@@ -299,6 +299,8 @@ import { FARM_JOBS, MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, 
 import { JobBoardView } from './world/jobBoard.js';
 import { ClassifiedsView } from './world/classifiedsView.js';
 import { MoneyTinView } from './world/moneyTinView.js';
+import { Shed, DEFAULT_SHED_PARAMS, SHED_PARAM_RANGES, SHED_PIECES } from './farm/shed.js';
+import { ShedView } from './workshop/shedView.js';
 import { CoinAudio } from './audio/coinAudio.js';
 import { MarketTalk, DEFAULT_MARKET_TALK_PARAMS, MARKET_TALK_RANGES } from './farm/marketTalk.js';
 import { Market, DEFAULT_MARKET_PARAMS, MARKET_PARAM_RANGES, FOR_SALE, dealAds, withBought, withoutSold, sellOffer, moneyFacts, colourName } from './farm/classifieds.js';
@@ -436,6 +438,10 @@ export class Game {
     registerTuning('Second-hand market', this.marketParams, MARKET_PARAM_RANGES);
     this.market = new Market(this.marketParams, createRandom(this.farmSeed ^ 0x7ea5));
     this.market.restore(this.farm.save?.market);
+    this.shedParams = { ...DEFAULT_SHED_PARAMS }; // the barn's compressor, parts washer and pit, bought from the catalogue (farm/shed.js)
+    registerTuning('Shed kit', this.shedParams, SHED_PARAM_RANGES);
+    this.shed = new Shed(this.shedParams);
+    this.shed.restore(this.farm.save?.shed);
     // What you sold yesterday has gone this morning (its saved condition goes with it: it isn't in the next save).
     const dealt = fleetFromSave(this.farm.save?.fleet, [...QUAD_SPECS, ...pool]) ?? pickFleet(QUAD_SPECS, pool, createRandom(this.farmSeed ^ 0x51ee7));
     const chosen = withoutSold(dealt, this.market.sold);
@@ -1524,6 +1530,7 @@ export class Game {
     // The money tin on its shelf under the cork board, its coin chink, and when the girls remark on the money (farm/marketTalk.js).
     this.moneyTin = new MoneyTinView({ game: this, market: this.market });
     this.coinAudio = new CoinAudio(this.audioHub, this.moneyTin.position);
+    this.shedView = new ShedView({ game: this, shed: this.shed, market: this.market }); // the catalogue under the board, and what it has bought
     this.marketTalkParams = { ...DEFAULT_MARKET_TALK_PARAMS };
     registerTuning('Money talk', this.marketTalkParams, MARKET_TALK_RANGES);
     this.marketTalk = new MarketTalk(this.marketTalkParams);
@@ -1543,6 +1550,12 @@ export class Game {
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.moneyTin.prompt(),
       interact: () => this.moneyTin.open(),
+    });
+    this.interaction.add({
+      target: this.shedView.proxy,
+      isAvailable: () => !this.handsFull && !this.player.isRiding,
+      prompt: () => this.shedView.prompt(),
+      interact: () => this.shedView.open(),
     });
     this.interaction.add({
       target: this.classifiedsView.proxy,
@@ -1923,7 +1936,7 @@ export class Game {
     if (this.menu.isOpen) return { mode: 'menu', menu: 'wheel' };
     if (this.workshop.isOpen) return { mode: 'menu', menu: 'workshop' };
     if (this.bench.isOpen) return { mode: 'menu', menu: 'bench' };
-    if (this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.photos.view.isOpen) return { mode: 'menu', menu: 'notebook' };
+    if (this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.shedView.isOpen || this.photos.view.isOpen) return { mode: 'menu', menu: 'notebook' };
     if (this.player.isRiding) {
       const q = this.riddenUnit?.quad;
       return { mode: 'ride', seat: this.player.seat, bucketOpen, gear: q?.manual ? q.drivetrain.gear : null, gears: q?.gearbox?.gears ?? 0 };
@@ -3903,6 +3916,44 @@ export class Game {
   refreshMarketViews() {
     this.classifiedsView.refresh();
     this.moneyTin.refresh();
+    this.shedView?.refresh();
+  }
+
+  /** Buys a piece of the shed kit from the catalogue (shedView.js): the money goes now and it stands in the barn tomorrow. Saved at once. */
+  buyShedPiece(id) {
+    if (this.farm.seeded) return this.hud.toast('A seeded game is not kept, so nothing would turn up tomorrow', 3);
+    const why = this.shed.whyNot(id, this.market.purse);
+    if (why) return this.hud.toast(why, 2.5);
+    this.shed.buy(id, this.market, this.farm.day);
+    this.saveFarm?.();
+    this.refreshMarketViews();
+    this.hud.toast(`Bought: the ${SHED_PIECES[id].name.toLowerCase()}. It will be in the barn in the morning`, 3.5);
+    this.coinAudio.chink(0.9);
+    this.saySomethingAboutShed('shedBought', { piece: id });
+  }
+
+  /** Ten seconds into a morning when a piece of the shed kit has turned up overnight, a girl nearby remarks on it, once. */
+  updateShedTalk(dt) {
+    this.shedTalkClock = (this.shedTalkClock ?? 0) + dt;
+    if (this.shedArrivedSaid || this.shedTalkClock < 10) return;
+    if (!this.shed.arrivals(this.farm.day).length) {
+      this.shedArrivedSaid = true;
+      return;
+    }
+    if (this.saySomethingAboutShed('shedArrived', { within: 25, chance: 0.5 })) this.shedArrivedSaid = true;
+  }
+
+  /** A girl remarks on the shed kit (npc/shedLines.js): the nearest who is free to, as for the money. */
+  saySomethingAboutShed(situation, { chance = 1, ...rest } = {}) {
+    return this.saySomethingAboutMoney(situation, { chance: situation === 'shedBought' ? 1 : chance, ...rest });
+  }
+
+  /** Hands a piece over and stands it in the barn at once (the debug panel and the console). */
+  giveShedPiece(id, on = true) {
+    if (on) this.shed.give(id);
+    else this.shed.take(id);
+    this.shedView.setStanding(id, on);
+    this.refreshMarketViews();
   }
 
   /**
@@ -3986,6 +4037,12 @@ export class Game {
     this.refreshMarketViews();
   }
 
+  /** One line about the shed kit, for the debug panel and the console. */
+  describeShed() {
+    const day = this.farm.day;
+    return Object.keys(SHED_PIECES).map((id) => `${id}: ${this.shed.has(id, day) ? 'in the barn' : this.shed.onTheWay(id, day) ? 'on the way' : `£${this.shed.price(id)}`}`).join(', ');
+  }
+
   /** One line about the market, for the debug panel and the console. */
   describeMarket() {
     const m = this.market;
@@ -4004,6 +4061,7 @@ export class Game {
       savedAt: Date.now(),
       fleet: this.fleetIds,
       market: this.market.toJSON(),
+      shed: this.shed.toJSON(),
       vehicles,
       pods: { ...this.podRack.at },
       girls: captureGirls(this),
@@ -10574,7 +10632,7 @@ export class Game {
     // 5: raise the camera (photos/photoHost.js), unless you are in a menu, up the ladder or hidden in the hay.
     if (
       input.wasPressed('Digit5') &&
-      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.photos.view.isOpen) &&
+      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.shedView.isOpen || this.photos.view.isOpen) &&
       !(this.climb || this.tryst || this.hiding.active)
     ) {
       this.photos.press();
@@ -10583,7 +10641,7 @@ export class Game {
     // 6: wave. Close girls wave back, a free girl further off comes over, a driving one pulls up (npc/playerWave.js).
     if (
       input.wasPressed('Digit6') &&
-      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.photos.view.isOpen) &&
+      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.shedView.isOpen || this.photos.view.isOpen) &&
       !(this.climb || this.tryst || this.hiding.active)
     ) {
       this.waveAtGirls();
@@ -10627,6 +10685,9 @@ export class Game {
     } else if (this.moneyTin.isOpen) {
       this.interaction.clear();
       this.moneyTin.handleInput(input);
+    } else if (this.shedView.isOpen) {
+      this.interaction.clear();
+      this.shedView.handleInput(input);
     } else if (this.classifiedsView.isOpen) {
       this.interaction.clear();
       this.classifiedsView.handleInput(input);
@@ -10816,6 +10877,7 @@ export class Game {
     this.guard.run('updateMuddiness', () => this.updateMuddiness(dt));
     this.guard.run('updateMoneyTin', () => this.moneyTin.update(dt));
     this.guard.run('updateMarketTalk', () => this.updateMarketTalk(dt));
+    this.guard.run('updateShedTalk', () => this.updateShedTalk(dt));
     this.guard.run('updateLens', () => this.updateLens(dt, ridden));
     this.guard.run('updatePair', () => this.updatePair(dt));
     this.watchNotices(dt);

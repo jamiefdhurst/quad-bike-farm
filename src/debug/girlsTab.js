@@ -264,6 +264,17 @@ export function buildGirlsTab(d) {
   button(market, 'Put ads up now', () => toast(`${g.debugDealAds()} ad(s) on the board`));
   button(market, 'Take the ads down', () => g.debugClearAds());
 
+  // The shed kit: the compressor, the parts washer and the pit bought from the catalogue under the cork board (farm/shed.js).
+  const shedKit = sub('Shed kit: compressor, parts washer and pit');
+  show(shedKit, 'the shed', () => g.describeShed());
+  for (const [id, name] of [['compressor', 'compressor'], ['washer', 'parts washer'], ['pit', 'pit']]) {
+    button(shedKit, `Stand the ${name} in the barn now`, () => g.giveShedPiece(id, true));
+    button(shedKit, `Take the ${name} away`, () => g.giveShedPiece(id, false));
+  }
+  for (const [verb, situation] of [['A girl remarks on a purchase', 'shedBought'], ['A girl remarks on a delivery', 'shedArrived']]) {
+    button(shedKit, verb, () => (g.saySomethingAboutShed(situation, { force: true, within: 1000 }) ? undefined : toast('Nobody has anything to say')));
+  }
+
   // The farm's jobs: the board, the muck, the bales and the bonfire.
   const jobs = sub('Jobs: the board, muck, bales and bonfire');
   show(jobs, 'the board', () => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on');

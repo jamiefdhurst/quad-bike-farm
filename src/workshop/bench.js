@@ -1,6 +1,7 @@
 import './bench.css';
 import * as THREE from 'three';
 import { PARTS } from './spares.js';
+import { SHED_JOBS, SHED_JOB_KINDS, shedJobWhyNot, shedLook } from './shedJobs.js';
 import { registerTuning } from '../core/tuning.js';
 import { DEFAULT_SERVICE_PARAMS, SERVICE_PARAM_RANGES, ServiceRun, servicePlan, factsOf, stateOf, dueBook, applyServiceReward } from './service.js';
 import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, tyreJobFor, inBay, plugCondition, readPlug, scoringLook, chainLook, bootLook, clutchLook, valvesLook, crashLook } from './benchJobs.js';
@@ -27,6 +28,7 @@ export class Bench {
     this.params = { ...DEFAULT_BENCH_PARAMS };
     this.unit = null;
     this.job = null;
+    this.page = 0; // 0 the usual jobs, 1 the ones that need the shed kit (R turns the page)
     this.dt = 1 / 60;
     this.serviceParams = { ...DEFAULT_SERVICE_PARAMS };
     this.services = new Map(); // unit id -> the full service under way on it (it carries on if you step away and come back)
@@ -62,6 +64,7 @@ export class Bench {
 
   /** The jobs listed for a quad: the barn find's own (the tarp, then what it needs), or the usual ones. */
   kindsFor(unit) {
+    if (this.page === 1) return SHED_JOB_KINDS;
     const charger = unit.engine.batteryOut ? 'chargeOff' : 'chargeOn';
     return unit.barnFind ? [...unit.barnFind.kinds, ...(unit.engine.params.noStarter ? [] : [charger])] : [...JOB_KINDS, charger];
   }
@@ -94,7 +97,24 @@ export class Bench {
     return true;
   }
 
+  /** Why a shed-kit job can't be done on this vehicle now, or null if it can. */
+  shedWhyNot(kind, unit) {
+    const g = this.game;
+    const day = g.farm.day;
+    const piece = SHED_JOBS[kind]?.piece;
+    if (piece && g.shed.onTheWay(piece, day)) return 'turns up tomorrow morning';
+    const e = unit.engine;
+    return shedJobWhyNot(kind, {
+      have: (p) => g.shed.has(p, day),
+      atPit: inBay(g.world.layout.bay2, unit.quad.position.x, unit.quad.position.z, this.params.bayMargin),
+      hasCarb: !e.params.compressionIgnition && !e.params.injected,
+      hasChain: !!unit.quad.faults.hasChain,
+      hasSump: !!unit.quad.sump,
+    });
+  }
+
   canBegin(kind, unit) {
+    if (kind in SHED_JOBS) return !this.shedWhyNot(kind, unit);
     if ((kind === 'filter' || kind === 'belt') && !servicePlan(factsOf(unit)).includes(kind)) return false;
     if (kind === 'newTyres' && !this.tyreJob(unit)) return false;
     return this.partOk(kind, unit) && this.batteryHandsOk(kind, unit) && (unit.barnFind && kind !== 'chargeOn' && kind !== 'chargeOff' ? unit.barnFind.available(kind) : unit.barnFind && !unit.barnFind.tarpOff ? false : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch));
@@ -125,6 +145,7 @@ export class Bench {
       this.job.holding = false;
       this.job.held = 0;
     }
+    this.page = 0;
     this.render();
     this.el.style.display = 'block';
     document.body.classList.add('bench-open');
@@ -202,7 +223,9 @@ export class Bench {
 
   /** Reacts to what a tap, hold or release did. */
   handle(events, inspected) {
-    if (inspected && this.job?.kind === 'topEnd') {
+    if (inspected && this.job?.kind in SHED_JOBS) {
+      this.game.hud.toast(`${this.job.kind === 'pressures' ? '' : 'Looking it over: '}${shedLook(this.job.kind, this.unit.quad.faults, this.unit.quad.tyres)}`);
+    } else if (inspected && this.job?.kind === 'topEnd') {
       this.game.hud.toast(`The piston is ${scoringLook(this.unit.engine, this.params)}`);
     } else if (inspected && this.job?.kind === 'chain') {
       this.game.hud.toast(`The chain is ${chainLook(this.unit.quad.faults)}`);
@@ -257,7 +280,12 @@ export class Bench {
     }
     const job = this.job;
     if (!job) {
-      if (input.wasPressed('KeyS')) this.startService();
+      if (input.wasPressed('KeyS') && this.page === 0) this.startService();
+      if (input.wasPressed('KeyR')) {
+        this.page = 1 - this.page;
+        this.render();
+        return;
+      }
       this.kindsFor(this.unit).forEach((kind, i) => {
         const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key, the twelfth on equals, the thirteenth on the left bracket, the fourteenth on the right, the fifteenth on the semicolon, the sixteenth on the quote
         const hit = i >= 10 ? input.wasPressed(OVERFLOW_KEYS[i - 10].code) : input.wasPressed(`Digit${n}`) || input.wasPressed(`Numpad${n}`);
@@ -311,6 +339,15 @@ export class Bench {
     return `<div class="bn-row"><span class="key">S</span>${run ? 'Carry on with the full service' : 'Full service'}<div class="bn-sub">${list}</div></div>`;
   }
 
+  /** The second page: the jobs that need the compressor, the parts washer and the pit, each with why not when it can't be done. */
+  renderShed(unit) {
+    this.bodyEl.innerHTML = SHED_JOB_KINDS.map((k, i) => {
+      const why = this.shedWhyNot(k, unit);
+      return `<div class="bn-row${why ? ' off' : ''}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${SHED_JOBS[k].name}${why ? ` (${why})` : ''}</div>`;
+    }).join('');
+    this.keysEl.textContent = 'Press a number to start   ·   R back to the usual jobs   ·   G step away';
+  }
+
   /** The hold meter: the fill climbs, and where a window is, the green band is where to let go. */
   paintHold() {
     const job = this.job;
@@ -326,6 +363,7 @@ export class Bench {
     if (!job) {
       this.holdEl.style.display = 'none';
       const find = unit.barnFind;
+      if (this.page === 1) return this.renderShed(unit);
       this.bodyEl.innerHTML = this.kindsFor(unit).map((k, i) => {
         const ok = this.canBegin(k, unit);
         let note = '';
@@ -337,8 +375,8 @@ export class Bench {
         }
         else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
-      }).join('') + this.serviceRow(unit);
-      this.keysEl.textContent = 'Press a number to start   ·   G step away';
+      }).join('') + this.serviceRow(unit) + '<div class="bn-row"><span class="key">R</span>Jobs that need the shed kit<div class="bn-sub">Compressor, parts washer and the pit</div></div>';
+      this.keysEl.textContent = 'Press a number to start   ·   R the shed kit   ·   G step away';
       return;
     }
     const run = job.service ? this.services.get(unit.id) : null;
