@@ -25,7 +25,7 @@ export const DEFAULT_STARTING_PARAMS = {
   floodedFouling: 0.4, // plug fouling past which she thinks it's flooded (Amy apologises to it)...
   floodedRich: 0.2, // ...or mixture richness past which she does
   tickleChance: 0.85, // on an old bike with a tickler, from cold she tickles the carb
-  tickleMax: 3, // up to this many presses (the old bike floods past about three)
+  tickleMax: 2, // up to this many presses (the old bike floods past about three)
   leverChance: 0.7, // and retards the spark lever before she kicks it; the rest of the time she leaves it where it was
 };
 
@@ -80,11 +80,12 @@ export class StartingAttempt {
           this.checkedTap = true;
           this.events.push('tapOn');
         }
-        if (this.random() < (engine.temperature < 0.5 ? p.coldChokeChance : p.warmChokeChance)) {
+        // The old bike's ritual first (a tickle and the spark lever): tickled, she leaves the choke alone, as the two together drown it.
+        if (engine.params?.manualTiming) this.oldBikeRitual();
+        if (!this.events.includes('tickle') && this.random() < (engine.temperature < 0.5 ? p.coldChokeChance : p.warmChokeChance)) {
           this.quad.choke = 1;
           this.events.push('chokeOn');
         }
-        if (engine.params?.manualTiming) this.oldBikeRitual();
         this.knowsKnack = this.random() < p.knackChance;
         this.startBurst();
         break;
@@ -192,7 +193,8 @@ export class StartingAttempt {
     this.pulls++;
     this.pulling = true;
     // Flooded, she kicks it over with the throttle open to blow it clear.
-    this.quad.helperThrottle = this.quad.engine.params?.tickler && this.quad.engine.tickled > this.quad.engine.params.tickleFloodAbove ? 1 : this.quad.helperThrottle;
+    const e = this.quad.engine;
+    if (e.params?.tickler && (e.tickled > e.params.tickleFloodAbove || e.fouling > this.p.floodedFouling)) this.quad.helperThrottle = 1;
     this.timer = this.between(this.p.pullHoldMin, this.p.pullHoldMax);
     this.quad.helperPull = true;
     if (this.pulls === 1) this.events.push('pull');
@@ -259,7 +261,7 @@ export class StartingAttempt {
       fuel.tap = 'on';
       this.checkedTap = true;
       this.events.push('remembered', 'tapOn');
-    } else if (engine.temperature < 0.5 && this.quad.choke < 0.5) {
+    } else if (engine.temperature < 0.5 && this.quad.choke < 0.5 && !(engine.tickled > 0.3)) { // (tickled, it wants no choke as well)
       this.quad.choke = 1;
       this.events.push('remembered', 'chokeOn');
     } else if (engine.params?.manualTiming && engine.advance > engine.params.kickAbove) {
