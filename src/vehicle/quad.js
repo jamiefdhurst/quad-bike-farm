@@ -39,7 +39,7 @@ import { stepPedalKey, DEFAULT_BRAKE_KEY_PARAMS, DEFAULT_THROTTLE_KEY_PARAMS } f
 import { Bog } from './bog.js';
 import { Sump, hasSump, oilPressureLamp } from './sump.js';
 import { stepHand } from './handLever.js';
-import { Faults, clutchSlipping, clutchSlipUnderPower } from './faults.js';
+import { Faults, clutchSlipping, clutchSlipUnderPower, applyTyreFaults } from './faults.js';
 import { CrashWatch, damageFor, DEFAULT_CRASH_PARAMS } from './crashDamage.js';
 import { toppleLoad } from './topple.js';
 import { BikeLean, DEFAULT_BIKE_PARAMS } from './bikeLean.js';
@@ -160,6 +160,7 @@ export class Quad {
     this.lastCrash = null; // { impact, bent: [{ kind, wheel, level }] } the last one, for the panel
     this.faults.steerWheels = layout.wheels.flatMap((w, i) => (!w.outrigger && (w.front ?? i < 2) ? [i] : []));
     this.sump = hasSump(engine.params) ? new Sump() : null; // every four-stroke's engine oil; the game deals each its level (sump.js)
+    this.faults.hasSump = !!this.sump; // so a gasket can weep
     this.sumpClock = 0;
     // A layout's outrigger wheels (the mini moto's) are never the flat one.
     if (layout.wheels.some((w) => w.outrigger) || layout.wheels.length !== 4) {
@@ -389,6 +390,12 @@ export class Quad {
   }
 
   /** Hard knocks while someone is at the controls: a hit on a post or a bad landing can bend a rod or a rim (crashDamage.js). */
+  /** The shed's faults on the tyres and the sump (shedFaults.js): the air seeping out, the cold morning's ceiling, the odd tyre, the weeping gasket. */
+  shedEffects(dt) {
+    if (this.tyres) applyTyreFaults(this.tyres, this.faults, dt);
+    if (this.sump) this.sump.level = Math.max(0, this.sump.level - this.faults.gasketLoss(dt, this.engine.isRunning));
+  }
+
   checkCrash(dt) {
     if (!this.rider && !this.driver) return this.crashWatch.reset(); // parked: stopping it by hand isn't a crash
     const impact = this.crashWatch.update(dt, this.physics.body.linvel());
@@ -793,7 +800,8 @@ export class Quad {
     const jolt = dt > 0 ? Math.abs(up - this.lastUp) / dt : 0;
     this.lastUp = up;
     const slipNow = this.manual && this.faults.hasClutch ? clutchSlipping(this.drivetrain, { running: this.engine.isRunning, throttle: throttleInput, slope: this.climb, speed: fwd }, this.faults.params) : 0;
-    this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput, jolt, clutchSlip: slipNow, punctureFactor: this.tyres.punctureFactor });
+    this.faults.update(dt, { running: this.engine.isRunning, speed: Math.abs(fwd), throttle: throttleInput, jolt, clutchSlip: slipNow, punctureFactor: this.tyres.punctureFactor, temperature: this.world.weather?.temperature ?? 12 });
+    this.shedEffects(dt);
     this.clutchSlip = this.manual && this.drivetrain.gear !== 0 ? clutchSlipUnderPower(this.faults.clutchWear, this.drivetrain.clutch > 0.5 ? this.throttle : 0, this.faults.params) : 0;
     this.checkCrash(dt);
     this.dust = this.world.dustParams ? dustLevel(this.world.dustParams, this.world.stubbleAt?.(this.position.x, this.position.z) ?? 0, this.world.wet ?? 0, fwd) : 0;
@@ -862,7 +870,7 @@ export class Quad {
     const hold = this.bog.holdForce(p.mass);
 
     this.brakes.update(dt, { puddle: Math.max(0, ...this.physics.wheelInfo.map((w) => w.puddle ?? 0)), speed: fwd, pressure: this.brake });
-    let brake = this.brake * p.maxBrake * this.tow.brakeFactor * this.brakes.grip; // wet brakes barely bite until they dry
+    let brake = this.brake * p.maxBrake * this.tow.brakeFactor * this.brakes.grip * this.faults.brakeFactor; // wet brakes barely bite until they dry
     // Someone at the controls with nothing pressed and stopped: it holds itself, unless it's an automatic on a steep slope, which rolls back.
     // With nobody on it (and not carrying on by itself) it only holds if the parking brake was set, or it rolls off down a slope; the tractor
     // still holds itself. Not while it's being winched (vehicle/handbrake.js).
@@ -1107,6 +1115,7 @@ export class Quad {
       slip: Math.max(this.faults.slip, this.clutchSlip), // the belt's or the clutch's: the revs flare and the load doesn't hold them down
       dirt: this.faults.dirt,
       airLeak: this.faults.airLeak,
+      exhaustLeak: this.faults.exhaustLeak,
       valveLoose: this.faults.valveLoose,
       valveTight: this.faults.valveTight,
       clog: Math.min(1, this.filter.clog + (this.sump?.airboxChoke ?? 0)),

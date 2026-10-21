@@ -85,6 +85,7 @@ import { JESS_UTV_LINES } from './utvLines.js';
 import { JESS_TRAILER_LINES } from './trailerLines.js';
 import { JESS_FARM_JOB_LINES } from './farmJobLines.js';
 import { JESS_MONEY_LINES } from './moneyLines.js';
+import { JESS_SHED_LINES } from './shedLines.js';
 import { JESS_FIRE_LINES } from './fireLines.js';
 import { JESS_LOAD_LINES } from './loadLines.js';
 import { JESS_RACE_LINES } from './raceLines.js';
@@ -539,6 +540,7 @@ export const JESS_LINES = {
   ...JESS_TRAILER_LINES,
   ...JESS_FARM_JOB_LINES,
   ...JESS_MONEY_LINES,
+  ...JESS_SHED_LINES,
   ...JESS_FIRE_LINES,
   ...JESS_LOAD_LINES,
   ...JESS_RACE_LINES,

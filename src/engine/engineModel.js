@@ -81,6 +81,7 @@ export class EngineModel {
     this.clickedDead = false; // the starter has clicked for this press
     this.slip = 0; // see update()
     this.dirt = 0;
+    this.exhaustLeak = 0; // 0..1 how loud a silencer holed through rust is (set from the quad's faults)
     this.airLeak = 0; // 0..1 a split or loose intake boot letting unmetered air in (set from the quad's faults)
     this.leakPhase = 0;
     this.leakNoise = 0;
@@ -298,7 +299,7 @@ export class EngineModel {
    * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
    * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, airLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, wax = 0, airLock = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12, dayDamp = this.params.airRefDamp } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, airLeak = 0, exhaustLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, wax = 0, airLock = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12, dayDamp = this.params.airRefDamp } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -315,6 +316,7 @@ export class EngineModel {
     this.slip = clamp(slip, 0, 1);
     this.dirt = clamp(dirt, 0, 1);
     this.airLeak = clamp(airLeak, 0, 1);
+    this.exhaustLeak = clamp(exhaustLeak, 0, 1);
     this.valveLoose = clamp(valveLoose, 0, 1);
     this.valveTight = clamp(valveTight, 0, 1);
     this.clog = clamp(clog, 0, 1);
@@ -422,7 +424,7 @@ export class EngineModel {
 
   /** How loud and bright the exhaust is, 0..1: a silencer off is full, a blown one part of it. */
   get exhaustLoud() {
-    return this.silencerOff ? 1 : this.silencerBlown * this.params.silencerBlownLoud;
+    return this.silencerOff ? 1 : Math.max(this.silencerBlown * this.params.silencerBlownLoud, this.exhaustLeak);
   }
 
   /** Whether the dash has power to light. */

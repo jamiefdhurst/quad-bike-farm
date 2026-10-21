@@ -3,7 +3,10 @@
 // without warning, gets worse until it's put right at the toolbox, and has a
 // symptom you can feel or hear. Pure logic, no Three.js.
 
+import { DEFAULT_SHED_FAULT_PARAMS, SHED_FAULT_RANGES, SHED_KINDS, SHED_WHEEL_KINDS } from './shedFaults.js';
+
 export const DEFAULT_FAULT_PARAMS = {
+  ...DEFAULT_SHED_FAULT_PARAMS,
   // How often each one starts, as the average seconds of the right kind of use per fault.
   punctureEvery: 2400, // riding: a thorn from the hedge
   beltEvery: 1800, // riding hard, with the throttle well open
@@ -61,6 +64,7 @@ export const DEFAULT_FAULT_PARAMS = {
 };
 
 export const FAULT_PARAM_RANGES = {
+  ...SHED_FAULT_RANGES,
   punctureEvery: [60, 20000, 60],
   beltEvery: [60, 20000, 60],
   cableEvery: [60, 20000, 60],
@@ -114,10 +118,12 @@ export const FAULT_PARAM_RANGES = {
   fieldFixCap: [0, 1, 0.01],
 };
 
-export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim', 'leak', 'clutch'];
+export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim', 'leak', 'clutch', ...SHED_KINDS];
+
+const perKind = (v) => Object.fromEntries(FAULT_KINDS.map((k) => [k, v]));
 
 /** Faults the toolbox can't touch: a rough fix in the yard does nothing, only the bench puts them right. */
-export const BENCH_ONLY_KINDS = ['leak', 'clutch'];
+export const BENCH_ONLY_KINDS = ['leak', 'clutch', ...SHED_KINDS];
 
 /** Faults that come from a knock (crashDamage.js), not from use: they never start or worsen by themselves, and only the bench puts them right. */
 export const CRASH_KINDS = ['rod', 'rim'];
@@ -138,12 +144,17 @@ export class Faults {
     this.rodWheel = -1; // which front wheel has the bent track rod
     this.rimWheel = -1; // which wheel has the bent rim
     this.steerWheels = [0, 1]; // the wheels a track rod can be bent on (set by Quad)
-    this.levels = { puncture: 0, belt: 0, cable: 0, carb: 0, mounts: 0, chain: 0, valves: 0, rod: 0, rim: 0, leak: 0, clutch: 0 }; // 0 none, rising to 1 at their worst
-    this.started = { puncture: false, belt: false, cable: false, carb: false, mounts: false, chain: false, valves: false, rod: false, rim: false, leak: false, clutch: false };
-    this.caps = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1, clutch: 1 }; // a rough fix leaves it from getting any worse than this
+    this.levels = perKind(0); // 0 none, rising to 1 at their worst
+    this.started = perKind(false);
+    this.caps = perKind(1); // a rough fix leaves it from getting any worse than this
+    this.wheelOf = Object.fromEntries(SHED_WHEEL_KINDS.map((k) => [k, -1])); // which wheel the uneven tyre, the dud valve core, the dragging caliper and the bearing are on
+    this.hasSump = false; // a petrol four-stroke has a sump to weep from (set by Quad)
+    this.tapLoad = 0; // the throttle just now, for a clogged tap starving the carb
+    this.cold = 0; // 0..1 how cold the morning is, for the tyres (set by update)
+    this.standing = true; // not moving just now
     this.heldThrottle = 0; // what a sticking cable is still holding open
-    this.prone = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1, clutch: 1 }; // times as often it starts (see roll)
-    this.worsens = { puncture: 1, belt: 1, cable: 1, carb: 1, mounts: 1, chain: 1, valves: 1, rod: 1, rim: 1, leak: 1, clutch: 1 }; // times as fast it gets worse
+    this.prone = perKind(1); // times as often it starts (see roll)
+    this.worsens = perKind(1); // times as fast it gets worse
     this.hasChain = false; // a chain-driven quad (the sport quad, the mini moto, the ATC) can have a stretched chain; the others never
     this.hasBoot = true; // a petrol carb or throttle body has an intake boot to split; a diesel has none (set by Quad)
     this.hasClutch = false; // a manual quad has a clutch plate to wear out; the automatics' belt is the belt fault (set by Quad)
@@ -195,6 +206,7 @@ export class Faults {
     const pool = kind === 'rod' ? this.steerWheels : this.tyreWheels;
     if (kind === 'rod' && this.rodWheel < 0) this.rodWheel = pool[Math.floor(this.random() * pool.length)] ?? 0;
     if (kind === 'rim' && this.rimWheel < 0) this.rimWheel = pool[Math.floor(this.random() * pool.length)] ?? 0;
+    if (SHED_WHEEL_KINDS.includes(kind) && this.wheelOf[kind] < 0) this.wheelOf[kind] = this.tyreWheels[Math.floor(this.random() * this.tyreWheels.length)] ?? 0;
   }
 
   /**
@@ -223,7 +235,7 @@ export class Faults {
    * @param {number} [s.jolt]    m/s2 of vertical jolt from the ground (for a slack chain slapping)
    * @param {number} [s.clutchSlip]  0..1 how hard the clutch is being slipped just now (clutchSlipping below): that is what wears it
    */
-  update(dt, { running, speed, throttle, jolt = 0, clutchSlip = 0, punctureFactor = 1 }) {
+  update(dt, { running, speed, throttle, jolt = 0, clutchSlip = 0, punctureFactor = 1, temperature = 12 }) {
     const p = this.params;
     this.events.length = 0;
     const moving = running && speed > p.movingSpeed;
@@ -249,12 +261,94 @@ export class Faults {
     grow('clutch', clutchSlip > 0 && clutchSlip, p.clutchSeconds); // only slipping it wears it further
     grow('valves', running && !this.kept.valveTight, p.valvesSeconds); // wearing wide; a clearance set too tight stays as it is
     if (this.hasChain) this.updateChain(dt, { moving, throttle, jolt });
+    this.updateShed(dt, { running, moving, throttle, temperature });
+  }
+
+  /**
+   * The shed's faults (shedFaults.js). The tyres' come on with use, the cold and the standing; the washer's with the engine and the mud; the pit's
+   * with the engine and the miles. None has a rough fix, so none is ever put off by a quick job in the yard.
+   */
+  updateShed(dt, { running, moving, throttle, temperature }) {
+    const p = this.params;
+    this.tapLoad = running ? throttle : 0;
+    this.standing = !moving;
+    this.cold = clamp((p.tyreColdBelow - temperature) / Math.max(1, p.tyreColdBelow + 4), 0, 1);
+    const chance = (every, kind, scale = 1) => 1 - Math.exp((-dt * this.prone[kind] * scale) / every);
+    const roll = (kind, on, every, scale = 1) => {
+      if (on && !this.started[kind] && this.random() < chance(every, kind, scale)) this.begin(kind);
+    };
+    roll('tyreLeak', moving, p.tyreLeakEvery);
+    roll('tyreCold', this.cold > 0, p.tyreColdEvery, this.cold);
+    roll('tyreUneven', moving, p.tyreUnevenEvery);
+    roll('valveCore', true, p.valveCoreEvery);
+    roll('carbGum', running && this.prone.carb > 0, p.carbGumEvery);
+    roll('tapClog', running, p.tapClogEvery);
+    roll('chainGrit', moving && this.hasChain, p.chainGritEvery);
+    roll('brakeMud', moving, p.brakeMudEvery);
+    roll('exhaustHole', running, p.exhaustHoleEvery);
+    roll('gasket', running && this.hasSump, p.gasketEvery);
+    roll('caliper', moving, p.caliperEvery);
+    roll('bearing', moving, p.bearingEvery);
+    const grow = (kind, on, seconds) => {
+      if (this.started[kind] && on) this.levels[kind] = Math.min(this.caps[kind], this.levels[kind] + (dt * this.worsens[kind]) / seconds);
+    };
+    grow('tyreLeak', true, p.tyreLeakSeconds);
+    grow('tyreCold', this.cold > 0, p.tyreColdSeconds); // the cold does not worsen it once the day has warmed up
+    grow('tyreUneven', moving, p.tyreUnevenSeconds);
+    grow('valveCore', true, p.valveCoreSeconds);
+    grow('carbGum', running, p.carbGumSeconds);
+    grow('tapClog', running, p.tapClogSeconds);
+    grow('chainGrit', moving && this.hasChain, p.chainGritSeconds);
+    grow('brakeMud', moving, p.brakeMudSeconds);
+    grow('exhaustHole', running, p.exhaustHoleSeconds);
+    grow('gasket', running && this.hasSump, p.gasketSeconds);
+    grow('caliper', moving, p.caliperSeconds);
+    grow('bearing', moving, p.bearingSeconds);
+    // A warm day lets the cold-morning drop go again by itself: it was only the air.
+    if (this.started.tyreCold && this.cold === 0 && this.caps.tyreCold >= 1) this.levels.tyreCold = Math.max(0, this.levels.tyreCold - dt / p.tyreColdSeconds);
+    if (this.started.tyreCold && this.cold === 0 && this.levels.tyreCold <= 0) this.started.tyreCold = false;
+  }
+
+  /** psi a second to take off every tyre (a slow leak), whether it is ridden or stood. */
+  get tyreBleed() {
+    return this.started.tyreLeak ? this.params.tyreLeakBleed * this.levels.tyreLeak : 0;
+  }
+
+  /** psi a second to take off the one wheel with the dud valve core: it seeps while the vehicle stands, so it is down in the morning. */
+  get coreBleed() {
+    return this.started.valveCore && this.standing ? this.params.valveCoreBleed * this.levels.valveCore : 0;
+  }
+
+  /** How far under stock a tyre cannot be held above, for the whole set: the cold morning's contracted air. */
+  get coldDrop() {
+    return this.started.tyreCold ? this.params.tyreColdDrop * this.levels.tyreCold : 0;
+  }
+
+  /** How far under stock the odd tyre sits (wheelOf.tyreUneven), 0 if none is. */
+  get unevenDrop() {
+    return this.started.tyreUneven ? this.params.tyreUnevenDrop * this.levels.tyreUneven : 0;
+  }
+
+  /** Multiplier on the braking force: caked brakes grab less. */
+  get brakeFactor() {
+    return 1 - (this.started.brakeMud ? this.params.brakeMudFade * this.levels.brakeMud : 0);
+  }
+
+  /** 0..1 how loud a holed silencer is, for the engine (the louder of this and a blown one's; a silencer taken off is still the loudest). */
+  get exhaustLeak() {
+    return this.started.exhaustHole ? this.params.exhaustHoleLoud * this.levels.exhaustHole : 0;
+  }
+
+  /** Sump level to lose in a step, for the weeping gasket (only while the engine runs). */
+  gasketLoss(dt, running) {
+    return this.hasSump && running && this.started.gasket ? this.params.gasketBleed * this.levels.gasket * dt : 0;
   }
 
   /** The chain: it oils off as you ride, stretches faster dry, slaps over bumps once slack, and jumps the sprocket when slack and loaded. */
   updateChain(dt, { moving, throttle, jolt }) {
     const p = this.params;
-    const dry = 1 + p.chainDryWear * (1 - this.kept.chainLube);
+    const grit = this.started.chainGrit ? p.chainGritWear * this.levels.chainGrit : 0; // a gritty chain stretches faster, as a dry one does
+    const dry = 1 + p.chainDryWear * (1 - this.kept.chainLube) + grit;
     if (moving) {
       this.kept.chainLube = Math.max(0, this.kept.chainLube - dt / p.chainLubeSeconds);
       if (!this.started.chain && this.random() < 1 - Math.exp((-dt * this.prone.chain * dry) / p.chainEvery)) this.begin('chain');
@@ -297,7 +391,7 @@ export class Faults {
 
   /** A dry chain squeaks and rattles; 0 fresh, 1 bone dry (only means anything on a chain-driven quad). */
   get chainDryness() {
-    return this.hasChain ? 1 - this.kept.chainLube : 0;
+    return this.hasChain ? Math.min(1, 1 - this.kept.chainLube + (this.started.chainGrit ? 0.5 * this.levels.chainGrit : 0)) : 0;
   }
 
   /** The cable has stuck for good: it won't close until you switch off (or it's fixed). */
@@ -355,13 +449,22 @@ export class Faults {
 
   /** Radians that wheel wobbles side to side once a turn, for show (zero for any other). */
   wheelWobble(i) {
-    return this.started.rim && i === this.rimWheel ? this.params.rimWobble * this.levels.rim : 0;
+    const rim = this.started.rim && i === this.rimWheel ? this.params.rimWobble * this.levels.rim : 0;
+    const bearing = this.started.bearing && i === this.wheelOf.bearing ? this.params.bearingWobble * this.levels.bearing : 0;
+    return rim + bearing;
   }
 
   /** Multiplier on the drive force at the wheels. */
   get driveFactor() {
     if (this.kept.chainOff) return 0;
-    return (1 - this.params.punctureDrag * this.levels.puncture) * (1 - this.params.beltDriveLoss * this.levels.belt) * (1 - this.params.chainLash * this.levels.chain) * (1 - this.params.rimDrag * this.levels.rim);
+    return (1 - this.params.punctureDrag * this.levels.puncture) * (1 - this.params.beltDriveLoss * this.levels.belt) * (1 - this.params.chainLash * this.levels.chain) * (1 - this.params.rimDrag * this.levels.rim) * this.shedDriveFactor;
+  }
+
+  /** What the tap, the silencer, the caliper and the bearing take off the drive between them. */
+  get shedDriveFactor() {
+    const p = this.params;
+    const on = (kind, k) => (this.started[kind] ? k * this.levels[kind] : 0);
+    return (1 - on('tapClog', p.tapClogLoss * this.tapLoad)) * (1 - on('exhaustHole', p.exhaustHoleLoss)) * (1 - on('caliper', p.caliperDrag)) * (1 - on('bearing', p.bearingDrag));
   }
 
   /** 0..1 how badly the belt slips, and how dirty the carb is (for the engine). */
@@ -370,7 +473,7 @@ export class Faults {
   }
 
   get dirt() {
-    return this.levels.carb;
+    return Math.max(this.levels.carb, this.started.carbGum ? this.params.carbGumDirt * this.levels.carbGum : 0);
   }
 
   /** 0..1 how badly the intake boot is split, for the engine (it leans out, hunts at idle and pops on the overrun). */
@@ -425,6 +528,7 @@ export class Faults {
     if (kind === 'rod') this.rodWheel = -1;
     if (kind === 'rim') this.rimWheel = -1;
     if (kind === 'cable') this.heldThrottle = 0;
+    if (kind in this.wheelOf) this.wheelOf[kind] = -1;
     this.events.push({ type: 'fixed', kind });
     return true;
   }
@@ -462,4 +566,20 @@ export function clutchSlipping(d, { running, throttle, slope, speed }, p = DEFAU
 export function clutchSlipUnderPower(wear, throttle, p = DEFAULT_FAULT_PARAMS) {
   if (wear <= p.clutchSlipFrom) return 0;
   return clamp(((wear - p.clutchSlipFrom) / (1 - p.clutchSlipFrom)) * clamp(throttle * 1.4, 0, 1), 0, 1);
+}
+
+/**
+ * The shed's faults on a set of tyres, for a step (shedFaults.js): every tyre bleeds a little (a slow leak), the dud valve's wheel bleeds while the vehicle
+ * stands, a cold morning puts a ceiling under stock on all four, and the odd tyre sits lower. Pressures are floats here; they only round when pumped.
+ */
+export function applyTyreFaults(tyres, faults, dt) {
+  const stock = tyres.tune.stockPsi;
+  const bleed = faults.tyreBleed * dt;
+  for (const w of tyres.realWheels) {
+    let psi = tyres.psi[w.i] - bleed;
+    if (w.i === faults.wheelOf.valveCore) psi -= faults.coreBleed * dt;
+    if (faults.coldDrop > 0) psi = Math.min(psi, stock - faults.coldDrop);
+    if (faults.unevenDrop > 0 && w.i === faults.wheelOf.tyreUneven) psi = Math.min(psi, stock - faults.unevenDrop);
+    tyres.psi[w.i] = Math.max(tyres.P.ventMinPsi, psi);
+  }
 }
