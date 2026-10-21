@@ -515,7 +515,7 @@ export function buildCommands(host) {
       '  tune.<group>.<key>      every number in the debug panel\'s Tune tab (names lower case, spaces as dashes)',
       'POSITIONS',
       '  x is east, z is south, up is y. Heading is degrees: 0 faces +z, 90 faces +x, 180 faces -z. The same for you, vehicles and girls.',
-      '  Things you can move: me, each vehicle id, amy, jess and the items (petrol-can, premix-can, diesel-can, toolbox, oil-bottle, leads).',
+      '  Things you can move: me, each vehicle id, amy, jess and the items (petrol-can, premix-can, diesel-can, toolbox, oil-bottle, feed-bucket, leads).',
       '  Or set the values: vehicle.red.x, vehicle.red.z, girl.amy.heading, player.y...',
       'TAB',
       '  Completes commands, paths, vehicles, girls, places and values. Press again to go through the choices, Shift+Tab goes back.',

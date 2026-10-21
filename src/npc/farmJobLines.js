@@ -4,6 +4,9 @@
 //   muckDone   the strip is spread and the job ticked off the board
 //   baleSpiked  the tractor's spike has gone into a silage bale
 //   silageDone  the silage is in the Dutch barn and the job ticked off the board
+//   feedStart   you've started feeding the hens or the pig (world/farmAnimals.js)
+//   feedDone    both are fed and the job is ticked off the board
+//   hensScatter a quad running near the hens has sent them flapping
 // Merged into the main line sets (voiceLines.js, jessLines.js), so they're recorded with the rest.
 
 const line = (cooldown, lines) => ({ cooldown, lines });
@@ -14,6 +17,9 @@ export const AMY_FARM_JOB_LINES = {
   muckDone: line(60, ['That is a lovely even strip. The field will thank you.', 'Done, and no bare patches. That is how it is done.', 'Tick it off the board. I like a board with ticks on.']),
   baleSpiked: line(90, ['Got it. Now lift it before you drive, please, not drag it.', 'Right through the middle. That is how it is done.', 'Keep it low across the yard. A bale on a spike likes to swing.']),
   silageDone: line(60, ['That is the silage in. Neatly, too.', 'In the dry at last. Tick it off, then.', 'Lovely. Straight rows would have been nicer, but lovely.']),
+  feedStart: line(90, ['Good. The hens will have been at that fence since first light.', 'Feed first, then the rest of the board. They do not wait for anyone.', 'Do the pig properly, please. She notices if you short her.']),
+  feedDone: line(60, ['Both fed. That is the animals sorted for the day.', 'Quiet at last. A fed pig is a peaceful pig.', 'Tick it off. They will not complain until the afternoon.']),
+  hensScatter: line(45, ['Engine off near the run, please. They will not lay for a week.', 'Look at them go. They hate a running engine.', 'You have frightened the hens. Switch it off when you stop.']),
 };
 
 export const JESS_FARM_JOB_LINES = {
@@ -22,4 +28,7 @@ export const JESS_FARM_JOB_LINES = {
   muckDone: ['Ha! The field smells lovely now. Of poo.', 'Done! Now go and wash, you absolute pong.', 'Well, that is the stubble sorted. Not sitting near you, though.'],
   baleSpiked: ['Ooh, you have kebabbed it! A bale kebab!', 'Is it going to fall off? Please let it fall off.', 'Go on, lift it up high. Higher! Higher!'],
   silageDone: ['Bale delivery, done! Do I get a tip?', 'Look at them all lined up. Very tidy, for you.', 'That is the silage sorted. Can we do something fun now?'],
+  feedStart: ['Feeding time! Hello, ladies!', 'Ooh, are you doing the animals? Can I have a go at the pig?', 'The pig will eat anything. Do not give her your sandwich.'],
+  feedDone: ['Everyone is fed! Look at that pig, she is practically smiling.', 'Done! Do we get fed now?', 'Hens happy, pig happy, and you smell of chicken feed.'],
+  hensScatter: ['Ha! Chicken chaos! Everybody run!', 'You have started a hen riot. Brilliant.', 'Poor hens! Though they do look funny running.'],
 };

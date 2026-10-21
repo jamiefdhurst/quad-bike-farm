@@ -71,7 +71,7 @@ export function randomiseQuadSpawns(spawn, count, random, { homeCount = count, b
 
 /**
  * Ground no vehicle may start on, as circles { x, z, r, what }: the trailers, the fuel tank and bowser, the silage stack, the barn and its
- * doorway, the paddock, the straw bales, the bell, the trees by the barn, the jump and its run-up, the drag strip and the bog in the field.
+ * doorway, the paddock, the straw bales, the bell, the hens' run and the pig's sty, the trees by the barn, the jump and its run-up, the drag strip and the bog in the field.
  * `r` is how far a vehicle's centre must keep from the middle. The track is checked separately (spawnBlocked). Pure, from the layout.
  */
 export function spawnKeepOut(layout) {
@@ -111,6 +111,11 @@ export function spawnKeepOut(layout) {
     for (let a = -8; a <= d.length + d.runOff; a += 6) add(d.x + fx * a, d.z + fz * a, d.width / 2 + 3, 'the drag strip');
   }
   if (L.bonfire) add(L.bonfire.x, L.bonfire.z, 6, 'the bonfire');
+  if (L.farmAnimals) {
+    for (const [r, what] of [[L.farmAnimals.pen, "the hens' run"], [L.farmAnimals.sty, "the pig's sty"]]) {
+      add((r.minX + r.maxX) / 2, (r.minZ + r.maxZ) / 2, Math.hypot(r.maxX - r.minX, r.maxZ - r.minZ) / 2 + 3, what);
+    }
+  }
   for (const b of L.bogs ?? []) if (b.x !== undefined) add(b.x, b.z, b.radius + 4, 'the bog');
   return out;
 }

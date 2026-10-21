@@ -249,6 +249,14 @@ export const LAYOUT = {
     corsa: { x: 190.6, z: -2.4, yaw: Math.PI, where: 'by the Dutch barn' },
   },
   paddock: { x: -66, z: 34, half: 7 },
+  // The yard's animals (world/farmAnimals.js, farmAnimalsView.js): the hens' run and the pig's sty west of the barn, clear of the silage, the paddock
+  // and the west hedge; you feed over the fence. The feed bin stands against the barn's north wall, with the bucket beside it (items/feedBucket.js).
+  farmAnimals: {
+    pen: { minX: -77, maxX: -70.5, minZ: 44.5, maxZ: 51.5 },
+    sty: { minX: -77, maxX: -72.5, minZ: 53.5, maxZ: 58.5 },
+    bin: { x: -66.6, z: 54.6, yaw: 0 },
+    bucket: { x: -65.5, z: 54.4, yaw: 0.4 },
+  },
   gate: { x: -30, side: 'south', width: 4.2, open: true }, // swung back into the field and tied, onto the lane to the hill
 
   // The jump (world/jumpRamp.js): a plank ramp in the flat middle of the field. x, z is the foot of the slope, yaw the way you ride up it (the
