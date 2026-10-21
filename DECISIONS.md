@@ -4793,4 +4793,12 @@ Settled with Jamie: the show is on the last Sunday of a month, not a random day.
 - **The slow race:** one roll from the farm seed and the day: Amy wins `amyPatience` 0.6 of the time. Each girl has a spoken line for winning and losing (`showSlowWon`, `showSlowLost`), Amy's at the card opening and Jess's three seconds later as the dayDone lines are. The evening before, a free girl says the show is tomorrow (`showEve`), and on the day itself `showToday`, once, after `showEveAfter` 25 s.
 - **Kept:** `shows` in the farm save: the last 12 results (day, month, year, place, total, entries, quad, who won the race), one per day. Older saves lack it and load fine. Not a breaking change.
 - **In the barn:** `src/world/trophyShelf.js`, a small shelf on the back wall under the calendar, with a rosette on a nail above it for the latest eight, coloured by place.
-- **Not checked:** the shelf, the rosettes and the calendar dot by eye, the card in a browser, the new voice lines by ear.
+- **Fuller show (Jamie: yes to a reasons, a preview, the girls entering, a drawn rosette and a records line; the classes and a ridden showground are separate issues):**
+  - **Reasons:** `judgeQuad` returns `notes` per mark (mud on the body, on the wheels, a worn body, punctures or bent parts, a worn engine, a fouled plug, faults, a flat battery) and the card prints them after each mark, or "spotless".
+  - **Preview:** on show day the calendar's prompt names the entry and says what it would score now and which mark loses most (`previewText`), whether or not you can call it a day yet.
+  - **The girls enter:** each girl's own quad (`homeQuad` or the one she is on) is judged by the same rules, unless it is the one you are entering. `runShow` ranks everyone with the rivals (a tie goes to you, then the girls, then the rivals); the card lists the ranking.
+  - **Speech:** a queue (`showSpeech`): the slow race lines for Amy at once and Jess `recapJessDelay` later, then the best girl ahead of you says `showAheadOfYou`, or the worst girl behind you says `showBehindYou`, a gap after that.
+  - **Rivals** gain `rivalYearly` 0.8 marks a farm year after the first, capped at 29.
+  - **Records board:** a "Show rosettes" line ("2 firsts, 5 placed"), through `Records.extra` and `allLines()`; with six rows the board's rows are 52 px apart, not 58.
+  - **Rosette:** an inline SVG on the card (`rosetteSvg`), and the card scrolls if it is taller than the screen.
+- **Not checked:** the shelf, the rosettes, the calendar dot, the extra records row and the card by eye, a girl's quad being picked correctly when she is off riding another, and the new voice lines by ear.
