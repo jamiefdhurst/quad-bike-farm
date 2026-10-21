@@ -1,6 +1,7 @@
 // The game as the console sees it: a tree of values (vehicle.red.temperature, girl.amy.favour, weather.rain, tune.<group>.<key>...)
 // built over the live game. Every value reads and writes through the same fields and methods the debug panel uses.
 import { tinLevel, ledgerText } from '../farm/classifieds.js';
+import { SEASONS } from '../world/seasons.js';
 import { netCharge } from '../engine/charging.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
@@ -276,7 +277,9 @@ export function buildGameTree(g, host) {
     stream: num(() => g.world.streamLevel.level, (v) => g.setStreamLevel(v), 0, 1, '', 'how high the stream stands, low to full (the ford deepens and runs faster)'),
     wet: num(() => w().wet, (v) => (w().wet = v), 0, 1, '', 'how wet the ground is'),
     temperature: num(() => w().temperature, (v) => g.setTemperature(v), -15, 35, '°C'),
-    autumn: text(() => (g.autumn ? 'an autumn day: turned leaves, conkers, a slippery wood' : 'not an autumn day (load with ?season=autumn)'), 'whether it is autumn (decided as the farm loads)'),
+    season: choice(SEASONS, () => g.season, (v) => g.reloadAsSeason(v), 'the season of the farm\'s date (spring, summer, autumn, winter); setting it loads the game again with ?season= (it shapes the weather, the daylight, the ground and the trees)'),
+    date: text(() => g.seasonText(), 'the farm\'s date, its season and the length of the daylight'),
+    autumn: text(() => (g.autumn ? 'an autumn day: turned leaves, conkers, a slippery wood' : 'not an autumn day (set season)'), 'whether it is autumn (decided as the farm loads)'),
     frost: ro(() => w().frost),
     puddleIce: num(() => g.world.puddleIce.thickness[0] ?? 0, (v) => g.world.puddleIce.setAll(v), 0, 1, '', 'how thick the ice is on every puddle (0 open water; it then follows the temperature again)'),
     breakIce: flag(() => !g.world.puddleIce.thickness.some((_, i) => g.world.puddleIce.isIce(i)), (v) => v && g.world.puddleIce.breakAll(), 'on: every puddle\'s ice breaks now'),

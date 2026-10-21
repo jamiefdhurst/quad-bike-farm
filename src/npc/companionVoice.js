@@ -14,6 +14,7 @@ import { isThrashedRunningIn } from '../engine/runningIn.js';
 import { leftRunningSituation } from './leftRunning.js';
 import { quadKey } from './quadNames.js';
 import { voiceWobble } from './voiceWobble.js';
+import { SEASON_SITUATIONS } from './seasonLines.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
@@ -865,6 +866,11 @@ export class CompanionVoice {
       const kind = weather.storm > 0.5 ? 'storm' : weather.rain > 0.25 ? 'raining' : temperature ?? ({ sunny: 'sunny', fair: 'sunny', fog: 'fog' }[weather.kind] ?? 'grey');
       const situation = { sunny: 'weatherSunny', raining: 'weatherRain', storm: 'weatherStorm', fog: 'weatherFog', grey: 'weatherGrey', frost: 'weatherFrost', cold: 'weatherCold', warm: 'weatherWarm' }[kind];
       this.say(situation, { chance: 0.75 });
+    }
+    // The time of year (world/seasons.js): one remark a game, a while after the weather has been mentioned.
+    if (this.weatherSaid && !this.seasonSaid && weather.season && this.weatherTime > this.weatherAt + 45) {
+      this.seasonSaid = true;
+      this.say(SEASON_SITUATIONS[weather.season], { chance: 0.8 });
     }
     // The board in the barn (world/forecast.js): a word on what it says, a while after the weather's been mentioned.
     if (this.weatherSaid && !this.forecastSaid && weather.promise && this.weatherTime > this.weatherAt + 20) {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createRandom } from '../src/core/random.js';
-import { autumnToday, leafCover, conkerSpots, leavesInAir, AUTUMN_CHANCE, DEFAULT_AUTUMN_PARAMS as P, AUTUMN_TINTS } from '../src/world/autumn.js';
+import { leafCover, conkerSpots, leavesInAir, DEFAULT_AUTUMN_PARAMS as P, AUTUMN_TINTS } from '../src/world/autumn.js';
 import { surfaceFeel, DEFAULT_SURFACE_PARAMS as S } from '../src/world/surfaces.js';
 import { Conkers } from '../src/npc/conkers.js';
 import { OFFER_KINDS } from '../src/npc/chooser.js';
@@ -10,20 +10,7 @@ import { girlActions } from '../src/debug/girlActions.js';
 
 const woods = { inWoods: (x, z, m = 0) => Math.abs(x) < 80 + m && z > -200 - m && z < -80 + m, treeOk: (x, z) => z < -90 };
 
-describe('which days are autumn', () => {
-  it('is about one in six over many farms and days, and the same day on a farm always is', () => {
-    let n = 0;
-    for (let i = 1; i <= 600; i++) if (autumnToday({ farmSeed: i * 7919, day: 1 + (i % 9), createRandom })) n++;
-    expect(n / 600).toBeGreaterThan(AUTUMN_CHANCE - 0.06);
-    expect(n / 600).toBeLessThan(AUTUMN_CHANCE + 0.06);
-    expect(autumnToday({ farmSeed: 55, day: 3, createRandom })).toBe(autumnToday({ farmSeed: 55, day: 3, createRandom }));
-  });
-
-  it('can be forced either way', () => {
-    expect(autumnToday({ farmSeed: 1, day: 1, forced: 'autumn', createRandom })).toBe(true);
-    expect(autumnToday({ farmSeed: 1, day: 1, forced: 'summer', chance: 1, createRandom })).toBe(false);
-  });
-
+describe('the autumn look', () => {
   it('turns every kind of tree a colour with more red than blue', () => {
     for (const [r, , b] of Object.values(AUTUMN_TINTS)) expect(r).toBeGreaterThan(b * 3);
   });

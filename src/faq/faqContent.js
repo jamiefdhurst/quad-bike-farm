@@ -162,7 +162,7 @@ export const FAQ_SECTIONS = [
         q: 'Can I play the same farm again?',
         a: `Yes. The browser console prints the game's seed when it loads. Add <code>?seed=</code> and that number to the address and you get
           the same layout, weather and luck again, as a first day: a seeded game doesn't touch your saved farm and isn't saved. <code>?weather=rain</code> (or <code>sunny</code>, <code>overcast</code>, <code>drizzle</code>,
-          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>cropTop</code>) puts both girls in that outfit.`,
+          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) plays a day in the middle of that season, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>cropTop</code>) puts both girls in that outfit.`,
         tip: 'Add ?seed= and a number to the address to play the same farm again.',
       },
       {
@@ -626,7 +626,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why is it snowing, and why is my quad sliding about?',
-        a: `Now and then the day is a snowy one, on a frosty or cold day. Snow settles on the ground in patches that join up the longer it falls,
+        a: `Snow comes in winter, and now and then in the weeks either side of it, on a frosty or cold day. Snow settles on the ground in patches that join up the longer it falls,
           and the seats turn white too (sit on one to clear it). Your tyres leave tracks that stay, but the quad grips less and drags more
           on snow, so brake early and take bends gently. It melts slowly if the day turns mild, and rain washes it away. A frosty start
           is harder in the cold, so use the choke.`,
@@ -1416,10 +1416,29 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why have the leaves turned orange, and why is the wood so slippery?',
-        a: `About one game in six is an autumn day. The oaks, hazel and hedges turn orange and gold, leaves fall round you under the trees and the floor of the wood is
+        a: `In autumn (September to November on the farm's calendar) the oaks, hazel and hedges turn orange and gold, leaves fall round you under the trees and the floor of the wood is
           deep in them, with conkers lying round the foot of every oak. Wet leaves are slippery: on the Hollow Run and between the trees you get less grip, a little
           when it is dry and a good deal after rain, so brake early and take the bends gently.`,
         tip: 'On an autumn day the wood is deep in leaves: they are slippery, especially when wet, so take the Hollow Run gently.',
+      },
+      {
+        q: 'What are the seasons, and what do they change?',
+        a: `The farm has its own calendar. A new farm starts on a date picked at random and every day you play is the next one, so over a long run of days the year
+          goes round: spring, summer, autumn and winter. The wall calendar in the barn shows the date. The season changes the weather (more rain and fog in autumn and winter,
+          snow only in winter, thunderstorms and hot days in summer), the temperature, how long the daylight lasts (about eight hours in midwinter, sixteen in midsummer, so the
+          evenings come in early and you may need your lights), and the ground: damp and muddy in winter and spring, dry and dusty in summer. In autumn the leaves turn,
+          and in winter they go dull and dark. Amy and Jess have a word about the time of year too.`,
+        tip: 'The farm has seasons: muddy winters, short days, dusty summers and turning leaves.',
+      },
+      {
+        q: 'Why is it dark so early, or still light so late?',
+        a: `It depends on the time of year on the farm's calendar. In winter the sun is up for about eight hours and sets by about four, so the evening comes quickly and a
+          game that starts in the afternoon is a short one. In summer it is light until after eight. Check the date on the barn calendar.`,
+      },
+      {
+        q: 'Can I choose the season?',
+        a: `Add <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) to the address to play a day in the middle of that season. It carries on
+          from there like any other day, so it moves your farm on a day.`,
       },
       {
         q: 'Why is Jess throwing conkers at me?',
@@ -1766,13 +1785,13 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I tell which day I am on?',
-        a: `Look at the calendar on the barn's back wall, between the two chalkboards. Every day gone is crossed off in red and today is circled. A page
-          is thirty days, then it turns over to the next month. The start screen's "Continue" button also says which day you are about to play.`,
+        a: `Look at the calendar on the barn's back wall, between the two chalkboards. Every day gone is crossed off in red and today is circled. The page is the month, with its real number of days under the weekdays, and it turns over at the end of the month. The farm has its own calendar and
+          its own year, not today's date: a new farm starts on a date picked at random, and every day you play is the next one. The start screen's "Continue" button also says which day you are about to play.`,
         tip: 'The calendar in the barn crosses off each day and circles today.',
       },
       {
         q: 'How do I save and carry on to the next day?',
-        a: `The farm saves as you play, so you can simply close the tab. To do it properly, wait until the evening (it lets you from 17:00, about sunset), ring the
+        a: `The farm saves as you play, so you can simply close the tab. To do it properly, wait until the evening (it lets you from 17:00, or a little before sunset on a short winter day), ring the
           bell by the barn doors to call the girls in, then walk into the barn and press <kbd>E</kbd> on the calendar on the back wall. A card comes up with Amy's
           logbook for the day, what you ticked off the bucket list and how far you rode, and the girls say goodnight. Press <kbd>E</kbd>, Enter or click to carry on:
           the screen fades to black, says the day is done, saves, and loads the next morning: click Continue to play it. A seeded game (<code>?seed=</code>) never carries on.`,
@@ -1784,7 +1803,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why won\'t the calendar let me call it a day?',
-        a: `Its prompt says why. Either it is too early (from 17:00), or one or both girls are not back at the barn: ring the bell and wait for them. Your browser also has to be
+        a: `Its prompt says why. Either it is too early (from 17:00, or just before sunset in winter), or one or both girls are not back at the barn: ring the bell and wait for them. Your browser also has to be
           willing to keep the farm, or there is no next day to carry on to.`,
       },
       {

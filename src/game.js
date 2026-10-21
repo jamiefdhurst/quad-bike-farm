@@ -264,13 +264,14 @@ import { DEFAULT_STRANDED_PARAMS, STRANDED_RANGES } from './npc/stranded.js';
 import { nearestNamedSpot } from './npc/spotNames.js';
 import { TRACTOR_GROUND_OFFSET } from './vehicle/tractorModel.js';
 import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
+import { dateToday, daylightParams, weatherWeights, temperatureBandWeights, groundFor, isAutumn, isWinter } from './world/seasons.js';
 import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } from './world/wind.js';
 import { windUniforms, swayMetres } from './effects/windSway.js';
 import { DoorAudio } from './audio/doorAudio.js';
 import { TrafficHost } from './world/trafficHost.js';
 import { NeighbourHost } from './world/neighbourHost.js';
 import { Snow } from './effects/snow.js';
-import { autumnToday, leavesInAir, DEFAULT_AUTUMN_PARAMS, AUTUMN_PARAM_RANGES } from './world/autumn.js';
+import { leavesInAir, DEFAULT_AUTUMN_PARAMS, AUTUMN_PARAM_RANGES } from './world/autumn.js';
 import { LeafFall } from './world/autumnView.js';
 import { Conkers } from './npc/conkers.js';
 import { ConkerAudio } from './audio/conkerAudio.js';
@@ -379,12 +380,15 @@ export class Game {
     this.models = await loadModels((done, total) => report(`Loading models… ${done}/${total}`));
     report('Building world…');
     await new Promise((r) => setTimeout(r, 0));
-    // Whether this is an autumn day (world/autumn.js) has to be known before the world is built: it turns the trees and the wood's floor.
-    // ?season=autumn or ?season=summer forces it; otherwise it is dealt from the farm's seed and the day, so a day on a farm is always the same.
+    // The farm's date and season (world/seasons.js) have to be known before the world is built: autumn turns the trees and the wood's floor, and
+    // winter dulls them. The farm has its own calendar, started on a date dealt from its seed; ?season=spring|summer|autumn|winter forces one.
     const farmPeek = openFarm({ search: location.search, storage: browserStorage() });
-    this.autumn = autumnToday({ farmSeed: farmPeek.farmSeed ?? startSeed(), day: farmPeek.day, forced: new URLSearchParams(location.search).get('season'), createRandom });
+    this.date = dateToday({ farmSeed: farmPeek.farmSeed ?? startSeed(), day: farmPeek.day, forced: new URLSearchParams(location.search).get('season'), createRandom });
+    this.season = this.date.season;
+    this.autumn = isAutumn(this.season);
     this.world = new World({
       autumn: this.autumn,
+      winter: isWinter(this.season),
       scene: this.scene,
       physics: this.physics,
       RAPIER: this.RAPIER,
@@ -492,7 +496,7 @@ export class Game {
     for (const unit of this.units) this.applyHistory(unit, historyRandom, faultChance, kept[unit.id]);
     // The time of day (world/daylight.js): its own start each game, morning or afternoon (?time=16.5 starts it then), running on into the night.
     const forcedTime = new URLSearchParams(location.search).get('time');
-    this.daylight = new Daylight({ ...DEFAULT_DAYLIGHT_PARAMS }, { random: createRandom(this.seed ^ 0xc10c), start: forcedTime !== null && Number.isFinite(+forcedTime) ? +forcedTime : null });
+    this.daylight = new Daylight(daylightParams(DEFAULT_DAYLIGHT_PARAMS, this.date), { random: createRandom(this.seed ^ 0xc10c), start: forcedTime !== null && Number.isFinite(+forcedTime) ? +forcedTime : null });
     this.vehicleLights = new VehicleLights(this.scene); // real light from the lit vehicles' lamps, a fixed pool (effects/vehicleLights.js)
     // The dashboards' clocks read the time of day; their flashing and cycling keep to real seconds.
     const dash = new DashClock(this.daylight.seconds());
@@ -627,11 +631,15 @@ export class Game {
     this.updateSmokeScale();
     // This game's weather, picked after everything else so a seed keeps its layout (?weather=rain forces one).
     const forced = new URLSearchParams(location.search).get('weather');
-    const kind = forced ?? pickWeatherKind(random);
+    const kind = forced ?? pickWeatherKind(random, weatherWeights(this.season));
     const forcedTemp = new URLSearchParams(location.search).get('temp'); // ?temp=-3 forces the day's temperature in degrees C
     // The picked temperature is the day's warmest; ?temp= sets it as it is when the game starts.
-    const celsius = forcedTemp !== null && forcedTemp !== '' && Number.isFinite(+forcedTemp) ? this.daylight.peakFor(+forcedTemp) : pickTemperature(kind, createRandom(this.seed ^ 0x7e3b));
+    const celsius = forcedTemp !== null && forcedTemp !== '' && Number.isFinite(+forcedTemp) ? this.daylight.peakFor(+forcedTemp) : pickTemperature(kind, createRandom(this.seed ^ 0x7e3b), temperatureBandWeights(this.season));
     this.weather = new Weather(kind, random, celsius);
+    this.weather.season = this.season; // for the girls' remark on the time of year (companionVoice.watchWeather)
+    this.weather.groundWet = groundFor(this.season).wet; // the ground never dries below the season's damp: winter's mud, spring's soft going
+    this.weather.wet = Math.max(this.weather.wet, this.weather.groundWet);
+    this.world.dustParams.seasonDust = groundFor(this.season).dust;
     this.weather.temperature = Math.round(this.daylight.temperature(celsius) * 10) / 10;
     // Whether the day turns to something else, and what the barn's forecast board says about it (world/forecast.js); a forced weather stays put.
     this.forecastParams = { ...DEFAULT_FORECAST_PARAMS };
@@ -676,7 +684,7 @@ export class Game {
     });
     this.rainbow = new Rainbow();
     this.rainbowView = new RainbowView(this.scene);
-    console.info(`Time: ${this.daylight.text()}, falling ${this.daylight.drop.toFixed(1)} °C into the night. Weather: ${this.weather.name}, ${this.weather.temperature} °C (${this.weather.band}), chill ${this.weather.chill.toFixed(2)}, frost ${this.weather.frost.toFixed(2)} (add ?temp=<degrees> to the URL to force it)`);
+    console.info(`Date: ${this.date.dom} ${this.date.monthName}, ${this.season}. Time: ${this.daylight.text()}, falling ${this.daylight.drop.toFixed(1)} °C into the night. Weather: ${this.weather.name}, ${this.weather.temperature} °C (${this.weather.band}), chill ${this.weather.chill.toFixed(2)}, frost ${this.weather.frost.toFixed(2)} (add ?temp=<degrees> to the URL to force it)`);
     // She starts beside a random quad in the yard; the player starts facing it.
     this.homeUnit = this.units[home];
     this.lastUnit = this.homeUnit;
@@ -1512,7 +1520,7 @@ export class Game {
     this.marketTalkParams = { ...DEFAULT_MARKET_TALK_PARAMS };
     registerTuning('Money talk', this.marketTalkParams, MARKET_TALK_RANGES);
     this.marketTalk = new MarketTalk(this.marketTalkParams);
-    this.wallCalendar = new WallCalendar({ game: this, day: this.farm.day }); // between the two boards: the days crossed off
+    this.wallCalendar = new WallCalendar({ game: this, date: this.date }); // between the two boards: the days crossed off
     this.photos = new PhotoHost(this); // the camera key and the corkboard beside the chalkboards (photos/)
     this.setUpEndOfDay();
     registerTuning('Muck job', this.muckParams, MUCK_PARAM_RANGES);
@@ -4033,7 +4041,7 @@ export class Game {
     }));
     return endOfDay(
       { hour: this.daylight.hour, seeded: this.farm.seeded, canSave: !!this.farmStorage, girls, day: this.farm.day },
-      this.farmParams,
+      { ...this.farmParams, endDayHour: Math.min(this.farmParams.endDayHour, this.daylight.p.sunset - 0.25) }, // a winter evening comes sooner
     );
   }
 
@@ -4146,6 +4154,19 @@ export class Game {
   farmText() {
     const savedAgo = this.farmSavedAt === undefined ? null : (performance.now() - this.farmSavedAt) / 1000;
     return describeFarm({ day: this.farm.day, seeded: this.farm.seeded, wiped: !!this.farmWiped, started: !!this.farmStarted, savedAgo });
+  }
+
+  /** One line about the farm's date and season, for the debug panel and the console. */
+  seasonText() {
+    const d = this.date;
+    return `${d.dom} ${d.monthName}, year ${d.year}: ${this.season} (${groundFor(this.season).label}); daylight ${this.daylight.p.sunrise}-${this.daylight.p.sunset}`;
+  }
+
+  /** The season is part of how the world is built (the trees, the wood's floor), so a different one means loading again with ?season= (the debug panel and console). */
+  reloadAsSeason(season) {
+    const params = new URLSearchParams(location.search);
+    params.set('season', season);
+    location.search = params.toString();
   }
 
   /** Forgets the farm: the next load deals a new one. Nothing is saved from this game after it. */

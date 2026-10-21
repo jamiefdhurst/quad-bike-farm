@@ -98,10 +98,11 @@ export const TEMPERATURE_BANDS = {
   cold: [2, 6],
   mild: [8, 14],
   warm: [16, 22],
+  hot: [22, 29], // only a summer day (seasons.js)
 };
 const TEMPERATURE_ODDS = {
-  sunny: { frosty: 0.15, cold: 0.2, mild: 0.3, warm: 0.35 },
-  fair: { frosty: 0.1, cold: 0.25, mild: 0.35, warm: 0.3 },
+  sunny: { frosty: 0.15, cold: 0.2, mild: 0.3, warm: 0.35, hot: 0.15 },
+  fair: { frosty: 0.1, cold: 0.25, mild: 0.35, warm: 0.3, hot: 0.08 },
   overcast: { frosty: 0.1, cold: 0.35, mild: 0.55 },
   drizzle: { cold: 0.35, mild: 0.65 },
   rain: { cold: 0.35, mild: 0.65 },
@@ -113,11 +114,14 @@ export const MILD_C = 12; // at and above this the cold doesn't bother an engine
 export const COLDEST_C = -5; // the coldest day there is: chill 1
 
 /** The day's temperature (a band, then a value in it to the nearest half degree) for a weather kind. */
-export function pickTemperature(kind, random = Math.random) {
-  const odds = TEMPERATURE_ODDS[kind] ?? TEMPERATURE_ODDS.overcast;
+export function pickTemperature(kind, random = Math.random, season = {}) {
+  const base = TEMPERATURE_ODDS[kind] ?? TEMPERATURE_ODDS.overcast;
+  const odds = Object.fromEntries(Object.entries(base).map(([b, o]) => [b, o * (season[b] ?? (b === 'hot' ? 0 : 1))]));
+  if (!Object.values(odds).some((o) => o > 0)) odds[Object.keys(base)[0]] = 1; // a season that rules out every band the kind has
   let r = random() * Object.values(odds).reduce((a, b) => a + b, 0);
   let band = Object.keys(odds)[0];
   for (const [b, o] of Object.entries(odds)) {
+    if (o <= 0) continue;
     band = b;
     if ((r -= o) <= 0) break;
   }
@@ -138,13 +142,14 @@ export function bandOf(celsius) {
 /** The rainy look the sky moves towards while it rains, whatever the kind. */
 const RAIN_SKY = WEATHER_KINDS.rain.sky;
 
-/** A kind at random, by weight. */
-export function pickWeatherKind(random = Math.random) {
+/** A kind at random, by weight (and by the season's multipliers on it). */
+export function pickWeatherKind(random = Math.random, season = {}) {
   const kinds = Object.keys(WEATHER_KINDS);
-  const total = kinds.reduce((s, k) => s + WEATHER_KINDS[k].weight, 0);
+  const w = (k) => WEATHER_KINDS[k].weight * (season[k] ?? 1); // the season's multipliers (seasons.js)
+  const total = kinds.reduce((s, k) => s + w(k), 0);
   let r = random() * total;
   for (const k of kinds) {
-    r -= WEATHER_KINDS[k].weight;
+    r -= w(k);
     if (r <= 0) return k;
   }
   return kinds[kinds.length - 1];
@@ -168,6 +173,7 @@ export class Weather {
     const k = WEATHER_KINDS[this.kind];
     this.rain = k.rain; // 0..1 falling now
     this.target = k.rain;
+    this.groundWet = 0; // the least the ground dries to (the season's: seasons.js), set by the game
     this.wet = k.wet; // 0..1 how wet the ground is
     this.snow = k.snow ?? 0; // 0..1 falling now
     this.snowTarget = this.snow;
@@ -305,7 +311,7 @@ export class Weather {
     this.cover = clamp01(this.cover + (this.snow * 0.9 / SNOW_SETTLE_SECONDS - melt) * dt);
     // The ground soaks up rain quickly and dries over ten minutes or so.
     if (this.rain > this.wet) this.wet = Math.min(1, this.wet + this.rain * dt / 40);
-    else this.wet = Math.max(k.wet * 0.5, this.wet - dt / 600);
+    else this.wet = Math.max(k.wet * 0.5, this.groundWet, this.wet - dt / 600);
     return this;
   }
 

@@ -1,31 +1,27 @@
 import * as THREE from 'three';
 import { barnShape } from './barn.js';
+import { MONTH_DAYS } from './seasons.js';
 
 const CAL_W = 0.9; // metres
 const CAL_H = 1.2;
 const PX_W = 384; // the same paper-per-metre both ways
 const PX_H = 512;
 
-export const DAYS_PER_PAGE = 30;
 export const PAGE_COLUMNS = 7;
-// Every farm starts in April (there are no seasons in the game, so nothing else points to a month). A page is thirty days, so the months are the farm's own, not the real ones.
-export const MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
 export const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 /**
- * The page of the calendar for a farm day (1 is the first day on the farm): its month, the farm's year, and a cell for each day with
- * whether it is gone (crossed off), today (circled) or still to come. A new page turns over after DAYS_PER_PAGE days. Pure, tested.
+ * The page of the calendar for a farm date (`farmDate` in seasons.js): the month's real days under the weekdays, each with whether it is
+ * gone (crossed off), today (circled) or still to come, and the month's name and the farm's year. Pure, tested.
  */
-export function calendarPage(day) {
-  const d = Math.max(1, Math.floor(day) || 1);
-  const page = Math.floor((d - 1) / DAYS_PER_PAGE);
-  const first = page * DAYS_PER_PAGE;
+export function calendarPage(date) {
+  const first = (((date.weekday - (date.dom - 1)) % 7) + 7) % 7; // the column the 1st falls in
   const cells = [];
-  for (let i = 0; i < DAYS_PER_PAGE; i++) {
-    const n = first + i + 1;
-    cells.push({ n, label: i + 1, state: n < d ? 'past' : n === d ? 'today' : 'future', column: i % PAGE_COLUMNS, row: Math.floor(i / PAGE_COLUMNS) });
+  for (let i = 0; i < MONTH_DAYS[date.month]; i++) {
+    const label = i + 1;
+    cells.push({ n: label, label, state: label < date.dom ? 'past' : label === date.dom ? 'today' : 'future', column: (first + i) % PAGE_COLUMNS, row: Math.floor((first + i) / PAGE_COLUMNS) });
   }
-  return { month: MONTHS[page % MONTHS.length], year: 1 + Math.floor(page / MONTHS.length), page, cells };
+  return { month: date.monthName, year: date.year, page: date.month, cells };
 }
 
 /** Miss Mudguard: the sort of pin-up that hung in every garage, a 1950s cartoon in dungarees leaning on a stack of tyres, winking, spanner in hand. */
@@ -154,7 +150,7 @@ export const PICTURES = [missMudguard];
  * change while it is loaded). Nothing to press: you read it from where you stand.
  */
 export class WallCalendar {
-  constructor({ game, day }) {
+  constructor({ game, date }) {
     this.game = game;
     const shape = barnShape(game.world.layout);
     const floorY = game.world.heightAt(shape.x, shape.z);
@@ -180,11 +176,11 @@ export class WallCalendar {
     group.position.set(shape.inner.minX + 0.06, floorY + 1.75, shape.z);
     game.scene.add(group);
     this.group = group;
-    this.draw(day);
+    this.draw(date);
   }
 
-  draw(day) {
-    const page = calendarPage(day);
+  draw(date) {
+    const page = calendarPage(date);
     const ctx = this.canvas.getContext('2d');
     ctx.fillStyle = '#f4efe0';
     ctx.fillRect(0, 0, PX_W, PX_H);
@@ -201,7 +197,7 @@ export class WallCalendar {
       ctx.fillStyle = i >= 5 ? '#a33' : '#555';
       ctx.fillText(w, left + i * colW, 296);
     });
-    const rowH = 38;
+    const rowH = 33; // up to six rows of weeks
     const top = 330;
     for (const c of page.cells) {
       const x = left + c.column * colW;

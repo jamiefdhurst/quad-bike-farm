@@ -14,7 +14,7 @@ import puppeteer from 'puppeteer-core';
 
 const SECONDS = Number(process.env.SMOKE_SECONDS || 20);
 // One load (about 20 s here, minutes on a CI runner), then phases: sunny at the real clock, then snow with the clock fast so the evening comes in.
-const QUERY = 'seed=3&weather=sunny&time=15.5';
+const QUERY = process.env.SMOKE_QUERY ?? 'seed=3&weather=sunny&time=15.5'; // SMOKE_QUERY tries another set-up, e.g. a season
 const PHASES = [
   { name: 'sunny', weather: 'sunny', clockRate: 1, seconds: SECONDS / 2 },
   { name: 'snow, fast clock into dusk', weather: 'snow', clockRate: 600, seconds: SECONDS / 2 },
