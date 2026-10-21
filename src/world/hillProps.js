@@ -138,7 +138,7 @@ function buildStream({ scene, heights, fields }) {
  * The small wood on the west flank: oaks of all sizes with bushes under them, trunks you can't ride through. And a few oaks standing in the
  * pasture's hedges, as old hedgerow trees do.
  */
-function buildWood({ scene, models, layout, heights, fields, physics, RAPIER, random }) {
+function buildWood({ scene, models, layout, heights, fields, physics, RAPIER, random, anchors }) {
   const hill = fields.hill;
   const wood = layout.hill.wood;
   const spots = [];
@@ -159,6 +159,7 @@ function buildWood({ scene, models, layout, heights, fields, physics, RAPIER, ra
   for (const [x, z, s] of spots) {
     mats[random() < 0.5 ? 0 : 1].push(matrixAt(x, heights.heightAt(x, z) - 0.15, z, random() * Math.PI * 2, s));
     physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, heights.heightAt(x, z) + 2.5 * s, z));
+    anchors.push({ x, y: heights.heightAt(x, z), z, r: 0.32 * s });
   }
   scene.add(instanceModel(models.treeA.scene, mats[0]));
   scene.add(instanceModel(models.treeB.scene, mats[1]));
@@ -373,13 +374,14 @@ export function buildPond({ scene, heights, random, drawDistance }, source, keep
 }
 
 /** Oaks round the pond with hazel under them: the farm's models, trunks you cannot ride through. */
-function buildMeadowTrees({ scene, models, layout, heights, physics, RAPIER, random }) {
+function buildMeadowTrees({ scene, models, layout, heights, physics, RAPIER, random, anchors }) {
   const west = layout.hill.paddocks.west;
   const mats = [[], []];
   for (const [x, z] of west.trees) {
     const s = 1.1 + random() * 0.6;
     mats[random() < 0.5 ? 0 : 1].push(matrixAt(x, heights.heightAt(x, z) - 0.15, z, random() * Math.PI * 2, s));
     physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, heights.heightAt(x, z) + 2.5 * s, z));
+    anchors.push({ x, y: heights.heightAt(x, z), z, r: 0.32 * s });
   }
   scene.add(instanceModel(models.treeA.scene, mats[0]));
   scene.add(instanceModel(models.treeB.scene, mats[1]));

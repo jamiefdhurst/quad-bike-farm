@@ -36,6 +36,7 @@ function matrixAt(x, y, z, yaw, sx, sy = sx, sz = sx) {
 export function buildProps(ctx) {
   const random = seeded(1234);
   const c = { ...ctx, random };
+  c.anchors = []; // every trunk the green's winch can hook (items/winchAnchor.js): { x, y, z, r }
   c.fixedBox = (x, y, z, hx, hy, hz, rotY = 0) => {
     const q = new THREE.Quaternion().setFromAxisAngle(UP, rotY);
     return ctx.physics.createCollider(
@@ -65,7 +66,7 @@ export function buildProps(ctx) {
   const hillProps = ctx.fields.hill ? buildHill(c) : null;
   if (ctx.fields.woods) buildWoods(c);
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { barn, jumpRamp, silage, puddles, gates, neighbourFarm, gateParams: c.gateParams, stream: hillProps?.stream ?? null };
+  return { barn, jumpRamp, silage, puddles, gates, neighbourFarm, gateParams: c.gateParams, stream: hillProps?.stream ?? null, anchors: c.anchors };
 }
 
 function buildBarn(c) {
@@ -621,7 +622,7 @@ function buildBales({ scene, layout, heights, track, physics, RAPIER, random }) 
 
 // Trees ---------------------------------------------------------------------
 
-function buildTrees({ scene, models, layout, heights, physics, RAPIER, random }) {
+function buildTrees({ scene, models, layout, heights, physics, RAPIER, random, anchors }) {
   const F = layout.fieldHalf;
   const spots = [];
   const farm = layout.farm ?? { maxX: F, maxZ: F };
@@ -650,6 +651,7 @@ function buildTrees({ scene, models, layout, heights, physics, RAPIER, random })
     physics.createCollider(
       RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, heights.heightAt(x, z) + 2.5 * s, z),
     );
+    anchors.push({ x, y: heights.heightAt(x, z), z, r: 0.32 * s });
   }
   // Trees and hedges lean and rock in the wind (effects/windSway.js; the metres are at the top in an ordinary wind, wind.js).
   swayMaterials(models.treeA.scene, 'tree', 8);

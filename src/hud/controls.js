@@ -118,7 +118,7 @@ export const CONTROLS = [
     lines: [
       `<kbd>E</kbd> pick up a jerry can, hold <kbd>E</kbd> at a quad to pour or at the tank to refill, <kbd>G</kbd> put it down`,
       `Hose: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to wash. Toolbox: <kbd>E</kbd> pick up, <kbd>E</kbd> on a quad to tinker`,
-      `RB300's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad to hook it, hold <kbd>X</kbd> to wind in`,
+      `RB300's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad, a vehicle or a tree to hook it, hold <kbd>X</kbd> to wind in (on a tree or a heavy vehicle the RB300 pulls itself up to it)`,
       `Tractor's tow chain: <kbd>X</kbd> looking at the tractor to take it, <kbd>E</kbd> on a quad to hook it, then back the tractor up and drive off`,
       `Tow rope on the Farm 300's and Bruin's racks: <kbd>X</kbd> looking at one to take it, <kbd>E</kbd> on a dead quad to hook it, ride off gently; ask a girl on the wheel to steer it`,
       `Hayloft ladder, workbench and Amy's logbook in the barn: <kbd>E</kbd>. On the bench menu <kbd>S</kbd> starts a full service and <kbd>R</kbd> turns to the jobs for the shed kit`,
