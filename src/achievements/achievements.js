@@ -136,6 +136,7 @@ export const ACHIEVEMENTS = [
   { id: 'hitch', group: 'Jobs', name: 'Hitched', hint: 'Hook a trailer onto the tractor or a quad', points: 1, test: (s) => s.n('hitched') >= 1 },
   { id: 'tip', group: 'Jobs', name: 'Tipped out', hint: 'Tip a trailer or the Yak\'s bed', points: 1, test: (s) => s.n('tipped') >= 1 },
   { id: 'muck', group: 'Jobs', name: 'Muck spreader', hint: 'Fork muck into the little trailer and spread it on the stubble', points: 2, test: (s) => s.n('muckSpread') >= 1 },
+  { id: 'hay', group: 'Jobs', name: 'Hay maker', hint: 'Mow and bale the hay patch, load the bales on the trailer and stack them in the Dutch barn', points: 3, test: (s) => s.n('hayMade') >= 1 },
   { id: 'silage', group: 'Jobs', name: 'Bale lifter', hint: 'Spike silage bales with the tractor and carry them into the Dutch barn', points: 2, test: (s) => s.n('silageMoved') >= 1 },
   { id: 'bonfire', group: 'Jobs', name: 'Firestarter', hint: 'Carry three bundles of hedge cuttings to the ring of stones and light the bonfire', points: 2, test: (s) => s.n('bonfireLit') >= 1 },
   { id: 'fire-sit', group: 'Jobs', name: 'Round the fire', hint: 'Sit by the bonfire with a girl until she has had enough', points: 2, test: (s) => s.n('fireSat') >= 1 },

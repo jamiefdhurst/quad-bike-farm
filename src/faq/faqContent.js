@@ -1727,7 +1727,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What are the chalkboards in the barn?',
         a: `Today's farm jobs. Walk into the barn to the back wall and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
-          entry when you've cleared the lot. The jobs are the muck and, if the tractor is about, the silage; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
+          entry when you've cleared the lot. The jobs are the muck and, if the tractor is about, the silage and the hay; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
@@ -1842,6 +1842,29 @@ export const FAQ_SECTIONS = [
         q: 'How do I do the silage job?',
         a: `When it's on the chalkboard, spike three of the wrapped silage bales beside the barn one at a time and leave them on the floor of the Dutch barn's open bay, out east
           (the bay with no bale stack in it). The job ticks off once the third is down.`,
+      },
+      {
+        q: 'How do I make hay?',
+        a: `When "Cut the hay patch, bale it and stack it in the Dutch barn" is on the chalkboard, it goes in four steps, all in the barley field out east. The green patch beside the first gateway is the hay:
+          drive the tractor over it at a steady walking pace and it is mown, turning pale as you go. Once enough is cut, drive over the cut hay in the same way and the baler leaves a square bale behind you every so often.
+          Then bring the bale trailer (hitched with <kbd>J</kbd>) up beside the bales: the girls carry them up and throw them on, or press <kbd>E</kbd> at a bale to heave it on yourself. Last, drive the trailer into the
+          Dutch barn's open bay and stop, and the bales are stacked along its back wall and the job ticks off.`,
+        tip: 'Hay: mow the green patch, bale it, load the bales on the trailer and stop it in the Dutch barn.',
+      },
+      {
+        q: 'Why is the tractor not cutting the hay?',
+        a: `It has to be running and going at a working pace, not crawling and not racing: about walking to jogging speed. The job has to be on the chalkboard that day, and you cut the green patch, not the stubble
+          around it. The pale ground is already cut; drive over that to bale it.`,
+      },
+      {
+        q: 'Why will the girls not load the bales?',
+        a: `The trailer has to be within about a dozen metres of a bale, with room on it, and each girl has to be free to do it, so one in the middle of something else will not come. Jess charges at them and sometimes
+          misses, so the odd bale lands short and one of them picks it up again; Amy is steadier.`,
+      },
+      {
+        q: 'Does the hay grow back?',
+        a: `Yes. The cut patch grows back over a few days of the farm, and the next hay job starts on fresh grass. The bales you have stacked in the Dutch barn stay there, up to sixteen, and the job stops
+          turning up on the board once the barn is full.`,
       },
       {
         q: "Why won't the spike go into the bale, or why won't it lift?",

@@ -7,6 +7,7 @@ export const DEFAULT_CARRY_PARAMS = {
   canPace: 0.78, // times her walking speed with a full jerry can (an empty one is nearly 1)
   toolboxPace: 0.88, // times her walking speed with the toolbox
   mugPace: 0.95, // times her walking speed with a mug of tea
+  balePace: 0.8, // times her walking speed with a bale of hay
   lean: 0.09, // radians she leans away from the weight, at full weight
   bend: 0.4, // radians she bends forward to pick it up or put it down
   sway: 0.04, // metres the hand swings back and forth with her stride
@@ -22,6 +23,7 @@ export const CARRY_PARAM_RANGES = {
   canPace: [0.4, 1, 0.01],
   toolboxPace: [0.4, 1, 0.01],
   mugPace: [0.4, 1, 0.01],
+  balePace: [0.4, 1, 0.01],
   lean: [0, 0.3, 0.01],
   bend: [0, 0.8, 0.02],
   sway: [0, 0.15, 0.005],
@@ -35,6 +37,7 @@ export const CARRY_PARAM_RANGES = {
 export const CARRY_ITEMS = {
   can: { grip: 0.49, hand: [0.27, 0.74, 0.02], yaw: -Math.PI / 2, light: 0.35, pace: 'canPace' },
   toolbox: { grip: 0.255, hand: [0.27, 0.74, 0.02], yaw: -Math.PI / 2, light: 0.7, pace: 'toolboxPace' },
+  squareBale: { grip: 0.19, hand: [0.5, 0.82, 0.05], yaw: -Math.PI / 2, light: 0.75, pace: 'balePace' }, // held by the twine on top (its middle is the model's origin), out to her side so it clears her hip
   mug: { grip: 0.05, hand: [0.1, 1.12, 0.3], yaw: 0, light: 0.05, pace: 'mugPace' },
 };
 

@@ -809,6 +809,18 @@ export function girlActions(g) {
     },
   });
   actions.push({
+    verb: 'load-hay',
+    label: '% loads a hay bale',
+    run: (id) => {
+      if (!g.hay || g.hay.phase !== 'load') return toast('Jump the hay job to the load stage first (Jobs, in the Girls tab)');
+      if (!free(id)) return;
+      const ctx = g.hayLoadContext();
+      if (!ctx.ready) return toast('Bring the trailer within reach of a loose bale first');
+      const e = g.hayLoading.force(ctx, id);
+      if (e) g.handleHayLoad(e);
+    },
+  });
+  actions.push({
     verb: 'guide-trailer',
     label: '% guides you back with the trailer',
     girls: ['amy'],
