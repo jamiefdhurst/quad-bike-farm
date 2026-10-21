@@ -11,6 +11,7 @@ import { Knack } from './knack.js';
 import { rollTurn, rollCatch } from './bumpStart.js';
 import { oilExcess, stepLube, nipping, sumpLube } from './lubrication.js';
 import { runOnChance, popPropensity } from './runOn.js';
+import { kickBackChance, startFactor, timingError, timingPower, retardHeat, timingRough, retardPop } from './ignitionTiming.js';
 import { followThrottle, isSnap, spitChance } from './spitBack.js';
 import { stepWater, waterCatchFactor } from './water.js';
 import { stepDieselSoak, dieselCatchFactor, contaminant } from './diesel.js';
@@ -76,6 +77,8 @@ export class EngineModel {
     this.lightLoad = 0; // 0..1 of the lamps run off the battery, set by the vehicle (charging.js)
     this.battery = 1; // charge, 0..1: drained by the ignition and the starter, charged while it runs
     this.batteryOut = false; // lifted out and on the bench charger: no dash, no starter, and it neither drains nor charges (the cord and a magneto still work)
+    this.advance = 0.5; // the advance-retard lever, 0 retarded to 1 advanced (ignitionTiming.js; only a manualTiming engine reads it)
+    this.kicked = 0; // seconds left of a kick-back: the pedal flung back at the foot
     this.pullLeft = 0; // seconds left of a yank on the pull-start
     this.pullStrength = 0; // how good that yank was, 0..1
     this.clickedDead = false; // the starter has clicked for this press
@@ -149,6 +152,7 @@ export class EngineModel {
     // Derived values, refreshed every step.
     this.mixture = 0;
     this.roughness = 0;
+    this.timingErr = 0; // how far the advance lever is from what the revs want (ignitionTiming.js)
     this.power = 0;
     this.idleTarget = 0;
     this.freeTargetRpm = 0; // where the throttle alone would take the revs
@@ -363,6 +367,7 @@ export class EngineModel {
     this.updateStarter(starter);
     this.updateBattery(h);
     this.pullLeft = Math.max(0, this.pullLeft - h);
+    this.kicked = Math.max(0, this.kicked - h);
     this.updateTemperature(h);
     this.updateLube(h);
     this.water = stepWater(this.water, h, { gulp: this.gulp, running: this.state === EngineState.RUNNING, throttle: this.throttle }, p);
@@ -458,6 +463,14 @@ export class EngineModel {
     if (!p.pullStart) return null;
     if (this.state !== EngineState.IGNITION && this.state !== EngineState.STALLED) return null;
     if (this.seized) return null;
+    // Kicked with the lever advanced, a manual-timing single fires against the piston and the pedal comes back at the foot.
+    if (p.manualTiming && p.kickStart && this.random() < kickBackChance(this.advance, p)) {
+      this.kicked = 0.6;
+      this.pullLeft = 0.12;
+      this.pullStrength = 0.3;
+      this.emit('kickBack');
+      return 0;
+    }
     let strength;
     if (held < p.pullGoodMin) strength = 0.25 + 0.5 * (held / p.pullGoodMin);
     else if (held <= p.pullGoodMax) strength = 1;
@@ -489,7 +502,7 @@ export class EngineModel {
     if (this.state === EngineState.RUNNING) {
       // Heat follows how hard it's working: revs, and more again pulling under load.
       const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
-      const work = 1 + p.warmUpRpmBoost * rpmNorm + p.warmUpLoadBoost * this.driveLoad * this.throttle;
+      const work = 1 + p.warmUpRpmBoost * rpmNorm + p.warmUpLoadBoost * this.driveLoad * this.throttle + (p.manualTiming ? p.heatPerError * retardHeat(this.timingErr) : 0);
       this.temperature += (h / (p.warmUpSeconds * (1 + p.chillWarmUp * this.chill))) * work;
       // And it wears: plug, filter and carb slowly go off, faster when it's worked hard.
       // Revving it hard before it's warm is the worst of it.
@@ -509,6 +522,11 @@ export class EngineModel {
       this.temperature = offTemperature(this.temperature, h, p.coolDownSeconds, this.sheltered, { warmFloor: p.barnWarmFloor, coolFactor: p.barnCoolFactor });
     }
     this.temperature = clamp(this.temperature, 0, 1);
+  }
+
+  /** Overrun-pop propensity added by a retarded spark (runOn.js reads it). */
+  get timingPop() {
+    return this.params.manualTiming ? retardPop(this.timingErr, this.params) : 0;
   }
 
   /** How hard it's working, 0 (idling) to 1 (flat out or pulling hard). */
@@ -656,6 +674,7 @@ export class EngineModel {
 
   updateMixture() {
     const p = this.params;
+    this.timingErr = p.manualTiming ? timingError(this.advance, this.rpm, p.idleRpmWarm, p.maxRpm, p) : 0; // negative retarded, positive advanced
     const need = p.coldEnrichmentNeed * (1 + p.chillChoke * this.chill) * (1 - this.temperature);
     // Injection gives a cold engine exactly what it needs, whatever the choke (it has none).
     const supplied = p.injected ? need : p.chokeEnrichment * (1 + p.chillChoke * p.chillChokeFlow * this.chill) * this.choke * (1 - p.throttleChokeRelief * this.throttle);
@@ -718,6 +737,11 @@ export class EngineModel {
     this.power *= 1 - p.clogPowerLoss * this.clog * clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1) ** 2;
     this.power *= 1 - p.carbIcePowerLoss * this.ice; // ice round the throttle plate strangles it
     this.erratic = Math.max(this.erratic, this.ice ** 2);
+    if (p.manualTiming && this.state === EngineState.RUNNING) {
+      const err = this.timingErr;
+      this.power *= timingPower(err, p);
+      this.roughness = clamp(this.roughness + p.roughPerError * timingRough(err), 0, 1);
+    }
     this.power *= 1 - p.pinkPowerLoss * this.pink;
     this.power *= 1 - p.hotPowerLoss * this.hot;
     this.power *= 1 - p.waterPowerLoss * this.water;
@@ -756,6 +780,7 @@ export class EngineModel {
         (1 - this.fouling) *
         clamp(speed, 0, 1) * // turned over too slowly, it won't fire
         catchScale *
+        (p.manualTiming ? startFactor(this.advance, p) : 1) * // the lever has to be near its starting place
 
         (this.fuel > 0.02 ? 1 : 0);
       // A diesel doesn't care about the mixture: it wants hot plugs when it's cold, and turning over fast enough.
