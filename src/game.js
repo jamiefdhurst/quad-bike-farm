@@ -18,6 +18,7 @@ import { DEFAULT_RIDER_LEAN_PARAMS, RIDER_LEAN_RANGES } from './vehicle/riderLea
 import { pickFleet } from './vehicle/fleet.js';
 import { endOfDay, DayFade } from './farm/endOfDay.js';
 import { dayRecap, todaysLog, DayRecap } from './farm/dayRecap.js';
+import { DEFAULT_SHOW_PARAMS, SHOW_PARAM_RANGES, ShowKeeper, isShowDay, isShowEve, runShow, showCard, showSpeech, judgeQuad, previewText, rosetteSvg } from './farm/showDay.js';
 import { formatEntry } from './workshop/logbook.js';
 import { DEFAULT_FARM_PARAMS, FARM_PARAM_RANGES, browserStorage, openFarm, writeSave, wipeSave, fleetFromSave, describeFarm, validSave } from './farm/farmSave.js';
 import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from './farm/farmState.js';
@@ -315,6 +316,7 @@ import { BrushwoodHeap } from './items/brushwood.js';
 import { FireSit, FIRE_SIT_PARAM_RANGES } from './npc/fireSit.js';
 import { PhotoHost } from './photos/photoHost.js';
 import { WallCalendar } from './world/wallCalendar.js';
+import { TrophyShelf } from './world/trophyShelf.js';
 import { MuckView } from './world/muckView.js';
 import { Haymaking, DEFAULT_HAY_PARAMS, HAY_PARAM_RANGES, STACK_CAPACITY, trailerSlots } from './world/haymaking.js';
 import { HayView } from './world/hayView.js';
@@ -425,6 +427,9 @@ export class Game {
     // varies each day (where things are parked, the weather) from today's. On a new farm the two are the same, so a seed deals as before.
     this.farmParams = { ...DEFAULT_FARM_PARAMS };
     registerTuning('Farm that remembers', this.farmParams, FARM_PARAM_RANGES);
+    this.showParams = { ...DEFAULT_SHOW_PARAMS };
+    registerTuning('Show day', this.showParams, SHOW_PARAM_RANGES);
+    this.showKeeper = new ShowKeeper(this.showParams); // the rosettes the farm has won (farm/showDay.js)
     this.farmStorage = browserStorage();
     this.farm = openFarm({ search: location.search, storage: this.farmStorage });
     this.farmSeed = this.farm.farmSeed ?? this.seed;
@@ -1536,6 +1541,7 @@ export class Game {
     this.marketTalkParams = { ...DEFAULT_MARKET_TALK_PARAMS };
     registerTuning('Money talk', this.marketTalkParams, MARKET_TALK_RANGES);
     this.marketTalk = new MarketTalk(this.marketTalkParams);
+    this.trophyShelf = new TrophyShelf({ game: this }); // under it: a rosette for each show placed at (farm/showDay.js)
     this.wallCalendar = new WallCalendar({ game: this, date: this.date }); // between the two boards: the days crossed off
     this.photos = new PhotoHost(this); // the camera key and the corkboard beside the chalkboards (photos/)
     this.setUpEndOfDay();
@@ -3890,6 +3896,10 @@ export class Game {
     this.jobBoardView.refresh();
     this.photos.wall.restore(save.photos);
     this.photos.view.refresh();
+    this.showKeeper.restore(save.shows);
+    this.records.extra = [this.showKeeper.recordLine()];
+    this.jobBoardView.refresh();
+    this.trophyShelf?.show(this.showKeeper.shelf());
     this.headgear.restore(save.headgear);
     this.helmetHooks.show(this.headgear.onHooks());
     this.spares.restore(save.spares);
@@ -4070,6 +4080,7 @@ export class Game {
       bucket: this.achievements.toJSON(),
       records: this.records.toJSON(),
       photos: this.photos.wall.toJSON(),
+      shows: this.showKeeper.toJSON(),
       logbook: this.notebook.book.toJSON(),
       spares: this.spares.toJSON(),
       generator: this.generator.toJSON(),
@@ -4107,10 +4118,94 @@ export class Game {
       name: c.character.name,
       home: Math.hypot(c.root.position.x - b.x, c.root.position.z - b.z) < this.farmParams.endDayHomeRadius,
     }));
-    return endOfDay(
+    const now = endOfDay(
       { hour: this.daylight.hour, seeded: this.farm.seeded, canSave: !!this.farmStorage, girls, day: this.farm.day },
       { ...this.farmParams, endDayHour: Math.min(this.farmParams.endDayHour, this.daylight.p.sunset - 0.25) }, // a winter evening comes sooner
     );
+    if (this.isShowToday()) now.text = now.ok ? `Press E to take your quad to the show (${this.showPreview()})` : `${now.text}. The show is today: ${this.showPreview()}`;
+    return now;
+  }
+
+  /** The last Sunday of the month (farm/showDay.js), or made so from the debug panel. */
+  isShowToday() {
+    return this.showForced || isShowDay(this.date);
+  }
+
+  /** What the judge would read off a unit now (farm/showDay.js `judgeQuad` takes it): its mud, wear, damage and faults. */
+  showCondition(unit) {
+    const f = unit.quad.faults;
+    return {
+      mud: Math.max(unit.mud?.state.body ?? 0, unit.mud?.state.wheels ?? 0),
+      mudBody: unit.mud?.state.body ?? 0,
+      mudWheels: unit.mud?.state.wheels ?? 0,
+      bodyWear: unit.spec.bodyWear ?? 0,
+      damage: [f.tyre, f.rodWheel, f.rimWheel].filter((w) => w >= 0).length,
+      engineWear: unit.engine.wear ?? 0,
+      fouling: unit.engine.fouling ?? 0,
+      faults: Object.values(f.started ?? {}).filter(Boolean).length,
+      battery: unit.engine.battery ?? 1,
+    };
+  }
+
+  /** The quad you would enter: the last quad you rode, if it is one (not the tractor or a car). */
+  showEntry() {
+    const u = this.lastRiddenUnit;
+    return u && QUAD_SPECS.some((s) => s.id === u.spec.id) ? u : null;
+  }
+
+  /** The farm's entries: yours first, then each girl's own quad (if it is not yours): [{ id, name, label, quad }]. */
+  showEntries() {
+    const mine = this.showEntry();
+    const out = [];
+    if (mine) out.push({ id: 'you', name: 'You', label: `the ${mine.label}`, quad: this.showCondition(mine) });
+    for (const c of this.companions) {
+      const own = c.homeQuad ?? c.quad;
+      const unit = own && this.units.find((u) => u.quad === own);
+      if (unit && unit !== mine && QUAD_SPECS.some((s) => s.id === unit.spec.id)) out.push({ id: c.character.id, name: c.character.name, label: `the ${unit.label}`, quad: this.showCondition(unit) });
+    }
+    return out;
+  }
+
+  /** What the entry would score if the show were now, as a line for the calendar. */
+  showPreview() {
+    const u = this.showEntry();
+    return u ? previewText(`the ${u.label}`, judgeQuad(this.showCondition(u), this.showParams)) : 'Nothing entered: ride a quad last and it is the entry';
+  }
+
+  /** The show: your quad and each girl's are judged against the others, the girls ride the slow race, and the result is kept (rosette, favour, bucket list). */
+  judgeShow() {
+    const show = runShow({ entries: this.showEntries(), farmSeed: this.farmSeed, date: this.date, rnd: createRandom((this.farmSeed ^ (this.farm.day * 7919)) >>> 0)(), p: this.showParams });
+    if (show.place) {
+      this.showKeeper.add(this.farm.day, this.date, show);
+      this.trophyShelf.show(this.showKeeper.shelf());
+      this.records.extra = [this.showKeeper.recordLine()];
+      this.jobBoardView.refresh();
+      for (const c of this.companions) this.favour.add(c.character.id, this.showParams.favourEntered + (show.place <= 2 ? this.showParams.favourWon : 0));
+      if (show.place === 1) this.achievements.note('showFirst');
+    }
+    return show;
+  }
+
+  /** One line about the show, for the debug panel and the console. */
+  describeShow() {
+    const d = this.date;
+    const k = this.showKeeper;
+    return `${isShowDay(d) ? 'the show is today' : isShowEve(d) ? 'the show is tomorrow' : this.showForced ? 'made show day' : 'no show today'}; ${k.results.length} rosette${k.results.length === 1 ? '' : 's'}, ${k.wins()} first${k.wins() === 1 ? '' : 's'}${k.results.length ? `; latest: ${k.results[k.results.length - 1].month} ${['', '1st', '2nd', '3rd', '4th'][k.results[k.results.length - 1].place] ?? 'commended'}` : ''}`;
+  }
+
+  /** Each frame: which quad you rode last (the show judges it), and the girls saying the show is coming. */
+  updateShowDay(dt) {
+    if (this.riddenUnit) this.lastRiddenUnit = this.riddenUnit;
+    if (this.showSaid || this.paused || (this.farm.seeded && !this.showForced)) return;
+    const today = this.isShowToday();
+    if (!today && !isShowEve(this.date)) return;
+    this.showClock = (this.showClock ?? 0) + dt;
+    if (this.showClock < this.showParams.showEveAfter) return;
+    const girl = this.companions.find((c) => c.availability().canRemark);
+    if (!girl) return;
+    this.showSaid = true;
+    girl.voice.say(today ? 'showToday' : 'showEve', { force: true });
+    this.hud.toast(today ? 'It is the show today: the quad you last ride will be judged this evening' : 'The show is tomorrow: wash a quad, tidy it up and get it running sweet', 4);
   }
 
   /** Crosses the day off: the recap card comes up over the dark while the farm saves, and a press on it starts the fade (updateEndOfDay). */
@@ -4118,6 +4213,7 @@ export class Game {
     if (this.dayFade.active || this.dayRecap.active) return;
     const now = this.endOfDayNow();
     if (!now.ok && !(force && !this.farm.seeded)) return this.hud.toast(now.text);
+    this.lastShow = this.isShowToday() ? this.judgeShow() : null;
     this.saveFarm();
     this.showRecap();
   }
@@ -4141,14 +4237,19 @@ export class Game {
     const esc = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
     const list = (items, more, none) =>
       items.length ? `<ul>${items.map((t) => `<li>${esc(t)}</li>`).join('')}${more ? `<li>and ${more} more</li>` : ''}</ul>` : `<p class="none">${none}</p>`;
+    const show = this.lastShow && showCard(this.lastShow);
+    const showHtml = show
+      ? `<h3>${esc(show.title)}</h3>${show.rosette !== null ? rosetteSvg(show.rosette) : ''}<p class="total">${esc(show.headline)}</p>${show.lines.length ? `<ul>${show.lines.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}` +
+        `${show.ranking.length ? `<ul class="ranking">${show.ranking.map((r) => `<li>${r.you ? '<b>' : ''}${esc(r.text)}${r.you ? '</b>' : ''}</li>`).join('')}</ul>` : ''}<p class="facts">${esc(show.race)}</p>`
+      : '';
     this.dayRecapEl.innerHTML =
-      `<h2>${esc(r.title)}</h2><h3>Amy's logbook</h3>${list(r.log, r.logMore, 'Nothing written down today.')}` +
+      `<h2>${esc(r.title)}</h2>${showHtml}<h3>Amy's logbook</h3>${list(r.log, r.logMore, 'Nothing written down today.')}` +
       `<h3>Bucket list</h3>${list(r.ticked, r.tickedMore, 'Nothing new ticked off.')}<p class="total">${esc(r.total)}</p>` +
       `${r.facts.length ? `<p class="facts">${esc(r.facts.join(', '))}</p>` : ''}${r.money ? `<p class="facts">${esc(r.money)}</p>` : ''}<p class="go">Press E to carry on</p>`;
     this.dayRecapEl.classList.add('shown');
     this.dayRecap.open();
-    this.recapJessIn = this.farmParams.recapJessDelay;
-    this.companions.find((c) => c.character.id === 'amy')?.voice.say('dayDone', { force: true });
+    this.recapSpeech = (this.lastShow ? showSpeech(this.lastShow, this.farmParams.recapJessDelay) : [{ girl: 'amy', situation: 'dayDone', at: 0 }, { girl: 'jess', situation: 'dayDone', at: this.farmParams.recapJessDelay }]).map((x) => ({ ...x }));
+    this.recapClock = 0;
   }
 
   /** E, Enter or a click on the card: the fade to black begins. */
@@ -4162,7 +4263,12 @@ export class Game {
   updateEndOfDay(dt) {
     if (this.dayRecap.active) {
       this.dayRecap.update(dt);
-      if (this.recapJessIn > 0 && (this.recapJessIn -= dt) <= 0) this.companions.find((c) => c.character.id === 'jess')?.voice.say('dayDone', { force: true });
+      this.recapClock += dt;
+      for (const x of this.recapSpeech ?? []) {
+        if (x.done || this.recapClock < x.at) continue;
+        x.done = true;
+        this.companions.find((c) => c.character.id === x.girl)?.voice.say(x.situation, { force: true });
+      }
       if (this.input.wasPressed('KeyE') || this.input.wasPressed('Enter')) this.dismissRecap();
     }
     if (!this.dayFade.active) return;
@@ -10879,6 +10985,7 @@ export class Game {
     this.guard.run('updateMuddiness', () => this.updateMuddiness(dt));
     this.guard.run('updateMoneyTin', () => this.moneyTin.update(dt));
     this.guard.run('updateMarketTalk', () => this.updateMarketTalk(dt));
+    this.guard.run('updateShowDay', () => this.updateShowDay(dt));
     this.guard.run('updateShedTalk', () => this.updateShedTalk(dt));
     this.guard.run('updateLens', () => this.updateLens(dt, ridden));
     this.guard.run('updatePair', () => this.updatePair(dt));

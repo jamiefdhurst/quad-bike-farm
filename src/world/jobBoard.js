@@ -117,8 +117,9 @@ export class JobBoardView {
   /** The records board: each of the game's bests in chalk, with who set it. */
   drawRecords() {
     const { ctx, w } = this.slate(this.recordsBoard, 'RECORDS', 230);
-    this.records.lines().forEach((l, i) => {
-      const y = 120 + i * 58;
+    const rows = this.records.allLines();
+    rows.forEach((l, i) => {
+      const y = 112 + i * (rows.length > 5 ? 52 : 58);
       ctx.fillStyle = '#ece8d8';
       ctx.font = '24px "Comic Sans MS", "Segoe Print", cursive';
       ctx.fillText(l.label, 28, y);
@@ -185,7 +186,7 @@ export class JobBoardView {
       return row;
     });
     this.recordsEl.replaceChildren(
-      ...this.records.lines().map((l) => {
+      ...this.records.allLines().map((l) => {
         const row = Object.assign(document.createElement('div'), { className: l.set ? 'jb-record' : 'jb-record jb-unset' });
         row.append(Object.assign(document.createElement('span'), { textContent: l.label }), Object.assign(document.createElement('span'), { textContent: l.text }));
         return row;

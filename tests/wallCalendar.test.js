@@ -26,3 +26,16 @@ describe('calendarPage', () => {
     expect(calendarPage(farmDate({ start: 364, day: 2 }))).toMatchObject({ month: 'January', year: 2 });
   });
 });
+
+describe('the show on the calendar', () => {
+  it('marks only the last Sunday of the month', async () => {
+    const { farmDate } = await import('../src/world/seasons.js');
+    for (let n = 1; n <= 365; n++) {
+      const page = calendarPage(farmDate({ start: 0, day: n }));
+      const shows = page.cells.filter((c) => c.show);
+      expect(shows.length).toBe(1);
+      expect(shows[0].column).toBe(6);
+      expect(shows[0].n + 7).toBeGreaterThan(page.cells.length);
+    }
+  });
+});

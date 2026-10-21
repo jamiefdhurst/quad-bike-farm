@@ -342,6 +342,8 @@ export function buildGameTree(g, host) {
     board: text(() => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on', "today's jobs on the barn door"),
     records: text(() => g.records.lines().map((l) => `${l.label}: ${l.text}`).join('; '), 'the bests on the barn board'),
     day: text(() => g.farmText(), 'the farm that remembers: which day it is and when it last saved (the save command does the rest)'),
+    show: text(() => g.describeShow(), 'the farm show on the last Sunday of a month (farm/showDay.js): today, and the rosettes won'),
+    showday: flag(() => g.isShowToday(), (v) => (g.showForced = v), 'make today show day (call it a day at the calendar to be judged; the last quad you rode is the entry)'),
     calendar: text(() => g.endOfDayNow().text, 'what the barn calendar says about calling it a day (save day does it at once)'),
     ask: group(() => ({
       race: text(() => g.askNow('race').join('; ') || 'nothing in the way', 'what would stop asking for the lap race working now'),

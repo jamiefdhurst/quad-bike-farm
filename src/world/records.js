@@ -38,6 +38,7 @@ export class Records {
     this.day = day; // the farm's day: a record carries the day it was set
     this.bests = {}; // kind -> { who, value, quad, day }
     this.byQuad = {}; // kind -> quad id -> { who, value, day }
+    this.extra = []; // lines the game adds under the bests on the board (the show's rosettes), each like one of lines()
   }
 
   /** The records as plain data, for the farm's save. */
@@ -85,6 +86,11 @@ export class Records {
 
   bestOn(kind, quad) {
     return this.byQuad[kind]?.[quad] ?? null;
+  }
+
+  /** The bests, then any extra lines (the show), for the board. */
+  allLines() {
+    return [...this.lines(), ...this.extra];
   }
 
   /** One line per kind for the board: { kind, label, text, set, today }. After the first day, a record set today says so. */

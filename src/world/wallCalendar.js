@@ -19,7 +19,7 @@ export function calendarPage(date) {
   const cells = [];
   for (let i = 0; i < MONTH_DAYS[date.month]; i++) {
     const label = i + 1;
-    cells.push({ n: label, label, state: label < date.dom ? 'past' : label === date.dom ? 'today' : 'future', column: (first + i) % PAGE_COLUMNS, row: Math.floor((first + i) / PAGE_COLUMNS) });
+    cells.push({ n: label, label, state: label < date.dom ? 'past' : label === date.dom ? 'today' : 'future', column: (first + i) % PAGE_COLUMNS, show: (first + i) % PAGE_COLUMNS === 6 && label + 7 > MONTH_DAYS[date.month], row: Math.floor((first + i) / PAGE_COLUMNS) });
   }
   return { month: date.monthName, year: date.year, page: date.month, cells };
 }
@@ -205,6 +205,12 @@ export class WallCalendar {
       if (c.state === 'today') {
         ctx.fillStyle = 'rgba(255, 214, 80, 0.55)';
         ctx.fillRect(x - colW / 2 + 3, y - 27, colW - 6, rowH - 4);
+      }
+      if (c.show) { // the show: a little red rosette under the date (farm/showDay.js)
+        ctx.fillStyle = '#c0281c';
+        ctx.beginPath();
+        ctx.arc(x, y + 7, 5, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.fillStyle = c.state === 'past' ? '#777' : '#222';
       ctx.font = `${c.state === 'today' ? 'bold ' : ''}24px "Comic Sans MS", "Segoe Print", cursive`;

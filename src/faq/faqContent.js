@@ -1854,8 +1854,33 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why won\'t the calendar let me call it a day?',
-        a: `Its prompt says why. Either it is too early (from 17:00, or just before sunset in winter), or one or both girls are not back at the barn: ring the bell and wait for them. Your browser also has to be
+        a: `Its prompt says why. Either it is too early (from 17:00, or just before sunset in winter), or one or both girls are not back at the barn: ring the bell and wait for them. (On show day it says so, and the day ends with the judging.) Your browser also has to be
           willing to keep the farm, or there is no next day to carry on to.`,
+      },
+      {
+        q: 'What is the show?',
+        a: `On the last Sunday of every month the day ends at a local show. The calendar in the barn has a red dot under that date, and the evening before one of the girls reminds you.
+          Carry on with the day as normal. When you call it a day at the calendar on show day (from the evening, with both girls at the barn), the quad you last rode is judged: marks out of ten for
+          clean, tidy and running sweet, against four other entries and the girls' own quads (each enters the quad that is hers, unless it is the one you are entering). You get a first, second, third, fourth or a highly commended, and a rosette that is kept on the farm. The card says what
+          cost you marks and ranks everyone. The girls ride the slow race between themselves: the slowest wins, and whoever puts a foot down loses. Both of them give you a little favour for entering, and a bit more for a first or second, and the one who placed best (or worst) has something to say about it.`,
+        tip: 'The last Sunday of a month is show day: wash and tidy your quad, then call it a day at the barn calendar.',
+      },
+      {
+        q: 'How do I do well at the show?',
+        a: `Wash the quad you mean to enter with the hose, so it has no mud on the body or the wheels (clean). Keep its body unworn, with no punctures or bent rods and rims (tidy). Have it
+          serviced and running well, with no faults, a clean plug and a charged battery (running sweet). The judge looks at the last quad you rode, so ride your entry last. Ride a tractor or
+          a car last and you enter nothing, although the girls still have their race.`,
+        tip: 'For the show: hose your quad down, fix its faults, and ride it last.',
+      },
+      {
+        q: 'How do I know how my quad would do at the show?',
+        a: `On show day, look at the barn calendar: its prompt names the quad you would enter and says what it would score now and what is costing it most ("mud on the wheels",
+          "a fouled plug"). Fix that and look again. The rivals get a little better with each farm year, so a quad that won in year one may need more care in year three.`,
+      },
+      {
+        q: 'Where do the rosettes go?',
+        a: `On the wall in the barn, on little nails above a shelf under the calendar. The colour says how you did: red for first, blue for second, yellow for third, green for fourth and white for a
+          highly commended. The shelf shows the latest eight, and the farm remembers the last twelve. The records board in the barn counts your firsts and rosettes, and a first also ticks off Best in show on the bucket list.`,
       },
       {
         q: 'How do I do the muck job?',

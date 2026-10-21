@@ -57,6 +57,16 @@ describe('records', () => {
   });
 });
 
+describe('the board\'s extra lines', () => {
+  it('come after the bests and are not among the kinds', () => {
+    const r = new Records();
+    r.extra = [{ kind: 'show', label: 'Show rosettes', set: true, today: false, text: '1 first, 1 placed' }];
+    expect(r.allLines().length).toBe(Object.keys(RECORD_KINDS).length + 1);
+    expect(r.allLines().at(-1).kind).toBe('show');
+    expect(r.lines().length).toBe(Object.keys(RECORD_KINDS).length);
+  });
+});
+
 describe('jump measure', () => {
   const fly = (m, steps) => {
     let out = null;
