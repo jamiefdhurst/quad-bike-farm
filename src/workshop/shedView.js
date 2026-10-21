@@ -5,6 +5,8 @@ import { SHED_PIECES, SHED_PIECE_IDS } from '../farm/shed.js';
 import { SHED_KINDS, SHED_PIECE_OF } from '../vehicle/shedFaults.js';
 import { buildCatalogue, buildCompressor, buildWasher, buildPit } from './shedModels.js';
 
+const FLOOR_TOP = 0.011;
+
 /**
  * The barn's shed kit (farm/shed.js): the catalogue hung on a nail under the cork board, and the compressor, the parts washer and the pit that
  * stand in the barn the morning after they are paid for. Look at the catalogue and press E for the card: 1 to 3 buy a piece from the tin.
@@ -34,7 +36,7 @@ export class ShedView {
     for (const [id, build] of [['compressor', buildCompressor], ['washer', buildWasher], ['pit', () => buildPit(L.shed.pit)]]) {
       const at = L.shed[id];
       const built = build();
-      const y = heightAt(at.x, at.z);
+      const y = heightAt(at.x, at.z) + FLOOR_TOP; // the barn's slab stands this far above the ground (barnBuild.js), which the pit's flat parts must clear
       built.group.position.set(at.x, y, at.z);
       built.group.rotation.y = at.yaw ?? 0;
       built.group.visible = shed.has(id, day);
