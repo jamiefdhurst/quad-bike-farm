@@ -15,7 +15,7 @@ import { detourVia, DEFAULT_DETOUR_PARAMS, DETOUR_PARAM_RANGES } from '../npc/de
 import { createOutbuildings } from './outbuildings.js';
 import { RoadMud, DEFAULT_ROAD_MUD_PARAMS, ROAD_MUD_PARAM_RANGES } from './roadMud.js';
 import { DEFAULT_DUST_PARAMS, DUST_PARAM_RANGES } from './dust.js';
-import { leafCover } from './autumn.js';
+import { leafCover, WINTER_TINTS } from './autumn.js';
 import { applyAutumnTint } from './autumnView.js';
 import { surfaceFeel, DEFAULT_SURFACE_PARAMS, SURFACE_PARAM_RANGES } from './surfaces.js';
 import { DEFAULT_SQUEAL_PARAMS, SQUEAL_PARAM_RANGES } from '../vehicle/tyreSqueal.js';
@@ -28,7 +28,7 @@ import * as THREE from 'three';
 
 /** The farm: terrain, track, sky and static props. */
 export class World {
-  constructor({ scene, physics, RAPIER, renderer, models, layout = LAYOUT, graphics = { ...DEFAULT_GRAPHICS_PARAMS }, autumn = false }) {
+  constructor({ scene, physics, RAPIER, renderer, models, layout = LAYOUT, graphics = { ...DEFAULT_GRAPHICS_PARAMS }, autumn = false, winter = false }) {
     this.layout = layout;
     this.autumn = autumn; // an autumn day (autumn.js): turned leaves, leaf litter, conkers and a slippery wood floor
     this.drawDistance = new DrawDistance(graphics); // hides far tiles of grass, stubble, tussocks and bracken (tiledInstances.js)
@@ -94,7 +94,8 @@ export class World {
         })
       : null;
 
-    if (autumn) applyAutumnTint(models); // before anything is built from the models
+    if (autumn) applyAutumnTint(models);
+    else if (winter) applyAutumnTint(models, WINTER_TINTS); // the leaves dull and dark in winter (seasons.js) // before anything is built from the models
     const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud, drawDistance: this.drawDistance, autumn };
     this.terrain = createTerrain(ctx);
     this.props = buildProps(ctx);

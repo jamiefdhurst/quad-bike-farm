@@ -3,6 +3,7 @@
 // romance and her skills, so both girls fit on the screen at once. The shared folder is a set of closed subfolders by subject
 // (the games, the day, the workshop, the jobs, the animals and the lane, the farm's memory, getting about), never a flat list.
 import { buttonText } from './buttonText.js';
+import { SEASONS } from '../world/seasons.js';
 import { girlActions } from './girlActions.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
@@ -314,6 +315,8 @@ export function buildGirlsTab(d) {
   const mem = sub('The farm that remembers');
   show(mem, 'the farm that remembers', () => g.farmText());
   show(mem, 'the calendar says', () => g.endOfDayNow().text);
+  show(mem, 'the date', () => g.seasonText());
+  for (const season of SEASONS) button(mem, `Load it as ${season}`, () => g.reloadAsSeason(season));
   button(mem, 'Save the farm now', () => toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));
   button(mem, 'Call it a day now (fade, save)', () => g.callItADay({ force: true }));
   button(mem, 'Wipe the farm (new one next load)', () => {

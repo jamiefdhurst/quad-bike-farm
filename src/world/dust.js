@@ -4,6 +4,7 @@
 import { inPlume } from '../npc/smokeSense.js';
 
 export const DEFAULT_DUST_PARAMS = {
+  seasonDust: 1, // how much dust the season lifts, as a factor (set from the season: dry summer stubble 1.4, winter's 0.1)
   maxWet: 0.25, // ground wetness (0..1) at which the dust stops altogether; it thins out from bone dry up to here
   minSpeed: 3, // m/s: slower than this it hardly lifts any
   fullSpeed: 10, // m/s: at this the cloud is at its fullest
@@ -19,6 +20,7 @@ export const DEFAULT_DUST_PARAMS = {
 };
 
 export const DUST_PARAM_RANGES = {
+  seasonDust: [0, 2, 0.05],
   maxWet: [0, 1, 0.01],
   minSpeed: [0, 10, 0.5],
   fullSpeed: [1, 25, 0.5],
@@ -39,7 +41,7 @@ const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 export function dustLevel(p, stubble, wet, speed) {
   const dry = clamp01(1 - wet / Math.max(1e-6, p.maxWet));
   const fast = clamp01((Math.abs(speed) - p.minSpeed) / Math.max(1e-6, p.fullSpeed - p.minSpeed));
-  return clamp01(stubble) * dry * fast;
+  return clamp01(clamp01(stubble) * dry * fast * (p.seasonDust ?? 1));
 }
 
 /** Whether a point is in the cloud behind a quad (x, z, yaw): straight behind it, for `cloudLength` metres, widening. */

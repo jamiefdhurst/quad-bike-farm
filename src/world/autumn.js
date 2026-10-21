@@ -1,9 +1,8 @@
-// Autumn: now and then a game is an autumn one. The leaves on the oaks, bushes and hedges turn, the wood's floor is thick with them, more
+// Autumn: on the farm's autumn days (world/seasons.js: September to November). The leaves on the oaks, bushes and hedges turn, the wood's floor is thick with them, more
 // come down round you under the trees, conkers lie under the oaks, and wet leaves on the Hollow Run are slippery. It is a look for the
-// wood and the farm's trees, not a season the weather follows (TODO 341 would make more of the farm seasonal). Pure; the pieces that draw
+// wood and the farm's trees, with the weather following the season in seasons.js. Pure; the pieces that draw
 // it are in autumnView.js.
 
-export const AUTUMN_CHANCE = 0.17; // how many days are autumn ones, about one in six (?season=autumn or ?season=summer forces it)
 export const CONKERS_PER_TREE = 7; // conkers lying round the foot of each oak
 
 export const DEFAULT_AUTUMN_PARAMS = {
@@ -40,6 +39,14 @@ export const AUTUMN_TINTS = {
   hedge: [2.2, 1.35, 0.4], // the hedgerows: yellow-brown
 };
 
+/** The leaves in winter: dull, dark and thin-looking (a multiplier on the green leaf texture, below 1: the trees are not bare, just done). */
+export const WINTER_TINTS = {
+  treeA: [0.78, 0.62, 0.42],
+  treeB: [0.74, 0.62, 0.45],
+  bush: [0.7, 0.62, 0.45],
+  hedge: [0.62, 0.6, 0.42],
+};
+
 /** The colours of leaves in the air and on the ground: [r, g, b] 0..1. */
 export const LEAF_COLOURS = [
   [0.78, 0.36, 0.08],
@@ -48,17 +55,6 @@ export const LEAF_COLOURS = [
   [0.8, 0.7, 0.2],
   [0.45, 0.28, 0.1],
 ];
-
-/**
- * Is this day an autumn one? `forced` is the URL's ?season= ('autumn' or 'summer'), otherwise it is dealt from the farm's seed and the day,
- * so the same day on the same farm always is, and the next day may not be.
- * @param {(seed:number)=>(()=>number)} createRandom
- */
-export function autumnToday({ farmSeed, day, forced = null, chance = AUTUMN_CHANCE, createRandom }) {
-  if (forced === 'autumn') return true;
-  if (forced === 'summer' || forced === 'none') return false;
-  return createRandom(((farmSeed ?? 0) ^ 0xa07b) + (day ?? 1) * 6007)() < chance;
-}
 
 /** 0..1 how deep in leaves the ground is here: the wood's floor, and nothing outside it. */
 export function leafCover(woods, x, z) {

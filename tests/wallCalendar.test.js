@@ -1,33 +1,28 @@
 import { describe, it, expect } from 'vitest';
-import { calendarPage, DAYS_PER_PAGE, MONTHS } from '../src/world/wallCalendar.js';
+import { calendarPage } from '../src/world/wallCalendar.js';
+import { farmDate, MONTH_DAYS } from '../src/world/seasons.js';
 
 describe('calendarPage', () => {
   it('crosses off the days gone, circles today and leaves the rest', () => {
-    const p = calendarPage(3);
-    expect(p.cells.filter((c) => c.state === 'past').map((c) => c.label)).toEqual([1, 2]);
-    expect(p.cells.filter((c) => c.state === 'today').map((c) => c.label)).toEqual([3]);
-    expect(p.cells.filter((c) => c.state === 'future')).toHaveLength(DAYS_PER_PAGE - 3);
-    expect(p.month).toBe(MONTHS[0]);
+    const date = farmDate({ start: 40, day: 1 }); // 10 February
+    const p = calendarPage(date);
+    expect(p.month).toBe('February');
+    expect(p.cells.filter((c) => c.state === 'past')).toHaveLength(date.dom - 1);
+    expect(p.cells.filter((c) => c.state === 'today').map((c) => c.label)).toEqual([date.dom]);
+    expect(p.cells).toHaveLength(MONTH_DAYS[1]);
   });
 
-  it('turns the page after a full month and counts the days from one again', () => {
-    const p = calendarPage(DAYS_PER_PAGE + 1);
-    expect(p.month).toBe(MONTHS[1]);
-    expect(p.cells[0].state).toBe('today');
-    expect(p.cells.some((c) => c.state === 'past')).toBe(false);
+  it('has the real number of days in the month and puts the days under the right weekdays', () => {
+    const a = calendarPage(farmDate({ start: 0, day: 1 }));
+    expect(a.cells).toHaveLength(31);
+    for (const c of a.cells) expect(c.column).toBe((a.cells[0].column + c.label - 1) % 7);
+    expect(Math.max(...a.cells.map((c) => c.row))).toBeLessThanOrEqual(5);
   });
 
-  it('keeps the last day of a page on that page', () => {
-    const p = calendarPage(DAYS_PER_PAGE);
-    expect(p.month).toBe(MONTHS[0]);
-    expect(p.cells.at(-1).state).toBe('today');
-  });
-
-  it('starts a new year after the last month', () => {
-    expect(calendarPage(MONTHS.length * DAYS_PER_PAGE + 1)).toMatchObject({ month: MONTHS[0], year: 2 });
-  });
-
-  it('copes with a missing day', () => {
-    expect(calendarPage(undefined).cells[0].state).toBe('today');
+  it('turns the page at the end of the month and the year at the end of December', () => {
+    const last = farmDate({ start: 30, day: 1 }); // 31 January
+    expect(farmDate({ start: 30, day: 2 }).monthName).toBe('February');
+    expect(calendarPage(last).cells.at(-1).state).toBe('today');
+    expect(calendarPage(farmDate({ start: 364, day: 2 }))).toMatchObject({ month: 'January', year: 2 });
   });
 });

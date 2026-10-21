@@ -6,9 +6,9 @@ import { AUTUMN_TINTS, LEAF_COLOURS, conkerSpots } from './autumn.js';
 import { matrixAt } from './hillProps.js';
 
 /** Turns the leaves of the oaks, bushes and hedges: the cut-out leaf materials (assets.js) get an orange or gold tint, each model its own. */
-export function applyAutumnTint(models) {
+export function applyAutumnTint(models, tints = AUTUMN_TINTS) {
   const done = new Set();
-  for (const [name, [r, g, b]] of Object.entries(AUTUMN_TINTS)) {
+  for (const [name, [r, g, b]] of Object.entries(tints)) {
     models[name]?.scene.traverse((o) => {
       if (!o.isMesh) return;
       for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
