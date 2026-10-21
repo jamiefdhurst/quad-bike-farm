@@ -264,7 +264,10 @@ import { TowRope, TOW_ROPE_PARAM_RANGES } from './items/towRope.js';
 import { DEFAULT_TOW_STEER_PARAMS, TOW_STEER_RANGES } from './npc/towSteer.js';
 import { DEFAULT_STRANDED_PARAMS, STRANDED_RANGES } from './npc/stranded.js';
 import { nearestNamedSpot } from './npc/spotNames.js';
-import { TRACTOR_GROUND_OFFSET } from './vehicle/tractorModel.js';
+import { TRACTOR_GROUND_OFFSET, SPLITTER, poseLogSplitter } from './vehicle/tractorModel.js';
+import { DEFAULT_SPLITTER_PARAMS, SPLITTER_PARAM_RANGES, LogSplitter, LogStack, splitterPowered } from './items/logSplitter.js';
+import { WoodPiece, StackView } from './items/woodPieces.js';
+import { SplitAudio } from './audio/splitAudio.js';
 import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
 import { dateToday, daylightParams, weatherWeights, temperatureBandWeights, groundFor, isAutumn, isWinter } from './world/seasons.js';
 import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } from './world/wind.js';
@@ -687,6 +690,7 @@ export class Game {
     this.leafFall = new LeafFall(this.scene);
     this.conkers = new Conkers(this.autumnParams, createRandom(this.farmSeed ^ 0xc0c4));
     this.conkerAudio = new ConkerAudio(this.audioHub);
+    this.splitAudio = new SplitAudio(this.audioHub);
     this.conkerMesh = null; // the conker in the air, made when the first one is thrown
     // Smoke hanging over the yard on a still day (world/haze.js, effects/hazeLayer.js).
     this.haze = new Haze(this.world.layout.yard);
@@ -1525,15 +1529,18 @@ export class Game {
     this.baleRig.restore(keepOutside(this.farm.save?.bales, (x, z) => underRoof(this.world.layout, x, z))); // not one left where the barn now stands
     this.siloRect = dutchBarnShape(this.world.layout)?.open ?? null;
     registerTuning('Bale spike', this.spikeParams, SPIKE_PARAM_RANGES);
+    this.setUpLogSplitter();
     this.setUpBonfire();
     this.jobBoardParams = { ...DEFAULT_JOB_BOARD_PARAMS };
     // The silage job needs the tractor, and enough bales still out of the barn for it to be worth asking.
     const hayStacked = Math.max(0, this.farm.save?.hay?.stacked ?? 0);
     const jobIds = availableJobs(this.world.layout)
       .filter((id) => id !== 'silage' || (!!this.tractorUnit && !!this.siloRect && this.baleRig.yard.countIn(this.siloRect) < this.spikeParams.balesNeeded))
+      .filter((id) => id !== 'logs' || (!!this.logStack && this.logStack.roomForJob())) // the log job needs the tractor and room on the stack
       .filter((id) => id !== 'spray' || sprayWanted(this.farm.save?.spray, this.farm.day)) // a sprayed field stays off the board for a few days
       .filter((id) => id !== 'hay' || (!!this.tractorUnit && !!this.siloRect && hayStacked + DEFAULT_HAY_PARAMS.balesNeeded <= STACK_CAPACITY)); // the hay needs the tractor and room in the barn
     this.jobBoard = new JobBoard({ ids: jobIds, random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
+    if (this.jobBoard.has('logs')) this.logStack.startJob();
     this.setUpServiceJob();
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
     this.setUpHay();
@@ -3294,9 +3301,9 @@ export class Game {
       raise: driving && input.isDown('BracketRight'),
       lower: driving && input.isDown('BracketLeft'),
       powered: q.engine.isRunning,
-      shown: !trailerOn,
+      shown: !trailerOn && !this.splitterFitted, // the log splitter takes the spike's place on the lift arms
     });
-    if (driving && !trailerOn && rig.lift.lift !== before && !this.spikeHinted) {
+    if (driving && !trailerOn && !this.splitterFitted && rig.lift.lift !== before && !this.spikeHinted) {
       this.spikeHinted = true;
       this.hud.toast('Bale spike: reverse the point into a standing silage bale, ] up and [ down', 3.5);
     }
@@ -3312,6 +3319,215 @@ export class Game {
     if (weight || this.spikeWeighed) Object.assign(q.tow, towEffect(towLoad(0, weight, this.towParams), true, this.towParams));
     this.spikeWeighed = !!weight;
   }
+
+  // The log splitter ---------------------------------------------------------------
+
+  /**
+   * The log splitter that takes the bale spike's place on the tractor (items/logSplitter.js): rounds lying in piles at the wood's gate, the
+   * splitter's beam, the logs it makes and the stack they go in. The stack and whether the splitter is fitted are kept; the rounds are dealt fresh each load.
+   */
+  setUpLogSplitter() {
+    this.logStack = null;
+    const yard = this.world.layout.logYard;
+    if (!yard || !this.tractorUnit) return;
+    const p = (this.splitterParams = { ...DEFAULT_SPLITTER_PARAMS });
+    registerTuning('Log splitter', p, SPLITTER_PARAM_RANGES);
+    this.splitter = new LogSplitter(p);
+    this.logStack = new LogStack(p);
+    this.logStack.restore(this.farm.save?.logs, this.farm.day);
+    this.splitterFitted = !!this.farm.save?.logs?.fitted;
+    this.splitterPush = false;
+    const random = createRandom(this.seed ^ 0x10c5);
+    const world = this.world;
+    this.rounds = [];
+    yard.piles.forEach(([x, z, yaw], pile) => {
+      for (let i = 0; i < p.roundsPerPile; i++) {
+        const r = new WoodPiece({ scene: this.scene, world, kind: 'round', gnarled: random() < p.gnarlChance, random, x: x + (i % 3) * 0.38 - 0.38, z: z + Math.floor(i / 3) * 0.38, yaw: random() * 6 });
+        r.putDown(r.home, r.home.yaw);
+        this.rounds.push(r);
+      }
+    });
+    this.logPieces = Array.from({ length: Math.max(1, this.rounds.length) * 4 }, () => new WoodPiece({ scene: this.scene, world, kind: 'log' }));
+    this.woodPieces = [...this.rounds, ...this.logPieces];
+    this.stackView = new StackView({ scene: this.scene, heightAt: (x, z) => world.heightAt(x, z), site: yard.stack, capacity: SPLITTER_PARAM_RANGES.capacity[1] });
+    this.stackView.set(this.logStack.count);
+    const q = this.tractorUnit.quad;
+    const hidden = new THREE.MeshBasicMaterial({ visible: false });
+    // The beam: look at it to load, push and (empty) swap back. The mast: look at it to fit the splitter. Both ride on the tractor.
+    this.splitterProxy = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.8, 1.7), hidden);
+    this.splitterProxy.position.set(0, 1.1, -2.45);
+    q.model.add(this.splitterProxy);
+    this.fitProxy = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.6, 0.5), hidden);
+    this.fitProxy.position.set(0, 1.25, -1.85);
+    q.model.add(this.fitProxy);
+    poseLogSplitter(q.model, 0, this.splitterFitted);
+    const onFoot = () => !this.player.isRiding;
+    for (const w of this.woodPieces) {
+      this.interaction.add({
+        target: w.proxy,
+        isAvailable: () => w.onGround && !this.handsFull && onFoot(),
+        prompt: () => (w.kind === 'round' ? 'Pick up the round' : 'Pick up the log'),
+        interact: () => w.pickUp(this.camera),
+      });
+    }
+    this.interaction.add({
+      target: this.stackView.proxy,
+      isAvailable: () => this.heldWood?.kind === 'log' && !this.logStack.full,
+      prompt: () => `Stack the log (${this.logStack.count + 1} of ${p.capacity})`,
+      interact: () => this.stackLog(),
+    });
+    this.interaction.add({
+      target: this.splitterProxy,
+      priority: 1, // it stands over the mast's box
+      isAvailable: () => this.splitterShown() && onFoot() && (!this.handsFull || this.heldWood?.kind === 'round'),
+      prompt: () => this.splitterPrompt(),
+      interact: () => this.splitterInteract(),
+      hold: () => this.splitterHold(),
+    });
+    this.interaction.add({
+      target: this.fitProxy,
+      isAvailable: () => !this.splitterFitted && !this.handsFull && onFoot() && !this.baleRig.held && !this.splitterTrailerOn(),
+      prompt: () => 'Take the bale spike off and fit the log splitter',
+      interact: () => this.fitSplitter(true),
+    });
+  }
+
+  get heldWood() {
+    return this.woodPieces?.find((w) => w.held) ?? null;
+  }
+
+  splitterTrailerOn() {
+    const q = this.tractorUnit.quad;
+    return this.trailer.hitched || (this.tipTrailer.hitched && this.tipTrailer.puller === q);
+  }
+
+  /** The splitter is on the tractor and in view (a trailer on the drawbar hides it). */
+  splitterShown() {
+    return !!this.tractorUnit && this.splitterFitted && !this.splitterTrailerOn();
+  }
+
+  /** Whether the tractor is running and held, so the hydraulics will work. */
+  splitterPowered() {
+    const q = this.tractorUnit.quad;
+    return splitterPowered({ running: q.engine.isRunning, parkBrake: q.parkBrake, gear: q.drivetrain.gear, speed: q.forwardSpeed });
+  }
+
+  splitterPrompt() {
+    const sp = this.splitter;
+    if (this.heldWood) return sp.canLoad() ? 'Put the round on the splitter' : { text: 'The splitter already has a round on it' };
+    if (sp.loaded) return this.splitterPowered() ? 'Hold E to push the ram through the round' : { text: 'Start the tractor and put its brake on, then hold E to split' };
+    return sp.canLoad() ? 'Take the log splitter off and fit the bale spike' : { text: 'Let the ram come back' };
+  }
+
+  splitterInteract() {
+    const sp = this.splitter;
+    const held = this.heldWood;
+    if (held) {
+      if (!sp.canLoad()) return;
+      sp.putOn(held.gnarled);
+      held.putOnBeam(this.tractorUnit.quad.model.getObjectByName('logSplitter'));
+      this.splitterPiece = held;
+      if (!this.splitterHinted) {
+        this.splitterHinted = true;
+        this.hud.toast(this.splitterPowered() ? 'Hold E to push the ram through' : 'Start the tractor and put its brake on, then hold E to split', 3.5);
+      }
+    } else if (!sp.loaded && sp.canLoad()) this.fitSplitter(false);
+  }
+
+  /** Holding E at the beam with a round on it: the ram goes out (updateLogSplitter moves it). */
+  splitterHold() {
+    if (this.heldWood || !this.splitter.loaded || !this.splitterPowered()) return false;
+    this.splitterPush = true;
+    return false; // true would make the pouring sound (the muck fork's does)
+  }
+
+  /** Swaps the bale spike for the splitter (or back) on the lift arms. */
+  fitSplitter(on) {
+    this.splitterFitted = on;
+    poseLogSplitter(this.tractorUnit.quad.model, this.splitter.ram, on && !this.splitterTrailerOn());
+    this.hud.toast(on ? 'Log splitter fitted in place of the bale spike. Rounds are piled by the wood\'s gate' : 'Bale spike back on', 3);
+  }
+
+  /** Every frame: the ram, the engine's governor and load, and what comes of a split. */
+  updateLogSplitter(dt) {
+    const q = this.tractorUnit.quad;
+    const shown = this.splitterShown();
+    const powered = shown && this.splitterPowered() && !this.player.isRiding;
+    const push = this.splitterPush && powered;
+    this.splitterPush = false;
+    for (const e of this.splitter.update(dt, { push, powered })) {
+      if (e.type === 'split') this.roundSplit(e);
+    }
+    const working = powered && (push || this.splitter.moving || this.splitter.load > 0);
+    q.pto.throttle = working ? this.splitterParams.pumpThrottle : 0;
+    q.pto.load = working ? this.splitter.load : 0;
+    poseLogSplitter(q.model, this.splitter.ram, shown);
+  }
+
+  /** The round gave way: it is gone from the beam and its logs lie either side of the tractor's back. */
+  roundSplit(e) {
+    const q = this.tractorUnit.quad;
+    const round = this.splitterPiece;
+    round?.hide();
+    this.splitterPiece = null;
+    const at = q.localToWorld(0, SPLITTER.roundY + TRACTOR_GROUND_OFFSET, SPLITTER.roundZ);
+    this.splitAudio.crack(at, e.gnarled);
+    const n = this.splitterParams.logsPerRound;
+    for (let i = 0; i < n; i++) {
+      const log = this.logPieces.find((l) => l.state === 'hidden');
+      if (!log) break;
+      const side = i % 2 ? 1 : -1;
+      const w = q.localToWorld(side * (0.55 + Math.floor(i / 2) * 0.3), 0, SPLITTER.roundZ + (Math.random() - 0.5) * 0.3);
+      log.putDown({ x: w.x, z: w.z }, Math.atan2(w.x - at.x, w.z - at.z) + Math.PI / 2 + (Math.random() - 0.5) * 0.4);
+    }
+    if (!this.logSplitHinted) {
+      this.logSplitHinted = true;
+      this.hud.toast('Split. Carry the logs to the stack by the hedge', 3.5);
+    }
+  }
+
+  stackLog() {
+    const log = this.heldWood;
+    if (!log || log.kind !== 'log' || this.logStack.add() < 0) return;
+    log.hide();
+    this.stackView.set(this.logStack.count);
+    this.hud.toast(`${this.logStack.count} of ${this.splitterParams.capacity} on the stack`, 1.6);
+    if (this.jobBoard.has('logs') && !this.jobBoard.finished.has('logs') && this.logStack.jobComplete) this.finishLogs();
+  }
+
+  finishLogs() {
+    if (this.jobBoard.complete('logs')) {
+      this.hud.toast('Logs stacked. Ticked off the board on the barn door', 3);
+      this.jobBoardView.refresh();
+      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
+    }
+  }
+
+  putWoodDown() {
+    const w = this.heldWood;
+    if (!w) return;
+    const p = this.player.position;
+    const yaw = this.player.yaw;
+    w.putDown({ x: p.x - Math.sin(yaw) * 0.8, z: p.z - Math.cos(yaw) * 0.8 }, yaw + Math.PI / 2);
+  }
+
+  debugFinishLogs() {
+    if (!this.logStack) return;
+    while (!this.logStack.jobComplete && !this.logStack.full) this.logStack.add();
+    this.stackView.set(this.logStack.count);
+    if (this.jobBoard.has('logs')) this.finishLogs();
+  }
+
+  /** Empties the stack and deals the rounds back into their piles (the debug panel). */
+  debugResetLogs() {
+    if (!this.logStack) return;
+    this.splitter.reset();
+    this.splitterPiece = null;
+    this.logStack.count = 0;
+    this.stackView.set(0);
+    for (const w of this.woodPieces) w.reset();
+  }
+
 
   /** A bale has been left: if that brings the silage job's bales into the Dutch barn, tick it off. */
   baleSettled() {
@@ -4100,6 +4316,7 @@ export class Game {
       generator: this.generator.toJSON(),
       headgear: this.headgear.capture(),
       bales: this.baleRig.yard.toJSON(),
+      logs: this.logStack ? { ...this.logStack.toJSON(this.farm.day), fitted: this.splitterFitted } : undefined,
       hay: this.hay?.toJSON(),
       spray: this.spray?.toJSON(),
       batteries: Object.fromEntries([...this.batteries].filter(([, b]) => b.out).map(([id, b]) => [id, { where: b.where === 'charger' ? 'charger' : 'loose' }])),
@@ -6671,7 +6888,7 @@ export class Game {
   }
 
   get handsFull() {
-    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.coolantBottle.held || this.antiGelBottle.held || !!this.heldBrushwood || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
+    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.coolantBottle.held || this.antiGelBottle.held || !!this.heldBrushwood || !!this.heldWood || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
   }
 
   /** The debug panel's tow rope button: hook the rope from the nearest utility quad onto this vehicle, or take it off again. */
@@ -11015,6 +11232,7 @@ export class Game {
       else if (this.coolantBottle.held && input.wasPressed('KeyG')) this.putCoolantBottleDown();
       else if (this.antiGelBottle.held && input.wasPressed('KeyG')) this.putAntiGelBottleDown();
       else if (this.heldBrushwood && input.wasPressed('KeyG')) this.putBrushwoodDown();
+      else if (this.heldWood && input.wasPressed('KeyG')) this.putWoodDown();
       else if (this.heldBattery() && input.wasPressed('KeyG')) this.putBatteryDown();
     }
 
@@ -11066,6 +11284,7 @@ export class Game {
     if (this.spray) this.guard.run('updateSprayer', () => this.updateSprayer(dt, ridden, input));
     if (this.hay) this.guard.run('updateHay', () => this.updateHay(dt));
     if (this.tractorUnit) this.guard.run('updateBaleSpike', () => this.updateBaleSpike(dt, ridden, input));
+    if (this.logStack) this.guard.run('updateLogSplitter', () => this.updateLogSplitter(dt));
     if (GO_KINDS.some((k) => this.goVehicle(k)) && auto) this.guard.run('updateTractorGo', () => this.updateTractorGo(dt, ridden));
     this.guard.run('updateRadios', () => this.updateRadios(dt));
     this.guard.run('updateCars', () => this.updateCars(dt)); // (minding you taking her car is a reaction, so it runs with the girls on hold too)
@@ -11738,6 +11957,8 @@ export class Game {
       this.hud.setStatus('Jump leads\nE on a quad to clamp one end, then another quad for the other\nG to put them down');
     } else if (this.heldBattery()) {
       this.hud.setStatus(`${this.heldBattery().name}\nE on its vehicle to fit it, at the bench charger to charge it\nG to put it down`);
+    } else if (this.heldWood) {
+      this.hud.setStatus(this.heldWood.kind === 'round' ? 'Round\nE at the log splitter on the tractor to put it on the beam\nG to put it down' : `Log\nE at the stack to add it (${this.logStack.count} of ${this.splitterParams.capacity})\nG to put it down`);
     } else if (this.heldBrushwood) {
       this.hud.setStatus(`Brushwood\nE at the ring of stones to put it on the pile (${this.bonfire.piled} of ${this.bonfireParams.heapsNeeded})\nG to put it down`);
     } else if (this.coolantBottle.held) {
@@ -11816,6 +12037,7 @@ export class Game {
       [this.coolantBottle, '#1f9bd0', 'Coolant bottle'],
       [this.antiGelBottle, '#3a7bd5', 'Diesel anti-gel'],
       ...this.brushwood.filter((h) => !h.used).map((h) => [h, '#6b4d30', 'Brushwood']),
+      ...(this.woodPieces ?? []).filter((w) => w.onGround && w.kind === 'round').map((w) => [w, '#7a5a3a', 'Round']),
       ...[...this.batteries.values()].filter((b) => b.out).map((b) => [b, '#c2231b', b.name]),
     ];
     for (const [item, colour, label] of items) {

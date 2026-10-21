@@ -1791,7 +1791,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What are the chalkboards in the barn?',
         a: `Today's farm jobs. Walk into the barn to the back wall and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
-          entry when you've cleared the lot. The jobs are the muck, the spraying (when the field wants it) and, if the tractor is about, the silage and the hay; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
+          entry when you've cleared the lot. The jobs are the muck, the spraying (when the field wants it) and, if the tractor is about, the silage, the hay and splitting logs; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
@@ -1931,6 +1931,26 @@ export const FAQ_SECTIONS = [
         q: 'How do I do the silage job?',
         a: `When it's on the chalkboard, spike three of the wrapped silage bales beside the barn one at a time and leave them on the floor of the Dutch barn's open bay, out east
           (the bay with no bale stack in it). The job ticks off once the third is down.`,
+      },
+      {
+        q: 'How do I split logs with the tractor?',
+        a: `Look at the back of the tractor, where the bale spike is, and press <kbd>E</kbd> to take the spike off and fit the log splitter (it will not go on with a bale on the spike
+          or a trailer on the drawbar). Rounds of trunk lie in two piles on the grass field by the wood's gate: pick one up with <kbd>E</kbd>, look at the splitter's beam and press
+          <kbd>E</kbd> to put it on. Then start the tractor, put its parking brake on (or leave it in neutral), and hold <kbd>E</kbd> at the beam: the ram pushes the round onto the
+          wedge and the engine note rises and sags as it works. Let go and the ram comes back. When the round gives way its logs fall either side of the tractor's back. Carry them
+          one at a time to the stack against the hedge and press <kbd>E</kbd> there. <kbd>G</kbd> puts what you are holding down.`,
+        tip: 'Fit the log splitter at the back of the tractor, then hold E at the beam with the engine running and the brake on.',
+      },
+      {
+        q: 'Why will the log splitter not work?',
+        a: `The tractor has to be running, with the parking brake on or in neutral, and not moving. If the engine stalls under a stubborn round the ram stops where it is; start it
+          again and carry on. A round with a knot in it takes longer to push through. Put the bale spike back (look at the beam when it is empty and press <kbd>E</kbd>) and the
+          splitter comes off. Hitching a trailer hides the splitter and unhitching brings it back.`,
+      },
+      {
+        q: 'How do I do the log job?',
+        a: `When it's on the chalkboard, split some logs and stack them on the stack at the wood. It ticks off when enough are on. The stack holds a limited number, and some of the logs are
+          burnt in the house each day that passes, so there is always room for the job again.`,
       },
       {
         q: 'How do I make hay?',
