@@ -19,13 +19,14 @@ export function buildWoods(c) {
 
 /** Oaks of all sizes with trunks you can't ride through, and hazel and holly between them. */
 function buildTrees(c, woods) {
-  const { scene, models, layout, heights, physics, RAPIER, random } = c;
+  const { scene, models, layout, heights, physics, RAPIER, random, anchors } = c;
   const { trees, bushes } = woodsPlants(woods, layout, random);
   const mats = [[], []];
   for (const [x, z, s] of trees) {
     const y = heights.heightAt(x, z);
     mats[random() < 0.5 ? 0 : 1].push(matrixAt(x, y - 0.15, z, random() * Math.PI * 2, s));
     physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, y + 2.5 * s, z));
+    anchors.push({ x, y, z, r: 0.32 * s });
   }
   scene.add(instanceModel(models.treeA.scene, mats[0]));
   scene.add(instanceModel(models.treeB.scene, mats[1]));

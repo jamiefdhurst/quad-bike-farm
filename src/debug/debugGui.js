@@ -273,6 +273,7 @@ export class DebugGui {
     show(r, 'throttle', () => round(unit().engine.throttle));
     show(r, 'load / lug', () => `${round(unit().engine.load)} / ${round(unit().engine.lug)}`);
     show(r, 'power', () => round(unit().engine.power));
+    show(r, 'on the winch', () => { const w = this.game.winch; if (!w || w.state !== 'hooked') return 'no'; const on = unit().quad === w.quad ? !!w.anchor : w.target === unit().quad; return on ? (w.tight ? `tight, ${Math.round(w.load * 100)}% of its pull` : 'slack') : 'no'; });
     show(r, 'on the tow rope', () => (this.game.towRope.target === unit().quad ? (this.game.towRope.tight ? `tight, ${Math.round(this.game.towRope.force)} N` : 'slack') : this.game.towRope.puller === unit().quad ? `pulling the ${this.game.towRope.target?.unit?.label ?? 'rope'}` : 'no'));
     show(r, 'on the bale trailer', () => (unit().quad.loadedOn ? (this.game.trailer.load.mode === 'aboard' ? (this.game.trailer.load.strapped ? 'strapped on' : 'on, loose') : 'on the ramps') : 'no'));
     show(r, 'trailer hitch angle (deg)', () => { const t = this.game.trailerOf(unit().quad); return t ? `${Math.round((t.motion.hitchAngle * 180) / Math.PI)}${t.motion.jammed ? ', folded' : ''}` : 'none'; });
@@ -441,6 +442,7 @@ export class DebugGui {
     row(one, 'Fill the tank', () => (this.unit().quad.fuel.litres = this.unit().quad.fuel.params.tankCapacity));
     row(one, 'Winch it onto the bale trailer', () => g.hud.toast(g.debugLoad(this.unit())));
     row(one, 'Pay it back off the trailer', () => g.hud.toast(g.debugUnload(this.unit())));
+    row(one, 'Hook the green\'s winch on it (the green: on the nearest tree) / take it off', () => g.hud.toast(g.debugWinch(this.unit())));
     row(one, 'Hook the tow rope on it / take it off', () => g.hud.toast(g.debugTowRope(this.unit())));
     row(one, 'Jack-knife the trailer on it', () => g.hud.toast(g.debugJackknife(this.unit())));
     row(one, 'Straighten the trailer on it', () => g.hud.toast(g.debugJackknife(this.unit(), false)));

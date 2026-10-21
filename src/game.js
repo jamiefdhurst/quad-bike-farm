@@ -260,6 +260,8 @@ import { Toolbox } from './items/toolbox.js';
 import { JumpLeads, JUMP_LEAD_PARAM_RANGES } from './items/jumpLeads.js';
 import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
 import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
+import { pickTree, isHeavy } from './items/winchAnchor.js';
+import { WinchAudio } from './audio/winchAudio.js';
 import { Chain, CHAIN_PARAM_RANGES } from './items/chain.js';
 import { TowRope, TOW_ROPE_PARAM_RANGES } from './items/towRope.js';
 import { DEFAULT_TOW_STEER_PARAMS, TOW_STEER_RANGES } from './npc/towSteer.js';
@@ -1163,6 +1165,7 @@ export class Game {
           const winch = this.winch;
           if (winch?.state === 'carried') {
             if (unit === winch.unit) return { text: 'X put the winch hook back' };
+            if (isHeavy(unit.spec)) return `Hook the winch cable on the ${unit.label}: the ${winch.unit.label} will pull itself up to it   ·   X put it back`;
             return `Hook the winch cable on the ${unit.label}${quad.bog.stuck ? ' (it\'s stuck)' : ''}   ·   X put it back`;
           }
           if (winch?.state === 'hooked' && winch.target === quad) return 'Unhook the winch   ·   hold X by the RB300 to wind in';
@@ -1461,6 +1464,11 @@ export class Game {
     const winchUnit = this.units.find((u) => u.spec.winch);
     this.winch = winchUnit ? new Winch({ scene: this.scene, unit: winchUnit }) : null;
     this.winchReel = false;
+    if (this.winch) {
+      this.winch.anchors = this.world.props.anchors ?? [];
+      this.winchAudio = new WinchAudio(this.audioHub);
+      this.winch.onCreak = (strength) => this.winchAudio.creak(strength, this.winch.leadPosition(new THREE.Vector3()));
+    }
     // The tractor's tow chain (items/chain.js), for a quad sunk too deep for the winch or a dead one to tow home.
     this.chain = this.tractorUnit ? new Chain({ scene: this.scene, tractor: this.tractorUnit.quad, anchor: (q) => q.localToWorld(0, TRACTOR_GROUND_OFFSET + 0.52, -1.5) }) : null; // no tractor, no chain
     // The tow rope on the red and blue quads' racks (items/towRope.js): a quad towing a quad, with a girl steering the dead one.
@@ -6971,6 +6979,31 @@ export class Game {
     return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.coolantBottle.held || this.antiGelBottle.held || !!this.heldBrushwood || !!this.heldWood || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
   }
 
+  /** The debug panel's winch button: the green's winch onto this vehicle (or, on the green itself, onto the nearest tree), or off again. */
+  debugWinch(unit) {
+    const w = this.winch;
+    if (!w) return 'No winch in this game';
+    const onIt = unit === w.unit ? !!w.anchor : w.target === unit.quad;
+    if (w.state === 'hooked' && onIt) {
+      w.stow();
+      return 'Winch off';
+    }
+    w.stow();
+    w.take(this.camera);
+    if (unit !== w.unit) {
+      w.hookOn(unit.quad);
+      return `Winch hooked on the ${unit.label}${w.selfPull ? `: the ${w.unit.label} pulls itself up to it` : ''}`;
+    }
+    const at = w.quad.position;
+    const tree = w.anchors.map((a) => ({ a, d: Math.hypot(a.x - at.x, a.z - at.z) })).sort((p, q) => p.d - q.d)[0];
+    if (!tree || tree.d > 30) {
+      w.stow();
+      return 'No tree within 30 m';
+    }
+    w.hookTree(tree.a);
+    return `Winch hooked on a tree ${Math.round(tree.d)} m away`;
+  }
+
   /** The debug panel's tow rope button: hook the rope from the nearest utility quad onto this vehicle, or take it off again. */
   debugTowRope(unit) {
     const r = this.towRope;
@@ -7022,7 +7055,7 @@ export class Game {
   }
 
   /** The winch: the cable's reach, and winding in while X is held by the green (or on it). */
-  updateWinch() {
+  updateWinch(dt = 0) {
     const w = this.winch;
     if (!w) return;
     if (w.state === 'carried' && this.player.isRiding) w.stow();
@@ -7033,7 +7066,16 @@ export class Game {
     const onIt = this.boardUnit === w.unit;
     const near = !this.player.isRiding && w.distanceFrom(this.player.position) < w.params.remoteReach;
     this.winchReel = w.state === 'hooked' && (onIt || near) && !this.menu.isOpen && this.input.isDown('KeyX');
-    w.update();
+    w.update(dt);
+  }
+
+  /** The trunk you are looking at while you hold the winch hook (or have it on a tree), if any. */
+  winchTreeLooked() {
+    const w = this.winch;
+    if (!w || this.player.isRiding || !(w.state === 'carried' || w.anchor)) return null;
+    const origin = this.camera.getWorldPosition(new THREE.Vector3());
+    const dir = this.camera.getWorldDirection(new THREE.Vector3());
+    return pickTree(w.anchors, origin, dir, 6);
   }
 
   /** Off the back: only once she's stopped (or nearly). */
@@ -11270,6 +11312,12 @@ export class Game {
         this.lastUnit = focused.unit;
       }
       if (focused && input.wasPressed('KeyE')) focused.interact();
+      else if (!focused && input.wasPressed('KeyE') && this.winch) {
+        // The winch hook on a tree: E on a trunk hooks it, E on the hooked trunk takes it off.
+        const tree = this.winchTreeLooked();
+        if (tree && this.winch.state === 'carried') this.winch.hookTree(tree);
+        else if (tree && this.winch.anchor === tree) this.winch.unhook(this.camera);
+      }
       this.pushOnFoot(input, focused?.unit);
       // B: sit on the back of a quad with nobody driving; sooner or later a girl comes and takes you for a ride.
       if (focused?.unit && input.wasPressed('KeyB') && this.canSitOnBack(focused.unit.quad)) {
@@ -11476,7 +11524,7 @@ export class Game {
     this.dieselCan.update(dt);
     this.guard.run('updateCanWater', () => this.updateCanWater(dt));
     this.guard.run('updateHose', () => this.updateHose(dt));
-    this.guard.run('updateWinch', () => this.updateWinch());
+    this.guard.run('updateWinch', () => this.updateWinch(dt));
     this.guard.run('updateChain', () => this.updateChain());
     this.guard.run('updateTowRope', () => this.updateTowRope());
     this.workshop.update(dt);
@@ -12031,7 +12079,9 @@ export class Game {
     } else if (this.towRope?.state === 'carried') {
       this.hud.setStatus('Tow rope\nE on a dead quad to hook it on, X to put it back\nThen ride off gently: it stretches and can snatch');
     } else if (this.winch?.state === 'carried') {
-      this.hud.setStatus('Winch hook\nE on a quad to hook it on, X to put it back');
+      this.hud.setStatus(`Winch hook\n${this.winchTreeLooked() ? 'E to hook the tree: the RB300 will pull itself up to it' : 'E on a tree or a vehicle to hook it on, X to put it back'}`);
+    } else if (this.winch?.state === 'hooked' && this.winch.anchor) {
+      this.hud.setStatus(`Winch on a tree\n${this.winchTreeLooked() === this.winch.anchor ? 'E to unhook it, ' : ''}hold X by the RB300 or on it to wind in`);
     } else if (this.hose.held) {
       this.hud.setStatus('Hose\nHold E to spray, G to put it back');
     } else if (this.leads.held) {
