@@ -2122,7 +2122,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'foreman', st
 
 let haloTexture = null;
 /** A soft round glow, drawn once: the bloom round a lit lamp. */
-function glowTexture() {
+export function glowTexture() {
   if (haloTexture) return haloTexture;
   const c = document.createElement('canvas');
   c.width = c.height = 64;

@@ -33,6 +33,7 @@ export const ACTIONS = [
     ['KeyK', 'Ignition, key'],
     ['KeyR', 'Crank (hold)'],
     ['KeyP', 'Lights, starting handle'],
+    ['Digit9', 'Spotlamps (once fitted at the bench)'],
     ['KeyQ', 'More choke, hand throttle'],
     ['KeyZ', 'Less choke'],
     ['KeyF', 'Fuel tap'],

@@ -7,7 +7,7 @@ import * as THREE from 'three';
 // and all; by day they're faint, as headlamps are in sunshine.
 
 export const DEFAULT_VEHICLE_LIGHT_PARAMS = {
-  count: 6, // spotlights in the pool (read once, at the start)
+  count: 8, // spotlights in the pool (headlamps, and a fitted vehicle's spotlamps take one more each) (read once, at the start)
   candela: 140, // a full-on headlamp pair, at the middle of its beam
   dayShare: 0.12, // how strong they are in full daylight, against at night
   reach: 40, // metres: the light is gone by here
@@ -68,16 +68,41 @@ export class VehicleLights {
     const cands = [];
     for (const u of units) {
       const q = u.quad;
-      if (!q.model?.userData.beams?.length) continue;
-      cands.push({ id: u.id, unit: u, level: q.headlightLevel ?? 0, distance: q.position.distanceTo(from), mine: u === mine, lighting: u === lighting });
+      if (q.model?.userData.beams?.length) cands.push({ id: u.id, unit: u, level: q.headlightLevel ?? 0, distance: q.position.distanceTo(from), mine: u === mine, lighting: u === lighting });
+      // A fitted pair of spotlamps is a second light, right after the same vehicle's headlamps (the sort is stable).
+      if (q.spotlamps?.level > 0.02 && q.model?.userData.spotLamps?.length) {
+        cands.push({ id: `${u.id}:spot`, unit: u, spot: true, level: q.spotlamps.level, distance: q.position.distanceTo(from), mine: u === mine, lighting: u === lighting });
+      }
     }
     this.lit = pickLit(cands, this.pool.length);
     const strength = p.dayShare + (1 - p.dayShare) * darkness;
     this.pool.forEach((light, i) => {
       const id = this.lit[i];
-      const u = id && cands.find((c) => c.id === id).unit;
+      const c = id && cands.find((x) => x.id === id);
+      const u = c?.unit;
       if (!u) {
         light.intensity = 0;
+        return;
+      }
+      if (c.spot) {
+        // Between the pair, pointing the way they were aimed at the bench (a badly aimed pair is low and off to one side).
+        const sp = u.quad.spotlamps;
+        const sl = sp.p;
+        const lenses = u.quad.model.userData.spotLamps;
+        _a.set(0, 0, 0);
+        for (const b of lenses) _a.add(b.getWorldPosition(_b));
+        _a.divideScalar(lenses.length);
+        lenses[0].getWorldQuaternion(_q);
+        const aim = sp.aimAngles();
+        _fwd.set(Math.sin(aim.yaw), -Math.sin(aim.pitch), Math.cos(aim.yaw)).applyQuaternion(_q);
+        light.position.copy(_a);
+        light.target.position.copy(_a).addScaledVector(_fwd, 10);
+        light.color.setHex(0xf4f8ff);
+        light.intensity = sl.candela * c.level * strength;
+        light.distance = sl.reach;
+        light.angle = sl.angle;
+        light.penumbra = sl.penumbra;
+        light.decay = sl.decay;
         return;
       }
       const q = u.quad;

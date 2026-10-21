@@ -74,6 +74,7 @@ export const RADIAL_ITEMS = [
   { label: 'Fuel tap', key: 'KeyF' },
   { label: 'Dipstick', key: 'KeyY', hold: 1.2, where: 'foot' },
   { label: 'Lights', key: 'KeyP', where: 'ride', note: 'Yak, Moorlands and the quads that have a switch' },
+  { label: 'Spotlamps', key: 'Digit9', where: 'ride', note: 'Once fitted at the bench' },
   { label: 'Left indicator', key: 'Comma', where: 'ride' },
   { label: 'Right indicator', key: 'Period', where: 'ride' },
   { label: 'Hazards', key: 'Equal', where: 'ride' },

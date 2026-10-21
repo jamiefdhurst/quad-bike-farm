@@ -68,6 +68,7 @@ const JOB_TEXT = {
   packing: 'silencer repacked',
   coolant: 'coolant topped up',
   bore: 'big-bore kit fitted',
+  spotlamps: 'spotlamps fitted',
   topEnd: 'top end rebuilt, new piston and rings',
   chain: 'chain adjusted and oiled',
   valves: 'valve clearances set',

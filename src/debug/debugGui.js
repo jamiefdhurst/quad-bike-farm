@@ -313,6 +313,12 @@ export class DebugGui {
     if (u.quad.lights) r.add({ get v() { return unit().quad.lights?.mode; }, set v(x) { unit().quad.lights?.set(x); } }, 'v', LIGHT_MODES).name('lights').listen();
     // The red's lights and HI / LO rockers on its switch pod (off, dipped, main beam): the same three positions, P in the game.
     if (u.quad.barLights) r.add({ get v() { return unit().quad.barLights?.mode; }, set v(x) { unit().quad.barLights?.set(x); } }, 'v', unit().quad.barLights.modes).name('lights (the bars\' pod or switch)').listen();
+    if (u.quad.spotlamps.canFit) {
+      // Fitted at the bench in the game; here either way. 9 switches them.
+      tick(r, 'spotlamps fitted (the bench job)', () => unit().quad.spotlamps.fitted, (v) => (v ? unit().quad.spotlamps.fit(1) : unit().quad.spotlamps.remove()));
+      tick(r, 'spotlamps on (9)', () => unit().quad.spotlamps.on, (v) => (unit().quad.spotlamps.on = v && unit().quad.spotlamps.fitted));
+      show(r, 'spotlamps burning (0 to 1)', () => round(unit().quad.spotlamps.level));
+    }
     if (u.quad.radio) {
       tick(r, 'radio on', () => unit().quad.radio?.on ?? false, (v) => unit().quad.radio?.set(v));
       set(r, 'radio volume', () => round(unit().quad.radio?.volume ?? 0), (v) => unit().quad.radio?.setVolume(v), 0, 1);
@@ -339,6 +345,7 @@ export class DebugGui {
     tick(p, 'valves too tight (not worn wide)', () => unit().quad.faults.kept.valveTight, (v) => (unit().quad.faults.kept.valveTight = v));
     tick(p, 'chain off the sprocket', () => unit().quad.faults.chainOff, (v) => (unit().quad.faults.kept.chainOff = v));
     set(p, 'chain oil (0 bone dry)', () => round(unit().quad.faults.kept.chainLube), (v) => (unit().quad.faults.kept.chainLube = v), 0, 1);
+    if (u.quad.spotlamps.canFit) set(p, 'spotlamps aim (1 is true; lower points low and off to one side)', () => round(unit().quad.spotlamps.aim), (v) => (unit().quad.spotlamps.aim = v), 0, 1);
     set(p, 'wet brakes', () => round(unit().quad.brakes.wet), (v) => (unit().quad.brakes.wet = v), 0, 1);
     if (u.quad.carbIce.enabled) set(p, 'iced carb (ice)', () => round(unit().quad.carbIce.ice), (v) => (unit().quad.carbIce.ice = v), 0, 1);
     if (u.engine.params.compressionIgnition) {

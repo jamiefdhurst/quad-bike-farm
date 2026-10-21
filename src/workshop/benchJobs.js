@@ -37,6 +37,7 @@ export const DEFAULT_BENCH_PARAMS = {
   chainOilShort: 0.5, // chain oil left after too little was put on
   packingBotched: 0.3, // silencer blown-out level left after a badly packed one (too loose or stuffed too tight)
   filterLeft: 0.3, // air filter clog left after one that was blown through badly
+  spotBotchedAim: 0.35, // aim of a pair of spotlamps fitted badly (1 is true; lower points low and off to one side)
   pressureOff: 0.6, // psi under (or over) stock that a tyre fill at the compressor ends up when the hold was let go early or held too long
 };
 
@@ -52,6 +53,7 @@ export const BENCH_PARAM_RANGES = {
   oilOver: [0, 0.2, 0.002],
   packingBotched: [0, 1, 0.05],
   filterLeft: [0, 1, 0.05],
+  spotBotchedAim: [0, 1, 0.05],
   pressureOff: [0, 2, 0.1],
   chainBotched: [0, 1, 0.05],
   crashBotched: [0, 1, 0.05],
@@ -174,6 +176,15 @@ export const JOBS = {
       { id: 'rings', text: 'Put the rings on the new piston and oil the bore', kind: 'press' },
       { id: 'fit', text: 'Fit the new barrel, easing it over the rings', kind: 'hold', need: 1.1 },
       { id: 'tight', text: 'Do the head nuts up evenly: snug, not tight', kind: 'hold', need: 0.8, limit: 1.6 },
+    ],
+  },
+  spotlamps: {
+    name: 'Fit a pair of spotlamps',
+    steps: [
+      { id: 'brackets', text: 'Bolt the two stalks to the front, by the headlamps', kind: 'hold', need: 0.9 },
+      { id: 'lamps', text: 'Mount a spotlamp on each stalk', kind: 'press' },
+      { id: 'wire', text: 'Run the wires back to the battery and do the terminals up: snug, not tight', kind: 'hold', need: 0.7, limit: 1.5 },
+      { id: 'aim', text: 'Aim them: level and straight ahead, a long way out', kind: 'hold', need: 0.8, limit: 1.6 },
     ],
   },
   chain: {
@@ -308,7 +319,7 @@ export const JOBS = {
 };
 
 // The last row of the list is the charger, and says either 'chargeOn' or 'chargeOff' depending on where this quad's battery is (bench.js kindsFor).
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'clutch', 'crash', 'newTyres'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'clutch', 'crash', 'newTyres', 'spotlamps'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -577,6 +588,12 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     fitBore(engine, botched ? P.boreBotchedFit : 1, P);
     return botched ? 'Kit fitted, but the head is not torqued evenly: it will not pull as it should' : 'Big-bore kit fitted: it should pull much harder, and run hotter';
   }
+  if (job.kind === 'spotlamps') {
+    // The aim is the fix to get right; the wiring done badly (terminals loose or crushed) is the same botch.
+    const bad = botched || job.outcome('aim') !== 'good' || job.outcome('wire') !== 'good';
+    target.spotlamps.fit(bad ? P.spotBotchedAim : 1);
+    return bad ? 'Spotlamps on, but they are not aimed true: they point low and off to one side. Nine switches them' : 'Spotlamps fitted and aimed down the field. Nine switches them';
+  }
   if (job.kind === 'topEnd') {
     rebuildTopEnd(engine, botched, P);
     return botched ? 'Back together on a new piston, but the head is uneven: it will nip up again sooner. Run it in gently' : 'New piston and rings in, and it turns freely. Run it in gently for a few minutes';
@@ -666,7 +683,8 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
 }
 
 /** Which jobs a quad can have done: the pre-mix oil is for the two-strokes, the sump's for the petrol four-strokes, the chain's for the chain-driven. */
-export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = false, valves = engine.params.strokes !== 2, clutch = false) {
+export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = false, valves = engine.params.strokes !== 2, clutch = false, spots = null) {
+  if (kind === 'spotlamps') return !!spots?.canFit && !spots.fitted;
   if (kind === 'oil') return engine.params.strokes === 2;
   if (kind === 'packing') return engine.params.strokes === 2;
   if (kind === 'coolant') return !!engine.params.waterCooled;
