@@ -333,6 +333,15 @@ export function buildGirlsTab(d) {
   show(mem, 'the farm that remembers', () => g.farmText());
   show(mem, 'the calendar says', () => g.endOfDayNow().text);
   show(mem, 'the date', () => g.seasonText());
+  show(mem, 'the show', () => g.describeShow());
+  button(mem, 'Make today show day (judge the last quad ridden)', () => {
+    g.showForced = true;
+    toast('Today is show day: call it a day at the calendar');
+  });
+  button(mem, 'Clear the rosettes', () => {
+    g.showKeeper.restore([]);
+    g.trophyShelf.show([]);
+  });
   for (const season of SEASONS) button(mem, `Load it as ${season}`, () => g.reloadAsSeason(season));
   button(mem, 'Save the farm now', () => toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));
   button(mem, 'Call it a day now (fade, save)', () => g.callItADay({ force: true }));

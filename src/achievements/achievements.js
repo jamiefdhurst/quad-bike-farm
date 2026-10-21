@@ -122,6 +122,7 @@ export const ACHIEVEMENTS = [
   { id: 'far-end', group: 'Places', name: 'End of the road', hint: 'Follow the farm road all the way to the gate', points: 1, test: (s) => s.has('places', 'farEnd') },
   { id: 'explorer', group: 'Places', name: 'Explorer', hint: 'Visit every place on the list', points: 3, test: (s) => PLACES.every((p) => s.has('places', p)) },
 
+  { id: 'show-first', group: 'Jobs', name: 'Best in show', hint: 'Win a first at the farm show, the last Sunday of a month', points: 3, test: (s) => s.n('showFirst') >= 1 },
   { id: 'bell', group: 'Jobs', name: 'Dinner bell', hint: 'Ring the bell by the barn', points: 1, test: (s) => s.n('bell') >= 1 },
   { id: 'loft', group: 'Jobs', name: 'Up the ladder', hint: 'Climb into the hayloft', points: 1, test: (s) => s.n('loft') >= 1 },
   { id: 'hide', group: 'Jobs', name: 'Hide and seek', hint: 'Hide in the hay', points: 1, test: (s) => s.n('hid') >= 1 },
