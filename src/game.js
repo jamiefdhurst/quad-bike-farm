@@ -253,6 +253,10 @@ import { CatAudio } from './audio/catAudio.js';
 import { Dog, DEFAULT_DOG_PARAMS, DOG_PARAM_RANGES } from './world/dog.js';
 import { DogView } from './world/dogView.js';
 import { DogAudio } from './audio/dogAudio.js';
+import { AnimalAudio } from './audio/animalAudio.js';
+import { FarmAnimals, DEFAULT_ANIMAL_PARAMS, ANIMAL_PARAM_RANGES } from './world/farmAnimals.js';
+import { FarmAnimalsView } from './world/farmAnimalsView.js';
+import { FeedBucket, FeedBin, FEED_BUCKET_PARAM_RANGES } from './items/feedBucket.js';
 import { ElectricFence, createElectricFence, DEFAULT_FENCE_PARAMS, FENCE_PARAM_RANGES } from './world/electricFence.js';
 import { FenceAudio } from './audio/fenceAudio.js';
 import { BELL_PARAM_RANGES } from './world/bell.js';
@@ -303,7 +307,7 @@ import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
 import { planDamage, applyDamage } from './vehicle/rustyDamage.js';
 import { Notebook } from './workshop/notebook.js';
 import { SparesShelf } from './workshop/sparesShelf.js';
-import { FARM_JOBS, MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs } from './world/farmJobs.js';
+import { FARM_JOBS, MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs, feedWanted } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
 import { ClassifiedsView } from './world/classifiedsView.js';
 import { MoneyTinView } from './world/moneyTinView.js';
@@ -1425,6 +1429,7 @@ export class Game {
     this.setUpWildlife();
     this.setUpCat();
     this.setUpDog();
+    this.setUpFarmAnimals();
     this.setUpFence();
     this.setUpRadios();
     this.trafficHost = new TrafficHost(this); // the lane's traffic, the visitors and the two gates (world/trafficHost.js)
@@ -1548,12 +1553,14 @@ export class Game {
     // The silage job needs the tractor, and enough bales still out of the barn for it to be worth asking.
     const hayStacked = Math.max(0, this.farm.save?.hay?.stacked ?? 0);
     const jobIds = availableJobs(this.world.layout)
+      .filter((id) => id !== 'feed') // not drawn from the pool: it is dealt on its own chance below, and goes on top of the day's two
       .filter((id) => id !== 'silage' || (!!this.tractorUnit && !!this.siloRect && this.baleRig.yard.countIn(this.siloRect) < this.spikeParams.balesNeeded))
       .filter((id) => id !== 'logs' || (!!this.logStack && this.logStack.roomForJob())) // the log job needs the tractor and room on the stack
       .filter((id) => id !== 'spray' || sprayWanted(this.farm.save?.spray, this.farm.day)) // a sprayed field stays off the board for a few days
       .filter((id) => id !== 'hay' || (!!this.tractorUnit && !!this.siloRect && hayStacked + DEFAULT_HAY_PARAMS.balesNeeded <= STACK_CAPACITY)); // the hay needs the tractor and room in the barn
     this.jobBoard = new JobBoard({ ids: jobIds, random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
     if (this.jobBoard.has('logs')) this.logStack.startJob();
+    if (feedWanted(createRandom((this.farmSeed ^ Math.imul(this.farm.day + 1, 0x85ebca6b)) >>> 0), this.jobBoardParams.feedChance)) this.jobBoard.add('feed', FARM_JOBS.feed);
     this.setUpServiceJob();
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
     this.setUpHay();
@@ -1581,6 +1588,8 @@ export class Game {
     this.setUpEndOfDay();
     registerTuning('Muck job', this.muckParams, MUCK_PARAM_RANGES);
     registerTuning('Job board', this.jobBoardParams, JOB_BOARD_PARAM_RANGES);
+    registerTuning('Farm animals', this.animalParams, ANIMAL_PARAM_RANGES);
+    registerTuning('Feed bucket', this.feedBucket.params, FEED_BUCKET_PARAM_RANGES);
     this.interaction.add({
       target: this.jobBoardView.proxy,
       isAvailable: () => !this.handsFull && !this.player.isRiding,
@@ -3097,8 +3106,7 @@ export class Game {
   }
 
   /** One girl, the nearest who is free to remark (or the other one), says a line about the job. */
-  saySomethingAboutJob(key, other = false) {
-    const at = this.tipTrailer.model.position;
+  saySomethingAboutJob(key, other = false, at = this.tipTrailer.model.position) {
     const ranked = this.companions
       .filter((c) => c.availability().canRemark && c.root.position.distanceTo(at) < 30)
       .sort((a, b) => a.root.position.distanceTo(at) - b.root.position.distanceTo(at));
@@ -6976,7 +6984,7 @@ export class Game {
   }
 
   get handsFull() {
-    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.coolantBottle.held || this.antiGelBottle.held || !!this.heldBrushwood || !!this.heldWood || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
+    return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.coolantBottle.held || this.antiGelBottle.held || this.feedBucket.held || !!this.heldBrushwood || !!this.heldWood || !!this.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
   }
 
   /** The debug panel's winch button: the green's winch onto this vehicle (or, on the green itself, onto the nearest tree), or off again. */
@@ -11359,6 +11367,7 @@ export class Game {
       else if (this.oilBottle.held && input.wasPressed('KeyG')) this.putOilBottleDown();
       else if (this.coolantBottle.held && input.wasPressed('KeyG')) this.putCoolantBottleDown();
       else if (this.antiGelBottle.held && input.wasPressed('KeyG')) this.putAntiGelBottleDown();
+      else if (this.feedBucket.held && input.wasPressed('KeyG')) this.putFeedBucketDown();
       else if (this.heldBrushwood && input.wasPressed('KeyG')) this.putBrushwoodDown();
       else if (this.heldWood && input.wasPressed('KeyG')) this.putWoodDown();
       else if (this.heldBattery() && input.wasPressed('KeyG')) this.putBatteryDown();
@@ -11452,6 +11461,7 @@ export class Game {
     this.guard.run('updateWildlife', () => this.updateWildlife(dt));
     this.guard.run('updateCat', () => this.updateCat(dt));
     this.guard.run('updateDog', () => this.updateDog(dt, ridden));
+    this.guard.run('updateFarmAnimals', () => this.updateFarmAnimals(dt));
     this.guard.run('updateFence', () => this.updateFence(dt));
     this.trafficHost.update(dt);
     this.guard.run('updateNeighbour', () => this.neighbourHost.update(dt));
@@ -11842,6 +11852,150 @@ export class Game {
     this.dogGirlPrev = new Map(); // girl id -> where she was last frame, for how fast she is walking
   }
 
+  // The hens and the pig ------------------------------------------------------------
+
+  /** The hens' run, the pig's sty, the feed bin and bucket (world/farmAnimals.js, items/feedBucket.js). The feeding job is on the board on some days. */
+  setUpFarmAnimals() {
+    const L = this.world.layout.farmAnimals;
+    const world = this.world;
+    this.animalParams = { ...DEFAULT_ANIMAL_PARAMS };
+    this.farmAnimals = new FarmAnimals({ pen: L.pen, sty: L.sty, random: createRandom(this.farmSeed ^ 0x4e45), params: this.animalParams });
+    this.farmAnimalsView = new FarmAnimalsView({ scene: this.scene, animals: this.farmAnimals, groundAt: (x, z) => world.groundHeightAt(x, z), physics: this.physics, RAPIER: this.RAPIER });
+    this.animalAudio = new AnimalAudio(this.audioHub);
+    this.feedBin = new FeedBin({ scene: this.scene, world, position: L.bin, yaw: L.bin.yaw });
+    this.feedBucket = new FeedBucket({ scene: this.scene, world, position: L.bucket, yaw: L.bucket.yaw });
+    // One proxy over each of the run and the sty, so that looking at the hens or the pig is looking at what to feed.
+    const proxyFor = (rect, which) => {
+      const w = rect.maxX - rect.minX;
+      const d = rect.maxZ - rect.minZ;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, 1.3, d), new THREE.MeshBasicMaterial({ visible: false }));
+      m.position.set((rect.minX + rect.maxX) / 2, world.groundHeightAt((rect.minX + rect.maxX) / 2, (rect.minZ + rect.maxZ) / 2) + 0.65, (rect.minZ + rect.maxZ) / 2);
+      this.scene.add(m);
+      this.interaction.add({
+        target: m,
+        isAvailable: () => !this.player.isRiding,
+        prompt: () => this.feedPrompt(which),
+        interact: () => {},
+        hold: (dt) => this.feedAnimals(which, dt),
+      });
+    };
+    proxyFor(L.pen, 'hens');
+    proxyFor(L.sty, 'pig');
+    this.interaction.add({
+      target: this.feedBin.proxy,
+      isAvailable: () => !this.player.isRiding,
+      prompt: () => (this.feedBucket.held ? { text: this.feedBucket.full ? 'The feed bucket is full' : 'Hold E to fill the bucket with feed' } : { text: 'The feed bin: bring the bucket to fill it' }),
+      interact: () => {},
+      hold: (dt) => this.feedBucket.held && this.feedBucket.fill(dt),
+    });
+    this.interaction.add({
+      target: this.feedBucket.proxy,
+      isAvailable: () => !this.feedBucket.held,
+      prompt: () => (this.handsFull ? { text: 'The feed bucket: put what you are holding down first' } : `Pick up the feed bucket (${Math.round(this.feedBucket.feed * 100)}% full)`),
+      interact: () => {
+        if (!this.handsFull) this.feedBucket.pickUp(this.camera);
+      },
+    });
+  }
+
+  putFeedBucketDown() {
+    const p = this.player.position;
+    const yaw = this.player.yaw;
+    this.feedBucket.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
+  }
+
+  /** What the prompt says at the hens' run or the pig's sty. */
+  feedPrompt(which) {
+    const a = this.farmAnimals;
+    const name = which === 'hens' ? 'hens' : 'pig';
+    const state = a.hungry(which) ? `the ${name} ${which === 'hens' ? 'are' : 'is'} hungry` : `the ${name} ${which === 'hens' ? 'look' : 'looks'} content`;
+    if (!this.feedBucket.held) return { text: `${which === 'hens' ? 'The hens' : 'The pig'}: ${state}   ·   bring the feed bucket to feed ${which === 'hens' ? 'them' : 'her'}` };
+    if (a.hunger[which] <= 0.02) return { text: `${which === 'hens' ? 'The hens have' : 'The pig has'} just been fed` };
+    if (this.feedBucket.empty) return { text: 'The bucket is empty: fill it at the feed bin by the barn' };
+    const p = this.player.position;
+    if (!a.canFeed(which, p.x, p.z)) return { text: `Go right up to the fence to feed the ${name}` };
+    return { text: `Hold E to feed the ${name}` };
+  }
+
+  /** Holding E at the run or the sty with the bucket: feeds them. Returns whether feed went (the pouring sound). */
+  feedAnimals(which, dt) {
+    const a = this.farmAnimals;
+    const b = this.feedBucket;
+    const p = this.player.position;
+    if (!b.held || !a.canFeed(which, p.x, p.z)) return false;
+    const { used, events } = a.feeding(which, dt, b.feed);
+    if (used > 0) b.use(used);
+    for (const e of events) {
+      if (e.type === 'empty') this.hud.toast('The bucket has run out: fill it at the feed bin', 2.5);
+      else if (e.type === 'fed') this.animalsFed(e.which);
+    }
+    if (used > 0 && !this.feedStartSaid) {
+      this.feedStartSaid = true; // once a game: they remark when you begin, not at every scoop
+      if (this.jobBoard.has('feed') && !this.jobBoard.finished.has('feed')) this.saySomethingAboutJob('feedStart', false, this.feedBin.model.position);
+    }
+    return used > 0;
+  }
+
+  /** One lot has had enough. Both, with the job on the board, ticks it off. */
+  animalsFed(which) {
+    const a = this.farmAnimals;
+    this.hud.toast(which === 'hens' ? 'The hens swarm the feed' : 'The pig buries her nose in it', 2.5);
+    if (this.jobBoard.has('feed') && !this.jobBoard.finished.has('feed') && a.allFed) this.finishFeeding();
+  }
+
+  finishFeeding() {
+    if (this.jobBoard.complete('feed')) {
+      this.hud.toast('Everyone fed. Ticked off the board on the barn door', 3);
+      this.jobBoardView.refresh();
+      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
+    }
+    this.saySomethingAboutJob('feedDone', false, this.feedBin.model.position);
+  }
+
+  /** The animals' step: what is running near the hens, where you are, and what they did. */
+  updateFarmAnimals(dt) {
+    const a = this.farmAnimals;
+    if (!a) return;
+    const boarded = this.boardUnit?.quad;
+    const p = boarded ? boarded.position : this.player.position;
+    const threats = this.units.map((u) => ({ x: u.quad.position.x, z: u.quad.position.z, running: !!u.engine?.isRunning, speed: Math.abs(u.quad.speed ?? 0) }));
+    const pig = a.pig;
+    const events = a.update(dt, { threats, you: { x: p.x, z: p.z }, near: Math.hypot(p.x - pig.x, p.z - pig.z) < 60 });
+    this.farmAnimalsView.update(dt);
+    for (const e of events) {
+      if (e.type === 'cluck') this.animalAudio.cluck(e);
+      else if (e.type === 'scatter') {
+        this.animalAudio.squawk(e);
+        this.saySomethingAboutJob('hensScatter', false, new THREE.Vector3(e.x, 0, e.z));
+      } else if (e.type === 'squeal') this.animalAudio.squeal(e);
+      else if (e.type === 'grunt') this.animalAudio.grunt(e);
+    }
+  }
+
+  /** The debug panel's and console's animal buttons. */
+  debugAnimals(action) {
+    const a = this.farmAnimals;
+    if (action === 'hungry') a.hunger.hens = a.hunger.pig = 1;
+    else if (action === 'fed') {
+      a.hunger.hens = a.hunger.pig = 0;
+      a.fed.hens = a.fed.pig = true;
+      if (this.jobBoard.has('feed')) this.finishFeeding();
+    } else if (action === 'bucket') this.feedBucket.setFeed(1);
+    else if (action === 'scatter') {
+      const h = a.hens[0];
+      for (const hen of a.hens) hen.panic = a.p.panicSeconds;
+      this.animalAudio.squawk({ x: h.x, z: h.z });
+    } else if (action === 'squeal') this.animalAudio.squeal(a.pig);
+    else if (action === 'day') {
+      a.reset();
+      this.feedBucket.setFeed(0);
+    } else if (action === 'job') {
+      if (!this.jobBoard.has('feed')) this.jobBoard.add('feed', FARM_JOBS.feed);
+      this.jobBoardView.refresh();
+    } else return false;
+    return true;
+  }
+
   /** What the dog needs to know about you, the quad you are on, the other vehicles and the girls on foot: see world/dog.js for the shape. */
   dogContext(dt, ridden) {
     const boarded = this.boardUnit;
@@ -12096,6 +12250,8 @@ export class Game {
       this.hud.setStatus('Coolant bottle\nY at a water-cooled engine that is off and cool to top it up; keep holding when it is full to flush a stuck thermostat\nG to put it down');
     } else if (this.antiGelBottle.held) {
       this.hud.setStatus('Diesel anti-gel\nY at a diesel (tractor, Yak, Moorland) to treat its tank, so it will not wax in a hard frost; it thaws what has waxed\nG to put it down');
+    } else if (this.feedBucket.held) {
+      this.hud.setStatus(`Feed bucket (${Math.round(this.feedBucket.feed * 100)}% full)\n${this.feedBucket.empty ? 'Hold E at the feed bin by the barn to fill it' : 'Hold E at the hens\' run or the pig\'s sty to feed them'}\nG to put it down`);
     } else if (this.oilBottle.held) {
       this.hud.setStatus('Oil bottle\nY at a four-stroke to top up its oil, near it\nG to put it down');
     } else if (this.toolbox.held) {
@@ -12167,6 +12323,7 @@ export class Game {
       [this.oilBottle, '#e8e2c8', 'Oil bottle'],
       [this.coolantBottle, '#1f9bd0', 'Coolant bottle'],
       [this.antiGelBottle, '#3a7bd5', 'Diesel anti-gel'],
+      [this.feedBucket, '#c9a553', 'Feed bucket'],
       ...this.brushwood.filter((h) => !h.used).map((h) => [h, '#6b4d30', 'Brushwood']),
       ...(this.woodPieces ?? []).filter((w) => w.onGround && w.kind === 'round').map((w) => [w, '#7a5a3a', 'Round']),
       ...[...this.batteries.values()].filter((b) => b.out).map((b) => [b, '#c2231b', b.name]),

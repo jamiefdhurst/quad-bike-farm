@@ -328,6 +328,11 @@ export function buildGameTree(g, host) {
   const farm = group(() => ({
     muck: num(() => g.muck.load, (v) => g.debugSetMuck(v), 0, 1, '', 'muck in the tipping trailer'),
     laid: ro(() => g.muck.laid, '', 'patches laid on the stubble this job'),
+    hensHunger: num(() => g.farmAnimals.hunger.hens, (v) => (g.farmAnimals.hunger.hens = Math.max(0, Math.min(1, v))), 0, 1, '', 'how hungry the hens are, 0 fed to 1 starving'),
+    pigHunger: num(() => g.farmAnimals.hunger.pig, (v) => (g.farmAnimals.hunger.pig = Math.max(0, Math.min(1, v))), 0, 1, '', 'how hungry the pig is, 0 fed to 1 starving'),
+    feedBucket: num(() => g.feedBucket.feed, (v) => g.feedBucket.setFeed(v), 0, 1, '', 'feed in the bucket, 0 empty to 1 full'),
+    feedJob: flag(() => g.jobBoard.has('feed'), (v) => v && g.debugAnimals('job'), 'the feeding job is on the board (setting it puts it there)'),
+    hensScatter: flag(() => false, (v) => v && g.debugAnimals('scatter'), 'set to true: the hens scatter'),
     muckDone: flag(() => g.muck.done, (v) => v && g.debugFinishMuck(), 'the muck job is done (ticks the board)'),
     bonfire: text(() => `${g.bonfire.state}, ${g.bonfire.piled} on the pile, ${Math.round(g.bonfire.intensity * 100)}% blaze`, 'the bonfire (world/bonfire.js)'),
     radios: flag(() => g.radioUnits().some((u) => u.quad.radio.on), (v) => g.setAllRadios(v), 'every radio in the Land Rovers and the cars: set on or off together'),

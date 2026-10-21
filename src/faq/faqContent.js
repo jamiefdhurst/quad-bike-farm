@@ -1587,6 +1587,24 @@ export const FAQ_SECTIONS = [
         spoiler: true,
       },
       {
+        q: 'How do I feed the hens and the pig?',
+        a: `On some days "Feed the hens and the pig" is on the chalkboard, on top of the day's others. Pick up the feed bucket by the bin against the barn's north wall (look at it and press <kbd>E</kbd>), then
+          hold <kbd>E</kbd> at the bin to fill it. Carry it round to the hens' run and the pig's sty west of the barn, stand right up to the fence and hold <kbd>E</kbd> on each: a few seconds
+          feeds them. One full bucket does both. <kbd>G</kbd> puts the bucket down. When both have been fed the job is ticked off and pays like any other. You can feed them on a day it is not on the board, and they are
+          hungry again as the day goes on, but nothing happens to them if you never do.`,
+        tip: 'Fill the feed bucket at the bin by the barn, then hold E at the hens\' run and the pig\'s sty.',
+      },
+      {
+        q: 'Why is the pig squealing, and why are the hens at the fence?',
+        a: `They are hungry. As the day goes on they get hungrier, and once they are, the pig squeals when you are near and the hens crowd the fence closest to you. Feed them (see the feeding question) and they settle.`,
+      },
+      {
+        q: 'Why did the hens scatter and squawk?',
+        a: `A vehicle with its engine running came too close to their run, and the faster it was going the further off they noticed it. Switch it off when you stop near them. They can't be hurt and settle a few seconds after it has gone.
+          The pig only grunts at an engine. Amy tells you to switch it off; Jess thinks it is hilarious.`,
+        tip: 'A quad left running near the hens scatters them. Switch it off when you stop by the run.',
+      },
+      {
         q: 'What is the ticking fence on the hill, and what happens if I touch it?',
         a: `It is an electric fence across the hill pasture, two strands of yellow tape on white stakes, with a gap in it for you to ride through (look for the pair of stout posts and the sign with the lightning bolt). The box on the hedge at the east end ticks and blinks. Touch the tape with the front or back of a quad, or walk into it, and it jolts you: the view shakes, you lose some speed, and whoever is on the quad yelps. A girl who sees it will say something about it. It only zaps once for each brush, so you won't be stuck in a loop.`,
         tip: 'The fence across the hill pasture is live. Go through the gap by the sign, not the tape.',
@@ -1812,7 +1830,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What are the chalkboards in the barn?',
         a: `Today's farm jobs. Walk into the barn to the back wall and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
-          entry when you've cleared the lot. The jobs are the muck, the spraying (when the field wants it) and, if the tractor is about, the silage, the hay and splitting logs; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
+          entry when you've cleared the lot. The jobs are the muck, the spraying (when the field wants it), feeding the hens and the pig (on some days) and, if the tractor is about, the silage, the hay and splitting logs; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {

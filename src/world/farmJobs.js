@@ -160,14 +160,26 @@ export const FARM_JOBS = {
     hint: 'Fit the log splitter on the tractor, put a round on the beam and hold E to push it through, then carry the logs to the stack by the hedge',
     needs: 'logYard',
   },
+  feed: {
+    label: 'Feed the animals',
+    chalk: 'Feed the hens and the pig',
+    hint: 'Fill the bucket from the feed bin by the barn, then hold E at the hens\' run and again at the pig\'s sty',
+    needs: 'farmAnimals',
+  },
   spray: SPRAY_JOB, // only on the board while the field wants it (the game leaves it off for the days a spray lasts)
 };
 
 export const DEFAULT_JOB_BOARD_PARAMS = {
   jobsPerDay: 2, // how many of the jobs that exist go on the board (all of them, while there are fewer)
+  feedChance: 0.35, // the chance on any day that feeding the animals is a job (they get hungry whether or not it is)
 };
 
-export const JOB_BOARD_PARAM_RANGES = { jobsPerDay: [1, 6, 1] };
+export const JOB_BOARD_PARAM_RANGES = { jobsPerDay: [1, 6, 1], feedChance: [0, 1, 0.05] };
+
+/** Whether today is a day for feeding the animals: `random` is a stream dealt from the farm's seed and the day, so it differs by day and repeats on a reload. */
+export function feedWanted(random, chance) {
+  return random() < chance;
+}
 
 /** The ids of the jobs this farm can do (its layout has what they need). */
 export function availableJobs(layout, jobs = FARM_JOBS) {

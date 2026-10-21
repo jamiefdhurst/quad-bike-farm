@@ -30,6 +30,7 @@ export function createHost(g, { copy = () => {} } = {}) {
     toolbox: g.toolbox,
     'oil-bottle': g.oilBottle,
     'coolant-bottle': g.coolantBottle,
+    'feed-bucket': g.feedBucket,
     leads: g.leads,
   };
   const itemNames = Object.keys(items).filter((k) => items[k]);
@@ -52,6 +53,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       dutchbarn: layout.dutchBarn,
       fieldshed: layout.fieldShed,
       muckheap: layout.muckHeap,
+      animals: layout.farmAnimals ? { x: layout.farmAnimals.pen.maxX + 2.5, z: (layout.farmAnimals.pen.minZ + layout.farmAnimals.sty.maxZ) / 2 } : null,
       trough: layout.trough,
       road: layout.road?.pad,
       ford: layout.hill ? { x: layout.hill.lane.x, z: layout.hill.stream.z } : null,

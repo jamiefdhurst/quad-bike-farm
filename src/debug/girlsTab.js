@@ -321,6 +321,14 @@ export function buildGirlsTab(d) {
   button(out, 'Put the cat asleep on the nearest vehicle', () => g.debugCat('perch') || toast('No open vehicle to put it on'));
   button(out, 'Shoo the cat', () => g.debugCat('shoo') || toast('The cat is not near enough, or is already off'));
   button(out, 'Keep the cat in the barn / let it out', () => g.debugCat('shelter'));
+  show(out, 'hens and pig', () => `hens ${Math.round(g.farmAnimals.hunger.hens * 100)}% hungry (${g.farmAnimals.hens.map((h) => h.mode).join('/')}), pig ${Math.round(g.farmAnimals.hunger.pig * 100)}% hungry (${g.farmAnimals.pig.mode}); bucket ${Math.round(g.feedBucket.feed * 100)}%; feed job ${g.jobBoard.has('feed') ? (g.jobBoard.finished.has('feed') ? 'done' : 'on the board') : 'not today'}`);
+  button(out, 'Make the hens and the pig hungry', () => g.debugAnimals('hungry'));
+  button(out, 'Fill the feed bucket', () => g.debugAnimals('bucket'));
+  button(out, 'Scatter the hens', () => g.debugAnimals('scatter'));
+  button(out, 'Make the pig squeal', () => g.debugAnimals('squeal'));
+  button(out, 'Put the feeding job on the board', () => g.debugAnimals('job'));
+  button(out, 'Feed them both now', () => g.debugAnimals('fed'));
+  button(out, 'A fresh day for the animals', () => g.debugAnimals('day'));
   show(out, 'the dog', () => `${g.dog.mode}${g.dog.riding ? ` on ${g.dog.rackId}` : ''}${g.dog.target ? ` after ${g.dog.target}` : ''}`);
   button(out, 'Call the dog over to you', () => g.debugDog('call'));
   button(out, 'Put the dog on your rack', () => g.debugDog('ride') || toast('You need to be on a quad with a rear rack'));
