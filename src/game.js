@@ -10702,6 +10702,7 @@ export class Game {
     // the pause starts or the window changes, and twice a second in case something finished loading. The very first frame runs
     // regardless, so the camera is put at your eyes and everything is placed before the start screen shows the farm behind it.
     this.setPaused(this.isPaused());
+    if (this.photos.modeActive && this.paused) this.photos.exitMode(); // the pause card ends photo mode
     if (this.firstFrameDone) this.bakeWear(this.paused ? 12 : 2);
     if (this.paused && this.firstFrameDone) {
       this.updateEndOfDay(dt); // a fade to the next day carries on if the pointer lock is let go of
@@ -10710,6 +10711,14 @@ export class Game {
         this.redraw = false;
         this.pausedDrawAt = started;
       }
+      input.endFrame();
+      return;
+    }
+    // Photo mode: the world stands still, so none of the game below runs; the camera flies, the held poses show and the shutter goes.
+    if (this.photos.modeActive) {
+      this.photos.modeFrame(dt, input);
+      this.renderer.render(this.scene, this.camera);
+      this.photos.afterRender();
       input.endFrame();
       return;
     }
@@ -10737,14 +10746,12 @@ export class Game {
       this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);
     }
 
-    // 5: raise the camera (photos/photoHost.js), unless you are in a menu, up the ladder or hidden in the hay.
-    if (
-      input.wasPressed('Digit5') &&
-      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.shedView.isOpen || this.photos.view.isOpen) &&
-      !(this.climb || this.tryst || this.hiding.active)
-    ) {
-      this.photos.press();
-    }
+    // 7: raise the camera, 8: photo mode (photos/photoHost.js), unless you are in a menu, up the ladder or hidden in the hay.
+    const noPhoto =
+      this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen ||
+      this.classifiedsView.isOpen || this.moneyTin.isOpen || this.shedView.isOpen || this.photos.view.isOpen || this.climb || this.tryst || this.hiding.active;
+    if (input.wasPressed('Digit7') && !noPhoto) this.photos.press();
+    if (input.wasPressed('Digit8') && !noPhoto) this.photos.enterMode();
 
     // 6: wave. Close girls wave back, a free girl further off comes over, a driving one pulls up (npc/playerWave.js).
     if (

@@ -4802,3 +4802,17 @@ Settled with Jamie: the show is on the last Sunday of a month, not a random day.
   - **Records board:** a "Show rosettes" line ("2 firsts, 5 placed"), through `Records.extra` and `allLines()`; with six rows the board's rows are 52 px apart, not 58.
   - **Rosette:** an inline SVG on the card (`rosetteSvg`), and the card scrolls if it is taller than the screen.
 - **Not checked:** the shelf, the rosettes, the calendar dot, the extra records row and the card by eye, a girl's quad being picked correctly when she is off riding another, and the new voice lines by ear.
+
+## Photo mode (#35, was TODO 140)
+
+Jamie's answers: **freeze everything** (the sim, the girls, the clock and weather), **the console's free-fly camera reused**, **keys 7 and 8** (the quick snap moves from 5 to 7, photo mode is 8; 5 is fifth gear, which the key editor's list had missed, so it is listed now), a **full-size PNG** as well as the corkboard print, **toggles to hide the HUD and to pose the girls**, and **one bucket-list entry**.
+
+- `src/photos/photoMode.js` is pure (tests in `tests/photoMode.test.js`): `PhotoCam` steps with `flightVelocity` (the console's fly, W/S along the view, A/D level, `E` up, `Q` down, Shift fast), kept `leash` 40 m from where it was raised and between `floor` 0.25 m and `ceiling` 60 m over the ground, with a zoom of 18 to 90 degrees on the wheel. `pngSize` and `pngName` are the saved file's size (the screen's shape, `pngWidth` 1920 across, never bigger than the canvas) and name (`farm-day3-0745-1.png`). Tunables are "Photo mode" in the Tune tab (items and workshop).
+- `PhotoHost.modeFrame` stands in for the whole game frame: `game.frame` returns after it, drawing and calling `afterRender`, so nothing else updates (no clock, weather, physics, girls, voice, achievements). It does keep the sky centred on the camera and the draw distance on it. Sound is held (`audioHub.setPaused`) and speech paused, and both resume on leaving. The pause card ends photo mode.
+- The girls: `G` makes each girl in the shot react with her usual photo reaction (pose, face or palm, weighted by her taste and mood, as with the quick snap), and photo mode runs only her reaction and her rig, holding the pose at 1.4 s (all three are fully up by 0.3 s). She does not walk or talk. `G` again clears them. A girl asleep does not pose.
+- The shutter (`Enter` or a click) is the existing one with no delay: the print goes on the board (and counts for the existing entries) and the full-size PNG is downloaded. A blank shot is not pinned but is still saved.
+- What you carry hangs from the camera and would float in front of the lens, so it is hidden while photo mode is on and restored after, with the camera's position, direction and field of view. `H` hides the `#hud` element. Your own quad and the girls' are in the world and stay.
+- Bucket list: Proper photographer (a photo-mode shot with both girls in it, `photoModeBoth`).
+- Panel and console: a button and a line in the Girls tab's jobs, and `photos.mode`, `photos.hud` and `photos.pose` in the console.
+- Left out: a depth-of-field blur (it wants a post-processing pass the game does not have), filters, a gamepad button, and taking the camera into the barn through its doors with the world frozen (nothing stops it, but it was not looked at).
+- Checked: unit tests and the smoke test (which does not enter photo mode). Not checked in the running game: the flight, the feel of the mouse, the held poses, the PNG download, the HUD hiding, or what is left of a carried item.

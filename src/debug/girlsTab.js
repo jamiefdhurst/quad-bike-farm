@@ -298,6 +298,8 @@ export function buildGirlsTab(d) {
   button(jobs, 'Put the bonfire out', () => g.bonfire.putOut() || toast('It is not lit'));
   button(jobs, 'Clear the bonfire, restore brushwood', () => g.debugResetFire());
   button(jobs, 'Take a photo now', () => g.photos.press() || toast('The camera is not ready'));
+  button(jobs, 'Photo mode on or off (8)', () => g.photos.toggleMode());
+  show(jobs, 'Photo mode', () => (g.photos.modeActive ? `on${g.photos.hudHidden ? ', HUD hidden' : ''}${g.photos.girlsPosing ? ', girls posing' : ''}` : 'off'));
   button(jobs, 'Take all the photos down', () => g.photos.clear());
 
   // Animals, the fence, the gates and what comes along the lane.
