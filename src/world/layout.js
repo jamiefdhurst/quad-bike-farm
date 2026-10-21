@@ -65,6 +65,9 @@ export const LAYOUT = {
     lane: { x: -30, toZ: 134, halfWidth: 2.1, sink: 1, hedgeOff: 4.6, hedgeHeight: 3.3 },
     pasture: { minX: -96, maxX: 34, minZ: 134, maxZ: 203 },
     stream: { z: 140, wander: 2.5, halfWidth: 1.6, depth: 0.75, water: 0.32, ford: { halfWidth: 3.4, depth: 0.42, reach: 6 } },
+    // The brook (world/brook.js): the stream carried on east under the pasture's hedge and across the country to the neighbour's, past the south
+    // of her yard and under the public lane in a culvert, to a spring in the field beyond. `points` are [x, z] waypoints from west to east.
+    brook: { points: [[70, 144], [105, 150], [135, 157], [165, 160], [195, 159], [225, 157], [250, 158]], wander: 1.2, source: 18 },
     valley: 2.5,
     banks: [
       { at: 6, rise: 1.2, width: 9 },

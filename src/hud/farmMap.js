@@ -1,6 +1,7 @@
 // The farm map on M: what to draw and where, worked out from the layout, the fields and the track, with no canvas or Three.js, so it can
 // be tested. North is -z and east is +x, so the map puts x across and z down the page, north up. hud/mapView.js draws it.
 
+import { createBrook } from '../world/brook.js';
 import { dutchBarnShape, fieldShedShape } from '../world/outbuildings.js';
 import { neighbourFarmShape } from '../world/neighbourFarm.js';
 
@@ -143,6 +144,8 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (hill) {
     for (let x = hill.pasture.minX; x <= hill.pasture.maxX + 1e-6; x += 2) stream.push({ x, z: hill.streamZ(x), half: hill.halfAt(x) });
     ford = { x: hill.lane.x, z: hill.streamZ(hill.lane.x), half: hill.halfAt(hill.lane.x) };
+    // On under the hedge as the brook, as far as the map goes (it is out of sight in the culvert under the lane, so its width pinches there).
+    for (const p of createBrook(layout)?.line(2) ?? []) if (p.x > hill.pasture.maxX && p.x <= bounds.maxX) stream.push(p);
   }
 
   const pond = hill?.pond ?? null;

@@ -227,6 +227,8 @@ export class World {
   /** How much more water an engine gulps at (x, z) than usual: the stream, when it is up, is deeper and its bow wave bigger. */
   gulpBoostAt(x, z) {
     const hill = this.heights.hill;
+    const brook = this.heights.brook;
+    if (brook && brook.waterAt(x, z) > 0.5) return this.streamLevel.gulp;
     return hill && hill.waterAt(x, z) > 0.5 && Math.abs(z - hill.streamZ(x)) <= hill.halfAt(x) + 1 ? this.streamLevel.gulp : 1;
   }
 
