@@ -33,6 +33,7 @@ export const PARKED_SIZES = {
   tractor: { hl: 1.9, hw: 1.0, h: 2.4 },
 };
 
+const EAST_REACH = 1; // m the levelling eases over on the lane side, away from the gateway (see floorAt)
 const rect = (x, z, hx, hz) => ({ minX: x - hx, maxX: x + hx, minZ: z - hz, maxZ: z + hz });
 const inRect = (r, x, z, margin = 0) => x > r.minX - margin && x < r.maxX + margin && z > r.minZ - margin && z < r.maxZ + margin;
 const outside = (r, x, z) => Math.hypot(Math.max(r.minX - x, 0, x - r.maxX), Math.max(r.minZ - z, 0, z - r.maxZ));
@@ -126,13 +127,18 @@ export function createNeighbourFarm(layout) {
   const inYard = (x, z, margin = 0) => inRect(s.outline, x, z, -margin);
   /**
    * 0..1 how much to level the ground at (x, z) to the yard's, and the level there from `ground(x, z)` at its middle: flat inside the wall,
-   * easing back over `reach` m outside it.
+   * easing back over `reach` m outside it. On the east, towards the lane, it eases over barely a metre (the lane's own edge is 1.1 m from the
+   * wall) except about the gateway, where it takes the full reach to ramp up from the lane; pulled further, the yard's level would drag the
+   * tarmac sideways across a slope and give it a camber.
    */
   function floorAt(x, z, ground, reach = 4) {
-    const d = outside(s.outline, x, z);
-    if (d >= reach) return null;
     const c = s.outline;
-    return { k: 1 - smooth(clamp01(d / reach)), level: ground((c.minX + c.maxX) / 2, (c.minZ + c.maxZ) / 2) };
+    const near = Math.abs(z - s.gateway.z);
+    const eastReach = EAST_REACH + (reach - EAST_REACH) * (1 - smooth(clamp01((near - 6) / 14)));
+    const r = x > c.maxX ? Math.min(reach, eastReach) : reach;
+    const d = outside(c, x, z);
+    if (d >= r) return null;
+    return { k: 1 - smooth(clamp01(d / r)), level: ground((c.minX + c.maxX) / 2, (c.minZ + c.maxZ) / 2) };
   }
   return { shape: s, footprints, covered, builtAt, inYard, floorAt };
 }

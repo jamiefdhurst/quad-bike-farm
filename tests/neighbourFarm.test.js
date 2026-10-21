@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
 import { createRandom } from '../src/core/random.js';
 import { neighbourFarmShape, laneBarriers, createNeighbourFarm, Neighbour, DEFAULT_NEIGHBOUR_PARAMS, NEIGHBOUR_PARAM_RANGES, PARKED_SIZES } from '../src/world/neighbourFarm.js';
+import { createTerrainHeight } from '../src/world/terrainHeight.js';
+import { Track } from '../src/world/track.js';
 import { createOutbuildings } from '../src/world/outbuildings.js';
 import { NEIGHBOUR_VOICE, AMY_NEIGHBOUR_LINES, JESS_NEIGHBOUR_LINES } from '../src/npc/neighbourLines.js';
 import { VISITOR_KINDS } from '../src/world/traffic.js';
@@ -70,6 +72,22 @@ describe('the neighbour\'s yard', () => {
     expect(nf.floorAt(S.outline.minX - 2, 120, ground).k).toBeGreaterThan(0);
     expect(nf.floorAt(S.outline.minX - 2, 120, ground).k).toBeLessThan(1);
     expect(nf.floorAt(S.outline.minX - 6, 120, ground)).toBeNull();
+  });
+
+  it('leaves the lane\'s own ground alone along the wall, so the tarmac has no camber from the yard, but ramps up to it at the gateway', () => {
+    const nf = createNeighbourFarm(LAYOUT);
+    const ground = () => 3;
+    const laneEdge = lane.x - lane.halfWidth;
+    expect(laneEdge).toBeGreaterThan(S.outline.maxX + 1);
+    for (const z of [125, 135, 145]) expect(nf.floorAt(laneEdge, z, ground), `z ${z}`).toBeNull();
+    expect(nf.floorAt(laneEdge, S.gateway.z, ground).k).toBeGreaterThan(0);
+  });
+
+  it('really leaves the terrain under the lane as it was along the wall (the yard does not pull the tarmac sideways)', () => {
+    const track = new Track(LAYOUT.trackPoints);
+    const withYard = createTerrainHeight(LAYOUT, track).heightAt;
+    const without = createTerrainHeight({ ...LAYOUT, neighbourFarm: undefined }, track).heightAt;
+    for (const z of [125, 130, 135, 140, 145]) for (const x of [lane.x - lane.halfWidth, lane.x, lane.x + lane.halfWidth]) expect(withYard(x, z)).toBeCloseTo(without(x, z), 6);
   });
 });
 
