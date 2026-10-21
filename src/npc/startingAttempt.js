@@ -24,6 +24,9 @@ export const DEFAULT_STARTING_PARAMS = {
   blipGap: 0.3, // ...and shut between them
   floodedFouling: 0.4, // plug fouling past which she thinks it's flooded (Amy apologises to it)...
   floodedRich: 0.2, // ...or mixture richness past which she does
+  tickleChance: 0.85, // on an old bike with a tickler, from cold she tickles the carb
+  tickleMax: 2, // up to this many presses (the old bike floods past about three)
+  leverChance: 0.7, // and retards the spark lever before she kicks it; the rest of the time she leaves it where it was
 };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -62,6 +65,10 @@ export class StartingAttempt {
     const { engine, fuel } = this.quad;
     const p = this.p;
     this.timer -= dt;
+    if (this.checkKick) {
+      this.checkKick = false;
+      if (engine.kicked > 0) this.events.push('kickedBack');
+    }
 
     switch (this.phase) {
       case 'reach':
@@ -73,7 +80,9 @@ export class StartingAttempt {
           this.checkedTap = true;
           this.events.push('tapOn');
         }
-        if (this.random() < (engine.temperature < 0.5 ? p.coldChokeChance : p.warmChokeChance)) {
+        // The old bike's ritual first (a tickle and the spark lever): tickled, she leaves the choke alone, as the two together drown it.
+        if (engine.params?.manualTiming) this.oldBikeRitual();
+        if (!this.events.includes('tickle') && this.random() < (engine.temperature < 0.5 ? p.coldChokeChance : p.warmChokeChance)) {
           this.quad.choke = 1;
           this.events.push('chokeOn');
         }
@@ -125,7 +134,10 @@ export class StartingAttempt {
           if (this.pulling) {
             this.quad.helperPull = false; // letting go is the yank
             this.pulling = false;
+            this.checkKick = true; // the kick happens on the quad's next step: look for a kick-back on hers
+            this.quad.helperThrottle = 0;
             this.timer = p.pullWait;
+            if (this.quad.engine.params?.manualTiming) this.rethink(); // the old bike's lever, the tap, a flooded plug: she thinks between kicks
           } else if (this.pulls >= p.maxPulls) {
             engine.setIgnition(false);
             this.finish('gaveUp');
@@ -161,10 +173,28 @@ export class StartingAttempt {
     return this.events;
   }
 
-  /** Draws the cord back for a yank. */
+  /** The old bike's starting ritual: a tickle or two when it is cold, and the spark lever back to where it starts, if she remembers. */
+  oldBikeRitual() {
+    const { engine } = this.quad;
+    const p = this.p;
+    if (engine.params.tickler && engine.temperature < 0.5 && this.random() < p.tickleChance) {
+      const presses = 1 + Math.floor(this.random() * p.tickleMax);
+      for (let i = 0; i < presses; i++) engine.tickle();
+      this.events.push('tickle');
+    }
+    if (this.random() < p.leverChance) {
+      engine.advance = engine.params.startAdvance;
+      this.events.push('retard');
+    }
+  }
+
+  /** Draws the cord back for a yank (a kick on the old bike). */
   beginPull() {
     this.pulls++;
     this.pulling = true;
+    // Flooded, she kicks it over with the throttle open to blow it clear.
+    const e = this.quad.engine;
+    if (e.params?.tickler && (e.tickled > e.params.tickleFloodAbove || e.fouling > this.p.floodedFouling)) this.quad.helperThrottle = 1;
     this.timer = this.between(this.p.pullHoldMin, this.p.pullHoldMax);
     this.quad.helperPull = true;
     if (this.pulls === 1) this.events.push('pull');
@@ -231,9 +261,12 @@ export class StartingAttempt {
       fuel.tap = 'on';
       this.checkedTap = true;
       this.events.push('remembered', 'tapOn');
-    } else if (engine.temperature < 0.5 && this.quad.choke < 0.5) {
+    } else if (engine.temperature < 0.5 && this.quad.choke < 0.5 && !(engine.tickled > 0.3)) { // (tickled, it wants no choke as well)
       this.quad.choke = 1;
       this.events.push('remembered', 'chokeOn');
+    } else if (engine.params?.manualTiming && engine.advance > engine.params.kickAbove) {
+      engine.advance = engine.params.startAdvance; // it kicked back: that is the lever
+      this.events.push('remembered', 'retard');
     } else if (this.needsKnack() && !this.knowsKnack) {
       this.knowsKnack = true;
       this.events.push('remembered');

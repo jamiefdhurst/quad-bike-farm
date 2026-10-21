@@ -43,21 +43,53 @@ function sampleHeights(model, nx, nz) {
     // (not the tarp, the damage, the invisible box you look at to get on, or a lamp's faked beam)
     if (o.isMesh && o.visible && o.name !== 'tarp' && !/proxy|beam|halo/i.test(o.name) && !o.userData.rustyDamage && o.material?.visible !== false && !(o.material?.transparent && o.material.opacity < 0.05)) meshes.push(o);
   });
-  const ray = new THREE.Raycaster();
-  const down = new THREE.Vector3(0, -1, 0).transformDirection(root.matrixWorld);
-  ray.far = 3;
   const heights = new Float32Array((nx + 1) * (nz + 1));
-  for (let j = 0; j <= nz; j++) {
-    for (let i = 0; i <= nx; i++) {
-      const x = -0.95 + (1.9 * i) / nx;
-      const z = -1.45 + (2.85 * j) / nz;
-      let top = 0;
-      for (const [dx, dz] of [[0, 0], [0.04, 0], [-0.04, 0], [0, 0.04], [0, -0.04], [0.04, 0.04], [-0.04, 0.04], [0.04, -0.04], [-0.04, -0.04], [0.02, 0], [-0.02, 0], [0, 0.02], [0, -0.02]]) { // thirteen rays, so a thin bar or grip between two points is not missed
-        ray.set(root.localToWorld(new THREE.Vector3(x + dx, 2.2, z + dz)), down);
-        const hit = ray.intersectObjects(meshes, false)[0];
-        if (hit) top = Math.max(top, root.worldToLocal(hit.point.clone()).y);
+  // Rasterised, not ray-cast: every triangle is laid flat on the grid (in bodyRoot space) and each sample point it covers keeps the highest
+  // surface seen. The same thirteen sample points round every grid point as the rays had (so a thin bar or grip between points is not missed),
+  // but one pass over the triangles instead of ten thousand rays through all of them: 600 ms of the load for a bike of 30,000 triangles.
+  const dx = 1.9 / nx;
+  const dz = 2.85 / nz;
+  const OFFS = [[0, 0], [0.04, 0], [-0.04, 0], [0, 0.04], [0, -0.04], [0.04, 0.04], [-0.04, 0.04], [0.04, -0.04], [-0.04, -0.04], [0.02, 0], [-0.02, 0], [0, 0.02], [0, -0.02]];
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const m = new THREE.Matrix4();
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  for (const mesh of meshes) {
+    const pos = mesh.geometry.attributes.position;
+    if (!pos) continue;
+    const index = mesh.geometry.index;
+    m.multiplyMatrices(inv, mesh.matrixWorld);
+    const tris = index ? index.count / 3 : pos.count / 3;
+    for (let t = 0; t < tris; t++) {
+      const [ia, ib, ic] = index ? [index.getX(t * 3), index.getX(t * 3 + 1), index.getX(t * 3 + 2)] : [t * 3, t * 3 + 1, t * 3 + 2];
+      a.fromBufferAttribute(pos, ia).applyMatrix4(m);
+      b.fromBufferAttribute(pos, ib).applyMatrix4(m);
+      c.fromBufferAttribute(pos, ic).applyMatrix4(m);
+      const det = (b.z - c.z) * (a.x - c.x) + (c.x - b.x) * (a.z - c.z);
+      if (Math.abs(det) < 1e-12) continue; // edge-on from above: it covers no sample
+      const i0 = Math.max(0, Math.ceil((Math.min(a.x, b.x, c.x) - 0.04 + 0.95) / dx));
+      const i1 = Math.min(nx, Math.floor((Math.max(a.x, b.x, c.x) + 0.04 + 0.95) / dx));
+      const j0 = Math.max(0, Math.ceil((Math.min(a.z, b.z, c.z) - 0.04 + 1.45) / dz));
+      const j1 = Math.min(nz, Math.floor((Math.max(a.z, b.z, c.z) + 0.04 + 1.45) / dz));
+      for (let j = j0; j <= j1; j++) {
+        for (let i = i0; i <= i1; i++) {
+          const x = -0.95 + i * dx;
+          const z = -1.45 + j * dz;
+          let top = heights[j * (nx + 1) + i];
+          for (const [ox, oz] of OFFS) {
+            const px = x + ox;
+            const pz = z + oz;
+            const l1 = ((b.z - c.z) * (px - c.x) + (c.x - b.x) * (pz - c.z)) / det;
+            const l2 = ((c.z - a.z) * (px - c.x) + (a.x - c.x) * (pz - c.z)) / det;
+            const l3 = 1 - l1 - l2;
+            if (l1 < 0 || l2 < 0 || l3 < 0) continue;
+            const y = l1 * a.y + l2 * b.y + l3 * c.y;
+            if (y > top) top = y;
+          }
+          heights[j * (nx + 1) + i] = top;
+        }
       }
-      heights[j * (nx + 1) + i] = top;
     }
   }
   return heights;

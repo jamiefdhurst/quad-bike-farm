@@ -289,6 +289,8 @@ export class DebugGui {
     if (!u.quad.fuel.params.noTap) show(r, 'fuel slopped away from the tap (steep bank, low tank)', () => (unit().quad.fuel.uncovered ? 'yes' : 'no'));
     // The Land Rover has a choke (Q and Z) but no fuel tap, so the tap's absence doesn't mean no choke.
     if (!u.quad.engine.params.injected && (!u.quad.fuel.params.noTap || (u.quad.landRover && !u.quad.engine.params.compressionIgnition))) set(r, 'choke', () => round(unit().quad.choke), (v) => (unit().quad.choke = v), 0, 1, 0.1);
+    if (e.params.manualTiming) set(r, 'spark lever (0 retarded, 1 advanced)', () => round(unit().engine.advance), (v) => (unit().engine.advance = v), 0, 1, 0.05);
+    if (e.params.tickler) set(r, 'tickler fuel in the bowl (floods past ' + e.params.tickleFloodAbove + ')', () => round(unit().engine.tickled), (v) => (unit().engine.tickled = v), 0, 3, 0.1);
     if (u.quad.sump) set(r, 'engine oil', () => round(unit().quad.sump?.level ?? 0), (v) => unit().quad.sump && (unit().quad.sump.level = v), 0, unit().quad.sump?.params.maxLevel ?? 1); // the picked vehicle can change before the next rebuild (past 1 is overfilled)
     set(r, 'battery', () => round(unit().engine.battery), (v) => (unit().engine.battery = v), 0, 1);
     show(r, 'battery is', () => this.game.batteryWhere(unit()));
@@ -357,6 +359,7 @@ export class DebugGui {
     tick(p, 'cable freezes open (not shut)', () => unit().quad.iceCable.mode === 'open', (v) => (unit().quad.iceCable.mode = v ? 'open' : 'shut'));
     tick(p, 'brake binding (rides free)', () => unit().quad.brakes.binding, (v) => unit().quad.brakes.setBinding(v));
     set(p, 'plug fouling', () => round(unit().engine.fouling), (v) => (unit().engine.fouling = v), 0, 1);
+    if (e.params.tickler) set(p, 'flooded by the tickler (fuel in the bowl)', () => round(unit().engine.tickled), (v) => (unit().engine.tickled = v), 0, 3, 0.1);
     set(p, 'air filter clogged', () => round(unit().engine.clog), (v) => (unit().engine.clog = v), 0, 1);
     set(p, 'wear (a service clears it)', () => round(unit().engine.wear), (v) => (unit().engine.wear = v), 0, e.params.wearMax ?? 1);
     set(p, 'piston looseness (slap when cold; only a new piston clears it)', () => round(unit().engine.pistonWear ?? unit().engine.wear), (v) => (unit().engine.pistonWear = v), 0, e.params.wearMax ?? 1);
@@ -424,6 +427,15 @@ export class DebugGui {
     row(one, 'Cool it right down', () => this.unit().engine.setTemperature(0));
     row(one, 'Turn every radio on', () => g.setAllRadios(true));
     row(one, 'Turn every radio off', () => g.setAllRadios(false));
+    row(one, 'Tickle its carb (the old bike)', () => {
+      const q = this.unit().quad;
+      if (q.engine.params.tickler) q.tickle();
+      else g.hud.toast('It has no tickler');
+    });
+    row(one, 'Kick it over for 0.6 s (the old bike)', () => {
+      const e = this.unit().engine;
+      g.hud.toast(!e.params.kickStart ? 'It has no kickstart' : e.pull(0.6) === 0 ? 'It kicked back' : 'Kicked');
+    });
     row(one, 'Fill the tank', () => (this.unit().quad.fuel.litres = this.unit().quad.fuel.params.tankCapacity));
     row(one, 'Winch it onto the bale trailer', () => g.hud.toast(g.debugLoad(this.unit())));
     row(one, 'Pay it back off the trailer', () => g.hud.toast(g.debugUnload(this.unit())));

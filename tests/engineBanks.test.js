@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import * as SPECS from '../src/vehicle/quadSpecs.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC } from '../src/vehicle/quadSpecs.js';
 import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
 
 describe('engine banks', () => {
@@ -84,6 +84,21 @@ describe('engine banks', () => {
       expect(grains.filter((g) => g.kind === 'idle').length, id).toBeGreaterThan(100);
       expect(grains.filter((g) => g.kind === 'accel').length, id).toBeGreaterThan(100);
     }
+  });
+
+  it("gives the old bike a bank of its own, with a kick and a run-down, idling about where its engine does", () => {
+    expect(PLOVER_SPEC.audio.recBank).toBe('engine-bank-plover');
+    const bank = JSON.parse(readFileSync('public/audio/engine-bank-plover.json', 'utf8'));
+    expect(bank.oneshots.handCrank).toBeTruthy(); // the kickstart's swing
+    expect(bank.oneshots.shutdown).toBeTruthy();
+    const grains = bank.grains.filter((g) => g.ok !== false);
+    expect(grains.filter((g) => g.kind === 'idle').length).toBeGreaterThan(100);
+    expect(grains.filter((g) => g.kind === 'accel').length).toBeGreaterThan(100);
+    // A two-stroke fires every turn, so the bank's rpm (120 / pulse length) is twice the engine's: its idle sits near the recording's.
+    const idle = grains.filter((g) => g.kind === 'idle').map((g) => g.rpm / 2).sort((a, b) => a - b);
+    const median = idle[Math.floor(idle.length / 2)];
+    expect(median).toBeGreaterThan(PLOVER_SPEC.idleRange[0] * 0.9);
+    expect(median).toBeLessThan(PLOVER_SPEC.idleRange[1] * 1.2);
   });
 
   it('gives the mini moto, the ATC and the UTV their own banks', () => {

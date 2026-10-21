@@ -15,12 +15,16 @@ export const DEFAULT_BARN_FIND_PARAMS = {
   wear: [0.55, 0.8], // engine wear it comes with: a lot of years
   hours: [1900, 2800], // hour meter
   odoMiles: [4200, 7800], // odometer
+  classicMinJobs: 4, // the old bike (always in the barn, bantamBody.js) needs at least this many of its seven jobs...
+  classicMaxJobs: 5, // ...and at most this many
   bodyWear: 0.95, // how worn its body looks (the wear layer, effects/wearLayer.js): rust in every fold, the edges rubbed bare
 };
 
 export const BARN_FIND_RANGES = {
   chance: [0, 1, 0.05],
   minJobs: [1, 6, 1],
+  classicMinJobs: [1, 7, 1],
+  classicMaxJobs: [1, 7, 1],
   maxJobs: [1, 6, 1],
   startBattery: [0, 0.2, 0.01],
   readyAt: [0.1, 1, 0.05],
@@ -35,8 +39,15 @@ export const RUSTY_JOBS = ['fuel', 'carb', 'plug', 'brake', 'tyre', 'battery'];
 
 export const RUSTY_ID = 'rusty';
 
+/** The old bike's jobs (the Plover): the quads' list less the battery (it has none), plus the points to clean and gap and the seized kickstart. */
+export const CLASSIC_JOBS = ['fuel', 'carb', 'plug', 'points', 'brake', 'tyre', 'kick'];
+
+/** The old bike's id: its restoration is a BarnFind like the rusty quad's, always present, with these jobs. */
+export const PLOVER_ID = 'plover';
+
 /** The jobs a given donor spec can need: a pull-start-only quad has no battery to charge. */
 export function jobsFor(spec) {
+  if (spec.classicBike) return CLASSIC_JOBS;
   return RUSTY_JOBS.filter((k) => !(k === 'battery' && spec.engine?.noStarter));
 }
 
@@ -54,6 +65,18 @@ export function pickBarnFind(random, regulars, P = DEFAULT_BARN_FIND_PARAMS) {
   return { donor, jobs: RUSTY_JOBS.filter((k) => left.includes(k)) }; // listed in the bench's order
 }
 
+/**
+ * The old bike's restoration: it is always there, `classicMinJobs` to `classicMaxJobs` of its seven jobs, drawn from its own stream. { donor, jobs }.
+ * The same random numbers give the same plan.
+ */
+export function pickClassicFind(random, spec, P = DEFAULT_BARN_FIND_PARAMS) {
+  const options = jobsFor(spec);
+  const want = Math.min(options.length, P.classicMinJobs + Math.floor(random() * (Math.max(P.classicMaxJobs, P.classicMinJobs) - P.classicMinJobs + 1)));
+  const left = options.slice();
+  while (left.length > want) left.splice(Math.floor(random() * left.length), 1);
+  return { donor: spec, jobs: options.filter((k) => left.includes(k)) };
+}
+
 /** What the engine does when it won't catch yet, for a toast while you crank it. */
 const BLOCKED_BY = {
   fuel: 'It cranks, but the old varnished fuel will not burn',
@@ -62,6 +85,8 @@ const BLOCKED_BY = {
   battery: 'The battery is flat or out: it only clicks. Charge it on the bench charger',
   brake: 'It cranks, but the seized brake is dragging it down',
   tyre: 'It cranks, but it is not safe to start it on a flat tyre',
+  points: 'It turns over, but the old points are pitted and there is no spark. Clean and gap them at the bench',
+  kick: 'The kickstart will not move: it is seized solid. Free it at the bench',
 };
 
 export class BarnFind {
@@ -118,6 +143,11 @@ export class BarnFind {
   /** The seized brake holds it on while it's still to do. */
   get brakeSeized() {
     return this.jobs.includes('brake') && !this.finished.has('brake');
+  }
+
+  /** The kickstart is seized until freed (the old bike's job): a kick does nothing. */
+  get kickSeized() {
+    return this.jobs.includes('kick') && !this.finished.has('kick');
   }
 
   get remaining() {

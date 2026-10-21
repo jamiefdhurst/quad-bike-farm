@@ -166,3 +166,33 @@ describe('the engine and a barn find that is not ready', () => {
     expect(crankFor(false)).toBe(true);
   });
 });
+
+describe('the old bike\'s restoration', () => {
+  const spec = { id: 'plover', classicBike: true, engine: { noStarter: true } };
+  it('is always there, with four or five of its own jobs, never the battery', async () => {
+    const { pickClassicFind, CLASSIC_JOBS, DEFAULT_BARN_FIND_PARAMS: P } = await import('../src/vehicle/barnFind.js');
+    for (let i = 0; i < 40; i++) {
+      let n = i + 1;
+      const random = () => ((n = (n * 16807) % 2147483647) / 2147483647);
+      const plan = pickClassicFind(random, spec, P);
+      expect(plan.donor).toBe(spec);
+      expect(plan.jobs.length).toBeGreaterThanOrEqual(P.classicMinJobs);
+      expect(plan.jobs.length).toBeLessThanOrEqual(P.classicMaxJobs);
+      expect(plan.jobs).not.toContain('battery');
+      expect(plan.jobs.every((k) => CLASSIC_JOBS.includes(k))).toBe(true);
+      expect(plan.jobs).toEqual(CLASSIC_JOBS.filter((k) => plan.jobs.includes(k))); // in the bench's order
+    }
+  });
+  it('holds the kickstart seized until its job is done, and says what is wrong', async () => {
+    const { BarnFind, DEFAULT_BARN_FIND_PARAMS: P } = await import('../src/vehicle/barnFind.js');
+    const find = new BarnFind({ donor: spec, jobs: ['points', 'kick'] }, P);
+    find.finish('tarp');
+    expect(find.kickSeized).toBe(true);
+    expect(find.blockedReason()).toMatch(/points/);
+    find.finish('points');
+    expect(find.blockedReason()).toMatch(/kickstart/);
+    find.finish('kick');
+    expect(find.kickSeized).toBe(false);
+    expect(find.ready).toBe(true);
+  });
+});

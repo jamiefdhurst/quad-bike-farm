@@ -22,7 +22,7 @@ export const MAKERS = {
 
 /** Which maker each vehicle's badge names, by spec id. The three-wheeler has none yet (its item says). */
 export const MAKER_FOR = {
-  red: 'kestrel', blue: 'tamura', loan: 'tamura', green: 'ridgeback', yellow: 'tamura', orange: 'viper', kids: 'viper', moto: 'tamura', atc: 'kestrel',
+  red: 'kestrel', blue: 'tamura', loan: 'tamura', green: 'ridgeback', yellow: 'tamura', orange: 'viper', kids: 'viper', moto: 'tamura', atc: 'kestrel', plover: 'ashby',
   tractor: 'hartley', utv: 'ridgeback', landrover: 'moorland', landrover200: 'moorland', fiesta: 'thorne', corsa: 'ashby',
 };
 

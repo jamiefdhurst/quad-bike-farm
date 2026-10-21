@@ -87,6 +87,7 @@ import { AMY_SHOUT_LINES } from './shoutFaultLines.js';
 import { AMY_FUMES_LINES } from './fumesLines.js';
 import { AMY_RUSTY_LINES } from './rustyLines.js';
 import { AMY_UTV_LINES } from './utvLines.js';
+import { AMY_OLD_BIKE_LINES } from './oldBikeLines.js';
 import { AMY_TRAILER_LINES } from './trailerLines.js';
 import { AMY_TRAILER_GUIDE_LINES } from './trailerGuideLines.js';
 import { AMY_FARM_JOB_LINES } from './farmJobLines.js';
@@ -1601,6 +1602,8 @@ export const VOICE_LINES = {
   ...AMY_RUSTY_LINES,
   // The UTV: climbing in, the middle seat, the bed, tipping it, petrol in the tank (utvLines.js).
   ...AMY_UTV_LINES,
+  // Starting the old bike: the tickle, the spark lever, the kick-back (oldBikeLines.js).
+  ...AMY_OLD_BIKE_LINES,
   // The little tipping trailer: riding in it against the rules (trailerLines.js).
   ...AMY_TRAILER_LINES,
   ...AMY_TRAILER_GUIDE_LINES,

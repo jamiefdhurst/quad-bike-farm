@@ -8,7 +8,7 @@ import { World } from './world/world.js';
 import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC } from './vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC } from './vehicle/quadSpecs.js';
 import { LANDY_STAND, LANDY_REAR_STAND, LANDY_REAR_SEATS } from './vehicle/landRoverModel.js';
 import { CARS, CAR_STAND } from './vehicle/carModel.js';
 import { DEFAULT_REAR_ACCESS_PARAMS, REAR_ACCESS_PARAM_RANGES, seatTipTargets, easeSeatTips, pickRearSeat, rearDoor } from './vehicle/rearAccess.js';
@@ -295,7 +295,7 @@ import { pickWornGearbox } from './vehicle/manualDrivetrain.js';
 import { DashClock, pickReading, pickRelatedReading, setDashClock, dashClock } from './vehicle/dashState.js';
 import { Bench } from './workshop/bench.js';
 import { DEFAULT_FUEL_WATER_PARAMS, FUEL_WATER_RANGES, stepCanWater } from './vehicle/fuelWater.js';
-import { pickBarnFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
+import { pickBarnFind, pickClassicFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
 import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
 import { planDamage, applyDamage } from './vehicle/rustyDamage.js';
 import { Notebook } from './workshop/notebook.js';
@@ -628,10 +628,13 @@ export class Game {
     // Perhaps an old quad under a tarp at the back of the barn (vehicle/barnFind.js): a unit like the tractor, not one of the girls' quads.
     this.barnFindParams = { ...DEFAULT_BARN_FIND_PARAMS };
     registerTuning('Barn find', this.barnFindParams, BARN_FIND_RANGES);
+    this.pendingLooks = []; // the barn finds' rust, cracks and webs, put on once the game is ready (dressFinds)
     this.rustyUnit = this.addRusty();
+    this.ploverUnit = this.addPlover(); // and always the old bike, under its own tarp (vehicle/bantamModel.js)
     if (this.tractorUnit) this.podRack.allow(this.tractorUnit.id); // likewise the tractor, which is added after the pods are dealt
     this.achievements = new Achievements({ params: { ...DEFAULT_ACHIEVEMENT_PARAMS } }); // the bucket list; its fleet is set once every vehicle is added
     if (this.rustyUnit) this.podRack.allow(this.rustyUnit.id); // placed after the pods were dealt, but you can fit one at the bench
+    if (this.ploverUnit) this.podRack.allow(this.ploverUnit.id);
     // A sticky float on some of the quads (vehicle/carbDrip.js): a parked one with the tap on drips petrol and floods. Own random stream.
     this.carbDrip = new CarbDrip(this.units.filter((u) => !u.quad.fuel.params.noTap && !u.quad.engine.params.compressionIgnition).map((u) => u.id), createRandom(this.farmSeed ^ 0x5d1f));
     registerTuning('Dripping carb', this.carbDrip.p, DRIP_PARAM_RANGES);
@@ -1148,7 +1151,7 @@ export class Game {
         target: quad.proxy,
         prompt: () => {
           if (quad.loadedOn) return this.loadedPrompt(quad);
-          if (unit.barnFind && !unit.barnFind.tarpOff) return { text: 'The rusty quad: an old shape under a tarp   ·   take it off at the workbench' };
+          if (unit.barnFind && !unit.barnFind.tarpOff) return { text: `${unit.id === 'plover' ? 'The old bike' : 'The rusty quad'}: an old shape under a tarp   ·   take it off at the workbench` };
           if (this.tooFastToMount(quad) && this.herDriving(quad) && !quad.hasBench) return `Ask ${this.herDriving(quad).name} to stop and let you on`;
           if (this.tooFastToMount(quad)) {
             return { text: `The ${unit.label} is going too fast to get on   ·   K ignition` };
@@ -1205,7 +1208,7 @@ export class Game {
                   ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.defender ? [] : [['Q Z', 'Choke'], ['[ ]', 'Hand throttle']]), ['Y', 'Dipstick'], ...(unit.spec.defender ? [] : [['P', 'Starting handle (at the front)']]), ...(this.canSitOnBack(quad) ? [['B', this.lookingAtBack(quad) ? 'Sit in the back' : 'Sit in the passenger seat']] : [])]
                 : unit.spec.car
                   ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.engine.injected ? [] : [['Q Z', 'Choke']]), ['Y', 'Dipstick'], ...(this.canSitOnBack(quad) ? [['B', this.lookingAtBack(quad) ? 'Sit in the back' : 'Sit in the passenger seat']] : [])]
-                : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['O', 'Pull-start']] : []), ...(quad.engine.params.injected ? [] : [['Q Z', 'Choke']]), ...(quad.fuel.params.noTap ? [] : [['F', 'Fuel tap']]), ...(quad.sump ? [['Y', 'Dipstick']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : []), ...(this.towRope.state === 'stowed' && this.ropeQuadFor(unit) && !this.player.isRiding ? [['X', 'Tow rope']] : [])],
+                : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['O', quad.engine.params.kickStart ? 'Kick' : 'Pull-start']] : []), ...(quad.engine.params.manualTiming ? [['[ ]', 'Spark lever']] : []), ...(quad.engine.params.injected ? [] : [['Q Z', 'Choke']]), ...(quad.fuel.params.noTap ? [] : [['F', 'Fuel tap']]), ...(quad.sump ? [['Y', 'Dipstick']] : quad.engine.params.tickler ? [['Y', 'Tickle']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : []), ...(this.towRope.state === 'stowed' && this.ropeQuadFor(unit) && !this.player.isRiding ? [['X', 'Tow rope']] : [])],
           };
         },
         interact: () => {
@@ -1933,6 +1936,7 @@ export class Game {
   }
 
   start() {
+    setTimeout(() => this.dressFinds(), 300); // the barn finds' damage, now the load is done
     const overlay = document.getElementById('overlay');
     overlay.addEventListener('click', () => {
       this.audioHub.unlock();
@@ -4102,7 +4106,8 @@ export class Game {
       if (unit.barnFind && s.barnFind) {
         unit.barnFind.restore(s.barnFind);
         unit.engine.startBlocked = unit.barnFind.startBlocked;
-        unit.rustyLook.sync(unit.barnFind, { instant: true });
+        if (unit.barnFind.tarpOff && unit.tarp) unit.tarp.visible = false; // (its look is not on yet: dressFinds does the rest)
+        unit.rustyLook?.sync(unit.barnFind, { instant: true });
       }
       const h = this.history.quads[unit.id];
       if (h) Object.assign(h, { wear: unit.engine.wear, faults: savedFaults(s) });
@@ -4704,7 +4709,63 @@ export class Game {
     unit.mud.coat.look.wear = P.bodyWear; // and the wear layer turned right up: rust in every fold, the edges rubbed bare
     unit.tarp = buildTarp(unit.quad.model); // draped over this donor's own shape
     unit.quad.bodyRoot.add(unit.tarp);
-    unit.rustyLook = applyDamage(unit.quad.model, damage, unit.tarp); // rust patches, cracks, webs, cracked tyres and (on the yellow) a mouse nest; the jobs and the tarp change them
+    unit.rustyLook = null; // rust patches, cracks, webs, cracked tyres and (on the yellow) a mouse nest: put on after the load (dressFinds), under the tarp
+    this.pendingLooks.push({ unit, damage });
+    this.units = [...this.units, unit];
+    return unit;
+  }
+
+  /**
+   * Puts the barn finds' damage on, one at a time, once the game is ready: rust patches, cracks and webs are rays through every triangle (about 0.4 s a
+   * vehicle) and the tarp hides them, so they wait until the start screen is showing instead of being part of the load.
+   */
+  dressFinds() {
+    const next = this.pendingLooks.shift();
+    if (!next) return;
+    const { unit, damage } = next;
+    unit.rustyLook = applyDamage(unit.quad.model, damage, unit.tarp);
+    unit.rustyLook.sync(unit.barnFind, { instant: true });
+    setTimeout(() => this.dressFinds(), 50);
+  }
+
+  /** The old bike (#38): the Plover, always under its tarp at the back of the barn, a restoration with its own jobs (vehicle/barnFind.js CLASSIC_JOBS). Returns its unit. */
+  addPlover() {
+    const P = this.barnFindParams;
+    const spec = PLOVER_SPEC;
+    const plan = pickClassicFind(createRandom(this.farmSeed ^ 0xba41), spec, P);
+    const random = createRandom(this.farmSeed ^ 0xba42);
+    const damage = planDamage(createRandom(this.farmSeed ^ 0xba43), spec.id); // patches, cracks and webs (it has no rack and no open intake for a nest)
+    const unit = new QuadUnit({ spec, spawn: this.world.layout.plover, scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub });
+    unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(spec.idleRange, random));
+    unit.variation = applyVariation(spec, unit.engine.params, unit.quad.fuel, random);
+    unit.topRpm = applyTopRpm(spec, unit.engine.params, random);
+    unit.quad.usage.hours = pickReading(spec.hoursRange, random);
+    unit.quad.usage.odoMiles = pickReading(spec.odoRange, random);
+    unit.engine.wear = spec.wearRange[0] + (spec.wearRange[1] - spec.wearRange[0]) * random();
+    unit.quad.parkBrake = true;
+    unit.where = 'at the back of the barn';
+    // What's wrong with it. The engine can't catch until every job is done (startBlocked), and the kickstart is seized until freed.
+    unit.barnFind = new BarnFind(plan, P);
+    unit.engine.startBlocked = true;
+    unit.quad.kickLocked = unit.barnFind.kickSeized;
+    unit.quad.fuel.waterParams = this.fuelWaterParams;
+    if (random() < P.waterChance) unit.quad.fuel.water = unit.quad.fuel.bowlWater = P.tankWater;
+    if (plan.jobs.includes('tyre')) {
+      unit.quad.faults.begin('puncture');
+      unit.quad.faults.levels.puncture = 0.9;
+      unit.quad.tyres.level(1);
+    }
+    if (plan.jobs.includes('fuel')) unit.engine.fouling = 0.35; // the varnish: it would only foul the plug
+    if (plan.jobs.includes('carb')) {
+      unit.quad.faults.begin('carb');
+      unit.quad.faults.levels.carb = 0.9;
+    }
+    weatherModel(unit.quad.model, { rust: 0.4, dust: 0.25 });
+    unit.mud.coat.look.wear = P.bodyWear;
+    unit.tarp = buildTarp(unit.quad.model);
+    unit.quad.bodyRoot.add(unit.tarp);
+    unit.rustyLook = null; // its rust, cracks and webs come after the load too (dressFinds)
+    this.pendingLooks.push({ unit, damage });
     this.units = [...this.units, unit];
     return unit;
   }
@@ -4727,28 +4788,45 @@ export class Game {
     }
   }
 
-  /** The barn find's slow jobs: the charger going, the seized brake holding it, and the first start. */
+  /** The barn finds' slow jobs: the charger going, the seized brake holding it, the seized kickstart, and the first start. */
   updateBarnFind(dt) {
-    const unit = this.rustyUnit;
-    const find = unit?.barnFind;
-    if (!find) return;
+    for (const unit of [this.rustyUnit, this.ploverUnit]) if (unit?.barnFind) this.updateFind(unit, dt);
+  }
+
+  /** The old bike's kick-back on you: the nearest girl within 15 m says something (oldBikeLines.js). A girl's own is hers to say (startingAttempt.js). */
+  updateKickBack() {
+    for (const u of this.units) {
+      const q = u.quad;
+      if (!q.engine.params.kickStart) continue;
+      if (q.kickBack > 0 && !q.kickBackSaid) {
+        q.kickBackSaid = true;
+        if (q.helperPull || q.driver) continue; // she kicked it herself
+        const near = this.companions.filter((c) => c.root.position.distanceTo(q.position) < 15).sort((a, b) => a.root.position.distanceTo(q.position) - b.root.position.distanceTo(q.position))[0];
+        near?.voice.say('oldKick', { urgent: true });
+      } else if (q.kickBack <= 0) q.kickBackSaid = false;
+    }
+  }
+
+  updateFind(unit, dt) {
+    const find = unit.barnFind;
     const e = unit.engine;
-    unit.rustyLook.sync(find); // the tarp slides off when it is taken off, the tyres and the nest follow their jobs
-    unit.rustyLook.step(dt);
+    unit.rustyLook?.sync(find); // the tarp slides off when it is taken off, the tyres and the nest follow their jobs
+    unit.rustyLook?.step(dt);
     if (find.brakeSeized) unit.quad.parkBrake = true;
-    if (find.setBattery(e.battery, !e.batteryOut)) this.notebook.note(unit, { kind: 'job', job: 'battery' }, { by: 'you' });
+    unit.quad.kickLocked = find.kickSeized;
+    if (!e.params.noStarter && find.setBattery(e.battery, !e.batteryOut)) this.notebook.note(unit, { kind: 'job', job: 'battery' }, { by: 'you' });
     e.startBlocked = find.startBlocked;
     // Cranking it before it's ready: it tells you why.
     const cranking = e.state === 'cranking';
-    if (cranking && !this.rustyWasCranking && find.startBlocked && find.tarpOff) this.hud.toast(find.blockedReason(), 3.2);
-    this.rustyWasCranking = cranking;
+    if (cranking && !unit.findWasCranking && find.startBlocked && find.tarpOff) this.hud.toast(find.blockedReason(), 3.2);
+    unit.findWasCranking = cranking;
     // The first start: smoke everywhere, and both girls cheer.
     if (e.isRunning && find.ready && !find.started) {
       find.started = true;
       startRunningIn(e); // not run for years, and now it wants running in
       find.smokeLeft = find.params.smokeSeconds;
-      this.hud.toast('It runs! The first start in years');
-      this.achievements.note('barnFind');
+      this.hud.toast(unit.id === 'plover' ? 'It runs! The old bike fires up for the first time in years' : 'It runs! The first start in years');
+      this.achievements.note(unit.id === 'plover' ? 'oldBike' : 'barnFind');
       for (const c of this.companions) c.voice.onBench('runs');
     }
     if (find.smokeLeft > 0) {
@@ -10534,7 +10612,7 @@ export class Game {
   dipstick(unit, input, dt) {
     const sump = unit.quad.sump;
     if (!sump) {
-      if (input.wasPressed('KeyY')) this.hud.toast('A two-stroke has no dipstick: its oil goes in with the petrol');
+      if (input.wasPressed('KeyY') && !unit.quad.engine.params.tickler) this.hud.toast('A two-stroke has no dipstick: its oil goes in with the petrol'); // (Y is the old bike's tickler)
       return;
     }
     if (input.wasPressed('KeyY')) {
@@ -11404,6 +11482,7 @@ export class Game {
     this.guard.run('updateCharger', () => this.updateCharger(dt));
     this.guard.run('updateGenerator', () => this.updateGenerator(dt));
     this.guard.run('updateBarnFind', () => this.updateBarnFind(dt));
+    this.guard.run('updateKickBack', () => this.updateKickBack());
     this.notebook.update(dt);
     this.sparesShelf.update(dt);
     this.guard.run('updateLoft', () => this.updateLoft(dt));

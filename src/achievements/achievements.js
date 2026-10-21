@@ -58,6 +58,7 @@ const RIDE_NAMES = {
   kids: 'the kids\' quad',
   moto: 'the mini moto',
   atc: 'the three-wheeler',
+  plover: thePhrase('plover'),
   loan: 'the loan quad',
   tractor: 'the tractor',
   utv: thePhrase('utv'),
@@ -69,9 +70,9 @@ const rideOf = (id) => ({ id: `ride-${id}`, group: 'Ride', name: `Ride ${RIDE_NA
 
 // Each: id, group, name, hint (what to do), points (1 easy, 2 takes a while, 3 hard), test(s) and optionally needs (a vehicle id).
 export const ACHIEVEMENTS = [
-  ...['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'moto', 'atc', 'loan', 'tractor', 'utv', 'landrover', 'landrover200'].map(rideOf),
+  ...['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'moto', 'atc', 'plover', 'loan', 'tractor', 'utv', 'landrover', 'landrover200'].map(rideOf),
   { id: 'ride-three', group: 'Ride', name: 'Getting about', hint: 'Ride three different vehicles', points: 1, test: (s) => s.count('rode') >= 3 },
-  { id: 'ride-all', group: 'Ride', name: 'Full set', hint: 'Ride every vehicle on the farm this game', points: 3, test: (s) => s.fleet.some((id) => id !== 'rusty') && s.fleet.every((id) => id === 'rusty' || s.has('rode', id)) },
+  { id: 'ride-all', group: 'Ride', name: 'Full set', hint: 'Ride every vehicle on the farm this game', points: 3, test: (s) => s.fleet.some((id) => id !== 'rusty' && id !== 'plover') && s.fleet.every((id) => id === 'rusty' || id === 'plover' || s.has('rode', id)) },
   { id: 'all-running', group: 'Ride', name: 'Everything going at once', hint: 'Get every quad on the farm running at the same time', points: 3, test: (s) => s.n('allRunning') > 0 },
   { id: 'up-to-speed', group: 'Ride', name: 'Up to speed', hint: 'Get a vehicle moving properly', points: 1, test: (s) => s.m('topSpeed') >= s.p.topSpeed },
   { id: 'flat-out', group: 'Ride', name: 'Flat out', hint: 'Open it right up', points: 2, test: (s) => s.m('topSpeed') >= s.p.flatOut },
@@ -149,6 +150,7 @@ export const ACHIEVEMENTS = [
   { id: 'gallery', group: 'Jobs', name: 'Gallery', hint: 'Have six photos pinned on the corkboard in the barn', points: 2, test: (s) => s.m('photosPinned') >= 6 },
   { id: 'park-brake', group: 'Jobs', name: 'Handbrake on', hint: 'Put the parking brake on', points: 1, test: (s) => s.n('parkBrake') >= 1 },
   { id: 'map', group: 'Jobs', name: 'Where am I?', hint: 'Open the farm map', points: 1, test: (s) => s.n('map') >= 1 },
+  { id: 'old-bike', group: 'Jobs', name: 'Kick it over', hint: 'Get the old bike in the barn running: tickle it, retard the spark and kick', points: 3, needs: 'plover', test: (s) => s.n('oldBike') >= 1 },
   { id: 'barn-find', group: 'Jobs', name: 'Barn find', hint: 'Get the old quad under the tarp running', points: 3, needs: 'rusty', test: (s) => s.n('barnFind') >= 1 },
 ];
 

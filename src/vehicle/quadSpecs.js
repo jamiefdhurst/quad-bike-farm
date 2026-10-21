@@ -1592,3 +1592,118 @@ export const CORSA_SPEC = {
   },
   smoke: { ...LAND_ROVER_SPEC.smoke, warmDensity: 0.12, coldDensity: 0.6 },
 };
+
+// The old bike in the barn (#38, TODO 143): the Ashby Plover 125, after a 1949 rigid-frame Bantam. A restoration project: it stands under a tarp at
+// the back of the barn every game, needs a handful of jobs at the bench (barnFind.js's, plus the old bike's own), and then starts the old way: tickle
+// the carb, set the advance-retard lever, kick it over (engine/ignitionTiming.js). A 123 cc two-stroke single, a clutch (Shift) and a three-speed
+// foot-change box. Built by bantamModel.js, on the quad physics with two wheels and the lean model holding it up. Solo. Not in the fleet pool.
+export const PLOVER_SPEC = {
+  id: 'plover',
+  tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES): the nearest it has; a 19 inch tyre of its own is a later idea
+  bodyWear: 0.8, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
+  chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
+  classicBike: true,
+  label: sayName('plover'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('plover'),
+  bodyColor: 0x7f9a74, // a faded sage green
+  style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
+  dashStyle: 'smiths',
+  reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
+  chokeStyle: 'plunger', // a strangler on the carb's air intake, pulled out sideways (the model places it itself)
+  tapStyle: 'carbLeft', // the tap is under the tank (the model places it itself)
+  hoursRange: [900, 2200], // engine hours showing when the game starts
+  odoRange: [9000, 26000], // odometer miles showing when the game starts
+  wearRange: [0.3, 0.5], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
+  tinkers: false, // nobody leaves the throttle stop out on a bike this old
+  solo: true, // one saddle, no room for anyone on the back
+  wheelShake: 0.9, // old and loose
+  // A slow, lumpy single's tickover.
+  safeIdle: 1200,
+  idleRange: [1400, 1700], // the recording's own tickover, about 23 to 29 firings a second
+  roughnessRange: [0.35, 0.55],
+  fuelRange: [0.3, 1.2], // 9 litre tank (two gallons), 1 litre reserve
+  topRpmRange: [5600, 6100], // full-throttle revs this game, about 4% either side of the engine's own
+  manual: true, // a clutch (Shift) and a three-speed box in place of the CVT (src/vehicle/manualDrivetrain.js)
+  gearbox: { gears: 3, topSpeed1: 5, topSpeed2: 10, topSpeed3: 17, topSpeedReverse: 2, torque1: 1, torque2: 0.8, torque3: 0.6, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, lugSpeed: 0.6 },
+  fuel: { tankCapacity: 9, startOil: 0.02, reserveLitres: 1, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
+  engine: {
+    loadDragRpm: 16000, // a manual: slowing in a high gear drags it down and stalls it (manualDrivetrain.js)
+    strokes: 2,
+    popProne: 0.8, // two-strokes crackle and bang on the overrun, and an old one more
+    pullStart: true,
+    kickStart: true, // the pull is a kickstart pedal (it can kick back with the lever advanced)
+    manualTiming: true, // the advance-retard lever (engine/ignitionTiming.js)
+    tickler: true, // a tickler on the carb: a press floods fuel in for a cold start
+    noStarter: true, // no key start, only the pedal
+    idleRpmWarm: 1550,
+    maxRpm: 6200,
+    redlineRpm: 5700,
+    rpmRiseRate: 8,
+    rpmFallRate: 6,
+    warmUpSeconds: 130,
+    coldEnrichmentNeed: 1.1,
+    chokeIdleRpm: 1950,
+    catchChance: 0.4,
+    coldRoughness: 0.6,
+    coldPowerLoss: 0.8,
+    skipChance: 0.35,
+    skipThrottle: 0.15,
+    skipRpm: 2800,
+    idleFoulRate: 0.003,
+    misfireRpmDrop: 140,
+  },
+  vehicle: {
+    mass: 150, // bike plus rider
+    centreOfMassY: -0.12, // low-ish, so the lean balance (bikeLean.js) has little to hold up
+    riderTopple: 0, // the rider is in the mass; its tipping is the lean model's (bikeLean.js)
+    suspensionStiffness: 70,
+    rollInertia: 22,
+    pitchInertia: 48,
+    yawInertia: 52,
+    wheelRadius: 0.31,
+    suspensionRestLength: 0.12,
+    maxSuspensionTravel: 0.1,
+    maxSuspensionForce: 14000,
+    maxDriveForce: 700,
+    maxSpeed: 17,
+    maxSteerDeg: 36,
+    steerSpeedReduction: 0.02, // a bike keeps its steering at speed
+    spinSideLoss: 0.5, // and the driven rear steps out when you pour the power on mid-corner
+    clutchEngageRpm: 2700,
+    clutchFullRpm: 3900,
+    couplingRpm: 3300,
+    engineBrakeForce: 45,
+    powerbandRpm: 3800,
+    torqueBelowBand: 0.5,
+    fourWheelDrive: 0,
+  },
+  vibration: {
+    pulseGain: 1.0,
+    idleRpm: 1550,
+    barsFreq: 22,
+    barsGain: 0.3,
+    heaveFreq: 10,
+    pitchFreq: 8,
+    heaveDamping: 0.16,
+  },
+  audio: {
+    recBank: 'engine-bank-plover', // a 1938 98cc light motorbike's slow lumpy two-stroke single
+    pulseRefRpm: 1550,
+    pulseRevLoudness: 1.0,
+    recIdleSource: 'quad',
+    recBlendLo: 2600,
+    recBlendHi: 3600,
+    recToneClosed: 6500,
+    recVolume: 0.4,
+    pipeLength: 1.0,
+    mufflerFreqA: 190,
+    densityRefRpm: 1800,
+  },
+  smoke: {
+    warmDensity: 0.4,
+    coldDensity: 0.8,
+    warmGray: 0.8,
+    coldGray: 0.9,
+    tint: '#dde6ff',
+  },
+};

@@ -4,11 +4,22 @@
 import { DEFAULT_KNACK_PARAMS, KNACK_RANGES } from './knack.js';
 import { DEFAULT_SLAP_PARAMS, SLAP_RANGES } from './pistonSlap.js';
 import { DEFAULT_CHARGING_PARAMS, CHARGING_PARAM_RANGES } from './charging.js';
+import { DEFAULT_TIMING_PARAMS, TIMING_PARAM_RANGES } from './ignitionTiming.js';
 
 export const DEFAULT_ENGINE_PARAMS = {
   // A quad's knack for starting (knack.js)
   ...DEFAULT_KNACK_PARAMS,
   ...DEFAULT_SLAP_PARAMS,
+  ...DEFAULT_TIMING_PARAMS,
+  manualTiming: false, // an advance-retard lever on the bars (ignitionTiming.js): the old bike's starting ritual
+  tickler: false, // a tickler on the carb (the old bike): a press floods a little fuel in, to start it cold without a choke
+  tickleAmount: 0.45, // how much one press adds to what is in the float bowl, in enrichment terms
+  tickleRich: 0.9, // mixture enrichment per unit of it, as if it were choke
+  tickleSeconds: 45, // seconds a unit takes to drain off or burn away when it is standing
+  tickleRunFactor: 5, // and how many times quicker while it runs
+  tickleFloodAbove: 1.4, // past this much in, it is flooded: the plug is wet and it will not catch
+  tickleFoulRate: 0.12, // fouling per second at twice that
+  kickStart: false, // its pull is a kickstart pedal: held down for a swing, and it can kick back with the lever advanced
 
   // What running does to the battery (charging.js)
   ...DEFAULT_CHARGING_PARAMS,
@@ -383,6 +394,7 @@ export const ENGINE_PARAM_RANGES = {
   ...CHARGING_PARAM_RANGES,
   ...KNACK_RANGES,
   ...SLAP_RANGES,
+  ...TIMING_PARAM_RANGES,
   strokes: [2, 4, 2],
   cylinders: [1, 8, 1],
   skipChance: [0, 1, 0.01],
@@ -413,6 +425,12 @@ export const ENGINE_PARAM_RANGES = {
   rollCatchTwoStroke: [0, 1.5, 0.05],
   rollCatchFourStroke: [0, 1.5, 0.05],
   pullSeconds: [0.2, 3, 0.05],
+  tickleAmount: [0, 1, 0.05],
+  tickleRich: [0, 3, 0.1],
+  tickleSeconds: [5, 120, 5],
+  tickleRunFactor: [1, 20, 1],
+  tickleFloodAbove: [0.5, 3, 0.1],
+  tickleFoulRate: [0, 1, 0.01],
   pullRpmFactor: [0.3, 2, 0.05],
   pullGoodMin: [0.1, 1.5, 0.05],
   pullGoodMax: [0.3, 3, 0.05],

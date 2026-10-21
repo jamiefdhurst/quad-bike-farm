@@ -518,6 +518,9 @@ export class CompanionVoice {
       flat: ['startFlat', 1],
       pull: ['startPull', 1],
       knack: ['startKnack', 1],
+      tickle: ['startTickle', 0.7],
+      retard: ['startRetard', 0.7],
+      kickedBack: ['startKicked', 1],
     };
     const girl = this.companion.character?.id;
     const specId = this.view?.units?.find((u) => u.quad === this.companion.quad)?.spec.id;

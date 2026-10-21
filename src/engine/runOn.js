@@ -8,7 +8,7 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
 /** How readily it pops on the overrun, 0 up: its own nature (popProne), leanness, wear and heat. */
 export function popPropensity(e, p) {
-  return Math.max(0, p.popProne + p.popLean * e.lean + p.popWear * e.wear + p.popHeat * clamp01(e.heat) + p.popLeak * (e.airLeak ?? 0) + (e.silencerOff ? p.silencerPop : 0));
+  return Math.max(0, p.popProne + p.popLean * e.lean + p.popWear * e.wear + p.popHeat * clamp01(e.heat) + p.popLeak * (e.airLeak ?? 0) + (e.silencerOff ? p.silencerPop : 0) + (e.timingPop ?? 0));
 }
 
 /** The chance it runs on when switched off while running: hot metal, wear and a lean mixture. 0..0.9. */

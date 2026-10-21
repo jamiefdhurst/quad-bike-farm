@@ -300,6 +300,25 @@ export const JOBS = {
       { id: 'lever', text: 'Squeeze the lever: it moves', kind: 'press' },
     ],
   },
+  // The old bike's own (vehicle/barnFind.js CLASSIC_JOBS).
+  points: {
+    name: 'Clean and gap the points',
+    steps: [
+      { id: 'cover', text: 'Take the magneto cover off', kind: 'press' },
+      { id: 'file', text: 'Rub the pitted contacts clean with a points file', kind: 'hold', need: 1 },
+      { id: 'gap', text: 'Set the gap with the feeler gauge: a hair under the thickness of a cigarette card', kind: 'hold', need: 0.7, limit: 1.4 },
+      { id: 'refit', text: 'Put the cover back', kind: 'press' },
+    ],
+  },
+  kick: {
+    name: 'Free the seized kickstart',
+    steps: [
+      { id: 'oil', text: 'Soak the kickstart shaft in penetrating oil', kind: 'press' },
+      { id: 'tap', text: 'Tap the crank with the hammer, then leave it a minute', kind: 'press' },
+      { id: 'work', text: 'Work the pedal back and forth: firm, not forced', kind: 'hold', need: 0.9, limit: 1.8 },
+      { id: 'kick', text: 'Give it a slow kick through: it turns', kind: 'press' },
+    ],
+  },
   chargeOn: {
     name: 'Take the battery out',
     steps: [
@@ -668,6 +687,9 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     }
     return botched ? 'Drained, though the tank still smells of varnish. It needs fuel' : 'Tank drained and flushed. It needs fuel now';
   }
+  if (job.kind === 'points' && botched) engine.fouling = Math.max(engine.fouling, P.plugLeftFouling); // a weak spark: it fouls the plug
+  if (job.kind === 'points') return botched ? 'The points are cleaned, but the gap is a bit off. It will start and run a little rough' : 'Points clean and the gap set: a good fat spark';
+  if (job.kind === 'kick') return botched ? 'The kickstart turns, though it is stiff' : 'The kickstart swings freely again';
   if (job.kind === 'brake') return botched ? 'The brake is free, but it is a bit stiff' : 'The brake is free and moves properly';
   if (job.kind === 'chargeOn') {
     target.batteryOut?.();
@@ -699,7 +721,7 @@ export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = fal
   if (kind === 'chargeOn') return !engine.batteryOut && !engine.params.noStarter; // a cord-only quad has no battery to take out
   if (kind === 'chargeOff') return !!engine.batteryOut;
   if (kind === 'newTyres') return true; // (the bench checks the tyres are worn)
-  if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'filter' || kind === 'belt') return true; // the bench checks a filter or belt is fitted (service plans)
+  if (kind === 'tarp' || kind === 'fuel' || kind === 'brake' || kind === 'points' || kind === 'kick' || kind === 'filter' || kind === 'belt') return true; // the bench checks a filter or belt is fitted (service plans)
   if (kind === 'sump') return engine.params.strokes !== 2 && !engine.params.runsOnDiesel;
   return true;
 }

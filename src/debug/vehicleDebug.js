@@ -1,5 +1,6 @@
 // Pure helpers behind the debug panel's Vehicles tab (no DOM, no Three.js), so what the buttons do is tested.
 import { FAULT_KINDS } from '../vehicle/faults.js';
+import { idealAdvance } from '../engine/ignitionTiming.js';
 
 /** Quirks that can't be had together, as the game deals them. */
 const EXCLUSIVE = { fuelHigh: 'fuelSticks', fuelSticks: 'fuelHigh' };
@@ -38,6 +39,7 @@ export function fixEverything(unit) {
   const e = unit.engine;
   clearFaults(unit.quad.faults);
   e.fouling = 0;
+  e.tickled = 0; // the tickler's flood
   e.clog = 0;
   e.wear = 0;
   e.pistonWear = 0;
@@ -138,6 +140,11 @@ export function engineReadouts(engine, { manual = false } = {}) {
     { key: 'driveLoad', label: 'drive load / of it resisting', get: (e) => `${num(e.driveLoad)} / ${num(e.resistLoad)}` },
   ];
   if (manual) list.push({ key: 'gearRevs', label: 'revs the road speed turns it at / clutch lock', get: (e) => `${Math.round(e.gearRpm)} / ${num(e.gearLock)}` });
+  if (p.manualTiming) {
+    list.push({ key: 'sparkLever', label: 'spark lever now / what the revs want (0 retarded, 1 advanced)', get: (e) => `${num(e.advance)} / ${num(idealAdvance(e.rpm, p.idleRpmWarm, p.maxRpm, p))}` });
+    list.push({ key: 'timingError', label: 'spark timing off by (negative late, positive early)', get: (e) => e.timingErr });
+    list.push({ key: 'kickedBack', label: 'kicked back (seconds left)', get: (e) => e.kicked });
+  }
   list.push({ key: 'surge', label: 'surge at idle (rpm)', get: (e) => Math.round(e.surge) });
   if (!p.injected) list.push({ key: 'floatBowl', label: 'fuel in the float bowl', get: (e) => e.fuel });
   if (!diesel && !p.injected) list.push({ key: 'dieselInCarb', label: 'diesel in the carb', get: (e) => e.diesel });

@@ -23,6 +23,7 @@ import { DEFAULT_GEARBOX_PARAMS, GEARBOX_PARAM_RANGES } from './manualDrivetrain
 import { SHIFTER_PARAM_RANGES } from './autoShifter.js';
 import { buildAtcModel, ATC_LAYOUT, ATC_GROUND_OFFSET, ATC_PROXY } from './atcModel.js';
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET, MOTO_PROXY } from './miniMotoModel.js';
+import { buildBantamModel, BANTAM_LAYOUT, BANTAM_GROUND_OFFSET, BANTAM_PROXY } from './bantamModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_PROXY, UTV_STAND } from './utvModel.js';
 import { buildLandRoverModel, LANDY_LAYOUT, DEFENDER_LAYOUT, LANDY_GROUND_OFFSET, LANDY_PROXY, LANDY_STAND } from './landRoverModel.js';
@@ -81,6 +82,13 @@ export class QuadUnit {
         layout: MOTO_LAYOUT,
         groundOffset: MOTO_GROUND_OFFSET,
         proxy: MOTO_PROXY,
+        wheelShake: spec.wheelShake,
+      }),
+      ...(spec.classicBike && {
+        build: ({ dashStyle }) => buildBantamModel({ bodyColor: spec.bodyColor, dashStyle }),
+        layout: BANTAM_LAYOUT,
+        groundOffset: BANTAM_GROUND_OFFSET,
+        proxy: BANTAM_PROXY,
         wheelShake: spec.wheelShake,
       }),
       ...(spec.threeWheeler && {

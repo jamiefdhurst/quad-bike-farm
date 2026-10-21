@@ -16,7 +16,7 @@ import vm from 'node:vm';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { DEFAULT_AUDIO_PARAMS } from '../src/audio/audioParams.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC } from '../src/vehicle/quadSpecs.js';
 
 const SR = 48000;
 const DT = 1 / 60;
@@ -31,7 +31,7 @@ const PLAN = [
 
 const args = process.argv.slice(2);
 const [id, outPath] = args;
-const spec = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC].find((s) => s.id === id);
+const spec = [...QUAD_SPECS, ...EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC].find((s) => s.id === id);
 if (!spec || !outPath) {
   console.error('usage: node tools/render_engine_sound.mjs <vehicle id> <out.wav> [--bank bank.json] [--set param=value ...]');
   process.exit(1);
@@ -106,8 +106,19 @@ const fuel = { fuel: process.argv.includes('--no-catch') ? 0 : 1, diesel: spec.f
 const recordStart = args.includes('--start');
 const GLOW = 3; // seconds with the key on before the starter (a diesel's glow plugs; a petrol engine doesn't mind)
 engine.setIgnition(true);
+// A bike with no starter motor is kicked over every 1.5 s instead (after its ritual: the spark lever back and a tickle or two), as a person would.
+const noStarter = !!spec.engine?.noStarter;
+if (noStarter) {
+  if (engine.params.manualTiming) engine.advance = engine.params.startAdvance;
+  if (engine.temperature < 0.5) for (let i = 0; i < 2; i++) engine.tickle(); // (a warm one wants none)
+}
+const kickEvery = 1.5;
+const kickNow = (s) => noStarter && !engine.isRunning && Math.abs(((s % kickEvery) + kickEvery) % kickEvery) < DT && engine.pull(0.6) !== null;
 if (!recordStart) {
-  for (let t = 0; t < 30 && !engine.isRunning; t += DT) engine.update(DT, { ...fuel, starter: t > 8 });
+  for (let t = 0; t < 30 && !engine.isRunning; t += DT) {
+    kickNow(t - 4);
+    engine.update(DT, { ...fuel, starter: !noStarter && t > 8 });
+  }
   for (let t = 0; t < 3; t += DT) engine.update(DT, fuel);
   if (!engine.isRunning) throw new Error(`${id} never started`);
 }
@@ -127,7 +138,8 @@ for (const [step, dur, throttle = 0] of plan) {
       caughtAt ??= s;
       if (s - caughtAt > 0.5) break;
     }
-    engine.update(DT, { ...fuel, throttle, starter: step === 'crank' && !engine.isRunning });
+    if (step === 'crank') kickNow(s);
+    engine.update(DT, { ...fuel, throttle, starter: !noStarter && step === 'crank' && !engine.isRunning });
     top = Math.max(top, engine.rpm);
     const start = (frame + 0.05 * SR) / SR; // a little latency, as in the game
     const events = engine.pulses.map((p) => ({ time: start + p.t, type: p.type, strength: p.strength, period: p.period }));
