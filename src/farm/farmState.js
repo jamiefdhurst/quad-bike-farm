@@ -34,6 +34,7 @@ export function captureVehicle(unit, extra = {}) {
     faults: { tyre: q.faults.tyre, rodWheel: q.faults.rodWheel, rimWheel: q.faults.rimWheel, ...Object.fromEntries(FAULT_FIELDS.map((k) => [k, { ...q.faults[k] }])) },
     tyres: q.tyres ? { psi: [...q.tyres.psi], brand: { ...q.tyres.brand }, tread: { ...q.tyres.tread } } : null,
     sump: q.sump ? q.sump.level : null,
+    spotlamps: q.spotlamps?.fitted ? q.spotlamps.capture() : null,
     tapStiff: q.quirks?.tapStiff ?? null,
     mud: unit.mud?.state ? { body: unit.mud.state.body, wheels: unit.mud.state.wheels } : null,
   };
@@ -88,6 +89,7 @@ export function restoreVehicle(unit, s) {
     if (s.tyres.tread) Object.assign(q.tyres.tread, s.tyres.tread);
   }
   if (num(s.sump) && q.sump) q.sump.level = s.sump;
+  if (s.spotlamps && q.spotlamps) q.spotlamps.restore(s.spotlamps); // fitted at the bench, kept (a vehicle that can't have them ignores it)
   if (num(s.tapStiff) && q.quirks) q.quirks.tapStiff = s.tapStiff;
   if (s.mud && unit.mud?.state) {
     if (num(s.mud.body)) unit.mud.state.body = s.mud.body;

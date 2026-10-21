@@ -123,6 +123,11 @@ export function buildGameTree(g, host) {
       };
       if (q().lights) out.lights = choice(LIGHT_MODES, () => q().lights.mode, (v) => q().lights.set(v), 'the UTV light switch');
       if (q().barLights) out.lights = choice(q().barLights.modes, () => q().barLights.mode, (v) => q().barLights.set(v), 'the lights switch on the bars (off, low is dipped, high is main beam; the yellow\'s plain switch has only off and low)');
+      if (q().spotlamps.canFit) {
+        out.spotlamps = flag(() => q().spotlamps.fitted, (v) => (v ? q().spotlamps.fit(1) : q().spotlamps.remove()), 'are spotlamps fitted? (the bench job fits them; set true or false here)');
+        out.spotlampsOn = flag(() => q().spotlamps.on, (v) => (q().spotlamps.on = !!v && q().spotlamps.fitted), 'the spotlamps switch (9 in the game)');
+        out.spotlampAim = num(() => q().spotlamps.aim, (v) => (q().spotlamps.aim = v), 0, 1, '', '1 is aimed true, lower points low and off to one side; "Put it right" sets it to 1');
+      }
       if (q().radio) {
         out.radio = flag(() => q().radio.on, (v) => q().radio.set(v), 'the radio is on (it also needs the key on to make a sound)');
         out.radioVolume = num(() => q().radio.volume, (v) => q().radio.setVolume(v), 0, 1);

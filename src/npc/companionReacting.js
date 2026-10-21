@@ -50,9 +50,10 @@ export const reactingMethods = {
   reactToNotice(n) {
     const at = this.root.getWorldPosition(_at);
     const own = this.root.parent !== this.scene && !!this.quad?.unit && n.key === this.quad.unit.id;
-    const ctx = { distance: Math.hypot(n.x - at.x, n.z - at.z), own, can: (t) => this.mayReact(t), current: this.reaction };
+    const dark = this.voice?.dark ?? 0;
+    const ctx = { distance: Math.hypot(n.x - at.x, n.z - at.z), own, can: (t) => this.mayReact(t), current: this.reaction, dark };
     const r = reactionTo(n, ctx, this.params);
-    if (r) this.react(r.type, r);
+    if (r && this.react(r.type, r) !== false) this.voice?.onDarkStartle?.(r.type);
   },
 
   /** Each frame: the reaction's clock, and turning her face away from smoke while she does. */

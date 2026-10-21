@@ -70,6 +70,7 @@ import { RollWatch, rollReactions, DEFAULT_HANDBRAKE_PARAMS, HANDBRAKE_PARAM_RAN
 import { DEFAULT_DRIVE_PARAMS, DRIVE_PARAM_RANGES, StuckWatch, forgotReaction } from './vehicle/driveMode.js';
 import { HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES } from './vehicle/headlight.js';
 import { LIGHT_SWITCH_PARAMS, LIGHT_SWITCH_PARAM_RANGES } from './vehicle/lightSwitch.js';
+import { SPOTLAMP_PARAMS, SPOTLAMP_PARAM_RANGES } from './vehicle/spotlamps.js';
 import { INDICATOR_PARAMS, INDICATOR_PARAM_RANGES } from './vehicle/indicators.js';
 import { SEAT_BELT_PARAMS, SEAT_BELT_PARAM_RANGES } from './vehicle/seatBelts.js';
 import { describeVehicle } from './debug/startReport.js';
@@ -567,6 +568,7 @@ export class Game {
     this.fourWdState = new Map(); // companion -> { quad: the switched quad she's driving or null, watch }
     registerTuning('Headlights', HEADLIGHT_PARAMS, HEADLIGHT_PARAM_RANGES);
     registerTuning('Yak lights', LIGHT_SWITCH_PARAMS, LIGHT_SWITCH_PARAM_RANGES);
+    registerTuning('Spotlamps', SPOTLAMP_PARAMS, SPOTLAMP_PARAM_RANGES);
     registerTuning('Indicators', INDICATOR_PARAMS, INDICATOR_PARAM_RANGES);
     registerTuning('Seat belts', SEAT_BELT_PARAMS, SEAT_BELT_PARAM_RANGES);
     registerTuning('Two-wheeler lean', DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES);

@@ -55,6 +55,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   // How she reacts with her body (reactions.js): the chances and the size of it.
   radioKeen: 0.5, // how much she likes the radio on in a cab: above 0.5 she switches it on and turns it up, below she turns it down and off (radioTaste.js)
   reactEarsChance: 0.5, // revs right beside her: the chance she covers her ears
+  reactDarkRange: 0.8, // after dark a sudden noise is noticed from this much further off, as a share of the usual distance (at full dark)
+  reactDarkChance: 0.2, // and she jumps at it this much more often (added to the chance, at full dark)
   reactStartleChance: 0.7, // a pheasant bursting out of the hedge near her: the chance she jumps
   reactCheerChance: 0.6, // someone landing a jump she can see: the chance she cheers
   forecastChat: 0.5, // reading the forecast board: the chance she mentions what it says early in the game
@@ -413,6 +415,8 @@ export const COMPANION_PARAM_RANGES = {
   lookSpeed: [0.3, 10, 0.1],
   radioKeen: [0, 1, 0.05],
   reactEarsChance: [0, 1, 0.05],
+  reactDarkRange: [0, 3, 0.05],
+  reactDarkChance: [0, 1, 0.05],
   reactStartleChance: [0, 1, 0.05],
   reactCheerChance: [0, 1, 0.05],
   forecastChat: [0, 1, 0.05],

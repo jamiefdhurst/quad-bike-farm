@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SAVE_KEY, SAVE_VERSION, DEFAULT_FARM_PARAMS as P, readSave, writeSave, wipeSave, openFarm, continueInfo, fleetFromSave, validSave, describeFarm } from '../src/farm/farmSave.js';
 import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from '../src/farm/farmState.js';
 import { EngineModel } from '../src/engine/engineModel.js';
+import { Spotlamps } from '../src/vehicle/spotlamps.js';
 import { Faults } from '../src/vehicle/faults.js';
 import { FuelSystem } from '../src/vehicle/fuelSystem.js';
 import { Sump } from '../src/vehicle/sump.js';
@@ -184,6 +185,22 @@ describe('a vehicle from one day to the next', () => {
     restoreVehicle(b, captureVehicle(a));
     expect(b.quad.faults.has('carb')).toBe(false);
     expect(b.quad.faults.levels.carb).toBe(0);
+  });
+
+  it('keeps spotlamps fitted at the bench, and ignores them on a vehicle that cannot have any', () => {
+    const a = unit();
+    a.quad.spotlamps = new Spotlamps(true);
+    a.quad.spotlamps.fit(0.6);
+    const data = JSON.parse(JSON.stringify(captureVehicle(a)));
+    const b = unit();
+    b.quad.spotlamps = new Spotlamps(true);
+    restoreVehicle(b, data);
+    expect(b.quad.spotlamps).toMatchObject({ fitted: true, aim: 0.6 });
+    const tractor = unit();
+    tractor.quad.spotlamps = new Spotlamps(false);
+    restoreVehicle(tractor, data);
+    expect(tractor.quad.spotlamps.fitted).toBe(false);
+    expect(captureVehicle(unit()).spotlamps).toBe(null); // not fitted: nothing kept (an old save has none, and loads the same)
   });
 
   it('lists its faults for what the girls know', () => {

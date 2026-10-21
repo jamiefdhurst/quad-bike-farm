@@ -7,6 +7,8 @@ import { unscaleAnchors } from './unscaleAnchors.js';
 import { Drivetrain } from './drivetrain.js';
 import { QuirkSet } from './quirks.js';
 import { headlightLook, taillightLevel } from './headlight.js';
+import { Spotlamps } from './spotlamps.js';
+import { addSpotlamps, setSpotlamps } from './spotlampModel.js';
 import { LightSwitch, LIGHT_MODES, SIMPLE_LIGHT_MODES, lightLook, lightLamps } from './lightSwitch.js';
 import { poseBarPod, poseThumbThrottle, POD } from './foremanControls.js';
 import { Indicators, INDICATOR_PARAMS } from './indicators.js';
@@ -146,6 +148,8 @@ export class Quad {
     this.model = build ? build({ dashStyle }) : buildQuadModel({ bodyColor, dashStyle, style, solo, plateNumber, chokeStyle, tapStyle, driveSwitch: drive, decay });
     this.model.scale.setScalar(scale);
     this.dash = this.model.userData.dash;
+    // Spotlamps are fitted at the bench to the quads and the Land Rovers (not the tractor, the UTV or the cars), by their headlamps (spotlamps.js).
+    this.spotlamps = new Spotlamps(!tractor && !utv && !car && !noHeadlight && !!addSpotlamps(this.model));
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
     this.faults.hasBoot = !engine.params.compressionIgnition; // nor an intake boot to split
@@ -548,6 +552,7 @@ export class Quad {
     if (this.drive && this.input) this.driveKeys(input);
     if (this.lights && this.input && input.wasPressed('KeyP')) this.lights.cycle();
     if (this.barLights && this.input && input.wasPressed('KeyP')) this.barLights.cycle();
+    if (this.spotlamps.fitted && this.input && input.wasPressed('Digit9')) this.say(this.spotlamps.toggle() ? 'Spotlamps on' : 'Spotlamps off');
     if (this.radio && this.input && input.wasPressed('KeyI')) this.radioKey(input);
     if (this.signals && this.input) {
       if (input.wasPressed('Comma')) this.signals.press('left');
@@ -1337,7 +1342,11 @@ export class Quad {
     const beams = this.lights ? lightLook(this.lights.mode, e.hasPower) : barMode === 'high' ? lightLook('high', true) : null;
     // Lamps on the battery's supply load it, and dim when it is weak and the revs are low (engine/charging.js); the old quads' run off the magneto.
     const onBattery = lit && (this.lights ? beams.level > 0 : this.steadyLights);
-    e.lightLoad = onBattery ? 1 : 0;
+    // Spotlamps always run off the battery, and the key must be on as well; they load it on top of the headlamps.
+    const spotSupply = this.spotlamps.fitted && this.spotlamps.on ? lampSupply(e.battery, e.rpm, e.params.idleRpmWarm, e.params.maxRpm, e.params.batteryWeakBelow) : 1;
+    this.spotlamps.update(dt, e.ignitionOn && e.hasPower, spotSupply);
+    setSpotlamps(this.model, this.spotlamps.fitted, this.spotlamps.level);
+    e.lightLoad = Math.min(1, (onBattery ? 1 : 0) + this.spotlamps.load);
     const supply = onBattery ? lampSupply(e.battery, e.rpm, e.params.idleRpmWarm, e.params.maxRpm, e.params.batteryWeakBelow) : 1;
     const level = (this.lights ? beams.level : look.level) * this.quirks.headlight(dt) * supply;
     setHeadlights(this.model, lit, level, beams ? beams.colour : look.colour, beams);

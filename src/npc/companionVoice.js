@@ -893,8 +893,14 @@ export class CompanionVoice {
     if (this.rainTime > 60) this.say('stillRaining', { chance: 0.004 });
     // The day going (world/daylight.js): a word as the light goes, and out in the dark, now and then, that she'd like to go in.
     const dark = weather.dark ?? 0;
+    this.dark = dark; // read by her reactions (a jumpy girl in the dark) and her start's line
     if (dark > 0.25 && dark < 0.8 && !this.duskSaid) this.duskSaid = !!this.say('gettingDark', { chance: 0.9 });
     if (dark > 0.85 && !this.companion.coveredNow) this.say('darkGoIn', { chance: 0.003 });
+  }
+
+  /** She has just jumped at something (reactions.js): in the dark, she says so. */
+  onDarkStartle(type) {
+    if (this.dark > 0.5 && (type === 'flinch' || type === 'stepBack' || type === 'gasp')) this.say('darkStartle', { chance: 0.75, urgent: true });
   }
 
   /** Picks a line for the situation and says it; returns what was said, or null. */
