@@ -4,7 +4,7 @@
 
 export const TUNE_CATEGORIES = {
   'Driving and towing': [
-    '2WD and 4WD', 'Throttle key', 'Brake key', 'Gamepad', 'Gamepad rumble', 'Brakes', 'Frozen throttle cable', 'Diesel waxing', 'Bleeding a diesel', 'Handbrake', 'Headlights', 'Vehicle lights', 'Yak lights', 'Spotlamps', 'Indicators', 'Seat belts', 'Mud on the lens', 'Two-wheeler lean', 'Three-wheeler rider lean', 'Tyres', 'Quad strengths', 'Tyre squeal', 'Towing', 'Tow chain', 'Tow rope', 'Trailer', 'Tipping trailer', 'Trailer tub', 'Sprayer trailer',
+    '2WD and 4WD', 'Throttle key', 'Brake key', 'Gamepad', 'Gamepad rumble', 'Brakes', 'Frozen throttle cable', 'Diesel waxing', 'Bleeding a diesel', 'Handbrake', 'Headlights', 'Vehicle lights', 'Yak lights', 'Spotlamps', 'Snorkel', 'Indicators', 'Seat belts', 'Mud on the lens', 'Two-wheeler lean', 'Three-wheeler rider lean', 'Tyres', 'Quad strengths', 'Tyre squeal', 'Towing', 'Tow chain', 'Tow rope', 'Trailer', 'Tipping trailer', 'Trailer tub', 'Sprayer trailer',
     'Yak bed', 'Yak load', 'Tor load', 'Tor tailgate', 'Crag back door', 'Finch hatch', 'Griffin hatch', 'Bale trailer wear', 'Bale trailer mud', 'Tipping trailer wear', 'Tipping trailer mud', 'Sprayer trailer wear', 'Sprayer trailer mud', 'Yak riders', 'Tor riders', 'Crag riders', 'Crag back seats', 'Finch riders', 'Griffin riders', 'Trailer riders', 'Tractor creep', 'Tractor runaway',
   ],
   'Engines, fuel and faults': ['Quirks', 'Engine oil', 'Dripping carb', 'Carb icing', 'Water in the fuel', 'Barn find', 'Red diesel mistake', 'Two-stroke smoke'],

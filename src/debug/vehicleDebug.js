@@ -63,6 +63,7 @@ export function fixEverything(unit) {
   unit.quad.startTrouble = 0;
   unit.quad.brakes.fix();
   if (unit.quad.spotlamps) unit.quad.spotlamps.aim = 1; // aimed true again (they stay fitted)
+  if (unit.quad.snorkel) unit.quad.snorkel.seal = 1; // sealed again (it stays fitted)
   unit.quad.iceCable.fix();
   unit.quad.carbIce.fix();
   unit.quad.fuel.wax = 0;
@@ -102,6 +103,7 @@ export function problemSummary(unit) {
   if (unit.quad.faults.chainOff) bits.push('chain off the sprocket');
   if (unit.quad.faults.chainDryness > 0.8) bits.push('chain dry');
   if (unit.quad.spotlamps?.fitted && unit.quad.spotlamps.aim < 0.9) bits.push(`spotlamps aimed badly ${unit.quad.spotlamps.aim.toFixed(2)}`);
+  if (unit.quad.snorkel?.fitted && unit.quad.snorkel.seal < 0.9) bits.push(`snorkel leaking ${unit.quad.snorkel.seal.toFixed(2)}`);
   if (e.seized) bits.push('seized');
   if (e.scuff > 0.05) bits.push(`scuffed ${e.scuff.toFixed(2)}`);
   if (e.fouling > 0.1) bits.push(`plug fouled ${e.fouling.toFixed(2)}`);

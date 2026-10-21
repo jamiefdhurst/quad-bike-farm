@@ -3,6 +3,7 @@ import { SAVE_KEY, SAVE_VERSION, DEFAULT_FARM_PARAMS as P, readSave, writeSave, 
 import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from '../src/farm/farmState.js';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { Spotlamps } from '../src/vehicle/spotlamps.js';
+import { Snorkel } from '../src/vehicle/snorkel.js';
 import { Faults } from '../src/vehicle/faults.js';
 import { FuelSystem } from '../src/vehicle/fuelSystem.js';
 import { Sump } from '../src/vehicle/sump.js';
@@ -185,6 +186,22 @@ describe('a vehicle from one day to the next', () => {
     restoreVehicle(b, captureVehicle(a));
     expect(b.quad.faults.has('carb')).toBe(false);
     expect(b.quad.faults.levels.carb).toBe(0);
+  });
+
+  it('keeps a snorkel fitted at the bench, and ignores it on a vehicle that cannot have one', () => {
+    const a = unit();
+    a.quad.snorkel = new Snorkel(true);
+    a.quad.snorkel.fit(0.6);
+    const data = JSON.parse(JSON.stringify(captureVehicle(a)));
+    const b = unit();
+    b.quad.snorkel = new Snorkel(true);
+    restoreVehicle(b, data);
+    expect(b.quad.snorkel).toMatchObject({ fitted: true, seal: 0.6 });
+    const quad = unit();
+    quad.quad.snorkel = new Snorkel(false);
+    restoreVehicle(quad, data);
+    expect(quad.quad.snorkel.fitted).toBe(false);
+    expect(captureVehicle(unit()).snorkel).toBe(null);
   });
 
   it('keeps spotlamps fitted at the bench, and ignores them on a vehicle that cannot have any', () => {

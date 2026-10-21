@@ -16,6 +16,7 @@ const OVERFLOW_KEYS = [
   { code: 'Quote', label: "'" },
   { code: 'Period', label: '.' },
   { code: 'Slash', label: '/' },
+  { code: 'Comma', label: ',' },
 ];
 
 /**
@@ -120,7 +121,7 @@ export class Bench {
     if (kind in SHED_JOBS) return !this.shedWhyNot(kind, unit);
     if ((kind === 'filter' || kind === 'belt') && !servicePlan(factsOf(unit)).includes(kind)) return false;
     if (kind === 'newTyres' && !this.tyreJob(unit)) return false;
-    return this.partOk(kind, unit) && this.batteryHandsOk(kind, unit) && (unit.barnFind && kind !== 'chargeOn' && kind !== 'chargeOff' ? unit.barnFind.available(kind) : unit.barnFind && !unit.barnFind.tarpOff ? false : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch, unit.quad.spotlamps));
+    return this.partOk(kind, unit) && this.batteryHandsOk(kind, unit) && (unit.barnFind && kind !== 'chargeOn' && kind !== 'chargeOff' ? unit.barnFind.available(kind) : unit.barnFind && !unit.barnFind.tarpOff ? false : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch, unit.quad.spotlamps, unit.quad.snorkel));
   }
 
   toolboxHere() {
@@ -253,8 +254,8 @@ export class Bench {
       else if (e.type === 'done') {
         const job = this.job;
         const unit = this.unit;
-        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump, filter: unit.quad.filter, spotlamps: unit.quad.spotlamps, batteryOut: () => this.game.batteryOut(unit), batteryIn: () => this.game.batteryIn(unit) }, this.params));
-        if (!job.service) this.say(job.kind === 'bore' ? (job.botched ? 'boreBotched' : 'boreDone') : job.botched ? 'botched' : 'done');
+        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump, filter: unit.quad.filter, spotlamps: unit.quad.spotlamps, snorkel: unit.quad.snorkel, batteryOut: () => this.game.batteryOut(unit), batteryIn: () => this.game.batteryIn(unit) }, this.params));
+        if (!job.service) this.say(job.kind === 'bore' ? (job.botched ? 'boreBotched' : 'boreDone') : job.kind === 'snorkel' ? (unit.quad.snorkel.seal < 1 ? 'snorkelBotched' : 'snorkelDone') : job.botched ? 'botched' : 'done');
         if (unit.barnFind) this.foundJobDone(unit, job.kind);
         this.game.notebook.note(unit, { kind: 'job', job: job.kind, botched: job.botched }, { by: 'you' });
         this.job = null;
@@ -290,7 +291,7 @@ export class Bench {
         return;
       }
       this.kindsFor(this.unit).forEach((kind, i) => {
-        const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key, the twelfth on equals, the thirteenth on the left bracket, the fourteenth on the right, the fifteenth on the semicolon, the sixteenth on the quote
+        const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key, the twelfth on equals, the thirteenth on the left bracket, the fourteenth on the right, the fifteenth on the semicolon, the sixteenth on the quote, then period, slash and comma
         const hit = i >= 10 ? input.wasPressed(OVERFLOW_KEYS[i - 10].code) : input.wasPressed(`Digit${n}`) || input.wasPressed(`Numpad${n}`);
         if (hit) this.begin(kind);
       });
@@ -376,7 +377,7 @@ export class Bench {
           const need = this.partFor(k, unit);
           note = k === 'newTyres' ? ` (needs ${need.count} ${need.count === 1 ? PARTS[need.part].one : PARTS[need.part].many} from the tyre rack)` : ` (no ${PARTS[need.part].one} on the shelf)`;
         }
-        else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'spotlamps' ? (unit.quad.spotlamps.fitted ? ' ✓ fitted' : ' (quads and Land Rovers only)') : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
+        else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'snorkel' ? (unit.quad.snorkel.fitted ? ' ✓ fitted' : ' (Moorlands only)') : k === 'spotlamps' ? (unit.quad.spotlamps.fitted ? ' ✓ fitted' : ' (quads and Land Rovers only)') : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
       }).join('') + this.serviceRow(unit) + '<div class="bn-row"><span class="key">R</span>Jobs that need the shed kit<div class="bn-sub">Compressor, parts washer and the pit</div></div>';
       this.keysEl.textContent = 'Press a number to start   ·   R the shed kit   ·   G step away';
