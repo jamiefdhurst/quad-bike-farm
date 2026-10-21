@@ -704,11 +704,11 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I fit spotlamps for riding at night?',
-        a: `Park a quad or a Land Rover in its bay at the barn, open the workbench and choose "Fit a pair of spotlamps" (the last job but one on the
+        a: `Park a quad or a Moorland in its bay at the barn, open the workbench and choose "Fit a pair of spotlamps" (the last job but one on the
           list). Bolt the stalks on, mount the lamps, do the wiring up snug and aim them: let go of each hold inside its window, or they come out
           pointing low and off to one side. They are fitted for good, and the farm keeps them from one day to the next. The tractor, the Yak and the
           cars can't have them.`,
-        tip: 'Spotlamps are a job on the barn workbench, for quads and Land Rovers.',
+        tip: 'Spotlamps are a job on the barn workbench, for quads and Moorlands.',
       },
       {
         q: 'How do I switch the spotlamps on?',
