@@ -523,6 +523,19 @@ export const FAQ_SECTIONS = [
         tip: 'Stuck? Rock it: forwards, backwards, forwards. Each change of direction works it looser.',
       },
       {
+        q: 'How do I get the RB300 up a bank or out of a bog when it won’t start?',
+        a: `Look at the RB300, press <kbd>X</kbd> to take the winch hook, walk it to a tree (look at the trunk, within about six metres, and press <kbd>E</kbd>), then
+          hold <kbd>X</kbd> by the RB300 or sitting on it. The cable draws tight and the RB300 pulls itself up to the tree with its brakes off, engine running or
+          not, and stops a couple of metres short. It groans when it is working hard. <kbd>E</kbd> on the same tree takes the hook off. The hook also goes on the
+          tractor, the cars, the Land Rovers and the UTV: those are too heavy to drag, so the RB300 winds itself up to them instead. Any other quad is still dragged
+          to the RB300.`,
+        tip: 'Winch hook on a tree (E), then hold X by the RB300: it pulls itself up, engine or no engine.',
+      },
+      {
+        q: 'Why won’t the winch pull the tractor?',
+        a: `It is far too heavy for the little winch (2,000 kg against 6.5 kN), so it is only an anchor: the cable goes tight and the RB300 moves to the tractor.`,
+      },
+      {
         q: 'Amy or Jess is up on her quad waving and shouting. What do I do?',
         a: `She has bogged it (or tipped it over) and can't get out. Bogged, she stands up on the footboards and waves; tipped, she climbs off and waves
           beside it. She shouts where she is ("I am stuck by the ford!"), and the farm map rings her in red while she waits. Go to her. For a bog, hold
