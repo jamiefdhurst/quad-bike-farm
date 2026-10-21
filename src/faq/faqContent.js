@@ -2337,6 +2337,10 @@ export const VEHICLE_NOTES = {
     blurb: 'The neighbour’s worn-out old Kestrel T185 three-wheeler: one front wheel on chrome forks, two fat tyres, a wide red rear body, a long flat seat and a rectangular headlamp.',
     tips: ['Pull-start only.', 'Tips over in a fast tight turn.', 'Lumpy and smoky at idle, and hard to start.', 'The choke knob and the fuel tap are by the carb.'],
   },
+  plover: {
+    blurb: 'The Ashby Plover 125, an old green rigid-framed single that stands under a tarp at the back of the barn: sprung saddle, spoked wheels, a long chrome silencer and a kickstart, with a Smiths-style speedo in the headlamp.',
+    tips: ['Under a tarp until you take it off at the bench.', 'Starts the old way: tickle the carb, set the advance-retard lever, kick it.', 'A clutch and a three-speed foot-change gearbox.'],
+  },
   loan: {
     blurb: 'The dealer’s loan quad, a silver Tamura Ursa 450: fuel injected, starts on the button, idles smooth and quiet, and has almost no wear.',
     tips: ['Fuel injected: no choke and no fuel tap, even on a frosty morning.', 'Full tank and a bit more power than the old farm quads.', 'The dealer’s sticker is on the left rear fender.'],

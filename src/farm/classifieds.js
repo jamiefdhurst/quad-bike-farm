@@ -59,6 +59,7 @@ export const FOR_SALE = {
 // Everything else in the spec files, and why it is not for sale. Another vehicle goes in one list or the other.
 export const NOT_FOR_SALE = {
   loan: 'it is on loan, not ours to sell',
+  plover: 'the old bike is the barn project, always under its tarp at the back: it is not for sale',
   fiesta: "the girls' own car, always on the farm (one slot; a second needs vehicles that can have several of a model)",
   corsa: "the girls' own car, always on the farm (one slot; a second needs vehicles that can have several of a model)",
 };

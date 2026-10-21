@@ -19,6 +19,7 @@ import {
 //   blaster:   yellow. Only the key, in a small housing on the bar clamp.
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   mini moto, old three-wheeler. A key switch under the bar clamp. asp: the kids' quad's, the same key on the V bars' clamp block.
+//   smiths:    the old bike: a round Smiths-style speedo to 70 mph with an odometer drum, a red ignition lamp and the key, in a cup on the headlamp's top.
 //   tractor:   the tractor (a Massey-Ferguson-35-style cluster, TODO 98). Three round dials in chrome bezels set straight into the red metal of the cowl, no housing (a big rev counter with an hour meter and the PTO speed marked, water temperature, fuel), a brass ignition switch, and four warning lamps (temperature, GLOW, CHARGE, OIL).
 //   utv:       the UTV (a Mule-style cluster, TODO 99): a round speedo to 40 mph with its odometer between four lamp pockets (glow, charge, oil, parking brake), a strip of the rest of the tell-tales, a separate fuel and hours unit and a key switch in 3D. It was a basic LCD over symbols for glow, charge, oil, park
 //              (parking brake), a belted figure (flashes while someone sits unbelted), a headlamp (green, blue for main beam) and the key.
@@ -452,6 +453,70 @@ function buildBayou() {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       const o = counterDigits(s.odoMiles, 6);
       const L = { lamps: lampStates(s), mph: shownMph, odo: o };
+      if (gate(lookKey(s, [Math.round(shownMph * 4), o.key]))) face.redraw((ctx) => draw(ctx, s, L));
+    },
+  };
+}
+
+// The old bike's speedo ----------------------------------------------------------------
+
+/** The Smiths-style speedo on the old bike: mph 0 to 70 sweeping 270 degrees from the lower left to the lower right, 35 at the top. */
+export const SMITHS_DIAL = { from: 225, to: -45, maxMph: 70 };
+
+export function smithsNeedleAngle(mph) {
+  const { from, to, maxMph } = SMITHS_DIAL;
+  return from + ((to - from) * Math.min(maxMph, Math.max(0, mph))) / maxMph;
+}
+
+function buildSmiths() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const [cx, cy] = [150, 50];
+  // A round cup in the body paint colour's place (a dark one here, the model paints its own bezel), open towards the rider (-Z).
+  const cup = new THREE.LatheGeometry(
+    [[0, -0.03], [0.047, -0.03], [0.0515, -0.024], [0.0515, 0.022], [0.0485, 0.03], [0.0435, 0.03], [0.0425, 0.022], [0.0415, 0.0]].map(([r, y]) => new THREE.Vector2(r, y)),
+    40,
+  ).rotateX(-Math.PI / 2);
+  const cupMesh = new THREE.Mesh(cup, plastic);
+  cupMesh.name = 'dashHousing';
+  group.add(cupMesh);
+  const face = mmPanel({ x: cx - 46, y: cy - 46, w: 92, h: 92, ox: cx, oy: cy, z: -0.0175 });
+  group.add(face.mesh);
+  const gate = changeGate();
+  let shownMph = 0;
+
+  function draw(ctx, s, L) {
+    const { from, to } = SMITHS_DIAL;
+    ctx.fillStyle = '#0c0c0b';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 42, 0, Math.PI * 2);
+    ctx.fill();
+    // Cream figures every ten, a tick every five and a short one between, as on the old instruments.
+    ticks(ctx, cx, cy, 37, 41, from, to, 70, '#d9d3bd', 0.5);
+    ticks(ctx, cx, cy, 34, 41, from, to, 14, '#ece6cf', 1.1);
+    labels(ctx, cx, cy, 27, from, to, ['0', '10', '20', '30', '40', '50', '60', '70'], '#ece6cf', 6.4);
+    text(ctx, 'MILES', cx, cy - 14, 3.6, '#c9c3ad', { align: 'center', spacing: 0.4 });
+    text(ctx, 'PER HOUR', cx, cy - 10, 2.8, '#c9c3ad', { align: 'center', spacing: 0.3 });
+    drum(ctx, cx - 13.8, cy + 12, L.odo, 7);
+    makerBadge(ctx, 'ashby', cx, cy + 27, 5.4, 24);
+    // A red ignition lamp low on the face, lit with the key; the key's own switch beside it.
+    lamp(ctx, cx - 17, cy + 31, LAMP.red, '', L.lit, { r: 2.6 });
+    keySwitch(ctx, cx + 17, cy + 31, s.keyOn);
+    needle(ctx, cx, cy, 38, smithsNeedleAngle(L.mph), '#e8dfb6', 1.2);
+    ctx.fillStyle = '#58584f';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  return {
+    group,
+    mount: podMount(group, 0, 0.058, 0, 0.85),
+    update(s) {
+      // The needle follows the road speed with a little lag, like a cable.
+      shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
+      const o = counterDigits(s.odoMiles, 6);
+      const L = { mph: shownMph, odo: o, lit: !!s.ignition };
       if (gate(lookKey(s, [Math.round(shownMph * 4), o.key]))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
@@ -1330,7 +1395,7 @@ function buildCorsa() {
 }
 
 /** Dash styles buildDash knows: every quad spec must name one of these. */
-export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'asp', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa'];
+export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'asp', 'smiths', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa'];
 
 /** Where each dash sits on the bars (metres, in the bars' frame) and how far it tilts back. A nacelle quad carries its own on its top. */
 export const DASH_PLACE = {
@@ -1341,6 +1406,7 @@ export const DASH_PLACE = {
   blaster: { pos: [0, -0.034, -0.02], tilt: 0.5 }, // sitting on the clamp block at the bars' middle, behind the lamp (the V's middle is 7 cm below the bars' origin)
   quadracer: { pos: [0.195, -0.022, -0.075], tilt: 0.9 }, // on the pod on the level run of the V bars (the kill switch's panel)
   kidsKey: { pos: [0, 0.075, 0.0], tilt: 0.9 },
+  smiths: { pos: [0, 0, 0], tilt: 0.5 }, // the old bike's speedo: its model sets it in the headlamp nacelle itself
   asp: { pos: [0, -0.034, -0.02], tilt: 0.5 }, // the kids' quad's key, on the clamp block at the V bars' middle as the yellow's
   tractor: { pos: [0, 0, 0], tilt: 1.05 }, // the tractor's model places it on its scuttle itself
   utv: { pos: [0, 0, 0], tilt: 0.9 }, // so does the UTV's
@@ -1359,6 +1425,7 @@ const BUILDERS = {
   quadracer: buildQuadracer,
   kidsKey: buildKidsKey,
   asp: buildKidsKey,
+  smiths: buildSmiths,
   tractor: buildTractor,
   utv: buildUtv,
   series: buildSeries,

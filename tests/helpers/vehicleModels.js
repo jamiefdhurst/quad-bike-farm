@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC } from '../../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC } from '../../src/vehicle/quadSpecs.js';
 
 // Every vehicle's model built in node, the way quadUnit.js builds it, for the tests that look at the models as a whole (budgets,
 // fixed points, proportions). The dashes, plates and decals draw on canvases, so a canvas that accepts every call stands in.
@@ -9,13 +9,14 @@ export function fakeCanvas() {
   return { width: 0, height: 0, getContext: () => ctx, style: {} };
 }
 
-export const ALL_SPECS = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC];
+export const ALL_SPECS = [...QUAD_SPECS, ...EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC];
 
 /** [{ id, spec, model, layout }] for every vehicle, built fresh. Call from a beforeAll. */
 export async function buildAllModels() {
   vi.stubGlobal('document', { createElement: () => fakeCanvas() });
   const { buildQuadModel } = await import('../../src/vehicle/quadModel.js');
   const { buildMiniMotoModel } = await import('../../src/vehicle/miniMotoModel.js');
+  const { buildBantamModel, BANTAM_LAYOUT } = await import('../../src/vehicle/bantamModel.js');
   const { buildAtcModel } = await import('../../src/vehicle/atcModel.js');
   const { buildTractorModel } = await import('../../src/vehicle/tractorModel.js');
   const { buildUtvModel } = await import('../../src/vehicle/utvModel.js');
@@ -32,6 +33,7 @@ export async function buildAllModels() {
     let model;
     let layout = QUAD_LAYOUT;
     if (spec.miniMoto) [model, layout] = [buildMiniMotoModel(o), MOTO_LAYOUT];
+    else if (spec.classicBike) [model, layout] = [buildBantamModel(o), BANTAM_LAYOUT];
     else if (spec.threeWheeler) [model, layout] = [buildAtcModel({ ...o, chokeStyle: spec.chokeStyle }), ATC_LAYOUT];
     else if (spec.tractor) [model, layout] = [buildTractorModel(o), TRACTOR_LAYOUT];
     else if (spec.utv) [model, layout] = [buildUtvModel(o), UTV_LAYOUT];
