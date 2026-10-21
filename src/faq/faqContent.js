@@ -394,12 +394,12 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I take the ford fast, or cross the stream when it is up?',
-        a: `Fit a snorkel to a Land Rover. Park it in the big bay at the barn, open the workbench and choose "Fit a snorkel": cut the hole, run the pipe up
+        a: `Fit a snorkel to a Moorland. Park it in the big bay at the barn, open the workbench and choose "Fit a snorkel": cut the hole, run the pipe up
           past the screen, bed the joints in with sealant and clamp the hose on, letting go of the last two holds inside their windows. The air then comes in over
-          the roof, so the shallower water is nothing at any speed and the ford at most a splutter. It does not make the Land Rover a boat: hit the ford
+          the roof, so the shallower water is nothing at any speed and the ford at most a splutter. It does not make the Moorland a boat: hit the ford
           flat out when the stream is up after rain and it can still drown. Skimp on the sealant or the clamps and a joint leaks, so more gets in. It is fitted for good and the farm
-          keeps it. Only the two Land Rovers can have one; a quad's intake is under the seat, so take it slowly.`,
-        tip: 'A snorkel, fitted at the barn workbench, lets a Land Rover take the ford fast.',
+          keeps it. Only the two Moorlands can have one; a quad's intake is under the seat, so take it slowly.`,
+        tip: 'A snorkel, fitted at the barn workbench, lets a Moorland take the ford fast.',
       },
       {
         q: 'Why is the ford deeper than it was?',
