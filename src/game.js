@@ -628,6 +628,7 @@ export class Game {
     // Perhaps an old quad under a tarp at the back of the barn (vehicle/barnFind.js): a unit like the tractor, not one of the girls' quads.
     this.barnFindParams = { ...DEFAULT_BARN_FIND_PARAMS };
     registerTuning('Barn find', this.barnFindParams, BARN_FIND_RANGES);
+    this.pendingLooks = []; // the barn finds' rust, cracks and webs, put on once the game is ready (dressFinds)
     this.rustyUnit = this.addRusty();
     this.ploverUnit = this.addPlover(); // and always the old bike, under its own tarp (vehicle/bantamModel.js)
     if (this.tractorUnit) this.podRack.allow(this.tractorUnit.id); // likewise the tractor, which is added after the pods are dealt
@@ -1935,6 +1936,7 @@ export class Game {
   }
 
   start() {
+    setTimeout(() => this.dressFinds(), 300); // the barn finds' damage, now the load is done
     const overlay = document.getElementById('overlay');
     overlay.addEventListener('click', () => {
       this.audioHub.unlock();
@@ -4104,7 +4106,8 @@ export class Game {
       if (unit.barnFind && s.barnFind) {
         unit.barnFind.restore(s.barnFind);
         unit.engine.startBlocked = unit.barnFind.startBlocked;
-        unit.rustyLook.sync(unit.barnFind, { instant: true });
+        if (unit.barnFind.tarpOff && unit.tarp) unit.tarp.visible = false; // (its look is not on yet: dressFinds does the rest)
+        unit.rustyLook?.sync(unit.barnFind, { instant: true });
       }
       const h = this.history.quads[unit.id];
       if (h) Object.assign(h, { wear: unit.engine.wear, faults: savedFaults(s) });
@@ -4706,9 +4709,23 @@ export class Game {
     unit.mud.coat.look.wear = P.bodyWear; // and the wear layer turned right up: rust in every fold, the edges rubbed bare
     unit.tarp = buildTarp(unit.quad.model); // draped over this donor's own shape
     unit.quad.bodyRoot.add(unit.tarp);
-    unit.rustyLook = applyDamage(unit.quad.model, damage, unit.tarp); // rust patches, cracks, webs, cracked tyres and (on the yellow) a mouse nest; the jobs and the tarp change them
+    unit.rustyLook = null; // rust patches, cracks, webs, cracked tyres and (on the yellow) a mouse nest: put on after the load (dressFinds), under the tarp
+    this.pendingLooks.push({ unit, damage });
     this.units = [...this.units, unit];
     return unit;
+  }
+
+  /**
+   * Puts the barn finds' damage on, one at a time, once the game is ready: rust patches, cracks and webs are rays through every triangle (about 0.4 s a
+   * vehicle) and the tarp hides them, so they wait until the start screen is showing instead of being part of the load.
+   */
+  dressFinds() {
+    const next = this.pendingLooks.shift();
+    if (!next) return;
+    const { unit, damage } = next;
+    unit.rustyLook = applyDamage(unit.quad.model, damage, unit.tarp);
+    unit.rustyLook.sync(unit.barnFind, { instant: true });
+    setTimeout(() => this.dressFinds(), 50);
   }
 
   /** The old bike (#38): the Plover, always under its tarp at the back of the barn, a restoration with its own jobs (vehicle/barnFind.js CLASSIC_JOBS). Returns its unit. */
@@ -4747,7 +4764,8 @@ export class Game {
     unit.mud.coat.look.wear = P.bodyWear;
     unit.tarp = buildTarp(unit.quad.model);
     unit.quad.bodyRoot.add(unit.tarp);
-    unit.rustyLook = applyDamage(unit.quad.model, damage, unit.tarp);
+    unit.rustyLook = null; // its rust, cracks and webs come after the load too (dressFinds)
+    this.pendingLooks.push({ unit, damage });
     this.units = [...this.units, unit];
     return unit;
   }
@@ -4792,8 +4810,8 @@ export class Game {
   updateFind(unit, dt) {
     const find = unit.barnFind;
     const e = unit.engine;
-    unit.rustyLook.sync(find); // the tarp slides off when it is taken off, the tyres and the nest follow their jobs
-    unit.rustyLook.step(dt);
+    unit.rustyLook?.sync(find); // the tarp slides off when it is taken off, the tyres and the nest follow their jobs
+    unit.rustyLook?.step(dt);
     if (find.brakeSeized) unit.quad.parkBrake = true;
     unit.quad.kickLocked = find.kickSeized;
     if (!e.params.noStarter && find.setBattery(e.battery, !e.batteryOut)) this.notebook.note(unit, { kind: 'job', job: 'battery' }, { by: 'you' });
