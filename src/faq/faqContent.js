@@ -1387,7 +1387,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I get a photo of a girl asleep?',
-        a: `Find one dozing on the bales, stand in front of her and press <kbd>5</kbd>. She sleeps on through the shutter, and the picture goes on the corkboard like any other. It also ticks "Caught napping" on the bucket list.`,
+        a: `Find one dozing on the bales, stand in front of her and press <kbd>7</kbd>. She sleeps on through the shutter, and the picture goes on the corkboard like any other. It also ticks "Caught napping" on the bucket list.`,
       },
       {
         q: 'Why are the girls wearing different coloured shirts from my last farm?',
@@ -1671,8 +1671,21 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I take a photo?',
-        a: `Press 5, on foot or on a quad. The camera comes up, any girl in front of you reacts, and a moment later the shutter goes. The shot is pinned on the corkboard on the barn's back wall, south of the chalkboards. It throws away a shot of nothing but sky or a blank wall, and there is a short wait between shots.`,
-        tip: 'Press 5 to take a photo. They get pinned on the corkboard in the barn.',
+        a: `Press 7, on foot or on a quad. The camera comes up, any girl in front of you reacts, and a moment later the shutter goes. The shot is pinned on the corkboard on the barn's back wall, south of the chalkboards. It throws away a shot of nothing but sky or a blank wall, and there is a short wait between shots.`,
+        tip: 'Press 7 to take a photo, or 8 for photo mode. They get pinned in the barn.',
+      },
+      {
+        q: 'How do I use photo mode?',
+        a: `Press <kbd>8</kbd>, on foot or on a quad. The farm stops where it is, the clock and the weather with it, and you fly the camera: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> along where you look, <kbd>E</kbd> up, <kbd>Q</kbd> down, <kbd>Shift</kbd> for fast, the mouse to look and the wheel to zoom. <kbd>G</kbd> has the girls in the shot pose, and again lets them go. <kbd>H</kbd> hides the screen's dials and words. <kbd>Enter</kbd> or a click takes the picture. Press <kbd>8</kbd> again to leave.`,
+        tip: 'Press 8 for photo mode: the farm stops and the camera flies free.',
+      },
+      {
+        q: 'Where does a photo-mode picture go?',
+        a: `Two places: pinned on the corkboard in the barn as a small print like any other, and saved to your downloads as a full-size PNG named for the day and time. The browser may ask the first time whether the game can download several files.`,
+      },
+      {
+        q: 'Why can\'t I fly further, or lower?',
+        a: `Photo mode keeps the camera within about forty metres of where you raised it and a little above the ground, so you can't get out of the farm or under it. Leave it and raise it again from somewhere else.`,
       },
       {
         q: 'Why did she put her hand up and tell me to put the camera away?',

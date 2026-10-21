@@ -26,7 +26,8 @@ export const ACTIONS = [
     ['KeyY', 'Dipstick, top up coolant (hold)'],
     ['KeyJ', 'Hook a trailer on or off'],
     ['KeyL', 'Horn (hold)'],
-    ['Digit5', 'Raise the camera'],
+    ['Digit7', 'Raise the camera'],
+    ['Digit8', 'Photo mode'],
     ['Digit6', 'Wave'],
   ] },
   { group: 'Engine and gearbox', keys: [
@@ -44,6 +45,7 @@ export const ACTIONS = [
     ['Digit2', 'Gear 2'],
     ['Digit3', 'Gear 3'],
     ['Digit4', 'Gear 4'],
+    ['Digit5', 'Gear 5'],
   ] },
   { group: 'Switches and the cab', keys: [
     ['Comma', 'Left indicator'],

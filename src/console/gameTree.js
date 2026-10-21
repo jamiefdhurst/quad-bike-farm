@@ -411,6 +411,9 @@ export function buildGameTree(g, host) {
     count: ro(() => g.photos.wall.photos.length, '', 'photos pinned'),
     take: flag(() => false, (v) => v && g.photos.press(), 'set to true: raise the camera now'),
     clear: flag(() => false, (v) => v && g.photos.clear(), 'set to true: take every photo down'),
+    mode: flag(() => g.photos.modeActive, (v) => (v ? g.photos.enterMode() : g.photos.exitMode()), 'photo mode (key 8): the world stands still and the camera flies free'),
+    hud: flag(() => g.photos.hudHidden, (v) => g.photos.modeActive && g.photos.setHudHidden(!!v), 'in photo mode: true hides the HUD'),
+    pose: flag(() => g.photos.girlsPosing, (v) => g.photos.modeActive && g.photos.setGirlsPosing(!!v), 'in photo mode: true has the girls in the shot pose'),
   }), 'the camera and the barn corkboard');
   const waving = group(() => ({
     wave: flag(() => false, (v) => v && g.waveAtGirls(), 'set to true: wave as if you had pressed 6'),
