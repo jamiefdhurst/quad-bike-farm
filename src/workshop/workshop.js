@@ -4,6 +4,7 @@ import { registerTuning } from '../core/tuning.js';
 import { FIX_PARTS, PARTS, jetShelfChange } from './spares.js';
 import { hasBattery } from '../items/battery.js';
 import { airText } from '../vehicle/bleeding.js';
+import { pressureWhyNot } from '../farm/shed.js';
 import {
   DEFAULT_TUNE_PARAMS,
   TUNE_PARAM_RANGES,
@@ -232,6 +233,10 @@ export class Workshop {
 
   /** Changes one setting by a click; returns whether anything changed. */
   adjust(key, direction) {
+    if (key === 'tyres' && this.pressureWhyNot(this.unit)) {
+      this.game.hud.toast(this.pressureWhyNot(this.unit));
+      return false;
+    }
     const q = this.quads.get(this.unit);
     const next = nudge(q.settings, key, direction, q.stock, this.params);
     if (Object.keys(next).every((k) => next[k] === q.settings[k])) return false;
@@ -383,10 +388,11 @@ export class Workshop {
       this.game.hud.toast(`There is no spare ${PARTS[part].one} on the shelf: order one from the parts rack in the barn`);
       return;
     }
-    if (kind === 'puncture') this.levelTyres(unit); // pumping up is pumping up, whether or not there was a puncture
+    const noAir = kind === 'puncture' && this.pressureWhyNot(unit);
+    if (kind === 'puncture' && !noAir) this.levelTyres(unit); // pumping up is pumping up, whether or not there was a puncture
     const done = unit.quad.faults.fix(kind, { rough: true });
     if (done && part) this.game.spares.take(part);
-    this.game.hud.toast(done ? REPAIR_DONE[kind] : REPAIR_NOTHING[kind]);
+    this.game.hud.toast(done ? (noAir ? `${REPAIR_DONE[kind]}. It needs air from the compressor, though` : REPAIR_DONE[kind]) : REPAIR_NOTHING[kind]);
     if (done) for (const c of this.game.companions) c.voice.onTinker?.('service');
     this.render(); // the pump's readings changed
   }
@@ -426,6 +432,12 @@ export class Workshop {
     return true;
   }
 
+  /** Why the pressures can't be changed from the toolbox, or null if they can (farm/shed.js): they are set at the barn's compressor. */
+  pressureWhyNot(unit) {
+    const g = this.game;
+    return pressureWhyNot(g.shed, g.farm.day, g.world.layout.shed.compressor, unit.quad.position.x, unit.quad.position.z, g.shedParams.hoseReach);
+  }
+
   /** Pumps (or lets down) all four tyres to the pressure the toolbox is set to. */
   levelTyres(unit) {
     const q = this.quads.get(unit);
@@ -437,6 +449,11 @@ export class Workshop {
   pumpWheel(i, dir) {
     const unit = this.unit;
     if (!unit) return;
+    const why = this.pressureWhyNot(unit);
+    if (why) {
+      this.game.hud.toast(why);
+      return;
+    }
     const t = unit.quad.tyres;
     t.pump(i, dir * t.P.pumpStep);
     unit.quad.physics.applyParams();
@@ -448,12 +465,13 @@ export class Workshop {
     const t = unit.quad.tyres;
     const f = unit.quad.faults;
     const reading = t.reading(f.tyre, f.started.puncture ? f.levels.puncture : 0);
-    this.pumpEl.innerHTML = `<div class="ws-pumphead">Tyre pump and gauge</div>${t.realWheels
+    const why = this.pressureWhyNot(unit);
+    this.pumpEl.innerHTML = `<div class="ws-pumphead">${why ? 'Tyre gauge' : 'Tyre gauge and compressor'}</div>${why ? `<div class="ws-tread low">${why}</div>` : ''}${t.realWheels
       .map(
         (w) => `<div class="ws-wheel${t.rimLevel(w.i) > 0 ? ' low' : ''}"><span class="ws-wname">${w.name}</span>
-          <button type="button" data-wheel="${w.i}" data-dir="-1" aria-label="Let some out"${t.psi[w.i] <= t.P.ventMinPsi ? ' disabled' : ''}>−</button>
+          <button type="button" data-wheel="${w.i}" data-dir="-1" aria-label="Let some out"${why || t.psi[w.i] <= t.P.ventMinPsi ? ' disabled' : ''}>−</button>
           <span class="ws-wpsi">${reading[w.i].toFixed(1)} psi</span>
-          <button type="button" data-wheel="${w.i}" data-dir="1" aria-label="Pump up"${t.psi[w.i] >= t.P.maxPsi ? ' disabled' : ''}>+</button></div>`,
+          <button type="button" data-wheel="${w.i}" data-dir="1" aria-label="Pump up"${why || t.psi[w.i] >= t.P.maxPsi ? ' disabled' : ''}>+</button></div>`,
       )
       .join('')}<div class="ws-tread${t.tread.front < 0.3 || t.tread.rear < 0.3 ? ' low' : ''}">Tread: ${t.treadText()}</div>`;
   }
@@ -512,8 +530,10 @@ export class Workshop {
     if (isStock(q.settings, q.stock, this.params) && !e.silencerOff) return;
     e.silencerOff = false;
     if (q.settings.jet !== 0) this.game.spares.give('jet'); // the stock jet goes back in, the other comes out
-    this.apply(stockSettings(q.stock, this.params));
-    this.levelTyres(this.unit);
+    const stock = stockSettings(q.stock, this.params);
+    if (this.pressureWhyNot(this.unit)) stock.tyres = q.settings.tyres; // no air to put them back to stock with
+    this.apply(stock);
+    if (!this.pressureWhyNot(this.unit)) this.levelTyres(this.unit);
     for (const c of this.game.companions) c.voice.onTinker?.('stock');
   }
 

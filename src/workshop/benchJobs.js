@@ -6,6 +6,7 @@
 import { canFitBore, fitBore } from '../engine/bigBore.js';
 import { canRebuildTopEnd, readScoring, rebuildTopEnd } from '../engine/topEnd.js';
 import { tyrePart } from '../vehicle/tyres.js';
+import { SHED_JOBS, finishShedJob } from './shedJobs.js';
 
 export const DEFAULT_BENCH_PARAMS = {
   holdScale: 1, // multiplier on how long every hold takes, so the whole bench can be quicker or slower
@@ -36,6 +37,7 @@ export const DEFAULT_BENCH_PARAMS = {
   chainOilShort: 0.5, // chain oil left after too little was put on
   packingBotched: 0.3, // silencer blown-out level left after a badly packed one (too loose or stuffed too tight)
   filterLeft: 0.3, // air filter clog left after one that was blown through badly
+  pressureOff: 0.6, // psi under (or over) stock that a tyre fill at the compressor ends up when the hold was let go early or held too long
 };
 
 export const BENCH_PARAM_RANGES = {
@@ -50,6 +52,7 @@ export const BENCH_PARAM_RANGES = {
   oilOver: [0, 0.2, 0.002],
   packingBotched: [0, 1, 0.05],
   filterLeft: [0, 1, 0.05],
+  pressureOff: [0, 2, 0.1],
   chainBotched: [0, 1, 0.05],
   crashBotched: [0, 1, 0.05],
   chainOilShort: [0, 1, 0.05],
@@ -75,6 +78,7 @@ export const TYRES_PART = '@tyres';
 // need: seconds to hold. limit: if set, it's a window (let go between need and limit), and
 // holding to the limit overdoes it. 'inspect' steps tell you the state of the old part.
 export const JOBS = {
+  ...SHED_JOBS,
   plug: {
     name: 'Change the spark plug',
     steps: [
@@ -514,6 +518,7 @@ export class BenchJob {
  * What a finished job does to the quad. `target` is { engine, faults, fuel }. Returns a line for the toast.
  */
 export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
+  if (job.kind in SHED_JOBS) return finishShedJob(job, target, P);
   const { engine, faults, fuel } = target;
   const botched = job.botched;
   if (job.kind === 'plug') {

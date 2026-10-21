@@ -220,6 +220,15 @@ export const LAYOUT = {
   // The big bay in the barn's second span, nose-in from its door: the tractor, UTV, Land Rovers and cars are worked on here, at the same bench
   // (workshop/bench.js). A trolley jack and axle stands stand by it (workshop/jackModel.js), and a second bulb hangs over it.
   bay2: { x: -65.4, z: 69.2, halfX: 3.0, halfZ: 1.9, yaw: 0 },
+  // The shed kit bought from the catalogue under the cork board (farm/shed.js, workshop/shedModels.js), standing in the barn the morning after it is paid for.
+  // The compressor stands on the west wall beside the barn find, facing the room (yaw is the way it faces, 0 being +z); the parts washer on the floor at the
+  // east end of the bench; the pit is the dark trench in the big bay's floor, `halfX` by `halfZ`, along the bay so a car's wheels straddle it.
+  shed: {
+    compressor: { x: -68.65, z: 61.4, yaw: Math.PI / 2 },
+    washer: { x: -60.15, z: 56.35, yaw: 0 },
+    pit: { x: -65.4, z: 69.2, halfX: 1.9, halfZ: 0.45 },
+    catalogue: { z: 62.75, y: 1.0 }, // hung on a nail on the west wall under the cork board's left edge
+  },
   jack: { x: -63.2, z: 66.6, yaw: 0.25 },
   axleStands: [{ x: -66.6, z: 66.7, yaw: 0.1 }, { x: -66.0, z: 66.9, yaw: -0.3 }],
   // Where the barn find stands under its tarp (vehicle/barnFind.js), at the back of the barn: clear of the bay, the bales and the ladder.
