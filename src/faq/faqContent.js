@@ -2251,6 +2251,12 @@ export const FAQ_SECTIONS = [
           so it is more a thing to tune by ear than to fuss over. A girl driving it works the lever herself.`,
       },
       {
+        q: 'How do I switch the old bike’s lights on and off?',
+        spoiler: true,
+        a: `<kbd>P</kbd>, from the seat: it works the rocker on the left bar, just inboard of the clutch lever. The lamp starts switched on, but it runs straight off the magneto, so it is dark
+          while the engine is stopped, dim and yellow at tickover and white when you rev it, and it flickers if the engine runs rough. Switch it off to save the glow for the barn.`,
+      },
+      {
         q: 'Why will not the old bike catch after I tickled it a lot?',
         spoiler: true,
         a: `Too many tickles flood it: more than about three presses and the plug is wet. Kick it with the throttle open (hold <kbd>W</kbd> while you kick) to blow it clear,

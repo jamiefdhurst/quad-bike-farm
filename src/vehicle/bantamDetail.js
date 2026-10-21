@@ -9,7 +9,7 @@ import { mesh, rbox, tube, pipe, CHOKE_KNOB, CHOKE_MARK } from './tz65Detail.js'
 import {
   BANTAM_WHEELS, BANTAM_RAKE, forkZ, BANTAM_BARS_AT, BANTAM_FORK, BANTAM_BARS, BANTAM_SEAT, BANTAM_SADDLE_SPRING, BANTAM_TANK, BANTAM_LAMP,
   BANTAM_FRONT_FENDER, BANTAM_REAR_FENDER, BANTAM_FRAME, BANTAM_ENGINE, BANTAM_CARB, BANTAM_TAP, BANTAM_EXHAUST, BANTAM_KICK, BANTAM_PEGS,
-  BANTAM_STAND, BANTAM_CARRIER, BANTAM_TAIL,
+  BANTAM_STAND, BANTAM_CARRIER, BANTAM_TAIL, BANTAM_SWITCH,
 } from './bantamBody.js';
 
 // The old bike's parts (#38), after a 1949 rigid-frame single: spoked 19 inch wheels with drum brakes, telescopic forks in rubber gaiters, deep
@@ -196,7 +196,7 @@ export function addBantamBody(root, MAT, paint, seatMat) {
   const rf = mesh(fenderGeometry(BANTAM_REAR_FENDER), paint, root, 'rearFender');
   rf.position.set(0, R, BANTAM_WHEELS.rearZ);
   // The fender's stays down to the axle on each side.
-  for (const s of [-1, 1]) tube([s * 0.075, R, BANTAM_WHEELS.rearZ], [s * 0.075, 0.62, -0.3], 0.006, paint, root, 6);
+  for (const s of [-1, 1]) tube([s * 0.075, R, BANTAM_WHEELS.rearZ], [s * BANTAM_FRAME.x, 0.635, -0.3], 0.006, paint, root, 6); // up to the seat stay
   const C = BANTAM_CARRIER;
   for (const s of [-1, 1]) {
     pipe([[s * C.w / 2, 0.62, -0.28], [s * C.w / 2, C.y, C.z0], [s * C.w / 2, C.y, C.z1], [s * C.w / 2, 0.56, C.z1 - 0.1]], 0.0065, paint, root, { bend: 0.03, steps: 3 });
@@ -204,13 +204,12 @@ export function addBantamBody(root, MAT, paint, seatMat) {
   tube([-C.w / 2, C.y, C.z0], [C.w / 2, C.y, C.z0], 0.0065, paint, root, 6);
   tube([-C.w / 2, C.y, C.z1], [C.w / 2, C.y, C.z1], 0.0065, paint, root, 6);
   tube([-C.w / 2, C.y, (C.z0 + C.z1) / 2], [C.w / 2, C.y, (C.z0 + C.z1) / 2], 0.005, paint, root, 6);
-  // The tail lamp and the number plate behind the fender: a red lens in a plain housing, and a black plate with white letters.
+  // The tail lamp on the fender's tail, its housing bedded into the metal, and the number plate hanging from it: a red lens in a plain housing,
+  // a black plate. (The arc ends at z -0.99, y 0.22; the housing runs from z -1.05 to -0.99 across it, so it is bolted on, not floating.)
   const T = BANTAM_TAIL;
-  rbox(0.1, 0.05, 0.05, 0.015, MAT.plastic, 0, T.y + 0.1, T.z + 0.01, root);
-  const tail = rbox(0.085, 0.04, 0.02, 0.012, MAT.tail, 0, T.y + 0.1, T.z - 0.02, root, 'tailLight');
-  tail.userData.keep = false;
-  rbox(0.22, 0.17, 0.008, 0.004, MAT.rubber, 0, T.y - 0.03, T.z - 0.005, root, 'numberPlate');
-  tube([0, 0.62, -0.94], [0, T.y + 0.08, T.z + 0.005], 0.007, paint, root, 6);
+  rbox(0.1, 0.05, 0.065, 0.012, MAT.plastic, 0, T.y, T.z, root, 'tailHousing');
+  rbox(0.085, 0.04, 0.02, 0.01, MAT.tail, 0, T.y, T.z - 0.034, root, 'tailLight');
+  rbox(0.22, 0.17, 0.008, 0.004, MAT.rubber, 0, T.y - 0.105, T.z - 0.02, root, 'numberPlate'); // from the housing's underside, 2 mm in, down to 9 cm off the ground
 }
 
 // Engine ----------------------------------------------------------------------
@@ -391,13 +390,22 @@ export function addBantamBars(bars, MAT, paint, lensMat) {
   }
   // The twist grip's housing on the right and its cable.
   rbox(0.04, 0.034, 0.034, 0.01, MAT.chrome, -0.22, 0.056, -0.034, bars, 'throttleHousing');
+  // The lights switch (a plain on / off rocker, P): a chrome housing clamped round the left bar just inboard of the clutch perch, with the rocker on its top.
+  const [sx, sy, sz] = BANTAM_SWITCH.pos;
+  rbox(0.034, 0.03, 0.034, 0.008, MAT.chrome, sx, sy, sz, bars, 'lightsSwitchHousing');
+  const rocker = new THREE.Group();
+  rocker.name = 'lightsRocker';
+  rocker.userData.keep = true;
+  rocker.position.set(sx, sy + 0.015, sz);
+  bars.add(rocker);
+  rbox(0.022, 0.008, 0.024, 0.003, new THREE.MeshStandardMaterial({ color: 0x25272a, roughness: 0.6 }), 0, 0.001, 0, rocker, 'lightsRockerCap');
   // The advance-retard lever: a small lever under the clutch's perch, its pivot on the bar, swinging through about 60 degrees; named `advanceLever`.
   const adv = new THREE.Group();
   adv.name = 'advanceLever';
   adv.userData.keep = true;
-  adv.position.set(0.14, 0.036, -0.015);
+  adv.position.set(...BANTAM_SWITCH.lever); // on the clutch perch's inner face, so it is clipped to the bar
   bars.add(adv);
-  mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.02, 12).rotateZ(Math.PI / 2), MAT.chrome, adv);
+  mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.024, 12).rotateZ(Math.PI / 2), MAT.chrome, adv);
   const arm = new THREE.Group();
   arm.name = 'advanceArm';
   arm.userData.keep = true;
@@ -437,9 +445,12 @@ export function addBantamBars(bars, MAT, paint, lensMat) {
   const lz = lampZ + L.ahead;
   const shell = mesh(new THREE.SphereGeometry(L.r, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.62).rotateX(-Math.PI / 2).scale(1, 1, 1.2), paint, bars, 'lampShell');
   shell.position.set(0, lampY, lz - L.depth * 0.3);
-  mesh(new THREE.TorusGeometry(L.r * 0.99, 0.0055, 6, 28).translate(0, lampY, lz + L.depth * 0.34), MAT.chrome, bars);
-  const lens = mesh(new THREE.CircleGeometry(L.r * 0.93, 24).translate(0, lampY, lz + L.depth * 0.34), lensMat, bars, 'headlight');
-  lens.scale.z = 1;
+  // The shell is a dome a little more than a hemisphere (polar angle 111.6 degrees), so its rim stands 0.368 r (times the 1.2 stretch) ahead of its centre and
+  // 0.93 r out from the axis: the chrome rim sits right on that edge, and the glass is a thin disc just inside it, so nothing floats in front of the shell.
+  const rimZ = shell.position.z + 0.3681 * L.r * 1.2;
+  const rimR = L.r * 0.9298;
+  mesh(new THREE.TorusGeometry(rimR, 0.0055, 6, 28).translate(0, lampY, rimZ), MAT.chrome, bars);
+  mesh(new THREE.CylinderGeometry(rimR - 0.003, rimR - 0.003, 0.012, 28).rotateX(Math.PI / 2).translate(0, lampY, rimZ - 0.002), lensMat, bars, 'headlight');
   for (const s of [-1, 1]) tube([s * F.x, F.gaiter[1] - BANTAM_BARS_AT[1] + 0.02, forkZ(F.gaiter[1]) - BANTAM_BARS_AT[2]], [s * (L.r - 0.012), lampY, lz - L.depth * 0.25], 0.0055, paint, bars, 6);
   return { lampY, lampZ: lz };
 }

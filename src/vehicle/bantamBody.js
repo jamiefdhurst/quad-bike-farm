@@ -60,7 +60,7 @@ export const BANTAM_LAMP = { y: 0.85, ahead: 0.14, r: 0.1, depth: 0.13 };
 /** The front fender: deep, valanced, riding on the lower legs, with a flick at the front; the arc runs `from` to `to` degrees about the axle (0 up, forward positive). */
 export const BANTAM_FRONT_FENDER = { r: 0.35, width: 0.12, flange: 0.07, from: -42, to: 118 };
 /** The rear fender: the same, from the saddle's tail round to behind the wheel, with the carrier on it. */
-export const BANTAM_REAR_FENDER = { r: 0.35, width: 0.15, flange: 0.08, from: -125, to: 74 };
+export const BANTAM_REAR_FENDER = { r: 0.35, width: 0.15, flange: 0.08, from: -105, to: 74 };
 
 /** The frame: a single tube loop. Each run is a list of [z, y] per side (x is `x`), the head tube in the middle along the fork's axis. */
 export const BANTAM_FRAME = {
@@ -104,7 +104,9 @@ export const BANTAM_STAND = { y: 0.04, z: -0.12, w: 0.22 };
 
 /** The carrier on the rear fender, the tail lamp and the plate. */
 export const BANTAM_CARRIER = { y: 0.74, z0: -0.2, z1: -0.82, w: 0.16 };
-export const BANTAM_TAIL = { y: 0.55, z: -0.98 };
+export const BANTAM_TAIL = { y: 0.285, z: -1.02 }; // the lamp's housing on the fender's tail (the arc's rear end is at z -0.99, y 0.22), the plate hanging below it
+/** The lights rocker's housing, clamped round the left bar just inboard of the clutch perch, and the spark lever's pivot on the perch's inner face. */
+export const BANTAM_SWITCH = { pos: [0.158, 0.037, 0.014], lever: [0.19, 0.05, -0.02] };
 
 /** The rider's and the camera's places (the camera's eyes are 0.79 m above the seat's anchor, as on the other bikes). */
 export const BANTAM_RIDER = { y: 0.8, z: -0.24, camera: 1.59 };

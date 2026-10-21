@@ -28,6 +28,9 @@ export function weatherModel(model, { rust = 0.3, dust = 0.22 } = {}) {
     }
     o.material = m;
   });
+  // The model's own handles on materials (the headlamp's lens the game lights, the seat the frost settles on) must follow the clones, or the
+  // lamp is lit in a material no mesh uses any more.
+  for (const [k, v] of Object.entries(model.userData)) if (v && v.isMaterial && copies.has(v)) model.userData[k] = copies.get(v);
 }
 
 /**
