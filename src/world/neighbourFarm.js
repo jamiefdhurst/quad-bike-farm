@@ -113,6 +113,12 @@ export function laneBarriers(layout) {
   return [...west, east, ...ends];
 }
 
+/** Whether (x, z) is within `margin` m of the yard's wall (or inside it): the distant trees keep clear of her farm and the lane beside it. */
+export function nearNeighbourYard(layout, x, z, margin) {
+  const s = neighbourFarmShape(layout);
+  return !!s && outside(s.outline, x, z) < margin;
+}
+
 /** The yard's buildings, vehicles and wall as the rest of the world sees them: footprints, shelter, levelling and what is built where. */
 export function createNeighbourFarm(layout) {
   const s = neighbourFarmShape(layout);

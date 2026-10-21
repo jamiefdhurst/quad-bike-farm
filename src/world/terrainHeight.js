@@ -22,6 +22,7 @@ import { outsideRect, createFieldShape } from './fields.js';
 import { createHill } from './hill.js';
 import { createWoods } from './woods.js';
 import { createOutbuildings } from './outbuildings.js';
+import { createBrook } from './brook.js';
 
 export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf, road } = layout;
@@ -30,6 +31,7 @@ export function createTerrainHeight(layout, track) {
   const hill = createHill(layout);
   const woods = createWoods(layout);
   const outbuildings = createOutbuildings(layout);
+  const brook = createBrook(layout);
   const yardHeight = baseHeight(yard.x, yard.z);
   const puddles = layout.puddles.map((u) => track.sample(u));
   const bogs = (layout.bogs ?? []).map((b) => (b.track !== undefined ? { ...track.sample(b.track), radius: b.radius } : { ...b }));
@@ -79,6 +81,9 @@ export function createTerrainHeight(layout, track) {
     const floor = outbuildings.floorAt(x, z, (fx, fz) => baseHeight(fx, fz) + fieldShape(fx, fz).lift);
     if (floor) h += (floor.level - h) * floor.k;
 
+    // The brook's channel, cut into whatever the ground is.
+    if (brook) h -= brook.cutAt(x, z);
+
     // Level under the drag strip, with a shoulder to ease it back into the field.
     if (strip) {
       const f = stripFrame(strip, x, z);
@@ -127,7 +132,7 @@ export function createTerrainHeight(layout, track) {
 
   /** 0..1, how much standing water there is here (1 in the middle of a puddle, or in the stream). */
   function puddleAt(x, z) {
-    let w = Math.max(hill ? hill.waterAt(x, z) : 0, woods ? woods.waterAt(x, z) : 0);
+    let w = Math.max(hill ? hill.waterAt(x, z) : 0, woods ? woods.waterAt(x, z) : 0, brook ? brook.waterAt(x, z) : 0);
     for (const p of puddles) {
       const pd = Math.hypot(x - p.x, z - p.z);
       if (pd < puddleRadius) w = Math.max(w, 1 - smoothstep(puddleRadius * 0.45, puddleRadius * 0.85, pd));
@@ -135,5 +140,5 @@ export function createTerrainHeight(layout, track) {
     return w;
   }
 
-  return { heightAt, mudAt, puddleAt, bogAt, puddles, bogs, hill, woods };
+  return { heightAt, mudAt, puddleAt, bogAt, puddles, bogs, hill, woods, brook };
 }

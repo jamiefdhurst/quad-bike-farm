@@ -122,6 +122,7 @@ export function createHill(layout) {
 
   /** Metres the stream's channel is cut into the ground at (x, z). */
   function channelAt(x, z) {
+    if (x > pasture.maxX && hill.brook) return 0; // beyond the hedge it is the brook's (brook.js)
     const r = Math.abs(z - streamZ(x));
     const half = halfAt(x);
     if (r > half + 1.2) return 0;

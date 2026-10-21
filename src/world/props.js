@@ -11,7 +11,8 @@ import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
 import { buildOutbuildings } from './outbuildingProps.js';
 import { buildNeighbourFarm } from './neighbourFarmProps.js';
-import { laneBarriers } from './neighbourFarm.js';
+import { buildBrookCulvert } from './brookProps.js';
+import { laneBarriers, nearNeighbourYard } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -52,6 +53,7 @@ export function buildProps(ctx) {
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
   const neighbourFarm = buildNeighbourFarm(c);
+  buildBrookCulvert(c);
   if (neighbourFarm) gates.push(neighbourFarm.gate); // the yard's own gate opens and shuts like the farm's
   const silage = bale.silage;
   buildTrees(c);
@@ -671,8 +673,11 @@ function buildDistantTrees({ scene, layout, heights, fields, random }) {
     if (patchAt(x, z).border > 4 && random() > 0.04) continue;
     const s = 0.8 + random() * 0.9;
     const y = heights.heightAt(x, z);
-    trunks.push(matrixAt(x, y, z, 0, s));
-    crowns.push(matrixAt(x, y + 5 * s, z, random() * 6, s * (3.2 + random() * 1.2), s * (3 + random()), s * (3.2 + random() * 1.2)));
+    const trunk = matrixAt(x, y, z, 0, s);
+    const crown = matrixAt(x, y + 5 * s, z, random() * 6, s * (3.2 + random() * 1.2), s * (3 + random()), s * (3.2 + random() * 1.2));
+    if (nearNeighbourYard(layout, x, z, 45)) continue; // none stand by her yard or the lane beside it
+    trunks.push(trunk);
+    crowns.push(crown);
   }
   const trunkMesh = new THREE.InstancedMesh(
     new THREE.CylinderGeometry(0.25, 0.4, 5, 5).translate(0, 2.5, 0),

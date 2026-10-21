@@ -63,36 +63,56 @@ const STREAM_SPATE = new THREE.Color(0x5a4a34); // after rain it runs browner wi
 function buildStream({ scene, heights, fields }) {
   const hill = fields.hill;
   const p = hill.pasture;
+  // Each ribbon is a run of cross-sections { x, z, half, y }; the pasture's stream is one, and the brook beyond the hedge is one or more (it
+  // is left out where it goes under the lane in its culvert).
+  const runs = [];
   const xs = [];
   for (let x = p.minX - 3; x <= p.maxX + 3; x += 1) xs.push(x);
-  const pos = [];
-  const uv = [];
-  const index = [];
-  const base = [];
-  for (const x of xs) {
-    const z = hill.streamZ(x);
-    const y = heights.heightAt(x, z) + hill.waterDepthAt(x);
-    const half = hill.halfAt(x) * 0.95;
-    pos.push(x, y, z - half, x, y, z + half);
-    base.push(y);
-    uv.push(x / 6, 0, x / 6, 1);
+  runs.push(xs.map((x) => ({ x, z: hill.streamZ(x), half: hill.halfAt(x) * 0.95, y: heights.heightAt(x, hill.streamZ(x)) + hill.waterDepthAt(x) })));
+  const brook = heights.brook;
+  if (brook) {
+    let run = [];
+    for (let x = brook.minX + 3; x <= brook.maxX; x += 1) {
+      const wd = brook.waterDepthAt(x);
+      if (wd < 0.04) {
+        if (run.length > 1) runs.push(run);
+        run = [];
+        continue;
+      }
+      const z = brook.zAt(x);
+      run.push({ x, z, half: brook.halfAt(x) * 0.95, y: heights.heightAt(x, z) + wd });
+    }
+    if (run.length > 1) runs.push(run);
   }
-  for (let i = 0; i < xs.length - 1; i++) {
-    const a = i * 2;
-    index.push(a, a + 1, a + 2, a + 2, a + 1, a + 3);
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-  geo.setIndex(index);
-  geo.computeVertexNormals();
   // Peaty, clear-ish moorland water: brown-green, glossy, the bed showing through.
   const map = flowTexture();
   const mat = new THREE.MeshStandardMaterial({ color: STREAM_CLEAR.clone(), map, roughness: 0.12, transparent: true, opacity: 0.86, depthWrite: false });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.receiveShadow = true;
-  mesh.name = 'stream';
-  scene.add(mesh);
+  const ribbons = runs.map((run, n) => {
+    const pos = [];
+    const uv = [];
+    const index = [];
+    const base = [];
+    for (const c of run) {
+      pos.push(c.x, c.y, c.z - c.half, c.x, c.y, c.z + c.half);
+      base.push(c.y);
+      uv.push(c.x / 6, 0, c.x / 6, 1);
+    }
+    for (let i = 0; i < run.length - 1; i++) {
+      const a = i * 2;
+      index.push(a, a + 1, a + 2, a + 2, a + 1, a + 3);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(index);
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.receiveShadow = true;
+    mesh.name = n === 0 ? 'stream' : 'brook';
+    scene.add(mesh);
+    return { mesh, geo, base };
+  });
+  const mesh = ribbons[0].mesh;
   let lastRise = 0;
   return {
     mesh,
@@ -102,12 +122,14 @@ function buildStream({ scene, heights, fields }) {
       mat.opacity = 0.86 + 0.1 * level;
       if (Math.abs(rise - lastRise) < 0.003) return;
       lastRise = rise;
-      const attr = geo.getAttribute('position');
-      for (let i = 0; i < base.length; i++) {
-        attr.setY(i * 2, base[i] + rise);
-        attr.setY(i * 2 + 1, base[i] + rise);
+      for (const { geo, base } of ribbons) {
+        const attr = geo.getAttribute('position');
+        for (let i = 0; i < base.length; i++) {
+          attr.setY(i * 2, base[i] + rise);
+          attr.setY(i * 2 + 1, base[i] + rise);
+        }
+        attr.needsUpdate = true;
       }
-      attr.needsUpdate = true;
     },
   };
 }
