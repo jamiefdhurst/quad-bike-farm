@@ -2216,8 +2216,45 @@ export const FAQ_SECTIONS = [
       {
         q: 'What’s under the tarp at the back of the barn?',
         spoiler: true,
-        a: `In about one game in five, the rusty quad: an old barn find, not run for years. Take the tarp off at the workbench, then do the three or four jobs it needs
+        a: `In about one game in five, the rusty quad: an old barn find, not run for years (and there is always the old bike, a second tarp in the middle of the floor). Take the tarp off at the workbench, then do the three or four jobs it needs
           (from draining the varnished fuel to charging the battery: lift it out at the bench, put it on the bench charger with the generator running, and fit it back). It won't catch until every one is done. The tarp is dragged off to the side, and the jobs show on the quad: a new tyre is fresh black rubber with none of the old cracks, and on the yellow the mouse nest in its intake goes with the carb clean. Under it the quad is rusting through: bars gone from its racks, rust patches with holes eaten through, cracked plastic, cobwebs in the corners and grey, cracked tyres. Try seeds 7, 8, 12 or 13.`,
+      },
+      {
+        q: 'What is the old bike under the other tarp?',
+        spoiler: true,
+        a: `Every game there is a second tarp in the middle of the barn floor, over the Ashby Plover 125: a 1949-style rigid-framed single in faded sage green, with a sprung saddle,
+          spoked wheels, a long chrome silencer, a kickstart on the right and a Smiths-style speedo in the headlamp. Take the tarp off at the workbench (it is worked on where it
+          stands), then do four or five of the seven jobs it needs: drain the varnished fuel, clean the carb, change the plug, clean and gap the points (hold the file, then the feeler
+          gauge), free a seized front brake, deal with a flat tyre and free a seized kickstart. It will not catch until all of them are done, and it says what is stopping it when
+          you try. It has no battery, so no charger job. It is not for sale.`,
+      },
+      {
+        q: 'How do I start the old bike?',
+        spoiler: true,
+        a: `The old way, in this order. Fuel tap on (<kbd>F</kbd>) and the key on (<kbd>K</kbd>). If it is cold, tickle the carb with <kbd>Y</kbd>: once or twice, and watch the
+          button on top of the carb go down. Pull the spark lever on the left bar back to retarded with <kbd>[</kbd> (hold it; the lever moves and the readout in the Vehicles tab
+          follows). Then kick it with <kbd>O</kbd>: hold, then let go, as with a cord. It catches in a few kicks. Once it runs, bring the lever up with <kbd>]</kbd> as the revs
+          rise, and take it back before you stop. Use the tickler or the choke (<kbd>Q</kbd>), not both: the two together drown it.`,
+      },
+      {
+        q: 'Why did the old bike kick back at me?',
+        spoiler: true,
+        a: `You kicked it with the spark lever advanced. Advanced, the spark comes early and fires against the piston as you push it down, and the pedal comes back at your foot
+          with a bang. Put the lever right back (<kbd>[</kbd>) first. The nearest girl will have a word. Nothing is hurt, but it is no use kicking and kicking: it will not catch while the
+          lever is wrong.`,
+      },
+      {
+        q: 'What does the spark lever do once it is running?',
+        spoiler: true,
+        a: `It sets when the spark fires, and what it wants rises with the revs: a little advance at tickover, nearly all of it flat out. Too far back (retarded) and the bike has no
+          power, runs hot and bangs on the overrun. Too far forward at tickover and it runs rough and loses power. A little wrong costs a little and it only gets bad when the lever is a long way out,
+          so it is more a thing to tune by ear than to fuss over. A girl driving it works the lever herself.`,
+      },
+      {
+        q: 'Why will not the old bike catch after I tickled it a lot?',
+        spoiler: true,
+        a: `Too many tickles flood it: more than about three presses and the plug is wet. Kick it with the throttle open (hold <kbd>W</kbd> while you kick) to blow it clear,
+          or leave it a minute: it drains off by itself. Warm, it wants no tickle at all.`,
       },
       {
         q: 'What happens round the back of the barn?',
