@@ -1539,6 +1539,10 @@ export const FAQ_SECTIONS = [
         tip: 'The neighbour\'s gate opens with E, like the farm\'s. Her vehicles are only for show.',
       },
       {
+        q: 'Where does the stream come from, and where does it go?',
+        a: `The stream in the hill pasture runs in from the east, under the pasture's east hedge. Follow it up and it crosses the open country, goes by the south of the neighbour's yard and passes under the lane in a stone-ended culvert, then ends at a spring in the field beyond. The water flows west, downhill, to the pasture. The same rain that raises the ford raises the brook. You cannot ride along it: it is behind the lane's walls, but you can see the culvert from the lane, south of her gateway.`,
+      },
+      {
         q: 'Why is the neighbour not in her yard?',
         a: `She goes indoors when it gets dark and comes back out in the morning, so at night you will see only her windows and the lamp over her door lit. By day she may also be out of earshot of whoever is in the yard: she only turns and speaks when you, or a girl, comes within about 16 m.`,
       },
