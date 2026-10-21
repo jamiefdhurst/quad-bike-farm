@@ -950,7 +950,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I fix things?',
-        a: `Pick up the red toolbox from the workbench, take it to a switched-off quad and press <kbd>E</kbd>. <kbd>T</kbd> pumps and patches the tyres,
+        a: `Pick up the red toolbox from the workbench, take it to a switched-off quad and press <kbd>E</kbd>. <kbd>T</kbd> patches a puncture (pumping it up needs the compressor),
           <kbd>R</kbd> swaps the belt (using a spare from the rack), <kbd>L</kbd> oils the cable, <kbd>C</kbd> cleans the carb, <kbd>M</kbd> nips up the engine mounts, <kbd>N</kbd> puts a chain back on and oils it, <kbd>I</kbd> (held) cleans the air filter, <kbd>V</kbd>
           services it. These are quick fixes that leave a mild fault behind; for a proper job, use the workbench. Each fix does its job if there is one and
           otherwise says all is well, so it doesn't give a fault away.`,
@@ -971,8 +971,36 @@ export const FAQ_SECTIONS = [
       {
         q: 'What can the workbench do?',
         a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd>, <kbd>0</kbd>, <kbd>-</kbd>, <kbd>=</kbd>, <kbd>[</kbd>, <kbd>]</kbd>, <kbd>;</kbd>, <kbd>'</kbd> and <kbd>.</kbd> pick a job: a new plug,
-          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, a top-end rebuild for a two-stroke that has seized, adjusting and oiling the chain on the three chain-driven quads, setting the valve clearances on a four-stroke, renewing a split intake boot on a petrol engine, fitting a new clutch plate on a manual quad, or new tyres on a worn axle (from the tyre rack). Each is a short list of steps; on a hold step keep
+          clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, a top-end rebuild for a two-stroke that has seized, adjusting and oiling the chain on the three chain-driven quads, setting the valve clearances on a four-stroke, renewing a split intake boot on a petrol engine, fitting a new clutch plate on a manual quad, or new tyres on a worn axle (from the tyre rack). <kbd>R</kbd> turns to a second page of jobs that need the shed kit from the catalogue (compressor, parts washer, pit). Each is a short list of steps; on a hold step keep
           <kbd>E</kbd> down and let go inside the green band. Too soon or too long botches it and the fault comes back a little. Amy helps; Jess heckles.`,
+      },
+      {
+        q: 'How do I buy a compressor, a parts washer or a pit?',
+        a: `Look at the shed catalogue hanging on a nail under the cork board on the barn's back wall and press <kbd>E</kbd>. Three pieces are in it, and you can buy them in any order,
+          with money from the tin: the compressor (£120), the parts washer (£200) and the inspection pit (£450). Press the number once to ask and again to buy. A piece you pay for turns up in the barn
+          the next morning: the compressor on the back wall beside the barn find, the parts washer at the end of the workbench and the pit in the floor of the big bay. Each one puts right faults that nothing else can.`,
+        tip: 'The shed catalogue hangs under the cork board. Compressor £120, parts washer £200, pit £450; they turn up the next morning.',
+      },
+      {
+        q: 'What does each piece of the shed kit mend?',
+        a: `The compressor sets tyre pressures, seals a leaking bead, changes a dud valve core and evens up tyres that the cold has shrunk or that are lopsided. The parts washer cleans a carb gummed with varnish
+          (more than the ordinary carb job reaches), flushes a clogged fuel tap and its gauze, washes and oils a gritty chain and scrubs caked brakes. The pit lets you patch a holed silencer, renew a weeping sump gasket
+          on a four-stroke, free a dragging brake caliper and replace a worn wheel bearing. Press <kbd>R</kbd> on the bench menu for the page of jobs. The faults themselves come on whether or not you own the piece,
+          so a tyre that keeps going soft or a brake that grabs and drags is a reason to go shopping.`,
+        tip: 'Tyres going soft, a gummed carb, caked brakes, a holed silencer: the shed kit mends what the toolbox can’t.',
+      },
+      {
+        q: 'Why does a tyre keep going soft, even after I pumped it up?',
+        a: `Four things do it. A leaking bead lets air out slowly all the time, the cold shrinks the air in all four tyres on a frosty morning, a lopsided tyre sits lower than the others after a knock,
+          and a valve core that has stopped sealing lets one wheel down while it stands, so it is flat in the morning. All four are mended at the compressor in the barn. Press <kbd>R</kbd> on the bench menu to find
+          the jobs; look first, and the toast tells you what you are seeing.`,
+        tip: 'A tyre that goes down while parked is a dud valve core; one that sags slowly all day is a leaking bead.',
+      },
+      {
+        q: 'Why is the carb running badly after I cleaned it, or the brakes weak and a wheel dragging?',
+        a: `Some faults are deeper than the usual jobs reach. Varnish in the carb's jets, a clogged fuel tap that starves it at full throttle, a chain packed with grit and brakes caked in mud all want the parts washer.
+          A sticking caliper that drags, a worn wheel bearing that hums and wobbles, a holed silencer that is loud and weak and a weeping sump gasket want the pit. The bench's second page (<kbd>R</kbd>) has a
+          job for each, and its look-it-over step tells you which wheel it is.`,
       },
       {
         q: 'Why did a girl wander off with her phone?',
@@ -1007,8 +1035,11 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I set one tyre\'s pressure?',
-        a: `Open the toolbox on a switched-off quad. Under the rows is the tyre pump and gauge, with a reading for each wheel. Click <kbd>−</kbd> to let a
-          little air out of that tyre or <kbd>+</kbd> to pump it up. Softer tyres grip better in mud, harder ones roll easier on the track.`,
+        a: `You need the compressor from the shed catalogue (see "How do I buy a compressor, a parts washer or a pit?"), standing in the barn, and the vehicle within reach of its hose.
+          Then open the toolbox on a switched-off quad: under the rows is the tyre gauge, with a reading for each wheel. Click <kbd>−</kbd> to let a
+          little air out of that tyre or <kbd>+</kbd> to pump it up, or use the tyre pressures row to set all four. Softer tyres grip better in mud, harder ones roll easier on the track.
+          Without the compressor the gauge still reads, but the toolbox can't change a pressure.`,
+        tip: 'The toolbox has no pump now: tyre pressures are set at the compressor from the shed catalogue.',
       },
       {
         q: 'How do I tell when my tyres are worn out, and what do I do about it?',
@@ -1025,7 +1056,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why does it pull to one side and feel draggy?',
         a: `A tyre let down too far (under about 2 psi, shown in orange on the pump) squashes off its rim: the bars pull towards it and it drags. Pump it
-          back up. A slow puncture does much the same, and the pump's reading shows it going down.`,
+          back up at the compressor. A slow puncture does much the same, and the gauge's reading shows it going down.`,
       },
       {
         q: 'Why does it knock when it is cold and then go quiet?',
@@ -1035,7 +1066,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What can I tune with the toolbox?',
-        a: `The idle screw, the carb mixture, the throttle stop (screw it out for more top speed), the rev limiter, the clutch springs and the tyre pressures, plus
+        a: `The idle screw, the carb mixture, the throttle stop (screw it out for more top speed), the rev limiter, the clutch springs and (with the compressor) the tyre pressures, plus
           a jet kit on the Hornet and Adder. Each shows its stock value and the trade-off. Taking the silencer off (<kbd>X</kbd>) makes it louder, rawer and
           a little stronger. "Back to stock" undoes everything.`,
       },
