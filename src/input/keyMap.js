@@ -17,7 +17,7 @@ export const ACTIONS = [
     ['KeyC', 'Look back (hold)'],
     ['KeyV', 'Lean in to the dash, push a quad (hold)'],
     ['KeyB', 'Sit on the back, reverse'],
-    ['KeyT', 'Right a tipped quad, tip a tub, fold ramps'],
+    ['KeyT', 'Right a tipped quad, tip a tub, fold ramps or the sprayer boom'],
   ] },
   { group: 'Using things', keys: [
     ['KeyE', 'Interact, get off'],
