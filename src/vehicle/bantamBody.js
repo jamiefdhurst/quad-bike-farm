@@ -95,8 +95,8 @@ export const BANTAM_EXHAUST = {
   can: { from: [-0.17, 0.3, -0.3], to: [-0.18, 0.34, -0.75], r0: 0.032, r1: 0.052 }, // tapers up towards the back
 };
 
-/** The kickstart pedal's crank on the right of the crankcase behind the clutch cover, a long lever swinging down and forward, with a rubber on it. */
-export const BANTAM_KICK = { x: -0.13, y: 0.3, z: -0.18, length: 0.2, restAngle: 0.5, rubber: 0.04 };
+/** The kickstart pedal's crank on the right of the crankcase behind the clutch cover, a long lever resting forward and down (a kick swings it down and back), with a rubber on it. */
+export const BANTAM_KICK = { x: -0.13, y: 0.3, z: -0.18, length: 0.2, restAngle: -0.55, rubber: 0.04 };
 
 /** The foot rests (rubbers on short bars through the frame), the brake pedal on the right and the gear lever on the left; the centre stand. */
 export const BANTAM_PEGS = { x: 0.19, y: 0.29, z: -0.12 };

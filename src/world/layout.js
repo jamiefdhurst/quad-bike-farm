@@ -238,6 +238,8 @@ export const LAYOUT = {
   axleStands: [{ x: -66.6, z: 66.7, yaw: 0.1 }, { x: -66.0, z: 66.9, yaw: -0.3 }],
   // Where the barn find stands under its tarp (vehicle/barnFind.js), at the back of the barn: clear of the bay, the bales and the ladder.
   rusty: { x: -66.7, z: 59.9, yaw: 0.15 },
+  // Where the old bike stands under its tarp (the Plover, vehicle/bantamModel.js), always: along the west wall towards the north-west corner, nose to the north wall, its right side (the kickstart and exhaust) to the room.
+  plover: { x: -68.15, z: 57.5, yaw: Math.PI },
   yard: { x: -54, z: 58, radius: 20 },
   // Where the girls' cars park (game.js): on the tarmac pad at the end of the farm road, in front of the Dutch barn's open side, side by side
   // and nosed in towards it. 5.2 m apart, so there's room for a girl to walk between them. The pad is flat, so nothing needs laying.

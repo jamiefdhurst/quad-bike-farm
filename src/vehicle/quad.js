@@ -193,6 +193,12 @@ export class Quad {
     this.fuelTap = part('fuelTap');
     this.sedimentWater = part('sedimentWater'); // the water showing in the glass bowl under the tap (not on the diesels, which have no tap)
     this.chokeLever = part('chokeLever');
+    this.kickStart = part('kickStart'); // the old bike's pedal, its advance-retard lever's arm and the carb's tickler (bantamModel.js): posed from the engine's state
+    this.advanceArm = part('advanceArm');
+    this.tickler = part('tickler');
+    this.tickleShown = 0; // how far the tickler's button is down, 0..1
+    this.kickLocked = false; // the kickstart is seized (the old bike's barn job): a kick does nothing
+    this.kickBack = 0; // seconds left of a kick-back for the game to react to (a girl says something); it counts down by itself
     this.driveRocker = part('driveSwitchRocker'); // the 2WD / 4WD rocker on the bars (the red and blue)
     this.diffLockButton = part('diffLockButton'); // the blue's diff lock button beside it
     this.riderHands = part('riderHands');
@@ -541,6 +547,8 @@ export class Quad {
     if (!input) return;
     if (this.input) input.takeWheelSteps();
     if (input.wasPressed('KeyK')) this.engine.toggleIgnition();
+    if (this.engine.params.manualTiming) this.timingKeys(input, dt);
+    if (this.engine.params.tickler && input.wasPressed('KeyY')) this.tickle();
     if (this.crank && !this.input && this.atCrank) {
       // The starting handle's grip: 1 thumb round it (the natural way, and the one that kicks back), 2 thumb alongside the fingers.
       if (input.wasPressed('Digit1')) this.crank.setGrip('round');
@@ -574,6 +582,22 @@ export class Quad {
       } else if (keys.some((k) => input.wasPressed(k))) this.say(reach.why);
     }
     if (input.wasPressed('KeyT') && this.isTipped) this.rightItself();
+  }
+
+  /** The old bike's advance-retard lever on the left bar: [ eases it towards retarded, ] towards advanced (from the seat, or reaching over from beside it). */
+  timingKeys(input, dt) {
+    const e = this.engine;
+    const rate = e.params.advanceRate ?? 0.6;
+    if (input.isDown('BracketLeft')) e.advance = Math.max(0, e.advance - rate * dt);
+    if (input.isDown('BracketRight')) e.advance = Math.min(1, e.advance + rate * dt);
+  }
+
+  /** A press on the carb's tickler (Y): the engine floods a little fuel in, and the button goes down. */
+  tickle() {
+    if (this.engine.tickle()) {
+      this.tickleShown = 1;
+      this.say(this.engine.tickled > this.engine.params.tickleFloodAbove ? 'That is a lot of petrol: it will be flooded' : 'Tickled');
+    }
   }
 
   /** The gear lever, and the tractor's stop knob. */
@@ -790,8 +814,14 @@ export class Quad {
       this.pullHeld += dt;
       this.pullByHer = !!this.crank && !byYou;
     } else if (this.pullHeld > 0) {
-      const swung = this.engine.pull(this.pullHeld);
+      const locked = this.kickLocked;
+      const swung = locked ? null : this.engine.pull(this.pullHeld);
       this.pullHeld = 0;
+      if (locked) this.say('The kickstart is seized solid: free it at the bench first');
+      else if (this.engine.params.kickStart && swung === 0 && this.engine.kicked > 0) {
+        this.kickBack = this.engine.kicked; // it fired against the piston and the pedal came back at your foot
+        this.say('Ow! It kicked back: the lever is too far advanced. Retard it with [ and try again');
+      }
       if (swung !== null && this.crank?.swing(this.pullByHer ? this.helperGrip : undefined) === 'kick') {
         // Thumb round the handle: it caught a compression and spun back. No turn, and a sore hand.
         this.engine.pullLeft = 0;
@@ -1411,6 +1441,22 @@ export class Quad {
     else if (this.chokeStyle === 'plunger') this.chokeLever.position.y = this.chokeLever.userData.baseY - this.displayChoke * (this.chokeLever.userData.travel ?? 0.045); // pulled down
     else if (this.chokeStyle === 'slide') this.chokeLever.position.x = this.chokeLever.userData.baseX - this.displayChoke * POD.slide; // pulled along its slot to apply
     else this.chokeLever.rotation.x = 0.5 - this.displayChoke * 1.45;
+    if (this.kickStart) {
+      // The pedal rests forward and down; a kick (the engine's pullLeft) swings it down and back and a spring brings it home; a kick-back flings it forward.
+      const pull = this.engine.pullLeft > 0 ? 1 - this.engine.pullLeft / Math.max(0.01, this.engine.params.pullSeconds) : 0;
+      this.kickBack = Math.max(0, this.kickBack - dt);
+      this.kickStart.rotation.x = this.kickStart.userData.restAngle + 1.5 * Math.sin(pull * Math.PI) - 0.5 * Math.min(1, this.engine.kicked / 0.3) - (this.pullHeld > 0 ? 0.12 : 0);
+    }
+    if (this.advanceArm) {
+      this.advanceShown ??= this.engine.advance;
+      this.advanceShown += (this.engine.advance - this.advanceShown) * Math.min(1, 12 * dt);
+      this.advanceArm.rotation.x = 0.55 - this.advanceShown * 1.1; // retarded: the arm is up; advanced: it is down
+    }
+    if (this.tickler) {
+      this.tickleShown = Math.max(0, this.tickleShown - 5 * dt);
+      this.tickler.userData.baseY ??= this.tickler.position.y;
+      this.tickler.position.y = this.tickler.userData.baseY - this.tickleShown * (this.tickler.userData.travel ?? 0.01);
+    }
     poseThumbThrottle(this.model, this.throttle); // the red's and blue's thumb throttle lever moves; the others' stay still (poseThumbThrottle checks)
     if (this.barLights) poseBarPod(this.model, { lights: this.barLights.mode, keyOn: e.ignitionOn, cranking: e.state === 'cranking' });
     if (this.drive && this.driveRocker) {

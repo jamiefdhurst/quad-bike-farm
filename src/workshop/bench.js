@@ -51,8 +51,10 @@ export class Bench {
   unitInBay() {
     const bay = this.game.world.layout.bay;
     const parked = this.game.girlUnits.find((u) => !u.quad.driver && inBay(bay, u.quad.position.x, u.quad.position.z, this.params.bayMargin));
-    const rusty = this.game.rustyUnit;
-    return parked ?? (rusty && !rusty.barnFind.ready ? rusty : null);
+    // The barn finds (the rusty quad, the old bike) are worked on where they stand: whichever is not yet running and is nearest you.
+    const me = this.game.player.position;
+    const finds = [this.game.rustyUnit, this.game.ploverUnit].filter((u) => u && !u.barnFind.ready).sort((a, b) => a.quad.position.distanceTo(me) - b.quad.position.distanceTo(me));
+    return parked ?? finds[0] ?? null;
   }
 
   /** What the bench works on: the quad in the small bay (or the barn find), else whatever is in the big bay in the barn's second span: any vehicle, since it is

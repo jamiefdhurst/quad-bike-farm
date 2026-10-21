@@ -8,7 +8,7 @@ import { World } from './world/world.js';
 import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC } from './vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC } from './vehicle/quadSpecs.js';
 import { LANDY_STAND, LANDY_REAR_STAND, LANDY_REAR_SEATS } from './vehicle/landRoverModel.js';
 import { CARS, CAR_STAND } from './vehicle/carModel.js';
 import { DEFAULT_REAR_ACCESS_PARAMS, REAR_ACCESS_PARAM_RANGES, seatTipTargets, easeSeatTips, pickRearSeat, rearDoor } from './vehicle/rearAccess.js';
@@ -295,7 +295,7 @@ import { pickWornGearbox } from './vehicle/manualDrivetrain.js';
 import { DashClock, pickReading, pickRelatedReading, setDashClock, dashClock } from './vehicle/dashState.js';
 import { Bench } from './workshop/bench.js';
 import { DEFAULT_FUEL_WATER_PARAMS, FUEL_WATER_RANGES, stepCanWater } from './vehicle/fuelWater.js';
-import { pickBarnFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
+import { pickBarnFind, pickClassicFind, BarnFind, DEFAULT_BARN_FIND_PARAMS, BARN_FIND_RANGES, RUSTY_ID } from './vehicle/barnFind.js';
 import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
 import { planDamage, applyDamage } from './vehicle/rustyDamage.js';
 import { Notebook } from './workshop/notebook.js';
@@ -629,9 +629,11 @@ export class Game {
     this.barnFindParams = { ...DEFAULT_BARN_FIND_PARAMS };
     registerTuning('Barn find', this.barnFindParams, BARN_FIND_RANGES);
     this.rustyUnit = this.addRusty();
+    this.ploverUnit = this.addPlover(); // and always the old bike, under its own tarp (vehicle/bantamModel.js)
     if (this.tractorUnit) this.podRack.allow(this.tractorUnit.id); // likewise the tractor, which is added after the pods are dealt
     this.achievements = new Achievements({ params: { ...DEFAULT_ACHIEVEMENT_PARAMS } }); // the bucket list; its fleet is set once every vehicle is added
     if (this.rustyUnit) this.podRack.allow(this.rustyUnit.id); // placed after the pods were dealt, but you can fit one at the bench
+    if (this.ploverUnit) this.podRack.allow(this.ploverUnit.id);
     // A sticky float on some of the quads (vehicle/carbDrip.js): a parked one with the tap on drips petrol and floods. Own random stream.
     this.carbDrip = new CarbDrip(this.units.filter((u) => !u.quad.fuel.params.noTap && !u.quad.engine.params.compressionIgnition).map((u) => u.id), createRandom(this.farmSeed ^ 0x5d1f));
     registerTuning('Dripping carb', this.carbDrip.p, DRIP_PARAM_RANGES);
@@ -1148,7 +1150,7 @@ export class Game {
         target: quad.proxy,
         prompt: () => {
           if (quad.loadedOn) return this.loadedPrompt(quad);
-          if (unit.barnFind && !unit.barnFind.tarpOff) return { text: 'The rusty quad: an old shape under a tarp   ·   take it off at the workbench' };
+          if (unit.barnFind && !unit.barnFind.tarpOff) return { text: `${unit.id === 'plover' ? 'The old bike' : 'The rusty quad'}: an old shape under a tarp   ·   take it off at the workbench` };
           if (this.tooFastToMount(quad) && this.herDriving(quad) && !quad.hasBench) return `Ask ${this.herDriving(quad).name} to stop and let you on`;
           if (this.tooFastToMount(quad)) {
             return { text: `The ${unit.label} is going too fast to get on   ·   K ignition` };
@@ -4709,6 +4711,47 @@ export class Game {
     return unit;
   }
 
+  /** The old bike (#38): the Plover, always under its tarp at the back of the barn, a restoration with its own jobs (vehicle/barnFind.js CLASSIC_JOBS). Returns its unit. */
+  addPlover() {
+    const P = this.barnFindParams;
+    const spec = PLOVER_SPEC;
+    const plan = pickClassicFind(createRandom(this.farmSeed ^ 0xba41), spec, P);
+    const random = createRandom(this.farmSeed ^ 0xba42);
+    const damage = planDamage(createRandom(this.farmSeed ^ 0xba43), spec.id); // patches, cracks and webs (it has no rack and no open intake for a nest)
+    const unit = new QuadUnit({ spec, spawn: this.world.layout.plover, scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub });
+    unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(spec.idleRange, random));
+    unit.variation = applyVariation(spec, unit.engine.params, unit.quad.fuel, random);
+    unit.topRpm = applyTopRpm(spec, unit.engine.params, random);
+    unit.quad.usage.hours = pickReading(spec.hoursRange, random);
+    unit.quad.usage.odoMiles = pickReading(spec.odoRange, random);
+    unit.engine.wear = spec.wearRange[0] + (spec.wearRange[1] - spec.wearRange[0]) * random();
+    unit.quad.parkBrake = true;
+    unit.where = 'at the back of the barn';
+    // What's wrong with it. The engine can't catch until every job is done (startBlocked), and the kickstart is seized until freed.
+    unit.barnFind = new BarnFind(plan, P);
+    unit.engine.startBlocked = true;
+    unit.quad.kickLocked = unit.barnFind.kickSeized;
+    unit.quad.fuel.waterParams = this.fuelWaterParams;
+    if (random() < P.waterChance) unit.quad.fuel.water = unit.quad.fuel.bowlWater = P.tankWater;
+    if (plan.jobs.includes('tyre')) {
+      unit.quad.faults.begin('puncture');
+      unit.quad.faults.levels.puncture = 0.9;
+      unit.quad.tyres.level(1);
+    }
+    if (plan.jobs.includes('fuel')) unit.engine.fouling = 0.35; // the varnish: it would only foul the plug
+    if (plan.jobs.includes('carb')) {
+      unit.quad.faults.begin('carb');
+      unit.quad.faults.levels.carb = 0.9;
+    }
+    weatherModel(unit.quad.model, { rust: 0.4, dust: 0.25 });
+    unit.mud.coat.look.wear = P.bodyWear;
+    unit.tarp = buildTarp(unit.quad.model);
+    unit.quad.bodyRoot.add(unit.tarp);
+    unit.rustyLook = applyDamage(unit.quad.model, damage, unit.tarp);
+    this.units = [...this.units, unit];
+    return unit;
+  }
+
   /** A girl near you who is free to remark says her line about the plug-saver you have just poured in (additiveLines.js). */
   saySomethingAboutAdditive() {
     const at = this.player.position;
@@ -4727,28 +4770,31 @@ export class Game {
     }
   }
 
-  /** The barn find's slow jobs: the charger going, the seized brake holding it, and the first start. */
+  /** The barn finds' slow jobs: the charger going, the seized brake holding it, the seized kickstart, and the first start. */
   updateBarnFind(dt) {
-    const unit = this.rustyUnit;
-    const find = unit?.barnFind;
-    if (!find) return;
+    for (const unit of [this.rustyUnit, this.ploverUnit]) if (unit?.barnFind) this.updateFind(unit, dt);
+  }
+
+  updateFind(unit, dt) {
+    const find = unit.barnFind;
     const e = unit.engine;
     unit.rustyLook.sync(find); // the tarp slides off when it is taken off, the tyres and the nest follow their jobs
     unit.rustyLook.step(dt);
     if (find.brakeSeized) unit.quad.parkBrake = true;
-    if (find.setBattery(e.battery, !e.batteryOut)) this.notebook.note(unit, { kind: 'job', job: 'battery' }, { by: 'you' });
+    unit.quad.kickLocked = find.kickSeized;
+    if (!e.params.noStarter && find.setBattery(e.battery, !e.batteryOut)) this.notebook.note(unit, { kind: 'job', job: 'battery' }, { by: 'you' });
     e.startBlocked = find.startBlocked;
     // Cranking it before it's ready: it tells you why.
     const cranking = e.state === 'cranking';
-    if (cranking && !this.rustyWasCranking && find.startBlocked && find.tarpOff) this.hud.toast(find.blockedReason(), 3.2);
-    this.rustyWasCranking = cranking;
+    if (cranking && !unit.findWasCranking && find.startBlocked && find.tarpOff) this.hud.toast(find.blockedReason(), 3.2);
+    unit.findWasCranking = cranking;
     // The first start: smoke everywhere, and both girls cheer.
     if (e.isRunning && find.ready && !find.started) {
       find.started = true;
       startRunningIn(e); // not run for years, and now it wants running in
       find.smokeLeft = find.params.smokeSeconds;
-      this.hud.toast('It runs! The first start in years');
-      this.achievements.note('barnFind');
+      this.hud.toast(unit.id === 'plover' ? 'It runs! The old bike fires up for the first time in years' : 'It runs! The first start in years');
+      this.achievements.note(unit.id === 'plover' ? 'oldBike' : 'barnFind');
       for (const c of this.companions) c.voice.onBench('runs');
     }
     if (find.smokeLeft > 0) {
@@ -10534,7 +10580,7 @@ export class Game {
   dipstick(unit, input, dt) {
     const sump = unit.quad.sump;
     if (!sump) {
-      if (input.wasPressed('KeyY')) this.hud.toast('A two-stroke has no dipstick: its oil goes in with the petrol');
+      if (input.wasPressed('KeyY') && !unit.quad.engine.params.tickler) this.hud.toast('A two-stroke has no dipstick: its oil goes in with the petrol'); // (Y is the old bike's tickler)
       return;
     }
     if (input.wasPressed('KeyY')) {

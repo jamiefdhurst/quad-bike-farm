@@ -16,6 +16,7 @@ export const DEFAULT_TIMING_PARAMS = {
   heatPerError: 0.6, // extra work (heat) at full error, in the engine's `work` terms, when it is retarded
   roughPerError: 0.35, // roughness added at full error
   popPerRetard: 1.2, // pop propensity added per unit retarded below what the revs want (a two-stroke bangs; a retarded one more)
+  advanceRate: 0.6, // how fast the lever moves, per second of holding [ or ]
   pingFromAdvance: 0.12, // how far past the ideal it can be advanced before it pings and loses power
 };
 
@@ -31,6 +32,7 @@ export const TIMING_PARAM_RANGES = {
   roughPerError: [0, 1, 0.05],
   popPerRetard: [0, 3, 0.1],
   pingFromAdvance: [0, 0.5, 0.01],
+  advanceRate: [0.1, 3, 0.1],
 };
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
