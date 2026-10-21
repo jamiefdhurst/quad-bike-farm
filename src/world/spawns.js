@@ -79,6 +79,7 @@ export function spawnKeepOut(layout) {
   const add = (x, z, r, what) => out.push({ x, z, r, what });
   const L = layout;
   if (L.tipTrailer) add(L.tipTrailer.x, L.tipTrailer.z, 5.5, 'the tipping trailer');
+  if (L.sprayer) add(L.sprayer.x, L.sprayer.z, 4.5, 'the sprayer');
   if (L.trailer) add(L.trailer.x, L.trailer.z, 8, 'the bale trailer');
   if (L.fuelTank) add(L.fuelTank.x, L.fuelTank.z, 4, 'the petrol tank');
   if (L.dieselBowser) add(L.dieselBowser.x, L.dieselBowser.z, 4, 'the diesel bowser');

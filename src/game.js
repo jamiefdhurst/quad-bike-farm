@@ -320,6 +320,9 @@ import { TrophyShelf } from './world/trophyShelf.js';
 import { MuckView } from './world/muckView.js';
 import { Haymaking, DEFAULT_HAY_PARAMS, HAY_PARAM_RANGES, STACK_CAPACITY, trailerSlots } from './world/haymaking.js';
 import { HayView } from './world/hayView.js';
+import { SprayerTrailer, SPRAYER_PARAM_RANGES } from './vehicle/sprayerTrailer.js';
+import { Spraying, DEFAULT_SPRAY_PARAMS, SPRAY_PARAM_RANGES, SPRAY_PHASE_TEXT, sprayWanted } from './world/spraying.js';
+import { SprayView } from './world/sprayView.js';
 import { HayLoading, HAY_LOADING_PARAM_RANGES } from './npc/hayLoading.js';
 import { shortName } from './workshop/logbook.js';
 import { Interaction } from './interaction/interaction.js';
@@ -729,7 +732,7 @@ export class Game {
       c.agenda = new Agenda(character.agendaOdds, c.params);
       c.quads = this.girlUnits.map((u) => u.quad);
       c.others = () => this.companions.filter((o) => o !== c);
-      c.trailers = () => [this.trailer, this.tipTrailer]; // obstacles on foot and on wheels (vehicle/trailerObstacle.js)
+      c.trailers = () => [this.trailer, this.tipTrailer, this.sprayer]; // obstacles on foot and on wheels (vehicle/trailerObstacle.js)
       c.followTarget = () => this.riddenUnit?.quad ?? null;
       c.sounds = new CompanionSounds(this.audioHub, { voiceBank: character.voiceBank, rate: character.soundRate });
       c.voice = new CompanionVoice({
@@ -935,6 +938,15 @@ export class Game {
     registerTuning('Trailer tub', this.tipTrailer.bed.p, UTV_BED_PARAM_RANGES);
     registerTuning('Trailer riders', this.tipRide.p, TRAILER_RIDE_PARAM_RANGES);
     registerTuning('Towing', this.towParams, TOW_PARAM_RANGES);
+    // The field sprayer behind a quad with a rack (vehicle/sprayerTrailer.js; the job is world/spraying.js).
+    this.sprayer = new SprayerTrailer({ scene: this.scene, world: this.world });
+    registerTuning('Sprayer trailer wear', this.sprayer.coat.coat.look, WEAR_LOOK_RANGES);
+    registerTuning('Sprayer trailer mud', this.sprayer.coat.state, MUD_STATE_RANGES);
+    const sprayerAt = this.world.layout.sprayer;
+    this.sprayer.addObstacle(this.physics, this.RAPIER);
+    this.sprayer.place(sprayerAt.x, sprayerAt.z, sprayerAt.yaw);
+    this.sprayPuller = null; // the Quad whose drive and brakes the sprayer is taking from
+    registerTuning('Sprayer trailer', this.sprayer.p, SPRAYER_PARAM_RANGES);
     this.interaction.add({
       target: this.tipTrailer.proxy,
       priority: -1, // a can or the toolbox standing in the tub wins when you look at it
@@ -1519,11 +1531,13 @@ export class Game {
     const hayStacked = Math.max(0, this.farm.save?.hay?.stacked ?? 0);
     const jobIds = availableJobs(this.world.layout)
       .filter((id) => id !== 'silage' || (!!this.tractorUnit && !!this.siloRect && this.baleRig.yard.countIn(this.siloRect) < this.spikeParams.balesNeeded))
+      .filter((id) => id !== 'spray' || sprayWanted(this.farm.save?.spray, this.farm.day)) // a sprayed field stays off the board for a few days
       .filter((id) => id !== 'hay' || (!!this.tractorUnit && !!this.siloRect && hayStacked + DEFAULT_HAY_PARAMS.balesNeeded <= STACK_CAPACITY)); // the hay needs the tractor and room in the barn
     this.jobBoard = new JobBoard({ ids: jobIds, random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
     this.setUpServiceJob();
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
     this.setUpHay();
+    this.setUpSpraying();
     // Each farm job ticked off pays (farm/classifieds.js); the neighbours' ads for vehicles are pinned up on the odd day, on the board beside the chalkboards.
     this.jobBoard.onComplete = (id) => {
       this.market.earn(this.marketParams.jobPay);
@@ -2063,7 +2077,7 @@ export class Game {
     const tractor = !!this.tractorUnit && unit === this.tractorUnit;
     const hay = tractor ? this.trailer : null;
     const tip = this.tipTrailer;
-    const mine = [hay, tip].filter(Boolean);
+    const mine = [hay, tip, this.sprayer].filter(Boolean);
     if (tractor && this.chain?.state !== 'stowed') return this.hud.toast('The tow chain is on the drawbar', 2);
     if (tractor && this.baleRig.held) return this.hud.toast('Put the bale down first: it is on the spike', 2);
     if (!tractor && this.towRope.state !== 'stowed' && this.towRope.puller === q) return this.hud.toast('The tow rope is on the hitch', 2);
@@ -2085,7 +2099,7 @@ export class Game {
 
   /** The trailer a vehicle has on its hook, if any. */
   trailerOf(quad) {
-    return [this.trailer, this.tipTrailer].find((t) => t.hitched && (t.tractor ?? t.puller) === quad) ?? null;
+    return [this.trailer, this.tipTrailer, this.sprayer].find((t) => t.hitched && (t.tractor ?? t.puller) === quad) ?? null;
   }
 
   /** A trailer that has just folded up against what is pulling it (reversed too far on the lock): the puller can't push any further. */
@@ -4087,6 +4101,7 @@ export class Game {
       headgear: this.headgear.capture(),
       bales: this.baleRig.yard.toJSON(),
       hay: this.hay?.toJSON(),
+      spray: this.spray?.toJSON(),
       batteries: Object.fromEntries([...this.batteries].filter(([, b]) => b.out).map(([id, b]) => [id, { where: b.where === 'charger' ? 'charger' : 'loose' }])),
     };
   }
@@ -5981,6 +5996,134 @@ export class Game {
     return { x: c.x, z: c.z, yaw: Math.atan2(target.x - c.x, target.z - c.z) };
   }
 
+
+  // Spraying the field --------------------------------------------------------------
+
+  /** The field in the south wheat stubble, the sprayer's rules and how it looks (world/spraying.js, world/sprayView.js). */
+  setUpSpraying() {
+    const rect = this.world.layout.sprayField;
+    if (!rect) return;
+    this.sprayParams = { ...DEFAULT_SPRAY_PARAMS };
+    this.spray = new Spraying({ rect, params: this.sprayParams });
+    this.spray.restore(this.farm.save?.spray, this.farm.day);
+    this.sprayView = new SprayView({ scene: this.scene, spraying: this.spray, heightAt: (x, z) => this.world.heightAt(x, z) });
+    this.sprayNoticeIn = 0; // seconds to the next time the girls notice the mist
+    this.sprayStarted = false; // the girls have been told the job has begun
+    this.sprayEmptied = false;
+    registerTuning('Spraying', this.sprayParams, SPRAY_PARAM_RANGES);
+    this.farmMap.spray = this.spray; // the map draws your lines
+    this.farmMap.sprayWanted = () => this.jobBoard.has('spray') && !this.spray.done;
+    // The hose fills the tank: hold E at the sprayer with the hose in your hand.
+    this.interaction.add({
+      target: this.sprayer.proxy,
+      priority: -1,
+      isAvailable: () => this.hose.held && !this.player.isRiding,
+      prompt: () => ({ text: this.spray.tank >= 0.999 ? 'The sprayer is full   ·   G put the hose back' : `Hold E to fill the sprayer (${Math.round(this.spray.tank * 100)}%)   ·   G put the hose back` }),
+      interact: () => {},
+      hold: (dt) => this.fillSprayer(dt),
+    });
+  }
+
+  fillSprayer(dt) {
+    const sp = this.spray;
+    if (!this.hose.held || this.player.position.distanceTo(this.sprayer.model.position) > sp.p.fillReach + 1) return false;
+    if (sp.tank >= 0.999) return false;
+    if (sp.fill(dt) === 'full') this.hud.toast('The sprayer is full', 2);
+    this.sprayEmptied = false;
+    return true;
+  }
+
+  /** What the status line says to someone pulling the sprayer. */
+  sprayStatus() {
+    const sp = this.spray;
+    const level = `${Math.round(sp.tank * 100)}% in the tank`;
+    if (!sp.out) return `Sprayer hitched, ${level}\nT to fold the boom ${sp.boomWant ? 'in' : 'out'}, J to unhitch`;
+    return `${SPRAY_PHASE_TEXT[sp.phase]}\nBoom out, ${level}, ${Math.round(sp.coverage * 100)}% of the field sprayed\nT to fold it in`;
+  }
+
+  /** One of the girls near the sprayer says something about the spraying (npc/sprayLines.js). */
+  saySomethingAboutSpray(key) {
+    const at = this.sprayer.model.position;
+    const c = this.companions
+      .filter((g) => g.availability().canRemark && g.root.position.distanceTo(at) < 40)
+      .sort((a, b) => a.root.position.distanceTo(at) - b.root.position.distanceTo(at))[0];
+    c?.voice.say(key);
+  }
+
+  updateSprayer(dt, ridden, input) {
+    const t = this.sprayer;
+    const sp = this.spray;
+    t.update(dt, { boom: sp.boom, tank: sp.tank });
+    this.noteFolded(t, ridden);
+    // What it takes from the quad in front of it: a full tank drags.
+    if (this.sprayPuller && this.sprayPuller !== t.puller) Object.assign(this.sprayPuller.tow, { driveFactor: 1, brakeFactor: 1 });
+    this.sprayPuller = t.puller;
+    if (t.puller) Object.assign(t.puller.tow, towEffect(towLoad(0, sp.tank * t.p.towWeight, this.towParams), !!t.puller.tractor || !!t.puller.landRover, this.towParams));
+    // T folds the boom out or in, from the seat of whatever pulls it or standing by it.
+    const riding = !!ridden && t.hitched && ridden.quad === t.puller;
+    const near = riding || (!this.player.isRiding && this.player.position.distanceTo(t.model.position) < 3);
+    if (near && input.wasPressed('KeyT') && !this.handsFull && !(ridden && !riding) && !(riding && ridden.quad.isTipped)) {
+      this.hud.toast(sp.toggleBoom() ? 'Boom folding out' : 'Boom folding in', 2);
+    }
+    const events = sp.update(dt, { x: t.motion.x, z: t.motion.z, yaw: t.motion.yaw, speed: Math.abs(t.signedSpeed), hitched: t.hitched, day: this.farm.day });
+    for (const e of events) {
+      if (e.type === 'sprayed') {
+        this.sprayView.repaint(e.cells);
+        if (!this.sprayStarted) {
+          this.sprayStarted = true;
+          this.saySomethingAboutSpray('sprayStart');
+        }
+      } else if (e.type === 'empty') {
+        this.hud.toast('The tank is empty: fill it from the hose', 4);
+        if (!this.sprayEmptied) this.saySomethingAboutSpray('sprayEmpty');
+        this.sprayEmptied = true;
+      } else if (e.type === 'done') this.sprayDone();
+    }
+    // The mist drifts: a girl close by turns her face away (a notice, so reactions.js decides).
+    this.sprayNoticeIn -= dt;
+    if (sp.spraying && this.sprayNoticeIn <= 0) {
+      this.sprayNoticeIn = 8;
+      this.notice('spray', t.model.position, { key: 'sprayer', strength: 0.6 });
+    }
+    this.sprayView.setLight(1 - (this.daylight?.darkness ?? 0)); // the mist has its own colour, so it dims with the day
+    this.sprayView.update(dt, { model: t.model, on: sp.spraying });
+  }
+
+  /** Enough of the field is sprayed: tick the job off the board (if it is on today) and the girls remark. */
+  sprayDone() {
+    if (this.jobBoard.complete('spray')) {
+      this.hud.toast('Field sprayed. Ticked off the board on the barn door; fold the boom in', 4);
+      this.jobBoardView.refresh();
+      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
+    } else this.hud.toast('Field sprayed', 3);
+    this.saySomethingAboutSpray('sprayDone');
+  }
+
+  /** The debug panel: set the sprayer to a point in the job. `what`: out, in, empty, fill, half, done, clear. */
+  debugSpray(what) {
+    const sp = this.spray;
+    if (!sp) return;
+    if (!this.jobBoard.has('spray') && (what === 'done' || what === 'half')) this.jobBoard.add('spray', FARM_JOBS.spray);
+    if (what === 'out') sp.setBoom(true);
+    else if (what === 'in') sp.setBoom(false);
+    else if (what === 'empty') sp.tank = 0;
+    else if (what === 'fill') sp.tank = 1;
+    else if (what === 'clear') {
+      sp.clear();
+      this.sprayStarted = this.sprayEmptied = false;
+    } else if (what === 'half') {
+      for (let i = 0; i < sp.cells / 2; i++) {
+        sp.dose[i] = 1;
+        sp.state[i] = 1;
+      }
+      sp.started = true;
+      sp.since ??= this.farm.day;
+    } else if (what === 'done') {
+      sp.sprayAll(this.farm.day);
+      this.sprayDone();
+    }
+    this.sprayView.refresh();
+  }
 
   // Making hay -----------------------------------------------------------------------
 
@@ -10685,7 +10828,7 @@ export class Game {
       const coat = unit.mud?.coat;
       while (coat?.bakeStep()) if (performance.now() - start > budgetMs) return;
     }
-    for (const t of [this.trailer, this.tipTrailer]) while (t?.coat?.bakeStep()) if (performance.now() - start > budgetMs) return; // and the trailers'
+    for (const t of [this.trailer, this.tipTrailer, this.sprayer]) while (t?.coat?.bakeStep()) if (performance.now() - start > budgetMs) return; // and the trailers'
   }
 
   frame() {
@@ -10920,6 +11063,7 @@ export class Game {
     if (this.utvUnit) this.guard.run('updateUtv', () => this.updateUtv(dt, ridden, input));
     for (const l of Object.values(this.landys)) if (l.unit) this.guard.run('updateLandRover', () => this.updateLandRover(dt, ridden, input, l));
     this.guard.run('updateTipTrailer', () => this.updateTipTrailer(dt, ridden, input));
+    if (this.spray) this.guard.run('updateSprayer', () => this.updateSprayer(dt, ridden, input));
     if (this.hay) this.guard.run('updateHay', () => this.updateHay(dt));
     if (this.tractorUnit) this.guard.run('updateBaleSpike', () => this.updateBaleSpike(dt, ridden, input));
     if (GO_KINDS.some((k) => this.goVehicle(k)) && auto) this.guard.run('updateTractorGo', () => this.updateTractorGo(dt, ridden));
@@ -11613,6 +11757,10 @@ export class Game {
       this.hud.setStatus('Ramps down\nHold X to winch a switched-off quad on, or push it up with V\nT to fold them up');
     } else if (this.tractorUnit && this.riddenUnit === this.tractorUnit && this.trailer.canHitch(this.tractorUnit.quad)) {
       this.hud.setStatus('The drawbar is at the trailer\'s ring\nJ to hitch it on');
+    } else if (this.riddenUnit && this.sprayer.canHitch(this.riddenUnit.quad)) {
+      this.hud.setStatus('The hitch is at the sprayer\'s ring\nJ to hitch it on');
+    } else if (this.riddenUnit && this.sprayer.puller === this.riddenUnit.quad && this.spray) {
+      this.hud.setStatus(this.sprayStatus());
     } else if (this.riddenUnit && this.tipTrailer.canHitch(this.riddenUnit.quad)) {
       this.hud.setStatus('The hitch is at the trailer\'s ring\nJ to hitch it on');
     } else if (this.riddenUnit && this.tipTrailer.puller === this.riddenUnit.quad && this.riddenUnit.quad.speed < 0.8) {
@@ -11654,7 +11802,7 @@ export class Game {
         colour: hidden ? '#8b8270' : hex(u.spec.bodyColor), label: hidden ? 'Under the tarp' : u.spec.name,
       });
     }
-    for (const [t, label] of [[this.trailer, 'Bale trailer'], [this.tipTrailer, 'Tipping trailer']]) {
+    for (const [t, label] of [[this.trailer, 'Bale trailer'], [this.tipTrailer, 'Tipping trailer'], [this.sprayer, 'Sprayer']]) {
       at(t.model);
       markers.push({ kind: 'trailer', x: v.x, z: v.z, yaw: yawOf(t.model), colour: '#9a9a96', label });
     }

@@ -288,6 +288,10 @@ export function buildGirlsTab(d) {
     button(jobs, 'Hay: let the cut patch grow back', () => g.debugHayRegrow());
     button(jobs, 'Hay: empty the barn stack', () => g.debugHayEmptyStack());
   }
+  if (g.spray) {
+    show(jobs, 'the spraying', () => g.spray.describe());
+    for (const [what, label] of [['out', 'Sprayer: fold the boom out'], ['in', 'Sprayer: fold the boom in'], ['empty', 'Sprayer: empty the tank'], ['fill', 'Sprayer: fill the tank'], ['half', 'Spraying: spray half the field'], ['done', 'Spraying: job done now'], ['clear', 'Spraying: clear the field, needs spraying again']]) button(jobs, label, () => g.debugSpray(what));
+  }
   slider(jobs, 'Bale spike arms (0 down, 1 up)', () => g.baleRig.lift.lift, (v) => (g.baleRig.lift.lift = v), 0, 1, 0.01);
   show(jobs, 'On the spike', () => g.baleRig.held?.id ?? 'nothing');
   button(jobs, 'Put the bale on the spike down', () => g.baleRig.putDown());

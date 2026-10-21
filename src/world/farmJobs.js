@@ -2,6 +2,8 @@
 // it on the stubble from the raised tub as you drive slowly). Pure logic, no Three.js: the game feeds it where the trailer is and what the
 // tub is doing, and draws what it says (world/muckView.js, world/jobBoard.js). Tested in tests/farmJobs.test.js.
 
+import { SPRAY_JOB } from './spraying.js';
+
 export const DEFAULT_MUCK_PARAMS = {
   forkSeconds: 12, // holding E at the heap fills an empty tub in this long
   forkReach: 5, // metres from the heap's edge to the trailer that you can still fork it in
@@ -152,6 +154,7 @@ export const FARM_JOBS = {
     hint: 'Mow and bale the patch in the north field with the tractor, load the bales on the trailer and take them to the Dutch barn',
     needs: 'hayMeadow',
   },
+  spray: SPRAY_JOB, // only on the board while the field wants it (the game leaves it off for the days a spray lasts)
 };
 
 export const DEFAULT_JOB_BOARD_PARAMS = {
