@@ -393,6 +393,15 @@ export const FAQ_SECTIONS = [
         tip: 'Take the ford slowly: above about 15 mph the bow wave drowns the engine.',
       },
       {
+        q: 'How do I take the ford fast, or cross the stream when it is up?',
+        a: `Fit a snorkel to a Land Rover. Park it in the big bay at the barn, open the workbench and choose "Fit a snorkel": cut the hole, run the pipe up
+          past the screen, bed the joints in with sealant and clamp the hose on, letting go of the last two holds inside their windows. The air then comes in over
+          the roof, so the shallower water is nothing at any speed and the ford at most a splutter. It does not make the Land Rover a boat: hit the ford
+          flat out when the stream is up after rain and it can still drown. Skimp on the sealant or the clamps and a joint leaks, so more gets in. It is fitted for good and the farm
+          keeps it. Only the two Land Rovers can have one; a quad's intake is under the seat, so take it slowly.`,
+        tip: 'A snorkel, fitted at the barn workbench, lets a Land Rover take the ford fast.',
+      },
+      {
         q: 'Why is the ford deeper than it was?',
         a: `The stream comes up with the rain. After a few minutes of steady rain it stands higher, runs browner and faster, and the ford is nearly twice as deep, so a quad drowns more easily in it. It drops back over ten minutes or more once the rain stops. Wait for it to go down, or cross very slowly. A girl nearby will tell you when it is up and when it has gone down.`,
         tip: 'After rain the stream rises and the ford drowns engines more easily. Wait, or go very slowly.',
@@ -704,8 +713,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I fit spotlamps for riding at night?',
-        a: `Park a quad or a Moorland in its bay at the barn, open the workbench and choose "Fit a pair of spotlamps" (the last job but one on the
-          list). Bolt the stalks on, mount the lamps, do the wiring up snug and aim them: let go of each hold inside its window, or they come out
+        a: `Park a quad or a Moorland in its bay at the barn, open the workbench and choose "Fit a pair of spotlamps". Bolt the stalks on, mount the lamps, do the wiring up snug and aim them: let go of each hold inside its window, or they come out
           pointing low and off to one side. They are fitted for good, and the farm keeps them from one day to the next. The tractor, the Yak and the
           cars can't have them.`,
         tip: 'Spotlamps are a job on the barn workbench, for quads and Moorlands.',
