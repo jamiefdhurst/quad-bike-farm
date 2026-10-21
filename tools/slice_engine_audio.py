@@ -271,6 +271,33 @@ BANKS = {
         'revTail': 0.75,
         'revOdd': 0.3,
     },
+    'engine-bank-plover': {
+        # The old bike (the Plover): a 1938 98cc Express SL 102 light motorbike, a slow lumpy two-stroke single (AchimEngels, Freesound 168847, CC0).
+        # Its idle fires about 23 to 29 times a second; the steady stretches are 23 to 30 s and 41 to 47 s, and the running at 61 to 97 s. Its two
+        # openings of the throttle (49 to 60 s) are the mid revs. The top end borrows a Yamaha DT 125 two-stroke's pulling away and backing off
+        # (kristian321, 175964), as the ATC does. The starter borrows the quad recording, though nothing plays it. The run-down is the engine stopped with the decompression lever (96.6 to 98 s). There is no starter motor:
+        # the kick is a Honda 125's kickstart (3bagbrew, 574322), one swing, which the worklet plays for each kick (handCrank).
+        'segments': [
+            ('idle', 'sl', 23.0, 30.0, (0.03, 0.05)),
+            ('idle', 'sl', 41.0, 47.0, (0.03, 0.05)),
+            ('idle', 'sl', 61.0, 97.0, (0.03, 0.05)),
+            ('accel', 'sl', 49.0, 53.0, (0.015, 0.045)),
+            ('accel', 'sl', 56.0, 60.0, (0.015, 0.045)),
+            ('accel', 'dt', 15.0, 18.5, (0.01, 0.03)),
+            ('decel', 'dt', 18.0, 20.0, (0.01, 0.035)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'quad', 0.08, 0.365),  # (no starter motor, but every bank carries the quads' so a test can rely on one)
+            ('crankLoop', 'quad', 0.365, 1.329),
+            ('handCrank', 'kick', 6.55, 7.3),
+            ('shutdown', 'sl', 96.6, 98.0),
+        ],
+        'level': [('idle', 'idle', 'sl'), ('idle', 'accel', 'dt'), ('accel', 'accel', 'dt', 'sl')],
+        'fixedGain': {'quad': 6.283},  # as in the other banks
+        'periodCheck': True,
+        'revTail': 0.75,
+        'revOdd': 0.3,
+    },
     'engine-bank-green': {
         # The green: a Yamaha Ténéré 250 four-stroke single idling, studio-close (Singular_Estudio, Freesound 510231), about
         # 1,750 rpm. Revs from kyles's Honda ATV pulling away (450136), about 2,400 to 7,000 rpm, which the pulse sound blends

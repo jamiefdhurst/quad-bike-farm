@@ -1618,8 +1618,8 @@ export const PLOVER_SPEC = {
   solo: true, // one saddle, no room for anyone on the back
   wheelShake: 0.9, // old and loose
   // A slow, lumpy single's tickover.
-  safeIdle: 900,
-  idleRange: [1000, 1300],
+  safeIdle: 1200,
+  idleRange: [1400, 1700], // the recording's own tickover, about 23 to 29 firings a second
   roughnessRange: [0.35, 0.55],
   fuelRange: [0.3, 1.2], // 9 litre tank (two gallons), 1 litre reserve
   topRpmRange: [5600, 6100], // full-throttle revs this game, about 4% either side of the engine's own
@@ -1635,14 +1635,14 @@ export const PLOVER_SPEC = {
     manualTiming: true, // the advance-retard lever (engine/ignitionTiming.js)
     tickler: true, // a tickler on the carb: a press floods fuel in for a cold start
     noStarter: true, // no key start, only the pedal
-    idleRpmWarm: 1150,
+    idleRpmWarm: 1550,
     maxRpm: 6200,
     redlineRpm: 5700,
     rpmRiseRate: 8,
     rpmFallRate: 6,
     warmUpSeconds: 130,
     coldEnrichmentNeed: 1.1,
-    chokeIdleRpm: 1500,
+    chokeIdleRpm: 1950,
     catchChance: 0.4,
     coldRoughness: 0.6,
     coldPowerLoss: 0.8,
@@ -1669,9 +1669,9 @@ export const PLOVER_SPEC = {
     maxSteerDeg: 36,
     steerSpeedReduction: 0.02, // a bike keeps its steering at speed
     spinSideLoss: 0.5, // and the driven rear steps out when you pour the power on mid-corner
-    clutchEngageRpm: 2200,
-    clutchFullRpm: 3600,
-    couplingRpm: 2800,
+    clutchEngageRpm: 2700,
+    clutchFullRpm: 3900,
+    couplingRpm: 3300,
     engineBrakeForce: 45,
     powerbandRpm: 3800,
     torqueBelowBand: 0.5,
@@ -1679,7 +1679,7 @@ export const PLOVER_SPEC = {
   },
   vibration: {
     pulseGain: 1.0,
-    idleRpm: 1150,
+    idleRpm: 1550,
     barsFreq: 22,
     barsGain: 0.3,
     heaveFreq: 10,
@@ -1687,12 +1687,12 @@ export const PLOVER_SPEC = {
     heaveDamping: 0.16,
   },
   audio: {
-    recBank: 'engine-bank-atc', // the old three-wheeler's slow lumpy two-stroke, until it has a bank of its own
-    pulseRefRpm: 1150,
+    recBank: 'engine-bank-plover', // a 1938 98cc light motorbike's slow lumpy two-stroke single
+    pulseRefRpm: 1550,
     pulseRevLoudness: 1.0,
     recIdleSource: 'quad',
-    recBlendLo: 2200,
-    recBlendHi: 3200,
+    recBlendLo: 2600,
+    recBlendHi: 3600,
     recToneClosed: 6500,
     recVolume: 0.4,
     pipeLength: 1.0,

@@ -83,6 +83,15 @@ Note: every `.wav` named below is now a lossless FLAC in `public/audio/` with th
 | Revs | Vespa Scooter PX 200 GS old exhaust wav | druki | https://freesound.org/people/druki/sounds/158891/ | CC0 1.0 |
 | Starter and shutdown | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
 
+`public/audio/engine-bank-plover.wav` and `engine-bank-plover.json` (the old bike, the Ashby Plover) are cut from:
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses and mid revs, and the run-down (stopped with the decompression lever) | Engine run / Motor-Lauf (a 1938 98cc Express SL 102 light motorbike) | AchimEngels | https://freesound.org/people/AchimEngels/sounds/168847/ | CC0 1.0 |
+| Top-end revs | Motocross bike starting and ticking over (a Yamaha DT 125) | kristian321 | https://freesound.org/people/kristian321/sounds/175964/ | CC0 1.0 |
+| The kickstart's swing | Jerry Honda 125 Kickstart & ride off.wav | 3bagbrew | https://freesound.org/people/3bagbrew/sounds/574322/ | CC0 1.0 |
+| Starter (not played: it has no starter motor) | Quad Bike_ATV Engine.wav (as above) | Alex Fitzwater | https://freesound.org/people/Alex_hears_things/sounds/379915/ | CC0 1.0 |
+
 `public/audio/engine-bank-landy.wav` and `engine-bank-landy.json` (the Land Rover) are cut from:
 
 | Used for | Recording | Author | Source | Licence |
