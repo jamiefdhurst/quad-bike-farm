@@ -2,6 +2,7 @@
 // then you, the girls, the vehicles and the items on top of it each frame it's open. The game carries on underneath.
 
 import { MAP_COLOURS as C, mapTransform, placeMarkers, mapAngle } from './farmMap.js';
+import { sprayRuns, SPRAY_CELL, DOUBLED } from '../world/spraying.js';
 
 export class MapView {
   /** `features` from farmMapFeatures, `params` DEFAULT_MAP_PARAMS (tuned live). */
@@ -45,10 +46,33 @@ export class MapView {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(this.ground, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.drawSprayed(ctx, t);
     this.drawLegend(ctx, t, markers);
     const order = { trailer: 0, item: 1, vehicle: 2, girl: 3, you: 4 };
     const placed = placeMarkers([...markers].sort((a, b) => order[a.kind] - order[b.kind]), t, 8);
     for (const m of placed) this.drawMarker(ctx, m, p.markerScale);
+  }
+
+  /** The lines you have sprayed (world/spraying.js): a strip a pass, darker where two passes overlap, and the field's outline while the job is on. */
+  drawSprayed(ctx, t) {
+    const sp = this.spray;
+    if (!sp) return;
+    if (this.sprayWanted?.()) {
+      const [u0, v0] = t.toMap(sp.rect.minX, sp.rect.minZ);
+      const [u1, v1] = t.toMap(sp.rect.maxX, sp.rect.maxZ);
+      ctx.save();
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = C.ink;
+      ctx.strokeRect(u0, v0, u1 - u0, v1 - v0);
+      ctx.restore();
+    }
+    for (const run of sprayRuns(sp)) {
+      const [u0, v0] = t.toMap(run.x0, run.z);
+      const [u1, v1] = t.toMap(run.x1, run.z + SPRAY_CELL);
+      ctx.fillStyle = run.state === DOUBLED ? 'rgba(30, 90, 50, 0.7)' : 'rgba(60, 140, 80, 0.5)';
+      ctx.fillRect(u0, v0, u1 - u0 + 0.5, v1 - v0 + 0.5);
+    }
   }
 
   drawGround(t, px, dpr) {

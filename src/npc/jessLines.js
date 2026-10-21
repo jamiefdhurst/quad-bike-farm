@@ -20,6 +20,7 @@ import { JESS_STORM_LINES } from './stormLines.js';
 import { JESS_DIESEL_LINES } from './dieselLines.js';
 import { JESS_GENERATOR_LINES } from './generatorLines.js';
 import { JESS_HAY_LINES } from './hayLines.js';
+import { JESS_SPRAY_LINES } from './sprayLines.js';
 import { JESS_STREAM_LINES } from './streamLines.js';
 import { JESS_WATER_LINES } from './waterLines.js';
 import { JESS_HEAT_LINES } from './heatLines.js';
@@ -460,6 +461,7 @@ export const JESS_LINES = {
   ...JESS_DIESEL_LINES,
   ...JESS_GENERATOR_LINES,
   ...JESS_HAY_LINES,
+  ...JESS_SPRAY_LINES,
   ...JESS_STREAM_LINES,
   ...JESS_WATER_LINES,
   ...JESS_LPLATE_LINES,

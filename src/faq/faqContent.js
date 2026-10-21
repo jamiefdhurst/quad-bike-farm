@@ -1791,7 +1791,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What are the chalkboards in the barn?',
         a: `Today's farm jobs. Walk into the barn to the back wall and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
-          entry when you've cleared the lot. The jobs are the muck and, if the tractor is about, the silage and the hay; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
+          entry when you've cleared the lot. The jobs are the muck, the spraying (when the field wants it) and, if the tractor is about, the silage and the hay; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
@@ -1954,6 +1954,29 @@ export const FAQ_SECTIONS = [
         q: 'Does the hay grow back?',
         a: `Yes. The cut patch grows back over a few days of the farm, and the next hay job starts on fresh grass. The bales you have stacked in the Dutch barn stay there, up to sixteen, and the job stops
           turning up on the board once the barn is full.`,
+      },
+      {
+        q: 'How do I spray the field?',
+        a: `When "Spray the wheat stubble in the south field" is on the chalkboard, back a quad with a rack up to the sprayer trailer in the yard (east of the petrol tank and the hose) and hook it on with <kbd>J</kbd>.
+          Ride out to the south field, the stubble east of the muck heap (the map, <kbd>M</kbd>, outlines it while the job is on), and press <kbd>T</kbd> to fold the boom out. Then drive slowly up and down the field:
+          at about walking pace it sprays a strip 6 m wide behind the trailer. Overlap each line a little so you leave no stripes. The sprayed ground goes a darker green, and darker still where two lines overlap.
+          Once nearly all of it is covered the job ticks off. Fold the boom in with <kbd>T</kbd> before you go through a gate.`,
+        tip: 'Spraying: hitch the sprayer with J, T folds the boom out, then drive slowly in overlapping lines.',
+      },
+      {
+        q: 'How do I fill the sprayer?',
+        a: `Pick up the hose (it is on its reel by the petrol tank), take it to the sprayer and hold <kbd>E</kbd> with the nozzle at the tank. It fills in about fourteen seconds, and the little blue tube on the back of the tank shows how much is left.
+          A full tank sprays a little over two hundred metres of line, so a field takes most of one with some overlap, and a sloppy go can run it dry. When it does, the spraying stops and you go back to the hose.`,
+      },
+      {
+        q: 'Why is the sprayer not spraying?',
+        a: `The boom has to be folded right out (press <kbd>T</kbd> and wait a few seconds), the sprayer has to be hooked on, and there has to be something in the tank. You also have to be going at about walking pace:
+          crawl and it dribbles, hurry and the spray blows away. Spray that lands outside the field uses the tank up for nothing.`,
+      },
+      {
+        q: 'Does the field need spraying again?',
+        a: `Not for a while. Once you have sprayed it, it stays sprayed for about six days of the farm and the job stays off the chalkboard. A field you only half sprayed wears off in the same time. After that it is back
+          on the board some days, but not every day. The lines you sprayed stay on the map until then.`,
       },
       {
         q: "Why won't the spike go into the bale, or why won't it lift?",

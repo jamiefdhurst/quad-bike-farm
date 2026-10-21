@@ -161,6 +161,8 @@ export const LAYOUT = {
   fieldShed: { x: 89, z: -73, halfX: 3.2, halfZ: 2.2, wall: 0.5, wallHeight: 2.3, ridge: 3.5, door: { halfWidth: 0.9, height: 1.9 } },
   // The hay patch (world/haymaking.js): a rectangle of the barley field's stubble beside the first gateway of its north side, level and dry, that the hay job mows, bales and clears.
   hayMeadow: { minX: 100, maxX: 132, minZ: -26, maxZ: -8 },
+  // The spray field (world/spraying.js): a rectangle of the wheat stubble in the south field, level and clear of the muck heap and the gateways, that the spraying job goes over in lines.
+  sprayField: { minX: 134, maxX: 166, minZ: 26, maxZ: 50 },
   muckHeap: { x: 118, z: 15.2, halfX: 3.6, halfZ: 2.3, height: 1.5 },
   trough: { x: 146.8, z: -5.5, length: 2.4, width: 0.65, height: 0.6 },
 
@@ -334,6 +336,7 @@ export const LAYOUT = {
   // The tractor, UTV and Land Rover have no spot of their own: each game they're dealt a parking slot or an open spot like the quads (spawn, below).
   trailer: { x: -42.5, z: 72.5, yaw: 2.7 }, // the bale trailer's axle, in the open towards the field gate with its drawbar to the yard, 7 m clear of the north hedge (it was in it). The tractor is wherever the game put it
   tipTrailer: { x: -49, z: 33.5, yaw: 0.2 }, // the little tipping trailer's axle, in the clear by the paddock with its tongue towards the yard, for a quad to back up to
+  sprayer: { x: -39, z: 46, yaw: 0.3 }, // the sprayer trailer's axle, east of the yard spots within the hose's reach, with its tongue towards the yard, for the green quad to back up to
   dieselBowser: { x: -61, z: 45.6, yaw: Math.PI / 2 }, // red diesel for the tractor, south of the petrol tank (and the hose)
   jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot
   // The toolbox for tinkering with the quads, on the workbench in the barn.

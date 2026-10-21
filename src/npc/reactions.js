@@ -37,6 +37,7 @@ export const NOTICE_REACTIONS = {
   pheasant: { reaction: 'flinch', within: 14, chance: 'reactStartleChance' },
   zap: { reaction: 'flinch', within: 25, notOwn: true },
   thunder: { reaction: 'flinch', within: 400, minStrength: 0.9, chance: 'reactStartleChance' }, // only a close crack: the far rumbles are only heard
+  spray: { reaction: 'turnAway', within: 8, chance: 0.5 },
   jump: { reaction: 'cheer', within: 45, chance: 'reactCheerChance', notOwn: true },
   traffic: { reaction: 'wave', within: 45, chance: 'reactWaveChance' },
 };

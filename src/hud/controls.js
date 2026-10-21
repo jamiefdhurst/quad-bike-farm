@@ -53,6 +53,13 @@ export const CONTROLS = [
     ],
   },
   {
+    title: 'The sprayer',
+    lines: [
+      `<kbd>J</kbd> on a quad with a rack hooks the sprayer on when the hitch is at its ring, or takes it off when you're stopped. <kbd>T</kbd> folds the boom out or in (from the seat, or standing by it). With the boom out, drive slowly (about walking pace) and it sprays 6 m wide behind the trailer`,
+      `Hold <kbd>E</kbd> at the sprayer with the hose in your hands to fill the tank. The spraying job is on the chalkboard when the south field wants it; the lines you spray show on the map (<kbd>M</kbd>)`,
+    ],
+  },
+  {
     title: 'The little tipping trailer',
     lines: [
       `<kbd>J</kbd> on a quad with a rack (or the tractor) hooks it on when the hitch is at its ring, or takes it off when you're stopped. <kbd>E</kbd> at the tub with a jerry can or the toolbox in your hands stands it in the tub. <kbd>T</kbd> tips the tub (stopped, from the seat or beside it) and tips out whatever is in it. Jess may climb in against the rules, or ask either girl in from the wheel`,

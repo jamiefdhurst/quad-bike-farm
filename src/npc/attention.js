@@ -30,6 +30,7 @@ export const NOTICE_KINDS = {
   zap: { seconds: 2.5, range: 50, heard: true }, // someone catching the electric fence
   photo: { seconds: 3, range: 20, heard: false }, // you raising the camera: she looks at you
   thunder: { seconds: 3, range: 400, heard: true }, // a clap of thunder (placed where you are, since it comes from the whole sky; strength is how near the strike was)
+  spray: { seconds: 3, range: 25, heard: false }, // the sprayer's mist drifting (she turns her face away if close)
   bang: { seconds: 2.5, range: 80, heard: true }, // anything else loud and sudden (and the debug panel's test noise)
 };
 
@@ -51,6 +52,7 @@ export const DEFAULT_NOTICE_PARAMS = {
   pheasant: 1.6,
   zap: 1.7,
   thunder: 0.9,
+  spray: 0.8,
   bang: 1.8,
   revThrottle: 0.2, // how far the throttle has to be opened for climbing revs to count as a vehicle being revved (an idle never does)
   revAbove: 0.2, // and how far up the rev range above its idle (0 idle, 1 flat out) the revs have to get
