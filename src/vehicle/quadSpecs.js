@@ -1608,6 +1608,7 @@ export const PLOVER_SPEC = {
   bodyColor: 0x7f9a74, // a faded sage green
   style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
   dashStyle: 'smiths',
+  barLights: 'switch', // a plain on / off rocker on the left bar (P: off, on; lightSwitch.js), starting on: the lamp runs off the magneto, dim at tickover
   reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
   chokeStyle: 'plunger', // a strangler on the carb's air intake, pulled out sideways (the model places it itself)
   tapStyle: 'carbLeft', // the tap is under the tank (the model places it itself)
