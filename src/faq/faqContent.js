@@ -703,6 +703,26 @@ export const FAQ_SECTIONS = [
         tip: 'After dark, rev an old quad and its headlights brighten.',
       },
       {
+        q: 'How do I fit spotlamps for riding at night?',
+        a: `Park a quad or a Land Rover in its bay at the barn, open the workbench and choose "Fit a pair of spotlamps" (the last job but one on the
+          list). Bolt the stalks on, mount the lamps, do the wiring up snug and aim them: let go of each hold inside its window, or they come out
+          pointing low and off to one side. They are fitted for good, and the farm keeps them from one day to the next. The tractor, the Yak and the
+          cars can't have them.`,
+        tip: 'Spotlamps are a job on the barn workbench, for quads and Land Rovers.',
+      },
+      {
+        q: 'How do I switch the spotlamps on?',
+        a: `Press <kbd>9</kbd> while you are on the vehicle. The key must be on, and they only run off the battery, so a weak battery dims them and
+          they load it more than the headlights do. They throw a narrow, bright
+          beam a long way down the field, much further than the headlamps. <kbd>P</kbd> is still the headlights.`,
+      },
+      {
+        q: 'Why are the girls jumpy after dark?',
+        a: `A bang, a backfire, a pheasant bursting out of the hedge or a crack of thunder all startle them more in the dark: they notice it from
+          further away and jump more often, and they say so ("What was that?"). Amy and Jess are both a bit jumpy, Amy more so. It's worse the
+          darker it is, so a full moon helps and so do spotlamps.`,
+      },
+      {
         q: 'How do I get some light to work by in the dark?',
         a: `Ask a girl: "Light me up" on her wheel, after dark. She fetches something with headlights (a Moorland or the Yak if there's one
           about, otherwise a quad), drives it round to a few metres off facing you, and leaves it running with the lights on. Most of the time
