@@ -52,6 +52,7 @@ export function buildProps(ctx) {
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
   const neighbourFarm = buildNeighbourFarm(c);
+  if (neighbourFarm) gates.push(neighbourFarm.gate); // the yard's own gate opens and shuts like the farm's
   const silage = bale.silage;
   buildTrees(c);
   buildDistantTrees(c);
