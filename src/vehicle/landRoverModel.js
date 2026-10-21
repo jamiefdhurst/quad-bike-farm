@@ -511,8 +511,10 @@ export function buildWheel(w, rim) {
 // The Land Rover ----------------------------------------------------------------
 
 export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series', variant = 'series', reg = null } = {}) {
-  if (variant === 'defender') return buildDefenderModel({ bodyColor, dashStyle, reg }); // each has its own model: defenderModel.js, seriesModel.js
-  return buildSeriesModel({ bodyColor, dashStyle, reg });
+  // Each has its own model: defenderModel.js, seriesModel.js. The variant is kept for the snorkel, which stands on a different wing.
+  const model = variant === 'defender' ? buildDefenderModel({ bodyColor, dashStyle, reg }) : buildSeriesModel({ bodyColor, dashStyle, reg });
+  model.userData.variant = variant;
+  return model;
 }
 
 /** Tips the 200TDi's outer front backrests forward, 0 (upright) to 1 (right forward), by seat name ({ left, driver }). */

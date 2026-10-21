@@ -5,6 +5,7 @@ import { BrakeState } from '../src/vehicle/brakeState.js';
 import { CarbIcing } from '../src/vehicle/carbIcing.js';
 import { FrozenCable } from '../src/vehicle/frozenCable.js';
 import { Spotlamps } from '../src/vehicle/spotlamps.js';
+import { Snorkel } from '../src/vehicle/snorkel.js';
 import { Faults } from '../src/vehicle/faults.js';
 import { FuelSystem, DEFAULT_FUEL_PARAMS } from '../src/vehicle/fuelSystem.js';
 
@@ -68,6 +69,17 @@ describe('vehicle debug helpers', () => {
     expect(u.quad.faults.chainOff).toBe(false);
     expect(u.quad.faults.kept.chainLube).toBe(1);
     expect(u.quad.startTrouble).toBe(0); // a hard start is a problem the girls keep a quad alive for
+  });
+
+  it('lists a leaking snorkel as a problem, and putting it right seals it but leaves it fitted', () => {
+    const u = unitWith();
+    u.quad.snorkel = new Snorkel(true);
+    u.quad.snorkel.fit(0.35);
+    expect(problemSummary(u)).toContain('snorkel leaking');
+    fixEverything(u);
+    expect(u.quad.snorkel.seal).toBe(1);
+    expect(u.quad.snorkel.fitted).toBe(true);
+    expect(problemSummary(u)).toBe('nothing wrong');
   });
 
   it('lists badly aimed spotlamps as a problem, and putting it right aims them true but leaves them fitted', () => {

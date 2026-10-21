@@ -35,6 +35,7 @@ export function captureVehicle(unit, extra = {}) {
     tyres: q.tyres ? { psi: [...q.tyres.psi], brand: { ...q.tyres.brand }, tread: { ...q.tyres.tread } } : null,
     sump: q.sump ? q.sump.level : null,
     spotlamps: q.spotlamps?.fitted ? q.spotlamps.capture() : null,
+    snorkel: q.snorkel?.fitted ? q.snorkel.capture() : null,
     tapStiff: q.quirks?.tapStiff ?? null,
     mud: unit.mud?.state ? { body: unit.mud.state.body, wheels: unit.mud.state.wheels } : null,
   };
@@ -89,6 +90,7 @@ export function restoreVehicle(unit, s) {
     if (s.tyres.tread) Object.assign(q.tyres.tread, s.tyres.tread);
   }
   if (num(s.sump) && q.sump) q.sump.level = s.sump;
+  if (s.snorkel && q.snorkel) q.snorkel.restore(s.snorkel); // fitted at the bench, kept (only a Land Rover takes one)
   if (s.spotlamps && q.spotlamps) q.spotlamps.restore(s.spotlamps); // fitted at the bench, kept (a vehicle that can't have them ignores it)
   if (num(s.tapStiff) && q.quirks) q.quirks.tapStiff = s.tapStiff;
   if (s.mud && unit.mud?.state) {

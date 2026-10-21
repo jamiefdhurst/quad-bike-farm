@@ -10,6 +10,8 @@ import { QuirkSet } from './quirks.js';
 import { headlightLook, taillightLevel } from './headlight.js';
 import { Spotlamps } from './spotlamps.js';
 import { addSpotlamps, setSpotlamps } from './spotlampModel.js';
+import { Snorkel } from './snorkel.js';
+import { addSnorkel, setSnorkel } from './snorkelModel.js';
 import { LightSwitch, LIGHT_MODES, SIMPLE_LIGHT_MODES, lightLook, lightLamps } from './lightSwitch.js';
 import { poseBarPod, poseThumbThrottle, POD } from './foremanControls.js';
 import { Indicators, INDICATOR_PARAMS } from './indicators.js';
@@ -151,6 +153,8 @@ export class Quad {
     this.dash = this.model.userData.dash;
     // Spotlamps are fitted at the bench to the quads and the Land Rovers (not the tractor, the UTV or the cars), by their headlamps (spotlamps.js).
     this.spotlamps = new Spotlamps(!tractor && !utv && !car && !noHeadlight && !!addSpotlamps(this.model));
+    // A snorkel is fitted at the bench to the Land Rovers only (snorkel.js).
+    this.snorkel = new Snorkel(landRover && !!addSnorkel(this.model));
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
     this.faults.hasBoot = !engine.params.compressionIgnition; // nor an intake boot to split
@@ -1126,7 +1130,7 @@ export class Quad {
       puddle = Math.max(puddle, w.puddle);
       if (w.puddle > 0.5) boost = Math.max(boost, this.world.gulpBoostAt?.(w.point.x, w.point.z) ?? 1);
     }
-    return waterGulp(puddle, this.speed, this.engine.params) * boost;
+    return waterGulp(puddle, this.speed, this.engine.params, this.snorkel.effect()) * boost;
   }
 
   /** Engine controls for this frame. */
@@ -1378,6 +1382,7 @@ export class Quad {
     const spotSupply = this.spotlamps.fitted && this.spotlamps.on ? lampSupply(e.battery, e.rpm, e.params.idleRpmWarm, e.params.maxRpm, e.params.batteryWeakBelow) : 1;
     this.spotlamps.update(dt, e.ignitionOn && e.hasPower, spotSupply);
     setSpotlamps(this.model, this.spotlamps.fitted, this.spotlamps.level);
+    setSnorkel(this.model, this.snorkel.fitted);
     e.lightLoad = Math.min(1, (onBattery ? 1 : 0) + this.spotlamps.load);
     const supply = onBattery ? lampSupply(e.battery, e.rpm, e.params.idleRpmWarm, e.params.maxRpm, e.params.batteryWeakBelow) : 1;
     const level = (this.lights ? beams.level : look.level) * this.quirks.headlight(dt) * supply;

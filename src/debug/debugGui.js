@@ -321,6 +321,7 @@ export class DebugGui {
       tick(r, 'spotlamps on (9)', () => unit().quad.spotlamps.on, (v) => (unit().quad.spotlamps.on = v && unit().quad.spotlamps.fitted));
       show(r, 'spotlamps burning (0 to 1)', () => round(unit().quad.spotlamps.level));
     }
+    if (u.quad.snorkel.canFit) tick(r, 'snorkel fitted (the bench job)', () => unit().quad.snorkel.fitted, (v) => (v ? unit().quad.snorkel.fit(1) : unit().quad.snorkel.remove()));
     if (u.quad.radio) {
       tick(r, 'radio on', () => unit().quad.radio?.on ?? false, (v) => unit().quad.radio?.set(v));
       set(r, 'radio volume', () => round(unit().quad.radio?.volume ?? 0), (v) => unit().quad.radio?.setVolume(v), 0, 1);
@@ -348,6 +349,7 @@ export class DebugGui {
     tick(p, 'chain off the sprocket', () => unit().quad.faults.chainOff, (v) => (unit().quad.faults.kept.chainOff = v));
     set(p, 'chain oil (0 bone dry)', () => round(unit().quad.faults.kept.chainLube), (v) => (unit().quad.faults.kept.chainLube = v), 0, 1);
     if (u.quad.spotlamps.canFit) set(p, 'spotlamps aim (1 is true; lower points low and off to one side)', () => round(unit().quad.spotlamps.aim), (v) => (unit().quad.spotlamps.aim = v), 0, 1);
+    if (u.quad.snorkel.canFit) set(p, 'snorkel seal (1 is bedded in; lower lets water in)', () => round(unit().quad.snorkel.seal), (v) => (unit().quad.snorkel.seal = v), 0, 1);
     set(p, 'wet brakes', () => round(unit().quad.brakes.wet), (v) => (unit().quad.brakes.wet = v), 0, 1);
     if (u.quad.carbIce.enabled) set(p, 'iced carb (ice)', () => round(unit().quad.carbIce.ice), (v) => (unit().quad.carbIce.ice = v), 0, 1);
     if (u.engine.params.compressionIgnition) {

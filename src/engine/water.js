@@ -6,11 +6,15 @@
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-/** Water taken in per second: how deep the puddle is under the wheels (0..1) and how fast you're ploughing through it (m/s). */
-export function waterGulp(puddle, speed, p) {
-  const depth = clamp01((puddle - p.waterDepthFrom) / Math.max(0.01, 1 - p.waterDepthFrom));
+/**
+ * Water taken in per second: how deep the puddle is under the wheels (0..1) and how fast you're ploughing through it (m/s). A snorkel
+ * ({ depthFrom, scale } from snorkel.js) lifts the intake clear of the shallower water and lets less in when it is deep enough.
+ */
+export function waterGulp(puddle, speed, p, snorkel = null) {
+  const from = snorkel ? Math.max(p.waterDepthFrom, snorkel.depthFrom) : p.waterDepthFrom;
+  const depth = clamp01((puddle - from) / Math.max(0.01, 1 - from));
   const fast = clamp01((Math.abs(speed) - p.waterSafeSpeed) / Math.max(0.1, p.waterFullSpeed - p.waterSafeSpeed));
-  return p.waterGulpRate * depth * fast * fast;
+  return p.waterGulpRate * depth * fast * fast * (snorkel ? snorkel.scale : 1);
 }
 
 /** The new water level after dt seconds. It blows out faster running with the throttle open than it drips out standing. */

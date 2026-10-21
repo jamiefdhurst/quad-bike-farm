@@ -123,6 +123,10 @@ export function buildGameTree(g, host) {
       };
       if (q().lights) out.lights = choice(LIGHT_MODES, () => q().lights.mode, (v) => q().lights.set(v), 'the UTV light switch');
       if (q().barLights) out.lights = choice(q().barLights.modes, () => q().barLights.mode, (v) => q().barLights.set(v), 'the lights switch on the bars (off, low is dipped, high is main beam; the yellow\'s plain switch has only off and low)');
+      if (q().snorkel.canFit) {
+        out.snorkel = flag(() => q().snorkel.fitted, (v) => (v ? q().snorkel.fit(1) : q().snorkel.remove()), 'is a snorkel fitted? (the bench job fits one; set true or false here)');
+        out.snorkelSeal = num(() => q().snorkel.seal, (v) => (q().snorkel.seal = v), 0, 1, '', '1 is bedded in, lower lets water in when it is deep; "Put it right" sets it to 1');
+      }
       if (q().spotlamps.canFit) {
         out.spotlamps = flag(() => q().spotlamps.fitted, (v) => (v ? q().spotlamps.fit(1) : q().spotlamps.remove()), 'are spotlamps fitted? (the bench job fits them; set true or false here)');
         out.spotlampsOn = flag(() => q().spotlamps.on, (v) => (q().spotlamps.on = !!v && q().spotlamps.fitted), 'the spotlamps switch (9 in the game)');
