@@ -41,6 +41,9 @@ export const NOTICE_REACTIONS = {
   traffic: { reaction: 'wave', within: 45, chance: 'reactWaveChance' },
 };
 
+/** The reactions that are a start at something sudden (the ones the dark makes more likely). */
+export const startles = (reaction) => reaction === 'flinch' || reaction === 'stepBack' || reaction === 'gasp';
+
 /** Stronger things take over from weaker ones already under way. */
 const RANK = { wave: 1, pose: 1, face: 1, palm: 1, cheer: 1, turnAway: 1, coverEars: 2, gasp: 2, flinch: 3, stepBack: 4 };
 
@@ -50,12 +53,16 @@ const RANK = { wave: 1, pose: 1, face: 1, palm: 1, cheer: 1, turnAway: 1, coverE
  */
 export function reactionTo(notice, ctx, p, random = Math.random) {
   const rule = NOTICE_REACTIONS[notice.kind];
-  if (!rule || ctx.distance > rule.within) return null;
+  if (!rule) return null;
+  // After dark every bump is louder: the startling reactions are noticed from further off and more often (more so for a jumpy girl).
+  const dark = startles(rule.reaction) ? Math.max(0, Math.min(1, ctx.dark ?? 0)) : 0;
+  if (ctx.distance > rule.within * (1 + dark * (p.reactDarkRange ?? 0))) return null;
   if (rule.notOwn && ctx.own) return null;
   if ((notice.strength ?? 1) < (rule.minStrength ?? 0)) return null;
   if (!mayInterrupt(rule.reaction, ctx.current)) return null;
   if (!ctx.can(rule.reaction)) return null;
-  const chance = typeof rule.chance === 'string' ? p[rule.chance] : rule.chance ?? 1;
+  const base = typeof rule.chance === 'string' ? p[rule.chance] : rule.chance ?? 1;
+  const chance = Math.min(1, base + dark * (p.reactDarkChance ?? 0));
   if (random() >= chance) return null;
   return { type: rule.reaction, from: { x: notice.x, y: notice.y, z: notice.z }, strength: Math.min(1.5, notice.strength ?? 1) };
 }

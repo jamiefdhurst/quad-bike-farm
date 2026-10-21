@@ -66,6 +66,8 @@ export const CHARACTERS = [
       towDistractChance: 0.004,
       radioKeen: 0.1, // would rather hear the engine: turns the radio down, then off
       reactEarsChance: 0.85, // covers her ears at revs beside her; claps a jump rather than cheering
+      reactDarkRange: 1.2, // jumpy in the dark: hears a bump from over twice as far
+      reactDarkChance: 0.35,
       reactStartleChance: 0.95, // a pheasant out of the hedge makes her jump
       reactCheerChance: 0.45,
       forecastChat: 0.85, // reads the board in the barn and tells you what it says
@@ -125,6 +127,8 @@ export const CHARACTERS = [
       voiceHardBrakeShed: 3,
       radioKeen: 0.9, // radio on and up, always
       reactEarsChance: 0.15, // loves the noise; cheers a jump with both arms up; flinches less
+      reactDarkRange: 0.6,
+      reactDarkChance: 0.2,
       reactStartleChance: 0.4, // laughs at the pheasant, mostly
       reactCheerChance: 0.95,
       forecastChat: 0.2, // hardly looks at the board

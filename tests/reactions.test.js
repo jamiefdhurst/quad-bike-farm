@@ -30,6 +30,23 @@ describe('which notices make her react', () => {
     expect(reactionTo(n('rev', { strength: 1.2 }), ctx(), P, never)).toBe(null);
   });
 
+  it('after dark a bump is heard from further off and startles her more often', () => {
+    const jumpy = { ...P, reactDarkRange: 1, reactDarkChance: 0.5 };
+    const day = ctx({ distance: 30 });
+    const night = ctx({ distance: 30, dark: 1 });
+    expect(reactionTo(n('bang'), day, jumpy, always)).toBe(null); // 20 m by day
+    expect(reactionTo(n('bang'), night, jumpy, always)?.type).toBe('flinch'); // 40 m in the dark
+    const bump = { ...jumpy, reactStartleChance: 0.4 };
+    expect(reactionTo(n('pheasant'), ctx({ distance: 3 }), bump, () => 0.6)).toBe(null);
+    expect(reactionTo(n('pheasant'), ctx({ distance: 3, dark: 1 }), bump, () => 0.6)?.type).toBe('flinch');
+  });
+
+  it("the dark doesn't make her cover her ears or cheer any more", () => {
+    const jumpy = { ...P, reactDarkRange: 1, reactDarkChance: 1 };
+    expect(reactionTo(n('rev', { strength: 1.2 }), ctx({ distance: 9, dark: 1 }), jumpy, always)).toBe(null);
+    expect(reactionTo(n('jump'), ctx({ distance: 10, dark: 1 }), jumpy, never)).toBe(null);
+  });
+
   it("doesn't cheer the jump she's on, or cover her ears at her own quad", () => {
     expect(reactionTo(n('jump'), ctx({ distance: 10 }), P, always)?.type).toBe('cheer');
     expect(reactionTo(n('jump'), ctx({ distance: 10, own: true }), P, always)).toBe(null);
