@@ -79,6 +79,7 @@ export class EngineModel {
     this.batteryOut = false; // lifted out and on the bench charger: no dash, no starter, and it neither drains nor charges (the cord and a magneto still work)
     this.advance = 0.5; // the advance-retard lever, 0 retarded to 1 advanced (ignitionTiming.js; only a manualTiming engine reads it)
     this.kicked = 0; // seconds left of a kick-back: the pedal flung back at the foot
+    this.tickled = 0; // how much the tickler has put in the carb's bowl (tickle(), ignitionTiming): enriches it like choke, and floods it past tickleFloodAbove
     this.pullLeft = 0; // seconds left of a yank on the pull-start
     this.pullStrength = 0; // how good that yank was, 0..1
     this.clickedDead = false; // the starter has clicked for this press
@@ -368,6 +369,7 @@ export class EngineModel {
     this.updateBattery(h);
     this.pullLeft = Math.max(0, this.pullLeft - h);
     this.kicked = Math.max(0, this.kicked - h);
+    this.stepTickle(h);
     this.updateTemperature(h);
     this.updateLube(h);
     this.water = stepWater(this.water, h, { gulp: this.gulp, running: this.state === EngineState.RUNNING, throttle: this.throttle }, p);
@@ -392,6 +394,15 @@ export class EngineModel {
     this.rpm = clamp(this.rpm, 0, p.maxRpm);
   }
 
+  /** What the tickler put in drains off, or burns away while it runs, and past tickleFloodAbove it wets the plug. */
+  stepTickle(h) {
+    const p = this.params;
+    if (this.tickled <= 0) return;
+    const drain = (this.state === EngineState.RUNNING ? p.tickleRunFactor : 1) / Math.max(1, p.tickleSeconds);
+    this.tickled = Math.max(0, this.tickled - drain * h);
+    if (this.tickled > p.tickleFloodAbove && this.state !== EngineState.RUNNING) this.fouling += ((this.tickled - p.tickleFloodAbove) / p.tickleFloodAbove) * p.tickleFoulRate * h;
+  }
+
   updateStarter(starter) {
     const p = this.params;
     const canTurn = this.state === EngineState.IGNITION || this.state === EngineState.STALLED;
@@ -412,7 +423,7 @@ export class EngineModel {
       this.state = EngineState.CRANKING;
       if (roll > 0) return; // no starter whirr: the wheels are turning it
       // A swing on the starting handle is a clunk over compression, not the starter motor's whirr.
-      this.emit(!motor && p.crankHandle ? 'handCrankOn' : 'starterOn');
+      this.emit(!motor && (p.crankHandle || p.kickStart) ? 'handCrankOn' : 'starterOn');
     } else if (!motor && !pulling && roll === 0 && this.state === EngineState.CRANKING) {
       this.state = EngineState.IGNITION;
       this.emit('starterOff');
@@ -448,6 +459,18 @@ export class EngineModel {
     return true;
   }
 
+  /**
+   * A press on the carb's tickler: fuel floods into the bowl, enriching the mixture for a start with no choke. Too many presses flood the engine.
+   * Returns whether it did anything (an engine with a tickler, not seized).
+   */
+  tickle() {
+    const p = this.params;
+    if (!p.tickler) return false;
+    this.tickled = Math.min(3, this.tickled + p.tickleAmount);
+    this.emit('tickle');
+    return true;
+  }
+
   /** Put charge in (a jump from another quad), or take it out. */
   charge(amount) {
     this.battery = clamp(this.battery + amount, 0, 1);
@@ -469,6 +492,7 @@ export class EngineModel {
       this.pullLeft = 0.12;
       this.pullStrength = 0.3;
       this.emit('kickBack');
+      this.emit('backfire', 0); // the bang of it firing against the piston
       return 0;
     }
     let strength;
@@ -685,7 +709,7 @@ export class EngineModel {
     this.jetErr = p.strokes === 2 ? jetError(p.jet, this.dayTemp, p, this.bore, this.dayDamp) : 0;
     this.air = airCharge(this.dayTemp, this.dayDamp, p);
     this.jetOn = p.strokes === 2 ? jetTrue(this.jetErr, p) : 0;
-    this.mixture = jetMixture(this.jetErr, p) + supplied - need - p.starveLean * starve - p.leakLean * this.airLeak * (1 - 0.7 * this.throttle) + p.mixtureTrim + p.clogRich * this.clog + hot + airMixture(this.air, p);
+    this.mixture = jetMixture(this.jetErr, p) + supplied - need - p.starveLean * starve - p.leakLean * this.airLeak * (1 - 0.7 * this.throttle) + p.mixtureTrim + p.clogRich * this.clog + p.tickleRich * this.tickled + hot + airMixture(this.air, p);
     this.lean = Math.max(0, -this.mixture);
     this.rich = Math.max(0, this.mixture - p.richTolerance);
 

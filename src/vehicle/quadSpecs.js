@@ -1633,6 +1633,7 @@ export const PLOVER_SPEC = {
     pullStart: true,
     kickStart: true, // the pull is a kickstart pedal (it can kick back with the lever advanced)
     manualTiming: true, // the advance-retard lever (engine/ignitionTiming.js)
+    tickler: true, // a tickler on the carb: a press floods fuel in for a cold start
     noStarter: true, // no key start, only the pedal
     idleRpmWarm: 1150,
     maxRpm: 6200,
