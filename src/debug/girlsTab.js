@@ -341,6 +341,8 @@ export function buildGirlsTab(d) {
   button(mem, 'Clear the rosettes', () => {
     g.showKeeper.restore([]);
     g.trophyShelf.show([]);
+    g.records.extra = [g.showKeeper.recordLine()];
+    g.jobBoardView.refresh();
   });
   for (const season of SEASONS) button(mem, `Load it as ${season}`, () => g.reloadAsSeason(season));
   button(mem, 'Save the farm now', () => toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));

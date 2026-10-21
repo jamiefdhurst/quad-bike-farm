@@ -18,7 +18,7 @@ import { DEFAULT_RIDER_LEAN_PARAMS, RIDER_LEAN_RANGES } from './vehicle/riderLea
 import { pickFleet } from './vehicle/fleet.js';
 import { endOfDay, DayFade } from './farm/endOfDay.js';
 import { dayRecap, todaysLog, DayRecap } from './farm/dayRecap.js';
-import { DEFAULT_SHOW_PARAMS, SHOW_PARAM_RANGES, ShowKeeper, isShowDay, isShowEve, runShow, showCard } from './farm/showDay.js';
+import { DEFAULT_SHOW_PARAMS, SHOW_PARAM_RANGES, ShowKeeper, isShowDay, isShowEve, runShow, showCard, showSpeech, judgeQuad, previewText, rosetteSvg } from './farm/showDay.js';
 import { formatEntry } from './workshop/logbook.js';
 import { DEFAULT_FARM_PARAMS, FARM_PARAM_RANGES, browserStorage, openFarm, writeSave, wipeSave, fleetFromSave, describeFarm, validSave } from './farm/farmSave.js';
 import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from './farm/farmState.js';
@@ -3897,6 +3897,8 @@ export class Game {
     this.photos.wall.restore(save.photos);
     this.photos.view.refresh();
     this.showKeeper.restore(save.shows);
+    this.records.extra = [this.showKeeper.recordLine()];
+    this.jobBoardView.refresh();
     this.trophyShelf?.show(this.showKeeper.shelf());
     this.headgear.restore(save.headgear);
     this.helmetHooks.show(this.headgear.onHooks());
@@ -4120,7 +4122,7 @@ export class Game {
       { hour: this.daylight.hour, seeded: this.farm.seeded, canSave: !!this.farmStorage, girls, day: this.farm.day },
       { ...this.farmParams, endDayHour: Math.min(this.farmParams.endDayHour, this.daylight.p.sunset - 0.25) }, // a winter evening comes sooner
     );
-    if (now.ok && this.isShowToday()) now.text = `Press E to take your quad to the show: day ${this.farm.day} ends with the judging`;
+    if (this.isShowToday()) now.text = now.ok ? `Press E to take your quad to the show (${this.showPreview()})` : `${now.text}. The show is today: ${this.showPreview()}`;
     return now;
   }
 
@@ -4129,14 +4131,13 @@ export class Game {
     return this.showForced || isShowDay(this.date);
   }
 
-  /** The show: the quad you last rode is judged, the girls ride the slow race, and the result is kept (rosette, favour, bucket list). */
-  judgeShow() {
-    const quadIds = QUAD_SPECS.map((s) => s.id);
-    const unit = this.lastRiddenUnit && quadIds.includes(this.lastRiddenUnit.spec.id) ? this.lastRiddenUnit : null;
-    const f = unit?.quad.faults;
-    const quad = unit && {
-      label: `the ${unit.label}`,
+  /** What the judge would read off a unit now (farm/showDay.js `judgeQuad` takes it): its mud, wear, damage and faults. */
+  showCondition(unit) {
+    const f = unit.quad.faults;
+    return {
       mud: Math.max(unit.mud?.state.body ?? 0, unit.mud?.state.wheels ?? 0),
+      mudBody: unit.mud?.state.body ?? 0,
+      mudWheels: unit.mud?.state.wheels ?? 0,
       bodyWear: unit.spec.bodyWear ?? 0,
       damage: [f.tyre, f.rodWheel, f.rimWheel].filter((w) => w >= 0).length,
       engineWear: unit.engine.wear ?? 0,
@@ -4144,10 +4145,41 @@ export class Game {
       faults: Object.values(f.started ?? {}).filter(Boolean).length,
       battery: unit.engine.battery ?? 1,
     };
-    const show = runShow({ quad, farmSeed: this.farmSeed, date: this.date, rnd: createRandom((this.farmSeed ^ (this.farm.day * 7919)) >>> 0)(), p: this.showParams });
+  }
+
+  /** The quad you would enter: the last quad you rode, if it is one (not the tractor or a car). */
+  showEntry() {
+    const u = this.lastRiddenUnit;
+    return u && QUAD_SPECS.some((s) => s.id === u.spec.id) ? u : null;
+  }
+
+  /** The farm's entries: yours first, then each girl's own quad (if it is not yours): [{ id, name, label, quad }]. */
+  showEntries() {
+    const mine = this.showEntry();
+    const out = [];
+    if (mine) out.push({ id: 'you', name: 'You', label: `the ${mine.label}`, quad: this.showCondition(mine) });
+    for (const c of this.companions) {
+      const own = c.homeQuad ?? c.quad;
+      const unit = own && this.units.find((u) => u.quad === own);
+      if (unit && unit !== mine && QUAD_SPECS.some((s) => s.id === unit.spec.id)) out.push({ id: c.character.id, name: c.character.name, label: `the ${unit.label}`, quad: this.showCondition(unit) });
+    }
+    return out;
+  }
+
+  /** What the entry would score if the show were now, as a line for the calendar. */
+  showPreview() {
+    const u = this.showEntry();
+    return u ? previewText(`the ${u.label}`, judgeQuad(this.showCondition(u), this.showParams)) : 'Nothing entered: ride a quad last and it is the entry';
+  }
+
+  /** The show: your quad and each girl's are judged against the others, the girls ride the slow race, and the result is kept (rosette, favour, bucket list). */
+  judgeShow() {
+    const show = runShow({ entries: this.showEntries(), farmSeed: this.farmSeed, date: this.date, rnd: createRandom((this.farmSeed ^ (this.farm.day * 7919)) >>> 0)(), p: this.showParams });
     if (show.place) {
       this.showKeeper.add(this.farm.day, this.date, show);
       this.trophyShelf.show(this.showKeeper.shelf());
+      this.records.extra = [this.showKeeper.recordLine()];
+      this.jobBoardView.refresh();
       for (const c of this.companions) this.favour.add(c.character.id, this.showParams.favourEntered + (show.place <= 2 ? this.showParams.favourWon : 0));
       if (show.place === 1) this.achievements.note('showFirst');
     }
@@ -4207,7 +4239,8 @@ export class Game {
       items.length ? `<ul>${items.map((t) => `<li>${esc(t)}</li>`).join('')}${more ? `<li>and ${more} more</li>` : ''}</ul>` : `<p class="none">${none}</p>`;
     const show = this.lastShow && showCard(this.lastShow);
     const showHtml = show
-      ? `<h3>${esc(show.title)}</h3><p class="total">${esc(show.headline)}</p>${show.lines.length ? `<ul>${show.lines.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}<p class="facts">${esc(show.race)}</p>`
+      ? `<h3>${esc(show.title)}</h3>${show.rosette !== null ? rosetteSvg(show.rosette) : ''}<p class="total">${esc(show.headline)}</p>${show.lines.length ? `<ul>${show.lines.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}` +
+        `${show.ranking.length ? `<ul class="ranking">${show.ranking.map((r) => `<li>${r.you ? '<b>' : ''}${esc(r.text)}${r.you ? '</b>' : ''}</li>`).join('')}</ul>` : ''}<p class="facts">${esc(show.race)}</p>`
       : '';
     this.dayRecapEl.innerHTML =
       `<h2>${esc(r.title)}</h2>${showHtml}<h3>Amy's logbook</h3>${list(r.log, r.logMore, 'Nothing written down today.')}` +
@@ -4215,13 +4248,8 @@ export class Game {
       `${r.facts.length ? `<p class="facts">${esc(r.facts.join(', '))}</p>` : ''}${r.money ? `<p class="facts">${esc(r.money)}</p>` : ''}<p class="go">Press E to carry on</p>`;
     this.dayRecapEl.classList.add('shown');
     this.dayRecap.open();
-    this.recapJessIn = this.farmParams.recapJessDelay;
-    this.recapSay = { amy: 'dayDone', jess: 'dayDone' };
-    if (this.lastShow) {
-      const { winner } = this.lastShow.race;
-      this.recapSay = { amy: winner === 'amy' ? 'showSlowWon' : 'showSlowLost', jess: winner === 'jess' ? 'showSlowWon' : 'showSlowLost' };
-    }
-    this.companions.find((c) => c.character.id === 'amy')?.voice.say(this.recapSay.amy, { force: true });
+    this.recapSpeech = (this.lastShow ? showSpeech(this.lastShow, this.farmParams.recapJessDelay) : [{ girl: 'amy', situation: 'dayDone', at: 0 }, { girl: 'jess', situation: 'dayDone', at: this.farmParams.recapJessDelay }]).map((x) => ({ ...x }));
+    this.recapClock = 0;
   }
 
   /** E, Enter or a click on the card: the fade to black begins. */
@@ -4235,7 +4263,12 @@ export class Game {
   updateEndOfDay(dt) {
     if (this.dayRecap.active) {
       this.dayRecap.update(dt);
-      if (this.recapJessIn > 0 && (this.recapJessIn -= dt) <= 0) this.companions.find((c) => c.character.id === 'jess')?.voice.say(this.recapSay?.jess ?? 'dayDone', { force: true });
+      this.recapClock += dt;
+      for (const x of this.recapSpeech ?? []) {
+        if (x.done || this.recapClock < x.at) continue;
+        x.done = true;
+        this.companions.find((c) => c.character.id === x.girl)?.voice.say(x.situation, { force: true });
+      }
       if (this.input.wasPressed('KeyE') || this.input.wasPressed('Enter')) this.dismissRecap();
     }
     if (!this.dayFade.active) return;

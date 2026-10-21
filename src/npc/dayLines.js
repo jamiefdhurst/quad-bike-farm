@@ -32,6 +32,16 @@ export const AMY_DAY_LINES = {
     'Jess won the slow race. I let her. Quite deliberately.',
     'I did not lose. The race was simply too slow for me to concentrate.',
   ]),
+  showAheadOfYou: line(300, [
+    'I placed above you. Do not take it personally. Wash the quad.',
+    'I came out ahead of you, I am afraid. It is the tidy that does it.',
+    'A higher mark than yours. I shall be gracious about it.',
+  ]),
+  showBehindYou: line(300, [
+    'You beat me. I shall be asking to see the judge\'s notes.',
+    'You placed above me. Well done. I did say mine needed a service.',
+    'You are ahead of me, and I am being very mature about it.',
+  ]),
 };
 
 export const JESS_DAY_LINES = {
@@ -62,5 +72,15 @@ export const JESS_DAY_LINES = {
     'I put my foot down. I could not help it, it was so slow.',
     'Amy won the slow race. She was going so slow I thought she had stopped.',
     'I am rubbish at slow. Fast, though. Fast I can do.',
+  ],
+  showAheadOfYou: [
+    'I beat you! Mud and everything! Well, less mud than yours.',
+    'I came higher than you! I am never washing this quad again, it clearly works.',
+    'Ha! I was ahead of you in the show!',
+  ],
+  showBehindYou: [
+    'You beat me! Fine. Next month, though.',
+    'You got a better mark than me. I want a rematch.',
+    'I came below you. It was the mud. It is always the mud.',
   ],
 };

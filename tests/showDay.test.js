@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isShowDay, isShowEve, judgeQuad, rivalEntries, placeOf, rosetteFor, slowRace, runShow, ShowKeeper, showCard, DEFAULT_SHOW_PARAMS as P, SHOW_PARAM_RANGES } from '../src/farm/showDay.js';
+import { isShowDay, isShowEve, judgeQuad, noteText, previewText, showSpeech, rosetteSvg, rivalEntries, placeOf, rosetteFor, slowRace, runShow, ShowKeeper, showCard, DEFAULT_SHOW_PARAMS as P, SHOW_PARAM_RANGES } from '../src/farm/showDay.js';
 import { farmDate } from '../src/world/seasons.js';
 
 const dateOf = (n) => farmDate({ start: 0, day: n });
@@ -23,7 +23,7 @@ describe('which day is the show', () => {
 
 describe('judging', () => {
   it('gives a spotless quad ten for everything', () => {
-    expect(judgeQuad({}, P)).toEqual({ clean: 10, tidy: 10, running: 10, total: 30 });
+    expect(judgeQuad({}, P)).toMatchObject({ clean: 10, tidy: 10, running: 10, total: 30 });
   });
   it('marks mud, wear, damage and faults down independently', () => {
     const m = judgeQuad({ mud: 0.25, bodyWear: 0.5, damage: 1, engineWear: 0.4, faults: 1 }, P);
@@ -59,33 +59,93 @@ describe('the other entries', () => {
   });
 });
 
+const you = (quad = {}, label = 'the red quad') => ({ id: 'you', name: 'You', label, quad });
+const amy = (quad = {}) => ({ id: 'amy', name: 'Amy', label: 'the blue quad', quad });
+const jess = (quad = {}) => ({ id: 'jess', name: 'Jess', label: 'the green quad', quad });
+const MUDDY = { mud: 1, bodyWear: 1, engineWear: 1, faults: 3 };
+
 describe('the show', () => {
-  it('gives a full house a first and a muddy wreck a lower place', () => {
-    const good = runShow({ quad: { label: 'the red quad' }, farmSeed: 5, date: dateOf(30), rnd: 0.1 });
+  it('gives a spotless quad a first and a muddy wreck a lower place', () => {
+    const good = runShow({ entries: [you()], farmSeed: 5, date: dateOf(30), rnd: 0.1 });
     expect(good.place).toBe(1);
     expect(good.race.winner).toBe('amy');
-    const bad = runShow({ quad: { label: 'the red quad', mud: 1, bodyWear: 1, engineWear: 1, faults: 3 }, farmSeed: 5, date: dateOf(30), rnd: 0.9 });
+    const bad = runShow({ entries: [you(MUDDY)], farmSeed: 5, date: dateOf(30), rnd: 0.9 });
     expect(bad.place).toBeGreaterThan(1);
     expect(bad.race.winner).toBe('jess');
     expect(slowRace(0.5).loser).toBe('jess');
   });
+  it('ranks the girls with you and the rivals, ties going to you then the girls', () => {
+    const s = runShow({ entries: [you(), amy(), jess(MUDDY)], farmSeed: 5, date: dateOf(30), rnd: 0.1 });
+    expect(s.entries).toBe(3 + P.rivals);
+    expect(s.ranking.map((r) => r.place)).toEqual(s.ranking.map((_, i) => i + 1));
+    expect(s.ranking[0].id).toBe('you');
+    expect(s.ranking[1].id).toBe('amy');
+    expect(s.girls.amy.place).toBe(2);
+    expect(s.girls.jess.place).toBeGreaterThan(2);
+  });
   it('with no quad there is no place but the girls still race', () => {
-    const s = runShow({ quad: null, farmSeed: 5, date: dateOf(30), rnd: 0.5 });
+    const s = runShow({ entries: [], farmSeed: 5, date: dateOf(30), rnd: 0.5 });
     expect(s.place).toBeNull();
     expect(showCard(s).headline).toMatch(/did not enter/);
   });
-  it('the card says what you got and who won', () => {
-    const s = runShow({ quad: { label: 'the red quad' }, farmSeed: 5, date: dateOf(30), rnd: 0.1 });
+  it('the card says what you got, why, and who won', () => {
+    const s = runShow({ entries: [you({ mud: 0.25, mudBody: 0.05, mudWheels: 0.25 }), amy(), jess()], farmSeed: 5, date: dateOf(30), rnd: 0.1 });
     const c = showCard(s);
-    expect(c.headline).toBe('First of 5: the red quad');
+    expect(c.headline).toMatch(/^(First|Second|Third|Fourth|Highly commended)/);
+    expect(c.lines[0]).toBe('Clean 5: mud on the wheels');
+    expect(c.lines[1]).toBe('Tidy 10: spotless');
+    expect(c.ranking.filter((r) => r.you).length).toBe(1);
     expect(c.race).toBe('Amy won the slow race. Jess put a foot down.');
+    expect(c.rosette).toBe(s.rosette.rosette);
+  });
+});
+
+describe('the judge\'s reasons and the preview', () => {
+  it('names what cost marks', () => {
+    const m = judgeQuad({ mud: 0.5, bodyWear: 0.5, damage: 2, engineWear: 0.5, fouling: 0.5, faults: 2, battery: 0.1 }, P);
+    expect(m.notes.clean).toEqual(['mud on the body', 'mud on the wheels']);
+    expect(m.notes.tidy).toEqual(['a worn body', '2 punctures or bent parts']);
+    expect(m.notes.running).toEqual(['a worn engine', 'a fouled plug', '2 faults', 'a flat battery']);
+    expect(noteText([])).toBe('spotless');
+  });
+  it('previews the worst mark', () => {
+    expect(previewText('the red quad', judgeQuad({ mud: 0.25 }, P))).toBe('the red quad would get 25 of 30 now; clean loses most (mud on the body and mud on the wheels)');
+    expect(previewText('the red quad', judgeQuad({}, P))).toBe('the red quad would get 30 of 30 now');
+  });
+});
+
+describe('the rivals get better', () => {
+  it('by rivalYearly a year, capped at 29', () => {
+    const y1 = rivalEntries(7, dateOf(30), P);
+    const y3 = rivalEntries(7, dateOf(30 + 365 * 2), P);
+    const sum = (a) => a.reduce((t, r) => t + r.total, 0);
+    expect(sum(y3)).toBeGreaterThan(sum(y1));
+    for (const r of rivalEntries(7, dateOf(30 + 365 * 40), P)) expect(r.total).toBeLessThanOrEqual(29);
+  });
+});
+
+describe('who says what over the card', () => {
+  const speak = (entries, rnd) => showSpeech(runShow({ entries, farmSeed: 5, date: dateOf(30), rnd }), 3);
+  it('has both girls speak of the race, then the best girl ahead of you', () => {
+    const t = speak([you(MUDDY), amy(), jess()], 0.1);
+    expect(t.slice(0, 2)).toEqual([{ girl: 'amy', situation: 'showSlowWon', at: 0 }, { girl: 'jess', situation: 'showSlowLost', at: 3 }]);
+    expect(t[2]).toEqual({ girl: 'amy', situation: 'showAheadOfYou', at: 6 });
+  });
+  it('has the worst girl behind you remark if you beat them both', () => {
+    const t = speak([you(), amy(MUDDY), jess({ mud: 0.5 })], 0.9);
+    expect(t[2].situation).toBe('showBehindYou');
+    expect(t[2].girl).toBe('amy');
+  });
+  it('says nothing more if you did not enter or no girl entered', () => {
+    expect(speak([], 0.1).length).toBe(2);
+    expect(speak([you()], 0.1).length).toBe(2);
   });
 });
 
 describe('what the farm keeps', () => {
   it('keeps a rosette a day, replaces a second go and round-trips', () => {
     const k = new ShowKeeper(P);
-    const s = runShow({ quad: { label: 'x' }, farmSeed: 5, date: dateOf(30), rnd: 0.1 });
+    const s = runShow({ entries: [you()], farmSeed: 5, date: dateOf(30), rnd: 0.1 });
     k.add(30, dateOf(30), s);
     k.add(30, dateOf(30), s);
     expect(k.results.length).toBe(1);
@@ -94,14 +154,17 @@ describe('what the farm keeps', () => {
     const j = new ShowKeeper(P);
     j.restore(JSON.parse(JSON.stringify(k.toJSON())));
     expect(j.shelf()[0].place).toBe(1);
+    expect(j.recordLine()).toMatchObject({ set: true, text: '1 first, 1 placed' });
+    expect(new ShowKeeper(P).recordLine()).toMatchObject({ set: false, text: 'not yet' });
+    expect(rosetteSvg(0xc0281c)).toContain('#c0281c');
     j.restore('rubbish');
     expect(j.results.length).toBe(1);
   });
   it('ignores a no-entry result and caps the list', () => {
     const k = new ShowKeeper({ ...P, keptResults: 3 });
-    k.add(1, dateOf(1), runShow({ quad: null, farmSeed: 1, date: dateOf(1), rnd: 0 }));
+    k.add(1, dateOf(1), runShow({ entries: [], farmSeed: 1, date: dateOf(1), rnd: 0 }));
     expect(k.results.length).toBe(0);
-    for (let d = 1; d <= 5; d++) k.add(d, dateOf(d), runShow({ quad: { label: 'x' }, farmSeed: 1, date: dateOf(d), rnd: 0 }));
+    for (let d = 1; d <= 5; d++) k.add(d, dateOf(d), runShow({ entries: [you()], farmSeed: 1, date: dateOf(d), rnd: 0 }));
     expect(k.results.map((r) => r.day)).toEqual([3, 4, 5]);
   });
 });

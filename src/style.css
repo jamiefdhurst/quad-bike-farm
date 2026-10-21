@@ -794,11 +794,24 @@ body {
   display: none;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
+  overflow-y: auto; /* the show's section makes it taller */
   background: rgba(0, 0, 0, 0.88);
   color: #e9e4d4;
   text-align: center;
   cursor: pointer;
+}
+
+#day-recap .rosette {
+  display: block;
+  margin: 4px auto;
+}
+
+#day-recap .ranking {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 1.35;
+  opacity: 0.85;
 }
 
 #day-recap.shown {
