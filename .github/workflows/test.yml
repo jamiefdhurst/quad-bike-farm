@@ -64,6 +64,19 @@ jobs:
       - name: Smoke test
         run: CHROME_PATH=$(which google-chrome) npm run smoke
         timeout-minutes: 12
+      # The smoke test also holds the frame to its budget (draw calls and triangles from fixed spots, tools/frameBudget.mjs) and fails a PR over it.
+      # This prints the numbers in the job summary with the change from main, measured the same way on main's build. It never fails the job:
+      # if main can't be built or measured the table just has no change column.
+      - name: Frame budget against main
+        if: always()
+        timeout-minutes: 12
+        run: |
+          [ -f budget-pr.json ] || { echo "No frame budget numbers: the smoke test stopped before measuring." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+          if git fetch --depth 1 origin main && git worktree add ../main-base FETCH_HEAD \
+            && ln -s "$PWD/node_modules" ../main-base/node_modules && (cd ../main-base && npm run build); then
+            CHROME_PATH=$(which google-chrome) node tools/budget.mjs --root ../main-base --dist dist --out budget-main.json || echo "main could not be measured"
+          fi
+          node tools/budget.mjs --summary budget-pr.json budget-main.json >> "$GITHUB_STEP_SUMMARY"
 
   # always(): if a Unit shard or Smoke fails this would otherwise be skipped, and a skipped required check counts as passed.
   Test:
