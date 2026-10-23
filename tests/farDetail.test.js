@@ -1,0 +1,162 @@
+import { describe, it, expect } from 'vitest';
+import * as THREE from 'three';
+import { FarDetail, detailLevel, isSmallPart, VEHICLE_NAMES, BARN_PROP_NAMES, SET_PIECE_NAMES } from '../src/world/farDetail.js';
+import { DEFAULT_GRAPHICS_PARAMS } from '../src/core/graphics.js';
+
+const params = { ...DEFAULT_GRAPHICS_PARAMS };
+const box = (w, mat) => new THREE.Mesh(new THREE.BoxGeometry(w, w, w), mat ?? new THREE.MeshStandardMaterial());
+
+function vehicle(x, z = 0) {
+  const g = new THREE.Group();
+  g.name = 'quad';
+  g.position.set(x, 0, z);
+  const body = box(1);
+  body.castShadow = true;
+  const bolt = box(0.02);
+  bolt.castShadow = true;
+  const lens = box(0.05, new THREE.MeshStandardMaterial({ emissive: 0xffffff, emissiveIntensity: 2 }));
+  g.add(body, bolt, lens);
+  g.updateMatrixWorld(true);
+  return { g, body, bolt, lens };
+}
+
+function sceneWith(...children) {
+  const scene = new THREE.Scene();
+  scene.add(...children);
+  return scene;
+}
+
+describe('detailLevel', () => {
+  it('is 0 near, 1 past the detail distance and 2 past the shadow distance', () => {
+    expect(detailLevel(10, params)).toBe(0);
+    expect(detailLevel(70, params)).toBe(1);
+    expect(detailLevel(100, params)).toBe(2);
+  });
+  it('holds a level until the vehicle is well back inside its distance', () => {
+    expect(detailLevel(58, params, 1)).toBe(1);
+    expect(detailLevel(50, params, 1)).toBe(0);
+    expect(detailLevel(78, params, 2)).toBe(2);
+  });
+  it('is 0 whatever the distance when a distance is 0', () => {
+    expect(detailLevel(500, { vehicleDetailDistance: 0, shadowDistance: 0 })).toBe(0);
+    expect(detailLevel(500, { vehicleDetailDistance: 60, shadowDistance: 0 })).toBe(1);
+  });
+});
+
+describe('isSmallPart', () => {
+  it('is true for a bolt and false for a body, a light lens or a part marked to keep', () => {
+    const { body, bolt, lens } = vehicle(0);
+    expect(isSmallPart(bolt)).toBe(true);
+    expect(isSmallPart(body)).toBe(false);
+    expect(isSmallPart(lens)).toBe(false);
+    const kept = box(0.02);
+    kept.userData.keepFar = true;
+    expect(isSmallPart(kept)).toBe(false);
+  });
+});
+
+describe('FarDetail vehicles', () => {
+  it('hides small parts past the detail distance, then the shadows, and puts both back near', () => {
+    const v = vehicle(0);
+    const far = new FarDetail(sceneWith(v.g), params);
+    far.update({ x: 70, z: 0 }, 1);
+    expect(v.bolt.visible).toBe(false);
+    expect(v.body.visible).toBe(true);
+    expect(v.lens.visible).toBe(true);
+    expect(v.body.castShadow).toBe(true);
+    far.update({ x: 100, z: 0 }, 1);
+    expect(v.body.castShadow).toBe(false);
+    far.update({ x: 5, z: 0 }, 1);
+    expect(v.bolt.visible).toBe(true);
+    expect(v.body.castShadow).toBe(true);
+  });
+  it('never lets a small part cast a shadow, near or far', () => {
+    const v = vehicle(0);
+    const far = new FarDetail(sceneWith(v.g), params);
+    far.update({ x: 0, z: 0 }, 1);
+    expect(v.bolt.castShadow).toBe(false);
+    expect(v.body.castShadow).toBe(true);
+    far.update({ x: 300, z: 0 }, 1, true);
+    far.update({ x: 0, z: 0 }, 1, true);
+    expect(v.bolt.castShadow).toBe(false);
+    expect(v.body.castShadow).toBe(true);
+  });
+  it('goes straight to the far level from close', () => {
+    const v = vehicle(0);
+    const far = new FarDetail(sceneWith(v.g), params);
+    far.update({ x: 300, z: 0 }, 1);
+    expect(v.bolt.visible).toBe(false);
+    expect(v.body.castShadow).toBe(false);
+  });
+  it('leaves a part the game had hidden hidden when it comes back', () => {
+    const v = vehicle(0);
+    v.bolt.visible = false;
+    const far = new FarDetail(sceneWith(v.g), params);
+    far.update({ x: 70, z: 0 }, 1);
+    far.update({ x: 0, z: 0 }, 1);
+    expect(v.bolt.visible).toBe(false);
+  });
+  it('looks only every quarter second unless told to', () => {
+    const v = vehicle(0);
+    const far = new FarDetail(sceneWith(v.g), params);
+    far.update({ x: 0, z: 0 }, 0.3);
+    far.update({ x: 70, z: 0 }, 0.1);
+    expect(v.bolt.visible).toBe(true);
+    far.update({ x: 70, z: 0 }, 0.1, true);
+    expect(v.bolt.visible).toBe(false);
+  });
+});
+
+describe('FarDetail set pieces and props', () => {
+  function piece(name, x, z) {
+    const g = new THREE.Group();
+    g.name = name;
+    const m = box(10);
+    m.position.set(x, 0, z);
+    g.add(m);
+    g.updateMatrixWorld(true);
+    return g;
+  }
+  it('hides a set piece past its distance from its nearest edge and shows it again', () => {
+    const farm = piece('neighbourFarm', 200, 0); // spans x 195 to 205
+    const far = new FarDetail(sceneWith(farm), params);
+    far.update({ x: 0, z: 0 }, 1, true);
+    expect(farm.visible).toBe(false);
+    far.update({ x: 40, z: 0 }, 1, true); // 155 from the edge
+    expect(farm.visible).toBe(true);
+  });
+  it('hides the barn props past the short distance', () => {
+    const rack = piece('tyreRack', 0, 0);
+    const far = new FarDetail(sceneWith(rack), params);
+    far.update({ x: 15, z: 0 }, 1, true); // 10 from the edge
+    expect(rack.visible).toBe(true);
+    far.update({ x: 30, z: 0 }, 1, true);
+    expect(rack.visible).toBe(false);
+  });
+  it('shows nothing it did not hide, and everything with a distance of 0', () => {
+    const logs = piece('logs', 500, 0);
+    const other = piece('somethingElse', 500, 0);
+    other.visible = false;
+    const far = new FarDetail(sceneWith(logs, other), params);
+    far.update({ x: 0, z: 0 }, 1, true);
+    expect(logs.visible).toBe(false);
+    far.params = { ...params, setPieceDistance: 0 };
+    far.update({ x: 0, z: 0 }, 1, true);
+    expect(logs.visible).toBe(true);
+    expect(other.visible).toBe(false);
+  });
+  it('keeps the name lists apart', () => {
+    const all = [...VEHICLE_NAMES, ...BARN_PROP_NAMES, ...SET_PIECE_NAMES];
+    expect(new Set(all).size).toBe(all.length);
+  });
+});
+
+describe('the names FarDetail looks for', () => {
+  it('are all still given to something in src, so a rename cannot quietly leave a set piece undrawn-never', async () => {
+    const { execSync } = await import('node:child_process');
+    for (const name of [...VEHICLE_NAMES, ...BARN_PROP_NAMES, ...SET_PIECE_NAMES]) {
+      const found = execSync(`grep -rlE "name = '${name}'" src || true`, { encoding: 'utf8' });
+      expect(found.trim(), name).not.toBe('');
+    }
+  });
+});

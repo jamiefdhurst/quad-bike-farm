@@ -5,7 +5,11 @@ export const DEFAULT_GRAPHICS_PARAMS = {
   maxFps: 60, // frames drawn a second at most (0: as often as the screen asks, 120 on a ProMotion Mac); the physics steps at 60 regardless
   renderScale: 1.5, // pixels drawn per screen point at most (2 is full Retina); never more than the screen has
   coverDistance: 70, // metres the grass and the stubble are drawn out to (0: all of it)
-  roughDistance: 90, // metres the tussocks and bracken on the hill are drawn out to (0: all of it)
+  roughDistance: 75, // metres the tussocks and bracken on the hill are drawn out to (0: all of it)
+  setPieceDistance: 160, // metres a set piece (the neighbour's farm, brushwood, logs, cone courses, the village) is drawn out to, from its nearest edge (0: all)
+  barnPropsDistance: 15, // metres the barn's racks, charger, generator and jacks are drawn out to, from their nearest edge (0: all of them)
+  vehicleDetailDistance: 60, // metres beyond which a vehicle loses its small parts (bolts, cables, decals, brake bits; 0: never)
+  shadowDistance: 80, // metres beyond which a vehicle casts no shadow (0: always)
 };
 
 export const GRAPHICS_PARAM_RANGES = {
@@ -13,6 +17,10 @@ export const GRAPHICS_PARAM_RANGES = {
   renderScale: [0.5, 3, 0.25],
   coverDistance: [0, 400, 5],
   roughDistance: [0, 400, 5],
+  setPieceDistance: [0, 600, 10],
+  barnPropsDistance: [0, 200, 5],
+  vehicleDetailDistance: [0, 300, 5],
+  shadowDistance: [0, 400, 5],
 };
 
 /** The renderer's pixel ratio: the screen's, but no more than the render scale. */

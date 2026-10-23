@@ -16,7 +16,7 @@ export const DEFAULT_VILLAGE_PARAMS = {
   tubePrice: 12, // £ for an inner tube
   beltPrice: 28, // £ for a drive belt
   tyreQuadPrice: 38, // £ for a quad tyre (one, off the stack by the roller door)
-  drawDistance: 260, // m: the village is not drawn beyond this (it is a long way off, and a lot of boxes)
+  drawDistance: 150, // m from the nearest edge of the village: it is not drawn beyond this (a long way off, and a lot of boxes)
 };
 
 export const VILLAGE_PARAM_RANGES = {

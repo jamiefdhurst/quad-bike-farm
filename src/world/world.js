@@ -4,6 +4,7 @@ import { Track } from './track.js';
 import { createTerrainHeight } from './terrainHeight.js';
 import { createTerrain } from './terrain.js';
 import { DrawDistance } from './tiledInstances.js';
+import { FarDetail } from './farDetail.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../core/graphics.js';
 import { buildProps } from './props.js';
 import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLevel, barnShape } from './barn.js';
@@ -32,6 +33,7 @@ export class World {
     this.layout = layout;
     this.autumn = autumn; // an autumn day (autumn.js): turned leaves, leaf litter, conkers and a slippery wood floor
     this.drawDistance = new DrawDistance(graphics); // hides far tiles of grass, stubble, tussocks and bracken (tiledInstances.js)
+    this.farDetail = new FarDetail(scene, graphics); // leaves out set pieces, small vehicle parts and far shadows (farDetail.js)
     this.track = new Track(layout.trackPoints);
     this.heights = createTerrainHeight(layout, this.track);
     this.fields = createFields(layout);
@@ -289,5 +291,6 @@ export class World {
     }
     this.sky.update(dt, focus, camera);
     this.drawDistance.update(camera.position);
+    this.farDetail.update(camera.position, dt);
   }
 }
