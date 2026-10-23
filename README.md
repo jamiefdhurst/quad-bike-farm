@@ -34,7 +34,7 @@ Other scripts:
 
 The to-do list is the [GitHub issues](https://github.com/jamiefdhurst/quad-bike-farm/issues), labelled by kind (feature, enhancement, bug, task) and by part of the game (girls, vehicles, engine, world, sound, items, interface); the labels are defined in `.github/settings.yml`. Items moved from the old list in this file say "Was TODO n", the number DECISIONS.md knows them by.
 
-- `/idea` in Claude Code turns an idea, or a brainstorm on a theme, into issues once each one has a yes; the noes go in DECISIONS.md's "Ideas turned down".
+- `/idea` in Claude Code turns an idea, or a brainstorm on a theme, into issues once each one has a yes; the noes go in `docs/decisions/ideas-turned-down.md`.
 - `/todo` takes the next issue (one labelled "🔜 next" first, otherwise the lowest number), builds it in its own worktree (`tools/worktree.sh`), opens a pull request and sets it to merge itself once the Test check passes.
 - Every merge to `main` that changes what ships (the source, `public/`, the pages, the build config or the packages) runs the tests again, builds the game and publishes a GitHub release with `dist` zipped up and a `v` tag. The version comes from the merged pull request's labels: "💥 breaking" (an old farm save won't load) is a major release, "✨ feature" a minor one, anything else a patch.
 - Dependabot opens updates monthly and merges minor and patch ones itself once the tests pass.

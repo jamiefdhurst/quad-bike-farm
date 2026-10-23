@@ -1,5 +1,5 @@
 // How much the renderer is asked to do: how often a frame is drawn, at what resolution, and how far small ground cover reaches. See
-// DECISIONS.md, "Drawing less (frame time)".
+// docs/decisions/world.md, "Drawing less (frame time)".
 
 export const DEFAULT_GRAPHICS_PARAMS = {
   maxFps: 60, // frames drawn a second at most (0: as often as the screen asks, 120 on a ProMotion Mac); the physics steps at 60 regardless

@@ -1,6 +1,6 @@
 // Scattered things (grass, stubble, tussocks, hedges, trees) split into square tiles of ground, so the renderer can leave out the tiles
 // out of view, and small ground cover can stop at a draw distance. One batch spanning the farm is never out of view, so every stalk on the
-// farm was drawn every frame, behind you or half a kilometre off. See DECISIONS.md, "Drawing less (frame time)".
+// farm was drawn every frame, behind you or half a kilometre off. See docs/decisions/world.md, "Drawing less (frame time)".
 
 /**
  * Groups instances into tiles by where they stand. `positions` is a list of { x, z }. Returns the tiles that have anything in them, each

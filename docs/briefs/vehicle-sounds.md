@@ -1,6 +1,6 @@
 # Engine sounds for the vehicles: shortlist (2026-10-07)
 
-**Picked by Jamie (idles):** mini moto the Derbi GPR 50, ATC the Piaggio Ape, UTV the Gator, Land Rover the Jeep rumbling idle, the green the Yamaha Ténéré 250 (revs maybe the Honda ATV), the yellow the Yamaha DT 125 with its revving left out, two-stroke revs the Honda CR85. The moto, ATC and UTV are built (DECISIONS.md, "The mini moto's, ATC's and UTV's own sounds"), and the green and yellow ("The green's and yellow's own sounds"; the CR85 went to the yellow, and the orange keeps its old sound). The Land Rover's is in its TODO item.
+**Picked by Jamie (idles):** mini moto the Derbi GPR 50, ATC the Piaggio Ape, UTV the Gator, Land Rover the Jeep rumbling idle, the green the Yamaha Ténéré 250 (revs maybe the Honda ATV), the yellow the Yamaha DT 125 with its revving left out, two-stroke revs the Honda CR85. The moto, ATC and UTV are built (docs/decisions/sound.md, "The mini moto's, ATC's and UTV's own sounds"), and the green and yellow ("The green's and yellow's own sounds"; the CR85 went to the yellow, and the orange keeps its old sound). The Land Rover's is in its TODO item.
 
 Candidates for the mini moto, the ATC, the diesel UTV (TODO 2), the Land Rover (TODO 15), and alternatives for the four-stroke quads (red, blue, green; TODO 31) and the two-stroke quads (yellow, orange; TODO 32). Shopped for on Freesound, CC0 only (each licence checked on the sound's page). To be picked by ear.
 

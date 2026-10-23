@@ -1,4 +1,4 @@
-// The polo's collar, built on the polo's neck edge (see DECISIONS.md, "The polo as a garment"). Pure, on plain data
+// The polo's collar, built on the polo's neck edge (see docs/decisions/girls.md, "The polo as a garment"). Pure, on plain data
 // (garmentMesh.js).
 //
 // A polo collar is a band standing up round the neck (the stand) that folds over at the top and lies back down over itself and

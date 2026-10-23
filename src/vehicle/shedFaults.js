@@ -1,4 +1,5 @@
-// The faults only the barn's shed equipment puts right (DECISIONS.md, #32): four for the compressor, four for the parts washer and four
+// The faults only the barn's shed equipment puts right (docs/decisions/items.md, #32): four for the compressor, four for the parts
+// washer and four
 // for the pit. They start whether or not the piece is owned (that is the reason to buy it), have no rough fix in the yard, and are put
 // right by the bench jobs in workshop/shedJobs.js. Pure data: the faults themselves live in faults.js.
 

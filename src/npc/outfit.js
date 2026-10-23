@@ -11,7 +11,7 @@ import { unskin, smoothNormals, blendWeights, vec } from './garmentMesh.js';
 // Outfits for the companion. The Quaternius model is textured from a tiny palette (one flat colour per band), so her hair and the
 // body under her clothes are recoloured by swapping palette entries. Her clothes are garments over the body: the polo, its collar,
 // the jumper and the shorts are cut from her own mesh along smooth lines and skinned to her skeleton (polo.js, collar.js,
-// shorts.js, on garmentMesh.js), and the wellies are shells fitted round her legs and attached to bones. See DECISIONS.md, "The
+// shorts.js, on garmentMesh.js), and the wellies are shells fitted round her legs and attached to bones. See docs/decisions/girls.md, "The
 // polo as a garment" and its follow-ups.
 
 // Palette colours in the source texture.

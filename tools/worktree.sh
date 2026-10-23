@@ -1,5 +1,5 @@
 #!/bin/sh
-# A worktree per GitHub issue, so sessions working in parallel never switch each other's branch (DECISIONS.md, "Issues, pull
+# A worktree per GitHub issue, so sessions working in parallel never switch each other's branch (docs/decisions/process.md, "Issues, pull
 # requests and releases"). Worktrees live beside the main checkout, not inside it, so the dev server there doesn't watch them.
 #
 #   tools/worktree.sh start <issue>    branch issue-<n>-<slug> from origin/main, print the worktree's path
