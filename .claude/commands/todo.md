@@ -3,11 +3,11 @@ description: Work through one GitHub issue, start to finish, as a pull request t
 argument-hint: "[issue number; default: the next one]"
 ---
 
-Work on GitHub issue $ARGUMENTS. If no number is given, take the next one: the lowest-numbered open issue labelled `🔜 next`, or if none is, the lowest-numbered open issue that isn't labelled `❓ question` or `🤦‍♂️ wontfix` and has no open PR yet (`gh pr list --search "<n> in:body"`):
+Work on GitHub issue $ARGUMENTS. If no number is given, take the next one: the lowest-numbered open issue labelled `🔜 next`, or if none is, the lowest-numbered open issue that isn't labelled `❓ question`, `🤦‍♂️ wontfix` or `🧪 testing` and has no open PR yet (`gh pr list --search "<n> in:body"`):
 
 ```
 gh issue list --state open --label "🔜 next" --json number,title --jq 'sort_by(.number) | .[0]'
-gh issue list --state open --limit 500 --json number,title,labels --jq '[.[] | select(all(.labels[].name; . != "❓ question" and . != "🤦‍♂️ wontfix"))] | sort_by(.number) | .[0:5]'
+gh issue list --state open --limit 500 --json number,title,labels --jq '[.[] | select(all(.labels[].name; . != "❓ question" and . != "🤦‍♂️ wontfix" and . != "🧪 testing"))] | sort_by(.number) | .[0:5]'
 ```
 
 Other sessions work in this checkout at the same time, so every item gets its own worktree and branch. Never switch branch in the main checkout, and never commit to main.
@@ -28,6 +28,11 @@ Other sessions work in this checkout at the same time, so every item gets its ow
    The PR carries the issue's labels: exactly one type label, which decides the release's version bump (`✨ feature` minor, anything else patch), and `💥 breaking` on top only if an old farm save won't load or loses something (major). CLAUDE.md, "Versions and releases", says which; the required "Version label" check fails without one and says what the merge will release as. No AI attribution anywhere, and no Testing or Known limitation sections in the body.
 8. **Watch CI.** `gh pr checks --watch --fail-fast`. If Test fails, read the log (`gh run view <run id> --log-failed`), fix it in the worktree, commit, push and watch again. It merges itself once Test passes; confirm with `gh pr view --json state,mergedAt`. Don't stop while it's red, and never merge it by hand past a failing check.
 9. **Clean up.** Once merged: `tools/worktree.sh finish <n>`. The issue closes from the PR's "Closes #n". A merge that changes what ships makes a release on its own (`.github/workflows/release.yml`); the merge is the end of the item, so don't wait for the release.
-10. **Tell Jamie** in a few lines what changed, what you checked and what you didn't, with the PR link and the version it releases as (from the Version label check's summary).
+10. **Ask for testing if it needs it.** If something you didn't check could be wrong in a way Jamie would want fixed, and only the running game can show it (how it looks, how it feels, a line by ear, what a girl does in play), open one testing issue for the item; otherwise none. Number tweaks and things the tests cover don't need one. At most one per item:
+    ```
+    gh issue create --title "Try: <the issue's title>" --label "🧪 testing" --label "<each of the issue's area labels>" --body "<body>"
+    ```
+    The body, short: `Try #<n>, merged in <PR link> (v<version>).`, then **Get there** (the quickest way: a "Make her do" button, a console command such as `girl amy tip`, a `to <place>`), **Try** (a checklist, `- [ ]`, one thing to do and see per line), **Right looks like** (what you expect, with any number worth eyeing), and **Not checked** (what the session couldn't see). No type label: it's not a change. The "not checked" list lives here now, not in DECISIONS.md.
+11. **Tell Jamie** in a few lines what changed, what you checked and what you didn't, with the PR link, the version it releases as (from the Version label check's summary) and the testing issue's link if you opened one.
 
 One issue per session. When it's done, stop; Jamie will start a fresh session for the next one. Ideas that come up on the way go to `/idea` (or a line at the end of your summary), not into this PR.

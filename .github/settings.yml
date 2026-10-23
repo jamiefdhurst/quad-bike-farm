@@ -68,6 +68,9 @@ labels:
   - name: "🔜 next"
     color: 0e8a16
     description: /todo takes this before the lowest-numbered open issue
+  - name: "🧪 testing"
+    color: fef2c0
+    description: Jamie to try a merged change in the running game; /todo skips these
   - name: "🧑‍🤝‍🧑 duplicate"
     color: cfd3d7
     description: This issue or pull request already exists
