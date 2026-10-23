@@ -98,6 +98,7 @@ import { AMY_LOAD_LINES } from './loadLines.js';
 import { AMY_RACE_LINES } from './raceLines.js';
 import { AMY_DRAG_LINES } from './dragLines.js';
 import { AMY_CLIMB_LINES } from './hillClimbLines.js';
+import { AMY_CHALLENGE_LINES } from './challengeLines.js';
 import { AMY_CONE_LINES } from './coneCourseLines.js';
 import { AMY_RECALL_LINES } from './recallLines.js';
 import { AMY_READING_LINES } from './readingLines.js';
@@ -1620,6 +1621,7 @@ export const VOICE_LINES = {
   // Drag racing you (dragLines.js).
   ...AMY_DRAG_LINES,
   ...AMY_CLIMB_LINES,
+  ...AMY_CHALLENGE_LINES,
   ...AMY_CONE_LINES,
   // Called back to the barn (recallLines.js).
   ...AMY_RECALL_LINES,

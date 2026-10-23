@@ -12,10 +12,11 @@ const BOARD_PX_H = 444; // the same chalk-per-metre as the width
  * and press E for a close view (the card), the same way as Amy's logbook. The prop is drawn on a canvas that's redrawn when the list changes.
  */
 export class JobBoardView {
-  constructor({ game, board, records }) {
+  constructor({ game, board, records, challenges }) {
     this.game = game;
     this.board = board;
     this.records = records;
+    this.challenges = challenges;
     const shape = barnShape(game.world.layout);
     const floorY = game.world.heightAt(shape.x, shape.z);
     // Both boards hang inside, on the back (west) wall, side by side: the jobs to the south, the records to the north. The backing is 1 cm off
@@ -88,6 +89,8 @@ export class JobBoardView {
   handleInput(input) {
     this.game.player.moveEnabled = false;
     input.takeWheelSteps();
+    if (input.wasPressed('Digit1')) this.game.startColdStart();
+    if (input.wasPressed('Digit2')) this.game.judgeLineUp();
     if (input.wasPressed('KeyG') || input.wasPressed('KeyE') || input.wasPressed('Escape')) this.close();
   }
 
@@ -170,11 +173,12 @@ export class JobBoardView {
     const el = document.createElement('div');
     el.className = 'jobboard';
     el.style.display = 'none';
-    el.innerHTML = '<div class="jb-card"><div class="jb-title">Today\'s jobs</div><div class="jb-body"></div><div class="jb-title jb-records-title">Records</div><div class="jb-records"></div><div class="jb-keys">E or G to step back</div></div>';
+    el.innerHTML = '<div class="jb-card"><div class="jb-title">Today\'s jobs</div><div class="jb-body"></div><div class="jb-title jb-records-title">Records</div><div class="jb-records"></div><div class="jb-title jb-records-title">Challenges</div><div class="jb-records jb-challenges"></div><div class="jb-keys">1 starts the cold-start clock, 2 judges the line-up. E or G to step back</div></div>';
     document.body.appendChild(el);
     this.el = el;
     this.bodyEl = el.querySelector('.jb-body');
     this.recordsEl = el.querySelector('.jb-records');
+    this.challengesEl = el.querySelector('.jb-challenges');
   }
 
   render() {
@@ -190,6 +194,15 @@ export class JobBoardView {
         const row = Object.assign(document.createElement('div'), { className: l.set ? 'jb-record' : 'jb-record jb-unset' });
         row.append(Object.assign(document.createElement('span'), { textContent: l.label }), Object.assign(document.createElement('span'), { textContent: l.text }));
         return row;
+      }),
+    );
+    const cold = this.game.coldRun;
+    this.challengesEl.replaceChildren(
+      ...this.challenges.lines().flatMap((l) => {
+        const row = Object.assign(document.createElement('div'), { className: l.set ? 'jb-record' : 'jb-record jb-unset' });
+        const live = l.kind === 'coldStart' && cold.active ? `  (running: ${Math.floor(cold.time)} s, ${cold.left.size} left)` : '';
+        row.append(Object.assign(document.createElement('span'), { textContent: l.label, title: l.blurb }), Object.assign(document.createElement('span'), { textContent: l.text + live }));
+        return [row, Object.assign(document.createElement('div'), { className: 'jb-hint', textContent: l.blurb })];
       }),
     );
     this.bodyEl.replaceChildren(...(rows.length ? rows : [Object.assign(document.createElement('div'), { textContent: 'Nothing on today.' })]));

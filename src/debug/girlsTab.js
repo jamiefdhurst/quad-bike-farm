@@ -218,6 +218,14 @@ export function buildGirlsTab(d) {
   }
   button(games, 'Knock all the cones down', () => g.coneField.cones.forEach((c) => Object.assign(c, { down: true, dx: 0, dz: 1 })));
   button(games, 'Stand the cones up', () => g.standCones());
+  show(games, 'challenges', () => g.describeChallenges());
+  show(games, 'line-up now', () => { const r = g.lineUpNow(); return `${r.score} / 100, ${r.inBays} in the bays`; });
+  button(games, 'Start (or call off) the cold start', () => g.startColdStart());
+  button(games, 'Judge the line-up', () => g.judgeLineUp());
+  button(games, 'Clear the challenges', () => {
+    g.challenges.bests = {};
+    g.jobBoardView.refresh();
+  });
   button(games, 'Clear the records', () => {
     g.records.bests = {};
     g.records.byQuad = {};

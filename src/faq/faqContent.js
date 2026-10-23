@@ -1362,9 +1362,19 @@ export const FAQ_SECTIONS = [
       {
         q: 'Where are the records kept?',
         a: `On the second chalkboard inside the barn, on the back wall next to the jobs board: the best lap of the track, drag run, hill climb, cone course and longest jump on the farm,
-          and who set it. Press <kbd>E</kbd> at either board for a close view. You're told when you set a record, and when it's your best on the quad you're on.
+          and who set it. Press <kbd>E</kbd> at either board for a close view (the challenges are there too). You're told when you set a record, and when it's your best on the quad you're on.
           The girls set them too. They're kept from day to day, and one set today says so; only a new farm clears them.`,
         tip: 'The records for laps, drag runs, the hill climb, the cones and the longest jump are on the chalkboard in the barn.',
+      },
+      {
+        q: 'What are the challenges on the chalkboard?',
+        a: `Three set tasks, each with your best kept from day to day. Press <kbd>E</kbd> at either chalkboard in the barn for the close view, where they are listed under the records.
+          <b>Cold start:</b> press <kbd>1</kbd> and the clock runs until every quad that hasn't run today has been started, with five minutes to do it (<kbd>1</kbd> again calls it off).
+          It needs at least two cold quads, so it is best first thing, before you or the girls have been out. <b>Line-up:</b> park the quads nose out in the four painted bays in the yard,
+          in front of the barn's doors, then press <kbd>2</kbd> at the board. Each quad scores for how near the middle of its bay and how straight it sits, out of 100 for all four.
+          A quad with someone on it, or still rolling, doesn't count, and three have to be in the bays. <b>Clean climb:</b> a hill climb of yours with no stall and no tipping over counts
+          on its own. Whichever of the girls is nearby says something when you finish one.`,
+        tip: 'Challenges: E at the chalkboard, then 1 starts the cold-start clock and 2 judges the quads in the yard bays.',
       },
       {
         q: 'Do the girls climb the hill too?',

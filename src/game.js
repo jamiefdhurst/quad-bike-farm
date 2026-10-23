@@ -164,6 +164,8 @@ import { Drag, DRAG_PARAM_RANGES, onDragGrid } from './npc/drag.js';
 import { buildDragStrip } from './world/dragStrip.js';
 import { HillClimb, CLIMB_PARAM_RANGES, climbGates, climbRoute } from './npc/hillClimb.js';
 import { ConeCourse, ConeField, DEFAULT_CONE_PARAMS, CONE_PARAM_RANGES, coneGates, coneSpots, knockRoute } from './npc/coneCourse.js';
+import { Challenges, ColdStartRun, CleanWatch, DEFAULT_CHALLENGE_PARAMS, CHALLENGE_PARAM_RANGES, CHALLENGE_KINDS, judgeLineUp, formatChallenge } from './world/challenges.js';
+import { buildLineUpBays } from './world/lineUpBays.js';
 import { Records, JumpMeasure, DEFAULT_RECORD_PARAMS, RECORD_PARAM_RANGES, RECORD_KINDS, WHO_NAMES, formatValue } from './world/records.js';
 import { stripFrame, stripPoint } from './world/layout.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
@@ -1102,6 +1104,14 @@ export class Game {
     this.scene.add(this.coneProxy);
     registerTuning('Cone course', this.coneCourse.p, CONE_PARAM_RANGES);
     registerTuning('Records', this.recordParams, RECORD_PARAM_RANGES);
+    // The challenges on the barn's chalkboard (world/challenges.js): the cold start, the line-up in the yard's painted bays and the clean climb.
+    this.challengeParams = { ...DEFAULT_CHALLENGE_PARAMS };
+    registerTuning('Challenges', this.challengeParams, CHALLENGE_PARAM_RANGES);
+    this.challenges = new Challenges(this.farm.day);
+    this.coldRun = new ColdStartRun(this.challengeParams);
+    this.cleanWatch = new CleanWatch();
+    this.ranToday = new Set(); // ids of the quads whose engine has run since this day began: the rest are cold
+    this.lineUpBays = buildLineUpBays(this.scene, (x, z) => this.world.heightAt(x, z), this.world.layout.lineUp);
     this.warming = new Warming(); // hands over an idling engine on a cold day (npc/warming.js)
     this.waveParams = { ...DEFAULT_WAVE_PARAMS }; // you wave at the girls (npc/playerWave.js)
     this.lastWaveAnswer = new Map(); // girl id -> game clock seconds she last answered a wave (wall clock)
@@ -1572,7 +1582,7 @@ export class Game {
     if (this.jobBoard.has('logs')) this.logStack.startJob();
     if (feedWanted(createRandom((this.farmSeed ^ Math.imul(this.farm.day + 1, 0x85ebca6b)) >>> 0), this.jobBoardParams.feedChance)) this.jobBoard.add('feed', FARM_JOBS.feed);
     this.setUpServiceJob();
-    this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records });
+    this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records, challenges: this.challenges });
     this.setUpHay();
     this.setUpSpraying();
     // Each farm job ticked off pays (farm/classifieds.js); the neighbours' ads for vehicles are pinned up on the odd day, on the board beside the chalkboards.
@@ -4158,6 +4168,7 @@ export class Game {
     restoreGirls(this, save.girls, this.farmParams);
     this.achievements.restore(save.bucket);
     this.records.restore(save.records);
+    this.challenges.restore(save.challenges);
     this.jobBoardView.refresh();
     this.photos.wall.restore(save.photos);
     this.photos.view.refresh();
@@ -4344,6 +4355,7 @@ export class Game {
       girls: captureGirls(this),
       bucket: this.achievements.toJSON(),
       records: this.records.toJSON(),
+      challenges: this.challenges.toJSON(),
       photos: this.photos.wall.toJSON(),
       shows: this.showKeeper.toJSON(),
       logbook: this.notebook.book.toJSON(),
@@ -9940,6 +9952,85 @@ export class Game {
     }
   }
 
+  // The challenges on the chalkboard --------------------------------------------
+
+  /** Each frame: which quads have run today, the cold-start clock, and whether your climb is staying clean. */
+  updateChallenges(dt, ridden) {
+    for (const u of this.girlUnits) if (u.engine.isRunning) this.ranToday.add(u.id);
+    if (this.coldRun.active) {
+      const verdict = this.coldRun.update(dt, this.girlUnits.filter((u) => u.engine.isRunning).map((u) => u.id));
+      if (verdict === 'done') this.finishChallenge('coldStart', this.coldRun.time);
+      else if (verdict === 'out') this.hud.toast(`Cold start: out of time, ${this.coldRun.left.size} still to start`, 4);
+    }
+    const run = this.hillClimb.runs.you;
+    if (run?.state === 'running') {
+      const q = ridden?.quad;
+      this.cleanWatch.update({ running: !!q?.engine.isRunning, tipped: !!q?.isTipped });
+    }
+  }
+
+  /** The quads that are cold: not run since the day began. */
+  coldQuadIds() {
+    return this.girlUnits.filter((u) => !this.ranToday.has(u.id) && !u.engine.isRunning).map((u) => u.id);
+  }
+
+  /** The chalkboard's 1: the cold-start clock runs from now, until every quad that is cold has been started. */
+  startColdStart() {
+    if (this.coldRun.active) {
+      this.coldRun.cancel();
+      this.hud.toast('Cold start: called off', 2.5);
+      return;
+    }
+    const cold = this.coldQuadIds();
+    if (!this.coldRun.start(cold)) {
+      this.hud.toast(`Cold start: only ${cold.length} quad${cold.length === 1 ? ' is' : 's are'} cold, it needs ${this.challengeParams.coldMin}. They have been run today`, 5);
+      return;
+    }
+    this.hud.toast(`Cold start: ${cold.length} quads to start in ${formatChallenge('coldStart', this.challengeParams.coldLimit)}. Go!`, 5);
+  }
+
+  /** How the quads stand in the bays now, without putting it on the board. */
+  lineUpNow() {
+    const parked = this.girlUnits.map((u) => ({
+      id: u.id, x: u.quad.position.x, z: u.quad.position.z, yaw: u.quad.yaw, speed: Math.abs(u.quad.speed),
+      occupied: !!(u.quad.rider || u.quad.driver),
+    }));
+    return judgeLineUp(this.lineUpBays.bays, parked, this.challengeParams);
+  }
+
+  /** The chalkboard's 2: judges the quads parked in the yard's bays. */
+  judgeLineUp() {
+    const r = this.lineUpNow();
+    if (!r.ok) {
+      this.hud.toast(`Line-up: ${r.why}`, 5);
+      return r;
+    }
+    this.finishChallenge('lineUp', r.score);
+    return r;
+  }
+
+  /** What the challenges are doing, for the panel and the console. */
+  describeChallenges() {
+    const cold = this.coldRun;
+    const running = cold.active ? `cold start running: ${Math.floor(cold.time)} s, ${cold.left.size} of ${cold.total} left` : `${this.coldQuadIds().length} quads are cold`;
+    return `${this.challenges.lines().map((l) => `${l.label}: ${l.text}`).join('; ')}. ${running}`;
+  }
+
+  /** A result for a challenge: to the board with a toast, and a girl says something. */
+  finishChallenge(kind, value) {
+    const r = this.noteChallenge(kind, value);
+    const text = formatChallenge(kind, value);
+    this.hud.toast(`${CHALLENGE_KINDS[kind].label}: ${text}${r.best ? '. Your best!' : ''}`, 4);
+    this.companions.find((c) => c.availability().canRemark)?.voice.say(r.best ? 'challengeBest' : 'challengeDone', { force: true });
+    return r;
+  }
+
+  noteChallenge(kind, value) {
+    const r = this.challenges.submit(kind, value);
+    if (r.best) this.jobBoardView.refresh();
+    return r;
+  }
+
   /** You ask to be timed up the hill (Enter by the start cones): the clock runs when you ride through them. */
   askForClimb() {
     this.hillClimb.arm();
@@ -10014,7 +10105,10 @@ export class Game {
     const pick = hc.pick;
     for (const e of hc.update(dt, { at })) {
       const quadId = e.id === 'you' ? ridden?.spec.id : pick;
-      if (e.type === 'start' && e.id === 'you') this.hud.toast('Go!', 1.2);
+      if (e.type === 'start' && e.id === 'you') {
+        this.cleanWatch.reset();
+        this.hud.toast('Go!', 1.2);
+      }
       else if (e.type === 'gate' && e.id === 'you') this.hud.toast(e.gatesLeft > 1 ? 'Gate' : 'Gate. The finish cones are next', 1.2);
       else if (e.type === 'out') {
         if (e.id === 'you') this.hud.toast('Hill climb: you are out', 2.5);
@@ -10033,7 +10127,8 @@ export class Game {
       return;
     }
     this.achievements.note('climbs');
-    this.hud.toast(`Hill climb: ${time}${r.record ? '. A record!' : r.quadBest ? '. Your best on this quad' : ''}`, 4);
+    const clean = this.cleanWatch.clean ? this.noteChallenge('cleanClimb', e.time) : null;
+    this.hud.toast(`Hill climb: ${time}${r.record ? '. A record!' : r.quadBest ? '. Your best on this quad' : ''}${clean ? `. A clean run${clean.best ? ', your best' : ''}` : ''}`, 4);
     // Whoever is near the top has timed you.
     const top = this.climbGates[this.climbGates.length - 1];
     const near = this.companions
@@ -11500,6 +11595,7 @@ export class Game {
     this.guard.run('updateClimb', () => this.updateClimb(dt, ridden));
     this.guard.run('updateCones', () => this.updateCones(dt, ridden));
     this.guard.run('updateJumpRecords', () => this.updateJumpRecords(dt, ridden));
+    this.guard.run('updateChallenges', () => this.updateChallenges(dt, ridden));
     this.helpOnGrid(dt);
     this.guard.run('updateSmokeSense', () => this.updateSmokeSense(dt));
     this.guard.run('updateDustClouds', () => this.updateDustClouds());
