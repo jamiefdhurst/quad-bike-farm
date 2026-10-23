@@ -10,7 +10,7 @@ paths:
 
 ## The girls' minds
 
-How the girls notice, react and decide has been rebuilt so each part lives in one place and everything new plugs into it rather than bringing its own timers and dice. Follow every part below for anything new the girls do; `tests/girlsMinds.test.js`, `tests/reactions.test.js`, `tests/availability.test.js`, `tests/needs.test.js` and `tests/chooser.test.js` check what they can. Read DECISIONS.md's sections on it (from "The girls' attention" on) before changing any of it.
+How the girls notice, react and decide has been rebuilt so each part lives in one place and everything new plugs into it rather than bringing its own timers and dice. Follow every part below for anything new the girls do; `tests/girlsMinds.test.js`, `tests/reactions.test.js`, `tests/availability.test.js`, `tests/needs.test.js` and `tests/chooser.test.js` check what they can. Read the summary at the top of `docs/decisions/girls.md` and the sections it names before changing any of it.
 
 ## What she decides to do (needs and the chooser)
 
@@ -22,7 +22,7 @@ What a girl does on her own follows from what she wants (`src/npc/needs.js`: war
 - **How she goes about it** (`src/npc/intent.js`): give the offer kind a `pace` ('hurry', 'brisk' or 'dawdle') if it calls for one; have her say she's off to do it if it has no line yet; anything new that takes her from what she was doing for you (a new way of asking or calling her) calls `companion.interrupt()` first, as the wheel and the bell do.
 - Personality is weights and rates in `characters.js` (Jess's restlessness, Amy's cold), not rules.
 - **The two together** (`src/npc/pair.js`): going over to her friend and tagging along are offers; a new walk her friend may tag along on goes in `TAG_KINDS`. Stood together they face each other through `pairFacing` in the idle state, so anything new that turns a stood girl goes before it there or in `freeToTurn()`.
-- The Girls tab's "Why" folder shows her needs (settable), what she chose and for what, and what she nearly chose: use it, and `Think now`, to see a new offer working rather than waiting for chance. Everything a girl decides to do with her free time is an offer now; the things left on their own clocks are reactions (to your rev, to being left on a quad, to falling out) and are listed in DECISIONS.md ("Needs and a chooser (TODO 133): the rest moved"). A new reaction stays a reaction; a new choice is an offer.
+- The Girls tab's "Why" folder shows her needs (settable), what she chose and for what, and what she nearly chose: use it, and `Think now`, to see a new offer working rather than waiting for chance. Everything a girl decides to do with her free time is an offer now; the things left on their own clocks are reactions (to your rev, to being left on a quad, to falling out) and are listed in docs/decisions/girls.md ("Needs and a chooser (TODO 133): the rest moved"). A new reaction stays a reaction; a new choice is an offer.
 
 ## Is she free? (availability)
 

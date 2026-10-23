@@ -2,7 +2,8 @@
 // keeps its condition (hours, wear, faults left unfixed, the fuel and oil, its tyres, its tuning) but not where it was parked;
 // overnight its battery runs down a little and its mud dries and drops off. The girls keep half their favour, what you taught
 // them and a romance that got as far as the quad; a falling-out that wasn't made up leaves them cool in the morning.
-// Pure: works on the game's objects through the fields named here, so a test can use stand-ins. See DECISIONS.md, TODO 15.
+// Pure: works on the game's objects through the fields named here, so a test can use stand-ins. See docs/decisions/world.md, "A farm
+// that remembers (TODO 15)".
 
 import { DEFAULT_FARM_PARAMS } from './farmSave.js';
 import { TAP_POSITIONS } from '../vehicle/fuelSystem.js';

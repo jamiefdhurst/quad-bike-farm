@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 
 // Decals and stickers for the vehicle models (TODO 87): makers' badges, stripes, warning labels, a chassis plate, race numbers and
-// a dealer's sticker, drawn on canvases. Never a real maker's name or logo: every maker here is made up (DECISIONS.md, "A shared
+// a dealer's sticker, drawn on canvases. Never a real maker's name or logo: every maker here is made up (docs/decisions/vehicles.md, "A
+// shared
 // detail kit"). `decalLayout` is pure (what to draw, in pixels, tested); `decalTexture` and `decalMesh` draw it.
 
 /**

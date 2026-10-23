@@ -1,4 +1,4 @@
-// The girls' denim shorts as a garment cut over the body, with the polo (polo.js) tucked in (see DECISIONS.md, "The polo as a
+// The girls' denim shorts as a garment cut over the body, with the polo (polo.js) tucked in (see docs/decisions/girls.md, "The polo as a
 // garment"). Pure, on her body as plain data (garmentMesh.js).
 //
 // Her hips and thighs, cut level at the waist and square across each thigh, with a waistband and turned-in edges. The polo is

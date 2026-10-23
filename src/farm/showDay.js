@@ -1,6 +1,6 @@
 // The show: on the last Sunday of a month the day ends at a local show instead of the plain recap. The quad you last rode is judged on
 // clean, tidy and running sweet, against a few other entries, and the girls ride the slow race between themselves. Pure (the game says
-// what the quad is like), tested in tests/showDay.test.js. DECISIONS.md, "A show day (#34, was TODO 139)".
+// what the quad is like), tested in tests/showDay.test.js. docs/decisions/world.md, "A show day (#34, was TODO 139)".
 
 import { createRandom } from '../core/random.js';
 import { MONTH_DAYS } from '../world/seasons.js';

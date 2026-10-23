@@ -1,6 +1,6 @@
 # Quad bike farm
 
-First-person British farm quad-bike game: Three.js, Vite, ES modules, Rapier physics, Vitest. Two companions, Amy and Jess, who ride, drive, bicker and talk. README.md says what the game is and links `docs/game.md` (for a player), `docs/how-its-built.md` (the code) and `docs/console-and-panel.md` (the debug tools). DECISIONS.md records why things are the way they are: read the section for whatever you're touching before changing it.
+First-person British farm quad-bike game: Three.js, Vite, ES modules, Rapier physics, Vitest. Two companions, Amy and Jess, who ride, drive, bicker and talk. README.md says what the game is and links `docs/game.md` (for a player), `docs/how-its-built.md` (the code) and `docs/console-and-panel.md` (the debug tools). DECISIONS.md indexes why things are the way they are, by area in `docs/decisions/`: read the "Where things stand" summary for the area you're touching, and the sections it names, before changing it.
 
 ## Area rules
 
@@ -30,7 +30,7 @@ The detailed rules for each part of the game are in `.claude/rules/`. They load 
 - Keep logic pure and testable where you can (no Three.js or DOM), with a test in `tests/`; `boredom.js`, `bog.js` and `banter.js` show the pattern.
 - New tunables go in the module's `DEFAULT_*_PARAMS` with a one-line comment, plus a `[min, max, step]` range, registered with `registerTuning` and placed in `TUNE_CATEGORIES` (a test fails until it is).
 - A new per-frame feature update in `game.js` goes through `this.guard.run('updateX', () => this.updateX(dt))`.
-- The farm remembers between loads (`src/farm`). A vehicle's or a girl's lasting condition (wear, a fault, a level she has learnt) goes in `captureVehicle`/`restoreVehicle` (or `ENGINE_KEPT`) or `captureGirls`/`restoreGirls`, with a test; something about the farm's character dealt at random comes from a `this.farmSeed` stream, not `this.seed`. DECISIONS.md, "A farm that remembers (TODO 15)".
+- The farm remembers between loads (`src/farm`). A vehicle's or a girl's lasting condition (wear, a fault, a level she has learnt) goes in `captureVehicle`/`restoreVehicle` (or `ENGINE_KEPT`) or `captureGirls`/`restoreGirls`, with a test; something about the farm's character dealt at random comes from a `this.farmSeed` stream, not `this.seed`. docs/decisions/world.md, "A farm that remembers (TODO 15)".
 - A quad spec must name a `style` and `dashStyle` that exist. A new vehicle goes in `FOR_SALE` or `NOT_FOR_SALE` in `src/farm/classifieds.js`. Tests check both.
 - Style: single quotes, about 140-column lines, comments that say why. No prettier or eslint; don't run either over existing files.
 
@@ -53,7 +53,7 @@ Every merge to `main` that changes what ships is released by CI as `vX.Y.Z`; the
 
 1. `npm test` passes, and `npm run smoke` too if you touched `game.js` or added to the frame.
 2. The debug panel and console have anything new (`debug-panel.md`); the FAQ answers it (`faq.md`); new or changed keys are in `src/hud/controls.js`; `docs/game.md` is fixed where it describes something the item changed (the README stays short); assets are credited in ASSETS.md; new lines are recorded and their banks committed on the branch (`voice-lines.md`).
-3. DECISIONS.md gets a section headed with the issue number (and its old TODO number if it has one): what was decided, why, and any numbers measured, in about ten lines. Not what wasn't checked (that goes on a testing issue) and not a restatement of the code.
+3. The area's file in `docs/decisions/` gets a section at its end headed with the issue number (and its old TODO number if it has one): what was decided, why, and any numbers measured, in about ten lines. Not what wasn't checked (that goes on a testing issue) and not a restatement of the code. If the item changes how something stands, fix that line in the file's summary too.
 4. Commit in sensible chunks with plain messages saying what changed for the player ("Let the girls share a quad, one driving and one on the back"): they become the FAQ's "Recently changed". No AI attribution of any kind. Stage only your own files by name: never `git add -A`, `git add .` or `git commit -a`.
 5. Rebase on `origin/main`, push, open the PR ("Closes #n", the issue's labels), `gh pr merge --auto --merge`, and watch the checks until it has merged; fix anything red. Then `tools/worktree.sh finish <n>`. Don't wait for the release.
 6. If something unchecked could be wrong in a way worth fixing and only the running game shows it (a look, a feel, a line by ear, a girl in play), open one `🧪 testing` issue for it (`/todo` step 10 has the shape); otherwise none.

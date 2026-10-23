@@ -1,5 +1,6 @@
 // Whether a girl is free, and if not, what has her: one answer every feature asks (companion.availability()), instead of each one
-// checking her state and its own list of flags (DECISIONS.md, "Whether a girl is free"). Pure: the companion hands it a snapshot of herself.
+// checking her state and its own list of flags (docs/decisions/girls.md, "Whether a girl is free"). Pure: the companion hands it a
+// snapshot of herself.
 //
 // The pattern (.claude/rules/girls-minds.md): ask availability(), never fsm.is('idle') plus flags, to decide whether she can be
 // given something to do. A new state gets a STATE_WHY entry (a test checks); a new thing she does that should keep other features off

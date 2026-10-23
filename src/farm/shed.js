@@ -1,4 +1,5 @@
-// The barn's shed kit, built up over games (DECISIONS.md, #32): a compressor, a parts washer and a pit, bought from the catalogue that hangs under
+// The barn's shed kit, built up over games (docs/decisions/items.md, #32): a compressor, a parts washer and a pit, bought from the
+// catalogue that hangs under
 // the cork board with money from the tin. A piece paid for today stands in the barn tomorrow morning, like a second-hand vehicle. Each puts
 // right faults that nothing else can (vehicle/shedFaults.js, workshop/shedJobs.js). Pure, tested.
 
