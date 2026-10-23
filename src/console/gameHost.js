@@ -180,7 +180,7 @@ export function createHost(g, { copy = () => {} } = {}) {
 
     perf() {
       const r = g.renderer;
-      return { ...g.frameStats.summary(), stages: g.frameBreakdown.summary().map((x) => ({ name: x.name, ms: x.ms })), ...r.info.render, width: r.domElement.width, height: r.domElement.height, pixelRatio: r.getPixelRatio(), maxFps: g.graphics.maxFps };
+      return { ...g.frameStats.summary(), stages: g.frameBreakdown.summary().map((x) => ({ name: x.name, ms: x.ms })), slowestFeatures: g.guard.slowest(5), ...r.info.render, width: r.domElement.width, height: r.domElement.height, pixelRatio: r.getPixelRatio(), maxFps: g.graphics.maxFps };
     },
   };
   return host;

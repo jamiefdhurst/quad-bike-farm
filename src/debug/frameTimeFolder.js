@@ -15,6 +15,8 @@ export function buildFrameTime(d) {
   show(f, 'The game\'s own time', () => `${stats().ms.toFixed(2)} ms a frame, worst ${stats().worstMs.toFixed(1)}`);
   show(f, 'Biggest part', () => g.frameBreakdown.biggest ?? '-');
   for (const [name] of FRAME_STAGES) show(f, name, () => stageText(g.frameBreakdown.summary().find((s) => s.name === name)));
+  // The farm features split out (core/featureGuard.js times each one): the five that take the most.
+  for (let i = 0; i < 5; i++) show(f, `Feature ${i + 1} of the slowest`, () => { const s = g.guard.slowest(5)[i]; return s ? `${s.name} ${s.ms.toFixed(3)} ms` : '-'; });
   // A feature whose update threw is caught so the rest of the frame runs (core/featureGuard.js); it is listed here so it is not hidden.
   show(f, 'Features that threw', () => (g.guard.total ? g.guard.summary().map((e) => `${e.name} x${e.count}`).join(', ') : 'none'));
   show(f, 'Drawn', () => `${info().calls} calls, ${Math.round(info().triangles / 1000)}k triangles`);
