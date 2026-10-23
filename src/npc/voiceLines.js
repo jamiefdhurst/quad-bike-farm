@@ -8,7 +8,7 @@
 // changing any spoken line, re-record them with tools/generate_companion_voice.py.
 
 import { AMY_SKILL_LINES } from './skillLines.js';
-import { AMY_REQUEST_LINES } from './requestLines.js';
+import { AMY_REQUEST_LINES, AMY_PUB_LINES } from './requestLines.js';
 import { AMY_PLACE_LINES } from './placeLines.js';
 import { AMY_LOFT_LINES } from './loftLines.js';
 import { AMY_BATTERY_LINES } from './batteryLines.js';
@@ -1658,4 +1658,6 @@ export const VOICE_LINES = {
   ...AMY_DARE_LINES,
   // Stuck out in the field, calling you (strandedLines.js).
   ...AMY_STRANDED_LINES,
+  // Asking to be taken to the village pub (requestLines.js).
+  ...AMY_PUB_LINES,
 };

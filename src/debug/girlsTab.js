@@ -347,6 +347,8 @@ export function buildGirlsTab(d) {
   show(out, 'the neighbour over the lane', () => g.neighbourHost.describe());
   button(out, 'Take you to the neighbour\'s gate', () => g.neighbourHost.debugGoTo() || toast('Get off your vehicle first'));
   button(out, 'Make the neighbour say hello', () => g.neighbourHost.debugGreet() || toast('She has gone indoors'));
+  show(out, 'the village down the lane', () => g.villageHost.describe());
+  for (const [where, label] of [['pub', 'the pub car park'], ['shop', 'the shop'], ['garage', 'the garage pumps']]) button(out, `Take you to ${label}`, () => g.villageHost.debugGoTo(where) || toast('Get off your vehicle first'));
 
   // The farm's memory and the end of the day.
   const mem = sub('The farm that remembers');

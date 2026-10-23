@@ -5,7 +5,7 @@
 // re-recording step (tools/generate_companion_voice.py --character jess).
 
 import { JESS_SKILL_LINES } from './skillLines.js';
-import { JESS_REQUEST_LINES } from './requestLines.js';
+import { JESS_REQUEST_LINES, JESS_PUB_LINES } from './requestLines.js';
 import { JESS_PLACE_LINES } from './placeLines.js';
 import { JESS_LOFT_LINES } from './loftLines.js';
 import { JESS_BATTERY_LINES } from './batteryLines.js';
@@ -573,4 +573,6 @@ export const JESS_LINES = {
   ...JESS_PHONE_LINES,
   ...JESS_DARE_LINES,
   ...JESS_STRANDED_LINES,
+  // Asking to be taken to the village pub (requestLines.js).
+  ...JESS_PUB_LINES,
 };

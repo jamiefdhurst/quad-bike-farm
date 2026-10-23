@@ -426,6 +426,12 @@ export function buildGameTree(g, host) {
     hello: flag(() => false, (v) => v && g.neighbourHost.debugGreet(), 'set to true: she says hello now'),
     go: flag(() => false, (v) => v && g.neighbourHost.debugGoTo(), 'set to true: put you on foot at her gate'),
   }), 'the neighbour over the lane');
+  const village = group(() => ({
+    now: text(() => g.villageHost.describe(), 'the village down the lane: its limit, what was last bought and the fuel prices'),
+    pub: flag(() => false, (v) => v && g.villageHost.debugGoTo('pub'), 'set to true: put you on foot in the pub car park'),
+    shop: flag(() => false, (v) => v && g.villageHost.debugGoTo('shop'), 'set to true: put you on foot outside the shop'),
+    garage: flag(() => false, (v) => v && g.villageHost.debugGoTo('garage'), 'set to true: put you on foot at the garage pumps'),
+  }), 'the village down the lane (Nether Thornby): its pub, shop and garage');
   const photos = group(() => ({
     now: text(() => g.photos.describe(), 'the photos pinned on the barn corkboard and the last one taken'),
     count: ro(() => g.photos.wall.photos.length, '', 'photos pinned'),
@@ -468,6 +474,7 @@ export function buildGameTree(g, host) {
     fence,
     lane,
     neighbour,
+    village,
     generator,
     spares,
     photos,

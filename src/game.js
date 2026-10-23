@@ -282,6 +282,7 @@ import { windUniforms, swayMetres } from './effects/windSway.js';
 import { DoorAudio } from './audio/doorAudio.js';
 import { TrafficHost } from './world/trafficHost.js';
 import { NeighbourHost } from './world/neighbourHost.js';
+import { VillageHost } from './world/villageHost.js';
 import { Snow } from './effects/snow.js';
 import { leavesInAir, DEFAULT_AUTUMN_PARAMS, AUTUMN_PARAM_RANGES } from './world/autumn.js';
 import { LeafFall } from './world/autumnView.js';
@@ -822,6 +823,11 @@ export class Game {
       ...this.world.layout.strawBaleSpots
         .filter(([x, z]) => this.world.track.distanceTo(x, z, 10) >= this.world.layout.trackHalfWidth + 3)
         .map(([x, z, yaw], i) => ({ id: `bale${i}`, kind: 'bale', x, z, yaw, seat: this.world.layout.baleSeat })),
+      // The village pub's picnic tables: a bench each side, facing across the table (the north bench looks south to the road).
+      ...(this.world.layout.village?.pub.benches ?? []).flatMap((t, i) => [
+        { id: `pubBench${i}n`, kind: 'bench', x: t.x, z: t.z - 0.62, yaw: 0, seat: 0.52 },
+        { id: `pubBench${i}s`, kind: 'bench', x: t.x, z: t.z + 0.62, yaw: Math.PI, seat: 0.52 },
+      ]),
     ];
     // The hayloft: she climbs the ladder (the points she passes through are heights above the barn floor) and sits on a bale at its edge.
     this.loftParams = { ...DEFAULT_LOFT_PARAMS };
@@ -869,7 +875,7 @@ export class Game {
         const free = this.restSpots.filter((s) => s.kind !== 'shelter' && !spotTaken(s));
         const loftFree = !spotTaken(this.loftSpot) && Math.hypot(this.loftSpot.x - here.x, this.loftSpot.z - here.z) < this.places.p.restFrom;
         if (loftFree && Math.random() < this.loftParams.girlLoftChance) return [this.loftSpot];
-        const near = nearestSpot(free, ['bale', 'fence'], here, new Set(), this.places.p.restFrom);
+        const near = nearestSpot(free, ['bale', 'fence', 'bench'], here, new Set(), this.places.p.restFrom);
         return near ? [near] : [];
       };
     }
@@ -1579,6 +1585,7 @@ export class Game {
     // The money tin on its shelf under the cork board, its coin chink, and when the girls remark on the money (farm/marketTalk.js).
     this.moneyTin = new MoneyTinView({ game: this, market: this.market });
     this.coinAudio = new CoinAudio(this.audioHub, this.moneyTin.position);
+    this.villageHost = new VillageHost(this); // the village down the lane: its pumps, its shop, its draw distance and its glow after dark (world/villageHost.js)
     this.shedView = new ShedView({ game: this, shed: this.shed, market: this.market }); // the catalogue under the board, and what it has bought
     this.marketTalkParams = { ...DEFAULT_MARKET_TALK_PARAMS };
     registerTuning('Money talk', this.marketTalkParams, MARKET_TALK_RANGES);
@@ -7565,6 +7572,7 @@ export class Game {
       })),
       can: { ...this.petrolCan.model.getWorldPosition(new THREE.Vector3()), held: this.petrolCan.held }, // it may be standing in the trailer
       bales: this.bales,
+      pub: this.world.props.village?.shape.pubStop ?? null, // where you pull up at the village pub (the girls' 'take me to the pub')
       grid: !!this.world.cattleGrid,
       tractor: {
         exists: !!this.tractorUnit,
@@ -7583,7 +7591,8 @@ export class Game {
     if (joiner) {
       const c = this.companions.find((o) => o.character.id === joiner);
       c?.requestMount(ridden.quad);
-      c?.voice.say('remindBales', { force: true });
+      const kind = this.requests.openFor(joiner)?.kind ?? 'bales';
+      c?.voice.say(`remind${kind[0].toUpperCase()}${kind.slice(1)}`, { force: true });
     }
     for (const e of this.requests.update(dt, ctx)) this.handleRequestEvent(e);
   }
@@ -11494,6 +11503,7 @@ export class Game {
     this.guard.run('updateMinds', () => this.updateMinds(dt, ridden));
     this.guard.run('updateMuddiness', () => this.updateMuddiness(dt));
     this.guard.run('updateMoneyTin', () => this.moneyTin.update(dt));
+    this.guard.run('updateVillage', () => this.villageHost.update(dt));
     this.guard.run('updateMarketTalk', () => this.updateMarketTalk(dt));
     this.guard.run('updateShowDay', () => this.updateShowDay(dt));
     this.guard.run('updateShedTalk', () => this.updateShedTalk(dt));

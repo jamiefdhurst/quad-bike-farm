@@ -197,3 +197,42 @@ describe('the buzz-seeking requests', () => {
     expect(wait(running, { ...stopped, tractor: { exists: true, running: true, mudguard: null } })).toEqual([]);
   });
 });
+
+describe('Requests: the village pub', () => {
+  const stopped = (over = {}) => ctx({
+    girls: [girl({ x: 2 })],
+    quads: [{ id: 'red', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, hasPillion: true, pillion: null }],
+    bales: [],
+    can: { x: 0, z: 1, held: false },
+    pub: { x: 200, z: 190 },
+    ...over,
+  });
+  it('is one of the kinds, and she asks for it when there is a pub and a free seat on the back', () => {
+    const later = () => Object.assign(make(), { clock: P.firstDelay + 1 });
+    expect(later().offers(stopped()).map((o) => o.kind)).toContain('pub');
+    expect(later().offers(stopped({ pub: null })).map((o) => o.kind)).not.toContain('pub');
+    expect(later().offers(stopped({ quads: [] })).map((o) => o.kind)).not.toContain('pub');
+  });
+  it('counts it done when she is on the back of the quad you ride, stopped in the car park', () => {
+    const r = make();
+    r.force('amy', 'pub');
+    const on = (over = {}) => stopped({ quads: [{ id: 'red', x: 203, z: 190, muddy: 0, speed: 0, ridden: true, hasPillion: true, pillion: 'amy', ...over }] });
+    expect(r.update(1, on({ speed: 4 }))).toEqual([]); // still moving
+    expect(r.update(1, on({ x: 120 }))).toEqual([]); // not there
+    expect(r.update(1, on())[0]).toMatchObject({ type: 'done', request: { kind: 'pub' } });
+  });
+  it('lapses like the others if you never take her', () => {
+    const r = make();
+    r.force('amy', 'pub');
+    let lapsed = null;
+    for (let t = 0; t < P.expireAfter + 5 && !lapsed; t++) lapsed = r.update(1, stopped()).find((e) => e.type === 'lapsed');
+    expect(lapsed).toBeTruthy();
+    expect(r.grudge('amy')).toMatchObject({ kind: 'pub' });
+  });
+  it('sends the girl who asked to climb on when you get on a quad, as with the bales', () => {
+    const r = make();
+    r.force('amy', 'pub');
+    const ridden = { id: 'red', hasPillion: true, pillion: null };
+    expect(r.joiner(P.joinDelay + 1, { you: { x: 0, z: 0 }, girls: [{ id: 'amy', x: 5, z: 0, free: true }], ridden })).toBe('amy');
+  });
+});
