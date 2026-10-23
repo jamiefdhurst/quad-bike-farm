@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { Spares, ALL_PART_IDS, DEFAULT_SPARES_PARAMS } from '../src/workshop/spares.js';
 import { Market } from '../src/farm/classifieds.js';
-import { DEFAULT_VILLAGE_PARAMS, VILLAGE_PARAM_RANGES, SHOP_STOCK, PUMP_FUELS, Till, PumpBill } from '../src/world/villageShop.js';
+import { DEFAULT_VILLAGE_PARAMS, VILLAGE_PARAM_RANGES, SHOP_STOCK, PUMP_FUELS, GARAGE_PARTS, partWhyNot, buyPart, Till, PumpBill } from '../src/world/villageShop.js';
 
 const P = DEFAULT_VILLAGE_PARAMS;
 const tin = (purse) => {
@@ -125,5 +126,42 @@ describe('the pump bill', () => {
     b.begin();
     b.charge(0.9, 1.52, m);
     expect(b.allow(1, 1.52, m)).toBeLessThan(1);
+  });
+});
+
+describe('parts from the garage', () => {
+  const shelf = () => new Spares({ ...DEFAULT_SPARES_PARAMS }, () => 0.5);
+
+  it('sells only parts the spares shelf counts, each with a price', () => {
+    for (const [id, part] of Object.entries(GARAGE_PARTS)) {
+      expect(ALL_PART_IDS, id).toContain(id);
+      expect(P, id).toHaveProperty(part.price);
+    }
+  });
+  it('takes the price from the tin and puts one on the rack', () => {
+    const m = tin(50);
+    const s = shelf();
+    const before = s.count('plug');
+    expect(buyPart('plug', m, s, P, 'spark plug')).toEqual({ price: P.plugPrice });
+    expect(m.purse).toBe(50 - P.plugPrice);
+    expect(s.count('plug')).toBe(before + 1);
+  });
+  it('refuses when the tin is short, and changes nothing', () => {
+    const m = tin(P.beltPrice - 1);
+    const s = shelf();
+    const before = s.count('belt');
+    expect(partWhyNot('belt', m.purse, s, P, 'drive belt')).toBe('You are £1 short');
+    expect(buyPart('belt', m, s, P, 'drive belt')).toBeNull();
+    expect(m.purse).toBe(P.beltPrice - 1);
+    expect(s.count('belt')).toBe(before);
+  });
+  it('refuses when the rack at the barn has no room, counting what is on order', () => {
+    const m = tin(500);
+    const s = shelf();
+    s.counts.tube = s.p.maxOnShelf - 1;
+    s.ordered.tube = 1;
+    expect(partWhyNot('tube', m.purse, s, P, 'inner tube')).toBe('The rack at the barn is full of inner tubes');
+    expect(buyPart('tube', m, s, P, 'inner tube')).toBeNull();
+    expect(m.purse).toBe(500);
   });
 });

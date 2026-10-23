@@ -506,6 +506,7 @@ export function buildVillage(c) {
     groups: [],
     night: [],
     shopProxies: [],
+    partProxies: [],
     pumpProxies: [],
     rootGroup: (name, y = 0) => {
       const g = new THREE.Group();
@@ -598,6 +599,7 @@ export function buildVillage(c) {
     shape: S,
     cars,
     shopProxies: ctx.shopProxies,
+    partProxies: ctx.partProxies,
     pumpProxies: ctx.pumpProxies,
     /** 0..1 how dark it is: the windows, lamps and lit signs glow once it is (never a light). */
     setNight(darkness) {
