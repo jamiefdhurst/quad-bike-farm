@@ -2403,8 +2403,9 @@ export const FAQ_SECTIONS = [
         q: 'Why does the game stop at 60 frames a second?',
         a: `So it runs cool and quiet on a laptop. The physics works in sixtieths of a second anyway, so a faster screen only got extra in-between frames
           for twice the work. It also draws at 1.5 times the screen's points on a Retina screen rather than 2, and the grass and stubble stop about 70 m
-          away (the tussocks and bracken on the hill about 90 m), where a stalk is smaller than a pixel. "Graphics" in the tuning panel's Tune tab changes
-          all four: a cap of 0 means none. <code>perf</code> in the console says how hard it is working.`,
+          away (the tussocks and bracken on the hill about 75 m), where a stalk is smaller than a pixel. Far off, the village and the neighbour's farm
+          are left out, and a vehicle loses its bolts and cables past 60 m and its shadow past 80 m. "Graphics" in the tuning panel's Tune tab changes
+          all of them: a distance of 0 means none. <code>perf</code> in the console says how hard it is working.`,
         tip: 'A fan-quiet laptop: the game caps itself at 60 fps. "Graphics" in the tuning panel lifts it.',
       },
     ],
