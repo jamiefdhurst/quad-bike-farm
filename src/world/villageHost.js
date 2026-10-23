@@ -3,8 +3,9 @@
 // console use the debug* methods.
 
 import * as THREE from 'three';
+import { PARTS } from '../workshop/spares.js';
 import { registerTuning } from '../core/tuning.js';
-import { DEFAULT_VILLAGE_PARAMS, VILLAGE_PARAM_RANGES, SHOP_STOCK, PUMP_FUELS, Till, PumpBill, pounds } from './villageShop.js';
+import { DEFAULT_VILLAGE_PARAMS, VILLAGE_PARAM_RANGES, SHOP_STOCK, PUMP_FUELS, GARAGE_PARTS, partWhyNot, buyPart, Till, PumpBill, pounds } from './villageShop.js';
 
 export class VillageHost {
   constructor(game) {
@@ -43,6 +44,19 @@ export class VillageHost {
         hold: (dt) => this.pour(pump, dt),
       });
     }
+    for (const part of this.props.partProxies) {
+      g.interaction.add({
+        target: part.mesh,
+        isAvailable: () => !g.handsFull && !g.player.isRiding,
+        prompt: () => {
+          const name = this.partName(part.id);
+          const why = partWhyNot(part.id, g.market.purse, g.spares, this.params, name);
+          if (why) return { text: why };
+          return { text: `Buy a ${name}: ${pounds(this.params[GARAGE_PARTS[part.id].price])} (${g.spares.count(part.id)} on the rack at the barn, ${this.purseText()})` };
+        },
+        interact: () => this.buyPart(part.id),
+      });
+    }
     for (const stock of this.props.shopProxies) {
       g.interaction.add({
         target: stock.mesh,
@@ -56,6 +70,22 @@ export class VillageHost {
         interact: () => this.buy(stock.id),
       });
     }
+  }
+
+  /** The garage's rack: what a part is called in the shelf's own words ("spark plug"). */
+  partName(id) {
+    return PARTS[id].one;
+  }
+
+  /** Buys one part at the garage: the tin pays and it goes on the barn's rack. */
+  buyPart(id) {
+    const g = this.g;
+    const name = this.partName(id);
+    const got = buyPart(id, g.market, g.spares, this.params, name);
+    if (!got) return g.hud.toast(partWhyNot(id, g.market.purse, g.spares, this.params, name) ?? 'Not now', 2);
+    this.lastBought = `a ${name} (${pounds(got.price)})`;
+    g.sparesShelf.paintCrates();
+    g.hud.toast(`A ${name}: ${pounds(got.price)}. It's on the rack at the barn. ${this.purseText()}`, 3);
   }
 
   /** One frame of E held at a pump with a can in your hands: fill what the tin can pay for, and bill it. */
@@ -109,6 +139,7 @@ export class VillageHost {
       pub: { x: s.pubStop.x, z: s.pubStop.z },
       shop: { x: s.shop.x + 1.5, z: s.shop.outer.maxZ + 2.2 },
       garage: { x: s.v.garage.pumps.xs[1], z: s.v.garage.pumps.z + 1.6 },
+      parts: { x: s.v.garage.x + 0.6, z: s.v.garage.z - s.v.garage.halfZ - 1.4 }, // the garage faces -z (yaw PI): its rack is 0.6 m west of the middle
     };
     const at = spots[where] ?? spots.pub;
     this.g.player.moveTo({ x: at.x, y: this.g.world.groundHeightAt(at.x, at.z), z: at.z });

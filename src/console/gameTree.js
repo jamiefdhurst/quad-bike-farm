@@ -431,6 +431,7 @@ export function buildGameTree(g, host) {
     pub: flag(() => false, (v) => v && g.villageHost.debugGoTo('pub'), 'set to true: put you on foot in the pub car park'),
     shop: flag(() => false, (v) => v && g.villageHost.debugGoTo('shop'), 'set to true: put you on foot outside the shop'),
     garage: flag(() => false, (v) => v && g.villageHost.debugGoTo('garage'), 'set to true: put you on foot at the garage pumps'),
+    parts: flag(() => false, (v) => v && g.villageHost.debugGoTo('parts'), 'set to true: put you on foot at the garage parts rack'),
   }), 'the village down the lane (Nether Thornby): its pub, shop and garage');
   const photos = group(() => ({
     now: text(() => g.photos.describe(), 'the photos pinned on the barn corkboard and the last one taken'),

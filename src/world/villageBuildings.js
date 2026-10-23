@@ -568,6 +568,23 @@ export function buildGarage(ctx, b) {
     f.add(new THREE.CylinderGeometry(0.28, 0.28, 0.85, 14), drum, 0.5 + i * 0.62, 0.43, front + 0.55);
     f.solid(0.5 + i * 0.62, 0.43, front + 0.55, 0.29, 0.43, 0.29);
   }
+  // The parts rack between the roller door and the office: a weathered board with three shelves of packets (plugs, tubes, belts) you buy from,
+  // and the stack of tyres by the door is the tyre you buy.
+  const rx = -0.6;
+  f.box(1.9, 1.5, 0.08, M.weathered, rx, 1.2, front + 0.06, 0.6);
+  const packets = [
+    { id: 'plug', x: rx - 0.6, colour: 0xe8c23a, w: 0.18, h: 0.12 },
+    { id: 'tube', x: rx, colour: 0x2f5f9a, w: 0.3, h: 0.22 },
+    { id: 'belt', x: rx + 0.6, colour: 0xa8271f, w: 0.34, h: 0.2 },
+  ].map((pk) => ({ ...pk, mat: new THREE.MeshStandardMaterial({ color: pk.colour, roughness: 0.7 }) }));
+  for (const y of [0.8, 1.2, 1.6]) {
+    f.box(1.8, 0.04, 0.22, M.iron, rx, y - 0.1, front + 0.2, 0.6);
+    for (const pk of packets) {
+      for (let k = 0; k < 2; k++) f.box(pk.w, pk.h, 0.12, pk.mat, pk.x + (k - 0.5) * (pk.w + 0.04), y - 0.08 + pk.h / 2, front + 0.2, 0.6);
+    }
+  }
+  for (const pk of packets) ctx.partProxies.push(proxyAt(ctx, f, pk.id, pk.x, 1.2, front + 0.3, 0.6, 1.2, 0.5));
+  ctx.partProxies.push(proxyAt(ctx, f, 'tyreQuad', -7.9, 0.75, front + 0.45, 0.9, 1.5, 0.9));
   // The forecourt's pumps: three, on an island under the canopy.
   const pumps = b.pumps;
   const island = [S.v.garage.pumps.xs[0] - 1.2, S.v.garage.pumps.xs[2] + 1.2];

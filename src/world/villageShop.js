@@ -1,4 +1,5 @@
-// Buying in the village (layout.village): fuel at the garage's pumps by the litre into the jerry can you hold, and sweets and a hot pasty at the shop.
+// Buying in the village (layout.village): fuel at the garage's pumps by the litre into the jerry can you hold, parts from the garage's rack, and
+// sweets and a hot pasty at the shop.
 // Pure: prices, what each treat does, the till's cooldowns and the pump's billing. world/villageHost.js is the game side.
 
 export const DEFAULT_VILLAGE_PARAMS = {
@@ -11,6 +12,10 @@ export const DEFAULT_VILLAGE_PARAMS = {
   pastyWarmth: 0.7, // how much of each girl's cold a hot pasty takes off (needs, 0..1)
   pastyFavour: 1.5, // favour each girl gives you for a pasty
   pastyEvery: 180, // s before another pasty is wanted
+  plugPrice: 6, // £ for a spark plug off the garage's rack (the classifieds' rates: a quad is about £500, so parts are pocket money)
+  tubePrice: 12, // £ for an inner tube
+  beltPrice: 28, // £ for a drive belt
+  tyreQuadPrice: 38, // £ for a quad tyre (one, off the stack by the roller door)
   drawDistance: 260, // m: the village is not drawn beyond this (it is a long way off, and a lot of boxes)
 };
 
@@ -24,6 +29,10 @@ export const VILLAGE_PARAM_RANGES = {
   pastyWarmth: [0, 1, 0.05],
   pastyFavour: [0, 10, 0.1],
   pastyEvery: [0, 900, 10],
+  plugPrice: [0, 100, 1],
+  tubePrice: [0, 100, 1],
+  beltPrice: [0, 200, 1],
+  tyreQuadPrice: [0, 200, 1],
   drawDistance: [60, 600, 10],
 };
 
@@ -37,6 +46,14 @@ export const SHOP_STOCK = {
 export const PUMP_FUELS = {
   petrol: { label: 'unleaded', price: 'petrolPrice', diesel: 0 },
   diesel: { label: 'diesel', price: 'dieselPrice', diesel: 1 },
+};
+
+/** What the garage's rack sells: spares-shelf part ids (workshop/spares.js) and the price's param. One at a time; it goes on the barn's rack. */
+export const GARAGE_PARTS = {
+  plug: { price: 'plugPrice' },
+  tube: { price: 'tubePrice' },
+  belt: { price: 'beltPrice' },
+  tyreQuad: { price: 'tyreQuadPrice' },
 };
 
 const pounds = (n) => `£${Number.isInteger(n) ? n : n.toFixed(2)}`;
@@ -75,6 +92,26 @@ export class Till {
     this.since[item] = 0;
     return { price, favour: P[stock.favour], warmth: stock.warmth ? P[stock.warmth] : 0 };
   }
+}
+
+/**
+ * Why a part can't be bought from the garage now, or null. `shelf` is the barn's Spares (count/total/pack/p.maxOnShelf), `partName` what to call it.
+ * It is refused when the rack at the barn could not hold one more (counting what is on order), as ordering is.
+ */
+export function partWhyNot(id, purse, shelf, P, partName) {
+  const price = P[GARAGE_PARTS[id].price];
+  if (shelf.total(id) + 1 > shelf.p.maxOnShelf) return `The rack at the barn is full of ${partName}s`;
+  if (purse < price) return `You are ${pounds(price - purse)} short`;
+  return null;
+}
+
+/** Buys one: the tin pays and it goes on the barn's rack. Returns { price } or null if it can't be bought. */
+export function buyPart(id, market, shelf, P, partName) {
+  if (partWhyNot(id, market.purse, shelf, P, partName)) return null;
+  const price = P[GARAGE_PARTS[id].price];
+  if (!market.spend(price)) return null;
+  shelf.give(id);
+  return { price };
 }
 
 /**
