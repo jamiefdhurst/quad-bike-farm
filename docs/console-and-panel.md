@@ -1,6 +1,6 @@
 # The console and the debug panel
 
-For tinkering while it runs. See also CLAUDE.md, "Debug panel", for how the tabs are organised.
+For tinkering while it runs. See also `.claude/rules/debug-panel.md` for how the tabs are organised.
 
 ## Console
 

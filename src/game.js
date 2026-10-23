@@ -4869,7 +4869,7 @@ export class Game {
   /**
    * Tells the girls something happened that might catch their eye: `kind` (a NOTICE_KINDS key, attention.js), where (`at`, any
    * { x, y, z }), and optionally `key` (what made it, so a repeat refreshes rather than piles up) and `strength` (1 usual). This is the
-   * one way anything in the world gets their attention; see CLAUDE.md, "The girls' minds".
+   * one way anything in the world gets their attention; see .claude/rules/girls-minds.md.
    */
   notice(kind, at, { key = '', strength = 1 } = {}) {
     for (const c of this.companions) c.notice({ kind, key, x: at.x, y: at.y, z: at.z, strength });
