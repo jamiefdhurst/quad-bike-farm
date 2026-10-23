@@ -183,7 +183,8 @@
   "audio/companion-voice-jess-180.mp3",
   "audio/companion-voice-jess-181.mp3",
   "audio/companion-voice-jess-182.mp3",
-  "audio/companion-voice-jess-183.mp3"
+  "audio/companion-voice-jess-183.mp3",
+  "audio/companion-voice-jess-184.mp3"
  ],
  "voice": "chatterbox|d9f55acd6998",
  "clips": {
@@ -19756,6 +19757,111 @@
    "file": 183,
    "start": 32.1,
    "dur": 2.96
+  },
+  "We could just go in. One drink. Nobody would know.": {
+   "file": 183,
+   "start": 35.14,
+   "dur": 3.18
+  },
+  "Then we paint a drink on too.": {
+   "file": 183,
+   "start": 38.4,
+   "dur": 1.7
+  },
+  "It is a horse and a plough. I would have put a pint on it.": {
+   "file": 183,
+   "start": 40.18,
+   "dur": 3.53
+  },
+  "What would you have, if you were having something?": {
+   "file": 183,
+   "start": 43.79,
+   "dur": 2.4
+  },
+  "A lemonade. At a pub. Unreal.": {
+   "file": 183,
+   "start": 46.27,
+   "dur": 3.36
+  },
+  "You could sit in a beer garden with nothing to drink all afternoon. Impressive.": {
+   "file": 183,
+   "start": 49.71,
+   "dur": 4.48
+  },
+  "Cider. In the sun. That is the whole plan.": {
+   "file": 183,
+   "start": 54.27,
+   "dur": 3.87
+  },
+  "It is a plan with a thirst in it.": {
+   "file": 183,
+   "start": 58.22,
+   "dur": 2.06
+  },
+  "Amy. It is a pub. It does a Sunday roast and a quiz.": {
+   "file": 184,
+   "start": 0.1,
+   "dur": 4.04
+  },
+  "You would be insufferable at the quiz.": {
+   "file": 184,
+   "start": 4.22,
+   "dur": 1.77
+  },
+  "Race you to the picnic table.": {
+   "file": 184,
+   "start": 6.07,
+   "dur": 1.36
+  },
+  "Then I have already won.": {
+   "file": 184,
+   "start": 7.51,
+   "dur": 1.65
+  },
+  "It smells of chips. I like it.": {
+   "file": 184,
+   "start": 9.24,
+   "dur": 1.93
+  },
+  "Oh, we are going. Fine. I did not want a drink anyway.": {
+   "file": 184,
+   "start": 11.25,
+   "dur": 3.45
+  },
+  "I did. Next time.": {
+   "file": 184,
+   "start": 14.78,
+   "dur": 2.02
+  },
+  "A view of a pub. Brilliant. Wave goodbye to it.": {
+   "file": 184,
+   "start": 16.88,
+   "dur": 4.51
+  },
+  "Next time I am going in.": {
+   "file": 184,
+   "start": 21.47,
+   "dur": 2.19
+  },
+  "And next time I mean it.": {
+   "file": 184,
+   "start": 23.74,
+   "dur": 2.04
+  },
+  "We should come back with some money.": {
+   "file": 184,
+   "start": 25.86,
+   "dur": 1.58
+  },
+  "Bye, pub!": {
+   "file": 184,
+   "start": 27.52,
+   "dur": 0.85
+  },
+  "It knows.": {
+   "file": 184,
+   "start": 28.45,
+   "dur": 1.03
   }
  }
 }
