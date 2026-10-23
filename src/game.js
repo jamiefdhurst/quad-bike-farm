@@ -660,6 +660,7 @@ export class Game {
     }
     this.wearGearbox();
     this.restoreVehicles();
+    this.world.wear.laneFromJSON(this.farm.save?.lane, this.farmParams.laneKept); // the green lane's ruts, half dried out overnight
     this.logStart();
     this.updateSmokeScale();
     // This game's weather, picked after everything else so a seed keeps its layout (?weather=rain forces one).
@@ -4342,6 +4343,7 @@ export class Game {
       logs: this.logStack ? { ...this.logStack.toJSON(this.farm.day), fitted: this.splitterFitted } : undefined,
       hay: this.hay?.toJSON(),
       spray: this.spray?.toJSON(),
+      lane: this.world.wear.laneToJSON(),
       batteries: Object.fromEntries([...this.batteries].filter(([, b]) => b.out).map(([id, b]) => [id, { where: b.where === 'charger' ? 'charger' : 'loose' }])),
     };
   }

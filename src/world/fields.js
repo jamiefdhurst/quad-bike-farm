@@ -316,5 +316,14 @@ export function createFields(layout) {
   }
 
   const gates = { south: gateGap, north: northGap, road: roadGap };
-  return { farm, hill, woods, gates, outside: outsideAll, grass, areas, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, tarmacAt, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
+  // The ground tyres wear: the farm and, through the south gate, the lane, the fields beside it and the pasture.
+  const wearBounds = hill
+    ? { minX: Math.min(farm.minX, hill.pasture.minX, hill.west?.minX ?? Infinity), maxX: Math.max(farm.maxX, hill.pasture.maxX), minZ: farm.minZ, maxZ: Math.max(farm.maxZ, hill.pasture.maxZ) }
+    : farm;
+  /** 0..1 how much of the ground at (x, z) is the green lane's own, which ruts deeper and dries slower than a field (groundWear.js). */
+  const laneAt = (x, z) => {
+    if (!hill || z < hill.laneRect.minZ || z > hill.laneRect.maxZ) return 0;
+    return 1 - smoothstep(hill.lane.halfWidth, hill.lane.halfWidth + 1.5, Math.abs(x - hill.lane.x));
+  };
+  return { wearBounds, laneAt, farm, hill, woods, gates, outside: outsideAll, grass, areas, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, tarmacAt, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
 }

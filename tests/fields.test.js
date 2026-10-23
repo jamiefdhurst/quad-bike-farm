@@ -143,3 +143,17 @@ describe('the farm fields', () => {
     }
   });
 });
+
+describe('the ground that wears', () => {
+  it('covers the farm and the hill, and the lane is the strip down the middle of its hedges', () => {
+    const b = f.wearBounds;
+    for (const [x, z] of [[0, 0], [190, 70], [-30, 100], [-90, 190], [30, 200]]) {
+      expect(x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ).toBe(true);
+    }
+    const lane = LAYOUT.hill.lane;
+    expect(f.laneAt(lane.x, 100)).toBe(1);
+    expect(f.laneAt(lane.x + lane.halfWidth + 3, 100)).toBe(0);
+    expect(f.laneAt(lane.x, 30)).toBe(0); // inside the grass field
+    expect(f.laneAt(lane.x, lane.toZ + 5)).toBe(0); // the pasture beyond
+  });
+});

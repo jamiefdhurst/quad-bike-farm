@@ -293,6 +293,7 @@ export function buildGameTree(g, host) {
     date: text(() => g.seasonText(), 'the farm\'s date, its season and the length of the daylight'),
     autumn: text(() => (g.autumn ? 'an autumn day: turned leaves, conkers, a slippery wood' : 'not an autumn day (set season)'), 'whether it is autumn (decided as the farm loads)'),
     frost: ro(() => w().frost),
+    lane: num(() => g.world.wear.laneMean(), (v) => g.world.wear.setLane(v), 0, 1, '', 'how rutted the green lane is, 0 sound to 1 a bog (the lane wears and recovers on its own as well)'),
     puddleIce: num(() => g.world.puddleIce.thickness[0] ?? 0, (v) => g.world.puddleIce.setAll(v), 0, 1, '', 'how thick the ice is on every puddle (0 open water; it then follows the temperature again)'),
     breakIce: flag(() => !g.world.puddleIce.thickness.some((_, i) => g.world.puddleIce.isIce(i)), (v) => v && g.world.puddleIce.breakAll(), 'on: every puddle\'s ice breaks now'),
     chill: ro(() => w().chill),
