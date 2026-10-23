@@ -178,6 +178,7 @@ export class PhotoHost {
     }
     g.world.sky.update(0, g.player.position, cam);
     g.world.drawDistance.update(cam.position);
+    g.world.farDetail.update(cam.position, dt, true);
     this.update(dt);
     g.audioHub.setPaused(true);
   }

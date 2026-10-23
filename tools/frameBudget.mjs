@@ -10,16 +10,17 @@
 /** Per spot: the most draw calls and triangles a frame may take there. */
 export const BUDGETS = {
   spawn: { calls: 2600, triangles: 3.5e6 },
-  // The others are what each measured when this was set (#364: yard 5,652 and 4.31M, village 5,227 and 4.24M, wood 3,424 and 4.14M, hilltop
-  // 4,271 and 7.54M) and about 8% over.
-  yard: { calls: 6100, triangles: 4.7e6 },
-  village: { calls: 5650, triangles: 4.6e6 },
-  wood: { calls: 3700, triangles: 4.5e6 },
-  hilltop: { calls: 4600, triangles: 8.2e6 },
+  // The others are what each measured after #365 (yard 2,945 and 3.63M, village 3,957 and 4.15M, wood 1,901 and 3.95M, hilltop 2,396 and
+  // 6.97M) and about 8% over. Before it they were 5,652, 5,227, 3,424 and 4,271 calls, so these are tightened with it.
+  yard: { calls: 3200, triangles: 3.9e6 },
+  village: { calls: 4300, triangles: 4.5e6 },
+  wood: { calls: 2050, triangles: 4.3e6 },
+  hilltop: { calls: 2600, triangles: 7.5e6 },
 };
 
-/** Spots over their budget today, which are reported and not failed on until the issue that brings them back under makes them strict (#364). */
-export const KNOWN_OVER = ['spawn'];
+/** Spots over their budget today, which are reported and not failed on until the issue that brings them back under makes them strict. None now:
+ * spawn came under in #365. */
+export const KNOWN_OVER = [];
 
 export const SPOTS = Object.keys(BUDGETS);
 

@@ -3,6 +3,7 @@
 // console use the debug* methods.
 
 import * as THREE from 'three';
+import { distanceToTile } from './tiles.js';
 import { PARTS } from '../workshop/spares.js';
 import { registerTuning } from '../core/tuning.js';
 import { DEFAULT_VILLAGE_PARAMS, VILLAGE_PARAM_RANGES, SHOP_STOCK, PUMP_FUELS, GARAGE_PARTS, partWhyNot, buyPart, Till, PumpBill, pounds } from './villageShop.js';
@@ -128,7 +129,7 @@ export class VillageHost {
     const dark = g.daylight?.darkness ?? 0;
     this.props.setNight(dark);
     const p = g.player.position;
-    this.props.group.visible = Math.hypot(p.x - this.centre.x, p.z - this.centre.z) < this.params.drawDistance;
+    this.props.group.visible = distanceToTile(g.world.layout.village.area, p.x, p.z) < this.params.drawDistance;
   }
 
   /** Puts you on foot at the pub, the shop or the garage (the debug panel and the console). False if you are riding or there is no village. */
