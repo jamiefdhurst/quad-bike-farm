@@ -367,6 +367,8 @@ export function buildGirlsTab(d) {
   for (const season of SEASONS) button(mem, `Load it as ${season}`, () => g.reloadAsSeason(season));
   button(mem, 'Save the farm now', () => toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));
   button(mem, 'Call it a day now (fade, save)', () => g.callItADay({ force: true }));
+  button(mem, 'Rut the green lane to a bog', () => g.world.wear.setLane(1));
+  button(mem, 'Dry the green lane out', () => g.world.wear.setLane(0));
   button(mem, 'Wipe the farm (new one next load)', () => {
     g.wipeFarm();
     toast('Farm wiped: the next load deals a new one');

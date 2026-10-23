@@ -143,7 +143,7 @@ export const FAQ_SECTIONS = [
         q: 'What does the farm remember from one day to the next?',
         a: `Each vehicle's hours and miles, its wear, any fault you didn't put right, what you set with the toolbox, its tyres, fuel, oil and coolant,
           where the pods are, and how far you got with the barn find. Overnight a battery runs down a little (flat, if you left the key on with the engine stopped) and half
-          the mud dries and drops off. The bucket list keeps its ticks, the records board its bests (with "today" on any set today), and Amy's logbook
+          the mud dries and drops off, and half the ruts in the green lane dry out. The bucket list keeps its ticks, the records board its bests (with "today" on any set today), and Amy's logbook
           its last forty notes, by day. The girls keep half of how much they like you and all you've taught them.`,
         tip: 'Leave the key on with the engine off overnight and the battery is flat by morning.',
       },
@@ -521,6 +521,13 @@ export const FAQ_SECTIONS = [
           quad, then hold <kbd>X</kbd> by the RB300 to wind in), or the tractor's tow chain. Next time, charge it with a run-up. A girl who has bogged her
           own quad calls for you instead (see the next question).`,
         tip: 'Stuck? Rock it: forwards, backwards, forwards. Each change of direction works it looser.',
+      },
+      {
+        q: 'Why is the green lane so rutted?',
+        a: `Everything that rides down the lane takes the same line, so it wears faster than the fields, and rain makes it worse. Ride it through a wet day
+          and the ruts deepen into a bog where the tyres go. Dry weather brings it back, slowly, and about half the ruts are still there the next morning.
+          Keep to the drier edge, go steadily and don't spin the wheels.`,
+        tip: 'The green lane ruts up through a wet day and takes days to dry. Keep steady and off the wheelspin.',
       },
       {
         q: 'How do I get the RB300 up a bank or out of a bog when it won’t start?',

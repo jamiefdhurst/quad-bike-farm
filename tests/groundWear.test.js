@@ -147,3 +147,53 @@ describe('ground wear', () => {
     expect(g.data[o + 2]).toBeGreaterThan(200);
   });
 });
+
+describe('the green lane', () => {
+  const laneAt = (x, z) => (Math.abs(x) < 2 && z > 0 ? 1 : 0);
+  const lane = (o = {}) => fresh({ lane: laneAt, ...o });
+
+  it('wears faster than a field and recovers slower', () => {
+    const g = lane();
+    pass(g, 0, 10);
+    pass(g, 20, 10);
+    expect(g.wearAt(0, 10)).toBeCloseTo(g.wearAt(20, 10) * DEFAULT_WEAR_PARAMS.laneWear, 3);
+    const a = lane();
+    a.wear.fill(0.5);
+    a.update(100, 0);
+    const field = 0.5 - 100 * DEFAULT_WEAR_PARAMS.recoverRate;
+    expect(a.wearAt(0, 10)).toBeCloseTo(0.5 - 100 * DEFAULT_WEAR_PARAMS.recoverRate * DEFAULT_WEAR_PARAMS.laneRecovery, 3);
+    expect(a.wearAt(20, 10)).toBeCloseTo(field, 3);
+  });
+
+  it('bogs in rain from less wear than a field', () => {
+    const g = lane();
+    pass(g, 0, 10, 0, 14);
+    pass(g, 20, 10, 0, 14);
+    expect(g.bogAt(0, 10, 0.5)).toBeGreaterThan(g.bogAt(20, 10, 0.5));
+  });
+
+  it('saves only the lane, and keeps a share of it after a night', () => {
+    const g = lane();
+    pass(g, 0, 10, 1, 20);
+    pass(g, 20, 10, 1, 20);
+    const saved = g.laneToJSON();
+    expect(saved.length).toBeGreaterThan(0);
+    expect(JSON.parse(JSON.stringify(saved))).toEqual(saved);
+    const before = g.wearAt(0, 10);
+    const h = lane();
+    h.laneFromJSON(saved, 0.5);
+    expect(h.wearAt(0, 10)).toBeCloseTo(before * 0.5, 1);
+    expect(h.wearAt(20, 10)).toBe(0);
+    h.laneFromJSON([999999999, 255, -1, 255, 5, NaN], 1); // bad points are ignored
+    h.laneFromJSON(undefined);
+  });
+
+  it('can be set to rutted or put right', () => {
+    const g = lane();
+    g.setLane(1);
+    expect(g.wearAt(0, 10)).toBe(1);
+    expect(g.wearAt(20, 10)).toBe(0);
+    g.setLane(0);
+    expect(g.wearAt(0, 10)).toBe(0);
+  });
+});

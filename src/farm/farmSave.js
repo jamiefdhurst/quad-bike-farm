@@ -9,6 +9,7 @@ export const DEFAULT_FARM_PARAMS = {
   overnightDrain: 0.05, // battery lost overnight with the key off
   flatOvernight: 0.02, // what's left of a battery when the key was left on overnight
   mudKept: 0.5, // fraction of a quad's mud still on it in the morning (the rest dries and drops off)
+  laneKept: 0.5, // fraction of the green lane's ruts still there in the morning (the rest dries out)
   favourKept: 0.5, // fraction of each girl's favour that carries to the next day
   memoryKept: 0.5, // and of how far each feeling for what went well or badly sits from none (npc/memory.js)
   frictionKept: 0.5, // fraction of the girls' friction that carries when they hadn't fallen out
@@ -28,6 +29,7 @@ export const FARM_PARAM_RANGES = {
   overnightDrain: [0, 0.5, 0.01],
   flatOvernight: [0, 0.3, 0.01],
   mudKept: [0, 1, 0.05],
+  laneKept: [0, 1, 0.05],
   favourKept: [0, 1, 0.05],
   memoryKept: [0, 1, 0.05],
   frictionKept: [0, 1, 0.05],
