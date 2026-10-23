@@ -4916,3 +4916,12 @@ Settled with Jamie: feeding is a chalkboard job on well under half of days (35%,
 - **Panel and console.** Tune: "Farm animals", "Feed bucket". Girls tab, "Animals, gates and the lane": hunger and what each is doing, and buttons to make them hungry, fill the bucket, scatter the hens, make the pig squeal, put the job on the board, feed them both and start a fresh day. Console: `farm.hensHunger`, `farm.pigHunger`, `farm.feedBucket`, `farm.feedJob`, `farm.hensScatter`, `to animals`.
 - **Not done.** Saving hunger between loads (not asked for); the girls feeding them on their own (it would be an offer in the chooser); the hens laying, the pig getting out, the animals reacting to you walking up on foot.
 - **Checked:** unit tests and the smoke test. **Not checked in the running game:** how the hens, pig, run, sty and coop look, whether the fence and the animals sit right on the ground, the sounds by ear, the pick-up and fill feel, whether the site is clear of everything by eye, or the frame time (`perf.mjs` not run).
+
+## Testing tickets (#350)
+
+Settled with Jamie: work merges faster than Jamie can try it, so what only the running game can show gets a follow-up issue to try later, while other sessions keep building.
+
+- **When:** at the end of an item, one issue at most, and only if something unchecked could be wrong in a way worth fixing and only the running game shows it (a look, a feel, a line by ear, a girl in play). Number tweaks and things the tests cover get none.
+- **Shape:** labelled `🧪 testing` plus the item's areas, no type label. "Try: <title>", then how to get there quickly, a checklist, what right looks like and what wasn't checked. The "not checked" list belongs there from now on rather than in DECISIONS.md.
+- **`/todo` skips them**; **`/test`** works one with Jamie. Small fixes are made there and then, tried on the worktree's dev server, and go in as a `🐛 bug` PR saying "Found testing #n"; bigger ones are filed as issues. Jamie closes the ticket.
+- **No backfill** of items merged before this.
