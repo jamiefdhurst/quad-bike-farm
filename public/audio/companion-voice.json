@@ -168,7 +168,8 @@
   "audio/companion-voice-165.mp3",
   "audio/companion-voice-166.mp3",
   "audio/companion-voice-167.mp3",
-  "audio/companion-voice-168.mp3"
+  "audio/companion-voice-168.mp3",
+  "audio/companion-voice-169.mp3"
  ],
  "voice": "chatterbox|7fda5df3df9d",
  "clips": {
@@ -20141,6 +20142,76 @@
    "file": 168,
    "start": 36.5,
    "dur": 1.48
+  },
+  "The door is painted on, Jess.": {
+   "file": 168,
+   "start": 38.06,
+   "dur": 1.46
+  },
+  "That sign is lovely, you know. Someone has taken real care over it.": {
+   "file": 168,
+   "start": 39.6,
+   "dur": 3.57
+  },
+  "A lemonade. A proper one, with ice.": {
+   "file": 168,
+   "start": 43.25,
+   "dur": 2.11
+  },
+  "I could sit in a beer garden all afternoon.": {
+   "file": 168,
+   "start": 45.44,
+   "dur": 2.13
+  },
+  "You do not have a plan. You have a thirst.": {
+   "file": 168,
+   "start": 47.65,
+   "dur": 2.22
+  },
+  "Do you think they do a Sunday roast?": {
+   "file": 168,
+   "start": 49.95,
+   "dur": 1.44
+  },
+  "I would be good at the quiz.": {
+   "file": 168,
+   "start": 51.47,
+   "dur": 1.21
+  },
+  "We are already next to the picnic table.": {
+   "file": 168,
+   "start": 52.76,
+   "dur": 1.97
+  },
+  "It is nice, being somewhere that is not the farm.": {
+   "file": 168,
+   "start": 54.81,
+   "dur": 2.59
+  },
+  "You wanted one very much.": {
+   "file": 168,
+   "start": 57.48,
+   "dur": 1.4
+  },
+  "Thank you for bringing us. It was nice to sit somewhere with a view of a pub.": {
+   "file": 168,
+   "start": 58.96,
+   "dur": 3.62
+  },
+  "You said that last time.": {
+   "file": 169,
+   "start": 0.1,
+   "dur": 1.86
+  },
+  "We should come back on a warm evening.": {
+   "file": 169,
+   "start": 2.04,
+   "dur": 1.47
+  },
+  "Jess, it cannot hear you.": {
+   "file": 169,
+   "start": 3.59,
+   "dur": 2.08
   }
  }
 }

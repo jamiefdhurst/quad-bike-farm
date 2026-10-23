@@ -1571,3 +1571,10 @@ Decided with you: care attaches to the quad she owns (the claim in `ownership.js
 - Favour: washing her quad earns `favourWashPerSecond` 0.1 a second scaled by her care, on top of the existing favourite-quad wash score. If it is you thrashing it and she says so, you lose `favourThrash` 1.2 scaled by her care. Falling out is untouched: Jess or Amy thrashing it is words only.
 - Kept overnight (`captureGirls` `care`), in full; an old save without it starts at `startCare`. Girls tab "Her state" shows it, and the console has `girl.<name>.quadCare`.
 - Lines are `{q}` templates (colour or nickname), so each is written out per quad. Not checked in the running game: how often she speaks up, or whether 6 s flat out is right.
+
+## The girls at the pub (#358)
+
+The banter's two new situations, both raised by `PubVisit` (`src/npc/pubVisit.js`, pure, tested) and added to the triggers in `updateBanter`. `atPub` is a lasting situation: you stopped (a quad under 2 m/s, or on foot) within 14 m of `village.pub.stop` with both girls within 14 m and settled (stood, resting or sat as passengers, not driving). It starts an exchange now and then (gap 100 s, 5% a second), after the idle one in priority so the pub's chat wins over the general standing about. `leavingPub` is a moment: after 8 s there together, you pull away (over 2 m/s) or get 20 m off, with both girls within 20 m; it speaks once and the visit resets. Leaving them behind, or riding past without stopping, says nothing.
+- **Lines.** Eight waiting chats and five goodbyes in `pubLines.js`, merged at the end of the banter so earlier recordings are untouched. They mention drinks the girls would have (Amy a lemonade, Jess cider) and that the door is painted on, but nothing is drunk: no new mechanic, no need or favour change.
+- **Not done.** The girls do not go into the pub or get a drink in hand; that waits until the door opens.
+- **Debug.** "Girls at the pub" in the Tune tab (the four distances and times); the village group in the Girls tab and `village stayed` in the console show the seconds at the pub.

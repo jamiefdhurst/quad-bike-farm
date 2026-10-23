@@ -428,6 +428,7 @@ export function buildGameTree(g, host) {
   }), 'the neighbour over the lane');
   const village = group(() => ({
     now: text(() => g.villageHost.describe(), 'the village down the lane: its limit, what was last bought and the fuel prices'),
+    stayed: text(() => `${g.pubVisit.stayed.toFixed(0)} s at the pub with both girls (they say goodbye after ${g.pubParams.pubStay} s)`, 'how long you and the girls have been at the pub'),
     pub: flag(() => false, (v) => v && g.villageHost.debugGoTo('pub'), 'set to true: put you on foot in the pub car park'),
     shop: flag(() => false, (v) => v && g.villageHost.debugGoTo('shop'), 'set to true: put you on foot outside the shop'),
     garage: flag(() => false, (v) => v && g.villageHost.debugGoTo('garage'), 'set to true: put you on foot at the garage pumps'),

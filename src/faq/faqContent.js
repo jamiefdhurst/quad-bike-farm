@@ -1666,7 +1666,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why has a girl asked me to take her to the pub?',
-        a: `Now and then Amy or Jess asks for a run down to the Plough and Harrow, like a favour to the bales. Get on a quad with a free seat on the back, let her climb on, ride to the village and pull up in the pub's car park (west of the pub). Doing it pleases her; letting it lapse is remembered, as with any favour. On a fine day a girl who is about the village may also sit at one of the beer garden's picnic tables to rest.`,
+        a: `Now and then Amy or Jess asks for a run down to the Plough and Harrow, like a favour to the bales. Get on a quad with a free seat on the back, let her climb on, ride to the village and pull up in the pub's car park (west of the pub). Doing it pleases her; letting it lapse is remembered, as with any favour. On a fine day a girl who is about the village may also sit at one of the beer garden's picnic tables to rest. While you are stopped in the car park with both of them, they chat to each other about the pub and what they would drink if they went in (the door is only painted on), and they have something to say when you pull away.`,
         tip: 'A girl may ask to be run down to the village pub. Take her on the back and pull up in its car park.',
       },
       {

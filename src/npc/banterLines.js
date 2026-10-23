@@ -15,6 +15,7 @@ import { STRENGTH_BANTER } from './strengthLines.js';
 import { CONVOY_BANTER } from './convoyLines.js';
 import { GOSSIP_BANTER } from './gossipLines.js';
 import { FALLING_OUT_BANTER } from './fallingOutLines.js';
+import { PUB_BANTER } from './pubLines.js';
 
 export const BANTER = [
   // Standing about together, near you --------------------------------------
@@ -93,4 +94,5 @@ export const BANTER = [
   ...FALLING_OUT_BANTER,
   ...CONVOY_BANTER,
   ...GOSSIP_BANTER,
+  ...PUB_BANTER,
 ];
