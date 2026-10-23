@@ -215,6 +215,7 @@ import { Banter } from './npc/banter.js';
 import { RideOffer, pickOfferer } from './npc/rideOffer.js';
 import { BANTER } from './npc/banterLines.js';
 import { BanterWatch } from './npc/banterWatch.js';
+import { PubVisit, DEFAULT_PUB_PARAMS, PUB_PARAM_RANGES } from './npc/pubVisit.js';
 
 // Bickers where they trade digs: each adds a little friction towards falling out (fallingOut.js).
 const FRICTION_BANTER = ['idle', 'favoured', 'rivals', 'strengths', 'watching', 'sharing', 'riding', 'corrected', 'swapped', 'stuck'];
@@ -882,6 +883,8 @@ export class Game {
 
     // Favours the girls ask of you: wash her quad, take her to the bales, fetch the can (npc/requests.js).
     this.requests = new Requests();
+    this.pubParams = { ...DEFAULT_PUB_PARAMS };
+    this.pubVisit = new PubVisit(this.pubParams);
     const baleSpots = this.world.layout.strawBaleSpots.filter(([x, z]) => this.world.track.distanceTo(x, z, 10) >= this.world.layout.trackHalfWidth + 3);
     this.bales = baleSpots.map(([x, z]) => ({ x, z }));
 
@@ -1797,6 +1800,7 @@ export class Game {
     registerTuning('Hayloft', this.loftParams, LOFT_PARAM_RANGES);
     registerTuning('Wind', this.wind.p, WIND_PARAM_RANGES);
     registerTuning('Favours asked', this.requests.p, REQUEST_PARAM_RANGES);
+    registerTuning('Girls at the pub', this.pubParams, PUB_PARAM_RANGES);
     if (this.winch) registerTuning('Winch', this.winch.params, WINCH_PARAM_RANGES);
     if (this.chain) registerTuning('Tow chain', this.chain.params, CHAIN_PARAM_RANGES);
     registerTuning('Tow rope', this.towRope.params, TOW_ROPE_PARAM_RANGES);
@@ -5489,6 +5493,17 @@ export class Game {
         triggers.push({ when: 'corrected', edge: true, roles: { guesser: 'jess', corrector: 'amy', guess: said.guess, truth: said.truth } });
       }
     }
+    // Waiting in the village pub's car park with you, and pulling away from it (npc/pubVisit.js).
+    const at = (c) => c.root.getWorldPosition(c.tmpV.clone());
+    triggers.push(
+      ...this.pubVisit.triggers(
+        dt,
+        this.world.props.village?.shape.pubStop ?? null,
+        this.camera.position,
+        ridden && this.player.isRiding ? ridden.quad.speed : 0,
+        this.companions.map((c) => ({ x: at(c).x, z: at(c).z, settled: c.fsm.is('idle', 'resting') || (c.isSeated && !c.fsm.is('driving')) })),
+      ),
+    );
     // A race has just finished, or one of them is well ahead on wins (npc/race.js).
     if (this.raceResult) {
       triggers.push({ when: 'raced', edge: true, roles: this.raceResult });

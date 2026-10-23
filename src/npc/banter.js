@@ -29,10 +29,12 @@ export const BANTER_TIMING = {
   fellOut: { gap: 0 }, // they've just fallen out (fallingOut.js)
   fallenOut: { gap: 60, chance: 0.05 }, // stood about while fallen out
   madeUp: { gap: 0 }, // they've made up
+  atPub: { gap: 100, chance: 0.05 }, // stood about in the village pub's car park with you (pubLines.js)
+  leavingPub: { gap: 0 }, // you pull away from the pub
 };
 const ANY_GAP = 20; // seconds between any two exchanges
 const MOMENT_KEEPS = 8; // seconds a moment waits for a gap in the talking before it's let go
-const PRIORITY = ['fellOut', 'madeUp', 'stuck', 'corrected', 'raced', 'swapped', 'talked', 'riding', 'back', 'sharing', 'favoured', 'rivals', 'strengths', 'strengthsAgree', 'fallenOut', 'watching', 'idle'];
+const PRIORITY = ['fellOut', 'madeUp', 'stuck', 'corrected', 'raced', 'swapped', 'talked', 'riding', 'back', 'sharing', 'favoured', 'rivals', 'strengths', 'strengthsAgree', 'fallenOut', 'atPub', 'watching', 'idle'];
 
 const rolesMatch = (exchange, roles = {}) => Object.entries(exchange.roles ?? {}).every(([role, who]) => roles[role] === who);
 
