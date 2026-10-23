@@ -1298,7 +1298,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'She asked me to do something. What was it?',
-        a: `A favour: wash her quad, take her to the straw bales, or fetch the jerry can. Nothing on screen reminds you, but talk to her and she will.
+        a: `A favour: wash her quad, take her to the straw bales or the village pub, or fetch the jerry can. Nothing on screen reminds you, but talk to her and she will.
           Do it and she likes you a lot more; leave it six minutes and it lapses and she's put out.`,
       },
       {
@@ -1641,7 +1641,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Can I ride out onto the lane, and where does it go?',
-        a: `Yes. Open the big gate at the end of the farm road (look at it and press <kbd>E</kbd>), ride through and turn right, south, along the lane. Keep to the left for the traffic, which brakes for you. It is walled in on both sides, so the only place to turn off is the neighbour's gateway on the right, about 100 m down (its gate is shut: get off and open it), and it ends 60 m or so further along, and 60 m north of the big gate, where an invisible wall stops you. You can walk it too.`,
+        a: `Yes. Open the big gate at the end of the farm road (look at it and press <kbd>E</kbd>), ride through and turn right, south, along the lane. Keep to the left for the traffic, which brakes for you. It is walled in on both sides, so the only place to turn off is the neighbour's gateway on the right, about 100 m down (its gate is shut: get off and open it), and it carries on south, past the stream's culvert, to a side road into the village (see “Is there a village, and how do I get there?”), then ends at an invisible wall about 100 m past her gateway. North of the big gate it stops 60 m along, at another. You can walk it too.`,
         tip: 'The lane runs south from the big gate to the neighbour\'s farm. Look out for the traffic.',
       },
       {
@@ -1653,6 +1653,25 @@ export const FAQ_SECTIONS = [
         q: 'Can I open the neighbour\'s gate, and can I drive her vehicles?',
         a: `You can open the gate: get off, look at it and press <kbd>E</kbd>, and again to shut it (it will not shut with someone in the way). Her Moorland, buggy and tractor are for show for now, so you cannot drive them.`,
         tip: 'The neighbour\'s gate opens with E, like the farm\'s. Her vehicles are only for show.',
+      },
+      {
+        q: 'Is there a village, and how do I get there?',
+        a: `Yes: Nether Thornby, a short ride south down the lane. Open the big gate, turn right along the lane and keep going past the neighbour's gateway and the culvert. About 70 m past her gateway a side road turns off to the right, with the village sign (and the 20 mph signs) just inside it. The road bends west past a few cottages, the garage, the shop, a little green with an oak and the pub, and ends at a gate with a "road closed" sign (the floods). It is walled in, so there is nowhere else to go; the lane carries on a little further south to a dead end.`,
+        tip: 'Nether Thornby is down the lane, past the neighbour. Turn right at the village sign.',
+      },
+      {
+        q: 'What is in the village, and what can I buy?',
+        a: `The garage, Hollis Motors, has three pumps on a forecourt: two unleaded and one diesel. Stand by one with a jerry can in your hands and hold <kbd>E</kbd> to fill it. The litres are paid for out of the farm's money tin as they go in, at the price on the pump, and filling stops if the tin runs dry. Pargeter's Stores, the shop and post office, is open to walk into: look at the jar of sweets on the counter and press <kbd>E</kbd> to buy the girls a bag, or at the pasty warmer for two hot pasties, one each. Both girls like being treated, and a pasty takes the chill off. Buying again straight away does not please them as much, so the shop makes you wait a few minutes. The pub, the Plough and Harrow, has a car park and a beer garden but no door you can walk through yet.`,
+        tip: 'Hollis Motors sells petrol and diesel by the litre; Pargeter\'s Stores sells treats for the girls.',
+      },
+      {
+        q: 'Why has a girl asked me to take her to the pub?',
+        a: `Now and then Amy or Jess asks for a run down to the Plough and Harrow, like a favour to the bales. Get on a quad with a free seat on the back, let her climb on, ride to the village and pull up in the pub's car park (west of the pub). Doing it pleases her; letting it lapse is remembered, as with any favour. On a fine day a girl who is about the village may also sit at one of the beer garden's picnic tables to rest.`,
+        tip: 'A girl may ask to be run down to the village pub. Take her on the back and pull up in its car park.',
+      },
+      {
+        q: 'Is there a speed limit in the village?',
+        a: `20 mph, on the signs at the turning and along the road. Nobody enforces it yet: the village is simply a place to take slowly, past the shop and the pub.`,
       },
       {
         q: 'Where does the stream come from, and where does it go?',
