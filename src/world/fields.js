@@ -6,6 +6,7 @@
 import { createHill } from './hill.js';
 import { createWoods } from './woods.js';
 import { createOutbuildings } from './outbuildings.js';
+import { villageShape } from './village.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -184,14 +185,26 @@ export function createFields(layout) {
     return best;
   }
 
-  /** 0..1 how much of (x, z) is tarmac: the road and the hardstanding at its end, with a soft edge a hand's width across. */
+  /**
+   * 0..1 how much of (x, z) is tarmac or concrete: the farm road and the hardstanding at its end, the public lane, and the village's road,
+   * pavements, car park and forecourt, with a soft edge a hand's width across.
+   */
+  const lane = layout.publicLane;
+  const village = villageShape(layout);
   function tarmacAt(x, z) {
-    if (!road) return 0;
     const edge = 0.15;
-    const along = Math.max(road.fromX - x, 0, x - road.toX);
-    const onRoad = 1 - smoothstep(road.halfWidth - edge, road.halfWidth + edge, Math.hypot(along, z - road.z));
-    const onPad = road.pad ? 1 - smoothstep(road.pad.radius - edge, road.pad.radius + edge, Math.hypot(x - padX, z - road.z)) : 0;
-    return Math.max(onRoad, onPad);
+    let t = 0;
+    if (road) {
+      const along = Math.max(road.fromX - x, 0, x - road.toX);
+      const onRoad = 1 - smoothstep(road.halfWidth - edge, road.halfWidth + edge, Math.hypot(along, z - road.z));
+      const onPad = road.pad ? 1 - smoothstep(road.pad.radius - edge, road.pad.radius + edge, Math.hypot(x - padX, z - road.z)) : 0;
+      t = Math.max(onRoad, onPad);
+    }
+    if (lane && t < 1) {
+      const along = Math.max(lane.minZ - z, 0, z - lane.maxZ);
+      t = Math.max(t, 1 - smoothstep(lane.halfWidth - edge, lane.halfWidth + edge, Math.hypot(along, x - lane.x)));
+    }
+    return village && t < 1 ? Math.max(t, village.tarmacAt(x, z)) : t;
   }
 
   /** 0..1 how much of (x, z) is stubble: the two fields either side of the road, up to the tarmac, and not under the buildings out there. */

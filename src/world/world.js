@@ -13,7 +13,7 @@ import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
 import { createFields } from './fields.js';
 import { detourVia, DEFAULT_DETOUR_PARAMS, DETOUR_PARAM_RANGES } from '../npc/detour.js';
 import { createOutbuildings } from './outbuildings.js';
-import { RoadMud, DEFAULT_ROAD_MUD_PARAMS, ROAD_MUD_PARAM_RANGES } from './roadMud.js';
+import { RoadMud, RoadMudSet, DEFAULT_ROAD_MUD_PARAMS, ROAD_MUD_PARAM_RANGES } from './roadMud.js';
 import { DEFAULT_DUST_PARAMS, DUST_PARAM_RANGES } from './dust.js';
 import { leafCover, WINTER_TINTS } from './autumn.js';
 import { applyAutumnTint } from './autumnView.js';
@@ -86,17 +86,20 @@ export class World {
     registerTuning('Road mud', this.roadMudParams, ROAD_MUD_PARAM_RANGES);
     const road = layout.road;
     const reach = (road?.pad?.radius ?? road?.halfWidth ?? 0) + 1;
-    this.roadMud = road
-      ? new RoadMud({
-          bounds: { minX: road.fromX - 1, maxX: Math.max(road.toX + 1, (road.pad?.x ?? 0) + reach), minZ: road.z - reach, maxZ: road.z + reach },
-          tarmacAt: this.fields.tarmacAt,
-          params: this.roadMudParams,
-        })
-      : null;
+    const grid = (bounds) => new RoadMud({ bounds, tarmacAt: this.fields.tarmacAt, params: this.roadMudParams });
+    const grids = road
+      ? [grid({ minX: road.fromX - 1, maxX: Math.max(road.toX + 1, (road.pad?.x ?? 0) + reach), minZ: road.z - reach, maxZ: road.z + reach })]
+      : [];
+    // The rest of the tarmac: the lane you can ride, and the village's ground (the lane's grid takes the mouth of its road).
+    const lane = layout.publicLane;
+    if (grids.length && lane) grids.push(grid({ minX: lane.x - lane.halfWidth - 1, maxX: lane.x + lane.halfWidth + 1, minZ: lane.open.minZ, maxZ: lane.open.maxZ }));
+    const vArea = layout.village?.area;
+    if (grids.length && vArea && lane) grids.push(grid({ minX: vArea.minX, maxX: lane.x - lane.halfWidth - 1, minZ: vArea.minZ, maxZ: vArea.maxZ }));
+    this.roadMud = grids.length ? new RoadMudSet(grids) : null;
 
     if (autumn) applyAutumnTint(models);
     else if (winter) applyAutumnTint(models, WINTER_TINTS); // the leaves dull and dark in winter (seasons.js) // before anything is built from the models
-    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud, drawDistance: this.drawDistance, autumn };
+    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud?.main, drawDistance: this.drawDistance, autumn };
     this.terrain = createTerrain(ctx);
     this.props = buildProps(ctx);
 
@@ -269,8 +272,8 @@ export class World {
     this.wear.packed = false;
     if (this.roadMud) {
       this.roadMud.update(dt, this.weather?.rain ?? 0);
-      if (this.roadMud.packed) this.terrain.roadMudTexture.needsUpdate = true;
-      this.roadMud.packed = false;
+      if (this.roadMud.main.packed) this.terrain.roadMudTexture.needsUpdate = true;
+      this.roadMud.main.packed = false;
     }
     if (this.weather) {
       this.terrain.frost.value = this.weather.frost;

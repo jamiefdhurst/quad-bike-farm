@@ -49,6 +49,11 @@ export class RoadMud {
     this.packClock = 0;
   }
 
+  /** Whether (x, z) is on the ground this grid covers. */
+  has(x, z) {
+    return x >= this.minX && z >= this.minZ && x < this.minX + this.sizeX && z < this.minZ + this.sizeZ;
+  }
+
   get sizeX() {
     return this.nx * this.cell;
   }
@@ -142,5 +147,38 @@ export class RoadMud {
     }
     this.dirty = false;
     this.packed = true;
+  }
+}
+
+/**
+ * The farm road's grid (the first, `main`, the one the terrain shader draws) and any others over the rest of the tarmac, the public lane and
+ * the village's road. Each point of tarmac belongs to one grid; a tyre rolling anywhere else is handled by `main`, which only loses what it sheds.
+ */
+export class RoadMudSet {
+  /** @param {RoadMud[]} grids  The first is `main`; they share one set of params and one `tarmacAt`. */
+  constructor(grids) {
+    this.grids = grids;
+    this.main = grids[0];
+    this.tarmacAt = this.main.tarmacAt;
+  }
+
+  #at(x, z) {
+    return this.grids.find((g) => g.has(x, z));
+  }
+
+  roll(load, x, z, dist, mud) {
+    return (this.#at(x, z) ?? this.main).roll(load, x, z, dist, mud);
+  }
+
+  smearAt(x, z) {
+    return this.#at(x, z)?.smearAt(x, z) ?? 0;
+  }
+
+  mudAt(x, z) {
+    return this.#at(x, z)?.mudAt(x, z) ?? 0;
+  }
+
+  update(dt, rain = 0) {
+    for (const g of this.grids) g.update(dt, rain);
   }
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { RoadMud, DEFAULT_ROAD_MUD_PARAMS as P } from '../src/world/roadMud.js';
+import { RoadMud, RoadMudSet, DEFAULT_ROAD_MUD_PARAMS as P } from '../src/world/roadMud.js';
 
 // A road along x from 0 to 100 at z = 0, 4 m wide.
 const tarmacAt = (x, z) => (x >= 0 && x <= 100 && Math.abs(z) < 2 ? 1 : 0);
@@ -61,5 +61,35 @@ describe('mud carried onto the road', () => {
     const iz = Math.round((0 - m.minZ) / m.cell - 0.5);
     expect(m.data[(iz * m.nx + ix) * 4]).toBeGreaterThan(20);
     expect(m.packed).toBe(true);
+  });
+});
+
+describe('mud on more than one stretch of road', () => {
+  // The first road is as above; a second runs along z from 50 to 150 at x = 200.
+  const lane = (x, z) => (Math.abs(x - 200) < 2 && z >= 50 && z <= 150 ? 1 : 0);
+  const both = (x, z) => Math.max(tarmacAt(x, z), lane(x, z));
+  const set = () =>
+    new RoadMudSet([
+      new RoadMud({ bounds: { minX: -5, maxX: 105, minZ: -4, maxZ: 4 }, tarmacAt: both }),
+      new RoadMud({ bounds: { minX: 197, maxX: 203, minZ: 50, maxZ: 150 }, tarmacAt: both }),
+    ]);
+
+  it('sheds a loaded tyre onto the second road and reads it back there only', () => {
+    const m = set();
+    let load = 1;
+    for (let z = 50; z < 80; z++) load = m.roll(load, 200, z, 1, 0);
+    expect(load).toBeLessThan(0.3);
+    expect(m.smearAt(200, 52.5)).toBeGreaterThan(0.05);
+    expect(m.mudAt(200, 52.5)).toBeGreaterThan(0);
+    expect(m.smearAt(50, 0)).toBe(0);
+    expect(m.main.smearAt(200, 52.5)).toBe(0);
+  });
+
+  it('washes every grid in the rain', () => {
+    const m = set();
+    m.roll(1, 200, 51, 1, 0);
+    const before = m.smearAt(200, 51);
+    m.update(60, 1);
+    expect(m.smearAt(200, 51)).toBeLessThan(before);
   });
 });

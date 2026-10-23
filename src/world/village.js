@@ -127,9 +127,22 @@ function buildShape(layout) {
     return natural(p0[0], p0[1]) * (1 - t) + natural(p1[0], p1[1]) * t;
   }
 
+  /**
+   * 0..1 how much of (x, z) is hard standing: the road and its pavements, the car park and the garage's forecourt, with the same soft
+   * edge a hand's width across as the farm road's.
+   */
+  const EDGE = 0.15;
+  function tarmacAt(x, z) {
+    if (!inRect(a, x, z, 1)) return 0;
+    const onRoad = 1 - smooth(clamp01((roadAt(x, z).d - (curb - EDGE)) / (2 * EDGE)));
+    const onRect = (r) => 1 - smooth(clamp01(outside(r, x, z) / (2 * EDGE)));
+    return Math.max(onRoad, onRect(carPark), onRect(forecourt));
+  }
+
   return {
     v,
     name: v.name,
+    tarmacAt,
     areaWeight,
     planeAt,
     limit: v.limit,
