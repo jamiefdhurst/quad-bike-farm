@@ -794,7 +794,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'What does the tarmac road do?',
         a: `It grips harder and rolls easier than grass, and the tyres squeal on it. Mud you carry onto it from the track leaves slippery brown smears
-          until the rain washes them off.`,
+          until the rain washes them off. The public lane and the village's road, pavements, car park and garage forecourt count as hard ground too, so
+          they grip, squeal and wipe your tyres clean the same way. The smears are only drawn on the farm road, though they still make the lane slippery.`,
       },
     ],
   },

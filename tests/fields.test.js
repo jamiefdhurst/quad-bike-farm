@@ -54,6 +54,23 @@ describe('the farm fields', () => {
     expect(f.stubbleAt(road.pad.x, road.z - road.pad.radius + 1)).toBe(0); // the hardstanding reaches into the field
   });
 
+  it('counts the public lane and the village streets as tarmac too', () => {
+    const lane = LAYOUT.publicLane;
+    const v = LAYOUT.village;
+    expect(f.tarmacAt(lane.x, 100)).toBe(1);
+    expect(f.tarmacAt(lane.x, 0)).toBe(1);
+    expect(f.tarmacAt(lane.x - lane.halfWidth - 1, 100)).toBe(0); // the verge
+    expect(f.tarmacAt(lane.x + lane.halfWidth + 1, 100)).toBe(0);
+    expect(f.tarmacAt(166, 183.5)).toBe(1); // the village road
+    expect(f.tarmacAt(166, 183.5 + v.road.halfWidth + v.road.pavement - 0.5)).toBe(1); // its pavement
+    expect(f.tarmacAt(166, 183.5 + 6)).toBe(0); // behind the pavement
+    const cp = v.pub.carPark;
+    expect(f.tarmacAt((cp.minX + cp.maxX) / 2, (cp.minZ + cp.maxZ) / 2)).toBe(1);
+    expect(f.tarmacAt(v.garage.x, v.garage.z - v.garage.halfZ - 4)).toBe(1); // the forecourt
+    expect(f.tarmacAt(120, 170)).toBeLessThan(0.5); // the grass north of the car park
+    expect(f.stubbleAt(lane.x, 0)).toBe(0);
+  });
+
   it('measures the way to the hedge ahead, through the gaps', () => {
     expect(f.hedgeAhead(0, 0, 0)).toBeCloseTo(LAYOUT.fieldHalf); // south, to the grass field's hedge
     expect(f.hedgeAhead(0, 30, Math.PI / 2)).toBeCloseTo(LAYOUT.fieldHalf); // east
