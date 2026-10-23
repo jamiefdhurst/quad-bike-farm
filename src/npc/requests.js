@@ -1,5 +1,5 @@
 // Favours. Now and then a girl asks you for something: wash her favourite quad,
-// take her over to the straw bales, fetch the jerry can, take her over the cattle grid again, go the bumpy way, or start the tractor so she can sit on
+// take her over to the straw bales, run her down to the village pub, fetch the jerry can, take her over the cattle grid again, go the bumpy way, or start the tractor so she can sit on
 // its mudguard while it idles (the last three are the buzz: the girls like the shake). Doing it pleases her;
 // leaving it, the request lapses and she remembers (a grudge that makes her
 // short with you and more likely to say no). Nothing shows on screen: you have
@@ -20,6 +20,7 @@ export const DEFAULT_REQUEST_PARAMS = {
   muddyAbove: 0.3, // her favourite quad must be this muddy (0..1) for her to ask you to wash it
   cleanBelow: 0.1, // and it's washed once it's below this
   balesRange: 7, // metres from the straw bales that counts as having taken her over
+  pubRange: 9, // metres from where you pull up in the village pub's car park that counts as having taken her
   canRange: 3, // metres from her the jerry can must be (held or put down) to count as fetched
   stopSpeed: 0.8, // m/s: the quad counts as stopped below this
   joinDelay: 1.5, // seconds after you get on a quad before the girl who asked for the bales sets off to climb on the back
@@ -40,6 +41,7 @@ export const REQUEST_PARAM_RANGES = {
   muddyAbove: [0, 1, 0.05],
   cleanBelow: [0, 1, 0.05],
   balesRange: [2, 20, 0.5],
+  pubRange: [2, 20, 0.5],
   canRange: [1, 10, 0.5],
   stopSpeed: [0.1, 3, 0.1],
   joinDelay: [0, 10, 0.5],
@@ -47,7 +49,7 @@ export const REQUEST_PARAM_RANGES = {
   bumpySlams: [1, 20, 1],
 };
 
-export const REQUEST_KINDS = ['wash', 'bales', 'can', 'grid', 'bumpy', 'mudguard'];
+export const REQUEST_KINDS = ['wash', 'bales', 'can', 'grid', 'bumpy', 'mudguard', 'pub'];
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
@@ -64,7 +66,7 @@ export class Requests {
   }
 
   /**
-   * The girl who asked to go to the bales, if she should now come and get on the
+   * The girl who asked to go to the bales (or the pub), if she should now come and get on the
    * back of the quad you've just got on: she's still waiting, free, in range, and
    * the quad has a free pillion seat. She waits `joinDelay` after you mount so
    * you've time to see she's coming, and is only sent once per quad.
@@ -85,7 +87,7 @@ export class Requests {
     }
     this.rideTime += dt;
     if (this.rideTime < this.p.joinDelay || this.sentFor === q.id || !q.hasPillion || q.pillion) return null;
-    const r = this.open.find((o) => o.kind === 'bales' && ctx.girls.some((g) => g.id === o.girl && g.free && dist(g, ctx.you) <= this.p.joinRange));
+    const r = this.open.find((o) => (o.kind === 'bales' || o.kind === 'pub') && ctx.girls.some((g) => g.id === o.girl && g.free && dist(g, ctx.you) <= this.p.joinRange));
     if (!r) return null;
     this.sentFor = q.id;
     return r.girl;
@@ -116,6 +118,7 @@ export class Requests {
    *   grid: whether there is a cattle grid; tractor: { exists, running, mudguard } (mudguard: id of the girl sat on its wheel arch)
    *   can: { x, z, held }
    *   bales: [{ x, z }]
+   *   pub: { x, z } | null     where you pull up at the village pub (null on a farm without a village)
    * Returns events: { type: 'ask' | 'done' | 'lapsed', request }.
    */
   update(dt, ctx) {
@@ -183,6 +186,7 @@ export class Requests {
     }
     const backFree = ctx.quads.some((q) => q.hasPillion && !q.pillion);
     if (kind === 'bales') return ctx.bales.length && backFree ? {} : null;
+    if (kind === 'pub') return ctx.pub && backFree ? {} : null;
     if (kind === 'grid') return ctx.grid && backFree ? {} : null;
     if (kind === 'bumpy') return backFree ? {} : null;
     if (kind === 'mudguard') return ctx.tractor?.exists && !ctx.tractor.running && !ctx.tractor.mudguard ? {} : null;
@@ -202,6 +206,11 @@ export class Requests {
       const on = ctx.quads.find((x) => x.pillion === r.girl && x.ridden);
       if (on) r.bumps = (r.bumps ?? 0) + (on.slams ?? 0);
       return (r.bumps ?? 0) >= p.bumpySlams;
+    }
+    // The pub: on the back of a quad you're on, stopped in its car park.
+    if (r.kind === 'pub') {
+      const on = ctx.quads.find((x) => x.pillion === r.girl && x.ridden);
+      return !!on && !!ctx.pub && Math.abs(on.speed) < p.stopSpeed && dist(ctx.pub, on) <= p.pubRange;
     }
     // Bales: on the back of a quad you're on, stopped near them.
     const q = ctx.quads.find((x) => x.pillion === r.girl && x.ridden);

@@ -1,7 +1,7 @@
 // What the girls say about favours: asking (ask<Kind>), thanking you when it's
 // done (thanks<Kind>), reminding you when you talk to her with it still open
 // (remind<Kind>), and holding it against you after it lapsed (grudge<Kind>, said
-// the next time you talk to her). Kinds are Wash, Bales and Can. gloatFavour is
+// the next time you talk to her). Kinds are Wash, Bales, Can and Pub. gloatFavour is
 // the favoured one crowing when her friend is listening. Merged into the main
 // line sets (voiceLines.js, jessLines.js) so they're recorded with the rest.
 
@@ -37,4 +37,19 @@ export const JESS_REQUEST_LINES = {
   grudgeBales: ["You didn't take me to the bales. Rude.", 'The bales. Remember those? I asked.', "I'll remember you said no to the bales."],
   grudgeCan: ["Didn't fetch the can, did you? Typical.", 'I asked for one thing. One.', 'No jerry can. Great.'],
   gloatFavour: ['Ha! I get what I ask for. Wonder why.', 'Jealous, Amy? You should be.', "You do things for me. I'm just saying."],
+};
+
+// The village pub (#43). Kept apart, and merged at the end of each girl's lines, so adding them leaves the recorded banks before them as they were.
+export const AMY_PUB_LINES = {
+  askPub: line(60, ["Could you run me down to the pub? The Plough and Harrow. I'd love to sit in the car park for a bit.", 'Will you take me to the pub in the village? Just to pull up outside.', "Fancy a run down to the Plough and Harrow? On the back, with you."]),
+  thanksPub: line(30, ['Lovely. Look at that sign. I do like this pub.', 'Ah, thank you. The Plough and Harrow. Perfect.', "That's just what I wanted. Thanks for the ride."]),
+  remindPub: line(30, ["Don't forget the pub.", 'Still waiting on that run to the Plough and Harrow.', 'The pub. When you are ready.']),
+  grudgePub: line(30, ["You never took me to the pub. I haven't forgotten.", 'I asked for a run down to the pub and you ignored me.', "Funny how you couldn't find the time for the pub."]),
+};
+
+export const JESS_PUB_LINES = {
+  askPub: ["Take me to the pub. The Plough and Harrow. I'm parched.", 'Run me down to the village pub, go on.', 'Pub. Me. On the back. Now. Please?'],
+  thanksPub: ['Nice. I could sit here all afternoon.', "Right on, the Plough and Harrow. Cheers.", "Ahh. Perfect. You're not so bad."],
+  remindPub: ['Pub. Remember?', "I'm still waiting for that run to the pub.", 'Are we going to the pub, or what?'],
+  grudgePub: ["You didn't take me to the pub. Rude.", 'The pub. Remember that? I asked.', "I'll remember you said no to the pub."],
 };

@@ -1,0 +1,101 @@
+import { describe, it, expect } from 'vitest';
+import { LAYOUT } from '../src/world/layout.js';
+import { villageShape, smoothRoad, frontOf } from '../src/world/village.js';
+import { laneBarriers, neighbourFarmShape } from '../src/world/neighbourFarm.js';
+import { createBrook } from '../src/world/brook.js';
+import { createTerrainHeight } from '../src/world/terrainHeight.js';
+import { Track } from '../src/world/track.js';
+
+const S = villageShape(LAYOUT);
+const lane = LAYOUT.publicLane;
+const overlap = (a, b, m = 0) => a.minX < b.maxX + m && a.maxX > b.minX - m && a.minZ < b.maxZ + m && a.maxZ > b.minZ - m;
+
+describe('the village', () => {
+  it('is there, called Nether Thornby, with a 20 mph limit', () => {
+    expect(S.name).toBe('Nether Thornby');
+    expect(S.limit).toBe(20);
+  });
+
+  it('has a side road that turns off the lane and bends away west, not a straight line', () => {
+    expect(S.road[0].x).toBeCloseTo(lane.x, 0);
+    expect(S.road[S.road.length - 1].x).toBeLessThan(110);
+    const heading = (i) => Math.atan2(S.road[i].tz, S.road[i].tx);
+    const headings = S.road.map((_, i) => heading(i));
+    expect(Math.max(...headings) - Math.min(...headings)).toBeGreaterThan(0.6);
+    // Smooth: no jump between neighbouring samples.
+    for (let i = 1; i < S.road.length; i++) expect(Math.hypot(S.road[i].x - S.road[i - 1].x, S.road[i].z - S.road[i - 1].z)).toBeLessThan(2.1);
+  });
+
+  it('smoothRoad passes through its points and ends where they end', () => {
+    const r = smoothRoad([[0, 0], [10, 0], [20, 5]], 1);
+    expect(r[0]).toMatchObject({ x: 0, z: 0 });
+    expect(r[r.length - 1]).toMatchObject({ x: 20, z: 5 });
+    expect(r.some((p) => Math.hypot(p.x - 10, p.z) < 0.01)).toBe(true);
+  });
+
+  it('keeps every building inside its area, off each other and clear of the road and its pavements', () => {
+    for (const b of S.buildings) {
+      expect(b.outer.minX, b.id).toBeGreaterThan(S.area.minX);
+      expect(b.outer.maxX, b.id).toBeLessThan(S.area.maxX - 2);
+      expect(b.outer.minZ, b.id).toBeGreaterThan(S.area.minZ + 3);
+      expect(b.outer.maxZ, b.id).toBeLessThan(S.area.maxZ - 0.5);
+      for (const o of S.buildings) if (o !== b) expect(overlap(b.outer, o.outer, 1.5), `${b.id} ${o.id}`).toBe(false);
+      for (let x = b.outer.minX; x <= b.outer.maxX; x += 1) {
+        for (const z of [b.outer.minZ, b.outer.maxZ]) expect(S.roadAt(x, z).d, `${b.id} ${x}`).toBeGreaterThan(S.curb + 1.5);
+      }
+    }
+  });
+
+  it('turns every front to the road', () => {
+    for (const b of S.buildings) {
+      const f = frontOf(b);
+      const r = S.roadAt(b.x, f.z);
+      expect(Math.sign(r.at.z - f.z), b.id).toBe(f.face); // the road lies the way the front faces
+    }
+  });
+
+  it('keeps the car park and the forecourt off the buildings and the road', () => {
+    for (const b of S.buildings) expect(overlap(S.carPark, b.outer), b.id).toBe(false);
+    for (let x = S.carPark.minX; x <= S.carPark.maxX; x += 1) expect(S.roadAt(x, S.carPark.maxZ).d).toBeGreaterThan(S.roadHalfWidth + 0.5);
+    expect(S.pubStop.x).toBeGreaterThan(S.carPark.minX);
+    expect(S.pubStop.x).toBeLessThan(S.carPark.maxX);
+    expect(S.pubStop.z).toBeGreaterThan(S.carPark.minZ);
+    expect(S.pubStop.z).toBeLessThan(S.carPark.maxZ);
+  });
+
+  it('stands clear of the brook and the neighbour\'s yard', () => {
+    const brook = createBrook(LAYOUT);
+    const yard = neighbourFarmShape(LAYOUT).outline;
+    for (const b of S.buildings) {
+      for (let x = b.outer.minX; x <= b.outer.maxX; x += 2) expect(b.outer.minZ - (brook.zAt(x) + brook.halfAt(x)), `${b.id} ${x}`).toBeGreaterThan(4);
+      expect(b.outer.minZ).toBeGreaterThan(yard.maxZ + 8);
+    }
+  });
+
+  it('opens a gap in the lane\'s west barrier at the turning, and keeps the lane ridable down to it', () => {
+    const [a, b] = S.laneGap;
+    expect(a).toBeLessThan(S.road[0].z);
+    expect(b).toBeGreaterThan(S.road[0].z);
+    expect(lane.open.maxZ).toBeGreaterThan(b);
+    const west = laneBarriers(LAYOUT).filter((w) => w.x < lane.x);
+    const mid = (a + b) / 2;
+    expect(west.some((w) => mid > w.z - w.hz && mid < w.z + w.hz)).toBe(false);
+  });
+
+  it('shuts the village in with walls on its north, south and west', () => {
+    expect(S.walls).toHaveLength(3);
+    for (const w of S.walls) expect(w.hx * w.hz).toBeGreaterThan(0);
+  });
+
+  it('levels the ground under each building, the car park and the forecourt, and leaves the road to follow the land', () => {
+    const heights = createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints));
+    for (const b of [S.pub, S.shop, S.garage]) {
+      const ys = [];
+      for (const dx of [-0.8, 0, 0.8]) for (const dz of [-0.8, 0, 0.8]) ys.push(heights.heightAt(b.x + dx * b.halfX, b.z + dz * b.halfZ));
+      expect(Math.max(...ys) - Math.min(...ys), b.id).toBeLessThan(0.01);
+    }
+    const c = S.carPark;
+    const corner = heights.heightAt(c.minX + 1, c.minZ + 1);
+    expect(Math.abs(corner - heights.heightAt(c.maxX - 1, c.maxZ - 1))).toBeLessThan(0.01);
+  });
+});

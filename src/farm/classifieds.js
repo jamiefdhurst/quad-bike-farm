@@ -199,6 +199,14 @@ export class Market {
     this.today.earned += amount;
   }
 
+  /** Pays `amount` out of the tin for something small (fuel, the shop): false, and nothing taken, if the tin hasn't got it. */
+  spend(amount) {
+    if (!(amount > 0) || this.purse < amount) return false;
+    this.purse -= amount;
+    this.today.spent += amount;
+    return true;
+  }
+
   /** Why this model can't be sold now, or null if it can. `onFarm` is the models here, `regulars` the regular quads' ids. */
   sellWhyNot(specId, { onFarm, regulars }, P = this.p) {
     if (!(specId in FOR_SALE)) return NOT_FOR_SALE[specId] ? 'Not ours to sell' : 'Nobody wants that';

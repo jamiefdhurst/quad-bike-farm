@@ -14,7 +14,7 @@ import { poseBaleSpike } from '../vehicle/tractorModel.js';
 import { woodTexture, paintedTexture, doorTexture, sashTexture, binTexture, barrelTexture, barkTexture, logEndTexture, postboxTexture } from './neighbourTextures.js';
 
 /** Slate: courses of dark grey tiles, one tile 1 m square, a few paler or greener. */
-function slateTexture(random) {
+export function slateTexture(random) {
   return canvasTexture(256, 256, (ctx, w, h) => {
     ctx.fillStyle = '#3d4247';
     ctx.fillRect(0, 0, w, h);
@@ -33,7 +33,7 @@ function slateTexture(random) {
 }
 
 /** Worn concrete: pale grey with joints every 4 m, oil stains and the odd crack. One tile is 4 m square. */
-function concreteTexture(random) {
+export function concreteTexture(random) {
   return canvasTexture(512, 512, (ctx, w, h) => {
     ctx.fillStyle = '#9d9b94';
     ctx.fillRect(0, 0, w, h);
@@ -83,7 +83,7 @@ const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, rough
  * A five-bar gate leaf `len` long and 1.2 m high, lying along z with its hinge end at z = 0: a top bar, four rails, a stile at each end, a
  * diagonal brace from the hinge up to the latch end, two strap hinges and a latch plate. The stiles run down past the bottom rail.
  */
-function gateLeaf(wood, iron, len) {
+export function gateLeaf(wood, iron, len) {
   const g = new THREE.Group();
   const bar = (y, h = 0.09) => {
     const m = new THREE.Mesh(worldBox(0.06, h, len, 1), wood);

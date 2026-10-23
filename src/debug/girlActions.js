@@ -211,9 +211,9 @@ export function girlActions(g) {
         toast(g.sendToCab(id, 'rain') ? `${nameOf(id)} is off to the nearest cab` : `No cab free for ${nameOf(id)}`);
       },
     },
-    ...['grid', 'bumpy', 'mudguard'].map((kind) => ({
+    ...['grid', 'bumpy', 'mudguard', 'pub'].map((kind) => ({
       verb: `ask-${kind}`,
-      label: { grid: '% asks for the cattle grid again', bumpy: '% asks for the bumpy way', mudguard: '% asks to sit on the tractor (start it)' }[kind],
+      label: { grid: '% asks for the cattle grid again', bumpy: '% asks for the bumpy way', mudguard: '% asks to sit on the tractor (start it)', pub: '% asks to be taken to the village pub' }[kind],
       run: (id) => {
         const e = g.requests.force(id, kind);
         if (!e) return toast(`${nameOf(id)} has asked for something already`);

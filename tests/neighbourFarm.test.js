@@ -131,7 +131,7 @@ describe('the lane you can ride', () => {
       for (const [dx, dz] of [[cell, 0], [-cell, 0], [0, cell], [0, -cell]]) {
         const nx = x + dx;
         const nz = z + dz;
-        if (nx < 150 || nx > 215 || nz < -80 || nz > 175) continue; // the part of the world that matters
+        if (nx < 150 || nx > 215 || nz < -80 || nz > 215) continue; // the part of the world that matters
         if (blocked(nx, nz) || seen.has(key(nx, nz))) continue;
         seen.add(key(nx, nz));
         todo.push([nx, nz]);

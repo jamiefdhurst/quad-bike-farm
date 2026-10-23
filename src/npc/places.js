@@ -6,7 +6,7 @@
 // Pure logic: the game says what the weather and the girls are doing and where
 // the spots are, and does the walking and sitting this module asks for.
 //
-// A spot is { id, kind: 'bale' | 'fence' | 'shelter', x, z, yaw, seat? }. `seat` is the
+// A spot is { id, kind: 'bale' | 'fence' | 'bench' | 'shelter', x, z, yaw, seat? }. `seat` is the
 // height she sits at (none for shelter, where she stands); `yaw` the way she faces.
 
 import { DEFAULT_DOZE_PARAMS, DOZE_PARAM_RANGES } from './dozing.js';

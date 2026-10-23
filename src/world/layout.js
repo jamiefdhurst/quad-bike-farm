@@ -24,7 +24,46 @@ export const LAYOUT = {
   // and the `minZ` to `maxZ` that is drawn and driven on. Vehicles go by on it and visitors turn in at the gate.
   // `open` is the stretch you can ride or walk along (z from `minZ` to `maxZ`, between the farm's hedge and an invisible wall just east of
   // the tarmac); the rest is as it was, shut off by the wall along its near edge.
-  publicLane: { x: 206.4, halfWidth: 2.3, minZ: -205, maxZ: 205, open: { minZ: -60, maxZ: 160 } },
+  publicLane: { x: 206.4, halfWidth: 2.3, minZ: -205, maxZ: 205, open: { minZ: -60, maxZ: 200 } },
+  // The village, Nether Thornby (world/village.js, villageProps.js): a short ride south down the public lane, where a side road turns off to the
+  // west past the shop, the pub and the garage, with a few cottages along it, ending at a closed gate. `road` is its middle line (smoothed into a
+  // curve, `halfWidth` m either side of it with a `pavement` each side); `area` is the ground you can ride on, shut in by drystone walls (the
+  // lane's own west barrier has a gap into it where the road turns off). Every building faces the road, `yaw` 0 looking south (+z) from the road's
+  // north side and Math.PI looking north from its south side, so each footprint is a plain rectangle; `halfX` runs along the frontage and
+  // `halfZ` is the depth. `limit` is the speed limit in mph, on the signs.
+  village: {
+    name: 'Nether Thornby',
+    limit: 20,
+    road: {
+      halfWidth: 2.3,
+      pavement: 1.7,
+      points: [[206.4, 171], [200, 176], [190, 180.5], [178, 183], [166, 183.5], [154, 185], [144, 189], [134, 191], [122, 193], [110, 191], [100, 186]],
+    },
+    area: { minX: 96, maxX: 203, minZ: 163.5, maxZ: 205 },
+    // The pub: front door on its long south side, a beer garden in front and the car park to its west (`carPark`: the tarmac, with its bays).
+    pub: {
+      name: 'The Plough & Harrow',
+      x: 132, z: 178.3, yaw: 0, halfX: 8.5, halfZ: 5.5, wallHeight: 5.6, ridge: 8.8,
+      door: { x: 132 },
+      carPark: { minX: 105, maxX: 121, minZ: 171, maxZ: 184 },
+      stop: { x: 113, z: 178 }, // where a quad pulls up for the girls' pub stop (the middle of the car park)
+      benches: [{ x: 126.2, z: 186 }, { x: 137.2, z: 185.1 }],
+    },
+    shop: { name: "Pargeter's Stores", sub: 'Post Office', x: 157, z: 173.5, yaw: 0, halfX: 5.5, halfZ: 4.5, wallHeight: 5.3, ridge: 7.8, door: { x: 160.4 } },
+    garage: { name: 'Hollis Motors', x: 181, z: 198, yaw: Math.PI, halfX: 8, halfZ: 4.2, wallHeight: 4.4, ridge: 5.6, pumps: { z: 189.2, xs: [177.6, 181.6, 185.6] } },
+    cottages: [
+      { id: 'n1', x: 172, z: 174.2, yaw: 0, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'render', paint: '#d8cfae', door: '#7a2a22' },
+      { id: 'n2', x: 190, z: 169.9, yaw: 0, halfX: 3.6, halfZ: 3, wallHeight: 4.4, ridge: 6.7, wall: 'stone', door: '#2d4a3a' },
+      { id: 's1', x: 165, z: 195.4, yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'brick', door: '#23406b' },
+      { id: 's2', x: 154, z: 196.2, yaw: Math.PI, halfX: 3.6, halfZ: 3.2, wallHeight: 4.4, ridge: 6.7, wall: 'render', paint: '#cfd8c4', door: '#8a5a2b' },
+      { id: 's3', x: 143, z: 199.2, yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'stone', door: '#6b2f4a' },
+    ],
+    green: { x: 146, z: 176, r: 4.5 }, // the little green between the pub and the shop: an oak, a bench, the village sign
+    sign: { x: 197.2, z: 172.4 }, // "Nether Thornby", just inside the turning
+    phone: { x: 131.5, z: 197.4 },
+    busStop: { x: 120.5, z: 198.6 },
+    end: { barrierX: 101.2 }, // the road is shut here (a gate and a "road closed" sign)
+  },
   // The neighbour's farm (world/neighbourFarm.js, neighbourFarmProps.js): a walled yard on the lane's west side south of the farm, its gateway
   // in the east wall onto the lane. `yard` is the wall's outline (`wall` thick, `wallHeight` high); the farmhouse stands at the south with its
   // door in the north wall, the barn at the west with its big door in the east wall, and three vehicles are parked about. The neighbour herself
