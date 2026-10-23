@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import wasm from 'vite-plugin-wasm';
+import { faqTips } from './src/faq/faqContent.js';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 
@@ -25,11 +26,15 @@ function gitLogHashes() {
   }
 }
 
+// The start screen's tips, taken out of the FAQ here so the game's first page does not load the whole FAQ (1.3 MB) for them.
+const FAQ_TIPS = faqTips();
+
 export default defineConfig({
   plugins: [wasm()],
   define: {
     __GIT_LOG__: JSON.stringify(gitLog()),
     __GIT_LOG_HASHES__: JSON.stringify(gitLogHashes()),
+    __FAQ_TIPS__: JSON.stringify(FAQ_TIPS),
   },
   build: {
     target: 'es2022',

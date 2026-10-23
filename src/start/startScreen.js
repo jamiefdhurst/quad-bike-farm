@@ -3,7 +3,6 @@
 
 import './keyEditor.js';
 import { logoSvg } from './logo.js';
-import { faqTips } from '../faq/faqContent.js';
 import { currentBuild, newSince } from './sinceLast.js';
 import { browserStorage, continueInfo, wipeSave } from '../farm/farmSave.js';
 
@@ -16,7 +15,8 @@ const TIP_EVERY = 9; // seconds each tip stays up
 document.getElementById('start-logo').innerHTML = logoSvg({ prefix: 'start' });
 
 const tipEl = document.getElementById('start-tip');
-const tips = faqTips();
+/* global __FAQ_TIPS__ */
+const tips = typeof __FAQ_TIPS__ === 'object' ? __FAQ_TIPS__ : []; // from vite.config.js
 let order = tips.map((t, i) => [Math.random(), i]).sort((a, b) => a[0] - b[0]).map(([, i]) => i);
 let at = 0;
 function nextTip() {
