@@ -610,3 +610,13 @@ Settled with Jamie: every `compressionIgnition` engine (the tractor, the UTV, an
 - Girls: `dieselAir` (Amy and Jess) once there is fuel in the tank again, it is not running and it still has the lock, twice a spell like the wax; `dieselBled` (Amy only, 50%) when it clears after she spoke (`airLines.js`, recorded). Not an offer or a reaction: it is a remark on a state, like the wax.
 - Debug: "air in the fuel line" under Running and a settable one under Problems (in `problemSummary`, cleared by "Put it right"), the console's `dieselAir`, and "Bleeding a diesel" in the Tune tab's vehicle category.
 - Not done: the girls bleeding one when asked, a priming lever or pump on the models, and a sound for the pumping.
+
+## Holding the frame to its budget in CI (#364)
+
+- The budget (2,600 calls, 3.5M triangles at the spawn) had no enforcement and the spawn was over it after the village (4,477 calls, 4.36M). The smoke test now counts draw calls and triangles from `renderer.info` at five spots and fails over them: `tools/frameBudget.mjs` (`BUDGETS`), measured in the page smoke already loads. Frame ms is not checked, because software GL makes it meaningless; `perf.mjs` stays the local tool for that.
+- A spot is measured as you on foot there looking north, east, south and west, worst view kept, so a view into a hedge can't hide a busy one. Spawn is the one exception: the view the game opens on. The game doesn't draw on every animation frame, so the counts are divided by renders (`info.render.frame`), not rAF ticks.
+- Measured when set: spawn 4,477 calls and 4.36M; yard 5,652 and 4.31M; village street 5,227 and 4.24M; wood gate 3,424 and 4.14M; top of the pasture 4,271 and 7.54M. The last four got about 8% headroom (yard 6,100 and 4.7M, village 5,650 and 4.6M, wood 3,700 and 4.5M, hilltop 4,600 and 8.2M). They are strict from the start; the figures are the same on repeat runs.
+- Spawn is in `KNOWN_OVER`: reported but not failed on until the "drawing less far away" issue brings it back under, then the list is emptied.
+- The Smoke job's summary shows each spot against its budget with the change from main, measured on main's build the same way (`tools/budget.mjs`). If main can't be built or measured the table has no change column and the job still passes or fails on the budget alone.
+- Raising a budget is deliberate: change `BUDGETS` and add a line here saying what was added and why it is worth it.
+- `FeatureGuard` also times each guarded feature (smoothed, a feature run twice in a frame adds up) so the "farm features" stage can be split: the console's `perf` gives `slowestFeatures` and the Tune tab's "Frame time" folder lists the five slowest.

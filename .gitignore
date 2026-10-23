@@ -21,3 +21,6 @@ dist/
 .claude/first-run
 .claude/assistant-daemon-state.json
 .claude/settings.local.json
+
+# The frame budget's numbers, written by the smoke test and CI (tools/frameBudget.mjs).
+budget-*.json

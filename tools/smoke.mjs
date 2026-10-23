@@ -1,16 +1,19 @@
 // A smoke test: run the real game in headless Chrome and fail if it throws. `npm run smoke` locally; CI runs it in the Smoke job, which the Test check waits for (#262, #284).
 // Unit tests never build game.js, so a frame that throws (#260) is invisible to them. This clears the "Click to play" overlay so frames run,
 // plays one farm through a few phases (weather and time changed in the page, so the game loads once), and fails on a page error, a console.error, a feature the frame guard caught (core/featureGuard.js),
-// a girl or vehicle with a NaN position, a girl stood or walking more than 0.6 m off the ground, or a vehicle more than 2 m under it.
+// a girl or vehicle with a NaN position, a girl stood or walking more than 0.6 m off the ground, or a vehicle more than 2 m under it,
+// or a spot on the farm over its frame budget (draw calls and triangles; tools/frameBudget.mjs).
 //
 // It uses the built game in dist/ if there is one (?smoke exposes window.game in a build), else the dev server (SMOKE_DEV=1 forces that).
 // Drawing is skipped (the GL draw calls do nothing): on software GL the first frame alone took half a minute, and drawing finds nothing the update doesn't.
 //
 //   npm run smoke                  SMOKE_SECONDS=10 npm run smoke   shorter phases
 //   CHROME_PATH=/path/to/chrome    to use a particular Chrome (else a system Chrome is looked for)
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { createServer, preview } from 'vite';
 import puppeteer from 'puppeteer-core';
+import { MEASURE_ARGS, check, measureInPage } from './frameBudget.mjs';
+import { CHROME_ARGS, chromePath, stubDraws } from './frameBudgetRun.mjs';
 
 const SECONDS = Number(process.env.SMOKE_SECONDS || 20);
 // One load (about 20 s here, minutes on a CI runner), then phases: sunny at the real clock, then snow with the clock fast so the evening comes in.
@@ -20,15 +23,7 @@ const PHASES = [
   { name: 'snow, fast clock into dusk', weather: 'snow', clockRate: 600, seconds: SECONDS / 2 },
 ];
 
-const CHROMES = [
-  process.env.CHROME_PATH,
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  '/usr/bin/google-chrome',
-  '/usr/bin/google-chrome-stable',
-  '/usr/bin/chromium',
-  '/usr/bin/chromium-browser',
-];
-const executablePath = CHROMES.find((p) => p && existsSync(p));
+const executablePath = chromePath();
 if (!executablePath) {
   console.error('smoke: no Chrome found. Set CHROME_PATH.');
   process.exit(2);
@@ -47,8 +42,7 @@ const base = server.resolvedUrls.local[0];
 const browser = await puppeteer.launch({
   executablePath,
   headless: 'new',
-  // software GL, so it runs on a CI runner with no GPU
-  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'],
+  args: CHROME_ARGS, // software GL, so it runs on a CI runner with no GPU
 });
 
 const problems = [];
@@ -60,11 +54,7 @@ async function run() {
   await page.setViewport({ width: 320, height: 200 });
   page.on('pageerror', (e) => note(`page error: ${e.message} @ ${(e.stack || '').split('\n').slice(1, 3).join(' | ').trim()}`));
   page.on('console', (m) => { if (m.type() === 'error') note(`console.error: ${m.text().slice(0, 300)}`); });
-  await page.evaluateOnNewDocument(() => { speechSynthesis.speak = () => {}; localStorage.clear();
-    for (const C of [WebGLRenderingContext, WebGL2RenderingContext]) {
-      for (const f of ['drawArrays', 'drawElements', 'drawArraysInstanced', 'drawElementsInstanced', 'drawRangeElements']) if (C.prototype[f]) C.prototype[f] = function () {};
-    }
-  });
+  await page.evaluateOnNewDocument(stubDraws);
   await page.goto(`${base}?smoke&${QUERY}`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000 });
   const loaded = Date.now();
@@ -74,6 +64,16 @@ async function run() {
     o.style.display = 'none';
     game.audioHub.params.muted = true;
   });
+  // The frame's budget, from fixed spots on the farm while it is still sunny at the start (tools/frameBudget.mjs); the numbers go to a file for the job summary.
+  const measured = await page.evaluate(measureInPage, MEASURE_ARGS);
+  if (measured.error) note(`budget: ${measured.error}`);
+  else {
+    const { rows, failures, missing } = check(measured.spots);
+    writeFileSync(process.env.SMOKE_BUDGET_OUT ?? 'budget-pr.json', JSON.stringify(measured.spots, null, 1));
+    for (const f of failures) note(`over budget: ${f}`);
+    for (const m of missing) note(`budget: ${m} not measured (${measured.notes.join(', ') || 'no reason given'})`);
+    console.log(rows.map((r) => `  ${r.spot.padEnd(8)} ${String(Math.round(r.calls)).padStart(5)} calls ${(r.triangles / 1e6).toFixed(2)}M triangles${r.over.length ? (r.known ? '  over (known overrun)' : '  OVER') : ''}`).join('\n'));
+  }
   for (const phase of PHASES) {
     await page.evaluate((ph) => {
       game.setWeatherKind(ph.weather);

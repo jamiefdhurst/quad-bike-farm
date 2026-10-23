@@ -11594,6 +11594,7 @@ export class Game {
     this.photos.afterRender();
     fb.lap('drawing', performance.now());
     fb.end();
+    this.guard.endFrame();
     input.endFrame();
     this.firstFrameDone = true;
     this.frameStats.record(started / 1000, performance.now() - started);

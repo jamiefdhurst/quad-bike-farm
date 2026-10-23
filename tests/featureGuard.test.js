@@ -49,3 +49,42 @@ describe('FeatureGuard', () => {
     expect(g.total).toBe(0);
   });
 });
+
+describe('FeatureGuard timing (#364)', () => {
+  const clocked = () => {
+    let now = 0;
+    const g = new FeatureGuard(() => {}, () => now, 0);
+    return { g, tick: (ms) => { now += ms; } };
+  };
+
+  it('times each feature, adds up one run twice in a frame, and lists the slowest first', () => {
+    const { g, tick } = clocked();
+    g.run('cheap', () => tick(0.5));
+    g.run('dear', () => tick(3));
+    g.run('dear', () => tick(2));
+    g.endFrame();
+    expect(g.slowest(5)).toEqual([{ name: 'dear', ms: 5 }, { name: 'cheap', ms: 0.5 }]);
+    expect(g.slowest(1)).toHaveLength(1);
+    expect(g.totalMs).toBeCloseTo(5.5, 5);
+  });
+
+  it('times a feature that throws, and still counts the error', () => {
+    const { g, tick } = clocked();
+    g.run('bad', () => { tick(4); throw new Error('no'); });
+    g.endFrame();
+    expect(g.slowest()[0]).toEqual({ name: 'bad', ms: 4 });
+    expect(g.total).toBe(1);
+  });
+
+  it('smooths across frames, and a feature that stops running fades', () => {
+    let now = 0;
+    const g = new FeatureGuard(() => {}, () => now, 0.5);
+    g.run('a', () => { now += 4; });
+    g.endFrame();
+    g.run('a', () => { now += 8; });
+    g.endFrame();
+    expect(g.ms.get('a')).toBeCloseTo(6, 5);
+    g.endFrame();
+    expect(g.ms.get('a')).toBeCloseTo(3, 5);
+  });
+});
