@@ -308,6 +308,11 @@ export const LAYOUT = {
   // up, `width` across. The ground is levelled under it (terrainHeight.js); a test checks it is clear of the track, the bogs, the bales and the ramp.
   dragStrip: { x: -30, z: 19, yaw: Math.PI / 2 - 0.2, length: 56, runOff: 8, width: 10 },
 
+  // The line-up bays (world/challenges.js, lineUpBays.js): painted on the yard's grass for the tidiest line-up challenge on the barn's chalkboard. `bays` of
+  // them side by side `spacing` m apart across the row, centred on x, z, each `length` m deep with a quad's nose to yaw (a quad's yaw). Clear of the spawn
+  // keep-out and the track (a test checks).
+  lineUp: { x: -42, z: 56, yaw: Math.PI / 2, bays: 4, spacing: 2.6, length: 3.4 },
+
   // Amy's cone course (npc/coneCourse.js): a slalom across the grass west of the middle, ridden from x, z in the direction yaw (a quad's yaw, so
   // towards -z). `gates` pairs of cones, `spacing` m apart from `lead` m past the start and swinging `swing` m either side of the line in turn, each
   // gap `gateHalf` m either side of its point, then the finish `tail` m on. The ground along it and its run-up is a gentle slope (under 2 m over 40, a test checks), clear of the track, bogs, puddles and bales.
