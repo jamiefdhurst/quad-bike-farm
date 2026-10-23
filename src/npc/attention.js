@@ -4,7 +4,7 @@
 // flicking about, tires of a thing she has looked at for a while and comes back to it later (which is what makes her glance at you
 // now and then), and something startling turns her head at once. Pure: no Three.js. companion.js turns the pick into a head turn.
 //
-// The pattern for anything new the girls do (CLAUDE.md, "The girls' minds"): something that happens in the world calls
+// The pattern for anything new the girls do (.claude/rules/girls-minds.md): something that happens in the world calls
 // game.notice(kind, ...) with a kind from NOTICE_KINDS; a state says what she looks at while in it (its `look`); a sub-activity
 // inside a state calls companion.attend(...); walking to somewhere looks there first on its own.
 

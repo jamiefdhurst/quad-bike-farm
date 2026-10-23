@@ -4925,3 +4925,9 @@ Settled with Jamie: work merges faster than Jamie can try it, so what only the r
 - **Shape:** labelled `🧪 testing` plus the item's areas, no type label. "Try: <title>", then how to get there quickly, a checklist, what right looks like and what wasn't checked. The "not checked" list belongs there from now on rather than in DECISIONS.md.
 - **`/todo` skips them**; **`/test`** works one with Jamie. Small fixes are made there and then, tried on the worktree's dev server, and go in as a `🐛 bug` PR saying "Found testing #n"; bigger ones are filed as issues. Jamie closes the ticket.
 - **No backfill** of items merged before this.
+
+## A shorter CLAUDE.md (#352)
+
+- CLAUDE.md was 168 lines and 33 KB, loaded into every session. It is 60 lines and 8 KB now: what the game is, how work is done, code basics, testing, versions and finishing an item.
+- The area rules moved word for word to `.claude/rules/` (girls' minds, vehicle detail, debug panel, voice lines, FAQ, world, checking), each with `paths:` so it loads when a session touches those files. Path rules don't load for files in a sibling worktree, which is where `/todo` works, so CLAUDE.md lists them and `/todo` reads the ones its item touches.
+- New DECISIONS sections are about ten lines: what was decided, why and numbers measured. What wasn't checked goes on a `🧪 testing` issue instead.

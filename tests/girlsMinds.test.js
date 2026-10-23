@@ -1,4 +1,4 @@
-// The pattern for the girls' minds (CLAUDE.md, "The girls' minds"): every state says what she looks at and what it means for her being
+// The pattern for the girls' minds (.claude/rules/girls-minds.md): every state says what she looks at and what it means for her being
 // free, everything the game tells her about is a kind attention.js knows, and nothing decides she's free except availability(). These
 // fail until something new follows it.
 import { describe, it, expect } from 'vitest';

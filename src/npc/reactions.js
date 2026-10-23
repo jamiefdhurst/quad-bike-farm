@@ -3,7 +3,7 @@
 // smoke makes her turn away. Most come from the notices attention.js already gets (NOTICE_REACTIONS); a feature can also start one
 // directly (companion.react). Pure: which reaction, if any, and how strongly it shows over its life. companionReacting.js poses it.
 //
-// The pattern (CLAUDE.md, "The girls' minds"): a notice kind that should make her move gets a rule here; a new reaction type goes in
+// The pattern (.claude/rules/girls-minds.md): a notice kind that should make her move gets a rule here; a new reaction type goes in
 // REACTIONS with a pose in companionReacting.js, who may do it in mayReact there, and a debug button in girlActions.js.
 
 /** Each reaction: how long it lasts (seconds), how soon it's full on and how long it eases off at the end, and what it takes. */

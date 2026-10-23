@@ -3,7 +3,7 @@
 // (OFFER_KINDS). Every couple of seconds while she's free she weighs them: the needs each meets times its weight (her taste for it,
 // mostly the old chance params) times a whim, and she takes the best if it clears the bar. Pure.
 //
-// The pattern (CLAUDE.md, "The girls' minds"): a new thing a girl decides to do on her own is an offer with an OFFER_KINDS entry, not
+// The pattern (.claude/rules/girls-minds.md): a new thing a girl decides to do on her own is an offer with an OFFER_KINDS entry, not
 // a timer and a random() in its own module. A test fails if an offer kind meets no need or names one that doesn't exist.
 
 import { gaussian } from './boredom.js';
