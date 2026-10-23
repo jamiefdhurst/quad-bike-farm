@@ -11,6 +11,8 @@ import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
 import { buildOutbuildings } from './outbuildingProps.js';
 import { buildNeighbourFarm } from './neighbourFarmProps.js';
+import { buildVillage } from './villageProps.js';
+import { inVillage } from './village.js';
 import { buildBrookCulvert } from './brookProps.js';
 import { laneBarriers, nearNeighbourYard } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
@@ -54,6 +56,7 @@ export function buildProps(ctx) {
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
   const neighbourFarm = buildNeighbourFarm(c);
+  const village = buildVillage({ ...c, laneTexture });
   buildBrookCulvert(c);
   if (neighbourFarm) gates.push(neighbourFarm.gate); // the yard's own gate opens and shuts like the farm's
   const silage = bale.silage;
@@ -66,7 +69,7 @@ export function buildProps(ctx) {
   const hillProps = ctx.fields.hill ? buildHill(c) : null;
   if (ctx.fields.woods) buildWoods(c);
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { barn, jumpRamp, silage, puddles, gates, neighbourFarm, gateParams: c.gateParams, stream: hillProps?.stream ?? null, anchors: c.anchors };
+  return { barn, jumpRamp, silage, puddles, gates, neighbourFarm, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, anchors: c.anchors };
 }
 
 function buildBarn(c) {
@@ -367,7 +370,7 @@ function buildPublicLane({ scene, layout, heights, fixedBox }) {
 }
 
 /** Worn grey tarmac: speckle, a darker band down each wheel track and a pale, crumbling edge. */
-function laneTexture() {
+export function laneTexture() {
   const size = 128;
   const c = document.createElement('canvas');
   c.width = c.height = size;
@@ -678,6 +681,7 @@ function buildDistantTrees({ scene, layout, heights, fields, random }) {
     const trunk = matrixAt(x, y, z, 0, s);
     const crown = matrixAt(x, y + 5 * s, z, random() * 6, s * (3.2 + random() * 1.2), s * (3 + random()), s * (3.2 + random() * 1.2));
     if (nearNeighbourYard(layout, x, z, 45)) continue; // none stand by her yard or the lane beside it
+    if (inVillage(layout, x, z, 14)) continue; // nor in the village
     trunks.push(trunk);
     crowns.push(crown);
   }

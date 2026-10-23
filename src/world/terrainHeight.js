@@ -23,6 +23,7 @@ import { createHill } from './hill.js';
 import { createWoods } from './woods.js';
 import { createOutbuildings } from './outbuildings.js';
 import { createBrook } from './brook.js';
+import { villageShape } from './village.js';
 
 export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf, road } = layout;
@@ -32,6 +33,7 @@ export function createTerrainHeight(layout, track) {
   const woods = createWoods(layout);
   const outbuildings = createOutbuildings(layout);
   const brook = createBrook(layout);
+  const village = villageShape(layout);
   const yardHeight = baseHeight(yard.x, yard.z);
   const puddles = layout.puddles.map((u) => track.sample(u));
   const bogs = (layout.bogs ?? []).map((b) => (b.track !== undefined ? { ...track.sample(b.track), radius: b.radius } : { ...b }));
@@ -41,7 +43,8 @@ export function createTerrainHeight(layout, track) {
   const strip = layout.dragStrip;
   const stripLevel = strip ? [0, 0.25, 0.5, 0.75, 1].reduce((sum, t) => sum + baseHeight(strip.x + Math.sin(strip.yaw) * strip.length * t, strip.z + Math.cos(strip.yaw) * strip.length * t), 0) / 5 : 0;
 
-  function heightAt(x, z) {
+  /** The ground as the land lies, before anything is built on it or cut into it. */
+  function natural(x, z) {
     let h = baseHeight(x, z);
 
     // Land rises gently beyond the farm's hedges towards distant hills; through the south gate, the lane and the hill pasture have their own
@@ -55,6 +58,17 @@ export function createTerrainHeight(layout, track) {
 
     // The stubble fields' own lie: the north one's hollow, the south one's rise.
     h += fieldShape(x, z).lift;
+    return h;
+  }
+
+  function heightAt(x, z) {
+    let h = natural(x, z);
+
+    // The village's ground is laid to a plane along its road (world/village.js), over the natural lie.
+    if (village) {
+      const w = village.areaWeight(x, z);
+      if (w > 0) h += (village.planeAt(x, natural) - h) * w;
+    }
 
     // The farm road is laid level across, following the lie of the land along its middle, with a 3 m shoulder each side; the
     // hardstanding at its end is flat.
@@ -80,6 +94,12 @@ export function createTerrainHeight(layout, track) {
     // And under the Dutch barn and the field shed, to the lie of the land at their middles.
     const floor = outbuildings.floorAt(x, z, (fx, fz) => baseHeight(fx, fz) + fieldShape(fx, fz).lift);
     if (floor) h += (floor.level - h) * floor.k;
+
+    // And under the village's buildings, its car park and the garage's forecourt.
+    if (village) {
+      const pad = village.floorAt(x, z, (fx) => village.planeAt(fx, natural));
+      if (pad) h += (pad.level - h) * pad.k;
+    }
 
     // The brook's channel, cut into whatever the ground is.
     if (brook) h -= brook.cutAt(x, z);

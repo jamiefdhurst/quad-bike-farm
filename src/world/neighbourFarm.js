@@ -2,6 +2,8 @@
 // vehicles parked about, and the neighbour who lives there. Pure: the shapes (for the props, the terrain, the map and the walls), the
 // invisible walls that make a stretch of the lane ridable, and `Neighbour`, who stands about, turns to face whoever comes and greets them.
 
+import { villageShape } from './village.js';
+
 export const DEFAULT_NEIGHBOUR_PARAMS = {
   greetRange: 16, // m: you or a girl comes this close and she says hello
   greetEvery: 240, // s before she greets the same visit again (she remembers you were just here)
@@ -96,6 +98,8 @@ export function laneBarriers(layout) {
   const gaps = [];
   if (road) gaps.push([road.z - (road.gate?.width ?? 7) / 2 - 1.5, road.z + (road.gate?.width ?? 7) / 2 + 1.5]);
   if (shape) gaps.push([shape.yard.minZ - 1, shape.yard.maxZ + 1]);
+  const village = villageShape(layout);
+  if (village) gaps.push(village.laneGap); // the side road into the village turns off here
   gaps.sort((a, b) => a[0] - b[0]);
   const west = [];
   let from = lane.minZ - 20;
