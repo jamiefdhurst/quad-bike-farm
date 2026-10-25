@@ -11,13 +11,15 @@ The detailed rules for each part of the game are in `.claude/rules/`. They load 
 - `debug-panel.md`: the panel's three tabs and the console. Anything new that can be tuned, watched, set or started goes in both.
 - `voice-lines.md`: adding or changing what the girls say, and recording and committing the banks.
 - `faq.md`: the FAQ, the start screen and the logo. Every item that changes what a player sees or does updates the FAQ.
+- `controls.md`: anything you can use, pick up or talk to: the one rule for keys, the prompt, feedback, and names from `docs/glossary.md`.
+- `interface.md`: screens, the HUD and messages: the shared tokens, the close-up frame, and when to use a prompt, a toast or a girl's line.
 - `looks.md`: anything new you'll see in the world (buildings, yards, props, items): the **Looks like** brief, how detailed, and one look before the PR.
 - `world.md`: the moving day, light sources, and anything scattered over the farm in numbers (`src/world`, `src/effects`).
 - `checking.md`: the smoke test, the frame guard, headless checks, engine sound renders, frame time and load time.
 
 ## How work is done here
 
-- The to-do list is the GitHub issues (labels in `.github/settings.yml`). `/todo` works one, `/idea` adds them, `/test` tries merged work with Jamie (issues labelled `🧪 testing`, which `/todo` skips), `/perf` works `🚀 performance` issues first, measuring before and after (`/todo` takes them in number order like the rest). Each item is built in its own worktree (`tools/worktree.sh`) on a branch, opened as a PR with the issue's labels and set to merge itself when the Test check passes. Never commit to `main` or switch branch in the main checkout: other sessions are working in it.
+- The to-do list is the GitHub issues (labels in `.github/settings.yml`). `/todo` works one, `/idea` adds them, `/test` tries merged work with Jamie (issues labelled `🧪 testing`, which `/todo` skips), `/perf` works `🚀 performance` issues first, measuring before and after, and `/tidy` works `🧩 cohesion` issues first and checks for drift (`/todo` takes both in number order like the rest). Each item is built in its own worktree (`tools/worktree.sh`) on a branch, opened as a PR with the issue's labels and set to merge itself when the Test check passes. Never commit to `main` or switch branch in the main checkout: other sessions are working in it.
 - Autonomous: don't ask whether to write the code, just do it. Ask only for a real decision the issue doesn't settle (look, feel, scope, which of two behaviours): once, up front, a short numbered list with a recommendation for each. Jamie answers in a matching numbered list.
 - When you start an item, say its number, title and link before anything else.
 - Plan briefly, then build. Keep to the item; note other ideas at the end rather than doing them.

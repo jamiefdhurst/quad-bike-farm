@@ -39,3 +39,8 @@ One look per new thing, two rounds at most. A unit test can't tell a shop from a
 - Shoot it in the running game with the overlay cleared and the HUD hidden: four sides and one close-up of the busiest face, in daylight. `tools/shot.mjs` (#384) once it exists; until then `.scratch/pp/villageshot.mjs` and `redshot.mjs` are the pattern to copy (`checking.md` for the dev server and the overlay).
 - Look at each shot at full size, and crop the original for anything small (never judge detail from a shrunken contact sheet), against the "Looks like" list. Fix what's missing or wrong and take one more round if you must, then stop.
 - Say in the PR summary to Jamie what you looked at, and put anything you couldn't judge (it reads right at dusk, it looks right from the lane) on the item's testing issue.
+
+## Light and size
+
+- **Lit like the world.** Everything in the world uses a lit material (`MeshStandardMaterial` or the like). Only things that give light (a lamp's lens, fire, a screen) or the sky are unlit; an unlit material on anything else glows at night and in shade. #414 adds a test with the named exceptions.
+- **The right size.** Build to real sizes: doors about 2 m by 0.9 m, a step about 18 cm, a bench or worktop about 0.9 m, a seat 0.45 m, things you carry their real size against the player's eye height and the girls' height. #414 adds a table of real sizes for the world (like the vehicles' `REAL_SIZES`) and a test; until then, check against a real example.

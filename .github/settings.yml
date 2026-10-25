@@ -67,6 +67,9 @@ labels:
   - name: "🚀 performance"
     color: d93f0b
     description: "How fast it runs and loads: draw calls, frame time, stutters, load time; /perf works these"
+  - name: "🧩 cohesion"
+    color: 6f42c1
+    description: "Making the game hang together: one way to do things, one look, one name; /tidy works these"
   # Workflow.
   - name: "🔜 next"
     color: 0e8a16
