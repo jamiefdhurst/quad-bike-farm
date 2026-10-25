@@ -7,8 +7,10 @@ import { distanceToTile } from './tiles.js';
 
 /** Scene children that are vehicles (and trailers, the sprayer): they lose small parts and then their shadow with distance. */
 export const VEHICLE_NAMES = ['quad', 'trailer', 'tipTrailer', 'sprayer'];
-/** The barn's fixtures, drawn only within `barnPropsDistance`: the pegboard-and-rack clutter that cannot be seen from outside. */
-export const BARN_PROP_NAMES = ['tyreRack', 'sparesRack', 'batteryCharger', 'helmetHooks', 'jumperRack', 'generator', 'axle-stand', 'trolley-jack', 'fuelTank'];
+/** The barn's fixtures, drawn only within `barnPropsDistance`: the pegboard-and-rack clutter inside it that cannot be seen from outside. Never
+ * anything standing outside the barn (the fuel tanks and the generator are in the yard and along the annex wall, and vanished at 15 m: #402);
+ * tests/farDetail.test.js checks each one with a place in the layout is inside the barn. */
+export const BARN_PROP_NAMES = ['tyreRack', 'sparesRack', 'batteryCharger', 'helmetHooks', 'jumperRack', 'axle-stand', 'trolley-jack'];
 /** Whole set pieces, drawn only within `setPieceDistance` of their nearest edge. The village does the same itself (villageHost.js). */
 export const SET_PIECE_NAMES = ['neighbourFarm', 'brushwood', 'logs', 'coneCourse', 'climbCones'];
 
