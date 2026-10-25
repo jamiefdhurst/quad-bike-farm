@@ -33,4 +33,5 @@ Follow `/todo` (`.claude/commands/todo.md`) for everything not said here: say th
 2. Find the biggest cost. In order: anything over a CI budget; the spot with the highest ms a frame and why (draw calls, triangles, or a feature in the slowest list; take `--profile 10 --dev` if it isn't obvious); the worst frame if it is over about 33 ms (a stutter); the loading step that takes longest.
 3. Compare with the last check-up or performance section in `docs/decisions/performance.md` and say what has crept up since, and which merges did it (`git log --since`).
 4. Check whether an open `🚀 performance` issue already covers it. If one does, say which and recommend `🔜 next` for it. If not, draft one as `/idea` does (title, what to change, the numbers that show it, what it builds on, labels `🔨 task` or `⚡ enhancement` plus `🚀 performance` and the area), and ask Jamie before filing.
-5. Tell Jamie the numbers in a short table, what has crept up, and the one thing you'd do next.
+5. **Record it**: a line at the end of `docs/perf-checks.md` with the date, the commit measured, the headline numbers and what you proposed, committed through a small PR (`📚 documentation`, `🚀 performance`) if nothing else is going in. The session-start reminder reads it.
+6. Tell Jamie the numbers in a short table, what has crept up, and the one thing you'd do next.
