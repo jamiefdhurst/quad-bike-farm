@@ -353,7 +353,7 @@ export const FAQ_SECTIONS = [
         a: `In a hard frost the diesel waxes: it goes thick in the filter. A diesel left out in the open, especially with the engine off, loses power, runs
           roughly and cuts out, and when it is really waxed it won't start at all. Nothing is broken. Warm it: a running engine melts the wax, and so does a
           milder spell or the sun. Quicker, take the diesel anti-gel from the ground by the coolant bottle (<kbd>E</kbd> to pick it up), look at the
-          vehicle and hold <kbd>Y</kbd> to treat the tank. Treated fuel won't wax and clears what has. Keep it in the barn on a hard frosty night and it is
+          vehicle and hold <kbd>E</kbd> to treat the tank. Treated fuel won't wax and clears what has. Keep it in the barn on a hard frosty night and it is
           fine. Petrol quads never wax.`,
         tip: 'A diesel dying on a hard frost has waxed. Warm it up, or treat the tank with the anti-gel by the coolant.',
       },
@@ -530,7 +530,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'I’m stuck in a bog.',
         a: `Go into a bog slowly, or stop in one, and it drags you down. Not too deep: rock it, forwards, backwards, forwards, and each change of direction
-          works it looser. Too deep: use the RB300's winch (look at the RB300, <kbd>X</kbd> to take the hook, walk it over, <kbd>E</kbd> on the stuck
+          works it looser. Too deep: use the RB300's winch (look at the RB300's hook, <kbd>E</kbd> to take it, walk it over, <kbd>E</kbd> on the stuck
           quad, then hold <kbd>X</kbd> by the RB300 to wind in), or the tractor's tow chain. Next time, charge it with a run-up. A girl who has bogged her
           own quad calls for you instead (see the next question).`,
         tip: 'Stuck? Rock it: forwards, backwards, forwards. Each change of direction works it looser.',
@@ -544,12 +544,12 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I get the RB300 up a bank or out of a bog when it won’t start?',
-        a: `Look at the RB300, press <kbd>X</kbd> to take the winch hook, walk it to a tree (look at the trunk, within about six metres, and press <kbd>E</kbd>), then
+        a: `Look at the hook on the RB300's front and press <kbd>E</kbd> to take it, walk it to a tree (look at the trunk, within about six metres, and press <kbd>E</kbd>), then
           hold <kbd>X</kbd> by the RB300 or sitting on it. The cable draws tight and the RB300 pulls itself up to the tree with its brakes off, engine running or
           not, and stops a couple of metres short. It groans when it is working hard. <kbd>E</kbd> on the same tree takes the hook off. The hook also goes on the
           tractor, the cars, the Land Rovers and the UTV: those are too heavy to drag, so the RB300 winds itself up to them instead. Any other quad is still dragged
           to the RB300.`,
-        tip: 'Winch hook on a tree (E), then hold X by the RB300: it pulls itself up, engine or no engine.',
+        tip: 'Take the winch hook with E, hook the tree with E, then hold X by the RB300: it pulls itself up, engine or no engine.',
       },
       {
         q: 'Why won’t the winch pull the tractor?',
@@ -803,7 +803,7 @@ export const FAQ_SECTIONS = [
           is low (look for a damp patch on the ground under it) or the thermostat has stuck shut, which can be there from the start or come on after a long run.
           It loses power and runs rough, steams if it gets worse, and past the top it cuts out and won't start until it has cooled for a minute or two. The red
           lamp or red symbol on the dash lights as the needle goes in. Switch it off and let it cool. Then take the coolant bottle (it stands by the oil bottle
-          at the petrol tank), look at the vehicle with the engine off and cool, and hold <kbd>Y</kbd> to top up. With the radiator full, keep holding it and the
+          at the petrol tank), look at the vehicle with the engine off and cool, and hold <kbd>E</kbd> to top up. With the radiator full, keep holding it and the
           coolant flushes through, which frees a stuck thermostat. A weeping hose keeps weeping until it is mended at the workbench, which also changes the thermostat.`,
       },
       {
@@ -933,7 +933,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I get a girl to show me something?',
-        a: `Sit on the back of a parked quad (<kbd>B</kbd> on it) and let one of them come and drive you. Most of her drives with you aboard go to see something when there
+        a: `Sit on the back of a parked quad (look at its back seat and press <kbd>E</kbd>) and let one of them come and drive you. Most of her drives with you aboard go to see something when there
           is something to see. Leave the big gate open, or a quad running with nobody on it for a minute or two, and that is what she is likelier to take you to.`,
       },
       {
@@ -1273,10 +1273,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I get a girl to drive me about?',
-        a: `Ask her from the wheel ("Take me for a ride"), or just sit on the back of a parked quad (<kbd>B</kbd>) and wait: after a while a free girl
+        a: `Ask her from the wheel ("Take me for a ride"), or just sit on the back of a parked quad (<kbd>E</kbd> at its back seat) and wait: after a while a free girl
           comes over and drives you about in big loops. On the back, <kbd>E</kbd> opens a wheel to ask her to stop, slow down, speed up, let you off,
           let you drive, or coach her.`,
-        tip: 'Sit on the back of a parked quad with B and wait: one of the girls will come and drive you.',
+        tip: 'Sit on the back of a parked quad with E and wait: one of the girls will come and drive you.',
       },
       {
         q: 'Can I teach them to ride better?',
@@ -1840,7 +1840,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I give the girls a hay ride?',
-        a: `Back the tractor's drawbar up to the bale trailer's ring and press <kbd>J</kbd>. Stop with it hitched and the girls climb on by themselves.
+        a: `Back the tractor's drawbar up to the bale trailer's ring and press <kbd>J</kbd> (or get off and press <kbd>E</kbd> at the drawbar). Stop with it hitched and the girls climb on by themselves.
           On the tractor alone, they may climb onto the rear mudguards.`,
       },
       {
@@ -2148,14 +2148,14 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I use the tow chain?',
-        a: `Look at the tractor and press <kbd>X</kbd> to take the chain, <kbd>E</kbd> on a stuck quad to hook it, then back the tractor up and drive off.`,
+        a: `Look at the tractor's drawbar and press <kbd>E</kbd> to take the chain, <kbd>E</kbd> on a stuck quad to hook it, then back the tractor up and drive off.`,
       },
       {
         q: 'How do I tow a dead quad with another quad?',
-        a: `Look at the Farm 300 or Bruin (the RB300 keeps its winch on <kbd>X</kbd>) and press <kbd>X</kbd> to take the tow rope off its rack. Walk the hook to the dead quad and press
-          <kbd>E</kbd> on it, then get on the towing quad and ride off gently. <kbd>E</kbd> on the dead quad unhooks it, and <kbd>X</kbd> puts the rope back. The rope stretches and goes slack, unlike the tractor's chain, and
+        a: `Look at the rack of the Farm 300 or Bruin (the RB300 keeps its winch) and press <kbd>E</kbd> to take the tow rope off it. Walk the hook to the dead quad and press
+          <kbd>E</kbd> on it, then get on the towing quad and ride off gently. <kbd>E</kbd> on the dead quad unhooks it, and <kbd>G</kbd> puts the rope back. The rope stretches and goes slack, unlike the tractor's chain, and
           the dead quad has its brakes off, so it rolls on if you stop.`,
-        tip: 'Tow rope: X at a Farm 300 or Bruin, E on the dead one. Take up the slack gently.',
+        tip: 'Tow rope: E at the rack of a Farm 300 or Bruin, E on the dead one. Take up the slack gently.',
       },
       {
         q: 'How do I get a girl to steer the quad I am towing?',
@@ -2168,13 +2168,13 @@ export const FAQ_SECTIONS = [
       },
       {
         q: "Why won't the tow rope come off the quad, or hook on?",
-        a: `The RB300's <kbd>X</kbd> is its winch, so take the rope from the Farm 300 or the Bruin, with your hands empty and on foot. A trailer on the same quad's hitch has to come off first. The rope only reaches a few metres from the hitch
+        a: `The RB300 keeps a winch instead, so take the rope from the Farm 300 or the Bruin, with your hands empty and on foot. A trailer on the same quad's hitch has to come off first. The rope only reaches a few metres from the hitch
           and comes out of your hand if you go further or get on something.`,
       },
       {
         q: 'Can the girls ride in the Yak and the Moorland?',
         a: `Yes. Stop with the engine running and they may climb in, squabbling over the middle seat. Jess may ride in the Yak's bed, which is against the rules.
-          They drive both too (Amy only once she's had her day on the tractor), and you can ride beside the driver. The Crag has a back bench as well: ask a girl to "Get in the back", or look at its back half and press <kbd>B</kbd> to sit there yourself.`,
+          They drive both too (Amy only once she's had her day on the tractor), and you can ride beside the driver. The Crag has a back bench as well: ask a girl to "Get in the back", or look at its back half and press <kbd>E</kbd> to sit there yourself.`,
       },
       {
         q: 'What is the other Moorland, the Crag?',
@@ -2307,7 +2307,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Can I ride in their cars?',
-        a: `Yes. While one of them is driving, look at the car and press <kbd>E</kbd> to get in beside her, or look at its back half and press <kbd>B</kbd> to get in the back. There are
+        a: `Yes. While one of them is driving, look at the car and press <kbd>E</kbd> to get in beside her, or look at its back half and press <kbd>E</kbd> to get in the back. There are
           four seats, two in front and two behind, all with belts (<kbd>;</kbd>). The front seat tips forward to let people into the back, as they are both three-doors.`,
       },
     ],
@@ -2468,7 +2468,7 @@ export const VEHICLE_NOTES = {
   },
   green: {
     blurb: 'The Ridgeback RB300, the workhorse: older, heavier and slower, with a big lazy four-stroke that idles low and lumpy and pulls hard low down.',
-    tips: ['Has the winch: X to take the hook.', 'Takes an age to warm up and wants plenty of choke.', 'The choke slides on the switch housing on the left bar.', 'Always four-wheel drive.'],
+    tips: ['Has the winch: E at the hook to take it.', 'Takes an age to warm up and wants plenty of choke.', 'The choke slides on the switch housing on the left bar.', 'Always four-wheel drive.'],
   },
   orange: {
     blurb: 'The Viper Adder 250, a two-stroke race quad: a triangle of a quad on a blue frame with big flat side panels and a wide duck-tail, lighter and lower than the Hornet. It revs to 11,500 and smokes like a chimney.',
