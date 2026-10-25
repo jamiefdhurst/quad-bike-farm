@@ -105,6 +105,8 @@ export function buildGameTree(g, host) {
         folded: flag(() => !!g.trailerOf(q())?.motion.jammed, (v) => g.debugJackknife(u(), !!v), 'is the trailer on its hook folded against it? Set true to fold it, false to straighten it'),
         winch: flag(() => { const w = g.winch; return !!w && w.state === 'hooked' && (u() === w.unit ? !!w.anchor : w.target === q()); }, (v) => { const w = g.winch; const on = !!w && w.state === 'hooked' && (u() === w.unit ? !!w.anchor : w.target === q()); if (!!v !== on) g.hud.toast(g.debugWinch(u())); }, 'is the green\'s winch hooked on it? Set true to hook it (on the green itself, the nearest tree), false to take it off'),
         towRope: flag(() => g.towRope.target === q(), (v) => { if (!!v !== (g.towRope.target === q())) g.hud.toast(g.debugTowRope(u())); }, 'is the tow rope hooked on it? Set true to hook it from the nearest utility quad, false to take it off'),
+        engineOut: flag(() => !!u().engineOut, (v) => g.debugEngineOut(u(), !!v), 'is the engine out on the floor by the parts rack? Set true to take it out, false to fit the first spare that suits it'),
+        engineFrom: text(() => (u().engineOrigin ? `the ${u().engineOrigin.label}'s` : 'its own'), 'whose engine is in it (swapped at the bench)'),
         battery: num(() => e().battery, (v) => (e().battery = v), 0, 1),
         charging: ro(() => (e().isRunning ? netCharge(e().rpm, e().params.idleRpmWarm, e().params.maxRpm, e().lightLoad, e().params.batteryChargeRate, e().params) * 60 : 0), '/min', 'battery gained a minute at these revs and lamps'),
         fuel: num(() => q().fuel.litres, (v) => (q().fuel.litres = v), 0, q().fuel.params.tankCapacity, 'litres'),

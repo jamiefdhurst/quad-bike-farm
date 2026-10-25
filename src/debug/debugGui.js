@@ -374,12 +374,14 @@ export class DebugGui {
     set(p, 'tap bowl full of water', () => round(unit().quad.fuel.sediment), (v) => (unit().quad.fuel.sediment = v), 0, 1);
     set(p, 'diesel soaked', () => round(unit().engine.dieselSoak), (v) => (unit().engine.dieselSoak = v), 0, 1);
     if (e.params.strokes === 2) set(p, 'silencer blown', () => round(unit().engine.silencerBlown), (v) => (unit().engine.silencerBlown = v), 0, 1);
+    tick(p, 'engine out (on the floor by the parts rack)', () => !!unit().engineOut, (v) => this.game.debugEngineOut(unit(), v));
+    show(p, 'engine in it', () => (unit().engineOrigin ? `the ${unit().engineOrigin.label}'s` : 'its own'));
     show(p, 'running in / scar', () => `${round(unit().engine.runIn)} / ${round(unit().engine.scar)}`);
     const buttons = {
       clearFaults: () => clearFaults(unit().quad.faults),
       batteryOut: () => this.game.debugBatteryOut(unit()),
       batteryIn: () => this.game.debugBatteryIn(unit()),
-      fix: () => (fixEverything(unit()), this.game.debugBatteryIn(unit())),
+      fix: () => (fixEverything(unit()), this.game.debugBatteryIn(unit()), this.game.debugEngineOut(unit(), false)),
       crash: () => unit().quad.crashHeadOn(1),
     };
     p.add(buttons, 'crash').name('Hit a post head-on (bends a rod?)');
@@ -446,7 +448,7 @@ export class DebugGui {
     row(one, 'Hook the tow rope on it / take it off', () => g.hud.toast(g.debugTowRope(this.unit())));
     row(one, 'Jack-knife the trailer on it', () => g.hud.toast(g.debugJackknife(this.unit())));
     row(one, 'Straighten the trailer on it', () => g.hud.toast(g.debugJackknife(this.unit(), false)));
-    row(one, 'Put it right (faults, plug, filter, wear; not quirks)', () => (fixEverything(this.unit()), g.debugBatteryIn(this.unit()), g.trailerOf(this.unit().quad)?.motion.jammed && g.debugJackknife(this.unit(), false)));
+    row(one, 'Put it right (faults, plug, filter, wear; not quirks)', () => (fixEverything(this.unit()), g.debugBatteryIn(this.unit()), g.debugEngineOut(this.unit(), false), g.trailerOf(this.unit().quad)?.motion.jammed && g.debugJackknife(this.unit(), false)));
     row(one, 'Splat mud on the lens', () => g.debugLens('splat'));
     row(one, 'Wipe the lens (once smears, twice clears)', () => g.debugLens('wipe'));
     row(one, 'Take me to it', () => {
@@ -459,7 +461,7 @@ export class DebugGui {
     row(all, 'Start them all (warm, fuel on)', () => g.units.forEach(startOne));
     row(all, 'Switch them all off (fuel off)', () => g.units.forEach(stopOne));
     row(all, 'Warm them all up', () => g.units.forEach((u) => u.engine.setTemperature(1)));
-    row(all, 'Put them all right (not quirks)', () => g.units.forEach((u) => (fixEverything(u), g.debugBatteryIn(u))));
+    row(all, 'Put them all right (not quirks)', () => g.units.forEach((u) => (fixEverything(u), g.debugBatteryIn(u), g.debugEngineOut(u, false))));
     row(all, 'Put them all back in the yard', () => g.units.forEach((u) => u.resetToSpawn(g.world)));
     all.close();
   }
