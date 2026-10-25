@@ -6,7 +6,8 @@ import * as THREE from 'three';
  *   {
  *     target: Object3D,          raycast against this (usually an invisible proxy)
  *     isAvailable(): boolean,    optional, defaults to true
- *     prompt(): string | {text}, an E action ("Ride the quad") or plain text ({ text: 'The can is full' })
+ *     prompt(): string | {text} | {action, hold, keys} | {info, keys}: an E action ("Ride the quad") or a line saying why not
+ *                                ({ text: 'The can is full' }); prompt.js sets the shapes
  *     interact(): void,          called when E is pressed while focused
  *     hold(dt): boolean,         optional, called every frame E is held; true while something is happening
  *     range(): number,           optional, how far away it can be reached (defaults to the player's reach)
@@ -29,6 +30,8 @@ export class Interaction {
   }
 
   add(item) {
+    // Everything you can use says what it is (see prompt.js); one that cannot would be a thing you look at and nothing happens.
+    if (typeof item.prompt !== 'function') throw new Error('An interactable needs a prompt()');
     this.items.push(item);
     return item;
   }

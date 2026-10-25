@@ -12396,7 +12396,7 @@ export class Game {
     const onBack = this.player.isRiding && this.player.seat === 'pillion' && !this.menu.isOpen;
     this.hud.setCrosshairVisible(!onBack);
     if (onBack) p = '';
-    this.hud.setPrompt(typeof p === 'string' ? (p ? { action: p } : null) : p.action ? p : p.text);
+    this.hud.setPrompt(p);
     // No readout for the quad: its dash is all you get.
     if (this.chain?.state === 'carried') {
       this.hud.setStatus('Tow chain\nE on a quad to hook it on, X to put it back\nThen drive the tractor off, forwards');

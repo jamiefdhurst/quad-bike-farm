@@ -26,7 +26,7 @@ Each context has its own key map, and within a context a key means one thing: **
 
 ## Every act
 
-- **A prompt.** Everything you can use shows the prompt (`hud.setPrompt`) when you look at it: the key, "hold" if it is one, and what it does, using the glossary's name for the thing ("E  Pick up the jerry can"). Once #416's registry lands, add it there rather than to `game.js`'s prompt code.
+- **A prompt.** Everything you can use shows the prompt (`hud.setPrompt`) when you look at it: the key, "hold" if it is one, and what it does, using the glossary's name for the thing ("E  Pick up the jerry can"). `Interaction.add` refuses a thing with no `prompt()`; `src/interaction/prompt.js` is the one shape (`{ action, hold, keys }` for an act, `{ info, keys }` for a reason you can't), and the HUD draws every prompt from it. Write new prompts in that shape; a string is an E action and `{ text }` a reason.
 - **Feedback.** It makes a sound and shows a change, and a girl reacts where she'd notice. A toast is not feedback for something you can see happen (`interface.md`).
 - **Listed.** The key goes in `src/hud/controls.js` (the help and the FAQ read it) and the FAQ answers how to do it (`faq.md`).
 - **Names** come from `docs/glossary.md`: one name for each place, thing and job, in prompts, toasts, the girls' lines, the FAQ, the guide, the console and the panel. A new thing gets its entry there first, and `tests/glossary.test.js` fails on a variant it lists (a girl's line that has one needs re-recording: `voice-lines.md`).

@@ -25,6 +25,12 @@ export const FAQ_SECTIONS = [
         tip: 'Press H at any time for the controls.',
       },
       {
+        q: 'What does the prompt in the middle of the screen mean?',
+        a: `Look at anything you can use and it says what <kbd>E</kbd> does. "hold E" means the job takes time (pouring, filling, washing, forking muck): keep the key down until it is done.
+          Other keys that work on the same thing are listed under it, such as <kbd>G</kbd> to put down what you are holding. A line with no key is the game saying why you can't, such as "The jerry can is full".`,
+        tip: 'The prompt says "hold E" for a job that takes time, "E" for a press.',
+      },
+      {
         q: 'How do I call a girl over, or tell her to stop?',
         a: `Look at her and press <kbd>E</kbd> to open her wheel. Whatever she is up to, it has "Come here" (she gets off whatever she is on and
           walks over to you), "Stop there" (when she is on her way somewhere) and "I'll be a minute" (she gets a quad going and waits on the back

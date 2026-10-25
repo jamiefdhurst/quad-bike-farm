@@ -2,6 +2,7 @@
 // controls help panel.
 
 import { spreads } from '../achievements/pages.js';
+import { normalisePrompt, promptSignature } from '../interaction/prompt.js';
 import { CONTROLS, controlsHtml } from './controls.js';
 import { KEYS_EVENT, keyStorage, loadBindings, relabelKbd } from '../input/keyMap.js';
 
@@ -48,21 +49,18 @@ export class Hud {
   }
 
   /**
-   * What you can do with what you're looking at: plain text, or { action, keys }
-   * where the action is what E does and keys are the other keys that work, as
-   * [key, what it does] pairs shown as little chips.
+   * What you can do with what you're looking at, as the interaction module's one shape (`normalisePrompt`):
+   * { action, hold?, keys? } is what E (or holding E) does, with the other keys that work as [key, what it does] chips;
+   * { info, keys? } is a line with nothing to press.
    */
   setPrompt(prompt) {
-    const sig = typeof prompt === 'string' || !prompt ? (prompt ?? '') : JSON.stringify(prompt);
+    const p = normalisePrompt(prompt);
+    const sig = promptSignature(p);
     if (this.promptSig === sig) return;
     this.promptSig = sig;
     const el = this.prompt;
     el.replaceChildren();
-    if (!prompt) return;
-    if (typeof prompt === 'string') {
-      el.textContent = prompt;
-      return;
-    }
+    if (!p) return;
     const chip = (key, label, cls = '') => {
       const row = document.createElement('span');
       row.className = `prompt-item ${cls}`;
@@ -71,11 +69,17 @@ export class Hud {
       row.append(k, document.createTextNode(label));
       return row;
     };
-    el.appendChild(chip('E', prompt.action, 'prompt-main'));
-    if (prompt.keys?.length) {
+    if (p.action) el.appendChild(chip(p.hold ? 'hold E' : 'E', p.action, 'prompt-main'));
+    else {
+      const line = document.createElement('span');
+      line.className = 'prompt-item';
+      line.textContent = p.info;
+      el.appendChild(line);
+    }
+    if (p.keys.length) {
       const row = document.createElement('div');
-      row.className = 'prompt-keys';
-      for (const [key, label] of prompt.keys) row.appendChild(chip(key, label));
+      row.className = p.action ? 'prompt-keys' : 'prompt-keys prompt-keys-bare';
+      for (const [key, label] of p.keys) row.appendChild(chip(key, label));
       el.appendChild(row);
     }
   }
