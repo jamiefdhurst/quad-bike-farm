@@ -7,6 +7,7 @@
 
 import { DEFAULT_FARM_PARAMS } from './farmSave.js';
 import { TAP_POSITIONS } from '../vehicle/fuelSystem.js';
+import { captureSwap, restoreSwap } from '../vehicle/engineSwap.js';
 
 // Engine values that are its condition rather than its running state (rpm, heat, choke). Restored only when the save has them.
 export const ENGINE_KEPT = ['wear', 'pistonWear', 'fouling', 'scuff', 'seized', 'silencerBlown', 'silencerOff', 'runIn', 'scar', 'coolant', 'coolantLeak', 'thermostat', 'boiled', 'dieselSoak', 'bore', 'boreFit', 'battery', 'batteryOut'];
@@ -38,6 +39,8 @@ export function captureVehicle(unit, extra = {}) {
     spotlamps: q.spotlamps?.fitted ? q.spotlamps.capture() : null,
     snorkel: q.snorkel?.fitted ? q.snorkel.capture() : null,
     tapStiff: q.quirks?.tapStiff ?? null,
+    swap: captureSwap(unit), // a different engine fitted at the bench (vehicle/engineSwap.js)
+    engineOut: !!unit.engineOut,
     mud: unit.mud?.state ? { body: unit.mud.state.body, wheels: unit.mud.state.wheels } : null,
   };
   if (extra.settings) out.settings = { ...extra.settings };
@@ -66,6 +69,8 @@ export function restoreVehicle(unit, s) {
   if (!s) return;
   const e = unit.engine;
   const q = unit.quad;
+  restoreSwap(unit, s.swap); // first: its numbers are the engine's now, and the rest of what is kept goes on top
+  if (s.engineOut) unit.engineOut = true;
   if (num(s.roughness)) e.params.baseRoughness = s.roughness;
   if (num(s.hours)) q.usage.hours = s.hours;
   if (num(s.odo)) q.usage.odoMiles = s.odo;

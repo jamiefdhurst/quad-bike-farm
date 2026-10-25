@@ -1024,10 +1024,19 @@ export const FAQ_SECTIONS = [
         tip: 'Revs flaring without the speed on a manual quad means a worn clutch: do not hold it at the bite, and fit a new plate at the workbench.',
       },
       {
+        q: 'Can I put a different engine in a quad?',
+        a: `Yes, once the barn find runs. Park it in the yellow bay, switch it off, open the bench and press <kbd>R</kbd> for the second page: "Take the engine out" lifts it clear
+          and stands it on the floor by the parts rack (the rack's panel lists it, and how worn it is). Then park another quad, open the same page and pick "Fit the spare engine". The
+          engine comes with its character: its idle, how high it revs, how rough it runs, its sound and its wear. The quad keeps its body, its gearbox or belt, its tank and its dash.
+          The engine that comes out goes on the floor in its place, so you can fit it back, or in the barn find's empty body. A two-stroke only takes a two-stroke and a manual's only
+          another manual's. A new engine wants running in, like any rebuilt one, and if you rush the bolts it rocks on its mounts and runs rough.`,
+        tip: 'Pull the barn find\'s engine at the bench (R for page two) and fit it in another quad of the same sort.',
+      },
+      {
         q: 'What can the workbench do?',
         a: `Drive into the yellow bay in front of it, switch off, look at the bench and press <kbd>E</kbd>. <kbd>1</kbd> to <kbd>9</kbd>, <kbd>0</kbd>, <kbd>-</kbd>, <kbd>=</kbd>, <kbd>[</kbd>, <kbd>]</kbd>, <kbd>;</kbd>, <kbd>'</kbd> and <kbd>.</kbd> pick a job: a new plug,
           clean the carb, fix a tyre, two-stroke oil, engine oil, repack a silencer, coolant, a big-bore kit, new engine mounts, a top-end rebuild for a two-stroke that has seized, adjusting and oiling the chain on the three chain-driven quads, setting the valve clearances on a four-stroke, renewing a split intake boot on a petrol engine, fitting a new clutch plate on a manual quad, or new tyres on a worn axle (from the tyre rack). <kbd>R</kbd> turns to a second page of jobs that need the shed kit from the catalogue (compressor, parts washer, pit). Each is a short list of steps; on a hold step keep
-          <kbd>E</kbd> down and let go inside the green band. Too soon or too long botches it and the fault comes back a little. Amy helps; Jess heckles.`,
+          <kbd>E</kbd> down and let go inside the green band. Too soon or too long botches it and the fault comes back a little. Swapping engines is on the second page (<kbd>R</kbd>). Amy helps; Jess heckles.`,
       },
       {
         q: 'How do I buy a compressor, a parts washer or a pit?',

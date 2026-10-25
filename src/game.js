@@ -313,6 +313,7 @@ import { weatherModel, buildTarp } from './vehicle/rustyLook.js';
 import { planDamage, applyDamage } from './vehicle/rustyDamage.js';
 import { Notebook } from './workshop/notebook.js';
 import { SparesShelf } from './workshop/sparesShelf.js';
+import { canPull, fitIndex } from './vehicle/engineSwap.js';
 import { FARM_JOBS, MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs, feedWanted } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
 import { ClassifiedsView } from './world/classifiedsView.js';
@@ -4895,10 +4896,11 @@ export class Game {
     if (find.brakeSeized) unit.quad.parkBrake = true;
     unit.quad.kickLocked = find.kickSeized;
     if (!e.params.noStarter && find.setBattery(e.battery, !e.batteryOut)) this.notebook.note(unit, { kind: 'job', job: 'battery' }, { by: 'you' });
-    e.startBlocked = find.startBlocked;
+    e.startBlocked = find.startBlocked || !!unit.engineOut; // (its engine is out on the floor, once pulled)
     // Cranking it before it's ready: it tells you why.
     const cranking = e.state === 'cranking';
     if (cranking && !unit.findWasCranking && find.startBlocked && find.tarpOff) this.hud.toast(find.blockedReason(), 3.2);
+    else if (cranking && !unit.findWasCranking && unit.engineOut) this.hud.toast('There is no engine in it', 3.2);
     unit.findWasCranking = cranking;
     // The first start: smoke everywhere, and both girls cheer.
     if (e.isRunning && find.ready && !find.started) {
@@ -11054,6 +11056,12 @@ export class Game {
     if (b.out) return;
     const q = unit.quad.position;
     b.putDown({ x: q.x + 1.6, z: q.z }, 0.4);
+  }
+
+  /** The panel's and the console's engine swap: true takes the engine out onto the floor by the parts rack, false fits the first spare that suits it. Same as the bench. */
+  debugEngineOut(unit, out) {
+    if (out && canPull(unit)) this.hud.toast(this.bench.pullEngine(unit));
+    else if (!out && unit.engineOut && fitIndex(this.spares.engines, unit) >= 0) this.hud.toast(this.bench.fitEngine(unit, 1));
   }
 
   debugBatteryIn(unit) {
