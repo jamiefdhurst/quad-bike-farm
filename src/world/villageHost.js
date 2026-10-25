@@ -1,9 +1,8 @@
-// The village in the running game: what you can buy there, the draw distance and the glow after dark. The shapes are world/village.js's, the drawing
+// The village in the running game: what you can buy there and the glow after dark. The shapes are world/village.js's, the drawing
 // villageProps.js's and the buying world/villageShop.js's; game.js builds this and calls update() inside the frame guard. The debug panel and the
 // console use the debug* methods.
 
 import * as THREE from 'three';
-import { distanceToTile } from './tiles.js';
 import { CoinAudio } from '../audio/coinAudio.js';
 import { PARTS } from '../workshop/spares.js';
 import { registerTuning } from '../core/tuning.js';
@@ -138,9 +137,6 @@ export class VillageHost {
     if (this.filling && !g.interaction.focused) this.filling = null;
     const dark = g.daylight?.darkness ?? 0;
     this.props.setNight(dark);
-    // The camera, not the player: riding leaves the player's own position where you got on.
-    const p = g.camera.position;
-    this.props.group.visible = distanceToTile(g.world.layout.village.area, p.x, p.z) < this.params.drawDistance;
   }
 
   /** Puts you on foot at the pub, the shop or the garage (the debug panel and the console). False if you are riding or there is no village. */

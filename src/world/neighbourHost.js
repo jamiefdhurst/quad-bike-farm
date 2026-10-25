@@ -12,7 +12,6 @@ import { applyOutfit, withJumper, OUTFITS } from '../npc/outfit.js';
 import { CompanionSounds } from '../audio/companionAudio.js';
 
 const WAVE_SECONDS = 2.4;
-const DRAW_DISTANCE = 230; // m: beyond this the whole yard is not drawn (it is a long way off, and a lot of boxes and three vehicles)
 
 export class NeighbourHost {
   constructor(game) {
@@ -65,8 +64,6 @@ export class NeighbourHost {
     const events = n.update(dt, { targets: this.targets(), darkness: dark, rain: g.weather?.rain ?? 0 });
     for (const e of events) this.onEvent(e);
     this.props.setNight(dark, n.indoors);
-    const cam = g.camera.position;
-    this.props.group.visible = Math.hypot(cam.x - this.shape.house.x, cam.z - this.shape.house.z) < DRAW_DISTANCE;
     this.watchArrival(dt);
     this.sounds.ensure();
     this.show(dt);

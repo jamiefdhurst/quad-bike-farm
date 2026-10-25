@@ -126,6 +126,30 @@ describe('FarDetail set pieces and props', () => {
     far.update({ x: 40, z: 0 }, 1, true); // 155 from the edge
     expect(farm.visible).toBe(true);
   });
+  it('swaps a set piece with a far version for it beyond fullDistance, with a margin either way', () => {
+    const village = piece('village', 200, 0); // spans x 195 to 205
+    const farVersion = new THREE.Group();
+    village.userData.farVersion = farVersion;
+    const far = new FarDetail(sceneWith(village, farVersion), params);
+    far.update({ x: 0, z: 0 }, 1, true);
+    expect([village.visible, farVersion.visible]).toEqual([false, true]);
+    far.update({ x: 160, z: 0 }, 1, true); // 35 from the edge
+    expect([village.visible, farVersion.visible]).toEqual([true, false]);
+    far.update({ x: 143, z: 0 }, 1, true); // 52 from the edge: past the distance, inside the margin
+    expect([village.visible, farVersion.visible]).toEqual([true, false]);
+    far.update({ x: 130, z: 0 }, 1, true); // 65
+    expect([village.visible, farVersion.visible]).toEqual([false, true]);
+    far.update({ x: 150, z: 0 }, 1, true); // 45 from the edge: back inside the distance only just
+    expect([village.visible, farVersion.visible]).toEqual([false, true]);
+  });
+  it('always draws the full one with a fullDistance of 0', () => {
+    const village = piece('village', 500, 0);
+    const farVersion = new THREE.Group();
+    village.userData.farVersion = farVersion;
+    const far = new FarDetail(sceneWith(village, farVersion), { ...params, fullDistance: 0 });
+    far.update({ x: 0, z: 0 }, 1, true);
+    expect([village.visible, farVersion.visible]).toEqual([true, false]);
+  });
   it('hides the barn props past the short distance', () => {
     const rack = piece('tyreRack', 0, 0);
     const far = new FarDetail(sceneWith(rack), params);

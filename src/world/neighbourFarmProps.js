@@ -9,6 +9,7 @@ import { createNeighbourFarm } from './neighbourFarm.js';
 import { canvasTexture, corrugatedTexture, stoneTexture, blockTexture, worldBox } from './outbuildingProps.js';
 import { buildVehicleBody } from './trafficView.js';
 import { enableShadows } from './assets.js';
+import { buildFarVersion } from './farVersion.js';
 import { Gate } from './gates.js';
 import { poseBaleSpike } from '../vehicle/tractorModel.js';
 import { woodTexture, paintedTexture, doorTexture, sashTexture, binTexture, barrelTexture, barkTexture, logEndTexture, postboxTexture } from './neighbourTextures.js';
@@ -132,6 +133,14 @@ function mergeStatic(group) {
 }
 
 /** Builds the neighbour's farm and its colliders. `c` is the props context (props.js). Returns null on a farm without one. */
+/** The yard from afar (world/farVersion.js): the house, the barn and the low drystone wall round the yard, no vehicles. */
+export function farNeighbourFarm(s, y0) {
+  const house = { x: s.house.x, z: s.house.z, y: y0, halfX: s.house.halfX, halfZ: s.house.halfZ, wallHeight: s.house.wallHeight, ridge: s.house.ridge, wall: '#8c877a', roof: '#42474c' };
+  const barn = { x: s.barn.x, z: s.barn.z, y: y0, halfX: s.barn.halfX, halfZ: s.barn.halfZ, wallHeight: s.barn.wallHeight, ridge: s.barn.ridge, wall: '#5d6e58', roof: '#7b5a42' };
+  const walls = s.walls.map((w) => ({ ...w, y: y0, height: s.yard.wallHeight, color: '#8c877a' }));
+  return buildFarVersion('neighbourFarmFar', { buildings: [house, barn], walls });
+}
+
 export function buildNeighbourFarm(c) {
   const { scene, layout, heights, fixedBox, random, gateParams } = c;
   const nf = createNeighbourFarm(layout);
@@ -420,8 +429,13 @@ export function buildNeighbourFarm(c) {
 
   enableShadows(group);
   scene.add(group);
+  const far = farNeighbourFarm(s, y0);
+  group.userData.farVersion = far;
+  far.visible = false; // FarDetail shows it, and hides the full yard, from a distance
+  scene.add(far);
   return {
     group,
+    far,
     vehicles,
     gate,
     /** 0..1 how dark it is: the windows and the porch lamp glow once it is (the house is lived in). */

@@ -12,6 +12,7 @@ import { villageSignTexture, limitSignTexture, roadClosedTexture, noticeTexture 
 import { worldBox } from './outbuildingProps.js';
 import { gateLeaf } from './neighbourFarmProps.js';
 import { enableShadows } from './assets.js';
+import { buildFarVersion } from './farVersion.js';
 
 const smooth = (t) => t * t * (3 - 2 * t);
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -483,6 +484,17 @@ function roadEnd(ctx) {
 }
 
 /** Builds the village and its colliders. `c` is the props context (props.js). Returns null on a farm without one. */
+/** The village from afar (world/farVersion.js): each building a box with a gabled roof in the colour of its walls and its roof. */
+const WALLS = { stone: '#8c877a', brick: '#9a5c48' };
+export function farVillage(S, heights) {
+  const buildings = S.buildings.map((b) => {
+    const wall = b.kind === 'cottage' ? (b.wall === 'render' ? b.paint : WALLS[b.wall]) : b.kind === 'shop' ? WALLS.brick : b.kind === 'pub' ? '#ece5d0' : WALLS.brick;
+    const roof = b.kind === 'garage' ? '#8d9294' : b.kind === 'cottage' && b.wall !== 'stone' ? '#a85a3e' : '#42474c';
+    return { x: b.x, z: b.z, y: heights.heightAt(b.x, b.z), halfX: b.halfX, halfZ: b.halfZ, wallHeight: b.wallHeight, ridge: b.ridge, wall, roof };
+  });
+  return buildFarVersion('villageFar', { buildings });
+}
+
 export function buildVillage(c) {
   const { scene, layout, heights, fixedBox, random } = c;
   const S = villageShape(layout);
@@ -593,9 +605,14 @@ export function buildVillage(c) {
   for (const g of ctx.groups) mergeInto(g);
   enableShadows(root);
   scene.add(root);
+  const far = farVillage(S, heights);
+  root.userData.farVersion = far;
+  far.visible = false; // FarDetail shows it, and hides the full village, from a distance
+  scene.add(far);
 
   return {
     group: root,
+    far,
     shape: S,
     cars,
     shopProxies: ctx.shopProxies,

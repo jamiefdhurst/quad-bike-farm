@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import { distanceToTile } from './tiles.js';
+import { drawFull } from './farVersion.js';
 
 /** Scene children that are vehicles (and trailers, the sprayer): they lose small parts and then their shadow with distance. */
 export const VEHICLE_NAMES = ['quad', 'trailer', 'tipTrailer', 'sprayer'];
@@ -11,11 +12,15 @@ export const VEHICLE_NAMES = ['quad', 'trailer', 'tipTrailer', 'sprayer'];
  * anything standing outside the barn (the fuel tanks and the generator are in the yard and along the annex wall, and vanished at 15 m: #402);
  * tests/farDetail.test.js checks each one with a place in the layout is inside the barn. */
 export const BARN_PROP_NAMES = ['tyreRack', 'sparesRack', 'batteryCharger', 'helmetHooks', 'jumperRack', 'axle-stand', 'trolley-jack'];
-/** Whole set pieces, drawn only within `setPieceDistance` of their nearest edge. The village does the same itself (villageHost.js). */
-export const SET_PIECE_NAMES = ['neighbourFarm', 'brushwood', 'logs', 'coneCourse', 'climbCones'];
+/**
+ * Whole set pieces, drawn only within `setPieceDistance` of their nearest edge. The village and the neighbour's farm have a cheap far version
+ * (`userData.farVersion`, world/farVersion.js) instead: always drawn, and swapped for the full one within `fullDistance`.
+ */
+export const SET_PIECE_NAMES = ['village', 'neighbourFarm', 'brushwood', 'logs', 'coneCourse', 'climbCones'];
 
 const SMALL = 0.15; // m: a part with a bounding sphere smaller than this is a small part
 const MARGIN = 5; // m: a vehicle crossing a distance has to come this far back before it changes again, so it doesn't flicker on the line
+const FULL_MARGIN = 10; // m: the full version of a set piece holds this far past `fullDistance` once drawn, so the swap doesn't flicker on the line
 const EVERY = 0.25; // s between looks at the scene
 
 /** 0 near, 1 beyond the detail distance, 2 beyond the shadow distance; `was` gives the margin. A distance of 0 switches that level off. */
@@ -43,6 +48,7 @@ export class FarDetail {
     this.vehicles = new WeakMap(); // object -> { level, small: [meshes hidden], shadows: [meshes that stopped casting] }
     this.hidden = new WeakSet(); // set pieces and props we have hidden (so we only show what we hid)
     this.boxes = new WeakMap();
+    this.full = new WeakMap(); // set piece -> whether its full version is the one drawn
   }
 
   /** Looks at the scene from `position` every quarter second (always when `now`). */
@@ -53,6 +59,7 @@ export class FarDetail {
     for (const o of this.scene.children) {
       if (VEHICLE_NAMES.includes(o.name)) this.vehicle(o, position);
       else if (BARN_PROP_NAMES.includes(o.name)) this.within(o, position, this.params.barnPropsDistance);
+      else if (SET_PIECE_NAMES.includes(o.name) && o.userData.farVersion) this.swap(o, position);
       else if (SET_PIECE_NAMES.includes(o.name)) this.within(o, position, this.params.setPieceDistance);
     }
   }
@@ -72,6 +79,14 @@ export class FarDetail {
       this.boxes.set(o, b);
     }
     return b;
+  }
+
+  /** Draws the full `o` within `fullDistance` of its nearest edge and its far version beyond (with a margin, so it doesn't flicker); 0 is always full. */
+  swap(o, position) {
+    const full = drawFull(distanceToTile(this.box(o), position.x, position.z), this.params.fullDistance, this.full.get(o) ?? o.visible, FULL_MARGIN);
+    this.full.set(o, full);
+    o.visible = full;
+    o.userData.farVersion.visible = !full;
   }
 
   /** Draws `o` only within `distance` metres of its nearest edge; 0 draws it always. */

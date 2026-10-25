@@ -85,17 +85,3 @@ describe('the garage rack and the shop counter', () => {
     expect(toasts[0]).toMatch(/^Bought a bag of sweets/);
   });
 });
-
-describe('the village stays drawn while you ride', () => {
-  it('judges the distance from the camera, not from the player, whose position stays where you got on', () => {
-    const { host, game } = setup();
-    host.props.group = { visible: false };
-    host.props.setNight = () => {};
-    host.props.shape = {};
-    game.daylight = { darkness: 0 };
-    game.world.layout = { village: { area: { minX: 96, maxX: 203, minZ: 163.5, maxZ: 205 } } };
-    game.player.position = { x: 0, y: 0, z: 0 }; // got on at the far end of the farm
-    host.update(0.016);
-    expect(host.props.group.visible).toBe(true); // the camera is in the village
-  });
-});
