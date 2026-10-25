@@ -54,6 +54,18 @@ export class CoinAudio {
     return true;
   }
 
+  /** One chink at `at` (a position) instead of at the tin: a till or a rack away from the farm. */
+  chinkAt(at, strength = 0.6) {
+    if (!this.attach()) return;
+    const { x, y, z } = at;
+    if (this.panner.positionX) {
+      this.panner.positionX.value = x;
+      this.panner.positionY.value = y;
+      this.panner.positionZ.value = z;
+    } else this.panner.setPosition(x, y, z);
+    this.chink(strength);
+  }
+
   /** One chink, `strength` 0 to 1 (a job paying is a small one, a purchase a big one). */
   chink(strength = 0.6) {
     if (!this.attach()) return;

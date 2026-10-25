@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import { distanceToTile } from './tiles.js';
+import { CoinAudio } from '../audio/coinAudio.js';
 import { PARTS } from '../workshop/spares.js';
 import { registerTuning } from '../core/tuning.js';
 import { DEFAULT_VILLAGE_PARAMS, VILLAGE_PARAM_RANGES, SHOP_STOCK, PUMP_FUELS, GARAGE_PARTS, partWhyNot, buyPart, Till, PumpBill, pounds } from './villageShop.js';
@@ -21,6 +22,7 @@ export class VillageHost {
     this.filling = null; // the pump being filled from, while E is held
     this.centre = new THREE.Vector3(150, 0, 185);
     this.lastBought = 'nothing yet';
+    this.coins = new CoinAudio(game.audioHub, new THREE.Vector3(), 0.7); // chinks at the counter or the rack you are at, not at the farm's tin
     this.addTargets();
   }
 
@@ -53,7 +55,8 @@ export class VillageHost {
           const name = this.partName(part.id);
           const why = partWhyNot(part.id, g.market.purse, g.spares, this.params, name);
           if (why) return { text: why };
-          return { text: `Buy a ${name}: ${pounds(this.params[GARAGE_PARTS[part.id].price])} (${g.spares.count(part.id)} on the rack at the barn, ${this.purseText()})` };
+          // A string is an E action: the HUD puts the key on it, as it does for getting on a quad.
+          return `Buy a ${name}: ${pounds(this.params[GARAGE_PARTS[part.id].price])} (${g.spares.count(part.id)} on the barn's rack now, ${this.purseText()})`;
         },
         interact: () => this.buyPart(part.id),
       });
@@ -66,11 +69,16 @@ export class VillageHost {
           const item = SHOP_STOCK[stock.id];
           const why = this.till.whyNot(stock.id, g.market.purse, this.params);
           if (why) return { text: why };
-          return { text: `Buy ${item.label}: ${pounds(this.params[item.price])} (${this.purseText()})` };
+          return `Buy ${item.label}: ${pounds(this.params[item.price])} (${this.purseText()})`;
         },
         interact: () => this.buy(stock.id),
       });
     }
+  }
+
+  /** The chink of a purchase, where you are standing. */
+  chink() {
+    this.coins.chinkAt(this.g.camera.position, 0.9);
   }
 
   /** The garage's rack: what a part is called in the shelf's own words ("spark plug"). */
@@ -86,7 +94,8 @@ export class VillageHost {
     if (!got) return g.hud.toast(partWhyNot(id, g.market.purse, g.spares, this.params, name) ?? 'Not now', 2);
     this.lastBought = `a ${name} (${pounds(got.price)})`;
     g.sparesShelf.paintCrates();
-    g.hud.toast(`A ${name}: ${pounds(got.price)}. It's on the rack at the barn. ${this.purseText()}`, 3);
+    this.chink();
+    g.hud.toast(`Bought a ${name} for ${pounds(got.price)}. It is on the barn's rack now (${g.spares.count(id)} there). ${this.purseText()}`, 3.5);
   }
 
   /** One frame of E held at a pump with a can in your hands: fill what the tin can pay for, and bill it. */
@@ -118,7 +127,8 @@ export class VillageHost {
       if (got.warmth) c.needs.warmth = Math.max(0, c.needs.warmth - got.warmth);
     }
     this.lastBought = `${SHOP_STOCK[item].label} (${pounds(got.price)})`;
-    g.hud.toast(`${SHOP_STOCK[item].label[0].toUpperCase()}${SHOP_STOCK[item].label.slice(1)}: ${pounds(got.price)}. ${this.purseText()}`, 3);
+    this.chink();
+    g.hud.toast(`Bought ${SHOP_STOCK[item].label} for ${pounds(got.price)}. ${this.purseText()}`, 3);
   }
 
   update(dt) {
@@ -128,7 +138,8 @@ export class VillageHost {
     if (this.filling && !g.interaction.focused) this.filling = null;
     const dark = g.daylight?.darkness ?? 0;
     this.props.setNight(dark);
-    const p = g.player.position;
+    // The camera, not the player: riding leaves the player's own position where you got on.
+    const p = g.camera.position;
     this.props.group.visible = distanceToTile(g.world.layout.village.area, p.x, p.z) < this.params.drawDistance;
   }
 
