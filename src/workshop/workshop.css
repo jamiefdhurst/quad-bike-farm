@@ -270,6 +270,23 @@
   background: rgba(255, 255, 255, 0.18);
 }
 
+.ws-btn.picked {
+  border-color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* A job that takes time: "hold E" in front, and the fill climbs while E is held. */
+.ws-btn.hold {
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.3) var(--hold, 0%), transparent var(--hold, 0%));
+}
+
+.ws-btn.hold::before {
+  margin-right: 0.6em;
+  content: 'hold E';
+  font-size: 0.85em;
+  opacity: 0.5;
+}
+
 .ws-btn:disabled {
   opacity: 0.35;
   cursor: default;

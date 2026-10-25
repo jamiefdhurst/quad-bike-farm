@@ -55,9 +55,13 @@ export const DEFAULT_TUNE_PARAMS = {
   psiMudGrip: 0.1, // the same in mud, where soft tyres help most
   psiRolling: 0.12, // rolling resistance lost per psi up
   psiStiffness: 0.07, // suspension stiffness gained per psi up (soft tyres bounce more)
+
+  // Jobs on the panel that take time (service, strip down, drain)
+  holdSeconds: 0.8, // seconds to hold E on one
 };
 
 export const TUNE_PARAM_RANGES = {
+  holdSeconds: [0.2, 3, 0.1],
   idleStep: [10, 200, 10],
   idleHeadroom: [0, 800, 10],
   jetSmaller: [0, 5, 1],

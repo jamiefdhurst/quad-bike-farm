@@ -5,6 +5,7 @@ import { FIX_PARTS, PARTS, jetShelfChange } from './spares.js';
 import { hasBattery } from '../items/battery.js';
 import { airText } from '../vehicle/bleeding.js';
 import { pressureWhyNot } from '../farm/shed.js';
+import { nextPick, stepHold } from './toolboxPick.js';
 import {
   DEFAULT_TUNE_PARAMS,
   TUNE_PARAM_RANGES,
@@ -41,10 +42,23 @@ const REPAIR_NOTHING = {
 const SILENCER_OFF = 'Took the silencer off: it will be a lot louder, and a bit stronger';
 const SILENCER_ON = 'Put the silencer back on';
 const POD_JOB_SECONDS = 3; // fitting or taking off an accessory pod
-const FILTER_KEY = 'KeyI'; // hold to clean the air filter
-const BLEED_KEY = 'KeyQ'; // hold to work a diesel's lift pump priming lever
 const POD_NAMES = { analogue: 'analogue pod', digital: 'digital pod' };
-const REPAIR_KEYS = { KeyT: 'puncture', KeyR: 'belt', KeyL: 'cable', KeyC: 'carb', KeyM: 'mounts', KeyN: 'chain', KeyH: 'battery' };
+// The buttons under the rows, in the order W and S reach them after the last row. `hold` ones take a hold on E (`holdSeconds`); `own` ones
+// (the air filter, the lift pump) time themselves; the rest are a press. `run` names the method; `kind` is its argument where it has one.
+const ACTIONS = [
+  { sel: '.ws-service', hold: true, run: 'service' },
+  { sel: '.ws-bleed', own: 'bleed' },
+  { sel: '.ws-filter', own: 'filter' },
+  ...['puncture', 'belt', 'cable', 'carb', 'mounts', 'battery', 'chain'].map((kind) => ({ sel: `[data-fix="${kind}"]`, run: 'repair', kind })),
+  { sel: '.ws-drain', hold: true, run: 'drainFuel' },
+  { sel: '.ws-water', hold: true, run: 'drainWater' },
+  { sel: '.ws-strip', hold: true, run: 'stripDown' },
+  { sel: '.ws-silencer', run: 'toggleSilencer' },
+  { sel: '.ws-reset', run: 'backToStock' },
+  { sel: '[data-pod="analogue"]', run: 'startPod', args: ['fit', 'analogue'] },
+  { sel: '[data-pod="digital"]', run: 'startPod', args: ['fit', 'digital'] },
+  { sel: '.ws-podoff', run: 'startPod', args: ['off'] },
+];
 
 const rpm = (n) => `${Math.round(n).toLocaleString('en-GB')} rpm`;
 const pct = (f) => `${f >= 0 ? '+' : '−'}${Math.round(Math.abs(f) * 100)}%`;
@@ -157,7 +171,8 @@ export class Workshop {
     this.params = { ...DEFAULT_TUNE_PARAMS };
     this.quads = new Map(); // unit -> { stock, settings }
     this.unit = null;
-    this.selected = 0;
+    this.selected = 0; // the picked item: a row (below ROWS.length) or one of the ACTIONS buttons after them
+    this.hold = { held: 0, spent: false };
     this.repeat = {};
     this.fastTime = 0;
     this.fastSaid = false;
@@ -194,8 +209,10 @@ export class Workshop {
       })());
     }
     this.unit = unit;
-    if (!this.rowShown(this.selected)) this.selected = 0; // the jet row isn't there on a four-stroke
+    this.hold = { held: 0, spent: false };
     this.repeat = {};
+    this.render();
+    if (!this.itemShown(this.selected)) this.selected = 0; // the jet row isn't there on a four-stroke
     this.render();
     this.el.style.display = 'flex';
     document.getElementById('overlay')?.classList.add('workshop');
@@ -554,30 +571,46 @@ export class Workshop {
     this.freezePlayer(true);
     input.takeWheelSteps();
     const pressed = (...codes) => codes.some((c) => input.wasPressed(c));
-    if (pressed('KeyE', 'Escape', 'Enter')) {
+    if (pressed('KeyB', 'Escape')) {
       this.close();
       return;
     }
     for (let i = 0; i < ROWS.length; i++) {
       if (pressed(`Digit${i + 1}`, `Numpad${i + 1}`)) this.select(i);
     }
-    if (pressed('ArrowUp', 'KeyW')) this.select(this.nextRow(-1));
-    if (pressed('ArrowDown', 'KeyS')) this.select(this.nextRow(1));
-    if (pressed('KeyB', 'Backspace')) this.backToStock();
-    this.filterKey = input.isDown(FILTER_KEY) || this.filterButton;
-    this.bleedKey = input.isDown(BLEED_KEY) || this.bleedButton;
-    if (pressed('KeyV')) this.service();
-    if (pressed('KeyX')) this.toggleSilencer();
-    if (pressed('KeyF')) this.stripDown();
-    if (pressed('KeyP')) this.drainFuel();
-    if (pressed('KeyG')) this.drainWater();
-    if (pressed('KeyY')) this.startPod('fit', 'analogue');
-    if (pressed('KeyU')) this.startPod('fit', 'digital');
-    if (pressed('KeyO')) this.startPod('off');
-    for (const [code, kind] of Object.entries(REPAIR_KEYS)) if (pressed(code)) this.repair(kind);
-    const key = ROWS[this.selected].key;
-    if (this.repeatKey(input, ['ArrowLeft', 'KeyA'])) this.adjust(key, -1);
-    if (this.repeatKey(input, ['ArrowRight', 'KeyD'])) this.adjust(key, 1);
+    if (pressed('ArrowUp', 'KeyW')) this.select(this.nextItem(-1));
+    if (pressed('ArrowDown', 'KeyS')) this.select(this.nextItem(1));
+    this.pressPicked(input);
+    const row = ROWS[this.selected];
+    if (!row) return;
+    if (this.repeatKey(input, ['ArrowLeft'])) this.adjust(row.key, -1);
+    if (this.repeatKey(input, ['ArrowRight'])) this.adjust(row.key, 1);
+  }
+
+  /** E on the picked button: a press does it, a hold fills over `holdSeconds` and does it once, and the filter and the lift pump work while E is down. */
+  pressPicked(input) {
+    const act = ACTIONS[this.selected - ROWS.length];
+    const el = act && this.actionEls[this.selected - ROWS.length];
+    const down = input.isDown('KeyE');
+    this.filterKey = (act?.own === 'filter' && down && !el.disabled) || this.filterButton;
+    this.bleedKey = (act?.own === 'bleed' && down && !el.disabled) || this.bleedButton;
+    if (!act || act.own || el.disabled) {
+      this.hold = stepHold(this.hold, false, 0, 1).state;
+    } else if (act.hold) {
+      const r = stepHold(this.hold, down, this.dt ?? 1 / 60, this.params.holdSeconds);
+      this.hold = r.state;
+      if (r.fired) this.runAction(act);
+      this.paintHold(el, this.hold.held / this.params.holdSeconds);
+      return;
+    } else if (input.wasPressed('KeyE')) this.runAction(act);
+  }
+
+  runAction(act) {
+    this[act.run](act.kind ?? act.args?.[0], act.args?.[1]);
+  }
+
+  paintHold(el, fraction) {
+    el.style.setProperty('--hold', `${Math.round(Math.min(1, fraction) * 100)}%`);
   }
 
   /** True on a press, then repeatedly while held. */
@@ -617,17 +650,22 @@ export class Workshop {
     return !!this.unit?.engine.params.runsOnDiesel;
   }
 
-  /** The row above (-1) or below (1) the selected one, skipping any that aren't shown. */
-  nextRow(direction) {
-    let i = this.selected;
-    do i = (i + direction + ROWS.length) % ROWS.length;
-    while (!this.rowShown(i));
-    return i;
+  /** Whether a row or button is on the panel for this quad (the buttons that don't apply are hidden, which keeps their place). */
+  itemShown(i) {
+    if (i < ROWS.length) return this.rowShown(i);
+    const el = this.actionEls[i - ROWS.length];
+    return !!el && getComputedStyle(el).visibility !== 'hidden'; // (a hidden pods box hides its buttons too, as visibility is inherited)
+  }
+
+  /** The row or button below (1) or above (-1) the picked one, skipping any that aren't shown. */
+  nextItem(direction) {
+    return nextPick(ROWS.length + ACTIONS.length, this.selected, direction, (i) => this.itemShown(i));
   }
 
   select(i) {
-    if (i === this.selected || !this.rowShown(i)) return;
+    if (i === this.selected || !this.itemShown(i)) return;
     this.selected = i;
+    this.hold = { held: 0, spent: false };
     this.render();
   }
 
@@ -673,30 +711,30 @@ export class Workshop {
         <div class="ws-pump"></div>
         <div class="ws-explain"></div>
         <div class="ws-foot">
-          <button type="button" class="ws-btn ws-service"><span class="key">V</span>Service it</button>
-          <button type="button" class="ws-btn ws-bleed"><span class="key">Q</span>Hold to bleed the fuel at the lift pump</button>
-          <button type="button" class="ws-btn ws-filter"><span class="key">I</span>Hold to clean the air filter</button>
-          <button type="button" class="ws-btn ws-fix" data-fix="puncture"><span class="key">T</span>Pump and patch tyres</button>
-          <button type="button" class="ws-btn ws-fix" data-fix="belt"><span class="key">R</span>Check the belt</button>
-          <button type="button" class="ws-btn ws-fix" data-fix="cable"><span class="key">L</span>Oil the throttle cable</button>
-          <button type="button" class="ws-btn ws-fix" data-fix="carb"><span class="key">C</span>Clean the carb</button>
-          <button type="button" class="ws-btn ws-fix" data-fix="mounts"><span class="key">M</span>Nip up the engine mounts</button>
-          <button type="button" class="ws-btn ws-fix" data-fix="battery"><span class="key">H</span>Battery out, or back in</button>
-          <button type="button" class="ws-btn ws-fix" data-fix="chain"><span class="key">N</span>Put the chain back and oil it</button>
-          <button type="button" class="ws-btn ws-drain"><span class="key">P</span>Pump out the tank and carb</button>
-          <button type="button" class="ws-btn ws-water"><span class="key">G</span>Drain the water at the tap</button>
-          <button type="button" class="ws-btn ws-strip"><span class="key">F</span>Strip it down</button>
-          <button type="button" class="ws-btn ws-silencer"><span class="key">X</span>Take the silencer off</button>
-          <button type="button" class="ws-btn ws-reset"><span class="key">B</span>Back to stock</button>
-          <button type="button" class="ws-btn ws-done"><span class="key">E</span>Done</button>
+          <button type="button" class="ws-btn hold ws-service">Service it</button>
+          <button type="button" class="ws-btn hold ws-bleed">Bleed the fuel at the lift pump</button>
+          <button type="button" class="ws-btn hold ws-filter">Clean the air filter</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="puncture">Pump and patch tyres</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="belt">Check the belt</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="cable">Oil the throttle cable</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="carb">Clean the carb</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="mounts">Nip up the engine mounts</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="battery">Battery out, or back in</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="chain">Put the chain back and oil it</button>
+          <button type="button" class="ws-btn hold ws-drain">Pump out the tank and carb</button>
+          <button type="button" class="ws-btn hold ws-water">Drain the water at the tap</button>
+          <button type="button" class="ws-btn hold ws-strip">Strip it down</button>
+          <button type="button" class="ws-btn ws-silencer">Take the silencer off</button>
+          <button type="button" class="ws-btn ws-reset">Back to stock</button>
+          <button type="button" class="ws-btn ws-done"><span class="key">B</span>Done</button>
         </div>
         <div class="ws-pods">
           <div class="ws-podline"></div>
-          <button type="button" class="ws-btn ws-pod" data-pod="analogue"><span class="key">Y</span>Fit analogue pod</button>
-          <button type="button" class="ws-btn ws-pod" data-pod="digital"><span class="key">U</span>Fit digital pod</button>
-          <button type="button" class="ws-btn ws-podoff"><span class="key">O</span>Pod off</button>
+          <button type="button" class="ws-btn ws-pod" data-pod="analogue">Fit analogue pod</button>
+          <button type="button" class="ws-btn ws-pod" data-pod="digital">Fit digital pod</button>
+          <button type="button" class="ws-btn ws-podoff">Pod off</button>
         </div>
-        <div class="ws-keys">↑ ↓ choose   ·   ← → adjust (hold to keep going)   ·   V service   ·   hold I air filter   ·   X silencer   ·   F strip down   ·   P pump out the fuel   ·   Y U O pods   ·   T tyres   ·   R belt   ·   L cable   ·   C carb   ·   M mounts   ·   N chain   ·   H battery   ·   or use the mouse</div>
+        <div class="ws-keys">W S pick a row or button   ·   ← → adjust a row (hold to keep going)   ·   E press it, hold E for the jobs that take time   ·   B put the toolbox away   ·   or use the mouse</div>
       </div>`;
     document.body.appendChild(el);
     this.el = el;
@@ -704,6 +742,8 @@ export class Workshop {
     this.rowsEl = el.querySelector('.ws-rows');
     this.explainEl = el.querySelector('.ws-explain');
     this.pumpEl = el.querySelector('.ws-pump');
+    this.actionEls = ACTIONS.map((a) => el.querySelector(a.sel));
+    this.actionEls.forEach((b, i) => b.addEventListener('mouseenter', () => this.select(ROWS.length + i)));
     // One click handler for the pump's buttons, as the wheels (and so the buttons) change with the quad.
     this.pumpEl.addEventListener('click', (e) => {
       const b = e.target.closest('button[data-wheel]');
@@ -759,7 +799,12 @@ export class Workshop {
     const P = this.params;
     const st = stockSettings(stock, P);
     this.titleEl.textContent = `Toolbox   ·   ${unit.name}`;
-    this.explainEl.textContent = ROWS[this.selected].explain;
+    const picked = ACTIONS[this.selected - ROWS.length];
+    this.explainEl.textContent = ROWS[this.selected]?.explain ?? (picked.hold || picked.own ? 'Hold E to do this one.' : 'Press E to do this one.');
+    this.actionEls.forEach((b, i) => {
+      b.classList.toggle('picked', ROWS.length + i === this.selected);
+      b.style.setProperty('--hold', '0%');
+    });
     this.renderPump(unit);
     ROWS.forEach((r, i) => {
       const rowEl = this.rowEls[i];
@@ -799,10 +844,12 @@ export class Workshop {
     const air = unit.quad.fuel.airLock;
     bleedBtn.style.visibility = unit.quad.canAirLock ? '' : 'hidden';
     bleedBtn.disabled = air <= 0;
-    bleedBtn.lastChild.textContent = this.bleedHeld ? `Bleeding... ${Math.round((1 - air) * 100)}%` : `Hold: bleed the fuel at the lift pump (${airText(air)})`;
+    bleedBtn.lastChild.textContent = this.bleedHeld ? `Bleeding... ${Math.round((1 - air) * 100)}%` : `Bleed the fuel at the lift pump (${airText(air)})`;
+    if (this.bleedHeld) this.paintHold(bleedBtn, 1 - air);
     const filterBtn = this.el.querySelector('.ws-filter');
     filterBtn.disabled = filter.isClean;
-    filterBtn.lastChild.textContent = this.filterHeld > 0 ? `Cleaning... ${Math.round((this.filterHeld / filter.p.cleanSeconds) * 100)}%` : `Hold: clean air filter (${filter.state})`;
+    filterBtn.lastChild.textContent = this.filterHeld > 0 ? `Cleaning... ${Math.round((this.filterHeld / filter.p.cleanSeconds) * 100)}%` : `Clean the air filter (${filter.state})`;
+    if (this.filterHeld > 0) this.paintHold(filterBtn, this.filterHeld / filter.p.cleanSeconds);
     // The pods: what's on this quad, what's in the toolbox, and the job in hand.
     const rack = this.canPod ? this.game.podRack : null;
     if (rack) {
