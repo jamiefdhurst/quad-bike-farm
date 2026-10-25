@@ -648,16 +648,16 @@ function forecourt(ctx, w, S, b, random) {
     w.box(0.7, 0.14, 0.45, M.kerb, px, 0.23, pz, 1); // the base it is bolted to
     w.box(0.6, 0.3, 0.4, skirt, px, 0.45, pz, 0.6); // the dark skirt
     w.box(0.56, 1.1, 0.36, body, px, 1.15, pz, 0.6);
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) w.box(0.03, 1.1, 0.03, steel, px + sx * 0.285, 1.15, pz + sz * 0.185, 0.6); // the corner trims
-    w.box(0.6, 0.04, 0.4, steel, px, 0.6, pz, 0.6); // the trim between skirt and body
-    w.box(0.62, 0.3, 0.42, body, px, 1.83, pz, 0.6); // the head
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) w.box(0.04, 1.1, 0.04, steel, px + sx * 0.29, 1.15, pz + sz * 0.19, 0.6); // the corner trims
+    w.box(0.64, 0.04, 0.44, steel, px, 0.6, pz, 0.6); // the trim between skirt and body, standing proud of both
+    w.box(0.62, 0.28, 0.42, body, px, 1.84, pz, 0.6); // the head, its foot clear of the body's top
     w.box(0.66, 0.05, 0.46, accent, px, 1.995, pz, 0.6); // and its cap
     for (const s of [-1, 1]) {
       const fz = pz + s * 0.185;
       const r = s > 0 ? 0 : Math.PI;
       w.add(new THREE.PlaneGeometry(0.5, 0.75), face, px, 1.15, fz + s * 0.002).rotation.y = r;
       w.add(new THREE.PlaneGeometry(0.58, 0.14), header, px, 1.83, pz + s * 0.212).rotation.y = r;
-      w.add(new THREE.PlaneGeometry(0.34, 1.1), side, px + s * 0.2865, 1.15, pz).rotation.y = (s * Math.PI) / 2;
+      w.add(new THREE.PlaneGeometry(0.31, 1.06), side, px + s * 0.293, 1.15, pz).rotation.y = (s * Math.PI) / 2;
     }
     // A holster, nozzle and hose on each side, on the pump's right-hand flank: the spout hangs in the holster and the hose runs from the
     // nozzle's back, down in a loop and into the pump's base.
