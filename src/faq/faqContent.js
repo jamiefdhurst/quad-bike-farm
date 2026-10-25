@@ -360,10 +360,9 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why won\'t the tractor (or Yak, or Moorland) start after I filled it up?',
         a: `If a diesel runs out of fuel, air gets into the fuel line, and it won't start again just because there is fuel in the tank. Fill it from the
-          green can first, then look at it and press <kbd>E</kbd> to open the toolbox, and hold <kbd>Q</kbd> (or the button) on "bleed the fuel at the lift
-          pump" for about six seconds, until it says it is bled. Let go early and what you have done stays done. Then give it the glow plugs and start it as
+          green can first, then look at it and press <kbd>E</kbd> to open the toolbox, pick "Bleed the fuel at the lift pump" with <kbd>W</kbd> and <kbd>S</kbd> and hold <kbd>E</kbd> (or the button) for about six seconds, until it says it is bled. Let go early and what you have done stays done. Then give it the glow plugs and start it as
           usual. Amy knows what is wrong and says so. Petrol quads never need it.`,
-        tip: 'A diesel that ran dry needs bleeding: open the toolbox and hold Q at the lift pump, once there is fuel in.',
+        tip: 'A diesel that ran dry needs bleeding: open the toolbox and hold E on the lift pump, once there is fuel in.',
       },
       {
         q: 'Why won\'t the throttle open (or shut) on a frosty morning?',
@@ -503,7 +502,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I get water out of the fuel?',
-        a: `Take the toolbox to the quad and press <kbd>G</kbd> (Drain the water at the tap). It lets the water out of the bowl, the tank and the carb, with
+        a: `Take the toolbox to the quad, pick "Drain the water at the tap" with <kbd>W</kbd> and <kbd>S</kbd> and hold <kbd>E</kbd>. It lets the water out of the bowl, the tank and the carb, with
           a little petrol, and the quad runs again at once. Keep the cans under the barn roof or the lean-to when it rains and it will not happen. Amy
           spots it and says so; Jess blames the quad. A diesel has no bowl and no tap, so there is nothing to drain.`,
       },
@@ -843,8 +842,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I put a chain back on, and how do I stop it coming off?',
-        a: `In the yard, take the toolbox to the quad and press <kbd>N</kbd>: it goes back on the sprocket and gets a squirt of oil, enough to ride home. To take the
-          stretch out, use the workbench's "Adjust and oil the chain" (the minus key): slacken the axle nuts, draw the axle back to about a finger of play, oil it
+        a: `In the yard, take the toolbox to the quad, pick "Put the chain back and oil it" and press <kbd>E</kbd>: it goes back on the sprocket and gets a squirt of oil, enough to ride home. To take the
+          stretch out, use the workbench's "Adjust and oil the chain" (pick it with <kbd>W</kbd> and <kbd>S</kbd>): slacken the axle nuts, draw the axle back to about a finger of play, oil it
           a little and do the nuts up. Look at the chain first and it will tell you how slack and how dry it is. Done carelessly some of the slack comes back.`,
       },
       {
@@ -883,7 +882,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why is my four-stroke ticking, and what does the feeler gauge do?',
         a: `Every four-stroke has valves whose clearance wears wide over the hours, and the engine starts to tick from the top, louder the longer it runs and
-          a touch weaker. Use the workbench's "Set the valve clearances" (the equals key): look with the feeler gauge first and it will tell you whether the
+          a touch weaker. Use the workbench's "Set the valve clearances" (pick it with <kbd>W</kbd> and <kbd>S</kbd>): look with the feeler gauge first and it will tell you whether the
           gap is wide, right or too tight, then slacken the locknuts, turn the screws until the gauge just drags and do the locknuts up. Turn too little and it
           still ticks; turn too far and the valves are too tight, which makes no noise at all but means a hard start when the engine is hot and a loss of power.
           Set it again properly to cure either. Two-strokes have no valves.`,
@@ -1019,9 +1018,9 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I fix things?',
-        a: `Pick up the red toolbox from the workbench, take it to a switched-off quad and press <kbd>E</kbd>. <kbd>T</kbd> patches a puncture (pumping it up needs the compressor),
-          <kbd>R</kbd> swaps the belt (using a spare from the rack), <kbd>L</kbd> oils the cable, <kbd>C</kbd> cleans the carb, <kbd>M</kbd> nips up the engine mounts, <kbd>N</kbd> puts a chain back on and oils it, <kbd>I</kbd> (held) cleans the air filter, <kbd>V</kbd>
-          services it. These are quick fixes that leave a mild fault behind; for a proper job, use the workbench. Each fix does its job if there is one and
+        a: `Pick up the red toolbox from the workbench, take it to a switched-off quad and press <kbd>E</kbd>. Pick a job with <kbd>W</kbd> and <kbd>S</kbd> and press <kbd>E</kbd>: patch a puncture (pumping it up needs the compressor),
+          swap the belt (using a spare from the rack), oil the cable, clean the carb, nip up the engine mounts or put a chain back on and oil it. Hold <kbd>E</kbd> to clean the air filter
+          or to service it. These are quick fixes that leave a mild fault behind; for a proper job, use the workbench. Each fix does its job if there is one and
           otherwise says all is well, so it doesn't give a fault away.`,
       },
       {
@@ -1151,7 +1150,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why is it running rough and stumbling?',
         a: `Wear. Engines wear as they run, faster when worked hard, and much faster if you thrash them cold or while they're running in after a rebuild. A worn
-          engine idles lumpy and shakes, and past a point it stumbles through misfires and dies now and then. A service (<kbd>V</kbd> at the toolbox) brings it back.
+          engine idles lumpy and shakes, and past a point it stumbles through misfires and dies now and then. A service (hold <kbd>E</kbd> on "Service it" at the toolbox) brings it back.
           The game keeps count of who did the damage, and the girls know.`,
         tip: 'Rev a cold engine hard and it wears several times faster. Let it warm up first.',
       },
@@ -1745,8 +1744,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Can I take a battery out in the yard, and carry one in the Yak?',
-        a: `Yes, for any vehicle with a starter. Take the toolbox to it, switched off, press <kbd>E</kbd> to open it and then <kbd>H</kbd>: the battery stands by your feet. Pick it up with <kbd>E</kbd> and carry it like a can: look into the Yak's bed and press <kbd>E</kbd> to stand it in with the rest of your things, take it to the barn, charge it, and bring it back. Fit it by looking at its own vehicle, switched off, and pressing <kbd>E</kbd>, or by pressing <kbd>H</kbd> in the toolbox panel when it is lying close. A battery belongs to its vehicle, so the prompt tells you if you have the wrong one.`,
-        tip: 'Toolbox, then H takes a battery out. Carry it in the Yak bed.',
+        a: `Yes, for any vehicle with a starter. Take the toolbox to it, switched off, press <kbd>E</kbd> to open it, pick "Battery out, or back in" and press <kbd>E</kbd>: the battery stands by your feet. Pick it up with <kbd>E</kbd> and carry it like a can: look into the Yak's bed and press <kbd>E</kbd> to stand it in with the rest of your things, take it to the barn, charge it, and bring it back. Fit it by looking at its own vehicle, switched off, and pressing <kbd>E</kbd>, or by pressing <kbd>H</kbd> in the toolbox panel when it is lying close. A battery belongs to its vehicle, so the prompt tells you if you have the wrong one.`,
+        tip: 'Toolbox, then "Battery out" takes a battery out. Carry it in the Yak bed.',
       },
       {
         q: 'Why is the quad completely dead with no clicking?',

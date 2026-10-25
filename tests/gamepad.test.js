@@ -194,9 +194,10 @@ describe('menus and the start card', () => {
     expect(c.update(raw({ down: [PAD.B] }), 0.016, { mode: 'menu', menu: 'wheel' }).held.has('Escape')).toBe(true);
   });
 
-  it('does not let A shut the toolbox, which treats Enter as leave', () => {
+  it('makes A the toolbox\'s E, and does not let it shut the panel', () => {
     const c = new PadController({ ...P });
     const s = c.update(raw({ down: [PAD.A] }), 0.016, { mode: 'menu', menu: 'workshop' });
+    expect(s.held.has('KeyE')).toBe(true);
     expect(s.held.has('Enter')).toBe(false);
   });
 

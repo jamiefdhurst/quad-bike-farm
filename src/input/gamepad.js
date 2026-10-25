@@ -201,8 +201,7 @@ export class PadController {
   }
 
   /**
-   * The menus read keys of their own. The girls' wheel: A picks, B backs out. The toolbox: the D-pad moves between rows and adjusts, X
-   * services, Y the silencer, B leaves. The bench: A is its E, the face buttons and bumpers pick a job (1 to 4), B leaves.
+   * The menus read keys of their own. The girls' wheel: A picks, B backs out. The toolbox: the D-pad picks and adjusts, A is its E, B leaves. The bench: A is its E, the face buttons and bumpers pick a job (1 to 4), B leaves.
    */
   menuKeys(b, menu, out) {
     const dpad = () => {
@@ -213,9 +212,8 @@ export class PadController {
     };
     if (menu === 'workshop') {
       dpad();
+      if (b[PAD.A]) out.held.add('KeyE'); // presses the picked button, and held it works the jobs that take time
       if (b[PAD.B]) out.held.add('Escape');
-      if (b[PAD.X]) out.held.add('KeyV');
-      if (b[PAD.Y]) out.held.add('KeyX');
     } else if (menu === 'bench') {
       if (b[PAD.A]) out.held.add('KeyE');
       if (b[PAD.B]) out.held.add('Escape');

@@ -118,7 +118,7 @@ export const CONTROLS = [
     title: 'Fuel and tools',
     lines: [
       `<kbd>E</kbd> pick up a jerry can, hold <kbd>E</kbd> at a quad to pour or at the tank to refill, <kbd>G</kbd> put it down`,
-      `Hose: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to wash. Toolbox: <kbd>E</kbd> pick up, <kbd>E</kbd> on a quad to tinker`,
+      `Hose: <kbd>E</kbd> pick up, hold <kbd>E</kbd> to wash. Toolbox: <kbd>E</kbd> pick up, <kbd>E</kbd> on a quad to tinker. In the panel <kbd>W</kbd> <kbd>S</kbd> pick, <kbd>E</kbd> presses, hold <kbd>E</kbd> for jobs that take time, <kbd>B</kbd> puts it away`,
       `RB300's winch: <kbd>X</kbd> take the hook, <kbd>E</kbd> on a quad, a vehicle or a tree to hook it, hold <kbd>X</kbd> to wind in (on a tree or a heavy vehicle the RB300 pulls itself up to it)`,
       `Tractor's tow chain: <kbd>X</kbd> looking at the tractor to take it, <kbd>E</kbd> on a quad to hook it, then back the tractor up and drive off`,
       `Tow rope on the Farm 300's and Bruin's racks: <kbd>X</kbd> looking at one to take it, <kbd>E</kbd> on a dead quad to hook it, ride off gently; ask a girl on the wheel to steer it`,
@@ -142,7 +142,7 @@ export const CONTROLS = [
       `On a vehicle: <kbd>RT</kbd> throttle and <kbd>LT</kbd> brake (as far as you press), left stick steers, right stick looks, <kbd>L3</kbd> looks back, <kbd>B</kbd> gets off, <kbd>X</kbd> horn, <kbd>Y</kbd> parking brake, <kbd>RB</kbd> reverse`,
       `Clutch: hold <kbd>LB</kbd> and press <kbd>D-pad up</kbd> or <kbd>down</kbd> for the next gear up or down (down from first is neutral)`,
       `Everything else (ignition, crank, choke, fuel tap, lights, indicators, 4WD, diff lock, seat belt, the bucket list...): click <kbd>R3</kbd> for the ring, <kbd>D-pad</kbd> or the right stick to pick, <kbd>A</kbd> to do it, <kbd>B</kbd> to cancel. The crank, choke and pull-start hold themselves for a moment; any button lets go`,
-      `In the girls' wheel the sticks and <kbd>D-pad</kbd> point, <kbd>A</kbd> picks and <kbd>B</kbd> backs out. At the toolbox the <kbd>D-pad</kbd> picks and adjusts, <kbd>B</kbd> leaves; at the bench <kbd>A</kbd> is <kbd>E</kbd> and <kbd>X</kbd> <kbd>Y</kbd> <kbd>LB</kbd> <kbd>RB</kbd> pick the first four jobs`,
+      `In the girls' wheel the sticks and <kbd>D-pad</kbd> point, <kbd>A</kbd> picks and <kbd>B</kbd> backs out. At the toolbox the <kbd>D-pad</kbd> picks and adjusts, <kbd>A</kbd> presses (hold it for jobs that take time) and <kbd>B</kbd> leaves; at the bench <kbd>A</kbd> is <kbd>E</kbd> and <kbd>X</kbd> <kbd>Y</kbd> <kbd>LB</kbd> <kbd>RB</kbd> pick the first four jobs`,
     ],
   },
 ];

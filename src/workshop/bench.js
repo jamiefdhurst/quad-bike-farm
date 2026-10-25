@@ -7,18 +7,8 @@ import { registerTuning } from '../core/tuning.js';
 import { DEFAULT_SERVICE_PARAMS, SERVICE_PARAM_RANGES, ServiceRun, servicePlan, factsOf, stateOf, dueBook, applyServiceReward } from './service.js';
 import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, ENGINE_JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, tyreJobFor, inBay, plugCondition, readPlug, scoringLook, chainLook, bootLook, clutchLook, valvesLook, crashLook } from './benchJobs.js';
 
-// The jobs after the tenth (which is on 0) have the keys beside it.
-const OVERFLOW_KEYS = [
-  { code: 'Minus', label: '-' },
-  { code: 'Equal', label: '=' },
-  { code: 'BracketLeft', label: '[' },
-  { code: 'BracketRight', label: ']' },
-  { code: 'Semicolon', label: ';' },
-  { code: 'Quote', label: "'" },
-  { code: 'Period', label: '.' },
-  { code: 'Slash', label: '/' },
-  { code: 'Comma', label: ',' },
-];
+// The first ten jobs have a number as a shortcut (the tenth on 0); the rest are picked with W, S and E, and carry no key.
+const jobKey = (i) => (i < 10 ? String((i + 1) % 10) : '');
 
 /**
  * The barn bench: park a vehicle in a painted bay (the small one for the quads, the big one in the second span for everything else), switch it off and work on it here. Each job is a few
@@ -368,9 +358,8 @@ export class Bench {
       }
       if (input.wasPressed('KeyE')) return this.pressRow(rows[Math.min(this.row, rows.length - 1)]);
       this.kindsFor(this.unit).forEach((kind, i) => {
-        const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key, the twelfth on equals, the thirteenth on the left bracket, the fourteenth on the right, the fifteenth on the semicolon, the sixteenth on the quote, then period, slash and comma
-        const hit = i >= 10 ? input.wasPressed(OVERFLOW_KEYS[i - 10].code) : input.wasPressed(`Digit${n}`) || input.wasPressed(`Numpad${n}`);
-        if (hit) this.begin(kind);
+        const n = (i + 1) % 10; // the tenth job is on 0; later ones have no key
+        if (i < 10 && (input.wasPressed(`Digit${n}`) || input.wasPressed(`Numpad${n}`))) this.begin(kind);
       });
       return;
     }
@@ -425,9 +414,9 @@ export class Bench {
     const kinds = [...SHED_JOB_KINDS, ...ENGINE_JOB_KINDS];
     this.bodyEl.innerHTML = kinds.map((k, i) => {
       const why = ENGINE_JOB_KINDS.includes(k) ? this.engineWhyNot(k, unit) ?? (unit.engine.isRunning ? 'switch it off' : null) : this.shedWhyNot(k, unit);
-      return `<div class="bn-row${why ? ' off' : ''}${this.row === i ? ' picked' : ''}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${why ? ` (${why})` : ''}</div>`;
+      return `<div class="bn-row${why ? ' off' : ''}${this.row === i ? ' picked' : ''}"><span class="key">${jobKey(i)}</span>${JOBS[k].name}${why ? ` (${why})` : ''}</div>`;
     }).join('') + `<div class="bn-row${this.row === kinds.length ? ' picked' : ''}"><span class="key"></span>Back to the usual jobs</div>`;
-    this.keysEl.textContent = 'Press a number, or W S and E, to start   ·   ← back to the usual jobs   ·   B step away';
+    this.keysEl.textContent = 'W S pick a job   ·   E start it   ·   1 to 0 for the first ten   ·   ← back to the usual jobs   ·   B step away';
   }
 
   /** The hold meter: the fill climbs, and where a window is, the green band is where to let go. */
@@ -457,9 +446,9 @@ export class Bench {
           note = k === 'newTyres' ? ` (needs ${need.count} ${need.count === 1 ? PARTS[need.part].one : PARTS[need.part].many} from the tyre rack)` : ` (no ${PARTS[need.part].one} on the shelf)`;
         }
         else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'snorkel' ? (unit.quad.snorkel.fitted ? ' ✓ fitted' : ' (Moorlands only)') : k === 'spotlamps' ? (unit.quad.spotlamps.fitted ? ' ✓ fitted' : ' (quads and Land Rovers only)') : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
-        return `<div class="bn-row${ok ? '' : ' off'}${this.row === i ? ' picked' : ''}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
+        return `<div class="bn-row${ok ? '' : ' off'}${this.row === i ? ' picked' : ''}"><span class="key">${jobKey(i)}</span>${JOBS[k].name}${note}</div>`;
       }).join('') + this.serviceRow(unit, this.row === this.kindsFor(unit).length) + `<div class="bn-row${this.row === this.rowsFor(unit).length - 1 ? ' picked' : ''}"><span class="key"></span>Jobs that need the shed kit<div class="bn-sub">Compressor, parts washer and the pit, and swapping engines</div></div>`;
-      this.keysEl.textContent = 'Press a number, or W S and E, to start   ·   → the shed kit   ·   B step away';
+      this.keysEl.textContent = 'W S pick a job   ·   E start it   ·   1 to 0 for the first ten   ·   → the shed kit   ·   B step away';
       return;
     }
     const run = job.service ? this.services.get(unit.id) : null;
