@@ -7,10 +7,11 @@ Why things are the way they are, kept by area in `docs/decisions/`. Each file op
 | The girls | [girls.md](docs/decisions/girls.md) | How Amy and Jess decide, notice and react, what they do, you and them, bodies and clothes |
 | Vehicles | [vehicles.md](docs/decisions/vehicles.md) | Specs, the fleet, physics, drivetrains, dashes, lights, models, trailers |
 | The engine | [engine.md](docs/decisions/engine.md) | Mixture, starting, wear, faults, fuel, heat, lubrication |
-| The world | [world.md](docs/decisions/world.md) | The farm, weather and the day, the save, money and jobs, animals, frame time |
+| The world | [world.md](docs/decisions/world.md) | The farm, weather and the day, the save, money and jobs, animals |
 | Sound | [sound.md](docs/decisions/sound.md) | Engine sound and banks, ride sounds, voices, the radio |
 | Items and the workshop | [items.md](docs/decisions/items.md) | Toolbox, bench, spares, batteries, generator, tractor attachments, winch |
 | The interface | [interface.md](docs/decisions/interface.md) | Debug panel, console, wheel, controls, gamepad, start screen and FAQ, map, photos |
+| Performance | [performance.md](docs/decisions/performance.md) | The frame budget, drawing less, frame time, stutters, load time; `/perf` |
 | How work is done | [process.md](docs/decisions/process.md) | Stack, issues and PRs, releases, CI, instructions, loading |
 | Ideas turned down | [ideas-turned-down.md](docs/decisions/ideas-turned-down.md) | What Jamie said no to, so it isn't offered again |
 

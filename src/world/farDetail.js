@@ -1,5 +1,5 @@
 // What is left out far away: whole set pieces beyond a distance from their nearest edge, the barn's loose props beyond a short one, and for
-// each vehicle its small parts (bolts, cables, decals, brake bits) and then its shadow. Close up nothing changes. See docs/decisions/engine.md,
+// each vehicle its small parts (bolts, cables, decals, brake bits) and then its shadow. Close up nothing changes. See docs/decisions/performance.md,
 // "Draw less far away (#365)". The distances are in the graphics params (src/core/graphics.js).
 
 import * as THREE from 'three';

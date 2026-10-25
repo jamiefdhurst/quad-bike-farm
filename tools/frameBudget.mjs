@@ -1,12 +1,12 @@
 // The frame's budget, held in CI (#364). Draw calls and triangles come from `renderer.info`, which still counts with the GL draws stubbed, so they
-// are the same on any machine (frame ms is not: software GL makes it meaningless, so `perf` in the console and .scratch/pp/perf.mjs stay the local
+// are the same on any machine (frame ms is not: software GL makes it meaningless, so `perf` in the console and tools/perf.mjs are the local
 // tools for that). They are counted from fixed spots on the farm: you at each one, looking north, east, south and west, and the worst view kept.
 //
 // tools/smoke.mjs measures in the page it already loads and fails over budget. `node tools/budget.mjs --dist <dir> --out <file>` loads a build
 // on its own and writes the numbers (CI does that for main); `node tools/budget.mjs --summary <pr.json> [main.json]` prints the markdown
 // table for the job summary, with the change from main. This file is the pure part (and the in-page measuring), tested in tests/frameBudget.test.js.
 //
-// A budget is raised only on purpose, with a line in docs/decisions/engine.md saying why (.claude/rules/checking.md).
+// A budget is raised only on purpose, with a line in docs/decisions/performance.md saying why (.claude/rules/checking.md).
 /** Per spot: the most draw calls and triangles a frame may take there. */
 export const BUDGETS = {
   spawn: { calls: 2600, triangles: 3.5e6 },
@@ -24,8 +24,10 @@ export const KNOWN_OVER = [];
 
 export const SPOTS = Object.keys(BUDGETS);
 
-/** The spots (and what is measured at each) as the page sees them. Runs in the browser, so it is self-contained. Returns { [spot]: { calls, triangles } } or { error }. */
-export async function measureInPage({ spots, headings, frames }) {
+/** The spots (and what is measured at each) as the page sees them. Runs in the browser, so it is self-contained. Returns { [spot]: { calls, triangles } } or { error }.
+ * With `dwell` (seconds, on a real GPU: tools/perf.mjs) each view is also held that long and timed: `ms` and `worstMs` from frameStats and the three
+ * slowest features, the worst view's kept. */
+export async function measureInPage({ spots, headings, frames, dwell = 0 }) {
   const g = window.game;
   const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
   const settle = async (n) => { for (let i = 0; i < n; i++) await frame(); };
@@ -39,9 +41,19 @@ export async function measureInPage({ spots, headings, frames }) {
     const from = info.render.frame;
     for (let i = 0; i < 600 && info.render.frame - from < frames; i++) await frame();
     const drawn = Math.max(1, info.render.frame - from);
-    return { calls: info.render.calls / drawn, triangles: info.render.triangles / drawn };
+    const r = { calls: info.render.calls / drawn, triangles: info.render.triangles / drawn };
+    if (dwell > 0) {
+      await new Promise((ok) => setTimeout(ok, dwell * 1000)); // longer than frameStats' window, so it is this view's frames only
+      const t = g.frameStats.summary();
+      Object.assign(r, { ms: t.ms, worstMs: t.worstMs, slowest: g.guard.slowest(3) });
+    }
+    return r;
   };
-  const worst = (a, b) => ({ calls: Math.max(a.calls, b.calls), triangles: Math.max(a.triangles, b.triangles) });
+  const worst = (a, b) => {
+    const w = { calls: Math.max(a.calls, b.calls), triangles: Math.max(a.triangles, b.triangles) };
+    if (b.ms !== undefined) Object.assign(w, { ms: Math.max(a.ms ?? 0, b.ms), worstMs: Math.max(a.worstMs ?? 0, b.worstMs), slowest: (a.ms ?? -1) >= b.ms ? a.slowest : b.slowest });
+    return w;
+  };
   const layout = g.world.layout;
   const out = {};
   const notes = [];
@@ -142,7 +154,7 @@ export function summary(measured, main, budgets = BUDGETS, knownOver = KNOWN_OVE
     );
   }
   if (missing.length) lines.push('', `Not measured: ${missing.join(', ')}.`);
-  if (failures.length) lines.push('', `Over budget: ${failures.join('; ')}. Bring it back under, or raise the budget on purpose with a line in docs/decisions/engine.md.`);
+  if (failures.length) lines.push('', `Over budget: ${failures.join('; ')}. Bring it back under, or raise the budget on purpose with a line in docs/decisions/performance.md.`);
   if (!main) lines.push('', 'No numbers from main to compare with.');
   return lines.join('\n');
 }
