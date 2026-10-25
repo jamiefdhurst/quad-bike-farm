@@ -57,6 +57,8 @@ import { Forecast, DEFAULT_FORECAST_PARAMS, FORECAST_PARAM_RANGES, KIND_WARMTH }
 import { choose, mainNeed, nextThink, OFFER_KINDS } from './npc/chooser.js';
 import { pickThen, planKey } from './npc/plans.js';
 import { Agenda, agendaKey } from './npc/agenda.js';
+import { FAULT_KINDS } from './vehicle/faults.js';
+import { Briefing, planBriefing, worstTrouble, DEFAULT_BRIEFING_PARAMS, BRIEFING_PARAM_RANGES } from './npc/briefing.js';
 import { girlsLeftOut } from './npc/leftOut.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { FallingOut, FALLING_OUT_PARAM_RANGES } from './npc/fallingOut.js';
@@ -446,6 +448,9 @@ export class Game {
     registerTuning('Farm that remembers', this.farmParams, FARM_PARAM_RANGES);
     this.showParams = { ...DEFAULT_SHOW_PARAMS };
     registerTuning('Show day', this.showParams, SHOW_PARAM_RANGES);
+    this.briefingParams = { ...DEFAULT_BRIEFING_PARAMS };
+    registerTuning('Briefing', this.briefingParams, BRIEFING_PARAM_RANGES);
+    this.briefing = new Briefing(this.briefingParams);
     this.showKeeper = new ShowKeeper(this.showParams); // the rosettes the farm has won (farm/showDay.js)
     this.farmStorage = browserStorage();
     this.farm = openFarm({ search: location.search, storage: this.farmStorage });
@@ -4486,6 +4491,38 @@ export class Game {
     this.showSaid = true;
     girl.voice.say(today ? 'showToday' : 'showEve', { force: true });
     this.hud.toast(today ? 'It is the show today: the quad you last ride will be judged this evening' : 'The show is tomorrow: wash a quad, tidy it up and get it running sweet', 4);
+  }
+
+  /** The day as the briefing will read it (npc/briefing.js): the weather and board, the quad most playing up, what each girl has in mind. */
+  briefingPlan() {
+    const faults = Object.fromEntries(this.girlUnits.map((u) => [u.spec.id, u.quad.faults]));
+    const agendas = Object.fromEntries(this.companions.map((c) => [c.character.id, c.agenda.id]));
+    return planBriefing({ weather: this.weather, promise: this.weather.promise, trouble: worstTrouble(faults, FAULT_KINDS, this.briefingParams.briefingTroubleFrom), agendas });
+  }
+
+  /** Starts the briefing now, whatever the clock (the debug panel and the console). */
+  startBriefing() {
+    this.briefing.begin(this.briefingPlan());
+  }
+
+  /** Soon after the game loads, Amy reads out the day, a part at a time as the girls are free (npc/briefing.js). What they say here they don't say again unprompted. */
+  updateBriefing(dt) {
+    const b = this.briefing;
+    if (this.paused || (!b.steps && !this.firstFrameDone)) return;
+    if (b.due(dt)) this.startBriefing();
+    const girlOf = (id) => this.companions.find((c) => c.character.id === id);
+    const quiet = this.companions.every((c) => c.voice.floor.left <= 0);
+    const step = b.next(dt, quiet, (id) => !!girlOf(id)?.availability().canRemark);
+    if (!step) return;
+    const c = girlOf(step.girl);
+    const said = step.quad ? c.voice.sayQuad(step.key, step.quad, { force: true }) : c.voice.say(step.key, { force: true, chance: 1 });
+    if (step.agenda) c.agenda.mention();
+    for (const o of this.companions) {
+      o.voice.weatherAt ??= 0;
+      o.voice.weatherSaid = true; // the briefing covered the weather, the board and the season's remark waits its turn
+      o.voice.forecastSaid = true;
+    }
+    return said;
   }
 
   /** Crosses the day off: the recap card comes up over the dark while the farm saves, and a press on it starts the fade (updateEndOfDay). */
@@ -11617,6 +11654,7 @@ export class Game {
     this.guard.run('updateVillage', () => this.villageHost.update(dt));
     this.guard.run('updateMarketTalk', () => this.updateMarketTalk(dt));
     this.guard.run('updateShowDay', () => this.updateShowDay(dt));
+    this.guard.run('updateBriefing', () => this.updateBriefing(dt));
     this.guard.run('updateShedTalk', () => this.updateShedTalk(dt));
     this.guard.run('updateLens', () => this.updateLens(dt, ridden));
     this.guard.run('updatePair', () => this.updatePair(dt));

@@ -15,6 +15,7 @@ What is true now, with the sections below to read for the detail. Keep it curren
 - **What they do.** Ride on the back, ride on the front rack, sit side-saddle, drive (with a confidence that sets pace and nerve), follow you, race, drag, run convoys, do doughnuts, jumps and the climb, show off, prank, nick your quad, bring tea, warm their hands, shelter in the barn or a cab, sleep on the back, take you to see something, call for help when bogged or tipped, give and take driving lessons, practise the clutch alone, work at the bench, carry things, take their own cars out, load hay, sit by the fire, and fetch jumpers and coats. Each has its own section, named after it.
 - **Who they are** (`characters.js`): Amy is careful, knows engines (`diagnoseAccuracy` 0.9), tidy and cold-blooded; Jess is restless, cheeky, a worse judge (0.5) and loud. Differences are weights and rates, never rules. Each owns a quad she cares for, and each girl names the quads. They only ever call the player "you". "Personalities, a companion wheel, and bolder girls (2026-10-05)", "Nicknames, whose quad, and hearing one (TODO 9, 10, 11)", "Getting attached to a quad (#23, TODO 128)".
 - **Bodies and clothes.** One CC0 model, each girl with her own figure and height. Garments are shells made from her own skinned triangles, cut along smooth lines where an edge must fall (the polo). The day's outfit is dealt from the farm seed and the day (polo, plaid, double polo, popped collar, Jess's crop-top on a hot day), with jumpers, wax jackets and helmets on top. Girls stay full size on scaled vehicles. "Two different figures, a rounder bust, and the seat of the shorts (2026-10-14)", "The polo as a garment (spike, behind `?polo=shell`)", "Other outfits, and layers (TODO 204)", "Wax jackets and hoods (TODO 62, first half)", "Helmets and goggles (TODO 48)". The collar's earlier goes ("The polo collar, third go" to "No collar; rounder still") are history.
+- **The start of the day** is a briefing: Amy reads out the weather, the board, the quad playing up and each girl's plan. "A start-of-day briefing (#45, was TODO 150)".
 - **Their voices** are in sound.md.
 
 ---
@@ -1578,3 +1579,13 @@ The banter's two new situations, both raised by `PubVisit` (`src/npc/pubVisit.js
 - **Lines.** Eight waiting chats and five goodbyes in `pubLines.js`, merged at the end of the banter so earlier recordings are untouched. They mention drinks the girls would have (Amy a lemonade, Jess cider) and that the door is painted on, but nothing is drunk: no new mechanic, no need or favour change.
 - **Not done.** The girls do not go into the pub or get a drink in hand; that waits until the door opens.
 - **Debug.** "Girls at the pub" in the Tune tab (the four distances and times); the village group in the Girls tab and `village stayed` in the console show the seconds at the pub.
+
+## A start-of-day briefing (#45, was TODO 150)
+
+- Decided: Amy reads out the day soon after the game loads, and Jess adds her plan, rather than each girl mentioning things at random later. Turning hidden state into story was the point.
+- `src/npc/briefing.js` (pure, tested): `planBriefing` makes the parts (an opener, the weather, the board's promise, the worst quad or "nothing wrong", Amy's agenda, Jess's agenda); `Briefing` hands them out one at a time when nobody is talking and the speaker `canRemark`, after `briefingGap` 0.8 s, dropping a part nobody can say for `briefingGiveUp` 40 s. It starts `briefingAfter` 8 s in.
+- It reuses the existing weather, forecast and agenda lines (the weather choice moved to `weatherSituation` and companionVoice uses it too), so only three new situations were recorded: `briefingOpen`, `briefingAllWell` and a quad line `briefingTrouble` (per quad and nickname, so Amy calls it what the farm does).
+- "Playing up" is the highest started fault level over all the girls' quads, at least `briefingTroubleFrom` 0.25. Quirks are not counted: they are the quad's character, not today's trouble.
+- Once it has run, the girls' own weather and forecast remarks are marked said, and the agenda's own timer is skipped for the girls it covered. It runs each game, not each day, and is not saved.
+- Debug: "Briefing" in the Tune tab, a readout and button in the Girls tab, `briefing` in the console.
+

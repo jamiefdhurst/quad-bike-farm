@@ -13,6 +13,7 @@ import { isThrashed } from '../engine/wearLedger.js';
 import { isThrashedRunningIn } from '../engine/runningIn.js';
 import { leftRunningSituation } from './leftRunning.js';
 import { quadKey } from './quadNames.js';
+import { weatherSituation } from './briefing.js';
 import { voiceWobble } from './voiceWobble.js';
 import { SEASON_SITUATIONS } from './seasonLines.js';
 
@@ -865,9 +866,7 @@ export class CompanionVoice {
     if (!this.weatherSaid && this.weatherTime > (this.weatherAt ??= 12 + Math.random() * 40)) {
       this.weatherSaid = true;
       // The temperature is worth a word when it's frosty, cold or warm (and the rain still comes first); a mild day says nothing of it.
-      const temperature = { frosty: 'frost', cold: 'cold', warm: 'warm' }[weather.band];
-      const kind = weather.storm > 0.5 ? 'storm' : weather.rain > 0.25 ? 'raining' : temperature ?? ({ sunny: 'sunny', fair: 'sunny', fog: 'fog' }[weather.kind] ?? 'grey');
-      const situation = { sunny: 'weatherSunny', raining: 'weatherRain', storm: 'weatherStorm', fog: 'weatherFog', grey: 'weatherGrey', frost: 'weatherFrost', cold: 'weatherCold', warm: 'weatherWarm' }[kind];
+      const situation = weatherSituation(weather);
       this.say(situation, { chance: 0.75 });
     }
     // The time of year (world/seasons.js): one remark a game, a while after the weather has been mentioned.
