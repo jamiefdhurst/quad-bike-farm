@@ -49,6 +49,8 @@ export class FarDetail {
     this.hidden = new WeakSet(); // set pieces and props we have hidden (so we only show what we hid)
     this.boxes = new WeakMap();
     this.full = new WeakMap(); // set piece -> whether its full version is the one drawn
+    this.seen = new WeakSet(); // scene children already searched for small things
+    this.small = []; // { mesh, off }: small shadow casters outside the vehicles, switched by their distance from you
   }
 
   /** Looks at the scene from `position` every quarter second (always when `now`). */
@@ -61,7 +63,46 @@ export class FarDetail {
       else if (BARN_PROP_NAMES.includes(o.name)) this.within(o, position, this.params.barnPropsDistance);
       else if (SET_PIECE_NAMES.includes(o.name) && o.userData.farVersion) this.swap(o, position);
       else if (SET_PIECE_NAMES.includes(o.name)) this.within(o, position, this.params.setPieceDistance);
+      else this.findSmall(o);
     }
+    this.smallShadows(position);
+  }
+
+  /** Notes the small shadow casters in a scene child the first time it is seen (mugs, bottles, tools, bolts on fixtures, the bench's clutter). */
+  findSmall(o) {
+    if (this.seen.has(o)) return;
+    this.seen.add(o);
+    o.traverse((m) => {
+      if (m.isMesh && !m.isInstancedMesh && m.castShadow && isSmallPart(m)) this.small.push({ mesh: m, off: false });
+    });
+  }
+
+  /** A small thing casts no shadow beyond `smallShadowDistance`: it cannot be told from the shadow of what it sits on. Close up nothing changes. */
+  smallShadows(position) {
+    const d = this.params.smallShadowDistance;
+    const e = this.small;
+    let n = 0;
+    for (const s of e) {
+      const m = s.mesh;
+      let root = m;
+      while (root.parent) root = root.parent;
+      if (!root.isScene) {
+        if (s.off) m.castShadow = true; // taken out of the scene: forget it, and leave it as it was if it is put back
+        continue;
+      }
+      e[n++] = s;
+      const x = m.matrixWorld.elements[12] - position.x;
+      const z = m.matrixWorld.elements[14] - position.z;
+      const far = d > 0 && Math.hypot(x, z) > (s.off ? d - MARGIN : d);
+      if (far && !s.off && m.castShadow) {
+        m.castShadow = false;
+        s.off = true;
+      } else if (!far && s.off) {
+        m.castShadow = true;
+        s.off = false;
+      }
+    }
+    e.length = n;
   }
 
   /** The ground bounds of an object's meshes, found once (set pieces and fixtures do not move). */

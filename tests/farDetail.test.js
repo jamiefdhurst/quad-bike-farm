@@ -205,3 +205,62 @@ describe('BARN_PROP_NAMES', () => {
     expect(BARN_PROP_NAMES).not.toContain('generator');
   });
 });
+
+describe('small things far away', () => {
+  function bench() {
+    const g = new THREE.Group();
+    g.name = 'mugShelf';
+    const mug = box(0.1);
+    mug.castShadow = true;
+    const shelf = box(1);
+    shelf.castShadow = true;
+    g.add(mug, shelf);
+    return { g, mug, shelf };
+  }
+
+  it('stops a small thing casting past the distance and gives it back when you return, leaving big things alone', () => {
+    const { g, mug, shelf } = bench();
+    g.position.set(30, 0, 0);
+    const scene = sceneWith(g);
+    scene.updateMatrixWorld(true);
+    const far = new FarDetail(scene, params);
+    far.update(new THREE.Vector3(0, 0, 0), 0, true);
+    expect(mug.castShadow).toBe(false);
+    expect(shelf.castShadow).toBe(true);
+    far.update(new THREE.Vector3(25, 0, 0), 0, true);
+    expect(mug.castShadow).toBe(true);
+  });
+
+  it('does not flicker on the line, and a distance of 0 leaves everything casting', () => {
+    const { g, mug } = bench();
+    g.position.set(19, 0, 0);
+    const scene = sceneWith(g);
+    scene.updateMatrixWorld(true);
+    const far = new FarDetail(scene, params);
+    far.update(new THREE.Vector3(-2, 0, 0), 0, true); // 21 m
+    expect(mug.castShadow).toBe(false);
+    far.update(new THREE.Vector3(0, 0, 0), 0, true); // 19 m: inside, but not by the margin
+    expect(mug.castShadow).toBe(false);
+    far.update(new THREE.Vector3(10, 0, 0), 0, true);
+    expect(mug.castShadow).toBe(true);
+    const off = new FarDetail(scene, { ...params, smallShadowDistance: 0 });
+    off.update(new THREE.Vector3(500, 0, 0), 0, true);
+    expect(mug.castShadow).toBe(true);
+  });
+
+  it('finds things added later, and gives a shadow back to one taken out while off', () => {
+    const scene = sceneWith();
+    const far = new FarDetail(scene, params);
+    far.update(new THREE.Vector3(), 0, true);
+    const { g, mug } = bench();
+    g.position.set(60, 0, 0);
+    scene.add(g);
+    scene.updateMatrixWorld(true);
+    far.update(new THREE.Vector3(), 0, true);
+    expect(mug.castShadow).toBe(false);
+    scene.remove(g);
+    far.update(new THREE.Vector3(), 0, true);
+    expect(mug.castShadow).toBe(true);
+    expect(far.small.length).toBe(0);
+  });
+});

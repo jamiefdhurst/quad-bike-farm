@@ -67,6 +67,7 @@ export class World {
     ];
 
     this.sky = new Sky(scene, renderer, { ...SKY_PARAMS });
+    this.sky.graphics = graphics;
     registerTuning('Sky', this.sky.params, SKY_RANGES);
 
     // Tyres wear the fields (groundWear.js); the yard, the drag strip, the barn floors and the road are hard and never do.

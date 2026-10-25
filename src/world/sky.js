@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { ShadowFit } from './shadowFit.js';
+import { DEFAULT_GRAPHICS_PARAMS } from '../core/graphics.js';
 
 export const SKY_PARAMS = {
   horizonColor: '#cfd3d4',
@@ -166,6 +168,9 @@ export class Sky {
     this.sun.shadow.bias = -0.0004;
     this.sun.shadow.normalBias = 0.04;
     this.sun.shadow.radius = 4;
+    this.fit = new ShadowFit();
+    this.viewDir = new THREE.Vector3();
+    this.graphics = null; // the graphics params, lent by the World (shadowSize, shadowAhead)
     scene.add(this.sun);
     scene.add(this.sun.target);
 
@@ -221,10 +226,20 @@ export class Sky {
     if (p.sunDir) this.sunOffset.set(p.sunDir.x, p.sunDir.y, p.sunDir.z).multiplyScalar(85);
     this.scene.environmentIntensity = 0.6 * (p.envLevel ?? 1);
 
-    // Keep the shadow frustum centred on the action, snapped to texels to stop shimmering.
-    const texel = 90 / this.sun.shadow.mapSize.x;
-    const fx = Math.round(focus.x / texel) * texel;
-    const fz = Math.round(focus.z / texel) * texel;
+    // Keep the shadow window on what you can see: ahead of you along the view, snapped to texels to stop shimmering (shadowFit.js).
+    const g = this.graphics ?? DEFAULT_GRAPHICS_PARAMS;
+    const half = g.shadowSize / 2;
+    const cam = this.sun.shadow.camera;
+    if (cam.right !== half) {
+      cam.left = cam.bottom = -half;
+      cam.right = cam.top = half;
+      cam.updateProjectionMatrix();
+    }
+    if (camera.getWorldDirection) {
+      camera.getWorldDirection(this.viewDir);
+      this.fit.update(dt, this.viewDir.x, this.viewDir.z);
+    }
+    const { x: fx, z: fz } = this.fit.centre(focus, g.shadowAhead, g.shadowSize / this.sun.shadow.mapSize.x);
     this.sun.target.position.set(fx, focus.y, fz);
     this.sun.position.set(fx + this.sunOffset.x, focus.y + this.sunOffset.y, fz + this.sunOffset.z);
     this.dome.position.copy(camera.position);
