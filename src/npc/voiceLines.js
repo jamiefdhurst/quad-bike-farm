@@ -1551,7 +1551,7 @@ export const VOICE_LINES = {
   // The lane and the visitors (trafficLines.js).
   ...AMY_TRAFFIC_LINES,
   ...AMY_NEIGHBOUR_LINES,
-  // The camera and the corkboard (photoLines.js).
+  // The camera and the cork board (photoLines.js).
   ...AMY_PHOTO_LINES,
   // The electric fence on the hill (fenceLines.js).
   ...AMY_FENCE_LINES,

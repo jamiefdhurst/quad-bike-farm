@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// The farm's money tin: a printed biscuit tin with a hinged lid, the kind that lives on a shelf in a barn. Procedural, no assets. Metres, in its own
+// The farm's money tin: a printed tin with a hinged lid, the kind that lives on a shelf in a barn. Procedural, no assets. Metres, in its own
 // frame: x from the back (towards the wall) to the front, y up from its base, z along the wall. The lid hinges on the back top edge (`lid`, turned
 // about z), and what is in it grows with the balance in five steps (`setLevel`): a few coins, scattered change, stacks and a note, bundles of
 // notes, notes over the rim. Pure geometry, tested in tests/moneyTin.test.js.

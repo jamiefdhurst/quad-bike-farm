@@ -11,7 +11,7 @@ const PRINT_H = 176;
 const PIN_COLOURS = ['#c43a2e', '#2f6fb5', '#e0b42c', '#3f9a4c'];
 
 /**
- * The corkboard in the barn, on the back wall south of the chalkboards: the photos, pinned at random and a little askew, drawn on a canvas
+ * The cork board in the barn, on the back wall south of the chalkboards: the photos, pinned at random and a little askew, drawn on a canvas
  * that's redrawn when one is added. Look at it and press E for a bigger view (a card of the prints with when they were taken).
  */
 export class PhotoBoardView {
@@ -54,7 +54,7 @@ export class PhotoBoardView {
   }
 
   prompt() {
-    return this.wall.photos.length ? 'Look at the photos' : 'The corkboard (take a photo with 5)';
+    return this.wall.photos.length ? 'Look at the photos' : 'The cork board (take a photo with 7)';
   }
 
   open() {
@@ -151,7 +151,7 @@ export class PhotoBoardView {
     const el = document.createElement('div');
     el.className = 'photoboard';
     el.style.display = 'none';
-    el.innerHTML = '<div class="pb-card"><div class="pb-title">The corkboard</div><div class="pb-grid"></div><div class="pb-keys">E or G to step back</div></div>';
+    el.innerHTML = '<div class="pb-card"><div class="pb-title">The cork board</div><div class="pb-grid"></div><div class="pb-keys">E or G to step back</div></div>';
     document.body.appendChild(el);
     this.el = el;
     this.gridEl = el.querySelector('.pb-grid');

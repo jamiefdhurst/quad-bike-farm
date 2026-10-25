@@ -1611,7 +1611,7 @@ export class Game {
     this.marketTalk = new MarketTalk(this.marketTalkParams);
     this.trophyShelf = new TrophyShelf({ game: this }); // under it: a rosette for each show placed at (farm/showDay.js)
     this.wallCalendar = new WallCalendar({ game: this, date: this.date }); // between the two boards: the days crossed off
-    this.photos = new PhotoHost(this); // the camera key and the corkboard beside the chalkboards (photos/)
+    this.photos = new PhotoHost(this); // the camera key and the cork board beside the chalkboards (photos/)
     this.setUpEndOfDay();
     registerTuning('Muck job', this.muckParams, MUCK_PARAM_RANGES);
     registerTuning('Job board', this.jobBoardParams, JOB_BOARD_PARAM_RANGES);

@@ -13,7 +13,7 @@ export const AMY_VEHICLEGO_LINES = {
   utvRefuse: line(30, ['No. It is a farm vehicle, not a toy. Ask Jess, she will love it.', 'Absolutely not. I would have to reverse it, and I do not trust the lever.']),
   landyRefuse: line(30, ['I am not driving that. It has a starting handle.', 'No. It has no power steering and I will not be made to try.']),
   utvGoAsk: line(60, ['Fine. Though it is only a very large golf buggy.', 'All right. Mind the bed, nothing is in it.', 'If I must. Which one is reverse?']),
-  utvGoSetOff: line(40, ['There. Smooth as anything.', 'Oh, it does it all itself. That is much more sensible.', 'Seatbelt on. Not that there is one.']),
+  utvGoSetOff: line(40, ['There. Smooth as anything.', 'Oh, it does it all itself. That is much more sensible.', 'Seat belt on. Not that there is one.']),
   utvGoDone: line(60, ['That was perfectly civilised.', 'Fine, that was quite nice. Do not tell Jess.', 'Parked, and not a scratch on it.']),
   utvGoWatch: line(60, ['Slowly, Jess! It is not a quad!', 'Please do not tip the bed.', 'Mind the gatepost!']),
   landyGoAsk: line(60, ['Fine. Hand me the keys. Both feet on the pedals, correctly.', 'All right. I have read the manual. It is a Series. It is simple.', 'If I must. Stand back from the front.']),

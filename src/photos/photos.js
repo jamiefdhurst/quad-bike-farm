@@ -1,4 +1,4 @@
-// Photos: a camera key, the shots pinned on a corkboard on the barn wall, and how a girl takes being photographed. Pure (the picture
+// Photos: a camera key, the shots pinned on a cork board on the barn wall, and how a girl takes being photographed. Pure (the picture
 // itself is drawn by the game and passed in as a data URL), tested. The wall is kept between days (farm/farmSave.js).
 
 export const DEFAULT_PHOTO_PARAMS = {
@@ -87,7 +87,7 @@ export function clockText(hours) {
 }
 
 /**
- * The corkboard's shots. Each is { data, day, time, girls: [ids], x, y, tilt, pin }: x and y where it is pinned (0..1 across the cork,
+ * The cork board's shots. Each is { data, day, time, girls: [ids], x, y, tilt, pin }: x and y where it is pinned (0..1 across the cork,
  * dealt so it lands away from those already there), tilt how askew, pin the colour of the pin.
  */
 export class PhotoWall {

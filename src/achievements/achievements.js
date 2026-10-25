@@ -147,7 +147,7 @@ export const ACHIEVEMENTS = [
   { id: 'say-cheese', group: 'Jobs', name: 'Say cheese', hint: 'Take a photo with a girl in it (press 7)', points: 1, test: (s) => s.n('photoGirl') >= 1 },
   { id: 'caught-napping', group: 'Jobs', name: 'Caught napping', hint: 'Photograph a girl fast asleep on the bales (press 7)', points: 2, test: (s) => s.n('photoAsleep') >= 1 },
   { id: 'proper-photographer', group: 'Jobs', name: 'Proper photographer', hint: 'In photo mode (press 8), take a shot with both girls in it', points: 2, test: (s) => s.n('photoModeBoth') >= 1 },
-  { id: 'gallery', group: 'Jobs', name: 'Gallery', hint: 'Have six photos pinned on the corkboard in the barn', points: 2, test: (s) => s.m('photosPinned') >= 6 },
+  { id: 'gallery', group: 'Jobs', name: 'Gallery', hint: 'Have six photos pinned on the cork board in the barn', points: 2, test: (s) => s.m('photosPinned') >= 6 },
   { id: 'park-brake', group: 'Jobs', name: 'Handbrake on', hint: 'Put the parking brake on', points: 1, test: (s) => s.n('parkBrake') >= 1 },
   { id: 'map', group: 'Jobs', name: 'Where am I?', hint: 'Open the farm map', points: 1, test: (s) => s.n('map') >= 1 },
   { id: 'old-bike', group: 'Jobs', name: 'Kick it over', hint: 'Get the old bike in the barn running: tickle it, retard the spark and kick', points: 3, needs: 'plover', test: (s) => s.n('oldBike') >= 1 },

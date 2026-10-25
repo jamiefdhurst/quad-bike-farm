@@ -9,7 +9,7 @@ const SHELF = { long: 0.5, deep: 0.25, thick: 0.03, height: 0.8 }; // metres; he
 const SPEED = 3.2; // lid openness per second
 
 /**
- * The money tin on its shelf under the cork board, on the barn's back wall: a biscuit tin with the farm's money in it (world/moneyTin.js). Look at it
+ * The money tin on its shelf under the cork board, on the barn's back wall: a tin with the farm's money in it (world/moneyTin.js). Look at it
  * and press E: the lid comes up and a card says what is in it, what moved today and the last few deals. What shows in the tin grows with the balance.
  */
 export class MoneyTinView {
