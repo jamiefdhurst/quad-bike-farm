@@ -9,7 +9,7 @@ import { buildVehicleBody } from './trafficView.js';
 import { PARKED_SIZES } from './neighbourFarm.js';
 import { poseBaleSpike } from '../vehicle/tractorModel.js';
 import { Frame, shellAndRoof, chimney, windowAt, bayWindow, doorAt, porch, dormer, flowerBox } from './villageKit.js';
-import { fasciaTexture, pubSignTexture, shopInteriorTexture, awningTexture, chalkBoardTexture, rollerDoorTexture, pumpFaceTexture, partPacketTexture, priceBoardTexture, carParkTexture, noticeTexture } from './villageTextures.js';
+import { fasciaTexture, pubSignTexture, shopInteriorTexture, awningTexture, chalkBoardTexture, rollerDoorTexture, pumpFaceTexture, partPacketTexture, pumpSideTexture, pumpHeaderTexture, bollardTexture, priceBoardTexture, carParkTexture, noticeTexture } from './villageTextures.js';
 
 void poseBaleSpike;
 
@@ -525,6 +525,12 @@ function pillarBox(ctx, f, x, z) {
 
 // The garage ----------------------------------------------------------------------------------------------------------------------------
 
+/** A round bollard: a painted post with a domed top, `r` thick and `h` tall, standing at (x, z). */
+function bollard(f, mat, x, z, h, r) {
+  f.add(new THREE.CylinderGeometry(r, r * 1.08, h, 14), mat, x, h / 2, z);
+  f.add(new THREE.SphereGeometry(r, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), mat, x, h, z);
+}
+
 export function buildGarage(ctx, b) {
   const { M, S, random } = ctx;
   const f = frameFor(ctx, b);
@@ -532,23 +538,19 @@ export function buildGarage(ctx, b) {
   shellAndRoof(f, b, m, { plinthMat: M.concrete, plinth: 0.4, eave: 0.3, verge: 0.2 });
   f.solid(0, b.wallHeight / 2, 0, b.halfX, b.wallHeight / 2 + 0.6, b.halfZ);
   const front = b.halfZ;
-  // The workshop door (left): a roller door in a steel frame with a sign over it; the office (right): a glazed front with a door.
+  // Two workshop bays, each a roller door in a steel frame with its shutter box over it, and an ordinary steel door at the end for staff.
   const doorW = 3.6;
   const doorH = 2.6;
-  const dx = -4.4;
-  f.box(doorW + 0.5, doorH + 0.4, 0.14, M.iron, dx, doorH / 2 + 0.2, front + 0.02, 0.6);
-  f.add(worldBox(doorW, doorH, 0.06, doorW, doorH), new THREE.MeshStandardMaterial({ map: rollerDoorTexture(random), roughness: 0.6, metalness: 0.3 }), dx, doorH / 2 + 0.02, front + 0.08);
-  f.box(doorW + 0.5, 0.35, 0.3, M.iron, dx, doorH + 0.5, front + 0.12, 0.6); // the shutter box
-  for (const sx of [-1, 1]) f.box(0.1, 0.9, 0.1, new THREE.MeshStandardMaterial({ color: 0xe8c23a, roughness: 0.6 }), dx + sx * (doorW / 2 + 0.55), 0.45, front + 0.9, 0.6); // yellow bollards
-  const ox = 3.6;
-  f.box(4.6, 2.9, 0.1, M.iron, ox, 1.55, front + 0.03, 0.6);
-  f.add(worldBox(4.4, 2.5, 0.06, 4.4, 2.5), M.glow, ox - 0.1, 1.5, front + 0.09);
-  // The office seen through its glass: a desk, a chair, a calendar, a light.
-  f.box(1.6, 0.05, 0.7, M.weathered, ox - 0.8, 0.9, front - 1.0, 0.6);
-  f.box(0.5, 0.5, 0.5, M.iron, ox - 0.8, 0.5, front - 1.6, 0.6);
-  f.add(new THREE.BoxGeometry(0.3, 0.2, 0.05), M.signGlow, ox - 0.4, 1.1, front - 1.0);
-  f.box(0.9, 2.2, 0.06, M.paint, ox + 2.0, 1.1, front + 0.08, 0.6);
-  f.add(worldBox(0.7, 1.3, 0.04, 0.7, 1.3), M.glow, ox + 2.0, 1.4, front + 0.12);
+  const bollardMat = new THREE.MeshStandardMaterial({ map: bollardTexture(random), roughness: 0.6 });
+  const bay = (dx) => {
+    f.box(doorW + 0.5, doorH + 0.4, 0.14, M.iron, dx, doorH / 2 + 0.2, front + 0.02, 0.6);
+    f.add(worldBox(doorW, doorH, 0.06, doorW, doorH), new THREE.MeshStandardMaterial({ map: rollerDoorTexture(random), roughness: 0.6, metalness: 0.3 }), dx, doorH / 2 + 0.02, front + 0.08);
+    f.box(doorW + 0.5, 0.35, 0.3, M.iron, dx, doorH + 0.5, front + 0.12, 0.6); // the shutter box
+    for (const sx of [-1, 1]) bollard(f, bollardMat, dx + sx * (doorW / 2 + 0.55), front + 0.9, 0.9, 0.07);
+  };
+  bay(-4.4);
+  bay(3.0);
+  doorAt(f, m, { x: 6.5, w: 0.95, h: 2.1, wallZ: front, face: 1, doorMat: new THREE.MeshStandardMaterial({ color: 0x35506a, roughness: 0.5, metalness: 0.3 }), fanlight: false, lamp: false });
   // The sign over the lot, clear of the shutter box and under the eaves, its board the shape of its texture (a stretched one reads badly).
   signBoard(ctx, f, fasciaTexture(random, { text: b.name.toUpperCase(), sub: 'MOT · SERVICING · REPAIRS · TYRES', bg: '#1b2a44', fg: '#f2f2ee', accent: '#e8c23a', font: 'bold 96px Arial, Helvetica, sans-serif', width: 2048, height: 192 }), 9.4, 0.88, -0.5, 3.85, front, 1, 0.5);
   // Side window, a flue and a lean-to for the tyres.
@@ -627,41 +629,57 @@ function forecourt(ctx, w, S, b, random) {
   const isl = w.box(x1 - x0, 0.16, 1.1, M.kerb, cx, 0.08, pz, 1);
   void isl;
   const colours = [{ grade: 'UNLEADED', band: '#2f8a46', price: '1.52', fuel: 'petrol' }, { grade: 'UNLEADED', band: '#2f8a46', price: '1.52', fuel: 'petrol' }, { grade: 'DIESEL', band: '#222', price: '1.58', fuel: 'diesel' }];
+  const bollardMat = new THREE.MeshStandardMaterial({ map: bollardTexture(random), roughness: 0.6 });
+  const steel = new THREE.MeshStandardMaterial({ color: 0xb9bcbe, roughness: 0.3, metalness: 0.8 });
+  const skirt = new THREE.MeshStandardMaterial({ color: 0x3a3d40, roughness: 0.6, metalness: 0.3 });
+  const rubber = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.9 });
+  const lit = (tex, strength) => {
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0 });
+    ctx.night.push({ mat, strength });
+    return mat;
+  };
   xs.forEach((px, i) => {
     const c = colours[i];
-    const face = new THREE.MeshStandardMaterial({ map: pumpFaceTexture(c.grade, c.band, c.price), roughness: 0.5, emissive: 0xffffff, emissiveIntensity: 0 });
-    face.emissiveMap = face.map;
-    ctx.night.push({ mat: face, strength: 0.35 });
+    const face = lit(pumpFaceTexture(c.grade, c.band, c.price), 0.35);
+    const side = new THREE.MeshStandardMaterial({ map: pumpSideTexture(c.band), roughness: 0.45, metalness: 0.15 });
+    const header = lit(pumpHeaderTexture(c.band), 0.6);
     const body = new THREE.MeshStandardMaterial({ color: 0xdcdcd4, roughness: 0.4, metalness: 0.3 });
     const accent = new THREE.MeshStandardMaterial({ color: new THREE.Color(c.band), roughness: 0.5 });
-    w.box(0.7, 0.14, 0.45, M.kerb, px, 0.23, pz, 1);
-    w.box(0.56, 1.35, 0.36, body, px, 0.9, pz, 0.6);
-    w.box(0.6, 0.12, 0.4, accent, px, 1.62, pz, 0.6);
-    w.box(0.64, 0.08, 0.44, body, px, 1.72, pz, 0.6);
+    w.box(0.7, 0.14, 0.45, M.kerb, px, 0.23, pz, 1); // the base it is bolted to
+    w.box(0.6, 0.3, 0.4, skirt, px, 0.45, pz, 0.6); // the dark skirt
+    w.box(0.56, 1.1, 0.36, body, px, 1.15, pz, 0.6);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) w.box(0.03, 1.1, 0.03, steel, px + sx * 0.285, 1.15, pz + sz * 0.185, 0.6); // the corner trims
+    w.box(0.6, 0.04, 0.4, steel, px, 0.6, pz, 0.6); // the trim between skirt and body
+    w.box(0.62, 0.3, 0.42, body, px, 1.83, pz, 0.6); // the head
+    w.box(0.66, 0.05, 0.46, accent, px, 1.995, pz, 0.6); // and its cap
     for (const s of [-1, 1]) {
-      w.add(new THREE.PlaneGeometry(0.5, 0.75), face, px, 1.15, pz + s * 0.185).rotation.y = s > 0 ? 0 : Math.PI;
+      const fz = pz + s * 0.185;
+      const r = s > 0 ? 0 : Math.PI;
+      w.add(new THREE.PlaneGeometry(0.5, 0.75), face, px, 1.15, fz + s * 0.002).rotation.y = r;
+      w.add(new THREE.PlaneGeometry(0.58, 0.14), header, px, 1.83, pz + s * 0.212).rotation.y = r;
+      w.add(new THREE.PlaneGeometry(0.34, 1.1), side, px + s * 0.2865, 1.15, pz).rotation.y = (s * Math.PI) / 2;
     }
-    // A holster, nozzle and hose on each side, all on the pump's right-hand flank: the spout hangs in the holster and the hose runs from the
+    // A holster, nozzle and hose on each side, on the pump's right-hand flank: the spout hangs in the holster and the hose runs from the
     // nozzle's back, down in a loop and into the pump's base.
-    const hose = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.9 });
     for (const s of [-1, 1]) {
       const hz = pz + s * 0.09;
-      const hx = px + 0.28 + 0.06;
-      w.box(0.12, 0.26, 0.13, M.iron, px + 0.28 + 0.03, 0.95, hz, 0.6); // the holster, fixed to the side
-      w.add(new THREE.CylinderGeometry(0.014, 0.014, 0.26, 8), M.lead, hx, 0.92, hz); // the spout, in the holster
+      const hx = px + 0.285 + 0.07;
+      w.box(0.14, 0.28, 0.14, M.iron, px + 0.285 + 0.035, 0.95, hz, 0.6); // the holster, fixed to the side
+      w.add(new THREE.CylinderGeometry(0.014, 0.014, 0.26, 8), steel, hx, 0.92, hz); // the spout, in the holster
       w.box(0.07, 0.11, 0.05, accent, hx, 1.1, hz, 0.6); // the nozzle's body
       w.box(0.04, 0.03, 0.16, M.iron, hx, 1.17, hz + s * 0.05, 0.6); // its grip, back towards the hose
+      w.add(new THREE.TorusGeometry(0.03, 0.008, 6, 10), steel, hx, 1.19, hz + s * 0.13); // the swivel
       const curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(hx, 1.15, hz + s * 0.12),
-        new THREE.Vector3(hx + 0.1, 0.8, hz + s * 0.14),
+        new THREE.Vector3(hx, 1.15, hz + s * 0.13),
+        new THREE.Vector3(hx + 0.1, 0.8, hz + s * 0.15),
         new THREE.Vector3(hx + 0.14, 0.4, hz + s * 0.12),
         new THREE.Vector3(hx + 0.04, 0.3, hz + s * 0.04),
         new THREE.Vector3(px + 0.27, 0.3, hz),
       ]);
-      w.add(new THREE.TubeGeometry(curve, 20, 0.02, 6), hose, 0, 0, 0);
+      w.add(new THREE.TubeGeometry(curve, 20, 0.026, 8), rubber, 0, 0, 0);
     }
     w.solid(px, 0.95, pz, 0.38, 0.95, 0.28);
-    for (const s of [-1, 1]) w.box(0.12, 0.5, 0.12, new THREE.MeshStandardMaterial({ color: 0xe8c23a, roughness: 0.6 }), px + s * 0.55, 0.4, pz, 0.6);
+    for (const s of [-1, 1]) bollard(w, bollardMat, px + s * 0.55, pz, 0.7, 0.06); // a guard each side of the pump
     const proxy = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.8, 1.0), new THREE.MeshBasicMaterial({ visible: false }));
     proxy.position.set(px, y + 0.9, pz);
     proxy.userData.proxyId = `pump${i}`;
@@ -692,7 +710,7 @@ function forecourt(ctx, w, S, b, random) {
   const bz = S.forecourt.minZ + 1.0;
   const by = ctx.heights.heightAt(bx, bz) - w.y0;
   const turn = (3 * Math.PI) / 4;
-  w.box(0.12, 3.2, 0.12, M.iron, bx, by + 1.6, bz, 0.6);
+  w.box(0.12, 2.0, 0.12, M.iron, bx, by + 1.0, bz, 0.6); // the post stops at the board's foot, so it never shows through the text
   w.box(0.2, 0.2, 0.2, M.iron, bx, by + 0.1, bz, 0.6);
   const priceMat = new THREE.MeshStandardMaterial({
     map: priceBoardTexture(random, 'HOLLIS MOTORS', [{ label: 'UNLEADED', price: '1.52', band: '#2f8a46' }, { label: 'DIESEL', price: '1.58', band: '#333' }]),

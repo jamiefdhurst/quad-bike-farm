@@ -3,6 +3,7 @@
 // in code; nothing is a real maker's or shop's name.
 
 import { canvasTexture } from './outbuildingProps.js';
+import { segText } from '../vehicle/dashParts.js';
 
 const grain = (ctx, w, h, random, n, alpha = 0.08) => {
   for (let i = 0; i < n; i++) {
@@ -387,43 +388,28 @@ export function roadClosedTexture() {
   });
 }
 
-/** Draws `text` as red seven-segment digits (and points) in a box: a pump's LED display, not a font. */
-function ledDigits(ctx, text, x, y, w, h, colour) {
-  const digits = [...text].filter((c) => c !== '.').length;
-  const dw = w / digits;
-  const t = h * 0.13;
-  const segs = { a: [0, 0, 1, 0], b: [1, 0, 1, 1], c: [1, 1, 1, 2], d: [0, 2, 1, 2], e: [0, 1, 0, 2], f: [0, 0, 0, 1], g: [0, 1, 1, 1] };
-  const on = { 0: 'abcdef', 1: 'bc', 2: 'abged', 3: 'abgcd', 4: 'fgbc', 5: 'afgcd', 6: 'afgedc', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' };
-  let i = 0;
-  ctx.lineCap = 'round';
-  ctx.lineWidth = t;
-  for (let k = 0; k < text.length; k++) {
-    const ch = text[k];
-    if (ch === '.') continue;
-    const x0 = x + i * dw + dw * 0.18;
-    const x1 = x + (i + 1) * dw - dw * 0.18;
-    const y0 = y + h * 0.1;
-    const y1 = y + h * 0.9;
-    for (const [name, [ax, ay, bx, by]] of Object.entries(segs)) {
-      ctx.strokeStyle = on[ch].includes(name) ? colour : 'rgba(255,60,40,0.07)';
-      ctx.beginPath();
-      ctx.moveTo(x0 + ax * (x1 - x0), y0 + (ay / 2) * (y1 - y0));
-      ctx.lineTo(x0 + bx * (x1 - x0), y0 + (by / 2) * (y1 - y0));
-      ctx.stroke();
-    }
-    if (text[k + 1] === '.') {
-      ctx.fillStyle = colour;
-      ctx.beginPath();
-      ctx.arc(x1 + dw * 0.06, y1, t * 0.6, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    i++;
-  }
+const LED_RED = { on: '#ff3b2a', ghost: '#3a0f0c' };
+const LED_GREEN = { on: '#6dff7d', ghost: '#0e3a16' };
+
+/** A dark display window at (x, y) `w` by `h` with seven-segment `text` in it, right-aligned, the unlit segments faintly showing (as the quads' dashes do). */
+function ledWindow(ctx, text, x, y, w, h, { on, ghost }) {
+  ctx.fillStyle = '#080a0c';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#7d7f7c';
+  ctx.lineWidth = 5;
+  ctx.strokeRect(x, y, w, h);
+  const g = ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, 'rgba(255,255,255,0.1)');
+  g.addColorStop(0.5, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+  const dh = h - 24;
+  segText(ctx, text, x + w - 14, y + 12, dh, on, ghost);
 }
 
 /**
- * A petrol pump's face (2:3): the grade in a coloured band, then the way a real pump reads: a dark window of red seven-segment digits for the
- * money and the litres and a green one for the price a litre, each with a small caption beside it, and the pay-inside plate under them.
+ * A petrol pump's face (2:3): the grade in a coloured band, then three dark windows of seven-segment digits (the money and the litres in red, the
+ * price in pence a litre in green) with a short caption to the left of each, and the pay-inside plate under them.
  */
 export function pumpFaceTexture(grade, band, price) {
   return canvasTexture(384, 576, (ctx, w, h) => {
@@ -436,29 +422,90 @@ export function pumpFaceTexture(grade, band, price) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(grade, w / 2, 56);
-    const row = (y, label, text, colour, small) => {
-      ctx.fillStyle = '#0b0d0f';
-      ctx.fillRect(100, y, 260, 84);
-      ctx.strokeStyle = '#8a8a84';
-      ctx.lineWidth = 4;
-      ctx.strokeRect(100, y, 260, 84);
-      ledDigits(ctx, text, 112, y + 8, 236, 68, colour);
-      ctx.fillStyle = '#333';
+    const row = (y, label, text, colour) => {
+      ledWindow(ctx, text, 112, y, 252, 92, colour);
+      ctx.fillStyle = '#2a2a2a';
       ctx.textAlign = 'left';
-      ctx.font = 'bold 22px Arial, Helvetica, sans-serif';
-      ctx.fillText(label, 16, y + 30);
-      ctx.font = '17px Arial, Helvetica, sans-serif';
-      ctx.fillText(small, 16, y + 56);
+      ctx.font = 'bold 21px Arial, Helvetica, sans-serif';
+      ctx.fillText(label, 14, y + 46);
     };
-    row(140, '£', '0.00', '#ff3b2a', 'TO PAY');
-    row(244, 'LITRES', '0.00', '#ff3b2a', 'DELIVERED');
-    row(348, 'PRICE', `${Math.round(parseFloat(price) * 100)}.9`, '#6dff7d', 'PENCE/LITRE');
+    row(132, '£', '  0.00', LED_RED);
+    row(240, 'LITRES', '  0.00', LED_RED);
+    row(348, 'PENCE/L', `${Math.round(parseFloat(price) * 100)}.9`, LED_GREEN);
     ctx.fillStyle = '#9a9a92';
     ctx.fillRect(24, 468, w - 48, 52);
     ctx.fillStyle = '#222';
     ctx.textAlign = 'center';
     ctx.font = 'bold 24px Arial, Helvetica, sans-serif';
     ctx.fillText('LIFT NOZZLE · PAY INSIDE', w / 2, 494);
+  });
+}
+
+/** A pump's side panel (about 1:3.2): white enamel with a stripe in the grade's colour, a vent grille, a hazard plate and a small name. */
+export function pumpSideTexture(band) {
+  return canvasTexture(128, 416, (ctx, w, h) => {
+    ctx.fillStyle = '#e4e4de';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = band;
+    ctx.fillRect(0, 30, w, 22);
+    ctx.fillStyle = '#c8c8c0';
+    ctx.fillRect(10, 74, w - 20, 120);
+    ctx.fillStyle = '#6a6a64';
+    for (let y = 82; y < 190; y += 9) ctx.fillRect(16, y, w - 32, 4); // the louvres
+    ctx.fillStyle = '#e8c23a';
+    ctx.fillRect(14, 230, w - 28, 54);
+    ctx.fillStyle = '#16161a';
+    ctx.font = 'bold 15px Arial, Helvetica, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('NO SMOKING', w / 2, 247);
+    ctx.fillText('ENGINE OFF', w / 2, 266);
+    ctx.fillStyle = '#3a3d40';
+    ctx.font = 'bold 17px Arial, Helvetica, sans-serif';
+    ctx.fillText('HOLLIS', w / 2, 330);
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.fillRect(0, h - 70, w, 70); // the dirt that splashes up
+    for (let i = 0; i < 40; i++) {
+      ctx.fillStyle = `rgba(60,50,40,${0.04 + Math.random() * 0.06})`;
+      ctx.fillRect(Math.random() * w, h - 90 + Math.random() * 90, 2 + Math.random() * 6, 2 + Math.random() * 12);
+    }
+  });
+}
+
+/** The strip across the pump's head (about 4:1): the name on the grade's colour. */
+export function pumpHeaderTexture(band) {
+  return canvasTexture(256, 64, (ctx, w, h) => {
+    ctx.fillStyle = '#f2f2ec';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = band;
+    ctx.fillRect(0, 0, 22, h);
+    ctx.fillRect(w - 22, 0, 22, h);
+    ctx.fillStyle = '#1b2a44';
+    ctx.font = 'bold 40px Arial, Helvetica, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('HOLLIS', w / 2, h / 2 + 2);
+  });
+}
+
+/** A yellow post, painted and scuffed, with a black band and a white reflector strip near the top. One tile wraps round once. */
+export function bollardTexture(random) {
+  return canvasTexture(64, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#e0b92c';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#17171a';
+    ctx.fillRect(0, h * 0.18, w, h * 0.1);
+    ctx.fillStyle = '#e9e9e2';
+    ctx.fillRect(0, h * 0.3, w, h * 0.08);
+    for (let i = 0; i < 70; i++) {
+      ctx.fillStyle = `rgba(${random() < 0.5 ? '40,30,10' : '255,240,180'},${0.05 + random() * 0.15})`;
+      ctx.fillRect(random() * w, h * 0.4 + random() * h * 0.6, 1 + random() * 4, 1 + random() * 9);
+    }
+    const g = ctx.createLinearGradient(0, h * 0.7, 0, h);
+    g.addColorStop(0, 'rgba(50,40,30,0)');
+    g.addColorStop(1, 'rgba(50,40,30,0.5)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, h * 0.7, w, h * 0.3);
   });
 }
 
@@ -528,17 +575,15 @@ export function priceBoardTexture(random, name, rows) {
     rows.forEach((r, i) => {
       const y = 170 + i * 110;
       ctx.fillStyle = r.band;
-      ctx.fillRect(22, y - 38, w - 44, 84);
+      ctx.fillRect(22, y - 38, w - 44, 28);
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 28px Arial, Helvetica, sans-serif';
-      ctx.fillText(r.label, w / 2, y - 14);
-      ctx.fillStyle = '#fff6c8';
-      ctx.font = 'bold 40px "Courier New", monospace';
-      ctx.fillText(r.price, w / 2, y + 22);
+      ctx.font = 'bold 22px Arial, Helvetica, sans-serif';
+      ctx.fillText(r.label, w / 2, y - 24);
+      ledWindow(ctx, `${Math.round(parseFloat(r.price) * 100)}.9`, 22, y - 8, w - 44, 70, LED_GREEN);
     });
     ctx.fillStyle = '#cfd6e2';
     ctx.font = '22px Arial, Helvetica, sans-serif';
-    ctx.fillText('£ PER LITRE', w / 2, h - 36);
+    ctx.fillText('PENCE PER LITRE', w / 2, h - 36);
     grain(ctx, w, h, random, 300, 0.08);
   });
 }

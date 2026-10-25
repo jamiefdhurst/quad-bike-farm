@@ -128,7 +128,8 @@ export class VillageHost {
     if (this.filling && !g.interaction.focused) this.filling = null;
     const dark = g.daylight?.darkness ?? 0;
     this.props.setNight(dark);
-    const p = g.player.position;
+    // The camera, not the player: riding leaves the player's own position where you got on.
+    const p = g.camera.position;
     this.props.group.visible = distanceToTile(g.world.layout.village.area, p.x, p.z) < this.params.drawDistance;
   }
 
