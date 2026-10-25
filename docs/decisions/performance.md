@@ -10,7 +10,7 @@ What is true now, with the sections below to read for the detail. Keep it curren
 - **Drawing less far away.** Set pieces, barn fixtures and vehicles' small parts are left out by distance (`src/world/farDetail.js`), and vehicles stop casting shadows past 80 m; scattered things go through `tiledInstances`/`instanceModel` and ground cover stops at 70 to 90 m. "Draw less far away (#365)", and in world.md "Drawing less (frame time) (2026-10-12)".
 - **Frame time on Jamie's Mac** (`tools/perf.mjs`, real GPU, 1600 by 1000 at 2x): 11 to 15 ms a frame at every spot against a local budget of 8 ms, with every feature's own update under 0.15 ms, so the time is in drawing. Load: "Ready" in about 2.7 s from a fresh browser against 2.5 s. "A /perf command and a performance label (#396)".
 - **Loading.** Voice files fetched when a line is wanted, engine banks within 45 m, the start screen's tips built in. In process.md: "Loading faster (2026-10-09)", "Smaller downloads (TODO 104, 2026-10-18)".
-- **Open:** shaders prepared while loading (#372), counting stutters (#373), batching vehicles (#374), building areas only near (#375), parked vehicles sleeping (#150), less work far away (#152), fewer objects made every frame (#174), switched-off vehicles costing nothing (#225).
+- **Open:** shadows only where you can see them (#405), never-culled meshes (#406), shaders prepared while loading (#372), counting stutters (#373), batching vehicles (#374), building areas only near (#375), parked vehicles sleeping (#150), less work far away (#152), fewer objects made every frame (#174), switched-off vehicles costing nothing (#225).
 
 ---
 
@@ -49,3 +49,8 @@ The sections below are the record, oldest first. A new decision goes at the end.
 
 - #365 put `fuelTank` and `generator` in `BARN_PROP_NAMES`, the barn's indoor clutter hidden beyond 15 m, but the petrol tank and the red diesel bowser (both named `fuelTank`) stand in the yard north of the barn and the generator along the annex's south wall, so Jamie saw them vanish as he walked off. Both are out of the list and always drawn; they are a few meshes each.
 - `tests/farDetail.test.js` now checks each barn prop with a place in the layout stands inside the barn or its annex, and that the tanks and the generator are not in the list.
+
+## Where the frame goes, and occlusion left for later (#407)
+
+- Measured on Jamie's Mac at the spawn looking north, east, south and west: 1,875, 2,217, 2,232 and 2,560 draw calls, 1,304 looking at the sky. The camera already culls what is out of view (only 108 visible meshes skip it); the sun's shadow pass is 1,202 calls of each, whichever way you look, because it draws every caster in a 90 m square centred on you. In the village street it is 1,690. That is #405; the meshes drawn behind you because their bounds are wrong are #406.
+- Not yet, agreed with Jamie: skipping what is in view but hidden behind a wall or a hill (occlusion culling, by zones such as inside and outside the barn, or the village behind its hedges). The distance cut-offs (#365) already cover the worst of it. `/perf check` should raise it if a spot's calls are mostly things you can't see.
