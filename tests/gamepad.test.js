@@ -106,11 +106,17 @@ describe('on a vehicle', () => {
     expect(c.update(raw({ down: [PAD.LB, PAD.UP] }), 0.016, { ...ride, gear: -1 }).taps).toEqual(['Digit1']);
   });
 
-  it('gets off on B, and talks on A only as a pillion', () => {
+  it('gets off on B, and talks (Enter) on A only as a pillion', () => {
     const c = new PadController({ ...P });
     expect(c.update(raw({ down: [PAD.B] }), 0.016, ride).held.has('KeyE')).toBe(true);
-    expect(c.update(raw({ down: [PAD.A] }), 0.016, ride).held.has('KeyE')).toBe(false);
-    expect(c.update(raw({ down: [PAD.A] }), 0.016, { ...ride, seat: 'pillion' }).held.has('KeyE')).toBe(true);
+    expect(c.update(raw({ down: [PAD.A] }), 0.016, ride).held.has('Enter')).toBe(false);
+    expect(c.update(raw({ down: [PAD.A] }), 0.016, { ...ride, seat: 'pillion' }).held.has('Enter')).toBe(true);
+  });
+
+  it('talks on RB on foot, and from the ring on a vehicle', () => {
+    const c = new PadController({ ...P });
+    expect(c.update(raw({ down: [PAD.RB] }), 0.016, foot).held.has('Enter')).toBe(true);
+    expect(radialItems('ride').some((i) => i.key === 'Enter')).toBe(true);
   });
 });
 

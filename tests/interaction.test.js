@@ -29,6 +29,14 @@ describe('what you are looking at', () => {
     expect(bench).not.toBe(toolbox);
   });
 
+  it('can look for a person only, past a nearer thing', () => {
+    const i = new Interaction();
+    i.add({ target: box(0, 0, -2, 1, 1, 1), prompt });
+    const her = i.add({ target: box(0, 0, -4, 1, 1, 1), person: {}, prompt });
+    expect(i.update(player, 6, (x) => x.person)).toBe(her);
+    expect(i.update(player, 6, () => false)).toBe(null);
+  });
+
   it('refuses a thing with no prompt, so nothing can be used without saying so', () => {
     const i = new Interaction();
     expect(() => i.add({ target: box(0, 0, -2, 1, 1, 1) })).toThrow(/prompt/);

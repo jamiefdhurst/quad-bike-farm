@@ -9,13 +9,13 @@ paths:
 
 # Controls: one way to use things
 
-Anything you can use, pick up, hook, switch or talk to follows one rule, so the game feels like one game. docs/decisions/process.md, "Pulling the game together (#417)". #416 audited every binding against this (the audit and Jamie's answers are on the issue). The map is `src/input/controlMap.js`, held by `tests/controlMap.test.js`; entries with a fourth part (`wheel`) are not in the game yet, and the pieces of #416 still to land move them. Until then follow the rule for anything new and don't copy an outlier.
+Anything you can use, pick up, hook, switch or talk to follows one rule, so the game feels like one game. docs/decisions/process.md, "Pulling the game together (#417)". #416 audited every binding against this (the audit and Jamie's answers are on the issue). The map is `src/input/controlMap.js`, held by `tests/controlMap.test.js`. An entry with a fourth part names the piece of #416 still to move it (none now). Follow the rule for anything new and don't copy an outlier.
 
 ## The rule
 
 Each context has its own key map, and within a context a key means one thing: **on foot**, **riding** (driving any vehicle), **on the back** (a girl driving), **a close-up screen** (a board, the bench, a shelf, the map) and **photo mode**.
 
-- `E` (press) uses a **thing** you're looking at: pick up, open, read, switch on or off, hook on or off, ring, sit, get off. `Enter` is for **people**: looking at a girl, from anywhere including the seat, it opens her wheel; looking at nobody it opens your own (races and the rest). Until #416's wheel piece lands `E` still talks to her on the back.
+- `E` (press) uses a **thing** you're looking at: pick up, open, read, switch on or off, hook on or off, ring, sit, get off. `Enter` is for **people**: looking at a girl, from anywhere including the seat, it opens her wheel; looking at nobody it opens your own (races and the rest).  On the back `E` gets off once she has stopped and `Enter` talks to her. A girl's interactable carries `person` and an `Enter` prompt (`{ action, key: 'Enter' }`); `E` ignores it.
 - Hold `E` does anything that takes time: pour, fill, wash, fork, bleed, strap, tip out. The prompt says "hold".
 - `G` puts down what you hold.
 - `B` backs out or cancels: close a screen, go back a step, leave photo mode. Getting off a vehicle is `E` (the key you got on with). Riding, `B` is the vehicle's reverse.
