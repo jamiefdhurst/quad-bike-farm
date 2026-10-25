@@ -364,6 +364,16 @@ body {
   color: rgba(255, 255, 255, 0.8);
 }
 
+.prompt-keys-bare {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.prompt-item + .prompt-keys-bare {
+  margin-top: 4px;
+}
+
 .prompt kbd {
   min-width: 18px;
   padding: 1px 5px;
