@@ -16,7 +16,6 @@ export const DEFAULT_VILLAGE_PARAMS = {
   tubePrice: 12, // £ for an inner tube
   beltPrice: 28, // £ for a drive belt
   tyreQuadPrice: 38, // £ for a quad tyre (one, off the stack by the roller door)
-  drawDistance: 150, // m from the nearest edge of the village: it is not drawn beyond this (a long way off, and a lot of boxes)
 };
 
 export const VILLAGE_PARAM_RANGES = {
@@ -33,7 +32,6 @@ export const VILLAGE_PARAM_RANGES = {
   tubePrice: [0, 100, 1],
   beltPrice: [0, 200, 1],
   tyreQuadPrice: [0, 200, 1],
-  drawDistance: [60, 600, 10],
 };
 
 /** What the shop sells: its label, the price's param, what it does to each girl, and the cooldown param. */

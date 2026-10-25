@@ -7,6 +7,7 @@ export const DEFAULT_GRAPHICS_PARAMS = {
   coverDistance: 70, // metres the grass and the stubble are drawn out to (0: all of it)
   roughDistance: 75, // metres the tussocks and bracken on the hill are drawn out to (0: all of it)
   setPieceDistance: 160, // metres a set piece (the neighbour's farm, brushwood, logs, cone courses, the village) is drawn out to, from its nearest edge (0: all)
+  fullDistance: 45, // metres from its nearest edge within which the village and the neighbour's farm are drawn in full, not as a plain far version (0: always full)
   barnPropsDistance: 15, // metres the barn's racks, charger, generator and jacks are drawn out to, from their nearest edge (0: all of them)
   vehicleDetailDistance: 60, // metres beyond which a vehicle loses its small parts (bolts, cables, decals, brake bits; 0: never)
   shadowDistance: 80, // metres beyond which a vehicle casts no shadow (0: always)
@@ -18,6 +19,7 @@ export const GRAPHICS_PARAM_RANGES = {
   coverDistance: [0, 400, 5],
   roughDistance: [0, 400, 5],
   setPieceDistance: [0, 600, 10],
+  fullDistance: [0, 400, 5],
   barnPropsDistance: [0, 200, 5],
   vehicleDetailDistance: [0, 300, 5],
   shadowDistance: [0, 400, 5],
