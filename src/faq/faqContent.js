@@ -335,6 +335,14 @@ export const FAQ_SECTIONS = [
         tip: 'After the ford the brakes are wet. Dab S as you ride to dry them.',
       },
       {
+        q: 'Why do the brakes fade on the steep bank?',
+        a: `Hold <kbd>S</kbd> down all the way down a long hill and the drums heat up. After eight seconds or so of it they barely bite, and Amy or Jess
+          on the back will say they can smell them. Easing off lets them cool. The better fix is a low gear: on a manual, come off the throttle in first or
+          second and the engine holds you back (a lot in first, little in fourth), so you hardly need the brake. Change down before you tip over the top,
+          not halfway down. The automatics have no gears to use, so stop and let them cool, or dab rather than hold.`,
+        tip: 'Down a long hill, use first gear and let the engine hold you back. Held brakes get hot and fade.',
+      },
+      {
         q: 'Why is the tractor (or Yak, or Moorland) coughing and dying on a very frosty day?',
         a: `In a hard frost the diesel waxes: it goes thick in the filter. A diesel left out in the open, especially with the engine off, loses power, runs
           roughly and cuts out, and when it is really waxed it won't start at all. Nothing is broken. Warm it: a running engine melts the wax, and so does a

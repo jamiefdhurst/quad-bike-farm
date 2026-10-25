@@ -51,4 +51,26 @@ describe('brake state', () => {
     expect(b.wet).toBe(0);
     expect(b.binding).toBe(false);
   });
+
+  it('held on at speed they heat and fade, and dabbing lets them cool', () => {
+    const held = new BrakeState(DEFAULT_BRAKE_PARAMS, mid);
+    for (let t = 0; t < 3; t += 0.1) held.update(0.1, { speed: 5, pressure: 1 });
+    expect(held.grip).toBe(1); // not hot enough to fade yet
+    for (let t = 0; t < 9; t += 0.1) held.update(0.1, { speed: 5, pressure: 1 });
+    expect(held.hot).toBe(true);
+    expect(held.grip).toBeLessThan(0.4);
+    const dabbed = new BrakeState(DEFAULT_BRAKE_PARAMS, mid);
+    for (let t = 0; t < 60; t += 0.1) dabbed.update(0.1, { speed: 5, pressure: Math.floor(t) % 4 === 0 ? 1 : 0 });
+    expect(dabbed.hot).toBe(false);
+    expect(dabbed.grip).toBe(1);
+  });
+
+  it('cools stood still, and putting it right cools it', () => {
+    const b = new BrakeState(DEFAULT_BRAKE_PARAMS, mid);
+    b.heat = 1;
+    b.update(20, { speed: 0 });
+    expect(b.heat).toBeLessThan(0.7);
+    b.fix();
+    expect(b.heat).toBe(0);
+  });
 });

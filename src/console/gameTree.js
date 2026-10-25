@@ -165,6 +165,7 @@ export function buildGameTree(g, host) {
         snow: num(() => w().snow, (v) => g.setSnow(v), 0, 1, '', 'snowing now'),
     snowCover: num(() => w().cover, (v) => g.setSnowCover(v), 0, 1, '', 'how far the ground and seats are under snow'),
     wet: num(() => q().brakes.wet, (v) => (q().brakes.wet = v), 0, 1, '', '1 is soaked: they barely bite until they dry'),
+        heat: num(() => q().brakes.heat, (v) => (q().brakes.heat = v), 0, 1, '', '1 is cooked: held brake on a hill fades them, a low gear spares them'),
         binding: flag(() => q().brakes.binding, (v) => q().brakes.setBinding(v)),
       }), 'the brakes');
       out.carbIce = group(() => ({

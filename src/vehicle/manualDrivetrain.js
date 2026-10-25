@@ -26,6 +26,7 @@ export const DEFAULT_GEARBOX_PARAMS = {
   launchLoad5: 1.3, // ...fifth
   lugSpeed: 1, // the drag fades out by this fraction of the gear's top speed: below it, a high gear labours the engine (1 is only from rest)
   launchRelief: 0.9, // fraction of that drag a fully open throttle takes away
+  overrunHold: 4, // m/s2 the engine holds back in first, off the throttle and faster than the gear pulls (less in higher gears)
   clutchPressRate: 8, // 1/s the pedal goes down at
   clutchReleaseRate: 1.6, // 1/s it comes up at, so about 0.6 s from down to fully engaged
   handStart: 0.15, // where the hand throttle is left when the game starts (about 710 rpm); it moves in steps of 0.35 a second from there
@@ -43,6 +44,7 @@ export const DEFAULT_GEARBOX_PARAMS = {
 };
 
 export const GEARBOX_PARAM_RANGES = {
+  overrunHold: [0, 10, 0.1],
   crashGears: [0, 4, 1],
   crashSpeed: [0, 5, 0.1],
   declutchTime: [0, 1, 0.05],
@@ -130,6 +132,17 @@ export class ManualDrivetrain {
     const g = this.gearbox;
     const ratio = gear < 0 ? g.topSpeedReverse : [g.topSpeedReverse, 1, g.topSpeed1, g.topSpeed2, g.topSpeed3, g.topSpeed4, g.topSpeed5][gear + 1];
     return Math.min(ratio, gear < 0 ? this.params.maxReverseSpeed ?? Infinity : this.params.maxSpeed ?? Infinity);
+  }
+
+  /**
+   * Rolling downhill faster than the gear would take it, off the throttle, the engine turns over faster than it wants to and holds the
+   * vehicle back: most in first, a little in fourth, up to `overrunHold` m/s2 at twice the gear's speed. What spares the brakes on a bank.
+   */
+  overrunForce(gear, speed, top) {
+    const over = clamp(speed / top - 1, 0, 1);
+    if (over <= 0 || !(this.params.mass > 0)) return 0;
+    const lowness = clamp(this.topSpeed(this.gearbox.gears) / this.topSpeed(gear) / 4, 0.25, 1);
+    return this.params.mass * this.gearbox.overrunHold * lowness * over * this.clutch;
   }
 
   /** Share of the drive force a gear has. */
@@ -248,7 +261,10 @@ export class ManualDrivetrain {
       // Past the gear's top speed (rolling downhill, say) it holds back rather than pushing.
       const speedFactor = clamp(1 - (speed / top) ** 2, 0, 1);
       force = dir * this.clutch * this.available * speedFactor;
-      if (throttle < 0.05) force -= Math.sign(forwardSpeed) * p.engineBrakeForce * this.clutch * Math.min(1, speed / 2);
+      if (throttle < 0.05) {
+        force -= Math.sign(forwardSpeed) * p.engineBrakeForce * this.clutch * Math.min(1, speed / 2);
+        force -= Math.sign(forwardSpeed) * this.overrunForce(g, speed, top);
+      }
     }
     this.driveForce = force;
 

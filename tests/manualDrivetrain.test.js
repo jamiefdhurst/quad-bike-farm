@@ -73,6 +73,16 @@ describe('drive', () => {
     expect(d.driveForce).toBe(0);
   });
 
+  it('holds the vehicle back going downhill off the throttle, most in first and nothing within the gear\'s speed', () => {
+    const hold = (gear, speed) => -run(inGear(gear), 2, { forwardSpeed: speed }).driveForce;
+    const eb = (speed) => V.engineBrakeForce * Math.min(1, speed / 2);
+    expect(hold(1, 2.4)).toBeCloseTo(eb(2.4), 0); // at first's top speed: only the plain engine braking
+    expect(hold(1, 4.8)).toBeGreaterThan(eb(4.8) + V.mass * 2);
+    expect(hold(1, 4.8)).toBeGreaterThan(hold(2, 4.8 * 2) * 1.2); // the same overrun ratio holds back more in first than in second
+    expect(hold(1, 4.8)).toBeGreaterThan(hold(3, 8.5 * 2));
+    expect(run(inGear(1), 2, { forwardSpeed: 4.8, throttle: 1 }).driveForce).toBeCloseTo(0, 5); // on the throttle it doesn't hold back
+  });
+
   it('is strongest in first and weakest in third at a standstill', () => {
     const force = (gear) => run(inGear(gear), 2, { throttle: 1 }).driveForce;
     expect(force(1)).toBeGreaterThan(force(2));
