@@ -44,6 +44,11 @@
   opacity: 0.35;
 }
 
+.bn-row.picked {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
 .bn-step.now {
   font-weight: 600;
 }

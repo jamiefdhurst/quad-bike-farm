@@ -91,7 +91,7 @@ export class JobBoardView {
     input.takeWheelSteps();
     if (input.wasPressed('Digit1')) this.game.startColdStart();
     if (input.wasPressed('Digit2')) this.game.judgeLineUp();
-    if (input.wasPressed('KeyG') || input.wasPressed('KeyE') || input.wasPressed('Escape')) this.close();
+    if (input.wasPressed('KeyB') || input.wasPressed('Escape')) this.close();
   }
 
   /** The list changed (a job done) or a record was set: redraw the boards and the card. */
@@ -173,7 +173,7 @@ export class JobBoardView {
     const el = document.createElement('div');
     el.className = 'jobboard';
     el.style.display = 'none';
-    el.innerHTML = '<div class="jb-card"><div class="jb-title">Today\'s jobs</div><div class="jb-body"></div><div class="jb-title jb-records-title">Records</div><div class="jb-records"></div><div class="jb-title jb-records-title">Challenges</div><div class="jb-records jb-challenges"></div><div class="jb-keys">1 starts the cold-start clock, 2 judges the line-up. E or G to step back</div></div>';
+    el.innerHTML = '<div class="jb-card"><div class="jb-title">Today\'s jobs</div><div class="jb-body"></div><div class="jb-title jb-records-title">Records</div><div class="jb-records"></div><div class="jb-title jb-records-title">Challenges</div><div class="jb-records jb-challenges"></div><div class="jb-keys">1 starts the cold-start clock, 2 judges the line-up. B to step back</div></div>';
     document.body.appendChild(el);
     this.el = el;
     this.bodyEl = el.querySelector('.jb-body');

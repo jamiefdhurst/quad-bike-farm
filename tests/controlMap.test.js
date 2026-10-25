@@ -57,7 +57,7 @@ describe('the control map', () => {
   });
 
   it('names a piece of #416 for anything the game does not do yet', () => {
-    const pieces = new Set(['wheel', 'photo']);
+    const pieces = new Set(['wheel']);
     for (const e of all) if (e.moves) expect(pieces.has(e.moves)).toBe(true);
     expect(Object.keys(CONTEXTS)).toEqual(['foot', 'ride', 'back', 'screen', 'photo', 'anytime']);
   });

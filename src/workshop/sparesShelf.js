@@ -124,7 +124,7 @@ export class SparesShelf {
   handleInput(input) {
     this.game.player.moveEnabled = false;
     input.takeWheelSteps();
-    if (input.wasPressed('KeyG') || input.wasPressed('KeyE') || input.wasPressed('Escape')) return this.close();
+    if (input.wasPressed('KeyB') || input.wasPressed('Escape')) return this.close();
     this.ids.forEach((id, i) => {
       if (input.wasPressed(`Digit${i + 1}`) || input.wasPressed(`Numpad${i + 1}`)) this.order(id);
     });
@@ -189,6 +189,6 @@ export class SparesShelf {
       const full = this.spares.total(id) + this.spares.pack(id) > this.params.maxOnShelf;
       return `<div class="sp-row${this.spares.has(id) ? '' : ' none'}"><span class="key">${i + 1}</span>${PARTS[id].many[0].toUpperCase()}${PARTS[id].many.slice(1)}: ${this.spares.line(id)}${full ? '' : ` <em>(order ${this.spares.pack(id)})</em>`}</div>`;
     }).join('') + (this.mode === 'parts' ? this.engineRows() : '');
-    this.keysEl.textContent = 'Press a number to order a pack   ·   the post van brings it   ·   G step away';
+    this.keysEl.textContent = 'Press a number to order a pack   ·   the post van brings it   ·   B step away';
   }
 }

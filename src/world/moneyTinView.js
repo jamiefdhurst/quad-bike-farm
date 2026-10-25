@@ -77,7 +77,7 @@ export class MoneyTinView {
   handleInput(input) {
     this.game.player.moveEnabled = false;
     input.takeWheelSteps();
-    if (input.wasPressed('KeyG') || input.wasPressed('KeyE') || input.wasPressed('Escape')) this.close();
+    if (input.wasPressed('KeyB') || input.wasPressed('Escape')) this.close();
   }
 
   /** The lid eases open and shut. */
@@ -97,7 +97,7 @@ export class MoneyTinView {
     const el = document.createElement('div');
     el.className = 'classifieds money-tin';
     el.style.display = 'none';
-    el.innerHTML = '<div class="cl-card"><div class="cl-title">The tin</div><div class="cl-purse tin-balance"></div><div class="cl-body"></div><div class="cl-keys">E or G to put the lid back</div></div>';
+    el.innerHTML = '<div class="cl-card"><div class="cl-title">The tin</div><div class="cl-purse tin-balance"></div><div class="cl-body"></div><div class="cl-keys">B to put the lid back</div></div>';
     document.body.appendChild(el);
     this.el = el;
     this.balanceEl = el.querySelector('.tin-balance');

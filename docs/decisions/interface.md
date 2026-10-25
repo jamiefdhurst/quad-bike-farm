@@ -308,7 +308,7 @@ Jamie's answers: **freeze everything** (the sim, the girls, the clock and weathe
 - New from Jamie: `Enter` is for people, `E` for things. `Enter` on a girl opens her wheel from anywhere (so you can talk to her while driving if you look at her), and `Enter` on nobody opens your own wheel, where races and the other things you can ask for live. It replaces `E` on the back and `Enter` for races, and `Enter` comes off the list of keys that can't be remapped.
 - `src/input/controlMap.js` is the map, per context, one meaning per key and mode, with the piece that moves anything not yet in the game. `tests/controlMap.test.js` checks no clash, every remappable key placed, and the help page naming no key outside it.
 - `docs/glossary.md` has a row per name with a choice in it (cork board, money tin, workbench, toolbox, jerry can, seat belt, tow rope) and `tests/glossary.test.js` fails on a listed variant in `src/` or `docs/game.md`. Found by the count: "cork board" 28 against "corkboard" 22, "money tin" against "biscuit tin" 6; the prompt on the cork board also said to take a photo with `5` (it is `7`). Two girls' lines and one more (cork board, seat belt) were re-recorded.
-- Still to land: `Enter` for people, the close-up screens on `B`, the toolbox panel, the on-foot outliers and the feedback audit.
+- Still to land: `Enter` for people, the toolbox panel, the on-foot outliers and the feedback audit.
 
 ## One way to use things: the one prompt (#416, piece 2)
 
@@ -317,3 +317,11 @@ Jamie's answers: **freeze everything** (the sim, the girls, the clock and weathe
 - Kept the old call sites as they were instead of rewriting 45 prompts and 20 strings, since the normaliser gives them the same look; new prompts are written in the structured shape (`controls.md`). `Interaction.add` throws without a `prompt()`, so nothing can be looked at, usable and silent.
 - Not done here: the names inside the prompts against the glossary beyond what piece 1 tested, and the help page generated from the registry. The prompts for `Y` (coolant, anti-gel) and `B`/`J` still say what they do today; pieces 3 to 5 move them.
 
+## One way to use things: the close-up screens (#416, piece 3)
+
+- Every close-up screen except the toolbox panel (piece 4) closes on `B` and `Esc`: the cork board of ads, the chalkboards, the money tin, the cork board of photos, the logbook, the shed catalogue, the spares shelf and the bench. `E` and `G` no longer close any of them, and the hint line at the foot of each says `B`.
+- The ads turn their page with `→` (to sell) and `←` (back to the ads), not `S` and `B`. The bench's second page is `→` and back is `←`, not `R`.
+- The bench could not give the full service the number `1` as the issue's audit first said: its first page already has 19 jobs, and the numbers run out at the 19th (digits, then nine punctuation keys; the backslash and backtick open the console and the panel). So the menu now has a picked row as well: `W` and `S` move it, `E` presses it, and the full service and the page turn are rows of their own, with no key of their own. The numbers still start the jobs as before.
+- Photo mode flies up on `Space` and down on `C`, poses the girls on `E`, and leaves on `B` as well as `8`. `G` and `Q` do nothing in it now.
+- The girls' wheel steps back a ring on `B`, `Esc`, `Backspace` or a right-click, and closes from the first ring; `E` and `Q` no longer close it. `E` opening it from the back stays until the `Enter` piece.
+- `tests/closeUpKeys.test.js` reads each screen's input code for `B` and `Esc` and no `G`. Not done: the map, the bucket list and the FAQ keep their own closing keys (`M`, `Tab`, `H`) as global toggles.

@@ -2,7 +2,7 @@
 // options round a ring, picked by moving the mouse towards one and clicking
 // (or pressing its number, or scrolling to it and pressing Enter). An option
 // with `children` opens another ring of its own (a quad, then what to do with
-// it); right-click, Backspace or Escape goes back a ring, E or Q closes it.
+// it); right-click, Backspace, B or Escape goes back a ring, and closes it from the first.
 // Same interface as a menu: open(title, options), isOpen, handleInput(), close().
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -153,11 +153,10 @@ export class Wheel {
       this.choose(this.selected);
       return true;
     }
-    if (input.wasClicked(2) || input.wasPressed('Backspace') || input.wasPressed('Escape')) {
+    if (input.wasClicked(2) || input.wasPressed('Backspace') || input.wasPressed('KeyB') || input.wasPressed('Escape')) {
       this.back();
       return true;
     }
-    if (input.wasPressed('KeyE') || input.wasPressed('KeyQ')) this.close();
     return true;
   }
 
@@ -204,7 +203,7 @@ export class Wheel {
     needle.setAttribute('r', 5);
     svg.appendChild(needle);
     this.needle = needle;
-    const back = this.stack.length > 1 ? 'right-click back' : 'E to close';
+    const back = this.stack.length > 1 ? 'B back' : 'B to close';
     this.el.innerHTML = `<div class="wheel-centre"><div class="wheel-title">${title}</div></div>${labels.join('')}<div class="wheel-hint">move the mouse and click, or 1-${n}   ·   ${back}</div>`;
     this.el.prepend(svg);
     this.moveNeedle();

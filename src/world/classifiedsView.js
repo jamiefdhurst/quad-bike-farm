@@ -12,8 +12,8 @@ const SELL_ROWS = 9; // the number keys
 
 /**
  * The cork board of classified ads at the back of the barn (farm/classifieds.js Market): a card for sale from the neighbours, pinned up on the
- * odd day. Most days it is bare. Look at it and press E for a close view, where 1 to 3 buy the ad (it turns up tomorrow); S turns to the page for
- * selling what is on the farm (a number, then the same number again, and a buyer collects it in the morning), B back to the ads. Drawn on a canvas,
+ * odd day. Most days it is bare. Look at it and press E for a close view, where 1 to 3 buy the ad (it turns up tomorrow); → turns to the page for
+ * selling what is on the farm (a number, then the same number again, and a buyer collects it in the morning), ← back to the ads. Drawn on a canvas,
  * redrawn when an ad goes or the purse changes.
  */
 export class ClassifiedsView {
@@ -78,9 +78,9 @@ export class ClassifiedsView {
   handleInput(input) {
     this.game.player.moveEnabled = false;
     input.takeWheelSteps();
-    if (input.wasPressed('KeyG') || input.wasPressed('KeyE') || input.wasPressed('Escape')) return this.close();
-    if (input.wasPressed('KeyS') && this.page !== 'sell') return this.turnTo('sell');
-    if (input.wasPressed('KeyB') && this.page !== 'buy') return this.turnTo('buy');
+    if (input.wasPressed('KeyB') || input.wasPressed('Escape')) return this.close();
+    if (input.wasPressed('ArrowRight') && this.page !== 'sell') return this.turnTo('sell');
+    if (input.wasPressed('ArrowLeft') && this.page !== 'buy') return this.turnTo('buy');
     if (this.page === 'buy') {
       for (let i = 0; i < SLIPS; i++) if (input.wasPressed(`Digit${i + 1}`) && this.market.ads[i]) this.game.buyAd(this.market.ads[i]);
       return;
@@ -199,7 +199,7 @@ export class ClassifiedsView {
     });
     const bought = m.bought.length ? `On the way or bought: ${m.bought.length}` : '';
     this.bodyEl.replaceChildren(...(rows.length ? rows : [Object.assign(document.createElement('div'), { textContent: 'Nothing for sale today.' })]));
-    this.keysEl.textContent = `${bought}${bought ? '   ·   ' : ''}S to sell one of yours   ·   E or G to step back`;
+    this.keysEl.textContent = `${bought}${bought ? '   ·   ' : ''}→ to sell one of yours   ·   B to step back`;
   }
 
   /** The page for selling: each vehicle on the farm that a buyer would take, with the offer and what pulled it down. */
@@ -220,6 +220,6 @@ export class ClassifiedsView {
       return row;
     });
     this.bodyEl.replaceChildren(...(rows.length ? rows : [Object.assign(document.createElement('div'), { textContent: 'Nothing here a buyer would take.' })]));
-    this.keysEl.textContent = 'B for the ads for sale   ·   E or G to step back';
+    this.keysEl.textContent = '← the ads for sale   ·   B to step back';
   }
 }

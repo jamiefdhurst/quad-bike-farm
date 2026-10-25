@@ -73,7 +73,7 @@ export class PhotoBoardView {
   handleInput(input) {
     this.game.player.moveEnabled = false;
     input.takeWheelSteps();
-    if (input.wasPressed('KeyG') || input.wasPressed('KeyE') || input.wasPressed('Escape')) this.close();
+    if (input.wasPressed('KeyB') || input.wasPressed('Escape')) this.close();
   }
 
   /** A photo was added or the wall was restored. */
@@ -151,7 +151,7 @@ export class PhotoBoardView {
     const el = document.createElement('div');
     el.className = 'photoboard';
     el.style.display = 'none';
-    el.innerHTML = '<div class="pb-card"><div class="pb-title">The cork board</div><div class="pb-grid"></div><div class="pb-keys">E or G to step back</div></div>';
+    el.innerHTML = '<div class="pb-card"><div class="pb-title">The cork board</div><div class="pb-grid"></div><div class="pb-keys">B to step back</div></div>';
     document.body.appendChild(el);
     this.el = el;
     this.gridEl = el.querySelector('.pb-grid');
