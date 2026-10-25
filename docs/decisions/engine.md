@@ -18,6 +18,7 @@ What is true now, with the sections below to read for the detail. Keep it curren
 - **The drivetrain.** The CVT quads have a centrifugal clutch. A manual's revs follow the road through the gear's bite (`gearRpm`, `gearLock`). Engine load sags the revs and can stall a weak engine. A warm engine never stalls from braking, and the Land Rovers hold in first and second. "Engine load (2026-10-05)", "The clutch vehicles' revs follow the road, and the Land Rovers stay put", "Frost starts and braking stalls (TODO 3)".
 - **Water.** A puddle hit fast drowns the engine, which won't fire until it drains. "Puddles stalled quads too easily, and a drowned quad now drips" supersedes the numbers in "Drowning it (2026-10-06)".
 - **Smoke and air.** Exhaust smoke follows the mixture, oil and water. Yard haze and barn fumes are one level each, fed by running engines and cleared by wind or the doors. "Smoke hanging in still air (TODO 15)", "Fumes in the barn (TODO 21)".
+- **Engines can be swapped (#46).** The barn find's engine comes out at the bench onto the floor by the parts rack and goes into another quad of the same family; the one it replaces comes out onto the floor. The engine takes all its numbers, its sound and its wear. "Engine swaps (#46, was TODO 151)".
 - **History, not rules:** the revving passes (four-stroke second and third, two-stroke second) belong to the old `recorded` sound, and sound.md has the current `pulse` sound.
 
 ---
@@ -631,3 +632,14 @@ Settled with Jamie: every `compressionIgnition` engine (the tractor, the UTV, an
 - **Start screen tips** come from `vite.config.js` (`__FAQ_TIPS__`) so the first page no longer imports `faqContent.js`. The dev server's time to Ready measured 2.75 s afterwards (2.70 before); the saving is in the built start page, not measured.
 - **Result** (`tools/budget.mjs` on a build, same on any machine): spawn 4,470 calls to 2,207 and 3.40M triangles; yard 5,652 to 2,945; village street 5,227 to 3,957; wood gate 3,424 to 1,901; hilltop 4,271 to 2,413 (6.97M triangles). Spawn is strict now (`KNOWN_OVER` is empty) and the other budgets are tightened to about 8% over these.
 - Not done: merging static props (`mergeStatic`) in the barn and village, which the distance cut-offs made less pressing.
+
+## Engine swaps (#46, was TODO 151)
+
+Settled with Jamie: the donor is the barn find's engine, pulled once it runs. Engines for sale, or in the parts catalogue, and swaps across engine types are later issues. The big-bore kit already is the conversion project and is unchanged.
+
+- **An engine is its params.** Pulling one copies the engine's whole params object, its sound's params (`recBank` and the rest) and its condition (`CONDITION_KEYS` in `src/vehicle/engineSwap.js`). Fitting one assigns them into the quad's existing objects, so the tuning panel and the sound keep what they hold. Pure, tested.
+- **Families.** `engineFamily`: strokes, cord start, water cooling, diesel, and manual or not. Only the same family fits, which keeps the oil system, the pull cord and the clutch right with no extra rules. Tractor, UTV, Land Rovers, cars, mini moto, old bike, trike and anything with no starter are out.
+- **A swap trades two engines.** The engine that comes out goes on the floor (`Spares.engines`, saved), not into the bin, so nothing is lost and the empty barn find can be filled again. The barn find is the only quad an engine can be taken out of for now; after it runs it is parked in the small bay like the others.
+- **After the swap.** `startRunningIn`. A job with any flaw leaves loose mounts (the existing `mounts` fault at `botchedLevel`) and `swapBotchedRoughness` (0.08) more roughness. The clutch is moved up over a higher idle (`applyIdle`). The toolbox forgets its snapshot of the old engine.
+- **Save.** `captureVehicle` keeps `swap` (the engine's params, sound and where it came from) and `engineOut`; the shelf keeps its engines.
+- **Bench.** The menu has no free keys left (19), so both jobs are on the second page with the shed kit's. #394 reworks the menu.
