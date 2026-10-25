@@ -60,6 +60,7 @@ export class TrafficHost {
         target: proxy,
         isAvailable: () => !g.player.isRiding,
         prompt: () => (gate.isOpen ? 'Shut the gate' : 'Open the gate'),
+        feedback: 'latch',
         interact: () => this.toggle(gate, true),
       });
     }

@@ -11,6 +11,7 @@ import workletUrl from './engineWorklet.js?url';
 import { DEFAULT_AUDIO_PARAMS, DEFAULT_SOUND_PARAMS } from './audioParams.js';
 import { SoundPath, distanceLevel, airCutoff } from './propagation.js';
 import { rainHeard } from '../world/barn.js';
+import { USE_CUES, useSamples } from './useAudio.js';
 import { wantsBank } from './bankWant.js';
 
 // Recorded pulse banks in public/audio/, made by tools/slice_engine_audio.py and tools/wav_to_flac.py. Only the ones a vehicle near
@@ -246,6 +247,25 @@ export class AudioHub {
       osc.start(t);
       osc.stop(t + ring + 0.05);
     });
+  }
+
+  /** One of the small sounds of using things (`USE_CUES`), at the listener. */
+  useCue(kind) {
+    if (!this.ready || this.params.muted || !USE_CUES.includes(kind)) return;
+    const ctx = this.ctx;
+    this.useBuffers ??= {};
+    if (!this.useBuffers[kind]) {
+      const samples = useSamples(kind, ctx.sampleRate);
+      this.useBuffers[kind] = ctx.createBuffer(1, samples.length, ctx.sampleRate);
+      this.useBuffers[kind].copyToChannel(samples, 0);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = this.useBuffers[kind];
+    src.playbackRate.value = 0.94 + Math.random() * 0.12;
+    const gain = ctx.createGain();
+    gain.gain.value = this.params.useVolume;
+    src.connect(gain).connect(this.master);
+    src.start(ctx.currentTime + 0.01);
   }
 
   /**

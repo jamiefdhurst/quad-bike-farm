@@ -42,6 +42,7 @@ export class VillageHost {
           if (this.bill.allow(0.1, price, g.market) < 0.1) return { text: `You can't pay for any more (${this.purseText()})` };
           return { text: `Hold E to fill the jerry can with ${fuel.label} (${g.can.litres.toFixed(1)} / ${g.can.params.capacity} L, ${pounds(price)} a litre, ${this.purseText()})` };
         },
+        feedback: 'hold',
         interact: () => {},
         hold: (dt) => this.pour(pump, dt),
       });
@@ -57,6 +58,7 @@ export class VillageHost {
           // A string is an E action: the HUD puts the key on it, as it does for getting on a quad.
           return `Buy a ${name}: ${pounds(this.params[GARAGE_PARTS[part.id].price])} (${g.spares.count(part.id)} on the barn's rack now, ${this.purseText()})`;
         },
+        feedback: 'own',
         interact: () => this.buyPart(part.id),
       });
     }
@@ -70,6 +72,7 @@ export class VillageHost {
           if (why) return { text: why };
           return `Buy ${item.label}: ${pounds(this.params[item.price])} (${this.purseText()})`;
         },
+        feedback: 'own',
         interact: () => this.buy(stock.id),
       });
     }

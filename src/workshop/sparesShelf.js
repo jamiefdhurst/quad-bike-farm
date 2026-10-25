@@ -50,12 +50,14 @@ export class SparesShelf {
       target: this.proxy,
       isAvailable: () => !game.handsFull,
       prompt: () => 'Look at the parts rack',
+      feedback: 'paper',
       interact: () => this.open(),
     });
     game.interaction.add({
       target: this.tyreProxy,
       isAvailable: () => !game.handsFull,
       prompt: () => 'Look at the tyre rack',
+      feedback: 'paper',
       interact: () => this.open('tyres'),
     });
     game.interaction.add({
@@ -63,6 +65,7 @@ export class SparesShelf {
       priority: 1,
       isAvailable: () => this.spares.hasParcel && !game.handsFull,
       prompt: () => 'Open the parcel from the post',
+      feedback: 'pickUp',
       interact: () => this.collect(),
     });
     this.seen = {};

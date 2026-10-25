@@ -344,6 +344,8 @@ import { SprayView } from './world/sprayView.js';
 import { HayLoading, HAY_LOADING_PARAM_RANGES } from './npc/hayLoading.js';
 import { shortName } from './workshop/logbook.js';
 import { Interaction } from './interaction/interaction.js';
+import { cueFor } from './interaction/feedback.js';
+import { normalisePrompt } from './interaction/prompt.js';
 import { Wheel } from './interaction/wheel.js';
 import { groupWheelOptions } from './interaction/wheelGroups.js';
 import { Hud } from './hud/hud.js';
@@ -784,6 +786,7 @@ export class Game {
         get priority() {
           return c.fsm.is('onTrailer') ? 1 : 0;
         },
+        feedback: 'own',
         interact: () => this.openCompanionMenu(c),
       });
       return c;
@@ -988,6 +991,7 @@ export class Game {
       priority: -1, // a can or the toolbox standing in the tub wins when you look at it
       isAvailable: () => !!this.heldLoad() || (!this.handsFull && !this.player.isRiding),
       prompt: () => this.tipTrailerPrompt(),
+      feedback: 'putDown',
       interact: () => this.loadTipTrailer(),
       hold: (dt) => this.forkMuck(dt),
     });    // Having a go on the tractor: Jess takes it, Amy won't until her day (npc/tractorGo.js). The girls' own numbers are shared objects.
@@ -1251,13 +1255,14 @@ export class Game {
                 : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['O', quad.engine.params.kickStart ? 'Kick' : 'Pull-start']] : []), ...(quad.engine.params.manualTiming ? [['[ ]', 'Spark lever']] : []), ...(quad.barLights ? [['P', 'Lights']] : []), ...(quad.engine.params.injected ? [] : [['Q Z', 'Choke']]), ...(quad.fuel.params.noTap ? [] : [['F', 'Fuel tap']]), ...(quad.sump ? [['Y', 'Dipstick']] : quad.engine.params.tickler ? [['Y', 'Tickle']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : [])],
           };
         },
+        feedback: 'own',
         interact: () => {
-          if (quad.loadedOn) return this.strapDown(quad);
+          if (quad.loadedOn) return this.audioHub.useCue('latch'), this.strapDown(quad);
           if (unit.barnFind && !unit.barnFind.tarpOff) return;
-          if (this.leads.held) return this.clampLeads(quad);
-          if (this.leads.ends.includes(quad)) return this.leads.unclamp(this.camera);
+          if (this.leads.held) return this.audioHub.useCue('latch'), this.clampLeads(quad);
+          if (this.leads.ends.includes(quad)) return this.audioHub.useCue('latch'), this.leads.unclamp(this.camera);
           if (this.winch?.state === 'carried') {
-            if (unit !== this.winch.unit) this.winch.hookOn(quad);
+            if (unit !== this.winch.unit) (this.audioHub.useCue('latch'), this.winch.hookOn(quad));
             return;
           }
           if (this.winch?.state === 'hooked' && this.winch.target === quad) {
@@ -1388,6 +1393,7 @@ export class Game {
         target: can.proxy,
         isAvailable: () => !this.handsFull && !can.carried,
         prompt: () => `Pick up the ${can === this.premixCan ? 'yellow' : can === this.dieselCan ? 'dark green' : 'red'} jerry can (${can.litres.toFixed(1)} L, ${fuelText(can.oil, can.diesel, can.water, can.additive)})`,
+        feedback: 'pickUp',
         interact: () => can.pickUp(this.camera),
       });
     }
@@ -1400,6 +1406,7 @@ export class Game {
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
         return { text: `Hold E to add oil to the can (${fuelText(this.can.oil, this.can.diesel, this.can.water, this.can.additive)})` };
       },
+      feedback: 'pickUp',
       interact: () => {
         if (!this.handsFull) this.oilBottle.pickUp(this.camera);
       },
@@ -1409,6 +1416,7 @@ export class Game {
       target: this.coolantBottle.proxy,
       isAvailable: () => !this.coolantBottle.held,
       prompt: () => (this.handsFull ? { text: 'Coolant: put what you are holding down first' } : 'Pick up the coolant bottle'),
+      feedback: 'pickUp',
       interact: () => {
         if (!this.handsFull) this.coolantBottle.pickUp(this.camera);
       },
@@ -1417,6 +1425,7 @@ export class Game {
       target: this.antiGelBottle.proxy,
       isAvailable: () => !this.antiGelBottle.held,
       prompt: () => (this.handsFull ? { text: 'Diesel anti-gel: put what you are holding down first' } : 'Pick up the diesel anti-gel'),
+      feedback: 'pickUp',
       interact: () => {
         if (!this.handsFull) this.antiGelBottle.pickUp(this.camera);
       },
@@ -1429,6 +1438,7 @@ export class Game {
         if (this.can.additive > 0.99) return { text: 'The pre-mix is already treated' };
         return { text: `Hold E to treat the pre-mix with plug-saver (${Math.round(this.can.additive * 100)}% treated)` };
       },
+      feedback: 'hold',
       interact: () => {},
       hold: (dt) => {
         if (!this.can.held || this.can.oil <= 0) return false;
@@ -1445,6 +1455,7 @@ export class Game {
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
         return { text: `Hold E to fill the jerry can (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water, this.can.additive)})` };
       },
+      feedback: 'hold',
       interact: () => {},
       hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt) > 0,
     });
@@ -1455,6 +1466,7 @@ export class Game {
         if (this.can.space < 0.01) return { text: 'The jerry can is full' };
         return { text: `Hold E to fill the jerry can with red diesel (${this.can.litres.toFixed(1)} / ${this.can.params.capacity} L, ${fuelText(this.can.oil, this.can.diesel, this.can.water, this.can.additive)})` };
       },
+      feedback: 'hold',
       interact: () => {},
       hold: (dt) => this.can.held && this.can.fill(this.can.params.fillRate * dt, 0, 1) > 0,
     });
@@ -1474,6 +1486,7 @@ export class Game {
     this.interaction.add({
       target: this.bell.proxy,
       prompt: () => (this.recalling ? 'Ring the bell again' : 'Ring the bell to call the girls back'),
+      feedback: 'own',
       interact: () => this.ringBell(),
     });
 
@@ -1518,6 +1531,7 @@ export class Game {
       target: this.hose.proxy,
       isAvailable: () => !this.handsFull,
       prompt: () => 'Pick up the hose',
+      feedback: 'pickUp',
       interact: () => this.hose.pickUp(this.camera),
     });
     // Jump leads, for a flat battery: a running quad charges it.
@@ -1534,6 +1548,7 @@ export class Game {
       priority: 1, // they lie on the bench, whose box would otherwise be hit first
       isAvailable: () => !this.handsFull && !this.leads.held,
       prompt: () => 'Pick up the jump leads',
+      feedback: 'pickUp',
       interact: () => this.leads.pickUp(this.camera),
     });
     this.interaction.add({
@@ -1541,6 +1556,7 @@ export class Game {
       priority: 1, // it sits on the bench, whose box would otherwise be hit first
       isAvailable: () => !this.handsFull && !this.toolbox.carried,
       prompt: () => 'Pick up the toolbox',
+      feedback: 'pickUp',
       interact: () => this.toolbox.pickUp(this.camera),
     });
     // The workbench: jobs on a quad parked in the painted bay (workshop/bench.js).
@@ -1548,6 +1564,7 @@ export class Game {
       target: this.bench.proxy,
       isAvailable: () => !this.handsFull || !!this.benchItem() || !!this.heldBattery(), // a battery in your hands is fitted from the bench's job list
       prompt: () => (this.benchItem() ? `Put the ${this.benchItem().name} back on the bench` : this.bench.prompt()),
+      feedback: () => (this.benchItem() ? 'putDown' : 'paper'),
       interact: () => (this.benchItem() ? this.putOnBench(this.benchItem()) : (this.achievements.note('bench'), this.bench.open())),
     });
     // Her asking for a hand at the bench (npc/girlBench.js): the spanner, or the torch.
@@ -1556,6 +1573,7 @@ export class Game {
       priority: 2,
       isAvailable: () => !!this.girlBench.asking && this.nearBench(this.girlBench.p.helpRange),
       prompt: () => ASK_PROMPT[this.girlBench.asking.type].replace('{name}', this.companions.find((c) => c.character.id === this.girlBench.asking.girl)?.name ?? 'her'),
+      feedback: 'own',
       interact: () => this.girlBench.help(),
     });
     this.interaction.add({
@@ -1563,6 +1581,7 @@ export class Game {
       priority: 1, // it lies on the bench, whose box would otherwise be hit first
       isAvailable: () => !this.handsFull,
       prompt: () => this.notebook.prompt(),
+      feedback: 'paper',
       interact: () => this.notebook.open(),
     });
 
@@ -1631,30 +1650,35 @@ export class Game {
       target: this.jobBoardView.proxy,
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.jobBoardView.prompt(),
+      feedback: 'paper',
       interact: () => this.jobBoardView.open(),
     });
     this.interaction.add({
       target: this.moneyTin.proxy,
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.moneyTin.prompt(),
+      feedback: 'paper',
       interact: () => this.moneyTin.open(),
     });
     this.interaction.add({
       target: this.shedView.proxy,
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.shedView.prompt(),
+      feedback: 'paper',
       interact: () => this.shedView.open(),
     });
     this.interaction.add({
       target: this.classifiedsView.proxy,
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.classifiedsView.prompt(),
+      feedback: 'paper',
       interact: () => this.classifiedsView.open(),
     });
     this.interaction.add({
       target: this.jobBoardView.recordsProxy,
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.jobBoardView.recordsPrompt(),
+      feedback: 'paper',
       interact: () => this.jobBoardView.open(),
     });
 
@@ -1663,6 +1687,7 @@ export class Game {
         target: this.helmetHooks.proxies[what],
         isAvailable: () => !this.handsFull && !this.player.isRiding,
         prompt: () => this.hookPrompt(what),
+        feedback: 'latch',
         interact: () => this.toggleYourGear(what),
       });
     }
@@ -1671,6 +1696,7 @@ export class Game {
       target: this.photos.view.proxy,
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.photos.view.prompt(),
+      feedback: 'paper',
       interact: () => this.photos.openBoard(),
     });
 
@@ -1679,6 +1705,7 @@ export class Game {
       target: this.coneProxy,
       isAvailable: () => !this.handsFull && !this.player.isRiding && this.coneField.downCount > 0 && !this.coneCourse.active,
       prompt: () => 'Stand the cones up',
+      feedback: 'putDown',
       interact: () => this.standCones(),
     });
 
@@ -1687,12 +1714,14 @@ export class Game {
       target: this.loft.ladderProxy,
       isAvailable: () => !this.handsFull && !this.climb && !this.hiding.active,
       prompt: () => (this.youOnLoft() ? 'Climb down the ladder' : 'Climb up to the hayloft'),
+      feedback: 'own',
       interact: () => this.startClimb(),
     });
     this.interaction.add({
       target: this.loft.hayProxy,
       isAvailable: () => !this.handsFull && !this.climb && !this.hiding.active && this.youOnLoft(),
       prompt: () => 'Duck into the hay and hide',
+      feedback: 'paper',
       interact: () => this.startHiding(),
     });
 
@@ -2210,6 +2239,7 @@ export class Game {
         priority: 1, // the trailer's own box is round it
         isAvailable: () => !this.player.isRiding && !this.handsFull && !!this.drawbarAction(t, name),
         prompt: () => this.drawbarAction(t, name)?.prompt ?? { info: '' },
+        feedback: 'latch',
         interact: () => this.drawbarAction(t, name)?.run?.(),
       });
     }
@@ -3168,6 +3198,7 @@ export class Game {
         if (hold.freeSpot() === null) return { text: `It is full   ·   G put the ${what} down` };
         return `Put the ${what} in the ${name}`;
       },
+      feedback: 'putDown',
       interact: () => {
         const item = this.heldLoad();
         if (item && !blocked()) hold.load(item);
@@ -3222,6 +3253,7 @@ export class Game {
         target: h.proxy,
         isAvailable: () => !h.held && !h.used && !this.handsFull && !this.player.isRiding,
         prompt: () => `Pick up the brushwood (${this.bonfire.piled} of ${this.bonfireParams.heapsNeeded} on the pile)`,
+        feedback: 'pickUp',
         interact: () => {
           h.pickUp(this.camera);
           if (!this.fireHinted) {
@@ -3238,6 +3270,7 @@ export class Game {
       target: proxy,
       isAvailable: () => !this.player.isRiding && !!this.bonfireAction(),
       prompt: () => this.bonfireAction().prompt,
+      feedback: () => (this.heldBrushwood ? 'putDown' : 'latch'),
       interact: () => this.bonfireAction().run(),
     });
     this.fireClock = 0;
@@ -3477,6 +3510,7 @@ export class Game {
         target: w.proxy,
         isAvailable: () => w.onGround && !this.handsFull && onFoot(),
         prompt: () => (w.kind === 'round' ? 'Pick up the round' : 'Pick up the log'),
+        feedback: 'pickUp',
         interact: () => w.pickUp(this.camera),
       });
     }
@@ -3484,6 +3518,7 @@ export class Game {
       target: this.stackView.proxy,
       isAvailable: () => this.heldWood?.kind === 'log' && !this.logStack.full,
       prompt: () => `Stack the log (${this.logStack.count + 1} of ${p.capacity})`,
+      feedback: 'putDown',
       interact: () => this.stackLog(),
     });
     this.interaction.add({
@@ -3491,6 +3526,7 @@ export class Game {
       priority: 1, // it stands over the mast's box
       isAvailable: () => this.splitterShown() && onFoot() && (!this.handsFull || this.heldWood?.kind === 'round'),
       prompt: () => this.splitterPrompt(),
+      feedback: () => (this.heldWood ? 'putDown' : 'latch'),
       interact: () => this.splitterInteract(),
       hold: () => this.splitterHold(),
     });
@@ -3498,6 +3534,7 @@ export class Game {
       target: this.fitProxy,
       isAvailable: () => !this.splitterFitted && !this.handsFull && onFoot() && !this.baleRig.held && !this.splitterTrailerOn(),
       prompt: () => 'Take the bale spike off and fit the log splitter',
+      feedback: 'latch',
       interact: () => this.fitSplitter(true),
     });
   }
@@ -4453,6 +4490,7 @@ export class Game {
       target: this.wallCalendar.group,
       isAvailable: () => !this.dayFade.active && !this.dayRecap.active,
       prompt: () => ({ text: this.endOfDayNow().text }),
+      feedback: 'own',
       interact: () => this.callItADay(),
     });
   }
@@ -5432,6 +5470,7 @@ export class Game {
       spot(model, model.worldToLocal((w.hookMesh ?? w.fairlead).getWorldPosition(new THREE.Vector3())).toArray(), [0.5, 0.4, 0.4], {
         isAvailable: () => w.state === 'stowed' && !this.handsFull && !this.player.isRiding,
         prompt: () => 'Take the winch hook',
+        feedback: 'pickUp',
         interact: () => w.take(this.camera),
       });
     }
@@ -5440,6 +5479,7 @@ export class Game {
       spot(this.tractorUnit.quad.model, [0, TRACTOR_GROUND_OFFSET + 0.52, -1.5], [0.6, 0.4, 0.5], {
         isAvailable: () => c.state === 'stowed' && !this.handsFull && !this.player.isRiding,
         prompt: () => (this.trailer.hitched ? { info: 'The trailer is on the drawbar: unhitch it before taking the chain' } : 'Take the tow chain'),
+        feedback: 'pickUp',
         interact: () => {
           if (!this.trailer.hitched) c.take(this.camera);
         },
@@ -5452,6 +5492,7 @@ export class Game {
       spot(quad.model, [0, p.hitchHeight, -p.hitchBack], [0.4, 0.3, 0.3], {
         isAvailable: () => r.state === 'stowed' && !this.handsFull && !this.player.isRiding,
         prompt: () => (this.tipTrailer.hitched && this.tipTrailer.puller === quad ? { info: `The trailer is on the ${unit.label}'s hitch: unhitch it before taking the rope` } : 'Take the tow rope'),
+        feedback: 'pickUp',
         interact: () => {
           if (!(this.tipTrailer.hitched && this.tipTrailer.puller === quad)) r.take(this.camera, quad);
         },
@@ -6532,6 +6573,7 @@ export class Game {
       priority: -1,
       isAvailable: () => this.hose.held && !this.player.isRiding,
       prompt: () => ({ text: this.spray.tank >= 0.999 ? 'The sprayer is full   ·   G put the hose back' : `Hold E to fill the sprayer (${Math.round(this.spray.tank * 100)}%)   ·   G put the hose back` }),
+      feedback: 'hold',
       interact: () => {},
       hold: (dt) => this.fillSprayer(dt),
     });
@@ -6661,6 +6703,7 @@ export class Game {
       target: this.hayView.loose,
       isAvailable: () => this.hay.phase === 'load' && !this.handsFull && !this.player.isRiding,
       prompt: () => this.hayBalePrompt(),
+      feedback: 'pickUp',
       interact: () => this.heaveBale(),
     });
   }
@@ -9044,6 +9087,7 @@ export class Game {
       target: proxy,
       isAvailable: () => !this.handsFull && !this.player.isRiding && !this.flask.active && !!this.flaskGirl(),
       prompt: () => `Sit down with ${this.flaskGirl().name} and have a cup of tea from the flask`,
+      feedback: 'own',
       interact: () => this.askForFlask(),
     });
   }
@@ -11154,6 +11198,7 @@ export class Game {
         if (held) return this.charger.busy ? { text: 'The charger already has a battery on   ·   G put it down' } : `Put the ${held.name} on the charger${this.generator.powered ? '' : ' (it needs the generator running)'}`;
         return `Pick up the ${this.chargedBattery().name}`;
       },
+      feedback: () => (this.heldBattery() ? 'putDown' : 'pickUp'),
       interact: () => {
         const held = this.heldBattery();
         if (held && !this.charger.busy) this.putOnCharger(held);
@@ -11250,6 +11295,7 @@ export class Game {
         target: b.proxy,
         isAvailable: () => b.out && !b.held && !this.handsFull,
         prompt: () => `Pick up the ${b.name}`,
+        feedback: 'pickUp',
         interact: () => this.pickUpBattery(b),
       });
     }
@@ -11351,6 +11397,7 @@ export class Game {
       target: proxy,
       isAvailable: () => !this.handsFull || !!this.can.held,
       prompt: () => this.generatorPrompt(),
+      feedback: 'own',
       interact: () => {
         if (this.can.held) return;
         if (this.generator.running) this.switchGeneratorOff();
@@ -11630,7 +11677,12 @@ export class Game {
         if (!this.coolantBottle.held && !this.antiGelBottle.held) this.dipstick(focused.unit, input, dt);
         this.lastUnit = focused.unit;
       }
-      if (focused && !focused.person && input.wasPressed('KeyE')) focused.interact();
+      if (focused && !focused.person && input.wasPressed('KeyE')) {
+        // Worked out before the act, which changes what you hold: a prompt that only gives a reason (a full can) did nothing, so no sound.
+        const cue = normalisePrompt(focused.prompt())?.action ? cueFor(focused) : null;
+        focused.interact();
+        if (cue) this.audioHub.useCue(cue);
+      }
       if (this.talkPressed(input)) {
         if (focused?.person) this.openCompanionMenu(focused.person);
         else this.openYourWheel();
@@ -11647,6 +11699,8 @@ export class Game {
       if (!input.isDown('KeyE')) this.eHeld = 0;
       if (focused?.hold && input.isDown('KeyE') && focused.hold(dt)) pouring = true;
       // The winch hook, tow chain and tow rope are taken with E at where they are kept (setUpKitSpots) and put back with G.
+      // Putting something down makes its small sound: whatever G did, if your hands are empty of what they held.
+      const putting = input.wasPressed('KeyG') && this.handsFull;
       if (input.wasPressed('KeyG')) {
         if (this.winch?.state === 'carried') this.winch.stow();
         else if (this.chain?.state === 'carried') this.chain.stow();
@@ -11663,6 +11717,7 @@ export class Game {
       else if (this.heldBrushwood && input.wasPressed('KeyG')) this.putBrushwoodDown();
       else if (this.heldWood && input.wasPressed('KeyG')) this.putWoodDown();
       else if (this.heldBattery() && input.wasPressed('KeyG')) this.putBatteryDown();
+      if (putting && !this.handsFull) this.audioHub.useCue('putDown');
     }
 
     fb.lap('input and prompts', performance.now());
@@ -11996,6 +12051,7 @@ export class Game {
       isAvailable: () => !!this.catParams.enabled && !this.cat.panicked && !this.riddenUnit,
       range: () => 3,
       prompt: () => (this.cat.perched ? 'Shoo the cat off' : 'Shoo the cat'),
+      feedback: 'own',
       interact: () => this.shooCat(),
     });
   }
@@ -12171,6 +12227,7 @@ export class Game {
         target: m,
         isAvailable: () => !this.player.isRiding,
         prompt: () => this.feedPrompt(which),
+        feedback: 'hold',
         interact: () => {},
         hold: (dt) => this.feedAnimals(which, dt),
       });
@@ -12181,6 +12238,7 @@ export class Game {
       target: this.feedBin.proxy,
       isAvailable: () => !this.player.isRiding,
       prompt: () => (this.feedBucket.held ? { text: this.feedBucket.full ? 'The feed bucket is full' : 'Hold E to fill the bucket with feed' } : { text: 'The feed bin: bring the bucket to fill it' }),
+      feedback: 'hold',
       interact: () => {},
       hold: (dt) => this.feedBucket.held && this.feedBucket.fill(dt),
     });
@@ -12188,6 +12246,7 @@ export class Game {
       target: this.feedBucket.proxy,
       isAvailable: () => !this.feedBucket.held,
       prompt: () => (this.handsFull ? { text: 'The feed bucket: put what you are holding down first' } : `Pick up the feed bucket (${Math.round(this.feedBucket.feed * 100)}% full)`),
+      feedback: 'pickUp',
       interact: () => {
         if (!this.handsFull) this.feedBucket.pickUp(this.camera);
       },

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { validFeedback } from './feedback.js';
 
 /**
  * Finds what the player is looking at. Anything can register as interactable:
@@ -9,6 +10,7 @@ import * as THREE from 'three';
  *     prompt(): string | {text} | {action, hold, keys} | {info, keys}: an E action ("Ride the quad") or a line saying why not
  *                                ({ text: 'The can is full' }); prompt.js sets the shapes
  *     interact(): void,          called when E is pressed while focused
+ *     feedback: string | () => string, what it gives back: a cue (pickUp, putDown, latch, paper), 'own' or 'hold' (feedback.js)
  *     hold(dt): boolean,         optional, called every frame E is held; true while something is happening
  *     range(): number,           optional, how far away it can be reached (defaults to the player's reach)
  *     priority: number,          optional, defaults to 0: a direct hit on a higher priority item wins over a nearer one (the toolbox on
@@ -32,6 +34,7 @@ export class Interaction {
   add(item) {
     // Everything you can use says what it is (see prompt.js); one that cannot would be a thing you look at and nothing happens.
     if (typeof item.prompt !== 'function') throw new Error('An interactable needs a prompt()');
+    if (!validFeedback(item.feedback)) throw new Error('An interactable needs feedback (see feedback.js)');
     this.items.push(item);
     return item;
   }

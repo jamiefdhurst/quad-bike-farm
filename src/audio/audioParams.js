@@ -30,6 +30,7 @@ export const DEFAULT_SOUND_PARAMS = {
   splashVolume: 0.9, // hitting a puddle
   beltBingVolume: 0.16, // the UTV's seat belt reminder, a soft bong
   indicatorVolume: 0.05, // the indicator relay's tick and tock
+  useVolume: 0.35, // the small sounds of picking up, putting down, switching and opening boards
   knockVolume: 0.5, // suspension knocking over a bump or a wheel touching down
   bumpVolume: 0.18, // small knocks from uneven ground
   gridVolume: 1.2, // the cattle grid's rumble and bar knocks, over the road's own rumble
@@ -79,6 +80,7 @@ export const SOUND_PARAM_RANGES = {
   splashVolume: [0, 3, 0.01],
   beltBingVolume: [0, 0.3, 0.005],
   indicatorVolume: [0, 0.15, 0.005],
+  useVolume: [0, 1, 0.01],
   knockVolume: [0, 2, 0.01],
   bumpVolume: [0, 2, 0.01],
   gridVolume: [0, 4, 0.05],
