@@ -664,10 +664,10 @@ function forecourt(ctx, w, S, b, random) {
     for (const s of [-1, 1]) {
       const hz = pz + s * 0.09;
       const hx = px + 0.285 + 0.07;
-      w.box(0.14, 0.28, 0.14, M.iron, px + 0.285 + 0.035, 0.95, hz, 0.6); // the holster, fixed to the side
+      w.box(0.12, 0.26, 0.13, M.iron, px + 0.285 + 0.025, 0.95, hz, 0.6); // the holster, fixed to the side; the nozzle's body stands out of it, so no faces are level
       w.add(new THREE.CylinderGeometry(0.014, 0.014, 0.26, 8), steel, hx, 0.92, hz); // the spout, in the holster
-      w.box(0.07, 0.11, 0.05, accent, hx, 1.1, hz, 0.6); // the nozzle's body
-      w.box(0.04, 0.03, 0.16, M.iron, hx, 1.17, hz + s * 0.05, 0.6); // its grip, back towards the hose
+      w.box(0.07, 0.11, 0.05, accent, hx + 0.01, 1.12, hz, 0.6); // the nozzle's body
+      w.box(0.04, 0.03, 0.16, M.iron, hx + 0.01, 1.19, hz + s * 0.05, 0.6); // its grip, back towards the hose
       w.add(new THREE.TorusGeometry(0.03, 0.008, 6, 10), steel, hx, 1.19, hz + s * 0.13); // the swivel
       const curve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(hx, 1.15, hz + s * 0.13),
