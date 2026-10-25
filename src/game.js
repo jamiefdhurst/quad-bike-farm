@@ -11,6 +11,7 @@ import { QuadUnit } from './vehicle/quadUnit.js';
 import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC } from './vehicle/quadSpecs.js';
 import { LANDY_STAND, LANDY_REAR_STAND, LANDY_REAR_SEATS } from './vehicle/landRoverModel.js';
 import { CARS, CAR_STAND } from './vehicle/carModel.js';
+import { nearerPassenger } from './interaction/seatLook.js';
 import { DEFAULT_REAR_ACCESS_PARAMS, REAR_ACCESS_PARAM_RANGES, seatTipTargets, easeSeatTips, pickRearSeat, rearDoor } from './vehicle/rearAccess.js';
 import { clearOfChassis } from './vehicle/dismount.js';
 import { DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES } from './vehicle/bikeLean.js';
@@ -1194,21 +1195,21 @@ export class Game {
           if (this.leads.ends.includes(quad)) return `Take the jump leads off the ${unit.label}`;
           const winch = this.winch;
           if (winch?.state === 'carried') {
-            if (unit === winch.unit) return { text: 'X put the winch hook back' };
-            if (isHeavy(unit.spec)) return `Hook the winch cable on the ${unit.label}: the ${winch.unit.label} will pull itself up to it   ·   X put it back`;
-            return `Hook the winch cable on the ${unit.label}${quad.bog.stuck ? ' (it\'s stuck)' : ''}   ·   X put it back`;
+            if (unit === winch.unit) return { info: 'You are holding the winch hook', keys: [['G', 'Put it back']] };
+            if (isHeavy(unit.spec)) return `Hook the winch cable on the ${unit.label}: the ${winch.unit.label} will pull itself up to it   ·   G put it back`;
+            return `Hook the winch cable on the ${unit.label}${quad.bog.stuck ? ' (it\'s stuck)' : ''}   ·   G put it back`;
           }
           if (winch?.state === 'hooked' && winch.target === quad) return 'Unhook the winch   ·   hold X by the RB300 to wind in';
           const chain = this.chain;
           if (chain?.state === 'carried') {
-            if (unit === this.tractorUnit) return { text: 'X put the tow chain back' };
-            return `Hook the tractor's chain on the ${unit.label}${quad.bog.stuck ? ' (it\'s stuck)' : ''}   ·   X put it back`;
+            if (unit === this.tractorUnit) return { info: 'You are holding the tow chain', keys: [['G', 'Put it back']] };
+            return `Hook the tractor's chain on the ${unit.label}${quad.bog.stuck ? ' (it\'s stuck)' : ''}   ·   G put it back`;
           }
           if (chain?.state === 'hooked' && chain.target === quad) return 'Unhook the tow chain';
           const rope = this.towRope;
           if (rope.state === 'carried') {
-            if (quad === rope.puller) return { text: 'X put the tow rope back' };
-            return `Hook the tow rope on the ${unit.label}   ·   X put it back`;
+            if (quad === rope.puller) return { info: 'You are holding the tow rope', keys: [['G', 'Put it back']] };
+            return `Hook the tow rope on the ${unit.label}   ·   G put it back`;
           }
           if (rope.state === 'hooked' && rope.target === quad) return 'Unhook the tow rope';
           if (this.hose.held) {
@@ -1219,6 +1220,8 @@ export class Game {
           if (this.toolbox.held) {
             return this.workshop.prompt(unit);
           }
+          if (this.coolantBottle.held) return { action: `Top up the ${unit.label}'s coolant`, hold: true, keys: [['G', 'Put the bottle down']] };
+          if (this.antiGelBottle.held) return { action: `Treat the ${unit.label}'s diesel`, hold: true, keys: [['G', 'Put the bottle down']] };
           if (this.can.held) {
             const pct = Math.round(quad.fuel.level * 100);
             if (quad.fuel.space < 0.01) return { text: `The ${unit.label} is full   ·   G put the can down` };
@@ -1232,18 +1235,18 @@ export class Game {
           if (quad.hasBench && this.herAtTheFront(quad) && !quad.passenger && !this.benchSeatFor(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and the bench is full` };
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger && this.herOnBack(quad)) return { text: `${this.herAtTheFront(quad).name}'s driving and ${this.herOnBack(quad).name}'s on the back: no room` };
           if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) return `Get on the back (${this.herAtTheFront(quad).name}'s driving)`;
-          const winchKey = this.winch?.unit === unit && this.winch.state === 'stowed' ? '   X winch cable' : '';
+          if (this.canSitOnBack(quad) && this.lookingAtPassengerSeat(quad)) return `Sit ${quad.hasBench ? (this.lookingAtBack(quad) ? 'in the back' : 'in the passenger seat') : 'on the back'} of the ${unit.label}`;
           return {
             action: `Ride the ${unit.label}`,
             keys: quad.tractor
-              ? [['K', 'Key'], ['R', 'Start'], ['Q Z', 'Hand throttle'], ['O', 'Stop knob'], ['Y', 'Dipstick'], ...(this.chain?.state === 'stowed' && !this.player.isRiding ? [['X', 'Tow chain']] : [])]
+              ? [['K', 'Key'], ['R', 'Start'], ['Q Z', 'Hand throttle'], ['O', 'Stop knob'], ['Y', 'Dipstick']]
               : unit.spec.utv
-                ? [['K', 'Key'], ['R', 'Start'], ['T', 'Tip the bed'], ['Y', 'Dipstick'], ...(this.canSitOnBack(quad) ? [['B', 'Sit in the passenger seat']] : [])] // the reverse lever is on the dash: only from the seat
+                ? [['K', 'Key'], ['R', 'Start'], ['T', 'Tip the bed'], ['Y', 'Dipstick']] // the reverse lever is on the dash: only from the seat
                 : unit.spec.landRover
-                  ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.defender ? [] : [['Q Z', 'Choke'], ['[ ]', 'Hand throttle']]), ['Y', 'Dipstick'], ...(unit.spec.defender ? [] : [['P', 'Starting handle (at the front)']]), ...(this.canSitOnBack(quad) ? [['B', this.lookingAtBack(quad) ? 'Sit in the back' : 'Sit in the passenger seat']] : [])]
+                  ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.defender ? [] : [['Q Z', 'Choke'], ['[ ]', 'Hand throttle']]), ['Y', 'Dipstick'], ...(unit.spec.defender ? [] : [['P', 'Starting handle (at the front)']])]
                 : unit.spec.car
-                  ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.engine.injected ? [] : [['Q Z', 'Choke']]), ['Y', 'Dipstick'], ...(this.canSitOnBack(quad) ? [['B', this.lookingAtBack(quad) ? 'Sit in the back' : 'Sit in the passenger seat']] : [])]
-                : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['O', quad.engine.params.kickStart ? 'Kick' : 'Pull-start']] : []), ...(quad.engine.params.manualTiming ? [['[ ]', 'Spark lever']] : []), ...(quad.barLights ? [['P', 'Lights']] : []), ...(quad.engine.params.injected ? [] : [['Q Z', 'Choke']]), ...(quad.fuel.params.noTap ? [] : [['F', 'Fuel tap']]), ...(quad.sump ? [['Y', 'Dipstick']] : quad.engine.params.tickler ? [['Y', 'Tickle']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : []), ...(this.canSitOnBack(quad) ? [['B', 'Sit on the back']] : []), ...(winchKey ? [['X', 'Winch cable']] : []), ...(this.towRope.state === 'stowed' && this.ropeQuadFor(unit) && !this.player.isRiding ? [['X', 'Tow rope']] : [])],
+                  ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.engine.injected ? [] : [['Q Z', 'Choke']]), ['Y', 'Dipstick']]
+                : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['O', quad.engine.params.kickStart ? 'Kick' : 'Pull-start']] : []), ...(quad.engine.params.manualTiming ? [['[ ]', 'Spark lever']] : []), ...(quad.barLights ? [['P', 'Lights']] : []), ...(quad.engine.params.injected ? [] : [['Q Z', 'Choke']]), ...(quad.fuel.params.noTap ? [] : [['F', 'Fuel tap']]), ...(quad.sump ? [['Y', 'Dipstick']] : quad.engine.params.tickler ? [['Y', 'Tickle']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : [])],
           };
         },
         interact: () => {
@@ -1275,7 +1278,7 @@ export class Game {
             this.towRope.unhook(this.camera);
             return;
           }
-          if (this.can.held || this.hose.held) return; // E is for pouring or spraying while you're holding those
+          if (this.can.held || this.hose.held || this.coolantBottle.held || this.antiGelBottle.held) return; // E is for pouring or spraying while you're holding those
           if (this.heldBattery()) return this.fitHeldBattery(unit);
           if (this.toolbox.held) {
             this.achievements.note('toolbox');
@@ -1295,9 +1298,12 @@ export class Game {
           else if (quad.hasBench && this.herAtTheFront(quad)) return; // she's driving and the bench is full
           else if (this.herAtTheFront(quad) && this.herOnBack(quad)) return;
           else if (this.herAtTheFront(quad) && quad.hasPillion && !quad.passenger) this.mountPillion(unit);
+          else if (this.canSitOnBack(quad) && this.lookingAtPassengerSeat(quad)) this.sitOnBack(unit);
           else this.mount(unit);
         },
         hold: (dt) => {
+          if (this.coolantBottle.held) return this.coolantTopUp(unit, dt);
+          if (this.antiGelBottle.held) return this.antiGelDose(unit, dt);
           if (this.hose.held) {
             // Close enough and the jet reaches it: the mud comes off.
             const near = quad.position.distanceTo(this.player.position) < this.hose.params.washRange + 1.2;
@@ -1504,6 +1510,8 @@ export class Game {
     this.chain = this.tractorUnit ? new Chain({ scene: this.scene, tractor: this.tractorUnit.quad, anchor: (q) => q.localToWorld(0, TRACTOR_GROUND_OFFSET + 0.52, -1.5) }) : null; // no tractor, no chain
     // The tow rope on the red and blue quads' racks (items/towRope.js): a quad towing a quad, with a girl steering the dead one.
     this.towRope = new TowRope({ scene: this.scene });
+    this.setUpKitSpots();
+    this.setUpDrawbars();
     this.interaction.add({
       target: this.hose.proxy,
       isAvailable: () => !this.handsFull,
@@ -2136,9 +2144,8 @@ export class Game {
     const hay = tractor ? this.trailer : null;
     const tip = this.tipTrailer;
     const mine = [hay, tip, this.sprayer].filter(Boolean);
-    if (tractor && this.chain?.state !== 'stowed') return this.hud.toast('The tow chain is on the drawbar', 2);
-    if (tractor && this.baleRig.held) return this.hud.toast('Put the bale down first: it is on the spike', 2);
-    if (!tractor && this.towRope.state !== 'stowed' && this.towRope.puller === q) return this.hud.toast('The tow rope is on the hitch', 2);
+    const blocked = this.hitchBlock(q);
+    if (blocked) return this.hud.toast(blocked, 2);
     const on = mine.find((t) => t.hitched && (t === hay || t.puller === q));
     if (on) {
       if (q.speed > 0.5) return this.hud.toast('Stop before you unhitch the trailer', 2);
@@ -2153,6 +2160,57 @@ export class Game {
     }
     const near = Math.min(...mine.filter((t) => !t.hitched).map((t) => t.gap(q)));
     this.hud.toast(near < 8 ? 'Back the hitch up to the trailer\'s ring' : 'No trailer behind you', 2);
+  }
+
+  /** Why this vehicle's hitch is not free to take a trailer, or null. */
+  hitchBlock(q) {
+    if (q === this.tractorUnit?.quad) {
+      if (this.chain?.state !== 'stowed') return 'The tow chain is on the drawbar';
+      if (this.baleRig.held) return 'Put the bale down first: it is on the spike';
+    } else if (this.towRope.state !== 'stowed' && this.towRope.puller === q) return 'The tow rope is on the hitch';
+    return null;
+  }
+
+  /**
+   * A trailer's drawbar, for E on foot (J is the same from the seat): { prompt, run } to hook on the vehicle parked at its ring or take it off,
+   * or null when there is nothing to do.
+   */
+  drawbarAction(t, name) {
+    const tractor = this.tractorUnit?.quad;
+    if (t.hitched) {
+      const q = t.tractor ?? t.puller;
+      if (q.rider || q.driver) return null; // somebody is on it: J is theirs
+      if (q.speed > 0.5) return { prompt: { info: `The ${name} is moving` } };
+      return { prompt: `Unhitch the ${name}`, run: () => (t.unhitch(), this.hud.toast(`${name[0].toUpperCase()}${name.slice(1)} unhitched${q === tractor ? ', bale spike fitted again' : ''}`, 2)) };
+    }
+    const q = this.units.map((u) => u.quad).find((c) => (t === this.trailer ? c === tractor : canTow(c)) && !c.rider && !c.driver && t.canHitch(c));
+    if (!q) return null;
+    const why = this.hitchBlock(q);
+    if (why) return { prompt: { info: why } };
+    return {
+      prompt: `Hook on the ${name}`,
+      run: () => {
+        t.hitch(q);
+        this.achievements.note('hitched');
+        this.hud.toast(`${name[0].toUpperCase()}${name.slice(1)} hitched${q === tractor ? ', bale spike taken off' : ''}`, 2);
+      },
+    };
+  }
+
+  /** A box at each trailer's drawbar to look at: E hooks it on to the vehicle backed up to its ring, or takes it off. */
+  setUpDrawbars() {
+    for (const [t, name] of [[this.trailer, 'bale trailer'], [this.tipTrailer, 'tipping trailer'], [this.sprayer, 'sprayer']]) {
+      const proxy = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.9), new THREE.MeshBasicMaterial({ visible: false }));
+      proxy.position.set(0, 0.5, t.motion.p.drawLength);
+      t.model.add(proxy);
+      this.interaction.add({
+        target: proxy,
+        priority: 1, // the trailer's own box is round it
+        isAvailable: () => !this.player.isRiding && !this.handsFull && !!this.drawbarAction(t, name),
+        prompt: () => this.drawbarAction(t, name)?.prompt ?? { info: '' },
+        interact: () => this.drawbarAction(t, name)?.run?.(),
+      });
+    }
   }
 
   /** The trailer a vehicle has on its hook, if any. */
@@ -5354,7 +5412,72 @@ export class Game {
     return (quad.hasPillion || (quad.hasBench && !!this.benchSeatFor(quad, this.lookingAtBack(quad)))) && !quad.driver && !quad.isTipped && !quad.passenger && !quad.rider && !this.herOn(quad) && quad.speed < 0.5 && !this.handsFull;
   }
 
-  /** Looking at the back half of a car with a back bench (the 200TDi), so B or E is for the back seats rather than the front. */
+  /**
+   * Where the winch hook, the tow chain and the tow rope are kept, each a small box to look at: E takes it, G puts it back
+   * (the hook worked from the seat stays X, a vehicle control). The rope is on every red and blue quad's rack.
+   */
+  setUpKitSpots() {
+    const spot = (parent, at, size, item) => {
+      const proxy = new THREE.Mesh(new THREE.BoxGeometry(...size), new THREE.MeshBasicMaterial({ visible: false }));
+      proxy.position.set(...at);
+      parent.add(proxy);
+      this.interaction.add({ target: proxy, priority: 1, ...item });
+    };
+    const w = this.winch;
+    if (w) {
+      const model = w.unit.quad.model;
+      model.updateMatrixWorld(true);
+      spot(model, model.worldToLocal((w.hookMesh ?? w.fairlead).getWorldPosition(new THREE.Vector3())).toArray(), [0.5, 0.4, 0.4], {
+        isAvailable: () => w.state === 'stowed' && !this.handsFull && !this.player.isRiding,
+        prompt: () => 'Take the winch hook',
+        interact: () => w.take(this.camera),
+      });
+    }
+    const c = this.chain;
+    if (c) {
+      spot(this.tractorUnit.quad.model, [0, TRACTOR_GROUND_OFFSET + 0.52, -1.5], [0.6, 0.4, 0.5], {
+        isAvailable: () => c.state === 'stowed' && !this.handsFull && !this.player.isRiding,
+        prompt: () => (this.trailer.hitched ? { info: 'The trailer is on the drawbar: unhitch it before taking the chain' } : 'Take the tow chain'),
+        interact: () => {
+          if (!this.trailer.hitched) c.take(this.camera);
+        },
+      });
+    }
+    const r = this.towRope;
+    for (const unit of this.units.filter((u) => this.ropeQuadFor(u))) {
+      const quad = unit.quad;
+      const p = r.params;
+      spot(quad.model, [0, p.hitchHeight, -p.hitchBack], [0.4, 0.3, 0.3], {
+        isAvailable: () => r.state === 'stowed' && !this.handsFull && !this.player.isRiding,
+        prompt: () => (this.tipTrailer.hitched && this.tipTrailer.puller === quad ? { info: `The trailer is on the ${unit.label}'s hitch: unhitch it before taking the rope` } : 'Take the tow rope'),
+        interact: () => {
+          if (!(this.tipTrailer.hitched && this.tipTrailer.puller === quad)) r.take(this.camera, quad);
+        },
+      });
+    }
+  }
+
+  /** Whether you are looking at the passenger's or the back seat rather than the driver's: E there sits you in it (interaction/seatLook.js). */
+  lookingAtPassengerSeat(quad) {
+    const at = this.interaction.focusPoint;
+    if (!at || this.interaction.focused?.unit?.quad !== quad) return false;
+    if (this.lookingAtBack(quad)) return true;
+    const spot = (anchor) => {
+      if (!anchor) return null;
+      const l = quad.model.worldToLocal(anchor.getWorldPosition(new THREE.Vector3()));
+      return { x: l.x, z: l.z };
+    };
+    const look = quad.model.worldToLocal(at.clone());
+    return nearerPassenger({ x: look.x, z: look.z }, spot(quad.cameraAnchor), spot(quad.hasBench ? quad.benchCameras.left : quad.pillionCameraAnchor));
+  }
+
+  /** On the back of a parked quad with nobody driving; sooner or later a girl comes and takes you for a ride. */
+  sitOnBack(unit) {
+    if (unit.quad.hasBench) this.mountBench(unit);
+    else this.mountPillion(unit);
+  }
+
+  /** Looking at the back half of a car with a back bench (the 200TDi), so E is for the back seats rather than the front. */
   lookingAtBack(quad) {
     const at = this.interaction.focusPoint;
     if (!quad.rearSeats?.length || !at || this.interaction.focused?.unit?.quad !== quad) return false;
@@ -10944,21 +11067,18 @@ export class Game {
     this.coolantBottle.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
   }
 
-  /** Stood looking at a vehicle with the coolant bottle in your hands: Y tops the radiator up, then flushes a stuck thermostat free (items/coolantBottle.js). */
-  coolantTopUp(unit, input, dt) {
-    if (!input.isDown('KeyY')) {
-      this.yHeld = 0;
-      return;
-    }
+  /** Holding E looking at a vehicle with the coolant bottle in your hands: tops the radiator up, then flushes a stuck thermostat free (items/coolantBottle.js). True while it pours. */
+  coolantTopUp(unit, dt) {
     const e = unit.engine;
     const how = pourStep(e, dt, this.coolantBottle.params);
-    this.yHeld = (this.yHeld ?? 0) + dt;
+    this.eHeld = (this.eHeld ?? 0) + dt;
     if (how === 'pouring') this.hud.setStatus(`Topping up the coolant: ${levelText(e.coolant)}`);
     else if (how === 'flushing') this.hud.setStatus('Flushing coolant through the engine');
     else if (how === 'freed') this.hud.toast('Flushed right through: the thermostat has freed up', 3);
-    else if (this.yHeld < 0.6) {
+    else if (this.eHeld < 0.6) {
       this.hud.toast(how === 'air' ? 'No radiator: that one is air-cooled' : how === 'hot' ? 'Too hot to open the cap: switch it off and let it cool' : 'The radiator is full', 2.5);
     }
+    return how === 'pouring' || how === 'flushing';
   }
 
   putAntiGelBottleDown() {
@@ -10967,19 +11087,16 @@ export class Game {
     this.antiGelBottle.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
   }
 
-  /** Stood looking at a vehicle with the anti-gel in your hands: Y doses a diesel's tank (items/antiGelBottle.js). */
-  antiGelDose(unit, input, dt) {
-    if (!input.isDown('KeyY')) {
-      this.yHeld = 0;
-      return;
-    }
+  /** Holding E looking at a vehicle with the anti-gel in your hands: doses a diesel's tank (items/antiGelBottle.js). True while it pours. */
+  antiGelDose(unit, dt) {
     const q = unit.quad;
     const how = doseStep(q.fuel, unit.engine, dt, this.antiGelBottle.params);
-    this.yHeld = (this.yHeld ?? 0) + dt;
+    this.eHeld = (this.eHeld ?? 0) + dt;
     if (how === 'pouring') this.hud.setStatus(`Treating the diesel: ${Math.round(q.fuel.antiGel * 100)}% of the tank`);
-    else if (this.yHeld < 0.6) {
+    else if (this.eHeld < 0.6) {
       this.hud.toast(how === 'petrol' ? 'That runs on petrol: it never waxes' : how === 'empty' ? 'Nothing in the tank to treat' : 'The tank is already treated', 2.5);
     }
+    return how === 'pouring';
   }
 
   putOilBottleDown() {
@@ -11480,9 +11597,7 @@ export class Game {
       if (focused?.unit) {
         focused.unit.quad.setRemote(input);
         focused.unit.quad.handleFrameInput(dt);
-        if (this.coolantBottle.held) this.coolantTopUp(focused.unit, input, dt);
-        else if (this.antiGelBottle.held) this.antiGelDose(focused.unit, input, dt);
-        else this.dipstick(focused.unit, input, dt);
+        if (!this.coolantBottle.held && !this.antiGelBottle.held) this.dipstick(focused.unit, input, dt);
         this.lastUnit = focused.unit;
       }
       if (focused && input.wasPressed('KeyE')) focused.interact();
@@ -11493,38 +11608,15 @@ export class Game {
         else if (tree && this.winch.anchor === tree) this.winch.unhook(this.camera);
       }
       this.pushOnFoot(input, focused?.unit);
-      // B: sit on the back of a quad with nobody driving; sooner or later a girl comes and takes you for a ride.
-      if (focused?.unit && input.wasPressed('KeyB') && this.canSitOnBack(focused.unit.quad)) {
-        if (focused.unit.quad.hasBench) this.mountBench(focused.unit);
-        else this.mountPillion(focused.unit);
-      }
       // Holding E pours fuel or fills the can.
       this.wrongMix = null;
+      if (!input.isDown('KeyE')) this.eHeld = 0;
       if (focused?.hold && input.isDown('KeyE') && focused.hold(dt)) pouring = true;
-      // The winch: X takes the hook off the green (looking at it), or puts it back.
-      if (this.winch && input.wasPressed('KeyX')) {
-        const w = this.winch;
-        if (w.state === 'stowed' && focused?.unit === w.unit && !this.handsFull) w.take(this.camera);
-        else if (w.state === 'carried') w.stow();
-      }
-      // The tow chain: X takes it off the tractor's drawbar (looking at the tractor), or puts it back.
-      if (input.wasPressed('KeyX') && !this.player.isRiding) {
-        const c = this.chain;
-        if (!c) {
-          // no tractor this game
-        } else if (c.state === 'stowed' && focused?.unit === this.tractorUnit && !this.handsFull) {
-          if (this.trailer.hitched) this.hud.toast('Unhitch the trailer first: the chain goes on the same drawbar', 2.4);
-          else c.take(this.camera);
-        } else if (c.state === 'carried') c.stow();
-      }
-      // The tow rope: X takes it off a red or blue quad's rack (looking at it), or puts it back.
-      if (input.wasPressed('KeyX') && !this.player.isRiding) {
-        const r = this.towRope;
-        if (r.state === 'stowed' && this.ropeQuadFor(focused?.unit) && !this.handsFull) {
-          const quad = focused.unit.quad;
-          if (this.tipTrailer.hitched && this.tipTrailer.puller === quad) this.hud.toast('Unhitch the trailer first: the rope goes on the same hitch', 2.4);
-          else r.take(this.camera, quad);
-        } else if (r.state === 'carried') r.stow();
+      // The winch hook, tow chain and tow rope are taken with E at where they are kept (setUpKitSpots) and put back with G.
+      if (input.wasPressed('KeyG')) {
+        if (this.winch?.state === 'carried') this.winch.stow();
+        else if (this.chain?.state === 'carried') this.chain.stow();
+        else if (this.towRope.state === 'carried') this.towRope.stow();
       }
       if (this.hose.held && input.wasPressed('KeyG')) this.hose.putBack();
       else if (this.can.held && input.wasPressed('KeyG')) this.putCanDown();
@@ -12399,11 +12491,11 @@ export class Game {
     this.hud.setPrompt(p);
     // No readout for the quad: its dash is all you get.
     if (this.chain?.state === 'carried') {
-      this.hud.setStatus('Tow chain\nE on a quad to hook it on, X to put it back\nThen drive the tractor off, forwards');
+      this.hud.setStatus('Tow chain\nE on a quad to hook it on, G to put it back\nThen drive the tractor off, forwards');
     } else if (this.towRope?.state === 'carried') {
-      this.hud.setStatus('Tow rope\nE on a dead quad to hook it on, X to put it back\nThen ride off gently: it stretches and can snatch');
+      this.hud.setStatus('Tow rope\nE on a dead quad to hook it on, G to put it back\nThen ride off gently: it stretches and can snatch');
     } else if (this.winch?.state === 'carried') {
-      this.hud.setStatus(`Winch hook\n${this.winchTreeLooked() ? 'E to hook the tree: the RB300 will pull itself up to it' : 'E on a tree or a vehicle to hook it on, X to put it back'}`);
+      this.hud.setStatus(`Winch hook\n${this.winchTreeLooked() ? 'E to hook the tree: the RB300 will pull itself up to it' : 'E on a tree or a vehicle to hook it on, G to put it back'}`);
     } else if (this.winch?.state === 'hooked' && this.winch.anchor) {
       this.hud.setStatus(`Winch on a tree\n${this.winchTreeLooked() === this.winch.anchor ? 'E to unhook it, ' : ''}hold X by the RB300 or on it to wind in`);
     } else if (this.hose.held) {
@@ -12417,9 +12509,9 @@ export class Game {
     } else if (this.heldBrushwood) {
       this.hud.setStatus(`Brushwood\nE at the ring of stones to put it on the pile (${this.bonfire.piled} of ${this.bonfireParams.heapsNeeded})\nG to put it down`);
     } else if (this.coolantBottle.held) {
-      this.hud.setStatus('Coolant bottle\nY at a water-cooled engine that is off and cool to top it up; keep holding when it is full to flush a stuck thermostat\nG to put it down');
+      this.hud.setStatus('Coolant bottle\nHold E at a water-cooled engine that is off and cool to top it up; keep holding when it is full to flush a stuck thermostat\nG to put it down');
     } else if (this.antiGelBottle.held) {
-      this.hud.setStatus('Diesel anti-gel\nY at a diesel (tractor, Yak, Moorland) to treat its tank, so it will not wax in a hard frost; it thaws what has waxed\nG to put it down');
+      this.hud.setStatus('Diesel anti-gel\nHold E at a diesel (tractor, Yak, Moorland) to treat its tank, so it will not wax in a hard frost; it thaws what has waxed\nG to put it down');
     } else if (this.feedBucket.held) {
       this.hud.setStatus(`Feed bucket (${Math.round(this.feedBucket.feed * 100)}% full)\n${this.feedBucket.empty ? 'Hold E at the feed bin by the barn to fill it' : 'Hold E at the hens\' run or the pig\'s sty to feed them'}\nG to put it down`);
     } else if (this.oilBottle.held) {

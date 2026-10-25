@@ -242,7 +242,6 @@ export class PadController {
     if (b[PAD.B]) out.held.add('KeyG');
     if (b[PAD.X]) out.held.add('KeyX');
     if (b[PAD.Y]) out.held.add('Space');
-    if (b[PAD.RB]) out.held.add('KeyB');
     if (b[PAD.LT]) out.held.add('KeyV');
     if (b[PAD.L3] || b[PAD.LB]) out.held.add('ShiftLeft'); // jog, or the clutch while you work a gear lever from outside
     if (b[PAD.LEFT]) out.held.add('ArrowLeft'); // the bucket list's pages
