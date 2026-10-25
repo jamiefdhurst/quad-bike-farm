@@ -8,7 +8,7 @@ paths:
 
 # Making a new thing look right the first time
 
-New areas and items used to land as plain blocks, and Jamie had to ask for detail afterwards. These rules hold for anything new you'll see in the world: a building, a yard, a prop, a thing you carry, a fixture. Vehicles have their own, stricter rules (`vehicle-detail.md`); the girls' clothes and figures are in docs/decisions/girls.md. docs/decisions/process.md, "Making new things look right (#383)".
+New areas and items used to land as plain blocks, and Jamie had to ask for detail afterwards. These rules hold, in the style `docs/style.md` sets (era, wear, colour, light), for anything new you'll see in the world: a building, a yard, a prop, a thing you carry, a fixture. Vehicles have their own, stricter rules (`vehicle-detail.md`); the girls' clothes and figures are in docs/decisions/girls.md. docs/decisions/process.md, "Making new things look right (#383)".
 
 ## Before building
 

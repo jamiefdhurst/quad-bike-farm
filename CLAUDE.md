@@ -1,6 +1,6 @@
 # Quad bike farm
 
-First-person British farm quad-bike game: Three.js, Vite, ES modules, Rapier physics, Vitest. Two companions, Amy and Jess, who ride, drive, bicker and talk. README.md says what the game is and links `docs/game.md` (for a player), `docs/how-its-built.md` (the code) and `docs/console-and-panel.md` (the debug tools). DECISIONS.md indexes why things are the way they are, by area in `docs/decisions/`: read the "Where things stand" summary for the area you're touching, and the sections it names, before changing it.
+First-person British farm quad-bike game: Three.js, Vite, ES modules, Rapier physics, Vitest. Two companions, Amy and Jess, who ride, drive, bicker and talk. `docs/what-the-game-is.md` says what every part of the game is for and `docs/style.md` how it looks. README.md describes the game and links `docs/game.md` (for a player), `docs/how-its-built.md` (the code) and `docs/console-and-panel.md` (the debug tools). DECISIONS.md indexes why things are the way they are, by area in `docs/decisions/`: read the "Where things stand" summary for the area you're touching, and the sections it names, before changing it.
 
 ## Area rules
 
