@@ -40,6 +40,7 @@ The detailed rules for each part of the game are in `.claude/rules/`. They load 
 - `npm test` must pass before every commit. Add or update unit tests for any logic you change.
 - `npm run smoke` before opening a PR that touches `game.js` or adds to the frame (CI runs it too; `checking.md`).
 - No headless browser checks or screenshot rounds, apart from model work (anything new you'll see gets one look, `looks.md`) and the smoke test: they are slow, and screenshots keep showing the "Click to play" overlay. The one exception is a check where you get past the overlay and confirm it in the screenshot (`checking.md`). Otherwise rely on unit tests and say what you didn't verify. No long simulation runs or tuning loops: pick sensible values.
+- Jamie tries the running game for what only eyes and ears can judge (a look, a feel, a line by ear, how it plays), not for what a test can assert: prompts and their keys, toasts, that a sound is triggered, refusals, values. Those are tests before the item is done, and a stand-in game (`tests/villageHost.test.js`) is how to test code that lives in a host class.
 - Never make sound in tests: stub `speechSynthesis.speak` and set `game.audioHub.params.muted = true`.
 
 ## Versions and releases
