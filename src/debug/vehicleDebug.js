@@ -115,6 +115,7 @@ export function problemSummary(unit) {
   if (unit.quad.tyres && Math.min(unit.quad.tyres.tread.front, unit.quad.tyres.tread.rear) < 0.15) bits.push(`bald tyres (${unit.quad.tyres.treadText()})`);
   if (e.battery < 0.25) bits.push('battery flat');
   if (unit.quad.brakes.wet > 0.1) bits.push(`brakes wet ${unit.quad.brakes.wet.toFixed(2)}`);
+  if (unit.quad.brakes.heat > 0.1) bits.push(`brakes hot ${unit.quad.brakes.heat.toFixed(2)}`);
   if (unit.quad.brakes.binding) bits.push('brake binding');
   if (unit.quad.carbIce.icing) bits.push(`carb iced ${unit.quad.carbIce.ice.toFixed(2)}`);
   if (unit.quad.fuel.airLock >= 0.02) bits.push(`air in the fuel line ${unit.quad.fuel.airLock.toFixed(2)}`);

@@ -305,6 +305,7 @@ export class DebugGui {
     show(r, 'chain oil (1 fresh)', () => (unit().quad.faults.hasChain ? round(unit().quad.faults.kept.chainLube) : 'no chain'));
     show(r, 'mud on your view (0 clean; open vehicles only)', () => round(lensCoverage(this.game.lens)));
     show(r, 'brakes wet (0 dry)', () => round(unit().quad.brakes.wet));
+    show(r, 'brake heat (1 cooked; fades from 0.45)', () => round(unit().quad.brakes.heat));
     show(r, 'ice in the throttle cable', () => round(unit().quad.iceCable.ice));
     if (u.engine.params.compressionIgnition) show(r, 'diesel waxed (0 clear)', () => round(unit().quad.fuel.wax));
     if (u.engine.params.compressionIgnition) show(r, 'air in the fuel line (0 bled)', () => round(unit().quad.fuel.airLock));
@@ -352,6 +353,7 @@ export class DebugGui {
     if (u.quad.spotlamps.canFit) set(p, 'spotlamps aim (1 is true; lower points low and off to one side)', () => round(unit().quad.spotlamps.aim), (v) => (unit().quad.spotlamps.aim = v), 0, 1);
     if (u.quad.snorkel.canFit) set(p, 'snorkel seal (1 is bedded in; lower lets water in)', () => round(unit().quad.snorkel.seal), (v) => (unit().quad.snorkel.seal = v), 0, 1);
     set(p, 'wet brakes', () => round(unit().quad.brakes.wet), (v) => (unit().quad.brakes.wet = v), 0, 1);
+    set(p, 'hot brakes (they fade)', () => round(unit().quad.brakes.heat), (v) => (unit().quad.brakes.heat = v), 0, 1);
     if (u.quad.carbIce.enabled) set(p, 'iced carb (ice)', () => round(unit().quad.carbIce.ice), (v) => (unit().quad.carbIce.ice = v), 0, 1);
     if (u.engine.params.compressionIgnition) {
       set(p, 'waxed diesel (wax)', () => round(unit().quad.fuel.wax), (v) => (unit().quad.fuel.wax = v), 0, 1);
