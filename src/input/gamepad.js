@@ -91,6 +91,7 @@ export const RADIAL_ITEMS = [
   { label: 'Wipe the lens', key: 'KeyX', where: 'ride' },
   { label: 'Tip / ramps', key: 'KeyT', where: 'foot' },
   { label: 'Push', key: 'KeyV', hold: 1.5, where: 'foot' },
+  { label: 'Talk to her', key: 'Enter', note: 'Looking at a girl; looking at nobody, ask for a race' },
   { label: 'Wave', key: 'Digit6' },
   { label: 'Bucket list', key: 'Tab' },
   { label: 'Sound on/off', key: 'KeyN' },
@@ -246,6 +247,7 @@ export class PadController {
     if (b[PAD.L3] || b[PAD.LB]) out.held.add('ShiftLeft'); // jog, or the clutch while you work a gear lever from outside
     if (b[PAD.LEFT]) out.held.add('ArrowLeft'); // the bucket list's pages
     if (b[PAD.RIGHT]) out.held.add('ArrowRight');
+    if (b[PAD.RB]) out.held.add('Enter'); // talk to the girl you are looking at, or ask for a race
     if (pad.rt > 0) out.held.add('KeyE'); // a second thumb for the hold-to-pour and winch jobs
   }
 
@@ -258,7 +260,8 @@ export class PadController {
     out.brake = pad.lt;
     if (pad.rt > 0) out.held.add('KeyW');
     if (pad.lt > 0) out.held.add('KeyS');
-    if (b[PAD.B] || (b[PAD.A] && ctx.seat === 'pillion')) out.held.add('KeyE');
+    if (b[PAD.B]) out.held.add('KeyE');
+    if (b[PAD.A] && ctx.seat === 'pillion') out.held.add('Enter'); // talk to her about the ride
     if (b[PAD.X]) out.held.add('KeyL');
     if (b[PAD.Y]) out.held.add('Space');
     if (b[PAD.LB]) out.held.add('ShiftLeft');

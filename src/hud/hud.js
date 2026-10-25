@@ -69,7 +69,7 @@ export class Hud {
       row.append(k, document.createTextNode(label));
       return row;
     };
-    if (p.action) el.appendChild(chip(p.hold ? 'hold E' : 'E', p.action, 'prompt-main'));
+    if (p.action) el.appendChild(chip(p.hold ? 'hold E' : (p.key ?? 'E'), p.action, 'prompt-main'));
     else {
       const line = document.createElement('span');
       line.className = 'prompt-item';

@@ -1,7 +1,8 @@
 /**
  * The one prompt. Everything you can use says what it is in the same shape, whatever wrote it:
  *
- *   { action, hold?, keys? }   E (or hold E) does `action`; `keys` are other [key, what it does] chips under it
+ *   { action, hold?, key?, keys? }   E (or hold E) does `action`, or `key` does when it is a person you talk to (Enter); `keys` are other
+ *                              [key, what it does] chips under it
  *   { info, keys? }            nothing to press: a line saying why not ("The jerry can is full")
  *
  * An interactable's `prompt()` may return a string (an E action), `{ text }` (an info line) or either shape above; older prompts

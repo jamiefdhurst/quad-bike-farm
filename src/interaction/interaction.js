@@ -37,7 +37,8 @@ export class Interaction {
   }
 
   /** Updates `focused` from the player's view. */
-  update(player, range) {
+  /** `only`, when given, is a test an item must pass to be considered (looking for a person while riding). */
+  update(player, range, only = null) {
     player.getViewRay(this.ray);
     this.raycaster.set(this.ray.origin, this.ray.direction);
     this.raycaster.far = range;
@@ -50,6 +51,7 @@ export class Interaction {
     let coneBestCos = this.coneCos;
     for (const item of this.items) {
       if (item.isAvailable && !item.isAvailable()) continue;
+      if (only && !only(item)) continue;
       const far = item.range?.() ?? range;
       this.raycaster.far = far;
       const hits = this.raycaster.intersectObject(item.target, true);

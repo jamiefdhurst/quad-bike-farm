@@ -16,7 +16,7 @@ export const CONTROLS = [
   {
     title: 'On the back while she drives',
     lines: [
-      `<kbd>E</kbd> talk to her (mouse and click): stop, slower, faster, let me off, let me drive, coach her`,
+      `<kbd>Enter</kbd> talk to her (mouse and click): stop, slower, faster, let me off, let me drive, coach her. <kbd>E</kbd> gets you off once she has stopped`,
     ],
   },
   {
@@ -131,14 +131,14 @@ export const CONTROLS = [
   {
     title: 'Other',
     lines: [
-      `<kbd>H</kbd> help, <kbd>Tab</kbd> bucket list (<kbd>&larr;</kbd><kbd>&rarr;</kbd> turn the page), <kbd>Enter</kbd> ask for a race (on a quad, by the yard or at the drag strip) a timed hill climb (by the cones past the stream) or the cone course (by the cones west of the middle of the field), <kbd>M</kbd> farm map, <kbd>N</kbd> mute, <kbd>Esc</kbd> pause, <kbd>\`</kbd> tuning panel, <kbd>\\</kbd> console`,
+      `<kbd>H</kbd> help, <kbd>Tab</kbd> bucket list (<kbd>&larr;</kbd><kbd>&rarr;</kbd> turn the page), <kbd>Enter</kbd> talk to the girl you are looking at, on foot or from the seat, or at nobody to open your own wheel: "A race" (on a quad, by the yard or at the drag strip) a timed hill climb (by the cones past the stream) or the cone course (by the cones west of the middle of the field), <kbd>M</kbd> farm map, <kbd>N</kbd> mute, <kbd>Esc</kbd> pause, <kbd>\`</kbd> tuning panel, <kbd>\\</kbd> console`,
     ],
   },
   {
     title: 'On a gamepad',
     lines: [
       `Press <kbd>Start</kbd> on the start card to play, and again to pause. <kbd>Select</kbd> shows this help`,
-      `On foot: left stick walks (a gentle lean is a gentle walk), right stick looks, <kbd>A</kbd> is <kbd>E</kbd>, <kbd>B</kbd> puts down what you hold, <kbd>X</kbd> is <kbd>X</kbd> (wind the winch), <kbd>L3</kbd> jogs, <kbd>LT</kbd> pushes`,
+      `On foot: left stick walks (a gentle lean is a gentle walk), right stick looks, <kbd>A</kbd> is <kbd>E</kbd>, <kbd>RB</kbd> is <kbd>Enter</kbd> (talk to her, or open your own wheel), <kbd>B</kbd> puts down what you hold, <kbd>X</kbd> is <kbd>X</kbd> (wind the winch), <kbd>L3</kbd> jogs, <kbd>LT</kbd> pushes`,
       `On a vehicle: <kbd>RT</kbd> throttle and <kbd>LT</kbd> brake (as far as you press), left stick steers, right stick looks, <kbd>L3</kbd> looks back, <kbd>B</kbd> gets off, <kbd>X</kbd> horn, <kbd>Y</kbd> parking brake, <kbd>RB</kbd> reverse`,
       `Clutch: hold <kbd>LB</kbd> and press <kbd>D-pad up</kbd> or <kbd>down</kbd> for the next gear up or down (down from first is neutral)`,
       `Everything else (ignition, crank, choke, fuel tap, lights, indicators, 4WD, diff lock, seat belt, the bucket list...): click <kbd>R3</kbd> for the ring, <kbd>D-pad</kbd> or the right stick to pick, <kbd>A</kbd> to do it, <kbd>B</kbd> to cancel. The crank, choke and pull-start hold themselves for a moment; any button lets go`,

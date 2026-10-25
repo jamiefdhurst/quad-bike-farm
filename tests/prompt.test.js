@@ -36,6 +36,10 @@ describe('the one prompt', () => {
     });
   });
 
+  it('keeps the key a person is talked to with', () => {
+    expect(normalisePrompt({ action: 'Talk to Amy', key: 'Enter' })).toEqual({ action: 'Talk to Amy', key: 'Enter', keys: [] });
+  });
+
   it('passes the structured shapes through', () => {
     expect(normalisePrompt({ action: 'Get off', keys: [['C', 'Look back']] })).toEqual({ action: 'Get off', keys: [['C', 'Look back']] });
     expect(normalisePrompt({ action: 'Fill it', hold: true })).toEqual({ action: 'Fill it', hold: true, keys: [] });

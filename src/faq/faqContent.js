@@ -20,7 +20,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I start playing?',
         a: `Click the start screen to lock the mouse, and you're stood in the yard. Walk with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>,
-          look with the mouse, and press <kbd>E</kbd> at whatever you're looking at: a quad to get on, a girl to talk to, an item to pick up.
+          look with the mouse, and press <kbd>E</kbd> at whatever you're looking at: a quad to get on, an item to pick up. A girl you talk to with <kbd>Enter</kbd>.
           <kbd>H</kbd> shows the controls at any time. Every engine starts stone cold, so read "Starting an engine" below before your first go.`,
         tip: 'Press H at any time for the controls.',
       },
@@ -32,7 +32,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I call a girl over, or tell her to stop?',
-        a: `Look at her and press <kbd>E</kbd> to open her wheel. Whatever she is up to, it has "Come here" (she gets off whatever she is on and
+        a: `Look at her and press <kbd>Enter</kbd> to open her wheel. Whatever she is up to, it has "Come here" (she gets off whatever she is on and
           walks over to you), "Stop there" (when she is on her way somewhere) and "I'll be a minute" (she gets a quad going and waits on the back
           for you). The quads she could ride come on the wheel as well. If she is in the middle of something she will not drop, such as carrying
           something, the game says what she is doing instead.`,
@@ -1250,7 +1250,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I talk to them?',
-        a: `Look at one and press <kbd>E</kbd> to open her wheel. Move the mouse to a slice and click, or press its number. The first ring has a slice
+        a: `Look at one and press <kbd>Enter</kbd> to open her wheel (<kbd>E</kbd> is for things, <kbd>Enter</kbd> for people). It works from the saddle too, and on the back of a quad while she drives; look at nobody and it opens your own wheel, where you ask for a race. Move the mouse to a slice and click, or press its number. The first ring has a slice
           for each vehicle she could do something with; a vehicle's slice opens a second ring of what she could do with it. Right-click or Backspace
           goes back; <kbd>B</kbd> goes back a ring and closes it from the first.`,
       },
@@ -1345,14 +1345,14 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Can I race them?',
-        a: `Yes. Ride up to the start line by the yard and press <kbd>Enter</kbd>, or sit there with the engine running and Jess may dare you. Line up in the
+        a: `Yes. Ride up to the start line by the yard and press <kbd>Enter</kbd> and pick “A race”, or sit there with the engine running and Jess may dare you. Line up in the
           middle lane. A lap only counts if you go round the track. For a drag race, ride to the gravel strip in the middle of the field and press
-          <kbd>Enter</kbd>, or answer Jess when she blips her throttle at you. They also race each other.`,
+          <kbd>Enter</kbd> and pick “A race”, or answer Jess when she blips her throttle at you. They also race each other.`,
         tip: 'Press Enter at the start line by the yard to race the girls.',
       },
       {
         q: 'Why won\'t the girls race when I ask?',
-        a: `When you press <kbd>Enter</kbd> they drop what they are doing, find a quad and set off, so it should only take a few moments. If they can't, the game
+        a: `When you press <kbd>Enter</kbd> and pick “A race” they drop what they are doing, find a quad and set off, so it should only take a few moments. If they can't, the game
           tells you why after about fifteen seconds: one of them is carrying something or getting off a quad, there's no quad free for her (the one you're on is
           never offered, and the little ones belong to one girl), a race is already on, or you've rung the bell. The lap race needs both of them, and two different quads; the drag race, the hill climb and the cone course
           need only one. Ride up to the start line first: the lap race by the yard, the drag race at the gravel strip, the climb at the cones past the stream, the cone course at the cones in the field.`,
@@ -1360,7 +1360,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I time a run up the hill?',
         a: `Go down the lane and across the ford to the hill pasture. Just past the stream there are two pairs of big orange cones: ride up to them on a quad and press
-          <kbd>Enter</kbd>, then ride through them when you're ready. The clock runs from there. Go between the cones of each checkpoint in order (a cone
+          <kbd>Enter</kbd> and “A race”, then ride through them when you're ready. The clock runs from there. Go between the cones of each checkpoint in order (a cone
           either side, two on the way up) and on through the two pairs at the finish near the top. Anywhere between the cones counts, so the line is yours: the gentler ground in the east
           is the easy way, the steep banks in the west are quicker if you dare. Your time goes up as a toast, and the best ones go on the board in the barn.`,
         tip: 'Press Enter by the orange cones past the stream, then ride through them to time a hill climb.',
@@ -1368,7 +1368,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I time a run round the cone course?',
         a: `Amy's cone course is a slalom of orange cones across the grass, west of the middle of the field, inside the track. Ride up to the first pair of cones on any vehicle and
-          press <kbd>Enter</kbd>, then ride through them when you're ready. The clock runs from there. Weave through each pair of cones in order, left then right, and on through
+          press <kbd>Enter</kbd> and pick “A race”, then ride through them when you're ready. The clock runs from there. Weave through each pair of cones in order, left then right, and on through
           the finish pair. Every cone you knock down adds two seconds and every gap you miss adds five. Your score goes up as a toast, and the best ones go on the board in the barn.`,
         tip: 'Press Enter by the first orange cones in the field, west of the middle, then weave through them to be timed.',
       },
@@ -1385,7 +1385,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why did my hill climb stop counting?',
         a: `You're out if you get off or stall for ten seconds, or take more than two and a half minutes. Missing a gate (going round outside its cones, or
-          skipping one) doesn't count it, so go back through. Press <kbd>Enter</kbd> at the start cones again to try another run. Pressing it also asks one of the girls to race you up, in the dark too.`,
+          skipping one) doesn't count it, so go back through. Press <kbd>Enter</kbd> at the start cones again and pick “A race” to try another run. It also asks one of the girls to race you up, in the dark too.`,
       },
       {
         q: 'Where are the records kept?',
@@ -1449,7 +1449,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I wake a girl who is dozing?',
-        a: `Gently: walk up, press <kbd>E</kbd> and talk to her. She wakes, a bit embarrassed, and climbs down. Or rudely: rev a quad, sound the horn or make some other loud noise close by and she jumps awake.
+        a: `Gently: walk up, press <kbd>Enter</kbd> and talk to her. She wakes, a bit embarrassed, and climbs down. Or rudely: rev a quad, sound the horn or make some other loud noise close by and she jumps awake.
           Jess laughs it off. Amy minds, and is cross with you for a while afterwards, so wake her gently if you want her on your side.`,
       },
       {
@@ -1589,7 +1589,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why is a girl waiting and looking at me?',
         a: `She is asking you along. When she fancies company and is about to sit on the bales, go up the hill for a cup of tea, sit by the fire or race you, she may stop and ask you
-          first if you are within earshot (a toast says who). Press <kbd>E</kbd> on her and choose the yes (“Sit on the bales with her”, “Race her”) or “Not now”. If you say nothing she
+          first if you are within earshot (a toast says who). Press <kbd>Enter</kbd> on her and choose the yes (“Sit on the bales with her”, “Race her”) or “Not now”. If you say nothing she
           takes it as a not now after about forty seconds. A yes sets her off and she likes you a little more. A no depends on her: Jess shrugs and goes on her own, Amy goes quiet and
           likes you a little less for a while, then goes by herself later. A girl you have been neglecting sulks for longer and is less likely to go on her own.`,
         tip: 'A girl stood looking at you may be asking you along. Press E on her to say yes or not now.',

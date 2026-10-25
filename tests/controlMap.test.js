@@ -56,6 +56,11 @@ describe('the control map', () => {
     expect([...new Set(unknown)]).toEqual([]);
   });
 
+  it('has Enter talk to people on foot, riding and on the back, and E get off on the back', () => {
+    for (const id of ['foot', 'ride', 'back']) expect(all.some((e) => e.id === id && e.key === 'Enter' && /talk/i.test(e.what))).toBe(true);
+    expect(all.find((e) => e.id === 'back' && e.key === 'KeyE').what).toMatch(/get off/i);
+  });
+
   it('names a piece of #416 for anything the game does not do yet', () => {
     const pieces = new Set(['wheel']);
     for (const e of all) if (e.moves) expect(pieces.has(e.moves)).toBe(true);

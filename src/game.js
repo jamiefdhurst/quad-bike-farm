@@ -777,7 +777,9 @@ export class Game {
         target: c.proxy,
         // While she's driving you can call her over from further away.
         range: () => (c.fsm.is('driving') ? c.params.driveTalkRange : undefined),
-        prompt: () => `Talk to ${c.name}`,
+        // A person, not a thing: Enter talks to her (E is for things), from the ground, the seat or the back.
+        person: c,
+        prompt: () => ({ action: `Talk to ${c.name}`, key: 'Enter' }),
         // Sat up on the tractor, she's inside its big get-on box, so she has to win over it to be asked down.
         get priority() {
           return c.fsm.is('onTrailer') ? 1 : 0;
@@ -7315,10 +7317,32 @@ export class Game {
     return true;
   }
 
+  /** Enter this frame, unless the end of the day is on screen (it dismisses that). */
+  talkPressed(input) {
+    return input.wasPressed('Enter') && !this.dayRecap.active && !this.dayFade.active;
+  }
+
+  /** The girl in the middle of your view, near enough to talk to, whatever you are on (the ground's interactables are cleared on a quad). */
+  lookedGirl() {
+    const it = this.interaction.update(this.player, this.player.params.interactRange, (i) => i.person);
+    this.interaction.clear();
+    return it?.person ?? null;
+  }
+
+  /** Your own wheel: what you ask for rather than ask of her. Enter looking at nobody. */
+  openYourWheel() {
+    const ridden = this.player.isRiding && this.player.seat !== 'pillion' ? this.riddenUnit : null;
+    this.openWheel('You ask for', [
+      ridden ? { label: 'A race', run: () => this.askForRace(ridden) } : { label: 'A race', disabled: true, hint: 'you need to be driving a quad' },
+    ]);
+    this.player.lookEnabled = false;
+    this.player.moveEnabled = false;
+  }
+
   /** Your menu riding on the back: talk to her about the ride. */
   openPassengerMenu() {
     const c = this.herAtTheFront(this.boardUnit.quad) ?? this.herOn(this.boardUnit.quad);
-    if (!c) return void this.getOffBack(); // sat on the back by yourself: E just gets you off
+    if (!c) return void this.openYourWheel(); // sat on the back by yourself: nobody to talk to, E gets you off
     const quad0 = this.boardUnit.quad;
     this.passengerHer = c; // who any plan below is with, even once she's off the front
     const drive = c.fsm.is('driving') ? c.drive : null;
@@ -11504,7 +11528,6 @@ export class Game {
     if (input.wasPressed('Backquote')) this.debugGui.toggle();
     if ((input.wasPressed('Backslash') || input.wasPressed('IntlBackslash')) && !this.console.visible) this.console.open();
     if (input.wasPressed('KeyJ')) this.toggleHitch();
-    if (input.wasPressed('Enter') && !this.menu.isOpen && this.player.isRiding) this.askForRace(this.riddenUnit);
     if (input.wasPressed('KeyM') && !this.workshop.isOpen) {
       this.farmMap.toggle();
       this.achievements.note('map');
@@ -11545,9 +11568,10 @@ export class Game {
       this.menu.handleInput(input);
       if (!this.menu.isOpen) this.closeMenu();
     } else if (this.player.isRiding && this.player.seat === 'pillion') {
-      // On the back: E to talk to her about the ride.
+      // On the back: Enter to talk to her about the ride, E to get off once she has stopped.
       this.interaction.clear();
-      if (input.wasPressed('KeyE')) this.openPassengerMenu();
+      if (this.talkPressed(input)) this.openPassengerMenu();
+      else if (input.wasPressed('KeyE')) this.getOffBack();
     } else if (this.player.isRiding) {
       this.interaction.clear();
       this.riddenUnit.quad.handleFrameInput(dt);
@@ -11555,6 +11579,12 @@ export class Game {
       else {
         if (input.wasPressed('Space')) this.toggleParkBrake(this.riddenUnit.quad);
         if (input.wasPressed('KeyE')) this.tryDismount();
+        // Enter talks to the girl you are looking at, from the seat too, or opens your own wheel (a race and the rest).
+        if (this.talkPressed(input)) {
+          const her = this.lookedGirl();
+          if (her) this.openCompanionMenu(her);
+          else this.openYourWheel();
+        }
       }
     } else if (this.workshop.isOpen) {
       this.workshop.handleInput(input);
@@ -11600,7 +11630,11 @@ export class Game {
         if (!this.coolantBottle.held && !this.antiGelBottle.held) this.dipstick(focused.unit, input, dt);
         this.lastUnit = focused.unit;
       }
-      if (focused && input.wasPressed('KeyE')) focused.interact();
+      if (focused && !focused.person && input.wasPressed('KeyE')) focused.interact();
+      if (this.talkPressed(input)) {
+        if (focused?.person) this.openCompanionMenu(focused.person);
+        else this.openYourWheel();
+      }
       else if (!focused && input.wasPressed('KeyE') && this.winch) {
         // The winch hook on a tree: E on a trunk hooks it, E on the hooked trunk takes it off.
         const tree = this.winchTreeLooked();
@@ -12482,7 +12516,7 @@ export class Game {
     let p = f ? f.prompt() : '';
     if (this.player.isRiding && this.player.seat === 'pillion' && !this.menu.isOpen) {
       const her = this.herOn(this.boardUnit.quad);
-      p = { action: her ? `Talk to ${her.name}` : 'Get off', keys: [['C', 'Look back']] };
+      p = { action: 'Get off', keys: [['C', 'Look back']].concat(her ? [['Enter', `Talk to ${her.name}`]] : []) };
     }
     // On the back you're a passenger: no crosshair or prompt, just the view (the help panel says E and C).
     const onBack = this.player.isRiding && this.player.seat === 'pillion' && !this.menu.isOpen;
