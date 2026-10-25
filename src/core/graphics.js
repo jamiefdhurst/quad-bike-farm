@@ -11,6 +11,9 @@ export const DEFAULT_GRAPHICS_PARAMS = {
   barnPropsDistance: 15, // metres the barn's racks, charger, generator and jacks are drawn out to, from their nearest edge (0: all of them)
   vehicleDetailDistance: 60, // metres beyond which a vehicle loses its small parts (bolts, cables, decals, brake bits; 0: never)
   shadowDistance: 80, // metres beyond which a vehicle casts no shadow (0: always)
+  shadowSize: 64, // metres across the square the sun's shadows are drawn in (it was 90, centred on you)
+  shadowAhead: 22, // metres that square is pushed ahead of you along the way you look, so little is drawn behind you (0: centred on you)
+  smallShadowDistance: 20, // metres beyond which a small thing (a mug, a bottle, a tool, a bolt) casts no shadow (0: always)
 };
 
 export const GRAPHICS_PARAM_RANGES = {
@@ -23,6 +26,9 @@ export const GRAPHICS_PARAM_RANGES = {
   barnPropsDistance: [0, 200, 5],
   vehicleDetailDistance: [0, 300, 5],
   shadowDistance: [0, 400, 5],
+  shadowSize: [30, 150, 5],
+  shadowAhead: [0, 60, 1],
+  smallShadowDistance: [0, 200, 5],
 };
 
 /** The renderer's pixel ratio: the screen's, but no more than the render scale. */
