@@ -31,7 +31,8 @@ export class Bench {
     this.params = { ...DEFAULT_BENCH_PARAMS };
     this.unit = null;
     this.job = null;
-    this.page = 0; // 0 the usual jobs, 1 the ones that need the shed kit (R turns the page)
+    this.page = 0; // 0 the usual jobs, 1 the ones that need the shed kit (the arrows turn the page)
+    this.row = 0; // the row W and S have picked, for E to press
     this.dt = 1 / 60;
     this.serviceParams = { ...DEFAULT_SERVICE_PARAMS };
     this.services = new Map(); // unit id -> the full service under way on it (it carries on if you step away and come back)
@@ -200,6 +201,7 @@ export class Bench {
       this.job.held = 0;
     }
     this.page = 0;
+    this.row = 0;
     this.render();
     this.el.style.display = 'block';
     document.body.classList.add('bench-open');
@@ -323,23 +325,48 @@ export class Bench {
     if (kind === 'tarp') for (const c of this.game.companions) c.voice.onBench?.('tarp');
   }
 
-  /** Keys while it's open: the numbers pick a job, E does the steps, G steps away. */
+  /** The menu's rows in order: the jobs, then the full service (first page) and the turn of the page. */
+  rowsFor(unit) {
+    const rows = this.kindsFor(unit).map((kind) => ({ kind }));
+    if (this.page === 0 && this.servicePlanFor(unit).length) rows.push({ service: true });
+    rows.push({ turn: true });
+    return rows;
+  }
+
+  turnPage(page) {
+    if (page === this.page) return;
+    this.page = page;
+    this.row = 0;
+    this.render();
+  }
+
+  /** E on the picked row. */
+  pressRow(row) {
+    if (row.kind) this.begin(row.kind);
+    else if (row.service) this.startService();
+    else this.turnPage(1 - this.page);
+  }
+
+  /** Keys while it's open: the numbers or W, S and E pick a job, the arrows turn the page, E does the steps, B steps away. */
   handleInput(input) {
     if (!this.unit) return;
     this.game.player.moveEnabled = false;
     input.takeWheelSteps();
-    if (input.wasPressed('KeyG') || input.wasPressed('Escape')) {
+    if (input.wasPressed('KeyB') || input.wasPressed('Escape')) {
       this.close();
       return;
     }
     const job = this.job;
     if (!job) {
-      if (input.wasPressed('KeyS') && this.page === 0) this.startService();
-      if (input.wasPressed('KeyR')) {
-        this.page = 1 - this.page;
+      if (input.wasPressed('ArrowRight')) return this.turnPage(1);
+      if (input.wasPressed('ArrowLeft')) return this.turnPage(0);
+      const rows = this.rowsFor(this.unit);
+      const step = (input.wasPressed('KeyS') ? 1 : 0) - (input.wasPressed('KeyW') ? 1 : 0);
+      if (step) {
+        this.row = (this.row + step + rows.length) % rows.length;
         this.render();
-        return;
       }
+      if (input.wasPressed('KeyE')) return this.pressRow(rows[Math.min(this.row, rows.length - 1)]);
       this.kindsFor(this.unit).forEach((kind, i) => {
         const n = (i + 1) % 10; // the tenth job is on 0, the eleventh on the minus key, the twelfth on equals, the thirteenth on the left bracket, the fourteenth on the right, the fifteenth on the semicolon, the sixteenth on the quote, then period, slash and comma
         const hit = i >= 10 ? input.wasPressed(OVERFLOW_KEYS[i - 10].code) : input.wasPressed(`Digit${n}`) || input.wasPressed(`Numpad${n}`);
@@ -385,21 +412,22 @@ export class Bench {
   }
 
   /** The last row of the menu: the full service, with how far it has got. */
-  serviceRow(unit) {
+  serviceRow(unit, picked) {
     const plan = this.servicePlanFor(unit);
     if (!plan.length) return '';
     const run = this.services.get(unit.id);
     const list = plan.map((k, i) => (run && i < run.results.length ? `✓ ${JOBS[k].name}` : JOBS[k].name)).join(', ');
-    return `<div class="bn-row"><span class="key">S</span>${run ? 'Carry on with the full service' : 'Full service'}<div class="bn-sub">${list}</div></div>`;
+    return `<div class="bn-row${picked ? ' picked' : ''}"><span class="key"></span>${run ? 'Carry on with the full service' : 'Full service'}<div class="bn-sub">${list}</div></div>`;
   }
 
   /** The second page: the jobs that need the compressor, the parts washer and the pit, each with why not when it can't be done. */
   renderShed(unit) {
-    this.bodyEl.innerHTML = [...SHED_JOB_KINDS, ...ENGINE_JOB_KINDS].map((k, i) => {
+    const kinds = [...SHED_JOB_KINDS, ...ENGINE_JOB_KINDS];
+    this.bodyEl.innerHTML = kinds.map((k, i) => {
       const why = ENGINE_JOB_KINDS.includes(k) ? this.engineWhyNot(k, unit) ?? (unit.engine.isRunning ? 'switch it off' : null) : this.shedWhyNot(k, unit);
-      return `<div class="bn-row${why ? ' off' : ''}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${why ? ` (${why})` : ''}</div>`;
-    }).join('');
-    this.keysEl.textContent = 'Press a number to start   ·   R back to the usual jobs   ·   G step away';
+      return `<div class="bn-row${why ? ' off' : ''}${this.row === i ? ' picked' : ''}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${why ? ` (${why})` : ''}</div>`;
+    }).join('') + `<div class="bn-row${this.row === kinds.length ? ' picked' : ''}"><span class="key"></span>Back to the usual jobs</div>`;
+    this.keysEl.textContent = 'Press a number, or W S and E, to start   ·   ← back to the usual jobs   ·   B step away';
   }
 
   /** The hold meter: the fill climbs, and where a window is, the green band is where to let go. */
@@ -417,6 +445,7 @@ export class Bench {
     if (!job) {
       this.holdEl.style.display = 'none';
       const find = this.stillFound(unit) ? unit.barnFind : null;
+      this.row = Math.min(this.row, this.rowsFor(unit).length - 1);
       if (this.page === 1) return this.renderShed(unit);
       this.bodyEl.innerHTML = this.kindsFor(unit).map((k, i) => {
         const ok = this.canBegin(k, unit);
@@ -428,9 +457,9 @@ export class Bench {
           note = k === 'newTyres' ? ` (needs ${need.count} ${need.count === 1 ? PARTS[need.part].one : PARTS[need.part].many} from the tyre rack)` : ` (no ${PARTS[need.part].one} on the shelf)`;
         }
         else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'snorkel' ? (unit.quad.snorkel.fitted ? ' ✓ fitted' : ' (Moorlands only)') : k === 'spotlamps' ? (unit.quad.spotlamps.fitted ? ' ✓ fitted' : ' (quads and Land Rovers only)') : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
-        return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
-      }).join('') + this.serviceRow(unit) + '<div class="bn-row"><span class="key">R</span>Jobs that need the shed kit<div class="bn-sub">Compressor, parts washer and the pit, and swapping engines</div></div>';
-      this.keysEl.textContent = 'Press a number to start   ·   R the shed kit   ·   G step away';
+        return `<div class="bn-row${ok ? '' : ' off'}${this.row === i ? ' picked' : ''}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
+      }).join('') + this.serviceRow(unit, this.row === this.kindsFor(unit).length) + `<div class="bn-row${this.row === this.rowsFor(unit).length - 1 ? ' picked' : ''}"><span class="key"></span>Jobs that need the shed kit<div class="bn-sub">Compressor, parts washer and the pit, and swapping engines</div></div>`;
+      this.keysEl.textContent = 'Press a number, or W S and E, to start   ·   → the shed kit   ·   B step away';
       return;
     }
     const run = job.service ? this.services.get(unit.id) : null;
@@ -447,6 +476,6 @@ export class Bench {
       this.windowEl.style.width = `${100 - Math.round((job.needSeconds / end) * 100)}%`;
       this.fillEl.style.width = '0%';
     }
-    this.keysEl.textContent = s.kind === 'press' ? 'E do it   ·   G step away' : s.limit ? 'Hold E, and let go in the green   ·   G step away' : 'Hold E until it is done   ·   G step away';
+    this.keysEl.textContent = s.kind === 'press' ? 'E do it   ·   B step away' : s.limit ? 'Hold E, and let go in the green   ·   B step away' : 'Hold E until it is done   ·   B step away';
   }
 }

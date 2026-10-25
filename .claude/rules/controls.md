@@ -9,7 +9,7 @@ paths:
 
 # Controls: one way to use things
 
-Anything you can use, pick up, hook, switch or talk to follows one rule, so the game feels like one game. docs/decisions/process.md, "Pulling the game together (#417)". #416 audited every binding against this (the audit and Jamie's answers are on the issue). The map is `src/input/controlMap.js`, held by `tests/controlMap.test.js`; entries with a fourth part (`wheel`, `photo`) are not in the game yet, and the pieces of #416 still to land move them. Until then follow the rule for anything new and don't copy an outlier.
+Anything you can use, pick up, hook, switch or talk to follows one rule, so the game feels like one game. docs/decisions/process.md, "Pulling the game together (#417)". #416 audited every binding against this (the audit and Jamie's answers are on the issue). The map is `src/input/controlMap.js`, held by `tests/controlMap.test.js`; entries with a fourth part (`wheel`) are not in the game yet, and the pieces of #416 still to land move them. Until then follow the rule for anything new and don't copy an outlier.
 
 ## The rule
 

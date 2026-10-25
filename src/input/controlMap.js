@@ -69,12 +69,12 @@ export const CONTEXTS = {
     title: 'Photo mode',
     keys: [
       ['KeyW', 'hold', 'Fly forwards'], ['KeyS', 'hold', 'Fly back'], ['KeyA', 'hold', 'Fly left'], ['KeyD', 'hold', 'Fly right'],
-      ['Space', 'hold', 'Fly up', 'photo'], ['KeyC', 'hold', 'Fly down', 'photo'],
-      ['KeyE', 'press', 'Pose the girls in the shot', 'photo'],
+      ['Space', 'hold', 'Fly up'], ['KeyC', 'hold', 'Fly down'],
+      ['KeyE', 'press', 'Pose the girls in the shot'],
       ['KeyH', 'press', 'Hide the screen\'s dials and words'],
       ['Enter', 'press', 'Take the shot'],
       ['Digit8', 'press', 'Leave photo mode'],
-      ['KeyB', 'press', 'Leave photo mode', 'photo'],
+      ['KeyB', 'press', 'Leave photo mode'],
     ],
   },
   anytime: {

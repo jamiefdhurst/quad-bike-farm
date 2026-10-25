@@ -97,7 +97,7 @@ export class ShedView {
   handleInput(input) {
     this.game.player.moveEnabled = false;
     input.takeWheelSteps();
-    if (input.wasPressed('KeyG') || input.wasPressed('KeyE') || input.wasPressed('Escape')) return this.close();
+    if (input.wasPressed('KeyB') || input.wasPressed('Escape')) return this.close();
     SHED_PIECE_IDS.forEach((id, i) => {
       if (!input.wasPressed(`Digit${i + 1}`)) return;
       if (this.armed === id && !this.shed.whyNot(id, this.market.purse)) {
@@ -155,7 +155,7 @@ export class ShedView {
       return row;
     });
     this.bodyEl.replaceChildren(...rows);
-    this.keysEl.textContent = 'E or G to step back';
+    this.keysEl.textContent = 'B to step back';
   }
 }
 

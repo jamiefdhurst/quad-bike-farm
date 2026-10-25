@@ -97,7 +97,7 @@ export class PhotoHost {
     this.modeActive = true;
     this.girlsPosing = false;
     this.pending = null;
-    g.hud.toast('Photo mode: WASD and Q E fly, wheel zooms, Enter takes it, G poses the girls, H hides the HUD, 8 to leave', 4);
+    g.hud.toast('Photo mode: WASD fly, Space and C up and down, wheel zooms, Enter takes it, E poses the girls, H hides the HUD, B to leave', 4);
     if (typeof speechSynthesis !== 'undefined') speechSynthesis.pause();
     return true;
   }
@@ -147,12 +147,12 @@ export class PhotoHost {
     const g = this.g;
     const p = this.modeParams;
     const key = (a, b) => (input.isDown(a) ? 1 : 0) - (input.isDown(b) ? 1 : 0);
-    if (input.wasPressed('Digit8')) return this.exitMode();
+    if (input.wasPressed('Digit8') || input.wasPressed('KeyB')) return this.exitMode();
     const mouse = input.takeMouseDelta();
     const k = g.player.params.mouseSensitivity * p.lookScale;
     this.cam.step(
       dt,
-      { forward: key('KeyW', 'KeyS'), right: key('KeyD', 'KeyA'), up: key('KeyE', 'KeyQ') },
+      { forward: key('KeyW', 'KeyS'), right: key('KeyD', 'KeyA'), up: key('Space', 'KeyC') },
       { x: mouse.x * k, y: mouse.y * k },
       input.takeWheelSteps(),
       input.isDown('ShiftLeft') || input.isDown('ShiftRight'),
@@ -166,7 +166,7 @@ export class PhotoHost {
       cam.updateProjectionMatrix();
     }
     if (input.wasPressed('KeyH')) this.setHudHidden(!this.hudHidden);
-    if (input.wasPressed('KeyG')) this.setGirlsPosing(!this.girlsPosing);
+    if (input.wasPressed('KeyE')) this.setGirlsPosing(!this.girlsPosing);
     if (input.wasPressed('Enter') || input.wasClicked(0)) this.shoot();
     // The girls stand where they were; only a held pose moves them, eased in and then kept at its height.
     for (const c of g.companions) {

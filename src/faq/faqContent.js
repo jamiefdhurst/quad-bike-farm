@@ -858,12 +858,12 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I give a quad a full service?',
-        a: `Park it in the bay, switch it off, take the toolbox to the bench and press <kbd>E</kbd>. The last row of the menu is "Full service": press <kbd>S</kbd>.
+        a: `Park it in the bay, switch it off, take the toolbox to the bench and press <kbd>E</kbd>. The "Full service" row is below the jobs: pick it with <kbd>W</kbd> and <kbd>S</kbd> and press <kbd>E</kbd>.
           It takes you through the jobs that quad has, in order: the spark plug (it uses one from the shelf), the air filter, the oil (the pre-mix on a two-stroke, the
           sump on a four-stroke), then the chain on the chain-driven quads or the belt on the rest. A diesel has no plug or sump on the bench, so it gets the filter and
-          the belt. Step away part way and <kbd>S</kbd> carries on where you left off. Do every job right and the quad runs noticeably smoother, though never smoother than
+          the belt. Step away part way and the same row carries on where you left off. Do every job right and the quad runs noticeably smoother, though never smoother than
           that quad can; botch a job and you get the work done without the smoothness. Amy writes it in her logbook.`,
-        tip: 'Press S on the bench menu for a full service: plug, filter, oil and chain or belt, in order.',
+        tip: 'Pick Full service on the bench menu with W and S, then press E: plug, filter, oil and chain or belt, in order.',
       },
       {
         q: 'Why is there a service on the chalkboard?',
@@ -1039,7 +1039,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Can I put a different engine in a quad?',
-        a: `Yes, once the barn find runs. Park it in the yellow bay, switch it off, open the bench and press <kbd>R</kbd> for the second page: "Take the engine out" lifts it clear
+        a: `Yes, once the barn find runs. Park it in the yellow bay, switch it off, open the bench and press <kbd>&rarr;</kbd> for the second page: "Take the engine out" lifts it clear
           and stands it on the floor by the parts rack (the rack's panel lists it, and how worn it is). Then park another quad, open the same page and pick "Fit the spare engine". The
           engine comes with its character: its idle, how high it revs, how rough it runs, its sound and its wear. The quad keeps its body, its gearbox or belt, its tank and its dash.
           The engine that comes out goes on the floor in its place, so you can fit it back, or in the barn find's empty body. A two-stroke only takes a two-stroke and a manual's only
@@ -1253,7 +1253,7 @@ export const FAQ_SECTIONS = [
         q: 'How do I talk to them?',
         a: `Look at one and press <kbd>E</kbd> to open her wheel. Move the mouse to a slice and click, or press its number. The first ring has a slice
           for each vehicle she could do something with; a vehicle's slice opens a second ring of what she could do with it. Right-click or Backspace
-          goes back; <kbd>E</kbd> closes it.`,
+          goes back; <kbd>B</kbd> goes back a ring and closes it from the first.`,
       },
       {
         q: 'What can I ask them to do?',
@@ -1781,7 +1781,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I use photo mode?',
-        a: `Press <kbd>8</kbd>, on foot or on a quad. The farm stops where it is, the clock and the weather with it, and you fly the camera: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> along where you look, <kbd>E</kbd> up, <kbd>Q</kbd> down, <kbd>Shift</kbd> for fast, the mouse to look and the wheel to zoom. <kbd>G</kbd> has the girls in the shot pose, and again lets them go. <kbd>H</kbd> hides the screen's dials and words. <kbd>Enter</kbd> or a click takes the picture. Press <kbd>8</kbd> again to leave.`,
+        a: `Press <kbd>8</kbd>, on foot or on a quad. The farm stops where it is, the clock and the weather with it, and you fly the camera: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> along where you look, <kbd>Space</kbd> up, <kbd>C</kbd> down, <kbd>Shift</kbd> for fast, the mouse to look and the wheel to zoom. <kbd>E</kbd> has the girls in the shot pose, and again lets them go. <kbd>H</kbd> hides the screen's dials and words. <kbd>Enter</kbd> or a click takes the picture. Press <kbd>B</kbd> or <kbd>8</kbd> to leave.`,
         tip: 'Press 8 for photo mode: the farm stops and the camera flies free.',
       },
       {
@@ -1931,9 +1931,9 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I sell a vehicle?',
-        a: `At the cork board in the barn, press <kbd>E</kbd> and then <kbd>S</kbd> for the page of what a buyer would take. Each vehicle on the farm is listed with an offer,
+        a: `At the cork board in the barn, press <kbd>E</kbd> and then <kbd>&rarr;</kbd> for the page of what a buyer would take. Each vehicle on the farm is listed with an offer,
           and a note on what pulled it down (a tired engine, a rough body, faults). Press its number, then the same number again to sell it. You get the money at once and a buyer
-          collects the vehicle in the morning, so you can use it until you call it a day. <kbd>B</kbd> goes back to the ads. A buyer never pays as much as the board charges for the same
+          collects the vehicle in the morning, so you can use it until you call it a day. <kbd>&larr;</kbd> goes back to the ads. A buyer never pays as much as the board charges for the same
           one, so buying to sell on loses money.`,
         tip: 'At the cork board in the barn press S to sell a vehicle: its number, then again to confirm.',
       },

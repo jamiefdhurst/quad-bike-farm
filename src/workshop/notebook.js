@@ -78,7 +78,7 @@ export class Notebook {
   handleInput(input) {
     this.game.player.moveEnabled = false;
     input.takeWheelSteps();
-    if (input.wasPressed('KeyG') || input.wasPressed('KeyE') || input.wasPressed('Escape')) this.close();
+    if (input.wasPressed('KeyB') || input.wasPressed('Escape')) this.close();
   }
 
   update(dt) {
@@ -119,7 +119,7 @@ export class Notebook {
     const el = document.createElement('div');
     el.className = 'notebook';
     el.style.display = 'none';
-    el.innerHTML = '<div class="nb-card"><div class="nb-title">Amy\'s logbook</div><div class="nb-body"></div><div class="nb-keys">E or G to put it down</div></div>';
+    el.innerHTML = '<div class="nb-card"><div class="nb-title">Amy\'s logbook</div><div class="nb-body"></div><div class="nb-keys">B to put it down</div></div>';
     document.body.appendChild(el);
     this.el = el;
     this.bodyEl = el.querySelector('.nb-body');
