@@ -1,10 +1,11 @@
 import './bench.css';
 import * as THREE from 'three';
 import { PARTS } from './spares.js';
+import { canPull, engineName, fitEngine, fitIndex, pullEngine, unitFamily } from '../vehicle/engineSwap.js';
 import { SHED_JOBS, SHED_JOB_KINDS, shedJobWhyNot, shedLook } from './shedJobs.js';
 import { registerTuning } from '../core/tuning.js';
 import { DEFAULT_SERVICE_PARAMS, SERVICE_PARAM_RANGES, ServiceRun, servicePlan, factsOf, stateOf, dueBook, applyServiceReward } from './service.js';
-import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, tyreJobFor, inBay, plugCondition, readPlug, scoringLook, chainLook, bootLook, clutchLook, valvesLook, crashLook } from './benchJobs.js';
+import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, ENGINE_JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, tyreJobFor, inBay, plugCondition, readPlug, scoringLook, chainLook, bootLook, clutchLook, valvesLook, crashLook } from './benchJobs.js';
 
 // The jobs after the tenth (which is on 0) have the keys beside it.
 const OVERFLOW_KEYS = [
@@ -51,7 +52,8 @@ export class Bench {
   /** The quad parked in the bay, if there's one. Failing that, the barn find: it can't be driven, so it's worked on where it stands. */
   unitInBay() {
     const bay = this.game.world.layout.bay;
-    const parked = this.game.girlUnits.find((u) => !u.quad.driver && inBay(bay, u.quad.position.x, u.quad.position.z, this.params.bayMargin));
+    const rusty = this.game.rustyUnit?.barnFind.ready ? [this.game.rustyUnit] : []; // once it runs, the barn find's quad is parked in the bay like any other
+    const parked = [...this.game.girlUnits, ...rusty].find((u) => !u.quad.driver && inBay(bay, u.quad.position.x, u.quad.position.z, this.params.bayMargin));
     // The barn finds (the rusty quad, the old bike) are worked on where they stand: whichever is not yet running and is nearest you.
     const me = this.game.player.position;
     const finds = [this.game.rustyUnit, this.game.ploverUnit].filter((u) => u && !u.barnFind.ready).sort((a, b) => a.quad.position.distanceTo(me) - b.quad.position.distanceTo(me));
@@ -66,11 +68,16 @@ export class Bench {
     return this.unitInBay() ?? big ?? null;
   }
 
+  /** Whether this is a barn find that still has its jobs to do (one that runs is worked on like any other quad). */
+  stillFound(unit) {
+    return !!unit.barnFind && !unit.barnFind.ready;
+  }
+
   /** The jobs listed for a quad: the barn find's own (the tarp, then what it needs), or the usual ones. */
   kindsFor(unit) {
-    if (this.page === 1) return SHED_JOB_KINDS;
+    if (this.page === 1) return [...SHED_JOB_KINDS, ...ENGINE_JOB_KINDS];
     const charger = unit.engine.batteryOut ? 'chargeOff' : 'chargeOn';
-    return unit.barnFind ? [...unit.barnFind.kinds, ...(unit.engine.params.noStarter ? [] : [charger])] : [...JOB_KINDS, charger];
+    return this.stillFound(unit) ? [...unit.barnFind.kinds, ...(unit.engine.params.noStarter ? [] : [charger])] : [...JOB_KINDS, charger];
   }
 
   /** What fitting new tyres to this vehicle takes: { part, count, axle }, or null while its tyres are not worn enough. */
@@ -117,11 +124,54 @@ export class Bench {
     });
   }
 
+  /** Why an engine job can't be done on this vehicle now, or null if it can. */
+  engineWhyNot(kind, unit) {
+    if (this.stillFound(unit)) return 'get it running first';
+    const g = this.game;
+    if (kind === 'pull') {
+      if (unit !== g.rustyUnit) return 'only the barn find\'s engine comes out';
+      return canPull(unit) ? null : 'the engine is out already';
+    }
+    if (!unitFamily(unit)) return 'no spare engine fits it';
+    if (fitIndex(g.spares.engines, unit) < 0) return g.spares.engines.length ? 'none of the spare engines fits it' : 'no spare engine on the floor';
+    return null;
+  }
+
+  /** The engine job is done: the engine is out on the floor by the parts rack. */
+  pullEngine(unit) {
+    const pack = pullEngine(unit);
+    this.game.spares.engines.push(pack);
+    unit.engine.startBlocked = true;
+    this.forgetTuning(unit);
+    return `${engineName(pack)} is out and standing by the parts rack. The ${unit.label} will not start without one`;
+  }
+
+  /** The engine job is done: the first spare that fits goes in, and the one that came out goes on the floor. */
+  fitEngine(unit, fit) {
+    const spares = this.game.spares;
+    const i = fitIndex(spares.engines, unit);
+    if (i < 0) return 'There is no engine to fit';
+    const [pack] = spares.engines.splice(i, 1);
+    const old = fitEngine(unit, pack, fit, this.params);
+    if (old) spares.engines.push(old);
+    unit.engine.startBlocked = false;
+    this.forgetTuning(unit);
+    const where = old ? ` ${engineName(old)} is on the floor now` : '';
+    return fit < 1 ? `${engineName(pack)} is in, but it is not bolted down evenly: it rocks and runs rough.${where}` : `${engineName(pack)} is in. It wants running in.${where}`;
+  }
+
+  /** The toolbox remembers an engine's stock numbers and your settings; a different engine has its own. */
+  forgetTuning(unit) {
+    this.game.workshop?.quads.delete(unit);
+    unit.leftovers = null;
+  }
+
   canBegin(kind, unit) {
+    if (ENGINE_JOB_KINDS.includes(kind)) return !this.engineWhyNot(kind, unit) && !unit.engine.isRunning;
     if (kind in SHED_JOBS) return !this.shedWhyNot(kind, unit);
     if ((kind === 'filter' || kind === 'belt') && !servicePlan(factsOf(unit)).includes(kind)) return false;
     if (kind === 'newTyres' && !this.tyreJob(unit)) return false;
-    return this.partOk(kind, unit) && this.batteryHandsOk(kind, unit) && (unit.barnFind && kind !== 'chargeOn' && kind !== 'chargeOff' ? unit.barnFind.available(kind) : unit.barnFind && !unit.barnFind.tarpOff ? false : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch, unit.quad.spotlamps, unit.quad.snorkel));
+    return this.partOk(kind, unit) && this.batteryHandsOk(kind, unit) && (this.stillFound(unit) && kind !== 'chargeOn' && kind !== 'chargeOff' ? unit.barnFind.available(kind) : this.stillFound(unit) && !unit.barnFind.tarpOff ? false : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch, unit.quad.spotlamps, unit.quad.snorkel));
   }
 
   toolboxHere() {
@@ -154,7 +204,7 @@ export class Bench {
     this.el.style.display = 'block';
     document.body.classList.add('bench-open');
     this.game.player.moveEnabled = false;
-    if (!left) this.say(unit.engine.params.boreKit && !unit.engine.bore ? 'catalogue' : !unit.barnFind && dueBook(stateOf(unit), this.serviceParams) ? 'serviceDue' : 'start');
+    if (!left) this.say(unit.engine.params.boreKit && !unit.engine.bore ? 'catalogue' : !this.stillFound(unit) && dueBook(stateOf(unit), this.serviceParams) ? 'serviceDue' : 'start');
   }
 
   close() {
@@ -180,7 +230,7 @@ export class Bench {
 
   /** The service Amy would do on this quad: its plan, or null where the bench can't (the barn find has to be got running first). */
   servicePlanFor(unit) {
-    return unit.barnFind ? [] : servicePlan(factsOf(unit));
+    return this.stillFound(unit) || unit.engineOut ? [] : servicePlan(factsOf(unit));
   }
 
   /** S on the menu: starts a full service, or carries on with the one already under way. */
@@ -254,9 +304,9 @@ export class Bench {
       else if (e.type === 'done') {
         const job = this.job;
         const unit = this.unit;
-        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump, filter: unit.quad.filter, spotlamps: unit.quad.spotlamps, snorkel: unit.quad.snorkel, batteryOut: () => this.game.batteryOut(unit), batteryIn: () => this.game.batteryIn(unit) }, this.params));
+        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump, filter: unit.quad.filter, spotlamps: unit.quad.spotlamps, snorkel: unit.quad.snorkel, pullEngine: () => this.pullEngine(unit), fitEngine: (fit) => this.fitEngine(unit, fit), batteryOut: () => this.game.batteryOut(unit), batteryIn: () => this.game.batteryIn(unit) }, this.params));
         if (!job.service) this.say(job.kind === 'bore' ? (job.botched ? 'boreBotched' : 'boreDone') : job.kind === 'snorkel' ? (unit.quad.snorkel.seal < 1 ? 'snorkelBotched' : 'snorkelDone') : job.botched ? 'botched' : 'done');
-        if (unit.barnFind) this.foundJobDone(unit, job.kind);
+        if (this.stillFound(unit)) this.foundJobDone(unit, job.kind);
         this.game.notebook.note(unit, { kind: 'job', job: job.kind, botched: job.botched }, { by: 'you' });
         this.job = null;
         this.game.girlBenchFinished(job);
@@ -345,9 +395,9 @@ export class Bench {
 
   /** The second page: the jobs that need the compressor, the parts washer and the pit, each with why not when it can't be done. */
   renderShed(unit) {
-    this.bodyEl.innerHTML = SHED_JOB_KINDS.map((k, i) => {
-      const why = this.shedWhyNot(k, unit);
-      return `<div class="bn-row${why ? ' off' : ''}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${SHED_JOBS[k].name}${why ? ` (${why})` : ''}</div>`;
+    this.bodyEl.innerHTML = [...SHED_JOB_KINDS, ...ENGINE_JOB_KINDS].map((k, i) => {
+      const why = ENGINE_JOB_KINDS.includes(k) ? this.engineWhyNot(k, unit) ?? (unit.engine.isRunning ? 'switch it off' : null) : this.shedWhyNot(k, unit);
+      return `<div class="bn-row${why ? ' off' : ''}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${why ? ` (${why})` : ''}</div>`;
     }).join('');
     this.keysEl.textContent = 'Press a number to start   ·   R back to the usual jobs   ·   G step away';
   }
@@ -366,7 +416,7 @@ export class Bench {
     const job = this.job;
     if (!job) {
       this.holdEl.style.display = 'none';
-      const find = unit.barnFind;
+      const find = this.stillFound(unit) ? unit.barnFind : null;
       if (this.page === 1) return this.renderShed(unit);
       this.bodyEl.innerHTML = this.kindsFor(unit).map((k, i) => {
         const ok = this.canBegin(k, unit);
@@ -379,7 +429,7 @@ export class Bench {
         }
         else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'snorkel' ? (unit.quad.snorkel.fitted ? ' ✓ fitted' : ' (Moorlands only)') : k === 'spotlamps' ? (unit.quad.spotlamps.fitted ? ' ✓ fitted' : ' (quads and Land Rovers only)') : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}"><span class="key">${i >= 10 ? OVERFLOW_KEYS[i - 10].label : (i + 1) % 10}</span>${JOBS[k].name}${note}</div>`;
-      }).join('') + this.serviceRow(unit) + '<div class="bn-row"><span class="key">R</span>Jobs that need the shed kit<div class="bn-sub">Compressor, parts washer and the pit</div></div>';
+      }).join('') + this.serviceRow(unit) + '<div class="bn-row"><span class="key">R</span>Jobs that need the shed kit<div class="bn-sub">Compressor, parts washer and the pit, and swapping engines</div></div>';
       this.keysEl.textContent = 'Press a number to start   ·   R the shed kit   ·   G step away';
       return;
     }

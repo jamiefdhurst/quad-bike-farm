@@ -5,6 +5,7 @@ import { createRandom } from '../core/random.js';
 import { buildSparesModel } from './sparesModel.js';
 import { buildTyreRackModel } from './tyreRackModel.js';
 import { barnShape } from '../world/barn.js';
+import { engineName, familyWords } from '../vehicle/engineSwap.js';
 import { Spares, DEFAULT_SPARES_PARAMS, SPARES_PARAM_RANGES, PARTS, PART_IDS, TYRE_IDS, ALL_PART_IDS, partCount } from './spares.js';
 
 /**
@@ -177,12 +178,17 @@ export class SparesShelf {
     this.keysEl = el.querySelector('.sp-keys');
   }
 
+  /** The engines standing on the floor by the rack (pulled at the bench, waiting for a quad), one line each. */
+  engineRows() {
+    return this.spares.engines.map((p) => `<div class="sp-row"><span class="key">·</span>${engineName(p)}: ${familyWords(p.family)}, ${Math.round((p.condition.wear ?? 0) * 100)}% worn</div>`).join('');
+  }
+
   render() {
     this.titleEl.textContent = this.mode === 'tyres' ? 'Tyre rack' : 'Parts rack';
     this.bodyEl.innerHTML = this.ids.map((id, i) => {
       const full = this.spares.total(id) + this.spares.pack(id) > this.params.maxOnShelf;
       return `<div class="sp-row${this.spares.has(id) ? '' : ' none'}"><span class="key">${i + 1}</span>${PARTS[id].many[0].toUpperCase()}${PARTS[id].many.slice(1)}: ${this.spares.line(id)}${full ? '' : ` <em>(order ${this.spares.pack(id)})</em>`}</div>`;
-    }).join('');
+    }).join('') + (this.mode === 'parts' ? this.engineRows() : '');
     this.keysEl.textContent = 'Press a number to order a pack   ·   the post van brings it   ·   G step away';
   }
 }

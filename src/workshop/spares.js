@@ -88,6 +88,7 @@ export class Spares {
     this.ordered = {}; // part -> how many are on order
     this.waiting = {}; // part -> how many are in the parcel at the barn door
     this.due = null; // seconds until the van sets off for the order, or null when none is waiting to go
+    this.engines = []; // engines out of their quads, standing on the floor by the shelf (vehicle/engineSwap.js): not parts you can order
   }
 
   count(id) {
@@ -181,7 +182,7 @@ export class Spares {
   }
 
   toJSON() {
-    return { counts: { ...this.counts }, ordered: { ...this.ordered }, waiting: { ...this.waiting } };
+    return { counts: { ...this.counts }, ordered: { ...this.ordered }, waiting: { ...this.waiting }, engines: structuredClone(this.engines) };
   }
 
   restore(s) {
@@ -193,6 +194,7 @@ export class Spares {
       if (n(s.waiting?.[id])) this.waiting[id] = n(s.waiting[id]);
     }
     this.due = this.hasOrder ? this.p.orderDelay : null;
+    if (Array.isArray(s.engines)) this.engines = structuredClone(s.engines.filter((e) => e && typeof e.family === 'string' && e.params && typeof e.params === 'object'));
   }
 }
 

@@ -26,6 +26,7 @@ export const DEFAULT_BENCH_PARAMS = {
   coolantLeakLeft: 0.4, // share of its leak left after a badly tightened clip
   boreWearRemoved: 0.2, // wear a new piston and rings take away, with the big-bore kit
   boreBotchedFit: 0.55, // share of the kit's power left after a badly fitted one
+  swapBotchedRoughness: 0.08, // roughness a badly bolted-in swapped engine adds (and its mounts are left loose, at botchedLevel)
   topEndScuffFrom: 0.05, // scuffing at which a two-stroke has a top end worth pulling down
   topEndDeepScuff: 0.5, // scuffing at which the bore looks deeply scored rather than lightly scuffed
   topEndSeizeWear: 0.15, // wear a seizure leaves, which the new piston and rings mostly take away (the toolbox strip down left 0.3)
@@ -68,6 +69,7 @@ export const BENCH_PARAM_RANGES = {
   topEndBotchedScuff: [0, 0.54, 0.02],
   boreWearRemoved: [0, 1, 0.05],
   boreBotchedFit: [0, 1, 0.05],
+  swapBotchedRoughness: [0, 0.3, 0.01],
   coolantShort: [0.3, 1, 0.05],
   coolantLeakLeft: [0, 1, 0.05],
   plugRichFouling: [0, 1, 0.05],
@@ -284,6 +286,26 @@ export const JOBS = {
       { id: 'tight', text: 'Do the head nuts up evenly: snug, not tight', kind: 'hold', need: 0.8, limit: 1.6 },
     ],
   },
+  // Engine swaps (vehicle/engineSwap.js), on the bench's second page.
+  pull: {
+    name: 'Take the engine out',
+    steps: [
+      { id: 'drain', text: 'Drain the oil and the fuel line, and disconnect the cables', kind: 'press' },
+      { id: 'bolts', text: 'Undo the engine mounts and the exhaust', kind: 'hold', need: 1.2 },
+      { id: 'hoist', text: 'Hook the hoist on and lift it clear: slowly, so it does not swing', kind: 'hold', need: 1, limit: 2.2 },
+      { id: 'stand', text: 'Stand it on the floor by the parts rack', kind: 'press' },
+    ],
+  },
+  swap: {
+    name: 'Fit the spare engine',
+    steps: [
+      { id: 'clear', text: 'Clear the bay and wheel the hoist over the frame', kind: 'press' },
+      { id: 'lower', text: 'Lower the engine into the frame: slowly, so it does not knock the paint', kind: 'hold', need: 1, limit: 2.2 },
+      { id: 'mounts', text: 'Bolt it to the mounts, snug and even', kind: 'hold', need: 1.1, limit: 2.2 },
+      { id: 'hook', text: 'Connect the cables, the fuel line and the exhaust', kind: 'hold', need: 0.9 },
+      { id: 'fill', text: 'Fill it with oil and check the lot over', kind: 'press' },
+    ],
+  },
   // The barn find's own jobs (vehicle/barnFind.js): only the rusty quad has them.
   tarp: {
     name: 'Take the tarp off',
@@ -349,6 +371,8 @@ export const JOBS = {
 };
 
 // The last row of the list is the charger, and says either 'chargeOn' or 'chargeOff' depending on where this quad's battery is (bench.js kindsFor).
+export const ENGINE_JOB_KINDS = ['pull', 'swap']; // listed with the shed kit's jobs on the second page; the bench decides when they can be done (they need the shelf)
+
 export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'clutch', 'crash', 'newTyres', 'spotlamps', 'snorkel'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
@@ -618,6 +642,8 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     fitBore(engine, botched ? P.boreBotchedFit : 1, P);
     return botched ? 'Kit fitted, but the head is not torqued evenly: it will not pull as it should' : 'Big-bore kit fitted: it should pull much harder, and run hotter';
   }
+  if (job.kind === 'pull') return target.pullEngine();
+  if (job.kind === 'swap') return target.fitEngine(botched ? 0.5 : 1);
   if (job.kind === 'spotlamps') {
     // The aim is the fix to get right; the wiring done badly (terminals loose or crushed) is the same botch.
     const bad = botched || job.outcome('aim') !== 'good' || job.outcome('wire') !== 'good';
@@ -729,6 +755,7 @@ export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = fal
   if (kind === 'packing') return engine.params.strokes === 2;
   if (kind === 'coolant') return !!engine.params.waterCooled;
   if (kind === 'bore') return canFitBore(engine);
+  if (kind === 'pull' || kind === 'swap') return true; // (the bench checks the shelf and the quad)
   if (kind === 'topEnd') return canRebuildTopEnd(engine, P);
   if (kind === 'chain') return !!chain;
   if (kind === 'valves') return !!valves; // every four-stroke has them
