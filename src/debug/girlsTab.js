@@ -181,6 +181,8 @@ export function buildGirlsTab(d) {
   show(day, 'throttle grab', () => (g.throttleGrab.grab?.girl ? `${g.throttleGrab.grab.girl} (${g.throttleGrab.grab.phase})` : g.throttleGrab.forced ? `${g.throttleGrab.forced} waiting` : 'none'));
   show(day, 'Jess\'s dare', () => g.dares.describe());
   show(day, 'a phone call', () => `${g.phoneCalls.describe()}${g.companions.map((c) => (g.favour.moodLeft(c.character.id) > 0 ? `; ${c.name} in a mood for ${Math.round(g.favour.moodLeft(c.character.id))} s` : '')).join('')}`);
+  show(day, 'the briefing', () => (g.briefing.active ? `${g.briefing.steps.length} parts to go` : g.briefing.done ? 'given' : `in ${Math.max(0, Math.round(g.briefingParams.briefingAfter - g.briefing.clock))} s`));
+  button(day, 'Give the briefing of the day now', () => g.startBriefing());
   show(day, 'lights to work by', () => g.workLight.describe());
   show(day, 'guiding a trailer back', () => g.trailerGuide.describe());
   button(day, 'A girl leaves her tea on a rack', () => {

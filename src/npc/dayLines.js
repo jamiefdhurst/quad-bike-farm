@@ -12,6 +12,8 @@ export const AMY_DAY_LINES = {
     'The log is up to date. Goodnight.',
     'I am quite tired, but in a good way.',
   ]),
+  briefingOpen: line(60, ['Right, good morning. Here is the day.', 'Morning. Let me tell you how the day looks.', 'Before you go anywhere, listen. Here is the day.']),
+  briefingAllWell: line(60, ['Every quad seems to be behaving, which makes a change.', 'I cannot find anything wrong with any of the quads today.', 'The quads all look sound this morning.']),
   showEve: line(600, [
     'The show is tomorrow. Whatever you enter, I suggest you wash it.',
     'Tomorrow is the show. Clean, tidy and running sweet, that is what they judge.',
@@ -53,6 +55,8 @@ export const JESS_DAY_LINES = {
     'Night, you. Do not stay up thinking about quads.',
     'Can we go faster tomorrow?',
   ],
+  briefingOpen: ['Right, morning! Here is the day.', 'Morning! Listen, this is the day.', 'Ooh, the day, hang on.'],
+  briefingAllWell: ['Nothing wrong with any of the quads. Amazing.', 'Every quad is fine today. Do not jinx it.', 'The quads are all behaving.'],
   showEve: [
     'Show tomorrow! Wash your quad, it is bare mud at the moment.',
     'It is the show tomorrow, and I am winning the slow race, I can feel it.',

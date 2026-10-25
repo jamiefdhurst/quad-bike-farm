@@ -560,9 +560,15 @@ export const FAQ_SECTIONS = [
         tip: 'A girl who bogged her quad is warier of driving for a while; one who won a race is keener to race.',
       },
       {
+        q: 'What is the briefing at the start of the day?',
+        a: `A few seconds after you load in, Amy reads out the day: the weather and what the barn's forecast board says of it, which quad is playing up (or that
+          none is), and what she has in mind. Jess then adds hers. Stay within earshot to hear it. It is the quickest way to know what to look at first.`,
+        tip: 'Amy briefs you soon after the game loads: the weather, which quad is playing up and what the girls fancy doing.',
+      },
+      {
         q: 'Why does a girl keep going back to the same thing all day?',
         a: `Each girl starts a game with something loose in mind for the day: Jess might want the ramp, doughnuts or a race, Amy a proper cup of tea, the cones or the Land
-          Rover out. She says so a minute or so in ("I am jumping that ramp today. Watch me."), and she is keener on it all game, so she picks it more often than she
+          Rover out. She says so in the briefing at the start ("I am jumping that ramp today. Watch me."), and she is keener on it all game, so she picks it more often than she
           otherwise would. It only nudges what she picks for herself, and a new game deals her a new one.`,
         tip: 'Each girl starts with something in mind for the day and says so early on. She keeps drifting back to it.',
       },

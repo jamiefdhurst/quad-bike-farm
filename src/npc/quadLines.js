@@ -16,6 +16,7 @@ const AMY_TEMPLATES = {
   quadDry: line(90, ['That is {q} nearly out of petrol. Look at the tank before you ruin it.', 'You are running {q} on fumes. It is not a toy, you know.', 'Is {q} running dry? Do not just ride it until it stops.']),
   quadThrashed: line(90, ['Easy on {q}! It is not built to be flat out all day.', 'Stop thrashing {q}. It has feelings, you know.', 'Is that really good for {q}? Gently, please.']),
   quadProud: line(180, ['Oh, {q} looks lovely now. Thank you.', 'Look at {q}. All clean. I could almost cry.', '{Q} is so shiny. I am very pleased with it.']),
+  briefingTrouble: line(60, ['{Q} is playing up. Have a look at it before you take it anywhere.', 'Mind {q} today. It is not right, and I would not trust it.']),
   earSteady: line(60, ["That's Jess on {q}. I can tell by the sound.", 'I can hear Jess on {q}. At least it sounds happy.']),
 };
 
@@ -28,6 +29,7 @@ const JESS_TEMPLATES = {
   quadDry: line(90, ['Oi! {Q} is almost empty. Do not leave me pushing it.', 'You are going to run {q} dry, you know.', 'Put some petrol in {q} before it conks out, will you?']),
   quadThrashed: line(90, ['Oi, go easy on {q}! You will break it.', 'You are flogging {q}. Ease off.', 'Gently on {q}! It is not a rental.']),
   quadProud: line(180, ['Ooh, {q} is gleaming. Nice one.', 'Now {q} looks good. Proper clean.', '{Q} is spotless. I might not let anyone on it.']),
+  briefingTrouble: line(60, ['{Q} is playing up today. Just so you know.', 'Watch {q}. Something is off with it.']),
   earSteady: line(60, ["That's Amy on {q}. I can tell, she is going at walking pace.", 'Amy on {q}, listen. Nice and sensible. Boring.']),
 };
 
