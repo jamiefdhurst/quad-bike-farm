@@ -1,12 +1,17 @@
 ---
 description: Try one merged change with Jamie in the running game, fixing small things on the spot and filing bigger ones
-argument-hint: "[testing issue number; default: the oldest]"
+argument-hint: "[testing issue number | an area | notes; default: the area with most open]"
 ---
 
-Work through testing issue $ARGUMENTS with Jamie. If no number is given, take the oldest open one:
+Test with Jamie: $ARGUMENTS.
+
+- **A number** works that testing issue.
+- **An area** (a label such as `world`, `girls` or `vehicles`, or a place such as the barn or the village) works every open testing issue there in one session: read them all, then order their checklist lines along one route through the game so Jamie isn't sent back and forth, and work through it as below, ticking each issue's lines as they pass.
+- **`notes`** takes Jamie's notes from playing (see "Play notes" below).
+- **Nothing** takes the area with the most open testing issues.
 
 ```
-gh issue list --state open --label "🧪 testing" --json number,title --jq 'sort_by(.number) | .[0]'
+gh issue list --state open --label "🧪 testing" --json number,title,labels --jq 'sort_by(.number) | .[] | "\(.number) \(.title) \([.labels[].name] | join(","))"'
 ```
 
 Jamie plays; you guide, watch for what goes wrong and fix it. Other sessions are building features at the same time, so the same rules hold: never commit to main or switch branch in the main checkout. Don't build anything new here; ideas go to `/idea` or a line at the end.
@@ -19,4 +24,12 @@ Jamie plays; you guide, watch for what goes wrong and fix it. Other sessions are
 6. **Close it when Jamie says it's done**, not before, with a comment: what passed, what was fixed (PR links) and what was filed (issue links). `gh issue close <n> --comment "<that>"`. If Jamie stops partway through, leave it open with a comment saying where you got to.
 7. **Tell Jamie** in a few lines: what passed, what was fixed and merged, what was filed.
 
-One testing issue per session.
+## Play notes
+
+Jamie plays often, and notes what jars as he goes. `/test notes` with the notes pasted (or a file) turns them into work:
+
+1. **Sort each note**, one line each, into: it matches an open testing issue's line (tick or comment on it); an open issue already covers it (comment there with what Jamie saw); **small** (fix it here, as step 4); **bigger** (file it, as step 5); **drift** from the rules (`.claude/rules/controls.md`, `interface.md`, `looks.md`, `debug-panel.md`, `docs/glossary.md`, `docs/style.md`: file it as `🧩 cohesion`, or fix it if small); or **an idea** (to `/idea`). Where a note is unclear, ask.
+2. **Show Jamie the sorted list** with what you'll do for each, as a numbered list, then carry on unless he changes any.
+3. Work the small fixes as one PR ("Found in play" in the body), file the rest, and tell Jamie what was fixed, filed and commented, with links.
+
+One testing issue, one area or one set of notes per session.
