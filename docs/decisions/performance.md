@@ -44,3 +44,8 @@ The sections below are the record, oldest first. A new decision goes at the end.
 - Noise: two builds of the same game differed by up to 1 ms a frame at a spot and 3 ms in the worst frame, so `NOISE` calls less than 1.2 ms (and 4 ms worst) "same". Calls and triangles drift a little as main moves.
 - Measured on main when it landed: spawn 2,204 calls, 3.40M triangles, 12.5 ms; yard 2,936, 13.1 ms; village 3,955, 15.2 ms; wood 1,913, 11.5 ms; hilltop 2,442, 6.97M, 14.6 ms; the worst frame at the spawn 31.8 ms. The 8 ms local budget is over everywhere: the first thing for `/perf`.
 - Load is now timed from a fresh browser on a build (2.7 s to Ready), not the warm dev server the 2.5 s budget was set on (1.7 s then).
+
+## The fuel tanks and the generator stay drawn (#402)
+
+- #365 put `fuelTank` and `generator` in `BARN_PROP_NAMES`, the barn's indoor clutter hidden beyond 15 m, but the petrol tank and the red diesel bowser (both named `fuelTank`) stand in the yard north of the barn and the generator along the annex's south wall, so Jamie saw them vanish as he walked off. Both are out of the list and always drawn; they are a few meshes each.
+- `tests/farDetail.test.js` now checks each barn prop with a place in the layout stands inside the barn or its annex, and that the tanks and the generator are not in the list.

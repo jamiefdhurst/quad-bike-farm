@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { FarDetail, detailLevel, isSmallPart, VEHICLE_NAMES, BARN_PROP_NAMES, SET_PIECE_NAMES } from '../src/world/farDetail.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../src/core/graphics.js';
+import { LAYOUT } from '../src/world/layout.js';
 
 const params = { ...DEFAULT_GRAPHICS_PARAMS };
 const box = (w, mat) => new THREE.Mesh(new THREE.BoxGeometry(w, w, w), mat ?? new THREE.MeshStandardMaterial());
@@ -158,5 +159,25 @@ describe('the names FarDetail looks for', () => {
       const found = execSync(`grep -rlE "name = '${name}'" src || true`, { encoding: 'utf8' });
       expect(found.trim(), name).not.toBe('');
     }
+  });
+});
+
+describe('BARN_PROP_NAMES', () => {
+  // Only what is inside the barn may be hidden at the barn's short distance: something in the yard would vanish as you walk off (#402).
+  const b = LAYOUT.barn;
+  const inside = ({ x, z }) => Math.abs(x - b.x) <= b.halfX && z >= b.z - b.halfZ && z <= b.z + b.halfZ + 2 * b.annex.halfZ;
+  const placed = { helmetHooks: [LAYOUT.helmetHooks], 'trolley-jack': [LAYOUT.jack], 'axle-stand': LAYOUT.axleStands };
+
+  it('holds only things that stand inside the barn or its annex', () => {
+    for (const [name, spots] of Object.entries(placed)) {
+      expect(BARN_PROP_NAMES).toContain(name);
+      for (const s of spots) expect(inside(s), `${name} at ${s.x}, ${s.z}`).toBe(true);
+    }
+  });
+
+  it('leaves out the fuel tanks and the generator, which stand outside', () => {
+    for (const s of [LAYOUT.fuelTank, LAYOUT.dieselBowser, LAYOUT.generator]) expect(inside(s)).toBe(false);
+    expect(BARN_PROP_NAMES).not.toContain('fuelTank');
+    expect(BARN_PROP_NAMES).not.toContain('generator');
   });
 });
