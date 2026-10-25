@@ -18,7 +18,7 @@ export function brickTexture(random) {
     ctx.fillRect(0, 0, w, h);
     const rows = 13;
     const rh = h / rows;
-    const bw = w / 4.6;
+    const bw = w / 5; // a whole number of bricks across, so the tile joins its neighbour with no seam
     for (let r = 0; r < rows; r++) {
       const off = (r % 2) * bw * 0.5;
       for (let c = -1; c < 6; c++) {
@@ -387,34 +387,126 @@ export function roadClosedTexture() {
   });
 }
 
-/** A petrol pump's face: the grade in a coloured band, the price per litre and the amount, in dot-matrix style. */
+/** Draws `text` as red seven-segment digits (and points) in a box: a pump's LED display, not a font. */
+function ledDigits(ctx, text, x, y, w, h, colour) {
+  const digits = [...text].filter((c) => c !== '.').length;
+  const dw = w / digits;
+  const t = h * 0.13;
+  const segs = { a: [0, 0, 1, 0], b: [1, 0, 1, 1], c: [1, 1, 1, 2], d: [0, 2, 1, 2], e: [0, 1, 0, 2], f: [0, 0, 0, 1], g: [0, 1, 1, 1] };
+  const on = { 0: 'abcdef', 1: 'bc', 2: 'abged', 3: 'abgcd', 4: 'fgbc', 5: 'afgcd', 6: 'afgedc', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' };
+  let i = 0;
+  ctx.lineCap = 'round';
+  ctx.lineWidth = t;
+  for (let k = 0; k < text.length; k++) {
+    const ch = text[k];
+    if (ch === '.') continue;
+    const x0 = x + i * dw + dw * 0.18;
+    const x1 = x + (i + 1) * dw - dw * 0.18;
+    const y0 = y + h * 0.1;
+    const y1 = y + h * 0.9;
+    for (const [name, [ax, ay, bx, by]] of Object.entries(segs)) {
+      ctx.strokeStyle = on[ch].includes(name) ? colour : 'rgba(255,60,40,0.07)';
+      ctx.beginPath();
+      ctx.moveTo(x0 + ax * (x1 - x0), y0 + (ay / 2) * (y1 - y0));
+      ctx.lineTo(x0 + bx * (x1 - x0), y0 + (by / 2) * (y1 - y0));
+      ctx.stroke();
+    }
+    if (text[k + 1] === '.') {
+      ctx.fillStyle = colour;
+      ctx.beginPath();
+      ctx.arc(x1 + dw * 0.06, y1, t * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    i++;
+  }
+}
+
+/**
+ * A petrol pump's face (2:3): the grade in a coloured band, then the way a real pump reads: a dark window of red seven-segment digits for the
+ * money and the litres and a green one for the price a litre, each with a small caption beside it, and the pay-inside plate under them.
+ */
 export function pumpFaceTexture(grade, band, price) {
-  return canvasTexture(256, 384, (ctx, w, h) => {
+  return canvasTexture(384, 576, (ctx, w, h) => {
     ctx.fillStyle = '#e8e8e2';
     ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = band;
-    ctx.fillRect(0, 0, w, 86);
+    ctx.fillRect(0, 0, w, 110);
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 40px Arial, Helvetica, sans-serif';
+    ctx.font = 'bold 56px Arial, Helvetica, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(grade, w / 2, 44);
-    ctx.fillStyle = '#12161a';
-    ctx.fillRect(24, 110, w - 48, 70);
-    ctx.fillRect(24, 196, w - 48, 70);
-    ctx.fillStyle = '#e8352b';
-    ctx.font = 'bold 54px "Courier New", monospace';
-    ctx.fillText('0.00', w / 2, 146);
-    ctx.fillStyle = '#7fe38a';
-    ctx.fillText(price, w / 2, 232);
-    ctx.fillStyle = '#333';
-    ctx.font = '22px Arial, Helvetica, sans-serif';
-    ctx.fillText('£  LITRES   PRICE/L', w / 2, 290);
+    ctx.fillText(grade, w / 2, 56);
+    const row = (y, label, text, colour, small) => {
+      ctx.fillStyle = '#0b0d0f';
+      ctx.fillRect(100, y, 260, 84);
+      ctx.strokeStyle = '#8a8a84';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(100, y, 260, 84);
+      ledDigits(ctx, text, 112, y + 8, 236, 68, colour);
+      ctx.fillStyle = '#333';
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 22px Arial, Helvetica, sans-serif';
+      ctx.fillText(label, 16, y + 30);
+      ctx.font = '17px Arial, Helvetica, sans-serif';
+      ctx.fillText(small, 16, y + 56);
+    };
+    row(140, '£', '0.00', '#ff3b2a', 'TO PAY');
+    row(244, 'LITRES', '0.00', '#ff3b2a', 'DELIVERED');
+    row(348, 'PRICE', `${Math.round(parseFloat(price) * 100)}.9`, '#6dff7d', 'PENCE/LITRE');
     ctx.fillStyle = '#9a9a92';
-    ctx.fillRect(24, 312, w - 48, 40);
+    ctx.fillRect(24, 468, w - 48, 52);
     ctx.fillStyle = '#222';
-    ctx.font = 'bold 20px Arial, Helvetica, sans-serif';
-    ctx.fillText('LIFT NOZZLE · PAY INSIDE', w / 2, 334);
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 24px Arial, Helvetica, sans-serif';
+    ctx.fillText('LIFT NOZZLE · PAY INSIDE', w / 2, 494);
+  });
+}
+
+/** A packet off the parts rack (4:3 or so): the colour of the part, a white label with its name, and a simple picture of it. */
+export function partPacketTexture(label, colour, kind) {
+  return canvasTexture(256, 192, (ctx, w, h) => {
+    ctx.fillStyle = colour;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(0, 0, w, 14);
+    ctx.fillRect(0, h - 10, w, 10);
+    ctx.fillStyle = '#f4f1e6';
+    ctx.fillRect(14, 26, w - 28, 46);
+    ctx.fillStyle = '#16161a';
+    ctx.font = 'bold 30px Arial, Helvetica, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, w / 2, 50);
+    ctx.fillStyle = '#f4f1e6';
+    ctx.strokeStyle = '#f4f1e6';
+    ctx.lineWidth = 8;
+    const cx = w / 2;
+    const cy = 128;
+    if (kind === 'plug') {
+      ctx.fillRect(cx - 9, cy - 38, 18, 30);
+      ctx.fillRect(cx - 20, cy - 8, 40, 14);
+      ctx.fillRect(cx - 7, cy + 6, 14, 28);
+      ctx.fillRect(cx - 1.5, cy + 34, 3, 12);
+    } else if (kind === 'tube') {
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 48, 32, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillRect(cx - 5, cy - 46, 10, 16);
+    } else {
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 70, 30, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.lineWidth = 3;
+      for (let x = cx - 62; x <= cx + 62; x += 10) {
+        ctx.beginPath();
+        ctx.moveTo(x, cy - 27 * Math.sqrt(Math.max(0, 1 - ((x - cx) / 70) ** 2)) - 4);
+        ctx.lineTo(x, cy - 27 * Math.sqrt(Math.max(0, 1 - ((x - cx) / 70) ** 2)) + 4);
+        ctx.stroke();
+      }
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(4, 4, w - 8, h - 8);
   });
 }
 

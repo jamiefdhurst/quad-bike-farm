@@ -40,7 +40,7 @@ export class Frame {
 }
 
 /** A gable end: a triangle `width` wide and `rise` high, `depth` thick, in the plane facing along x (x = `x`), standing on y = `base`. */
-function gableGeometry(width, rise, depth, tile = 1.5) {
+function gableGeometry(width, rise, depth, tile = 1.5, vOffset = 0) {
   const shape = new THREE.Shape();
   shape.moveTo(-width / 2, 0);
   shape.lineTo(width / 2, 0);
@@ -48,7 +48,7 @@ function gableGeometry(width, rise, depth, tile = 1.5) {
   shape.closePath();
   const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false });
   const uv = geo.getAttribute('uv');
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / tile, uv.getY(i) / tile);
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / tile, uv.getY(i) / tile + vOffset);
   geo.translate(0, 0, -depth / 2);
   geo.rotateY(Math.PI / 2);
   return geo;
@@ -65,7 +65,7 @@ export function shellAndRoof(f, b, m, { eave = 0.4, verge = 0.28, plinth = 0.5, 
   if (solidWalls) f.box(halfX * 2, wH + sink, halfZ * 2, m.wall, 0, (wH - sink) / 2, 0, 1.2);
   if (solidWalls) f.box(halfX * 2 + 0.08, plinth + sink, halfZ * 2 + 0.08, plinthMat ?? m.stone, 0, (plinth - sink) / 2, 0, 1);
   // The gables, set into the ends of the roof.
-  for (const side of [-1, 1]) f.add(gableGeometry(halfZ * 2, R - wH, 0.4), m.wall, side * (halfX - 0.2), wH, 0);
+  for (const side of [-1, 1]) f.add(gableGeometry(halfZ * 2, R - wH, 0.4, 1.2, (wH + sink) / 1.2), m.wall, side * (halfX - 0.2), wH, 0);
   const over = halfZ + eave;
   const drop = (R - wH) * (over / halfZ);
   const slope = Math.hypot(over, drop);

@@ -813,3 +813,15 @@ Agreed with Jamie before building (all as recommended): three challenges listed 
 - **Line-up.** Agreed as "offset, heading and gap evenness"; with painted bays the gaps are fixed, so it is offset and heading only. `layout.lineUp` is four bays at the yard's front, nose east, checked clear of the spawn keep-out and the track by a test. Four perfect is 100, so a missing quad costs 25. Each bay takes the nearest eligible quad.
 - **Clean climb.** `CleanWatch` fails the run on any frame the engine is stopped or `isTipped`; it resets when your run starts. A clean finish also submits to the `cleanClimb` best, on top of the climb record.
 - **Lines.** `challengeDone` and `challengeBest`, said by the first free girl. A clean climb leaves the climb's own line alone.
+
+## Garage fixes found testing (#367)
+
+Jamie's first look at the garage (testing #367) found a run of faults, fixed together; the canopy and forecourt were filed separately.
+
+- **Brick seam.** `brickTexture` had 4.6 bricks across its tile, so every metre of wall showed where it ended and started. It is now five, so it joins. The gable ends used a 1.5 m tile and started their courses at the eaves, against the wall's 1.2 m from the ground; they now match, so the brick runs unbroken up into the gable.
+- **Signs are the shape of their texture.** The garage's name board was 12.6:1 on an 8:1 texture and the canopy's fascia 24:1: both stretched. The name board is 10.7:1 on a 2048 by 192 texture, and the canopy's name is a lit panel of 8:1 in the middle of a plain navy band. The roller door is 2.6 m high (was 3.2) so its shutter box clears the name board, which stays under the eaves.
+- **Windows.** The side window was landscape on a portrait sash texture, so it stretched and its bars crossed the frame's own. It is 0.95 by 1.2 now, like the houses'.
+- **Parts rack.** A "PARTS FOR SALE" board over it, packets with a printed front (name and a picture of the part) as a plane in front of each box, and the packets stand on the shelf rather than level with its top (they were z-fighting).
+- **Pumps.** The face is a seven-segment display for the money and the litres (red) and the price in pence a litre (green, "152.9"), each with a small caption beside it. The nozzle hangs in a holster fixed to the pump's side and its hose runs from the nozzle's back into the pump's base.
+- **Price board.** At the east end of the frontage, off the road, turned to face traffic coming in from the lane (it was in the road, square to the pavement).
+- **Drums.** Plain painted steel with rolling hoops and a lid (the old ones used the shed barrel's ribs and read as coils). A mesh with a material array is dropped by the village's mesh merge, so a drum is separate meshes.
