@@ -17,7 +17,7 @@ The detailed rules for each part of the game are in `.claude/rules/`. They load 
 
 ## How work is done here
 
-- The to-do list is the GitHub issues (labels in `.github/settings.yml`). `/todo` works one, `/idea` adds them, `/test` tries merged work with Jamie (issues labelled `🧪 testing`, which `/todo` skips). Each item is built in its own worktree (`tools/worktree.sh`) on a branch, opened as a PR with the issue's labels and set to merge itself when the Test check passes. Never commit to `main` or switch branch in the main checkout: other sessions are working in it.
+- The to-do list is the GitHub issues (labels in `.github/settings.yml`). `/todo` works one, `/idea` adds them, `/test` tries merged work with Jamie (issues labelled `🧪 testing`, which `/todo` skips), `/perf` works `🚀 performance` issues first, measuring before and after (`/todo` takes them in number order like the rest). Each item is built in its own worktree (`tools/worktree.sh`) on a branch, opened as a PR with the issue's labels and set to merge itself when the Test check passes. Never commit to `main` or switch branch in the main checkout: other sessions are working in it.
 - Autonomous: don't ask whether to write the code, just do it. Ask only for a real decision the issue doesn't settle (look, feel, scope, which of two behaviours): once, up front, a short numbered list with a recommendation for each. Jamie answers in a matching numbered list.
 - When you start an item, say its number, title and link before anything else.
 - Plan briefly, then build. Keep to the item; note other ideas at the end rather than doing them.

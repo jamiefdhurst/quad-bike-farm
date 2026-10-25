@@ -64,6 +64,9 @@ labels:
   - name: "🖥️ interface"
     color: bfdadc
     description: The HUD, menus, FAQ, debug panel, console and controls
+  - name: "🚀 performance"
+    color: d93f0b
+    description: "How fast it runs and loads: draw calls, frame time, stutters, load time; /perf works these"
   # Workflow.
   - name: "🔜 next"
     color: 0e8a16
