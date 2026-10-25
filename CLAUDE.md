@@ -11,6 +11,7 @@ The detailed rules for each part of the game are in `.claude/rules/`. They load 
 - `debug-panel.md`: the panel's three tabs and the console. Anything new that can be tuned, watched, set or started goes in both.
 - `voice-lines.md`: adding or changing what the girls say, and recording and committing the banks.
 - `faq.md`: the FAQ, the start screen and the logo. Every item that changes what a player sees or does updates the FAQ.
+- `looks.md`: anything new you'll see in the world (buildings, yards, props, items): the **Looks like** brief, how detailed, and one look before the PR.
 - `world.md`: the moving day, light sources, and anything scattered over the farm in numbers (`src/world`, `src/effects`).
 - `checking.md`: the smoke test, the frame guard, headless checks, engine sound renders, frame time and load time.
 
@@ -38,7 +39,7 @@ The detailed rules for each part of the game are in `.claude/rules/`. They load 
 
 - `npm test` must pass before every commit. Add or update unit tests for any logic you change.
 - `npm run smoke` before opening a PR that touches `game.js` or adds to the frame (CI runs it too; `checking.md`).
-- No headless browser checks or screenshot rounds, apart from model work and the smoke test: they are slow, and screenshots keep showing the "Click to play" overlay. The one exception is a check where you get past the overlay and confirm it in the screenshot (`checking.md`). Otherwise rely on unit tests and say what you didn't verify. No long simulation runs or tuning loops: pick sensible values.
+- No headless browser checks or screenshot rounds, apart from model work (anything new you'll see gets one look, `looks.md`) and the smoke test: they are slow, and screenshots keep showing the "Click to play" overlay. The one exception is a check where you get past the overlay and confirm it in the screenshot (`checking.md`). Otherwise rely on unit tests and say what you didn't verify. No long simulation runs or tuning loops: pick sensible values.
 - Never make sound in tests: stub `speechSynthesis.speak` and set `game.audioHub.params.muted = true`.
 
 ## Versions and releases
