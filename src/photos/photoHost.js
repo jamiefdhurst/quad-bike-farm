@@ -12,7 +12,7 @@ const _at = new THREE.Vector3();
 
 /**
  * The camera, in the game: the key raises it (the girls in the picture pose, pull a face or put a hand up), the shutter goes a moment later,
- * and the shot is pinned on the barn's corkboard (photos.js, photoBoard.js). The picture is the game's canvas, copied small right after
+ * and the shot is pinned on the barn's cork board (photos.js, photoBoard.js). The picture is the game's canvas, copied small right after
  * the frame is drawn.
  */
 export class PhotoHost {
@@ -217,7 +217,7 @@ export class PhotoHost {
     this.wall.add({ data: this.canvas.toDataURL('image/jpeg', p.quality), day: g.farm.day, time: clockText(g.daylight.hour), girls }, this.random);
     this.view.refresh();
     this.last = girls.length ? `with ${girls.join(' and ')}` : 'just you';
-    g.hud.toast('Photo pinned on the corkboard in the barn', 2);
+    g.hud.toast('Photo pinned on the cork board in the barn', 2);
     g.achievements.note('photo');
     if (girls.length) g.achievements.note('photoGirl');
     if (this.modeActive && girls.length >= 2) g.achievements.note('photoModeBoth');
@@ -245,7 +245,7 @@ export class PhotoHost {
     this.g.hud.toast(`Saved ${name}`, 2);
   }
 
-  /** E at the corkboard: the card, and a girl nearby may say something about it. */
+  /** E at the cork board: the card, and a girl nearby may say something about it. */
   openBoard() {
     this.view.open();
     if (!this.wall.photos.length) return;

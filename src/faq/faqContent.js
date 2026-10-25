@@ -1449,7 +1449,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I get a photo of a girl asleep?',
-        a: `Find one dozing on the bales, stand in front of her and press <kbd>7</kbd>. She sleeps on through the shutter, and the picture goes on the corkboard like any other. It also ticks "Caught napping" on the bucket list.`,
+        a: `Find one dozing on the bales, stand in front of her and press <kbd>7</kbd>. She sleeps on through the shutter, and the picture goes on the cork board like any other. It also ticks "Caught napping" on the bucket list.`,
       },
       {
         q: 'Why are the girls wearing different coloured shirts from my last farm?',
@@ -1770,7 +1770,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I take a photo?',
-        a: `Press 7, on foot or on a quad. The camera comes up, any girl in front of you reacts, and a moment later the shutter goes. The shot is pinned on the corkboard on the barn's back wall, south of the chalkboards. It throws away a shot of nothing but sky or a blank wall, and there is a short wait between shots.`,
+        a: `Press 7, on foot or on a quad. The camera comes up, any girl in front of you reacts, and a moment later the shutter goes. The shot is pinned on the cork board on the barn's back wall, south of the chalkboards. It throws away a shot of nothing but sky or a blank wall, and there is a short wait between shots.`,
         tip: 'Press 7 to take a photo, or 8 for photo mode. They get pinned in the barn.',
       },
       {
@@ -1780,7 +1780,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where does a photo-mode picture go?',
-        a: `Two places: pinned on the corkboard in the barn as a small print like any other, and saved to your downloads as a full-size PNG named for the day and time. The browser may ask the first time whether the game can download several files.`,
+        a: `Two places: pinned on the cork board in the barn as a small print like any other, and saved to your downloads as a full-size PNG named for the day and time. The browser may ask the first time whether the game can download several files.`,
       },
       {
         q: 'Why can\'t I fly further, or lower?',
@@ -1792,7 +1792,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where do my photos go, and how many stay?',
-        a: `On the corkboard in the barn, each at a random spot and a little crooked, with its day. Look at the board and press E for a bigger view that says when each was taken and who is in it. The last twelve stay up and the oldest comes down to make room. They are kept from one day to the next, with the rest of the farm.`,
+        a: `On the cork board in the barn, each at a random spot and a little crooked, with its day. Look at the board and press E for a bigger view that says when each was taken and who is in it. The last twelve stay up and the oldest comes down to make room. They are kept from one day to the next, with the rest of the farm.`,
       },
       {
         q: 'Why can\'t I ride out over the cattle grid?',
@@ -1895,10 +1895,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where do I see how much money we have?',
-        a: `On the shelf under the cork board on the barn's back wall there is a biscuit tin: look at it and press <kbd>E</kbd> and the lid comes up. A card says what is in it,
+        a: `On the shelf under the cork board on the barn's back wall there is a money tin: look at it and press <kbd>E</kbd> and the lid comes up. A card says what is in it,
           what came in, went out and was sold today, and the last five deals. What shows in the tin grows with the money: a coin or two when it is nearly empty, change, stacks of coins, bundles
           of notes, and notes piled over the rim when you are doing well. A toast also tells you the tin's total each time a job pays, and the end-of-day card says what moved.`,
-        tip: 'The biscuit tin on the shelf in the barn holds the farm\'s money. Look at it and press E.',
+        tip: 'The money tin on the shelf in the barn holds the farm\'s money. Look at it and press E.',
       },
       {
         q: 'Do the girls say anything about the money?',

@@ -7,7 +7,7 @@
 const line = (cooldown, lines) => ({ cooldown, lines });
 
 export const AMY_TRACTORGO_LINES = {
-  tractorRefuse: line(30, ['I am not going near that thing.', 'No. It has no seatbelt and I do not trust the clutch.', 'Absolutely not. Ask Jess, she loves it.']),
+  tractorRefuse: line(30, ['I am not going near that thing.', 'No. It has no seat belt and I do not trust the clutch.', 'Absolutely not. Ask Jess, she loves it.']),
   tractorDay: line(600, ['Fine. Move over. And nobody say a word.', 'Oh, give it here. How hard can it be?', 'Right. I am doing this once, so watch carefully.']),
   tractorGoAsk: line(60, ['Fine, I will do it. Only because you asked nicely.', 'All right. Stand back, and do not offer advice.', 'If I must. Does the hand throttle do anything?']),
   tractorGoLurch: line(20, ['Clutch, Jess! Gently with the clutch!', 'It is bucking! Is it meant to do that?', 'Oh, do not hurt it. Or yourself.']),
