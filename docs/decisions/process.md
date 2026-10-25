@@ -12,6 +12,7 @@ What is true now, with the sections below to read for the detail. Keep it curren
 - **The frame guard.** Each feature's update in `game.js` runs inside `FeatureGuard`, so one feature's error is logged and counted rather than stopping the frame. "A smoke test in CI, and a guard round each feature's update (#262)".
 - **Loading and download size.** "Ready" in about 1.7 s warm (keep it under 2.5 s); a cold load fetches about 35 MB: voice files are fetched and decoded only when a line in them is wanted, engine recordings are FLAC, an engine's bank is fetched only when it is on or you come within 45 m, Rapier's wasm is its own file. "Loading faster (2026-10-09)", "Smaller downloads (TODO 104, 2026-10-18)".
 - **Instructions.** CLAUDE.md holds what every session needs; area rules are in `.claude/rules/`. New DECISIONS sections are about ten lines and go in the area's file here. "A shorter CLAUDE.md (#352)", "Splitting DECISIONS by area (#353)".
+- **How new things should look.** An issue that adds something you'll see carries a **Looks like** list (the real thing and the 8 to 15 features you'd know it by); the look is built first and checked by one look in the running game, two rounds at most (`.claude/rules/looks.md`). "Making new things look right (#383)".
 - **Stack.** Three.js, Vite, plain ES modules, Rapier, Vitest; a fixed 60 Hz physics step with interpolation; Y up, a vehicle's forward is +Z. "Stack".
 
 ---
@@ -206,3 +207,10 @@ Settled with Jamie: work merges faster than Jamie can try it, so what only the r
 - DECISIONS.md was 1.27 MB in 433 sections, one running log. Sessions grepped a section and could not tell whether a later one had replaced it. It is now an index, and the sections live word for word in `docs/decisions/<area>.md` by the label areas (girls, vehicles, engine, world, sound, items, interface, process), plus `ideas-turned-down.md` for `/idea`.
 - Each file opens with "Where things stand": a page of what is true now, naming the sections to read and the ones that are only history. Written by reading every section; an item that changes how something stands updates its line.
 - A section that spans areas went where it mostly belongs, so a grep across `docs/decisions` is the way to find one by name. References in code comments, docs and the commands now point at the area file.
+
+## Making new things look right (#383)
+
+- New areas and items kept landing as plain blocks (the neighbour's farm needed a second commit to "add detail to her house, bins, bench, logs and postbox"), and Jamie had to ask for detail each time. Vehicles didn't, because `vehicle-detail.md` writes down what good looks like.
+- The cause was the process: no brief for the look, and the 2026-10-14 rule that Jamie checks visual changes himself meant no session saw what it built. A unit test can't tell a shop from a block.
+- Settled with Jamie: every issue that adds something seen has a **Looks like** section (`/idea` writes it, `/todo` ticks it off); `.claude/rules/looks.md` sets the bar (outline, trim, small detail; no bare box, no flat colour, nothing floating; reuse the kits) for `src/world`, `src/items`, `src/workshop` and `src/effects`; the look is built first as its own commit; and anything new seen gets one look, two rounds at most, which replaces "Jamie checks the look". The plaid-shirt session's open-ended rounds are what the limit is for.
+- A test that fails a set piece or item that is a bare block, and a tracked `tools/shot.mjs`, are #384.
