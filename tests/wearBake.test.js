@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { findCreases, bakeWear, bakeNooks, pieces, hash01 } from '../src/vehicle/detail/wear.js';
+import { findCreases, bakeWear, bakeNooks, bakeNooksSteps, pieces, hash01 } from '../src/vehicle/detail/wear.js';
 
 const L = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0.2, 0), new THREE.Vector2(0.2, 0.05), new THREE.Vector2(0.05, 0.05), new THREE.Vector2(0.05, 0.2), new THREE.Vector2(0, 0.2)]);
 
@@ -108,5 +108,25 @@ describe('wear: which way a material wears', async () => {
 
   it('picks its own shader branch for each kind', () => {
     WEAR_KINDS.forEach((k, i) => expect(wearColourGlsl(k)).toContain(`#if ${i} == 0`));
+  });
+});
+
+describe('wear: spread over frames (#459)', () => {
+  const part = () => ({ geometry: bakeWear(new THREE.BoxGeometry(1, 1, 1, 12, 12, 12)), matrix: new THREE.Matrix4() });
+
+  it('a big mesh takes several steps, and a mesh is added to the grid in a step of its own, so no step is a frame-long hitch', () => {
+    const meshes = [part(), part(), part()];
+    expect(meshes[0].geometry.attributes.position.count).toBeGreaterThan(3000);
+    let steps = 0;
+    for (const _ of bakeNooksSteps(meshes)) steps++;
+    expect(steps).toBeGreaterThan(meshes.length * 2 + 3); // grid: one each; nooks: more than one each
+  });
+
+  it('gives the same nooks however it is stepped', () => {
+    const stepped = [part(), part()];
+    const whole = [part(), part()];
+    for (const _ of bakeNooksSteps(stepped));
+    bakeNooks(whole);
+    whole.forEach((w, i) => expect([...stepped[i].geometry.attributes.wearNook.array]).toEqual([...w.geometry.attributes.wearNook.array]));
   });
 });

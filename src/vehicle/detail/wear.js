@@ -173,7 +173,10 @@ export function hash01(x, y, z) {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
 }
 
-/** `bakeNooks` a mesh at a time: yields after each, so it can be spread over frames. */
+/** Vertices of one mesh's nooks found between yields. */
+const NOOK_CHUNK = 1500;
+
+/** `bakeNooks` a mesh at a time (a big one in pieces): yields after each, so it can be spread over frames. */
 export function* bakeNooksSteps(meshes, params = DEFAULT_WEAR_BAKE) {
   const r = params.nookReach;
   const cell = (x) => Math.floor(x / r);
@@ -181,7 +184,9 @@ export function* bakeNooksSteps(meshes, params = DEFAULT_WEAR_BAKE) {
   const grid = new Map();
   const world = [];
   const v = new THREE.Vector3();
-  meshes.forEach(({ geometry, matrix }, m) => {
+  // (a mesh at a time, yielding between: finding every mesh's pieces in one step was a 10 to 30 ms hitch after the start, #459)
+  for (let m = 0; m < meshes.length; m++) {
+    const { geometry, matrix } = meshes[m];
     const pos = geometry.attributes.position;
     const part = pieces(geometry);
     const pts = new Float32Array(pos.count * 3);
@@ -195,8 +200,8 @@ export function* bakeNooksSteps(meshes, params = DEFAULT_WEAR_BAKE) {
       else grid.set(key, [v.x, v.y, v.z, owner]);
     }
     world.push({ pts, part, m });
-  });
-  yield;
+    yield;
+  }
   const nrm = new THREE.Vector3();
   const normalMatrix = new THREE.Matrix3();
   for (let m = 0; m < meshes.length; m++) {
@@ -206,6 +211,7 @@ export function* bakeNooksSteps(meshes, params = DEFAULT_WEAR_BAKE) {
     const nAttr = geometry.attributes.normal;
     normalMatrix.getNormalMatrix(matrix);
     for (let i = 0; i < pts.length / 3; i++) {
+      if (i > 0 && i % NOOK_CHUNK === 0) yield; // and a big mesh in pieces
       const x = pts[i * 3];
       const y = pts[i * 3 + 1];
       const z = pts[i * 3 + 2];
