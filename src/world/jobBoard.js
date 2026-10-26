@@ -89,8 +89,14 @@ export class JobBoardView {
   handleInput(input) {
     this.game.player.moveEnabled = false;
     input.takeWheelSteps();
-    if (input.wasPressed('Digit1')) this.game.startColdStart();
-    if (input.wasPressed('Digit2')) this.game.judgeLineUp();
+    // A challenge closes the card first, so its toast isn't half behind it.
+    if (input.wasPressed('Digit1')) {
+      this.close();
+      this.game.startColdStart();
+    } else if (input.wasPressed('Digit2')) {
+      this.close();
+      this.game.judgeLineUp();
+    }
     if (input.wasPressed('KeyB') || input.wasPressed('Escape')) this.close();
   }
 
