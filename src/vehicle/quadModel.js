@@ -1,3 +1,4 @@
+import { part } from './part.js';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -2345,10 +2346,10 @@ export function faceAlong(group, normal, up) {
 
 /** Squeezes the left brake lever in (`amount` 0 to 1, eased by the caller) and shows the red catch that holds it once it is nearly there. */
 export function poseParkBrake(model, amount) {
-  const lever = model.getObjectByName('parkBrakeLever');
+  const lever = part(model, 'parkBrakeLever');
   if (!lever) return; // the tractor, UTV and Land Rovers have their own handles
   lever.rotation.y = amount * 0.16;
-  const hold = model.getObjectByName('parkBrakeCatch');
+  const hold = part(model, 'parkBrakeCatch');
   if (hold) hold.visible = amount > 0.85;
 }
 

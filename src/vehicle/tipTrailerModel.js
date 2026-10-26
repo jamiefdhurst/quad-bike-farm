@@ -1,3 +1,4 @@
+import { part } from './part.js';
 import * as THREE from 'three';
 import { PART_MAT, box, buildWheel, addMudguard, addJockeyWheel, addRearLights, addChain, addCable, addLeafSpring, addUBolts, beam, galvanised, addGusset, addEye } from './trailerParts.js';
 import { boltsMesh } from './detail/fixings.js';
@@ -200,6 +201,6 @@ export function buildTipTrailerModel() {
 
 /** Tips the tub (0 down to 1 up) and drops the tailgate (0 shut to 1 flat). */
 export function poseTipTrailer(model, { tip, gate }) {
-  model.getObjectByName('tub').rotation.x = -TIP_TRAILER_SPEC.maxTip * tip;
-  model.getObjectByName('tailgate').rotation.x = TIP_TRAILER_SPEC.gateOpen * gate;
+  part(model, 'tub').rotation.x = -TIP_TRAILER_SPEC.maxTip * tip;
+  part(model, 'tailgate').rotation.x = TIP_TRAILER_SPEC.gateOpen * gate;
 }

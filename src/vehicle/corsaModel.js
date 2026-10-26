@@ -1,3 +1,4 @@
+import { part } from './part.js';
 import * as THREE from 'three';
 import { buildDash, addIgnitionKey } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch } from './quadModel.js';
@@ -1042,12 +1043,12 @@ function corsaWheels() {
 
 /** Lifts the hatch, 0 (shut) to 1 (swung up and back on its hinge), and stretches the two gas struts between the body and it. */
 export function poseCorsaHatch(model, open) {
-  const hatch = model.getObjectByName('hatch');
+  const hatch = part(model, 'hatch');
   if (!hatch || !hatch.userData.keep) return;
   hatch.rotation.x = CORSA_HATCH.open * open;
   hatch.updateMatrix();
   for (const name of ['hatchStrutLeft', 'hatchStrutRight']) {
-    const strut = model.getObjectByName(name);
+    const strut = part(model, name);
     if (!strut) continue;
     const end = new THREE.Vector3(...strut.userData.hatchEnd).applyMatrix4(hatch.matrix);
     const way = end.sub(strut.position);

@@ -1,3 +1,4 @@
+import { part } from './part.js';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { buildDash } from './dash.js';
@@ -766,8 +767,8 @@ function consoleParts(model) {
 
 /** Poses the bed and tailgate: `tip` is how far the bed has risen (0..1), `gate` how open the tailgate is (0 shut, 1 flat). The console's bed rocker follows the bed. */
 export function poseUtvBed(model, { tip, gate }) {
-  model.getObjectByName('bed').rotation.x = -BED_MAX_TIP * tip;
-  model.getObjectByName('tailgate').rotation.x = TAILGATE_OPEN * gate;
+  part(model, 'bed').rotation.x = -BED_MAX_TIP * tip;
+  part(model, 'tailgate').rotation.x = TAILGATE_OPEN * gate;
   const parts = consoleParts(model);
   parts.tip.rotation.x = 0.3 - 0.6 * tip; // the lower half goes in as the bed goes up
   parts.icons.tip.set(tip > 0.02);

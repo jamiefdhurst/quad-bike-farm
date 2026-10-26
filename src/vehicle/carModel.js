@@ -1,3 +1,4 @@
+import { part } from './part.js';
 import * as THREE from 'three';
 import { gearLeverPose, SEAT_TIP, posePedals } from './landRoverModel.js';
 import { buildFiestaModel } from './fiestaModel.js';
@@ -172,20 +173,20 @@ export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, reg = nul
 /** The front backrests tipped forward, 0 (upright) to 1 (right forward), by seat name ({ left, driver }). */
 export function poseCarSeats(model, tips) {
   for (const name of CAR_TIPPING_SEATS) {
-    const back = model.getObjectByName(`seatBack_${name}`);
+    const back = part(model, `seatBack_${name}`);
     if (back) back.rotation.x = SEAT_TIP * Math.min(1, Math.max(0, tips[name] ?? 0));
   }
 }
 
 /** The gear lever in its H (four gears or five, as the Land Rovers'), the choke knob pulled out, the handbrake up or down. */
 export function poseCarControls(model, { gear = 0, gears = 4, choke = 0, park = false, clutch = 0, brake = 0, throttle = 0 }) {
-  const g = model.getObjectByName('gearLever');
+  const g = part(model, 'gearLever');
   if (!g) return;
   posePedals(model, { clutch, brake, throttle });
   const pose = gearLeverPose(gear, gears);
   g.rotation.set(pose.along, 0, pose.across);
-  const knob = model.getObjectByName('chokeKnob');
+  const knob = part(model, 'chokeKnob');
   knob.position.z = knob.userData.baseZ - KNOB_TRAVEL * choke;
-  const hb = model.getObjectByName('parkBrakeLever');
+  const hb = part(model, 'parkBrakeLever');
   hb.rotation.x += ((park ? HANDBRAKE_ON : HANDBRAKE_OFF) - hb.rotation.x) * 0.3;
 }

@@ -1,3 +1,4 @@
+import { part } from './part.js';
 import * as THREE from 'three';
 import { buildDash } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk } from './quadModel.js';
@@ -700,7 +701,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
 
 /** Swings the back door out on its offside hinge: 0 (shut) to 1 (swung right out behind, a little past square). */
 export function poseDefenderBackDoor(model, open) {
-  const door = model.getObjectByName('backDoor');
+  const door = part(model, 'backDoor');
   if (!door || !door.userData.keep) return;
   door.rotation.y = DEF_BACK_DOOR.open * open;
 }
