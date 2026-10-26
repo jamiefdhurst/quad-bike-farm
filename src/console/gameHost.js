@@ -59,6 +59,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       ford: layout.hill ? { x: layout.hill.lane.x, z: layout.hill.stream.z } : null,
       wood: layout.woods ? { x: layout.woods.gate.x, z: layout.woods.leadIn[1][1] } : null,
       hollowrun: layout.woods ? { x: layout.woods.circuit.points[0][0], z: layout.woods.circuit.points[0][1] } : null,
+      river: layout.hill?.river ? { x: layout.hill.river.crossing.x, z: layout.hill.stream.z + layout.hill.river.halfWidth + 8 } : null,
       pasture: layout.hill ? { x: (layout.hill.pasture.minX + layout.hill.pasture.maxX) / 2, z: (layout.hill.pasture.minZ + layout.hill.pasture.maxZ) / 2 } : null,
     };
     return Object.fromEntries(Object.entries(spots).filter(([, p]) => p && Number.isFinite(p.x) && Number.isFinite(p.z)).map(([k, p]) => [k, { x: p.x, z: p.z }]));

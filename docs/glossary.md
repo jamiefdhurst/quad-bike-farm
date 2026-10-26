@@ -8,6 +8,8 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 
 | Name | What it is | Not |
 | --- | --- | --- |
+| river | The wide river across the riverside meadow, past the pasture's east hedge: the brook widened | big stream |
+| crossing | The marked shallows across the river, between the white posts | river ford |
 | cork board | The board on the barn's back wall where photos are pinned | corkboard, cork-board |
 | money tin | The tin on the shelf under the cork board that holds the farm's money | biscuit tin |
 | workbench | The bench along the barn's north wall where jobs are done and the bay is | work bench |

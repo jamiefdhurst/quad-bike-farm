@@ -434,6 +434,10 @@ export function buildGameTree(g, host) {
     hello: flag(() => false, (v) => v && g.neighbourHost.debugGreet(), 'set to true: she says hello now'),
     go: flag(() => false, (v) => v && g.neighbourHost.debugGoTo(), 'set to true: put you on foot at her gate'),
   }), 'the neighbour over the lane');
+  const river = group(() => ({
+    now: text(() => g.describeRiver(), 'where you are at the river (on the crossing, in the deep water, on the bank) and how far up it is'),
+    go: flag(() => false, (v) => v && g.debugGoToRiver(), 'set to true: put you on foot on the south bank by the marked crossing'),
+  }), 'the river past the pasture, and its crossing');
   const village = group(() => ({
     now: text(() => g.villageHost.describe(), 'the village down the lane: its limit, what was last bought and the fuel prices'),
     stayed: text(() => `${g.pubVisit.stayed.toFixed(0)} s at the pub with both girls (they say goodbye after ${g.pubParams.pubStay} s)`, 'how long you and the girls have been at the pub'),
@@ -484,6 +488,7 @@ export function buildGameTree(g, host) {
     fence,
     lane,
     neighbour,
+    river,
     village,
     generator,
     spares,
