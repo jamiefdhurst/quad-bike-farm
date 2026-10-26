@@ -4,7 +4,7 @@
 
 export const TRIANGLE_BUDGETS = {
   quad: 65000, // the five quads, the kids' quad and the loan
-  small: 35000, // the mini moto and the three-wheeler
+  small: 38000, // the mini moto and the three-wheeler (was 35k; the toothed sprockets and link-by-link chain of #48 are 2k to 3k on each)
   tractor: 70000,
   utv: 80000,
   big: 100000, // the Land Rovers and the cars

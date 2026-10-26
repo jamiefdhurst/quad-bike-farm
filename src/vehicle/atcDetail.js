@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { loftGeometry, rod, sweepGeometry, gripGeometry } from './quadGeometry.js';
 import { cableGeometry } from './detail/cables.js';
 import { treadTyre } from './detail/tread.js';
+import { buildChainDrive } from './detail/chainDrive.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
 import { chokeSymbol } from './blasterDetail.js';
 import { buildThumbThrottle } from './foremanControls.js';
@@ -103,16 +104,13 @@ export function addAtcFrame(root, MAT) {
   tube([-F.x, 0.62, -0.3], [F.x, 0.62, -0.3], 0.014, MAT.frame, root, 6);
   // The solid axle across the back (fixed: it measures as part of the body, not of the wheel) with the chain's sprocket on the left.
   tube([-ATC_WHEELS.halfTrack, R, ATC_WHEELS.rearZ], [ATC_WHEELS.halfTrack, R, ATC_WHEELS.rearZ], 0.022, MAT.steel, root);
-  mesh(new THREE.CylinderGeometry(ATC_CHAIN.rearR, ATC_CHAIN.rearR, 0.006, 28).rotateZ(Math.PI / 2).translate(ATC_CHAIN.x, R, ATC_WHEELS.rearZ), MAT.steel, root);
   mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.014, 12).rotateZ(Math.PI / 2).translate(ATC_CHAIN.x - 0.004, R, ATC_WHEELS.rearZ), MAT.engineDark, root);
   // The axle housing, a black box across the back between the tyres.
   rbox(ATC_WHEELS.halfTrack * 1.3, 0.07, 0.08, 0.02, MAT.frame, 0, R, ATC_WHEELS.rearZ, root, 'axleHousing');
   // The chain on the left: two runs from the engine's sprocket to the rear axle's, with a guard over the top run.
   const E = ATC_ENGINE.sprocket;
   const rz = ATC_WHEELS.rearZ;
-  tube([ATC_CHAIN.x, E.y + E.r, E.z], [ATC_CHAIN.x, R + ATC_CHAIN.rearR, rz], 0.0055, MAT.steel, root, 5);
-  tube([ATC_CHAIN.x, E.y - E.r, E.z], [ATC_CHAIN.x, R - ATC_CHAIN.rearR, rz], 0.0055, MAT.steel, root, 5);
-  mesh(new THREE.CylinderGeometry(E.r, E.r, 0.012, 14).rotateZ(Math.PI / 2).translate(ATC_CHAIN.x, E.y, E.z), MAT.steel, root);
+  buildChainDrive(root, { x: ATC_CHAIN.x, front: { y: E.y, z: E.z, r: E.r }, rear: { y: R, z: rz, r: ATC_CHAIN.rearR } });
   rbox(0.024, 0.014, 0.3, 0.005, MAT.plastic, ATC_CHAIN.x, 0.355, -0.34, root);
 }
 
