@@ -174,7 +174,7 @@ describe('FarDetail set pieces and props', () => {
     const far = new FarDetail(sceneWith(rack), params);
     far.update({ x: 15, z: 0 }, 1, true); // 10 from the edge
     expect(rack.visible).toBe(true);
-    far.update({ x: 30, z: 0 }, 1, true);
+    far.update({ x: 40, z: 0 }, 1, true);
     expect(rack.visible).toBe(false);
   });
   it('shows nothing it did not hide, and everything with a distance of 0', () => {
@@ -273,6 +273,12 @@ describe('BARN_PROP_NAMES', () => {
       expect(BARN_PROP_NAMES).toContain(name);
       for (const s of spots) expect(inside(s), `${name} at ${s.x}, ${s.z}`).toBe(true);
     }
+  });
+
+  // From anywhere inside the barn, a prop at the far corner is still drawn (#379 testing: the racks at the other end vanished).
+  it('is drawn from one corner of the barn and annex to the opposite one', () => {
+    const corner = Math.hypot(2 * b.halfX, 2 * b.halfZ + 2 * b.annex.halfZ);
+    expect(DEFAULT_GRAPHICS_PARAMS.barnPropsDistance).toBeGreaterThan(corner);
   });
 
   it('leaves out the fuel tanks and the generator, which stand outside', () => {
