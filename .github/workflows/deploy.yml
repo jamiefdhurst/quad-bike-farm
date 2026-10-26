@@ -1,0 +1,94 @@
+name: Deploy
+
+# Puts each release on the server at https://qbf.jamiehurst.co.uk (behind a password while the BBC recordings are in it,
+# ASSETS.md), the same way the blog is deployed. Only the latest release is kept: /srv/qbf is emptied and refilled.
+# Run it by hand with a version to put an older one back.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to deploy, such as v1.46.9 (the latest if empty)'
+        required: false
+        default: ''
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  Deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Work out the version
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUESTED: ${{ inputs.version }}
+        run: |
+          version="${REQUESTED:-$(gh release view --repo "${{ github.repository }}" --json tagName --jq .tagName)}"
+          echo "Deploying $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      # The repo is private, so the server can't fetch the zip itself: the runner downloads it and copies it across.
+      - name: Download ${{ steps.version.outputs.version }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release download "${{ steps.version.outputs.version }}" --repo "${{ github.repository }}" --pattern 'quad-bike-farm-*.zip'
+      # Recording the deployment in GitHub is bookkeeping: it must never stop the game shipping.
+      - name: Create deployment for ${{ steps.version.outputs.version }}
+        uses: chrnorm/deployment-action@v2.0.8
+        id: deployment
+        continue-on-error: true
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          description: ${{ steps.version.outputs.version }}
+          environment: production
+      - name: Copy ${{ steps.version.outputs.version }} to the server
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: quad-bike-farm-${{ steps.version.outputs.version }}.zip
+          target: /srv
+      - name: Unpack ${{ steps.version.outputs.version }} into /srv/qbf
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            set -e
+            cd /srv
+            mkdir -p qbf
+            find qbf -mindepth 1 -delete
+            unzip -oq quad-bike-farm-${{ steps.version.outputs.version }}.zip -d qbf
+            rm -f quad-bike-farm-*.zip
+            cat qbf/VERSION
+      - name: Update deployment status (success)
+        if: success() && steps.deployment.outputs.deployment_id
+        continue-on-error: true
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment-url: https://qbf.jamiehurst.co.uk
+          state: success
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+      - name: Update deployment status (failure)
+        if: failure() && steps.deployment.outputs.deployment_id
+        continue-on-error: true
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment-url: https://qbf.jamiehurst.co.uk
+          state: failure
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
