@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { instanceModel, modelBounds } from './assets.js';
 import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
 import { buildElectricFence } from './electricFenceBuild.js';
+import { buildRiverside } from './riverProps.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -23,6 +24,7 @@ export function buildHill(c) {
   buildTussocks(c);
   buildViewpoint(c);
   buildElectricFence(c);
+  if (c.fields.hill.riverside) buildRiverside(c);
   if (c.fields.hill.west) {
     buildPond(c, c.fields.hill, (x, z) => c.fields.hill.lineDistance(c.layout.hill.paddocks.west.track, x, z) < 3);
     buildMeadowTrees(c);

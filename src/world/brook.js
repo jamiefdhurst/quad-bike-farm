@@ -3,6 +3,10 @@
 // field beyond. The water flows west, downhill: the land rises all the way from the pasture's bottom (about -2 m) to the lane (about 6 m).
 // Pure: its line, how deep it is cut, where the water stands and where the culvert is, for the terrain, the water's drawing, the map and
 // how wet a quad gets.
+//
+// Its western reach, just beyond the pasture's hedge, is the river (`layout.hill.river`): the brook widened and deepened (a ramp up from the
+// hedge, full for a while, a ramp back down) with a shallow crossing across it. It is the same channel, so it still runs on east to the
+// culvert and the spring, and never meets the edge of the map.
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -25,6 +29,14 @@ export function createBrook(layout) {
   const half0 = b.halfWidth ?? hill.stream.halfWidth;
   const depth0 = b.depth ?? hill.stream.depth;
   const water0 = b.water ?? hill.stream.water;
+  const river = hill.river ?? null;
+  const cross = river?.crossing ?? null;
+
+  /** 0..1 how much of the river it is at x: widening from `fromX`, full, then narrowing back to the brook by `toX`. */
+  const riverK = (x) => (river ? smoothstep(river.fromX, river.fromX + river.rampIn, x) * (1 - smoothstep(river.toX - river.rampOut, river.toX, x)) : 0);
+  /** 0..1 how much of the crossing it is at x: the raised bed, with a short ramp down to the deep either side. */
+  const crossK = (x) => (cross ? riverK(x) * (1 - smoothstep(cross.half, cross.half + cross.ramp, Math.abs(x - cross.x))) : 0);
+  const mix = (a, c, k) => a + (c - a) * k;
 
   /** The brook's middle line at x: smooth steps between its waypoints, with a little wander of its own once it is away from the hedge. */
   function zAt(x) {
@@ -49,10 +61,17 @@ export function createBrook(layout) {
     if (culvert) k *= smoothstep(0, culvert.ease, Math.abs(x - culvert.x) - culvert.half);
     return k;
   }
-  const depthAt = (x) => depth0 * fullness(x);
-  const halfAt = (x) => half0 * (0.55 + 0.45 * fullness(x));
+  // The river keeps the surface where it was and deepens the bed under it; the crossing raises the bed again until `cross.water` m stand over it.
+  const riverDepth = (x) => mix(depth0, river.depth, riverK(x));
+  const riverWater = (x) => mix(water0, river.water, riverK(x));
+  const depthAt = (x) => {
+    if (!river) return depth0 * fullness(x);
+    const d = riverDepth(x);
+    return (cross ? mix(d, d - riverWater(x) + cross.water, crossK(x)) : d) * fullness(x);
+  };
+  const halfAt = (x) => (half0 * (0.55 + 0.45 * fullness(x))) * (river ? mix(1, river.halfWidth / half0, riverK(x)) : 1);
   /** How deep the water stands in the channel at x (before any rise after rain). */
-  const waterDepthAt = (x) => water0 * fullness(x);
+  const waterDepthAt = (x) => (river ? (cross ? mix(riverWater(x), cross.water, crossK(x)) : riverWater(x)) : water0) * fullness(x);
 
   /** Metres the channel is cut into the ground at (x, z). */
   function cutAt(x, z) {
@@ -68,7 +87,31 @@ export function createBrook(layout) {
     const wd = waterDepthAt(x);
     if (wd < 0.03) return 0;
     const dry = depthAt(x) - wd;
-    return clamp((cutAt(x, z) - dry) / (wd * 0.5), 0, 1);
+    const d = cutAt(x, z) - dry;
+    const w = clamp(d / (wd * 0.5), 0, 1);
+    // In the river only deep water counts as deep: over the crossing it is a wade (under the engine's gulp threshold), in the deep it drowns.
+    const k = riverK(x);
+    return k > 0 ? w * mix(1, clamp((d - 0.05) / river.deepFrom, 0, 1), k) : w;
+  }
+
+  /**
+   * 0..1 how much the ground at (x, z) is levelled across the river to the ground at its middle, so a wide river has level banks and the
+   * water sits in them (terrainHeight.js blends the ground at its middle across the valley).
+   */
+  function levelK(x, z) {
+    const k = riverK(x);
+    if (k <= 0) return 0;
+    const r = Math.abs(z - zAt(x));
+    return k * (1 - smoothstep(halfAt(x) + 1, halfAt(x) + (river.level ?? 7), r));
+  }
+
+  /** 0..1 how muddy the ground is at (x, z): the worn landing where the tyres come down to the crossing, on each bank. */
+  function mudAt(x, z) {
+    if (!cross) return 0;
+    const across = clamp(1 - (Math.abs(x - cross.x) - cross.half) / 1.5, 0, 1);
+    if (across <= 0) return 0;
+    const out = Math.abs(z - zAt(x)) - halfAt(x);
+    return out < -0.5 || out > 3.5 ? 0 : clamp(1 - Math.abs(out - 1.2) / 2.4, 0, 1) * across;
   }
 
   /** The two mouths of the culvert (west, east): where the water goes in and comes out, facing along x. */
@@ -86,5 +129,5 @@ export function createBrook(layout) {
     return out;
   }
 
-  return { minX, maxX, zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, half: half0, depth: depth0, water: water0 };
+  return { minX, maxX, zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt };
 }

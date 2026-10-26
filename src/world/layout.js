@@ -107,6 +107,19 @@ export const LAYOUT = {
     // The brook (world/brook.js): the stream carried on east under the pasture's hedge and across the country to the neighbour's, past the south
     // of her yard and under the public lane in a culvert, to a spring in the field beyond. `points` are [x, z] waypoints from west to east.
     brook: { points: [[70, 144], [105, 150], [135, 157], [165, 160], [195, 159], [225, 157], [250, 158]], wander: 1.2, source: 18 },
+    // The river (world/brook.js): the brook's western reach widened and deepened from the pasture's hedge (`fromX`, `rampIn` m to full width, full
+    // to `toX` less `rampOut`, then back to the brook): `halfWidth` across, `depth` cut, `water` m standing, deep (counts as drowning water) from
+    // `deepFrom` m. The ground is levelled across it out to `level` m beyond its banks. Its crossing is a raised bed, `half` m either side of
+    // `x` with `ramp` m down to the deep, `water` m over it, marked by posts (`posts`: how many each side, at each end of it).
+    river: { fromX: 34, rampIn: 22, toX: 124, rampOut: 24, halfWidth: 5.5, depth: 1.3, water: 0.95, deepFrom: 0.45, level: 7, crossing: { x: 66, half: 4.5, ramp: 3, water: 0.2, posts: 4 } },
+    // The riverside meadow (hedged all round, with a sheep hurdle across the river at its east end): through the gateway in the pasture's east
+    // hedge (`gate`: z, width), either side of the river.
+    riverside: {
+      minX: 34, maxX: 80, minZ: 118, maxZ: 203, gate: { z: 154, width: 4.8 },
+      // Willows on the banks ([x, side (-1 north, 1 south), metres out from the water]) and oaks in the meadow's corners ([x, z]).
+      willows: [[44, -1, 3.5], [74, -1, 4.5], [58, 1, 4], [49, 1, 8]],
+      trees: [[38, 126], [76, 123], [43, 196], [70, 199], [77, 178]],
+    },
     valley: 2.5,
     banks: [
       { at: 6, rise: 1.2, width: 9 },

@@ -101,8 +101,12 @@ export function createTerrainHeight(layout, track) {
       if (pad) h += (pad.level - h) * pad.k;
     }
 
-    // The brook's channel, cut into whatever the ground is.
-    if (brook) h -= brook.cutAt(x, z);
+    // The river's valley is level across, to the ground at its middle, and then the brook's channel is cut into it.
+    if (brook) {
+      const lk = brook.levelK(x, z);
+      if (lk > 0) h += (natural(x, brook.zAt(x)) - h) * lk;
+      h -= brook.cutAt(x, z);
+    }
 
     // Level under the drag strip, with a shoulder to ease it back into the field.
     if (strip) {
@@ -147,7 +151,7 @@ export function createTerrainHeight(layout, track) {
   /** 0..1, how muddy the surface is here (1 on the track centre, and in a bog). */
   function mudAt(x, z) {
     const d = track.distanceTo(x, z, trackReach);
-    return Math.max(1 - smoothstep(trackHalfWidth * 0.7, trackHalfWidth + 0.6, d), Math.min(1, bogAt(x, z) * 1.5), hill ? hill.mudAt(x, z) : 0, woods ? woods.mudAt(x, z) : 0);
+    return Math.max(1 - smoothstep(trackHalfWidth * 0.7, trackHalfWidth + 0.6, d), Math.min(1, bogAt(x, z) * 1.5), hill ? hill.mudAt(x, z) : 0, woods ? woods.mudAt(x, z) : 0, brook ? brook.mudAt(x, z) : 0);
   }
 
   /** 0..1, how much standing water there is here (1 in the middle of a puddle, or in the stream). */
