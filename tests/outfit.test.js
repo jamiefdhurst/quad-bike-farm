@@ -59,4 +59,15 @@ describe('cullRays', () => {
     caster.far = 5;
     expect(caster.intersectObject(culled, false).length).toBeGreaterThan(0);
   });
+
+  it('leaves the index it was given alone, as the real body shares it with the copy', () => {
+    const mesh = body();
+    const shared = mesh.geometry.index;
+    const before = Array.from(shared.array);
+    const culled = cullRays(new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position', mesh.geometry.attributes.position).setIndex(shared), mesh.material));
+    const caster = new THREE.Raycaster(new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, -1, 0), 0, 20);
+    caster.intersectObject(culled, false);
+    expect(Array.from(shared.array)).toEqual(before);
+    expect(mesh.geometry.index).toBe(shared);
+  });
 });

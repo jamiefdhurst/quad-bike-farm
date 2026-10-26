@@ -133,8 +133,8 @@ const localRay = new THREE.Ray();
 export function cullRays(mesh) {
   const geo = mesh.geometry;
   const pos = geo.attributes.position.array;
-  const index = geo.index?.array;
-  if (!index || Array.isArray(mesh.material)) return mesh;
+  if (!geo.index || Array.isArray(mesh.material)) return mesh;
+  const index = geo.index.array.slice(); // its own: the index is shared with the real body, which must keep every triangle
   const count = index.length / 3;
   const boxes = new Float32Array(count * 6);
   for (let t = 0; t < count; t++) {

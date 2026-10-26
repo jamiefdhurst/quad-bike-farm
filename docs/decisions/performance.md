@@ -152,3 +152,8 @@ The sections below are the record, oldest first. A new decision goes at the end.
 - The spawn's 1% low was 26.5 ms against a mean of 9.1 and a worst frame of 15.7. A log of every frame for 8 s after Ready named it: `bakeWear` (vehicle wear, baked a piece at a time at 2 ms a frame) ran for the whole eight seconds, and its steps overshot the 2 ms it was given. Over the 14 vehicle coats (about 1 s of work in 22,000 steps) 20 steps were over 4 ms, up to 28 ms; frames of 19 to 36 ms were all a long bake step, none the shaders or the world.
 - The big steps were `bakeNooksSteps` indexing every mesh of a vehicle (`pieces()` and the grid) in one step, 10 to 24 ms for the larger vehicles; it is a step a mesh now. One 18 ms step was left, a heavy mesh's nook pass; it now yields every 1,500 vertices. The slowest step is under 4 ms and the work is the same (a test checks the nooks come out identical).
 - Measured (`perf.mjs`, three runs each): spawn 1% low 26.5 to 11.7 ms (mean 9.2), worst frame 15.7 to 11.6; every other number the same within noise. Not changed: how long the whole bake takes (still about 8 s at 2 ms a frame on a first load).
+
+## The girls' faces went missing (#462)
+
+- The #452 ray culling (`cullRays`) built each ray's short triangle list by rewriting an index array in place. `posedCopy` hands it the real body's index (`geo.setIndex(src.index)`), so every fitting ray compacted the visible skinned body's own triangles and its draw range, and the face (and parts of the body) stopped drawing.
+- `cullRays` now works on its own copy of the index, and a test checks the index it was given is unchanged after a ray. Rule: a perf shortcut that writes into a buffer must own it.
