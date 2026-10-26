@@ -358,7 +358,6 @@ export function buildGirlsTab(d) {
   button(out, 'Take you to the neighbour\'s gate', () => g.neighbourHost.debugGoTo() || toast('Get off your vehicle first'));
   button(out, 'Make the neighbour say hello', () => g.neighbourHost.debugGreet() || toast('She has gone indoors'));
   show(out, 'the river', () => g.describeRiver());
-  button(out, 'Take you to the river crossing', () => g.debugGoToRiver() || toast('Get off your vehicle first'));
   show(out, 'the village down the lane', () => g.villageHost.describe());
   show(out, 'time at the pub with them', () => `${g.pubVisit.stayed.toFixed(0)} s (goodbye after ${g.pubParams.pubStay} s)`);
   for (const [where, label] of [['pub', 'the pub car park'], ['shop', 'the shop'], ['garage', 'the garage pumps'], ['parts', 'the garage parts rack']]) button(out, `Take you to ${label}`, () => g.villageHost.debugGoTo(where) || toast('Get off your vehicle first'));
