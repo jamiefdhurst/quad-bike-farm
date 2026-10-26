@@ -120,7 +120,68 @@ function posedCopy(mesh) {
   const copy = new THREE.Mesh(geo, mesh.material);
   copy.matrixAutoUpdate = false;
   copy.matrixWorld.copy(mesh.matrixWorld);
-  return copy;
+  return cullRays(copy);
+}
+
+const toLocal = new THREE.Matrix4();
+const localRay = new THREE.Ray();
+
+/**
+ * Makes a ray at `mesh` test only the triangles whose box it crosses, then hand those to three's own test, so a hit is exactly what it was
+ * and a ray no longer walks every triangle of the body (about 0.2 s of loading for the two girls). Needs one material and an index.
+ */
+export function cullRays(mesh) {
+  const geo = mesh.geometry;
+  const pos = geo.attributes.position.array;
+  const index = geo.index?.array;
+  if (!index || Array.isArray(mesh.material)) return mesh;
+  const count = index.length / 3;
+  const boxes = new Float32Array(count * 6);
+  for (let t = 0; t < count; t++) {
+    for (let axis = 0; axis < 3; axis++) {
+      const a = pos[index[t * 3] * 3 + axis];
+      const b = pos[index[t * 3 + 1] * 3 + axis];
+      const c = pos[index[t * 3 + 2] * 3 + axis];
+      boxes[t * 6 + axis] = Math.min(a, b, c) - 1e-5;
+      boxes[t * 6 + 3 + axis] = Math.max(a, b, c) + 1e-5;
+    }
+  }
+  const full = Uint32Array.from(index);
+  geo.setIndex(new THREE.BufferAttribute(index, 1)); // the list three walks: the first `3 * kept` entries are the triangles in play
+  const raycast = THREE.Mesh.prototype.raycast;
+  mesh.raycast = function (raycaster, intersects) {
+    toLocal.copy(this.matrixWorld).invert();
+    localRay.copy(raycaster.ray).applyMatrix4(toLocal);
+    const { origin: o, direction: d } = localRay;
+    const far = raycaster.far;
+    let kept = 0;
+    for (let t = 0; t < count; t++) {
+      let near = 0;
+      let out = Infinity;
+      for (let axis = 0; axis < 3 && near <= out; axis++) {
+        const lo = boxes[t * 6 + axis];
+        const hi = boxes[t * 6 + 3 + axis];
+        const origin = axis === 0 ? o.x : axis === 1 ? o.y : o.z;
+        const dir = axis === 0 ? d.x : axis === 1 ? d.y : d.z;
+        if (dir === 0) {
+          if (origin < lo || origin > hi) out = -1;
+        } else {
+          const t1 = (lo - origin) / dir;
+          const t2 = (hi - origin) / dir;
+          near = Math.max(near, Math.min(t1, t2));
+          out = Math.min(out, Math.max(t1, t2));
+        }
+      }
+      if (near > out || out < 0 || near > far * 1.0001) continue;
+      index[kept * 3] = full[t * 3];
+      index[kept * 3 + 1] = full[t * 3 + 1];
+      index[kept * 3 + 2] = full[t * 3 + 2];
+      kept++;
+    }
+    geo.setDrawRange(0, kept * 3);
+    raycast.call(this, raycaster, intersects);
+  };
+  return mesh;
 }
 
 /** What the fitting casts at: the posed copy while one is in use (`withPosedBody`), otherwise the mesh. */

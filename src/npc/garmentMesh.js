@@ -240,21 +240,37 @@ export function edgeLoops(mesh) {
  * distance, and the weights of its three corners. Null if it misses.
  */
 export function rayHit(mesh, origin, dir, pos = (v) => v.rest) {
+  // The same arithmetic as the vector helpers, written out on numbers: this runs for every triangle of a garment for every ray of its fitting.
+  const [ox, oy, oz] = origin;
+  const [dx, dy, dz] = dir;
+  const verts = mesh.verts;
   let best = null;
   for (const tri of mesh.tris) {
-    const [p0, p1, p2] = tri.map((i) => pos(mesh.verts[i]));
-    const e1 = sub(p1, p0);
-    const e2 = sub(p2, p0);
-    const h = cross(dir, e2);
-    const det = dot(e1, h);
+    const p0 = pos(verts[tri[0]]);
+    const p1 = pos(verts[tri[1]]);
+    const p2 = pos(verts[tri[2]]);
+    const e1x = p1[0] - p0[0];
+    const e1y = p1[1] - p0[1];
+    const e1z = p1[2] - p0[2];
+    const e2x = p2[0] - p0[0];
+    const e2y = p2[1] - p0[1];
+    const e2z = p2[2] - p0[2];
+    const hx = dy * e2z - dz * e2y;
+    const hy = dz * e2x - dx * e2z;
+    const hz = dx * e2y - dy * e2x;
+    const det = e1x * hx + e1y * hy + e1z * hz;
     if (Math.abs(det) < 1e-12) continue;
-    const s = sub(origin, p0);
-    const u = dot(s, h) / det;
+    const sx = ox - p0[0];
+    const sy = oy - p0[1];
+    const sz = oz - p0[2];
+    const u = (sx * hx + sy * hy + sz * hz) / det;
     if (u < 0 || u > 1) continue;
-    const q = cross(s, e1);
-    const v = dot(dir, q) / det;
+    const qx = sy * e1z - sz * e1y;
+    const qy = sz * e1x - sx * e1z;
+    const qz = sx * e1y - sy * e1x;
+    const v = (dx * qx + dy * qy + dz * qz) / det;
     if (v < 0 || u + v > 1) continue;
-    const t = dot(e2, q) / det;
+    const t = (e2x * qx + e2y * qy + e2z * qz) / det;
     if (t > 0 && (!best || t < best.t)) best = { tri, t, bary: [1 - u - v, u, v] };
   }
   return best;

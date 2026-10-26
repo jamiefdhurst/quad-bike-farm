@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { OUTFITS, withShirt } from '../src/npc/outfit.js';
+import * as THREE from 'three';
+import { OUTFITS, withShirt, cullRays } from '../src/npc/outfit.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 
 describe('withShirt', () => {
@@ -19,5 +20,43 @@ describe('withShirt', () => {
 
   it('works for every quad colour', () => {
     for (const spec of Object.values(QUAD_SPECS)) expect(withShirt(OUTFITS.farmPolo, spec.bodyColor).colors.shirt).toMatch(/^#[0-9a-f]{6}$/);
+  });
+});
+
+describe('cullRays', () => {
+  const body = () => {
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 24, 16), new THREE.MeshBasicMaterial());
+    mesh.position.set(0.4, 1.1, -0.2);
+    mesh.rotation.set(0.3, 0.8, 0.1);
+    mesh.scale.setScalar(1.5);
+    mesh.updateMatrixWorld(true);
+    return mesh;
+  };
+
+  it('finds the same hits as three does on its own, from every side', () => {
+    const plain = body();
+    const culled = cullRays(body());
+    const caster = new THREE.Raycaster();
+    let hit = 0;
+    for (let i = 0; i < 200; i++) {
+      const from = new THREE.Vector3().setFromSphericalCoords(0.9, Math.acos(1 - ((i * 0.618) % 1) * 2), i * 2.4).add(new THREE.Vector3(0.4, 1.1, -0.2));
+      const to = new THREE.Vector3(0.4, 1.1, -0.2).add(new THREE.Vector3((i % 7) * 0.02 - 0.06, (i % 5) * 0.02 - 0.04, 0));
+      caster.set(from, to.clone().sub(from).normalize());
+      caster.far = from.distanceTo(to);
+      const a = caster.intersectObject(plain, false).map((h) => h.distance);
+      const b = caster.intersectObject(culled, false).map((h) => h.distance);
+      expect(b).toEqual(a);
+      hit += a.length;
+    }
+    expect(hit).toBeGreaterThan(150);
+  });
+
+  it('keeps every triangle for the next ray', () => {
+    const culled = cullRays(body());
+    const caster = new THREE.Raycaster(new THREE.Vector3(5, 5, 5), new THREE.Vector3(0, 1, 0), 0, 0.1);
+    expect(caster.intersectObject(culled, false)).toHaveLength(0);
+    caster.set(new THREE.Vector3(0.4, 3, -0.2), new THREE.Vector3(0, -1, 0));
+    caster.far = 5;
+    expect(caster.intersectObject(culled, false).length).toBeGreaterThan(0);
   });
 });
