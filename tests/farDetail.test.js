@@ -126,6 +126,25 @@ describe('FarDetail set pieces and props', () => {
     far.update({ x: 40, z: 0 }, 1, true); // 155 from the edge
     expect(farm.visible).toBe(true);
   });
+  it('leaves a hidden set piece\'s matrices alone, asks for its world position all the same, and catches up when it is shown', () => {
+    const farm = piece('neighbourFarm', 200, 0);
+    const scene = sceneWith(farm);
+    const far = new FarDetail(scene, params);
+    far.update({ x: 0, z: 0 }, 1, true);
+    expect(farm.visible).toBe(false);
+    const m = farm.children[0];
+    m.position.x = 300;
+    scene.updateMatrixWorld();
+    expect(m.matrixWorld.elements[12]).toBe(200); // not worked out while hidden
+    expect(m.getWorldPosition(new THREE.Vector3()).x).toBe(300); // but asking for it is right
+    m.position.x = 200;
+    far.update({ x: 40, z: 0 }, 1, true);
+    scene.updateMatrixWorld();
+    expect(farm.visible).toBe(true);
+    m.position.x = 250;
+    scene.updateMatrixWorld();
+    expect(m.matrixWorld.elements[12]).toBe(250);
+  });
   it('swaps a set piece with a far version for it beyond fullDistance, with a margin either way', () => {
     const village = piece('village', 200, 0); // spans x 195 to 205
     const farVersion = new THREE.Group();

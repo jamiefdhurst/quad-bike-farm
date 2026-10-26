@@ -40,6 +40,19 @@ export function isSmallPart(mesh) {
   return true;
 }
 
+/**
+ * A hidden piece's matrices are not worked out every frame: the village and the neighbour's farm alone are over 2,000 objects, each composed and
+ * multiplied by the renderer whether drawn or not (about 0.5 ms a frame, #442). They catch up in the frame the piece is shown. Anything that asks
+ * for a hidden object's world position (`getWorldPosition`, `Box3.setFromObject`) updates its own chain, so only a direct read of a `matrixWorld`
+ * under a hidden piece is out of date.
+ */
+export function skipMatricesWhileHidden(o) {
+  const update = o.updateMatrixWorld;
+  o.updateMatrixWorld = function (force) {
+    if (this.visible) update.call(this, force);
+  };
+}
+
 export class FarDetail {
   constructor(scene, params) {
     this.scene = scene;
@@ -118,6 +131,7 @@ export class FarDetail {
       });
       b = box.isEmpty() ? { minX: o.position.x, maxX: o.position.x, minZ: o.position.z, maxZ: o.position.z } : { minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z };
       this.boxes.set(o, b);
+      skipMatricesWhileHidden(o);
     }
     return b;
   }
