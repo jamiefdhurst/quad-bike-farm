@@ -8,6 +8,7 @@
 //   --runs 3 (default 2)  --dwell 2 (seconds held on each view, default 1.5)  --no-build (reuse dist/)  --profile 10 (a CPU profile of
 //   10 s at the spawn, by function; add --dev for readable names: the dev server, not a build, so compare its numbers only with --dev ones)
 //
+//   --stages (where each frame's JS time goes at every spot, from the game's own frame breakdown)
 //   --steps (the loading steps' timeline on the first run, to see which step a slow load spends its time in)
 //
 // CI can't do this (software GL makes ms meaningless); it holds draw calls and triangles only, in the smoke test.
@@ -125,6 +126,7 @@ async function measureOnce(root, profileFor, showSteps) {
     const r = await page.evaluate(measureInPage, { ...MEASURE_ARGS, frames: 10, dwell });
     if (r.error) throw new Error(r.error);
     for (const n of r.notes ?? []) console.error(`perf: ${n}`);
+    if (args.includes('--stages')) for (const [spot, v] of Object.entries(r.spots)) console.error(`perf: ${spot} stages (ms): ${(v.stages ?? []).map(([n, ms]) => `${n} ${ms}`).join(', ')}`);
     return { load: { readyS, mb: bytes / 1e6, heapMb }, spots: r.spots };
   } finally {
     await browser.close();

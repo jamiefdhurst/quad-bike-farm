@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { FarDetail, detailLevel, isSmallPart, VEHICLE_NAMES, BARN_PROP_NAMES, SET_PIECE_NAMES } from '../src/world/farDetail.js';
+import { FarDetail, detailLevel, isSmallPart, isSpeck, pointsAcross, pixelsPerRadian, SPECK_LAYER, VEHICLE_NAMES, BARN_PROP_NAMES, SET_PIECE_NAMES } from '../src/world/farDetail.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../src/core/graphics.js';
 import { LAYOUT } from '../src/world/layout.js';
 
@@ -281,5 +281,132 @@ describe('small things far away', () => {
     far.update(new THREE.Vector3(), 0, true);
     expect(mug.castShadow).toBe(true);
     expect(far.small.length).toBe(0);
+  });
+});
+
+describe('specks: parts too small on the screen to see', () => {
+  const PPR = 650; // about a 1000-point-high window at 75 degrees
+  const at = (x) => ({ x, y: 0, z: 0 });
+  function farDetail(...children) {
+    const far = new FarDetail(sceneWith(...children), params);
+    far.pixelsPerRadian = PPR;
+    return far;
+  }
+
+  it('works out how many points a sphere spans from the field of view and the window', () => {
+    expect(pixelsPerRadian(75, 1000)).toBeCloseTo(651.6, 0);
+    expect(pointsAcross(0.5, 100, 650)).toBeCloseTo(3.25);
+    expect(pointsAcross(0.5, 0, 650)).toBe(Infinity);
+  });
+  it('is a speck under the threshold, and holds until it is clearly bigger, and never when the threshold is 0', () => {
+    expect(isSpeck(0.9, 1)).toBe(true);
+    expect(isSpeck(1.1, 1)).toBe(false);
+    expect(isSpeck(1.1, 1, true)).toBe(true);
+    expect(isSpeck(1.3, 1, true)).toBe(false);
+    expect(isSpeck(0.01, 0)).toBe(false);
+  });
+  it('moves a small part to the undrawn layer once it is far enough off to be under a point, and back when you come near', () => {
+    const v = vehicle(0);
+    const far = farDetail(v.g);
+    far.update(at(30), 1, true); // the body's sphere is 0.87 m: 19 points
+    expect(v.body.layers.isEnabled(0)).toBe(true);
+    expect(v.bolt.layers.isEnabled(0)).toBe(false); // 0.4 points
+    expect(v.bolt.layers.isEnabled(SPECK_LAYER)).toBe(true);
+    far.update(at(5), 1, true);
+    expect(v.bolt.layers.isEnabled(0)).toBe(true);
+  });
+  it('leaves a bigger part out only when it is further off', () => {
+    const v = vehicle(0);
+    const far = farDetail(v.g);
+    far.update(at(800), 1, true); // the body's sphere is 0.87 m: 0.87 / 800 * 650 = 0.7 points
+    expect(v.body.layers.isEnabled(0)).toBe(false);
+    far.update(at(500), 1, true); // 1.1 points: past the threshold but inside the margin, so it stays out
+    expect(v.body.layers.isEnabled(0)).toBe(false);
+    far.update(at(300), 1, true);
+    expect(v.body.layers.isEnabled(0)).toBe(true);
+  });
+  it('counts the height too, and the part\'s own position inside its parent', () => {
+    const v = vehicle(0);
+    const far = farDetail(v.g);
+    v.bolt.position.set(0, 0, 0);
+    v.g.position.y = 0;
+    far.update({ x: 0, y: 30, z: 0 }, 1, true);
+    expect(v.bolt.layers.isEnabled(0)).toBe(false);
+    v.bolt.position.set(0, 29.9, 0); // right at the camera
+    v.g.updateMatrixWorld(true);
+    far.update({ x: 0, y: 30, z: 0 }, 1, true);
+    expect(v.bolt.layers.isEnabled(0)).toBe(true);
+  });
+  it('keeps a light\'s lens, a part marked to keep and a skinned or instanced mesh', () => {
+    const v = vehicle(0);
+    const kept = box(0.02);
+    kept.userData.keepFar = true;
+    const batch = new THREE.InstancedMesh(new THREE.BoxGeometry(0.02, 0.02, 0.02), new THREE.MeshStandardMaterial(), 3);
+    v.g.add(kept, batch);
+    v.g.updateMatrixWorld(true);
+    const far = farDetail(v.g);
+    far.update(at(500), 1, true);
+    expect(v.lens.layers.isEnabled(0)).toBe(true);
+    expect(kept.layers.isEnabled(0)).toBe(true);
+    expect(batch.layers.isEnabled(0)).toBe(true);
+    expect(v.bolt.layers.isEnabled(0)).toBe(false);
+  });
+  it('does not touch visible, so what the game shows and hides is its own', () => {
+    const v = vehicle(0);
+    v.bolt.visible = false;
+    const far = farDetail(v.g);
+    far.update(at(500), 1, true);
+    far.update(at(1), 1, true);
+    expect(v.bolt.visible).toBe(false);
+    expect(v.body.visible).toBe(true);
+  });
+  it('draws everything when the threshold is 0 or the view is not known', () => {
+    const v = vehicle(0);
+    const off = new FarDetail(sceneWith(v.g), { ...params, partPixels: 0 });
+    off.pixelsPerRadian = PPR;
+    off.update(at(500), 1, true);
+    expect(v.bolt.layers.isEnabled(0)).toBe(true);
+    const blind = new FarDetail(sceneWith(v.g), params);
+    blind.update(at(500), 1, true);
+    expect(v.bolt.layers.isEnabled(0)).toBe(true);
+  });
+  it('brings the parts back when the view stops being known (photo mode) or the threshold is turned to 0', () => {
+    const v = vehicle(0);
+    const far = farDetail(v.g);
+    far.update(at(500), 1, true);
+    expect(v.bolt.layers.isEnabled(0)).toBe(false);
+    far.pixelsPerRadian = 0;
+    far.update(at(500), 1, true);
+    expect(v.bolt.layers.isEnabled(0)).toBe(true);
+    far.pixelsPerRadian = PPR;
+    far.update(at(500), 1, true);
+    far.params = { ...params, partPixels: 0 };
+    far.update(at(500), 1, true);
+    expect(v.bolt.layers.isEnabled(0)).toBe(true);
+  });
+  it('notices a part fitted since, and puts back one that is taken off', () => {
+    const v = vehicle(0);
+    const far = farDetail(v.g);
+    far.update(at(500), 1, true);
+    const fitted = box(0.02);
+    v.g.add(fitted);
+    v.g.updateMatrixWorld(true);
+    for (let i = 0; i < 25; i++) far.update(at(500), 1, true);
+    expect(fitted.layers.isEnabled(0)).toBe(false);
+    v.g.remove(v.bolt);
+    for (let i = 0; i < 25; i++) far.update(at(500), 1, true);
+    expect(v.bolt.layers.isEnabled(0)).toBe(true);
+  });
+  it('leaves the set pieces, the barn\'s props and the camera to their own rules', () => {
+    for (const name of [SET_PIECE_NAMES[0], BARN_PROP_NAMES[0]]) {
+      const g = new THREE.Group();
+      g.name = name;
+      const m = box(0.02);
+      g.add(m);
+      g.updateMatrixWorld(true);
+      const far = farDetail(g);
+      far.update(at(500), 1, true);
+      expect(m.layers.isEnabled(0)).toBe(true);
+    }
   });
 });

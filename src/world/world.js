@@ -5,7 +5,7 @@ import { Track } from './track.js';
 import { createTerrainHeight } from './terrainHeight.js';
 import { createTerrain } from './terrain.js';
 import { DrawDistance } from './tiledInstances.js';
-import { FarDetail } from './farDetail.js';
+import { FarDetail, pixelsPerRadian } from './farDetail.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../core/graphics.js';
 import { buildProps } from './props.js';
 import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLevel, barnShape } from './barn.js';
@@ -299,6 +299,7 @@ export class World {
     }
     this.sky.update(dt, focus, camera);
     this.drawDistance.update(camera.position);
+    this.farDetail.pixelsPerRadian = pixelsPerRadian(camera.fov, this.farDetail.viewHeight || window.innerHeight);
     this.farDetail.update(camera.position, dt);
   }
 }
