@@ -43,7 +43,7 @@ describe('the frame budget', () => {
   });
 
   it('keeps spawn at the budget the game has had since it was set', () => {
-    expect(BUDGETS.spawn).toEqual({ calls: 2600, triangles: 3.5e6 });
+    expect(BUDGETS.spawn).toEqual({ calls: 2040, triangles: 3.5e6 });
   });
 
   it('only knows overruns for spots that have a budget', () => {

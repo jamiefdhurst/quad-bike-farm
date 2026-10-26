@@ -13,6 +13,7 @@ export const DEFAULT_GRAPHICS_PARAMS = {
   shadowDistance: 80, // metres beyond which a vehicle casts no shadow (0: always)
   shadowSize: 64, // metres across the square the sun's shadows are drawn in (it was 90, centred on you)
   shadowAhead: 22, // metres that square is pushed ahead of you along the way you look, so little is drawn behind you (0: centred on you)
+  partPixels: 1, // screen points a part's bounding sphere has to span (radius) to be drawn: a bolt, a cable or a fender too far off to see is left out (0: all drawn)
   smallShadowDistance: 20, // metres beyond which a small thing (a mug, a bottle, a tool, a bolt) casts no shadow (0: always)
 };
 
@@ -28,6 +29,7 @@ export const GRAPHICS_PARAM_RANGES = {
   shadowDistance: [0, 400, 5],
   shadowSize: [30, 150, 5],
   shadowAhead: [0, 60, 1],
+  partPixels: [0, 4, 0.1],
   smallShadowDistance: [0, 200, 5],
 };
 

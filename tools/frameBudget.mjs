@@ -9,13 +9,13 @@
 // A budget is raised only on purpose, with a line in docs/decisions/performance.md saying why (.claude/rules/checking.md).
 /** Per spot: the most draw calls and triangles a frame may take there. */
 export const BUDGETS = {
-  spawn: { calls: 2600, triangles: 3.5e6 },
-  // The others are what each measured after #365 (yard 2,945 and 3.63M, village 3,957 and 4.15M, wood 1,901 and 3.95M, hilltop 2,396 and
-  // 6.97M) and about 8% over. Before it they were 5,652, 5,227, 3,424 and 4,271 calls, so these are tightened with it.
-  yard: { calls: 3200, triangles: 3.9e6 },
-  village: { calls: 4300, triangles: 4.5e6 },
-  wood: { calls: 2050, triangles: 4.3e6 },
-  hilltop: { calls: 2600, triangles: 7.5e6 },
+  spawn: { calls: 2040, triangles: 3.5e6 },
+  // The others are what each measured after #451 (yard 2,432 and 3.50M, the most the smoke test saw, village 3,170 and 3.80M, wood 1,232 and 3.80M, hilltop 1,530 and 6.70M)
+  // and about 8% over. Before it (and after #365) they were 2,945, 3,957, 1,901 and 2,396 calls: parts too small to see are no longer drawn.
+  yard: { calls: 2630, triangles: 3.8e6 },
+  village: { calls: 3430, triangles: 4.1e6 },
+  wood: { calls: 1330, triangles: 4.1e6 },
+  hilltop: { calls: 1650, triangles: 7.2e6 },
 };
 
 /** Spots over their budget today, which are reported and not failed on until the issue that brings them back under makes them strict. None now:
@@ -27,7 +27,7 @@ export const SPOTS = Object.keys(BUDGETS);
 /** The spots (and what is measured at each) as the page sees them. Runs in the browser, so it is self-contained. Returns { [spot]: { calls, triangles } } or { error }.
  * With `dwell` (seconds, on a real GPU: tools/perf.mjs) each view is also held that long and timed: `ms` and `worstMs` from frameStats and the three
  * slowest features, the worst view's kept. */
-export async function measureInPage({ spots, headings, frames, dwell = 0 }) {
+export async function measureInPage({ spots, headings, frames, dwell = 0, viewHeight = 0 }) {
   const g = window.game;
   const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
   const settle = async (n) => { for (let i = 0; i < n; i++) await frame(); };
@@ -36,6 +36,7 @@ export async function measureInPage({ spots, headings, frames, dwell = 0 }) {
   info.autoReset = false;
   const count = async () => {
     await settle(3); // the update that follows a move decides what is drawn
+    g.world.farDetail.update(g.camera.position, 0, true); // and the far detail looks only every quarter second, so bring it up to date
     info.reset();
     // The game does not draw on every animation frame, so count the draws themselves (render.frame goes up once a render).
     const from = info.render.frame;
@@ -45,15 +46,16 @@ export async function measureInPage({ spots, headings, frames, dwell = 0 }) {
     if (dwell > 0) {
       await new Promise((ok) => setTimeout(ok, dwell * 1000)); // longer than frameStats' window, so it is this view's frames only
       const t = g.frameStats.summary();
-      Object.assign(r, { ms: t.ms, worstMs: t.worstMs, slowest: g.guard.slowest(3) });
+      Object.assign(r, { ms: t.ms, worstMs: t.worstMs, slowest: g.guard.slowest(3), stages: g.frameBreakdown.summary().map((s) => [s.name, Math.round(s.ms * 100) / 100]) });
     }
     return r;
   };
   const worst = (a, b) => {
     const w = { calls: Math.max(a.calls, b.calls), triangles: Math.max(a.triangles, b.triangles) };
-    if (b.ms !== undefined) Object.assign(w, { ms: Math.max(a.ms ?? 0, b.ms), worstMs: Math.max(a.worstMs ?? 0, b.worstMs), slowest: (a.ms ?? -1) >= b.ms ? a.slowest : b.slowest });
+    if (b.ms !== undefined) Object.assign(w, { ms: Math.max(a.ms ?? 0, b.ms), worstMs: Math.max(a.worstMs ?? 0, b.worstMs), slowest: (a.ms ?? -1) >= b.ms ? a.slowest : b.slowest, stages: (a.ms ?? -1) >= b.ms ? a.stages : b.stages });
     return w;
   };
+  g.world.farDetail.viewHeight = viewHeight; // what is too small to see depends on the window, and the check's may be tiny: count as in one this high
   const layout = g.world.layout;
   const out = {};
   const notes = [];
@@ -102,6 +104,7 @@ export async function measureInPage({ spots, headings, frames, dwell = 0 }) {
       } else notes.push('no hill on this farm');
     }
   } finally {
+    g.world.farDetail.viewHeight = 0;
     info.autoReset = wasAuto;
     g.player.moveTo({ x: home.x, y: home.y, z: home.z });
     g.player.yaw = home.yaw;
@@ -110,7 +113,7 @@ export async function measureInPage({ spots, headings, frames, dwell = 0 }) {
   return { spots: out, notes };
 }
 
-export const MEASURE_ARGS = { spots: SPOTS, headings: [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2], frames: 3 };
+export const MEASURE_ARGS = { spots: SPOTS, headings: [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2], frames: 3, viewHeight: 1000 };
 
 /**
  * Compare measured numbers with the budgets.
