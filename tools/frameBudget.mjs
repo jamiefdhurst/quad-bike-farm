@@ -44,15 +44,19 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
     const drawn = Math.max(1, info.render.frame - from);
     const r = { calls: info.render.calls / drawn, triangles: info.render.triangles / drawn };
     if (dwell > 0) {
+      const from = performance.now() / 1000;
       await new Promise((ok) => setTimeout(ok, dwell * 1000)); // longer than frameStats' window, so it is this view's frames only
       const t = g.frameStats.summary();
-      Object.assign(r, { ms: t.ms, worstMs: t.worstMs, slowest: g.guard.slowest(3), stages: g.frameBreakdown.summary().map((s) => [s.name, Math.round(s.ms * 100) / 100]) });
+      // The stutter figures (#373) are missing from a build of main from before they existed, which perf.mjs --main measures too.
+      const low = g.frameStats.since?.(from);
+      const causes = (g.stutters?.log.items ?? []).filter((x) => x.at >= from).map((x) => `${Math.round(x.ms)} ms, ${x.cause}`);
+      Object.assign(r, { ms: t.ms, worstMs: t.worstMs, ...low, causes, slowest: g.guard.slowest(3), stages: g.frameBreakdown.summary().map((s) => [s.name, Math.round(s.ms * 100) / 100]) });
     }
     return r;
   };
   const worst = (a, b) => {
     const w = { calls: Math.max(a.calls, b.calls), triangles: Math.max(a.triangles, b.triangles) };
-    if (b.ms !== undefined) Object.assign(w, { ms: Math.max(a.ms ?? 0, b.ms), worstMs: Math.max(a.worstMs ?? 0, b.worstMs), slowest: (a.ms ?? -1) >= b.ms ? a.slowest : b.slowest, stages: (a.ms ?? -1) >= b.ms ? a.stages : b.stages });
+    if (b.ms !== undefined) Object.assign(w, { ms: Math.max(a.ms ?? 0, b.ms), worstMs: Math.max(a.worstMs ?? 0, b.worstMs), ...(b.p99Ms === undefined ? {} : { p99Ms: Math.max(a.p99Ms ?? 0, b.p99Ms), longFrames: (a.longFrames ?? 0) + b.longFrames }), causes: [...(a.causes ?? []), ...(b.causes ?? [])].slice(-3), slowest: (a.ms ?? -1) >= b.ms ? a.slowest : b.slowest, stages: (a.ms ?? -1) >= b.ms ? a.stages : b.stages });
     return w;
   };
   g.world.farDetail.viewHeight = viewHeight; // what is too small to see depends on the window, and the check's may be tiny: count as in one this high

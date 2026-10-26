@@ -13,7 +13,7 @@ import { resolve, walk, show, describe, parseValue, pathCandidates } from './she
  *   dump(text): void                      (copies to the clipboard)
  *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   farmEndDay(): string   (the farm that remembers)
  *   errors(): [{ name, count, message }]   clearErrors(): void   (features whose update threw, caught by core/featureGuard.js)
- *   perf(): { fps, ms, worstMs, calls, triangles, width, height, pixelRatio, maxFps }   (how hard the game is working)
+ *   perf(): { fps, ms, worstMs, p99Ms, longFrames, longTotal, longFrameCauses, heapMb, allocMbPerSecond, calls, triangles, width, height, pixelRatio, maxFps }   (how hard the game is working)
  */
 
 const GROUPS = ['Looking', 'Changing', 'Moving', 'Vehicles', 'Girls', 'World', 'Console'];
@@ -446,7 +446,7 @@ export function buildCommands(host) {
       name: 'perf',
       group: 'World',
       usage: 'perf',
-      help: 'how hard the game is working: frames a second, the game\'s own time on each, and what the GPU is asked to draw. tune.graphics sets the cap, the render scale and the draw distances',
+      help: 'how hard the game is working: frames a second, the game\'s own time on each, the slowest 1% and what made the long ones long, and what the GPU is asked to draw. tune.graphics sets the cap, the render scale and the draw distances',
       examples: ['perf', 'tune.graphics.maxFps 0'],
       run: () => {
         const p = host.perf();
@@ -455,6 +455,9 @@ export function buildCommands(host) {
           `${Math.round(p.fps)} fps (cap ${p.maxFps > 0 ? p.maxFps : 'none'}), ${round(p.ms, 2)} ms a frame on average, ${round(p.worstMs, 1)} ms at worst`,
           `${k(p.calls)} draw calls and ${k(p.triangles)} triangles a frame, shadows included`,
           `${p.width} x ${p.height} pixels (render scale ${p.pixelRatio})`,
+          ...(p.p99Ms === undefined ? [] : [`slowest 1% of frames ${round(p.p99Ms, 1)} ms; ${p.longFrames} over 33 ms in the last 10 s (${p.longTotal} since the game started)`]),
+          ...(p.longFrameCauses?.length ? [`last long frames: ${p.longFrameCauses.join('; ')}`] : []),
+          ...(p.heapMb ? [`memory ${Math.round(p.heapMb)} MB, allocating ${round(p.allocMbPerSecond, 1)} MB a second`] : []),
           ...(p.stages?.length ? [`where the time goes: ${p.stages.map((x) => `${x.name} ${round(x.ms, 2)}`).join(', ')} (ms)`] : []),
         ];
       },

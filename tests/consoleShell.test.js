@@ -48,7 +48,7 @@ function makeWorld() {
     farmEndDay: () => 'fading to black: day 5 loads next',
     errors: () => (state.errors ?? []),
     clearErrors: () => (state.errors = []),
-    perf: () => ({ fps: 59.8, ms: 4.234, worstMs: 9.06, calls: 812, triangles: 1234567, width: 2592, height: 1676, pixelRatio: 1.5, maxFps: 60 }),
+    perf: () => ({ fps: 59.8, ms: 4.234, worstMs: 9.06, calls: 812, triangles: 1234567, width: 2592, height: 1676, pixelRatio: 1.5, maxFps: 60, ...state.perfExtra }),
     farmLoad: (json) => {
       const s = JSON.parse(json);
       state.loaded = s;
@@ -316,5 +316,14 @@ describe('perf', () => {
     expect(text(shell.run('perf'))).toBe(
       '60 fps (cap 60), 4.23 ms a frame on average, 9.1 ms at worst\n812 draw calls and 1.23M triangles a frame, shadows included\n2592 x 1676 pixels (render scale 1.5)',
     );
+  });
+
+  it('says the stutters, what caused them and the memory, when the game reports them', () => {
+    const { shell, state } = makeWorld();
+    state.perfExtra = { p99Ms: 21.46, longFrames: 2, longTotal: 5, longFrameCauses: ['41 ms, memory clean-up', '36 ms, drawing (30 ms)'], heapMb: 183.4, allocMbPerSecond: 12.34 };
+    const lines = text(shell.run('perf')).split('\n');
+    expect(lines).toContain('slowest 1% of frames 21.5 ms; 2 over 33 ms in the last 10 s (5 since the game started)');
+    expect(lines).toContain('last long frames: 41 ms, memory clean-up; 36 ms, drawing (30 ms)');
+    expect(lines).toContain('memory 183 MB, allocating 12.3 MB a second');
   });
 });

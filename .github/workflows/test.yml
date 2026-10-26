@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: test-${{ github.event.pull_request.number }}
@@ -69,6 +70,8 @@ jobs:
       # if main can't be built or measured the table just has no change column.
       - name: Frame budget against main
         if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         timeout-minutes: 12
         run: |
           [ -f budget-pr.json ] || { echo "No frame budget numbers: the smoke test stopped before measuring." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
@@ -76,7 +79,10 @@ jobs:
             && ln -s "$PWD/node_modules" ../main-base/node_modules && (cd ../main-base && npm run build); then
             CHROME_PATH=$(which google-chrome) node tools/budget.mjs --root ../main-base --dist dist --out budget-main.json || echo "main could not be measured"
           fi
-          node tools/budget.mjs --summary budget-pr.json budget-main.json >> "$GITHUB_STEP_SUMMARY"
+          # The last ten merges to main (perf-history.yml keeps the history as an artifact); no history yet just leaves the trend out.
+          run=$(gh run list --workflow perf-history.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty' || true)
+          [ -n "$run" ] && gh run download "$run" -n budget-history -D history || echo "no budget history yet"
+          node tools/budget.mjs --summary budget-pr.json budget-main.json --history history/history.json >> "$GITHUB_STEP_SUMMARY"
 
   # always(): if a Unit shard or Smoke fails this would otherwise be skipped, and a skipped required check counts as passed.
   Test:
