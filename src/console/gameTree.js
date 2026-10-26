@@ -436,7 +436,6 @@ export function buildGameTree(g, host) {
   }), 'the neighbour over the lane');
   const river = group(() => ({
     now: text(() => g.describeRiver(), 'where you are at the river (on the crossing, in the deep water, on the bank) and how far up it is'),
-    go: flag(() => false, (v) => v && g.debugGoToRiver(), 'set to true: put you on foot on the south bank by the marked crossing'),
   }), 'the river past the pasture, and its crossing');
   const village = group(() => ({
     now: text(() => g.villageHost.describe(), 'the village down the lane: its limit, what was last bought and the fuel prices'),

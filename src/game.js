@@ -2195,16 +2195,6 @@ export class Game {
     return `${zone ? `you are ${zone === 'crossing' ? 'on the crossing' : zone === 'deep' ? 'in the deep water' : 'on the bank'}` : 'you are away from it'}; the river is ${(this.world.streamLevel.level * 100).toFixed(0)}% up`;
   }
 
-  /** Puts you on foot on the south bank by the crossing (the debug panel and `river go`). False if you are riding. */
-  debugGoToRiver() {
-    const river = this.world.river;
-    if (!river || this.player.isRiding) return false;
-    const x = river.cross.x - river.cross.half;
-    const z = this.world.heights.brook.zAt(x) + this.world.heights.brook.halfAt(x) + 4;
-    this.player.moveTo({ x, y: this.world.groundHeightAt(x, z), z });
-    return true;
-  }
-
   /** J on the tractor or a quad with a rack: hook a trailer on when the hitch is at its ring, or take it off when you're stopped. */
   toggleHitch() {
     const unit = this.riddenUnit;
