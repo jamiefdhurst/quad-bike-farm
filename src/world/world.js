@@ -1,3 +1,4 @@
+import { createRiver } from './river.js';
 import { createCattleGrid } from './cattleGrid.js';
 import { LAYOUT } from './layout.js';
 import { Track } from './track.js';
@@ -37,6 +38,7 @@ export class World {
     this.track = new Track(layout.trackPoints);
     this.heights = createTerrainHeight(layout, this.track);
     this.fields = createFields(layout);
+    this.river = createRiver(layout, this.heights.brook); // the river's crossing and what zone a point is in (river.js)
     this.cattleGrid = createCattleGrid(layout); // across the road in the grass field's east gateway, or null
     this.outbuildings = createOutbuildings(layout); // the Dutch barn, the field shed, the muck heap and the trough out east
 
@@ -237,6 +239,11 @@ export class World {
     const brook = this.heights.brook;
     if (brook && brook.waterAt(x, z) > 0.5) return this.streamLevel.gulp;
     return hill && hill.waterAt(x, z) > 0.5 && Math.abs(z - hill.streamZ(x)) <= hill.halfAt(x) + 1 ? this.streamLevel.gulp : 1;
+  }
+
+  /** 0..1 how deep the river's water is at (x, z): over the intake, so an engine in it floods at any speed (0 on the crossing, in the brook and everywhere else). */
+  deepWaterAt(x, z) {
+    return this.heights.brook?.deepAt(x, z) ?? 0;
   }
 
   /** The stream follows the rain: its surface lifts, browns and runs faster as the level rises. */

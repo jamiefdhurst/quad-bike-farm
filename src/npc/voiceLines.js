@@ -26,6 +26,7 @@ import { AMY_GENERATOR_LINES } from './generatorLines.js';
 import { AMY_HAY_LINES } from './hayLines.js';
 import { AMY_SPRAY_LINES } from './sprayLines.js';
 import { AMY_STREAM_LINES } from './streamLines.js';
+import { AMY_RIVER_LINES } from './riverLines.js';
 import { AMY_WATER_LINES } from './waterLines.js';
 import { AMY_HEAT_LINES } from './heatLines.js';
 import { AMY_SILENCER_LINES } from './silencerLines.js';
@@ -1486,6 +1487,7 @@ export const VOICE_LINES = {
   ...AMY_HAY_LINES,
   ...AMY_SPRAY_LINES,
   ...AMY_STREAM_LINES,
+  ...AMY_RIVER_LINES,
   ...AMY_WATER_LINES,
   // Heat (heatLines.js).
   ...AMY_HEAT_LINES,

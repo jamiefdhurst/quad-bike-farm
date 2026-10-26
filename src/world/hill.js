@@ -32,6 +32,8 @@ export function createHill(layout) {
         { side: 1, x: laneRect.maxX, z: pad.east.gate.z, half: pad.east.gate.width / 2 },
       ]
     : [];
+  // The riverside meadow beyond the pasture's east hedge, where the river runs (world/brook.js); it is entered by a gateway in that hedge.
+  const riverside = hill.riverside ? { ...hill.riverside } : null;
   const pond = pad?.west.pond ?? null;
   const knolls = pad?.east.knolls ?? [];
   /** How far (x, z) is through the pond, 0 at its middle and 1 at the edge of the ground it dishes. */
@@ -246,9 +248,9 @@ export function createHill(layout) {
   const setRise = (metres) => {
     rise = Math.max(0, metres);
   };
-  const outsideHill = (x, z) => Math.min(outside(pasture, x, z), outside(laneRect, x, z), west ? outside(west, x, z) : Infinity, east ? outside(east, x, z) : Infinity);
+  const outsideHill = (x, z) => Math.min(outside(pasture, x, z), outside(laneRect, x, z), west ? outside(west, x, z) : Infinity, east ? outside(east, x, z) : Infinity, riverside ? outside(riverside, x, z) : Infinity);
   return {
-    lane, pasture, stream, laneRect, west, east, gates, pond, knolls, top, total, waitSpot,
+    lane, pasture, stream, laneRect, west, east, riverside, gates, pond, knolls, top, total, waitSpot,
     streamZ, halfAt, depthAt, waterDepthAt, farEdge, climb, climbSlope, sinkAt, channelAt, profile, weight,
     setRise, get rise() { return rise; },
     waterAt, mudAt, sheepFieldOk, pondCut, knollLift, lineDistance, brackenAt, gorseAt, inPasture, inLane, inWest, inEast, inPaddock, inWood, pastFoot, outside: outsideHill,

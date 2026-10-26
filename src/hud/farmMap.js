@@ -60,6 +60,7 @@ export function mapBounds(fields, margin = MAP_MARGIN) {
   if (fields.areas.hill) r = union(r, fields.areas.hill);
   if (fields.areas.meadow) r = union(r, fields.areas.meadow);
   if (fields.areas.sheep) r = union(r, fields.areas.sheep);
+  if (fields.areas.riverside) r = union(r, fields.areas.riverside);
   if (fields.areas.woods) r = union(r, fields.areas.woods);
   return { minX: r.minX - margin, maxX: r.maxX + margin, minZ: r.minZ - margin, maxZ: r.maxZ + margin };
 }
@@ -127,7 +128,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const A = fields.areas;
   const hill = fields.hill;
   const crop = (k) => layout.stubbleFields?.[k]?.crop;
-  const fieldFill = { grass: C.grass, road: C.verge, end: C.verge, north: crop('north') === 'barley' ? C.barley : C.wheat, south: crop('south') === 'barley' ? C.barley : C.wheat, lane: C.lane, hill: C.pasture, meadow: C.pasture, sheep: C.pasture, woods: C.woodland };
+  const fieldFill = { grass: C.grass, road: C.verge, end: C.verge, north: crop('north') === 'barley' ? C.barley : C.wheat, south: crop('south') === 'barley' ? C.barley : C.wheat, lane: C.lane, hill: C.pasture, meadow: C.pasture, sheep: C.pasture, riverside: C.pasture, woods: C.woodland };
   const areas = Object.entries(A).map(([kind, rect]) => ({ kind, rect, fill: fieldFill[kind] ?? C.grass }));
 
   const hedges = [];
@@ -198,6 +199,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (A.south) field(`${cap(crop('south') ?? 'stubble')} stubble`, (A.south.minX + A.south.maxX) / 2 + 10, A.south.maxZ - 14);
   if (A.meadow) field('Wet meadow', (A.meadow.minX + A.meadow.maxX) / 2 - 10, A.meadow.minZ + 10);
   if (A.sheep) field('Sheep field', (A.sheep.minX + A.sheep.maxX) / 2 + 6, A.sheep.minZ + 8);
+  if (A.riverside) field('Riverside meadow', (A.riverside.minX + A.riverside.maxX) / 2, A.riverside.maxZ - 10);
   if (hill) field('Hill pasture', (hill.pasture.minX + hill.pasture.maxX) / 2 + 12, hill.pasture.maxZ - 12);
   if (b) place('Barn', b.x - 5, b.z + b.halfZ + 6); // south-west of it, clear of the quads parked in the yard (which has no name: it's crowded)
   if (paddock) place('Paddock', p.x, p.z, p.half + 4);
@@ -213,6 +215,8 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     place('Lane', hill.lane.x + 9, (layout.fieldHalf + hill.lane.toZ) / 2);
     place('Ford', hill.lane.x + 9, ford.z + 1);
     place('Stream', hill.pasture.maxX - 16, hill.streamZ(hill.pasture.maxX - 16) - 4);
+    const cr = layout.hill.river?.crossing;
+    if (cr) place('River crossing', cr.x, createBrook(layout).zAt(cr.x) + layout.hill.river.halfWidth + 5);
   }
   if (wood) place('Wood', (wood.minX + wood.maxX) / 2, (wood.minZ + wood.maxZ) / 2);
   if (woods) {
@@ -226,7 +230,10 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   place(layout.trackName ?? 'Track', tp.x + 8, tp.z);
 
   // The map's key, north arrow and scale go in the neighbours' land south of the farm and east of the hill, where there's room.
-  const key = { minX: (A.hill?.maxX ?? fields.farm.minX) + (nf ? 4 : 10), maxX: Math.min(bounds.maxX - 4, nf ? nf.yard.minX - 6 : Infinity), minZ: fields.farm.maxZ + 8, maxZ: bounds.maxZ - 4 };
+  // With the riverside meadow there (south of the farm, beyond the hill), they go in the open ground north-east of the farm instead, past the wood.
+  const key = A.riverside && A.woods
+    ? { minX: A.woods.maxX + 4, maxX: bounds.maxX - 4, minZ: bounds.minZ + 4, maxZ: fields.farm.minZ - 8 }
+    : { minX: (A.hill?.maxX ?? fields.farm.minX) + (nf ? 4 : 10), maxX: Math.min(bounds.maxX - 4, nf ? nf.yard.minX - 6 : Infinity), minZ: fields.farm.maxZ + 8, maxZ: bounds.maxZ - 4 };
 
   return {
     bounds, key, areas, hedges, gates, stream, ford, pond, road, track: { points: track.points, half: layout.trackHalfWidth }, bogs, dragStrip, ramp,

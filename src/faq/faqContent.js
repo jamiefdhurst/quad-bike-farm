@@ -415,6 +415,21 @@ export const FAQ_SECTIONS = [
         tip: 'A snorkel, fitted at the barn workbench, lets a Moorland take the ford fast.',
       },
       {
+        q: 'Where is the river, and how do I cross it?',
+        a: `Ride up the green lane, over the ford and up the hill pasture, then look for the gateway in its east hedge, just up from
+          the stream at the east side. It opens onto the riverside meadow, with a wide, slow river across it. The only safe way over is the crossing, a strip of pale
+          gravel between two lines of white posts with a red band, where the water is about 20 cm deep. Keep your wheels between the posts and
+          you can ride it at a walking pace or faster. A willow stands on the bank either side and a hurdle shuts the river in at the far end.`,
+        tip: 'The river is through the gateway in the pasture\'s east hedge. Cross it between the white posts.',
+      },
+      {
+        q: 'What happens if I miss the posts and ride into the river?',
+        a: `Outside the posts the river is deep, nearly a metre, and it is over the intake whatever speed you are doing, so the engine drowns within a second
+          or two, however slowly you go in. Reverse out, then let it drain (about 45 s standing, quicker running with the throttle open) before it will
+          start. A snorkel only lets in less; it does not keep a Moorland clear of water that deep. The girls will have something to say.`,
+        tip: 'Outside the white posts the river is deep enough to drown any engine, at any speed.',
+      },
+      {
         q: 'Why is the ford deeper than it was?',
         a: `The stream comes up with the rain. After a few minutes of steady rain it stands higher, runs browner and faster, and the ford is nearly twice as deep, so a quad drowns more easily in it. It drops back over ten minutes or more once the rain stops. Wait for it to go down, or cross very slowly. A girl nearby will tell you when it is up and when it has gone down.`,
         tip: 'After rain the stream rises and the ford drowns engines more easily. Wait, or go very slowly.',

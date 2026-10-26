@@ -7,6 +7,7 @@ import { createHill } from './hill.js';
 import { createWoods } from './woods.js';
 import { createOutbuildings } from './outbuildings.js';
 import { villageShape } from './village.js';
+import { createBrook } from './brook.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -75,6 +76,7 @@ export function createFields(layout) {
     areas.hill = { ...hill.pasture };
     if (hill.west) areas.meadow = { ...hill.west };
     if (hill.east) areas.sheep = { ...hill.east };
+    if (hill.riverside) areas.riverside = { ...hill.riverside };
   }
   if (woods) areas.woods = { ...woods.rect };
   // On foot, a girl wandering about the hill pasture keeps to the bottom of it, over the stream from the lane: this rect, less the 6 m margin
@@ -90,10 +92,10 @@ export function createFields(layout) {
     wanderAreas.hill = { minX: hill.lane.x - 14, maxX: hill.lane.x + 14, minZ: lo - 6, maxZ: Math.max(lo, hi) + 6 };
   }
 
-  /** Which field (x, z) is in: 'grass', 'road', 'end', 'north', 'south', 'lane', 'hill', 'meadow' (west of the lane), 'sheep' (east of it), 'woods' (through the north gate), or 'out' beyond the hedges. */
+  /** Which field (x, z) is in: 'grass', 'road', 'end', 'north', 'south', 'lane', 'hill', 'meadow' (west of the lane), 'sheep' (east of it), 'riverside' (beyond the pasture's east hedge, where the river runs), 'woods' (through the north gate), or 'out' beyond the hedges. */
   function areaOf(x, z) {
     if (inRect(grass, x, z)) return 'grass';
-    for (const k of ['road', 'end', 'north', 'south', 'lane', 'hill', 'meadow', 'sheep', 'woods']) if (areas[k] && inRect(areas[k], x, z)) return k;
+    for (const k of ['road', 'end', 'north', 'south', 'lane', 'hill', 'meadow', 'sheep', 'riverside', 'woods']) if (areas[k] && inRect(areas[k], x, z)) return k;
     return 'out';
   }
 
@@ -102,6 +104,8 @@ export function createFields(layout) {
   const gateGap = { id: 'south', at: gate.x, half: gate.width / 2 + 0.35, gate: true, shut: !gate.open };
   const northGap = woods ? { id: 'north', at: woods.gate.x, half: woods.gate.width / 2 + 0.35, gate: true, shut: !woods.gate.open } : null;
   const roadGap = road?.gate ? { id: 'road', at: road.z, half: road.gate.width / 2 + 0.35, gate: true, shut: true } : null; // the game opens and shuts both (world/gates.js)
+  const brook = createBrook(layout);
+  const riverGap = hill?.riverside && brook ? { at: brook.zAt(hill.riverside.maxX), half: brook.halfAt(hill.riverside.maxX) + 1.6, shut: true } : null;
   const hedges = [
     { x1: -F, z1: -F, x2: F, z2: -F, gaps: northGap ? [northGap] : [] },
     { x1: -F, z1: F, x2: F, z2: F, gaps: [gateGap] },
@@ -148,8 +152,19 @@ export function createFields(layout) {
       { x1: p.minX, z1: p.minZ, x2: p.maxX, z2: p.minZ, gaps: [hill.west ? { at: (p.minX + p.maxX) / 2, half: (p.maxX - p.minX) / 2 + 1 } : { at: lane.x, half: lane.hedgeOff }] },
       { x1: p.minX, z1: p.maxZ, x2: p.maxX, z2: p.maxZ, gaps: [] },
       { x1: p.minX, z1: p.minZ, x2: p.minX, z2: p.maxZ, gaps: [] },
-      { x1: p.maxX, z1: p.minZ, x2: p.maxX, z2: p.maxZ, gaps: [] },
+      { x1: p.maxX, z1: p.minZ, x2: p.maxX, z2: p.maxZ, gaps: hill.riverside ? [{ at: hill.riverside.gate.z, half: hill.riverside.gate.width / 2 }] : [] },
     );
+    if (hill.riverside) {
+      // The riverside meadow's other three sides; its west side is the pasture's east hedge (above) and the sheep field's, which meet at the corner.
+      // The river runs out under its east hedge (the water is at the hedge's foot, as at the pasture's).
+      const r = hill.riverside;
+      hedges.push(
+        { x1: r.minX, z1: r.minZ, x2: r.maxX, z2: r.minZ, gaps: [] },
+        { x1: r.minX, z1: r.maxZ, x2: r.maxX, z2: r.maxZ, gaps: [] },
+        // Open where the river runs out, which a hurdle across the water shuts (world/riverProps.js).
+        { x1: r.maxX, z1: r.minZ, x2: r.maxX, z2: r.maxZ, gaps: riverGap ? [riverGap] : [] },
+      );
+    }
   }
   for (const h of hedges) {
     h.alongX = h.z1 === h.z2;
@@ -221,6 +236,10 @@ export function createFields(layout) {
   link('grass', { x: gate.x, z: F - 2.5 }, hill ? 'lane' : 'out', { x: gate.x, z: F + 2.5 }, gateGap); // a shut gate is no way through
   if (woods) link('grass', { x: woods.gate.x, z: -F + 2.5 }, 'woods', { x: woods.gate.x, z: -F - 2.5 }, northGap);
   if (hill) link('lane', { x: hill.lane.x, z: hill.lane.toZ - 2 }, 'hill', { x: hill.lane.x, z: hill.lane.toZ + 2 });
+  if (hill?.riverside) {
+    const g = hill.riverside.gate;
+    link('hill', { x: hill.pasture.maxX - 2.5, z: g.z }, 'riverside', { x: hill.pasture.maxX + 2.5, z: g.z });
+  }
   if (hill) {
     for (const g of hill.gates) {
       link('lane', { x: g.x - g.side * 2, z: g.z }, g.side < 0 ? 'meadow' : 'sheep', { x: g.x + g.side * 2.5, z: g.z });
