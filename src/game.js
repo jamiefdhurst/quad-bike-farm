@@ -91,6 +91,7 @@ import { RevOff, REVOFF_PARAM_RANGES } from './npc/revOff.js';
 import { DrownOut, DROWNOUT_PARAM_RANGES } from './npc/drownOut.js';
 import { Horns, HORN_PARAM_RANGES } from './npc/horns.js';
 import { TractorWatch, TRACTOR_WATCH_PARAM_RANGES } from './npc/tractorWatch.js';
+import { RiverWatch, RIVER_WATCH_PARAM_RANGES } from './npc/riverWatch.js';
 import { HayRide, HAYRIDE_PARAM_RANGES } from './npc/hayRide.js';
 import { MudguardRide, MUDGUARD_PARAM_RANGES } from './npc/mudguardRide.js';
 import { TractorMount } from './vehicle/tractorMount.js';
@@ -912,6 +913,8 @@ export class Game {
     this.horns = new Horns();
     // What they say about the tractor: the key that doesn't stop it, waiting for the glow plugs, it catching (npc/tractorWatch.js).
     this.tractorWatch = new TractorWatch(undefined, createRandom(this.seed ^ 0x7a7c));
+    // What they say at the river's crossing and when the deep water drowns your engine (npc/riverWatch.js).
+    this.riverWatch = new RiverWatch(undefined, createRandom(this.seed ^ 0x61e5));
     // The tractor creeping off on its own, and the girl who runs after it (npc/tractorRunaway.js, vehicle/creep.js).
     this.tractorRunaway = new TractorRunaway(undefined, createRandom(this.seed ^ 0x7c4e));
     this.runawayJob = null; // { girl, time }: she's running after it
@@ -1765,6 +1768,7 @@ export class Game {
     registerTuning('Drowning out', this.drownOut.p, DROWNOUT_PARAM_RANGES);
     registerTuning('Horns', this.horns.p, HORN_PARAM_RANGES);
     registerTuning('Tractor remarks', this.tractorWatch.p, TRACTOR_WATCH_PARAM_RANGES);
+    registerTuning('River remarks', this.riverWatch.p, RIVER_WATCH_PARAM_RANGES);
     registerTuning('Tractor creep', DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES);
     registerTuning('Throttle key', DEFAULT_THROTTLE_KEY_PARAMS, PEDAL_KEY_PARAM_RANGES);
     registerTuning('Brake key', DEFAULT_BRAKE_KEY_PARAMS, PEDAL_KEY_PARAM_RANGES);
@@ -2164,6 +2168,41 @@ export class Game {
       const girl = this.companions.find((c) => c.character.id === ev.girl);
       girl?.voice.say(`tractor${ev.type[0].toUpperCase()}${ev.type.slice(1)}`, { urgent: true });
     }
+  }
+
+  /** The girls' remarks at the river's crossing and when its deep water drowns your engine (npc/riverWatch.js). */
+  updateRiverWatch(dt) {
+    const river = this.world.river;
+    if (!river) return;
+    const cam = this.camera.position;
+    const unit = this.boardUnit;
+    const at = unit ? unit.quad.position : cam;
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().canRemark, x: c.root.position.x, z: c.root.position.z }));
+    const e = this.riddenUnit?.quad.engine;
+    const drowned = !!e && e.water >= e.params.waterStallAt && river.zoneAt(at.x, at.z) === 'deep';
+    const cz = this.world.heights.brook.zAt(river.cross.x);
+    for (const ev of this.riverWatch.update(dt, { you: { x: at.x, z: at.z }, crossing: { x: river.cross.x, z: cz }, drowned, girls })) {
+      this.companions.find((c) => c.character.id === ev.girl)?.voice.say(ev.type === 'near' ? 'riverNear' : 'riverStall', { urgent: ev.type === 'stall' });
+    }
+  }
+
+  /** Where you are at the river and how the crossing stands, for the panel and the console. */
+  describeRiver() {
+    const river = this.world.river;
+    if (!river) return 'no river on this farm';
+    const at = this.boardUnit ? this.boardUnit.quad.position : this.camera.position;
+    const zone = river.zoneAt(at.x, at.z);
+    return `${zone ? `you are ${zone === 'crossing' ? 'on the crossing' : zone === 'deep' ? 'in the deep water' : 'on the bank'}` : 'you are away from it'}; the river is ${(this.world.streamLevel.level * 100).toFixed(0)}% up`;
+  }
+
+  /** Puts you on foot on the south bank by the crossing (the debug panel and `river go`). False if you are riding. */
+  debugGoToRiver() {
+    const river = this.world.river;
+    if (!river || this.player.isRiding) return false;
+    const x = river.cross.x - river.cross.half;
+    const z = this.world.heights.brook.zAt(x) + this.world.heights.brook.halfAt(x) + 4;
+    this.player.moveTo({ x, y: this.world.groundHeightAt(x, z), z });
+    return true;
   }
 
   /** J on the tractor or a quad with a rack: hook a trailer on when the hitch is at its ring, or take it off when you're stopped. */
@@ -11759,6 +11798,7 @@ export class Game {
     }
     this.guard.run('updateHorns', () => this.updateHorns(dt, ridden));
     if (this.tractorUnit) this.guard.run('updateTractorWatch', () => this.updateTractorWatch(dt));
+    this.guard.run('updateRiverWatch', () => this.updateRiverWatch(dt));
     if (this.tractorUnit) this.guard.run('updateTractorRunaway', () => this.updateTractorRunaway(dt, ridden));
     this.guard.run('updateHayRide', () => this.updateHayRide(dt, ridden, input));
     if (this.tractorUnit) this.guard.run('updateMudguard', () => this.updateMudguard(dt, ridden));

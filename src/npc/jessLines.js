@@ -22,6 +22,7 @@ import { JESS_GENERATOR_LINES } from './generatorLines.js';
 import { JESS_HAY_LINES } from './hayLines.js';
 import { JESS_SPRAY_LINES } from './sprayLines.js';
 import { JESS_STREAM_LINES } from './streamLines.js';
+import { JESS_RIVER_LINES } from './riverLines.js';
 import { JESS_WATER_LINES } from './waterLines.js';
 import { JESS_HEAT_LINES } from './heatLines.js';
 import { JESS_SILENCER_LINES } from './silencerLines.js';
@@ -465,6 +466,7 @@ export const JESS_LINES = {
   ...JESS_HAY_LINES,
   ...JESS_SPRAY_LINES,
   ...JESS_STREAM_LINES,
+  ...JESS_RIVER_LINES,
   ...JESS_WATER_LINES,
   ...JESS_LPLATE_LINES,
   ...JESS_HEAT_LINES,
