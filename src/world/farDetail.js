@@ -96,6 +96,7 @@ export class FarDetail {
     this.viewHeight = 0; // points: the window's height, unless set (the frame budget is counted as in a window of the same height wherever it runs)
     this.pixelsPerRadian = 0; // set from the camera and the window (World.update); 0 until then, which leaves nothing out
     this.specks = new WeakMap(); // scene child -> { parts: [{ mesh, off }], age }: its small meshes, left out while too small on the screen to see
+    this.inside = new WeakMap(); // set piece -> the vehicles standing in it
     this.centre = new THREE.Vector3();
   }
 
@@ -107,12 +108,26 @@ export class FarDetail {
     for (const o of this.scene.children) {
       if (VEHICLE_NAMES.includes(o.name)) this.vehicle(o, position);
       else if (BARN_PROP_NAMES.includes(o.name)) this.within(o, position, this.params.barnPropsDistance);
-      else if (SET_PIECE_NAMES.includes(o.name) && o.userData.farVersion) this.swap(o, position);
+      else if (SET_PIECE_NAMES.includes(o.name) && o.userData.farVersion) {
+        this.swap(o, position);
+        if (o.visible) for (const v of this.vehiclesIn(o)) this.vehicle(v, position); // the vehicles standing in it are trimmed like those in the farm (#399)
+      }
       else if (SET_PIECE_NAMES.includes(o.name)) this.within(o, position, this.params.setPieceDistance);
       else this.findSmall(o);
     }
     this.smallShadows(position);
     this.leaveOutSpecks(position);
+  }
+
+  /** The vehicles standing in a set piece (the village's parked quads), found once: they are not scene children, so the loop above does not reach them. */
+  vehiclesIn(o) {
+    let list = this.inside.get(o);
+    if (!list) {
+      list = [];
+      o.traverse((m) => { if (m !== o && VEHICLE_NAMES.includes(m.name)) list.push(m); });
+      this.inside.set(o, list);
+    }
+    return list;
   }
 
   /** Every small mesh that would span under `partPixels` points is moved to a layer nobody draws, and back as it grows. Not the set pieces (which
@@ -122,7 +137,10 @@ export class FarDetail {
     const scale = this.pixelsPerRadian;
     const y = position.y ?? 0;
     for (const o of this.scene.children) {
-      if (o.isCamera || SET_PIECE_NAMES.includes(o.name) || BARN_PROP_NAMES.includes(o.name)) continue;
+      // A set piece with a far version is drawn, and so has current matrices, whenever its full version is (the village is static, so its small parts are
+      // judged from where they stand).
+      const drawnPiece = o.userData.farVersion && o.visible;
+      if (o.isCamera || (SET_PIECE_NAMES.includes(o.name) && !drawnPiece) || BARN_PROP_NAMES.includes(o.name)) continue;
       let e = this.specks.get(o);
       if (!e || ++e.age > REFIND) e = this.findSpecks(o, e);
       for (const p of e.parts) {
@@ -252,7 +270,8 @@ export class FarDetail {
       this.vehicles.set(o, (s = { level: 0, small: [], shadows: [] }));
       this.dropSmallShadows(o);
     }
-    const level = detailLevel(Math.hypot(o.position.x - position.x, o.position.z - position.z), this.params, s.level);
+    const e = o.matrixWorld.elements; // world, since a vehicle in the village stands inside its group
+    const level = detailLevel(Math.hypot(e[12] - position.x, e[14] - position.z), this.params, s.level);
     if (level === s.level) return;
     if (level >= 1 && !s.small.length) {
       o.traverse((m) => {
