@@ -103,6 +103,7 @@ export class DebugGui {
     }
     this.buildTabBar();
     this.showTab('Vehicles');
+    this.settleListening();
   }
 
   /** The vehicle the Vehicles tab is about: the one picked, or else whichever you're on or looking at. */
@@ -419,6 +420,23 @@ export class DebugGui {
     }
     show(c, 'where it started', () => unit().where ?? '');
     this.applyVisibility?.();
+    this.settleListening();
+  }
+
+  /**
+   * lil-gui's `listen()` polls a row every animation frame even with the panel hidden, and there are some 13,000 rows (about 0.5 ms a frame,
+   * #442). So rows only listen while the panel is open: stopped when it is hidden, and the ones stopped started again when it opens.
+   */
+  settleListening() {
+    for (const c of this.gui.controllersRecursive()) {
+      if (this.visible && c._wantsListen) {
+        c._wantsListen = false;
+        c.listen();
+      } else if (!this.visible && c._listening) {
+        c._wantsListen = true;
+        c.listen(false);
+      }
+    }
   }
 
   /** Things to do to the picked vehicle, then to all of them. */
@@ -490,5 +508,6 @@ export class DebugGui {
       this.game.input.requestPointerLock();
     }
     document.getElementById('overlay').classList.toggle('tuning', this.visible);
+    this.settleListening();
   }
 }
