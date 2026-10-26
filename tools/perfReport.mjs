@@ -12,7 +12,7 @@ export const LOCAL_BUDGETS = {
 
 /** How far a measured number has to move to count as a change, not run-to-run noise. Two builds of the same game on Jamie's Mac differed by up
  * to 1 ms a frame at a spot and 3 ms in the worst frame; calls and triangles drift a little with main between a before and an after. */
-export const NOISE = { calls: 25, triangles: 20000, ms: 1.2, worstMs: 4, readyS: 0.2, mb: 0.5 };
+export const NOISE = { calls: 25, triangles: 20000, ms: 1.2, worstMs: 4, p99Ms: 4, longFrames: 1, readyS: 0.2, mb: 0.5 };
 
 const median = (xs) => {
   const v = xs.filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
@@ -29,9 +29,11 @@ export function combineRuns(runs) {
   for (const spot of new Set(runs.flatMap((r) => Object.keys(r.spots ?? {})))) {
     const all = runs.map((r) => r.spots?.[spot]).filter(Boolean);
     const s = {};
-    for (const k of ['calls', 'triangles', 'ms', 'worstMs']) s[k] = median(all.map((x) => x[k]));
+    for (const k of ['calls', 'triangles', 'ms', 'worstMs', 'p99Ms', 'longFrames']) s[k] = median(all.map((x) => x[k]));
     const near = [...all].sort((a, b) => Math.abs((a.ms ?? 0) - (s.ms ?? 0)) - Math.abs((b.ms ?? 0) - (s.ms ?? 0)))[0];
     if (near?.slowest) s.slowest = near.slowest;
+    const causes = all.flatMap((x) => x.causes ?? []);
+    if (causes.length) s.causes = causes.slice(-3);
     spots[spot] = s;
   }
   return { load, spots };
@@ -89,11 +91,11 @@ const cell = (now, before, noise, fmt) => {
 
 /** The markdown table for a PR body and the decisions file: each spot and the load, before and after (or just now, with no `before`). */
 export function report(after, before) {
-  const lines = ['| Spot | Draw calls | Triangles | ms a frame | Worst frame ms |', '| --- | --- | --- | --- | --- |'];
+  const lines = ['| Spot | Draw calls | Triangles | ms a frame | Worst frame ms | 1% low ms | Frames over 33 ms |', '| --- | --- | --- | --- | --- | --- | --- |'];
   for (const [spot, s] of Object.entries(after.spots)) {
     const b = before?.spots?.[spot] ?? {};
     lines.push(
-      `| ${spot} | ${cell(s.calls, b.calls, NOISE.calls, n0)} | ${cell(s.triangles, b.triangles, NOISE.triangles, tri)} | ${cell(s.ms, b.ms, NOISE.ms, ms1)} | ${cell(s.worstMs, b.worstMs, NOISE.worstMs, ms1)} |`,
+      `| ${spot} | ${cell(s.calls, b.calls, NOISE.calls, n0)} | ${cell(s.triangles, b.triangles, NOISE.triangles, tri)} | ${cell(s.ms, b.ms, NOISE.ms, ms1)} | ${cell(s.worstMs, b.worstMs, NOISE.worstMs, ms1)} | ${cell(s.p99Ms, b.p99Ms, NOISE.p99Ms, ms1)} | ${cell(s.longFrames, b.longFrames, NOISE.longFrames, n0)} |`,
     );
   }
   const l = after.load ?? {};
@@ -101,6 +103,8 @@ export function report(after, before) {
   lines.push('', `Load: ${cell(l.readyS, lb.readyS, NOISE.readyS, s2)} s to Ready, ${cell(l.mb, lb.mb, NOISE.mb, ms1)} MB fetched.`);
   const slow = Object.entries(after.spots).filter(([, s]) => s.slowest?.length).map(([spot, s]) => `${spot}: ${s.slowest.map((f) => `${f.name} ${f.ms.toFixed(2)}`).join(', ')}`);
   if (slow.length) lines.push('', `Slowest features (ms): ${slow.join('; ')}.`);
+  const stutter = Object.entries(after.spots).filter(([, s]) => s.causes?.length).map(([spot, s]) => `${spot}: ${s.causes.join(' / ')}`);
+  if (stutter.length) lines.push('', `Long frames and what caused them: ${stutter.join('; ')}.`);
   if (before) lines.push('', `Overall: ${verdict(after, before)}.`);
   const over = overBudget(after);
   if (over.length) lines.push('', `Over budget: ${over.join('; ')}.`);

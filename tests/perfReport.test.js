@@ -41,4 +41,14 @@ describe('perf report', () => {
     expect(t).toContain('| spawn | 2,000 → 1,500 (-500, -25%)');
     expect(t).toContain('Overall: better.');
   });
+
+  it('keeps the 1% low and the long frames, and says what caused them', () => {
+    const run = (p99, long) => ({ load: {}, spots: { spawn: { ...spot(2000, 6), p99Ms: p99, longFrames: long, causes: [`${p99} ms, drawing`] } } });
+    const m = combineRuns([run(10, 0), run(40, 3), run(12, 1)]);
+    expect(m.spots.spawn.p99Ms).toBe(12);
+    expect(m.spots.spawn.longFrames).toBe(1);
+    const t = report(m);
+    expect(t).toContain('1% low ms');
+    expect(t).toContain('Long frames and what caused them: spawn: 10 ms, drawing / 40 ms, drawing / 12 ms, drawing.');
+  });
 });

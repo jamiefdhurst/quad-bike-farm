@@ -1,0 +1,65 @@
+name: Frame budget history
+
+# Every merge to main that changes what ships adds the five spots' draw calls and triangles (tools/budget.mjs) to a history kept as a workflow
+# artifact, not a commit, so recording it never starts another run or release. The Smoke job on a pull request reads the last ten and shows the
+# trend (docs/decisions/performance.md, "Counting stutters and tracking the budget (#373)"). Artifacts last 90 days; a quiet quarter starts it afresh.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'faq.html'
+      - 'vite.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: read
+  actions: read
+
+# One at a time, so two quick merges can't both read the same history and one lose its line.
+concurrency:
+  group: perf-history
+  cancel-in-progress: false
+
+jobs:
+  Record:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - name: Setup Node
+        uses: jdx/mise-action@v5
+      - name: Cache npm
+        uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json', 'mise.toml') }}
+          restore-keys: npm-${{ runner.os }}-
+      - name: Install dependencies
+        run: node --version && npm ci
+      - name: Build
+        run: npm run build
+      - name: Measure
+        run: CHROME_PATH=$(which google-chrome) node tools/budget.mjs --dist dist --out budget-now.json
+        timeout-minutes: 12
+      # The history so far is in the last run of this workflow that finished; none yet is fine.
+      - name: Fetch the history
+        run: |
+          run=$(gh run list --workflow perf-history.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          [ -n "$run" ] && gh run download "$run" -n budget-history -D old || echo "no history yet"
+          [ -f old/history.json ] && cp old/history.json history.json || echo "[]" > history.json
+      - name: Add this merge
+        run: |
+          label=$(git log -1 --format=%s)
+          node tools/budget.mjs --record budget-now.json --history history.json --sha "$GITHUB_SHA" --label "$label"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: budget-history
+          path: history.json
+          retention-days: 90
