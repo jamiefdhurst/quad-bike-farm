@@ -13,7 +13,7 @@ export const BUDGETS = {
   // The others are what each measured after #451 (yard 2,432 and 3.50M, the most the smoke test saw, village 3,170 and 3.80M, wood 1,232 and 3.80M, hilltop 1,530 and 6.70M)
   // and about 8% over. Before it (and after #365) they were 2,945, 3,957, 1,901 and 2,396 calls: parts too small to see are no longer drawn.
   yard: { calls: 2630, triangles: 3.8e6 },
-  village: { calls: 3430, triangles: 4.1e6 },
+  village: { calls: 2200, triangles: 4.1e6 }, // 3,170 until #399 trimmed the quads parked in it (2,040 now)
   wood: { calls: 1330, triangles: 4.1e6 },
   hilltop: { calls: 1650, triangles: 7.2e6 },
 };

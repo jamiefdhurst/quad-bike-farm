@@ -195,6 +195,63 @@ describe('FarDetail set pieces and props', () => {
   });
 });
 
+describe('vehicles standing in a set piece (#399)', () => {
+  const full = { ...params, fullDistance: 0 }; // the full village is always the one drawn
+  function village() {
+    const g = new THREE.Group();
+    g.name = 'village';
+    g.userData.farVersion = new THREE.Group();
+    const { g: quad, bolt } = vehicle(0, 0);
+    quad.position.set(60, 0, 0);
+    g.add(quad);
+    g.updateMatrixWorld(true);
+    return { g, quad, bolt };
+  }
+  it('trims a parked quad in the village like one in the farm: small parts past the detail distance, and back near', () => {
+    const { g, quad, bolt } = village();
+    const far = new FarDetail(sceneWith(g, g.userData.farVersion), full);
+    far.update({ x: 60 - (params.vehicleDetailDistance - 10), z: 0 }, 1, true); // in the village, quad 50 m away
+    expect(bolt.visible).toBe(true);
+    far.update({ x: 60 - (params.vehicleDetailDistance + 10), z: 0 }, 1, true);
+    expect(g.visible).toBe(true); // within fullDistance of the village's edge
+    expect(bolt.visible).toBe(false);
+    far.update({ x: 60, z: 5 }, 1, true);
+    expect(bolt.visible).toBe(true);
+    expect(quad.visible).toBe(true);
+  });
+  it('uses where the quad stands in the world, not its place in the group', () => {
+    const { g, bolt } = village();
+    g.position.set(500, 0, 0); // the group is moved: the quad is at 560
+    g.updateMatrixWorld(true);
+    const far = new FarDetail(sceneWith(g, g.userData.farVersion), full);
+    far.update({ x: 560 - (params.vehicleDetailDistance - 10), z: 0 }, 1, true);
+    expect(bolt.visible).toBe(true);
+  });
+  it('leaves a piece it is not drawing alone', () => {
+    const { g, bolt } = village();
+    const far = new FarDetail(sceneWith(g, g.userData.farVersion), params);
+    far.update({ x: 60 + 1000, z: 0 }, 1, true); // far off: the far version is drawn, the full one stays out
+    expect(g.visible).toBe(false);
+    expect(bolt.visible).toBe(true);
+  });
+  it('leaves out a speck in the village that is drawn, and not in one that is not', () => {
+    const g = new THREE.Group();
+    g.name = 'village';
+    g.userData.farVersion = new THREE.Group();
+    const m = box(0.02);
+    m.position.set(100, 0, 0);
+    g.add(m);
+    g.updateMatrixWorld(true);
+    const far = new FarDetail(sceneWith(g, g.userData.farVersion), full);
+    far.pixelsPerRadian = 650;
+    far.update({ x: 0, y: 0, z: 0 }, 1, true);
+    expect(g.visible).toBe(true);
+    expect(m.layers.isEnabled(0)).toBe(false);
+    far.update({ x: 99, y: 0, z: 0 }, 1, true);
+    expect(m.layers.isEnabled(0)).toBe(true);
+  });
+});
+
 describe('the names FarDetail looks for', () => {
   it('are all still given to something in src, so a rename cannot quietly leave a set piece undrawn-never', async () => {
     const { execSync } = await import('node:child_process');
