@@ -1,3 +1,4 @@
+import { part } from './part.js';
 import * as THREE from 'three';
 import { buildDash } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, faceAlong } from './quadModel.js';
@@ -860,12 +861,12 @@ function fiestaWheels() {
 
 /** Lifts the hatch, 0 (shut) to 1 (swung up and back on its hinge), and stretches the two gas struts between the body and it. */
 export function poseFiestaHatch(model, open) {
-  const hatch = model.getObjectByName('hatch');
+  const hatch = part(model, 'hatch');
   if (!hatch || !hatch.userData.keep) return;
   hatch.rotation.x = FIESTA_HATCH.open * open;
   hatch.updateMatrix();
   for (const name of ['hatchStrutLeft', 'hatchStrutRight']) {
-    const strut = model.getObjectByName(name);
+    const strut = part(model, name);
     if (!strut) continue;
     const end = new THREE.Vector3(...strut.userData.hatchEnd).applyMatrix4(hatch.matrix); // the hatch end in the body's frame (the hatch's parent is the body root)
     const way = end.sub(strut.position);

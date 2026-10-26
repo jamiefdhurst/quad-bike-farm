@@ -1,3 +1,4 @@
+import { part } from './part.js';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { buildDash } from './dash.js';
@@ -465,7 +466,7 @@ const PEDAL_TRAVEL = 0.28;
 /** Swings the pedals with what your feet are doing, eased so they don't snap (`pedalClutch`, `pedalBrake`, `pedalAccel`, from addPedals). */
 export function posePedals(model, { clutch = 0, brake = 0, throttle = 0 }) {
   for (const [name, press] of [['pedalClutch', clutch], ['pedalBrake', brake], ['pedalAccel', throttle]]) {
-    const pedal = model.getObjectByName(name);
+    const pedal = part(model, name);
     if (pedal) pedal.rotation.x += (-PEDAL_TRAVEL * Math.min(1, Math.max(0, press)) - pedal.rotation.x) * 0.5;
   }
 }
@@ -520,7 +521,7 @@ export function buildLandRoverModel({ bodyColor = 0x3b4a36, dashStyle = 'series'
 /** Tips the 200TDi's outer front backrests forward, 0 (upright) to 1 (right forward), by seat name ({ left, driver }). */
 export function poseSeatTips(model, tips) {
   for (const name of TIPPING_SEATS) {
-    const back = model.getObjectByName(`seatBack_${name}`);
+    const back = part(model, `seatBack_${name}`);
     if (back) back.rotation.x = SEAT_TIP * Math.min(1, Math.max(0, tips[name] ?? 0));
   }
 }
@@ -557,17 +558,17 @@ export function gearLeverPose(gear, gears = 4) {
  * down when engaged, the choke and hand throttle knobs pull out towards the driver, and the handbrake lever goes up with the brake.
  */
 export function poseLandyControls(model, { gear = 0, gears = 4, fourWd = false, locked = false, choke = 0, hand = 0, park = false, clutch = 0, brake = 0, throttle = 0 }) {
-  const g = model.getObjectByName('gearLever');
+  const g = part(model, 'gearLever');
   if (!g) return;
   posePedals(model, { clutch, brake, throttle });
   const pose = gearLeverPose(gear, gears);
   g.rotation.set(pose.along, 0, pose.across);
-  model.getObjectByName('transferKnob').position.y = 0.84 - (fourWd ? 0.05 : 0);
-  model.getObjectByName('diffLockKnob').position.y = 0.84 - (locked ? 0.05 : 0);
+  part(model, 'transferKnob').position.y = 0.84 - (fourWd ? 0.05 : 0);
+  part(model, 'diffLockKnob').position.y = 0.84 - (locked ? 0.05 : 0);
   const knobZ = model.userData.knobZ ?? KNOB_Z; // the Series' dash face is further back than the 200TDi's has
-  model.getObjectByName('chokeKnob').position.z = knobZ - KNOB_TRAVEL * choke;
-  model.getObjectByName('handThrottleKnob').position.z = knobZ - KNOB_TRAVEL * hand;
+  part(model, 'chokeKnob').position.z = knobZ - KNOB_TRAVEL * choke;
+  part(model, 'handThrottleKnob').position.z = knobZ - KNOB_TRAVEL * hand;
   // The handbrake lever swings up and back when it goes on, eased so it doesn't snap.
-  const hb = model.getObjectByName('parkBrakeLever');
+  const hb = part(model, 'parkBrakeLever');
   hb.rotation.x += ((park ? HANDBRAKE_ON : HANDBRAKE_OFF) - hb.rotation.x) * 0.3;
 }

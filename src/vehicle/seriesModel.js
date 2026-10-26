@@ -1,3 +1,4 @@
+import { part } from './part.js';
 import * as THREE from 'three';
 import { buildDash } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, faceAlong } from './quadModel.js';
@@ -568,8 +569,8 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
 
 /** Swings the Series' doors, each side on its own: `open` is { left, right }, each 0 (shut) to 1 (swung out on its front edge). */
 export function poseSeriesDoors(model, open) {
-  const left = model.getObjectByName('doorLeft');
-  const right = model.getObjectByName('doorRight');
+  const left = part(model, 'doorLeft');
+  const right = part(model, 'doorRight');
   if (!left || !right || !left.userData.keep) return; // the 200TDi's doors are still fixed panels
   left.rotation.y = -SERIES_DOOR.open * open.left; // the free edge at the back swings out to the side
   right.rotation.y = SERIES_DOOR.open * open.right;
@@ -577,13 +578,13 @@ export function poseSeriesDoors(model, open) {
 
 /** Drops the Series' tailgate, 0 (shut) to 1 (lying flat behind, level with the floor), and stretches its chains between the tub and its corners. */
 export function poseSeriesTailgate(model, open) {
-  const gate = model.getObjectByName('tailgate');
+  const gate = part(model, 'tailgate');
   if (!gate || !gate.userData.keep) return;
   const angle = -open * Math.PI / 2;
   gate.rotation.x = angle;
   const reach = SERIES_GATE.height - 0.03; // the gate's top corner, in the body's frame, turning about its hinge
   for (const name of ['gateChainLeft', 'gateChainRight']) {
-    const chain = model.getObjectByName(name);
+    const chain = part(model, name);
     const corner = new THREE.Vector3(chain.position.x, gate.position.y + reach * Math.cos(angle), gate.position.z + reach * Math.sin(angle));
     const way = corner.sub(chain.position);
     chain.scale.z = Math.max(0.001, way.length());

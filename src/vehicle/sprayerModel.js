@@ -1,3 +1,4 @@
+import { part } from './part.js';
 import * as THREE from 'three';
 import { PART_MAT, box, buildWheel, addMudguard, addJockeyWheel, addRearLights, addChain, addCable, addLeafSpring, addUBolts, beam, galvanised, addGusset, addEye } from './trailerParts.js';
 import { decalMesh } from './detail/decals.js';
@@ -213,11 +214,11 @@ export function buildSprayerModel() {
 export function poseSprayer(model, { boom, tank }) {
   const fold = 1 - boom;
   for (const [name, side] of [['boomLeft', 1], ['boomRight', -1]]) {
-    const arm = model.getObjectByName(name);
+    const arm = part(model, name);
     arm.rotation.order = 'YZX';
     arm.rotation.set(0, -side * (Math.PI / 2) * fold, side * 0.3 * fold);
   }
-  const lv = model.getObjectByName('level');
+  const lv = part(model, 'level');
   lv.scale.y = Math.max(0.02, tank);
   lv.position.y = lv.userData.baseY - 0.09 * (1 - tank);
 }

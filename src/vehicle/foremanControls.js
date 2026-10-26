@@ -1,3 +1,4 @@
+import { part } from './part.js';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -305,6 +306,6 @@ export function buildThumbThrottle(bars, MAT, dy = 0, x = -0.3) {
 
 /** Poses the thumb throttle: `amount` 0..1, the paddle pushed forward and down by the thumb. */
 export function poseThumbThrottle(model, amount) {
-  const lever = (model.userData.thumb ??= model.getObjectByName('thumbThrottle'));
+  const lever = part(model, 'thumbThrottle');
   if (lever && lever.userData.keep) lever.rotation.x = amount * 0.5;
 }
