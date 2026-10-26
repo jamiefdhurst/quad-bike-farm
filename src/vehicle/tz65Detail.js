@@ -5,6 +5,7 @@ import { bentTube, loftGeometry, rod, sweepGeometry, springGeometry, gripGeometr
 import { cableGeometry, hoseGeometry } from './detail/cables.js';
 import { discGeometry, caliperGeometry } from './detail/brakes.js';
 import { treadTyre } from './detail/tread.js';
+import { buildChainDrive } from './detail/chainDrive.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
 import { chokeSymbol, silverMaterial } from './blasterDetail.js';
 import {
@@ -70,15 +71,12 @@ export function buildTzSpin(spin, MAT, front) {
   mesh(mergeGeometries(spokes), MAT.chrome, spin);
   mesh(new THREE.CylinderGeometry(0.034, 0.034, front ? 0.07 : 0.085, 14).rotateZ(Math.PI / 2), MAT.alloy, spin);
   mesh(new THREE.CylinderGeometry(0.012, 0.012, half * 2 + 0.07, 8).rotateZ(Math.PI / 2), MAT.engineDark, spin);
-  // The disc on the right (x negative); the rear wheel's sprocket is on the left.
+  // The disc on the right (x negative); the rear wheel's sprocket is on the left (in the chain drive, not the wheel).
   const { disc, dark } = discGeometry({ r: front ? 0.105 : 0.085, holes: 8, hat: 0.35 });
   const discX = -(half + 0.004);
   mesh(disc.translate(discX, 0, 0), MAT.alloy, spin);
   if (dark) mesh(dark.translate(discX, 0, 0), MAT.hole, spin);
-  if (!front) {
-    mesh(new THREE.CylinderGeometry(TZ_CHAIN.rearR, TZ_CHAIN.rearR, 0.006, 26).rotateZ(Math.PI / 2).translate(TZ_CHAIN.x, 0, 0), MAT.steel, spin);
-    mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.012, 12).rotateZ(Math.PI / 2).translate(TZ_CHAIN.x - 0.004, 0, 0), MAT.engineDark, spin);
-  }
+  if (!front) mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.012, 12).rotateZ(Math.PI / 2).translate(TZ_CHAIN.x - 0.004, 0, 0), MAT.engineDark, spin); // (the sprocket is the chain drive's)
   mergeStatic(spin);
 }
 
@@ -148,13 +146,7 @@ export function addTzFrame(root, MAT, silver) {
   // The chain on the left: the two runs between the engine's sprocket and the rear wheel's, which is in the wheel (buildTzSpin).
   const E = TZ_ENGINE.sprocket;
   const rz = TZ_WHEELS.rearZ;
-  const top = [E.x, E.y + E.r, E.z];
-  const rearTop = [TZ_CHAIN.x, R + TZ_CHAIN.rearR, rz];
-  const low = [E.x, E.y - E.r, E.z];
-  const rearLow = [TZ_CHAIN.x, R - TZ_CHAIN.rearR, rz];
-  tube(top, rearTop, 0.0055, MAT.steel, root, 5);
-  tube(low, rearLow, 0.0055, MAT.steel, root, 5);
-  mesh(new THREE.CylinderGeometry(E.r, E.r, 0.012, 14).rotateZ(Math.PI / 2).translate(E.x, E.y, E.z), MAT.steel, root);
+  buildChainDrive(root, { x: TZ_CHAIN.x, front: { y: E.y, z: E.z, r: E.r }, rear: { y: R, z: rz, r: TZ_CHAIN.rearR } });
   // The chain guard and slider: a short black block over the top run.
   rbox(0.02, 0.012, 0.12, 0.004, MAT.plastic, TZ_CHAIN.x, 0.325, -0.34, root);
 }

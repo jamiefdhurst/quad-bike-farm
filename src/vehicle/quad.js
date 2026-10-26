@@ -44,6 +44,7 @@ import { stepPedalKey, DEFAULT_BRAKE_KEY_PARAMS, DEFAULT_THROTTLE_KEY_PARAMS } f
 import { Bog } from './bog.js';
 import { Sump, hasSump, oilPressureLamp } from './sump.js';
 import { stepHand } from './handLever.js';
+import { chainWear } from './chainShape.js';
 import { Faults, clutchSlipping, clutchSlipUnderPower, applyTyreFaults } from './faults.js';
 import { CrashWatch, damageFor, DEFAULT_CRASH_PARAMS } from './crashDamage.js';
 import { toppleLoad } from './topple.js';
@@ -191,6 +192,8 @@ export class Quad {
     scene.add(this.model);
     const part = (name) => this.model.getObjectByName(name);
     this.body = part('body');
+    this.chainDrive = part('chainDrive')?.userData.drive ?? null; // the chain and sprockets of a chain-driven model (detail/chainDrive.js)
+    if (this.chainDrive) (this.model.userData.liveMaterials ??= []).push(...this.chainDrive.materials);
     this.bodyRoot = part('bodyRoot');
     this.bodyRoot.position.y = this.groundOffset;
     this.handlebars = part('handlebars');
@@ -1195,6 +1198,8 @@ export class Quad {
     this.wheelieShown += (this.wheelie - this.wheelieShown) * Math.min(1, dt * (this.wheelie > this.wheelieShown ? 3 : 2));
     const lift = this.wheelieShown;
     const rearZ = this.rearAxleZ ??= Math.max(...this.wheels.map((w) => w.z));
+    const backZ = this.backAxleZ ??= Math.min(...this.wheels.map((w) => w.z)); // +Z is forward, so the back wheels are the lowest
+    let rearTurn = 0;
     for (let i = 0; i < this.wheels.length; i++) {
       const w = this.wheels[i];
       const st = this.physics.wheelState(i);
@@ -1217,10 +1222,16 @@ export class Quad {
         w.object.position.z += (w.z - pivotZ) * (Math.cos(turn) - 1);
       }
       w.spin.rotation.x = st.rotation;
+      if (w.z === backZ) rearTurn = st.rotation;
       this.showTread(w);
       this.wheelHeights[i] = w.object.position.y - this.groundOffset;
     }
     if (this.model.userData.suspension) poseSuspension(this.model, this.wheelHeights);
+    if (this.chainDrive) {
+      // The chain hangs as slack as the fault says, and its sprockets turn with the rear wheel.
+      this.chainDrive.set(chainWear(this.faults));
+      this.chainDrive.spin(rearTurn);
+    }
 
     // Vibration rocks the sprung body and shakes the bars on top of steering.
     const v = vibration;

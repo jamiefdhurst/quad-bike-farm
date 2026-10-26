@@ -34,6 +34,7 @@ import { RACER_FENDERS, RACER_SECTION, RACER_SEAT, RACER_EXHAUST, shroudTop } fr
 import { addRacerBody, addRacerBars, addRacerDecals, racerChokeAt, racerBlue, racerSeatBlue } from './racerDetail.js';
 import { JUNIOR_FENDERS, JUNIOR_SECTION, JUNIOR_SEAT, JUNIOR_EXHAUST, JUNIOR_TYRES, juniorTop } from './juniorBody.js';
 import { addJuniorBody, addJuniorDecals, juniorSeatMaterial } from './juniorDetail.js';
+import { buildChainDrive } from './detail/chainDrive.js';
 import { addGrizzlyFront, addGrizzlyRear, addGrizzlyDecals, addFrontBrake, addGrizzlyRackBlocks, GRIZZLY_FACE } from './grizzlyDetail.js';
 
 // Farm quad built from procedural parts. One group with named parts so it can
@@ -354,19 +355,8 @@ function buildSwingarm(root, cfg, sport, rig) {
   const disc = add(new THREE.CylinderGeometry(0.09, 0.09, 0.008, 20).rotateZ(Math.PI / 2), MAT.alloy, g);
   disc.position.set(-0.22, axle[1], axle[2]);
   if (sport) {
-    // Chain drive on the left.
-    const sprocket = add(new THREE.CylinderGeometry(0.085, 0.085, 0.01, 20).rotateZ(Math.PI / 2), MAT.steel, g);
-    sprocket.position.set(0.22, axle[1], axle[2]);
-    const c = [];
-    for (let k = 0; k <= 12; k++) {
-      const a = -Math.PI / 2 + (k / 12) * Math.PI;
-      c.push([0.2, axle[1] + Math.sin(a) * 0.09, axle[2] - Math.cos(a) * 0.09]);
-    }
-    for (let k = 0; k <= 12; k++) {
-      const a = Math.PI / 2 + (k / 12) * Math.PI;
-      c.push([0.2, 0.0 + Math.sin(a) * 0.035, 0.06 - Math.cos(a) * 0.035]);
-    }
-    add(sweepGeometry(c.map((p) => new THREE.Vector3(...p)), 0.007, { radial: 5, closed: true }), MAT.frame, g);
+    // Chain drive on the left: a toothed sprocket each end and a chain that hangs as it stretches (detail/chainDrive.js).
+    buildChainDrive(g, { x: 0.21, front: { y: 0, z: 0.06, r: 0.035 }, rear: { y: axle[1], z: axle[2], r: 0.09 } });
   } else {
     // Shaft drive: final drive housing on the right.
     rbox(0.1, 0.16, 0.16, 0.04, MAT.engine, -0.24, axle[1], axle[2], g);

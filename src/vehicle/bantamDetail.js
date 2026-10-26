@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { bentTube, loftGeometry, rod, sweepGeometry, springGeometry, gripGeometry, mergeStatic } from './quadGeometry.js';
 import { cableGeometry, hoseGeometry } from './detail/cables.js';
 import { treadTyre } from './detail/tread.js';
+import { buildChainDrive } from './detail/chainDrive.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
 import { chokeSymbol } from './blasterDetail.js';
 import { mesh, rbox, tube, pipe, CHOKE_KNOB, CHOKE_MARK } from './tz65Detail.js';
@@ -84,7 +85,6 @@ export function buildBantamSpin(spin, MAT, paint, front) {
   mesh(new THREE.CylinderGeometry(hubR + 0.006, hubR + 0.006, 0.008, 20).rotateZ(Math.PI / 2).translate(0.03, 0, 0), MAT.engineDark, spin);
   mesh(new THREE.CylinderGeometry(0.014, 0.014, BANTAM_WHEELS.width + 0.07, 8).rotateZ(Math.PI / 2), MAT.engineDark, spin);
   if (!front) {
-    mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.006, 28).rotateZ(Math.PI / 2).translate(0.045, 0, 0), MAT.steel, spin);
     mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.014, 12).rotateZ(Math.PI / 2).translate(0.04, 0, 0), MAT.engineDark, spin);
   }
   mergeStatic(spin);
@@ -142,10 +142,8 @@ export function addBantamFrame(root, MAT, paint) {
     coil.position.set(s * S.x, S.y1, S.z);
   }
   tube([-S.x - 0.03, S.y0, S.z], [S.x + 0.03, S.y0, S.z], 0.009, MAT.steel, root, 6);
-  // The chain: the engine's sprocket to the rear wheel's, a flat run each side of both (the guard covers the top).
-  mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.008, 18).rotateZ(Math.PI / 2).translate(0.07, 0.3, -0.24), MAT.steel, root);
-  tube([0.066, 0.336, -0.24], [0.05, 0.386, BANTAM_WHEELS.rearZ], 0.0045, MAT.engineDark, root, 5);
-  tube([0.066, 0.264, -0.24], [0.05, 0.234, BANTAM_WHEELS.rearZ], 0.0045, MAT.engineDark, root, 5);
+  // The chain and both sprockets (the guard covers the top run).
+  buildChainDrive(root, { x: 0.06, front: { y: 0.3, z: -0.24, r: 0.036 }, rear: { y: R, z: BANTAM_WHEELS.rearZ, r: 0.075 } });
   // The chain guard over the top run of the chain on the left, in the body's colour, from the sprocket to the rear hub.
   mesh(loftGeometry([{ z: -0.22, w: 0.016, x: 0.073, y0: 0.31, y1: 0.355 }, { z: -0.4, w: 0.016, x: 0.073, y0: 0.31, y1: 0.35 }, { z: -0.6, w: 0.016, x: 0.073, y0: 0.305, y1: 0.345 }], { exponent: 3 }), paint, root, 'chainGuard');
 }
