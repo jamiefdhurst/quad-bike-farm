@@ -9,6 +9,7 @@ try {
   await game.load((msg) => (status.textContent = msg));
   status.textContent = 'Ready';
   game.start();
+  game.prepareShaders(); // behind the start screen; nothing waits for it
 } catch (err) {
   status.textContent = `Failed to start: ${err.message}`;
   throw err;
