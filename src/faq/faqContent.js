@@ -836,9 +836,16 @@ export const FAQ_SECTIONS = [
           the workbench renews them for good.`,
       },
       {
-        q: 'What is that slapping from the sport quad, the mini moto or the old three-wheeler?',
-        a: `Those three are chain driven. A chain oils off as you ride and stretches until it hangs slack, and a slack one slaps the chainguard over bumps. Left
+        q: 'What is that slapping from the sport quad, the mini moto, the old three-wheeler or the old bike?',
+        a: `Those four are chain driven. A chain oils off as you ride and stretches until it hangs slack, and a slack one slaps the chainguard over bumps. Left
           alone it gets worse until a handful of throttle makes it jump off the sprocket: the engine races and nothing drives the wheels.`,
+      },
+      {
+        q: 'How can I tell by looking that a chain is worn?',
+        a: `Look at the chain and sprockets on the left of the quad, low down between the engine and the back wheel. A good one is dark, oiled and taut, with square teeth on the sprockets. As it stretches the bottom run sags
+          and then the top, the teeth wear thin and hooked like shark fins, and a dry chain turns orange with rust. A chain that has jumped off the sprocket hangs loose from the back one. Mending it at the workbench tightens
+          it up in front of you.`,
+        tip: 'A slack chain sags, its sprocket teeth hook and it rusts when dry. The workbench takes the stretch out.',
       },
       {
         q: 'How do I put a chain back on, and how do I stop it coming off?',
