@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Input } from './core/input.js';
 import { createRandom, startSeed } from './core/random.js';
+import { prepareShaders } from './core/shaderPrep.js';
 import { randomiseQuadSpawns, randomJerryCanSpots, spawnKeepOut, spawnBlocked } from './world/spawns.js';
 import { registerTuning } from './core/tuning.js';
 import { loadModels } from './world/assets.js';
@@ -2023,6 +2024,13 @@ export class Game {
     this.debugCamera = true;
     this.camera.position.set(x, y, z);
     this.camera.rotation.set((pitch * Math.PI) / 180, (yaw * Math.PI) / 180, 0, 'YXZ');
+  }
+
+  /** Builds every shader now, with the start screen up, rather than on the first frame that shows each (core/shaderPrep.js). Resolves when they are linked;
+   * `shadersReady` is the same promise, and `shaderPrep` says what it cost. */
+  prepareShaders() {
+    this.shadersReady ??= prepareShaders(this.renderer, this.scene, this.camera).then((r) => (this.shaderPrep = { ...r, programs: this.renderer.info.programs.length }));
+    return this.shadersReady;
   }
 
   start() {
