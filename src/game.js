@@ -175,6 +175,7 @@ import { Drag, DRAG_PARAM_RANGES, onDragGrid } from './npc/drag.js';
 import { buildDragStrip } from './world/dragStrip.js';
 import { HillClimb, CLIMB_PARAM_RANGES, climbGates, climbRoute } from './npc/hillClimb.js';
 import { ConeCourse, ConeField, DEFAULT_CONE_PARAMS, CONE_PARAM_RANGES, coneGates, coneSpots, knockRoute } from './npc/coneCourse.js';
+import { yourAsks } from './npc/yourAsks.js';
 import { Challenges, ColdStartRun, CleanWatch, DEFAULT_CHALLENGE_PARAMS, CHALLENGE_PARAM_RANGES, CHALLENGE_KINDS, judgeLineUp, formatChallenge } from './world/challenges.js';
 import { buildLineUpBays } from './world/lineUpBays.js';
 import { Records, JumpMeasure, DEFAULT_RECORD_PARAMS, RECORD_PARAM_RANGES, RECORD_KINDS, WHO_NAMES, formatValue } from './world/records.js';
@@ -7617,9 +7618,8 @@ export class Game {
   /** Your own wheel: what you ask for rather than ask of her. Enter looking at nobody. */
   openYourWheel() {
     const ridden = this.player.isRiding && this.player.seat !== 'pillion' ? this.riddenUnit : null;
-    this.openWheel('You ask for', [
-      ridden ? { label: 'A race', run: () => this.askForRace(ridden) } : { label: 'A race', disabled: true, hint: 'you need to be driving a quad' },
-    ]);
+    const runs = { climb: () => this.askForClimb(), pit: () => this.askForPit(), cones: () => this.askForCones(), drag: () => this.askForDrag(ridden), race: () => this.askForRace(ridden) };
+    this.openWheel('You ask for', yourAsks({ riding: !!ridden, near: ridden ? this.askNear(ridden) : {} }).map((a) => ({ ...a, run: runs[a.id] })));
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;
   }
@@ -9989,23 +9989,22 @@ export class Game {
 
   /** You ask the girls for a race, from the saddle near the start line. They start one as soon as both are free. */
   askForRace(ridden) {
-    const you = this.raceYou(ridden);
-    if (!you.riding) return this.hud.toast('You need to be on a quad to ask for a race', 2);
-    const start = this.climbGates[0];
-    if (Math.hypot(ridden.quad.position.x - start.x, ridden.quad.position.z - start.z) < this.hillClimb.p.nearStart) return this.askForClimb();
-    if (this.pitClimb && this.pitClimb.distanceToStart(ridden.quad.position) < this.pitClimb.p.nearStart) return this.askForPit();
-    const coneStart = this.coneGates[0];
-    if (Math.hypot(ridden.quad.position.x - coneStart.x, ridden.quad.position.z - coneStart.z) < this.coneCourse.p.nearStart) return this.askForCones();
-    // The two start lines can be within reach of each other: whichever you are nearer to is the one you mean.
-    const lapLine = this.world.track.sample(this.raceStart);
-    const q = ridden.quad;
-    const toLap = Math.hypot(q.position.x - lapLine.x, q.position.z - lapLine.z);
-    const strip = this.world.layout.dragStrip;
-    const toStrip = Math.hypot(q.position.x - strip.x, q.position.z - strip.z);
-    if (this.dragYou(ridden).near && (toStrip < toLap || !you.near)) return this.askForDrag(ridden);
-    if (!you.near) return this.hud.toast('Ride up to the start line by the yard first', 2);
+    if (!this.raceYou(ridden).riding) return this.hud.toast('You need to be on a quad to ask for a race', 2);
+    if (!this.raceYou(ridden).near) return this.hud.toast('Ride up to the start line by the yard first', 2);
     if (this.race.active) return this.hud.toast('There is a race on already', 1.6);
     this.askGirls('race');
+  }
+
+  /** Which starts you are at, on this quad, for what your wheel offers (the hill climb's cones, the cone course's, the drag strip). */
+  askNear(ridden) {
+    const q = ridden.quad;
+    const within = (g, r) => Math.hypot(q.position.x - g.x, q.position.z - g.z) < r;
+    return {
+      climb: within(this.climbGates[0], this.hillClimb.p.nearStart),
+      pit: !!this.pitClimb && this.pitClimb.distanceToStart(q.position) < this.pitClimb.p.nearStart,
+      cones: within(this.coneGates[0], this.coneCourse.p.nearStart),
+      drag: this.dragYou(ridden).near,
+    };
   }
 
   /** Your part in a race: lined up on the grid, then your lap judged (npc/race.js). */
