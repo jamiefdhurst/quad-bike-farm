@@ -37,5 +37,6 @@ The to-do list is the [GitHub issues](https://github.com/jamiefdhurst/quad-bike-
 - `/idea` in Claude Code turns an idea, or a brainstorm on a theme, into issues once each one has a yes; the noes go in `docs/decisions/ideas-turned-down.md`.
 - `/todo` takes the next issue (one labelled "🔜 next" first, otherwise the lowest number), builds it in its own worktree (`tools/worktree.sh`), opens a pull request and sets it to merge itself once the Test check passes.
 - Every merge to `main` that changes what ships (the source, `public/`, the pages, the build config or the packages) runs the tests again, builds the game and publishes a GitHub release with `dist` zipped up and a `v` tag. The version comes from the merged pull request's labels: "💥 breaking" (an old farm save won't load) is a major release, "✨ feature" a minor one, anything else a patch.
+- Each release is then deployed to https://qbf.jamiehurst.co.uk (password protected) by `.github/workflows/deploy.yml`, which can also be run by hand with a version to put an older one back.
 - Dependabot opens updates monthly and merges minor and patch ones itself once the tests pass.
 
