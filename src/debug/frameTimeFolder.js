@@ -13,6 +13,10 @@ export function buildFrameTime(d) {
   const info = () => g.renderer.info.render;
   show(f, 'Frames a second', () => Math.round(stats().fps));
   show(f, 'The game\'s own time', () => `${stats().ms.toFixed(2)} ms a frame, worst ${stats().worstMs.toFixed(1)}`);
+  show(f, 'Slowest 1% of frames', () => `${stats().p99Ms.toFixed(1)} ms, ${stats().longFrames} over 33 ms in 10 s (${stats().longTotal} in all)`);
+  for (let i = 0; i < 3; i++) show(f, `Long frame ${i + 1} (newest first)`, () => g.stutters.log.lines()[i] ?? '-');
+  // Chrome only (performance.memory); a drop in the heap beside a long frame is named as a memory clean-up above.
+  show(f, 'Memory', () => (performance.memory ? `${(g.stutters.heap.used / 1048576).toFixed(0)} MB, allocating ${g.stutters.heap.allocMbPerSecond.toFixed(1)} MB a second` : 'not reported by this browser'));
   show(f, 'Biggest part', () => g.frameBreakdown.biggest ?? '-');
   for (const [name] of FRAME_STAGES) show(f, name, () => stageText(g.frameBreakdown.summary().find((s) => s.name === name)));
   // The farm features split out (core/featureGuard.js times each one): the five that take the most.

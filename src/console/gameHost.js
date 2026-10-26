@@ -181,7 +181,7 @@ export function createHost(g, { copy = () => {} } = {}) {
 
     perf() {
       const r = g.renderer;
-      return { ...g.frameStats.summary(), stages: g.frameBreakdown.summary().map((x) => ({ name: x.name, ms: x.ms })), slowestFeatures: g.guard.slowest(5), ...r.info.render, width: r.domElement.width, height: r.domElement.height, pixelRatio: r.getPixelRatio(), maxFps: g.graphics.maxFps };
+      return { ...g.frameStats.summary(), stages: g.frameBreakdown.summary().map((x) => ({ name: x.name, ms: x.ms })), slowestFeatures: g.guard.slowest(5), longFrameCauses: g.stutters.log.lines(), heapMb: g.stutters.heap.used / 1048576, allocMbPerSecond: g.stutters.heap.allocMbPerSecond, ...r.info.render, width: r.domElement.width, height: r.domElement.height, pixelRatio: r.getPixelRatio(), maxFps: g.graphics.maxFps };
     },
   };
   return host;

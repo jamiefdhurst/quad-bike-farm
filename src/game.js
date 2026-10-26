@@ -32,6 +32,7 @@ import { overlayPauses } from './core/pause.js';
 import { DEFAULT_GRAPHICS_PARAMS, GRAPHICS_PARAM_RANGES, pixelRatioFor, nextFrameAt } from './core/graphics.js';
 import { FrameStats } from './core/frameStats.js';
 import { FrameBreakdown } from './core/frameBreakdown.js';
+import { StutterWatch } from './core/stutters.js';
 import { FeatureGuard } from './core/featureGuard.js';
 import { RadialPad } from './hud/radialPad.js';
 import { PAD_RANGES } from './input/gamepad.js';
@@ -379,6 +380,7 @@ export class Game {
     this.graphics = { ...DEFAULT_GRAPHICS_PARAMS };
     registerTuning('Graphics', this.graphics, GRAPHICS_PARAM_RANGES, { onChange: () => this.onResize() });
     this.frameStats = new FrameStats(); // for the console's `perf`
+    this.stutters = new StutterWatch(); // the cause of each long frame and the heap's growth, for `perf` and the "Frame time" folder (core/stutters.js)
     this.guard = new FeatureGuard(); // one feature's error is logged and counted, and the rest of the frame runs (core/featureGuard.js)
     this.frameBreakdown = new FrameBreakdown(); // where the time goes, for the Tune tab's "Frame time" and `perf` (core/frameBreakdown.js)
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -11955,10 +11957,15 @@ export class Game {
     this.photos.afterRender();
     fb.lap('drawing', performance.now());
     fb.end();
+    const frameMs = performance.now() - started;
+    this.stutters.frame({
+      at: started / 1000, ms: frameMs, stages: fb.latest, features: this.guard.frame, shaders: this.renderer.info.programs?.length ?? 0,
+      heapBytes: performance.memory?.usedJSHeapSize,
+    });
     this.guard.endFrame();
     input.endFrame();
     this.firstFrameDone = true;
-    this.frameStats.record(started / 1000, performance.now() - started);
+    this.frameStats.record(started / 1000, frameMs);
   }
 
   /** The flocks (world/flock.js): the hill pasture's, grazing on the gentler ground past the stream, out of the gorse, the wood and the water. */

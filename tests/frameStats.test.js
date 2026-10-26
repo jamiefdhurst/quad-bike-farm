@@ -12,6 +12,6 @@ describe('frame stats', () => {
   });
 
   it('says nothing before any frame', () => {
-    expect(new FrameStats().summary()).toEqual({ fps: 0, ms: 0, worstMs: 0 });
+    expect(new FrameStats().summary()).toMatchObject({ fps: 0, ms: 0, worstMs: 0, p99Ms: 0, longFrames: 0 });
   });
 });
