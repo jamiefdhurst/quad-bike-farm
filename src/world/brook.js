@@ -94,6 +94,12 @@ export function createBrook(layout) {
     return k > 0 ? w * mix(1, clamp((d - 0.05) / river.deepFrom, 0, 1), k) : w;
   }
 
+  /** 0..1 how much of the river's deep water is at (x, z): only the river's own, and not over the crossing's shallows. */
+  function deepAt(x, z) {
+    const k = riverK(x);
+    return k > 0.3 ? clamp((waterAt(x, z) - 0.8) / 0.2, 0, 1) : 0;
+  }
+
   /**
    * 0..1 how much the ground at (x, z) is levelled across the river to the ground at its middle, so a wide river has level banks and the
    * water sits in them (terrainHeight.js blends the ground at its middle across the valley).
@@ -129,5 +135,5 @@ export function createBrook(layout) {
     return out;
   }
 
-  return { minX, maxX, zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt };
+  return { minX, maxX, zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt };
 }

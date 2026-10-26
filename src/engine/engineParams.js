@@ -335,6 +335,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   waterSafeSpeed: 4, // m/s: slower than this it wades through without a drop
   waterFullSpeed: 10, // m/s at which it takes in the most
   waterGulpRate: 3.5, // water taken in per second at full depth and speed (a puddle is only about a quarter of a second long at speed)
+  waterDeepRate: 1.4, // water taken in per second in the river's deep water, at any speed (it is deeper than the intake, so about half a second to stall it)
   waterDrainRunning: 0.03, // per second it drains while running (it blows out)
   waterDrainThrottle: 0.05, // extra per second with the throttle wide open
   waterDrainOff: 0.022, // per second it drains standing about, so about 45 s to clear
@@ -660,6 +661,7 @@ export const ENGINE_PARAM_RANGES = {
   waterSafeSpeed: [0, 15, 0.5],
   waterFullSpeed: [1, 25, 0.5],
   waterGulpRate: [0, 10, 0.1],
+  waterDeepRate: [0, 5, 0.1],
   waterDrainRunning: [0, 0.5, 0.005],
   waterDrainThrottle: [0, 0.5, 0.005],
   waterDrainOff: [0, 0.5, 0.002],

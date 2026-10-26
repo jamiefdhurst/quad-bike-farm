@@ -17,6 +17,14 @@ export function waterGulp(puddle, speed, p, snorkel = null) {
   return p.waterGulpRate * depth * fast * fast * (snorkel ? snorkel.scale : 1);
 }
 
+/**
+ * Water taken in per second standing or driving in the river's deep water (`deep`, 0..1, world.deepWaterAt): deeper than any intake, so it
+ * floods at any speed. A snorkel only lets less in; it cannot lift the intake clear of it.
+ */
+export function deepWaterGulp(deep, p, snorkel = null) {
+  return p.waterDeepRate * clamp01(deep) * (snorkel ? snorkel.scale : 1);
+}
+
 /** The new water level after dt seconds. It blows out faster running with the throttle open than it drips out standing. */
 export function stepWater(water, dt, { gulp = 0, running = false, throttle = 0 }, p) {
   const drain = running ? p.waterDrainRunning + p.waterDrainThrottle * clamp01(throttle) : p.waterDrainOff;

@@ -34,7 +34,7 @@ import { poseCarControls, poseCarSeats } from './carModel.js';
 import { poseUtvControls, poseUtvBelts, poseUtvDoors } from './utvModel.js';
 import { DoorSwing } from './doorSwing.js';
 import { EngineLoad } from './engineLoad.js';
-import { waterGulp } from '../engine/water.js';
+import { waterGulp, deepWaterGulp } from '../engine/water.js';
 import { AirFilter } from './airFilter.js';
 import { CarbIcing } from './carbIcing.js';
 import { dustLevel } from '../world/dust.js';
@@ -1129,11 +1129,14 @@ export class Quad {
   waterGulp() {
     let puddle = 0;
     let boost = 1;
+    let deep = 0;
     for (const w of this.physics.wheelInfo) {
       puddle = Math.max(puddle, w.puddle);
       if (w.puddle > 0.5) boost = Math.max(boost, this.world.gulpBoostAt?.(w.point.x, w.point.z) ?? 1);
+      if (w.puddle > 0.8) deep = Math.max(deep, this.world.deepWaterAt?.(w.point.x, w.point.z) ?? 0);
     }
-    return waterGulp(puddle, this.speed, this.engine.params, this.snorkel.effect()) * boost;
+    const snorkel = this.snorkel.effect();
+    return Math.max(waterGulp(puddle, this.speed, this.engine.params, snorkel) * boost, deepWaterGulp(deep, this.engine.params, snorkel));
   }
 
   /** Engine controls for this frame. */
