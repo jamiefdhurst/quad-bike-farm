@@ -385,6 +385,9 @@ export function buildGirlsTab(d) {
     g.jobBoardView.refresh();
   });
   for (const season of SEASONS) button(mem, `Load it as ${season}`, () => g.reloadAsSeason(season));
+  show(mem, 'the notebook', () => `${g.discoveries.score().count} of ${g.discoveries.score().totalCount} things learnt`);
+  button(mem, 'Write down everything in the notebook', () => g.discoveries.list.forEach((d) => g.discoveries.learn(d.id)));
+  button(mem, 'Rub out the notebook\'s learnt page', () => (g.discoveries.forget(), g.hud.bucketOpen && g.showBucketList()));
   button(mem, 'Save the farm now', () => toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));
   button(mem, 'Call it a day now (fade, save)', () => g.callItADay({ force: true }));
   button(mem, 'Rut the green lane to a bog', () => g.world.wear.setLane(1));

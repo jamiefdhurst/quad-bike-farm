@@ -1915,6 +1915,13 @@ export const FAQ_SECTIONS = [
         a: `Press <kbd>Tab</kbd> for a notebook of about 60 things to do, each worth 1 to 3 points, ticked off as you do them. Things for vehicles that aren't on the
           farm this game are left off. The full list is further down this page, folded away.`,
       },
+      {
+        q: 'What’s the "Things I’ve learnt" page in the notebook?',
+        a: `After the bucket list's pages, the notebook has a few more headed "Things I've learnt". The first time something shows you how the farm works (the choke left on
+          flooding an engine, running dry, a quad that drips petrol with its tap on, one of the girls' pranks) it is written down there and a short "Added to your notebook" appears.
+          Lines you haven't found yet read "???" with a nudge. They are kept from day to day, and a new farm starts the page again.`,
+        spoiler: true,
+      },
     ],
   },
   {

@@ -212,6 +212,7 @@ import { DieselMistake, DIESEL_MISTAKE_PARAM_RANGES } from './npc/dieselMistake.
 import { Mugs } from './items/mug.js';
 import { Achievements, DEFAULT_ACHIEVEMENT_PARAMS, ACHIEVEMENT_PARAM_RANGES } from './achievements/achievements.js';
 import { paginate } from './achievements/pages.js';
+import { Discoveries, stallDiscovery, prankDiscovery } from './achievements/discoveries.js';
 import { achievementSnapshot, placesAt } from './achievements/snapshot.js';
 import { buildStartLine, buildClimbCones, buildConeCourse, layCone, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
@@ -663,6 +664,7 @@ export class Game {
     this.rustyUnit = this.addRusty();
     this.ploverUnit = this.addPlover(); // and always the old bike, under its own tarp (vehicle/bantamModel.js)
     if (this.tractorUnit) this.podRack.allow(this.tractorUnit.id); // likewise the tractor, which is added after the pods are dealt
+    this.discoveries = new Discoveries(); // the notebook's "Things I've learnt", written down the first time each shows itself
     this.achievements = new Achievements({ params: { ...DEFAULT_ACHIEVEMENT_PARAMS } }); // the bucket list; its fleet is set once every vehicle is added
     if (this.rustyUnit) this.podRack.allow(this.rustyUnit.id); // placed after the pods were dealt, but you can fit one at the bench
     if (this.ploverUnit) this.podRack.allow(this.ploverUnit.id);
@@ -1775,6 +1777,7 @@ export class Game {
     registerTuning('Achievements', this.achievements.p, ACHIEVEMENT_PARAM_RANGES);
     this.achievements.fleet = [...this.units.map((u) => u.id), ...(this.rustyUnit ? ['rusty'] : [])];
     this.achievements.onUnlock((a) => this.achievementUnlocked(a));
+    this.discoveries.onLearn(() => this.discoveryLearnt());
     registerTuning('Falling out', this.fallingOut.p, FALLING_OUT_PARAM_RANGES);
     registerTuning('Making up', this.makeUp.p, MAKE_UP_PARAM_RANGES);
     registerTuning('Romance', this.romance.p, ROMANCE_PARAM_RANGES);
@@ -2772,7 +2775,10 @@ export class Game {
   /** What a girl says as she pushes your vehicle for a bump-start (npc/pushStart.js, pushLines.js). */
   updatePushStart() {
     const mine = this.riddenUnit?.quad.engine;
-    if (mine?.caughtBy === 'roll' && mine.events.some((ev) => ev.type === 'caught')) this.achievements.note('bumpStart');
+    if (mine?.caughtBy === 'roll' && mine.events.some((ev) => ev.type === 'caught')) {
+      this.achievements.note('bumpStart');
+      this.discoveries.learn('bumpStart');
+    }
     for (const c of this.companions) {
       for (const e of c.pushEvents.splice(0)) {
         if (e === 'start') c.voice.say('pushStart', { urgent: true });
@@ -4359,6 +4365,7 @@ export class Game {
     if (!save) return;
     restoreGirls(this, save.girls, this.farmParams);
     this.achievements.restore(save.bucket);
+    this.discoveries.restore(save.learnt);
     this.records.restore(save.records);
     this.challenges.restore(save.challenges);
     this.jobBoardView.refresh();
@@ -4546,6 +4553,7 @@ export class Game {
       pods: { ...this.podRack.at },
       girls: captureGirls(this),
       bucket: this.achievements.toJSON(),
+      learnt: this.discoveries.toJSON(),
       records: this.records.toJSON(),
       challenges: this.challenges.toJSON(),
       photos: this.photos.wall.toJSON(),
@@ -7730,6 +7738,7 @@ export class Game {
       q.fuel.litres -= res.lost;
       if (parked) unit.engine.fouling = Math.max(unit.engine.fouling, this.carbDrip.floodFouling(unit.id));
       let patch = this.dripPatches.get(unit.id);
+      if (res.stuck && q.position.distanceTo(this.player.position) < 12) this.discoveries.learn('carbDrip');
       if (!patch && (res.stuck || this.carbDrip.puddle(unit.id) > 0)) {
         patch = new THREE.Mesh(new THREE.CircleGeometry(0.5, 20).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x2a2418, roughness: 0.15, transparent: true, opacity: 0.65, depthWrite: false }));
         patch.renderOrder = 1;
@@ -10742,6 +10751,7 @@ export class Game {
     if (e.type === 'start') this.startPrank(a, girl);
     else if (e.type === 'found') {
       girl?.voice.say('prankGiggle', { force: true });
+      this.discoveries.learn(prankDiscovery(a));
       this.noteOutcome(a.girl, 'prankLanded');
     }
     else if (e.type === 'restore') {
@@ -11622,9 +11632,34 @@ export class Game {
     if (this.hud.bucketOpen) this.showBucketList();
   }
 
+  /** A quiet toast and nothing else: it isn't a prize, and the girls don't remark on it. */
+  discoveryLearnt() {
+    this.hud.toast('Added to your notebook', 3);
+    if (this.hud.bucketOpen) this.showBucketList();
+  }
+
+  /** What stalling the vehicle you're on has taught you (a stall that isn't a lesson, like the key coming off, teaches nothing). */
+  updateDiscoveries() {
+    const unit = this.riddenUnit;
+    if (!unit) return;
+    for (const ev of unit.quad.engine.events) {
+      if (ev.type !== 'stalled') continue;
+      const id = stallDiscovery(ev.reason, unit.quad.choke ?? 0);
+      if (id) this.discoveries.learn(id);
+    }
+  }
+
+  /** The bucket list's pages, then (from a fresh spread) the notebook's "Things I've learnt". */
+  notebookPages() {
+    const list = paginate(this.achievements.entries()).map((pg) => ({ ...pg, title: 'Bucket list' }));
+    if (list.length % 2) list.push({ lines: [], title: 'Bucket list' });
+    const learnt = paginate(this.discoveries.entries(), 7).map((pg) => ({ ...pg, title: 'Things I\'ve learnt' }));
+    return [...list, ...learnt];
+  }
+
   showBucketList() {
-    this.bucketPages = paginate(this.achievements.entries());
-    const shown = this.hud.showBucket(this.bucketPages, this.achievements.score(), this.bucketSpread ?? 0);
+    this.bucketPages = this.notebookPages();
+    const shown = this.hud.showBucket(this.bucketPages, this.achievements.score(), this.bucketSpread ?? 0, this.discoveries.score());
     this.bucketSpread = shown.spread;
     this.bucketSpreads = shown.count;
   }
@@ -11903,6 +11938,7 @@ export class Game {
     this.guard.run('updateCars', () => this.updateCars(dt)); // (minding you taking her car is a reaction, so it runs with the girls on hold too)
     this.guard.run('updateLPlates', () => this.updateLPlates(dt));
     this.guard.run('updatePushStart', () => this.updatePushStart());
+    this.guard.run('updateDiscoveries', () => this.updateDiscoveries());
     this.guard.run('updateWatching', () => this.updateWatching(dt));
     this.guard.run('updateQuadTalk', () => this.updateQuadTalk(dt, ridden));
     this.guard.run('updateWarming', () => this.updateWarming(dt));

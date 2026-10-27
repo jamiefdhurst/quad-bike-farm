@@ -180,6 +180,14 @@ export function createHost(g, { copy = () => {} } = {}) {
     },
     farmLoad: (json) => g.loadFarmJson(json),
 
+    notebookLearnt: () => g.discoveries.list.map((d) => ({ id: d.id, text: d.text, learnt: g.discoveries.learnt.has(d.id) })),
+    learnThing: (id) => g.discoveries.learn(id),
+    learnAll: () => g.discoveries.list.forEach((d) => g.discoveries.learn(d.id)),
+    forgetAll: () => {
+      g.discoveries.forget();
+      if (g.hud.bucketOpen) g.showBucketList();
+    },
+
     errors: () => g.guard.summary(),
     clearErrors: () => g.guard.clear(),
 

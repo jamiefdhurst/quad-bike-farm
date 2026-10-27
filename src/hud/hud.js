@@ -115,7 +115,7 @@ export class Hud {
    * The bucket list as a notebook open at one spread (two pages), items crossed off in pen. `pages` come from achievements/pages.js
    * and `score` from Achievements; returns the spread it showed (clamped) and how many there are.
    */
-  showBucket(pages, score, spread = 0) {
+  showBucket(pages, score, spread = 0, learnt = null) {
     const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
     const all = spreads(pages);
     const at = Math.max(0, Math.min(spread, all.length - 1));
@@ -125,14 +125,15 @@ export class Hud {
         .map((l) =>
           l.heading
             ? `<h3>${esc(l.heading)}</h3>`
-            : `<div class="nb-item${l.entry.done ? ' done' : ''}"><b></b><span>${esc(l.entry.name)}<small>${esc(l.entry.hint)}</small></span><i>${l.entry.points}</i></div>`,
+            : `<div class="nb-item${l.entry.done ? ' done' : ''}${l.entry.points ? '' : ' learnt'}"><b></b><span>${esc(l.entry.name)}<small>${esc(l.entry.hint)}</small></span>${l.entry.points ? `<i>${l.entry.points}</i>` : ''}</div>`,
         )
         .join('');
       return `<div class="nb-page">${lines}<em>${n}</em></div>`;
     };
     const [left, right] = all[at] ?? [null, null];
+    const learning = left?.title === 'Things I\'ve learnt' && learnt;
     this.bucket.innerHTML =
-      `<div class="nb-title"><h2>Bucket list</h2><span>${score.count} of ${score.totalCount} done &middot; ${score.points} of ${score.total} points</span></div>` +
+      `<div class="nb-title"><h2>${esc(left?.title ?? 'Bucket list')}</h2><span>${learning ? `${learnt.count} of ${learnt.totalCount} found` : `${score.count} of ${score.totalCount} done &middot; ${score.points} of ${score.total} points`}</span></div>` +
       `<div class="nb-foot">${at > 0 ? '&larr; ' : ''}turn the page${at < all.length - 1 ? ' &rarr;' : ''} &middot; Tab to close</div>` +
       `<div class="nb-spread">${page(left, at * 2 + 1)}${page(right, at * 2 + 2)}</div>`;
     this.bucket.style.display = 'block';

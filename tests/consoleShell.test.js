@@ -46,6 +46,10 @@ function makeWorld() {
     farmJson: () => '{"day":4}',
     farmWipe: () => (state.wiped = true),
     farmEndDay: () => 'fading to black: day 5 loads next',
+    notebookLearnt: () => [{ id: 'flood', text: 'A flooded engine clears.', learnt: !!state.learnt?.has('flood') }, { id: 'wax', text: 'Diesel waxes.', learnt: !!state.learnt?.has('wax') }],
+    learnThing: (id) => ((state.learnt ??= new Set()).has(id) ? false : (state.learnt.add(id), true)),
+    learnAll: () => (state.learnt = new Set(['flood', 'wax'])),
+    forgetAll: () => (state.learnt = new Set()),
     errors: () => (state.errors ?? []),
     clearErrors: () => (state.errors = []),
     perf: () => ({ fps: 59.8, ms: 4.234, worstMs: 9.06, calls: 812, triangles: 1234567, width: 2592, height: 1676, pixelRatio: 1.5, maxFps: 60, ...state.perfExtra }),
@@ -279,6 +283,20 @@ describe('tab completion', () => {
   it('offers nothing for an unknown path', () => {
     const { shell } = makeWorld();
     expect(shell.complete('get nothing.').candidates).toEqual([]);
+  });
+});
+
+describe('the notebook\'s things I\'ve learnt', () => {
+  it('lists them, writes one down by id, all of them, or none', () => {
+    const { shell } = makeWorld();
+    expect(text(shell.run('learn'))).toContain('[ ] flood: A flooded engine clears.');
+    expect(text(shell.run('learn flood'))).toBe('wrote down flood');
+    expect(text(shell.run('learn flood'))).toBe('flood was already written down');
+    expect(text(shell.run('learn'))).toContain('[x] flood');
+    expect(text(shell.run('learn nonsense'))).toMatch(/no "nonsense"/);
+    expect(text(shell.run('learn all'))).toBe('wrote them all down');
+    expect(text(shell.run('learn none'))).toBe('rubbed them all out');
+    expect(text(shell.run('learn'))).toContain('[ ] wax');
   });
 });
 
