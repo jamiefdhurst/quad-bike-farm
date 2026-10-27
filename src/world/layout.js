@@ -175,6 +175,11 @@ export const LAYOUT = {
   // across, flat to the track's width). `bogs` and `logs` sit `at` metres round the loop; a log lies across the track from `side` (-1 or 1)
   // with `len` m of it over the track, a chicane. `deadwood` are fallen branches off the track as [x, z, yaw, length]. The pond is the south
   // one's again (an ellipse `rx` by `rz` m, `depth` cut with `water` standing). `trees` is the count of oaks and `bushes` the hazel and holly.
+  // `trail` is the Fern Trail, a single-track loop for the two-wheelers that winds between the Hollow Run's rows (`points`, closed, `halfWidth` m
+  // either side, bed `depth` m), starting just off the lead-in at `entrance` (the way-marking sign). Four places it crosses the circuit. `roots`
+  // are clusters of `count` roots across it every `spacing` m from `from` m round (`rise` m high); `dips` hollow it `depth` m for `len` m at `at`
+  // metres round; `hop` is the one log lying right across it at `at` metres (`r` m thick, `len` m long, a bump a bike can hop and a quad rolls
+  // over); `postEvery` m apart stand way-marker posts beside it.
   woods: {
     name: 'Hollow Wood',
     minX: -80, maxX: 80, minZ: -200, maxZ: -80,
@@ -196,6 +201,21 @@ export const LAYOUT = {
     logs: [{ at: 152, side: 1, len: 2.2 }, { at: 166, side: -1, len: 2.2 }, { at: 262, side: -1, len: 2.2 }, { at: 276, side: 1, len: 2.2 }, { at: 400, side: 1, len: 2.2 }],
     deadwood: [[-12, -118, 0.4, 4.2], [14, -166, 2.2, 3.6], [40, -142, 1.3, 5], [-46, -128, 2.8, 3.8], [52, -192, 0.1, 4.4], [-20, -192, 1.5, 3.2], [-52, -166, 0.7, 4.6]],
     pond: { x: -42, z: -150, rx: 8.5, rz: 6, depth: 1, water: 0.55 },
+    trail: {
+      name: 'The Fern Trail',
+      points: [
+        [-36, -89], [-18, -93], [0, -88], [20, -93], [40, -89], [56, -93], [52, -104], [46, -114], [30, -118], [16, -112], [8, -118], [6, -130], [8, -139],
+        [26, -137], [44, -141], [58, -142], [56, -147], [40, -146], [22, -148], [2, -145], [-6, -137], [-8, -128], [-12, -118], [-26, -113], [-40, -118],
+        [-42, -108], [-39, -97],
+      ],
+      halfWidth: 1,
+      depth: 0.06,
+      entrance: { x: -33.4, z: -86.4 },
+      roots: { from: 12, spacing: 23, count: 3, rise: 0.07 },
+      dips: [{ at: 62, len: 14, depth: 0.55 }, { at: 205, len: 12, depth: 0.45 }],
+      hop: { at: 282, len: 2.6, r: 0.2 },
+      postEvery: 28,
+    },
     trees: 170,
     bushes: 110,
   },

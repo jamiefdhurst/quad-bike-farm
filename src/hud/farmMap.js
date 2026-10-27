@@ -37,6 +37,7 @@ export const MAP_COLOURS = {
   road: '#9a9893',
   roadEdge: '#6f6d68',
   track: '#a5835c',
+  trail: '#d6bf8e', // the Fern Trail, paler than the tracks
   gravel: '#c6bba5',
   bog: '#6e5539',
   water: '#6f9cc0',
@@ -152,6 +153,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const pond = hill?.pond ?? null;
   const woods = fields.woods;
   const woodsTrack = woods ? { points: woods.track.points, leadIn: woods.leadIn, half: woods.halfWidth } : null;
+  const woodsTrail = woods?.trail ? { points: woods.trailTrack.points, half: woods.trailHalf } : null;
   const woodsBogs = woods ? woods.bogs.map((b) => ({ x: b.x, z: b.z, r: b.radius })) : [];
   const road = layout.road ? { x1: layout.road.fromX, x2: layout.road.toX, z: layout.road.z, half: layout.road.halfWidth, pad: layout.road.pad ? { x: layout.road.pad.x, z: layout.road.z, r: layout.road.pad.radius } : null } : null;
 
@@ -224,6 +226,10 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     field(woods.name, (r.minX + r.maxX) / 2 + 20, r.minZ + 10);
     const p = woods.at(woods.track.totalLength * 0.97); // on the way back to the junction, in the open by the gate
     place(woods.circuitName, p.x + 6, p.z - 10);
+    if (woods.trail) {
+      const t = woods.trailAt(woods.trailTrack.totalLength * 0.2);
+      place(woods.trail.name, t.x, t.z - 9);
+    }
     if (woods.pond) place('Pond', woods.pond.x, woods.pond.z, woods.pond.rz + 4);
   }
   const tp = track.sample(0.78);
@@ -237,7 +243,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
 
   return {
     bounds, key, areas, hedges, gates, stream, ford, pond, road, track: { points: track.points, half: layout.trackHalfWidth }, bogs, dragStrip, ramp,
-    woodsTrack, woodsBogs, woodsPond: woods?.pond ?? null, woodland: woods ? { ...woods.rect } : null,
+    woodsTrack, woodsTrail, woodsBogs, woodsPond: woods?.pond ?? null, woodland: woods ? { ...woods.rect } : null,
     buildings, small, muckHeap, paddock, yard, wood, labels,
     neighbourYard: nf ? { ...nf.outline } : null,
   };

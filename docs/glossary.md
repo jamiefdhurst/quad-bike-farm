@@ -8,6 +8,8 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 
 | Name | What it is | Not |
 | --- | --- | --- |
+| Fern Trail | The narrow single-track path for the two-wheelers through the wood, marked by the blue-banded posts | Fern Path, Bike Trail, the trail loop |
+| way-marker post | The timber post with a blue band and an arrow beside the Fern Trail | waymarker, waymark post |
 | river | The wide river across the riverside meadow, past the pasture's east hedge: the brook widened | big stream |
 | crossing | The marked shallows across the river, between the white posts | river ford |
 | cork board | The board on the barn's back wall where photos are pinned | corkboard, cork-board |

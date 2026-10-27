@@ -7,6 +7,7 @@ import { matrixAt, buildPond } from './hillProps.js';
 import { woodsPlants } from './woods.js';
 import { buildConkers } from './autumnView.js';
 import { CONKERS_PER_TREE } from './autumn.js';
+import { buildTrail } from './trailProps.js';
 
 /** Builds the wood's props and their colliders. `c` is the props context (props.js). */
 export function buildWoods(c) {
@@ -14,6 +15,7 @@ export function buildWoods(c) {
   const woods = fields.woods;
   buildTrees(c, woods);
   buildLogs(c, woods);
+  buildTrail(c, woods);
   if (woods.pond) buildPond(c, woods, () => false);
 }
 

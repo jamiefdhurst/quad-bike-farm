@@ -175,6 +175,12 @@ export class MapView {
       line([...wt.points, wt.points[0]], Math.max(2, wt.half * 2 * s), C.track);
       for (const b of f.woodsBogs) disc(b.x, b.z, b.r, C.bog);
     }
+    // The Fern Trail: a thin dashed path, paler than the tracks, since it's a footpath-wide thing for two wheels.
+    if (f.woodsTrail) {
+      ctx.setLineDash([4, 3]);
+      line([...f.woodsTrail.points, f.woodsTrail.points[0]], Math.max(1.5, f.woodsTrail.half * s), C.trail);
+      ctx.setLineDash([]);
+    }
 
     // The road and the hardstanding, edged.
     if (f.road) {

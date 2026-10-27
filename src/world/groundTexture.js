@@ -385,6 +385,60 @@ function paintWoods(ctx, toPx, s, fields, random, autumn = false) {
     ctx.stroke();
     ctx.restore();
   };
+  // The Fern Trail (painted first, so the Hollow Run's wider bed lies over it where they cross): a single-track path of packed pale earth worn through the litter, a ribbon of bare ground with a faint dark edge and a
+  // dusting of leaves on it, no ruts. Painted roots cross it where the real ones lie.
+  const tr = woods.trail;
+  if (tr) {
+    const th = woods.trailHalf;
+    const line = { pts: woods.trailTrack.points, closed: true };
+    stroke(line, 0, th * 2 + 1.3, '#3d3020', 0.4, 5);
+    stroke(line, 0, th * 2 + 0.3, '#6b5738', 0.95, 2);
+    stroke(line, 0, th * 2 - 0.5, '#7d6844', 0.9, 2);
+    stroke(line, 0, 0.5, '#8a7650', 0.55, 1);
+    stroke(line, 0, 0.35, '#4c5a2c', 0.18, 1);
+    for (const dip of tr.dips) {
+      // The dips are darker, damp earth.
+      for (let k = -dip.len / 2; k < dip.len / 2; k += 0.25) {
+        const p = woods.trailAt(dip.at + k);
+        const [px, pz] = toPx(p.x, p.z);
+        ctx.fillStyle = 'rgba(44,34,22,0.14)';
+        ctx.beginPath();
+        ctx.ellipse(px, pz, (th + 0.2) * s, 0.8 * s, Math.atan2(p.tx, -p.tz), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    for (let i = 0; i < 1800; i++) {
+      const p = woods.trailAt(random() * woods.trailTrack.totalLength);
+      const lat = (random() * 2 - 1) * th;
+      const [px, pz] = toPx(p.x - p.tz * lat, p.z + p.tx * lat);
+      const rr = (0.05 + random() * 0.16) * s;
+      ctx.fillStyle = random() < 0.5 ? 'rgba(60,46,28,0.3)' : autumn ? 'rgba(190,110,30,0.4)' : 'rgba(150,104,48,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(px, pz, rr * (1 + random()), rr, random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Roots: the ones with bodies, and a few more only painted, running off the path into the litter.
+    const rootLine = (x, z, yaw, len, wide) => {
+      const [x0, z0] = toPx(x - Math.cos(yaw) * len / 2, z + Math.sin(yaw) * len / 2);
+      const [x1, z1] = toPx(x + Math.cos(yaw) * len / 2, z - Math.sin(yaw) * len / 2);
+      for (const [width, style] of [[wide * 1.6, 'rgba(24,16,8,0.45)'], [wide, 'rgba(92,70,46,0.9)'], [wide * 0.35, 'rgba(140,114,82,0.6)']]) {
+        ctx.strokeStyle = style;
+        ctx.lineWidth = width * s;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x0, z0);
+        ctx.lineTo(x1, z1);
+        ctx.stroke();
+      }
+    };
+    for (const root of tr.roots) rootLine(root.x, root.z, root.yaw, root.len, root.r * 2);
+    for (let i = 0; i < 70; i++) {
+      const p = woods.trailAt(random() * woods.trailTrack.totalLength);
+      const yaw = Math.atan2(-p.tx, -p.tz) + (random() - 0.5) * 1.2;
+      const lat = (random() * 2 - 1) * (th + 0.8);
+      rootLine(p.x - p.tz * lat, p.z + p.tx * lat, yaw, 0.7 + random() * 1.3, 0.05 + random() * 0.05);
+    }
+  }
   for (const line of lines) {
     stroke(line, 0, half * 2 + 2, '#4a3d28', 0.5, 6);
     stroke(line, 0, half * 2 + 0.4, '#3f3222', 0.92, 3);
