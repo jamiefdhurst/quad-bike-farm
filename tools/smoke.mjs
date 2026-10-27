@@ -57,7 +57,7 @@ async function run() {
   await page.evaluateOnNewDocument(stubDraws);
   await page.goto(`${base}?smoke&${QUERY}`, { waitUntil: 'load' });
   try {
-    await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000 });
+    await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000, polling: 250 });
   } catch (err) {
     // Say where the load had got to, so a slow runner is told from a game that threw while starting.
     const status = await page.evaluate(() => `${document.getElementById('overlay-status')?.textContent} (game ${typeof window.game}, companions ${typeof window.game?.companions}, ${location.href})`).catch(() => '(page gone)');
