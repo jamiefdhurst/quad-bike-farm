@@ -739,6 +739,26 @@ body {
   display: none;
 }
 
+/* A line of "Things I've learnt": written out in full rather than ticked, so it may run to two lines. */
+.nb-item.learnt {
+  height: auto;
+  min-height: 3.8em;
+  line-height: 1.45em;
+  padding-top: 0.2em;
+}
+
+.nb-item.learnt b {
+  display: none;
+}
+
+.nb-item.learnt.done {
+  opacity: 1;
+}
+
+.nb-item.learnt.done span {
+  text-decoration: none;
+}
+
 .nb-page em {
   position: absolute;
   bottom: 4px;
