@@ -321,10 +321,11 @@ export const LAYOUT = {
   // up, `width` across. The ground is levelled under it (terrainHeight.js); a test checks it is clear of the track, the bogs, the bales and the ramp.
   dragStrip: { x: -30, z: 19, yaw: Math.PI / 2 - 0.2, length: 56, runOff: 8, width: 10 },
 
-  // The line-up bays (world/challenges.js, lineUpBays.js): painted on the yard's grass for the tidiest line-up challenge on the barn's chalkboard. `bays` of
-  // them side by side `spacing` m apart across the row, centred on x, z, each `length` m deep with a quad's nose to yaw (a quad's yaw). Clear of the spawn
-  // keep-out and the track (a test checks).
-  lineUp: { x: -42, z: 56, yaw: Math.PI / 2, bays: 4, spacing: 2.6, length: 3.4 },
+  // The line-up spaces (world/challenges.js, lineUpBays.js): four old railway sleepers half sunk in the grass by the south hedge, east of the barn's
+  // extension doorway and west of the field gate, for the tidiest line-up challenge on the barn's chalkboard. `bays` of them side by side `spacing` m
+  // apart along the hedge, centred on x, z, each `length` m deep with a quad's nose to yaw (a quad's yaw, here towards the hedge); the sleeper lies
+  // across the nose end. Clear of the spawn keep-out and the track (a test checks).
+  lineUp: { x: -44, z: 75, yaw: 0, bays: 4, spacing: 3, length: 3 },
 
   // Amy's cone course (npc/coneCourse.js): a slalom across the grass west of the middle, ridden from x, z in the direction yaw (a quad's yaw, so
   // towards -z). `gates` pairs of cones, `spacing` m apart from `lead` m past the start and swinging `swing` m either side of the line in turn, each
@@ -400,12 +401,12 @@ export const LAYOUT = {
     { x: -57.6, z: 56.6, yaw: 1.2, where: 'by the barn doors' },
     { x: -58.4, z: 38.5, yaw: 2.1, where: 'by the paddock' },
     { x: -72.6, z: 66.3, yaw: -0.6, where: 'by the silage bales' },
-    { x: -35.2, z: 77.4, yaw: 0.9, where: 'by the field gate' }, // clear of the gate, swung open into the field
+    { x: -33.4, z: 76.6, yaw: 0.9, where: 'by the field gate' }, // clear of the gate, swung open into the field, and of the line-up sleepers
     { x: 177.2, z: -8.6, yaw: 2.4, where: 'by the Dutch barn' }, // by its front corner stanchion, under the eaves
     { x: 92.9, z: -69.6, yaw: -0.5, where: 'by the field shed' }, // against its wall, beside the doorway
   ],
   // The tractor, UTV and Land Rover have no spot of their own: each game they're dealt a parking slot or an open spot like the quads (spawn, below).
-  trailer: { x: -42.5, z: 72.5, yaw: 2.7 }, // the bale trailer's axle, in the open towards the field gate with its drawbar to the yard, 7 m clear of the north hedge (it was in it). The tractor is wherever the game put it
+  trailer: { x: -42, z: 37, yaw: 2.7 }, // the bale trailer's axle, up the yard past the sprayer with its drawbar to the yard, 8 m or more from every parking and away spot and the line-up sleepers (it was in their way). The tractor is wherever the game put it
   tipTrailer: { x: -49, z: 33.5, yaw: 0.2 }, // the little tipping trailer's axle, in the clear by the paddock with its tongue towards the yard, for a quad to back up to
   sprayer: { x: -39, z: 46, yaw: 0.3 }, // the sprayer trailer's axle, east of the yard spots within the hose's reach, with its tongue towards the yard, for the green quad to back up to
   dieselBowser: { x: -61, z: 45.6, yaw: Math.PI / 2 }, // red diesel for the tractor, south of the petrol tank (and the hose)

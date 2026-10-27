@@ -1420,11 +1420,11 @@ export const FAQ_SECTIONS = [
         q: 'What are the challenges on the chalkboard?',
         a: `Three set tasks, each with your best kept from day to day. Press <kbd>E</kbd> at either chalkboard in the barn for the close view, where they are listed under the records.
           <b>Cold start:</b> press <kbd>1</kbd> and the clock runs until every quad that hasn't run today has been started, with five minutes to do it (<kbd>1</kbd> again calls it off).
-          It needs at least two cold quads, so it is best first thing, before you or the girls have been out. <b>Line-up:</b> park the quads nose out in the four painted bays in the yard,
-          in front of the barn's doors, then press <kbd>2</kbd> at the board. Each quad scores for how near the middle of its bay and how straight it sits, out of 100 for all four.
-          A quad with someone on it, or still rolling, doesn't count, and three have to be in the bays. <b>Clean climb:</b> a hill climb of yours with no stall and no tipping over counts
+          It needs at least two cold quads, so it is best first thing, before you or the girls have been out. <b>Line-up:</b> park the quads nose to the hedge, one at each of the four old railway sleepers laid in the grass
+          along the yard's south hedge, then press <kbd>2</kbd> at the board. Each quad scores for how near the middle of its space (the sleeper is its nose end) and how straight it sits, out of 100 for all four.
+          A quad with someone on it, or still rolling, doesn't count, and three have to be in the spaces. <b>Clean climb:</b> a hill climb of yours with no stall and no tipping over counts
           on its own. Whichever of the girls is nearby says something when you finish one.`,
-        tip: 'Challenges: E at the chalkboard, then 1 starts the cold-start clock and 2 judges the quads in the yard bays.',
+        tip: 'Challenges: E at the chalkboard, then 1 starts the cold-start clock and 2 judges the quads at the sleepers by the south hedge.',
       },
       {
         q: 'Do the girls climb the hill too?',
