@@ -1542,7 +1542,7 @@ export const FAQ_SECTIONS = [
           water trough. South, through the field gate, a sunk green lane down to a ford and a rough hill pasture with gorse, bracken and a small oak wood, and a
           view over the whole farm from the top. The sheep graze there. Beside the lane, with no hedge between, there is a wet meadow with a pond to the west and a rolling
           sheep field with a drystone wall to the east. North, through the gate in the grass field's north hedge, there is a wood with a narrow twisting
-          track through it, the Hollow Run.`,
+          track through it, the Hollow Run, and a narrower trail for two-wheelers, the Fern Trail.`,
         tip: 'Ride to the top of the hill pasture for a view over the whole farm.',
       },
       {
@@ -1553,6 +1553,15 @@ export const FAQ_SECTIONS = [
           swell the middle rows climb over, two bogs, and logs lying across the track in pairs, a chicane to steer through. Ride it either way round. There is a pond in the
           wood, with reeds, that works like the meadow's: don't drive into it. There is no timed race on it yet.`,
         tip: 'The Hollow Run is the narrow, twisty wood track through the gate in the grass field\'s north hedge.',
+      },
+      {
+        q: 'What is the Fern Trail, and can I take a quad on it?',
+        a: `A narrow path for the two-wheelers (the Bantam and the mini moto) through the same wood as the Hollow Run, about 390 m round and only 2 m wide. It starts beside the
+          lead-in from the gate, at a sign that says "The Fern Trail", and is marked by posts with a blue band and an arrow every 28 m or so, on the right as you follow it. It
+          winds between the Hollow Run's rows and crosses the Run in four places, so watch for the other track. Along it there are clusters of roots across the path, a damp hollow
+          or two, and one fallen log right across it, about 40 cm thick, to hop or roll over. Ferns and brambles grow along its edges. A quad will fit if you steer carefully, and
+          the oaks close to the path are what makes the tight turns hard. The trail is on the map as a dashed line.`,
+        tip: 'The Fern Trail is a narrow path through the wood for the two-wheelers: follow the posts with the blue bands, and mind the log across it.',
       },
       {
         q: 'Why have the leaves turned orange, and why is the wood so slippery?',
