@@ -20,6 +20,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | money tin | The tin on the shelf under the cork board that holds the farm's money | biscuit tin |
 | workbench | The bench along the barn's north wall where jobs are done and the bay is | work bench |
 | toolbox | The red box you carry and open at a quad | tool box |
+| booster pack | The black and yellow jump-start pack on the back of the workbench: charged on the bench charger, carried to a flat vehicle | jump starter, jump pack, battery pack, power pack |
 | jerry can | The 20 litre can you carry and pour from | jerrycan, jerry-can |
 | seat belt | The belt in the Land Rovers and the UTV, on `;` | seatbelt |
 | tow rope | The rope on the Farm 300's and Bruin's racks | towrope, tow-rope |

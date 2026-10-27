@@ -240,6 +240,7 @@ import { AntiGelBottle, ANTI_GEL_BOTTLE_PARAM_RANGES, doseStep } from './items/a
 import { DEFAULT_BLEED_PARAMS, BLEED_PARAM_RANGES } from './vehicle/bleeding.js';
 import { DEFAULT_DIESEL_WAX_PARAMS, DIESEL_WAX_PARAM_RANGES, dealWax } from './vehicle/dieselWax.js';
 import { BatteryItem, hasBattery } from './items/battery.js';
+import { BoosterPack, BOOSTER_ID, DEFAULT_BOOSTER_PARAMS, BOOSTER_PARAM_RANGES, boostStep, packOvernight } from './items/boosterPack.js';
 import { Charger, CHARGER_PARAM_RANGES } from './workshop/charger.js';
 import { buildChargerModel, CHARGER_SLOT } from './workshop/chargerModel.js';
 import { PlugAdditive, PLUG_ADDITIVE_PARAM_RANGES } from './items/plugAdditive.js';
@@ -1318,6 +1319,7 @@ export class Game {
             return;
           }
           if (this.can.held || this.hose.held || this.coolantBottle.held || this.antiGelBottle.held) return; // E is for pouring or spraying while you're holding those
+          if (this.heldBattery()?.unitId === BOOSTER_ID) return; // E is for holding to boost with the pack
           if (this.heldBattery()) return this.fitHeldBattery(unit);
           if (this.toolbox.held) {
             this.achievements.note('toolbox');
@@ -1343,6 +1345,7 @@ export class Game {
         hold: (dt) => {
           if (this.coolantBottle.held) return this.coolantTopUp(unit, dt);
           if (this.antiGelBottle.held) return this.antiGelDose(unit, dt);
+          if (this.heldBattery()?.unitId === BOOSTER_ID) return this.boostWithPack(unit, dt);
           if (this.hose.held) {
             // Close enough and the jet reaches it: the mud comes off.
             const near = quad.position.distanceTo(this.player.position) < this.hose.params.washRange + 1.2;
@@ -3268,7 +3271,7 @@ export class Game {
 
   /** What to call whatever heldLoad() found. */
   loadName(item) {
-    return item === this.toolbox ? 'toolbox' : item === this.leads ? 'jump leads' : item === this.oilBottle ? 'oil bottle' : item instanceof BatteryItem ? 'battery' : 'jerry can';
+    return item === this.toolbox ? 'toolbox' : item === this.leads ? 'jump leads' : item === this.oilBottle ? 'oil bottle' : item?.unitId === BOOSTER_ID ? 'booster pack' : item instanceof BatteryItem ? 'battery' : 'jerry can';
   }
 
   /** The UTV's bed as somewhere to stand a can, the toolbox, the leads or the oil bottle (vehicle/cargoHold.js). They tip out with the bed. */
@@ -4391,6 +4394,7 @@ export class Game {
     this.helmetHooks.show(this.headgear.onHooks());
     this.spares.restore(save.spares);
     this.restoreBatteries(save.batteries);
+    this.restoreBoosterPack(save.boosterPack);
     this.generator.restore(save.generator);
     this.sparesShelf.showParcel();
   }
@@ -4580,7 +4584,8 @@ export class Game {
       hay: this.hay?.toJSON(),
       spray: this.spray?.toJSON(),
       lane: this.world.wear.laneToJSON(),
-      batteries: Object.fromEntries([...this.batteries].filter(([, b]) => b.out).map(([id, b]) => [id, { where: b.where === 'charger' ? 'charger' : 'loose' }])),
+      boosterPack: { charge: this.boosterPack.engine.battery, where: this.boosterPack.where === 'charger' ? 'charger' : 'loose' },
+      batteries: Object.fromEntries([...this.batteries].filter(([id, b]) => id !== BOOSTER_ID && b.out).map(([id, b]) => [id, { where: b.where === 'charger' ? 'charger' : 'loose' }])),
     };
   }
 
@@ -11346,6 +11351,7 @@ export class Game {
     const L = this.world.layout;
     if (this.toolbox.held) return { name: 'toolbox', item: this.toolbox, spot: L.toolbox };
     if (this.leads.held) return { name: 'jump leads', item: this.leads, spot: L.benchLeads };
+    if (this.heldBattery()?.unitId === BOOSTER_ID) return { name: 'booster pack', item: this.heldBattery(), spot: L.benchPack };
     if (this.oilBottle.held) return { name: 'oil bottle', item: this.oilBottle, spot: L.benchOil };
     return null;
   }
@@ -11407,6 +11413,9 @@ export class Game {
     const L = this.world.layout;
     this.batteries = new Map(); // by vehicle id, made when the battery first comes out
     this.charger = new Charger();
+    this.boosterParams = { ...DEFAULT_BOOSTER_PARAMS };
+    registerTuning('Booster pack', this.boosterParams, BOOSTER_PARAM_RANGES);
+    this.setUpBoosterPack();
     registerTuning('Battery charger', this.charger.params, CHARGER_PARAM_RANGES);
     const built = buildChargerModel();
     this.chargerModel = built;
@@ -11452,10 +11461,32 @@ export class Game {
     }
   }
 
+  /** The next morning: the pack has lost a little sitting about; if it was on the charger it is on it still, and full. */
+  restoreBoosterPack(saved) {
+    if (!saved) return;
+    const pack = this.boosterPack;
+    pack.engine.battery = packOvernight(saved.charge ?? 1, this.boosterParams);
+    if (saved.where === 'charger' && !this.charger.busy) {
+      this.putOnCharger(pack);
+      pack.engine.battery = 1;
+      this.charger.full = true;
+    }
+  }
+
   /** Where a unit's battery is, in words (the debug panel). */
   batteryWhere(unit) {
     const b = this.batteries.get(unit.id);
     return !b?.out ? 'in the vehicle' : b.held ? 'in your hands' : b.where === 'charger' ? 'on the bench charger' : 'loose, out of the vehicle';
+  }
+
+  describeBoosterPack() {
+    const p = this.boosterPack;
+    return `${Math.round(p.engine.battery * 100)}%, ${p.held ? 'in your hands' : p.where === 'charger' ? 'on the charger' : 'loose'}`;
+  }
+
+  /** The panel's and the console's pack setting: its charge, 0 to 1. */
+  debugBoosterCharge(v) {
+    this.boosterPack.engine.battery = Math.max(0, Math.min(1, v));
   }
 
   describeCharger() {
@@ -11553,8 +11584,42 @@ export class Game {
     return true;
   }
 
+  /** The booster pack lies on the workbench with a full charge; it is in the `batteries` map so carrying and the charger treat it as one (items/boosterPack.js). */
+  setUpBoosterPack() {
+    const L = this.world.layout;
+    const pack = new BoosterPack({ scene: this.scene, world: this.world });
+    this.batteries.set(BOOSTER_ID, pack);
+    this.boosterPack = pack;
+    pack.putDown(new THREE.Vector3(L.benchPack.x, 0, L.benchPack.z), L.benchPack.yaw, this.world.heightAt(L.benchPack.x, L.benchPack.z) + L.bench.height);
+    this.interaction.add({
+      target: pack.proxy,
+      priority: 1, // it sits on the bench, whose box would otherwise be hit first
+      isAvailable: () => !this.handsFull && pack.where === 'loose',
+      prompt: () => 'Pick up the booster pack',
+      feedback: 'pickUp',
+      interact: () => this.pickUpBattery(pack),
+    });
+  }
+
+  /** Holding E at a vehicle with the booster pack in your hands: pushes charge into its battery, up to starting. True while it flows. */
+  boostWithPack(unit, dt) {
+    const how = boostStep(this.boosterPack.engine, unit.engine, dt, this.boosterParams);
+    this.eHeld = (this.eHeld ?? 0) + dt;
+    if (how === 'boosting') {
+      this.hud.setStatus(`Boosting the ${unit.label}: battery ${Math.round(unit.engine.battery * 100)}%, pack ${Math.round(this.boosterPack.engine.battery * 100)}%`);
+    } else if (this.eHeld < 0.6) {
+      const why = { out: `The ${unit.label} has no battery in it`, running: `The ${unit.label} is running: switch it off first`, enough: `The ${unit.label} has enough to start on`, flat: 'The booster pack is flat: put it on the charger' };
+      this.hud.toast(why[how], 2.5);
+    }
+    return how === 'boosting';
+  }
+
   batteryPrompt(unit) {
     const b = this.heldBattery();
+    if (b.unitId === BOOSTER_ID) {
+      if (unit.engine.batteryOut) return { text: `The ${unit.label} has no battery in it   ·   G put the pack down` };
+      return { action: `Boost the ${unit.label} from the pack (${Math.round(b.engine.battery * 100)}%)`, hold: true, keys: [['G', 'Put the pack down']] };
+    }
     if (b.unitId !== unit.id) return { text: `That is the ${b.name}, not the ${unit.label}'s   ·   G put it down` };
     if (unit.engine.isRunning || unit.engine.state === 'cranking') return { text: `Switch the ${unit.label} off first   ·   G put the battery down` };
     return `Fit the battery in the ${unit.label}   ·   G put it down`;
@@ -12863,7 +12928,8 @@ export class Game {
     } else if (this.leads.held) {
       this.hud.setStatus('Jump leads\nE on a quad to clamp one end, then another quad for the other\nG to put them down');
     } else if (this.heldBattery()) {
-      this.hud.setStatus(`${this.heldBattery().name}\nE on its vehicle to fit it, at the bench charger to charge it\nG to put it down`);
+      const b = this.heldBattery();
+      this.hud.setStatus(b.unitId === BOOSTER_ID ? `Booster pack  ${Math.round(b.engine.battery * 100)}%\nHold E on a switched-off vehicle to boost its battery, at the bench charger to charge it\nG to put it down` : `${b.name}\nE on its vehicle to fit it, at the bench charger to charge it\nG to put it down`);
     } else if (this.heldWood) {
       this.hud.setStatus(this.heldWood.kind === 'round' ? 'Round\nE at the log splitter on the tractor to put it on the beam\nG to put it down' : `Log\nE at the stack to add it (${this.logStack.count} of ${this.splitterParams.capacity})\nG to put it down`);
     } else if (this.heldBrushwood) {

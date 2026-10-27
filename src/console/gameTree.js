@@ -417,6 +417,10 @@ export function buildGameTree(g, host) {
     fuel: num(() => g.generator.fuel, (v) => g.debugGeneratorFuel(v), 0, 20, ' L', 'diesel in the tank (setting it switches the set off)'),
     running: flag(() => g.generator.running, (v) => (v ? g.debugGeneratorPull() : g.switchGeneratorOff()), 'set to true: pull the cord once (it may not catch); false: switch it off'),
   }), 'the diesel generator outside the barn');
+  const boosterPack = group(() => ({
+    now: text(() => g.describeBoosterPack(), 'its charge and where it is'),
+    charge: num(() => g.boosterPack.engine.battery, (v) => g.debugBoosterCharge(v), 0, 1, '', 'its charge (0 flat, 1 full)'),
+  }), 'the booster pack from the workbench');
   const spares = group(() => ({
     now: text(() => g.sparesShelf.describe(), 'what is on the rack, on order and in the parcel'),
     ...Object.fromEntries(ALL_PART_IDS.map((id) => [id, num(() => g.spares.count(id), (v) => ((g.spares.counts[id] = Math.max(0, Math.round(v))), g.sparesShelf.paintCrates()), 0, 20, '', `${PARTS[id].many} on the rack`)])),
@@ -500,6 +504,7 @@ export function buildGameTree(g, host) {
     pit,
     village,
     generator,
+    boosterPack,
     spares,
     photos,
     waving,
