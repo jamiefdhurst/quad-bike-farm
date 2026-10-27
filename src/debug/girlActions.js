@@ -371,6 +371,14 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'hut',
+      label: '% sits in the hut on the hill (lights the stove if she wants it)',
+      run: (id) => {
+        if (!free(id)) return;
+        toast(g.hutHost.ask(girl(id)) ? `${nameOf(id)} is off up to the hut` : `${nameOf(id)} can't just now`);
+      },
+    },
+    {
       verb: 'warm-sit',
       label: '% warms up the picked vehicle (needs it off, and a seat)',
       vehicle: true,

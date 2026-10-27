@@ -7,6 +7,7 @@ import { instanceModel, modelBounds } from './assets.js';
 import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
 import { buildElectricFence } from './electricFenceBuild.js';
 import { buildRiverside } from './riverProps.js';
+import { buildHut } from './hutBuild.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -23,6 +24,7 @@ export function buildHill(c) {
   buildBracken(c);
   buildTussocks(c);
   buildViewpoint(c);
+  const hut = buildHut(c);
   buildElectricFence(c);
   if (c.fields.hill.riverside) buildRiverside(c);
   if (c.fields.hill.west) {
@@ -31,7 +33,7 @@ export function buildHill(c) {
     buildWall(c);
     buildThorns(c);
   }
-  return { stream };
+  return { stream, hut };
 }
 
 /** Faint pale streaks along the stream, so the water's drift shows (the ribbon scrolls this across it). */
@@ -317,7 +319,7 @@ function buildTussocks({ scene, heights, fields, random, drawDistance }) {
     const { r, lane: inLane } = areas[i];
     const x = r.minX + random() * (r.maxX - r.minX);
     const z = r.minZ + random() * (r.maxZ - r.minZ);
-    if (heights.puddleAt(x, z) > 0 || heights.mudAt(x, z) > 0.2 || hill.inWood(x, z, 2)) continue;
+    if (heights.puddleAt(x, z) > 0 || heights.mudAt(x, z) > 0.2 || hill.inWood(x, z, 2) || hill.nearHut(x, z)) continue;
     // In the lane, on the banks and up the middle between the wheel tracks, not in them.
     if (inLane) {
       const dx = Math.abs(x - hill.lane.x);

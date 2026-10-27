@@ -185,6 +185,8 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (b) buildings.push({ name: 'barn', rect: centred(b.x, b.z + (b.annex?.halfZ ?? 0), b.halfX, b.halfZ + (b.annex?.halfZ ?? 0)), fill: C.building });
   if (dutch) buildings.push({ name: 'dutchBarn', rect: dutch.roof, fill: C.building });
   if (shed) buildings.push({ name: 'fieldShed', rect: shed.outer, fill: C.building });
+  const hut = layout.hill?.hut;
+  if (hut) buildings.push({ name: 'hut', rect: centred(hut.x, hut.z, hut.width / 2, hut.length / 2), fill: C.building });
   const nf = neighbourFarmShape(layout);
   if (nf) buildings.push({ name: 'neighbourHouse', rect: nf.house.outer, fill: C.building }, { name: 'neighbourBarn', rect: nf.barn.outer, fill: C.building });
   const small = [];
@@ -210,6 +212,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (A.sheep) field('Sheep field', (A.sheep.minX + A.sheep.maxX) / 2 + 6, A.sheep.minZ + 8);
   if (A.riverside) field('Riverside meadow', (A.riverside.minX + A.riverside.maxX) / 2, A.riverside.maxZ - 10);
   if (hill) field('Hill pasture', (hill.pasture.minX + hill.pasture.maxX) / 2 + 12, hill.pasture.maxZ - 12);
+  if (hut) place('Hut', hut.x - 2, hut.z - 7.5);
   if (b) place('Barn', b.x - 5, b.z + b.halfZ + 6); // south-west of it, clear of the quads parked in the yard (which has no name: it's crowded)
   if (paddock) place('Paddock', p.x, p.z, p.half + 4);
   if (strip) place('Drag strip', strip.x + 6, strip.z + 6);

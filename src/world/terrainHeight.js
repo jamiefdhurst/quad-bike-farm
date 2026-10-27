@@ -20,6 +20,7 @@ import { floorBlend } from './barn.js';
 import { stripFrame } from './layout.js';
 import { outsideRect, createFieldShape } from './fields.js';
 import { createHill } from './hill.js';
+import { hutShape } from './hut.js';
 import { createWoods } from './woods.js';
 import { createQuarry } from './quarry.js';
 import { createOutbuildings } from './outbuildings.js';
@@ -36,6 +37,9 @@ export function createTerrainHeight(layout, track) {
   const outbuildings = createOutbuildings(layout);
   const brook = createBrook(layout);
   const village = villageShape(layout);
+  const hut = hutShape(layout);
+  let hutLevel = null; // the ground at the hut's middle as the land lies, found the first time it's needed
+  let findingHutLevel = false;
   const yardHeight = baseHeight(yard.x, yard.z);
   const puddles = layout.puddles.map((u) => track.sample(u));
   const bogs = (layout.bogs ?? []).map((b) => (b.track !== undefined ? { ...track.sample(b.track), radius: b.radius } : { ...b }));
@@ -105,6 +109,19 @@ export function createTerrainHeight(layout, track) {
     if (village) {
       const pad = village.floorAt(x, z, (fx) => village.planeAt(fx, natural));
       if (pad) h += (pad.level - h) * pad.k;
+    }
+
+    // And under the shepherd's hut on the hill, a terrace cut into the bank at the lie of the land at its middle.
+    if (hut && !findingHutLevel) {
+      const k = hut.levelK(x, z);
+      if (k > 0) {
+        if (hutLevel === null) {
+          findingHutLevel = true;
+          hutLevel = natural(hut.x, hut.z);
+          findingHutLevel = false;
+        }
+        h += (hutLevel - h) * k;
+      }
     }
 
     // The river's valley is level across, to the ground at its middle, and then the brook's channel is cut into it.

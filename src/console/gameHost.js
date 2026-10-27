@@ -63,6 +63,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       river: layout.hill?.river ? { x: layout.hill.river.crossing.x, z: layout.hill.stream.z + layout.hill.river.halfWidth + 8 } : null,
       pit: g.world.fields.quarry ? (() => { const r = g.world.fields.quarry.roadPoints.find((p) => p.t > 0.02); return r ? { x: r.x, z: r.z } : null; })() : null,
       pitwall: g.world.fields.quarry ? { x: g.pitGates[0].x - g.pitGates[0].tx * 4, z: g.pitGates[0].z - g.pitGates[0].tz * 4 } : null,
+      hut: g.world.hutShape?.footOfSteps ?? null, // the foot of its steps, not inside it
       pasture: layout.hill ? { x: (layout.hill.pasture.minX + layout.hill.pasture.maxX) / 2, z: (layout.hill.pasture.minZ + layout.hill.pasture.maxZ) / 2 } : null,
     };
     return Object.fromEntries(Object.entries(spots).filter(([, p]) => p && Number.isFinite(p.x) && Number.isFinite(p.z)).map(([k, p]) => [k, { x: p.x, z: p.z }]));

@@ -317,6 +317,9 @@ export function buildGirlsTab(d) {
   button(jobs, 'Build and light the bonfire', () => g.debugLightFire());
   button(jobs, 'Put the bonfire out', () => g.bonfire.putOut() || toast('It is not lit'));
   button(jobs, 'Clear the bonfire, restore brushwood', () => g.debugResetFire());
+  show(jobs, 'The hut stove', () => g.hutHost.describe());
+  button(jobs, 'Light the hut stove, kettle boiled', () => g.hutHost.debugLight());
+  button(jobs, 'Put the hut stove out', () => g.hutHost.debugPutOut());
   button(jobs, 'Take a photo now', () => g.photos.press() || toast('The camera is not ready'));
   button(jobs, 'Photo mode on or off (8)', () => g.photos.toggleMode());
   show(jobs, 'Photo mode', () => (g.photos.modeActive ? `on${g.photos.hudHidden ? ', HUD hidden' : ''}${g.photos.girlsPosing ? ', girls posing' : ''}` : 'off'));

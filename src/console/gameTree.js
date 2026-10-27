@@ -340,6 +340,8 @@ export function buildGameTree(g, host) {
     muckDone: flag(() => g.muck.done, (v) => v && g.debugFinishMuck(), 'the muck job is done (ticks the board)'),
     bonfire: text(() => `${g.bonfire.state}, ${g.bonfire.piled} on the pile, ${Math.round(g.bonfire.intensity * 100)}% blaze`, 'the bonfire (world/bonfire.js)'),
     radios: flag(() => g.radioUnits().some((u) => u.quad.radio.on), (v) => g.setAllRadios(v), 'every radio in the Land Rovers and the cars: set on or off together'),
+    hut: text(() => g.hutHost.describe(), "the shepherd's hut stove and kettle (world/hut.js)"),
+    hutLit: flag(() => g.hutHost.stove.burning, (v) => (v ? g.hutHost.debugLight() : g.hutHost.debugPutOut()), "the hut's stove is lit (setting it lights it at full heat with the kettle boiled)"),
     bonfireLit: flag(() => g.bonfire.burning, (v) => (v ? g.debugLightFire() : g.bonfire.putOut()), 'the bonfire is lit (setting it builds the pile and lights it)'),
     hay: text(() => (g.hay ? `${g.hay.describe()}; ${g.hayLoading.describe()}` : 'no hay patch on this farm'), 'the hay job (world/haymaking.js): its stage, bales and who is loading'),
     spray: text(() => (g.spray ? g.spray.describe() : 'no spray field on this farm'), 'the spraying job (world/spraying.js): its stage, coverage, tank and boom'),

@@ -162,6 +162,10 @@ export const LAYOUT = {
     // The flat rock at the top of the pasture, on the level ground by the far hedge, looking back north over the farm (npc/flask.js): a girl sits on it
     // (yaw is the way she faces, `height` how high the top is) and the flask and mugs go on the ground beside it.
     viewpoint: { x: -22, z: 198.5, yaw: Math.PI, height: 0.45 },
+    // The shepherd's hut on the flat top of the pasture, west of the flask rock (world/hut.js, hutBuild.js): a wheeled hut `length` by `width` m on iron
+    // wheels with its floor `floor` m off the ground, the door end (local +z) facing `yaw`'s way, north over the farm. The ground is levelled
+    // for `level` m beyond its walls and eased back over `fade` m more; bracken, gorse and sheep keep `clear` m off it.
+    hut: { x: -60, z: 196.5, yaw: Math.PI, length: 4, width: 2.2, floor: 0.56, level: 2.5, fade: 5, clear: 8 },
     // The hill climb (npc/hillClimb.js): cones mark a gate at each of `points` ([x, z]: the start just past the stream, two on the way up, the
     // finish near the top), each `gateHalf` m either side of the point and across the way to the next (cones stand just outside). The line between them is yours; the points
     // run up the gentler ground in the east of the pasture, where the banks spread out, so the girls can drive it too.

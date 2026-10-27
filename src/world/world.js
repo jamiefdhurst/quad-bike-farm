@@ -15,6 +15,7 @@ import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
 import { createFields } from './fields.js';
 import { detourVia, DEFAULT_DETOUR_PARAMS, DETOUR_PARAM_RANGES } from '../npc/detour.js';
 import { createOutbuildings } from './outbuildings.js';
+import { hutShape } from './hut.js';
 import { RoadMud, RoadMudSet, DEFAULT_ROAD_MUD_PARAMS, ROAD_MUD_PARAM_RANGES } from './roadMud.js';
 import { DEFAULT_DUST_PARAMS, DUST_PARAM_RANGES } from './dust.js';
 import { leafCover, WINTER_TINTS } from './autumn.js';
@@ -41,6 +42,7 @@ export class World {
     this.river = createRiver(layout, this.heights.brook); // the river's crossing and what zone a point is in (river.js)
     this.cattleGrid = createCattleGrid(layout); // across the road in the grass field's east gateway, or null
     this.outbuildings = createOutbuildings(layout); // the Dutch barn, the field shed, the muck heap and the trough out east
+    this.hutShape = hutShape(layout); // the shepherd's hut on the hill (hut.js), or null
 
     this.streamLevel = new StreamLevel(); // how high the stream stands after rain (streamLevel.js)
     registerTuning('Stream', this.streamLevel.params, STREAM_PARAM_RANGES);
@@ -66,6 +68,7 @@ export class World {
       { ...bo.outer, door: { x: bo.door.x, z: bo.z, halfWidth: bo.door.maxZ - bo.z } },
       ...(bo.annex ? [{ ...bo.annex.outer, door: { x: bo.annex.door.x, z: bo.annex.z, halfWidth: bo.annex.door.maxZ - bo.annex.z } }] : []),
       ...(sh ? [{ minX: sh.x - sh.halfX, maxX: sh.x + sh.halfX, minZ: sh.z - sh.halfZ, maxZ: sh.z + sh.halfZ }] : []),
+      ...(this.hutShape ? [this.hutShape.box()] : []),
     ];
 
     this.sky = new Sky(scene, renderer, { ...SKY_PARAMS });
@@ -172,7 +175,7 @@ export class World {
 
   /** Under a roof (the barn's, the Dutch barn's or the field shed's): out of the rain. */
   covered(x, z) {
-    return underRoof(this.layout, x, z) || this.outbuildings.covered(x, z);
+    return underRoof(this.layout, x, z) || this.outbuildings.covered(x, z) || !!this.hutShape?.covered(x, z);
   }
 
   /** In the barn: a quad parked here keeps its warmth (the open-sided Dutch barn and the draughty shed don't). */
