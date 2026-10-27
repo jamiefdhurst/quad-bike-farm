@@ -20,6 +20,8 @@ export const MAP_PARAM_RANGES = {
 // A muted Ordnance Survey palette: fields in their own colours, hedges dark green, the road grey, the track brown.
 /** Metres of the neighbours' land shown round the farm and the hill. */
 export const MAP_MARGIN = 6;
+/** Metres added to the map's south edge when the gravel pit has taken the open ground its key stood on, for the key to stand in. */
+export const MAP_KEY_STRIP = 31;
 
 export const MAP_COLOURS = {
   paper: '#e9e4d4',
@@ -32,6 +34,9 @@ export const MAP_COLOURS = {
   pasture: '#a9bf86',
   wood: '#7fa268',
   woodland: '#9cb87c', // the north wood's ground, under its sprinkle of trees
+  quarryField: '#b3bf8c', // the gravel pit's rough field
+  pit: '#cdbf9a', // the pit's walls
+  pitFloor: '#bfae86', // and its floor and haul road
   hedge: '#3f6b35',
   gate: '#7d7d7d',
   road: '#9a9893',
@@ -63,7 +68,8 @@ export function mapBounds(fields, margin = MAP_MARGIN) {
   if (fields.areas.sheep) r = union(r, fields.areas.sheep);
   if (fields.areas.riverside) r = union(r, fields.areas.riverside);
   if (fields.areas.woods) r = union(r, fields.areas.woods);
-  return { minX: r.minX - margin, maxX: r.maxX + margin, minZ: r.minZ - margin, maxZ: r.maxZ + margin };
+  if (fields.areas.quarry) r = union(r, fields.areas.quarry);
+  return { minX: r.minX - margin, maxX: r.maxX + margin, minZ: r.minZ - margin, maxZ: r.maxZ + margin + (fields.areas.quarry ? MAP_KEY_STRIP : 0) };
 }
 
 /**
@@ -129,7 +135,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const A = fields.areas;
   const hill = fields.hill;
   const crop = (k) => layout.stubbleFields?.[k]?.crop;
-  const fieldFill = { grass: C.grass, road: C.verge, end: C.verge, north: crop('north') === 'barley' ? C.barley : C.wheat, south: crop('south') === 'barley' ? C.barley : C.wheat, lane: C.lane, hill: C.pasture, meadow: C.pasture, sheep: C.pasture, riverside: C.pasture, woods: C.woodland };
+  const fieldFill = { grass: C.grass, road: C.verge, end: C.verge, north: crop('north') === 'barley' ? C.barley : C.wheat, south: crop('south') === 'barley' ? C.barley : C.wheat, lane: C.lane, hill: C.pasture, meadow: C.pasture, sheep: C.pasture, riverside: C.pasture, woods: C.woodland, quarry: C.quarryField };
   const areas = Object.entries(A).map(([kind, rect]) => ({ kind, rect, fill: fieldFill[kind] ?? C.grass }));
 
   const hedges = [];
@@ -152,6 +158,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
 
   const pond = hill?.pond ?? null;
   const woods = fields.woods;
+  const quarry = fields.quarry;
   const woodsTrack = woods ? { points: woods.track.points, leadIn: woods.leadIn, half: woods.halfWidth } : null;
   const woodsTrail = woods?.trail ? { points: woods.trailTrack.points, half: woods.trailHalf } : null;
   const woodsBogs = woods ? woods.bogs.map((b) => ({ x: b.x, z: b.z, r: b.radius })) : [];
@@ -232,20 +239,46 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     }
     if (woods.pond) place('Pond', woods.pond.x, woods.pond.z, woods.pond.rz + 4);
   }
+  if (quarry) {
+    field(quarry.name, quarry.rect.maxX - 38, quarry.rect.minZ + 12);
+    place('Pit climb', quarry.climb.points[2][0], quarry.climb.points[2][1], -6); // at the top, where the line finishes
+    place('Pond', quarry.pond.x, quarry.pond.z, quarry.pond.rz + 4);
+  }
   const tp = track.sample(0.78);
   place(layout.trackName ?? 'Track', tp.x + 8, tp.z);
 
   // The map's key, north arrow and scale go in the neighbours' land south of the farm and east of the hill, where there's room.
   // With the riverside meadow there (south of the farm, beyond the hill), they go in the open ground north-east of the farm instead, past the wood.
-  const key = A.riverside && A.woods
+  const key = A.quarry && A.riverside
+    ? { minX: A.riverside.maxX + 4, maxX: bounds.maxX - 4, minZ: bounds.maxZ - 4 - 84, maxZ: bounds.maxZ - 4 }
+    : A.riverside && A.woods
     ? { minX: A.woods.maxX + 4, maxX: bounds.maxX - 4, minZ: bounds.minZ + 4, maxZ: fields.farm.minZ - 8 }
     : { minX: (A.hill?.maxX ?? fields.farm.minX) + (nf ? 4 : 10), maxX: Math.min(bounds.maxX - 4, nf ? nf.yard.minX - 6 : Infinity), minZ: fields.farm.maxZ + 8, maxZ: bounds.maxZ - 4 };
 
   return {
     bounds, key, areas, hedges, gates, stream, ford, pond, road, track: { points: track.points, half: layout.trackHalfWidth }, bogs, dragStrip, ramp,
     woodsTrack, woodsTrail, woodsBogs, woodsPond: woods?.pond ?? null, woodland: woods ? { ...woods.rect } : null,
+    quarryPit: quarry ? quarryOutline(quarry) : null,
     buildings, small, muckHeap, paddock, yard, wood, labels,
     neighbourYard: nf ? { ...nf.outline } : null,
+  };
+}
+
+/** The pit as the map draws it: its lip and the foot of its walls as outlines, the haul road, the pond and the heaps. */
+export function quarryOutline(quarry) {
+  const ring = (radius) => Array.from({ length: 72 }, (_, i) => {
+    const a = (i / 72) * Math.PI * 2;
+    const p = quarry.frameAt(a, radius(a));
+    return [p.x, p.z];
+  });
+  return {
+    rim: ring((a) => quarry.rimAt(a)),
+    floor: ring((a) => quarry.floorEdge(a)),
+    road: quarry.roadPoints.map((p) => [p.x, p.z]),
+    roadHalf: quarry.roadHalf,
+    pond: quarry.pond,
+    heaps: quarry.pit.heaps.map((h) => ({ x: h.x, z: h.z, r: h.r })),
+    climb: quarry.climb.points,
   };
 }
 

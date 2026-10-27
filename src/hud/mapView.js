@@ -154,8 +154,29 @@ export class MapView {
       }
     }
 
-    // The ponds: the wet meadow's and the wood's.
-    for (const pd of [f.pond, f.woodsPond]) {
+    // The gravel pit: the walls, the floor, the haul road winding down, the heaps and the line up the steep wall.
+    if (f.quarryPit) {
+      const qp = f.quarryPit;
+      const loop = (pts, colour) => {
+        ctx.beginPath();
+        pts.forEach(([x, z], i) => (i ? ctx.lineTo(...P(x, z)) : ctx.moveTo(...P(x, z))));
+        ctx.closePath();
+        ctx.fillStyle = colour;
+        ctx.fill();
+      };
+      loop(qp.rim, C.pit);
+      loop(qp.floor, C.pitFloor);
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      line(qp.road, Math.max(2, qp.roadHalf * 2 * s), C.pitFloor);
+      for (const h of qp.heaps) disc(h.x, h.z, h.r, C.gravel);
+      ctx.setLineDash([3, 3]);
+      line(qp.climb.map(([x, z]) => [x, z]), Math.max(1.5, 2 * s), C.ink);
+      ctx.setLineDash([]);
+    }
+
+    // The ponds: the wet meadow's, the wood's and the pit's.
+    for (const pd of [f.pond, f.woodsPond, f.quarryPit?.pond]) {
       if (!pd) continue;
       ctx.beginPath();
       ctx.ellipse(...P(pd.x, pd.z), pd.rx * s, pd.rz * s, 0, 0, Math.PI * 2);

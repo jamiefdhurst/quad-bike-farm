@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
 import { createFields } from '../src/world/fields.js';
 import { Track } from '../src/world/track.js';
-import { mapBounds, mapTransform, hedgeRuns, farmMapFeatures, placeMarkers, mapAngle, boxCorners, DEFAULT_MAP_PARAMS, MAP_PARAM_RANGES } from '../src/hud/farmMap.js';
+import { mapBounds, mapTransform, hedgeRuns, farmMapFeatures, placeMarkers, mapAngle, boxCorners, DEFAULT_MAP_PARAMS, MAP_PARAM_RANGES, MAP_KEY_STRIP } from '../src/hud/farmMap.js';
 
 const fields = createFields(LAYOUT);
 const track = new Track(LAYOUT.trackPoints);
@@ -15,7 +15,7 @@ describe('the farm map', () => {
     expect(b.minX).toBe(Math.min(LAYOUT.farm.minX, LAYOUT.hill.pasture.minX) - 6);
     expect(b.maxX).toBe(LAYOUT.farm.maxX + 6);
     expect(b.minZ).toBe(LAYOUT.woods.minZ - 6);
-    expect(b.maxZ).toBe(LAYOUT.hill.pasture.maxZ + 6);
+    expect(b.maxZ).toBe(LAYOUT.hill.pasture.maxZ + 6 + MAP_KEY_STRIP); // the strip the key stands in, now the gravel pit has the north-east
   });
 
   it('fits the ground in its box keeping its shape, centred, and maps back again', () => {

@@ -173,7 +173,8 @@ import { ConeCourse, ConeField, DEFAULT_CONE_PARAMS, CONE_PARAM_RANGES, coneGate
 import { Challenges, ColdStartRun, CleanWatch, DEFAULT_CHALLENGE_PARAMS, CHALLENGE_PARAM_RANGES, CHALLENGE_KINDS, judgeLineUp, formatChallenge } from './world/challenges.js';
 import { buildLineUpBays } from './world/lineUpBays.js';
 import { Records, JumpMeasure, DEFAULT_RECORD_PARAMS, RECORD_PARAM_RANGES, RECORD_KINDS, WHO_NAMES, formatValue } from './world/records.js';
-import { stripFrame, stripPoint } from './world/layout.js';
+import { LAYOUT, stripFrame, stripPoint } from './world/layout.js';
+import { dealtLayout } from './world/quarry.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
@@ -418,10 +419,12 @@ export class Game {
     // The farm's date and season (world/seasons.js) have to be known before the world is built: autumn turns the trees and the wood's floor, and
     // winter dulls them. The farm has its own calendar, started on a date dealt from its seed; ?season=spring|summer|autumn|winter forces one.
     const farmPeek = openFarm({ search: location.search, storage: browserStorage() });
-    this.date = dateToday({ farmSeed: farmPeek.farmSeed ?? startSeed(), day: farmPeek.day, forced: new URLSearchParams(location.search).get('season'), createRandom });
+    this.seed = startSeed(); // a new farm's seed (the farm's own, once it has one, deals its date and its gravel pit)
+    this.date = dateToday({ farmSeed: farmPeek.farmSeed ?? this.seed, day: farmPeek.day, forced: new URLSearchParams(location.search).get('season'), createRandom });
     this.season = this.date.season;
     this.autumn = isAutumn(this.season);
     this.world = new World({
+      layout: dealtLayout(LAYOUT, farmPeek.farmSeed ?? this.seed),
       autumn: this.autumn,
       winter: isWinter(this.season),
       scene: this.scene,
@@ -446,7 +449,6 @@ export class Game {
     this.rideWind = new RideWind(this.audioHub);
 
     // Where things start varies a little each game; ?seed=N repeats a layout.
-    this.seed = startSeed();
     const random = createRandom(this.seed);
     console.info(`Layout seed ${this.seed} (add ?seed=${this.seed} to the URL to repeat it)`);
     // The farm that remembers (farm/farmSave.js): each load is the next day on the same farm, unless ?seed= is in the URL. What the farm

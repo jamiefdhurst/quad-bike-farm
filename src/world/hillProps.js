@@ -178,13 +178,8 @@ function buildWood({ scene, models, layout, heights, fields, physics, RAPIER, ra
   scene.add(instanceModel(models.bush.scene, bushes, { castShadow: false }));
 }
 
-/**
- * Gorse: dense, dark, spiny clumps flecked with yellow flower, on the steep banks (hill.gorseAt). Each clump is a few lumps stuck together,
- * with a short collider you bump off rather than ride through.
- */
-function buildGorse({ scene, heights, fields, physics, RAPIER, random }) {
-  const hill = fields.hill;
-  const p = hill.pasture;
+/** One gorse clump's geometry: seven lumps stuck together, nearly black-green with the odd yellow flower. */
+export function gorseGeometry(random) {
   const pos = [];
   const colors = [];
   for (let k = 0; k < 7; k++) {
@@ -209,6 +204,17 @@ function buildGorse({ scene, heights, fields, physics, RAPIER, random }) {
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geo.computeVertexNormals();
+  return geo;
+}
+
+/**
+ * Gorse: dense, dark, spiny clumps flecked with yellow flower, on the steep banks (hill.gorseAt). Each clump is a few lumps stuck together,
+ * with a short collider you bump off rather than ride through.
+ */
+function buildGorse({ scene, heights, fields, physics, RAPIER, random }) {
+  const hill = fields.hill;
+  const p = hill.pasture;
+  const geo = gorseGeometry(random);
   const matrices = [];
   for (let tries = 0; matrices.length < 260 && tries < 30000; tries++) {
     const x = p.minX + random() * (p.maxX - p.minX);

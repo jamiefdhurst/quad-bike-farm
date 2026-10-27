@@ -9,6 +9,7 @@ import { underRoof } from './barn.js';
 import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
+import { buildQuarry } from './quarryProps.js';
 import { buildOutbuildings } from './outbuildingProps.js';
 import { buildNeighbourFarm } from './neighbourFarmProps.js';
 import { buildVillage } from './villageProps.js';
@@ -49,7 +50,7 @@ export function buildProps(ctx) {
   const barn = buildBarn(c);
   buildHedges(c);
   c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
-  const gates = [buildGate(c), buildNorthGate(c), buildRoadGate(c), buildGridGate(c)].filter(Boolean);
+  const gates = [buildGate(c), buildNorthGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c)].filter(Boolean);
   buildCattleGrid(c);
   buildPublicLane(c);
   buildPaddock(c);
@@ -68,6 +69,7 @@ export function buildProps(ctx) {
   buildBogs(c);
   const hillProps = ctx.fields.hill ? buildHill(c) : null;
   if (ctx.fields.woods) buildWoods(c);
+  if (ctx.fields.quarry) buildQuarry(c);
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
   return { barn, jumpRamp, silage, puddles, gates, neighbourFarm, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, anchors: c.anchors };
 }
@@ -161,6 +163,13 @@ function buildNorthGate(c) {
   const { layout } = c;
   if (!layout.woods) return null;
   return buildFiveBarGate(c, { id: 'north', gate: layout.woods.gate, z: -layout.fieldHalf, dir: -1, gap: c.fields.gates.north });
+}
+
+/** The gate in the barley field's north hedge onto the gravel pit's field (layout.quarry.gate): swung back into the barley field and tied. */
+function buildQuarryGate(c) {
+  const { layout } = c;
+  if (!layout.quarry) return null;
+  return buildFiveBarGate(c, { id: 'quarry', gate: layout.quarry.gate, z: layout.farm.minZ, dir: -1, gap: c.fields.gates.quarry });
 }
 
 /** A five-bar field gate at (gate.x, z) in a hedge along x. `dir` is the way it swings back into the grass field: 1 towards -z (the south hedge), -1 towards +z. */
