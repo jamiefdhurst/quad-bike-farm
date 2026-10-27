@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { createRandom } from '../core/random.js';
 import { registerTuning } from '../core/tuning.js';
 import { Traffic, DEFAULT_TRAFFIC_PARAMS, TRAFFIC_PARAM_RANGES, visitPlaces, LANE_KINDS, VISITOR_KINDS } from './traffic.js';
+import { Kids, DEFAULT_KIDS_PARAMS, KIDS_PARAM_RANGES, SHOWY_OFFERS } from './kids.js';
 import { TrafficView } from './trafficView.js';
 import { GATE_PARAM_RANGES } from './gates.js';
 import { GateMinder, DEFAULT_GATE_MIND_PARAMS, GATE_MIND_RANGES } from './gateMinding.js';
@@ -26,6 +27,9 @@ export class TrafficHost {
     this.lastSeen = new Map(); // girl -> { x, z }: where she was last frame, for how fast she is going
     this.places = visitPlaces(world.layout);
     this.traffic = new Traffic({ places: this.places, params: this.params, random: createRandom(game.seed ^ 0x7a11c) });
+    this.kidsParams = { ...DEFAULT_KIDS_PARAMS };
+    registerTuning('Kids on the lane', this.kidsParams, KIDS_PARAM_RANGES);
+    this.kids = new Kids({ places: this.places, params: this.kidsParams, random: createRandom(game.seed ^ 0x61d5) });
     this.view = new TrafficView(game.scene, (x, z) => world.groundHeightAt(x, z), game.models.companion);
     this.audio = new TrafficAudio(game.audioHub);
     this.later = []; // [{ left, run }]: things the girls say a few seconds after
@@ -116,7 +120,10 @@ export class TrafficHost {
     };
     for (const e of this.traffic.update(dt, ctx)) this.onEvent(e);
     this.mindGridGate(dt, blockers);
-    this.view.update(dt, this.traffic, dark);
+    const w = g.weather;
+    const watchers = this.watchers();
+    for (const e of this.kids.update(dt, { darkness: dark, fine: !((w?.rain ?? 0) > 0.05 || (w?.frost ?? 0) > 0.2), watchers, blockers: [] })) this.onKidsEvent(e);
+    this.view.update(dt, this.traffic, dark, this.kids);
     for (let i = this.later.length - 1; i >= 0; i--) {
       this.later[i].left -= dt;
       if (this.later[i].left <= 0) this.later.splice(i, 1)[0].run();
@@ -200,6 +207,47 @@ export class TrafficHost {
     }
   }
 
+  /** Who the kids would stop for: you, and each girl wherever she is (on foot or on a quad). */
+  watchers() {
+    const g = this.g;
+    const p = g.player.position;
+    const out = [{ x: p.x, z: p.z }];
+    const pos = new THREE.Vector3();
+    for (const c of g.companions) {
+      c.root.getWorldPosition(pos);
+      out.push({ x: pos.x, z: pos.z });
+    }
+    return out;
+  }
+
+  /** The kids on the lane: the girls notice them, and a girl near enough says something. */
+  onKidsEvent(e) {
+    const g = this.g;
+    const at = { x: e.x, y: g.world.groundHeightAt(e.x, e.z) + 1, z: e.z };
+    if (e.type === 'kidsPass') {
+      this.lastEvent = 'kids rode by on the lane';
+      g.notice('kids', at, { key: 'kids', strength: 0.5 });
+      this.remark('kidsPass', at, 0.5);
+    } else if (e.type === 'kidsWatch') {
+      this.lastEvent = 'kids stopped at the gate to watch';
+      g.notice('kids', at, { key: 'kids', strength: 1 });
+      this.remark('kidsWatch', at, 0.9);
+    } else if (e.type === 'kidsLeave') {
+      this.lastEvent = 'the kids rode on';
+      this.later.push({ left: 3, run: () => this.remark('kidsLeave', at, 0.5) });
+    }
+  }
+
+  /** Whether kids are stopped at the gate watching now (the girls are keener on showing off: npc/chooser weights in game.js). */
+  get kidsWatching() {
+    return this.kids.watching;
+  }
+
+  /** A girl has just chosen `key`: if it shows off and kids are watching, she says so. */
+  girlChose(girl, key) {
+    if (this.kids.watching && SHOWY_OFFERS.includes(key)) girl.voice.say('kidsShowOff', { chance: 0.7 });
+  }
+
   // Debug panel and console --------------------------------------------------
 
   debugPass(kind) {
@@ -213,12 +261,18 @@ export class TrafficHost {
     return !!v;
   }
 
+  debugKids(count) {
+    const k = this.kids.start(count);
+    if (k) this.lastEvent = 'kids are on the lane';
+    return !!k;
+  }
+
   describe() {
     const t = this.traffic;
     const v = t.visit;
     const lane = t.vehicles.map((x) => x.kind).join(', ') || 'empty';
     const step = v?.current ? v.current.type : '';
-    return `lane ${lane}; ${v ? `${v.kind} visit (${step})` : 'no visitor'}; last: ${this.lastEvent}`;
+    return `lane ${lane}${this.kids.group ? `; kids ${this.kids.group.phase}` : ''}; ${v ? `${v.kind} visit (${step})` : 'no visitor'}; last: ${this.lastEvent}`;
   }
 }
 

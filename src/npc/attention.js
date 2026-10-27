@@ -26,6 +26,7 @@ export const NOTICE_KINDS = {
   lurch: { seconds: 1.5, range: 15, heard: false, interest: 'attentionVehicles' }, // a vehicle leaping forward from a standstill (a clutch dropped, a kangaroo hop)
   jump: { seconds: 3, range: 50, heard: false, interest: 'attentionVehicles' }, // a vehicle landing after real air
   traffic: { seconds: 4, range: 70, heard: true }, // something going by on the lane, or a visitor coming in at the gate
+  kids: { seconds: 4, range: 70, heard: true }, // the neighbours' kids riding by on the lane, or stopped at the gate to watch
   pheasant: { seconds: 2.5, range: 40, heard: true }, // one bursting out of the hedge in a clatter of wings
   zap: { seconds: 2.5, range: 50, heard: true }, // someone catching the electric fence
   photo: { seconds: 3, range: 20, heard: false }, // you raising the camera: she looks at you
@@ -48,6 +49,7 @@ export const DEFAULT_NOTICE_PARAMS = {
   lurch: 1.3,
   jump: 1.2,
   traffic: 0.9,
+  kids: 1.1,
   photo: 1.5,
   pheasant: 1.6,
   zap: 1.7,

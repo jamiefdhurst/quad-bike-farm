@@ -7,6 +7,8 @@ import * as THREE from 'three';
 import { buildLandRoverModel, LANDY_LAYOUT, DEFENDER_LAYOUT, LANDY_GROUND_OFFSET, LANDY_SEATS } from '../vehicle/landRoverModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET } from '../vehicle/tractorModel.js';
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_SEATS } from '../vehicle/utvModel.js';
+import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET } from '../vehicle/miniMotoModel.js';
+import { TZ_WHEELS } from '../vehicle/tz65Body.js';
 import { CharacterRig } from '../npc/characterRig.js';
 import { applyOutfit, withShirt, withJumper, OUTFITS } from '../npc/outfit.js';
 
@@ -14,8 +16,12 @@ const MODELS = {
   defender: { build: (c, reg) => buildLandRoverModel({ bodyColor: c, dashStyle: 'defender', variant: 'defender', reg }), layout: DEFENDER_LAYOUT, offset: LANDY_GROUND_OFFSET, seat: LANDY_SEATS.driver },
   series: { build: (c, reg) => buildLandRoverModel({ bodyColor: c, dashStyle: 'series', variant: 'series', reg }), layout: LANDY_LAYOUT, offset: LANDY_GROUND_OFFSET, seat: LANDY_SEATS.driver },
   tractor: { build: (c) => buildTractorModel({ bodyColor: c, dashStyle: 'tractor' }), layout: TRACTOR_LAYOUT, offset: TRACTOR_GROUND_OFFSET, seat: { x: 0, y: 1.35, z: -0.55 } },
+  // The neighbours' kids' mini moto (kids.js): the TZ 65 stood upright on its two wheels, the rider sat on its anchor.
+  moto: { build: (c) => buildMiniMotoModel({ bodyColor: c }), layout: { wheels: MOTO_LAYOUT.wheels.map((w) => ({ ...w, radius: TZ_WHEELS.radius })) }, offset: MOTO_GROUND_OFFSET, seat: { x: 0, y: 0.78, z: -0.2 } },
   utv: { build: (c) => buildUtvModel({ bodyColor: c, dashStyle: 'utv' }), layout: UTV_LAYOUT, offset: UTV_GROUND_OFFSET, seat: UTV_SEATS.driver ?? { x: -0.4, y: 0.9, z: -0.1 } },
 };
+
+const KID_HEIGHT = 1.3; // m: a ten-year-old
 
 const SKIN = new THREE.MeshStandardMaterial({ color: 0x2b2926, roughness: 1 });
 const BOX = new THREE.MeshStandardMaterial({ color: 0xb08d5c, roughness: 0.9 });
@@ -58,6 +64,8 @@ export class TrafficView {
     this.pool = new Map(); // `${model}:${colour}` -> idle bodies
     this.shown = new Map(); // simulation vehicle -> body
     this.parcels = [];
+    this.kidRigs = []; // rider index -> { rig, sitHips, top }: the kids, on the girls' rig scaled down
+    this.kidBikes = new Map(); // rider -> body
     this.rigs = {}; // visitor kind -> { rig, sitHips }
     this.t = 0;
   }
@@ -164,6 +172,57 @@ export class TrafficView {
     r.mode = null;
   }
 
+  /** A kid's rig (the girls' model at about 1.3 m, in a jumper), made the first time that rider is needed. */
+  kidRig(i, top) {
+    if (!this.gltf) return null;
+    let k = this.kidRigs[i];
+    if (!k) {
+      const rig = new CharacterRig(this.gltf, KID_HEIGHT);
+      rig.play('Idle', { fade: 0 });
+      rig.root.visible = false;
+      this.scene.add(rig.root);
+      k = this.kidRigs[i] = { rig, sitHips: null, top: null };
+    }
+    if (k.top !== top) {
+      applyOutfit(k.rig, withJumper(OUTFITS.original, top));
+      k.sitHips = k.rig.measureHips('SitIdle', 0);
+      k.top = top;
+    }
+    return k;
+  }
+
+  /** The kids' bikes and riders for this frame: sat on the mini motos, set on the ground, wheels turning. */
+  placeKids(group, darkness, dt) {
+    const live = new Set(group?.riders ?? []);
+    for (const [r, body] of this.kidBikes) {
+      if (live.has(r)) continue;
+      this.release(body);
+      this.kidBikes.delete(r);
+      const k = this.kidRigs[r.id];
+      if (k) {
+        k.rig.root.visible = false;
+        this.scene.add(k.rig.root); // off the pooled bike, so the next rider on it is not sat on by this one
+      }
+    }
+    for (const r of live) {
+      let body = this.kidBikes.get(r);
+      const k = this.kidRig(r.id, r.top);
+      if (!body) {
+        body = this.take('moto', r.bike, false);
+        this.kidBikes.set(r, body);
+        if (k) {
+          body.seat.add(k.rig.root);
+          k.rig.root.position.set(-k.sitHips.x, -k.sitHips.y + 0.04, -k.sitHips.z);
+          k.rig.root.rotation.set(0, 0, 0);
+          k.rig.root.visible = true;
+          k.rig.play('SitIdle', { fade: 0 });
+        }
+      }
+      this.place(body, r.drive, darkness, dt);
+      if (k?.rig.root.visible) k.rig.update(dt);
+    }
+  }
+
   /** Takes the parcel at the barn door away (opened). */
   clearParcel() {
     for (const p of this.parcels) this.scene.remove(p);
@@ -189,8 +248,9 @@ export class TrafficView {
   }
 
   /** Each frame: `traffic` is the simulation. */
-  update(dt, traffic, darkness) {
+  update(dt, traffic, darkness, kids = null) {
     this.t += dt;
+    this.placeKids(kids?.group, darkness, dt);
     const live = new Set(traffic.vehicles);
     for (const [v, body] of this.shown) {
       if (v.steps ? v !== traffic.visit : !live.has(v)) {

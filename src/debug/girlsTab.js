@@ -352,6 +352,7 @@ export function buildGirlsTab(d) {
   button(out, 'Swing the big gate', () => g.trafficHost.toggle(g.trafficHost.gate('road')));
   button(out, 'Swing the cattle grid gate', () => g.trafficHost.toggle(g.trafficHost.gate('grid')));
   button(out, 'Send a vehicle along the lane', () => g.trafficHost.debugPass());
+  button(out, 'Send the kids along the lane', () => g.trafficHost.debugKids() || toast('The kids are already out'));
   button(out, 'Send the post van', () => g.trafficHost.debugVisit('post') || toast('A visitor is already about'));
   button(out, 'Send a neighbour', () => g.trafficHost.debugVisit('neighbour') || toast('A visitor is already about'));
   show(out, 'the neighbour over the lane', () => g.neighbourHost.describe());
