@@ -47,7 +47,7 @@ export const ACHIEVEMENT_PARAM_RANGES = {
 };
 
 // The places worth going to, checked against where you stand (the game has the coordinates).
-export const PLACES = ['ford', 'pasture', 'wood', 'dutchBarn', 'fieldShed', 'cattleGrid', 'farEnd'];
+export const PLACES = ['ford', 'pasture', 'wood', 'dutchBarn', 'fieldShed', 'cattleGrid', 'farEnd', 'gravelPit'];
 
 const RIDE_NAMES = {
   red: thePhrase('red'),
@@ -111,12 +111,14 @@ export const ACHIEVEMENTS = [
   { id: 'cones', group: 'Company', name: 'Slalom', hint: 'Time a run round Amy\'s cone course (Enter by its first cones, west of the middle of the field)', points: 1, test: (s) => s.n('coneRuns') >= 1 },
   { id: 'coneClean', group: 'Company', name: 'Not a cone down', hint: 'Finish the cone course without knocking a cone over', points: 1, test: (s) => s.n('coneClean') >= 1 },
   { id: 'climb', group: 'Company', name: 'King of the hill', hint: 'Time a run up the hill pasture (Enter by the cones past the stream)', points: 1, test: (s) => s.n('climbs') >= 1 },
+  { id: 'pit-climb', group: 'Company', name: 'Over the lip', hint: 'Time a run up the gravel pit\'s steep wall (Enter by the cones on its floor)', points: 2, test: (s) => s.n('pitClimbs') >= 1 },
   { id: 'record', group: 'Company', name: 'On the board', hint: 'Set a record on the chalkboard in the barn', points: 2, test: (s) => s.n('records') >= 1 },
   { id: 'drag-win', group: 'Company', name: 'Lights to flag', hint: 'Win a drag race', points: 2, test: (s) => s.n('dragWins') >= 1 },
 
   { id: 'ford', group: 'Places', name: 'Wet feet', hint: 'Cross the ford', points: 1, test: (s) => s.has('places', 'ford') },
   { id: 'pasture', group: 'Places', name: 'Up the hill', hint: 'Go down the lane to the hill pasture', points: 1, test: (s) => s.has('places', 'pasture') },
   { id: 'wood', group: 'Places', name: 'Into the woods', hint: 'Find the wood on the hill', points: 1, test: (s) => s.has('places', 'wood') },
+  { id: 'gravel-pit', group: 'Places', name: 'Down the pit', hint: 'Find the gravel pit north of the barley field, through the gate in its hedge', points: 1, test: (s) => s.has('places', 'gravelPit') },
   { id: 'dutch-barn', group: 'Places', name: 'Dutch barn', hint: 'Go to the barn at the end of the farm road', points: 1, test: (s) => s.has('places', 'dutchBarn') },
   { id: 'field-shed', group: 'Places', name: 'Field shed', hint: 'Find the stone shed in the far corner', points: 1, test: (s) => s.has('places', 'fieldShed') },
   { id: 'cattle-grid', group: 'Places', name: 'Rattled', hint: 'Cross the cattle grid', points: 1, test: (s) => s.has('places', 'cattleGrid') },

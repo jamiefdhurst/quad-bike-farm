@@ -27,6 +27,7 @@ import { AMY_HAY_LINES } from './hayLines.js';
 import { AMY_SPRAY_LINES } from './sprayLines.js';
 import { AMY_STREAM_LINES } from './streamLines.js';
 import { AMY_RIVER_LINES } from './riverLines.js';
+import { AMY_QUARRY_LINES } from './quarryLines.js';
 import { AMY_WATER_LINES } from './waterLines.js';
 import { AMY_HEAT_LINES } from './heatLines.js';
 import { AMY_SILENCER_LINES } from './silencerLines.js';
@@ -1664,4 +1665,6 @@ export const VOICE_LINES = {
   ...AMY_STRANDED_LINES,
   // Asking to be taken to the village pub (requestLines.js).
   ...AMY_PUB_LINES,
+  // The gravel pit (quarryLines.js), last so the banks before it stay as they are.
+  ...AMY_QUARRY_LINES,
 };

@@ -437,6 +437,11 @@ export function buildGameTree(g, host) {
   const river = group(() => ({
     now: text(() => g.describeRiver(), 'where you are at the river (on the crossing, in the deep water, on the bank) and how far up it is'),
   }), 'the river past the pasture, and its crossing');
+  const pit = group(() => ({
+    now: text(() => g.describeQuarry(), 'where you are at the gravel pit, how it is dealt on this farm, and the pit climb'),
+    ask: flag(() => !!g.pitClimb?.youArmed, (v) => v && g.askForPit(), 'set to true: ask to be timed up the pit climb now (the clock runs when you ride through the start cones)'),
+    pond: text(() => { const q = g.world.fields.quarry; return q ? `${q.pond.rx.toFixed(1)} by ${q.pond.rz.toFixed(1)} m, ${q.pond.water} m of water` : 'none'; }, 'the pit\'s pond'),
+  }), 'the gravel pit north of the barley field, and its pit climb');
   const village = group(() => ({
     now: text(() => g.villageHost.describe(), 'the village down the lane: its limit, what was last bought and the fuel prices'),
     stayed: text(() => `${g.pubVisit.stayed.toFixed(0)} s at the pub with both girls (they say goodbye after ${g.pubParams.pubStay} s)`, 'how long you and the girls have been at the pub'),
@@ -488,6 +493,7 @@ export function buildGameTree(g, host) {
     lane,
     neighbour,
     river,
+    pit,
     village,
     generator,
     spares,

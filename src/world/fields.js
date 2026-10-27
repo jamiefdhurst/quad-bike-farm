@@ -139,8 +139,9 @@ export function createFields(layout) {
     // The gravel pit's field: its south side is the barley field's north hedge (above, with the gate in it) and its west side the wood's east one.
     const r = quarry.rect;
     hedges.push(
-      { x1: r.minX, z1: r.minZ, x2: r.maxX, z2: r.minZ, gaps: [] },
-      { x1: r.maxX, z1: r.minZ, x2: r.maxX, z2: r.maxZ, gaps: [] },
+      // Far from everywhere you ride, so a coarser hedge (props.js: fewer, fatter blocks) keeps the triangles down.
+      { x1: r.minX, z1: r.minZ, x2: r.maxX, z2: r.minZ, gaps: [], coarse: true },
+      { x1: r.maxX, z1: r.minZ, x2: r.maxX, z2: r.maxZ, gaps: [], coarse: true },
     );
   }
   if (hill) {

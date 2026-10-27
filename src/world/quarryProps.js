@@ -18,9 +18,14 @@ const TAU = Math.PI * 2;
 export function buildQuarry(c) {
   const quarry = c.fields.quarry;
   const plants = quarryPlants(quarry, c.random);
-  buildScrub(c, quarry, plants);
-  buildBoulders(c, quarry, plants);
-  buildSite(c, quarry);
+  // One set piece (farDetail.js SET_PIECE_NAMES): everything in the pit's field is left out beyond the far-detail distance, so a view from the
+  // yard or the village pays nothing for it.
+  const site = new THREE.Group();
+  site.name = 'quarrySite';
+  buildScrub(c, quarry, plants, site);
+  buildBoulders(c, quarry, plants, site);
+  buildSite(c, quarry, site);
+  c.scene.add(site);
   buildPond(c, quarry, () => false);
 }
 
@@ -170,8 +175,8 @@ function findSpot(tries, ok, pick) {
 }
 
 /** Hawthorn and gorse along the lip and over the field, and a few oaks standing in the rough. */
-function buildScrub(c, quarry, plants) {
-  const { scene, models, heights, physics, RAPIER, random, anchors } = c;
+function buildScrub(c, quarry, plants, site) {
+  const { models, heights, physics, RAPIER, random, anchors } = c;
   const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
   const hawthorn = [];
   const gorse = [];
@@ -179,9 +184,9 @@ function buildScrub(c, quarry, plants) {
     if (random() < 0.5) hawthorn.push(matrixAt(x, heights.heightAt(x, z) - 0.2, z, random() * TAU, (1.5 + s * 1.2) / bushSize.y));
     else gorse.push(matrixAt(x, heights.heightAt(x, z) - 0.1, z, random() * TAU, s * (1 + random() * 0.5), s, s * (1 + random() * 0.5)));
   }
-  scene.add(instanceModel(models.bush.scene, hawthorn, { castShadow: false }));
+  if (hawthorn.length) site.add(instanceModel(models.bush.scene, hawthorn, { castShadow: false })); // (instanceModel complains of an empty list)
   const material = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
-  scene.add(tiledInstances(gorseGeometry(random), material, gorse, { tileSize: MODEL_TILE, castShadow: true, name: 'quarryGorse' }));
+  site.add(tiledInstances(gorseGeometry(random), material, gorse, { tileSize: MODEL_TILE, castShadow: true, name: 'quarryGorse' }));
   const mats = [[], []];
   for (const [x, z, s] of plants.trees) {
     const y = heights.heightAt(x, z);
@@ -189,13 +194,13 @@ function buildScrub(c, quarry, plants) {
     physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, y + 2.5 * s, z));
     anchors.push({ x, y, z, r: 0.32 * s });
   }
-  scene.add(instanceModel(models.treeA.scene, mats[0]));
-  scene.add(instanceModel(models.treeB.scene, mats[1]));
+  if (mats[0].length) site.add(instanceModel(models.treeA.scene, mats[0]));
+  if (mats[1].length) site.add(instanceModel(models.treeB.scene, mats[1]));
 }
 
 /** A rock: a rough, flat-shaded lump with a flat-ish base, its faces tinted buff, grey or orange-brown. */
 function rockGeometry(random) {
-  const geo = new THREE.IcosahedronGeometry(0.5, 2);
+  const geo = new THREE.IcosahedronGeometry(0.5, 1);
   const p = geo.attributes.position;
   const colors = new Float32Array(p.count * 3);
   const tint = [[0.42, 0.39, 0.34], [0.34, 0.33, 0.32], [0.5, 0.38, 0.26], [0.5, 0.47, 0.4]][Math.floor(random() * 4)];
@@ -214,8 +219,8 @@ function rockGeometry(random) {
 }
 
 /** Boulders and flints fallen to the foot of the walls and strewn down the chutes, and a few big ones on the floor you ride round. */
-function buildBoulders(c, quarry, plants) {
-  const { scene, heights, random, fixedBox, drawDistance } = c;
+function buildBoulders(c, quarry, plants, site) {
+  const { heights, random, fixedBox } = c;
   const material = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
   const stones = [];
   for (const [x, z, size] of plants.boulders) {
@@ -224,7 +229,7 @@ function buildBoulders(c, quarry, plants) {
   for (let i = 0; i < 3; i++) {
     const geo = rockGeometry(random);
     const mine = stones.filter((_, k) => k % 3 === i);
-    scene.add(drawDistance.add(tiledInstances(geo, material, mine, { castShadow: true, name: 'quarryStones' }), 'roughDistance'));
+    site.add(tiledInstances(geo, material, mine, { castShadow: true, name: 'quarryStones' }));
   }
   const bigGeo = rockGeometry(random);
   const bigs = plants.big.map(([x, z, size]) => {
@@ -234,14 +239,13 @@ function buildBoulders(c, quarry, plants) {
     fixedBox(x, y + s * 0.2, z, s * 0.4, s * 0.25, s * 0.4, yaw);
     return matrixAt(x, y + s * 0.05, z, yaw, s * 1.15, s * 0.8, s);
   });
-  scene.add(tiledInstances(bigGeo, material, bigs, { tileSize: MODEL_TILE, castShadow: true, name: 'quarryBoulders' }));
+  site.add(tiledInstances(bigGeo, material, bigs, { tileSize: MODEL_TILE, castShadow: true, name: 'quarryBoulders' }));
 }
 
-/** Everything standing in and round the pit that isn't a plant or a stone, as one set piece (`quarrySite`, far-detail trimmed by distance). */
-function buildSite(c, quarry) {
-  const { scene, heights, random, fixedBox } = c;
-  const site = new THREE.Group();
-  site.name = 'quarrySite';
+/** Everything standing in and round the pit that isn't a plant or a stone: the fence, the container, the excavator, the plant, the drums and the dead trees. */
+function buildSite(c, quarry, site) {
+  const { heights, random, fixedBox } = c;
+  const things = new THREE.Group();
   const lit = (o) => new THREE.MeshStandardMaterial({ roughness: 0.85, ...o });
   const wood = new THREE.MeshStandardMaterial({ map: woodTexture(random, [118, 98, 74]), roughness: 0.95 });
   const wire = lit({ color: 0x7d8286, metalness: 0.5, roughness: 0.5 });
@@ -256,7 +260,7 @@ function buildSite(c, quarry) {
   const groundY = (x, z) => heights.heightAt(x, z);
   const floorAt = (a, back) => quarry.frameAt(a, quarry.floorEdge(a) - back);
 
-  buildFence(site, quarry, { wood, wire, groundY, random });
+  buildFence(things, quarry, { wood, wire, groundY, random });
 
   // The steel container: the site's store, in the field a little off the gate, doors at one end, a padlock bar, a dent or two.
   const gate = quarry.gate;
@@ -279,7 +283,7 @@ function buildSite(c, quarry) {
     const g = parts.build();
     g.position.set(hut.x, y0, hut.z);
     g.rotation.y = hutYaw;
-    site.add(g);
+    things.add(g);
     fixedBox(hut.x, y0 + H / 2, hut.z, L / 2, H / 2, W / 2, hutYaw);
   }
 
@@ -333,7 +337,7 @@ function buildSite(c, quarry) {
     const y0 = Math.max(groundY(dig.x - 2, dig.z), groundY(dig.x + 2, dig.z)) - 0.02;
     g.position.set(dig.x, y0, dig.z);
     g.rotation.y = yaw - Math.PI / 2; // the machine looks along its +x
-    site.add(g);
+    things.add(g);
     // Colliders: the tracks and house as one box, the bucket hanging against the wall as another.
     const turn = yaw - Math.PI / 2;
     const at = (lx, lz) => ({ x: dig.x + Math.cos(turn) * lx + Math.sin(turn) * lz, z: dig.z - Math.sin(turn) * lx + Math.cos(turn) * lz });
@@ -352,7 +356,7 @@ function buildSite(c, quarry) {
     const dz = Math.cos(yaw);
     const base = { x: heap.x + dx * (heap.r + 14), z: heap.z + dz * (heap.r + 14) };
     const ok = quarry.inPit(base.x, base.z) && quarry.waterAt(base.x, base.z) === 0;
-    if (ok) buildPlant(site, c, { x: base.x, z: base.z, yaw: Math.atan2(-dx, -dz), length: heap.r + 11, groundY, rust, rustDark, dark, green, fixedBox, height: heap.h * 0.9 });
+    if (ok) buildPlant(things, c, { x: base.x, z: base.z, yaw: Math.atan2(-dx, -dz), length: heap.r + 11, groundY, rust, rustDark, dark, green, fixedBox, height: heap.h * 0.9 });
   }
 
   // Drums and tyres by the pond, a pallet and a broken trough.
@@ -417,7 +421,7 @@ function buildSite(c, quarry) {
     group.traverse((o) => {
       if (o.isMesh) o.receiveShadow = true;
     });
-    site.add(group);
+    things.add(group);
   }
 
   // Dead trees leaning at the rim: a bare grey trunk with a couple of broken limbs.
@@ -440,17 +444,13 @@ function buildSite(c, quarry) {
       const g = local.build();
       g.position.set(p.x, y - 0.1, p.z);
       g.rotation.y = random() * TAU;
-      site.add(g);
+      things.add(g);
       fixedBox(p.x, y + 1.5, p.z, 0.25, 1.5, 0.25);
     }
   }
 
-  enableShadows(site);
-  site.traverse((o) => {
-    if (o.isMesh) o.receiveShadow = true;
-  });
-  scene.add(site);
-  return site;
+  enableShadows(things);
+  site.add(things);
 }
 
 /** Posts every few metres round the lip, leaning, some gone, with two strands of wire between those that are left (some sagging to the ground), and the signs. */

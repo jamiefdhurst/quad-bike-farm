@@ -23,6 +23,7 @@ import { JESS_HAY_LINES } from './hayLines.js';
 import { JESS_SPRAY_LINES } from './sprayLines.js';
 import { JESS_STREAM_LINES } from './streamLines.js';
 import { JESS_RIVER_LINES } from './riverLines.js';
+import { JESS_QUARRY_LINES } from './quarryLines.js';
 import { JESS_WATER_LINES } from './waterLines.js';
 import { JESS_HEAT_LINES } from './heatLines.js';
 import { JESS_SILENCER_LINES } from './silencerLines.js';
@@ -579,4 +580,6 @@ export const JESS_LINES = {
   ...JESS_STRANDED_LINES,
   // Asking to be taken to the village pub (requestLines.js).
   ...JESS_PUB_LINES,
+  // The gravel pit (quarryLines.js), last so the banks before it stay as they are.
+  ...JESS_QUARRY_LINES,
 };

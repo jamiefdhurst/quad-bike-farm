@@ -1411,10 +1411,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where are the records kept?',
-        a: `On the second chalkboard inside the barn, on the back wall next to the jobs board: the best lap of the track, drag run, hill climb, cone course and longest jump on the farm,
+        a: `On the second chalkboard inside the barn, on the back wall next to the jobs board: the best lap of the track, drag run, hill climb, pit climb, cone course and longest jump on the farm,
           and who set it. Press <kbd>E</kbd> at either board for a close view (the challenges are there too). You're told when you set a record, and when it's your best on the quad you're on.
           The girls set them too. They're kept from day to day, and one set today says so; only a new farm clears them.`,
-        tip: 'The records for laps, drag runs, the hill climb, the cones and the longest jump are on the chalkboard in the barn.',
+        tip: 'The records for laps, drag runs, the hill climb, the pit climb, the cones and the longest jump are on the chalkboard in the barn.',
       },
       {
         q: 'What are the challenges on the chalkboard?',
@@ -1542,7 +1542,8 @@ export const FAQ_SECTIONS = [
           water trough. South, through the field gate, a sunk green lane down to a ford and a rough hill pasture with gorse, bracken and a small oak wood, and a
           view over the whole farm from the top. The sheep graze there. Beside the lane, with no hedge between, there is a wet meadow with a pond to the west and a rolling
           sheep field with a drystone wall to the east. North, through the gate in the grass field's north hedge, there is a wood with a narrow twisting
-          track through it, the Hollow Run, and a narrower trail for two-wheelers, the Fern Trail.`,
+          track through it, the Hollow Run, and a narrower trail for two-wheelers, the Fern Trail. North of the barley field, through the gate in its north hedge, there is
+          an old gravel pit.`,
         tip: 'Ride to the top of the hill pasture for a view over the whole farm.',
       },
       {
@@ -1553,6 +1554,38 @@ export const FAQ_SECTIONS = [
           swell the middle rows climb over, two bogs, and logs lying across the track in pairs, a chicane to steer through. Ride it either way round. There is a pond in the
           wood, with reeds, that works like the meadow's: don't drive into it. There is no timed race on it yet.`,
         tip: 'The Hollow Run is the narrow, twisty wood track through the gate in the grass field\'s north hedge.',
+      },
+      {
+        q: 'Where is the gravel pit, and how do I get into it?',
+        a: `North of the barley field, behind its north hedge, there is a hedged field with an old gravel pit in it, roughly 85 m by 60 m and about 9 m deep. Ride up the farm road, through a gateway on its north side into the barley field,
+          and across to the gate in the far hedge (it starts tied open; look at it and press <kbd>E</kbd> to shut it or open it). From the
+          gate a pale gravel road runs across the field to the lip and winds down the pit's wall to the floor, wide enough for a quad or the tractor and dropping about one metre in eight to ten. Down on the floor are
+          heaps of grey gravel and buff sand you can ride over, an old excavator nose to the wall, a screening plant with a hopper and a conveyor, a pond in the low corner and boulders fallen from the walls. The girls will not follow you down: they wait inside the gate.`,
+        tip: 'The gravel pit is through the gate in the barley field\'s north hedge. A gravel road winds down its wall to the floor.',
+      },
+      {
+        q: 'How do I get out of the gravel pit by the wall?',
+        a: `The road is the easy way. The walls are loose gravel, which gives you less grip than grass and drags at the wheels, so a climb takes more speed and more courage than the hill's banks.
+          The pit's steep wall, opposite where the road comes down, has two chutes in it, gullies of looser stone that are a little gentler, and between them buttresses that are much too steep. The line up is the thing to find. Take a run at it from the floor, keep the wheels straight, and keep
+          your weight back: a quad that stalls on the wall can roll, so brake and restart it. The girls will say something if yours stops down there.`,
+        tip: 'The steep wall has two gentler chutes between steeper spurs. Take a run at it, keep straight, and look for the way up.',
+      },
+      {
+        q: 'How do I time a run up the pit\'s wall?',
+        a: `Ride to the orange cones on the pit's floor, at the foot of the steep wall, and press <kbd>Enter</kbd> and “A race”, then ride through them when you are ready. The clock runs from there. Go
+          through the gate of cones halfway up the wall (it is wide enough to take in both chutes) and on through the finish cones over the lip. The line is yours. You are out if you get off or stall for eight seconds, or take over two minutes. Your time goes up as a toast, and the best goes on the barn's records board as the pit climb. Only you
+          run it; whoever is near the top times you and says something.`,
+        tip: 'Press Enter by the orange cones on the pit floor, then ride up the steep wall and through the gate and the finish cones to be timed.',
+      },
+      {
+        q: 'Is the gravel pit the same on every farm?',
+        a: `No. Each farm is dealt its own pit and keeps it, day after day: how big, how ragged its lip is, which wall is steep, where the chutes and the spurs are, which way the road winds,
+          where the pond is and where the heaps stand. The pit climb's times are kept with the farm too.`,
+      },
+      {
+        q: 'Will the gravel pit\'s pond drown my engine?',
+        a: `No. It is shallow, about a third of a metre, so it wets the tyres, splashes and makes mud round the shore. The river is the water that drowns engines. Keep out of the pond all the same: the shore is
+          soft, and the quad can bog there.`,
       },
       {
         q: 'What is the Fern Trail, and can I take a quad on it?',

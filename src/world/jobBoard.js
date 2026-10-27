@@ -122,7 +122,7 @@ export class JobBoardView {
     const { ctx, w } = this.slate(this.recordsBoard, 'RECORDS', 230);
     const rows = this.records.allLines();
     rows.forEach((l, i) => {
-      const y = 112 + i * (rows.length > 5 ? 52 : 58);
+      const y = 112 + i * (rows.length > 6 ? 46 : rows.length > 5 ? 52 : 58);
       ctx.fillStyle = '#ece8d8';
       ctx.font = '24px "Comic Sans MS", "Segoe Print", cursive';
       ctx.fillText(l.label, 28, y);

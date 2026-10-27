@@ -104,7 +104,11 @@ export function dealPit(q, random) {
   const first = pit.steepAt + r(-0.22, 0.22);
   const second = first + (random() < 0.5 ? -1 : 1) * r(0.3, 0.5);
   pit.chutes = [{ at: first, w: r(3, 4), run: r(15, 17) }, { at: second, w: r(2.5, 3.5), run: r(14, 16) }];
-  pit.buttresses = [first + (second - first) * 0.5, pit.steepAt + r(-0.9, 0.9), pit.steepAt + r(-0.9, 0.9)].map((at) => ({ at, w: r(2.5, 4), run: r(8, 9) }));
+  for (let tries = 0; pit.buttresses.length < 3 && tries < 60; tries++) {
+    const at = pit.steepAt + r(-0.95, 0.95);
+    if (pit.chutes.some((c) => Math.abs(angleDiff(at, c.at)) < 0.2) || pit.buttresses.some((o) => Math.abs(angleDiff(at, o.at)) < 0.2)) continue;
+    pit.buttresses.push({ at, w: r(2.5, 4), run: r(8, 9) });
+  }
 
   // Fit the rim inside the hedges with a margin: if the pit as dealt would come closer, make it smaller.
   const short = (p) => {
@@ -392,7 +396,7 @@ export function quarryPlants(quarry, random) {
   const { pit, rect } = quarry;
   const patch = (x, z) => 0.5 + 0.25 * Math.sin(x * 0.07 + z * 0.05 + 0.7) + 0.25 * Math.sin(z * 0.1 - x * 0.045 + 2.1);
   const bushes = [];
-  for (let tries = 0; bushes.length < 170 && tries < 20000; tries++) {
+  for (let tries = 0; bushes.length < 90 && tries < 20000; tries++) {
     const a = random() * TAU;
     let x;
     let z;
@@ -410,7 +414,7 @@ export function quarryPlants(quarry, random) {
     bushes.push([x, z, 0.8 + random() * 1.1]);
   }
   const trees = [];
-  for (let tries = 0; trees.length < 14 && tries < 4000; tries++) {
+  for (let tries = 0; trees.length < 6 && tries < 4000; tries++) {
     const x = rect.minX + 6 + random() * (rect.maxX - rect.minX - 12);
     const z = rect.minZ + 6 + random() * (rect.maxZ - rect.minZ - 12);
     if (!quarry.plantOk(x, z, 7)) continue;
@@ -419,7 +423,7 @@ export function quarryPlants(quarry, random) {
   }
   const start = quarry.climb.points[0];
   const boulders = [];
-  for (let tries = 0; boulders.length < 90 && tries < 5000; tries++) {
+  for (let tries = 0; boulders.length < 64 && tries < 5000; tries++) {
     const a = random() * TAU;
     const run = quarry.runAt(a);
     const p = quarry.frameAt(a, quarry.floorEdge(a) + (random() - 0.35) * run * 0.7); // the foot and lower bank, where it has rolled down
