@@ -12,6 +12,7 @@ import { resolve, walk, show, describe, parseValue, pathCandidates } from './she
  *   weatherKinds(): string[]              setWeather(kind): string
  *   dump(text): void                      (copies to the clipboard)
  *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   farmEndDay(): string   (the farm that remembers)
+ *   notebookLearnt(): [{ id, text, learnt }]   learnThing(id): boolean   learnAll(): void   forgetAll(): void   (the notebook's "Things I've learnt")
  *   errors(): [{ name, count, message }]   clearErrors(): void   (features whose update threw, caught by core/featureGuard.js)
  *   perf(): { fps, ms, worstMs, p99Ms, longFrames, longTotal, longFrameCauses, heapMb, allocMbPerSecond, calls, triangles, width, height, pixelRatio, maxFps }   (how hard the game is working)
  */
@@ -419,6 +420,23 @@ export function buildCommands(host) {
           return host.farmLoad(json);
         }
         throw new Error(`no "save ${what}". Try save, save now, save show, save copy, save wipe or save load <json>`);
+      },
+    },
+    {
+      name: 'learn',
+      group: 'World',
+      usage: 'learn [id | all | none]',
+      help: 'the notebook\'s "Things I\'ve learnt": list them with a tick for each you have, write one down by id, write them all down, or rub them all out',
+      examples: ['learn', 'learn chokeFlood', 'learn all', 'learn none'],
+      complete: (ctx, tokens) => (tokens.length === 0 ? ['all', 'none', ...host.notebookLearnt().map((d) => d.id)] : []),
+      run: ([what]) => {
+        if (what === 'all') return host.learnAll(), 'wrote them all down';
+        if (what === 'none') return host.forgetAll(), 'rubbed them all out';
+        if (what) {
+          if (!host.notebookLearnt().some((d) => d.id === what)) throw new Error(`no "${what}". Try learn to see the list`);
+          return host.learnThing(what) ? `wrote down ${what}` : `${what} was already written down`;
+        }
+        return host.notebookLearnt().map((d) => `${d.learnt ? '[x]' : '[ ]'} ${d.id}: ${d.text}`);
       },
     },
     ...[
