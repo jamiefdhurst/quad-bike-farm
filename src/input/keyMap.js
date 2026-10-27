@@ -39,7 +39,7 @@ export const ACTIONS = [
     ['KeyZ', 'Less choke'],
     ['KeyF', 'Fuel tap'],
     ['KeyO', 'Pull-start, stop knob (tractor)'],
-    ['KeyU', 'Diff lock'],
+    ['KeyU', 'Diff lock, dip the tank'],
     ['Digit0', 'Neutral'],
     ['Digit1', 'Gear 1'],
     ['Digit2', 'Gear 2'],

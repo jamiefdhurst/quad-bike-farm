@@ -18,6 +18,7 @@ import { AMY_TOW_LINES } from './towLines.js';
 import { AMY_MIND_LINES } from './mindLines.js';
 import { AMY_KNACK_LINES } from './knackLines.js';
 import { AMY_OIL_LINES } from './oilLines.js';
+import { AMY_TANK_DIP_LINES } from './tankDipLines.js';
 import { AMY_MOTO_LINES } from './motoLines.js';
 import { AMY_STORM_LINES } from './stormLines.js';
 import { AMY_WALK_LINES } from './walkLines.js';
@@ -1478,6 +1479,8 @@ export const VOICE_LINES = {
   ...AMY_KNACK_LINES,
   // Two-stroke oil (oilLines.js).
   ...AMY_OIL_LINES,
+  // Dipping the tank of a quad whose gauge lies (tankDipLines.js).
+  ...AMY_TANK_DIP_LINES,
   // Amy's walk-round before she rides (walkLines.js).
   ...AMY_WALK_LINES,
   // The mini moto (motoLines.js).
