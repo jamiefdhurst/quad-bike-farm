@@ -13,6 +13,9 @@ export const PARTS = {
 };
 export const PART_IDS = Object.keys(PARTS); // the parts rack's: the number keys order these
 
+/** Tyre plugs live in the toolbox's plug kit, not on the rack: counted and kept like a part, topped up each morning (`startStrip`). */
+PARTS.strip = { one: 'tyre plug', many: 'tyre plugs' };
+
 /** The tyres, on their own rack in the barn (tyreRack.js): one part for each size (tyres.js TYRE_SIZES), counted in single tyres. */
 export const TYRE_IDS = TYRE_SIZE_IDS.map(tyrePart);
 for (const size of TYRE_SIZE_IDS) PARTS[tyrePart(size)] = { ...TYRE_SIZES[size], tyre: size };
@@ -29,6 +32,7 @@ export const DEFAULT_SPARES_PARAMS = {
   startBelt: 2, // drive belts
   startJet: 2, // main jets (a size other than the stock one takes one; going back to stock gives it back)
   startPiston: 1, // pistons and rings
+  startStrip: 4, // tyre plugs in the toolbox's plug kit, which the kit is topped back up to every morning
   startTyreKid: 2, // tyres, singly: enough for an axle of the small quads
   startTyreQuad: 4,
   startTyreSport: 2,
@@ -61,6 +65,7 @@ export const SPARES_PARAM_RANGES = {
   startBelt: [0, 10, 1],
   startJet: [0, 10, 1],
   startPiston: [0, 10, 1],
+  startStrip: [0, 10, 1],
   ...Object.fromEntries(TYRE_IDS.map((id) => [`start${id[0].toUpperCase()}${id.slice(1)}`, [0, 12, 1]])),
   ...Object.fromEntries(TYRE_IDS.map((id) => [`pack${id[0].toUpperCase()}${id.slice(1)}`, [1, 8, 1]])),
   packPlug: [1, 10, 1],
@@ -193,6 +198,7 @@ export class Spares {
       if (n(s.ordered?.[id])) this.ordered[id] = n(s.ordered[id]);
       if (n(s.waiting?.[id])) this.waiting[id] = n(s.waiting[id]);
     }
+    this.counts.strip = Math.max(this.count('strip'), this.p.startStrip); // the plug kit is restocked overnight
     this.due = this.hasOrder ? this.p.orderDelay : null;
     if (Array.isArray(s.engines)) this.engines = structuredClone(s.engines.filter((e) => e && typeof e.family === 'string' && e.params && typeof e.params === 'object'));
   }

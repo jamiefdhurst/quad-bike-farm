@@ -21,6 +21,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | workbench | The bench along the barn's north wall where jobs are done and the bay is | work bench |
 | toolbox | The red box you carry and open at a quad | tool box |
 | booster pack | The black and yellow jump-start pack on the back of the workbench: charged on the bench charger, carried to a flat vehicle | jump starter, jump pack, battery pack, power pack |
+| tyre plug | The sticky rubber strip from the plug kit in the toolbox, pushed into a puncture | tire plug, puncture plug, tyre strip, rope plug |
 | jerry can | The 20 litre can you carry and pour from | jerrycan, jerry-can |
 | seat belt | The belt in the Land Rovers and the UTV, on `;` | seatbelt |
 | your car | The Vauclair 39D, the silver-grey diesel you arrive in each morning, parked by the Dutch barn (the girls say "the Vauclair") | your Peugeot |

@@ -14,7 +14,7 @@ What is true now, with the sections below to read for the detail. Keep it curren
 - **Carried things** (jerry can, oil bottle, toolbox, leads, batteries, rounds and logs) share `heldLoad`/`handsFull`, `G` to put down, and their own places on the bench, with `priority` on their pick-up boxes so the bench's box doesn't hide them. "Carrying the oil bottle (2026-10-07)", "Back on the bench (2026-10-07)", "Jump leads off the bench (TODO 64)".
 - **Tractor attachments.** The bale spike moves only the standing silage bales, carried rigidly and stacked two high, with positions kept in the save. The log splitter is worked standing at it, holding the engine at a governed throttle with load, and split logs are carried to a stack that burns six a day. Each gives a farm job. "The bale spike (TODO 44)", "A log splitter on the tractor's back (#37, was TODO 142)".
 - **The winch** is on the green only. It drags a light quad to itself, or pulls itself to a tree or a heavy vehicle. The rope is drawn as a tube and groans under load, and never snaps. "Winching between vehicles (#40, was TODO 145)".
-- **Tyres.** Per-wheel pressures; below 2.2 psi a tyre starts coming off the rim (a pull and drag). "Tyre pump and gauge (TODO 4)", now behind the compressor.
+- **Tyres.** Per-wheel pressures; below 2.2 psi a tyre starts coming off the rim (a pull and drag). "Tyre pump and gauge (TODO 4)", now behind the compressor. A puncture in the field is plugged from the toolbox's kit before a tube is used. "Plugging a puncture in the field (#57, was TODO 162)".
 
 ---
 
@@ -189,3 +189,13 @@ Settled with Jamie: hook onto trees and any vehicle; the green stays the only wi
 - Refused with a toast: a running or cranking vehicle, one with its battery out, one already at 0.6 or more, and a flat pack. The girls neither use it nor react to it (a boosted start is an ordinary engine start to them).
 - Debug: Tune "Booster pack"; the Girls tab's workshop folder shows it and has a charge slider; the console's `farm.boosterPack` (`now`, `charge`).
 - Looks: one look at four sides and a close-up: black case, yellow end caps, lid trim, handle, label with four lamps and a socket, clamps hung on the side. Fixed coplanar end caps after the first look.
+
+## Plugging a puncture in the field (#57, was TODO 162)
+
+Decided without asking, as the issue was one line: the plug kit is the toolbox's own, not a sixth part on the rack.
+
+- **The kit.** Tyre plugs are counted like a part (`strip` in `spares.js`, so the save, the console and the Tune tab get them) but are not on the rack, the shop or the order list. It starts at `startStrip` 4 and is topped back up to that every time a farm loads (a new morning), so it needs no ordering.
+- **The button.** "Pump and patch tyres" (`Workshop.plugTyre`) uses a plug when there is a puncture and the kit has one, and falls back to the spare inner tube when the kit is empty (that path is unchanged, and still needs the compressor for air). No new button, so the grid does not move.
+- **What it does that the tube does not.** It leaves the puncture at `plugFixLevel` 0.07 capped at `plugFixCap` 0.18 (the tube leaves 0.12 capped at 0.28), and a little pump in the kit brings only the punctured tyre up to `plugPsi` 3 psi (above the 2.2 where a tyre rolls off its rim) wherever you are, so no compressor. It never lets air out. The bench still does the proper job.
+- **Not decided here:** a plug kit to buy or run out of for good (a refill from the village shop); the girls using it themselves.
+

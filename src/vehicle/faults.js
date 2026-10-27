@@ -61,6 +61,8 @@ export const DEFAULT_FAULT_PARAMS = {
   movingSpeed: 2, // m/s over which it counts as being ridden
   fieldFixLevel: 0.12, // what's left of a fault after a rough fix in the yard (the bench does it properly)
   fieldFixCap: 0.28, // and it never gets worse than this, which is just under what Amy notices
+  plugFixLevel: 0.07, // what a tyre plug leaves of a puncture: a rubber strip in the hole holds better than a spare tube dropped in at the roadside
+  plugFixCap: 0.18, // and it never gets worse than this
 };
 
 export const FAULT_PARAM_RANGES = {
@@ -116,6 +118,8 @@ export const FAULT_PARAM_RANGES = {
   movingSpeed: [0.5, 10, 0.5],
   fieldFixLevel: [0, 0.5, 0.01],
   fieldFixCap: [0, 1, 0.01],
+  plugFixLevel: [0, 0.5, 0.01],
+  plugFixCap: [0, 1, 0.01],
 };
 
 export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim', 'leak', 'clutch', ...SHED_KINDS];
@@ -504,8 +508,9 @@ export class Faults {
   /**
    * Puts one right (pump and patch the tyre, new belt, lubricate the cable, clean the carb). True if there was anything to do.
    * A rough fix, which is all you can do in the yard, leaves a mild fault that never gets much worse; the bench does it properly.
+   * A `plug` (a tyre plug in the hole) is a rough fix that leaves a puncture milder still.
    */
-  fix(kind, { rough = false } = {}) {
+  fix(kind, { rough = false, plug = false } = {}) {
     if (!this.started[kind]) return false;
     if (rough && BENCH_ONLY_KINDS.includes(kind)) return false; // a split boot wants a new one
     if (rough && CRASH_KINDS.includes(kind)) return false; // bent metal can't be mended with what's in the toolbox
@@ -517,7 +522,8 @@ export class Faults {
     if (kind === 'valves') this.kept.valveTight = false; // a rough fix (a shim) or the bench both leave it wide, not tight
     if (rough) {
       if (this.caps[kind] < 1) return false; // already patched up as far as it'll go
-      this.leave(kind, this.params.fieldFixLevel, this.params.fieldFixCap);
+      const plugged = plug && kind === 'puncture'; // a tyre plug, which only a puncture takes
+      this.leave(kind, plugged ? this.params.plugFixLevel : this.params.fieldFixLevel, plugged ? this.params.plugFixCap : this.params.fieldFixCap);
       this.events.push({ type: 'fixed', kind });
       return true;
     }

@@ -51,6 +51,7 @@ export const DEFAULT_TYRE_PARAMS = {
   rimPull: 0.06, // radians of pull at 0 psi on a front wheel (half for a rear)
   rimDrag: 0.25, // share of the drive lost at 0 psi
   pumpStep: 0.5, // psi a click on the pump adds or lets out
+  plugPsi: 3, // what a tyre plug's little pump brings the mended tyre up to, anywhere (the compressor takes it to the full setting)
   minPsi: 1.5, // the lowest a tyre is dealt
   ventMinPsi: 0.5, // the lowest you can let one down to at the pump
   maxPsi: 7,
@@ -83,6 +84,7 @@ export const TYRE_PARAM_RANGES = {
   rimPull: [0, 0.3, 0.01],
   rimDrag: [0, 1, 0.05],
   pumpStep: [0.1, 2, 0.1],
+  plugPsi: [1, 5, 0.1],
   minPsi: [0, 5, 0.1],
   ventMinPsi: [0, 2, 0.1],
   maxPsi: [3, 12, 0.5],
@@ -159,6 +161,12 @@ export class TyreSet {
   level(psi) {
     const v = clamp(psi, this.P.minPsi, this.P.maxPsi);
     this.psi = this.psi.map(() => v);
+  }
+
+  /** Brings one tyre up to at least `psi` (a plugged tyre's hand pump); never lets any air out. Returns the new pressure. */
+  topUp(i, psi = this.P.plugPsi) {
+    if (this.psi[i] < psi) this.psi[i] = round(clamp(psi, this.P.ventMinPsi, this.P.maxPsi), 0.1);
+    return this.psi[i];
   }
 
   /** The real wheels as { i, name, front, side } (side 1 left, -1 right, 0 centre): what the pump lists. */

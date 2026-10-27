@@ -103,7 +103,7 @@ describe('tyre sizes', () => {
       expect(DEFAULT_SPARES_PARAMS[`start${tyrePart(size)[0].toUpperCase()}${tyrePart(size).slice(1)}`]).toBeTypeOf('number');
     }
     expect(PART_IDS).toHaveLength(5);
-    expect(ALL_PART_IDS).toHaveLength(5 + TYRE_SIZE_IDS.length);
+    expect(ALL_PART_IDS).toHaveLength(5 + 1 + TYRE_SIZE_IDS.length); // the rack's five, the toolbox's tyre plugs, the tyres
     const s = new Spares({ ...DEFAULT_SPARES_PARAMS }, () => 0.5);
     expect(s.count('tyreQuad')).toBe(4);
     expect(s.order('tyreQuad').ok).toBe(true);

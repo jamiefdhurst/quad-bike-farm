@@ -25,6 +25,7 @@ const FAST_SAY_AFTER = 1.5; // seconds above the old top speed, with her on the 
 
 const REPAIR_DONE = {
   puncture: 'Put a spare inner tube in and pumped it up: it will do for now',
+  plug: 'Reamed the hole, pushed a tyre plug in and pumped it up: it holds, though the bench would do it better',
   belt: 'Swapped in a spare belt: it grips a bit better',
   cable: 'Squirted some oil on the cable: it is freer, but not right',
   carb: 'Gave the carb a clean with what is in the toolbox: better, not perfect',
@@ -398,8 +399,9 @@ export class Workshop {
     const unit = this.unit;
     if (!unit || !this.repairShown(kind)) return;
     if (kind === 'battery') return this.battery(unit);
-    const part = FIX_PARTS[kind];
     const f = unit.quad.faults;
+    if (kind === 'puncture' && f.started.puncture && f.caps.puncture >= 1 && this.game.spares.has('strip')) return this.plugTyre(unit);
+    const part = FIX_PARTS[kind];
     if (part && f.started[kind] && f.caps[kind] >= 1 && !this.game.spares.has(part)) {
       // Something to fix and nothing on the shelf to fix it with.
       this.game.hud.toast(`There is no spare ${PARTS[part].one} on the shelf: order one from the parts rack in the barn`);
@@ -412,6 +414,23 @@ export class Workshop {
     this.game.hud.toast(done ? (noAir ? `${REPAIR_DONE[kind]}. It needs air from the compressor, though` : REPAIR_DONE[kind]) : REPAIR_NOTHING[kind]);
     if (done) for (const c of this.game.companions) c.voice.onTinker?.('service');
     this.render(); // the pump's readings changed
+  }
+
+  /**
+   * A tyre plug from the kit in the toolbox into the hole: no tube, no wheel off. It leaves the puncture milder than a spare tube does, and
+   * its little pump brings just that tyre up to `plugPsi` wherever you are, so it needs no compressor. The tube is the fallback when the kit is empty.
+   */
+  plugTyre(unit) {
+    const f = unit.quad.faults;
+    const wheel = f.tyre;
+    if (!f.fix('puncture', { rough: true, plug: true })) return;
+    this.game.spares.take('strip');
+    if (wheel >= 0) unit.quad.tyres.topUp(wheel);
+    unit.quad.physics.applyParams();
+    const left = this.game.spares.count('strip');
+    this.game.hud.toast(`${REPAIR_DONE.plug} (${left} ${left === 1 ? PARTS.strip.one : PARTS.strip.many} left in the kit)`);
+    for (const c of this.game.companions) c.voice.onTinker?.('service');
+    this.render();
   }
 
   /**
