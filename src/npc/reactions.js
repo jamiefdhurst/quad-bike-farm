@@ -40,6 +40,7 @@ export const NOTICE_REACTIONS = {
   spray: { reaction: 'turnAway', within: 8, chance: 0.5 },
   jump: { reaction: 'cheer', within: 45, chance: 'reactCheerChance', notOwn: true },
   traffic: { reaction: 'wave', within: 45, chance: 'reactWaveChance' },
+  kids: { reaction: 'wave', within: 45, chance: 'reactWaveChance' },
 };
 
 /** The reactions that are a start at something sudden (the ones the dark makes more likely). */

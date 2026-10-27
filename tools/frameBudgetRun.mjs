@@ -38,7 +38,7 @@ export async function measureBuild({ dist = 'dist', root = '.', query = 'seed=3&
     await page.setViewport({ width: 320, height: 200 });
     await page.evaluateOnNewDocument(stubDraws);
     await page.goto(`${server.resolvedUrls.local[0]}?smoke&${query}`, { waitUntil: 'load' });
-    await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000 });
+    await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000, polling: 250 });
     await page.evaluate(() => {
       const o = document.getElementById('overlay');
       o.classList.add('hidden');

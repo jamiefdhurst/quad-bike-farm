@@ -423,6 +423,7 @@ export function buildGameTree(g, host) {
   const lane = group(() => ({
     now: text(() => g.trafficHost.describe(), 'what is on the lane and who is visiting'),
     pass: flag(() => false, (v) => v && g.trafficHost.debugPass(), 'set to true: a vehicle goes along the lane now'),
+    kids: flag(() => false, (v) => v && g.trafficHost.debugKids(), 'set to true: the neighbours\' kids ride along the lane now (they stop at the big gate to watch if you or a girl are near it)'),
     post: flag(() => false, (v) => v && g.trafficHost.debugVisit('post'), 'set to true: the post van comes in at the big gate'),
     neighbour: flag(() => false, (v) => v && g.trafficHost.debugVisit('neighbour'), 'set to true: a neighbour calls'),
     southGate: flag(() => g.trafficHost.gate('south').isOpen, (v) => g.trafficHost.gate('south').set(!!v), 'the south gate onto the green lane: true is open'),

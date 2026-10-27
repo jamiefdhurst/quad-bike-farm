@@ -1743,6 +1743,11 @@ export const FAQ_SECTIONS = [
         tip: 'The post van and neighbours come in at the big gate. Pull over for them.',
       },
       {
+        q: 'Who are the kids on little motorbikes on the lane?',
+        a: `The neighbours' children ride their mini motos along the lane now and then, in daylight and fine weather, one to three of them in single file. If you or one of the girls is near the big gate when they get to it they stop outside, turn to look in and watch for about half a minute, then ride on. Jess waves, Amy less often, and while they are watching the girls are keener on showing off: the ramp, doughnuts, a race. They only watch the farm, so there is nothing to do for them but give them something worth watching.`,
+        tip: 'The neighbours\' kids stop at the big gate to watch if you are near. The girls show off for them.',
+      },
+      {
         q: 'Can I ride out onto the lane, and where does it go?',
         a: `Yes. Open the big gate at the end of the farm road (look at it and press <kbd>E</kbd>), ride through and turn right, south, along the lane. Keep to the left for the traffic, which brakes for you. It is walled in on both sides, so the only place to turn off is the neighbour's gateway on the right, about 100 m down (its gate is shut: get off and open it), and it carries on south, past the stream's culvert, to a side road into the village (see “Is there a village, and how do I get there?”), then ends at an invisible wall about 100 m past her gateway. North of the big gate it stops 60 m along, at another. You can walk it too.`,
         tip: 'The lane runs south from the big gate to the neighbour\'s farm. Look out for the traffic.',

@@ -293,6 +293,7 @@ import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } fr
 import { windUniforms, swayMetres } from './effects/windSway.js';
 import { DoorAudio } from './audio/doorAudio.js';
 import { TrafficHost } from './world/trafficHost.js';
+import { showOffBoost } from './world/kids.js';
 import { NeighbourHost } from './world/neighbourHost.js';
 import { VillageHost } from './world/villageHost.js';
 import { Snow } from './effects/snow.js';
@@ -5166,7 +5167,7 @@ export class Game {
       // Something you stopped her doing is still on her mind, so she's keener on it for a while (npc/intent.js).
       // Sleepy, she can't be bothered with anything but a doze (companionParams: sleepyLazy).
       const lazy = 1 - c.params.sleepyLazy * c.needs.sleep;
-      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * c.memory.weight(o.key) * c.agenda.boost(o.key, c.params) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy * c.mood.keen(c.params)) }));
+      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * c.memory.weight(o.key) * c.agenda.boost(o.key, c.params) * showOffBoost(o.key, this.trafficHost.kidsWatching, this.trafficHost.kidsParams) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy * c.mood.keen(c.params)) }));
       if (sitting) offers = offers.filter((o) => OFFER_KINDS[o.key]?.fromSeat);
       else if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
       // Free again with a plan to carry on (npc/plans.js): the second part, if it's still on offer, is taken without weighing.
@@ -5177,6 +5178,7 @@ export class Game {
       m.scored = scored.filter((s) => s.offer !== pick).slice(0, 4).map((s) => ({ key: s.offer.key, score: s.score }));
       if (!pick) continue;
       const need = mainNeed(pick, c.needs);
+      this.trafficHost.girlChose(c, pick.key);
       // Wanting company, she may ask you along first and wait for your answer (npc/askAlong.js).
       if (this.askBeforeGoing(c, pick, planned)) {
         m.last = { key: pick.key, need, score: scored[0].score, asking: true };
