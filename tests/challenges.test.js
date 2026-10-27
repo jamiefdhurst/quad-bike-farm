@@ -40,6 +40,30 @@ describe('the bays', () => {
   });
 });
 
+describe('the sleepers', () => {
+  const l = LAYOUT.lineUp;
+
+  it('are spaced about 3 m apart, so slightly uneven parking still scores well', () => {
+    expect(l.spacing).toBeGreaterThanOrEqual(3);
+  });
+
+  it('lie by the south hedge, inside it, with room for a quad at each and the field gate clear', () => {
+    const noseEnd = l.z + (l.length / 2) * Math.cos(l.yaw);
+    const hedgeFace = LAYOUT.fieldHalf - LAYOUT.hedgeThickness / 2;
+    expect(noseEnd).toBeLessThan(hedgeFace - 0.8);
+    expect(hedgeFace - noseEnd).toBeLessThan(3);
+    for (const b of bays) expect(Math.abs(b.x - LAYOUT.gate.x)).toBeGreaterThan(LAYOUT.gate.width / 2 + 2.6);
+  });
+
+  it('keep the barn doors clear and the bale trailer well away', () => {
+    const doors = { x: LAYOUT.barn.x + LAYOUT.barn.halfX, z: LAYOUT.barn.z };
+    for (const b of bays) {
+      expect(Math.hypot(b.x - doors.x, b.z - doors.z)).toBeGreaterThan(12);
+      expect(Math.hypot(b.x - LAYOUT.trailer.x, b.z - LAYOUT.trailer.z)).toBeGreaterThan(8);
+    }
+  });
+});
+
 describe('judging the line-up', () => {
   it('gives full marks for every bay filled dead centre and straight', () => {
     const r = judgeLineUp(bays, bays.map(parkedIn), P);
