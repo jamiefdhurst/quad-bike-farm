@@ -451,6 +451,7 @@ export const LAYOUT = {
   antiGelBottle: { x: -58.15, z: 52.8, yaw: 0.9 }, // diesel anti-gel, beside the coolant
   plugAdditive: { x: -59.75, z: 53.2, yaw: -0.3 }, // plug-saver, a little way from the oil bottle
   benchLeads: { x: -63.55, z: 56.1, yaw: 0.4 }, // where the jump leads lie on the workbench, at the start and when you put them back (the toolbox's place is `toolbox`)
+  benchPack: { x: -61.8, z: 56.32, yaw: 0.15 }, // the booster pack's place on the back edge of the workbench, clear of the oil bottle and the logbook
   hose: { x: -61.2, z: 49.4, yaw: 0.2 }, // hose reel at the south end of the petrol tank
 
   spawn: {

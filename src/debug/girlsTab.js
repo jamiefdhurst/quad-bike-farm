@@ -254,6 +254,8 @@ export function buildGirlsTab(d) {
   show(shop, 'a girl at the bench', () => g.girlBench.describe());
   show(shop, 'their cars', () => g.describeCars());
   show(shop, 'the battery charger', () => g.describeCharger());
+  show(shop, 'the booster pack', () => g.describeBoosterPack());
+  slider(shop, 'booster pack charge', () => g.boosterPack.engine.battery, (v) => g.debugBoosterCharge(v), 0, 1, 0.05);
   button(shop, 'Take the battery off the charger', () => g.debugChargerClear());
   show(shop, 'the generator', () => g.describeGenerator());
   show(shop, 'starting the generator', () => g.generatorStart.describe());

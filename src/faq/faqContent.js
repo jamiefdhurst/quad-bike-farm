@@ -239,8 +239,13 @@ export const FAQ_SECTIONS = [
           A warm engine with lots of choke is the usual way to do it.`,
       },
       {
+        q: 'How do I use the booster pack?',
+        a: `It sits on the back edge of the workbench. Pick it up (<kbd>E</kbd>), look at a switched-off vehicle with a flat battery and hold <kbd>E</kbd>: it pushes charge in for a few seconds, enough to start on, and the status line shows both numbers. It does not need a second vehicle or the leads. It can run flat itself (each boost takes more out of it than it puts in, and it loses a little overnight), so stand it on the bench charger (<kbd>E</kbd> at the charger) when it is low. The charger needs the barn generator running. <kbd>G</kbd> puts it down, or <kbd>E</kbd> at the bench puts it back.`,
+        tip: 'Hold E on a switched-off flat vehicle with the booster pack in your hands.',
+      },
+      {
         q: 'The battery is flat. Now what?',
-        a: `Three ways out. The Hornet, the Adder, the kids' quad, the mini moto and the old three-wheeler have a pull-start: with the ignition on, hold <kbd>O</kbd>
+        a: `Four ways out. The booster pack from the workbench (hold <kbd>E</kbd> at the vehicle) is the quickest. The Hornet, the Adder, the kids' quad, the mini moto and the old three-wheeler have a pull-start: with the ignition on, hold <kbd>O</kbd>
           for about half a second to a second and let go to yank (too short is weak, too long is botched). Or fetch the jump leads from the
           workbench, clamp the flat one (<kbd>E</kbd>) and then a running one (<kbd>E</kbd>), parked nose to nose since they only reach about
           4.5 m. The Tor has a starting handle too (the Crag hasn't: it wants the leads). Running an engine charges its battery again, but by the revs: about ten minutes revved, much longer at idle. The leads are slow: a flat battery wants a minute or two joined to a running quad before it will turn the engine. Or lift the battery out, charge it on the workbench charger and put it back (see the battery questions below). A jumped petrol engine
