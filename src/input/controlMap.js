@@ -22,6 +22,7 @@ export const CONTEXTS = {
       ['KeyZ', 'press', 'Less choke, from beside the quad'],
       ['KeyF', 'press', 'Fuel tap, from beside the quad'],
       ['KeyY', 'press', 'Dipstick, or tickle the old bike\'s carb'],
+      ['KeyU', 'press', 'Dip the tank, from beside the quad'],
     ],
   },
   ride: {

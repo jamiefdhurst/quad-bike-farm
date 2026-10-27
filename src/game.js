@@ -249,6 +249,7 @@ import { DEFAULT_MOTO_PARAMS, MOTO_PARAM_RANGES } from './npc/motoGo.js';
 import { DEFAULT_THROWN_PARAMS, THROWN_PARAM_RANGES } from './npc/companionThrown.js';
 import { FaultKnowledge, DEFAULT_WONT_PARAMS, WONT_PARAM_RANGES, WONT_LINE } from './npc/wontRide.js';
 import { Sump, DEFAULT_SUMP_PARAMS, SUMP_PARAM_RANGES, pickBurner, startLevel, readStick } from './vehicle/sump.js';
+import { DEFAULT_DIP_PARAMS, DIP_PARAM_RANGES, readTank, dipMessage, gaugeLies } from './vehicle/tankDip.js';
 import { fuelText } from './engine/diesel.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Bell } from './world/bellBuild.js';
@@ -629,6 +630,8 @@ export class Game {
     // Engine oil: each four-stroke's sump starts at its own level, and one of them burns oil this game (vehicle/sump.js).
     this.sumpParams = { ...DEFAULT_SUMP_PARAMS };
     registerTuning('Engine oil', this.sumpParams, SUMP_PARAM_RANGES);
+    this.dipParams = { ...DEFAULT_DIP_PARAMS };
+    registerTuning('Tank dip', this.dipParams, DIP_PARAM_RANGES);
     this.walkParams = { ...DEFAULT_WALK_PARAMS };
     registerTuning('Amy walk-round', this.walkParams, WALK_PARAM_RANGES);
     this.wontParams = { ...DEFAULT_WONT_PARAMS }; // Amy refusing a quad she knows is faulty (npc/wontRide.js)
@@ -1270,15 +1273,18 @@ export class Game {
           if (this.canSitOnBack(quad) && this.lookingAtPassengerSeat(quad)) return `Sit ${quad.hasBench ? (this.lookingAtBack(quad) ? 'in the back' : 'in the passenger seat') : 'on the back'} of the ${unit.label}`;
           return {
             action: `Ride the ${unit.label}`,
-            keys: quad.tractor
-              ? [['K', 'Key'], ['R', 'Start'], ['Q Z', 'Hand throttle'], ['O', 'Stop knob'], ['Y', 'Dipstick']]
-              : unit.spec.utv
-                ? [['K', 'Key'], ['R', 'Start'], ['T', 'Tip the bed'], ['Y', 'Dipstick']] // the reverse lever is on the dash: only from the seat
-                : unit.spec.landRover
-                  ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.defender ? [] : [['Q Z', 'Choke'], ['[ ]', 'Hand throttle']]), ['Y', 'Dipstick'], ...(unit.spec.defender ? [] : [['P', 'Starting handle (at the front)']])]
-                : unit.spec.car
-                  ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.engine.injected ? [] : [['Q Z', 'Choke']]), ['Y', 'Dipstick']]
-                : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['O', quad.engine.params.kickStart ? 'Kick' : 'Pull-start']] : []), ...(quad.engine.params.manualTiming ? [['[ ]', 'Spark lever']] : []), ...(quad.barLights ? [['P', 'Lights']] : []), ...(quad.engine.params.injected ? [] : [['Q Z', 'Choke']]), ...(quad.fuel.params.noTap ? [] : [['F', 'Fuel tap']]), ...(quad.sump ? [['Y', 'Dipstick']] : quad.engine.params.tickler ? [['Y', 'Tickle']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : [])],
+            keys: [
+              ...(quad.tractor
+                ? [['K', 'Key'], ['R', 'Start'], ['Q Z', 'Hand throttle'], ['O', 'Stop knob'], ['Y', 'Dipstick']]
+                : unit.spec.utv
+                  ? [['K', 'Key'], ['R', 'Start'], ['T', 'Tip the bed'], ['Y', 'Dipstick']] // the reverse lever is on the dash: only from the seat
+                  : unit.spec.landRover
+                    ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.defender ? [] : [['Q Z', 'Choke'], ['[ ]', 'Hand throttle']]), ['Y', 'Dipstick'], ...(unit.spec.defender ? [] : [['P', 'Starting handle (at the front)']])]
+                  : unit.spec.car
+                    ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.engine.injected ? [] : [['Q Z', 'Choke']]), ['Y', 'Dipstick']]
+                  : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['O', quad.engine.params.kickStart ? 'Kick' : 'Pull-start']] : []), ...(quad.engine.params.manualTiming ? [['[ ]', 'Spark lever']] : []), ...(quad.barLights ? [['P', 'Lights']] : []), ...(quad.engine.params.injected ? [] : [['Q Z', 'Choke']]), ...(quad.fuel.params.noTap ? [] : [['F', 'Fuel tap']]), ...(quad.sump ? [['Y', 'Dipstick']] : quad.engine.params.tickler ? [['Y', 'Tickle']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : [])]),
+              ['U', 'Dip the tank'],
+            ],
           };
         },
         feedback: 'own',
@@ -11234,6 +11240,26 @@ export class Game {
     } else if (this.yHeld < 0.6) this.hud.toast('As full as it will hold');
   }
 
+  /** What a dip of this quad's tank shows: the stick's reading and whether it has a fuel gauge to compare with (null: none to show). */
+  tankDipOf(unit) {
+    const f = unit.quad.fuel;
+    const reading = readTank({ litres: f.litres, capacity: f.params.tankCapacity, reserve: f.params.noTap ? 0 : f.params.reserveLitres, noise: Math.random() * 2 - 1 }, this.dipParams);
+    const hasGauge = featuresOf(unit.spec, !!unit.quad.pod).fuelGauge;
+    return { reading, shown: hasGauge ? unit.quad.shownFuel : null };
+  }
+
+  /**
+   * Stood looking at a quad: U puts a stick down the tank and says what is really in it, and whether the gauge agrees. If Amy is near
+   * enough to see it, a gauge that is off goes in her logbook.
+   */
+  dipTank(unit) {
+    const { reading, shown } = this.tankDipOf(unit);
+    this.audioHub.useCue('latch');
+    this.hud.toast(dipMessage(reading, shown, this.dipParams), 3.5);
+    const quirk = ['fuelSticks', 'fuelHigh'].find((k) => unit.quad.quirks.has(k));
+    if (quirk && shown !== null && gaugeLies(shown, reading.share, this.dipParams)) this.notebook.note(unit, { kind: 'quirk', quirk });
+  }
+
   /**
    * Amy walks round a quad before she rides it: squeezes the tyres, looks it over and checks the dipstick, and tops it up if it wants some,
    * saying what she finds. Jess goes straight to the starter. Once per ride. `c.walkFound` keeps what she found, for the girls to act on later.
@@ -11265,6 +11291,7 @@ export class Game {
         }
         if (driven) for (const finding of c.walkFound) this.notebook.note(driven, { kind: 'walk', finding }, { saw: true });
       }
+      if (driven && !c.walkFound.length && this.amyDipsTank(c, driven)) continue;
       const sump = c.quad.sump;
       if (!sump || Math.random() > this.sumpParams.amyChecks) continue;
       if (sump.tooMuch) {
@@ -11279,6 +11306,20 @@ export class Game {
         c.voice.say('oilFine', { chance: 0.35 });
       }
     }
+  }
+
+  /**
+   * Amy dips the tank of a quad whose gauge she knows lies, before she rides it, and says what she finds. Returns true if she did,
+   * which is her remark for the walk-round. She writes it up as she does the oil.
+   */
+  amyDipsTank(c, unit) {
+    const quirk = ['fuelSticks', 'fuelHigh'].find((k) => c.voice.knowsQuirk(unit, k));
+    if (!quirk || Math.random() > this.dipParams.amyDips) return false;
+    const { reading, shown } = this.tankDipOf(unit);
+    if (shown === null) return false;
+    c.voice.say(reading.low ? 'tankDipLow' : gaugeLies(shown, reading.share, this.dipParams) ? 'tankDipLies' : 'tankDipFine', { urgent: true, chance: 1 });
+    if (unit.quad.quirks.has(quirk)) this.notebook.note(unit, { kind: 'quirk', quirk }, { saw: true });
+    return true;
   }
 
   /** A race, drag race, follow the leader or recall is on, so a girl shouldn't walk out of it. */
@@ -11889,6 +11930,7 @@ export class Game {
         focused.unit.quad.setRemote(input);
         focused.unit.quad.handleFrameInput(dt);
         if (!this.coolantBottle.held && !this.antiGelBottle.held) this.dipstick(focused.unit, input, dt);
+        if (input.wasPressed('KeyU')) this.dipTank(focused.unit);
         this.lastUnit = focused.unit;
       }
       if (focused && !focused.person && input.wasPressed('KeyE')) {

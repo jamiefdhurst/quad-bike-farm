@@ -1368,6 +1368,7 @@ export class Quad {
       clock: clock.text(),
       seconds: clock.seconds(),
     };
+    this.shownFuel = state.fuelLevel; // what the fuel gauge reads, lies and all (the tank dip compares it with the real level)
     this.lamps = lampStates(state); // what the dash's warning lamps show, for the girl on the back to read out
     this.dash.update(state);
     this.pod?.update(state);

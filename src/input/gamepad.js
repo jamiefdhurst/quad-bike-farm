@@ -73,6 +73,7 @@ export const RADIAL_ITEMS = [
   { label: 'Less choke', key: 'KeyZ', hold: 0.5 },
   { label: 'Fuel tap', key: 'KeyF' },
   { label: 'Dipstick', key: 'KeyY', hold: 1.2, where: 'foot' },
+  { label: 'Dip the tank', key: 'KeyU', where: 'foot' },
   { label: 'Tickle the carb', key: 'KeyY', note: 'The old bike' },
   { label: 'Spark lever back', key: 'BracketLeft', hold: 0.8, note: 'The old bike' },
   { label: 'Spark lever forward', key: 'BracketRight', hold: 0.8, note: 'The old bike' },

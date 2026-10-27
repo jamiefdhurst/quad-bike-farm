@@ -826,19 +826,27 @@ export class CompanionVoice {
     w.historyUntil = this.chatter.time + 90; // one at a time, so she doesn't read out the whole file
   }
 
+  /** The quirks she believes a quad has, settled once per quad as well as her `diagnoseAccuracy` lets her. */
+  quirksKnown(unit) {
+    this.quirkBeliefs ??= {};
+    return (this.quirkBeliefs[unit.id] ??= girlKnowsQuirks(unit.quad.quirks.kinds, applicableQuirks(featuresOf(unit.spec, true)), this.companion.params.diagnoseAccuracy, Math.random));
+  }
+
+  knowsQuirk(unit, kind) {
+    return this.quirksKnown(unit).includes(kind);
+  }
+
   /**
    * Stood by a quad, or as you get on it, she warns you of a quirk she knows it has (quirks.js), once each. What she knows is
    * settled once per quad as well as her `diagnoseAccuracy` lets her, so Jess misses some and sometimes swears to one it hasn't got.
    */
   watchQuirks(dt, unit, w, view) {
     const c = this.companion;
-    const kinds = unit.quad.quirks.kinds;
     const away = unit.quad.position.distanceTo(this.head);
     const boarding = unit === view.ridden && away < 10;
     if (!boarding && !(c.availability().settled && away < 6)) return;
     if (this.chatter.time < (w.quirkUntil ?? 0)) return;
-    this.quirkBeliefs ??= {};
-    const known = (this.quirkBeliefs[unit.id] ??= girlKnowsQuirks(kinds, applicableQuirks(featuresOf(unit.spec, true)), c.params.diagnoseAccuracy, Math.random));
+    const known = this.quirksKnown(unit);
     w.quirkSaid ??= new Set();
     const kind = known.find((k) => !w.quirkSaid.has(k));
     if (!kind) return;

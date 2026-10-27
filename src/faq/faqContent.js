@@ -529,6 +529,14 @@ export const FAQ_SECTIONS = [
         tip: 'Tappets ticking? Check the oil with Y. One four-stroke burns oil every game.',
       },
       {
+        q: 'How do I tell what is really in the tank?',
+        a: `Stand at the quad and press <kbd>U</kbd> to dip the tank. A toast says how full it is in words (about a quarter, about half, down in the reserve) and,
+          on a quad with a fuel gauge, whether the gauge agrees. The stick is never out by more than a few hundred millilitres. A gauge that sticks or reads
+          high can say half with a splash left, so dip it when a quad's gauge looks too good. Amy dips the tank of a quad whose gauge she knows is wrong
+          before she rides it, and writes the gauge in her logbook; Jess never does.`,
+        tip: 'Gauge looks too good? Press U at the quad to dip the tank and see what is really in it.',
+      },
+      {
         q: 'I put too much oil in. What happens?',
         a: `Keep holding <kbd>Y</kbd> by the bottle past the top mark and the pour carries on, so you can overfill it. Over the mark the dipstick says so, the
           exhaust smokes blue even on a light throttle, and the longer you work it the more oil gets blown into the air box, which leaves it sluggish and
@@ -2480,7 +2488,7 @@ export const FAQ_SECTIONS = [
         spoiler: true,
         a: `Quirks: each quad has one to three. A fuel gauge that reads high or sticks, a temperature needle that never moves, a choke that creeps out a notch or two with the
           shaking (the engine idles a little faster, but still idles), a stiff fuel tap that needs working (press <kbd>F</kbd> a few times), a split seat, a horn that works when it likes, brakes that pull or squeal, or a
-          flickering headlight. Nobody fixes them, and a quad keeps its quirks from day to day. Amy's logbook may mention them.`,
+          flickering headlight. Nobody fixes them, and a quad keeps its quirks from day to day. Amy's logbook may mention them. A lying fuel gauge is found out by dipping the tank (<kbd>U</kbd> beside the quad).`,
       },
       {
         q: 'Someone has been messing with my quads.',
