@@ -12061,7 +12061,7 @@ export class Game {
     if (!hill) return;
     const allowed = (x, z) =>
       hill.inPasture(x, z, 3) && z > hill.farEdge(x) + this.world.layout.hill.foot + 2 && !hill.inWood(x, z, -2) && hill.waterAt(x, z) < 0.05 &&
-      hill.gorseAt(x, z) < 0.25 && hill.climbSlope(x, z) < 0.45;
+      hill.gorseAt(x, z) < 0.25 && hill.climbSlope(x, z) < 0.45 && !hill.nearHut(x, z);
     const p = hill.pasture;
     const random = createRandom(this.seed ^ 0x5eed);
     const spot = findFlockSpot(allowed, { minX: p.minX + 8, maxX: p.maxX - 8, minZ: p.minZ + 20, maxZ: p.maxZ - 8 }, random);

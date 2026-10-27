@@ -206,6 +206,9 @@ export function createHill(layout) {
   const inPaddock = (x, z, margin = 0) => inWest(x, z, margin) || inEast(x, z, margin);
   const inWood = (x, z, margin = 0) => inRect(hill.wood, x, z, margin);
 
+  /** Within the hut's clearing, where nothing grows and no sheep stand. */
+  const nearHut = (x, z, margin = hill.hut?.clear ?? 0) => !!hill.hut && Math.hypot(x - hill.hut.x, z - hill.hut.z) < margin;
+
   /** The climb's slope up the hill at (x, z), rise over run along z: the banks' steepness, without the rough. */
   const climbSlope = (x, z) => Math.abs(climb(x, z + 0.5) - climb(x, z - 0.5));
 
@@ -214,14 +217,14 @@ export function createHill(layout) {
 
   /** 0..1 how thick bracken grows at (x, z): in patches over the rough, not in the wood, the lane, the stream or by the ford. */
   function brackenAt(x, z) {
-    if (!inPasture(x, z, 1.5) || inWood(x, z, -2)) return 0;
+    if (!inPasture(x, z, 1.5) || inWood(x, z, -2) || nearHut(x, z)) return 0;
     if (z < farEdge(x) + hill.foot) return 0;
     return smoothstep(0.58, 0.72, patch(x, z, 0.4));
   }
 
   /** 0..1 how thick gorse grows at (x, z): in clumps on the steep banks, where nobody's mowed or grazed it, and on the patchy tops. */
   function gorseAt(x, z) {
-    if (!inPasture(x, z, 2) || inWood(x, z, -3)) return 0;
+    if (!inPasture(x, z, 2) || inWood(x, z, -3) || nearHut(x, z)) return 0;
     if (z < farEdge(x) + hill.foot) return 0;
     const steep = smoothstep(0.3, 0.55, climbSlope(x, z));
     return steep * smoothstep(0.42, 0.6, patch(x * 1.7, z * 1.7, 2.1));
@@ -253,6 +256,6 @@ export function createHill(layout) {
     lane, pasture, stream, laneRect, west, east, riverside, gates, pond, knolls, top, total, waitSpot,
     streamZ, halfAt, depthAt, waterDepthAt, farEdge, climb, climbSlope, sinkAt, channelAt, profile, weight,
     setRise, get rise() { return rise; },
-    waterAt, mudAt, sheepFieldOk, pondCut, knollLift, lineDistance, brackenAt, gorseAt, inPasture, inLane, inWest, inEast, inPaddock, inWood, pastFoot, outside: outsideHill,
+    waterAt, mudAt, sheepFieldOk, pondCut, knollLift, lineDistance, brackenAt, gorseAt, inPasture, nearHut, inLane, inWest, inEast, inPaddock, inWood, pastFoot, outside: outsideHill,
   };
 }
