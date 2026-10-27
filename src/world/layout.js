@@ -219,6 +219,14 @@ export const LAYOUT = {
     trees: 170,
     bushes: 110,
   },
+  // The gravel pit (world/quarry.js): a hedged field north of the barley field, the wood's east neighbour, through a gate in the barley field's
+  // north hedge (`gate`: x along it, `width`, tied `open`). The pit's own shape is dealt from the farm's seed (`pit`, `dealPit`); without one
+  // the same fixed deal is used.
+  quarry: {
+    name: 'The Gravel Pit',
+    minX: 80, maxX: 200, minZ: -200, maxZ: -80,
+    gate: { x: 150, width: 4.8, open: true },
+  },
   hedgeThickness: 1.8,
   hedgeHeight: 2.4,
 

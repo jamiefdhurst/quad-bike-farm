@@ -52,7 +52,7 @@ export class TrafficHost {
   addGatePrompts() {
     const g = this.g;
     for (const gate of this.gates) {
-      const wide = gate.id === 'south' || gate.id === 'north' ? { x: 4.8, z: 1.4 } : { x: 1.4, z: gate.id === 'grid' ? 9.4 : 7.8 };
+      const wide = gate.id === 'south' || gate.id === 'north' || gate.id === 'quarry' ? { x: 4.8, z: 1.4 } : { x: 1.4, z: gate.id === 'grid' ? 9.4 : 7.8 };
       const proxy = new THREE.Mesh(new THREE.BoxGeometry(wide.x, 2.2, wide.z), new THREE.MeshBasicMaterial({ visible: false }));
       proxy.position.set(gate.x, g.world.groundHeightAt(gate.x, gate.z) + 1.1, gate.z);
       g.scene.add(proxy);

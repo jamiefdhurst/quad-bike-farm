@@ -1,10 +1,11 @@
-// The records on the barn's chalkboard: the best lap, drag run, hill climb, cone course and longest jump of the game, by whoever set them. Pure, tested.
+// The records on the barn's chalkboard: the best lap, drag run, hill climb, pit climb, cone course and longest jump of the game, by whoever set them. Pure, tested.
 // Times are kept for every quad as well as overall, so a slow quad is not compared with the quick one. They carry from day to day with the farm (farm/farmState.js); one set today is marked so.
 
 export const RECORD_KINDS = {
   lap: { label: 'Lap of the track', better: 'lower' },
   drag: { label: 'Drag strip', better: 'lower' },
   climb: { label: 'Hill climb', better: 'lower' },
+  pit: { label: 'Pit climb', better: 'lower' },
   cones: { label: 'Cone course', better: 'lower' }, // the time with the penalties added
   jump: { label: 'Longest jump', better: 'higher' },
 };

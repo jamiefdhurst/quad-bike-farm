@@ -86,6 +86,7 @@ export function createGroundCanvas({ size, worldSize, track, layout, fields, pud
     paintTarmac(ctx, toPx, s, layout, fields, random);
     if (fields.hill) paintHill(ctx, toPx, s, fields, random);
     if (fields.woods) paintWoods(ctx, toPx, s, fields, random, autumn);
+    if (fields.quarry) paintQuarry(ctx, toPx, s, fields.quarry, rand(51));
   }
 
   // Worn yard and gateway.
@@ -473,6 +474,144 @@ function paintWoods(ctx, toPx, s, fields, random, autumn = false) {
       }
     }
   }
+}
+
+/**
+ * The gravel pit (world/quarry.js): a rough, scrubby field round it; the walls in bands of buff, orange, grey and pale sand (a band is a depth,
+ * so they run level round the bowl with a wobble, as strata do), loose scree at the toe and where the chutes are; a floor of packed grey-brown
+ * with the haul road worn bare and pale with two ruts; the heaps, grey gravel or buff sand; the pond's silt and the damp round its shore.
+ */
+function paintQuarry(ctx, toPx, s, quarry, random) {
+  const r = quarry.rect;
+  const pit = quarry.pit;
+  const cell = (x, z, w, h, color) => {
+    const [px, pz] = toPx(x, z);
+    ctx.fillStyle = color;
+    ctx.fillRect(px, pz, w * s, h * s);
+  };
+  // The field: dry rough grass gone to dock and bare patches, browner than the farm's.
+  for (let x = r.minX; x < r.maxX; x += 1) {
+    for (let z = r.minZ; z < r.maxZ; z += 1) {
+      const v = random();
+      const dry = 0.5 + 0.5 * Math.sin(x * 0.13 + z * 0.09) * Math.sin(z * 0.11 - x * 0.07 + 1);
+      if (dry > 0.45) cell(x, z, 1, 1, `rgba(${118 + v * 40},${112 + v * 34},${66 + v * 20},${0.25 + 0.3 * dry})`);
+    }
+  }
+  const STRATA = [[201, 184, 138], [186, 140, 84], [158, 152, 138], [216, 207, 178], [174, 150, 104]];
+  const step = 0.3;
+  // Cells a little bigger than their spacing and knocked off the grid, so the ground reads as grit and not as squares.
+  const grit = (x, z, color) => cell(x + (random() - 0.5) * step, z + (random() - 0.5) * step, step * 1.6, step * 1.6, color);
+  for (let x = pit.x - quarry.reachMax - 3; x < pit.x + quarry.reachMax + 3; x += step) {
+    for (let z = pit.z - quarry.reachMax - 3; z < pit.z + quarry.reachMax + 3; z += step) {
+      const { a, s: dist } = quarry.polar(x, z);
+      const rim = quarry.rimAt(a);
+      if (dist > rim + 2.5) continue;
+      const v = random();
+      const cut = quarry.bowlCut(x, z);
+      const u = (rim - dist) / quarry.runAt(a);
+      let c;
+      let alpha = 0.98;
+      if (u >= 1) {
+        // The floor: packed, with stones.
+        const g = 120 + v * 28;
+        c = [g + 12, g + 4, g - 14];
+      } else if (u <= 0) {
+        // The lip: raw ground showing through the grass.
+        c = [176 + v * 20, 160 + v * 18, 112 + v * 14];
+        alpha = 0.9 * (1 - Math.min(1, -u * (quarry.runAt(a) / 2.5)));
+      } else {
+        const band = Math.floor(cut * 0.85 + 0.9 * Math.sin(a * 5 + cut * 0.4) + 0.5 * Math.sin(a * 13 + 2) + v * 0.35);
+        const base = STRATA[((band % STRATA.length) + STRATA.length) % STRATA.length];
+        const scree = smoothScree(u);
+        const m = 0.86 + v * 0.22;
+        c = [base[0] * m * (1 - 0.2 * scree) + 30 * scree, base[1] * m * (1 - 0.2 * scree) + 26 * scree, base[2] * m * (1 - 0.2 * scree) + 20 * scree];
+      }
+      grit(x, z, `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${alpha})`);
+    }
+  }
+  // Stones speckled over the walls and floor, flints and grey.
+  for (let i = 0; i < 26000; i++) {
+    const a = random() * Math.PI * 2;
+    const dist = Math.sqrt(random()) * (quarry.rimAt(a) + 1);
+    const p = quarry.frameAt(a, dist);
+    const [px, pz] = toPx(p.x, p.z);
+    ctx.fillStyle = random() < 0.4 ? 'rgba(236,230,214,0.5)' : random() < 0.5 ? 'rgba(88,84,78,0.5)' : 'rgba(150,120,80,0.45)';
+    ctx.beginPath();
+    ctx.ellipse(px, pz, (0.05 + random() * 0.14) * s, (0.04 + random() * 0.1) * s, random() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // The heaps.
+  for (const h of pit.heaps) {
+    const sand = h.kind === 'sand';
+    for (let x = h.x - h.r; x < h.x + h.r; x += step) {
+      for (let z = h.z - h.r; z < h.z + h.r; z += step) {
+        const d = Math.hypot(x - h.x, z - h.z) / h.r;
+        if (d > 1) continue;
+        const v = random();
+        const m = 0.85 + v * 0.3 + 0.12 * (1 - d);
+        grit(x, z, sand ? `rgba(${(214 * m) | 0},${(190 * m) | 0},${(134 * m) | 0},0.95)` : `rgba(${(138 * m) | 0},${(135 * m) | 0},${(130 * m) | 0},0.95)`);
+      }
+    }
+  }
+  // The haul road: bare pale gravel, with two darker ruts and a fringe of dust.
+  const road = quarry.roadPoints;
+  const stroke = (offset, widthM, style, alpha, blur = 0) => {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = style;
+    ctx.lineWidth = widthM * s;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    if (blur) ctx.filter = `blur(${blur}px)`;
+    ctx.beginPath();
+    road.forEach((pt, i) => {
+      const b = road[Math.min(i + 1, road.length - 1)];
+      const a = road[Math.max(i - 1, 0)];
+      const tl = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+      const [px, pz] = toPx(pt.x - ((b.z - a.z) / tl) * offset, pt.z + ((b.x - a.x) / tl) * offset);
+      if (i) ctx.lineTo(px, pz);
+      else ctx.moveTo(px, pz);
+    });
+    ctx.stroke();
+    ctx.restore();
+  };
+  const w = quarry.roadHalf * 2;
+  stroke(0, w + 1.6, '#b9aa86', 0.55, 5);
+  stroke(0, w, '#c8bb98', 0.92, 2);
+  for (const off of [-0.8, 0.8]) stroke(off, 0.5, '#8d8064', 0.7, 1);
+  stroke(0, 0.3, '#a89c7e', 0.5, 1);
+  // Gravel and dust flecks along the haul road.
+  for (let i = 0; i < 9000; i++) {
+    const pt = road[Math.floor(random() * road.length)];
+    const [px, pz] = toPx(pt.x + (random() - 0.5) * w * 1.1, pt.z + (random() - 0.5) * w * 1.1);
+    ctx.fillStyle = random() < 0.5 ? 'rgba(238,232,214,0.6)' : 'rgba(96,86,68,0.5)';
+    ctx.beginPath();
+    ctx.ellipse(px, pz, (0.04 + random() * 0.09) * s, (0.03 + random() * 0.07) * s, random() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // The gateway, worn.
+  const [gx, gz] = toPx(quarry.gate.x, r.maxZ - 2);
+  const gr = ctx.createRadialGradient(gx, gz, 0, gx, gz, 6 * s);
+  gr.addColorStop(0, 'rgba(110,92,62,0.85)');
+  gr.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gr;
+  ctx.fillRect(gx - 6 * s, gz - 6 * s, 12 * s, 12 * s);
+  // The pond: silt on the bed, a damp dark fringe on the shore.
+  const pond = pit.pond;
+  for (let x = pond.x - pond.rx * 1.5; x < pond.x + pond.rx * 1.5; x += step) {
+    for (let z = pond.z - pond.rz * 1.5; z < pond.z + pond.rz * 1.5; z += step) {
+      const rr = Math.hypot((x - pond.x) / pond.rx, (z - pond.z) / pond.rz);
+      const v = random();
+      if (rr < 0.8) grit(x, z, `rgba(${86 + v * 18},${78 + v * 14},${58 + v * 10},0.97)`);
+      else if (rr < 1.4) grit(x, z, `rgba(${70 + v * 20},${64 + v * 14},${44 + v * 10},${(0.7 * (1.4 - rr)) / 0.6})`);
+    }
+  }
+}
+
+/** 0..1 how much scree there is `u` of the way down a bank: none at the top, loose stone over the lower part. */
+function smoothScree(u) {
+  const t = Math.min(1, Math.max(0, (u - 0.45) / 0.5));
+  return t * t * (3 - 2 * t);
 }
 
 /** The neighbouring farmland beyond the farm's hedges, at 2 m a pixel, fading in from the grass a few metres out (as the outer ring does). */

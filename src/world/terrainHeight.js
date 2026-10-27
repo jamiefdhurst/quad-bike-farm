@@ -21,6 +21,7 @@ import { stripFrame } from './layout.js';
 import { outsideRect, createFieldShape } from './fields.js';
 import { createHill } from './hill.js';
 import { createWoods } from './woods.js';
+import { createQuarry } from './quarry.js';
 import { createOutbuildings } from './outbuildings.js';
 import { createBrook } from './brook.js';
 import { villageShape } from './village.js';
@@ -31,6 +32,7 @@ export function createTerrainHeight(layout, track) {
   const fieldShape = createFieldShape(layout);
   const hill = createHill(layout);
   const woods = createWoods(layout);
+  const quarry = createQuarry(layout);
   const outbuildings = createOutbuildings(layout);
   const brook = createBrook(layout);
   const village = villageShape(layout);
@@ -49,10 +51,11 @@ export function createTerrainHeight(layout, track) {
 
     // Land rises gently beyond the farm's hedges towards distant hills; through the south gate, the lane and the hill pasture have their own
     // shape (world/hill.js), fading back into it beyond their hedges.
-    // North, through the north gate, the wood has its own (world/woods.js) in the same way.
+    // North, through the north gate, the wood has its own (world/woods.js) in the same way, and the gravel pit's field (world/quarry.js) is kept flat for it.
     const w = hill ? hill.weight(x, z) : 0;
     const ww = woods ? woods.weight(x, z) : 0;
-    h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013)) * (1 - Math.max(w, ww));
+    const qw = quarry ? quarry.weight(x, z) : 0;
+    h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013)) * (1 - Math.max(w, ww, qw));
     if (w > 0) h += w * hill.profile(x, z);
     if (ww > 0) h += ww * woods.profile(x, z);
 
@@ -60,6 +63,9 @@ export function createTerrainHeight(layout, track) {
     h += fieldShape(x, z).lift;
     return h;
   }
+
+  // The ground the gravel pit is cut into: the lie at its middle, the whole patch round it eased to it (quarry.groundAt).
+  const quarryLevel = quarry ? natural(quarry.pit.x, quarry.pit.z) : 0;
 
   function heightAt(x, z) {
     let h = natural(x, z);
@@ -108,6 +114,9 @@ export function createTerrainHeight(layout, track) {
       h -= brook.cutAt(x, z);
     }
 
+    // The gravel pit: its patch levelled, the bowl cut into it, the haul road down its wall, the pond and the heaps.
+    if (quarry) h = quarry.groundAt(x, z, h, quarryLevel);
+
     // Level under the drag strip, with a shoulder to ease it back into the field.
     if (strip) {
       const f = stripFrame(strip, x, z);
@@ -151,12 +160,12 @@ export function createTerrainHeight(layout, track) {
   /** 0..1, how muddy the surface is here (1 on the track centre, and in a bog). */
   function mudAt(x, z) {
     const d = track.distanceTo(x, z, trackReach);
-    return Math.max(1 - smoothstep(trackHalfWidth * 0.7, trackHalfWidth + 0.6, d), Math.min(1, bogAt(x, z) * 1.5), hill ? hill.mudAt(x, z) : 0, woods ? woods.mudAt(x, z) : 0, brook ? brook.mudAt(x, z) : 0);
+    return Math.max(1 - smoothstep(trackHalfWidth * 0.7, trackHalfWidth + 0.6, d), Math.min(1, bogAt(x, z) * 1.5), hill ? hill.mudAt(x, z) : 0, woods ? woods.mudAt(x, z) : 0, quarry ? quarry.mudAt(x, z) : 0, brook ? brook.mudAt(x, z) : 0);
   }
 
   /** 0..1, how much standing water there is here (1 in the middle of a puddle, or in the stream). */
   function puddleAt(x, z) {
-    let w = Math.max(hill ? hill.waterAt(x, z) : 0, woods ? woods.waterAt(x, z) : 0, brook ? brook.waterAt(x, z) : 0);
+    let w = Math.max(hill ? hill.waterAt(x, z) : 0, woods ? woods.waterAt(x, z) : 0, quarry ? quarry.waterAt(x, z) : 0, brook ? brook.waterAt(x, z) : 0);
     for (const p of puddles) {
       const pd = Math.hypot(x - p.x, z - p.z);
       if (pd < puddleRadius) w = Math.max(w, 1 - smoothstep(puddleRadius * 0.45, puddleRadius * 0.85, pd));
@@ -164,5 +173,5 @@ export function createTerrainHeight(layout, track) {
     return w;
   }
 
-  return { heightAt, mudAt, puddleAt, bogAt, puddles, bogs, hill, woods, brook };
+  return { heightAt, mudAt, puddleAt, bogAt, puddles, bogs, hill, woods, quarry, brook };
 }

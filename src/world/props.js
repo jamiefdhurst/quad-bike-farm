@@ -9,6 +9,7 @@ import { underRoof } from './barn.js';
 import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
+import { buildQuarry } from './quarryProps.js';
 import { buildOutbuildings } from './outbuildingProps.js';
 import { buildNeighbourFarm } from './neighbourFarmProps.js';
 import { buildVillage } from './villageProps.js';
@@ -49,7 +50,7 @@ export function buildProps(ctx) {
   const barn = buildBarn(c);
   buildHedges(c);
   c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
-  const gates = [buildGate(c), buildNorthGate(c), buildRoadGate(c), buildGridGate(c)].filter(Boolean);
+  const gates = [buildGate(c), buildNorthGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c)].filter(Boolean);
   buildCattleGrid(c);
   buildPublicLane(c);
   buildPaddock(c);
@@ -68,6 +69,7 @@ export function buildProps(ctx) {
   buildBogs(c);
   const hillProps = ctx.fields.hill ? buildHill(c) : null;
   if (ctx.fields.woods) buildWoods(c);
+  if (ctx.fields.quarry) buildQuarry(c);
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
   return { barn, jumpRamp, silage, puddles, gates, neighbourFarm, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, anchors: c.anchors };
 }
@@ -94,13 +96,13 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random 
     const at = h.alongX ? h.z1 : h.x1;
     // The gate's leaf needs a little more room than an open gap.
     const skip = (s) => h.gaps.some((g) => Math.abs(s - g.at) < g.half + (g.gate ? 0.9 : 0.4));
-    for (let s = lo - 1; s <= hi + 1; s += 1.1 + random() * 0.5) {
+    for (let s = lo - 1; s <= hi + 1; s += h.coarse ? 2.2 + random() * 0.6 : 1.1 + random() * 0.5) {
       if (skip(s)) continue;
       const wobble = (random() - 0.5) * 0.6;
       const x = h.alongX ? s : at + wobble;
       const z = h.alongX ? at + wobble : s;
       const y = heights.heightAt(x, z) - 0.2;
-      const width = T * (0.95 + random() * 0.4);
+      const width = T * (0.95 + random() * 0.4) * (h.coarse ? 1.5 : 1);
       hedgeMatrices.push(
         matrixAt(
           x,
@@ -112,7 +114,7 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random 
           width / hedgeSize.z,
         ),
       );
-      if (random() < 0.3) {
+      if (!h.coarse && random() < 0.3) {
         const off = (random() - 0.5) * T * 0.8;
         const bx = h.alongX ? s + (random() - 0.5) : at + off;
         const bz = h.alongX ? at + off : s + (random() - 0.5);
@@ -161,6 +163,13 @@ function buildNorthGate(c) {
   const { layout } = c;
   if (!layout.woods) return null;
   return buildFiveBarGate(c, { id: 'north', gate: layout.woods.gate, z: -layout.fieldHalf, dir: -1, gap: c.fields.gates.north });
+}
+
+/** The gate in the barley field's north hedge onto the gravel pit's field (layout.quarry.gate): swung back into the barley field and tied. */
+function buildQuarryGate(c) {
+  const { layout } = c;
+  if (!layout.quarry) return null;
+  return buildFiveBarGate(c, { id: 'quarry', gate: layout.quarry.gate, z: layout.farm.minZ, dir: -1, gap: c.fields.gates.quarry });
 }
 
 /** A five-bar field gate at (gate.x, z) in a hedge along x. `dir` is the way it swings back into the grass field: 1 towards -z (the south hedge), -1 towards +z. */

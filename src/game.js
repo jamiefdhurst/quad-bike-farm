@@ -94,6 +94,8 @@ import { DrownOut, DROWNOUT_PARAM_RANGES } from './npc/drownOut.js';
 import { Horns, HORN_PARAM_RANGES } from './npc/horns.js';
 import { TractorWatch, TRACTOR_WATCH_PARAM_RANGES } from './npc/tractorWatch.js';
 import { RiverWatch, RIVER_WATCH_PARAM_RANGES } from './npc/riverWatch.js';
+import { QuarryWatch, QUARRY_WATCH_PARAM_RANGES } from './npc/quarryWatch.js';
+import { PitClimb, PIT_PARAM_RANGES, pitMessage, PIT_ASK_MESSAGE } from './world/pitClimb.js';
 import { HayRide, HAYRIDE_PARAM_RANGES } from './npc/hayRide.js';
 import { MudguardRide, MUDGUARD_PARAM_RANGES } from './npc/mudguardRide.js';
 import { TractorMount } from './vehicle/tractorMount.js';
@@ -173,7 +175,8 @@ import { ConeCourse, ConeField, DEFAULT_CONE_PARAMS, CONE_PARAM_RANGES, coneGate
 import { Challenges, ColdStartRun, CleanWatch, DEFAULT_CHALLENGE_PARAMS, CHALLENGE_PARAM_RANGES, CHALLENGE_KINDS, judgeLineUp, formatChallenge } from './world/challenges.js';
 import { buildLineUpBays } from './world/lineUpBays.js';
 import { Records, JumpMeasure, DEFAULT_RECORD_PARAMS, RECORD_PARAM_RANGES, RECORD_KINDS, WHO_NAMES, formatValue } from './world/records.js';
-import { stripFrame, stripPoint } from './world/layout.js';
+import { LAYOUT, stripFrame, stripPoint } from './world/layout.js';
+import { dealtLayout } from './world/quarry.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
@@ -418,10 +421,12 @@ export class Game {
     // The farm's date and season (world/seasons.js) have to be known before the world is built: autumn turns the trees and the wood's floor, and
     // winter dulls them. The farm has its own calendar, started on a date dealt from its seed; ?season=spring|summer|autumn|winter forces one.
     const farmPeek = openFarm({ search: location.search, storage: browserStorage() });
-    this.date = dateToday({ farmSeed: farmPeek.farmSeed ?? startSeed(), day: farmPeek.day, forced: new URLSearchParams(location.search).get('season'), createRandom });
+    this.seed = startSeed(); // a new farm's seed (the farm's own, once it has one, deals its date and its gravel pit)
+    this.date = dateToday({ farmSeed: farmPeek.farmSeed ?? this.seed, day: farmPeek.day, forced: new URLSearchParams(location.search).get('season'), createRandom });
     this.season = this.date.season;
     this.autumn = isAutumn(this.season);
     this.world = new World({
+      layout: dealtLayout(LAYOUT, farmPeek.farmSeed ?? this.seed),
       autumn: this.autumn,
       winter: isWinter(this.season),
       scene: this.scene,
@@ -446,7 +451,6 @@ export class Game {
     this.rideWind = new RideWind(this.audioHub);
 
     // Where things start varies a little each game; ?seed=N repeats a layout.
-    this.seed = startSeed();
     const random = createRandom(this.seed);
     console.info(`Layout seed ${this.seed} (add ?seed=${this.seed} to the URL to repeat it)`);
     // The farm that remembers (farm/farmSave.js): each load is the next day on the same farm, unless ?seed= is in the URL. What the farm
@@ -918,6 +922,8 @@ export class Game {
     this.tractorWatch = new TractorWatch(undefined, createRandom(this.seed ^ 0x7a7c));
     // What they say at the river's crossing and when the deep water drowns your engine (npc/riverWatch.js).
     this.riverWatch = new RiverWatch(undefined, createRandom(this.seed ^ 0x61e5));
+    // And at the gravel pit: when you come to its lip, and when your engine stops down in it (npc/quarryWatch.js).
+    this.quarryWatch = new QuarryWatch(undefined, createRandom(this.seed ^ 0x9a17));
     // The tractor creeping off on its own, and the girl who runs after it (npc/tractorRunaway.js, vehicle/creep.js).
     this.tractorRunaway = new TractorRunaway(undefined, createRandom(this.seed ^ 0x7c4e));
     this.runawayJob = null; // { girl, time }: she's running after it
@@ -1111,6 +1117,14 @@ export class Game {
     this.climbIdle = 0; // seconds the girl climbing has been doing nothing about it
     buildClimbCones(this.scene, (x, z) => this.world.heightAt(x, z), this.climbGates);
     registerTuning('Hill climb', this.hillClimb.p, CLIMB_PARAM_RANGES);
+    // The pit climb: your timed run up the gravel pit's steep wall (world/pitClimb.js), on the board beside the hill climb.
+    const quarry = this.world.fields.quarry;
+    this.pitGates = quarry ? climbGates(quarry.climb) : null;
+    this.pitClimb = quarry ? new PitClimb(this.pitGates) : null;
+    if (quarry) {
+      buildClimbCones(this.scene, (x, z) => this.world.heightAt(x, z), this.pitGates);
+      registerTuning('Pit climb', this.pitClimb.p, PIT_PARAM_RANGES);
+    }
     // Amy's cone course (npc/coneCourse.js): the same kind of timed run on the grass, with cones that fall over and penalties for them.
     this.coneGates = coneGates(this.world.layout.coneCourse);
     this.coneCourse = new ConeCourse(this.coneGates, { ...DEFAULT_CONE_PARAMS }, createRandom(this.seed ^ 0x3c0e));
@@ -1772,6 +1786,7 @@ export class Game {
     registerTuning('Horns', this.horns.p, HORN_PARAM_RANGES);
     registerTuning('Tractor remarks', this.tractorWatch.p, TRACTOR_WATCH_PARAM_RANGES);
     registerTuning('River remarks', this.riverWatch.p, RIVER_WATCH_PARAM_RANGES);
+    registerTuning('Pit remarks', this.quarryWatch.p, QUARRY_WATCH_PARAM_RANGES);
     registerTuning('Tractor creep', DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES);
     registerTuning('Throttle key', DEFAULT_THROTTLE_KEY_PARAMS, PEDAL_KEY_PARAM_RANGES);
     registerTuning('Brake key', DEFAULT_BRAKE_KEY_PARAMS, PEDAL_KEY_PARAM_RANGES);
@@ -2180,6 +2195,20 @@ export class Game {
     }
   }
 
+  /** The girls' remarks when you come to the gravel pit's lip and when your engine stops down in it (npc/quarryWatch.js). */
+  updateQuarryWatch(dt) {
+    const quarry = this.world.fields.quarry;
+    if (!quarry) return;
+    const unit = this.boardUnit;
+    const at = unit ? unit.quad.position : this.camera.position;
+    const { a, s } = quarry.polar(at.x, at.z);
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().canRemark, x: c.root.position.x, z: c.root.position.z }));
+    const running = !!unit && unit.quad.engine.isRunning;
+    for (const ev of this.quarryWatch.update(dt, { you: { x: at.x, z: at.z }, fromLip: quarry.inQuarry(at.x, at.z) ? s - quarry.rimAt(a) : Infinity, inPit: quarry.inPit(at.x, at.z), running, girls })) {
+      this.companions.find((c) => c.character.id === ev.girl)?.voice.say(ev.type === 'near' ? 'pitNear' : 'pitStall', { urgent: ev.type === 'stall' });
+    }
+  }
+
   /** The girls' remarks at the river's crossing and when its deep water drowns your engine (npc/riverWatch.js). */
   updateRiverWatch(dt) {
     const river = this.world.river;
@@ -2194,6 +2223,24 @@ export class Game {
     for (const ev of this.riverWatch.update(dt, { you: { x: at.x, z: at.z }, crossing: { x: river.cross.x, z: cz }, drowned, girls })) {
       this.companions.find((c) => c.character.id === ev.girl)?.voice.say(ev.type === 'near' ? 'riverNear' : 'riverStall', { urgent: ev.type === 'stall' });
     }
+  }
+
+  /** Where you are at the gravel pit and how it is dealt, with the pit climb, for the panel and the console. */
+  describeQuarry() {
+    const quarry = this.world.fields.quarry;
+    if (!quarry) return 'no gravel pit on this farm';
+    const at = this.boardUnit ? this.boardUnit.quad.position : this.camera.position;
+    const { a, s } = quarry.polar(at.x, at.z);
+    const where = !quarry.inQuarry(at.x, at.z) ? 'you are away from it' : quarry.inPit(at.x, at.z) ? `you are down in it, ${(quarry.rimAt(a) - s).toFixed(0)} m in from the lip` : `you are ${(s - quarry.rimAt(a)).toFixed(0)} m from the lip`;
+    const p = quarry.pit;
+    const wall = quarry.frameAt(p.steepAt, 10);
+    const dx = wall.x - p.x;
+    const dz = wall.z - p.z;
+    const side = Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? 'east' : 'west') : dz > 0 ? 'south' : 'north';
+    const pc = this.pitClimb;
+    const climb = pc.running ? `timing ${pc.run.time.toFixed(1)} s` : pc.youArmed ? 'you are asked for' : 'idle';
+    const best = this.records.best('pit');
+    return `${where}; ${p.depth.toFixed(1)} m deep, ${(p.rx * 2).toFixed(0)} by ${(p.rz * 2).toFixed(0)} m; steep wall on the ${side} side, ${p.chutes.length} chutes; haul road ${quarry.roadLength.toFixed(0)} m, ${p.road.dir > 0 ? 'clockwise' : 'anticlockwise'} down; ${p.heaps.length} heaps; pit climb ${climb}${best ? `, best ${formatValue('pit', best.value)}` : ''}`;
   }
 
   /** Where you are at the river and how the crossing stands, for the panel and the console. */
@@ -8925,6 +8972,7 @@ export class Game {
     this.race.stand();
     this.drag.stand();
     this.hillClimb.stand();
+    this.pitClimb?.stand();
     this.coneCourse.stand();
     this.convoy.stand();
     this.recalling = { left: 120, spots: this.companions.map((c, i) => this.recallSpot(i)), said: false };
@@ -9788,6 +9836,7 @@ export class Game {
     if (!you.riding) return this.hud.toast('You need to be on a quad to ask for a race', 2);
     const start = this.climbGates[0];
     if (Math.hypot(ridden.quad.position.x - start.x, ridden.quad.position.z - start.z) < this.hillClimb.p.nearStart) return this.askForClimb();
+    if (this.pitClimb && this.pitClimb.distanceToStart(ridden.quad.position) < this.pitClimb.p.nearStart) return this.askForPit();
     const coneStart = this.coneGates[0];
     if (Math.hypot(ridden.quad.position.x - coneStart.x, ridden.quad.position.z - coneStart.z) < this.coneCourse.p.nearStart) return this.askForCones();
     // The two start lines can be within reach of each other: whichever you are nearer to is the one you mean.
@@ -10384,6 +10433,38 @@ export class Game {
         else byId[e.id]?.voice.say('climbOut', { force: true });
       } else if (e.type === 'finish') this.finishClimb(e, quadId, byId, girl);
     }
+  }
+
+  /** You ask to be timed up the gravel pit's wall (Enter by the cones on its floor): the clock runs when you ride through them. */
+  askForPit() {
+    this.pitClimb.arm();
+    this.hud.toast(PIT_ASK_MESSAGE, 5);
+  }
+
+  /** Your pit climb: the clock, the gate, the finish and the time to the board (world/pitClimb.js). */
+  updatePitClimb(dt, ridden) {
+    const pc = this.pitClimb;
+    if (!pc) return;
+    const q = ridden?.quad;
+    let at = null;
+    if (q) at = { x: q.position.x, z: q.position.z, riding: true, running: q.engine.isRunning };
+    else if (pc.run) at = { x: this.player.position.x, z: this.player.position.z, riding: false, running: false };
+    for (const e of pc.update(dt, at)) {
+      if (e.type === 'finish') this.finishPitClimb(e, ridden);
+      else this.hud.toast(pitMessage(e), e.type === 'out' ? 2.5 : 1.2);
+    }
+  }
+
+  /** You have been through the finish cones over the lip: the time to the board, and whoever is near the top says something. */
+  finishPitClimb(e, ridden) {
+    const r = this.noteRecord('pit', 'you', e.time, ridden?.spec.id);
+    this.achievements.note('pitClimbs');
+    this.hud.toast(pitMessage(e, r), 4);
+    const top = this.pitGates[this.pitGates.length - 1];
+    const timer = this.companions
+      .filter((c) => c.availability().canRemark && Math.hypot(c.root.position.x - top.x, c.root.position.z - top.z) < 45)
+      .sort((a, b) => Math.hypot(a.root.position.x - top.x, a.root.position.z - top.z) - Math.hypot(b.root.position.x - top.x, b.root.position.z - top.z))[0];
+    timer?.voice.say(r.record ? 'pitRecord' : 'pitYou', { force: true });
   }
 
   /** Someone has been through the finish cones: the time to the board, and what is said. */
@@ -11799,6 +11880,7 @@ export class Game {
     this.guard.run('updateHorns', () => this.updateHorns(dt, ridden));
     if (this.tractorUnit) this.guard.run('updateTractorWatch', () => this.updateTractorWatch(dt));
     this.guard.run('updateRiverWatch', () => this.updateRiverWatch(dt));
+    this.guard.run('updateQuarryWatch', () => this.updateQuarryWatch(dt));
     if (this.tractorUnit) this.guard.run('updateTractorRunaway', () => this.updateTractorRunaway(dt, ridden));
     this.guard.run('updateHayRide', () => this.updateHayRide(dt, ridden, input));
     if (this.tractorUnit) this.guard.run('updateMudguard', () => this.updateMudguard(dt, ridden));
@@ -11859,6 +11941,7 @@ export class Game {
     if (!this.recalling && (auto || this.race.active || this.race.forced)) this.guard.run('updateRace', () => this.updateRace(dt, ridden));
     if (!this.recalling && (auto || this.drag.active || this.drag.forced)) this.guard.run('updateDrag', () => this.updateDrag(dt, ridden));
     this.guard.run('updateClimb', () => this.updateClimb(dt, ridden));
+    this.guard.run('updatePitClimb', () => this.updatePitClimb(dt, ridden));
     this.guard.run('updateCones', () => this.updateCones(dt, ridden));
     this.guard.run('updateJumpRecords', () => this.updateJumpRecords(dt, ridden));
     this.guard.run('updateChallenges', () => this.updateChallenges(dt, ridden));

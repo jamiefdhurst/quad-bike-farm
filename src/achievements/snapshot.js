@@ -17,6 +17,8 @@ export function placesAt(p, layout) {
   if (inBox(p, db.x - db.halfX - 2, db.x + db.halfX + 2, db.z - db.halfZ - 2, db.z + db.halfZ + 2)) out.push('dutchBarn');
   const fs = layout.fieldShed;
   if (inBox(p, fs.x - fs.halfX - 2, fs.x + fs.halfX + 2, fs.z - fs.halfZ - 2, fs.z + fs.halfZ + 2)) out.push('fieldShed');
+  const q = layout.quarry;
+  if (q && inBox(p, q.minX, q.maxX, q.minZ, q.maxZ)) out.push('gravelPit');
   const r = layout.road;
   if (inBox(p, r.fromX, r.fromX + r.grid.length + 0.5, r.z - r.halfWidth, r.z + r.halfWidth)) out.push('cattleGrid');
   if (p.x >= r.pad.x - r.pad.radius && Math.abs(p.z - r.z) <= r.pad.radius) out.push('farEnd');
