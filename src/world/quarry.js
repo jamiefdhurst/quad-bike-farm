@@ -36,6 +36,9 @@ const RIM_MARGIN = 7; // the closest a rim may come to the field's hedges
 /** The ellipse's radius at angle `a` (in the pit's own frame) before the rim's ragged bumps. */
 const ellipseRadius = (pit, a) => (pit.rx * pit.rz) / Math.hypot(pit.rz * Math.cos(a), pit.rx * Math.sin(a));
 
+/** The angle the pit climb goes up: between the two chutes, so both are in reach of its gates. */
+const climbAngle = (pit) => pit.chutes[0].at + angleDiff(pit.chutes[1].at, pit.chutes[0].at) / 2;
+
 /** The rim's ragged factor at angle `a`: 1 plus the bumps. */
 function rimFactor(pit, a) {
   let f = 1;
@@ -101,8 +104,8 @@ export function dealPit(q, random) {
 
   // Two chutes in the steep wall (a gully of loose stone, easier going: the line up is the thing to find) and a few buttresses of hard rock
   // between them that are not.
-  const first = pit.steepAt + r(-0.22, 0.22);
-  const second = first + (random() < 0.5 ? -1 : 1) * r(0.3, 0.5);
+  const first = pit.steepAt + r(-0.15, 0.15);
+  const second = first + (random() < 0.5 ? -1 : 1) * r(0.24, 0.38);
   pit.chutes = [{ at: first, w: r(3, 4), run: r(15, 17) }, { at: second, w: r(2.5, 3.5), run: r(14, 16) }];
   for (let tries = 0; pit.buttresses.length < 3 && tries < 60; tries++) {
     const at = pit.steepAt + r(-0.95, 0.95);
@@ -132,7 +135,7 @@ export function dealPit(q, random) {
   const floorEdge = (a) => rimOf(a) - runFor(pit, a);
 
   // The pond in the low corner, a little way round from the steep wall's foot.
-  const pa = pit.steepAt + (random() < 0.5 ? -1 : 1) * r(0.6, 0.85);
+  const pa = climbAngle(pit) + (random() < 0.5 ? -1 : 1) * r(0.7, 0.95);
   const prx = r(6.5, 9);
   const prz = r(4.8, 6.5);
   const pc = at(pa, floorEdge(pa) - Math.min(prx, prz) * 0.5);
@@ -141,7 +144,8 @@ export function dealPit(q, random) {
   // Heaps of graded stone on the floor, none on the pond, the foot of the steep wall (the start of the climb) or where the road comes down.
   const endA = pit.road.from + pit.road.dir * pit.road.sweep;
   const roadEnd = at(endA, floorEdge(endA));
-  const climbFoot = at(pit.steepAt, floorEdge(pit.steepAt) - 9);
+  const cAngle = climbAngle(pit);
+  const climbFoot = at(cAngle, floorEdge(cAngle) - 9);
   const count = 3 + Math.floor(random() * 3);
   for (let tries = 0; pit.heaps.length < count && tries < 400; tries++) {
     const rad = r(4.5, 7);
@@ -351,13 +355,17 @@ export function createQuarry(layout) {
 
   // The pit climb: start gate on the floor at the steep wall's foot, one on the bank and the finish just past the lip, all facing up the wall,
   // wide enough (`gateHalf`) to take in the chutes: the line up is yours to find (npc/hillClimb.js's gates).
+  const cAngle = climbAngle(pit);
   const gateAt = (s) => {
-    const p = frameAt(pit.steepAt, s);
+    const p = frameAt(cAngle, s);
     return [p.x, p.z];
   };
+  // The gates are as wide as it takes for both chutes to be inside them at the finish, where they are furthest apart.
+  const finishS = rimAt(cAngle) + 5;
+  const reach = Math.max(...pit.chutes.map((c) => Math.abs(angleDiff(c.at, cAngle)) * finishS + c.w)) + 2;
   const climb = {
-    points: [gateAt(floorEdge(pit.steepAt) - 9), gateAt(rimAt(pit.steepAt) - runAt(pit.steepAt) * 0.5), gateAt(rimAt(pit.steepAt) + 5)],
-    gateHalf: 9,
+    points: [gateAt(floorEdge(cAngle) - 9), gateAt(rimAt(cAngle) - runAt(cAngle) * 0.5), gateAt(finishS)],
+    gateHalf: Math.max(9, Math.ceil(reach)),
   };
 
   const inQuarry = (x, z, margin = 0) => inRect(rect, x, z, margin);
