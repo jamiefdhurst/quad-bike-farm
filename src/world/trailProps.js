@@ -153,36 +153,38 @@ function arrowTexture() {
   });
 }
 
-/** Way-marker posts: a squared timber post with a bevelled cap, a blue band, and the arrow disc on the face that looks back along the way on. */
+/** Way-marker posts: a squared timber post with a bevelled cap, a blue band, and the arrow disc on the face that looks back along the way on. Merged into a mesh per material: 11 posts of five parts would be 55 draw calls. */
 function buildPosts(c, trail, group) {
   const { heights, random, fixedBox } = c;
-  const wood = new THREE.MeshStandardMaterial({ map: woodTexture(random, [108, 84, 58]), roughness: 0.95 });
-  const band = new THREE.MeshStandardMaterial({ color: BLUE, roughness: 0.7 });
-  const disc = new THREE.MeshStandardMaterial({ map: arrowTexture(), roughness: 0.6 });
+  const mats = {
+    wood: new THREE.MeshStandardMaterial({ map: woodTexture(random, [108, 84, 58]), roughness: 0.95 }),
+    band: new THREE.MeshStandardMaterial({ color: BLUE, roughness: 0.7 }),
+    disc: new THREE.MeshStandardMaterial({ map: arrowTexture(), roughness: 0.6 }),
+  };
+  const parts = { wood: [], band: [], disc: [] };
   for (const p of trail.posts) {
     const y = heights.heightAt(p.x, p.z);
-    const post = new THREE.Group();
-    post.position.set(p.x, y - 0.1, p.z);
-    post.rotation.y = p.yaw + (random() - 0.5) * 0.12; // never quite true
-    const shaft = new THREE.Mesh(worldBox(0.1, 1.6, 0.1, 1), wood);
-    shaft.position.y = 0.8;
-    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.07, 4), wood);
-    cap.rotation.y = Math.PI / 4;
-    cap.position.y = 1.635;
-    const ring = new THREE.Mesh(worldBox(0.114, 0.2, 0.114, 1), band);
-    ring.position.y = 1.35;
-    const face = new THREE.Mesh(new THREE.CircleGeometry(0.075, 16), disc);
-    face.position.set(0, 1.35, 0.0575);
-    // A bevelled foot where it meets the ground, and a lean from the weather.
-    const foot = new THREE.Mesh(worldBox(0.13, 0.08, 0.13, 1), wood);
-    foot.position.y = 0.14;
-    post.add(shaft, cap, ring, face, foot);
-    post.rotation.z = (random() - 0.5) * 0.04;
-    post.traverse((o) => {
-      if (o.isMesh) o.castShadow = true;
-    });
-    group.add(post);
+    const at = new THREE.Matrix4().compose(
+      new THREE.Vector3(p.x, y - 0.1, p.z),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler((random() - 0.5) * 0.03, p.yaw + (random() - 0.5) * 0.12, (random() - 0.5) * 0.04)), // never quite true
+      new THREE.Vector3(1, 1, 1),
+    );
+    const put = (kind, geo, x, py, z, rotY = 0) => {
+      if (rotY) geo.rotateY(rotY);
+      parts[kind].push(geo.translate(x, py, z).applyMatrix4(at));
+    };
+    put('wood', worldBox(0.1, 1.6, 0.1, 1), 0, 0.8, 0);
+    put('wood', new THREE.ConeGeometry(0.085, 0.07, 4), 0, 1.635, 0, Math.PI / 4);
+    put('wood', worldBox(0.13, 0.08, 0.13, 1), 0, 0.14, 0); // a foot where it meets the ground
+    put('band', worldBox(0.114, 0.2, 0.114, 1), 0, 1.35, 0);
+    put('disc', new THREE.CircleGeometry(0.075, 16), 0, 1.35, 0.0575);
     fixedBox(p.x, y + 0.7, p.z, 0.055, 0.8, 0.055);
+  }
+  for (const kind of Object.keys(parts)) {
+    if (!parts[kind].length) continue;
+    const mesh = new THREE.Mesh(mergeGeometries(parts[kind]), mats[kind]);
+    mesh.castShadow = kind === 'wood';
+    group.add(mesh);
   }
 }
 
