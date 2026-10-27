@@ -877,6 +877,13 @@ body {
   font-size: 18px;
 }
 
+#day-recap .story {
+  max-width: 34em;
+  margin: 0 0 8px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
 #day-recap .none,
 #day-recap .facts {
   opacity: 0.7;

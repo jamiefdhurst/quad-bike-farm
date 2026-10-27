@@ -20,6 +20,8 @@ import { DEFAULT_RIDER_LEAN_PARAMS, RIDER_LEAN_RANGES } from './vehicle/riderLea
 import { pickFleet } from './vehicle/fleet.js';
 import { endOfDay, DayFade } from './farm/endOfDay.js';
 import { dayRecap, todaysLog, DayRecap } from './farm/dayRecap.js';
+import { DayEvents, writeStory, keepStory, validStories } from './farm/dayStory.js';
+import { StoriesView } from './farm/storiesView.js';
 import { DEFAULT_SHOW_PARAMS, SHOW_PARAM_RANGES, ShowKeeper, isShowDay, isShowEve, runShow, showCard, showSpeech, judgeQuad, previewText, rosetteSvg } from './farm/showDay.js';
 import { formatEntry } from './workshop/logbook.js';
 import { DEFAULT_FARM_PARAMS, FARM_PARAM_RANGES, browserStorage, openFarm, writeSave, wipeSave, fleetFromSave, describeFarm, validSave } from './farm/farmSave.js';
@@ -2090,7 +2092,7 @@ export class Game {
     if (this.menu.isOpen) return { mode: 'menu', menu: 'wheel' };
     if (this.workshop.isOpen) return { mode: 'menu', menu: 'workshop' };
     if (this.bench.isOpen) return { mode: 'menu', menu: 'bench' };
-    if (this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.shedView.isOpen || this.photos.view.isOpen) return { mode: 'menu', menu: 'notebook' };
+    if (this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.storiesView.isOpen || this.shedView.isOpen || this.photos.view.isOpen) return { mode: 'menu', menu: 'notebook' };
     if (this.player.isRiding) {
       const q = this.riddenUnit?.quad;
       return { mode: 'ride', seat: this.player.seat, bucketOpen, gear: q?.manual ? q.drivetrain.gear : null, gears: q?.gearbox?.gears ?? 0 };
@@ -4216,7 +4218,11 @@ export class Game {
   onStranded(c, e) {
     const id = c.character.id;
     const kind = c.stranded?.kind === 'tipped' ? 'tip' : 'bog';
-    if (e.type === 'shout' && e.n === 0) c.memory.note(kind === 'tip' ? 'tipped' : 'bogged', c.params); // her first call: it has just happened
+    if (e.type === 'shout' && e.n === 0) {
+      c.memory.note(kind === 'tip' ? 'tipped' : 'bogged', c.params); // her first call: it has just happened
+      const unit = this.units.find((u) => u.quad === c.quad);
+      this.dayEvents.add('stranded', { girl: id, how: kind, quad: unit ? shortName(unit.name) : 'quad' });
+    }
     if (e.type === 'shout') {
       const spot = nearestNamedSpot(c.quad.position.x, c.quad.position.z);
       // The first, and every third after, say where she is; the rest are just a shout.
@@ -4559,6 +4565,7 @@ export class Game {
       photos: this.photos.wall.toJSON(),
       shows: this.showKeeper.toJSON(),
       logbook: this.notebook.book.toJSON(),
+      stories: this.stories,
       spares: this.spares.toJSON(),
       generator: this.generator.toJSON(),
       headgear: this.headgear.capture(),
@@ -4575,6 +4582,10 @@ export class Game {
   setUpEndOfDay() {
     this.dayFade = new DayFade();
     this.dayRecap = new DayRecap();
+    this.dayEvents = new DayEvents(); // what happened today, for the story on the card (farm/dayStory.js)
+    this.stories = validStories(this.farm.save?.stories); // the last few days' stories, read on the calendar
+    this.storiesView = new StoriesView({ game: this });
+    this.sawSeized = new Set(); // quads already seen seized, so the story tells each once
     this.dayRecapEl = document.createElement('div');
     this.dayRecapEl.id = 'day-recap';
     this.dayRecapEl.addEventListener('click', () => this.dismissRecap());
@@ -4586,9 +4597,12 @@ export class Game {
     this.interaction.add({
       target: this.wallCalendar.group,
       isAvailable: () => !this.dayFade.active && !this.dayRecap.active,
-      prompt: () => ({ text: this.endOfDayNow().text }),
+      prompt: () => {
+        const now = this.endOfDayNow();
+        return { text: this.stories.length && !now.ok ? `${now.text}. Press E to read the last few days` : now.text };
+      },
       feedback: 'own',
-      interact: () => this.callItADay(),
+      interact: () => (this.stories.length && !this.endOfDayNow().ok ? this.storiesView.open() : this.callItADay()),
     });
   }
 
@@ -4727,8 +4741,36 @@ export class Game {
     const now = this.endOfDayNow();
     if (!now.ok && !(force && !this.farm.seeded)) return this.hud.toast(now.text);
     this.lastShow = this.isShowToday() ? this.judgeShow() : null;
+    this.writeDayStory();
     this.saveFarm();
     this.showRecap();
+  }
+
+  /** The day's story, written from what happened and kept with the last few: it goes on the card and into the save (farm/dayStory.js). */
+  writeDayStory() {
+    if (this.lastShow) this.dayEvents.add('show', { place: this.lastShow.place });
+    this.story = this.storyNow();
+    this.stories = keepStory(this.stories, this.farm.day, this.story, this.farmParams);
+  }
+
+  /** The story as it would read now, as sentences (the console and the panel show it; nothing is kept). */
+  storyNow() {
+    const a = this.achievements;
+    const lines = this.jobBoard.lines();
+    const totals = { metres: a.n('metres'), bogs: a.n('bogged'), jobs: lines.filter((l) => l.done).length, jobsCleared: this.jobBoard.cleared };
+    return writeStory(this.dayEvents.list, totals, this.farmParams, createRandom((this.farmSeed ^ (this.farm.day * 104729)) >>> 0));
+  }
+
+  /** A quad seizing is the story's breakdown: seen once a quad, on the way in (the strip-down clears it, and it can seize again another day). */
+  updateDayStory() {
+    const primed = this.storyPrimed; // the first look only notes what was already seized when the day loaded (a kept farm's engines are restored by then)
+    this.storyPrimed = true;
+    for (const u of this.units) {
+      const seized = !!u.engine?.seized;
+      if (primed && seized && !this.sawSeized.has(u)) this.dayEvents.add('seized', { quad: shortName(u.name) });
+      if (seized) this.sawSeized.add(u);
+      else this.sawSeized.delete(u);
+    }
   }
 
   /** The card over the dark: Amy's logbook for today, what was ticked off, and each girl's sign-off. */
@@ -4744,6 +4786,7 @@ export class Game {
         metres: a.n('metres'),
         bogs: a.n('bogged'),
         money: moneyFacts(this.market.today, this.market.purse),
+        story: this.story,
       },
       this.farmParams,
     );
@@ -4756,7 +4799,7 @@ export class Game {
         `${show.ranking.length ? `<ul class="ranking">${show.ranking.map((r) => `<li>${r.you ? '<b>' : ''}${esc(r.text)}${r.you ? '</b>' : ''}</li>`).join('')}</ul>` : ''}<p class="facts">${esc(show.race)}</p>`
       : '';
     this.dayRecapEl.innerHTML =
-      `<h2>${esc(r.title)}</h2>${showHtml}<h3>Amy's logbook</h3>${list(r.log, r.logMore, 'Nothing written down today.')}` +
+      `<h2>${esc(r.title)}</h2>${r.story ? `<p class="story">${esc(r.story)}</p>` : ''}${showHtml}<h3>Amy's logbook</h3>${list(r.log, r.logMore, 'Nothing written down today.')}` +
       `<h3>Bucket list</h3>${list(r.ticked, r.tickedMore, 'Nothing new ticked off.')}<p class="total">${esc(r.total)}</p>` +
       `${r.facts.length ? `<p class="facts">${esc(r.facts.join(', '))}</p>` : ''}${r.money ? `<p class="facts">${esc(r.money)}</p>` : ''}<p class="go">Press E to carry on</p>`;
     this.dayRecapEl.classList.add('shown');
@@ -5871,10 +5914,14 @@ export class Game {
     if (!event) return;
     if (event.type === 'fellOut') {
       this.fallingOutEvents.push({ when: 'fellOut', edge: true, roles: { kind: event.kind, fault: event.fault } });
+      this.dayEvents.add('fellOut', { cause: event.kind, fault: event.fault });
       this.sulking.fellOut(event.kind, event.fault, this.companions.map((c) => c.character.id)); // the one who came off worse may go and sulk
       this.race.stand();
       this.convoy.stand();
-    } else if (event.type === 'madeUp') this.fallingOutEvents.push({ when: 'madeUp', edge: true, roles: { sorry: event.sorry } });
+    } else if (event.type === 'madeUp') {
+      this.fallingOutEvents.push({ when: 'madeUp', edge: true, roles: { sorry: event.sorry } });
+      this.dayEvents.add('madeUp');
+    }
   }
 
   /** What making up needs to know (npc/makeUp.js): how long the row has lasted, who is at fault, who is free, and whose own quad is there to give. */
@@ -10062,6 +10109,7 @@ export class Game {
     else if (e.type === 'finish') {
       this.noteRecord('lap', e.girl, e.time, this.race.picks?.[e.girl]);
       if (e.girl === 'you') {
+        this.dayEvents.add('youRaced', { place: e.place });
         this.achievements.note('races');
         if (e.place === 1) this.achievements.note('raceWins');
       }
@@ -10076,6 +10124,7 @@ export class Game {
       this.noteOutcome(e.winner, 'raceWon');
       this.noteOutcome(e.loser, 'raceLost');
       this.noteFriction('race', e.loser);
+      this.dayEvents.add('race', { winner: e.winner, loser: e.loser });
     }
   }
 
@@ -11754,14 +11803,14 @@ export class Game {
     // 7: raise the camera, 8: photo mode (photos/photoHost.js), unless you are in a menu, up the ladder or hidden in the hay.
     const noPhoto =
       this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen ||
-      this.classifiedsView.isOpen || this.moneyTin.isOpen || this.shedView.isOpen || this.photos.view.isOpen || this.climb || this.tryst || this.hiding.active;
+      this.classifiedsView.isOpen || this.moneyTin.isOpen || this.storiesView.isOpen || this.shedView.isOpen || this.photos.view.isOpen || this.climb || this.tryst || this.hiding.active;
     if (input.wasPressed('Digit7') && !noPhoto) this.photos.press();
     if (input.wasPressed('Digit8') && !noPhoto) this.photos.enterMode();
 
     // 6: wave. Close girls wave back, a free girl further off comes over, a driving one pulls up (npc/playerWave.js).
     if (
       input.wasPressed('Digit6') &&
-      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.shedView.isOpen || this.photos.view.isOpen) &&
+      !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.storiesView.isOpen || this.shedView.isOpen || this.photos.view.isOpen) &&
       !(this.climb || this.tryst || this.hiding.active)
     ) {
       this.waveAtGirls();
@@ -11809,6 +11858,9 @@ export class Game {
     } else if (this.jobBoardView.isOpen) {
       this.interaction.clear();
       this.jobBoardView.handleInput(input);
+    } else if (this.storiesView.isOpen) {
+      this.interaction.clear();
+      this.storiesView.handleInput(input);
     } else if (this.moneyTin.isOpen) {
       this.interaction.clear();
       this.moneyTin.handleInput(input);
@@ -12076,6 +12128,7 @@ export class Game {
     this.guard.run('updateWeather', () => this.updateWeather(dt));
     fb.lap('world, weather and effects', performance.now());
     this.guard.run('updateAchievements', () => this.updateAchievements(dt, ridden));
+    this.guard.run('updateDayStory', () => this.updateDayStory());
     this.guard.run('updateHud', () => this.updateHud(dt));
     this.photos.update(dt);
     fb.lap('hud', performance.now());

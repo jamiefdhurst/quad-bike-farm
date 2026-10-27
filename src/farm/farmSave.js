@@ -20,6 +20,8 @@ export const DEFAULT_FARM_PARAMS = {
   endDayHold: 1.4, // seconds it stays black, saying the day is done, before the next day loads
   recapLogLines: 5, // logbook lines on the end-of-day card (the latest)
   recapTickLines: 6, // bucket list items ticked today that the card names (the rest are counted)
+  storySentences: 4, // sentences in the day's story on the card (the most notable things that happened, then the day's totals)
+  storiesKept: 10, // days' stories kept in the save, to read on the wall calendar
   recapLock: 1, // seconds before a press dismisses the card, so the press that opened it does not
   recapJessDelay: 3, // seconds after Amy's sign-off that Jess has hers
 };
@@ -40,6 +42,8 @@ export const FARM_PARAM_RANGES = {
   endDayHold: [0.5, 5, 0.1],
   recapLogLines: [1, 12, 1],
   recapTickLines: [1, 12, 1],
+  storySentences: [1, 8, 1],
+  storiesKept: [1, 40, 1],
   recapLock: [0, 3, 0.1],
   recapJessDelay: [0, 8, 0.5],
 };

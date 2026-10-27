@@ -372,6 +372,7 @@ export function buildGirlsTab(d) {
   const mem = sub('The farm that remembers');
   show(mem, 'the farm that remembers', () => g.farmText());
   show(mem, 'the calendar says', () => g.endOfDayNow().text);
+  show(mem, "the day's story so far", () => g.storyNow().join(' '));
   show(mem, 'the date', () => g.seasonText());
   show(mem, 'the show', () => g.describeShow());
   button(mem, 'Make today show day (judge the last quad ridden)', () => {
