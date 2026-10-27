@@ -2058,9 +2058,14 @@ export const FAQ_SECTIONS = [
         q: 'How do I save and carry on to the next day?',
         a: `The farm saves as you play, so you can simply close the tab. To do it properly, wait until the evening (it lets you from 17:00, or a little before sunset on a short winter day), ring the
           bell by the barn doors to call the girls in, then walk into the barn and press <kbd>E</kbd> on the calendar on the back wall. A card comes up with Amy's
-          logbook for the day, what you ticked off the bucket list and how far you rode, and the girls say goodnight. Press <kbd>E</kbd>, Enter or click to carry on:
+          logbook for the day, a few lines telling the day's story (who raced, who fell out, which quad broke), what you ticked off the bucket list and how far you rode, and the girls say goodnight. Press <kbd>E</kbd>, Enter or click to carry on:
           the screen fades to black, says the day is done, saves, and loads the next morning: click Continue to play it. A seeded game (<code>?seed=</code>) never carries on.`,
         tip: 'In the evening, ring the bell, then press E on the barn calendar to call it a day.',
+      },
+      {
+        q: 'How do I read what happened on earlier days?',
+        a: `The card tells the day's story once, then it is gone from the screen. The farm keeps the last ten days' stories: in the daytime, or any time you cannot yet call it a day, look at the calendar in the barn and press <kbd>E</kbd> to read them. <kbd>B</kbd> closes it.`,
+        tip: 'Press E on the barn calendar in the daytime to read the last few days.',
       },
       {
         q: 'Why does nothing happen when I press E on the end-of-day card?',
