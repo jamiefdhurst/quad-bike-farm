@@ -8,6 +8,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { worldBox, corrugatedTexture, canvasTexture } from './outbuildingProps.js';
 import { woodTexture, paintedTexture } from './neighbourTextures.js';
 import { HUT_INSIDE, hutShape } from './hut.js';
+import { createRandom } from '../core/random.js';
 
 const WALL = 0.07; // board thickness, with the framing behind it
 const ROOF_RISE = 0.6; // how high the curved roof's middle stands above its eaves
@@ -135,7 +136,8 @@ function wheelGeometry(r, x, z) {
 export function buildHut(c) {
   const shape = hutShape(c.layout);
   if (!shape) return null;
-  const { scene, heights, random, fixedBox } = c;
+  const { scene, heights, fixedBox } = c;
+  const random = createRandom(0x5e9d); // its own stream: drawing from the props' shared one would move every tree and tuft built after it
   const L = shape.length;
   const hl = L / 2;
   const hw = shape.width / 2;
@@ -387,6 +389,8 @@ export function buildHut(c) {
   add(new THREE.CylinderGeometry(0.29, 0.29, 0.03, 12), iron, hw + 0.5, 0.56, 1.55);
   for (const dz2 of [0, 0.14]) add(new THREE.CylinderGeometry(0.045, 0.05, 0.28, 8), plain(0x20231f, 0.7), -0.7 + dz2 * 0.2, 0.14, sz1 + 0.5 + dz2 + 0.25);
 
+  mergeByMaterial(group);
+
   // Colliders: floor slab, the four walls (the door end in two, leaving the doorway), the steps, the wheels and the drawbar.
   const wb = (lx, y0, y1, lz, hx, hz) => {
     const p = shape.toWorld(lx, lz);
@@ -406,7 +410,34 @@ export function buildHut(c) {
   }
   wb(0, 0, 0.5, tip / 2 - hl / 2 - 0.2, 0.35, (Math.abs(tip) - hl) / 2 + 0.1);
 
-  return { group, shape, parts: { glass, glassMesh, kettle, stoveDoor, mug, topLeaf, ground } };
+  return { group, shape, parts: { glass, glassMesh, kettle, stoveDoor, mug, topLeaf, ground, chimneyY: flueTop + 0.12 } };
+}
+
+/**
+ * Merges the group's plain static meshes into one mesh for each material (and shadow setting), so the whole hut is a handful of draw calls and
+ * not a hundred. Named meshes (the glass, the stove's door, the roof, the mug) and the kettle, which move or change, are left as they are.
+ */
+function mergeByMaterial(group) {
+  group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
+  const buckets = new Map();
+  const victims = [];
+  group.traverse((o) => {
+    if (!o.isMesh || o.name || o.parent?.name === 'hutKettle') return;
+    const key = `${o.material.uuid}/${o.castShadow ? 1 : 0}/${o.receiveShadow ? 1 : 0}`;
+    const geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+    if (!buckets.has(key)) buckets.set(key, { material: o.material, cast: o.castShadow, receive: o.receiveShadow, geos: [] });
+    buckets.get(key).geos.push(geo);
+    victims.push(o);
+  });
+  for (const o of victims) o.removeFromParent();
+  for (const b of buckets.values()) {
+    const m = new THREE.Mesh(mergeGeometries(b.geos), b.material);
+    m.castShadow = b.cast;
+    m.receiveShadow = b.receive;
+    group.add(m);
+  }
 }
 
 /** A woven or knitted cloth: two colours in a check, one tile being 0.5 m (blankets, rugs, a bin's lid). */

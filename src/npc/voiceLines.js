@@ -96,6 +96,7 @@ import { AMY_FARM_JOB_LINES } from './farmJobLines.js';
 import { AMY_MONEY_LINES } from './moneyLines.js';
 import { AMY_SHED_LINES } from './shedLines.js';
 import { AMY_FIRE_LINES } from './fireLines.js';
+import { AMY_HUT_LINES } from './hutLines.js';
 import { AMY_LOAD_LINES } from './loadLines.js';
 import { AMY_RACE_LINES } from './raceLines.js';
 import { AMY_DRAG_LINES } from './dragLines.js';
@@ -1618,6 +1619,7 @@ export const VOICE_LINES = {
   // The barn's shed kit and its faults (shedLines.js).
   ...AMY_SHED_LINES,
   ...AMY_FIRE_LINES,
+  ...AMY_HUT_LINES,
   ...AMY_LOAD_LINES,
   // Racing each other (raceLines.js).
   ...AMY_RACE_LINES,

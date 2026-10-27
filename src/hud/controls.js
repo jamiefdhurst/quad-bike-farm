@@ -77,6 +77,12 @@ export const CONTROLS = [
     ],
   },
   {
+    title: "The shepherd's hut",
+    lines: [
+      `Up the hill pasture, at the top by the far hedge. <kbd>E</kbd> at the stove lights it, and again puts a log on; once the hut is warm, hold <kbd>E</kbd> at the kettle to pour a mug of tea. At the door, <kbd>E</kbd> asks the nearest free girl to sit in the hut with you`,
+    ],
+  },
+  {
     title: 'The Yak',
     lines: [
       `<kbd>K</kbd> key (wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank; the key stops it again. It is a diesel: red diesel only`,

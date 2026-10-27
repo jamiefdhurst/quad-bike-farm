@@ -337,6 +337,7 @@ import { BaleSpikeRig } from './items/baleSpikeRig.js';
 import { dutchBarnShape } from './world/outbuildings.js';
 import { Bonfire, DEFAULT_BONFIRE_PARAMS, BONFIRE_PARAM_RANGES, logSeats } from './world/bonfire.js';
 import { BonfireView } from './world/bonfireView.js';
+import { HutHost } from './world/hutHost.js';
 import { BrushwoodHeap } from './items/brushwood.js';
 import { FireSit, FIRE_SIT_PARAM_RANGES } from './npc/fireSit.js';
 import { PhotoHost } from './photos/photoHost.js';
@@ -1625,6 +1626,7 @@ export class Game {
     registerTuning('Bale spike', this.spikeParams, SPIKE_PARAM_RANGES);
     this.setUpLogSplitter();
     this.setUpBonfire();
+    this.hutHost = new HutHost(this); // the shepherd's hut on the hill: its stove, its kettle and the girls' stays (world/hutHost.js)
     this.jobBoardParams = { ...DEFAULT_JOB_BOARD_PARAMS };
     // The silage job needs the tractor, and enough bales still out of the barn for it to be worth asking.
     const hayStacked = Math.max(0, this.farm.save?.hay?.stacked ?? 0);
@@ -5335,6 +5337,7 @@ export class Game {
       }),
       ...mine(this.tea.offers(this.teaContext(ridden)), (o) => this.handleTeaEvent(this.tea.take(o))),
       ...mine(this.flask.offers(this.flaskContext(ridden)), (o) => this.handleFlaskEvent(this.flask.take(o))),
+      ...mine(this.hutHost.offers(), (o) => this.hutHost.take(o)),
       ...mine(this.fireSit.offers(this.fireSitContext()), (o) => this.handleFireEvent(this.fireSit.take(o, this.fireSit.seatsLeft(this.fireSpots.length)))),
       ...(this.hiding.active ? [] : mine(this.requests.offers(this.requestContext(ridden)), (o) => this.handleRequestEvent(this.requests.take(o)))),
       ...mine(this.jumpers.offers(this.jumpersContext()), (o) => this.handleJumperEvent(this.jumpers.take(o))),
@@ -5448,8 +5451,9 @@ export class Game {
     const at = c.root.getWorldPosition(this.needsAt ??= new THREE.Vector3());
     const inBarn = this.world.inBarn(at.x, at.z);
     const inCab = this.cabShelter.of(c.character.id)?.state === 'in';
-    const covered = inBarn || inCab;
-    c.coveredNow = covered; // in the barn or a cab, for what she says about the dark (companionVoice.watchWeather)
+    const inHut = this.hutHost.inside(at.x, at.z);
+    const covered = inBarn || inCab || inHut;
+    c.coveredNow = covered; // in the barn, the hut or a cab, for what she says about the dark (companionVoice.watchWeather)
     const w = this.weather;
     // A dull or wet day feels cold (as warming hands always had it), and a cold one colder.
     const dayChill = Math.min(1, Math.max(0, (0.6 - w.warmth) / 0.6) * 0.8 + w.chill * 0.5);
@@ -5471,7 +5475,7 @@ export class Game {
     return {
       chill: covered ? 0 : dayChill,
       wet: !covered && w.rain > 0.25 && !this.coats.worn[c.character.id], // a wax jacket keeps the rain off
-      warmed: !!c.warmingAt || inCab || inBarn || this.bonfire.warms(Math.hypot(at.x - this.world.layout.bonfire.x, at.z - this.world.layout.bonfire.z)),
+      warmed: !!c.warmingAt || inCab || inBarn || this.hutHost.warmsAt(at.x, at.z) || this.bonfire.warms(Math.hypot(at.x - this.world.layout.bonfire.x, at.z - this.world.layout.bonfire.z)),
       alone: near > p.needLonelyRange && !ridingWith,
       together: near < p.needCloseRange || ridingWith,
       thrill: Math.min(1, speed / 12 + (onBoard && c.quad?.airborne ? 0.5 : 0)),
@@ -7234,6 +7238,7 @@ export class Game {
       u.value.copy(m.userData.baseLight).multiplyScalar(light);
     };
     dim(this.bonfireView?.smoke.material, 'uLight');
+    dim(this.hutHost?.view?.smoke.material, 'uLight');
     dim(this.generatorSmoke?.material, 'uLight');
     for (const unit of this.units) {
       for (const fx of [unit.smoke, unit.steam, unit.heatSteam]) dim(fx?.material, 'uLight');
@@ -11920,6 +11925,7 @@ export class Game {
     this.guard.run('updateLooseMugs', () => this.updateLooseMugs(dt));
     if (auto || this.flask.active) this.guard.run('updateFlask', () => this.updateFlask(dt));
     this.guard.run('updateBonfire', () => this.updateBonfire(dt, ridden));
+    this.guard.run('updateHut', () => this.hutHost.update(dt));
     if (auto || this.girlBench.active || this.girlBench.pending) this.guard.run('updateGirlBench', () => this.updateGirlBench(dt));
     if (auto || this.phoneCalls.active) this.guard.run('updatePhoneCall', () => this.updatePhoneCall(dt));
     this.guard.run('updateDares', () => this.updateDares(dt));
@@ -12833,6 +12839,7 @@ export class Game {
   updateSmokeScale() {
     for (const unit of this.units ?? []) unit.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
     this.bonfireView?.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
+    this.hutHost?.view?.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
     this.generatorSmoke?.setViewport(window.innerHeight * this.renderer.getPixelRatio(), this.camera.fov);
   }
 }

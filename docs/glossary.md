@@ -10,6 +10,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | --- | --- | --- |
 | Fern Trail | The narrow single-track path for the two-wheelers through the wood, marked by the blue-banded posts | Fern Path, Bike Trail, the trail loop |
 | way-marker post | The timber post with a blue band and an arrow beside the Fern Trail | waymarker, waymark post |
+| shepherd's hut | The little wheeled hut on top of the hill pasture, with the bunk, the stove and the kettle | shepherds hut, shepherd's shed, hill hut, hut on wheels |
 | river | The wide river across the riverside meadow, past the pasture's east hedge: the brook widened | big stream |
 | crossing | The marked shallows across the river, between the white posts | river ford |
 | gravel pit | The old pit in the hedged field north of the barley field, through the gate in its north hedge: the deep cut, its haul road, pond and heaps | sandpit, sand pit, gravel quarry, borrow pit |

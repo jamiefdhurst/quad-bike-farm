@@ -35,6 +35,7 @@ export const OFFER_KINDS = {
   warmCab: { label: "sit in a Moorland with the heater on", satisfies: { warmth: 1, rest: 0.4 } },
   tea: { label: 'make a cup of tea', satisfies: { warmth: 0.4, rest: 0.3, purpose: 0.5 } },
   fire: { label: 'sit by the bonfire', satisfies: { warmth: 0.9, rest: 0.6, company: 0.5, purpose: 0.3 }, pace: 'dawdle' },
+  hut: { label: 'sit in the shepherd\'s hut on the hill', satisfies: { warmth: 0.9, rest: 0.7, company: 0.4, purpose: 0.3 }, pace: 'dawdle' },
   flask: { label: 'have a cup of tea from the flask at the top of the hill', satisfies: { warmth: 0.4, rest: 0.6, company: 0.6, purpose: 0.4 }, pace: 'dawdle' },
   favour: { label: 'ask you a favour', satisfies: { purpose: 0.5, company: 0.5, attention: 0.8 } },
   getOff: { label: 'get off the quad she was sat on', satisfies: { purpose: 0.8 }, fromSeat: true },

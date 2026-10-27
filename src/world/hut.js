@@ -101,8 +101,19 @@ export function hutShape(layout) {
     stepsWay: [
       { ...toWorld(0, HUT_INSIDE.stepZ[1] - 0.2), rise: HUT_INSIDE.stepTop },
       { ...toWorld(0, hl - 0.1), rise: h.floor },
-      { ...toWorld(0.2, 0.2), rise: h.floor },
+      { ...toWorld(0.05, 0.1), rise: h.floor },
+      { ...toWorld(0, -0.7), rise: h.floor },
     ],
+    /** The hut's footprint as a box the girls walk round (npc/detour.js): the walls and wheels, the steps and the drawbar at the other end. */
+    box() {
+      const corners = [[-hw - 0.4, -hl - 3.7], [hw + 0.4, -hl - 3.7], [hw + 0.4, hl + 0.6], [-hw - 0.4, hl + 0.6]].map(([lx, lz]) => toWorld(lx, lz));
+      return {
+        minX: Math.min(...corners.map((c) => c.x)),
+        maxX: Math.max(...corners.map((c) => c.x)),
+        minZ: Math.min(...corners.map((c) => c.z)),
+        maxZ: Math.max(...corners.map((c) => c.z)),
+      };
+    },
   };
 }
 

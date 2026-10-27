@@ -57,7 +57,7 @@ describe('the farm map', () => {
   it('draws every field, the buildings and the ground features inside the map', () => {
     const kinds = features.areas.map((a) => a.kind);
     for (const k of ['grass', 'north', 'south', 'road', 'lane', 'hill']) expect(kinds).toContain(k);
-    expect(features.buildings.map((b) => b.name)).toEqual(['barn', 'dutchBarn', 'fieldShed', 'neighbourHouse', 'neighbourBarn']);
+    expect(features.buildings.map((b) => b.name)).toEqual(['barn', 'dutchBarn', 'fieldShed', 'hut', 'neighbourHouse', 'neighbourBarn']);
     for (const b of [...features.buildings, ...features.small]) {
       expect(inside(features.bounds, b.rect.minX, b.rect.minZ) && inside(features.bounds, b.rect.maxX, b.rect.maxZ)).toBe(true);
     }

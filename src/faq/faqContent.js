@@ -1651,6 +1651,27 @@ export const FAQ_SECTIONS = [
         tip: 'Take a girl to the rock at the top of the hill, get off, and press E for a flask of tea.',
       },
       {
+        q: "Where is the shepherd's hut, and how do I light the stove?",
+        a: `Right at the top of the hill pasture, on the flat ground by the far hedge, west of the rock: a little wheeled hut with a green-painted boarded side and a rusty curved tin roof,
+          its door end facing back over the farm. Go up the two steps and in. Look at the stove and press <kbd>E</kbd> to light it (the hut has logs by the stove). It takes under a minute to warm
+          the hut and burns for about a quarter of an hour; press <kbd>E</kbd> again while it burns to put another log on. In the dark you will see the glow in the window and smoke from the pipe
+          from across the pasture. Nothing is kept: the stove is cold again at the start of each game.`,
+        tip: "Climb the hill pasture to the shepherd's hut and press E at its stove to light it.",
+      },
+      {
+        q: "How do I make tea in the shepherd's hut?",
+        a: `Light the stove first. Once the hut is warm the kettle on the stove comes to the boil in under half a minute. Look at the kettle and hold <kbd>E</kbd> to pour a mug of tea
+          (a few seconds; let go and you start again). The kettle needs a little while to boil again afterwards. If a girl is sat in the hut when you pour she will say something, and she likes you a
+          little more for the tea. If the prompt only says the kettle is cold or coming up to the boil, the stove is not hot enough yet.`,
+      },
+      {
+        q: "Do the girls use the shepherd's hut?",
+        a: `Yes. When it rains, turns cold or gets dark a free girl may fancy walking up to the hut (she will not drive a quad past the foot of the hill, so she walks), climbing the steps and sitting on the
+          bunk. If the stove is out she lights it, and she puts a log on if it runs low while she is there. Both of them can sit at once. She says a few things (more if you are close and she is fond of
+          you) and gets up when she has had enough. You can ask the nearest free girl yourself: stand at the hut's door and press <kbd>E</kbd>. Girls in the hut are out of the rain and, with the stove
+          going, warm.`,
+      },
+      {
         q: 'Why is a girl waiting and looking at me?',
         a: `She is asking you along. When she fancies company and is about to sit on the bales, go up the hill for a cup of tea, sit by the fire or race you, she may stop and ask you
           first if you are within earshot (a toast says who). Press <kbd>Enter</kbd> on her and choose the yes (“Sit on the bales with her”, “Race her”) or “Not now”. If you say nothing she
