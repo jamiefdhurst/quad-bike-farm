@@ -56,7 +56,14 @@ async function run() {
   page.on('console', (m) => { if (m.type() === 'error') note(`console.error: ${m.text().slice(0, 300)}`); });
   await page.evaluateOnNewDocument(stubDraws);
   await page.goto(`${base}?smoke&${QUERY}`, { waitUntil: 'load' });
-  await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000 });
+  try {
+    await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000 });
+  } catch (err) {
+    // Say where the load had got to, so a slow runner is told from a game that threw while starting.
+    const status = await page.evaluate(() => document.getElementById('overlay-status')?.textContent).catch(() => '(page gone)');
+    console.log(`smoke: still loading after 150 s, the overlay says "${status}"${seen.size ? `; seen: ${[...seen.keys()].join(' // ')}` : ''}`);
+    throw err;
+  }
   const loaded = Date.now();
   await page.evaluate(() => {
     const o = document.getElementById('overlay');
