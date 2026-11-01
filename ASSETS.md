@@ -1,6 +1,6 @@
 # Assets
 
-Every external asset is CC0 1.0 (public domain), with one named exception: the girls' cars' engine sounds are cut from BBC Sound Effects recordings under the BBC's RemArc licence (personal, educational and research use only), allowed because the game is private and personal. **If the game is ever made public or shared, `engine-bank-fiesta` and `engine-bank-corsa` must be rebuilt from CC0 recordings first.** Models come from Poly Pizza and live in `public/models/`; engine recordings come from Freesound (and those BBC ones) and are cut into `public/audio/`.
+Every external asset is CC0 1.0 (public domain), with one named exception: the cars' engine sounds (the girls' and yours) are cut from BBC Sound Effects recordings under the BBC's RemArc licence (personal, educational and research use only), allowed because the game is private and personal. **If the game is ever made public or shared, `engine-bank-fiesta` and `engine-bank-corsa` must be rebuilt from CC0 recordings first.** Models come from Poly Pizza and live in `public/models/`; engine recordings come from Freesound (and those BBC ones) and are cut into `public/audio/`.
 
 ## Models
 
@@ -135,7 +135,15 @@ Note: every `.wav` named below is now a lossless FLAC in `public/audio/` with th
 | Revs held, and the stall | 07043123: Vauxhall Carlton, exterior, switch on, rev cold engine, engine fails | BBC | https://sound-effects.bbcrewind.co.uk/search?q=07043123 | RemArc (BBC) |
 | Shutdown | 07043125: Vauxhall Carlton, exterior, approach from right and stop, switch off | BBC | https://sound-effects.bbcrewind.co.uk/search?q=07043125 | RemArc (BBC) |
 
-Kept but not used yet (in `.scratch/`, not committed): the rest of the BBC's Fiesta, Carlton and Peugeot 309 diesel series (07043112 to 07043137), for the cars arriving and leaving (TODO 183, 184) and anything else.
+`public/audio/engine-bank-309.flac` and `engine-bank-309.json` (your car, the Vauclair 39D) are cut from these, BBC and so **not CC0** (RemArc licence, see the top of this file), apart from its starter, which is the CC0 Citroën Jumpy van's (as the 200TDi's):
+
+| Used for | Recording | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Idle pulses, and the switch-off | 07043131: Peugeot 309, exterior, switch on, idle, switch off (1.9 litre diesel, 1986/7) | BBC | https://sound-effects.bbcrewind.co.uk/search?q=07043131 | RemArc (BBC) |
+| Revs pulling away | 07043132: Peugeot 309, exterior, switch on, depart | BBC | https://sound-effects.bbcrewind.co.uk/search?q=07043132 | RemArc (BBC) |
+| Starter | Diesel engine starting revving and stopping (a Citroën Jumpy van) | chlund | https://freesound.org/people/chlund/sounds/500193/ | CC0 1.0 |
+
+Kept but not used yet (in `.scratch/`, not committed): the rest of the BBC's Fiesta, Carlton and Peugeot 309 diesel series (07043112 to 07043137, the 309's interior run and its arrivals among them), for the cars arriving and leaving (#99, #100) and anything else.
 
 `public/audio/ride.wav` and `ride.json` (mud squelches, splashes and landing thuds) are cut from these by `tools/slice_ride_audio.py`, using Freesound's high-quality MP3 previews. The other ride sounds (tyre rumble, grass, gravel, water churn, knocks, rattles and the rider's wind) are made in code.
 
