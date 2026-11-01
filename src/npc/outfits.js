@@ -47,16 +47,16 @@ export const OUTFIT_PARAM_RANGES = {
 /**
  * Today's outfit for a girl. `odds`: { polo, plaid, doublePolo, cropTop } (they needn't add up to 1), and `shirtTie`, the chance
  * that a shirt and tie takes the place of whatever else she'd have worn; `warm`: whether the day is warm enough for a crop-top (if
- * not, its share goes to the polo); `popped`: her chance of a popped collar; `underOpen` and `plaidButtons`: her ranges of buttons
- * undone on the polo under a second one and on a buttoned plaid; `tieLoose`: her chance of wearing a shirt and tie loosened rather
+ * not, its share goes to the polo); `popped`: her chance of a popped collar; `underOpen` and `shirtButtons`: her ranges of buttons
+ * undone on the polo under a second one and on a shirt (a buttoned plaid, or a shirt and tie when it's loosened); `tieLoose`: her chance of wearing a shirt and tie loosened rather
  * than done right up. Always draws the same number of randoms, so one girl's deal doesn't move the other's. The shirt and tie's
  * come from `extra`, a stream of their own, so adding it moved nobody's other outfits (without one they follow on in `random`).
- * Returns { kind, plaid, plaidOpen, over, crop, popped, underOpen, plaidButtons, shirt, shirtOverPolo,
- * tieLoose, shirtOpen, tieDrop }.
+ * Returns { kind, plaid, plaidOpen, over, crop, popped, underOpen, shirtButtons, shirt, shirtOverPolo,
+ * tieLoose, tieDrop }.
  */
-export function dealOutfit(random, odds, { warm = false, popped = 0, underOpen = [0, 0], plaidButtons = [0, 0], tieLoose = 0, extra = null, p = DEFAULT_OUTFIT_PARAMS } = {}) {
+export function dealOutfit(random, odds, { warm = false, popped = 0, underOpen = [0, 0], shirtButtons = [0, 0], tieLoose = 0, extra = null, p = DEFAULT_OUTFIT_PARAMS } = {}) {
   const r = Array.from({ length: 8 }, () => random());
-  const e = Array.from({ length: 6 }, () => (extra ?? random)());
+  const e = Array.from({ length: 5 }, () => (extra ?? random)());
   const between = ([lo, hi], x) => lo + Math.min(hi - lo, Math.floor(x * (hi - lo + 1)));
   const share = { ...odds };
   if (!warm) {
@@ -85,12 +85,11 @@ export function dealOutfit(random, odds, { warm = false, popped = 0, underOpen =
     crop: pick(CROP_COLOURS, r[4]),
     popped: kind !== 'cropTop' && kind !== 'shirtTie' && r[5] < popped, // nobody pops a collar with a tie on
     underOpen: between(underOpen, r[6]), // in two polos, the buttons undone on hers under the other (the top one has her usual)
-    plaidButtons: between(plaidButtons, r[7]), // a buttoned plaid's buttons undone: none, done right up, to a few
+    shirtButtons: between(shirtButtons, r[7]), // a shirt's buttons undone: none, done right up, to a few
     shirt: pick(SHIRT_COLOURS, e[1]).colour,
     shirtOverPolo: e[2] < p.shirtOverPoloChance,
     tieLoose: e[3] < tieLoose,
-    shirtOpen: between([1, 1], e[4]), // loosened, the top one undone
-    tieDrop: Math.round((0.02 + 0.01 * e[5]) * 1000) / 1000, // and the knot pulled 2 to 3 cm down
+    tieDrop: Math.round((0.02 + 0.01 * e[4]) * 1000) / 1000, // loosened, the knot pulled 2 to 3 cm down (or to the open neck's point)
   };
 }
 
@@ -104,14 +103,32 @@ export function completeStyle(style = {}) {
     crop: CROP_COLOURS[0],
     popped: false,
     underOpen: 0,
-    plaidButtons: 0,
+    shirtButtons: 0,
     shirt: SHIRT_COLOURS[0].colour,
     shirtOverPolo: false,
     tieLoose: false,
-    shirtOpen: 1,
     tieDrop: 0.025,
     ...style,
   };
+}
+
+/**
+ * How many of her shirt's buttons are undone as she has it on: a buttoned plaid's are her `shirtButtons`; a shirt and tie's are
+ * none with the tie done right up, and loosened at least the top one. One number for both, set by "shirt buttons undone".
+ */
+export function shirtButtonsUndone(style = {}) {
+  const n = style.shirtButtons ?? 0;
+  if (style.kind !== 'shirtTie') return n;
+  return style.tieLoose ? Math.max(1, n) : 0;
+}
+
+/**
+ * The style with that many shirt buttons undone. On a shirt and tie the tie goes with them: done right up with none undone,
+ * loosened with any.
+ */
+export function withShirtButtons(style, n) {
+  const next = { ...style, shirtButtons: n };
+  return style.kind === 'shirtTie' ? { ...next, tieLoose: n > 0 } : next;
 }
 
 /** Which outfits a girl may wear: the crop-top only for one with a chance of it (Jess). */

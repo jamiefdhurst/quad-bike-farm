@@ -1209,7 +1209,7 @@ export class Game {
         warm,
         popped: c.character.poppedChance ?? 0,
         underOpen: c.character.underOpen,
-        plaidButtons: c.character.plaidButtons,
+        shirtButtons: c.character.shirtButtons,
         tieLoose: c.character.tieLooseChance ?? 0,
         extra: shirtTieRandom,
         p: this.outfitParams,

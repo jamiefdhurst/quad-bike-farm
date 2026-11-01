@@ -61,11 +61,11 @@ describe('buttons and who may wear what', () => {
     const random = createRandom(5);
     const seen = new Set();
     for (let i = 0; i < 300; i++) {
-      const o = dealOutfit(random, ODDS, { underOpen: [0, 4], plaidButtons: [0, 3] });
+      const o = dealOutfit(random, ODDS, { underOpen: [0, 4], shirtButtons: [0, 3] });
       expect(o.underOpen).toBeGreaterThanOrEqual(0);
       expect(o.underOpen).toBeLessThanOrEqual(4);
-      expect(o.plaidButtons).toBeLessThanOrEqual(3);
-      seen.add(o.plaidButtons);
+      expect(o.shirtButtons).toBeLessThanOrEqual(3);
+      seen.add(o.shirtButtons);
     }
     expect(seen.has(0)).toBe(true); // done right up, sometimes
   });
@@ -88,7 +88,7 @@ describe('a shirt and tie', () => {
     expect([...colours].sort()).toEqual(SHIRT_COLOURS.map((s) => s.colour).sort());
   });
 
-  it('is mostly done right up on Amy and mostly loosened on Jess, with the knot 2 to 3 cm down and the top one undone', () => {
+  it('is mostly done right up on Amy and mostly loosened on Jess, with the knot 2 to 3 cm down', () => {
     const loose = (id) => {
       const g = CHARACTERS.find((c) => c.id === id);
       const random = createRandom(4);
@@ -97,7 +97,6 @@ describe('a shirt and tie', () => {
         const o = dealOutfit(random, { shirtTie: 1 }, { tieLoose: g.tieLooseChance });
         expect(o.tieDrop).toBeGreaterThanOrEqual(0.02);
         expect(o.tieDrop).toBeLessThanOrEqual(0.03);
-        expect(o.shirtOpen).toBe(1);
         expect(o.popped).toBe(false);
         if (o.tieLoose) n++;
       }
@@ -128,6 +127,31 @@ describe('a shirt and tie', () => {
       else expect(after.kind).toBe(before.kind);
     }
     expect(swapped / 500).toBeCloseTo(0.1, 1);
+  });
+
+  it('shares one "shirt buttons undone" with the plaid: none with the tie done up, at least the top one loosened', async () => {
+    const { shirtButtonsUndone, withShirtButtons } = await import('../src/npc/outfits.js');
+    expect(shirtButtonsUndone({ kind: 'plaid', shirtButtons: 2 })).toBe(2);
+    expect(shirtButtonsUndone({ kind: 'shirtTie', shirtButtons: 2, tieLoose: false })).toBe(0);
+    expect(shirtButtonsUndone({ kind: 'shirtTie', shirtButtons: 0, tieLoose: true })).toBe(1);
+    expect(shirtButtonsUndone({ kind: 'shirtTie', shirtButtons: 3, tieLoose: true })).toBe(3);
+    // Setting it on a shirt and tie loosens the tie or does it up to match; on a plaid it's only the buttons.
+    expect(withShirtButtons({ kind: 'shirtTie', tieLoose: false }, 2)).toMatchObject({ shirtButtons: 2, tieLoose: true });
+    expect(withShirtButtons({ kind: 'shirtTie', tieLoose: true }, 0)).toMatchObject({ shirtButtons: 0, tieLoose: false });
+    expect(withShirtButtons({ kind: 'plaid', tieLoose: false }, 2)).toEqual({ kind: 'plaid', tieLoose: false, shirtButtons: 2 });
+    // Dealt from her range: loosened, Amy has the top one undone and Jess one to three.
+    const jess = CHARACTERS.find((c) => c.id === 'jess');
+    const amy = CHARACTERS.find((c) => c.id === 'amy');
+    const random = createRandom(17);
+    const seen = { amy: new Set(), jess: new Set() };
+    for (let i = 0; i < 400; i++) {
+      for (const g of [amy, jess]) {
+        const o = dealOutfit(random, { shirtTie: 1 }, { tieLoose: 1, shirtButtons: g.shirtButtons });
+        seen[g.id].add(shirtButtonsUndone(o));
+      }
+    }
+    expect([...seen.amy]).toEqual([1]);
+    expect([...seen.jess].sort()).toEqual([1, 2, 3]);
   });
 
   it('is offered to both girls in the outfit picker', () => {
