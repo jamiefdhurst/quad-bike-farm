@@ -124,6 +124,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   needSleepFall: 0.012, // per second dozing on the bales
   dozeWeight: 1, // how keen she is to doze on the bales when she's sleepy (dozing.js; weighed by the chooser like any offer)
   dozeMinds: 0, // 1 if being woken rudely costs you her favour and gets a sulk (Amy), 0 if she laughs it off (Jess)
+  blinkSlow: 1, // how many times as long her blinks take as the shared tuning's (blink.js): Amy's are slower
+  blinkSteady: 0, // 0 to 1: how evenly her blinks are spaced
   napProne: 1, // how readily she drops off on the back of a smooth ride (backNap.js): 1 is average, 0 never
   sleepySlowThink: 2, // when she's as sleepy as she gets she thinks this much more slowly (1 + this times her sleepiness)
   sleepyLazy: 0.6, // and anything but a doze is this much less attractive to her (1 - this times her sleepiness)
@@ -460,6 +462,8 @@ export const COMPANION_PARAM_RANGES = {
   needSleepFall: [0, 0.1, 0.001],
   dozeWeight: [0, 3, 0.05],
   dozeMinds: [0, 1, 1],
+  blinkSlow: [0.5, 3, 0.05],
+  blinkSteady: [0, 1, 0.05],
   napProne: [0, 3, 0.05],
   sleepySlowThink: [0, 6, 0.1],
   sleepyLazy: [0, 1, 0.05],

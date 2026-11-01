@@ -971,6 +971,7 @@ export class CompanionVoice {
       this.speech.stop();
       seconds = this.sounds.play(line.sound, this.head, p.voiceSoundVolume * raise, voice);
       if (!seconds) return null; // not loaded yet
+      if (line.sound === 'laugh') this.companion.laughLeft = seconds; // her eyes screw up while she does
       if (this.hearing(shout) > 0.2 && SOUND_CAPTIONS[line.sound]) this.caption(`${this.name ? `${this.name}: ` : ''}${SOUND_CAPTIONS[line.sound]}`, seconds + 0.4);
     }
     this.chatter.holdFor(seconds);

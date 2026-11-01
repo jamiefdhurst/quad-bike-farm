@@ -82,6 +82,8 @@ export const CHARACTERS = [
       needSleepRise: 0.0009, // sleepy later than Jess, and says she was only resting her eyes
       dozeWeight: 0.8,
       napProne: 1.3, // drops off on a smooth ride, and says she only closed her eyes
+      blinkSlow: 1.3, // her blinks take this many times as long as the average (blink.js): slower
+      blinkSteady: 0.6, // and are evenly spaced, 0 to 1
       dozeMinds: 1, // and takes it badly if you wake her with a rev
     },
     lines: VOICE_LINES,
@@ -147,6 +149,8 @@ export const CHARACTERS = [
       needSleepRise: 0.0016, // up late, so sleepy sooner
       dozeWeight: 1.2,
       napProne: 0.7, // too fidgety to sleep on a quad, mostly
+      blinkSlow: 1, // quick blinks
+      blinkSteady: 0, // at all sorts of gaps
       // Shorter than Amy and curvier: a fuller bust, a narrower waist and wider hips.
       height: 1.52,
       bust: 1.4,
