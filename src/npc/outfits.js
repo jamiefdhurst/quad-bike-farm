@@ -89,8 +89,8 @@ export function dealOutfit(random, odds, { warm = false, popped = 0, underOpen =
     shirt: pick(SHIRT_COLOURS, e[1]).colour,
     shirtOverPolo: e[2] < p.shirtOverPoloChance,
     tieLoose: e[3] < tieLoose,
-    shirtOpen: between([1, 2], e[4]), // loosened, the top one or two undone
-    tieDrop: Math.round((0.04 + 0.02 * e[5]) * 1000) / 1000, // and the knot pulled 4 to 6 cm down
+    shirtOpen: between([1, 1], e[4]), // loosened, the top one undone
+    tieDrop: Math.round((0.02 + 0.01 * e[5]) * 1000) / 1000, // and the knot pulled 2 to 3 cm down
   };
 }
 
@@ -109,7 +109,7 @@ export function completeStyle(style = {}) {
     shirtOverPolo: false,
     tieLoose: false,
     shirtOpen: 1,
-    tieDrop: 0.05,
+    tieDrop: 0.025,
     ...style,
   };
 }

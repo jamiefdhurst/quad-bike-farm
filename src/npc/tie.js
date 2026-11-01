@@ -21,8 +21,8 @@ export const TIE = {
   blade: 0.08, // the blade at its widest, just above the point
   tip: 0.035, // the point at its bottom, this long
   toWaist: 0.004, // the point this far above the top of her shorts
-  lift: 0.0045, // the blade's face off what's under it down its middle, clear of the shirt's buttons
-  edgeLift: 0.0028, // and at its edges, so it's a little rounded across
+  lift: 0.005, // the blade's face off what's under it down its middle, clear of the shirt's buttons as she moves
+  edgeLift: 0.003, // and at its edges, so it's a little rounded across
   dimple: 0.028, // the dimple under the knot: this long
   dimpleDepth: 0.0018,
   dimpleShade: 0.7,
@@ -38,7 +38,7 @@ export const TIE = {
 /**
  * Builds the tie. `top`: the height where the shirt meets her neck at the middle of her front (the placket's top); `ground`: the
  * meshes it can lie on, as she stands (the shirt, its placket, and in an open neck her skin or the polo under it); `loose` and
- * `drop`: loosened, the knot's top this far below `top`, and below the open neck `vee` (from buildTop) whatever `drop` says.
+ * `drop`: loosened, the knot's top this far below `top`, over the bottom of the open neck `vee` (from buildTop).
  * Returns { verts, tris, shade, knotTop } or null if it found nothing to lie on; verts carry bind, rest, weights, skin and normal
  * from what each lies on.
  */
@@ -64,7 +64,7 @@ export function buildTie(body, { top, ground, loose = false, drop = 0.05, vee = 
     return null;
   };
 
-  const knotTop = loose ? Math.min(top - drop, (vee ? vee.bottom : top) - 0.006) : top + p.knotUp;
+  const knotTop = loose ? top - drop : top + p.knotUp; // loosened, over the bottom of the open neck
   const knotBottom = knotTop - p.knotHeight;
   const tipEnd = body.waist + p.toWaist;
   if (tipEnd > knotBottom - 0.05) return null;

@@ -88,16 +88,16 @@ describe('a shirt and tie', () => {
     expect([...colours].sort()).toEqual(SHIRT_COLOURS.map((s) => s.colour).sort());
   });
 
-  it('is mostly done right up on Amy and mostly loosened on Jess, with the knot 4 to 6 cm down and one or two undone', () => {
+  it('is mostly done right up on Amy and mostly loosened on Jess, with the knot 2 to 3 cm down and the top one undone', () => {
     const loose = (id) => {
       const g = CHARACTERS.find((c) => c.id === id);
       const random = createRandom(4);
       let n = 0;
       for (let i = 0; i < 1000; i++) {
         const o = dealOutfit(random, { shirtTie: 1 }, { tieLoose: g.tieLooseChance });
-        expect(o.tieDrop).toBeGreaterThanOrEqual(0.04);
-        expect(o.tieDrop).toBeLessThanOrEqual(0.06);
-        expect([1, 2]).toContain(o.shirtOpen);
+        expect(o.tieDrop).toBeGreaterThanOrEqual(0.02);
+        expect(o.tieDrop).toBeLessThanOrEqual(0.03);
+        expect(o.shirtOpen).toBe(1);
         expect(o.popped).toBe(false);
         if (o.tieLoose) n++;
       }
