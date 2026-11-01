@@ -477,7 +477,7 @@ export function posePedals(model, { clutch = 0, brake = 0, throttle = 0 }) {
  * `pedalClutch`, `pedalBrake` and `pedalAccel`, and kept apart from the merge. The driver sits on the right (x -0.42), so the clutch is furthest left
  * of him (the largest x, nearest the console) and the accelerator furthest right (the smallest, by the door), as on any right-hand-drive car.
  */
-export function addPedals(root, { pivot, foot, xs = [-0.25, -0.4, -0.55], widths = [0.075, 0.075, 0.045], padMat = MAT.black }) {
+export function addPedals(root, { pivot, foot, xs = [-0.25, -0.4, -0.55], widths = [0.075, 0.075, 0.045], padMat = MAT.black, armMat = MAT.galv, ribMat = MAT.knob }) {
   ['pedalClutch', 'pedalBrake', 'pedalAccel'].forEach((name, i) => {
     const g = new THREE.Group();
     g.name = name;
@@ -485,12 +485,12 @@ export function addPedals(root, { pivot, foot, xs = [-0.25, -0.4, -0.55], widths
     g.position.set(xs[i], pivot[0], pivot[1]);
     const dy = foot[0] - pivot[0];
     const dz = foot[1] - pivot[1];
-    tube([0, 0, 0], [0, dy, dz], 0.008, MAT.galv, g, 5); // the arm, from its pivot to the pad
+    tube([0, 0, 0], [0, dy, dz], 0.008, armMat, g, 5); // the arm, from its pivot to the pad
     const pad = new THREE.Group();
     pad.position.set(0, dy, dz);
     pad.rotation.x = -0.6;
     add(new THREE.BoxGeometry(widths[i], 0.016, 0.1), padMat, pad);
-    for (const z of [-0.03, 0, 0.03]) add(new THREE.BoxGeometry(widths[i] - 0.01, 0.006, 0.008), MAT.knob, pad).position.set(0, 0.01, z); // the ribs
+    for (const z of [-0.03, 0, 0.03]) add(new THREE.BoxGeometry(widths[i] - 0.01, 0.006, 0.008), ribMat, pad).position.set(0, 0.01, z); // the ribs
     g.add(pad);
     root.add(g);
   });

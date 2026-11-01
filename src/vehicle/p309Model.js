@@ -9,7 +9,7 @@ import { buildRoadWheel } from './detail/roadWheels.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
 import { buildWiper } from './detail/fittings.js';
 import { buildRadio } from './detail/radios.js';
-import { P309_BODY, P309_DOOR, P309_HATCH, P309_TAIL_LAMP, P309_BOOT, P309_R, P309_TYRE_W, P309_RIDE_LIFT, P309_RUB, P309_DENTS } from './p309Body.js';
+import { P309_BODY, P309_DOOR, P309_HATCH, P309_TAIL_LAMP, P309_BOOT, P309_R, P309_TYRE_W, P309_RIDE_LIFT, P309_RUB, P309_DENTS, P309_SHELF, P309_STRUT } from './p309Body.js';
 
 // Your car (#229): a 1987 three-door 309 diesel at its real size, the Vauclair 39D, built from p309Body.js's numbers after the photos. Built as the
 // Fiesta is (fiestaModel.js, whose fixes it keeps: watertight panels, the doors' frames, the hatch spanning the quarters, the boot closed underneath),
@@ -59,6 +59,9 @@ function upperAt(z) {
 
 /** The glasshouse's half width at height y: the body's at the waist, drawn in (tumblehome) towards the roof. */
 export const halfAt = (y) => W / 2 - 0.05 - (y - ys) * c.tumble;
+
+/** Whether a dent is on a door's panel (between its edges) rather than the wing or the quarter. */
+export const onDoor = (d) => d.z < P309_DOOR.hinge && d.z > P309_DOOR.rear;
 
 const archDz = () => Math.sqrt(Math.max(0, ARCH.r * ARCH.r - (c.sill - ARCH.y) ** 2));
 
@@ -177,6 +180,10 @@ const PAL = {
   strap: new THREE.MeshStandardMaterial({ color: 0x3a3d42, roughness: 0.9 }),
   trimCap: new THREE.MeshStandardMaterial({ color: 0x8e9296, roughness: 0.5, metalness: 0.3 }), // the wheels' plain silver plastic trims
 };
+
+// The inside's own copies of the dark plastics and metals (vents, switches, the door cards' fittings, the seat frames, the levers), so they can be
+// listed as clean: the mud coat keeps mud out of a cab's clean materials, but puts it in every nook of a shared one, and the vents are all nooks.
+const IN = { black: PAL.black.clone(), under: PAL.under.clone(), steel: PAL.steel.clone(), chrome: PAL.chrome.clone(), rubber: PAL.rubber.clone() };
 
 /** The inside: grey, a basic one's (Jamie): ribbed grey cloth on grey vinyl, grey plastics, dark grey carpet. Made when one is built (they need a canvas). */
 function trimMaterials() {
@@ -310,9 +317,10 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
       rbox(0.03, 0.4, 0.75, 0.01, PAL.under, s * (c.track / 2 - P309_TYRE_W / 2 - 0.05), 0.5, -zF, root);
     }
     rbox(0.6, 0.45, 0.55, 0.05, PAL.steel, 0, 0.5, zF - 0.02, root); // the engine, across the car (the 1.9 diesel, a tall block)
-    rbox(0.004, 0.11, 0.14, 0.004, PAL.black, -(OUT + 0.005), 0.72, -1.5, root); // the fuel flap's outline on the right (-x) rear quarter
-    // The dents (p309Body.js): each a bowl of paint shaded as if pushed in, 1 mm off the panel.
-    for (const d of P309_DENTS) {
+    rbox(0.012, 0.11, 0.14, 0.006, paint, -(OUT + 0.001), 0.72, -1.5, root, 'fuelFlap'); // the fuel flap on the right (-x) rear quarter, in paint, standing a few mm proud
+    rbox(0.008, 0.01, 0.025, 0.002, PAL.black, -(OUT + 0.007), 0.72, -1.45, root); // and the notch you open it by
+    // The dents on the wings and quarters (p309Body.js): each a bowl of paint shaded as if pushed in, 1 mm off the panel. A door's go on the door.
+    for (const d of P309_DENTS.filter((x) => !onDoor(x))) {
       const m = add(dentGeometry(d.r, d.depth), paint, root, 'dent');
       if (d.side < 0) m.rotation.y = Math.PI;
       m.position.set(d.side * (OUT + 0.001), d.y, d.z);
@@ -374,16 +382,21 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
       const inside = -s * 0.03;
       rbox(0.02, upperAt(D.rear) - D.bottom - 0.05, len - 0.1, 0.01, trim.card, inside, (D.bottom + upperAt(D.rear)) / 2 - 0.01, -len / 2, d);
       rbox(0.05, 0.04, len - 0.4, 0.015, trim.card, inside - s * 0.02, ys - 0.2, -len / 2 + 0.05, d); // the arm rest
-      tube([inside - s * 0.03, ys - 0.24, -0.62], [inside - s * 0.03, ys - 0.24, -0.4], 0.012, PAL.black, d, 6); // the pull
+      tube([inside - s * 0.03, ys - 0.24, -0.62], [inside - s * 0.03, ys - 0.24, -0.4], 0.012, IN.black, d, 6); // the pull
       // The door pocket: a deep open bin along the bottom of the card, its front lip low enough to see the bottles in it.
       const pz = -len / 2 - 0.05;
       rbox(0.1, 0.02, 0.6, 0.008, trim.card, inside - s * 0.05, D.bottom + 0.06, pz, d); // its floor
       rbox(0.012, 0.12, 0.6, 0.005, trim.card, inside - s * 0.1, D.bottom + 0.12, pz, d); // its front lip
       for (const e of [-0.3, 0.3]) rbox(0.1, 0.12, 0.012, 0.005, trim.card, inside - s * 0.05, D.bottom + 0.12, pz + e, d); // its ends
       if (s < 0) d.userData.pocket = [inside - s * 0.05, D.bottom + 0.07, pz]; // where the driver's bottles stand (addLitter)
-      add(new THREE.CylinderGeometry(0.008, 0.008, 0.05, 6).rotateZ(Math.PI / 2), PAL.chrome, d).position.set(inside - s * 0.04, ys - 0.12, lz(D.rear) + 0.36);
-      add(new THREE.SphereGeometry(0.018, 8, 6), PAL.black, d).position.set(inside - s * 0.07, ys - 0.12, lz(D.rear) + 0.36);
-      rbox(0.012, 0.03, 0.012, 0.004, PAL.black, inside, ys + 0.015, lz(D.rear) + 0.1, d); // the lock button on the sill
+      add(new THREE.CylinderGeometry(0.008, 0.008, 0.05, 6).rotateZ(Math.PI / 2), IN.chrome, d).position.set(inside - s * 0.04, ys - 0.12, lz(D.rear) + 0.36);
+      add(new THREE.SphereGeometry(0.018, 8, 6), IN.black, d).position.set(inside - s * 0.07, ys - 0.12, lz(D.rear) + 0.36);
+      rbox(0.012, 0.03, 0.012, 0.004, IN.black, inside, ys + 0.015, lz(D.rear) + 0.1, d); // the lock button on the sill
+      for (const dent of P309_DENTS.filter((x) => x.side === s && onDoor(x))) { // its dents, so they swing with it
+        const m = add(dentGeometry(dent.r, dent.depth), paint, d, 'dent');
+        if (s < 0) m.rotation.y = Math.PI;
+        m.position.set(s * 0.0185, dent.y, lz(dent.z));
+      }
       root.add(d);
     }
   }
@@ -537,8 +550,12 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
       const strut = new THREE.Group();
       strut.name = s > 0 ? 'hatchStrutLeft' : 'hatchStrutRight';
       strut.userData.keep = true;
-      strut.position.set(s * (halfAt(1.0) - 0.04), 1.0, -1.45);
-      strut.userData.hatchEnd = [s * (halfAt(1.12) - 0.045), 1.12 - yr, -0.22];
+      // Both ends well in from the C pillars (which lean in as they rise) and under the glass: the body's end low on the boot's side, the hatch's a
+      // third of the way down its glass and 3 cm inside it. Out at the pillars, the open strut went through them (Jamie).
+      strut.position.set(s * P309_STRUT.x, P309_STRUT.y, P309_STRUT.z);
+      const along = 0.35 * Math.hypot(zh - zr, yh - yr); // down the glass from the hinge...
+      const dir = [(zh - zr) / Math.hypot(zh - zr, yh - yr), (yh - yr) / Math.hypot(zh - zr, yh - yr)]; // (z, y)
+      strut.userData.hatchEnd = [s * P309_STRUT.x, dir[1] * along + dir[0] * 0.03, dir[0] * along - dir[1] * 0.03]; // ...and in from it, at right angles towards the cabin
       add(new THREE.CylinderGeometry(0.009, 0.009, 1, 6).rotateX(Math.PI / 2).translate(0, 0, 0.5), PAL.chrome, strut);
       add(new THREE.CylinderGeometry(0.014, 0.014, 0.12, 6).rotateX(Math.PI / 2).translate(0, 0, 0.06), PAL.steel, strut);
       root.add(strut);
@@ -609,7 +626,7 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
     rbox(0.48, 0.1, 0.48, 0.04, trim.vinyl, seat.x, seat.y - 0.08, seat.z + 0.12, root);
     rbox(0.34, 0.02, 0.42, 0.008, trim.cloth, seat.x, seat.y - 0.025, seat.z + 0.12, root);
     for (const sx of [-1, 1]) rbox(0.07, 0.06, 0.46, 0.03, trim.cloth, seat.x + sx * 0.21, seat.y - 0.045, seat.z + 0.12, root);
-    rbox(0.42, 0.2, 0.36, 0.02, PAL.under, seat.x, seat.y - 0.24, seat.z + 0.1, root);
+    rbox(0.42, 0.2, 0.36, 0.02, IN.under, seat.x, seat.y - 0.24, seat.z + 0.1, root);
     const pivot = new THREE.Group();
     pivot.name = `seatBack_${name}`;
     pivot.userData.keep = true;
@@ -619,7 +636,7 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
     rbox(0.48, 0.52, 0.1, 0.04, trim.vinyl, 0, 0.26, -0.03, lean);
     rbox(0.34, 0.4, 0.08, 0.01, trim.cloth, 0, 0.25, -0.01, lean);
     for (const sx of [-1, 1]) rbox(0.07, 0.4, 0.13, 0.03, trim.cloth, sx * 0.21, 0.23, 0.0, lean);
-    for (const sx of [-0.08, 0.08]) tube([sx, 0.5, -0.03], [sx, 0.6, -0.03], 0.006, PAL.chrome, lean, 5); // the headrest's stems
+    for (const sx of [-0.08, 0.08]) tube([sx, 0.5, -0.03], [sx, 0.6, -0.03], 0.006, IN.chrome, lean, 5); // the headrest's stems
     rbox(0.28, 0.14, 0.08, 0.03, trim.cloth, 0, 0.64, -0.02, lean); // and the headrest
     pivot.add(lean);
     root.add(pivot);
@@ -630,7 +647,7 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
     rbox(W - 0.1, 0.03, zs - 0.1 + 0.75, 0.01, trim.floor, 0, 0.26, (zs - 0.1 - 0.75) / 2, root);
     rbox(1.12, 0.03, -0.75 - c.tail - 0.1, 0.01, trim.floor, 0, 0.26, (-0.75 + c.tail + 0.1) / 2, root);
     for (const x of [c.seats.driver.x, c.seats.left.x]) rbox(0.4, 0.008, 0.45, 0.003, trim.mat, x, 0.2785, zs - 0.42, root); // the rubber mats in the footwells
-    rbox(W - 0.1, 0.5, 0.04, 0.01, PAL.under, 0, 0.5, zs - 0.06, root); // the bulkhead
+    rbox(W - 0.1, 0.5, 0.04, 0.01, IN.under, 0, 0.5, zs - 0.06, root); // the bulkhead
     rbox(0.16, 0.12, zs - 0.1 - (c.seats.driver.z - 0.2), 0.04, trim.floor, 0, 0.32, (zs - 0.1 + c.seats.driver.z - 0.2) / 2, root); // the tunnel
     for (const s of [-1, 1]) {
       rbox(0.08, 0.3, 0.7, 0.03, trim.trim, s * 0.52, 0.42, -zF, root); // the rear arch inside, beside the back seat
@@ -643,12 +660,14 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
     rbox(W - 0.12, 0.08, 0.32, 0.03, trim.dash, 0, dashTop, zs - 0.17, root);
     rbox(W - 0.12, 0.3, 0.04, 0.02, trim.dash, 0, dashTop - 0.17, face, root); // its face
     // The tray: a recess in the face on the passenger's half (its floor, back and lip), the vent at its outer end.
-    rbox(0.5, 0.012, 0.12, 0.004, PAL.black, 0.33, dashTop - 0.1, face - 0.06, root, 'dashTray');
-    rbox(0.52, 0.03, 0.012, 0.004, trim.dash, 0.33, dashTop - 0.09, face - 0.12, root); // its front lip
-    for (const e of [-0.26, 0.26]) rbox(0.012, 0.06, 0.12, 0.004, trim.dash, 0.33 + e, dashTop - 0.07, face - 0.06, root);
-    quad.userData.tray = { x: 0.33, y: dashTop - 0.094, z: face - 0.06 }; // where the CD cases lie (addLitter)
-    rbox(0.42, 0.13, 0.012, 0.004, trim.dash, 0.33, dashTop - 0.2, face - 0.024, root, 'glovebox'); // the glovebox lid
-    rbox(0.05, 0.016, 0.008, 0.003, PAL.black, 0.33, dashTop - 0.16, face - 0.032, root); // its catch
+    // (0.2 to 0.6 across: clear of the centre vents on one side and the end vent on the other, which it overlapped when it was wider)
+    const TRAY = { x: 0.39, half: 0.2 };
+    rbox(2 * TRAY.half - 0.02, 0.012, 0.12, 0.004, IN.black, TRAY.x, dashTop - 0.1, face - 0.06, root, 'dashTray');
+    rbox(2 * TRAY.half, 0.03, 0.012, 0.004, trim.dash, TRAY.x, dashTop - 0.09, face - 0.12, root); // its front lip
+    for (const e of [-TRAY.half, TRAY.half]) rbox(0.012, 0.06, 0.12, 0.004, trim.dash, TRAY.x + e, dashTop - 0.07, face - 0.06, root);
+    quad.userData.tray = { x: TRAY.x, y: dashTop - 0.094, z: face - 0.06, half: TRAY.half }; // where the CD cases lie (addLitter)
+    rbox(2 * TRAY.half - 0.04, 0.13, 0.012, 0.004, trim.dash, TRAY.x, dashTop - 0.2, face - 0.024, root, 'glovebox'); // the glovebox lid
+    rbox(0.05, 0.016, 0.008, 0.003, IN.black, TRAY.x, dashTop - 0.16, face - 0.032, root); // its catch
     rbox(0.42, 0.04, 0.12, 0.02, trim.dash, c.seats.driver.x, dashTop + 0.07, face - 0.05, root); // the binnacle's hood
     rbox(0.42, 0.2, 0.04, 0.02, trim.dash, c.seats.driver.x, dashTop - 0.03, face - 0.01, root);
     const dash = buildDash('p309');
@@ -662,8 +681,8 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
     quad.userData.podMount = null;
     // The vents: a slatted one at each end of the dash, two square ones at the top of the console.
     const vent = (x, y, w, h) => {
-      rbox(w, h, 0.02, 0.006, PAL.black, x, y, face - 0.025, root);
-      for (let i = 0; i < Math.round(h / 0.013); i++) rbox(w - 0.016, 0.004, 0.006, 0.002, PAL.under, x, y - h / 2 + 0.008 + i * 0.013, face - 0.036, root);
+      rbox(w, h, 0.02, 0.006, IN.black, x, y, face - 0.025, root, 'vent');
+      for (let i = 0; i < Math.round(h / 0.013); i++) rbox(w - 0.016, 0.004, 0.006, 0.002, IN.under, x, y - h / 2 + 0.008 + i * 0.013, face - 0.036, root);
     };
     vent(0.66, dashTop - 0.05, 0.1, 0.06);
     vent(-0.66, dashTop - 0.05, 0.1, 0.06);
@@ -680,8 +699,8 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
         switches[name] = g;
       }
       g.position.set(x, y, face - 0.026);
-      add(new THREE.CylinderGeometry(0.013, 0.013, 0.012, 14).rotateX(Math.PI / 2), PAL.black, g);
-      add(new THREE.CylinderGeometry(0.008, 0.008, 0.004, 12).rotateX(Math.PI / 2), PAL.steel, g).position.z = -0.007; // its symbol's face
+      add(new THREE.CylinderGeometry(0.013, 0.013, 0.012, 14).rotateX(Math.PI / 2), IN.black, g);
+      add(new THREE.CylinderGeometry(0.008, 0.008, 0.004, 12).rotateX(Math.PI / 2), IN.steel, g).position.z = -0.007; // its symbol's face
       root.add(g);
     };
     const pushY = dashTop - 0.135;
@@ -689,10 +708,10 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
     const hz = addHazardSwitch(root, 0.09, pushY, face - 0.026, { plate: false, w: 0.026, h: 0.026 }); // the hazards, last of the row
     hz.rotation.y = Math.PI;
     for (const x of [-0.07, 0.07]) {
-      add(new THREE.CylinderGeometry(0.026, 0.026, 0.012, 18).rotateX(Math.PI / 2), PAL.black, root).position.set(x, dashTop - 0.19, face - 0.03); // the heater's dials
-      rbox(0.008, 0.03, 0.01, 0.003, PAL.steel, x, dashTop - 0.19, face - 0.038, root).rotation.z = x < 0 ? 0.5 : -0.4; // their pointers
+      add(new THREE.CylinderGeometry(0.026, 0.026, 0.012, 18).rotateX(Math.PI / 2), IN.black, root).position.set(x, dashTop - 0.19, face - 0.03); // the heater's dials
+      rbox(0.008, 0.03, 0.01, 0.003, IN.steel, x, dashTop - 0.19, face - 0.038, root).rotation.z = x < 0 ? 0.5 : -0.4; // their pointers
     }
-    rbox(0.012, 0.03, 0.01, 0.003, PAL.steel, 0, dashTop - 0.19, face - 0.03, root); // the slider between them
+    rbox(0.012, 0.03, 0.01, 0.003, IN.steel, 0, dashTop - 0.19, face - 0.03, root); // the slider between them
     const radio = buildRadio('cassette', { w: 0.18, h: 0.05 });
     radio.position.set(0, dashTop - 0.255, face - 0.0225);
     radio.rotation.y = Math.PI;
@@ -711,17 +730,19 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
     const rz = c.rear.rearLeft.z;
     rbox(1.12, 0.1, 0.48, 0.04, trim.vinyl, 0, c.rear.rearLeft.y - 0.08, rz + 0.12, root);
     for (const x of [-0.28, 0.28]) rbox(0.38, 0.02, 0.42, 0.008, trim.cloth, x, c.rear.rearLeft.y - 0.025, rz + 0.12, root);
-    rbox(1.12, 0.26, 0.4, 0.02, PAL.under, 0, 0.37, rz + 0.1, root);
+    rbox(1.12, 0.26, 0.4, 0.02, IN.under, 0, 0.37, rz + 0.1, root);
     const back = new THREE.Group();
     back.position.set(0, c.rear.rearLeft.y + 0.2, rz - 0.2);
     back.rotation.x = -0.2;
     rbox(1.12, 0.44, 0.1, 0.04, trim.vinyl, 0, 0, 0, back);
     for (const x of [-0.28, 0.28]) rbox(0.38, 0.32, 0.08, 0.01, trim.cloth, x, 0.0, 0.012, back);
     root.add(back);
-    rbox(1.42, 0.012, 0.5, 0.005, trim.trim, 0, 0.96, -1.5, root, 'parcelShelf'); // the parcel shelf, under the glass behind the seat back
+    // The parcel shelf: under the glass, from behind the seat back's top to the deck, below the deck's underside (it stuck out through the bustle
+    // when it ran to the tail at the waist), and narrower than the boot so the back belts hang clear of it.
+    rbox(2 * P309_SHELF.half, 0.012, P309_SHELF.front - P309_SHELF.back, 0.005, trim.trim, 0, P309_SHELF.y, (P309_SHELF.front + P309_SHELF.back) / 2, root, 'parcelShelf');
     const bootFront = P309_BOOT.front;
     rbox(1.46, 0.03, bootFront - (c.tail + 0.015), 0.01, trim.floor, 0, P309_BOOT.floor, (c.tail + 0.015 + bootFront) / 2, root);
-    rbox(1.42, P309_BOOT.floor - 0.29, bootFront - (c.tail + 0.015), 0.01, PAL.under, 0, (P309_BOOT.floor + 0.29) / 2, (c.tail + 0.015 + bootFront) / 2, root);
+    rbox(1.42, P309_BOOT.floor - 0.29, bootFront - (c.tail + 0.015), 0.01, IN.under, 0, (P309_BOOT.floor + 0.29) / 2, (c.tail + 0.015 + bootFront) / 2, root);
     for (const s of [-1, 1]) {
       rbox(0.12, 0.2, 0.6, 0.03, trim.trim, s * 0.5, P309_BOOT.floor + 0.1, -1.26, root); // the arch hump in the boot
       rbox(0.03, 0.3, bootFront - (c.tail + 0.12), 0.01, trim.trim, s * (W / 2 - 0.1), P309_BOOT.floor + 0.17, (bootFront + c.tail + 0.12) / 2, root); // the boot's side trim, behind the tyres
@@ -749,10 +770,10 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
     column.userData.keep = true;
     column.position.set(c.seats.driver.x, c.columnY, face);
     column.rotation.x = -1.12;
-    tube([0, -0.02, 0], [0, c.wheelOut - 0.02, 0], 0.03, PAL.black, column);
+    tube([0, -0.02, 0], [0, c.wheelOut - 0.02, 0], 0.03, IN.black, column);
     rbox(0.1, 0.07, 0.12, 0.025, trim.dash, 0, 0.05, 0, column); // the shroud by the dash, grey
     root.add(column);
-    addSignalStalk(column, c.wheelOut - 0.06, PAL.black, { modern: true });
+    addSignalStalk(column, c.wheelOut - 0.06, IN.black, { modern: true });
     const keyHolder = new THREE.Group();
     keyHolder.position.set(-0.052, 0.05, 0.03); // the key on the shroud's right side, the door's
     keyHolder.rotation.y = Math.PI / 2;
@@ -773,9 +794,9 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
     column.add(wheel);
     // The 309's big wheel: a thick black rim on two wide spokes that sweep down to a broad horn pad with the maker's shield.
     const rimR = c.rim;
-    add(new THREE.TorusGeometry(rimR, 0.017, 8, 32).rotateX(Math.PI / 2), PAL.black, wheel);
-    rbox(0.24, 0.045, 0.08, 0.02, PAL.black, 0, 0, -0.02, wheel); // the horn pad, wide
-    for (const a of [Math.PI / 2 + 0.3, -Math.PI / 2 - 0.3]) tube([Math.sin(a) * 0.1, 0, Math.cos(a) * 0.1 - 0.02], [Math.sin(a) * rimR, 0, Math.cos(a) * rimR], 0.02, PAL.black, wheel, 6);
+    add(new THREE.TorusGeometry(rimR, 0.017, 8, 32).rotateX(Math.PI / 2), IN.black, wheel);
+    rbox(0.24, 0.045, 0.08, 0.02, IN.black, 0, 0, -0.02, wheel); // the horn pad, wide
+    for (const a of [Math.PI / 2 + 0.3, -Math.PI / 2 - 0.3]) tube([Math.sin(a) * 0.1, 0, Math.cos(a) * 0.1 - 0.02], [Math.sin(a) * rimR, 0, Math.cos(a) * rimR], 0.02, IN.black, wheel, 6);
     const hub = label(0.03, 0.036, 1000, (g, Wd, H) => {
       g.fillStyle = '#8f9396';
       g.fillRect(0, 0, Wd, H);
@@ -801,19 +822,19 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
     gear.name = 'gearLever';
     gear.userData.keep = true;
     gear.position.set(0, 0.36, zs - 0.62);
-    tube([0, 0, 0], [0, 0.26, 0], 0.008, PAL.steel, gear, 5);
-    add(new THREE.SphereGeometry(0.026, 12, 10).scale(1, 1.2, 1), PAL.black, gear).position.set(0, 0.27, 0);
+    tube([0, 0, 0], [0, 0.26, 0], 0.008, IN.steel, gear, 5);
+    add(new THREE.SphereGeometry(0.026, 12, 10).scale(1, 1.2, 1), IN.black, gear).position.set(0, 0.27, 0);
     root.add(gear);
-    add(new THREE.CylinderGeometry(0.03, 0.06, 0.06, 12), PAL.rubber, root).position.set(0, 0.38, zs - 0.62);
+    add(new THREE.CylinderGeometry(0.03, 0.06, 0.06, 12), IN.rubber, root).position.set(0, 0.38, zs - 0.62);
     rbox(0.16, 0.03, 0.22, 0.01, trim.dash, 0, 0.36, zs - 0.62, root); // the console's tray round it
     const hb = new THREE.Group();
     hb.name = 'parkBrakeLever';
     hb.userData.keep = true;
     hb.position.set(0, 0.405, c.seats.driver.z - 0.1);
-    rbox(0.035, 0.03, 0.26, 0.012, PAL.black, 0, 0, 0.13, hb);
-    rbox(0.014, 0.014, 0.02, 0.004, PAL.chrome, 0, 0.005, 0.27, hb);
+    rbox(0.035, 0.03, 0.26, 0.012, IN.black, 0, 0, 0.13, hb);
+    rbox(0.014, 0.014, 0.02, 0.004, IN.chrome, 0, 0.005, 0.27, hb);
     root.add(hb);
-    addPedals(root, { pivot: [0.62, 0.58], foot: [0.36, 0.5], xs: [c.seats.driver.x + 0.17, c.seats.driver.x, c.seats.driver.x - 0.15], widths: [0.07, 0.07, 0.04] });
+    addPedals(root, { pivot: [0.62, 0.58], foot: [0.36, 0.5], xs: [c.seats.driver.x + 0.17, c.seats.driver.x, c.seats.driver.x - 0.15], widths: [0.07, 0.07, 0.04], padMat: IN.rubber, armMat: IN.steel, ribMat: IN.black });
     for (const name of ['fuelTap', 'chokeLever', 'chokeKnob']) { // Quad poses these on a quad; a diesel car has none
       const g = new THREE.Group();
       g.name = name;
@@ -837,6 +858,7 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
         add(new THREE.CylinderGeometry(0.013, 0.032, tall * 0.2, 12), liquid, g).position.y = tall * 0.8; // its shoulder
         add(new THREE.CylinderGeometry(0.014, 0.014, 0.022, 10), cap, g).position.y = tall + 0.011;
         add(new THREE.CylinderGeometry(0.0325, 0.0325, tall * 0.25, 12), new THREE.MeshStandardMaterial({ color: 0xc8302a, roughness: 0.6 }), g).position.y = tall * 0.42; // a label round it
+        for (const o of g.children) quad.userData.liveMaterials.push(o.material); // its own look: no mud, no wear
         door.add(g);
       };
       bottle(-0.18, new THREE.MeshStandardMaterial({ color: 0x3a1c0e, roughness: 0.15, transparent: true, opacity: 0.85 }), new THREE.MeshStandardMaterial({ color: 0xb02020, roughness: 0.5 }), 0.24); // cola, half drunk
@@ -847,7 +869,7 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
       const g = new THREE.Group();
       g.position.set(tray.x + dx, tray.y + 0.009 + layer * 0.012, tray.z + dz);
       g.rotation.y = yaw;
-      rbox(0.142, 0.01, 0.125, 0.002, new THREE.MeshStandardMaterial({ color: 0x202224, roughness: 0.3 }), 0, 0, 0, g); // the case
+      quad.userData.liveMaterials.push(rbox(0.142, 0.01, 0.125, 0.002, new THREE.MeshStandardMaterial({ color: 0x202224, roughness: 0.3 }), 0, 0, 0, g).material); // the case
       const cover = label(0.12, 0.12, 900, (cx, Wd, H) => {
         cx.fillStyle = colour;
         cx.fillRect(0, 0, Wd, H);
@@ -860,10 +882,9 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
       cover.position.y = 0.0055;
       root.add(g);
     };
-    cdCase(-0.17, 0.0, 0.15, '#3b5f8a', 'NOW 37', 0);
-    cdCase(0.0, 0.0, -0.1, '#a0442c', 'BRITPOP', 0);
-    cdCase(0.02, 0.0, 0.3, '#2d2d2d', 'DRIVING', 1); // lying on the one under it
-    cdCase(0.17, 0.0, -0.06, '#c2a23a', 'HITS 98', 0);
+    cdCase(-0.077, 0.0, 0.05, '#3b5f8a', 'NOW 37', 0); // two side by side across the tray...
+    cdCase(0.08, 0.0, -0.05, '#c2a23a', 'HITS 98', 0);
+    cdCase(-0.02, 0.0, 0.3, '#2d2d2d', 'DRIVING', 1); // ...and one dropped on top of them
   }
 
   function addAnchors() {
@@ -897,7 +918,7 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
   quad.userData.tailHaloMaterial = new THREE.SpriteMaterial({ transparent: true, opacity: 0 });
   quad.userData.tailHalos = [];
   mergeStatic(root);
-  quad.userData.cleanMaterials = [trim.vinyl, trim.cloth, trim.floor, trim.dash, trim.card, trim.lining, trim.trim, trim.mat, PAL.strap];
+  quad.userData.cleanMaterials = [trim.vinyl, trim.cloth, trim.floor, trim.dash, trim.card, trim.lining, trim.trim, trim.mat, PAL.strap, ...Object.values(IN)];
   quad.userData.cabin = { min: [-c.width / 2, c.sill, c.hatchBottom[0]], max: [c.width / 2, c.screenTop[1] + 0.1, c.screenBase[0]] };
   const casts = new Set([paint, PAL.rubber, PAL.black, PAL.under, PAL.chrome, PAL.bumper]);
   quad.traverse((o) => {
