@@ -1,8 +1,9 @@
 import * as THREE from 'three';
-import { buildTop, buildInset, buttonShape, slitShape, poloFields, tuckSleeves, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO } from './polo.js';
+import { buildTop, buildInset, buttonShape, slitShape, poloFields, tuckSleeves, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER } from './polo.js';
+import { buildTie } from './tie.js';
 import { buildCropTop } from './crop.js';
 import { buildShorts, SHORTS } from './shorts.js';
-import { buildCollar, COLLAR, COAT_COLLAR, SHIRT_COLLAR, SHIRT_UNDER_COLLAR, OVER_COLLAR } from './collar.js';
+import { buildCollar, COLLAR, COAT_COLLAR, SHIRT_COLLAR, SHIRT_UNDER_COLLAR, OVER_COLLAR, POINT_COLLAR, POLO_UNDER_SHIRT_COLLAR } from './collar.js';
 import { buildHood, lowerHood, intoHood, chestShare, tartan } from './hood.js';
 import { COAT_COLLAR_COLOUR } from './coats.js';
 import { measureHead } from './helmetView.js';
@@ -479,12 +480,14 @@ export function withShirt(outfit, color) {
 
 /**
  * The body's palette for an outfit: under a crop-top her shirt band is her skin (her top half is bare). Under a plaid it stays
- * her polo's colour, as the polo is under it, buttoned or open; without a polo, a buttoned plaid's ground.
+ * her polo's colour, as the polo is under it, buttoned or open; without a polo, a buttoned plaid's ground. Under a shirt and tie
+ * on its own, the shirt's colour.
  */
 export function bodyColours(outfit) {
   const kind = outfit.style?.kind;
   if (kind === 'cropTop') return { ...outfit.colors, shirt: 'skin' };
   if (kind === 'plaid' && !outfit.style.plaidOpen && !outfit.polo) return { ...outfit.colors, shirt: outfit.style.plaid[0] };
+  if (kind === 'shirtTie' && !(outfit.style.shirtOverPolo && outfit.polo)) return { ...outfit.colors, shirt: outfit.style.shirt ?? '#f4f3ef' };
   return outfit.colors;
 }
 
@@ -748,6 +751,7 @@ function addTop(rig, name, color, spec) {
   if (vee && spec.inset !== false) {
     // Her skin in the V of the open neck, her own flat faces in her skin's colour.
     const inset = buildInset(data, vee, spec);
+    made.inset = inset;
     const [r, g, b] = PALETTE.skin.map((c) => c / 255);
     const skin = new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
     const shading = [];
@@ -762,6 +766,15 @@ function addTop(rig, name, color, spec) {
     );
   }
   if (built.logo) addLogo(rig, body, data, built.logo, tint);
+  if (built.pocket) {
+    // A shirt's chest pocket, in the shirt's cloth, its edges and hem a shade darker.
+    const pk = built.pocket;
+    const shading = [];
+    for (const k of pk.shade) shading.push(tint.r * k, tint.g * k, tint.b * k);
+    const index = pk.tris.flat();
+    const positions = pk.verts.map((q) => q.bind);
+    skinnedFromArrays(rig, body, data, `${name}Pocket`, { positions, normals: smoothArrayNormals(positions, index), weights: pk.verts.map((q) => q.weights), colors: shading, index }, fabric());
+  }
   if (!placket) return made;
 
   // The placket, stitched, and its buttons (a second mesh, the holes coloured in).
@@ -792,7 +805,8 @@ function addTop(rig, name, color, spec) {
     }
     for (const t of triangles) tris.push(...t.map((i) => i + base));
   };
-  for (const b of placket.buttons) {
+  const underTie = (b) => spec.underTie && Math.abs(b.centre[0] - data.bones.Neck[0]) < 0.008;
+  for (const b of [...placket.buttons.filter((b) => !underTie(b)), ...built.cuffButtons]) {
     const shape = buttonShape(b.centre, b.normal, spec.buttonRadius);
     add(shape.points, shape.tris, b.anchor, face);
     if (spec.buttonHoles !== false) add(shape.holes, shape.holeTris, b.anchor, hole);
@@ -807,7 +821,7 @@ function addTop(rig, name, color, spec) {
     data,
     `${name}Buttons`,
     { positions, normals: smoothArrayNormals(positions, tris), weights, colors, index: tris },
-    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, metalness: spec.buttonColour ? 0.6 : 0, side: THREE.DoubleSide }),
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, metalness: spec.buttonMetal ?? (spec.buttonColour ? 0.6 : 0), side: THREE.DoubleSide }),
   );
   return made;
 }
@@ -1126,18 +1140,30 @@ function addEachGarment(rig, outfit) {
   const pop = (spec) => (style.popped ? { ...spec, popped: true } : spec);
   let polo = null;
   let outer = null;
+  const shirtTie = kind === 'shirtTie';
   if (kind === 'cropTop') addCrop(rig, style.crop);
-  else if (outfit.polo) polo = addTop(rig, 'polo', outfit.polo, { ...POLO, open: kind === 'doublePolo' ? style.underOpen ?? 0 : open });
+  else if (outfit.polo && (!shirtTie || style.shirtOverPolo)) polo = addTop(rig, 'polo', outfit.polo, { ...POLO, open: kind === 'doublePolo' ? style.underOpen ?? 0 : shirtTie ? 0 : open }); // done up under a shirt and tie, so its placket and collar show in the shirt's open neck
   if (kind === 'doublePolo') outer = addTop(rig, 'overPolo', style.over, { ...OVER_POLO, open });
   const plaidShut = kind === 'plaid' && !style.plaidOpen;
   const shut = { ...(polo ? PLAID_OVER : PLAID), open: style.plaidButtons ?? 0 };
   if (kind === 'plaid') outer = addTop(rig, 'plaid', style.plaid, style.plaidOpen ? PLAID_OPEN : shut);
+  if (shirtTie) {
+    // Done right up (cuffs at the wrist), or loosened: the top one or two undone and the sleeves rolled to the elbow.
+    const spec = style.tieLoose ? (polo ? SHIRT_ROLLED_OVER : SHIRT_ROLLED) : polo ? SHIRT_OVER : SHIRT;
+    outer = addTop(rig, 'shirt', style.shirt ?? '#f4f3ef', { ...spec, open: style.tieLoose ? style.shirtOpen ?? 1 : 0 });
+  }
   if (polo && outer) tuckUnder(polo, outer);
   const jumper = outfit.jumper ? addTop(rig, 'jumper', outfit.jumper, JUMPER) : null;
   // A collar lies on its own top and on the jumper over everything (its neck is low enough for collars to come out over it), never
   // on a shirt worn over its top: under that it's hidden but for where it shows at the neck and down the front.
   const knit = jumper ? [jumper.built.shell] : [];
-  if (plaidShut && polo) {
+  if (shirtTie && outer) {
+    // The polo's collar lies close on the polo, under the shirt; the tie goes on the shirt (and in an open neck on what shows in
+    // it); then the shirt's collar over the tie, so its points cover the knot's sides.
+    const under = polo ? addCollar(rig, polo, [polo.built.shell], outfit.polo, POLO_UNDER_SHIRT_COLLAR) : null;
+    const tie = addTie(rig, outer, polo, under, outfit.polo ?? outfit.colors?.shirt ?? '#3a5690', style);
+    addCollar(rig, outer, [outer.built.shell, ...(tie ? [tie] : []), ...knit], style.shirt, pop(POINT_COLLAR), 'shirtCollar');
+  } else if (plaidShut && polo) {
     // Buttoned over her polo: the plaid's collar first, a lower stand on its lower neck, then hers folded out over it and the shirt.
     const shirt = addCollar(rig, outer, [outer.built.shell, ...knit], style.over, pop(SHIRT_UNDER_COLLAR), 'plaidCollar');
     addCollar(rig, polo, [polo.built.shell, outer.built.shell, ...knit, ...(shirt ? [shirt] : [])], outfit.polo, pop(COLLAR));
@@ -1148,6 +1174,33 @@ function addEachGarment(rig, outfit) {
   if (outfit.coat) addCoat(rig, outfit.coat);
   if (outfit.shorts) addBottom(rig, outfit.shorts, !!outfit.coat);
   if (outfit.wellies) addWellies(rig, outfit.wellies);
+}
+
+/**
+ * The tie (tie.js) on a shirt, in her polo's colour: laid on the shirt and its placket, and in a loosened shirt's open neck on her
+ * skin there or on the polo, its placket and its collar. Returns what it built, for the shirt's collar to lie on.
+ */
+function addTie(rig, shirt, polo, poloCollar, color, style) {
+  const body = bodyMesh(rig);
+  const { data, built } = shirt;
+  if (!built.placket) return null;
+  const ground = [built.shell, built.placket];
+  if (shirt.inset) ground.push(shirt.inset);
+  if (polo) ground.push(polo.built.shell, ...(polo.built.placket ? [polo.built.placket] : []), ...(poloCollar ? [poloCollar] : []));
+  const tie = buildTie(data, { top: built.placket.top, ground, loose: !!style.tieLoose, drop: style.tieDrop ?? 0.05, vee: built.vee });
+  if (!tie) return null;
+  const tint = new THREE.Color(color);
+  const colors = [];
+  for (const k of tie.shade) colors.push(tint.r * k, tint.g * k, tint.b * k);
+  skinnedFromArrays(
+    rig,
+    body,
+    data,
+    'tie',
+    { positions: tie.verts.map((q) => q.bind), normals: smoothNormals(tie), weights: tie.verts.map((q) => q.weights), colors, index: tie.tris.flat() },
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, side: THREE.DoubleSide }), // woven silk has a little sheen
+  );
+  return tie;
 }
 
 /** Her polo's sleeves pulled back inside the top over it (polo.js, tuckSleeves), and its mesh moved to match. */

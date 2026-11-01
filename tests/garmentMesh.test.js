@@ -512,6 +512,60 @@ describe('the other tops', () => {
   });
 });
 
+describe('a shirt and tie', () => {
+  it('tucks a work shirt in with seven buttons to the waistband and a chest pocket on her left', async () => {
+    const { SHIRT } = await import('../src/npc/polo.js');
+    const body = cylinderBody();
+    const { placket, pocket, shell } = buildTop(body, SHIRT);
+    expect(placket.buttons.length).toBe(7);
+    expect(Math.max(...placket.buttons.map((b) => b.centre[1]))).toBeGreaterThan(placket.top); // done right up, on the stand
+    expect(Math.min(...placket.buttons.map((b) => b.centre[1]))).toBeGreaterThan(body.waist);
+    expect(Math.min(...shell.verts.map((v) => v.rest[1]))).toBeLessThan(body.waist); // tucked into her shorts
+    expect(pocket).not.toBe(null);
+    const xs = pocket.verts.map((v) => v.rest[0]);
+    expect(Math.min(...xs)).toBeGreaterThan(0.02); // all on her left (+x as she stands)
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(SHIRT.pocket.width, 2);
+  });
+
+  it('lays the tie down her front from a knot up in the collar to the waistband, widening to about 8 cm', async () => {
+    const { SHIRT } = await import('../src/npc/polo.js');
+    const { buildTie, TIE } = await import('../src/npc/tie.js');
+    const body = cylinderBody();
+    const shirt = buildTop(body, SHIRT);
+    const tie = buildTie(body, { top: shirt.placket.top, ground: [shirt.shell, shirt.placket] });
+    expect(tie).not.toBe(null);
+    expect(tie.knotTop).toBeGreaterThan(shirt.placket.top);
+    const ys = tie.verts.map((v) => v.rest[1]);
+    expect(Math.min(...ys)).toBeGreaterThan(body.waist);
+    expect(Math.min(...ys)).toBeLessThan(body.waist + 0.01);
+    const xs = tie.verts.map((v) => v.rest[0]);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(TIE.blade, 2);
+    // In front of the shirt everywhere: no point of the tie further in than her shirt there.
+    for (const v of tie.verts) expect(Math.hypot(v.rest[0], v.rest[2])).toBeGreaterThan(0.12);
+    // The knot stands out from the blade, and the blade is narrow under it.
+    const knot = tie.verts.filter((v) => v.rest[1] > tie.knotTop - TIE.knotHeight && v.rest[1] <= tie.knotTop);
+    const blade = tie.verts.filter((v) => v.rest[1] < tie.knotTop - TIE.knotHeight - 0.05);
+    expect(Math.max(...knot.map((v) => v.rest[2]))).toBeGreaterThan(Math.max(...blade.map((v) => v.rest[2])) + 0.005);
+  });
+
+  it('loosened, pulls the knot down below the open buttons and runs its ends up into the collar', async () => {
+    const { SHIRT_ROLLED } = await import('../src/npc/polo.js');
+    const { buildTie } = await import('../src/npc/tie.js');
+    const body = cylinderBody();
+    const shirt = buildTop(body, { ...SHIRT_ROLLED, open: 2 });
+    expect(shirt.vee).not.toBe(null);
+    const inset = buildInset(body, shirt.vee, SHIRT_ROLLED);
+    const tie = buildTie(body, { top: shirt.placket.top, ground: [shirt.shell, shirt.placket, inset], loose: true, drop: 0.05, vee: shirt.vee });
+    expect(tie).not.toBe(null);
+    expect(tie.knotTop).toBeLessThan(shirt.vee.bottom);
+    expect(tie.knotTop).toBeLessThanOrEqual(shirt.placket.top - 0.05 + 1e-9);
+    // Its ends reach up to the neck, either side of her middle.
+    const high = tie.verts.filter((v) => v.rest[1] > shirt.placket.top - 0.005);
+    expect(high.some((v) => v.rest[0] > 0.01)).toBe(true);
+    expect(high.some((v) => v.rest[0] < -0.01)).toBe(true);
+  });
+});
+
 describe('the crop-top', () => {
   it('is a band round her bust and two straps over her shoulders, and nothing below the band', async () => {
     const { buildCropTop, cropFields, CROP } = await import('../src/npc/crop.js');

@@ -242,6 +242,8 @@ export function buildGameTree(g, host) {
       outfit: choice(outfitsFor(c().character.outfitOdds), () => completeStyle(c().outfit.style).kind, (v) => c().setStyle({ ...completeStyle(c().outfit.style), kind: v }), 'what she has on top today'),
       plaidOpen: flag(() => completeStyle(c().outfit.style).plaidOpen, (v) => c().setStyle({ ...completeStyle(c().outfit.style), plaidOpen: v }), 'a plaid shirt worn open over her polo'),
       popped: flag(() => completeStyle(c().outfit.style).popped, (v) => c().setStyle({ ...completeStyle(c().outfit.style), popped: v }), 'her collar popped'),
+      tieLoose: flag(() => completeStyle(c().outfit.style).tieLoose, (v) => c().setStyle({ ...completeStyle(c().outfit.style), tieLoose: v }), 'a shirt and tie loosened rather than done right up'),
+      shirtOverPolo: flag(() => completeStyle(c().outfit.style).shirtOverPolo, (v) => c().setStyle({ ...completeStyle(c().outfit.style), shirtOverPolo: v }), 'a shirt and tie worn over her polo'),
       plaidButtons: num(() => completeStyle(c().outfit.style).plaidButtons, (v) => c().setStyle({ ...completeStyle(c().outfit.style), plaidButtons: Math.round(v) }), 0, 4, '', "buttons undone on a buttoned plaid (0: done right up)"),
       underOpen: num(() => completeStyle(c().outfit.style).underOpen, (v) => c().setStyle({ ...completeStyle(c().outfit.style), underOpen: Math.round(v) }), 0, 5, '', 'in two polos, buttons undone on hers under the other'),
       mud: num(() => c().mucky.mud, (v) => (c().mucky.mud = v), 0, 1, '', 'how muddy her jeans are'),

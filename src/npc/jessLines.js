@@ -114,6 +114,7 @@ import { JESS_NICK_LINES } from './nickLines.js';
 import { JESS_LINEUP_LINES } from './lineUpLines.js';
 import { JESS_TEA_LINES } from './teaLines.js';
 import { JESS_JUMPER_LINES } from './jumperLines.js';
+import { JESS_OUTFIT_LINES } from './outfitLines.js';
 import { JESS_COAT_LINES } from './coatLines.js';
 import { JESS_HEADGEAR_LINES } from './headgearLines.js';
 import { JESS_KEEP_LINES } from './keepAliveLines.js';
@@ -574,6 +575,7 @@ export const JESS_LINES = {
   ...JESS_LINEUP_LINES,
   ...JESS_TEA_LINES,
   ...JESS_JUMPER_LINES,
+  ...JESS_OUTFIT_LINES,
   ...JESS_COAT_LINES,
   ...JESS_HEADGEAR_LINES,
   ...JESS_BENCH_LINES,

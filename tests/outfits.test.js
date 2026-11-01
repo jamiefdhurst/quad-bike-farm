@@ -77,3 +77,71 @@ describe('buttons and who may wear what', () => {
     expect(outfitsFor(jess.outfitOdds)).toContain('cropTop');
   });
 });
+
+describe('a shirt and tie', () => {
+  it('is dealt about one day in ten for each girl, white or pale blue', async () => {
+    const { SHIRT_COLOURS } = await import('../src/npc/outfits.js');
+    for (const g of CHARACTERS.filter((c) => c.outfitOdds)) expect(tally(g.outfitOdds, { warm: false }).shirtTie).toBeCloseTo(0.1, 1);
+    const random = createRandom(9);
+    const colours = new Set();
+    for (let i = 0; i < 200; i++) colours.add(dealOutfit(random, { shirtTie: 1 }).shirt);
+    expect([...colours].sort()).toEqual(SHIRT_COLOURS.map((s) => s.colour).sort());
+  });
+
+  it('is mostly done right up on Amy and mostly loosened on Jess, with the knot 4 to 6 cm down and one or two undone', () => {
+    const loose = (id) => {
+      const g = CHARACTERS.find((c) => c.id === id);
+      const random = createRandom(4);
+      let n = 0;
+      for (let i = 0; i < 1000; i++) {
+        const o = dealOutfit(random, { shirtTie: 1 }, { tieLoose: g.tieLooseChance });
+        expect(o.tieDrop).toBeGreaterThanOrEqual(0.04);
+        expect(o.tieDrop).toBeLessThanOrEqual(0.06);
+        expect([1, 2]).toContain(o.shirtOpen);
+        expect(o.popped).toBe(false);
+        if (o.tieLoose) n++;
+      }
+      return n / 1000;
+    };
+    expect(loose('amy')).toBeLessThan(0.35);
+    expect(loose('jess')).toBeGreaterThan(0.65);
+  });
+
+  it('is worn over the polo about half the time, and says what she has on', () => {
+    const random = createRandom(13);
+    let over = 0;
+    for (let i = 0; i < 1000; i++) if (dealOutfit(random, { shirtTie: 1 }).shirtOverPolo) over++;
+    expect(over / 1000).toBeCloseTo(0.5, 1);
+    expect(describeOutfit({ kind: 'shirtTie', shirt: '#c4d7ec', shirtOverPolo: true, tieLoose: true })).toBe('a pale blue shirt and tie over her polo, the tie loosened');
+    expect(describeOutfit({ kind: 'shirtTie', shirt: '#f4f3ef' })).toBe('a white shirt and tie, done right up');
+  });
+
+  it('takes its place from its own stream, so every other day she wears what she always would have', () => {
+    const a = createRandom(21);
+    const b = createRandom(21);
+    const extra = createRandom(99);
+    let swapped = 0;
+    for (let i = 0; i < 500; i++) {
+      const before = dealOutfit(a, ODDS, { warm: true, extra: Math.random });
+      const after = dealOutfit(b, { ...ODDS, shirtTie: 0.1 }, { warm: true, extra });
+      if (after.kind === 'shirtTie') swapped++;
+      else expect(after.kind).toBe(before.kind);
+    }
+    expect(swapped / 500).toBeCloseTo(0.1, 1);
+  });
+
+  it('is offered to both girls in the outfit picker', () => {
+    for (const g of CHARACTERS.filter((c) => c.outfitOdds)) expect(outfitsFor(g.outfitOdds)).toContain('shirtTie');
+  });
+
+  it('has her say why the first time you talk to her that day, and only then', async () => {
+    const { outfitRemark } = await import('../src/npc/outfits.js');
+    const { AMY_OUTFIT_LINES, JESS_OUTFIT_LINES } = await import('../src/npc/outfitLines.js');
+    expect(outfitRemark({ kind: 'shirtTie' }, 3, undefined)).toBe('shirtTie');
+    expect(outfitRemark({ kind: 'shirtTie' }, 3, 3)).toBe(null);
+    expect(outfitRemark({ kind: 'shirtTie' }, 4, 3)).toBe('shirtTie');
+    expect(outfitRemark({ kind: 'polo' }, 3, undefined)).toBe(null);
+    expect(AMY_OUTFIT_LINES.shirtTie.lines.every((l) => /town/.test(l))).toBe(true);
+    expect(JESS_OUTFIT_LINES.shirtTie.length).toBeGreaterThan(0);
+  });
+});

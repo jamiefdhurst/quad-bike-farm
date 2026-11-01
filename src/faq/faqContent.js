@@ -169,7 +169,7 @@ export const FAQ_SECTIONS = [
         q: 'Can I play the same farm again?',
         a: `Yes. The browser console prints the game's seed when it loads. Add <code>?seed=</code> and that number to the address and you get
           the same layout, weather and luck again, as a first day: a seeded game doesn't touch your saved farm and isn't saved. <code>?weather=rain</code> (or <code>sunny</code>, <code>overcast</code>, <code>drizzle</code>,
-          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) plays a day in the middle of that season, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>cropTop</code>) puts both girls in that outfit.`,
+          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) plays a day in the middle of that season, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>shirtTie</code>, <code>cropTop</code>) puts both girls in that outfit.`,
         tip: 'Add ?seed= and a number to the address to play the same farm again.',
       },
       {
@@ -1504,9 +1504,16 @@ export const FAQ_SECTIONS = [
         a: `What they have on top is dealt each day. Most days it's their polo. Some days it's a plaid flannel shirt over the polo, either
           buttoned, with the polo's collar out over the shirt's, or worn open; some days a second polo, white or black and a size bigger, over their own, so you
           can see the one underneath at the collar and the sleeves; and now and then a collar is popped. Jess is likelier than Amy to
-          pop hers. On a very warm day (over 20°C at its warmest) Jess may turn up in just a string crop-top. A day's outfit stays the
+          pop hers. About one day in ten each wears a white or pale blue shirt and a tie the colour of her polo, on its own or over the
+          polo: Amy usually has it done right up, and Jess usually wears it loosened, with the top buttons undone and the knot pulled
+          down. On a very warm day (over 20°C at its warmest) Jess may turn up in just a string crop-top. A day's outfit stays the
           same all day, and a jumper or a wax jacket goes on over whatever they're wearing.`,
-        tip: 'The girls dress differently from day to day: a polo, a plaid shirt, two polos, or on a hot day a crop-top for Jess.',
+        tip: 'The girls dress differently from day to day: a polo, a plaid shirt, two polos, a shirt and tie, or on a hot day a crop-top for Jess.',
+      },
+      {
+        q: 'Why is one of the girls in a shirt and tie?',
+        a: `Ask her: the first time you talk to her on a day she's wearing it, she tells you. Amy is going into town later and isn't
+          changing twice; Jess wants to know whether you like it.`,
       },
       {
         q: 'Why are the jumpers on the rack different colours from my last farm?',
