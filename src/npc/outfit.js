@@ -7,7 +7,9 @@ import { buildShorts, SHORTS } from './shorts.js';
 import { buildCollar, COLLAR, COAT_COLLAR, SHIRT_COLLAR, SHIRT_UNDER_COLLAR, OVER_COLLAR, POINT_COLLAR, POLO_UNDER_SHIRT_COLLAR } from './collar.js';
 import { buildHood, lowerHood, intoHood, chestShare, tartan } from './hood.js';
 import { COAT_COLLAR_COLOUR } from './coats.js';
-import { measureHead } from './helmetView.js';
+import { measureHead, RIM_BELOW_CROWN } from './helmetView.js';
+import { buildTail, strand, merge } from './ponytail.js';
+import { PonytailSwing } from './ponytailView.js';
 import { unskin, smoothNormals, blendWeights, vec } from './garmentMesh.js';
 
 // Outfits for the companion. The Quaternius model is textured from a tiny palette (one flat colour per band), so her hair and the
@@ -530,6 +532,7 @@ export function setHood(rig, up) {
   if (!rig.hood) return;
   rig.hood.up.visible = !!up;
   rig.hood.down.visible = !up;
+  if (rig.ponytail) rig.ponytail.pivot.visible = rig.ponytail.strands.visible = !up; // tucked in under the hood
   for (const { mesh, index, loose, squashed } of rig.hood.hair) {
     const pos = mesh.geometry.attributes.position;
     const from = up ? squashed : loose;
@@ -1090,6 +1093,179 @@ function addHood(rig, data, shell, tint) {
   setHood(rig, rig.hoodIsUp);
 }
 
+/** Her hair as it was before it was tied back (each mesh's own copy of its points), put back for a refit. */
+function letHairDown(rig) {
+  for (const { mesh, loose } of rig.hairTied ?? []) {
+    mesh.geometry.attributes.position.array.set(loose);
+    mesh.geometry.attributes.position.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
+  }
+  rig.hairTied = null;
+  rig.ponytail = null;
+}
+
+/**
+ * A ponytail (ponytail.js): her hair pulled in tight to her head and up off the back of her neck, then a band and a tail on her head
+ * bone, hanging down her back from a pivot the rig turns each frame (PonytailSwing), and a few loose strands at her temples and nape.
+ * In the rest pose, with the posed body for rays.
+ */
+function addPonytail(rig, style) {
+  const body = bodyMesh(rig);
+  const b = rig.bones;
+  const head = measureHead(rig);
+  if (!body || !head || !b.Head || !b.Neck || !b.Spine2 || !b.LeftToeBase || !b.RightToeBase) return;
+  const root = rig.root;
+  const data = bodyData(rig, body);
+  const Hb = bonePos(rig, 'Head');
+  const up = new THREE.Vector3(0, 1, 0);
+  // Her frame from her feet: forward is where her toes point.
+  const forward = bonePos(rig, 'LeftToeBase').add(bonePos(rig, 'RightToeBase')).sub(bonePos(rig, 'LeftFoot')).sub(bonePos(rig, 'RightFoot'));
+  forward.y = 0;
+  forward.normalize();
+  const back = forward.clone().negate();
+  const right = forward.clone().cross(up).normalize();
+  const k = (head.top - Hb.y) / 0.22; // her head against the one this was measured on
+  const C = Hb.clone().addScaledVector(up, 0.07 * k); // the middle of her skull
+  // How far from C her scalp is that way (her skin, not her hair), in root space, or null where there's none (the top of her head).
+  const toWorld = (pt) => root.localToWorld(pt.clone());
+  const cWorld = toWorld(C);
+  const scalp = (dir) => {
+    const end = toWorld(C.clone().addScaledVector(dir, 0.3));
+    raycaster.set(cWorld, end.clone().sub(cWorld).normalize());
+    raycaster.far = cWorld.distanceTo(end);
+    for (const h of raycaster.intersectObject(castAt(rig, body), false)) {
+      if (data.paint(h.face.a) === 'hair') continue;
+      return root.worldToLocal(h.point.clone()).distanceTo(C);
+    }
+    return null;
+  };
+  const margin = 0.005 * k;
+  // Below these heights her hair is lifted: the nape at the back, over her ears at the side, the hairline at the front.
+  const floorAt = (dir) => {
+    const h = dir.clone().addScaledVector(up, -dir.dot(up));
+    const front = h.lengthSq() > 1e-8 ? h.normalize().dot(forward) : 0;
+    // Over and behind her ears the line rises quickly from the nape, so her ears show.
+    const lift = front < -0.4 ? THREE.MathUtils.lerp(0.045, -0.02, (-front - 0.4) / 0.6) : front < 0 ? THREE.MathUtils.lerp(0.1, 0.045, -front / 0.4) : THREE.MathUtils.lerp(0.1, 0.15, front);
+    return Hb.y + lift * k;
+  };
+
+  // Her hair pulled in, in each of her meshes painted hair (her own copy of the geometry: the girls' clones share it).
+  const tied = [];
+  const meshes = [];
+  rig.model.traverse((o) => {
+    if (o.isSkinnedMesh && !rig.outfitParts.includes(o)) meshes.push(o);
+  });
+  const p = new THREE.Vector3();
+  for (const mesh of meshes) {
+    const md = mesh === body ? data : bodyData(rig, mesh);
+    const moves = [];
+    md.verts.forEach((q, i) => {
+      if (md.paint(i) !== 'hair') return;
+      p.fromArray(q.rest);
+      const dir = p.clone().sub(C).normalize();
+      p.y = Math.max(p.y, floorAt(dir));
+      dir.copy(p).sub(C).normalize();
+      const s = scalp(dir);
+      if (s != null) p.copy(C).addScaledVector(dir, s + margin);
+      moves.push([i, unskin(q.skin, p.toArray())]);
+    });
+    if (!moves.length) continue;
+    if (!mesh.userData.ownGeometry) {
+      mesh.geometry = mesh.geometry.clone();
+      mesh.userData.ownGeometry = true;
+    }
+    const attr = mesh.geometry.attributes.position;
+    tied.push({ mesh, loose: attr.array.slice() });
+    for (const [i, at] of moves) p.fromArray(at).applyMatrix4(md.fromRoot).toArray(attr.array, i * 3);
+    attr.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
+  }
+  rig.hairTied = tied;
+
+  // Her hair's colour: the body's own texture at one of her hair's points, so it matches whatever colour hers is.
+  const hairAt = data.verts.findIndex((_, i) => data.paint(i) === 'hair');
+  const uv = body.geometry.attributes.uv;
+  const hairUv = hairAt >= 0 ? [uv.getX(hairAt), uv.getY(hairAt)] : [0, 0];
+  const hairMat = new THREE.MeshStandardMaterial({ map: body.material.map, vertexColors: true, roughness: 0.85, metalness: 0, side: THREE.DoubleSide });
+  const geometryOf = (part) => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(part.points.flat(), 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(part.shade.flatMap((s) => [s, s, s]), 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(part.points.flatMap(() => hairUv), 2));
+    geo.setIndex(part.tris.flat());
+    geo.computeVertexNormals();
+    return geo;
+  };
+
+  // The band: high at the back of her crown.
+  const bandAt = (el, out) => {
+    const dir = back.clone().multiplyScalar(Math.cos(el)).addScaledVector(up, Math.sin(el));
+    const s = scalp(dir);
+    return C.clone().addScaledVector(dir, (s != null ? s + margin : 0.145 * k) + out * k);
+  };
+  const band = bandAt(0.62, 0.004);
+  // Under a helmet: just below its rim at the back.
+  const rimY = head.top - RIM_BELOW_CROWN - 0.04 * k;
+  const low = bandAt(Math.asin(THREE.MathUtils.clamp((rimY - C.y) / (0.11 * k), -0.9, 0.9)), 0.003);
+  // Her back as the tail falls down it: how far back of the band her body is, `d` below it, down her middle.
+  const backAt = (d) => {
+    const at = band.clone().addScaledVector(up, -d);
+    const from = toWorld(at.clone().addScaledVector(back, 0.3));
+    const to = toWorld(at.clone().addScaledVector(back, -0.15));
+    raycaster.set(from, to.clone().sub(from).normalize());
+    raycaster.far = from.distanceTo(to);
+    for (const h of raycaster.intersectObject(castAt(rig, body), false)) {
+      if (data.paint(h.face.a) === 'hair') continue;
+      return root.worldToLocal(h.point.clone()).sub(band).dot(back);
+    }
+    return null;
+  };
+  // Long enough to fall between her shoulder blades.
+  const blades = data.bones.Spine2[1] + 0.25 * (data.bones.Neck[1] - data.bones.Spine2[1]);
+  const tail = buildTail(band.y - blades, backAt);
+  const pivot = new THREE.Group();
+  pivot.name = 'ponytail';
+  pivot.position.copy(band);
+  pivot.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, back));
+  const hair = new THREE.Mesh(geometryOf(tail.hair), hairMat);
+  hair.castShadow = true;
+  const elastic = new THREE.Mesh(geometryOf(tail.band), new THREE.MeshStandardMaterial({ color: style.band ?? '#151515', vertexColors: true, roughness: 0.6 }));
+  pivot.add(hair, elastic);
+  root.add(pivot);
+  b.Head.attach(pivot);
+  rig.outfitParts.push(pivot);
+  const lowLocal = b.Head.worldToLocal(toWorld(low));
+
+  // A few loose strands: one at each temple falling beside her face, and two short wisps at her nape. Each kept off her skin.
+  const off = (pt, clear) => {
+    const at = new THREE.Vector3().fromArray(pt);
+    const dir = at.clone().sub(C).normalize();
+    const s = scalp(dir);
+    const need = s == null ? 0 : s + clear - at.distanceTo(C);
+    return need > 0 ? dir.multiplyScalar(need).toArray() : [0, 0, 0];
+  };
+  const down = up.clone().negate().toArray();
+  const pieces = [];
+  for (const side of [1, -1]) {
+    const dir = forward.clone().multiplyScalar(0.55).addScaledVector(right, side * 0.83).addScaledVector(up, 0.42).normalize();
+    const rootPt = C.clone().addScaledVector(dir, (scalp(dir) ?? 0.1 * k) + margin + 0.002);
+    pieces.push(strand(rootPt.toArray(), down, forward.clone().multiplyScalar(0.4).addScaledVector(right, side * 0.15).toArray(), 0.075 * k, { out: (pt) => off(pt, 0.004 * k) }));
+  }
+  for (const side of [1, -1]) {
+    const at = C.clone().addScaledVector(right, side * 0.018 * k);
+    at.y = floorAt(back);
+    const dir = at.clone().sub(C).normalize();
+    const rootPt = C.clone().addScaledVector(dir, (scalp(dir) ?? 0.09 * k) + margin);
+    pieces.push(strand(rootPt.toArray(), down, right.clone().multiplyScalar(side * 0.3).addScaledVector(back, 0.2).toArray(), 0.035 * k, { r0: 0.0016, out: (pt) => off(pt, 0.003 * k) }));
+  }
+  const strands = new THREE.Mesh(geometryOf(merge(pieces)), hairMat);
+  strands.name = 'ponytailStrands';
+  attachToBone(rig, strands, 'Head');
+
+  rig.ponytail = { pivot, strands, swing: new PonytailSwing(pivot, { low: lowLocal, chest: b.Spine2, params: rig.ponytailParams }) };
+  rig.ponytail.swing.underHelmet = !!rig.underHelmet;
+}
+
 /** The shorts as a garment (shorts.js), with the polo tucked into them. */
 function addBottom(rig, color, coat = false) {
   const body = bodyMesh(rig);
@@ -1141,6 +1317,7 @@ function addEachGarment(rig, outfit) {
   let polo = null;
   let outer = null;
   const shirtTie = kind === 'shirtTie';
+  if (style.ponytail) addPonytail(rig, style); // first: the hood squashes her hair as the ponytail leaves it
   if (kind === 'cropTop') addCrop(rig, style.crop);
   else if (outfit.polo && (!shirtTie || style.shirtOverPolo)) polo = addTop(rig, 'polo', outfit.polo, { ...POLO, open: kind === 'doublePolo' ? style.underOpen ?? 0 : shirtTie ? 0 : open }); // done up under a shirt and tie, so its placket and collar show in the shirt's open neck
   if (kind === 'doublePolo') outer = addTop(rig, 'overPolo', style.over, { ...OVER_POLO, open });
@@ -1228,6 +1405,7 @@ export function refitOutfit(rig, outfit) {
     });
   }
   if (rig.hood) setHood(rig, false); // her hair let out before anything is measured again
+  letHairDown(rig);
   rig.outfitParts = [];
   rig.hood = null;
   rig.withRestPose(() => addGarments(rig, outfit));

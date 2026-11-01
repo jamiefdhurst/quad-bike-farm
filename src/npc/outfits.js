@@ -108,6 +108,8 @@ export function completeStyle(style = {}) {
     shirtOverPolo: false,
     tieLoose: false,
     tieDrop: 0.025,
+    ponytail: false,
+    band: '#151515',
     ...style,
   };
 }
@@ -136,8 +138,13 @@ export function outfitsFor(odds = {}) {
   return Object.keys(OUTFIT_KINDS).filter((k) => k !== 'cropTop' || (odds.cropTop ?? 0) > 0);
 }
 
-/** A short description for the debug panel and the console. */
+/** A short description for the debug panel and the console, with her hair if it's tied back. */
 export function describeOutfit(o) {
+  const top = describeTop(o);
+  return o?.ponytail ? `${top}, her hair in a ponytail` : top;
+}
+
+function describeTop(o) {
   if (!o || o.kind === 'polo' || !o.kind) return `her polo${o?.popped ? ', collar popped' : ''}`;
   if (o.kind === 'cropTop') return 'a crop-top';
   if (o.kind === 'shirtTie') {

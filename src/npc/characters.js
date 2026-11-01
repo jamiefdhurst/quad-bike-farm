@@ -30,6 +30,7 @@ export const CHARACTERS = [
     underOpen: [0, 1], // in two polos, buttons undone on her own under the other
     shirtButtons: [0, 1], // a buttoned plaid or a loosened shirt and tie: done right up, or the top one undone
     tieLooseChance: 0.2, // a shirt and tie: mostly done right up
+    ponytailChance: 0.35, // her hair tied back about one day in three (npc/ponytail.js)
     params: {
       // The taller of the two, a balanced figure (figure.js amounts, 1 the usual shape).
       height: 1.58,
@@ -103,6 +104,7 @@ export const CHARACTERS = [
     underOpen: [0, 4], // in two polos, buttons undone on her own under the other
     shirtButtons: [0, 3], // a buttoned plaid or a loosened shirt and tie: done right up, down to three undone
     tieLooseChance: 0.8, // a shirt and tie: mostly loosened
+    ponytailChance: 0.15, // her bob tied back now and then
     // Cheekier: braver behind the bars, chattier, bored sooner (usually after
     // about 45 s rather than 60) and more likely to do something about it, and
     // she likes being left on a runaway.

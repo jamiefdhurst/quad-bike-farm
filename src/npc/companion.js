@@ -292,6 +292,12 @@ export class Companion {
     refitOutfit(this.rig, this.outfit);
   }
 
+  /** Whether she has a helmet on: her ponytail comes out under the back of its rim (outfit.js, ponytailView.js). */
+  setUnderHelmet(on) {
+    this.rig.underHelmet = !!on;
+    if (this.rig.ponytail) this.rig.ponytail.swing.underHelmet = !!on;
+  }
+
   /** Her coat's hood up or down (only shows with a coat on). */
   setHood(up) {
     this.rig.hoodIsUp = !!up;
