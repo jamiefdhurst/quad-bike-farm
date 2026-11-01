@@ -565,6 +565,36 @@ describe('a shirt and tie', () => {
     expect(high.some((v) => v.rest[0] < -0.01)).toBe(true);
   });
 
+  it('loosened with more buttons undone, drops the knot to cover the open neck\'s point', async () => {
+    const { SHIRT_ROLLED } = await import('../src/npc/polo.js');
+    const { buildTie, TIE } = await import('../src/npc/tie.js');
+    const body = cylinderBody();
+    for (const open of [1, 2, 3]) {
+      const shirt = buildTop(body, { ...SHIRT_ROLLED, open });
+      const inset = buildInset(body, shirt.vee, SHIRT_ROLLED);
+      const tie = buildTie(body, { top: shirt.placket.top, ground: [shirt.shell, shirt.placket, inset], loose: true, drop: 0.025, vee: shirt.vee });
+      expect(tie).not.toBe(null);
+      expect(tie.knotTop).toBeGreaterThan(shirt.vee.bottom); // the point of the V behind the knot
+      expect(tie.knotTop - TIE.knotHeight).toBeLessThan(shirt.vee.bottom);
+    }
+  });
+
+  it('lays a loosened tie\'s ends over the undone buttons rather than letting them through', async () => {
+    const { SHIRT_ROLLED } = await import('../src/npc/polo.js');
+    const { buildTie } = await import('../src/npc/tie.js');
+    const body = cylinderBody();
+    const shirt = buildTop(body, { ...SHIRT_ROLLED, open: 2 });
+    const inset = buildInset(body, shirt.vee, SHIRT_ROLLED);
+    const { buttons } = shirt.placket;
+    const tie = buildTie(body, { top: shirt.placket.top, ground: [shirt.shell, shirt.placket, inset], loose: true, drop: 0.025, vee: shirt.vee, buttons });
+    const undone = buttons.filter((b) => b.centre[1] > shirt.vee.bottom && b.centre[1] < shirt.placket.top);
+    expect(undone.length).toBeGreaterThan(0);
+    for (const b of undone) {
+      const over = tie.verts.filter((v) => Math.hypot(v.rest[0] - b.centre[0], v.rest[1] - b.centre[1]) < 0.003);
+      for (const v of over) expect(v.rest[2]).toBeGreaterThan(b.centre[2] + 0.0026);
+    }
+  });
+
   it('presses a point collar down on to the shirt rather than leaving its points standing off it', async () => {
     const { SHIRT } = await import('../src/npc/polo.js');
     const { POINT_COLLAR } = await import('../src/npc/collar.js');

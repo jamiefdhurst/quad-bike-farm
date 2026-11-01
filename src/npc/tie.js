@@ -33,16 +33,20 @@ export const TIE = {
   knotUnder: 0.78, // the knot's bottom, tucking in, a shade darker
   sideShade: 0.6, // its sides, down to the shirt
   step: 0.003, // rows this far apart
+  buttonRadius: 0.0055, // a shirt button's reach, a little over its own, for finding the ones under a row
+  buttonHeight: 0.0028, // and how far it stands off the placket, with a little to spare
 };
 
 /**
  * Builds the tie. `top`: the height where the shirt meets her neck at the middle of her front (the placket's top); `ground`: the
  * meshes it can lie on, as she stands (the shirt, its placket, and in an open neck her skin or the polo under it); `loose` and
- * `drop`: loosened, the knot's top this far below `top`, over the bottom of the open neck `vee` (from buildTop).
+ * `drop`: loosened, the knot's top this far below `top`, or lower to cover the point of the open neck `vee`
+ * (from buildTop) when more buttons are undone; `placketWidth`: the shirt's, so its loosened ends lie over the half-plackets;
+ * `buttons`: the shirt's (buildTop's placket), which it lies over rather than letting them through.
  * Returns { verts, tris, shade, knotTop } or null if it found nothing to lie on; verts carry bind, rest, weights, skin and normal
  * from what each lies on.
  */
-export function buildTie(body, { top, ground, loose = false, drop = 0.05, vee = null }, p = TIE) {
+export function buildTie(body, { top, ground, loose = false, drop = 0.05, vee = null, placketWidth = 0.024, buttons = [] }, p = TIE) {
   const neck = body.bones.Neck;
   const x0 = neck[0];
   const near = (v) => Math.abs(v.rest[0] - x0) < 0.09 && v.rest[2] > neck[2] - 0.02 && v.rest[1] > body.waist - 0.06 && v.rest[1] < top + 0.06;
@@ -64,11 +68,15 @@ export function buildTie(body, { top, ground, loose = false, drop = 0.05, vee = 
     return null;
   };
 
-  const knotTop = loose ? top - drop : top + p.knotUp; // loosened, over the bottom of the open neck
+  // Loosened, `drop` below the neck, or further down with more buttons undone, so the knot always covers the open neck's point.
+  const knotTop = loose ? Math.min(top - drop, vee ? vee.bottom + p.knotHeight * 0.4 : top) : top + p.knotUp;
   const knotBottom = knotTop - p.knotHeight;
   const tipEnd = body.waist + p.toWaist;
   if (tipEnd > knotBottom - 0.05) return null;
 
+  // The shirt's buttons, which stand proud of its placket: a row over one lies on the button's top, not the cloth under it.
+  const clearOf = (y, xL, xR) =>
+    buttons.reduce((z, b) => (Math.abs(b.centre[1] - y) < p.buttonRadius && b.centre[0] > xL - p.buttonRadius && b.centre[0] < xR + p.buttonRadius ? Math.max(z, b.centre[2] + p.buttonHeight) : z), -Infinity);
   const out = { verts: [], tris: [], shade: [] };
   const rowsBetween = (y0, y1) => {
     const n = Math.max(2, Math.ceil((y0 - y1) / p.step));
@@ -87,6 +95,7 @@ export function buildTie(body, { top, ground, loose = false, drop = 0.05, vee = 
     return s < 0 || s > 1 ? 0 : 1 - smooth01(s);
   };
   const ok = ribbon(out, hitAt, {
+    clearOf,
     ys: rowsBetween(bladeTop, tipEnd),
     across: (y) => [x0 - halfBlade(y), x0 + halfBlade(y)],
     n: 7,
@@ -105,6 +114,7 @@ export function buildTie(body, { top, ground, loose = false, drop = 0.05, vee = 
     return (p.knotTop + (p.knotBottom - p.knotTop) * t) / 2;
   };
   const knotOk = ribbon(out, hitAt, {
+    clearOf,
     ys: rowsBetween(knotTop, knotBottom),
     across: (y) => [x0 - halfKnot(y), x0 + halfKnot(y)],
     n: 9,
@@ -130,10 +140,14 @@ export function buildTie(body, { top, ground, loose = false, drop = 0.05, vee = 
     const reach = vee ? Math.max(0, vee.halfWidth(vee.top)) : 0.012;
     for (const side of [1, -1]) {
       const fromX = x0 + side * p.knotTop * 0.28;
-      const toX = x0 + side * (reach + p.strand * 0.3);
+      const toX = x0 + side * (reach + placketWidth / 4);
       const upTo = top + 0.006;
-      const centre = (y) => fromX + (toX - fromX) * smooth01((y - knotTop) / (upTo - knotTop));
+      // Along the open neck's edges, over the shirt's half-plackets and the undone buttons on them (laid between its ends, the
+      // buttons showed beside it), eased in to the knot's top corners.
+      const along = (y) => fromX + (toX - fromX) * smooth01((y - knotTop) / (upTo - knotTop));
+      const centre = (y) => (vee ? x0 + side * Math.max(Math.abs(along(y) - x0), vee.halfWidth(y) + placketWidth / 4) : along(y));
       const strandOk = ribbon(out, hitAt, {
+    clearOf,
         ys: rowsBetween(upTo, knotTop - 0.004),
         across: (y) => [centre(y) - p.strand / 2, centre(y) + p.strand / 2],
         n: 3,
@@ -154,7 +168,7 @@ export function buildTie(body, { top, ground, loose = false, drop = 0.05, vee = 
  * falling back from the row above no faster than that per metre. Its two long sides go down to what's under them, and `caps`
  * ('top', 'bottom') close its ends. Adds to `out`; false if a row found nothing to lie on.
  */
-function ribbon(out, hitAt, { ys, across, n, raise, shadeAt, hang = 0, settle = null, side = 0.6, caps = [] }) {
+function ribbon(out, hitAt, { clearOf = () => -Infinity, ys, across, n, raise, shadeAt, hang = 0, settle = null, side = 0.6, caps = [] }) {
   const rows = [];
   let prev = null;
   for (const y of ys) {
@@ -162,7 +176,7 @@ function ribbon(out, hitAt, { ys, across, n, raise, shadeAt, hang = 0, settle = 
     const xs = Array.from({ length: n }, (_, k) => xL + ((xR - xL) * k) / (n - 1));
     const under = xs.map((x) => hitAt(x, y));
     if (under.some((v) => !v)) return false;
-    const ground = Math.max(...under.map((v) => v.rest[2]));
+    const ground = Math.max(...under.map((v) => v.rest[2]), clearOf(y, xL, xR));
     let base = ground;
     if (prev && hang) base = Math.max(base, prev.base - hang * (prev.y - y));
     prev = { y, base };
