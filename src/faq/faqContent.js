@@ -1506,9 +1506,18 @@ export const FAQ_SECTIONS = [
           can see the one underneath at the collar and the sleeves; and now and then a collar is popped. Jess is likelier than Amy to
           pop hers. About one day in ten each wears a white or pale blue shirt and a tie the colour of her polo, on its own or over the
           polo: Amy usually has it done right up, and Jess usually wears it loosened, with a button or a few undone and the knot pulled
-          down over the open neck. On a very warm day (over 20°C at its warmest) Jess may turn up in just a string crop-top. A day's outfit stays the
+          down over the open neck. On a very warm day (over 20°C at its warmest) Jess may turn up in just a string crop-top. Their hair is dealt
+          the same way: some days a girl has it tied back in a high ponytail with an elastic, Amy about one day in three and Jess about one in
+          seven. It swings as she walks and rides, comes out under the back of her helmet, and tucks away under her hood. A day's outfit stays the
           same all day, and a jumper or a wax jacket goes on over whatever they're wearing.`,
         tip: 'The girls dress differently from day to day: a polo, a plaid shirt, two polos, a shirt and tie, or on a hot day a crop-top for Jess.',
+      },
+      {
+        q: 'Why does one of the girls have her hair in a ponytail?',
+        a: `Some days she ties it back. It's dealt each morning like her clothes: Amy wears one about one day in three, Jess (whose bob
+          barely makes one) about one in seven. It lasts the day, swings as she moves, comes out under the back of her helmet and is
+          tucked away when her hood is up.`,
+        tip: 'Some days a girl ties her hair back in a ponytail: Amy about one day in three, Jess less often.',
       },
       {
         q: 'Why is one of the girls in a shirt and tie?',
