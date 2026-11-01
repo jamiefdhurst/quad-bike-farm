@@ -100,6 +100,14 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'blink',
+      label: '% blinks',
+      run: (id) => {
+        girl(id).blink.blink();
+        toast(`${nameOf(id)} blinks`);
+      },
+    },
+    {
       verb: 'agenda',
       label: '% says what she has in mind today',
       run: (id) => {

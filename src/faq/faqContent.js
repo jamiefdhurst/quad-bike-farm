@@ -1525,6 +1525,13 @@ export const FAQ_SECTIONS = [
           changing twice; Jess wants to know whether you like it.`,
       },
       {
+        q: 'Do the girls blink?',
+        a: `Yes. Each blinks every two to six seconds, now and then twice running; Amy's blinks are a little slower and steadier than Jess's. Their
+          eyes stay shut while one of them is asleep on the back of your quad or dozing on the bales, and screw up tight when she laughs or flinches
+          at a bang. Look at a girl's face from close up and watch.`,
+        tip: 'The girls blink, and shut their eyes tight when they laugh or flinch.',
+      },
+      {
         q: 'Why are the jumpers on the rack different colours from my last farm?',
         a: `Each farm has its own two jumpers on the rail in the barn, in colours dealt when the farm is new: grey and beige among
           them, or navy, bottle green, burgundy, mustard, oatmeal, charcoal, heather blue, rust or moss. They stay the same on that

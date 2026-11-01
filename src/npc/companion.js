@@ -43,6 +43,9 @@ import { reactingMethods } from './companionReacting.js';
 import { availabilityOf, JOBS } from './availability.js';
 import { Needs } from './needs.js';
 import { BackNap } from './backNap.js';
+import { Blink, SQUEEZING_REACTIONS } from './blink.js';
+import { reactionWeight } from './reactions.js';
+import { addEyelids } from './eyelids.js';
 import { firstThink } from './chooser.js';
 import { DEFAULT_DOZE_PARAMS, dozePose } from './dozing.js';
 import { Memory } from './memory.js';
@@ -91,6 +94,10 @@ export class Companion {
     this.outfit = OUTFITS[params.outfit] ?? OUTFITS.original;
     // Her clothes are fitted once the game has dealt her shirt colour and buttons (setShirt, or dress), not twice.
     applyOutfit(this.rig, this.outfit, { garments: false });
+    // Her eyelids, painted over her painted eyes, and when they close (blink.js). The game points the blink at the shared tuning.
+    this.eyelids = addEyelids(this.rig);
+    this.blink = new Blink(undefined, { slow: params.blinkSlow, steady: params.blinkSteady });
+    this.laughLeft = 0; // seconds of laughing still to go: her eyes screw up
     this.mucky = createMuddiness(); // how muddy and dusty she is (muddiness.js)
     this.girlMud = new GirlMud(this.rig); // and how that looks on her
     this.root = this.rig.root;
@@ -1396,6 +1403,7 @@ export class Companion {
     this.updateLineUp(dt);
     if (viewer) this.updateAttention(dt, viewer);
     this.updateFidget(dt);
+    this.updateEyes(dt);
     this.updateCarry(dt);
     this.updateWaiting(dt);
     this.updatePose(dt);
@@ -1546,6 +1554,15 @@ const FIDGETS = {
 // (Looking about is attention.js's gazing, not a fidget.)
 const SEATED_FIDGETS = ['arm', 'lean', 'stretch', 'arm'];
 const STANDING_FIDGETS = ['lean'];
+
+/** Her eyelids: blinking, shut asleep, screwed up laughing or flinching (blink.js, eyelids.js). */
+Companion.prototype.updateEyes = function (dt) {
+  this.laughLeft = Math.max(0, this.laughLeft - dt);
+  const r = this.reaction;
+  const flinching = r && SQUEEZING_REACTIONS.includes(r.type) ? reactionWeight(r.type, r.t) : 0;
+  const lid = this.blink.update(dt, { asleep: this.nap.asleep || this.isDozing, squeeze: Math.max(flinching, this.laughLeft > 0 ? 1 : 0) });
+  this.eyelids?.setLid(lid);
+};
 
 Companion.prototype.updateFidget = function (dt) {
   const p = this.params;

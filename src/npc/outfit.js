@@ -19,7 +19,7 @@ import { unskin, smoothNormals, blendWeights, vec } from './garmentMesh.js';
 // polo as a garment" and its follow-ups.
 
 // Palette colours in the source texture.
-const PALETTE = {
+export const PALETTE = {
   skin: [231, 189, 145],
   dark: [41, 41, 41],
   hair: [209, 194, 112],
@@ -84,7 +84,7 @@ function recolourTexture(texture, colors) {
 }
 
 /** The character's skinned body mesh. */
-function bodyMesh(rig) {
+export function bodyMesh(rig) {
   let mesh = null;
   rig.model.traverse((o) => {
     if (o.isSkinnedMesh && !mesh) mesh = o;
