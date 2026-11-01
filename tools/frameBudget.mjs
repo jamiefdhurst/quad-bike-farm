@@ -63,6 +63,11 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
   const layout = g.world.layout;
   const out = {};
   const notes = [];
+  // You start the day sat in your car (#229), and the spots are stood at on foot: get out first, as you would. The spawn view is from beside it.
+  if (g.player.isRiding) {
+    g.tryDismount();
+    await settle(10);
+  }
   const home = { x: g.player.position.x, y: g.player.position.y, z: g.player.position.z, yaw: g.player.yaw, pitch: g.player.pitch };
   const standAt = (x, z) => g.player.moveTo({ x, y: g.world.groundHeightAt(x, z), z });
   const lookFrom = async (x, z) => {

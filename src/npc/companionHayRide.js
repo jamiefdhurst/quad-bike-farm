@@ -81,6 +81,17 @@ export const hayRideMethods = {
     return true;
   },
 
+  /** Already sat in it, without walking over or climbing in: where the morning puts her (farm/arrival.js). Only when she's stood about. */
+  sitInNow(trailer, slot) {
+    if (!this.fsm.is('idle') || !slot || slot.girl) return false;
+    slot.girl = this;
+    this.trailer = trailer;
+    this.traSlot = slot;
+    this.setColliderEnabled(false);
+    this.fsm.transition('onTrailer', {});
+    return true;
+  },
+
   /** She was on her way, or on, and now isn't: give the seat back. */
   freeTrailerSlot() {
     if (this.traSlot?.girl === this) this.traSlot.girl = null;

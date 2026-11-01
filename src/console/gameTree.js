@@ -326,6 +326,7 @@ export function buildGameTree(g, host) {
     girlBench: text(() => g.girlBench.describe()),
     phoneCall: text(() => g.phoneCalls.describe()),
     cars: text(() => g.describeCars(), "the girls' cars: who's in them, who has them, when each girl next takes hers out"),
+    arrival: text(() => g.describeArrival(), 'this morning: who came in your car, who is still sat in hers and when she gets out'),
     workLight: text(() => g.workLight.describe()),
     trailerGuide: text(() => g.trailerGuide.describe()),
   }), 'both girls');

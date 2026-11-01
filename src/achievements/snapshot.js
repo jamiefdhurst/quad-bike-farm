@@ -25,6 +25,15 @@ export function placesAt(p, layout) {
   return out;
 }
 
+/**
+ * The places that count for the bucket list: where you are, less any you started the day in and have not left yet (you arrive in your car on the
+ * pad at the end of the farm road: that is not following the road to its end). Returns them and what is left of `started`.
+ */
+export function earnedPlaces(here, started = []) {
+  const still = started.filter((pl) => here.includes(pl));
+  return { places: here.filter((pl) => !still.includes(pl)), started: still };
+}
+
 export function achievementSnapshot(game, ridden) {
   const layout = game.world.layout;
   const board = game.boardUnit;
@@ -62,7 +71,11 @@ export function achievementSnapshot(game, ridden) {
     pulling,
     tippedIds: game.units.filter((u) => u.quad.isTipped).map((u) => u.id),
     favoured: game.companions.filter((c) => game.favour.mood(c.character.id) === 'favoured').map((c) => c.character.id),
-    places: placesAt(pos, layout),
+    places: (() => {
+      const e = earnedPlaces(placesAt(pos, layout), game.startPlaces);
+      game.startPlaces = e.started;
+      return e.places;
+    })(),
     weather: game.weather.name,
     rain: game.weather.rain,
     washing: !!game.washing,

@@ -13,9 +13,10 @@ const BED_LIFT = 0.45; // up onto the tailgate from behind
 export class UtvMount {
   /**
    * `rear`: the back bench's seats where there is one (the 200TDi's LANDY_REAR_SEATS, each with the `door` it's reached by), and `stand`
-   * then has a stand point for each door (`rearLeft` for the passenger's, `rearRight` for the driver's).
+   * then has a stand point for each door (`rearLeft` for the passenger's, `rearRight` for the driver's). `driver`: the driver's seat is a slot
+   * too (the cars'), for a girl sat at the wheel of her parked car of a morning (farm/arrival.js); nothing picks it by itself.
    */
-  constructor(quad, ground, stand = UTV_STAND, rear = {}) {
+  constructor(quad, ground, stand = UTV_STAND, rear = {}, { driver = false } = {}) {
     this.quad = quad;
     this.ground = ground;
     this.model = quad.model;
@@ -32,6 +33,8 @@ export class UtvMount {
       const anchor = this.model.getObjectByName(`seat${name[0].toUpperCase()}${name.slice(1)}`);
       if (anchor) this.slots[name] = { name, side: 1, anchor, girl: null, lift: CLIMB_LIFT, move: 'stepInBack', rear: true, door: seat.door };
     }
+    const wheel = driver && stand.driver ? this.model.getObjectByName('riderAnchor') : null;
+    if (wheel) this.slots.driver = { name: 'driver', side: 1, anchor: wheel, girl: null, lift: CLIMB_LIFT, move: 'stepIn', door: 'driver' };
     const bedSeat = this.model.getObjectByName('bedSeat');
     if (bedSeat) this.slots.bed = { name: 'bed', side: 1, anchor: bedSeat, girl: null, lift: BED_LIFT };
     this.lastYaw = quad.yaw;

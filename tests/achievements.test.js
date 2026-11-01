@@ -163,3 +163,17 @@ describe('places', () => {
     expect(placesAt({ x: 0, z: 0 }, LAYOUT)).toEqual([]);
   });
 });
+
+describe('places you start the day in (#229)', () => {
+  it('do not count until you have left them once', async () => {
+    const { earnedPlaces } = await import('../src/achievements/snapshot.js');
+    let started = ['farEnd'];
+    let e = earnedPlaces(['farEnd'], started);
+    expect(e.places).toEqual([]);
+    started = e.started;
+    e = earnedPlaces([], started); // you drive off
+    expect(e.started).toEqual([]);
+    expect(earnedPlaces(['farEnd'], e.started).places).toEqual(['farEnd']); // and back: now it counts
+    expect(earnedPlaces(['ford'], undefined).places).toEqual(['ford']);
+  });
+});

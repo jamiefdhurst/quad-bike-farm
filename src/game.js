@@ -65,6 +65,7 @@ import { Agenda, agendaKey } from './npc/agenda.js';
 import { FAULT_KINDS } from './vehicle/faults.js';
 import { Briefing, planBriefing, worstTrouble, DEFAULT_BRIEFING_PARAMS, BRIEFING_PARAM_RANGES } from './npc/briefing.js';
 import { girlsLeftOut } from './npc/leftOut.js';
+import { DEFAULT_ARRIVAL_PARAMS, ARRIVAL_PARAM_RANGES, dealArrival, liftSeats, carsAway, keepAway, Arrival } from './farm/arrival.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
 import { FallingOut, FALLING_OUT_PARAM_RANGES } from './npc/fallingOut.js';
 import { Romance, Tryst, ROMANCE_PARAM_RANGES } from './npc/romance.js';
@@ -659,11 +660,17 @@ export class Game {
     for (const [kind, spec] of [['landy', LAND_ROVER_SPEC], ['defender', DEFENDER_SPEC]]) {
       this.landys[kind] = { kind, spec, unit: this.bigSpecs[spec.id] ? this.addLandRover(bigSpawn(spec), this.bigSpecs[spec.id]) : null, mount: null, ride: null };
     }
-    // The girls' own cars (vehicle/carModel.js), always here, by the Dutch barn: built and ridden like the Land Rovers, so
+    // How you arrive this morning (farm/arrival.js): which girls you gave a lift, dealt from today's stream. A girl who came with you left her car at home.
+    this.arrivalParams = { ...DEFAULT_ARRIVAL_PARAMS };
+    registerTuning('Arriving in your car', this.arrivalParams, ARRIVAL_PARAM_RANGES);
+    this.arrivalDeal = dealArrival(createRandom(this.seed ^ 0x2291), girlsLeftOut(location.search) ? [] : CHARACTERS.map((ch) => ch.id), this.arrivalParams);
+    const carSpecs = { fiesta: FIESTA_SPEC, corsa: CORSA_SPEC };
+    this.carsAway = carsAway(this.arrivalDeal, (g) => CAR_KINDS.find((k) => carSpecs[k].owner === g));
+    // The girls' own cars (vehicle/carModel.js), by the Dutch barn unless she came with you: built and ridden like the Land Rovers, so
     // they live in `landys` too (with `car` set), but each is driven only by its owner (spec.owner) and minds if you take it (npc/carGo.js).
     for (const kind of CAR_KINDS) {
-      const spec = { fiesta: FIESTA_SPEC, corsa: CORSA_SPEC }[kind];
-      this.landys[kind] = { kind, spec, car: true, unit: this.addLandRover({ ...this.world.layout.cars[kind] }, spec), mount: null, ride: null };
+      const spec = carSpecs[kind];
+      this.landys[kind] = { kind, spec, car: true, unit: this.carsAway.includes(kind) ? null : this.addLandRover({ ...this.world.layout.cars[kind] }, spec), mount: null, ride: null };
     }
     // Your own car (#229), always here: where you arrive each morning, pulled up on the pad by the Dutch barn (farm/arrival.js).
     this.landys.p309 = { kind: 'p309', spec: P309_SPEC, car: true, unit: this.addLandRover({ ...this.world.layout.cars.p309 }, P309_SPEC), mount: null, ride: null };
@@ -978,7 +985,7 @@ export class Game {
       else if (l.kind === 'fiesta') registerTuning('Finch riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
       else if (l.kind === 'p309') registerTuning('Vauclair riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
       else registerTuning('Griffin riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
-      l.mount = l.unit ? new UtvMount(l.unit.quad, (x, z) => this.world.heightAt(x, z), l.car ? CAR_STAND : { ...LANDY_STAND, ...LANDY_REAR_STAND }, rear) : null;
+      l.mount = l.unit ? new UtvMount(l.unit.quad, (x, z) => this.world.heightAt(x, z), l.car ? CAR_STAND : { ...LANDY_STAND, ...LANDY_REAR_STAND }, rear, { driver: !!l.car }) : null;
       if (l.unit) l.unit.quad.tipHold = { left: 0, driver: 0 }; // seconds a backrest stays tipped after you climb past it
       if (l.unit && series) this.addLandyCargo(l);
       else if (l.unit && l.kind === 'corsa') registerTuning('Griffin hatch', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T lifts its hatch
@@ -1920,7 +1927,57 @@ export class Game {
     this.restoreDay();
     await new Promise((r) => setTimeout(r, 0));
     this.settleVehicles();
+    this.arriveInCar();
     await this.loadSounds(report);
+  }
+
+  /**
+   * The morning (#229, farm/arrival.js): you are sat in your car on the pad by the Dutch barn, engine running and warm. A girl you gave a lift is
+   * sat in it with you; each of the others is at the wheel of her own car beside it, engine running too. Done once the cars are on their wheels.
+   */
+  arriveInCar() {
+    const mine = this.landys.p309;
+    if (!mine?.unit) return;
+    mine.unit.quad.engine.runWarm();
+    this.mount(mine.unit);
+    this.startPlaces = placesAt(mine.unit.quad.position, this.world.layout); // the end of the road doesn't count until you've left it (achievements/snapshot.js)
+    const seats = liftSeats(this.arrivalDeal.lift);
+    for (const c of this.companions) {
+      const id = c.character.id;
+      const own = Object.values(this.landys).find((l) => l.car && l.spec.owner === id && l.unit);
+      const l = seats[id] ? mine : own;
+      const slot = l?.mount.slots[seats[id] ?? 'driver'];
+      if (!slot || !c.sitInNow(l.mount, slot)) continue;
+      l.ride.ask(id); // she stays sat until the morning lets her out (updateArrival)
+      if (l !== mine) l.unit.quad.engine.runWarm();
+    }
+    this.arrival = new Arrival(this.arrivalDeal);
+  }
+
+  /** This morning in a line, for the Girls tab and the console (farm/arrival.js). */
+  describeArrival() {
+    return this.arrival ? this.arrival.describe(Object.fromEntries(this.companions.map((c) => [c.character.id, c.name]))) : 'you did not arrive in your car today';
+  }
+
+  /** Each frame of the morning: lets each girl out of the car she arrived in when her time comes (farm/arrival.js), and switches her own off. */
+  updateArrival(dt) {
+    const a = this.arrival;
+    if (!a || a.done) return;
+    const mine = this.landys.p309;
+    const seated = new Set();
+    for (const c of this.companions) {
+      const l = Object.values(this.landys).find((x) => x.mount && c.onHayRide && c.trailer === x.mount);
+      const own = l?.spec.owner === c.character.id && c.traSlot?.name === 'driver';
+      if (l && c.fsm.is('onTrailer') && !c.fsm.data?.leaving && (l === mine || own)) seated.add(c.character.id);
+    }
+    for (const e of a.update(dt, { youIn: this.riddenUnit === mine.unit, seated })) {
+      const c = this.companions.find((o) => o.character.id === e.girl);
+      const l = Object.values(this.landys).find((x) => x.mount && c?.trailer === x.mount);
+      if (!c || !l) continue;
+      if (e.from === 'own') l.unit.quad.engine.setIgnition(false); // she's parked: she switches off as she gets out
+      l.ride.dismiss(e.girl);
+      c.leaveTrailer();
+    }
   }
 
   /**
@@ -4571,7 +4628,7 @@ export class Game {
       fleet: this.fleetIds,
       market: this.market.toJSON(),
       shed: this.shed.toJSON(),
-      vehicles,
+      vehicles: keepAway(vehicles, this.farm.save?.vehicles, this.carsAway), // a girl's car that stayed at home today keeps what it had (farm/arrival.js)
       pods: { ...this.podRack.at },
       girls: captureGirls(this),
       bucket: this.achievements.toJSON(),
@@ -11062,6 +11119,8 @@ export class Game {
 
   mount(unit) {
     if (this.player.isRiding || this.tooFastToMount(unit.quad)) return;
+    const atWheel = Object.values(this.landys).find((l) => l.unit === unit)?.mount?.slots.driver?.girl; // a girl sat in her parked car of a morning
+    if (atWheel) return void this.hud.toast(`${atWheel.name} is in the driver's seat`, 2);
     this.player.mount(unit.quad);
     this.favourQuad(unit, this.favour.p.favouriteQuad);
     unit.quad.setRider(this.player, this.input);
@@ -12100,6 +12159,7 @@ export class Game {
     if (this.logStack) this.guard.run('updateLogSplitter', () => this.updateLogSplitter(dt));
     if (GO_KINDS.some((k) => this.goVehicle(k)) && auto) this.guard.run('updateTractorGo', () => this.updateTractorGo(dt, ridden));
     this.guard.run('updateRadios', () => this.updateRadios(dt));
+    this.guard.run('updateArrival', () => this.updateArrival(dt));
     this.guard.run('updateCars', () => this.updateCars(dt)); // (minding you taking her car is a reaction, so it runs with the girls on hold too)
     this.guard.run('updateLPlates', () => this.updateLPlates(dt));
     this.guard.run('updatePushStart', () => this.updatePushStart());

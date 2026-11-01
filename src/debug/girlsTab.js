@@ -253,6 +253,7 @@ export function buildGirlsTab(d) {
   const shop = sub('Workshop, generator and spares');
   show(shop, 'a girl at the bench', () => g.girlBench.describe());
   show(shop, 'their cars', () => g.describeCars());
+  show(shop, 'this morning', () => g.describeArrival());
   show(shop, 'the battery charger', () => g.describeCharger());
   show(shop, 'the booster pack', () => g.describeBoosterPack());
   slider(shop, 'booster pack charge', () => g.boosterPack.engine.battery, (v) => g.debugBoosterCharge(v), 0, 1, 0.05);
