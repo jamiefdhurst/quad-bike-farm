@@ -27,6 +27,7 @@ import { poseLandyControls, poseSeatTips, LANDY_REAR_SEATS } from './landRoverMo
 import { poseSeriesDoors, poseSeriesTailgate } from './seriesModel.js';
 import { poseDefenderBackDoor } from './defenderModel.js';
 import { poseFiestaHatch } from './fiestaModel.js';
+import { pose309Hatch } from './p309Model.js';
 import { poseCorsaHatch } from './corsaModel.js';
 import { Tailgate } from './tailgate.js';
 import { poseCarControls, poseCarSeats } from './carModel.js';
@@ -1449,7 +1450,7 @@ export class Quad {
       poseSeriesDoors(this.model, this.doorSwing.update(dt, { speed: this.speed, aboard: { right: !!(this.driver || this.rider), left: !!this.passenger && !(this.driver || this.rider) }, boarding: this.doorBoarding ?? {} }));
       this.tailgate ??= new Tailgate();
       this.tailgate.update(dt, { speed: this.speed });
-      (this.model.userData.carKind === 'corsa' ? poseCorsaHatch : poseFiestaHatch)(this.model, this.tailgate.open);
+      ({ corsa: poseCorsaHatch, p309: pose309Hatch }[this.model.userData.carKind] ?? poseFiestaHatch)(this.model, this.tailgate.open);
     }
     if (!this.utv && !this.landRover && !this.tractor && !this.car) {
       this.displayPark += ((this.parkBrake ? 1 : 0) - this.displayPark) * Math.min(1, 14 * dt);
