@@ -1383,7 +1383,7 @@ export const FAQ_SECTIONS = [
         q: 'Can I race them?',
         a: `Yes. Ride up to the start line by the yard and press <kbd>Enter</kbd> and pick “A race”, or sit there with the engine running and Jess may dare you. Line up in the
           middle lane. A lap only counts if you go round the track. For a drag race, ride to the gravel strip in the middle of the field and press
-          <kbd>Enter</kbd> and pick “A race”, or answer Jess when she blips her throttle at you. They also race each other.`,
+          <kbd>Enter</kbd> and pick “A drag race”, or answer Jess when she blips her throttle at you. They also race each other.`,
         tip: 'Press Enter at the start line by the yard to race the girls.',
       },
       {
@@ -1396,7 +1396,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I time a run up the hill?',
         a: `Go down the lane and across the ford to the hill pasture. Just past the stream there are two pairs of big orange cones: ride up to them on a quad and press
-          <kbd>Enter</kbd> and “A race”, then ride through them when you're ready. The clock runs from there. Go between the cones of each checkpoint in order (a cone
+          <kbd>Enter</kbd> and pick “The hill climb”, then ride through them when you're ready. The clock runs from there. Go between the cones of each checkpoint in order (a cone
           either side, two on the way up) and on through the two pairs at the finish near the top. Anywhere between the cones counts, so the line is yours: the gentler ground in the east
           is the easy way, the steep banks in the west are quicker if you dare. Your time goes up as a toast, and the best ones go on the board in the barn.`,
         tip: 'Press Enter by the orange cones past the stream, then ride through them to time a hill climb.',
@@ -1404,7 +1404,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I time a run round the cone course?',
         a: `Amy's cone course is a slalom of orange cones across the grass, west of the middle of the field, inside the track. Ride up to the first pair of cones on any vehicle and
-          press <kbd>Enter</kbd> and pick “A race”, then ride through them when you're ready. The clock runs from there. Weave through each pair of cones in order, left then right, and on through
+          press <kbd>Enter</kbd> and pick “The cone course”, then ride through them when you're ready. The clock runs from there. Weave through each pair of cones in order, left then right, and on through
           the finish pair. Every cone you knock down adds two seconds and every gap you miss adds five. Your score goes up as a toast, and the best ones go on the board in the barn.`,
         tip: 'Press Enter by the first orange cones in the field, west of the middle, then weave through them to be timed.',
       },
@@ -1421,7 +1421,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why did my hill climb stop counting?',
         a: `You're out if you get off or stall for ten seconds, or take more than two and a half minutes. Missing a gate (going round outside its cones, or
-          skipping one) doesn't count it, so go back through. Press <kbd>Enter</kbd> at the start cones again and pick “A race” to try another run. It also asks one of the girls to race you up, in the dark too.`,
+          skipping one) doesn't count it, so go back through. Press <kbd>Enter</kbd> at the start cones again and pick “The hill climb” to try another run. It also asks one of the girls to race you up, in the dark too.`,
       },
       {
         q: 'Where are the records kept?',
@@ -1593,7 +1593,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I time a run up the pit\'s wall?',
-        a: `Ride to the orange cones on the pit's floor, at the foot of the steep wall, and press <kbd>Enter</kbd> and “A race”, then ride through them when you are ready. The clock runs from there. Go
+        a: `Ride to the orange cones on the pit's floor, at the foot of the steep wall, and press <kbd>Enter</kbd> and pick “The pit climb”, then ride through them when you are ready. The clock runs from there. Go
           through the gate of cones halfway up the wall (it is wide enough to take in both chutes) and on through the finish cones over the lip. The line is yours. You are out if you get off or stall for eight seconds, or take over two minutes. Your time goes up as a toast, and the best goes on the barn's records board as the pit climb. Only you
           run it; whoever is near the top times you and says something.`,
         tip: 'Press Enter by the orange cones on the pit floor, then ride up the steep wall and through the gate and the finish cones to be timed.',
