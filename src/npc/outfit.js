@@ -805,8 +805,7 @@ function addTop(rig, name, color, spec) {
     }
     for (const t of triangles) tris.push(...t.map((i) => i + base));
   };
-  const underTie = (b) => spec.underTie && Math.abs(b.centre[0] - data.bones.Neck[0]) < 0.008;
-  for (const b of [...placket.buttons.filter((b) => !underTie(b)), ...built.cuffButtons]) {
+  for (const b of [...placket.buttons, ...built.cuffButtons]) {
     const shape = buttonShape(b.centre, b.normal, spec.buttonRadius);
     add(shape.points, shape.tris, b.anchor, face);
     if (spec.buttonHoles !== false) add(shape.holes, shape.holeTris, b.anchor, hole);
