@@ -21,7 +21,7 @@ import { SIGNAL_MODES } from '../vehicle/indicators.js';
 import { DRIVE_MODES } from '../vehicle/driveMode.js';
 import { lensCoverage } from '../effects/lensMud.js';
 import { WEATHER_KINDS } from '../world/weather.js';
-import { completeStyle, outfitsFor } from '../npc/outfits.js';
+import { completeStyle, outfitsFor, shirtButtonsUndone, withShirtButtons } from '../npc/outfits.js';
 
 const DEG = 180 / Math.PI;
 const round = (v, n = 3) => Math.round(v * 10 ** n) / 10 ** n;
@@ -244,7 +244,7 @@ export function buildGameTree(g, host) {
       popped: flag(() => completeStyle(c().outfit.style).popped, (v) => c().setStyle({ ...completeStyle(c().outfit.style), popped: v }), 'her collar popped'),
       tieLoose: flag(() => completeStyle(c().outfit.style).tieLoose, (v) => c().setStyle({ ...completeStyle(c().outfit.style), tieLoose: v }), 'a shirt and tie loosened rather than done right up'),
       shirtOverPolo: flag(() => completeStyle(c().outfit.style).shirtOverPolo, (v) => c().setStyle({ ...completeStyle(c().outfit.style), shirtOverPolo: v }), 'a shirt and tie worn over her polo'),
-      plaidButtons: num(() => completeStyle(c().outfit.style).plaidButtons, (v) => c().setStyle({ ...completeStyle(c().outfit.style), plaidButtons: Math.round(v) }), 0, 4, '', "buttons undone on a buttoned plaid (0: done right up)"),
+      shirtButtons: num(() => shirtButtonsUndone(completeStyle(c().outfit.style)), (v) => c().setStyle(withShirtButtons(completeStyle(c().outfit.style), Math.round(v))), 0, 4, '', 'buttons undone on a buttoned plaid or a shirt and tie (0: done right up; on a shirt and tie, any loosens the tie)'),
       underOpen: num(() => completeStyle(c().outfit.style).underOpen, (v) => c().setStyle({ ...completeStyle(c().outfit.style), underOpen: Math.round(v) }), 0, 5, '', 'in two polos, buttons undone on hers under the other'),
       mud: num(() => c().mucky.mud, (v) => (c().mucky.mud = v), 0, 1, '', 'how muddy her jeans are'),
       dust: num(() => c().mucky.dust, (v) => (c().mucky.dust = v), 0, 1, '', 'how dusty her hair and face are'),

@@ -1505,8 +1505,8 @@ export const FAQ_SECTIONS = [
           buttoned, with the polo's collar out over the shirt's, or worn open; some days a second polo, white or black and a size bigger, over their own, so you
           can see the one underneath at the collar and the sleeves; and now and then a collar is popped. Jess is likelier than Amy to
           pop hers. About one day in ten each wears a white or pale blue shirt and a tie the colour of her polo, on its own or over the
-          polo: Amy usually has it done right up, and Jess usually wears it loosened, with the top buttons undone and the knot pulled
-          down. On a very warm day (over 20°C at its warmest) Jess may turn up in just a string crop-top. A day's outfit stays the
+          polo: Amy usually has it done right up, and Jess usually wears it loosened, with a button or a few undone and the knot pulled
+          down over the open neck. On a very warm day (over 20°C at its warmest) Jess may turn up in just a string crop-top. A day's outfit stays the
           same all day, and a jumper or a wax jacket goes on over whatever they're wearing.`,
         tip: 'The girls dress differently from day to day: a polo, a plaid shirt, two polos, a shirt and tie, or on a hot day a crop-top for Jess.',
       },

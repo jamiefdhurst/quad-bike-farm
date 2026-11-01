@@ -28,7 +28,7 @@ export const CHARACTERS = [
     // What she might have in mind for the day (npc/agenda.js): tea and tidying, the careful things.
     agendaOdds: { tea: 3, bench: 2, cones: 2, tidy: 2, landRover: 2, fire: 2, hill: 1, ramp: 0.5, race: 0.5 },
     underOpen: [0, 1], // in two polos, buttons undone on her own under the other
-    plaidButtons: [0, 1], // a buttoned plaid: done right up, or the top one undone
+    shirtButtons: [0, 1], // a buttoned plaid or a loosened shirt and tie: done right up, or the top one undone
     tieLooseChance: 0.2, // a shirt and tie: mostly done right up
     params: {
       // The taller of the two, a balanced figure (figure.js amounts, 1 the usual shape).
@@ -101,7 +101,7 @@ export const CHARACTERS = [
     agendaOdds: { ramp: 3, doughnuts: 3, race: 2, bigOne: 2, car: 2, hill: 1, landRover: 1, cones: 1, fire: 1, bench: 0.5 },
     poppedChance: 0.3, // her collar popped a good third of the time
     underOpen: [0, 4], // in two polos, buttons undone on her own under the other
-    plaidButtons: [0, 3], // a buttoned plaid: done right up, down to three undone
+    shirtButtons: [0, 3], // a buttoned plaid or a loosened shirt and tie: done right up, down to three undone
     tieLooseChance: 0.8, // a shirt and tie: mostly loosened
     // Cheekier: braver behind the bars, chattier, bored sooner (usually after
     // about 45 s rather than 60) and more likely to do something about it, and

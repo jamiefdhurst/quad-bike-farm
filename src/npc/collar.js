@@ -80,19 +80,22 @@ export const SHIRT_UNDER_COLLAR = { ...SHIRT_COLLAR, stand: 0.016, standFront: 0
 // fall down more than out, either side of the knot, lying over the tie.
 export const POINT_COLLAR = {
   ...SHIRT_COLLAR,
-  stand: 0.03,
-  standFront: 0.025,
+  stand: 0.024,
+  standFront: 0.02,
   lean: 0.002, // stiff: it hardly leans in
   roll: 0.007,
-  out: 0.033,
-  pointOut: 0.016,
-  pointDrop: 0.05,
+  out: 0.03,
+  pointOut: 0.012,
+  pointDrop: 0.038, // points about 4 cm long
   pointSpread: 0.12,
   pointReach: 0.75,
   fallGap: 0.005, // its wings start this close to her middle, over the knot's sides, rather than beside the placket
   tipRound: 0.012,
   thickness: 0.0022,
   smoothing: 2, // evened out less, so it keeps a crisp line
+  lie: 0.35, // its points pressed down on to the shirt from about a third of the way down the fall
+  edgeShade: 1, // no darker edge: on a white shirt it read as a line drawn round it
+  underShade: 0.94,
 };
 
 // The polo's collar under the shirt: lying close on the polo, so the shirt over it doesn't show it through.
@@ -224,10 +227,13 @@ export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p =
       }
       const floor = surface + p.clear;
       const mine = dot(sub(q, centre), D);
-      if (mine < floor) q = add(q, scale(D, floor - mine));
+      // A stiff collar's points are pressed down on to what's under them rather than left standing off it (`lie`: from this far
+      // down the fall, eased in).
+      const press = p.lie != null && surface > -Infinity ? smooth01((t - p.lie) / 0.3) : 0;
+      if (mine < floor || press) q = add(q, scale(D, (floor - mine) * (mine < floor ? 1 : press)));
       // Its skin blends from the neck edge's to that of what it lies on, so it moves with her shoulders.
       const s = under ? smooth01(t) : 0;
-      column.push({ ...B, rest: q, weights: under ? blendWeights(B.weights, under.weights, s) : B.weights, skin: under ? lerp(B.skin, under.skin, s) : B.skin, lay: { centre, D, floor } });
+      column.push({ ...B, rest: q, weights: under ? blendWeights(B.weights, under.weights, s) : B.weights, skin: under ? lerp(B.skin, under.skin, s) : B.skin, lay: { centre, D, floor, press } });
     });
     return column;
   });
@@ -247,7 +253,7 @@ export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p =
         let q = next[c][r];
         if (v.lay) {
           const mine = dot(sub(q, v.lay.centre), v.lay.D);
-          if (mine < v.lay.floor) q = add(q, scale(v.lay.D, v.lay.floor - mine));
+          if (mine < v.lay.floor || v.lay.press) q = add(q, scale(v.lay.D, (v.lay.floor - mine) * (mine < v.lay.floor ? 1 : v.lay.press)));
         }
         v.rest = q;
       }),

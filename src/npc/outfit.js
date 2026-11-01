@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { buildTop, buildInset, buttonShape, slitShape, poloFields, tuckSleeves, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER } from './polo.js';
 import { buildTie } from './tie.js';
+import { shirtButtonsUndone } from './outfits.js';
 import { buildCropTop } from './crop.js';
 import { buildShorts, SHORTS } from './shorts.js';
 import { buildCollar, COLLAR, COAT_COLLAR, SHIRT_COLLAR, SHIRT_UNDER_COLLAR, OVER_COLLAR, POINT_COLLAR, POLO_UNDER_SHIRT_COLLAR } from './collar.js';
@@ -805,8 +806,7 @@ function addTop(rig, name, color, spec) {
     }
     for (const t of triangles) tris.push(...t.map((i) => i + base));
   };
-  const underTie = (b) => spec.underTie && Math.abs(b.centre[0] - data.bones.Neck[0]) < 0.008;
-  for (const b of [...placket.buttons.filter((b) => !underTie(b)), ...built.cuffButtons]) {
+  for (const b of [...placket.buttons, ...built.cuffButtons]) {
     const shape = buttonShape(b.centre, b.normal, spec.buttonRadius);
     add(shape.points, shape.tris, b.anchor, face);
     if (spec.buttonHoles !== false) add(shape.holes, shape.holeTris, b.anchor, hole);
@@ -1145,12 +1145,12 @@ function addEachGarment(rig, outfit) {
   else if (outfit.polo && (!shirtTie || style.shirtOverPolo)) polo = addTop(rig, 'polo', outfit.polo, { ...POLO, open: kind === 'doublePolo' ? style.underOpen ?? 0 : shirtTie ? 0 : open }); // done up under a shirt and tie, so its placket and collar show in the shirt's open neck
   if (kind === 'doublePolo') outer = addTop(rig, 'overPolo', style.over, { ...OVER_POLO, open });
   const plaidShut = kind === 'plaid' && !style.plaidOpen;
-  const shut = { ...(polo ? PLAID_OVER : PLAID), open: style.plaidButtons ?? 0 };
+  const shut = { ...(polo ? PLAID_OVER : PLAID), open: shirtButtonsUndone(style) };
   if (kind === 'plaid') outer = addTop(rig, 'plaid', style.plaid, style.plaidOpen ? PLAID_OPEN : shut);
   if (shirtTie) {
     // Done right up (cuffs at the wrist), or loosened: the top one or two undone and the sleeves rolled to the elbow.
     const spec = style.tieLoose ? (polo ? SHIRT_ROLLED_OVER : SHIRT_ROLLED) : polo ? SHIRT_OVER : SHIRT;
-    outer = addTop(rig, 'shirt', style.shirt ?? '#f4f3ef', { ...spec, open: style.tieLoose ? style.shirtOpen ?? 1 : 0 });
+    outer = addTop(rig, 'shirt', style.shirt ?? '#f4f3ef', { ...spec, open: shirtButtonsUndone(style) });
   }
   if (polo && outer) tuckUnder(polo, outer);
   const jumper = outfit.jumper ? addTop(rig, 'jumper', outfit.jumper, JUMPER) : null;
@@ -1187,7 +1187,7 @@ function addTie(rig, shirt, polo, poloCollar, color, style) {
   const ground = [built.shell, built.placket];
   if (shirt.inset) ground.push(shirt.inset);
   if (polo) ground.push(polo.built.shell, ...(polo.built.placket ? [polo.built.placket] : []), ...(poloCollar ? [poloCollar] : []));
-  const tie = buildTie(data, { top: built.placket.top, ground, loose: !!style.tieLoose, drop: style.tieDrop ?? 0.05, vee: built.vee });
+  const tie = buildTie(data, { top: built.placket.top, ground, loose: !!style.tieLoose, drop: style.tieDrop ?? 0.025, vee: built.vee, placketWidth: shirt.spec.placketWidth, buttons: built.placket.buttons });
   if (!tie) return null;
   const tint = new THREE.Color(color);
   const colors = [];

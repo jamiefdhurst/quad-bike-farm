@@ -10,7 +10,7 @@ import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
 import { REMEMBERED_KINDS } from '../npc/memory.js';
 import { DRILLS } from '../npc/lessons.js';
 import { rampPoint } from '../npc/jumps.js';
-import { OUTFIT_KINDS, describeOutfit, completeStyle, outfitsFor } from '../npc/outfits.js';
+import { OUTFIT_KINDS, describeOutfit, completeStyle, outfitsFor, shirtButtonsUndone, withShirtButtons } from '../npc/outfits.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const round = (v, n = 2) => Math.round(v * 10 ** n) / 10 ** n;
@@ -111,7 +111,7 @@ export function buildGirlsTab(d) {
     tick(wear, 'tie loosened', () => style().tieLoose, (v) => c.setStyle({ ...style(), tieLoose: v }));
     tick(wear, 'over the polo', () => style().shirtOverPolo, (v) => c.setStyle({ ...style(), shirtOverPolo: v }));
     slider(wear, 'polo buttons undone', () => c.outfit.poloOpen ?? 0, (v) => c.setPoloOpen(v), 0, 5, 1);
-    slider(wear, 'plaid buttons undone', () => style().plaidButtons, (v) => c.setStyle({ ...style(), plaidButtons: Math.round(v) }), 0, 4, 1);
+    slider(wear, 'shirt buttons undone', () => shirtButtonsUndone(style()), (v) => c.setStyle(withShirtButtons(style(), Math.round(v))), 0, 4, 1);
     slider(wear, 'under polo buttons undone', () => style().underOpen, (v) => c.setStyle({ ...style(), underOpen: Math.round(v) }), 0, 5, 1);
     show(wear, 'mud and dust', () => `${round(c.mucky.mud)} mud (${round(c.mucky.wet)} wet), ${round(c.mucky.dust)} dust`);
     slider(wear, 'mud on her', () => c.mucky.mud, (v) => (c.mucky.mud = v), 0, 1, 0.01);

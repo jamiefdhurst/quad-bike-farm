@@ -1323,7 +1323,7 @@ Jamie: in a jumper over the open plaid the plaid poked out at her shoulders; in 
 - **The open plaid's collar** sat on her shoulders: the fronts were 7.5 cm either side of her middle right up to the neck, so the collar started there and its wings spread out over a jumper. It now hangs as an open shirt does, 2.2 cm either side at the collar (`veeNeck`), falling open over 14 cm (`veeDrop`) to 5.5 cm, and on down to the hem.
 - **The open plaid's buttons.** On her real body (not the test's stand-in) its placket failed to build, so it had no fronts or buttons. Two reasons: her body isn't quite symmetrical, so one side's front was laid along the other side's edge and missed the cloth (each side's edge is found on its own now); and at her waist the open fronts come round towards her sides, past where the placket looked for cloth (it looks 8 cm further round now). All eight buttons show on her left front, a buttonhole for each on her right.
 - **Two polos** have the under one's buttons dealt on their own (`underOpen` in `characters.js`: Amy 0 to 1, Jess 0 to 4), and the over one's sleeves are roomier (1.5 cm off her), as her own came through with her arms up.
-- **A buttoned plaid** can be done right up: its top button is on the collar's stand, as the polo's, and how many are undone is dealt for it (`plaidButtons`: Amy 0 to 1, Jess 0 to 3) instead of following her polo.
+- **A buttoned plaid** can be done right up: its top button is on the collar's stand, as the polo's, and how many are undone is dealt for it (`plaidButtons`: Amy 0 to 1, Jess 0 to 3) instead of following her polo. (Since #494 this is `shirtButtons`, shared with the shirt and tie.)
 - **Only Jess** wears the crop-top: the outfit picker and the console offer it only to a girl with a chance of it (`outfitsFor`), `setStyle` refuses it for anyone else, and `?outfit=cropTop` only dresses her.
 - **The crop-top's straps** were cut from her body, whose shoulder triangles are far bigger than a strap, so they came out wide and ragged. They're ribbons now, 4.4 mm wide: rays from all round a line through her shoulder find her skin from the band's top at her front, over the shoulder, to its top at her back (her hair and head are left out, so Jess's bob doesn't catch them), the path is evened out, lifted 2.5 mm off her, and each point skinned as her skin under it. Round her back the band was missing for the same reason, narrower than her triangles; its edges are drawn in before it's cut.
 - Debug panel: "plaid buttons undone" and "under polo buttons undone" in each girl's folder, `plaidButtons` and `underOpen` in the console.
@@ -1597,3 +1597,22 @@ The banter's two new situations, both raised by `PubVisit` (`src/npc/pubVisit.js
 - **The collar** (`POINT_COLLAR`): a taller, stiffer stand and points falling down more than out. Its wings start 5 mm from her middle (`fallGap`), so they lie over the knot's sides. Over the polo, the polo is done up and its collar lies close under the shirt's (`POLO_UNDER_SHIRT_COLLAR`), so its placket and collar show in a loosened V.
 - **What she says**: the first time you open her wheel on a day she's in it (`outfitRemark`), Amy that she's going into town later and Jess whether you like it.
 - Panel: "tie loosened" and "over the polo" in each girl's clothes; console `tieLoose` and `shirtOverPolo`; `?outfit=shirtTie`.
+
+### Follow-up: less loose, a smaller collar, the buttons, and her elbows (testing #494)
+
+Jamie, after a first look: the loosened tie was too loose, the collar looked odd, none of the buttons showed, and sitting on a bale her skin came through the shirt. The tie stays her polo's colour.
+
+- **Loosened** now has only the top button undone and the knot 2 to 3 cm down (was one or two, and 4 to 6), sitting over the bottom of the open neck rather than below it.
+- **The collar** is smaller (`POINT_COLLAR`: stand 2.4 cm, was 3; points about 4 cm long, were 5). Its points lie on the shirt: from a third of the way down the fall each point is pressed on to what's under it (`lie`), where before it was only ever lifted off it and so stood out in the air. The dark edge is gone (`edgeShade` 1): on a white shirt it read as a line drawn round the collar.
+- **The buttons** were the plaid's all along (the same placket builder), but the ones under the tie weren't drawn because they showed through it. They're all drawn now, and the tie stands 5 mm off the placket (was 4.5), clear of a button's 2.6 mm.
+- **Her elbows.** Sat on a bale, the long sleeve was squeezed on the inside of her bent elbow and her forearm came through. The sleeve has more room now (1.6 cm, was 1.1; at the cuff 1.3, was 0.8), with 7 mm more round the elbow (`elbowEase`), and more again over the polo. Over the polo none showed in the shots afterwards; on its own a hairline still did on the inside of the bend.
+
+### Follow-up: one "shirt buttons undone" for the plaid and the shirt and tie (testing #494)
+
+Jamie: the shirt and tie's buttons undone should be the plaid's setting, random and settable, not another one.
+
+- **One number, `shirtButtons`** (was `plaidButtons`), dealt from each girl's range as before (Amy 0 to 1, Jess 0 to 3), is how many of a buttoned plaid's buttons are undone and of a loosened shirt and tie's. `shirtButtonsUndone(style)` in `outfits.js` is the rule: a shirt and tie done right up has none, and loosened at least the top one, so loosened Amy has the top one undone and Jess one to three.
+- Setting it (the panel's "shirt buttons undone", the console's `girl.<name>.shirtButtons`) on a shirt and tie loosens the tie with any undone and does it up with none (`withShirtButtons`); "tie loosened" stays in step the other way. The shirt's own `shirtOpen` is gone.
+- **The knot** is pulled 2 to 3 cm down, or further with more buttons undone, so it always covers the open neck's point (`vee.bottom` plus 40% of its height).
+- **The loosened ends** run up along the open neck's edges over the shirt's half-plackets, and every row of the tie lies on the top of any button under it, so the undone buttons don't show through or beside them.
+
