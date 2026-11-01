@@ -58,7 +58,7 @@ jobs:
         run: |
           label=$(git log -1 --format=%s)
           node tools/budget.mjs --record budget-now.json --history history.json --sha "$GITHUB_SHA" --label "$label"
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: budget-history
           path: history.json
