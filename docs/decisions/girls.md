@@ -1597,3 +1597,13 @@ The banter's two new situations, both raised by `PubVisit` (`src/npc/pubVisit.js
 - **The collar** (`POINT_COLLAR`): a taller, stiffer stand and points falling down more than out. Its wings start 5 mm from her middle (`fallGap`), so they lie over the knot's sides. Over the polo, the polo is done up and its collar lies close under the shirt's (`POLO_UNDER_SHIRT_COLLAR`), so its placket and collar show in a loosened V.
 - **What she says**: the first time you open her wheel on a day she's in it (`outfitRemark`), Amy that she's going into town later and Jess whether you like it.
 - Panel: "tie loosened" and "over the polo" in each girl's clothes; console `tieLoose` and `shirtOverPolo`; `?outfit=shirtTie`.
+
+### Follow-up: less loose, a smaller collar, the buttons, and her elbows (testing #494)
+
+Jamie, after a first look: the loosened tie was too loose, the collar looked odd, none of the buttons showed, and sitting on a bale her skin came through the shirt. The tie stays her polo's colour.
+
+- **Loosened** now has only the top button undone and the knot 2 to 3 cm down (was one or two, and 4 to 6), sitting over the bottom of the open neck rather than below it.
+- **The collar** is smaller (`POINT_COLLAR`: stand 2.4 cm, was 3; points about 4 cm long, were 5). Its points lie on the shirt: from a third of the way down the fall each point is pressed on to what's under it (`lie`), where before it was only ever lifted off it and so stood out in the air. The dark edge is gone (`edgeShade` 1): on a white shirt it read as a line drawn round the collar.
+- **The buttons** were the plaid's all along (the same placket builder), but the ones under the tie weren't drawn because they showed through it. They're all drawn now, and the tie stands 5 mm off the placket (was 4.5), clear of a button's 2.6 mm.
+- **Her elbows.** Sat on a bale, the long sleeve was squeezed on the inside of her bent elbow and her forearm came through. The sleeve has more room now (1.6 cm, was 1.1; at the cuff 1.3, was 0.8), with 7 mm more round the elbow (`elbowEase`), and more again over the polo. Over the polo none showed in the shots afterwards; on its own a hairline still did on the inside of the bend.
+
