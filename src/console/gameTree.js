@@ -243,6 +243,7 @@ export function buildGameTree(g, host) {
       plaidOpen: flag(() => completeStyle(c().outfit.style).plaidOpen, (v) => c().setStyle({ ...completeStyle(c().outfit.style), plaidOpen: v }), 'a plaid shirt worn open over her polo'),
       popped: flag(() => completeStyle(c().outfit.style).popped, (v) => c().setStyle({ ...completeStyle(c().outfit.style), popped: v }), 'her collar popped'),
       tieLoose: flag(() => completeStyle(c().outfit.style).tieLoose, (v) => c().setStyle({ ...completeStyle(c().outfit.style), tieLoose: v }), 'a shirt and tie loosened rather than done right up'),
+      ponytail: flag(() => completeStyle(c().outfit.style).ponytail, (v) => c().setStyle({ ...completeStyle(c().outfit.style), ponytail: v }), 'her hair tied back in a ponytail today'),
       shirtOverPolo: flag(() => completeStyle(c().outfit.style).shirtOverPolo, (v) => c().setStyle({ ...completeStyle(c().outfit.style), shirtOverPolo: v }), 'a shirt and tie worn over her polo'),
       shirtButtons: num(() => shirtButtonsUndone(completeStyle(c().outfit.style)), (v) => c().setStyle(withShirtButtons(completeStyle(c().outfit.style), Math.round(v))), 0, 4, '', 'buttons undone on a buttoned plaid or a shirt and tie (0: done right up; on a shirt and tie, any loosens the tie)'),
       underOpen: num(() => completeStyle(c().outfit.style).underOpen, (v) => c().setStyle({ ...completeStyle(c().outfit.style), underOpen: Math.round(v) }), 0, 5, '', 'in two polos, buttons undone on hers under the other'),

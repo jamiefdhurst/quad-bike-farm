@@ -205,6 +205,7 @@ import { Flask, FLASK_PARAM_RANGES } from './npc/flask.js';
 import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js';
 import { dealPoloOpen } from './npc/polo.js';
 import { dealOutfit, outfitsFor, outfitRemark, DEFAULT_OUTFIT_PARAMS, OUTFIT_PARAM_RANGES } from './npc/outfits.js';
+import { dealPonytail, DEFAULT_PONYTAIL_PARAMS, PONYTAIL_PARAM_RANGES } from './npc/ponytail.js';
 import { Jumpers, JUMPER_PARAM_RANGES, dealJumperColours } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
 import { Coats, COAT_PARAM_RANGES, dealCoatColours } from './npc/coats.js';
@@ -1203,6 +1204,8 @@ export class Game {
     this.outfitParams = { ...DEFAULT_OUTFIT_PARAMS };
     const outfitRandom = createRandom((this.farmSeed ^ 0x0f17) + this.farm.day * 7919);
     const shirtTieRandom = createRandom((this.farmSeed ^ 0x7e1e) + this.farm.day * 7919); // the shirt and tie's own, so it moved nobody's other outfits
+    const ponytailRandom = createRandom((this.farmSeed ^ 0x9a17) + this.farm.day * 7919); // her hair tied back (npc/ponytail.js), its own too
+    this.ponytailParams = { ...DEFAULT_PONYTAIL_PARAMS };
     const warm = this.weather.peak > this.outfitParams.warmAbove;
     const forcedOutfit = new URLSearchParams(location.search).get('outfit');
     for (const c of this.companions) {
@@ -1216,6 +1219,8 @@ export class Game {
         p: this.outfitParams,
       });
       if (outfitsFor(c.character.outfitOdds).includes(forcedOutfit)) style.kind = forcedOutfit; // ?outfit=plaid puts both girls in it, to look at
+      Object.assign(style, dealPonytail(ponytailRandom, c.character.ponytailChance ?? 0));
+      c.rig.ponytailParams = this.ponytailParams; // the swing's tuning, shared
       c.outfit = { ...c.outfit, poloOpen: dealPoloOpen(c.character.poloOpen, buttonsRandom), style }; // fitted with her shirt just below
     }
     for (const c of this.companions) {
@@ -1901,6 +1906,7 @@ export class Game {
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
     registerTuning('Wax jackets', this.coats.p, COAT_PARAM_RANGES);
     registerTuning('Outfits', this.outfitParams, OUTFIT_PARAM_RANGES);
+    registerTuning('Ponytail', this.ponytailParams, PONYTAIL_PARAM_RANGES);
     registerTuning('Helmets and goggles', this.headgear.p, HEADGEAR_PARAM_RANGES);
     registerTuning('Red diesel mistake', this.dieselMistake.p, DIESEL_MISTAKE_PARAM_RANGES);
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);
@@ -9603,6 +9609,7 @@ export class Game {
       const id = c.character.id;
       const g = this.headgear.girl(id);
       this.helmetView.setWorn(id, g.place === 'head', id === 'jess' && !g.riding, this.headgear.p.helmetFit * c.params.helmetSize, this.headgear.p.helmetLift + c.params.helmetRaise);
+      c.setUnderHelmet(g.place === 'head'); // her ponytail out under the back of it
       let where = null;
       let key = '';
       if (g.place === 'ground') {
