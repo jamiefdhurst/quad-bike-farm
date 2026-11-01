@@ -118,7 +118,7 @@ import { vehicleOptions, wheelChildren } from './npc/vehicleWheel.js';
 import { RadioAudio } from './audio/radioAudio.js';
 import { RADIO_PARAMS, RADIO_PARAM_RANGES } from './vehicle/radio.js';
 import { RadioTaste, applyRadioMove, RADIO_TASTE_PARAMS, RADIO_TASTE_PARAM_RANGES } from './npc/radioTaste.js';
-import { CarGo, Borrowing, mayDriveCar, CAR_GO_PARAM_RANGES } from './npc/carGo.js';
+import { CarGo, Borrowing, mayDriveCar, refuseCarLine, CAR_GO_PARAM_RANGES } from './npc/carGo.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
 import { TractorRunaway, TRACTOR_RUNAWAY_PARAM_RANGES } from './npc/tractorRunaway.js';
@@ -1975,6 +1975,7 @@ export class Game {
       const l = Object.values(this.landys).find((x) => x.mount && c?.trailer === x.mount);
       if (!c || !l) continue;
       if (e.from === 'own') l.unit.quad.engine.setIgnition(false); // she's parked: she switches off as she gets out
+      else c.voice.say('liftThanks', { chance: 0.8 });
       l.ride.dismiss(e.girl);
       c.leaveTrailer();
     }
@@ -2718,8 +2719,9 @@ export class Game {
   /** You ask her for a go: Jess is thrilled, and Amy says no until her day has come. */
   askDriveVehicle(c, kind) {
     const id = c.character.id;
-    const line = { tractor: ['tractorRefuse', 'tractorGoAsk'], utv: ['utvRefuse', 'utvGoAsk'], landy: ['landyRefuse', 'landyGoAsk'], defender: ['defenderRefuse', 'defenderGoAsk'], fiesta: ['carNotMine', 'carGoOff'], corsa: ['carNotMine', 'carGoOff'], p309: ['carYours', 'carGoOff'] }[kind];
-    if (OWNED_KINDS.includes(kind) ? !mayDriveCar(id, this.landys[kind].spec) : this.tractorGo.ask(id) === 'refuse') return void c.voice.say(line[0], { force: true });
+    const line = { tractor: ['tractorRefuse', 'tractorGoAsk'], utv: ['utvRefuse', 'utvGoAsk'], landy: ['landyRefuse', 'landyGoAsk'], defender: ['defenderRefuse', 'defenderGoAsk'], fiesta: [null, 'carGoOff'], corsa: [null, 'carGoOff'], p309: [null, 'carGoOff'] }[kind];
+    const refuse = OWNED_KINDS.includes(kind) ? refuseCarLine(id, this.landys[kind].spec) : this.tractorGo.ask(id) === 'refuse' ? line[0] : null;
+    if (refuse) return void c.voice.say(refuse, { force: true });
     this.startGo(c, kind);
     c.voice.say(line[1], { force: true });
   }
@@ -2993,6 +2995,21 @@ export class Game {
         l.slowFor = 0;
       }
     }
+  }
+
+  /** A girl sat in your car while you drive it has a view on it now and then (#229): the bottles, the smell of diesel, the CDs. */
+  updateYourCar(dt) {
+    const l = this.landys.p309;
+    if (!l?.unit || this.riddenUnit !== l.unit || Math.abs(l.unit.quad.speed) < 3) return;
+    const aboard = this.companions.filter((c) => c.onHayRide && c.trailer === l.mount && c.fsm.is('onTrailer'));
+    if (!aboard.length) {
+      l.remarkIn = null;
+      return;
+    }
+    l.remarkIn = (l.remarkIn ?? 20 + Math.random() * 40) - dt; // a while into the drive, then the line's own cooldown spaces them
+    if (l.remarkIn > 0) return;
+    l.remarkIn = 60 + Math.random() * 90;
+    aboard[Math.floor(Math.random() * aboard.length)].voice.say('yourCarRide', { chance: 0.8 });
   }
 
   /** The radios in the Land Rovers and the girls' cars (vehicle/radio.js): their sound, and what each girl does about the one she is sat by. */
@@ -4210,7 +4227,7 @@ export class Game {
       seatFree: !!(mount.freeSlot(from) || mount.freeRearSlot(from)),
       hasBack: !!mount.rearSlots.length,
       backFree: !!mount.freeRearSlot(from),
-      mayDrive: mayDriveCar(c.character.id, l.spec),
+      mayDrive: mayDriveCar(c.character.id, l.spec) || l.spec.owner === 'you', // asked to drive yours, she says it's yours (refuseCarLine)
       ownerName: owner,
       canDrive: c.canDrive(q),
       driveFree: this.driveFree(kind),
@@ -12160,6 +12177,7 @@ export class Game {
     if (GO_KINDS.some((k) => this.goVehicle(k)) && auto) this.guard.run('updateTractorGo', () => this.updateTractorGo(dt, ridden));
     this.guard.run('updateRadios', () => this.updateRadios(dt));
     this.guard.run('updateArrival', () => this.updateArrival(dt));
+    this.guard.run('updateYourCar', () => this.updateYourCar(dt));
     this.guard.run('updateCars', () => this.updateCars(dt)); // (minding you taking her car is a reaction, so it runs with the girls on hold too)
     this.guard.run('updateLPlates', () => this.updateLPlates(dt));
     this.guard.run('updatePushStart', () => this.updatePushStart());

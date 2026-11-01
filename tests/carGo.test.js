@@ -93,3 +93,14 @@ describe('borrowing her car', () => {
     expect(b.update(at({}))).toEqual([]);
   });
 });
+
+describe('asking a girl to drive a car that is not hers', () => {
+  it('gets "it is yours" for your car and "that is hers" for her friend\'s, and nothing for her own', async () => {
+    const { refuseCarLine } = await import('../src/npc/carGo.js');
+    const { FIESTA_SPEC, CORSA_SPEC, P309_SPEC } = await import('../src/vehicle/quadSpecs.js');
+    expect(refuseCarLine('amy', P309_SPEC)).toBe('carYours');
+    expect(refuseCarLine('jess', P309_SPEC)).toBe('carYours');
+    expect(refuseCarLine('amy', CORSA_SPEC)).toBe('carNotMine');
+    expect(refuseCarLine('amy', FIESTA_SPEC)).toBeNull();
+  });
+});

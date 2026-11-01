@@ -1,7 +1,8 @@
 // What the girls say about their own cars (npc/carGo.js): carGoOff as she sets off to take hers out (or when you ask her to), carGoSetOff
 // as she pulls away, carGoWatch from her friend watching, carGoDone back; carNotMine asked to drive the other's; carTaken when she sees you
 // drive off in hers, carBack and carBackDamaged when you bring it back, carRidden when you take her along in it; and sat beside you in
-// hers, carStalled, carTooFast (Amy) and carTooSlow (Jess). Merged into the main line sets (voiceLines.js, jessLines.js).
+// hers, carStalled, carTooFast (Amy) and carTooSlow (Jess). And your car (#229): carYours asked to drive it, liftThanks getting out of it after a
+// lift of a morning, yourCarRide now and then while you drive her in it. Merged into the main line sets (voiceLines.js, jessLines.js).
 
 const line = (cooldown, lines) => ({ cooldown, lines });
 
@@ -17,6 +18,9 @@ export const AMY_CAR_LINES = {
   carRidden: line(60, ['Gently, please. It is not a quad.', 'Mind the choke, it does not like being cold.', 'All right, but I am watching you.']),
   carStalled: line(40, ['Clutch, then gas. Gently.', 'You stalled it. It does that. Try again.', 'Bring the clutch up slower.']),
   carTooFast: line(30, ['Slow down! It does not like going this fast.', 'That is far too quick. Please.', 'It was not built for this. Neither was I.']),
+  carYours: line(30, ['It is your car. You drive it.', 'I am not driving your car. I would only find a new dent for it.']),
+  liftThanks: line(60, ['Thanks for the lift.', 'Thank you for picking me up.', 'Thanks. Your heater could do with looking at.']),
+  yourCarRide: line(240, ['There is a bottle rolling about under my feet.', 'It smells of diesel in here.', 'How many miles has this done now?', 'You really should get that dent seen to.', 'It is quite comfy, for an old diesel.']),
 };
 
 export const JESS_CAR_LINES = {
@@ -31,6 +35,9 @@ export const JESS_CAR_LINES = {
   carRidden: ['Go on then, let us see what you can do.', 'Put your foot down, it will not break. Probably.', 'Mind the exhaust on the bumps.'],
   carStalled: ['You stalled it. In my car.', 'More revs! It is not a tractor.', 'Ha! Go on, again.'],
   carTooSlow: ['My nan drives faster than this.', 'Are we parking or driving?', 'You can put your foot down, you know.'],
+  carYours: ['Your car, your problem.', 'Me, drive that? It is a diesel. No thank you.'],
+  liftThanks: ['Cheers for the lift.', 'Ta for the lift. Same time tomorrow?', 'Cheers. Your car smells of diesel, by the way.'],
+  yourCarRide: ['Can we put some music on? Not those CDs.', 'This thing rattles like a tractor.', 'Who keeps CDs in a car any more?', 'Does it go any faster than this?', 'It is a nice enough car. For a pensioner.'],
 };
 
 /** Lines only Jess has: Amy would never tell you to go faster. */
