@@ -33,7 +33,7 @@ describe('dealing the morning', () => {
   });
 
   it('copes with no girls, or one', () => {
-    expect(dealArrival(rnd(1), [])).toEqual({ lift: [], sit: {}, follow: {} });
+    expect(dealArrival(rnd(1), [])).toEqual({ lift: [], sit: {}, follow: {}, running: [] });
     for (let i = 1; i < 50; i++) expect(dealArrival(rnd(i), ['jess']).lift.length).toBeLessThanOrEqual(1);
   });
 
@@ -73,7 +73,7 @@ describe('the morning playing out', () => {
     const all = [];
     let t = 0;
     for (; t < 30; t += 0.5) all.push(...a.update(0.5, { youIn: true, seated: seatedAll }).map((e) => ({ ...e, t })));
-    expect(all).toEqual([{ type: 'out', girl: 'amy', from: 'own', t: 19.5 }]);
+    expect(all).toEqual([{ type: 'out', girl: 'amy', from: 'own', leaveRunning: false, t: 19.5 }]);
     for (let s = 0; s < 2; s += 0.5) expect(a.update(0.5, { youIn: false, seated: new Set(['jess']) })).toEqual([]); // you've just got out: she waits two seconds
     expect(a.update(0.5, { youIn: false, seated: new Set(['jess']) })).toEqual([{ type: 'out', girl: 'jess', from: 'lift' }]);
     expect(a.done).toBe(true);
@@ -106,3 +106,23 @@ describe('the car you arrive in', () => {
     expect(e.temperature).toBeGreaterThan(0.8);
   });
 });
+
+describe('leaving her car running (#491)', () => {
+  it('has Jess leave hers ticking over far more often than Amy, and says so when she gets out', () => {
+    const random = rnd(11);
+    const n = { amy: 0, jess: 0 };
+    let days = { amy: 0, jess: 0 };
+    for (let i = 0; i < 3000; i++) {
+      const d = dealArrival(random, GIRLS);
+      for (const g of Object.keys(d.sit)) {
+        days[g]++;
+        if (d.running.includes(g)) n[g]++;
+      }
+    }
+    expect(n.amy / days.amy).toBeLessThan(0.22);
+    expect(n.jess / days.jess).toBeGreaterThan(0.38);
+    const a = new Arrival({ lift: [], sit: { jess: 1 }, follow: {}, running: ['jess'] });
+    expect(a.update(2, { youIn: true, seated: new Set(['jess']) })).toEqual([{ type: 'out', girl: 'jess', from: 'own', leaveRunning: true }]);
+  });
+});
+

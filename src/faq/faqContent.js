@@ -2382,7 +2382,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why are the girls sat in their cars when I arrive?',
-        a: `They have just driven in too. Each one sits on in her car with the engine running for a bit, up to about a minute, then switches off and gets out.
+        a: `They have just driven in too. Each one sits on in her car with the engine running for a bit, up to about a minute, then gets out, usually switching off first. Not always: Amy hardly ever leaves hers running, Jess quite often does.
           You can't get into the driver's seat of a girl's car while she is sat in it.`,
       },
       {

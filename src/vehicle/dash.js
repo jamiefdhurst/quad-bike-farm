@@ -1402,6 +1402,16 @@ function buildCorsa() {
  * rev counter (it keeps the game's time, and goes dark with no power), a column of lamps between them (indicators, glow plugs, charge, handbrake,
  * main beam), and at each end a pocket of two: the oil lamp over the fuel gauge on the left, the water lamp over the temperature gauge on the right.
  */
+/** Your 309's cluster's layout, in the panel's pixels: each dial's middle and radius, and the left edges of the two end pockets (34 wide). */
+export const P309_CLUSTER = {
+  speedo: { cx: 127, cy: 60, r: 31 },
+  clock: { cx: 230, cy: 60, r: 30 },
+  fuel: { cx: 70, cy: 76, r: 14 },
+  water: { cx: 289, cy: 76, r: 14 },
+  pockets: [53, 272],
+  lamps: [170, 190],
+};
+
 function buildP309() {
   const group = new THREE.Group();
   group.name = 'dash';
@@ -1410,10 +1420,9 @@ function buildP309() {
   housing(group, { ...P, x: P.x - 4, y: P.y - 4, w: P.w + 8, h: P.h + 8, r: 7, ...O, material: FIESTA_BLACK });
   const face = mmPanel({ ...P, ...O });
   group.add(face.mesh);
-  const speedo = { cx: 128, cy: 60, r: 33 };
-  const clock = { cx: 232, cy: 60, r: 31 };
-  const fuel = { cx: 76, cy: 76, r: 15 };
-  const water = { cx: 284, cy: 76, r: 15 };
+  // Laid out left to right with room between (the speedo's rim ran into the left pocket, the clock's into the right): the left pocket 53 to 87, the
+  // speedo 94 to 160, the lamps 170 to 190, the clock 198 to 262, the right pocket 272 to 306. P309_CLUSTER is the same, for the test.
+  const { speedo, clock, fuel, water, pockets } = P309_CLUSTER;
   const gate = changeGate();
   let shownMph = 0;
   let shownFuel = 0;
@@ -1441,12 +1450,12 @@ function buildP309() {
     ctx.fillStyle = '#1a1b1c';
     ctx.fillRect(P.x, P.y, P.w, P.h);
     // The left end: the oil lamp over the fuel gauge (a quarter arc, E to F).
-    pocket(ctx, 56, 26, 40, 28);
-    warnSymbol(ctx, 'oil', 76, 40, LAMP.red, L.oil, 0.5, false);
-    pocket(ctx, 56, 58, 40, 36);
+    pocket(ctx, pockets[0], 26, 34, 28);
+    warnSymbol(ctx, 'oil', fuel.cx, 40, LAMP.red, L.oil, 0.5, false);
+    pocket(ctx, pockets[0], 58, 34, 36);
     ticks(ctx, fuel.cx, fuel.cy, fuel.r - 4, fuel.r, 150, 30, 4, FIG, 0.8);
-    text(ctx, '0', fuel.cx - 14, fuel.cy - 4, 3.2, LAMP.red, { align: 'center' });
-    text(ctx, '1', fuel.cx + 14, fuel.cy - 4, 3.2, FIG, { align: 'center' });
+    text(ctx, '0', fuel.cx - 11, fuel.cy - 4, 3.2, LAMP.red, { align: 'center' });
+    text(ctx, '1', fuel.cx + 11, fuel.cy - 4, 3.2, FIG, { align: 'center' });
     warnSymbol(ctx, 'fuel', fuel.cx, fuel.cy + 9, '#cfd0cc', true, 0.36, false);
     needle(ctx, fuel.cx, fuel.cy, fuel.r - 1, 150 - 120 * L.fuel, NEEDLE, 1.3);
     // The speedometer: 0 to 100 mph round 270 degrees, with km/h inside and the odometer under the boss.
@@ -1478,9 +1487,9 @@ function buildP309() {
       needle(ctx, clock.cx, clock.cy, clock.r * 0.78, 90 - mm * 6, '#f0f0ea', 1.4);
     }
     // The right end: the water lamp over the temperature gauge (cold to hot, red at the top end).
-    pocket(ctx, 264, 26, 40, 28);
-    warnSymbol(ctx, 'temp', 284, 40, LAMP.red, L.temp >= HOT_FROM, 0.5, false);
-    pocket(ctx, 264, 58, 40, 36);
+    pocket(ctx, pockets[1], 26, 34, 28);
+    warnSymbol(ctx, 'temp', water.cx, 40, LAMP.red, L.temp >= HOT_FROM, 0.5, false);
+    pocket(ctx, pockets[1], 58, 34, 36);
     ticks(ctx, water.cx, water.cy, water.r - 4, water.r, 150, 30, 4, FIG, 0.8);
     arc(ctx, water.cx, water.cy, water.r - 1.5, 150 - 120 * HOT_FROM, 30, LAMP.red, 2);
     warnSymbol(ctx, 'temp', water.cx, water.cy + 9, '#cfd0cc', true, 0.36, false);
@@ -1506,7 +1515,7 @@ function buildP309() {
         park: on && !!s.parkBrake,
         main: on && !!s.lightLamps?.main,
         turn: on && !!(s.indicatorLamps?.left || s.indicatorLamps?.right),
-        clock: on ? s.clock ?? '' : '', // dark with a flat battery, as the Corsa's
+        clock: s.clock ?? '', // a clock runs all the time, key on or off (Jamie)
       };
       const odo = counterDigits(s.odoMiles, 5);
       if (gate([on, L.charge, L.oil, L.glow, L.park, L.main, L.turn, L.clock, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {

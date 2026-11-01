@@ -2,6 +2,7 @@
 // horn that works when it likes...). Nothing says which; you find out, or a girl who knows warns you. Unlike the faults that develop
 // (faults.js) they are the quad's character and nobody fixes them, apart from the stiff tap, which frees up with use. Pure logic, no
 // Three.js, so the effects are tested here and quad.js, game.js and rideAudio.js only ask for the numbers.
+import { hasChoke } from './controls.js';
 
 export const QUIRK_KINDS = ['fuelHigh', 'fuelSticks', 'tempCold', 'chokeCreeps', 'tapStiff', 'seatSplit', 'hornFlaky', 'brakesPull', 'brakeSqueal', 'headlightFlicker'];
 
@@ -65,7 +66,7 @@ export function featuresOf(spec, hasPod = false) {
   return {
     fuelGauge: gauge,
     tempGauge: gauge,
-    choke: !spec.tractor && !spec.utv && !spec.defender && !spec.engine?.injected, // (Jess's Corsa is injected: no choke)
+    choke: !spec.tractor && !spec.utv && !spec.defender && hasChoke(spec.engine), // (Jess's Corsa is injected and your car a diesel: no choke)
     tap: !spec.fuel?.noTap,
     seat: !spec.tractor && !spec.utv && !spec.landRover && !spec.car && spec.id !== 'kids' && spec.id !== 'moto', // the Land Rover's is a vinyl bench, the cars' are cloth
     horn: true,

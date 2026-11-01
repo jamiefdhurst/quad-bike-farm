@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
-import { build309Model, pose309Hatch, dentGeometry } from '../src/vehicle/p309Model.js';
+import { build309Model, pose309Hatch, dentGeometry, onDoor, halfAt } from '../src/vehicle/p309Model.js';
+import { P309_CLUSTER } from '../src/vehicle/dash.js';
 import { poseSeriesDoors } from '../src/vehicle/seriesModel.js';
 import { poseCarControls, carLayout } from '../src/vehicle/carModel.js';
-import { P309_BODY, P309_DOOR, P309_HATCH, P309_DENTS } from '../src/vehicle/p309Body.js';
+import { P309_BODY, P309_DOOR, P309_HATCH, P309_DENTS, P309_SHELF } from '../src/vehicle/p309Body.js';
 import { MAKERS, MAKER_FOR } from '../src/vehicle/detail/decals.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
@@ -227,4 +228,84 @@ describe('your 309 at its real size', () => {
     }
     expect(holes.slice(0, 8)).toEqual([]);
   }, 60000);
+
+  // Jamie's first look (#491) ---------------------------------------------------------------------------------------------------------------
+
+  it('keeps the mud out of the inside: the vents and the rest of the dark fittings in there are clean materials', () => {
+    const clean = new Set(model.userData.cleanMaterials);
+    const vents = [];
+    model.traverse((o) => { if (o.isMesh && o.name === 'vent') vents.push(o); });
+    expect(vents.length).toBeGreaterThanOrEqual(4);
+    for (const v of vents) expect(clean.has(v.material)).toBe(true);
+    for (const n of ['pedalClutch', 'gearLever', 'parkBrakeLever']) model.getObjectByName(n).traverse((o) => { if (o.isMesh) expect(clean.has(o.material), n).toBe(true); });
+  });
+
+  it('puts the tray clear of the vents either side of it', () => {
+    const t = model.userData.tray;
+    const box = new THREE.Box3();
+    model.traverse((o) => {
+      if (!o.isMesh || o.name !== 'vent') return;
+      box.setFromObject(o);
+      const clear = box.max.x < t.x - t.half - 0.01 || box.min.x > t.x + t.half + 0.01;
+      expect(clear, `vent ${box.min.x.toFixed(2)} to ${box.max.x.toFixed(2)}`).toBe(true);
+    });
+  });
+
+  it('lays out its cluster with nothing running into anything else', () => {
+    const { speedo, clock, fuel, water, pockets, lamps } = P309_CLUSTER;
+    const left = (d) => d.cx - d.r - 2; // (a dial's black rim is 2 px proud of its face)
+    const right = (d) => d.cx + d.r + 2;
+    expect(left(speedo)).toBeGreaterThan(pockets[0] + 34 + 3);
+    expect(right(speedo)).toBeLessThan(lamps[0] - 3);
+    expect(left(clock)).toBeGreaterThan(lamps[1] + 3);
+    expect(right(clock)).toBeLessThan(pockets[1] - 3);
+    for (const [g, x] of [[fuel, pockets[0]], [water, pockets[1]]]) {
+      expect(g.cx - g.r).toBeGreaterThan(x);
+      expect(g.cx + g.r).toBeLessThan(x + 34);
+    }
+  });
+
+  it('puts the dents on the doors in the doors, so they swing with them, and keeps every dent off the arches and the shut lines', () => {
+    for (const d of P309_DENTS) {
+      for (const zc of [C.wheelbase / 2, -C.wheelbase / 2]) expect(Math.hypot(d.z - zc, d.y - (C.R + 0.03)), `dent at ${d.z}`).toBeGreaterThan(C.R + 0.07 + d.r + 0.02);
+      for (const edge of [P309_DOOR.hinge, P309_DOOR.rear]) expect(Math.abs(d.z - edge), `dent at ${d.z}`).toBeGreaterThan(d.r + 0.02);
+    }
+    const doorDents = (name) => { let n = 0; model.getObjectByName(name).traverse((o) => { if (o.name === 'dent') n++; }); return n; };
+    expect(doorDents('doorLeft')).toBe(P309_DENTS.filter((d) => d.side > 0 && onDoor(d)).length);
+    expect(doorDents('doorRight')).toBe(P309_DENTS.filter((d) => d.side < 0 && onDoor(d)).length);
+    expect(doorDents('doorLeft')).toBeGreaterThan(0);
+  });
+
+  it('paints its fuel flap', () => {
+    const flap = model.getObjectByName('fuelFlap');
+    expect(flap.material.color.getHex()).not.toBe(0x1b1c1d);
+    expect(flap.material).toBe(model.getObjectByName('wing').material);
+  });
+
+  it('keeps its parcel shelf under the glass and the deck, behind the seat back, and inside the back belts', () => {
+    const deckUnder = (z) => (z <= C.hatchBottom[0] ? upperLine(z) : C.roofRear[1] + ((C.hatchBottom[1] - C.roofRear[1]) * (z - C.roofRear[0])) / (C.hatchBottom[0] - C.roofRear[0])) - 0.03;
+    for (const z of [P309_SHELF.front, P309_SHELF.back]) expect(P309_SHELF.y + 0.006, `z ${z}`).toBeLessThan(deckUnder(z) - 0.01);
+    expect(P309_SHELF.back).toBeGreaterThan(C.tail + 0.2); // nowhere near the tail
+    expect(P309_SHELF.half).toBeLessThan(halfAt(C.rear.rearLeft.y + 0.6) - 0.03 - 0.03); // the back belts' tops hang outside it
+  });
+
+  it('keeps its hatch struts inside the body at every point of the hatch\'s swing', () => {
+    const [, yr] = C.roofRear;
+    for (const open of [0, 0.25, 0.5, 0.75, 1]) {
+      pose309Hatch(model, open);
+      model.updateMatrixWorld(true);
+      for (const n of ['hatchStrutLeft', 'hatchStrutRight']) {
+        const strut = model.getObjectByName(n);
+        for (let t = 0; t <= 1; t += 0.1) {
+          const p = new THREE.Vector3(0, 0, t).applyMatrix4(strut.matrixWorld); // along the strut (its length is its z scale)
+          const y = p.y - LIFT;
+          if (y > yr) continue; // up in the opening the hatch has left: open air
+          expect(Math.abs(p.x), `${n} open ${open} at ${p.toArray().map((v) => v.toFixed(2))}`).toBeLessThan(halfAt(y) - 0.04);
+        }
+      }
+    }
+    pose309Hatch(model, 0);
+    model.updateMatrixWorld(true);
+  });
 });
+

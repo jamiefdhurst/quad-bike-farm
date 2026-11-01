@@ -19,7 +19,7 @@ export const LAYOUT = {
   // gate (`gate`, `width` m across) in the farm's east hedge, closed. The cattle grid (`grid`) fills the grass field's gateway: `length` m along
   // the road, bars `pitch` m apart, `margin` m of pit beyond the tarmac each side (world/cattleGrid.js). A steel gate shuts the whole
   // corridor, hedge to hedge, `gateOffset` m east of the grid's middle, so it has to be opened before you can cross.
-  road: { z: 2, fromX: 78, toX: 199.5, halfWidth: 2.3, verge: 2.8, hedgeTo: 176, pad: { x: 188, radius: 8 }, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6, gate: { width: 7 }, grid: { length: 3.2, pitch: 0.16, margin: 0.3, gateOffset: 2.4 } },
+  road: { z: 2, fromX: 78, toX: 199.5, halfWidth: 2.3, verge: 2.8, hedgeTo: 176, pad: { x: 188, radius: 9 }, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6, gate: { width: 7 }, grid: { length: 3.2, pitch: 0.16, margin: 0.3, gateOffset: 2.4 } },
   // The public lane outside the farm's east hedge, running north to south past the big gate (world/traffic.js): its middle `x`, `halfWidth`,
   // and the `minZ` to `maxZ` that is drawn and driven on. Vehicles go by on it and visitors turn in at the gate.
   // `open` is the stretch you can ride or walk along (z from `minZ` to `maxZ`, between the farm's hedge and an invisible wall just east of
@@ -326,12 +326,13 @@ export const LAYOUT = {
   // the barn find, nose to the north wall, so its right side (the kickstart, the carb and the exhaust) is to the room and the girls can walk round to it.
   plover: { x: -65.0, z: 61.9, yaw: Math.PI },
   yard: { x: -54, z: 58, radius: 20 },
-  // Where the girls' cars park (game.js): on the tarmac pad at the end of the farm road, in front of the Dutch barn's open side, side by side
-  // and nosed in towards it. 5.2 m apart, so there's room for a girl to walk between them. The pad is flat, so nothing needs laying.
+  // Where the cars park (game.js): on the tarmac pad at the end of the farm road, in front of the Dutch barn's open side, in a row and nosed in
+  // towards it, yours at the west end (#491: Jamie wanted it beside theirs). 5.2 m apart, so there's room for a girl to walk between them; the row
+  // sits 0.8 m nearer the road than the two did and the pad is 9 m across the radius (it was 8), so all three stand wholly on it. The pad is flat, so nothing needs laying.
   cars: {
-    fiesta: { x: 185.4, z: -2.4, yaw: Math.PI, where: 'by the Dutch barn' },
-    corsa: { x: 190.6, z: -2.4, yaw: Math.PI, where: 'by the Dutch barn' },
-    p309: { x: 183.6, z: 4.4, yaw: Math.PI / 2 + 0.12, where: 'by the Dutch barn' }, // yours (#229): just pulled up off the farm road, nose east, behind theirs
+    p309: { x: 182.8, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
+    fiesta: { x: 188, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
+    corsa: { x: 193.2, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
   },
   paddock: { x: -66, z: 34, half: 7 },
   // The yard's animals (world/farmAnimals.js, farmAnimalsView.js): the hens' run and the pig's sty west of the barn, clear of the silage, the paddock

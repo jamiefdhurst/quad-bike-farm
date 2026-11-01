@@ -1,7 +1,7 @@
 // You arrive in your own car each morning (#229, was TODO 338): the day opens with you in the driver's seat of your 309, just pulled up on the
 // pad by the Dutch barn with the engine running and warm. Some days you have given one or both girls a lift: they are sat in it with you, and get
 // out after you do; their own car is not on the farm that day. The others are sat at the wheel of their own cars on the pad, engines running and
-// warm, and get out within a minute, switching off as they go. Pure: the game deals the day, seats everyone, and acts on the events
+// warm, and get out within a minute, usually switching off as they go (Jess often doesn't). Pure: the game deals the day, seats everyone, and acts on the events
 // (game.js arriveInCar, updateArrival). Driving their cars in down the lane is #99's; parking yours where you left it needs the save to keep places.
 
 export const DEFAULT_ARRIVAL_PARAMS = {
@@ -11,6 +11,8 @@ export const DEFAULT_ARRIVAL_PARAMS = {
   sitMax: 60, // ...up to a minute (Jamie)
   followMin: 1.5, // seconds after you get out that a girl you gave a lift gets out too...
   followMax: 4.5, // ...the second one a little after the first
+  amyLeavesRunning: 0.15, // chance a girl gets out of her own car and leaves it ticking over (Jamie: they wouldn't always switch off): Amy hardly ever...
+  jessLeavesRunning: 0.45, // ...Jess often
 };
 
 export const ARRIVAL_PARAM_RANGES = {
@@ -20,11 +22,14 @@ export const ARRIVAL_PARAM_RANGES = {
   sitMax: [0, 180, 1],
   followMin: [0, 10, 0.5],
   followMax: [0, 15, 0.5],
+  amyLeavesRunning: [0, 1, 0.05],
+  jessLeavesRunning: [0, 1, 0.05],
 };
 
 /**
  * Today's arrival, from today's random stream: `lift` the girls in your car (the first in the front, the second behind), `sit` how long each of
- * the others sits on in her own car, `follow` how long after you each one you gave a lift waits before she gets out.
+ * the others sits on in her own car, `follow` how long after you each one you gave a lift waits before she gets out, `running` the girls who'll
+ * get out of their own cars and leave them running.
  */
 export function dealArrival(random, girls, p = DEFAULT_ARRIVAL_PARAMS) {
   const r = random();
@@ -36,16 +41,18 @@ export function dealArrival(random, girls, p = DEFAULT_ARRIVAL_PARAMS) {
   const between = (a, b) => a + random() * Math.max(0, b - a);
   const sit = {};
   const follow = {};
+  const running = [];
   let after = 0;
   for (const g of girls) {
     if (lift.includes(g)) continue;
     sit[g] = between(p.sitMin, p.sitMax);
+    if (random() < (p[`${g}LeavesRunning`] ?? 0.3)) running.push(g);
   }
   for (const g of lift) {
     after += between(p.followMin, p.followMax);
     follow[g] = after;
   }
-  return { lift, sit, follow };
+  return { lift, sit, follow, running };
 }
 
 /** Which seat each girl you gave a lift takes: the passenger's for the first, behind it for the second. */
@@ -70,7 +77,7 @@ export function keepAway(vehicles, saved = {}, away = []) {
 
 /**
  * The morning as it plays out. Each frame the game says whether you are still in your car and which girls are still sat where they started;
- * `update` returns { type: 'out', girl, from: 'own' | 'lift' } when it is time for one to get out. Done once everyone is out.
+ * `update` returns { type: 'out', girl, from: 'own' | 'lift', leaveRunning } when it is time for one to get out (`leaveRunning`: out of her own car without switching off). Done once everyone is out.
  */
 export class Arrival {
   constructor(deal) {
@@ -96,15 +103,15 @@ export class Arrival {
     this.clock += dt;
     if (!youIn && this.youOutAt === null) this.youOutAt = this.clock;
     const events = [];
-    const go = (girl, from) => {
+    const go = (girl, from, leaveRunning = false) => {
       this.out.add(girl);
       this.forced.delete(girl);
-      events.push({ type: 'out', girl, from });
+      events.push({ type: 'out', girl, from, ...(from === 'own' && { leaveRunning }) });
     };
     for (const [girl, at] of Object.entries(this.deal.sit)) {
       if (this.out.has(girl)) continue;
       if (!seated.has(girl)) this.out.add(girl); // moved off it some other way (asked out, sent to a job): nothing more to do
-      else if (this.clock >= at || this.forced.has(girl)) go(girl, 'own');
+      else if (this.clock >= at || this.forced.has(girl)) go(girl, 'own', (this.deal.running ?? []).includes(girl));
     }
     for (const girl of this.deal.lift) {
       if (this.out.has(girl)) continue;

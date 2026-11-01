@@ -49,6 +49,12 @@ export const P309_TAIL_LAMP = { x: 0.53, y0: 0.62, y1: 0.8, w: 0.34 };
 /** The cargo floor behind the rear seat. */
 export const P309_BOOT = { floor: 0.52, front: -1.53 }; // full width only behind the rear tyres (their back edge is at z -1.515)
 
+/** The parcel shelf: its height, front and back edges (z) and half width. Under the glass and the deck, behind the back seat's top, inside the belts. */
+export const P309_SHELF = { y: 0.9, front: -1.4, back: -1.6, half: 0.62 };
+
+/** The hatch struts' body end (x either side, y, z): low on the boot's side, well inboard of the C pillars. */
+export const P309_STRUT = { x: 0.6, y: 0.98, z: -1.5 };
+
 /** The rubbing strip along the sides, at about the bumpers' height: its middle and its height. */
 export const P309_RUB = { y: 0.44, h: 0.05 };
 
@@ -57,7 +63,7 @@ export const P309_RUB = { y: 0.44, h: 0.05 };
  * 0 to 1. Drawn as a shallow bowl of paint shaded as if pushed in (p309Model.js), so they read without cutting the panel.
  */
 export const P309_DENTS = [
-  { side: -1, z: -1.15, y: 0.66, r: 0.09, depth: 0.6 }, // the driver's rear quarter, above the arch: reversed into a gatepost
+  { side: -1, z: -0.92, y: 0.7, r: 0.08, depth: 0.6 }, // the driver's rear quarter, ahead of and above the arch: reversed into a gatepost
   { side: 1, z: 0.1, y: 0.56, r: 0.06, depth: 0.45 }, // the passenger's door: a car park's door ding
   { side: 1, z: -0.3, y: 0.66, r: 0.05, depth: 0.4 },
 ];
