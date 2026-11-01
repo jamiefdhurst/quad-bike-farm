@@ -60,7 +60,7 @@ import { fuelWaterLevel } from './fuelWater.js';
 import { DEFAULT_DIESEL_WAX_PARAMS, stepWax } from './dieselWax.js';
 import { DEFAULT_BLEED_PARAMS, runsDry, stepBleed } from './bleeding.js';
 import { strengthEffects, bonusFor } from './strength.js';
-import { reverseAllowed, chokeReach, DEFAULT_CONTROLS_PARAMS } from './controls.js';
+import { reverseAllowed, chokeReach, hasChoke, DEFAULT_CONTROLS_PARAMS } from './controls.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
 
 const REAR_SEATS = Object.keys(LANDY_REAR_SEATS); // a back bench's seats, where a model has one (the 200TDi)
@@ -581,7 +581,7 @@ export class Quad {
     // An automatic's reverse is a button, pressed with the brake held (the two-strokes have none).
     if (this.input && !this.manual && !this.tractor && input.wasPressed('KeyB') && this.reverseCheck(input)) this.reverse = true;
     this.handOff = 1;
-    if (!this.tractor && !this.engine.params.injected) { // (an injected engine has no choke: Jess's Corsa)
+    if (!this.tractor && hasChoke(this.engine.params)) { // (an injected engine or a diesel has no choke: Jess's Corsa, your car)
       const reach = chokeReach(this.chokeStyle, Math.abs(this.forwardSpeed), !!this.input, this.controlsParams);
       const keys = [CHOKE_MORE_KEY, CHOKE_LESS_KEY];
       if (reach.ok) {

@@ -114,7 +114,13 @@ export const CONTROLS = [
     ],
   },
   {
-    title: 'The radio (the Moorlands and the girls\' cars)',
+    title: 'Your Vauclair',
+    lines: [
+      `<kbd>K</kbd> key (wait for the glow plug lamp to go out), hold <kbd>R</kbd> to crank; the key stops it. A diesel: no choke. Hold <kbd>Shift</kbd> for the clutch, <kbd>1</kbd>-<kbd>5</kbd> gears, <kbd>B</kbd> reverse, <kbd>Space</kbd> handbrake. <kbd>T</kbd> lifts the hatch or shuts it (stopped, from the seat or beside it). The doors swing out when you get in or out`,
+    ],
+  },
+  {
+    title: 'The radio (the Moorlands and the cars)',
     lines: [
       `<kbd>I</kbd> radio on and off, <kbd>Shift</kbd>+<kbd>I</kbd> louder, <kbd>Alt</kbd>+<kbd>I</kbd> quieter. It needs the key on, and goes quiet while the starter turns`,
       `Each has a set of its own: the Series' picks up the engine and drifts off the station, Amy's Finch has a cassette radio, Jess's Griffin a loud one with a lot of bass. Jess turns it up, Amy turns it off`,

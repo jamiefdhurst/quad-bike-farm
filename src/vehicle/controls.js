@@ -14,6 +14,14 @@ export const REVERSE_STYLES = ['bars', 'button', 'knee', 'dashLever', 'none'];
 export const CHOKE_STYLES = ['thumb', 'knob', 'plunger', 'slide', 'none'];
 export const TAP_STYLES = ['left', 'right', 'rearLeft', 'lowLeft', 'lowRight', 'carbLeft', 'none']; // ('none': no tap at all, the fuel always flows: an injected quad's)
 
+/**
+ * Whether an engine has a choke you can work: not a fuel injected one (it meters its own cold start) and not a diesel (glow plugs warm it instead:
+ * the tractor, the Yak, the Crag, your car). The key hints, the choke keys and the choke quirks all ask this.
+ */
+export function hasChoke(engineParams = {}) {
+  return !engineParams.injected && !engineParams.compressionIgnition;
+}
+
 export const DEFAULT_CONTROLS_PARAMS = {
   barsMaxSpeed: 1.5, // m/s: the bar lever can be pushed down while it's creeping, not at a run
   buttonMaxSpeed: 0.4, // m/s: the reverse button wants it stopped

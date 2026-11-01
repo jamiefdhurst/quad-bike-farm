@@ -71,7 +71,7 @@ import { FallingOut, FALLING_OUT_PARAM_RANGES } from './npc/fallingOut.js';
 import { Romance, Tryst, ROMANCE_PARAM_RANGES } from './npc/romance.js';
 import { pickHistory, pickFaultChance } from './vehicle/history.js';
 import { TyreSet, dealTyres, DEFAULT_TYRE_PARAMS, TYRE_PARAM_RANGES } from './vehicle/tyres.js';
-import { pushDirection, localAlong } from './vehicle/controls.js';
+import { pushDirection, localAlong, hasChoke } from './vehicle/controls.js';
 import { BrakeState, DEFAULT_BRAKE_PARAMS, BRAKE_PARAM_RANGES } from './vehicle/brakeState.js';
 import { DEFAULT_CARB_ICE_PARAMS, CARB_ICE_PARAM_RANGES } from './vehicle/carbIcing.js';
 import { FrozenCable, DEFAULT_FROZEN_CABLE_PARAMS, FROZEN_CABLE_PARAM_RANGES } from './vehicle/frozenCable.js';
@@ -1295,8 +1295,8 @@ export class Game {
                   : unit.spec.landRover
                     ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.defender ? [] : [['Q Z', 'Choke'], ['[ ]', 'Hand throttle']]), ['Y', 'Dipstick'], ...(unit.spec.defender ? [] : [['P', 'Starting handle (at the front)']])]
                   : unit.spec.car
-                    ? [['K', 'Key'], ['R', 'Start'], ...(unit.spec.engine.injected ? [] : [['Q Z', 'Choke']]), ['Y', 'Dipstick']]
-                  : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['O', quad.engine.params.kickStart ? 'Kick' : 'Pull-start']] : []), ...(quad.engine.params.manualTiming ? [['[ ]', 'Spark lever']] : []), ...(quad.barLights ? [['P', 'Lights']] : []), ...(quad.engine.params.injected ? [] : [['Q Z', 'Choke']]), ...(quad.fuel.params.noTap ? [] : [['F', 'Fuel tap']]), ...(quad.sump ? [['Y', 'Dipstick']] : quad.engine.params.tickler ? [['Y', 'Tickle']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : [])]),
+                    ? [['K', unit.spec.engine.compressionIgnition ? 'Key (wait for the glow lamp)' : 'Key'], ['R', 'Start'], ...(hasChoke(unit.spec.engine) ? [['Q Z', 'Choke']] : []), ['Y', 'Dipstick']]
+                  : [['K', 'Ignition'], ...(quad.engine.params.noStarter ? [] : [['R', 'Start']]), ...(quad.engine.params.pullStart ? [['O', quad.engine.params.kickStart ? 'Kick' : 'Pull-start']] : []), ...(quad.engine.params.manualTiming ? [['[ ]', 'Spark lever']] : []), ...(quad.barLights ? [['P', 'Lights']] : []), ...(hasChoke(quad.engine.params) ? [['Q Z', 'Choke']] : []), ...(quad.fuel.params.noTap ? [] : [['F', 'Fuel tap']]), ...(quad.sump ? [['Y', 'Dipstick']] : quad.engine.params.tickler ? [['Y', 'Tickle']] : []), ...(quad.reverseStyle === 'none' ? [['V', 'Push (no reverse)']] : [])]),
               ['U', 'Dip the tank'],
             ],
           };
@@ -1974,7 +1974,7 @@ export class Game {
       const c = this.companions.find((o) => o.character.id === e.girl);
       const l = Object.values(this.landys).find((x) => x.mount && c?.trailer === x.mount);
       if (!c || !l) continue;
-      if (e.from === 'own') l.unit.quad.engine.setIgnition(false); // she's parked: she switches off as she gets out
+      if (e.from === 'own' && !e.leaveRunning) l.unit.quad.engine.setIgnition(false); // she's parked: she switches off as she gets out, most days
       else c.voice.say('liftThanks', { chance: 0.8 });
       l.ride.dismiss(e.girl);
       c.leaveTrailer();
