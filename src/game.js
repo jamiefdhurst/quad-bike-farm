@@ -203,7 +203,7 @@ import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
 import { Flask, FLASK_PARAM_RANGES } from './npc/flask.js';
 import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js';
 import { dealPoloOpen } from './npc/polo.js';
-import { dealOutfit, outfitsFor, DEFAULT_OUTFIT_PARAMS, OUTFIT_PARAM_RANGES } from './npc/outfits.js';
+import { dealOutfit, outfitsFor, outfitRemark, DEFAULT_OUTFIT_PARAMS, OUTFIT_PARAM_RANGES } from './npc/outfits.js';
 import { Jumpers, JUMPER_PARAM_RANGES, dealJumperColours } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
 import { Coats, COAT_PARAM_RANGES, dealCoatColours } from './npc/coats.js';
@@ -1201,6 +1201,7 @@ export class Game {
     // on a warm day.
     this.outfitParams = { ...DEFAULT_OUTFIT_PARAMS };
     const outfitRandom = createRandom((this.farmSeed ^ 0x0f17) + this.farm.day * 7919);
+    const shirtTieRandom = createRandom((this.farmSeed ^ 0x7e1e) + this.farm.day * 7919); // the shirt and tie's own, so it moved nobody's other outfits
     const warm = this.weather.peak > this.outfitParams.warmAbove;
     const forcedOutfit = new URLSearchParams(location.search).get('outfit');
     for (const c of this.companions) {
@@ -1209,6 +1210,8 @@ export class Game {
         popped: c.character.poppedChance ?? 0,
         underOpen: c.character.underOpen,
         plaidButtons: c.character.plaidButtons,
+        tieLoose: c.character.tieLooseChance ?? 0,
+        extra: shirtTieRandom,
         p: this.outfitParams,
       });
       if (outfitsFor(c.character.outfitOdds).includes(forcedOutfit)) style.kind = forcedOutfit; // ?outfit=plaid puts both girls in it, to look at
@@ -11105,9 +11108,14 @@ export class Game {
     if (her) {
       // Caught out, she owns up as soon as you speak to her.
       const prank = this.pranks.unconfessed(her.character.id);
+      // Dressed up today (a shirt and tie), she says why the first time you talk to her (npc/outfits.js).
+      const remark = outfitRemark(her.outfit?.style, this.farm.day, her.outfitRemarkedOn);
       if (prank) {
         this.pranks.confess(prank);
         her.voice.say('prankConfess', { force: true });
+      } else if (remark) {
+        her.outfitRemarkedOn = this.farm.day;
+        her.voice.say(remark, { force: true });
       } else this.remindOfFavour(her);
       this.favour.add(her.character.id, this.favour.p.talk);
       her.needs.noticed(her.params.needTalkEase);

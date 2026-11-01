@@ -108,6 +108,8 @@ export function buildGirlsTab(d) {
     wear.add({ get v() { return style().kind; }, set v(x) { c.setStyle({ ...style(), kind: x }); } }, 'v', kinds).name('outfit').listen();
     tick(wear, 'plaid worn open', () => style().plaidOpen, (v) => c.setStyle({ ...style(), plaidOpen: v }));
     tick(wear, 'collar popped', () => style().popped, (v) => c.setStyle({ ...style(), popped: v }));
+    tick(wear, 'tie loosened', () => style().tieLoose, (v) => c.setStyle({ ...style(), tieLoose: v }));
+    tick(wear, 'over the polo', () => style().shirtOverPolo, (v) => c.setStyle({ ...style(), shirtOverPolo: v }));
     slider(wear, 'polo buttons undone', () => c.outfit.poloOpen ?? 0, (v) => c.setPoloOpen(v), 0, 5, 1);
     slider(wear, 'plaid buttons undone', () => style().plaidButtons, (v) => c.setStyle({ ...style(), plaidButtons: Math.round(v) }), 0, 4, 1);
     slider(wear, 'under polo buttons undone', () => style().underOpen, (v) => c.setStyle({ ...style(), underOpen: Math.round(v) }), 0, 5, 1);
