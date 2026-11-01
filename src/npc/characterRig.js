@@ -235,6 +235,7 @@ export class CharacterRig {
     this.rotateAboutRootAxis(b.RightForeArm, AXIS_X, -o.rightElbow);
     for (const fn of this.posers) fn(dt);
     this.applyLook();
+    this.ponytail?.swing.update(dt); // last: it hangs from her chest whatever her head has done (outfit.js, ponytailView.js)
   }
 
   /**

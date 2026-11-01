@@ -6,7 +6,7 @@ import { buildHelmet } from './helmetModel.js';
 // only Three.js.
 
 const _v = new THREE.Vector3();
-const RIM_BELOW_CROWN = 0.105; // metres from the top of her head to the helmet's rim
+export const RIM_BELOW_CROWN = 0.105; // metres from the top of her head to the helmet's rim
 
 /** Sorted values' percentile. */
 function pct(values, q) {
