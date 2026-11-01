@@ -168,7 +168,7 @@ Settled with Jamie before building:
 
 ## The Version label check reads labels live (#266)
 
-`gh pr create --label` opens the PR and then adds the labels, so the `opened` event's payload had none and the check failed; a rerun reused that payload, and the passing `labeled` run didn't replace the failed one. The check now asks `gh pr view --json labels` for the current labels, so any run or rerun sees the truth, and a per-PR `concurrency` group with `cancel-in-progress` stops a late stale run overwriting a newer one. The remove-and-re-add workaround is gone from CLAUDE.md.
+`gh pr create --label` opens the PR and then adds the labels, so the `opened` event's payload had none and the check failed; a rerun reused that payload, and the passing `labeled` run didn't replace the failed one. The check now asks `gh pr view --json labels` for the current labels, so any run or rerun sees the truth. (The `concurrency` group this added was removed in #320.) The remove-and-re-add workaround is gone from CLAUDE.md.
 
 ## A faster smoke test (#265)
 
@@ -241,3 +241,7 @@ Settled with Jamie: work merges faster than Jamie can try it, so what only the r
 - Only the latest release is kept: `/srv/qbf` is emptied and the zip unpacked into it. Rolling back means running the workflow by hand with an older tag. Versioned folders behind a symlink were turned down as more than this needs for now.
 - The site is behind nginx basic auth while the BBC engine recordings are in the game (ASSETS.md). The nginx site, DNS record and the `/srv/qbf` folder live in Jamie's infrastructure repo.
 - Secrets: `SSH_HOST`, `SSH_USER` and `SSH_PRIVATE_KEY`, set by hand on this repo. The deployment record uses `GITHUB_TOKEN`, so no PAT is needed.
+
+## A cancelled Version label run blocked auto-merge (#320)
+
+`gh pr create` with two labels fires `opened` and one `labeled` per label. The workflow's `concurrency` group with `cancel-in-progress` cancelled the earlier runs, and a cancelled run still leaves a status on the commit, so #317 and #318 sat `BLOCKED` with Test and Version label green until the cancelled runs were re-run by hand. The group is gone, not just `cancel-in-progress`: with it off, GitHub still cancels runs that are pending behind a running one. Each run reads the labels live (#266), so a run is right as of when it ran, and the newest run is the one the PR shows. The check still fails for no type label or more than one, and still runs on `labeled` and `unlabeled`.
