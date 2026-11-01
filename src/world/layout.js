@@ -331,6 +331,7 @@ export const LAYOUT = {
   cars: {
     fiesta: { x: 185.4, z: -2.4, yaw: Math.PI, where: 'by the Dutch barn' },
     corsa: { x: 190.6, z: -2.4, yaw: Math.PI, where: 'by the Dutch barn' },
+    p309: { x: 183.6, z: 4.4, yaw: Math.PI / 2 + 0.12, where: 'by the Dutch barn' }, // yours (#229): just pulled up off the farm road, nose east, behind theirs
   },
   paddock: { x: -66, z: 34, half: 7 },
   // The yard's animals (world/farmAnimals.js, farmAnimalsView.js): the hens' run and the pig's sty west of the barn, clear of the silage, the paddock

@@ -1593,6 +1593,119 @@ export const CORSA_SPEC = {
   smoke: { ...LAND_ROVER_SPEC.smoke, warmDensity: 0.12, coldDensity: 0.6 },
 };
 
+// Your own car (#229, was TODO 338): a 1987 three-door 309 GLD, the 1.9 diesel (no turbo), a five-speed, in silver-grey with grey cloth inside, a
+// few dents. A car like the girls' (a unit with a clutch and gears, two seats in front and two in the back past a tipped seat, belts), but a diesel:
+// glow plugs on the key, the key stops it, it waxes in a hard frost and needs bleeding if run dry. Only you drive it (`owner: 'you'`); the girls sit in
+// its other seats, and one will start it for you. You arrive in it each morning (farm/arrival.js).
+export const P309_SPEC = {
+  id: 'p309',
+  tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
+  bodyWear: 0.12, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js): an everyday old car (0.3 and 0.2 read as rusty on silver)
+  radiatorAt: { x: 0, y: 0.85, z: 1.65 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
+  label: sayName('p309'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('p309'),
+  car: 'p309',
+  owner: 'you',
+  steadyLights: true,
+  wheelShake: 0.5,
+  bodyColor: 0x8f9396, // metallic silver-grey (Jamie: silver or grey)
+  dashStyle: 'p309',
+  hoursRange: [0, 0],
+  odoRange: [118000, 164000], // a diesel's miles
+  wearRange: [0.05, 0.1],
+  safeIdle: 650,
+  idleRange: [760, 800], // its recording ticks over at 748 to 803, so it plays at its own pace
+  roughnessRange: [0.08, 0.13], // a diesel's clatter, but four cylinders on soft mounts
+  fuelRange: [15, 40], // 55 litre tank
+  topRpmRange: [4950, 5050],
+  manual: true,
+  gearbox: {
+    ...FIESTA_SPEC.gearbox,
+    gears: 5,
+    topSpeed1: 9, // 20 mph
+    topSpeed2: 16, // 36
+    topSpeed3: 25, // 56
+    topSpeed4: 33, // 74
+    topSpeed5: 41, // 92: flat out it settles just under
+    torque1: 1,
+    torque2: 0.62,
+    torque3: 0.44,
+    torque4: 0.34,
+    torque5: 0.28,
+    launchLoad1: 0.25, // a diesel's torque low down: it pulls away from tickover
+    launchLoad2: 0.55,
+    launchLoad4: 1.2,
+    launchLoad5: 1.4,
+  },
+  fuel: { tankCapacity: 55, reserveLitres: 6, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.00016, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
+  engine: {
+    ...CAR_ENGINE,
+    compressionIgnition: true, // glow plugs, no choke (src/engine/compression.js)
+    runsOnDiesel: true,
+    keyStops: true, // a car's key stops it (the stop solenoid)
+    petrolFussy: true,
+    coldEnrichmentNeed: 0, // no mixture to enrich
+    chokeIdleRpm: 0,
+    catchChance: 0.85,
+    catchColdFactor: 0.9,
+    coldRoughness: 0.12,
+    coldPowerLoss: 0.3,
+    idleRpmWarm: 780,
+    maxRpm: 5000,
+    redlineRpm: 4800,
+    stallRpm: 380,
+    loadDragRpm: 1700, // a manual: lugging it in fifth with the clutch out stalls it
+    crankRpm: 220,
+    catchRpm: 900,
+    rpmRiseRate: 4.2, // a heavier flywheel than the petrol cars': slower to rev and to drop
+    rpmFallRate: 3.6,
+    warmUpSeconds: 300,
+    lugDepth: 0.22, // pulls from low down
+    popProne: 0,
+    roughHunt: 0.02,
+    erraticHunt: 0.01,
+    huntRpm: 0,
+    stumbleRate: 0.03,
+    misfireBase: 0,
+    cycleJitter: 0.04,
+    pulseStrengthJitter: 0.12,
+    wearPerMinute: 0.0004,
+  },
+  vehicle: {
+    ...CAR_VEHICLE,
+    mass: 1000, // with its driver
+    wheelRadius: 0.28, // 165/70 R13 tyres, at the model's real size
+    suspensionRestLength: 0.16,
+    maxDriveForce: 4600, // a diesel's torque
+    maxSpeed: 42,
+    engineBrakeForce: 900,
+    parkingBrake: 16,
+    rollInertia: 200, // longer and heavier than the girls': it leans, but not as far
+    pitchInertia: 640,
+    yawInertia: 700,
+    suspensionCompression: 2.8,
+    suspensionRelaxation: 2.6,
+  },
+  vibration: { ...CAR_VIBRATION, idleRpm: 780, steadiness: 0.6, pulseGain: 1.0, heaveGain: 0.1, pitchGain: 0.13 }, // a diesel four shakes more than the petrols
+  audio: {
+    recBank: 'engine-bank-309', // the BBC's 309 diesel itself: idling, pulling away and the interior constant run, a starter and its switch-off
+    recIdleSource: 'quad',
+    pulseDivide: 4, // the bank's grains are whole cycles: one plays every fourth firing
+    pulseRefRpm: 775, // its recorded idle, where the rev loudness and EQ start
+    pulseRevLo: 1100,
+    pulseRevHi: 1800,
+    pulseRevFollow: 0.08,
+    pulseRevLoudness: 0.3,
+    pulseRevGain: 1.1,
+    recVolume: 0.9,
+    recStarterVolume: 0.6,
+    recToneClosed: 4000,
+    pipeLength: 1.8,
+    densityRefRpm: 1300,
+  },
+  smoke: { ...UTV_SPEC.smoke },
+};
+
 // The old bike in the barn (#38, TODO 143): the Ashby Plover 125, after a 1949 rigid-frame Bantam. A restoration project: it stands under a tarp at
 // the back of the barn every game, needs a handful of jobs at the bench (barnFind.js's, plus the old bike's own), and then starts the old way: tickle
 // the carb, set the advance-retard lever, kick it over (engine/ignitionTiming.js). A 123 cc two-stroke single, a clutch (Shift) and a three-speed

@@ -37,6 +37,7 @@ export const RADIO_PROFILES = {
   landrover200: { name: 'plain stereo, door speakers', band: [200, 4800], hiss: 0.3, crackle: 0.25, whine: 0.25, drift: 0.25, bass: 3, warble: 0, loud: 0.9 },
   fiesta: { name: 'cassette radio', band: [160, 5200], hiss: 0.25, crackle: 0.12, whine: 0.1, drift: 0.15, bass: 4, warble: 0.4, loud: 0.85 },
   corsa: { name: 'aftermarket head unit, big bass', band: [60, 9500], hiss: 0.1, crackle: 0.05, whine: 0.04, drift: 0.08, bass: 10, warble: 0, loud: 1.15 },
+  p309: { name: 'factory cassette radio', band: [140, 6000], hiss: 0.22, crackle: 0.1, whine: 0.15, drift: 0.15, bass: 3, warble: 0.25, loud: 0.9 }, // your car's: a diesel's glow plugs and alternator whine into it a little
 };
 
 /** The profile for a vehicle id (the Series' if it is one we don't know). */

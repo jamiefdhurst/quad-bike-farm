@@ -16,7 +16,7 @@ import { wantsBank } from './bankWant.js';
 
 // Recorded pulse banks in public/audio/, made by tools/slice_engine_audio.py and tools/wav_to_flac.py. Only the ones a vehicle near
 // the start uses load behind the loading screen; any other loads the first time a voice asks for it (`requestBank`).
-const BANK_NAMES = ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-plover', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-landy', 'engine-bank-tdi', 'engine-bank-fiesta', 'engine-bank-corsa'];
+const BANK_NAMES = ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-plover', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-landy', 'engine-bank-tdi', 'engine-bank-fiesta', 'engine-bank-corsa', 'engine-bank-309'];
 
 /** The echo of the barn: a couple of seconds of noise that dies away fast, duller as it goes (tin and brick, not a cathedral). */
 function barnImpulse(ctx, seconds = 1.6) {

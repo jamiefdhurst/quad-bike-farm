@@ -255,5 +255,22 @@
     "cameraLeft": [0.37,1.21,-0.32],
     "cameraRearLeft": [0.34,1.23,-1.12],
     "cameraRearRight": [-0.34,1.23,-1.12]
+  },
+  "p309": {
+    "dash": [-0.37,0.89,0.44],
+    "seatBack_driver": [-0.37,0.47,-0.47],
+    "seatBack_left": [0.37,0.47,-0.47],
+    "handlebars": [-0.37,0.861,0.21],
+    "gripLeft": [-0.18,0.861,0.21],
+    "gripRight": [-0.56,0.861,0.21],
+    "riderHands": [-0.37,0.861,0.21],
+    "riderAnchor": [-0.37,0.51,-0.34],
+    "seatLeft": [0.37,0.51,-0.34],
+    "seatRearLeft": [0.34,0.53,-1.08],
+    "seatRearRight": [-0.34,0.53,-1.08],
+    "cameraAnchor": [-0.37,1.17,-0.32],
+    "cameraLeft": [0.37,1.17,-0.32],
+    "cameraRearLeft": [0.34,1.19,-1.06],
+    "cameraRearRight": [-0.34,1.19,-1.06]
   }
 }

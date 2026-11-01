@@ -2633,6 +2633,10 @@ export const VEHICLE_NOTES = {
     blurb: "Jess's car, the Ashby Griffin: a 1990s hatchback, red gone pink on the roof and bonnet, a grey primer wing, a wheel trim missing and a big exhaust. A 1.2 with fuel injection and five gears that sounds much faster than it is. Its doors swing open and its hatch lifts on T.",
     tips: ['T lifts the hatch.', 'No choke: the injection sorts out a cold start itself.', 'There is rarely much petrol in it.', 'Jess minds less if you borrow it, as long as you do not dawdle.'],
   },
+  p309: {
+    blurb: "Your own car, the Vauclair 39D: a late-80s three-door in silver-grey with grey cloth inside, a 1.9 diesel and five gears. A few dents, two bottles of pop in your door pocket and some CDs on the dash. You arrive in it every morning, parked up by the Dutch barn with the engine still running. Its doors swing open and its hatch lifts on T.",
+    tips: ['Wait for the glow plug lamp to go out before you crank it.', 'Diesel, so it waxes on a hard frost and needs bleeding if you run it dry.', 'T lifts the hatch.', 'Only you drive it. The girls will sit in it, and either will start it for you.'],
+  },
 };
 
 // A note for each girl, keyed by character id (characters.js).

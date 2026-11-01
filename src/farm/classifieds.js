@@ -62,6 +62,7 @@ export const NOT_FOR_SALE = {
   plover: 'the old bike is the barn project, always under its tarp at the back: it is not for sale',
   fiesta: "the girls' own car, always on the farm (one slot; a second needs vehicles that can have several of a model)",
   corsa: "the girls' own car, always on the farm (one slot; a second needs vehicles that can have several of a model)",
+  p309: 'your own car: you arrive in it every morning',
 };
 
 const COLOUR_NAMES = new Map([
