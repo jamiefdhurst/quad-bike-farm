@@ -264,6 +264,55 @@ export const OVER_POLO = {
   blouse: 0.006,
 };
 
+// A plain cotton work shirt for a shirt and tie, white or pale blue: tucked in as the polo is, seven small white buttons down a
+// placket to the waistband, a chest pocket on her left. Done right up, its long sleeves end in cuffs buttoned at her wrists; its
+// collar is a stiff point collar (POINT_COLLAR in collar.js) with the tie (tie.js) under it.
+export const SHIRT = {
+  ...POLO,
+  ease: 0.008,
+  bare: /Leg|Foot|Toe|Hand[A-Z]/, // the hand itself may carry the wrist, under the cuff
+  neckBack: 0.018,
+  neckSide: 0.016,
+  neckFront: -0.006,
+  neckBand: 0.006,
+  neckEase: 0.006,
+  sleeveFrom: 'ForeArm',
+  sleeveLength: 0.9, // to the wrist
+  sleeveEase: 0.011,
+  sleeveFlare: 0.012,
+  cuff: 0.05, // a shirt's cuff, stiff and close round her wrist
+  cuffEase: 0.008,
+  cuffButtons: true, // one button on the outside of each cuff
+  bandShade: 0.94, // a cuff is the same cloth, only doubled
+  hangSlope: 0.25,
+  hangMax: 0.04,
+  placket: true,
+  placketToHem: 0.045, // down to just above the waistband
+  placketWidth: 0.024,
+  placketShade: 1,
+  studs: 7,
+  buttons: [-0.008], // done right up, the top button is on the collar's stand, under the knot
+  topButtonOpen: 0.006,
+  buttonRadius: 0.0045,
+  buttonColour: '#f6f4ee', // small white shirt buttons
+  buttonMetal: 0,
+  underTie: true, // the buttons done up down the middle are under the tie and aren't drawn (they'd show through as she moves)
+  veeWidths: [0, 0.019, 0.026, 0.032, 0.038],
+  veeBows: [1, 1, 0.9, 0.8, 0.7],
+  veeStop: 0.01,
+  logo: null,
+  pocket: { across: 0.07, down: 0.07, width: 0.08, height: 0.09, lift: 0.0012, hem: 0.014, shade: 0.9 },
+  roughness: 0.8,
+};
+
+// Loosened: the top one or two undone and the sleeves rolled to the elbow in a turn-up.
+export const SHIRT_ROLLED = { ...SHIRT, sleeveLength: 0.06, sleeveFlare: 0.014, cuff: 0.045, cuffEase: 0.016, cuffButtons: false, bandShade: 0.9 };
+
+// The shirt over her polo: roomier, as the plaid over it is, its neck as high as on its own so its collar stands over the polo's.
+const OVER = { ease: 0.0135, sleeveEase: 0.015, neckEase: 0.013, inset: false };
+export const SHIRT_OVER = { ...SHIRT, ...OVER };
+export const SHIRT_ROLLED_OVER = { ...SHIRT_ROLLED, ...OVER, cuffEase: 0.018 };
+
 /**
  * Keeps a top's sleeves inside the top worn over it, as she stands. Skinned down from the stored pose (arms out) to her arms
  * hanging, the inside of a sleeve is squeezed, and the outer top, further out, is squeezed more, so the under one's sleeve can
@@ -476,7 +525,73 @@ export function buildTop(body, p = POLO) {
   shell.normals = smoothNormals(shell);
   const placket = p.placket ? buildPlacket({ verts: mesh.verts, tris: mesh.tris }, body, p, vee) : null;
   const logo = placket && p.logo ? buildLogo({ verts: mesh.verts, tris: mesh.tris }, body, p, placket.top) : null;
-  return { shell, shade, vee, placket, logo };
+  const pocket = placket && p.pocket ? buildPocket({ verts: mesh.verts, tris: mesh.tris }, body, p.pocket, placket.top) : null;
+  const cuffButtons = p.cuffButtons ? buildCuffButtons(mesh, body, p, F) : [];
+  return { shell, shade, vee, placket, logo, pocket, cuffButtons };
+}
+
+/**
+ * A button on the outside of each cuff, as she stands with her arms down: on the cuff's middle, on the side of her wrist away
+ * from her body. Each { centre, normal, anchor } as the placket's.
+ */
+function buildCuffButtons(mesh, body, p, F) {
+  const x0 = body.bones.Neck[0];
+  const out = [];
+  for (const [side, sl] of [[1, F.left], [-1, F.right]]) {
+    // her left is +x as she stands
+    let best = null;
+    for (const v of mesh.verts) {
+      if (sl.limb(v) < 0.8) continue;
+      const f = sl.field(v);
+      if (f > -p.cuff * 0.3 || f < -p.cuff * 0.7) continue;
+      const reach = side * (v.rest[0] - x0);
+      if (!best || reach > best.reach) best = { v, reach };
+    }
+    if (!best) continue;
+    const normal = norm(applySkinDir(best.v.skin, best.v.normal));
+    out.push({ centre: add(best.v.rest, scale(normal, 0.0003)), normal, anchor: best.v });
+  }
+  return out;
+}
+
+/**
+ * A shirt's chest pocket: a patch laid on the finished shirt on her left chest (rays from in front, as she stands), a hair off
+ * it, with a pointed bottom and a turned-down hem along its top. `shade` per point: its stitched edges and hem a shade darker.
+ */
+export function buildPocket(mesh, body, pk, top) {
+  const neck = body.bones.Neck;
+  const cx = neck[0] + pk.across; // her left
+  const cy = top - pk.down - pk.height / 2;
+  const near = (v) => Math.abs(v.rest[0] - cx) < pk.width && v.rest[2] > neck[2] && Math.abs(v.rest[1] - cy) < pk.height;
+  const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
+  const cols = 7;
+  const rows = 9;
+  const verts = [];
+  const shade = [];
+  for (let r = 0; r < rows; r++) {
+    const t = r / (rows - 1); // 0 at the top
+    for (let c = 0; c < cols; c++) {
+      const u = c / (cols - 1) - 0.5;
+      // The bottom comes to a shallow point, as a work shirt's does.
+      const x = cx + u * pk.width;
+      const y = cy + pk.height / 2 - t * pk.height + (t === 1 ? Math.abs(u) * 0.02 : 0);
+      const h = rayHit(front, [x, y, neck[2] + 0.6], [0, 0, -1]);
+      if (!h) return null;
+      const v = inTriangle(front, h.tri, h.bary);
+      const rest = add(v.rest, scale(norm(applySkinDir(v.skin, v.normal)), pk.lift));
+      verts.push({ ...v, bind: unskin(v.skin, rest), rest });
+      const edge = r === rows - 1 || c === 0 || c === cols - 1;
+      shade.push(edge || pk.height * t < pk.hem ? pk.shade : 1);
+    }
+  }
+  const tris = [];
+  for (let r = 0; r < rows - 1; r++) {
+    for (let c = 0; c < cols - 1; c++) {
+      const a = r * cols + c;
+      tris.push([a, a + cols, a + 1], [a + 1, a + cols, a + cols + 1]);
+    }
+  }
+  return { verts, tris, shade };
 }
 
 /**

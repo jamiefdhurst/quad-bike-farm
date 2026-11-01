@@ -76,6 +76,28 @@ export const SHIRT_COLLAR = {
 // and sharper points, so its edge and points show beyond the polo's.
 export const SHIRT_UNDER_COLLAR = { ...SHIRT_COLLAR, stand: 0.016, standFront: 0.012 };
 
+// A work shirt's point collar, for a shirt and tie: stiffer than the plaid's, a taller stand round her neck and long points that
+// fall down more than out, either side of the knot, lying over the tie.
+export const POINT_COLLAR = {
+  ...SHIRT_COLLAR,
+  stand: 0.03,
+  standFront: 0.025,
+  lean: 0.002, // stiff: it hardly leans in
+  roll: 0.007,
+  out: 0.033,
+  pointOut: 0.016,
+  pointDrop: 0.05,
+  pointSpread: 0.12,
+  pointReach: 0.75,
+  fallGap: 0.005, // its wings start this close to her middle, over the knot's sides, rather than beside the placket
+  tipRound: 0.012,
+  thickness: 0.0022,
+  smoothing: 2, // evened out less, so it keeps a crisp line
+};
+
+// The polo's collar under the shirt: lying close on the polo, so the shirt over it doesn't show it through.
+export const POLO_UNDER_SHIRT_COLLAR = { ...COLLAR, stand: 0.017, standFront: 0.013, out: 0.022, drop: 0.006, pointDrop: 0.022, clear: 0.0015 };
+
 // The over-polo's collar: a little smaller than her own polo's, so hers shows round its edge.
 export const OVER_COLLAR = { ...COLLAR, stand: 0.018, standFront: 0.014, out: 0.022, pointOut: 0.016, pointDrop: 0.025 };
 
@@ -114,7 +136,7 @@ export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p =
     return a0 === null || a1 === null ? null : [a0, a1];
   };
   const standSpan = ends(vee ? vee.halfWidth(vee.top) : p.closedGap);
-  const fallSpan = vee ? standSpan : ends(placketWidth / 2 + p.placketClear);
+  const fallSpan = vee ? standSpan : ends(p.fallGap ?? placketWidth / 2 + p.placketClear);
   if (!standSpan || !fallSpan) return null;
 
   // What the fall can lie on, near her neck.
