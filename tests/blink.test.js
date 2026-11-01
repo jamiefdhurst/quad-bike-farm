@@ -124,3 +124,17 @@ describe('her eyes in play (Companion.updateEyes)', () => {
     expect(gasping.lids.at(-1)).toBe(0);
   });
 });
+
+describe('the debug blink action', () => {
+  it('makes her blink now and says so', async () => {
+    const { girlActions } = await import('../src/debug/girlActions.js');
+    const toasts = [];
+    const amy = { character: { id: 'amy' }, name: 'Amy', blink: new Blink({ ...DEFAULT_BLINK_PARAMS }, { random: seeded(1) }) };
+    const g = { companions: [amy], hud: { toast: (t) => toasts.push(t) }, girlUnits: [], units: [] };
+    const act = girlActions(g).find('amy', 'blink');
+    expect(act.label).toContain('blinks');
+    act.run('amy');
+    expect(amy.blink.blinking).toBe(true);
+    expect(toasts).toEqual(['Amy blinks']);
+  });
+});

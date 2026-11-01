@@ -58,6 +58,9 @@ export function buildGirlsTab(d) {
     show(f, 'looking at', () => c.attention.describe());
     show(f, 'hearing', () => `${Math.round((c.hearingK ?? 1) * 100)}% (rain, the barn and engines dull it)`);
     show(f, 'reacting', () => c.reactingText);
+    show(f, 'eyes', () => (c.blink.lid > 1 ? 'squeezed shut' : c.blink.lid > 0.98 ? 'shut' : c.blink.lid > 0.02 ? `${Math.round(c.blink.lid * 100)}% shut` : 'open'));
+    slider(f, 'blink rate', () => c.blink.rate, (v) => (c.blink.rate = v), 0.1, 5, 0.1);
+    tick(f, 'eyes held shut', () => c.blink.hold, (v) => (c.blink.hold = v));
 
     // --- Why she does what she does: what she wants (settable) and what she chose for it (npc/needs.js, npc/chooser.js).
     const why = f.addFolder('Why');
