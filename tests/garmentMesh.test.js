@@ -548,21 +548,48 @@ describe('a shirt and tie', () => {
     expect(Math.max(...knot.map((v) => v.rest[2]))).toBeGreaterThan(Math.max(...blade.map((v) => v.rest[2])) + 0.005);
   });
 
-  it('loosened, pulls the knot down below the open buttons and runs its ends up into the collar', async () => {
+  it('loosened, pulls the knot a little down over the open neck and runs its ends up into the collar', async () => {
     const { SHIRT_ROLLED } = await import('../src/npc/polo.js');
-    const { buildTie } = await import('../src/npc/tie.js');
+    const { buildTie, TIE } = await import('../src/npc/tie.js');
     const body = cylinderBody();
-    const shirt = buildTop(body, { ...SHIRT_ROLLED, open: 2 });
+    const shirt = buildTop(body, { ...SHIRT_ROLLED, open: 1 });
     expect(shirt.vee).not.toBe(null);
     const inset = buildInset(body, shirt.vee, SHIRT_ROLLED);
-    const tie = buildTie(body, { top: shirt.placket.top, ground: [shirt.shell, shirt.placket, inset], loose: true, drop: 0.05, vee: shirt.vee });
+    const tie = buildTie(body, { top: shirt.placket.top, ground: [shirt.shell, shirt.placket, inset], loose: true, drop: 0.025, vee: shirt.vee });
     expect(tie).not.toBe(null);
-    expect(tie.knotTop).toBeLessThan(shirt.vee.bottom);
-    expect(tie.knotTop).toBeLessThanOrEqual(shirt.placket.top - 0.05 + 1e-9);
+    expect(tie.knotTop).toBeCloseTo(shirt.placket.top - 0.025, 6);
+    expect(tie.knotTop - TIE.knotHeight).toBeLessThan(shirt.vee.bottom); // over the point of the open neck
     // Its ends reach up to the neck, either side of her middle.
     const high = tie.verts.filter((v) => v.rest[1] > shirt.placket.top - 0.005);
     expect(high.some((v) => v.rest[0] > 0.01)).toBe(true);
     expect(high.some((v) => v.rest[0] < -0.01)).toBe(true);
+  });
+
+  it('presses a point collar down on to the shirt rather than leaving its points standing off it', async () => {
+    const { SHIRT } = await import('../src/npc/polo.js');
+    const { POINT_COLLAR } = await import('../src/npc/collar.js');
+    const body = cylinderBody();
+    const { shell } = buildTop(body, SHIRT);
+    const opts = { placketWidth: SHIRT.placketWidth, over: [shell] };
+    const out = (c) => Math.max(...c.verts.map((v) => Math.hypot(v.rest[0], v.rest[2])));
+    const lying = buildCollar(shell, body, opts, POINT_COLLAR);
+    const standing = buildCollar(shell, body, opts, { ...POINT_COLLAR, lie: null });
+    expect(out(lying)).toBeLessThan(out(standing) - 0.005);
+    expect(out(lying)).toBeLessThan(0.12 + SHIRT.ease + 0.012); // within about a centimetre of the shirt
+  });
+
+  it('draws every button on the shirt, the tie lying over them', async () => {
+    const { SHIRT } = await import('../src/npc/polo.js');
+    const { buildTie } = await import('../src/npc/tie.js');
+    const body = cylinderBody();
+    const shirt = buildTop(body, SHIRT);
+    const tie = buildTie(body, { top: shirt.placket.top, ground: [shirt.shell, shirt.placket] });
+    expect(SHIRT.underTie).toBeUndefined();
+    for (const b of shirt.placket.buttons.filter((b) => b.centre[1] < tie.knotTop - 0.04)) {
+      const over = tie.verts.filter((v) => Math.abs(v.rest[1] - b.centre[1]) < 0.002 && Math.abs(v.rest[0] - b.centre[0]) < 0.003);
+      expect(over.length).toBeGreaterThan(0);
+      expect(Math.min(...over.map((v) => v.rest[2]))).toBeGreaterThan(b.centre[2] + 0.0026); // clear of the button's top
+    }
   });
 });
 

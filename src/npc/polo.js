@@ -278,10 +278,11 @@ export const SHIRT = {
   neckEase: 0.006,
   sleeveFrom: 'ForeArm',
   sleeveLength: 0.9, // to the wrist
-  sleeveEase: 0.011,
-  sleeveFlare: 0.012,
+  sleeveEase: 0.016, // roomy enough that her forearm doesn't come through at the elbow when she bends it (sat on a bale)
+  sleeveFlare: 0.017,
   cuff: 0.05, // a shirt's cuff, stiff and close round her wrist
-  cuffEase: 0.008,
+  cuffEase: 0.013,
+  elbowEase: 0.007, // and more round the elbow, where bending it (sat on a bale) brought her forearm through
   cuffButtons: true, // one button on the outside of each cuff
   bandShade: 0.94, // a cuff is the same cloth, only doubled
   hangSlope: 0.25,
@@ -296,7 +297,6 @@ export const SHIRT = {
   buttonRadius: 0.0045,
   buttonColour: '#f6f4ee', // small white shirt buttons
   buttonMetal: 0,
-  underTie: true, // the buttons done up down the middle are under the tie and aren't drawn (they'd show through as she moves)
   veeWidths: [0, 0.019, 0.026, 0.032, 0.038],
   veeBows: [1, 1, 0.9, 0.8, 0.7],
   veeStop: 0.01,
@@ -306,12 +306,12 @@ export const SHIRT = {
 };
 
 // Loosened: the top one or two undone and the sleeves rolled to the elbow in a turn-up.
-export const SHIRT_ROLLED = { ...SHIRT, sleeveLength: 0.06, sleeveFlare: 0.014, cuff: 0.045, cuffEase: 0.016, cuffButtons: false, bandShade: 0.9 };
+export const SHIRT_ROLLED = { ...SHIRT, sleeveLength: 0.06, sleeveFlare: 0.017, cuff: 0.045, cuffEase: 0.016, cuffButtons: false, bandShade: 0.9 };
 
 // The shirt over her polo: roomier, as the plaid over it is, its neck as high as on its own so its collar stands over the polo's.
-const OVER = { ease: 0.0135, sleeveEase: 0.015, neckEase: 0.013, inset: false };
-export const SHIRT_OVER = { ...SHIRT, ...OVER };
-export const SHIRT_ROLLED_OVER = { ...SHIRT_ROLLED, ...OVER, cuffEase: 0.018 };
+const OVER = { ease: 0.0135, neckEase: 0.013, inset: false };
+export const SHIRT_OVER = { ...SHIRT, ...OVER, sleeveEase: 0.019, sleeveFlare: 0.019, cuffEase: 0.015 };
+export const SHIRT_ROLLED_OVER = { ...SHIRT_ROLLED, ...OVER, sleeveEase: 0.019, cuffEase: 0.018 };
 
 /**
  * Keeps a top's sleeves inside the top worn over it, as she stands. Skinned down from the stored pose (arms out) to her arms
@@ -462,6 +462,8 @@ export function buildTop(body, p = POLO) {
     const flare = smooth01((sl.s(v) - (sl.at - 0.06)) / 0.06);
     let arm = p.sleeveEase + (p.sleeveFlare - p.sleeveEase) * flare;
     if (p.cuffEase !== null) arm += (p.cuffEase - arm) * smooth01((sl.field(v) + p.cuff) / p.cuff);
+    // A long sleeve is squeezed on the inside of a bent elbow, so it has a little more room there (from the elbow, `s` 0).
+    if (p.elbowEase && p.sleeveFrom === 'ForeArm') arm += p.elbowEase * Math.exp(-((sl.s(v) / 0.05) ** 2));
     let e = p.ease * (1 - a) + arm * a;
     // The neck band hugs her neck towards its edge.
     const n = F.neckField(v);
