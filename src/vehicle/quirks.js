@@ -54,7 +54,7 @@ export const QUIRK_PARAM_RANGES = {
 };
 
 /** Dash styles that show a fuel level and an engine temperature themselves (the others need a pod fitted to show them). */
-const GAUGE_DASHES = ['grizzly', 'kodiak', 'series', 'defender', 'fiesta', 'corsa'];
+const GAUGE_DASHES = ['grizzly', 'kodiak', 'series', 'defender', 'fiesta', 'corsa', 'p309'];
 
 /**
  * What a quad has that a quirk could act on. `hasPod`: an accessory pod is fitted at the start, which reads the quad's fuel and

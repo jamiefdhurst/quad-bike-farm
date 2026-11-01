@@ -25,6 +25,7 @@ import {
 //   utv:       the UTV (a Mule-style cluster, TODO 99): a round speedo to 40 mph with its odometer between four lamp pockets (glow, charge, oil, parking brake), a strip of the rest of the tell-tales, a separate fuel and hours unit and a key switch in 3D. It was a basic LCD over symbols for glow, charge, oil, park
 //              (parking brake), a belted figure (flashes while someone sits unbelted), a headlamp (green, blue for main beam) and the key.
 //   fiesta:    Amy's Mk1 Fiesta: a speedo and a combined fuel and water gauge the same size, the lamps between them, on brown. corsa: Jess's Corsa B, with a rev counter too.
+//   p309:      your 309: a speedo and a clock, the lamps between, fuel and water in pockets at the ends.
 //   series:    the Land Rover. A Series III binnacle: a big speedo to 90 mph with its odometer, a combined fuel and water gauge,
 //              IGN, OIL, CHOKE and BRAKE lamps, a 4WD and a DIFF lamp, and the key.
 //
@@ -1395,8 +1396,128 @@ function buildCorsa() {
   };
 }
 
+/**
+ * Your 309 (#229), after the photo of the real cluster: a black panel in a deep hood, the speedometer left of middle (to 100 mph, km/h in a ring
+ * inside, the odometer and trip in a window under the boss, an orange needle), an analogue clock to the right of middle where a better model has its
+ * rev counter (it keeps the game's time, and goes dark with no power), a column of lamps between them (indicators, glow plugs, charge, handbrake,
+ * main beam), and at each end a pocket of two: the oil lamp over the fuel gauge on the left, the water lamp over the temperature gauge on the right.
+ */
+function buildP309() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 180, oy: 60 };
+  const P = { x: 50, y: 22, w: 260, h: 76 };
+  housing(group, { ...P, x: P.x - 4, y: P.y - 4, w: P.w + 8, h: P.h + 8, r: 7, ...O, material: FIESTA_BLACK });
+  const face = mmPanel({ ...P, ...O });
+  group.add(face.mesh);
+  const speedo = { cx: 128, cy: 60, r: 33 };
+  const clock = { cx: 232, cy: 60, r: 31 };
+  const fuel = { cx: 76, cy: 76, r: 15 };
+  const water = { cx: 284, cy: 76, r: 15 };
+  const gate = changeGate();
+  let shownMph = 0;
+  let shownFuel = 0;
+  let shownTemp = 0;
+  const FIG = '#eeeeea';
+  const NEEDLE = '#f2741c';
+  const dial = (ctx, d) => {
+    ctx.fillStyle = '#060606';
+    ctx.beginPath();
+    ctx.arc(d.cx, d.cy, d.r + 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#121313';
+    ctx.beginPath();
+    ctx.arc(d.cx, d.cy, d.r, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  const pocket = (ctx, x, y, w, h) => { // the moulded pockets the end lamps and gauges sit in
+    ctx.fillStyle = '#0d0e0e';
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, 6);
+    ctx.fill();
+  };
+
+  function draw(ctx, s, L) {
+    ctx.fillStyle = '#1a1b1c';
+    ctx.fillRect(P.x, P.y, P.w, P.h);
+    // The left end: the oil lamp over the fuel gauge (a quarter arc, E to F).
+    pocket(ctx, 56, 26, 40, 28);
+    warnSymbol(ctx, 'oil', 76, 40, LAMP.red, L.oil, 0.5, false);
+    pocket(ctx, 56, 58, 40, 36);
+    ticks(ctx, fuel.cx, fuel.cy, fuel.r - 4, fuel.r, 150, 30, 4, FIG, 0.8);
+    text(ctx, '0', fuel.cx - 14, fuel.cy - 4, 3.2, LAMP.red, { align: 'center' });
+    text(ctx, '1', fuel.cx + 14, fuel.cy - 4, 3.2, FIG, { align: 'center' });
+    warnSymbol(ctx, 'fuel', fuel.cx, fuel.cy + 9, '#cfd0cc', true, 0.36, false);
+    needle(ctx, fuel.cx, fuel.cy, fuel.r - 1, 150 - 120 * L.fuel, NEEDLE, 1.3);
+    // The speedometer: 0 to 100 mph round 270 degrees, with km/h inside and the odometer under the boss.
+    dial(ctx, speedo);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 4, speedo.r - 1.5, 225, -45, 50, FIG, 0.4);
+    ticks(ctx, speedo.cx, speedo.cy, speedo.r - 6.5, speedo.r - 1.5, 225, -45, 10, FIG, 1);
+    labels(ctx, speedo.cx, speedo.cy, speedo.r - 11, 225, -45, ['0', '', '20', '', '40', '', '60', '', '80', '', '100'], FIG, 4.2);
+    [20, 40, 60, 80, 100, 120, 140, 160].forEach((k) => {
+      const a = (225 - (270 * (k / 1.609)) / 100) * (Math.PI / 180);
+      text(ctx, String(k), speedo.cx + Math.cos(a) * (speedo.r - 19), speedo.cy - Math.sin(a) * (speedo.r - 19) + 1.2, 2.5, '#a8a8a2', { align: 'center' });
+    });
+    text(ctx, 'MPH', speedo.cx, speedo.cy - 9, 3.2, '#d8d8d0', { align: 'center' });
+    drum(ctx, speedo.cx - 14, speedo.cy + 6, counterDigits(s.odoMiles, 5), 6);
+    needle(ctx, speedo.cx, speedo.cy, speedo.r - 2, 225 - (270 * Math.min(100, L.mph)) / 100, NEEDLE, 1.6);
+    // The lamps in a column between the dials.
+    const lamps = [['turn', LAMP.green, L.turn], ['glow', LAMP.amber, L.glow], ['charge', LAMP.red, L.charge], ['park', LAMP.red, L.park], ['beam', '#4aa8ff', L.main]];
+    lamps.forEach(([kind, colour, lit], i) => {
+      ctx.fillStyle = '#0c0c0b';
+      ctx.fillRect(170, 26 + i * 14, 20, 12);
+      warnSymbol(ctx, kind, 180, 32 + i * 14, colour, lit, 0.34, false);
+    });
+    // The clock: hours round the face, two hands, a red seconds hand, dark without power.
+    dial(ctx, clock);
+    ticks(ctx, clock.cx, clock.cy, clock.r - 4, clock.r - 1, 90, -270, 12, FIG, 1.1);
+    labels(ctx, clock.cx, clock.cy, clock.r - 10, 60, -270, ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], FIG, 4);
+    if (L.clock) {
+      const [hh, mm] = L.clock.split(':').map(Number);
+      needle(ctx, clock.cx, clock.cy, clock.r * 0.5, 90 - ((hh % 12) + mm / 60) * 30, '#f0f0ea', 2);
+      needle(ctx, clock.cx, clock.cy, clock.r * 0.78, 90 - mm * 6, '#f0f0ea', 1.4);
+    }
+    // The right end: the water lamp over the temperature gauge (cold to hot, red at the top end).
+    pocket(ctx, 264, 26, 40, 28);
+    warnSymbol(ctx, 'temp', 284, 40, LAMP.red, L.temp >= HOT_FROM, 0.5, false);
+    pocket(ctx, 264, 58, 40, 36);
+    ticks(ctx, water.cx, water.cy, water.r - 4, water.r, 150, 30, 4, FIG, 0.8);
+    arc(ctx, water.cx, water.cy, water.r - 1.5, 150 - 120 * HOT_FROM, 30, LAMP.red, 2);
+    warnSymbol(ctx, 'temp', water.cx, water.cy + 9, '#cfd0cc', true, 0.36, false);
+    needle(ctx, water.cx, water.cy, water.r - 1, 150 - 120 * L.temp, NEEDLE, 1.3);
+  }
+
+  return {
+    group,
+    mount: null,
+    update(s) {
+      shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
+      shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
+      shownTemp += ((s.ignition ? tempGaugeFraction(s.temperature, true, s.overheat) : 0) - shownTemp) * 0.1;
+      const running = s.rpm > 300;
+      const on = !!s.ignition;
+      const L = {
+        mph: shownMph,
+        fuel: shownFuel,
+        temp: shownTemp,
+        charge: on && !running,
+        oil: on && (!running || !!s.oilLow),
+        glow: on && !!s.glow,
+        park: on && !!s.parkBrake,
+        main: on && !!s.lightLamps?.main,
+        turn: on && !!(s.indicatorLamps?.left || s.indicatorLamps?.right),
+        clock: on ? s.clock ?? '' : '', // dark with a flat battery, as the Corsa's
+      };
+      const odo = counterDigits(s.odoMiles, 5);
+      if (gate([on, L.charge, L.oil, L.glow, L.park, L.main, L.turn, L.clock, Math.round(shownMph * 2), Math.round(shownFuel * 20), Math.round(shownTemp * 20), odo.key].join('|'))) {
+        face.redraw((ctx) => draw(ctx, s, L));
+      }
+    },
+  };
+}
+
 /** Dash styles buildDash knows: every quad spec must name one of these. */
-export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'asp', 'smiths', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa'];
+export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'asp', 'smiths', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa', 'p309'];
 
 /** Where each dash sits on the bars (metres, in the bars' frame) and how far it tilts back. A nacelle quad carries its own on its top. */
 export const DASH_PLACE = {
@@ -1415,6 +1536,7 @@ export const DASH_PLACE = {
   defender: { pos: [0, 0, 0], tilt: 0.55 }, // and the 200TDi's
   fiesta: { pos: [0, 0, 0], tilt: 0.5 }, // and the girls' cars'
   corsa: { pos: [0, 0, 0], tilt: 0.5 },
+  p309: { pos: [0, 0, 0], tilt: 0.5 }, // and your car's
 };
 
 const BUILDERS = {
@@ -1433,6 +1555,7 @@ const BUILDERS = {
   defender: buildDefender,
   fiesta: buildFiesta,
   corsa: buildCorsa,
+  p309: buildP309,
 };
 
 export function buildDash(style = 'foreman') {

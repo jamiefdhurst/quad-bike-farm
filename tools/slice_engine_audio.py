@@ -43,6 +43,7 @@ Usage (needs numpy, and matplotlib for --plot):
   afconvert ... 511685.mp3 st.wav   # the won't-start car, for both starters
   python3 tools/slice_engine_audio.py engine-bank-fiesta fx=07043115.wav fd=07043116.wav fs=07043117.wav st=st.wav mini=686742.wav
   python3 tools/slice_engine_audio.py engine-bank-corsa cd=07043124.wav cc=07043123.wav cs=07043125.wav st=st.wav
+  python3 tools/slice_engine_audio.py engine-bank-309 px=07043131.wav pd=07043132.wav jumpy=500193.wav   # your 309
 """
 
 import argparse
@@ -446,6 +447,29 @@ BANKS = {
         'oneshotGain': {'st': 6},  # the crank about 10 dB under the idle, as a starter heard from beside the car is
         'periodCheck': True,  # the Mini's blips throw up half-cycles and single firings among its cycles: keep only real cycles
         'oneshotLevel': {'fs': (14.0, 21.0)},  # the run-down as loud against the bank's idle as against its own recording's
+        'idleCycles': True,
+        'revTail': 0.9,
+        'revOdd': 0.3,
+    },
+    'engine-bank-309': {
+        # Your 309, from the BBC's own 1986/7 Peugeot 309 1.9 diesel (RemArc licence, see ASSETS.md). Its idle is the exterior idle
+        # (07043131) once it has settled, firing about every 40 ms (about 750 rpm, the clatter of a cold-ish XUD), cut into whole
+        # cycles; its revs are the same car pulling away (07043132), off tickover and up through first. The BBC's start catches at
+        # once, so the starter is the Citroen Jumpy van's diesel crank (chlund, 500193, CC0) as the 200TDi's; the run-down is the
+        # 309's own switch-off at the end of its idle.
+        'segments': [
+            ('idle', 'px', 30.0, 52.0, (0.14, 0.18)),
+            ('accel', 'pd', 2.3, 5.8, (0.04, 0.15)),
+            ('decel', 'pd', 5.8, 7.5, (0.05, 0.15)),
+        ],
+        'oneshots': [
+            ('starterEngage', 'jumpy', 1.0, 1.273),
+            ('crankLoop', 'jumpy', 1.273, 1.716, {'crankRpm': 230}),
+            ('shutdown', 'px', 156.4, 158.2),
+        ],
+        'level': [('idle', 'idle', 'px'), ('idle', 'accel', 'pd')],
+        'oneshotLevel': {'jumpy': (3.0, 10.0)},
+        'periodCheck': True,
         'idleCycles': True,
         'revTail': 0.9,
         'revOdd': 0.3,

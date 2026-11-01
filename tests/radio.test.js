@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Radio, RADIO_PROFILES, RADIO_PARAMS, signalAt, heardAt, hasRadio, profileFor } from '../src/vehicle/radio.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC, P309_SPEC } from '../src/vehicle/quadSpecs.js';
 
 describe('the radio', () => {
   it('is on or off, and louder or quieter by a step, within 0 and 1', () => {
@@ -54,8 +54,8 @@ describe('the radio', () => {
   });
 
   it('is fitted to the Land Rovers and the cars, not the quads, the UTV or the tractor', () => {
-    const fitted = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC].filter(hasRadio).map((s) => s.id).sort();
-    expect(fitted).toEqual(['corsa', 'fiesta', 'landrover', 'landrover200']);
+    const fitted = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC, P309_SPEC].filter(hasRadio).map((s) => s.id).sort();
+    expect(fitted).toEqual(['corsa', 'fiesta', 'landrover', 'landrover200', 'p309']);
     expect(Object.keys(RADIO_PROFILES).sort()).toEqual(fitted);
   });
 });

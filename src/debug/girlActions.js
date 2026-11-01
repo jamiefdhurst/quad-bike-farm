@@ -347,6 +347,11 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'car-out',
+      label: '% gets out of the car she arrived in (this morning)',
+      run: (id) => (g.arrival && !g.arrival.out.has(id) ? g.arrival.getOutNow(id) : toast(`${nameOf(id)} is not sat in a car from this morning`)),
+    },
+    {
       verb: 'bench-work',
       label: '% works on the bench quad (needs one parked there, off, and the toolbox on the bench; Jess makes a hash of it and hands it to you)',
       run: (id) => g.startGirlBench(id),

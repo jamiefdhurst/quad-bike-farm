@@ -22,6 +22,7 @@ export const REAL_SIZES = {
   landrover200: { like: 'Land Rover Defender 90 200Tdi', length: 3883, width: 1790, height: 1963, wheelbase: 2360, track: 1486, tyre: 757 },
   fiesta: { like: 'Ford Fiesta Mk1', length: 3565, width: 1567, height: 1360, wheelbase: 2286, track: 1340, tyre: 537 },
   corsa: { like: 'Vauxhall Corsa B', length: 3729, width: 1608, height: 1420, wheelbase: 2443, track: 1400, tyre: 547 },
+  p309: { like: 'Peugeot 309 three-door (the Vauclair 39D)', length: 4051, width: 1628, height: 1380, wheelbase: 2469, track: 1380, tyre: 561 },
 };
 
 /**
@@ -44,7 +45,7 @@ const isPart = (o) => o.isMesh && o.material?.isMeshStandardMaterial;
  * headlight beams, not a bale spike. The wheels stand where the `layout` puts them (the game places them, not the model), each as
  * big as what turns in it (its `spin` group), and the length and width take them in. A three-wheeler's track is its rear pair's.
  */
-export function measureModel(model, layout, { skip = /proxy|tarp|baleSpike|mirror/i } = {}) {
+export function measureModel(model, layout, { skip = /proxy|tarp|baleSpike|mirror|aerial/i } = {}) {
   model.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(model.matrixWorld).invert();
   const local = (o) => new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
@@ -102,6 +103,6 @@ export function proportionErrors(measured, real) {
 }
 
 /** The vehicles a detail item has brought into proportion; tests/proportions.test.js holds each within `PROPORTION_TOLERANCE`. */
-export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'plover', 'atc', 'loan', 'tractor', 'utv', 'landrover', 'landrover200', 'fiesta', 'corsa'];
+export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'plover', 'atc', 'loan', 'tractor', 'utv', 'landrover', 'landrover200', 'fiesta', 'corsa', 'p309'];
 
 export const PROPORTION_TOLERANCE = 0.08;

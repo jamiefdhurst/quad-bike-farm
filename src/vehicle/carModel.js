@@ -5,6 +5,8 @@ import { buildFiestaModel } from './fiestaModel.js';
 import { FIESTA_BODY } from './fiestaBody.js';
 import { buildCorsaModel } from './corsaModel.js';
 import { CORSA_BODY } from './corsaBody.js';
+import { build309Model } from './p309Model.js';
+import { P309_BODY } from './p309Body.js';
 
 // The girls' cars, procedural like the Land Rovers: Amy's Mk1 Fiesta (1976 to 1983, boxy, a sloping hatch, square lamps, black
 // bumpers) and Jess's Corsa B (1993, rounded, oval lamps, body-coloured bumpers, a big-bore exhaust). One builder, a table each
@@ -41,6 +43,7 @@ const EYE_UP = 0.66; // your eyes over the hips
 export const CARS = {
   fiesta: FIESTA_BODY, // its numbers are in fiestaBody.js, with its own model (fiestaModel.js)
   corsa: CORSA_BODY, // its numbers are in corsaBody.js, with its own model (corsaModel.js)
+  p309: P309_BODY, // your car: p309Body.js and p309Model.js
 };
 
 /** The wheels and the physics box, per car. The back wheels are not driven (front-wheel drive, with the spec's fourWheelDrive on). */
@@ -98,7 +101,7 @@ export function carDashThroughWheel(kind) {
   const fiesta = kind === 'fiesta';
   const th = -1.12; // the column's rake, as buildCarModel sets it
   const face = c.screenBase[0] - 0.32;
-  const rimR = fiesta ? 0.19 : 0.17;
+  const rimR = c.rim ?? (fiesta ? 0.19 : 0.17);
   const wy = c.columnY + c.wheelOut * Math.cos(th);
   const wz = face + c.wheelOut * Math.sin(th);
   const ey = c.seats.driver.y + EYE_UP;
@@ -110,7 +113,7 @@ export function carDashThroughWheel(kind) {
     const t = ((wy - ey) * Math.cos(th) + (wz - ez) * Math.sin(th)) / (dY * Math.cos(th) + dZ * Math.sin(th));
     return (ey + t * dY - wy) * -Math.sin(th) + (ez + t * dZ - wz) * Math.cos(th);
   };
-  return { low: at(-0.05), high: at(0.06), boss: fiesta ? 0.03 : 0.035, rimInner: rimR - (fiesta ? 0.014 : 0.02) };
+  return { low: at(-0.05), high: at(0.06), boss: c.boss ?? (fiesta ? 0.03 : 0.035), rimInner: rimR - (fiesta || c.rim ? 0.014 : 0.02) };
 }
 
 /** The backrests that tip forward to let someone into the back. */
@@ -164,9 +167,10 @@ export function sideShape(c) {
   return s;
 }
 
-/** A car's model: each has its own file (fiestaModel.js, corsaModel.js) built from its own numbers. */
+/** A car's model: each has its own file (fiestaModel.js, corsaModel.js, p309Model.js) built from its own numbers. */
 export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, reg = null } = {}) {
   if (kind === 'corsa') return buildCorsaModel({ bodyColor, reg });
+  if (kind === 'p309') return build309Model({ bodyColor, reg });
   return buildFiestaModel({ bodyColor, reg });
 }
 

@@ -19,7 +19,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I start playing?',
-        a: `Click the start screen to lock the mouse, and you're stood in the yard. Walk with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>,
+        a: `Click the start screen to lock the mouse, and you're sat in your own car, just pulled up at the end of the farm road by the Dutch barn with the engine
+          still running. Press <kbd>E</kbd> to get out (or drive it somewhere first). Walk with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>,
           look with the mouse, and press <kbd>E</kbd> at whatever you're looking at: a quad to get on, an item to pick up. A girl you talk to with <kbd>Enter</kbd>.
           <kbd>H</kbd> shows the controls at any time. Every engine starts stone cold, so read "Starting an engine" below before your first go.`,
         tip: 'Press H at any time for the controls.',
@@ -1529,7 +1530,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why is a girl sitting in the Moorland?',
-        a: `She's sheltering. When it rains, a girl stood about sometimes climbs into the Yak, a Moorland or one of their cars (they have roofs) instead of running for the barn.
+        a: `She's sheltering. When it rains, a girl stood about sometimes climbs into the Yak, a Moorland or one of the cars, yours included (they have roofs), instead of running for the barn.
           On a cold day she may walk over to a Moorland, climb in, start it from her seat (choke and all, not stood out in the cold) and sit in it for a minute or two with the engine running. Only a flat battery makes her swing the starting handle outside. When the weather turns or she has had enough
           she gets out again, and switches off an engine she started herself. If you want the vehicle, just get in: she shuffles up and comes along.`,
       },
@@ -2025,7 +2026,7 @@ export const FAQ_SECTIONS = [
         q: 'What are the vehicles called?',
         a: `Every vehicle has a maker and a model, as on its badge: the Kestrel Farm 300, the Tamura Bruin 660, the Tamura Hornet 200, the Ridgeback RB300, the Viper Adder 250,
           the Viper Asp 50 (the kids' quad), the Tamura TZ 65 (the mini moto), the Kestrel T185 (the old three-wheeler), the Tamura Ursa 450 (the loan quad), the Hartley 35 (the tractor),
-          the Ridgeback Yak 4010, the Moorland Tor and the Moorland Crag (the two trucks), and the girls' cars, the Thorne Finch (Amy's) and the Ashby Griffin (Jess's).
+          the Ridgeback Yak 4010, the Moorland Tor and the Moorland Crag (the two trucks), the girls' cars, the Thorne Finch (Amy's) and the Ashby Griffin (Jess's), and your own, the Vauclair 39D.
           The girls say the short name: "the Farm 300", "the Hornet", "the Tor". The panels and the wheel show the maker too. A colour is only paint: a vehicle you buy second-hand
           can be a different colour from the one you know, and it is still the same model.`,
         tip: 'The girls call a quad by its model, not its colour: the Farm 300, the Bruin, the Hornet, the RB300, the Adder.',
@@ -2358,8 +2359,38 @@ export const FAQ_SECTIONS = [
   },
   {
     id: 'cars',
-    title: "The girls' cars",
+    title: 'The cars',
     entries: [
+      {
+        q: 'Whose is the silver car I start in?',
+        a: `Yours: the Vauclair 39D, a late-80s three-door diesel in silver-grey with grey cloth seats, a few dents, two bottles of pop in your door pocket and some CDs on the dash.
+          Every day starts with you sat in it, just pulled up on the tarmac at the end of the farm road by the Dutch barn, engine still running and warm, as if you have just driven in.
+          It is a car like the girls': key, gears, clutch, fuel, faults, and the farm remembers it from one day to the next. Its doors open and <kbd>T</kbd> lifts its hatch.`,
+        tip: 'The silver Vauclair is your own car: every day starts with you sat in it by the Dutch barn.',
+      },
+      {
+        q: 'How do I start my car?',
+        a: `It is a diesel, so there is no choke. Turn the key (<kbd>K</kbd>) and wait for the glow plug lamp on the dash to go out, then hold <kbd>R</kbd> to crank it. Cold, it may take a
+          couple of goes. On a hard frost its diesel can wax and it will barely run until it warms; run it dry and it needs bleeding before it will start again, as the Moorland Crag does.
+          If a girl is about, you can ask her to start it for you from her wheel.`,
+        tip: 'Your car is a diesel: key on, wait for the glow plug lamp to go out, then crank.',
+      },
+      {
+        q: 'Can the girls drive my car?',
+        a: `No: only you drive it. Ask one to and she will tell you it is your car. They will sit in it, though: ask them in from the wheel, they climb in when you stop by them
+          with the engine running, and they get in out of the rain. Either will start it for you if you ask.`,
+      },
+      {
+        q: 'Why are the girls sat in their cars when I arrive?',
+        a: `They have just driven in too. Each one sits on in her car with the engine running for a bit, up to about a minute, then switches off and gets out.
+          You can't get into the driver's seat of a girl's car while she is sat in it.`,
+      },
+      {
+        q: "Why is one of the girls in my car, and her car isn't here?",
+        a: `Some days you have given one of them a lift in, and now and then both. She is sat in your car with you when the day starts, and gets out a moment after you do,
+          usually with a thank you. Her own car stays at home that day, so it isn't on the farm until tomorrow; nothing happens to it while it is away.`,
+        tip: 'Some mornings you have given a girl a lift: her car stays at home that day.',
+      },
       {
         q: 'How do I open the Finch\'s hatch?',
         a: `Press <kbd>T</kbd>, stopped, from the driver's seat or standing beside the car, and the hatch lifts up and back on its gas struts onto the boot, with the parcel shelf and the carpet. Press it again to shut it.
@@ -2375,7 +2406,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Whose are the two cars?',
         a: `The brown Thorne Finch is Amy's: an old hatchback, kept clean, with L plates on, because she is still learning. The red Ashby Griffin with the grey wing and the big exhaust is
-          Jess's. They park side by side on the tarmac at the end of the farm road, in front of the Dutch barn, and they are always there.`,
+          Jess's. They park side by side on the tarmac at the end of the farm road, in front of the Dutch barn, and they are there every day unless she came in with you.`,
         tip: "The Finch is Amy's and the Griffin is Jess's. They park at the end of the farm road, by the Dutch barn.",
       },
       {
@@ -2403,7 +2434,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I turn the radio on?',
-        a: `In either Moorland or one of the girls' cars, press <kbd>I</kbd> with the key on. <kbd>Shift</kbd>+<kbd>I</kbd> turns it up and
+        a: `In either Moorland or one of the cars, press <kbd>I</kbd> with the key on. <kbd>Shift</kbd>+<kbd>I</kbd> turns it up and
           <kbd>Alt</kbd>+<kbd>I</kbd> turns it down; on a gamepad it is in the ring. There is one station, mostly talk with a tune now and then,
           and every radio on the farm plays the same thing. It goes quiet while the starter turns and when the battery is flat. Outside, you can hear
           one that has been left on from a few metres.`,
@@ -2413,7 +2444,7 @@ export const FAQ_SECTIONS = [
         q: 'Why does the radio crackle and fade?',
         a: `Each set is different. The Tor has an old dash radio that picks up the engine, so it spits more the harder you rev, and the station
           drifts in and out. The Crag's is plainer. Amy's Finch has a cassette radio with a little warble, and Jess's Griffin a loud one with a
-          lot of bass that holds the station well.`,
+          lot of bass that holds the station well. Yours is the cassette radio it came with, with a faint whine from the engine.`,
       },
       {
         q: 'Why did she turn the radio on, up or off?',
@@ -2632,6 +2663,10 @@ export const VEHICLE_NOTES = {
   corsa: {
     blurb: "Jess's car, the Ashby Griffin: a 1990s hatchback, red gone pink on the roof and bonnet, a grey primer wing, a wheel trim missing and a big exhaust. A 1.2 with fuel injection and five gears that sounds much faster than it is. Its doors swing open and its hatch lifts on T.",
     tips: ['T lifts the hatch.', 'No choke: the injection sorts out a cold start itself.', 'There is rarely much petrol in it.', 'Jess minds less if you borrow it, as long as you do not dawdle.'],
+  },
+  p309: {
+    blurb: "Your own car, the Vauclair 39D: a late-80s three-door in silver-grey with grey cloth inside, a 1.9 diesel and five gears. A few dents, two bottles of pop in your door pocket and some CDs on the dash. You arrive in it every morning, parked up by the Dutch barn with the engine still running. Its doors swing open and its hatch lifts on T.",
+    tips: ['Wait for the glow plug lamp to go out before you crank it.', 'Diesel, so it waxes on a hard frost and needs bleeding if you run it dry.', 'T lifts the hatch.', 'Only you drive it. The girls will sit in it, and either will start it for you.'],
   },
 };
 

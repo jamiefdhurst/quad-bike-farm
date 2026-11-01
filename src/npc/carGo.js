@@ -45,6 +45,15 @@ export function mayDriveCar(girlId, spec) {
   return !spec?.car || spec.owner === girlId;
 }
 
+/**
+ * What she says when you ask her to drive a car that isn't hers: your own (#229) gets "it's yours, you drive it", the other girl's gets "that's
+ * hers". Null when she may drive it. Asking about your car is left open on her wheel so she can say so; the other girl's is greyed.
+ */
+export function refuseCarLine(girlId, spec) {
+  if (mayDriveCar(girlId, spec)) return null;
+  return spec.owner === 'you' ? 'carYours' : 'carNotMine';
+}
+
 export class CarGo {
   constructor(params = { ...DEFAULT_CAR_GO_PARAMS }, random = Math.random) {
     this.p = params;

@@ -269,6 +269,16 @@ export class EngineModel {
     }
   }
 
+  /** Already running, warm, at its idle: a car that has just been driven here (you arriving in yours each morning, farm/arrival.js). No start, no catch. */
+  runWarm(temperature = 0.9) {
+    this.keyOff = false;
+    this.keyPulled = false;
+    this.state = EngineState.RUNNING;
+    this.temperature = clamp(temperature, 0, 1);
+    this.rpm = this.params.idleRpmWarm;
+    this.caughtBy = 'starter';
+  }
+
   toggleIgnition() {
     this.setIgnition(!this.ignitionOn);
   }

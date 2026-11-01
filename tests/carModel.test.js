@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { buildCarModel, carLayout, sideShape, poseCarControls, poseCarSeats, carEyeToGlass, carDashThroughWheel, CARS, CAR_GROUND_OFFSET } from '../src/vehicle/carModel.js';
 import { landyEyeToGlass } from '../src/vehicle/landRoverModel.js';
 import { poseUtvBelts } from '../src/vehicle/utvModel.js';
-import { FIESTA_SPEC, CORSA_SPEC } from '../src/vehicle/quadSpecs.js';
+import { FIESTA_SPEC, CORSA_SPEC, P309_SPEC } from '../src/vehicle/quadSpecs.js';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
@@ -14,7 +14,7 @@ function fakeCanvas() {
   return { width: 0, height: 0, getContext: () => ctx, style: {} };
 }
 
-describe.each([['fiesta', FIESTA_SPEC], ['corsa', CORSA_SPEC]])('%s', (kind, spec) => {
+describe.each([['fiesta', FIESTA_SPEC], ['corsa', CORSA_SPEC], ['p309', P309_SPEC]])('%s', (kind, spec) => {
   let model;
   beforeAll(() => {
     vi.stubGlobal('document', { createElement: () => fakeCanvas() });
@@ -73,7 +73,7 @@ describe.each([['fiesta', FIESTA_SPEC], ['corsa', CORSA_SPEC]])('%s', (kind, spe
     expect(AUDIO_PARAM_RANGES.recBank).toContain(spec.audio.recBank);
     expect(spec.manual).toBe(true);
     expect(spec.fuel.noTap).toBe(true);
-    expect(['amy', 'jess']).toContain(spec.owner);
+    expect(['amy', 'jess', 'you']).toContain(spec.owner);
     expect(spec.vehicle.maxSpeed).toBeGreaterThanOrEqual(spec.gearbox[`topSpeed${spec.gearbox.gears}`] - 1);
   });
 

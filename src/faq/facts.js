@@ -14,7 +14,7 @@ export const ALL_VEHICLE_SPECS = (() => {
   // A module's exports come in alphabetical order, so put them in the page's: the five quads, the other small ones, then the big
   // machines, oldest first.
   const lists = [SPECS.QUAD_SPECS, SPECS.EXTRA_SPECS, ...Object.values(SPECS).filter((v) => Array.isArray(v) && v !== SPECS.QUAD_SPECS && v !== SPECS.EXTRA_SPECS)];
-  const big = (s) => (s.tractor ? 0 : s.utv ? 1 : s.defender ? 3 : s.landRover ? 2 : s.car ? (s.car === 'fiesta' ? 5 : 6) : 4); // the girls' cars last, Amy's first
+  const big = (s) => (s.tractor ? 0 : s.utv ? 1 : s.defender ? 3 : s.landRover ? 2 : s.car ? ({ fiesta: 5, corsa: 6 }[s.car] ?? 7) : 4); // the girls' cars last, Amy's first, then yours
   const singles = Object.values(SPECS).filter((v) => !Array.isArray(v) && isSpec(v)).sort((a, b) => big(a) - big(b));
   return [...lists.flat(), ...singles].filter(isSpec);
 })();

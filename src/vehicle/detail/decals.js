@@ -19,16 +19,17 @@ export const MAKERS = {
   thorne: { name: 'Thorne', badge: 'oval', ink: '#ffffff', edge: null, box: '#1b3d7a' }, // the Fiesta (Ford's)
   fenwick: { name: 'Fenwick', badge: 'block', ink: '#f4f1e6', edge: null, box: '#3c5a2e' }, // the trailers (an Ifor Williams's place)
   ashby: { name: 'Ashby', badge: 'block', ink: '#f4f4f4', edge: null, box: '#3a3a3a' }, // the Corsa (Vauxhall's)
+  vauclair: { name: 'Vauclair', badge: 'block', ink: '#d9dadb', edge: null, box: '#1b1c1e' }, // your car (Peugeot's)
 };
 
 /** Which maker each vehicle's badge names, by spec id. The three-wheeler has none yet (its item says). */
 export const MAKER_FOR = {
   red: 'kestrel', blue: 'tamura', loan: 'tamura', green: 'ridgeback', yellow: 'tamura', orange: 'viper', kids: 'viper', moto: 'tamura', atc: 'kestrel', plover: 'ashby',
-  tractor: 'hartley', utv: 'ridgeback', landrover: 'moorland', landrover200: 'moorland', fiesta: 'thorne', corsa: 'ashby',
+  tractor: 'hartley', utv: 'ridgeback', landrover: 'moorland', landrover200: 'moorland', fiesta: 'thorne', corsa: 'ashby', p309: 'vauclair',
 };
 
 /** Names a decal must never carry. tests/decals.test.js checks every maker and every built-in string against it. */
-export const REAL_NAMES = ['honda', 'yamaha', 'kawasaki', 'suzuki', 'land rover', 'landrover', 'ford', 'vauxhall', 'opel', 'massey', 'ferguson', 'john deere', 'deere', 'kubota', 'polaris', 'can-am', 'bombardier', 'gator'];
+export const REAL_NAMES = ['honda', 'yamaha', 'kawasaki', 'suzuki', 'land rover', 'landrover', 'ford', 'vauxhall', 'opel', 'massey', 'ferguson', 'john deere', 'deere', 'kubota', 'polaris', 'can-am', 'bombardier', 'gator', 'peugeot'];
 
 /** The farm-ATV warning sticker's words, in the usual order. */
 export const WARNING_LINES = ['WARNING', 'Improper use can result in SEVERE INJURY or DEATH.', 'Always wear a helmet.', 'Never carry a passenger.', 'Read the owner’s manual.'];
