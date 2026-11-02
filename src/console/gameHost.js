@@ -16,6 +16,10 @@ export const VEHICLE_VERBS = [
   { name: 'fill', help: 'fill the tank' },
   { name: 'load', help: 'winch it onto the bale trailer (ramps down at once; not the tractor, UTV or Land Rovers)' },
   { name: 'unload', help: 'pay it back down the trailer\'s ramps' },
+  { name: 'rackcan', help: 'stand the red jerry can on its rack, loose (quads with a rack)' },
+  { name: 'racktoolbox', help: 'stand the toolbox on its rack, loose' },
+  { name: 'strap', help: 'strap down what is on its rack, or undo the strap' },
+  { name: 'clearrack', help: 'take whatever is on its rack off, gone from the rack' },
   { name: 'fix', help: 'put right: faults, plug, filter, wear, scuffing, seizure, water (quirks stay)' },
 ];
 
@@ -150,6 +154,10 @@ export function createHost(g, { copy = () => {} } = {}) {
         case 'fix': fixEverything(u); break;
         case 'load': return `${id}: ${g.debugLoad(u)}`;
         case 'unload': return `${id}: ${g.debugUnload(u)}`;
+        case 'rackcan': return `${id}: ${g.debugRack(u, 'can')}`;
+        case 'racktoolbox': return `${id}: ${g.debugRack(u, 'toolbox')}`;
+        case 'strap': return `${id}: ${g.debugRack(u, 'strap')}`;
+        case 'clearrack': return `${id}: ${g.debugRack(u, 'clear')}`;
         default: throw new Error(`no such thing as ${verb}`);
       }
       return `${id}: ${verb}`;

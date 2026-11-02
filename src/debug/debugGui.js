@@ -305,7 +305,8 @@ export class DebugGui {
     show(r, 'odometer / trip (mi)', () => `${unit().quad.usage.odoMiles.toFixed(2)} / ${unit().quad.tripMiles.toFixed(2)}`);
     show(r, 'chain oil (1 fresh)', () => (unit().quad.faults.hasChain ? round(unit().quad.faults.kept.chainLube) : 'no chain'));
     show(r, 'mud on your view (0 clean; open vehicles only)', () => round(lensCoverage(this.game.lens)));
-    show(r, 'brakes wet (0 dry)', () => round(unit().quad.brakes.wet));
+    show(r, 'on its rack', () => this.game.rackSummary(unit()));
+    show(r, 'brakes wet (0 dry)',() => round(unit().quad.brakes.wet));
     show(r, 'brake heat (1 cooked; fades from 0.45)', () => round(unit().quad.brakes.heat));
     show(r, 'ice in the throttle cable', () => round(unit().quad.iceCable.ice));
     if (u.engine.params.compressionIgnition) show(r, 'diesel waxed (0 clear)', () => round(unit().quad.fuel.wax));
@@ -464,6 +465,10 @@ export class DebugGui {
     row(one, 'Fill the tank', () => (this.unit().quad.fuel.litres = this.unit().quad.fuel.params.tankCapacity));
     row(one, 'Winch it onto the bale trailer', () => g.hud.toast(g.debugLoad(this.unit())));
     row(one, 'Pay it back off the trailer', () => g.hud.toast(g.debugUnload(this.unit())));
+    row(one, 'Stand the red jerry can on its rack, loose', () => g.hud.toast(g.debugRack(this.unit(), 'can')));
+    row(one, 'Stand the toolbox on its rack, loose', () => g.hud.toast(g.debugRack(this.unit(), 'toolbox')));
+    row(one, 'Strap down what is on its rack / undo the strap', () => g.hud.toast(g.debugRack(this.unit(), 'strap')));
+    row(one, 'Clear its rack', () => g.hud.toast(g.debugRack(this.unit(), 'clear')));
     row(one, 'Hook the green\'s winch on it (the green: on the nearest tree) / take it off', () => g.hud.toast(g.debugWinch(this.unit())));
     row(one, 'Hook the tow rope on it / take it off', () => g.hud.toast(g.debugTowRope(this.unit())));
     row(one, 'Jack-knife the trailer on it', () => g.hud.toast(g.debugJackknife(this.unit())));

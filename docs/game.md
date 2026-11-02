@@ -17,6 +17,7 @@ Everything the game does, for a player, in more detail than the FAQ. The [FAQ pa
 | `V` (hold) | Looking at a quad on foot: push it along, away from you (backwards from the side). The only way to reverse the yellow, orange and kids' quads, and the girls won't help |
 | Hold `E` | Holding the jerry can: pour into the quad you're looking at, or refill the can at the petrol tank |
 | `G` | Put the jerry can down |
+| `E` at a quad's rack, a jerry can or the toolbox in your hands | Stand it on the rack. Then tap `E` to take it off, or hold `E` to strap it down (hold again to undo the strap and take it). A strapped load stays put but slows the quad's drive and braking a little; unstrapped, it shuffles with the shake and slides off the back on a hard brake or a bump. Quads with a rack only; a strapped load is kept overnight |
 
 **On the quad**
 

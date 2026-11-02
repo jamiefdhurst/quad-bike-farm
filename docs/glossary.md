@@ -20,6 +20,8 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | money tin | The tin on the shelf under the cork board that holds the farm's money | biscuit tin |
 | workbench | The bench along the barn's north wall where jobs are done and the bay is | work bench |
 | toolbox | The red box you carry and open at a quad | tool box |
+| rack | The rack over a quad's back wheels, where the girls leave their tea and where you can strap a jerry can or the toolbox | luggage rack |
+| strap | The orange ratchet strap that holds a jerry can or the toolbox down on a quad's rack: hold E on the rack to do it up or undo it | tiedown |
 | booster pack | The black and yellow jump-start pack on the back of the workbench: charged on the bench charger, carried to a flat vehicle | jump starter, jump pack, battery pack, power pack |
 | tyre plug | The sticky rubber strip from the plug kit in the toolbox, pushed into a puncture | tire plug, puncture plug, tyre strip, rope plug |
 | jerry can | The 20 litre can you carry and pour from | jerrycan, jerry-can |

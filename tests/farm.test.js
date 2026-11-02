@@ -188,6 +188,12 @@ describe('a vehicle from one day to the next', () => {
     expect(b.quad.faults.levels.carb).toBe(0);
   });
 
+  it('keeps which load is strapped on the rear rack, and nothing when there is none', () => {
+    const a = unit();
+    expect(captureVehicle(a).rack).toBeUndefined();
+    expect(JSON.parse(JSON.stringify(captureVehicle(a, { rack: 'toolbox' }))).rack).toBe('toolbox');
+  });
+
   it('keeps a snorkel fitted at the bench, and ignores it on a vehicle that cannot have one', () => {
     const a = unit();
     a.quad.snorkel = new Snorkel(true);
