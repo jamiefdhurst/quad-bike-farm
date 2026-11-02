@@ -1086,6 +1086,11 @@ export const FAQ_SECTIONS = [
         a: `That is not a flat battery. After a while the posts on a battery can furrow up with white crust, and the starter can't get enough current through it: it turns slowly, then only clicks, while the dash and lights stay bright. Jump leads clamp onto the same posts, so they don't help. Take the toolbox to it and use "Clean the battery terminals". The girls will take the click for a flat battery, so don't believe them.`,
       },
       {
+        q: 'Why does the starter click and not turn, with the battery fine, until I tap it?',
+        a: `In some games one of the petrol vehicles has an old starter motor with worn brushes. On a cold start it can stick: you hold <kbd>R</kbd> and it only clicks, with the dash and lights bright, so it is not the battery. Open the toolbox on it and use "Tap the starter with the spanner". That frees it for that start, and then it turns over as normal. The next cold start, after it has run, it may stick again. Some games have no such vehicle. Jess learns the trick by watching: tap it near her twice and she does it herself from then on, with great enthusiasm. Amy knows what is wrong but will not do it. A new starter (the debug panel's "Put it right") cures it for good.`,
+        tip: 'Starter only clicks, lights bright, battery fine? Open the toolbox and tap the starter with the spanner.',
+      },
+      {
         q: 'How do I fix things?',
         a: `Pick up the red toolbox from the workbench, take it to a switched-off quad and press <kbd>E</kbd>. Pick a job with <kbd>W</kbd> and <kbd>S</kbd> and press <kbd>E</kbd>: plug a puncture (with a tyre plug from the kit in the toolbox, or a spare inner tube if the kit is empty),
           swap the belt (using a spare from the rack), oil the cable, clean the carb, nip up the engine mounts or put a chain back on and oil it. Hold <kbd>E</kbd> to clean the air filter
