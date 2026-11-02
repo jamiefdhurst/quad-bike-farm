@@ -36,3 +36,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | run | One go on the rolling road: the engine held and swept up through its revs while the power is measured, for £15 from the money tin | dyno run, power run |
 | tuner | The woman who brings the rolling road | dyno operator, dyno man |
 | results sheet | The sheet on the barn's back wall with a graph for each quad that has had a run | dyno sheet, power sheet, dyno chart |
+| MOT | The test at Hollis Motors that goes over a Land Rover's lights, brakes, wipers, horn, tyres, leaks and exhaust | M.O.T., roadworthiness test |
+| MOT bay | The white-lined bay on the garage forecourt, in front of the western roller door, where a Land Rover is parked square to be tested | test bay, inspection bay |
+| MOT sheet | The card the garage hands you after a test, with a pass or a fail beside each item | test report, MOT report |
+| certificate | What a pass earns: good for a couple of weeks, kept by the farm and worth a little more on the cork board | MOT pass, test certificate |
