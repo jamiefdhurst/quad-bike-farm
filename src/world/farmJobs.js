@@ -166,6 +166,12 @@ export const FARM_JOBS = {
     hint: 'Fill the bucket from the feed bin by the barn, then hold E at the hens\' run and again at the pig\'s sty',
     needs: 'farmAnimals',
   },
+  mow: {
+    label: 'Mow the lawns',
+    chalk: 'Mow the yard lawn and the paddock with the mower',
+    hint: 'Start the mower, push the blade lever forward (T) and mow both lawns in stripes. Blade off on the gravel and the road',
+    needs: 'lawns',
+  },
   spray: SPRAY_JOB, // only on the board while the field wants it (the game leaves it off for the days a spray lasts)
 };
 

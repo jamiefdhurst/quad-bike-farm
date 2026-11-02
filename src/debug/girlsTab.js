@@ -315,6 +315,12 @@ export function buildGirlsTab(d) {
     button(jobs, 'Hay: lift the tracks in the long grass', () => g.debugHayTracksClear());
     button(jobs, 'Hay: empty the barn stack', () => g.debugHayEmptyStack());
   }
+  if (g.mowGrid) {
+    show(jobs, 'the mowing', () => g.mowGrid.describe(g.farm.day));
+    button(jobs, 'Mow: cut both lawns now', () => g.debugCutLawns());
+    button(jobs, 'Mow: let the lawns grow back', () => g.debugGrowLawns());
+    button(jobs, 'Mow: job done now', () => g.debugFinishMowing());
+  }
   if (g.spray) {
     show(jobs, 'the spraying', () => g.spray.describe());
     for (const [what, label] of [['out', 'Sprayer: fold the boom out'], ['in', 'Sprayer: fold the boom in'], ['empty', 'Sprayer: empty the tank'], ['fill', 'Sprayer: fill the tank'], ['half', 'Spraying: spray half the field'], ['done', 'Spraying: job done now'], ['clear', 'Spraying: clear the field, needs spraying again']]) button(jobs, label, () => g.debugSpray(what));

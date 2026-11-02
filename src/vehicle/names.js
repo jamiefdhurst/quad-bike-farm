@@ -11,6 +11,7 @@ export const VEHICLE_NAMES = {
   kids: { maker: 'Viper', model: 'Asp 50', say: "kids' quad" },
   moto: { maker: 'Tamura', model: 'TZ 65', say: 'mini moto' },
   ag200: { maker: 'Ridgeback', model: 'Shepherd 200', say: 'Shepherd' },
+  mower: { maker: 'Ridgeback', model: 'Clipper 12', say: 'mower' },
   atc: { maker: 'Kestrel', model: 'T185', say: 'old three-wheeler' },
   plover: { maker: 'Ashby', model: 'Plover 125', say: 'Plover' },
   loan: { maker: 'Tamura', model: 'Ursa 450', say: 'loan quad' },

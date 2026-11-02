@@ -335,6 +335,12 @@ export const LAYOUT = {
     corsa: { x: 193.2, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
   },
   paddock: { x: -66, z: 34, half: 7 },
+  // The lawns the ride-on mower cuts (world/mowing.js, the 'Mow the lawns' job): the open grass at the yard's east edge, beyond its bare ground (the yard's dirt ends about 13 m from its middle, rideEvents.js) and clear of
+  // the tank, the trailers and the barn's doorway, and the paddock's floor inside its rails (the east side facing the yard is open, so the mower can get in).
+  lawns: {
+    yard: { minX: -38, maxX: -24, minZ: 55, maxZ: 69 },
+    paddock: { minX: -72, maxX: -60, minZ: 28, maxZ: 40 },
+  },
   // The yard's animals (world/farmAnimals.js, farmAnimalsView.js): the hens' run and the pig's sty west of the barn, clear of the silage, the paddock
   // and the west hedge; you feed over the fence. The feed bin stands against the barn's north wall, with the bucket beside it (items/feedBucket.js).
   farmAnimals: {

@@ -16,6 +16,7 @@ export const REAL_SIZES = {
   moto: { like: 'Yamaha YZ65 (the Tamura TZ 65)', length: 1625, width: 750, height: 990, wheelbase: 1145, track: 0, tyre: 460 }, // read from the side photo: tyre to tyre it is 1.42 wheelbases, the bars top out at 0.86
   plover: { like: '1949 BSA Bantam D1 (the Ashby Plover 125)', length: 1930, width: 700, height: 1020, wheelbase: 1300, track: 0, tyre: 620 }, // the book: 76 in long, 51 in wheelbase, 2.75-19 tyres, the bars about 40 in up
   ag200: { like: 'Yamaha AG200 (the Ridgeback Shepherd 200)', length: 2085, width: 840, height: 1130, wheelbase: 1330, track: 0, tyre: 670 }, // the book: 2,085 long, 840 over the bars, 1,130 high, 1,330 wheelbase, 2.75-21 and 4.10-18 tyres
+  mower: { like: 'Westwood-style 42 inch garden tractor (the Ridgeback Clipper 12)', length: 2100, width: 1150, height: 1150, wheelbase: 1120, track: 780, tyre: 480 }, // a 42 inch deck tractor: about 2.1 m with the box, 1.15 m over the deck and its chute
   atc: { like: 'Honda ATC185S (the Kestrel T185)', length: 1780, width: 1040, height: 1050, wheelbase: 1145, track: 780, tyre: 600 },
   tractor: { like: 'Massey Ferguson 35 (the Hartley 35)', length: 2970, width: 1650, height: 1920, wheelbase: 1830, track: 1270, tyre: 1170 }, // height is to the top of the exhaust
   utv: { like: 'Kawasaki Mule 4010', length: 3015, width: 1580, height: 1925, wheelbase: 1910, track: 1230, tyre: 650 },
@@ -104,6 +105,6 @@ export function proportionErrors(measured, real) {
 }
 
 /** The vehicles a detail item has brought into proportion; tests/proportions.test.js holds each within `PROPORTION_TOLERANCE`. */
-export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'ag200', 'plover', 'atc', 'loan', 'tractor', 'utv', 'landrover', 'landrover200', 'fiesta', 'corsa', 'p309'];
+export const IN_PROPORTION = ['red', 'blue', 'green', 'kids', 'moto', 'ag200', 'mower', 'plover', 'atc', 'loan', 'tractor', 'utv', 'landrover', 'landrover200', 'fiesta', 'corsa', 'p309'];
 
 export const PROPORTION_TOLERANCE = 0.08;

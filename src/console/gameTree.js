@@ -151,6 +151,10 @@ export function buildGameTree(g, host) {
         out.radioVolume = num(() => q().radio.volume, (v) => q().radio.setVolume(v), 0, 1);
         out.radioState = text(() => `${q().radio.describe()}, signal ${q().radio.signal.toFixed(2)}`, 'what the radio is doing');
       }
+      if (u().spec.mower) {
+        out.blade = flag(() => q().bladeOn, (v) => q().bladeOn !== !!v && g.toggleBlade(u()), 'the blade lever is forward (T in the game; the engine must be running)');
+        out.bladeDull = num(() => g.bladeOf(u()).dull, (v) => (g.bladeOf(u()).dull = v), 0, 1, '', 'how blunt the blade is, 0 sharp to 1 blunt (gravel and tarmac blunt it; "Put it right" sharpens it)');
+      }
       if (q().signals) out.indicators = choice(SIGNAL_MODES, () => q().signals.mode, (v) => q().signals.set(v), 'the indicators and hazards');
       if (q().wipers) {
         out.wipers = choice(q().wipers.positions(), () => q().wipers.setting, (v) => q().wipers.set(v), 'the windscreen wipers\' stalk (X from the seat steps it on)');
@@ -380,6 +384,8 @@ export function buildGameTree(g, host) {
     sprayTank: num(() => g.spray?.tank ?? 0, (v) => g.spray && (g.spray.tank = Math.max(0, Math.min(1, v))), 0, 1, '', 'the sprayer tank, 0 empty to 1 full'),
     sprayBoom: flag(() => !!g.spray?.boomWant, (v) => g.debugSpray(v ? 'out' : 'in'), 'the sprayer boom is folded out'),
     sprayDone: flag(() => g.spray?.done ?? false, (v) => g.debugSpray(v ? 'done' : 'clear'), 'the field is sprayed (setting it ticks the board; clearing makes it need spraying again)'),
+    mowing: text(() => (g.mowGrid ? g.mowGrid.describe(g.farm.day) : 'no lawns on this farm'), 'the mowing job (world/mowing.js): how much of the lawns is cut today'),
+    mowed: flag(() => !!g.mowGrid && g.mowGrid.done(g.farm.day), (v) => g.mowGrid && (v ? g.debugFinishMowing() : g.debugGrowLawns()), 'the lawns are mown (setting it cuts both and ticks the board; clearing lets them grow back)'),
     hayTracks: text(() => g.grassTracks?.describe() ?? 'no hay patch on this farm', 'the lines wheels have pressed in the long grass (world/grassTracks.js)'),
     hayTracksLifted: flag(() => !g.grassTracks?.live, (v) => v && g.debugHayTracksClear(), 'the grass in the hay patch is standing (setting it to true lifts every track at once)'),
     hayStacked: ro(() => g.hay?.stacked ?? 0, '', 'hay bales stacked in the Dutch barn (kept from day to day)'),

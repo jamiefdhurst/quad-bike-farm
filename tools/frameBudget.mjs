@@ -12,9 +12,9 @@ export const BUDGETS = {
   spawn: { calls: 2040, triangles: 3.5e6 },
   // The others are what each measured after #451 (yard 2,432 and 3.50M, the most the smoke test saw, village 3,170 and 3.80M, wood 1,232 and 3.80M, hilltop 1,530 and 6.70M)
   // and about 8% over. Before it (and after #365) they were 2,945, 3,957, 1,901 and 2,396 calls: parts too small to see are no longer drawn.
-  yard: { calls: 2700, triangles: 3.8e6 }, // 2,630 until the farm bike (#75): one more vehicle in the yard is about 100 calls
+  yard: { calls: 2800, triangles: 4.0e6 }, // 2,630 until the farm bike (#75): one more vehicle in the yard is about 100 calls; 3.8M until the mower (#76): CI measured 3.90M and 2,701 calls with it parked in view
   village: { calls: 2200, triangles: 4.1e6 }, // 3,170 until #399 trimmed the quads parked in it (2,040 now)
-  wood: { calls: 1330, triangles: 4.1e6 },
+  wood: { calls: 1400, triangles: 4.1e6 }, // 1,330 until the mower (#76): the smoke test measured 1,360 and 1,390 with it parked in view
   hilltop: { calls: 1730, triangles: 7.2e6 }, // 1,650 until the farm bike (#75): CI measured 1,671 with it parked in view
 };
 

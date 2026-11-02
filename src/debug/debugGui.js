@@ -298,6 +298,10 @@ export class DebugGui {
     if (e.params.tickler) set(r, 'tickler fuel in the bowl (floods past ' + e.params.tickleFloodAbove + ')', () => round(unit().engine.tickled), (v) => (unit().engine.tickled = v), 0, 3, 0.1);
     if (u.quad.sump) set(r, 'engine oil', () => round(unit().quad.sump?.level ?? 0), (v) => unit().quad.sump && (unit().quad.sump.level = v), 0, unit().quad.sump?.params.maxLevel ?? 1); // the picked vehicle can change before the next rebuild (past 1 is overfilled)
     set(r, 'battery', () => round(unit().engine.battery), (v) => (unit().engine.battery = v), 0, 1);
+    if (u.spec.mower) {
+      tick(r, 'blade lever forward (the engine must be running)', () => unit().quad.bladeOn, (v) => unit().quad.bladeOn !== v && this.game.toggleBlade(unit()));
+      show(r, 'blade (spin / load on the engine)', () => `${round(this.game.bladeOf(unit()).spin)} / ${round(this.game.bladeOf(unit()).out.load)}`);
+    }
     show(r, 'battery is', () => this.game.batteryWhere(unit()));
     show(r, 'charging (battery per minute)', () => {
       const en = unit().engine;
@@ -380,6 +384,7 @@ export class DebugGui {
       set(p, 'air in the fuel line (airLock)', () => round(unit().quad.fuel.airLock), (v) => (unit().quad.fuel.airLock = v), 0, 1);
       set(p, 'anti-gel in the tank (share)', () => round(unit().quad.fuel.antiGel), (v) => (unit().quad.fuel.antiGel = v), 0, 1);
     }
+    if (u.spec.mower) set(p, 'blade dullness (from running it on gravel or tarmac)', () => round(this.game.bladeOf(unit()).dull), (v) => (this.game.bladeOf(unit()).dull = v), 0, 1);
     set(p, 'frozen throttle cable (ice)', () => round(unit().quad.iceCable.ice), (v) => (unit().quad.iceCable.ice = v), 0, 1);
     tick(p, 'cable freezes open (not shut)', () => unit().quad.iceCable.mode === 'open', (v) => (unit().quad.iceCable.mode = v ? 'open' : 'shut'));
     tick(p, 'brake binding (rides free)', () => unit().quad.brakes.binding, (v) => unit().quad.brakes.setBinding(v));

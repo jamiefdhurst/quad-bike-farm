@@ -97,6 +97,7 @@ import { AMY_OLD_BIKE_LINES } from './oldBikeLines.js';
 import { AMY_TRAILER_LINES } from './trailerLines.js';
 import { AMY_TRAILER_GUIDE_LINES } from './trailerGuideLines.js';
 import { AMY_FARM_JOB_LINES } from './farmJobLines.js';
+import { AMY_MOW_LINES } from './mowLines.js';
 import { AMY_MONEY_LINES } from './moneyLines.js';
 import { AMY_SHED_LINES } from './shedLines.js';
 import { AMY_FIRE_LINES } from './fireLines.js';
@@ -1685,4 +1686,6 @@ export const VOICE_LINES = {
   ...AMY_LATE_QUAD_LINES,
   ...AMY_LATE_HISTORY_LINES,
   ...AMY_LATE_RANK_LINES,
+  // The mowing job (mowLines.js), last of all.
+  ...AMY_MOW_LINES,
 };

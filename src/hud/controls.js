@@ -36,6 +36,14 @@ export const CONTROLS = [
     ],
   },
   {
+    title: 'The mower (the Clipper)',
+    lines: [
+      `<kbd>K</kbd> key, hold <kbd>R</kbd> to start, or <kbd>O</kbd> for the pull cord on the right of the bonnet when the battery is flat. <kbd>Q</kbd> <kbd>Z</kbd> choke, <kbd>F</kbd> fuel tap, <kbd>P</kbd> lamp`,
+      `<kbd>T</kbd> blade lever forward or back (the engine must be running: it stops with the engine, and when you get off). It cuts forwards, on grass; on gravel or the road it throws stones and goes blunt`,
+      `<kbd>W</kbd> throttle, <kbd>S</kbd> brake, <kbd>Space</kbd> parking brake, <kbd>E</kbd> get off. Long grass loads the engine and slows it`,
+    ],
+  },
+  {
     title: 'The old tractor',
     lines: [
       `<kbd>K</kbd> key (heats the glow plugs: wait for the GLOW lamp to go out), hold <kbd>R</kbd> to crank`,

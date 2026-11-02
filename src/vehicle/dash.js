@@ -21,6 +21,7 @@ import {
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   mini moto, old three-wheeler. A key switch under the bar clamp. asp: the kids' quad's, the same key on the V bars' clamp block.
 //   trail:     the farm bike: a round white-faced speedo to 70 mph in a black bezel, with an odometer drum, an ignition lamp and the key.
+//   mower:     the ride-on mower (#76): a small black panel with an hour meter, a red charge lamp, an amber blade lamp that lights while the blade is engaged, and the key.
 //   smiths:    the old bike: a round Smiths-style speedo to 70 mph with an odometer drum, a red ignition lamp and the key, in a cup on the headlamp's top.
 //   tractor:   the tractor (a Massey-Ferguson-35-style cluster, TODO 98). Three round dials in chrome bezels set straight into the red metal of the cowl, no housing (a big rev counter with an hour meter and the PTO speed marked, water temperature, fuel), a brass ignition switch, and four warning lamps (temperature, GLOW, CHARGE, OIL).
 //   utv:       the UTV (a Mule-style cluster, TODO 99): a round speedo to 40 mph with its odometer between four lamp pockets (glow, charge, oil, parking brake), a strip of the rest of the tell-tales, a separate fuel and hours unit and a key switch in 3D. It was a basic LCD over symbols for glow, charge, oil, park
@@ -653,6 +654,39 @@ function buildKidsKey() {
     mount: null,
     update(s) {
       if (gate(lookKey(s))) face.redraw((ctx) => keySwitch(ctx, 110, 55, s.keyOn));
+    },
+  };
+}
+
+// The ride-on mower ------------------------------------------------------------------------
+
+// A small black panel on the dash: the hour meter, a red charge lamp that is lit with the key on and the engine not yet charging, an amber lamp
+// that lights while the blade is engaged, and the key switch. No speedo: you judge your speed by the grass.
+function buildMower() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const O = { ox: 150, oy: 40 };
+  housing(group, { x: 118, y: 24, w: 64, h: 32, r: 4, ...O, material: blackMat, depth: 0.03 });
+  const face = mmPanel({ x: 118, y: 24, w: 64, h: 32, ...O });
+  group.add(face.mesh);
+  const gate = changeGate();
+  function draw(ctx, s, L) {
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(118, 24, 64, 32);
+    text(ctx, 'HOURS', 134, 31, 3.4, '#9a9a94', { align: 'center', spacing: 0.3 });
+    drum(ctx, 124, 34, L.hours, 7);
+    lamp(ctx, 134, 51, LAMP.red, 'CHARGE', L.charge, { r: 2.4 });
+    lamp(ctx, 150, 51, LAMP.amber, 'BLADE', L.blade, { r: 2.4 });
+    makerBadge(ctx, 'ridgeback', 166, 31, 4.4, 20);
+    keySwitch(ctx, 166, 45, s.keyOn);
+  }
+  return {
+    group,
+    mount: null,
+    update(s) {
+      const h = counterDigits(s.hours, 4);
+      const L = { hours: h, charge: !!s.keyOn && !!s.ignition && s.rpm < 1200, blade: !!s.bladeOn && !!s.ignition };
+      if (gate(lookKey(s, [h.key, L.charge, L.blade]))) face.redraw((ctx) => draw(ctx, s, L));
     },
   };
 }
@@ -1583,7 +1617,7 @@ function buildP309() {
 }
 
 /** Dash styles buildDash knows: every quad spec must name one of these. */
-export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'asp', 'smiths', 'trail', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa', 'p309'];
+export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'asp', 'smiths', 'trail', 'mower', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa', 'p309'];
 
 /** Where each dash sits on the bars (metres, in the bars' frame) and how far it tilts back. A nacelle quad carries its own on its top. */
 export const DASH_PLACE = {
@@ -1596,6 +1630,7 @@ export const DASH_PLACE = {
   kidsKey: { pos: [0, 0.075, 0.0], tilt: 0.9 },
   smiths: { pos: [0, 0, 0], tilt: 0.5 }, // the old bike's speedo: its model sets it in the headlamp nacelle itself
   trail: { pos: [0, 0, 0], tilt: 0.5 }, // the farm bike's: its model sets it on the bars' bracket
+  mower: { pos: [0, 0, 0], tilt: 1.1 }, // the mower's: its model sets it on the dash panel's top
   asp: { pos: [0, -0.034, -0.02], tilt: 0.5 }, // the kids' quad's key, on the clamp block at the V bars' middle as the yellow's
   tractor: { pos: [0, 0, 0], tilt: 1.05 }, // the tractor's model places it on its scuttle itself
   utv: { pos: [0, 0, 0], tilt: 0.9 }, // so does the UTV's
@@ -1617,6 +1652,7 @@ const BUILDERS = {
   asp: buildKidsKey,
   smiths: buildSmiths,
   trail: buildTrail,
+  mower: buildMower,
   tractor: buildTractor,
   utv: buildUtv,
   series: buildSeries,
