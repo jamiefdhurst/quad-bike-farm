@@ -2266,6 +2266,11 @@ export const FAQ_SECTIONS = [
           turning up on the board once the barn is full.`,
       },
       {
+        q: 'Why does the hay patch show my tracks?',
+        a: `The green patch is long grass, so anything that rolls over it presses the blades flat in a paler, shinier line the width of the tyre, one for each wheel. The grass lifts again
+          over about seven minutes, the oldest end of the line first, so you can see where everyone has been. Cut and baled hay shows none. The lines are not kept between visits.`,
+      },
+      {
         q: 'How do I spray the field?',
         a: `When "Spray the wheat stubble in the south field" is on the chalkboard, back a quad with a rack up to the sprayer trailer in the yard (east of the petrol tank and the hose) and hook it on with <kbd>J</kbd>.
           Ride out to the south field, the stubble east of the muck heap (the map, <kbd>M</kbd>, outlines it while the job is on), and press <kbd>T</kbd> to fold the boom out. Then drive slowly up and down the field:
