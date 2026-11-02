@@ -13,10 +13,11 @@ import { JESS_ONLY_DROWNOUT_SITUATIONS } from '../src/npc/drownOutLines.js';
 import { JESS_ONLY_DARE_SITUATIONS } from '../src/npc/dareLines.js';
 import { JESS_ONLY_CAR_SITUATIONS } from '../src/npc/carLines.js';
 import { JESS_ONLY_CONKER_SITUATIONS } from '../src/npc/conkerLines.js';
+import { JESS_ONLY_STICKY_SITUATIONS } from '../src/npc/stickyLines.js';
 
 describe('characters', () => {
   it('only give their own lines for situations that exist, keeping cooldowns and shouts', () => {
-    for (const situation of Object.keys(JESS_LINES).filter((s) => ![...JESS_ONLY_QUAD_SITUATIONS, ...JESS_ONLY_SMOKE_SITUATIONS, ...JESS_ONLY_DIESEL_SITUATIONS, ...JESS_ONLY_LPLATE_SITUATIONS, ...JESS_ONLY_HANDBRAKE_SITUATIONS, ...JESS_ONLY_FOUR_WD_SITUATIONS, ...JESS_ONLY_DROWNOUT_SITUATIONS, ...JESS_ONLY_DARE_SITUATIONS, ...JESS_ONLY_CAR_SITUATIONS, ...JESS_ONLY_CONKER_SITUATIONS].includes(s))) expect(VOICE_LINES, situation).toHaveProperty(situation);
+    for (const situation of Object.keys(JESS_LINES).filter((s) => ![...JESS_ONLY_QUAD_SITUATIONS, ...JESS_ONLY_SMOKE_SITUATIONS, ...JESS_ONLY_DIESEL_SITUATIONS, ...JESS_ONLY_LPLATE_SITUATIONS, ...JESS_ONLY_HANDBRAKE_SITUATIONS, ...JESS_ONLY_FOUR_WD_SITUATIONS, ...JESS_ONLY_DROWNOUT_SITUATIONS, ...JESS_ONLY_DARE_SITUATIONS, ...JESS_ONLY_CAR_SITUATIONS, ...JESS_ONLY_CONKER_SITUATIONS, ...JESS_ONLY_STICKY_SITUATIONS].includes(s))) expect(VOICE_LINES, situation).toHaveProperty(situation);
     const lines = linesFor({ leftBehind: ['Oi!'] });
     expect(lines.leftBehind.lines).toEqual(['Oi!']);
     expect(lines.leftBehind.cooldown).toBe(VOICE_LINES.leftBehind.cooldown);

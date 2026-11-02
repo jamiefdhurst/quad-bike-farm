@@ -521,6 +521,8 @@ export class CompanionVoice {
       flat: ['startFlat', 1],
       pull: ['startPull', 1],
       knack: ['startKnack', 1],
+      stuckStarter: ['startStuck', 1],
+      tapStarter: ['startTapStarter', 1],
       tickle: ['startTickle', 0.7],
       retard: ['startRetard', 0.7],
       kickedBack: ['startKicked', 1],

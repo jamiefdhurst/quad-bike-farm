@@ -15,7 +15,8 @@ import { getTuningGroups } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
 import { WHEEL_NAMES } from '../vehicle/tyres.js';
-import { setFault, setQuirk, engineReadouts } from '../debug/vehicleDebug.js';
+import { setFault, setQuirk, setStarterStuck, engineReadouts } from '../debug/vehicleDebug.js';
+import { canStick } from '../vehicle/stickyStarter.js';
 import { TAP_POSITIONS } from '../vehicle/fuelSystem.js';
 import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
 import { SIGNAL_MODES } from '../vehicle/indicators.js';
@@ -178,6 +179,12 @@ export function buildGameTree(g, host) {
       out.carbIce = group(() => ({
         ice: num(() => q().carbIce.ice, (v) => (q().carbIce.ice = v), 0, 1, '', '1 is iced solid: power gone at steady part throttle until a blip or a stop clears it'),
       }), 'the carb\'s ice');
+      if (canStick(e().params)) {
+        out.stickyStarter = group(() => ({
+          brushes: flag(() => !!q().sticky, (v) => q().giveSticky(v), 'the starter has worn brushes and can stick on a cold start'),
+          stuck: flag(() => !!q().sticky?.stuck, (v) => setStarterStuck({ quad: q() }, v), 'it only clicks until it is tapped with the spanner (toolbox, or Jess once she has learnt)'),
+        }), 'the starter motor\'s worn brushes');
+      }
       if (e().params.compressionIgnition) {
         out.dieselWax = group(() => ({
           wax: num(() => q().fuel.wax, (v) => (q().fuel.wax = v), 0, 1, '', '1 is waxed solid: a diesel loses power, cuts out and will not catch until it warms or is treated'),
