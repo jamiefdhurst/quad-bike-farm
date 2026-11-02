@@ -8,6 +8,12 @@ import { rod } from './quadGeometry.js';
 // rotation.z turns the arm across it) and its windscreen with `addRainGlass`: an empty group in the glass's frame (x across, y up the glass,
 // z out of it) carrying the panes as corners in metres, which effects/screenRainView.js hangs the drops on. vehicle/wipers.js moves them.
 
+/** Marks a cab's glass material so the mist can find it (effects/cabMistView.js): the side windows and the back fog as one. */
+export function markGlass(material) {
+  material.userData.glass = true;
+  return material;
+}
+
 /** Marks a parked wiper to sweep `sweep` radians (signed: positive turns its arm from +x towards +y) from where it lies now. */
 export function markWiper(wiper, sweep) {
   wiper.userData.keep = true;
