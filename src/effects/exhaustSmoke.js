@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { condensation } from '../engine/heat.js';
 
 // Exhaust smoke. One soft puff per firing pulse, so at idle you can see the
 // individual beats. How thick and what colour depends on the engine: white-grey
@@ -37,6 +38,10 @@ export const DEFAULT_SMOKE_PARAMS = {
   warmGray: 0.62,
   dieselGray: 0.5, // colour of diesel smoke: thick grey
   tint: '#ffffff', // colour cast; two-stroke oil smoke is bluish
+  condensationDensity: 0.7, // extra white vapour from a cold exhaust in cold air (engine/heat.js condensation)
+  dripsPerSecond: 4, // drops of water falling from the tip at full condensation
+  dripSize: 0.022, // metres, a drop
+  dripGray: 0.7, // colour of a drop (0 black, 1 white)
   spitPuffs: 5, // puffs of smoke a spit back through the carb throws out from under the seat (at full strength)
   flashBrightness: 1, // how bright an overrun pop's flash from the pipe is, in poor light
 };
@@ -72,6 +77,10 @@ export const SMOKE_PARAM_RANGES = {
   coldGray: [0, 1, 0.01],
   richGray: [0, 1, 0.01],
   warmGray: [0, 1, 0.01],
+  condensationDensity: [0, 2, 0.01],
+  dripsPerSecond: [0, 12, 0.5],
+  dripSize: [0.005, 0.08, 0.001],
+  dripGray: [0, 1, 0.01],
   spitPuffs: [0, 12, 1],
   flashBrightness: [0, 3, 0.05],
 };
@@ -137,6 +146,7 @@ export class ExhaustSmoke {
     this.life = new Float32Array(MAX).fill(-1); // < 0 means free
     this.alpha0 = new Float32Array(MAX);
     this.gray = new Float32Array(MAX);
+    this.heavy = new Uint8Array(MAX); // 1 for a drop of water, which falls instead of drifting
     this.size = new Float32Array(MAX);
     this.alpha = new Float32Array(MAX);
     this.seed = new Float32Array(MAX).map(() => Math.random());
@@ -177,6 +187,8 @@ export class ExhaustSmoke {
     this.spawnBudget = 0;
     this.pendingAlpha = 0;
     this.burst = 0;
+    this.dripBudget = 0;
+    this.condensing = 0; // 0..1, how much the exhaust is condensing now
     this.lastThrottle = 0;
     this.tipPos = new THREE.Vector3();
     this.tipDir = new THREE.Vector3();
@@ -207,16 +219,20 @@ export class ExhaustSmoke {
     this.burst *= Math.exp(-dt * 2.5);
 
     const coldness = 1 - engine.temperature;
+    const ep = engine.params;
+    this.condensing = ep.condenseAirBelow === undefined ? 0 : condensation({ running: engine.isRunning, temperature: engine.temperature, dayTemp: engine.dayTemp ?? 12 }, ep);
+    const cond = this.condensing;
     const rich = Math.max(0, engine.mixture - engine.params.richTolerance);
     const density =
-      p.warmDensity + p.coldDensity * coldness + p.richDensity * rich + p.foulDensity * engine.fouling + p.oilDensity * (engine.oilRich + (engine.oilBurn ?? 0)) + p.waterDensity * (engine.water ?? 0) + p.dieselDensity * (engine.dieselSoak ?? 0) + p.throttleBurst * this.burst + p.throttleDensity * engine.throttle;
+      p.warmDensity + p.coldDensity * coldness + p.richDensity * rich + p.foulDensity * engine.fouling + p.oilDensity * (engine.oilRich + (engine.oilBurn ?? 0)) + p.waterDensity * (engine.water ?? 0) + p.dieselDensity * (engine.dieselSoak ?? 0) + p.throttleBurst * this.burst + p.throttleDensity * engine.throttle + p.condensationDensity * cond;
     // Colour: vapour-white when cold, sooty when rich or bursting.
     const sooty = Math.min(1, rich * 1.5 + engine.fouling + (engine.oilRich + (engine.oilBurn ?? 0)) * 0.6 + this.burst * 0.5);
     const base = p.warmGray + (p.coldGray - p.warmGray) * coldness;
     const steamy = Math.min(1, (engine.water ?? 0) * 3); // water's steam is white whatever else is going on
     const dieselly = Math.min(1, (engine.dieselSoak ?? 0) * 2); // diesel smoke is grey, over the sootiness
     const sootGray = (base + (p.richGray - base) * sooty) * (1 - dieselly) + p.dieselGray * dieselly;
-    const gray = (sootGray * (1 - steamy) + p.coldGray * steamy) * (1 - p.burstBlack * this.burst) * (1 - p.throttleBlack * engine.throttle);
+    const vapour = Math.max(steamy, cond * (1 - sooty)); // condensation is white unless the smoke is sooty anyway
+    const gray = (sootGray * (1 - vapour) + p.coldGray * vapour) * (1 - p.burstBlack * this.burst) * (1 - p.throttleBlack * engine.throttle);
 
     this.spawnBudget = Math.min(this.spawnBudget + p.maxPerSecond * dt, 3);
     for (const pulse of engine.pulses) {
@@ -232,6 +248,13 @@ export class ExhaustSmoke {
         this.pendingAlpha = 0;
       }
     }
+    if (cond > ep.condenseDripFrom) {
+      this.dripBudget = Math.min(this.dripBudget + p.dripsPerSecond * cond * dt, 3);
+      while (this.dripBudget >= 1) {
+        this.dripBudget -= 1;
+        this.drip(carrierVel);
+      }
+    } else this.dripBudget = 0;
     for (const e of engine.events) {
       if (e.type === 'overrunPop') this.flashLeft = Math.max(this.flashLeft, e.strength);
       if (e.type === 'stalled' || e.type === 'caught') {
@@ -286,6 +309,25 @@ export class ExhaustSmoke {
     this.tipDir.copy(keepDir);
   }
 
+  /** A drop of water from the tip: it drops away from the pipe and falls to the ground, where it's gone. */
+  drip(carrierVel) {
+    const p = this.params;
+    const i = this.next;
+    this.next = (this.next + 1) % MAX;
+    const j = i * 3;
+    this.vel[j] = carrierVel.x + this.tipDir.x * 0.3;
+    this.vel[j + 1] = carrierVel.y - 0.2;
+    this.vel[j + 2] = carrierVel.z + this.tipDir.z * 0.3;
+    this.pos[j] = this.tipPos.x + (Math.random() - 0.5) * 0.02;
+    this.pos[j + 1] = this.tipPos.y - 0.02;
+    this.pos[j + 2] = this.tipPos.z + (Math.random() - 0.5) * 0.02;
+    this.age[i] = 0;
+    this.life[i] = 3; // it lands long before this
+    this.alpha0[i] = 0.9;
+    this.gray[i] = p.dripGray;
+    this.heavy[i] = 1;
+  }
+
   spawn(alpha, gray, exit, carrierVel, preAge) {
     const p = this.params;
     const i = this.next;
@@ -303,6 +345,7 @@ export class ExhaustSmoke {
     this.age[i] = back;
     this.life[i] = p.lifeMin + Math.random() * (p.lifeMax - p.lifeMin);
     this.alpha0[i] = alpha;
+    this.heavy[i] = 0;
     this.gray[i] = Math.min(1, Math.max(0, gray + (Math.random() - 0.5) * 0.06));
   }
 
@@ -324,6 +367,16 @@ export class ExhaustSmoke {
         continue;
       }
       const j = i * 3;
+      if (this.heavy[i]) {
+        this.vel[j + 1] -= 9.8 * dt;
+        this.pos[j] += this.vel[j] * dt;
+        this.pos[j + 1] += this.vel[j + 1] * dt;
+        this.pos[j + 2] += this.vel[j + 2] * dt;
+        this.size[i] = p.dripSize;
+        this.alpha[i] = this.alpha0[i] * Math.min(1, p.opacity);
+        if (this.pos[j + 1] < this.heightAt(this.pos[j], this.pos[j + 2])) { this.life[i] = -1; this.alpha[i] = 0; this.size[i] = 0; } // it has landed
+        continue;
+      }
       // Relax toward the wind, rise a little.
       this.vel[j] = p.windX + (this.vel[j] - p.windX) * dragK;
       this.vel[j + 1] = this.vel[j + 1] * dragK + p.buoyancy * dt;

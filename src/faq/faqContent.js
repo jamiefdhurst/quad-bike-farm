@@ -827,6 +827,12 @@ export const FAQ_SECTIONS = [
           Moorland with the heater on than stand about outside. Ask them out from their wheel and they'll still come.`,
       },
       {
+        q: 'Why is my exhaust dripping and puffing white?',
+        a: `A cold engine on a cold morning makes water as it burns fuel, and the cold pipe turns it to white vapour and drips it out of the tip. It is
+          nothing wrong. Once the engine has warmed up the pipe dries out, the drips stop and the vapour thins to a haze. On a mild afternoon it barely shows at all.`,
+        tip: 'White puffs and drips from the pipe on a cold morning is just water. It stops when the engine has warmed up.',
+      },
+      {
         q: 'Does the weather matter?',
         a: `Yes. Rain wets the ground, and wet grass and especially wet mud are slipperier and the bogs worse. It's colder in the morning and after dark than
           in the afternoon. Cold days want more choke, longer to warm

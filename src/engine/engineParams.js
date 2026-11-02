@@ -287,6 +287,10 @@ export const DEFAULT_ENGINE_PARAMS = {
   steamWetFrom: 0.3, // metal heat (running heat or soak) from which rain steams off it: just idling doesn't
   steamWet: 0.9, // steam from rain on fully hot metal
   steamWetGround: 0.4, // wet ground counts for this much of falling rain
+  condenseAirBelow: 12, // air temperature (°C) below which a cold exhaust shows vapour at all
+  condenseAirFull: 0, // and the air temperature at which it shows most
+  condenseWarmAt: 0.6, // engine warmth (0..1) from which the exhaust has dried out
+  condenseDripFrom: 0.2, // condensation level from which water drips out of the tip
   heatGaugeWater: 0.25, // how much of its heat the water-cooled one's gauge shows
   soakIdle: 0.25, // heat held in the metal by an engine just idling, against 1 flat out
   soakRiseSeconds: 60, // how fast the metal heats up
@@ -623,6 +627,10 @@ export const ENGINE_PARAM_RANGES = {
   steamWetFrom: [0, 1, 0.01],
   steamWet: [0, 1, 0.01],
   steamWetGround: [0, 1, 0.01],
+  condenseAirBelow: [0, 25, 0.5],
+  condenseAirFull: [-10, 15, 0.5],
+  condenseWarmAt: [0.1, 1, 0.01],
+  condenseDripFrom: [0, 1, 0.01],
   heatGaugeWater: [0, 1, 0.01],
   soakIdle: [0, 1, 0.01],
   soakRiseSeconds: [5, 600, 5],
