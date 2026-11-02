@@ -20,3 +20,13 @@ Offered alongside #372 to #375. Not wanted yet; raise them again only if the rea
 - Reusing the sun's shadows between frames (redrawing the shadow map less often): the shadow under a moving quad or girl would lag, and Three.js has one map, so the static and moving shadows can't be split.
 - Lowering the drawing resolution when a frame is slow: the cost here is sending draws, not pixels, so it would barely help.
 - Low, Medium and High quality settings and a minimum machine: the game only runs on Jamie's Mac for now. If anyone plays it elsewhere, this becomes the machine the budgets are measured on.
+
+## Bringing the old issues up to date (#422, batch 1, 2026-11-02)
+
+Closed as dropped when the oldest 30 issues were gone through. Raise them again only if the reason no longer holds.
+
+- A moped (a Honda Cub style), #79: Amy has the Finch for the village. A candidate on #520 (more vehicles to buy) if variety on the cork board needs it.
+- A home-made go-kart, #78: the races and the mini moto already cover messing about. Also a candidate on that issue.
+- A compact tractor with a front loader, #83: the bale spike on the tractor does the lifting.
+- A vehicle spec editor in the debug panel, #89: new vehicles are written as specs by a session, not tuned by hand, so it would pay back little.
+- The romance as a slow thread across days (from #85): no clear first step yet. Amy's driving test (#85) and Jess saving for a bike (#519) go first.
