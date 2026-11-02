@@ -14,3 +14,4 @@ paths:
 - `--bank-only` rebuilds a bank from the cache without recording anything (about 12 s a girl), for when only the bank's format or packing changes.
 - Unrecorded lines fall back to browser speech, so the game works before recording finishes; commit the banks when it's done.
 
+- **A new vehicle that can be on the farm** needs a phrase and nicknames in `quadNames.js`, and its id goes in `LATE_QUAD_IDS` there, not `EARLY_QUAD_IDS`: the lines about each quad are written out per quad and nickname, and putting a new quad among them re-packs the banks. Late ones are expanded after the rest and merged last (`AMY_LATE_*`, `JESS_LATE_*`), so only new banks change (#75).

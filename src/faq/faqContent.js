@@ -246,7 +246,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'The battery is flat. Now what?',
-        a: `Four ways out. The booster pack from the workbench (hold <kbd>E</kbd> at the vehicle) is the quickest. The Hornet, the Adder, the kids' quad, the mini moto and the old three-wheeler have a pull-start: with the ignition on, hold <kbd>O</kbd>
+        a: `Four ways out. The booster pack from the workbench (hold <kbd>E</kbd> at the vehicle) is the quickest. The Hornet, the Adder, the kids' quad, the mini moto and the old three-wheeler have a pull-start, and the Shepherd has a kickstart as well as its key: with the ignition on, hold <kbd>O</kbd>
           for about half a second to a second and let go to yank (too short is weak, too long is botched). Or fetch the jump leads from the
           workbench, clamp the flat one (<kbd>E</kbd>) and then a running one (<kbd>E</kbd>), parked nose to nose since they only reach about
           4.5 m. The Tor has a starting handle too (the Crag hasn't: it wants the leads). Running an engine charges its battery again, but by the revs: about ten minutes revved, much longer at idle. The leads are slow: a flat battery wants a minute or two joined to a running quad before it will turn the engine. Or lift the battery out, charge it on the workbench charger and put it back (see the battery questions below). A jumped petrol engine
@@ -307,7 +307,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do the gears work?',
         a: `The Bruin, the Adder, the kids' quad, the loan quad, the mini moto and the Yak are automatics: <kbd>W</kbd> to go, <kbd>S</kbd> to brake.
-          The Farm 300, RB300 and Hornet, the old three-wheeler, the tractor and both Moorlands have a clutch: hold <kbd>Shift</kbd> and press
+          The Farm 300, RB300 and Hornet, the Shepherd, the old three-wheeler, the tractor and both Moorlands have a clutch: hold <kbd>Shift</kbd> and press
           <kbd>1</kbd> to <kbd>4</kbd> for a gear (the tractor has three, the Crag five), <kbd>B</kbd> for reverse and <kbd>0</kbd> for neutral. Pulling away
           in a high gear labours it and can stall it, and rushing a change can land you in a false neutral.`,
       },
@@ -323,7 +323,7 @@ export const FAQ_SECTIONS = [
         q: 'How do I reverse?',
         a: `It's different on each, as on the real machines. Bruin and loan quad: stopped, hold <kbd>S</kbd> and press <kbd>B</kbd>, then <kbd>S</kbd>
           backs it up. Farm 300: <kbd>B</kbd> with the clutch in and the bars turned. RB300: <kbd>B</kbd> with the clutch in, stopped. Yak: stopped,
-          <kbd>B</kbd> flips the dash lever. The Moorlands and the tractor: reverse is a gear. The Hornet, Adder, kids' quad, mini moto and three-wheeler
+          <kbd>B</kbd> flips the dash lever. The Moorlands and the tractor: reverse is a gear. The Hornet, Adder, kids' quad, mini moto, farm bike and three-wheeler
           have no reverse at all: get off and hold <kbd>V</kbd> to push it. In reverse, <kbd>S</kbd> is the throttle and <kbd>W</kbd> the brake.`,
         tip: 'The two-strokes have no reverse: get off and hold V to push them.',
       },
@@ -464,6 +464,13 @@ export const FAQ_SECTIONS = [
         a: `Like a bike, not a quad: the bars ask for a lean and the lean turns it, and faster corners need more lean. Power in a deep lean pushes the
           rear out (ease off and it comes back), and grabbing the brake mid-corner tucks the front. Overdo either, or lean hard in the mud, and it goes
           down: <kbd>T</kbd> or <kbd>E</kbd> beside it picks it up. Under walking pace a foot is down, so it can't fall.`,
+      },
+      {
+        q: 'Can a girl ride on the back of the farm bike?',
+        a: `Yes, the Shepherd is the one bike with room for two. Look at the back of its long seat and press <kbd>E</kbd> to sit behind a girl, or let her sit
+          behind you: she holds your waist when you are in front and the strap across the seat when nobody is. It rides like the mini moto, bars asking
+          for a lean, but with her on the back it is slower to get over, holds its lean a little firmer and goes down a little sooner if you push it.`,
+        tip: 'The Shepherd (the farm bike) has room for a girl on the back. Ease into the corners.',
       },
       {
         q: 'Will the girls ride the mini moto?',
@@ -894,8 +901,8 @@ export const FAQ_SECTIONS = [
           the workbench renews them for good.`,
       },
       {
-        q: 'What is that slapping from the sport quad, the mini moto, the old three-wheeler or the old bike?',
-        a: `Those four are chain driven. A chain oils off as you ride and stretches until it hangs slack, and a slack one slaps the chainguard over bumps. Left
+        q: 'What is that slapping from the sport quad, the mini moto, the farm bike, the old three-wheeler or the old bike?',
+        a: `Those five are chain driven. A chain oils off as you ride and stretches until it hangs slack, and a slack one slaps the chainguard over bumps. Left
           alone it gets worse until a handful of throttle makes it jump off the sprocket: the engine races and nothing drives the wheels.`,
       },
       {
@@ -2783,6 +2790,10 @@ export const VEHICLE_NOTES = {
   moto: {
     blurb: 'The Tamura TZ 65, a sun-faded blue small motocross bike with gold forks, a high front fender and a silver silencer. Two wheels, one seat, and it leans into corners like a proper bike.',
     tips: ['Lean it to turn it.', 'Grab the brake mid-corner and the front tucks.', 'T picks it up when it goes down.', 'Cord only: the choke knob and the fuel tap are by the carb.'],
+  },
+  ag200: {
+    blurb: 'The Ridgeback Shepherd 200, a faded blue hill-farm trail bike: tall and narrow, long forks, a long flat seat for two, steel racks front and back with a bit of baler twine on one, hand guards and an upswept silencer. The first bike with room on the back.',
+    tips: ['Lean it to turn it, and with someone on the back it leans a little slower.', 'A clutch (Shift) and a four-speed box.', 'The key starts it, or kick it over (O).', 'The choke plunger and the fuel tap are by the carb.', 'P switches the lamp on and off.'],
   },
   atc: {
     blurb: 'The neighbour’s worn-out old Kestrel T185 three-wheeler: one front wheel on chrome forks, two fat tyres, a wide red rear body, a long flat seat and a rectangular headlamp.',

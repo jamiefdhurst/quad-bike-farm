@@ -99,4 +99,37 @@ describe('bike lean', () => {
     run(b, 0.1, { ...base, lean: 1.2 });
     expect(b.fallen).toBe(true);
   });
+  it('is slower to lean over, and firmer once it has, with someone on the back', () => {
+    const solo = new BikeLean({ ...DEFAULT_BIKE_PARAMS });
+    const two = new BikeLean({ ...DEFAULT_BIKE_PARAMS });
+    run(solo, 0.3, { ...base, bars: 0.5, lean: 0 });
+    run(two, 0.3, { ...base, bars: 0.5, lean: 0, pillion: true });
+    expect(two.command).toBeGreaterThan(0);
+    expect(two.command).toBeLessThan(solo.command);
+    const a = new BikeLean({ ...DEFAULT_BIKE_PARAMS });
+    const b = new BikeLean({ ...DEFAULT_BIKE_PARAMS });
+    const held = run(a, 1, { ...base, bars: 0.5, lean: 0 });
+    const heldTwo = run(b, 1, { ...base, bars: 0.5, lean: 0, pillion: true });
+    expect(Math.abs(heldTwo.rollTorque)).toBeGreaterThan(0); // pushing towards a lean it has not reached yet
+    expect(held.steer).toBeDefined();
+  });
+
+  it('goes over a little sooner with her weight high on the back', () => {
+    const p = DEFAULT_BIKE_PARAMS;
+    const lean = ((p.fallLeanDeg - p.pillionFall / 2) * Math.PI) / 180; // between the two limits
+    const solo = new BikeLean({ ...p });
+    const two = new BikeLean({ ...p });
+    run(solo, 0.1, { ...base, bars: 0.3, lean });
+    run(two, 0.1, { ...base, bars: 0.3, lean, pillion: true });
+    expect(solo.fallen).toBe(false);
+    expect(two.fallen).toBe(true);
+  });
+
+  it('is the same with nobody on the back as before', () => {
+    const a = new BikeLean({ ...DEFAULT_BIKE_PARAMS });
+    const b = new BikeLean({ ...DEFAULT_BIKE_PARAMS });
+    const x = run(a, 1, { ...base, bars: 0.4, lean: 0.1 });
+    const y = run(b, 1, { ...base, bars: 0.4, lean: 0.1, pillion: false });
+    expect(y.rollTorque).toBeCloseTo(x.rollTorque, 9);
+  });
 });
