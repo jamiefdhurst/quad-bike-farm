@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
 import { createRandom } from '../src/core/random.js';
 import { Drive, Traffic, Visit, DEFAULT_TRAFFIC_PARAMS, TRAFFIC_PARAM_RANGES, visitPlaces, planVisit, laneX, LANE_KINDS } from '../src/world/traffic.js';
+import { wantedBodies } from '../src/world/trafficView.js';
 import { createFields } from '../src/world/fields.js';
 
 const places = visitPlaces(LAYOUT);
@@ -330,5 +331,38 @@ describe('the girls and the lane', () => {
     expect(droneFor('van', 15).hz).toBeGreaterThan(droneFor('van', 2).hz);
     expect(droneFor('van', 0).tyre).toBe(0);
     expect(droneFor('tractor', 6).hz).toBeLessThan(droneFor('van', 6).hz);
+  });
+});
+
+describe('the bodies built ahead (#532)', () => {
+  const key = (model, colour, reg) => `${model}:${colour}:${reg ?? ''}`;
+  const wanted = new Set(wantedBodies().map((b) => key(b.model, b.colour, b.reg)));
+
+  it('has one of everything the lane, the visitors and the kids can ask for, and no more than it needs', () => {
+    const t = new Traffic({ places, params: P, random: createRandom(9) });
+    const seen = new Set();
+    for (let i = 0; i < 200; i++) {
+      const v = t.spawnPass();
+      seen.add(key(v.model, v.colour, null));
+      t.visit = null;
+      const visit = t.startVisit(i % 3 === 0 ? 'post' : 'neighbour');
+      seen.add(key(visit.model, visit.colour, visit.reg));
+    }
+    const tuner = new Traffic({ places, params: P, random: createRandom(1) }).startVisit('tuner');
+    seen.add(key(tuner.model, tuner.colour, tuner.reg));
+    for (const k of seen) expect(wanted.has(k)).toBe(true);
+    expect(wanted.size).toBeLessThanOrEqual(30);
+    expect(wantedBodies()).toHaveLength(wanted.size);
+  });
+
+  it('pairs each neighbour\'s paint with one registration', () => {
+    const t = new Traffic({ places, params: P, random: createRandom(4) });
+    const regOf = new Map();
+    for (let i = 0; i < 80; i++) {
+      t.visit = null;
+      const v = t.startVisit('neighbour');
+      expect(regOf.get(v.colour) ?? v.reg).toBe(v.reg);
+      regOf.set(v.colour, v.reg);
+    }
   });
 });

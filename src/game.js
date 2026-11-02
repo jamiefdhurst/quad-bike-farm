@@ -12644,6 +12644,7 @@ export class Game {
     this.setPaused(this.isPaused());
     if (this.photos.modeActive && this.paused) this.photos.exitMode(); // the pause card ends photo mode
     if (this.firstFrameDone) this.bakeWear(this.paused ? 12 : 2);
+    if (this.firstFrameDone) this.guard.run('stockTraffic', () => this.trafficHost.stockUp(this.paused)); // a vehicle's body takes 10 to 30 ms: made ahead, not as it turns in
     if (this.paused && this.firstFrameDone) {
       this.updateEndOfDay(dt); // a fade to the next day carries on if the pointer lock is let go of
       if (this.redraw || started - (this.pausedDrawAt ?? 0) > 500) {
