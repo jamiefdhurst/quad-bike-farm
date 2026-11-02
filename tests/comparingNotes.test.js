@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { ComparingNotes, ranking, combinedRanking, DEFAULT_COMPARE_PARAMS as P } from '../src/npc/comparingNotes.js';
 import { Logbook, formatEntry } from '../src/workshop/logbook.js';
-import { AMY_RANK_LINES, JESS_RANK_LINES } from '../src/npc/rankLines.js';
+import { AMY_RANK_LINES as AMY_EARLY_RANK, JESS_RANK_LINES as JESS_EARLY_RANK, AMY_LATE_RANK_LINES, JESS_LATE_RANK_LINES } from '../src/npc/rankLines.js';
+
+const AMY_RANK_LINES = { ...AMY_EARLY_RANK, ...AMY_LATE_RANK_LINES }; // the quads recorded first and those added since, as the game merges them
+const JESS_RANK_LINES = { ...JESS_EARLY_RANK, ...JESS_LATE_RANK_LINES };
 import { QUAD_PHRASES } from '../src/npc/quadNames.js';
 
 const girls = (a, j, o = {}) => [

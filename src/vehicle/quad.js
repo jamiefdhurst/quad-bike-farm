@@ -1064,6 +1064,7 @@ export class Quad {
       grip,
       safe: !this.input,
       gentle: !!this.driver,
+      pillion: !!(this.passenger || this.backRider),
     });
     this.physics.gripMul = this.physics.wheels.map((w) => (w.front ? out.frontGrip : out.rearGrip));
     if (!wasFallen && this.bike.fallen) this.engine.setIgnition(false); // it stalls, or you kill it, on the way down

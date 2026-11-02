@@ -11828,6 +11828,8 @@ export class Game {
     const side = quad.bike.fallSide;
     const spot = this.findDismountSpot(quad, [[side * 1.1, -0.15], [-side * 1.1, -0.15], [0, -1.8]], 0.3);
     this.hud.toast(`You came off the ${unit.label}`, 2.5);
+    // Whoever is on the back (the farm bike has room) goes over with it, to the same side.
+    for (const c of this.companions) if (c.quad === quad && c.fsm.is('seated') && c.seatKind === 'pillion') c.fsm.transition('thrown', { side });
     if (!spot) return; // nowhere clear to land: you stay put, and T rights it
     const push = new THREE.Vector3(spot.x - quad.position.x, 0, spot.z - quad.position.z).normalize();
     const look = this.camera.getWorldDirection(new THREE.Vector3());

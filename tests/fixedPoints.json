@@ -150,6 +150,23 @@
     "pillionCameraAnchor": [0,1.79,-0.62],
     "cameraAnchor": [0,1.69,-0.22]
   },
+  "ag200": {
+    "seat": [0,0,0],
+    "pillionSeat": [0,0,0],
+    "pegRight": [-0.2,0.33,-0.06],
+    "pegLeft": [0.2,0.33,-0.06],
+    "handlebars": [0,1,0.381],
+    "gripRight": [-0.3,1.06,0.351],
+    "gripLeft": [0.3,1.06,0.351],
+    "dash": [0,1.1,0.381],
+    "riderHands": [0,1,0.381],
+    "riderAnchor": [0,0.835,-0.12],
+    "cameraAnchor": [0,1.625,-0.12],
+    "pillionAnchor": [0,0.84,-0.55],
+    "pillionCameraAnchor": [0,1.63,-0.55],
+    "pillionGripRight": [-0.1,0.835,-0.4],
+    "pillionGripLeft": [0.1,0.835,-0.4]
+  },
   "plover": {
     "seat": [0,0,0],
     "pegRight": [-0.19,0.29,-0.12],

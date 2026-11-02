@@ -49,6 +49,7 @@ export const FOR_SALE = {
   orange: { price: 640, colours: [0xe86a12, 0x1d4fa3, 0x2e2e30, 0xe9e6dc] },
   kids: { price: 180, colours: [0xd596ad, 0x4f8fd0, 0x6aa84f, 0xe0b030] },
   moto: { price: 240, colours: [0x3f6fa8, 0xa8271f, 0xe9c21b, 0x2e2e30] },
+  ag200: { price: 420, colours: [0x1d4fa3, 0xe9c21b, 0xc8c4b8, 0x6b7a3a] },
   atc: { price: 280, colours: [0xb4553f, 0x3f6fa8, 0xd8d4c8, 0x6b7a3a] },
   tractor: { price: 3200, colours: [0xa82a20, 0x2c4f8a, 0x3a6a3a, 0xc8a02c] },
   utv: { price: 2400, colours: [0x3b5b3a, 0x8a6a3a, 0x2e2e30, 0xa82a20] },

@@ -20,6 +20,7 @@ import {
 //   blaster:   yellow. Only the key, in a small housing on the bar clamp.
 //   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   mini moto, old three-wheeler. A key switch under the bar clamp. asp: the kids' quad's, the same key on the V bars' clamp block.
+//   trail:     the farm bike: a round white-faced speedo to 70 mph in a black bezel, with an odometer drum, an ignition lamp and the key.
 //   smiths:    the old bike: a round Smiths-style speedo to 70 mph with an odometer drum, a red ignition lamp and the key, in a cup on the headlamp's top.
 //   tractor:   the tractor (a Massey-Ferguson-35-style cluster, TODO 98). Three round dials in chrome bezels set straight into the red metal of the cowl, no housing (a big rev counter with an hour meter and the PTO speed marked, water temperature, fuel), a brass ignition switch, and four warning lamps (temperature, GLOW, CHARGE, OIL).
 //   utv:       the UTV (a Mule-style cluster, TODO 99): a round speedo to 40 mph with its odometer between four lamp pockets (glow, charge, oil, parking brake), a strip of the rest of the tell-tales, a separate fuel and hours unit and a key switch in 3D. It was a basic LCD over symbols for glow, charge, oil, park
@@ -516,6 +517,62 @@ function buildSmiths() {
     mount: podMount(group, 0, 0.058, 0, 0.85),
     update(s) {
       // The needle follows the road speed with a little lag, like a cable.
+      shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
+      const o = counterDigits(s.odoMiles, 6);
+      const L = { mph: shownMph, odo: o, lit: !!s.ignition };
+      if (gate(lookKey(s, [Math.round(shownMph * 4), o.key]))) face.redraw((ctx) => draw(ctx, s, L));
+    },
+  };
+}
+
+// The farm bike's speedo ------------------------------------------------------------------
+
+/** The trail bike's speedo: a round white-faced dial in a black bezel, mph 0 to 70 as the old bike's,, with an ignition lamp and the key. */
+function buildTrail() {
+  const group = new THREE.Group();
+  group.name = 'dash';
+  const [cx, cy] = [150, 50];
+  const cup = new THREE.LatheGeometry(
+    [[0, -0.03], [0.047, -0.03], [0.0515, -0.024], [0.0515, 0.022], [0.0485, 0.03], [0.0435, 0.03], [0.0425, 0.022], [0.0415, 0.0]].map(([r, y]) => new THREE.Vector2(r, y)),
+    40,
+  ).rotateX(-Math.PI / 2);
+  const cupMesh = new THREE.Mesh(cup, plastic);
+  cupMesh.name = 'dashHousing';
+  group.add(cupMesh);
+  const face = mmPanel({ x: cx - 46, y: cy - 46, w: 92, h: 92, ox: cx, oy: cy, z: -0.0175 });
+  group.add(face.mesh);
+  const gate = changeGate();
+  let shownMph = 0;
+
+  function draw(ctx, s, L) {
+    const { from, to } = SMITHS_DIAL;
+    ctx.fillStyle = '#0c0c0b';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 43, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e9e8e1';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 40, 0, Math.PI * 2);
+    ctx.fill();
+    ticks(ctx, cx, cy, 36, 39, from, to, 70, '#2a2a28', 0.5);
+    ticks(ctx, cx, cy, 33, 39, from, to, 14, '#1c1c1a', 1.1);
+    labels(ctx, cx, cy, 26, from, to, ['0', '10', '20', '30', '40', '50', '60', '70'], '#1c1c1a', 6.2);
+    text(ctx, 'MPH', cx, cy - 12, 4, '#3a3a36', { align: 'center', spacing: 0.4 });
+    drum(ctx, cx - 13.8, cy + 12, L.odo, 7);
+    makerBadge(ctx, 'ridgeback', cx, cy + 27, 5.4, 24);
+    lamp(ctx, cx - 17, cy + 31, LAMP.red, '', L.lit, { r: 2.6 });
+    keySwitch(ctx, cx + 17, cy + 31, s.keyOn);
+    needle(ctx, cx, cy, 37, smithsNeedleAngle(L.mph), '#e0b400', 1.4);
+    ctx.fillStyle = '#6a6a64';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  return {
+    group,
+    mount: podMount(group, 0, 0.058, 0, 0.85),
+    update(s) {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       const o = counterDigits(s.odoMiles, 6);
       const L = { mph: shownMph, odo: o, lit: !!s.ignition };
@@ -1526,7 +1583,7 @@ function buildP309() {
 }
 
 /** Dash styles buildDash knows: every quad spec must name one of these. */
-export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'asp', 'smiths', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa', 'p309'];
+export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'asp', 'smiths', 'trail', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa', 'p309'];
 
 /** Where each dash sits on the bars (metres, in the bars' frame) and how far it tilts back. A nacelle quad carries its own on its top. */
 export const DASH_PLACE = {
@@ -1538,6 +1595,7 @@ export const DASH_PLACE = {
   quadracer: { pos: [0.195, -0.022, -0.075], tilt: 0.9 }, // on the pod on the level run of the V bars (the kill switch's panel)
   kidsKey: { pos: [0, 0.075, 0.0], tilt: 0.9 },
   smiths: { pos: [0, 0, 0], tilt: 0.5 }, // the old bike's speedo: its model sets it in the headlamp nacelle itself
+  trail: { pos: [0, 0, 0], tilt: 0.5 }, // the farm bike's: its model sets it on the bars' bracket
   asp: { pos: [0, -0.034, -0.02], tilt: 0.5 }, // the kids' quad's key, on the clamp block at the V bars' middle as the yellow's
   tractor: { pos: [0, 0, 0], tilt: 1.05 }, // the tractor's model places it on its scuttle itself
   utv: { pos: [0, 0, 0], tilt: 0.9 }, // so does the UTV's
@@ -1558,6 +1616,7 @@ const BUILDERS = {
   kidsKey: buildKidsKey,
   asp: buildKidsKey,
   smiths: buildSmiths,
+  trail: buildTrail,
   tractor: buildTractor,
   utv: buildUtv,
   series: buildSeries,

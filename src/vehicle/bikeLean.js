@@ -8,6 +8,7 @@
 //   - power mid-corner uses some of the rear's grip, so at a deep lean it steps out (rear slide) and recovers if you ease off;
 //   - the front brake mid-corner uses the front's grip, so the front tucks and the bike goes down on its inside;
 //   - too much slide or tuck, or a lean past `fallLeanDeg`, and it falls.
+// Someone on the back (`pillion`) makes it heavier to lean: the lean builds slower, the balance holds firmer and it goes over a little sooner.
 // Below `footDownSpeed` a foot is down: no lean, the bars steer directly, and it can't fall. An unattended bike (a parked one on its
 // stand, or one carrying on without a rider) and one a girl is riding balance themselves and never fall.
 
@@ -34,6 +35,9 @@ export const DEFAULT_BIKE_PARAMS = {
   fallPush: 700, // N m, pushing a falling bike over onto its side
   fallenRollDeg: 88, // where the push stops
   gentle: 0.6, // how much of the lean a girl will ask for
+  pillionSlow: 0.25, // fraction of the lean rate lost with someone on the back: two people are slower to get over
+  pillionStiff: 0.3, // how much firmer the balance holds with her weight up there
+  pillionFall: 4, // degrees less lean before it goes with her weight high on the back
 };
 
 export const BIKE_PARAM_RANGES = {
@@ -56,6 +60,9 @@ export const BIKE_PARAM_RANGES = {
   fallPush: [100, 2000, 50],
   fallenRollDeg: [60, 90, 1],
   gentle: [0.2, 1, 0.05],
+  pillionSlow: [0, 0.6, 0.05],
+  pillionStiff: [0, 1, 0.05],
+  pillionFall: [0, 15, 1],
 };
 
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
@@ -120,6 +127,7 @@ export class BikeLean {
    * @param {number} s.grip       The tyres' grip as a fraction of dry grass, about 0.2 (wet mud) to 1.2.
    * @param {boolean} s.safe      Nobody who can fall off is riding: held up regardless.
    * @param {boolean} s.gentle    A girl riding: asks for less lean.
+   * @param {boolean} [s.pillion] Someone is on the back.
    * @returns {{rollTorque:number, steer:number, rearGrip:number, frontGrip:number, leaning:boolean}} The roll torque (N m, positive
    * leans it left), the front wheel angle, a factor on each tyre's grip, and whether the lean is steering it.
    */
@@ -142,6 +150,8 @@ export class BikeLean {
 
     // Foot down: upright, and steered on the bars. Reversing is the same.
     const w = s.speed < 0 ? 0 : smooth((speed - p.footDownSpeed) / p.footDownBlend);
+    const load = s.pillion ? 1 : 0;
+    const fallLean = (p.fallLeanDeg - p.pillionFall * load) * DEG;
     const askFor = (s.gentle ? p.gentle : 1) * p.maxLeanDeg * DEG * s.bars * Math.min(1, speed / p.fullLeanSpeed) * w;
 
     // The grip: the tan of the lean the tyres will hold. Power uses some of the rear's, the brake some of the front's.
@@ -158,7 +168,7 @@ export class BikeLean {
     if (s.safe) {
       this.rearSlide = Math.min(this.rearSlide, 0.6);
       this.frontSlide = 0;
-    } else if (this.rearSlide >= 1 || this.frontSlide >= 1 || Math.abs(s.lean) > p.fallLeanDeg * DEG) {
+    } else if (this.rearSlide >= 1 || this.frontSlide >= 1 || Math.abs(s.lean) > fallLean) {
       this.fallen = true;
       this.justFell = true;
       this.fallSide = Math.sign(s.lean || s.bars || 1);
@@ -173,9 +183,9 @@ export class BikeLean {
     // A tucking front pulls it further over, the way it is already leaning.
     const tuck = this.frontSlide * p.tuckDropDeg * DEG * Math.sign(s.lean || s.bars);
     const target = askFor + tuck;
-    this.command += (target - this.command) * Math.min(1, p.leanRate * dt);
+    this.command += (target - this.command) * Math.min(1, p.leanRate * (1 - p.pillionSlow * load) * dt);
 
-    o.rollTorque = p.rollStiffness * (this.command - s.lean) - p.rollDamping * s.leanRate;
+    o.rollTorque = p.rollStiffness * (1 + p.pillionStiff * load) * (this.command - s.lean) - p.rollDamping * s.leanRate;
     // The bars alone at a walking pace, the lean's own turn at speed.
     o.steer = w > 0 ? s.barAngle * (1 - w) + steerForLean(p.wheelbase, s.lean, speed) * w : s.barAngle;
     o.rearGrip = 1 - p.slideGripLoss * clamp(this.rearSlide, 0, 1);

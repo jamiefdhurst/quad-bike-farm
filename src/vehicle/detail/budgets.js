@@ -13,7 +13,7 @@ export const TRIANGLE_BUDGETS = {
 
 /** Which budget a vehicle spec comes under. */
 export function budgetFor(spec) {
-  if (spec.miniMoto || spec.threeWheeler || spec.classicBike) return TRIANGLE_BUDGETS.small;
+  if (spec.miniMoto || spec.threeWheeler || spec.classicBike || spec.farmBike) return TRIANGLE_BUDGETS.small;
   if (spec.tractor) return TRIANGLE_BUDGETS.tractor;
   if (spec.utv) return TRIANGLE_BUDGETS.utv;
   if (spec.landRover || spec.car) return TRIANGLE_BUDGETS.big;
