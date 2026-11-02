@@ -164,4 +164,4 @@ The sections below are the record, oldest first. A new decision goes at the end.
 
 ## The wood's draw-call budget for the mower (#76)
 
-- The smoke test's wood view measured 1,360 to 1,390 calls against 1,330 once the mower was in the pool and parked in view. Not a leak: the model's parts are unnamed so each material is one mesh (248 meshes came down to 117, with 49k triangles), and the wood's budget goes to 1,400. The yard's triangles went from 3.8M to 4.0M (CI measured 3.90M with the mower's 49k triangles parked in view; its calls stayed under, 2,647 to 2,699).
+- The smoke test's wood view measured 1,360 to 1,390 calls against 1,330 once the mower was in the pool and parked in view. Not a leak: the model's parts are unnamed so each material is one mesh (248 meshes came down to 117, with 49k triangles), and the wood's budget goes to 1,400. The yard's triangles went from 3.8M to 4.0M (CI measured 3.90M with the mower's 49k triangles parked in view; its calls went from 2,700 to 2,800, CI measuring 2,647 to 2,701).
