@@ -22,6 +22,8 @@ export const VEHICLE_VERBS = [
   { name: 'clearrack', help: 'take whatever is on its rack off, gone from the rack' },
   { name: 'soak', help: 'rain on its windscreen, as in a downpour (the cars, the Land Rovers and the UTV)' },
   { name: 'dry', help: 'its windscreen dried off' },
+  { name: 'mist', help: 'the glass of its cab misted over, as after a cold wet drive with a full load (the cars and the Land Rovers)' },
+  { name: 'demist', help: 'the glass of its cab cleared of mist' },
   { name: 'fix', help: 'put right: faults, plug, filter, wear, scuffing, seizure, water (quirks stay)' },
 ];
 
@@ -156,6 +158,8 @@ export function createHost(g, { copy = () => {} } = {}) {
         case 'fix': fixEverything(u); break;
         case 'soak': if (!g.debugScreenRain(u, 'soak')) return `${id} has no windscreen`; break;
         case 'dry': if (!g.debugScreenRain(u, 'clear')) return `${id} has no windscreen`; break;
+        case 'mist': if (!g.debugCabMist(u, 'mist')) return `${id} has no cab to mist`; break;
+        case 'demist': if (!g.debugCabMist(u, 'clear')) return `${id} has no cab to mist`; break;
         case 'load': return `${id}: ${g.debugLoad(u)}`;
         case 'unload': return `${id}: ${g.debugUnload(u)}`;
         case 'rackcan': return `${id}: ${g.debugRack(u, 'can')}`;

@@ -1,5 +1,6 @@
 import { lensCoverage } from '../effects/lensMud.js';
 import { screenCover } from '../effects/screenRain.js';
+import { cabMistCover } from '../effects/cabMist.js';
 import GUI from 'lil-gui';
 import { getTuningGroups, exportTuning } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
@@ -338,6 +339,7 @@ export class DebugGui {
     if (u.quad.wipers) {
       r.add({ get v() { return unit().quad.wipers?.setting; }, set v(x) { unit().quad.wipers?.set(x); } }, 'v', u.quad.wipers.positions()).name('wipers (X)').listen();
       show(r, 'rain on the windscreen (0 clear)', () => round(unit().screenRain ? screenCover(unit().screenRain.glass) : 0));
+      if (u.quad.model.userData.cabin) show(r, 'mist on the windscreen (0 clear)', () => round(unit().cabMist ? cabMistCover(unit().cabMist.grid) : 0));
     }
     if (u.quad.drive) r.add({ get v() { return unit().quad.drive?.mode; }, set v(x) { if (unit().quad.drive) unit().quad.drive.mode = x; } }, 'v', u.quad.drive.hasLock ? DRIVE_MODES : ['2wd', '4wd']).name('drive').listen();
     show(r, 'mixture', () => round(unit().engine.mixture));
@@ -489,6 +491,8 @@ export class DebugGui {
     row(one, 'Wipe the lens (once smears, twice clears)', () => g.debugLens('wipe'));
     row(one, 'Soak its windscreen, as in a downpour', () => g.debugScreenRain(this.unit(), 'soak') || g.hud.toast('It has no windscreen'));
     row(one, 'Dry its windscreen', () => g.debugScreenRain(this.unit(), 'clear') || g.hud.toast('It has no windscreen'));
+    row(one, 'Mist up the glass of its cab', () => g.debugCabMist(this.unit(), 'mist') || g.hud.toast('It has no cab'));
+    row(one, 'Clear the mist off its cab', () => g.debugCabMist(this.unit(), 'clear') || g.hud.toast('It has no cab'));
     row(one, 'Take me to it', () => {
       const q = this.unit().quad;
       if (g.riddenUnit) return g.hud.toast('Get off first');
