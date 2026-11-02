@@ -70,11 +70,22 @@ export const SHIRT_COLLAR = {
   pointSpread: 0.6,
   tipRound: 0.02,
   thickness: 0.0018,
+  edgeBand: 0.5, // a stitched edge, the outer half of the fall's last strip (about 2.5 mm at the back, more at the points)
+  edgeShade: 0.6, // dark enough to read against the check
 };
 
-// A buttoned plaid's collar under the polo's: a lower stand, so the polo's collar folds out over it, and the shirt's longer fall
-// and sharper points, so its edge and points show beyond the polo's.
-export const SHIRT_UNDER_COLLAR = { ...SHIRT_COLLAR, stand: 0.016, standFront: 0.012 };
+// A buttoned plaid's collar under the polo's: a lower stand, so the polo's collar folds out over it, and a fall and points longer
+// still than the shirt's, so a band of it shows round the back below the polo's and its points come out past the polo's.
+export const SHIRT_UNDER_COLLAR = {
+  ...SHIRT_COLLAR,
+  stand: 0.016,
+  standFront: 0.012,
+  out: 0.054,
+  drop: 0.018,
+  pointOut: 0.046,
+  pointDrop: 0.043,
+  pointSpread: 0.7,
+};
 
 // A work shirt's point collar, for a shirt and tie: stiffer than the plaid's, a taller stand round her neck and long points that
 // fall down more than out, either side of the knot, lying over the tie.
@@ -95,6 +106,7 @@ export const POINT_COLLAR = {
   smoothing: 2, // evened out less, so it keeps a crisp line
   lie: 0.35, // its points pressed down on to the shirt from about a third of the way down the fall
   edgeShade: 1, // no darker edge: on a white shirt it read as a line drawn round it
+  edgeBand: 0,
   underShade: 0.94,
 };
 
@@ -260,9 +272,21 @@ export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p =
     );
   }
 
-  const out = { verts: [], tris: [], shade: [] };
+  // A stitched edge (`edgeBand`): the last strip of the fall split twice, so the outer part of it is shaded as a line with a crisp
+  // inner edge rather than fading in across the whole strip.
+  let edgeRows = 1;
+  if (p.edgeBand) {
+    const at = (a, b, f) => ({ ...a, rest: lerp(a.rest, b.rest, f), weights: blendWeights(a.weights, b.weights, f), skin: lerp(a.skin, b.skin, f) });
+    for (const col of fall) {
+      const [a, b] = col.slice(-2);
+      col.splice(col.length - 1, 0, at(a, b, 1 - p.edgeBand - 0.1), at(a, b, 1 - p.edgeBand));
+    }
+    edgeRows = 2;
+  }
+
+  const out = { verts: [], tris: [], shade: [], uv: [] };
   slab(out, stand, standSpan, p, () => 1, () => 1);
-  slab(out, fall, fallSpan, p, (r, R) => (r === R - 1 ? p.edgeShade : 1), (r) => (r <= 2 ? p.foldThin : 1));
+  slab(out, fall, fallSpan, p, (r, R) => (r >= R - edgeRows ? p.edgeShade : 1), (r) => (r <= 2 ? p.foldThin : 1));
   for (const v of out.verts) v.rest = applySkin(v.skin, v.bind);
   return out;
 }
@@ -283,13 +307,24 @@ function slab(out, grid, [a0, a1], p, shadeOf, thin) {
     if (dot(n, add([Math.sin(theta), 0, Math.cos(theta)], scale(U, 0.3))) < 0) n = scale(n, -1);
     return n;
   };
-  const put = (v, rest, k) => {
+  // Where each point is on the cloth (m): along each row round her neck, and down each column from the top, so a check drawn from
+  // it runs along the collar as it does on a real one, cut on its own, rather than carrying on from the shirt's.
+  const along = grid.map(() => Array(R).fill(0));
+  const down = grid.map(() => Array(R).fill(0));
+  for (let c = 0; c < C; c++) {
+    for (let r = 0; r < R; r++) {
+      if (c > 0) along[c][r] = along[c - 1][r] + Math.hypot(...sub(grid[c][r].rest, grid[c - 1][r].rest));
+      if (r > 0) down[c][r] = down[c][r - 1] + Math.hypot(...sub(grid[c][r].rest, grid[c][r - 1].rest));
+    }
+  }
+  const put = (v, rest, k, c, r) => {
     out.verts.push({ bind: unskin(v.skin, rest), rest, weights: v.weights, skin: v.skin, normal: [0, 1, 0] });
     out.shade.push(k);
+    out.uv.push(along[c][r] - along[C - 1][r] / 2, down[c][r]);
     return out.verts.length - 1;
   };
-  const top = grid.map((col) => col.map((v, r) => put(v, v.rest, shadeOf(r, R))));
-  const under = grid.map((col, c) => col.map((v, r) => put(v, sub(v.rest, scale(normal(c, r), p.thickness * thin(r))), p.underShade)));
+  const top = grid.map((col, c) => col.map((v, r) => put(v, v.rest, shadeOf(r, R), c, r)));
+  const under = grid.map((col, c) => col.map((v, r) => put(v, sub(v.rest, scale(normal(c, r), p.thickness * thin(r))), p.underShade, c, r)));
   const quad = (a, b, c, d) => out.tris.push([a, b, c], [b, d, c]);
   for (let c = 0; c < C - 1; c++) {
     for (let r = 0; r < R - 1; r++) {
