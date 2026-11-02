@@ -1540,6 +1540,14 @@ export const FAQ_SECTIONS = [
         tip: 'The girls blink, and shut their eyes tight when they laugh or flinch.',
       },
       {
+        q: 'Do the girls pull faces?',
+        a: `Yes, with their brows and mouths. A girl in a good mood rests with a bit of a smile, and one who has been cold or bored a while
+          scowls. When something makes her jump (a backfire, a horn, a rev beside her) she grimaces with her teeth showing; a quad going over
+          makes her mouth drop open; a good jump she sees makes her laugh, and she laughs with her eyes screwed shut and her head back. Waving
+          at someone or posing for a photo, she smiles. Each face comes and goes in about a fifth of a second.`,
+        tip: 'Watch the girls\' faces: they smile in a good mood, scowl in a bad one and grimace when something makes them jump.',
+      },
+      {
         q: 'Why are the jumpers on the rack different colours from my last farm?',
         a: `Each farm has its own two jumpers on the rail in the barn, in colours dealt when the farm is new: grey and beige among
           them, or navy, bottle green, burgundy, mustard, oatmeal, charcoal, heather blue, rust or moss. They stay the same on that

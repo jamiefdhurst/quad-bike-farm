@@ -492,6 +492,8 @@ There are two of them, each starting beside her own quad in the yard. **Amy** (b
 
 They blink (#486): a quick blink every two to six seconds, now and then two together, Amy a little slower and steadier than Jess. Their eyes stay shut while one is asleep on the back or dozing on the bales, and screw up when she laughs or flinches at a bang.
 
+Their faces move (#128): brows and a mouth that smile in a good mood and scowl in a bad one, grimace when something makes them jump, drop open when a quad goes over, and laugh with the eyes screwed shut and the head back. The Girls tab's "pull a face" and the console's `girl.<name>.faceHeld` hold a face to look at.
+
 Look at one of them and press `E` to open her wheel. Move the mouse towards a slice and click (or press its number). The first ring has a slice for each quad she could do something with, in its colour, plus anything that isn't about a particular quad (answering her when she's asked to get off, getting off the one she's on, or stopping while she's driving); a quad's slice opens a second ring of what she could do with it. Right-click (or Backspace) goes back a ring; `E` closes it. Riding on the back while she drives, `E` opens a one-ring wheel for the ride. The options:
 
 - **Get on the red / blue / yellow quad**: she walks over and sits on the pillion seat. Get on and ride; she stays on. Asking her onto the other quad while she's sitting on one, she gets off and walks over.
