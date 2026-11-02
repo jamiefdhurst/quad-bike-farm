@@ -328,6 +328,14 @@ export const FAQ_SECTIONS = [
         tip: 'The two-strokes have no reverse: get off and hold V to push them.',
       },
       {
+        q: 'Do the mirrors work?',
+        a: `In the Land Rovers, the Yak and every car (yours and the girls'), yes: the door or wing mirrors and the rear-view mirror show what is
+          behind you, so you can back a trailer up, or see who is following. They are fixed where they are, not adjustable, and only the vehicle you are driving
+          has live ones; you see them when you look forward. You are not in the picture, but the trailer and everyone else are. If a mirror seems to cost you
+          frames, the Tune tab's "Mirrors" folder turns them off or draws them less often.`,
+        tip: 'The Land Rovers, the Yak and the cars have working mirrors: look at them when you back a trailer.',
+      },
+      {
         q: 'Why does it spin its wheels in the mud?',
         a: `The Farm 300 and Bruin start every game in 2WD. <kbd>G</kbd> switches to 4WD (the rocker on the bars), which grips in the mud at the cost of a
           little steering. The Bruin's diff lock (<kbd>U</kbd>) pulls hardest of all in the mud but pushes wide on grass; the Yak and the Moorlands have
