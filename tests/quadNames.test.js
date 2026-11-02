@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { QuadNames, QUAD_PHRASES, NICKNAMES, expandQuadLines, quadKey, DEFAULT_NAME_PARAMS as P } from '../src/npc/quadNames.js';
 import { QUAD_SPECS, EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
-import { AMY_QUAD_LINES, JESS_QUAD_LINES } from '../src/npc/quadLines.js';
+import { AMY_QUAD_LINES as AMY_EARLY_QUAD, JESS_QUAD_LINES as JESS_EARLY_QUAD, AMY_LATE_QUAD_LINES, JESS_LATE_QUAD_LINES } from '../src/npc/quadLines.js';
+
+const AMY_QUAD_LINES = { ...AMY_EARLY_QUAD, ...AMY_LATE_QUAD_LINES }; // the quads recorded first and those added since, as the game merges them
+const JESS_QUAD_LINES = { ...JESS_EARLY_QUAD, ...JESS_LATE_QUAD_LINES };
 import { VOICE_LINES } from '../src/npc/voiceLines.js';
 import { JESS_LINES } from '../src/npc/jessLines.js';
 

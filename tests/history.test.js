@@ -3,7 +3,10 @@ import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 import { pickHistory, pickFaultChance, girlKnows, historyTopics, stillTinkered, DEFAULT_HISTORY_PARAMS as P } from '../src/vehicle/history.js';
 import { FAULT_KINDS } from '../src/vehicle/faults.js';
 import { createRandom } from '../src/core/random.js';
-import { AMY_HISTORY_LINES, JESS_HISTORY_LINES, HISTORY_KINDS } from '../src/npc/historyLines.js';
+import { AMY_HISTORY_LINES as AMY_EARLY_HISTORY, JESS_HISTORY_LINES as JESS_EARLY_HISTORY, AMY_LATE_HISTORY_LINES, JESS_LATE_HISTORY_LINES, HISTORY_KINDS } from '../src/npc/historyLines.js';
+
+const AMY_HISTORY_LINES = { ...AMY_EARLY_HISTORY, ...AMY_LATE_HISTORY_LINES }; // the quads recorded first and those added since, as the game merges them
+const JESS_HISTORY_LINES = { ...JESS_EARLY_HISTORY, ...JESS_LATE_HISTORY_LINES };
 import { quadKey, QUAD_PHRASES } from '../src/npc/quadNames.js';
 
 const spec = { wearRange: [0.1, 0.5] };

@@ -45,7 +45,7 @@ import { AMY_LEFT_LINES } from './leftRunningLines.js';
 import { AMY_SIGHT_LINES } from './sightLines.js';
 import { AMY_DRIP_LINES } from './dripLines.js';
 import { AMY_CONTENT_LINES } from './contentLines.js';
-import { AMY_HISTORY_LINES } from './historyLines.js';
+import { AMY_HISTORY_LINES, AMY_LATE_HISTORY_LINES } from './historyLines.js';
 import { AMY_QUIRK_LINES } from './quirkLines.js';
 import { AMY_TEMPERATURE_LINES } from './temperatureLines.js';
 import { AMY_ADDITIVE_LINES } from './additiveLines.js';
@@ -78,7 +78,7 @@ import { AMY_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { AMY_FALLINGOUT_LINES } from './fallingOutLines.js';
 import { AMY_ROMANCE_LINES } from './romanceLines.js';
 import { AMY_ASK_LINES } from './askAlongLines.js';
-import { AMY_QUAD_LINES } from './quadLines.js';
+import { AMY_QUAD_LINES, AMY_LATE_QUAD_LINES } from './quadLines.js';
 import { AMY_WARMING_LINES } from './warmingLines.js';
 import { AMY_CAB_LINES } from './cabShelterLines.js';
 import { AMY_HEADSTART_LINES } from './headStartLines.js';
@@ -137,7 +137,7 @@ import { AMY_FLASK_LINES } from './flaskLines.js';
 import { AMY_DONTFIX_LINES } from './dontFixLines.js';
 import { AMY_BUZZ_LINES } from './buzzLines.js';
 import { AMY_NUMB_LINES } from './numbLines.js';
-import { AMY_RANK_LINES } from './rankLines.js';
+import { AMY_RANK_LINES, AMY_LATE_RANK_LINES } from './rankLines.js';
 import { AMY_FAULT_LINES } from './faultLines.js';
 import { AMY_BENCH_LINES } from './benchLines.js';
 import { AMY_PHONE_LINES } from './phoneLines.js';
@@ -1681,4 +1681,8 @@ export const VOICE_LINES = {
   ...AMY_PUB_LINES,
   // The gravel pit (quarryLines.js), last so the banks before it stay as they are.
   ...AMY_QUARRY_LINES,
+  // The lines about the quads added after the first recording (quadNames.js), last for the same reason.
+  ...AMY_LATE_QUAD_LINES,
+  ...AMY_LATE_HISTORY_LINES,
+  ...AMY_LATE_RANK_LINES,
 };

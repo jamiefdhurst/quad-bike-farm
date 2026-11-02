@@ -6,7 +6,11 @@
 
 import { thePhrase } from '../vehicle/names.js';
 
-export const QUAD_PHRASES = Object.fromEntries(['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'loan', 'moto', 'atc'].map((id) => [id, thePhrase(id)]));
+// The quads that had their lines recorded first, and the ones added since: a new quad's lines are written out after all the others (`expandQuadLines`
+// with `LATE_QUAD_IDS`) and merged last in voiceLines.js and jessLines.js, so the banks before them keep their packing.
+export const EARLY_QUAD_IDS = ['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'loan', 'moto', 'atc'];
+export const LATE_QUAD_IDS = ['ag200'];
+export const QUAD_PHRASES = Object.fromEntries([...EARLY_QUAD_IDS, ...LATE_QUAD_IDS].map((id) => [id, thePhrase(id)]));
 
 // Two to pick from for each, so a game gets one of them. Each reads in "That's ___" and "Come on, ___".
 export const NICKNAMES = {
@@ -19,6 +23,7 @@ export const NICKNAMES = {
   loan: ['Lucky', 'the loaner'],
   moto: ['Pogo', 'the bumblebee'],
   atc: ['the tripod', 'Wobbles'],
+  ag200: ['Dolly', 'the shepherd'],
 };
 
 export const DEFAULT_NAME_PARAMS = {
@@ -43,12 +48,12 @@ export const quadKey = (kind, specId, nick = null) => (nick ? `${kind}:${specId}
 /**
  * Written-out situations for templates of lines about a quad. `templates` is { kind: { cooldown, lines } }; `{q}` in a
  * line is the quad ("the RB300", "Grandad"), `{Q}` the same with a capital. Each template is written out for
- * the colour and for every nickname, under `quadKey(kind, specId, nick)`.
+ * the colour and for every nickname, under `quadKey(kind, specId, nick)`, for the quads in `ids` (the early ones unless it is told otherwise).
  */
-export function expandQuadLines(templates) {
+export function expandQuadLines(templates, ids = EARLY_QUAD_IDS) {
   const out = {};
   for (const [kind, entry] of Object.entries(templates)) {
-    for (const specId of Object.keys(QUAD_PHRASES)) {
+    for (const specId of ids) {
       for (const nick of [null, ...NICKNAMES[specId]]) {
         const q = nick ?? QUAD_PHRASES[specId];
         out[quadKey(kind, specId, nick)] = { cooldown: entry.cooldown, lines: entry.lines.map((l) => l.replaceAll('{Q}', capital(q)).replaceAll('{q}', q)) };

@@ -3,7 +3,7 @@
 // (after swapping quads to settle it). Merged into the main line sets (voiceLines.js, jessLines.js), so they're recorded with the rest.
 // The girls call you "you", never he, she or they.
 
-import { expandQuadLines } from './quadNames.js';
+import { expandQuadLines, LATE_QUAD_IDS } from './quadNames.js';
 
 const line = (cooldown, lines) => ({ cooldown, lines });
 
@@ -14,6 +14,9 @@ const AMY_TEMPLATES = {
 const JESS_TEMPLATES = {
   rankTop: line(30, ['{Q}! No question. It shakes like mad.', '{Q} is the best shaker. Obviously.', 'Easy. {Q}. Nothing else comes close.']),
 };
+
+export const AMY_LATE_RANK_LINES = expandQuadLines(AMY_TEMPLATES, LATE_QUAD_IDS); // merged last, with the other late quad lines (quadNames.js)
+export const JESS_LATE_RANK_LINES = expandQuadLines(JESS_TEMPLATES, LATE_QUAD_IDS);
 
 export const AMY_RANK_LINES = {
   ...expandQuadLines(AMY_TEMPLATES),

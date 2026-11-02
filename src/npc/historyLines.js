@@ -3,7 +3,7 @@
 // in (histLimiter, histMixture). Amy says it plainly; Jess is cheerful about it. Written for the colour and each nickname
 // (see quadLines.js), and merged into the main line sets (voiceLines.js, jessLines.js).
 
-import { expandQuadLines } from './quadNames.js';
+import { expandQuadLines, LATE_QUAD_IDS } from './quadNames.js';
 
 const line = (cooldown, lines) => ({ cooldown, lines });
 
@@ -45,4 +45,6 @@ const JESS_TEMPLATES = {
 
 export const AMY_HISTORY_LINES = expandQuadLines(AMY_TEMPLATES);
 export const JESS_HISTORY_LINES = expandQuadLines(JESS_TEMPLATES);
+export const AMY_LATE_HISTORY_LINES = expandQuadLines(AMY_TEMPLATES, LATE_QUAD_IDS); // merged last, with the other late quad lines (quadNames.js)
+export const JESS_LATE_HISTORY_LINES = expandQuadLines(JESS_TEMPLATES, LATE_QUAD_IDS);
 export const HISTORY_KINDS = Object.keys(AMY_TEMPLATES);

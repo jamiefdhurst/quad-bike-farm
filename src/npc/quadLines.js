@@ -3,7 +3,7 @@
 // once for the colour and once for each possible nickname (see expandQuadLines), so they can be recorded; the game
 // picks the one for this game's names. Merged into the main line sets (voiceLines.js, jessLines.js).
 
-import { QUAD_PHRASES, NICKNAMES, expandQuadLines, quadKey } from './quadNames.js';
+import { QUAD_PHRASES, NICKNAMES, EARLY_QUAD_IDS, LATE_QUAD_IDS, expandQuadLines, quadKey } from './quadNames.js';
 
 const line = (cooldown, lines) => ({ cooldown, lines });
 
@@ -34,12 +34,17 @@ const JESS_TEMPLATES = {
 };
 
 // Jess naming one: written out for every quad and nickname, since each says both.
-const NAMING = {};
-for (const [id, phrase] of Object.entries(QUAD_PHRASES)) {
-  for (const nick of NICKNAMES[id]) {
-    NAMING[quadKey('nameQuad', id, nick)] = [`Right. ${phrase} is ${nick} from now on.`, `I am calling ${phrase} ${nick}. Do not argue.`];
+const naming = (ids) => {
+  const out = {};
+  for (const id of ids) {
+    for (const nick of NICKNAMES[id]) {
+      out[quadKey('nameQuad', id, nick)] = [`Right. ${QUAD_PHRASES[id]} is ${nick} from now on.`, `I am calling ${QUAD_PHRASES[id]} ${nick}. Do not argue.`];
+    }
   }
-}
+  return out;
+};
+const NAMING = naming(EARLY_QUAD_IDS);
+const LATE_NAMING = naming(LATE_QUAD_IDS);
 
 export const AMY_QUAD_LINES = {
   ...expandQuadLines(AMY_TEMPLATES),
@@ -58,5 +63,12 @@ export const JESS_QUAD_LINES = {
   borrowTease: line(60, ['Relax, Amy. I am just keeping it warm for you.', 'What? It is only a quad.', 'You snooze, you lose.']),
 };
 
+// The lines about the quads added since the first recording (see quadNames.js), merged last so the banks before them stay as they are.
+export const AMY_LATE_QUAD_LINES = expandQuadLines(AMY_TEMPLATES, LATE_QUAD_IDS);
+export const JESS_LATE_QUAD_LINES = {
+  ...expandQuadLines(JESS_TEMPLATES, LATE_QUAD_IDS),
+  ...Object.fromEntries(Object.entries(LATE_NAMING).map(([k, lines]) => [k, line(30, lines)])),
+};
+
 // Things only Jess says (naming, pouncing, borrowing, and objecting when Amy is on hers): Amy has no version of them.
-export const JESS_ONLY_QUAD_SITUATIONS = [...Object.keys(NAMING), 'nameCaved', ...Object.keys(JESS_QUAD_LINES).filter((k) => /^start(Pat|Cheer):/.test(k)), 'ownerUpset_amy', 'borrow', 'borrowTease'];
+export const JESS_ONLY_QUAD_SITUATIONS = [...Object.keys(NAMING), ...Object.keys(LATE_NAMING), 'nameCaved', ...Object.keys({ ...JESS_QUAD_LINES, ...JESS_LATE_QUAD_LINES }).filter((k) => /^start(Pat|Cheer):/.test(k)), 'ownerUpset_amy', 'borrow', 'borrowTease'];

@@ -40,7 +40,7 @@ import { JESS_LEFT_LINES } from './leftRunningLines.js';
 import { JESS_SIGHT_LINES } from './sightLines.js';
 import { JESS_DRIP_LINES } from './dripLines.js';
 import { JESS_CONTENT_LINES } from './contentLines.js';
-import { JESS_HISTORY_LINES } from './historyLines.js';
+import { JESS_HISTORY_LINES, JESS_LATE_HISTORY_LINES } from './historyLines.js';
 import { JESS_QUIRK_LINES } from './quirkLines.js';
 import { JESS_TEMPERATURE_LINES } from './temperatureLines.js';
 import { JESS_ADDITIVE_LINES } from './additiveLines.js';
@@ -73,7 +73,7 @@ import { JESS_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { JESS_FALLINGOUT_LINES } from './fallingOutLines.js';
 import { JESS_ROMANCE_LINES } from './romanceLines.js';
 import { JESS_ASK_LINES } from './askAlongLines.js';
-import { JESS_QUAD_LINES } from './quadLines.js';
+import { JESS_QUAD_LINES, JESS_LATE_QUAD_LINES } from './quadLines.js';
 import { JESS_WARMING_LINES } from './warmingLines.js';
 import { JESS_CAB_LINES } from './cabShelterLines.js';
 import { JESS_HEADSTART_LINES } from './headStartLines.js';
@@ -131,7 +131,7 @@ import { JESS_FLASK_LINES } from './flaskLines.js';
 import { JESS_DONTFIX_LINES } from './dontFixLines.js';
 import { JESS_BUZZ_LINES } from './buzzLines.js';
 import { JESS_NUMB_LINES } from './numbLines.js';
-import { JESS_RANK_LINES } from './rankLines.js';
+import { JESS_RANK_LINES, JESS_LATE_RANK_LINES } from './rankLines.js';
 import { JESS_FAULT_LINES } from './faultLines.js';
 import { JESS_BENCH_LINES } from './benchLines.js';
 import { JESS_PHONE_LINES } from './phoneLines.js';
@@ -592,4 +592,8 @@ export const JESS_LINES = {
   ...JESS_PUB_LINES,
   // The gravel pit (quarryLines.js), last so the banks before it stay as they are.
   ...JESS_QUARRY_LINES,
+  // The lines about the quads added after the first recording (quadNames.js), last for the same reason.
+  ...JESS_LATE_QUAD_LINES,
+  ...JESS_LATE_HISTORY_LINES,
+  ...JESS_LATE_RANK_LINES,
 };
