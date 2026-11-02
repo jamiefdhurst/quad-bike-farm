@@ -16,6 +16,7 @@ import { createFields } from './fields.js';
 import { detourVia, DEFAULT_DETOUR_PARAMS, DETOUR_PARAM_RANGES } from '../npc/detour.js';
 import { createOutbuildings } from './outbuildings.js';
 import { hutShape } from './hut.js';
+import { RoadWet, DEFAULT_ROAD_WET_PARAMS, ROAD_WET_PARAM_RANGES } from './roadWet.js';
 import { RoadMud, RoadMudSet, DEFAULT_ROAD_MUD_PARAMS, ROAD_MUD_PARAM_RANGES } from './roadMud.js';
 import { DEFAULT_DUST_PARAMS, DUST_PARAM_RANGES } from './dust.js';
 import { leafCover, WINTER_TINTS } from './autumn.js';
@@ -104,6 +105,11 @@ export class World {
     const vArea = layout.village?.area;
     if (grids.length && vArea && lane) grids.push(grid({ minX: vArea.minX, maxX: lane.x - lane.halfWidth - 1, minZ: vArea.minZ, maxZ: vArea.maxZ }));
     this.roadMud = grids.length ? new RoadMudSet(grids) : null;
+    // How wet the tarmac is, for the shine (roadWet.js): rain wets it at once and it dries over many minutes, in patches.
+    this.roadWetParams = { ...DEFAULT_ROAD_WET_PARAMS };
+    registerTuning('Wet road', this.roadWetParams, ROAD_WET_PARAM_RANGES);
+    this.roadWet = new RoadWet({ params: this.roadWetParams });
+    this.roadWetStarted = false;
 
     if (autumn) applyAutumnTint(models);
     else if (winter) applyAutumnTint(models, WINTER_TINTS); // the leaves dull and dark in winter (seasons.js) // before anything is built from the models
@@ -249,6 +255,19 @@ export class World {
     return this.heights.brook?.deepAt(x, z) ?? 0;
   }
 
+  /** The tarmac takes the rain at once and dries in the sun and wind; the ground shader draws it dark and shining by `roadWet.value`. */
+  updateRoadWet(dt) {
+    const w = this.weather;
+    if (!this.roadWetStarted) {
+      this.roadWetStarted = true;
+      this.roadWet.set(Math.max(0, w.wet - w.groundWet)); // a game that starts on a wet day starts with the road wet
+    }
+    const sun = Math.min(1, w.def.sky.sunIntensity / 2.6) * (1 - w.rain) * w.sunUp;
+    this.roadWet.update(dt, { rain: w.rain, sun, wind: Math.min(1, w.wind / 1.5), temperature: w.temperature });
+    this.terrain.roadWet.value = this.roadWet.value;
+    this.terrain.skyTint.value.copy(this.sky.uniforms.horizonColor.value);
+  }
+
   /** The stream follows the rain: its surface lifts, browns and runs faster as the level rises. */
   updateStream(dt) {
     const s = this.streamLevel;
@@ -292,6 +311,7 @@ export class World {
       this.terrain.frost.value = this.weather.frost;
       this.terrain.snow.value = this.weather.cover;
       this.weather.update(dt);
+      this.updateRoadWet(dt);
       this.updateStream(dt);
       this.updatePuddleIce(dt);
       Object.assign(this.sky.params, this.skyNow());
