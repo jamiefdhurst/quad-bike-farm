@@ -45,6 +45,7 @@ export function captureVehicle(unit, extra = {}) {
   };
   if (extra.settings) out.settings = { ...extra.settings };
   if (extra.barnFind) out.barnFind = extra.barnFind;
+  if (extra.rack) out.rack = extra.rack; // the strapped load on its rear rack (game.js setUpRackLoads puts it back)
   return out;
 }
 

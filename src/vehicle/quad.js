@@ -139,6 +139,7 @@ export class Quad {
     this.noHeadlight = noHeadlight; // the lamp is only for show (the yellow and orange): it never lights
     this.steadyLights = steadyLights; // a battery runs the headlight, so it doesn't follow the engine (headlight.js)
     this.towJam = false; // a trailer on the hook is folded against it: no more reversing into it (vehicle/trailer.js)
+    this.rackLoad = { kg: 0, driveFactor: 1, brakeFactor: 1 }; // what a load on the rear rack takes off the drive and brakes (vehicle/rackLoad.js)
     this.tow = { driveFactor: 1, brakeFactor: 1 }; // what a trailer on the hook takes off its drive and brakes (vehicle/towing.js)
     this.wheelShake = wheelShake; // how much of the body's vibration the wheels share (the tractor's shake more than the quads', which share about 0.6 of it)
     this.scale = scale; // 1, or smaller for the kids' quad: the model and the physics chassis both shrink by this
@@ -896,7 +897,7 @@ export class Quad {
       available: d.available,
       clutch: d.clutch,
       coupled: d.coupled,
-      mass: p.mass,
+      mass: p.mass + this.rackLoad.kg,
       wheels: this.physics.wheelLoads(),
       grip: this.physics.traction.putDown, // wheelspin from last step
     });
@@ -915,7 +916,7 @@ export class Quad {
     const hold = this.bog.holdForce(p.mass);
 
     this.brakes.update(dt, { puddle: Math.max(0, ...this.physics.wheelInfo.map((w) => w.puddle ?? 0)), speed: fwd, pressure: this.brake });
-    let brake = this.brake * p.maxBrake * this.tow.brakeFactor * this.brakes.grip * this.faults.brakeFactor; // wet brakes barely bite until they dry
+    let brake = this.brake * p.maxBrake * this.tow.brakeFactor * this.rackLoad.brakeFactor * this.brakes.grip * this.faults.brakeFactor; // wet brakes barely bite until they dry
     // Someone at the controls with nothing pressed and stopped: it holds itself, unless it's an automatic on a steep slope, which rolls back.
     // With nobody on it (and not carrying on by itself) it only holds if the parking brake was set, or it rolls off down a slope; the tractor
     // still holds itself. Not while it's being winched (vehicle/handbrake.js).
@@ -948,7 +949,7 @@ export class Quad {
     const sf = this.strengthSpec ? strengthEffects(this.strengthSpec, this.groundUnder()) : null;
     this.physics.strengthGrip = this.strengthSpec ? { mud: bonusFor(this.strengthSpec, 'mud'), tarmac: bonusFor(this.strengthSpec, 'tarmac') } : null;
     this.physics.applyControls({
-      driveForce: (sf?.drive ?? 1) * Math.sign(drive) * (this.towJam && drive < 0 ? 0 : 1) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * (1 - this.faults.params.clutchDriveLoss * this.clutchSlip) * this.tyres.driveFactor * this.tow.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
+      driveForce: (sf?.drive ?? 1) * Math.sign(drive) * (this.towJam && drive < 0 ? 0 : 1) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * (1 - this.faults.params.clutchDriveLoss * this.clutchSlip) * this.tyres.driveFactor * this.tow.driveFactor * this.rackLoad.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
       brake,
       steer: wheelSteer,
       mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),

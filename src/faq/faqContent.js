@@ -501,6 +501,15 @@ export const FAQ_SECTIONS = [
           can by holding <kbd>E</kbd> at the green petrol tank. <kbd>G</kbd> puts it down; you can't ride holding it.`,
       },
       {
+        q: 'Can I carry a jerry can or the toolbox on a quad?',
+        a: `Yes, on the rack over the back wheels of the Farm 300, Bruin, RB300 and the other quads with one. Carry the jerry can or the toolbox up to it and press <kbd>E</kbd> to stand it
+          on the rack. With it there, tap <kbd>E</kbd> to take it off again, or hold <kbd>E</kbd> to do up the orange strap (hold again to undo it and take the load). A strapped load never
+          moves, but the weight makes the quad slower to pick up speed and to stop: the can is a bit heavier than the toolbox. A load left unstrapped shuffles about with the shake of the
+          engine and slides off the back if you brake hard or hit a big bump, and it lands on the ground for you to pick up again. A strapped load is still on the rack the next day. The
+          rack takes one load at a time, and not while a girl's mug of tea is on it.`,
+        tip: 'Carry a jerry can on a quad: E puts it on the rack, hold E straps it down. Unstrapped, it slides off over bumps.',
+      },
+      {
         q: 'It coughed and died with fuel in the tank.',
         a: `On ON the tap can't reach the last couple of litres. Flick it to RESERVE (<kbd>F</kbd>) when it starts to cough, and head for fuel.
           Some games a quad starts below its reserve and only runs on RESERVE until it's filled.`,
