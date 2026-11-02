@@ -9,6 +9,9 @@ import { createRandom } from '../core/random.js';
 
 const BALE = { w: 0.98, h: 0.38, d: 0.44 }; // the trailer's own bales
 const LIFT = 0.06; // metres the skin sits above the ground
+const TRACK_LIFT = 0.015; // and the pressed lines above the skin
+const TRACK_RGB = [176, 194, 118]; // the colour of pressed grass: paler and yellower than the standing green
+const TRACK_EVERY = 0.2; // seconds between redraws of the lines
 const COLOURS = {
   [STANDING]: new THREE.Color(0x869a46),
   [CUT]: new THREE.Color(0xcbb879),
@@ -18,9 +21,10 @@ const _a = new THREE.Vector3();
 const _b = new THREE.Vector3();
 
 export class HayView {
-  constructor({ scene, hay, heightAt, random = createRandom(0x4a17) }) {
+  constructor({ scene, hay, heightAt, tracks = null, random = createRandom(0x4a17) }) {
     this.scene = scene;
     this.hay = hay;
+    this.tracks = tracks;
     this.heightAt = heightAt;
     this.geo = squareBaleGeometry(BALE.w, BALE.h, BALE.d);
     this.mats = squareBaleMaterials(random);
@@ -31,6 +35,7 @@ export class HayView {
     this.loose.name = 'hayBales';
     scene.add(this.loose);
     this.buildGround(random);
+    if (tracks) this.buildTracks();
   }
 
   /** One quad per cell, its corners on the ground, with a vertex colour for what state it is in. */
@@ -63,8 +68,66 @@ export class HayView {
     this.refresh();
   }
 
+  /**
+   * The lines wheels have pressed in the standing grass: the skin's own corners lifted a hair, with a texture over the patch whose alpha is how
+   * flat the grass is. Pressed grass lies one way, so it is paler and shinier than the standing blades round it.
+   */
+  buildTracks() {
+    const t = this.tracks;
+    const r = t.rect;
+    const src = this.ground.geometry;
+    const pos = src.attributes.position.clone();
+    const uv = new Float32Array(pos.count * 2);
+    for (let i = 0; i < pos.count; i++) {
+      uv[i * 2] = (pos.getX(i) - r.minX) / (t.cols * t.cell);
+      uv[i * 2 + 1] = (pos.getZ(i) - r.minZ) / (t.rows * t.cell);
+      pos.setY(i, pos.getY(i) + TRACK_LIFT);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', pos);
+    geo.setAttribute('normal', src.attributes.normal.clone());
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    geo.setIndex(src.index.clone());
+    this.trackPixels = new Uint8Array(t.cols * t.rows * 4);
+    for (let i = 0; i < t.cols * t.rows; i++) this.trackPixels.set(TRACK_RGB, i * 4);
+    this.trackTexture = new THREE.DataTexture(this.trackPixels, t.cols, t.rows, THREE.RGBAFormat);
+    this.trackTexture.colorSpace = THREE.SRGBColorSpace;
+    this.trackTexture.magFilter = this.trackTexture.minFilter = THREE.LinearFilter;
+    this.trackTexture.needsUpdate = true;
+    const mat = new THREE.MeshStandardMaterial({ map: this.trackTexture, transparent: true, depthWrite: false, roughness: 0.55, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+    this.trackMesh = new THREE.Mesh(geo, mat);
+    this.trackMesh.receiveShadow = true;
+    this.trackMesh.name = 'hayTracks';
+    this.scene.add(this.trackMesh);
+    this.trackSince = 0;
+    this.trackMask = true; // which points are standing grass has changed, so the picture wants redrawing
+  }
+
+  /** Redraws the lines (alpha is how flat, only where the grass still stands), a few times a second at most. */
+  redrawTracks(dt) {
+    const t = this.tracks;
+    this.trackSince += dt;
+    if (this.trackSince < TRACK_EVERY || !(t.dirty || this.trackMask)) return;
+    this.trackSince = 0;
+    t.dirty = false;
+    this.trackMask = false;
+    const h = this.hay;
+    const px = this.trackPixels;
+    const lay = t.p.lay * 255;
+    for (let row = 0; row < t.rows; row++) {
+      for (let col = 0; col < t.cols; col++) {
+        const i = row * t.cols + col;
+        const v = t.flat[i];
+        const standing = v > 0 && h.state[h.index(t.rect.minX + (col + 0.5) * t.cell, t.rect.minZ + (row + 0.5) * t.cell)] === STANDING;
+        px[i * 4 + 3] = standing ? v * lay : 0;
+      }
+    }
+    this.trackTexture.needsUpdate = true;
+  }
+
   /** Recolours every cell from the state (after a restore, or a pass). */
   refresh() {
+    this.trackMask = true;
     const col = this.ground.geometry.attributes.color;
     const s = this.hay.state;
     for (let i = 0; i < s.length; i++) this.paint(col, i, s[i]);
@@ -73,6 +136,7 @@ export class HayView {
 
   /** Recolours just these cells. */
   repaint(cells) {
+    this.trackMask = true;
     const col = this.ground.geometry.attributes.color;
     for (const i of cells) this.paint(col, i, this.hay.state[i]);
     col.needsUpdate = true;
@@ -133,6 +197,10 @@ export class HayView {
   }
 
   update(dt) {
+    if (this.tracks) {
+      this.tracks.update(dt);
+      this.redrawTracks(dt);
+    }
     for (let i = this.flying.length - 1; i >= 0; i--) {
       const f = this.flying[i];
       f.t += dt;

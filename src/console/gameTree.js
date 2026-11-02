@@ -358,6 +358,8 @@ export function buildGameTree(g, host) {
     sprayTank: num(() => g.spray?.tank ?? 0, (v) => g.spray && (g.spray.tank = Math.max(0, Math.min(1, v))), 0, 1, '', 'the sprayer tank, 0 empty to 1 full'),
     sprayBoom: flag(() => !!g.spray?.boomWant, (v) => g.debugSpray(v ? 'out' : 'in'), 'the sprayer boom is folded out'),
     sprayDone: flag(() => g.spray?.done ?? false, (v) => g.debugSpray(v ? 'done' : 'clear'), 'the field is sprayed (setting it ticks the board; clearing makes it need spraying again)'),
+    hayTracks: text(() => g.grassTracks?.describe() ?? 'no hay patch on this farm', 'the lines wheels have pressed in the long grass (world/grassTracks.js)'),
+    hayTracksLifted: flag(() => !g.grassTracks?.live, (v) => v && g.debugHayTracksClear(), 'the grass in the hay patch is standing (setting it to true lifts every track at once)'),
     hayStacked: ro(() => g.hay?.stacked ?? 0, '', 'hay bales stacked in the Dutch barn (kept from day to day)'),
     hayDone: flag(() => g.jobBoard.finished.has('hay'), (v) => v && g.debugHayStage('done'), 'the hay job is done (ticks the board)'),
     silageDone: flag(() => g.jobBoard.finished.has('silage'), (v) => v && g.debugFinishSilage(), 'the silage job is done (ticks the board)'),

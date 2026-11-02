@@ -308,6 +308,7 @@ export function buildGirlsTab(d) {
     show(jobs, 'the hay', () => `${g.hay.describe()}; ${g.hayLoading.describe()}`);
     for (const stage of ['cut', 'bale', 'load', 'stack', 'done']) button(jobs, `Hay job: jump to the ${stage} stage`, () => g.debugHayStage(stage));
     button(jobs, 'Hay: let the cut patch grow back', () => g.debugHayRegrow());
+    button(jobs, 'Hay: lift the tracks in the long grass', () => g.debugHayTracksClear());
     button(jobs, 'Hay: empty the barn stack', () => g.debugHayEmptyStack());
   }
   if (g.spray) {
