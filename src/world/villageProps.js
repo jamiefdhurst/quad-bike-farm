@@ -618,6 +618,8 @@ export function buildVillage(c) {
     shopProxies: ctx.shopProxies,
     partProxies: ctx.partProxies,
     pumpProxies: ctx.pumpProxies,
+    motProxy: ctx.motProxy,
+    motBay: ctx.motBay,
     /** 0..1 how dark it is: the windows, lamps and lit signs glow once it is (never a light). */
     setNight(darkness) {
       M.setNight(darkness);
