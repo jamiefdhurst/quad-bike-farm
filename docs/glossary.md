@@ -16,6 +16,9 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | gravel pit | The old pit in the hedged field north of the barley field, through the gate in its north hedge: the deep cut, its haul road, pond and heaps | sandpit, sand pit, gravel quarry, borrow pit |
 | haul road | The wide gravel road that winds down the gravel pit's wall from the lip to the floor | access road, ramp road |
 | pit climb | The timed run up the gravel pit's steep wall, from the cones on the floor to the cones over the lip | gravel climb, wall climb |
+| mower | The Ridgeback Clipper 12, the little ride-on with the cutting deck and the grass box; its job is mowing the lawns | lawnmower, lawn mower, lawn tractor, grass cutter |
+| blade lever | The red-knobbed lever on the left of the mower's seat that engages the blade (T), with the amber BLADE lamp on the dash | PTO lever, cutter lever, deck lever |
+| lawns | The yard lawn at the yard's east edge and the paddock's floor, the grass the mower stripes | lawn patches, mowing plots |
 | cork board | The board on the barn's back wall where photos are pinned | corkboard, cork-board |
 | money tin | The tin on the shelf under the cork board that holds the farm's money | biscuit tin |
 | workbench | The bench along the barn's north wall where jobs are done and the bay is | work bench |

@@ -2127,7 +2127,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What are the chalkboards in the barn?',
         a: `Today's farm jobs. Walk into the barn to the back wall and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
-          entry when you've cleared the lot. The jobs are the muck, the spraying (when the field wants it), feeding the hens and the pig (on some days) and, if the tractor is about, the silage, the hay and splitting logs; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
+          entry when you've cleared the lot. The jobs are the muck, mowing the lawns, the spraying (when the field wants it), feeding the hens and the pig (on some days) and, if the tractor is about, the silage, the hay and splitting logs; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
@@ -2242,6 +2242,23 @@ export const FAQ_SECTIONS = [
           Hold <kbd>E</kbd> at the trailer, empty-handed, to fork muck in: the girls will have something to say about the smell. Drive onto the stubble, stop,
           press <kbd>T</kbd> (the tub tilts just enough and holds there) and drive off slowly. Muck runs out of the back in patches while you go slower than
           a brisk walk, and the job ticks off the board once there's a good strip down. A full tub is a drag on whatever pulls it.`,
+      },
+      {
+        q: 'How do I mow the lawns?',
+        a: `Take the mower (the Clipper) from wherever it was left, start it with the key (<kbd>K</kbd>, hold <kbd>R</kbd>) or, if the battery is flat, the pull cord on the right of the bonnet (<kbd>O</kbd>),
+          and push the blade lever forward with <kbd>T</kbd>: the amber BLADE lamp on the dash comes on. It cuts under the middle of the deck as you drive forward on grass, so go up and down the yard lawn (the open grass east of the
+          barn, past the bare yard) and the paddock in straight passes. Each pass leaves a stripe, paler going one way and darker the other. The job ticks off the board once most of both lawns is cut that day.`,
+        tip: 'The mower: key on, T for the blade, then up and down the yard lawn and the paddock in stripes.',
+      },
+      {
+        q: 'Why does the mower slow down, and why did the blade stop?',
+        a: `Long grass loads the engine: the revs sag and the mower slows, more the faster you push it. A lawn you cut a day or two ago is short again and barely troubles it. The blade only turns with the engine running, so a stall
+          drops it, and it also stops when you get off (the seat switch). It only cuts going forwards, and on grass: on gravel, the yard's bare ground or the road it throws stones, blunts and cuts nothing, and the girls will say so.
+          A blunt blade cuts a narrower strip and drags harder; it is sharpened overnight.`,
+      },
+      {
+        q: 'How long do the stripes last?',
+        a: `About five days, fading as the grass grows back. The farm remembers them between days. A lawn you mown yesterday still shows, but it only counts for today's job if you cut it today.`,
       },
       {
         q: 'How do I light the bonfire?',
