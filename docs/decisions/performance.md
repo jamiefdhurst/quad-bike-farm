@@ -160,4 +160,4 @@ The sections below are the record, oldest first. A new decision goes at the end.
 
 ## The yard's draw-call budget for the farm bike (#75)
 
-- The smoke test's yard view measured 2,642 calls against 2,630 once the farm bike was in the pool: a vehicle of 97 meshes (the mini moto has 86, the old bike 81) standing in the yard. Not a leak: the yard's budget goes to 2,700 (about 2.7% up), triangles unchanged at 3.8M (the bike is 37k). The bike's own model is inside the small-vehicle triangle budget.
+- The smoke test's yard view measured 2,642 calls against 2,630 once the farm bike was in the pool: a vehicle of 97 meshes (the mini moto has 86, the old bike 81) standing in the yard. Not a leak: the yard's budget goes to 2,700 (about 2.7% up), triangles unchanged at 3.8M (the bike is 37k). CI's hilltop view measured 1,671 against 1,650 (the bike was parked in sight of it there), so the hilltop's goes to 1,730. The bike's own model is inside the small-vehicle triangle budget.

@@ -15,7 +15,7 @@ export const BUDGETS = {
   yard: { calls: 2700, triangles: 3.8e6 }, // 2,630 until the farm bike (#75): one more vehicle in the yard is about 100 calls
   village: { calls: 2200, triangles: 4.1e6 }, // 3,170 until #399 trimmed the quads parked in it (2,040 now)
   wood: { calls: 1330, triangles: 4.1e6 },
-  hilltop: { calls: 1650, triangles: 7.2e6 },
+  hilltop: { calls: 1730, triangles: 7.2e6 }, // 1,650 until the farm bike (#75): CI measured 1,671 with it parked in view
 };
 
 /** Spots over their budget today, which are reported and not failed on until the issue that brings them back under makes them strict. None now:
