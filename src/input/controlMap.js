@@ -45,7 +45,7 @@ export const CONTEXTS = {
       ['BracketRight', 'press', 'Raise the bale arms, hand throttle out, advance the spark'],
       ['BracketLeft', 'press', 'Lower the bale arms, hand throttle in, retard the spark'],
       ['KeyJ', 'press', 'Hook a trailer on or off'],
-      ['KeyT', 'press', 'Work the vehicle\'s or trailer\'s kit: tip, fold, drop the tailgate'],
+      ['KeyT', 'press', 'Work the vehicle\'s or trailer\'s kit: tip, fold, drop the tailgate, put the mower\'s blade lever forward or back'],
       ['KeyX', 'press', 'Wipe your view, or the wiper stalk where there is a windscreen'], ['KeyX', 'hold', 'Wind the winch'],
       ['KeyY', 'press', 'Tickle the old bike\'s carb'],
     ],

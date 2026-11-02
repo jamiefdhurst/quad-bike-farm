@@ -366,9 +366,13 @@ import { PhotoHost } from './photos/photoHost.js';
 import { WallCalendar } from './world/wallCalendar.js';
 import { TrophyShelf } from './world/trophyShelf.js';
 import { MuckView } from './world/muckView.js';
+import { createSurfaceSampler } from './audio/rideEvents.js';
 import { Haymaking, DEFAULT_HAY_PARAMS, HAY_PARAM_RANGES, STACK_CAPACITY, trailerSlots } from './world/haymaking.js';
 import { HayView } from './world/hayView.js';
 import { GrassTracks, DEFAULT_TRACKS_PARAMS, TRACKS_PARAM_RANGES } from './world/grassTracks.js';
+import { MowHost } from './world/mowHost.js';
+import { MowGrid, DEFAULT_MOW_PARAMS, MOW_PARAM_RANGES, lawnPlots } from './world/mowing.js';
+import { MowView } from './world/mowView.js';
 import { SprayerTrailer, SPRAYER_PARAM_RANGES } from './vehicle/sprayerTrailer.js';
 import { Spraying, DEFAULT_SPRAY_PARAMS, SPRAY_PARAM_RANGES, SPRAY_PHASE_TEXT, sprayWanted } from './world/spraying.js';
 import { SprayView } from './world/sprayView.js';
@@ -1713,6 +1717,7 @@ export class Game {
     this.setUpServiceJob();
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records, challenges: this.challenges });
     this.setUpHay();
+    this.setUpMowing();
     this.setUpSpraying();
     // Each farm job ticked off pays (farm/classifieds.js); the neighbours' ads for vehicles are pinned up on the odd day, on the board beside the chalkboards.
     this.jobBoard.onComplete = (id) => {
@@ -4763,6 +4768,7 @@ export class Game {
       bales: this.baleRig.yard.toJSON(),
       logs: this.logStack ? { ...this.logStack.toJSON(this.farm.day), fitted: this.splitterFitted } : undefined,
       hay: this.hay?.toJSON(),
+      mowing: this.mowGrid?.toJSON(),
       spray: this.spray?.toJSON(),
       lane: this.world.wear.laneToJSON(),
       boosterPack: { charge: this.boosterPack.engine.battery, where: this.boosterPack.where === 'charger' ? 'charger' : 'loose' },
@@ -7202,6 +7208,50 @@ export class Game {
       feedback: 'pickUp',
       interact: () => this.heaveBale(),
     });
+  }
+
+  // Mowing -----------------------------------------------------------------------------
+
+  /** The lawns the ride-on mower cuts and the stripes it leaves (world/mowing.js, world/mowView.js). */
+  setUpMowing() {
+    const plots = lawnPlots(this.world.layout);
+    if (!plots.length) return;
+    this.mowParams = { ...DEFAULT_MOW_PARAMS };
+    this.mowGrid = new MowGrid(plots, this.mowParams);
+    this.mowGrid.restore(this.farm.save?.mowing, this.farm.day);
+    this.mowView = new MowView({ scene: this.scene, grid: this.mowGrid, heightAt: (x, z) => this.world.heightAt(x, z), params: this.mowParams });
+    this.mowView.refresh(this.farm.day);
+    this.mow = new MowHost(this, { grid: this.mowGrid, params: this.mowParams, surfaceAt: createSurfaceSampler(this.world), view: this.mowView });
+    registerTuning('Mowing', this.mowParams, MOW_PARAM_RANGES);
+  }
+
+  /** The ride-on mower (a spec with `mower: true`), if this farm has one. */
+  get mowerUnit() {
+    return this.mow?.unit ?? null;
+  }
+
+  bladeOf(unit) {
+    return this.mow.bladeOf(unit);
+  }
+
+  toggleBlade(unit) {
+    return this.mow.toggleBlade(unit);
+  }
+
+  updateMowing(dt, ridden, input) {
+    this.mow.update(dt, ridden, input);
+  }
+
+  debugCutLawns() {
+    this.mow.cutAll();
+  }
+
+  debugGrowLawns() {
+    this.mow.growBack();
+  }
+
+  debugFinishMowing() {
+    this.mow.finishNow();
   }
 
   /** The bales in the Dutch barn's bay, as many as the farm has stacked there. */
@@ -12820,6 +12870,7 @@ export class Game {
     this.guard.run('updateTipTrailer', () => this.updateTipTrailer(dt, ridden, input));
     if (this.spray) this.guard.run('updateSprayer', () => this.updateSprayer(dt, ridden, input));
     if (this.hay) this.guard.run('updateHay', () => this.updateHay(dt));
+    if (this.mowGrid) this.guard.run('updateMowing', () => this.updateMowing(dt, ridden, input));
     if (this.tractorUnit) this.guard.run('updateBaleSpike', () => this.updateBaleSpike(dt, ridden, input));
     if (this.logStack) this.guard.run('updateLogSplitter', () => this.updateLogSplitter(dt));
     if (GO_KINDS.some((k) => this.goVehicle(k)) && auto) this.guard.run('updateTractorGo', () => this.updateTractorGo(dt, ridden));

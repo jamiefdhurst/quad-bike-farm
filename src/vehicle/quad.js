@@ -333,7 +333,8 @@ export class Quad {
     this.wheelieShown = 0;
     this.handThrottle = 0; // a girl on the back reaching round to open it over your hand (npc/throttleGrab.js)
     this.pullHeld = 0; // seconds the cord's been held, until it's let go (the yank)
-    this.bladeOn = false; // the mower's blade is engaged (game.js decides when it can be; mowing.js)
+    this.blade = null; // the mower's blade (world/mowing.js): the game gives the mower one and runs it
+    this.bladeDrive = 1; // what the blade takes off the drive in long grass
     this.passenger = null; // you, riding on the back while she drives
     this.backRider = false; // a girl on the back (the game sets it each step), for the toppling weight
     this.driver = null; // someone else at the controls (her), see setDriver()
@@ -964,7 +965,7 @@ export class Quad {
     const sf = this.strengthSpec ? strengthEffects(this.strengthSpec, this.groundUnder()) : null;
     this.physics.strengthGrip = this.strengthSpec ? { mud: bonusFor(this.strengthSpec, 'mud'), tarmac: bonusFor(this.strengthSpec, 'tarmac') } : null;
     this.physics.applyControls({
-      driveForce: (sf?.drive ?? 1) * Math.sign(drive) * (this.towJam && drive < 0 ? 0 : 1) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * (1 - this.faults.params.clutchDriveLoss * this.clutchSlip) * this.tyres.driveFactor * this.tow.driveFactor * this.rackLoad.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
+      driveForce: (sf?.drive ?? 1) * Math.sign(drive) * (this.towJam && drive < 0 ? 0 : 1) * Math.max(0, Math.abs(drive) * this.faults.driveFactor * (1 - this.faults.params.clutchDriveLoss * this.clutchSlip) * this.tyres.driveFactor * this.tow.driveFactor * this.bladeDrive * this.rackLoad.driveFactor * (this.drive ? this.driveEffects.driveScale : 1) - hold),
       brake,
       steer: wheelSteer,
       mudAt: (x, z) => Math.max(this.world.mudAt(x, z), this.churn),
@@ -1283,6 +1284,11 @@ export class Quad {
     this.updateFrost(dt);
     if (this.note && (this.note.left -= dt) <= 0) this.note = null;
     this.updateFlap(dt);
+  }
+
+  /** Whether the mower's blade lever is forward. */
+  get bladeOn() {
+    return !!this.blade?.engaged;
   }
 
   /** Moves each seat on its own spring from the frame's bumps, and notes any that slam (seatRide.js). */

@@ -91,6 +91,7 @@ import { JESS_UTV_LINES } from './utvLines.js';
 import { JESS_OLD_BIKE_LINES } from './oldBikeLines.js';
 import { JESS_TRAILER_LINES } from './trailerLines.js';
 import { JESS_FARM_JOB_LINES } from './farmJobLines.js';
+import { JESS_MOW_LINES } from './mowLines.js';
 import { JESS_MONEY_LINES } from './moneyLines.js';
 import { JESS_SHED_LINES } from './shedLines.js';
 import { JESS_FIRE_LINES } from './fireLines.js';
@@ -596,4 +597,6 @@ export const JESS_LINES = {
   ...JESS_LATE_QUAD_LINES,
   ...JESS_LATE_HISTORY_LINES,
   ...JESS_LATE_RANK_LINES,
+  // The mowing job (mowLines.js), last of all.
+  ...JESS_MOW_LINES,
 };

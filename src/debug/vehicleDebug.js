@@ -73,6 +73,7 @@ export function fixEverything(unit) {
   unit.quad.faults.kept.chainLube = 1; // a fresh chain, as the bench leaves it
   unit.quad.faults.kept.chainOff = false;
   unit.quad.motWear?.renew(); // new bulbs, blades and horn contacts
+  unit.quad.blade?.sharpen(); // the mower's blade
   if (unit.quad.tyres) unit.quad.tyres.tread = { front: 1, rear: 1 }; // new rubber (without taking anything off the rack)
 }
 
