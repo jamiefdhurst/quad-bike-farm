@@ -1062,10 +1062,18 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I fix things?',
-        a: `Pick up the red toolbox from the workbench, take it to a switched-off quad and press <kbd>E</kbd>. Pick a job with <kbd>W</kbd> and <kbd>S</kbd> and press <kbd>E</kbd>: patch a puncture (pumping it up needs the compressor),
+        a: `Pick up the red toolbox from the workbench, take it to a switched-off quad and press <kbd>E</kbd>. Pick a job with <kbd>W</kbd> and <kbd>S</kbd> and press <kbd>E</kbd>: plug a puncture (with a tyre plug from the kit in the toolbox, or a spare inner tube if the kit is empty),
           swap the belt (using a spare from the rack), oil the cable, clean the carb, nip up the engine mounts or put a chain back on and oil it. Hold <kbd>E</kbd> to clean the air filter
           or to service it. These are quick fixes that leave a mild fault behind; for a proper job, use the workbench. Each fix does its job if there is one and
           otherwise says all is well, so it doesn't give a fault away.`,
+      },
+      {
+        q: 'How do I mend a puncture in the field?',
+        a: `Take the toolbox to the vehicle, switched off, press <kbd>E</kbd> and pick "Pump and patch tyres". The toolbox has a plug kit with a few tyre plugs in it: one goes in the hole,
+          and its little pump brings that tyre up to about 3 psi wherever you are, so you can ride home without the compressor. It leaves a puncture milder than a spare inner tube does, but it is still
+          a quick fix, so the workbench does it properly. The kit is topped up each morning. With it empty the button uses a spare inner tube from the rack instead, which needs the compressor for air.
+          Look at the gauge in the toolbox to see which tyre was soft.`,
+        tip: 'Toolbox, then "Pump and patch tyres" plugs a puncture and pumps it to about 3 psi, anywhere. Four plugs in the kit.',
       },
       {
         q: 'Why does the idle keep rising and falling, and why does it pop when I lift off?',
