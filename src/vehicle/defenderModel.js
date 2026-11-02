@@ -198,7 +198,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       wiper.rotation.z = s > 0 ? 0.12 : Math.PI - 0.12;
       screen.add(wiper);
     }
-    rbox(0.2, 0.07, 0.03, 0.01, MAT.black, 0, DEF_SCREEN.topY - 0.1, DEF_SCREEN_TOP_Z - 0.04, root); // the rear-view mirror
+    rbox(0.2, 0.07, 0.03, 0.01, MAT.black, 0, DEF_SCREEN.topY - 0.1, DEF_SCREEN_TOP_Z - 0.04, root, 'mirrorGlass'); // the rear-view mirror
     tube([0, DEF_SCREEN.topY - 0.05, DEF_SCREEN_TOP_Z - 0.01], [0, DEF_SCREEN.topY - 0.09, DEF_SCREEN_TOP_Z - 0.04], 0.006, MAT.black, root, 4);
   }
 
@@ -243,7 +243,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       mirror.position.set(s * 0.84, 1.3, defScreenZ(1.3) - 0.02);
       tube([0, -0.06, 0.02], [s * 0.14, 0.02, -0.06], 0.009, MAT.black, mirror, 6);
       tube([0, 0.06, 0.02], [s * 0.14, 0.1, -0.06], 0.009, MAT.black, mirror, 6);
-      rbox(0.13, 0.2, 0.025, 0.01, MAT.black, s * 0.17, 0.11, -0.08, mirror);
+      rbox(0.13, 0.2, 0.025, 0.01, MAT.black, s * 0.17, 0.11, -0.08, mirror, 'mirrorGlass');
       root.add(mirror);
       // The body at each side: the hinge pillar, the B pillar, the rear side with its arch, the long window, the rail over it.
       rbox(0.04, door.y1 - door.y0, 0.1, 0.01, paint, s * door.x, (door.y0 + door.y1) / 2, door.hinge + 0.06, root); // the hinge pillar

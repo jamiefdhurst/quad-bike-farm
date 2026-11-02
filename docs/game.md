@@ -414,6 +414,10 @@ Every day starts with you sat in your own car, the Vauclair 39D, just parked on 
 - **Only you drive it.** Ask a girl to and she tells you it is yours. They sit in it, though: asked in from the wheel, climbing in when you stop by them with it running, or out of the rain, and either will start it for you.
 - **The girls' mornings.** Each girl is sat at the wheel of her own car beside yours, engine running, and gets out within about a minute, usually switching off as she goes, though Jess quite often leaves hers ticking over and Amy now and then (you can't take her car while she is in it). Some days you have given one of them a lift (about one day in four), now and then both (about one in eight): she is sat in your car with you, gets out a moment after you do, and her own car stays at home that day.
 
+## Mirrors
+
+The Land Rovers, the Yak and all the cars have working mirrors: the door or wing mirrors on each side and the rear-view mirror show what is behind, for backing a trailer and seeing who is following. They are fixed (no adjusting) and live only on the vehicle you are driving, when you look forward; a parked vehicle's glass is dull. Your own vehicle isn't in them, but the trailer, the girls and everything else is. Tune tab, "Mirrors": switch them off, or change how big, how often and how far they draw.
+
 ## The girls' cars
 
 Amy and Jess have a car each, parked side by side on the tarmac at the end of the farm road, in front of the Dutch barn and nosed in towards it (unless she came in with you). They're road cars: front-wheel drive, low and on road tyres, quick on the yard and the farm road, slithering on wet grass, bogging down in mud almost at once and scraping over bumps. Look at one and press `E` to drive it.

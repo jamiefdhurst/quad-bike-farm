@@ -344,7 +344,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
       mirror.position.set(s * 0.045, ys + 0.1, -0.1);
       rbox(0.07, 0.03, 0.05, 0.01, PAL.black, s * 0.0, 0.0, 0.0, mirror); // its foot on the door
       rbox(0.12, 0.085, 0.05, 0.015, PAL.chrome, s * 0.08, 0.05, -0.02, mirror); // the housing
-      rbox(0.105, 0.07, 0.004, 0.003, PAL.glass, s * 0.08, 0.05, -0.0475, mirror); // and its glass, facing back
+      rbox(0.105, 0.07, 0.004, 0.003, PAL.glass, s * 0.08, 0.05, -0.0475, mirror, 'mirrorGlass'); // and its glass, facing back
       d.add(mirror);
       // The card on the inside: brown vinyl with the arm rest and its pull, a map pocket under, the winder and the lock button.
       const inside = -s * 0.03;
@@ -423,7 +423,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
       root.add(wiper);
     }
     // The rear-view mirror at the top of the screen, in the middle, on its stem from the header.
-    rbox(0.2, 0.06, 0.02, 0.01, PAL.black, 0, yt - 0.15, zt - 0.06, root);
+    rbox(0.2, 0.06, 0.02, 0.01, PAL.black, 0, yt - 0.15, zt - 0.06, root, 'mirrorGlass');
     tube([0, yt - 0.01, zt - 0.03], [0, yt - 0.12, zt - 0.06], 0.008, PAL.black, root, 5);
   }
 

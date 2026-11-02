@@ -433,7 +433,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       mirror.position.set(s * 0.015, ys + 0.06, -0.06);
       rbox(0.07, 0.04, 0.06, 0.012, PAL.black, 0, 0, 0, mirror); // its foot on the door
       rbox(0.16, 0.1, 0.07, 0.035, PAL.black, s * 0.1, 0.04, -0.02, mirror); // the housing, rounded
-      rbox(0.13, 0.075, 0.004, 0.003, PAL.glass, s * 0.1, 0.04, -0.0575, mirror); // and its glass, facing back
+      rbox(0.13, 0.075, 0.004, 0.003, PAL.glass, s * 0.1, 0.04, -0.0575, mirror, 'mirrorGlass'); // and its glass, facing back
       d.add(mirror);
       // The card on the inside: grey, with the arm rest and its pull, a map pocket under, the winder and the lock button.
       const inside = -s * 0.03;
@@ -557,7 +557,7 @@ export function buildCorsaModel({ bodyColor = 0xb8322e, reg = null } = {}) {
       root.add(wiper);
     }
     // The rear-view mirror at the top of the screen, in the middle, on its stem from the header.
-    rbox(0.2, 0.06, 0.02, 0.01, PAL.black, 0, yt - 0.15, zt - 0.06, root);
+    rbox(0.2, 0.06, 0.02, 0.01, PAL.black, 0, yt - 0.15, zt - 0.06, root, 'mirrorGlass');
     tube([0, yt - 0.01, zt - 0.03], [0, yt - 0.12, zt - 0.06], 0.008, PAL.black, root, 5);
   }
 

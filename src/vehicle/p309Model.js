@@ -376,7 +376,7 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
       mirror.position.set(s * 0.045, ys + 0.06, zs - D.hinge - 0.12);
       rbox(0.06, 0.08, 0.1, 0.01, PAL.black, 0, 0, 0, mirror); // its foot on the door
       rbox(0.13, 0.09, 0.06, 0.015, PAL.black, s * 0.09, 0.03, -0.01, mirror); // the housing
-      rbox(0.115, 0.075, 0.004, 0.003, PAL.glass, s * 0.09, 0.03, -0.0415, mirror); // and its glass, facing back
+      rbox(0.115, 0.075, 0.004, 0.003, PAL.glass, s * 0.09, 0.03, -0.0415, mirror, 'mirrorGlass'); // and its glass, facing back
       d.add(mirror);
       // The card on the inside: grey, with a long pull along it, a deep pocket at the bottom, the winder and the lock button.
       const inside = -s * 0.03;
@@ -472,7 +472,7 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
       wiper.rotation.order = 'YXZ';
       root.add(wiper);
     }
-    rbox(0.22, 0.06, 0.02, 0.01, PAL.black, 0, yt - 0.15, zt - 0.06, root); // the rear-view mirror
+    rbox(0.22, 0.06, 0.02, 0.01, PAL.black, 0, yt - 0.15, zt - 0.06, root, 'mirrorGlass'); // the rear-view mirror
     tube([0, yt - 0.01, zt - 0.03], [0, yt - 0.12, zt - 0.06], 0.008, PAL.black, root, 5);
   }
 

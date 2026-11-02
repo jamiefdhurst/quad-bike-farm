@@ -107,6 +107,7 @@ import { BENCH_SEATS, benchDismountSpots, pickBenchSeat } from './vehicle/benchS
 import { UtvBed, UTV_BED_PARAM_RANGES } from './vehicle/utvBed.js';
 import { TipTrailer, canTow, TIP_TRAILER_PARAM_RANGES } from './vehicle/tipTrailer.js';
 import { DEFAULT_TOW_PARAMS, TOW_PARAM_RANGES, towLoad, towEffect } from './vehicle/towing.js';
+import { DEFAULT_MIRROR_PARAMS, MIRROR_PARAM_RANGES, MirrorView, insideFootprint, lookingForward, mirrorTurn } from './vehicle/mirrorView.js';
 import { TrailerRide, TRAILER_RIDE_PARAM_RANGES } from './npc/trailerRide.js';
 import { poseUtvBed, BED_CARGO_SPOTS, BED_CARGO_YAWS, BED_CARGO_YAW } from './vehicle/utvModel.js';
 import { CargoHold, CARGO_PARAM_RANGES } from './vehicle/cargoHold.js';
@@ -1017,6 +1018,10 @@ export class Game {
     registerTuning('Trailer tub', this.tipTrailer.bed.p, UTV_BED_PARAM_RANGES);
     registerTuning('Trailer riders', this.tipRide.p, TRAILER_RIDE_PARAM_RANGES);
     registerTuning('Towing', this.towParams, TOW_PARAM_RANGES);
+    this.mirrorParams = { ...DEFAULT_MIRROR_PARAMS };
+    this.mirrorViews = new Map(); // unit -> its MirrorView, made the first time you drive it
+    this.mirrorFrame = 0;
+    registerTuning('Mirrors', this.mirrorParams, MIRROR_PARAM_RANGES);
     // The field sprayer behind a quad with a rack (vehicle/sprayerTrailer.js; the job is world/spraying.js).
     this.sprayer = new SprayerTrailer({ scene: this.scene, world: this.world });
     registerTuning('Sprayer trailer wear', this.sprayer.coat.coat.look, WEAR_LOOK_RANGES);
@@ -5258,6 +5263,36 @@ export class Game {
       find.smokeLeft -= dt;
       unit.smoke.burst = 1;
     }
+  }
+
+  // Mirrors ----------------------------------------------------------------
+
+  /**
+   * The mirrors of the vehicle you drive show the world behind it (vehicle/mirrorView.js): one mirror is drawn per turn, every few frames,
+   * and only while you look ahead; every other vehicle keeps its dull glass. The vehicle itself and anyone sat in it are left out of the picture.
+   */
+  updateMirrors() {
+    const unit = this.riddenUnit;
+    const p = this.mirrorParams;
+    for (const [u, v] of this.mirrorViews) if (v.live && (u !== unit || !p.enabled)) v.setLive(false);
+    if (!unit || !p.enabled) return;
+    let view = this.mirrorViews.get(unit);
+    if (!view) {
+      view = new MirrorView(unit.quad.model, p);
+      this.mirrorViews.set(unit, view);
+    }
+    if (!view.count) return;
+    if (!view.live) view.setLive(true);
+    const model = unit.quad.model;
+    const ahead = new THREE.Vector3(0, 0, 1).applyQuaternion(model.getWorldQuaternion(new THREE.Quaternion()));
+    if (!lookingForward(this.camera.getWorldDirection(new THREE.Vector3()), ahead, p.lookAngle)) return;
+    const turn = mirrorTurn(this.mirrorFrame++, p.every, view.count);
+    if (turn === null) return;
+    const hidden = [model];
+    for (const c of this.companions) {
+      if (insideFootprint(model.worldToLocal(c.root.getWorldPosition(new THREE.Vector3())), { x: 1.3, z: 2.6 })) hidden.push(c.root);
+    }
+    view.render(this.renderer, this.scene, turn, hidden);
   }
 
   // Which quad -------------------------------------------------------------
@@ -12341,6 +12376,7 @@ export class Game {
     this.guard.run('updateHud', () => this.updateHud(dt));
     this.photos.update(dt);
     fb.lap('hud', performance.now());
+    this.guard.run('updateMirrors', () => this.updateMirrors());
 
     this.renderer.render(this.scene, this.camera);
     this.photos.afterRender();

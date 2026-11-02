@@ -185,7 +185,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       wiper.rotation.z = s > 0 ? 0.12 : Math.PI - 0.12;
       screen.add(wiper);
     }
-    rbox(0.2, 0.07, 0.03, 0.01, MAT.black, 0, SERIES_SCREEN.topY - 0.1, SERIES_SCREEN_TOP_Z - 0.04, root); // the rear-view mirror
+    rbox(0.2, 0.07, 0.03, 0.01, MAT.black, 0, SERIES_SCREEN.topY - 0.1, SERIES_SCREEN_TOP_Z - 0.04, root, 'mirrorGlass'); // the rear-view mirror
     tube([0, SERIES_SCREEN.topY - 0.05, SERIES_SCREEN_TOP_Z - 0.01], [0, SERIES_SCREEN.topY - 0.09, SERIES_SCREEN_TOP_Z - 0.04], 0.006, MAT.galv, root, 4);
   }
 
@@ -230,7 +230,7 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       mirror.position.set(s * 0.84, 1.3, screenZ(1.3) + 0.02);
       tube([0, 0, 0], [s * 0.1, 0.02, -0.04], 0.009, MAT.black, mirror, 6);
       tube([s * 0.1, 0.02, -0.04], [s * 0.16, 0.1, -0.06], 0.007, MAT.black, mirror, 6);
-      rbox(0.13, 0.18, 0.025, 0.01, MAT.black, s * 0.18, 0.15, -0.08, mirror); // the head faces back
+      rbox(0.13, 0.18, 0.025, 0.01, MAT.black, s * 0.18, 0.15, -0.08, mirror, 'mirrorGlass'); // the head faces back
       root.add(mirror);
       // The body at each side: the hinge pillar the door's front edge meets, the B pillar behind it, the quarter below the quarter window, the
       // sill closing the gap to the chassis, the rear upright and the rails above and below the quarter glass.
