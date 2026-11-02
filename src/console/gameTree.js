@@ -8,6 +8,7 @@ import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
 import { REMEMBERED_KINDS } from '../npc/memory.js';
 import { strengthOf } from '../vehicle/strength.js';
 import { AGENDA_IDS } from '../npc/agenda.js';
+import { FACE_PICKS, pickFace } from '../npc/faceExpression.js';
 import { group, value, slug } from './shell.js';
 import { PARTS, ALL_PART_IDS } from '../workshop/spares.js';
 import { getTuningGroups } from '../core/tuning.js';
@@ -240,6 +241,8 @@ export function buildGameTree(g, host) {
       eyes: text(() => { const l = c().blink.lid; return l > 1 ? 'squeezed shut' : l > 0.98 ? 'shut' : l > 0.02 ? `${Math.round(l * 100)}% shut` : 'open'; }, 'how far her eyelids are down'),
       blinkRate: num(() => c().blink.rate, (v) => (c().blink.rate = v), 0.1, 5, '', 'how often she blinks, times the usual (about every 2 to 6 seconds)'),
       eyesShut: flag(() => c().blink.hold, (v) => (c().blink.hold = v), 'her eyes held shut, as if asleep'),
+      face: text(() => c().expression.describe(), 'the expression she is wearing: her mood, a reaction or a laugh'),
+      faceHeld: choice(FACE_PICKS, () => c().expression.held ?? 'auto', (v) => pickFace(c().expression, v), 'hold her face in one expression; auto lets it follow what is going on'),
       helmet: text(() => g.headgear.describe(id), 'where her helmet is: on the hooks, on her head, on a seat or on the ground'),
       coat: text(() => g.coats.describe(id), 'whether she has a wax jacket on, and her hood up or down'),
       outfit: choice(outfitsFor(c().character.outfitOdds), () => completeStyle(c().outfit.style).kind, (v) => c().setStyle({ ...completeStyle(c().outfit.style), kind: v }), 'what she has on top today'),

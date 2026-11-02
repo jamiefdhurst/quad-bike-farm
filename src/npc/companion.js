@@ -5,7 +5,7 @@ import { StateMachine } from './stateMachine.js';
 import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
 import { outfitsFor } from './outfits.js';
-import { applyOutfit, refitOutfit, reshirt, restyle, withJumper, withCoat, setHood, OUTFITS } from './outfit.js';
+import { applyOutfit, refitOutfit, reshirt, restyle, withJumper, withCoat, setHood, OUTFITS, PALETTE } from './outfit.js';
 import { shapeFigure } from './figure.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { TractorStartAttempt, DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
@@ -46,6 +46,8 @@ import { BackNap } from './backNap.js';
 import { Blink, SQUEEZING_REACTIONS } from './blink.js';
 import { reactionWeight } from './reactions.js';
 import { addEyelids } from './eyelids.js';
+import { addFace } from './face.js';
+import { Face } from './faceExpression.js';
 import { firstThink } from './chooser.js';
 import { DEFAULT_DOZE_PARAMS, dozePose } from './dozing.js';
 import { Memory } from './memory.js';
@@ -98,6 +100,9 @@ export class Companion {
     this.eyelids = addEyelids(this.rig);
     this.blink = new Blink(undefined, { slow: params.blinkSlow, steady: params.blinkSteady });
     this.laughLeft = 0; // seconds of laughing still to go: her eyes screw up
+    // Her brows and mouth, and the expression she wears (face.js, faceExpression.js). The game points the expression at the shared tuning.
+    this.faceParts = addFace(this.rig, { hair: this.outfit.colors?.hair ?? PALETTE.hair });
+    this.expression = new Face();
     this.mucky = createMuddiness(); // how muddy and dusty she is (muddiness.js)
     this.girlMud = new GirlMud(this.rig); // and how that looks on her
     this.root = this.rig.root;
@@ -248,6 +253,8 @@ export class Companion {
     this.reaction = null; // { type, t, from, strength }
     this.reactTurn = null; // a heading to turn to while she turns away from something
     this.rig.posers.push((dt) => this.poseReacting(dt));
+    // Her head tipped back as she laughs, after everything else.
+    this.rig.posers.push(() => this.rig.rotateAboutRootAxis(this.rig.bones.Neck, FACE_TILT, -0.22 * this.expression.ch.headBack));
   }
 
   figureAmounts() {
@@ -1403,6 +1410,7 @@ export class Companion {
     this.updateLineUp(dt);
     if (viewer) this.updateAttention(dt, viewer);
     this.updateFidget(dt);
+    this.updateFace(dt);
     this.updateEyes(dt);
     this.updateCarry(dt);
     this.updateWaiting(dt);
@@ -1543,6 +1551,8 @@ const _dirV = new THREE.Vector3();
 const _pickV = new THREE.Vector3();
 
 // Small movements, each with a shape over its life (0..1) and offsets to apply.
+const FACE_TILT = new THREE.Vector3(1, 0, 0); // her head tips back about her own side-to-side axis
+
 const FIDGETS = {
   // Lifts one arm out and bends the elbow, as if adjusting her grip or hair.
   arm: (k, side) => (side > 0 ? { leftArmOut: 0.55 * k, leftElbow: 0.9 * k } : { rightArmOut: 0.55 * k, rightElbow: 0.9 * k }),
@@ -1560,8 +1570,21 @@ Companion.prototype.updateEyes = function (dt) {
   this.laughLeft = Math.max(0, this.laughLeft - dt);
   const r = this.reaction;
   const flinching = r && SQUEEZING_REACTIONS.includes(r.type) ? reactionWeight(r.type, r.t) : 0;
-  const lid = this.blink.update(dt, { asleep: this.nap.asleep || this.isDozing, squeeze: Math.max(flinching, this.laughLeft > 0 ? 1 : 0) });
-  this.eyelids?.setLid(lid);
+  const face = this.expression.ch;
+  const lid = this.blink.update(dt, { asleep: this.nap.asleep || this.isDozing, squeeze: Math.max(flinching, this.laughLeft > 0 ? 1 : 0, face.squeeze) });
+  // A smile narrows her eyes a little: the cheeks lifting under them.
+  this.eyelids?.setLid(Math.max(lid, face.squint));
+};
+
+/** Her expression: her mood's resting face, a reaction's for its length, laughing (faceExpression.js), laid on her brows and mouth (face.js). */
+Companion.prototype.updateFace = function (dt) {
+  const r = this.reaction;
+  const ch = this.expression.update(dt, {
+    mood: this.mood.value,
+    reaction: r ? { type: r.type, weight: reactionWeight(r.type, r.t) } : null,
+    laughing: this.laughLeft > 0,
+  });
+  this.faceParts?.setFace(ch);
 };
 
 Companion.prototype.updateFidget = function (dt) {

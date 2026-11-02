@@ -158,6 +158,7 @@ import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { DEFAULT_NAP_PARAMS, NAP_PARAM_RANGES } from './npc/backNap.js';
 import { DEFAULT_BLINK_PARAMS, BLINK_PARAM_RANGES } from './npc/blink.js';
+import { DEFAULT_FACE_PARAMS, FACE_PARAM_RANGES } from './npc/faceExpression.js';
 import { PillionCoach, PILLION_COACH_PARAM_RANGES } from './npc/pillionCoach.js';
 import { Lessons, LESSON_PARAM_RANGES, DRILLS } from './npc/lessons.js';
 import { dustExposure } from './world/dust.js';
@@ -908,8 +909,10 @@ export class Game {
     const spotTaken = (spot) => this.companions.some((o) => o.currentSpot()?.id === spot.id);
     this.napParams = { ...DEFAULT_NAP_PARAMS }; // asleep on the back of a smooth ride (npc/backNap.js); made before the companions are wired to it
     this.blinkParams = { ...DEFAULT_BLINK_PARAMS }; // her blinking (npc/blink.js)
+    this.faceParams = { ...DEFAULT_FACE_PARAMS }; // her expressions (npc/faceExpression.js)
     for (const c of this.companions) {
       c.blink.p = this.blinkParams;
+      c.expression.p = this.faceParams;
       c.restStayFor = () => restStay(this.places.p);
       c.dozeParams = this.places.p;
       c.nap.p = this.napParams;
@@ -1890,6 +1893,7 @@ export class Game {
     registerTuning('Hand on the throttle', this.throttleGrab.p, GRAB_PARAM_RANGES);
     registerTuning('Asleep on the back', this.napParams, NAP_PARAM_RANGES);
     registerTuning('Blinking', this.blinkParams, BLINK_PARAM_RANGES);
+    registerTuning('Faces', this.faceParams, FACE_PARAM_RANGES);
     registerTuning('Two-stroke smoke', this.smokeSense.p, SMOKE_PARAM_RANGES);
     registerTuning('Shouting a fault', this.faultShout.p, SHOUT_PARAM_RANGES);
     registerTuning('Yard haze', this.haze.p, HAZE_PARAM_RANGES);

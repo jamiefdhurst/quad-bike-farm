@@ -10,6 +10,7 @@ import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
 import { REMEMBERED_KINDS } from '../npc/memory.js';
 import { DRILLS } from '../npc/lessons.js';
 import { rampPoint } from '../npc/jumps.js';
+import { FACE_PICKS, pickFace } from '../npc/faceExpression.js';
 import { OUTFIT_KINDS, describeOutfit, completeStyle, outfitsFor, shirtButtonsUndone, withShirtButtons } from '../npc/outfits.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
@@ -61,6 +62,8 @@ export function buildGirlsTab(d) {
     show(f, 'eyes', () => (c.blink.lid > 1 ? 'squeezed shut' : c.blink.lid > 0.98 ? 'shut' : c.blink.lid > 0.02 ? `${Math.round(c.blink.lid * 100)}% shut` : 'open'));
     slider(f, 'blink rate', () => c.blink.rate, (v) => (c.blink.rate = v), 0.1, 5, 0.1);
     tick(f, 'eyes held shut', () => c.blink.hold, (v) => (c.blink.hold = v));
+    show(f, 'face', () => c.expression.describe());
+    f.add({ get v() { return c.expression.held ?? 'auto'; }, set v(x) { pickFace(c.expression, x); } }, 'v', FACE_PICKS).name('pull a face').listen();
 
     // --- Why she does what she does: what she wants (settable) and what she chose for it (npc/needs.js, npc/chooser.js).
     const why = f.addFolder('Why');
