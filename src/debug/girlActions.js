@@ -830,6 +830,16 @@ export function girlActions(g) {
     },
   });
   actions.push({
+    verb: 'fetch-lost',
+    label: '% goes for the thing you left lying',
+    run: (id) => {
+      if (!free(id)) return;
+      const e = g.lost.force(id, id === 'jess');
+      if (e) g.handleLostEvent(e);
+      else toast('Nothing is lying out: leave something in the grass first (Barn and shop in the Girls tab)');
+    },
+  });
+  actions.push({
     verb: 'load-hay',
     label: '% loads a hay bale',
     run: (id) => {

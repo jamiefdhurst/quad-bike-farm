@@ -5,6 +5,7 @@
 import { buttonText } from './buttonText.js';
 import { SEASONS } from '../world/seasons.js';
 import { girlActions } from './girlActions.js';
+import { LOSABLE } from '../items/lostThings.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
 import { REMEMBERED_KINDS } from '../npc/memory.js';
@@ -270,6 +271,8 @@ export function buildGirlsTab(d) {
   button(shop, 'Take the battery off the charger', () => g.debugChargerClear());
   show(shop, 'the generator', () => g.describeGenerator());
   show(shop, 'starting the generator', () => g.generatorStart.describe());
+  show(shop, 'things left lying', () => g.lost.describe());
+  for (const [kind, { name }] of Object.entries(LOSABLE)) button(shop, `Leave the ${name} lying in the grass`, () => g.debugLoseThing(kind));
   button(shop, 'Pull the generator\'s cord', () => g.debugGeneratorPull());
   button(shop, 'Switch the generator off', () => g.switchGeneratorOff());
   button(shop, 'Fill the generator\'s tank', () => g.debugGeneratorFuel(g.generator.params.tank));

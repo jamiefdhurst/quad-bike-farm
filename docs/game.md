@@ -403,6 +403,10 @@ An old Tor 88-inch pick-up is on the farm in about two games in three, parked an
 - **The doors and the tub.** The doors are hinged at the front and swing out, at the side you are using, for a couple of seconds when you get in or out and while a girl climbs in or down, and only while it is stopped. `T` drops the tailgate, on its two chains, until it lies flat behind the tub (from the seat or standing beside it; it won't go down while it is moving and swings shut if you drive off with it down). Look into the tub with a jerry can, the toolbox, the jump leads or the oil bottle in your hands and `E` stands it there, on one of six places between the wheel arches.
 - **The girls.** Stop with it running and a girl stood about may climb in beside you, or both, squabbling over the middle seat as they do in the Yak. You can ask them in and out from the wheel. Nobody rides in the back. They drive it, and you can ride beside the driver (below).
 
+## Leaving things lying about
+
+Put the jump leads or one of the three bottles down in a field and it stays there, and the farm remembers where it lies from one day to the next. In long grass it sinks in and shows only when you are within a couple of metres; on tarmac, the yard and the barn floor it shows from far off, and stubble is in between. A girl who comes across one may carry it back to its place in front of her (Amy more often than Jess). Jess may instead pocket it and make you ask: her wheel has "Give me the ... back", and she gives in after ten minutes. The Tune tab's "Things left lying" has the distances and chances.
+
 ## The Crag
 
 The other Moorland: an early-90s Defender 90 station wagon in Atlantic Blue with a white roof, at its real size, with a rattly 2.5 litre turbo diesel (a Crag). Either Moorland, both or neither may be on the farm in a game. Look at it and press `E`, as with the Tor.

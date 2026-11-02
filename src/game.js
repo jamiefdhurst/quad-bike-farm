@@ -199,6 +199,7 @@ import { BALE_TRAILER_FOOTPRINT, TIP_TRAILER_FOOTPRINT } from './vehicle/trailer
 import { TrailerGuide, TRAILER_GUIDE_PARAM_RANGES, guideSpot } from './npc/trailerGuide.js';
 import { WorkLight, WORK_LIGHT_PARAM_RANGES } from './npc/workLight.js';
 import { GeneratorStart, GENERATOR_START_PARAM_RANGES } from './npc/generatorStart.js';
+import { LostThings, LOST_PARAM_RANGES, LOSABLE, coverAt, seen, sinkFor } from './items/lostThings.js';
 import { finishJob } from './workshop/benchJobs.js';
 import { Dares, DARE_PARAM_RANGES, DARE_KINDS, steepestBank } from './npc/dares.js';
 import { GirlBench, GIRL_BENCH_PARAM_RANGES, ASK_PROMPT, pickJob, workSpot } from './npc/girlBench.js';
@@ -1216,6 +1217,7 @@ export class Game {
     this.askGo = {}; // girl id -> { together, alone }: how to carry out what she asked about
     this.pair = new Pair(); // the two as a pair: going over to each other, tagging along, letting you in (npc/pair.js)
     this.generatorStart = new GeneratorStart(); // a girl pulling the generator's cord (npc/generatorStart.js)
+    this.lost = new LostThings(); // jump leads and bottles left lying in the field, and a girl bringing them back (items/lostThings.js)
     this.workLight = new WorkLight(undefined, createRandom(this.seed ^ 0x11e7)); // bringing a vehicle round to light what you're at, after dark (npc/workLight.js)
     this.trailerGuide = new TrailerGuide(); // Amy walking round behind the trailer and calling the lock when you reverse it (npc/trailerGuide.js)
     this.dontFix = new DontFixIt(); // a girl minding when her favourite is fixed up (npc/dontFixIt.js)
@@ -1909,6 +1911,7 @@ export class Game {
     registerTuning('Guiding a trailer back', this.trailerGuide.p, TRAILER_GUIDE_PARAM_RANGES);
     registerTuning('Lights to work by', this.workLight.p, WORK_LIGHT_PARAM_RANGES);
     registerTuning('Starting the generator', this.generatorStart.p, GENERATOR_START_PARAM_RANGES);
+    registerTuning('Things left lying', this.lost.p, LOST_PARAM_RANGES);
     registerTuning('Numb bum', this.numbParams, NUMB_PARAM_RANGES);
     registerTuning('Minding a fix', this.dontFix.p, DONTFIX_PARAM_RANGES);
     registerTuning('Sitting while it warms', this.warmSit.p, WARMSIT_PARAM_RANGES);
@@ -2973,6 +2976,7 @@ export class Game {
       c.voice.onRequest(kind);
     };
     const options = [];
+    for (const kind of this.lost.keeping(c.character.id)) options.push({ label: `Give me the ${LOSABLE[kind].name} back`, run: () => this.askForLost(c, kind) });
     if (kinds.includes('come')) options.push({ label: 'Come here', run: ask('come', () => c.requestComeHere(this.player.position)) });
     if (kinds.includes('stop')) options.push({ label: 'Stop there', run: ask('stop', () => c.requestStop()) });
     if (kinds.includes('wait') && !this.readyWaiting.has(c.character.id)) options.push({ label: 'I\'ll be a minute', run: () => this.askToWait(c) });
@@ -4568,6 +4572,7 @@ export class Game {
     this.restoreBatteries(save.batteries);
     this.restoreBoosterPack(save.boosterPack);
     this.generator.restore(save.generator);
+    this.restoreLostThings(save.lostThings);
     this.sparesShelf.showParcel();
   }
 
@@ -4753,6 +4758,7 @@ export class Game {
       stories: this.stories,
       spares: this.spares.toJSON(),
       generator: this.generator.toJSON(),
+      lostThings: this.lost.toJSON(),
       headgear: this.headgear.capture(),
       bales: this.baleRig.yard.toJSON(),
       logs: this.logStack ? { ...this.logStack.toJSON(this.farm.day), fitted: this.splitterFitted } : undefined,
@@ -5598,6 +5604,7 @@ export class Game {
         this.companions.find((g) => g.character.id === o.girl).voice.say('hayGo', { urgent: true, force: true });
         this.handleHayLoad(this.hayLoading.take(o));
       }),
+      ...this.lostOffers(c),
       ...mine(this.generatorStart.offers(this.generatorStartContext()), (o) => {
         this.companions.find((g) => g.character.id === o.girl).voice.say('generatorGo', { urgent: true, force: true });
         this.handleGeneratorStart(this.generatorStart.take(o));
@@ -11452,9 +11459,140 @@ export class Game {
     if (!girl.sneakTo(spot, act)) this.pranks.cancel(a);
   }
 
+  // Things left lying about (items/lostThings.js) ---------------------------------
+
+  /** What can be left in the field: the thing, where it belongs and what a girl carries it as. */
+  lostItems() {
+    const L = this.world.layout;
+    const bench = L.bench.height;
+    return {
+      leads: { item: this.leads, home: { x: L.benchLeads.x, z: L.benchLeads.z, yaw: L.benchLeads.yaw, y: bench }, carry: 'leads' },
+      oilBottle: { item: this.oilBottle, home: L.oilBottle, carry: 'bottle' },
+      coolantBottle: { item: this.coolantBottle, home: L.coolantBottle, carry: 'bottle' },
+      antiGelBottle: { item: this.antiGelBottle, home: L.antiGelBottle, carry: 'bottle' },
+    };
+  }
+
+  /** How much long grass is over (x, z). */
+  grassCoverAt(x, z) {
+    const w = this.world;
+    const yard = w.layout.yard;
+    if (Math.hypot(x - yard.x, z - yard.z) < yard.radius || w.inBarn(x, z, 1) || w.outbuildings.builtAt(x, z, 0.5)) return 0; // hard ground, as the wear's exemptions
+    return coverAt(this.world.fields.areaOf(x, z), this.world.tarmacAt(x, z), this.world.stubbleAt(x, z), this.lost.p);
+  }
+
+  /** Whether `item` is lying on the open ground (not held, carried, stood in a bed, on the bench or joined to a quad). */
+  onTheGround(item) {
+    if (item.held || item.carried || item.model.parent !== this.scene || !item.model.visible) return false;
+    const m = item.model.position;
+    return Math.abs(m.y - this.world.heightAt(m.x, m.z)) < 0.12;
+  }
+
+  /** Each frame: note what is lying out, sink it into long grass and hide it from a distance, and Jess gives in after a while. */
+  updateLostThings(dt) {
+    for (const e of this.lost.update(dt)) this.giveLostBack(e.kind, null);
+    this.lostLook = (this.lostLook ?? 0) - dt;
+    if (this.lostLook > 0) return;
+    this.lostLook = 0.4;
+    const me = this.player.position;
+    const things = [];
+    for (const [kind, { item, home }] of Object.entries(this.lostItems())) {
+      if (this.lost.kept[kind]) continue;
+      const m = item.model.position;
+      const ground = this.onTheGround(item);
+      const cover = ground ? this.grassCoverAt(m.x, m.z) : 0;
+      const out = ground && cover > 0 && Math.hypot(m.x - home.x, m.z - home.z) > 3;
+      things.push({ kind, x: m.x, z: m.z, yaw: item.model.rotation.y, out });
+      if (out) {
+        item.model.position.y = this.world.heightAt(m.x, m.z) + 0.005 - sinkFor(kind, cover, this.lost.p);
+        item.model.visible = seen(cover, Math.hypot(m.x - me.x, m.z - me.z), this.lost.p);
+        item.lostHidden = !item.model.visible;
+      } else if (item.lostHidden) {
+        item.model.visible = true;
+        item.lostHidden = false;
+      }
+    }
+    this.lost.sync(things);
+  }
+
+  /** Back from the save: each thing that was lying out is where it was left. */
+  restoreLostThings(data) {
+    this.lost.restore(data);
+    const items = this.lostItems();
+    for (const [kind, at] of Object.entries(this.lost.lying)) items[kind].item.putDown(new THREE.Vector3(at.x, 0, at.z), at.yaw);
+  }
+
+  /** What a girl who comes across a thing left lying might do (chooser.js): bring it back, as an offer. */
+  lostOffers(c) {
+    const id = c.character.id;
+    const ctx = {
+      girls: [{ id, x: c.root.position.x, z: c.root.position.z, free: c.availability().free, weight: this.lost.weightFor(id) }],
+      cover: (x, z) => this.grassCoverAt(x, z),
+    };
+    return this.lost.offers(ctx).map((o) => ({ ...o, take: () => this.handleLostEvent(this.lost.take(o)) }));
+  }
+
+  /** She walks up to it, and either carries it back to its place in front of her or, if it's Jess in a mood, pockets it until you ask. */
+  handleLostEvent(e) {
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const entry = this.lostItems()[e.kind];
+    const at = this.lost.lying[e.kind];
+    if (!c || !entry || !at) return this.lost.finish();
+    const thing = entry.item;
+    const from = c.root.position;
+    const d = Math.hypot(from.x - at.x, from.z - at.z) || 1;
+    const spot = { x: at.x + ((from.x - at.x) / d) * 0.55, z: at.z + ((from.z - at.z) / d) * 0.55 };
+    const act = () => {
+      if (thing.held || thing.carried || this.lost.kept[e.kind]) return this.lost.finish();
+      thing.model.visible = true;
+      thing.lostHidden = false;
+      if (e.keep) {
+        thing.model.position.y = -50; // out of the world and out of reach until she hands it over
+        this.lost.keep(e.kind, e.girl);
+        c.voice.say('prankGiggle', { force: true });
+        return this.lost.finish();
+      }
+      const ok = this.carryThing(c, thing, entry.carry, entry.home, () => {
+        this.lost.recovered(e.kind);
+        this.lost.finish();
+      });
+      if (!ok) this.lost.finish();
+    };
+    if (!c.sneakTo(spot, act)) this.lost.finish();
+  }
+
+  /** The debug panel and console: leave a thing lying in the grass, a few metres ahead of you. */
+  debugLoseThing(kind) {
+    const entry = this.lostItems()[kind];
+    if (!entry || entry.item.held) return this.hud.toast(entry ? 'Put it down first' : 'Nothing by that name');
+    const p = this.player.position;
+    const yaw = this.player.yaw;
+    entry.item.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 6, 0, p.z - Math.cos(yaw) * 6), yaw);
+    this.lostLook = 0;
+  }
+
+  /** You asked Jess for it: it's at your feet. */
+  askForLost(c, kind) {
+    if (!this.lost.askFor(kind, c.character.id)) return;
+    this.giveLostBack(kind, this.player.position);
+    c.voice.say('prankGiggle', { force: true });
+  }
+
+  /** A thing Jess kept goes back down: at `where` (your feet), or at its place if she gave in. */
+  giveLostBack(kind, where) {
+    const entry = this.lostItems()[kind];
+    if (!entry) return;
+    const home = entry.home;
+    const yaw = this.player.yaw;
+    const at = where ? new THREE.Vector3(where.x - Math.sin(yaw) * 0.7, 0, where.z - Math.cos(yaw) * 0.7) : new THREE.Vector3(home.x, 0, home.z);
+    entry.item.putDown(at, where ? yaw : home.yaw);
+    if (!where && home.y !== undefined) entry.item.model.position.y = home.y;
+    this.lost.recovered(kind);
+  }
+
   /** The item as a girl carries it: 'can' or 'toolbox'. */
   carryWeightOf(thing, kind) {
-    return kind === 'can' ? carryWeight('can', thing.litres, thing.params.capacity) : carryWeight('toolbox');
+    return kind === 'can' ? carryWeight('can', thing.litres, thing.params.capacity) : carryWeight(kind);
   }
 
   /**
@@ -12825,6 +12963,7 @@ export class Game {
     this.guard.run('updateWorkLight', () => this.updateWorkLight(dt));
     this.guard.run('updateTrailerGuide', () => this.updateTrailerGuide(dt, this.riddenUnit));
     this.generatorStart.update(dt);
+    this.guard.run('updateLostThings', () => this.updateLostThings(dt));
     this.guard.run('updateDaylight', () => this.updateDaylight(dt));
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);
     this.guard.run('updateWeather', () => this.updateWeather(dt));

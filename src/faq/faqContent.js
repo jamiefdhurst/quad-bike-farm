@@ -2676,6 +2676,13 @@ export const FAQ_SECTIONS = [
           flickering headlight. Nobody fixes them, and a quad keeps its quirks from day to day. Amy's logbook may mention them. A lying fuel gauge is found out by dipping the tank (<kbd>U</kbd> beside the quad).`,
       },
       {
+        q: 'I put the jump leads down in the field and now I cannot find them.',
+        a: `The jump leads and the oil, coolant and anti-gel bottles stay where you put them down with <kbd>G</kbd>, and the farm remembers where, even overnight. In long grass they sink
+          in and you only see them when you are almost on top of them, so walk the spot slowly. On tarmac, in the yard or in the barn they show from a long way off. If one of the
+          girls comes across it she may carry it back to where it lives. Amy usually does. Jess might keep it for a bit instead: ask her from her wheel ("Give me the jump leads back") or wait, and she gives in after ten minutes.`,
+        tip: 'Put things down on the yard, not in long grass. A girl may bring one back.',
+      },
+      {
         q: 'Someone has been messing with my quads.',
         spoiler: true,
         a: `Pranks. While you're away, Jess turns off a parked quad's fuel tap or pulls its choke, and Amy hides the jerry can or the toolbox. Hidden things come back after ten
