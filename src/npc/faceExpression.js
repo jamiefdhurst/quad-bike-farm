@@ -104,3 +104,11 @@ export class Face {
     return `${top.pose}${top.weight < 0.95 ? ` (${Math.round(top.weight * 100)}%)` : ''}${this.held ? ', held' : ''}`;
   }
 }
+
+/** What the debug panel and the console can hold her face in: 'auto' lets it follow what's going on. */
+export const FACE_PICKS = ['auto', ...Object.keys(FACE_POSES)];
+
+/** Holds her face in a pick from FACE_PICKS ('auto' lets it go). */
+export function pickFace(face, pick) {
+  face.held = pick === 'auto' || !FACE_POSES[pick] ? null : pick;
+}
