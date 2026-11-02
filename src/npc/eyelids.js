@@ -10,8 +10,11 @@ const _v = new THREE.Vector3();
 const dark = new THREE.Color().setRGB(PALETTE.dark[0] / 255, PALETTE.dark[1] / 255, PALETTE.dark[2] / 255, THREE.SRGBColorSpace);
 const skin = new THREE.Color().setRGB(PALETTE.skin[0] / 255, PALETTE.skin[1] / 255, PALETTE.skin[2] / 255, THREE.SRGBColorSpace).multiplyScalar(0.94); // a shade under her face's, which the light catches less
 
-/** The painted eyes on her face, each as the [x, y, z] of its vertices in her Head bone's space, found by what the texture paints there. */
-export function paintedEyes(rig) {
+/**
+ * The shapes painted dark on her face (two eyes, two brows), each as { points: the [x, y, z] of its vertices in her Head bone's space,
+ * verts: its vertex indices on her body }, found by what the texture paints there.
+ */
+export function paintedShapes(rig) {
   const body = bodyMesh(rig);
   const map = body?.material.userData.baseMap ?? body?.material.map;
   const img = map?.image;
@@ -50,17 +53,24 @@ export function paintedEyes(rig) {
     const points = tri.map(at);
     const keys = points.map((p) => p.map((n) => Math.round(n * 1000)).join(','));
     const found = [...new Set(keys.map((k) => owner.get(k)).filter(Boolean))];
-    const shape = found[0] ?? { points: [] };
+    const shape = found[0] ?? { points: [], verts: [] };
     if (!found.length) shapes.push(shape);
     for (const other of found.slice(1)) {
       shape.points.push(...other.points);
+      shape.verts.push(...other.verts);
       shapes.splice(shapes.indexOf(other), 1);
       for (const [k, o] of owner) if (o === other) owner.set(k, shape);
     }
     shape.points.push(...points);
+    shape.verts.push(...tri);
     for (const k of keys) owner.set(k, shape);
   }
-  return shapes.map((s) => s.points).filter(isEye);
+  return shapes;
+}
+
+/** The painted eyes on her face, each as the [x, y, z] of its vertices in her Head bone's space. */
+export function paintedEyes(rig) {
+  return paintedShapes(rig).map((s) => s.points).filter(isEye);
 }
 
 /** Builds her lids and puts them on her Head bone. Returns { setLid(s), lid, parts } or null if her eyes weren't found. */

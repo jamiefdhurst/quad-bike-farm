@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Blink, DEFAULT_BLINK_PARAMS } from '../src/npc/blink.js';
+import { Face } from '../src/npc/faceExpression.js';
 
 const seeded = (seed = 1) => () => {
   seed = (seed * 16807) % 2147483647;
@@ -99,6 +100,7 @@ describe('her eyes in play (Companion.updateEyes)', () => {
         isDozing: false,
         blink: new Blink({ ...DEFAULT_BLINK_PARAMS, blinkGapMin: 99, blinkGapMax: 99 }, { random: seeded(1) }),
         eyelids: { setLid: (s) => lids.push(s) },
+        expression: new Face(),
         ...over,
       };
       return { c, lids, step: (dt = 0.5) => Companion.prototype.updateEyes.call(c, dt) };
