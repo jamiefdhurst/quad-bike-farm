@@ -370,6 +370,11 @@ export function buildGirlsTab(d) {
   button(out, 'Send the kids along the lane', () => g.trafficHost.debugKids() || toast('The kids are already out'));
   button(out, 'Send the post van', () => g.trafficHost.debugVisit('post') || toast('A visitor is already about'));
   button(out, 'Send a neighbour', () => g.trafficHost.debugVisit('neighbour') || toast('A visitor is already about'));
+  show(out, 'the rolling road', () => g.trafficHost.road.describe());
+  button(out, 'Send the tuner with the rolling road', () => g.trafficHost.road.debugCall() || toast('She is already here or on her way'));
+  button(out, 'Send the tuner home', () => g.trafficHost.road.debugSendHome() || toast('She is not set up yet'));
+  button(out, 'Run the quad on the rollers (free)', () => g.trafficHost.road.debugRun() || toast(g.trafficHost.road.why() ?? 'Nothing to run'));
+  button(out, 'Take the results sheet down', () => g.trafficHost.road.debugClearSheet());
   show(out, 'the neighbour over the lane', () => g.neighbourHost.describe());
   button(out, 'Take you to the neighbour\'s gate', () => g.neighbourHost.debugGoTo() || toast('Get off your vehicle first'));
   button(out, 'Make the neighbour say hello', () => g.neighbourHost.debugGreet() || toast('She has gone indoors'));

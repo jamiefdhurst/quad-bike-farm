@@ -57,6 +57,7 @@ import { JESS_SEASON_LINES } from './seasonLines.js';
 import { JESS_DROWNOUT_LINES } from './drownOutLines.js';
 import { JESS_HORN_LINES } from './hornLines.js';
 import { JESS_TRAFFIC_LINES } from './trafficLines.js';
+import { JESS_ROAD_LINES } from './rollingRoadLines.js';
 import { JESS_NEIGHBOUR_LINES } from './neighbourLines.js';
 import { JESS_PHOTO_LINES } from './photoLines.js';
 import { JESS_FENCE_LINES } from './fenceLines.js';
@@ -514,6 +515,7 @@ export const JESS_LINES = {
   ...JESS_DROWNOUT_LINES,
   ...JESS_HORN_LINES,
   ...JESS_TRAFFIC_LINES,
+  ...JESS_ROAD_LINES,
   ...JESS_NEIGHBOUR_LINES,
   ...JESS_PHOTO_LINES,
   ...JESS_FENCE_LINES,

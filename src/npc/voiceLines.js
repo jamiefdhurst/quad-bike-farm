@@ -62,6 +62,7 @@ import { AMY_SEASON_LINES } from './seasonLines.js';
 import { AMY_DROWNOUT_LINES } from './drownOutLines.js';
 import { AMY_HORN_LINES } from './hornLines.js';
 import { AMY_TRAFFIC_LINES } from './trafficLines.js';
+import { AMY_ROAD_LINES } from './rollingRoadLines.js';
 import { AMY_NEIGHBOUR_LINES } from './neighbourLines.js';
 import { AMY_PHOTO_LINES } from './photoLines.js';
 import { AMY_FENCE_LINES } from './fenceLines.js';
@@ -1558,6 +1559,7 @@ export const VOICE_LINES = {
   ...AMY_HORN_LINES,
   // The lane and the visitors (trafficLines.js).
   ...AMY_TRAFFIC_LINES,
+  ...AMY_ROAD_LINES,
   ...AMY_NEIGHBOUR_LINES,
   // The camera and the cork board (photoLines.js).
   ...AMY_PHOTO_LINES,

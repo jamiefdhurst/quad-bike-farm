@@ -1,7 +1,10 @@
 // Traffic on the public lane just outside the farm's east hedge, and the visitors who come in through the big gate. Pure: no Three.js, no
 // sound. `Drive` is a vehicle following waypoints (it brakes for anything ahead); `Traffic` deals the vehicles that go by and the
 // visits; `Visit` is one visitor's trip (the post van's parcel, a neighbour calling) as a list of steps. The game draws it (trafficView.js),
-// owns the gate, and gets back events to sound and tell the girls about.
+// owns the gate, and gets back events to sound and tell the girls about. The rolling road's tuner (farm/rollingRoad.js) comes the same way but
+// stays all day (a `stay` step), as a visit of her own that the traffic does not deal.
+
+import { rigSite } from './rollingRoadSite.js';
 
 export const DEFAULT_TRAFFIC_PARAMS = {
   passEvery: 160, // s: on average between vehicles going by on the lane by day (0 turns the lane's traffic off)
@@ -50,6 +53,8 @@ export const LANE_KINDS = {
 export const VISITOR_KINDS = {
   post: { model: 'defender', colour: 0xc8102e, regs: ['G342 TVR'], does: 'parcel' },
   neighbour: { model: 'series', colours: [0x5d6d4a, 0x8a3b2e, 0x3d5a80, 0xc9c3b0], regs: ['L915 HRE', 'F604 WGT', 'M227 BDK', 'E158 NFA'], does: 'chat' }, // not the farm's own
+  // The rolling road's tuner: a Land Rover towing the trailer, who stays until she is sent home (rollingRoadHost.js). Not dealt with the others.
+  tuner: { model: 'defender', colour: 0x2f3b45, regs: ['N481 RRD'], does: 'stay', dealt: false },
 };
 
 const wrap = (a) => ((((a + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;
@@ -166,6 +171,8 @@ export function visitPlaces(layout) {
     door: { x: barn.x + barn.halfX + 1.8, z: barn.z + 2.6 }, // where the driver goes
     parcel: { x: barn.x + barn.halfX + 1.4, z: barn.z + 4.2 },
     turn: { z0: barn.z + 7.5, z1: barn.z + 14.5, r: 3.5, dx: 4 },
+    // The tuner's rig: the Land Rover stops where the other visitors do, facing west, and the trailer stands behind it.
+    rig: rigSite({ x: barn.x + 14, z: barn.z + 7.5, yaw: -Math.PI / 2 }),
   };
 }
 
@@ -224,8 +231,15 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
   });
   steps.push({ type: 'event', event: 'arrived' });
   steps.push({ type: 'exit' });
-  steps.push({ type: 'walk', to: [door] });
-  steps.push({ type: 'wait', seconds: does === 'parcel' ? 'parcelSeconds' : 'chatSeconds', event: does === 'parcel' ? 'parcel' : 'chat', at: door });
+  if (does === 'stay') {
+    // Sets up and stays by the trailer until she is sent home, then packs up and gets back in.
+    steps.push({ type: 'walk', to: [places.rig.stand] });
+    steps.push({ type: 'stay', event: 'setUp', at: places.rig.stand });
+    steps.push({ type: 'event', event: 'packUp' });
+  } else {
+    steps.push({ type: 'walk', to: [door] });
+    steps.push({ type: 'wait', seconds: does === 'parcel' ? 'parcelSeconds' : 'chatSeconds', event: does === 'parcel' ? 'parcel' : 'chat', at: door });
+  }
   steps.push({ type: 'walk', to: [{ x: stop.x - 0.2, z: stop.z - 1.4 }] });
   steps.push({ type: 'enter' });
   // Round the loop to face east again, and back out along the road on the other side.
@@ -276,7 +290,8 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
 
 /**
  * One visit under way. `gate` is told in ctx on each update: { isOpen, set(open) -> boolean }. The vehicle is `drive`; the driver is `driver`
- * ({ mode: 'seat' | 'foot', x, z, heading, walking }). Events come back from update(): arrived, parcel, chat, gate (opened/shut), honk, leftOpen, done.
+ * ({ mode: 'seat' | 'foot', x, z, heading, walking }). Events come back from update(): arrived, parcel, chat, setUp, packUp, gate (opened/shut), honk, leftOpen, done.
+ * A `stay` step holds the driver at her spot until ctx.stayOver is true.
  */
 export class Visit {
   constructor({ kind, places, from, to, leaveOpen, params, colour, reg = null }) {
@@ -375,6 +390,10 @@ export class Visit {
       const secs = typeof s.seconds === 'string' ? this.params[s.seconds] : s.seconds;
       if (this.t === dt) events.push({ type: s.event, x: s.at.x, z: s.at.z });
       if (this.t >= secs) this.next();
+    } else if (s.type === 'stay') {
+      this.driver.walking = false;
+      if (this.t === dt) events.push({ type: s.event, x: s.at.x, z: s.at.z });
+      if (ctx.stayOver) this.next();
     } else if (s.type === 'gate') this.gateStep(dt, s, ctx, events);
     return events;
   }
@@ -451,7 +470,7 @@ export class Traffic {
   /** Sets a visitor off now, if there is not one: `kind` 'post' or 'neighbour', or random. `leaveOpen` forces the gate's fate. */
   startVisit(kind, leaveOpen) {
     if (this.visit) return null;
-    const k = VISITOR_KINDS[kind] ? kind : this.random() < this.p.postShare ? 'post' : 'neighbour';
+    const k = VISITOR_KINDS[kind]?.dealt === false ? 'post' : VISITOR_KINDS[kind] ? kind : this.random() < this.p.postShare ? 'post' : 'neighbour';
     const spec = VISITOR_KINDS[k];
     const colour = spec.colour ?? spec.colours[Math.floor(this.random() * spec.colours.length)];
     const from = this.random() < 0.5 ? 1 : -1;

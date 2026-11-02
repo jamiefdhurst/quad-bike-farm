@@ -1,0 +1,38 @@
+/* The slip the tuner hands you after a run (rollingRoadView.js): a small paper card low on the screen, like the logbook page, that fades by itself. */
+.road-slip {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 18%;
+  z-index: 24;
+  display: none;
+  pointer-events: none;
+  font-size: 15px;
+}
+
+.rs-card {
+  width: min(300px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 10px 16px 12px;
+  background: rgba(240, 235, 218, 0.96);
+  color: #2a2620;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-top: 5px solid #26333d;
+  border-radius: 3px;
+  font-family: Georgia, serif;
+  line-height: 1.5;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.rs-title {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 4px;
+}
+
+.rs-big {
+  font-size: 22px;
+  font-weight: 700;
+}

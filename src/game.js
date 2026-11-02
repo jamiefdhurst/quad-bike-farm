@@ -4490,6 +4490,7 @@ export class Game {
     this.photos.wall.restore(save.photos);
     this.photos.view.refresh();
     this.showKeeper.restore(save.shows);
+    this.trafficHost.road.restore(save.road);
     this.records.extra = [this.showKeeper.recordLine()];
     this.jobBoardView.refresh();
     this.trophyShelf?.show(this.showKeeper.shelf());
@@ -4677,6 +4678,7 @@ export class Game {
       challenges: this.challenges.toJSON(),
       photos: this.photos.wall.toJSON(),
       shows: this.showKeeper.toJSON(),
+      road: this.trafficHost.road.toJSON(),
       logbook: this.notebook.book.toJSON(),
       stories: this.stories,
       spares: this.spares.toJSON(),
@@ -12276,7 +12278,7 @@ export class Game {
     this.guard.run('updateDog', () => this.updateDog(dt, ridden));
     this.guard.run('updateFarmAnimals', () => this.updateFarmAnimals(dt));
     this.guard.run('updateFence', () => this.updateFence(dt));
-    this.trafficHost.update(dt);
+    this.guard.run('updateTraffic', () => this.trafficHost.update(dt));
     this.guard.run('updateNeighbour', () => this.neighbourHost.update(dt));
     this.guard.run('updateRecall', () => this.updateRecall(dt));
     if (!this.recalling && (auto || this.convoy.active || this.convoy.forced)) this.guard.run('updateConvoy', () => this.updateConvoy(dt, ridden));

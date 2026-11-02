@@ -56,6 +56,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       animals: layout.farmAnimals ? { x: layout.farmAnimals.pen.maxX + 2.5, z: (layout.farmAnimals.pen.minZ + layout.farmAnimals.sty.maxZ) / 2 } : null,
       trough: layout.trough,
       road: layout.road?.pad,
+      rollingroad: g.trafficHost.places.rig.stand, // beside the tuner's trailer when it is set up (the Farm tab's "Send the tuner" brings it)
       ford: layout.hill ? { x: layout.hill.lane.x, z: layout.hill.stream.z } : null,
       wood: layout.woods ? { x: layout.woods.gate.x, z: layout.woods.leadIn[1][1] } : null,
       fern: layout.woods?.trail ? { x: layout.woods.trail.entrance.x, z: layout.woods.trail.entrance.z } : null,

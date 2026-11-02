@@ -17,6 +17,7 @@
 //     tinkering off it.
 //   noHeadlight: true if the lamp is only for show and never lights (the orange).
 //   steadyLights: true if a battery runs its headlight (the loan quad and the tractor); the others' follow the engine's revs (headlight.js).
+//   stockBhp: the power a sound, stock one makes on the tuner's rolling road; what a run is judged against.
 //   topRpmRange: [min, max] full-throttle rpm (maxRpm; the redline keeps its gap below it). The toolbox's rev limiter moves it from there.
 //   fuelRange: [min, max] litres in the tank at the start. Below the reserve
 //     (reserveLitres) it'll only run on RESERVE.
@@ -27,6 +28,7 @@ export const QUAD_SPECS = [
   {
     // Honda-style farm quad: soft, steady, low warm idle. The original tuning.
     id: 'red',
+    stockBhp: 18, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'hill', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.5, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
@@ -68,6 +70,7 @@ export const QUAD_SPECS = [
     // when cold and runs lumpier until it's warm, warms a little quicker, and
     // pulls slightly harder. Its idle comes from the other recorded machine.
     id: 'blue',
+    stockBhp: 26, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'mud', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.3, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
@@ -136,6 +139,7 @@ export const QUAD_SPECS = [
     // engine braking, and trails blue-white oil smoke. Sounds like a two-stroke
     // dirt bike. Automatic like the others.
     id: 'yellow',
+    stockBhp: 24, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'tarmac', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'sport', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.4, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
@@ -241,6 +245,7 @@ export const QUAD_SPECS = [
     // takes an age to warm up and wants plenty of choke. Rougher than the others,
     // and strong engine braking. It idles on a different recorded machine.
     id: 'green',
+    stockBhp: 21, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'mud', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
@@ -326,6 +331,7 @@ export const QUAD_SPECS = [
     // her), barely any engine braking, and smokes like a chimney. Its idle is a
     // different two-stroke from the yellow's.
     id: 'orange',
+    stockBhp: 38, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'tarmac', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'sport', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
@@ -427,6 +433,7 @@ export const EXTRA_SPECS = [
     // physics together), light and slow, one seat, and it revs very high and sounds like an angry wasp. Pull-start as well as the
     // starter; it runs on the same pre-mix as the yellow.
     id: 'kids',
+    stockBhp: 4, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.65, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     label: sayName('kids'), // what the girls and the toasts call it (vehicle/names.js)
@@ -530,6 +537,7 @@ export const EXTRA_SPECS = [
     // sound for now. Built by miniMotoModel.js: it rides on the quad physics with two wheels and the lean model (bikeLean.js) holding it up, and
     // leaning into corners. Anyone can ride it (it's nobody's), but there's no room on the back.
     id: 'moto',
+    stockBhp: 6, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
@@ -636,6 +644,7 @@ export const EXTRA_SPECS = [
     // pull-start only (no starter motor), a clutch (Shift) and a four-speed box, and a tall, narrow stance that tips if you throw it round
     // a corner. Worn out, hard to start and rough. Built by atcModel.js, with the yellow's sound until it gets its own. Solo.
     id: 'atc',
+    stockBhp: 17, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'trike', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.8, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
@@ -744,6 +753,7 @@ export const EXTRA_SPECS = [
     // A smart new quad on loan for the day: the Yamaha's body in neutral silver, fuel injected so it hardly wants any choke, starts on
     // the button, idles smooth and quiet and has almost no wear. Full tank, and a bit more power than the old farm quads.
     id: 'loan',
+    stockBhp: 29, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     steadyLights: true, // a battery runs its headlight, so it doesn't follow the revs like the old quads' (headlight.js)
