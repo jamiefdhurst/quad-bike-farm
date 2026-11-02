@@ -252,5 +252,4 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 
 - **`💤 later`.** Since `/todo` takes the lowest number, an old issue Jamie wants kept but not yet would otherwise be picked first. The label holds it back: `/todo`, `/tidy` and `/perf` skip it as they skip `🧪 testing`. Taking it off is how it comes back.
 - **Vehicle variety.** New vehicles are wanted for farms that differ (the cork board deals ads per farm), but deep before wide comes first, so the candidates sit together on one held-back issue (#520) rather than one issue each.
-- **Tools.** Jamie wants the tools to be real things you take out of the toolbox and put back, ahead of using them by hand at a job (#517, before #220 and #394).
-
+- **Tools.** Jamie wants the tools to be real things you take out of the toolbox and put back, ahead of using them by hand at a job (#517, before #220 and #394).- **Done in one day (2026-11-02), in seven batches.** The 207 issues open at the start, testing apart, came down to 179 workable plus 6 held back: merged where two were one piece of play, closed where later work had done them, dropped only where Jamie said so. Issues written after the rules (#251 on) mostly needed only checking that they weren't done. The next tidy of the backlog is a `/tidy check` matter, not another round.
