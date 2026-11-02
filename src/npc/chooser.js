@@ -66,6 +66,7 @@ export const OFFER_KINDS = {
   dare: { label: 'dare you to do something daft', satisfies: { excitement: 0.9, company: 0.6, purpose: 0.3, attention: 0.6 } },
   benchWork: { label: 'work on a quad at the bench', satisfies: { purpose: 0.9, company: 0.2 }, pace: 'brisk' },
   phoneCall: { label: 'take a call on her phone', satisfies: { company: 0.6, excitement: 0.3 } },
+  fetchLost: { label: 'bring back something you left lying', satisfies: { purpose: 0.7 }, pace: 'brisk' },
   generatorStart: { label: 'start the generator', satisfies: { purpose: 0.8 }, pace: 'brisk' },
   workLight: { label: 'bring something round to light the way for you', satisfies: { purpose: 0.9, company: 0.6 }, pace: 'brisk' },
   trailerGuide: { label: 'guide you back with the trailer', satisfies: { purpose: 0.9, company: 0.5 }, pace: 'hurry' },

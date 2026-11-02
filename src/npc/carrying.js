@@ -38,6 +38,8 @@ export const CARRY_ITEMS = {
   can: { grip: 0.49, hand: [0.27, 0.74, 0.02], yaw: -Math.PI / 2, light: 0.35, pace: 'canPace' },
   toolbox: { grip: 0.255, hand: [0.27, 0.74, 0.02], yaw: -Math.PI / 2, light: 0.7, pace: 'toolboxPace' },
   squareBale: { grip: 0.19, hand: [0.5, 0.82, 0.05], yaw: -Math.PI / 2, light: 0.75, pace: 'balePace' }, // held by the twine on top (its middle is the model's origin), out to her side so it clears her hip
+  bottle: { grip: 0.2, hand: [0.27, 0.74, 0.02], yaw: -Math.PI / 2, light: 0.2, pace: 'mugPace' },
+  leads: { grip: 0.05, hand: [0.27, 0.74, 0.02], yaw: -Math.PI / 2, light: 0.15, pace: 'mugPace' },
   mug: { grip: 0.05, hand: [0.1, 1.12, 0.3], yaw: 0, light: 0.05, pace: 'mugPace' },
 };
 

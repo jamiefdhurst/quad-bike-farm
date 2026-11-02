@@ -2,6 +2,7 @@
 // built over the live game. Every value reads and writes through the same fields and methods the debug panel uses.
 import { tinLevel, ledgerText } from '../farm/classifieds.js';
 import { SEASONS } from '../world/seasons.js';
+import { LOSABLE } from '../items/lostThings.js';
 import { netCharge } from '../engine/charging.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
@@ -450,6 +451,10 @@ export function buildGameTree(g, host) {
     fuel: num(() => g.generator.fuel, (v) => g.debugGeneratorFuel(v), 0, 20, ' L', 'diesel in the tank (setting it switches the set off)'),
     running: flag(() => g.generator.running, (v) => (v ? g.debugGeneratorPull() : g.switchGeneratorOff()), 'set to true: pull the cord once (it may not catch); false: switch it off'),
   }), 'the diesel generator outside the barn');
+  const lying = group(() => ({
+    now: text(() => g.lost.describe(), 'what is lying out in the field, what Jess has kept and who is fetching'),
+    ...Object.fromEntries(Object.entries(LOSABLE).map(([kind, { name }]) => [kind, flag(() => !!g.lost.lying[kind], (v) => v && g.debugLoseThing(kind), `set to true: leave the ${name} lying in the grass ahead of you`)])),
+  }), 'jump leads and bottles left lying in the field');
   const boosterPack = group(() => ({
     now: text(() => g.describeBoosterPack(), 'its charge and where it is'),
     charge: num(() => g.boosterPack.engine.battery, (v) => g.debugBoosterCharge(v), 0, 1, '', 'its charge (0 flat, 1 full)'),
@@ -553,6 +558,7 @@ export function buildGameTree(g, host) {
     village,
     mot,
     generator,
+    lying,
     boosterPack,
     spares,
     photos,
