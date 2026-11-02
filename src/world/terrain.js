@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createGroundCanvas, createDetailCanvas } from './groundTexture.js';
 import { patchColor, patchBlend } from './patchwork.js';
+import { tarmacMask } from './roadWet.js';
 
 export { patchAt } from './patchwork.js';
 
@@ -84,9 +85,19 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   roadMudTex.needsUpdate = true;
   const snow = { value: 0 }; // 0..1 how far the ground is under snow (the weather's cover); the World feeds it
   const frost = { value: 0 }; // 0..1 how hard the frost is (the weather's); the World feeds it
+  const roadWet = { value: 0 }; // 0..1 how wet the tarmac is (roadWet.js); the World feeds it
+  const skyTint = { value: new THREE.Color() }; // what the wet tarmac mirrors: the horizon's colour now, the World feeds it
+  // Where the tarmac is, for the shine (roadWet.js): the farm road, the lane and the village's streets.
+  const mask = tarmacMask(fields.tarmacAt, size);
+  const tarmacTex = new THREE.DataTexture(mask.data, mask.n, mask.n, THREE.RedFormat);
+  tarmacTex.magFilter = tarmacTex.minFilter = THREE.LinearFilter;
+  tarmacTex.needsUpdate = true;
   addDetailLayer(mat, detailTex, 0.45, {
     frost,
     snow,
+    roadWet,
+    skyTint,
+    tarmac: { map: tarmacTex, origin: new THREE.Vector2(mask.minX, mask.minZ), size: new THREE.Vector2(mask.size, mask.size) },
     wear: { map: wearTex, origin: new THREE.Vector2(wear.minX, wear.minZ), size: new THREE.Vector2(wear.sizeX, wear.sizeZ) },
     roadMud: { map: roadMudTex, origin: new THREE.Vector2(mudData.minX, mudData.minZ), size: new THREE.Vector2(mudData.sizeX, mudData.sizeZ) },
   });
@@ -98,7 +109,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
 
   scene.add(createOuterRing(layout, heights, fields));
 
-  return { mesh, collider, frost, snow, wearTexture: wearTex, roadMudTexture: roadMudTex, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
+  return { mesh, collider, frost, snow, roadWet, skyTint, wearTexture: wearTex, roadMudTexture: roadMudTex, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
 }
 
 /**
@@ -124,7 +135,7 @@ function gridHeight(grid, n, step, half, x, z) {
 }
 
 /** Multiplies a tiling greyscale texture over the diffuse colour in world space, and lays the worn ground and the road's mud over it. */
-function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow }) {
+function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow, roadWet, skyTint, tarmac }) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.detailMap = { value: detailTex };
     shader.uniforms.wearMap = { value: wear.map };
@@ -132,6 +143,11 @@ function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow
     shader.uniforms.wearSize = { value: wear.size };
     shader.uniforms.uFrost = frost;
     shader.uniforms.uSnow = snow;
+    shader.uniforms.uRoadWet = roadWet;
+    shader.uniforms.uSkyTint = skyTint;
+    shader.uniforms.tarmacMap = { value: tarmac.map };
+    shader.uniforms.tarmacOrigin = { value: tarmac.origin };
+    shader.uniforms.tarmacSize = { value: tarmac.size };
     shader.uniforms.roadMudMap = { value: roadMud.map };
     shader.uniforms.roadMudOrigin = { value: roadMud.origin };
     shader.uniforms.roadMudSize = { value: roadMud.size };
@@ -139,7 +155,7 @@ function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow
       .replace('#include <common>', '#include <common>\nvarying vec2 vWorldXZ;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform vec2 wearOrigin;\nuniform vec2 wearSize;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nvarying vec2 vWorldXZ;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform vec2 wearOrigin;\nuniform vec2 wearSize;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nuniform float uRoadWet;\nuniform vec3 uSkyTint;\nuniform sampler2D tarmacMap;\nuniform vec2 tarmacOrigin;\nuniform vec2 tarmacSize;\nvarying vec2 vWorldXZ;')
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
@@ -176,9 +192,16 @@ function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow
         float snowAmt = snowLay * (1.0 - 0.7 * smoothstep(0.1, 0.5, thawed)) * (1.0 - 0.85 * wornSoft) * (1.0 - 0.3 * onRoad);
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.95, 0.98) * mix(0.93, 1.04, grain), snowAmt * 0.93);
         float snowGlint = smoothstep(0.86, 1.0, texture2D(detailMap, vWorldXZ * 6.3).r) * snowAmt;
-        diffuseColor.rgb += vec3(0.12) * snowGlint;`,
+        diffuseColor.rgb += vec3(0.12) * snowGlint;
+        // Wet tarmac: dark and glossy, drying in patches (each spot has its own point at which it goes dull), not under frost, snow or mud.
+        float tarmacHere = texture2D(tarmacMap, (vWorldXZ - tarmacOrigin) / tarmacSize).r;
+        float dryPoint = clamp(0.5 + (texture2D(detailMap, vWorldXZ * 0.04).r * 0.7 + texture2D(detailMap, vWorldXZ * 0.17).r * 0.3 - 0.5) * 3.2, 0.05, 0.95);
+        float wetRoad = tarmacHere * smoothstep(dryPoint - 0.05, dryPoint + 0.1, uRoadWet) * (1.0 - 0.8 * onRoad) * (1.0 - frostAmt) * (1.0 - snowAmt);
+        diffuseColor.rgb *= 1.0 - 0.45 * wetRoad;`,
       )
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n        roughnessFactor *= 1.0 - 0.4 * wornBog;\n        roughnessFactor = mix(roughnessFactor, 0.55, frostAmt * 0.5);\n        roughnessFactor = mix(roughnessFactor, 0.85, snowAmt * 0.6);');
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n        roughnessFactor *= 1.0 - 0.4 * wornBog;\n        roughnessFactor = mix(roughnessFactor, 0.55, frostAmt * 0.5);\n        roughnessFactor = mix(roughnessFactor, 0.85, snowAmt * 0.6);\n        roughnessFactor = mix(roughnessFactor, 0.08, wetRoad);')
+      // The sky in the wet road, strongest where you look along it.
+      .replace('#include <opaque_fragment>', 'float skyLook = pow(1.0 - clamp(dot(normalize(vViewPosition), normal), 0.0, 1.0), 3.0);\n        outgoingLight += uSkyTint * wetRoad * (0.04 + 0.35 * skyLook);\n        #include <opaque_fragment>');
   };
 }
 

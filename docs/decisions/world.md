@@ -912,3 +912,13 @@ Settled without asking (the issue was clear): only the hay patch has long grass,
 - **Not kept:** the lines are not in the farm save, as they are gone in minutes; a new load starts with the grass standing.
 - **Debug:** the Girls tab's Jobs folder has "Hay: lift the tracks in the long grass"; the console has `farm.hayTracks` (what is pressed) and `farm.hayTracksLifted`.
 - **Measured:** one look in the running game, the real red quad driven in a line and a turn: two soft tyre-wide lines, a curve through the turn, none off the patch.
+
+## Wet tarmac that shines (#64, was TODO 169)
+
+Settled without asking (the issue was clear): one shine for all the tarmac, not puddles, and the tyres leave no wet lines.
+
+- **State** (`src/world/roadWet.js`, tests in `tests/roadWet.test.js`, tunables under "Wet road"): `RoadWet` holds 0..1 how wet the tarmac is, separate from the ground's `weather.wet`, which never falls below the season's damp. Rain soaks it in about 25 s; dry it loses it over 1500 s under cloud, faster by sun (up to 4 times) and wind (up to 2 times), a third as fast at freezing. A game that starts on a wet day starts with it wet.
+- **Where the tarmac is:** `tarmacMask` bakes `fields.tarmacAt` over the whole 420 m terrain at 0.5 m a texel (a 840 by 840 one-channel texture, about 45 ms at load), because the road-mud grid covers only the farm road.
+- **How it is drawn:** in the terrain shader, wet tarmac is 45% darker, roughness 0.08, and adds the horizon's colour by a Fresnel term (more when looking along it, `skyTint` fed from the sky each frame) on top of the environment map. Each spot has its own dry point from the detail texture's low frequencies, so it dries in patches. Frost, snow and mud smears reduce it.
+- **Debug:** the console has `weather.roadWet`, the Girls tab's day folder a "wet tarmac (shine)" slider.
+- **Looked at once** in the running game at 17:30: dry, half dry and fully wet, from eye height and low: dull dark grey, then pale patches, then a glossy sky-grey. The wet grip of tarmac was already in `surfaceFeel`; it is not changed.
