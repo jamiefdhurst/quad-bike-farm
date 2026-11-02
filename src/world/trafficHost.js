@@ -10,6 +10,7 @@ import { TrafficView } from './trafficView.js';
 import { GATE_PARAM_RANGES } from './gates.js';
 import { GateMinder, DEFAULT_GATE_MIND_PARAMS, GATE_MIND_RANGES } from './gateMinding.js';
 import { TrafficAudio } from '../audio/trafficAudio.js';
+import { RollingRoadHost } from './rollingRoadHost.js';
 
 const CLOSE = 40; // m: a girl within this of something that happens may remark on it
 
@@ -35,6 +36,7 @@ export class TrafficHost {
     this.later = []; // [{ left, run }]: things the girls say a few seconds after
     this.lastEvent = 'nothing yet';
     this.addGatePrompts();
+    this.road = new RollingRoadHost(game, this); // the tuner's rolling road, which comes on certain days (rollingRoadHost.js)
   }
 
   gate(id) {
@@ -119,11 +121,12 @@ export class TrafficHost {
       gates: { grid: this.gridGate() },
     };
     for (const e of this.traffic.update(dt, ctx)) this.onEvent(e);
+    this.road.update(dt, ctx);
     this.mindGridGate(dt, blockers);
     const w = g.weather;
     const watchers = this.watchers();
     for (const e of this.kids.update(dt, { darkness: dark, fine: !((w?.rain ?? 0) > 0.05 || (w?.frost ?? 0) > 0.2), watchers, blockers: [] })) this.onKidsEvent(e);
-    this.view.update(dt, this.traffic, dark, this.kids);
+    this.view.update(dt, this.traffic, dark, this.kids, [this.road.visit]);
     for (let i = this.later.length - 1; i >= 0; i--) {
       this.later[i].left -= dt;
       if (this.later[i].left <= 0) this.later.splice(i, 1)[0].run();
@@ -168,6 +171,8 @@ export class TrafficHost {
     for (const v of this.traffic.vehicles) add(v.id, v.kind, v.drive, g.world.groundHeightAt(v.drive.x, v.drive.z) + 0.6);
     const visit = this.traffic.visit;
     if (visit) add('visit', visit.kind, visit.drive, g.world.groundHeightAt(visit.drive.x, visit.drive.z) + 0.6);
+    const rig = this.road.visit;
+    if (rig && rig.drive.speed > 0.2) add('rig', 'tuner', rig.drive, g.world.groundHeightAt(rig.drive.x, rig.drive.z) + 0.6); // its drone while it moves
     const cam = g.camera.position;
     this.audio.update(items, { x: cam.x, y: cam.y, z: cam.z, vx: 0, vz: 0 });
   }

@@ -447,6 +447,14 @@ export function buildGameTree(g, host) {
     gridGate: flag(() => g.trafficHost.gate('grid').isOpen, (v) => g.trafficHost.setGridGate(!!v), 'the gate by the cattle grid: true is open'),
     bigGate: flag(() => g.trafficHost.gate('road').isOpen, (v) => g.trafficHost.gate('road').set(!!v), 'the big gate in the east hedge: true is open'),
   }), 'the public lane, the visitors and the two gates');
+  const road = group(() => ({
+    now: text(() => g.trafficHost.road.describe(), 'the tuner and her rolling road: the next road day, where she is and what is on the sheet'),
+    price: num(() => g.trafficHost.road.params.price, (v) => (g.trafficHost.road.params.price = Math.round(v)), 0, 100, '£', 'what a run costs from the tin'),
+    call: flag(() => false, (v) => v && g.trafficHost.road.debugCall(), 'set to true: the tuner comes in with the rolling road now, whatever the day'),
+    sendHome: flag(() => false, (v) => v && g.trafficHost.road.debugSendHome(), 'set to true: she packs up and goes (once nothing is on the rollers)'),
+    run: flag(() => false, (v) => v && g.trafficHost.road.debugRun(), 'set to true: a free run for the quad sat on the rollers (engine running, out of gear)'),
+    clearSheet: flag(() => false, (v) => v && g.trafficHost.road.debugClearSheet(), 'set to true: take the results sheet down and forget every run'),
+  }), 'the rolling road, which comes on certain days');
   const neighbour = group(() => ({
     now: text(() => g.neighbourHost.describe(), 'where the neighbour is and what she did last'),
     hello: flag(() => false, (v) => v && g.neighbourHost.debugGreet(), 'set to true: she says hello now'),
@@ -509,6 +517,7 @@ export function buildGameTree(g, host) {
     dog,
     fence,
     lane,
+    road,
     neighbour,
     river,
     pit,

@@ -122,8 +122,8 @@ export class TrafficView {
   /** A visitor's rig, made the first time she comes. */
   rigFor(kind) {
     if (this.rigs[kind] || !this.gltf) return this.rigs[kind] ?? null;
-    const rig = new CharacterRig(this.gltf, kind === 'post' ? 1.66 : 1.72);
-    const outfit = kind === 'post' ? withShirt(OUTFITS.original, '#b8282a') : withJumper(OUTFITS.original, '#5b6b3c');
+    const rig = new CharacterRig(this.gltf, kind === 'post' ? 1.66 : kind === 'tuner' ? 1.68 : 1.72);
+    const outfit = kind === 'post' ? withShirt(OUTFITS.original, '#b8282a') : kind === 'tuner' ? withJumper(OUTFITS.original, '#2b3d52') : withJumper(OUTFITS.original, '#5b6b3c');
     applyOutfit(rig, outfit);
     const sitHips = rig.measureHips('SitIdle', 0);
     rig.play('Idle', { fade: 0 });
@@ -247,13 +247,14 @@ export class TrafficView {
     this.parcels.push(g);
   }
 
-  /** Each frame: `traffic` is the simulation. */
-  update(dt, traffic, darkness, kids = null) {
+  /** Each frame: `traffic` is the simulation; `extras` are visits of their own that the traffic does not deal (the rolling road's tuner). */
+  update(dt, traffic, darkness, kids = null, extras = []) {
     this.t += dt;
     this.placeKids(kids?.group, darkness, dt);
     const live = new Set(traffic.vehicles);
+    const visits = [traffic.visit, ...extras].filter(Boolean);
     for (const [v, body] of this.shown) {
-      if (v.steps ? v !== traffic.visit : !live.has(v)) {
+      if (v.steps ? !visits.includes(v) : !live.has(v)) {
         if (v.steps) this.hideDriver(v.kind);
         this.release(body);
         this.shown.delete(v);
@@ -267,8 +268,7 @@ export class TrafficView {
       }
       this.place(body, v.drive, darkness, dt);
     }
-    const visit = traffic.visit;
-    if (visit) {
+    for (const visit of visits) {
       let body = this.shown.get(visit);
       if (!body) {
         body = this.take(visit.model, visit.colour, false, visit.reg);

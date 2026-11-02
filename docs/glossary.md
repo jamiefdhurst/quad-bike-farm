@@ -27,3 +27,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | your car | The Vauclair 39D, the silver-grey diesel you arrive in each morning, parked by the Dutch barn (the girls say "the Vauclair") | your Peugeot |
 | tow rope | The rope on the Farm 300's and Bruin's racks | towrope, tow-rope |
 | tank dip | Putting a stick down the filler, with `U` beside a quad, to read what is really in the tank, whatever its fuel gauge says | dip the fuel, fuel dipstick, tank stick |
+| rolling road | The tuner's trailer with two steel rollers that comes to the farm about once a week: ride a quad onto it and have a run to see how much power it makes | dyno, dynamometer, dyno trailer, power rig |
+| run | One go on the rolling road: the engine held and swept up through its revs while the power is measured, for £15 from the money tin | dyno run, power run |
+| tuner | The woman who brings the rolling road | dyno operator, dyno man |
+| results sheet | The sheet on the barn's back wall with a graph for each quad that has had a run | dyno sheet, power sheet, dyno chart |
