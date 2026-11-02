@@ -267,7 +267,13 @@ export class RollingRoadHost {
       const b = toWorld(s.trailer, sx * RIG.rampHalfWide, -RIG.deckHalf - span);
       rampPts.push({ x: a.x, y: top, z: a.z }, { x: a.x, y: base - 0.2, z: a.z }, { x: b.x, y: this.footY + 0.01, z: b.z }, { x: b.x, y: this.footY - 0.25, z: b.z });
     }
-    this.colliders = [hull(deck), hull(rampPts)].filter(Boolean);
+    // The fan, tool chest and reel at the deck's front, as one block, so a quad rolls onto the rollers and stops short of them.
+    const block = [];
+    for (const sx of [-1, 1]) for (const lz of [RIG.frontBlock, RIG.deckHalf]) {
+      const c = toWorld(s.trailer, sx * RIG.deckHalfWide, lz);
+      block.push({ x: c.x, y: top, z: c.z }, { x: c.x, y: top + RIG.frontBlockHeight, z: c.z });
+    }
+    this.colliders = [hull(deck), hull(rampPts), hull(block)].filter(Boolean);
     this.rampDrop = drop;
   }
 

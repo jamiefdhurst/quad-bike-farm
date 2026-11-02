@@ -13,6 +13,8 @@ export const RIG = {
   cradleZ: -0.35, // where the rollers' middle is along the deck (towards the rear)
   cradleHalfAlong: 0.75, // a quad's middle must be this close to it
   cradleHalfAcross: 0.7,
+  frontBlock: 1.2, // from here to the deck's front edge stand the fan, the tool chest and the reel: solid, so a quad stops short of them
+  frontBlockHeight: 1.1,
   rollerGap: 0.62, // m between the two rollers' middles along the deck
   postX: 1.55, // the screen's post, beside the deck at the rear corner
   postZ: -1.7,

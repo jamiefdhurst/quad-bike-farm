@@ -120,7 +120,7 @@ describe('her day', () => {
     const t = setup();
     arrive(t);
     expect(t.host.state).toBe('set');
-    expect(t.host.colliders).toHaveLength(2);
+    expect(t.host.colliders).toHaveLength(3); // the deck, the ramp and the block at the front
     expect(t.host.rampK).toBe(1);
     expect(t.traffic.remark).toHaveBeenCalledWith('roadComing', expect.anything(), expect.any(Number));
   });
@@ -294,7 +294,7 @@ describe('packing up', () => {
     expect(t.host.state).toBe('set'); // the quad is still on the rollers
     t.quad.position.x += 40;
     expect(t.until(() => t.host.state === 'away')).toBe(true);
-    expect(t.removed).toHaveLength(2);
+    expect(t.removed).toHaveLength(3);
     expect(t.item.isAvailable()).toBe(false);
     expect(t.host.visit).toBeNull();
     expect(t.scene.some((o) => o.name === 'rolling-road-trailer')).toBe(false); // the trailer goes with her
