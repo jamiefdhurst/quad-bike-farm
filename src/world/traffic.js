@@ -472,7 +472,8 @@ export class Traffic {
     if (this.visit) return null;
     const k = VISITOR_KINDS[kind]?.dealt === false ? 'post' : VISITOR_KINDS[kind] ? kind : this.random() < this.p.postShare ? 'post' : 'neighbour';
     const spec = VISITOR_KINDS[k];
-    const colour = spec.colour ?? spec.colours[Math.floor(this.random() * spec.colours.length)];
+    const paint = spec.colours ? Math.floor(this.random() * spec.colours.length) : 0; // each neighbour's car is one paint with one reg, so there are few to build
+    const colour = spec.colour ?? spec.colours[paint];
     const from = this.random() < 0.5 ? 1 : -1;
     const to = this.random() < 0.5 ? 1 : -1;
     this.visit = new Visit({
@@ -483,7 +484,7 @@ export class Traffic {
       leaveOpen: leaveOpen ?? this.random() < this.p.leftOpenChance,
       params: this.p,
       colour,
-      reg: spec.regs[Math.floor(this.random() * spec.regs.length)],
+      reg: spec.regs[paint % spec.regs.length],
     });
     return this.visit;
   }

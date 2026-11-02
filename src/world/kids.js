@@ -66,7 +66,7 @@ export class KidsGroup {
         id: i,
         drive,
         bike: KIDS_BIKES[Math.floor(random() * KIDS_BIKES.length)],
-        top: KIDS_TOPS[Math.floor(random() * KIDS_TOPS.length)],
+        top: KIDS_TOPS[i % KIDS_TOPS.length], // a rider's place in the line has her jumper, so each of the three is dressed once, ahead (trafficView.js)
         stopAt: { x, z: places.gate.z - dir * i * 2.2 },
       });
     }

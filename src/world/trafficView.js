@@ -9,6 +9,8 @@ import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET } from '../veh
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_SEATS } from '../vehicle/utvModel.js';
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET } from '../vehicle/miniMotoModel.js';
 import { TZ_WHEELS } from '../vehicle/tz65Body.js';
+import { LANE_KINDS, VISITOR_KINDS } from './traffic.js';
+import { KIDS_BIKES, KIDS_TOPS, KIDS_PARAM_RANGES } from './kids.js';
 import { CharacterRig } from '../npc/characterRig.js';
 import { applyOutfit, withShirt, withJumper, OUTFITS } from '../npc/outfit.js';
 
@@ -55,12 +57,32 @@ export function buildVehicleBody(model, colour, reg = null) {
   return { object, spec, wheels, bodyRoot };
 }
 
+const bodyKey = (model, colour, reg) => `${model}:${colour}:${reg ?? ''}`;
+
+/**
+ * Every body the lane, the visitors and the kids can ask for, likeliest first: { model, colour, reg, driver }. Building one takes about 70 ms,
+ * so `TrafficView.stockUp` makes them behind the start screen instead of in the frame a vehicle turns in. A test checks nothing traffic deals is missing.
+ */
+export function wantedBodies() {
+  const out = [];
+  const lane = Object.values(LANE_KINDS).sort((a, b) => b.weight - a.weight);
+  for (const k of lane) for (const colour of k.colours) out.push({ model: k.model, colour, reg: null, driver: true });
+  for (const k of Object.values(VISITOR_KINDS)) {
+    const paints = k.colours ?? [k.colour];
+    paints.forEach((colour, i) => out.push({ model: k.model, colour, reg: k.regs[i % k.regs.length], driver: false }));
+  }
+  for (const colour of KIDS_BIKES) out.push({ model: 'moto', colour, reg: null, driver: false });
+  return out;
+}
+
 export class TrafficView {
   /** `groundAt(x, z)`: the drawn ground. `gltf`: the girls' model, for the visitors. */
-  constructor(scene, groundAt, gltf) {
+  constructor(scene, groundAt, gltf, prepare = null) {
     this.scene = scene;
     this.groundAt = groundAt;
     this.gltf = gltf;
+    this.prepare = prepare; // (object) => the object's shaders asked for, so the first sight of it does not build them
+    this.stocked = new Set(); // keys already built ahead
     this.pool = new Map(); // `${model}:${colour}` -> idle bodies
     this.shown = new Map(); // simulation vehicle -> body
     this.parcels = [];
@@ -72,12 +94,19 @@ export class TrafficView {
 
   /** A vehicle body for this model and paint, from the pool if there is one idle. */
   take(model, colour, driver, reg = null) {
-    const key = `${model}:${colour}:${reg ?? ''}`;
-    const idle = this.pool.get(key)?.pop();
+    const idle = this.pool.get(bodyKey(model, colour, reg))?.pop();
     if (idle) {
+      this.stocked.delete(idle.key); // a spare is built for the next of its kind, in case two are out at once
       idle.object.visible = true;
+      this.scene.add(idle.object);
       return idle;
     }
+    return this.make(model, colour, driver, reg);
+  }
+
+  /** A new body, in the scene and in use. */
+  make(model, colour, driver, reg = null) {
+    const key = bodyKey(model, colour, reg);
     const { object, spec, wheels, bodyRoot } = buildVehicleBody(model, colour, reg);
     const seat = new THREE.Group();
     seat.position.set(spec.seat.x, spec.seat.y - 0.02, spec.seat.z);
@@ -87,8 +116,30 @@ export class TrafficView {
     return { key, model, object, spec, wheels, seat, spun: 0, lit: -1, last: null };
   }
 
+  /**
+   * Builds the next thing nobody has built yet, and says whether there was one: the vehicle bodies into the pool, then the visitors' rigs and
+   * the kids' (a rig is cloned and dressed on first use). One a call: each takes 10 to 30 ms.
+   */
+  stockUp() {
+    const w = wantedBodies().find((b) => !this.stocked.has(bodyKey(b.model, b.colour, b.reg)));
+    if (w) {
+      this.stocked.add(bodyKey(w.model, w.colour, w.reg));
+      const body = this.make(w.model, w.colour, w.driver, w.reg);
+      this.prepare?.(body.object);
+      this.release(body);
+      return true;
+    }
+    if (!this.gltf) return false;
+    const kind = Object.keys(VISITOR_KINDS).find((k) => !this.rigs[k]);
+    if (kind) return !!this.rigFor(kind);
+    const slot = Array.from({ length: KIDS_PARAM_RANGES.kidsMax[1] }, (_, i) => i).find((i) => !this.kidRigs[i]);
+    if (slot === undefined) return false;
+    return !!this.kidRig(slot, KIDS_TOPS[slot % KIDS_TOPS.length]);
+  }
+
   release(body) {
     body.object.visible = false;
+    this.scene.remove(body.object); // an idle body is kept out of the scene, so the dozens waiting cost no matrix updates a frame
     if (!this.pool.has(body.key)) this.pool.set(body.key, []);
     this.pool.get(body.key).push(body);
   }

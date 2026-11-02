@@ -7,11 +7,13 @@ import { registerTuning } from '../core/tuning.js';
 import { Traffic, DEFAULT_TRAFFIC_PARAMS, TRAFFIC_PARAM_RANGES, visitPlaces, LANE_KINDS, VISITOR_KINDS } from './traffic.js';
 import { Kids, DEFAULT_KIDS_PARAMS, KIDS_PARAM_RANGES, SHOWY_OFFERS } from './kids.js';
 import { TrafficView } from './trafficView.js';
+import { showHidden } from '../core/shaderPrep.js';
 import { GATE_PARAM_RANGES } from './gates.js';
 import { GateMinder, DEFAULT_GATE_MIND_PARAMS, GATE_MIND_RANGES } from './gateMinding.js';
 import { TrafficAudio } from '../audio/trafficAudio.js';
 import { RollingRoadHost } from './rollingRoadHost.js';
 
+const STOCK_EVERY = 2000; // ms between things built ahead while you play, each 10 to 30 ms: sparse enough not to be felt, and most are done behind the start card
 const CLOSE = 40; // m: a girl within this of something that happens may remark on it
 
 export class TrafficHost {
@@ -31,12 +33,26 @@ export class TrafficHost {
     this.kidsParams = { ...DEFAULT_KIDS_PARAMS };
     registerTuning('Kids on the lane', this.kidsParams, KIDS_PARAM_RANGES);
     this.kids = new Kids({ places: this.places, params: this.kidsParams, random: createRandom(game.seed ^ 0x61d5) });
-    this.view = new TrafficView(game.scene, (x, z) => world.groundHeightAt(x, z), game.models.companion);
+    this.view = new TrafficView(game.scene, (x, z) => world.groundHeightAt(x, z), game.models.companion, (object) => {
+      const restore = showHidden(object); // three.js prepares only what it would draw
+      try {
+        return game.renderer.compileAsync(object, game.camera, game.scene);
+      } finally {
+        restore();
+      }
+    });
     this.audio = new TrafficAudio(game.audioHub);
     this.later = []; // [{ left, run }]: things the girls say a few seconds after
     this.lastEvent = 'nothing yet';
     this.addGatePrompts();
     this.road = new RollingRoadHost(game, this); // the tuner's rolling road, which comes on certain days (rollingRoadHost.js)
+  }
+
+  /** Builds one more of the lane's vehicles ahead of its turn (trafficView.js): every frame behind a card, one each STOCK_EVERY ms in play. */
+  stockUp(paused, now = performance.now()) {
+    if (!paused && now < (this.stockAfter ?? 0)) return;
+    this.stockAfter = now + STOCK_EVERY;
+    this.view.stockUp();
   }
 
   gate(id) {

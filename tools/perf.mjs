@@ -115,6 +115,7 @@ async function measureOnce(root, profileFor, showSteps) {
       if (!seen.has(step)) seen.add(step), console.error(`perf: ${t.toFixed(2).padStart(6)} s  ${s}`);
     }
     const heapMb = await page.evaluate(() => (performance.memory ? performance.memory.usedJSHeapSize / 1e6 : undefined));
+    await new Promise((ok) => setTimeout(ok, 5000)); // a player is on the start card for a few seconds: what the game builds behind it (shaders #372, the lane's vehicles #532) is done
     await page.evaluate(() => {
       const o = document.getElementById('overlay');
       o.classList.add('hidden');
