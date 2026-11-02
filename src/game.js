@@ -324,6 +324,8 @@ import { WIPER_PARAMS, WIPER_PARAM_RANGES, girlWiperSetting } from './vehicle/wi
 import { wiperGeometry } from './vehicle/wiperModel.js';
 import { DEFAULT_SCREEN_RAIN_PARAMS, SCREEN_RAIN_PARAM_RANGES, createScreenRain, updateScreenRain, wipeSector } from './effects/screenRain.js';
 import { ScreenRainView } from './effects/screenRainView.js';
+import { DEFAULT_CAB_MIST_PARAMS, CAB_MIST_PARAM_RANGES, createCabMist, cabMistRates, updateCabMist, wipeCabMistSector, wipeSwipe, drawLine, smileyStrokes, sideX, CabMistTalk, cabMistCover } from './effects/cabMist.js';
+import { CabMistView } from './effects/cabMistView.js';
 import { DEFAULT_LENS_PARAMS, LENS_PARAM_RANGES, createLens, updateLens, wipeLens, leaderAhead, isOpenVehicle, lensCoverage, addSplat } from './effects/lensMud.js';
 import { LensMudView } from './effects/lensMudView.js';
 import { DEFAULT_MUDDY_PARAMS, MUDDY_PARAM_RANGES, updateMuddiness, noticing, markRemarked } from './npc/muddiness.js';
@@ -1839,6 +1841,10 @@ export class Game {
     this.screenRainParams = { ...DEFAULT_SCREEN_RAIN_PARAMS };
     registerTuning('Rain on the windscreen', this.screenRainParams, SCREEN_RAIN_PARAM_RANGES);
     this.screenRainRandom = createRandom(this.seed ^ 0x5c4e);
+    // Mist on the inside of a cab's glass from breath and wet clothes, cleared by the heater, the wipers and the girls' sleeves (effects/cabMist.js).
+    this.cabMistParams = { ...DEFAULT_CAB_MIST_PARAMS };
+    registerTuning('Mist inside the cab', this.cabMistParams, CAB_MIST_PARAM_RANGES);
+    this.cabMistRandom = createRandom(this.seed ^ 0x3157);
     registerTuning('Bell', this.bell.params, BELL_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
     registerTuning('Achievements', this.achievements.p, ACHIEVEMENT_PARAM_RANGES);
@@ -6030,6 +6036,85 @@ export class Game {
       }
       if (changed) sr.view.update(sr.glass);
     }
+  }
+
+  /**
+   * Mist on the inside of the glass of the cabs near you (effects/cabMist.js, drawn by cabMistView.js): people aboard fog it on a cold wet day,
+   * the heater clears it once the engine is warm (from the demister slots up), the wipers clear what they sweep, and a girl who has said
+   * so wipes her side or draws on it.
+   */
+  updateCabMist(dt, ridden) {
+    const p = this.cabMistParams;
+    const cam = this.camera.position;
+    for (const u of this.units) {
+      const q = u.quad;
+      if (!q.model.userData.cabin) continue;
+      if (q.position.distanceTo(cam) > 40 && u !== ridden) continue; // too far to see the glass
+      const ms = (u.cabMist ??= this.makeCabMist(q));
+      if (!ms) continue;
+      const blade = q.wipers?.blade ?? 0;
+      if (blade !== ms.blade) {
+        for (const w of ms.wipers) wipeCabMistSector(ms.grid, w, ms.blade, blade);
+        ms.blade = blade;
+        ms.dirty = true;
+      }
+      ms.acc += dt;
+      if (ms.acc < 0.1) {
+        if (ms.dirty) {
+          ms.dirty = false;
+          ms.view.update();
+        }
+        continue;
+      }
+      const step = ms.acc;
+      ms.acc = 0;
+      const aboard = this.companions.filter((c) => c.quad === q && (c.fsm.is('seated') || c.fsm.is('driving')));
+      const driving = u === ridden || aboard.some((c) => c.fsm.is('driving'));
+      const people = (u === ridden ? 1 : 0) + aboard.length;
+      const covered = !!this.world.covered?.(q.position.x, q.position.z);
+      const wet = Math.max(this.weather.rain, covered ? 0 : this.weather.wet ?? 0);
+      const rates = cabMistRates({ people, wet, air: this.weather.temperature, warmth: u.engine.temperature, running: u.engine.isRunning }, p);
+      const changed = updateCabMist(ms.grid, step, { ...rates, slots: ms.slots, people }, this.cabMistRandom, p);
+      for (const ev of ms.talk.update(step, { cover: cabMistCover(ms.grid), driving: driving && q.speed > 0.5, girls: aboard.map((c) => c.character.id) }, this.cabMistRandom, p)) {
+        const girl = this.companions.find((c) => c.character.id === ev.girl);
+        if (ev.type === 'say') girl?.voice.say('screenMisty', { urgent: true });
+        else if (this.cabMistAct(ms, ev.girl, q, aboard.find((c) => c === girl)?.fsm.is('driving'))) girl?.voice.say('screenWipe', { urgent: true });
+      }
+      ms.view.setLight(1 - (this.daylight?.darkness ?? 0));
+      if (changed || ms.dirty) ms.view.update();
+      ms.dirty = false;
+    }
+  }
+
+  /** Amy wipes her side of the screen with her sleeve, Jess draws a face on it; the driver's side if she's driving, else the other. */
+  cabMistAct(ms, girlId, q, driving) {
+    const side = driving ? -1 : 1;
+    const x = sideX(ms.grid, side);
+    const [, y0, , y1] = ms.grid.box;
+    const yMid = (y0 + y1) / 2;
+    if (girlId === 'jess') {
+      for (const stroke of smileyStrokes(x, yMid + (y1 - y0) * 0.05, Math.min(0.3, (y1 - y0) * 0.55))) drawLine(ms.grid, stroke);
+    } else wipeSwipe(ms.grid, [x - 0.18, yMid - (y1 - y0) * 0.18], [x + 0.18, yMid + (y1 - y0) * 0.25], 0.09);
+    ms.dirty = true;
+    return true;
+  }
+
+  /** A cab's mist: its grid over the rain glass, its drawing, its wipers as the grid sees them and the girls' talk. Null for a model with no rain glass. */
+  makeCabMist(q) {
+    const glass = q.model.getObjectByName('rainGlass');
+    if (!glass) return null;
+    const grid = createCabMist(glass.userData.panes, this.cabMistParams);
+    return { grid, view: new CabMistView(q.model, grid), wipers: wiperGeometry(q.model), blade: 0, acc: 0, dirty: true, talk: new CabMistTalk(), slots: [0.2, 0.5, 0.8] };
+  }
+
+  /** The debug panel and console: the cab's glass misted over, or cleared. */
+  debugCabMist(unit, what) {
+    const ms = unit?.quad.model.userData.cabin ? (unit.cabMist ??= this.makeCabMist(unit.quad)) : null;
+    if (!ms) return false;
+    ms.grid.cells.forEach((_, k) => { ms.grid.cells[k] = what === 'clear' ? 0 : ms.grid.on[k] ? 1 : 0; });
+    ms.grid.rest = what === 'clear' ? 0 : 1;
+    ms.view.update();
+    return true;
   }
 
   /** A vehicle's windscreen for the rain: its panes, its wipers as the drops see them, and the drops' view. Null for a model with no rain glass. */
@@ -12674,6 +12759,7 @@ export class Game {
     this.guard.run('updateShedTalk', () => this.updateShedTalk(dt));
     this.guard.run('updateLens', () => this.updateLens(dt, ridden));
     this.guard.run('updateScreenRain', () => this.updateScreenRain(dt, ridden));
+    this.guard.run('updateCabMist', () => this.updateCabMist(dt, ridden));
     this.guard.run('updatePair', () => this.updatePair(dt));
     this.watchNotices(dt);
     for (const c of this.companions) {

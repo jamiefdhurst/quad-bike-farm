@@ -2468,6 +2468,20 @@ export const FAQ_SECTIONS = [
           driver's side. When one of the girls drives she puts the wipers on to suit the rain.`,
       },
       {
+        q: 'Why have the windows gone misty?',
+        a: `On a cold, wet day the glass of the Tor, the Crag, the Finch, the Griffin and your Vauclair mists up from the inside while people sit in them. The more
+          of you there are and the wetter the day, the faster it comes, and it comes thickest at the top and the edges of the screen, with drops running down
+          where it is heaviest. A misted screen is hard to see out of. A warm day, or an empty cab, doesn't do it.`,
+        tip: 'Cold wet days mist up a cab\'s glass. Warm the engine up, and put the wipers on (X).',
+      },
+      {
+        q: 'How do I clear a misted screen?',
+        a: `Warm the engine up. Once it is warm the heater blows from the slots along the foot of the screen, and the mist clears from them upwards in a widening
+          fan; the side windows and the back are the last to clear. The wipers (<kbd>X</kbd>) clear whatever the blades sweep over, and the mist comes back after a
+          minute or so if the cab is still cold and full. When it is bad and you are driving, one of the girls says so and wipes her side with her sleeve (Amy)
+          or draws on it with her finger (Jess), and the drawing shows clear until the rest has fogged over again.`,
+      },
+      {
         q: 'Do the Yak and Moorlands have a reverse light?',
         a: `Yes. A clear lamp at the back lights up (the Tor has just the one, on the driver's side; the Yak and the Crag have one each side) when you select reverse with the key on: the lever on the Yak's console, or reverse gear in a Moorland.
           Look over your shoulder (<kbd>C</kbd>) or watch someone else back up at dusk to see it.`,

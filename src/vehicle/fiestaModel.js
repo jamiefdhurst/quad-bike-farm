@@ -9,7 +9,7 @@ import { treadTyre } from './detail/tread.js';
 import { buildRoadWheel } from './detail/roadWheels.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
 import { buildWiper } from './detail/fittings.js';
-import { markWiper, addRainGlassBetween, addWiperStalk } from './wiperModel.js';
+import { markWiper, addRainGlassBetween, addWiperStalk, markGlass } from './wiperModel.js';
 import { buildRadio } from './detail/radios.js';
 import { addIgnitionKey } from './dash.js';
 import { FIESTA_BODY, FIESTA_DOOR, FIESTA_HATCH, FIESTA_TAIL_LAMP, FIESTA_BOOT, FIESTA_R, FIESTA_TYRE_W, FIESTA_RIDE_LIFT } from './fiestaBody.js';
@@ -128,7 +128,7 @@ const PAL = {
   chrome: new THREE.MeshStandardMaterial({ color: 0xc8ccd0, roughness: 0.22, metalness: 0.9 }),
   steel: new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 0.5, metalness: 0.6 }),
   under: new THREE.MeshStandardMaterial({ color: 0x18191a, roughness: 0.9 }),
-  glass: new THREE.MeshStandardMaterial({ color: 0x9fb3b8, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false }),
+  glass: markGlass(new THREE.MeshStandardMaterial({ color: 0x9fb3b8, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false })),
   amber: new THREE.MeshStandardMaterial({ color: 0x5c2c08, roughness: 0.25 }), // dark until it flashes (addSignalLamps)
   smoke: new THREE.MeshStandardMaterial({ color: 0x4d5254, roughness: 0.2 }), // the reverse lens, smoked until it lights
   fog: new THREE.MeshStandardMaterial({ color: 0x5a110d, roughness: 0.2 }),

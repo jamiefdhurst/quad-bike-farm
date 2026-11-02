@@ -1,5 +1,6 @@
 import { part } from './part.js';
 import * as THREE from 'three';
+import { markGlass } from './wiperModel.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { buildDash } from './dash.js';
 import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, faceAlong } from './quadModel.js';
@@ -150,7 +151,7 @@ export const MAT = {
   roof: new THREE.MeshStandardMaterial({ color: 0xe8e4d6, roughness: 0.5, side: THREE.DoubleSide }), // Limestone
   rim: new THREE.MeshStandardMaterial({ color: 0xc9c7bc, roughness: 0.45, metalness: 0.4 }), // the steel wheels in Limestone
   rimGrey: new THREE.MeshStandardMaterial({ color: 0xa9adb0, roughness: 0.4, metalness: 0.5 }), // the 200TDi's, silver
-  glass: new THREE.MeshStandardMaterial({ color: 0x9fb3b8, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.22, side: THREE.DoubleSide }),
+  glass: markGlass(new THREE.MeshStandardMaterial({ color: 0x9fb3b8, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.22, side: THREE.DoubleSide })),
   knob: new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.35 }),
   yellow: new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.35 }), // the 4WD knob
   red: new THREE.MeshStandardMaterial({ color: 0xb02018, roughness: 0.35 }), // the diff lock's

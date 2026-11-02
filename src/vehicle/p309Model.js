@@ -8,7 +8,7 @@ import { treadTyre } from './detail/tread.js';
 import { buildRoadWheel } from './detail/roadWheels.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
 import { buildWiper } from './detail/fittings.js';
-import { markWiper, addRainGlassBetween, addWiperStalk } from './wiperModel.js';
+import { markWiper, addRainGlassBetween, addWiperStalk, markGlass } from './wiperModel.js';
 import { buildRadio } from './detail/radios.js';
 import { P309_BODY, P309_DOOR, P309_HATCH, P309_TAIL_LAMP, P309_BOOT, P309_R, P309_TYRE_W, P309_RIDE_LIFT, P309_RUB, P309_DENTS, P309_SHELF, P309_STRUT } from './p309Body.js';
 
@@ -172,7 +172,7 @@ const PAL = {
   chrome: new THREE.MeshStandardMaterial({ color: 0xc8ccd0, roughness: 0.22, metalness: 0.9 }),
   steel: new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 0.5, metalness: 0.6 }),
   under: new THREE.MeshStandardMaterial({ color: 0x18191a, roughness: 0.9 }),
-  glass: new THREE.MeshStandardMaterial({ color: 0x9fb3b8, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false }),
+  glass: markGlass(new THREE.MeshStandardMaterial({ color: 0x9fb3b8, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false })),
   amber: new THREE.MeshStandardMaterial({ color: 0x5c2c08, roughness: 0.25 }), // dark until it flashes (addSignalLamps)
   smoke: new THREE.MeshStandardMaterial({ color: 0x4d5254, roughness: 0.2 }), // the reverse lens, smoked until it lights
   fog: new THREE.MeshStandardMaterial({ color: 0x5a110d, roughness: 0.2 }),

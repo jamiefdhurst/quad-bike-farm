@@ -8,7 +8,7 @@ import { treadTyre } from './detail/tread.js';
 import { buildRoadWheel } from './detail/roadWheels.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
 import { buildWiper } from './detail/fittings.js';
-import { markWiper, addRainGlassBetween, addWiperStalk } from './wiperModel.js';
+import { markWiper, addRainGlassBetween, addWiperStalk, markGlass } from './wiperModel.js';
 import { buildRadio } from './detail/radios.js';
 import { CORSA_BODY, CORSA_DOOR, CORSA_HATCH, CORSA_TAIL_LAMP, CORSA_BOOT, CORSA_BUMPER, CORSA_R, CORSA_TYRE_W, CORSA_RIDE_LIFT } from './corsaBody.js';
 
@@ -195,7 +195,7 @@ const PAL = {
   chrome: new THREE.MeshStandardMaterial({ color: 0xc8ccd0, roughness: 0.22, metalness: 0.9 }),
   steel: new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 0.5, metalness: 0.6 }),
   under: new THREE.MeshStandardMaterial({ color: 0x18191a, roughness: 0.9 }),
-  glass: new THREE.MeshStandardMaterial({ color: 0x9fb3b8, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false }),
+  glass: markGlass(new THREE.MeshStandardMaterial({ color: 0x9fb3b8, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false })),
   amber: new THREE.MeshStandardMaterial({ color: 0xb8700f, roughness: 0.25 }), // an amber lens, brighter when it flashes (addSignalLamps)
   smoke: new THREE.MeshStandardMaterial({ color: 0x4d5254, roughness: 0.2 }), // the reverse lens, smoked until it lights
   fog: new THREE.MeshStandardMaterial({ color: 0x5a110d, roughness: 0.2 }),
