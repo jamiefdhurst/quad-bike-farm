@@ -444,6 +444,12 @@ export const FAQ_SECTIONS = [
         tip: 'Outside the white posts the river is deep enough to drown any engine, at any speed.',
       },
       {
+        q: 'Why is the road shining?',
+        a: `It has been raining. Tarmac takes the rain at once and holds it: the farm road, the lane and the village's streets go dark and glossy, and they mirror the sky,
+          most of all when you look along them. It dries slowly, in patches, a good deal faster in sun and wind than under cloud, and the cold keeps it wet. Frost, snow and mud on the road hide the shine. Wet tarmac grips less than dry, but the wet grass and mud beside it are worse.`,
+        tip: 'A shining road means a wet one: it dries in patches, faster in sun and wind.',
+      },
+      {
         q: 'Why is the ford deeper than it was?',
         a: `The stream comes up with the rain. After a few minutes of steady rain it stands higher, runs browner and faster, and the ford is nearly twice as deep, so a quad drowns more easily in it. It drops back over ten minutes or more once the rain stops. Wait for it to go down, or cross very slowly. A girl nearby will tell you when it is up and when it has gone down.`,
         tip: 'After rain the stream rises and the ford drowns engines more easily. Wait, or go very slowly.',
