@@ -77,6 +77,9 @@ labels:
   - name: "🧪 testing"
     color: fef2c0
     description: Jamie to try a merged change in the running game; /todo skips these
+  - name: "💤 later"
+    color: c2c5cc
+    description: Kept, but held back until there is room for it; /todo and /tidy skip these
   - name: "🧑‍🤝‍🧑 duplicate"
     color: cfd3d7
     description: This issue or pull request already exists

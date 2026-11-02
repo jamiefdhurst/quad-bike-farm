@@ -3,11 +3,11 @@ description: Work through one GitHub issue, start to finish, as a pull request t
 argument-hint: "[issue number; default: the next one]"
 ---
 
-Work on GitHub issue $ARGUMENTS. If no number is given, take the next one: the lowest-numbered open issue labelled `🔜 next`, or if none is, the lowest-numbered open issue that isn't labelled `❓ question`, `🤦‍♂️ wontfix` or `🧪 testing` and has no open PR yet (`gh pr list --search "<n> in:body"`):
+Work on GitHub issue $ARGUMENTS. If no number is given, take the next one: the lowest-numbered open issue labelled `🔜 next`, or if none is, the lowest-numbered open issue that isn't labelled `❓ question`, `🤦‍♂️ wontfix`, `🧪 testing` or `💤 later` and has no open PR yet (`gh pr list --search "<n> in:body"`):
 
 ```
 gh issue list --state open --label "🔜 next" --json number,title --jq 'sort_by(.number) | .[0]'
-gh issue list --state open --limit 500 --json number,title,labels --jq '[.[] | select(all(.labels[].name; . != "❓ question" and . != "🤦‍♂️ wontfix" and . != "🧪 testing"))] | sort_by(.number) | .[0:5]'
+gh issue list --state open --limit 500 --json number,title,labels --jq '[.[] | select(all(.labels[].name; . != "❓ question" and . != "🤦‍♂️ wontfix" and . != "🧪 testing" and . != "💤 later"))] | sort_by(.number) | .[0:5]'
 ```
 
 Other sessions work in this checkout at the same time, so every item gets its own worktree and branch. Never switch branch in the main checkout, and never commit to main.
