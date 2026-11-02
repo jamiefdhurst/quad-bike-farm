@@ -164,6 +164,7 @@ export function addAgBody(root, MAT, paint, seatMat, rack) {
   for (const s of [-1, 1]) {
     const panel = rbox(0.022, P.y1 - P.y0, P.z0 - P.z1, 0.01, paint, s * P.x, (P.y0 + P.y1) / 2, (P.z0 + P.z1) / 2, root, 'sidePanel');
     panel.rotation.z = s * -0.08;
+    for (const z of [P.z0 - 0.08, P.z1 + 0.08]) tube([s * AG_FRAME.x, 0.7, z], [s * P.x, 0.7, z], 0.008, MAT.frame, root, 6); // the bracket from the seat rail to the panel
   }
   // The rear mudguard, a plain strip under the seat's tail over the wheel, with a long rubber flap and the number plate on it.
   const rf = mesh(fenderGeometry(AG_REAR_FENDER), paint, root, 'rearFender');

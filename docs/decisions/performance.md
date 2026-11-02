@@ -157,3 +157,7 @@ The sections below are the record, oldest first. A new decision goes at the end.
 
 - The #452 ray culling (`cullRays`) built each ray's short triangle list by rewriting an index array in place. `posedCopy` hands it the real body's index (`geo.setIndex(src.index)`), so every fitting ray compacted the visible skinned body's own triangles and its draw range, and the face (and parts of the body) stopped drawing.
 - `cullRays` now works on its own copy of the index, and a test checks the index it was given is unchanged after a ray. Rule: a perf shortcut that writes into a buffer must own it.
+
+## The yard's draw-call budget for the farm bike (#75)
+
+- The smoke test's yard view measured 2,642 calls against 2,630 once the farm bike was in the pool: a vehicle of 97 meshes (the mini moto has 86, the old bike 81) standing in the yard. Not a leak: the yard's budget goes to 2,700 (about 2.7% up), triangles unchanged at 3.8M (the bike is 37k). The bike's own model is inside the small-vehicle triangle budget.
