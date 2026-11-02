@@ -135,6 +135,11 @@ export function buildGameTree(g, host) {
         out.snorkel = flag(() => q().snorkel.fitted, (v) => (v ? q().snorkel.fit(1) : q().snorkel.remove()), 'is a snorkel fitted? (the bench job fits one; set true or false here)');
         out.snorkelSeal = num(() => q().snorkel.seal, (v) => (q().snorkel.seal = v), 0, 1, '', '1 is bedded in, lower lets water in when it is deep; "Put it right" sets it to 1');
       }
+      if (q().motWear) {
+        out.bulbs = num(() => q().motWear.bulbs, (v) => (q().motWear.bulbs = v), 0, 1, '', 'how worn the bulbs are, 0 new to 1 gone; the MOT fails them from 0.6, the bench renews them, "Put it right" sets it to 0');
+        out.wiperRubbers = num(() => q().motWear.blades, (v) => (q().motWear.blades = v), 0, 1, '', 'how worn the wiper rubbers are, 0 new to 1 gone; the MOT fails them from 0.6');
+        out.hornContacts = num(() => q().motWear.horn, (v) => (q().motWear.horn = v), 0, 1, '', 'how worn the horn contacts are, 0 new to 1 gone; the MOT fails them from 0.6');
+      }
       if (q().spotlamps.canFit) {
         out.spotlamps = flag(() => q().spotlamps.fitted, (v) => (v ? q().spotlamps.fit(1) : q().spotlamps.remove()), 'are spotlamps fitted? (the bench job fits them; set true or false here)');
         out.spotlampsOn = flag(() => q().spotlamps.on, (v) => (q().spotlamps.on = !!v && q().spotlamps.fitted), 'the spotlamps switch (9 in the game)');
@@ -486,6 +491,12 @@ export function buildGameTree(g, host) {
     ask: flag(() => !!g.pitClimb?.youArmed, (v) => v && g.askForPit(), 'set to true: ask to be timed up the pit climb now (the clock runs when you ride through the start cones)'),
     pond: text(() => { const q = g.world.fields.quarry; return q ? `${q.pond.rx.toFixed(1)} by ${q.pond.rz.toFixed(1)} m, ${q.pond.water} m of water` : 'none'; }, 'the pit\'s pond'),
   }), 'the gravel pit north of the barley field, and its pit climb');
+  const mot = group(() => ({
+    now: text(() => g.villageHost.mot?.describe() ?? 'no village on this farm', 'each Land Rover: when it was last tested and how it went'),
+    price: num(() => g.villageHost.mot?.params.price ?? 0, (v) => g.villageHost.mot && (g.villageHost.mot.params.price = Math.round(v)), 0, 200, '£', 'what a test costs from the tin'),
+    test: flag(() => false, (v) => v && (g.villageHost.mot?.debugTest() || g.hud.toast('Park a Land Rover in the MOT bay first')), 'set to true: a free test of the Land Rover in the bay, at once'),
+    forget: flag(() => false, (v) => v && g.villageHost.mot?.debugForget(), 'set to true: forget every test and certificate'),
+  }), 'the MOT at Hollis Motors (tp to motbay to park, tp me to mot for the clipboard)');
   const village = group(() => ({
     now: text(() => g.villageHost.describe(), 'the village down the lane: its limit, what was last bought and the fuel prices'),
     stayed: text(() => `${g.pubVisit.stayed.toFixed(0)} s at the pub with both girls (they say goodbye after ${g.pubParams.pubStay} s)`, 'how long you and the girls have been at the pub'),
@@ -540,6 +551,7 @@ export function buildGameTree(g, host) {
     river,
     pit,
     village,
+    mot,
     generator,
     boosterPack,
     spares,

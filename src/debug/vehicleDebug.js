@@ -72,6 +72,7 @@ export function fixEverything(unit) {
   unit.quad.sticky = null; // a new starter motor
   unit.quad.faults.kept.chainLube = 1; // a fresh chain, as the bench leaves it
   unit.quad.faults.kept.chainOff = false;
+  unit.quad.motWear?.renew(); // new bulbs, blades and horn contacts
   if (unit.quad.tyres) unit.quad.tyres.tread = { front: 1, rear: 1 }; // new rubber (without taking anything off the rack)
 }
 
@@ -116,6 +117,7 @@ export function problemSummary(unit) {
   if (unit.quad.faults.chainDryness > 0.8) bits.push('chain dry');
   if (unit.quad.spotlamps?.fitted && unit.quad.spotlamps.aim < 0.9) bits.push(`spotlamps aimed badly ${unit.quad.spotlamps.aim.toFixed(2)}`);
   if (unit.quad.snorkel?.fitted && unit.quad.snorkel.seal < 0.9) bits.push(`snorkel leaking ${unit.quad.snorkel.seal.toFixed(2)}`);
+  if (unit.quad.motWear && Math.max(unit.quad.motWear.bulbs, unit.quad.motWear.blades, unit.quad.motWear.horn) >= 0.6) bits.push('bulbs, wipers or horn worn out');
   if (e.seized) bits.push('seized');
   if (e.scuff > 0.05) bits.push(`scuffed ${e.scuff.toFixed(2)}`);
   if (e.fouling > 0.1) bits.push(`plug fouled ${e.fouling.toFixed(2)}`);

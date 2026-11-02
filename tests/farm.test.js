@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { SAVE_KEY, SAVE_VERSION, DEFAULT_FARM_PARAMS as P, readSave, writeSave, wipeSave, openFarm, continueInfo, fleetFromSave, validSave, describeFarm } from '../src/farm/farmSave.js';
+import { MotWear } from '../src/farm/mot.js';
 import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from '../src/farm/farmState.js';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { Spotlamps } from '../src/vehicle/spotlamps.js';
@@ -42,6 +43,7 @@ function unit() {
       tyres: new TyreSet(newTyres(4)),
       filter: new AirFilter(),
       quirks: new QuirkSet([]),
+      motWear: new MotWear(),
     },
     mud: { state: { body: 0, wheels: 0, wet: 0, washed: 0 } },
   };
@@ -143,10 +145,12 @@ describe('a vehicle from one day to the next', () => {
     a.quad.sump.level = 0.55;
     a.quad.filter.clog = 0.3;
     a.quad.quirks.tapStiff = 0.2;
+    a.quad.motWear.horn = 0.77; // a Land Rover's horn contacts (the MOT)
     const data = JSON.parse(JSON.stringify(captureVehicle(a, { settings: { idle: 1500 } })));
 
     const b = unit();
     restoreVehicle(b, data);
+    expect(b.quad.motWear.horn).toBe(0.77);
     expect(b.engine.params.baseRoughness).toBe(0.07);
     expect(b.engine.wear).toBe(0.4);
     expect(b.engine.pistonWear).toBe(0.55);

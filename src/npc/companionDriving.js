@@ -699,6 +699,16 @@ export const drivingMethods = {
     this.voice.say('stormWont', { urgent: true, chance: 1 });
   },
 
+  /** A vehicle whose latest MOT failed: 'refuses' (Amy won't get on the back), 'grumbles' (Jess does and says so) or 'ok'. The game sets `motMinds`. */
+  motMind(q) {
+    const id = q.unit?.spec.id;
+    return id && this.motMinds ? this.motMinds(id) : 'ok';
+  },
+
+  refuseMot() {
+    this.voice.say('motWont', { urgent: true, chance: 1 });
+  },
+
   /** She says she isn't getting on it. */
   refuseMoto() {
     this.voice.say('motoWont', { urgent: true, chance: 1 });

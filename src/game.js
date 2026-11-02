@@ -309,6 +309,7 @@ import { DoorAudio } from './audio/doorAudio.js';
 import { TrafficHost } from './world/trafficHost.js';
 import { showOffBoost } from './world/kids.js';
 import { NeighbourHost } from './world/neighbourHost.js';
+import { MOT_PARAMS, withCertificate, girlMinds } from './farm/mot.js';
 import { VillageHost } from './world/villageHost.js';
 import { Snow } from './effects/snow.js';
 import { leavesInAir, DEFAULT_AUTUMN_PARAMS, AUTUMN_PARAM_RANGES } from './world/autumn.js';
@@ -1123,6 +1124,7 @@ export class Game {
     for (const c of this.companions) {
       c.walkParams = this.walkParams;
       c.knows = new FaultKnowledge(Math.random, this.wontParams);
+      c.motMinds = (specId) => girlMinds(c.character.id, !!specId && !!this.villageHost?.mot?.failed(specId)); // a Land Rover that failed its MOT (farm/mot.js)
       c.motoParams = this.motoParams;
       c.thrownParams = this.thrownParams;
     }
@@ -4487,6 +4489,8 @@ export class Game {
   applyHistory(unit, random, faultChance, kept = null) {
     const [lo, hi] = unit.spec.hoursRange ?? [0, 0];
     const h = pickHistory(unit.spec, random, { faultChance, hoursT: hi > lo ? (unit.quad.usage.hours - lo) / (hi - lo) : 0.5 });
+    // A Land Rover's bulbs, rubbers and horn start a little worn, dealt from the farm's seed on a stream of their own (the MOT, farm/mot.js).
+    unit.quad.motWear?.deal(createRandom(this.farmSeed ^ 0x307 ^ [...String(unit.id)].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) | 0, 7)));
     if (kept) {
       // The farm remembers this one: its wear, faults and tuning are put back by restoreVehicles, and nobody else has tinkered with it.
       // It was still drawn above so the stream stays in step; who had it out yesterday is still dealt.
@@ -4554,6 +4558,7 @@ export class Game {
     this.photos.view.refresh();
     this.showKeeper.restore(save.shows);
     this.trafficHost.road.restore(save.road);
+    this.villageHost.mot?.restore(save.mot);
     this.records.extra = [this.showKeeper.recordLine()];
     this.jobBoardView.refresh();
     this.trophyShelf?.show(this.showKeeper.shelf());
@@ -4671,7 +4676,8 @@ export class Game {
       .filter((u) => u.spec.id in FOR_SALE && !u.barnFind)
       .map((unit) => {
         const faults = Object.values(unit.quad.faults?.started ?? {}).filter(Boolean).length;
-        const offer = sellOffer(unit.spec.id, { wear: unit.engine.wear ?? 0, bodyWear: unit.spec.bodyWear ?? 0, faults }, this.marketParams);
+        let offer = sellOffer(unit.spec.id, { wear: unit.engine.wear ?? 0, bodyWear: unit.spec.bodyWear ?? 0, faults }, this.marketParams);
+        if (offer && this.villageHost.mot?.log.valid(unit.spec.id, this.farm.day)) offer = { price: withCertificate(offer.price, true, MOT_PARAMS), notes: [...offer.notes, 'MOT passed'] };
         return { unit, specId: unit.spec.id, offer, why: this.market.sellWhyNot(unit.spec.id, ctx) };
       });
   }
@@ -4742,6 +4748,7 @@ export class Game {
       photos: this.photos.wall.toJSON(),
       shows: this.showKeeper.toJSON(),
       road: this.trafficHost.road.toJSON(),
+      mot: this.villageHost.mot?.toJSON(),
       logbook: this.notebook.book.toJSON(),
       stories: this.stories,
       spares: this.spares.toJSON(),

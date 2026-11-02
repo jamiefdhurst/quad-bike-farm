@@ -386,6 +386,12 @@ export function buildGirlsTab(d) {
   show(out, 'the village down the lane', () => g.villageHost.describe());
   show(out, 'time at the pub with them', () => `${g.pubVisit.stayed.toFixed(0)} s (goodbye after ${g.pubParams.pubStay} s)`);
   for (const [where, label] of [['pub', 'the pub car park'], ['shop', 'the shop'], ['garage', 'the garage pumps'], ['parts', 'the garage parts rack']]) button(out, `Take you to ${label}`, () => g.villageHost.debugGoTo(where) || toast('Get off your vehicle first'));
+  if (g.villageHost.mot) {
+    const mot = g.villageHost.mot;
+    show(out, 'the MOT at Hollis Motors', () => mot.describe());
+    button(out, 'MOT test the Land Rover in the bay (free, at once)', () => mot.debugTest() || toast(mot.why() ?? 'Park a Land Rover in the MOT bay first'));
+    button(out, 'Forget every MOT test', () => mot.debugForget());
+  }
 
   // The farm's memory and the end of the day.
   const mem = sub('The farm that remembers');

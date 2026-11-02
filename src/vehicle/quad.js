@@ -64,6 +64,7 @@ import { StickyStarter, DEFAULT_STICKY_PARAMS } from './stickyStarter.js';
 import { DEFAULT_BLEED_PARAMS, runsDry, stepBleed } from './bleeding.js';
 import { strengthEffects, bonusFor } from './strength.js';
 import { reverseAllowed, chokeReach, hasChoke, DEFAULT_CONTROLS_PARAMS } from './controls.js';
+import { MotWear } from '../farm/mot.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
 
 const REAR_SEATS = Object.keys(LANDY_REAR_SEATS); // a back bench's seats, where a model has one (the 200TDi)
@@ -163,6 +164,8 @@ export class Quad {
     this.spotlamps = new Spotlamps(!tractor && !utv && !car && !noHeadlight && !!addSpotlamps(this.model));
     // A snorkel is fitted at the bench to the Land Rovers only (snorkel.js).
     this.snorkel = new Snorkel(landRover && !!addSnorkel(this.model));
+    // The Land Rovers' bulbs, wiper rubbers and horn contacts, which the MOT at Hollis Motors looks at (farm/mot.js).
+    this.motWear = landRover ? new MotWear() : null;
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
     this.faults.hasBoot = !engine.params.compressionIgnition; // nor an intake boot to split
@@ -1354,7 +1357,9 @@ export class Quad {
     const e = this.engine;
     const speed = Math.abs(this.forwardSpeed);
     this.tripMiles += (speed * dt) / 1609.34;
+    const hoursBefore = this.usage.hours;
     advanceUsage(this.usage, { running: e.isRunning, speedMps: speed, dt, timeScale: dashClock().rate() });
+    this.motWear?.wear(this.usage.hours - hoursBefore);
     const f = this.fuel;
     const clock = dashClock();
     const state = {

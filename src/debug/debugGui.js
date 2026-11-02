@@ -363,6 +363,11 @@ export class DebugGui {
     set(p, 'chain oil (0 bone dry)', () => round(unit().quad.faults.kept.chainLube), (v) => (unit().quad.faults.kept.chainLube = v), 0, 1);
     if (u.quad.spotlamps.canFit) set(p, 'spotlamps aim (1 is true; lower points low and off to one side)', () => round(unit().quad.spotlamps.aim), (v) => (unit().quad.spotlamps.aim = v), 0, 1);
     if (u.quad.snorkel.canFit) set(p, 'snorkel seal (1 is bedded in; lower lets water in)', () => round(unit().quad.snorkel.seal), (v) => (unit().quad.snorkel.seal = v), 0, 1);
+    if (u.quad.motWear) {
+      set(p, 'bulbs worn (the MOT fails them from 0.6)', () => round(unit().quad.motWear.bulbs), (v) => (unit().quad.motWear.bulbs = v), 0, 1);
+      set(p, 'wiper rubbers worn (the MOT fails them from 0.6)', () => round(unit().quad.motWear.blades), (v) => (unit().quad.motWear.blades = v), 0, 1);
+      set(p, 'horn contacts worn (the MOT fails them from 0.6)', () => round(unit().quad.motWear.horn), (v) => (unit().quad.motWear.horn = v), 0, 1);
+    }
     set(p, 'wet brakes', () => round(unit().quad.brakes.wet), (v) => (unit().quad.brakes.wet = v), 0, 1);
     set(p, 'hot brakes (they fade)', () => round(unit().quad.brakes.heat), (v) => (unit().quad.brakes.heat = v), 0, 1);
     if (u.quad.carbIce.enabled) set(p, 'iced carb (ice)', () => round(unit().quad.carbIce.ice), (v) => (unit().quad.carbIce.ice = v), 0, 1);
