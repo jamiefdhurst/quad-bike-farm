@@ -1821,8 +1821,31 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Who is that on the lane, and why has someone come in at the gate?',
-        a: `Beyond the big gate is a quiet public lane, which you can ride along (see “Can I ride out onto the lane?”). A van, a Moorland, a tractor or a Yak goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or a neighbour who parks at the barn and stands about for a while. Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
+        a: `Beyond the big gate is a quiet public lane, which you can ride along (see “Can I ride out onto the lane?”). A van, a Moorland, a tractor or a Yak goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or a neighbour who parks at the barn and stands about for a while. About once a week the tuner comes too, towing her rolling road (see “What is the rolling road?”). Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
         tip: 'The post van and neighbours come in at the big gate. Pull over for them.',
+      },
+      {
+        q: 'What is the rolling road?',
+        a: `A tuner, Hargreave, brings a trailer with two steel rollers in its deck to the farm about once a week (the first day of a new farm is one), from the middle of the morning until the evening. Her Moorland Crag tows it in through the big gate and she sets up in front of the barn, lowers the ramp and stands by the trailer. You ride a quad up the ramp and onto the rollers, and she measures how much power it makes. It is how you find out whether a jet change, a new plug or a tidy-up of the clutch did anything, and whether a quad is as strong as it should be. The two girls like it: they cheer a good figure, tease a poor one and argue about whose quad is strongest.`,
+        tip: 'About once a week a tuner brings a rolling road to the barn. Ride a quad onto it to see its power.',
+      },
+      {
+        q: 'How do I run a quad on the rolling road?',
+        a: `Ride up the ramp from the east end and stop with the quad's wheels over the rollers, square along the trailer (a yellow and black stripe marks each end of them). Start the engine if it is not running, put a manual quad out of gear, and get off with <kbd>E</kbd>. Walk to the screen on the post by the trailer's rear corner, look at it and press <kbd>E</kbd>. A run costs £15 from the money tin. The quad is strapped down, the fan comes on and the engine is held while the throttle opens a little at a time, so you hear it climb through its revs; the screen shows the revs and the power as it goes. It takes about thirteen seconds. When it ends she hands you a slip with the peak power, the revs it came at and how that stands against stock, and the farm remembers the run. Leave the quad on the rollers until the run has finished.`,
+        tip: 'Stop a quad on the rollers, get off, and press E at the screen on the post. A run costs £15.',
+      },
+      {
+        q: 'Why will the screen not start a run?',
+        a: `It says why in the prompt. “Ride a quad onto the rollers first”: the quad has to be over the rollers, stopped and square along the trailer, and it has to be a quad (she can't strap down the tractor, the Yak, the Moorlands or the cars yet). “Start the quad's engine first”: it has to be running. “Put it in neutral first”: a manual quad in gear would stall against the rollers. “You are £… short”: the tin cannot cover the £15. “A run is on”: wait for the one under way. If the engine cuts out or the quad leaves the rollers mid-run it stops and your money goes back in the tin.`,
+      },
+      {
+        q: 'What do the figures on the rolling road mean?',
+        a: `The power is in brake horsepower (bhp), shown with the revs it came at and the torque there. Each quad has a stock figure, what a sound one makes: the kids' quad a few bhp, the Farm 300 about 18 and the Adder about 38. It is worked out from how the engine is actually running, so a cold engine, a fouled plug, a weak jet or a worn engine makes less, a good jet on a cold dense day or a fitted big-bore kit makes more, and a clean run on a warm engine reads close to stock. The slip says how far above or below stock it was and how it compares with the last run, and the girls say something about it.`,
+        tip: 'A run reads low on a cold, fouled or badly jetted engine. Warm it up first.',
+      },
+      {
+        q: 'Where do I see my earlier results?',
+        a: `On the results sheet on the barn's back wall, just past the cork board beyond the first post. It appears after the first run and has a graph for each of the last four quads run: the power across the revs, a dashed line for stock and the figures from the latest run beside the one before. The farm keeps the last few runs of every quad, so you can run one before and after you tune it and read both.`,
       },
       {
         q: 'Who are the kids on little motorbikes on the lane?',

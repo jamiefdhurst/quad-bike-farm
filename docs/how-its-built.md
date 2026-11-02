@@ -54,6 +54,8 @@ To recut the recordings, see the instructions at the top of `tools/slice_engine_
 
 **Quads** (`src/vehicle/quadSpecs.js`, `src/vehicle/quadUnit.js`). Each quad is a spec (name, colour and overrides for engine, vehicle, vibration, audio and smoke parameters) built into a `QuadUnit` that owns its engine model, physics, vibration, smoke and sound. To add a third, add a spec and a spawn point in the layout.
 
+**The rolling road** (`src/farm/rollingRoad.js` is the pure part: the power curve, a run as a small state machine that returns the throttle and load to hold, the road days, what the farm keeps and the slip; `src/world/rollingRoadSite.js` the trailer's geometry from where the Land Rover stops; `rollingRoadModel.js` the trailer; `rollingRoadHost.js` the visit, colliders, the screen, the run and the girls; `rollingRoadView.js` the slip and the wall sheet). The tuner is a `Visit` of her own in `traffic.js` with a `stay` step, so the lane's visitors still come. A run reads the engine model's own `power` and `rpm` and feeds `quad.pto` back, the hook the tractor's log splitter uses. Tested in `tests/rollingRoad*.test.js`.
+
 **Layout** (`src/world/layout.js`). Positions for the field, barn, gate, track control points and spawn points all live here.
 
 **Parameters**. Every tunable number lives in a `*Params.js` file next to the code that uses it, with a range for the tuning panel.
