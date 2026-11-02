@@ -28,6 +28,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | seat belt | The belt in the Land Rovers and the UTV, on `;` | seatbelt |
 | windscreen | The glass in front of you in the cars, the Land Rovers and the UTV | windshield, front screen |
 | wipers | The blades that sweep the windscreen, worked by the wiper stalk on `X` | windshield wipers, wiper blades |
+| mist | The fog of breath and wet clothes on the inside of a cab's glass; the heater, the wipers and a sleeve clear it | fog on the glass |
 | your car | The Vauclair 39D, the silver-grey diesel you arrive in each morning, parked by the Dutch barn (the girls say "the Vauclair") | your Peugeot |
 | tow rope | The rope on the Farm 300's and Bruin's racks | towrope, tow-rope |
 | tank dip | Putting a stick down the filler, with `U` beside a quad, to read what is really in the tank, whatever its fuel gauge says | dip the fuel, fuel dipstick, tank stick |
