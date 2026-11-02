@@ -967,6 +967,7 @@ export const TRACTOR_SPEC = {
 // Its sound borrows the tractor's recordings, played faster.
 export const UTV_SPEC = {
   id: 'utv',
+  wipers: ['slow'], // the windscreen wipers' speeds after off (wipers.js): one speed, on or off
   tyreSize: 'utv', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.3, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.15 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
@@ -1117,6 +1118,7 @@ export const UTV_SPEC = {
 // hand throttle on the dash, a towing hitch, and a starting handle at the front for when the battery won't (vehicle/crankHandle.js).
 export const LAND_ROVER_SPEC = {
   id: 'landrover',
+  wipers: ['slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a two-speed toggle on the dash
   tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
@@ -1265,6 +1267,7 @@ export const LAND_ROVER_SPEC = {
 // stops it, so no choke, no hand throttle and no starting handle.
 export const DEFENDER_SPEC = {
   id: 'landrover200',
+  wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
@@ -1438,6 +1441,7 @@ const CAR_ENGINE = {
 // clean and looked after. L plates on (she is learning; item 167 has her pass in it).
 export const FIESTA_SPEC = {
   id: 'fiesta',
+  wipers: ['slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk with two speeds
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.2, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js): a careful owner's car
   radiatorAt: { x: 0, y: 0.85, z: 1.5 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
@@ -1520,6 +1524,7 @@ export const FIESTA_SPEC = {
 // and bonnet, a grey primer wing, and a big-bore exhaust that makes it sound far quicker than it is.
 export const CORSA_SPEC = {
   id: 'corsa',
+  wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.85, z: 1.55 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
@@ -1609,6 +1614,7 @@ export const CORSA_SPEC = {
 // its other seats, and one will start it for you. You arrive in it each morning (farm/arrival.js).
 export const P309_SPEC = {
   id: 'p309',
+  wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.12, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js): an everyday old car (0.3 and 0.2 read as rusty on silver)
   radiatorAt: { x: 0, y: 0.85, z: 1.65 }, // where its steam leaves, in the model's own space (the front, under the bonnet)

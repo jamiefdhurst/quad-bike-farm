@@ -128,6 +128,13 @@ export const CONTROLS = [
     ],
   },
   {
+    title: 'The wipers (the cars, the Moorlands and the Yak)',
+    lines: [
+      `<kbd>X</kbd> moves the wiper stalk on a notch: off, then each speed it has, then off again. The Finch has slow and fast, the Tor slow and fast on a toggle on the dash, the Griffin, the Crag and your Vauclair intermittent, slow and fast, and the Yak one speed. They need the key on; switched off, they finish their sweep and park`,
+      `Rain beads on the glass, big drops run down it and at speed the wind pushes them up it. The blades clear what they sweep and leave the corners wet. The girls put them on to suit the rain when they drive`,
+    ],
+  },
+  {
     title: 'Fuel and tools',
     lines: [
       `<kbd>E</kbd> pick up a jerry can, hold <kbd>E</kbd> at a quad to pour or at the tank to refill, <kbd>G</kbd> put it down`,

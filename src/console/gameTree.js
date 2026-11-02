@@ -21,6 +21,7 @@ import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
 import { SIGNAL_MODES } from '../vehicle/indicators.js';
 import { DRIVE_MODES } from '../vehicle/driveMode.js';
 import { lensCoverage } from '../effects/lensMud.js';
+import { screenCover } from '../effects/screenRain.js';
 import { WEATHER_KINDS } from '../world/weather.js';
 import { completeStyle, outfitsFor, shirtButtonsUndone, withShirtButtons } from '../npc/outfits.js';
 
@@ -143,6 +144,10 @@ export function buildGameTree(g, host) {
         out.radioState = text(() => `${q().radio.describe()}, signal ${q().radio.signal.toFixed(2)}`, 'what the radio is doing');
       }
       if (q().signals) out.indicators = choice(SIGNAL_MODES, () => q().signals.mode, (v) => q().signals.set(v), 'the indicators and hazards');
+      if (q().wipers) {
+        out.wipers = choice(q().wipers.positions(), () => q().wipers.setting, (v) => q().wipers.set(v), 'the windscreen wipers\' stalk (X from the seat steps it on)');
+        out.screenRain = ro(() => (u().screenRain ? screenCover(u().screenRain.glass) : 0), '', 'how much of the windscreen has rain on it, 0 to 1');
+      }
       if (q().drive) out.drive = choice(q().drive.hasLock ? DRIVE_MODES : ['2wd', '4wd'], () => q().drive.mode, (v) => (q().drive.mode = v), 'the 2WD / 4WD switch');
       if (!q().engine.params.injected && (!q().fuel.params.noTap || (q().landRover && !q().engine.params.compressionIgnition))) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
       for (const m of engineReadouts(e(), { manual: !!q().manual })) out[m.key] = typeof m.get(e()) === 'number' ? ro(() => m.get(e()), '', m.label) : text(() => String(m.get(e())), m.label);

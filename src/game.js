@@ -319,6 +319,10 @@ import { Thunderstorm, DEFAULT_THUNDER_PARAMS, THUNDER_PARAM_RANGES } from './wo
 import { ThunderAudio } from './audio/thunderAudio.js';
 
 import { washMud } from './effects/mudBuildUp.js';
+import { WIPER_PARAMS, WIPER_PARAM_RANGES, girlWiperSetting } from './vehicle/wipers.js';
+import { wiperGeometry } from './vehicle/wiperModel.js';
+import { DEFAULT_SCREEN_RAIN_PARAMS, SCREEN_RAIN_PARAM_RANGES, createScreenRain, updateScreenRain, wipeSector } from './effects/screenRain.js';
+import { ScreenRainView } from './effects/screenRainView.js';
 import { DEFAULT_LENS_PARAMS, LENS_PARAM_RANGES, createLens, updateLens, wipeLens, leaderAhead, isOpenVehicle, lensCoverage, addSplat } from './effects/lensMud.js';
 import { LensMudView } from './effects/lensMudView.js';
 import { DEFAULT_MUDDY_PARAMS, MUDDY_PARAM_RANGES, updateMuddiness, noticing, markRemarked } from './npc/muddiness.js';
@@ -628,6 +632,7 @@ export class Game {
     registerTuning('Spotlamps', SPOTLAMP_PARAMS, SPOTLAMP_PARAM_RANGES);
     registerTuning('Snorkel', SNORKEL_PARAMS, SNORKEL_PARAM_RANGES);
     registerTuning('Indicators', INDICATOR_PARAMS, INDICATOR_PARAM_RANGES);
+    registerTuning('Wipers', WIPER_PARAMS, WIPER_PARAM_RANGES);
     registerTuning('Seat belts', SEAT_BELT_PARAMS, SEAT_BELT_PARAM_RANGES);
     registerTuning('Two-wheeler lean', DEFAULT_BIKE_PARAMS, BIKE_PARAM_RANGES);
     registerTuning('Three-wheeler rider lean', DEFAULT_RIDER_LEAN_PARAMS, RIDER_LEAN_RANGES);
@@ -1820,6 +1825,10 @@ export class Game {
     this.lens = createLens();
     this.lensRandom = createRandom(this.seed ^ 0x1e45);
     this.lensView = new LensMudView();
+    // Rain on the windscreens and the wipers clearing it (effects/screenRain.js), for the vehicles with a screen near you.
+    this.screenRainParams = { ...DEFAULT_SCREEN_RAIN_PARAMS };
+    registerTuning('Rain on the windscreen', this.screenRainParams, SCREEN_RAIN_PARAM_RANGES);
+    this.screenRainRandom = createRandom(this.seed ^ 0x5c4e);
     registerTuning('Bell', this.bell.params, BELL_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
     registerTuning('Achievements', this.achievements.p, ACHIEVEMENT_PARAM_RANGES);
@@ -5953,6 +5962,49 @@ export class Game {
     this.lensView.update(dt, this.lens, open);
   }
 
+  /**
+   * Rain on the windscreens of the vehicles near you, beading and running and blown up the glass, and the wipers clearing it where they
+   * sweep (effects/screenRain.js, drawn by screenRainView.js). A girl driving sets the wipers to the rain herself.
+   */
+  updateScreenRain(dt, ridden) {
+    const p = this.screenRainParams;
+    const cam = this.camera.position;
+    for (const u of this.units) {
+      const q = u.quad;
+      if (!q.wipers) continue;
+      if (u !== ridden && this.companions.some((c) => c.quad === q && c.fsm.is('driving'))) q.wipers.set(girlWiperSetting(this.weather.rain, q.wipers.speeds));
+      if (q.position.distanceTo(cam) > 40 && u !== ridden) continue; // too far to see the glass
+      const sr = (u.screenRain ??= this.makeScreenRain(q));
+      if (!sr) continue;
+      const rain = this.world.covered(q.position.x, q.position.z) ? 0 : this.weather.rain;
+      let changed = updateScreenRain(sr.glass, dt, { rain, speed: q.forwardSpeed }, this.screenRainRandom, p);
+      const blade = q.wipers.blade;
+      if (blade !== sr.blade) {
+        for (const w of sr.wipers) wipeSector(sr.glass, w, sr.blade, blade);
+        sr.blade = blade;
+        changed = true;
+      }
+      if (changed) sr.view.update(sr.glass);
+    }
+  }
+
+  /** A vehicle's windscreen for the rain: its panes, its wipers as the drops see them, and the drops' view. Null for a model with no rain glass. */
+  makeScreenRain(q) {
+    const glass = q.model.getObjectByName('rainGlass');
+    if (!glass) return null;
+    return { glass: createScreenRain(glass.userData.panes), wipers: wiperGeometry(q.model), blade: 0, view: new ScreenRainView(glass, this.screenRainParams.maxDrops) };
+  }
+
+  /** The debug panel and console: the screen of `unit` soaked as in a downpour, or wiped clean. */
+  debugScreenRain(unit, what) {
+    const sr = unit?.quad.wipers ? (unit.screenRain ??= this.makeScreenRain(unit.quad)) : null;
+    if (!sr) return false;
+    if (what === 'clear') sr.glass.drops.length = 0;
+    else for (let i = 0; i < 4; i++) updateScreenRain(sr.glass, 1, { rain: 1, speed: 0 }, this.screenRainRandom, this.screenRainParams);
+    sr.view.update(sr.glass);
+    return true;
+  }
+
   /** The debug panel and console: a splat of mud on the lens now, or a wipe. */
   debugLens(what) {
     if (what === 'splat') for (let i = 0; i < 3; i++) addSplat(this.lens, this.lensRandom, this.lensParams, 'mud');
@@ -8308,6 +8360,10 @@ export class Game {
       if (u.quad.signalClick) {
         this.audioHub.indicatorClick(u.quad.signalClick === 'on', u.quad.position); // the relay, fading with distance
         u.quad.signalClick = null;
+      }
+      if (u.quad.wiperClick) {
+        this.audioHub.indicatorClick(false, u.quad.position); // the wiper stalk's notch, the relay's lower tick
+        u.quad.wiperClick = false;
       }
     }
   }
@@ -12572,6 +12628,7 @@ export class Game {
     this.guard.run('updateBriefing', () => this.updateBriefing(dt));
     this.guard.run('updateShedTalk', () => this.updateShedTalk(dt));
     this.guard.run('updateLens', () => this.updateLens(dt, ridden));
+    this.guard.run('updateScreenRain', () => this.updateScreenRain(dt, ridden));
     this.guard.run('updatePair', () => this.updatePair(dt));
     this.watchNotices(dt);
     for (const c of this.companions) {

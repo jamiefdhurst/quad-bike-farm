@@ -63,6 +63,7 @@ export class QuadUnit {
       bodyColor: spec.bodyColor,
       dashStyle: spec.dashStyle,
       style: spec.style,
+      wipers: spec.wipers ?? null,
       scale: spec.scale,
       solo: spec.solo,
       plateNumber: spec.plateNumber,

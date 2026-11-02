@@ -20,6 +20,8 @@ export const VEHICLE_VERBS = [
   { name: 'racktoolbox', help: 'stand the toolbox on its rack, loose' },
   { name: 'strap', help: 'strap down what is on its rack, or undo the strap' },
   { name: 'clearrack', help: 'take whatever is on its rack off, gone from the rack' },
+  { name: 'soak', help: 'rain on its windscreen, as in a downpour (the cars, the Land Rovers and the UTV)' },
+  { name: 'dry', help: 'its windscreen dried off' },
   { name: 'fix', help: 'put right: faults, plug, filter, wear, scuffing, seizure, water (quirks stay)' },
 ];
 
@@ -152,6 +154,8 @@ export function createHost(g, { copy = () => {} } = {}) {
         case 'cool': u.engine.setTemperature(0); break;
         case 'fill': u.quad.fuel.litres = u.quad.fuel.params.tankCapacity; break;
         case 'fix': fixEverything(u); break;
+        case 'soak': if (!g.debugScreenRain(u, 'soak')) return `${id} has no windscreen`; break;
+        case 'dry': if (!g.debugScreenRain(u, 'clear')) return `${id} has no windscreen`; break;
         case 'load': return `${id}: ${g.debugLoad(u)}`;
         case 'unload': return `${id}: ${g.debugUnload(u)}`;
         case 'rackcan': return `${id}: ${g.debugRack(u, 'can')}`;
