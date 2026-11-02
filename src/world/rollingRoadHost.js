@@ -195,8 +195,8 @@ export class RollingRoadHost {
   ensureModel() {
     if (this.model) return;
     this.model = buildRollingRoadModel();
-    this.model.visible = false;
-    this.g.scene.add(this.model);
+    this.model.position.set(0, -100, 0); // out of sight until the first frame of the tow places it
+    this.g.scene.add(this.model); // whether it is drawn is far detail's call by distance (world/farDetail.js SET_PIECE_NAMES), so `visible` is never touched here
   }
 
   onEvent(e) {
@@ -237,7 +237,11 @@ export class RollingRoadHost {
     this.dropColliders();
     this.stopRun(true);
     this.proxy.position.set(0, -100, 0);
-    if (this.model) this.model.visible = false;
+    if (this.model) {
+      this.g.scene.remove(this.model);
+      this.model.traverse((o) => o.geometry?.dispose());
+      this.model = null; // built afresh for the next visit
+    }
     this.site = null;
     this.rampK = 0;
   }
@@ -281,7 +285,6 @@ export class RollingRoadHost {
       if (body) this.followTow(this.visit.drive);
     } else if (this.state === 'set') {
       this.rampK = Math.min(1, this.rampK + dt / RAMP_SECONDS);
-      m.visible = true;
     } else if (this.state === 'closing') {
       this.rampK = Math.max(0, this.rampK - dt / RAMP_SECONDS);
       if (this.rampK <= 0) {
@@ -307,7 +310,6 @@ export class RollingRoadHost {
     const z = d.z - Math.cos(d.yaw) * RIG.hitch;
     const front = this.g.world.groundHeightAt(x + Math.sin(d.yaw) * 2, z + Math.cos(d.yaw) * 2);
     const back = this.g.world.groundHeightAt(x - Math.sin(d.yaw) * 2, z - Math.cos(d.yaw) * 2);
-    m.visible = true;
     m.position.set(x, (front + back) / 2, z);
     m.rotation.set(-Math.atan2(front - back, 4), d.yaw, 0, 'YXZ');
   }

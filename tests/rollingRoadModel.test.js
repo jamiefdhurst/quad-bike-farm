@@ -68,6 +68,6 @@ describe('the rolling road model', () => {
     expect(box.max.z).toBeLessThan(RIG.deckHalf + 1.75); // the tongue
     expect(box.min.z).toBeGreaterThan(-RIG.deckHalf - RIG.rampLength - 0.4);
     expect(Math.abs(box.max.x)).toBeLessThan(2.1);
-    expect(box.max.y).toBeLessThan(2);
+    expect(box.max.y).toBeLessThan(2.2); // the headboard stands about 1.75 m over the deck
   });
 });

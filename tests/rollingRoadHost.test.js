@@ -23,6 +23,7 @@ function setup({ purse = 100, day = 1, hour = 12 } = {}) {
   const items = [];
   const toasts = [];
   const removed = [];
+  const scene = [];
   const market = new Market();
   market.purse = purse;
   const quad = {
@@ -40,7 +41,7 @@ function setup({ purse = 100, day = 1, hour = 12 } = {}) {
     seed: 1,
     farmSeed: 7,
     farm: { day },
-    scene: { add() {} },
+    scene: { add: (o) => scene.push(o), remove: (o) => scene.splice(scene.indexOf(o), 1) },
     interaction: { add: (i) => items.push(i) },
     world: { layout: LAYOUT, heightAt: () => 0, groundHeightAt: () => 0 },
     physics: { createCollider: (d) => ({ d }), removeCollider: (c) => removed.push(c) },
@@ -72,7 +73,7 @@ function setup({ purse = 100, day = 1, hour = 12 } = {}) {
     Object.assign(quad.position, { x: c.x, z: c.z });
     quad.yaw = c.yaw;
   };
-  return { host, game, traffic, quad, unit, item, toasts, removed, step, until, park, ctx };
+  return { host, game, traffic, quad, unit, item, toasts, removed, scene, step, until, park, ctx };
 }
 
 function arrive(t) {
@@ -296,6 +297,7 @@ describe('packing up', () => {
     expect(t.removed).toHaveLength(2);
     expect(t.item.isAvailable()).toBe(false);
     expect(t.host.visit).toBeNull();
+    expect(t.scene.some((o) => o.name === 'rolling-road-trailer')).toBe(false); // the trailer goes with her
   });
   it('goes when sent home, and not before she is set up', () => {
     const t = setup();
