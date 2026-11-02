@@ -96,7 +96,7 @@ describe('the drive chain', () => {
 
   it('is only in a history for a quad with a chain', () => {
     const specs = [...QUAD_SPECS, ...EXTRA_SPECS].filter((s) => s.chainDrive);
-    expect(specs.map((s) => s.id).sort()).toEqual(['atc', 'moto', 'yellow']);
+    expect(specs.map((s) => s.id).sort()).toEqual(['ag200', 'atc', 'moto', 'yellow']);
     for (let seed = 1; seed < 200; seed++) {
       const h = pickHistory({ wearRange: [0, 0] }, seeded(seed), { faultChance: 1 });
       expect(h.faults.some((f) => f.kind === 'chain')).toBe(false);

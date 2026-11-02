@@ -814,6 +814,104 @@ export const EXTRA_SPECS = [
       tint: '#e8eef5',
     },
   },
+  {
+    // The farm bike (#75): the Ridgeback AG200, a shepherd's trail bike after a Yamaha AG200. A 200 cc air-cooled four-stroke single with a clutch (Shift)
+    // and a four-speed box, a button start and a kickstart, and a long dual seat with a rack front and back: the first two-wheeler with room for a girl on
+    // the back. Built by ag200Model.js, on the quad physics with two wheels and the lean model (bikeLean.js) holding it up. Anyone can ride it.
+    id: 'ag200',
+    stockBhp: 13, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
+    tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES): the nearest it has; a 21 inch tyre of its own is a later idea
+    bodyWear: 0.45, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
+    chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
+    farmBike: true,
+    label: sayName('ag200'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('ag200'),
+    bodyColor: 0x1d4fa3, // a faded blue
+    style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
+    dashStyle: 'trail',
+    barLights: 'switch', // a plain on / off rocker on the left bar (P: off, on; lightSwitch.js), starting on
+    reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
+    chokeStyle: 'plunger', // a plunger on the carb, pulled out sideways (the model places it itself)
+    tapStyle: 'carbLeft', // the tap is under the tank (the model places it itself)
+    hoursRange: [700, 2400], // engine hours showing when the game starts
+    odoRange: [4000, 18000], // odometer miles showing when the game starts
+    wearRange: [0.15, 0.4], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
+    tinkers: false, // nobody leaves the throttle stop out on a bike this size
+    wheelShake: 0.8,
+    // A busy little single's tickover, quicker and thinner than the quads'.
+    safeIdle: 1100,
+    idleRange: [1450, 1700],
+    roughnessRange: [0.12, 0.25],
+    fuelRange: [1.2, 8], // 9 litre tank, 1.5 litre reserve
+    topRpmRange: [7500, 8100], // full-throttle revs this game, about 4% either side of the engine's own
+    manual: true, // a clutch (Shift) and a four-speed box in place of the CVT (src/vehicle/manualDrivetrain.js)
+    gearbox: { gears: 4, topSpeed1: 4, topSpeed2: 8, topSpeed3: 12.5, topSpeed4: 17, topSpeedReverse: 2, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, launchLoad4: 1, lugSpeed: 0.6 },
+    fuel: { tankCapacity: 9, reserveLitres: 1.5 },
+    engine: {
+      loadDragRpm: 12000, // a manual: slowing in a high gear drags it down and stalls it (manualDrivetrain.js)
+      pullStart: true,
+      kickStart: true, // the pull is a kickstart pedal as well as the button
+      idleRpmWarm: 1550,
+      maxRpm: 8000,
+      redlineRpm: 7400,
+      rpmRiseRate: 10,
+      rpmFallRate: 8,
+      warmUpSeconds: 100,
+      coldEnrichmentNeed: 1.0,
+      chokeIdleRpm: 1850,
+      catchChance: 0.55,
+      coldRoughness: 0.5,
+      coldPowerLoss: 0.85,
+    },
+    vehicle: {
+      mass: 200, // bike plus rider
+      centreOfMassY: -0.12, // low-ish, so the lean balance (bikeLean.js) has little to hold up
+      riderTopple: 0, // the rider is in the mass; its tipping is the lean model's (bikeLean.js)
+      suspensionStiffness: 62,
+      rollInertia: 28,
+      pitchInertia: 58,
+      yawInertia: 62,
+      wheelRadius: 0.335,
+      suspensionRestLength: 0.12,
+      maxSuspensionTravel: 0.12,
+      maxSuspensionForce: 14000,
+      maxDriveForce: 900,
+      maxSpeed: 17,
+      maxSteerDeg: 36,
+      steerSpeedReduction: 0.02, // a bike keeps its steering at speed
+      spinSideLoss: 0.5, // and the driven rear steps out when you pour the power on mid-corner
+      clutchEngageRpm: 2400,
+      clutchFullRpm: 3800,
+      couplingRpm: 3100,
+      engineBrakeForce: 55,
+      fourWheelDrive: 0,
+    },
+    vibration: {
+      pulseGain: 1.0,
+      idleRpm: 1550,
+      barsFreq: 24,
+      barsGain: 0.22,
+      heaveFreq: 10,
+      pitchFreq: 8,
+      heaveDamping: 0.2,
+    },
+    audio: {
+      recIdleSource: 'rev', // the blue's machine's idle, not the red's: a different single
+      pulseRefRpm: 1550,
+      recBlendLo: 3000,
+      recBlendHi: 4200,
+      recToneClosed: 8200, // thinner and brighter than a quad's
+      recVolume: 0.45,
+      pipeLength: 0.8, // a short upswept can
+      mufflerFreqA: 230,
+      densityRefRpm: 2000,
+    },
+    smoke: {
+      warmDensity: 0.15,
+      coldDensity: 0.55,
+      tint: '#e8eef5',
+    },
+  },
 ];
 
 // The tractor: always on the farm (it isn't part of the fleet, src/vehicle/fleet.js). An old diesel in the yard: heavy, slow and strong,

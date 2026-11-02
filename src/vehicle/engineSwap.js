@@ -7,7 +7,7 @@ import { applyIdle } from './quadVariation.js';
 import { startRunningIn } from '../engine/runningIn.js';
 
 /** Specs that are not the girls' sort of quad: their engines stay where they are. */
-const NOT_QUADS = ['tractor', 'utv', 'landRover', 'car', 'miniMoto', 'classicBike', 'threeWheeler'];
+const NOT_QUADS = ['tractor', 'utv', 'landRover', 'car', 'miniMoto', 'classicBike', 'farmBike', 'threeWheeler'];
 
 /** The condition an engine carries with it (the rest of ENGINE_KEPT belongs to the quad's systems: its battery, coolant, silencer). */
 export const CONDITION_KEYS = ['wear', 'pistonWear', 'scuff', 'scar', 'runIn', 'bore', 'boreFit', 'seized'];
