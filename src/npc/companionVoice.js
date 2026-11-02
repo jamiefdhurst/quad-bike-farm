@@ -668,6 +668,7 @@ export class CompanionVoice {
       const showing = ridden ? Math.abs(unit.quad.forwardSpeed) > 2 : unit.engine.isRunning;
       // A chain that has come off shows when the engine is going and nothing drives: it is a different thing to say.
       const off = kind === 'chain' && f.chainOff && unit.engine.isRunning;
+      if (!FAULT_SITUATION[kind]) continue; // the corroded posts have no line: she takes the click for a flat battery
       if (kind === 'valves' && !f.valveLoose) continue; // too-tight valves make no noise: you only feel the hard start and the lost power
       if (!listening || !(showing || off) || f.levels[kind] < from || w.faultSaid[kind] >= 2) continue;
       const hers = unit.quad === this.companion.quad;
@@ -861,7 +862,7 @@ export class CompanionVoice {
     const e = unit.engine;
     if (e.dieselSoak > 0.4) return 'dieselNoStart';
     if (e.fuelWater > 0.5) return 'waterNoStart';
-    if (e.battery < e.params.batteryWeakBelow) return 'crankStruggleBattery';
+    if (e.battery < e.params.batteryWeakBelow || e.terminals >= e.params.terminalsSlowFrom) return 'crankStruggleBattery'; // (corroded posts sound the same)
     if (e.knack && !e.knack.primed && e.temperature < e.params.knackColdBelow) return 'crankStruggleKnack';
     if (unit.quad.fuel.bowlLevel < 0.3) return 'crankStruggleNoFuel';
     if (e.fouling > 0.4 || e.rich > 0.2) return 'crankStruggleFlooded';

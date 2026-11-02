@@ -31,6 +31,7 @@ const REPAIR_DONE = {
   carb: 'Gave the carb a clean with what is in the toolbox: better, not perfect',
   mounts: 'Nipped up the engine mount bolts and packed a washer under the worst: it shakes less, but the rubber is still perished',
   chain: 'Put the chain back on the sprocket and gave it a squirt of oil: it still wants adjusting at the bench',
+  terminals: 'Took the leads off, scrubbed the posts and clamps bright with the wire brush and smeared them with grease: clean',
 };
 const REPAIR_NOTHING = {
   puncture: 'Pumped the tyres up: they were fine',
@@ -39,6 +40,7 @@ const REPAIR_NOTHING = {
   carb: 'Carb is clean',
   mounts: 'Engine mounts look sound',
   chain: 'The chain is on the sprocket and not too slack',
+  terminals: 'Scrubbed the battery posts with the wire brush: they were clean already',
 };
 const SILENCER_OFF = 'Took the silencer off: it will be a lot louder, and a bit stronger';
 const SILENCER_ON = 'Put the silencer back on';
@@ -50,7 +52,7 @@ const ACTIONS = [
   { sel: '.ws-service', hold: true, run: 'service' },
   { sel: '.ws-bleed', own: 'bleed' },
   { sel: '.ws-filter', own: 'filter' },
-  ...['puncture', 'belt', 'cable', 'carb', 'mounts', 'battery', 'chain'].map((kind) => ({ sel: `[data-fix="${kind}"]`, run: 'repair', kind })),
+  ...['puncture', 'belt', 'cable', 'carb', 'mounts', 'battery', 'terminals', 'chain'].map((kind) => ({ sel: `[data-fix="${kind}"]`, run: 'repair', kind })),
   { sel: '.ws-drain', hold: true, run: 'drainFuel' },
   { sel: '.ws-water', hold: true, run: 'drainWater' },
   { sel: '.ws-strip', hold: true, run: 'stripDown' },
@@ -461,7 +463,7 @@ export class Workshop {
 
   /** Whether a quick job is on the panel: a diesel has no carb, and the tractor no belt. */
   repairShown(kind) {
-    if (kind === 'battery') return hasBattery(this.unit);
+    if (kind === 'battery' || kind === 'terminals') return hasBattery(this.unit);
     if (kind === 'carb') return !this.isDiesel && !this.unit?.engine.params.injected; // (an injected engine has no carb to clean)
     if (kind === 'chain') return !!this.unit?.quad.faults.hasChain; // only the chain-driven ones
     if (kind === 'belt') return !this.unit?.quad.tractor && !this.unit?.quad.landRover; // the Land Rover has a clutch
@@ -739,6 +741,7 @@ export class Workshop {
           <button type="button" class="ws-btn ws-fix" data-fix="carb">Clean the carb</button>
           <button type="button" class="ws-btn ws-fix" data-fix="mounts">Nip up the engine mounts</button>
           <button type="button" class="ws-btn ws-fix" data-fix="battery">Battery out, or back in</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="terminals">Clean the battery terminals</button>
           <button type="button" class="ws-btn ws-fix" data-fix="chain">Put the chain back and oil it</button>
           <button type="button" class="ws-btn hold ws-drain">Pump out the tank and carb</button>
           <button type="button" class="ws-btn hold ws-water">Drain the water at the tap</button>

@@ -165,6 +165,7 @@ export class Quad {
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
     this.faults.hasBoot = !engine.params.compressionIgnition; // nor an intake boot to split
+    this.faults.hasBattery = !engine.params.noStarter; // a pull-start-only machine has no battery to corrode
     if (engine.params.compressionIgnition || engine.params.injected) this.faults.prone.carb = 0; // a diesel or an injected engine has no carb to get dirty
     if (tractor) this.faults.prone.belt = 0; // and the tractor has a clutch and gearbox, not a belt
     this.faults.hasValves = engine.params.strokes !== 2; // every four-stroke has valves to go out of adjustment; a two-stroke has none
@@ -1174,6 +1175,7 @@ export class Quad {
       oilBurn: this.sump ? Math.max(this.sump.burnSmoke(this.engine.throttle, Math.max(0, this.engine.rpm - this.engine.params.idleRpmWarm)), this.engine.isRunning ? this.sump.overSmoke() : 0) : 0,
       slip: Math.max(this.faults.slip, this.clutchSlip), // the belt's or the clutch's: the revs flare and the load doesn't hold them down
       dirt: this.faults.dirt,
+      terminals: this.faults.terminalCorrosion,
       airLeak: this.faults.airLeak,
       exhaustLeak: this.faults.exhaustLeak,
       valveLoose: this.faults.valveLoose,

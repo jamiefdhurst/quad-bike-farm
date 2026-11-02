@@ -86,6 +86,7 @@ export class EngineModel {
     this.slip = 0; // see update()
     this.dirt = 0;
     this.exhaustLeak = 0; // 0..1 how loud a silencer holed through rust is (set from the quad's faults)
+    this.terminals = 0; // 0..1 corroded battery posts: the battery holds its charge but the starter gets too little of it (set from the quad's faults)
     this.airLeak = 0; // 0..1 a split or loose intake boot letting unmetered air in (set from the quad's faults)
     this.leakPhase = 0;
     this.leakNoise = 0;
@@ -300,6 +301,7 @@ export class EngineModel {
    * @param {number}  [controls.resistLoad] 0..1 the part of driveLoad from climbing, mud or being blocked; this is what lugs a weak engine.
    * @param {number}  [controls.slip] 0..1 a slipping drive belt: the revs flare and the load doesn't hold them down.
    * @param {number}  [controls.airLeak] 0..1 a split intake boot: the idle hunts up and down, it runs lean and pops on the overrun.
+   * @param {number}  [controls.terminals] 0..1 corroded battery posts: the starter turns slower, then only clicks, with the battery and dash fine.
    * @param {number}  [controls.dirt] 0..1 a dirty carb: lumpy, erratic and short of power.
    * @param {number}  [controls.valveLoose] 0..1 valves too loose: the tappets tick.
    * @param {number}  [controls.valveTight] 0..1 valves too tight: a hard hot start and short of power.
@@ -314,7 +316,7 @@ export class EngineModel {
    * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
    * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, airLeak = 0, exhaustLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, wax = 0, airLock = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12, dayDamp = this.params.airRefDamp } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, terminals = 0, airLeak = 0, exhaustLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, wax = 0, airLock = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12, dayDamp = this.params.airRefDamp } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -330,6 +332,7 @@ export class EngineModel {
     this.oilBurn = clamp(oilBurn, 0, 1);
     this.slip = clamp(slip, 0, 1);
     this.dirt = clamp(dirt, 0, 1);
+    this.terminals = clamp(terminals, 0, 1);
     this.airLeak = clamp(airLeak, 0, 1);
     this.exhaustLeak = clamp(exhaustLeak, 0, 1);
     this.valveLoose = clamp(valveLoose, 0, 1);
@@ -417,7 +420,7 @@ export class EngineModel {
     const p = this.params;
     const canTurn = this.state === EngineState.IGNITION || this.state === EngineState.STALLED;
     const canCrank = canTurn && !this.seized;
-    const motor = starter && !this.batteryOut && this.battery >= p.batteryDeadBelow && !this.seized; // (an overheated one still turns over, it just won't catch)
+    const motor = starter && !this.batteryOut && !this.starterDead && !this.seized; // (an overheated one still turns over, it just won't catch)
     const pulling = this.pullLeft > 0;
     // A manual rolling with the clutch out: the wheels turn it over (bump-starting). The key has to be on; the battery doesn't matter.
     const roll = (canCrank || this.state === EngineState.CRANKING) && !this.seized && !motor && !pulling && this.ignitionOn ? rollTurn(this.gearRpm, this.gearLock, p) : 0;
@@ -440,12 +443,21 @@ export class EngineModel {
     }
   }
 
-  /** How fast the starter turns as a fraction of normal: slows as the battery goes. */
+  /** The starter can only click: the battery is flat, or its posts are too corroded to pass the current. */
+  get starterDead() {
+    return this.battery < this.params.batteryDeadBelow || this.terminals >= this.params.terminalsClickAt;
+  }
+
+  /** How fast the starter turns as a fraction of normal: slows as the battery goes, and as its posts corrode. */
   get crankFactor() {
     const p = this.params;
-    if (this.battery >= p.batteryWeakBelow) return 1;
-    const t = clamp((this.battery - p.batteryDeadBelow) / Math.max(0.01, p.batteryWeakBelow - p.batteryDeadBelow), 0, 1);
-    return lerp(p.weakCrankFactor, 1, t);
+    let factor = 1;
+    if (this.battery < p.batteryWeakBelow) {
+      const t = clamp((this.battery - p.batteryDeadBelow) / Math.max(0.01, p.batteryWeakBelow - p.batteryDeadBelow), 0, 1);
+      factor = lerp(p.weakCrankFactor, 1, t);
+    }
+    const c = clamp((this.terminals - p.terminalsSlowFrom) / Math.max(0.01, p.terminalsClickAt - p.terminalsSlowFrom), 0, 1);
+    return factor * lerp(1, p.terminalsCrankFloor, c);
   }
 
   /** How loud and bright the exhaust is, 0..1: a silencer off is full, a blown one part of it. */
