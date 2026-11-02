@@ -738,9 +738,9 @@ function addTop(rig, name, color, spec) {
   const tint = new THREE.Color(spec.plaid ? '#ffffff' : color);
   const shading = [];
   for (const k of shade) shading.push(tint.r * k, tint.g * k, tint.b * k);
-  const fabric = () =>
+  const fabric = (cut = {}) =>
     spec.plaid
-      ? plaidMaterial(color, data, { vertexColors: true, roughness: spec.roughness, side: THREE.DoubleSide })
+      ? plaidMaterial(color, data, { vertexColors: true, roughness: spec.roughness, side: THREE.DoubleSide }, cut)
       : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: spec.roughness ?? (spec === JUMPER ? 0.97 : 0.92), side: THREE.DoubleSide });
   made.fabric = fabric;
   made.tint = tint;
@@ -904,8 +904,8 @@ function addCollar(rig, top, over, color, collarSpec = COLLAR, name = 'poloColla
     body,
     data,
     name,
-    { positions: collar.verts.map((q) => q.bind), normals: smoothNormals(collar), weights: collar.verts.map((q) => q.weights), colors, index: collar.tris.flat() },
-    top.fabric ? top.fabric() : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide }),
+    { positions: collar.verts.map((q) => q.bind), normals: smoothNormals(collar), weights: collar.verts.map((q) => q.weights), colors, uvs: collar.uv, index: collar.tris.flat() },
+    top.fabric ? top.fabric({ along: true }) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, side: THREE.DoubleSide }),
   );
   return collar;
 }
@@ -913,28 +913,31 @@ function addCollar(rig, top, over, color, collarSpec = COLLAR, name = 'poloColla
 /**
  * A plaid flannel's check, drawn on the cloth from the stored (bind) shape the garment is skinned from: in that pose her arms are
  * straight out, so each of three flat projections, blended by which way the cloth faces, runs the check straight across her
- * body and along and round her arms. `colours`: [ground, check, line]. Vertex colours (if any) shade it.
+ * body and along and round her arms. `colours`: [ground, check, line]. Vertex colours (if any) shade it. `along`: a piece cut
+ * on its own (a collar), its check drawn from its uv (in metres) instead, so it runs along the piece.
  */
-function plaidMaterial(colours, data, options = {}) {
+function plaidMaterial(colours, data, options = {}, { along = false } = {}) {
   const mat = new THREE.MeshStandardMaterial(options);
   const [ground, check, line] = colours.map((c) => new THREE.Color(c));
   // About 9 cm a repeat, in the mesh's own units.
   const perUnit = 11 / new THREE.Vector3().setFromMatrixScale(data.fromRoot).x;
   mat.onBeforeCompile = (shader) => {
-    Object.assign(shader.uniforms, { plaidGround: { value: ground }, plaidCheck: { value: check }, plaidLine: { value: line }, plaidScale: { value: perUnit } });
+    Object.assign(shader.uniforms, { plaidGround: { value: ground }, plaidCheck: { value: check }, plaidLine: { value: line }, plaidScale: { value: perUnit }, plaidAlong: { value: 11 } });
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vPlaidPos;\nvarying vec3 vPlaidNormal;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPlaidPos = position;\nvPlaidNormal = normal;');
+      .replace('#include <common>', '#include <common>\nvarying vec3 vPlaidPos;\nvarying vec3 vPlaidNormal;\nvarying vec2 vPlaidUv;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>\nvPlaidPos = position;\nvPlaidNormal = normal;\nvPlaidUv = ${along ? 'uv' : 'vec2(0.0)'};`);
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
         `#include <common>
 varying vec3 vPlaidPos;
 varying vec3 vPlaidNormal;
+varying vec2 vPlaidUv;
 uniform vec3 plaidGround;
 uniform vec3 plaidCheck;
 uniform vec3 plaidLine;
 uniform float plaidScale;
+uniform float plaidAlong;
 vec3 plaidAt(vec2 q) {
   vec2 f = fract(q);
   float bx = step(f.x, 0.42);
@@ -948,14 +951,18 @@ vec3 plaidAt(vec2 q) {
         '#include <color_fragment>',
         `#include <color_fragment>
 {
-  vec3 w = pow(abs(normalize(vPlaidNormal)), vec3(4.0));
+${
+  along
+    ? 'diffuseColor.rgb *= plaidAt(vPlaidUv * plaidAlong);'
+    : `vec3 w = pow(abs(normalize(vPlaidNormal)), vec3(4.0));
   w /= (w.x + w.y + w.z);
   vec3 p = vPlaidPos * plaidScale;
-  diffuseColor.rgb *= plaidAt(p.yz) * w.x + plaidAt(p.xz) * w.y + plaidAt(p.xy) * w.z;
+  diffuseColor.rgb *= plaidAt(p.yz) * w.x + plaidAt(p.xz) * w.y + plaidAt(p.xy) * w.z;`
+}
 }`,
       );
   };
-  mat.customProgramCacheKey = () => 'plaid';
+  mat.customProgramCacheKey = () => (along ? 'plaidAlong' : 'plaid');
   return mat;
 }
 

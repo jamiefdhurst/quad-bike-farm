@@ -454,6 +454,34 @@ describe('the other tops', () => {
     const back = (c, y) => c.verts.filter((v) => v.rest[2] < -0.02 && Math.abs(v.rest[0]) < 0.03 && Math.abs(v.rest[1] - y) < 0.006).map(out);
     const y = high(shirt) - 0.004;
     expect(Math.max(...back(hers, y))).toBeGreaterThan(Math.max(...back(shirt, y)));
+    // The plaid's collar shows past hers: its points 1.5 cm or more below and beyond hers, and a band of it below hers at the back.
+    const tip = (c) => c.verts.filter((v) => v.rest[2] > 0 && v.rest[0] > 0).reduce((a, b) => (b.rest[1] < a.rest[1] ? b : a)).rest;
+    const [mine, theirs] = [tip(shirt), tip(hers)];
+    expect(theirs[1] - mine[1]).toBeGreaterThan(0.015);
+    expect(Math.hypot(mine[0] - theirs[0], mine[2] - theirs[2])).toBeGreaterThan(0.015);
+    const lowBack = (c) => Math.min(...c.verts.filter((v) => v.rest[2] < 0 && Math.abs(v.rest[0]) < 0.02).map((v) => v.rest[1]));
+    expect(lowBack(hers) - lowBack(shirt)).toBeGreaterThan(0.008);
+  });
+
+  it('gives a shirt collar a darker stitched edge and a check that runs along it', async () => {
+    const { SHIRT_COLLAR } = await import('../src/npc/collar.js');
+    const body = cylinderBody();
+    const shell = buildTop(body, POLO).shell;
+    const opts = { placketWidth: POLO.placketWidth, over: [shell] };
+    const shirt = buildCollar(shell, body, opts, SHIRT_COLLAR);
+    const polo = buildCollar(shell, body, opts);
+    // Two rows more down the fall (outside and in), and the outer two of them shaded darker on the outside, against one on a polo's.
+    expect(shirt.verts.length - polo.verts.length).toBe(2 * 2 * (COLLAR.columns + 1));
+    expect(shirt.shade.filter((k) => k === SHIRT_COLLAR.edgeShade).length).toBe(2 * (COLLAR.columns + 1));
+    expect(SHIRT_COLLAR.edgeShade).toBeLessThan(COLLAR.edgeShade);
+    // Its cloth position: along it round her neck, centred on the back, and down it from the top, in metres.
+    expect(shirt.uv.length).toBe(shirt.verts.length * 2);
+    const us = shirt.uv.filter((_, i) => i % 2 === 0);
+    const vs = shirt.uv.filter((_, i) => i % 2 === 1);
+    expect(Math.max(...us)).toBeGreaterThan(0.15);
+    expect(Math.min(...us)).toBeCloseTo(-Math.max(...us), 2);
+    expect(Math.min(...vs)).toBe(0);
+    expect(Math.max(...vs)).toBeGreaterThan(SHIRT_COLLAR.out);
   });
 
   it('pulls the under polo sleeve back inside the one over it where it has come through', async () => {
