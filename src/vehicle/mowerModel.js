@@ -116,6 +116,11 @@ export function buildMowerModel({ bodyColor = 0x2f5f35, dashStyle = 'mower' } = 
 
   addHeadlightBeams(quad);
   addTailLights(quad);
+  // Names on the parts are for building and looking at them; only the lamps' lenses and the textured decals matter by name, and a named
+  // mesh is never merged, so unname the rest and let each material's meshes become one draw call.
+  quad.traverse((o) => {
+    if (o.isMesh && !o.material.map) o.name = '';
+  });
   mergeStatic(root);
   mergeStatic(bars);
   quad.traverse((o) => {

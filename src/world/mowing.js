@@ -14,7 +14,7 @@ export const DEFAULT_MOW_PARAMS = {
   idleLoad: 0.18, // the engine's load from just turning the blade
   cutLoad: 0.55, // the load added at full speed through long grass
   fullSpeed: 2.4, // m/s at which cutting takes its full load
-  maxDrag: 0.45, // the share of the drive the blade can take off at full load
+  maxDrag: 0.6, // the share of the drive the blade can take off at full load
   gritRate: 4, // bits of grit a second thrown with the blade on a hard surface
   dullRate: 0.04, // dullness gained a second with the blade on a hard surface
   dullWidth: 0.35, // how much narrower a fully dull blade cuts
@@ -134,13 +134,14 @@ export class MowGrid {
     return d < 0 ? 1 : clamp((day - d) / this.p.regrowDays, 0, 1);
   }
 
-  /** The grass under the deck, averaged over three points across its front. */
+  /** The grass the deck is about to cut, averaged over three points across its front edge (just beyond what the last steps cut). */
   longnessUnder(x, z, heading, day) {
     const fx = Math.sin(heading);
     const fz = Math.cos(heading);
     const w = this.p.deckWidth * 0.4;
+    const ahead = this.p.deckLength / 2 + 0.2;
     let sum = 0;
-    for (const k of [-1, 0, 1]) sum += this.longness(x + fz * k * w + fx * 0.2, z - fx * k * w + fz * 0.2, day);
+    for (const k of [-1, 0, 1]) sum += this.longness(x + fz * k * w + fx * ahead, z - fx * k * w + fz * ahead, day);
     return sum / 3;
   }
 

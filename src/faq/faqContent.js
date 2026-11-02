@@ -2814,7 +2814,7 @@ export const VEHICLE_NOTES = {
   },
   mower: {
     blurb: 'The Ridgeback Clipper 12, a faded green ride-on mower: small wheels in front and fat turf tyres behind, a bonnet with a grille and a round lamp, a moulded seat with a back, a cutting deck underneath with grass caked under it and a box on the back. Slow and simple.',
-    tips: ['One seat, no reverse, and it is slow: about 8 mph flat out.', 'Key start, or pull the cord on the right of the bonnet (O) when the battery is flat.', 'T engages the blade (the lever by the seat, and the amber BLADE lamp on the dash). It only cuts with the engine running and the mower moving forward, and it loads the engine in long grass.', 'Mowing a lawn is a job on the chalkboard: stripes appear in the grass and grow back over a few days.', 'Do not mow gravel or concrete with the blade engaged: it throws grit and dulls the blade.'],
+    tips: ['One seat, no reverse, and it is slow: about 7 mph flat out.', 'Key start, or pull the cord on the right of the bonnet (O) when the battery is flat.', 'T engages the blade (the lever by the seat, and the amber BLADE lamp on the dash). It only cuts with the engine running and the mower moving forward, and it loads the engine in long grass.', 'Mowing a lawn is a job on the chalkboard: stripes appear in the grass and grow back over a few days.', 'Do not mow gravel or concrete with the blade engaged: it throws grit and dulls the blade.'],
   },
   atc: {
     blurb: 'The neighbour’s worn-out old Kestrel T185 three-wheeler: one front wheel on chrome forks, two fat tyres, a wide red rear body, a long flat seat and a rectangular headlamp.',

@@ -155,7 +155,7 @@ describe('the lawns', () => {
     expect(b.lawns[0].dir[Math.floor(5 / P.cell) * b.lawns[0].cols + Math.floor(2 / P.cell)]).toBe(2);
   });
 
-  it('read the grass under the deck from three points across it', () => {
+  it('read the grass the deck is about to cut from three points across its front edge', () => {
     const g = new MowGrid([lawn], { ...P });
     expect(g.longnessUnder(5, 5, 0, 3)).toBe(1);
     for (let z = 0; z < 10; z += 0.25) g.cut(5.6, z, 0, 1, 3); // a strip over only part of the deck's width

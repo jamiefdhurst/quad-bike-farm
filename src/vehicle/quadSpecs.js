@@ -970,7 +970,7 @@ export const EXTRA_SPECS = [
       maxSuspensionTravel: 0.06,
       maxSuspensionForce: 9000,
       maxDriveForce: 650,
-      maxSpeed: 3.8, // about 8 mph flat out with the blade off
+      maxSpeed: 3.4, // about 7.5 mph flat out with the blade off
       maxSteerDeg: 42,
       steerSpeedReduction: 0.05,
       clutchEngageRpm: 1500,
