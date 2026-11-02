@@ -191,6 +191,15 @@ export const JOBS = {
       { id: 'aim', text: 'Aim them: level and straight ahead, a long way out', kind: 'hold', need: 0.8, limit: 1.6 },
     ],
   },
+  electrics: {
+    name: 'Fit new bulbs, blades and horn',
+    steps: [
+      { id: 'bulbs', text: 'Swap the headlamp and tail bulbs for new ones', kind: 'press' },
+      { id: 'blades', text: 'Clip new blades on the wiper arms', kind: 'press' },
+      { id: 'clean', text: 'Rub the horn contacts bright with the wire brush', kind: 'hold', need: 0.7 },
+      { id: 'horn', text: 'Do the horn terminal up: snug, not tight', kind: 'hold', need: 0.6, limit: 1.4 },
+    ],
+  },
   snorkel: {
     name: 'Fit a snorkel',
     steps: [
@@ -373,7 +382,7 @@ export const JOBS = {
 // The last row of the list is the charger, and says either 'chargeOn' or 'chargeOff' depending on where this quad's battery is (bench.js kindsFor).
 export const ENGINE_JOB_KINDS = ['pull', 'swap']; // listed with the shed kit's jobs on the second page; the bench decides when they can be done (they need the shelf)
 
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'clutch', 'crash', 'newTyres', 'spotlamps', 'snorkel'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'clutch', 'crash', 'newTyres', 'spotlamps', 'snorkel', 'electrics'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -650,6 +659,16 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     target.spotlamps.fit(bad ? P.spotBotchedAim : 1);
     return bad ? 'Spotlamps on, but they are not aimed true: they point low and off to one side. Nine switches them' : 'Spotlamps fitted and aimed down the field. Nine switches them';
   }
+  if (job.kind === 'electrics') {
+    // Bulbs and blades are swapped whole; only the horn's terminal can be overdone (the horn is then left as worn as it was).
+    if (!botched && job.outcome('horn') === 'good') target.motWear.renew();
+    else {
+      const horn = target.motWear.horn;
+      target.motWear.renew();
+      target.motWear.horn = horn;
+    }
+    return target.motWear.horn > 0 ? 'New bulbs and blades, but the horn is still weak: the terminal is not right' : 'New bulbs, new blades and a horn that barks';
+  }
   if (job.kind === 'snorkel') {
     // The joints are what leak: sealant or clamps done badly, or a botched job, is the same fault.
     const bad = botched || job.outcome('seal') !== 'good' || job.outcome('hose') !== 'good';
@@ -748,7 +767,8 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
 }
 
 /** Which jobs a quad can have done: the pre-mix oil is for the two-strokes, the sump's for the petrol four-strokes, the chain's for the chain-driven. */
-export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = false, valves = engine.params.strokes !== 2, clutch = false, spots = null, snorkel = null) {
+export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = false, valves = engine.params.strokes !== 2, clutch = false, spots = null, snorkel = null, motWear = null) {
+  if (kind === 'electrics') return !!motWear;
   if (kind === 'snorkel') return !!snorkel?.canFit && !snorkel.fitted;
   if (kind === 'spotlamps') return !!spots?.canFit && !spots.fitted;
   if (kind === 'oil') return engine.params.strokes === 2;

@@ -72,6 +72,7 @@ const JOB_TEXT = {
   swap: 'different engine fitted',
   spotlamps: 'spotlamps fitted',
   snorkel: 'snorkel fitted',
+  electrics: 'new bulbs, blades and horn',
   topEnd: 'top end rebuilt, new piston and rings',
   chain: 'chain adjusted and oiled',
   valves: 'valve clearances set',
@@ -111,6 +112,8 @@ export function entryText(what) {
     }
     case 'oil':
       return 'engine oil topped up';
+    case 'mot':
+      return what.passed ? 'MOT passed' : `MOT failed: ${(what.fails ?? []).join(', ')}`;
     case 'deal':
       return `${what.deal === 'sold' ? 'sold' : 'bought'} for £${what.price}`;
     case 'fault':

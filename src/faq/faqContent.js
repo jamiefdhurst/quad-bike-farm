@@ -1908,6 +1908,20 @@ export const FAQ_SECTIONS = [
         tip: 'Hollis Motors sells petrol, diesel and a few parts; Pargeter\'s Stores sells treats for the girls.',
       },
       {
+        q: 'How do I get a Moorland MOT tested?',
+        a: `Hollis Motors tests the Moorlands, and only them. Drive one onto the white-lined MOT bay on the forecourt, in front of the western roller door, and park it along the lines with the engine off. Get out, look at the clipboard on the wall by the staff door and press <kbd>E</kbd>: £20 comes out of the money tin and the garage goes over it for about twenty seconds. Stay where you are, because driving it off or starting the engine stops the test and gives your money back. You then get a sheet with a pass or a fail beside the lights, brakes, wipers, horn, tyres, leaks and exhaust, and Amy writes the result in her logbook.`,
+        tip: 'Park a Moorland in the MOT bay at Hollis Motors, get out and press E on the clipboard. It costs £20.',
+      },
+      {
+        q: 'What do I do when a Moorland fails its MOT?',
+        a: `Read the sheet and put right what it names. Worn bulbs, wiper rubbers and horn contacts all wear with the engine hours, and the bench has one job, "Fit new bulbs, blades and horn", that renews all three. The rest is the vehicle's own faults and wear: binding or fading brakes, a worn or soft tyre, a coolant leak or a weeping gasket, and a blowing silencer. Then take it back to the bay for another test. A fail does not stop you driving it: this is a farm. But Amy will not get on the back of one that has failed, and Jess does but says what she thinks of it, until it has a pass.`,
+        tip: 'A failed Moorland still drives, but Amy will not ride in it. Mend what the sheet names and test it again.',
+      },
+      {
+        q: 'What does an MOT certificate do?',
+        a: `A pass is a certificate that is good for a couple of weeks of farm days, and the farm remembers it. While it is good, a buyer on the cork board offers a little more for that Moorland. A failed test voids it, and so does letting the days run out.`,
+      },
+      {
         q: 'Why has a girl asked me to take her to the pub?',
         a: `Now and then Amy or Jess asks for a run down to the Plough and Harrow, like a favour to the bales. Get on a quad with a free seat on the back, let her climb on, ride to the village and pull up in the pub's car park (west of the pub). Doing it pleases her; letting it lapse is remembered, as with any favour. On a fine day a girl who is about the village may also sit at one of the beer garden's picnic tables to rest. While you are stopped in the car park with both of them, they chat to each other about the pub and what they would drink if they went in (the door is only painted on), and they have something to say when you pull away.`,
         tip: 'A girl may ask to be run down to the village pub. Take her on the back and pull up in its car park.',

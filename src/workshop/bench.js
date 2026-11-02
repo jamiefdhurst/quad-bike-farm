@@ -162,7 +162,7 @@ export class Bench {
     if (kind in SHED_JOBS) return !this.shedWhyNot(kind, unit);
     if ((kind === 'filter' || kind === 'belt') && !servicePlan(factsOf(unit)).includes(kind)) return false;
     if (kind === 'newTyres' && !this.tyreJob(unit)) return false;
-    return this.partOk(kind, unit) && this.batteryHandsOk(kind, unit) && (this.stillFound(unit) && kind !== 'chargeOn' && kind !== 'chargeOff' ? unit.barnFind.available(kind) : this.stillFound(unit) && !unit.barnFind.tarpOff ? false : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch, unit.quad.spotlamps, unit.quad.snorkel));
+    return this.partOk(kind, unit) && this.batteryHandsOk(kind, unit) && (this.stillFound(unit) && kind !== 'chargeOn' && kind !== 'chargeOff' ? unit.barnFind.available(kind) : this.stillFound(unit) && !unit.barnFind.tarpOff ? false : jobAvailable(kind, unit.engine, this.params, unit.quad.faults.hasChain, unit.quad.faults.hasValves, unit.quad.faults.hasClutch, unit.quad.spotlamps, unit.quad.snorkel, unit.quad.motWear));
   }
 
   toolboxHere() {
@@ -296,7 +296,7 @@ export class Bench {
       else if (e.type === 'done') {
         const job = this.job;
         const unit = this.unit;
-        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump, filter: unit.quad.filter, spotlamps: unit.quad.spotlamps, snorkel: unit.quad.snorkel, pullEngine: () => this.pullEngine(unit), fitEngine: (fit) => this.fitEngine(unit, fit), batteryOut: () => this.game.batteryOut(unit), batteryIn: () => this.game.batteryIn(unit) }, this.params));
+        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump, filter: unit.quad.filter, spotlamps: unit.quad.spotlamps, snorkel: unit.quad.snorkel, motWear: unit.quad.motWear, pullEngine: () => this.pullEngine(unit), fitEngine: (fit) => this.fitEngine(unit, fit), batteryOut: () => this.game.batteryOut(unit), batteryIn: () => this.game.batteryIn(unit) }, this.params));
         if (!job.service) this.say(job.kind === 'bore' ? (job.botched ? 'boreBotched' : 'boreDone') : job.kind === 'snorkel' ? (unit.quad.snorkel.seal < 1 ? 'snorkelBotched' : 'snorkelDone') : job.botched ? 'botched' : 'done');
         if (this.stillFound(unit)) this.foundJobDone(unit, job.kind);
         this.game.notebook.note(unit, { kind: 'job', job: job.kind, botched: job.botched }, { by: 'you' });
@@ -445,7 +445,7 @@ export class Bench {
           const need = this.partFor(k, unit);
           note = k === 'newTyres' ? ` (needs ${need.count} ${need.count === 1 ? PARTS[need.part].one : PARTS[need.part].many} from the tyre rack)` : ` (no ${PARTS[need.part].one} on the shelf)`;
         }
-        else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'snorkel' ? (unit.quad.snorkel.fitted ? ' ✓ fitted' : ' (Moorlands only)') : k === 'spotlamps' ? (unit.quad.spotlamps.fitted ? ' ✓ fitted' : ' (quads and Land Rovers only)') : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
+        else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'electrics' ? ' (Land Rovers only)' : k === 'snorkel' ? (unit.quad.snorkel.fitted ? ' ✓ fitted' : ' (Moorlands only)') : k === 'spotlamps' ? (unit.quad.spotlamps.fitted ? ' ✓ fitted' : ' (quads and Land Rovers only)') : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}${this.row === i ? ' picked' : ''}"><span class="key">${jobKey(i)}</span>${JOBS[k].name}${note}</div>`;
       }).join('') + this.serviceRow(unit, this.row === this.kindsFor(unit).length) + `<div class="bn-row${this.row === this.rowsFor(unit).length - 1 ? ' picked' : ''}"><span class="key"></span>Jobs that need the shed kit<div class="bn-sub">Compressor, parts washer and the pit, and swapping engines</div></div>`;
       this.keysEl.textContent = 'W S pick a job   ·   E start it   ·   1 to 0 for the first ten   ·   → the shed kit   ·   B step away';

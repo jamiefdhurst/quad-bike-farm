@@ -65,6 +65,8 @@ export function createHost(g, { copy = () => {} } = {}) {
       trough: layout.trough,
       road: layout.road?.pad,
       rollingroad: g.trafficHost.places.rig.stand, // beside the tuner's trailer when it is set up (the Farm tab's "Send the tuner" brings it)
+      motbay: g.villageHost.mot ? g.villageHost.mot.bay : null, // the MOT bay's middle at Hollis Motors (then `face <vehicle> 90` to sit it along the wall)
+      mot: g.villageHost.mot ? g.villageHost.mot.stand() : null, // on foot before the MOT clipboard
       ford: layout.hill ? { x: layout.hill.lane.x, z: layout.hill.stream.z } : null,
       wood: layout.woods ? { x: layout.woods.gate.x, z: layout.woods.leadIn[1][1] } : null,
       fern: layout.woods?.trail ? { x: layout.woods.trail.entrance.x, z: layout.woods.trail.entrance.z } : null,

@@ -602,6 +602,26 @@ export function buildGarage(ctx, b) {
   }
   for (const pk of packets) ctx.partProxies.push(proxyAt(ctx, f, pk.id, pk.x, 1.2, front + 0.3, 0.6, 1.2, 0.5));
   ctx.partProxies.push(proxyAt(ctx, f, 'tyreQuad', -7.9, 0.75, front + 0.45, 0.9, 1.5, 0.9));
+  // The MOT bay: a white-lined rectangle on the forecourt in front of the western roller door, long side along the wall, and a test centre board with a
+  // clipboard on the wall by the east door (the garage faces -z, so a world x is the frame's x turned about).
+  const bayX = -4.4;
+  const bayZ = front + 2.4;
+  const bayLen = 5.2;
+  const bayWid = 2.5;
+  const bayY = ctx.heights.heightAt(S.v.garage.x - bayX, S.v.garage.z - bayZ) - f.y0 + 0.07;
+  const lineMat = new THREE.MeshStandardMaterial({ color: 0xe9e7dc, roughness: 0.85 });
+  const paint = (w, d, x, z) => f.box(w, 0.012, d, lineMat, x, bayY, z, 0.6);
+  paint(bayLen, 0.1, bayX, bayZ - bayWid / 2);
+  paint(bayLen, 0.1, bayX, bayZ + bayWid / 2);
+  paint(0.1, bayWid + 0.1, bayX - bayLen / 2, bayZ);
+  paint(0.1, bayWid + 0.1, bayX + bayLen / 2, bayZ);
+  signBoard(ctx, f, fasciaTexture(random, { text: 'MOT TEST', sub: 'PARK IN THE BAY, SEE THE BOARD', bg: '#e8c23a', fg: '#1b2a44', accent: '#1b2a44', font: 'bold 96px Arial, Helvetica, sans-serif', width: 1024, height: 256 }), 1.0, 0.25, 5.4, 2.55, front + 0.02, 1, 0.3);
+  f.box(0.5, 0.7, 0.04, M.weathered, 5.4, 1.5, front + 0.07, 0.6); // the board the clipboard hangs on
+  f.box(0.36, 0.5, 0.025, M.paintDark, 5.4, 1.5, front + 0.1, 0.6); // the clipboard
+  f.box(0.3, 0.42, 0.012, lineMat, 5.4, 1.5, front + 0.12, 0.6); // its sheet
+  f.box(0.12, 0.04, 0.03, M.iron, 5.4, 1.78, front + 0.11, 0.6); // and the clip
+  ctx.motProxy = proxyAt(ctx, f, 'mot', 5.4, 1.5, front + 0.3, 1.1, 1.6, 0.7);
+  ctx.motBay = { x: S.v.garage.x - bayX, z: S.v.garage.z - bayZ, yaw: Math.PI / 2 }; // world middle and heading of a vehicle parked along it (the wall runs along x)
   // The forecourt's pumps: three, on an island under the canopy.
   const pumps = b.pumps;
   const island = [S.v.garage.pumps.xs[0] - 1.2, S.v.garage.pumps.xs[2] + 1.2];

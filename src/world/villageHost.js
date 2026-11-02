@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { CoinAudio } from '../audio/coinAudio.js';
 import { PARTS } from '../workshop/spares.js';
 import { registerTuning } from '../core/tuning.js';
+import { MotHost } from './motHost.js';
 import { DEFAULT_VILLAGE_PARAMS, VILLAGE_PARAM_RANGES, SHOP_STOCK, PUMP_FUELS, GARAGE_PARTS, partWhyNot, buyPart, Till, PumpBill, pounds } from './villageShop.js';
 
 export class VillageHost {
@@ -23,6 +24,7 @@ export class VillageHost {
     this.lastBought = 'nothing yet';
     this.coins = new CoinAudio(game.audioHub, new THREE.Vector3(), 0.7); // chinks at the counter or the rack you are at, not at the farm's tin
     this.addTargets();
+    this.mot = this.props.motProxy ? new MotHost(game, this.props) : null; // the MOT bay and clipboard (world/motHost.js)
   }
 
   purseText() {
@@ -136,6 +138,7 @@ export class VillageHost {
   update(dt) {
     if (!this.active) return;
     this.till.update(dt);
+    this.mot?.update(dt);
     const g = this.g;
     if (this.filling && !g.interaction.focused) this.filling = null;
     const dark = g.daylight?.darkness ?? 0;

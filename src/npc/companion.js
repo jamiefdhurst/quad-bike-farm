@@ -387,7 +387,7 @@ export class Companion {
    * or giving you a ride), so she'll stop to let her on.
    */
   canRidePillion(quad) {
-    if (this.avoidsFriendOn(quad) || this.refusesStorm()) return false;
+    if (this.avoidsFriendOn(quad) || this.refusesStorm() || this.motMind(quad) === 'refuses') return false;
     if (!quad.hasPillion || quad.isTipped || quad.passenger || this.takenByOther(quad, 'pillion')) return false;
     const friend = this.friendDriving(quad);
     return !friend?.drive || (!friend.drive.follow && !friend.drive.waitForPassenger);
@@ -459,6 +459,7 @@ export class Companion {
       if (drivable(q)) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => this.requestDrive(q) });
       else if (this.refusesMoto(q) || this.refusesStorm()) actions.push({ kind: 'drive', quad: q, short: 'Drive it', label: `Drive the ${q.label}`, run: () => (this.refusesStorm() ? this.refuseStorm() : this.refuseMoto()) });
       if (rideable(q)) actions.push({ kind: 'mount', quad: q, short: 'Get on it', label: `Get on the ${q.label}`, run: () => this.requestMount(q) });
+      else if (this.motMind(q) === 'refuses' && q.hasPillion && !q.isTipped && !q.passenger) actions.push({ kind: 'mount', quad: q, short: 'Get on it', label: `Get on the ${q.label}`, run: () => this.refuseMot() });
       if (this.canRideRackOn(q)) actions.push({ kind: 'mountRack', quad: q, short: 'Sit on the front', label: `Sit on the front of the ${q.label}`, run: () => this.requestMount(q, { seat: 'rack' }) });
       if (!this.isStandingBeside(q)) actions.push({ kind: 'stand', quad: q, short: 'Stand next to it', label: `Stand next to the ${q.label}`, run: () => this.requestStandBeside(q) });
     }
@@ -467,6 +468,7 @@ export class Companion {
 
   requestMount(quad = this.quad, { ownChoice = false, seat = 'pillion' } = {}) {
     if (!(seat === 'rack' ? quad.hasRack : quad.hasPillion)) return;
+    if (seat === 'pillion' && this.motMind(quad) === 'grumbles') this.voice.say('motGrumble', { chance: 1 }); // Jess gets on, and says what she thinks of it
     // On the back because she chose to: she can get bored and get off again. Put there by you, she waits to be asked.
     this.seatedByChoice = ownChoice;
     // Driving this one: onto the back. Another: off this one first.
