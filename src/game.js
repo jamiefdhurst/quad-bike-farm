@@ -357,6 +357,7 @@ import { TrophyShelf } from './world/trophyShelf.js';
 import { MuckView } from './world/muckView.js';
 import { Haymaking, DEFAULT_HAY_PARAMS, HAY_PARAM_RANGES, STACK_CAPACITY, trailerSlots } from './world/haymaking.js';
 import { HayView } from './world/hayView.js';
+import { GrassTracks, DEFAULT_TRACKS_PARAMS, TRACKS_PARAM_RANGES } from './world/grassTracks.js';
 import { SprayerTrailer, SPRAYER_PARAM_RANGES } from './vehicle/sprayerTrailer.js';
 import { Spraying, DEFAULT_SPRAY_PARAMS, SPRAY_PARAM_RANGES, SPRAY_PHASE_TEXT, sprayWanted } from './world/spraying.js';
 import { SprayView } from './world/sprayView.js';
@@ -6982,7 +6983,10 @@ export class Game {
     this.hayParams = { ...DEFAULT_HAY_PARAMS };
     this.hay = new Haymaking({ rect, params: this.hayParams });
     this.hay.restore(this.farm.save?.hay, this.farm.day);
-    this.hayView = new HayView({ scene: this.scene, hay: this.hay, heightAt: (x, z) => this.world.heightAt(x, z), random: createRandom(this.farmSeed ^ 0x4a17) });
+    this.trackParams = { ...DEFAULT_TRACKS_PARAMS };
+    this.grassTracks = new GrassTracks({ rect, params: this.trackParams });
+    this.world.grassTracks = this.grassTracks;
+    this.hayView = new HayView({ scene: this.scene, hay: this.hay, heightAt: (x, z) => this.world.heightAt(x, z), tracks: this.grassTracks, random: createRandom(this.farmSeed ^ 0x4a17) });
     this.hayCapacity = 16;
     this.haySlots = trailerSlots(this.hayCapacity);
     this.hayLoading = new HayLoading();
@@ -6991,6 +6995,7 @@ export class Game {
     this.hayView.refresh();
     this.hayPhase = this.hay.phase;
     registerTuning('Haymaking', this.hayParams, HAY_PARAM_RANGES);
+    registerTuning('Grass tracks', this.trackParams, TRACKS_PARAM_RANGES);
     registerTuning('Loading the hay', this.hayLoading.p, HAY_LOADING_PARAM_RANGES);
     this.interaction.add({
       target: this.hayView.loose,
@@ -7180,6 +7185,11 @@ export class Game {
     hay.cut = 0;
     hay.baledCells = 0;
     this.hayView.refresh();
+  }
+
+  /** The debug panel: every line pressed in the long grass lifts at once. */
+  debugHayTracksClear() {
+    this.grassTracks?.clear();
   }
 
   /** The debug panel: the barn's hay stack is taken away. */

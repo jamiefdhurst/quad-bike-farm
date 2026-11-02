@@ -984,6 +984,12 @@ export class Quad {
         if (w.contact) this.world.wear.trample(w.point.x, w.point.z, groundSpeed * dt, { spin: w.driven ? this.physics.spinSlip : 0, wet, dt, weight });
       }
     }
+    // Every wheel on the move presses the long grass of the hay patch flat, and it springs back (world/grassTracks.js).
+    if (this.world.grassTracks && groundSpeed > 0.3) {
+      for (const w of this.physics.wheelInfo) {
+        if (w.contact) this.world.grassTracks.press(w.point.x, w.point.z, groundSpeed);
+      }
+    }
     // Tread wears with every metre rolled, faster on tarmac and under wheelspin, slower in mud (tyres.js).
     if (!this.pinned && (groundSpeed > 0.2 || this.physics.spinSlip > 0.05)) {
       const wheels = this.physics.wheelInfo;
