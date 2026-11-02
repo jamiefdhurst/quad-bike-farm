@@ -139,6 +139,7 @@ export class EngineModel {
     this.gulp = 0; // water being taken in right now, per second
     this.diesel = 0; // diesel fraction of the fuel in the carb right now
     this.additive = 0; // 0..1 how much of the fuel has plug-saver in it (plugAdditive.js): it cuts the oily idle fouling
+    this.starterStuck = false; // worn brushes (vehicle/stickyStarter.js): the starter clicks and doesn't turn until it is tapped free
     this.airLock = 0; // 0..1 air in a diesel's fuel line after running dry (vehicle/bleeding.js): it won't catch until bled
     this.wax = 0; // 0..1 how waxed up the diesel is in a hard frost (vehicle/dieselWax.js)
     this.fuelWater = 0; // 0..1 how much water is reaching the carb in the fuel (fuelWater.js); it clears when clean fuel arrives
@@ -305,6 +306,7 @@ export class EngineModel {
    * @param {number}  [controls.dirt] 0..1 a dirty carb: lumpy, erratic and short of power.
    * @param {number}  [controls.valveLoose] 0..1 valves too loose: the tappets tick.
    * @param {number}  [controls.valveTight] 0..1 valves too tight: a hard hot start and short of power.
+   * @param {boolean} [controls.starterStuck] the starter's brushes are stuck: it clicks and nothing turns.
    * @param {number}  [controls.airLock] 0..1 air in a diesel's fuel line (a diesel only): a running one cuts out at half, and none will catch while it is there.
    * @param {number}  [controls.wax] 0..1 diesel waxed in a hard frost (a diesel only): loses power, runs rough, may cut out and won't catch when solid.
    * @param {number}  [controls.ice] 0..1 ice round the carb's throttle plate: loses power and runs unevenly.
@@ -316,7 +318,7 @@ export class EngineModel {
    * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
    * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, terminals = 0, airLeak = 0, exhaustLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, wax = 0, airLock = 0, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12, dayDamp = this.params.airRefDamp } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, terminals = 0, airLeak = 0, exhaustLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, wax = 0, airLock = 0, starterStuck = false, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12, dayDamp = this.params.airRefDamp } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -344,6 +346,7 @@ export class EngineModel {
     this.fuelWater = clamp(fuelWater, 0, 1);
     this.wax = this.params.compressionIgnition ? clamp(wax, 0, 1) : 0;
     this.airLock = this.params.compressionIgnition ? clamp(airLock, 0, 1) : 0;
+    this.starterStuck = !!starterStuck;
     this.additive = clamp(additive, 0, 1);
     this.speed = Math.abs(speed);
     this.ambient = clamp(ambient, 0, 1);
@@ -420,7 +423,7 @@ export class EngineModel {
     const p = this.params;
     const canTurn = this.state === EngineState.IGNITION || this.state === EngineState.STALLED;
     const canCrank = canTurn && !this.seized;
-    const motor = starter && !this.batteryOut && !this.starterDead && !this.seized; // (an overheated one still turns over, it just won't catch)
+    const motor = starter && !this.batteryOut && !this.starterDead && !this.starterStuck && !this.seized; // (an overheated one still turns over, it just won't catch)
     const pulling = this.pullLeft > 0;
     // A manual rolling with the clutch out: the wheels turn it over (bump-starting). The key has to be on; the battery doesn't matter.
     const roll = (canCrank || this.state === EngineState.CRANKING) && !this.seized && !motor && !pulling && this.ignitionOn ? rollTurn(this.gearRpm, this.gearLock, p) : 0;

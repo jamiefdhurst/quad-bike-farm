@@ -4,6 +4,7 @@ import { registerTuning } from '../core/tuning.js';
 import { FIX_PARTS, PARTS, jetShelfChange } from './spares.js';
 import { hasBattery } from '../items/battery.js';
 import { airText } from '../vehicle/bleeding.js';
+import { canStick } from '../vehicle/stickyStarter.js';
 import { pressureWhyNot } from '../farm/shed.js';
 import { nextPick, stepHold } from './toolboxPick.js';
 import {
@@ -52,7 +53,7 @@ const ACTIONS = [
   { sel: '.ws-service', hold: true, run: 'service' },
   { sel: '.ws-bleed', own: 'bleed' },
   { sel: '.ws-filter', own: 'filter' },
-  ...['puncture', 'belt', 'cable', 'carb', 'mounts', 'battery', 'terminals', 'chain'].map((kind) => ({ sel: `[data-fix="${kind}"]`, run: 'repair', kind })),
+  ...['puncture', 'belt', 'cable', 'carb', 'mounts', 'battery', 'terminals', 'chain', 'tap'].map((kind) => ({ sel: `[data-fix="${kind}"]`, run: 'repair', kind })),
   { sel: '.ws-drain', hold: true, run: 'drainFuel' },
   { sel: '.ws-water', hold: true, run: 'drainWater' },
   { sel: '.ws-strip', hold: true, run: 'stripDown' },
@@ -401,6 +402,7 @@ export class Workshop {
     const unit = this.unit;
     if (!unit || !this.repairShown(kind)) return;
     if (kind === 'battery') return this.battery(unit);
+    if (kind === 'tap') return this.tapStarter(unit);
     const f = unit.quad.faults;
     if (kind === 'puncture' && f.started.puncture && f.caps.puncture >= 1 && this.game.spares.has('strip')) return this.plugTyre(unit);
     const part = FIX_PARTS[kind];
@@ -416,6 +418,14 @@ export class Workshop {
     this.game.hud.toast(done ? (noAir ? `${REPAIR_DONE[kind]}. It needs air from the compressor, though` : REPAIR_DONE[kind]) : REPAIR_NOTHING[kind]);
     if (done) for (const c of this.game.companions) c.voice.onTinker?.('service');
     this.render(); // the pump's readings changed
+  }
+
+  /** A rap on the starter motor with the spanner: frees worn brushes if they are stuck, and says so either way (it doesn't give the fault away). */
+  tapStarter(unit) {
+    const was = this.game.tapStarter(unit);
+    this.game.hud.toast(was ? 'Gave the starter a tap with the spanner: it turns over now' : 'Tapped the starter with the spanner: nothing was stuck');
+    for (const c of this.game.companions) c.voice.onTinker?.('service');
+    this.render();
   }
 
   /**
@@ -465,6 +475,7 @@ export class Workshop {
   repairShown(kind) {
     if (kind === 'battery' || kind === 'terminals') return hasBattery(this.unit);
     if (kind === 'carb') return !this.isDiesel && !this.unit?.engine.params.injected; // (an injected engine has no carb to clean)
+    if (kind === 'tap') return canStick(this.unit?.engine.params ?? {});
     if (kind === 'chain') return !!this.unit?.quad.faults.hasChain; // only the chain-driven ones
     if (kind === 'belt') return !this.unit?.quad.tractor && !this.unit?.quad.landRover; // the Land Rover has a clutch
     return true;
@@ -742,6 +753,7 @@ export class Workshop {
           <button type="button" class="ws-btn ws-fix" data-fix="mounts">Nip up the engine mounts</button>
           <button type="button" class="ws-btn ws-fix" data-fix="battery">Battery out, or back in</button>
           <button type="button" class="ws-btn ws-fix" data-fix="terminals">Clean the battery terminals</button>
+          <button type="button" class="ws-btn ws-fix" data-fix="tap">Tap the starter with the spanner</button>
           <button type="button" class="ws-btn ws-fix" data-fix="chain">Put the chain back and oil it</button>
           <button type="button" class="ws-btn hold ws-drain">Pump out the tank and carb</button>
           <button type="button" class="ws-btn hold ws-water">Drain the water at the tap</button>

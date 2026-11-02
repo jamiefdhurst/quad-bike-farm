@@ -118,8 +118,9 @@ export function savedFaults(s) {
  * The girls as plain data: { favour: { id: score }, friction, fallenOut, skills: { id: { skill: level } }, memories: { id: { kind: weight } }, romance: { id: { locked, betrayed } } }.
  * Pranks, grudges and moods belong to the day and aren't kept.
  */
-export function captureGirls({ favour, fallingOut, skills, romance, lessons, quadCare, companions = [] }) {
+export function captureGirls({ favour, fallingOut, skills, romance, lessons, quadCare, trick, companions = [] }) {
   return {
+    trick: trick?.capture(),
     care: quadCare?.capture(),
     favour: { ...favour.scores },
     friction: fallingOut.friction,
@@ -133,8 +134,9 @@ export function captureGirls({ favour, fallingOut, skills, romance, lessons, qua
 }
 
 /** Puts the girls' saved state back the next morning (see captureGirls). */
-export function restoreGirls({ favour, fallingOut, skills, romance, lessons, quadCare, companions = [] }, s, P = DEFAULT_FARM_PARAMS) {
+export function restoreGirls({ favour, fallingOut, skills, romance, lessons, quadCare, trick, companions = [] }, s, P = DEFAULT_FARM_PARAMS) {
   if (!s) return;
+  trick?.restore(s.trick);
   for (const id of favour.ids) if (num(s.favour?.[id])) favour.scores[id] = s.favour[id] * P.favourKept;
   if (s.fallenOut) fallingOut.friction = P.frictionFallenOut;
   else if (num(s.friction)) fallingOut.friction = s.friction * P.frictionKept;

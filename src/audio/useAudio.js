@@ -1,13 +1,14 @@
 // The small sounds of using things: picking something up, putting it down, a latch or switch, a page or a board. Made once as samples
 // and played at the listener, so every interaction has a sound (.claude/rules/controls.md). Same shape as doorAudio.js. Pure.
 
-export const USE_CUES = ['pickUp', 'putDown', 'latch', 'paper'];
+export const USE_CUES = ['pickUp', 'putDown', 'latch', 'paper', 'tap'];
 
 // What each cue is: a body note (Hz, how fast it dies, level), a click of noise (how fast it dies, how dark, level) and a length.
 const CUES = {
   pickUp: { body: [210, 38, 0.35], noise: [70, 0.35, 0.5], seconds: 0.18 }, // a light scuff and knock
   putDown: { body: [120, 26, 0.8], noise: [90, 0.2, 0.35], seconds: 0.25 }, // a duller knock
   latch: { body: [1400, 90, 0.3], noise: [160, 0.6, 0.55], seconds: 0.1 }, // a short dry click
+  tap: { body: [2600, 55, 0.5], noise: [220, 0.7, 0.4], seconds: 0.12 }, // a spanner rapped on metal
   paper: { body: [0, 1, 0], noise: [18, 0.7, 0.5], seconds: 0.3 }, // a rustle: noise swelling in and fading out
 };
 

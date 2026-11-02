@@ -60,6 +60,7 @@ import { SeatSpring, UpAccel, DEFAULT_SEAT_PARAMS } from './seatRide.js';
 import { DriveSwitch, driveEffects, DEFAULT_DRIVE_PARAMS } from './driveMode.js';
 import { fuelWaterLevel } from './fuelWater.js';
 import { DEFAULT_DIESEL_WAX_PARAMS, stepWax } from './dieselWax.js';
+import { StickyStarter, DEFAULT_STICKY_PARAMS } from './stickyStarter.js';
 import { DEFAULT_BLEED_PARAMS, runsDry, stepBleed } from './bleeding.js';
 import { strengthEffects, bonusFor } from './strength.js';
 import { reverseAllowed, chokeReach, hasChoke, DEFAULT_CONTROLS_PARAMS } from './controls.js';
@@ -293,6 +294,8 @@ export class Quad {
     this.declutched = false; // set when you double-declutch into a gear with no synchromesh; npc/watching.js reads and clears it
     this.drivetrain = this.manual ? new ManualDrivetrain(params, gearbox) : new Drivetrain(params);
     this.handSetting = gearbox?.handStart ?? 0; // the tractor's hand throttle, 0..1: it stays where it was put, even with nobody on it
+    this.stickyParams = DEFAULT_STICKY_PARAMS; // the game swaps in this game's tuning
+    this.sticky = null; // a StickyStarter if this vehicle has worn starter brushes (stickyStarter.js); the game deals it
     this.quirks = new QuirkSet(); // this game's oddities (quirks.js); the game gives it the ones it picked
     this.note = null; // something to tell whoever's at the controls, taken by the game (see takeNote)
     this.bog = new Bog(); // how far it's sunk into a bog (bog.js)
@@ -1153,8 +1156,15 @@ export class Quad {
     return Math.max(waterGulp(puddle, this.speed, this.engine.params, snorkel) * boost, deepWaterGulp(deep, this.engine.params, snorkel));
   }
 
+  /** Gives this vehicle worn starter brushes (stickyStarter.js), or takes them away. */
+  giveSticky(on, random = Math.random) {
+    this.sticky = on ? new StickyStarter(this.stickyParams, random) : null;
+  }
+
   /** Engine controls for this frame. */
   engineControls() {
+    const e = this.engine;
+    if (this.sticky && this.sticky.step(this.starter, e.isRunning, e.temperature)) this.say('The starter only clicks, and the dash is bright: it is not the battery. Try a tap on it with the spanner');
     // A manual in gear with the clutch up turns at the road's pace: its speed over the gear's top speed times its full-throttle revs.
     const d = this.drivetrain;
     const geared = this.manual && d.gear !== 0;
@@ -1188,6 +1198,7 @@ export class Quad {
       fuelWater: fuelWaterLevel(this.fuel.bowlWater, this.fuel.waterParams),
       wax: this.fuel.wax,
       airLock: this.fuel.airLock,
+      starterStuck: !!this.sticky?.stuck,
       speed: this.forwardSpeed,
       ambient: this.world.warmth ?? 0.5,
       chill: this.world.chill ?? 0,

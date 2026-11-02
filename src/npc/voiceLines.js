@@ -38,6 +38,7 @@ import { AMY_SPIT_LINES } from './spitLines.js';
 import { AMY_ICE_LINES } from './iceLines.js';
 import { AMY_WAX_LINES } from './waxLines.js';
 import { AMY_AIR_LINES } from './airLines.js';
+import { AMY_STICKY_LINES } from './stickyLines.js';
 import { AMY_DIAGNOSIS_LINES } from './diagnosisLines.js';
 import { AMY_THRASH_LINES } from './thrashLines.js';
 import { AMY_LEFT_LINES } from './leftRunningLines.js';
@@ -1512,6 +1513,8 @@ export const VOICE_LINES = {
   ...AMY_WAX_LINES,
   // A diesel run dry that needs bleeding at the lift pump (airLines.js).
   ...AMY_AIR_LINES,
+  // A starter that only clicks until it is tapped with the spanner (stickyLines.js).
+  ...AMY_STICKY_LINES,
   // Faults that develop (faultLines.js).
   ...AMY_FAULT_LINES,
   ...AMY_KEEP_LINES,

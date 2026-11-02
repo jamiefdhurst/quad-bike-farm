@@ -246,6 +246,7 @@ import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
 import { CoolantBottle, COOLANT_BOTTLE_PARAM_RANGES, pourStep } from './items/coolantBottle.js';
 import { AntiGelBottle, ANTI_GEL_BOTTLE_PARAM_RANGES, doseStep } from './items/antiGelBottle.js';
 import { DEFAULT_BLEED_PARAMS, BLEED_PARAM_RANGES } from './vehicle/bleeding.js';
+import { DEFAULT_STICKY_PARAMS, STICKY_PARAM_RANGES, StuckHelp, TrickLearner, canStick, dealSticky } from './vehicle/stickyStarter.js';
 import { DEFAULT_DIESEL_WAX_PARAMS, DIESEL_WAX_PARAM_RANGES, dealWax } from './vehicle/dieselWax.js';
 import { BatteryItem, hasBattery } from './items/battery.js';
 import { BoosterPack, BOOSTER_ID, DEFAULT_BOOSTER_PARAMS, BOOSTER_PARAM_RANGES, boostStep, packOvernight } from './items/boosterPack.js';
@@ -643,6 +644,15 @@ export class Game {
     for (const unit of this.units) {
       const kinds = pickQuirks(featuresOf(unit.spec, !!this.podRack.podOn(unit.id)), quirkRandom, this.quirkParams);
       unit.quad.quirks = new QuirkSet(kinds, this.quirkParams);
+    }
+    // Some games one electric-start petrol vehicle has worn starter brushes (vehicle/stickyStarter.js); Jess learns to tap it free.
+    this.stickyParams = { ...DEFAULT_STICKY_PARAMS };
+    registerTuning('Sticky starter', this.stickyParams, STICKY_PARAM_RANGES);
+    this.trick = new TrickLearner(['jess'], this.stickyParams) // Amy never learns it;
+    const stickyId = dealSticky(this.units.filter((u) => canStick(u.engine.params)).map((u) => u.id), createRandom(this.farmSeed ^ 0x57c4), this.stickyParams);
+    for (const unit of this.units) {
+      unit.quad.stickyParams = this.stickyParams;
+      unit.quad.giveSticky(unit.id === stickyId, createRandom(this.seed ^ 0x57c5));
     }
     // Engine oil: each four-stroke's sump starts at its own level, and one of them burns oil this game (vehicle/sump.js).
     this.sumpParams = { ...DEFAULT_SUMP_PARAMS };
@@ -4407,6 +4417,40 @@ export class Game {
   }
 
   /** A split seat soaks up the rain, and soaks you if you sit on it wet; the nearest girl has something to say. */
+  /**
+   * Tapping a vehicle's sticky starter with the spanner (vehicle/stickyStarter.js), from the toolbox or by a girl who has learnt how.
+   * Returns whether it was stuck. A girl watching you do it, near enough, learns it (twice, and Jess has it).
+   */
+  tapStarter(unit, by = 'you') {
+    const q = unit.quad;
+    this.audioHub.useCue('tap');
+    const was = !!q.sticky?.tap();
+    if (by !== 'you') return was;
+    for (const c of this.companions) {
+      if (!this.trick.watch(c.character.id, c.root.position.distanceTo(q.position), c.availability().canRemark || c.fsm.is('idle', 'walking'))) continue;
+      c.voice.say('learnedTap', { urgent: true, force: true });
+    }
+    return was;
+  }
+
+  /** A girl starting a vehicle whose starter is stuck: Jess, once she has learnt it, taps it free after a moment; the others say what is wrong. */
+  updateStickyStarter(dt) {
+    for (const u of this.units) {
+      const q = u.quad;
+      if (!q.sticky) continue;
+      const c = this.companions.find((o) => {
+        const a = o.attempt ?? o.drive?.attempt;
+        return a && !a.done && a.quad === q && (o.fsm.is('starting') || o.fsm.is('driving'));
+      });
+      q.stuckHelp ??= new StuckHelp(this.stickyParams);
+      const act = q.stuckHelp.step(dt, q.sticky.stuck, c ? this.trick.knows(c.character.id) : null);
+      if (act === 'tap') {
+        this.tapStarter(u, c.character.id);
+        c.startEvents.push('tapStarter');
+      } else if (act === 'stuck') c.startEvents.push('stuckStarter');
+    }
+  }
+
   updateQuirks(dt, ridden) {
     const raining = this.weather.rain > 0.25;
     for (const u of this.units) {
@@ -12516,6 +12560,7 @@ export class Game {
     this.guard.run('updateCarbDrip', () => this.updateCarbDrip(dt));
     this.guard.run('updateCoolantLeak', () => this.updateCoolantLeak(dt));
     this.guard.run('updateQuirks', () => this.updateQuirks(dt, ridden));
+    this.guard.run('updateStickyStarter', () => this.updateStickyStarter(dt));
     this.guard.run('updateOilChecks', () => this.updateOilChecks());
     this.guard.run('updateHandbrake', () => this.updateHandbrake(dt));
     this.guard.run('updateFourWd', () => this.updateFourWd(dt));

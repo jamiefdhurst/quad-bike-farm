@@ -7,13 +7,14 @@ import { applicableQuirks, featuresOf } from '../vehicle/quirks.js';
 import { categoryOf, sortTuneGroups } from './tuneCategories.js';
 import { buildGirlsTab } from './girlsTab.js';
 import { buildFrameTime } from './frameTimeFolder.js';
-import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, startWarm, switchOff, engineReadouts } from './vehicleDebug.js';
+import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, startWarm, switchOff, engineReadouts, setStarterStuck } from './vehicleDebug.js';
 import { netCharge } from '../engine/charging.js';
 import { sickness, sickEvidence } from '../npc/keepAlive.js';
 import { BRANDS, WHEEL_NAMES } from '../vehicle/tyres.js';
 import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
 import { SIGNAL_MODES } from '../vehicle/indicators.js';
 import { DRIVE_MODES } from '../vehicle/driveMode.js';
+import { canStick } from '../vehicle/stickyStarter.js';
 import { Trace, TRACE_LINES } from './trace.js';
 
 /**
@@ -310,6 +311,7 @@ export class DebugGui {
     show(r, 'brakes wet (0 dry)',() => round(unit().quad.brakes.wet));
     show(r, 'brake heat (1 cooked; fades from 0.45)', () => round(unit().quad.brakes.heat));
     show(r, 'ice in the throttle cable', () => round(unit().quad.iceCable.ice));
+    if (canStick(u.engine.params)) show(r, 'starter stuck (worn brushes: clicks, won\'t turn)', () => (unit().quad.sticky ? (unit().quad.sticky.stuck ? 'stuck' : 'free') : 'sound'));
     if (u.engine.params.compressionIgnition) show(r, 'diesel waxed (0 clear)', () => round(unit().quad.fuel.wax));
     if (u.engine.params.compressionIgnition) show(r, 'air in the fuel line (0 bled)', () => round(unit().quad.fuel.airLock));
     if (u.quad.carbIce.enabled) show(r, 'ice in the carb', () => round(unit().quad.carbIce.ice));
@@ -362,6 +364,10 @@ export class DebugGui {
     set(p, 'wet brakes', () => round(unit().quad.brakes.wet), (v) => (unit().quad.brakes.wet = v), 0, 1);
     set(p, 'hot brakes (they fade)', () => round(unit().quad.brakes.heat), (v) => (unit().quad.brakes.heat = v), 0, 1);
     if (u.quad.carbIce.enabled) set(p, 'iced carb (ice)', () => round(unit().quad.carbIce.ice), (v) => (unit().quad.carbIce.ice = v), 0, 1);
+    if (canStick(u.engine.params)) {
+      tick(p, 'worn starter brushes (can stick when cold)', () => !!unit().quad.sticky, (v) => unit().quad.giveSticky(v));
+      tick(p, 'starter stuck now (tap it with the spanner)', () => !!unit().quad.sticky?.stuck, (v) => setStarterStuck(unit(), v));
+    }
     if (u.engine.params.compressionIgnition) {
       set(p, 'waxed diesel (wax)', () => round(unit().quad.fuel.wax), (v) => (unit().quad.fuel.wax = v), 0, 1);
       set(p, 'air in the fuel line (airLock)', () => round(unit().quad.fuel.airLock), (v) => (unit().quad.fuel.airLock = v), 0, 1);
