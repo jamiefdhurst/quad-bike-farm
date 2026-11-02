@@ -52,7 +52,7 @@ export function pickHistory(spec, random, { faultChance, hoursT = 0.5, P = DEFAU
 
   const faults = [];
   if (random() < faultChance) {
-    const pool = FAULT_KINDS.filter((k) => !SHED_KINDS.includes(k) && (k !== 'chain' || spec.chainDrive) && (k !== 'valves' || spec.engine?.strokes !== 2) && (k !== 'leak' || !spec.engine?.compressionIgnition) && (k !== 'clutch' || (spec.gearbox && !spec.tractor && !spec.landRover && !spec.car && !spec.utv))); // only a chain-driven quad has a chain, only a four-stroke valves
+    const pool = FAULT_KINDS.filter((k) => !SHED_KINDS.includes(k) && k !== 'terminals' && (k !== 'chain' || spec.chainDrive) && (k !== 'valves' || spec.engine?.strokes !== 2) && (k !== 'leak' || !spec.engine?.compressionIgnition) && (k !== 'clutch' || (spec.gearbox && !spec.tractor && !spec.landRover && !spec.car && !spec.utv))); // only a chain-driven quad has a chain, only a four-stroke valves
     const count = random() < P.secondFault ? 2 : 1;
     for (let i = 0; i < count; i++) {
       const kind = pool.splice(Math.floor(random() * pool.length), 1)[0];

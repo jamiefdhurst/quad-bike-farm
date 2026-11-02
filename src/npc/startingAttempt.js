@@ -209,7 +209,7 @@ export class StartingAttempt {
   startBurst() {
     const { engine } = this.quad;
     const ep = engine.params ?? {};
-    if (this.knowsKnack && this.needsKnack() && engine.battery >= ep.batteryDeadBelow) {
+    if (this.knowsKnack && this.needsKnack() && !engine.starterDead) {
       this.phase = 'blip';
       this.blipsLeft = ep.knackBlips;
       this.timer = 0;
@@ -224,7 +224,7 @@ export class StartingAttempt {
       return;
     }
     // A flat battery: it only clicks. She says so, then either has a go at the cord or gives up.
-    if (engine.battery < ep.batteryDeadBelow) {
+    if (engine.starterDead) {
       this.events.push('flat');
       if (ep.pullStart && this.random() < this.p.pullWhenFlat) {
         this.phase = 'pull';

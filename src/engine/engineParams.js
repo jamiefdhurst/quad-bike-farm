@@ -46,6 +46,9 @@ export const DEFAULT_ENGINE_PARAMS = {
   batteryDeadBelow: 0.25, // below this the starter only clicks
   weakCrankFactor: 0.4, // the starter's speed, as a fraction of normal, just above dead
   batteryDashOutBelow: 0.1, // below this the dash lights go out
+  terminalsSlowFrom: 0.25, // corroded battery posts (0..1) from this level starve the starter, so it turns slower, though the battery is fine
+  terminalsClickAt: 0.7, // and from this level it only clicks, as a flat battery does (the dash and lamps stay bright)
+  terminalsCrankFloor: 0.35, // the starter's speed, as a fraction of normal, just under the click
   pullStart: false, // has a recoil pull-start as well as the starter (the two-strokes)
   crankHandle: false, // its pull is a starting handle at the front (the Land Rover): each swing sounds a clunk, not the starter
   noStarter: false, // no starter motor at all, only the cord (the mini moto)
@@ -424,6 +427,9 @@ export const ENGINE_PARAM_RANGES = {
   batteryDeadBelow: [0, 0.6, 0.01],
   weakCrankFactor: [0.05, 1, 0.01],
   batteryDashOutBelow: [0, 0.3, 0.01],
+  terminalsSlowFrom: [0, 0.9, 0.01],
+  terminalsClickAt: [0.1, 1, 0.01],
+  terminalsCrankFloor: [0.05, 1, 0.01],
   rollMinFraction: [0.01, 0.3, 0.01],
   rollFullFraction: [0.1, 1, 0.01],
   rollClutchMin: [0, 0.95, 0.05],

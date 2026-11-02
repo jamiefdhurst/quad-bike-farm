@@ -15,6 +15,7 @@ export const DEFAULT_FAULT_PARAMS = {
   clutchEvery: 400, // slipping the clutch (at the bite under load, or creeping in low): a worn plate starts after this much slipping
   leakEvery: 6000, // engine running: the intake boot perishing and splitting (diesels have no carb boot, see hasBoot)
   mountsEvery: 5400, // engine running: rubber perishing, so it comes on slower than the rest
+  terminalsEvery: 9000, // engine running, with a battery: the posts furring up with white crust
   valvesEvery: 4800, // engine running, on a four-stroke: the tappets wearing wide
   chainEvery: 3000, // riding, on a chain-driven quad: the chain stretching (a dry one starts sooner, see chainDryWear)
   // How long each takes to go from just started to as bad as it gets.
@@ -25,6 +26,7 @@ export const DEFAULT_FAULT_PARAMS = {
   leakSeconds: 1200, // running: the split opening up from a hiss to a gape
   clutchSeconds: 500, // of slipping it: the plate wearing from a little slip to hardly gripping at all
   mountsSeconds: 1500, // running: the mounts going from sound to shot
+  terminalsSeconds: 1500, // running: the crust going from a dusting to thick enough to stop the starter
   valvesSeconds: 2400, // running: the clearance going from a faint tick to a loud one
   chainSeconds: 900, // of riding: the chain going from just slack to hanging off the sprocket
   chainLubeSeconds: 1500, // of riding for a freshly oiled chain to run dry
@@ -73,6 +75,8 @@ export const FAULT_PARAM_RANGES = {
   carbEvery: [60, 20000, 60],
   mountsEvery: [60, 20000, 60],
   leakEvery: [60, 20000, 60],
+  terminalsEvery: [60, 30000, 60],
+  terminalsSeconds: [10, 7200, 10],
   clutchEvery: [30, 10000, 30],
   clutchSeconds: [10, 3600, 10],
   clutchDriveLoss: [0, 1, 0.01],
@@ -122,12 +126,15 @@ export const FAULT_PARAM_RANGES = {
   plugFixCap: [0, 1, 0.01],
 };
 
-export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim', 'leak', 'clutch', ...SHED_KINDS];
+export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim', 'leak', 'clutch', 'terminals', ...SHED_KINDS];
 
 const perKind = (v) => Object.fromEntries(FAULT_KINDS.map((k) => [k, v]));
 
 /** Faults the toolbox can't touch: a rough fix in the yard does nothing, only the bench puts them right. */
 export const BENCH_ONLY_KINDS = ['leak', 'clutch', ...SHED_KINDS];
+
+/** Faults the toolbox puts right completely, not roughly: a wire brush on the posts leaves them clean, so there is no mild fault left behind. */
+export const YARD_CLEAN_KINDS = ['terminals'];
 
 /** Faults that come from a knock (crashDamage.js), not from use: they never start or worsen by themselves, and only the bench puts them right. */
 export const CRASH_KINDS = ['rod', 'rim'];
@@ -160,6 +167,7 @@ export class Faults {
     this.prone = perKind(1); // times as often it starts (see roll)
     this.worsens = perKind(1); // times as fast it gets worse
     this.hasChain = false; // a chain-driven quad (the sport quad, the mini moto, the ATC) can have a stretched chain; the others never
+    this.hasBattery = true; // a vehicle with a starter has a battery whose posts can corrode; a pull-start-only machine has none (set by Quad)
     this.hasBoot = true; // a petrol carb or throttle body has an intake boot to split; a diesel has none (set by Quad)
     this.hasClutch = false; // a manual quad has a clutch plate to wear out; the automatics' belt is the belt fault (set by Quad)
     this.hasValves = false; // a four-stroke can have its valve clearances out; a two-stroke has no valves (set by Quad)
@@ -251,6 +259,7 @@ export class Faults {
     if (running && !this.started.carb && this.random() < chance(p.carbEvery, 'carb')) this.begin('carb');
     if (running && !this.started.mounts && this.random() < chance(p.mountsEvery, 'mounts')) this.begin('mounts');
     if (this.hasValves && running && !this.started.valves && this.random() < chance(p.valvesEvery, 'valves')) this.begin('valves');
+    if (this.hasBattery && running && !this.started.terminals && this.random() < chance(p.terminalsEvery, 'terminals')) this.begin('terminals');
     if (this.hasBoot && running && !this.started.leak && this.random() < chance(p.leakEvery, 'leak')) this.begin('leak');
     if (this.hasClutch && clutchSlip > 0 && !this.started.clutch && this.random() < chance(p.clutchEvery / clutchSlip, 'clutch')) this.begin('clutch');
     const grow = (kind, on, seconds) => {
@@ -262,6 +271,7 @@ export class Faults {
     grow('carb', running, p.carbSeconds);
     grow('mounts', running, p.mountsSeconds);
     grow('leak', running, p.leakSeconds);
+    grow('terminals', running, p.terminalsSeconds);
     grow('clutch', clutchSlip > 0 && clutchSlip, p.clutchSeconds); // only slipping it wears it further
     grow('valves', running && !this.kept.valveTight, p.valvesSeconds); // wearing wide; a clearance set too tight stays as it is
     if (this.hasChain) this.updateChain(dt, { moving, throttle, jolt });
@@ -485,6 +495,11 @@ export class Faults {
     return this.levels.leak;
   }
 
+  /** 0..1 how corroded the battery posts are, for the engine (the starter turns slowly, then only clicks, with the battery itself fine). */
+  get terminalCorrosion() {
+    return this.hasBattery ? this.levels.terminals : 0;
+  }
+
   /** 0..1 how worn the clutch plate is, for the manual drivetrain (it slips under power, more the worse it is). */
   get clutchWear() {
     return this.hasClutch ? this.levels.clutch : 0;
@@ -520,7 +535,7 @@ export class Faults {
       this.kept.chainLube = Math.max(this.kept.chainLube, rough ? 0.6 : 1);
     }
     if (kind === 'valves') this.kept.valveTight = false; // a rough fix (a shim) or the bench both leave it wide, not tight
-    if (rough) {
+    if (rough && !YARD_CLEAN_KINDS.includes(kind)) {
       if (this.caps[kind] < 1) return false; // already patched up as far as it'll go
       const plugged = plug && kind === 'puncture'; // a tyre plug, which only a puncture takes
       this.leave(kind, plugged ? this.params.plugFixLevel : this.params.fieldFixLevel, plugged ? this.params.plugFixCap : this.params.fieldFixCap);

@@ -29,7 +29,7 @@ export const CRANK_ATTEMPT_PARAM_RANGES = {
 /** The Land Rover's battery is too flat for the starter and it is not running: someone has to swing the handle, outside. Otherwise the key will do, from the seat. */
 export function needsStartingHandle(quad) {
   const e = quad.engine;
-  return !!quad.crank && !e.isRunning && e.battery < (e.params.batteryDeadBelow ?? 0);
+  return !!quad.crank && !e.isRunning && e.starterDead;
 }
 
 export class CrankAttempt {

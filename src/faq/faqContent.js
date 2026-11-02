@@ -1082,10 +1082,14 @@ export const FAQ_SECTIONS = [
         a: `It does buzz more on the back, and she knows it. Jess owns up if she sits there long enough. Amy only does if you come up to her after a long sit.`,
       },
       {
+        q: 'Why does it only click when the lights are bright?',
+        a: `That is not a flat battery. After a while the posts on a battery can furrow up with white crust, and the starter can't get enough current through it: it turns slowly, then only clicks, while the dash and lights stay bright. Jump leads clamp onto the same posts, so they don't help. Take the toolbox to it and use "Clean the battery terminals". The girls will take the click for a flat battery, so don't believe them.`,
+      },
+      {
         q: 'How do I fix things?',
         a: `Pick up the red toolbox from the workbench, take it to a switched-off quad and press <kbd>E</kbd>. Pick a job with <kbd>W</kbd> and <kbd>S</kbd> and press <kbd>E</kbd>: plug a puncture (with a tyre plug from the kit in the toolbox, or a spare inner tube if the kit is empty),
           swap the belt (using a spare from the rack), oil the cable, clean the carb, nip up the engine mounts or put a chain back on and oil it. Hold <kbd>E</kbd> to clean the air filter
-          or to service it. These are quick fixes that leave a mild fault behind; for a proper job, use the workbench. Each fix does its job if there is one and
+          or to service it. "Clean the battery terminals" scrubs the posts with the wire brush and does clear the fault completely. The other quick fixes that leave a mild fault behind; for a proper job, use the workbench. Each fix does its job if there is one and
           otherwise says all is well, so it doesn't give a fault away.`,
       },
       {
