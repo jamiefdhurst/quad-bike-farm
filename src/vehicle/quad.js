@@ -210,6 +210,8 @@ export class Quad {
     this.handlebars = part('handlebars');
     this.handlebarsBase = this.handlebars.position.clone();
     this.fuelTap = part('fuelTap');
+    this.bladeLever = part('bladeLever'); // the mower's blade engage lever, swung forward while the blade is on
+    this.bladeShown = 0;
     this.sedimentWater = part('sedimentWater'); // the water showing in the glass bowl under the tap (not on the diesels, which have no tap)
     this.chokeLever = part('chokeLever');
     this.kickStart = part('kickStart'); // the old bike's pedal, its advance-retard lever's arm and the carb's tickler (bantamModel.js): posed from the engine's state
@@ -331,6 +333,7 @@ export class Quad {
     this.wheelieShown = 0;
     this.handThrottle = 0; // a girl on the back reaching round to open it over your hand (npc/throttleGrab.js)
     this.pullHeld = 0; // seconds the cord's been held, until it's let go (the yank)
+    this.bladeOn = false; // the mower's blade is engaged (game.js decides when it can be; mowing.js)
     this.passenger = null; // you, riding on the back while she drives
     this.backRider = false; // a girl on the back (the game sets it each step), for the toppling weight
     this.driver = null; // someone else at the controls (her), see setDriver()
@@ -1375,6 +1378,7 @@ export class Quad {
       coldBelow: e.params.warmLightThreshold,
       ignition: e.hasPower, // the dash goes dark on a flat battery
       keyOn: e.ignitionOn,
+      bladeOn: this.bladeOn, // the mower's blade lamp
       cranking: e.state === 'cranking', // the UTV's key turns on to START while it is cranking
       tripMiles: this.tripMiles,
       odoMiles: this.usage.odoMiles,
@@ -1500,6 +1504,11 @@ export class Quad {
     else if (this.chokeStyle === 'plunger') this.chokeLever.position.y = this.chokeLever.userData.baseY - this.displayChoke * (this.chokeLever.userData.travel ?? 0.045); // pulled down
     else if (this.chokeStyle === 'slide') this.chokeLever.position.x = this.chokeLever.userData.baseX - this.displayChoke * POD.slide; // pulled along its slot to apply
     else this.chokeLever.rotation.x = 0.5 - this.displayChoke * 1.45;
+    if (this.bladeLever) {
+      // The blade lever rests leaning back (off) and is swung forward to engage, a little slower than the blade's own spin-up.
+      this.bladeShown += ((this.bladeOn ? 1 : 0) - this.bladeShown) * Math.min(1, 10 * dt);
+      this.bladeLever.rotation.x = this.bladeLever.userData.restAngle - this.bladeShown * 0.9;
+    }
     if (this.kickStart) {
       // The pedal rests forward and down; a kick (the engine's pullLeft) swings it down and back and a spring brings it home; a kick-back flings it forward.
       const pull = this.engine.pullLeft > 0 ? 1 - this.engine.pullLeft / Math.max(0.01, this.engine.params.pullSeconds) : 0;

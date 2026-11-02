@@ -25,6 +25,7 @@ import { buildAtcModel, ATC_LAYOUT, ATC_GROUND_OFFSET, ATC_PROXY } from './atcMo
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET, MOTO_PROXY } from './miniMotoModel.js';
 import { buildBantamModel, BANTAM_LAYOUT, BANTAM_GROUND_OFFSET, BANTAM_PROXY } from './bantamModel.js';
 import { buildAgModel, AG_LAYOUT, AG_GROUND_OFFSET, AG_PROXY } from './ag200Model.js';
+import { buildMowerModel, MOWER_LAYOUT, MOWER_GROUND_OFFSET, MOWER_PROXY } from './mowerModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_PROXY, UTV_STAND } from './utvModel.js';
 import { buildLandRoverModel, LANDY_LAYOUT, DEFENDER_LAYOUT, LANDY_GROUND_OFFSET, LANDY_PROXY, LANDY_STAND } from './landRoverModel.js';
@@ -98,6 +99,13 @@ export class QuadUnit {
         layout: AG_LAYOUT,
         groundOffset: AG_GROUND_OFFSET,
         proxy: AG_PROXY,
+        wheelShake: spec.wheelShake,
+      }),
+      ...(spec.mower && {
+        build: ({ dashStyle }) => buildMowerModel({ bodyColor: spec.bodyColor, dashStyle }),
+        layout: MOWER_LAYOUT,
+        groundOffset: MOWER_GROUND_OFFSET,
+        proxy: MOWER_PROXY,
         wheelShake: spec.wheelShake,
       }),
       ...(spec.threeWheeler && {

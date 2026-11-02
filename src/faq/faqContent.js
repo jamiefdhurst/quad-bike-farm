@@ -2795,6 +2795,10 @@ export const VEHICLE_NOTES = {
     blurb: 'The Ridgeback Shepherd 200, a faded blue hill-farm trail bike: tall and narrow, long forks, a long flat seat for two, steel racks front and back with a bit of baler twine on one, hand guards and an upswept silencer. The first bike with room on the back.',
     tips: ['Lean it to turn it, and with someone on the back it leans a little slower.', 'A clutch (Shift) and a four-speed box.', 'The key starts it, or kick it over (O).', 'The choke plunger and the fuel tap are by the carb.', 'P switches the lamp on and off.'],
   },
+  mower: {
+    blurb: 'The Ridgeback Clipper 12, a faded green ride-on mower: small wheels in front and fat turf tyres behind, a bonnet with a grille and a round lamp, a moulded seat with a back, a cutting deck underneath with grass caked under it and a box on the back. Slow and simple.',
+    tips: ['One seat, no reverse, and it is slow: about 8 mph flat out.', 'Key start, or pull the cord on the right of the bonnet (O) when the battery is flat.', 'T engages the blade (the lever by the seat, and the amber BLADE lamp on the dash). It only cuts with the engine running and the mower moving forward, and it loads the engine in long grass.', 'Mowing a lawn is a job on the chalkboard: stripes appear in the grass and grow back over a few days.', 'Do not mow gravel or concrete with the blade engaged: it throws grit and dulls the blade.'],
+  },
   atc: {
     blurb: 'The neighbour’s worn-out old Kestrel T185 three-wheeler: one front wheel on chrome forks, two fat tyres, a wide red rear body, a long flat seat and a rectangular headlamp.',
     tips: ['Pull-start only.', 'Tips over in a fast tight turn.', 'Lumpy and smoky at idle, and hard to start.', 'The choke knob and the fuel tap are by the carb.'],

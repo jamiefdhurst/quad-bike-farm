@@ -912,6 +912,101 @@ export const EXTRA_SPECS = [
       tint: '#e8eef5',
     },
   },
+  {
+    // The ride-on mower (#76): the Ridgeback Clipper 12, an old British garden tractor with a 12 hp single under the bonnet. Slow and simple: a key
+    // start with a pull cord for when the battery is flat, a choke, an automatic drive, and a blade you engage with a lever (T; mowing.js).
+    // Built by mowerModel.js on the quad physics with small front wheels and big rear ones. One seat. Anyone can drive it; the girls don't yet.
+    id: 'mower',
+    stockBhp: 8, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
+    tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES): the nearest it has
+    bodyWear: 0.55, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
+    mower: true,
+    barLights: 'switch', // a plain on / off rocker (P: off, on; lightSwitch.js), starting off
+    label: sayName('mower'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('mower'),
+    bodyColor: 0x2f5f35, // a faded British racing green
+    style: 'utility', // the quad body styles are unused (the model is its own), but the spec must name one that exists
+    dashStyle: 'mower',
+    reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
+    chokeStyle: 'plunger', // a pull knob on the dash panel (the model places it itself)
+    tapStyle: 'carbLeft', // the tap is under the tank (the model places it itself)
+    hoursRange: [60, 900], // engine hours showing when the game starts
+    odoRange: [40, 600], // odometer miles showing when the game starts
+    wearRange: [0.1, 0.35], // engine wear it comes with (0 new, 1 shot), pulled up by a high hour meter; see history.js
+    tinkers: false, // nobody leaves a throttle stop out on a mower
+    solo: true, // one seat
+    wheelShake: 0.9,
+    // A slow, steady garden-engine tickover, and a top end that never gets far.
+    safeIdle: 1000,
+    idleRange: [1250, 1450],
+    roughnessRange: [0.18, 0.35],
+    fuelRange: [1.5, 4.5], // 5 litre tank, 1 litre reserve
+    topRpmRange: [3500, 3800], // full-throttle revs this game, about 4% either side of the engine's own
+    fuel: { tankCapacity: 5, reserveLitres: 1 },
+    engine: {
+      pullStart: true, // a cord, as well as the key
+      idleRpmWarm: 1350,
+      maxRpm: 3650,
+      redlineRpm: 3300,
+      rpmRiseRate: 6,
+      rpmFallRate: 5,
+      warmUpSeconds: 90,
+      coldEnrichmentNeed: 1.0,
+      chokeIdleRpm: 1700,
+      catchChance: 0.6,
+      coldRoughness: 0.45,
+      coldPowerLoss: 0.85,
+    },
+    vehicle: {
+      mass: 260, // mower plus rider
+      centreOfMassY: -0.08,
+      riderTopple: 20,
+      suspensionStiffness: 40,
+      rollInertia: 40,
+      pitchInertia: 80,
+      yawInertia: 90,
+      wheelRadius: 0.24,
+      suspensionRestLength: 0.1,
+      maxSuspensionTravel: 0.06,
+      maxSuspensionForce: 9000,
+      maxDriveForce: 650,
+      maxSpeed: 3.8, // about 8 mph flat out with the blade off
+      maxSteerDeg: 42,
+      steerSpeedReduction: 0.05,
+      clutchEngageRpm: 1500,
+      clutchFullRpm: 2300,
+      couplingRpm: 1900,
+      engineBrakeForce: 70,
+      powerbandRpm: 2800,
+      torqueBelowBand: 0.7,
+      fourWheelDrive: 0, // the rears push
+    },
+    vibration: {
+      pulseGain: 0.9,
+      idleRpm: 1350,
+      barsFreq: 16,
+      barsGain: 0.18,
+      heaveFreq: 9,
+      pitchFreq: 7,
+      heaveDamping: 0.2,
+    },
+    audio: {
+      recIdleSource: 'rev', // the same single as the farm bike's, slowed right down until the mower has an engine of its own (#76)
+      pulseRefRpm: 1350,
+      recBlendLo: 1800,
+      recBlendHi: 2900,
+      recToneClosed: 6000,
+      recVolume: 0.42,
+      pipeLength: 0.6,
+      mufflerFreqA: 200,
+      densityRefRpm: 1600,
+    },
+    smoke: {
+      warmDensity: 0.12,
+      coldDensity: 0.5,
+      tint: '#e8eef5',
+    },
+  },
 ];
 
 // The tractor: always on the farm (it isn't part of the fleet, src/vehicle/fleet.js). An old diesel in the yard: heavy, slow and strong,

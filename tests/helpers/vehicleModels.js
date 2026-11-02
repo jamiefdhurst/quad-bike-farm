@@ -19,6 +19,7 @@ export async function buildAllModels() {
   const { buildBantamModel, BANTAM_LAYOUT } = await import('../../src/vehicle/bantamModel.js');
   const { buildAgModel, AG_LAYOUT } = await import('../../src/vehicle/ag200Model.js');
   const { buildAtcModel } = await import('../../src/vehicle/atcModel.js');
+  const { buildMowerModel, MOWER_LAYOUT } = await import('../../src/vehicle/mowerModel.js');
   const { buildTractorModel } = await import('../../src/vehicle/tractorModel.js');
   const { buildUtvModel } = await import('../../src/vehicle/utvModel.js');
   const { buildLandRoverModel } = await import('../../src/vehicle/landRoverModel.js');
@@ -35,6 +36,7 @@ export async function buildAllModels() {
     let layout = QUAD_LAYOUT;
     if (spec.miniMoto) [model, layout] = [buildMiniMotoModel(o), MOTO_LAYOUT];
     else if (spec.farmBike) [model, layout] = [buildAgModel(o), AG_LAYOUT];
+    else if (spec.mower) [model, layout] = [buildMowerModel(o), MOWER_LAYOUT];
     else if (spec.classicBike) [model, layout] = [buildBantamModel(o), BANTAM_LAYOUT];
     else if (spec.threeWheeler) [model, layout] = [buildAtcModel({ ...o, chokeStyle: spec.chokeStyle }), ATC_LAYOUT];
     else if (spec.tractor) [model, layout] = [buildTractorModel(o), TRACTOR_LAYOUT];

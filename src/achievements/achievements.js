@@ -60,6 +60,7 @@ const RIDE_NAMES = {
   atc: 'the three-wheeler',
   plover: thePhrase('plover'),
   ag200: thePhrase('ag200'),
+  mower: thePhrase('mower'),
   loan: 'the loan quad',
   tractor: 'the tractor',
   utv: thePhrase('utv'),
@@ -71,7 +72,7 @@ const rideOf = (id) => ({ id: `ride-${id}`, group: 'Ride', name: `Ride ${RIDE_NA
 
 // Each: id, group, name, hint (what to do), points (1 easy, 2 takes a while, 3 hard), test(s) and optionally needs (a vehicle id).
 export const ACHIEVEMENTS = [
-  ...['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'moto', 'ag200', 'atc', 'plover', 'loan', 'tractor', 'utv', 'landrover', 'landrover200'].map(rideOf),
+  ...['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'moto', 'ag200', 'mower', 'atc', 'plover', 'loan', 'tractor', 'utv', 'landrover', 'landrover200'].map(rideOf),
   { id: 'ride-three', group: 'Ride', name: 'Getting about', hint: 'Ride three different vehicles', points: 1, test: (s) => s.count('rode') >= 3 },
   { id: 'ride-all', group: 'Ride', name: 'Full set', hint: 'Ride every vehicle on the farm this game', points: 3, test: (s) => s.fleet.some((id) => id !== 'rusty' && id !== 'plover') && s.fleet.every((id) => id === 'rusty' || id === 'plover' || s.has('rode', id)) },
   { id: 'all-running', group: 'Ride', name: 'Everything going at once', hint: 'Get every quad on the farm running at the same time', points: 3, test: (s) => s.n('allRunning') > 0 },
