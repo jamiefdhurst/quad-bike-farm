@@ -5,6 +5,7 @@ import { addHeadlightBeams, addSignalLamps, addSignalStalk, addHazardSwitch, fac
 import { bentTube, loftGeometry, mergeStatic } from './quadGeometry.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
 import { buildWiper } from './detail/fittings.js';
+import { markWiper, addRainGlass } from './wiperModel.js';
 import { buildToggle, buildPullKnob, buildLampLens } from './detail/switchgear.js';
 import { buildRadio } from './detail/radios.js';
 import {
@@ -183,8 +184,11 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
       const wiper = buildWiper({ len: 0.55, mats: { arm: MAT.black } });
       wiper.position.set(s * 0.1, 0.03, 0); // its spindle in the bottom rail, below the glass, the arm rising out of it onto the glass
       wiper.rotation.z = s > 0 ? 0.12 : Math.PI - 0.12;
-      screen.add(wiper);
+      screen.add(markWiper(wiper, s * 1.45)); // each sweeping up its own pane from the bottom rail to about upright (#103)
     }
+    // Where the rain lands: the two panes, either side of the centre post, in the screen's own frame (its z is out of the glass).
+    const pane = (s) => [[s * 0.03, -H / 2 + 0.06], [s * 0.77, -H / 2 + 0.06], [s * 0.77, H / 2 - 0.06], [s * 0.03, H / 2 - 0.06]];
+    addRainGlass(screen, { position: [0, H / 2, 0], panes: [pane(-1).reverse(), pane(1)] });
     rbox(0.2, 0.07, 0.03, 0.01, MAT.black, 0, SERIES_SCREEN.topY - 0.1, SERIES_SCREEN_TOP_Z - 0.04, root, 'mirrorGlass'); // the rear-view mirror
     tube([0, SERIES_SCREEN.topY - 0.05, SERIES_SCREEN_TOP_Z - 0.01], [0, SERIES_SCREEN.topY - 0.09, SERIES_SCREEN_TOP_Z - 0.04], 0.006, MAT.galv, root, 4);
   }
@@ -422,7 +426,9 @@ export function buildSeriesModel({ bodyColor = 0x3b4a36, dashStyle = 'series', r
     fit(buildLampLens({ r: 0.006, colour: 'Red' }), -0.7, 0.15);
     fit(buildLampLens({ r: 0.006, colour: 'Amber' }), -0.665, 0.15);
     fit(buildLampLens({ r: 0.011, colour: 'Clear' }), -0.63, 0.11); // the push button
-    fit(buildToggle({ on: false }), -0.7, 0.07);
+    const wiperSwitch = buildToggle({ on: false }); // the wipers' switch: down off, then up through slow and fast (#103)
+    wiperSwitch.name = 'wiperSwitch';
+    fit(wiperSwitch, -0.7, 0.07);
     const lightsKnob = buildPullKnob({ out: 0 }); // the lights' pull knob: out one notch for the lights, two for main beam (the dash's update moves it)
     fit(lightsKnob, -0.63, 0.04);
     const dash = buildDash(dashStyle);

@@ -15,6 +15,8 @@ import { addSnorkel, setSnorkel } from './snorkelModel.js';
 import { LightSwitch, LIGHT_MODES, SIMPLE_LIGHT_MODES, lightLook, lightLamps } from './lightSwitch.js';
 import { poseBarPod, poseThumbThrottle, POD } from './foremanControls.js';
 import { Indicators, INDICATOR_PARAMS } from './indicators.js';
+import { Wipers } from './wipers.js';
+import { poseWipers, poseWiperStalk } from './wiperModel.js';
 import { SeatBelts, BELT_SEATS, beltLampMode, beltLampLit } from './seatBelts.js';
 import { TyreSet } from './tyres.js';
 import { wearLook, wornTyre } from './detail/tread.js';
@@ -107,7 +109,7 @@ export class Quad {
    * @param {string} [opts.style]      Body style, see buildQuadModel.
    * @param {object} opts.fuelParams   See fuelSystem.js.
    */
-  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, decay = null, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, handLever = false, crank = null, landRover = false, utv = false, car = false, lightSwitch = false, barLights = false, driverStand = null, benchStand = null, chainDrive = false, strengthSpec = null }) {
+  constructor({ scene, physics, RAPIER, world, engine, params, label = 'quad', spawn, bodyColor, dashStyle, style, scale = 1, solo = false, plateNumber, fuelParams, build, layout = QUAD_LAYOUT, groundOffset = GROUND_OFFSET, gearbox = null, tractor = false, proxy = null, wheelShake = 0.6, noHeadlight = false, steadyLights = false, decay = null, reverseStyle = 'knee', chokeStyle = 'thumb', tapStyle = 'left', controlsParams = DEFAULT_CONTROLS_PARAMS, drive = null, wipers = null, handLever = false, crank = null, landRover = false, utv = false, car = false, lightSwitch = false, barLights = false, driverStand = null, benchStand = null, chainDrive = false, strengthSpec = null }) {
     this.strengthSpec = strengthSpec;
     this.reverseStyle = reverseStyle; // where its reverse is and what it takes (controls.js)
     this.chokeStyle = chokeStyle;
@@ -127,6 +129,8 @@ export class Quad {
     this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's and the Land Rovers' three-way light switch: off, dipped, main beam (lightSwitch.js)
     this.signals = lightSwitch ? new Indicators() : null; // and their indicators and hazards (indicators.js)
     this.signalClick = null; // the relay's tick: 'on' or 'off' on the frame the lamp changes (the game plays it and clears it)
+    this.wipers = wipers ? new Wipers(wipers) : null; // the windscreen wipers, on everything with a screen: X steps the stalk (wipers.js)
+    this.wiperClick = false; // the stalk has moved a notch this frame (the game plays it and clears it)
     this.belts = lightSwitch || landRover ? new SeatBelts() : null; // the UTV's and the Land Rover's seat belts (seatBelts.js)
     this.driverStand = driverStand; // where a girl climbs in to drive from, on the model's right: the UTV and Land Rover step in through a door ({ x, z } in the model's frame, x negative: the right)
     this.benchStand = benchStand; // where you get in and out beside the bench, on the model's left (the other side from the driver's door), same frame as above
@@ -578,6 +582,7 @@ export class Quad {
       if (input.wasPressed('Period')) this.signals.press('right');
       if (input.wasPressed('Equal')) this.signals.press('hazard');
     }
+    if (this.wipers && this.input && input.wasPressed('KeyX')) this.wipers.step();
     if (this.manual) this.manualKeys(input);
     // An automatic's reverse is a button, pressed with the brake held (the two-strokes have none).
     if (this.input && !this.manual && !this.tractor && input.wasPressed('KeyB') && this.reverseCheck(input)) this.reverse = true;
@@ -1420,6 +1425,12 @@ export class Quad {
       if (this.signals.click) this.signalClick = this.signals.click;
       poseSignalControls(this.model, { mode: this.signals.mode, lit: this.signals.lit });
       setSignalLamps(this.model, { ...sides, reverse: this.reverse && e.hasPower && e.ignitionOn ? INDICATOR_PARAMS.reverseGlow : 0 });
+    }
+    if (this.wipers) {
+      const notch = this.wipers.positions().indexOf(this.wipers.setting);
+      if (this.wipers.moved) this.wiperClick = true; // (read before update clears it: the stalk can move with the key off)
+      poseWipers(this.model, this.wipers.update(dt, e.hasPower && e.ignitionOn));
+      poseWiperStalk(this.model, notch, this.wipers.speeds.length);
     }
     setTaillights(this.model, lit ? taillightLevel(level, this.brake > 0.1) : 0); // the same supply, so a brake light needs it too
 

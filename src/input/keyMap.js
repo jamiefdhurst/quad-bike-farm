@@ -22,7 +22,7 @@ export const ACTIONS = [
   { group: 'Using things', keys: [
     ['KeyE', 'Interact, sit, hook on or off, get off'],
     ['KeyG', 'Put down what you hold, 2WD or 4WD'],
-    ['KeyX', 'Wind the winch, wipe your view'],
+    ['KeyX', 'Wind the winch, wipe your view, the wipers'],
     ['KeyY', 'Dipstick, tickle the old bike’s carb'],
     ['KeyJ', 'Hook a trailer on or off, from the seat'],
     ['KeyL', 'Horn (hold)'],

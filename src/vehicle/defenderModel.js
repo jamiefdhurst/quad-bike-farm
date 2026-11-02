@@ -5,6 +5,7 @@ import { addHeadlightBeams, addSignalLamps, addSignalStalk } from './quadModel.j
 import { loftGeometry, mergeStatic } from './quadGeometry.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
 import { buildWiper } from './detail/fittings.js';
+import { markWiper, addRainGlass, addWiperStalk } from './wiperModel.js';
 import { buildGlovebox } from './detail/switchgear.js';
 import { buildRadio } from './detail/radios.js';
 import {
@@ -196,8 +197,11 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
       const wiper = buildWiper({ len: 0.5, mats: { arm: MAT.black } }); // a wiper from the kit, parked along the foot of the glass
       wiper.position.set(s * 0.1, 0.03, 0); // its spindle in the bottom rail, below the glass (which starts at 0.06), the arm rising out of it onto the glass
       wiper.rotation.z = s > 0 ? 0.12 : Math.PI - 0.12;
-      screen.add(wiper);
+      screen.add(markWiper(wiper, s * 1.45)); // each sweeping up its own pane from the bottom rail to about upright (#103)
     }
+    // Where the rain lands: the two panes, either side of the centre post, in the screen's own frame (its z is out of the glass).
+    const pane = (s) => [[s * 0.03, -H / 2 + 0.06], [s * 0.77, -H / 2 + 0.06], [s * 0.77, H / 2 - 0.06], [s * 0.03, H / 2 - 0.06]];
+    addRainGlass(screen, { position: [0, H / 2, 0], panes: [pane(-1).reverse(), pane(1)] });
     rbox(0.2, 0.07, 0.03, 0.01, MAT.black, 0, DEF_SCREEN.topY - 0.1, DEF_SCREEN_TOP_Z - 0.04, root, 'mirrorGlass'); // the rear-view mirror
     tube([0, DEF_SCREEN.topY - 0.05, DEF_SCREEN_TOP_Z - 0.01], [0, DEF_SCREEN.topY - 0.09, DEF_SCREEN_TOP_Z - 0.04], 0.006, MAT.black, root, 4);
   }
@@ -461,6 +465,7 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     tube([0, 0, 0], [0, 0.42, 0], 0.026, MAT.black, column);
     root.add(column);
     addSignalStalk(column, 0.34, MAT.black, { modern: true });
+    addWiperStalk(column, 0.34, MAT.black, { modern: true }); // and the wipers' on the right
     const wheel = new THREE.Group();
     wheel.name = 'handlebars';
     wheel.userData.keep = true;

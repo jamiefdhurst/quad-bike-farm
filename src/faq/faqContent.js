@@ -672,7 +672,7 @@ export const FAQ_SECTIONS = [
         a: `On a quad, the mini moto, the three-wheeler or the tractor, riding close behind another vehicle on the mud, through a puddle or the ford
           at speed, or fast in hard rain splatters your view. Press <kbd>X</kbd> to wipe: the first wipe only smears it wide and thin, the second
           clears the smear, and raindrops go in one. Left alone it dries and drops off in a few minutes. The Yak, the Moorlands and the cars
-          have a windscreen, so they stay clean. Hanging back, or going round the puddles, keeps it off.`,
+          have a windscreen, so your view stays clean: the rain lands on the glass instead, and <kbd>X</kbd> works their wipers. Hanging back, or going round the puddles, keeps it off.`,
         tip: 'Mud on your view? Press X to wipe it. Once smears, twice clears.',
       },
       {
@@ -2441,6 +2441,22 @@ export const FAQ_SECTIONS = [
           front and back of that side flash orange and the relay ticks. The Tor has one green "<- ->" lamp on its dash; the Yak and the Crag have a separate arrow for each side. Press the same key again to switch them off. A left or right
           indicator also cancels itself once you have turned the wheel that way and straightened up, like a real stalk. The hazards stay on until you press <kbd>=</kbd>.`,
         tip: "Comma and full stop are the left and right indicators in the Yak and Moorlands, equals the hazards.",
+      },
+      {
+        q: 'How do I put the wipers on?',
+        a: `<kbd>X</kbd> in the girls' cars, your Vauclair, either Moorland or the Yak, with the key on. Each press moves the wiper stalk on a notch,
+          through the speeds that vehicle has and back to off: the Griffin, the Crag and your Vauclair have intermittent (a wipe every few seconds), slow
+          and fast; the Finch slow and fast; the Tor slow and fast on a toggle switch at the end of its dash; the Yak one speed. You can see the stalk on the
+          right of the column lift a notch at a time. Switched off, the blades finish their sweep and park at the bottom of the screen. Turn the key off
+          and they stop where they are.`,
+        tip: 'X works the wipers in the cars, the Moorlands and the Yak. The key has to be on.',
+      },
+      {
+        q: 'Why is there rain all over the windscreen?',
+        a: `Rain lands on the glass and beads up, more of it the faster you drive into it. Drops that join up and get heavy run down the glass, and at
+          speed the wind pushes them up it in streaks. Under a roof nothing new lands, and once it stops raining they dry off in a minute or so. The wipers
+          only clear what the blades sweep over, so the corners and the top of the glass stay wet, as on the real thing; the Yak's one blade clears the
+          driver's side. When one of the girls drives she puts the wipers on to suit the rain.`,
       },
       {
         q: 'Do the Yak and Moorlands have a reverse light?',

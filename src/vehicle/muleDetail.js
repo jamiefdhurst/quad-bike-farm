@@ -5,6 +5,7 @@ import { decalMesh, MAKER_FOR } from './detail/decals.js';
 import { buildGrille } from './detail/fittings.js';
 import { buildMirror } from './detail/mirrors.js';
 import { merge } from './detail/parts.js';
+import { markWiper, addRainGlassBetween } from './wiperModel.js';
 import { mesh, rbox, tube } from './tz65Detail.js';
 import {
   MULE_WHEELS, MULE_BONNET, MULE_BODY, MULE_HOOD_E, MULE_FLARES, MULE_NOSE, MULE_CAB, MULE_ROOF, MULE_DOOR, MULE_BED, MULE_TAIL, MULE_HITCH, loftTop, MULE_DASH,
@@ -164,11 +165,25 @@ export function addMuleCab(root, MAT, paint) {
   for (const s of [-1, 1]) tube(onGlass(0, s * G.half), onGlass(1, s * G.half), 0.016, MAT.frame, root, 6);
   tube(onGlass(0, -G.half), onGlass(0, G.half), 0.02, MAT.frame, root, 6);
   tube(onGlass(1, -G.half), onGlass(1, G.half), 0.018, MAT.frame, root, 6);
-  // The wiper: a pivot on the dash's top at the glass's foot (the spindle through the cowl), a short arm up the glass and a blade lying on it.
-  const piv = onGlass(0.0, 0.2);
+  // The wiper: a pivot on the dash's top at the glass's foot (the spindle through the cowl), a short arm up the glass and a long blade lying
+  // along its foot.
+  const piv = onGlass(0.0, -0.2); // on the driver's side, so the blade clears the glass in front of the driver
   mesh(new THREE.CylinderGeometry(0.014, 0.016, 0.03, 10), MAT.plastic, root, 'wiperPivot').position.set(piv[0], piv[1] - 0.005, piv[2] + 0.0);
-  tube([piv[0], piv[1] + 0.004, piv[2] - 0.004], onGlass(0.1, 0.12), 0.0045, MAT.frame, root, 5).name = 'wiperArm';
-  tube(onGlass(0.1, 0.12), onGlass(0.26, -0.18), 0.0065, MAT.frame, root, 5).name = 'wiperBlade';
+  const arm = tube([piv[0], piv[1] + 0.004, piv[2] - 0.004], onGlass(0.06, -0.14), 0.0045, MAT.frame, root, 5);
+  arm.name = 'wiperArm';
+  const blade = tube(onGlass(0.06, -0.14), onGlass(0.12, 0.36), 0.0065, MAT.frame, root, 5);
+  blade.name = 'wiperBlade';
+  // The arm and blade in a group on the spindle, lying in the glass, so it turns across it (#103): built where they are, then moved in.
+  const wiper = new THREE.Group();
+  wiper.name = 'wiper';
+  wiper.position.set(piv[0], piv[1], piv[2]);
+  wiper.rotation.x = lean;
+  root.add(wiper);
+  root.updateMatrixWorld(true);
+  wiper.attach(arm);
+  wiper.attach(blade);
+  markWiper(wiper, 2.2); // from lying along the foot, up past upright and over towards the driver's pillar
+  addRainGlassBetween(root, { foot: G.base.slice().reverse(), top: G.top.slice().reverse(), halfFoot: G.half, halfTop: G.half });
   // The rear hoop's net behind the seat: a mesh in a frame of three bars, from the seat back's height to the roof.
   const N = C.net;
   const nz = C.rear.z - 0.004;

@@ -1,4 +1,5 @@
 import { lensCoverage } from '../effects/lensMud.js';
+import { screenCover } from '../effects/screenRain.js';
 import GUI from 'lil-gui';
 import { getTuningGroups, exportTuning } from '../core/tuning.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
@@ -332,6 +333,10 @@ export class DebugGui {
       show(r, 'radio (what you hear, signal)', () => (unit().quad.radio ? `${unit().quad.radio.describe()}, signal ${round(unit().quad.radio.signal)}, ${unit().quad.radio.profile.name}` : 'none'));
     }
     if (u.quad.signals) r.add({ get v() { return unit().quad.signals?.mode; }, set v(x) { unit().quad.signals?.set(x); } }, 'v', SIGNAL_MODES).name('indicators').listen();
+    if (u.quad.wipers) {
+      r.add({ get v() { return unit().quad.wipers?.setting; }, set v(x) { unit().quad.wipers?.set(x); } }, 'v', u.quad.wipers.positions()).name('wipers (X)').listen();
+      show(r, 'rain on the windscreen (0 clear)', () => round(unit().screenRain ? screenCover(unit().screenRain.glass) : 0));
+    }
     if (u.quad.drive) r.add({ get v() { return unit().quad.drive?.mode; }, set v(x) { if (unit().quad.drive) unit().quad.drive.mode = x; } }, 'v', u.quad.drive.hasLock ? DRIVE_MODES : ['2wd', '4wd']).name('drive').listen();
     show(r, 'mixture', () => round(unit().engine.mixture));
     show(r, 'roughness', () => round(unit().engine.roughness));
@@ -476,6 +481,8 @@ export class DebugGui {
     row(one, 'Put it right (faults, plug, filter, wear; not quirks)', () => (fixEverything(this.unit()), g.debugBatteryIn(this.unit()), g.debugEngineOut(this.unit(), false), g.trailerOf(this.unit().quad)?.motion.jammed && g.debugJackknife(this.unit(), false)));
     row(one, 'Splat mud on the lens', () => g.debugLens('splat'));
     row(one, 'Wipe the lens (once smears, twice clears)', () => g.debugLens('wipe'));
+    row(one, 'Soak its windscreen, as in a downpour', () => g.debugScreenRain(this.unit(), 'soak') || g.hud.toast('It has no windscreen'));
+    row(one, 'Dry its windscreen', () => g.debugScreenRain(this.unit(), 'clear') || g.hud.toast('It has no windscreen'));
     row(one, 'Take me to it', () => {
       const q = this.unit().quad;
       if (g.riddenUnit) return g.hud.toast('Get off first');

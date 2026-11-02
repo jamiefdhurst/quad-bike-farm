@@ -18,7 +18,7 @@ Every value is at a dotted path. Type the path alone to read it, or the path and
 
 - `tp red barn`, `tp me 100 20`, `tp amy to jess`, `tp tractor here`, `tp petrol-can 10 10 90`, then `nudge`, `face`, `where`, `places`.
 - `reset red`, `reset vehicles`, `reset girls`, `reset all`.
-- `start|stop|warm|cool|fill|fix <vehicle|all>`, `vehicles`, `girls`.
+- `start|stop|warm|cool|fill|soak|dry|fix <vehicle|all>`, `vehicles`, `girls` (`soak` rains on a vehicle's windscreen as in a downpour, `dry` dries it).
 - `girl amy drive red`, `girl jess doughnuts`, `girl amy invite-barn`: the same things as the Girls tab buttons.
 - `weather rain`, `fly`, `autonomy off` (the girls start nothing on their own, but follow and answer you), `speech off`, `sound off`.
 

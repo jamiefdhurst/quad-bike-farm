@@ -8,6 +8,7 @@ import { treadTyre } from './detail/tread.js';
 import { buildRoadWheel } from './detail/roadWheels.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
 import { buildWiper } from './detail/fittings.js';
+import { markWiper, addRainGlassBetween, addWiperStalk } from './wiperModel.js';
 import { buildRadio } from './detail/radios.js';
 import { P309_BODY, P309_DOOR, P309_HATCH, P309_TAIL_LAMP, P309_BOOT, P309_R, P309_TYRE_W, P309_RIDE_LIFT, P309_RUB, P309_DENTS, P309_SHELF, P309_STRUT } from './p309Body.js';
 
@@ -470,8 +471,9 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
       wiper.position.set(x, ys + 0.022, zs + 0.03);
       wiper.rotation.set(-Math.atan2(yt - ys, zs - zt), 0, ang);
       wiper.rotation.order = 'YXZ';
-      root.add(wiper);
+      root.add(markWiper(wiper, 1.85)); // sweeping up from the foot of the screen, past upright (#103)
     }
+    addRainGlassBetween(root, { foot: [zs, ys], top: [zt, yt], halfFoot: halfAt(ys), halfTop: halfAt(yt) }); // where the rain lands on it
     rbox(0.22, 0.06, 0.02, 0.01, PAL.black, 0, yt - 0.15, zt - 0.06, root, 'mirrorGlass'); // the rear-view mirror
     tube([0, yt - 0.01, zt - 0.03], [0, yt - 0.12, zt - 0.06], 0.008, PAL.black, root, 5);
   }
@@ -774,6 +776,7 @@ export function build309Model({ bodyColor = 0x8f9396, reg = null } = {}) {
     rbox(0.1, 0.07, 0.12, 0.025, trim.dash, 0, 0.05, 0, column); // the shroud by the dash, grey
     root.add(column);
     addSignalStalk(column, c.wheelOut - 0.06, IN.black, { modern: true });
+    addWiperStalk(column, c.wheelOut - 0.06, IN.black, { modern: true }); // and the wipers' on the right
     const keyHolder = new THREE.Group();
     keyHolder.position.set(-0.052, 0.05, 0.03); // the key on the shroud's right side, the door's
     keyHolder.rotation.y = Math.PI / 2;

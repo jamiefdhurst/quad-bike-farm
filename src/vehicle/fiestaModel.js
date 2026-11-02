@@ -9,6 +9,7 @@ import { treadTyre } from './detail/tread.js';
 import { buildRoadWheel } from './detail/roadWheels.js';
 import { buildSeatBelt, webbingMaterial } from './detail/belts.js';
 import { buildWiper } from './detail/fittings.js';
+import { markWiper, addRainGlassBetween, addWiperStalk } from './wiperModel.js';
 import { buildRadio } from './detail/radios.js';
 import { addIgnitionKey } from './dash.js';
 import { FIESTA_BODY, FIESTA_DOOR, FIESTA_HATCH, FIESTA_TAIL_LAMP, FIESTA_BOOT, FIESTA_R, FIESTA_TYRE_W, FIESTA_RIDE_LIFT } from './fiestaBody.js';
@@ -420,8 +421,9 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
       wiper.position.set(x, ys + 0.022, zs + 0.03);
       wiper.rotation.set(-Math.atan2(yt - ys, zs - zt), 0, ang);
       wiper.rotation.order = 'YXZ';
-      root.add(wiper);
+      root.add(markWiper(wiper, 1.85)); // sweeping up from the foot of the screen, past upright (#103)
     }
+    addRainGlassBetween(root, { foot: [zs, ys], top: [zt, yt], halfFoot: halfAt(ys), halfTop: halfAt(yt) }); // where the rain lands on it
     // The rear-view mirror at the top of the screen, in the middle, on its stem from the header.
     rbox(0.2, 0.06, 0.02, 0.01, PAL.black, 0, yt - 0.15, zt - 0.06, root, 'mirrorGlass');
     tube([0, yt - 0.01, zt - 0.03], [0, yt - 0.12, zt - 0.06], 0.008, PAL.black, root, 5);
@@ -722,6 +724,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     rbox(0.08, 0.06, 0.1, 0.025, PAL.black, 0, 0.05, 0, column); // the shroud by the dash
     root.add(column);
     addSignalStalk(column, c.wheelOut - 0.06, PAL.black, { modern: false });
+    addWiperStalk(column, c.wheelOut - 0.06, PAL.black, { modern: false }); // and the wipers' on the right
     // The key in the column's right side, a real one (as the UTV's): on the shroud, facing the driver, turned by the dash's update.
     const keyHolder = new THREE.Group();
     keyHolder.position.set(-0.045, 0.045, 0.03); // on the driver's right, the door's side
