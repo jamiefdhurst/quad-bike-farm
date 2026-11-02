@@ -6,7 +6,7 @@ argument-hint: "[issue number; default: the next 🚀 performance issue; 'check'
 Performance work on $ARGUMENTS. It runs alongside feature work, in its own session. `/todo` takes issues in number order, performance ones included; this takes `🚀 performance` issues first. The difference from `/todo` is that every change is measured before and after, the same way, and a change that doesn't move the numbers isn't shipped.
 
 - **A number** works that issue.
-- **Nothing** takes the next performance issue: the lowest-numbered open one labelled `🚀 performance` and `🔜 next`, else the lowest-numbered open `🚀 performance` issue with no open PR (`gh pr list --search "<n> in:body"`). If there is none, do the check-up.
+- **Nothing** takes the next performance issue: the lowest-numbered open one labelled `🚀 performance` and `🔜 next`, else the lowest-numbered open `🚀 performance` issue not labelled `💤 later` with no open PR (`gh pr list --search "<n> in:body"`). If there is none, do the check-up.
 - **`check`** does the check-up.
 
 ```

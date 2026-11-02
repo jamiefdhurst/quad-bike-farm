@@ -6,7 +6,7 @@ argument-hint: "[issue number; default: the next 🧩 cohesion issue; 'check' fo
 Cohesion work on $ARGUMENTS: keeping the game pulled together, so it has one way to use things, one look, one name for each thing and one level of detail. It runs alongside feature work, in its own session. `/todo` takes issues in number order, cohesion ones included; this takes `🧩 cohesion` issues first.
 
 - **A number** works that issue.
-- **Nothing** takes the next cohesion issue: the lowest-numbered open one labelled `🧩 cohesion` and `🔜 next`, else the lowest-numbered open `🧩 cohesion` issue with no open PR (`gh pr list --search "<n> in:body"`). If there is none, do the check-up.
+- **Nothing** takes the next cohesion issue: the lowest-numbered open one labelled `🧩 cohesion` and `🔜 next`, else the lowest-numbered open `🧩 cohesion` issue not labelled `💤 later` with no open PR (`gh pr list --search "<n> in:body"`). If there is none, do the check-up.
 - **`check`** does the check-up.
 
 ```
