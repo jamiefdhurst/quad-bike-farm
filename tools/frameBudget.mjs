@@ -14,7 +14,7 @@ export const BUDGETS = {
   // and about 8% over. Before it (and after #365) they were 2,945, 3,957, 1,901 and 2,396 calls: parts too small to see are no longer drawn.
   yard: { calls: 2700, triangles: 3.8e6 }, // 2,630 until the farm bike (#75): one more vehicle in the yard is about 100 calls
   village: { calls: 2200, triangles: 4.1e6 }, // 3,170 until #399 trimmed the quads parked in it (2,040 now)
-  wood: { calls: 1330, triangles: 4.1e6 },
+  wood: { calls: 1400, triangles: 4.1e6 }, // 1,330 until the mower (#76): the smoke test measured 1,360 and 1,390 with it parked in view
   hilltop: { calls: 1730, triangles: 7.2e6 }, // 1,650 until the farm bike (#75): CI measured 1,671 with it parked in view
 };
 
