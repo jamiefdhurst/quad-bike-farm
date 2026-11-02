@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
-import { hotSteam, heatTarget, pinkLevel, gaugeHeat, stepSoak, coolTickRate, hotStartRich, airflow } from '../src/engine/heat.js';
+import { hotSteam, heatTarget, pinkLevel, gaugeHeat, stepSoak, coolTickRate, hotStartRich, airflow, condensation } from '../src/engine/heat.js';
 import { Weather, WEATHER_KINDS } from '../src/world/weather.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 import { tempGaugeFraction, HOT_FROM } from '../src/vehicle/tempGauge.js';
@@ -239,5 +239,21 @@ describe('steam off a hot engine', () => {
     const ground = hotSteam({ ...base, soak: 1, wet: 1 }, P);
     expect(ground).toBeGreaterThan(0);
     expect(ground).toBeLessThan(hotSteam({ ...base, soak: 1, rain: 1 }, P));
+  });
+});
+
+describe('condensation in a cold exhaust', () => {
+  const at = (temperature, dayTemp, running = true) => condensation({ running, temperature, dayTemp }, P);
+  it('needs a cold engine in cold air', () => {
+    expect(at(0.1, 2)).toBeGreaterThan(0.5);
+    expect(at(0.1, 20)).toBe(0);
+    expect(at(0.9, 2)).toBe(0);
+  });
+  it('fades as the engine warms or the air does', () => {
+    expect(at(0.1, 2)).toBeGreaterThan(at(0.4, 2));
+    expect(at(0.1, 2)).toBeGreaterThan(at(0.1, 9));
+  });
+  it('stops when the engine is off', () => {
+    expect(at(0.1, 2, false)).toBe(0);
   });
 });

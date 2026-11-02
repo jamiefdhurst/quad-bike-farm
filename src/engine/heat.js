@@ -55,6 +55,17 @@ export function hotSteam({ running, heat, soak, rain = 0, wet = 0, covered = fal
   return clamp01(Math.max(cooking, wetness * hot * p.steamWet));
 }
 
+/**
+ * 0..1 how much a cold exhaust condenses: the water in the exhaust gas turns to white vapour and drips from the tip while the engine
+ * is cold and the air is cold. It needs both, so a cold engine on a warm afternoon shows nothing, and a warm one never does.
+ */
+export function condensation({ running, temperature, dayTemp }, p) {
+  if (!running) return 0;
+  const air = clamp01((p.condenseAirBelow - dayTemp) / Math.max(0.5, p.condenseAirBelow - p.condenseAirFull));
+  const cold = clamp01((p.condenseWarmAt - temperature) / Math.max(0.05, p.condenseWarmAt));
+  return air * cold;
+}
+
 /** Where the dash gauge's red zone pushes to: poor lubrication, or this heat (shown weakly on the water-cooled). */
 export function gaugeHeat(overheat, heat, p, coolant = 1) {
   // With the coolant gone the gauge shows the water-cooled engine's heat in full.

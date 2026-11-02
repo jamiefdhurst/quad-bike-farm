@@ -17,7 +17,7 @@ What is true now, with the sections below to read for the detail. Keep it curren
 - **Starting and the battery.** Each vehicle has a battery with no gauge. Charging follows the revs, and a weak battery kills a petrol engine at idle. The two-strokes have a pull cord. Manuals can be bump-started by rolling, by a girl pushing, or by a tow. "Batteries and starting (2026-10-05)", "Charging that follows the revs (TODO 120)", "Bump-starting (TODO 24)".
 - **The drivetrain.** The CVT quads have a centrifugal clutch. A manual's revs follow the road through the gear's bite (`gearRpm`, `gearLock`). Engine load sags the revs and can stall a weak engine. A warm engine never stalls from braking, and the Land Rovers hold in first and second. "Engine load (2026-10-05)", "The clutch vehicles' revs follow the road, and the Land Rovers stay put", "Frost starts and braking stalls (TODO 3)".
 - **Water.** A puddle hit fast drowns the engine, which won't fire until it drains. "Puddles stalled quads too easily, and a drowned quad now drips" supersedes the numbers in "Drowning it (2026-10-06)".
-- **Smoke and air.** Exhaust smoke follows the mixture, oil and water. Yard haze and barn fumes are one level each, fed by running engines and cleared by wind or the doors. "Smoke hanging in still air (TODO 15)", "Fumes in the barn (TODO 21)".
+- **Smoke and air.** Exhaust smoke follows the mixture, oil and water, and a cold engine in cold air puffs white vapour and drips from the tip (#65). Yard haze and barn fumes are one level each, fed by running engines and cleared by wind or the doors. "Smoke hanging in still air (TODO 15)", "Fumes in the barn (TODO 21)".
 - **Engines can be swapped (#46).** The barn find's engine comes out at the bench onto the floor by the parts rack and goes into another quad of the same family; the one it replaces comes out onto the floor. The engine takes all its numbers, its sound and its wear. "Engine swaps (#46, was TODO 151)".
 - **History, not rules:** the revving passes (four-stroke second and third, two-stroke second) belong to the old `recorded` sound, and sound.md has the current `pulse` sound.
 
@@ -622,3 +622,11 @@ Settled with Jamie: the donor is the barn find's engine, pulled once it runs. En
 - **After the swap.** `startRunningIn`. A job with any flaw leaves loose mounts (the existing `mounts` fault at `botchedLevel`) and `swapBotchedRoughness` (0.08) more roughness. The clutch is moved up over a higher idle (`applyIdle`). The toolbox forgets its snapshot of the old engine.
 - **Save.** `captureVehicle` keeps `swap` (the engine's params, sound and where it came from) and `engineOut`; the shelf keeps its engines.
 - **Bench.** The menu has no free keys left (19), so both jobs are on the second page with the shed kit's. #394 reworks the menu.
+
+## Exhaust condensation (#65, was TODO 170)
+
+Chosen without asking: the issue settles the look, and the cause is the real one (water in the exhaust gas condensing in a cold pipe).
+
+- `condensation` (`engine/heat.js`, pure, tested) gives 0..1 for a running engine: how cold the air is (nothing above `condenseAirBelow` 12 °C, full at `condenseAirFull` 0 °C) times how cold the engine is (nothing once its warm-up passes `condenseWarmAt` 0.6). Both are needed, so a cold start on a mild afternoon shows nothing and a warm engine never does. It uses `engine.dayTemp`, so the panel's temperature setting drives it.
+- `ExhaustSmoke` adds `condensationDensity` to the puffs and whitens them unless the smoke is sooty anyway. Above `condenseDripFrom` 0.2 it also throws drops (`dripsPerSecond` 4 at full) from the tip: small dark-grey points that fall under gravity in the same particle pool, so no extra draw call, and vanish on reaching the ground. No wet patch is left behind.
+- The panel and console show it as "vapour and drips from a cold exhaust in cold air" in Running; the numbers are in the engine's Heat group and the vehicle's Smoke group in Tune.

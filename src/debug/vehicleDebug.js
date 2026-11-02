@@ -1,6 +1,7 @@
 // Pure helpers behind the debug panel's Vehicles tab (no DOM, no Three.js), so what the buttons do is tested.
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { idealAdvance } from '../engine/ignitionTiming.js';
+import { condensation } from '../engine/heat.js';
 
 /** Quirks that can't be had together, as the game deals them. */
 const EXCLUSIVE = { fuelHigh: 'fuelSticks', fuelSticks: 'fuelHigh' };
@@ -158,6 +159,7 @@ export function engineReadouts(engine, { manual = false } = {}) {
   if (p.strokes === 2) list.push({ key: 'silencerOff', label: 'silencer off (toolbox job)', get: (e) => (e.silencerOff ? 'yes' : 'no') });
   list.push({ key: 'overheating', label: 'overheating', get: (e) => e.heat });
   if (!p.waterCooled && !diesel) list.push({ key: 'pinking', label: 'pinking (heat too high, loses power)', get: (e) => e.pink });
+  list.push({ key: 'condensing', label: 'vapour and drips from a cold exhaust in cold air', get: (e) => condensation({ running: e.isRunning, temperature: e.temperature, dayTemp: e.dayTemp }, e.params) });
   list.push({ key: 'heatSoak', label: 'heat soak (ticks as it cools, hot start rich)', get: (e) => e.soak });
   list.push({ key: 'lubeHeat', label: 'extra heat from poor lubrication', get: (e) => e.overheat });
   if (p.waterCooled) {

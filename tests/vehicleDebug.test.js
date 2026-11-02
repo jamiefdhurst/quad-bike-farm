@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { setQuirk, setFault, clearFaults, fixEverything, problemSummary, quirkLabel, engineReadouts } from '../src/debug/vehicleDebug.js';
 import { QuirkSet } from '../src/vehicle/quirks.js';
 import { BrakeState } from '../src/vehicle/brakeState.js';
@@ -99,12 +100,17 @@ describe('vehicle debug helpers', () => {
 });
 
 describe('engineReadouts', () => {
-  const eng = (params) => ({ params, heat: 0.4, pink: 0.3, soak: 0.6, overheat: 0, steam: 0, boiled: false, coolantPuddle: 0, glow: 0, nip: 0, tick: 0, oilBurn: 0, oilRich: 0, jetOn: 1, jetErr: 0, valveLoose: 0.2, valveTight: 0, chill: 0, sheltered: false });
+  const eng = (params) => ({ params, isRunning: true, temperature: 0.2, dayTemp: 3, heat: 0.4, pink: 0.3, soak: 0.6, overheat: 0, steam: 0, boiled: false, coolantPuddle: 0, glow: 0, nip: 0, tick: 0, oilBurn: 0, oilRich: 0, jetOn: 1, jetErr: 0, valveLoose: 0.2, valveTight: 0, chill: 0, sheltered: false });
   const keys = (params) => engineReadouts(eng(params)).map((m) => m.key);
 
   it('shows pinking and heat soak on an air-cooled petrol engine', () => {
     expect(keys({ strokes: 4 })).toEqual(expect.arrayContaining(['overheating', 'pinking', 'heatSoak', 'valves']));
     expect(engineReadouts(eng({ strokes: 4 })).find((m) => m.key === 'pinking').get(eng({ strokes: 4 }))).toBe(0.3);
+  });
+
+  it('shows condensation on every engine', () => {
+    const e = eng(DEFAULT_ENGINE_PARAMS);
+    expect(engineReadouts(e).find((m) => m.key === 'condensing').get(e)).toBeGreaterThan(0.3);
   });
 
   it('leaves out what an engine cannot do', () => {
