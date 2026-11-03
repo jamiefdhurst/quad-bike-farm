@@ -1,5 +1,5 @@
 // The things in and round the gravel pit (world/quarry.js): a tumbledown post-and-wire fence round the lip with its danger signs, the site's
-// steel container, an old excavator left on the floor and a screening plant (a hopper over a conveyor, delivering onto a heap), drums and
+// steel container, an old excavator left on the floor and a screening plant (a hopper and crusher on a pad, conveyors and a screen, delivering onto a heap), its cabin and generator, drums and
 // tyres by the pond, hawthorn and gorse along the lip, boulders and flints fallen from the walls, dead trees, and the pond with its reeds.
 // All procedural, with canvas textures; the big pieces have colliders. The ground itself (the walls, the heaps, the road) is the terrain's.
 
@@ -15,6 +15,8 @@ import { rustTexture, signTexture } from './quarryTextures.js';
 import { buildExcavator, excavatorMaterials } from './excavatorModel.js';
 import { buildContainer, containerMaterials } from './containerModel.js';
 import { buildCabin, cabinMaterials } from './siteCabinModel.js';
+import { buildScreeningPlant, plantMaterials } from './screeningPlantModel.js';
+import { plantSite, plantPoint, inPlantsWay, PLANT } from './plantSite.js';
 import { buildSign, debrisMaterials, drumGeometry, scatterClear, tyreGeometry, DRUM, TYRE } from './quarryDebris.js';
 
 const TAU = Math.PI * 2;
@@ -198,13 +200,51 @@ function buildSite(c, quarry, site) {
     placeBoxes(fixedBox, hut, y0, hutYaw, boxes);
   }
 
-  // The excavator on the floor, where the first road comes down (on its side away from the steep wall's foot), nose to the wall.
-  const road = quarry.pit.road;
-  const endA = road.from + road.dir * road.sweep;
-  const dig = findSpot(300, (p) => !quarry.pit.heaps.some((m) => Math.hypot(m.x - p.x, m.z - p.z) < m.r + 4) && quarry.waterAt(p.x, p.z) === 0 && quarry.roadNear(p.x, p.z).d > 7, () => floorAt(endA - road.dir * (0.3 + random() * 0.4), 10 + random() * 6)) ?? floorAt(endA - road.dir * 0.5, 12);
+  // Whether (x, z) is flat floor off the water and clear of the roads, for the things that stand by the plant.
+  const onFloor = (x, z) => {
+    const p = quarry.polar(x, z);
+    return p.s < quarry.floorEdge(p.a) - 1.5 && quarry.waterAt(x, z) === 0 && quarry.roadNear(x, z).d > quarry.roadHalf + 3 && quarry.heapRise(x, z) < 0.05;
+  };
+
+  // The screening plant on its pad, where the pit was dealt it, its conveyor ending over the heap it was dealt with.
+  const plant = plantSite(quarry, groundY);
+  if (plant) {
+    const { group, boxes } = buildScreeningPlant(plantMaterials(random), {
+      headX: plant.headX,
+      headY: plant.headY,
+      ground: (lx, lz) => {
+        const p = plantPoint(plant, lx, lz);
+        return groundY(p.x, p.z) - plant.padTop;
+      },
+      side: plant.dig ? plant.dig.side : -1,
+    });
+    group.position.set(plant.x, plant.padTop, plant.z);
+    group.rotation.y = plant.turn;
+    things.add(group);
+    placeBoxes(fixedBox, plant, plant.padTop, plant.turn, boxes);
+    // The site cabin on the pad's other side from the generator and the excavator, by the conveyor, its door and steps facing out; or, failing
+    // that, behind the hopper facing the pad.
+    const cabinSide = plant.dig ? -plant.dig.side : 1;
+    const spots = [{ at: plantPoint(plant, 4.2, cabinSide * 2.6), turn: cabinSide > 0 ? plant.turn : plant.turn + Math.PI }];
+    spots.push({ at: plantPoint(plant, PLANT.padX0 - 2.8, 0), turn: plant.turn + Math.PI / 2 });
+    for (const { at, turn } of spots) {
+      if (![[0, 0], [2.2, 2.2], [-2.2, 2.2], [2.2, -2.2], [-2.2, -2.2]].every(([ox, oz]) => onFloor(at.x + ox, at.z + oz))) continue;
+      const { group: cabin, boxes: cabinBoxes } = buildCabin(cabinMaterials(random));
+      const y0 = settle(cabin, at, turn, 1.6, 1.0, groundY);
+      things.add(cabin);
+      placeBoxes(fixedBox, at, y0, turn, cabinBoxes);
+      break;
+    }
+  }
+
+  // The excavator: beside the plant's hopper with its bucket by the rim, if the plant has room for it, and if not on the floor where the first road
+  // comes down (on its side away from the steep wall's foot), nose to the wall.
   {
-    const yaw = Math.atan2(quarry.pit.x - dig.x, quarry.pit.z - dig.z) + Math.PI + (random() - 0.5) * 0.6; // looks out at the wall it has been digging
-    const turn = yaw - Math.PI / 2; // the machine looks along its +x
+    const road = quarry.pit.road;
+    const endA = road.from + road.dir * road.sweep;
+    const fallback = findSpot(300, (p) => !quarry.pit.heaps.some((m) => Math.hypot(m.x - p.x, m.z - p.z) < m.r + 4) && quarry.waterAt(p.x, p.z) === 0 && quarry.roadNear(p.x, p.z).d > 7, () => floorAt(endA - road.dir * (0.3 + random() * 0.4), 10 + random() * 6)) ?? floorAt(endA - road.dir * 0.5, 12);
+    const dig = plant?.dig ?? fallback;
+    const turn = plant?.dig ? plant.dig.turn : Math.atan2(quarry.pit.x - dig.x, quarry.pit.z - dig.z) + Math.PI + (random() - 0.5) * 0.6 - Math.PI / 2; // else it looks out at the wall it has been digging
     const { group, boxes } = buildExcavator(excavatorMaterials(random));
     const y0 = settle(group, dig, turn, 1.9, 1.3, groundY) - 0.03;
     group.position.y = y0;
@@ -212,47 +252,12 @@ function buildSite(c, quarry, site) {
     placeBoxes(fixedBox, dig, y0, turn, boxes);
   }
 
-  // The screening plant by the biggest heap: a hopper on legs over a conveyor that climbs to drop onto the heap.
-  const heap = [...quarry.pit.heaps].sort((a, b) => b.h - a.h)[0];
-  if (heap) {
-    const toward = Math.atan2(quarry.pit.x - heap.x, quarry.pit.z - heap.z);
-    // Along the heap's flank, not at the middle of the floor: on the flat floor, with its whole conveyor off the water and clear of the roads.
-    const onFloor = (x, z) => {
-      const p = quarry.polar(x, z);
-      return p.s < quarry.floorEdge(p.a) - 3 && quarry.waterAt(x, z) === 0 && quarry.roadNear(x, z).d > quarry.roadHalf + 4;
-    };
-    for (let tries = 0; tries < 16; tries++) {
-      const yaw = toward + (tries % 2 ? 1 : -1) * (0.8 + random() * 0.6 + tries * 0.1);
-      const dx = Math.sin(yaw);
-      const dz = Math.cos(yaw);
-      const reach = heap.r + 14;
-      const base = { x: heap.x + dx * reach, z: heap.z + dz * reach };
-      if (![0.4, 0.7, 1].every((f) => onFloor(heap.x + dx * reach * f, heap.z + dz * reach * f))) continue;
-      const plant = buildPlant(things, c, { x: base.x, z: base.z, yaw: Math.atan2(-dx, -dz), length: heap.r + 11, groundY, rust, rustDark, dark, fixedBox, height: heap.h * 0.9 });
-      // The site cabin beside it, its door and steps towards the plant, on whichever side is clear floor.
-      for (const side of [1, -1]) {
-        const a = plant.turn;
-        const lx = 0.7;
-        const lz = side * 5.4;
-        const at = { x: base.x + Math.cos(a) * lx + Math.sin(a) * lz, z: base.z - Math.sin(a) * lx + Math.cos(a) * lz };
-        if (![[0, 0], [2.2, 1.5], [-2.2, 1.5], [2.2, -1.5], [-2.2, -1.5]].every(([ox, oz]) => onFloor(at.x + ox, at.z + oz))) continue;
-        const turn = side > 0 ? a + Math.PI : a;
-        const { group, boxes } = buildCabin(cabinMaterials(random));
-        const y0 = settle(group, at, turn, 1.6, 1.0, groundY);
-        things.add(group);
-        placeBoxes(fixedBox, at, y0, turn, boxes);
-        break;
-      }
-      break;
-    }
-  }
-
   // Drums and tyres dumped by the pond with a pallet, none overlapping, and a drum and a tyre that have rolled off down the slope.
   {
     const pond = quarry.pond;
     const rim = (r) => ({ x: pond.x + Math.cos(r) * pond.rx * 1.25, z: pond.z + Math.sin(r) * pond.rz * 1.25 });
     const dirToCentre = Math.atan2(quarry.pit.z - pond.z, quarry.pit.x - pond.x);
-    const dry = (x, z) => quarry.waterAt(x, z) === 0 && quarry.inPit(x, z);
+    const dry = (x, z) => quarry.waterAt(x, z) === 0 && quarry.inPit(x, z) && !inPlantsWay(quarry.pit, x, z, 0.5);
     const centre = findSpot(60, (p) => dry(p.x, p.z), () => rim(dirToCentre + (random() - 0.5) * 1.4));
     if (centre) {
       const around = (near, far) => () => {
@@ -401,65 +406,4 @@ function buildFence(site, quarry, { wood, wire, groundY, random }) {
     g.rotation.set(0, Math.atan2(quarry.pit.x - p.x, quarry.pit.z - p.z) + Math.PI + (random() - 0.5) * 0.4, (random() - 0.5) * 0.12); // facing out from the pit
     site.add(g);
   }
-}
-
-/** A hopper on four legs over a conveyor that climbs 20 degrees to drop onto a heap: rusted steel, abandoned. `yaw` is the way the conveyor climbs. Returns `{ turn }`, the group's heading. */
-function buildPlant(site, c, { x, z, yaw, length, groundY, rust, rustDark, dark, fixedBox, height }) {
-  const parts = new Parts();
-  const y0 = groundY(x, z);
-  const climb = Math.atan2(height + 1.6, length);
-  const reach = Math.hypot(length, height + 1.6);
-  // Local frame: the conveyor runs along +x from its tail under the hopper, rising by `climb`.
-  const tail = { x: 0.4, y: 1.1 };
-  const head = { x: tail.x + Math.cos(climb) * reach, y: tail.y + Math.sin(climb) * reach };
-  parts.beam(rustDark, tail.x, tail.y, head.x, head.y, 0.14, 1.0, 0.5, 2); // the belt's frame, both sides
-  parts.beam(rustDark, tail.x, tail.y, head.x, head.y, 0.14, 0.1, -0.5 + 0.5, 2);
-  for (const sz of [-1, 1]) parts.beam(rust, tail.x, tail.y + 0.12, head.x, head.y + 0.12, 0.28, 0.07, sz * 0.5, 2); // the side plates
-  parts.beam(dark, tail.x, tail.y + 0.05, head.x, head.y + 0.05, 0.05, 0.86, 0, 2); // the belt itself, black and cracked
-  parts.wheel(rustDark, 0.2, 1.0, tail.x, tail.y, 0);
-  parts.wheel(rustDark, 0.24, 1.0, head.x, head.y, 0);
-  // Idlers every couple of metres.
-  for (let i = 1; i < 6; i++) {
-    const t = i / 6;
-    parts.wheel(dark, 0.07, 0.9, tail.x + (head.x - tail.x) * t, tail.y + (head.y - tail.y) * t + 0.12, 0, 8);
-  }
-  // A-frame legs under it.
-  for (const t of [0.34, 0.68, 0.98]) {
-    const lx = tail.x + (head.x - tail.x) * t;
-    const ly = tail.y + (head.y - tail.y) * t;
-    for (const sz of [-0.6, 0.6]) {
-      parts.box(rustDark, 0.12, ly - 0.05, 0.12, lx, (ly - 0.05) / 2, sz);
-    }
-    parts.box(rustDark, 0.1, 0.1, 1.3, lx, ly - 0.4, 0);
-    parts.beam(rustDark, lx - 0.5, 0.05, lx, ly - 0.4, 0.08, 0.08, 0.6);
-    parts.beam(rustDark, lx + 0.5, 0.05, lx, ly - 0.4, 0.08, 0.08, -0.6);
-  }
-  // The hopper: a box on top of a funnel, on four tall legs, a grating across the top and a chute into the belt's tail.
-  const hx = tail.x;
-  const hy = 2.7;
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) parts.box(rustDark, 0.16, hy - 0.2, 0.16, hx + sx * 1.2, (hy - 0.2) / 2, sz * 1.2);
-  parts.box(rustDark, 2.6, 0.12, 0.12, hx, 1.9, 1.2);
-  parts.box(rustDark, 2.6, 0.12, 0.12, hx, 1.9, -1.2);
-  parts.box(rustDark, 0.12, 0.12, 2.6, hx - 1.2, 1.9, 0);
-  parts.box(rustDark, 0.12, 0.12, 2.6, hx + 1.2, 1.9, 0);
-  parts.add(rust, new THREE.CylinderGeometry(2.0, 0.5, 1.5, 4, 1, true), hx, hy + 0.3, 0, 0, Math.PI / 4, 0); // the funnel, open
-  parts.add(rust, new THREE.CylinderGeometry(0.5, 0.5, 0.9, 4, 1, true), hx, hy - 0.8, 0, 0, Math.PI / 4, 0); // the throat
-  parts.box(rust, 2.9, 0.55, 2.9, hx, hy + 1.3, 0, 0, 2); // the rim of the hopper
-  for (let i = -3; i <= 3; i++) parts.box(rustDark, 0.05, 0.05, 2.8, hx + i * 0.38, hy + 1.6, 0); // the grating
-  const g = parts.build();
-  g.position.set(x, y0 - 0.02, z);
-  g.rotation.y = yaw - Math.PI / 2; // the belt looks along its +x, which the yaw points
-  site.add(g);
-  // Colliders: the hopper's legs as one box, the belt's feet and its head.
-  const local = (lx, lz) => {
-    const a = g.rotation.y;
-    return { x: x + Math.cos(a) * lx + Math.sin(a) * lz, z: z - Math.sin(a) * lx + Math.cos(a) * lz };
-  };
-  const hp = local(hx, 0);
-  fixedBox(hp.x, y0 + 1.6, hp.z, 1.45, 1.6, 1.45, g.rotation.y);
-  const head2 = local(head.x, 0);
-  fixedBox(head2.x, y0 + head.y / 2, head2.z, 0.7, head.y / 2, 0.7, g.rotation.y);
-  const mid = local((tail.x + head.x) / 2, 0);
-  fixedBox(mid.x, y0 + 0.9, mid.z, 0.4, 0.9, 0.8, g.rotation.y);
-  return { turn: g.rotation.y };
 }

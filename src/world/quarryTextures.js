@@ -1,4 +1,4 @@
-// The canvas textures of the pit's props: rusty plate, faded digger paint, the container's and the cabin's steel, the hazard signs and the drums.
+// The canvas textures of the pit's props: the plant's hardcore pad, rusty plate, faded digger paint, the container's and the cabin's steel, the hazard signs and the drums.
 
 import { canvasTexture } from './outbuildingProps.js';
 
@@ -31,6 +31,31 @@ export function rustTexture(random, base = '#7a4a30') {
     for (let i = 0; i < 6; i++) {
       ctx.fillStyle = 'rgba(190,170,110,0.28)';
       ctx.fillRect(random() * w, random() * h, 10 + random() * 40, 6 + random() * 24);
+    }
+  });
+}
+
+/** The plant's hardcore pad, one tile 3 m square: crushed stone in greys and buff, with dark oil stains and a few pale dust patches. */
+export function hardcoreTexture(random) {
+  return canvasTexture(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#8d877b';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 3200; i++) {
+      const v = 95 + Math.floor(random() * 80);
+      ctx.fillStyle = `rgba(${v + 10},${v + 4},${v - 8},0.5)`;
+      ctx.beginPath();
+      ctx.arc(random() * w, random() * h, 0.8 + random() * 1.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (let i = 0; i < 7; i++) {
+      const x = random() * w;
+      const y = random() * h;
+      const r = 14 + random() * 36;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, random() < 0.7 ? 'rgba(28,24,20,0.5)' : 'rgba(205,196,170,0.4)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
     }
   });
 }

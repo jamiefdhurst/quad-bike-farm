@@ -8,6 +8,7 @@
 // which way the haul road winds, where the pond and the heaps are.
 
 import { createRandom } from '../core/random.js';
+import { dealPlant, inPlantsWay, plantPadWeight } from './plantSite.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -103,6 +104,7 @@ export function dealPit(q, random) {
     road: { dir: random() < 0.5 ? -1 : 1, from: 0, sweep: r(2.7, 2.8), halfWidth: 2.7, bend: r(-7, 7) },
     pond: null,
     heaps: [],
+    plant: null, // where the screening plant stands, if the floor had room (plantSite.js); its heap is the first of `heaps`
   };
   // The haul roads leave the rim on the side facing the gate and go down either side; the steep wall is where they don't reach, opposite.
   const toGate = Math.atan2(q.maxZ - z, q.gate.x - x) - pit.yaw;
@@ -156,6 +158,13 @@ export function dealPit(q, random) {
   const cAngle = climbAngle(pit);
   const climbFoot = at(cAngle, floorEdge(cAngle) - 9);
   const count = 3 + Math.floor(random() * 3);
+  // The screening plant first, and the heap its conveyor ends over: the floor is too crowded to find it room after the other heaps.
+  const roadPaths = [1, -1].map((dir) => descentPath(pit, dir).filter((pt) => pt.t > 0.5));
+  const dealt = dealPlant(pit, { at, floorEdge, roadEnds, climbFoot, roadPaths }, random);
+  if (dealt) {
+    pit.heaps.push(dealt.heap);
+    pit.plant = dealt.plant;
+  }
   for (let tries = 0; pit.heaps.length < count && tries < 700; tries++) {
     const rad = r(3.8, 6.2) * (1 - Math.min(0.4, tries / 700)); // smaller as the floor fills
     const a = r(0, TAU);
@@ -166,6 +175,7 @@ export function dealPit(q, random) {
     if (roadEnds.some((e) => Math.hypot(p.x - e.x, p.z - e.z) < rad + 7)) continue;
     if (Math.hypot(p.x - climbFoot.x, p.z - climbFoot.z) < rad + 8) continue;
     if (pit.heaps.some((h) => Math.hypot(h.x - p.x, h.z - p.z) < h.r + rad + 3)) continue;
+    if (inPlantsWay(pit, p.x, p.z, rad)) continue;
     pit.heaps.push({ x: p.x, z: p.z, r: rad, h: r(1.8, 3.6), kind: random() < 0.5 ? 'gravel' : 'sand' });
   }
   return pit;
@@ -182,6 +192,36 @@ export function quarryOf(layout) {
 export function dealtLayout(layout, farmSeed) {
   if (!layout.quarry) return layout;
   return { ...layout, quarry: { ...layout.quarry, pit: dealPit(layout.quarry, createRandom((farmSeed ^ 0x6a17) >>> 0)) } };
+}
+
+/**
+ * The haul road down the wall from the lip point, `dir` round (1 or -1), from the lip to the floor: `[{ x, z, t, a, s }]`, even in grade (`t` is how
+ * far down, 0 to 1, `a` and `s` where it is round the pit and out from its middle). Here and not in createQuarry so the plant can be dealt clear of it.
+ */
+export function descentPath(pit, dir) {
+  const road = pit.road;
+  const rimAt = (a) => ellipseRadius(pit, a) * rimFactor(pit, a);
+  const frameAt = (a, s) => ({ x: pit.x + Math.cos(a + pit.yaw) * s, z: pit.z + Math.sin(a + pit.yaw) * s });
+  const n = Math.max(24, Math.round((road.sweep * rimAt(road.from)) / ROAD_STEP));
+  const angle = (i) => road.from + (dir * road.sweep * i) / n;
+  const w = (a) => rimAt(a) - baseRun(pit, a) * 0.5; // the radius of the middle of the bank: the length of wall passed per radian
+  const share = [0];
+  for (let i = 1; i <= n; i++) share.push(share[i - 1] + (w(angle(i - 1)) + w(angle(i))) / 2);
+  let ts = share.map((v) => v / share[n]);
+  const at = (i) => {
+    const a = angle(i);
+    return { ...frameAt(a, rimAt(a) - bankAt(ts[i]) * baseRun(pit, a)), t: ts[i], at: 0, a, s: rimAt(a) - bankAt(ts[i]) * baseRun(pit, a) };
+  };
+  // The road is lower where it is nearer the middle, and passes less wall per radian there: space the depth by the length actually driven.
+  for (let pass = 0; pass < 6; pass++) {
+    const here = ts.map((_, i) => at(i));
+    const len = [0];
+    for (let i = 1; i <= n; i++) len.push(len[i - 1] + Math.hypot(here[i].x - here[i - 1].x, here[i].z - here[i - 1].z));
+    ts = len.map((v) => v / len[n]);
+  }
+  const pts = [];
+  for (let i = 0; i <= n; i++) pts.push(at(i));
+  return pts;
 }
 
 /** Null when the layout has no gravel pit. */
@@ -230,25 +270,8 @@ export function createQuarry(layout) {
   const leadAt = lead[lead.length - 1].at;
   /** One road down the wall from the lip point, `dir` round (1 or -1): points from the lip to the floor, even in grade. */
   const descend = (dir) => {
-    const n = Math.max(24, Math.round((road.sweep * rimAt(road.from)) / ROAD_STEP));
-    const angle = (i) => road.from + (dir * road.sweep * i) / n;
-    const w = (a) => rimAt(a) - baseRun(pit, a) * 0.5; // the radius of the middle of the bank: the length of wall passed per radian
-    const share = [0];
-    for (let i = 1; i <= n; i++) share.push(share[i - 1] + (w(angle(i - 1)) + w(angle(i))) / 2);
-    let ts = share.map((v) => v / share[n]);
-    const at = (i) => {
-      const a = angle(i);
-      return { ...frameAt(a, rimAt(a) - bankAt(ts[i]) * baseRun(pit, a)), t: ts[i], at: 0, a, s: rimAt(a) - bankAt(ts[i]) * baseRun(pit, a) };
-    };
-    // The road is lower where it is nearer the middle, and passes less wall per radian there: space the depth by the length actually driven.
-    for (let pass = 0; pass < 6; pass++) {
-      const here = ts.map((_, i) => at(i));
-      const len = [0];
-      for (let i = 1; i <= n; i++) len.push(len[i - 1] + Math.hypot(here[i].x - here[i - 1].x, here[i].z - here[i - 1].z));
-      ts = len.map((v) => v / len[n]);
-    }
-    const pts = [{ x: startRim.x, z: startRim.z, t: 0, at: leadAt, a: road.from, s: rimAt(road.from) }];
-    for (let i = 1; i <= n; i++) pts.push(at(i));
+    const pts = descentPath(pit, dir);
+    pts[0] = { x: startRim.x, z: startRim.z, t: 0, at: leadAt, a: road.from, s: rimAt(road.from) };
     for (let i = 1; i < pts.length; i++) pts[i].at = pts[i - 1].at + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z);
     return pts;
   };
@@ -360,6 +383,9 @@ export function createQuarry(layout) {
     }
     // The floor is rutted and rough.
     if (cut >= pit.depth - 0.001) out += 0.1 * Math.sin(x * 0.7 + z * 0.37) * Math.sin(z * 0.53 - x * 0.21 + 1);
+    // The screening plant's pad is level: the floor's roughness and the foot of a wall are levelled out under it, and eased back in beyond its edge.
+    const flat = plantPadWeight(pit.plant, x, z);
+    if (flat > 0) out += (level - pit.depth - out) * flat;
     return out - pondCut(x, z) + heapRise(x, z);
   }
 
@@ -487,6 +513,7 @@ export function quarryPlants(quarry, random) {
     const p = quarry.frameAt(a, quarry.floorEdge(a) + (random() - 0.35) * run * 0.7); // the foot and lower bank, where it has rolled down
     if (quarry.waterAt(p.x, p.z) > 0 || pit.heaps.some((m) => Math.hypot(m.x - p.x, m.z - p.z) < m.r)) continue;
     if (quarry.roadNear(p.x, p.z).d < quarry.roadHalf + 1.2) continue;
+    if (inPlantsWay(pit, p.x, p.z, 0.6)) continue; // nor on the plant's pad
     if (Math.hypot(p.x - start[0], p.z - start[1]) < 4) continue; // not on the start line
     boulders.push([p.x, p.z, 0.2 + random() * random() * 0.7]);
   }
@@ -495,7 +522,7 @@ export function quarryPlants(quarry, random) {
     const a = random() * TAU;
     const p = quarry.frameAt(a, quarry.floorEdge(a) - 2 - random() * 12);
     if (quarry.waterAt(p.x, p.z) > 0 || quarry.roadNear(p.x, p.z).d < 8) continue;
-    if (pit.heaps.some((m) => Math.hypot(m.x - p.x, m.z - p.z) < m.r + 1.5)) continue;
+    if (pit.heaps.some((m) => Math.hypot(m.x - p.x, m.z - p.z) < m.r + 1.5) || inPlantsWay(pit, p.x, p.z, 1.5)) continue;
     if (Math.hypot(p.x - start[0], p.z - start[1]) < 9) continue;
     if (big.some(([bx, bz]) => Math.hypot(bx - p.x, bz - p.z) < 6)) continue;
     big.push([p.x, p.z, 0.8 + random() * 0.6]);
