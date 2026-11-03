@@ -4,6 +4,8 @@
 import { createBrook } from '../world/brook.js';
 import { dutchBarnShape, fieldShedShape } from '../world/outbuildings.js';
 import { neighbourFarmShape } from '../world/neighbourFarm.js';
+import { stripPoint } from '../world/layout.js';
+import { nearestTrackFraction } from '../world/startLine.js';
 
 export const DEFAULT_MAP_PARAMS = {
   size: 0.88, // the map's side as a share of the shorter side of the screen
@@ -53,9 +55,12 @@ export const MAP_COLOURS = {
   fence: '#8a6a45',
   ink: '#2c2a26',
   label: '#4a4438',
+  start: '#2e9a44', // a start (the cones are the same green)
+  finish: '#1f6dcc', // and a finish
 };
 
 /** The rect a rect and another make together. */
+const pick = (p) => ({ x: p.x, z: p.z });
 const union = (a, b) => ({ minX: Math.min(a.minX, b.minX), maxX: Math.max(a.maxX, b.maxX), minZ: Math.min(a.minZ, b.minZ), maxZ: Math.max(a.maxZ, b.maxZ) });
 const centred = (x, z, hx, hz) => ({ minX: x - hx, maxX: x + hx, minZ: z - hz, maxZ: z + hz });
 
@@ -178,6 +183,16 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const r = layout.jumpRamp;
   const ramp = r ? boxCorners(r.x + Math.sin(r.yaw) * r.length / 2, r.z + Math.cos(r.yaw) * r.length / 2, r.yaw, r.length, r.width) : null;
 
+  // Every start (green) and finish (blue), so they can be found from across the farm: the lap's line by the yard (both in one, so a start), the
+  // drag strip, the hill climb and the pit climb. Amy's cone course is plain orange cones and isn't marked.
+  const marks = [];
+  const lap = layout.yard ? track.sample(nearestTrackFraction(track, layout.yard.x, layout.yard.z)) : null;
+  if (lap) marks.push({ kind: 'start', x: lap.x, z: lap.z });
+  if (strip) marks.push({ kind: 'start', ...pick(stripPoint(strip, 0, 0)) }, { kind: 'finish', ...pick(stripPoint(strip, strip.length, 0)) });
+  for (const pts of [layout.hill?.climb?.points, quarry?.climb?.points]) {
+    if (pts?.length > 1) marks.push({ kind: 'start', x: pts[0][0], z: pts[0][1] }, { kind: 'finish', x: pts[pts.length - 1][0], z: pts[pts.length - 1][1] });
+  }
+
   const dutch = dutchBarnShape(layout);
   const shed = fieldShedShape(layout);
   const b = layout.barn;
@@ -262,7 +277,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     bounds, key, areas, hedges, gates, stream, ford, pond, road, track: { points: track.points, half: layout.trackHalfWidth }, bogs, dragStrip, ramp,
     woodsTrack, woodsTrail, woodsBogs, woodsPond: woods?.pond ?? null, woodland: woods ? { ...woods.rect } : null,
     quarryPit: quarry ? quarryOutline(quarry) : null,
-    buildings, small, muckHeap, paddock, yard, wood, labels,
+    buildings, small, muckHeap, paddock, yard, wood, labels, marks,
     neighbourYard: nf ? { ...nf.outline } : null,
   };
 }

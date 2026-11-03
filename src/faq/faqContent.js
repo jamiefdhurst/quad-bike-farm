@@ -1448,11 +1448,18 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I time a run up the hill?',
-        a: `Go down the lane and across the ford to the hill pasture. Just past the stream there are two pairs of big orange cones: ride up to them on a quad and press
+        a: `Go down the lane and across the ford to the hill pasture. Just past the stream there are two pairs of big green cones with START painted on them: ride up to them on a quad and press
           <kbd>Enter</kbd> and pick “The hill climb”, then ride through them when you're ready. The clock runs from there. Go between the cones of each checkpoint in order (a cone
           either side, two on the way up) and on through the two pairs at the finish near the top. Anywhere between the cones counts, so the line is yours: the gentler ground in the east
           is the easy way, the steep banks in the west are quicker if you dare. Your time goes up as a toast, and the best ones go on the board in the barn.`,
-        tip: 'Press Enter by the orange cones past the stream, then ride through them to time a hill climb.',
+        tip: 'Press Enter by the green START cones past the stream, then ride through them to time a hill climb.',
+      },
+      {
+        q: 'What do the cone colours mean?',
+        a: `Green cones with START painted on them mark where a run begins, and blue cones with FINISH painted on them mark where it ends. Plain orange cones are just cones, like the ones in Amy's
+          course. The lap race's line by the yard is both, so it is green. Press <kbd>M</kbd> and every start is a green square with an S and every finish a blue one with an F, so you can find them across the farm.
+          Riding up to the start of a climb, the prompt tells you to press <kbd>Enter</kbd> to time it.`,
+        tip: 'Green START cones begin a run, blue FINISH cones end it, plain orange ones are only cones. M marks them all.',
       },
       {
         q: 'How do I time a run round the cone course?',
@@ -1670,10 +1677,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I time a run up the pit\'s wall?',
-        a: `Ride to the orange cones on the pit's floor, at the foot of the steep wall, and press <kbd>Enter</kbd> and pick “The pit climb”, then ride through them when you are ready. The clock runs from there. Go
+        a: `Ride to the green START cones on the pit's floor, at the foot of the steep wall, and press <kbd>Enter</kbd> and pick “The pit climb”, then ride through them when you are ready. The clock runs from there. Go
           through the gate of cones halfway up the wall (it is wide enough to take in both chutes) and on through the finish cones over the lip. The line is yours. You are out if you get off or stall for eight seconds, or take over two minutes. Your time goes up as a toast, and the best goes on the barn's records board as the pit climb. Only you
           run it; whoever is near the top times you and says something.`,
-        tip: 'Press Enter by the orange cones on the pit floor, then ride up the steep wall and through the gate and the finish cones to be timed.',
+        tip: 'Press Enter by the green START cones on the pit floor, then ride up the wall and through the blue FINISH cones to be timed.',
       },
       {
         q: 'Is the gravel pit the same on every farm?',

@@ -253,6 +253,21 @@ export class MapView {
       ctx.fillText(l.text, u, v);
     }
 
+    // Starts and finishes: a green S or a blue F in a small square, so the letter says it as well as the colour.
+    ctx.font = '700 10px system-ui, sans-serif';
+    for (const m of f.marks ?? []) {
+      const [u, v] = P(m.x, m.z);
+      ctx.fillStyle = m.kind === 'start' ? C.start : C.finish;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.rect(u - 6, v - 6, 12, 12);
+      ctx.stroke();
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(m.kind === 'start' ? 'S' : 'F', u, v + 0.5);
+    }
+
     // A north arrow and a 50 m scale bar in the bottom corner of the key's corner of the map, and a frame.
     const [nu, nv] = P(f.key.maxX - 6, f.key.maxZ - 34);
     ctx.fillStyle = C.ink;
