@@ -1654,3 +1654,7 @@ Under the polo's collar the buttoned plaid's hardly showed: its points ended lev
 - Open, it lies back over her shoulders either side of the V with the same edge and check; under a jumper its points come out over the jumper's neck past the polo's. Neither needed the longer collar.
 - Checked in the game: both girls buttoned, Jess in a jumper, Amy open and Jess open in a jumper, front, three-quarter, side and back. On Amy's dark green check the edge line is faint; the break in the check carries it there.
 
+
+## `reset` on a girl stops her, it does not send her home (found testing #468)
+
+`reset amy` used to move her to where she started and nothing more, so a girl who was driving or sat on a quad was still busy where she landed and every "make her do" said so. It now stops her where she is: `Companion.settle()` drops what she had on her mind (`intent.interrupt`, without the line she says when you cut across her), gets her down by the same plan the bell uses (`getDownThen`, `recallPlan.js`) and stands her about, and `Settled` (`npc/settled.js`) holds her own mind off (`params.ownMind`) for `settleSeconds` (60, Tune: range 5 to 300) and then puts it back as it was. She is free the whole time, so the next command works at once. The bell (`recallGirls`) is unchanged: it still gathers both at the barn doors. `reset girls` and `reset all` do the same to each girl.
