@@ -498,9 +498,9 @@ function paintQuarry(ctx, toPx, s, quarry, random) {
     }
   }
   const STRATA = [[201, 184, 138], [186, 140, 84], [158, 152, 138], [216, 207, 178], [174, 150, 104]];
-  const step = 0.26; // grit cells about three pixels at the ground texture's ten a metre (finer cost more load time in CI), the shader adds the finer grain
+  const step = 0.3;
   // Cells a little bigger than their spacing and knocked off the grid, so the ground reads as grit and not as squares.
-  const grit = (x, z, color) => cell(x + (random() - 0.5) * step, z + (random() - 0.5) * step, step * 1.25, step * 1.25, color);
+  const grit = (x, z, color) => cell(x + (random() - 0.5) * step, z + (random() - 0.5) * step, step * 1.6, step * 1.6, color);
   for (let x = pit.x - quarry.reachMax - 3; x < pit.x + quarry.reachMax + 3; x += step) {
     for (let z = pit.z - quarry.reachMax - 3; z < pit.z + quarry.reachMax + 3; z += step) {
       const { a, s: dist } = quarry.polar(x, z);
@@ -523,7 +523,7 @@ function paintQuarry(ctx, toPx, s, quarry, random) {
         const band = Math.floor(cut * 0.85 + 0.9 * Math.sin(a * 5 + cut * 0.4) + 0.5 * Math.sin(a * 13 + 2) + v * 0.35);
         const base = STRATA[((band % STRATA.length) + STRATA.length) % STRATA.length];
         const scree = smoothScree(u);
-        const m = 0.86 + v * 0.22;
+        const m = 0.92 + v * 0.1; // the cells are about half a metre, so each is near its neighbour and the shader's grit gives the texture
         c = [base[0] * m * (1 - 0.2 * scree) + 30 * scree, base[1] * m * (1 - 0.2 * scree) + 26 * scree, base[2] * m * (1 - 0.2 * scree) + 20 * scree];
       }
       grit(x, z, `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${alpha})`);

@@ -189,7 +189,7 @@ function addDetailLayer(material, detailTex, scale, { quarryRect, wear, roadMud,
           vec3 wp = vec3(vWorldXZ.x, vWorldY, vWorldXZ.y);
           float gritA = texture2D(detailMap, wp.zy * 2.6).r * tw.x + texture2D(detailMap, wp.xz * 2.6).r * tw.y + texture2D(detailMap, wp.xy * 2.6).r * tw.z;
           float gritB = texture2D(detailMap, wp.zy * 7.3 + 0.31).r * tw.x + texture2D(detailMap, wp.xz * 7.3 + 0.31).r * tw.y + texture2D(detailMap, wp.xy * 7.3 + 0.31).r * tw.z;
-          diffuseColor.rgb *= mix(0.55, 1.45, gritA * 0.5 + gritB * 0.5);
+          diffuseColor.rgb *= mix(0.5, 1.5, gritA * 0.45 + gritB * 0.55);
         }
         // The hay meadow (hayMask.js): long green grass, pale stubble in swaths once cut, a darker tan once baled, one surface with the field round it.
         // The picture is read through a wobble and a noise threshold, so the edge and the cut cells' borders are ragged, never a straight line.
