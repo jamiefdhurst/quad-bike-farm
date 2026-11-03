@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
-import { villageShape, smoothRoad, frontOf } from '../src/world/village.js';
+import { villageShape, smoothRoad, frontOf, roadMarks } from '../src/world/village.js';
 import { laneBarriers, neighbourFarmShape } from '../src/world/neighbourFarm.js';
 import { createBrook } from '../src/world/brook.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
@@ -97,5 +97,43 @@ describe('the village', () => {
     const c = S.carPark;
     const corner = heights.heightAt(c.minX + 1, c.minZ + 1);
     expect(Math.abs(corner - heights.heightAt(c.maxX - 1, c.maxZ - 1))).toBeLessThan(0.01);
+  });
+});
+
+describe('the village road meets the lane and carries on past its gate (#535)', () => {
+  const lane2 = LAYOUT.publicLane;
+  it('starts at the lane\'s west edge, with the give-way line just inside it', () => {
+    expect(S.laneEdge).toBeCloseTo(lane2.x - lane2.halfWidth, 5);
+    expect(S.road[S.mouth].x).toBeLessThanOrEqual(S.laneEdge);
+    expect(S.road[S.mouth - 1].x).toBeGreaterThan(S.laneEdge);
+    expect(S.road[S.giveWay].x).toBeLessThan(S.laneEdge - 2);
+  });
+
+  it('has a broken centre line and one give-way line, across the way out only', () => {
+    const { centre, giveWay } = roadMarks(S);
+    expect(centre.length).toBeGreaterThan(10);
+    expect(centre.every((m) => m.s > S.giveWay && m.a < 0 && m.b > 0)).toBe(true);
+    // Across the north half (positive offset: the left going east, the traffic leaving the village), never the south.
+    expect(giveWay.length).toBeGreaterThan(3);
+    for (const m of giveWay) {
+      expect(m.a).toBeGreaterThan(0);
+      expect(m.b).toBeLessThanOrEqual(S.roadHalfWidth);
+      expect(m.s - S.giveWay).toBeLessThan(1);
+    }
+  });
+
+  it('opens the car park onto the road with a dropped kerb inside the car park\'s width', () => {
+    const e = LAYOUT.village.pub.carPark.entry;
+    expect(e.minX).toBeGreaterThanOrEqual(S.carPark.minX);
+    expect(e.maxX).toBeLessThanOrEqual(S.carPark.maxX);
+  });
+
+  it('goes on past the gate: from the last road sample, bending away and rising', () => {
+    const lastRoad = S.road[S.road.length - 1];
+    expect(S.beyond[0].x).toBeCloseTo(lastRoad.x, 0);
+    expect(S.beyond[0].z).toBeCloseTo(lastRoad.z, 0);
+    expect(S.beyond[S.beyond.length - 1].x).toBeLessThan(S.v.end.barrierX - 10);
+    expect(S.beyond[S.beyond.length - 1].x).toBeGreaterThan(S.area.minX - 20);
+    expect(S.beyondRise).toBeGreaterThan(2);
   });
 });
