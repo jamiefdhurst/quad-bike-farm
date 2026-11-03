@@ -298,6 +298,7 @@ export function buildGameTree(g, host) {
         else g.favour.unlock(id);
       }),
       skills: group(() => Object.fromEntries(Object.keys(g.skills.levels[id]).map((s) => [s, num(() => g.skills.level(id, s), (v) => g.skills.set(id, s, v), 0, 1)]))),
+      ...(id === 'amy' && { drivingTest: text(() => g.drivingTest.describe(g.farm.day), 'where she is with her driving test') }),
       lessonsPassed: text(() => [...g.lessons.passed[id]].join(', ') || 'none', 'the driving lessons she has passed you on'),
       tune: girlTune(c().name),
     }), id);

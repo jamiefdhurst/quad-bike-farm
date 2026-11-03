@@ -69,6 +69,7 @@ import { JESS_MUDGUARD_LINES } from './mudguardLines.js';
 import { JESS_TRACTORGO_LINES } from './tractorGoLines.js';
 import { JESS_VEHICLEGO_LINES } from './vehicleGoLines.js';
 import { JESS_LPLATE_LINES } from './lPlateLines.js';
+import { JESS_DRIVING_TEST_LINES } from './drivingTestLines.js';
 import { JESS_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { JESS_FALLINGOUT_LINES } from './fallingOutLines.js';
 import { JESS_ROMANCE_LINES } from './romanceLines.js';
@@ -477,6 +478,7 @@ export const JESS_LINES = {
   ...JESS_RIVER_LINES,
   ...JESS_WATER_LINES,
   ...JESS_LPLATE_LINES,
+  ...JESS_DRIVING_TEST_LINES,
   ...JESS_HEAT_LINES,
   ...JESS_SILENCER_LINES,
   ...JESS_JET_LINES,

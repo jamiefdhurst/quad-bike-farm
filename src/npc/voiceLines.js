@@ -74,6 +74,7 @@ import { AMY_MUDGUARD_LINES } from './mudguardLines.js';
 import { AMY_TRACTORGO_LINES } from './tractorGoLines.js';
 import { AMY_VEHICLEGO_LINES } from './vehicleGoLines.js';
 import { AMY_LPLATE_LINES } from './lPlateLines.js';
+import { AMY_DRIVING_TEST_LINES } from './drivingTestLines.js';
 import { AMY_TRACTORRUNAWAY_LINES } from './tractorRunawayLines.js';
 import { AMY_FALLINGOUT_LINES } from './fallingOutLines.js';
 import { AMY_ROMANCE_LINES } from './romanceLines.js';
@@ -1589,6 +1590,8 @@ export const VOICE_LINES = {
   ...AMY_DAY_LINES,
   // The L plates Jess tapes to her quad, and the tractor they end up on (lPlateLines.js).
   ...AMY_LPLATE_LINES,
+  // Her driving test: practising in the Finch, booking it, nerves, the result (drivingTestLines.js).
+  ...AMY_DRIVING_TEST_LINES,
   // The tractor creeping off by itself, and the hedge (tractorRunawayLines.js).
   ...AMY_TRACTORRUNAWAY_LINES,
   // Falling out with Jess: her side, being sided with, being nudged (fallingOutLines.js).

@@ -534,6 +534,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     lp.visible = true;
     lp.position.set(-0.42, 0.37, c.nose + 0.1);
     lp.userData.keep = true;
+    lp.name = 'finchLPlate'; // hidden once Amy has passed her test (game.js updateDrivingTest)
     root.add(lp);
   }
 
@@ -549,6 +550,7 @@ export function buildFiestaModel({ bodyColor = 0x7a4f30, reg = null } = {}) {
     lp.position.set(0.42, 0.37, c.tail - 0.1);
     lp.rotation.y = Math.PI;
     lp.userData.keep = true;
+    lp.name = 'finchLPlate'; // hidden once Amy has passed her test (game.js updateDrivingTest)
     root.add(lp);
     tube([-0.4, 0.22, -0.6], [-0.45, 0.22, c.tail - 0.06], 0.022, PAL.rust, root, 6); // the exhaust, a plain pipe under the back
   }

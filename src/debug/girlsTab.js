@@ -163,6 +163,16 @@ export function buildGirlsTab(d) {
       g.lessons.graduated[id] = false;
     });
     ls.close();
+    if (id === 'amy') {
+      // --- Her own driving test (npc/drivingTest.js).
+      const dt = f.addFolder('Driving test');
+      show(dt, 'where she is', () => g.drivingTest.describe(g.farm.day));
+      button(dt, 'Forget it and start learning again', () => g.drivingTest.reset('learning'));
+      button(dt, 'Say she has passed', () => {
+        g.drivingTest.reset('passed');
+      });
+      dt.close();
+    }
   }
 
   // --- The two of them, and the farm: closed subfolders by subject, each with its readouts first and its buttons after.
