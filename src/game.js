@@ -180,7 +180,7 @@ import { Drag, DRAG_PARAM_RANGES, onDragGrid } from './npc/drag.js';
 import { buildDragStrip } from './world/dragStrip.js';
 import { HillClimb, CLIMB_PARAM_RANGES, climbGates, climbRoute } from './npc/hillClimb.js';
 import { ConeCourse, ConeField, DEFAULT_CONE_PARAMS, CONE_PARAM_RANGES, coneGates, coneSpots, knockRoute } from './npc/coneCourse.js';
-import { yourAsks } from './npc/yourAsks.js';
+import { yourAsks, startPrompt } from './npc/yourAsks.js';
 import { Challenges, ColdStartRun, CleanWatch, DEFAULT_CHALLENGE_PARAMS, CHALLENGE_PARAM_RANGES, CHALLENGE_KINDS, judgeLineUp, formatChallenge } from './world/challenges.js';
 import { buildLineUpBays } from './world/lineUpBays.js';
 import { Records, JumpMeasure, DEFAULT_RECORD_PARAMS, RECORD_PARAM_RANGES, RECORD_KINDS, WHO_NAMES, formatValue } from './world/records.js';
@@ -13715,6 +13715,10 @@ export class Game {
     if (this.player.isRiding && this.player.seat === 'pillion' && !this.menu.isOpen) {
       const her = this.herOn(this.boardUnit.quad);
       p = { action: 'Get off', keys: [['C', 'Look back']].concat(her ? [['Enter', `Talk to ${her.name}`]] : []) };
+    }
+    // Riding up to a climb's start, looking at nobody: Enter opens your wheel, which has the climb on it.
+    if (!p && this.player.isRiding && this.player.seat !== 'pillion' && this.riddenUnit && !this.menu.isOpen && !this.pitClimb?.run && !this.hillClimb.active) {
+      p = startPrompt(this.askNear(this.riddenUnit)) || '';
     }
     // On the back you're a passenger: no crosshair or prompt, just the view (the help panel says E and C).
     const onBack = this.player.isRiding && this.player.seat === 'pillion' && !this.menu.isOpen;

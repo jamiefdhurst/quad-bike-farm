@@ -136,3 +136,17 @@ describe('the map key', () => {
     for (const l of features.labels) expect(inside(k, l.x, l.z), l.text).toBe(false);
   });
 });
+
+describe('starts and finishes on the map', () => {
+  const marks = features.marks;
+  it('has a start and a finish for the drag strip, the hill climb and the pit climb, and the lap line as a start', () => {
+    expect(marks.filter((m) => m.kind === 'start').length).toBe(4);
+    expect(marks.filter((m) => m.kind === 'finish').length).toBe(3);
+  });
+
+  it('puts the pit climb\'s start and finish where its cones are', () => {
+    const pts = fields.quarry.climb.points;
+    expect(marks).toContainEqual({ kind: 'start', x: pts[0][0], z: pts[0][1] });
+    expect(marks).toContainEqual({ kind: 'finish', x: pts[pts.length - 1][0], z: pts[pts.length - 1][1] });
+  });
+});

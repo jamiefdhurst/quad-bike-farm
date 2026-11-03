@@ -12,3 +12,12 @@ export function yourAsks({ riding, near }) {
   ].filter(Boolean);
   return [...here, { id: 'race', label: 'A race' }];
 }
+
+/**
+ * The prompt riding up to a climb's start (within its nearStart) looking at nobody: Enter opens your wheel, which has the climb on it. Null
+ * anywhere else. The pit's start wins if you are somehow near both.
+ */
+export function startPrompt(near) {
+  const what = near.pit ? 'the pit climb' : near.climb ? 'the hill climb' : null;
+  return what && { action: `Time ${what}`, key: 'Enter' };
+}
