@@ -463,10 +463,19 @@ export function buildHut(c) {
   add(plank(0.04, 0.08, 0.6, 0.4), darkTimber, railX, rise(1.55), 0.15);
   for (const dz2 of [-0.2, 0, 0.2]) add(new THREE.CylinderGeometry(0.012, 0.014, 0.07, 6).rotateZ(Math.PI / 2), iron, railX - 0.055, rise(1.55), 0.15 + dz2);
   const coat = new THREE.Mesh(coatGeometry(), mat(waxedTexture(random), { roughness: 0.8 }));
-  coat.position.set(railX - 0.09, rise(1.5), 0.15);
+  const hangX = railX - 0.075;
+  const apex = rise(1.5); // the hanger's peak, 3 cm under the peg's ring
+  coat.position.set(hangX, apex - 0.03, 0.15);
   coat.rotation.y = -Math.PI / 2; // its front towards the middle of the hut
   coat.castShadow = true;
   group.add(coat);
+  // The wooden hanger inside the coat's shoulders, and its wire hook looped over the peg.
+  for (const sz2 of [-1, 1]) {
+    const bar = add(new THREE.BoxGeometry(0.012, 0.012, 0.2), darkTimber, hangX, apex - 0.05, 0.15 + sz2 * 0.105, { cast: false });
+    bar.rotation.x = sz2 * 0.15; // slopes down from the peak to the shoulder
+  }
+  add(new THREE.CylinderGeometry(0.003, 0.003, 0.04, 5), iron, hangX, apex + 0.01, 0.15, { cast: false });
+  add(new THREE.TorusGeometry(0.02, 0.003, 5, 12).rotateY(Math.PI / 2), iron, hangX, rise(1.55), 0.15, { cast: false }); // round the peg
 
   // Outside: a water butt at the eaves on the +x side and a pair of boots by the steps.
   const butt = add(new THREE.CylinderGeometry(0.28, 0.24, 0.55, 12), mat(blanketTexture(random, '#3a4a3a', '#2a3a2a')), hw + 0.5, 0.275, 1.55);
