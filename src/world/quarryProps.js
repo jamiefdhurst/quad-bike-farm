@@ -287,10 +287,10 @@ function buildSite(c, quarry, site) {
     fixedBox(hut.x, y0 + H / 2, hut.z, L / 2, H / 2, W / 2, hutYaw);
   }
 
-  // The excavator on the floor, where the road comes down, nose to the wall: tracks, house, counterweight, cab, boom, stick and bucket.
+  // The excavator on the floor, where the first road comes down (on its side away from the steep wall's foot), nose to the wall: tracks, house, counterweight, cab, boom, stick and bucket.
   const road = quarry.pit.road;
   const endA = road.from + road.dir * road.sweep;
-  const dig = findSpot(300, (p) => !quarry.pit.heaps.some((m) => Math.hypot(m.x - p.x, m.z - p.z) < m.r + 4) && quarry.waterAt(p.x, p.z) === 0 && quarry.roadNear(p.x, p.z).d > 7, () => floorAt(endA + road.dir * (0.3 + random() * 0.4), 10 + random() * 6)) ?? floorAt(endA + road.dir * 0.5, 12);
+  const dig = findSpot(300, (p) => !quarry.pit.heaps.some((m) => Math.hypot(m.x - p.x, m.z - p.z) < m.r + 4) && quarry.waterAt(p.x, p.z) === 0 && quarry.roadNear(p.x, p.z).d > 7, () => floorAt(endA - road.dir * (0.3 + random() * 0.4), 10 + random() * 6)) ?? floorAt(endA - road.dir * 0.5, 12);
   {
     const yaw = Math.atan2(quarry.pit.x - dig.x, quarry.pit.z - dig.z) + Math.PI + (random() - 0.5) * 0.6; // looks out at the wall it has been digging
     const parts = new Parts();
@@ -351,12 +351,21 @@ function buildSite(c, quarry, site) {
   const heap = [...quarry.pit.heaps].sort((a, b) => b.h - a.h)[0];
   if (heap) {
     const toward = Math.atan2(quarry.pit.x - heap.x, quarry.pit.z - heap.z);
-    const yaw = toward + (random() < 0.5 ? 1 : -1) * (0.8 + random() * 0.6); // along the heap's flank, not at the middle of the floor
-    const dx = Math.sin(yaw);
-    const dz = Math.cos(yaw);
-    const base = { x: heap.x + dx * (heap.r + 14), z: heap.z + dz * (heap.r + 14) };
-    const ok = quarry.inPit(base.x, base.z) && quarry.waterAt(base.x, base.z) === 0;
-    if (ok) buildPlant(things, c, { x: base.x, z: base.z, yaw: Math.atan2(-dx, -dz), length: heap.r + 11, groundY, rust, rustDark, dark, green, fixedBox, height: heap.h * 0.9 });
+    // Along the heap's flank, not at the middle of the floor: on the flat floor, with its whole conveyor off the water and clear of the roads.
+    const onFloor = (x, z) => {
+      const p = quarry.polar(x, z);
+      return p.s < quarry.floorEdge(p.a) - 3 && quarry.waterAt(x, z) === 0 && quarry.roadNear(x, z).d > quarry.roadHalf + 4;
+    };
+    for (let tries = 0; tries < 16; tries++) {
+      const yaw = toward + (tries % 2 ? 1 : -1) * (0.8 + random() * 0.6 + tries * 0.1);
+      const dx = Math.sin(yaw);
+      const dz = Math.cos(yaw);
+      const reach = heap.r + 14;
+      const base = { x: heap.x + dx * reach, z: heap.z + dz * reach };
+      if (![0.4, 0.7, 1].every((f) => onFloor(heap.x + dx * reach * f, heap.z + dz * reach * f))) continue;
+      buildPlant(things, c, { x: base.x, z: base.z, yaw: Math.atan2(-dx, -dz), length: heap.r + 11, groundY, rust, rustDark, dark, green, fixedBox, height: heap.h * 0.9 });
+      break;
+    }
   }
 
   // Drums and tyres by the pond, a pallet and a broken trough.

@@ -29,7 +29,7 @@ const inRect = (r, x, z, margin = 0) => x >= r.minX + margin && x <= r.maxX - ma
 const outside = (r, x, z) => Math.hypot(Math.max(r.minX - x, 0, x - r.maxX), Math.max(r.minZ - z, 0, z - r.maxZ));
 
 const ROAD_STEP = 2.5; // metres between the haul road's sample points
-const ROAD_SHOULDER = 6; // metres the road's ledge takes to ease into the wall either side of its surface
+const ROAD_SHOULDER = 4; // metres the road's ledge takes to ease into the wall either side of its surface
 const ZONE_FADE = 14; // metres beyond the rim that the ground is eased from the pit's level back into the field's
 const RIM_MARGIN = 7; // the closest a rim may come to the field's hedges
 
@@ -46,14 +46,19 @@ function rimFactor(pit, a) {
   return f;
 }
 
+/** Metres from lip to floor along angle `a` before the chutes and buttresses are cut into the wall: the haul roads follow this, so they keep a smooth line across them. */
+function baseRun(pit, a) {
+  const wall = Math.exp(-((angleDiff(a, pit.steepAt) / pit.steepWidth) ** 2));
+  return (pit.steepRun + (pit.gentleRun - pit.steepRun) * (1 - wall)) * (1 + 0.1 * Math.sin(3 * a + 1.1) + 0.05 * Math.sin(7 * a));
+}
+
 /** Metres from lip to floor along angle `a`: the easy walls' run, the steep wall's (a Gaussian round `steepAt`), the chutes' and the buttresses'. */
 function runFor(pit, a) {
-  const wall = Math.exp(-((angleDiff(a, pit.steepAt) / pit.steepWidth) ** 2));
-  let run = (pit.steepRun + (pit.gentleRun - pit.steepRun) * (1 - wall)) * (1 + 0.1 * Math.sin(3 * a + 1.1) + 0.05 * Math.sin(7 * a));
+  let run = baseRun(pit, a);
   const rim = ellipseRadius(pit, a) * rimFactor(pit, a);
   for (const c of pit.chutes) run = Math.max(run, run + (c.run - run) * Math.exp(-((angleDiff(a, c.at) / (c.w / rim)) ** 2)));
   for (const b of pit.buttresses) run = Math.min(run, run + (b.run - run) * Math.exp(-((angleDiff(a, b.at) / (b.w / rim)) ** 2)));
-  return run;
+  return Math.min(run, rim * 0.78); // the floor never closes up at the middle
 }
 
 /**
@@ -80,37 +85,39 @@ const bankAt = (t) => {
 export function dealPit(q, random) {
   const r = (lo, hi) => lo + random() * (hi - lo);
   const x = (q.minX + q.maxX) / 2 + r(-4, 4);
-  const z = q.maxZ - 76 + r(-3, 3);
+  const z = q.maxZ - 66 + r(-3, 3);
+  const depth = r(18, 22);
   const pit = {
     x, z,
-    rx: r(42, 45),
-    rz: r(29, 32),
-    yaw: r(-0.3, 0.3),
-    depth: r(8, 9.5),
-    bumps: [[2, r(0.04, 0.07), r(0, TAU)], [3, r(0.03, 0.06), r(0, TAU)], [5, r(0.015, 0.035), r(0, TAU)]], // [harmonic, share of the radius, phase]
-    gentleRun: r(14.5, 16.5), // metres from lip to floor on the easy walls (about 30 degrees, a little more at its steepest)
-    steepRun: r(10.4, 11.8), // and on the steep one (about 38)
-    steepWidth: r(0.55, 0.8), // radians the steep wall takes before it eases
+    rx: r(45, 48), // the long way, turned to run from the gate to the steep wall by `yaw`
+    rz: r(36, 39),
+    yaw: Math.PI / 2 + r(-0.15, 0.15),
+    depth,
+    bumps: [[2, r(0.03, 0.05), r(0, TAU)], [3, r(0.02, 0.04), r(0, TAU)], [5, r(0.01, 0.025), r(0, TAU)]], // [harmonic, share of the radius, phase]
+    gentleRun: depth * r(1.15, 1.25), // metres from lip to floor on the easy walls (about 40 degrees, a little more at its steepest)
+    steepRun: depth * r(0.9, 1), // and on the steep one (about 48)
+    steepWidth: r(0.4, 0.55), // radians the steep wall takes before it eases
     chutes: [],
     buttresses: [],
-    road: { dir: random() < 0.5 ? -1 : 1, from: 0, sweep: r(2.4, 2.9), halfWidth: 2.7, bend: r(-7, 7) },
+    // Two roads leave the lip point facing the gate, one `dir` round and one the other, each `sweep` radians down the wall (a grade of 20 to 25%, 12 to 14 degrees).
+    road: { dir: random() < 0.5 ? -1 : 1, from: 0, sweep: r(2.7, 2.8), halfWidth: 2.7, bend: r(-7, 7) },
     pond: null,
     heaps: [],
   };
-  // The haul road leaves the rim on the side facing the gate, and winds round the wall; the steep wall is on the far side from its middle.
+  // The haul roads leave the rim on the side facing the gate and go down either side; the steep wall is where they don't reach, opposite.
   const toGate = Math.atan2(q.maxZ - z, q.gate.x - x) - pit.yaw;
   pit.road.from = toGate;
-  pit.steepAt = toGate + (pit.road.dir * pit.road.sweep) / 2 + Math.PI + r(-0.25, 0.25);
+  pit.steepAt = toGate + Math.PI + r(-0.12, 0.12);
 
   // Two chutes in the steep wall (a gully of loose stone, easier going: the line up is the thing to find) and a few buttresses of hard rock
   // between them that are not.
-  const first = pit.steepAt + r(-0.15, 0.15);
-  const second = first + (random() < 0.5 ? -1 : 1) * r(0.24, 0.38);
-  pit.chutes = [{ at: first, w: r(3, 4), run: r(15, 17) }, { at: second, w: r(2.5, 3.5), run: r(14, 16) }];
+  const first = pit.steepAt + r(-0.08, 0.08);
+  const second = first + (random() < 0.5 ? -1 : 1) * r(0.16, 0.24);
+  pit.chutes = [{ at: first, w: r(3, 4), run: depth * r(1.3, 1.4) }, { at: second, w: r(2.5, 3.5), run: depth * r(1.28, 1.38) }];
   for (let tries = 0; pit.buttresses.length < 3 && tries < 60; tries++) {
-    const at = pit.steepAt + r(-0.95, 0.95);
+    const at = pit.steepAt + r(-0.3, 0.3);
     if (pit.chutes.some((c) => Math.abs(angleDiff(at, c.at)) < 0.2) || pit.buttresses.some((o) => Math.abs(angleDiff(at, o.at)) < 0.2)) continue;
-    pit.buttresses.push({ at, w: r(2.5, 4), run: r(8, 9) });
+    pit.buttresses.push({ at, w: r(3.5, 5), run: depth * r(0.78, 0.86) });
   }
 
   // Fit the rim inside the hedges with a margin: if the pit as dealt would come closer, make it smaller.
@@ -134,28 +141,30 @@ export function dealPit(q, random) {
   const rimOf = (a) => ellipseRadius(pit, a) * rimFactor(pit, a);
   const floorEdge = (a) => rimOf(a) - runFor(pit, a);
 
-  // The pond in the low corner, a little way round from the steep wall's foot.
-  const pa = climbAngle(pit) + (random() < 0.5 ? -1 : 1) * r(0.7, 0.95);
+  // The pond in a low corner on the gate's side, away from where the roads come down and the steep wall's foot.
+  const pa = pit.road.from + (random() < 0.5 ? -1 : 1) * r(0.55, 1);
   const prx = r(6.5, 9);
   const prz = r(4.8, 6.5);
   const pc = at(pa, floorEdge(pa) - Math.min(prx, prz) * 0.5);
   pit.pond = { x: pc.x, z: pc.z, rx: prx, rz: prz, depth: 0.75, water: 0.35 };
 
   // Heaps of graded stone on the floor, none on the pond, the foot of the steep wall (the start of the climb) or where the road comes down.
-  const endA = pit.road.from + pit.road.dir * pit.road.sweep;
-  const roadEnd = at(endA, floorEdge(endA));
+  const roadEnds = [1, -1].map((side) => {
+    const endA = pit.road.from + side * pit.road.sweep;
+    return at(endA, floorEdge(endA));
+  });
   const cAngle = climbAngle(pit);
   const climbFoot = at(cAngle, floorEdge(cAngle) - 9);
   const count = 3 + Math.floor(random() * 3);
-  for (let tries = 0; pit.heaps.length < count && tries < 400; tries++) {
-    const rad = r(4.5, 7);
+  for (let tries = 0; pit.heaps.length < count && tries < 700; tries++) {
+    const rad = r(3.8, 6.2) * (1 - Math.min(0.4, tries / 700)); // smaller as the floor fills
     const a = r(0, TAU);
     const s = random() * floorEdge(a);
     const p = at(a, s);
     if (s > floorEdge(a) - rad * 0.9) continue;
     if (Math.hypot(p.x - pit.pond.x, p.z - pit.pond.z) < rad + Math.max(prx, prz) + 2) continue;
-    if (Math.hypot(p.x - roadEnd.x, p.z - roadEnd.z) < rad + 9) continue;
-    if (Math.hypot(p.x - climbFoot.x, p.z - climbFoot.z) < rad + 10) continue;
+    if (roadEnds.some((e) => Math.hypot(p.x - e.x, p.z - e.z) < rad + 7)) continue;
+    if (Math.hypot(p.x - climbFoot.x, p.z - climbFoot.z) < rad + 8) continue;
     if (pit.heaps.some((h) => Math.hypot(h.x - p.x, h.z - p.z) < h.r + rad + 3)) continue;
     pit.heaps.push({ x: p.x, z: p.z, r: rad, h: r(1.8, 3.6), kind: random() < 0.5 ? 'gravel' : 'sand' });
   }
@@ -201,45 +210,73 @@ export function createQuarry(layout) {
   let reachMax = 0;
   for (let i = 0; i < 90; i++) reachMax = Math.max(reachMax, rimAt((i / 90) * TAU));
 
-  // The haul road: from the gate straight (with a bend) to the lip on the side facing it, then winding down the wall at the depth the bank has
-  // at that distance, so it is a ledge cut into the slope and not a ramp through it. Each point: where, and how far down (0 on the lead-in, 1 at the floor).
+  // The haul roads: from the gate straight (with a bend) to the lip on the side facing it, where they fork and go down the wall either way round, each
+  // a ledge at the depth the bank has at that distance (so it is cut into the slope, not a ramp through it), its depth growing with the distance along
+  // it so the grade is even. Between their feet is the steep wall. Each point: where, how far down (0 on the lead-in, 1 at the floor), the angle round
+  // the pit and how far from its middle. Down one and up the other is a loop.
   const road = pit.road;
   const roadHalf = road.halfWidth;
-  const roadPts = [];
   const startRim = frameAt(road.from, rimAt(road.from));
   const gate = q.gate;
   const leadLen = Math.hypot(startRim.x - gate.x, startRim.z - q.maxZ);
   const leadN = Math.max(2, Math.round(leadLen / ROAD_STEP));
+  const lead = [];
   for (let i = 0; i <= leadN; i++) {
     const f = i / leadN;
     const bend = Math.sin(f * Math.PI) * road.bend;
-    roadPts.push({ x: gate.x + (startRim.x - gate.x) * f + bend, z: q.maxZ + (startRim.z - q.maxZ) * f, t: 0, at: 0 });
+    lead.push({ x: gate.x + (startRim.x - gate.x) * f + bend, z: q.maxZ + (startRim.z - q.maxZ) * f, t: 0, at: 0, a: road.from, s: rimAt(road.from) });
   }
-  const arc = Math.max(8, Math.round((road.sweep * (rimAt(road.from) - runAt(road.from) * 0.5)) / ROAD_STEP));
-  for (let i = 1; i <= arc; i++) {
-    const f = i / arc;
-    const a = road.from + road.dir * road.sweep * f;
-    const p = frameAt(a, rimAt(a) - bankAt(f) * runAt(a));
-    roadPts.push({ x: p.x, z: p.z, t: f, at: 0 });
-  }
-  for (let i = 1; i < roadPts.length; i++) roadPts[i].at = roadPts[i - 1].at + Math.hypot(roadPts[i].x - roadPts[i - 1].x, roadPts[i].z - roadPts[i - 1].z);
-  const roadLength = roadPts[roadPts.length - 1].at;
-  const roadBox = {
-    minX: Math.min(...roadPts.map((p) => p.x)) - roadHalf - 8,
-    maxX: Math.max(...roadPts.map((p) => p.x)) + roadHalf + 8,
-    minZ: Math.min(...roadPts.map((p) => p.z)) - roadHalf - 8,
-    maxZ: Math.max(...roadPts.map((p) => p.z)) + roadHalf + 8,
+  for (let i = 1; i < lead.length; i++) lead[i].at = lead[i - 1].at + Math.hypot(lead[i].x - lead[i - 1].x, lead[i].z - lead[i - 1].z);
+  const leadAt = lead[lead.length - 1].at;
+  /** One road down the wall from the lip point, `dir` round (1 or -1): points from the lip to the floor, even in grade. */
+  const descend = (dir) => {
+    const n = Math.max(24, Math.round((road.sweep * rimAt(road.from)) / ROAD_STEP));
+    const angle = (i) => road.from + (dir * road.sweep * i) / n;
+    const w = (a) => rimAt(a) - baseRun(pit, a) * 0.5; // the radius of the middle of the bank: the length of wall passed per radian
+    const share = [0];
+    for (let i = 1; i <= n; i++) share.push(share[i - 1] + (w(angle(i - 1)) + w(angle(i))) / 2);
+    let ts = share.map((v) => v / share[n]);
+    const at = (i) => {
+      const a = angle(i);
+      return { ...frameAt(a, rimAt(a) - bankAt(ts[i]) * baseRun(pit, a)), t: ts[i], at: 0, a, s: rimAt(a) - bankAt(ts[i]) * baseRun(pit, a) };
+    };
+    // The road is lower where it is nearer the middle, and passes less wall per radian there: space the depth by the length actually driven.
+    for (let pass = 0; pass < 6; pass++) {
+      const here = ts.map((_, i) => at(i));
+      const len = [0];
+      for (let i = 1; i <= n; i++) len.push(len[i - 1] + Math.hypot(here[i].x - here[i - 1].x, here[i].z - here[i - 1].z));
+      ts = len.map((v) => v / len[n]);
+    }
+    const pts = [{ x: startRim.x, z: startRim.z, t: 0, at: leadAt, a: road.from, s: rimAt(road.from) }];
+    for (let i = 1; i <= n; i++) pts.push(at(i));
+    for (let i = 1; i < pts.length; i++) pts[i].at = pts[i - 1].at + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z);
+    return pts;
   };
+  const roadA = descend(road.dir);
+  const roadB = descend(-road.dir);
+  const roadPts = [...lead, ...roadA.slice(1)]; // the main road: the lead-in and the way down the first side
+  const rampPts = roadB; // and the way down the other, from the lip
+  const roadLength = roadPts[roadPts.length - 1].at;
+  const roads = [roadPts, rampPts].map((pts) => ({
+    pts,
+    box: {
+      minX: Math.min(...pts.map((p) => p.x)) - roadHalf - 8,
+      maxX: Math.max(...pts.map((p) => p.x)) + roadHalf + 8,
+      minZ: Math.min(...pts.map((p) => p.z)) - roadHalf - 8,
+      maxZ: Math.max(...pts.map((p) => p.z)) + roadHalf + 8,
+    },
+  }));
 
-  /** The nearest part of the haul road to (x, z): its distance, how far down it is there (0..1) and the metres along it. Infinity far off. */
-  const roadNear = (x, z) => {
-    if (!inRect(roadBox, x, z)) return { d: Infinity, t: 0, at: 0 };
+  /** The nearest part of one road (`{ pts, box }`) to (x, z): its distance, how far down it is there (0..1) and the metres along it. Infinity far off. */
+  const nearOne = (rd, x, z) => {
+    if (!inRect(rd.box, x, z)) return { d: Infinity, t: 0, at: 0 };
+    const pts = rd.pts;
     let best = Infinity;
     let t = 0;
     let at = 0;
-    for (let i = 0; i < roadPts.length - 1; i++) {
-      const a = roadPts[i];
-      const b = roadPts[i + 1];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const a = pts[i];
+      const b = pts[i + 1];
       const abx = b.x - a.x;
       const abz = b.z - a.z;
       const len2 = abx * abx + abz * abz || 1;
@@ -252,6 +289,15 @@ export function createQuarry(layout) {
       }
     }
     return { d: Math.sqrt(best), t, at };
+  };
+  /** The nearest part of any haul road to (x, z). */
+  const roadNear = (x, z) => {
+    let best = { d: Infinity, t: 0, at: 0 };
+    for (const rd of roads) {
+      const n = nearOne(rd, x, z);
+      if (n.d < best.d) best = n;
+    }
+    return best;
   };
 
   // The pond, as the wood's: an ellipse cut deeper than the water stands.
@@ -307,7 +353,11 @@ export function createQuarry(layout) {
       if (s < rim) cut = pit.depth * bankShape((rim - s) / runAt(a));
     }
     let out = base - cut;
-    if (rd.t > 0 && rd.d < roadHalf + ROAD_SHOULDER) out += (base - pit.depth * rd.t - out) * (1 - softRamp((rd.d - roadHalf) / ROAD_SHOULDER));
+    // Each road lays its ledge in turn, so where two come close the ground goes from one to the other without a step.
+    for (const r of roads) {
+      const n = nearOne(r, x, z);
+      if (n.t > 0 && n.d < roadHalf + ROAD_SHOULDER) out += (base - pit.depth * n.t - out) * (1 - softRamp((n.d - roadHalf) / ROAD_SHOULDER));
+    }
     // The floor is rutted and rough.
     if (cut >= pit.depth - 0.001) out += 0.1 * Math.sin(x * 0.7 + z * 0.37) * Math.sin(z * 0.53 - x * 0.21 + 1);
     return out - pondCut(x, z) + heapRise(x, z);
@@ -390,7 +440,7 @@ export function createQuarry(layout) {
   return {
     rect, name: q.name, pit, gate, pond, waitSpot, climb,
     weight, groundAt, waterAt, mudAt, gravelAt, roadAt, pondCut, bowlCut, heapRise, inQuarry, inPit, pastGate, plantOk,
-    polar, frameAt, rimAt, runAt, floorEdge, roadNear, roadPoints: roadPts, roadHalf, roadLength, reachMax,
+    polar, frameAt, rimAt, runAt, floorEdge, roadNear, roadPoints: roadPts, rampPoints: rampPts, roadHalf, roadLength, reachMax,
     outside: (x, z) => outside(rect, x, z),
   };
 }

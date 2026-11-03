@@ -35,8 +35,8 @@ describe('the gravel pit: how it is dealt', () => {
     for (let seed = 1; seed <= 60; seed++) {
       const q = createQuarry(dealtLayout(LAYOUT, seed * 7919));
       const { rect, pit } = q;
-      expect(pit.depth, `seed ${seed}`).toBeGreaterThanOrEqual(8);
-      expect(pit.depth).toBeLessThanOrEqual(9.5);
+      expect(pit.depth, `seed ${seed}`).toBeGreaterThanOrEqual(18);
+      expect(pit.depth).toBeLessThanOrEqual(22);
       for (let i = 0; i < 72; i++) {
         const a = (i / 72) * Math.PI * 2;
         const p = q.frameAt(a, q.rimAt(a));
@@ -60,7 +60,7 @@ describe('the gravel pit: how it is dealt', () => {
         const { a, s } = q.polar(h.x, h.z);
         expect(s + h.r * 0.8, `seed ${seed}`).toBeLessThan(q.floorEdge(a) + 0.01);
         expect(Math.hypot(h.x - q.pond.x, h.z - q.pond.z)).toBeGreaterThan(h.r + 2);
-        expect(Math.hypot(h.x - sx, h.z - sz)).toBeGreaterThan(h.r + 9);
+        expect(Math.hypot(h.x - sx, h.z - sz)).toBeGreaterThan(h.r + 7);
       }
       for (const [i, a] of q.pit.heaps.entries()) for (const b of q.pit.heaps.slice(i + 1)) expect(Math.hypot(a.x - b.x, a.z - b.z)).toBeGreaterThan(a.r + b.r);
     }
@@ -84,7 +84,7 @@ describe('the gravel pit: the ground', () => {
     for (let x = rect.minX + 1; x < rect.maxX - 1; x += 1.5) {
       for (let z = rect.minZ + 1; z < rect.maxZ - 1; z += 1.5) worst = Math.max(worst, slopeAt(heights, x, z));
     }
-    expect(worst).toBeLessThan(72);
+    expect(worst).toBeLessThan(76);
     // Up the middle of the steep wall, the average slope is steep but a quad could try it.
     const a = quarry.pit.buttresses[0].at; // the steep wall where there is no chute
     const top = quarry.frameAt(a, quarry.rimAt(a));
@@ -115,31 +115,71 @@ describe('the gravel pit: the ground', () => {
     }
   });
 
-  it('winds the haul road down the wall at a grade a quad can take, from the gate to the floor', () => {
-    const pts = quarry.roadPoints;
-    expect(pts[0].t).toBe(0);
-    expect(pts[pts.length - 1].t).toBeCloseTo(1, 5);
-    expect(Math.hypot(pts[0].x - quarry.gate.x, pts[0].z - quarry.rect.maxZ)).toBeLessThan(1);
-    let steepest = 0;
-    let down = 0;
-    for (let i = 1; i < pts.length; i++) {
-      const a = pts[i - 1];
-      const b = pts[i];
-      const drop = heights.heightAt(a.x, a.z) - heights.heightAt(b.x, b.z);
-      if (b.t > 0) steepest = Math.max(steepest, drop / Math.hypot(b.x - a.x, b.z - a.z));
-      down += drop;
+  it('winds the haul roads down the wall at a grade a quad can take, from the gate to the floor, one each way round', () => {
+    const grade = (pts) => {
+      let steepest = 0;
+      let down = 0;
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1];
+        const b = pts[i];
+        const drop = heights.heightAt(a.x, a.z) - heights.heightAt(b.x, b.z);
+        if (b.t > 0) steepest = Math.max(steepest, drop / Math.hypot(b.x - a.x, b.z - a.z));
+        down += drop;
+      }
+      return { steepest: deg(steepest), down };
+    };
+    const main = quarry.roadPoints;
+    const other = quarry.rampPoints;
+    expect(main[0].t).toBe(0);
+    expect(main[main.length - 1].t).toBeCloseTo(1, 5);
+    expect(other[other.length - 1].t).toBeCloseTo(1, 5);
+    expect(Math.hypot(main[0].x - quarry.gate.x, main[0].z - quarry.rect.maxZ)).toBeLessThan(1);
+    // They leave the same point on the lip and go round opposite ways.
+    const lipEnd = main.filter((p) => p.t === 0).pop();
+    expect(Math.hypot(other[0].x - lipEnd.x, other[0].z - lipEnd.z)).toBeLessThan(0.5);
+    const sideOf = (pts) => Math.sign(Math.sin(pts[pts.length - 1].a - pts[0].a));
+    expect(sideOf(main)).toBe(-sideOf(other));
+    for (const pts of [main, other]) {
+      const g = grade(pts);
+      expect(g.down).toBeGreaterThan(quarry.pit.depth - 1.5);
+      expect(g.steepest).toBeLessThan(19);
     }
-    expect(down).toBeGreaterThan(quarry.pit.depth - 1.5);
-    expect(deg(steepest)).toBeLessThan(14);
-    expect(quarry.roadLength).toBeGreaterThan(80);
-    // Its surface is level across.
-    const mid = pts[Math.floor(pts.length * 0.8)];
-    const next = pts[Math.floor(pts.length * 0.8) + 1];
+    expect(quarry.roadLength).toBeGreaterThan(100);
+    // Their surface is level across.
+    const mid = main[Math.floor(main.length * 0.8)];
+    const next = main[Math.floor(main.length * 0.8) + 1];
     const nx = -(next.z - mid.z);
     const nz = next.x - mid.x;
     const len = Math.hypot(nx, nz);
     const across = [-1.5, 0, 1.5].map((o) => heights.heightAt(mid.x + (nx / len) * o, mid.z + (nz / len) * o));
-    expect(Math.max(...across) - Math.min(...across)).toBeLessThan(0.7);
+    expect(Math.max(...across) - Math.min(...across)).toBeLessThan(0.9);
+  });
+
+  it('keeps the two roads apart once they have left the lip, for every farm', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const q = createQuarry(dealtLayout(LAYOUT, seed * 4093));
+      for (const a of q.roadPoints.filter((p) => p.t > 0.3)) {
+        for (const b of q.rampPoints.filter((p) => p.t > 0.3)) expect(Math.hypot(a.x - b.x, a.z - b.z), `seed ${seed}`).toBeGreaterThan(q.roadHalf * 2 + 1);
+      }
+    }
+  });
+
+  it('is big enough: at least 80 by 62 m at the lip, with a floor of its own', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const q = createQuarry(dealtLayout(LAYOUT, seed * 2711));
+      const xs = [];
+      const zs = [];
+      for (let i = 0; i < 72; i++) {
+        const p = q.frameAt((i / 72) * Math.PI * 2, q.rimAt((i / 72) * Math.PI * 2));
+        xs.push(p.x);
+        zs.push(p.z);
+      }
+      const wide = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
+      const narrow = Math.min(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
+      expect(wide, `seed ${seed}`).toBeGreaterThan(80);
+      expect(narrow, `seed ${seed}`).toBeGreaterThan(62);
+      for (let i = 0; i < 72; i++) expect(q.floorEdge((i / 72) * Math.PI * 2), `seed ${seed}`).toBeGreaterThan(4);
+    }
   });
 
   it('holds water in the pond only, and not much of it', () => {

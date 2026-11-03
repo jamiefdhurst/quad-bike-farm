@@ -243,8 +243,8 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     if (woods.pond) place('Pond', woods.pond.x, woods.pond.z, woods.pond.rz + 4);
   }
   if (quarry) {
-    field(quarry.name, quarry.rect.maxX - 38, quarry.rect.minZ + 12);
-    place('Pit climb', quarry.climb.points[2][0], quarry.climb.points[2][1], -6); // at the top, where the line finishes
+    field(quarry.name, quarry.rect.maxX - 26, quarry.rect.maxZ - 20);
+    place('Pit climb', quarry.climb.points[2][0], quarry.climb.points[2][1], 12); // where the line finishes, written inside the lip so it stays on the map
     place('Pond', quarry.pond.x, quarry.pond.z, quarry.pond.rz + 4);
   }
   const tp = track.sample(0.78);
@@ -267,7 +267,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   };
 }
 
-/** The pit as the map draws it: its lip and the foot of its walls as outlines, the haul road, the pond and the heaps. */
+/** The pit as the map draws it: its lip and the foot of its walls as outlines, the haul roads, the pond and the heaps. */
 export function quarryOutline(quarry) {
   const ring = (radius) => Array.from({ length: 72 }, (_, i) => {
     const a = (i / 72) * Math.PI * 2;
@@ -277,7 +277,7 @@ export function quarryOutline(quarry) {
   return {
     rim: ring((a) => quarry.rimAt(a)),
     floor: ring((a) => quarry.floorEdge(a)),
-    road: quarry.roadPoints.map((p) => [p.x, p.z]),
+    roads: [quarry.roadPoints, quarry.rampPoints].map((pts) => pts.map((p) => [p.x, p.z])),
     roadHalf: quarry.roadHalf,
     pond: quarry.pond,
     heaps: quarry.pit.heaps.map((h) => ({ x: h.x, z: h.z, r: h.r })),

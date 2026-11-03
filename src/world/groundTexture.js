@@ -554,7 +554,8 @@ function paintQuarry(ctx, toPx, s, quarry, random) {
     }
   }
   // The haul road: bare pale gravel, with two darker ruts and a fringe of dust.
-  const road = quarry.roadPoints;
+  const roads = [quarry.roadPoints, quarry.rampPoints];
+  const road = roads.flat();
   const stroke = (offset, widthM, style, alpha, blur = 0) => {
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -563,16 +564,18 @@ function paintQuarry(ctx, toPx, s, quarry, random) {
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     if (blur) ctx.filter = `blur(${blur}px)`;
-    ctx.beginPath();
-    road.forEach((pt, i) => {
-      const b = road[Math.min(i + 1, road.length - 1)];
-      const a = road[Math.max(i - 1, 0)];
-      const tl = Math.hypot(b.x - a.x, b.z - a.z) || 1;
-      const [px, pz] = toPx(pt.x - ((b.z - a.z) / tl) * offset, pt.z + ((b.x - a.x) / tl) * offset);
-      if (i) ctx.lineTo(px, pz);
-      else ctx.moveTo(px, pz);
-    });
-    ctx.stroke();
+    for (const pts of roads) {
+      ctx.beginPath();
+      pts.forEach((pt, i) => {
+        const b = pts[Math.min(i + 1, pts.length - 1)];
+        const a = pts[Math.max(i - 1, 0)];
+        const tl = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+        const [px, pz] = toPx(pt.x - ((b.z - a.z) / tl) * offset, pt.z + ((b.x - a.x) / tl) * offset);
+        if (i) ctx.lineTo(px, pz);
+        else ctx.moveTo(px, pz);
+      });
+      ctx.stroke();
+    }
     ctx.restore();
   };
   const w = quarry.roadHalf * 2;
