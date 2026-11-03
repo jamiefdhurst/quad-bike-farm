@@ -17,7 +17,7 @@ Every value is at a dotted path. Type the path alone to read it, or the path and
 `list`, `find psi`, `get`, `range`, `set`, `add`, `toggle`, `dump` (copies JSON) read and write them. Positions are x east, z south, y up, heading in degrees (0 faces +z, 90 faces +x), the same for you, vehicles, girls and items:
 
 - `tp red barn`, `tp me 100 20`, `tp amy to jess`, `tp tractor here`, `tp petrol-can 10 10 90`, then `nudge`, `face`, `where`, `places`.
-- `reset red`, `reset vehicles`, `reset girls`, `reset all`.
+- `reset red`, `reset vehicles`, `reset girls`, `reset all`. On a girl it stops her where she is (off whatever she is on, out of what she is doing) and has her stand about for a minute, starting nothing of her own (Tune: settleSeconds), ready for the next command.
 - `start|stop|warm|cool|fill|soak|dry|fix <vehicle|all>`, `vehicles`, `girls` (`soak` rains on a vehicle's windscreen as in a downpour, `dry` dries it).
 - `girl amy drive red`, `girl jess doughnuts`, `girl amy invite-barn`: the same things as the Girls tab buttons.
 - `weather rain`, `fly`, `autonomy off` (the girls start nothing on their own, but follow and answer you), `speech off`, `sound off`.

@@ -310,10 +310,10 @@ export function buildGirlsTab(d) {
   button(jobs, 'Empty the tub and clear the ground', () => g.debugResetMuck());
   if (g.hay) {
     show(jobs, 'the hay', () => `${g.hay.describe()}; ${g.hayLoading.describe()}`);
-    for (const stage of ['cut', 'bale', 'load', 'stack', 'done']) button(jobs, `Hay job: jump to the ${stage} stage`, () => g.debugHayStage(stage));
-    button(jobs, 'Hay: let the cut patch grow back', () => g.debugHayRegrow());
-    button(jobs, 'Hay: lift the tracks in the long grass', () => g.debugHayTracksClear());
-    button(jobs, 'Hay: empty the barn stack', () => g.debugHayEmptyStack());
+    for (const stage of ['cut', 'bale', 'load', 'stack', 'done']) button(jobs, `Jump the hay job to the ${stage} stage`, () => g.debugHayStage(stage));
+    button(jobs, 'Let the cut hay patch grow back', () => g.debugHayRegrow());
+    button(jobs, 'Lift the tracks in the long grass', () => g.debugHayTracksClear());
+    button(jobs, 'Empty the hay stack in the Dutch barn', () => g.debugHayEmptyStack());
   }
   if (g.mowGrid) {
     show(jobs, 'the mowing', () => g.mowGrid.describe(g.farm.day));
@@ -323,7 +323,7 @@ export function buildGirlsTab(d) {
   }
   if (g.spray) {
     show(jobs, 'the spraying', () => g.spray.describe());
-    for (const [what, label] of [['out', 'Sprayer: fold the boom out'], ['in', 'Sprayer: fold the boom in'], ['empty', 'Sprayer: empty the tank'], ['fill', 'Sprayer: fill the tank'], ['half', 'Spraying: spray half the field'], ['done', 'Spraying: job done now'], ['clear', 'Spraying: clear the field, needs spraying again']]) button(jobs, label, () => g.debugSpray(what));
+    for (const [what, label] of [['out', 'Fold the sprayer boom out'], ['in', 'Fold the sprayer boom in'], ['empty', 'Empty the sprayer tank'], ['fill', 'Fill the sprayer tank'], ['half', 'Spray half the field'], ['done', 'Finish the spraying job now'], ['clear', 'Clear the field so it needs spraying again']]) button(jobs, label, () => g.debugSpray(what));
   }
   slider(jobs, 'Bale spike arms (0 down, 1 up)', () => g.baleRig.lift.lift, (v) => (g.baleRig.lift.lift = v), 0, 1, 0.01);
   show(jobs, 'On the spike', () => g.baleRig.held?.id ?? 'nothing');
@@ -332,9 +332,9 @@ export function buildGirlsTab(d) {
   button(jobs, 'Put the silage bales back', () => g.debugResetBales());
   if (g.logStack) {
     show(jobs, 'The log splitter', () => `${g.splitterFitted ? 'fitted' : 'not fitted'}, ram ${Math.round(g.splitter.ram * 100)}%, ${g.splitter.loaded ? 'a round on the beam' : 'beam empty'}, ${g.logStack.count} of ${g.splitterParams.capacity} logs stacked`);
-    button(jobs, 'Logs: fit the splitter / put the bale spike back', () => g.fitSplitter(!g.splitterFitted));
-    button(jobs, 'Logs: job done now', () => g.debugFinishLogs());
-    button(jobs, 'Logs: empty the stack and deal the rounds back', () => g.debugResetLogs());
+    button(jobs, 'Fit the log splitter, or put the bale spike back', () => g.fitSplitter(!g.splitterFitted));
+    button(jobs, 'Finish the log job now', () => g.debugFinishLogs());
+    button(jobs, 'Empty the log stack and deal the rounds back', () => g.debugResetLogs());
   }
   show(jobs, 'The bonfire', () => `${g.bonfire.state}, ${g.bonfire.piled} of ${g.bonfireParams.heapsNeeded} on the pile, ${Math.round(g.bonfire.intensity * 100)}% blaze${g.bonfire.damp ? ', smoky' : ''}`);
   button(jobs, 'Build and light the bonfire', () => g.debugLightFire());

@@ -36,6 +36,7 @@ import { createMuddiness } from './muddiness.js';
 import { GirlMud } from '../effects/girlMud.js';
 import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, boredOdds, BORED_NORM } from './boredom.js';
+import { Settled } from './settled.js';
 import { moveMethods, DEFAULT_MOVE_PARAMS } from './companionMoves.js';
 import { DEFAULT_IDLE_POSE_PARAMS } from './poseMoves.js';
 import { Attention, DEFAULT_NOTICE_PARAMS, hearingFactor } from './attention.js';
@@ -188,6 +189,7 @@ export class Companion {
     this.recoil = null; // a jump back from a boil-over, while it lasts (jumpBack)
     this.restlessness = 0.7 + Math.random() * 0.8; // drifts while she's about (boredom.js)
     this.boredAfter = nextBoredWait(params, this.restlessness);
+    this.settled = new Settled(); // told to stop and stand about for a while (settle)
     this.nickJob = null; // a quad of yours she has taken off: { quad, phase: 'away' | 'back', ... } (nicking.js)
     this.selfEvents = []; // things she decided to do on her own, for her voice
     this.favourView = () => ({ mood: 'even', warmth: 1, sulk: 1 }); // how you've treated her (favour.js); the game swaps in the real thing
@@ -814,6 +816,19 @@ export class Companion {
     this.getDownThen(go);
   }
 
+  /**
+   * Stops her wherever she is: off whatever she is on, out of what she is walking to or doing, then stood about where she is for
+   * `settleSeconds` starting nothing of her own, so she can be given something else at once (the console's `reset amy`).
+   */
+  settle() {
+    this.intent.interrupt(this.params); // what she had on her mind is dropped, without the line she says when you cut across her
+    this.settled.start(this.params.settleSeconds, this.params.ownMind);
+    this.params.ownMind = false;
+    this.getDownThen(() => {
+      if (this.fsm.is('walking')) this.fsm.transition('idle', { facing: this.heading });
+    });
+  }
+
   /** A last guard (recallPlan.js): stood or walking about but still parented to a vehicle's seat, she'd float for the rest of the game, so put her on the ground where she is. */
   dropIfStranded() {
     if (!strandedOnVehicle(this.fsm.name, this.root.parent === this.scene)) return;
@@ -1409,6 +1424,8 @@ export class Companion {
     this.updateTipCall(dt);
     this.updateReaction(dt);
     this.updateBoredom(dt);
+    const back = this.settled.step(dt);
+    if (back) this.params.ownMind = back.ownMind;
     this.updateLineUp(dt);
     if (viewer) this.updateAttention(dt, viewer);
     this.updateFidget(dt);

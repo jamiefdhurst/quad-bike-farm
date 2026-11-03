@@ -12,6 +12,7 @@ import { GATE_PARAM_RANGES } from './gates.js';
 import { GateMinder, DEFAULT_GATE_MIND_PARAMS, GATE_MIND_RANGES } from './gateMinding.js';
 import { TrafficAudio } from '../audio/trafficAudio.js';
 import { RollingRoadHost } from './rollingRoadHost.js';
+import { LANE_TARMAC_LIFT } from './props.js';
 
 const STOCK_EVERY = 2000; // ms between things built ahead while you play, each 10 to 30 ms: sparse enough not to be felt, and most are done behind the start card
 const CLOSE = 40; // m: a girl within this of something that happens may remark on it
@@ -33,6 +34,7 @@ export class TrafficHost {
     this.kidsParams = { ...DEFAULT_KIDS_PARAMS };
     registerTuning('Kids on the lane', this.kidsParams, KIDS_PARAM_RANGES);
     this.kids = new Kids({ places: this.places, params: this.kidsParams, random: createRandom(game.seed ^ 0x61d5) });
+    const lane = world.layout.publicLane;
     this.view = new TrafficView(game.scene, (x, z) => world.groundHeightAt(x, z), game.models.companion, (object) => {
       const restore = showHidden(object); // three.js prepares only what it would draw
       try {
@@ -40,7 +42,7 @@ export class TrafficHost {
       } finally {
         restore();
       }
-    });
+    }, (x) => (Math.abs(x - lane.x) < lane.halfWidth ? LANE_TARMAC_LIFT : 0)); // the lane's tarmac is laid above the ground
     this.audio = new TrafficAudio(game.audioHub);
     this.later = []; // [{ left, run }]: things the girls say a few seconds after
     this.lastEvent = 'nothing yet';
