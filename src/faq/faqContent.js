@@ -1382,6 +1382,15 @@ export const FAQ_SECTIONS = [
           What she knows shows: a girl who has learnt to bump-start pushes harder and for longer, and one who has learnt to double-declutch stops grinding the gears.`,
       },
       {
+        q: "Will Amy pass her driving test?",
+        a: `Yes, in the end, and you can help. Amy takes the Finch out on the lane more often while she is learning. Sit beside her (get in the passenger
+          seat) for a short while and it counts as a practice, one a day at most. After four she books her test for a couple of days later, and Jess
+          has an opinion. The evening before she is nervous. On the morning she is gone to the village for a few minutes and comes back on foot with the
+          result: most likely a pass, but she can fail, and then she needs two more practices before she tries again. When she passes the L plates come
+          off the Finch for good, she is pleased with you, and the day's story and the achievements say so. The farm remembers all of it.`,
+        tip: 'Sit beside Amy while she drives the Finch to help her practise for her driving test.',
+      },
+      {
         q: 'Can the girls teach me to drive a manual?',
         a: `Yes. Drive a manual quad (the Farm 300, RB300 or Hornet) with a girl on the back and after a little while she may offer you a lesson. Amy sets one
           thing at a time: pulling away without revving it, clutch control on a hill, changing down before a bank, smooth gear changes, and stopping
@@ -2609,7 +2618,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Whose are the two cars?',
-        a: `The brown Thorne Finch is Amy's: an old hatchback, kept clean, with L plates on, because she is still learning. The red Ashby Griffin with the grey wing and the big exhaust is
+        a: `The brown Thorne Finch is Amy's: an old hatchback, kept clean, with L plates on until she has passed her driving test. The red Ashby Griffin with the grey wing and the big exhaust is
           Jess's. They park side by side on the tarmac at the end of the farm road, in front of the Dutch barn, and they are there every day unless she came in with you.`,
         tip: "The Finch is Amy's and the Griffin is Jess's. They park at the end of the farm road, by the Dutch barn.",
       },
