@@ -88,6 +88,13 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   const roadWet = { value: 0 }; // 0..1 how wet the tarmac is (roadWet.js); the World feeds it
   const skyTint = { value: new THREE.Color() }; // what the wet tarmac mirrors: the horizon's colour now, the World feeds it
   // Where the tarmac is, for the shine (roadWet.js): the farm road, the lane and the village's streets.
+  // The hay meadow (hayMask.js, hayView.js): the view fills these when the hay job is set up. Until then they point at a blank texel far away.
+  const blank = new THREE.DataTexture(new Uint8Array(4), 1, 1, THREE.RGBAFormat);
+  blank.needsUpdate = true;
+  const hayPatch = {
+    map: { value: blank }, origin: { value: new THREE.Vector2(1e6, 1e6) }, size: { value: new THREE.Vector2(1, 1) },
+    trackMap: { value: blank }, trackOrigin: { value: new THREE.Vector2(1e6, 1e6) }, trackSize: { value: new THREE.Vector2(1, 1) },
+  };
   const mask = tarmacMask(fields.tarmacAt, size);
   const tarmacTex = new THREE.DataTexture(mask.data, mask.n, mask.n, THREE.RedFormat);
   tarmacTex.magFilter = tarmacTex.minFilter = THREE.LinearFilter;
@@ -97,6 +104,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
     snow,
     roadWet,
     skyTint,
+    hayPatch,
     tarmac: { map: tarmacTex, origin: new THREE.Vector2(mask.minX, mask.minZ), size: new THREE.Vector2(mask.size, mask.size) },
     wear: { map: wearTex, origin: new THREE.Vector2(wear.minX, wear.minZ), size: new THREE.Vector2(wear.sizeX, wear.sizeZ) },
     roadMud: { map: roadMudTex, origin: new THREE.Vector2(mudData.minX, mudData.minZ), size: new THREE.Vector2(mudData.sizeX, mudData.sizeZ) },
@@ -109,7 +117,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
 
   scene.add(createOuterRing(layout, heights, fields));
 
-  return { mesh, collider, frost, snow, roadWet, skyTint, wearTexture: wearTex, roadMudTexture: roadMudTex, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
+  return { mesh, collider, hayPatch, frost, snow, roadWet, skyTint, wearTexture: wearTex, roadMudTexture: roadMudTex, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
 }
 
 /**
@@ -135,7 +143,7 @@ function gridHeight(grid, n, step, half, x, z) {
 }
 
 /** Multiplies a tiling greyscale texture over the diffuse colour in world space, and lays the worn ground and the road's mud over it. */
-function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow, roadWet, skyTint, tarmac }) {
+function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow, roadWet, skyTint, tarmac, hayPatch }) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.detailMap = { value: detailTex };
     shader.uniforms.wearMap = { value: wear.map };
@@ -145,6 +153,12 @@ function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow
     shader.uniforms.uSnow = snow;
     shader.uniforms.uRoadWet = roadWet;
     shader.uniforms.uSkyTint = skyTint;
+    shader.uniforms.hayMap = hayPatch.map;
+    shader.uniforms.hayOrigin = hayPatch.origin;
+    shader.uniforms.haySize = hayPatch.size;
+    shader.uniforms.hayTrackMap = hayPatch.trackMap;
+    shader.uniforms.hayTrackOrigin = hayPatch.trackOrigin;
+    shader.uniforms.hayTrackSize = hayPatch.trackSize;
     shader.uniforms.tarmacMap = { value: tarmac.map };
     shader.uniforms.tarmacOrigin = { value: tarmac.origin };
     shader.uniforms.tarmacSize = { value: tarmac.size };
@@ -155,13 +169,30 @@ function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow
       .replace('#include <common>', '#include <common>\nvarying vec2 vWorldXZ;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform vec2 wearOrigin;\nuniform vec2 wearSize;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nuniform float uRoadWet;\nuniform vec3 uSkyTint;\nuniform sampler2D tarmacMap;\nuniform vec2 tarmacOrigin;\nuniform vec2 tarmacSize;\nvarying vec2 vWorldXZ;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform vec2 wearOrigin;\nuniform vec2 wearSize;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nuniform float uRoadWet;\nuniform vec3 uSkyTint;\nuniform sampler2D hayMap;\nuniform vec2 hayOrigin;\nuniform vec2 haySize;\nuniform sampler2D hayTrackMap;\nuniform vec2 hayTrackOrigin;\nuniform vec2 hayTrackSize;\nuniform sampler2D tarmacMap;\nuniform vec2 tarmacOrigin;\nuniform vec2 tarmacSize;\nvarying vec2 vWorldXZ;')
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
         float detail = texture2D(detailMap, vWorldXZ * ${scale.toFixed(3)}).r;
         float detail2 = texture2D(detailMap, vWorldXZ * ${(scale * 0.13).toFixed(3)}).r;
         diffuseColor.rgb *= mix(0.72, 1.28, detail) * mix(0.85, 1.15, detail2);
+        // The hay meadow (hayMask.js): long green grass, pale stubble in swaths once cut, a darker tan once baled, one surface with the field round it.
+        // The picture is read through a wobble and a noise threshold, so the edge and the cut cells' borders are ragged, never a straight line.
+        vec2 hayWarp = (vec2(texture2D(detailMap, vWorldXZ * 0.31).r, texture2D(detailMap, vWorldXZ * 0.27 + 0.37).r) - 0.5) * 2.2;
+        vec4 hayS = texture2D(hayMap, (vWorldXZ + hayWarp - hayOrigin) / haySize);
+        float hayNoise = texture2D(detailMap, vWorldXZ * 0.8).r * 0.6 + texture2D(detailMap, vWorldXZ * 0.09).r * 0.4 - 0.5;
+        float hayIn = smoothstep(0.38, 0.62, hayS.a + hayNoise * 0.55);
+        float hayCut = smoothstep(0.4, 0.6, hayS.r + hayNoise * 0.5);
+        float hayBaled = smoothstep(0.4, 0.6, hayS.g + hayNoise * 0.5);
+        float hayGrain = texture2D(detailMap, vWorldXZ * 2.1).r;
+        float hayStripe = 0.5 + 0.5 * sin(vWorldXZ.x * 1.9635 + hayNoise * 1.5);
+        vec3 hayCol = mix(vec3(0.17, 0.27, 0.05) * mix(0.8, 1.25, hayGrain) * mix(0.9, 1.1, detail2), vec3(0.58, 0.47, 0.2) * mix(0.78, 1.22, hayGrain) * mix(0.84, 1.1, hayStripe) * mix(0.85, 1.15, detail), hayCut);
+        hayCol = mix(hayCol, vec3(0.44, 0.34, 0.13) * mix(0.8, 1.2, hayGrain) * mix(0.85, 1.15, detail), hayBaled);
+        vec2 hayTrackUv = (vWorldXZ - hayTrackOrigin) / hayTrackSize;
+        float hayTrackIn = step(0.0, hayTrackUv.x) * step(hayTrackUv.x, 1.0) * step(0.0, hayTrackUv.y) * step(hayTrackUv.y, 1.0);
+        float hayPressed = texture2D(hayTrackMap, hayTrackUv).r * hayTrackIn * (1.0 - hayCut);
+        hayCol = mix(hayCol, vec3(0.42, 0.5, 0.2) * mix(0.9, 1.1, hayGrain), hayPressed * 0.9);
+        diffuseColor.rgb = mix(diffuseColor.rgb, hayCol, hayIn * 0.94);
         // Ground the tyres have worn: churned brown where it's soft, dark and glossy where it's a bog, ragged at the edges.
         vec2 wearUv = (vWorldXZ - wearOrigin) / wearSize;
         float wearIn = step(0.0, wearUv.x) * step(wearUv.x, 1.0) * step(0.0, wearUv.y) * step(wearUv.y, 1.0);
