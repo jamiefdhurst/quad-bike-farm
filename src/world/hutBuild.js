@@ -498,7 +498,7 @@ export function buildHut(c) {
   // Colliders: floor slab, the four walls (the door end in two, leaving the doorway), the steps, the wheels and the drawbar.
   const wb = (lx, y0, y1, lz, hx, hz) => {
     const p = shape.toWorld(lx, lz);
-    fixedBox(p.x, ground + (y0 + y1) / 2, p.z, hx, (y1 - y0) / 2, hz, shape.yaw);
+    return fixedBox(p.x, ground + (y0 + y1) / 2, p.z, hx, (y1 - y0) / 2, hz, shape.yaw);
   };
   wb(0, 0, F, 0, hw, hl);
   const top2 = wallTop;
@@ -507,6 +507,8 @@ export function buildHut(c) {
   wb(hw - WALL / 2, F, top2, 0, WALL / 2, hl);
   wb(0, F, top2, -hl + WALL / 2, hw, WALL / 2);
   for (const sx of [-1, 1]) wb(sx * (gap + (hw - gap) / 2), F, top2, hl - WALL / 2, (hw - gap) / 2, WALL / 2);
+  const doorCollider = wb(0, F, F + DOOR_H, hl - WALL / 2, gap, WALL / 2); // across the doorway, on only while the door is shut (hutHost.js)
+  doorCollider?.setEnabled?.(false);
   // The steps are walked up on an invisible ramp, not on boxes: a walking capsule has a round bottom, so it cannot autostep a 0.28 m riser (and the
   // next from the step to the floor), but it climbs a slope of 30 degrees up from the foot of the steps to the floor's edge without a snag.
   if (c.physics && c.RAPIER) {
@@ -525,7 +527,7 @@ export function buildHut(c) {
   }
   wb(0, 0, 0.5, tip / 2 - hl / 2 - 0.2, 0.35, (Math.abs(tip) - hl) / 2 + 0.1);
 
-  return { group, shape, parts: { glass, glassMesh, kettle, stoveDoor, mug, topLeaf, ground, chimneyY: flueTop + 0.12 } };
+  return { group, shape, parts: { glass, glassMesh, kettle, stoveDoor, mug, topLeaf, lowerLeaf, doorCollider, ground, chimneyY: flueTop + 0.12 } };
 }
 
 /**

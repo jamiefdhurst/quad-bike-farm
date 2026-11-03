@@ -1777,6 +1777,13 @@ export const FAQ_SECTIONS = [
           going, warm.`,
       },
       {
+        q: "Can I shut the shepherd's hut door?",
+        a: `Yes. Look at the doorway and press <kbd>E</kbd>: "Shut the door" swings the two leaves across with a click of the latch, and "Open the door" swings them back against the wall.
+          While it is shut it blocks you, so you cannot walk or ride in, and the stove's warmth stays inside; stood outside a shut door you get none of it. The girls open it to go in and, after
+          a stay in wet or dark weather, shut it behind them once they are clear of it. On a fine bright day they leave it open.`,
+        tip: "Look at the shepherd's hut doorway and press E to shut or open the door.",
+      },
+      {
         q: 'Why is a girl waiting and looking at me?',
         a: `She is asking you along. When she fancies company and is about to sit on the bales, go up the hill for a cup of tea, sit by the fire or race you, she may stop and ask you
           first if you are within earshot (a toast says who). Press <kbd>Enter</kbd> on her and choose the yes (“Sit on the bales with her”, “Race her”) or “Not now”. If you say nothing she

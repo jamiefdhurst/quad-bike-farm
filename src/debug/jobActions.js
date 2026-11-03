@@ -84,6 +84,7 @@ export function jobActions(g) {
     add('stove', 'The hut stove', () => g.hutHost.describe(), [
       a('light', 'Light the hut stove (kettle boiled)', () => g.hutHost.debugLight()),
       a('out', 'Put the hut stove out', () => g.hutHost.debugPutOut()),
+      a('door', 'Open or shut the hut door', () => g.hutHost.debugDoor(!g.hutHost.door.isOpen)),
     ]);
   }
 

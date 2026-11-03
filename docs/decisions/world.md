@@ -1011,3 +1011,11 @@ Settled with Jamie: it moves out of the barley stubble into grass, same 32 by 18
 - **Map.** `farmMapFeatures` returns `marks`: a green S square at each start and a blue F at each finish, so they can be found from across the farm. They are squares with a letter, not just a colour.
 - **Prompt.** Riding up to a climb's start (within `nearStart`) and looking at nobody shows "Enter  Time the pit climb" (`startPrompt`, `yourAsks.js`); Enter opens the wheel as before.
 - **Cost.** One shared material per kind and one lettered band texture each (512 by 96), so no new materials per cone.
+
+## Open and shut the hut's door (#566)
+
+- **Decided.** `E` at the hut's doorway (priority over the sit-with-her ask, which shares the space) says "Shut the door" or "Open the door", with the latch cue. Both leaves swing together on their hinges in `doorSeconds` (0.9 s, eased); it starts open, as built, and is not kept between games.
+- **Blocking.** `hutBuild.js` returns a `doorCollider` across the doorway, disabled while open and enabled (`HutDoor.blocking`) from the moment it starts to shut until it has swung most of the way back. The girls do not use physics, so a shut door never stops them: they open it for a stay (`go`) and again on leaving (`end`).
+- **The girls.** On leaving they flag `shutWhenEmpty`; once neither is in or within 2.2 m of the doorway the door shuts if `rain >= shutRain` (0.25) or `darkness >= shutDarkness` (0.6), else it stays open. The latch sound for her is `HutAudio.latch`.
+- **Warmth.** A shut door lets none of the stove's heat out to the girl stood by it (`warmsAt`); inside is unchanged.
+- **Pure.** `hutDoor.js` (`HutDoor`, `wantsShut`), tested in `tests/hutDoor.test.js`. Console: `farm.hutDoorOpen` is a flag; the Farm tab's stove job has an "Open or shut the hut door" button.
