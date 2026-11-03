@@ -110,8 +110,10 @@ import { DEFAULT_TOW_PARAMS, TOW_PARAM_RANGES, towLoad, towEffect } from './vehi
 import { DEFAULT_MIRROR_PARAMS, MIRROR_PARAM_RANGES, MirrorView, insideFootprint, lookingForward, mirrorTurn } from './vehicle/mirrorView.js';
 import { TrailerRide, TRAILER_RIDE_PARAM_RANGES } from './npc/trailerRide.js';
 import { poseUtvBed, BED_CARGO_SPOTS, BED_CARGO_YAWS, BED_CARGO_YAW } from './vehicle/utvModel.js';
-import { CargoHold, CARGO_PARAM_RANGES } from './vehicle/cargoHold.js';
-import { DEFAULT_LOOSE_PARAMS, LOOSE_PARAM_RANGES, newLoose, creepStep, offRack, shuffleStep, tipStep, looseDrive } from './vehicle/looseThings.js';
+import { CargoHold, CARGO_PARAM_RANGES, slideLimits } from './vehicle/cargoHold.js';
+import { DEFAULT_LOOSE_PARAMS, LOOSE_PARAM_RANGES, newLoose, creepStep, offRack, shuffleStep, tipStep, looseDrive, floorPush, slideStep, slideTip, fallsOut } from './vehicle/looseThings.js';
+import { DEF_LOAD_ROOM, DEF_LOAD_YAWS, DEF_LOAD_YAW } from './vehicle/defenderBody.js';
+import { SERIES_TUB_ROOM } from './vehicle/seriesBody.js';
 import { DEFAULT_RACK_PARAMS, RACK_PARAM_RANGES, RackLoad, rackEffect, slidePush } from './vehicle/rackLoad.js';
 import { buildRackStrap } from './items/rackStrap.js';
 import { Tailgate, TAILGATE_PARAM_RANGES } from './vehicle/tailgate.js';
@@ -199,6 +201,7 @@ import { BALE_TRAILER_FOOTPRINT, TIP_TRAILER_FOOTPRINT } from './vehicle/trailer
 import { TrailerGuide, TRAILER_GUIDE_PARAM_RANGES, guideSpot } from './npc/trailerGuide.js';
 import { WorkLight, WORK_LIGHT_PARAM_RANGES } from './npc/workLight.js';
 import { GeneratorStart, GENERATOR_START_PARAM_RANGES } from './npc/generatorStart.js';
+import { TidyLoad, TIDY_LOAD_PARAM_RANGES } from './npc/tidyLoad.js';
 import { LostThings, LOST_PARAM_RANGES, LOSABLE, coverAt, seen, sinkFor } from './items/lostThings.js';
 import { finishJob } from './workshop/benchJobs.js';
 import { Dares, DARE_PARAM_RANGES, DARE_KINDS, steepestBank } from './npc/dares.js';
@@ -404,6 +407,8 @@ const GO_KINDS = ['tractor', 'utv', 'landy', 'defender', 'fiesta', 'corsa', 'p30
 const CAR_KINDS = ['fiesta', 'corsa']; // the girls' own cars: each goes out only with her owner at the wheel (npc/carGo.js)
 const OWNED_KINDS = [...CAR_KINDS, 'p309']; // every car with an owner, yours too (#229): only its owner drives it, so no girl takes it for a go
 const CAB_KINDS = ['landy', 'defender', ...OWNED_KINDS]; // the Land Rovers and the cars: in `landys`, a cab with seats behind the wheel
+
+const LANDY_LOADS = ['petrolCan', 'premixCan', 'dieselCan', 'toolbox', 'leads', 'oilBottle']; // what is kept in a Land Rover's back (the keys on the game)
 
 export class Game {
   constructor(RAPIER, canvas) {
@@ -1022,11 +1027,10 @@ export class Game {
       else registerTuning('Griffin riders', l.ride.p, UTV_RIDE_PARAM_RANGES);
       l.mount = l.unit ? new UtvMount(l.unit.quad, (x, z) => this.world.heightAt(x, z), l.car ? CAR_STAND : { ...LANDY_STAND, ...LANDY_REAR_STAND }, rear, { driver: !!l.car }) : null;
       if (l.unit) l.unit.quad.tipHold = { left: 0, driver: 0 }; // seconds a backrest stays tipped after you climb past it
-      if (l.unit && series) this.addLandyCargo(l);
+      if (l.unit && (series || l.kind === 'defender')) this.addLandyCargo(l);
       else if (l.unit && l.kind === 'corsa') registerTuning('Griffin hatch', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T lifts its hatch
       else if (l.unit && l.kind === 'fiesta') registerTuning('Finch hatch', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T lifts its hatch
       else if (l.unit && l.kind === 'p309') registerTuning('Vauclair hatch', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T lifts its hatch
-      else if (l.unit && l.kind === 'defender') registerTuning('Crag back door', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES); // T swings its back door out
     }
     this.rearAccess = { ...DEFAULT_REAR_ACCESS_PARAMS };
     registerTuning('Crag back seats', this.rearAccess, REAR_ACCESS_PARAM_RANGES);
@@ -1220,6 +1224,7 @@ export class Game {
     this.askAlong = new AskAlong(); // asking you along to what she's chosen, and what a no does (npc/askAlong.js)
     this.askGo = {}; // girl id -> { together, alone }: how to carry out what she asked about
     this.pair = new Pair(); // the two as a pair: going over to each other, tagging along, letting you in (npc/pair.js)
+    this.tidyLoad = new TidyLoad(); // a girl loading or unloading a Land Rover's back (npc/tidyLoad.js)
     this.generatorStart = new GeneratorStart(); // a girl pulling the generator's cord (npc/generatorStart.js)
     this.lost = new LostThings(); // jump leads and bottles left lying in the field, and a girl bringing them back (items/lostThings.js)
     this.workLight = new WorkLight(undefined, createRandom(this.seed ^ 0x11e7)); // bringing a vehicle round to light what you're at, after dark (npc/workLight.js)
@@ -1656,6 +1661,7 @@ export class Game {
       interact: () => this.toolbox.pickUp(this.camera),
     });
     this.setUpRackLoads();
+    this.restoreLandyCargo();
     // The workbench: jobs on a quad parked in the painted bay (workshop/bench.js).
     this.interaction.add({
       target: this.bench.proxy,
@@ -1916,6 +1922,7 @@ export class Game {
     registerTuning('Guiding a trailer back', this.trailerGuide.p, TRAILER_GUIDE_PARAM_RANGES);
     registerTuning('Lights to work by', this.workLight.p, WORK_LIGHT_PARAM_RANGES);
     registerTuning('Starting the generator', this.generatorStart.p, GENERATOR_START_PARAM_RANGES);
+    registerTuning('Loading a Land Rover', this.tidyLoad.p, TIDY_LOAD_PARAM_RANGES);
     registerTuning('Things left lying', this.lost.p, LOST_PARAM_RANGES);
     registerTuning('Numb bum', this.numbParams, NUMB_PARAM_RANGES);
     registerTuning('Minding a fix', this.dontFix.p, DONTFIX_PARAM_RANGES);
@@ -3423,11 +3430,48 @@ export class Game {
     registerTuning('Yak load', this.utvCargo.p, CARGO_PARAM_RANGES);
   }
 
-  /** The Series' tub: the same standing and loading as the UTV's bed, a tailgate dropped or not (vehicle/tailgate.js). */
+  /**
+   * The Series' tub and the 200TDi's load space: the same standing and loading as the UTV's bed, a tailgate dropped or a back door swung
+   * out (vehicle/tailgate.js). What stands there slides on the corners and the brakes (updateLooseBed) and goes over the open edge.
+   */
   addLandyCargo(l) {
-    l.cargo = this.addBedCargo(l.unit.quad, { name: "Tor's tub", blocked: () => null, yawFor: () => BED_CARGO_YAW, host: l.unit.quad.model });
-    registerTuning('Tor load', l.cargo.p, CARGO_PARAM_RANGES);
-    registerTuning('Tor tailgate', (l.unit.quad.tailgate ??= new Tailgate()).p, TAILGATE_PARAM_RANGES);
+    const quad = l.unit.quad;
+    const crag = l.kind === 'defender';
+    const tail = (quad.tailgate ??= new Tailgate());
+    const open = () => tail.open >= 0.6;
+    l.cargo = this.addBedCargo(quad, {
+      name: crag ? "Crag's load space" : "Tor's tub",
+      blocked: () => (crag && !open() ? 'The back door is shut   ·   T to open it' : null),
+      yawFor: crag ? (item) => DEF_LOAD_YAWS[item.model.name] ?? DEF_LOAD_YAW : () => BED_CARGO_YAW,
+      host: quad.model,
+    });
+    l.cargo.room = crag ? DEF_LOAD_ROOM : SERIES_TUB_ROOM;
+    l.cargo.backOpen = open;
+    if (crag) {
+      registerTuning('Crag load', l.cargo.p, CARGO_PARAM_RANGES);
+      registerTuning('Crag back door', tail.p, TAILGATE_PARAM_RANGES);
+    } else {
+      registerTuning('Tor load', l.cargo.p, CARGO_PARAM_RANGES);
+      registerTuning('Tor tailgate', tail.p, TAILGATE_PARAM_RANGES);
+    }
+  }
+
+  /** The things loaded into a Land Rover's tub or load space, as `{ spot, item }` with the item's key on the game, for the save. */
+  landyCargoSave(unit) {
+    const l = Object.values(this.landys).find((x) => x.unit === unit && x.cargo);
+    if (!l) return [];
+    return l.cargo.contents().map((c) => ({ spot: c.spot, item: LANDY_LOADS.find((k) => this[k] === c.item) })).filter((c) => c.item);
+  }
+
+  /** A remembered farm has the tub and load space as they were left. */
+  restoreLandyCargo() {
+    for (const l of Object.values(this.landys)) {
+      if (!l.unit || !l.cargo) continue;
+      for (const c of this.farm.save?.vehicles?.[l.unit.id]?.cargo ?? []) {
+        const item = LANDY_LOADS.includes(c.item) ? this[c.item] : null;
+        if (item && !item.held && !this.onRack(item) && !l.cargo.holds(item)) l.cargo.load(item, c.spot);
+      }
+    }
   }
 
   /** A row of cargo spots (`bedCargo0`...) and a `bedProxy` box on a model to look at: what you hold goes in, unless `blocked` says why not. */
@@ -4739,7 +4783,7 @@ export class Game {
   captureFarm() {
     const vehicles = {};
     for (const unit of this.units) {
-      vehicles[unit.id] = captureVehicle(unit, { settings: this.history.settingsFor(unit), barnFind: unit.barnFind?.toJSON(), rack: this.rackSave(unit) });
+      vehicles[unit.id] = captureVehicle(unit, { settings: this.history.settingsFor(unit), barnFind: unit.barnFind?.toJSON(), rack: this.rackSave(unit), cargo: this.landyCargoSave(unit) });
     }
     return {
       day: this.farm.day,
@@ -5614,6 +5658,10 @@ export class Game {
       ...mine(this.generatorStart.offers(this.generatorStartContext()), (o) => {
         this.companions.find((g) => g.character.id === o.girl).voice.say('generatorGo', { urgent: true, force: true });
         this.handleGeneratorStart(this.generatorStart.take(o));
+      }),
+      ...mine(this.tidyLoad.offers(this.tidyLoadContext()), (o) => {
+        this.companions.find((g) => g.character.id === o.girl).voice.say(o.mode === 'load' ? 'tidyLoadIn' : 'tidyLoadOut', { urgent: true, force: true });
+        this.handleTidyLoad(this.tidyLoad.take(o));
       }),
       ...mine(this.tea.offers(this.teaContext(ridden)), (o) => this.handleTeaEvent(this.tea.take(o))),
       ...mine(this.flask.offers(this.flaskContext(ridden)), (o) => this.handleFlaskEvent(this.flask.take(o))),
@@ -7485,6 +7533,88 @@ export class Game {
       this.hayStack();
     }
     this.hayStageChanged(hay.phase);
+  }
+
+  // Loading a Land Rover's back ------------------------------------------------
+
+  /** The Land Rovers with a back to load that have nobody in them, and the things lying near each (loose on the ground, not carried). */
+  tidyLoadVehicles() {
+    return Object.values(this.landys).filter((l) => l.unit && l.cargo).map((l) => {
+      const q = l.unit.quad;
+      const parked = this.riddenUnit !== l.unit && !q.rider && !q.driver && !q.passenger && !this.companions.some((c) => c.trailer === l.mount) && Math.abs(q.speed) < 0.3;
+      return { id: l.kind, x: q.position.x, z: q.position.z, free: parked && !q.isTipped, loose: this.looseLoadsNear(l).length, loaded: l.cargo.items.length, room: l.cargo.anchors.length - l.cargo.items.length };
+    });
+  }
+
+  /** What is lying on the ground near this Land Rover that would go in its back, nearest first. */
+  looseLoadsNear(l, range = this.tidyLoad.p.itemRange) {
+    const at = l.unit.quad.position;
+    return LANDY_LOADS.map((k) => this[k]).filter((i) => i && !i.held && i.model.parent === this.scene && !this.onRack(i))
+      .map((i) => ({ i, d: Math.hypot(i.model.position.x - at.x, i.model.position.z - at.z) })).filter((x) => x.d <= range).sort((a, b) => a.d - b.d).map((x) => x.i);
+  }
+
+  /** What a girl loading a Land Rover's back needs to know (npc/tidyLoad.js). */
+  tidyLoadContext() {
+    return {
+      vehicles: this.tidyLoadVehicles(),
+      girls: this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.availability().free, weight: c.params.tidyLoadWeight ?? 0 })),
+    };
+  }
+
+  /** She walks round to the back, opens it, puts one thing in or takes one out, and shuts it again (a choice she made, or the debug panel's). */
+  handleTidyLoad(e) {
+    if (!e) return;
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const l = this.landys[e.vehicle];
+    const m = this.tidyLoad;
+    const q = l.unit.quad;
+    const hold = l.cargo;
+    const back = () => new THREE.Vector3(0, 0, -1).transformDirection(q.model.matrixWorld).setY(0).normalize();
+    const stand = q.model.localToWorld(new THREE.Vector3(0, 0, hold.room.z0 - 1.4));
+    const wasOpen = q.tailgate.want;
+    const sec = (s) => s * 1000;
+    const finish = () => {
+      if (!wasOpen) q.tailgate.want = false;
+      m.finished();
+    };
+    const act = () => {
+      const near = Math.hypot(c.root.position.x - stand.x, c.root.position.z - stand.z) < 3;
+      if (!near || Math.abs(q.speed) > 0.3) return m.finished();
+      q.tailgate.want = true;
+      setTimeout(() => {
+        const item = e.mode === 'load' ? this.looseLoadsNear(l)[0] : hold.items[hold.items.length - 1];
+        if (!item || q.tailgate.open < 0.6 || (e.mode === 'load' && hold.freeSpot() === null)) return finish();
+        if (e.mode === 'load') hold.load(item);
+        else hold.dropOut(item, back(), 0.7);
+        setTimeout(finish, sec(m.p.closeWait + m.p.carrySeconds * 0));
+      }, sec(m.p.gateWait + m.p.carrySeconds));
+    };
+    if (!c.sneakTo(stand, act, m.p.jobTimeout - 5)) m.finished();
+  }
+
+  /** Debug panel and console: put the red jerry can or the toolbox in the Land Rover's back (door or gate open, loose), or clear it. */
+  debugBack(unit, what) {
+    const l = Object.values(this.landys).find((x) => x.unit === unit && x.cargo);
+    if (!l) return 'it has no tub or load space';
+    if (what === 'clear') {
+      const items = l.cargo.items;
+      if (!items.length) return 'nothing in the back';
+      for (const i of items) l.cargo.dropOut(i, new THREE.Vector3(0, 0, -1).transformDirection(unit.quad.model.matrixWorld).setY(0).normalize(), 1);
+      return 'back emptied onto the ground';
+    }
+    const item = what === 'toolbox' ? this.toolbox : this.petrolCan;
+    if (item.held) return `you are holding the ${what}: put it down first`;
+    if (this.onRack(item)) return `the ${what} is strapped on a rack: clear that first`;
+    if (!l.cargo.load(item)) return 'the back is full';
+    return `the ${what} is in the back`;
+  }
+
+  /** What is in a Land Rover's back, for the console. */
+  backSummary(unit) {
+    const l = Object.values(this.landys).find((x) => x.unit === unit && x.cargo);
+    if (!l) return 'no tub or load space';
+    const names = l.cargo.items.map((i) => this.loadName(i));
+    return names.length ? names.join(', ') : 'empty';
   }
 
   // Starting the generator --------------------------------------------------
@@ -9558,9 +9688,35 @@ export class Game {
     }
   }
 
-  /** What stands in a bed shuffles about its spot with the shake of the vehicle, and a can shaken hard for long enough goes over. */
+  /**
+   * What the vehicle is doing to a load in a tub or load space, in the model's own frame: how it is accelerating (a corner, the brakes,
+   * a pull away) turned round, and the slope's share of gravity (vehicle/looseThings.js floorPush). Smoothed, since the physics steps.
+   */
+  loadPush(hold, quad, dt) {
+    const m = (hold.motion ??= { pos: new THREE.Vector3(), vel: new THREE.Vector3(), accel: new THREE.Vector3(), seen: false });
+    if (dt > 0 && m.seen) {
+      const vel = quad.position.clone().sub(m.pos).divideScalar(dt);
+      const a = vel.clone().sub(m.vel).divideScalar(dt);
+      m.vel.copy(vel);
+      if (vel.length() < 40 && a.length() < 30) m.accel.lerp(a.setY(0), 1 - Math.exp(-dt * 10)); // (a jump of position is not a push)
+    }
+    m.pos.copy(quad.position);
+    m.seen = true;
+    const inv = quad.model.getWorldQuaternion(new THREE.Quaternion()).invert();
+    const a = m.accel.clone().applyQuaternion(inv);
+    const g = new THREE.Vector3(0, -9.81, 0).applyQuaternion(inv);
+    return floorPush(a, g);
+  }
+
+  /**
+   * What stands in a bed shuffles about its spot with the shake of the vehicle, and a can shaken hard for long enough goes over. In a
+   * tub or load space (`hold.room`) it also slides when the corner, the brakes or a slope push it, stops at the walls, and out of an open
+   * back it goes over the edge.
+   */
   updateLooseBed(hold, quad, dt) {
     const shake = quad.unit?.vibration?.intensity ?? 0;
+    const push = hold.room ? this.loadPush(hold, quad, dt) : null;
+    const open = hold.backOpen?.() ?? false;
     for (const item of hold.items) {
       if (!hold.holds(item)) continue;
       const m = item.model;
@@ -9568,7 +9724,16 @@ export class Game {
       shuffleStep(s, dt, shake, this.loose.p);
       if (m.name === 'jerryCan') tipStep(s, dt, shake, this.loose.p);
       const yaw = hold.yawFor(item) + s.twist;
-      m.position.set(s.x, s.tipped ? 0.18 : 0, s.z); // on its side it sits half its width up
+      if (push) {
+        const spot = hold.anchors[m.userData.spot].position;
+        const hit = slideStep(s, dt, push, slideLimits(hold.room, spot, m.name, hold.yawFor(item), open), this.loose.p);
+        if (m.name === 'jerryCan') slideTip(s, hit, this.loose.p);
+        if (open && fallsOut(hold.room.z0 - (spot.z + s.sz), shake, this.loose.p)) {
+          hold.dropOut(item, new THREE.Vector3(0, 0, -1).transformDirection(quad.model.matrixWorld).setY(0).normalize(), 0.5);
+          continue;
+        }
+      }
+      m.position.set(s.x + s.sx, s.tipped ? 0.18 : 0, s.z + s.sz); // on its side it sits half its width up
       m.rotation.order = 'YXZ';
       m.rotation.set(0, yaw, s.tipped ? Math.PI / 2 : 0);
     }
@@ -13035,6 +13200,7 @@ export class Game {
     this.guard.run('updateWorkLight', () => this.updateWorkLight(dt));
     this.guard.run('updateTrailerGuide', () => this.updateTrailerGuide(dt, this.riddenUnit));
     this.generatorStart.update(dt);
+    this.tidyLoad.update(dt);
     this.guard.run('updateLostThings', () => this.updateLostThings(dt));
     this.guard.run('updateDaylight', () => this.updateDaylight(dt));
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);

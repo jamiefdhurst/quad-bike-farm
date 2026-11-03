@@ -54,6 +54,18 @@ export const DEF_ARCH = { r: 0.47, y: 0.58 };
 /** The rear door: hinged on the offside edge (x -0.5), swinging out behind; y bottom and top, the window in it and the body panels either side. */
 export const DEF_BACK_DOOR = { hingeX: -0.5, width: 1.0, y0: 0.7, y1: 1.76, window: { y0: 1.24, y1: 1.72, w: 0.8 }, open: 1.75 };
 
+/**
+ * The load space behind the back bench: where cargo stands on its carpet (two spots, side by side, the toolbox lying across), the room
+ * there is for it (model frame: between the wheel boxes, from the bench's back to the back door's edge) and the box to look at to put
+ * something in.
+ */
+export const DEF_LOAD_FLOOR = 0.918; // the carpet's top, with a centimetre under the load
+export const DEF_LOAD_SPOTS = [-0.28, 0.28].map((x) => ({ x, z: -1.56 }));
+export const DEF_LOAD_ROOM = { x0: -0.55, x1: 0.55, z0: DEF_END + 0.02, z1: -1.32 };
+export const DEF_LOAD_YAWS = { toolbox: 0 }; // by the item's model name; everything else lies along the car
+export const DEF_LOAD_YAW = Math.PI / 2;
+export const DEF_LOAD_PROXY = { w: 1.1, h: 0.5, d: 0.5, y: 0.906 + 0.28, z: -1.56 };
+
 /** The rear number plate: on the crossmember's back face, off the middle so the tow jaw does not hide it. */
 export const DEF_PLATE = { x: 0.4, y: 0.6 };
 

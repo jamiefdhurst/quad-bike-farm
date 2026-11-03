@@ -15,6 +15,7 @@ import {
 import {
   DEF_WHEELBASE, DEF_TRACK, DEF_END, DEF_SPARE, DEF_FRONT, DEF_WING, DEF_BONNET, DEF_BONNET_E, DEF_SCUTTLE, DEF_SCREEN, DEF_SCREEN_H,
   DEF_SCREEN_TOP_Z, defScreenZ, DEF_DOOR, DEF_CAB, DEF_ROOF, DEF_SIDE_WINDOW, DEF_BACK_DOOR, DEF_HITCH, DEF_DASH, DEF_ARCH, DEF_PLATE,
+  DEF_LOAD_FLOOR, DEF_LOAD_SPOTS, DEF_LOAD_PROXY,
 } from './defenderBody.js';
 
 // The 200TDi: a Defender 90 station wagon at its real size (TODO 100), built from defenderBody.js's numbers after the photos. Driven by Quad
@@ -23,6 +24,7 @@ import {
 // seatBack_driver and seatBack_left that tip), plus:
 //
 //   doorLeft, doorRight     groups hinged on their front edges: poseSeriesDoors swings them (the dirt on them goes with them: `mudRest`)
+//   bedCargo0, bedCargo1, bedProxy  where things stand on the load floor and a box to look at to put something in (game.js addLandyCargo)
 //   backDoor                a group hinged on the offside edge of the back, carrying the spare: poseDefenderBackDoor swings it out on T
 
 /**
@@ -428,6 +430,16 @@ export function buildDefenderModel({ bodyColor = 0x4f6f86, dashStyle = 'defender
     const loadZ = (-1.32 + DEF_END + 0.02) / 2;
     rbox(1.12, 0.32, loadL, 0.01, plastic2, 0, 0.74, loadZ, root); // the block under it
     rbox(1.12, 0.012, loadL - 0.02, 0.004, trim.floor, 0, 0.906, loadZ, root); // the carpet on top
+    DEF_LOAD_SPOTS.forEach((c, i) => {
+      const a = new THREE.Object3D();
+      a.name = `bedCargo${i}`;
+      a.position.set(c.x, DEF_LOAD_FLOOR, c.z);
+      root.add(a);
+    });
+    const loadProxy = new THREE.Mesh(new THREE.BoxGeometry(DEF_LOAD_PROXY.w, DEF_LOAD_PROXY.h, DEF_LOAD_PROXY.d), new THREE.MeshBasicMaterial({ visible: false }));
+    loadProxy.name = 'bedProxy';
+    loadProxy.position.set(0, DEF_LOAD_PROXY.y, DEF_LOAD_PROXY.z);
+    root.add(loadProxy);
     for (const s of [-1, 1]) {
       archBlock(s, zR); // the wheel box beside the bench, over the tyre, in the trim's plastic, with a round hole for it
     }

@@ -21,6 +21,9 @@ export const VEHICLE_VERBS = [
   { name: 'rackcan', help: 'stand the red jerry can on its rack, loose (quads with a rack)' },
   { name: 'racktoolbox', help: 'stand the toolbox on its rack, loose' },
   { name: 'strap', help: 'strap down what is on its rack, or undo the strap' },
+  { name: 'backcan', help: 'stand the red jerry can in the back of a Land Rover (the Tor or the Crag), loose' },
+  { name: 'backtoolbox', help: 'stand the toolbox in the back of a Land Rover, loose' },
+  { name: 'clearback', help: 'tip whatever is in the back of a Land Rover out onto the ground' },
   { name: 'clearrack', help: 'take whatever is on its rack off, gone from the rack' },
   { name: 'soak', help: 'rain on its windscreen, as in a downpour (the cars, the Land Rovers and the UTV)' },
   { name: 'dry', help: 'its windscreen dried off' },
@@ -178,6 +181,9 @@ export function createHost(g, { copy = () => {} } = {}) {
         case 'rackcan': return `${id}: ${g.debugRack(u, 'can')}`;
         case 'racktoolbox': return `${id}: ${g.debugRack(u, 'toolbox')}`;
         case 'strap': return `${id}: ${g.debugRack(u, 'strap')}`;
+        case 'backcan': return `${id}: ${g.debugBack(u, 'can')}`;
+        case 'backtoolbox': return `${id}: ${g.debugBack(u, 'toolbox')}`;
+        case 'clearback': return `${id}: ${g.debugBack(u, 'clear')}`;
         case 'clearrack': return `${id}: ${g.debugRack(u, 'clear')}`;
         default: throw new Error(`no such thing as ${verb}`);
       }

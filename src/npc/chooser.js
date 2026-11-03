@@ -68,6 +68,7 @@ export const OFFER_KINDS = {
   phoneCall: { label: 'take a call on her phone', satisfies: { company: 0.6, excitement: 0.3 } },
   fetchLost: { label: 'bring back something you left lying', satisfies: { purpose: 0.7 }, pace: 'brisk' },
   generatorStart: { label: 'start the generator', satisfies: { purpose: 0.8 }, pace: 'brisk' },
+  tidyLoad: { label: 'load or unload the back of a Land Rover', satisfies: { purpose: 0.7 }, pace: 'brisk' },
   workLight: { label: 'bring something round to light the way for you', satisfies: { purpose: 0.9, company: 0.6 }, pace: 'brisk' },
   trailerGuide: { label: 'guide you back with the trailer', satisfies: { purpose: 0.9, company: 0.5 }, pace: 'hurry' },
   pairUp: { label: 'go and stand with her friend', satisfies: { company: 0.9, purpose: 0.4 } },

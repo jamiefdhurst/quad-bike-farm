@@ -47,7 +47,8 @@ export const SERIES_TUB = { floor: 0.92, top: 1.27, front: SERIES_CAB.rear, side
 export const SERIES_GATE = { hingeY: SERIES_TUB.floor + 0.02, height: SERIES_TUB.top - SERIES_TUB.floor - 0.02, pinY: SERIES_TUB.top - 0.1 };
 
 /** Where cargo stands in the tub (two rows of three between the wheel humps) and the box to look at to put something in. */
-export const SERIES_TUB_SPOTS = [-0.25, 0.25].flatMap((x) => [-0.95, -1.25, -1.55].map((z) => ({ x, z })));
+export const SERIES_TUB_SPOTS = [-0.25, 0.25].flatMap((x) => [-1.0, -1.25, -1.5].map((z) => ({ x, z })));
+export const SERIES_TUB_ROOM = { x0: -0.45, x1: 0.45, z0: SERIES_END, z1: SERIES_CAB.rear }; // between the humps, from the cab to the tailgate's hinge
 export const SERIES_TUB_PROXY = { w: 1.4, h: 0.5, d: 1.0, y: SERIES_TUB.floor + 0.27, z: (SERIES_CAB.rear + SERIES_END) / 2 };
 
 /** The tow jaw under the tail, a fixed point: a little behind the tub's end. */

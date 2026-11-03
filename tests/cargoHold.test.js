@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { CargoHold } from '../src/vehicle/cargoHold.js';
+import { CargoHold, slideLimits } from '../src/vehicle/cargoHold.js';
 import { BED_CARGO_SPOTS, BED_CARGO_YAWS, BED_CARGO_YAW } from '../src/vehicle/utvModel.js';
+import { DEF_LOAD_SPOTS, DEF_LOAD_ROOM, DEF_LOAD_YAWS, DEF_LOAD_YAW } from '../src/vehicle/defenderBody.js';
+import { SERIES_TUB_SPOTS, SERIES_TUB_ROOM } from '../src/vehicle/seriesBody.js';
 import { CARGO_FOOTPRINTS } from '../src/vehicle/tipTrailerModel.js';
 
 // A stand-in for a jerry can: the bits of an item the hold touches.
@@ -76,5 +78,53 @@ describe('what stands in the UTV bed', () => {
     expect(a.model.position.y).toBe(0);
     expect(a.model.position.z).toBeLessThan(BED_CARGO_SPOTS[0].z - 1);
     expect(hold.flying.length).toBe(0);
+  });
+});
+
+describe('what stands in the Land Rovers\' backs', () => {
+  const NAMES = Object.keys(CARGO_FOOTPRINTS);
+  const fits = (spots, room, yawFor) => {
+    for (const spot of spots) {
+      for (const name of NAMES) {
+        const lim = slideLimits(room, spot, name, yawFor(name), false);
+        const over = name === 'jumpLeads' ? 0.06 : 0; // the leads are low and may overhang a wheel hump a little
+        expect(lim.minX, `${name} at ${spot.x}`).toBeLessThanOrEqual(over);
+        expect(lim.maxX, `${name} at ${spot.x}`).toBeGreaterThanOrEqual(-over);
+        expect(lim.minZ, `${name} at ${spot.z}`).toBeLessThanOrEqual(0);
+        expect(lim.maxZ, `${name} at ${spot.z}`).toBeGreaterThanOrEqual(0);
+      }
+    }
+  };
+
+  it('has every spot in the Crag\'s load space big enough for each thing, the way it lies', () => {
+    fits(DEF_LOAD_SPOTS, DEF_LOAD_ROOM, (n) => DEF_LOAD_YAWS[n] ?? DEF_LOAD_YAW);
+  });
+
+  it('has every spot in the Tor\'s tub big enough for each thing', () => {
+    fits(SERIES_TUB_SPOTS, SERIES_TUB_ROOM, () => BED_CARGO_YAW);
+  });
+
+  it('lets a thing slide past the edge only with the back open', () => {
+    const spot = DEF_LOAD_SPOTS[0];
+    const shut = slideLimits(DEF_LOAD_ROOM, spot, 'jerryCan', DEF_LOAD_YAW, false);
+    const open = slideLimits(DEF_LOAD_ROOM, spot, 'jerryCan', DEF_LOAD_YAW, true);
+    expect(spot.z + shut.minZ).toBeGreaterThan(DEF_LOAD_ROOM.z0);
+    expect(spot.z + open.minZ).toBeLessThan(DEF_LOAD_ROOM.z0);
+  });
+
+  it('takes an item to a chosen spot, lists what stands where, and drops one out behind', () => {
+    const { scene, bed, hold } = setup();
+    bed.position.set(0, 1, 0);
+    bed.updateMatrixWorld(true);
+    const a = fakeItem('jerryCan', scene);
+    const b = fakeItem('toolbox', scene);
+    expect(hold.load(a, 3)).toBe(true);
+    expect(hold.load(b, 3)).toBe(true); // that spot is taken: the next free one
+    expect(hold.contents().map((c) => c.spot)).toEqual([0, 3]);
+    hold.dropOut(a, new THREE.Vector3(0, 0, -1), 0.7);
+    expect(hold.items).toEqual([b]);
+    for (let t = 0; t < 1.5; t += 0.1) hold.update(0.1);
+    expect(a.held).toBe(false);
+    expect(a.model.parent).toBe(scene);
   });
 });

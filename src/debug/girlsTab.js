@@ -272,6 +272,7 @@ export function buildGirlsTab(d) {
   button(shop, 'Take the battery off the charger', () => g.debugChargerClear());
   show(shop, 'the generator', () => g.describeGenerator());
   show(shop, 'starting the generator', () => g.generatorStart.describe());
+  show(shop, 'loading a Land Rover', () => g.tidyLoad.describe());
   show(shop, 'things left lying', () => g.lost.describe());
   for (const [kind, { name }] of Object.entries(LOSABLE)) button(shop, `Leave the ${name} lying in the grass`, () => g.debugLoseThing(kind));
   button(shop, 'Pull the generator\'s cord', () => g.debugGeneratorPull());

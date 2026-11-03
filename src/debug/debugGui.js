@@ -492,6 +492,9 @@ export class DebugGui {
     row(one, 'Stand the toolbox on its rack, loose', () => g.hud.toast(g.debugRack(this.unit(), 'toolbox')));
     row(one, 'Strap down what is on its rack / undo the strap', () => g.hud.toast(g.debugRack(this.unit(), 'strap')));
     row(one, 'Clear its rack', () => g.hud.toast(g.debugRack(this.unit(), 'clear')));
+    row(one, 'Stand the red jerry can in its back (the Land Rovers), loose', () => g.hud.toast(g.debugBack(this.unit(), 'can')));
+    row(one, 'Stand the toolbox in its back, loose', () => g.hud.toast(g.debugBack(this.unit(), 'toolbox')));
+    row(one, 'Tip out whatever is in its back', () => g.hud.toast(g.debugBack(this.unit(), 'clear')));
     row(one, 'Hook the green\'s winch on it (the green: on the nearest tree) / take it off', () => g.hud.toast(g.debugWinch(this.unit())));
     row(one, 'Hook the tow rope on it / take it off', () => g.hud.toast(g.debugTowRope(this.unit())));
     row(one, 'Jack-knife the trailer on it', () => g.hud.toast(g.debugJackknife(this.unit())));

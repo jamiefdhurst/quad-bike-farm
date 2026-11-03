@@ -13,6 +13,10 @@ export const DEFAULT_LOOSE_PARAMS = {
   bedTwist: 0.25, // radians it can turn from the way it was stood
   tipFrom: 0.9, // shake level that tips a can over, if it lasts
   tipSeconds: 12, // seconds of that to do it
+  slideFriction: 0.35, // of gravity: a load in a tub or load space slides when the corner, the brakes or a slope push it harder than this
+  slideTipSpeed: 0.45, // m/s: a can that hits the wall at this speed goes over
+  edgeBalance: 0.07, // metres: a load with its middle this close to an open tailgate's edge goes over it on a bump
+  edgeShake: 0.8, // shake level that does it
 };
 
 export const LOOSE_PARAM_RANGES = {
@@ -25,13 +29,17 @@ export const LOOSE_PARAM_RANGES = {
   bedTwist: [0, 1, 0.05],
   tipFrom: [0, 3, 0.05],
   tipSeconds: [1, 120, 1],
+  slideFriction: [0.05, 1.5, 0.01],
+  slideTipSpeed: [0.1, 3, 0.05],
+  edgeBalance: [0, 0.3, 0.01],
+  edgeShake: [0, 3, 0.05],
 };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
 /** A loose thing at rest on its spot: offset from the spot in metres, the way it is heading, its twist and how far it has been tipping. */
 export function newLoose(random = Math.random) {
-  return { x: 0, z: 0, dir: random() * Math.PI * 2, twist: 0, tip: 0, tipped: false };
+  return { x: 0, z: 0, dir: random() * Math.PI * 2, twist: 0, tip: 0, tipped: false, sx: 0, sz: 0, vx: 0, vz: 0 };
 }
 
 /** How hard the shake is pushing: 0 under the threshold. */
@@ -68,4 +76,67 @@ export function tipStep(s, dt, shake, p = DEFAULT_LOOSE_PARAMS) {
   s.tip = shake >= p.tipFrom ? s.tip + dt : Math.max(0, s.tip - dt * 0.5);
   if (s.tip >= p.tipSeconds) s.tipped = true;
   return s;
+}
+
+const G = 9.81;
+
+/**
+ * What pushes a load across a floor, in the vehicle's own frame (x to its left, z forward), metres a second squared: the opposite of how
+ * the vehicle itself is accelerating (a corner throws things outwards, braking throws them forward), plus the slope's share of gravity.
+ * `accel` is the vehicle's acceleration in that frame, `gravity` the world's down in that frame (nothing on the level).
+ */
+export function floorPush(accel, gravity = { x: 0, z: 0 }) {
+  return { x: gravity.x - accel.x, z: gravity.z - accel.z };
+}
+
+/**
+ * One step of a load sliding on the floor it stands on. `s.sx`, `s.sz` is how far it has moved from its spot, `s.vx`, `s.vz` how fast;
+ * `limits` is how far it can go each way (`minX`, `maxX`, `minZ`, `maxZ`, offsets from the spot). It stays put until the push beats
+ * friction, slides while it does, and stops at a wall. Returns the speed it hit a wall at (0 if it did not).
+ */
+export function slideStep(s, dt, push, limits, p = DEFAULT_LOOSE_PARAMS) {
+  const mu = p.slideFriction * G;
+  const mag = Math.hypot(push.x, push.z);
+  const speed = Math.hypot(s.vx, s.vz);
+  if (speed < 1e-4 && mag <= mu) return 0;
+  const ox = s.vx;
+  const oz = s.vz;
+  let ax = push.x;
+  let az = push.z;
+  const fx = speed > 1e-4 ? s.vx / speed : push.x / mag;
+  const fz = speed > 1e-4 ? s.vz / speed : push.z / mag;
+  ax -= mu * fx;
+  az -= mu * fz;
+  s.vx += ax * dt;
+  s.vz += az * dt;
+  if (mag <= mu && s.vx * ox + s.vz * oz <= 0) s.vx = s.vz = 0; // friction brought it to rest rather than turning it round
+  s.sx += s.vx * dt;
+  s.sz += s.vz * dt;
+  let hit = 0;
+  if (s.sx > limits.maxX || s.sx < limits.minX) {
+    hit = Math.max(hit, Math.abs(s.vx));
+    s.sx = clamp(s.sx, limits.minX, limits.maxX);
+    s.vx = 0;
+  }
+  if (s.sz > limits.maxZ || s.sz < limits.minZ) {
+    hit = Math.max(hit, Math.abs(s.vz));
+    s.sz = clamp(s.sz, limits.minZ, limits.maxZ);
+    s.vz = 0;
+  }
+  return hit;
+}
+
+/** A can that slides into a wall hard enough goes over, and stays over until it is picked up. */
+export function slideTip(s, hitSpeed, p = DEFAULT_LOOSE_PARAMS) {
+  if (hitSpeed >= p.slideTipSpeed) s.tipped = true;
+  return s;
+}
+
+/**
+ * Whether a load falls out of the open back. `past` is how far its middle is over the edge in metres (negative: still inside): over it
+ * goes at once, and one sat right on it goes on a bump.
+ */
+export function fallsOut(past, shake, p = DEFAULT_LOOSE_PARAMS) {
+  if (past >= 0) return true;
+  return -past < p.edgeBalance && shake >= p.edgeShake;
 }

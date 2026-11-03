@@ -830,6 +830,16 @@ export function girlActions(g) {
     },
   });
   actions.push({
+    verb: 'tidy-load',
+    label: '% loads or unloads a Land Rover',
+    run: (id) => {
+      if (!free(id)) return;
+      const e = g.tidyLoad.force(g.tidyLoadContext(), id);
+      if (e) g.handleTidyLoad(e);
+      else toast('Nothing to do: leave a can or the toolbox lying near an empty Tor or Crag, or load one first');
+    },
+  });
+  actions.push({
     verb: 'fetch-lost',
     label: '% goes for the thing you left lying',
     run: (id) => {
