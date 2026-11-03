@@ -24,6 +24,15 @@ describe("the shepherd's hut model", () => {
     expect(fights.map((f) => `${f.a}/${f.b} at ${f.at.map((v) => v.toFixed(2))}`)).toEqual([]);
   });
 
+  it('has a stovepipe that goes down into the collar on the stove, not stopping short of it', async () => {
+    const { group } = await build();
+    const box = (name) => new THREE.Box3().setFromObject(group.getObjectByName(name));
+    const pipe = box('hutFlue');
+    const collar = box('hutFlueCollar');
+    expect(pipe.min.y).toBeLessThan(collar.max.y);
+    expect(pipe.min.y).toBeGreaterThan(collar.min.y);
+  });
+
   it('has a step deep enough to stand on, because a walking capsule cannot be autostepped onto a tread narrower than itself', () => {
     const [z0, z1] = HUT_INSIDE.stepZ;
     expect(z1 - z0).toBeGreaterThanOrEqual(CAPSULE_RADIUS * 2 + 0.2);

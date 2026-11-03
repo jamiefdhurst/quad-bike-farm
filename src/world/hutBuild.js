@@ -272,7 +272,7 @@ export function buildHut(c) {
   roof.name = 'hutRoof';
   group.add(roof);
   for (const z of [-1.6, -0.55, 0.55, 1.6]) {
-    const rib = new THREE.Mesh(arcBand(hw, 0.045, 0.07, 0.06, z - 0.03), darkTimber);
+    const rib = new THREE.Mesh(arcBand(hw - 0.035, 0.05, 0.07, 0.06, z - 0.03), darkTimber);
     group.add(rib);
   }
   for (const z of [-hl - 0.25, hl + 0.3 - 0.03]) group.add(new THREE.Mesh(arcBand(ROOF_HALF, 0.012, 0.11, 0.03, z), paintCream));
@@ -287,7 +287,8 @@ export function buildHut(c) {
   const flueZ = HUT_INSIDE.stove.z + HUT_INSIDE.flueBack;
   const roofAtFlue = roofY(flueX);
   const flueTop = roofAtFlue + 0.62;
-  add(new THREE.CylinderGeometry(0.055, 0.055, flueTop - (F + 0.66), 10), ironPipe, flueX, (flueTop + F + 0.66) / 2, flueZ);
+  const flueBottom = F + 0.58; // down inside the spigot's collar on the top plate, so the pipe stands on the stove
+  add(new THREE.CylinderGeometry(0.045, 0.045, flueTop - flueBottom, 10), ironPipe, flueX, (flueTop + flueBottom) / 2, flueZ, { name: 'hutFlue' });
   add(new THREE.CylinderGeometry(0.1, 0.1, 0.04, 10), iron, flueX, roofAtFlue + 0.04, flueZ); // the flashing collar
   add(new THREE.ConeGeometry(0.12, 0.08, 10), iron, flueX, flueTop + 0.07, flueZ);
   for (const a of [0, 1, 2]) add(new THREE.BoxGeometry(0.012, 0.07, 0.012), iron, flueX + Math.cos(a * 2.09) * 0.07, flueTop + 0.015, flueZ + Math.sin(a * 2.09) * 0.07, { cast: false });
@@ -401,7 +402,7 @@ export function buildHut(c) {
   stoveDoor.name = 'hutStoveDoor';
   add(new THREE.BoxGeometry(0.04, 0.045, 0.02), brass, st.x + 0.16, rise(0.32), doorZ - 0.02, { cast: false }); // a brass catch
   add(new THREE.BoxGeometry(0.1, 0.025, 0.02), cast, st.x, rise(0.17), doorZ - 0.005, { cast: false }); // the draught slide under the door
-  add(new THREE.CylinderGeometry(0.0225, 0.0225, 0.07, 8), ironPipe, st.x, rise(0.595), st.z + HUT_INSIDE.flueBack); // the flue spigot on the top plate
+  add(new THREE.CylinderGeometry(0.065, 0.075, 0.07, 10), ironPipe, st.x, rise(0.588), st.z + HUT_INSIDE.flueBack, { name: 'hutFlueCollar' }); // the flue collar on the top plate, the pipe going down into it
   // The kettle: a dented tin one with a spout and a bale handle, on its own group so the pour can tilt it.
   const kettle = new THREE.Group();
   kettle.name = 'hutKettle';
