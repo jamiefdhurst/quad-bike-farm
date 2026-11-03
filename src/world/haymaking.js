@@ -1,4 +1,4 @@
-// Haymaking: a farm job in four stages on the north field's hay patch. Mow it (drive the tractor over the standing grass at a working pace),
+// Haymaking: a farm job in four stages on the hay meadow in the grass field's south-east corner. Mow it (drive the tractor over the standing grass at a working pace),
 // bale it (drive over what was cut and the baler leaves square bales behind you), load the bales on the trailer (the girls carry them up, or
 // you do) and stack them in the Dutch barn. Pure logic, no Three.js: the game feeds it where the tractor is and what the trailer is doing,
 // and draws what it says (world/hayView.js). The patch is a grid of cells, each standing, cut or baled; the cut ones grow back over game
@@ -47,7 +47,7 @@ export const STACK_CAPACITY = 16; // bales the Dutch barn's bay holds, four to a
 export const PHASES = ['cut', 'bale', 'load', 'stack', 'done'];
 
 export const HAY_PHASE_TEXT = {
-  cut: 'Mow the hay patch in the north field with the tractor',
+  cut: 'Mow the hay meadow in the grass field with the tractor',
   bale: 'Drive over the cut hay and the baler leaves bales behind you',
   load: 'Bring the trailer to the bales: the girls carry them up, or press E to heave one on',
   stack: 'Take the trailer into the Dutch barn',

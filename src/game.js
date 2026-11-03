@@ -7190,7 +7190,7 @@ export class Game {
     this.trackParams = { ...DEFAULT_TRACKS_PARAMS };
     this.grassTracks = new GrassTracks({ rect, params: this.trackParams });
     this.world.grassTracks = this.grassTracks;
-    this.hayView = new HayView({ scene: this.scene, hay: this.hay, heightAt: (x, z) => this.world.heightAt(x, z), tracks: this.grassTracks, random: createRandom(this.farmSeed ^ 0x4a17) });
+    this.hayView = new HayView({ scene: this.scene, hay: this.hay, heightAt: (x, z) => this.world.heightAt(x, z), tracks: this.grassTracks, patch: this.world.terrain.hayPatch, drawDistance: this.world.drawDistance, random: createRandom(this.farmSeed ^ 0x4a17) });
     this.hayCapacity = 16;
     this.haySlots = trailerSlots(this.hayCapacity);
     this.hayLoading = new HayLoading();
@@ -7265,7 +7265,7 @@ export class Game {
   updateHay(dt) {
     const hay = this.hay;
     this.hayLoading.update(dt);
-    this.hayView.update(dt);
+    this.hayView.update(dt, Math.hypot(this.wind.x, this.wind.z));
     const q = this.tractorUnit?.quad;
     const events = q ? hay.update(dt, { x: q.position.x, z: q.position.z, heading: q.yaw, speed: q.speed, working: q.engine.isRunning, day: this.farm.day }) : [];
     for (const e of events) {

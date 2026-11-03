@@ -276,11 +276,9 @@ describe('the field in the farm', () => {
     for (let x = f.minX; x <= f.maxX; x += 2) for (let z = f.minZ; z <= f.maxZ; z += 2) expect(fields.stubbleAt(x, z), `${x},${z}`).toBeGreaterThan(0.5);
   });
 
-  it('is clear of the muck heap, the hay patch and the gateways', () => {
+  it('is clear of the muck heap and the gateways', () => {
     const m = LAYOUT.muckHeap;
     expect(f.minX > m.x + m.halfX + 6 || f.maxX < m.x - m.halfX - 6 || f.minZ > m.z + m.halfZ + 6).toBe(true);
-    const h = LAYOUT.hayMeadow;
-    expect(f.minZ > h.maxZ).toBe(true);
     for (const gx of LAYOUT.road.gaps.south) expect(f.minZ > LAYOUT.road.z + 10 || gx < f.minX - 3 || gx > f.maxX + 3).toBe(true);
   });
 

@@ -247,8 +247,8 @@ export const LAYOUT = {
   // field's second gateway, along the hedge.
   dutchBarn: { x: 186, z: -14, halfX: 7.5, halfZ: 4.5, bays: 3, eaves: 5.4, rise: 1.6, overhang: 0.4, openBays: 1, layers: 3 },
   fieldShed: { x: 89, z: -73, halfX: 3.2, halfZ: 2.2, wall: 0.5, wallHeight: 2.3, ridge: 3.5, door: { halfWidth: 0.9, height: 1.9 } },
-  // The hay patch (world/haymaking.js): a rectangle of the barley field's stubble beside the first gateway of its north side, level and dry, that the hay job mows, bales and clears.
-  hayMeadow: { minX: 100, maxX: 132, minZ: -26, maxZ: -8 },
+  // The hay patch (world/haymaking.js): a rectangle of long grass in the grass field's south-east corner, past the Home Loop's far side, level and dry, that the hay job mows, bales and clears.
+  hayMeadow: { minX: 44, maxX: 76, minZ: 52, maxZ: 70 },
   // The spray field (world/spraying.js): a rectangle of the wheat stubble in the south field, level and clear of the muck heap and the gateways, that the spraying job goes over in lines.
   sprayField: { minX: 134, maxX: 166, minZ: 26, maxZ: 50 },
   muckHeap: { x: 118, z: 15.2, halfX: 3.6, halfZ: 2.3, height: 1.5 },

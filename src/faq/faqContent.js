@@ -2312,7 +2312,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I make hay?',
-        a: `When "Cut the hay patch, bale it and stack it in the Dutch barn" is on the chalkboard, it goes in four steps, all in the barley field out east. The green patch beside the first gateway is the hay:
+        a: `When "Cut the hay patch, bale it and stack it in the Dutch barn" is on the chalkboard, it goes in four steps, starting in the long grass in the grass field's south-east corner, past the Home Loop. The meadow is the hay:
           drive the tractor over it at a steady walking pace and it is mown, turning pale as you go. Once enough is cut, drive over the cut hay in the same way and the baler leaves a square bale behind you every so often.
           Then bring the bale trailer (hitched with <kbd>J</kbd>) up beside the bales: the girls carry them up and throw them on, or press <kbd>E</kbd> at a bale to heave it on yourself. Last, drive the trailer into the
           Dutch barn's open bay and stop, and the bales are stacked along its back wall and the job ticks off.`,

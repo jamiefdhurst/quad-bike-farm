@@ -716,7 +716,14 @@ function buildDistantTrees({ scene, layout, heights, fields, random }) {
   scene.add(trunkMesh, crownMesh);
 }
 
-/** Instanced grass tufts across the field, kept off the track and the yard. */
+/** Whether (x, z) is in the hay meadow or the ragged margin of it (world/hayMask.js), where no other ground cover grows. */
+export function inHayMeadow(layout, x, z) {
+  const m = layout.hayMeadow;
+  const pad = 4;
+  return !!m && x > m.minX - pad && x < m.maxX + pad && z > m.minZ - pad && z < m.maxZ + pad;
+}
+
+/** Instanced grass tufts across the field, kept off the track, the yard and the hay meadow. */
 function buildGrass({ scene, layout, heights, random, drawDistance }) {
   const blades = 7;
   const pos = [];
@@ -755,6 +762,7 @@ function buildGrass({ scene, layout, heights, random, drawDistance }) {
     if (heights.mudAt(x, z) > 0.02) continue;
     if (Math.hypot(x - yard.x, z - yard.z) < yard.radius * 0.75) continue;
     if (underRoof(layout, x, z)) continue; // none growing up through the barn floor, in either span
+    if (inHayMeadow(layout, x, z)) continue; // the meadow has its own long grass, and cut hay has none standing in it
     if (strip) {
       // None growing through the gravel of the drag strip.
       const f = stripFrame(strip, x, z);
