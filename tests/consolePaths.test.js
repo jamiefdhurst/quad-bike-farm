@@ -5,6 +5,7 @@ import { buildCommands } from '../src/console/commands.js';
 import { Shell, resolve, parseValue } from '../src/console/shell.js';
 import { VEHICLE_VERBS } from '../src/console/gameHost.js';
 import { girlActions } from '../src/debug/girlActions.js';
+import { jobActions } from '../src/debug/jobActions.js';
 
 // `tools/consolePath.sh 'lane.kids on' 'tp me 105 -17' 'mist p309'` runs each line through the real command table and tree, so nothing
 // reaches Jamie unrun. The game is a stand-in: it has no vehicles of its own (the stand-in knows red, blue, green, tractor, utv, landrover and
@@ -17,6 +18,10 @@ const placeNames = () => {
   const spots = src.slice(src.indexOf('const spots = {'), src.indexOf('return Object.fromEntries'));
   return [...spots.matchAll(/^ {6}(\w+):/gm)].map((m) => m[1]);
 };
+
+// Every job is on this stand-in farm, so a job line that is NO here may be a job a real farm does not have (`job` on its own lists them).
+const anything = () => new Proxy(function () {}, { get: (_, k) => (k === Symbol.toPrimitive ? () => 0 : k === 'then' ? undefined : anything()), apply: () => 0 });
+const standInJobs = () => jobActions(new Proxy({ serviceJob: { name: '', kinds: [], left: new Set() } }, { get: (t, k) => (k in t ? t[k] : anything()) })).jobs;
 
 const standIn = () => {
   const vehicles = ['red', 'blue', 'green', 'tractor', 'utv', 'landrover', 'p309'];
@@ -31,6 +36,8 @@ const standIn = () => {
     put: (thing, spot) => `${thing} to ${spot.x}, ${spot.z}`,
     girlVerbs: (id) => girlActions({ companions: [{ character: { id }, name: id }], hud: { toast: () => {} } }).forGirl(id),
     vehicleVerb: (id, verb) => `${id}: ${verb}`,
+    jobs: () => standInJobs().map((j) => ({ id: j.id, name: j.name, stage: '', verbs: j.actions.map((a) => ({ verb: a.verb, label: a.label })) })),
+    jobVerb: () => undefined,
   };
   return new Proxy(base, { get: (t, k) => (k in t ? t[k] : () => undefined) });
 };

@@ -20,6 +20,7 @@ Every value is at a dotted path. Type the path alone to read it, or the path and
 - `reset red`, `reset vehicles`, `reset girls`, `reset all`. On a girl it stops her where she is (off whatever she is on, out of what she is doing) and has her stand about for a minute, starting nothing of her own (Tune: settleSeconds), ready for the next command.
 - `start|stop|warm|cool|fill|soak|dry|fix <vehicle|all>`, `vehicles`, `girls` (`soak` rains on a vehicle's windscreen as in a downpour, `dry` dries it).
 - `girl amy drive red`, `girl jess doughnuts`, `girl amy invite-barn`: the same things as the Girls tab buttons.
+- `job` lists the farm's jobs with their stage; `job hay` lists what can be done to one; `job hay cut`, `job muck done`, `job spray boom-out`: the same things as the Jobs folder's buttons.
 - `weather rain`, `fly`, `autonomy off` (the girls start nothing on their own, but follow and answer you), `speech off`, `sound off`.
 
 ## Tuning panel

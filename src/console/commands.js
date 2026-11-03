@@ -9,6 +9,7 @@ import { resolve, walk, show, describe, parseValue, pathCandidates } from './she
  *   locate(thing): { x, y, z, heading } | null      put(thing, { x, z, heading? }): string
  *   vehicleVerbs: string[]                vehicleVerb(id, verb): string | void      resetThing(thing): string
  *   girlVerbs(id): [{ verb, label, vehicle }]         girlVerb(id, verb, vehicleId): void
+ *   jobs(): [{ id, name, stage, verbs: [{ verb, label }] }]   jobVerb(id, verb): string | void   (the farm's jobs, as the panel's Jobs folder)
  *   weatherKinds(): string[]              setWeather(kind): string
  *   dump(text): void                      (copies to the clipboard)
  *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   farmEndDay(): string   (the farm that remembers)
@@ -380,6 +381,29 @@ export function buildCommands(host) {
     },
 
     // World -----------------------------------------------------------------------------------------------------------------
+    {
+      name: 'job',
+      aliases: ['jobs'],
+      group: 'World',
+      usage: 'job [name [action]]',
+      help: 'the farm\'s jobs: list them with their stage, or do what the debug panel\'s Jobs buttons do. job hay lists the hay job\'s actions',
+      examples: ['job', 'job hay', 'job hay cut', 'job muck done', 'job spray boom-out'],
+      complete: (ctx, tokens) => {
+        if (tokens.length === 0) return host.jobs().map((j) => j.id);
+        const j = host.jobs().find((x) => x.id === tokens[0].toLowerCase());
+        return j && tokens.length === 1 ? j.verbs.map((v) => v.verb) : [];
+      },
+      run: ([which, verb]) => {
+        const jobs = host.jobs();
+        if (!which) return jobs.map((j) => `${j.id.padEnd(8)} ${j.stage}   [${j.verbs.map((v) => v.verb).join(' ')}]`);
+        const job = jobs.find((j) => j.id === which.toLowerCase());
+        if (!job) throw new Error(`no job "${which}" on this farm. There is ${jobs.map((j) => j.id).join(', ')}`);
+        if (!verb) return [`${job.name}: ${job.stage}`, ...job.verbs.map((v) => `  ${v.verb.padEnd(12)} ${v.label}`)];
+        const v = job.verbs.find((x) => x.verb === verb.toLowerCase());
+        if (!v) throw new Error(`${job.id} has no "${verb}". It has ${job.verbs.map((x) => x.verb).join(', ')}`);
+        return host.jobVerb(job.id, v.verb) ?? `${job.id}: ${v.label}`;
+      },
+    },
     {
       name: 'weather',
       group: 'World',
