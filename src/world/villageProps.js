@@ -5,7 +5,7 @@
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { villageShape } from './village.js';
+import { villageShape, roadMarks } from './village.js';
 import { makeVillageMaterials } from './villageMaterials.js';
 import { buildCottage, buildPub, buildCarPark, buildShop, buildGarage, frameFor, signMaterial } from './villageBuildings.js';
 import { villageSignTexture, limitSignTexture, roadClosedTexture, noticeTexture } from './villageTextures.js';
@@ -20,6 +20,8 @@ const ROAD_LIFT = 0.075; // m above the ground, just over the lane's tarmac (0.0
 const PAVEMENT_LIFT = 0.16;
 const FLARE = 3.4; // m the road's mouth is wider by where it meets the lane
 const FLARE_LENGTH = 11;
+const BEYOND_HALF = 5.5; // m either side of the road past the closed gate that the hedges stand within
+const BEYOND_HEDGE = 2.4; // m the hedges stand over that road
 
 /**
  * Merges every mesh under `root` (its sub-groups too) into one mesh per material, baked into `root`'s frame. Walls, roofs and windows never move,
@@ -49,7 +51,7 @@ function mergeInto(root) {
 }
 
 /** A strip along the road's samples from offset `a` to `b` across (positive is the north side, to the right heading west), lying `lift` m over the ground. */
-function roadStrip(ctx, a, b, lift, material, { from = 0, to = Infinity, skip = null, flare = false, uv = 1, cols = 5 } = {}) {
+function roadStrip(ctx, a, b, lift, material, { from = 0, to = Infinity, skip = null, flare = false, uv = 1, cols = 5, clampX = Infinity } = {}) {
   const { S, heights } = ctx;
   const runs = [];
   let run = null;
@@ -75,7 +77,7 @@ function roadStrip(ctx, a, b, lift, material, { from = 0, to = Infinity, skip = 
       for (let c = 0; c < cols; c++) {
         const t = c / (cols - 1);
         const o = a + (b - a) * t + (flare ? (t - 0.5) * 2 * widen : 0);
-        const x = p.x + nx * o;
+        const x = Math.min(clampX, p.x + nx * o); // a strip meeting the lane stops at its edge, so the lane's tarmac is never drawn over
         const z = p.z + nz * o;
         pos.push(x, heights.heightAt(x, z) + lift, z);
         uvs.push(t * uv, i / 4);
@@ -99,6 +101,47 @@ function roadStrip(ctx, a, b, lift, material, { from = 0, to = Infinity, skip = 
     m.frustumCulled = false;
     ctx.root.add(m);
   }
+}
+
+/** The road's middle line at sample position `s` (fractional): where it is and which way it runs. */
+function roadPoint(S, s) {
+  const i = Math.max(0, Math.min(S.road.length - 2, Math.floor(s)));
+  const f = s - i;
+  const a = S.road[i];
+  const b = S.road[i + 1];
+  return { x: a.x + (b.x - a.x) * f, z: a.z + (b.z - a.z) * f, tx: a.tx + (b.tx - a.tx) * f, tz: a.tz + (b.tz - a.tz) * f };
+}
+
+/**
+ * Paint on the road: each mark is { s, len, a, b }, `len` m along the road about sample position `s` and from offset `a` to `b` across (positive
+ * is the north side), laid on the ground like the road itself and merged into one mesh.
+ */
+function paintMarks(ctx, marks, material, lift) {
+  const { S, heights } = ctx;
+  const pos = [];
+  const idx = [];
+  for (const m of marks) {
+    const base = pos.length / 3;
+    for (const along of [m.s - m.len / 2, m.s + m.len / 2]) {
+      const p = roadPoint(S, along);
+      for (const o of [m.a, m.b]) {
+        const x = p.x - p.tz * o;
+        const z = p.z + p.tx * o;
+        pos.push(x, heights.heightAt(x, z) + lift, z);
+      }
+    }
+    idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
+  }
+  if (!marks.length) return;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  const mesh = new THREE.Mesh(g, material);
+  mesh.receiveShadow = true;
+  mesh.userData.keep = true;
+  mesh.frustumCulled = false;
+  ctx.root.add(mesh);
 }
 
 /** A flat patch of paving over the ground from (x0, z0) to (x1, z1), following it on a 1 m grid, `lift` m up. */
@@ -426,6 +469,8 @@ function boundaryWalls(ctx) {
       const c = a + l / 2;
       const px = alongX ? w.x + c : w.x;
       const pz = alongX ? w.z : w.z + c;
+      // The wall behind the closed gate is left out (the road goes on there, `beyondRoad`); the collider below stays, so nothing rides out that way.
+      if (!alongX && w.x < S.v.end.barrierX && Math.abs(pz - S.road[S.road.length - 1].z) < run / 2 + BEYOND_HALF) continue;
       const gy = Math.max(heights.heightAt(px, pz), heights.heightAt(px + (alongX ? l / 2 : 0), pz + (alongX ? 0 : l / 2)), heights.heightAt(px - (alongX ? l / 2 : 0), pz - (alongX ? 0 : l / 2)));
       const bw = alongX ? l + 0.02 : t;
       const bd = alongX ? t : l + 0.02;
@@ -438,6 +483,78 @@ function boundaryWalls(ctx) {
     }
     ctx.fixedBox(w.x, heights.heightAt(w.x, w.z) + 1, w.z, w.hx, 1.5, w.hz);
   }
+}
+
+/** Rows of vertices { x, y, z, u, v } (the same count in each) joined into one sheet, drawn both sides. */
+function sheet(ctx, rows, material) {
+  const pos = [];
+  const uv = [];
+  const idx = [];
+  const w = rows[0].length;
+  rows.forEach((row, r) => {
+    for (const v of row) {
+      pos.push(v.x, v.y, v.z);
+      uv.push(v.u, v.v);
+    }
+    if (r > 0) {
+      for (let c = 0; c < w - 1; c++) {
+        const a = (r - 1) * w + c;
+        const b = r * w + c;
+        idx.push(a, b, a + 1, a + 1, b, b + 1);
+      }
+    }
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g, material);
+  m.receiveShadow = true;
+  m.userData.keep = true;
+  m.frustumCulled = false;
+  ctx.root.add(m);
+}
+
+/**
+ * The road past the closed gate: it carries on between tall hedges, bending away and climbing out of reach, and ends behind a hedge and trees,
+ * so it reads as shut and not as never having gone anywhere. Only seen; the village's west wall still keeps you in.
+ */
+function beyondRoad(ctx) {
+  const { S, M, heights } = ctx;
+  const pts = S.beyond;
+  const last = pts.length - 1;
+  const hw = S.roadHalfWidth;
+  const both = (mat) => {
+    const m = mat.clone();
+    m.side = THREE.DoubleSide;
+    return m;
+  };
+  const tarmac = new THREE.MeshStandardMaterial({ map: ctx.tarmac, roughness: 0.92, side: THREE.DoubleSide });
+  const verge = new THREE.MeshStandardMaterial({ color: 0x55672f, roughness: 1, side: THREE.DoubleSide });
+  const hedge = both(M.hedge);
+  const level = (i) => heights.heightAt(pts[i].x, pts[i].z) + ROAD_LIFT + S.beyondRise * smooth(clamp01(i / last));
+  const vert = (i, o, y, u, v) => ({ x: pts[i].x - pts[i].tz * o, y, z: pts[i].z + pts[i].tx * o, u, v });
+  const rowsOf = (make) => pts.map((_, i) => make(i));
+  sheet(ctx, rowsOf((i) => [-hw, 0, hw].map((o, k) => vert(i, o, level(i), k / 2, i / 4))), tarmac);
+  for (const side of [-1, 1]) {
+    const inner = side * (hw + 0.9);
+    const outer = side * (hw + 2.3);
+    sheet(ctx, rowsOf((i) => [side * (hw - 0.1), inner].map((o, k) => vert(i, o, level(i) - 0.02, k, i / 2))), verge);
+    sheet(ctx, rowsOf((i) => [level(i) - 0.02, level(i) + BEYOND_HEDGE].map((y, k) => vert(i, inner, y, i / 3, k * 0.5))), hedge);
+    sheet(ctx, rowsOf((i) => [inner, outer].map((o, k) => vert(i, o, level(i) + BEYOND_HEDGE, i / 3, 0.5 + k * 0.25))), hedge);
+    sheet(ctx, rowsOf((i) => {
+      const x = pts[i].x - pts[i].tz * outer;
+      const z = pts[i].z + pts[i].tx * outer;
+      return [level(i) + BEYOND_HEDGE, heights.heightAt(x, z) - 1.5].map((y, k) => vert(i, outer, y, i / 3, 0.75 + k * 0.25));
+    }), hedge);
+  }
+  // A hedge across the end, and trees behind it.
+  const end = [last, last].map((i, k) => [-1, 1].map((side) => vert(i, side * (hw + 2.3), k ? level(i) + BEYOND_HEDGE : level(i) - 0.02, 0.5 + side * 0.5, k * 0.5)));
+  sheet(ctx, end, hedge);
+  const tip = pts[last];
+  oak(ctx, tip.x + tip.tx * 2.5 - tip.tz * 3, tip.z + tip.tz * 2.5 + tip.tx * 3, 1.1);
+  oak(ctx, tip.x + tip.tx * 3 + tip.tz * 3, tip.z + tip.tz * 3 - tip.tx * 3, 0.9);
 }
 
 /** The road's end: a five-bar gate across it, a "road closed" board on a stand, two cones and a hedge each side. */
@@ -465,21 +582,30 @@ function roadEnd(ctx) {
     pivot.add(leaf);
     g.add(pivot);
   }
-  const board = add(new THREE.PlaneGeometry(1.6, 0.6), new THREE.MeshStandardMaterial({ map: roadClosedTexture(), roughness: 0.6 }), 0.0, 1.35, -0.0);
-  board.position.x = -0.2;
-  board.rotation.y = Math.PI / 2;
+  // The "road closed" board stands in the road in front of the gate (on the lane side), on two legs with feet, facing the traffic; its back is plain.
+  const bx = 1.3;
+  const faceMat = new THREE.MeshStandardMaterial({ map: roadClosedTexture(), roughness: 0.6 });
+  const front = add(new THREE.PlaneGeometry(1.6, 0.6), faceMat, bx + 0.012, 1.1, 0);
+  front.rotation.y = Math.PI / 2;
+  const back = add(new THREE.PlaneGeometry(1.6, 0.6), M.iron, bx - 0.052, 1.1, 0);
+  back.rotation.y = -Math.PI / 2;
+  add(worldBox(0.05, 0.64, 1.66, 1), M.iron, bx - 0.02, 1.1, 0); // its frame
+  for (const s of [-0.65, 0.65]) {
+    add(worldBox(0.06, 1.1, 0.06, 1), M.iron, bx - 0.02, 0.55, s); // legs
+    add(worldBox(0.5, 0.05, 0.06, 1), M.iron, bx - 0.02, 0.025, s); // and feet
+  }
   const cone = new THREE.MeshStandardMaterial({ color: 0xe8591f, roughness: 0.6 });
   for (const s of [-1.6, 1.8]) {
-    add(new THREE.ConeGeometry(0.17, 0.6, 12), cone, 1.4, 0.3, s);
-    add(new THREE.CylinderGeometry(0.18, 0.18, 0.05, 12), M.iron, 1.4, 0.025, s);
-    add(new THREE.CylinderGeometry(0.13, 0.11, 0.1, 12), M.paint, 1.4, 0.34, s);
+    add(new THREE.ConeGeometry(0.17, 0.6, 12), cone, 2.4, 0.3, s);
+    add(new THREE.CylinderGeometry(0.18, 0.18, 0.05, 12), M.iron, 2.4, 0.025, s);
+    add(new THREE.CylinderGeometry(0.13, 0.11, 0.1, 12), M.paint, 2.4, 0.34, s);
   }
   ctx.root.add(g);
   ctx.groups.push(g);
   ctx.fixedBox(x, y + 1, rz, 0.3, 1.2, half + 0.3);
   for (const s of [-1, 1]) {
     const hz = rz + s * (half + 3.2);
-    ctx.fixedBox(x - 1.2, y + 0.9, hz, 1.2, 0.9, 3.2);
+    ctx.fixedBox(x - 2.6, y + 0.9, hz, 2.6, 0.9, 3.2); // back to the village's west wall, so there is no way round the gate
   }
 }
 
@@ -538,11 +664,14 @@ export function buildVillage(c) {
   const curb = S.curb;
   const gap = (s) => (p) => p.x > s.x0 && p.x < s.x1;
   const south = gap({ x0: S.garage.outer.minX - 0.5, x1: S.garage.outer.maxX + 0.5 });
-  const north = () => false;
-  roadStrip(ctx, -hw, hw, ROAD_LIFT, road, { flare: true });
-  // A give-way line at the junction and a pale edge line either side of the road.
+  // The pavement and the road's edge line stop where the car park opens onto the road (a dropped kerb).
+  const north = gap({ x0: S.carPark.entry.minX - 0.5, x1: S.carPark.entry.maxX + 0.5 });
+  // The road starts at the lane's west edge, not its middle: the lane's tarmac is under the rest, so no texture is drawn over another.
+  roadStrip(ctx, -hw, hw, ROAD_LIFT, road, { flare: true, from: Math.max(0, S.mouth - 1), clampX: S.laneEdge });
+  // A broken line down the middle, a give-way line across the way out onto the lane, and a pale edge line either side.
   const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...poly, polygonOffsetFactor: -5 });
-  roadStrip(ctx, -hw, hw, ROAD_LIFT + 0.004, line, { from: 13, to: 14, cols: 2 });
+  const marks = roadMarks(S);
+  paintMarks(ctx, [...marks.centre, ...marks.giveWay], line, ROAD_LIFT + 0.004);
   for (const side of [-1, 1]) {
     roadStrip(ctx, side * (hw - 0.3), side * (hw - 0.2), ROAD_LIFT + 0.004, line, { from: 14, skip: (p) => (side < 0 ? south(p) : north(p)), cols: 2 });
   }
@@ -599,6 +728,7 @@ export function buildVillage(c) {
   }
   boundaryWalls(ctx);
   roadEnd(ctx);
+  beyondRoad(ctx);
   // A hedge-and-tree backdrop: three small trees in the cottages' back gardens.
   for (const [x, z] of [[170, 168.8], [150, 205 - 0.5 - 1], [125, 168]]) oak(ctx, x, z, 0.7);
 

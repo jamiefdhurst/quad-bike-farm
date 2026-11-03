@@ -45,7 +45,7 @@ export const LAYOUT = {
       name: 'The Plough & Harrow',
       x: 132, z: 178.3, yaw: 0, halfX: 8.5, halfZ: 5.5, wallHeight: 5.6, ridge: 8.8,
       door: { x: 132 },
-      carPark: { minX: 105, maxX: 121, minZ: 171, maxZ: 184 },
+      carPark: { minX: 105, maxX: 121, minZ: 171, maxZ: 184, entry: { minX: 110, maxX: 116 } }, // `entry`: the dropped kerb where it opens onto the road
       stop: { x: 113, z: 178 }, // where a quad pulls up for the girls' pub stop (the middle of the car park)
       benches: [{ x: 126.2, z: 186 }, { x: 137.2, z: 185.1 }],
     },
@@ -62,7 +62,9 @@ export const LAYOUT = {
     sign: { x: 197.2, z: 172.4 }, // "Nether Thornby", just inside the turning
     phone: { x: 131.5, z: 197.4 },
     busStop: { x: 120.5, z: 198.6 },
-    end: { barrierX: 101.2 }, // the road is shut here (a gate and a "road closed" sign)
+    // The road is shut at `barrierX` (a gate, with a "road closed" board in front), but the road goes on past it: `beyond` is its middle line, bending
+    // away and rising out of reach between hedges.
+    end: { barrierX: 101.2, beyond: [[100, 186], [95, 184], [90, 184], [86, 187.5], [84, 192], [83.5, 197]], rise: 5 },
   },
   // The neighbour's farm (world/neighbourFarm.js, neighbourFarmProps.js): a walled yard on the lane's west side south of the farm, its gateway
   // in the east wall onto the lane. `yard` is the wall's outline (`wall` thick, `wallHeight` high); the farmhouse stands at the south with its

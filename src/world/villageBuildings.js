@@ -310,27 +310,30 @@ export function buildCarPark(ctx) {
   hedge.position.set(cx, y + 0.7, c.minZ - 0.9);
   ctx.root.add(hedge);
   ctx.fixedBox(cx, y + 0.7, c.minZ - 0.9, w / 2 + 0.5, 0.7, 0.4);
-  // The apron to the road: a strip of tarmac from the car park's south edge across the pavement.
-  // The way in from the road: a strip of tarmac on the ground from the car park's south edge to the pavement.
+  // The way in from the road: tarmac from the car park's south edge across the dropped kerb (the pavement stops for `entry`) and under the road's
+  // edge, which is drawn over it, so the two meet flush with no ground between.
   const apronMat = new THREE.MeshStandardMaterial({ map: ctx.tarmac, roughness: 0.92, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-  const apronX0 = 110;
-  const apronX1 = 116;
+  const apronX0 = c.entry.minX;
+  const apronX1 = c.entry.maxX;
   const apronZ0 = c.maxZ - 0.2;
-  const apronZ1 = S.roadAt(113, c.maxZ + 6).at.z - S.curb - 0.2; // up to the pavement's outer edge
-  const rows = Math.max(2, Math.ceil(apronZ1 - apronZ0));
+  const columns = 3;
+  const rows = 6;
   const pos = [];
   const uv = [];
   const idx = [];
-  for (let r = 0; r <= rows; r++) {
-    for (let k = 0; k <= 3; k++) {
-      const px = apronX0 + ((apronX1 - apronX0) * k) / 3;
-      const pz = apronZ0 + ((apronZ1 - apronZ0) * r) / rows;
-      pos.push(px, heights.heightAt(px, pz) + 0.06, pz);
-      uv.push(k / 3, r / 2);
-      if (r > 0 && k > 0) {
-        const i1 = r * 4 + k;
-        const i0 = (r - 1) * 4 + k;
-        idx.push(i0 - 1, i1 - 1, i0, i0, i1 - 1, i1);
+  const lift = 0.07; // as the road, under its polygon offset
+  for (let k = 0; k <= columns; k++) {
+    const px = apronX0 + ((apronX1 - apronX0) * k) / columns;
+    const at = S.roadAt(px, apronZ0 + 6).at;
+    const edge = at.z + at.tx * (S.roadHalfWidth - 0.4); // the road's north edge here, tucked a little under it
+    for (let r = 0; r <= rows; r++) {
+      const pz = apronZ0 + ((edge - apronZ0) * r) / rows;
+      pos.push(px, heights.heightAt(px, pz) + lift, pz);
+      uv.push(k / columns, (r / rows) * ((edge - apronZ0) / 4));
+      if (k > 0 && r > 0) {
+        const i1 = k * (rows + 1) + r;
+        const i0 = (k - 1) * (rows + 1) + r;
+        idx.push(i0 - 1, i0, i1 - 1, i0, i1, i1 - 1);
       }
     }
   }
@@ -642,9 +645,38 @@ function forecourt(ctx, w, S, b, random) {
   // The concrete forecourt from the garage front to the road's pavement.
   const fc = S.forecourt;
   const y = ctx.heights.heightAt(cx, (fc.minZ + fc.maxZ) / 2);
-  const slab = w.box(fc.maxX - fc.minX + 2, 0.06, fc.maxZ - fc.minZ + 0.8, M.concrete, (fc.minX + fc.maxX) / 2, 0.03, (fc.minZ + fc.maxZ) / 2 - 0.2, 4);
-  slab.position.y = y - w.y0 + 0.03;
-  void slab;
+  // The slab runs from the garage's front out to the road's south edge, tucked under it (the road is drawn over), so they meet flush.
+  const slabMat = new THREE.MeshStandardMaterial({ map: M.concrete.map, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const fcCols = Math.ceil(fc.maxX - fc.minX);
+  const fcRows = 6;
+  const fpos = [];
+  const fuv = [];
+  const fidx = [];
+  for (let k = 0; k <= fcCols; k++) {
+    const px = fc.minX + ((fc.maxX - fc.minX) * k) / fcCols;
+    const at = S.roadAt(px, fc.minZ).at;
+    const edge = at.z - at.tx * (S.roadHalfWidth - 0.4);
+    for (let r = 0; r <= fcRows; r++) {
+      const pz = edge + ((fc.maxZ - edge) * r) / fcRows;
+      fpos.push(px, ctx.heights.heightAt(px, pz) + 0.07, pz);
+      fuv.push(px / 4, pz / 4);
+      if (k > 0 && r > 0) {
+        const i1 = k * (fcRows + 1) + r;
+        const i0 = (k - 1) * (fcRows + 1) + r;
+        fidx.push(i0 - 1, i0, i1 - 1, i0, i1, i1 - 1);
+      }
+    }
+  }
+  const slabGeo = new THREE.BufferGeometry();
+  slabGeo.setAttribute('position', new THREE.Float32BufferAttribute(fpos, 3));
+  slabGeo.setAttribute('uv', new THREE.Float32BufferAttribute(fuv, 2));
+  slabGeo.setIndex(fidx);
+  slabGeo.computeVertexNormals();
+  const slab = new THREE.Mesh(slabGeo, slabMat);
+  slab.receiveShadow = true;
+  slab.frustumCulled = false;
+  slab.userData.keep = true;
+  ctx.root.add(slab);
   // The island: concrete with a kerb and yellow guards round each pump.
   const isl = w.box(x1 - x0, 0.16, 1.1, M.kerb, cx, 0.08, pz, 1);
   void isl;
