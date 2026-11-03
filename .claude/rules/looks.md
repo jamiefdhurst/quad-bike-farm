@@ -44,3 +44,10 @@ One look per new thing, two rounds at most. A unit test can't tell a shop from a
 
 - **Lit like the world.** Everything in the world uses a lit material (`MeshStandardMaterial` or the like). Only things that give light (a lamp's lens, fire, a screen) or the sky are unlit; an unlit material on anything else glows at night and in shade. #414 adds a test with the named exceptions.
 - **The right size.** Build to real sizes: doors about 2 m by 0.9 m, a step about 18 cm, a bench or worktop about 0.9 m, a seat 0.45 m, things you carry their real size against the player's eye height and the girls' height. #414 adds a table of real sizes for the world (like the vehicles' `REAL_SIZES`) and a test; until then, check against a real example.
+
+## Checked by a test, not by eye
+
+Anything you build from boxes and planks gets two tests before the PR, because a look at one angle will not find these:
+
+- **No alpha fighting.** Build it in a test the way `tests/hutModel.test.js` does and run `coplanarOverlaps` (`tests/helpers/coplanar.js`; pass `textured: true` when its own surfaces are textured) over it: no two faces of the same way may lie within 3 mm of one plane and overlap. The shepherd's hut shipped with 87 of them (its back, roof edge, door and window) because nothing ran this over it. Fix by moving a part a few millimetres into its neighbour or making it a little narrower, never by ignoring the pair.
+- **You can get in.** If you can walk onto, into or up it (steps, a doorway, a floor you stand on), put its colliders in a Rapier world with the player's capsule and controller and walk in, as `tests/hutEntry.test.js` does. A capsule has a round bottom and does not autostep a tall riser or a tread narrower than itself.
