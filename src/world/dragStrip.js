@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { stripPoint } from './layout.js';
+import { cone, LAP_SCALE } from './startLine.js';
 
 // The drag strip (layout.dragStrip): a rough patch of gravel laid over the levelled ground, with ragged edges and ends that thin out into the grass,
 // and only cones to mark the start and the finish. Only something to look at: nothing here has a collider, so the quad rides on the ground under it.
@@ -89,15 +90,15 @@ export function buildDragStrip(scene, heightAt, strip) {
   surface.receiveShadow = true;
   group.add(surface);
 
-  // Only cones mark it: a pair at the start and a pair at the finish, just outside the edges.
-  const coneMat = new THREE.MeshStandardMaterial({ color: 0xe8541a, roughness: 0.55 });
-  for (const at of [0, strip.length]) {
+  // Only cones mark it: a pair at the start (green) and a pair at the finish (blue), just outside the edges.
+  for (const [at, kind] of [[0, 'start'], [strip.length, 'finish']]) {
     for (const side of [-1, 1]) {
       const p = stripPoint(strip, at, side * (strip.width / 2 + 0.4));
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.55, 14), coneMat);
-      cone.position.set(p.x, heightAt(p.x, p.z) + 0.28, p.z);
-      cone.castShadow = true;
-      group.add(cone);
+      const c = cone(kind);
+      c.scale.setScalar(LAP_SCALE);
+      c.position.set(p.x, heightAt(p.x, p.z), p.z);
+      c.rotation.y = strip.yaw + Math.PI / 2; // the words face along the strip
+      group.add(c);
     }
   }
 
