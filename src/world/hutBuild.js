@@ -14,6 +14,7 @@ const WALL = 0.07; // board thickness, with the framing behind it
 const ROOF_RISE = 0.6; // how high the curved roof's middle stands above its eaves
 const ROOF_HALF = 1.25; // half the roof's span: the walls are 1.1 either side, so it overhangs 0.15
 const EAVES = 2.3; // the roof's edge above the ground
+const END_GAP = 0.006; // the side walls stop this short of the end walls' outer faces, so their end faces are never on the same plane
 const DOOR_W = 0.85;
 const DOOR_H = 1.75; // above the floor
 const WINDOW = { z: 0.45, w: 0.5, y0: 0.95, y1: 1.5 }; // on the -x wall: z along the hut, y above the floor
@@ -76,7 +77,7 @@ function arcBand(a, lift, width, thick, z, segments = 18) {
 
 /** An end wall: the width of the hut, up to the roof's curve, with a doorway cut in it when `door`. Shape coordinates are metres, so textures tile per metre. */
 function endWall(floor, door) {
-  const hw = 1.1;
+  const hw = 1.1 - 0.008; // a hair inside the side walls' outer faces, so the two never share a plane
   const shape = new THREE.Shape();
   const n = 14;
   shape.moveTo(-hw, floor);
@@ -88,10 +89,11 @@ function endWall(floor, door) {
   shape.closePath();
   if (door) {
     const hole = new THREE.Path();
-    hole.moveTo(-DOOR_W / 2, floor);
+    const sill = floor + 0.01; // the doorway starts a hair above the wall's bottom edge (the door's sill covers it), or the two edges coincide and the wall's underside is triangulated across the doorway
+    hole.moveTo(-DOOR_W / 2, sill);
     hole.lineTo(-DOOR_W / 2, floor + DOOR_H);
     hole.lineTo(DOOR_W / 2, floor + DOOR_H);
-    hole.lineTo(DOOR_W / 2, floor);
+    hole.lineTo(DOOR_W / 2, sill);
     hole.closePath();
     shape.holes.push(hole);
   }
@@ -111,6 +113,28 @@ function bar(ax, ay, az, bx, by, bz, r, sides = 6) {
   geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()));
   const mid = a.add(b).multiplyScalar(0.5);
   return geo.translate(mid.x, mid.y, mid.z);
+}
+
+/**
+ * A wellington boot, toe along +z: a leg that tapers to the ankle, a rounded foot with a toe cap and a heel, a turned-over top, a black sole.
+ * Returns { body, sole } as merged geometries placed at (x, z) turned `yaw`, standing or `lying` on its side with its foot to the front.
+ */
+function wellingtonBoot(x, z, yaw, lying) {
+  const leg = new THREE.CylinderGeometry(0.05, 0.043, 0.3, 14, 1, true).translate(0, 0.2, 0.0);
+  const top = new THREE.TorusGeometry(0.05, 0.007, 6, 14).rotateX(Math.PI / 2).translate(0, 0.35, 0);
+  const ankle = new THREE.SphereGeometry(0.052, 12, 8).scale(1, 0.9, 1.1).translate(0, 0.07, 0.0);
+  const foot = new THREE.SphereGeometry(0.052, 14, 10).scale(1, 0.8, 2.2).translate(0, 0.045, 0.085); // the toe
+  const heel = new THREE.BoxGeometry(0.075, 0.07, 0.06).translate(0, 0.053, -0.045); // sat on the sole, not level with its underside
+  const soleGeo = new THREE.CylinderGeometry(0.056, 0.056, 0.016, 14).scale(1, 1, 2.45).translate(0, 0.008, 0.075);
+  const flat = (g) => (g.index ? g.toNonIndexed() : g);
+  const put = (g) => {
+    if (lying) g.rotateZ(Math.PI / 2).translate(0, 0.05, 0);
+    return g.rotateY(yaw).translate(x, 0, z);
+  };
+  return {
+    body: put(mergeGeometries([leg, top, ankle, foot, heel].map(flat))),
+    sole: put(flat(soleGeo)),
+  };
 }
 
 /** An iron wheel standing on its edge, axle along x at (x, r, z): a flat tyre band, a rim, ten spokes and a hub. */
@@ -173,8 +197,8 @@ export function buildHut(c) {
 
   // The floor, the sill boards round its edge and the underframe: iron rails along the hut, cross-bearers, and a dark box that shuts the view under it.
   add(plank(shape.width, 0.07, L, 0.4), timber, 0, F - 0.035, 0);
-  for (const sx of [-1, 1]) add(plank(0.08, 0.2, L + 0.1), paint, sx * (hw + 0.01), F - 0.13, 0);
-  for (const sz of [-1, 1]) add(plank(shape.width + 0.12, 0.2, 0.08), paint, 0, F - 0.13, sz * (hl + 0.01));
+  for (const sx of [-1, 1]) add(plank(0.08, 0.2, L + 0.08), paint, sx * (hw + 0.01), F - 0.13, 0);
+  for (const sz of [-1, 1]) add(plank(shape.width + 0.12, 0.19, 0.08), paint, 0, F - 0.13, sz * (hl + 0.01));
   add(new THREE.BoxGeometry(shape.width - 0.2, 0.28, L - 0.2), plain(0x15130f, 1), 0, F - 0.2, 0, { cast: false, receive: false });
   for (const sx of [-0.8, 0.8]) add(new THREE.BoxGeometry(0.1, 0.16, L + 0.2), iron, sx, F - 0.2, 0);
   for (const sz of [-1.6, -0.5, 0.5, 1.6]) add(new THREE.BoxGeometry(shape.width - 0.1, 0.1, 0.1), iron, 0, F - 0.2, sz);
@@ -184,14 +208,14 @@ export function buildHut(c) {
     const x = sx * (hw - WALL / 2);
     const h = wallTop - F;
     if (sx > 0) {
-      add(plank(WALL, h, L, 0.6), paint, x, F + h / 2, 0);
+      add(plank(WALL, h, L - 2 * END_GAP, 0.6), paint, x, F + h / 2, 0);
       return;
     }
     const z0 = WINDOW.z - WINDOW.w / 2;
     const z1 = WINDOW.z + WINDOW.w / 2;
     const bit = (za, zb, ya, yb) => add(plank(WALL, yb - ya, zb - za, 0.6), paint, x, F + (ya + yb) / 2, (za + zb) / 2);
-    bit(-hl, z0, 0, h);
-    bit(z1, hl, 0, h);
+    bit(-hl + END_GAP, z0, 0, h);
+    bit(z1, hl - END_GAP, 0, h);
     bit(z0, z1, 0, WINDOW.y0);
     bit(z0, z1, WINDOW.y1, h);
   };
@@ -220,7 +244,7 @@ export function buildHut(c) {
     const rib = new THREE.Mesh(arcBand(hw, 0.045, 0.07, 0.06, z - 0.03), darkTimber);
     group.add(rib);
   }
-  for (const z of [-hl - 0.25, hl + 0.3 - 0.03]) group.add(new THREE.Mesh(arcBand(ROOF_HALF, 0.0, 0.11, 0.03, z), paintCream));
+  for (const z of [-hl - 0.25, hl + 0.3 - 0.03]) group.add(new THREE.Mesh(arcBand(ROOF_HALF, 0.012, 0.11, 0.03, z), paintCream));
   for (const sx of [-1, 1]) {
     const gutter = add(new THREE.CylinderGeometry(0.04, 0.04, L + 0.5, 8, 1, true, -Math.PI / 2, Math.PI).rotateX(Math.PI / 2), iron, sx * (ROOF_HALF + 0.02), EAVES - 0.07, 0.025);
     gutter.material = iron.clone();
@@ -242,8 +266,8 @@ export function buildHut(c) {
   const doorFrame = (x, y, w, h) => add(plank(w, h, 0.1, 0.4), paintCream, x, F + y, dz);
   doorFrame(-DOOR_W / 2 - 0.05, DOOR_H / 2, 0.09, DOOR_H + 0.1);
   doorFrame(DOOR_W / 2 + 0.05, DOOR_H / 2, 0.09, DOOR_H + 0.1);
-  doorFrame(0, DOOR_H + 0.07, DOOR_W + 0.28, 0.1);
-  add(plank(DOOR_W + 0.14, 0.05, 0.16, 0.4), timber, 0, F + 0.025, dz + 0.03); // the sill
+  add(plank(DOOR_W + 0.28, 0.1, 0.1, 0.4), paintCream, 0, F + DOOR_H + 0.07, dz + 0.006); // the head, a hair proud of the side posts, not on their planes
+  add(plank(DOOR_W + 0.14, 0.05, 0.16, 0.4), timber, 0, F + 0.03, dz + 0.045); // the sill, a hair above the floor's plane
   const leafH = 0.88;
   add(plank(DOOR_W - 0.02, leafH, 0.045, 0.4), mat(paintedTexture(random, '#4f6a4c')), 0, F + leafH / 2 + 0.03, hl - 0.02);
   for (const y of [0.18, 0.7]) add(new THREE.BoxGeometry(0.5, 0.045, 0.02), iron, -DOOR_W / 2 + 0.25, F + y, hl + 0.015, { cast: false });
@@ -270,18 +294,18 @@ export function buildHut(c) {
   glassMesh.rotation.y = -Math.PI / 2;
   glassMesh.name = 'hutGlass';
   add(plank(0.03, wh, 0.025, 0.4), paintCream, wx - 0.012, wy, WINDOW.z);
-  add(plank(0.03, 0.025, WINDOW.w, 0.4), paintCream, wx - 0.012, wy, WINDOW.z);
+  add(plank(0.024, 0.025, WINDOW.w, 0.4), paintCream, wx - 0.012, wy, WINDOW.z);
 
   // Steps: two wooden risers up to the sill with stringers each side and a rail on the right.
   const sz0 = HUT_INSIDE.stepZ[0];
   const sz1 = HUT_INSIDE.stepZ[1];
   const top = HUT_INSIDE.stepTop;
-  add(plank(0.9, 0.05, 0.42, 0.4), timber, 0, top - 0.025, (sz0 + sz1) / 2 + 0.05);
-  add(plank(0.9, top - 0.05, 0.04, 0.4), timber, 0, (top - 0.05) / 2, sz1 + 0.04);
+  add(plank(0.9, 0.05, sz1 - sz0 - 0.02, 0.4), timber, 0, top - 0.025, (sz0 + sz1) / 2 + 0.01);
+  add(plank(0.88, top - 0.05, 0.04, 0.4), timber, 0, (top - 0.05) / 2, sz1 + 0.04);
   for (const sx of [-1, 1]) {
     add(plank(0.05, top + 0.05, sz1 - hl + 0.2, 0.4), darkTimber, sx * 0.47, (top + 0.05) / 2, (hl - 0.15 + sz1 + 0.05) / 2);
   }
-  add(plank(0.05, 0.05, sz1 - hl + 0.35, 0.4), darkTimber, 0.49, top + 0.9, (hl + sz1) / 2 + 0.05);
+  add(plank(0.04, 0.05, sz1 - hl + 0.35, 0.4), darkTimber, 0.49, top + 0.9, (hl + sz1) / 2 + 0.05); // narrower than its posts, so their sides are not on its planes
   for (const z of [hl + 0.05, sz1 + 0.05]) add(plank(0.05, 0.9, 0.05, 0.4), darkTimber, 0.49, top + 0.45, z);
 
   // The wheels: iron, a big pair at the door end and a smaller pair at the drawbar end, outside the walls, with a chock against the rear pair.
@@ -311,7 +335,7 @@ export function buildHut(c) {
   // The bunk across the back: a timber frame with a mattress, a folded blanket and a pillow.
   const b = HUT_INSIDE.bunk;
   const bunkL = b.z1 - b.z0;
-  add(plank(shape.width - 0.2, b.rise - 0.1, bunkL, 0.4), darkTimber, 0, rise((b.rise - 0.1) / 2), (b.z0 + b.z1) / 2);
+  add(plank(shape.width - 0.2, b.rise - 0.1, bunkL - 0.04, 0.4), darkTimber, 0, rise((b.rise - 0.1) / 2), (b.z0 + 0.04 + b.z1) / 2); // its back end a hair into the wall, not on the wall's outer plane
   const mattress = add(new THREE.BoxGeometry(shape.width - 0.26, 0.1, bunkL - 0.06), mat(blanketTexture(random, '#6b7f8e', '#3d4d5a')), 0, rise(b.rise - 0.05), (b.z0 + b.z1) / 2);
   mattress.receiveShadow = true;
   add(new THREE.BoxGeometry(shape.width - 0.3, 0.05, 0.4), mat(blanketTexture(random, '#a2412f', '#6a2a1e')), 0, rise(b.rise + 0.03), b.z1 - 0.3); // the folded blanket
@@ -387,7 +411,13 @@ export function buildHut(c) {
   const butt = add(new THREE.CylinderGeometry(0.28, 0.24, 0.55, 12), mat(blanketTexture(random, '#3a4a3a', '#2a3a2a')), hw + 0.5, 0.275, 1.55);
   butt.name = 'hutButt';
   add(new THREE.CylinderGeometry(0.29, 0.29, 0.03, 12), iron, hw + 0.5, 0.56, 1.55);
-  for (const dz2 of [0, 0.14]) add(new THREE.CylinderGeometry(0.045, 0.05, 0.28, 8), plain(0x20231f, 0.7), -0.7 + dz2 * 0.2, 0.14, sz1 + 0.5 + dz2 + 0.25);
+  const wellies = plain(0x2f4a2b, 0.55); // green rubber, with a black sole
+  const soles = plain(0x181818, 0.8);
+  for (const [bx, bz, yaw, lying] of [[-0.78, sz1 + 0.05, 0.35, false], [-0.55, sz1 + 0.55, -0.6, true]]) {
+    const { body, sole } = wellingtonBoot(bx, bz, yaw, lying);
+    add(body, wellies, 0, 0, 0);
+    add(sole, soles, 0, 0, 0);
+  }
 
   mergeByMaterial(group);
 
@@ -403,7 +433,18 @@ export function buildHut(c) {
   wb(hw - WALL / 2, F, top2, 0, WALL / 2, hl);
   wb(0, F, top2, -hl + WALL / 2, hw, WALL / 2);
   for (const sx of [-1, 1]) wb(sx * (gap + (hw - gap) / 2), F, top2, hl - WALL / 2, (hw - gap) / 2, WALL / 2);
-  wb(0, 0, top, (sz0 + sz1) / 2, 0.45, (sz1 - sz0) / 2);
+  // The steps are walked up on an invisible ramp, not on boxes: a walking capsule has a round bottom, so it cannot autostep a 0.28 m riser (and the
+  // next from the step to the floor), but it climbs a slope of 30 degrees up from the foot of the steps to the floor's edge without a snag.
+  if (c.physics && c.RAPIER) {
+    const pts = [];
+    for (const sx of [-0.45, 0.45]) {
+      for (const [lz, ly] of [[HUT_INSIDE.stepZ[0], F], [HUT_INSIDE.stepZ[0], 0], [HUT_INSIDE.stepZ[1], 0]]) {
+        const w = shape.toWorld(sx, lz);
+        pts.push(w.x, ground + ly, w.z);
+      }
+    }
+    c.physics.createCollider(c.RAPIER.ColliderDesc.convexHull(new Float32Array(pts)));
+  }
   for (const sx of [-1, 1]) {
     wb(sx * (hw + 0.14), 0, rearR * 2, 0.95, 0.06, rearR * 0.8);
     wb(sx * (hw + 0.14), 0, frontR * 2, -1.0, 0.06, frontR * 0.8);
