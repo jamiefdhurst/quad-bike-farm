@@ -4,13 +4,18 @@
 // All procedural, with canvas textures; the big pieces have colliders. The ground itself (the walls, the heaps, the road) is the terrain's.
 
 import * as THREE from 'three';
-import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { instanceModel, modelBounds, enableShadows } from './assets.js';
 import { matrixAt, buildPond, gorseGeometry } from './hillProps.js';
-import { canvasTexture, corrugatedTexture, worldBox } from './outbuildingProps.js';
-import { barrelTexture, woodTexture } from './neighbourTextures.js';
+import { woodTexture } from './neighbourTextures.js';
 import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
 import { quarryPlants } from './quarry.js';
+import { Parts } from './parts.js';
+import { rustTexture, signTexture } from './quarryTextures.js';
+import { buildExcavator, excavatorMaterials } from './excavatorModel.js';
+import { buildContainer, containerMaterials } from './containerModel.js';
+import { buildCabin, cabinMaterials } from './siteCabinModel.js';
+import { buildSign, debrisMaterials, drumGeometry, scatterClear, tyreGeometry, DRUM, TYRE } from './quarryDebris.js';
 
 const TAU = Math.PI * 2;
 
@@ -29,140 +34,26 @@ export function buildQuarry(c) {
   buildPond(c, quarry, () => false);
 }
 
-/** A rusty steel plate texture, one tile 2 m square: orange and brown blotches, streaks, and the odd pale patch of old paint. */
-function rustTexture(random, base = '#7a4a30') {
-  return canvasTexture(256, 256, (ctx, w, h) => {
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 90; i++) {
-      const x = random() * w;
-      const y = random() * h;
-      const r = 8 + random() * 40;
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      const col = random() < 0.5 ? '150,78,34' : random() < 0.5 ? '70,38,24' : '176,120,64';
-      g.addColorStop(0, `rgba(${col},0.4)`);
-      g.addColorStop(1, `rgba(${col},0)`);
-      ctx.fillStyle = g;
-      ctx.fillRect(x - r, y - r, r * 2, r * 2);
-    }
-    for (let i = 0; i < 40; i++) {
-      const x = random() * w;
-      const y = random() * h * 0.6;
-      const len = 20 + random() * 120;
-      const g = ctx.createLinearGradient(0, y, 0, y + len);
-      g.addColorStop(0, 'rgba(90,40,18,0.5)');
-      g.addColorStop(1, 'rgba(90,40,18,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(x, y, 1 + random() * 5, len);
-    }
-    for (let i = 0; i < 6; i++) {
-      ctx.fillStyle = 'rgba(190,170,110,0.28)';
-      ctx.fillRect(random() * w, random() * h, 10 + random() * 40, 6 + random() * 24);
-    }
-  });
+/** Puts a model's colliders ([x, y, z, half x, half y, half z] in its own frame) in the world where it stands: at `at`, on `y0`, turned `turn` about y. */
+function placeBoxes(fixedBox, at, y0, turn, boxes) {
+  const cos = Math.cos(turn);
+  const sin = Math.sin(turn);
+  for (const [bx, by, bz, hx, hy, hz] of boxes) fixedBox(at.x + cos * bx + sin * bz, y0 + by, at.z - sin * bx + cos * bz, hx, hy, hz, turn);
 }
 
-/** A faded paint-and-rust texture for the excavator's body: `colour` worn through to the rust in streaks and edges, dirt low down. */
-function diggerTexture(random, colour) {
-  return canvasTexture(256, 256, (ctx, w, h) => {
-    ctx.fillStyle = colour;
-    ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 26; i++) {
-      const x = random() * w;
-      const y = random() * h;
-      const r = 20 + random() * 60;
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      const col = random() < 0.5 ? '120,64,30' : random() < 0.5 ? '70,56,40' : '214,186,96';
-      g.addColorStop(0, `rgba(${col},${0.1 + random() * 0.14})`);
-      g.addColorStop(1, `rgba(${col},0)`);
-      ctx.fillStyle = g;
-      ctx.fillRect(x - r, y - r, r * 2, r * 2);
-    }
-    for (let i = 0; i < 40; i++) {
-      const x = random() * w;
-      const y = random() * h * 0.7;
-      const len = 14 + random() * 90;
-      const g = ctx.createLinearGradient(0, y, 0, y + len);
-      g.addColorStop(0, 'rgba(110,52,22,0.45)');
-      g.addColorStop(1, 'rgba(110,52,22,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(x, y, 1 + random() * 4, len);
-    }
-    ctx.strokeStyle = 'rgba(100,48,20,0.55)';
-    ctx.lineWidth = 6;
-    ctx.strokeRect(0, 0, w, h);
-    const dirt = ctx.createLinearGradient(0, h * 0.6, 0, h);
-    dirt.addColorStop(0, 'rgba(120,100,70,0)');
-    dirt.addColorStop(1, 'rgba(120,100,70,0.5)');
-    ctx.fillStyle = dirt;
-    ctx.fillRect(0, h * 0.6, w, h * 0.4);
-  });
-}
-
-/** A hazard sign: black on yellow, a heading and up to three lines, readable on a flat face. */
-function signTexture(heading, lines, { bg = '#e8c52a', fg = '#1a1a1a' } = {}) {
-  return canvasTexture(512, 360, (ctx, w, h) => {
-    ctx.fillStyle = '#d9d6cb';
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = bg;
-    ctx.fillRect(14, 14, w - 28, h - 28);
-    ctx.strokeStyle = fg;
-    ctx.lineWidth = 8;
-    ctx.strokeRect(24, 24, w - 48, h - 48);
-    ctx.fillStyle = fg;
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 70px Arial, Helvetica, sans-serif';
-    ctx.fillText(heading, w / 2, 108);
-    ctx.font = 'bold 40px Arial, Helvetica, sans-serif';
-    lines.forEach((l, i) => ctx.fillText(l, w / 2, 176 + i * 52));
-    // Weathering and a bullet hole or two.
-    for (let i = 0; i < 40; i++) {
-      ctx.fillStyle = `rgba(80,60,30,${0.05 + Math.random() * 0.12})`;
-      ctx.fillRect(Math.random() * w, Math.random() * h, 3 + Math.random() * 30, 3 + Math.random() * 6);
-    }
-  });
-}
-
-/** Collects boxes, tubes and the like per material and builds one merged mesh each, so a whole machine is a few draw calls. */
-class Parts {
-  constructor() {
-    this.byMaterial = new Map();
-  }
-
-  /** Adds `geo` (a fresh geometry) in `material`, placed by position and the Euler rotation (x, y, z) in radians. */
-  add(material, geo, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
-    geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1)));
-    if (!this.byMaterial.has(material)) this.byMaterial.set(material, []);
-    this.byMaterial.get(material).push(geo);
-    return this;
-  }
-
-  box(material, w, h, d, x, y, z, ry = 0, tile = 2) {
-    return this.add(material, worldBox(w, h, d, tile), x, y, z, 0, ry, 0);
-  }
-
-  /** A beam from a to b (in the x-y plane, at depth z), `h` thick, `d` wide. */
-  beam(material, ax, ay, bx, by, h, d, z = 0, tile = 2) {
-    const len = Math.hypot(bx - ax, by - ay);
-    return this.add(material, worldBox(len, h, d, tile), (ax + bx) / 2, (ay + by) / 2, z, 0, 0, Math.atan2(by - ay, bx - ax));
-  }
-
-  /** A cylinder with its axis along z (a wheel, a roller, a pin). */
-  wheel(material, r, width, x, y, z, segments = 14) {
-    return this.add(material, new THREE.CylinderGeometry(r, r, width, segments), x, y, z, Math.PI / 2, 0, 0);
-  }
-
-  /** The parts as a group of meshes, one per material. */
-  build({ castShadow = true } = {}) {
-    const group = new THREE.Group();
-    for (const [material, geos] of this.byMaterial) {
-      const mesh = new THREE.Mesh(mergeGeometries(geos, false), material);
-      mesh.castShadow = castShadow;
-      mesh.receiveShadow = true;
-      group.add(mesh);
-    }
-    return group;
-  }
+/**
+ * Stands a model on the ground: its middle at the average height of the ground under four spots (`ax` along its x, `az` along its z), tipped to the
+ * lie of the land by no more than a quarter of a radian, and turned `turn`. Returns the height of its middle, for the colliders.
+ */
+function settle(group, at, turn, ax, az, groundY) {
+  const cos = Math.cos(turn);
+  const sin = Math.sin(turn);
+  const h = (lx, lz) => groundY(at.x + cos * lx + sin * lz, at.z - sin * lx + cos * lz);
+  const [f, b, r, l] = [h(ax, 0), h(-ax, 0), h(0, az), h(0, -az)];
+  const lim = (v) => Math.max(-0.25, Math.min(0.25, v));
+  group.position.set(at.x, (f + b + r + l) / 4, at.z);
+  group.rotation.set(-lim(Math.atan2(r - l, 2 * az)), turn, lim(Math.atan2(f - b, 2 * ax)), 'YXZ');
+  return group.position.y;
 }
 
 /** The pit's own deal of a random stream: a spot on the floor or the rim, found by trying. */
@@ -290,100 +181,35 @@ function buildSite(c, quarry, site) {
   const wire = lit({ color: 0x7d8286, metalness: 0.5, roughness: 0.5 });
   const rust = lit({ map: rustTexture(random), roughness: 0.9 });
   const rustDark = lit({ map: rustTexture(random, '#5b3a2a'), roughness: 0.9 });
-  const tyreMat = lit({ color: 0x1c1c1b, roughness: 0.95 });
   const dark = lit({ color: 0x252422, roughness: 0.9 });
-  const glass = lit({ color: 0x1f2a2c, roughness: 0.2, metalness: 0.2 });
-  const yellow = lit({ map: diggerTexture(random, '#b69a34'), roughness: 0.8 });
-  const orange = lit({ map: diggerTexture(random, '#a85a28'), roughness: 0.8 });
-  const green = lit({ map: corrugatedTexture(random, '#58695c', 0.85), roughness: 0.75 });
   const groundY = (x, z) => heights.heightAt(x, z);
   const floorAt = (a, back) => quarry.frameAt(a, quarry.floorEdge(a) - back);
 
   buildFence(things, quarry, { wood, wire, groundY, random });
 
-  // The steel container: the site's store, in the field a little off the gate, doors at one end, a padlock bar, a dent or two.
+  // The steel container: the site's store, in the field a little off the gate, on sleepers, one door leaf ajar and the other padlocked.
   const gate = quarry.gate;
   const hut = findSpot(400, (p) => quarry.plantOk(p.x, p.z, 8) && Math.hypot(p.x - gate.x, p.z - quarry.rect.maxZ) > 14, () => ({ x: gate.x - 10 - random() * 24, z: quarry.rect.maxZ - 12 - random() * 14 })) ?? { x: gate.x - 18, z: quarry.rect.maxZ - 18 };
   const hutYaw = (random() - 0.5) * 0.7;
   {
-    const parts = new Parts();
-    const L = 6.06;
-    const W = 2.44;
-    const H = 2.59;
-    const y0 = Math.max(groundY(hut.x - 3, hut.z), groundY(hut.x + 3, hut.z)) + 0.02;
-    parts.box(green, L, H - 0.18, W, 0, 0.18 + (H - 0.18) / 2, 0, 0, 1.2);
-    parts.box(dark, L + 0.1, 0.18, W + 0.1, 0, 0.09, 0); // the base rails
-    parts.box(rust, L + 0.06, 0.07, W + 0.06, 0, H + 0.02, 0, 0, 1.6); // the rusty roof lip
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) parts.box(dark, 0.16, 0.16, 0.16, sx * (L / 2 - 0.05), 0.1, sz * (W / 2 - 0.05)); // corner posts
-    // Doors on the +x end: two leaves, four locking bars, the padlock.
-    for (const sz of [-1, 1]) parts.box(rust, 0.05, H - 0.4, W / 2 - 0.08, L / 2 + 0.01, 0.2 + (H - 0.4) / 2, sz * (W / 4), 0, 1.5);
-    for (const sz of [-0.62, -0.2, 0.2, 0.62]) parts.box(dark, 0.07, H - 0.5, 0.05, L / 2 + 0.06, 0.2 + (H - 0.5) / 2, sz * (W / 2 - 0.1));
-    parts.box(dark, 0.08, 0.1, 0.18, L / 2 + 0.1, 1.15, 0.08);
-    const g = parts.build();
-    g.position.set(hut.x, y0, hut.z);
-    g.rotation.y = hutYaw;
-    things.add(g);
-    fixedBox(hut.x, y0 + H / 2, hut.z, L / 2, H / 2, W / 2, hutYaw);
+    const { group, boxes } = buildContainer(containerMaterials(random), random);
+    const y0 = settle(group, hut, hutYaw, 3, 1.2, groundY);
+    things.add(group);
+    placeBoxes(fixedBox, hut, y0, hutYaw, boxes);
   }
 
-  // The excavator on the floor, where the first road comes down (on its side away from the steep wall's foot), nose to the wall: tracks, house, counterweight, cab, boom, stick and bucket.
+  // The excavator on the floor, where the first road comes down (on its side away from the steep wall's foot), nose to the wall.
   const road = quarry.pit.road;
   const endA = road.from + road.dir * road.sweep;
   const dig = findSpot(300, (p) => !quarry.pit.heaps.some((m) => Math.hypot(m.x - p.x, m.z - p.z) < m.r + 4) && quarry.waterAt(p.x, p.z) === 0 && quarry.roadNear(p.x, p.z).d > 7, () => floorAt(endA - road.dir * (0.3 + random() * 0.4), 10 + random() * 6)) ?? floorAt(endA - road.dir * 0.5, 12);
   {
     const yaw = Math.atan2(quarry.pit.x - dig.x, quarry.pit.z - dig.z) + Math.PI + (random() - 0.5) * 0.6; // looks out at the wall it has been digging
-    const parts = new Parts();
-    for (const sz of [-1, 1]) {
-      parts.box(dark, 3.9, 0.74, 0.8, 0, 0.45, sz * 1.0);
-      for (let i = 0; i < 5; i++) {
-        parts.wheel(dark, 0.28, 0.82, -1.4 + i * 0.7, 0.33, sz * 1.0);
-        parts.wheel(rustDark, 0.12, 0.9, -1.4 + i * 0.7, 0.33, sz * 1.0, 8);
-      }
-      for (const sx of [-1.7, 1.7]) {
-        parts.wheel(dark, 0.45, 0.82, sx, 0.55, sz * 1.0);
-        parts.wheel(rustDark, 0.18, 0.9, sx, 0.55, sz * 1.0, 8);
-      }
-      for (let i = 0; i < 15; i++) parts.box(rustDark, 0.14, 0.05, 0.86, -1.8 + i * 0.26, 0.84, sz * 1.0);
-    }
-    parts.box(rustDark, 2.4, 0.4, 2.0, 0, 0.8, 0); // the undercarriage
-    parts.box(yellow, 3.0, 0.9, 2.5, -0.3, 1.45, 0, 0, 1.5); // the house
-    parts.box(orange, 1.0, 1.0, 2.5, -1.9, 1.5, 0, 0, 1.5); // the counterweight, rusty
-    parts.box(yellow, 1.6, 0.5, 1.2, -0.2, 2.15, -0.6, 0, 1.5); // the engine hood
-    parts.box(yellow, 1.35, 1.65, 1.15, 0.5, 2.25, 0.62, 0, 1.5); // the cab
-    parts.box(glass, 0.05, 1.15, 0.95, 1.2, 2.45, 0.62); // its front glass
-    parts.box(glass, 1.0, 1.0, 0.04, 0.5, 2.4, 1.21); // the side window
-    parts.box(dark, 0.1, 0.9, 0.1, -0.1, 2.9, -0.9); // the exhaust
-    // The boom, stick and bucket, from a pin on the front of the house, the bucket hanging down against the wall.
-    const px = 1.35;
-    const py = 1.45;
-    const zz = -0.3;
-    const kx = px + 3.7 * Math.cos(0.62);
-    const ky = py + 3.7 * Math.sin(0.62);
-    parts.beam(yellow, px, py, kx, ky, 0.55, 0.5, zz, 1.5);
-    const sx = kx + 2.7 * Math.cos(-0.95);
-    const sy = ky + 2.7 * Math.sin(-0.95);
-    parts.beam(orange, kx, ky, sx, sy, 0.4, 0.36, zz, 1.5);
-    parts.beam(dark, px + 1.0, py - 0.15, kx - 1.2, ky - 0.35, 0.16, 0.16, zz + 0.4); // the boom ram
-    parts.beam(dark, kx - 0.2, ky - 0.05, sx - 0.5, sy + 0.6, 0.13, 0.13, zz + 0.4); // the stick ram
-    parts.wheel(dark, 0.14, 0.7, kx, ky, zz);
-    parts.wheel(dark, 0.14, 0.7, sx, sy, zz);
-    parts.box(rustDark, 0.85, 0.12, 1.1, sx + 0.25, sy - 0.55, zz, 0, 1.5);
-    parts.box(rustDark, 0.12, 0.7, 1.1, sx + 0.05, sy - 0.25, zz, 0, 1.5);
-    parts.box(rustDark, 0.7, 0.55, 0.1, sx + 0.35, sy - 0.3, zz - 0.5, 0, 1.5);
-    parts.box(rustDark, 0.7, 0.55, 0.1, sx + 0.35, sy - 0.3, zz + 0.5, 0, 1.5);
-    for (let i = 0; i < 4; i++) parts.box(dark, 0.18, 0.1, 0.09, sx + 0.72, sy - 0.62, zz - 0.44 + i * 0.3);
-    const g = parts.build();
-    const y0 = Math.max(groundY(dig.x - 2, dig.z), groundY(dig.x + 2, dig.z)) - 0.02;
-    g.position.set(dig.x, y0, dig.z);
-    g.rotation.y = yaw - Math.PI / 2; // the machine looks along its +x
-    things.add(g);
-    // Colliders: the tracks and house as one box, the bucket hanging against the wall as another.
-    const turn = yaw - Math.PI / 2;
-    const at = (lx, lz) => ({ x: dig.x + Math.cos(turn) * lx + Math.sin(turn) * lz, z: dig.z - Math.sin(turn) * lx + Math.cos(turn) * lz });
-    const body = at(0, 0);
-    fixedBox(body.x, y0 + 1.5, body.z, 2.0, 1.5, 1.5, turn);
-    const bucket = at(sx + 0.3, zz);
-    fixedBox(bucket.x, y0 + 1.1, bucket.z, 0.7, 1.1, 0.6, turn);
+    const turn = yaw - Math.PI / 2; // the machine looks along its +x
+    const { group, boxes } = buildExcavator(excavatorMaterials(random));
+    const y0 = settle(group, dig, turn, 1.9, 1.3, groundY) - 0.03;
+    group.position.y = y0;
+    things.add(group);
+    placeBoxes(fixedBox, dig, y0, turn, boxes);
   }
 
   // The screening plant by the biggest heap: a hopper on legs over a conveyor that climbs to drop onto the heap.
@@ -402,74 +228,97 @@ function buildSite(c, quarry, site) {
       const reach = heap.r + 14;
       const base = { x: heap.x + dx * reach, z: heap.z + dz * reach };
       if (![0.4, 0.7, 1].every((f) => onFloor(heap.x + dx * reach * f, heap.z + dz * reach * f))) continue;
-      buildPlant(things, c, { x: base.x, z: base.z, yaw: Math.atan2(-dx, -dz), length: heap.r + 11, groundY, rust, rustDark, dark, green, fixedBox, height: heap.h * 0.9 });
+      const plant = buildPlant(things, c, { x: base.x, z: base.z, yaw: Math.atan2(-dx, -dz), length: heap.r + 11, groundY, rust, rustDark, dark, fixedBox, height: heap.h * 0.9 });
+      // The site cabin beside it, its door and steps towards the plant, on whichever side is clear floor.
+      for (const side of [1, -1]) {
+        const a = plant.turn;
+        const lx = 0.7;
+        const lz = side * 5.4;
+        const at = { x: base.x + Math.cos(a) * lx + Math.sin(a) * lz, z: base.z - Math.sin(a) * lx + Math.cos(a) * lz };
+        if (![[0, 0], [2.2, 1.5], [-2.2, 1.5], [2.2, -1.5], [-2.2, -1.5]].every(([ox, oz]) => onFloor(at.x + ox, at.z + oz))) continue;
+        const turn = side > 0 ? a + Math.PI : a;
+        const { group, boxes } = buildCabin(cabinMaterials(random));
+        const y0 = settle(group, at, turn, 1.6, 1.0, groundY);
+        things.add(group);
+        placeBoxes(fixedBox, at, y0, turn, boxes);
+        break;
+      }
       break;
     }
   }
 
-  // Drums and tyres by the pond, a pallet and a broken trough.
+  // Drums and tyres dumped by the pond with a pallet, none overlapping, and a drum and a tyre that have rolled off down the slope.
   {
     const pond = quarry.pond;
-    const barrelMat = lit({ map: barrelTexture(), roughness: 0.6, metalness: 0.2 });
     const rim = (r) => ({ x: pond.x + Math.cos(r) * pond.rx * 1.25, z: pond.z + Math.sin(r) * pond.rz * 1.25 });
     const dirToCentre = Math.atan2(quarry.pit.z - pond.z, quarry.pit.x - pond.x);
-    const group = new THREE.Group();
-    const placeAt = (p, fn) => {
-      const y = groundY(p.x, p.z);
-      const g = fn();
-      g.position.set(p.x, y, p.z);
-      return g;
-    };
-    for (let i = 0; i < 5; i++) {
-      const p = rim(dirToCentre + (random() - 0.5) * 1.8);
-      if (quarry.waterAt(p.x, p.z) > 0 || !quarry.inPit(p.x, p.z)) continue;
-      const lying = random() < 0.4;
-      const geo = new THREE.CylinderGeometry(0.29, 0.29, 0.88, 14);
-      const g = new THREE.Mesh(geo, barrelMat);
-      g.position.set(p.x, groundY(p.x, p.z) + (lying ? 0.3 : 0.44), p.z);
-      if (lying) {
-        g.rotation.z = Math.PI / 2;
-        g.rotation.y = random() * TAU;
+    const dry = (x, z) => quarry.waterAt(x, z) === 0 && quarry.inPit(x, z);
+    const centre = findSpot(60, (p) => dry(p.x, p.z), () => rim(dirToCentre + (random() - 0.5) * 1.4));
+    if (centre) {
+      const around = (near, far) => () => {
+        const a = random() * TAU;
+        const d = near + random() * (far - near);
+        return { x: centre.x + Math.cos(a) * d, z: centre.z + Math.sin(a) * d };
+      };
+      const placed = [];
+      const deal = (count, radius, near, far) => {
+        const got = scatterClear(count, { pick: around(near, far), radius: () => radius, ok: dry, existing: placed });
+        placed.push(...got);
+        return got;
+      };
+      const mat = debrisMaterials(random);
+      const drums = mat.drums.map(() => []);
+      const tyres = [];
+      const at = (x, y, z, rx, ry, rz) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1));
+      const group = new THREE.Group();
+      for (const pal of deal(1, 0.75, 1.5, 3)) {
+        const g = new Parts();
+        for (let i = 0; i < 5; i++) g.box(wood, 1.2, 0.025, 0.14, 0, 0.14, -0.4 + i * 0.2, 0, 1);
+        for (const z of [-0.42, 0, 0.42]) g.box(wood, 1.2, 0.09, 0.1, 0, 0.06, z, 0, 1);
+        const m = g.build();
+        m.position.set(pal.x, groundY(pal.x, pal.z) - 0.02, pal.z);
+        m.rotation.y = random() * TAU;
+        group.add(m);
       }
-      g.castShadow = true;
-      group.add(g);
-    }
-    // A stack of tyres at the shore and a couple lying about.
-    const stack = rim(dirToCentre + 0.5 + random() * 0.4);
-    if (quarry.waterAt(stack.x, stack.z) === 0 && quarry.inPit(stack.x, stack.z)) {
-      for (let i = 0; i < 4; i++) {
-        const t = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.16, 8, 16), tyreMat);
-        t.rotation.x = Math.PI / 2;
-        t.position.set(stack.x + (random() - 0.5) * 0.12, groundY(stack.x, stack.z) + 0.16 + i * 0.3, stack.z + (random() - 0.5) * 0.12);
-        t.castShadow = true;
-        group.add(t);
+      for (const st of deal(1, 0.4, 1, 3)) {
+        const y = groundY(st.x, st.z);
+        const n = 3 + Math.floor(random() * 2);
+        for (let i = 0; i < n; i++) tyres.push(at(st.x + (random() - 0.5) * 0.05, y + TYRE.width / 2 + i * TYRE.width, st.z + (random() - 0.5) * 0.05, 0, random() * TAU, 0));
+        fixedBox(st.x, y + (n * TYRE.width) / 2, st.z, 0.33, (n * TYRE.width) / 2, 0.33);
       }
-      fixedBox(stack.x, groundY(stack.x, stack.z) + 0.6, stack.z, 0.5, 0.6, 0.5);
-    }
-    for (let i = 0; i < 3; i++) {
-      const p = rim(dirToCentre - 0.6 + random() * 1.4);
-      if (quarry.waterAt(p.x, p.z) > 0 || !quarry.inPit(p.x, p.z)) continue;
-      const t = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.17, 8, 16), tyreMat);
-      t.rotation.x = Math.PI / 2 + (random() - 0.5) * 0.2;
-      t.position.set(p.x, groundY(p.x, p.z) + 0.15, p.z);
-      group.add(t);
-    }
-    // A pallet and an old cattle trough tipped on its side.
-    const pal = rim(dirToCentre + 1.2);
-    if (quarry.waterAt(pal.x, pal.z) === 0 && quarry.inPit(pal.x, pal.z)) {
-      const g = placeAt(pal, () => {
-        const pp = new Parts();
-        for (let i = 0; i < 5; i++) pp.box(wood, 1.2, 0.025, 0.14, 0, 0.14, -0.4 + i * 0.2, 0, 1);
-        for (const z of [-0.42, 0, 0.42]) pp.box(wood, 1.2, 0.09, 0.1, 0, 0.06, z, 0, 1);
-        return pp.build();
+      for (const d of deal(5, DRUM.radius + 0.04, 0.8, 4)) {
+        const y = groundY(d.x, d.z);
+        drums[d.i % drums.length].push(at(d.x, y + DRUM.height / 2, d.z, 0, random() * TAU, 0));
+        fixedBox(d.x, y + DRUM.height / 2, d.z, 0.28, DRUM.height / 2, 0.28);
+      }
+      for (const d of deal(2, 0.5, 1.5, 4.5)) {
+        const y = groundY(d.x, d.z);
+        const yaw = random() * TAU;
+        drums[(d.i + 2) % drums.length].push(at(d.x, y + DRUM.radius, d.z, 0, yaw, Math.PI / 2));
+        fixedBox(d.x, y + DRUM.radius, d.z, DRUM.height / 2, DRUM.radius, DRUM.radius, yaw);
+      }
+      for (const t of deal(3, TYRE.radius + 0.04, 1, 4)) tyres.push(at(t.x, groundY(t.x, t.z) + TYRE.width / 2, t.z, (random() - 0.5) * 0.08, random() * TAU, 0));
+      // Rolled off: a drum on its side and a tyre on its edge, well clear of the rest.
+      for (const d of deal(1, 0.5, 6, 9)) {
+        const yaw = random() * TAU;
+        drums[3].push(at(d.x, groundY(d.x, d.z) + DRUM.radius, d.z, 0, yaw, Math.PI / 2));
+        fixedBox(d.x, groundY(d.x, d.z) + DRUM.radius, d.z, DRUM.height / 2, DRUM.radius, DRUM.radius, yaw);
+      }
+      for (const t of deal(1, TYRE.radius + 0.04, 5, 8)) {
+        const yaw = random() * TAU;
+        tyres.push(at(t.x, groundY(t.x, t.z) + TYRE.radius - 0.01, t.z, Math.PI / 2, yaw, 0));
+        fixedBox(t.x, groundY(t.x, t.z) + TYRE.radius, t.z, TYRE.radius, TYRE.radius, TYRE.width / 2, yaw + Math.PI / 2);
+      }
+      const drumGeo = drumGeometry();
+      drums.forEach((list, k) => {
+        if (list.length) group.add(tiledInstances(drumGeo, mat.drums[k], list, { castShadow: true, name: 'quarryDrums' }));
       });
-      g.rotation.y = random() * TAU;
-      group.add(g);
+      if (tyres.length) group.add(tiledInstances(tyreGeometry(), mat.tyre, tyres, { castShadow: true, name: 'quarryTyres' }));
+      group.traverse((o) => {
+        if (o.isMesh) o.receiveShadow = true;
+      });
+      things.add(group);
     }
-    group.traverse((o) => {
-      if (o.isMesh) o.receiveShadow = true;
-    });
-    things.add(group);
   }
 
   // Dead trees leaning at the rim: a bare grey trunk with a couple of broken limbs.
@@ -547,21 +396,15 @@ function buildFence(site, quarry, { wood, wire, groundY, random }) {
   for (const sg of signs) {
     const p = quarry.frameAt(sg.a, quarry.rimAt(sg.a) + sg.back);
     const y = groundY(p.x, p.z);
-    const g = new THREE.Group();
-    const pole = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.9, 0.1), wood);
-    pole.position.y = 0.9;
-    g.add(pole);
-    const face = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.63, 0.03), new THREE.MeshStandardMaterial({ map: sg.tex, roughness: 0.55 }));
-    face.position.set(0, 1.55, 0.065);
-    g.add(face);
+    const g = buildSign(sg.tex, wood);
     g.position.set(p.x, y - 0.1, p.z);
     g.rotation.set(0, Math.atan2(quarry.pit.x - p.x, quarry.pit.z - p.z) + Math.PI + (random() - 0.5) * 0.4, (random() - 0.5) * 0.12); // facing out from the pit
     site.add(g);
   }
 }
 
-/** A hopper on four legs over a conveyor that climbs 20 degrees to drop onto a heap: rusted steel, abandoned. `yaw` is the way the conveyor climbs. */
-function buildPlant(site, c, { x, z, yaw, length, groundY, rust, rustDark, dark, green, fixedBox, height }) {
+/** A hopper on four legs over a conveyor that climbs 20 degrees to drop onto a heap: rusted steel, abandoned. `yaw` is the way the conveyor climbs. Returns `{ turn }`, the group's heading. */
+function buildPlant(site, c, { x, z, yaw, length, groundY, rust, rustDark, dark, fixedBox, height }) {
   const parts = new Parts();
   const y0 = groundY(x, z);
   const climb = Math.atan2(height + 1.6, length);
@@ -603,10 +446,6 @@ function buildPlant(site, c, { x, z, yaw, length, groundY, rust, rustDark, dark,
   parts.add(rust, new THREE.CylinderGeometry(0.5, 0.5, 0.9, 4, 1, true), hx, hy - 0.8, 0, 0, Math.PI / 4, 0); // the throat
   parts.box(rust, 2.9, 0.55, 2.9, hx, hy + 1.3, 0, 0, 2); // the rim of the hopper
   for (let i = -3; i <= 3; i++) parts.box(rustDark, 0.05, 0.05, 2.8, hx + i * 0.38, hy + 1.6, 0); // the grating
-  // A little control cabin on stilts at the side, with its door hanging open.
-  parts.box(green, 1.5, 1.5, 1.6, hx + 0.3, 2.55, 3.4, 0, 1.2);
-  parts.box(dark, 0.06, 1.1, 0.7, hx + 1.06, 2.45, 3.0);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) parts.box(rustDark, 0.1, 1.8, 0.1, hx + 0.3 + sx * 0.6, 0.9, 3.4 + sz * 0.65);
   const g = parts.build();
   g.position.set(x, y0 - 0.02, z);
   g.rotation.y = yaw - Math.PI / 2; // the belt looks along its +x, which the yaw points
@@ -622,4 +461,5 @@ function buildPlant(site, c, { x, z, yaw, length, groundY, rust, rustDark, dark,
   fixedBox(head2.x, y0 + head.y / 2, head2.z, 0.7, head.y / 2, 0.7, g.rotation.y);
   const mid = local((tail.x + head.x) / 2, 0);
   fixedBox(mid.x, y0 + 0.9, mid.z, 0.4, 0.9, 0.8, g.rotation.y);
+  return { turn: g.rotation.y };
 }
