@@ -4,6 +4,7 @@ import { buildGameTree } from '../src/console/gameTree.js';
 import { buildCommands } from '../src/console/commands.js';
 import { Shell, resolve, parseValue } from '../src/console/shell.js';
 import { VEHICLE_VERBS } from '../src/console/gameHost.js';
+import { girlActions } from '../src/debug/girlActions.js';
 
 // `tools/consolePath.sh 'lane.kids on' 'tp me 105 -17' 'mist p309'` runs each line through the real command table and tree, so nothing
 // reaches Jamie unrun. The game is a stand-in: it has no vehicles of its own (the stand-in knows red, blue, green, tractor, utv, landrover and
@@ -28,6 +29,7 @@ const standIn = () => {
     places: () => places,
     locate: () => ({ x: 0, y: 0, z: 0, heading: 0 }),
     put: (thing, spot) => `${thing} to ${spot.x}, ${spot.z}`,
+    girlVerbs: (id) => girlActions({ companions: [{ character: { id }, name: id }], hud: { toast: () => {} } }).forGirl(id),
     vehicleVerb: (id, verb) => `${id}: ${verb}`,
   };
   return new Proxy(base, { get: (t, k) => (k in t ? t[k] : () => undefined) });
