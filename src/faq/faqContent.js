@@ -2428,7 +2428,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Do the girls load and unload the Tor and the Crag?',
-        a: `Now and then. With nobody in a Land Rover, a girl may see a can or the toolbox lying near it, open the back and stow it, or take something out of the back and set it down beside.
+        a: `Now and then. With nobody in the Tor or the Crag, a girl may see a can or the toolbox lying near it, open the back and stow it, or take something out of the back and set it down beside.
           Amy tidies up more than Jess does. What is in the back when the day ends is still there the next morning.`,
       },
       {
