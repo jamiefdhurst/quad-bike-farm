@@ -64,6 +64,9 @@ export function createHost(g, { copy = () => {} } = {}) {
       animals: layout.farmAnimals ? { x: layout.farmAnimals.pen.maxX + 2.5, z: (layout.farmAnimals.pen.minZ + layout.farmAnimals.sty.maxZ) / 2 } : null,
       trough: layout.trough,
       road: layout.road?.pad,
+      lane: layout.publicLane ? { x: layout.publicLane.x, z: layout.publicLane.open.minZ + 100 } : null, // the public lane's tarmac, on the farm side of the village turning
+      village: layout.village?.green, // the green, between the pub and the shop
+      carpark: layout.village?.pub?.stop, // the pub's car park
       rollingroad: g.trafficHost.places.rig.stand, // beside the tuner's trailer when it is set up (the Farm tab's "Send the tuner" brings it)
       motbay: g.villageHost.mot ? g.villageHost.mot.bay : null, // the MOT bay's middle at Hollis Motors (then `face <vehicle> 90` to sit it along the wall)
       mot: g.villageHost.mot ? g.villageHost.mot.stand() : null, // on foot before the MOT clipboard
