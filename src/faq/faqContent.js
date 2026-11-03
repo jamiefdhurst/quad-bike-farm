@@ -2405,7 +2405,7 @@ export const FAQ_SECTIONS = [
         q: 'Can I carry things in the Tor, and how do I drop the tailgate?',
         a: `Yes. Hold a jerry can, the toolbox, the jump leads or the oil bottle, look into the tub and press <kbd>E</kbd>: it holds six, between the wheel arches. <kbd>T</kbd>
           drops the tailgate (stopped, from the seat or standing beside the tub) and again to raise it. It lies flat behind the tub on its two chains, and swings shut by itself
-          if you drive off with it down. It doesn't tip like the Yak's bed, so what is in the tub stays there.`,
+          if you drive off with it down. It doesn't tip like the Yak's bed, but nothing is tied down: see below for what happens to a load on a corner.`,
         tip: 'T drops the Tor’s tailgate; E with something in your hands stands it in the tub.',
       },
       {
@@ -2413,6 +2413,23 @@ export const FAQ_SECTIONS = [
         a: `Press <kbd>T</kbd>, stopped, from the seat or standing beside it, and the back door swings out on its hinge on the driver's side, spare wheel and all, onto the
           load space behind the back bench. Press it again to shut it. It swings shut by itself if you drive off with it open, and it won't open while the Crag is moving.`,
         tip: 'T swings the Crag’s back door out and shuts it again.',
+      },
+      {
+        q: 'Can I carry things in the Crag, and do they stay put?',
+        a: `Yes, two things on the load space behind the back bench: a jerry can, the toolbox, the jump leads or the oil bottle. Open the back door (<kbd>T</kbd>), hold one,
+          look into the load space and press <kbd>E</kbd>. With the door shut it says so, and you pick things up again the same way.`,
+        tip: 'Open the Crag’s back door with T, then E with something in your hands stands it in the load space.',
+      },
+      {
+        q: 'Why did the can slide across the back of the Tor?',
+        a: `Nothing in the Tor's tub or the Crag's load space is tied down. Take a corner hard, brake hard or park on a steep slope and the load slides, as far as the walls and
+          no further, and a jerry can that hits one hard enough goes over. It stays where it slid to. With the tailgate or back door open it can slide out of the back, and a thing
+          sat right on the edge goes over on a bump. Drive gently, or shut the back.`,
+      },
+      {
+        q: 'Do the girls load and unload the Tor and the Crag?',
+        a: `Now and then. With nobody in a Land Rover, a girl may see a can or the toolbox lying near it, open the back and stow it, or take something out of the back and set it down beside.
+          Amy tidies up more than Jess does. What is in the back when the day ends is still there the next morning.`,
       },
       {
         q: 'Why do the Tor’s doors open?',
