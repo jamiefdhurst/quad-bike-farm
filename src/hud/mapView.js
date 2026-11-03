@@ -168,7 +168,7 @@ export class MapView {
       loop(qp.floor, C.pitFloor);
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
-      line(qp.road, Math.max(2, qp.roadHalf * 2 * s), C.pitFloor);
+      for (const road of qp.roads) line(road, Math.max(2, qp.roadHalf * 2 * s), C.pitFloor);
       for (const h of qp.heaps) disc(h.x, h.z, h.r, C.gravel);
       ctx.setLineDash([3, 3]);
       line(qp.climb.map(([x, z]) => [x, z]), Math.max(1.5, 2 * s), C.ink);

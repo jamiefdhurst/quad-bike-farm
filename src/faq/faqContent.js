@@ -1655,16 +1655,16 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where is the gravel pit, and how do I get into it?',
-        a: `North of the barley field, behind its north hedge, there is a hedged field with an old gravel pit in it, roughly 85 m by 60 m and about 9 m deep. Ride up the farm road, through a gateway on its north side into the barley field,
+        a: `North of the barley field, behind its north hedge, there is a hedged field with an old gravel pit in it, roughly 90 m by 70 m and about 20 m deep. Ride up the farm road, through a gateway on its north side into the barley field,
           and across to the gate in the far hedge (it starts tied open; look at it and press <kbd>E</kbd> to shut it or open it). From the
-          gate a pale gravel road runs across the field to the lip and winds down the pit's wall to the floor, wide enough for a quad or the tractor and dropping about one metre in eight to ten. Down on the floor are
+          gate a pale gravel road runs across the field to the lip, where it forks: one road winds down the pit's wall each way round to the floor, wide enough for a quad or the tractor and dropping about one metre in four to five. Ride down one and back up the other for a loop. Down on the floor are
           heaps of grey gravel and buff sand you can ride over, an old excavator nose to the wall, a screening plant with a hopper and a conveyor, a pond in the low corner and boulders fallen from the walls. The girls will not follow you down: they wait inside the gate.`,
-        tip: 'The gravel pit is through the gate in the barley field\'s north hedge. A gravel road winds down its wall to the floor.',
+        tip: 'The gravel pit is through the gate in the barley field\'s north hedge. Two gravel roads wind down its wall, one each way round.',
       },
       {
         q: 'How do I get out of the gravel pit by the wall?',
-        a: `The road is the easy way. The walls are loose gravel, which gives you less grip than grass and drags at the wheels, so a climb takes more speed and more courage than the hill's banks.
-          The pit's steep wall, opposite where the road comes down, has two chutes in it, gullies of looser stone that are a little gentler, and between them buttresses that are much too steep. The line up is the thing to find. Take a run at it from the floor, keep the wheels straight, and keep
+        a: `The roads are the easy way. The walls are loose gravel, which gives you less grip than grass and drags at the wheels, so a climb takes more speed and more courage than the hill's banks.
+          The pit's steep wall, on the far side from the lip where the roads fork, between the feet of the two roads, has two chutes in it, gullies of looser stone that are a little gentler, and between them buttresses that are much too steep. The line up is the thing to find. Take a run at it from the floor, keep the wheels straight, and keep
           your weight back: a quad that stalls on the wall can roll, so brake and restart it. The girls will say something if yours stops down there.`,
         tip: 'The steep wall has two gentler chutes between steeper spurs. Take a run at it, keep straight, and look for the way up.',
       },
@@ -1677,7 +1677,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Is the gravel pit the same on every farm?',
-        a: `No. Each farm is dealt its own pit and keeps it, day after day: how big, how ragged its lip is, which wall is steep, where the chutes and the spurs are, which way the road winds,
+        a: `No. Each farm is dealt its own pit and keeps it, day after day: how big and how deep (18 to 22 m), how ragged its lip is, which wall is steep, where the chutes and the spurs are, which way round the first road goes,
           where the pond is and where the heaps stand. The pit climb's times are kept with the farm too.`,
       },
       {

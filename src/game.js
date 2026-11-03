@@ -2383,7 +2383,7 @@ export class Game {
     const pc = this.pitClimb;
     const climb = pc.running ? `timing ${pc.run.time.toFixed(1)} s` : pc.youArmed ? 'you are asked for' : 'idle';
     const best = this.records.best('pit');
-    return `${where}; ${p.depth.toFixed(1)} m deep, ${(p.rx * 2).toFixed(0)} by ${(p.rz * 2).toFixed(0)} m; steep wall on the ${side} side, ${p.chutes.length} chutes; haul road ${quarry.roadLength.toFixed(0)} m, ${p.road.dir > 0 ? 'clockwise' : 'anticlockwise'} down; ${p.heaps.length} heaps; pit climb ${climb}${best ? `, best ${formatValue('pit', best.value)}` : ''}`;
+    return `${where}; ${p.depth.toFixed(1)} m deep, ${(p.rx * 2).toFixed(0)} by ${(p.rz * 2).toFixed(0)} m; steep wall on the ${side} side, ${p.chutes.length} chutes; haul roads ${quarry.roadLength.toFixed(0)} m (to the lip and down the ${p.road.dir > 0 ? 'clockwise' : 'anticlockwise'} side) and ${quarry.rampPoints[quarry.rampPoints.length - 1].at.toFixed(0)} m (the other way); ${p.heaps.length} heaps; pit climb ${climb}${best ? `, best ${formatValue('pit', best.value)}` : ''}`;
   }
 
   /** Where you are at the river and how the crossing stands, for the panel and the console. */
