@@ -4,7 +4,7 @@
 // All procedural, with canvas textures; the big pieces have colliders. The ground itself (the walls, the heaps, the road) is the terrain's.
 
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { instanceModel, modelBounds, enableShadows } from './assets.js';
 import { matrixAt, buildPond, gorseGeometry } from './hillProps.js';
 import { canvasTexture, corrugatedTexture, worldBox } from './outbuildingProps.js';
@@ -198,20 +198,50 @@ function buildScrub(c, quarry, plants, site) {
   if (mats[1].length) site.add(instanceModel(models.treeB.scene, mats[1]));
 }
 
-/** A rock: a rough, flat-shaded lump with a flat-ish base, its faces tinted buff, grey or orange-brown. */
-function rockGeometry(random) {
-  const geo = new THREE.IcosahedronGeometry(0.5, 1);
+/** A smooth value-noise-ish wobble of a direction, 0..1: a few sines of the unit vector, so two vertices at one place always agree. */
+const lump = (x, y, z, k) => 0.5 + 0.25 * Math.sin(x * 3.1 * k + y * 1.7 + z * 2.3) + 0.15 * Math.sin(y * 5.3 * k - x * 2.9 + z * 4.1) + 0.1 * Math.sin(z * 8.7 * k + x * 6.3 - y * 3.7);
+
+/**
+ * A rock: a closed, welded icosphere (its vertices shared, so no cracks) pushed about by a smooth lump, a few flat faces cut into it where a
+ * quarried stone has split, its underside flattened, smooth normals and a tint that drifts across it. About 1 m across, base near y = 0.
+ */
+export function rockGeometry(random) {
+  let geo = new THREE.IcosahedronGeometry(0.5, 3);
+  geo.deleteAttribute('normal');
+  geo.deleteAttribute('uv');
+  geo = mergeVertices(geo, 1e-4);
   const p = geo.attributes.position;
+  const seed = random() * 20;
+  const planes = [];
+  for (let i = 0; i < 3 + Math.floor(random() * 3); i++) {
+    const t = random() * TAU;
+    const u = random() * 2 - 1;
+    const r = Math.sqrt(1 - u * u);
+    planes.push({ n: [r * Math.cos(t), u * 0.8, r * Math.sin(t)], d: 0.27 + random() * 0.1 });
+  }
+  const tint = [[0.46, 0.43, 0.38], [0.38, 0.37, 0.36], [0.52, 0.41, 0.3], [0.54, 0.51, 0.44]][Math.floor(random() * 4)];
+  const squash = 0.7 + random() * 0.3;
   const colors = new Float32Array(p.count * 3);
-  const tint = [[0.42, 0.39, 0.34], [0.34, 0.33, 0.32], [0.5, 0.38, 0.26], [0.5, 0.47, 0.4]][Math.floor(random() * 4)];
-  for (let i = 0; i < p.count; i += 3) {
-    const j = 0.8 + random() * 0.4;
-    const v = 0.9 + random() * 0.2;
-    for (let k = i; k < i + 3; k++) {
-      const jitter = 0.84 + ((((Math.sin(p.getX(k) * 12.9 + p.getY(k) * 78.2 + p.getZ(k) * 37.7) * 43758.5453) % 1) + 1) % 1) * 0.3;
-      p.setXYZ(k, p.getX(k) * jitter * j, Math.max(p.getY(k) * jitter, -0.18), p.getZ(k) * jitter * j);
-      colors.set([tint[0] * v, tint[1] * v, tint[2] * v], k * 3);
+  for (let i = 0; i < p.count; i++) {
+    const nx = p.getX(i) * 2;
+    const ny = p.getY(i) * 2;
+    const nz = p.getZ(i) * 2;
+    const k = 0.78 + 0.5 * lump(nx + seed, ny, nz - seed, 1);
+    let x = nx * 0.5 * k;
+    let y = ny * 0.5 * k * squash;
+    let z = nz * 0.5 * k;
+    for (const { n, d } of planes) {
+      const over = x * n[0] + y * n[1] + z * n[2] - d;
+      if (over > 0) {
+        x -= n[0] * over;
+        y -= n[1] * over;
+        z -= n[2] * over;
+      }
     }
+    y = Math.max(y, -0.2);
+    p.setXYZ(i, x, y + 0.2, z);
+    const v = 0.88 + 0.24 * lump(x * 2.3 + seed, y * 2.3, z * 2.3, 2.2);
+    colors.set([tint[0] * v, tint[1] * v, tint[2] * v], i * 3);
   }
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   geo.computeVertexNormals();
@@ -221,25 +251,34 @@ function rockGeometry(random) {
 /** Boulders and flints fallen to the foot of the walls and strewn down the chutes, and a few big ones on the floor you ride round. */
 function buildBoulders(c, quarry, plants, site) {
   const { heights, random, fixedBox } = c;
-  const material = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+  const material = new THREE.MeshLambertMaterial({ vertexColors: true });
+  // A stone sits in the ground, not on it: its middle at the ground's height, lower again on a slope, so the scree comes up round it.
+  const sunk = (x, z, h) => {
+    const y = heights.heightAt(x, z);
+    const lean = Math.max(Math.abs(heights.heightAt(x + h, z) - y), Math.abs(heights.heightAt(x, z + h) - y));
+    return y - h * 0.12 - Math.min(lean, h * 0.5) * 0.6;
+  };
+  const SHAPES = 4;
   const stones = [];
   for (const [x, z, size] of plants.boulders) {
-    stones.push(matrixAt(x, heights.heightAt(x, z) + size * 0.1, z, random() * TAU, size * (1.1 + random() * 0.5), size * (0.6 + random() * 0.5), size * (1 + random() * 0.4)));
+    const h = size * (0.6 + random() * 0.5);
+    stones.push(matrixAt(x, sunk(x, z, h), z, random() * TAU, size * (1.1 + random() * 0.5), h, size * (1 + random() * 0.4)));
   }
-  for (let i = 0; i < 3; i++) {
-    const geo = rockGeometry(random);
-    const mine = stones.filter((_, k) => k % 3 === i);
-    site.add(tiledInstances(geo, material, mine, { castShadow: true, name: 'quarryStones' }));
+  for (let i = 0; i < SHAPES; i++) {
+    const mine = stones.filter((_, k) => k % SHAPES === i);
+    if (mine.length) site.add(tiledInstances(rockGeometry(random), material, mine, { castShadow: true, name: 'quarryStones' }));
   }
-  const bigGeo = rockGeometry(random);
-  const bigs = plants.big.map(([x, z, size]) => {
+  const bigShapes = Array.from({ length: 3 }, () => []);
+  plants.big.forEach(([x, z, size], k) => {
     const s = size * 1.7;
-    const y = heights.heightAt(x, z);
     const yaw = random() * TAU;
-    fixedBox(x, y + s * 0.2, z, s * 0.4, s * 0.25, s * 0.4, yaw);
-    return matrixAt(x, y + s * 0.05, z, yaw, s * 1.15, s * 0.8, s);
+    const y = sunk(x, z, s * 0.8);
+    fixedBox(x, y + s * 0.3, z, s * 0.4, s * 0.25, s * 0.4, yaw);
+    bigShapes[k % 3].push(matrixAt(x, y, z, yaw, s * 1.15, s * 0.8, s));
   });
-  site.add(tiledInstances(bigGeo, material, bigs, { tileSize: MODEL_TILE, castShadow: true, name: 'quarryBoulders' }));
+  for (const mine of bigShapes) {
+    if (mine.length) site.add(tiledInstances(rockGeometry(random), material, mine, { tileSize: MODEL_TILE, castShadow: true, name: 'quarryBoulders' }));
+  }
 }
 
 /** Everything standing in and round the pit that isn't a plant or a stone: the fence, the container, the excavator, the plant, the drums and the dead trees. */
