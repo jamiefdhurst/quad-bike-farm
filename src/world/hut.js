@@ -40,9 +40,10 @@ export const HUT_PARAM_RANGES = {
 
 /** What is where in the hut's own frame, in metres (x right facing the door, z towards the door end). The build and the girls both read this. */
 export const HUT_INSIDE = {
-  stove: { x: 0.62, z: 1.3 },
+  stove: { x: 0.62, z: 1.3 }, // its door faces -z, into the hut, towards the bunk
+  flueBack: 0.15, // the stovepipe stands this far behind the stove's middle (+z), clear of the kettle on the hob
   kettle: { x: 0.62, z: 1.3, rise: 0.74 }, // on the hob, above the floor
-  shelf: { x: -1.05, z: 0.35, rise: 1.35 },
+  shelf: { x: -1.05, z: -0.55, rise: 1.35 }, // on the -x wall between the window (z 0.2 to 0.7) and the bunk
   bunk: { z0: -2, z1: -1, rise: 0.42 }, // across the back end, its top this far above the floor
   seats: [{ x: -0.45, z: -1.2 }, { x: 0.38, z: -1.2 }], // on the bunk's front edge, two girls side by side
   stepTop: 0.28, // the step at the door: its top above the ground
@@ -78,7 +79,7 @@ export function hutShape(layout) {
   };
   const levelK = (x, z) => 1 - smoothstep(h.level, h.level + h.fade, levelDistance(x, z));
   const near = (x, z, margin = h.clear) => Math.hypot(x - h.x, z - h.z) < margin;
-  const chimney = toWorld(HUT_INSIDE.stove.x, HUT_INSIDE.stove.z);
+  const chimney = toWorld(HUT_INSIDE.stove.x, HUT_INSIDE.stove.z + HUT_INSIDE.flueBack);
   const at = (p) => toWorld(p.x, p.z);
   return {
     ...h,
