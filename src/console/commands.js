@@ -301,7 +301,7 @@ export function buildCommands(host) {
       name: 'reset',
       group: 'Moving',
       usage: 'reset <thing | vehicles | girls | all>',
-      help: 'back to where it started: a vehicle to its spot (on its wheels), a girl to the barn, you to the start',
+      help: 'back to where it started: a vehicle to its spot (on its wheels), a girl called back to the barn doors as the bell does (off whatever she is on, out of what she is doing), you to the start',
       examples: ['reset red', 'reset vehicles', 'reset all'],
       complete: (ctx, tokens) => (tokens.length === 0 ? ['vehicles', 'girls', 'all', ...thingOptions()] : []),
       run: ([what]) => {

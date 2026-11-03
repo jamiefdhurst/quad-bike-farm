@@ -146,6 +146,11 @@ export function createHost(g, { copy = () => {} } = {}) {
         const s = g.world.spawn.player;
         return host.put('me', { x: s.x, z: s.z, heading: norm((s.yaw + Math.PI) * DEG) });
       }
+      const c = girlOf(thing);
+      if (c) {
+        g.recallGirl(c); // not just moved: a girl mid-drive or sat on a quad is still busy where she lands (the bell does this for both)
+        return `${c.name} is called back to the barn`;
+      }
       return host.put(thing, home[thing]);
     },
 

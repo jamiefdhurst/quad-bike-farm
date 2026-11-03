@@ -9437,14 +9437,26 @@ export class Game {
     return { point: new THREE.Vector3(x, this.world.heightAt(x, b.z + (i === 0 ? -side : side)), b.z + (i === 0 ? -side : side)), facing: Math.PI / 2 };
   }
 
-  /** Stop whatever they're doing and gather by the barn doors. */
-  recallGirls() {
+  /** Ends the shared things the girls can be part of (a race, a climb, the cones, a convoy), so nobody is left waiting on them. */
+  standActivities() {
     this.race.stand();
     this.drag.stand();
     this.hillClimb.stand();
     this.pitClimb?.stand();
     this.coneCourse.stand();
     this.convoy.stand();
+  }
+
+  /** One girl, called back as the bell does for both (the console's `reset amy`): off whatever she is on, out of what she is doing, to the barn doors. */
+  recallGirl(c) {
+    this.standActivities();
+    const spot = this.recallSpot(this.companions.indexOf(c));
+    c.recall(spot.point, spot.facing);
+  }
+
+  /** Stop whatever they're doing and gather by the barn doors. */
+  recallGirls() {
+    this.standActivities();
     this.recalling = { left: 120, spots: this.companions.map((c, i) => this.recallSpot(i)), said: false };
     this.hud.toast('Girls: stop what you are doing and come to the barn');
   }
