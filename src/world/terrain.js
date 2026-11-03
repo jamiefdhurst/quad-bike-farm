@@ -99,7 +99,10 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   const tarmacTex = new THREE.DataTexture(mask.data, mask.n, mask.n, THREE.RedFormat);
   tarmacTex.magFilter = tarmacTex.minFilter = THREE.LinearFilter;
   tarmacTex.needsUpdate = true;
+  const qr = fields.quarry?.rect;
+  const quarryRect = new THREE.Vector4(...(qr ? [qr.minX, qr.minZ, qr.maxX, qr.maxZ] : [1e6, 1e6, 1e6 + 1, 1e6 + 1])); // the pit's field, for its gravel grain
   addDetailLayer(mat, detailTex, 0.45, {
+    quarryRect,
     frost,
     snow,
     roadWet,
@@ -143,12 +146,13 @@ function gridHeight(grid, n, step, half, x, z) {
 }
 
 /** Multiplies a tiling greyscale texture over the diffuse colour in world space, and lays the worn ground and the road's mud over it. */
-function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow, roadWet, skyTint, tarmac, hayPatch }) {
+function addDetailLayer(material, detailTex, scale, { quarryRect, wear, roadMud, frost, snow, roadWet, skyTint, tarmac, hayPatch }) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.detailMap = { value: detailTex };
     shader.uniforms.wearMap = { value: wear.map };
     shader.uniforms.wearOrigin = { value: wear.origin };
     shader.uniforms.wearSize = { value: wear.size };
+    shader.uniforms.quarryRect = { value: quarryRect };
     shader.uniforms.uFrost = frost;
     shader.uniforms.uSnow = snow;
     shader.uniforms.uRoadWet = roadWet;
@@ -166,16 +170,27 @@ function addDetailLayer(material, detailTex, scale, { wear, roadMud, frost, snow
     shader.uniforms.roadMudOrigin = { value: roadMud.origin };
     shader.uniforms.roadMudSize = { value: roadMud.size };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vWorldXZ;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;');
+      .replace('#include <common>', '#include <common>\nvarying vec2 vWorldXZ;\nvarying float vWorldY;\nvarying vec3 vWorldN;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;\nvWorldY = (modelMatrix * vec4(transformed, 1.0)).y;\nvWorldN = normalize(mat3(modelMatrix) * objectNormal);');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform vec2 wearOrigin;\nuniform vec2 wearSize;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nuniform float uRoadWet;\nuniform vec3 uSkyTint;\nuniform sampler2D hayMap;\nuniform vec2 hayOrigin;\nuniform vec2 haySize;\nuniform sampler2D hayTrackMap;\nuniform vec2 hayTrackOrigin;\nuniform vec2 hayTrackSize;\nuniform sampler2D tarmacMap;\nuniform vec2 tarmacOrigin;\nuniform vec2 tarmacSize;\nvarying vec2 vWorldXZ;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform vec2 wearOrigin;\nuniform vec2 wearSize;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nuniform float uRoadWet;\nuniform vec3 uSkyTint;\nuniform sampler2D hayMap;\nuniform vec2 hayOrigin;\nuniform vec2 haySize;\nuniform sampler2D hayTrackMap;\nuniform vec2 hayTrackOrigin;\nuniform vec2 hayTrackSize;\nuniform sampler2D tarmacMap;\nuniform vec2 tarmacOrigin;\nuniform vec2 tarmacSize;\nuniform vec4 quarryRect;\nvarying vec2 vWorldXZ;\nvarying float vWorldY;\nvarying vec3 vWorldN;')
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
         float detail = texture2D(detailMap, vWorldXZ * ${scale.toFixed(3)}).r;
         float detail2 = texture2D(detailMap, vWorldXZ * ${(scale * 0.13).toFixed(3)}).r;
         diffuseColor.rgb *= mix(0.72, 1.28, detail) * mix(0.85, 1.15, detail2);
+        // The pit's gravel: the painted ground is about ten pixels a metre, so the walls would show their texels. Fine grit goes over it from the
+        // detail map in all three planes (weighted by the face's lean), so a steep wall is as sharp as the floor and nothing stretches.
+        float pitIn = step(quarryRect.x, vWorldXZ.x) * step(vWorldXZ.x, quarryRect.z) * step(quarryRect.y, vWorldXZ.y) * step(vWorldXZ.y, quarryRect.w);
+        if (pitIn > 0.0) {
+          vec3 tw = pow(abs(vWorldN), vec3(4.0));
+          tw /= tw.x + tw.y + tw.z;
+          vec3 wp = vec3(vWorldXZ.x, vWorldY, vWorldXZ.y);
+          float gritA = texture2D(detailMap, wp.zy * 2.6).r * tw.x + texture2D(detailMap, wp.xz * 2.6).r * tw.y + texture2D(detailMap, wp.xy * 2.6).r * tw.z;
+          float gritB = texture2D(detailMap, wp.zy * 7.3 + 0.31).r * tw.x + texture2D(detailMap, wp.xz * 7.3 + 0.31).r * tw.y + texture2D(detailMap, wp.xy * 7.3 + 0.31).r * tw.z;
+          diffuseColor.rgb *= mix(0.55, 1.45, gritA * 0.5 + gritB * 0.5);
+        }
         // The hay meadow (hayMask.js): long green grass, pale stubble in swaths once cut, a darker tan once baled, one surface with the field round it.
         // The picture is read through a wobble and a noise threshold, so the edge and the cut cells' borders are ragged, never a straight line.
         vec2 hayWarp = (vec2(texture2D(detailMap, vWorldXZ * 0.31).r, texture2D(detailMap, vWorldXZ * 0.27 + 0.37).r) - 0.5) * 2.2;

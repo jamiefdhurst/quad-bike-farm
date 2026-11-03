@@ -498,9 +498,9 @@ function paintQuarry(ctx, toPx, s, quarry, random) {
     }
   }
   const STRATA = [[201, 184, 138], [186, 140, 84], [158, 152, 138], [216, 207, 178], [174, 150, 104]];
-  const step = 0.3;
+  const step = 0.18; // about two pixels at the ground texture's ten a metre, so the grit is finer than the texel and no block shows
   // Cells a little bigger than their spacing and knocked off the grid, so the ground reads as grit and not as squares.
-  const grit = (x, z, color) => cell(x + (random() - 0.5) * step, z + (random() - 0.5) * step, step * 1.6, step * 1.6, color);
+  const grit = (x, z, color) => cell(x + (random() - 0.5) * step, z + (random() - 0.5) * step, step * 1.7, step * 1.7, color);
   for (let x = pit.x - quarry.reachMax - 3; x < pit.x + quarry.reachMax + 3; x += step) {
     for (let z = pit.z - quarry.reachMax - 3; z < pit.z + quarry.reachMax + 3; z += step) {
       const { a, s: dist } = quarry.polar(x, z);
