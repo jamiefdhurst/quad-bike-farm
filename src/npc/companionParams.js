@@ -74,6 +74,7 @@ export const DEFAULT_COMPANION_PARAMS = {
 
   // Doing things on her own when left standing about
   ownMind: true,
+  settleSeconds: 60, // seconds a girl told to stop (console: reset amy) stands about without starting anything of her own
   boredAfterMin: 30, // seconds standing about before she does something: her usual wait is the middle of these...
   boredAfterMax: 90,
   boredSpread: 0.55, // ...spread widely either side of it (log scale: 0.55 puts two in three waits within 0.6 to 1.7 times it)
@@ -439,6 +440,7 @@ export const COMPANION_PARAM_RANGES = {
   chooseWhim: [0, 2, 0.05],
   chooseMin: [0, 2, 0.01],
   thinkEvery: [0.2, 10, 0.1],
+  settleSeconds: [5, 300, 5],
   needColdRise: [0, 0.2, 0.001],
   needWetRise: [0, 0.2, 0.001],
   needWarmFall: [0, 0.5, 0.005],

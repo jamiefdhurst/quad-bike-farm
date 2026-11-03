@@ -9447,11 +9447,10 @@ export class Game {
     this.convoy.stand();
   }
 
-  /** One girl, called back as the bell does for both (the console's `reset amy`): off whatever she is on, out of what she is doing, to the barn doors. */
-  recallGirl(c) {
+  /** One girl told to stop (the console's `reset amy`): off whatever she is on, out of what she is doing, stood about for a minute ready for the next thing. */
+  settleGirl(c) {
     this.standActivities();
-    const spot = this.recallSpot(this.companions.indexOf(c));
-    c.recall(spot.point, spot.facing);
+    c.settle();
   }
 
   /** Stop whatever they're doing and gather by the barn doors. */

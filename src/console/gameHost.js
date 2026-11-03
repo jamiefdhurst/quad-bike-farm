@@ -148,8 +148,8 @@ export function createHost(g, { copy = () => {} } = {}) {
       }
       const c = girlOf(thing);
       if (c) {
-        g.recallGirl(c); // not just moved: a girl mid-drive or sat on a quad is still busy where she lands (the bell does this for both)
-        return `${c.name} is called back to the barn`;
+        g.settleGirl(c); // not just moved: a girl mid-drive or sat on a quad is still busy where she lands
+        return `${c.name} stops and stands about (${Math.round(c.params.settleSeconds)} s) ready for the next thing`;
       }
       return host.put(thing, home[thing]);
     },
