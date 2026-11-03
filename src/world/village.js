@@ -3,6 +3,7 @@
 
 const rect = (x, z, hx, hz) => ({ minX: x - hx, maxX: x + hx, minZ: z - hz, maxZ: z + hz });
 const inRect = (r, x, z, margin = 0) => x > r.minX - margin && x < r.maxX + margin && z > r.minZ - margin && z < r.maxZ + margin;
+export const OAK_CROWN = 5.2; // m a crown spreads from its trunk, a unit of scale (the oak in villageProps.js)
 const outside = (r, x, z) => Math.hypot(Math.max(r.minX - x, 0, x - r.maxX), Math.max(r.minZ - z, 0, z - r.maxZ));
 const smooth = (t) => t * t * (3 - 2 * t);
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -106,6 +107,15 @@ function buildShape(layout) {
     return { d: best.d, s: best.i, side: Math.sign((x - r.x) * -r.tz + (z - r.z) * r.tx) || 1, at: r };
   }
 
+  /**
+   * How deep a cottage's back garden can run (m, up to 6): its hedge stands a metre inside the village's wall at the most, so it never goes out
+   * over the brook beyond.
+   */
+  const gardenDepth = (b) => {
+    const room = b.yaw === 0 ? b.z - b.halfZ - a.minZ : a.maxZ - (b.z + b.halfZ);
+    return Math.max(0, Math.min(6, room - 1));
+  };
+
   /** On a building or within `margin` of one (the trees keep off, a girl won't be put there). */
   const builtAt = (x, z, margin = 0) => footprints.some((r) => inRect(r, x, z, margin));
   /** Under a roof: out of the rain. */
@@ -186,6 +196,7 @@ function buildShape(layout) {
     pubStop: { ...v.pub.stop },
     roadAt,
     builtAt,
+    gardenDepth,
     covered,
     nearVillage,
     floorAt,

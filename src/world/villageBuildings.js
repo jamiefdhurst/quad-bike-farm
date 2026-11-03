@@ -78,7 +78,7 @@ export function buildCottage(ctx, b, index) {
   }
   win(0, 3.45, front, 1, 1.05, { shutters: shut });
   win(0, 3.45, back, -1, 1.05);
-  doorAt(f, m, { x: 0, wallZ: front, face: 1, colour: b.door, number: 3 + index * 2 });
+  doorAt(f, m, { x: 0, wallZ: front, face: 1, colour: b.door, number: 3 + index * 2, fanlight: index % 2 === 1 }); // a porch stands over the others
   if (index % 2 === 0) porch(f, m, { x: 0, wallZ: front, face: 1, roofMat: roof });
   // The side walls: a window each, and an outside tap and a water butt on the one.
   for (const sx of [-1, 1]) {
@@ -92,19 +92,23 @@ export function buildCottage(ctx, b, index) {
     for (let k = 0; k < 4; k++) f.add(new THREE.IcosahedronGeometry(0.1, 0), M.blooms[(k + index) % 4], sx * 1.05 + (k - 1.5) * 0.07, 0.4 + (k % 2) * 0.05, front + 0.55 + ((k % 3) - 1) * 0.06);
   }
   if (index % 2) bicycle(ctx, f, 1.7, front + 0.18);
-  // A hedge down each side and across the back, for a garden.
+  // A hedge down each side and across the back, for a garden, no deeper than the village's wall leaves room for.
+  const depth = ctx.S.gardenDepth(b);
   for (const sx of [-1, 1]) {
-    f.box(0.8, 1.5, 7, M.hedge, sx * (b.halfX + 0.9), 0.75, back - 2.5, 1);
-    f.solid(sx * (b.halfX + 0.9), 0.75, back - 2.5, 0.4, 0.75, 3.5);
+    f.box(0.8, 1.5, depth + 1, M.hedge, sx * (b.halfX + 0.9), 0.75, back - (depth - 1) / 2, 1);
+    f.solid(sx * (b.halfX + 0.9), 0.75, back - (depth - 1) / 2, 0.4, 0.75, (depth + 1) / 2);
   }
-  f.box(b.halfX * 2 + 2.6, 1.5, 0.8, M.hedge, 0, 0.75, back - 6, 1);
-  f.solid(0, 0.75, back - 6, b.halfX + 1.3, 0.75, 0.4);
-  // A shed and a washing line out the back.
-  const shed = f.box(2.2, 2.0, 1.7, M.weathered, b.halfX - 1.4, 1.0, back - 3.6, 1);
-  shed.rotation.y = 0;
-  const roofShed = f.box(2.5, 0.07, 2.0, M.lead, b.halfX - 1.4, 2.05, back - 3.6, 1);
-  roofShed.rotation.x = 0.07;
-  f.solid(b.halfX - 1.4, 1, back - 3.6, 1.1, 1, 0.85);
+  // The back hedge is a touch taller and wider than the sides, so their tops and ends never share a plane.
+  f.box(b.halfX * 2 + 2.8, 1.62, 0.8, M.hedge, 0, 0.81, back - depth, 1);
+  f.solid(0, 0.75, back - depth, b.halfX + 1.4, 0.75, 0.4);
+  // A shed and a washing line out the back, where the garden is deep enough.
+  if (depth >= 4) {
+    const shedZ = back - depth * 0.6;
+    f.box(2.2, 2.0, 1.7, M.weathered, b.halfX - 1.4, 1.0, shedZ, 1);
+    const roofShed = f.box(2.5, 0.07, 2.0, M.lead, b.halfX - 1.4, 2.05, shedZ, 1);
+    roofShed.rotation.x = 0.07;
+    f.solid(b.halfX - 1.4, 1, shedZ, 1.1, 1, 0.85);
+  }
   return f;
 }
 
@@ -412,10 +416,13 @@ export function buildShop(ctx, b) {
   signBoard(ctx, f, fasciaTexture(random, { text: b.name.toUpperCase(), sub: b.sub, bg: '#2a4a36', fg: '#f0e6b8', font: 'bold 84px Georgia, serif', width: 1536, height: 192 }), 10.4, 0.8, 0, 3.4, halfZ, 1, 0.4);
   for (const sx of [-1, 1]) f.box(0.1, 2.25, t + 0.06, M.paint, doorX + sx * (doorHalf + 0.05), 1.12, halfZ - t / 2, 0.6); // the door frame, jambs and head
   f.box(doorHalf * 2 + 0.2, 0.1, t + 0.06, M.paint, doorX, 2.2, halfZ - t / 2, 0.6);
-  const leaf = f.box(0.05, 2.1, 0.95, M.doors['#2d4a3a'], doorX + 0.55, 1.05, halfZ + 0.4, 0.6); // the door, stood open against the wall
-  leaf.rotation.y = 0;
   f.box(1.3, 0.1, 0.1, M.stone, doorX, 2.25, halfZ, 1); // lintel
-  f.box(1.5, 0.16, 0.6, M.stone, doorX, 0.08, halfZ + 0.3, 1); // the step
+  // The step is deep enough to stand the open door on, which hangs from the right jamb swung out to 75 degrees, clear of the step and the doorway.
+  f.box(1.9, 0.15, 1.0, M.stone, doorX + 0.2, 0.075, halfZ + 0.5, 1);
+  const swing = (75 * Math.PI) / 180;
+  const hinge = { x: doorX + doorHalf - 0.03, z: halfZ + 0.04 };
+  const leaf = f.box(0.95, 2.0, 0.05, M.doors['#2d4a3a'], hinge.x - Math.cos(swing) * 0.475, 1.17, hinge.z + Math.sin(swing) * 0.475, 0.95);
+  leaf.rotation.y = Math.PI + swing;
   // First floor windows (the flat above), a dormer each side, chimneys.
   for (const x of [-3.6, 0, 3.6]) windowAt(f, m, { x, y: 4.5, w: 0.95, h: 1.05, wallZ: halfZ, face: 1, shutters: M.paintDark, lintel: 'brick' });
   for (const x of [-3, 3]) windowAt(f, m, { x, y: 4.5, w: 0.95, h: 1.05, wallZ: -halfZ, face: -1, lintel: 'brick' });
@@ -425,11 +432,11 @@ export function buildShop(ctx, b) {
     windowAt(sf, m, { x: 0, y: 1.6, w: 1.0, h: 1.2, wallZ: 0, face: 1, lintel: 'brick' });
     windowAt(sf, m, { x: 0, y: 4.5, w: 1.0, h: 1.05, wallZ: 0, face: 1, lintel: 'brick' });
   }
-  // A striped awning over the bow window and out to the door.
-  const awnMat = new THREE.MeshStandardMaterial({ map: awningTexture(), roughness: 0.9, side: THREE.DoubleSide, transparent: true, alphaTest: 0.1 });
-  const awn = f.add(new THREE.PlaneGeometry(8.4, 1.1), awnMat, -0.9, 2.6, halfZ + 0.62);
+  // A striped awning over the door only (the bow window has its own lead hood), clear of the fascia board above it.
+  const awnMat = new THREE.MeshStandardMaterial({ map: awningTexture(), roughness: 0.9, side: THREE.DoubleSide, alphaTest: 0.1 });
+  const awn = f.add(new THREE.PlaneGeometry(2.6, 1.1), awnMat, doorX, 2.6, halfZ + 0.52);
   awn.rotation.x = -Math.PI / 2 + 0.38;
-  for (const x of [-5.1, 3.3]) f.box(0.04, 0.04, 1.2, M.iron, x, 2.65, halfZ + 0.6, 0.6).rotation.x = 0.38;
+  for (const sx of [-1, 1]) f.box(0.04, 0.04, 1.2, M.iron, doorX + sx * 1.2, 2.62, halfZ + 0.55, 0.6).rotation.x = 0.38;
   // Inside: a counter along the right, shelves on the back and left walls, a freezer, a paper rack, lights. The sweets jar and the pasty warmer
   // on the counter are what you buy from (proxies, ctx.shopProxies).
   const stock = shopInteriorTexture(random, true);

@@ -59,6 +59,8 @@ export const LAYOUT = {
       { id: 's3', x: 143, z: 199.2, yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'stone', door: '#6b2f4a' },
     ],
     green: { x: 146, z: 176, r: 4.5 }, // the little green between the pub and the shop: an oak, a bench, the village sign
+    // The village's oaks (the green's, and two in the gaps behind the houses): each keeps its crown (about 5.2 m a unit of `scale`) off every building.
+    trees: [{ x: 146, z: 174.5, scale: 0.8 }, { x: 181, z: 168.5, scale: 0.5 }, { x: 122.5, z: 167, scale: 0.6 }],
     sign: { x: 197.2, z: 172.4 }, // "Nether Thornby", just inside the turning
     phone: { x: 131.5, z: 197.4 },
     busStop: { x: 120.5, z: 198.6 },
