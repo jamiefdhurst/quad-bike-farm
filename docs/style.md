@@ -17,6 +17,7 @@ The style every model, texture, light and screen is built to, so the farm, the v
 
 - **Muted, natural colour.** Grass greens and hedgerow browns, stone and brick, weathered timber, the machines' faded reds, greens and blues. Bright colour is for what is bright in real life: a new quad's plastics, hi-vis, signs, the girls' clothes.
 - **Soft British daylight.** Mostly a bright overcast or broken cloud, the sun low in the south-west in the afternoon, shadows soft. Dusk is long and gold to blue; night is properly dark and lit only by real lights.
+- **Cones say what they mark.** Green with START painted on the band begins a run, blue with FINISH ends one, plain orange is any other cone (Amy's course). The word is painted as well as the colour, for anyone who can't tell green from orange, and the map marks starts and finishes the same colours with an S and an F.
 - **Everything is lit by the world.** Nothing glows unless it gives light (`looks.md`).
 
 ## Screens
