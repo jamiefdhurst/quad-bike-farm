@@ -37,6 +37,14 @@ function makeWorld() {
     vehicleVerb: (id, verb) => `${id}: ${verb}`,
     girlVerbs: () => [{ verb: 'drive', label: '% drives', vehicle: true }, { verb: 'ramp', label: '% jumps' }],
     girlVerb: (id, verb, v) => (state.last = [id, verb, v]),
+    jobs: () => [
+      { id: 'hay', name: 'Make hay', stage: 'cut 0 of 12', verbs: [{ verb: 'cut', label: 'Jump the hay job to the cut stage' }, { verb: 'done', label: 'Jump the hay job to the done stage' }] },
+      { id: 'muck', name: 'Muck out', stage: '0% in the tub', verbs: [{ verb: 'fill', label: 'Fill the trailer with muck' }] },
+    ],
+    jobVerb: (id, verb) => {
+      (state.jobsDone ??= []).push(`${id} ${verb}`);
+      return verb === 'fill' ? 'The tub is full' : undefined;
+    },
     weatherKinds: () => ['sunny', 'rain'],
     weatherNow: () => 'sunny',
     setWeather: (k) => `now ${k}`,
@@ -211,6 +219,32 @@ describe('verbs and girls', () => {
     const { shell } = makeWorld();
     expect(text(shell.run('autonomy off'))).toBe('girls.autonomy = on');
     expect(text(shell.run('autonomy sideways'))).toMatch(/not on or off/);
+  });
+});
+
+describe('the farm\'s jobs', () => {
+  it('lists every job with its stage and what can be done to it', () => {
+    const { shell } = makeWorld();
+    const out = text(shell.run('job'));
+    expect(out).toMatch(/hay\s+cut 0 of 12\s+\[cut done\]/);
+    expect(out).toMatch(/muck/);
+  });
+  it('lists one job\'s actions, runs one, and says what the game said or what it did', () => {
+    const { shell, state } = makeWorld();
+    expect(text(shell.run('job hay'))).toMatch(/cut\s+Jump the hay job to the cut stage/);
+    expect(text(shell.run('job hay cut'))).toBe('hay: Jump the hay job to the cut stage');
+    expect(text(shell.run('job muck fill'))).toBe('The tub is full');
+    expect(state.jobsDone).toEqual(['hay cut', 'muck fill']);
+  });
+  it('refuses a job or action that does not exist, naming the ones that do', () => {
+    const { shell } = makeWorld();
+    expect(text(shell.run('job sheep'))).toMatch(/no job "sheep".*hay, muck/);
+    expect(text(shell.run('job hay mow'))).toMatch(/no "mow".*cut, done/);
+  });
+  it('completes job names, then actions', () => {
+    const { shell } = makeWorld();
+    expect(shell.complete('job ').candidates).toEqual(['hay', 'muck']);
+    expect(shell.complete('job hay ').candidates).toEqual(['cut', 'done']);
   });
 });
 

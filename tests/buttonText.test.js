@@ -26,3 +26,18 @@ describe('the Girls tab buttons', () => {
     expect(long).toEqual([]);
   });
 });
+
+import { readdirSync, readFileSync } from 'node:fs';
+
+describe('button labels in the debug panel', () => {
+  it('never carry a colon before their meaning, as buttonText would cut the label there', () => {
+    const dir = new URL('../src/debug/', import.meta.url);
+    const bad = [];
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.js'))) {
+      for (const m of readFileSync(new URL(file, dir), 'utf8').matchAll(/\bbutton\(\s*\w+\s*,\s*(['"`])((?:(?!\1).)*)\1/g)) {
+        if (m[2].includes(': ')) bad.push(`${file}: ${m[2]}`);
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+});

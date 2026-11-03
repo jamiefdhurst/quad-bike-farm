@@ -6793,6 +6793,13 @@ export class Game {
     }
   }
 
+  /** The debug panel and console: every step of the service on the board is done, clean, and the board ticks it off. */
+  debugFinishService() {
+    const job = this.serviceJob;
+    if (!job) return 'There is no service job on the board';
+    for (const kind of [...job.left]) this.serviceJobNoted({ id: job.id }, kind, false);
+  }
+
   girlBenchFinished(job) {
     const pn = this.girlBench.pending;
     if (!pn || pn.job !== job) return;

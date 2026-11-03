@@ -5,6 +5,7 @@
 import { buttonText } from './buttonText.js';
 import { SEASONS } from '../world/seasons.js';
 import { girlActions } from './girlActions.js';
+import { jobActions } from './jobActions.js';
 import { LOSABLE } from '../items/lostThings.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
@@ -304,49 +305,15 @@ export function buildGirlsTab(d) {
   // The farm's jobs: the board, the muck, the bales and the bonfire.
   const jobs = sub('Jobs: the board, muck, bales and bonfire');
   show(jobs, 'the board', () => g.jobBoard.lines().map((l) => `${l.done ? '[x]' : '[ ]'} ${l.text}`).join('; ') || 'nothing on');
-  show(jobs, 'muck in the tub', () => `${Math.round(g.muck.load * 100)}%, ${g.muck.laid} patches laid on the stubble${g.muck.done ? ', done' : ''}`);
-  button(jobs, 'Fill the trailer with muck', () => g.debugFillMuck());
-  button(jobs, 'Muck job done now', () => g.debugFinishMuck());
-  button(jobs, 'Empty the tub and clear the ground', () => g.debugResetMuck());
-  if (g.hay) {
-    show(jobs, 'the hay', () => `${g.hay.describe()}; ${g.hayLoading.describe()}`);
-    for (const stage of ['cut', 'bale', 'load', 'stack', 'done']) button(jobs, `Jump the hay job to the ${stage} stage`, () => g.debugHayStage(stage));
-    button(jobs, 'Let the cut hay patch grow back', () => g.debugHayRegrow());
-    button(jobs, 'Lift the tracks in the long grass', () => g.debugHayTracksClear());
-    button(jobs, 'Empty the hay stack in the Dutch barn', () => g.debugHayEmptyStack());
+  // One row and its buttons per job, from src/debug/jobActions.js (the console's `job` command uses the same list). The feeding job's
+  // buttons sit with the animals below.
+  for (const job of jobActions(g).jobs) {
+    if (job.id === 'feed') continue;
+    show(jobs, job.name, job.describe);
+    for (const act of job.actions) button(jobs, act.label, () => { const said = act.run(); if (said) toast(said); });
+    if (job.id === 'silage') slider(jobs, 'Bale spike arms (0 down, 1 up)', () => g.baleRig.lift.lift, (v) => (g.baleRig.lift.lift = v), 0, 1, 0.01);
   }
-  if (g.mowGrid) {
-    show(jobs, 'the mowing', () => g.mowGrid.describe(g.farm.day));
-    button(jobs, 'Mow: cut both lawns now', () => g.debugCutLawns());
-    button(jobs, 'Mow: let the lawns grow back', () => g.debugGrowLawns());
-    button(jobs, 'Mow: job done now', () => g.debugFinishMowing());
-  }
-  if (g.spray) {
-    show(jobs, 'the spraying', () => g.spray.describe());
-    for (const [what, label] of [['out', 'Fold the sprayer boom out'], ['in', 'Fold the sprayer boom in'], ['empty', 'Empty the sprayer tank'], ['fill', 'Fill the sprayer tank'], ['half', 'Spray half the field'], ['done', 'Finish the spraying job now'], ['clear', 'Clear the field so it needs spraying again']]) button(jobs, label, () => g.debugSpray(what));
-  }
-  slider(jobs, 'Bale spike arms (0 down, 1 up)', () => g.baleRig.lift.lift, (v) => (g.baleRig.lift.lift = v), 0, 1, 0.01);
-  show(jobs, 'On the spike', () => g.baleRig.held?.id ?? 'nothing');
   button(jobs, 'Put the bale on the spike down', () => g.baleRig.putDown());
-  button(jobs, 'Silage job done now', () => g.debugFinishSilage());
-  button(jobs, 'Put the silage bales back', () => g.debugResetBales());
-  if (g.logStack) {
-    show(jobs, 'The log splitter', () => `${g.splitterFitted ? 'fitted' : 'not fitted'}, ram ${Math.round(g.splitter.ram * 100)}%, ${g.splitter.loaded ? 'a round on the beam' : 'beam empty'}, ${g.logStack.count} of ${g.splitterParams.capacity} logs stacked`);
-    button(jobs, 'Fit the log splitter, or put the bale spike back', () => g.fitSplitter(!g.splitterFitted));
-    button(jobs, 'Finish the log job now', () => g.debugFinishLogs());
-    button(jobs, 'Empty the log stack and deal the rounds back', () => g.debugResetLogs());
-  }
-  show(jobs, 'The bonfire', () => `${g.bonfire.state}, ${g.bonfire.piled} of ${g.bonfireParams.heapsNeeded} on the pile, ${Math.round(g.bonfire.intensity * 100)}% blaze${g.bonfire.damp ? ', smoky' : ''}`);
-  button(jobs, 'Build and light the bonfire', () => g.debugLightFire());
-  button(jobs, 'Put the bonfire out', () => g.bonfire.putOut() || toast('It is not lit'));
-  button(jobs, 'Clear the bonfire, restore brushwood', () => g.debugResetFire());
-  show(jobs, 'The hut stove', () => g.hutHost.describe());
-  button(jobs, 'Light the hut stove, kettle boiled', () => g.hutHost.debugLight());
-  button(jobs, 'Put the hut stove out', () => g.hutHost.debugPutOut());
-  button(jobs, 'Take a photo now', () => g.photos.press() || toast('The camera is not ready'));
-  button(jobs, 'Photo mode on or off (8)', () => g.photos.toggleMode());
-  show(jobs, 'Photo mode', () => (g.photos.modeActive ? `on${g.photos.hudHidden ? ', HUD hidden' : ''}${g.photos.girlsPosing ? ', girls posing' : ''}` : 'off'));
-  button(jobs, 'Take all the photos down', () => g.photos.clear());
 
   // Animals, the fence, the gates and what comes along the lane.
   const out = sub('Animals, gates and the lane');
@@ -395,12 +362,6 @@ export function buildGirlsTab(d) {
   show(out, 'the village down the lane', () => g.villageHost.describe());
   show(out, 'time at the pub with them', () => `${g.pubVisit.stayed.toFixed(0)} s (goodbye after ${g.pubParams.pubStay} s)`);
   for (const [where, label] of [['pub', 'the pub car park'], ['shop', 'the shop'], ['garage', 'the garage pumps'], ['parts', 'the garage parts rack']]) button(out, `Take you to ${label}`, () => g.villageHost.debugGoTo(where) || toast('Get off your vehicle first'));
-  if (g.villageHost.mot) {
-    const mot = g.villageHost.mot;
-    show(out, 'the MOT at Hollis Motors', () => mot.describe());
-    button(out, 'MOT test the Land Rover in the bay (free, at once)', () => mot.debugTest() || toast(mot.why() ?? 'Park a Land Rover in the MOT bay first'));
-    button(out, 'Forget every MOT test', () => mot.debugForget());
-  }
 
   // The farm's memory and the end of the day.
   const mem = sub('The farm that remembers');

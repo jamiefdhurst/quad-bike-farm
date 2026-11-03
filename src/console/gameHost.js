@@ -1,6 +1,7 @@
 // What the console's commands need from the game: where things are, putting them somewhere else, the vehicle verbs, the girls' actions
 // and the weather. Everything calls the same methods the debug panel and the game itself use.
 import { girlActions } from '../debug/girlActions.js';
+import { jobActions } from '../debug/jobActions.js';
 import { fixEverything, startWarm, switchOff } from '../debug/vehicleDebug.js';
 import { WEATHER_KINDS } from '../world/weather.js';
 
@@ -185,6 +186,9 @@ export function createHost(g, { copy = () => {} } = {}) {
     girlVerb(id, verb, vehicleId) {
       girlActions(g).find(id, verb).run(id, vehicleId ? unitOf(vehicleId) : undefined);
     },
+
+    jobs: () => jobActions(g).jobs.map((j) => ({ id: j.id, name: j.name, stage: j.describe(), verbs: j.actions.map((a) => ({ verb: a.verb, label: a.label })) })),
+    jobVerb: (id, verb) => jobActions(g).find(id).actions.find((a) => a.verb === verb).run(),
 
     weatherKinds: () => Object.keys(WEATHER_KINDS),
     weatherNow: () => `${g.weather.name}, ${g.weather.temperature} °C (${g.weather.band}), rain ${round(g.weather.rain, 2)}, ground wetness ${round(g.weather.wet, 2)}, snow cover ${round(g.weather.cover, 2)}`,
