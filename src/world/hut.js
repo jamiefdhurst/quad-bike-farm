@@ -46,7 +46,7 @@ export const HUT_INSIDE = {
   bunk: { z0: -2, z1: -1, rise: 0.42 }, // across the back end, its top this far above the floor
   seats: [{ x: -0.45, z: -1.2 }, { x: 0.38, z: -1.2 }], // on the bunk's front edge, two girls side by side
   stepTop: 0.28, // the step at the door: its top above the ground
-  stepZ: [2, 2.5],
+  stepZ: [2, 2.95], // the step is deep enough to stand a walking capsule on (it is 0.66 m across): a shallower one cannot be climbed
   doorHalf: 0.4,
 };
 

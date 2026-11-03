@@ -4,7 +4,7 @@ import { standing } from './standing.js';
 import { flightVelocity } from './flight.js';
 
 const CAPSULE_HALF_HEIGHT = 0.55;
-const CAPSULE_RADIUS = 0.3;
+export const CAPSULE_RADIUS = 0.3;
 const FEET_TO_CENTRE = CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS;
 const DEG = Math.PI / 180;
 // Springs that settle the camera after jumping off a moving quad.
