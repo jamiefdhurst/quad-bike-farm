@@ -77,9 +77,10 @@ export function wantedBodies() {
 
 export class TrafficView {
   /** `groundAt(x, z)`: the drawn ground. `gltf`: the girls' model, for the visitors. */
-  constructor(scene, groundAt, gltf, prepare = null) {
+  constructor(scene, groundAt, gltf, prepare = null, liftAt = () => 0) {
     this.scene = scene;
     this.groundAt = groundAt;
+    this.liftAt = liftAt; // how far a surface laid on the ground (the lane's tarmac) is above it at x, z
     this.gltf = gltf;
     this.prepare = prepare; // (object) => the object's shaders asked for, so the first sight of it does not build them
     this.stocked = new Set(); // keys already built ahead
@@ -151,7 +152,7 @@ export class TrafficView {
     const fz = Math.cos(d.yaw);
     const front = g(d.x + fx * 1.4, d.z + fz * 1.4);
     const back = g(d.x - fx * 1.4, d.z - fz * 1.4);
-    const y = (front + back) / 2;
+    const y = (front + back) / 2 + this.liftAt(d.x, d.z);
     body.object.position.set(d.x, y - body.spec.offset - (body.spec.layout.spawnSag ?? 0), d.z);
     body.object.rotation.set(-Math.atan2(front - back, 2.8), d.yaw, 0, 'YXZ');
     body.spun += d.speed * dt;

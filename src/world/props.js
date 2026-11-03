@@ -325,6 +325,8 @@ function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swi
   });
 }
 
+export const LANE_TARMAC_LIFT = 0.07; // m the lane's tarmac is laid above the ground, so things standing on it are lifted by this
+
 /**
  * The public lane (layout.publicLane) outside the farm's east hedge: a strip of tarmac laid over the ground in short sections, a worn
  * dashed line down its middle and a grassy verge worn into each side. Nothing on it is solid: the ground under it is the terrain's.
@@ -374,7 +376,7 @@ function buildPublicLane({ scene, layout, heights, fixedBox }) {
     scene.add(m);
   };
   const poly = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
-  ribbon(lane.x, lane.halfWidth, 0.07, new THREE.MeshStandardMaterial({ map: tarmac, color: 0xffffff, roughness: 0.92, ...poly }), false, 1);
+  ribbon(lane.x, lane.halfWidth, LANE_TARMAC_LIFT, new THREE.MeshStandardMaterial({ map: tarmac, color: 0xffffff, roughness: 0.92, ...poly }), false, 1);
   ribbon(lane.x, 0.07, 0.09, new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...poly }), true, 1);
 }
 
