@@ -485,35 +485,41 @@ function boundaryWalls(ctx) {
   }
 }
 
-/** Rows of vertices { x, y, z, u, v } (the same count in each) joined into one sheet, drawn both sides. */
-function sheet(ctx, rows, material) {
-  const pos = [];
-  const uv = [];
-  const idx = [];
+/** Rows of vertices { x, y, z, u, v } (the same count in each) joined into a sheet added to `parts` under its material (drawn both sides). */
+function sheet(parts, rows, material) {
+  const part = parts.get(material) ?? { pos: [], uv: [], idx: [] };
+  parts.set(material, part);
   const w = rows[0].length;
   rows.forEach((row, r) => {
+    const base = part.pos.length / 3;
     for (const v of row) {
-      pos.push(v.x, v.y, v.z);
-      uv.push(v.u, v.v);
+      part.pos.push(v.x, v.y, v.z);
+      part.uv.push(v.u, v.v);
     }
     if (r > 0) {
       for (let c = 0; c < w - 1; c++) {
-        const a = (r - 1) * w + c;
-        const b = r * w + c;
-        idx.push(a, b, a + 1, a + 1, b, b + 1);
+        const a = base - w + c;
+        const b = base + c;
+        part.idx.push(a, b, a + 1, a + 1, b, b + 1);
       }
     }
   });
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-  g.setIndex(idx);
-  g.computeVertexNormals();
-  const m = new THREE.Mesh(g, material);
-  m.receiveShadow = true;
-  m.userData.keep = true;
-  m.frustumCulled = false;
-  ctx.root.add(m);
+}
+
+/** One mesh for each material's sheets, so a whole stretch of road and hedge is three draw calls. */
+function flushSheets(ctx, parts) {
+  for (const [material, part] of parts) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(part.pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(part.uv, 2));
+    g.setIndex(part.idx);
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, material);
+    m.receiveShadow = true;
+    m.userData.keep = true;
+    m.frustumCulled = false;
+    ctx.root.add(m);
+  }
 }
 
 /**
@@ -523,6 +529,7 @@ function sheet(ctx, rows, material) {
 function beyondRoad(ctx) {
   const { S, M, heights } = ctx;
   const pts = S.beyond;
+  const parts = new Map();
   const last = pts.length - 1;
   const hw = S.roadHalfWidth;
   const both = (mat) => {
@@ -536,14 +543,14 @@ function beyondRoad(ctx) {
   const level = (i) => heights.heightAt(pts[i].x, pts[i].z) + ROAD_LIFT + S.beyondRise * smooth(clamp01(i / last));
   const vert = (i, o, y, u, v) => ({ x: pts[i].x - pts[i].tz * o, y, z: pts[i].z + pts[i].tx * o, u, v });
   const rowsOf = (make) => pts.map((_, i) => make(i));
-  sheet(ctx, rowsOf((i) => [-hw, 0, hw].map((o, k) => vert(i, o, level(i), k / 2, i / 4))), tarmac);
+  sheet(parts, rowsOf((i) => [-hw, 0, hw].map((o, k) => vert(i, o, level(i), k / 2, i / 4))), tarmac);
   for (const side of [-1, 1]) {
     const inner = side * (hw + 0.9);
     const outer = side * (hw + 2.3);
-    sheet(ctx, rowsOf((i) => [side * (hw - 0.1), inner].map((o, k) => vert(i, o, level(i) - 0.02, k, i / 2))), verge);
-    sheet(ctx, rowsOf((i) => [level(i) - 0.02, level(i) + BEYOND_HEDGE].map((y, k) => vert(i, inner, y, i / 3, k * 0.5))), hedge);
-    sheet(ctx, rowsOf((i) => [inner, outer].map((o, k) => vert(i, o, level(i) + BEYOND_HEDGE, i / 3, 0.5 + k * 0.25))), hedge);
-    sheet(ctx, rowsOf((i) => {
+    sheet(parts, rowsOf((i) => [side * (hw - 0.1), inner].map((o, k) => vert(i, o, level(i) - 0.02, k, i / 2))), verge);
+    sheet(parts, rowsOf((i) => [level(i) - 0.02, level(i) + BEYOND_HEDGE].map((y, k) => vert(i, inner, y, i / 3, k * 0.5))), hedge);
+    sheet(parts, rowsOf((i) => [inner, outer].map((o, k) => vert(i, o, level(i) + BEYOND_HEDGE, i / 3, 0.5 + k * 0.25))), hedge);
+    sheet(parts, rowsOf((i) => {
       const x = pts[i].x - pts[i].tz * outer;
       const z = pts[i].z + pts[i].tx * outer;
       return [level(i) + BEYOND_HEDGE, heights.heightAt(x, z) - 1.5].map((y, k) => vert(i, outer, y, i / 3, 0.75 + k * 0.25));
@@ -551,7 +558,8 @@ function beyondRoad(ctx) {
   }
   // A hedge across the end, and trees behind it.
   const end = [last, last].map((i, k) => [-1, 1].map((side) => vert(i, side * (hw + 2.3), k ? level(i) + BEYOND_HEDGE : level(i) - 0.02, 0.5 + side * 0.5, k * 0.5)));
-  sheet(ctx, end, hedge);
+  sheet(parts, end, hedge);
+  flushSheets(ctx, parts);
   const tip = pts[last];
   oak(ctx, tip.x + tip.tx * 2.5 - tip.tz * 3, tip.z + tip.tz * 2.5 + tip.tx * 3, 1.1);
   oak(ctx, tip.x + tip.tx * 3 + tip.tz * 3, tip.z + tip.tz * 3 - tip.tx * 3, 0.9);
