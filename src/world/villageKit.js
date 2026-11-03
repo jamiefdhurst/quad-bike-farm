@@ -78,12 +78,12 @@ export function shellAndRoof(f, b, m, { eave = 0.4, verge = 0.28, plinth = 0.5, 
     const lowY = R + thick / 2 - drop - 0.02;
     f.box(len, 0.16, 0.035, m.fascia, 0, lowY - 0.07, side * (over + 0.02), 0.6);
     if (gutters) {
-      const g = f.add(new THREE.CylinderGeometry(0.055, 0.055, len - 0.1, 8, 1, false, 0, Math.PI), m.iron, 0, lowY - 0.07, side * (over + 0.08));
-      g.rotation.z = Math.PI / 2;
-      g.rotation.y = side > 0 ? 0 : Math.PI;
+      // A half-round trough hung from the fascia, open at the top (the half-cylinder's curve faces down), with its ends stopped by the caps.
+      const g = f.add(new THREE.CylinderGeometry(0.07, 0.07, len - 0.1, 10, 1, false, 0, Math.PI), m.gutter ?? m.iron, 0, lowY - 0.01, side * (over + 0.07));
+      g.rotation.z = -Math.PI / 2;
     }
-    // A soffit tucked under it, so the underside of the overhang is closed.
-    f.box(len - 0.1, 0.03, eave + 0.1, m.fascia, 0, wH + 0.01, side * (halfZ + eave / 2), 0.6);
+    // A soffit closing the underside of the overhang: flat at the fascia's lower edge, from the wall out to it (never above the roof's slope).
+    f.box(len - 0.1, 0.03, eave + 0.05, m.fascia, 0, lowY - 0.135, side * (halfZ + (eave + 0.05) / 2 - 0.05), 0.6);
   }
   // The barge boards climbing each gable edge, and the ridge tiles.
   const bargeLen = Math.hypot(over, drop) + 0.05;
@@ -95,13 +95,19 @@ export function shellAndRoof(f, b, m, { eave = 0.4, verge = 0.28, plinth = 0.5, 
   }
   const ridgeCap = f.box(len, 0.16, 0.16, m.ridgeCap ?? m.roof, 0, R + thick + 0.02, 0, 0.6);
   ridgeCap.rotation.x = Math.PI / 4;
-  // Downpipes at the front corners and the back, from the gutter down into the ground.
+  // Downpipes at the front corners and the back: a swan neck from the gutter in to the wall, then straight down into the ground.
   if (gutters) {
+    const reach = over + 0.07 - (halfZ + 0.06); // how far the gutter stands out from the wall
+    const neckDrop = 0.45;
+    const neckLen = Math.hypot(reach, neckDrop);
+    const gutterY = R + thick / 2 - drop - 0.02 - 0.01;
     for (const sx of [-1, 1]) {
       for (const sz of [-1, 1]) {
-        const top = R - drop - 0.1;
-        const h = top + sink;
-        f.add(new THREE.CylinderGeometry(0.035, 0.035, h, 8), m.iron, sx * (halfX - 0.2), (top - sink) / 2 + 0.0, sz * (halfZ + 0.06));
+        const px = sx * (halfX - 0.2);
+        const neck = f.add(new THREE.CylinderGeometry(0.035, 0.035, neckLen, 8), m.iron, px, gutterY - neckDrop / 2, sz * (halfZ + 0.06 + reach / 2));
+        neck.rotation.x = sz * Math.atan2(reach, neckDrop);
+        const top = gutterY - neckDrop;
+        f.add(new THREE.CylinderGeometry(0.035, 0.035, top + sink, 8), m.iron, px, (top - sink) / 2, sz * (halfZ + 0.06));
       }
     }
   }
@@ -178,17 +184,31 @@ export function flowerBox(f, m, x, y, z, w, s = 1) {
   }
 }
 
-/** A three-sided bay window on the front wall: sill-to-eaves, glazed panels with bars, a lead-roofed hood. `base` is its floor's height. */
+/** A flat slab in the plan of a bay: `w` wide at the wall, `front` wide `depth` out, grown `grow` all round, `thick` tall, its foot at y = 0. */
+function bayPlan(w, front, depth, grow, thick) {
+  const pts = [[-(w / 2 + grow), -grow], [w / 2 + grow, -grow], [front / 2 + grow, depth + grow], [-(front / 2 + grow), depth + grow]];
+  const shape = new THREE.Shape();
+  pts.forEach(([px, pz], i) => (i ? shape.lineTo(px, -pz) : shape.moveTo(px, -pz)));
+  shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: thick, bevelEnabled: false });
+  geo.rotateX(-Math.PI / 2); // the plan lies flat, its y becoming -z, and the thickness stands up
+  return geo;
+}
+
+/**
+ * A three-sided bay window on the wall facing `face`: a stone base and a lead hood in the bay's own plan (as wide at the wall as `w`, narrowing to
+ * the front pane), glazed panes with bars, the side panes angled from the wall's ends in to the front pane's. `base` is its floor's height.
+ */
 export function bayWindow(f, m, { x, w = 2.6, depth = 0.7, h = 1.5, base = 0.7, wallZ, face = 1, lit = true, roofMat = null }) {
   const s = face;
-  const side = Math.hypot(depth, w * 0.18);
   const front = w * 0.64;
   const zf = wallZ + s * depth;
-  // The front pane and the angled side panes: each a frame and glass.
+  // Each pane is a frame and glass in its own group, turned to face outwards.
   const pane = (px, pz, pw, ry) => {
     const g = new THREE.Group();
     g.position.set(px, base + h / 2, pz);
     g.rotation.y = ry;
+    g.userData.pane = pw;
     f.group.add(g);
     const box = (bw, bh, bd, mat, bx, by, bz) => {
       const o = new THREE.Mesh(worldBox(bw, bh, bd, 0.6), mat);
@@ -202,34 +222,43 @@ export function bayWindow(f, m, { x, w = 2.6, depth = 0.7, h = 1.5, base = 0.7, 
     for (const sx of [-1, 1]) box(0.08, h + 0.16, 0.08, m.paint, sx * (pw / 2 + 0.01), 0, 0);
     box(pw, 0.05, 0.09, m.paint, 0, 0, 0);
   };
-  pane(x, zf, front, 0);
-  const sideW = Math.hypot(depth, (w - front) / 2);
-  const ang = Math.atan2((w - front) / 2, depth);
-  for (const sx of [-1, 1]) pane(x + sx * (front / 2 + (w - front) / 4), wallZ + s * depth / 2, sideW, sx * s * ang * -1 + (s > 0 ? 0 : Math.PI));
-  // The stone plinth under it and the roof over it.
-  f.box(w + 0.1, base, depth + 0.1, m.stone, x, base / 2, wallZ + s * depth / 2, 1);
-  f.box(w + 0.3, 0.07, depth + 0.3, m.stone, x, base + h + 0.14, wallZ + s * (depth / 2 + 0.05), 1);
-  const roof = f.box(w + 0.4, 0.06, depth + 0.45, roofMat ?? m.lead, x, base + h + 0.25, wallZ + s * (depth / 2 + 0.05), 1);
-  roof.rotation.x = -s * 0.08;
-  void side;
+  pane(x, zf, front, s > 0 ? 0 : Math.PI);
+  // A side pane runs from the wall (x +- w/2) to the front pane's end (x +- front/2): `run` along the wall and `depth` out, facing outwards and along.
+  const run = (w - front) / 2;
+  const sideW = Math.hypot(depth, run);
+  for (const sx of [-1, 1]) pane(x + sx * (front / 2 + run / 2), wallZ + (s * depth) / 2, sideW, Math.atan2(sx * depth, s * run));
+  // The base and the hood over it, in the bay's plan.
+  const slab = (geo, mat, y) => {
+    const o = new THREE.Mesh(geo, mat);
+    o.position.set(x, y, wallZ);
+    o.rotation.y = s > 0 ? 0 : Math.PI;
+    f.group.add(o);
+  };
+  slab(bayPlan(w, front, depth, 0.05, base), m.stone, 0);
+  slab(bayPlan(w, front, depth, 0.14, 0.07), m.stone, base + h + 0.1); // the sill the hood sits on
+  slab(bayPlan(w, front, depth, 0.2, 0.06), roofMat ?? m.lead, base + h + 0.17);
 }
 
-/** A front door in the wall facing `face` at local x: a painted door with panels and brass, a frame, a fanlight over it, a step and a number. */
-export function doorAt(f, m, { x, w = 0.95, h = 2.05, face = 1, wallZ, colour, number = null, doorMat = null, fanlight = true, lamp = true }) {
+/**
+ * A front door in the wall facing `face` at local x: a painted door with panels and brass, a frame, an optional glazed transom over it (three bars
+ * of dark glass, lit after dark), a lintel, a step and a number.
+ */
+export function doorAt(f, m, { x, w = 0.95, h = 2.05, face = 1, wallZ, colour, number = null, doorMat = null, fanlight = false, lamp = true }) {
   const s = face;
-  f.box(w + 0.3, h + 0.2, 0.1, m.paint, x, h / 2 + 0.1, wallZ + s * 0.04, 0.6); // the frame
+  const fanH = fanlight ? 0.3 : 0;
+  const top = h + 0.2 + fanH; // the top of the frame
+  f.box(w + 0.3, top, 0.1, m.paint, x, top / 2, wallZ + s * 0.04, 0.6); // the frame
   const door = f.add(worldBox(w, h, 0.06, w, h), doorMat ?? m.doors[colour], x, h / 2, wallZ + s * 0.08);
   door.userData.door = true;
   f.add(new THREE.SphereGeometry(0.035, 8, 6), m.brass, x + w / 2 - 0.13, 1.0, wallZ + s * 0.14); // the knob
   f.add(new THREE.BoxGeometry(0.1, 0.03, 0.02), m.brass, x, 1.46, wallZ + s * 0.115); // the knocker's plate
   f.add(new THREE.TorusGeometry(0.04, 0.008, 6, 12), m.brass, x, 1.4, wallZ + s * 0.125); // and its ring
   if (fanlight) {
-    const fan = f.add(new THREE.CylinderGeometry(w / 2 + 0.05, w / 2 + 0.05, 0.05, 14, 1, false, 0, Math.PI), m.glow, x, h + 0.2, wallZ + s * 0.05);
-    fan.rotation.x = Math.PI / 2;
-    fan.rotation.z = 0;
-    fan.rotation.y = s > 0 ? Math.PI / 2 * 0 : Math.PI;
+    f.box(w, 0.3, 0.04, m.fanGlass, x, h + 0.06 + 0.15, wallZ + s * 0.075, 0.6);
+    for (const k of [-1, 0, 1]) f.box(0.03, 0.3, 0.05, m.paint, x + (k * w) / 4, h + 0.21, wallZ + s * 0.08, 0.6);
+    f.box(w, 0.05, 0.05, m.paint, x, h + 0.035, wallZ + s * 0.08, 0.6); // the transom rail over the door
   }
-  f.box(w + 0.7, 0.16, 0.14, m.stone, x, h + 0.55 + (fanlight ? 0.12 : -0.28), wallZ + s * 0.07, 1);
+  f.box(w + 0.7, 0.16, 0.14, m.stone, x, top + 0.07, wallZ + s * 0.07, 1); // the lintel
   f.box(w + 0.5, 0.15, 0.55, m.stone, x, 0.075, wallZ + s * 0.3, 1); // the step
   if (number != null) {
     const plate = f.box(0.14, 0.12, 0.02, m.paint, x + w / 2 + 0.38, 1.7, wallZ + s * 0.025, 0.6);
@@ -257,8 +286,8 @@ export function porch(f, m, { x, w = 1.7, depth = 1.3, height = 2.35, wallZ, fac
     const slab = f.box(slopeLen, 0.06, depth + 0.3, roofMat, x + sx * half / 2, height + rise / 2 + 0.02, wallZ + s * (depth / 2 + 0.1), 1);
     slab.rotation.z = -sx * ang;
   }
-  // The gable end in the wall's material above the beam, as a thin triangle.
-  f.add(gableGeometry(w + 0.5, rise, 0.1, 1.5), m.render, x, height, zOuter + s * 0.1, 0).rotation.y = 0;
+  // The gable end in the wall's material above the beam, as a thin triangle facing out (gableGeometry faces along x, so it is turned to face z).
+  f.add(gableGeometry(w + 0.5, rise, 0.1, 1.5), m.wall, x, height, zOuter + s * 0.1, Math.PI / 2);
   f.box(0.04, 0.2, depth + 0.3, m.fascia, x, height + rise + 0.04, wallZ + s * (depth / 2 + 0.1), 0.6);
 }
 

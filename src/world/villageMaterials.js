@@ -28,6 +28,8 @@ export function makeVillageMaterials(random, { doorColours = [], renders = [] } 
     fascia: std(0xe8e5da, { roughness: 0.6 }),
     lead: std(0x6c7176, { roughness: 0.6, metalness: 0.4 }),
     iron: std(0x1f2326, { roughness: 0.5, metalness: 0.6 }),
+    // Gutters are half-round troughs, seen from inside as well as out.
+    gutter: std(0x2b3033, { roughness: 0.55, metalness: 0.5, side: THREE.DoubleSide }),
     brass: std(0xb8a24a, { roughness: 0.4, metalness: 0.7 }),
     pot: std(0x9a5a38),
     concrete: new THREE.MeshStandardMaterial({ map: concreteTexture(random), roughness: 0.95 }),
@@ -41,6 +43,8 @@ export function makeVillageMaterials(random, { doorColours = [], renders = [] } 
     glass: new THREE.MeshStandardMaterial({ map: glassMap, roughness: 0.2, metalness: 0.2 }),
     // Windows and lamps glow once it is dark (setNight): the emissive is scaled with the darkness, never a light.
     glow: new THREE.MeshStandardMaterial({ map: glassMap, emissive: 0xffffff, emissiveMap: litMap, emissiveIntensity: 0, roughness: 0.4 }),
+    // The little panes over a front door: plain dark glass, lit from inside after dark (a window's sash texture would stretch over them).
+    fanGlass: new THREE.MeshStandardMaterial({ color: 0x2a3640, emissive: 0xffd88a, emissiveIntensity: 0, roughness: 0.15, metalness: 0.2 }),
     lampGlow: new THREE.MeshStandardMaterial({ color: 0xddd6c0, emissive: 0xffd88a, emissiveIntensity: 0, roughness: 0.4 }),
     signGlow: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffe9b0, emissiveIntensity: 0, roughness: 0.5 }),
     // Plain glass you can see through (the shop window, the bus shelter, the phone box's panes).
@@ -57,6 +61,7 @@ export function makeVillageMaterials(random, { doorColours = [], renders = [] } 
     m.glow.emissiveIntensity = k * 0.9;
     m.phoneGlow.emissiveIntensity = k * 1.1;
     m.lampGlow.emissiveIntensity = k * 1.6;
+    m.fanGlass.emissiveIntensity = k * 0.7;
     m.signGlow.emissiveIntensity = k * 0.9;
   };
   return m;

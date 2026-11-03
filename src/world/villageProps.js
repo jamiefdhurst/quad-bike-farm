@@ -405,7 +405,6 @@ function oak(ctx, x, z, scale = 1) {
 function green(ctx) {
   const { M, S, heights } = ctx;
   const gr = S.v.green;
-  oak(ctx, gr.x - 1.5, gr.z - 1.5, 1.05);
   // The bench.
   const bx = gr.x + 0.4;
   const bz = gr.z + 2.4;
@@ -737,8 +736,8 @@ export function buildVillage(c) {
   boundaryWalls(ctx);
   roadEnd(ctx);
   beyondRoad(ctx);
-  // A hedge-and-tree backdrop: three small trees in the cottages' back gardens.
-  for (const [x, z] of [[170, 168.8], [150, 205 - 0.5 - 1], [125, 168]]) oak(ctx, x, z, 0.7);
+  // The oaks: the green's, and two in the gaps behind the houses (layout.village.trees, kept clear of every building).
+  for (const t of S.v.trees) oak(ctx, t.x, t.z, t.scale);
 
   for (const g of ctx.groups) mergeInto(g);
   enableShadows(root);

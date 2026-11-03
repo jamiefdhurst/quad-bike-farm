@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
-import { villageShape, smoothRoad, frontOf, roadMarks } from '../src/world/village.js';
+import * as THREE from 'three';
+import { villageShape, smoothRoad, frontOf, roadMarks, OAK_CROWN } from '../src/world/village.js';
+import { Frame, bayWindow } from '../src/world/villageKit.js';
 import { laneBarriers, neighbourFarmShape } from '../src/world/neighbourFarm.js';
 import { createBrook } from '../src/world/brook.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
@@ -135,5 +137,61 @@ describe('the village road meets the lane and carries on past its gate (#535)', 
     expect(S.beyond[S.beyond.length - 1].x).toBeLessThan(S.v.end.barrierX - 10);
     expect(S.beyond[S.beyond.length - 1].x).toBeGreaterThan(S.area.minX - 20);
     expect(S.beyondRise).toBeGreaterThan(2);
+  });
+});
+
+describe('the village houses, shop and pub shells (#538)', () => {
+  it('keeps every oak\'s crown off every building', () => {
+    expect(LAYOUT.village.trees.length).toBeGreaterThan(2);
+    for (const t of LAYOUT.village.trees) {
+      for (const r of S.footprints) {
+        const d = Math.hypot(Math.max(r.minX - t.x, 0, t.x - r.maxX), Math.max(r.minZ - t.z, 0, t.z - r.maxZ));
+        expect(d, `oak at ${t.x}, ${t.z}`).toBeGreaterThan(OAK_CROWN * t.scale);
+      }
+    }
+  });
+
+  it('keeps each cottage\'s back garden inside the village\'s wall, short of the brook beyond it', () => {
+    for (const b of S.buildings.filter((x) => x.kind === 'cottage')) {
+      const depth = S.gardenDepth(b);
+      const hedgeZ = b.yaw === 0 ? b.z - b.halfZ - depth : b.z + b.halfZ + depth;
+      expect(depth).toBeLessThanOrEqual(6);
+      expect(hedgeZ - 0.4).toBeGreaterThan(S.area.minZ + 0.3);
+      expect(hedgeZ + 0.4).toBeLessThan(S.area.maxZ - 0.3);
+    }
+  });
+
+  it('joins a bay window\'s panes end to end, the side ones running from the wall to the front pane, facing out', () => {
+    for (const face of [1, -1]) {
+      const group = new THREE.Group();
+      const f = new Frame({ group, x: 0, z: 0, yaw: 0, y0: 0, fixedBox: () => {} });
+      const stand = new THREE.MeshBasicMaterial();
+      const m = { glass: stand, glow: stand, paint: stand, stone: stand, lead: stand };
+      const w = 4.4;
+      const depth = 0.5;
+      bayWindow(f, m, { x: 1, w, depth, wallZ: 10, face, lit: false });
+      const panes = group.children.filter((c) => c.userData.pane);
+      expect(panes.length).toBe(3);
+      const ends = (p) => {
+        const half = p.userData.pane / 2;
+        const ax = Math.cos(p.rotation.y);
+        const az = -Math.sin(p.rotation.y);
+        return [[p.position.x - ax * half, p.position.z - az * half], [p.position.x + ax * half, p.position.z + az * half]];
+      };
+      const front = panes.find((p) => Math.abs(p.position.z - (10 + face * depth)) < 1e-6);
+      for (const side of panes.filter((p) => p !== front)) {
+        // One end on the wall at x = 1 +- w/2, the other on one of the front pane's ends.
+        const [a, b] = ends(side);
+        const onWall = [a, b].find((e) => Math.abs(e[1] - 10) < 1e-6);
+        const joined = [a, b].find((e) => e !== onWall);
+        expect(onWall && Math.abs(Math.abs(onWall[0] - 1) - w / 2) < 1e-6).toBe(true);
+        expect(ends(front).some((e) => Math.hypot(e[0] - joined[0], e[1] - joined[1]) < 1e-6)).toBe(true);
+        // Facing out: its normal points away from the bay's middle line, and away from the wall.
+        const nx = Math.sin(side.rotation.y);
+        const nz = Math.cos(side.rotation.y);
+        expect(nz * face).toBeGreaterThan(0);
+        expect(nx * Math.sign(side.position.x - 1)).toBeGreaterThan(0);
+      }
+    }
   });
 });
