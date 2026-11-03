@@ -53,6 +53,7 @@ export const CHARACTERS = [
       helmetNags: 1, // and tells you off if you don't
       stormWont: 1, // won't get on or drive a quad in a thunderstorm, and gets off one stood still in it
       carGoWeight: 0.8, // takes her Fiesta down the road now and then, carefully, on her L plates
+      tidyLoadWeight: 1, // puts the cans and the toolbox away in the back of a Land Rover, tidily
       generatorWeight: 1.1, // sees the barn dark and the charger waiting, and goes and starts the generator
       trailerGuideWeight: 1.2, // walks round behind a trailer you are reversing and calls the lock
       hayLoadWeight: 1, // carries the hay bales up to the trailer in a steady line, never dropping one
@@ -127,6 +128,7 @@ export const CHARACTERS = [
       hayLoadWeight: 1.3, // charges at the hay bales, faster than Amy and a lot less careful
       hayMissChance: 0.22, // so a few fall short
       hayCooldown: 1.5,
+      tidyLoadWeight: 0.5, // chucks things in the back of a Land Rover, and sometimes empties it out again
       generatorWeight: 0.6, // starts the generator if she is bored of the dark, with a lot of tugging and swearing
       carGoWeight: 1.3, // can't leave her Corsa alone: down the road and back, loud
       voiceHardBrakeDecel: 6.5, // takes a sharper stop before she calls it hard braking

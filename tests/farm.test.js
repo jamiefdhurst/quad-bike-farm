@@ -192,6 +192,15 @@ describe('a vehicle from one day to the next', () => {
     expect(b.quad.faults.levels.carb).toBe(0);
   });
 
+  it('keeps what stands in a Land Rover\'s back by spot, and nothing when it is empty', () => {
+    const a = unit();
+    expect(captureVehicle(a).cargo).toBeUndefined();
+    expect(captureVehicle(a, { cargo: [] }).cargo).toBeUndefined();
+    const kept = JSON.parse(JSON.stringify(captureVehicle(a, { cargo: [{ spot: 1, item: 'toolbox' }] })));
+    expect(kept.cargo).toEqual([{ spot: 1, item: 'toolbox' }]);
+    expect(overnight(kept).cargo).toEqual(kept.cargo);
+  });
+
   it('keeps which load is strapped on the rear rack, and nothing when there is none', () => {
     const a = unit();
     expect(captureVehicle(a).rack).toBeUndefined();

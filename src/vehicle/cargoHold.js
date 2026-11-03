@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CARGO_FOOTPRINTS } from './tipTrailerModel.js';
 
 export const DEFAULT_CARGO_PARAMS = {
   tipOutSeconds: 0.6, // things tipped out of a bed fly this long
@@ -40,9 +41,10 @@ export class CargoHold {
     return free >= 0 ? free : null;
   }
 
-  /** Stands a held item in the bed. Returns whether there was room. */
-  load(item) {
-    const spot = this.freeSpot();
+  /** Stands a held item in the bed (at `spot` if it is free, else the next one). Returns whether there was room. */
+  load(item, want = null) {
+    const used = this.items.some((i) => i.model.userData.spot === want);
+    const spot = want !== null && want >= 0 && want < this.anchors.length && !used ? want : this.freeSpot();
     if (spot === null) return false;
     item.putDown(this.anchors[spot].getWorldPosition(new THREE.Vector3()), 0); // drops the held state and its camera parent
     this.anchors[spot].add(item.model);
@@ -61,15 +63,24 @@ export class CargoHold {
 
   /** Slides everything out behind: `back` is the flat direction towards the tail. */
   tipOut(back) {
+    for (const item of this.items) this.dropOut(item, back);
+  }
+
+  /** One thing goes out behind and lands on the ground (what tipOut does to each, and what falls off an open tailgate). */
+  dropOut(item, back, distance = this.p.tipOutDistance) {
     const side = new THREE.Vector3(-back.z, 0, back.x);
-    for (const item of this.items) {
-      const from = item.model.getWorldPosition(new THREE.Vector3());
-      delete item.model.userData.cargoHold;
-      this.scene.attach(item.model);
-      const to = from.clone().addScaledVector(back, this.p.tipOutDistance + Math.random() * 0.5).addScaledVector(side, (Math.random() - 0.5) * 0.8);
-      to.y = this.ground(to.x, to.z);
-      this.flying.push({ item, from, to, yaw: Math.random() * Math.PI * 2, t: 0 });
-    }
+    const from = item.model.getWorldPosition(new THREE.Vector3());
+    delete item.model.userData.cargoHold;
+    delete item.model.userData.loose;
+    this.scene.attach(item.model);
+    const to = from.clone().addScaledVector(back, distance + Math.random() * 0.5).addScaledVector(side, (Math.random() - 0.5) * 0.8);
+    to.y = this.ground(to.x, to.z);
+    this.flying.push({ item, from, to, yaw: Math.random() * Math.PI * 2, t: 0 });
+  }
+
+  /** Where each held thing stands, by spot: [{ spot, name }] in spot order, to keep in the save. */
+  contents() {
+    return this.items.map((i) => ({ spot: i.model.userData.spot, item: i })).sort((a, b) => a.spot - b.spot);
   }
 
   update(dt) {
@@ -82,4 +93,26 @@ export class CargoHold {
     }
     this.flying = this.flying.filter((f) => f.t < 1);
   }
+}
+
+// What a load can do on the floor it stands on: how far it can slide from its spot. Anything without a footprint (a battery, the booster
+// pack) is taken as a box this size.
+const LOAD_FOOTPRINTS = CARGO_FOOTPRINTS;
+const DEFAULT_FOOTPRINT = { w: 0.25, d: 0.2 };
+
+/**
+ * How far a thing can slide each way from its spot (offsets, model frame: x to the left, z forward) in a floor with `room`
+ * (`x0`..`x1`, `z0` the back to `z1` the front). With the back open the rear limit is just past the edge, so it can go over.
+ */
+export function slideLimits(room, spot, name, yaw, backOpen) {
+  const f = LOAD_FOOTPRINTS[name] ?? DEFAULT_FOOTPRINT;
+  const turned = Math.abs(Math.sin(yaw)) > 0.5;
+  const halfX = (turned ? f.d : f.w) / 2;
+  const halfZ = (turned ? f.w : f.d) / 2;
+  return {
+    minX: room.x0 + halfX - spot.x,
+    maxX: room.x1 - halfX - spot.x,
+    minZ: (backOpen ? room.z0 - 0.1 : room.z0 + halfZ) - spot.z,
+    maxZ: room.z1 - halfZ - spot.z,
+  };
 }
