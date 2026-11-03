@@ -5,6 +5,7 @@ import { cleanUp } from '../npc/muddiness.js';
 import { standBy } from '../npc/pair.js';
 import { WAITING_IDLES } from '../npc/waiting.js';
 import { exhaustSideOf } from '../npc/exhaustBurn.js';
+import { meanSkill } from '../npc/lPlates.js';
 
 /**
  * @typedef {object} GirlAction
@@ -477,6 +478,17 @@ export function girlActions(g) {
         if (!c.mayRide(u.quad) || !c.canDrive(u.quad) || c.takenByOther(u.quad) || u.quad.rider) return toast(`${c.name} can't have a go on the mini moto right now`);
         c.requestDrive(u.quad);
         toast(`${c.name} is off to have a go on the mini moto`);
+      },
+    },
+    {
+      verb: 'test',
+      label: '% moves her driving test on (practice, away, result)',
+      girls: ['amy'],
+      run: () => {
+        if (g.drivingTest.passed) return toast('Amy has passed her test (forget it in the Girls tab)');
+        const ev = g.drivingTest.skip(g.farm.day, meanSkill(g.skills.levels.amy));
+        if (!ev.length) return toast('Nothing to move on');
+        for (const e of ev) g.handleDrivingTestEvent(e);
       },
     },
     {

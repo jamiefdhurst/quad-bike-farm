@@ -125,6 +125,7 @@ import { RADIO_PARAMS, RADIO_PARAM_RANGES } from './vehicle/radio.js';
 import { RadioTaste, applyRadioMove, RADIO_TASTE_PARAMS, RADIO_TASTE_PARAM_RANGES } from './npc/radioTaste.js';
 import { CarGo, Borrowing, mayDriveCar, refuseCarLine, CAR_GO_PARAM_RANGES } from './npc/carGo.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
+import { DrivingTest, DRIVING_TEST_PARAM_RANGES } from './npc/drivingTest.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
 import { TractorRunaway, TRACTOR_RUNAWAY_PARAM_RANGES } from './npc/tractorRunaway.js';
 import { DEFAULT_CREEP_PARAMS, CREEP_PARAM_RANGES } from './vehicle/creep.js';
@@ -1092,6 +1093,9 @@ export class Game {
     // Jess tapes L plates to Amy's quad; Amy peels them off, and once she's confident they go on the tractor (npc/lPlates.js).
     this.lPlates = new LPlates(undefined, createRandom(this.seed ^ 0x1b1a));
     this.lPlateSet = new LPlateSet();
+    // Amy's driving test (npc/drivingTest.js): practices in the Finch with you beside her, the booking, the nerves, the morning away, the result.
+    this.drivingTest = new DrivingTest(undefined, createRandom((this.farmSeed ^ 0x7e57) + this.farm.day * 7919));
+    this.finchPlatesOff = false; // the L plates have come off the Finch (after she passes)
     this.tractorSeen = {}; // girl id -> what we've already noticed about her go, for her lines
     this.hayLater = []; // lines to say in a moment: { left, girl, key }
     this.itemHome = {}; // where a hidden item was taken from, by name
@@ -1890,6 +1894,7 @@ export class Game {
     registerTuning('Mudguard ride', this.mudguard.p, MUDGUARD_PARAM_RANGES);
     registerTuning('Tractor go', this.tractorGo.p, TRACTORGO_PARAM_RANGES);
     registerTuning('L plates', this.lPlates.p, LPLATE_PARAM_RANGES);
+    registerTuning('Amy driving test', this.drivingTest.p, DRIVING_TEST_PARAM_RANGES);
     registerTuning('Tractor go drive', this.tractorDrive, TRACTOR_GO_DRIVE_RANGES);
     registerTuning('Yak go drive', this.utvDrive, TRACTOR_GO_DRIVE_RANGES);
     registerTuning('Tor go drive', this.landyDrive, TRACTOR_GO_DRIVE_RANGES);
@@ -2011,8 +2016,10 @@ export class Game {
     this.mount(mine.unit);
     this.startPlaces = placesAt(mine.unit.quad.position, this.world.layout); // the end of the road doesn't count until you've left it (achievements/snapshot.js)
     const seats = liftSeats(this.arrivalDeal.lift);
+    this.startTestMorning();
     for (const c of this.companions) {
       const id = c.character.id;
+      if (this.drivingTest.away && id === 'amy') continue; // she is off to her test, not sat in the car
       const own = Object.values(this.landys).find((l) => l.car && l.spec.owner === id && l.unit);
       const l = seats[id] ? mine : own;
       const slot = l?.mount.slots[seats[id] ?? 'driver'];
@@ -2021,6 +2028,7 @@ export class Game {
       if (l !== mine) l.unit.quad.engine.runWarm();
     }
     this.arrival = new Arrival(this.arrivalDeal);
+    if (this.drivingTest.away) this.arrival.out.add('amy');
   }
 
   /** This morning in a line, for the Girls tab and the console (farm/arrival.js). */
@@ -2822,6 +2830,81 @@ export class Game {
     }
   }
 
+  /** The morning of Amy's test (npc/drivingTest.js): she is gone, hidden and held, and her car stays where it is until she is back. */
+  startTestMorning() {
+    const amy = this.companions.find((c) => c.character.id === 'amy');
+    if (!amy) return;
+    for (const ev of this.drivingTest.startDay(this.farm.day)) this.handleDrivingTestEvent(ev);
+  }
+
+  /** The Finch's driver is Amy and you are sat beside her. */
+  besideAmy() {
+    const l = this.landys.fiesta;
+    const amy = this.companions.find((c) => c.character.id === 'amy');
+    const q = l?.unit?.quad;
+    return !!q && !!amy && amy.fsm.is('driving') && amy.quad === q && this.player.isRiding && this.player.vehicle === q && !!q.passenger;
+  }
+
+  updateDrivingTest(dt) {
+    const amy = this.companions.find((c) => c.character.id === 'amy');
+    if (!amy) return;
+    const ctx = { day: this.farm.day, hour: this.daylight.hour, besideHer: this.besideAmy(), skill: meanSkill(this.skills.levels.amy) };
+    for (const ev of this.drivingTest.update(dt, ctx)) this.handleDrivingTestEvent(ev);
+    if (this.drivingTest.passed && !this.finchPlatesOff && this.landys.fiesta?.unit) {
+      this.landys.fiesta.unit.quad.bodyRoot.traverse((o) => {
+        if (o.name === 'finchLPlate') o.visible = false;
+      });
+      this.finchPlatesOff = true;
+    }
+  }
+
+  /** Acts on Amy's test (npc/drivingTest.js): what each girl says, her morning away, the result and what it is worth. */
+  handleDrivingTestEvent(ev) {
+    const amy = this.companions.find((c) => c.character.id === 'amy');
+    const jess = this.companions.find((c) => c.character.id === 'jess');
+    if (!amy) return;
+    const jessSays = (key, left = 4) => jess && this.hayLater.push({ left, girl: jess, key });
+    if (ev.type === 'practice') {
+      amy.voice.say('testPractice', { force: true });
+      if (ev.n < ev.of) jessSays('jessTestPractice', 6);
+    } else if (ev.type === 'booked') {
+      this.hud.toast(`Amy has booked her driving test, for day ${ev.testDay}`);
+      this.hayLater.push({ left: 5, girl: amy, key: 'testBooked' });
+      jessSays('jessTestBooked', 10);
+    } else if (ev.type === 'nervous') {
+      amy.voice.say('testNervous', { force: true });
+      jessSays('jessTestNervous');
+    } else if (ev.type === 'leaves') {
+      amy.voice.say('testLeaves', { force: true });
+      amy.hold('drivingTest', 'at her driving test');
+      amy.root.visible = false;
+      this.hud.toast('Amy has gone to her driving test, in the village');
+      jessSays('jessTestLeaves', 1);
+    } else if (ev.type === 'passed' || ev.type === 'failed') {
+      this.testBack(amy);
+      const passed = ev.type === 'passed';
+      this.dayEvents.add(passed ? 'passedTest' : 'failedTest', { fails: ev.fails });
+      if (passed) {
+        this.favour.add('amy', this.drivingTest.p.passFavour);
+        this.achievements.note('amyPassed');
+      }
+      amy.voice.say(passed ? 'testPassed' : 'testFailed', { force: true });
+      jessSays(passed ? 'jessTestPassed' : 'jessTestFailed', 5);
+      this.hud.toast(passed ? 'Amy passed her driving test' : 'Amy failed her driving test');
+    }
+  }
+
+  /** She is back from the village: on foot by the Finch (someone dropped her), free again. */
+  testBack(amy) {
+    const at = this.landys.fiesta?.unit?.quad.position ?? this.world.layout.cars.fiesta;
+    const x = at.x + 2.5;
+    const z = at.z + 0.5;
+    amy.root.position.set(x, this.world.heightAt(x, z), z);
+    amy.syncCollider?.();
+    amy.root.visible = true;
+    amy.release('drivingTest');
+  }
+
   updateLPlates(dt) {
     const ctx = this.lPlatesContext();
     if (!ctx) return;
@@ -3017,7 +3100,8 @@ export class Game {
     for (const c of this.companions) {
       const id = c.character.id;
       const kind = CAR_KINDS.find((k) => this.landys[k]?.unit && this.landys[k].spec.owner === id) ?? null;
-      girls[id] = { free: c.availability().free, car: kind, carFree: !!kind && this.goFree(kind) && ridden !== this.goVehicle(kind), weight: c.params.carGoWeight ?? 0 };
+      const eager = id === 'amy' && kind === 'fiesta' && this.drivingTest.wantsPractice(this.farm.day); // learning to drive, and not out with you yet today
+      girls[id] = { free: c.availability().free, car: kind, carFree: !!kind && this.goFree(kind) && ridden !== this.goVehicle(kind), weight: (c.params.carGoWeight ?? 0) * (eager ? this.drivingTest.p.askWeight : 1), eager };
     }
     return { girls };
   }
@@ -3027,6 +3111,7 @@ export class Game {
     const c = this.companions.find((o) => o.character.id === ev.girl);
     if (!c) return;
     c.voice.say('carGoOff', { force: true });
+    if (ev.girl === 'amy' && ev.vehicle === 'fiesta') this.drivingTest.goBegan();
     this.startGo(c, ev.vehicle);
   }
 
@@ -4853,7 +4938,7 @@ export class Game {
     const b = this.world.layout.barn;
     const girls = this.companions.map((c) => ({
       name: c.character.name,
-      home: Math.hypot(c.root.position.x - b.x, c.root.position.z - b.z) < this.farmParams.endDayHomeRadius,
+      home: (c.character.id === 'amy' && this.drivingTest.away) || Math.hypot(c.root.position.x - b.x, c.root.position.z - b.z) < this.farmParams.endDayHomeRadius,
     }));
     const now = endOfDay(
       { hour: this.daylight.hour, seeded: this.farm.seeded, canSave: !!this.farmStorage, girls, day: this.farm.day },
@@ -13063,6 +13148,7 @@ export class Game {
     this.guard.run('updateYourCar', () => this.updateYourCar(dt));
     this.guard.run('updateCars', () => this.updateCars(dt)); // (minding you taking her car is a reaction, so it runs with the girls on hold too)
     this.guard.run('updateLPlates', () => this.updateLPlates(dt));
+    this.guard.run('updateDrivingTest', () => this.updateDrivingTest(dt));
     this.guard.run('updatePushStart', () => this.updatePushStart());
     this.guard.run('updateDiscoveries', () => this.updateDiscoveries());
     this.guard.run('updateWatching', () => this.updateWatching(dt));

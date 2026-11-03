@@ -12,17 +12,19 @@ export class DayEvents {
   }
 
   /** `kind` is one of: race { winner, loser } (girl ids), youRaced { place }, fellOut { cause, fault }, madeUp {}, stranded { girl, how, quad },
-   * seized { quad }, show { place } */
+   * seized { quad }, show { place }, passedTest { fails }, failedTest { fails } */
   add(kind, data = {}) {
     this.list.push({ kind, ...data });
   }
 }
 
 /** How much each kind is worth telling, most first. The story takes the top few and puts them back in the order they happened. */
-const WEIGHT = { fellOut: 6, seized: 5, show: 5, stranded: 4, race: 3, youRaced: 3, madeUp: 2 };
+const WEIGHT = { passedTest: 7, failedTest: 6, fellOut: 6, seized: 5, show: 5, stranded: 4, race: 3, youRaced: 3, madeUp: 2 };
 
 /** Each kind of event as a choice of sentences (a function of the event, so the girls can be named). */
 const TELL = {
+  passedTest: (e) => [e.fails ? 'Amy passed her driving test at last, and the L plates came off the Finch.' : 'Amy passed her driving test first time, and the L plates came off the Finch.', 'Amy came back from the village with a licence.'],
+  failedTest: () => ['Amy failed her driving test and came home quiet.', 'Amy did not pass her driving test, and Jess had opinions.'],
   race: (e) => [
     `${name(e.winner)} beat ${name(e.loser)} in a race, and ${name(e.loser)} was sore about it.`,
     `${name(e.winner)} won a race against ${name(e.loser)} and did not let it drop.`,

@@ -68,14 +68,15 @@ export class CarGo {
   }
 
   /**
-   * Her go in her own car: `ctx` is { girls: { <id>: { free, car (its kind, or null), carFree, weight } } }. Returns
+   * Her go in her own car: `ctx` is { girls: { <id>: { free, car (its kind, or null), carFree, weight, eager } } }. Returns
    * [{ key: 'carGo', girl, vehicle, weight }] for each girl who could go now.
    */
   offers(ctx) {
     const out = [];
     for (const [girl, g] of Object.entries(ctx.girls ?? {})) {
       if (!g.free || !g.car || !g.carFree) continue;
-      const due = this.clock >= this.p.firstAfter && this.clock - (this.lastGo[girl] ?? -Infinity) >= this.p.every;
+      const every = g.eager ? this.p.every / 3 : this.p.every; // keen to: Amy learning to drive, and not out with you yet today
+      const due = this.clock >= this.p.firstAfter && this.clock - (this.lastGo[girl] ?? -Infinity) >= every;
       if (!due && this.forced !== girl) continue;
       out.push({ key: 'carGo', girl, vehicle: g.car, weight: this.forced === girl ? 100 : g.weight ?? 1 });
     }
