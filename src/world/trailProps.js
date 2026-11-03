@@ -10,6 +10,8 @@ import { worldBox, canvasTexture } from './outbuildingProps.js';
 import { woodTexture, barkTexture, logEndTexture } from './neighbourTextures.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
+export const POST_BAND = 0.114; // m: the blue band round a way-marker post
+export const DISC_RADIUS = 0.05; // m: the arrow disc on it, which has to stay inside the band
 const BLUE = '#1f5fa8'; // the band on the posts: a blue-graded route, as the Forestry England trails are
 
 /** Builds the trail's props and colliders. `c` is the props context (props.js). */
@@ -176,8 +178,8 @@ function buildPosts(c, trail, group) {
     put('wood', worldBox(0.1, 1.6, 0.1, 1), 0, 0.8, 0);
     put('wood', new THREE.ConeGeometry(0.085, 0.07, 4), 0, 1.635, 0, Math.PI / 4);
     put('wood', worldBox(0.13, 0.08, 0.13, 1), 0, 0.14, 0); // a foot where it meets the ground
-    put('band', worldBox(0.114, 0.2, 0.114, 1), 0, 1.35, 0);
-    put('disc', new THREE.CircleGeometry(0.075, 16), 0, 1.35, 0.0575);
+    put('band', worldBox(POST_BAND, 0.2, POST_BAND, 1), 0, 1.35, 0);
+    put('disc', new THREE.CircleGeometry(DISC_RADIUS, 16), 0, 1.35, 0.0575); // narrower than the 0.114 band, so its edge stays on the post
     fixedBox(p.x, y + 0.7, p.z, 0.055, 0.8, 0.055);
   }
   for (const kind of Object.keys(parts)) {
@@ -209,28 +211,32 @@ function buildSign(c, trail, group) {
       ctx.fillStyle = '#e8e2cc';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = 'bold 54px Georgia, serif';
-      ctx.fillText('THE FERN TRAIL', w / 2, 84);
-      ctx.font = '30px Georgia, serif';
-      ctx.fillText('Two-wheelers welcome', w / 2, 138);
-      ctx.font = 'bold 34px Arial, sans-serif';
-      ctx.fillText('Follow the blue posts  →', w / 2, h - 44);
+      // Each line is shrunk until it fits inside the painted border, so none runs out past the edge.
+      const fit = (text, weight, size, family, y) => {
+        let px = size;
+        do ctx.font = `${weight} ${px--}px ${family}`;
+        while (ctx.measureText(text).width > w - 72 && px > 12);
+        ctx.fillText(text, w / 2, y);
+      };
+      fit('THE FERN TRAIL', 'bold', 54, 'Georgia, serif', 84);
+      fit('Two-wheelers welcome', '', 30, 'Georgia, serif', 138);
+      fit('Follow the blue posts  →', 'bold', 34, 'Arial, sans-serif', h - 44);
     }),
     roughness: 0.75,
   });
-  for (const px of [-0.7, 0.7]) {
-    const post = new THREE.Mesh(worldBox(0.12, 1.7, 0.12, 1), wood);
-    post.position.set(px, 0.85, 0);
+  for (const px of [-0.5, 0.5]) {
+    const post = new THREE.Mesh(worldBox(0.1, 1.35, 0.1, 1), wood);
+    post.position.set(px, 0.675, 0);
     sign.add(post);
-    fixedBox(x + px * Math.cos(0.12), y + 0.85, z - px * Math.sin(0.12), 0.07, 0.85, 0.07);
+    fixedBox(x + px * Math.cos(0.12), y + 0.675, z - px * Math.sin(0.12), 0.06, 0.68, 0.06);
   }
-  const face = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.75, 0.04), [wood, wood, wood, wood, board, wood]);
-  face.position.set(0, 1.25, 0.08);
-  const rail = new THREE.Mesh(worldBox(1.6, 0.05, 0.12, 1), wood); // the cap along the top, with a drip overhang
-  rail.position.set(0, 1.66, 0.1);
+  const face = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.55, 0.04), [wood, wood, wood, wood, board, wood]);
+  face.position.set(0, 0.98, 0.07);
+  const rail = new THREE.Mesh(worldBox(1.18, 0.045, 0.1, 1), wood); // the cap along the top, with a drip overhang
+  rail.position.set(0, 1.28, 0.08);
   rail.rotation.x = -0.12;
-  const rail2 = new THREE.Mesh(worldBox(1.5, 0.06, 0.06, 1), wood); // and a batten behind the board
-  rail2.position.set(0, 0.95, 0.0);
+  const rail2 = new THREE.Mesh(worldBox(1.1, 0.05, 0.05, 1), wood); // and a batten behind the board
+  rail2.position.set(0, 0.75, 0.0);
   sign.add(face, rail, rail2);
   sign.traverse((o) => {
     if (o.isMesh) o.castShadow = true;
