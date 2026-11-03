@@ -43,9 +43,10 @@ const area = (poly) => {
 
 /**
  * Pairs of overlapping coplanar same-facing triangles in a model: [{ a, b, area, at: [x, y, z], axis, dir }], biggest first. `gap` is how close
- * two planes must be to count (metres), `minArea` how much overlap (square metres).
+ * two planes must be to count (metres), `minArea` how much overlap (square metres). Textured materials are left out (labels and decals sit a
+ * millimetre off a face on purpose) unless `textured` is set, for a model whose own surfaces are all textured (the hut's boards, tin and timber).
  */
-export function coplanarOverlaps(model, { gap = 0.002, minArea = 2e-5, skip = (o) => false, visibleOnly = true } = {}) {
+export function coplanarOverlaps(model, { gap = 0.002, minArea = 2e-5, skip = (o) => false, visibleOnly = true, textured = false } = {}) {
   model.updateMatrixWorld(true);
   const tris = [];
   const va = new THREE.Vector3();
@@ -56,7 +57,7 @@ export function coplanarOverlaps(model, { gap = 0.002, minArea = 2e-5, skip = (o
     if (!o.isMesh || o.isSprite) return;
     for (let q = o; q; q = q.parent) if (!q.visible) return; // hidden, or inside a hidden group (the trailer's straps until it is strapped)
     const m = o.material;
-    if (m.transparent || m.map || /^headlight/.test(o.name) || skip(o)) return;
+    if (m.transparent || (m.map && !textured) || /^headlight/.test(o.name) || skip(o)) return;
     let p = o;
     while (p) {
       if (/^wheel_/.test(p.name)) return;
