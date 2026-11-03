@@ -151,7 +151,7 @@ export const FARM_JOBS = {
   hay: {
     label: 'Make hay',
     chalk: 'Cut the hay patch, bale it and stack it in the Dutch barn',
-    hint: 'Mow and bale the patch in the north field with the tractor, load the bales on the trailer and take them to the Dutch barn',
+    hint: 'Mow and bale the meadow in the south-east of the grass field with the tractor, load the bales on the trailer and take them to the Dutch barn',
     needs: 'hayMeadow',
   },
   logs: {

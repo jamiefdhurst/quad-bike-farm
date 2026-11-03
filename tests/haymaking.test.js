@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
 import { createFields } from '../src/world/fields.js';
+import { createTerrainHeight } from '../src/world/terrainHeight.js';
+import { Track } from '../src/world/track.js';
 import { Haymaking, DEFAULT_HAY_PARAMS, HAY_PARAM_RANGES, STANDING, CUT, BALED, STACK_CAPACITY, trailerSlots, stackSpots } from '../src/world/haymaking.js';
 
 const RECT = { minX: 100, maxX: 132, minZ: -26, maxZ: -8 };
@@ -296,18 +298,30 @@ describe('the hay patch in the farm', () => {
   const fields = createFields(LAYOUT);
   const m = LAYOUT.hayMeadow;
 
-  it('is all stubble field with nothing built on it', () => {
-    for (let x = m.minX; x <= m.maxX; x += 2) for (let z = m.minZ; z <= m.maxZ; z += 2) expect(fields.stubbleAt(x, z), `${x},${z}`).toBeGreaterThan(0.5);
-  });
+  const track = new Track(LAYOUT.trackPoints);
+  const heights = createTerrainHeight(LAYOUT, track);
 
-  it('is clear of the field\'s wet hollow', () => {
-    const h = LAYOUT.stubbleFields.north.hollow;
-    for (const [x, z] of [[m.minX, m.minZ], [m.maxX, m.minZ], [m.minX, m.maxZ], [m.maxX, m.maxZ]]) {
-      expect(Math.hypot((x - h.x) / h.rx, (z - h.z) / h.rz)).toBeGreaterThan(1);
+  it('is all grass field, clear of the hedges', () => {
+    for (let x = m.minX; x <= m.maxX; x += 2) for (let z = m.minZ; z <= m.maxZ; z += 2) {
+      expect(fields.areaOf(x, z), `${x},${z}`).toBe('grass');
+      expect(fields.stubbleAt(x, z), `${x},${z}`).toBe(0);
+      expect(fields.hedgeDistance(x, z), `${x},${z}`).toBeGreaterThan(3);
     }
   });
 
-  it('is on the way from the first gateway to the Dutch barn without crossing the barn', () => {
-    expect(m.maxX).toBeLessThan(LAYOUT.dutchBarn.x - LAYOUT.dutchBarn.halfX);
+  it('is level enough and clear of the track, bogs, puddles, bales and the ramp, with room round it for the ragged edge', () => {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (let x = m.minX - 3; x <= m.maxX + 3; x += 2) for (let z = m.minZ - 3; z <= m.maxZ + 3; z += 2) {
+      const y = heights.heightAt(x, z);
+      lo = Math.min(lo, y);
+      hi = Math.max(hi, y);
+      expect(track.distanceTo(x, z), `track ${x},${z}`).toBeGreaterThan(LAYOUT.trackHalfWidth + 3);
+      expect(heights.bogAt(x, z), `bog ${x},${z}`).toBe(0);
+      expect(heights.puddleAt(x, z), `puddle ${x},${z}`).toBe(0);
+      for (const [bx, bz] of LAYOUT.strawBaleSpots) expect(Math.hypot(bx - x, bz - z), `bale ${bx},${bz}`).toBeGreaterThan(4);
+      expect(Math.hypot(x - LAYOUT.jumpRamp.x, z - LAYOUT.jumpRamp.z), `ramp ${x},${z}`).toBeGreaterThan(30);
+    }
+    expect(hi - lo).toBeLessThan(1.6);
   });
 });
