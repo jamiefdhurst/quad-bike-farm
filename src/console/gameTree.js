@@ -378,6 +378,7 @@ export function buildGameTree(g, host) {
     radios: flag(() => g.radioUnits().some((u) => u.quad.radio.on), (v) => g.setAllRadios(v), 'every radio in the Land Rovers and the cars: set on or off together'),
     hut: text(() => g.hutHost.describe(), "the shepherd's hut stove and kettle (world/hut.js)"),
     hutLit: flag(() => g.hutHost.stove.burning, (v) => (v ? g.hutHost.debugLight() : g.hutHost.debugPutOut()), "the hut's stove is lit (setting it lights it at full heat with the kettle boiled)"),
+    hutDoorOpen: flag(() => g.hutHost.door.isOpen, (v) => g.hutHost.debugDoor(v), "the hut's door is open (setting it swings it, as a girl would)"),
     bonfireLit: flag(() => g.bonfire.burning, (v) => (v ? g.debugLightFire() : g.bonfire.putOut()), 'the bonfire is lit (setting it builds the pile and lights it)'),
     hay: text(() => (g.hay ? `${g.hay.describe()}; ${g.hayLoading.describe()}` : 'no hay patch on this farm'), 'the hay job (world/haymaking.js): its stage, bales and who is loading'),
     spray: text(() => (g.spray ? g.spray.describe() : 'no spray field on this farm'), 'the spraying job (world/spraying.js): its stage, coverage, tank and boom'),

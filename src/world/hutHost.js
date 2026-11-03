@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { registerTuning } from '../core/tuning.js';
 import { Stove, DEFAULT_HUT_PARAMS, HUT_PARAM_RANGES, HUT_INSIDE } from './hut.js';
 import { HutView } from './hutView.js';
+import { HutDoor, wantsShut } from './hutDoor.js';
 import { HutAudio } from '../audio/hutAudio.js';
 import { HutStay, DEFAULT_HUT_STAY_PARAMS, HUT_STAY_PARAM_RANGES, coldness } from '../npc/hutStay.js';
 
@@ -20,6 +21,8 @@ export class HutHost {
     this.params = { ...DEFAULT_HUT_PARAMS };
     this.stove = new Stove(this.params);
     this.stay = new HutStay();
+    this.door = new HutDoor(this.params);
+    this.shutWhenEmpty = false; // a girl has left: she shuts the door behind her once she is clear of it, if it is wet or dark
     registerTuning('Hut stove', this.params, HUT_PARAM_RANGES);
     registerTuning('Staying in the hut', this.stay.p, HUT_STAY_PARAM_RANGES);
     this.spots = [];
@@ -45,6 +48,7 @@ export class HutHost {
       climbSeconds: 6,
     }));
     this.addInteractions();
+    this.applyDoor();
   }
 
   /** An invisible box at a point in the hut's frame, to look at. */
@@ -84,6 +88,42 @@ export class HutHost {
       feedback: 'own', // she says yes and walks off
       interact: () => this.ask(this.hutGirl()),
     });
+    // The door: the half-stable leaves swing and the doorway is blocked while it is shut. It wins over the doorway's ask below, which shares its space (added after it).
+    g.interaction.add({
+      target: this.proxy(0, this.shape.halfLength + 0.02, this.shape.floor, HUT_INSIDE.doorHalf * 2 + 0.1, 1.75, 0.3),
+      priority: 1,
+      isAvailable: () => !g.player.isRiding,
+      prompt: () => (this.door.isOpen ? 'Shut the door' : 'Open the door'),
+      feedback: 'latch',
+      interact: () => this.operateDoor(!this.door.isOpen, 'you'),
+    });
+  }
+
+  /** Opens or shuts the door with a click of the latch. Returns whether it moved. */
+  operateDoor(open, by) {
+    if (!this.door.setOpen(open)) return false;
+    if (by !== 'you') this.audio.latch(this.doorPos());
+    if (by === 'her') this.shutWhenEmpty = false;
+    return true;
+  }
+
+  doorPos() {
+    const p = this.shape.toWorld(0, this.shape.halfLength);
+    return { x: p.x, y: this.props.parts.ground + this.shape.floor + 1, z: p.z };
+  }
+
+  /** Puts the leaves and the doorway's collider where the door is now. */
+  applyDoor() {
+    const parts = this.props.parts;
+    if (parts.topLeaf?.rotation) parts.topLeaf.rotation.y = this.door.angle;
+    if (parts.lowerLeaf?.rotation) parts.lowerLeaf.rotation.y = this.door.angle;
+    parts.doorCollider?.setEnabled?.(this.door.blocking);
+  }
+
+  /** Whether anyone is in or at the hut's doorway, for a girl to shut it behind her. */
+  doorwayBusy() {
+    const d = this.doorPos();
+    return this.g.companions.some((c) => this.inside(c.root.position.x, c.root.position.z) || Math.hypot(c.root.position.x - d.x, c.root.position.z - d.z) < 2.2);
   }
 
   kettlePrompt() {
@@ -186,6 +226,7 @@ export class HutHost {
     const c = g.companions.find((o) => o.character.id === e.girl);
     if (!c) return this.stay.cancel(e.girl);
     if (e.type === 'go') {
+      this.operateDoor(true, 'her');
       c.hold('hut', "sitting in the shepherd's hut");
       c.voice.say(e.how === 'offer' ? 'hutOffer' : 'hutYes', { force: true });
       if (!c.goRest(this.spots[e.seat], { stay: Infinity })) {
@@ -199,6 +240,8 @@ export class HutHost {
     } else if (e.type === 'stoke') {
       this.stoke('her');
     } else if (e.type === 'end') {
+      this.operateDoor(true, 'her'); // shut with her inside, she opens it to go out
+      this.shutWhenEmpty = true;
       c.release('hut');
       if (c.isResting) c.leaveRest();
       if (e.why === 'done') {
@@ -217,6 +260,7 @@ export class HutHost {
   /** Whether a girl standing at (x, z) is warmed by the stove. */
   warmsAt(x, z) {
     if (!this.active) return false;
+    if (!this.door.isOpen && !this.inside(x, z)) return false; // the heat comes out of the open top of the door
     return this.stove.warms(this.inside(x, z), Math.hypot(x - this.shape.stove.x, z - this.shape.stove.z));
   }
 
@@ -234,6 +278,12 @@ export class HutHost {
     for (const e of this.stove.update(dt)) {
       if (e.type === 'out' && Math.hypot(g.player.position.x - s.x, g.player.position.z - s.z) < 40) g.hud.toast('The stove has burnt out', 3);
     }
+    if (this.shutWhenEmpty && !this.doorwayBusy()) {
+      this.shutWhenEmpty = false;
+      if (wantsShut({ rain: w.rain, darkness: g.daylight?.darkness ?? 0 }, this.params)) this.operateDoor(false, 'her');
+    }
+    this.door.update(dt);
+    this.applyDoor();
     this.view.update(dt, this.stove, { wind: g.wind, darkness: g.daylight?.darkness ?? 0 });
     if (this.stove.glowing) this.audio.crackle(dt, this.stovePos, this.stove.heat);
     const girls = {};
@@ -267,12 +317,16 @@ export class HutHost {
     this.stove.kettle = 1;
   }
 
+  debugDoor(open) {
+    if (this.active) this.operateDoor(open, 'her');
+  }
+
   debugPutOut() {
     this.stove.reset();
   }
 
   describe() {
     const s = this.stove;
-    return `${s.burning ? `burning, ${Math.round(s.fuel)} s of fuel` : s.glowing ? 'glowing' : 'cold'}, ${Math.round(s.heat * 100)}% hot, kettle ${s.boiled ? 'boiled' : `${Math.round(s.kettle * 100)}%`}`;
+    return `${s.burning ? `burning, ${Math.round(s.fuel)} s of fuel` : s.glowing ? 'glowing' : 'cold'}, ${Math.round(s.heat * 100)}% hot, kettle ${s.boiled ? 'boiled' : `${Math.round(s.kettle * 100)}%`}, door ${this.door.isOpen ? 'open' : 'shut'}`;
   }
 }

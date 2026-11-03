@@ -57,4 +57,9 @@ export class HutAudio {
   light(at) {
     this.noise(at, 16, 250, 0.35, 0.7, 0.8);
   }
+
+  /** The door's latch dropping or lifting, when a girl works it (yours is the 'latch' cue). */
+  latch(at) {
+    this.noise(at, 25, 1500, 0.09, 0.6, 3);
+  }
 }

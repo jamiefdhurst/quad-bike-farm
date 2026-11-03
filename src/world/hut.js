@@ -22,6 +22,9 @@ export const DEFAULT_HUT_PARAMS = {
   warmRadius: 2.5, // metres from the stove, outside the hut, that its heat reaches (through the open top of the door)
   lightReach: 7, // metres the stove's light reaches
   lightCandela: 14, // the stove's light at the full dark, a fifth of that by day
+  doorSeconds: 0.9, // seconds the door takes to swing open or shut
+  shutRain: 0.25, // rain (0..1) at which the girls shut the door behind them when they leave
+  shutDarkness: 0.6, // darkness (0..1) at which they do
 };
 
 export const HUT_PARAM_RANGES = {
@@ -36,6 +39,9 @@ export const HUT_PARAM_RANGES = {
   warmRadius: [0.5, 8, 0.5],
   lightReach: [2, 20, 0.5],
   lightCandela: [0, 60, 1],
+  doorSeconds: [0.2, 4, 0.1],
+  shutRain: [0, 1, 0.05],
+  shutDarkness: [0, 1, 0.05],
 };
 
 /** What is where in the hut's own frame, in metres (x right facing the door, z towards the door end). The build and the girls both read this. */

@@ -56,14 +56,14 @@ function setup({ girls = [girl('amy')] } = {}) {
     },
   };
   const host = new HutHost(game);
-  host.audio = { light: vi.fn(), pour: vi.fn(), crackle: vi.fn() };
+  host.audio = { light: vi.fn(), pour: vi.fn(), crackle: vi.fn(), latch: vi.fn() };
   return { host, game, items, toasts, notes, favour, shape };
 }
 
 describe("the shepherd's hut stove", () => {
-  it('registers three things to use, each with a valid feedback and a prompt', () => {
+  it('registers four things to use, each with a valid feedback and a prompt', () => {
     const { items } = setup();
-    expect(items).toHaveLength(3);
+    expect(items).toHaveLength(4);
     for (const i of items) {
       expect(validFeedback(i.feedback), 'feedback').toBe(true);
       expect(i.prompt).toBeTypeOf('function');
@@ -227,5 +227,70 @@ describe('the warmth and the shelter of the hut', () => {
     host.stove.fuel = 1;
     host.update(2);
     expect(toasts).toEqual(['The stove has burnt out']);
+  });
+});
+
+describe("the shepherd's hut door", () => {
+  it('prompts to shut it, then to open it, and wins over the doorway ask', () => {
+    const { items, host } = setup();
+    const door = items.find((i) => i.priority === 1);
+    expect(door.prompt()).toBe('Shut the door');
+    expect(door.feedback).toBe('latch');
+    door.interact();
+    expect(host.door.isOpen).toBe(false);
+    expect(door.prompt()).toBe('Open the door');
+  });
+
+  it('blocks the doorway once shut and not while open', () => {
+    const { items, host } = setup();
+    const enabled = [];
+    host.props.parts.doorCollider = { setEnabled: (v) => enabled.push(v) };
+    items.find((i) => i.priority === 1).interact();
+    host.update(5);
+    expect(enabled.at(-1)).toBe(true);
+    items.find((i) => i.priority === 1).interact();
+    host.update(5);
+    expect(enabled.at(-1)).toBe(false);
+  });
+
+  it('is opened by a girl going in, and shut behind her on leaving in rain once she is clear', () => {
+    const amy = girl('amy', { near: false });
+    const { host, game } = setup({ girls: [amy] });
+    host.door.setOpen(false);
+    host.handleEvent({ type: 'go', girl: 'amy', seat: 0, how: 'asked' });
+    expect(host.door.isOpen).toBe(true);
+    game.weather.rain = 0.8;
+    host.handleEvent({ type: 'end', girl: 'amy', why: 'done' });
+    expect(host.door.isOpen).toBe(true);
+    host.update(0.1);
+    expect(host.door.isOpen).toBe(false);
+  });
+
+  it('is left open behind her on a fine day', () => {
+    const amy = girl('amy', { near: false });
+    const { host } = setup({ girls: [amy] });
+    host.handleEvent({ type: 'end', girl: 'amy', why: 'done' });
+    host.update(0.1);
+    expect(host.door.isOpen).toBe(true);
+  });
+
+  it('does not shut with a girl still at the doorway', () => {
+    const amy = girl('amy', { near: true });
+    const { host, game } = setup({ girls: [amy] });
+    const d = host.doorPos();
+    amy.root.position.set(d.x, 16, d.z);
+    game.weather.rain = 0.8;
+    host.handleEvent({ type: 'end', girl: 'amy', why: 'done' });
+    host.update(0.1);
+    expect(host.door.isOpen).toBe(true);
+  });
+
+  it('lets no stove heat out to a girl stood outside a shut door', () => {
+    const { host, shape } = setup();
+    host.stove.light();
+    host.stove.heat = 1;
+    const at = shape.toWorld(0.62, shape.halfLength + 0.8);
+    host.door.setOpen(false);
+    expect(host.warmsAt(at.x, at.z)).toBe(false);
   });
 });
