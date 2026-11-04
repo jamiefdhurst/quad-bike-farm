@@ -1,0 +1,124 @@
+{
+ "tracks": [
+  {
+   "id": "dale-00",
+   "station": "dale",
+   "title": "Funky Pop",
+   "artist": "HoliznaCC0",
+   "file": "audio/radio/music-dale-00.mp3",
+   "seconds": 142.78
+  },
+  {
+   "id": "dale-01",
+   "station": "dale",
+   "title": "Happy Dance",
+   "artist": "HoliznaCC0",
+   "file": "audio/radio/music-dale-01.mp3",
+   "seconds": 155.98
+  },
+  {
+   "id": "dale-02",
+   "station": "dale",
+   "title": "Day Dreams",
+   "artist": "HoliznaCC0",
+   "file": "audio/radio/music-dale-02.mp3",
+   "seconds": 170.0
+  },
+  {
+   "id": "dale-03",
+   "station": "dale",
+   "title": "Love Love Love",
+   "artist": "HoliznaCC0",
+   "file": "audio/radio/music-dale-03.mp3",
+   "seconds": 170.0
+  },
+  {
+   "id": "dale-04",
+   "station": "dale",
+   "title": "Retro Soundtrack",
+   "artist": "HoliznaCC0",
+   "file": "audio/radio/music-dale-04.mp3",
+   "seconds": 157.68
+  },
+  {
+   "id": "dale-05",
+   "station": "dale",
+   "title": "Bouncing",
+   "artist": "HoliznaCC0",
+   "file": "audio/radio/music-dale-05.mp3",
+   "seconds": 87.96
+  },
+  {
+   "id": "dale-06",
+   "station": "dale",
+   "title": "Back In The 80s",
+   "artist": "HoliznaCC0",
+   "file": "audio/radio/music-dale-06.mp3",
+   "seconds": 170.0
+  },
+  {
+   "id": "dale-07",
+   "station": "dale",
+   "title": "50 Over The Speed Limit",
+   "artist": "HoliznaCC0",
+   "file": "audio/radio/music-dale-07.mp3",
+   "seconds": 130.29
+  },
+  {
+   "id": "dale-08",
+   "station": "dale",
+   "title": "Classical Pop (Instrumental)",
+   "artist": "MELLE",
+   "file": "audio/radio/music-dale-08.mp3",
+   "seconds": 83.98
+  },
+  {
+   "id": "quarry-00",
+   "station": "quarry",
+   "title": "Unchained Destiny",
+   "artist": "Pro Sensory",
+   "file": "audio/radio/music-quarry-00.mp3",
+   "seconds": 136.06
+  },
+  {
+   "id": "quarry-01",
+   "station": "quarry",
+   "title": "Electric Rock",
+   "artist": "hatmix",
+   "file": "audio/radio/music-quarry-01.mp3",
+   "seconds": 128.05
+  },
+  {
+   "id": "quarry-02",
+   "station": "quarry",
+   "title": "Rock theme",
+   "artist": "FacadeGaikan",
+   "file": "audio/radio/music-quarry-02.mp3",
+   "seconds": 67.53
+  },
+  {
+   "id": "quarry-03",
+   "station": "quarry",
+   "title": "Action Track",
+   "artist": "AlexCons",
+   "file": "audio/radio/music-quarry-03.mp3",
+   "seconds": 138.89
+  },
+  {
+   "id": "quarry-04",
+   "station": "quarry",
+   "title": "Fight for Better Future",
+   "artist": "Calyad",
+   "file": "audio/radio/music-quarry-04.mp3",
+   "seconds": 136.26
+  },
+  {
+   "id": "quarry-05",
+   "station": "quarry",
+   "title": "JRPG Epic Rock Battle Theme #1",
+   "artist": "hydrogene",
+   "file": "audio/radio/music-quarry-05.mp3",
+   "seconds": 115.29
+  }
+ ]
+}
