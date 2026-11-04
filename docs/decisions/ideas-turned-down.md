@@ -31,3 +31,16 @@ Closed as dropped when the oldest 30 issues were gone through. Raise them again 
 - A vehicle spec editor in the debug panel, #89: new vehicles are written as specs by a session, not tuned by hand, so it would pay back little.
 - The romance as a slow thread across days (from #85): no clear first step yet. Amy's driving test (#85) and Jess saving for a bike (#519) go first.
 - More variety in how far the polos are undone, #307 (dropped in batch 6): Jess is already dealt anything from none to all five, and Amy keeping hers mostly done up is who she is.
+
+## Offered with the eight bug and layout issues (#610 to #617, 2026-11-04)
+
+Jamie turned down all eight brainstormed ideas. Raise them again only if the reason no longer holds.
+
+- A power cut in a storm, with the girls and a fuse box.
+- A tea break from a flask, with the girls on bales.
+- Bonfire Night, with fireworks from the village.
+- Recovering a stuck vehicle with a snatch strap.
+- Wet coats and boots that dry on a hook.
+- Sheepdog work, the dog gathering the flock.
+- A tyre pressure check with a foot pump and gauge.
+- A boundary walk checking fences and gates.
