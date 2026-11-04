@@ -380,6 +380,9 @@ import { MowView } from './world/mowView.js';
 import { SprayerTrailer, SPRAYER_PARAM_RANGES } from './vehicle/sprayerTrailer.js';
 import { Spraying, DEFAULT_SPRAY_PARAMS, SPRAY_PARAM_RANGES, SPRAY_PHASE_TEXT, sprayWanted } from './world/spraying.js';
 import { SprayView } from './world/sprayView.js';
+import { HarrowTrailer, DEFAULT_HARROW_TRAILER_PARAMS, HARROW_TRAILER_PARAM_RANGES } from './vehicle/harrowTrailer.js';
+import { Harrowing, DEFAULT_HARROW_PARAMS, HARROW_PARAM_RANGES, HARROW_PHASE_TEXT, harrowWanted, dealMolehills } from './world/harrowing.js';
+import { HarrowView } from './world/harrowView.js';
 import { HayLoading, HAY_LOADING_PARAM_RANGES } from './npc/hayLoading.js';
 import { shortName } from './workshop/logbook.js';
 import { Interaction } from './interaction/interaction.js';
@@ -827,7 +830,7 @@ export class Game {
       c.agenda = new Agenda(character.agendaOdds, c.params);
       c.quads = this.girlUnits.map((u) => u.quad);
       c.others = () => this.companions.filter((o) => o !== c);
-      c.trailers = () => [this.trailer, this.tipTrailer, this.sprayer]; // obstacles on foot and on wheels (vehicle/trailerObstacle.js)
+      c.trailers = () => [this.trailer, this.tipTrailer, this.sprayer, this.harrows]; // obstacles on foot and on wheels (vehicle/trailerObstacle.js)
       c.followTarget = () => this.riddenUnit?.quad ?? null;
       c.sounds = new CompanionSounds(this.audioHub, { voiceBank: character.voiceBank, rate: character.soundRate });
       c.voice = new CompanionVoice({
@@ -1065,6 +1068,15 @@ export class Game {
     this.sprayer.place(sprayerAt.x, sprayerAt.z, sprayerAt.yaw);
     this.sprayPuller = null; // the Quad whose drive and brakes the sprayer is taking from
     registerTuning('Sprayer trailer', this.sprayer.p, SPRAYER_PARAM_RANGES);
+    // The chain harrows behind a tractor or a quad with a rack (vehicle/harrowTrailer.js; the job is world/harrowing.js).
+    this.harrows = new HarrowTrailer({ scene: this.scene, world: this.world, params: { ...DEFAULT_HARROW_TRAILER_PARAMS } });
+    registerTuning('Harrows wear', this.harrows.coat.coat.look, WEAR_LOOK_RANGES);
+    registerTuning('Harrows mud', this.harrows.coat.state, MUD_STATE_RANGES);
+    const harrowsAt = this.world.layout.harrows;
+    this.harrows.addObstacle(this.physics, this.RAPIER);
+    this.harrows.place(harrowsAt.x, harrowsAt.z, harrowsAt.yaw);
+    this.harrowPuller = null; // the Quad whose drive and brakes the harrows are taking from
+    registerTuning('Harrows carrier', this.harrows.p, HARROW_TRAILER_PARAM_RANGES);
     this.interaction.add({
       target: this.tipTrailer.proxy,
       priority: -1, // a can or the toolbox standing in the tub wins when you look at it
@@ -1720,6 +1732,7 @@ export class Game {
       .filter((id) => id !== 'silage' || (!!this.tractorUnit && !!this.siloRect && this.baleRig.yard.countIn(this.siloRect) < this.spikeParams.balesNeeded))
       .filter((id) => id !== 'logs' || (!!this.logStack && this.logStack.roomForJob())) // the log job needs the tractor and room on the stack
       .filter((id) => id !== 'spray' || sprayWanted(this.farm.save?.spray, this.farm.day)) // a sprayed field stays off the board for a few days
+      .filter((id) => id !== 'harrow' || harrowWanted(this.farm.save?.harrow, this.farm.day)) // and a harrowed one
       .filter((id) => id !== 'hay' || (!!this.tractorUnit && !!this.siloRect && hayStacked + DEFAULT_HAY_PARAMS.balesNeeded <= STACK_CAPACITY)); // the hay needs the tractor and room in the barn
     this.jobBoard = new JobBoard({ ids: jobIds, random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
     if (this.jobBoard.has('logs')) this.logStack.startJob();
@@ -1729,6 +1742,7 @@ export class Game {
     this.setUpHay();
     this.setUpMowing();
     this.setUpSpraying();
+    this.setUpHarrowing();
     // Each farm job ticked off pays (farm/classifieds.js); the neighbours' ads for vehicles are pinned up on the odd day, on the board beside the chalkboards.
     this.jobBoard.onComplete = (id) => {
       this.market.earn(this.marketParams.jobPay);
@@ -2418,7 +2432,7 @@ export class Game {
     const tractor = !!this.tractorUnit && unit === this.tractorUnit;
     const hay = tractor ? this.trailer : null;
     const tip = this.tipTrailer;
-    const mine = [hay, tip, this.sprayer].filter(Boolean);
+    const mine = [hay, tip, this.sprayer, this.harrows].filter(Boolean);
     const blocked = this.hitchBlock(q);
     if (blocked) return this.hud.toast(blocked, 2);
     const on = mine.find((t) => t.hitched && (t === hay || t.puller === q));
@@ -2474,7 +2488,7 @@ export class Game {
 
   /** A box at each trailer's drawbar to look at: E hooks it on to the vehicle backed up to its ring, or takes it off. */
   setUpDrawbars() {
-    for (const [t, name] of [[this.trailer, 'bale trailer'], [this.tipTrailer, 'tipping trailer'], [this.sprayer, 'sprayer']]) {
+    for (const [t, name] of [[this.trailer, 'bale trailer'], [this.tipTrailer, 'tipping trailer'], [this.sprayer, 'sprayer'], [this.harrows, 'harrows']]) {
       const proxy = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.9), new THREE.MeshBasicMaterial({ visible: false }));
       proxy.position.set(0, 0.5, t.motion.p.drawLength);
       t.model.add(proxy);
@@ -2491,7 +2505,7 @@ export class Game {
 
   /** The trailer a vehicle has on its hook, if any. */
   trailerOf(quad) {
-    return [this.trailer, this.tipTrailer, this.sprayer].find((t) => t.hitched && (t.tractor ?? t.puller) === quad) ?? null;
+    return [this.trailer, this.tipTrailer, this.sprayer, this.harrows].find((t) => t.hitched && (t.tractor ?? t.puller) === quad) ?? null;
   }
 
   /** A trailer that has just folded up against what is pulling it (reversed too far on the lock): the puller can't push any further. */
@@ -4899,6 +4913,7 @@ export class Game {
       hay: this.hay?.toJSON(),
       mowing: this.mowGrid?.toJSON(),
       spray: this.spray?.toJSON(),
+      harrow: this.harrow?.toJSON(),
       lane: this.world.wear.laneToJSON(),
       boosterPack: { charge: this.boosterPack.engine.battery, where: this.boosterPack.where === 'charger' ? 'charger' : 'loose' },
       batteries: Object.fromEntries([...this.batteries].filter(([id, b]) => id !== BOOSTER_ID && b.out).map(([id, b]) => [id, { where: b.where === 'charger' ? 'charger' : 'loose' }])),
@@ -7316,6 +7331,100 @@ export class Game {
       this.sprayDone();
     }
     this.sprayView.refresh();
+  }
+
+  // Harrowing the field ---------------------------------------------------------------
+
+  /** The field inside the Home Loop, the chain harrows' rules and how it looks (world/harrowing.js, world/harrowView.js). */
+  setUpHarrowing() {
+    const rect = this.world.layout.harrowField;
+    if (!rect) return;
+    this.harrowParams = { ...DEFAULT_HARROW_PARAMS };
+    this.harrow = new Harrowing({ rect, params: this.harrowParams });
+    this.harrow.restore(this.farm.save?.harrow, this.farm.day);
+    // The molehills are part of the farm's character: dealt from its own seed, so the same farm has the same ones.
+    const hills = dealMolehills(rect, this.harrowParams.moleHills, createRandom((this.farmSeed ^ 0x401e) >>> 0));
+    this.harrowView = new HarrowView({ scene: this.scene, harrowing: this.harrow, heightAt: (x, z) => this.world.heightAt(x, z), molehills: hills });
+    this.harrowStarted = false; // the girls have been told the job has begun
+    registerTuning('Harrowing', this.harrowParams, HARROW_PARAM_RANGES);
+    this.farmMap.harrow = this.harrow; // the map draws your lines
+    this.farmMap.harrowWanted = () => this.jobBoard.has('harrow') && !this.harrow.done;
+  }
+
+  /** What the status line says to someone pulling the harrows. */
+  harrowStatus() {
+    const h = this.harrow;
+    if (!h.isDown) return `Harrows hitched, tines ${h.downWant ? 'lowering' : 'up'}\nT to lower the tines, J to unhitch`;
+    return `${HARROW_PHASE_TEXT[h.phase]}\nTines down, ${Math.round(h.coverage * 100)}% of the field harrowed\nT to lift them`;
+  }
+
+  /** One of the girls near the harrows says something about the harrowing (npc/harrowLines.js). */
+  saySomethingAboutHarrowing(key) {
+    const at = this.harrows.model.position;
+    const c = this.companions
+      .filter((g) => g.availability().canRemark && g.root.position.distanceTo(at) < 40)
+      .sort((a, b) => a.root.position.distanceTo(at) - b.root.position.distanceTo(at))[0];
+    c?.voice.say(key);
+  }
+
+  updateHarrows(dt, ridden, input) {
+    const t = this.harrows;
+    const h = this.harrow;
+    t.update(dt, { down: h.down });
+    this.noteFolded(t, ridden);
+    // What it takes from the vehicle in front of it: a mat on the ground drags.
+    if (this.harrowPuller && this.harrowPuller !== t.puller) Object.assign(this.harrowPuller.tow, { driveFactor: 1, brakeFactor: 1 });
+    this.harrowPuller = t.puller;
+    if (t.puller) Object.assign(t.puller.tow, towEffect(towLoad(0, h.down * h.p.towWeight, this.towParams), !!t.puller.tractor || !!t.puller.landRover, this.towParams));
+    // T lowers the tines or lifts them, from the seat of whatever pulls it or standing by it.
+    const riding = !!ridden && t.hitched && ridden.quad === t.puller;
+    const near = riding || (!this.player.isRiding && this.player.position.distanceTo(t.model.position) < 3);
+    if (near && input.wasPressed('KeyT') && !this.handsFull && !(ridden && !riding) && !(riding && ridden.quad.isTipped)) {
+      this.hud.toast(h.toggleTines() ? 'Tines lowering' : 'Tines lifting', 2);
+    }
+    const events = h.update(dt, { x: t.motion.x, z: t.motion.z, yaw: t.motion.yaw, speed: Math.abs(t.signedSpeed), hitched: t.hitched, day: this.farm.day });
+    for (const e of events) {
+      if (e.type === 'combed') {
+        this.harrowView.repaint(e.cells);
+        if (!this.harrowStarted) {
+          this.harrowStarted = true;
+          this.saySomethingAboutHarrowing('harrowStart');
+        }
+      } else if (e.type === 'done') this.harrowDone();
+    }
+  }
+
+  /** Enough of the field is harrowed: tick the job off the board (if it is on today) and the girls remark. */
+  harrowDone() {
+    if (this.jobBoard.complete('harrow')) {
+      this.hud.toast('Field harrowed. Ticked off the board on the barn door; lift the tines', 4);
+      this.jobBoardView.refresh();
+      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
+    } else this.hud.toast('Field harrowed', 3);
+    this.saySomethingAboutHarrowing('harrowDone');
+  }
+
+  /** The debug panel: set the harrows to a point in the job. `what`: down, up, half, done, clear. */
+  debugHarrow(what) {
+    const h = this.harrow;
+    if (!h) return;
+    if (!this.jobBoard.has('harrow') && (what === 'done' || what === 'half')) this.jobBoard.add('harrow', FARM_JOBS.harrow);
+    if (what === 'down') h.setDown(true);
+    else if (what === 'up') h.setDown(false);
+    else if (what === 'clear') {
+      h.clear();
+      this.harrowStarted = false;
+    } else if (what === 'half') {
+      for (let i = 0; i < h.cells / 2; i++) {
+        if (h.state[i] === 0) h.combed++;
+        h.state[i] = 1;
+      }
+      h.since ??= this.farm.day;
+    } else if (what === 'done') {
+      h.combAll(this.farm.day);
+      this.harrowDone();
+    }
+    this.harrowView.refresh();
   }
 
   // Making hay -----------------------------------------------------------------------
@@ -12893,7 +13002,7 @@ export class Game {
       const coat = unit.mud?.coat;
       while (coat?.bakeStep()) if (performance.now() - start > budgetMs) return;
     }
-    for (const t of [this.trailer, this.tipTrailer, this.sprayer]) while (t?.coat?.bakeStep()) if (performance.now() - start > budgetMs) return; // and the trailers'
+    for (const t of [this.trailer, this.tipTrailer, this.sprayer, this.harrows]) while (t?.coat?.bakeStep()) if (performance.now() - start > budgetMs) return; // and the trailers'
   }
 
   frame() {
@@ -13138,6 +13247,7 @@ export class Game {
     for (const l of Object.values(this.landys)) if (l.unit) this.guard.run('updateLandRover', () => this.updateLandRover(dt, ridden, input, l));
     this.guard.run('updateTipTrailer', () => this.updateTipTrailer(dt, ridden, input));
     if (this.spray) this.guard.run('updateSprayer', () => this.updateSprayer(dt, ridden, input));
+    if (this.harrow) this.guard.run('updateHarrows', () => this.updateHarrows(dt, ridden, input));
     if (this.hay) this.guard.run('updateHay', () => this.updateHay(dt));
     if (this.mowGrid) this.guard.run('updateMowing', () => this.updateMowing(dt, ridden, input));
     if (this.tractorUnit) this.guard.run('updateBaleSpike', () => this.updateBaleSpike(dt, ridden, input));
@@ -14020,6 +14130,10 @@ export class Game {
       this.hud.setStatus('The hitch is at the sprayer\'s ring\nJ to hitch it on');
     } else if (this.riddenUnit && this.sprayer.puller === this.riddenUnit.quad && this.spray) {
       this.hud.setStatus(this.sprayStatus());
+    } else if (this.riddenUnit && this.harrows.canHitch(this.riddenUnit.quad)) {
+      this.hud.setStatus('The hitch is at the harrows\' ring\nJ to hitch them on');
+    } else if (this.riddenUnit && this.harrows.puller === this.riddenUnit.quad && this.harrow) {
+      this.hud.setStatus(this.harrowStatus());
     } else if (this.riddenUnit && this.tipTrailer.canHitch(this.riddenUnit.quad)) {
       this.hud.setStatus('The hitch is at the trailer\'s ring\nJ to hitch it on');
     } else if (this.riddenUnit && this.tipTrailer.puller === this.riddenUnit.quad && this.riddenUnit.quad.speed < 0.8) {
@@ -14061,7 +14175,7 @@ export class Game {
         colour: hidden ? '#8b8270' : hex(u.spec.bodyColor), label: hidden ? 'Under the tarp' : u.spec.name,
       });
     }
-    for (const [t, label] of [[this.trailer, 'Bale trailer'], [this.tipTrailer, 'Tipping trailer'], [this.sprayer, 'Sprayer']]) {
+    for (const [t, label] of [[this.trailer, 'Bale trailer'], [this.tipTrailer, 'Tipping trailer'], [this.sprayer, 'Sprayer'], [this.harrows, 'Harrows']]) {
       at(t.model);
       markers.push({ kind: 'trailer', x: v.x, z: v.z, yaw: yawOf(t.model), colour: '#9a9a96', label });
     }

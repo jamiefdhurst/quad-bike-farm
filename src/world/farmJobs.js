@@ -3,6 +3,7 @@
 // tub is doing, and draws what it says (world/muckView.js, world/jobBoard.js). Tested in tests/farmJobs.test.js.
 
 import { SPRAY_JOB } from './spraying.js';
+import { HARROW_JOB } from './harrowing.js';
 
 export const DEFAULT_MUCK_PARAMS = {
   forkSeconds: 12, // holding E at the heap fills an empty tub in this long
@@ -173,6 +174,7 @@ export const FARM_JOBS = {
     needs: 'lawns',
   },
   spray: SPRAY_JOB, // only on the board while the field wants it (the game leaves it off for the days a spray lasts)
+  harrow: HARROW_JOB, // likewise: off the board for the days a harrowing lasts
 };
 
 export const DEFAULT_JOB_BOARD_PARAMS = {
