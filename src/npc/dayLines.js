@@ -14,6 +14,14 @@ export const AMY_DAY_LINES = {
   ]),
   briefingOpen: line(60, ['Right, good morning. Here is the day.', 'Morning. Let me tell you how the day looks.', 'Before you go anywhere, listen. Here is the day.']),
   briefingAllWell: line(60, ['Every quad seems to be behaving, which makes a change.', 'I cannot find anything wrong with any of the quads today.', 'The quads all look sound this morning.']),
+  briefingYesterdayFallenOut: line(60, [
+    'Jess and I are still not speaking after yesterday, in case you wondered.',
+    'I am afraid Jess and I left things badly yesterday. Do not expect us to be friends before breakfast.',
+  ]),
+  briefingYesterdayKey: line(60, [
+    'Somebody left a key on in one of the quads last night, so there is a flat battery waiting.',
+    'One of the quads was left with its key on overnight. Do check the battery before you set off.',
+  ]),
   showEve: line(600, [
     'The show is tomorrow. Whatever you enter, I suggest you wash it.',
     'Tomorrow is the show. Clean, tidy and running sweet, that is what they judge.',
@@ -56,6 +64,7 @@ export const JESS_DAY_LINES = {
     'Can we go faster tomorrow?',
   ],
   briefingOpen: ['Right, morning! Here is the day.', 'Morning! Listen, this is the day.', 'Ooh, the day, hang on.'],
+  briefingYesterdayFallenOut: ['Yeah, well, I am not talking to her either.', 'She started it. Just so you know.', 'Do not look at me. She knows what she did.'],
   briefingAllWell: ['Nothing wrong with any of the quads. Amazing.', 'Every quad is fine today. Do not jinx it.', 'The quads are all behaving.'],
   showEve: [
     'Show tomorrow! Wash your quad, it is bare mud at the moment.',

@@ -47,13 +47,38 @@ export function worstTrouble(faults, kinds, from) {
 }
 
 /**
+ * What the last day left behind, from the farm's save (farm/farmState.js), most telling first and at most `max`: the girls still not
+ * speaking, then a key left on with the engine stopped (so a flat battery this morning). `save` is the raw save, from before the night;
+ * returns steps like planBriefing's, [] on a new farm.
+ */
+export function yesterdayOf(save, max = 2) {
+  if (!save) return [];
+  const steps = [];
+  if (save.girls?.fallenOut) {
+    steps.push({ girl: 'amy', key: 'briefingYesterdayFallenOut' }, { girl: 'jess', key: 'briefingYesterdayFallenOut', cutIn: true });
+  }
+  const keyLeftOn = Object.values(save.vehicles ?? {}).some((v) => v?.keyOn && !v.running && !v.engine?.batteryOut);
+  if (keyLeftOn) steps.push({ girl: 'amy', key: 'briefingYesterdayKey' });
+  // A falling-out is two parts (her, then Jess cutting in); count the telling, not the parts.
+  const told = [];
+  let kinds = 0;
+  for (const st of steps) {
+    if (!st.cutIn) kinds++;
+    if (kinds > max) break;
+    told.push(st);
+  }
+  return told;
+}
+
+/**
  * The parts of the briefing, in order, each { girl, key } or { girl, quad: specId, key } (a line about a quad, said by `voice.sayQuad`).
- * `day`: { weather, promise, trouble (a spec id or null), agendas: { amy, jess } (agenda ids or null) }.
+ * `day`: { weather, promise, trouble (a spec id or null), agendas: { amy, jess } (agenda ids or null), yesterday (yesterdayOf's steps, optional) }.
  */
 export function planBriefing(day) {
   const steps = [];
   const say = (girl, key, extra = {}) => steps.push({ girl, key, ...extra });
   say('amy', 'briefingOpen');
+  for (const st of day.yesterday ?? []) say(st.girl, st.key);
   const weather = weatherSituation(day.weather);
   if (weather) say('amy', weather);
   if (day.promise) say('amy', day.promise.worse ? 'forecastWorse' : 'forecastBetter');
