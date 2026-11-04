@@ -29,6 +29,7 @@ export const VEHICLE_VERBS = [
   { name: 'dry', help: 'its windscreen dried off' },
   { name: 'mist', help: 'the glass of its cab misted over, as after a cold wet drive with a full load (the cars and the Land Rovers)' },
   { name: 'demist', help: 'the glass of its cab cleared of mist' },
+  { name: 'radiomusic', help: 'choose a folder of music to add to the station its radio is tuned to, for this session (the radios in the Land Rovers and the cars)' },
   { name: 'fix', help: 'put right: faults, plug, filter, wear, scuffing, seizure, water (quirks stay)' },
 ];
 
@@ -173,6 +174,10 @@ export function createHost(g, { copy = () => {} } = {}) {
         case 'cool': u.engine.setTemperature(0); break;
         case 'fill': u.quad.fuel.litres = u.quad.fuel.params.tankCapacity; break;
         case 'fix': fixEverything(u); break;
+        case 'radiomusic':
+          if (!u.quad.radio) return `${id} has no radio`;
+          g.addRadioMusic(u);
+          return `${id}: choose the music in the dialog`;
         case 'soak': if (!g.debugScreenRain(u, 'soak')) return `${id} has no windscreen`; break;
         case 'dry': if (!g.debugScreenRain(u, 'clear')) return `${id} has no windscreen`; break;
         case 'mist': if (!g.debugCabMist(u, 'mist')) return `${id} has no cab to mist`; break;

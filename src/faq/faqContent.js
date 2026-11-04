@@ -2678,17 +2678,31 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I turn the radio on?',
-        a: `In either Moorland or one of the cars, press <kbd>I</kbd> with the key on. <kbd>Shift</kbd>+<kbd>I</kbd> turns it up and
-          <kbd>Alt</kbd>+<kbd>I</kbd> turns it down; on a gamepad it is in the ring. There is one station, mostly talk with a tune now and then,
-          and every radio on the farm plays the same thing. It goes quiet while the starter turns and when the battery is flat. Outside, you can hear
+        a: `In either Moorland or one of the cars, press <kbd>I</kbd> with the key on. With it on, a short press of <kbd>I</kbd> changes
+          station and holding <kbd>I</kbd> switches it off. <kbd>Shift</kbd>+<kbd>I</kbd> turns it up and <kbd>Alt</kbd>+<kbd>I</kbd> turns it down;
+          on a gamepad it is in the ring, on and off only. It goes quiet while the starter turns and when the battery is flat. Outside, you can hear
           one that has been left on from a few metres.`,
-        tip: 'Press I in a Moorland or a car, key on, for the radio. Shift+I louder, Alt+I quieter.',
+        tip: 'Press I in a Moorland or a car, key on, for the radio. A short press changes station, hold it to switch off. Shift+I louder, Alt+I quieter.',
+      },
+      {
+        q: 'What is on the radio?',
+        a: `Two stations. Dale FM plays easy listening and pop, with the weather, the farming report, the local news, a phone-in and the traffic between
+          the songs. Quarry Rock plays rock, with the gig guide and a competition as well. Every radio tuned to a station plays the same thing at the same
+          moment, so if you get out of a car on Dale FM and get into the other, you hear the same song. Jess's Griffin starts on Quarry Rock and
+          the rest on Dale FM. The music is all free to use, and credited in ASSETS.md.`,
+      },
+      {
+        q: 'Can I put my own music on the radio?',
+        a: `Yes. Put MP3s in <code>public/audio/radio-extra/dale</code> or <code>quarry</code> and run <code>tools/build_radio_music.py --extras-only</code> (see
+          the README), or, in the game, open the debug panel (the backtick), pick a Moorland or a car in the Vehicles tab and press "Add music to its radio from a
+          folder". The songs you pick are shuffled in with the station's own until you reload.`,
       },
       {
         q: 'Why does the radio crackle and fade?',
-        a: `Each set is different. The Tor has an old dash radio that picks up the engine, so it spits more the harder you rev, and the station
-          drifts in and out. The Crag's is plainer. Amy's Finch has a cassette radio with a little warble, and Jess's Griffin a loud one with a
-          lot of bass that holds the station well. Yours is the cassette radio it came with, with a faint whine from the engine.`,
+        a: `Each set is different, and the old ones sound terrible. The Tor has an old dash radio with a tinny speaker that buzzes when it is loud and picks
+          up the engine, so it spits more the harder you rev, and the station drifts in and out. The Crag's is plainer. Amy's Finch has a cassette radio with a
+          warble, and Jess's Griffin an aftermarket one, clean and loud with a lot of bass, that holds the station well. Yours is the cassette radio it
+          came with, with a faint whine from the engine.`,
       },
       {
         q: 'Why did she turn the radio on, up or off?',

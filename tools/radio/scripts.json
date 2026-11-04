@@ -1,0 +1,158 @@
+{
+  "stations": {
+    "dale": {
+      "name": "Dale FM",
+      "style": "easy listening and pop",
+      "voices": { "main": "george", "news": "isabella" },
+      "talk": {
+        "ident": [
+          "You're listening to Dale FM, music and company for the whole valley.",
+          "Dale FM. The friendly voice of the farms, the villages and everything in between.",
+          "This is Dale FM, and you're in good company.",
+          "Dale FM, easy listening for the long way round.",
+          "Still with me on Dale FM? Good. There's plenty more to come.",
+          "Hello again, and welcome back to Dale FM."
+        ],
+        "weather": [
+          "A look at the weather. Cloud thickening from the west this afternoon, with a few spots of rain on the tops by teatime. Light winds, and a mild evening to follow.",
+          "The forecast for the dale. A bright start, a few showers through the middle of the day, and some good sunny spells in between. Take a coat, just in case.",
+          "Frost first thing on the higher ground, so mind the lanes. It should lift by mid morning, leaving a dry, cold, bright day.",
+          "Mist in the valley bottoms to begin with, clearing slowly. Then a grey, quiet afternoon with the wind picking up a little after dark.",
+          "It's turning wet across the moor this evening. Heavy rain at times, and the becks will be running fast by morning, so keep clear of the fords.",
+          "A breezy one today. Gusts of forty miles an hour on the tops, easing overnight. Good drying weather for the washing, not so good for the hay.",
+          "Fog patches again on the low roads tonight, and a touch of frost. Go gently if you're out and about.",
+          "Dry and bright for most of us tomorrow, with a cool north wind. A good day to get the outside jobs finished."
+        ],
+        "farming": [
+          "Time for the farming report. Store lambs were steady at the market this week, with the best of the heavy lambs making a little more than last time.",
+          "Over to the farming desk. Barley is a touch firmer, wheat is quiet, and red diesel is down a few pence a litre on last month.",
+          "At the mart this week, a good show of cattle, with the prime beasts holding their price. Cull cows were a little cheaper.",
+          "A reminder for the farms. If you've got stock out on the high pasture, check the water troughs before the frost sets in.",
+          "This week on the Farming Hour, a few tips for the winter. Check your gates, check your fences, and check the oil in the tractor before the cold gets at it.",
+          "Hay and straw are in short supply across the dale, so if you've got a spare bale or two, there are folk who'd be glad of them.",
+          "The sheep dog trials are coming up this weekend at the show field. Entries close on Friday, and there will be tea and cake.",
+          "And a word on slurry. Spreading is now closed until the new year, so please keep to the dates and keep clear of the becks.",
+          "Ewes are looking well on the whole, but it's worth a second look at their feet before the ground gets wet. Foot rot waits for no one.",
+          "The tractor run for the hospice raises money again this year. Polish up your old Fergie, and meet at the green at ten."
+        ],
+        "news": [
+          "This is the news from Dale FM. A fall in the price of red diesel has been welcomed by farmers across the county.",
+          "In local news, work to repair the bridge at the bottom of the dale will begin next week, and the road will be closed for around three weeks.",
+          "Councillors have approved plans for a new community shop in the village, which will open in the spring.",
+          "The parish council has appealed to drivers to slow down on the narrow lanes near the school, after several near misses this month.",
+          "A tractor and trailer blocked the main road for an hour this morning after losing a wheel. Nobody was hurt, and the road has now reopened.",
+          "The village hall has been awarded a grant to replace its roof, after volunteers raised more than eight thousand pounds.",
+          "Police are asking farmers to keep a close eye on fuel tanks and tools, after a number of thefts from yards in the area.",
+          "And finally, a prize marrow weighing more than forty kilos has taken first place at the village show. The grower says it was all in the soil.",
+          "The bus service between the market town and the villages will run a reduced timetable over the winter. Details are on the parish noticeboard.",
+          "A new walking route along the old railway line has opened, and walkers are asked to keep dogs on leads near the sheep.",
+          "That's the news. There's more at the top of the hour, and now back to the music.",
+          "The county show has announced the dates for next summer, and the organisers are already looking for volunteers.",
+          "Heavy rain overnight has left some of the low fields under water. The farmers affected say they have seen worse, but not recently.",
+          "A local cheesemaker has won a national award for a farmhouse cheddar. Orders are already coming in from as far as London."
+        ],
+        "phonein": [
+          "And on the line we have Margaret, who says she's lost her best glove somewhere between the church and the chip shop. If you've seen a green one, give us a ring.",
+          "Our next caller is Dennis, who wants to tell us the swallows have left the barn early this year. He says that means a hard winter. We'll see.",
+          "We've had a message from a listener with a spare tractor seat. If you need one, it's in good condition, and it's yours for a cup of tea.",
+          "Someone has written in to ask about the strange noise on the top road last night. We think it was a tawny owl. We hope it was a tawny owl.",
+          "Barbara rang in to say thank you to whoever mended her gate. She says she would like to say thanks properly, with a fruit cake.",
+          "A caller is asking if anyone has seen a black and white collie wearing a red collar. She answers to Meg, and she's friendly.",
+          "John from the far end of the dale says his first snowdrops are out. That is early, even for him.",
+          "Our lines are open. Tell us your favourite song for a long drive, and we'll see what we can do."
+        ],
+        "traffic": [
+          "On the roads, it's all clear on the main route into town. There's a tractor on the bend by the church, so allow a little extra time.",
+          "A word for drivers. The ford at the bottom of the lane is running high, so please use the bridge.",
+          "Sheep on the road near the top farm. Slow down, and give them room.",
+          "Roadworks with temporary lights on the valley road. Expect delays of about ten minutes.",
+          "Slippery conditions on the minor roads this evening, with mud from the fields. Take it steady.",
+          "The market town car park is full, so you might want to try the one by the river."
+        ],
+        "link": [
+          "More music coming up.",
+          "Stay with us. We've got plenty more for you.",
+          "That's a nice one. Let's keep it going.",
+          "Right, let's have another one."
+        ]
+      }
+    },
+    "quarry": {
+      "name": "Quarry Rock",
+      "style": "rock",
+      "voices": { "main": "lewis", "news": "isabella" },
+      "talk": {
+        "ident": [
+          "This is Quarry Rock. Turn it up.",
+          "You're locked on to Quarry Rock, the loudest station in the county.",
+          "Quarry Rock. Real music, no messing about.",
+          "Quarry Rock, and it's about to get louder.",
+          "Don't touch that dial. This is Quarry Rock.",
+          "Welcome back to Quarry Rock, where the riffs never stop."
+        ],
+        "weather": [
+          "Weather time. It's grey, it's wet, and it's going to stay that way. Bring a hat.",
+          "Cold and clear tonight, with a hard frost by morning. Perfect weather for staying in and turning the volume up.",
+          "Wind and rain on the tops this afternoon, with gusts that will knock your hat off. It eases tomorrow.",
+          "Bright and breezy tomorrow, with sunshine for most of the day. A good one for the bike.",
+          "Thick fog on the low roads tonight, so slow down. You'll be glad you did.",
+          "Showers all day, some of them heavy. But there's a rainbow in there somewhere, I'm told.",
+          "A cold front is sweeping in from the north. Expect a sharp drop in temperature, and a few flurries of sleet on the high ground.",
+          "A dry spell at last. Make the most of it before the weekend wet arrives."
+        ],
+        "traffic": [
+          "Traffic news. The bypass is moving slowly after a lorry shed its load of gravel. Take the back road if you can.",
+          "All quiet on the valley road, but there's a tractor in front of you on the long hill. Be patient.",
+          "A herd of cattle is crossing the lane by the quarry gates. They're not in a hurry, so you shouldn't be either.",
+          "Road closed at the bridge for repairs. Use the diversion past the old mill.",
+          "Oil on the road at the crossroads. Take care on the bend.",
+          "Fast and slippery on the top road tonight. If you're out on two wheels, treat it with respect."
+        ],
+        "gig": [
+          "Gig guide. The Rusty Gates play the Black Horse on Friday night, and tickets are a fiver on the door.",
+          "On Saturday, a night of loud guitars at the village hall, with three bands and a bar. Doors at seven.",
+          "Local band The Slurry Pits are back for one night only, at the farmers' club. Bring earplugs.",
+          "The young farmers are putting on a barn dance with a rock band. Wellies are not optional.",
+          "A new rock night starts on Thursday at the pub in the market town. Open mic, and anyone can have a go.",
+          "Festival tickets go on sale this weekend, and they're not expected to last."
+        ],
+        "news": [
+          "This is the news on Quarry Rock. A fall in the price of red diesel has been welcomed by farmers across the county.",
+          "Work to repair the bridge at the bottom of the dale will begin next week. The road will be closed for around three weeks.",
+          "Police are asking farmers to keep a close eye on their fuel tanks and tools after a number of thefts from yards in the area.",
+          "A tractor and trailer blocked the main road for an hour this morning after losing a wheel. Nobody was hurt.",
+          "A teenager from the village has won a place at the national championships for motocross. Friends say she has been practising every evening.",
+          "The council is asking drivers to slow down on the narrow lanes near the school, after a number of near misses.",
+          "The old quarry will host a charity rally next month, with proceeds going to the air ambulance.",
+          "Heavy rain overnight has flooded some of the low fields. Farmers say they have seen worse, but not recently.",
+          "A lorry has overturned on the long hill, spilling a load of bagged compost. The road is open again, but the verge is a mess.",
+          "That's the news. Now, back to the music.",
+          "A sheep has been rescued from a ledge on the quarry face after a two hour operation. The sheep is said to be unimpressed.",
+          "The county show organisers say next summer's event will be the biggest yet, with a new arena for the tractor pulling."
+        ],
+        "competition": [
+          "Competition time. Answer this and win a pair of tickets. Which band made the song we just played? Ring in with your answer.",
+          "Our caller today wins a Quarry Rock mug and a box of vinyl. Question: how many strings has a bass guitar usually got?",
+          "It's the Name That Riff competition. I'll play a few notes, and the first person to ring in with the right answer wins a prize.",
+          "Win a pair of tickets to the festival. All you have to do is tell us what you would play at maximum volume.",
+          "The prize this week is a signed guitar pick, and a pie from the pub. Phone lines open now.",
+          "Today's mystery sound: we'll play it twice. The first caller to name it wins the lot."
+        ],
+        "phonein": [
+          "Next caller, Steve, from the farm on the hill. He says his tractor radio only picks up us, and the cows prefer us to anything else.",
+          "A message from Kim, who says she's playing us loud enough that the neighbours are asking what the song is. Happy to help, Kim.",
+          "We've got Phil on the line. He says the best song to drive a quad bike to is anything with a big drum sound. I'd have to agree.",
+          "Dave rang in to request something with a lot of guitar, as he's been stuck in a tractor all day. Dave, we've got you.",
+          "Someone has asked us to turn it up. We already have.",
+          "A caller says she can hear us from the other side of the hill. We take that as a compliment."
+        ],
+        "link": [
+          "More rock coming up.",
+          "Keep it loud.",
+          "Right, here we go again.",
+          "Stay tuned. It only gets louder."
+        ]
+      }
+    }
+  }
+}

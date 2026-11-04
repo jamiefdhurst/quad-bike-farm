@@ -1,13 +1,17 @@
-// The sound of the radios: all procedural. Each radio that is on gets a chain of its own (built when it first makes a sound, dropped
-// when it has been silent a while): the station's programme (radioProgramme.js: syllables of a presenter, a tune, a jingle) mixed with
-// hiss and crackle that grow as the station drifts off, then through the set's speaker (its band, its bass) and out at the level where
-// the listener is. The programme is on the audio clock, so two radios playing at once play the same thing.
+// The sound of the radios. Each radio that is on gets a chain of its own (built when it first makes a sound, dropped when it has been
+// silent a while): the station it is tuned to (radioStation.js: recorded songs and talk shuffled into a programme on the audio clock,
+// loaded by radioLibrary.js) mixed with hiss and crackle that grow as the station drifts off, then through the set's speaker (its
+// band, its bass, how much it overloads, a cassette's warble) and out at the level where the listener is. Changing station is a burst
+// of static. Two radios on one station play the same thing at the same moment.
 
-import { programmeEvents } from './radioProgramme.js';
+import { Programme, stationById, STATION_PARAMS } from './radioStation.js';
+import { RadioLibrary, idsInUse } from './radioLibrary.js';
 import { heardAt } from '../vehicle/radio.js';
 
-const LOOKAHEAD = 0.7; // seconds of the programme scheduled ahead of the clock
+const LOOKAHEAD = 0.7; // seconds ahead that the next item is scheduled
+const PREFETCH = 30; // seconds ahead that the next item starts loading
 const DROP_AFTER = 1.5; // seconds silent before a chain is taken down
+const EVICT_EVERY = 2; // seconds between letting go of audio that is no longer wanted
 
 let noiseBuffer = null;
 function whiteNoise(ctx) {
@@ -20,16 +24,59 @@ function whiteNoise(ctx) {
   return buf;
 }
 
+/** A soft-clipping curve: `amount` 0 leaves it clean, 1 is a cheap speaker overloading. Pure. */
+export function distortionCurve(amount, n = 1024) {
+  const k = 1 + amount * 14;
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * 2 - 1;
+    out[i] = Math.tanh(k * x) / Math.tanh(k);
+  }
+  return out;
+}
+
 export class RadioAudio {
   constructor(hub, params = {}) {
     this.hub = hub;
     this.p = { volume: 0.5, crackleRate: 9, ...params };
     this.chains = new Map(); // key -> chain
+    this.library = new RadioLibrary(hub);
+    this.programmes = new Map(); // station id -> Programme, shared by every radio tuned to it
+    this.evictIn = 0;
   }
 
   /** Is there a sound to make at all right now? */
   get live() {
     return !!(this.hub.ready && !this.hub.paused && !this.hub.params?.muted);
+  }
+
+  /** The programme of a station, made when first wanted and given its songs and talk as they load or are added. */
+  programmeFor(id, now) {
+    let prog = this.programmes.get(id);
+    if (!prog) {
+      prog = new Programme(stationById(id), this.library.library(id), STATION_PARAMS);
+      prog.revision = this.library.revision;
+      this.programmes.set(id, prog);
+    } else if (prog.revision !== this.library.revision) {
+      prog.setLibrary(this.library.library(id), now);
+      prog.revision = this.library.revision;
+    }
+    return prog;
+  }
+
+  /** What is on a station now: { kind, title, left } or null (for the debug panel). */
+  nowPlaying(id) {
+    const now = this.hub.ctx?.currentTime;
+    const prog = this.programmes.get(id);
+    if (now === undefined || !prog) return null;
+    const slot = prog.at(now);
+    return { kind: slot.kind, title: slot.item?.title ?? slot.item?.id ?? '', left: Math.max(0, slot.end - now) };
+  }
+
+  /** Adds songs picked in the game to a station (resolves to how many could be played). */
+  addMusic(stationId, files) {
+    this.library.ensure();
+    return this.library.addLocal(stationId, files);
   }
 
   build(key, radio) {
@@ -51,7 +98,14 @@ export class RadioAudio {
     shelf.frequency.value = 200;
     shelf.gain.value = prof.bass;
     const speaker = ctx.createGain(); // everything the set makes goes through here
-    speaker.connect(hp).connect(shelf).connect(lp).connect(dull).connect(out).connect(this.hub.master);
+    let tail = speaker;
+    if (prof.distort > 0) {
+      const shaper = ctx.createWaveShaper(); // a small speaker overloading
+      shaper.curve = distortionCurve(prof.distort);
+      shaper.oversample = '2x';
+      tail = tail.connect(shaper);
+    }
+    tail.connect(hp).connect(shelf).connect(lp).connect(dull).connect(out).connect(this.hub.master);
 
     const programme = ctx.createGain(); // the station: clear when the signal is, thin in static
     programme.connect(speaker);
@@ -79,9 +133,42 @@ export class RadioAudio {
       warble.lfo = lfo;
     }
 
-    const chain = { key, out, dull, programme, hiss, speaker, hissSrc, warble, scheduledTo: ctx.currentTime, silentFor: 0, popDebt: 0 };
+    const chain = {
+      key, out, dull, programme, hiss, hissFilter, speaker, hissSrc, warble,
+      station: radio.station, bus: null, sources: new Set(), started: new Set(), silentFor: 0, popDebt: 0,
+    };
+    this.newBus(chain);
     this.chains.set(key, chain);
+    this.library.ensure();
     return chain;
+  }
+
+  /** A fresh mixing point for what is playing, so that the old one can be faded out on its own. */
+  newBus(chain) {
+    chain.bus = this.hub.ctx.createGain();
+    chain.bus.connect(chain.programme);
+  }
+
+  /** Tunes the chain to another station: what was playing stops and the new programme starts from wherever it has got to. */
+  retune(chain, station) {
+    const ctx = this.hub.ctx;
+    const old = chain.bus;
+    const sources = chain.sources;
+    old.gain.setTargetAtTime(0, ctx.currentTime, 0.02);
+    setTimeout(() => {
+      for (const s of sources) {
+        try {
+          s.stop();
+        } catch {
+          // already stopped
+        }
+      }
+      old.disconnect();
+    }, 150);
+    chain.sources = new Set();
+    chain.started = new Set();
+    chain.station = station;
+    this.newBus(chain);
   }
 
   drop(key) {
@@ -90,6 +177,7 @@ export class RadioAudio {
     try {
       c.hissSrc.stop();
       c.warble?.lfo.stop();
+      for (const s of c.sources) s.stop();
     } catch {
       // already stopped
     }
@@ -97,98 +185,34 @@ export class RadioAudio {
     this.chains.delete(key);
   }
 
-  /** Plays the programme's events that start in the next little while on this radio's chain. */
+  /** Starts the items of the chain's station that are due (and any that began a moment ago), and starts loading the ones coming up. */
   schedule(chain) {
     const ctx = this.hub.ctx;
     const now = ctx.currentTime;
-    const from = Math.max(chain.scheduledTo, now);
-    const to = now + LOOKAHEAD;
-    if (to <= from) return;
-    for (const e of programmeEvents(from, to)) this.voice(chain, e);
-    chain.scheduledTo = to;
-  }
-
-  osc(chain, type, freq, t) {
-    const o = this.hub.ctx.createOscillator();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, t);
-    if (chain.warble) chain.warble.connect(o.detune);
-    return o;
-  }
-
-  noiseBurst(chain, t, dur, gain, filterType, freq) {
-    const ctx = this.hub.ctx;
-    const src = ctx.createBufferSource();
-    src.buffer = whiteNoise(ctx);
-    const f = ctx.createBiquadFilter();
-    f.type = filterType;
-    f.frequency.value = freq;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(gain, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(f).connect(g).connect(chain.programme);
-    src.start(t, Math.random() * 1.5, dur + 0.02);
-  }
-
-  voice(chain, e) {
-    const ctx = this.hub.ctx;
-    const t = e.t;
-    const end = t + e.dur;
-    if (e.kind === 'syllable') {
-      const o = this.osc(chain, 'sawtooth', e.f0 * 0.96, t);
-      o.frequency.linearRampToValueAtTime(e.f0, end);
-      const env = ctx.createGain();
-      env.gain.setValueAtTime(0.0001, t);
-      env.gain.linearRampToValueAtTime(0.5 * e.gain, t + 0.02);
-      env.gain.linearRampToValueAtTime(0.0001, end + 0.03);
-      for (const [f, q, g] of [[e.f1, 6, 1], [e.f2, 9, 0.6]]) {
-        const bp = ctx.createBiquadFilter();
-        bp.type = 'bandpass';
-        bp.frequency.value = f;
-        bp.Q.value = q;
-        const gg = ctx.createGain();
-        gg.gain.value = g * 2.2;
-        o.connect(bp).connect(gg).connect(env);
-      }
-      env.connect(chain.programme);
-      o.start(t);
-      o.stop(end + 0.05);
-      if (e.hiss) this.noiseBurst(chain, t, 0.07, 0.18 * e.gain, 'highpass', 4500);
-    } else if (e.kind === 'lead') {
-      const o = this.osc(chain, 'square', e.freq, t);
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass';
-      lp.frequency.value = 2200;
-      const env = ctx.createGain();
-      env.gain.setValueAtTime(0.0001, t);
-      env.gain.linearRampToValueAtTime(0.11 * e.gain, t + 0.01);
-      env.gain.exponentialRampToValueAtTime(0.0001, end + 0.1);
-      o.connect(lp).connect(env).connect(chain.programme);
-      o.start(t);
-      o.stop(end + 0.12);
-    } else if (e.kind === 'bass') {
-      const o = this.osc(chain, 'triangle', e.freq, t);
-      const env = ctx.createGain();
-      env.gain.setValueAtTime(0.0001, t);
-      env.gain.linearRampToValueAtTime(0.4 * e.gain, t + 0.015);
-      env.gain.exponentialRampToValueAtTime(0.0001, end);
-      o.connect(env).connect(chain.programme);
-      o.start(t);
-      o.stop(end + 0.02);
-    } else if (e.kind === 'kick') {
-      const o = this.osc(chain, 'sine', 120, t);
-      o.frequency.exponentialRampToValueAtTime(42, t + e.dur);
-      const env = ctx.createGain();
-      env.gain.setValueAtTime(0.7, t);
-      env.gain.exponentialRampToValueAtTime(0.0001, t + e.dur + 0.04);
-      o.connect(env).connect(chain.programme);
-      o.start(t);
-      o.stop(t + e.dur + 0.06);
-    } else if (e.kind === 'snare') {
-      this.noiseBurst(chain, t, e.dur, 0.35 * e.gain, 'bandpass', 1800);
-    } else if (e.kind === 'hat') {
-      this.noiseBurst(chain, t, e.dur, 0.14 * e.gain, 'highpass', 6500);
+    const prog = this.programmeFor(chain.station, now);
+    for (const slot of prog.between(now, now + PREFETCH)) {
+      if (!slot.item || chain.started.has(slot.start)) continue;
+      const buf = this.library.buffer(slot.item); // starts loading it if it isn't
+      if (!buf || slot.start > now + LOOKAHEAD) continue;
+      const offset = Math.max(0, now - slot.start);
+      chain.started.add(slot.start);
+      if (offset >= buf.duration - 0.05) continue;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      if (chain.warble) chain.warble.connect(src.detune);
+      src.connect(chain.bus);
+      src.start(now + Math.max(0, slot.start - now), offset);
+      chain.sources.add(src);
+      src.onended = () => {
+        chain.sources.delete(src);
+        try {
+          chain.warble?.disconnect(src.detune);
+        } catch {
+          // not connected
+        }
+      };
     }
+    for (const t of chain.started) if (t < now - 600) chain.started.delete(t);
   }
 
   /** A pop or spit in the static, through the speaker only (it isn't part of the station). */
@@ -227,14 +251,18 @@ export class RadioAudio {
       }
       chain ??= this.build(s.key, radio);
       chain.silentFor = 0;
+      if (chain.station !== radio.station) this.retune(chain, radio.station);
       const t = ctx.currentTime;
       const signal = radio.signal;
       const prof = radio.profile;
+      // changing station: the programme drops out under a burst of static that dies away
+      const between = P.retuneSeconds > 0 ? Math.max(0, 1 - radio.sinceRetune / P.retuneSeconds) : 0;
       chain.out.gain.setTargetAtTime(gain * this.p.volume, t, 0.06);
       chain.dull.frequency.setTargetAtTime(18000 - dull * 16500, t, 0.1);
       // a weak station is thin in the noise: the voice drops, the hiss comes up
-      chain.programme.gain.setTargetAtTime(0.25 + 0.75 * signal * signal, t, 0.15);
-      chain.hiss.gain.setTargetAtTime(prof.hiss * (0.012 + 0.16 * (1 - signal)), t, 0.15);
+      chain.programme.gain.setTargetAtTime((0.25 + 0.75 * signal * signal) * (1 - 0.9 * between), t, between > 0 ? 0.02 : 0.15);
+      chain.hiss.gain.setTargetAtTime(prof.hiss * (0.012 + 0.16 * (1 - signal)) + 0.35 * between, t, between > 0 ? 0.02 : 0.15);
+      chain.hissFilter.frequency.setTargetAtTime(2200 + 2500 * between * Math.sin(radio.sinceRetune * 40), t, 0.03);
       // pops and spits: more in static, and the ignition's tick rising with the revs
       chain.popDebt += dt * this.p.crackleRate * (prof.crackle * (0.3 + 2.2 * (1 - signal)) + prof.whine * radio.rev * 3);
       while (chain.popDebt >= 1) {
@@ -242,6 +270,14 @@ export class RadioAudio {
         this.pop(chain, 0.04 + 0.2 * prof.crackle + 0.1 * prof.whine * radio.rev);
       }
       this.schedule(chain);
+    }
+    this.evictIn -= dt;
+    if (this.evictIn <= 0 && ctx) {
+      this.evictIn = EVICT_EVERY;
+      const now = ctx.currentTime;
+      const keep = new Set();
+      for (const c of this.chains.values()) for (const id of idsInUse(this.programmeFor(c.station, now).between(now - 1, now + PREFETCH))) keep.add(id);
+      this.library.evict(keep);
     }
   }
 

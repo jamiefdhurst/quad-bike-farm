@@ -138,8 +138,8 @@ export const CONTROLS = [
   {
     title: 'The radio (the Moorlands and the cars)',
     lines: [
-      `<kbd>I</kbd> radio on and off, <kbd>Shift</kbd>+<kbd>I</kbd> louder, <kbd>Alt</kbd>+<kbd>I</kbd> quieter. It needs the key on, and goes quiet while the starter turns`,
-      `Each has a set of its own: the Series' picks up the engine and drifts off the station, Amy's Finch has a cassette radio, Jess's Griffin a loud one with a lot of bass. Jess turns it up, Amy turns it off`,
+      `<kbd>I</kbd> switches the radio on; with it on, a short press changes station and holding <kbd>I</kbd> switches it off. <kbd>Shift</kbd>+<kbd>I</kbd> louder, <kbd>Alt</kbd>+<kbd>I</kbd> quieter. It needs the key on, and goes quiet while the starter turns`,
+      `Two stations: Dale FM (easy listening and pop, with the farming report and the news) and Quarry Rock. Each set is a different age: the Series' is tinny, buzzes and drifts off the station, Amy's Finch has a cassette radio with a warble, and Jess's Griffin is a loud, clean one with a lot of bass, on Quarry Rock. Jess turns it up, Amy turns it off`,
     ],
   },
   {

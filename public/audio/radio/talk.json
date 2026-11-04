@@ -1,0 +1,774 @@
+{
+ "talk": [
+  {
+   "id": "dale-ident-00",
+   "station": "dale",
+   "kind": "ident",
+   "file": "audio/radio/dale-ident-00.mp3",
+   "seconds": 3.95
+  },
+  {
+   "id": "dale-ident-01",
+   "station": "dale",
+   "kind": "ident",
+   "file": "audio/radio/dale-ident-01.mp3",
+   "seconds": 5.44
+  },
+  {
+   "id": "dale-ident-02",
+   "station": "dale",
+   "kind": "ident",
+   "file": "audio/radio/dale-ident-02.mp3",
+   "seconds": 2.94
+  },
+  {
+   "id": "dale-ident-03",
+   "station": "dale",
+   "kind": "ident",
+   "file": "audio/radio/dale-ident-03.mp3",
+   "seconds": 3.63
+  },
+  {
+   "id": "dale-ident-04",
+   "station": "dale",
+   "kind": "ident",
+   "file": "audio/radio/dale-ident-04.mp3",
+   "seconds": 3.96
+  },
+  {
+   "id": "dale-ident-05",
+   "station": "dale",
+   "kind": "ident",
+   "file": "audio/radio/dale-ident-05.mp3",
+   "seconds": 3.17
+  },
+  {
+   "id": "dale-weather-00",
+   "station": "dale",
+   "kind": "weather",
+   "file": "audio/radio/dale-weather-00.mp3",
+   "seconds": 9.45
+  },
+  {
+   "id": "dale-weather-01",
+   "station": "dale",
+   "kind": "weather",
+   "file": "audio/radio/dale-weather-01.mp3",
+   "seconds": 10.46
+  },
+  {
+   "id": "dale-weather-02",
+   "station": "dale",
+   "kind": "weather",
+   "file": "audio/radio/dale-weather-02.mp3",
+   "seconds": 7.19
+  },
+  {
+   "id": "dale-weather-03",
+   "station": "dale",
+   "kind": "weather",
+   "file": "audio/radio/dale-weather-03.mp3",
+   "seconds": 8.4
+  },
+  {
+   "id": "dale-weather-04",
+   "station": "dale",
+   "kind": "weather",
+   "file": "audio/radio/dale-weather-04.mp3",
+   "seconds": 8.26
+  },
+  {
+   "id": "dale-weather-05",
+   "station": "dale",
+   "kind": "weather",
+   "file": "audio/radio/dale-weather-05.mp3",
+   "seconds": 8.0
+  },
+  {
+   "id": "dale-weather-06",
+   "station": "dale",
+   "kind": "weather",
+   "file": "audio/radio/dale-weather-06.mp3",
+   "seconds": 5.61
+  },
+  {
+   "id": "dale-weather-07",
+   "station": "dale",
+   "kind": "weather",
+   "file": "audio/radio/dale-weather-07.mp3",
+   "seconds": 7.12
+  },
+  {
+   "id": "dale-farming-00",
+   "station": "dale",
+   "kind": "farming",
+   "file": "audio/radio/dale-farming-00.mp3",
+   "seconds": 8.05
+  },
+  {
+   "id": "dale-farming-01",
+   "station": "dale",
+   "kind": "farming",
+   "file": "audio/radio/dale-farming-01.mp3",
+   "seconds": 7.82
+  },
+  {
+   "id": "dale-farming-02",
+   "station": "dale",
+   "kind": "farming",
+   "file": "audio/radio/dale-farming-02.mp3",
+   "seconds": 7.35
+  },
+  {
+   "id": "dale-farming-03",
+   "station": "dale",
+   "kind": "farming",
+   "file": "audio/radio/dale-farming-03.mp3",
+   "seconds": 6.96
+  },
+  {
+   "id": "dale-farming-04",
+   "station": "dale",
+   "kind": "farming",
+   "file": "audio/radio/dale-farming-04.mp3",
+   "seconds": 9.31
+  },
+  {
+   "id": "dale-farming-05",
+   "station": "dale",
+   "kind": "farming",
+   "file": "audio/radio/dale-farming-05.mp3",
+   "seconds": 6.49
+  },
+  {
+   "id": "dale-farming-06",
+   "station": "dale",
+   "kind": "farming",
+   "file": "audio/radio/dale-farming-06.mp3",
+   "seconds": 7.47
+  },
+  {
+   "id": "dale-farming-07",
+   "station": "dale",
+   "kind": "farming",
+   "file": "audio/radio/dale-farming-07.mp3",
+   "seconds": 8.16
+  },
+  {
+   "id": "dale-farming-08",
+   "station": "dale",
+   "kind": "farming",
+   "file": "audio/radio/dale-farming-08.mp3",
+   "seconds": 7.15
+  },
+  {
+   "id": "dale-farming-09",
+   "station": "dale",
+   "kind": "farming",
+   "file": "audio/radio/dale-farming-09.mp3",
+   "seconds": 6.56
+  },
+  {
+   "id": "dale-news-00",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-00.mp3",
+   "seconds": 6.82
+  },
+  {
+   "id": "dale-news-01",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-01.mp3",
+   "seconds": 6.91
+  },
+  {
+   "id": "dale-news-02",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-02.mp3",
+   "seconds": 4.84
+  },
+  {
+   "id": "dale-news-03",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-03.mp3",
+   "seconds": 6.54
+  },
+  {
+   "id": "dale-news-04",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-04.mp3",
+   "seconds": 7.62
+  },
+  {
+   "id": "dale-news-05",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-05.mp3",
+   "seconds": 5.97
+  },
+  {
+   "id": "dale-news-06",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-06.mp3",
+   "seconds": 6.62
+  },
+  {
+   "id": "dale-news-07",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-07.mp3",
+   "seconds": 7.73
+  },
+  {
+   "id": "dale-news-08",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-08.mp3",
+   "seconds": 7.83
+  },
+  {
+   "id": "dale-news-09",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-09.mp3",
+   "seconds": 5.92
+  },
+  {
+   "id": "dale-news-10",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-10.mp3",
+   "seconds": 4.35
+  },
+  {
+   "id": "dale-news-11",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-11.mp3",
+   "seconds": 5.86
+  },
+  {
+   "id": "dale-news-12",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-12.mp3",
+   "seconds": 7.48
+  },
+  {
+   "id": "dale-news-13",
+   "station": "dale",
+   "kind": "news",
+   "file": "audio/radio/dale-news-13.mp3",
+   "seconds": 6.54
+  },
+  {
+   "id": "dale-phonein-00",
+   "station": "dale",
+   "kind": "phonein",
+   "file": "audio/radio/dale-phonein-00.mp3",
+   "seconds": 9.63
+  },
+  {
+   "id": "dale-phonein-01",
+   "station": "dale",
+   "kind": "phonein",
+   "file": "audio/radio/dale-phonein-01.mp3",
+   "seconds": 8.14
+  },
+  {
+   "id": "dale-phonein-02",
+   "station": "dale",
+   "kind": "phonein",
+   "file": "audio/radio/dale-phonein-02.mp3",
+   "seconds": 7.02
+  },
+  {
+   "id": "dale-phonein-03",
+   "station": "dale",
+   "kind": "phonein",
+   "file": "audio/radio/dale-phonein-03.mp3",
+   "seconds": 8.35
+  },
+  {
+   "id": "dale-phonein-04",
+   "station": "dale",
+   "kind": "phonein",
+   "file": "audio/radio/dale-phonein-04.mp3",
+   "seconds": 7.13
+  },
+  {
+   "id": "dale-phonein-05",
+   "station": "dale",
+   "kind": "phonein",
+   "file": "audio/radio/dale-phonein-05.mp3",
+   "seconds": 6.76
+  },
+  {
+   "id": "dale-phonein-06",
+   "station": "dale",
+   "kind": "phonein",
+   "file": "audio/radio/dale-phonein-06.mp3",
+   "seconds": 5.71
+  },
+  {
+   "id": "dale-phonein-07",
+   "station": "dale",
+   "kind": "phonein",
+   "file": "audio/radio/dale-phonein-07.mp3",
+   "seconds": 5.4
+  },
+  {
+   "id": "dale-traffic-00",
+   "station": "dale",
+   "kind": "traffic",
+   "file": "audio/radio/dale-traffic-00.mp3",
+   "seconds": 8.07
+  },
+  {
+   "id": "dale-traffic-01",
+   "station": "dale",
+   "kind": "traffic",
+   "file": "audio/radio/dale-traffic-01.mp3",
+   "seconds": 5.69
+  },
+  {
+   "id": "dale-traffic-02",
+   "station": "dale",
+   "kind": "traffic",
+   "file": "audio/radio/dale-traffic-02.mp3",
+   "seconds": 4.53
+  },
+  {
+   "id": "dale-traffic-03",
+   "station": "dale",
+   "kind": "traffic",
+   "file": "audio/radio/dale-traffic-03.mp3",
+   "seconds": 5.35
+  },
+  {
+   "id": "dale-traffic-04",
+   "station": "dale",
+   "kind": "traffic",
+   "file": "audio/radio/dale-traffic-04.mp3",
+   "seconds": 5.38
+  },
+  {
+   "id": "dale-traffic-05",
+   "station": "dale",
+   "kind": "traffic",
+   "file": "audio/radio/dale-traffic-05.mp3",
+   "seconds": 4.35
+  },
+  {
+   "id": "dale-link-00",
+   "station": "dale",
+   "kind": "link",
+   "file": "audio/radio/dale-link-00.mp3",
+   "seconds": 1.25
+  },
+  {
+   "id": "dale-link-01",
+   "station": "dale",
+   "kind": "link",
+   "file": "audio/radio/dale-link-01.mp3",
+   "seconds": 2.57
+  },
+  {
+   "id": "dale-link-02",
+   "station": "dale",
+   "kind": "link",
+   "file": "audio/radio/dale-link-02.mp3",
+   "seconds": 2.26
+  },
+  {
+   "id": "dale-link-03",
+   "station": "dale",
+   "kind": "link",
+   "file": "audio/radio/dale-link-03.mp3",
+   "seconds": 1.52
+  },
+  {
+   "id": "quarry-ident-00",
+   "station": "quarry",
+   "kind": "ident",
+   "file": "audio/radio/quarry-ident-00.mp3",
+   "seconds": 2.17
+  },
+  {
+   "id": "quarry-ident-01",
+   "station": "quarry",
+   "kind": "ident",
+   "file": "audio/radio/quarry-ident-01.mp3",
+   "seconds": 3.77
+  },
+  {
+   "id": "quarry-ident-02",
+   "station": "quarry",
+   "kind": "ident",
+   "file": "audio/radio/quarry-ident-02.mp3",
+   "seconds": 3.15
+  },
+  {
+   "id": "quarry-ident-03",
+   "station": "quarry",
+   "kind": "ident",
+   "file": "audio/radio/quarry-ident-03.mp3",
+   "seconds": 2.46
+  },
+  {
+   "id": "quarry-ident-04",
+   "station": "quarry",
+   "kind": "ident",
+   "file": "audio/radio/quarry-ident-04.mp3",
+   "seconds": 3.2
+  },
+  {
+   "id": "quarry-ident-05",
+   "station": "quarry",
+   "kind": "ident",
+   "file": "audio/radio/quarry-ident-05.mp3",
+   "seconds": 3.29
+  },
+  {
+   "id": "quarry-weather-00",
+   "station": "quarry",
+   "kind": "weather",
+   "file": "audio/radio/quarry-weather-00.mp3",
+   "seconds": 4.64
+  },
+  {
+   "id": "quarry-weather-01",
+   "station": "quarry",
+   "kind": "weather",
+   "file": "audio/radio/quarry-weather-01.mp3",
+   "seconds": 6.73
+  },
+  {
+   "id": "quarry-weather-02",
+   "station": "quarry",
+   "kind": "weather",
+   "file": "audio/radio/quarry-weather-02.mp3",
+   "seconds": 6.0
+  },
+  {
+   "id": "quarry-weather-03",
+   "station": "quarry",
+   "kind": "weather",
+   "file": "audio/radio/quarry-weather-03.mp3",
+   "seconds": 4.78
+  },
+  {
+   "id": "quarry-weather-04",
+   "station": "quarry",
+   "kind": "weather",
+   "file": "audio/radio/quarry-weather-04.mp3",
+   "seconds": 4.46
+  },
+  {
+   "id": "quarry-weather-05",
+   "station": "quarry",
+   "kind": "weather",
+   "file": "audio/radio/quarry-weather-05.mp3",
+   "seconds": 4.93
+  },
+  {
+   "id": "quarry-weather-06",
+   "station": "quarry",
+   "kind": "weather",
+   "file": "audio/radio/quarry-weather-06.mp3",
+   "seconds": 6.58
+  },
+  {
+   "id": "quarry-weather-07",
+   "station": "quarry",
+   "kind": "weather",
+   "file": "audio/radio/quarry-weather-07.mp3",
+   "seconds": 4.4
+  },
+  {
+   "id": "quarry-traffic-00",
+   "station": "quarry",
+   "kind": "traffic",
+   "file": "audio/radio/quarry-traffic-00.mp3",
+   "seconds": 6.46
+  },
+  {
+   "id": "quarry-traffic-01",
+   "station": "quarry",
+   "kind": "traffic",
+   "file": "audio/radio/quarry-traffic-01.mp3",
+   "seconds": 4.47
+  },
+  {
+   "id": "quarry-traffic-02",
+   "station": "quarry",
+   "kind": "traffic",
+   "file": "audio/radio/quarry-traffic-02.mp3",
+   "seconds": 5.84
+  },
+  {
+   "id": "quarry-traffic-03",
+   "station": "quarry",
+   "kind": "traffic",
+   "file": "audio/radio/quarry-traffic-03.mp3",
+   "seconds": 4.32
+  },
+  {
+   "id": "quarry-traffic-04",
+   "station": "quarry",
+   "kind": "traffic",
+   "file": "audio/radio/quarry-traffic-04.mp3",
+   "seconds": 3.12
+  },
+  {
+   "id": "quarry-traffic-05",
+   "station": "quarry",
+   "kind": "traffic",
+   "file": "audio/radio/quarry-traffic-05.mp3",
+   "seconds": 4.94
+  },
+  {
+   "id": "quarry-gig-00",
+   "station": "quarry",
+   "kind": "gig",
+   "file": "audio/radio/quarry-gig-00.mp3",
+   "seconds": 5.53
+  },
+  {
+   "id": "quarry-gig-01",
+   "station": "quarry",
+   "kind": "gig",
+   "file": "audio/radio/quarry-gig-01.mp3",
+   "seconds": 6.23
+  },
+  {
+   "id": "quarry-gig-02",
+   "station": "quarry",
+   "kind": "gig",
+   "file": "audio/radio/quarry-gig-02.mp3",
+   "seconds": 6.13
+  },
+  {
+   "id": "quarry-gig-03",
+   "station": "quarry",
+   "kind": "gig",
+   "file": "audio/radio/quarry-gig-03.mp3",
+   "seconds": 4.34
+  },
+  {
+   "id": "quarry-gig-04",
+   "station": "quarry",
+   "kind": "gig",
+   "file": "audio/radio/quarry-gig-04.mp3",
+   "seconds": 5.72
+  },
+  {
+   "id": "quarry-gig-05",
+   "station": "quarry",
+   "kind": "gig",
+   "file": "audio/radio/quarry-gig-05.mp3",
+   "seconds": 4.13
+  },
+  {
+   "id": "quarry-news-00",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-00.mp3",
+   "seconds": 6.48
+  },
+  {
+   "id": "quarry-news-01",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-01.mp3",
+   "seconds": 6.3
+  },
+  {
+   "id": "quarry-news-02",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-02.mp3",
+   "seconds": 6.62
+  },
+  {
+   "id": "quarry-news-03",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-03.mp3",
+   "seconds": 5.98
+  },
+  {
+   "id": "quarry-news-04",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-04.mp3",
+   "seconds": 6.7
+  },
+  {
+   "id": "quarry-news-05",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-05.mp3",
+   "seconds": 5.85
+  },
+  {
+   "id": "quarry-news-06",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-06.mp3",
+   "seconds": 4.46
+  },
+  {
+   "id": "quarry-news-07",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-07.mp3",
+   "seconds": 6.05
+  },
+  {
+   "id": "quarry-news-08",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-08.mp3",
+   "seconds": 7.07
+  },
+  {
+   "id": "quarry-news-09",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-09.mp3",
+   "seconds": 2.85
+  },
+  {
+   "id": "quarry-news-10",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-10.mp3",
+   "seconds": 7.02
+  },
+  {
+   "id": "quarry-news-11",
+   "station": "quarry",
+   "kind": "news",
+   "file": "audio/radio/quarry-news-11.mp3",
+   "seconds": 5.99
+  },
+  {
+   "id": "quarry-competition-00",
+   "station": "quarry",
+   "kind": "competition",
+   "file": "audio/radio/quarry-competition-00.mp3",
+   "seconds": 6.61
+  },
+  {
+   "id": "quarry-competition-01",
+   "station": "quarry",
+   "kind": "competition",
+   "file": "audio/radio/quarry-competition-01.mp3",
+   "seconds": 6.72
+  },
+  {
+   "id": "quarry-competition-02",
+   "station": "quarry",
+   "kind": "competition",
+   "file": "audio/radio/quarry-competition-02.mp3",
+   "seconds": 7.28
+  },
+  {
+   "id": "quarry-competition-03",
+   "station": "quarry",
+   "kind": "competition",
+   "file": "audio/radio/quarry-competition-03.mp3",
+   "seconds": 5.15
+  },
+  {
+   "id": "quarry-competition-04",
+   "station": "quarry",
+   "kind": "competition",
+   "file": "audio/radio/quarry-competition-04.mp3",
+   "seconds": 5.31
+  },
+  {
+   "id": "quarry-competition-05",
+   "station": "quarry",
+   "kind": "competition",
+   "file": "audio/radio/quarry-competition-05.mp3",
+   "seconds": 5.17
+  },
+  {
+   "id": "quarry-phonein-00",
+   "station": "quarry",
+   "kind": "phonein",
+   "file": "audio/radio/quarry-phonein-00.mp3",
+   "seconds": 7.0
+  },
+  {
+   "id": "quarry-phonein-01",
+   "station": "quarry",
+   "kind": "phonein",
+   "file": "audio/radio/quarry-phonein-01.mp3",
+   "seconds": 6.06
+  },
+  {
+   "id": "quarry-phonein-02",
+   "station": "quarry",
+   "kind": "phonein",
+   "file": "audio/radio/quarry-phonein-02.mp3",
+   "seconds": 7.06
+  },
+  {
+   "id": "quarry-phonein-03",
+   "station": "quarry",
+   "kind": "phonein",
+   "file": "audio/radio/quarry-phonein-03.mp3",
+   "seconds": 6.04
+  },
+  {
+   "id": "quarry-phonein-04",
+   "station": "quarry",
+   "kind": "phonein",
+   "file": "audio/radio/quarry-phonein-04.mp3",
+   "seconds": 3.18
+  },
+  {
+   "id": "quarry-phonein-05",
+   "station": "quarry",
+   "kind": "phonein",
+   "file": "audio/radio/quarry-phonein-05.mp3",
+   "seconds": 4.13
+  },
+  {
+   "id": "quarry-link-00",
+   "station": "quarry",
+   "kind": "link",
+   "file": "audio/radio/quarry-link-00.mp3",
+   "seconds": 1.26
+  },
+  {
+   "id": "quarry-link-01",
+   "station": "quarry",
+   "kind": "link",
+   "file": "audio/radio/quarry-link-01.mp3",
+   "seconds": 0.79
+  },
+  {
+   "id": "quarry-link-02",
+   "station": "quarry",
+   "kind": "link",
+   "file": "audio/radio/quarry-link-02.mp3",
+   "seconds": 1.69
+  },
+  {
+   "id": "quarry-link-03",
+   "station": "quarry",
+   "kind": "link",
+   "file": "audio/radio/quarry-link-03.mp3",
+   "seconds": 2.27
+  }
+ ]
+}

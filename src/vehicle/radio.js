@@ -1,10 +1,13 @@
 // The radio in the Land Rovers and the girls' cars: on or off, how loud, and how well it holds the one station. It needs the key on (a flat
 // battery silences it, and so does the starter motor, which takes the supply for as long as it turns). Pure, so it is tested without
-// Web Audio; the sound is audio/radioAudio.js, and what is on air is audio/radioProgramme.js.
+// Web Audio; the sound is audio/radioAudio.js, and what is on air is audio/radioStation.js.
 //
 // Each vehicle's set has its own character (RADIO_PROFILES): the Series' is an old dash radio with a tinny speaker that picks up the
 // ignition and drifts off the station; the 200TDi's is a plainer stereo; Amy's Fiesta has a cassette radio with a little warble; Jess's
-// Corsa has a bassy aftermarket head unit that is loud and clean.
+// Corsa has a bassy aftermarket head unit that is loud and clean. Each set is tuned to a station (audio/radioStation.js); a short press of
+// the key on a set that is on steps to the next one, and holding it switches it off (RadioKey).
+
+import { DEFAULT_STATION, nextStationId, stationById } from '../audio/radioStation.js';
 
 export const DEFAULT_RADIO_PARAMS = {
   startVolume: 0.5, // how loud it is the first time it goes on, 0 to 1
@@ -13,6 +16,8 @@ export const DEFAULT_RADIO_PARAMS = {
   outsideLevel: 0.35, // and how much of its inside level is left just outside the door
   driftSeconds: 37, // how long its station takes to wander off and back once (the vehicle's drift scales how far)
   cutSeconds: 0.12, // how quickly the supply coming back brings it up again
+  holdSeconds: 0.5, // how long the radio key is held to switch the radio off (a shorter press changes station)
+  retuneSeconds: 0.5, // how long the static of changing station lasts
 };
 
 export const RADIO_PARAM_RANGES = {
@@ -22,6 +27,8 @@ export const RADIO_PARAM_RANGES = {
   outsideLevel: [0, 1, 0.01],
   driftSeconds: [8, 120, 1],
   cutSeconds: [0.02, 1, 0.01],
+  holdSeconds: [0.2, 1.5, 0.05],
+  retuneSeconds: [0, 2, 0.05],
 };
 
 export const RADIO_PARAMS = { ...DEFAULT_RADIO_PARAMS }; // shared by every set, registered once
@@ -29,15 +36,16 @@ export const RADIO_PARAMS = { ...DEFAULT_RADIO_PARAMS }; // shared by every set,
 /**
  * Each set's character, by vehicle id: band (the speaker's low and high roll-off, Hz), hiss (the static floor, 0 to 1), crackle (the
  * pops and spits), whine (how much the engine's ignition gets into it, rising with the revs), drift (how far the station wanders off
- * into static), bass (dB added below 200 Hz), warble (a slow wobble of pitch, from a worn cassette head), loud (its top level) and
- * name (what the debug panel calls it).
+ * into static), bass (dB added below 200 Hz), warble (a slow wobble of pitch, from a worn cassette head), distort (a cheap speaker
+ * overloading, 0 clean to 1 buzzing), loud (its top level), station (what it is tuned to when first switched on) and name (what the
+ * debug panel calls it). The old sets sound terrible; Jess's aftermarket head unit is clean, deep and loud, and on the rock station.
  */
 export const RADIO_PROFILES = {
-  landrover: { name: 'old dash radio, tinny speaker', band: [380, 3000], hiss: 0.55, crackle: 0.65, whine: 0.75, drift: 0.55, bass: 0, warble: 0.1, loud: 0.8 },
-  landrover200: { name: 'plain stereo, door speakers', band: [200, 4800], hiss: 0.3, crackle: 0.25, whine: 0.25, drift: 0.25, bass: 3, warble: 0, loud: 0.9 },
-  fiesta: { name: 'cassette radio', band: [160, 5200], hiss: 0.25, crackle: 0.12, whine: 0.1, drift: 0.15, bass: 4, warble: 0.4, loud: 0.85 },
-  corsa: { name: 'aftermarket head unit, big bass', band: [60, 9500], hiss: 0.1, crackle: 0.05, whine: 0.04, drift: 0.08, bass: 10, warble: 0, loud: 1.15 },
-  p309: { name: 'factory cassette radio', band: [140, 6000], hiss: 0.22, crackle: 0.1, whine: 0.15, drift: 0.15, bass: 3, warble: 0.25, loud: 0.9 }, // your car's: a diesel's glow plugs and alternator whine into it a little
+  landrover: { name: 'old dash radio, tinny speaker', band: [380, 3000], hiss: 0.55, crackle: 0.65, whine: 0.75, drift: 0.55, bass: 0, warble: 0.1, distort: 0.6, loud: 0.8, station: 'dale' },
+  landrover200: { name: 'plain stereo, door speakers', band: [200, 4800], hiss: 0.3, crackle: 0.25, whine: 0.25, drift: 0.25, bass: 3, warble: 0, distort: 0.2, loud: 0.9, station: 'dale' },
+  fiesta: { name: 'cassette radio', band: [160, 5200], hiss: 0.25, crackle: 0.12, whine: 0.1, drift: 0.15, bass: 4, warble: 0.4, distort: 0.3, loud: 0.85, station: 'dale' },
+  corsa: { name: 'aftermarket head unit, big bass', band: [60, 9500], hiss: 0.1, crackle: 0.05, whine: 0.04, drift: 0.08, bass: 10, warble: 0, distort: 0, loud: 1.15, station: 'quarry' },
+  p309: { name: 'factory cassette radio', band: [140, 6000], hiss: 0.22, crackle: 0.1, whine: 0.15, drift: 0.15, bass: 3, warble: 0.25, distort: 0.25, loud: 0.9, station: 'dale' }, // your car's: a diesel's glow plugs and alternator whine into it a little
 };
 
 /** The profile for a vehicle id (the Series' if it is one we don't know). */
@@ -68,6 +76,8 @@ export class Radio {
     this.P = P;
     this.on = false;
     this.volume = P.startVolume;
+    this.station = this.profile.station ?? DEFAULT_STATION; // what it is tuned to
+    this.retunedAt = -Infinity; // when the station last changed, on the radio's own clock (for the static between)
     this.powered = false; // the supply: key on, battery good, the starter not turning
     this.level = 0; // what you actually hear, 0 to 1 of its top: eases up and down so a cut-out isn't a click
     this.rev = 0; // 0 to 1, the engine's revs, for the ignition whine
@@ -85,6 +95,24 @@ export class Radio {
   set(on) {
     this.on = !!on;
     this.changedAt = this.clock;
+  }
+
+  /** Steps to the next station; returns its name. */
+  nextStation() {
+    this.setStation(nextStationId(this.station));
+    return stationById(this.station).name;
+  }
+
+  setStation(id) {
+    const next = stationById(id).id;
+    if (next !== this.station) this.retunedAt = this.clock;
+    this.station = next;
+    this.changedAt = this.clock;
+  }
+
+  /** Seconds since the station last changed. */
+  get sinceRetune() {
+    return this.clock - this.retunedAt;
   }
 
   louder() {
@@ -134,7 +162,7 @@ export class Radio {
   describe() {
     if (!this.on) return 'off';
     if (!this.powered) return 'on, no power';
-    return `on, volume ${Math.round(this.volume * 100)}%`;
+    return `on, ${stationById(this.station).name}, volume ${Math.round(this.volume * 100)}%`;
   }
 }
 
@@ -147,4 +175,44 @@ export function heardAt(level, distance, inside, P = RADIO_PARAMS) {
   if (distance >= P.outsideRange) return { gain: 0, dull: 1 };
   const fall = 1 - distance / P.outsideRange;
   return { gain: level * P.outsideLevel * fall * fall, dull: 0.5 + 0.5 * (1 - fall) };
+}
+
+/**
+ * The radio key (plain `I`, without Shift or Alt) on a set that is on: a short press changes station, and holding it for `holdSeconds`
+ * switches the set off. A press on a set that is off switches it on at once (and the rest of that press does nothing, so holding it
+ * does not turn it straight off again). Pure: `update` is given the key's state each frame.
+ */
+export class RadioKey {
+  constructor() {
+    this.down = false;
+    this.held = 0;
+    this.spent = false; // this press has already done its job
+  }
+
+  /** Every frame. `pressed` is the key going down this frame, `isDown` whether it is down, `on` whether the set is on (before this press). */
+  update(dt, pressed, isDown, on, hold) {
+    if (pressed) {
+      this.down = true;
+      this.held = 0;
+      this.spent = !on;
+      if (!on) return 'on';
+    }
+    if (!this.down) return null;
+    if (isDown) {
+      this.held += dt;
+      if (!this.spent && this.held >= hold) {
+        this.spent = true;
+        return 'off';
+      }
+      return null;
+    }
+    this.down = false;
+    return this.spent ? null : 'station';
+  }
+
+  reset() {
+    this.down = false;
+    this.spent = true;
+    this.held = 0;
+  }
 }

@@ -205,3 +205,18 @@ These have no external source:
 | Used for | Recording | Author | Source | Licence |
 | --- | --- | --- | --- | --- |
 | The flock's bleats (`public/audio/sheep-baa.wav`, normalised, pitched up and down per sheep in the game) | sheep_baa | AntumDeluge, from a recording by mikewest | https://opengameart.org/node/132779 | CC0 1.0 |
+
+## The radio
+
+The music and the talk are in `public/audio/radio/`. The songs are listed in `tools/radio/music.json` and made by `tools/build_radio_music.py` (mono, 32 kHz, cut to 170 s with a fade, levelled). The talk is recorded by `tools/generate_radio_talk.py` from `tools/radio/scripts.json` with Chatterbox (MIT licence), copying reference voices made with Kokoro's `bm_george`, `bm_lewis` and `bf_isabella` (Apache 2.0), so it is not a recording of a person. Music you add yourself goes in `public/audio/radio-extra/`, which is not committed.
+
+| Station | Track | Author | Source | Licence |
+| --- | --- | --- | --- | --- |
+| Dale FM | Funky Pop, Happy Dance, Day Dreams, Love Love Love, Retro Soundtrack, Bouncing, Back In The 80s, 50 Over The Speed Limit (from *Power Pop!*) | HoliznaCC0 | https://freemusicarchive.org/music/holiznacc0/power-pop | CC0 1.0 |
+| Dale FM | Classical Pop (Instrumental) | MELLE | https://opengameart.org/content/classical-pop-instrumental | CC0 1.0 |
+| Quarry Rock | Unchained Destiny | Pro Sensory | https://opengameart.org/content/unchained-destiny-rock | CC0 1.0 |
+| Quarry Rock | Electric Rock | hatmix | https://opengameart.org/content/electric-rock | CC0 1.0 |
+| Quarry Rock | Rock theme | FacadeGaikan | https://opengameart.org/content/rock-theme | CC0 1.0 |
+| Quarry Rock | Action Track | AlexCons | https://opengameart.org/content/action-track | CC0 1.0 |
+| Quarry Rock | Fight for Better Future | Calyad | https://opengameart.org/content/fight-for-better-future-rockmetal | CC0 1.0 |
+| Quarry Rock | JRPG Epic Rock Battle Theme #1 | hydrogene | https://opengameart.org/content/jrpg-epic-rock-battle-theme-1 | CC0 1.0 |

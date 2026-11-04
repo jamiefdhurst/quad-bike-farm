@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { RadioKey } from './radio.js';
+import { stationById } from '../audio/radioStation.js';
 import { idealAdvance } from '../engine/ignitionTiming.js';
 import { lampSupply } from '../engine/charging.js';
 import { buildQuadModel, poseSuspension, setHeadlights, setTaillights, setSignalLamps, poseSignalControls, poseParkBrake } from './quadModel.js';
@@ -571,6 +573,7 @@ export class Quad {
   /** Discrete inputs (key presses), handled once per frame, from the rider or someone beside the bike. */
   handleFrameInput(dt) {
     const input = this.input ?? this.remoteInput;
+    if (!this.input) this.radioKeyState?.reset(); // a press left half done when you got out does nothing
     if (!input) return;
     if (this.input) input.takeWheelSteps();
     if (input.wasPressed('KeyK')) this.engine.toggleIgnition();
@@ -589,7 +592,7 @@ export class Quad {
     if (this.lights && this.input && input.wasPressed('KeyP')) this.lights.cycle();
     if (this.barLights && this.input && input.wasPressed('KeyP')) this.barLights.cycle();
     if (this.spotlamps.fitted && this.input && input.wasPressed('Digit9')) this.say(this.spotlamps.toggle() ? 'Spotlamps on' : 'Spotlamps off');
-    if (this.radio && this.input && input.wasPressed('KeyI')) this.radioKey(input);
+    if (this.radio && this.input) this.radioKey(input, dt);
     if (this.signals && this.input) {
       if (input.wasPressed('Comma')) this.signals.press('left');
       if (input.wasPressed('Period')) this.signals.press('right');
@@ -678,14 +681,29 @@ export class Quad {
     if (d.hasLock && input.wasPressed('KeyU')) d.toggleLock();
   }
 
-  /** I switches the radio on and off; with Shift held it is louder, with Alt quieter. It needs the key on, and says so when it hasn't it. */
-  radioKey(input) {
+  /**
+   * The radio key. Shift+I is louder and Alt+I quieter. Plain I switches the radio on; with it on, a short press changes station and
+   * holding it switches it off (RadioKey). It needs the key on, and says so when it hasn't it.
+   */
+  radioKey(input, dt) {
     const r = this.radio;
-    if (input.isDown('ShiftLeft') || input.isDown('ShiftRight')) r.louder();
-    else if (input.isDown('AltLeft') || input.isDown('AltRight')) r.quieter();
-    else r.toggle();
+    const key = (this.radioKeyState ??= new RadioKey());
+    const pressed = input.wasPressed('KeyI');
+    const shift = input.isDown('ShiftLeft') || input.isDown('ShiftRight');
+    const alt = input.isDown('AltLeft') || input.isDown('AltRight');
+    if (pressed && (shift || alt)) {
+      key.reset();
+      if (shift) r.louder();
+      else r.quieter();
+    } else {
+      const did = key.update(dt, pressed, input.isDown('KeyI'), r.on, r.P.holdSeconds);
+      if (did === 'on') r.set(true);
+      else if (did === 'off') r.set(false);
+      else if (did === 'station') r.nextStation();
+      if (!did) return;
+    }
     if (r.on && !this.engine.hasPower) this.say('The radio needs the key on');
-    else this.say(r.on ? `Radio ${Math.round(r.volume * 100)}%` : 'Radio off');
+    else this.say(r.on ? `${stationById(r.station).name}, ${Math.round(r.volume * 100)}%` : 'Radio off');
   }
 
   /** Tells whoever's at the controls something, for a moment; the game shows it (takeNote). */
