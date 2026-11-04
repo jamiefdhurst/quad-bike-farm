@@ -1415,5 +1415,8 @@ export function refitOutfit(rig, outfit) {
   letHairDown(rig);
   rig.outfitParts = [];
   rig.hood = null;
-  rig.withRestPose(() => addGarments(rig, outfit));
+  rig.withRestPose(() => {
+    addGarments(rig, outfit);
+    rig.onDressed?.(); // mud and dust on what she has on (effects/girlMud.js), while the clothes are at rest
+  });
 }

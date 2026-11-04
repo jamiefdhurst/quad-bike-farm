@@ -6279,7 +6279,7 @@ export class Game {
           }
         : null;
       updateMuddiness(c.mucky, dt, { ride, walking: c.fsm.is('walking'), hosed: c.hosedNow ? 1 : 0 }, p);
-      c.girlMud.update(c.mucky);
+      c.girlMud.update(c.mucky, p);
       const kind = noticing(c.mucky, p);
       if (kind && c.voice.onMuddy(kind)) markRemarked(c.mucky, kind, p);
     }
