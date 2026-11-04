@@ -734,8 +734,9 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why is it snowing, and why is my quad sliding about?',
         a: `Snow comes in winter, and now and then in the weeks either side of it, on a frosty or cold day. Snow settles on the ground in patches that join up the longer it falls,
-          and the seats turn white too (sit on one to clear it). Your tyres leave tracks that stay, but the quad grips less and drags more
-          on snow, so brake early and take bends gently. It melts slowly if the day turns mild, and rain washes it away. A frosty start
+          and the seats turn white too (sit on one to clear it). The roofs, hedges, trees, fence posts and everything else that faces up whiten too, a little ahead of the ground,
+          and so does the far country. A quad left standing in it gathers a layer on its rack and mudguards, and it slides off as you ride. Your tyres leave tracks that stay, but the quad grips less and drags more
+          on snow, so brake early and take bends gently. It melts slowly if the day turns mild, and rain washes it away: the tarmac clears first, and while it goes the bare roofs and walls look dark and wet. A frosty start
           is harder in the cold, so use the choke.`,
         tip: 'Snow means less grip: brake early, take bends gently, and use the choke on a cold start.',
       },

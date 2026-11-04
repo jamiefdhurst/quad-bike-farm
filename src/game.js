@@ -317,6 +317,8 @@ import { NeighbourHost } from './world/neighbourHost.js';
 import { MOT_PARAMS, withCertificate, girlMinds } from './farm/mot.js';
 import { VillageHost } from './world/villageHost.js';
 import { Snow } from './effects/snow.js';
+import { DEFAULT_SNOW_COAT_PARAMS, SNOW_COAT_PARAM_RANGES, snowUniforms, topsCover, vehicleSnowAfter } from './world/snowCoat.js';
+import { coatTree, WorldSnow } from './world/snowCoatView.js';
 import { leavesInAir, DEFAULT_AUTUMN_PARAMS, AUTUMN_PARAM_RANGES } from './world/autumn.js';
 import { LeafFall } from './world/autumnView.js';
 import { Conkers } from './npc/conkers.js';
@@ -779,6 +781,13 @@ export class Game {
     this.thunder = new Thunderstorm(this.thunderParams, createRandom(this.seed ^ 0x7d1f));
     this.flashWhite = new THREE.Color(0xdfe8ff);
     this.snow = new Snow(this.scene);
+    // Snow on roofs, hedges, trees, props and parked vehicles, not only the ground (world/snowCoat.js). A snowy game is coated as it loads; any
+    // other is left plain, so its shaders cost nothing, until the console or the panel brings snow in.
+    this.snowCoatParams = { ...DEFAULT_SNOW_COAT_PARAMS };
+    registerTuning('Snow coat', this.snowCoatParams, SNOW_COAT_PARAM_RANGES);
+    this.worldSnow = new WorldSnow(this.snowCoatParams);
+    this.snowCoated = false;
+    if (this.weather.cover > 0 || this.weather.snow > 0) this.coatSnow();
     // Leaves coming down under the trees, and Jess's conkers (world/autumn.js, npc/conkers.js): only on an autumn day.
     this.autumnParams = { ...DEFAULT_AUTUMN_PARAMS };
     this.leafFall = new LeafFall(this.scene);
@@ -7981,8 +7990,45 @@ export class Game {
   }
 
   /** Rain round you and its sound, and the wind on the exhaust smoke. */
+  /** Lays the snow shader over the world and over each vehicle (once). The ground and the vehicles are left out of the world's, which they don't share. */
+  coatSnow() {
+    if (this.snowCoated) return;
+    this.snowCoated = true;
+    const p = this.snowCoatParams;
+    const covered = (x, z) => this.world.covered(x, z);
+    this.world.terrain.mesh.userData.snowOwn = true; // the terrain shader draws the ground's own
+    for (const unit of this.units) {
+      unit.snowUniforms = snowUniforms(p);
+      unit.snowLevel = covered(unit.quad.position.x, unit.quad.position.z) ? 0 : topsCover(this.weather.cover, p);
+      unit.snowUniforms.uSnowTops.value = unit.snowLevel;
+      unit.quad.model.userData.snowOwn = true;
+      coatTree(unit.quad.model, unit.snowUniforms, { covered: () => false, p });
+    }
+    coatTree(this.scene, this.worldSnow.uniforms, { covered, p });
+  }
+
+  /** The world's snow follows the ground's cover; a vehicle's settles while it snows, slides off as it moves and thaws indoors (snowCoat.js). */
+  updateSnowCoat(dt) {
+    const w = this.weather;
+    if (!this.snowCoated) {
+      if (w.cover <= 0 && w.snow <= 0) return;
+      this.coatSnow();
+    }
+    this.worldSnow.update(dt, w.cover);
+    const p = this.snowCoatParams;
+    for (const unit of this.units) {
+      if (!unit.snowUniforms) continue;
+      const q = unit.quad;
+      unit.snowLevel = vehicleSnowAfter(unit.snowLevel, dt, { snow: w.snow, cover: w.cover, speed: q.speed, indoors: !!this.world.covered(q.position.x, q.position.z) }, p);
+      unit.snowUniforms.uSnowTops.value = unit.snowLevel;
+      unit.snowUniforms.uSnowWet.value = this.worldSnow.uniforms.uSnowWet.value;
+      unit.snowUniforms.uSnowEdge.value = p.holdEdge;
+    }
+  }
+
   updateWeather(dt) {
     const w = this.weather;
+    this.updateSnowCoat(dt);
     if (this.world.streamEvent) {
       // The stream came up or went back down: whoever is stood about near you says so.
       const near = this.companions.filter((c) => c.availability().canRemark && c.root.position.distanceTo(this.camera.position) < 40);
