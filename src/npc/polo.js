@@ -534,7 +534,7 @@ export function buildTop(body, p = POLO) {
 
 /**
  * A button on the outside of each cuff, as she stands with her arms down: on the cuff's middle, on the side of her wrist away
- * from her body. Each { centre, normal, anchor } as the placket's.
+ * from her body. Each { centre, normal, anchor, on } as the placket's, `on` the sleeve's faces round it.
  */
 function buildCuffButtons(mesh, body, p, F) {
   const x0 = body.bones.Neck[0];
@@ -551,7 +551,8 @@ function buildCuffButtons(mesh, body, p, F) {
     }
     if (!best) continue;
     const normal = norm(applySkinDir(best.v.skin, best.v.normal));
-    out.push({ centre: add(best.v.rest, scale(normal, 0.0003)), normal, anchor: best.v });
+    const near = (i) => Math.hypot(...sub(mesh.verts[i].rest, best.v.rest)) < 0.03;
+    out.push({ centre: add(best.v.rest, scale(normal, 0.0003)), normal, anchor: best.v, on: { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some(near)) } });
   }
   return out;
 }
@@ -839,7 +840,8 @@ function buildPlacket(mesh, body, p, vee) {
         strip(top, closed ? vBottom : bottom, (y) => [x0 - split(y, -1) - w / 2, x0 - split(y, -1)], 0, 0.5, 3, halfCaps)));
   if (!ok) return null;
 
-  // The buttons, and for the undone ones the buttonhole on the other half.
+  // The buttons, and for the undone ones the buttonhole on the other half. Those on the strip lie on it (`on`, onCloth).
+  const strips = { verts, tris };
   const buttons = [];
   const slits = [];
   p.buttons.forEach((d0, i) => {
@@ -867,7 +869,7 @@ function buildPlacket(mesh, body, p, vee) {
     const at = (x, [xL, xR, n]) => {
       const face = rowAt(y, xL, xR, n);
       const under = rowAt(y, x, x, 1);
-      return face && under && { centre: [x, y, face.z], normal: restNormal(under.under[0]), anchor: under.under[0] };
+      return face && under && { centre: [x, y, face.z], normal: restNormal(under.under[0]), anchor: under.under[0], on: strips };
     };
     const b = open ? at(x0 + split(y) + w / 4, [x0 + split(y), x0 + split(y) + w / 2, 3]) : at(x0, [x0 - w / 2, x0 + w / 2, 5]);
     if (b) buttons.push(b);
@@ -929,6 +931,38 @@ function frontTop(hitAt, x0, from, to) {
     return lo;
   }
   return null;
+}
+
+/**
+ * A button or a buttonhole laid on the cloth it sits on (`b.on`, a { verts, tris } of the placket or the sleeve). `make(centre,
+ * normal)` builds its shape (buttonShape, slitShape) facing the way the cloth's face under its middle does, and `lay(points)`
+ * carries each of the shape's points down on to the cloth straight under it, at its own height off it, with the skin and weights
+ * of that spot: so its whole underside sits on the cloth and bends and moves as the cloth does. Facing the shirt under it (or
+ * her body), a flat button stood a few millimetres clear of the placket or cuff on one side. Without cloth under it (on the
+ * collar's stand) it keeps `b.anchor`'s skin, as before. `lay` returns { bind, weights } for each point.
+ */
+export function layOnCloth(b, make, lift = 0.0003) {
+  const down = (from, n) => {
+    const hit = b.on && rayHit(b.on, add(from, scale(n, 0.01)), scale(n, -1));
+    if (!hit) return null;
+    const [p0, p1, p2] = hit.tri.map((i) => b.on.verts[i].rest);
+    return { v: inTriangle(b.on, hit.tri, hit.bary), face: norm(cross(sub(p1, p0), sub(p2, p0))) };
+  };
+  const mid = down(b.centre, b.normal);
+  if (!mid) {
+    return { shape: make(b.centre, b.normal), lay: (points) => points.map((pt) => ({ bind: unskin(b.anchor.skin, pt), weights: b.anchor.weights })) };
+  }
+  const normal = dot(mid.face, b.normal) < 0 ? scale(mid.face, -1) : mid.face;
+  const centre = add(mid.v.rest, scale(normal, lift));
+  const lay = (points) =>
+    points.map((pt) => {
+      const h = dot(sub(pt, centre), normal);
+      const under = down(sub(pt, scale(normal, h)), normal)?.v;
+      // A point past the cloth's edge (a rim over a turned-down side) keeps the skin of the cloth under its middle.
+      const at = under ?? mid.v;
+      return { bind: unskin(at.skin, under ? add(under.rest, scale(normal, h + lift)) : pt), weights: at.weights };
+    });
+  return { shape: make(centre, normal), lay };
 }
 
 /**
