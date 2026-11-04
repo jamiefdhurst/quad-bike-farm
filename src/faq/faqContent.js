@@ -633,9 +633,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What is the briefing at the start of the day?',
-        a: `A few seconds after you load in, Amy reads out the day: the weather and what the barn's forecast board says of it, which quad is playing up (or that
-          none is), and what she has in mind. Jess then adds hers. Stay within earshot to hear it. It is the quickest way to know what to look at first.`,
-        tip: 'Amy briefs you soon after the game loads: the weather, which quad is playing up and what the girls fancy doing.',
+        a: `A few seconds after you load in, Amy reads out the day: first, on a farm that remembers, how yesterday ended (a falling-out
+          that was not made up, with Jess cutting in, or a key left on and a flat battery this morning), then the weather and what the barn's forecast board says of it, which quad is
+          playing up (or that none is), and what she has in mind. Jess then adds hers. Stay within earshot to hear it. It is the quickest way to know what to look at first.`,
+        tip: 'Amy briefs you soon after the game loads: how yesterday ended, the weather, which quad is playing up and what the girls fancy doing.',
       },
       {
         q: 'Why does a girl keep going back to the same thing all day?',
