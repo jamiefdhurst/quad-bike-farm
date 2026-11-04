@@ -121,6 +121,8 @@ import { UtvRide, UTV_RIDE_PARAM_RANGES, DEFAULT_UTV_RIDE_PARAMS } from './npc/u
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
 import { vehicleOptions, wheelChildren } from './npc/vehicleWheel.js';
 import { RadioAudio } from './audio/radioAudio.js';
+import { STATION_PARAMS, STATION_PARAM_RANGES, stationById } from './audio/radioStation.js';
+import { pickMusicFiles } from './audio/pickMusic.js';
 import { RADIO_PARAMS, RADIO_PARAM_RANGES } from './vehicle/radio.js';
 import { RadioTaste, applyRadioMove, RADIO_TASTE_PARAMS, RADIO_TASTE_PARAM_RANGES } from './npc/radioTaste.js';
 import { CarGo, Borrowing, mayDriveCar, refuseCarLine, CAR_GO_PARAM_RANGES } from './npc/carGo.js';
@@ -3200,6 +3202,7 @@ export class Game {
     this.radioTaste = {}; // per girl and vehicle, made when she first sits in one
     registerTuning('Radio', RADIO_PARAMS, RADIO_PARAM_RANGES);
     registerTuning('Radio: the girls', RADIO_TASTE_PARAMS, RADIO_TASTE_PARAM_RANGES);
+    registerTuning('Radio: stations', STATION_PARAMS, STATION_PARAM_RANGES);
     registerTuning('Radio: sound', this.radioAudio.p, { volume: [0, 1.5, 0.01], crackleRate: [0, 30, 0.5] });
   }
 
@@ -3211,6 +3214,25 @@ export class Game {
   /** Switches every radio on or off together (the debug panel and the console). */
   setAllRadios(on) {
     for (const u of this.radioUnits()) u.quad.radio.set(on);
+  }
+
+  /** What a set is playing, for the debug panel and the console: its station, and what is on it. */
+  describeRadioStation(unit) {
+    const radio = unit.quad.radio;
+    const now = this.radioAudio.nowPlaying(radio.station);
+    const what = !now ? 'nothing yet' : now.kind === 'music' ? `a song, ${now.title}` : now.kind === 'silence' ? 'nothing yet' : `${now.kind}, ${now.title}`;
+    return `${stationById(radio.station).name}: ${what}${now ? ` (${Math.round(now.left)} s left)` : ''}`;
+  }
+
+  /** Asks for a folder of music and adds it to the station this set is tuned to, for the rest of the session. Resolves to what happened. */
+  async addRadioMusic(unit) {
+    const station = unit.quad.radio.station;
+    const files = await pickMusicFiles();
+    if (!files.length) return 'no music chosen';
+    const added = await this.radioAudio.addMusic(station, files);
+    const text = added ? `${added} song${added === 1 ? '' : 's'} added to ${stationById(station).name}` : 'none of those could be played';
+    this.hud.toast(text, 3);
+    return text;
   }
 
   /** The girls who are sat in this vehicle now: driving it, or in it with you. */

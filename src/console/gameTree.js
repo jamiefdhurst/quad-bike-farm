@@ -20,6 +20,7 @@ import { setFault, setQuirk, setStarterStuck, engineReadouts } from '../debug/ve
 import { canStick } from '../vehicle/stickyStarter.js';
 import { TAP_POSITIONS } from '../vehicle/fuelSystem.js';
 import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
+import { STATIONS } from '../audio/radioStation.js';
 import { SIGNAL_MODES } from '../vehicle/indicators.js';
 import { DRIVE_MODES } from '../vehicle/driveMode.js';
 import { lensCoverage } from '../effects/lensMud.js';
@@ -149,6 +150,8 @@ export function buildGameTree(g, host) {
       }
       if (q().radio) {
         out.radio = flag(() => q().radio.on, (v) => q().radio.set(v), 'the radio is on (it also needs the key on to make a sound)');
+        out.radioStation = choice(STATIONS.map((s) => s.id), () => q().radio.station, (v) => q().radio.setStation(v), 'the station it is tuned to: dale (Dale FM, easy listening and pop) or quarry (Quarry Rock)');
+        out.radioNow = text(() => g.describeRadioStation(u()), 'what is on the station it is tuned to');
         out.radioVolume = num(() => q().radio.volume, (v) => q().radio.setVolume(v), 0, 1);
         out.radioState = text(() => `${q().radio.describe()}, signal ${q().radio.signal.toFixed(2)}`, 'what the radio is doing');
       }

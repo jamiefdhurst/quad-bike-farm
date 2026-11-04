@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Radio, RADIO_PROFILES, RADIO_PARAMS, signalAt, heardAt, hasRadio, profileFor } from '../src/vehicle/radio.js';
+import { Radio, RadioKey, RADIO_PROFILES, RADIO_PARAMS, signalAt, heardAt, hasRadio, profileFor } from '../src/vehicle/radio.js';
+import { STATIONS } from '../src/audio/radioStation.js';
 import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC, P309_SPEC } from '../src/vehicle/quadSpecs.js';
 
 describe('the radio', () => {
@@ -85,5 +86,78 @@ describe('how loud it is where you are', () => {
     expect(far.gain).toBeLessThan(near.gain);
     expect(far.dull).toBeGreaterThan(near.dull);
     expect(heardAt(0.8, RADIO_PARAMS.outsideRange + 1).gain).toBe(0);
+  });
+});
+
+describe('which station a set is on', () => {
+  it('starts on its own preset: Jess\'s aftermarket set on the rock station, the rest on the easy one', () => {
+    expect(new Radio('corsa').station).toBe('quarry');
+    for (const id of ['landrover', 'landrover200', 'fiesta', 'p309']) expect(new Radio(id).station).toBe('dale');
+  });
+
+  it('steps round the stations and says which, and the static of changing is timed from then', () => {
+    const r = new Radio('fiesta');
+    r.update(5, {});
+    expect(r.sinceRetune).toBeGreaterThan(1e6);
+    expect(r.nextStation()).toBe('Quarry Rock');
+    expect(r.station).toBe('quarry');
+    expect(r.sinceRetune).toBe(0);
+    r.update(0.3, {});
+    expect(r.sinceRetune).toBeCloseTo(0.3);
+    r.nextStation();
+    expect(r.station).toBe(STATIONS[0].id);
+  });
+
+  it('says its station when it describes itself', () => {
+    const r = new Radio('corsa');
+    r.set(true);
+    r.update(1, { power: true });
+    expect(r.describe()).toContain('Quarry Rock');
+  });
+
+  it('sounds worse the older it is: the Series buzzes and is tinny, the Corsa is clean and deepest', () => {
+    const p = RADIO_PROFILES;
+    expect(p.landrover.distort).toBeGreaterThan(p.landrover200.distort);
+    expect(p.landrover200.distort).toBeGreaterThan(p.corsa.distort);
+    expect(p.corsa.distort).toBe(0);
+    expect(p.landrover.band[1] - p.landrover.band[0]).toBeLessThan(p.corsa.band[1] - p.corsa.band[0]);
+    expect(p.corsa.bass).toBeGreaterThan(Math.max(p.landrover.bass, p.landrover200.bass, p.fiesta.bass, p.p309.bass));
+    expect(p.fiesta.warble).toBeGreaterThan(p.corsa.warble);
+    for (const prof of Object.values(p)) expect(STATIONS.map((s) => s.id)).toContain(prof.station);
+  });
+});
+
+describe('the radio key', () => {
+  const hold = 0.5;
+  const frames = (key, { on, downFor, hz = 60 }) => {
+    const out = [];
+    const dt = 1 / hz;
+    const n = Math.round(downFor * hz);
+    for (let i = 0; i < n; i++) out.push(key.update(dt, i === 0, true, on, hold));
+    out.push(key.update(dt, false, false, on, hold));
+    return out.filter(Boolean);
+  };
+
+  it('switches a set that is off on, at once, and a long hold of that press does nothing more', () => {
+    const k = new RadioKey();
+    expect(frames(k, { on: false, downFor: 0.05 })).toEqual(['on']);
+    const k2 = new RadioKey();
+    expect(frames(k2, { on: false, downFor: 1.2 })).toEqual(['on']);
+  });
+
+  it('a short press on a set that is on changes station, when the key comes up', () => {
+    expect(frames(new RadioKey(), { on: true, downFor: 0.15 })).toEqual(['station']);
+  });
+
+  it('holding it switches the set off once, and letting go does not change station', () => {
+    expect(frames(new RadioKey(), { on: true, downFor: 0.9 })).toEqual(['off']);
+  });
+
+  it('does nothing without a press, and a reset press (louder or quieter) does nothing on release', () => {
+    const k = new RadioKey();
+    expect(k.update(0.016, false, false, true, hold)).toBeNull();
+    k.update(0.016, true, true, true, hold);
+    k.reset();
+    expect(k.update(0.016, false, false, true, hold)).toBeNull();
   });
 });

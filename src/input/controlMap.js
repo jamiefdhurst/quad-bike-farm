@@ -41,7 +41,7 @@ export const CONTEXTS = {
       ['Digit0', 'press', 'Neutral'], ['Digit1', 'press', 'Gear 1'], ['Digit2', 'press', 'Gear 2'], ['Digit3', 'press', 'Gear 3'],
       ['Digit4', 'press', 'Gear 4'], ['Digit5', 'press', 'Gear 5'],
       ['Comma', 'press', 'Left indicator'], ['Period', 'press', 'Right indicator'], ['Equal', 'press', 'Hazards'], ['Semicolon', 'press', 'Seat belt'],
-      ['KeyI', 'press', 'Radio'], ['KeyL', 'hold', 'Horn'],
+      ['KeyI', 'press', 'Radio: switch it on, then change station'], ['KeyI', 'hold', 'Switch the radio off'], ['KeyL', 'hold', 'Horn'],
       ['BracketRight', 'press', 'Raise the bale arms, hand throttle out, advance the spark'],
       ['BracketLeft', 'press', 'Lower the bale arms, hand throttle in, retard the spark'],
       ['KeyJ', 'press', 'Hook a trailer on or off'],

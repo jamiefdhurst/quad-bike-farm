@@ -13,6 +13,7 @@ import { netCharge } from '../engine/charging.js';
 import { sickness, sickEvidence } from '../npc/keepAlive.js';
 import { BRANDS, WHEEL_NAMES } from '../vehicle/tyres.js';
 import { LIGHT_MODES } from '../vehicle/lightSwitch.js';
+import { STATIONS } from '../audio/radioStation.js';
 import { SIGNAL_MODES } from '../vehicle/indicators.js';
 import { DRIVE_MODES } from '../vehicle/driveMode.js';
 import { canStick } from '../vehicle/stickyStarter.js';
@@ -337,6 +338,8 @@ export class DebugGui {
     if (u.quad.radio) {
       tick(r, 'radio on', () => unit().quad.radio?.on ?? false, (v) => unit().quad.radio?.set(v));
       set(r, 'radio volume', () => round(unit().quad.radio?.volume ?? 0), (v) => unit().quad.radio?.setVolume(v), 0, 1);
+      r.add({ get v() { return unit().quad.radio?.station; }, set v(x) { unit().quad.radio?.setStation(x); } }, 'v', STATIONS.map((s) => s.id)).name('radio station').listen();
+      show(r, 'radio station (what is on)', () => (unit().quad.radio ? this.game.describeRadioStation(unit()) : 'none'));
       show(r, 'radio (what you hear, signal)', () => (unit().quad.radio ? `${unit().quad.radio.describe()}, signal ${round(unit().quad.radio.signal)}, ${unit().quad.radio.profile.name}` : 'none'));
     }
     if (u.quad.signals) r.add({ get v() { return unit().quad.signals?.mode; }, set v(x) { unit().quad.signals?.set(x); } }, 'v', SIGNAL_MODES).name('indicators').listen();
@@ -474,6 +477,7 @@ export class DebugGui {
     row(one, 'Switch it off (fuel off)', () => stopOne(this.unit()));
     row(one, 'Warm it up', () => this.unit().engine.setTemperature(1));
     row(one, 'Cool it right down', () => this.unit().engine.setTemperature(0));
+    row(one, 'Add music to its radio from a folder', () => this.unit().quad.radio && g.addRadioMusic(this.unit()));
     row(one, 'Turn every radio on', () => g.setAllRadios(true));
     row(one, 'Turn every radio off', () => g.setAllRadios(false));
     row(one, 'Tickle its carb (the old bike)', () => {

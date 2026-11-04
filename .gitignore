@@ -25,3 +25,8 @@ dist/
 # The frame budget's numbers, written by the smoke test and CI (tools/frameBudget.mjs).
 budget-*.json
 .perf
+
+# The radio: songs you add yourself (tools/build_radio_music.py --extras-only)
+public/audio/radio-extra/*/*
+!public/audio/radio-extra/*/.gitkeep
+public/audio/radio/extra-*.mp3
