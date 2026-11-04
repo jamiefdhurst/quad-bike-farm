@@ -54,6 +54,7 @@ function makeWorld() {
     farmJson: () => '{"day":4}',
     farmWipe: () => (state.wiped = true),
     farmEndDay: () => 'fading to black: day 5 loads next',
+    farmSendHome: () => 'the girls are going home',
     notebookLearnt: () => [{ id: 'flood', text: 'A flooded engine clears.', learnt: !!state.learnt?.has('flood') }, { id: 'wax', text: 'Diesel waxes.', learnt: !!state.learnt?.has('wax') }],
     learnThing: (id) => ((state.learnt ??= new Set()).has(id) ? false : (state.learnt.add(id), true)),
     learnAll: () => (state.learnt = new Set(['flood', 'wax'])),
@@ -341,6 +342,7 @@ describe('the farm save', () => {
     expect(text(shell.run('save now'))).toMatch(/^saved/);
     expect(text(shell.run('save copy'))).toBe('copied the save');
     expect(text(shell.run('save day'))).toMatch(/^fading to black/);
+    expect(text(shell.run('save home'))).toMatch(/^the girls are going home/);
     expect(state.dumped).toBe('{"day":4}');
     shell.run('save wipe');
     expect(state.wiped).toBe(true);

@@ -378,6 +378,7 @@ export function buildGirlsTab(d) {
   const mem = sub('The farm that remembers');
   show(mem, 'the farm that remembers', () => g.farmText());
   show(mem, 'the calendar says', () => g.endOfDayNow().text);
+  show(mem, 'going home', () => g.describeGoingHome());
   show(mem, "the day's story so far", () => g.storyNow().join(' '));
   show(mem, 'the date', () => g.seasonText());
   show(mem, 'the show', () => g.describeShow());
@@ -396,6 +397,7 @@ export function buildGirlsTab(d) {
   button(mem, 'Write down everything in the notebook', () => g.discoveries.list.forEach((d) => g.discoveries.learn(d.id)));
   button(mem, 'Rub out the notebook\'s learnt page', () => (g.discoveries.forget(), g.hud.bucketOpen && g.showBucketList()));
   button(mem, 'Save the farm now', () => toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));
+  button(mem, 'Send the girls home in their cars (then the card)', () => toast(g.sendGirlsHome() ? 'The girls are going home' : 'Nobody has a car here to go home in'));
   button(mem, 'Call it a day now (fade, save)', () => g.callItADay({ force: true }));
   button(mem, 'Rut the green lane to a bog', () => g.world.wear.setLane(1));
   button(mem, 'Dry the green lane out', () => g.world.wear.setLane(0));

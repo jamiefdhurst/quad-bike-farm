@@ -218,6 +218,10 @@ export function createHost(g, { copy = () => {} } = {}) {
       g.callItADay({ force: true });
       return g.farm.seeded ? 'a seeded game does not carry on to another day' : `fading to black: day ${g.farm.day + 1} loads next`;
     },
+    farmSendHome: () => {
+      if (g.goingHome.active) return `already going: ${g.describeGoingHome()}`;
+      return g.sendGirlsHome() ? `the girls are going home (the card comes up when they have gone): ${g.describeGoingHome()}` : 'nobody has a car here to go home in';
+    },
     farmLoad: (json) => g.loadFarmJson(json),
 
     notebookLearnt: () => g.discoveries.list.map((d) => ({ id: d.id, text: d.text, learnt: g.discoveries.learnt.has(d.id) })),

@@ -12,7 +12,7 @@ import { resolve, walk, show, describe, parseValue, pathCandidates } from './she
  *   jobs(): [{ id, name, stage, verbs: [{ verb, label }] }]   jobVerb(id, verb): string | void   (the farm's jobs, as the panel's Jobs folder)
  *   weatherKinds(): string[]              setWeather(kind): string
  *   dump(text): void                      (copies to the clipboard)
- *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   farmEndDay(): string   (the farm that remembers)
+ *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   farmEndDay(): string   farmSendHome(): string   (the farm that remembers)
  *   notebookLearnt(): [{ id, text, learnt }]   learnThing(id): boolean   learnAll(): void   forgetAll(): void   (the notebook's "Things I've learnt")
  *   errors(): [{ name, count, message }]   clearErrors(): void   (features whose update threw, caught by core/featureGuard.js)
  *   perf(): { fps, ms, worstMs, p99Ms, longFrames, longTotal, longFrameCauses, heapMb, allocMbPerSecond, calls, triangles, width, height, pixelRatio, maxFps }   (how hard the game is working)
@@ -421,10 +421,10 @@ export function buildCommands(host) {
     {
       name: 'save',
       group: 'World',
-      usage: 'save [now | show | copy | day | wipe | load <json>]',
-      help: 'the farm that remembers: which day and when it saved; save it now, show or copy the save, end the day (the fade to the next day, whatever the time), wipe it, or load one (it plays from the next reload)',
+      usage: 'save [now | show | copy | day | home | wipe | load <json>]',
+      help: 'the farm that remembers: which day and when it saved; save it now, show or copy the save, end the day (the fade to the next day, whatever the time), send the girls home as the calendar does (the card comes up when they have gone), wipe it, or load one (it plays from the next reload)',
       examples: ['save', 'save now', 'save copy', 'save load {"version":1,"day":3,...}'],
-      complete: (ctx, tokens) => (tokens.length === 0 ? ['now', 'show', 'copy', 'day', 'wipe', 'load'] : []),
+      complete: (ctx, tokens) => (tokens.length === 0 ? ['now', 'show', 'copy', 'day', 'home', 'wipe', 'load'] : []),
       run: ([what], shell) => {
         if (!what) return host.farmText();
         if (what === 'now') return host.farmSave() ? `saved: ${host.farmText()}` : `not saved: ${host.farmText()}`;
@@ -434,6 +434,7 @@ export function buildCommands(host) {
           return 'copied the save';
         }
         if (what === 'day') return host.farmEndDay();
+        if (what === 'home') return host.farmSendHome();
         if (what === 'wipe') {
           host.farmWipe();
           return 'wiped: the next load deals a new farm';
