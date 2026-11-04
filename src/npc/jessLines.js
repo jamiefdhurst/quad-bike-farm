@@ -21,6 +21,7 @@ import { JESS_DIESEL_LINES } from './dieselLines.js';
 import { JESS_GENERATOR_LINES } from './generatorLines.js';
 import { JESS_HAY_LINES } from './hayLines.js';
 import { JESS_SPRAY_LINES } from './sprayLines.js';
+import { JESS_HARROW_LINES } from './harrowLines.js';
 import { JESS_STREAM_LINES } from './streamLines.js';
 import { JESS_RIVER_LINES } from './riverLines.js';
 import { JESS_QUARRY_LINES } from './quarryLines.js';
@@ -604,4 +605,6 @@ export const JESS_LINES = {
   ...JESS_MOW_LINES,
   // Loading and unloading a Land Rover's back (tidyLoadLines.js), after that.
   ...JESS_TIDY_LOAD_LINES,
+  // Harrowing the field (harrowLines.js), last so the banks before it stay as they are.
+  ...JESS_HARROW_LINES,
 };

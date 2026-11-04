@@ -26,6 +26,7 @@ import { AMY_DIESEL_LINES } from './dieselLines.js';
 import { AMY_GENERATOR_LINES } from './generatorLines.js';
 import { AMY_HAY_LINES } from './hayLines.js';
 import { AMY_SPRAY_LINES } from './sprayLines.js';
+import { AMY_HARROW_LINES } from './harrowLines.js';
 import { AMY_STREAM_LINES } from './streamLines.js';
 import { AMY_RIVER_LINES } from './riverLines.js';
 import { AMY_QUARRY_LINES } from './quarryLines.js';
@@ -1694,4 +1695,6 @@ export const VOICE_LINES = {
   ...AMY_MOW_LINES,
   // Loading and unloading a Land Rover's back (tidyLoadLines.js), after that.
   ...AMY_TIDY_LOAD_LINES,
+  // Harrowing the field (harrowLines.js), last so the banks before it stay as they are.
+  ...AMY_HARROW_LINES,
 };
