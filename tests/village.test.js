@@ -18,6 +18,13 @@ describe('the village', () => {
     expect(S.limit).toBe(20);
   });
 
+  it('starts on the lane and reaches its west edge, so the road can be clamped to the edge with no gap', () => {
+    expect(S.road[0].x).toBeGreaterThanOrEqual(S.laneEdge);
+    expect(S.laneEdge).toBeCloseTo(lane.x - lane.halfWidth, 6);
+    expect(S.road[S.mouth].x).toBeLessThanOrEqual(S.laneEdge);
+    expect(S.road[S.mouth - 1].x).toBeGreaterThan(S.laneEdge);
+  });
+
   it('has a side road that turns off the lane and bends away west, not a straight line', () => {
     expect(S.road[0].x).toBeCloseTo(lane.x, 0);
     expect(S.road[S.road.length - 1].x).toBeLessThan(110);

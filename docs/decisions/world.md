@@ -1031,3 +1031,7 @@ Settled with Jamie: it moves out of the barley stubble into grass, same 32 by 18
 - **Kept** as `harrow` in the farm save: `since`, `doneDay` and a digit a cell. The molehills are dealt from `farmSeed`, so a farm has the same ones each game.
 - **The girls** say `harrowStart` and `harrowDone` (`npc/harrowLines.js`), nothing in the chooser and no notice. Lines are merged last, so only the last voice banks changed.
 - **Debug.** Tune: "Harrowing", "Harrows carrier", "Harrows wear", "Harrows mud". Farm tab, Jobs, "Harrow the field": tines down and up, harrow half, finish, clear. Console: `farm.harrow`, `farm.harrowTines`, `farm.harrowed`, `job harrow done`.
+
+## The road meets the lane with no gap (#588, from testing #388)
+
+After #535 the road's markings were right but its tarmac stopped short of the lane. `roadStrip` began at the last sample outside the lane's west edge, and the road meets the lane at an angle, so that cross-section ran slantwise: clamping its vertices to the edge left a wedge of bare ground between the strip's end and the lane. The road is now built from its first sample (on the lane's middle), so every cross-section before the edge is squashed onto the edge line and the bellmouth is covered whole. The lane's tarmac is still under it, so nothing is drawn over the lane. Same cost: a handful of extra triangles.
