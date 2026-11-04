@@ -38,7 +38,15 @@ const KINDS = {
         diffuseColor.rgb = mix(diffuseColor.rgb, mudCol, gMask);
         // Dust: pale and patchy on the head and shoulders, a little over the rest.
         float dustHere = uGirlDust * mix(0.25, 0.75, smoothstep(0.62, 0.88, gh)) * (0.6 + 0.6 * gmNoise(gn * 45.0));
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.52, 0.36), clamp(dustHere, 0.0, 0.85) * (1.0 - gMask));`,
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.52, 0.36), clamp(dustHere, 0.0, 0.85) * (1.0 - gMask));
+        // Rain: the hair (the part of her head that is her hair's colour) goes dark and clumps into streaks, and her skin darkens a touch.
+        float onHead = smoothstep(0.5, 0.62, gh);
+        float isHair = 1.0 - smoothstep(0.04, 0.14, distance(diffuseColor.rgb, uGirlHairCol));
+        float streak = 0.75 + 0.25 * gmNoise(vec3(gn.x * 90.0, gn.y * 5.0, gn.z * 90.0));
+        gHair = onHead * isHair * uGirlHair;
+        diffuseColor.rgb *= mix(1.0, 0.3 * streak, gHair);
+        diffuseColor.rgb *= 1.0 - 0.1 * uGirlSoak * (1.0 - gHair);
+        gSheen = uGirlSoak * (1.0 - isHair) * 0.5 + gHair * 0.4;`,
   // A welly: caked thick round the foot as soon as she has any on her, splashed up the shin as she gets muddier.
   welly: `
         float blot = gmNoise(gn * 22.0) * 0.6 + gmNoise(gn * 60.0) * 0.4;
@@ -68,7 +76,13 @@ const KINDS = {
         diffuseColor.rgb = mix(diffuseColor.rgb, mudCol, gMask);
         // Dust on dark cloth is a dull grey bloom, more on the back and shoulders.
         float dustHere = uGirlDust * mix(0.35, 0.8, smoothstep(0.55, 0.85, gh)) * mix(0.4, 1.0, back) * (0.6 + 0.6 * gmNoise(gn * 40.0));
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.52, 0.49, 0.44), clamp(dustHere, 0.0, 0.7) * (1.0 - gMask));`,
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.52, 0.49, 0.44), clamp(dustHere, 0.0, 0.7) * (1.0 - gMask));
+        // Rain: dark patches from the shoulders down that join up as she soaks; the hem and cuffs dry first. Not over mud.
+        float patchy = gmNoise(gn * 18.0) * 0.6 + gmNoise(gn * 50.0) * 0.4;
+        float wetCover = uGirlSoak * 1.5 - (1.0 - gh) * 0.5 - abs(side) * 0.25 * (1.0 - uGirlSoak);
+        float wetMask = smoothstep(patchy - 0.12, patchy + 0.12, wetCover) * (1.0 - gMask);
+        diffuseColor.rgb *= 1.0 - 0.62 * wetMask;
+        gSheen = wetMask * 0.5;`,
 };
 
 function patch(material, uniforms, kind) {
@@ -90,6 +104,9 @@ function patch(material, uniforms, kind) {
         uniform float uGirlMud;
         uniform float uGirlDust;
         uniform float uGirlWet;
+        uniform float uGirlSoak;
+        uniform float uGirlHair;
+        uniform vec3 uGirlHairCol;
         uniform vec3 uGirlMin;
         uniform vec3 uGirlSize;
         uniform vec3 uGirlUp;
@@ -109,7 +126,14 @@ function patch(material, uniforms, kind) {
         vec3 wetMud = mix(vec3(0.085, 0.058, 0.034), vec3(0.045, 0.031, 0.019), gTone);
         vec3 dryMud = mix(vec3(0.3, 0.235, 0.155), vec3(0.2, 0.15, 0.095), gTone) * (1.0 - crack);
         vec3 mudCol = mix(dryMud, wetMud, uGirlWet);
+        float gHair = 0.0;
+        float gSheen = 0.0;
         ${KINDS[kind]}`
+      )
+      .replace(
+        '#include <roughnessmap_fragment>',
+        `#include <roughnessmap_fragment>
+        roughnessFactor = mix(roughnessFactor, min(roughnessFactor, 0.32), clamp(gSheen, 0.0, 1.0));`
       );
   };
   material.customProgramCacheKey = () => `${key.call(material)}girlMud-${kind}`;
@@ -130,6 +154,9 @@ export class GirlMud {
       uGirlMud: { value: 0 },
       uGirlDust: { value: 0 },
       uGirlWet: { value: 0 },
+      uGirlSoak: { value: 0 },
+      uGirlHair: { value: 0 },
+      uGirlHairCol: { value: new THREE.Color(0.1, 0.1, 0.1) },
       uGirlMin: { value: new THREE.Vector3() },
       uGirlSize: { value: new THREE.Vector3(1, 1, 1) },
       uGirlUp: { value: new THREE.Vector3(0, 1, 0) },
@@ -152,9 +179,35 @@ export class GirlMud {
     this.uniforms.uGirlSize.value.copy(size).max(new THREE.Vector3(1e-6, 1e-6, 1e-6));
     this.uniforms.uGirlUp.value.set(axis === 0 ? 1 : 0, axis === 1 ? 1 : 0, axis === 2 ? 1 : 0);
     this.uniforms.uGirlFwd.value.copy(this.forward(body));
+    this.uniforms.uGirlHairCol.value.copy(this.hairColour(body, axis));
     patch(body.material, this.uniforms, 'body');
     body.material.needsUpdate = true;
     rig.onDressed = () => this.dressed();
+  }
+
+  /** Her hair's colour (linear): the body's texture at its highest vertex, the crown of her head. Dark if it can't be read. */
+  hairColour(body, axis) {
+    const out = new THREE.Color(0.1, 0.1, 0.1);
+    try {
+      const pos = body.geometry.attributes.position;
+      const uv = body.geometry.attributes.uv;
+      let top = 0;
+      for (let i = 1; i < pos.count; i++) if (pos.getComponent(i, axis) > pos.getComponent(top, axis)) top = i;
+      const img = body.material.map?.image;
+      if (!img || !uv) return out;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const w = img.width ?? img.videoWidth;
+      const h = img.height ?? img.videoHeight;
+      const flip = body.material.map.flipY ? 1 - uv.getY(top) : uv.getY(top);
+      ctx.drawImage(img, Math.min(w - 1, Math.floor(uv.getX(top) * w)), Math.min(h - 1, Math.floor(flip * h)), 1, 1, 0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      out.setRGB(r / 255, g / 255, b / 255, THREE.SRGBColorSpace);
+    } catch {
+      // a texture that can't be read (no canvas): the default, dark
+    }
+    return out;
   }
 
   /** Which way she faces in the body's own space: from her heel to her toe in the bind pose, flattened. */
@@ -199,12 +252,14 @@ export class GirlMud {
     }
   }
 
-  /** @param {{ mud: number, dust: number, wet: number }} state  0..1 each. @param {{ backBias: number, wellyBoost: number }} [p] */
-  update(state, p) {
+  /** @param {{ mud: number, dust: number, wet: number }} state  0..1 each. @param {{ backBias: number, wellyBoost: number }} [p] @param {{ soak: number, hair: number }} [soaked] rain (npc/soaking.js) */
+  update(state, p, soaked) {
     if (!this.ok) return;
     this.uniforms.uGirlMud.value = state.mud;
     this.uniforms.uGirlDust.value = state.dust;
     this.uniforms.uGirlWet.value = state.wet;
+    this.uniforms.uGirlSoak.value = soaked?.soak ?? 0;
+    this.uniforms.uGirlHair.value = soaked?.hair ?? 0;
     if (p) {
       this.uniforms.uGirlBack.value = p.backBias;
       this.uniforms.uGirlBoots.value = p.wellyBoost;
