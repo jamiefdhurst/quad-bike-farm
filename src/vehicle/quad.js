@@ -32,6 +32,7 @@ import { poseFiestaHatch } from './fiestaModel.js';
 import { pose309Hatch } from './p309Model.js';
 import { poseCorsaHatch } from './corsaModel.js';
 import { Tailgate } from './tailgate.js';
+import { DoorSounds } from './doorSounds.js';
 import { poseCarControls, poseCarSeats } from './carModel.js';
 
 import { poseUtvControls, poseUtvBelts, poseUtvDoors } from './utvModel.js';
@@ -189,6 +190,7 @@ export class Quad {
       this.faults.wheelSides = layout.wheels.map((w) => ({ side: w.x >= 0 ? 1 : -1, front: !!w.front }));
     }
     this.carbIce = new CarbIcing(undefined, !engine.params.compressionIgnition && !engine.params.injected); // ice in the carb on a cold, damp day (carbIcing.js); a diesel or an injected engine has no carb
+    this.doorEvents = []; // door and tailgate sounds (doorSounds.js), taken by takeDoorSounds()
     this.iceHits = []; // 'crack' / 'break' from wheels on puddle ice, taken by takeIceHits()
     this.bleedParams = DEFAULT_BLEED_PARAMS; // a diesel run dry and bled at the lift pump (bleeding.js); the game swaps in this game's tuning
     this.waxParams = DEFAULT_DIESEL_WAX_PARAMS; // diesel waxing in a hard frost (dieselWax.js); the game swaps in this game's tuning
@@ -1145,6 +1147,11 @@ export class Quad {
     return this.fuel.drain();
   }
 
+  /** Doors and tailgates that opened, shut or slammed since last asked, for the sound (doorSounds.js; `heavy` for a Land Rover's). */
+  takeDoorSounds() {
+    return this.doorEvents.splice(0);
+  }
+
   /** What the wheels did to puddle ice since last asked: 'crack' and 'break', for the sound. */
   takeIceHits() {
     return this.iceHits.splice(0);
@@ -1487,6 +1494,9 @@ export class Quad {
       this.tailgate.update(dt, { speed: this.speed });
       poseSeriesTailgate(this.model, this.tailgate.open);
       poseDefenderBackDoor(this.model, this.tailgate.open);
+      this.doorSounds ??= new DoorSounds(this.model.getObjectByName('backDoor') ? 'backDoor' : 'tailgate');
+      this.doorSounds.update(dt, { doors: this.doorSwing.open, rear: this.tailgate.open, speed: this.speed });
+      this.doorEvents.push(...this.doorSounds.take().map((e) => ({ ...e, heavy: true })));
     }
     if (this.car) {
       poseCarControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, choke: this.choke, park: this.parkBrake, clutch: this.clutchHeld ? 1 : 0, brake: this.brake, throttle: this.throttleKey });
@@ -1498,6 +1508,9 @@ export class Quad {
       this.tailgate ??= new Tailgate();
       this.tailgate.update(dt, { speed: this.speed });
       ({ corsa: poseCorsaHatch, p309: pose309Hatch }[this.model.userData.carKind] ?? poseFiestaHatch)(this.model, this.tailgate.open);
+      this.doorSounds ??= new DoorSounds('hatch');
+      this.doorSounds.update(dt, { doors: this.doorSwing.open, rear: this.tailgate.open, speed: this.speed });
+      this.doorEvents.push(...this.doorSounds.take().map((e) => ({ ...e, heavy: false })));
     }
     if (!this.utv && !this.landRover && !this.tractor && !this.car) {
       this.displayPark += ((this.parkBrake ? 1 : 0) - this.displayPark) * Math.min(1, 14 * dt);

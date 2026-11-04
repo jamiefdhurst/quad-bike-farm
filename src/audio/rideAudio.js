@@ -15,6 +15,7 @@ import { squealLevel, slipAngle, DEFAULT_SQUEAL_PARAMS } from '../vehicle/tyreSq
 import { hornVoice } from '../npc/horns.js';
 import { RideEvents, createSurfaceSampler } from './rideEvents.js';
 import { gridRumble } from '../world/cattleGrid.js';
+import { doorSamples, DOOR_PROFILES } from './doorSamples.js';
 
 const TWO_PI = Math.PI * 2;
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -114,6 +115,26 @@ function rattleSound(d, sr) {
     }
     at += (0.012 + Math.random() * 0.04) * sr;
   }
+}
+
+/** The door noises, three takes of each so a run of them is not the same one twice: `doors[profile][what]` is a list of buffers. */
+function doorBuffers(hub) {
+  if (hub.doorBuffers) return hub.doorBuffers;
+  const ctx = hub.ctx;
+  const b = {};
+  for (const [name, prof] of Object.entries(DOOR_PROFILES)) {
+    b[name] = {};
+    for (const what of ['open', 'shut', 'slam', 'stop']) {
+      b[name][what] = [1, 2, 3].map((seed) => {
+        const samples = doorSamples(ctx.sampleRate, what, prof, seed);
+        const buf = ctx.createBuffer(1, samples.length, ctx.sampleRate);
+        buf.copyToChannel(samples, 0);
+        return buf;
+      });
+    }
+  }
+  hub.doorBuffers = b;
+  return b;
 }
 
 /** Buffers every quad shares, made once per AudioContext. */
@@ -417,6 +438,7 @@ export class RideAudio {
   update(dt) {
     if (!this.built && !this.build()) {
       this.events.take();
+      this.unit.quad.takeDoorSounds();
       return;
     }
     const ctx = this.hub.ctx;
@@ -467,6 +489,10 @@ export class RideAudio {
     if (quad.brakes?.takeClunk()) this.events.push('knock', 0.9); // a binding brake frees
     const slap = quad.faults.takeSlap();
     if (slap > 0) this.events.push('knock', 0.25 + 0.4 * slap); // a slack chain slaps the chainguard
+    for (const d of quad.takeDoorSounds()) {
+      const list = doorBuffers(this.hub)[d.heavy ? 'landRover' : 'car'][d.what];
+      this.oneShot(list[Math.floor(Math.random() * list.length)], level * p.doorVolume * d.strength, 0.95 + Math.random() * 0.1, 0);
+    }
     for (const hit of quad.takeIceHits()) this.events.push(hit === 'break' ? 'iceBreak' : 'iceCrack', hit === 'break' ? 1 : 0.6); // puddle ice under a wheel
     if (quad.faults.takeJump()) this.events.push('knock', 1); // and the chain comes off
 
