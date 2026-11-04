@@ -66,6 +66,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       dutchbarn: layout.dutchBarn,
       fieldshed: layout.fieldShed,
       muckheap: layout.muckHeap,
+      harrows: layout.harrows, // the chain harrows, left at the harrow field's west edge
       animals: layout.farmAnimals ? { x: layout.farmAnimals.pen.maxX + 2.5, z: (layout.farmAnimals.pen.minZ + layout.farmAnimals.sty.maxZ) / 2 } : null,
       trough: layout.trough,
       road: layout.road?.pad,

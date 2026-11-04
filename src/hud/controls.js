@@ -63,6 +63,13 @@ export const CONTROLS = [
     ],
   },
   {
+    title: 'The harrows',
+    lines: [
+      `<kbd>J</kbd> on the tractor or a quad with a rack hooks the chain harrows on when the hitch is at their ring, or takes them off when you're stopped (on foot, <kbd>E</kbd> at their drawbar does the same). <kbd>T</kbd> lowers the tines onto the ground or lifts them clear (from the seat, or standing by them)`,
+      `With the tines down, drive up and down the harrow field inside the track at a steady pace and the mat combs a strip 3.4 m wide behind the carrier. The harrowing job is on the chalkboard when the field wants it; the lines you drag show on the map (<kbd>M</kbd>)`,
+    ],
+  },
+  {
     title: 'The sprayer',
     lines: [
       `<kbd>J</kbd> on a quad with a rack hooks the sprayer on when the hitch is at its ring, or takes it off when you're stopped (on foot, <kbd>E</kbd> at its drawbar does the same). <kbd>T</kbd> folds the boom out or in (from the seat, or standing by it). With the boom out, drive slowly (about walking pace) and it sprays 6 m wide behind the trailer`,
