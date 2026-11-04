@@ -63,7 +63,7 @@ import { choose, mainNeed, nextThink, OFFER_KINDS } from './npc/chooser.js';
 import { pickThen, planKey } from './npc/plans.js';
 import { Agenda, agendaKey } from './npc/agenda.js';
 import { FAULT_KINDS } from './vehicle/faults.js';
-import { Briefing, planBriefing, worstTrouble, DEFAULT_BRIEFING_PARAMS, BRIEFING_PARAM_RANGES } from './npc/briefing.js';
+import { Briefing, planBriefing, worstTrouble, yesterdayOf, DEFAULT_BRIEFING_PARAMS, BRIEFING_PARAM_RANGES } from './npc/briefing.js';
 import { girlsLeftOut } from './npc/leftOut.js';
 import { DEFAULT_ARRIVAL_PARAMS, ARRIVAL_PARAM_RANGES, dealArrival, liftSeats, carsAway, keepAway, Arrival } from './farm/arrival.js';
 import { Favour, FAVOUR_PARAM_RANGES } from './npc/favour.js';
@@ -5058,7 +5058,7 @@ export class Game {
   briefingPlan() {
     const faults = Object.fromEntries(this.girlUnits.map((u) => [u.spec.id, u.quad.faults]));
     const agendas = Object.fromEntries(this.companions.map((c) => [c.character.id, c.agenda.id]));
-    return planBriefing({ weather: this.weather, promise: this.weather.promise, trouble: worstTrouble(faults, FAULT_KINDS, this.briefingParams.briefingTroubleFrom), agendas });
+    return planBriefing({ weather: this.weather, promise: this.weather.promise, trouble: worstTrouble(faults, FAULT_KINDS, this.briefingParams.briefingTroubleFrom), agendas, yesterday: yesterdayOf(this.farm.save) });
   }
 
   /** Starts the briefing now, whatever the clock (the debug panel and the console). */
