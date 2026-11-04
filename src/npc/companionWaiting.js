@@ -44,7 +44,7 @@ export const waitingMethods = {
       }
       this.waitTargets = { wheel: nearestWithin(here, wheels, p.waitReach), seat: nearestWithin(here, seats, p.waitReach * 0.8) };
       const w = this.waitWeather ?? {};
-      const ctx = { ...this.waitTargets, chill: w.chill, sun: w.sun, clouding: w.clouding, wet: w.wet };
+      const ctx = { ...this.waitTargets, chill: w.chill, sun: w.sun, clouding: w.clouding, wet: w.wet, shiver: w.shiver };
       const choices = waitingChoices(this.character?.idles ?? [], ctx, this.character?.waitTastes ?? {}, p);
       if (this.callSpot) choices.push({ name: 'phoneCall', weight: 1 }); // on a call (phoneCalls.js): kept in her list so it isn't eased out
       idles.setChoices(choices);

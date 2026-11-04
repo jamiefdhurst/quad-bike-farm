@@ -2,6 +2,7 @@
 // so both do exactly what the game does. Each action calls the real game methods and says what happened with a toast.
 import { pickTrick } from '../npc/showOff.js';
 import { cleanUp } from '../npc/muddiness.js';
+import { dryOff } from '../npc/soaking.js';
 import { standBy } from '../npc/pair.js';
 import { WAITING_IDLES } from '../npc/waiting.js';
 import { exhaustSideOf } from '../npc/exhaustBurn.js';
@@ -824,6 +825,21 @@ export function girlActions(g) {
       m.noticedMud = m.noticedDust = false;
       m.sinceRemark = 1e9;
     },
+  });
+  actions.push({
+    verb: 'soak',
+    label: '% is caught in a downpour',
+    run: (id) => {
+      const s = girl(id).soaked;
+      s.soak = s.hair = 1;
+      s.noticedWet = s.noticedCold = false;
+      s.sinceRemark = 1e9;
+    },
+  });
+  actions.push({
+    verb: 'dry-off',
+    label: '% is dried off',
+    run: (id) => dryOff(girl(id).soaked),
   });
   actions.push({
     verb: 'clean',

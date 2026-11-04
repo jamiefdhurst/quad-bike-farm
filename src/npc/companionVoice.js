@@ -116,6 +116,12 @@ export class CompanionVoice {
     return this.say(kind === 'dust' ? 'dusty' : 'muddy');
   }
 
+  /** She has noticed she is soaked or cold from the rain (soaking.js): 'wet' or 'cold'. Returns what she said, if anything. */
+  onSoaked(kind) {
+    if (this.head.distanceTo(this.listener) > Math.min(15, this.params.voiceRange)) return null;
+    return this.say(kind === 'cold' ? 'chilled' : 'soaked');
+  }
+
   onTinker(kind) {
     const [situation, chance] = { open: ['tinkerOpen', 0.6], adjust: ['tinker', 0.25], limiter: ['tinkerLimiter', 0.9], stock: ['tinkerStock', 0.6], service: ['tinkerService', 0.8], silencerOff: ['silencerOff', 0.9], silencerOn: ['silencerOn', 0.8], fast: ['tunedFast', 0.02], jetLean: ['jetLean', 0.9], jetRight: ['jetRight', 0.8] }[kind] ?? [];
     if (!situation || this.head.distanceTo(this.listener) > Math.min(15, this.params.voiceRange)) return null;

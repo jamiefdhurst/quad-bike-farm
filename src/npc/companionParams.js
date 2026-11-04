@@ -113,6 +113,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   thinkEvery: 2, // seconds between her weighing up what to do, while she's free (a little more or less each time)
   needColdRise: 0.025, // warmth: per second at the day's full chill, outside
   needWetRise: 0.035, // and this much more per second when it's raining on her
+  needSoakedRise: 0.05, // and this much more per second at her coldest, soaked through (soaking.js): she wants somewhere warm and dry
   needWarmFall: 0.06, // per second warming up (hands over an engine, a running cab, the barn roof); a third of it on a mild day anyway
   needLonelyRise: 0.004, // company: per second with nobody within needLonelyRange
   needLonelyRange: 15, // metres
@@ -444,6 +445,7 @@ export const COMPANION_PARAM_RANGES = {
   settleSeconds: [5, 300, 5],
   needColdRise: [0, 0.2, 0.001],
   needWetRise: [0, 0.2, 0.001],
+  needSoakedRise: [0, 0.3, 0.005],
   needWarmFall: [0, 0.5, 0.005],
   needLonelyRise: [0, 0.05, 0.0005],
   needLonelyRange: [3, 60, 1],

@@ -24,16 +24,16 @@ export class Needs {
   }
 
   /**
-   * One step. `ctx`: chill (0..1, the day's cold where she is: 0 indoors or in a cab), wet (it's raining on her), warmed (warming up:
+   * One step. `ctx`: chill (0..1, the day's cold where she is: 0 indoors or in a cab), wet (it's raining on her), cold (0..1, soaked through and chilled by it: soaking.js), warmed (warming up:
    * hands over an engine, a running cab, the barn), alone (nobody within her lonely range), together (someone close, or riding with
    * her), thrill (0..1: speed and shake), active (on the go: walking, driving, getting about), sitting, dozing (asleep or nodding off on the bales), idle (stood about with nothing
    * to do), purposeRate (per second while idle: 1 over her current boredom wait), withFriend (her friend is close), youNear (you are close to her),
    * youWithFriend (you are close to her friend and not to her). `p` her params (the need* keys).
    */
   update(dt, ctx, p) {
-    this.warmth += dt * (ctx.chill * p.needColdRise + (ctx.wet ? p.needWetRise : 0));
+    this.warmth += dt * (ctx.chill * p.needColdRise + (ctx.wet ? p.needWetRise : 0) + (ctx.cold ?? 0) * p.needSoakedRise);
     if (ctx.warmed) this.warmth -= dt * p.needWarmFall;
-    else if (ctx.chill < 0.15 && !ctx.wet) this.warmth -= dt * p.needWarmFall * 0.3; // a mild day, she warms up anyway
+    else if (ctx.chill < 0.15 && !ctx.wet && !(ctx.cold > 0)) this.warmth -= dt * p.needWarmFall * 0.3; // a mild day, she warms up anyway
     if (ctx.alone) this.company += dt * p.needLonelyRise;
     if (ctx.together) this.company -= dt * p.needCompanyFall;
     this.excitement += dt * (p.needThrillRise - (ctx.thrill ?? 0) * p.needThrillFall);

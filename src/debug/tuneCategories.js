@@ -20,7 +20,7 @@ export const TUNE_CATEGORIES = {
     'Left running', 'Ready and waiting', 'Waving', 'Shouting a fault', 'Reading the dash', 'Rev-offs', 'Drowning out', 'Horns', 'Head start', 'Sitting while it warms', 'Minding a fix', 'Numb bum', 'Comparing notes', 'Hand on the throttle', 'Asleep on the back', 'Girls coaching each other', 'Driving lessons',
   ],
   'Girls: things they do': [
-    'Racing', 'Drag race', 'Drives that go somewhere', 'Taking you to see something', 'Hill climb', 'Cone course', 'Follow the leader', 'Doughnuts', 'Practising the clutch', 'Tarmac', 'Showing off', 'The jump', 'Hay ride', 'Hay ride seat', 'Mudguard ride', 'Muddy girls',
+    'Racing', 'Drag race', 'Drives that go somewhere', 'Taking you to see something', 'Hill climb', 'Cone course', 'Follow the leader', 'Doughnuts', 'Practising the clutch', 'Tarmac', 'Showing off', 'The jump', 'Hay ride', 'Hay ride seat', 'Mudguard ride', 'Muddy girls', 'Soaked girls',
     'Tractor remarks', 'River remarks', 'Mini moto nerve', 'Thrown off the moto', 'Tractor go', 'Tractor go drive', 'Tractor go start', 'Tractor go novice',
     'Yak go drive', 'Tor go drive', 'Tor go handle', 'Their cars', 'Going home', 'Arriving in your car', 'Girl pushing a start', 'Girl steering a tow', 'Girl calling for help', 'Keeping it alive', 'Lights to work by', 'Guiding a trailer back', 'Starting the generator', 'Loading a Land Rover', 'Loading the hay', 'Dares', 'Radio: the girls',
   ],

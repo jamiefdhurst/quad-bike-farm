@@ -282,6 +282,8 @@ export function buildGameTree(g, host) {
       underOpen: num(() => completeStyle(c().outfit.style).underOpen, (v) => c().setStyle({ ...completeStyle(c().outfit.style), underOpen: Math.round(v) }), 0, 5, '', 'in two polos, buttons undone on hers under the other'),
       mud: num(() => c().mucky.mud, (v) => (c().mucky.mud = v), 0, 1, '', 'how muddy her jeans are'),
       dust: num(() => c().mucky.dust, (v) => (c().mucky.dust = v), 0, 1, '', 'how dusty her hair and face are'),
+      soaked: num(() => c().soaked.soak, (v) => (c().soaked.soak = c().soaked.hair = v), 0, 1, '', 'how soaked through she is from the rain (her hair, shorts and top go dark; once soaked she gets cold and shivers)'),
+      cold: ro(() => c().soaked.cold, '', 'how cold the rain has made her: it follows how soaked she is and the day, and eases by a fire, a heater or in a jumper'),
       poloOpen: num(() => c().outfit.poloOpen ?? 0, (v) => c().setPoloOpen(v), 0, 5, '', "how many of her polo's buttons are undone (0 to 5)"),
       pairedWith: text(() => g.pairState(id)),
       askingAlong: text(() => g.askAlongState(id)),
