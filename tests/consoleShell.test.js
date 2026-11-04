@@ -402,13 +402,10 @@ describe('scenes', () => {
     expect(shell.history.length).toBe(before);
   });
   it('only uses lines the console understands', () => {
-    const { shell } = makeWorld();
     const real = buildCommands({ vehicleVerbs: VEHICLE_VERBS, vehicles: () => [], girls: () => [], things: () => [], places: () => ({}) });
     for (const sc of SCENES) for (const line of sc.lines) {
       const head = line.split(' ')[0];
       expect(real.some((c) => c.name === head || c.aliases?.includes(head)) || head.includes('.'), `${sc.id}: ${line}`).toBe(true);
     }
-    expect(shell).toBeTruthy();
   });
-});
 });
