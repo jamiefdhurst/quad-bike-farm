@@ -539,12 +539,19 @@ export function buildTop(body, p = POLO) {
 function buildCuffButtons(mesh, body, p, F) {
   const x0 = body.bones.Neck[0];
   const out = [];
+  // Only points of the sleeve itself: a cut leaves the points it cut away in the list, and a button on one stood off the cuff.
+  const used = new Set(mesh.tris.flat());
   for (const [side, sl] of [[1, F.left], [-1, F.right]]) {
     // her left is +x as she stands
+    const sleeve = [...used].filter((i) => sl.limb(mesh.verts[i]) >= 0.8);
+    if (!sleeve.length) continue;
+    // Measured from where the sleeve really ends: her right sleeve stops about 4 cm short of the cuff's line, and from the line
+    // there was nothing of it to sit on (only a point the cut had left behind, so that button stood off the cuff).
+    const end = Math.max(...sleeve.map((i) => sl.field(mesh.verts[i])));
     let best = null;
-    for (const v of mesh.verts) {
-      if (sl.limb(v) < 0.8) continue;
-      const f = sl.field(v);
+    for (const i of sleeve) {
+      const v = mesh.verts[i];
+      const f = sl.field(v) - end;
       if (f > -p.cuff * 0.3 || f < -p.cuff * 0.7) continue;
       const reach = side * (v.rest[0] - x0);
       if (!best || reach > best.reach) best = { v, reach };
