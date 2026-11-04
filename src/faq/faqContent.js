@@ -2443,6 +2443,12 @@ export const FAQ_SECTIONS = [
         tip: 'T drops the Tor’s tailgate; E with something in your hands stands it in the tub.',
       },
       {
+        q: 'Do the doors make a noise?',
+        a: `Yes, in the Land Rovers and the cars. A door clicks as it comes unlatched and swings out, thumps when it shuts behind you, and slams if it swings shut because you drove
+          off with it open. The Land Rovers' are deeper and ring hollow, the cars' are shorter and tighter. The Tor's tailgate also clanks as it comes up short on its chains. You hear
+          them from where you stand, so a girl getting out across the yard sounds like it. "Sound" in the Tune tab has a "Door volume".`,
+      },
+      {
         q: 'How do I open the Crag’s back door?',
         a: `Press <kbd>T</kbd>, stopped, from the seat or standing beside it, and the back door swings out on its hinge on the driver's side, spare wheel and all, onto the
           load space behind the back bench. Press it again to shut it. It swings shut by itself if you drive off with it open, and it won't open while the Crag is moving.`,
