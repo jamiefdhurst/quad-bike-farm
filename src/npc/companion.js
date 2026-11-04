@@ -7,6 +7,7 @@ import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
 import { outfitsFor } from './outfits.js';
 import { applyOutfit, refitOutfit, reshirt, restyle, withJumper, withCoat, setHood, OUTFITS, PALETTE } from './outfit.js';
 import { shapeFigure } from './figure.js';
+import { BodyShake } from './bodyShakeView.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { TractorStartAttempt, DEFAULT_TRACTOR_START_PARAMS } from './tractorStart.js';
 import { drivingStates, drivingMethods } from './companionDriving.js';
@@ -108,6 +109,8 @@ export class Companion {
     this.mucky = createMuddiness(); // how muddy and dusty she is (muddiness.js)
     this.girlMud = new GirlMud(this.rig); // and how that looks on her
     this.soaked = createSoak(); // how wet and cold the rain has made her (soaking.js)
+    // Her body giving with the shake (bodyShake.js): the game points it at the shared tuning.
+    this.rig.bodyShake = new BodyShake(this.rig, { figure: () => this.figure });
     this.root = this.rig.root;
     this.root.name = `companion ${name}`;
     scene.add(this.root);
@@ -1443,9 +1446,11 @@ export class Companion {
       const k = this.params.rideBounce;
       this.rig.spineSway.pitch = vibration.camera.pitch * 2 * k + vibration.body.pitch * 0.8 * k;
       this.rig.spineSway.roll = vibration.camera.roll * 2 * k;
+      this.rig.bodyShake.heave = vibration.body.heave; // the seat's buzz, too fast for her soft parts to follow: a shiver
     } else {
       this.rig.spineSway.pitch = 0;
       this.rig.spineSway.roll = 0;
+      this.rig.bodyShake.heave = 0;
     }
     this.rig.update(dt);
   }

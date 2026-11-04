@@ -236,6 +236,7 @@ export class CharacterRig {
     for (const fn of this.posers) fn(dt);
     this.applyLook();
     this.ponytail?.swing.update(dt); // last: it hangs from her chest whatever her head has done (outfit.js, ponytailView.js)
+    this.bodyShake?.update(dt); // and her body giving with how she's thrown about, from where her bones ended up (bodyShakeView.js)
   }
 
   /**

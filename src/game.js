@@ -219,6 +219,7 @@ import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js'
 import { dealPoloOpen } from './npc/polo.js';
 import { dealOutfit, outfitsFor, outfitRemark, DEFAULT_OUTFIT_PARAMS, OUTFIT_PARAM_RANGES } from './npc/outfits.js';
 import { dealPonytail, DEFAULT_PONYTAIL_PARAMS, PONYTAIL_PARAM_RANGES } from './npc/ponytail.js';
+import { DEFAULT_BODY_SHAKE_PARAMS, BODY_SHAKE_PARAM_RANGES } from './npc/bodyShake.js';
 import { Jumpers, JUMPER_PARAM_RANGES, dealJumperColours } from './npc/jumpers.js';
 import { JumperRail } from './world/jumperRail.js';
 import { Coats, COAT_PARAM_RANGES, dealCoatColours } from './npc/coats.js';
@@ -1281,6 +1282,7 @@ export class Game {
     const shirtTieRandom = createRandom((this.farmSeed ^ 0x7e1e) + this.farm.day * 7919); // the shirt and tie's own, so it moved nobody's other outfits
     const ponytailRandom = createRandom((this.farmSeed ^ 0x9a17) + this.farm.day * 7919); // her hair tied back (npc/ponytail.js), its own too
     this.ponytailParams = { ...DEFAULT_PONYTAIL_PARAMS };
+    this.bodyShakeParams = { ...DEFAULT_BODY_SHAKE_PARAMS };
     const warm = this.weather.peak > this.outfitParams.warmAbove;
     const forcedOutfit = new URLSearchParams(location.search).get('outfit');
     for (const c of this.companions) {
@@ -1296,6 +1298,7 @@ export class Game {
       if (outfitsFor(c.character.outfitOdds).includes(forcedOutfit)) style.kind = forcedOutfit; // ?outfit=plaid puts both girls in it, to look at
       Object.assign(style, dealPonytail(ponytailRandom, c.character.ponytailChance ?? 0));
       c.rig.ponytailParams = this.ponytailParams; // the swing's tuning, shared
+      c.rig.bodyShake.params = this.bodyShakeParams; // and her body's give (npc/bodyShake.js)
       c.outfit = { ...c.outfit, poloOpen: dealPoloOpen(c.character.poloOpen, buttonsRandom), style }; // fitted with her shirt just below
     }
     for (const c of this.companions) {
@@ -2003,6 +2006,7 @@ export class Game {
     registerTuning('Wax jackets', this.coats.p, COAT_PARAM_RANGES);
     registerTuning('Outfits', this.outfitParams, OUTFIT_PARAM_RANGES);
     registerTuning('Ponytail', this.ponytailParams, PONYTAIL_PARAM_RANGES);
+    registerTuning('Body shake', this.bodyShakeParams, BODY_SHAKE_PARAM_RANGES);
     registerTuning('Helmets and goggles', this.headgear.p, HEADGEAR_PARAM_RANGES);
     registerTuning('Red diesel mistake', this.dieselMistake.p, DIESEL_MISTAKE_PARAM_RANGES);
     registerTuning('Reading the dash', this.dashReader.p, READING_PARAM_RANGES);

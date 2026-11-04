@@ -1598,6 +1598,14 @@ export const FAQ_SECTIONS = [
         tip: 'Some days a girl ties her hair back in a ponytail: Amy about one day in three, Jess less often.',
       },
       {
+        q: 'Why do the girls wobble on a running quad?',
+        a: `Their bodies give with the shake, as a real body does. Sat on something running, the seat's buzz shows in them: a lumpy single
+          like the green gives a slow, heavy wobble and a smoother engine a quicker shiver. A bump, landing on the seat, jumping down or
+          running makes their bust, belly, the backs of their arms and their seat bounce and settle over a couple of swings. Their clothes
+          move with them. The fuller the figure, the more it moves, so Jess wobbles more than Amy.`,
+        tip: 'The girls give with the shake: the seat\'s buzz, a bump or a run makes them wobble, Jess more than Amy.',
+      },
+      {
         q: 'Why is one of the girls in a shirt and tie?',
         a: `Ask her: the first time you talk to her on a day she's wearing it, she tells you. Amy is going into town later and isn't
           changing twice; Jess wants to know whether you like it.`,
