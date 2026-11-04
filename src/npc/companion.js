@@ -34,6 +34,7 @@ import { DEFAULT_HOME_PARAMS, jogging } from './homeParking.js';
 import { PillionPose } from './pillionPose.js';
 import { createMuddiness } from './muddiness.js';
 import { GirlMud } from '../effects/girlMud.js';
+import { createSoak } from './soaking.js';
 import { canRideRack } from './rackSeat.js';
 import { nextBoredWait, driftRestlessness, boredOdds, BORED_NORM } from './boredom.js';
 import { Settled } from './settled.js';
@@ -106,6 +107,7 @@ export class Companion {
     this.expression = new Face();
     this.mucky = createMuddiness(); // how muddy and dusty she is (muddiness.js)
     this.girlMud = new GirlMud(this.rig); // and how that looks on her
+    this.soaked = createSoak(); // how wet and cold the rain has made her (soaking.js)
     this.root = this.rig.root;
     this.root.name = `companion ${name}`;
     scene.add(this.root);

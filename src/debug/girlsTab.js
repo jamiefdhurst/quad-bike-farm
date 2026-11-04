@@ -125,6 +125,8 @@ export function buildGirlsTab(d) {
     show(wear, 'mud and dust', () => `${round(c.mucky.mud)} mud (${round(c.mucky.wet)} wet), ${round(c.mucky.dust)} dust`);
     slider(wear, 'mud on her', () => c.mucky.mud, (v) => (c.mucky.mud = v), 0, 1, 0.01);
     slider(wear, 'dust on her', () => c.mucky.dust, (v) => (c.mucky.dust = v), 0, 1, 0.01);
+    show(wear, 'rain on her', () => `${round(c.soaked.soak)} soaked (hair ${round(c.soaked.hair)}), ${round(c.soaked.cold)} cold`);
+    slider(wear, 'soaked', () => c.soaked.soak, (v) => (c.soaked.soak = c.soaked.hair = v), 0, 1, 0.01);
     wear.close();
 
     // --- How she rates you, and the romance.

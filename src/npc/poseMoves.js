@@ -301,6 +301,20 @@ export const STANDING_IDLES = {
     },
     wave: { period: 5.5, bones: { Spine: [0.02, 0, 0] } },
   },
+  // Arms wrapped tight round herself against the cold, shoulders up, head down, shaking.
+  shiver: {
+    hold: {
+      bones: { Spine: [0.1, 0, 0], Spine1: [0.1, 0, 0], Neck: [0.18, 0, 0], LeftShoulder: [0, 0, 0.12], RightShoulder: [0, 0, -0.12] },
+      hands: {
+        left: { frame: 'chest', at: [-0.14, -0.04, 0.11], pole: [0.5, -0.3, 0.05], fingers: [-0.35, -0.1, -0.9], palm: [-1, 0, 0], w: 1 },
+        right: { frame: 'chest', at: [0.14, -0.07, 0.1], pole: [-0.5, -0.35, 0.05], fingers: [0.35, -0.1, -0.9], palm: [1, 0, 0], w: 1 },
+      },
+    },
+    wave: [
+      { period: 0.17, bones: { Spine1: [0.012, 0, 0.012], Neck: [0.015, 0.02, 0], LeftShoulder: [0, 0, 0.02], RightShoulder: [0, 0, -0.02] } },
+      { period: 2.6, bones: { Spine: [0.03, 0, 0] } },
+    ],
+  },
   // Hands clasped low in front of her.
   clasped: {
     hold: {

@@ -339,6 +339,7 @@ import { DEFAULT_CAB_MIST_PARAMS, CAB_MIST_PARAM_RANGES, createCabMist, cabMistR
 import { CabMistView } from './effects/cabMistView.js';
 import { DEFAULT_LENS_PARAMS, LENS_PARAM_RANGES, createLens, updateLens, wipeLens, leaderAhead, isOpenVehicle, lensCoverage, addSplat } from './effects/lensMud.js';
 import { LensMudView } from './effects/lensMudView.js';
+import { DEFAULT_SOAK_PARAMS, SOAK_PARAM_RANGES, updateSoak, soakNoticing, soakRemarked } from './npc/soaking.js';
 import { DEFAULT_MUDDY_PARAMS, MUDDY_PARAM_RANGES, updateMuddiness, noticing, markRemarked } from './npc/muddiness.js';
 import { Workshop } from './workshop/workshop.js';
 import { PodRack } from './vehicle/pods.js';
@@ -1878,6 +1879,8 @@ export class Game {
     registerTuning('Hose', this.hose.params, HOSE_PARAM_RANGES);
     this.muddyParams = { ...DEFAULT_MUDDY_PARAMS };
     registerTuning('Muddy girls', this.muddyParams, MUDDY_PARAM_RANGES);
+    this.soakParams = { ...DEFAULT_SOAK_PARAMS };
+    registerTuning('Soaked girls', this.soakParams, SOAK_PARAM_RANGES);
     // What is stuck on your view riding an open vehicle (effects/lensMud.js), and the canvas that draws it.
     this.lensParams = { ...DEFAULT_LENS_PARAMS };
     registerTuning('Mud on the lens', this.lensParams, LENS_PARAM_RANGES);
@@ -5698,9 +5701,11 @@ export class Game {
       const swing = c.mood.update(dt, c.needs, ctx, c.params);
       if (swing && c.availability().canRemark) c.voice.say(swing === 'low' ? 'moodLow' : 'moodHigh', { chance: 1 });
       c.wetNow = ctx.wet;
+      c.warmedNow = ctx.warmed; // and what warms and chills her, for how soaked she is (updateSoaking)
+      c.chillNow = ctx.chill;
       // What the day is doing, for the ways she waits about (npc/waiting.js): the cold, the sun, a shower coming on.
       const w = this.weather;
-      c.waitWeather = { chill: ctx.chill, wet: ctx.wet, sun: Math.min(1, w.def.sky.sunIntensity / 2.6) * (1 - w.rain) * w.sunUp, clouding: Math.max(0, w.target - w.rain) };
+      c.waitWeather = { chill: ctx.chill, wet: ctx.wet, sun: Math.min(1, w.def.sky.sunIntensity / 2.6) * (1 - w.rain) * w.sunUp, clouding: Math.max(0, w.target - w.rain), shiver: c.soaked.cold };
       c.intent.update(dt, `${c.fsm.name}:${c.fsm.data?.goal ?? ''}`);
       c.memory.update(dt, c.params);
       // What she has in mind for the day, said early on once she's stood about with nothing holding her (npc/agenda.js).
@@ -6038,6 +6043,7 @@ export class Game {
     const speed = onBoard && c.quad ? Math.abs(c.quad.speed) : 0;
     return {
       chill: covered ? 0 : dayChill,
+      cold: c.soaked.cold, // soaked through and chilled by it: it keeps her wanting somewhere warm (needs.js)
       wet: !covered && w.rain > 0.25 && !this.coats.worn[c.character.id], // a wax jacket keeps the rain off
       warmed: !!c.warmingAt || inCab || inBarn || this.hutHost.warmsAt(at.x, at.z) || this.bonfire.warms(Math.hypot(at.x - this.world.layout.bonfire.x, at.z - this.world.layout.bonfire.z)),
       alone: near > p.needLonelyRange && !ridingWith,
@@ -6279,9 +6285,29 @@ export class Game {
           }
         : null;
       updateMuddiness(c.mucky, dt, { ride, walking: c.fsm.is('walking'), hosed: c.hosedNow ? 1 : 0 }, p);
-      c.girlMud.update(c.mucky, p);
+      c.girlMud.update(c.mucky, p, c.soaked);
       const kind = noticing(c.mucky, p);
       if (kind && c.voice.onMuddy(kind)) markRemarked(c.mucky, kind, p);
+    }
+  }
+
+  /** How soaked and cold the rain, the hose and the weather make each girl (npc/soaking.js), and what she says about it. */
+  updateSoaking(dt) {
+    const p = this.soakParams;
+    for (const c of this.companions) {
+      const id = c.character.id;
+      const covered = !!c.coveredNow;
+      updateSoak(c.soaked, dt, {
+        rain: covered ? 0 : this.weather.rain,
+        coat: !!this.coats.worn[id],
+        jumper: !!this.jumpers.worn[id],
+        covered,
+        warmed: !!c.warmedNow,
+        chill: c.chillNow ?? 0,
+        hosed: c.hosedNow ? 1 : 0,
+      }, p);
+      const kind = soakNoticing(c.soaked, p);
+      if (kind && c.voice.onSoaked(kind)) soakRemarked(c.soaked, kind);
     }
   }
 
@@ -13503,6 +13529,7 @@ export class Game {
     fb.lap('farm features', performance.now());
     this.guard.run('updateMinds', () => this.updateMinds(dt, ridden));
     this.guard.run('updateMuddiness', () => this.updateMuddiness(dt));
+    this.guard.run('updateSoaking', () => this.updateSoaking(dt));
     this.guard.run('updateMoneyTin', () => this.moneyTin.update(dt));
     this.guard.run('updateVillage', () => this.villageHost.update(dt));
     this.guard.run('updateMarketTalk', () => this.updateMarketTalk(dt));

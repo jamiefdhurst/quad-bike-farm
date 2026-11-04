@@ -120,7 +120,7 @@ import { AMY_TARMAC_LINES } from './tarmacLines.js';
 import { AMY_DUST_LINES } from './dustLines.js';
 import { AMY_CAT_LINES } from './catLines.js';
 import { AMY_DOG_LINES } from './dogLines.js';
-import { AMY_MUDDY_LINES } from './muddyLines.js';
+import { AMY_MUDDY_LINES, AMY_SOAKED_LINES } from './muddyLines.js';
 import { AMY_JUMP_LINES } from './jumpLines.js';
 import { AMY_SHOWOFF_LINES } from './showOffLines.js';
 import { AMY_NICK_LINES } from './nickLines.js';
@@ -1665,6 +1665,7 @@ export const VOICE_LINES = {
   ...AMY_DOG_LINES,
   // Noticing she is muddy or dusty (muddyLines.js).
   ...AMY_MUDDY_LINES,
+  ...AMY_SOAKED_LINES,
   // The jump (jumpLines.js).
   ...AMY_JUMP_LINES,
   ...AMY_SHOWOFF_LINES,
