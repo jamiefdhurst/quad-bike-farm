@@ -251,6 +251,8 @@ export const LAYOUT = {
   hayMeadow: { minX: 44, maxX: 76, minZ: 52, maxZ: 70 },
   // The spray field (world/spraying.js): a rectangle of the wheat stubble in the south field, level and clear of the muck heap and the gateways, that the spraying job goes over in lines.
   sprayField: { minX: 134, maxX: 166, minZ: 26, maxZ: 50 },
+  // The harrow field (world/harrowing.js): a rectangle of the grass field inside the Home Loop's east side, level and clear of the track, the bogs, the jump's run and the drag strip, with a few molehills in it, that the harrowing job drags the chain harrows over.
+  harrowField: { minX: 26, maxX: 50, minZ: 8, maxZ: 24 },
   muckHeap: { x: 118, z: 15.2, halfX: 3.6, halfZ: 2.3, height: 1.5 },
   trough: { x: 146.8, z: -5.5, length: 2.4, width: 0.65, height: 0.6 },
 
@@ -453,6 +455,7 @@ export const LAYOUT = {
   trailer: { x: -42, z: 37, yaw: 2.7 }, // the bale trailer's axle, up the yard past the sprayer with its drawbar to the yard, 8 m or more from every parking and away spot and the line-up sleepers (it was in their way). The tractor is wherever the game put it
   tipTrailer: { x: -49, z: 33.5, yaw: 0.2 }, // the little tipping trailer's axle, in the clear by the paddock with its tongue towards the yard, for a quad to back up to
   sprayer: { x: -39, z: 46, yaw: 0.3 }, // the sprayer trailer's axle, east of the yard spots within the hose's reach, with its tongue towards the yard, for the green quad to back up to
+  harrows: { x: 20, z: 17, yaw: -Math.PI / 2 }, // the chain harrows' carrier axle, left at the harrow field's west edge with its tongue towards the yard, for the tractor or a quad to back up to
   dieselBowser: { x: -61, z: 45.6, yaw: Math.PI / 2 }, // red diesel for the tractor, south of the petrol tank (and the hose)
   jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot
   // The toolbox for tinkering with the quads, on the workbench in the barn.

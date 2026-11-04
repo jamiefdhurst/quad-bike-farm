@@ -3,6 +3,7 @@
 
 import { MAP_COLOURS as C, mapTransform, placeMarkers, mapAngle } from './farmMap.js';
 import { sprayRuns, SPRAY_CELL, DOUBLED } from '../world/spraying.js';
+import { harrowRuns, HARROW_CELL, COMBED_ALONG_X } from '../world/harrowing.js';
 
 export class MapView {
   /** `features` from farmMapFeatures, `params` DEFAULT_MAP_PARAMS (tuned live). */
@@ -47,6 +48,7 @@ export class MapView {
     ctx.drawImage(this.ground, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.drawSprayed(ctx, t);
+    this.drawHarrowed(ctx, t);
     this.drawLegend(ctx, t, markers);
     const order = { trailer: 0, item: 1, vehicle: 2, girl: 3, you: 4 };
     const placed = placeMarkers([...markers].sort((a, b) => order[a.kind] - order[b.kind]), t, 8);
@@ -71,6 +73,28 @@ export class MapView {
       const [u0, v0] = t.toMap(run.x0, run.z);
       const [u1, v1] = t.toMap(run.x1, run.z + SPRAY_CELL);
       ctx.fillStyle = run.state === DOUBLED ? 'rgba(30, 90, 50, 0.7)' : 'rgba(60, 140, 80, 0.5)';
+      ctx.fillRect(u0, v0, u1 - u0 + 0.5, v1 - v0 + 0.5);
+    }
+  }
+
+  /** The lines you have harrowed (world/harrowing.js): a strip a pass, a little darker where the mat went across the first lines, and the field's outline while the job is on. */
+  drawHarrowed(ctx, t) {
+    const h = this.harrow;
+    if (!h) return;
+    if (this.harrowWanted?.()) {
+      const [u0, v0] = t.toMap(h.rect.minX, h.rect.minZ);
+      const [u1, v1] = t.toMap(h.rect.maxX, h.rect.maxZ);
+      ctx.save();
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = C.ink;
+      ctx.strokeRect(u0, v0, u1 - u0, v1 - v0);
+      ctx.restore();
+    }
+    for (const run of harrowRuns(h)) {
+      const [u0, v0] = t.toMap(run.x0, run.z);
+      const [u1, v1] = t.toMap(run.x1, run.z + HARROW_CELL);
+      ctx.fillStyle = run.state === COMBED_ALONG_X ? 'rgba(120, 90, 40, 0.6)' : 'rgba(150, 120, 60, 0.5)';
       ctx.fillRect(u0, v0, u1 - u0 + 0.5, v1 - v0 + 0.5);
     }
   }

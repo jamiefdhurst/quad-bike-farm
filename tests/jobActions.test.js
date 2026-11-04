@@ -19,11 +19,12 @@ function standIn(missing = []) {
 describe('the farm\'s jobs', () => {
   it('lists the jobs this farm has and leaves out the ones it has not', () => {
     const all = jobActions(standIn().g).jobs.map((j) => j.id);
-    expect(all).toEqual(['muck', 'hay', 'mow', 'spray', 'silage', 'logs', 'bonfire', 'stove', 'feed', 'service', 'mot', 'photos']);
-    const bare = jobActions(standIn(['hay', 'mowGrid', 'spray', 'logStack']).g).jobs.map((j) => j.id);
+    expect(all).toEqual(['muck', 'hay', 'mow', 'spray', 'harrow', 'silage', 'logs', 'bonfire', 'stove', 'feed', 'service', 'mot', 'photos']);
+    const bare = jobActions(standIn(['hay', 'mowGrid', 'spray', 'harrow', 'logStack']).g).jobs.map((j) => j.id);
     expect(bare).not.toContain('hay');
     expect(bare).not.toContain('mow');
     expect(bare).not.toContain('spray');
+    expect(bare).not.toContain('harrow');
     expect(bare).not.toContain('logs');
   });
   it('has the hay job\'s stages and extras the panel had', () => {
@@ -36,8 +37,9 @@ describe('the farm\'s jobs', () => {
     jobs.find('hay').actions.find((a) => a.verb === 'cut').run();
     jobs.find('muck').actions.find((a) => a.verb === 'done').run();
     jobs.find('spray').actions.find((a) => a.verb === 'boom-out').run();
+    jobs.find('harrow').actions.find((a) => a.verb === 'down').run();
     jobs.find('service').actions.find((a) => a.verb === 'done').run();
-    expect(calls).toEqual(['g.debugHayStage(cut)', 'g.debugFinishMuck()', 'g.debugSpray(out)', 'g.debugFinishService()']);
+    expect(calls).toEqual(['g.debugHayStage(cut)', 'g.debugFinishMuck()', 'g.debugSpray(out)', 'g.debugHarrow(down)', 'g.debugFinishService()']);
   });
   it('finds a job whatever the case, and none for a made-up name', () => {
     const jobs = jobActions(standIn().g);

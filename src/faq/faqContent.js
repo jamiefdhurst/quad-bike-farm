@@ -2150,7 +2150,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What are the chalkboards in the barn?',
         a: `Today's farm jobs. Walk into the barn to the back wall and press <kbd>E</kbd> for a close look. Done jobs get a tick, and a bucket list
-          entry when you've cleared the lot. The jobs are the muck, mowing the lawns, the spraying (when the field wants it), feeding the hens and the pig (on some days) and, if the tractor is about, the silage, the hay and splitting logs; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
+          entry when you've cleared the lot. The jobs are the muck, mowing the lawns, the spraying and the harrowing (when the fields want it), feeding the hens and the pig (on some days) and, if the tractor is about, the silage, the hay and splitting logs; the bonfire is not a job, but you can light one any time; the board lists up to two a day. When a quad is in a bad way, a service for it goes up as well, on top of those (see the service questions). The records are on the board beside it.`,
         tip: 'The chalkboard in the barn lists the day\'s farm jobs.',
       },
       {
@@ -2383,6 +2383,24 @@ export const FAQ_SECTIONS = [
         q: 'Does the field need spraying again?',
         a: `Not for a while. Once you have sprayed it, it stays sprayed for about six days of the farm and the job stays off the chalkboard. A field you only half sprayed wears off in the same time. After that it is back
           on the board some days, but not every day. The lines you sprayed stay on the map until then.`,
+      },
+      {
+        q: 'How do I harrow the field?',
+        a: `When "Harrow the field inside the track with the chain harrows" is on the chalkboard, the chain harrows are waiting at the west edge of the harrow field, in the grass field inside the track, east of the middle (the map, <kbd>M</kbd>, outlines the field while the job is on).
+          Back the tractor or a quad with a rack up to their ring and hook them on with <kbd>J</kbd>, then press <kbd>T</kbd> to lower the tines onto the ground.
+          Drive up and down the field at a steady pace (about a brisk walk up to a trot) and the mat of tines combs a strip about three and a half metres wide behind the carrier, leaving pale and dark stripes and spreading the molehills.
+          Overlap the lines a little so you leave no gaps. Once nearly all of it is combed the job ticks off. Lift the tines with <kbd>T</kbd> before you go through a gate.`,
+        tip: 'Harrowing: hitch the harrows with J, T lowers the tines, then drive up and down the field in overlapping lines.',
+      },
+      {
+        q: 'Why are the harrows not combing the field?',
+        a: `The tines have to be right down (press <kbd>T</kbd> and wait a moment), the harrows have to be hooked on, and the mat has to be over the field. Going too slowly, they just sit; going too fast, they skip over the top.
+          Going back across your first lines combs them the other way, which changes the stripes but does not count as new ground.`,
+      },
+      {
+        q: 'Does the field need harrowing again?',
+        a: `Not for a few days. Once you have harrowed it, it stays combed for about five days of the farm and the job stays off the chalkboard. After that the stripes grow out, the molehills come back and the job is on the board some days again.
+          The lines you dragged stay on the map until then.`,
       },
       {
         q: "Why won't the spike go into the bale, or why won't it lift?",

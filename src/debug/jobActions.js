@@ -60,6 +60,17 @@ export function jobActions(g) {
     ]);
   }
 
+  if (g.harrow) {
+    const harrow = (verb, label) => a(verb, label, () => g.debugHarrow(verb));
+    add('harrow', 'Harrow the field', () => g.harrow.describe(), [
+      harrow('down', 'Lower the harrows\' tines'),
+      harrow('up', 'Lift the harrows\' tines'),
+      harrow('half', 'Harrow half the field'),
+      harrow('done', 'Finish the harrowing job now'),
+      harrow('clear', 'Clear the field to harrow it again'),
+    ]);
+  }
+
   add('silage', 'Silage to the Dutch barn', () => `${g.jobBoard.finished.has('silage') ? 'done' : g.jobBoard.has('silage') ? 'on the board' : 'not on the board'}; on the spike: ${g.baleRig.held?.id ?? 'nothing'}`, [
     a('done', 'Silage job done now', () => g.debugFinishSilage()),
     a('reset', 'Put the silage bales back', () => g.debugResetBales()),
