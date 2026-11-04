@@ -1629,8 +1629,23 @@ export const FAQ_SECTIONS = [
           on a girl for a little while and she is stood about, she hurries over and puts one on, over her jumper if she has one. The front
           is done up two thirds of the way, so you can still see her polo's collar and her jumper at the neck. Once it has been dry for a
           couple of minutes she goes back and hangs it up. Each farm deals the coats' colours (olive, sage, navy or rustic brown) and keeps them.
-          A girl in a coat doesn't get wet, so she wants shelter less.`,
+          A girl in a coat hardly gets wet at all, so she wants shelter less.`,
         tip: 'When it rains for a while, the girls fetch wax jackets from the rack in the barn.',
+      },
+      {
+        q: 'Why are the girls soaked and shivering?',
+        a: `They were out in the rain without a coat. The harder and longer it rains on a girl the wetter she gets: her hair goes dark and
+          stringy, her top and shorts darken in patches from the shoulders down, and after a minute or so of a downpour she is wet through. Once
+          she is soaked she gets cold, more on a cold day, and stands with her arms wrapped round herself, shaking. She wants somewhere warm: the
+          barn, a Moorland with the heater on, the bonfire, the stove in the hut, a jumper or a wax jacket. The hose soaks her too, so mind where
+          you point it.`,
+        tip: 'A girl caught in the rain without a coat gets soaked and cold. A jacket keeps it off her.',
+      },
+      {
+        q: 'How do the girls dry off?',
+        a: `Warmth does it fastest: by the bonfire, near the hut's stove, in a Moorland with the heater running or with her hands over an
+          engine. Under a roof, in the barn or a cab, she dries slowly, and out in the open slowest of all, from the hem and the cuffs inwards and her
+          hair last. A jumper doesn't dry her but it takes the edge off the cold. While it's still raining on her she doesn't dry at all.`,
       },
       {
         q: 'When do the girls put their hoods up?',
