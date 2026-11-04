@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { Shell, group, value, resolve, tokenise, slug, tabStep, commonPrefix, pathCandidates, walk, hintChoices } from '../src/console/shell.js';
 import { buildCommands } from '../src/console/commands.js';
+import { VEHICLE_VERBS } from '../src/console/gameHost.js';
+import { SCENES, runScene } from '../src/debug/scenes.js';
 
 function makeWorld() {
   const state = { temp: 0.2, brake: false, kind: 'sunny', fuel: 3, x: 10, z: 20, heading: 0, busy: false };
@@ -380,4 +382,33 @@ describe('perf', () => {
     expect(lines).toContain('last long frames: 41 ms, memory clean-up; 36 ms, drawing (30 ms)');
     expect(lines).toContain('memory 183 MB, allocating 12.3 MB a second');
   });
+});
+
+describe('scenes', () => {
+  it('lists the scenes and runs one line by line', () => {
+    const { shell, state } = makeWorld();
+    expect(text(shell.run('scene'))).toMatch(/frost/);
+    expect(text(shell.run('scene nowhere'))).toMatch(/no scene "nowhere"/);
+    const out = runScene({ id: 'x', lines: ['tp me 5 6', 'weather.kind rain'] }, shell);
+    expect(out.join('\n')).toMatch(/me moved/);
+    expect([state.x, state.z, state.kind]).toEqual([5, 6, 'rain']);
+  });
+  it('stops at the first line that fails and says which, and does not fill the history', () => {
+    const { shell } = makeWorld();
+    const before = shell.history.length;
+    const out = runScene({ id: 'x', lines: ['echo one', 'nonsense.path 1', 'echo two'] }, shell);
+    expect(out.join('\n')).toMatch(/stopped at "nonsense.path 1"/);
+    expect(out.join('\n')).not.toMatch(/two/);
+    expect(shell.history.length).toBe(before);
+  });
+  it('only uses lines the console understands', () => {
+    const { shell } = makeWorld();
+    const real = buildCommands({ vehicleVerbs: VEHICLE_VERBS, vehicles: () => [], girls: () => [], things: () => [], places: () => ({}) });
+    for (const sc of SCENES) for (const line of sc.lines) {
+      const head = line.split(' ')[0];
+      expect(real.some((c) => c.name === head || c.aliases?.includes(head)) || head.includes('.'), `${sc.id}: ${line}`).toBe(true);
+    }
+    expect(shell).toBeTruthy();
+  });
+});
 });

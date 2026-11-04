@@ -6,6 +6,7 @@ import { buttonText } from './buttonText.js';
 import { SEASONS } from '../world/seasons.js';
 import { girlActions } from './girlActions.js';
 import { jobActions } from './jobActions.js';
+import { SCENES, runScene } from './scenes.js';
 import { LOSABLE } from '../items/lostThings.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
@@ -327,6 +328,10 @@ export function buildGirlsTab(d) {
     if (job.id === 'silage') slider(jobs, 'Bale spike arms (0 down, 1 up)', () => g.baleRig.lift.lift, (v) => (g.baleRig.lift.lift = v), 0, 1, 0.01);
   }
   button(jobs, 'Put the bale on the spike down', () => g.baleRig.putDown());
+
+  // Scenes: a feature set up in one go (src/debug/scenes.js; the console's `scene` runs the same lines).
+  const scenes = sub('Scenes: set a feature up to look at it');
+  for (const sc of SCENES) button(scenes, sc.label, () => { const out = runScene(sc, g.console.shell); toast(out.find((l) => l.includes('stopped')) ?? sc.label); });
 
   // Animals, the fence, the gates and what comes along the lane.
   const out = sub('Animals, gates and the lane');

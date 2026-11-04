@@ -1,5 +1,6 @@
 // The console's commands. They work on the tree (shell.js) and on a `host`, the game seen through a small set of calls (gameHost.js),
 // so they are tested here against a stand-in host. Keep every command in `GROUPS` order: `help` prints them like that.
+import { SCENES, runScene } from '../debug/scenes.js';
 import { resolve, walk, show, describe, parseValue, pathCandidates } from './shell.js';
 
 /*
@@ -416,6 +417,20 @@ export function buildCommands(host) {
         const k = host.weatherKinds().find((w) => w.toLowerCase() === kind.toLowerCase());
         if (!k) throw new Error(`no weather "${kind}". There is ${host.weatherKinds().join(', ')}`);
         return host.setWeather(k);
+      },
+    },
+    {
+      name: 'scene',
+      group: 'World',
+      usage: 'scene [name]',
+      help: 'set a feature up at once to look at it: weather, time, where you and the girls are. scene on its own lists them',
+      examples: ['scene', 'scene frost'],
+      complete: (ctx, tokens) => (tokens.length === 0 ? SCENES.map((s) => s.id) : []),
+      run: ([name], shell) => {
+        if (!name) return SCENES.map((s) => `${s.id.padEnd(10)} ${s.label}`);
+        const scene = SCENES.find((s) => s.id === name.toLowerCase());
+        if (!scene) throw new Error(`no scene "${name}". There is ${SCENES.map((s) => s.id).join(', ')}`);
+        return [scene.label, ...runScene(scene, shell)];
       },
     },
     {
