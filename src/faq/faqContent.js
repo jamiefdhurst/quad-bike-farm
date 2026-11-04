@@ -595,6 +595,13 @@ export const FAQ_SECTIONS = [
         tip: 'Stuck? Rock it: forwards, backwards, forwards. Each change of direction works it looser.',
       },
       {
+        q: 'Why are the girls covered in mud?',
+        a: `Riding on a muddy quad splashes them, the girl on the back most, and more through puddles. It shows on their skin and on their clothes: wellies
+          caked round the foot and splashed up the shin, and shorts, coats and tops spattered on the back, with the front much cleaner. Wet mud is dark
+          and glossy; it dries pale and flakes off, quicker while they walk about. Stubble dust dulls their clothes and hair. The hose takes it all off.`,
+        tip: 'The girl on the back gets the muddiest. The hose washes the lot off her.',
+      },
+      {
         q: 'Why is the green lane so rutted?',
         a: `Everything that rides down the lane takes the same line, so it wears faster than the fields, and rain makes it worse. Ride it through a wet day
           and the ruts deepen into a bog where the tyres go. Dry weather brings it back, slowly, and about half the ruts are still there the next morning.

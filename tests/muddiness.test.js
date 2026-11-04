@@ -96,3 +96,14 @@ describe('how muddy a girl is', () => {
     expect([s.mud, s.dust, s.wet]).toEqual([0, 0, 0]);
   });
 });
+
+describe('what takes mud on her', () => {
+  it('gives the wellies and the cloth the look, and leaves the small parts clean', async () => {
+    const { mudKindOfPart } = await import('../src/effects/girlMud.js');
+    expect(mudKindOfPart('leftWelly', false)).toBe('welly');
+    expect(mudKindOfPart('rightWellyFoot', false)).toBe('welly');
+    for (const n of ['polo', 'jumper', 'shorts', 'coat', 'plaid', 'cropTop']) expect(mudKindOfPart(n, true)).toBe('cloth');
+    for (const n of ['poloPlacket', 'plaidButtons', 'poloLogo', 'tie', 'poloVee', 'cropGroove']) expect(mudKindOfPart(n, true)).toBeNull();
+    expect(mudKindOfPart('ponytail', false)).toBeNull();
+  });
+});

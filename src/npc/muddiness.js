@@ -1,6 +1,6 @@
 // How muddy and dusty a girl is. Pure logic, no Three.js. Riding on a muddy quad (the pillion most, behind the back wheel) marks her jeans and
 // boots, dust off the stubble gets in her face and hair. Mud dries and is brushed off as she walks about; the hose takes it off quickest.
-// Amy minds once it shows; Jess laughs (the lines are in muddyLines.js, the look is effects/girlMud.js).
+// Amy minds once it shows; Jess laughs (the lines are in muddyLines.js, the look is effects/girlMud.js, on her skin and her clothes).
 
 export const DEFAULT_MUDDY_PARAMS = {
   mudRate: 0.05, // mud a second on her at full spray (a quad caked in mud, flat out), for the pillion
@@ -12,6 +12,8 @@ export const DEFAULT_MUDDY_PARAMS = {
   brushRate: 0.012, // a second more while she is walking about (she slaps it off her jeans)
   dustBrushRate: 0.02, // dust a second she loses when she is out of it (rubbed off her face, shaken from her hair)
   washRate: 0.4, // a second when the hose is on her
+  backBias: 0.15, // how much of the spray reaches the front of her clothes compared with the back (the look only; 1 is all round)
+  wellyBoost: 2.5, // her wellies catch more than the rest of her: the mud on her is multiplied by this for them (the look only)
   noticeAt: 0.3, // how much mud makes her notice and say something
   dustNoticeAt: 0.4, // and how much dust
   forgetAt: 0.12, // she is clean enough to say something again once she is below this
@@ -28,6 +30,8 @@ export const MUDDY_PARAM_RANGES = {
   brushRate: [0, 0.1, 0.001],
   dustBrushRate: [0, 0.2, 0.002],
   washRate: [0, 2, 0.05],
+  backBias: [0, 1, 0.05],
+  wellyBoost: [1, 6, 0.1],
   noticeAt: [0.05, 1, 0.05],
   dustNoticeAt: [0.05, 1, 0.05],
   forgetAt: [0, 0.5, 0.01],
