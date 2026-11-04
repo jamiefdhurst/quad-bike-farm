@@ -673,8 +673,10 @@ export function buildVillage(c) {
   const south = gap({ x0: S.garage.outer.minX - 0.5, x1: S.garage.outer.maxX + 0.5 });
   // The pavement and the road's edge line stop where the car park opens onto the road (a dropped kerb).
   const north = gap({ x0: S.carPark.entry.minX - 0.5, x1: S.carPark.entry.maxX + 0.5 });
-  // The road starts at the lane's west edge, not its middle: the lane's tarmac is under the rest, so no texture is drawn over another.
-  roadStrip(ctx, -hw, hw, ROAD_LIFT, road, { flare: true, from: Math.max(0, S.mouth - 1), clampX: S.laneEdge });
+  // The road ends at the lane's west edge, not its middle: the lane's tarmac is under the rest, so no texture is drawn over another. It is built
+  // from its first sample (on the lane's middle) so the cross-sections the clamp squashes onto the edge cover the whole bellmouth: starting at the
+  // last sample outside the edge left its slanting end short of the lane, a wedge of bare ground at the junction.
+  roadStrip(ctx, -hw, hw, ROAD_LIFT, road, { flare: true, from: 0, clampX: S.laneEdge });
   // A broken line down the middle, a give-way line across the way out onto the lane, and a pale edge line either side.
   const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...poly, polygonOffsetFactor: -5 });
   const marks = roadMarks(S);
