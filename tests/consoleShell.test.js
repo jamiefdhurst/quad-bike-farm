@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { Shell, group, value, resolve, tokenise, slug, tabStep, commonPrefix, pathCandidates, walk, hintChoices } from '../src/console/shell.js';
 import { buildCommands } from '../src/console/commands.js';
+import { VEHICLE_VERBS } from '../src/console/gameHost.js';
+import { SCENES, runScene } from '../src/debug/scenes.js';
+import { SETUPS } from '../src/debug/sceneSetups.js';
 
 function makeWorld() {
   const state = { temp: 0.2, brake: false, kind: 'sunny', fuel: 3, x: 10, z: 20, heading: 0, busy: false };
@@ -48,6 +51,8 @@ function makeWorld() {
     weatherKinds: () => ['sunny', 'rain'],
     weatherNow: () => 'sunny',
     setWeather: (k) => `now ${k}`,
+    scenes: () => [{ id: 'frost', label: 'Set up a frosty dawn' }],
+    runScene: (id) => [`ran ${id}`],
     dump: (t) => (state.dumped = t),
     farmText: () => `day ${state.day ?? 4}`,
     farmSave: () => true,
@@ -379,5 +384,41 @@ describe('perf', () => {
     expect(lines).toContain('slowest 1% of frames 21.5 ms; 2 over 33 ms in the last 10 s (5 since the game started)');
     expect(lines).toContain('last long frames: 41 ms, memory clean-up; 36 ms, drawing (30 ms)');
     expect(lines).toContain('memory 183 MB, allocating 12.3 MB a second');
+  });
+});
+
+describe('scenes', () => {
+  it('lists the scenes and says which one is missing', () => {
+    const { shell } = makeWorld();
+    expect(text(shell.run('scene'))).toMatch(/frost/);
+    expect(text(shell.run('scene nowhere'))).toMatch(/no scene "nowhere"/);
+  });
+  it('runs a scene through the host', () => {
+    const { shell } = makeWorld();
+    expect(text(shell.run('scene frost'))).toMatch(/Set up a frosty dawn[\s\S]*ran frost/);
+  });
+  it('runs the lines then the setup, stops at the first line that fails and keeps its lines out of the history', () => {
+    const { shell } = makeWorld();
+    const before = shell.history.length;
+    const seen = [];
+    const setups = { prepare: (g) => seen.push(`prepare ${g}`), go: (g, say) => (seen.push(g), say('echo setup'), ['done']) };
+    const ok = runScene({ id: 'x', lines: ['echo one'], setup: 'go' }, shell, 'GAME', setups);
+    expect(ok).toEqual(['one', 'setup', 'done']);
+    expect(seen).toEqual(['prepare GAME', 'GAME']);
+    seen.length = 0;
+    const bad = runScene({ id: 'y', lines: ['echo one', 'nonsense.path 1', 'echo two'], setup: 'go' }, shell, 'GAME', setups);
+    expect(bad.join('\n')).toMatch(/y stopped at "nonsense.path 1"/);
+    expect(bad.join('\n')).not.toMatch(/two|setup/);
+    expect(shell.history.length).toBe(before);
+  });
+  it('only uses lines the console understands, and setups that exist', () => {
+    const real = buildCommands({ vehicleVerbs: VEHICLE_VERBS, vehicles: () => [], girls: () => [], things: () => [], places: () => ({}) });
+    for (const sc of SCENES) {
+      if (sc.setup) expect(SETUPS[sc.setup], `${sc.id} setup`).toBeTypeOf('function');
+      for (const line of sc.lines) {
+        const head = line.split(' ')[0];
+        expect(real.some((c) => c.name === head || c.aliases?.includes(head)) || head.includes('.'), `${sc.id}: ${line}`).toBe(true);
+      }
+    }
   });
 });

@@ -14,6 +14,7 @@ import { resolve, walk, show, describe, parseValue, pathCandidates } from './she
  *   dump(text): void                      (copies to the clipboard)
  *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   farmEndDay(): string   farmSendHome(): string   (the farm that remembers)
  *   notebookLearnt(): [{ id, text, learnt }]   learnThing(id): boolean   learnAll(): void   forgetAll(): void   (the notebook's "Things I've learnt")
+ *   scenes(): [{ id, label }]   runScene(id, shell): string[]   (a feature set up at once: debug/scenes.js)
  *   errors(): [{ name, count, message }]   clearErrors(): void   (features whose update threw, caught by core/featureGuard.js)
  *   perf(): { fps, ms, worstMs, p99Ms, longFrames, longTotal, longFrameCauses, heapMb, allocMbPerSecond, calls, triangles, width, height, pixelRatio, maxFps }   (how hard the game is working)
  */
@@ -416,6 +417,21 @@ export function buildCommands(host) {
         const k = host.weatherKinds().find((w) => w.toLowerCase() === kind.toLowerCase());
         if (!k) throw new Error(`no weather "${kind}". There is ${host.weatherKinds().join(', ')}`);
         return host.setWeather(k);
+      },
+    },
+    {
+      name: 'scene',
+      group: 'World',
+      usage: 'scene [name]',
+      help: 'set a feature up at once to look at it: weather, time, where you and the girls are. scene on its own lists them',
+      examples: ['scene', 'scene frost'],
+      complete: (ctx, tokens) => (tokens.length === 0 ? host.scenes().map((x) => x.id) : []),
+      run: ([name], shell) => {
+        const scenes = host.scenes();
+        if (!name) return scenes.map((x) => `${x.id.padEnd(10)} ${x.label}`);
+        const scene = scenes.find((x) => x.id === name.toLowerCase());
+        if (!scene) throw new Error(`no scene "${name}". There is ${scenes.map((x) => x.id).join(', ')}`);
+        return [scene.label, ...host.runScene(scene.id, shell)];
       },
     },
     {
