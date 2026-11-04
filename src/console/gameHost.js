@@ -3,6 +3,7 @@
 import { girlActions } from '../debug/girlActions.js';
 import { jobActions } from '../debug/jobActions.js';
 import { fixEverything, startWarm, switchOff } from '../debug/vehicleDebug.js';
+import { SCENES, runScene } from '../debug/scenes.js';
 import { WEATHER_KINDS } from '../world/weather.js';
 import { plantSite, plantPoint } from '../world/plantSite.js';
 
@@ -237,6 +238,9 @@ export function createHost(g, { copy = () => {} } = {}) {
       g.discoveries.forget();
       if (g.hud.bucketOpen) g.showBucketList();
     },
+
+    scenes: () => SCENES.map(({ id, label }) => ({ id, label })),
+    runScene: (id, shell) => runScene(SCENES.find((s) => s.id === id), shell, g),
 
     errors: () => g.guard.summary(),
     clearErrors: () => g.guard.clear(),

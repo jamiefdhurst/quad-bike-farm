@@ -331,7 +331,7 @@ export function buildGirlsTab(d) {
 
   // Scenes: a feature set up in one go (src/debug/scenes.js; the console's `scene` runs the same lines).
   const scenes = sub('Scenes: set a feature up to look at it');
-  for (const sc of SCENES) button(scenes, sc.label, () => { const out = runScene(sc, g.console.shell); toast(out.find((l) => l.includes('stopped')) ?? sc.label); });
+  for (const sc of SCENES) button(scenes, sc.label, () => { const out = runScene(sc, g.console.shell, g); toast(out.find((l) => l.includes('stopped')) ?? out[out.length - 1] ?? sc.label); });
 
   // Animals, the fence, the gates and what comes along the lane.
   const out = sub('Animals, gates and the lane');
