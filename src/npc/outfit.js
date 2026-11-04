@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildTop, buildInset, buttonShape, slitShape, poloFields, tuckSleeves, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER } from './polo.js';
+import { buildTop, buildInset, buttonShape, slitShape, layOnCloth, poloFields, tuckSleeves, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER } from './polo.js';
 import { buildTie } from './tie.js';
 import { shirtButtonsUndone } from './outfits.js';
 import { buildCropTop } from './crop.js';
@@ -800,23 +800,24 @@ function addTop(rig, name, color, spec) {
   // A shade darker than the shirt, as a polo's are; a coat's studs are brass.
   const face = spec.buttonColour ? new THREE.Color(spec.buttonColour) : tint.clone().multiplyScalar(spec.buttonShade);
   const hole = tint.clone().multiplyScalar(0.35);
-  const add = (points, triangles, anchor, c) => {
+  // Each point laid on the cloth under it, with its skin (polo.js, layOnCloth).
+  const add = (lay, points, triangles, c) => {
     const base = positions.length;
-    for (const pt of points) {
-      positions.push(unskin(anchor.skin, pt));
-      weights.push(anchor.weights);
+    for (const q of lay(points)) {
+      positions.push(q.bind);
+      weights.push(q.weights);
       colors.push(c.r, c.g, c.b);
     }
     for (const t of triangles) tris.push(...t.map((i) => i + base));
   };
   for (const b of [...placket.buttons, ...built.cuffButtons]) {
-    const shape = buttonShape(b.centre, b.normal, spec.buttonRadius);
-    add(shape.points, shape.tris, b.anchor, face);
-    if (spec.buttonHoles !== false) add(shape.holes, shape.holeTris, b.anchor, hole);
+    const { shape, lay } = layOnCloth(b, (centre, normal) => buttonShape(centre, normal, spec.buttonRadius));
+    add(lay, shape.points, shape.tris, face);
+    if (spec.buttonHoles !== false) add(lay, shape.holes, shape.holeTris, hole);
   }
   for (const h of spec.slits === false ? [] : placket.slits) {
-    const shape = slitShape(h.centre, h.normal);
-    add(shape.points, shape.tris, h.anchor, hole);
+    const { shape, lay } = layOnCloth(h, slitShape);
+    add(lay, shape.points, shape.tris, hole);
   }
   skinnedFromArrays(
     rig,

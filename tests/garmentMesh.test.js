@@ -13,7 +13,7 @@ import {
   smoothNormals,
   smoothSkinning,
 } from '../src/npc/garmentMesh.js';
-import { buildTop, buildInset, topFields, dealPoloOpen, POLO, JUMPER } from '../src/npc/polo.js';
+import { buildTop, buildInset, topFields, dealPoloOpen, layOnCloth, buttonShape, POLO, JUMPER } from '../src/npc/polo.js';
 import { CHARACTERS } from '../src/npc/characters.js';
 import { createRandom } from '../src/core/random.js';
 import { buildShorts, SHORTS } from '../src/npc/shorts.js';
@@ -229,6 +229,72 @@ describe('knitted tops', () => {
     expect(inset.tris.length).toBeGreaterThan(0);
     const used = new Set(inset.tris.flat());
     for (const i of used) expect(vee.field(inset.verts[i])).toBeGreaterThan(-0.002);
+  });
+});
+
+describe('buttons on the cloth', () => {
+  // A patch of cloth 3 cm across, sloping at 30 degrees and curving, with its skin going from one bone to another across it.
+  const cloth = () => {
+    const n = 12;
+    const verts = [];
+    const tris = [];
+    for (let j = 0; j <= n; j++) {
+      for (let i = 0; i <= n; i++) {
+        const [x, y] = [(0.03 * i) / n - 0.015, (0.03 * j) / n - 0.015];
+        const t = i / n;
+        verts.push(vert([x, y, 0.58 * x + 4 * x * x], [0, 0, 1], IDENTITY, [[0, 1 - t], [1, t]]));
+      }
+    }
+    const at = (i, j) => j * (n + 1) + i;
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) tris.push([at(i, j), at(i + 1, j), at(i, j + 1)], [at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)]);
+    return { verts, tris };
+  };
+  const surfaceZ = (x) => 0.58 * x + 4 * x * x;
+  const R = 0.0052;
+
+  it('sits the whole of its underside on the cloth, not stood off it on one side', () => {
+    // Facing straight out, as it was given the shirt's normal rather than the cloth's: flat, its rim would stand 2.5 mm clear.
+    const { shape, lay } = layOnCloth({ centre: [0, 0, 0], normal: [0, 0, 1], anchor: cloth().verts[0], on: cloth() }, (c, nrm) => buttonShape(c, nrm, R));
+    const laid = lay(shape.points);
+    const rim = laid.filter((_, k) => k % 7 === 6); // the underside's edge (buttonShape's profile ends there)
+    for (const q of rim) expect(Math.abs(q.bind[2] - surfaceZ(q.bind[0]))).toBeLessThan(0.0005);
+    // And it still stands its full height off the cloth in the middle.
+    const top = laid[0].bind;
+    expect(top[2] - surfaceZ(top[0])).toBeGreaterThan(0.0014);
+  });
+
+  it('gives each point the skin of the cloth under it, so it bends as the cloth does', () => {
+    const { shape, lay } = layOnCloth({ centre: [0, 0, 0], normal: [0, 0, 1], anchor: cloth().verts[0], on: cloth() }, (c, nrm) => buttonShape(c, nrm, R));
+    const laid = lay(shape.points);
+    const share = (q) => q.weights.find(([b]) => b === 1)?.[1] ?? 0;
+    for (const q of laid.filter((_, k) => k % 7 === 6)) expect(share(q)).toBeCloseTo((q.bind[0] + 0.015) / 0.03, 2);
+    const shares = laid.map(share);
+    expect(Math.max(...shares) - Math.min(...shares)).toBeGreaterThan(0.25); // not one weight for the whole button
+  });
+
+  it('keeps its anchor with no cloth to lie on (on the collar stand)', () => {
+    const anchor = vert([0, 0, 0], [0, 0, 1], TURN, [[3, 1]]);
+    const { shape, lay } = layOnCloth({ centre: [0.1, 1, 0.2], normal: [0, 0, 1], anchor }, (c, nrm) => buttonShape(c, nrm, R));
+    for (const [k, q] of lay(shape.points).entries()) {
+      expect(q.weights).toEqual([[3, 1]]);
+      applySkin(TURN, q.bind).forEach((c, i) => expect(c).toBeCloseTo(shape.points[k][i], 9));
+    }
+  });
+
+  it("lays the polo's buttons flat on its placket", () => {
+    const body = cylinderBody();
+    const { placket } = buildTop(body, POLO);
+    // The top one is on the collar's stand, which isn't built yet; the rest are on the strip.
+    expect(placket.buttons.slice(1).every((b) => b.on)).toBe(true);
+    for (const b of placket.buttons.slice(1)) {
+      const { shape, lay } = layOnCloth(b, (c, nrm) => buttonShape(c, nrm, POLO.buttonRadius));
+      for (const q of lay(shape.points).filter((_, k) => k % 7 === 6)) {
+        const p = applySkin(TURN, q.bind); // the stand-in body's one skin
+        const hit = rayHit(b.on, [p[0], p[1], p[2] + 0.01], [0, 0, -1]);
+        expect(hit).toBeTruthy();
+        expect(Math.abs(hit.t - 0.01)).toBeLessThan(0.0008);
+      }
+    }
   });
 });
 
