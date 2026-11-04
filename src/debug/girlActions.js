@@ -102,6 +102,14 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'jolt',
+      label: '% gets a jolt',
+      run: (id) => {
+        girl(id).rig.bodyShake.jolt(0.6);
+        toast(`${nameOf(id)} gets a jolt: watch her settle`);
+      },
+    },
+    {
       verb: 'blink',
       label: '% blinks',
       run: (id) => {

@@ -265,6 +265,7 @@ export function buildGameTree(g, host) {
       memory: group(() => Object.fromEntries(REMEMBERED_KINDS.map((k) => [k, num(() => c().memory.weight(k), (v) => (c().memory.feel[k] = v), 0.1, 3, '', `how keen (over 1) or wary (under 1) she is of: ${OFFER_KINDS[k]?.label ?? k}`)]))),
       setOn: text(() => c().intent.describe((k) => OFFER_KINDS[k]?.label ?? k)),
       reacting: text(() => c().reactingText),
+      shake: text(() => `${c().rig.bodyShake.bustCm.toFixed(1)} cm`, 'how far her bust is moved from where it would be, by a bump, the seat\'s buzz or running (npc/bodyShake.js)'),
       eyes: text(() => { const l = c().blink.lid; return l > 1 ? 'squeezed shut' : l > 0.98 ? 'shut' : l > 0.02 ? `${Math.round(l * 100)}% shut` : 'open'; }, 'how far her eyelids are down'),
       blinkRate: num(() => c().blink.rate, (v) => (c().blink.rate = v), 0.1, 5, '', 'how often she blinks, times the usual (about every 2 to 6 seconds)'),
       eyesShut: flag(() => c().blink.hold, (v) => (c().blink.hold = v), 'her eyes held shut, as if asleep'),
