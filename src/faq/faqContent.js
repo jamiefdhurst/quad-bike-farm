@@ -2217,10 +2217,15 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I save and carry on to the next day?',
         a: `The farm saves as you play, so you can simply close the tab. To do it properly, wait until the evening (it lets you from 17:00, or a little before sunset on a short winter day), ring the
-          bell by the barn doors to call the girls in, then walk into the barn and press <kbd>E</kbd> on the calendar on the back wall. A card comes up with Amy's
+          bell by the barn doors to call the girls in, then walk into the barn and press <kbd>E</kbd> on the calendar on the back wall. The girls head home first: each walks to her own car on the pad by the Dutch barn, drives out through the big gate and away down the lane (Jess drives it far too fast, and Amy tuts), and a girl you gave a lift that morning goes and waits in your car. It takes a minute or two. Then a card comes up with Amy's
           logbook for the day, a few lines telling the day's story (who raced, who fell out, which quad broke), what you ticked off the bucket list and how far you rode, and the girls say goodnight. Press <kbd>E</kbd>, Enter or click to carry on:
           the screen fades to black, says the day is done, saves, and loads the next morning: click Continue to play it. A seeded game (<code>?seed=</code>) never carries on.`,
         tip: 'In the evening, ring the bell, then press E on the barn calendar to call it a day.',
+      },
+      {
+        q: 'Where do the girls go when I call it a day?',
+        a: `Home. When you press <kbd>E</kbd> on the calendar, each girl walks to her own car on the pad by the Dutch barn, starts it and drives out through the big gate and away down the lane. The big gate swings open for them and shuts again after. Jess drives hers as fast as she dares, Amy tuts at it, and they are sat in their cars on the pad again the next morning. A girl who came with you that morning has no car here, so she goes and sits in yours to wait. If you want to see them go, stay near the pad: it is a long walk from the barn, so give them a minute or two.`,
+        tip: 'Calling it a day sends the girls home in their cars: Jess drives off far too fast.',
       },
       {
         q: 'How do I read what happened on earlier days?',

@@ -2,7 +2,8 @@
 // as she pulls away, carGoWatch from her friend watching, carGoDone back; carNotMine asked to drive the other's; carTaken when she sees you
 // drive off in hers, carBack and carBackDamaged when you bring it back, carRidden when you take her along in it; and sat beside you in
 // hers, carStalled, carTooFast (Amy) and carTooSlow (Jess). And your car (#229): carYours asked to drive it, liftThanks getting out of it after a
-// lift of a morning, yourCarRide now and then while you drive her in it. Merged into the main line sets (voiceLines.js, jessLines.js).
+// lift of a morning, yourCarRide now and then while you drive her in it. And going home (#100, npc/goingHome.js): carHome as she heads for her
+// car when you call it a day, liftHome as she goes to wait in yours, carJessFast (Amy) when Jess's car is heard going down the lane. Merged into the main line sets (voiceLines.js, jessLines.js).
 
 const line = (cooldown, lines) => ({ cooldown, lines });
 
@@ -19,6 +20,9 @@ export const AMY_CAR_LINES = {
   carStalled: line(40, ['Clutch, then gas. Gently.', 'You stalled it. It does that. Try again.', 'Bring the clutch up slower.']),
   carTooFast: line(30, ['Slow down! It does not like going this fast.', 'That is far too quick. Please.', 'It was not built for this. Neither was I.']),
   carYours: line(30, ['It is your car. You drive it.', 'I am not driving your car. I would only find a new dent for it.']),
+  carHome: line(60, ['Right, I am off home. See you tomorrow.', 'That is me done for the day. Goodnight.', 'I will get my car and head off. An early start tomorrow.']),
+  liftHome: line(60, ['I will wait for you in your car, then.', 'Home time. I will sit in the car.']),
+  carJessFast: line(30, ['Listen to her. The whole lane will hear that.', 'There she goes. Flat out, down a lane with a tractor in it, probably.', 'She will have the neighbours out again. Honestly.']),
   liftThanks: line(60, ['Thanks for the lift.', 'Thank you for picking me up.', 'Thanks. Your heater could do with looking at.']),
   yourCarRide: line(240, ['There is a bottle rolling about under my feet.', 'It smells of diesel in here.', 'How many miles has this done now?', 'You really should get that dent seen to.', 'It is quite comfy, for an old diesel.']),
 };
@@ -36,6 +40,8 @@ export const JESS_CAR_LINES = {
   carStalled: ['You stalled it. In my car.', 'More revs! It is not a tractor.', 'Ha! Go on, again.'],
   carTooSlow: ['My nan drives faster than this.', 'Are we parking or driving?', 'You can put your foot down, you know.'],
   carYours: ['Your car, your problem.', 'Me, drive that? It is a diesel. No thank you.'],
+  carHome: ['Home time! See you tomorrow.', 'Right, I am off. Do not miss me too much.', 'Night! Watch this.'],
+  liftHome: ['Home time! I am already in your car.', 'Taking me home, then? I will get in.'],
   liftThanks: ['Cheers for the lift.', 'Ta for the lift. Same time tomorrow?', 'Cheers. Your car smells of diesel, by the way.'],
   yourCarRide: ['Can we put some music on? Not those CDs.', 'This thing rattles like a tractor.', 'Who keeps CDs in a car any more?', 'Does it go any faster than this?', 'It is a nice enough car. For a pensioner.'],
 };

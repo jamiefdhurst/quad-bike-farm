@@ -124,6 +124,7 @@ import { RadioAudio } from './audio/radioAudio.js';
 import { RADIO_PARAMS, RADIO_PARAM_RANGES } from './vehicle/radio.js';
 import { RadioTaste, applyRadioMove, RADIO_TASTE_PARAMS, RADIO_TASTE_PARAM_RANGES } from './npc/radioTaste.js';
 import { CarGo, Borrowing, mayDriveCar, refuseCarLine, CAR_GO_PARAM_RANGES } from './npc/carGo.js';
+import { GoingHome, GOING_HOME_PARAM_RANGES, leaveRoute } from './npc/goingHome.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
 import { DrivingTest, DRIVING_TEST_PARAM_RANGES } from './npc/drivingTest.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
@@ -1104,6 +1105,8 @@ export class Game {
     // The girls' own cars: each takes hers down the road now and then, and minds if you take it (npc/carGo.js).
     this.carGo = new CarGo(undefined, createRandom(this.seed ^ 0x0ca9));
     this.borrowing = Object.fromEntries(CAR_KINDS.map((k) => [k, new Borrowing(this.carGo.p)]));
+    this.goingHome = new GoingHome(); // calling it a day sends them home in their cars (npc/goingHome.js)
+    this.homeKinds = {}; // girl id -> the car she is driving home in
     this.crankParams = { ...DEFAULT_CRANK_ATTEMPT_PARAMS };
     this.pushParams = { ...DEFAULT_PUSH_PARAMS };
     this.towSteerParams = { ...DEFAULT_TOW_STEER_PARAMS }; // a girl steering a dead quad on the tow rope (npc/towSteer.js)
@@ -1922,6 +1925,7 @@ export class Game {
     registerTuning('Yak go drive', this.utvDrive, TRACTOR_GO_DRIVE_RANGES);
     registerTuning('Tor go drive', this.landyDrive, TRACTOR_GO_DRIVE_RANGES);
     registerTuning('Their cars', this.carGo.p, CAR_GO_PARAM_RANGES);
+    registerTuning('Going home', this.goingHome.p, GOING_HOME_PARAM_RANGES);
     registerTuning('Tor go handle', this.crankParams, CRANK_ATTEMPT_PARAM_RANGES);
     registerTuning('Girl pushing a start', this.pushParams, PUSH_PARAM_RANGES);
     registerTuning('Keeping it alive', this.keepParams, KEEPALIVE_PARAM_RANGES);
@@ -4947,7 +4951,7 @@ export class Game {
     document.body.appendChild(this.dayFadeEl);
     this.interaction.add({
       target: this.wallCalendar.group,
-      isAvailable: () => !this.dayFade.active && !this.dayRecap.active,
+      isAvailable: () => !this.dayFade.active && !this.dayRecap.active && !this.goingHome.active,
       prompt: () => {
         const now = this.endOfDayNow();
         return { text: this.stories.length && !now.ok ? `${now.text}. Press E to read the last few days` : now.text };
@@ -5091,10 +5095,111 @@ export class Game {
     if (this.dayFade.active || this.dayRecap.active) return;
     const now = this.endOfDayNow();
     if (!now.ok && !(force && !this.farm.seeded)) return this.hud.toast(now.text);
+    if (this.goingHome.active) return;
+    if (!force && this.sendGirlsHome()) return; // the recap comes when they have gone (updateGoingHome)
+    this.finishCallingIt();
+  }
+
+  /** The rest of calling it a day, once the girls are off home: the show judged, the day's story written, the farm saved, and the card up. */
+  finishCallingIt() {
     this.lastShow = this.isShowToday() ? this.judgeShow() : null;
     this.writeDayStory();
     this.saveFarm();
     this.showRecap();
+  }
+
+  /**
+   * Calling it a day sends the girls home first (npc/goingHome.js): each walks to her own car on the pad by the Dutch barn, drives out through the
+   * big gate and away down the lane; a girl you gave a lift this morning goes and sits in your car to wait. Returns whether anyone is going.
+   */
+  sendGirlsHome() {
+    const girls = [];
+    for (const c of this.companions) {
+      const id = c.character.id;
+      if (id === 'amy' && this.drivingTest.away) continue;
+      const kind = CAR_KINDS.find((k) => this.landys[k]?.unit && this.landys[k].spec.owner === id);
+      if (kind && this.goFree(kind) && this.riddenUnit !== this.goVehicle(kind)) girls.push({ id, how: 'drive', kind });
+      else if (this.arrivalDeal.lift.includes(id) && this.landys.p309?.unit) girls.push({ id, how: 'lift' });
+    }
+    if (!girls.length) return false;
+    this.homeKinds = Object.fromEntries(girls.filter((g) => g.kind).map((g) => [g.id, g.kind]));
+    const gate = this.trafficHost.gate('road');
+    gate?.set(true, []);
+    for (const ev of this.goingHome.begin(girls)) this.sendHome(ev);
+    return true;
+  }
+
+  /** Who is going home and how far they have got, in a line (the console and the Girls tab). */
+  describeGoingHome() {
+    return this.goingHome.describe(Object.fromEntries(this.companions.map((c) => [c.character.id, c.name])));
+  }
+
+  /** One girl sets off for her car, or for yours. */
+  sendHome(ev) {
+    const c = this.companions.find((o) => o.character.id === ev.girl);
+    if (!c) return this.goingHome.gone(ev.girl);
+    c.hold('goingHome', 'on her way home');
+    c.interrupt();
+    const seatedIn = c.onHayRide ? GO_KINDS.find((k) => k !== 'tractor' && this.mountOfKind(k) && c.trailer === this.mountOfKind(k)) : null; // sat in a cab or a car: she gets out first
+    if (seatedIn) {
+      this.rideOfKind(seatedIn).dismiss(ev.girl);
+      c.leaveTrailer();
+    }
+    if (ev.how === 'lift') {
+      c.voice.say('liftHome', { force: true });
+      if (!this.boardCab(c, 'p309', { passenger: true })) this.girlGone(ev.girl);
+      return;
+    }
+    const kind = this.homeKinds[ev.girl];
+    const unit = this.goVehicle(kind);
+    c.voice.say('carHome', { force: true });
+    const spot = this.world.layout.cars[kind];
+    unit.quad.placeAt(spot.x, spot.z + 1, Math.PI / 4); // the row is nosed in to the barn with no room to turn: she has it facing the road by the time she is there
+    c.requestDrive(unit.quad, { park: { route: leaveRoute(spot, this.world.layout, this.goingHome.p), light: true, then: () => this.girlGone(ev.girl) } });
+  }
+
+  /** She has got away: her car and she are gone from the farm (hidden, switched off), or she is sat in yours. */
+  girlGone(id) {
+    const g = this.goingHome.girls[id];
+    if (!g || g.state === 'gone') return;
+    const c = this.companions.find((o) => o.character.id === id);
+    if (g.how === 'drive') {
+      const unit = this.goVehicle(this.homeKinds[id]);
+      if (unit) {
+        unit.quad.engine.setIgnition(false);
+        unit.quad.model.visible = false;
+      }
+      if (c) c.root.visible = false;
+    }
+    this.goingHome.gone(id);
+  }
+
+  /** Each frame of the leaving: sees each car off, has Amy tut at Jess's, hides what has got away, and brings up the card when all have gone. */
+  updateGoingHome(dt) {
+    const gh = this.goingHome;
+    if (!gh.active) return;
+    const p = gh.p;
+    for (const [id, g] of Object.entries(gh.girls)) {
+      if (g.state === 'gone') continue;
+      const c = this.companions.find((o) => o.character.id === id);
+      if (g.how === 'lift') {
+        if (c?.onHayRide && c.fsm.is('onTrailer') && c.trailer === this.mountOfKind('p309')) gh.gone(id);
+        continue;
+      }
+      const q = this.goVehicle(this.homeKinds[id])?.quad;
+      if (!q) continue;
+      if (q.speed > 1.5) gh.setOff(id);
+      if (q.position.x > p.gateX && q.position.z > p.laneZ - 10) this.girlGone(id);
+    }
+    for (const ev of gh.update(dt)) {
+      if (ev.type === 'tut') this.companions.find((o) => o.character.id === ev.girl)?.voice.say('carJessFast', { force: true });
+      else if (ev.type === 'giveUp') this.girlGone(ev.girl);
+      else if (ev.type === 'done') {
+        for (const c of this.companions) c.release('goingHome');
+        this.trafficHost.gate('road')?.set(false, this.trafficHost.blockers());
+        this.finishCallingIt();
+      }
+    }
   }
 
   /** The day's story, written from what happened and kept with the last few: it goes on the card and into the save (farm/dayStory.js). */
@@ -13301,6 +13406,7 @@ export class Game {
     if (GO_KINDS.some((k) => this.goVehicle(k)) && auto) this.guard.run('updateTractorGo', () => this.updateTractorGo(dt, ridden));
     this.guard.run('updateRadios', () => this.updateRadios(dt));
     this.guard.run('updateArrival', () => this.updateArrival(dt));
+    this.guard.run('updateGoingHome', () => this.updateGoingHome(dt));
     this.guard.run('updateYourCar', () => this.updateYourCar(dt));
     this.guard.run('updateCars', () => this.updateCars(dt)); // (minding you taking her car is a reaction, so it runs with the girls on hold too)
     this.guard.run('updateLPlates', () => this.updateLPlates(dt));
