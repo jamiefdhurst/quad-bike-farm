@@ -232,15 +232,15 @@ function addDetailLayer(material, detailTex, scale, { quarryRect, wear, roadMud,
         float glitter = smoothstep(0.82, 1.0, texture2D(detailMap, vWorldXZ * 5.1).r) * frostAmt;
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.91, 0.94) * mix(0.9, 1.08, grain), frostAmt * 0.72) + vec3(0.25) * glitter;
         // Snow: it lies in patches at first and joins up as the cover grows. The tyres' lines and churned ground show through it
-        // (the wear map), so tracks stay, and it lies a little thinner on the road.
+        // (the wear map), so tracks stay, and it lies a little thinner where mud has been on the road, and the tarmac takes more cover to whiten (it is grey-white first and goes first).
         float snowPatch = texture2D(detailMap, vWorldXZ * 0.11).r * 0.6 + texture2D(detailMap, vWorldXZ * 0.9).r * 0.4;
-        float snowLay = smoothstep(0.0, 0.25, uSnow * 1.5 - (snowPatch - 0.25) * 0.9);
+        float tarmacHere = texture2D(tarmacMap, (vWorldXZ - tarmacOrigin) / tarmacSize).r;
+        float snowLay = smoothstep(0.0, 0.25, uSnow * 1.5 - (snowPatch - 0.25) * 0.9 - 0.4 * tarmacHere);
         float snowAmt = snowLay * (1.0 - 0.7 * smoothstep(0.1, 0.5, thawed)) * (1.0 - 0.85 * wornSoft) * (1.0 - 0.3 * onRoad);
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.95, 0.98) * mix(0.93, 1.04, grain), snowAmt * 0.93);
         float snowGlint = smoothstep(0.86, 1.0, texture2D(detailMap, vWorldXZ * 6.3).r) * snowAmt;
         diffuseColor.rgb += vec3(0.12) * snowGlint;
         // Wet tarmac: dark and glossy, drying in patches (each spot has its own point at which it goes dull), not under frost, snow or mud.
-        float tarmacHere = texture2D(tarmacMap, (vWorldXZ - tarmacOrigin) / tarmacSize).r;
         float dryPoint = clamp(0.5 + (texture2D(detailMap, vWorldXZ * 0.04).r * 0.7 + texture2D(detailMap, vWorldXZ * 0.17).r * 0.3 - 0.5) * 3.2, 0.05, 0.95);
         float wetRoad = tarmacHere * smoothstep(dryPoint - 0.05, dryPoint + 0.1, uRoadWet) * (1.0 - 0.8 * onRoad) * (1.0 - frostAmt) * (1.0 - snowAmt);
         diffuseColor.rgb *= 1.0 - 0.45 * wetRoad;`,

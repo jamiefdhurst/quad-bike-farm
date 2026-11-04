@@ -325,6 +325,8 @@ export function buildGameTree(g, host) {
     rain: num(() => w().rain, (v) => g.setRain(v), 0, 1, '', 'falling now'),
     snow: num(() => w().snow, (v) => g.setSnow(v), 0, 1, '', 'snowing now'),
     snowCover: num(() => w().cover, (v) => g.setSnowCover(v), 0, 1, '', 'how far the ground and seats are under snow'),
+    snowTops: ro(() => g.worldSnow?.look.tops ?? 0, '', 'how far roofs, hedge tops, branches and props are under snow (the ground\'s cover times a little more; it shows once a snowy game or snowCover has coated them)'),
+    snowMelt: ro(() => g.worldSnow?.look.wet ?? 0, '', 'how damp the bare roofs and walls look from a melt, 0 to 1'),
     stream: num(() => g.world.streamLevel.level, (v) => g.setStreamLevel(v), 0, 1, '', 'how high the stream stands, low to full (the ford deepens and runs faster)'),
     wet: num(() => w().wet, (v) => (w().wet = v), 0, 1, '', 'how wet the ground is'),
     temperature: num(() => w().temperature, (v) => g.setTemperature(v), -15, 35, '°C'),
