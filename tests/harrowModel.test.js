@@ -74,7 +74,15 @@ describe('the chain harrows model', () => {
     expect(coplanarOverlaps(mat, { textured: true })).toEqual([]);
   });
 
-  it('stays light enough to draw: a few thousand triangles for the mat, a few meshes', () => {
+  it('costs few draw calls: the carrier, the hangings, the mat and a mesh a wheel', () => {
+    let meshes = 0;
+    model.traverse((o) => {
+      if (o.isMesh) meshes++;
+    });
+    expect(meshes).toBeLessThanOrEqual(6);
+  });
+
+  it('stays light enough to draw: a few thousand triangles for the mat in one mesh', () => {
     let tris = 0;
     let meshes = 0;
     model.getObjectByName('lattice').traverse((o) => {
@@ -82,7 +90,7 @@ describe('the chain harrows model', () => {
       meshes++;
       tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3;
     });
-    expect(meshes).toBeLessThanOrEqual(6);
+    expect(meshes).toBe(1);
     expect(tris).toBeLessThan(8000);
   });
 });

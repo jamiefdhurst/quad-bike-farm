@@ -1,8 +1,7 @@
 import { part } from './part.js';
 import * as THREE from 'three';
-import { PART_MAT, box, buildWheel, addMudguard, addJockeyWheel, addRearLights, addChain, addLeafSpring, addUBolts, beam, galvanised, addGusset, addEye } from './trailerParts.js';
-import { decalMesh } from './detail/decals.js';
-import { mergeStatic, rod } from './quadGeometry.js';
+import { PART_MAT, box, buildWheel, addJockeyWheel, addChain, addLeafSpring, addUBolts, beam, addGusset, addEye } from './trailerParts.js';
+import { rod } from './quadGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // The chain harrows: a set of harrow mats, a lattice of steel links with a pointed tine at every joint, about 3.4 m across, hung on chains from a
@@ -67,6 +66,47 @@ function chainRun(parent, a, b, mat) {
   }
 }
 
+/**
+ * Folds every mesh under `container` (except the subtrees in `leave`) into one, whatever their materials: each mesh's colour is baked into its
+ * vertices and they share one lit material. A draw call is paid for every mesh and again for its shadow, and a trailer standing out in a field
+ * is seen from a long way off, so the carrier is a handful of meshes (the sprayer's is over a hundred). Textures and shine are given up for it.
+ */
+function mergeColoured(container, name, leave = [], castShadow = true) {
+  container.updateMatrixWorld(true);
+  const inv = container.matrixWorld.clone().invert();
+  const geos = [];
+  const victims = [];
+  const inside = (o) => leave.some((l) => {
+    for (let p = o; p; p = p.parent) if (p === l) return true;
+    return false;
+  });
+  container.traverse((o) => {
+    if (!o.isMesh || inside(o) || Array.isArray(o.material)) return;
+    const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal' && k !== 'color') g.deleteAttribute(k);
+    if (!g.attributes.color) {
+      const colours = new Float32Array(g.attributes.position.count * 3);
+      const c = o.material.map ? TEXTURED : (o.material.color ?? TEXTURED); // a textured part (a tyre's tread) goes in a flat dark grey
+      for (let i = 0; i < colours.length; i += 3) c.toArray(colours, i);
+      g.setAttribute('color', new THREE.BufferAttribute(colours, 3));
+    }
+    g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+    geos.push(g);
+    victims.push(o);
+  });
+  if (!geos.length) return null;
+  for (const v of victims) v.removeFromParent();
+  const mesh = new THREE.Mesh(mergeGeometries(geos), LATTICE_MATERIAL);
+  mesh.name = name;
+  mesh.castShadow = castShadow;
+  mesh.receiveShadow = true;
+  container.add(mesh);
+  return mesh;
+}
+
+const TEXTURED = new THREE.Color(0x24231f);
+const LATTICE_MATERIAL = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0.45 });
+
 /** A tiny seeded 0..1 source, so every set of harrows is rusted and caught with grass in the same places. */
 function seeded(seed) {
   let s = seed >>> 0;
@@ -114,16 +154,26 @@ function buildMat() {
       }
     }
   }
+  // One mesh for the lot, coloured by vertex (a mesh a material would be five draws): steel, rusty steel, tines, grass and straw.
+  const parts = [[steel, MAT.link], [rusty, MAT.rusty], [tines, MAT.tine], [tufts.grass, MAT.grass], [tufts.straw, MAT.straw]];
+  const geos = [];
+  for (const [list, material] of parts) {
+    for (const g of list) {
+      const geo = g.index ? g.toNonIndexed() : g;
+      for (const k of Object.keys(geo.attributes)) if (k !== 'position' && k !== 'normal') geo.deleteAttribute(k);
+      const colours = new Float32Array(geo.attributes.position.count * 3);
+      for (let i = 0; i < colours.length; i += 3) material.color.toArray(colours, i);
+      geo.setAttribute('color', new THREE.BufferAttribute(colours, 3));
+      geos.push(geo);
+    }
+  }
   const mat = new THREE.Group();
   mat.name = 'mat';
-  for (const [geos, material, name] of [[steel, MAT.link, 'links'], [rusty, MAT.rusty, 'rustLinks'], [tines, MAT.tine, 'tines'], [tufts.grass, MAT.grass, 'grassCaught'], [tufts.straw, MAT.straw, 'strawCaught']]) {
-    if (!geos.length) continue;
-    const mesh = new THREE.Mesh(mergeGeometries(geos), material);
-    mesh.name = name;
-    mesh.castShadow = name !== 'grassCaught' && name !== 'strawCaught';
-    mesh.receiveShadow = true;
-    mat.add(mesh);
-  }
+  const mesh = new THREE.Mesh(mergeGeometries(geos), LATTICE_MATERIAL);
+  mesh.name = 'links';
+  mesh.castShadow = false; // a flat mat of thin links throws no shadow worth a second draw of 5,000 triangles
+  mesh.receiveShadow = true;
+  mat.add(mesh);
   return mat;
 }
 
@@ -137,7 +187,7 @@ export function buildHarrowModel() {
 
   const len = S.frontZ - S.rearZ;
   const midZ = (S.frontZ + S.rearZ) / 2;
-  const gal = galvanised();
+  const gal = PART_MAT.galv; // the plain grey metal merges into one mesh; the textured galvanised() would be a draw a part
   // Frame: two rails with cross members, and the A-frame tongue to a ball coupling, as the sprayer's.
   for (const s of [-0.38, 0.38]) box(0.06, 0.08, len, MAT.steel, s, S.floorY - 0.1, midZ, body);
   box(S.halfWidth * 2, 0.06, 0.08, MAT.steel, 0, S.floorY - 0.1, S.frontZ - 0.1, body);
@@ -158,10 +208,6 @@ export function buildHarrowModel() {
   addEye(body, 0.06, S.ringHeight + 0.02, S.drawLength - 0.3, 1);
   addChain(body, [-0.08, S.ringHeight + 0.008, S.drawLength - 0.3], [0.08, S.ringHeight + 0.008, S.drawLength - 0.3], 7, 0.04);
   addJockeyWheel(body, 0, S.ringHeight + 0.05, S.frontZ + 0.75);
-  const plate = decalMesh('chassis', { maker: 'fenwick', seed: 23 }, { width: 0.1, name: 'chassisPlate' });
-  plate.position.set(-0.061, S.ringHeight + 0.03, S.drawLength - 0.3);
-  plate.rotation.y = -Math.PI / 2;
-  body.add(plate);
 
   // Axle on leaf springs.
   const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, (S.halfWidth + 0.11) * 2, 8), MAT.steel);
@@ -174,7 +220,6 @@ export function buildHarrowModel() {
     addUBolts(body, s, S.wheelRadius + 0.035, 0, 0.1, 0.012);
     box(0.07, 0.12, 0.1, MAT.steel, s, S.wheelRadius + 0.12, 0, body);
   }
-  addRearLights(body, S.halfWidth - 0.12, S.floorY - 0.15, S.rearZ - 0.08, true);
 
   // The spreader bar: a galvanised tube across the back on two stout struts from the frame rails, with an eye at each end and at the middle, and
   // a chain from each end forward to the tongue (the pull goes up to the hitch through these).
@@ -209,20 +254,16 @@ export function buildHarrowModel() {
   dragBar.rotation.z = Math.PI / 2;
   dragBar.position.set(0, -(S.barY - 0.07), -0.12);
   hang.add(dragBar);
-  mergeStatic(hang); // the chains and the drag bar into one mesh a material; the lattice's own meshes are named and stay
+  mergeColoured(hang, 'hangings', [lattice], false); // the chains and the drag bar in one mesh; the lattice is its own
 
-  // Wheels with a mudguard over each.
+  // Wheels, with no mudguards or lamps: a harrow carrier is a field implement, and each of those is a draw call.
   for (const [name, side] of [['wheelLeft', 1], ['wheelRight', -1]]) {
-    root.add(buildWheel(name, side * (S.halfWidth + 0.11), S.wheelRadius, 0.16, 'atv'));
-    addMudguard(root, side * (S.halfWidth + 0.11), S.wheelRadius, 0.22, PART_MAT.paint, S.halfWidth);
+    const wheel = buildWheel(name, side * (S.halfWidth + 0.11), S.wheelRadius, 0.16, 'atv');
+    root.add(wheel);
+    root.updateMatrixWorld(true);
+    mergeColoured(wheel.getObjectByName('spin'), 'wheelParts'); // the parts of a wheel turn together, so one mesh
   }
-  root.traverse((o) => {
-    if (o.isMesh) {
-      o.castShadow = o.castShadow || false;
-      o.receiveShadow = true;
-    }
-  });
-  mergeStatic(root);
+  mergeColoured(body, 'carrier', [hang]); // the frame, tongue, bar and the chains forward in one mesh
   return root;
 }
 
