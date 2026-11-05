@@ -100,12 +100,15 @@ describe('the gravel pit: the ground', () => {
     expect(easy).toBeLessThan(mean - 4);
   });
 
-  it('has chutes in the steep wall you can climb at 38 degrees or less on average, and buttresses you cannot', () => {
-    for (const c of quarry.pit.chutes) {
-      const top = quarry.frameAt(c.at, quarry.rimAt(c.at));
-      const foot = quarry.frameAt(c.at, quarry.floorEdge(c.at));
-      const slope = deg((heights.heightAt(top.x, top.z) - heights.heightAt(foot.x, foot.z)) / Math.hypot(top.x - foot.x, top.z - foot.z));
-      expect(slope).toBeLessThan(38);
+  it('has chutes in the steep wall you can climb at 34 degrees or less on average (a 20 m wall at 36 to 38 was not climbable), and buttresses you cannot', () => {
+    for (const seed of [51, 123, 4242]) {
+      const { quarry: q, heights: h } = make(seed);
+      for (const c of q.pit.chutes) {
+        const top = q.frameAt(c.at, q.rimAt(c.at));
+        const foot = q.frameAt(c.at, q.floorEdge(c.at));
+        const slope = deg((h.heightAt(top.x, top.z) - h.heightAt(foot.x, foot.z)) / Math.hypot(top.x - foot.x, top.z - foot.z));
+        expect(slope, `seed ${seed}`).toBeLessThan(34);
+      }
     }
     for (const b of quarry.pit.buttresses) {
       const top = quarry.frameAt(b.at, quarry.rimAt(b.at));

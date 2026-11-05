@@ -115,7 +115,9 @@ export function dealPit(q, random) {
   // between them that are not.
   const first = pit.steepAt + r(-0.08, 0.08);
   const second = first + (random() < 0.5 ? -1 : 1) * r(0.16, 0.24);
-  pit.chutes = [{ at: first, w: r(3, 4), run: depth * r(1.3, 1.4) }, { at: second, w: r(2.5, 3.5), run: depth * r(1.28, 1.38) }];
+  // (A run of 1.5 depths averages about 33 degrees up the middle: at 1.3 a 20 m wall was 36 to 38 and nothing climbed it. The first, 9 m pit's were about 30. Longer
+  // takes the floor the screening plant needs and leaves cliffs at the chutes' edges.)
+  pit.chutes = [{ at: first, w: r(3, 4), run: depth * r(1.5, 1.58) }, { at: second, w: r(2.5, 3.5), run: depth * r(1.48, 1.56) }];
   for (let tries = 0; pit.buttresses.length < 3 && tries < 60; tries++) {
     const at = pit.steepAt + r(-0.3, 0.3);
     if (pit.chutes.some((c) => Math.abs(angleDiff(at, c.at)) < 0.2) || pit.buttresses.some((o) => Math.abs(angleDiff(at, o.at)) < 0.2)) continue;
