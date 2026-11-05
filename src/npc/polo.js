@@ -233,7 +233,7 @@ export const PLAID_OVER = {
   neckFront: -0.03, // low enough at the front that her polo's top button shows above it
   neckEase: 0.012, // clear of the polo's neck band (0.45 cm off her, 1.1 cm deep)
   sleeveEase: 0.015, // over the polo's sleeves
-  buttons: [0.012], // done right up, the top button is on its placket just below the polo's collar, not up on its own low stand
+  buttons: [0.008], // done right up, the top button is on its placket just below the polo's collar, not up on its own low stand
   inset: false, // what shows in the V is her polo
 };
 
@@ -245,6 +245,7 @@ export const PLAID_OPEN = {
   sleeveFlare: 0.016,
   cuffEase: 0.017, // inside the jumper's sleeve (2.1 cm off her) when she has one on
   neckEase: 0.016,
+  neckFront: -0.02, // its fronts' tops a little lower, so its collar's ends lie under the ends of her polo's rather than up through them
   open: 99, // every button undone
   veeWidths: [0.075],
   veeBows: [0.55],
@@ -323,10 +324,11 @@ export const SHIRT_ROLLED_OVER = { ...SHIRT_ROLLED, ...OVER, sleeveEase: 0.019, 
  * Keeps a top's sleeves inside the top worn over it, as she stands. Skinned down from the stored pose (arms out) to her arms
  * hanging, the inside of a sleeve is squeezed, and the outer top, further out, is squeezed more, so the under one's sleeve can
  * come through it there. Each point of `inner` carried by an arm is checked along the line out from the arm's bone through it;
- * if the outer top is nearer than it plus `gap`, it is pulled back in to there (by at most `most`). Changes `inner`'s points
+ * if the outer top is nearer than it plus `gap`, it is pulled back in to there (by at most `most`); so is the body's cloth within
+ * `armpit` of her shoulder joint, along the line out from her middle. Changes `inner`'s points
  * (bind and rest) in place and returns how many moved. `body` as for topFields.
  */
-export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008 } = {}) {
+export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008, armpit = 0.13 } = {}) {
   const { bones, boneNames } = body;
   let moved = 0;
   for (const side of ['Left', 'Right']) {
@@ -349,6 +351,26 @@ export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008 } = 
       const dir = scale(out, 1 / d);
       const hit = rayHit(local, c, dir);
       // A point already tucked sits at exactly hit.t - gap, so allow for rounding or it is moved again on another machine.
+      if (!hit || hit.t >= d + gap - 1e-9) continue;
+      const rest = add(c, scale(dir, Math.max(d - most, hit.t - gap)));
+      v.rest = rest;
+      v.bind = unskin(v.skin, rest);
+      moved++;
+    }
+    // Round her armpit and the top of her shoulder, where the body, not the arm, carries the cloth, the outer top's side is
+    // squeezed in the same way: there each point is checked along the line straight out from the middle of her through it.
+    const shoulder = bones[`${side}Arm`];
+    const [cx, , cz] = bones.Neck;
+    const nearShoulder = (q) => Math.hypot(...sub(q, shoulder)) < armpit;
+    const round = { verts: outer.verts, tris: outer.tris.filter((t) => t.some((i) => Math.hypot(...sub(outer.verts[i].rest, shoulder)) < armpit + 0.05)) };
+    for (const v of inner.verts) {
+      if (share(v) >= 0.3 || !nearShoulder(v.rest)) continue;
+      const c = [cx, v.rest[1], cz];
+      const out = sub(v.rest, c);
+      const d = Math.hypot(...out);
+      if (d < 1e-6) continue;
+      const dir = scale(out, 1 / d);
+      const hit = rayHit(round, c, dir);
       if (!hit || hit.t >= d + gap - 1e-9) continue;
       const rest = add(c, scale(dir, Math.max(d - most, hit.t - gap)));
       v.rest = rest;

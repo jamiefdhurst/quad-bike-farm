@@ -89,12 +89,12 @@ export const SHIRT_UNDER_COLLAR = {
   ...SHIRT_COLLAR,
   stand: 0.016,
   standFront: 0.001, // hardly any at the front, under the ends of hers, or it stood up through them
-  placketClear: 0.002, // and its wings start beside its placket, not in over it in front of hers
+  placketClear: -0.003, // and its wings start a little in over its placket, close together under hers
   out: 0.03,
   drop: 0.011,
   pointOut: 0.014,
   pointDrop: 0.025,
-  pointSpread: 0.4,
+  pointSpread: 0.3,
 };
 
 // A work shirt's point collar, for a shirt and tie: stiffer than the plaid's, a taller stand round her neck and long points that

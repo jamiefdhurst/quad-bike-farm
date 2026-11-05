@@ -12,7 +12,7 @@ describe("her body's paint under her top", () => {
     expect(bodyColours({ colors, style: { kind: 'plaid', plaid, plaidOpen: false } }).shirt).toBe(plaid[0]);
   });
 
-  it("stays her polo's colour under an open plaid, where the polo shows down the front", () => {
-    expect(bodyColours({ colors, polo: '#d9661f', style: { kind: 'plaid', plaid, plaidOpen: true } }).shirt).toBe('#d9661f');
+  it('is an open plaid\'s ground too: the polo down her front covers her body there, and at her arms the plaid does', () => {
+    expect(bodyColours({ colors, polo: '#d9661f', style: { kind: 'plaid', plaid, plaidOpen: true } }).shirt).toBe(plaid[0]);
   });
 });

@@ -557,17 +557,17 @@ describe('the other tops', () => {
     const { tuckSleeves } = await import('../src/npc/polo.js');
     // Two sleeves as tubes round her left arm's bone (straight down), on that bone and in the same pose stored and standing.
     const ID = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];
-    const bones = { LeftArm: [0.4, 1.2, 0], LeftHand: [0.4, 0.8, 0], RightArm: [-0.4, 1.2, 0], RightHand: [-0.4, 0.8, 0] };
+    const bones = { LeftArm: [0.4, 1.2, 0], LeftHand: [0.4, 0.8, 0], RightArm: [-0.4, 1.2, 0], RightHand: [-0.4, 0.8, 0], Neck: [0, 1.4, 0] };
     const body = { bones, boneNames: ['Spine2', 'LeftArm'] };
-    const tube = (r) => {
+    const tube = (r, x = 0.4, bone = 1) => {
       const verts = [];
       const tris = [];
       const segs = 16;
       for (let k = 0; k <= 8; k++) {
         for (let j = 0; j < segs; j++) {
           const a = (j / segs) * Math.PI * 2;
-          const p = [0.4 + r * Math.cos(a), 1.15 - k * 0.04, r * Math.sin(a)];
-          verts.push({ rest: p, bind: p.slice(), skin: ID, weights: [[1, 1]] });
+          const p = [x + r * Math.cos(a), 1.15 - k * 0.04, r * Math.sin(a)];
+          verts.push({ rest: p, bind: p.slice(), skin: ID, weights: [[bone, 1]] });
           if (k < 8) {
             const i = k * segs + j;
             const n = k * segs + ((j + 1) % segs);
@@ -595,6 +595,21 @@ describe('the other tops', () => {
       expect(v.bind).toEqual(v.rest); // bind kept in step (this skin is the identity)
     }
     expect(tuckSleeves(under, over, body)).toBe(0); // nothing left to pull in
+    // Her body round the armpit (carried by the spine, not the arm): pulled in along the line out from her middle, but only near
+    // her shoulder.
+    const shirt = tube(0.3, 0, 0);
+    const plaid = tube(0.31, 0, 0);
+    const out = (v, r) => {
+      const k = r / Math.hypot(v.rest[0], v.rest[2]);
+      v.rest = [v.rest[0] * k, v.rest[1], v.rest[2] * k];
+      v.bind = v.rest.slice();
+    };
+    const armpit = shirt.verts[16]; // the second ring, facing her left shoulder
+    const far = shirt.verts[16 * 8]; // the bottom ring, too far below it
+    for (const v of [armpit, far]) out(v, 0.315);
+    expect(tuckSleeves(shirt, plaid, body)).toBe(1);
+    expect(Math.hypot(armpit.rest[0], armpit.rest[2])).toBeCloseTo(0.308, 4);
+    expect(Math.hypot(far.rest[0], far.rest[2])).toBeCloseTo(0.315, 6);
   });
 
   it('pops a collar up round her neck instead of laying it down', () => {
