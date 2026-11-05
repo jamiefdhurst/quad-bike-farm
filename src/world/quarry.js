@@ -145,16 +145,13 @@ export function dealPit(q, random) {
   pit.pond = { x: pc.x, z: pc.z, rx: prx, rz: prz, depth: 0.75, water: 0.35 };
 
   // Heaps of graded stone on the floor, none on the pond, the foot of the climb wall (the start of the climb) or where the road comes down.
-  const roadEnds = [1, -1].map((side) => {
-    const endA = pit.road.from + side * pit.road.sweep;
-    return at(endA, floorEdge(endA));
-  });
+  const roadPaths = [1, -1].map((dir) => descentPath(pit, dir));
+  const roadEnds = roadPaths.map((pts) => pts[pts.length - 1]); // where each road really finishes, not where the sweep says it should
   const cAngle = climbAngle(pit);
   const climbFoot = at(cAngle, floorEdge(cAngle) - 9);
   const count = 3 + Math.floor(random() * 3);
   // The screening plant first, and the heap its conveyor ends over: the floor is too crowded to find it room after the other heaps.
-  const roadPaths = [1, -1].map((dir) => descentPath(pit, dir).filter((pt) => pt.t > 0.5));
-  const dealt = dealPlant(pit, { at, floorEdge, roadEnds, climbFoot, roadPaths }, random);
+  const dealt = dealPlant(pit, { at, floorEdge, roadEnds, climbFoot, roadPaths: roadPaths.map((pts) => pts.filter((pt) => pt.t > 0.5)) }, random);
   if (dealt) {
     pit.heaps.push(dealt.heap);
     pit.plant = dealt.plant;

@@ -1058,4 +1058,5 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - The north boundary tree line (`boundaryTrees.js`) now skips the pit's field as it skipped the wood: it ran along z -88 to -101 and put a tree on the lead-in road. The pit's field has trees of its own.
 - A climb's start and finish are one gate of two cones each (green START, blue FINISH), not a box of four, on the pit and on the hill pasture alike: eight big cones read as a muddle.
 - The lip's fence is open where the climb goes over it, as it is where the road comes in (`fenceOpen`, the gate's width plus a metre and a half): Jamie had to drive through it at the finish.
+- Heaps are kept clear of where the haul roads really finish (`descentPath`'s last point), not where `from` plus `sweep` guessed: with the shallower pit that guess was off, and on 32 of 60 farms a heap sat on a road's foot (Jamie found a small sand pile at one). Now at least 6 m clear on all 60, and every one still has its plant.
 - The girls' line "Up the steep wall and over the lip" (`pitYou`) is a recorded line and still says steep; it needs re-recording if it is changed.

@@ -324,6 +324,15 @@ describe('the gravel pit: the climb and the plants', () => {
     }
   });
 
+  it('keeps every heap clear of both haul roads\' feet, where the roads really finish', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const q = createQuarry(dealtLayout(LAYOUT, seed * 7919));
+      for (const end of [q.roadPoints[q.roadPoints.length - 1], q.rampPoints[q.rampPoints.length - 1]]) {
+        for (const h of q.pit.heaps) expect(Math.hypot(h.x - end.x, h.z - end.z) - h.r, `seed ${seed}`).toBeGreaterThan(4);
+      }
+    }
+  });
+
   it('keeps bushes and trees off the pit, the road and the gate, and boulders off the water and the start line', () => {
     const plants = quarryPlants(quarry, createRandom(5));
     expect(plants.bushes.length).toBeGreaterThan(60);
