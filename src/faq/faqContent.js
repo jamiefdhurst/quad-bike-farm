@@ -1574,7 +1574,8 @@ export const FAQ_SECTIONS = [
         q: 'Why are the girls wearing different coloured shirts from my last farm?',
         a: `Each girl's polo is the colour of the quad she likes best, which is dealt with the farm, so a new farm can mean new shirts.
           How many buttons each has undone is dealt with the farm too: Amy keeps hers done up or undoes the top one, and Jess can have
-          anything from none to all of them undone. Both stay the same on that farm from day to day.`,
+          anything from none to all of them undone. Both stay the same on that farm from day to day. The little leaping hare on the chest
+          is stitched in whichever of navy, bottle green, burgundy or gold stands out most from the shirt.`,
         tip: "The girls' polos match the quads they like best.",
       },
       {
