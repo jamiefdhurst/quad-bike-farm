@@ -520,11 +520,14 @@ describe('the other tops', () => {
     const back = (c, y) => c.verts.filter((v) => v.rest[2] < -0.02 && Math.abs(v.rest[0]) < 0.03 && Math.abs(v.rest[1] - y) < 0.006).map(out);
     const y = high(shirt) - 0.004;
     expect(Math.max(...back(hers, y))).toBeGreaterThan(Math.max(...back(shirt, y)));
-    // The plaid's collar shows past hers: its points 1.5 cm or more below and beyond hers, and a band of it below hers at the back.
+    // The plaid's collar just shows past hers, without being heavy: its points below and beyond hers by under 3 cm, and a band of it
+    // below hers at the back.
     const tip = (c) => c.verts.filter((v) => v.rest[2] > 0 && v.rest[0] > 0).reduce((a, b) => (b.rest[1] < a.rest[1] ? b : a)).rest;
     const [mine, theirs] = [tip(shirt), tip(hers)];
-    expect(theirs[1] - mine[1]).toBeGreaterThan(0.015);
-    expect(Math.hypot(mine[0] - theirs[0], mine[2] - theirs[2])).toBeGreaterThan(0.015);
+    expect(theirs[1] - mine[1]).toBeGreaterThan(0.006);
+    expect(theirs[1] - mine[1]).toBeLessThan(0.03);
+    expect(Math.hypot(mine[0] - theirs[0], mine[2] - theirs[2])).toBeGreaterThan(0.005);
+    expect(Math.hypot(mine[0] - theirs[0], mine[2] - theirs[2])).toBeLessThan(0.03);
     const lowBack = (c) => Math.min(...c.verts.filter((v) => v.rest[2] < 0 && Math.abs(v.rest[0]) < 0.02).map((v) => v.rest[1]));
     expect(lowBack(hers) - lowBack(shirt)).toBeGreaterThan(0.008);
   });
@@ -554,17 +557,17 @@ describe('the other tops', () => {
     const { tuckSleeves } = await import('../src/npc/polo.js');
     // Two sleeves as tubes round her left arm's bone (straight down), on that bone and in the same pose stored and standing.
     const ID = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];
-    const bones = { LeftArm: [0.4, 1.2, 0], LeftHand: [0.4, 0.8, 0], RightArm: [-0.4, 1.2, 0], RightHand: [-0.4, 0.8, 0] };
+    const bones = { LeftArm: [0.4, 1.2, 0], LeftHand: [0.4, 0.8, 0], RightArm: [-0.4, 1.2, 0], RightHand: [-0.4, 0.8, 0], Neck: [0, 1.4, 0] };
     const body = { bones, boneNames: ['Spine2', 'LeftArm'] };
-    const tube = (r) => {
+    const tube = (r, x = 0.4, bone = 1) => {
       const verts = [];
       const tris = [];
       const segs = 16;
       for (let k = 0; k <= 8; k++) {
         for (let j = 0; j < segs; j++) {
           const a = (j / segs) * Math.PI * 2;
-          const p = [0.4 + r * Math.cos(a), 1.15 - k * 0.04, r * Math.sin(a)];
-          verts.push({ rest: p, bind: p.slice(), skin: ID, weights: [[1, 1]] });
+          const p = [x + r * Math.cos(a), 1.15 - k * 0.04, r * Math.sin(a)];
+          verts.push({ rest: p, bind: p.slice(), skin: ID, weights: [[bone, 1]] });
           if (k < 8) {
             const i = k * segs + j;
             const n = k * segs + ((j + 1) % segs);
@@ -592,6 +595,22 @@ describe('the other tops', () => {
       expect(v.bind).toEqual(v.rest); // bind kept in step (this skin is the identity)
     }
     expect(tuckSleeves(under, over, body)).toBe(0); // nothing left to pull in
+    // The cloth her body carries (the spine, not an arm), round her armpit or under her bust: pulled in along the line out from her
+    // middle, wherever it has come through.
+    const shirt = tube(0.3, 0, 0);
+    const plaid = tube(0.31, 0, 0);
+    const out = (v, r) => {
+      const k = r / Math.hypot(v.rest[0], v.rest[2]);
+      v.rest = [v.rest[0] * k, v.rest[1], v.rest[2] * k];
+      v.bind = v.rest.slice();
+    };
+    const through = [shirt.verts[16], shirt.verts[16 * 6 + 4]]; // by her left shoulder, and lower down her front
+    const inside = shirt.verts[16 * 3 + 8];
+    for (const v of through) out(v, 0.315);
+    expect(tuckSleeves(shirt, plaid, body)).toBe(2);
+    for (const v of through) expect(Math.hypot(v.rest[0], v.rest[2])).toBeCloseTo(0.308, 4);
+    expect(Math.hypot(inside.rest[0], inside.rest[2])).toBeCloseTo(0.3, 6); // already inside: left alone
+    expect(tuckSleeves(shirt, plaid, body)).toBe(0);
   });
 
   it('pops a collar up round her neck instead of laying it down', () => {
@@ -657,6 +676,17 @@ describe('a shirt and tie', () => {
     const high = tie.verts.filter((v) => v.rest[1] > shirt.placket.top - 0.005);
     expect(high.some((v) => v.rest[0] > 0.01)).toBe(true);
     expect(high.some((v) => v.rest[0] < -0.01)).toBe(true);
+  });
+
+  it('loosened, leaves out the undone top button and its buttonhole up on the stand, under the tie\'s loop', async () => {
+    const { SHIRT, SHIRT_ROLLED } = await import('../src/npc/polo.js');
+    const body = cylinderBody();
+    const done = buildTop(body, { ...SHIRT, open: 1 }).placket;
+    const loose = buildTop(body, { ...SHIRT_ROLLED, open: 1 }).placket;
+    const onStand = (pl) => [...pl.buttons, ...pl.slits].filter((b) => b.centre[1] > pl.top);
+    expect(onStand(done).length).toBe(2); // the button on its half's end of the stand, the buttonhole on the other's
+    expect(onStand(loose).length).toBe(0);
+    expect(loose.buttons.length).toBe(done.buttons.length - 1);
   });
 
   it('loosened with more buttons undone, drops the knot to cover the open neck\'s point', async () => {

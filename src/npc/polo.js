@@ -230,9 +230,10 @@ export const PLAID_OVER = {
   ease: 0.0135,
   neckBack: 0.01,
   neckSide: 0.008,
-  neckFront: -0.014,
+  neckFront: -0.03, // low enough at the front that her polo's top button shows above it
   neckEase: 0.012, // clear of the polo's neck band (0.45 cm off her, 1.1 cm deep)
   sleeveEase: 0.015, // over the polo's sleeves
+  buttons: [0.008], // done right up, the top button is on its placket just below the polo's collar, not up on its own low stand
   inset: false, // what shows in the V is her polo
 };
 
@@ -244,6 +245,7 @@ export const PLAID_OPEN = {
   sleeveFlare: 0.016,
   cuffEase: 0.017, // inside the jumper's sleeve (2.1 cm off her) when she has one on
   neckEase: 0.016,
+  neckFront: -0.02, // its fronts' tops a little lower, so its collar's ends lie under the ends of her polo's rather than up through them
   open: 99, // every button undone
   veeWidths: [0.075],
   veeBows: [0.55],
@@ -311,7 +313,8 @@ export const SHIRT = {
 };
 
 // Loosened: the top one or two undone and the sleeves rolled to the elbow in a turn-up.
-export const SHIRT_ROLLED = { ...SHIRT, sleeveLength: 0.06, sleeveFlare: 0.017, cuff: 0.045, cuffEase: 0.016, cuffButtons: false, bandShade: 0.9 };
+// The tie's loop runs round her neck over where its top button and buttonhole are, undone, so they aren't drawn (`tieOver`).
+export const SHIRT_ROLLED = { ...SHIRT, sleeveLength: 0.06, sleeveFlare: 0.017, cuff: 0.045, cuffEase: 0.016, cuffButtons: false, bandShade: 0.9, tieOver: true };
 
 // The shirt over her polo: roomier, as the plaid over it is, its neck as high as on its own so its collar stands over the polo's.
 const OVER = { ease: 0.0135, neckEase: 0.013, inset: false };
@@ -322,7 +325,8 @@ export const SHIRT_ROLLED_OVER = { ...SHIRT_ROLLED, ...OVER, sleeveEase: 0.019, 
  * Keeps a top's sleeves inside the top worn over it, as she stands. Skinned down from the stored pose (arms out) to her arms
  * hanging, the inside of a sleeve is squeezed, and the outer top, further out, is squeezed more, so the under one's sleeve can
  * come through it there. Each point of `inner` carried by an arm is checked along the line out from the arm's bone through it;
- * if the outer top is nearer than it plus `gap`, it is pulled back in to there (by at most `most`). Changes `inner`'s points
+ * if the outer top is nearer than it plus `gap`, it is pulled back in to there (by at most `most`); so is the cloth her body
+ * carries, along the line out from her middle. Changes `inner`'s points
  * (bind and rest) in place and returns how many moved. `body` as for topFields.
  */
 export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008 } = {}) {
@@ -354,6 +358,37 @@ export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008 } = 
       v.bind = unskin(v.skin, rest);
       moved++;
     }
+  }
+  // Her body, where the body, not an arm, carries the cloth (round her armpits, under her bust): the outer top is squeezed in the
+  // same way there. Each point is checked along the line straight out from the middle of her through it, against the outer
+  // top's faces near it, found from just outside.
+  const [cx, , cz] = bones.Neck;
+  const cell = (q) => q.map((x) => Math.floor(x / 0.04)).join();
+  const grid = new Map();
+  outer.tris.forEach((t, k) => {
+    for (const key of new Set(t.map((i) => cell(outer.verts[i].rest)))) grid.set(key, [...(grid.get(key) ?? []), k]);
+  });
+  const anyArm = /^(Left|Right)(Arm|ForeArm|Hand)$/;
+  for (const v of inner.verts) {
+    if (v.weights.reduce((s, [b, w]) => s + (anyArm.test(boneNames[b]) ? w : 0), 0) >= 0.3) continue;
+    const c = [cx, v.rest[1], cz];
+    const out = sub(v.rest, c);
+    const d = Math.hypot(...out);
+    if (d < 1e-6) continue;
+    const dir = scale(out, 1 / d);
+    const [i0, j0, k0] = v.rest.map((x) => Math.floor(x / 0.04));
+    const near = new Set();
+    for (let i = i0 - 1; i <= i0 + 1; i++) for (let j = j0 - 1; j <= j0 + 1; j++) for (let k = k0 - 1; k <= k0 + 1; k++) for (const t of grid.get(`${i},${j},${k}`) ?? []) near.add(t);
+    if (!near.size) continue;
+    const from = add(v.rest, scale(dir, 0.03));
+    const hit = rayHit({ verts: outer.verts, tris: [...near].map((t) => outer.tris[t]) }, from, scale(dir, -1));
+    if (!hit || hit.t > 0.03 + most) continue;
+    const there = d + 0.03 - hit.t; // how far out from her middle the outer top is
+    if (there >= d + gap - 1e-9) continue;
+    const rest = add(c, scale(dir, Math.max(d - most, there - gap)));
+    v.rest = rest;
+    v.bind = unskin(v.skin, rest);
+    moved++;
   }
   return moved;
 }
@@ -917,6 +952,8 @@ function buildPlacket(mesh, body, p, vee) {
         const at = rowAt(top, x, x, 1);
         return at && { centre: [x, top - d0, at.under[0].rest[2] - 0.0005 - (p.topButtonSink ?? 0)], normal: norm([0, 0.35, 1]), anchor: at.under[0] };
       };
+      // Under a loosened tie the undone one and its buttonhole are hidden by the tie's loop round her neck, so there are none.
+      if (undone && p.tieOver) return;
       const b = undone ? on(x0 + split(top) + w / 4) : on(x0);
       if (b || !undone) {
         if (b) buttons.push(b);

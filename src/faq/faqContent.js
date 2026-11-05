@@ -1580,8 +1580,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: "Why are the girls wearing something different today?",
-        a: `What they have on top is dealt each day. Most days it's their polo. Some days it's a plaid flannel shirt over the polo, either
-          buttoned, with the polo's collar out over the shirt's and the shirt's longer, sharper points showing past it, or worn open; some days a second polo, white or black and a size bigger, over their own, so you
+        a: `What they have on top is dealt each day. Most days it's their polo. Some days it's a plaid flannel shirt over the polo, buttoned
+          or worn open, with the polo's collar out over the shirt's and the shirt's sharper points just showing past it; some days a second polo, white or black and a size bigger, over their own, so you
           can see the one underneath at the collar and the sleeves; and now and then a collar is popped. Jess is likelier than Amy to
           pop hers. About one day in ten each wears a white or pale blue shirt and a tie the colour of her polo, on its own or over the
           polo: Amy usually has it done right up, and Jess usually wears it loosened, with a button or a few undone and the knot pulled
