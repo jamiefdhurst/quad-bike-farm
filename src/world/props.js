@@ -10,6 +10,7 @@ import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
 import { buildQuarry } from './quarryProps.js';
+import { boundaryTreeBlocked } from './boundaryTrees.js';
 import { buildOutbuildings } from './outbuildingProps.js';
 import { buildNeighbourFarm } from './neighbourFarmProps.js';
 import { buildVillage } from './villageProps.js';
@@ -656,11 +657,10 @@ function buildTrees({ scene, models, layout, heights, physics, RAPIER, random, a
   spots.push([-76, 72], [-84, 52], [-86, 20], [-90, -14]);
 
   const mats = [[], []];
-  const wood = layout.woods; // the north boundary's tree line would stand in the wood, which has trees of its own
   for (const [x, z] of spots) {
     const v = random() < 0.5 ? 0 : 1;
     const s = 1.35 + random() * 0.6;
-    if (wood && x > wood.minX - 3 && x < wood.maxX + 3 && z < wood.maxZ + 0.2 && z > wood.minZ - 3) continue;
+    if (boundaryTreeBlocked(layout, x, z)) continue; // the north boundary's tree line would stand in the wood or across the pit's lead-in road
     mats[v].push(matrixAt(x, heights.heightAt(x, z) - 0.15, z, random() * Math.PI * 2, s));
     physics.createCollider(
       RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, heights.heightAt(x, z) + 2.5 * s, z),

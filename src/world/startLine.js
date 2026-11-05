@@ -105,27 +105,24 @@ export function buildStartLine(scene, heightAt, track, u, halfWidth) {
 }
 
 /**
- * Cones for a climb's gates (npc/hillClimb.js climbGates), bigger than the lap's so they read from across the pasture: one plain pair (a cone
- * either side) at each gate between, and two pairs `box` m apart along the course at the start (green, START) and the finish (blue, FINISH),
- * larger again, to ride through like a gateway.
+ * Cones for a climb's gates (npc/hillClimb.js climbGates), bigger than the lap's so they read from across the pasture: one pair (a cone
+ * either side) at each gate, plain between, and larger again at the start (green, START) and the finish (blue, FINISH): a gate at each end, not a box.
  */
-export function buildClimbCones(scene, heightAt, gates, { scale = 1.8, endScale = 2.2, box = 3 } = {}) {
+export function buildClimbCones(scene, heightAt, gates, { scale = 1.8, endScale = 2.2 } = {}) {
   const group = new THREE.Group();
   group.name = 'climbCones';
   gates.forEach((g, i) => {
     const end = i === 0 || i === gates.length - 1;
     const kind = i === 0 ? 'start' : end ? 'finish' : 'orange';
     for (const side of [-1, 1]) {
-      for (const along of end ? [-box / 2, box / 2] : [0]) {
-        const x = g.x - g.tz * (g.half + 0.5) * side + g.tx * along;
-        const z = g.z + g.tx * (g.half + 0.5) * side + g.tz * along;
-        const c = cone(kind);
-        c.scale.setScalar(end ? endScale : scale);
-        c.position.set(x, heightAt(x, z), z);
-        // Face the lettering along the course, so the band's two words read riding in (and out).
-        c.rotation.y = Math.atan2(g.tx, g.tz) + Math.PI / 2;
-        group.add(c);
-      }
+      const x = g.x - g.tz * (g.half + 0.5) * side;
+      const z = g.z + g.tx * (g.half + 0.5) * side;
+      const c = cone(kind);
+      c.scale.setScalar(end ? endScale : scale);
+      c.position.set(x, heightAt(x, z), z);
+      // Face the lettering along the course, so the band's two words read riding in (and out).
+      c.rotation.y = Math.atan2(g.tx, g.tz) + Math.PI / 2;
+      group.add(c);
     }
   });
   scene.add(group);

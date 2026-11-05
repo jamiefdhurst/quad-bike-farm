@@ -1,10 +1,10 @@
 // The gravel pit (layout.quarry), in the hedged field north of the barley field: the lie of the ground (a bowl cut into a levelled patch, a haul road
-// that winds down its wall, a pond in the low corner, heaps of graded stone on the floor), the loose surface, the climb that goes up its steepest
+// that winds down its wall, a pond in the low corner, heaps of graded stone on the floor), the loose surface, the climb that goes up its longest
 // wall, and where scrub and boulders may stand. Pure: used by the terrain, the fields, the props, the map and the girls. Nothing here is drawn;
 // the meshes are in quarryProps.js.
 //
 // The pit's shape is dealt from the farm's seed (`dealPit`), so every farm has its own pit and keeps it: how big, how it is turned, how ragged
-// its rim is, which wall is the steep one, where the chutes (the loose gullies you can climb) and the buttresses (the spurs you can't) are,
+// its rim is, which wall is the climb wall (the long, gentle one you can ride straight up) and where the buttresses (the spurs you can't) are,
 // which way the haul road winds, where the pond and the heaps are.
 
 import { createRandom } from '../core/random.js';
@@ -37,8 +37,8 @@ const RIM_MARGIN = 7; // the closest a rim may come to the field's hedges
 /** The ellipse's radius at angle `a` (in the pit's own frame) before the rim's ragged bumps. */
 const ellipseRadius = (pit, a) => (pit.rx * pit.rz) / Math.hypot(pit.rz * Math.cos(a), pit.rx * Math.sin(a));
 
-/** The angle the pit climb goes up: between the two chutes, so both are in reach of its gates. */
-const climbAngle = (pit) => pit.chutes[0].at + angleDiff(pit.chutes[1].at, pit.chutes[0].at) / 2;
+/** The angle the pit climb goes up: the middle of the climb wall. */
+const climbAngle = (pit) => pit.climbAt;
 
 /** The rim's ragged factor at angle `a`: 1 plus the bumps. */
 function rimFactor(pit, a) {
@@ -47,17 +47,16 @@ function rimFactor(pit, a) {
   return f;
 }
 
-/** Metres from lip to floor along angle `a` before the chutes and buttresses are cut into the wall: the haul roads follow this, so they keep a smooth line across them. */
+/** Metres from lip to floor along angle `a` before the buttresses are cut into the wall: the haul roads follow this, so they keep a smooth line across them. */
 function baseRun(pit, a) {
-  const wall = Math.exp(-((angleDiff(a, pit.steepAt) / pit.steepWidth) ** 2));
-  return (pit.steepRun + (pit.gentleRun - pit.steepRun) * (1 - wall)) * (1 + 0.1 * Math.sin(3 * a + 1.1) + 0.05 * Math.sin(7 * a));
+  const wall = Math.exp(-((angleDiff(a, pit.climbAt) / pit.climbWidth) ** 2));
+  return (pit.climbRun + (pit.gentleRun - pit.climbRun) * (1 - wall)) * (1 + 0.1 * Math.sin(3 * a + 1.1) + 0.05 * Math.sin(7 * a));
 }
 
-/** Metres from lip to floor along angle `a`: the easy walls' run, the steep wall's (a Gaussian round `steepAt`), the chutes' and the buttresses'. */
+/** Metres from lip to floor along angle `a`: the other walls' run, the climb wall's (a Gaussian round `climbAt`, the gentlest and longest) and the buttresses' (short spurs of hard rock). */
 function runFor(pit, a) {
   let run = baseRun(pit, a);
   const rim = ellipseRadius(pit, a) * rimFactor(pit, a);
-  for (const c of pit.chutes) run = Math.max(run, run + (c.run - run) * Math.exp(-((angleDiff(a, c.at) / (c.w / rim)) ** 2)));
   for (const b of pit.buttresses) run = Math.min(run, run + (b.run - run) * Math.exp(-((angleDiff(a, b.at) / (b.w / rim)) ** 2)));
   return Math.min(run, rim * 0.78); // the floor never closes up at the middle
 }
@@ -80,25 +79,24 @@ const bankAt = (t) => {
 };
 
 /**
- * A pit's shape for one farm, from `random` (0..1): its size, turn and ragged rim, the way the haul road winds, the steep wall opposite it with
- * its chutes and buttresses, the pond by the steep wall's foot and the heaps on the floor. `q` is `layout.quarry` (the field and its gate).
+ * A pit's shape for one farm, from `random` (0..1): its size, turn and ragged rim, the way the haul road winds, the climb wall opposite it with
+ * its buttresses, the pond by the climb wall's foot and the heaps on the floor. `q` is `layout.quarry` (the field and its gate).
  */
 export function dealPit(q, random) {
   const r = (lo, hi) => lo + random() * (hi - lo);
   const x = (q.minX + q.maxX) / 2 + r(-4, 4);
   const z = q.maxZ - 66 + r(-3, 3);
-  const depth = r(18, 22);
+  const depth = r(13, 16);
   const pit = {
     x, z,
-    rx: r(45, 48), // the long way, turned to run from the gate to the steep wall by `yaw`
+    rx: r(45, 48), // the long way, turned to run from the gate to the climb wall by `yaw`
     rz: r(36, 39),
     yaw: Math.PI / 2 + r(-0.15, 0.15),
     depth,
     bumps: [[2, r(0.03, 0.05), r(0, TAU)], [3, r(0.02, 0.04), r(0, TAU)], [5, r(0.01, 0.025), r(0, TAU)]], // [harmonic, share of the radius, phase]
-    gentleRun: depth * r(1.15, 1.25), // metres from lip to floor on the easy walls (about 40 degrees, a little more at its steepest)
-    steepRun: depth * r(0.9, 1), // and on the steep one (about 48)
-    steepWidth: r(0.4, 0.55), // radians the steep wall takes before it eases
-    chutes: [],
+    gentleRun: depth * r(1.15, 1.25), // metres from lip to floor on the other walls (about 40 degrees, a little more at its steepest)
+    climbRun: depth * r(2.2, 2.3), // and on the climb wall, the longest and gentlest (about 25 degrees on average, 30 at its steepest)
+    climbWidth: r(0.4, 0.55), // radians the climb wall takes before it eases
     buttresses: [],
     // Two roads leave the lip point facing the gate, one `dir` round and one the other, each `sweep` radians down the wall (a grade of 20 to 25%, 12 to 14 degrees).
     road: { dir: random() < 0.5 ? -1 : 1, from: 0, sweep: r(2.7, 2.8), halfWidth: 2.7, bend: r(-7, 7) },
@@ -106,19 +104,15 @@ export function dealPit(q, random) {
     heaps: [],
     plant: null, // where the screening plant stands, if the floor had room (plantSite.js); its heap is the first of `heaps`
   };
-  // The haul roads leave the rim on the side facing the gate and go down either side; the steep wall is where they don't reach, opposite.
+  // The haul roads leave the rim on the side facing the gate and go down either side; the climb wall is where they don't reach, opposite.
   const toGate = Math.atan2(q.maxZ - z, q.gate.x - x) - pit.yaw;
   pit.road.from = toGate;
-  pit.steepAt = toGate + Math.PI + r(-0.12, 0.12);
+  pit.climbAt = toGate + Math.PI + r(-0.12, 0.12);
 
-  // Two chutes in the steep wall (a gully of loose stone, easier going: the line up is the thing to find) and a few buttresses of hard rock
-  // between them that are not.
-  const first = pit.steepAt + r(-0.08, 0.08);
-  const second = first + (random() < 0.5 ? -1 : 1) * r(0.16, 0.24);
-  pit.chutes = [{ at: first, w: r(3, 4), run: depth * r(1.3, 1.4) }, { at: second, w: r(2.5, 3.5), run: depth * r(1.28, 1.38) }];
+  // A few spurs of hard rock on the climb wall's flanks, to the sides of the line up so none stands in it.
   for (let tries = 0; pit.buttresses.length < 3 && tries < 60; tries++) {
-    const at = pit.steepAt + r(-0.3, 0.3);
-    if (pit.chutes.some((c) => Math.abs(angleDiff(at, c.at)) < 0.2) || pit.buttresses.some((o) => Math.abs(angleDiff(at, o.at)) < 0.2)) continue;
+    const at = pit.climbAt + (random() < 0.5 ? -1 : 1) * r(0.3, 0.5);
+    if (pit.buttresses.some((o) => Math.abs(angleDiff(at, o.at)) < 0.2)) continue;
     pit.buttresses.push({ at, w: r(3.5, 5), run: depth * r(0.78, 0.86) });
   }
 
@@ -143,24 +137,21 @@ export function dealPit(q, random) {
   const rimOf = (a) => ellipseRadius(pit, a) * rimFactor(pit, a);
   const floorEdge = (a) => rimOf(a) - runFor(pit, a);
 
-  // The pond in a low corner on the gate's side, away from where the roads come down and the steep wall's foot.
+  // The pond in a low corner on the gate's side, away from where the roads come down and the climb wall's foot.
   const pa = pit.road.from + (random() < 0.5 ? -1 : 1) * r(0.55, 1);
   const prx = r(6.5, 9);
   const prz = r(4.8, 6.5);
   const pc = at(pa, floorEdge(pa) - Math.min(prx, prz) * 0.5);
   pit.pond = { x: pc.x, z: pc.z, rx: prx, rz: prz, depth: 0.75, water: 0.35 };
 
-  // Heaps of graded stone on the floor, none on the pond, the foot of the steep wall (the start of the climb) or where the road comes down.
-  const roadEnds = [1, -1].map((side) => {
-    const endA = pit.road.from + side * pit.road.sweep;
-    return at(endA, floorEdge(endA));
-  });
+  // Heaps of graded stone on the floor, none on the pond, the foot of the climb wall (the start of the climb) or where the road comes down.
+  const roadPaths = [1, -1].map((dir) => descentPath(pit, dir));
+  const roadEnds = roadPaths.map((pts) => pts[pts.length - 1]); // where each road really finishes, not where the sweep says it should
   const cAngle = climbAngle(pit);
   const climbFoot = at(cAngle, floorEdge(cAngle) - 9);
   const count = 3 + Math.floor(random() * 3);
   // The screening plant first, and the heap its conveyor ends over: the floor is too crowded to find it room after the other heaps.
-  const roadPaths = [1, -1].map((dir) => descentPath(pit, dir).filter((pt) => pt.t > 0.5));
-  const dealt = dealPlant(pit, { at, floorEdge, roadEnds, climbFoot, roadPaths }, random);
+  const dealt = dealPlant(pit, { at, floorEdge, roadEnds, climbFoot, roadPaths: roadPaths.map((pts) => pts.filter((pt) => pt.t > 0.5)) }, random);
   if (dealt) {
     pit.heaps.push(dealt.heap);
     pit.plant = dealt.plant;
@@ -252,7 +243,7 @@ export function createQuarry(layout) {
 
   // The haul roads: from the gate straight (with a bend) to the lip on the side facing it, where they fork and go down the wall either way round, each
   // a ledge at the depth the bank has at that distance (so it is cut into the slope, not a ramp through it), its depth growing with the distance along
-  // it so the grade is even. Between their feet is the steep wall. Each point: where, how far down (0 on the lead-in, 1 at the floor), the angle round
+  // it so the grade is even. Between their feet is the climb wall. Each point: where, how far down (0 on the lead-in, 1 at the floor), the angle round
   // the pit and how far from its middle. Down one and up the other is a loop.
   const road = pit.road;
   const roadHalf = road.halfWidth;
@@ -429,20 +420,20 @@ export function createQuarry(layout) {
     return rd.d === Infinity ? 0 : 1 - smoothstep(roadHalf - 0.6, roadHalf + 0.4, rd.d);
   };
 
-  // The pit climb: start gate on the floor at the steep wall's foot, one on the bank and the finish just past the lip, all facing up the wall,
-  // wide enough (`gateHalf`) to take in the chutes: the line up is yours to find (npc/hillClimb.js's gates).
+  // The pit climb: start gate on the floor at the climb wall's foot, one on the bank and the finish just past the lip, all facing up the wall,
+  // `gateHalf` wide: the line up the wall is yours (npc/hillClimb.js's gates).
   const cAngle = climbAngle(pit);
   const gateAt = (s) => {
     const p = frameAt(cAngle, s);
     return [p.x, p.z];
   };
-  // The gates are as wide as it takes for both chutes to be inside them at the finish, where they are furthest apart.
   const finishS = rimAt(cAngle) + 5;
-  const reach = Math.max(...pit.chutes.map((c) => Math.abs(angleDiff(c.at, cAngle)) * finishS + c.w)) + 2;
   const climb = {
     points: [gateAt(floorEdge(cAngle) - 9), gateAt(rimAt(cAngle) - runAt(cAngle) * 0.5), gateAt(finishS)],
-    gateHalf: Math.max(9, Math.ceil(reach)),
+    gateHalf: 9,
   };
+  /** Whether the lip's fence must be open at angle `a` (the post at (x, z)): where the haul road comes in, and over the lip where the climb finishes. */
+  const fenceOpen = (a, x, z) => roadNear(x, z).d < roadHalf + 6 || Math.abs(angleDiff(a, cAngle)) * (rimAt(cAngle) + 2.4) < climb.gateHalf + 1.5;
 
   const inQuarry = (x, z, margin = 0) => inRect(rect, x, z, margin);
   /** Whether (x, z) is some way in from the gate: where a girl following you stops short and waits (`waitSpot`) rather than driving in. */
@@ -466,14 +457,14 @@ export function createQuarry(layout) {
   return {
     rect, name: q.name, pit, gate, pond, waitSpot, climb,
     weight, groundAt, waterAt, mudAt, gravelAt, roadAt, pondCut, bowlCut, heapRise, inQuarry, inPit, pastGate, plantOk,
-    polar, frameAt, rimAt, runAt, floorEdge, roadNear, roadPoints: roadPts, rampPoints: rampPts, roadHalf, roadLength, reachMax,
+    polar, frameAt, rimAt, runAt, floorEdge, roadNear, fenceOpen, roadPoints: roadPts, rampPoints: rampPts, roadHalf, roadLength, reachMax,
     outside: (x, z) => outside(rect, x, z),
   };
 }
 
 /**
  * Where the scrub and the boulders go round the pit: hawthorn and gorse thick along the lip and over the field (thinned into patches by a slow
- * pattern), boulders and flints strewn at the foot of the banks and down the chutes. `random` gives 0..1. Returns { bushes: [[x, z, scale]],
+ * pattern), boulders and flints strewn at the foot of the banks. `random` gives 0..1. Returns { bushes: [[x, z, scale]],
  * trees: [[x, z, scale]], boulders: [[x, z, size]], big: [[x, z, size]] }.
  */
 export function quarryPlants(quarry, random) {
