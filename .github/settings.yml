@@ -2,7 +2,7 @@ repository:
   name: quad-bike-farm
   description: First-person British farm quad-bike game, with two companions who ride, drive, bicker and talk. Three.js, Rapier, Vite.
   topics: threejs, game, rapier, vite, webaudio
-  private: true
+  private: false
   has_issues: true
   has_projects: false
   has_wiki: false
