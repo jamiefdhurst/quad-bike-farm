@@ -230,9 +230,10 @@ export const PLAID_OVER = {
   ease: 0.0135,
   neckBack: 0.01,
   neckSide: 0.008,
-  neckFront: -0.014,
+  neckFront: -0.03, // low enough at the front that her polo's top button shows above it
   neckEase: 0.012, // clear of the polo's neck band (0.45 cm off her, 1.1 cm deep)
   sleeveEase: 0.015, // over the polo's sleeves
+  buttons: [0.012], // done right up, the top button is on its placket just below the polo's collar, not up on its own low stand
   inset: false, // what shows in the V is her polo
 };
 

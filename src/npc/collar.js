@@ -88,7 +88,8 @@ export const SHIRT_COLLAR = {
 export const SHIRT_UNDER_COLLAR = {
   ...SHIRT_COLLAR,
   stand: 0.016,
-  standFront: 0.01,
+  standFront: 0.001, // hardly any at the front, under the ends of hers, or it stood up through them
+  placketClear: 0.002, // and its wings start beside its placket, not in over it in front of hers
   out: 0.03,
   drop: 0.011,
   pointOut: 0.014,

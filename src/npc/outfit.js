@@ -482,14 +482,15 @@ export function withShirt(outfit, color) {
 }
 
 /**
- * The body's palette for an outfit: under a crop-top her shirt band is her skin (her top half is bare). Under a plaid it stays
- * her polo's colour, as the polo is under it, buttoned or open; without a polo, a buttoned plaid's ground. Under a shirt and tie
- * on its own, the shirt's colour.
+ * The body's palette for an outfit: under a crop-top her shirt band is her skin (her top half is bare). Under a buttoned plaid
+ * it is the plaid's ground, polo or not: the plaid covers the polo but for its collar, so where her body comes through both (at
+ * her armpits) it should look like the plaid, not show the polo's colour. Under an open plaid it stays her polo's colour, as the
+ * polo shows down the front. Under a shirt and tie on its own, the shirt's colour.
  */
 export function bodyColours(outfit) {
   const kind = outfit.style?.kind;
   if (kind === 'cropTop') return { ...outfit.colors, shirt: 'skin' };
-  if (kind === 'plaid' && !outfit.style.plaidOpen && !outfit.polo) return { ...outfit.colors, shirt: outfit.style.plaid[0] };
+  if (kind === 'plaid' && !outfit.style.plaidOpen) return { ...outfit.colors, shirt: outfit.style.plaid[0] };
   if (kind === 'shirtTie' && !(outfit.style.shirtOverPolo && outfit.polo)) return { ...outfit.colors, shirt: outfit.style.shirt ?? '#f4f3ef' };
   return outfit.colors;
 }
