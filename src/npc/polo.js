@@ -81,7 +81,7 @@ export const POLO = {
   // stand (buttoned right up); the rest are spaced evenly down from it.
   buttons: [-0.005, 0.0459, 0.0968, 0.1476, 0.1985],
   topButtonOpen: 0.006, // undone, a top button that sits on the placket (not the collar's stand) is at least this far below its top
-  topButtonSink: 0.0025, // one on the collar's stand sits this far back from the shirt's face, as the stand leans in towards her neck
+  topButtonSink: 0.0038, // one on the collar's stand sits this far back from the shirt's face, as the stand leans in towards her neck
   // A little embroidered logo on her left chest, as a brand's would be: centred this far across from her middle and down from
   // where the shirt meets her neck, this wide and high.
   logo: { across: 0.07, down: 0.072, width: 0.025, height: 0.018, lift: 0.0007 },
