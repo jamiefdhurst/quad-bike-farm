@@ -336,10 +336,10 @@ describe('the collar', () => {
     }
     // It stands up above the neck edge.
     expect(Math.max(...collar.verts.map((v) => v.rest[1]))).toBeGreaterThan(neckY + COLLAR.standFront);
-    // The wings leave the placket showing: nothing below the neck edge on her front is over the placket.
+    // The wings leave the middle of the placket showing, its buttons between them.
     const low = collar.verts.filter((v) => v.rest[2] > 0.1 && v.rest[1] < neckY - 0.004);
     expect(low.length).toBeGreaterThan(0);
-    for (const v of low) expect(Math.abs(v.rest[0])).toBeGreaterThan(POLO.placketWidth / 2);
+    for (const v of low) expect(Math.abs(v.rest[0])).toBeGreaterThan(POLO.placketWidth / 2 + COLLAR.placketClear - 0.001);
     // And the points turn out towards her shoulders: the lowest point of each wing is further out than where it starts.
     const lowest = low.reduce((a, b) => (b.rest[1] < a.rest[1] ? b : a));
     expect(Math.abs(lowest.rest[0])).toBeGreaterThan(POLO.placketWidth / 2 + 0.01);
@@ -535,8 +535,8 @@ describe('the other tops', () => {
     const shell = buildTop(body, POLO).shell;
     const opts = { placketWidth: POLO.placketWidth, over: [shell] };
     const shirt = buildCollar(shell, body, opts, SHIRT_COLLAR);
-    const polo = buildCollar(shell, body, opts);
-    // Two rows more down the fall (outside and in), and the outer two of them shaded darker on the outside, against one on a polo's.
+    const polo = buildCollar(shell, body, opts, { ...COLLAR, edgeBand: 0 });
+    // Two rows more down the fall (outside and in), and the outer two of them shaded darker on the outside, against one without.
     expect(shirt.verts.length - polo.verts.length).toBe(2 * 2 * (COLLAR.columns + 1));
     expect(shirt.shade.filter((k) => k === SHIRT_COLLAR.edgeShade).length).toBe(2 * (COLLAR.columns + 1));
     expect(SHIRT_COLLAR.edgeShade).toBeLessThan(COLLAR.edgeShade);
