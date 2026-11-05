@@ -1351,7 +1351,8 @@ function addEachGarment(rig, outfit) {
     addCollar(rig, outer, [outer.built.shell, ...(tie ? [tie] : []), ...knit], style.shirt, pop(POINT_COLLAR), 'shirtCollar');
   } else if (plaidShut && polo) {
     // Buttoned over her polo: the plaid's collar first, a lower stand on its lower neck, then hers folded out over it and the shirt.
-    const shirt = addCollar(rig, outer, [outer.built.shell, ...knit], style.over, pop(SHIRT_UNDER_COLLAR), 'plaidCollar');
+    // Popped, only hers stands up: the plaid's popped too came up round the outside of hers and hid it.
+    const shirt = addCollar(rig, outer, [outer.built.shell, ...knit], style.over, SHIRT_UNDER_COLLAR, 'plaidCollar');
     addCollar(rig, polo, [polo.built.shell, outer.built.shell, ...knit, ...(shirt ? [shirt] : [])], outfit.polo, pop(COLLAR));
   } else {
     const under = polo ? addCollar(rig, polo, [polo.built.shell, ...knit], outfit.polo, pop(COLLAR)) : null;

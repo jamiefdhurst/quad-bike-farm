@@ -520,11 +520,14 @@ describe('the other tops', () => {
     const back = (c, y) => c.verts.filter((v) => v.rest[2] < -0.02 && Math.abs(v.rest[0]) < 0.03 && Math.abs(v.rest[1] - y) < 0.006).map(out);
     const y = high(shirt) - 0.004;
     expect(Math.max(...back(hers, y))).toBeGreaterThan(Math.max(...back(shirt, y)));
-    // The plaid's collar shows past hers: its points 1.5 cm or more below and beyond hers, and a band of it below hers at the back.
+    // The plaid's collar just shows past hers, without being heavy: its points below and beyond hers by under 3 cm, and a band of it
+    // below hers at the back.
     const tip = (c) => c.verts.filter((v) => v.rest[2] > 0 && v.rest[0] > 0).reduce((a, b) => (b.rest[1] < a.rest[1] ? b : a)).rest;
     const [mine, theirs] = [tip(shirt), tip(hers)];
-    expect(theirs[1] - mine[1]).toBeGreaterThan(0.015);
-    expect(Math.hypot(mine[0] - theirs[0], mine[2] - theirs[2])).toBeGreaterThan(0.015);
+    expect(theirs[1] - mine[1]).toBeGreaterThan(0.006);
+    expect(theirs[1] - mine[1]).toBeLessThan(0.03);
+    expect(Math.hypot(mine[0] - theirs[0], mine[2] - theirs[2])).toBeGreaterThan(0.005);
+    expect(Math.hypot(mine[0] - theirs[0], mine[2] - theirs[2])).toBeLessThan(0.03);
     const lowBack = (c) => Math.min(...c.verts.filter((v) => v.rest[2] < 0 && Math.abs(v.rest[0]) < 0.02).map((v) => v.rest[1]));
     expect(lowBack(hers) - lowBack(shirt)).toBeGreaterThan(0.008);
   });

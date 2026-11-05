@@ -69,33 +69,31 @@ export const COAT_COLLAR = {
   underShade: 0.6,
 };
 
-// A shirt's collar (the plaid): a taller stand, a longer fall and sharper points than a polo's.
+// A shirt's collar (the plaid): sharper points than a polo's and a stitched edge, otherwise its size, so it isn't heavy at the front.
 export const SHIRT_COLLAR = {
   ...COLLAR,
-  stand: 0.026,
-  standFront: 0.02,
-  out: 0.036,
-  pointOut: 0.028,
-  pointDrop: 0.045,
-  pointSpread: 0.6,
+  out: 0.027,
+  pointOut: 0.011,
+  pointDrop: 0.019,
+  pointSpread: 0.45, // its wings' front edges run down more than out, close either side of the top button
   tipRound: 0.02,
   thickness: 0.0018,
   openPoints: null, // worn open, its collar is as it is done up
-  edgeBand: 0.5, // a stitched edge, the outer half of the fall's last strip (about 2.5 mm at the back, more at the points)
+  edgeBand: 0.5, // a stitched edge, the outer half of the fall's last strip
   edgeShade: 0.6, // dark enough to read against the check
 };
 
-// A buttoned plaid's collar under the polo's: a lower stand, so the polo's collar folds out over it, and a fall and points longer
-// still than the shirt's, so a band of it shows round the back below the polo's and its points come out past the polo's.
+// A buttoned plaid's collar under the polo's: a lower stand, so the polo's collar folds out over it, and a fall and points a little
+// longer than the polo's, so a narrow band of it shows round the back below hers and its points just come out past hers.
 export const SHIRT_UNDER_COLLAR = {
   ...SHIRT_COLLAR,
   stand: 0.016,
-  standFront: 0.012,
-  out: 0.054,
-  drop: 0.018,
-  pointOut: 0.046,
-  pointDrop: 0.043,
-  pointSpread: 0.7,
+  standFront: 0.01,
+  out: 0.03,
+  drop: 0.011,
+  pointOut: 0.014,
+  pointDrop: 0.025,
+  pointSpread: 0.4,
 };
 
 // A work shirt's point collar, for a shirt and tie: stiffer than the plaid's, a taller stand round her neck and long points that
