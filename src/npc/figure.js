@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { splitBody } from './smoothBody.js';
 
 // Body shape for the companion. The source model is fairly straight up and
 // down, so her figure is reshaped at load time: the bust fuller, the waist
@@ -165,8 +166,12 @@ export function shapeFigure(rig, amounts) {
   if (!mesh) return;
   const geo = mesh.geometry;
   const pos = geo.attributes.position;
-  if (!geo.userData.bindPositions) geo.userData.bindPositions = pos.array.slice();
-  const original = geo.userData.bindPositions;
+  // A body split at load (smoothBody.js) is shaped on the model's own points, then split again: shaped point by point, the split's
+  // extra points would pick out every edge of the shaping (under her bust, round her seat) that the model's few points step over.
+  const coarse = geo.userData.coarse;
+  if (!coarse && !geo.userData.bindPositions) geo.userData.bindPositions = pos.array.slice();
+  const original = coarse ? coarse.positions : geo.userData.bindPositions;
+  const count = original.length / 3;
 
   // Bone bind positions are in the same space as the vertices.
   const sk = mesh.skeleton;
@@ -193,24 +198,24 @@ export function shapeFigure(rig, amounts) {
 
   // Arms are left alone: their weight on a vertex holds it still.
   const armBones = new Set(sk.bones.map((b, i) => (/Arm|Hand/.test(b.name) ? i : -1)).filter((i) => i >= 0));
-  const skinIndex = geo.attributes.skinIndex;
-  const skinWeight = geo.attributes.skinWeight;
+  const skinIndex = coarse ? coarse.skinIndex : geo.attributes.skinIndex.array;
+  const skinWeight = coarse ? coarse.skinWeight : geo.attributes.skinWeight.array;
   const armWeight = (i) => {
     let w = 0;
-    for (let k = 0; k < 4; k++) if (armBones.has(skinIndex.getComponent(i, k))) w += skinWeight.getComponent(i, k);
+    for (let k = 0; k < 4; k++) if (armBones.has(skinIndex[i * 4 + k])) w += skinWeight[i * 4 + k];
     return Math.min(1, w);
   };
 
   // The bust's apex is the frontmost point of the chest on her left.
   let apex = null;
-  for (let i = 0; i < pos.count; i++) {
+  for (let i = 0; i < count; i++) {
     const [x, y, z] = toBody(i);
     if (x > 0.02 && x < 0.4 && y > 0.55 && y < 0.9 && (!apex || z > apex.z)) apex = { x, y, z };
   }
   if (!apex) return;
 
   const moved = [];
-  for (let i = 0; i < pos.count; i++) {
+  for (let i = 0; i < count; i++) {
     const [x, y, z] = toBody(i);
     const [dx, dy, dz] = figureOffset(x, y, z, apex, amounts);
     const k = 1 - armWeight(i);
@@ -218,7 +223,8 @@ export function shapeFigure(rig, amounts) {
   }
   // Her seat rounded, on the reshaped figure (the model's bottom is a block with a shelf under it).
   const seat = amounts.seat === 0 ? moved.map((q) => q.z) : roundSeat(moved);
-  for (let i = 0; i < pos.count; i++) {
+  const shaped = new Float32Array(original.length);
+  for (let i = 0; i < count; i++) {
     const q = moved[i];
     const [x, y, z] = toBody(i);
     const dz = q.z - z + (seat[i] - q.z) * q.k;
@@ -226,8 +232,9 @@ export function shapeFigure(rig, amounts) {
       .addScaledVector(left, (q.x - x) * unit)
       .addScaledVector(up, (q.y - y) * unit)
       .addScaledVector(front, dz * unit);
-    pos.setXYZ(i, p.x, p.y, p.z);
+    p.toArray(shaped, i * 3);
   }
+  pos.array.set(coarse ? splitBody({ ...coarse, positions: shaped }, { rounded: (t) => coarse.rounded[t] === 1 }).positions : shaped);
   pos.needsUpdate = true;
   geo.computeVertexNormals();
   geo.computeBoundingBox();

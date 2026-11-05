@@ -20,6 +20,7 @@ import {
   applySkinDir,
   unskin,
   unskinDir,
+  drape,
   blendWeights,
   vec,
 } from './garmentMesh.js';
@@ -67,6 +68,7 @@ export const POLO = {
   hangSlope: 0.32, // metres back per metre down from the bust's furthest-forward point
   hangMax: 0.035,
   hangReach: 2, // bins (2 cm) either side it looks for her furthest-forward point, so it bridges between her breasts
+  drape: 8, // passes bridging the hollow under her bust on her front, so the cloth doesn't fold in there (garmentMesh.js, drape)
   bandShade: 0.84, // the neck band and cuffs, ribbed, a shade darker
   insideShade: 0.55, // the turned-in edge
   lips: ['neck', 'sleeve'], // which edges are turned in
@@ -467,7 +469,8 @@ export function buildTop(body, p = POLO) {
   let mesh = weld(verts, index, keepTri);
   const onArm = (v) => F.left.limb(v) + F.right.limb(v) > 0.5;
   const flatBelow = p.tucked ? waist + 0.03 : -Infinity;
-  mesh = subdivide(mesh, (A, B) => (Math.min(A.rest[1], B.rest[1]) < flatBelow ? 0 : onArm(A) || onArm(B) ? p.armRound : p.round));
+  // On a body already split and rounded at load (smoothBody.js) there are points enough, and a second split only costs time.
+  if (!body.split) mesh = subdivide(mesh, (A, B) => (Math.min(A.rest[1], B.rest[1]) < flatBelow ? 0 : onArm(A) || onArm(B) ? p.armRound : p.round));
   // Even out its skinning, so it doesn't crease across her shoulders when her arms reach forward (smoothSkinning).
   if (p.skinSmoothing) smoothSkinning(mesh, p.skinSmoothing, 0.5);
   // A placket down past her bust, measured on her (the V is cut to its buttons, so this comes first).
@@ -527,6 +530,9 @@ export function buildTop(body, p = POLO) {
   }
   hang(mesh, body, p, F);
   for (const v of mesh.verts) v.rest = applySkin(v.skin, v.bind);
+  // Over the hollow under her bust rather than in under it, where hanging alone doesn't reach.
+  const neck = body.bones.Neck;
+  drape(mesh, body.split ? p.drape * 4 : p.drape, (v) => v.rest[2] > neck[2] && v.rest[1] < neck[1] - 0.1 && v.rest[1] > body.waist + 0.02);
   if (p.skirt) addSkirt(mesh, body, p);
 
   // Shade: the bands a shade darker. A point on a band's line belongs to the side its triangle is on; colours are per vertex,

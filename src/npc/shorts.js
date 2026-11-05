@@ -5,7 +5,7 @@
 // tucked into them: at the waist both are her own faces pushed straight out along the same normals (the shorts further), so
 // the shirt stays inside however she bends.
 
-import { weld, subdivide, cut, openEdges, smoothNormals, applySkin, unskinDir, vec } from './garmentMesh.js';
+import { weld, subdivide, cut, openEdges, smoothNormals, applySkin, unskinDir, drape, vec } from './garmentMesh.js';
 
 const { sub, add, scale, dot, norm } = vec;
 const smooth01 = (t) => {
@@ -32,6 +32,7 @@ export const SHORTS = {
   hemCup: 0.015, // at the hem the cheeks are as they are this far up, so the hem stands round them
   seatSmoothing: 6, // passes evening out how far each point of the seat is moved, between neighbours
   subdivide: false, // split each of her faces in four (flat), so the seat curves rather than folding at her few corners
+  drape: 8, // passes bridging the hollows under her (the model's old shirt hem over her seat and hips), so the denim doesn't step in
 };
 
 /** The lines the shorts are cut along (below 0 is inside). `body` as for polo.js's topFields. */
@@ -87,6 +88,8 @@ export function buildShorts(body, p = SHORTS) {
     v.rest = applySkin(v.skin, v.bind);
   }
   seat(mesh, body, p);
+  // Over the lip all round her at the model's old shirt hem (her seat, her hips), not in under it.
+  drape(mesh, body.split ? p.drape * 4 : p.drape);
   const zone = (v) => {
     if (v.edge === 'band' || v.edge === 'hemBand') return v.outside ? (v.edge === 'band' ? 'band' : 'hem') : '';
     if (v.edge === 'waist') return 'band';

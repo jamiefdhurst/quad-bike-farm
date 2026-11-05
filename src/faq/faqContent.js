@@ -169,7 +169,7 @@ export const FAQ_SECTIONS = [
         q: 'Can I play the same farm again?',
         a: `Yes. The browser console prints the game's seed when it loads. Add <code>?seed=</code> and that number to the address and you get
           the same layout, weather and luck again, as a first day: a seeded game doesn't touch your saved farm and isn't saved. <code>?weather=rain</code> (or <code>sunny</code>, <code>overcast</code>, <code>drizzle</code>,
-          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) plays a day in the middle of that season, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>shirtTie</code>, <code>cropTop</code>) puts both girls in that outfit.`,
+          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) plays a day in the middle of that season, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>shirtTie</code>, <code>cropTop</code>) puts both girls in that outfit. <code>?body=flat</code> shows the girls' bodies without the smoothing.`,
         tip: 'Add ?seed= and a number to the address to play the same farm again.',
       },
       {
@@ -1597,6 +1597,12 @@ export const FAQ_SECTIONS = [
           barely makes one) about one in seven. It lasts the day, swings as she moves, comes out under the back of her helmet and is
           tucked away when her hood is up.`,
         tip: 'Some days a girl ties her hair back in a ponytail: Amy about one day in three, Jess less often.',
+      },
+      {
+        q: 'Why do the girls look smoother than the rest of the farm?',
+        a: `Their model is low-poly like everything else, but as the game loads each of their triangles is split into four and rounded a
+          little, so their shoulders, bust, seat and face curve rather than fold, and their clothes, which are cut from their bodies, follow.
+          Their hair keeps its sharp shapes. Add <code>?body=flat</code> to the address to see them as the model comes.`,
       },
       {
         q: 'Why do the girls wobble on a running quad?',
