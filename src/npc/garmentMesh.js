@@ -364,3 +364,32 @@ export function smoothSkinning(mesh, passes = 3, amount = 0.5, where = () => tru
   });
   return mesh;
 }
+
+/**
+ * Cloth bridges a hollow in her rather than following her into it. Each pass moves every point outwards along its normal, never in,
+ * half way to where its neighbours' average would put it, so a hollow fills and nothing goes into her. Points on a line the garment
+ * was cut along stay put, as do any `where(v)` leaves out. A body split at load (smoothBody.js) has twice the points along any line,
+ * so it needs four times the passes for the same reach (evening out spreads with their root).
+ */
+export function drape(mesh, passes, where = () => true) {
+  const near = mesh.verts.map(() => new Set());
+  for (const t of mesh.tris) for (const a of t) for (const b of t) if (a !== b) near[a].add(b);
+  const free = mesh.verts.map((v) => !v.edge && where(v));
+  const out = mesh.verts.map((v) => norm(applySkinDir(v.skin, v.normal)));
+  const rest = mesh.verts.map((v) => v.rest);
+  for (let pass = 0; pass < passes; pass++) {
+    const next = rest.map((r, i) => {
+      if (!free[i] || !near[i].size) return r;
+      const avg = [0, 0, 0];
+      for (const j of near[i]) for (let k = 0; k < 3; k++) avg[k] += rest[j][k] / near[i].size;
+      const d = dot(sub(avg, r), out[i]);
+      return d > 0 ? add(r, scale(out[i], d * 0.5)) : r;
+    });
+    next.forEach((r, i) => (rest[i] = r));
+  }
+  mesh.verts.forEach((v, i) => {
+    if (rest[i] === v.rest) return;
+    v.bind = unskin(v.skin, rest[i]);
+    v.rest = rest[i];
+  });
+}

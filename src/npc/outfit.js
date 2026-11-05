@@ -130,9 +130,34 @@ function posedCopy(mesh) {
 const toLocal = new THREE.Matrix4();
 const localRay = new THREE.Ray();
 
+/** Whether a ray (origin `o`, direction `d`, as far as `far`) crosses the box at `at` in `boxes` (min xyz, max xyz). */
+function crossesBox(boxes, at, o, d, far) {
+  let near = 0;
+  let out = Infinity;
+  for (let axis = 0; axis < 3 && near <= out; axis++) {
+    const lo = boxes[at + axis];
+    const hi = boxes[at + 3 + axis];
+    const origin = axis === 0 ? o.x : axis === 1 ? o.y : o.z;
+    const dir = axis === 0 ? d.x : axis === 1 ? d.y : d.z;
+    if (dir === 0) {
+      if (origin < lo || origin > hi) out = -1;
+    } else {
+      const t1 = (lo - origin) / dir;
+      const t2 = (hi - origin) / dir;
+      near = Math.max(near, Math.min(t1, t2));
+      out = Math.min(out, Math.max(t1, t2));
+    }
+  }
+  return !(near > out || out < 0 || near > far * 1.0001);
+}
+
+const RUN = 16; // triangles boxed together, near each other, so a ray skips most of her at once
+
 /**
  * Makes a ray at `mesh` test only the triangles whose box it crosses, then hand those to three's own test, so a hit is exactly what it was
- * and a ray no longer walks every triangle of the body (about 0.2 s of loading for the two girls). Needs one material and an index.
+ * and a ray no longer walks every triangle of the body (about 0.2 s of loading for the two girls). The triangles are put in order along a
+ * curve through space and boxed in runs as well, so a ray tests a run's box before its triangles': with her body split at load
+ * (smoothBody.js) there are four times as many. Needs one material and an index.
  */
 export function cullRays(mesh) {
   const geo = mesh.geometry;
@@ -141,6 +166,8 @@ export function cullRays(mesh) {
   const index = geo.index.array.slice(); // its own: the index is shared with the real body, which must keep every triangle
   const count = index.length / 3;
   const boxes = new Float32Array(count * 6);
+  const lo = [Infinity, Infinity, Infinity];
+  const hi = [-Infinity, -Infinity, -Infinity];
   for (let t = 0; t < count; t++) {
     for (let axis = 0; axis < 3; axis++) {
       const a = pos[index[t * 3] * 3 + axis];
@@ -148,6 +175,30 @@ export function cullRays(mesh) {
       const c = pos[index[t * 3 + 2] * 3 + axis];
       boxes[t * 6 + axis] = Math.min(a, b, c) - 1e-5;
       boxes[t * 6 + 3 + axis] = Math.max(a, b, c) + 1e-5;
+      lo[axis] = Math.min(lo[axis], boxes[t * 6 + axis]);
+      hi[axis] = Math.max(hi[axis], boxes[t * 6 + 3 + axis]);
+    }
+  }
+  // In order along a Morton curve through their middles, so each run of RUN is a small patch of her.
+  const cell = (t, axis) => Math.min(1023, Math.floor(((boxes[t * 6 + axis] + boxes[t * 6 + 3 + axis]) / 2 - lo[axis]) / (hi[axis] - lo[axis] || 1) * 1024));
+  const spread = (x) => {
+    let k = 0;
+    for (let bit = 0; bit < 10; bit++) k += ((x >> bit) & 1) * 2 ** (bit * 3);
+    return k;
+  };
+  const order = Array.from({ length: count }, (_, t) => t);
+  const code = order.map((t) => spread(cell(t, 0)) + 2 * spread(cell(t, 1)) + 4 * spread(cell(t, 2)));
+  order.sort((a, b) => code[a] - code[b]);
+  const runs = Math.ceil(count / RUN);
+  const runBoxes = new Float32Array(runs * 6);
+  for (let r = 0; r < runs; r++) {
+    runBoxes.fill(Infinity, r * 6, r * 6 + 3);
+    runBoxes.fill(-Infinity, r * 6 + 3, r * 6 + 6);
+    for (let k = r * RUN; k < Math.min(count, (r + 1) * RUN); k++) {
+      for (let axis = 0; axis < 6; axis++) {
+        const v = boxes[order[k] * 6 + axis];
+        runBoxes[r * 6 + axis] = axis < 3 ? Math.min(runBoxes[r * 6 + axis], v) : Math.max(runBoxes[r * 6 + axis], v);
+      }
     }
   }
   const full = Uint32Array.from(index);
@@ -158,31 +209,19 @@ export function cullRays(mesh) {
     localRay.copy(raycaster.ray).applyMatrix4(toLocal);
     const { origin: o, direction: d } = localRay;
     const far = raycaster.far;
-    let kept = 0;
-    for (let t = 0; t < count; t++) {
-      let near = 0;
-      let out = Infinity;
-      for (let axis = 0; axis < 3 && near <= out; axis++) {
-        const lo = boxes[t * 6 + axis];
-        const hi = boxes[t * 6 + 3 + axis];
-        const origin = axis === 0 ? o.x : axis === 1 ? o.y : o.z;
-        const dir = axis === 0 ? d.x : axis === 1 ? d.y : d.z;
-        if (dir === 0) {
-          if (origin < lo || origin > hi) out = -1;
-        } else {
-          const t1 = (lo - origin) / dir;
-          const t2 = (hi - origin) / dir;
-          near = Math.max(near, Math.min(t1, t2));
-          out = Math.min(out, Math.max(t1, t2));
-        }
-      }
-      if (near > out || out < 0 || near > far * 1.0001) continue;
+    // Kept in their first order, so hits that tie come out as they did.
+    const hit = [];
+    for (let r = 0; r < runs; r++) {
+      if (!crossesBox(runBoxes, r * 6, o, d, far)) continue;
+      for (let k = r * RUN; k < Math.min(count, (r + 1) * RUN); k++) if (crossesBox(boxes, order[k] * 6, o, d, far)) hit.push(order[k]);
+    }
+    hit.sort((a, b) => a - b);
+    hit.forEach((t, kept) => {
       index[kept * 3] = full[t * 3];
       index[kept * 3 + 1] = full[t * 3 + 1];
       index[kept * 3 + 2] = full[t * 3 + 2];
-      kept++;
-    }
-    geo.setDrawRange(0, kept * 3);
+    });
+    geo.setDrawRange(0, hit.length * 3);
     raycast.call(this, raycaster, intersects);
   };
   return mesh;
@@ -616,7 +655,7 @@ export function bodyData(rig, body) {
     }
     const e = sum.fromArray(acc).premultiply(body.bindMatrixInverse).multiply(body.bindMatrix).premultiply(toRoot).multiply(fromRoot).elements;
     const skin = [e[0], e[4], e[8], e[12], e[1], e[5], e[9], e[13], e[2], e[6], e[10], e[14]];
-    const rest = rig.root.worldToLocal(body.localToWorld(body.getVertexPosition(i, v))).toArray();
+    const rest = body.getVertexPosition(i, v).applyMatrix4(toRoot).toArray(); // the matrices once, not per point
     verts.push({ bind, rest, normal, weights, skin });
   }
   const bones = {};
@@ -626,7 +665,8 @@ export function bodyData(rig, body) {
   const paint = (i) => bands.find(([, c]) => pal?.is(i, c))?.[0] ?? 'other';
   // The top of the shorts as she stands: where the old shorts' top (1 cm above her spine bone, in the stored pose) comes to.
   const waist = (rig.bones.Spine ? bonePos(rig, 'Spine') : bonePos(rig, 'Hips')).y - 0.012;
-  return { verts, index: g.index ? [...g.index.array] : [...Array(pos.count).keys()], boneNames: body.skeleton.bones.map((b) => b.name), bones, paint, waist, fromRoot };
+  const split = !!g.userData.split; // already split and rounded at load (smoothBody.js)
+  return { verts, index: g.index ? [...g.index.array] : [...Array(pos.count).keys()], boneNames: body.skeleton.bones.map((b) => b.name), bones, paint, waist, fromRoot, split };
 }
 
 /** The body's paint under the polo garment: shirt up to a little below the garment's neckline, skin above, so none shows. */

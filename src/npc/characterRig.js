@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { BONES, EMPTY_POSE } from './poseMoves.js';
 import { rotateBoneWorld, solveTwoBone, orientHand } from './armIK.js';
+import { splitBody, smoothBodyWanted } from './smoothBody.js';
+import { PALETTE } from './outfit.js';
 
 const AXIS_X = new THREE.Vector3(1, 0, 0);
 const AXIS_Y = new THREE.Vector3(0, 1, 0);
@@ -11,6 +13,53 @@ const HAND_BONES = {
   right: ['RightArm', 'RightForeArm', 'RightHand', 'RightHandIndex1', 'RightHandThumb1'],
 };
 const _fingers = new THREE.Vector3();
+
+// Her body split once per loaded model (smoothBody.js), however many characters are made from it.
+const smoothed = new WeakMap();
+
+/**
+ * The model's body with each triangle split into four and rounded, all but her hair (painted the palette's hair colour). The coarse
+ * model is kept in `userData.coarse`: her figure is shaped on that and split again (figure.js), so the new points lie on a smooth
+ * surface through her shaped figure rather than picking out every edge of the shaping.
+ */
+function smoothGeometry(geo, material) {
+  if (smoothed.has(geo)) return smoothed.get(geo);
+  const { position, uv, skinIndex, skinWeight } = geo.attributes;
+  const index = geo.index ? Array.from(geo.index.array) : Array.from({ length: position.count }, (_, i) => i);
+  const img = material.map?.image;
+  let hair = () => false;
+  if (img && uv) {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    hair = (i) => {
+      const x = Math.min(canvas.width - 1, Math.floor(uv.getX(i) * canvas.width));
+      const y = Math.min(canvas.height - 1, Math.floor((material.map.flipY ? 1 - uv.getY(i) : uv.getY(i)) * canvas.height));
+      const k = (y * canvas.width + x) * 4;
+      return PALETTE.hair.every((c, j) => Math.abs(px[k + j] - c) < 3);
+    };
+  }
+  const rounded = Uint8Array.from({ length: index.length / 3 }, (_, t) => ([0, 1, 2].some((j) => hair(index[t * 3 + j])) ? 0 : 1));
+  const coarse = { positions: position.array.slice(), uvs: uv.array, skinIndex: skinIndex.array, skinWeight: skinWeight.array, index, rounded };
+  const split = splitBody(coarse, { rounded: (t) => rounded[t] === 1 });
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(split.positions, 3));
+  out.setAttribute('uv', new THREE.BufferAttribute(split.uvs, 2));
+  out.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(split.skinIndex, 4));
+  out.setAttribute('skinWeight', new THREE.BufferAttribute(split.skinWeight, 4));
+  out.setIndex(split.index);
+  out.computeVertexNormals();
+  out.computeBoundingBox();
+  out.computeBoundingSphere();
+  out.userData.split = true; // the garments cut from it needn't split it again (polo.js, buildTop)
+  out.userData.coarse = coarse; // read only, so shared by her clones
+  smoothed.set(geo, out);
+  return out;
+}
+
 const _palm = new THREE.Vector3();
 const _e = new THREE.Euler(0, 0, 0, 'XZY');
 const _qe = new THREE.Quaternion();
@@ -34,8 +83,10 @@ export class CharacterRig {
     this.model = cloneSkinned(gltf.scene);
     this.root.add(this.model);
 
+    const smooth = smoothBodyWanted(globalThis.location?.search);
     this.model.traverse((o) => {
       if (o.isMesh) {
+        if (smooth && o.isSkinnedMesh) o.geometry = smoothGeometry(o.geometry, o.material);
         o.geometry = o.geometry.clone();
         o.material = o.material.clone();
         if (o.isSkinnedMesh) o.boundingBox = o.boundingSphere = null; // recomputed once she's posed
