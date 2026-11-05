@@ -364,7 +364,7 @@ function buildFence(site, quarry, { wood, wire, groundY, random }) {
   for (let i = 0; i < N; i++) {
     const a = (i / N) * TAU + (random() - 0.5) * 0.04;
     const p = quarry.frameAt(a, quarry.rimAt(a) + 2.4);
-    if (quarry.roadNear(p.x, p.z).d < quarry.roadHalf + 6) continue; // open where the road comes in
+    if (quarry.fenceOpen(a, p.x, p.z)) continue; // open where the road comes in and where the climb goes over the lip
     posts.push({ ...p, a, gone: random() < 0.16, lean: (random() - 0.5) * 0.45, lean2: (random() - 0.5) * 0.3, h: 1.15 + random() * 0.3 });
   }
   for (const po of posts) {

@@ -301,6 +301,29 @@ describe('the gravel pit: the climb and the plants', () => {
     }
   });
 
+  it('leaves the lip\'s fence open where the climb goes over it and where the road comes in, and shut elsewhere', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const q = createQuarry(dealtLayout(LAYOUT, seed * 6151));
+      const a = q.pit.climbAt;
+      const post = (angle) => q.frameAt(angle, q.rimAt(angle) + 2.4);
+      const at = (angle) => q.fenceOpen(angle, post(angle).x, post(angle).z);
+      expect(at(a), `seed ${seed} on the line`).toBe(true);
+      const [, , finish] = q.climb.points;
+      const g = climbGates(q.climb)[2];
+      // Both edges of the finish gate are inside the gap, so the line through the gate never meets a post.
+      for (const side of [-1, 1]) {
+        const x = finish[0] - g.tz * q.climb.gateHalf * side;
+        const z = finish[1] + g.tx * q.climb.gateHalf * side;
+        const ang = q.polar(x, z).a;
+        expect(q.fenceOpen(ang, post(ang).x, post(ang).z), `seed ${seed} side ${side}`).toBe(true);
+      }
+      // And a good way round the lip, away from the climb and the road, it is shut.
+      let shut = 0;
+      for (let i = 0; i < 64; i++) if (!at((i / 64) * Math.PI * 2)) shut++;
+      expect(shut, `seed ${seed}`).toBeGreaterThan(30);
+    }
+  });
+
   it('keeps bushes and trees off the pit, the road and the gate, and boulders off the water and the start line', () => {
     const plants = quarryPlants(quarry, createRandom(5));
     expect(plants.bushes.length).toBeGreaterThan(60);

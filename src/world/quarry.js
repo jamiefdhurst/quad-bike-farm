@@ -435,6 +435,8 @@ export function createQuarry(layout) {
     points: [gateAt(floorEdge(cAngle) - 9), gateAt(rimAt(cAngle) - runAt(cAngle) * 0.5), gateAt(finishS)],
     gateHalf: 9,
   };
+  /** Whether the lip's fence must be open at angle `a` (the post at (x, z)): where the haul road comes in, and over the lip where the climb finishes. */
+  const fenceOpen = (a, x, z) => roadNear(x, z).d < roadHalf + 6 || Math.abs(angleDiff(a, cAngle)) * (rimAt(cAngle) + 2.4) < climb.gateHalf + 1.5;
 
   const inQuarry = (x, z, margin = 0) => inRect(rect, x, z, margin);
   /** Whether (x, z) is some way in from the gate: where a girl following you stops short and waits (`waitSpot`) rather than driving in. */
@@ -458,7 +460,7 @@ export function createQuarry(layout) {
   return {
     rect, name: q.name, pit, gate, pond, waitSpot, climb,
     weight, groundAt, waterAt, mudAt, gravelAt, roadAt, pondCut, bowlCut, heapRise, inQuarry, inPit, pastGate, plantOk,
-    polar, frameAt, rimAt, runAt, floorEdge, roadNear, roadPoints: roadPts, rampPoints: rampPts, roadHalf, roadLength, reachMax,
+    polar, frameAt, rimAt, runAt, floorEdge, roadNear, fenceOpen, roadPoints: roadPts, rampPoints: rampPts, roadHalf, roadLength, reachMax,
     outside: (x, z) => outside(rect, x, z),
   };
 }
