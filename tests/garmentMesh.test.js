@@ -595,8 +595,8 @@ describe('the other tops', () => {
       expect(v.bind).toEqual(v.rest); // bind kept in step (this skin is the identity)
     }
     expect(tuckSleeves(under, over, body)).toBe(0); // nothing left to pull in
-    // Her body round the armpit (carried by the spine, not the arm): pulled in along the line out from her middle, but only near
-    // her shoulder.
+    // The cloth her body carries (the spine, not an arm), round her armpit or under her bust: pulled in along the line out from her
+    // middle, wherever it has come through.
     const shirt = tube(0.3, 0, 0);
     const plaid = tube(0.31, 0, 0);
     const out = (v, r) => {
@@ -604,12 +604,13 @@ describe('the other tops', () => {
       v.rest = [v.rest[0] * k, v.rest[1], v.rest[2] * k];
       v.bind = v.rest.slice();
     };
-    const armpit = shirt.verts[16]; // the second ring, facing her left shoulder
-    const far = shirt.verts[16 * 8]; // the bottom ring, too far below it
-    for (const v of [armpit, far]) out(v, 0.315);
-    expect(tuckSleeves(shirt, plaid, body)).toBe(1);
-    expect(Math.hypot(armpit.rest[0], armpit.rest[2])).toBeCloseTo(0.308, 4);
-    expect(Math.hypot(far.rest[0], far.rest[2])).toBeCloseTo(0.315, 6);
+    const through = [shirt.verts[16], shirt.verts[16 * 6 + 4]]; // by her left shoulder, and lower down her front
+    const inside = shirt.verts[16 * 3 + 8];
+    for (const v of through) out(v, 0.315);
+    expect(tuckSleeves(shirt, plaid, body)).toBe(2);
+    for (const v of through) expect(Math.hypot(v.rest[0], v.rest[2])).toBeCloseTo(0.308, 4);
+    expect(Math.hypot(inside.rest[0], inside.rest[2])).toBeCloseTo(0.3, 6); // already inside: left alone
+    expect(tuckSleeves(shirt, plaid, body)).toBe(0);
   });
 
   it('pops a collar up round her neck instead of laying it down', () => {

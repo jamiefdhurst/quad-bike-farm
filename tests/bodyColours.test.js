@@ -15,4 +15,14 @@ describe("her body's paint under her top", () => {
   it('is an open plaid\'s ground too: the polo down her front covers her body there, and at her arms the plaid does', () => {
     expect(bodyColours({ colors, polo: '#d9661f', style: { kind: 'plaid', plaid, plaidOpen: true } }).shirt).toBe(plaid[0]);
   });
+
+  it("is the second polo's colour, and the shirt's under a shirt and tie, polo under it or not", () => {
+    expect(bodyColours({ colors, polo: '#d9661f', style: { kind: 'doublePolo', over: '#111111' } }).shirt).toBe('#111111');
+    expect(bodyColours({ colors, polo: '#d9661f', style: { kind: 'shirtTie', shirt: '#dfe8f2', shirtOverPolo: true } }).shirt).toBe('#dfe8f2');
+    expect(bodyColours({ colors, style: { kind: 'shirtTie', shirt: '#dfe8f2' } }).shirt).toBe('#dfe8f2');
+  });
+
+  it("is her polo's colour in just her polo", () => {
+    expect(bodyColours({ colors, polo: '#d9661f', style: { kind: 'polo' } }).shirt).toBe('#d9661f');
+  });
 });

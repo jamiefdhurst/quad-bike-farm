@@ -482,16 +482,17 @@ export function withShirt(outfit, color) {
 }
 
 /**
- * The body's palette for an outfit: under a crop-top her shirt band is her skin (her top half is bare). Under a plaid, buttoned
- * or open, it is the plaid's ground, polo or not: where her body comes through everything (round her armpits and the backs of
- * her arms) the plaid is outermost, and down an open plaid's front the polo covers her. Under a shirt and tie on its own, the
- * shirt's colour.
+ * The body's palette for an outfit: under a crop-top her shirt band is her skin (her top half is bare). Under anything worn over
+ * or in place of the polo (a plaid buttoned or open, a second polo, a shirt and tie), it is the outer top's colour: where her
+ * body comes through everything (round her armpits and the backs of her arms) that top is outermost, and wherever the polo
+ * shows (down an open plaid's front, at the second polo's sleeves) the polo covers her.
  */
 export function bodyColours(outfit) {
   const kind = outfit.style?.kind;
   if (kind === 'cropTop') return { ...outfit.colors, shirt: 'skin' };
   if (kind === 'plaid') return { ...outfit.colors, shirt: outfit.style.plaid[0] };
-  if (kind === 'shirtTie' && !(outfit.style.shirtOverPolo && outfit.polo)) return { ...outfit.colors, shirt: outfit.style.shirt ?? '#f4f3ef' };
+  if (kind === 'doublePolo' && outfit.style.over) return { ...outfit.colors, shirt: outfit.style.over };
+  if (kind === 'shirtTie') return { ...outfit.colors, shirt: outfit.style.shirt ?? '#f4f3ef' };
   return outfit.colors;
 }
 
@@ -1348,7 +1349,8 @@ function addEachGarment(rig, outfit) {
     // it); then the shirt's collar over the tie, so its points cover the knot's sides.
     const under = polo ? addCollar(rig, polo, [polo.built.shell], outfit.polo, POLO_UNDER_SHIRT_COLLAR) : null;
     const tie = addTie(rig, outer, polo, under, outfit.polo ?? outfit.colors?.shirt ?? '#3a5690', style);
-    addCollar(rig, outer, [outer.built.shell, ...(tie ? [tie] : []), ...knit], style.shirt, pop(POINT_COLLAR), 'shirtCollar');
+    // On the polo's collar too, so where the polo's comes up under the shirt's neck at the back, the shirt's lies over it.
+    addCollar(rig, outer, [outer.built.shell, ...(tie ? [tie] : []), ...(under ? [under] : []), ...knit], style.shirt, pop(POINT_COLLAR), 'shirtCollar');
   } else if (kind === 'plaid' && polo) {
     // Over her polo, buttoned or open: the plaid's collar first, a lower stand on its lower neck, then hers folded out over it and
     // the shirt (under an open plaid's, hers was hidden by its fronts and came through it in places). Popped, only hers stands up:
