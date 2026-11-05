@@ -535,8 +535,8 @@ describe('the other tops', () => {
     const shell = buildTop(body, POLO).shell;
     const opts = { placketWidth: POLO.placketWidth, over: [shell] };
     const shirt = buildCollar(shell, body, opts, SHIRT_COLLAR);
-    const polo = buildCollar(shell, body, opts);
-    // Two rows more down the fall (outside and in), and the outer two of them shaded darker on the outside, against one on a polo's.
+    const polo = buildCollar(shell, body, opts, { ...COLLAR, edgeBand: 0 });
+    // Two rows more down the fall (outside and in), and the outer two of them shaded darker on the outside, against one without.
     expect(shirt.verts.length - polo.verts.length).toBe(2 * 2 * (COLLAR.columns + 1));
     expect(shirt.shade.filter((k) => k === SHIRT_COLLAR.edgeShade).length).toBe(2 * (COLLAR.columns + 1));
     expect(SHIRT_COLLAR.edgeShade).toBeLessThan(COLLAR.edgeShade);

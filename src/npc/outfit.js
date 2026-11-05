@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildTop, buildInset, buttonShape, slitShape, layOnCloth, poloFields, tuckSleeves, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER } from './polo.js';
+import { buildTop, buildInset, buttonShape, slitShape, layOnCloth, poloFields, tuckSleeves, logoThread, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER } from './polo.js';
 import { buildTie } from './tie.js';
 import { shirtButtonsUndone } from './outfits.js';
 import { buildCropTop } from './crop.js';
@@ -586,7 +586,7 @@ export function reshirt(rig, outfit, color) {
  * stands (`rest`), both in root space, its normal, skin weights and `skin`, the map from one to the other. Needs her in her
  * rest pose.
  */
-function bodyData(rig, body) {
+export function bodyData(rig, body) {
   rig.root.updateMatrixWorld(true);
   body.skeleton.update();
   const g = body.geometry;
@@ -831,8 +831,8 @@ function addTop(rig, name, color, spec) {
 }
 
 /**
- * The polo's logo: a leaping hare, embroidered (drawn here: the farm's own brand, not anyone's real one), in cream thread on a
- * dark shirt and dark thread on a light one.
+ * The polo's logo: a leaping hare, embroidered (drawn here: the farm's own brand, not anyone's real one), in a coloured thread
+ * that stands out from the shirt (polo.js, logoThread).
  */
 let logoMap = null;
 function hareLogo() {
@@ -874,8 +874,8 @@ function hareLogo() {
 }
 
 function addLogo(rig, body, data, logo, tint) {
-  const light = 0.2126 * tint.r + 0.7152 * tint.g + 0.0722 * tint.b > 0.18;
-  const thread = light ? tint.clone().multiplyScalar(0.3) : new THREE.Color(0xeee6cf);
+  const shirt = tint.clone().convertLinearToSRGB();
+  const thread = new THREE.Color(logoThread([shirt.r, shirt.g, shirt.b]));
   const index = logo.tris.flat();
   const positions = logo.verts.map((q) => q.bind);
   skinnedFromArrays(
@@ -1321,7 +1321,8 @@ function addEachGarment(rig, outfit) {
   const style = outfit.style ?? {};
   const kind = style.kind ?? 'polo';
   const open = outfit.poloOpen ?? 0;
-  const pop = (spec) => (style.popped ? { ...spec, popped: true } : spec);
+  // Under a jumper an open collar keeps its done-up points: longer, they crumpled over the jumper's ribbed neck.
+  const pop = (spec) => ({ ...spec, ...(style.popped ? { popped: true } : {}), ...(outfit.jumper ? { openPoints: null } : {}) });
   let polo = null;
   let outer = null;
   const shirtTie = kind === 'shirtTie';

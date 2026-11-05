@@ -63,21 +63,25 @@ export const POLO = {
   blouse: 0.004,
   hemBand: 0,
   hemEase: null,
-  // Below the bust the front falls towards the waist instead of following her in under it.
-  hangSlope: 0.32, // metres back per metre down from the bust's furthest-forward point
-  hangMax: 0.035,
+  // Below the bust the front hangs nearly straight down towards the waist instead of following her in under it, then comes back
+  // in to her over the last `hangTuck` above the waist (null: it hangs straight on down to the hem).
+  hangSlope: 0.12, // metres back per metre down from the bust's furthest-forward point
+  hangMax: 0.15, // as far as any bust stands out
+  hangTuck: 0.1,
   hangReach: 2, // bins (2 cm) either side it looks for her furthest-forward point, so it bridges between her breasts
   bandShade: 0.84, // the neck band and cuffs, ribbed, a shade darker
   insideShade: 0.55, // the turned-in edge
   lips: ['neck', 'sleeve'], // which edges are turned in
-  // The placket: a strip down the front from the neck with five buttons.
+  // The placket: a strip down the front from the neck with five buttons, ending `placketPastBust` below the bottom of her bust
+  // (placketLength is for a body without one), the buttons spread evenly down it.
   placket: true,
-  placketLength: 0.155,
+  placketLength: 0.215,
+  placketPastBust: 0.015,
   placketWidth: 0.024,
   placketLift: 0.0022, // how far it stands proud of the shirt
   // How far down the placket each button is (m), from where the shirt meets her neck. The top one is above it, on the collar's
   // stand (buttoned right up); the rest are spaced evenly down from it.
-  buttons: [-0.008, 0.0285, 0.065, 0.1015, 0.138],
+  buttons: [-0.008, 0.0436, 0.0953, 0.1469, 0.1985],
   topButtonOpen: 0.006, // undone, a top button that sits on the placket (not the collar's stand) is at least this far below its top
   // A little embroidered logo on her left chest, as a brand's would be: centred this far across from her middle and down from
   // where the shirt meets her neck, this wide and high.
@@ -85,7 +89,7 @@ export const POLO = {
   buttonRadius: 0.0052,
   buttonShade: 0.72, // buttons a shade darker than the shirt
   open: 0, // how many buttons from the top are undone (dealt for each farm between the girl's limits)
-  veeWidths: [0, 0.017, 0.022, 0.027, 0.033, 0.04], // an open neck's V: half its width at the neckline, by buttons undone
+  veeWidths: [0, 0.018, 0.024, 0.03, 0.037, 0.045], // an open neck's V: half its width at the neckline, by buttons undone
   veeBows: [1, 1, 0.92, 0.8, 0.6, 0.5], // and how its sides curve out (below 1), opening round her bust the further it's undone
   veeStop: 0.009, // and where it stops, this far above the first button done up (all undone: the bottom of the placket)
   cleavage: 0.5, // with the neck open down to her bust, how dark the soft shadow down the middle is
@@ -115,8 +119,9 @@ export const JUMPER = {
   tucked: false,
   hemBand: 0.03,
   hemEase: 0.016,
-  hangSlope: 0.18,
-  hangMax: 0.05,
+  hangSlope: 0.1, // a little straighter than the polo's, so it never comes through under her bust
+  hangMax: 0.16,
+  hangTuck: null, // falling straight on down to its ribbed hem
   hangReach: 3,
   bandShade: 0.76,
   lips: ['neck', 'sleeve', 'hem'],
@@ -145,8 +150,9 @@ export const COAT = {
   cuffEase: 0.016,
   hemDrop: 0.08,
   hemBand: 0,
-  hangSlope: 0.18, // as the jumper's (any less and the jumper would come through under the bust)
-  hangMax: 0.05,
+  hangSlope: 0.1, // as the jumper's (any less and the jumper would come through under the bust)
+  hangMax: 0.16,
+  hangTuck: null, // straight on down: a wax jacket isn't drawn in at the waist
   bandShade: 0.9,
   insideShade: 0.4,
   lips: ['neck', 'sleeve', 'hem'],
@@ -197,8 +203,9 @@ export const PLAID = {
   hemDrop: 0.07,
   hemBand: 0,
   hemEase: null,
-  hangSlope: 0.25,
-  hangMax: 0.04,
+  hangSlope: 0.11, // a hair straighter than the polo under it
+  hangMax: 0.16,
+  hangTuck: null, // untucked, it hangs straight on down
   lips: ['neck', 'sleeve', 'hem'],
   placket: true,
   placketToHem: 0.015,
@@ -285,8 +292,8 @@ export const SHIRT = {
   elbowEase: 0.007, // and more round the elbow, where bending it (sat on a bale) brought her forearm through
   cuffButtons: true, // one button on the outside of each cuff
   bandShade: 0.94, // a cuff is the same cloth, only doubled
-  hangSlope: 0.25,
-  hangMax: 0.04,
+  hangSlope: 0.11, // a hair straighter than the polo under it
+  hangMax: 0.16,
   placket: true,
   placketToHem: 0.045, // down to just above the waistband
   placketWidth: 0.024,
@@ -430,6 +437,8 @@ export function buildTop(body, p = POLO) {
   mesh = subdivide(mesh, (A, B) => (Math.min(A.rest[1], B.rest[1]) < flatBelow ? 0 : onArm(A) || onArm(B) ? p.armRound : p.round));
   // Even out its skinning, so it doesn't crease across her shoulders when her arms reach forward (smoothSkinning).
   if (p.skinSmoothing) smoothSkinning(mesh, p.skinSmoothing, 0.5);
+  // A placket down past her bust, measured on her (the V is cut to its buttons, so this comes first).
+  if (p.placket && p.placketPastBust != null && p.placketToHem == null) p = pastBust(mesh, body, p, F.neckField);
   // An open neck: a V cut into the front of the neckline, down to just above the first button done up.
   const vee = p.open ? openNeck(mesh, body, p, F.neckField) : null;
   if (vee) {
@@ -656,6 +665,48 @@ function addSkirt(mesh, body, p) {
 }
 
 /**
+ * The placket made long enough to end `placketPastBust` below the bottom of her bust, its buttons spread evenly down it from the
+ * top one: the bottom of her bust is the lowest 1 cm band, below its fullest point, where her front still stands more than halfway
+ * out from her chest to that point (across the middle of either breast). A body without a bust keeps `placketLength`.
+ */
+function pastBust(mesh, body, p, neckField) {
+  const neck = body.bones.Neck;
+  const bands = new Map();
+  for (const { rest: [x, y, z] } of body.verts) {
+    const dx = Math.abs(x - neck[0]);
+    if (dx < 0.03 || dx > 0.09 || z < neck[2]) continue;
+    const k = Math.round((neck[1] - y) * 100);
+    bands.set(k, Math.max(bands.get(k) ?? -Infinity, z));
+  }
+  const near = [...bands.entries()].filter(([k]) => k >= 8 && k <= 20);
+  const chest = [...bands.entries()].filter(([k]) => k >= 24 && k <= 30).map(([, z]) => z);
+  if (!near.length || !chest.length) return p;
+  const [tipBand, tip] = near.reduce((a, b) => (b[1] > a[1] ? b : a));
+  const back = Math.min(...chest);
+  if (tip - back < 0.03) return p;
+  const bottom = Math.max(...[...bands.entries()].filter(([k, z]) => k >= tipBand && k <= 28 && z > (tip + back) / 2).map(([k]) => k));
+  const top = neckTop(mesh, body, p, neckField);
+  if (top === null) return p;
+  const placketLength = top - (neck[1] - bottom / 100) + p.placketPastBust;
+  const [first] = p.buttons;
+  const stretch = (placketLength - (p.placketLength - p.buttons.at(-1)) - first) / (p.buttons.at(-1) - first);
+  return { ...p, placketLength, buttons: p.buttons.map((d) => first + (d - first) * stretch) };
+}
+
+/** The round neckline's height at the middle of her front, found by rays from in front on the rounded shirt before it's cut. */
+function neckTop(mesh, body, p, neckField) {
+  const neck = body.bones.Neck;
+  const x0 = neck[0];
+  const near = (v) => Math.abs(v.rest[0] - x0) < 0.05 && v.rest[2] > neck[2] && v.rest[1] > neck[1] - 0.15;
+  const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
+  for (let y = neck[1] + p.neckCap + 0.005; y > neck[1] - 0.1; y -= 0.001) {
+    const h = rayHit(front, [x0, y, neck[2] + 0.6], [0, 0, -1]);
+    if (h && neckField(inTriangle(front, h.tri, h.bary)) <= 0) return y;
+  }
+  return null;
+}
+
+/**
  * The V of an open neck, worked out on the rounded shirt before it's cut: `top`, the round neckline's height at the middle of
  * her front; `bottom`, just above the first button done up; `halfWidth(y)`, how far either side of the middle it reaches at a
  * height; `field`, above 0 inside the V (only on her front, so her back is never cut by it).
@@ -663,13 +714,7 @@ function addSkirt(mesh, body, p) {
 function openNeck(mesh, body, p, neckField) {
   const neck = body.bones.Neck;
   const x0 = neck[0];
-  const near = (v) => Math.abs(v.rest[0] - x0) < 0.05 && v.rest[2] > neck[2] && v.rest[1] > neck[1] - 0.15;
-  const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
-  let top = null;
-  for (let y = neck[1] + p.neckCap + 0.005; y > neck[1] - 0.1 && top === null; y -= 0.001) {
-    const h = rayHit(front, [x0, y, neck[2] + 0.6], [0, 0, -1]);
-    if (h && neckField(inTriangle(front, h.tri, h.bary)) <= 0) top = y;
-  }
+  const top = neckTop(mesh, body, p, neckField);
   if (top === null) return null;
   const open = Math.min(p.open, p.buttons.length);
   const bottom = top - (open === p.buttons.length ? p.placketLength - 0.004 : p.buttons[open] - p.veeStop);
@@ -685,9 +730,22 @@ function openNeck(mesh, body, p, neckField) {
   return { top, bottom, halfWidth, field };
 }
 
+// The logo's embroidery threads, all coloured; the one that stands out most from the shirt is used.
+export const LOGO_THREADS = ['#22335e', '#1e4a33', '#7a1f2b', '#d1a93a']; // navy, bottle green, burgundy, gold
+
+/** The logo's thread for a shirt of colour `[r, g, b]` (0 to 1, as displayed): the one furthest from it, weighted as the eye is. */
+export function logoThread([r, g, b]) {
+  const rgb = (hex) => [0, 2, 4].map((k) => parseInt(hex.slice(1 + k, 3 + k), 16) / 255);
+  const far = (hex) => {
+    const [R, G, B] = rgb(hex);
+    return 2 * (R - r) ** 2 + 4 * (G - g) ** 2 + 3 * (B - b) ** 2;
+  };
+  return LOGO_THREADS.reduce((a, c) => (far(c) > far(a) ? c : a));
+}
+
 /**
- * Below the bust the shirt falls towards the waist rather than following her in under it. Worked out in the rest frame (her
- * front is +z) and carried back to the bind frame through each point's skin.
+ * Below the bust the shirt hangs nearly straight down rather than following her in under it, coming back in to her just above the
+ * waist (`hangTuck`). Worked out in the rest frame (her front is +z) and carried back to the bind frame through each point's skin.
  */
 function hang(mesh, body, p, F) {
   const { bones, boneNames } = body;
@@ -722,7 +780,7 @@ function hang(mesh, body, p, F) {
     if (r[2] >= want) continue;
     // Not at her sides, which are already upright.
     const sides = 1 - smooth01((Math.abs(r[0] - neck[0]) - 0.09) / 0.05);
-    const tuck = p.tucked ? smooth01((v.rest[1] - (body.waist + 0.01)) / 0.06) : 1;
+    const tuck = p.hangTuck ? smooth01((v.rest[1] - (body.waist + 0.01)) / p.hangTuck) : 1;
     const dz = Math.min(p.hangMax, want - r[2]) * sides * tuck;
     if (dz > 0) v.bind = add(v.bind, unskinDir(v.skin, [0, 0, dz]));
   }

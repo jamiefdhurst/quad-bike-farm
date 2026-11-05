@@ -16,26 +16,34 @@ const smooth01 = (t) => {
 };
 
 export const COLLAR = {
-  stand: 0.021, // height of the stand at the back (m)
-  standFront: 0.016, // and at the front
-  lean: 0.003, // the stand leans in towards her neck by this at the top
+  stand: 0.03, // height of the stand at the back (m), so the collar stands up her neck there rather than lying on her shoulders
+  standFront: 0.017, // and at the front
+  lean: 0.004, // the stand leans in towards her neck by this at the top
   roll: 0.009, // how far the fold rolls out over the top of the stand
-  out: 0.026, // how far the fall reaches out from the fold, at the back
-  drop: 0.01, // how far below the neckline the fall's edge lies, beyond covering the stand
-  pointOut: 0.02, // the points: this much further out at the ends
-  pointDrop: 0.03, // and this much further down
-  pointSpread: 0.75, // turned this much out towards her shoulders, so each wing's front edge runs down and outward
-  pointReach: 0.9, // over this many radians from each end
+  out: 0.024, // how far the fall reaches out from the fold, at the back
+  drop: 0.007, // how far below the neckline the fall's edge lies, beyond covering the stand
+  pointOut: 0.008, // the points: this much further out at the ends (short, so the collar isn't heavy at the front)
+  pointDrop: 0.013, // and this much further down
+  pointSpread: 0.6, // turned this much out towards her shoulders, so each wing's front edge runs down and outward
+  pointReach: 0.75, // over this many radians from each end
   tipRound: 0.05, // radians at each end over which the point's corner is rounded, only slightly
   clear: 0.003, // how far the fall lies off what's under it
   feel: 0.004, // and it looks this far either side down the fall for anything higher under it
+  deep: 0.02, // and ignores anything further below it than this (seen through an open neck)
   thickness: 0.0016,
   foldThin: 0.3, // thinner where it folds over the top of the stand, or the inside shows through the sharp bend
   closedGap: 0.0005, // done up, the stand closes over the top of the placket, this far either side of her middle
   placketClear: 0.002, // and the wings start just beyond the placket's edges, leaving it showing
   smoothing: 4, // passes evening out the fall after it's laid on what's under it, so no fold flips over
-  edgeShade: 0.9, // the fall's outer edge, a shade darker
+  edgeBand: 0.45, // a stitched edge, the outer part of the fall's last strip, so its outline reads against the shirt
+  edgeShade: 0.72, // that edge, darker
   underShade: 0.72, // its underside
+  // Open, the collar's front ends are turned back: the points longer and spread wider, lying back either side of the V rather
+  // than standing up beside it.
+  openPoints: 1.7, // the points this many times as long
+  openSpread: 0.45,
+  popRise: 0.038, // popped: how far the fall stands up above the fold, at the back
+  popOut: 0.012, // and how far it flares out from her neck
   columns: 72,
 };
 
@@ -55,6 +63,8 @@ export const COAT_COLLAR = {
   feel: 0.006,
   thickness: 0.003,
   placketClear: 0.003,
+  edgeBand: 0,
+  openPoints: null, // its open neck's collar is its own (above)
   edgeShade: 0.85,
   underShade: 0.6,
 };
@@ -70,6 +80,7 @@ export const SHIRT_COLLAR = {
   pointSpread: 0.6,
   tipRound: 0.02,
   thickness: 0.0018,
+  openPoints: null, // worn open, its collar is as it is done up
   edgeBand: 0.5, // a stitched edge, the outer half of the fall's last strip (about 2.5 mm at the back, more at the points)
   edgeShade: 0.6, // dark enough to read against the check
 };
@@ -105,16 +116,17 @@ export const POINT_COLLAR = {
   thickness: 0.0022,
   smoothing: 2, // evened out less, so it keeps a crisp line
   lie: 0.35, // its points pressed down on to the shirt from about a third of the way down the fall
+  deep: Infinity, // pressed down on to whatever is under them, however far
   edgeShade: 1, // no darker edge: on a white shirt it read as a line drawn round it
   edgeBand: 0,
   underShade: 0.94,
 };
 
 // The polo's collar under the shirt: lying close on the polo, so the shirt over it doesn't show it through.
-export const POLO_UNDER_SHIRT_COLLAR = { ...COLLAR, stand: 0.017, standFront: 0.013, out: 0.022, drop: 0.006, pointDrop: 0.022, clear: 0.0015 };
+export const POLO_UNDER_SHIRT_COLLAR = { ...COLLAR, stand: 0.017, standFront: 0.013, out: 0.022, drop: 0.006, pointDrop: 0.012, clear: 0.0015 };
 
 // The over-polo's collar: a little smaller than her own polo's, so hers shows round its edge.
-export const OVER_COLLAR = { ...COLLAR, stand: 0.018, standFront: 0.014, out: 0.022, pointOut: 0.016, pointDrop: 0.025 };
+export const OVER_COLLAR = { ...COLLAR, stand: 0.026, standFront: 0.015, out: 0.02, pointOut: 0.006, pointDrop: 0.011 };
 
 /**
  * Builds the collar. `shirt` is the garment polo's shell (its neck edge is the points tagged 'neck'), `vee` its open neck if
@@ -123,6 +135,7 @@ export const OVER_COLLAR = { ...COLLAR, stand: 0.018, standFront: 0.014, out: 0.
  * top corners of the V. Returns { verts, tris, shade }, verts carrying bind, rest, weights and skin like the shirt's.
  */
 export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p = COLLAR) {
+  if (vee && p.openPoints) p = { ...p, pointOut: p.pointOut * p.openPoints, pointDrop: p.pointDrop * p.openPoints, pointSpread: p.openSpread };
   const neck = body.bones.Neck;
   const [x0, , z0] = neck;
   const angleOf = (r) => (((Math.atan2(r[0] - x0, r[2] - z0) % TAU) + TAU) % TAU); // 0 at her front, rising towards her left
@@ -208,7 +221,7 @@ export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p =
     const fold = add(add(T, scale(O, p.roll)), scale(U, 0.003));
     // Popped, the fall is turned up: it stands up round her neck from the fold, flaring out, higher towards the points.
     const far = p.popped
-      ? add(add(T, scale(dir, p.out * 0.6 + p.pointOut * k * 0.7)), scale(U, p.out * 0.95 + p.pointDrop * k * 0.25))
+      ? add(add(T, scale(dir, p.popOut + p.pointOut * k * 0.7)), scale(U, p.popRise + p.pointDrop * k * 0.25))
       : add(add(T, scale(dir, p.out + p.pointOut * k)), scale(U, -(h + p.drop + p.pointDrop * k)));
     const bez = (t) => add(add(scale(T, (1 - t) * (1 - t)), scale(fold, 2 * t * (1 - t))), scale(far, t * t));
     // Lifted on to what's under it, along a line from a point inside her chest below the neck.
@@ -222,6 +235,7 @@ export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p =
         return;
       }
       const D = norm(sub(q, centre));
+      const mine0 = dot(sub(q, centre), D);
       // What's under it here, and a few millimetres either side down the fall: it rests on the highest of them, so a narrow
       // ridge between two of its points (a jumper's neck) can't come through.
       const down = norm(sub(bez(Math.min(1, t + 0.05)), bez(Math.max(0, t - 0.05))));
@@ -234,6 +248,9 @@ export function buildCollar(shirt, body, { vee = null, placketWidth, over }, p =
         if (!hit) continue;
         const v = inTriangle(local, hit.tri, hit.bary);
         const level = dot(sub(v.rest, centre), D);
+        // Over an open neck's V a ray can pass through the gap and find cloth deep inside her; lying on that, or skinned like
+        // it, twisted the end of the wing.
+        if (vee && level < mine0 - p.deep) continue;
         if (level > surface) surface = level;
         if (!under || d === 0) under = v;
       }
