@@ -63,11 +63,9 @@ export const POLO = {
   blouse: 0.004,
   hemBand: 0,
   hemEase: null,
-  // Below the bust the front hangs nearly straight down towards the waist instead of following her in under it, then comes back
-  // in to her over the last `hangTuck` above the waist (null: it hangs straight on down to the hem).
-  hangSlope: 0.12, // metres back per metre down from the bust's furthest-forward point
-  hangMax: 0.15, // as far as any bust stands out
-  hangTuck: 0.1,
+  // Below the bust the front falls towards the waist instead of following her in under it.
+  hangSlope: 0.32, // metres back per metre down from the bust's furthest-forward point
+  hangMax: 0.035,
   hangReach: 2, // bins (2 cm) either side it looks for her furthest-forward point, so it bridges between her breasts
   bandShade: 0.84, // the neck band and cuffs, ribbed, a shade darker
   insideShade: 0.55, // the turned-in edge
@@ -81,8 +79,9 @@ export const POLO = {
   placketLift: 0.0022, // how far it stands proud of the shirt
   // How far down the placket each button is (m), from where the shirt meets her neck. The top one is above it, on the collar's
   // stand (buttoned right up); the rest are spaced evenly down from it.
-  buttons: [-0.008, 0.0436, 0.0953, 0.1469, 0.1985],
+  buttons: [-0.005, 0.0459, 0.0968, 0.1476, 0.1985],
   topButtonOpen: 0.006, // undone, a top button that sits on the placket (not the collar's stand) is at least this far below its top
+  topButtonSink: 0.0025, // one on the collar's stand sits this far back from the shirt's face, as the stand leans in towards her neck
   // A little embroidered logo on her left chest, as a brand's would be: centred this far across from her middle and down from
   // where the shirt meets her neck, this wide and high.
   logo: { across: 0.07, down: 0.072, width: 0.025, height: 0.018, lift: 0.0007 },
@@ -95,6 +94,8 @@ export const POLO = {
   cleavage: 0.5, // with the neck open down to her bust, how dark the soft shadow down the middle is
   veeShadow: 0.18, // and the shadow along the V's edges, where the shirt's fronts stand over her skin
   cleavageWidth: 0.007, // either side of her middle
+  bustRound: 0.38, // and each breast shaded darker away from its fullest point (towards her middle and underneath), so the two
+  bustRadius: 0.075, // read as rounded shapes rather than flat faces with a line down them; over about this far
 };
 
 // The barn jumper, a size too big: down to the wrist and over the shorts, a crew neck low enough at the front to show the
@@ -119,9 +120,8 @@ export const JUMPER = {
   tucked: false,
   hemBand: 0.03,
   hemEase: 0.016,
-  hangSlope: 0.1, // a little straighter than the polo's, so it never comes through under her bust
-  hangMax: 0.16,
-  hangTuck: null, // falling straight on down to its ribbed hem
+  hangSlope: 0.18,
+  hangMax: 0.05,
   hangReach: 3,
   bandShade: 0.76,
   lips: ['neck', 'sleeve', 'hem'],
@@ -150,9 +150,8 @@ export const COAT = {
   cuffEase: 0.016,
   hemDrop: 0.08,
   hemBand: 0,
-  hangSlope: 0.1, // as the jumper's (any less and the jumper would come through under the bust)
-  hangMax: 0.16,
-  hangTuck: null, // straight on down: a wax jacket isn't drawn in at the waist
+  hangSlope: 0.18, // as the jumper's (any less and the jumper would come through under the bust)
+  hangMax: 0.05,
   bandShade: 0.9,
   insideShade: 0.4,
   lips: ['neck', 'sleeve', 'hem'],
@@ -203,9 +202,8 @@ export const PLAID = {
   hemDrop: 0.07,
   hemBand: 0,
   hemEase: null,
-  hangSlope: 0.11, // a hair straighter than the polo under it
-  hangMax: 0.16,
-  hangTuck: null, // untucked, it hangs straight on down
+  hangSlope: 0.25,
+  hangMax: 0.04,
   lips: ['neck', 'sleeve', 'hem'],
   placket: true,
   placketToHem: 0.015,
@@ -292,8 +290,8 @@ export const SHIRT = {
   elbowEase: 0.007, // and more round the elbow, where bending it (sat on a bale) brought her forearm through
   cuffButtons: true, // one button on the outside of each cuff
   bandShade: 0.94, // a cuff is the same cloth, only doubled
-  hangSlope: 0.11, // a hair straighter than the polo under it
-  hangMax: 0.16,
+  hangSlope: 0.25,
+  hangMax: 0.04,
   placket: true,
   placketToHem: 0.045, // down to just above the waistband
   placketWidth: 0.024,
@@ -744,8 +742,8 @@ export function logoThread([r, g, b]) {
 }
 
 /**
- * Below the bust the shirt hangs nearly straight down rather than following her in under it, coming back in to her just above the
- * waist (`hangTuck`). Worked out in the rest frame (her front is +z) and carried back to the bind frame through each point's skin.
+ * Below the bust the shirt falls towards the waist rather than following her in under it. Worked out in the rest frame (her
+ * front is +z) and carried back to the bind frame through each point's skin.
  */
 function hang(mesh, body, p, F) {
   const { bones, boneNames } = body;
@@ -780,7 +778,7 @@ function hang(mesh, body, p, F) {
     if (r[2] >= want) continue;
     // Not at her sides, which are already upright.
     const sides = 1 - smooth01((Math.abs(r[0] - neck[0]) - 0.09) / 0.05);
-    const tuck = p.hangTuck ? smooth01((v.rest[1] - (body.waist + 0.01)) / p.hangTuck) : 1;
+    const tuck = p.tucked ? smooth01((v.rest[1] - (body.waist + 0.01)) / 0.06) : 1;
     const dz = Math.min(p.hangMax, want - r[2]) * sides * tuck;
     if (dz > 0) v.bind = add(v.bind, unskinDir(v.skin, [0, 0, dz]));
   }
@@ -917,7 +915,7 @@ function buildPlacket(mesh, body, p, vee) {
       // (or, with no shirt under that end, down on its half of the placket as before).
       const on = (x) => {
         const at = rowAt(top, x, x, 1);
-        return at && { centre: [x, top - d0, at.under[0].rest[2] - 0.0005], normal: norm([0, 0.15, 1]), anchor: at.under[0] };
+        return at && { centre: [x, top - d0, at.under[0].rest[2] - 0.0005 - (p.topButtonSink ?? 0)], normal: norm([0, 0.35, 1]), anchor: at.under[0] };
       };
       const b = undone ? on(x0 + split(top) + w / 4) : on(x0);
       if (b || !undone) {
@@ -1083,15 +1081,27 @@ export function buildInset(body, vee, p = POLO) {
   // Her cleavage, drawn on: her body is a few flat faces there with no dip of its own to show. A soft shadow down her middle,
   // fading in from a little above the fullest part of her bust (the furthest-forward point of her chest either side).
   let apex = null;
+  const tips = {}; // each breast's fullest point, by side
   for (const v of verts) {
     const r = v.rest;
     const dx = Math.abs(r[0] - x0);
-    if (dx > 0.04 && dx < 0.12 && r[1] < vee.top && r[1] > vee.top - 0.25 && (!apex || r[2] > apex[2])) apex = r;
+    if (!(dx > 0.04 && dx < 0.12 && r[1] < vee.top && r[1] > vee.top - 0.25)) continue;
+    if (!apex || r[2] > apex[2]) apex = r;
+    const side = Math.sign(r[0] - x0);
+    if (!tips[side] || r[2] > tips[side][2]) tips[side] = r;
   }
   const from = apex ? apex[1] + 0.09 : -Infinity;
+  // Rounded: darker with distance from her fullest point on that side, below a little above it (her upper chest stays light).
+  const round = (r) => {
+    const tip = tips[Math.sign(r[0] - x0)] ?? apex;
+    if (!tip || !p.bustRound) return 1;
+    const d = Math.hypot(r[0] - tip[0], r[1] - tip[1]);
+    return 1 - p.bustRound * smooth01((d - 0.015) / p.bustRadius) * smooth01((tip[1] + 0.05 - r[1]) / 0.04);
+  };
   patch.shade = patch.verts.map((v) => {
-    const cleft = cleavageShade(v.rest[0] - x0, from - v.rest[1], { strength: p.cleavage, width: p.cleavageWidth, fade: 0.04 });
-    return cleft * (1 - p.veeShadow * (1 - smooth01(vee.field(v) / 0.008)));
+    const across = v.rest[0] - x0;
+    const cleft = cleavageShade(across, from - v.rest[1], { strength: p.cleavage, width: p.cleavageWidth, fade: 0.04 });
+    return cleft * round(v.rest) * (1 - p.veeShadow * (1 - smooth01(vee.field(v) / 0.008)));
   });
   return patch;
 }

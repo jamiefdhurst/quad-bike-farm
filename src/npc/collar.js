@@ -17,8 +17,8 @@ const smooth01 = (t) => {
 
 export const COLLAR = {
   stand: 0.03, // height of the stand at the back (m), so the collar stands up her neck there rather than lying on her shoulders
-  standFront: 0.017, // and at the front
-  lean: 0.004, // the stand leans in towards her neck by this at the top
+  standFront: 0.012, // and at the front, low where the ends meet
+  lean: 0.006, // the stand leans in towards her neck by this at the top, so it closes round it
   roll: 0.009, // how far the fold rolls out over the top of the stand
   out: 0.024, // how far the fall reaches out from the fold, at the back
   drop: 0.007, // how far below the neckline the fall's edge lies, beyond covering the stand
@@ -33,7 +33,7 @@ export const COLLAR = {
   thickness: 0.0016,
   foldThin: 0.3, // thinner where it folds over the top of the stand, or the inside shows through the sharp bend
   closedGap: 0.0005, // done up, the stand closes over the top of the placket, this far either side of her middle
-  placketClear: 0.002, // and the wings start just beyond the placket's edges, leaving it showing
+  placketClear: -0.006, // and the wings start this far beyond the placket's edges (in over them, so they nearly meet)
   smoothing: 4, // passes evening out the fall after it's laid on what's under it, so no fold flips over
   edgeBand: 0.45, // a stitched edge, the outer part of the fall's last strip, so its outline reads against the shirt
   edgeShade: 0.72, // that edge, darker

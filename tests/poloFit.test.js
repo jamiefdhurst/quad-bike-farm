@@ -2,8 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { buildAllGirls } from './helpers/girlModels.js';
 import { buildTop, logoThread, LOGO_THREADS, POLO } from '../src/npc/polo.js';
 
-// The polo's fit on each girl (#572): hanging straight down from her bust rather than following her in under it, and its placket
-// ending a little past her bust.
+// The polo on each girl (#572): its placket ending a little past her bust, and the logo stitched in a colour that stands out.
 
 const hex = (h) => [0, 2, 4].map((k) => parseInt(h.slice(1 + k, 3 + k), 16) / 255);
 
@@ -45,21 +44,6 @@ describe('the polo on each girl', () => {
     return bands;
   };
   const fullest = (bands) => [...bands.entries()].filter(([k]) => k >= 8 && k <= 20).reduce((a, b) => (b[1] > a[1] ? b : a));
-
-  it('hangs straight down from the fullest point of her bust to the tuck, not in under it', () => {
-    for (const { id, data, shell } of girls) {
-      const shirt = front(data, shell.verts.filter((v) => !v.apart));
-      const skin = front(data, data.verts);
-      const [tipBand, tip] = fullest(shirt);
-      // There is a hollow under her bust to bridge.
-      const under = [...skin.entries()].filter(([k]) => k > tipBand && k <= 24);
-      expect(Math.min(...under.map(([, z]) => z)), id).toBeLessThan(tip - 0.06);
-      // Down to 24 cm below her neck (above the tuck) the shirt is no more than its slope back from the tip.
-      for (let k = tipBand + 1; k <= 24; k++) {
-        if (shirt.has(k)) expect(shirt.get(k), `${id} ${k} cm`).toBeGreaterThan(tip - POLO.hangSlope * (k - tipBand) * 0.01 - 0.01);
-      }
-    }
-  });
 
   it('ends its placket a little past her bust', () => {
     for (const { id, data, placket } of girls) {
