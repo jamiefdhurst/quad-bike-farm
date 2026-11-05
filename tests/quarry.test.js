@@ -35,19 +35,17 @@ describe('the gravel pit: how it is dealt', () => {
     for (let seed = 1; seed <= 60; seed++) {
       const q = createQuarry(dealtLayout(LAYOUT, seed * 7919));
       const { rect, pit } = q;
-      expect(pit.depth, `seed ${seed}`).toBeGreaterThanOrEqual(14);
-      expect(pit.depth).toBeLessThanOrEqual(17);
+      expect(pit.depth, `seed ${seed}`).toBeGreaterThanOrEqual(13);
+      expect(pit.depth).toBeLessThanOrEqual(16);
       for (let i = 0; i < 72; i++) {
         const a = (i / 72) * Math.PI * 2;
         const p = q.frameAt(a, q.rimAt(a));
         expect(Math.min(p.x - rect.minX, rect.maxX - p.x, p.z - rect.minZ), `seed ${seed} rim at ${i}`).toBeGreaterThan(5.9);
         expect(q.runAt(a)).toBeGreaterThan(7);
       }
-      // The steep wall is steeper than the rest on average, and has two chutes in it.
-      expect(pit.steepRun).toBeLessThan(pit.gentleRun - 2);
-      for (const b of pit.buttresses) expect(q.runAt(b.at)).toBeLessThan(pit.steepRun);
-      expect(pit.chutes).toHaveLength(2);
-      for (const c of pit.chutes) expect(q.runAt(c.at)).toBeGreaterThan(pit.steepRun);
+      // The climb wall is longer and gentler than the rest, with short spurs of hard rock on its flanks.
+      expect(pit.climbRun).toBeGreaterThan(pit.gentleRun + 2);
+      for (const b of pit.buttresses) expect(q.runAt(b.at)).toBeLessThan(pit.climbRun);
       expect(pit.heaps.length).toBeGreaterThanOrEqual(1);
     }
   });
@@ -72,49 +70,45 @@ describe('the gravel pit: the ground', () => {
     const p = quarry.pit;
     const lip = quarry.frameAt(p.road.from + Math.PI, quarry.rimAt(p.road.from + Math.PI) + 3);
     const rimGround = heights.heightAt(lip.x, lip.z);
-    const floorPoint = quarry.frameAt(p.steepAt + Math.PI, quarry.floorEdge(p.steepAt + Math.PI) - 12);
+    const floorPoint = quarry.frameAt(p.climbAt + Math.PI, quarry.floorEdge(p.climbAt + Math.PI) - 12);
     const floor = heights.heightAt(floorPoint.x, floorPoint.z) - quarry.heapRise(floorPoint.x, floorPoint.z) + quarry.pondCut(floorPoint.x, floorPoint.z);
     expect(rimGround - floor).toBeGreaterThan(p.depth - 1.2);
     expect(rimGround - floor).toBeLessThan(p.depth + 1.2);
   });
 
-  it('has banks between 25 and 55 degrees on the walls, the steep wall the steepest, and no cliffs or spikes anywhere in the field', () => {
+  it('has banks no steeper than 76 degrees anywhere in the field, and the other walls steeper than the climb wall', () => {
     const rect = quarry.rect;
     let worst = 0;
     for (let x = rect.minX + 1; x < rect.maxX - 1; x += 1.5) {
       for (let z = rect.minZ + 1; z < rect.maxZ - 1; z += 1.5) worst = Math.max(worst, slopeAt(heights, x, z));
     }
     expect(worst).toBeLessThan(76);
-    // Up the middle of the steep wall, the average slope is steep but a quad could try it.
-    const a = quarry.pit.buttresses[0].at; // the steep wall where there is no chute
-    const top = quarry.frameAt(a, quarry.rimAt(a));
-    const foot = quarry.frameAt(a, quarry.floorEdge(a));
-    const mean = deg((heights.heightAt(top.x, top.z) - heights.heightAt(foot.x, foot.z)) / Math.hypot(top.x - foot.x, top.z - foot.z));
-    expect(mean).toBeGreaterThan(36);
-    expect(mean).toBeLessThan(56);
-    // And the easy walls are gentler.
-    const e = quarry.pit.steepAt + Math.PI;
-    const etop = quarry.frameAt(e, quarry.rimAt(e));
-    const efoot = quarry.frameAt(e, quarry.floorEdge(e));
-    const easy = deg((heights.heightAt(etop.x, etop.z) - heights.heightAt(efoot.x, efoot.z)) / Math.hypot(etop.x - efoot.x, etop.z - efoot.z));
-    expect(easy).toBeLessThan(mean - 4);
+    const mean = (a) => {
+      const top = quarry.frameAt(a, quarry.rimAt(a));
+      const foot = quarry.frameAt(a, quarry.floorEdge(a));
+      return deg((heights.heightAt(top.x, top.z) - heights.heightAt(foot.x, foot.z)) / Math.hypot(top.x - foot.x, top.z - foot.z));
+    };
+    const e = quarry.pit.climbAt + Math.PI;
+    expect(mean(e)).toBeGreaterThan(mean(quarry.pit.climbAt) + 6);
   });
 
-  it('has chutes in the steep wall you can climb at 30 degrees or less on average (a 20 m wall at 36 to 38 was not climbable), and buttresses you cannot', () => {
+  it('has a climb wall a quad can ride straight up anywhere across the line, 30 degrees or less on average (a 20 m wall at 36 to 38 was not climbable), and buttresses you cannot', () => {
     for (const seed of [51, 123, 4242]) {
       const { quarry: q, heights: h } = make(seed);
-      for (const c of q.pit.chutes) {
-        const top = q.frameAt(c.at, q.rimAt(c.at));
-        const foot = q.frameAt(c.at, q.floorEdge(c.at));
+      // Along the middle and a few metres either side of it, every line is as gentle.
+      for (const off of [-0.06, -0.03, 0, 0.03, 0.06]) {
+        const a = q.pit.climbAt + off;
+        const top = q.frameAt(a, q.rimAt(a));
+        const foot = q.frameAt(a, q.floorEdge(a));
         const slope = deg((h.heightAt(top.x, top.z) - h.heightAt(foot.x, foot.z)) / Math.hypot(top.x - foot.x, top.z - foot.z));
-        expect(slope, `seed ${seed}`).toBeLessThan(30);
+        expect(slope, `seed ${seed} at ${off}`).toBeLessThan(30);
       }
     }
     for (const b of quarry.pit.buttresses) {
       const top = quarry.frameAt(b.at, quarry.rimAt(b.at));
       const foot = quarry.frameAt(b.at, quarry.floorEdge(b.at));
       const slope = deg((heights.heightAt(top.x, top.z) - heights.heightAt(foot.x, foot.z)) / Math.hypot(top.x - foot.x, top.z - foot.z));
-      expect(slope).toBeGreaterThan(36);
+      expect(slope).toBeGreaterThan(30);
     }
   });
 
@@ -144,7 +138,7 @@ describe('the gravel pit: the ground', () => {
     expect(sideOf(main)).toBe(-sideOf(other));
     for (const pts of [main, other]) {
       const g = grade(pts);
-      expect(g.down).toBeGreaterThan(quarry.pit.depth - 1.5);
+      expect(g.down).toBeGreaterThan(quarry.pit.depth - 2); // the foot ends a little above the floor
       expect(g.steepest).toBeLessThan(19);
     }
     expect(quarry.roadLength).toBeGreaterThan(100);
@@ -198,7 +192,7 @@ describe('the gravel pit: the ground', () => {
   });
 
   it('is loose underfoot: the walls loosest, the floor and road less, none in the field', () => {
-    const a = quarry.pit.steepAt;
+    const a = quarry.pit.climbAt;
     const wall = quarry.frameAt(a, quarry.rimAt(a) - quarry.runAt(a) * 0.5);
     const [fx, fz] = quarry.climb.points[0];
     const road = quarry.roadPoints[quarry.roadPoints.length - 3];
@@ -279,7 +273,7 @@ describe('the gravel pit: its field', () => {
 });
 
 describe('the gravel pit: the climb and the plants', () => {
-  it('has start cones on the floor, a gate on the wall and the finish over the lip, all in a line up the steep wall', () => {
+  it('has start cones on the floor, a gate on the wall and the finish over the lip, all in a line up the climb wall', () => {
     const [start, mid, finish] = quarry.climb.points;
     expect(quarry.inPit(...start)).toBe(true);
     expect(quarry.inPit(...mid)).toBe(true);
@@ -293,17 +287,17 @@ describe('the gravel pit: the climb and the plants', () => {
     expect(gates[0].tx * (finish[0] - start[0]) + gates[0].tz * (finish[1] - start[1])).toBeGreaterThan(0);
   });
 
-  it('has gates wide enough to take in both chutes, for every farm', () => {
+  it('keeps every buttress off the line up the climb wall and outside its gates, for every farm', () => {
     for (let seed = 1; seed <= 40; seed++) {
       const q = createQuarry(dealtLayout(LAYOUT, seed * 6151));
       const [, , finish] = q.climb.points;
       const g = climbGates(q.climb)[2];
-      for (const c of q.pit.chutes) {
-        const p = q.frameAt(c.at, q.rimAt(c.at) + 5);
+      expect(q.climb.gateHalf).toBe(9);
+      for (const b of q.pit.buttresses) {
+        const p = q.frameAt(b.at, q.rimAt(b.at) + 5);
         const lateral = (p.x - finish[0]) * -g.tz + (p.z - finish[1]) * g.tx;
-        expect(Math.abs(lateral), `seed ${seed}`).toBeLessThanOrEqual(q.climb.gateHalf);
+        expect(Math.abs(lateral), `seed ${seed}`).toBeGreaterThan(q.climb.gateHalf);
       }
-      expect(q.climb.gateHalf).toBeLessThan(26);
     }
   });
 

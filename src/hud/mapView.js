@@ -178,7 +178,7 @@ export class MapView {
       }
     }
 
-    // The gravel pit: the walls, the floor, the haul road winding down, the heaps and the line up the steep wall.
+    // The gravel pit: the walls, the floor, the haul road winding down, the heaps and the line up the climb wall.
     if (f.quarryPit) {
       const qp = f.quarryPit;
       const loop = (pts, colour) => {

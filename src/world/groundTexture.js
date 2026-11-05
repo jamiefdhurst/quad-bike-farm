@@ -478,7 +478,7 @@ function paintWoods(ctx, toPx, s, fields, random, autumn = false) {
 
 /**
  * The gravel pit (world/quarry.js): a rough, scrubby field round it; the walls in bands of buff, orange, grey and pale sand (a band is a depth,
- * so they run level round the bowl with a wobble, as strata do), loose scree at the toe and where the chutes are; a floor of packed grey-brown
+ * so they run level round the bowl with a wobble, as strata do), loose scree at the toe; a floor of packed grey-brown
  * with the haul road worn bare and pale with two ruts; the heaps, grey gravel or buff sand; the pond's silt and the damp round its shore.
  */
 function paintQuarry(ctx, toPx, s, quarry, random) {

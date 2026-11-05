@@ -238,7 +238,7 @@ function buildSite(c, quarry, site) {
   }
 
   // The excavator: beside the plant's hopper with its bucket by the rim, if the plant has room for it, and if not on the floor where the first road
-  // comes down (on its side away from the steep wall's foot), nose to the wall.
+  // comes down (on its side away from the climb wall's foot), nose to the wall.
   {
     const road = quarry.pit.road;
     const endA = road.from + road.dir * road.sweep;
@@ -396,7 +396,7 @@ function buildFence(site, quarry, { wood, wire, groundY, random }) {
   const signs = [
     { a: road.from + road.dir * 0.35, back: 3.4, tex: signTexture('DANGER', ['UNSTABLE FACES', 'KEEP OUT']) },
     { a: Math.atan2(quarry.pond.z - quarry.pit.z, quarry.pond.x - quarry.pit.x) - quarry.pit.yaw, back: 3.4, tex: signTexture('DANGER', ['DEEP WATER', 'NO SWIMMING']) },
-    { a: quarry.pit.steepAt + 1.25, back: 3.4, tex: signTexture('PRIVATE', ['GRAVEL PIT', 'NO TRESPASSING'], { bg: '#e9e5d6' }) },
+    { a: quarry.pit.climbAt + 1.25, back: 3.4, tex: signTexture('PRIVATE', ['GRAVEL PIT', 'NO TRESPASSING'], { bg: '#e9e5d6' }) },
   ];
   for (const sg of signs) {
     const p = quarry.frameAt(sg.a, quarry.rimAt(sg.a) + sg.back);

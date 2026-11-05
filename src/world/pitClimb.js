@@ -1,6 +1,6 @@
 // The pit climb: a timed run from the cones on the gravel pit's floor up its steepest wall to the cones over the lip (layout: quarry.climb).
 // You ask with Enter by the start cones, then the clock runs from the moment you ride through them and stops over the finish cones; the cone
-// between is a gate you have to go through, wide enough to take in both chutes, so the line is yours to find. Only you run it. It is the hill
+// between is a gate you have to go through, wide enough to take in the line you choose up the climb wall, so the line is yours. Only you run it. It is the hill
 // climb's run (npc/hillClimb.js ClimbRun) with the same gates, kept on its own board line. Pure logic: the game feeds in where you are.
 
 import { ClimbRun } from '../npc/hillClimb.js';

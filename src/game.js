@@ -1216,7 +1216,7 @@ export class Game {
     this.climbIdle = 0; // seconds the girl climbing has been doing nothing about it
     buildClimbCones(this.scene, (x, z) => this.world.heightAt(x, z), this.climbGates);
     registerTuning('Hill climb', this.hillClimb.p, CLIMB_PARAM_RANGES);
-    // The pit climb: your timed run up the gravel pit's steep wall (world/pitClimb.js), on the board beside the hill climb.
+    // The pit climb: your timed run up the gravel pit's climb wall (world/pitClimb.js), on the board beside the hill climb.
     const quarry = this.world.fields.quarry;
     this.pitGates = quarry ? climbGates(quarry.climb) : null;
     this.pitClimb = quarry ? new PitClimb(this.pitGates) : null;
@@ -2427,14 +2427,14 @@ export class Game {
     const { a, s } = quarry.polar(at.x, at.z);
     const where = !quarry.inQuarry(at.x, at.z) ? 'you are away from it' : quarry.inPit(at.x, at.z) ? `you are down in it, ${(quarry.rimAt(a) - s).toFixed(0)} m in from the lip` : `you are ${(s - quarry.rimAt(a)).toFixed(0)} m from the lip`;
     const p = quarry.pit;
-    const wall = quarry.frameAt(p.steepAt, 10);
+    const wall = quarry.frameAt(p.climbAt, 10);
     const dx = wall.x - p.x;
     const dz = wall.z - p.z;
     const side = Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? 'east' : 'west') : dz > 0 ? 'south' : 'north';
     const pc = this.pitClimb;
     const climb = pc.running ? `timing ${pc.run.time.toFixed(1)} s` : pc.youArmed ? 'you are asked for' : 'idle';
     const best = this.records.best('pit');
-    return `${where}; ${p.depth.toFixed(1)} m deep, ${(p.rx * 2).toFixed(0)} by ${(p.rz * 2).toFixed(0)} m; steep wall on the ${side} side, ${p.chutes.length} chutes; haul roads ${quarry.roadLength.toFixed(0)} m (to the lip and down the ${p.road.dir > 0 ? 'clockwise' : 'anticlockwise'} side) and ${quarry.rampPoints[quarry.rampPoints.length - 1].at.toFixed(0)} m (the other way); ${p.heaps.length} heaps; pit climb ${climb}${best ? `, best ${formatValue('pit', best.value)}` : ''}`;
+    return `${where}; ${p.depth.toFixed(1)} m deep, ${(p.rx * 2).toFixed(0)} by ${(p.rz * 2).toFixed(0)} m; climb wall on the ${side} side, ${p.buttresses.length} buttresses; haul roads ${quarry.roadLength.toFixed(0)} m (to the lip and down the ${p.road.dir > 0 ? 'clockwise' : 'anticlockwise'} side) and ${quarry.rampPoints[quarry.rampPoints.length - 1].at.toFixed(0)} m (the other way); ${p.heaps.length} heaps; pit climb ${climb}${best ? `, best ${formatValue('pit', best.value)}` : ''}`;
   }
 
   /** Where you are at the river and how the crossing stands, for the panel and the console. */
