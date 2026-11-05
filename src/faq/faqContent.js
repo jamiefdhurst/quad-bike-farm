@@ -1466,9 +1466,9 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I time a run up the hill?',
-        a: `Go down the lane and across the ford to the hill pasture. Just past the stream there are two pairs of big green cones with START painted on them: ride up to them on a quad and press
+        a: `Go down the lane and across the ford to the hill pasture. Just past the stream there is a gate of two big green cones with START painted on them: ride up to them on a quad and press
           <kbd>Enter</kbd> and pick “The hill climb”, then ride through them when you're ready. The clock runs from there. Go between the cones of each checkpoint in order (a cone
-          either side, two on the way up) and on through the two pairs at the finish near the top. Anywhere between the cones counts, so the line is yours: the gentler ground in the east
+          either side, two on the way up) and on through the two blue FINISH cones near the top. Anywhere between the cones counts, so the line is yours: the gentler ground in the east
           is the easy way, the steep banks in the west are quicker if you dare. Your time goes up as a toast, and the best ones go on the board in the barn.`,
         tip: 'Press Enter by the green START cones past the stream, then ride through them to time a hill climb.',
       },

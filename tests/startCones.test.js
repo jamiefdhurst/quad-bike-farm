@@ -36,9 +36,10 @@ describe('start and finish cones', () => {
     const gates = climbGates(LAYOUT.hill.climb);
     const g = buildClimbCones(scene, flat, gates);
     const kinds = g.children.map((c) => c.userData.kind);
-    expect(kinds.filter((k) => k === 'start')).toHaveLength(4);
-    expect(kinds.filter((k) => k === 'finish')).toHaveLength(4);
+    expect(kinds.filter((k) => k === 'start')).toHaveLength(2); // a gate at each end, one cone either side, not a box of four
+    expect(kinds.filter((k) => k === 'finish')).toHaveLength(2);
     expect(kinds.filter((k) => k === 'orange')).toHaveLength((gates.length - 2) * 2);
+    expect(g.children).toHaveLength(gates.length * 2);
     const scale = (k) => g.children.find((c) => c.userData.kind === k).scale.x;
     expect(scale('start')).toBeGreaterThan(scale('orange'));
     expect(scale('finish')).toBe(scale('start'));
