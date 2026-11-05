@@ -36,6 +36,7 @@ const runs = Number(arg('--runs', 2));
 const dwell = Number(arg('--dwell', 1.5));
 const profileSeconds = Number(arg('--profile', 0));
 const dev = args.includes('--dev');
+const query = arg('--query', ''); // more of the URL's query, as `body=flat`, to measure a flag
 const steps = args.includes('--steps');
 const git = (...a) => execFileSync('git', a, { cwd: here, encoding: 'utf8' }).trim();
 
@@ -105,7 +106,7 @@ async function measureOnce(root, profileFor, showSteps) {
         if (s !== last) window.perfStep?.((last = s));
       }).observe(document, { subtree: true, childList: true, characterData: true });
     });
-    await page.goto(`${server.resolvedUrls.local[0]}?smoke&seed=3&weather=sunny&time=15.5`, { waitUntil: 'load' });
+    await page.goto(`${server.resolvedUrls.local[0]}?smoke&seed=3&weather=sunny&time=15.5${query ? `&${query}` : ''}`, { waitUntil: 'load' });
     await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000, polling: 50 });
     const readyS = marks.find(([, s]) => s === 'Ready')?.[0] ?? (Date.now() - t0) / 1000;
     // Each step once, at the time it first showed (a step that counts "3/14" shows once per count otherwise).
