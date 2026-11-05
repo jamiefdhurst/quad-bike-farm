@@ -87,7 +87,7 @@ export function dealPit(q, random) {
   const r = (lo, hi) => lo + random() * (hi - lo);
   const x = (q.minX + q.maxX) / 2 + r(-4, 4);
   const z = q.maxZ - 66 + r(-3, 3);
-  const depth = r(18, 22);
+  const depth = r(14, 17);
   const pit = {
     x, z,
     rx: r(45, 48), // the long way, turned to run from the gate to the steep wall by `yaw`
@@ -115,9 +115,9 @@ export function dealPit(q, random) {
   // between them that are not.
   const first = pit.steepAt + r(-0.08, 0.08);
   const second = first + (random() < 0.5 ? -1 : 1) * r(0.16, 0.24);
-  // (A run of 1.5 depths averages about 33 degrees up the middle: at 1.3 a 20 m wall was 36 to 38 and nothing climbed it. The first, 9 m pit's were about 30. Longer
-  // takes the floor the screening plant needs and leaves cliffs at the chutes' edges.)
-  pit.chutes = [{ at: first, w: r(3, 4), run: depth * r(1.5, 1.58) }, { at: second, w: r(2.5, 3.5), run: depth * r(1.48, 1.56) }];
+  // (A run of two depths averages about 26 degrees up the middle, 31 at its steepest. At 1.3 depths a 20 m wall was 36 to 38 and nothing climbed it; the
+  // pit was cut to 14 to 17 m so a lane that gentle fits in the 34 m or so the floor can spare. Wider, so the longer run leaves no cliffs at the edges.)
+  pit.chutes = [{ at: first, w: r(4, 5.2), run: depth * r(2.0, 2.1) }, { at: second, w: r(3.4, 4.6), run: depth * r(1.98, 2.08) }];
   for (let tries = 0; pit.buttresses.length < 3 && tries < 60; tries++) {
     const at = pit.steepAt + r(-0.3, 0.3);
     if (pit.chutes.some((c) => Math.abs(angleDiff(at, c.at)) < 0.2) || pit.buttresses.some((o) => Math.abs(angleDiff(at, o.at)) < 0.2)) continue;

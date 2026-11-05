@@ -1710,7 +1710,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where is the gravel pit, and how do I get into it?',
-        a: `North of the barley field, behind its north hedge, there is a hedged field with an old gravel pit in it, roughly 90 m by 70 m and about 20 m deep. Ride up the farm road, through a gateway on its north side into the barley field,
+        a: `North of the barley field, behind its north hedge, there is a hedged field with an old gravel pit in it, roughly 90 m by 70 m and about 15 m deep. Ride up the farm road, through a gateway on its north side into the barley field,
           and across to the gate in the far hedge (it starts tied open; look at it and press <kbd>E</kbd> to shut it or open it). From the
           gate a pale gravel road runs across the field to the lip, where it forks: one road winds down the pit's wall each way round to the floor, wide enough for a quad or the tractor and dropping about one metre in four to five. Ride down one and back up the other for a loop. Down on the floor are
           heaps of grey gravel and buff sand you can ride over, an old excavator nose to the wall, a screening plant on a level pad (a hopper over a crusher, a conveyor up to a screen and a second conveyor that ends over one of the heaps, with a generator and a site cabin beside it, and the excavator by the hopper, its bucket over the rim), a pond in the low corner with a pile of drums and tyres by it, and boulders fallen from the walls. Up in the field by the gate stands a steel container on sleepers, one door ajar and the other padlocked. The girls will not follow you down: they wait inside the gate.`,
@@ -1732,7 +1732,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Is the gravel pit the same on every farm?',
-        a: `No. Each farm is dealt its own pit and keeps it, day after day: how big and how deep (18 to 22 m), how ragged its lip is, which wall is steep, where the chutes and the spurs are, which way round the first road goes,
+        a: `No. Each farm is dealt its own pit and keeps it, day after day: how big and how deep (14 to 17 m), how ragged its lip is, which wall is steep, where the chutes and the spurs are, which way round the first road goes,
           where the pond is and where the heaps stand. The pit climb's times are kept with the farm too.`,
       },
       {
