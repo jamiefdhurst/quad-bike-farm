@@ -678,6 +678,17 @@ describe('a shirt and tie', () => {
     expect(high.some((v) => v.rest[0] < -0.01)).toBe(true);
   });
 
+  it('loosened, leaves out the undone top button and its buttonhole up on the stand, under the tie\'s loop', async () => {
+    const { SHIRT, SHIRT_ROLLED } = await import('../src/npc/polo.js');
+    const body = cylinderBody();
+    const done = buildTop(body, { ...SHIRT, open: 1 }).placket;
+    const loose = buildTop(body, { ...SHIRT_ROLLED, open: 1 }).placket;
+    const onStand = (pl) => [...pl.buttons, ...pl.slits].filter((b) => b.centre[1] > pl.top);
+    expect(onStand(done).length).toBe(2); // the button on its half's end of the stand, the buttonhole on the other's
+    expect(onStand(loose).length).toBe(0);
+    expect(loose.buttons.length).toBe(done.buttons.length - 1);
+  });
+
   it('loosened with more buttons undone, drops the knot to cover the open neck\'s point', async () => {
     const { SHIRT_ROLLED } = await import('../src/npc/polo.js');
     const { buildTie, TIE } = await import('../src/npc/tie.js');

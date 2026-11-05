@@ -313,7 +313,8 @@ export const SHIRT = {
 };
 
 // Loosened: the top one or two undone and the sleeves rolled to the elbow in a turn-up.
-export const SHIRT_ROLLED = { ...SHIRT, sleeveLength: 0.06, sleeveFlare: 0.017, cuff: 0.045, cuffEase: 0.016, cuffButtons: false, bandShade: 0.9 };
+// The tie's loop runs round her neck over where its top button and buttonhole are, undone, so they aren't drawn (`tieOver`).
+export const SHIRT_ROLLED = { ...SHIRT, sleeveLength: 0.06, sleeveFlare: 0.017, cuff: 0.045, cuffEase: 0.016, cuffButtons: false, bandShade: 0.9, tieOver: true };
 
 // The shirt over her polo: roomier, as the plaid over it is, its neck as high as on its own so its collar stands over the polo's.
 const OVER = { ease: 0.0135, neckEase: 0.013, inset: false };
@@ -951,6 +952,8 @@ function buildPlacket(mesh, body, p, vee) {
         const at = rowAt(top, x, x, 1);
         return at && { centre: [x, top - d0, at.under[0].rest[2] - 0.0005 - (p.topButtonSink ?? 0)], normal: norm([0, 0.35, 1]), anchor: at.under[0] };
       };
+      // Under a loosened tie the undone one and its buttonhole are hidden by the tie's loop round her neck, so there are none.
+      if (undone && p.tieOver) return;
       const b = undone ? on(x0 + split(top) + w / 4) : on(x0);
       if (b || !undone) {
         if (b) buttons.push(b);

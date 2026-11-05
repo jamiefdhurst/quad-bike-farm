@@ -1358,8 +1358,11 @@ function addEachGarment(rig, outfit) {
     const shirt = addCollar(rig, outer, [outer.built.shell, ...knit], style.over, SHIRT_UNDER_COLLAR, 'plaidCollar');
     addCollar(rig, polo, [polo.built.shell, outer.built.shell, ...knit, ...(shirt ? [shirt] : [])], outfit.polo, pop({ ...COLLAR, clear: 0.005 })); // a little further off, over the plaid's collar's fold
   } else {
-    const under = polo ? addCollar(rig, polo, [polo.built.shell, ...knit], outfit.polo, pop(COLLAR)) : null;
-    if (outer) addCollar(rig, outer, [outer.built.shell, ...knit, ...(under ? [under] : [])], style.over, pop(kind === 'plaid' ? SHIRT_COLLAR : OVER_COLLAR), `${kind}Collar`);
+    // Under a second polo hers keeps its done-up points, and stands lower at the front: open, its longer points and the ends of its
+    // stand came up through the ends of the second polo's collar.
+    const mine = kind === 'doublePolo' ? { ...COLLAR, openPoints: null, standFront: 0.006 } : COLLAR;
+    const under = polo ? addCollar(rig, polo, [polo.built.shell, ...knit], outfit.polo, pop(mine)) : null;
+    if (outer) addCollar(rig, outer, [outer.built.shell, ...knit, ...(under ? [under] : [])], style.over, pop(kind === 'plaid' ? SHIRT_COLLAR : { ...OVER_COLLAR, clear: 0.005 }), `${kind}Collar`);
   }
   if (outfit.coat) addCoat(rig, outfit.coat);
   if (outfit.shorts) addBottom(rig, outfit.shorts, !!outfit.coat);
