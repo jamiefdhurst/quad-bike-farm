@@ -178,3 +178,7 @@ The sections below are the record, oldest first. A new decision goes at the end.
 
 - #97 only changed what the girls say in the morning, and its smoke test failed twice at the hilltop: 1,734 and then 1,730 calls against 1,730. The same day's CI runs measured the hilltop at 1,704, 1,713, 1,715, 1,726, 1,728, 1,730, 1,734 and 1,747 with nothing changed there, and #94 had failed at 1,747 and passed on a rerun. So the budget sat inside the noise and any PR could go red by chance.
 - The hilltop's budget goes to 1,800: the worst run seen plus about the spread again. The measurement still shifts from run to run; making it hold still is its own issue.
+
+## The budget history recorded by Release (#636)
+
+- The Release workflow measures and records the frame budget after releasing, in place of `perf-history.yml`, to save a second checkout and build a merge; the history artifact keeps its name, `budget-history`. The PR's Smoke summary takes its change from main from the newest entry instead of building main again. Detail in process.md, "Fewer CI minutes a pull request (#636)".

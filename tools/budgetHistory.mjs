@@ -1,5 +1,5 @@
 // The frame budget over time (#373): every merge to main adds the five spots' draw calls and triangles to a history kept as a CI artifact
-// (.github/workflows/perf-history.yml), and the Smoke job's summary shows the last ten as a trend, so a creep shows before it crosses a budget.
+// (the Release workflow, .github/workflows/release.yml), and the Smoke job's summary shows the last ten as a trend, so a creep shows before it crosses a budget.
 // Pure; the command line is in tools/budget.mjs. Tested in tests/budgetHistory.test.js.
 
 /** One merge: when, which commit, what it was called, and each spot's { calls, triangles }. */
@@ -12,6 +12,13 @@ export function entry({ sha, label, at }, measured) {
 /** The history with `e` on the end (a commit already in it is replaced, so a re-run doesn't double it), keeping the last `keep`. */
 export function append(history, e, keep = 60) {
   return [...history.filter((h) => h.sha !== e.sha), e].slice(-keep);
+}
+
+/** The newest merge's numbers in the shape a measurement has ({ spot: { calls, triangles } }) and its commit, or null with no history:
+ * what the Smoke job compares a PR with, rather than building and measuring main again (#636). */
+export function latest(history) {
+  const e = history?.[history.length - 1];
+  return e ? { sha: e.sha, spots: e.spots } : null;
 }
 
 const SPARK = '▁▂▃▄▅▆▇█';

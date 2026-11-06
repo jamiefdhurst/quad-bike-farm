@@ -2,6 +2,9 @@ name: Release
 
 # Every push to main that changes what ships becomes a tagged GitHub release with the built game zipped up. The version
 # bump comes from the merged PR's labels (tools/nextVersion.mjs; DECISIONS.md, "Issues, pull requests and releases").
+# It then adds the build's frame budget to the history the PRs' Smoke job compares with (tools/budgetHistory.mjs). That was its own
+# workflow, perf-history.yml, with its own checkout and build, until #636. The history is a workflow artifact, not a commit, so recording
+# it never starts another run or release.
 on:
   push:
     branches: [main]
@@ -17,6 +20,7 @@ on:
 permissions:
   contents: write
   pull-requests: read
+  actions: read
 
 # One at a time, so two quick merges can't both take the same version.
 concurrency:
@@ -27,9 +31,12 @@ jobs:
   Release:
     runs-on: ubuntu-latest
     steps:
+      # The build's `git log` puts the last 300 commit messages in the FAQ's "Recently changed" and the start screen's "New since last time".
+      # It reads only the messages, so the old commits come without their files: only the tree checked out is downloaded (#636).
       - uses: actions/checkout@v7
         with:
           fetch-depth: 300
+          filter: blob:none
       # The Node version in mise.toml, the same one used locally.
       - name: Setup Node
         uses: jdx/mise-action@v5
@@ -41,10 +48,7 @@ jobs:
           restore-keys: npm-${{ runner.os }}-
       - name: Install dependencies
         run: node --version && npm ci
-      # Again on main: PRs merge without being brought up to date, and a quick fix may have been pushed straight here.
-      # A runner is two or three times slower than a laptop, so the heavy model tests need longer than the 5 s default.
-      - name: Test
-        run: npm test -- --testTimeout=30000
+      # No unit tests here: every PR has passed them before it merges (#636).
       - name: Work out the version
         id: version
         env:
@@ -69,3 +73,25 @@ jobs:
         run: |
           gh release create "v${{ steps.version.outputs.version }}" "quad-bike-farm-v${{ steps.version.outputs.version }}.zip" \
             --target "${{ github.sha }}" --title "v${{ steps.version.outputs.version }}" --generate-notes
+      # Recording the frame budget is bookkeeping: if it fails the release still stands and Deploy still runs.
+      - name: Measure the frame budget
+        id: measure
+        continue-on-error: true
+        timeout-minutes: 12
+        run: CHROME_PATH=$(which google-chrome) node tools/budget.mjs --dist dist --out budget-now.json
+      - name: Add this merge to the frame budget history
+        id: record
+        if: steps.measure.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tools/fetchBudgetHistory.sh history.json
+          node tools/budget.mjs --record budget-now.json --history history.json --sha "$GITHUB_SHA" --label "$(git log -1 --format=%s)"
+      - uses: actions/upload-artifact@v7
+        if: steps.record.outcome == 'success'
+        continue-on-error: true
+        with:
+          name: budget-history
+          path: history.json
+          retention-days: 90
