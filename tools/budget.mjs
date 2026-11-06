@@ -1,10 +1,11 @@
 // The frame budget's command line (tools/frameBudget.mjs says what it is for):
 //   node tools/budget.mjs --dist dist [--root <checkout>] --out numbers.json     measure a build on its own
-//   node tools/budget.mjs --summary pr.json [main.json] [--history history.json]  the markdown table for the job summary, and the trend of the last ten merges
-//   node tools/budget.mjs --record numbers.json --history history.json --sha <sha> --label <text>   add a merge to the history (perf-history.yml)
+//   node tools/budget.mjs --summary pr.json [main.json] [--history history.json]  the markdown table for the job summary, and the trend of the last ten merges;
+//                                                                                 without main.json the change is from the history's newest merge
+//   node tools/budget.mjs --record numbers.json --history history.json --sha <sha> --label <text>   add a merge to the history (release.yml)
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { summary } from './frameBudget.mjs';
-import { append, entry, trend } from './budgetHistory.mjs';
+import { append, entry, latest, trend } from './budgetHistory.mjs';
 import { measureBuild } from './frameBudgetRun.mjs';
 
 const args = process.argv.slice(2);
@@ -28,8 +29,11 @@ if (args.includes('--record')) {
     console.error('budget: no numbers to summarise');
     process.exit(2);
   }
-  console.log(summary(pr, read(mainFile)));
-  const t = trend(read(arg('--history')) ?? []);
+  const history = read(arg('--history')) ?? [];
+  const newest = mainFile ? null : latest(history);
+  console.log(summary(pr, read(mainFile) ?? newest?.spots));
+  if (newest) console.log(`\nThe change is from main at ${newest.sha}, the newest merge measured.`);
+  const t = trend(history);
   if (t) console.log(`\n${t}`);
 } else {
   const result = await measureBuild({ dist: arg('--dist'), root: arg('--root') });

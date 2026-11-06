@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { append, entry, trend } from '../tools/budgetHistory.mjs';
+import { append, entry, latest, trend } from '../tools/budgetHistory.mjs';
 
 const at = (sha, calls, tri = 3e6) => entry({ sha, label: `merge ${sha}`, at: '2026-10-26' }, { spawn: { calls, triangles: tri }, yard: { calls: calls + 500, triangles: tri } });
 
@@ -30,5 +30,12 @@ describe('the budget history', () => {
   it('says nothing until there are two merges to compare', () => {
     expect(trend([at('aaaaaaa', 2000)])).toBe('');
     expect(trend([])).toBe('');
+  });
+
+  it('gives the newest merge as main to compare a pull request with', () => {
+    expect(latest([])).toBeNull();
+    expect(latest(undefined)).toBeNull();
+    const h = append(append([], at('aaaaaaa', 2000)), at('bbbbbbb', 2100));
+    expect(latest(h)).toEqual({ sha: 'bbbbbbb', spots: { spawn: { calls: 2100, triangles: 3e6 }, yard: { calls: 2600, triangles: 3e6 } } });
   });
 });

@@ -6,6 +6,7 @@ on:
 permissions:
   contents: read
   actions: read
+  pull-requests: read
 
 concurrency:
   group: test-${{ github.event.pull_request.number }}
@@ -13,9 +14,29 @@ concurrency:
 
 # The unit tests (in three shards) and Smoke run side by side; Test waits for them all and is the one check main requires, so the required
 # name never changes (#284, #286). Each checks out only the tree: the full history is gigabytes of audio, and nothing here reads it.
+# Changes looks at the PR's files first: prose alone (tools/ciChanges.mjs) skips the shards and Smoke, and Test passes without them (#636).
 jobs:
+  Changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.files.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: tools
+      # The runner's own Node: the script needs nothing from mise.toml, and this saves installing it.
+      - name: Does it change anything but prose?
+        id: files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/${{ github.event.pull_request.number }}/files" --jq '.[].filename' > files.txt || : > files.txt
+          node tools/ciChanges.mjs < files.txt | tee -a "$GITHUB_OUTPUT"
+
   Unit:
     name: Unit ${{ matrix.shard }}/3
+    needs: Changes
+    if: needs.Changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       # Let the other shards finish, so one red run shows every failing test.
@@ -42,6 +63,8 @@ jobs:
         run: npm test -- --testTimeout=30000 --shard=${{ matrix.shard }}/3
 
   Smoke:
+    needs: Changes
+    if: needs.Changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -66,31 +89,27 @@ jobs:
         run: CHROME_PATH=$(which google-chrome) npm run smoke
         timeout-minutes: 12
       # The smoke test also holds the frame to its budget (draw calls and triangles from fixed spots, tools/frameBudget.mjs) and fails a PR over it.
-      # This prints the numbers in the job summary with the change from main, measured the same way on main's build. It never fails the job:
-      # if main can't be built or measured the table just has no change column.
+      # This prints the numbers in the job summary with the change from main: main's numbers are the newest merge in the history the Release
+      # workflow keeps, not main built and measured again here (#636). It never fails the job: with no history the table has no change column.
       - name: Frame budget against main
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-        timeout-minutes: 12
         run: |
           [ -f budget-pr.json ] || { echo "No frame budget numbers: the smoke test stopped before measuring." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
-          if git fetch --depth 1 origin main && git worktree add ../main-base FETCH_HEAD \
-            && ln -s "$PWD/node_modules" ../main-base/node_modules && (cd ../main-base && npm run build); then
-            CHROME_PATH=$(which google-chrome) node tools/budget.mjs --root ../main-base --dist dist --out budget-main.json || echo "main could not be measured"
-          fi
-          # The last ten merges to main (perf-history.yml keeps the history as an artifact); no history yet just leaves the trend out.
-          run=$(gh run list --workflow perf-history.yml --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty' || true)
-          [ -n "$run" ] && gh run download "$run" -n budget-history -D history || echo "no budget history yet"
-          node tools/budget.mjs --summary budget-pr.json budget-main.json --history history/history.json >> "$GITHUB_STEP_SUMMARY"
+          tools/fetchBudgetHistory.sh history.json
+          node tools/budget.mjs --summary budget-pr.json --history history.json >> "$GITHUB_STEP_SUMMARY"
 
-  # always(): if a Unit shard or Smoke fails this would otherwise be skipped, and a skipped required check counts as passed.
+  # always(): if a Unit shard or Smoke fails this would otherwise be skipped, and a skipped required check counts as passed. Skipped shards
+  # and Smoke pass only when Changes ran and said the PR is prose alone.
   Test:
-    needs: [Unit, Smoke]
+    needs: [Changes, Unit, Smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Every shard and Smoke passed
+      - name: Every shard and Smoke passed, or the PR is prose alone
         run: |
-          echo "Unit: ${{ needs.Unit.result }}, Smoke: ${{ needs.Smoke.result }}"
+          echo "Changes: ${{ needs.Changes.result }} (code ${{ needs.Changes.outputs.code }}), Unit: ${{ needs.Unit.result }}, Smoke: ${{ needs.Smoke.result }}"
+          [ "${{ needs.Changes.result }}" = success ] || exit 1
+          [ "${{ needs.Changes.outputs.code }}" = false ] && exit 0
           [ "${{ needs.Unit.result }}" = success ] && [ "${{ needs.Smoke.result }}" = success ]
