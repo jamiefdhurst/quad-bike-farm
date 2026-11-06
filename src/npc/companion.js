@@ -16,6 +16,7 @@ import { thrownStates, DEFAULT_THROWN_PARAMS } from './companionThrown.js';
 import { DEFAULT_MOTO_PARAMS } from './motoGo.js';
 import { restingMethods, restingStates } from './companionResting.js';
 import { warmingMethods } from './companionWarming.js';
+import { cuppingMethods } from './companionCupping.js';
 import { keepAliveMethods } from './companionKeepAlive.js';
 import { numbMethods } from './companionNumb.js';
 import { carryingMethods } from './companionCarrying.js';
@@ -229,6 +230,11 @@ export class Companion {
     this.carryParams = carryParams;
     this.carryPace = 1; // times her walking speed while she carries something heavy
     this.rig.posers.push((dt) => this.poseCarrying(dt));
+    // A mug in both hands at the flask, and a pat on the tank (companionCupping.js).
+    this.cup = null; // { mug, t, k }
+    this.pat = null; // { t, quad }
+    this.rig.posers.push((dt) => this.poseCupping(dt));
+    this.rig.posers.push((dt) => this.posePatting(dt));
     // Riding on the bale trailer (companionHayRide.js).
     this.hay = { ...DEFAULT_HAYSEAT_PARAMS };
     this.thrownParams = DEFAULT_THROWN_PARAMS; // coming off the mini moto (companionThrown.js); the game swaps in its tunable copy
@@ -1463,6 +1469,7 @@ Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(wa
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(keepAliveMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(numbMethods));
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(carryingMethods));
+Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(cuppingMethods));
 Object.assign(Companion.prototype, wavingMethods);
 Object.defineProperties(Companion.prototype, Object.getOwnPropertyDescriptors(strandedMethods));
 Object.assign(Companion.prototype, throwingMethods);

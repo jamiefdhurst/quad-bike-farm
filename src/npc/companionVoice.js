@@ -541,7 +541,10 @@ export class CompanionVoice {
       if (e === 'crank') {
         const a = this.companion.attempt ?? this.companion.drive?.attempt;
         // Jess pats the tank and talks to it on the first go; after that it is "come on" like anyone.
-        if (a && a.bursts === 1 && girl === 'jess' && specId && this.sayQuad('startPat', specId, { urgent: true, chance: 0.7 })) continue;
+        if (a && a.bursts === 1 && girl === 'jess' && specId && this.sayQuad('startPat', specId, { urgent: true, chance: 0.7 })) {
+          this.companion.patTank(); // she says she is patting it, so she does
+          continue;
+        }
         if (a && a.bursts > 1) this.say('startCrank', { urgent: true, chance: 0.6 });
         continue;
       }

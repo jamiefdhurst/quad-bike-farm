@@ -42,11 +42,17 @@ export class Tea {
     return this.mugs.find((m) => m.girl === girl) ?? null;
   }
 
+  /** Seconds since the tea on her rack was poured, for how warm it is (steam.js), or null when she has none out. */
+  ageOf(girl) {
+    const m = this.mugOf(girl);
+    return m ? this.clock - m.madeAt : null;
+  }
+
   /** She got there and put it down (the quad is still free): the mug is on the rack. */
   placed(girl, spec) {
     delete this.pending[girl];
     if (this.mugOf(girl)) return;
-    this.mugs.push({ girl, spec, leaveAt: this.clock + this.p.leaveMin + this.random() * Math.max(0, this.p.leaveMax - this.p.leaveMin) });
+    this.mugs.push({ girl, spec, madeAt: this.clock, leaveAt: this.clock + this.p.leaveMin + this.random() * Math.max(0, this.p.leaveMax - this.p.leaveMin) });
   }
 
   /** She got there and took it back (or it was lost on the way). */

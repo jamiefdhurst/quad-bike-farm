@@ -100,3 +100,15 @@ describe('tea on the rack', () => {
     }
   });
 });
+
+describe('how long the tea has stood', () => {
+  it('counts the seconds from the mug going on the rack, and is null when she has none out', () => {
+    const t = make();
+    expect(t.ageOf('amy')).toBeNull();
+    t.placed('amy', 'red');
+    t.update(30, ctx());
+    expect(t.ageOf('amy')).toBeCloseTo(30);
+    t.collected('amy');
+    expect(t.ageOf('amy')).toBeNull();
+  });
+});
