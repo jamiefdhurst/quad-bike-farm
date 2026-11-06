@@ -66,9 +66,9 @@ export function addWiperStalk(column, y, mat, { modern = false } = {}) {
     piece(new RoundedBoxGeometry(0.05, 0.024, 0.03, 2, 0.0099).translate(-0.155, 0, 0), mat, stalk); // and a wide end you push
     const symbol = wiperSymbol();
     if (symbol) {
-      const mark = new THREE.Mesh(new THREE.PlaneGeometry(0.026, 0.026), symbol);
-      mark.rotation.x = -Math.PI / 2; // lying on the end's top, the symbol the right way up for the driver looking down at it
-      mark.rotation.z = Math.PI / 2;
+      const mark = new THREE.Mesh(new THREE.PlaneGeometry(0.02, 0.02), symbol);
+      // Lying on the end's top, which faces the driver: the symbol's right is the stalk's tip (-x) and its top is up the column (+z).
+      mark.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0)));
       mark.position.set(-0.155, 0.0122, 0);
       stalk.add(mark);
     }
@@ -81,7 +81,7 @@ export function addWiperStalk(column, y, mat, { modern = false } = {}) {
 }
 
 let symbolMaterial = null;
-/** The wiper pictogram (a fan of glass swept by an arm, with a drop under it) in pale grey on nothing; null where there is no canvas (tests). */
+/** The wiper pictogram (a fan of glass with a blade across it and its spindle below) in pale grey on nothing; null where there is no canvas (tests). */
 function wiperSymbol() {
   if (symbolMaterial || typeof document === 'undefined') return symbolMaterial;
   const c = document.createElement('canvas');
@@ -89,18 +89,22 @@ function wiperSymbol() {
   const g = c.getContext('2d');
   if (!g) return null;
   g.strokeStyle = g.fillStyle = '#d9dcdf';
-  g.lineCap = 'round';
-  g.lineWidth = 8;
-  g.beginPath();
-  g.arc(64, 100, 78, Math.PI * 1.2, Math.PI * 1.8); // the swept arc
+  g.lineCap = g.lineJoin = 'round';
+  g.lineWidth = 9;
+  g.beginPath(); // the windscreen as the standard symbol draws it: a fan of glass, its top and foot both arcs, wider at the top
+  g.moveTo(7, 33);
+  g.quadraticCurveTo(64, 9, 121, 34);
+  g.lineTo(92, 84);
+  g.quadraticCurveTo(64, 60, 33, 83);
+  g.closePath();
   g.stroke();
-  g.lineWidth = 10;
-  g.beginPath();
-  g.moveTo(64, 100);
-  g.lineTo(100, 38); // the arm at the end of its sweep
+  g.beginPath(); // the blade slanting across it, and its arm down to the spindle below the glass
+  g.moveTo(40, 30);
+  g.lineTo(57, 80);
+  g.lineTo(62, 98);
   g.stroke();
   g.beginPath();
-  g.arc(56, 118, 6, 0, Math.PI * 2); // a drop
+  g.arc(63, 103, 8.5, 0, Math.PI * 2);
   g.fill();
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
