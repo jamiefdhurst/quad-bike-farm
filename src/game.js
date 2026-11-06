@@ -164,6 +164,7 @@ import { DEFAULT_NUMB_PARAMS, NUMB_PARAM_RANGES } from './npc/numbness.js';
 import { DEFAULT_KEEPALIVE_PARAMS, KEEPALIVE_PARAM_RANGES } from './npc/keepAlive.js';
 import { HeadStart, HEADSTART_PARAM_RANGES } from './npc/headStart.js';
 import { Gossip, GOSSIP_PARAM_RANGES } from './npc/gossip.js';
+import { canSee } from './npc/sight.js';
 import { ThrottleGrab, GRAB_PARAM_RANGES } from './npc/throttleGrab.js';
 import { DEFAULT_NAP_PARAMS, NAP_PARAM_RANGES } from './npc/backNap.js';
 import { DEFAULT_BLINK_PARAMS, BLINK_PARAM_RANGES } from './npc/blink.js';
@@ -8061,18 +8062,44 @@ export class Game {
 
   /** Talking about you while they think you can't hear (npc/gossip.js). */
   updateGossip(dt, byId, speak) {
+    const you = this.player.position;
     const girls = this.companions.map((c) => ({
       id: c.character.id,
       x: c.root.position.x,
       z: c.root.position.z,
       free: c.availability().free,
+      sees: this.girlSees(c, you),
     }));
     const loud = this.menu.isOpen || this.units.some((u) => u.quad.engine.isRunning && girls.some((g) => Math.hypot(u.quad.position.x - g.x, u.quad.position.z - g.z) < this.gossip.p.noticeRange));
     const v = this.player.velocity;
     const ctx = { you: { x: this.player.position.x, z: this.player.position.z, onFoot: !this.player.isRiding, speed: Math.hypot(v.x, v.z) }, girls, loud, floorFree: this.talkFloor.left <= 0 && !this.banter.busy };
     for (const e of this.gossip.update(dt, ctx, speak, () => this.companions.forEach((c) => c.voice.cut()))) {
-      byId[e.girl]?.voice.say('gossipCaught', { urgent: true, force: true });
+      if (e.type === 'noticed') this.notice('creep', { x: you.x, y: you.y + 1.6, z: you.z }, { key: 'creep' }); // they turn to look as they stop dead
+      else byId[e.girl]?.voice.say('gossipCaught', { urgent: true, force: true });
     }
+  }
+
+  /** Whether she could see `at` (a spot on the ground, a person's feet) from her eyes: not past a hedge, the barn's walls or a vehicle (npc/sight.js). */
+  girlSees(c, at) {
+    const eye = { x: c.root.position.x, y: c.root.position.y + 1.4, z: c.root.position.z };
+    const to = { x: at.x, y: at.y + this.player.params.eyeHeight, z: at.z };
+    return canSee(eye, to, {
+      hedges: this.world.fields.hedges,
+      buildings: this.world.detourBuildings,
+      blockedBy: (a, b) => this.vehicleBlocksSight(a, b),
+    });
+  }
+
+  /** Whether a vehicle or trailer, as the physics has it, is between two eyes. */
+  vehicleBlocksSight(a, b) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const dz = b.z - a.z;
+    const len = Math.hypot(dx, dy, dz);
+    if (len < 0.01) return false;
+    const mine = new Set([...this.units.map((u) => u.quad.physics.collider.handle), ...[this.trailer, this.tipTrailer, this.sprayer, this.harrows].map((t) => t?.obstacle?.collider.handle)]);
+    const hit = this.physics.castRay(new this.RAPIER.Ray(a, { x: dx / len, y: dy / len, z: dz / len }), len, true, undefined, undefined, undefined, undefined, (c) => mine.has(c.handle));
+    return !!hit;
   }
 
   /**

@@ -985,6 +985,14 @@ export const FAQ_SECTIONS = [
           bench, as "Buzz ranking".`,
       },
       {
+        q: 'Why do the girls stop talking when I come up behind the barn?',
+        a: `They are talking about you, and they stop when they see or hear you. Creep up on them on foot with nothing running nearby and you will catch an exchange or
+          two. Being close only gives you away to a girl who can see you, so the barn, the field shed, the hedges and a tall vehicle hide you; you can stand right behind
+          them. Running, an engine going nearby or opening the wheel still gives you away from a long way off, and so does bumping into them. When they catch you they both turn to
+          look, stop dead mid-sentence, and after a silence one of them covers for it.`,
+        tip: 'Sneak up on them on foot, out of sight round the barn, and you may overhear what they say about you.',
+      },
+      {
         q: 'Why do the girls argue about which quad is best on a hill, in mud or on tarmac?',
         spoiler: true,
         a: `Each quad is a little better at one thing than the rest: climbing, mud or tarmac. It is only a few per cent, so you will not feel it in one ride, and the

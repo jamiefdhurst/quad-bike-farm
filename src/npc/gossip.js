@@ -1,11 +1,13 @@
 // Talking about you. When the girls think you can't hear, they talk about you. Come up on them quietly (on foot, nothing
 // running nearby) and you catch an exchange or two; get close, run at them, start an engine or open the wheel and they
-// notice, stop dead mid-line and, after a silence, one of them covers for it. Pure logic: the game says who is where, and
+// notice, stop dead mid-line and, after a silence, one of them covers for it. Being near only gives you away to a girl who can see you
+// (npc/sight.js): behind the barn you can stand right by them. Pure logic: the game says who is where, and
 // `speak(speaker, text, opts)` does the talking and returns how long the line lasts; `cut()` stops whoever is talking.
 
 export const DEFAULT_GOSSIP_PARAMS = {
   startAfter: 60, // seconds into the game before they say anything about you
-  hearMin: 4.5, // metres: any nearer and they've seen you
+  hearMin: 4.5, // metres: any nearer and a girl who can see you has seen you
+  hearClose: 1.5, // metres: any nearer and they know you're there whatever is in the way
   hearMax: 14, // metres: any further and you couldn't make out the words
   together: 7, // metres: the two of them have to be this close to each other to be talking
   runSpeed: 3.2, // m/s: faster than this, within noticeRange, is heard coming
@@ -19,6 +21,7 @@ export const DEFAULT_GOSSIP_PARAMS = {
 export const GOSSIP_PARAM_RANGES = {
   startAfter: [0, 600, 5],
   hearMin: [1, 20, 0.5],
+  hearClose: [0.5, 5, 0.5],
   hearMax: [5, 40, 0.5],
   together: [2, 20, 0.5],
   runSpeed: [1, 8, 0.1],
@@ -53,7 +56,7 @@ export class Gossip {
   noticed(ctx) {
     const p = this.p;
     const near = Math.min(...ctx.girls.map((g) => dist(g, ctx.you)));
-    if (near < p.hearMin) return true;
+    if (ctx.girls.some((g) => dist(g, ctx.you) < (g.sees === false ? p.hearClose : p.hearMin))) return true;
     if (ctx.loud && near < p.noticeRange) return true;
     return ctx.you.speed > p.runSpeed && near < p.noticeRange;
   }
@@ -68,10 +71,11 @@ export class Gossip {
   /**
    * One step. `ctx`:
    *   you: { x, z, onFoot, speed }
-   *   girls: [{ id, x, z, free }]     free: stood about with nothing on
+   *   girls: [{ id, x, z, free, sees }]     free: stood about with nothing on; sees: she could see you (false behind a wall or a hedge)
    *   loud: an engine running near them, or you're talking to one of them
    *   floorFree: nobody else is talking
-   * Returns events: { type: 'caught', girl } when the silence after they notice you is over and she speaks up.
+   * Returns events: { type: 'noticed' } the moment they notice you mid-exchange (they turn to look), then
+   * { type: 'caught', girl } when the silence after they notice you is over and she speaks up.
    */
   update(dt, ctx, speak, cut) {
     const p = this.p;
@@ -93,7 +97,7 @@ export class Gossip {
       return [];
     }
     const near = both && ctx.you.onFoot ? Math.min(dist(a, ctx.you), dist(b, ctx.you)) : Infinity;
-    if (near < p.hearMin || near > p.hearMax || this.noticed(ctx)) {
+    if (near < p.hearClose || near > p.hearMax || this.noticed(ctx)) {
       this.creeping = 0;
       return [];
     }
@@ -115,7 +119,7 @@ export class Gossip {
     if (last === null) return [];
     cut();
     this.caught = { by: this.ids.find((id) => id !== last) ?? last, wait: this.p.silence };
-    return [];
+    return [{ type: 'noticed' }];
   }
 
   play(dt, speak) {

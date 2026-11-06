@@ -30,6 +30,7 @@ export const NOTICE_KINDS = {
   pheasant: { seconds: 2.5, range: 40, heard: true }, // one bursting out of the hedge in a clatter of wings
   zap: { seconds: 2.5, range: 50, heard: true }, // someone catching the electric fence
   photo: { seconds: 3, range: 20, heard: false }, // you raising the camera: she looks at you
+  creep: { seconds: 2.5, range: 20, heard: true }, // you caught creeping up on them (npc/gossip.js): she turns round to look at you
   thunder: { seconds: 3, range: 400, heard: true }, // a clap of thunder (placed where you are, since it comes from the whole sky; strength is how near the strike was)
   spray: { seconds: 3, range: 25, heard: false }, // the sprayer's mist drifting (she turns her face away if close)
   bang: { seconds: 2.5, range: 80, heard: true }, // anything else loud and sudden (and the debug panel's test noise)
@@ -51,6 +52,7 @@ export const DEFAULT_NOTICE_PARAMS = {
   traffic: 0.9,
   kids: 1.1,
   photo: 1.5,
+  creep: 1.7,
   pheasant: 1.6,
   zap: 1.7,
   thunder: 0.9,
