@@ -50,7 +50,9 @@ export const FAQ_SECTIONS = [
         a: `Yes. Plug in an Xbox, PlayStation, Switch Pro or similar pad, press any button on it so the browser notices it, and the start
           card says "Gamepad found". Press <kbd>Start</kbd> to play (and again to pause). The left stick walks and steers, the right stick
           looks, <kbd>RT</kbd> is the throttle and <kbd>LT</kbd> the brake, and they go in as far as you press them. <kbd>A</kbd> does what
-          <kbd>E</kbd> does, <kbd>B</kbd> gets you off or puts things down. Press <kbd>H</kbd> or the pad's Select button to see them all.`,
+          <kbd>E</kbd> does, <kbd>B</kbd> gets you off or puts things down. Press <kbd>H</kbd> or the pad's Select button to see them all. While
+          you are playing on a pad the prompts name its buttons ("A  Pick up the jerry can", "hold A" for the jobs that take time) and
+          "R3 ring" for what lives on the ring; touch the keyboard or mouse and they go back to the keys.`,
         tip: 'Gamepad: Start plays, sticks move and look, RT is throttle, LT brake, A interacts.',
       },
       {
