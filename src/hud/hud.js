@@ -51,10 +51,12 @@ export class Hud {
   /**
    * What you can do with what you're looking at, as the interaction module's one shape (`normalisePrompt`):
    * { action, hold?, keys? } is what E (or holding E) does, with the other keys that work as [key, what it does] chips;
-   * { info, keys? } is a line with nothing to press.
+   * { info, keys? } is a line with nothing to press. `rewrite` is set while you are playing on a pad: it takes the normalised prompt and
+   * returns it with its keys as the pad's buttons (`padPrompt`).
    */
-  setPrompt(prompt) {
-    const p = normalisePrompt(prompt);
+  setPrompt(prompt, rewrite = null) {
+    const normal = normalisePrompt(prompt);
+    const p = rewrite ? rewrite(normal) : normal;
     const sig = promptSignature(p);
     if (this.promptSig === sig) return;
     this.promptSig = sig;
@@ -69,7 +71,7 @@ export class Hud {
       row.append(k, document.createTextNode(label));
       return row;
     };
-    if (p.action) el.appendChild(chip(p.hold ? 'hold E' : (p.key ?? 'E'), p.action, 'prompt-main'));
+    if (p.action) el.appendChild(chip(p.keyLabel ?? (p.hold ? 'hold E' : (p.key ?? 'E')), p.action, 'prompt-main'));
     else {
       const line = document.createElement('span');
       line.className = 'prompt-item';

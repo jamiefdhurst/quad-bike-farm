@@ -198,7 +198,7 @@ Each girl's folder on the Girls tab opened with about thirty action buttons, so 
 - **Start plays and pauses.** A gamepad button is not a user gesture, so pointer lock is requested but may be refused; `Input.padPlaying` stands in for it and the start card is hidden by `startFromPad`. Esc still works with a mouse. This took Start for pausing, so the bucket list moved to the ring and Select is help.
 - **Menus.** The wheel takes A, B and the D-pad as Enter, Escape and arrows, with the sticks moving its cursor. The toolbox uses the D-pad and B (A would be Enter, which closes it). The bench maps A to E and four job picks to X, Y, LB, RB. The other toolbox and bench keys stay on the keyboard.
 - **Detection.** Browsers list a pad only after a button press, so at load the console says "none detected, press a button" and prints again on connect and disconnect (`gamepadconnected`); the start card gains "Gamepad found: press Start to play".
-- **Not done.** The interaction prompts still show keyboard letters. Rumble is item 99.
+- **Not done.** Rumble is item 99. (The prompts now show the pad's buttons: #110.)
 
 ## Photos (TODO 26)
 
@@ -379,3 +379,10 @@ Jamie's answers: **freeze everything** (the sim, the girls, the clock and weathe
 - `moto` needs a mini moto on the farm; they are bought from the barn's ads and arrive next morning, so on a farm without one it says so rather than make one.
 - Checked in a headless game: every scene ran with no feature errors; the wardrobe and flock were looked at. Found there: you start on a vehicle (so `tp me` refused: the fix is the get-off step) and the girls start on the opening trailer, so a scene run in the first seconds tells you who is not on foot yet.
 - New place for `tp`: `viewpoint`, the rock at the top of the pasture. Each later item that can only be judged by eye adds its scene to `SCENES`.
+
+## Gamepad prompts (#110, was TODO 219)
+
+- **Prompts follow the last device you touched.** `Input.usingPad` goes true when the pad does anything (a button, a lean of either stick, a trigger) and false on a key press, a mouse click or real mouse movement (the pad's own look is added to the mouse delta, not sent as an event, so it never flips it back). A pad being unplugged clears it.
+- **One place rewrites the prompt.** `input/padLabels.js` (pure) takes the normalised prompt and, for 'foot' or 'ride', swaps its keys for buttons: `PAD_BUTTONS` for keys with a button of their own, "R3 ring" for a key that is only on the ring (read from `RADIAL_ITEMS`, so a new ring item needs nothing here), and the letter left alone otherwise. Hold E becomes "hold A" on foot and "hold B" on a vehicle. Call sites keep writing keyboard prompts; the HUD does the swap, so a signature change redraws it as the device changes.
+- **Held to gamepad.js.** A test presses each button in `PAD_BUTTONS` on a real `PadController` and checks it holds the key the prompt stood for, so the two cannot drift.
+- **Not changed.** The status lines ("E on a quad to hook it on, G to put it back"), toasts and the girls' spoken lines still say keyboard letters; they are not prompts. Menu hints are unchanged.
