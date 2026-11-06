@@ -2591,6 +2591,11 @@ export const FAQ_SECTIONS = [
         tip: 'P on the Bruin: dipped, main beam, off. The choke is the lever under the left pod.',
       },
       {
+        q: 'Do the girls use the lights, indicators and brakes properly?',
+        a: `Mostly. Driving a Yak or a Moorland in the dark, a girl puts the lights on and switches them off again when she has parked (not if she brought it round to light your work). Amy nearly always indicates for a turn; Jess usually forgets. Getting off a quad with a 4WD switch, Amy usually puts it back in 2WD and Jess seldom does. If Amy sees water in a quad's sediment bowl before she rides it, she drains it at the tap. And a girl whose brakes have gone wet from a ford or the crossing says so, then taps the brake as she goes until they dry.`,
+        tip: 'Amy indicates, drains the tap and resets 2WD. Jess usually does not.',
+      },
+      {
         q: 'How do I use the indicators and hazard lights?',
         a: `In the Yak, either Moorland or the girls' cars with the key on: <kbd>,</kbd> is left, <kbd>.</kbd> is right and <kbd>=</kbd> is the hazards (both sides). There is also a stalk on the left of the steering column that drops down for left and goes up for right, and a red hazard button on the dash that flashes with the hazards. The lamps at the
           front and back of that side flash orange and the relay ticks. The Tor has one green "<- ->" lamp on its dash; the Yak and the Crag have a separate arrow for each side. Press the same key again to switch them off. A left or right

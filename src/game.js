@@ -264,6 +264,7 @@ import { Charger, CHARGER_PARAM_RANGES } from './workshop/charger.js';
 import { buildChargerModel, CHARGER_SLOT } from './workshop/chargerModel.js';
 import { PlugAdditive, PLUG_ADDITIVE_PARAM_RANGES } from './items/plugAdditive.js';
 import { ratioText } from './engine/lubrication.js';
+import { GIRL_CONTROLS_PARAMS, GIRL_CONTROLS_PARAM_RANGES, lightsWanted, bowlNeedsDraining } from './npc/girlControls.js';
 import { walkRound, DEFAULT_WALK_PARAMS, WALK_PARAM_RANGES } from './npc/walkRound.js';
 import { DEFAULT_MOTO_PARAMS, MOTO_PARAM_RANGES } from './npc/motoGo.js';
 import { DEFAULT_THROWN_PARAMS, THROWN_PARAM_RANGES } from './npc/companionThrown.js';
@@ -686,6 +687,7 @@ export class Game {
     registerTuning('Tank dip', this.dipParams, DIP_PARAM_RANGES);
     this.walkParams = { ...DEFAULT_WALK_PARAMS };
     registerTuning('Amy walk-round', this.walkParams, WALK_PARAM_RANGES);
+    registerTuning('Girls at the controls', GIRL_CONTROLS_PARAMS, GIRL_CONTROLS_PARAM_RANGES); // indicators, wet brakes, the lights, the bowl's drain (npc/girlControls.js)
     this.wontParams = { ...DEFAULT_WONT_PARAMS }; // Amy refusing a quad she knows is faulty (npc/wontRide.js)
     registerTuning('Amy won\'t ride', this.wontParams, WONT_PARAM_RANGES);
     this.motoParams = { ...DEFAULT_MOTO_PARAMS }; // the girls on the mini moto: Amy won't, Jess has a go (npc/motoGo.js)
@@ -4606,6 +4608,8 @@ export class Game {
       this.fourWdState.set(c, st);
       const q = c.fsm.is('driving') && c.quad.drive ? c.quad : null;
       if (q !== st.quad) {
+        // Getting off a quad she put in 4WD (or left there), she puts it back to 2WD as she'd want to find it.
+        if (st.quad && st.quad.drive.mode === '4wd' && !st.quad.driver && Math.random() < c.params.puts2wdBack) st.quad.drive.toggle();
         st.quad = q;
         st.watch.reset();
         if (q && Math.random() < c.params.remembers4wd) q.drive.engage4wd();
@@ -8084,9 +8088,13 @@ export class Game {
     w.dark = d.darkness; // for what the girls say about it (companionVoice.watchWeather)
     for (const unit of this.units) {
       unit.quad.dayFrost = w.seatFrost;
-      // A girl driving a cab in the dark puts its lights on.
+      // A girl driving a cab in the dark puts its lights on, and puts them off again once she has parked (but not the work light's).
       const q = unit.quad;
-      if (q.lights && q.lights.mode === 'off' && d.darkness > 0.5 && this.companions.some((c) => c.quad === q && c.fsm.is('driving'))) q.lights.set('low');
+      if (!q.lights) continue;
+      const driving = this.companions.some((c) => c.quad === q && c.fsm.is('driving'));
+      const act = lightsWanted(driving, d.darkness, q.lights.mode, !q.girlLights || this.workLight.job?.vehicle === unit.id);
+      if (act) q.lights.set(act);
+      q.girlLights = driving ? q.girlLights || act === 'low' : q.girlLights && !act;
     }
     const turn = this.forecast.update(d.hour);
     if (turn) this.turnWeather(turn);
@@ -12684,6 +12692,11 @@ export class Game {
         if (driven) for (const finding of c.walkFound) this.notebook.note(driven, { kind: 'walk', finding }, { saw: true });
       }
       if (driven && !c.walkFound.length && this.amyDipsTank(c, driven)) continue;
+      if (driven && bowlNeedsDraining(c.quad.fuel)) {
+        c.quad.fuel.drainSediment(); // she opens the drain on the tap's bowl and shuts it again
+        c.voice.say('bowlDrained', { urgent: true, chance: 1 });
+        continue;
+      }
       const sump = c.quad.sump;
       if (!sump || Math.random() > this.sumpParams.amyChecks) continue;
       if (sump.tooMuch) {
