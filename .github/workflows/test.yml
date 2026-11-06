@@ -13,7 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 # The unit tests (in three shards) and Smoke run side by side; Test waits for them all and is the one check main requires, so the required
-# name never changes (#284, #286). Each checks out only the tree: the full history is gigabytes of audio, and nothing here reads it.
+# name never changes (#284, #286). Each checks out only the tree: the full history is gigabytes of audio, and nothing here reads it. The
+# shards leave the recordings out and Smoke takes them from the cache (#640).
 # Changes looks at the PR's files first: prose alone (tools/ciChanges.mjs) skips the shards and Smoke, and Test passes without them (#636).
 jobs:
   Changes:
@@ -44,9 +45,18 @@ jobs:
       matrix:
         shard: [1, 2, 3]
     steps:
+      # Without the recordings (the MP3s and FLACs in public/audio, the WAVs in source/audio): about 3 s and 28 MB, not 22 s and 310 MB.
+      # The tests read the JSON beside them, never the audio itself; a test that starts to will find its file missing here (#640).
       - uses: actions/checkout@v7
         with:
           fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !*.mp3
+            !*.flac
+            !*.wav
       # The Node version in mise.toml, the same one used locally.
       - name: Setup Node
         uses: jdx/mise-action@v5
@@ -67,9 +77,18 @@ jobs:
     if: needs.Changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
+      # The game plays its recordings, so they come back from the Actions cache rather than a fresh git fetch (#640).
       - uses: actions/checkout@v7
         with:
           fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !*.mp3
+            !*.flac
+            !*.wav
+      - uses: ./.github/actions/audio
       - name: Setup Node
         uses: jdx/mise-action@v5
       - name: Cache npm

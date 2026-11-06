@@ -1,0 +1,38 @@
+name: Audio
+description: Puts public/audio's recordings into a checkout made without them, from the Actions cache when it holds this commit's, else from git
+
+# The recordings are most of a checkout (about 230 MB of 310) and change far less often than the code, so a job checks out without them
+# (a blobless clone, sparse with `!*.mp3`, `!*.flac`, `!*.wav`) and this brings them back (#640). The key is public/audio's git tree, so a
+# hit is exactly that commit's audio and only exact hits are taken. A miss fetches the recordings from git and saves them: on main that is
+# the cache every PR reads; on a PR it is only that PR's, and a PR only misses when it changes the audio.
+runs:
+  using: composite
+  steps:
+    - name: Key from the audio's tree
+      id: key
+      shell: bash
+      run: echo "key=audio-$(git rev-parse HEAD:public/audio)" >> "$GITHUB_OUTPUT"
+    - name: Restore the recordings
+      id: restore
+      uses: actions/cache/restore@v6
+      with:
+        path: public/audio
+        key: ${{ steps.key.outputs.key }}
+    # Everything but source/audio's WAVs, which nothing in CI reads.
+    - name: Fetch the recordings from git
+      if: steps.restore.outputs.cache-hit != 'true'
+      shell: bash
+      run: git sparse-checkout set --no-cone '/*' '!*.wav'
+    - name: Save the recordings
+      if: steps.restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: public/audio
+        key: ${{ steps.key.outputs.key }}
+    # A build without them would still pass and ship a silent game, so fail here if any file git tracks is missing.
+    - name: Every recording is there
+      shell: bash
+      run: |
+        missing=$(git ls-tree -r --name-only HEAD public/audio | while read -r f; do [ -f "$f" ] || echo "$f"; done)
+        [ -z "$missing" ] || { echo "::error::Missing from public/audio: $(echo "$missing" | head -5 | tr '\n' ' ')"; exit 1; }
+        echo "$(git ls-tree -r --name-only HEAD public/audio | wc -l) files in public/audio"

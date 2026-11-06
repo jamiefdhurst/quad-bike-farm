@@ -32,11 +32,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # The build's `git log` puts the last 300 commit messages in the FAQ's "Recently changed" and the start screen's "New since last time".
-      # It reads only the messages, so the old commits come without their files: only the tree checked out is downloaded (#636).
+      # It reads only the messages, so the old commits come without their files: only the tree checked out is downloaded (#636). The
+      # recordings come from the Actions cache, and when this merge changed them they are fetched and saved there for every PR after (#640).
       - uses: actions/checkout@v7
         with:
           fetch-depth: 300
           filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !*.mp3
+            !*.flac
+            !*.wav
+      - uses: ./.github/actions/audio
       # The Node version in mise.toml, the same one used locally.
       - name: Setup Node
         uses: jdx/mise-action@v5
