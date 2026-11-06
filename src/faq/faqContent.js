@@ -2592,7 +2592,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Do the girls use the lights, indicators and brakes properly?',
-        a: `Mostly. Driving a Land Rover or the UTV in the dark, a girl puts the lights on and switches them off again when she has parked (not if she brought it round to light your work). Amy nearly always indicates for a turn; Jess usually forgets. Getting off a quad with a 4WD switch, Amy usually puts it back in 2WD and Jess seldom does. If Amy sees water in a quad's sediment bowl before she rides it, she drains it at the tap. And a girl whose brakes have gone wet from a ford or the crossing says so, then taps the brake as she goes until they dry.`,
+        a: `Mostly. Driving a Yak or a Moorland in the dark, a girl puts the lights on and switches them off again when she has parked (not if she brought it round to light your work). Amy nearly always indicates for a turn; Jess usually forgets. Getting off a quad with a 4WD switch, Amy usually puts it back in 2WD and Jess seldom does. If Amy sees water in a quad's sediment bowl before she rides it, she drains it at the tap. And a girl whose brakes have gone wet from a ford or the crossing says so, then taps the brake as she goes until they dry.`,
         tip: 'Amy indicates, drains the tap and resets 2WD. Jess usually does not.',
       },
       {
