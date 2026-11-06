@@ -987,7 +987,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why do the girls stop talking when I come up behind the barn?',
         a: `They are talking about you, and they stop when they see or hear you. Creep up on them on foot with nothing running nearby and you will catch an exchange or
-          two. Being close only gives you away to a girl who can see you, so the barn, the field shed, the hedges and a tall vehicle hide you; you can stand right behind
+          two. Being close only gives you away to a girl who can see you, so the barn, the field shed, the Dutch barn's back and bale stack, the neighbour's house and barn, the hedges and a tall vehicle hide you; you can stand right behind
           them. Running, an engine going nearby or opening the wheel still gives you away from a long way off, and so does bumping into them. When they catch you they both turn to
           look, stop dead mid-sentence, and after a silence one of them covers for it.`,
         tip: 'Sneak up on them on foot, out of sight round the barn, and you may overhear what they say about you.',

@@ -14,7 +14,7 @@ import { stripFrame } from './layout.js';
 import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
 import { createFields } from './fields.js';
 import { detourVia, DEFAULT_DETOUR_PARAMS, DETOUR_PARAM_RANGES } from '../npc/detour.js';
-import { createOutbuildings } from './outbuildings.js';
+import { createOutbuildings, dutchBarnScreens } from './outbuildings.js';
 import { hutShape } from './hut.js';
 import { RoadWet, DEFAULT_ROAD_WET_PARAMS, ROAD_WET_PARAM_RANGES } from './roadWet.js';
 import { RoadMud, RoadMudSet, DEFAULT_ROAD_MUD_PARAMS, ROAD_MUD_PARAM_RANGES } from './roadMud.js';
@@ -70,6 +70,16 @@ export class World {
       ...(bo.annex ? [{ ...bo.annex.outer, door: { x: bo.annex.door.x, z: bo.annex.z, halfWidth: bo.annex.door.maxZ - bo.annex.z } }] : []),
       ...(sh ? [{ minX: sh.x - sh.halfX, maxX: sh.x + sh.halfX, minZ: sh.z - sh.halfZ, maxZ: sh.z + sh.halfZ }] : []),
       ...(this.hutShape ? [this.hutShape.box()] : []),
+    ];
+
+    // What hides you from a girl as well (npc/sight.js): those, the Dutch barn's clad back and east end (its front and west end are open) and
+    // its bale stack, and the neighbour's house and barn. The muck heap, the trough and the neighbour's parked vehicles are too low or too varied.
+    const db = this.outbuildings.barn;
+    const nb = this.outbuildings.neighbour?.shape;
+    this.sightBuildings = [
+      ...this.detourBuildings,
+      ...dutchBarnScreens(db),
+      ...(nb ? [nb.house.outer, nb.barn.outer] : []),
     ];
 
     this.sky = new Sky(scene, renderer, { ...SKY_PARAMS });

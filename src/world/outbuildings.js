@@ -44,6 +44,13 @@ export function dutchBarnShape(layout) {
   return { outer, roof, postXs, bay, eaves: b.eaves, rise: b.rise, bales, seats, stack, open: rect(outer.minX + (b.openBays * bay) / 2, b.z, (b.openBays * bay) / 2, b.halfZ) };
 }
 
+/** What the Dutch barn hides a person behind, as thin boxes: its clad back (-z) and east end, and its bale stack. The front and west end are open. */
+export function dutchBarnScreens(shape) {
+  if (!shape) return [];
+  const o = shape.outer;
+  return [{ ...o, maxZ: o.minZ + 0.2 }, { ...o, minX: o.maxX - 0.2 }, shape.stack];
+}
+
 /** The field shed's shape: outside and inside its walls, the doorway in its south wall, and its roof. Null if the layout has none. */
 export function fieldShedShape(layout) {
   const s = layout.fieldShed;

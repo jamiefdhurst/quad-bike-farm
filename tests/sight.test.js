@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { LAYOUT } from '../src/world/layout.js';
+import { dutchBarnShape, dutchBarnScreens } from '../src/world/outbuildings.js';
 import { canSee, hedgeBlocks, buildingBlocks } from '../src/npc/sight.js';
 
 const at = (x, z, y = 1.5) => ({ x, y, z });
@@ -33,5 +35,17 @@ describe('sight', () => {
     expect(canSee(at(-5, 20), at(-5, 25), world)).toBe(false);
     expect(asked).toEqual([1]);
     expect(canSee(at(-5, 20), at(-5, 25), { ...world, blockedBy: () => false })).toBe(true);
+  });
+
+  it('hides you behind the Dutch barn\'s back and bale stack but not in front of it', () => {
+    const b = dutchBarnShape(LAYOUT);
+    const screens = dutchBarnScreens(b);
+    const mid = (b.outer.minX + b.outer.maxX) / 2;
+    const behind = at(mid, b.outer.minZ - 5);
+    const front = at(mid, b.outer.maxZ + 5);
+    expect(buildingBlocks(screens, behind, front)).toBe(true);
+    expect(buildingBlocks(screens, at(b.outer.minX - 3, b.outer.maxZ + 3), at(b.outer.minX - 3, b.outer.maxZ + 9))).toBe(false);
+    expect(buildingBlocks(screens, at(b.outer.minX + 0.5, b.outer.maxZ + 3), at(b.outer.minX - 4, b.outer.maxZ + 3))).toBe(false); // open west end
+    expect(dutchBarnScreens(null)).toEqual([]);
   });
 });
