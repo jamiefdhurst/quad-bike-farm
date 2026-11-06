@@ -194,7 +194,8 @@
   "audio/companion-voice-191.mp3",
   "audio/companion-voice-192.mp3",
   "audio/companion-voice-193.mp3",
-  "audio/companion-voice-194.mp3"
+  "audio/companion-voice-194.mp3",
+  "audio/companion-voice-195.mp3"
  ],
  "voice": "chatterbox|7fda5df3df9d",
  "clips": {
@@ -22672,6 +22673,176 @@
    "file": 194,
    "start": 11.44,
    "dur": 2.08
+  },
+  "I bet you do.": {
+   "file": 194,
+   "start": 13.6,
+   "dur": 0.99
+  },
+  "You only won because I let you.": {
+   "file": 194,
+   "start": 14.67,
+   "dur": 2.11
+  },
+  "It was a long time ago.": {
+   "file": 194,
+   "start": 16.86,
+   "dur": 1.64
+  },
+  "I did beat you in that race, you know.": {
+   "file": 194,
+   "start": 18.58,
+   "dur": 1.7
+  },
+  "I have not finished telling you.": {
+   "file": 194,
+   "start": 20.36,
+   "dur": 1.48
+  },
+  "A fluke that finished ahead of you.": {
+   "file": 194,
+   "start": 21.92,
+   "dur": 1.48
+  },
+  "Do not make a fuss, Jess.": {
+   "file": 194,
+   "start": 23.48,
+   "dur": 1.39
+  },
+  "I thought you were brilliant in that race.": {
+   "file": 194,
+   "start": 24.95,
+   "dur": 1.62
+  },
+  "I am allowed to say so.": {
+   "file": 194,
+   "start": 26.65,
+   "dur": 1.21
+  },
+  "We did not go easy on you this time.": {
+   "file": 194,
+   "start": 27.94,
+   "dur": 1.91
+  },
+  "You can win the next race. I will say a prayer.": {
+   "file": 194,
+   "start": 29.93,
+   "dur": 2.62
+  },
+  "That was one time.": {
+   "file": 194,
+   "start": 32.63,
+   "dur": 1.72
+  },
+  "I am not going near that mud again.": {
+   "file": 194,
+   "start": 34.43,
+   "dur": 2.41
+  },
+  "Do not.": {
+   "file": 194,
+   "start": 36.92,
+   "dur": 0.63
+  },
+  "Still got mud in your boots, Jess?": {
+   "file": 194,
+   "start": 37.63,
+   "dur": 1.52
+  },
+  "It was a shortcut to the bottom.": {
+   "file": 194,
+   "start": 39.23,
+   "dur": 1.63
+  },
+  "Which bog?": {
+   "file": 194,
+   "start": 40.94,
+   "dur": 0.75
+  },
+  "I landed on my feet.": {
+   "file": 194,
+   "start": 41.77,
+   "dur": 1.14
+  },
+  "My shoulder is still sore from earlier.": {
+   "file": 194,
+   "start": 42.99,
+   "dur": 1.74
+  },
+  "From you laughing at me.": {
+   "file": 194,
+   "start": 44.81,
+   "dur": 1.58
+  },
+  "Jess, I have never seen anyone go over so fast.": {
+   "file": 194,
+   "start": 46.47,
+   "dur": 3.04
+  },
+  "It really was not.": {
+   "file": 194,
+   "start": 49.59,
+   "dur": 2.21
+  },
+  "Nobody said a word.": {
+   "file": 194,
+   "start": 51.88,
+   "dur": 1.69
+  },
+  "Do you think it will start again, the one that seized?": {
+   "file": 194,
+   "start": 53.65,
+   "dur": 2.27
+  },
+  "That is the same problem.": {
+   "file": 194,
+   "start": 56.0,
+   "dur": 1.13
+  },
+  "Someone. Not looking at anyone.": {
+   "file": 194,
+   "start": 57.21,
+   "dur": 2.34
+  },
+  "I am sorry about before, Jess. Mostly.": {
+   "file": 194,
+   "start": 59.63,
+   "dur": 2.4
+  },
+  "You were awful. I was justified.": {
+   "file": 195,
+   "start": 0.1,
+   "dur": 2.82
+  },
+  "You have seen it six times.": {
+   "file": 195,
+   "start": 3.0,
+   "dur": 1.77
+  },
+  "I keep checking my pocket for the licence.": {
+   "file": 195,
+   "start": 4.85,
+   "dur": 1.82
+  },
+  "I know. I like checking.": {
+   "file": 195,
+   "start": 6.75,
+   "dur": 1.8
+  },
+  "Thank you. That is kind.": {
+   "file": 195,
+   "start": 8.63,
+   "dur": 2.05
+  },
+  "I do not want to talk about the test.": {
+   "file": 195,
+   "start": 10.76,
+   "dur": 1.52
+  },
+  "You had your mouth open.": {
+   "file": 195,
+   "start": 12.36,
+   "dur": 1.16
   }
  }
 }
