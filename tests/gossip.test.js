@@ -47,7 +47,33 @@ describe('gossip', () => {
     expect(cuts.length).toBe(1);
     expect(said.length).toBeLessThan(3);
     const last = said[said.length - 1].split(':')[0];
-    expect(events).toEqual([{ type: 'caught', girl: last === 'jess' ? 'amy' : 'jess' }]);
+    expect(events).toEqual([{ type: 'noticed' }, { type: 'caught', girl: last === 'jess' ? 'amy' : 'jess' }]);
+  });
+
+  it('does not take being near as being seen when no girl can see you, until you are right on them', () => {
+    const hidden = girls.map((g) => ({ ...g, sees: false }));
+    const g = make();
+    const said = [];
+    run(g, 3.5, ctx({ you: { x: 5.5, z: 0, onFoot: true, speed: 1.5 }, girls: hidden }), said, []);
+    expect(said.length).toBeGreaterThan(0);
+    const cuts = [];
+    const events = run(g, 0.5, ctx({ you: { x: 5, z: 0, onFoot: true, speed: 1.5 }, girls: hidden }), said, cuts);
+    expect(cuts).toEqual([]);
+    expect(events).toEqual([]);
+    run(g, 0.25, ctx({ you: { x: 5, z: 0, onFoot: true, speed: 1.5 }, girls: girls.map((x) => ({ ...x, sees: true })) }), said, cuts);
+    expect(cuts.length).toBe(1);
+    const close = make();
+    run(close, 4, ctx({ girls: hidden }), [], []);
+    const closeCuts = [];
+    run(close, 2, ctx({ you: { x: 3, z: 0, onFoot: true, speed: 1.5 }, girls: [{ ...girls[0], x: 2, sees: false }, { ...girls[1], x: 4, sees: false }] }), [], closeCuts);
+    expect(closeCuts.length).toBe(1);
+  });
+
+  it('says they have noticed you the moment they stop, so they can turn to look', () => {
+    const g = make();
+    run(g, 4, ctx(), [], []);
+    const events = run(g, 0.25, ctx({ you: { x: 3, z: 0, onFoot: true, speed: 1.5 } }), [], []);
+    expect(events).toEqual([{ type: 'noticed' }]);
   });
 
   it('stays quiet afterwards for the cooldown, and uses every exchange before repeating', () => {
