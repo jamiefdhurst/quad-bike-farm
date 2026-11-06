@@ -1448,6 +1448,12 @@ export const FAQ_SECTIONS = [
           Do it and she likes you a lot more; leave it six minutes and it lapses and she's put out.`,
       },
       {
+        q: 'Why are the girls going on about something that happened earlier?',
+        a: `They remember the day. A few minutes after a race, a tip or a bog, a seized quad, a row or Amy's driving test, the two of them can bring it
+          up again when they are stood about together: who won the race and won't let it drop, who is not to be reminded about the mud. They bring each
+          thing up once. Yours counts too, if you raced them.`,
+      },
+      {
         q: 'Why have they stopped talking to each other?',
         a: `They've fallen out, after a bad race, one taking the other's quad, or too many digs. For a few minutes they won't share a quad and the banter
           turns sharp. Each tells you her side; her wheel then has "You're right" (she likes you more, the row lasts longer) and "Make it up" (shortens it,

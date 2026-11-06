@@ -1810,3 +1810,10 @@ The vehicle's controls had been built for you; the girls only did some of them. 
 - Follow-on to #114: `world.sightBuildings` is the walk-round list plus the Dutch barn's clad back and east end (thin boxes, `dutchBarnScreens`; its front and west end are open, so you are seen through them), its bale stack, and the neighbour's house and barn. The game uses it for `girlSees`; the girls' walking still uses `detourBuildings` alone.
 - Left out on purpose: the muck heap and the trough (low), and the neighbour's parked vehicles and yard wall (heights vary), so they don't hide you.
 
+
+## The girls call back to earlier in the day (#115, was TODO 224)
+
+- The day's log (`DayEvents`, #55) already existed for the end-of-day card; this reads it a second way. `src/npc/earlier.js` (pure, tested) notes when each entry first appears and, once it is `earlierAfter` old (300 s), offers it to the banter as a lasting `earlier` situation with roles naming the event and who. The banter's usual gap (150 s) and chance (3% a second) decide when, and a callback is not a dig, so it adds no friction.
+- Sooner than five minutes the race, bog or row is still just happening and its own moment (`raced`, `stuck`, `fellOut`) covers it; later it is a thing they remember.
+- Called back: a race between them (by winner), a race you were in (won or not), a girl tipped or bogged (by girl and which), a seized quad, a falling out, Amy's test (passed or failed). Not the show, a made-up or the totals, which have nothing to say yet. Each entry once, oldest first; stood about together and not fallen out. The seized line names no quad, because the lines about each quad are per quad and would re-pack the banks (#75).
+- Merged last in `banterLines.js` so the recorded banks before it stay as they were. The log is per day and not saved, so nothing is kept across loads.
