@@ -86,6 +86,7 @@ import { JESS_PILLION_COACH_LINES } from './pillionCoachLines.js';
 import { JESS_LESSON_LINES } from './lessonLines.js';
 import { JESS_SMOKE_LINES } from './smokeLines.js';
 import { JESS_HILL_LINES } from './hillLines.js';
+import { JESS_TERRACE_LINES } from './terraceLines.js';
 import { JESS_SHOUT_LINES } from './shoutFaultLines.js';
 import { JESS_FUMES_LINES } from './fumesLines.js';
 import { JESS_RUSTY_LINES } from './rustyLines.js';
@@ -608,4 +609,6 @@ export const JESS_LINES = {
   ...JESS_TIDY_LOAD_LINES,
   // Harrowing the field (harrowLines.js), last so the banks before it stay as they are.
   ...JESS_HARROW_LINES,
+  // The sheep field's terraces (terraceLines.js), after that.
+  ...JESS_TERRACE_LINES,
 };
