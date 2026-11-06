@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { angleDiff, headingTo, steerFor, targetSpeed, pedalsFor, planLoop, HerDrive, steerLimit, cornerSpeed } from '../src/npc/herDriving.js';
+import { angleDiff, headingTo, steerFor, targetSpeed, pedalsFor, planLoop, leadIn, HerDrive, steerLimit, cornerSpeed } from '../src/npc/herDriving.js';
 import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
 
 function seededRandom(seed) {
@@ -120,6 +120,43 @@ describe('her driving: the pieces', () => {
     expect(pts.length).toBeGreaterThan(0);
     for (const p of pts) expect(p.x).toBeLessThanOrEqual(0.5);
     expect(planLoop({ x: 0, z: 0 }, 0, seededRandom(3), P, () => false)).toEqual([]);
+  });
+});
+
+describe('setting off from a crowded yard', () => {
+  // A parked quad close beside her, level with her front wheel: the chord out to a point at 60 degrees clears it by the
+  // test's width, but a quad that has to swing that far first would not.
+  const origin = { x: 0, z: 0 };
+  const beside = (a, b) => !(b.x > 1 && b.z > 0 && b.z < 3 && b.x < 4);
+  it('starts with a short run straight out along the way the quad points', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const pts = planLoop(origin, 0, seededRandom(seed), P, open);
+      expect(pts[0].x).toBeCloseTo(0);
+      expect(pts[0].z).toBeCloseTo(P.driveLeadIn);
+    }
+  });
+
+  it('bends the run only a little towards a loop that wants to go another way', () => {
+    const lead = leadIn(origin, 0, Math.PI / 2, P, open);
+    expect(Math.atan2(lead.x, lead.z)).toBeCloseTo(P.driveLeadBend);
+  });
+
+  it('checks the later legs from the end of the run, not from where she sits', () => {
+    const seen = [];
+    planLoop(origin, 0, seededRandom(2), P, (a, b) => (seen.push(a), true));
+    expect(seen[0]).toEqual(origin);
+    expect(seen[1].z).toBeCloseTo(P.driveLeadIn);
+  });
+
+  it('shortens the run when something is near, and gives none when there is no room for it', () => {
+    const near = (a, b) => Math.hypot(b.x - a.x, b.z - a.z) < 2 || b.z < 0;
+    expect(leadIn(origin, 0, 0, P, near).z).toBeCloseTo(P.driveLeadIn / 2);
+    expect(leadIn(origin, 0, 0, P, () => false)).toBeNull();
+  });
+
+  it('plans round a quad parked beside her', () => {
+    const pts = planLoop(origin, 0, seededRandom(6), P, beside);
+    expect(pts.length).toBeGreaterThan(0);
   });
 });
 
