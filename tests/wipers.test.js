@@ -30,6 +30,24 @@ describe('the wiper stalk', () => {
     expect(w.running).toBe(false);
   });
 
+  it('keeps wiping on slow and fast after being parked on intermittent (found testing #512)', () => {
+    for (const next of ['slow', 'fast']) {
+      const w = new Wipers(['int', 'slow', 'fast']);
+      w.set('int');
+      run(w, WIPER_PARAMS.slowCycle * 1.2); // one wipe, now parked and waiting out the pause
+      expect(w.blade).toBe(0);
+      w.set(next);
+      let sweeps = 0;
+      let high = false;
+      for (let t = 0; t < 6; t += 0.05) {
+        w.update(0.05, true);
+        if (w.blade > 0.9 && !high) sweeps++;
+        high = w.blade > 0.9;
+      }
+      expect(sweeps, next).toBeGreaterThanOrEqual(3);
+    }
+  });
+
   it('stops dead with the ignition off', () => {
     const w = new Wipers(['slow']);
     w.set('slow');

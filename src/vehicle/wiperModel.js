@@ -52,8 +52,8 @@ export function addRainGlassBetween(parent, { foot, top, halfFoot, halfTop, inse
 }
 
 /**
- * The wiper stalk on the right of a steering column (-x in the column's frame), opposite the indicator stalk and like it, a plain end
- * with no symbol. It is lifted a notch for each speed (`poseWiperStalk`).
+ * The wiper stalk on the right of a steering column (-x in the column's frame), opposite the indicator stalk and like it. A modern one has the
+ * wiper symbol on top of its wide end. It is lifted a notch for each speed (`poseWiperStalk`).
  */
 export function addWiperStalk(column, y, mat, { modern = false } = {}) {
   const stalk = new THREE.Group();
@@ -64,12 +64,48 @@ export function addWiperStalk(column, y, mat, { modern = false } = {}) {
   if (modern) {
     piece(new RoundedBoxGeometry(0.12, 0.014, 0.024, 2, 0.006).translate(-0.075, 0, 0), mat, stalk); // a flat moulded arm
     piece(new RoundedBoxGeometry(0.05, 0.024, 0.03, 2, 0.0099).translate(-0.155, 0, 0), mat, stalk); // and a wide end you push
+    const symbol = wiperSymbol();
+    if (symbol) {
+      const mark = new THREE.Mesh(new THREE.PlaneGeometry(0.026, 0.026), symbol);
+      mark.rotation.x = -Math.PI / 2; // lying on the end's top, the symbol the right way up for the driver looking down at it
+      mark.rotation.z = Math.PI / 2;
+      mark.position.set(-0.155, 0.0122, 0);
+      stalk.add(mark);
+    }
   } else {
     piece(rod([0, 0, 0], [-0.13, 0, 0], 0.006, 6), mat, stalk); // a thin round old one
     piece(rod([-0.11, 0, 0], [-0.15, 0, 0], 0.011, 10), mat, stalk); // with a thicker grip on the end
   }
   column.add(stalk);
   return stalk;
+}
+
+let symbolMaterial = null;
+/** The wiper pictogram (a fan of glass swept by an arm, with a drop under it) in pale grey on nothing; null where there is no canvas (tests). */
+function wiperSymbol() {
+  if (symbolMaterial || typeof document === 'undefined') return symbolMaterial;
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  if (!g) return null;
+  g.strokeStyle = g.fillStyle = '#d9dcdf';
+  g.lineCap = 'round';
+  g.lineWidth = 8;
+  g.beginPath();
+  g.arc(64, 100, 78, Math.PI * 1.2, Math.PI * 1.8); // the swept arc
+  g.stroke();
+  g.lineWidth = 10;
+  g.beginPath();
+  g.moveTo(64, 100);
+  g.lineTo(100, 38); // the arm at the end of its sweep
+  g.stroke();
+  g.beginPath();
+  g.arc(56, 118, 6, 0, Math.PI * 2); // a drop
+  g.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  symbolMaterial = new THREE.MeshBasicMaterial({ map: tex, transparent: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  return symbolMaterial;
 }
 
 function piece(geo, mat, parent) {
