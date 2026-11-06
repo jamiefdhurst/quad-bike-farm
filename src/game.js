@@ -8085,7 +8085,7 @@ export class Game {
     const to = { x: at.x, y: at.y + this.player.params.eyeHeight, z: at.z };
     return canSee(eye, to, {
       hedges: this.world.fields.hedges,
-      buildings: this.world.detourBuildings,
+      buildings: this.world.sightBuildings,
       blockedBy: (a, b) => this.vehicleBlocksSight(a, b),
     });
   }
