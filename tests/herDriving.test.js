@@ -160,6 +160,44 @@ describe('setting off from a crowded yard', () => {
   });
 });
 
+describe('backing out of a crowded spot', () => {
+  // Something close ahead of her, nothing behind: forward legs from the start are blocked, until she is 3 m further back.
+  const crowded = (quad) => (a, b) => !(quad.position.z > -2 && b.z > a.z - 0.5 && Math.hypot(b.x - a.x, b.z - a.z) < 6.5);
+
+  it('reverses first when there is no room to pull forward, then sets off without bumping', () => {
+    const quad = fakeQuad();
+    const { d, events } = run(quad, { seed: 3, isClear: crowded(quad), params: { ...P, driveForMin: 20, driveForMax: 20 } });
+    expect(d.stopped).not.toBe('noRoom');
+    expect(events).not.toContain('obstacle');
+    expect(events).not.toContain('stuck');
+    expect(events.some((e) => e === 'setOff' || e === 'moveOff')).toBe(true);
+    expect(quad.position.z).toBeLessThan(-0.5); // she did back out, and set off from there
+  });
+
+  it('does not reverse when there is room ahead, or none behind', () => {
+    const open1 = fakeQuad();
+    const a = new HerDrive(open1, { params: P, probe: () => Infinity, isClear: open, random: seededRandom(2) });
+    open1.driver = a;
+    expect(a.plan()).toBe(true);
+    const tight = fakeQuad();
+    const b = new HerDrive(tight, { params: P, probe: (h) => (Math.abs(h - Math.PI) < 0.1 ? 1 : Infinity), isClear: () => false, random: seededRandom(2) });
+    tight.driver = b;
+    b.plan();
+    expect(b.phase).not.toBe('reversing');
+  });
+
+  it('only does it as many times as she is allowed', () => {
+    const quad = fakeQuad();
+    const d = new HerDrive(quad, { params: { ...P, crowdedBackOuts: 1 }, probe: () => Infinity, isClear: () => false, random: seededRandom(2) });
+    quad.driver = d;
+    d.plan();
+    expect(d.phase).toBe('reversing');
+    d.setPhase('pause', 0);
+    d.plan();
+    expect(d.phase).not.toBe('reversing');
+  });
+});
+
 describe('her driving a quad', () => {
   it('drives slowly round a small loop for about a minute, then stops', () => {
     for (let seed = 1; seed <= 10; seed++) {
