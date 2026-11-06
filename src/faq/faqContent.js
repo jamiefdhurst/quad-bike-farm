@@ -1799,8 +1799,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I have tea at the top of the hill?',
         a: `Ride up the hill pasture with a girl to the flat rock at the very top, by the far hedge. Get off, stand by the rock and press E. She gets off her quad if she is on
-          it, sits on the rock and pours two mugs from her flask. Stay close and look at the view for about forty seconds and she will say a few things about it, and about
-          the weather. A girl stood about up there when you arrive may suggest it herself. Finish the cup and she likes you a little more.`,
+          it, sits on the rock and pours tea from her flask. Stay close and look at the view for about forty seconds and she will say a few things about it, and about
+          the weather. She holds her mug in both hands to warm them and lifts it to drink now and then, and the mugs steam, more on a cold day. A girl stood about up there when you arrive may suggest it herself. Finish the cup and she likes you a little more.`,
         tip: 'Take a girl to the rock at the top of the hill, get off, and press E for a flask of tea.',
       },
       {

@@ -42,7 +42,7 @@ export const reactingMethods = {
     if (needs === 'any') return true;
     const onFoot = this.root.parent === this.scene && this.fsm.is('idle', 'walking', 'pranking');
     if (needs === 'feet') return onFoot && !this.attempt;
-    if (this.carrying || this.warmingAt || this.attempt || this.waitHands?.()) return false;
+    if (this.carrying || this.cup || this.pat || this.warmingAt || this.attempt || this.waitHands?.()) return false;
     return onFoot || this.fsm.is('resting', 'onTrailer') || (this.fsm.is('seated') && this.seatKind === 'rack');
   },
 

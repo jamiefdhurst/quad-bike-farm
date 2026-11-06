@@ -214,6 +214,7 @@ import { PhoneCalls, PHONE_PARAM_RANGES, callSpot } from './npc/phoneCalls.js';
 import { PhoneAudio } from './audio/phoneAudio.js';
 import { DEFAULT_HOME_PARAMS, HOME_PARAM_RANGES } from './npc/homeParking.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
+import { steamParams, STEAM_PARAM_RANGES, teaTemperature, steamAmount } from './npc/steam.js';
 import { Flask, FLASK_PARAM_RANGES } from './npc/flask.js';
 import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js';
 import { dealPoloOpen } from './npc/polo.js';
@@ -2001,6 +2002,7 @@ export class Game {
     registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
     registerTuning('Things walk off', this.loose.p, LOOSE_PARAM_RANGES);
     registerTuning('Flask at the top of the hill', this.flask.p, FLASK_PARAM_RANGES);
+    registerTuning('Steam and mugs in the hand', steamParams, STEAM_PARAM_RANGES);
     registerTuning('Girls carrying things', carryParams, CARRY_PARAM_RANGES);
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
     registerTuning('Wax jackets', this.coats.p, COAT_PARAM_RANGES);
@@ -10070,6 +10072,21 @@ export class Game {
     return (model.userData.loose ??= newLoose());
   }
 
+  /** Steam off the tea on the racks, in the girl's hands and at the flask, thinner as it cools and bent by the wind (npc/steam.js). */
+  updateSteam(dt) {
+    const air = this.weather.temperature;
+    const amount = (age) => steamAmount(teaTemperature(age, air, steamParams), air, steamParams);
+    for (const [girl, mug] of Object.entries(this.teaMugs)) {
+      const age = this.tea.ageOf(girl);
+      if (age != null) this.mugs.setSteam(mug, amount(age));
+    }
+    if (this.flaskSet) {
+      this.flaskSet.userData.age += dt;
+      for (const m of [...this.flaskSet.userData.mugs, this.flaskSet.userData.hers]) this.mugs.setSteam(m, amount(this.flaskSet.userData.age));
+    }
+    this.mugs.updateSteam(dt, this.wind);
+  }
+
   /** A mug on a rack creeps with the shake of the quad under it, and goes over the edge in the end. */
   updateLooseMugs(dt) {
     for (const [girl, mug] of Object.entries(this.teaMugs)) {
@@ -10562,18 +10579,28 @@ export class Game {
     const group = new THREE.Group();
     group.position.set(v.x, this.world.heightAt(v.x, v.z), v.z);
     group.rotation.y = v.yaw;
+    // Her mug is in her hands; yours is on the ground beside the flask, and the flask's cup is the other.
     const flask = this.mugs.makeFlask();
-    const mugs = [this.mugs.make(0x3a6ea5), this.mugs.make(0xb8322a)];
+    const mugs = [this.mugs.make(0x3a6ea5), this.mugs.makeFlaskCup()];
     [[flask, 1.15, 0.55], [mugs[0], 0.9, 0.7], [mugs[1], 1.35, 0.75]].forEach(([o, x, z]) => {
       group.add(o);
       o.position.set(x, 0, z);
     });
     this.scene.add(group);
+    group.userData = { mugs, age: 0 }; // the tea cools from the pour (updateSteam)
     this.flaskSet = group;
+    const c = this.companions.find((o) => o.character.id === this.flask.girl);
+    const mug = c && this.mugs.make(c.character.id === 'amy' ? 0xe6dfd0 : 0xb8322a);
+    if (mug) {
+      mug.position.copy(c.root.position);
+      if (c.startCup(mug)) group.userData.hers = mug;
+      else this.mugs.remove(mug);
+    }
   }
 
   clearFlask() {
     if (!this.flaskSet) return;
+    for (const c of this.companions) this.mugs.remove(c.stopCup());
     this.scene.remove(this.flaskSet);
     this.flaskSet = null;
   }
@@ -13485,6 +13512,7 @@ export class Game {
     if (auto) this.guard.run('updateNicking', () => this.updateNicking(dt, ridden));
     if (auto || this.tea.forced) this.guard.run('updateTea', () => this.updateTea(dt, ridden));
     this.guard.run('updateLooseMugs', () => this.updateLooseMugs(dt));
+    this.guard.run('updateSteam', () => this.updateSteam(dt));
     this.guard.run('updateRackLoads', () => this.updateRackLoads(dt, input));
     if (auto || this.flask.active) this.guard.run('updateFlask', () => this.updateFlask(dt));
     this.guard.run('updateBonfire', () => this.updateBonfire(dt, ridden));

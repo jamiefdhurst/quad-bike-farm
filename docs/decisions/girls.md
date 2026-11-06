@@ -1763,3 +1763,13 @@ Her model is about 1,900 flat-shaded triangles, and every garment is cut from th
 - **A drape pass** (`drape` in `garmentMesh.js`, 8 passes, 32 on a split body) on the shorts and the tops' front below her bust only moves cloth outwards, half way to its neighbours, so it bridges hollows. The model's baked-in old shirt hem flares round her seat and hips; split shorts followed it into a hard lip like a T-shirt's hem.
 - **Cost:** 3.36 s to Ready against 2.97 flat (+0.39), about 30,000 more triangles a frame and no change in frame time. Dressing a girl takes about 300 ms against 175 flat, after `cullRays` was given boxes round runs of 16 triangles (it was 660).
 - On by default after Jamie's look; `?body=flat` for the model as it comes.
+
+## Hands in the sit-down moments (#108, was TODO 217)
+
+The flask, the rack and the starting handle all had a girl doing something with her hands that the game only said. Now it shows.
+
+- **Steam** (`src/npc/steam.js`, pure, tested). Tea is poured at `teaStartC` 80 and cools towards the air's temperature with a half-life of 200 s (a mug left on a rack for the usual 90 to 180 s is just going cold when she comes back for it). `steamAmount` is 0 below 48 °C and full above 70 °C, and a cold day makes it thicker (full at 2 °C, 35% on a warm day). The wisp (`items/mug.js`, `setSteam`/`updateSteam`) is nine soft dots rising 20 cm from the lip on a thin double wave, leaning downwind with `game.wind` (up to 22 cm at the top). It lives in the scene, not on the mug, and goes when the mug leaves it. A spilt mug stops steaming.
+- **At the flask** she holds a china mug in both hands at her chest (`companionCupping.js`, a rig poser after she sits down) and lifts it to her mouth for a drink every 11 s, tilting it, and looks out over the view while she drinks. Yours is on the ground beside the flask, and the flask's own steel cup is the third: both steam from the pour. The flask lost its fixed cup to make the third.
+- **Jess pats the tank** only when she says she is (`startPat`): the voice calls `patTank()`, and her right hand comes down flat on the tank top (found from the model's `tank` mesh) three times in 1.7 s while she leans in a little. It works standing at the starter or sat at the wheel.
+- Everything here is tuned under "Steam and mugs in the hand". Not a new offer: nothing new is chosen, so the chooser is untouched.
+

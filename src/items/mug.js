@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { wispOffset, steamLean } from '../npc/steam.js';
 
 // Mugs of tea (npc/tea.js): the one a girl leaves on a quad's rear rack, and the same one lying on the ground, with a
 // tea stain, once it has fallen off. Just something to look at: no collider, so nothing knocks it over but the
@@ -6,6 +7,28 @@ import * as THREE from 'three';
 
 const GRAVITY = 9.81;
 const STAINS_MAX = 6;
+const PUFFS = 9; // soft dots in a wisp
+const WISP_HEIGHT = 0.2; // metres from the lip to the top of the wisp
+const WISP_SECONDS = 2.4; // seconds for a puff to rise that far
+const LIP = 0.09; // the height of a mug's lip (buildMug)
+
+let _dot = null;
+/** A soft white dot for a puff of steam. */
+function dotTexture() {
+  if (_dot) return _dot;
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 32, 32);
+  _dot = new THREE.CanvasTexture(c);
+  return _dot;
+}
+
+const _p = new THREE.Vector3();
 
 function buildMug(colour) {
   const g = new THREE.Group();
@@ -25,15 +48,36 @@ function buildMug(colour) {
   return g;
 }
 
-/** A tartan-green vacuum flask with its cup on top, standing on a rock (npc/flask.js). */
+/** The flask's cup lid, steel, with tea in it, used as a mug. */
+function buildFlaskCup() {
+  const g = new THREE.Group();
+  g.name = 'flaskCup';
+  const steel = new THREE.MeshStandardMaterial({ color: 0xc9ccd0, roughness: 0.3, metalness: 0.6 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.044, 0.07, 16, 1, true), steel);
+  body.position.y = 0.035;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.003, 6, 18).rotateX(Math.PI / 2), steel);
+  rim.position.y = 0.07;
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(0.044, 16).rotateX(-Math.PI / 2), steel);
+  floor.position.y = 0.003;
+  const tea = new THREE.Mesh(new THREE.CircleGeometry(0.044, 16).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x6b3d1c, roughness: 0.15 }));
+  tea.position.y = 0.06;
+  for (const m of [body, rim, floor, tea]) {
+    m.castShadow = true;
+    g.add(m);
+  }
+  g.userData.lip = 0.07;
+  return g;
+}
+
+/** A tartan-green vacuum flask, its cup off, standing on a rock (npc/flask.js). */
 function buildFlask() {
   const g = new THREE.Group();
   g.name = 'flask';
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.22, 16), new THREE.MeshStandardMaterial({ color: 0x2f6b45, roughness: 0.5 }));
   body.position.y = 0.11;
-  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.044, 0.07, 16), new THREE.MeshStandardMaterial({ color: 0xc9ccd0, roughness: 0.3, metalness: 0.6 }));
-  cup.position.y = 0.255;
-  for (const m of [body, cup]) {
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.03, 16), new THREE.MeshStandardMaterial({ color: 0x1c1f22, roughness: 0.6 }));
+  neck.position.y = 0.235;
+  for (const m of [body, neck]) {
     m.castShadow = true;
     g.add(m);
   }
@@ -45,6 +89,7 @@ export class Mugs {
     this.scene = scene;
     this.heightAt = heightAt;
     this.stainFor = stainFor;
+    this.wisps = new Map(); // mug -> { points, amount, t, phase }, the steam off its tea
     this.falling = []; // { mug, vel, spin }
     this.stains = []; // { mesh, left, mug }
     this.stainMat = new THREE.MeshStandardMaterial({ color: 0x4a2b14, roughness: 0.2, transparent: true, opacity: 0.8, depthWrite: false });
@@ -55,6 +100,69 @@ export class Mugs {
     const mug = buildMug(colour);
     this.scene.add(mug);
     return mug;
+  }
+
+  /** The flask's cup, as a mug on the ground. */
+  makeFlaskCup() {
+    const cup = buildFlaskCup();
+    this.scene.add(cup);
+    return cup;
+  }
+
+  /**
+   * How much this mug steams, 0..1 (0 for none): a wisp rises from the lip of its tea, bent downwind. The caller says it each frame from how
+   * hot the tea is (npc/steam.js); the wisp goes when the mug leaves the scene.
+   */
+  setSteam(mug, amount) {
+    if (!mug) return;
+    let w = this.wisps.get(mug);
+    if (!w) {
+      if (amount <= 0.01) return;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(PUFFS * 3), 3));
+      const mat = new THREE.PointsMaterial({ map: dotTexture(), size: 0.05, transparent: true, depthWrite: false, opacity: 0, sizeAttenuation: true });
+      const points = new THREE.Points(geo, mat);
+      points.frustumCulled = false;
+      points.name = 'steam';
+      this.scene.add(points);
+      w = { points, amount: 0, t: Math.random() * 10, phase: Math.random() * 6 };
+      this.wisps.set(mug, w);
+    }
+    w.amount = amount;
+  }
+
+  /** Moves every wisp: up from its mug's lip, leaning with the wind `{ x, z }`. */
+  updateSteam(dt, wind) {
+    const lean = steamLean(wind);
+    for (const [mug, w] of this.wisps) {
+      if (!this.inScene(mug)) {
+        this.scene.remove(w.points);
+        w.points.geometry.dispose();
+        w.points.material.dispose();
+        this.wisps.delete(mug);
+        continue;
+      }
+      w.t += dt;
+      w.points.material.opacity = Math.min(0.55, w.amount * 0.6);
+      w.points.material.size = 0.035 + 0.03 * w.amount;
+      w.points.visible = w.amount > 0.01;
+      if (!w.points.visible) continue;
+      mug.getWorldPosition(_p);
+      const lip = mug.userData.lip ?? LIP;
+      const pos = w.points.geometry.attributes.position;
+      for (let i = 0; i < PUFFS; i++) {
+        const rise = ((w.t / WISP_SECONDS + i / PUFFS) % 1);
+        const o = wispOffset(rise, w.phase, w.t, lean, WISP_HEIGHT * (0.6 + 0.4 * w.amount));
+        pos.setXYZ(i, _p.x + o.x, _p.y + lip + 0.01 + o.y, _p.z + o.z);
+      }
+      pos.needsUpdate = true;
+    }
+  }
+
+  inScene(obj) {
+    let o = obj;
+    while (o.parent) o = o.parent;
+    return o === this.scene;
   }
 
   /** A flask in the scene, for a girl to set down. */
@@ -93,6 +201,7 @@ export class Mugs {
     if (!mug) return;
     const pos = new THREE.Vector3();
     mug.getWorldPosition(pos);
+    this.setSteam(mug, 0); // the tea is spilt
     mug.parent?.remove(mug);
     mug.position.copy(pos);
     mug.rotation.set(0, Math.random() * Math.PI * 2, 0);
