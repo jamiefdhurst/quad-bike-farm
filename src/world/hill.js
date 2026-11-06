@@ -35,22 +35,13 @@ export function createHill(layout) {
   // The riverside meadow beyond the pasture's east hedge, where the river runs (world/brook.js); it is entered by a gateway in that hedge.
   const riverside = hill.riverside ? { ...hill.riverside } : null;
   const pond = pad?.west.pond ?? null;
-  const knolls = pad?.east.knolls ?? [];
+  const terraces = pad?.east.terraces ?? null;
   /** How far (x, z) is through the pond, 0 at its middle and 1 at the edge of the ground it dishes. */
   const pondR = (x, z) => (pond ? Math.hypot((x - pond.x) / pond.rx, (z - pond.z) / pond.rz) : Infinity);
   /** Metres the pond is cut into the ground at (x, z). */
   const pondCut = (x, z) => {
     const r = pondR(x, z);
     return r >= 1 ? 0 : pond.depth * (1 - smoothstep(0.3, 1, r));
-  };
-  /** Metres the sheep field's humps lift the ground at (x, z). */
-  const knollLift = (x, z) => {
-    let h = 0;
-    for (const k of knolls) {
-      const d = Math.hypot(x - k.x, z - k.z) / k.r;
-      if (d < 1) h += k.rise * (1 - smoothstep(0.15, 1, d));
-    }
-    return h;
   };
   /** Metres from (x, z) to the nearest point of a line through `pts` ([x, z] pairs). */
   const lineDistance = (pts, x, z) => {
@@ -140,7 +131,7 @@ export function createHill(layout) {
     h -= sinkAt(x, z);
     h -= channelAt(x, z);
     h -= pondCut(x, z);
-    h += knollLift(x, z);
+    h += terraceLift(x, z);
     // Tussocks and old anthills: rough ground, kept off the lane and out of the stream.
     const rough = inPasture(x, z) || inPaddock(x, z) ? smoothstep(1, 4, Math.abs(z - streamZ(x)) - halfAt(x)) : 0;
     if (rough > 0) h += rough * 0.09 * Math.sin(x * 0.93 + z * 0.31) * Math.sin(z * 0.81 - x * 0.27);
@@ -212,6 +203,37 @@ export function createHill(layout) {
   /** The climb's slope up the hill at (x, z), rise over run along z: the banks' steepness, without the rough. */
   const climbSlope = (x, z) => Math.abs(climb(x, z + 0.5) - climb(x, z - 0.5));
 
+  /**
+   * The sheep field's ground as stepped terraces: 0 on the tread north of the first bank and 1 on the long one at the bottom, a smoothstep
+   * up through each bank in between (so each is a steady slope with a flat tread above it).
+   */
+  const stairs = (z) => {
+    let f = 0;
+    for (const c of terraces.banks) f += smoothstep(c - terraces.width / 2, c + terraces.width / 2, z) / terraces.banks.length;
+    return f;
+  };
+  /** 0..1 how much of the terraces stand at x: none over the lane's gateway ramp, and none in the last few metres before the east hedge. */
+  const terraceReach = (x) => {
+    const from = laneRect.maxX + pad.ramp;
+    return smoothstep(from, from + terraces.ease, x) * (1 - smoothstep(east.maxX - 6, east.maxX, x));
+  };
+  /** The metres the terraces fall in all, down to where the field meets the pasture at its south edge: the valley side's own fall there. */
+  const terraceFall = (x) => -land(x, east.maxZ);
+  /**
+   * Metres the terraces change the sheep field's ground at (x, z) from the valley side's smooth fall: the steps stand in place of it, ending at
+   * the pasture's edge exactly where it was, so nothing outside the field moves.
+   */
+  const terraceLift = (x, z) => {
+    if (!terraces || z <= east.minZ || z >= east.maxZ) return 0;
+    const k = terraceReach(x);
+    return k > 0 ? k * (-terraceFall(x) * stairs(z) - land(x, z)) : 0;
+  };
+  /** The terraces' slope at (x, z), rise over run along z: the banks' steepness without the rough, 0 on a tread. */
+  const terraceSlope = (x, z) => {
+    if (!terraces || !inEast(x, z)) return 0;
+    return terraceReach(x) * terraceFall(x) * Math.abs(stairs(z + 0.5) - stairs(z - 0.5));
+  };
+
   // Patches a few tens of metres across, for where the bracken and the gorse grow.
   const patch = (x, z, k) => 0.5 + 0.25 * Math.sin(x * 0.071 + z * 0.047 + k) + 0.25 * Math.sin(z * 0.113 - x * 0.043 + 1.3 * k);
 
@@ -253,9 +275,9 @@ export function createHill(layout) {
   };
   const outsideHill = (x, z) => Math.min(outside(pasture, x, z), outside(laneRect, x, z), west ? outside(west, x, z) : Infinity, east ? outside(east, x, z) : Infinity, riverside ? outside(riverside, x, z) : Infinity);
   return {
-    lane, pasture, stream, laneRect, west, east, riverside, gates, pond, knolls, top, total, waitSpot,
+    lane, pasture, stream, laneRect, west, east, riverside, gates, pond, terraces, top, total, waitSpot,
     streamZ, halfAt, depthAt, waterDepthAt, farEdge, climb, climbSlope, sinkAt, channelAt, profile, weight,
     setRise, get rise() { return rise; },
-    waterAt, mudAt, sheepFieldOk, pondCut, knollLift, lineDistance, brackenAt, gorseAt, inPasture, nearHut, inLane, inWest, inEast, inPaddock, inWood, pastFoot, outside: outsideHill,
+    waterAt, mudAt, sheepFieldOk, pondCut, terraceLift, terraceSlope, lineDistance, brackenAt, gorseAt, inPasture, nearHut, inLane, inWest, inEast, inPaddock, inWood, pastFoot, outside: outsideHill,
   };
 }

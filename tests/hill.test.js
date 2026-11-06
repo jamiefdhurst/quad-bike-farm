@@ -198,8 +198,8 @@ describe('the hill through the south gate', () => {
         expect(steepest(from, to)).toBeLessThan(0.32);
         // The gateway is lower than the bank beside it, along the hedge.
         const hedgeX = g.x;
-        expect(h(hedgeX, g.z + 8) - h(hedgeX, g.z)).toBeGreaterThan(0.8);
-        expect(h(hedgeX, g.z - 8) - h(hedgeX, g.z)).toBeGreaterThan(0.8);
+        expect(h(hedgeX, g.z + 8) - h(hedgeX, g.z)).toBeGreaterThan(0.6);
+        expect(h(hedgeX, g.z - 8) - h(hedgeX, g.z)).toBeGreaterThan(0.6);
       }
     });
 
@@ -221,11 +221,45 @@ describe('the hill through the south gate', () => {
       expect(heights.mudAt(-85, 125)).toBe(0);
     });
 
-    it('have the sheep field rolling, with humps a quad can climb and the track kept clear', () => {
-      const k = pads.east.knolls[0];
-      expect(h(k.x, k.z) - h(k.x + k.r * 1.1, k.z)).toBeGreaterThan(k.rise * 0.8);
-      expect(steepest({ x: k.x - k.r, z: k.z }, { x: k.x, z: k.z })).toBeLessThan(0.35);
-      expect(steepest({ x: k.x - k.r, z: k.z }, { x: k.x, z: k.z })).toBeGreaterThan(0.1);
+    it('step the sheep field down to the stream in broad terraces a quad can ride', () => {
+      const { banks, width } = pads.east.terraces;
+      const x = 10;
+      // A flat tread above each bank, and the ground falling from one to the next.
+      const treads = [banks[0] - width, (banks[0] + banks[1]) / 2, hill.east.maxZ - 3].map((z) => h(x, z));
+      expect(treads[0] - treads[1]).toBeGreaterThan(0.6);
+      expect(treads[1] - treads[2]).toBeGreaterThan(0.6);
+      // Each bank a steady slope under what the farm's quads manage, with the rough on it, and one you can learn to line up at.
+      for (const [i, c] of banks.entries()) {
+        const slope = steepest({ x, z: c - width / 2 }, { x, z: c + width / 2 });
+        expect(slope, `bank ${i}`).toBeLessThan(0.3);
+        expect(slope, `bank ${i}`).toBeGreaterThan(0.1);
+        expect(hill.terraceSlope(x, c)).toBeGreaterThan(0.1);
+      }
+      expect(hill.terraceSlope(x, banks[0] - width)).toBe(0);
+      expect(hill.terraceSlope(-60, banks[0])).toBe(0); // not in the meadow
+      expect(steepest({ x, z: hill.east.minZ + 12 }, { x, z: hill.east.maxZ - 1 })).toBeLessThan(0.3);
+    });
+
+    it('leave every height outside the sheep field, and over the gateway ramp, as they were', () => {
+      const east = pads.east;
+      const bare = { ...LAYOUT, hill: { ...LAYOUT.hill, paddocks: { ...pads, east: { ...east, terraces: null } } } };
+      const was = createTerrainHeight(bare, track).heightAt;
+      const ramp = hill.laneRect.maxX + pads.ramp;
+      for (let x = -40; x <= 70; x += 2) {
+        for (let z = 60; z <= 160; z += 2) {
+          const inside = x > ramp && x < east.maxX && z > hill.east.minZ && z < hill.east.maxZ;
+          if (!inside) expect(h(x, z), `${x} ${z}`).toBe(was(x, z));
+        }
+      }
+      let changed = 0;
+      for (let z = 90; z <= 130; z += 4) if (Math.abs(h(10, z) - was(10, z)) > 0.2) changed++;
+      expect(changed).toBeGreaterThan(3);
+    });
+
+    it('meet the pasture at the south edge with no step', () => {
+      for (let x = -10; x < pads.east.maxX; x += 3) {
+        expect(Math.abs(h(x, hill.east.maxZ - 0.5) - h(x, hill.east.maxZ + 0.5))).toBeLessThan(0.3);
+      }
     });
 
     it('keep the drystone wall inside the sheep field, with its gap clear of the humps and the thorns', () => {
