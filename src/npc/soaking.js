@@ -3,6 +3,13 @@
 // place dries her. Mud is muddiness.js (the hose and a splash wet that too); this is water. The look is effects/girlMud.js, on her skin,
 // her hair and her clothes; her hair dries last.
 
+import { isOpenVehicle } from '../effects/lensMud.js';
+
+/** Out of the rain: in the barn, the hut or a cab she has sheltered in, or aboard a vehicle with a cab or a roof (`aboardSpec` is its spec id, null on foot). */
+export function underCover({ inBarn = false, inCab = false, inHut = false, aboardSpec = null }) {
+  return inBarn || inCab || inHut || (aboardSpec !== null && !isOpenVehicle(aboardSpec));
+}
+
 export const DEFAULT_SOAK_PARAMS = {
   rainAbove: 0.1, // rain (0..1) above which it gets through to her
   soakRate: 0.012, // soaked a second in the hardest rain (about 80 s to be wet through)
