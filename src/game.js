@@ -341,7 +341,7 @@ import { DEFAULT_CAB_MIST_PARAMS, CAB_MIST_PARAM_RANGES, createCabMist, cabMistR
 import { CabMistView } from './effects/cabMistView.js';
 import { DEFAULT_LENS_PARAMS, LENS_PARAM_RANGES, createLens, updateLens, wipeLens, leaderAhead, isOpenVehicle, lensCoverage, addSplat } from './effects/lensMud.js';
 import { LensMudView } from './effects/lensMudView.js';
-import { DEFAULT_SOAK_PARAMS, SOAK_PARAM_RANGES, updateSoak, soakNoticing, soakRemarked } from './npc/soaking.js';
+import { DEFAULT_SOAK_PARAMS, SOAK_PARAM_RANGES, updateSoak, soakNoticing, soakRemarked, underCover } from './npc/soaking.js';
 import { DEFAULT_MUDDY_PARAMS, MUDDY_PARAM_RANGES, updateMuddiness, noticing, markRemarked } from './npc/muddiness.js';
 import { Workshop } from './workshop/workshop.js';
 import { PodRack } from './vehicle/pods.js';
@@ -6027,12 +6027,13 @@ export class Game {
     const inBarn = this.world.inBarn(at.x, at.z);
     const inCab = this.cabShelter.of(c.character.id)?.state === 'in';
     const inHut = this.hutHost.inside(at.x, at.z);
-    const covered = inBarn || inCab || inHut;
+    const onBoard = c.root.parent !== this.scene;
+    const aboardSpec = onBoard && c.quad ? this.units.find((u) => u.quad === c.quad)?.spec.id ?? null : null; // a cab or a roof keeps the rain off her too
+    const covered = underCover({ inBarn, inCab, inHut, aboardSpec });
     c.coveredNow = covered; // in the barn, the hut or a cab, for what she says about the dark (companionVoice.watchWeather)
     const w = this.weather;
     // A dull or wet day feels cold (as warming hands always had it), and a cold one colder.
     const dayChill = Math.min(1, Math.max(0, (0.6 - w.warmth) / 0.6) * 0.8 + w.chill * 0.5);
-    const onBoard = c.root.parent !== this.scene;
     const ridingWith = onBoard && (this.riddenUnit?.quad === c.quad || c.others().some((o) => o.quad === c.quad && o.root.parent !== this.scene));
     const youAway = Math.hypot(this.camera.position.x - at.x, this.camera.position.z - at.z);
     let near = youAway;

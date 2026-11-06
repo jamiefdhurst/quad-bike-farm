@@ -46,3 +46,33 @@ describe('the mud coat on a swinging part', () => {
     expect(text(fixed)).not.toContain('position + vec3(');
   });
 });
+
+describe('the mud coat on a wiper (found testing #512)', () => {
+  it('works a swept wiper from its own coordinates, offset to where it stands, so its dirt goes round with it', () => {
+    const { quad } = model();
+    const root = quad.getObjectByName('bodyRoot');
+    const wiper = new THREE.Group();
+    wiper.position.set(0.3, 0.9, 1.1);
+    wiper.userData.wiperSweep = 1.4;
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.5, 0.01), new THREE.MeshStandardMaterial({ color: 0x111111 }));
+    wiper.add(arm);
+    root.add(wiper);
+    const stalk = new THREE.Group();
+    stalk.name = 'wiperStalk';
+    const stalkMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    stalk.add(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.01, 0.02), stalkMat));
+    root.add(stalk);
+    const q = { model: quad, wheels: [], layout: { wheels: [] }, groundOffset: 0 };
+    try {
+      // eslint-disable-next-line no-new
+      new MudCoat(q);
+    } catch (e) {
+      // (as above)
+    }
+    expect(wiper.userData.mudRest[0]).toBeCloseTo(0.3, 5);
+    expect(wiper.userData.mudRest[1]).toBeCloseTo(0.9, 5);
+    expect(wiper.userData.mudRest[2]).toBeCloseTo(1.1, 5);
+    expect(arm.material.customProgramCacheKey()).not.toBe(root.children[0].material.customProgramCacheKey());
+    expect(stalk.children[0].material).toBe(stalkMat); // the stalk swings too, so it is left clean like the indicator's
+  });
+});

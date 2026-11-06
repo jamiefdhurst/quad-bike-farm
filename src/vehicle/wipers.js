@@ -76,6 +76,7 @@ export class Wipers {
   update(dt, powered, P = WIPER_PARAMS) {
     this.moved = false;
     if (!powered) return this.blade; // the motor stops dead: the blades stay where they are
+    if (this.setting !== 'int') this.wait = 0; // only intermittent waits parked: a pause left over from it would hold slow and fast still
     const cycle = this.setting === 'fast' ? P.fastCycle : P.slowCycle;
     if (this.phase > 0 || (this.setting !== 'off' && this.wait <= 0)) {
       this.phase += dt / cycle;

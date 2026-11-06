@@ -46,6 +46,18 @@ export function roadMarks(S) {
 }
 
 /** Where a building's front is: the z of its front wall, and which way the front faces (+1 south, towards +z; -1 north). */
+/**
+ * Samples laid back from the road's first one, out over the lane, along its heading: `count` of them `step` m apart, nearest the road last.
+ * The road's mouth is clamped to the lane's edge, and only cross-sections that lie wholly past the edge squash flat onto it, so these stand
+ * in for the stretch the road would have had if it went on across the lane (#588 left a wedge of bare ground without them).
+ */
+export function roadLeadIn(first, count, step) {
+  return Array.from({ length: count }, (_, k) => {
+    const d = (count - k) * step;
+    return { x: first.x - first.tx * d, z: first.z - first.tz * d, tx: first.tx, tz: first.tz };
+  });
+}
+
 export const frontOf = (b) => (Math.cos(b.yaw) > 0 ? { z: b.z + b.halfZ, face: 1 } : { z: b.z - b.halfZ, face: -1 });
 
 /**
@@ -180,6 +192,8 @@ function buildShape(layout) {
     giveWay,
     /** The road past its closed gate: a middle line bending away and the metres it rises. */
     beyond: smoothRoad(v.end.beyond, 1),
+    /** The closed gate: `end.back` m before the road's last sample, facing along the road's heading there (the gate runs across it). */
+    gate: { x: road[road.length - 1].x - road[road.length - 1].tx * v.end.back, z: road[road.length - 1].z - road[road.length - 1].tz * v.end.back, tx: road[road.length - 1].tx, tz: road[road.length - 1].tz },
     beyondRise: v.end.rise,
     roadHalfWidth: v.road.halfWidth,
     curb,

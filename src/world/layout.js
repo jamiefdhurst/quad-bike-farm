@@ -37,7 +37,7 @@ export const LAYOUT = {
     road: {
       halfWidth: 2.3,
       pavement: 1.7,
-      points: [[206.4, 171], [200, 176], [190, 180.5], [178, 183], [166, 183.5], [154, 185], [144, 189], [134, 191], [122, 193], [110, 191], [100, 186]],
+      points: [[206.4, 171], [200, 176], [190, 180.5], [178, 183], [166, 183.5], [154, 185], [144, 189], [134, 191], [122, 193], [110, 191], [105, 192.5], [102, 196], [102, 201.5]],
     },
     area: { minX: 96, maxX: 203, minZ: 163.5, maxZ: 205 },
     // The pub: front door on its long south side, a beer garden in front and the car park to its west (`carPark`: the tarmac, with its bays).
@@ -64,9 +64,9 @@ export const LAYOUT = {
     sign: { x: 197.2, z: 172.4 }, // "Nether Thornby", just inside the turning
     phone: { x: 131.5, z: 197.4 },
     busStop: { x: 120.5, z: 198.6 },
-    // The road is shut at `barrierX` (a gate, with a "road closed" board in front), but the road goes on past it: `beyond` is its middle line, bending
-    // away and rising out of reach between hedges.
-    end: { barrierX: 101.2, beyond: [[100, 186], [95, 184], [90, 184], [86, 187.5], [84, 192], [83.5, 197]], rise: 5 },
+    // The road bends left, south, and is shut at its last point (a gate, with a "road closed" board in front), but the road goes on past it: `beyond`
+    // is its middle line, bending away and rising out of reach between hedges.
+    end: { back: 0.3, beyond: [[102, 201.5], [102, 208], [104, 214], [108, 219], [114, 222.5], [120, 224]], rise: 5 },
   },
   // The neighbour's farm (world/neighbourFarm.js, neighbourFarmProps.js): a walled yard on the lane's west side south of the farm, its gateway
   // in the east wall onto the lane. `yard` is the wall's outline (`wall` thick, `wallHeight` high); the farmhouse stands at the south with its

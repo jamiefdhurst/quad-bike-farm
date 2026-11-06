@@ -1773,3 +1773,7 @@ The flask, the rack and the starting handle all had a girl doing something with 
 - **Jess pats the tank** only when she says she is (`startPat`): the voice calls `patTank()`, and her right hand comes down flat on the tank top (found from the model's `tank` mesh) three times in 1.7 s while she leans in a little. It works standing at the starter or sat at the wheel.
 - Everything here is tuned under "Steam and mugs in the hand". Not a new offer: nothing new is chosen, so the chooser is untouched.
 
+
+## Dry aboard a cab (found testing #512)
+
+A girl was counted out of the rain only in the barn, the hut or a cab she had sheltered in, so riding or driving in a Land Rover, the UTV or a car soaked her. `underCover` (`soaking.js`) now also counts being aboard a vehicle that is not `isOpenVehicle` (the same list that keeps your lens clean): the utv, both Land Rovers and the cars. Quads and the tractor still soak her.

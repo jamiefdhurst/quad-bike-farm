@@ -160,6 +160,11 @@ function patchMaterial(material, uniforms, wheel, kind, clean = false, rest = nu
 /** The Vehicles tab's "Wear" for each vehicle. */
 export const WEAR_LOOK_RANGES = { wear: [0, 1, 0.01] };
 
+/** Where a part stands at rest in the body's frame: the offset its pattern is worked from, so dirt on a swinging part moves with it. */
+function restOf(o, frame) {
+  return frame.worldToLocal(o.getWorldPosition(new THREE.Vector3())).toArray();
+}
+
 export class MudCoat {
   /**
    * @param {Quad} quad
@@ -195,10 +200,13 @@ export class MudCoat {
     const restCopies = new Map(); // by the rest offset: the swinging parts' own copies
     const bars = model.getObjectByName('handlebars');
     const wheelGroups = new Set(quad.wheels.map((w) => w.object));
+    const frame = model.getObjectByName('bodyRoot') ?? model;
+    model.updateMatrixWorld(true);
     const visit = (o, wheel, rest = null) => {
+      if (o.userData.wiperSweep !== undefined && !o.userData.mudRest) o.userData.mudRest = restOf(o, frame); // a wiper's wear and dirt sweep with it
       if (o.userData.mudRest) rest = o.userData.mudRest; // this part and what hangs on it work in their own coordinates
       // The bars, dash and rider's hands stay clean: well above the mud, and the dash changes its own materials.
-      if (o === bars || o.name === 'signalStalk') return; // (the indicator stalk swings: a wear pattern that stayed put on it would look wrong, so it stays clean)
+      if (o === bars || o.name === 'signalStalk' || o.name === 'wiperStalk') return; // (the indicator and wiper stalks swing: a wear pattern that stayed put on it would look wrong, so it stays clean)
       if (wheelGroups.has(o)) wheel = true;
       if (o.isMesh && o.material?.isMeshStandardMaterial && !skip.has(o.material) && !o.material.emissive?.getHex()) {
         let copies = wheel ? wheelCopies : bodyCopies;

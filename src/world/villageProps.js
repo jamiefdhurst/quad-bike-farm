@@ -5,13 +5,14 @@
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { villageShape, roadMarks } from './village.js';
+import { villageShape, roadMarks, roadLeadIn } from './village.js';
 import { makeVillageMaterials } from './villageMaterials.js';
 import { buildCottage, buildPub, buildCarPark, buildShop, buildGarage, frameFor, signMaterial } from './villageBuildings.js';
 import { villageSignTexture, limitSignTexture, roadClosedTexture, noticeTexture } from './villageTextures.js';
 import { worldBox } from './outbuildingProps.js';
 import { gateLeaf } from './neighbourFarmProps.js';
 import { enableShadows } from './assets.js';
+import { cone } from './startLine.js';
 import { buildFarVersion } from './farVersion.js';
 
 const smooth = (t) => t * t * (3 - 2 * t);
@@ -20,7 +21,10 @@ const ROAD_LIFT = 0.075; // m above the ground, just over the lane's tarmac (0.0
 const PAVEMENT_LIFT = 0.16;
 const FLARE = 3.4; // m the road's mouth is wider by where it meets the lane
 const FLARE_LENGTH = 11;
+const LEAD_COUNT = 6; // samples laid out over the lane ahead of the road's first, LEAD_STEP m apart (roadLeadIn)
+const LEAD_STEP = 2;
 const BEYOND_HALF = 5.5; // m either side of the road past the closed gate that the hedges stand within
+const BEYOND_OUTER = 2.3; // m the road past the gate's hedges stand out from its edge, at their outer face
 const BEYOND_HEDGE = 2.4; // m the hedges stand over that road
 
 /**
@@ -53,10 +57,14 @@ function mergeInto(root) {
 /** A strip along the road's samples from offset `a` to `b` across (positive is the north side, to the right heading west), lying `lift` m over the ground. */
 function roadStrip(ctx, a, b, lift, material, { from = 0, to = Infinity, skip = null, flare = false, uv = 1, cols = 5, clampX = Infinity } = {}) {
   const { S, heights } = ctx;
+  // A strip clamped to the lane's edge starts out over the lane, so its slanting end is squashed flat onto the edge whole.
+  const lead = Number.isFinite(clampX) ? roadLeadIn(S.road[0], LEAD_COUNT, LEAD_STEP) : [];
+  const at = (i) => (i < 0 ? lead[lead.length + i] : S.road[i]);
   const runs = [];
   let run = null;
-  S.road.forEach((p, i) => {
-    const ok = i >= from && i <= to && !(skip && skip(p, i));
+  [...lead, ...S.road].forEach((p, n) => {
+    const i = n - lead.length;
+    const ok = i >= from && i <= to && !(skip && skip(p, i)) || i < 0;
     if (ok) (run ??= []).push(i);
     else if (run) {
       runs.push(run);
@@ -70,7 +78,7 @@ function roadStrip(ctx, a, b, lift, material, { from = 0, to = Infinity, skip = 
     const uvs = [];
     const idx = [];
     r.forEach((i, k) => {
-      const p = S.road[i];
+      const p = at(i);
       const nx = -p.tz;
       const nz = p.tx;
       const widen = flare ? FLARE * (1 - smooth(clamp01(i / FLARE_LENGTH))) : 0;
@@ -461,24 +469,30 @@ function boundaryWalls(ctx) {
   for (const w of S.walls) {
     const alongX = w.hx > w.hz;
     const len = (alongX ? w.hx : w.hz) * 2;
-    const n = Math.ceil(len / run);
-    for (let i = 0; i < n; i++) {
-      const a = -len / 2 + i * run;
-      const l = Math.min(run, len / 2 - a);
-      const c = a + l / 2;
-      const px = alongX ? w.x + c : w.x;
-      const pz = alongX ? w.z : w.z + c;
-      // The wall behind the closed gate is left out (the road goes on there, `beyondRoad`); the collider below stays, so nothing rides out that way.
-      if (!alongX && w.x < S.v.end.barrierX && Math.abs(pz - S.road[S.road.length - 1].z) < run / 2 + BEYOND_HALF) continue;
-      const gy = Math.max(heights.heightAt(px, pz), heights.heightAt(px + (alongX ? l / 2 : 0), pz + (alongX ? 0 : l / 2)), heights.heightAt(px - (alongX ? l / 2 : 0), pz - (alongX ? 0 : l / 2)));
-      const bw = alongX ? l + 0.02 : t;
-      const bd = alongX ? t : l + 0.02;
-      const stone = new THREE.Mesh(worldBox(bw, h + 0.6, bd, 1), M.stone);
-      stone.position.set(px, gy - 0.6 + (h + 0.6) / 2, pz);
-      group.add(stone);
-      const top = new THREE.Mesh(worldBox(bw + 0.1, 0.1, bd + 0.1, 1), cap);
-      top.position.set(px, gy + h + 0.05, pz);
-      group.add(top);
+    // The wall stops at the hedge either side of the road that goes on past the gate (`beyondRoad`), tucked a hand into it; the collider below stays whole,
+    // so nothing rides out that way. The road crosses at the beyond sample nearest the wall's line.
+    const mid = alongX ? w.x : w.z;
+    const q = S.beyond.reduce((best, p) => (Math.abs((alongX ? p.z - w.z : p.x - w.x)) < Math.abs((alongX ? best.z - w.z : best.x - w.x)) ? p : best));
+    const crossing = Math.abs(alongX ? q.z - w.z : q.x - w.x) < 1 ? (alongX ? q.x : q.z) - mid : null;
+    const gap = S.roadHalfWidth + BEYOND_OUTER - 0.1;
+    const spans = crossing === null ? [[-len / 2, len / 2]] : [[-len / 2, crossing - gap], [crossing + gap, len / 2]].filter(([lo, hi]) => hi - lo > 0.05);
+    for (const [lo, hi] of spans) {
+      const n = Math.ceil((hi - lo) / run);
+      const l = (hi - lo) / n;
+      for (let i = 0; i < n; i++) {
+        const c = lo + (i + 0.5) * l;
+        const px = alongX ? w.x + c : w.x;
+        const pz = alongX ? w.z : w.z + c;
+        const gy = Math.max(heights.heightAt(px, pz), heights.heightAt(px + (alongX ? l / 2 : 0), pz + (alongX ? 0 : l / 2)), heights.heightAt(px - (alongX ? l / 2 : 0), pz - (alongX ? 0 : l / 2)));
+        const bw = alongX ? l + 0.02 : t;
+        const bd = alongX ? t : l + 0.02;
+        const stone = new THREE.Mesh(worldBox(bw, h + 0.6, bd, 1), M.stone);
+        stone.position.set(px, gy - 0.6 + (h + 0.6) / 2, pz);
+        group.add(stone);
+        const top = new THREE.Mesh(worldBox(bw + 0.1, 0.1, bd + 0.1, 1), cap);
+        top.position.set(px, gy + h + 0.05, pz);
+        group.add(top);
+      }
     }
     ctx.fixedBox(w.x, heights.heightAt(w.x, w.z) + 1, w.z, w.hx, 1.5, w.hz);
   }
@@ -545,9 +559,11 @@ function beyondRoad(ctx) {
   sheet(parts, rowsOf((i) => [-hw, 0, hw].map((o, k) => vert(i, o, level(i), k / 2, i / 4))), tarmac);
   for (const side of [-1, 1]) {
     const inner = side * (hw + 0.9);
-    const outer = side * (hw + 2.3);
+    const outer = side * (hw + BEYOND_OUTER);
     sheet(parts, rowsOf((i) => [side * (hw - 0.1), inner].map((o, k) => vert(i, o, level(i) - 0.02, k, i / 2))), verge);
     sheet(parts, rowsOf((i) => [level(i) - 0.02, level(i) + BEYOND_HEDGE].map((y, k) => vert(i, inner, y, i / 3, k * 0.5))), hedge);
+    // The hedge's near end, by the gate, is shut with a face, so there is no looking up into its hollow.
+    sheet(parts, [level(0) - 0.02, level(0) + BEYOND_HEDGE].map((y, k) => [inner, outer].map((o, j) => vert(0, o, y, j * 0.5, k * 0.5))), hedge);
     sheet(parts, rowsOf((i) => [inner, outer].map((o, k) => vert(i, o, level(i) + BEYOND_HEDGE, i / 3, 0.5 + k * 0.25))), hedge);
     sheet(parts, rowsOf((i) => {
       const x = pts[i].x - pts[i].tz * outer;
@@ -556,7 +572,7 @@ function beyondRoad(ctx) {
     }), hedge);
   }
   // A hedge across the end, and trees behind it.
-  const end = [last, last].map((i, k) => [-1, 1].map((side) => vert(i, side * (hw + 2.3), k ? level(i) + BEYOND_HEDGE : level(i) - 0.02, 0.5 + side * 0.5, k * 0.5)));
+  const end = [last, last].map((i, k) => [-1, 1].map((side) => vert(i, side * (hw + BEYOND_OUTER), k ? level(i) + BEYOND_HEDGE : level(i) - 0.02, 0.5 + side * 0.5, k * 0.5)));
   sheet(parts, end, hedge);
   flushSheets(ctx, parts);
   const tip = pts[last];
@@ -564,15 +580,17 @@ function beyondRoad(ctx) {
   oak(ctx, tip.x + tip.tx * 3 + tip.tz * 3, tip.z + tip.tz * 3 - tip.tx * 3, 0.9);
 }
 
-/** The road's end: a five-bar gate across it, a "road closed" board on a stand, two cones and a hedge each side. */
+/**
+ * The road's end: a five-bar gate across it, a "road closed" board on a stand, two cones and a hedge each side. The group is built facing west
+ * (+x is back along the road) and turned to the road's heading at the gate, which runs south now.
+ */
 function roadEnd(ctx) {
   const { M, S, heights } = ctx;
-  const last = S.road[S.road.length - 1];
-  const x = S.v.end.barrierX;
-  const rz = S.roadAt(x, last.z).at.z;
+  const { x, z: rz, tx, tz } = S.gate;
   const y = heights.heightAt(x, rz);
   const g = new THREE.Group();
-  g.position.set(x, y, rz);
+  g.position.set(x, y + ROAD_LIFT, rz); // on the road's surface, not the ground under it
+  g.rotation.y = Math.atan2(tz, -tx);
   const half = S.roadHalfWidth + S.v.road.pavement;
   const add = (geo, mat, px, py, pz) => {
     const o = new THREE.Mesh(geo, mat);
@@ -589,7 +607,7 @@ function roadEnd(ctx) {
     pivot.add(leaf);
     g.add(pivot);
   }
-  // The "road closed" board stands in the road in front of the gate (on the lane side), on two legs with feet, facing the traffic; its back is plain.
+  // The "road closed" board stands in the road in front of the gate (on the village side), on two legs with feet, facing the traffic; its back is plain.
   const bx = 1.3;
   const faceMat = new THREE.MeshStandardMaterial({ map: roadClosedTexture(), roughness: 0.6 });
   const front = add(new THREE.PlaneGeometry(1.6, 0.6), faceMat, bx + 0.012, 1.1, 0);
@@ -601,19 +619,27 @@ function roadEnd(ctx) {
     add(worldBox(0.06, 1.1, 0.06, 1), M.iron, bx - 0.02, 0.55, s); // legs
     add(worldBox(0.5, 0.05, 0.06, 1), M.iron, bx - 0.02, 0.025, s); // and feet
   }
-  const cone = new THREE.MeshStandardMaterial({ color: 0xe8591f, roughness: 0.6 });
   for (const s of [-1.6, 1.8]) {
-    add(new THREE.ConeGeometry(0.17, 0.6, 12), cone, 2.4, 0.3, s);
-    add(new THREE.CylinderGeometry(0.18, 0.18, 0.05, 12), M.iron, 2.4, 0.025, s);
-    add(new THREE.CylinderGeometry(0.13, 0.11, 0.1, 12), M.paint, 2.4, 0.34, s);
+    const c = cone(); // the same cone as the lap line and the climbs
+    c.position.set(2.4, 0, s);
+    g.updateMatrixWorld();
+    const at = g.localToWorld(c.position.clone());
+    c.position.y = heights.heightAt(at.x, at.z) + ROAD_LIFT + 0.02 - g.position.y; // each on the road where it stands, the road being on a cross-slope
+    g.add(c);
   }
   ctx.root.add(g);
   ctx.groups.push(g);
-  ctx.fixedBox(x, y + 1, rz, 0.3, 1.2, half + 0.3);
-  for (const s of [-1, 1]) {
-    const hz = rz + s * (half + 3.2);
-    ctx.fixedBox(x - 2.6, y + 0.9, hz, 2.6, 0.9, 3.2); // back to the village's west wall, so there is no way round the gate
-  }
+  // Colliders are upright boxes, so they are laid across or along the road by which way it runs at the gate.
+  const alongX = Math.abs(tx) > Math.abs(tz);
+  const box = (along, across, hAlong, hAcross, up, hUp) => {
+    const [px, pz] = alongX ? [x + along, rz + across] : [x + across, rz + along];
+    ctx.fixedBox(px, y + up, pz, alongX ? hAlong : hAcross, hUp, alongX ? hAcross : hAlong);
+  };
+  box(0, 0, 0.3, half + 0.3, 1, 1.2);
+  // Back to the village's wall past the gate, so there is no way round it.
+  const wall = alongX ? (tx < 0 ? S.area.minX : S.area.maxX) : tz > 0 ? S.area.maxZ : S.area.minZ;
+  const ahead = Math.abs(wall - (alongX ? x : rz));
+  for (const s of [-1, 1]) box(Math.sign(alongX ? tx : tz) * ahead / 2, s * (half + 3.2), ahead / 2, 3.2, 0.9, 0.9);
 }
 
 /** Builds the village and its colliders. `c` is the props context (props.js). Returns null on a farm without one. */

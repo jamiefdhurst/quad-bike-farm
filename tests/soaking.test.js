@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_SOAK_PARAMS as P, SOAK_PARAM_RANGES, createSoak, updateSoak, soakNoticing, soakRemarked, dryOff } from '../src/npc/soaking.js';
+import { DEFAULT_SOAK_PARAMS as P, SOAK_PARAM_RANGES, createSoak, updateSoak, soakNoticing, soakRemarked, dryOff, underCover } from '../src/npc/soaking.js';
 import { Needs } from '../src/npc/needs.js';
 import { DEFAULT_COMPANION_PARAMS as CP } from '../src/npc/companionParams.js';
 import { waitingChoices } from '../src/npc/waiting.js';
@@ -105,5 +105,19 @@ describe('what being soaked does to her', () => {
     expect(names({ shiver: 0.8 })).toContain('shiver');
     const w = (shiver) => waitingChoices(['folded'], { ...quiet, shiver }).find((c) => c.name === 'shiver').weight;
     expect(w(1)).toBeGreaterThan(w(0.3));
+  });
+});
+
+describe('out of the rain aboard a vehicle with a cab (found testing #512)', () => {
+  it('keeps her dry in the Land Rovers, the UTV and the cars, but not on a quad or the tractor', () => {
+    for (const id of ['landrover', 'landrover200', 'utv', 'fiesta', 'corsa', 'p309']) expect(underCover({ aboardSpec: id }), id).toBe(true);
+    for (const id of ['red', 'moto', 'tractor']) expect(underCover({ aboardSpec: id }), id).toBe(false);
+  });
+
+  it('is still cover in the barn, the hut or a cab she sheltered in, and none on foot', () => {
+    expect(underCover({ inBarn: true })).toBe(true);
+    expect(underCover({ inHut: true })).toBe(true);
+    expect(underCover({ inCab: true })).toBe(true);
+    expect(underCover({})).toBe(false);
   });
 });

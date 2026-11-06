@@ -52,8 +52,8 @@ export function addRainGlassBetween(parent, { foot, top, halfFoot, halfTop, inse
 }
 
 /**
- * The wiper stalk on the right of a steering column (-x in the column's frame), opposite the indicator stalk and like it, a plain end
- * with no symbol. It is lifted a notch for each speed (`poseWiperStalk`).
+ * The wiper stalk on the right of a steering column (-x in the column's frame), opposite the indicator stalk and like it. A modern one has the
+ * wiper symbol on top of its wide end. It is lifted a notch for each speed (`poseWiperStalk`).
  */
 export function addWiperStalk(column, y, mat, { modern = false } = {}) {
   const stalk = new THREE.Group();
@@ -64,12 +64,52 @@ export function addWiperStalk(column, y, mat, { modern = false } = {}) {
   if (modern) {
     piece(new RoundedBoxGeometry(0.12, 0.014, 0.024, 2, 0.006).translate(-0.075, 0, 0), mat, stalk); // a flat moulded arm
     piece(new RoundedBoxGeometry(0.05, 0.024, 0.03, 2, 0.0099).translate(-0.155, 0, 0), mat, stalk); // and a wide end you push
+    const symbol = wiperSymbol();
+    if (symbol) {
+      const mark = new THREE.Mesh(new THREE.PlaneGeometry(0.02, 0.02), symbol);
+      // Lying on the end's top, which faces the driver: the symbol's right is the stalk's tip (-x) and its top is up the column (+z).
+      mark.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0)));
+      mark.position.set(-0.155, 0.0122, 0);
+      stalk.add(mark);
+    }
   } else {
     piece(rod([0, 0, 0], [-0.13, 0, 0], 0.006, 6), mat, stalk); // a thin round old one
     piece(rod([-0.11, 0, 0], [-0.15, 0, 0], 0.011, 10), mat, stalk); // with a thicker grip on the end
   }
   column.add(stalk);
   return stalk;
+}
+
+let symbolMaterial = null;
+/** The wiper pictogram (a fan of glass with a blade across it and its spindle below) in pale grey on nothing; null where there is no canvas (tests). */
+function wiperSymbol() {
+  if (symbolMaterial || typeof document === 'undefined') return symbolMaterial;
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  if (!g) return null;
+  g.strokeStyle = g.fillStyle = '#d9dcdf';
+  g.lineCap = g.lineJoin = 'round';
+  g.lineWidth = 9;
+  g.beginPath(); // the windscreen as the standard symbol draws it: a fan of glass, its top and foot both arcs, wider at the top
+  g.moveTo(7, 33);
+  g.quadraticCurveTo(64, 9, 121, 34);
+  g.lineTo(92, 84);
+  g.quadraticCurveTo(64, 60, 33, 83);
+  g.closePath();
+  g.stroke();
+  g.beginPath(); // the blade slanting across it, and its arm down to the spindle below the glass
+  g.moveTo(40, 30);
+  g.lineTo(57, 80);
+  g.lineTo(62, 98);
+  g.stroke();
+  g.beginPath();
+  g.arc(63, 103, 8.5, 0, Math.PI * 2);
+  g.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  symbolMaterial = new THREE.MeshBasicMaterial({ map: tex, transparent: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  return symbolMaterial;
 }
 
 function piece(geo, mat, parent) {
