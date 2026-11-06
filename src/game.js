@@ -250,6 +250,7 @@ import { RideOffer, pickOfferer } from './npc/rideOffer.js';
 import { BANTER } from './npc/banterLines.js';
 import { BanterWatch } from './npc/banterWatch.js';
 import { PubVisit, DEFAULT_PUB_PARAMS, PUB_PARAM_RANGES } from './npc/pubVisit.js';
+import { Earlier, DEFAULT_EARLIER_PARAMS, EARLIER_PARAM_RANGES } from './npc/earlier.js';
 
 // Bickers where they trade digs: each adds a little friction towards falling out (fallingOut.js).
 const FRICTION_BANTER = ['idle', 'favoured', 'rivals', 'strengths', 'watching', 'sharing', 'riding', 'corrected', 'swapped', 'stuck'];
@@ -991,6 +992,8 @@ export class Game {
     this.requests = new Requests();
     this.pubParams = { ...DEFAULT_PUB_PARAMS };
     this.pubVisit = new PubVisit(this.pubParams);
+    this.earlierParams = { ...DEFAULT_EARLIER_PARAMS };
+    this.earlier = new Earlier(this.earlierParams); // them bringing up something from earlier in the day (npc/earlier.js)
     const baleSpots = this.world.layout.strawBaleSpots.filter(([x, z]) => this.world.track.distanceTo(x, z, 10) >= this.world.layout.trackHalfWidth + 3);
     this.bales = baleSpots.map(([x, z]) => ({ x, z }));
 
@@ -2024,6 +2027,7 @@ export class Game {
     registerTuning('Wind', this.wind.p, WIND_PARAM_RANGES);
     registerTuning('Favours asked', this.requests.p, REQUEST_PARAM_RANGES);
     registerTuning('Girls at the pub', this.pubParams, PUB_PARAM_RANGES);
+    registerTuning('Girls calling back', this.earlierParams, EARLIER_PARAM_RANGES);
     if (this.winch) registerTuning('Winch', this.winch.params, WINCH_PARAM_RANGES);
     if (this.chain) registerTuning('Tow chain', this.chain.params, CHAIN_PARAM_RANGES);
     registerTuning('Tow rope', this.towRope.params, TOW_ROPE_PARAM_RANGES);
@@ -6561,6 +6565,9 @@ export class Game {
       }
       for (const a of agreements(...hers, ids, this.strengthTruth)) triggers.push({ when: 'strengthsAgree', roles: { kind: a.kind } });
     }
+    // Something from earlier today is old enough to bring up while they are stood about together (npc/earlier.js).
+    const stoodAbout = first.fsm.is('idle') && second.fsm.is('idle') && first.root.position.distanceTo(second.root.position) < 12;
+    triggers.push(...this.earlier.triggers(dt, this.dayEvents.list, stoodAbout && !this.fallingOut.active));
     // Fallen out: the friendly digs stop and the bickering turns sharp.
     for (const t of this.fallingOutEvents.splice(0)) triggers.push(t);
     if (this.fallingOut.active) {
@@ -6570,6 +6577,7 @@ export class Game {
     }
     const speak = (speaker, text, opts) => (byId[speaker]?.params.voice ? byId[speaker].voice.speak(text, opts) : 0);
     const started = this.banter.update(dt, triggers, speak, this.talkFloor.left <= 0 && !this.menu.isOpen && !this.gossip.busy && !this.comparing.busy);
+    this.earlier.spoke(started);
     if (started?.when === 'strengths') this.strengthTurn = !this.strengthTurn; // the other one raises it next time
     if (started && FRICTION_BANTER.includes(started.when)) this.noteFriction('digs');
     this.talkFloor.banter = this.banter.busy || this.gossip.busy || this.comparing.busy;

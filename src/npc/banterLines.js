@@ -16,6 +16,7 @@ import { CONVOY_BANTER } from './convoyLines.js';
 import { GOSSIP_BANTER } from './gossipLines.js';
 import { FALLING_OUT_BANTER } from './fallingOutLines.js';
 import { PUB_BANTER } from './pubLines.js';
+import { EARLIER_BANTER } from './earlierLines.js';
 
 export const BANTER = [
   // Standing about together, near you --------------------------------------
@@ -95,4 +96,5 @@ export const BANTER = [
   ...CONVOY_BANTER,
   ...GOSSIP_BANTER,
   ...PUB_BANTER,
+  ...EARLIER_BANTER,
 ];

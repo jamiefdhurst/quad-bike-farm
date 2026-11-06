@@ -428,6 +428,7 @@ export function buildGameTree(g, host) {
     show: text(() => g.describeShow(), 'the farm show on the last Sunday of a month (farm/showDay.js): today, and the rosettes won'),
     showday: flag(() => g.isShowToday(), (v) => (g.showForced = v), 'make today show day (call it a day at the calendar to be judged; the last quad you rode is the entry)'),
     briefing: flag(() => g.briefing.active, (v) => (v ? g.startBriefing() : g.briefing.skip()), "Amy's briefing of the day (npc/briefing.js): setting it on starts it at once, off cuts it short"),
+    earlier: text(() => g.earlier.describe(g.dayEvents.list), 'what the girls would bring up from earlier in the day, and when (npc/earlier.js)'),
     story: text(() => g.storyNow().join(' '), "the day's story as it would read on the end-of-day card now (farm/dayStory.js)"),
     goinghome: text(() => g.describeGoingHome(), 'the girls going home when you call it a day (npc/goingHome.js): who is walking to her car, driving off or gone (save home sends them now)'),
     calendar: text(() => g.endOfDayNow().text, 'what the barn calendar says about calling it a day (save day does it at once)'),

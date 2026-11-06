@@ -21,7 +21,7 @@ describe('what the girls say to each other', () => {
   it('only has the two of them talking, in the moments the game raises', () => {
     for (const e of BANTER) {
       if (e.when !== 'gossip') expect(BANTER_TIMING).toHaveProperty(e.when); // gossip is run by gossip.js
-      for (const [role, who] of Object.entries(e.roles ?? {})) if (!['guess', 'truth', 'kind'].includes(role)) expect(ids).toContain(who);
+      for (const [role, who] of Object.entries(e.roles ?? {})) if (!['guess', 'truth', 'kind', 'event', 'result', 'how'].includes(role)) expect(ids).toContain(who);
       for (const [who, text] of e.lines) {
         expect(ids).toContain(who);
         expect(text.length).toBeGreaterThan(1);

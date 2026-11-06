@@ -107,4 +107,12 @@ export function flask(g, say) {
   return ['Amy is a few steps from the rock with the flask, and you are beside it'];
 }
 
-export const SETUPS = { prepare: getOff, wardrobe, moto, flock, flask, end: endScene };
+/** Two things in today's log and the wait before the girls bring them up cut to a few seconds, with you stood by them. */
+export function earlier(g) {
+  g.dayEvents.add('race', { winner: 'jess', loser: 'amy' });
+  g.dayEvents.add('stranded', { girl: 'amy', how: 'tip', quad: 'Finch' });
+  g.earlierParams.earlierAfter = 30;
+  return ['Jess has beaten Amy in a race and Amy has tipped a quad, as far as the day goes; stand near them and wait half a minute or so'];
+}
+
+export const SETUPS = { prepare: getOff, wardrobe, moto, flock, flask, earlier, end: endScene };
