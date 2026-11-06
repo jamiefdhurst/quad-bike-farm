@@ -1790,3 +1790,10 @@ The vehicle's controls had been built for you; the girls only did some of them. 
 - **The bowl.** Amy's pre-ride walk-round (`updateOilChecks`) opens the sediment bowl's drain when it is at least a quarter full, and says so; it costs the fuel the drain always costs. Jess does not.
 - **Wet brakes.** Her brakes crossing half wet earns a remark once (again after they dry); at 0.35 wet and 2 m/s she dabs the brake for a third of every 0.9 s, which the brake model's wiping at speed dries in about ten seconds.
 - All numbers are under "Girls at the controls".
+
+## #111 (was TODO 220): her way out of the crowded yard
+
+- The bump came from `planLoop` checking only a straight chord from where she sits to the first waypoint. With the quads parked as they are at the start of a day that chord can be clear while the quad, which cannot turn on the spot, sweeps through its neighbour's side getting round to it, then backs off and tries again.
+- `planLoop` now takes the quad's real facing and starts every loop with a short run straight out along it (`driveLeadIn`, 3.5 m, or half that if the full run is blocked), bending at most `driveLeadBend` (0.5 rad) towards where the loop wants to go. Each later leg is checked from the end of that run. With no room even for the short run it plans as before and the existing back-off still applies.
+- Chosen over planning with the quad's turning circle: one pure function, the same `isClear` check, and the swing now happens out in the open rather than between the parked quads. Both numbers are in the Girls tab's driving tuning.
+- Not reproduced in the running game; covered by unit tests of the planner. A testing issue holds the by-eye check.

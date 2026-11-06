@@ -288,6 +288,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   raceGridRadius: 3.5, // metres from the grid point at which she counts as on it, in a race (wider than a waypoint, so she doesn't circle it)
   keepRidingAfter: 0.3, // chance she carries on driving when doughnuts, the ramp, showing off or a convoy is over, instead of pulling up and getting off
   raceGridYaw: 0.6, // radians off the track's direction she may be pointing on the grid before she goes round again to face it
+  driveLeadIn: 3.5, // metres: she sets off on a straight run this long along the way the quad points before the loop bends, so she clears parked quads
+  driveLeadBend: 0.5, // radians: and that run may bend this much towards where the loop wants to go
   backOffsToGiveUp: 5, // backing off the same thing this many times in a row and she gives up and gets off
   backOffRadius: 6, // metres: backing off again within this of the last time counts as the same spot
   backOffLonger: 0.5, // each time she backs off the same thing she reverses this much longer again (0.5: half as long again)
@@ -684,6 +686,8 @@ export const COMPANION_PARAM_RANGES = {
   backOffWithin: [5, 120, 1],
   backOffLonger: [0, 2, 0.1],
   backOffLook: [2, 15, 0.5],
+  driveLeadIn: [0, 8, 0.5],
+  driveLeadBend: [0, 1.2, 0.05],
   driveMaxStalls: [0, 6, 1],
   driveBackChance: [0, 1, 0.05],
   driveKeyOffChance: [0, 1, 0.05],

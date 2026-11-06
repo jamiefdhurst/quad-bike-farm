@@ -94,16 +94,34 @@ export function pedalsFor(speed, target, integral, p) {
 }
 
 /**
+ * The short run straight out along the way the quad points, bending no more than `driveLeadBend` towards where the loop
+ * wants to go, or null if there's no room for even half of it (then the loop is planned as it was, from where she sits).
+ */
+export function leadIn(origin, facing, yaw, p, isClear) {
+  if (!(p.driveLeadIn > 0)) return null;
+  const heading = facing + Math.max(-p.driveLeadBend, Math.min(p.driveLeadBend, angleDiff(facing, yaw)));
+  for (const len of [p.driveLeadIn, p.driveLeadIn / 2]) {
+    const pt = { x: origin.x + Math.sin(heading) * len, z: origin.z + Math.cos(heading) * len };
+    if (isClear(origin, pt)) return pt;
+  }
+  return null;
+}
+
+/**
  * Waypoints for a loop round `origin`, setting off the way she's facing: a
  * rough circle through where she is, bending to whichever side is clear.
  * `isClear(a, b)` says whether she could drive straight from a to b. Returns
- * an empty list if there's nowhere to go.
+ * an empty list if there's nowhere to go. `facing` is the way the quad actually points: she can't turn on the spot, so the
+ * loop starts with a short run out along it (`driveLeadIn`), swinging at most a little towards `yaw`, and each leg after that
+ * is checked from the end of it. A chord straight from where she sits to the first point passed in a yard full of parked
+ * quads, but the quad swept through their sides getting round to it.
  */
-export function planLoop(origin, yaw, random, p, isClear) {
+export function planLoop(origin, yaw, random, p, isClear, facing = yaw) {
   const n = Math.round(p.driveWaypointsMin + random() * (p.driveWaypointsMax - p.driveWaypointsMin));
   const first = random() < 0.5 ? 1 : -1;
   const r0 = p.driveLoopRadiusMin + random() * (p.driveLoopRadiusMax - p.driveLoopRadiusMin);
   const jitter = Array.from({ length: n }, () => 0.8 + random() * 0.4);
+  const lead = leadIn(origin, facing, yaw, p, isClear);
   for (const scale of [1, 0.7, 0.5]) {
     for (const side of [first, -first]) {
       const r = Math.max(3.5, r0 * scale);
@@ -111,8 +129,8 @@ export function planLoop(origin, yaw, random, p, isClear) {
       const cx = origin.x + Math.sin(yaw + (side * Math.PI) / 2) * r;
       const cz = origin.z + Math.cos(yaw + (side * Math.PI) / 2) * r;
       const start = Math.atan2(origin.x - cx, origin.z - cz);
-      const points = [];
-      let prev = origin;
+      const points = lead ? [lead] : [];
+      let prev = lead ?? origin;
       let ok = true;
       for (let k = 1; k <= n; k++) {
         // Round the circle the way she's facing; the last point brings her back.
@@ -832,7 +850,7 @@ export class HerDrive {
     const q4 = Math.PI / 4;
     search: for (let tries = 0; tries < 2; tries++) {
       for (const turn of [0, q4, -q4, 2 * q4, -2 * q4, 3 * q4, -3 * q4, Math.PI]) {
-        this.waypoints = planLoop(pos, yaw + turn, this.random, this.p, this.isClear);
+        this.waypoints = planLoop(pos, yaw + turn, this.random, this.p, this.isClear, q.yaw);
         if (this.waypoints.length) break search;
       }
     }
