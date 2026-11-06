@@ -2,9 +2,11 @@ name: Version label
 
 # Every PR needs exactly one type label: it decides the release's version bump (tools/nextVersion.mjs), and without this
 # a PR left unlabelled would quietly release as a patch. Runs again when labels change, without re-running the tests.
+# Not on `opened`: `gh pr create --label` fires one `labeled` per label straight after, so that run only repeated them (#636). A PR opened
+# with no labels has no Version label check until one is added, and can't merge without it, as the check is required.
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: read
