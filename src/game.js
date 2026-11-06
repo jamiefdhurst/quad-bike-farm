@@ -38,6 +38,7 @@ import { StutterWatch } from './core/stutters.js';
 import { FeatureGuard } from './core/featureGuard.js';
 import { RadialPad } from './hud/radialPad.js';
 import { PAD_RANGES } from './input/gamepad.js';
+import { padPrompt } from './input/padLabels.js';
 import { Rumble, DEFAULT_RUMBLE_PARAMS, RUMBLE_RANGES, playRumble } from './input/rumble.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from './audio/audioParams.js';
 import { Companion } from './npc/companion.js';
@@ -14334,7 +14335,8 @@ export class Game {
     const onBack = this.player.isRiding && this.player.seat === 'pillion' && !this.menu.isOpen;
     this.hud.setCrosshairVisible(!onBack);
     if (onBack) p = '';
-    this.hud.setPrompt(p);
+    const padMode = this.input.usingPad ? (this.player.isRiding ? 'ride' : 'foot') : null;
+    this.hud.setPrompt(p, padMode && ((q) => padPrompt(q, padMode)));
     // No readout for the quad: its dash is all you get.
     if (this.chain?.state === 'carried') {
       this.hud.setStatus('Tow chain\nE on a quad to hook it on, G to put it back\nThen drive the tractor off, forwards');

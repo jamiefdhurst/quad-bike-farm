@@ -31,6 +31,7 @@ export class Input {
     this.padSteer = 0;
     this.padTrigger = { throttle: 0, brake: 0 };
     this.padState = NO_PAD;
+    this.usingPad = false; // the pad was the last thing touched, so prompts name its buttons
     this.padPlaying = false; // started from the pad: no pointer lock to say the game has the mouse
     window.addEventListener?.('gamepadconnected', () => this.listeners.padchange.forEach((fn) => fn(this.padNames())));
     window.addEventListener?.('gamepaddisconnected', () => this.listeners.padchange.forEach((fn) => fn(this.padNames())));
@@ -50,11 +51,13 @@ export class Input {
     });
     document.addEventListener('mousemove', (e) => {
       if (!this.pointerLocked) return;
+      if (e.movementX || e.movementY) this.usingPad = false;
       this.mouseDX += e.movementX;
       this.mouseDY += e.movementY;
     });
     document.addEventListener('mousedown', (e) => {
       this.noteInteraction();
+      this.usingPad = false;
       if (!this.pointerLocked) return;
       this.mouseButtonsPressed.add(e.button);
       this.mouseButtonsDown.add(e.button);
@@ -123,7 +126,12 @@ export class Input {
     this.padSteer = s.steer;
     this.padTrigger = { throttle: s.throttle, brake: s.brake };
     this.padState = s.connected ? s : NO_PAD;
-    if (s.connected && (s.start || s.held.size || s.taps.length)) this.noteInteraction();
+    const leaned = s.move.mag > 0 || s.steer !== 0 || s.look.x !== 0 || s.look.y !== 0;
+    if (s.connected && (s.start || s.held.size || s.taps.length || leaned)) {
+      this.noteInteraction();
+      this.usingPad = true;
+    }
+    if (!s.connected) this.usingPad = false;
     return this.padState;
   }
 
@@ -159,6 +167,7 @@ export class Input {
 
   onKeyDown(e) {
     this.noteInteraction();
+    this.usingPad = false;
     if (e.code === 'Tab' || e.code === 'Space') e.preventDefault();
     if (e.repeat) return;
     const code = translate(this.keyMap, e.code);
