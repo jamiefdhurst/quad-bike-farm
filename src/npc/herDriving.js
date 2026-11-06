@@ -254,6 +254,7 @@ export class HerDrive {
     this.clearAhead = Infinity;
     this.clearAround = Infinity; // nearest thing off to either side
     this.stuckTime = 0;
+    this.crowdedBackOuts = 0; // times she has backed out of a crowded spot before setting off
     this.bogs = 0; // times it's sat there and not gone
     this.regrids = 0; // times she has gone round again to face the right way on the grid
     this.boost = 0; // seconds left giving it extra throttle
@@ -843,6 +844,15 @@ export class HerDrive {
       }
     }
     // Wandered off a bit: the next loop sets off back towards where she started.
+    // Hemmed in, with no room to pull forward even a little: she backs out first, on purpose, while there's room behind,
+    // rather than setting off, bumping what's beside her and backing off after.
+    if (this.crowdedBackOuts < this.p.crowdedBackOuts && !leadIn(pos, q.yaw, q.yaw, this.p, this.isClear) && this.probe(q.yaw + Math.PI, this.p.backOutRoom) === Infinity) {
+      this.crowdedBackOuts++;
+      this.waypoints = [];
+      this.reverseSteer = this.chooseReverseSteer(false);
+      this.setPhase('reversing', this.between(1.5, 2.5));
+      return false;
+    }
     const away = Math.hypot(pos.x - this.origin.x, pos.z - this.origin.z) > this.p.driveLoopRadiusMin;
     const yaw = away ? headingTo(pos, this.origin) : q.yaw;
     // The way she's facing (or home) first; failing that, any way there's room,

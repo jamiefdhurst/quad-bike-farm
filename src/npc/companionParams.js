@@ -290,6 +290,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   raceGridYaw: 0.6, // radians off the track's direction she may be pointing on the grid before she goes round again to face it
   driveLeadIn: 3.5, // metres: she sets off on a straight run this long along the way the quad points before the loop bends, so she clears parked quads
   driveLeadBend: 0.5, // radians: and that run may bend this much towards where the loop wants to go
+  crowdedBackOuts: 2, // times a drive may begin by backing out of a spot with no room to pull forward, before she sets off regardless
+  backOutRoom: 3, // metres she needs clear behind her to back out on purpose
   backOffsToGiveUp: 5, // backing off the same thing this many times in a row and she gives up and gets off
   backOffRadius: 6, // metres: backing off again within this of the last time counts as the same spot
   backOffLonger: 0.5, // each time she backs off the same thing she reverses this much longer again (0.5: half as long again)
@@ -688,6 +690,8 @@ export const COMPANION_PARAM_RANGES = {
   backOffLook: [2, 15, 0.5],
   driveLeadIn: [0, 8, 0.5],
   driveLeadBend: [0, 1.2, 0.05],
+  crowdedBackOuts: [0, 4, 1],
+  backOutRoom: [1, 8, 0.5],
   driveMaxStalls: [0, 6, 1],
   driveBackChance: [0, 1, 0.05],
   driveKeyOffChance: [0, 1, 0.05],
