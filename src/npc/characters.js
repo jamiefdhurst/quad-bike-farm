@@ -63,6 +63,8 @@ export const CHARACTERS = [
       sideSaddleChance: 0.4, // sits side-saddle on the back, ladylike
       blownNoticeAt: 0.25,
       remembers4wd: 0.65,
+      puts2wdBack: 0.9, // tidy: leaves it as she found it
+      signalsChance: 0.95, // and indicates for everything
       voiceHardBrakeDecel: 5.5, // notices hard braking a little sooner than Jess
       voiceHardBrakeTime: 0.3,
       towHorizon: 2.6, // brakes early and keeps her eyes on the rope
@@ -164,6 +166,8 @@ export const CHARACTERS = [
       boredMountChance: 0.2,
       parkBrakeChance: 0.5, // leaves it in gear-less limbo half the time
       remembers4wd: 0.25, // and mostly forgets the 4WD switch
+      puts2wdBack: 0.2, // and does not put it back
+      signalsChance: 0.3, // and mostly forgets to indicate
       rockPrankWeight: 0.9,
       boredStartChance: 0.25,
       boredDoughnutChance: 0.12, // spins doughnuts in the field when she's bored

@@ -429,6 +429,7 @@ export class CompanionVoice {
       stalled: ['driveStalled', 0.9],
       revIt: ['driveBogged', 0.8],
       rollBack: ['driveRollBack', 1],
+      wetBrakes: ['wetBrakes', 1],
       chokeBack: ['startRemembered', 0.9],
       pause: ['drivePause', 0.35],
       tooFast: ['driveTooFast', 1],

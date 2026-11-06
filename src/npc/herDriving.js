@@ -18,6 +18,7 @@ import { JumpRun } from './jumps.js';
 import { ShowOffRun } from './showOff.js';
 import { slotHeading, slotOffsets } from './lineUp.js';
 import { pathLength } from './outings.js';
+import { GIRL_CONTROLS_PARAMS, signalFor, pumpBrake, wetRemark } from './girlControls.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const TAU = Math.PI * 2;
@@ -210,6 +211,9 @@ export class HerDrive {
     this.showOff = showOff ? { run: new ShowOffRun(showOff.trick, showOff.p, random, isClear), you: showOff.you } : null; // showing off to you (showOff.js)
     this.lastJump = null; // the last landing rated: { rating, air, upY, impact }
     this.park = park; // tidying a quad into the row (lineUp.js): { route: [stage, slot] }; she drives in line with the slot, stops on it
+    this.controlsT = 0; // seconds into the drive, for pumping the brakes (girlControls.js)
+    this.signalLeft = 0; // seconds until an indicator she put on is put off by hand
+    this.wetSaid = false; // she has said her brakes are wet, and they have not dried since
     this.pass = null; // overtaking whoever she's following (passTarget)
     this.slowFor = 0;
     this.behindTime = 0; // seconds she's been well behind you
@@ -896,6 +900,7 @@ export class HerDrive {
     const wp = this.waypoints[this.index];
     const pos = q.position;
     const dist = Math.hypot(wp.x - pos.x, wp.z - pos.z);
+    this.workControls(dt, wp, dist);
     // Going quickly she can't thread a waypoint exactly: near enough will do.
     // (Racing she holds her line much tighter, to keep out of the puddles.)
     const onGrid = this.race && this.index === this.race.gridIndex;
@@ -1038,7 +1043,7 @@ export class HerDrive {
     const pullAway = pedals.throttle > 0 ? this.hillStart * clamp(1 - speed / 2, 0, 1) : 0;
     const most = Math.min(1, p.driveMaxThrottle + pullAway + (this.boost > 0 ? 0.25 : 0));
     c.throttle = clamp((pedals.throttle + turning) * this.wobble + pullAway + (this.boost > 0 ? 0.25 : 0), 0, most);
-    c.brake = pedals.brake;
+    c.brake = Math.max(pedals.brake, pumpBrake(this.controlsT, q.brakes?.wet ?? 0, speed));
 
     // Wanting to go and going nowhere (or creeping backwards).
     this.stuckTime = target > 0.3 && q.forwardSpeed < 0.3 ? this.stuckTime + dt : 0;
@@ -1046,6 +1051,30 @@ export class HerDrive {
       this.stuckTime = 0;
       this.unstick();
     }
+  }
+
+  /**
+   * The controls she works as you would (girlControls.js): the indicator for a turn coming up (on a vehicle that has them, by her habit),
+   * put off by hand if the turn never came, and a remark when her brakes have gone wet.
+   */
+  workControls(dt, wp, dist) {
+    const q = this.quad;
+    this.controlsT += dt;
+    const sig = q.signals;
+    if (sig) {
+      const timedOut = this.signalLeft > 0 && (this.signalLeft -= dt) <= 0;
+      if (timedOut && (sig.mode === 'left' || sig.mode === 'right')) sig.set('off');
+      if (!timedOut && sig.mode === 'off' && !this.follow && !this.race && !this.park && this.signalLeft <= 0) {
+        const way = signalFor(q.position, wp, this.waypoints[this.index + 1], dist);
+        if (way && this.random() < this.p.signalsChance) {
+          sig.set(way);
+          this.signalLeft = GIRL_CONTROLS_PARAMS.signalGive;
+        } else if (way) this.signalLeft = GIRL_CONTROLS_PARAMS.signalGive; // not this one: she does not signal this corner at all
+      }
+    }
+    const wet = wetRemark(this.wetSaid, q.brakes?.wet ?? 0);
+    this.wetSaid = wet.said;
+    if (wet.say) this.events.push('wetBrakes');
   }
 
   /** Settles her pace to the road under her: faster on tarmac, with a remark as she joins it. Returns the multiplier on her scare speed. */

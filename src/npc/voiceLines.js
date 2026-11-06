@@ -58,6 +58,7 @@ import { AMY_DAY_LINES } from './dayLines.js';
 import { AMY_WORK_LIGHT_LINES } from './workLightLines.js';
 import { AMY_HANDBRAKE_LINES } from './handbrakeLines.js';
 import { AMY_FOUR_WD_LINES } from './fourWdLines.js';
+import { AMY_CONTROLS_LINES } from './controlsLines.js';
 import { AMY_REVOFF_LINES } from './revOffLines.js';
 import { AMY_CONKER_LINES } from './conkerLines.js';
 import { AMY_SEASON_LINES } from './seasonLines.js';
@@ -1556,6 +1557,7 @@ export const VOICE_LINES = {
   ...AMY_WORK_LIGHT_LINES,
   ...AMY_HANDBRAKE_LINES,
   ...AMY_FOUR_WD_LINES,
+  ...AMY_CONTROLS_LINES,
   // Rev-offs (revOffLines.js).
   ...AMY_REVOFF_LINES,
   // Conkers on an autumn day (conkerLines.js).

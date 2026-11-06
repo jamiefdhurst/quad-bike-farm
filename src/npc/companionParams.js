@@ -234,6 +234,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   thrashWork: 0.6, // how hard it's working (0..1) before she calls it thrashing
   parkBrakeChance: 0.9, // getting off a quad she was driving, the chance she pulls the parking brake on (an empty quad only holds on a slope if she does)
   remembers4wd: 0.4, // taking the wheel of a quad with a 2WD / 4WD switch left in 2WD, the chance she remembers to put it in 4WD (else she finds out in the mud)
+  puts2wdBack: 0.5, // getting off a quad with a 2WD / 4WD switch left in 4WD, the chance she puts it back in 2WD
+  signalsChance: 0.6, // a turn coming up on a vehicle with indicators, the chance she signals it
   rockPrankWeight: 0, // how keen she is to reach over and blip the quad her friend is sat on running, stood next to it (0: never; chooser.js)
   rockPrankRange: 3.5, // metres from that quad she has to be
   thrashChance: 0.15, // per second she can see a quad being thrashed cold, that she says something
@@ -624,6 +626,8 @@ export const COMPANION_PARAM_RANGES = {
   thrashWork: [0, 1, 0.05],
   parkBrakeChance: [0, 1, 0.05],
   remembers4wd: [0, 1, 0.05],
+  puts2wdBack: [0, 1, 0.05],
+  signalsChance: [0, 1, 0.05],
   rockPrankWeight: [0, 3, 0.05],
   rockPrankRange: [1, 10, 0.5],
   thrashChance: [0, 1, 0.01],
