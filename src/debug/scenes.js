@@ -22,6 +22,7 @@ export const SCENES = [
   },
   { id: 'snow', label: 'Set up snow falling at midday, in the yard', lines: ['weather snow', 'weather.time 12', 'tp me to yard'] },
   { id: 'flock', label: 'Put the flock at the end of the lane, south of the gate, and you looking at it', lines: ['weather fair', 'weather.time 10'], setup: 'flock' },
+  { id: 'terraces', label: 'Put you on the top tread of the sheep field, above its two banks', lines: ['weather fair', 'weather.time 11', 'tp me to terraces'] },
   { id: 'flask', label: 'Put Amy by the flask on the rock at the top of the hill, with you beside it', lines: [], setup: 'flask' },
   { id: 'moto', label: 'Put the mini moto in the paddock and send Jess for a go on it', lines: ['weather fair', 'weather.time 11'], setup: 'moto' },
   {

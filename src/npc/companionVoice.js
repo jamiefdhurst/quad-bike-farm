@@ -197,6 +197,8 @@ export class CompanionVoice {
       if (!quad.bog?.stuck) this.stuckSaid = false;
       // Leaning or pitched over on a steep slope (the hill's banks): world/hill.js, vehicle/topple.js.
       if (quad.upY < p.voiceSteepUpY && speed > 0.5 && !quad.isTipped) this.say('hillSteep', { urgent: true, chance: 0.8 });
+      // Taking one of the sheep field's terraces (world/hill.js).
+      if (speed > 1.5 && view.terraceSlope && view.terraceSlope(quad.position.x, quad.position.z) > p.voiceTerraceSlope) this.say('terraceBank', { chance: 0.5 });
       // Brakes held on down a hill until they fade: get it in a low gear (vehicle/brakeState.js).
       if (quad.brakes?.hot && speed > 1 && quad.brake > 0.3) this.say('brakesFading', { urgent: true, chance: 0.7 });
       if (this.hardBrake.update(dt, this.decel, speed, p)) this.say('hardBrake', { urgent: true });

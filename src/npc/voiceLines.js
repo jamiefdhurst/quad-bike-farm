@@ -91,6 +91,7 @@ import { AMY_PILLION_COACH_LINES } from './pillionCoachLines.js';
 import { AMY_LESSON_LINES } from './lessonLines.js';
 import { AMY_SMOKE_LINES } from './smokeLines.js';
 import { AMY_HILL_LINES } from './hillLines.js';
+import { AMY_TERRACE_LINES } from './terraceLines.js';
 import { AMY_SHOUT_LINES } from './shoutFaultLines.js';
 import { AMY_FUMES_LINES } from './fumesLines.js';
 import { AMY_RUSTY_LINES } from './rustyLines.js';
@@ -1698,4 +1699,6 @@ export const VOICE_LINES = {
   ...AMY_TIDY_LOAD_LINES,
   // Harrowing the field (harrowLines.js), last so the banks before it stay as they are.
   ...AMY_HARROW_LINES,
+  // The sheep field's terraces (terraceLines.js), after that.
+  ...AMY_TERRACE_LINES,
 };

@@ -140,7 +140,9 @@ export const LAYOUT = {
     // A gateway is `gate.z` along the lane and `gate.width` across, and the lane's bank is eased down to it over `ramp` m.
     // West, the wet meadow: a pond (an ellipse `rx` by `rz` m, `depth` m cut with `water` m standing in it), the muddy way in from the gateway to it
     // (`track`: points, as far as the water), trees (oaks) round the pond and reeds along its edge.
-    // East, the sheep field: rolling ground (`knolls`: a hump `r` m across, `rise` m high), a drystone wall across it with a gap in it
+    // East, the sheep field: the valley side falling to the stream in broad terraces, like the lynchets on a real hill farm (`terraces`: a bank at
+    // each of `banks` z, `width` m of steady slope, tapering out over `ease` m at the lane's end and the east hedge so nothing outside the field
+    // changes), a drystone wall across it with a gap in it
     // (`wall`: along z, from x `from` to `to`, `height` high, the `gap` at x `at` and `half` wide), and thorn bushes in clumps (`thorns`).
     paddocks: {
       ramp: 10,
@@ -154,7 +156,7 @@ export const LAYOUT = {
       east: {
         maxX: 34,
         gate: { z: 112, width: 4.8 },
-        knolls: [{ x: 6, z: 103, r: 19, rise: 3 }, { x: 24, z: 123, r: 11, rise: 1.4 }],
+        terraces: { banks: [102, 118], width: 7, ease: 10 },
         wall: { z: 92, from: -25.4, to: 34, height: 1, gap: { at: -4, half: 2.6 } },
         thorns: [[-8, 118], [-6, 120], [14, 96], [17, 94], [28, 108], [-14, 98], [30, 86]],
       },

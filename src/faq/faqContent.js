@@ -1693,7 +1693,7 @@ export const FAQ_SECTIONS = [
         q: 'What’s beyond the grass field?',
         a: `East, over the cattle grid, a tarmac farm road between two stubble fields, a Dutch barn full of round bales, an old stone field shed, a muck heap and a
           water trough. South, through the field gate, a sunk green lane down to a ford and a rough hill pasture with gorse, bracken and a small oak wood, and a
-          view over the whole farm from the top. The sheep graze there. Beside the lane, with no hedge between, there is a wet meadow with a pond to the west and a rolling
+          view over the whole farm from the top. The sheep graze there. Beside the lane, with no hedge between, there is a wet meadow with a pond to the west and a terraced
           sheep field with a drystone wall to the east. North, through the gate in the grass field's north hedge, there is a wood with a narrow twisting
           track through it, the Hollow Run, and a narrower trail for two-wheelers, the Fern Trail. North of the barley field, through the gate in its north hedge, there is
           an old gravel pit.`,
@@ -1788,7 +1788,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I get to the pond and the sheep field?',
         a: `Go through the south gate and down the lane. The lane has no hedge on either side, and halfway down its banks are eased into a ramp each way. West is a wet meadow: a muddy track
-          leads down to a pond with reeds and oaks round it, and the mud is deep enough to catch you out. East is a rolling field with two humps to climb, a drystone
+          leads down to a pond with reeds and oaks round it, and the mud is deep enough to catch you out. East is a sheep field whose ground steps down towards the stream in three broad terraces, two banks to ride up and down with a flat tread between, a drystone
           wall across it (go through the gap, or round the end) and thorn bushes. The girls follow you into both, but do not go there on their own yet.`,
       },
       {
