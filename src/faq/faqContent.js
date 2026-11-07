@@ -1566,7 +1566,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What do they do when I leave them alone?',
         a: `All sorts: wander off for a look round, start a quad, take one for a drive, race each other, go for a ride together, spin doughnuts, show off to you,
-          line the quads up by the barn, leave a mug of tea on a rack, sit with you on the rock at the top of the hill with a flask, sit on the bales or the paddock fence on a fine day (or doze on the bales when they are sleepy), run for the barn or climb into a Moorland when it rains,
+          line the quads up by the barn, leave a mug of tea on a rack, sit with you on the rock at the top of the hill with a flask, fetch their lunch from the car at midday, help themselves to a biscuit from the tin in the barn, sit on the bales or the paddock fence on a fine day (or doze on the bales when they are sleepy), run for the barn or climb into a Moorland when it rains,
           warm their hands over a running engine, start a Moorland and sit in it to warm up, fetch jumpers when it's cold or wax jackets when it rains, or get their helmets from the hooks.`,
       },
       {
@@ -1811,6 +1811,14 @@ export const FAQ_SECTIONS = [
         q: 'Are there any animals?',
         a: `Rabbits and pheasants round the hedges (see “What are the rabbits and pheasants for?”), and a flock of sheep on the hill pasture, past the stream, and a smaller one in the sheep field beside the lane, on the big side of its drystone wall. They graze, wander about, bunch up and call to each other now and then. Come close and they move off, further away the faster you are going, and the rest of the flock runs with them. You can't hurt them, and for now there's nothing to do with them but watch.`,
         tip: 'Ride up the hill pasture to find the sheep. They move off from a quad.',
+      },
+      {
+        q: 'Do the girls get hungry? What happens at lunch?',
+        a: `Yes. They get hungrier through the morning, most of all about half past twelve. A hungry girl who is free goes to her car, fetches her lunch bag and eats on the Tor's tailgate
+          if the Tor is parked, or sat on the bales, or on the bales in the barn if it is raining. Stand near her for a few seconds while she eats and she shares a word and likes you a little more.
+          At any time of day a girl who is peckish may nip to the snack tin on the shelf in the barn for a biscuit, which only takes the edge off. A girl who misses lunch altogether
+          says so in the late afternoon and is a little less cheerful for it, but never refuses you anything.`,
+        tip: 'Around half past twelve the girls fetch lunch from their cars. Stand by one while she eats and she shares it.',
       },
       {
         q: 'How do I have tea at the top of the hill?',
