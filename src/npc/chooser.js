@@ -37,6 +37,8 @@ export const OFFER_KINDS = {
   fire: { label: 'sit by the bonfire', satisfies: { warmth: 0.9, rest: 0.6, company: 0.5, purpose: 0.3 }, pace: 'dawdle' },
   hut: { label: 'sit in the shepherd\'s hut on the hill', satisfies: { warmth: 0.9, rest: 0.7, company: 0.4, purpose: 0.3 }, pace: 'dawdle' },
   flask: { label: 'have a cup of tea from the flask at the top of the hill', satisfies: { warmth: 0.4, rest: 0.6, company: 0.6, purpose: 0.4 }, pace: 'dawdle' },
+  lunch: { label: 'fetch her bag and have lunch', satisfies: { hunger: 1, rest: 0.3, company: 0.3, purpose: 0.3 }, pace: 'brisk' },
+  biscuit: { label: 'have a biscuit from the tin in the barn', satisfies: { hunger: 0.4, purpose: 0.3 }, pace: 'brisk' },
   favour: { label: 'ask you a favour', satisfies: { purpose: 0.5, company: 0.5, attention: 0.8 } },
   getOff: { label: 'get off the quad she was sat on', satisfies: { purpose: 0.8 }, fromSeat: true },
   lesson: { label: 'give you a driving lesson from the back', satisfies: { purpose: 0.7, company: 0.5 }, fromSeat: true },
@@ -128,7 +130,7 @@ export function describeMind(mind) {
   return { chose, nearly, next };
 }
 
-const NEED_WORDS = { warmth: 'warmth', company: 'company', excitement: 'excitement', rest: 'a rest', sleep: 'sleep', purpose: 'something to do' };
+const NEED_WORDS = { warmth: 'warmth', company: 'company', excitement: 'excitement', rest: 'a rest', sleep: 'sleep', purpose: 'something to do', hunger: 'hunger' };
 
 /**
  * Her choice: { pick, scored } where scored is every offer with its score (best first, for the debug panel) and pick the one she

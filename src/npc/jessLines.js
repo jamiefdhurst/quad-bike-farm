@@ -134,6 +134,7 @@ import { JESS_WARMSIT_LINES } from './warmSitLines.js';
 import { JESS_PRACTISING_LINES } from './practisingLines.js';
 import { JESS_WATCH_LINES } from './watchLines.js';
 import { JESS_FLASK_LINES } from './flaskLines.js';
+import { JESS_LUNCH_LINES } from './lunchLines.js';
 import { JESS_DONTFIX_LINES } from './dontFixLines.js';
 import { JESS_BUZZ_LINES } from './buzzLines.js';
 import { JESS_NUMB_LINES } from './numbLines.js';
@@ -500,6 +501,7 @@ export const JESS_LINES = {
   ...JESS_PRACTISING_LINES,
   ...JESS_WATCH_LINES,
   ...JESS_FLASK_LINES,
+  ...JESS_LUNCH_LINES,
   ...JESS_DONTFIX_LINES,
   ...JESS_BUZZ_LINES,
   ...JESS_NUMB_LINES,

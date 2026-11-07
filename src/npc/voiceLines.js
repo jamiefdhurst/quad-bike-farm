@@ -140,6 +140,7 @@ import { AMY_WARMSIT_LINES } from './warmSitLines.js';
 import { AMY_PRACTISING_LINES } from './practisingLines.js';
 import { AMY_WATCH_LINES } from './watchLines.js';
 import { AMY_FLASK_LINES } from './flaskLines.js';
+import { AMY_LUNCH_LINES } from './lunchLines.js';
 import { AMY_DONTFIX_LINES } from './dontFixLines.js';
 import { AMY_BUZZ_LINES } from './buzzLines.js';
 import { AMY_NUMB_LINES } from './numbLines.js';
@@ -1532,6 +1533,7 @@ export const VOICE_LINES = {
   ...AMY_PRACTISING_LINES,
   ...AMY_WATCH_LINES,
   ...AMY_FLASK_LINES,
+  ...AMY_LUNCH_LINES,
   ...AMY_DONTFIX_LINES,
   ...AMY_BUZZ_LINES,
   ...AMY_NUMB_LINES,

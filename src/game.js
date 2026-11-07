@@ -114,7 +114,7 @@ import { poseUtvBed, BED_CARGO_SPOTS, BED_CARGO_YAWS, BED_CARGO_YAW } from './ve
 import { CargoHold, CARGO_PARAM_RANGES, slideLimits } from './vehicle/cargoHold.js';
 import { DEFAULT_LOOSE_PARAMS, LOOSE_PARAM_RANGES, newLoose, creepStep, offRack, shuffleStep, tipStep, looseDrive, floorPush, slideStep, slideTip, fallsOut } from './vehicle/looseThings.js';
 import { DEF_LOAD_ROOM, DEF_LOAD_YAWS, DEF_LOAD_YAW } from './vehicle/defenderBody.js';
-import { SERIES_TUB_ROOM } from './vehicle/seriesBody.js';
+import { SERIES_TUB_ROOM, SERIES_END, SERIES_GATE } from './vehicle/seriesBody.js';
 import { DEFAULT_RACK_PARAMS, RACK_PARAM_RANGES, RackLoad, rackEffect, slidePush } from './vehicle/rackLoad.js';
 import { buildRackStrap } from './items/rackStrap.js';
 import { Tailgate, TAILGATE_PARAM_RANGES } from './vehicle/tailgate.js';
@@ -218,6 +218,9 @@ import { DEFAULT_HOME_PARAMS, HOME_PARAM_RANGES } from './npc/homeParking.js';
 import { Tea, TEA_PARAM_RANGES } from './npc/tea.js';
 import { steamParams, STEAM_PARAM_RANGES, teaTemperature, steamAmount } from './npc/steam.js';
 import { Flask, FLASK_PARAM_RANGES } from './npc/flask.js';
+import { Lunch, LUNCH_PARAM_RANGES, whereToEat } from './npc/lunch.js';
+import { buildLunchBag } from './items/lunchBag.js';
+import { BiscuitTinView } from './world/biscuitTinView.js';
 import { carryParams, CARRY_PARAM_RANGES, carryWeight } from './npc/carrying.js';
 import { dealPoloOpen } from './npc/polo.js';
 import { dealOutfit, outfitsFor, outfitRemark, DEFAULT_OUTFIT_PARAMS, OUTFIT_PARAM_RANGES } from './npc/outfits.js';
@@ -1188,6 +1191,9 @@ export class Game {
     this.flask = new Flask(undefined, createRandom(this.seed ^ 0x6f1a)); // tea from a flask on the rock at the top of the hill (npc/flask.js)
     this.flaskSet = null; // the flask and two mugs out on the ground by the rock: a Group
     this.setupFlask();
+    this.lunch = new Lunch(); // lunch from the car and a biscuit from the tin (npc/lunch.js)
+    this.lunchWhere = {}; // girl id -> { bag, spot, where }: what she is eating and where
+    this.biscuitTin = new BiscuitTinView({ scene: this.scene, world: this.world });
     // Jumpers from the barn rail on cold or wet days (npc/jumpers.js), in colours this farm dealt.
     this.jumpers = new Jumpers(undefined, Math.random, dealJumperColours(createRandom(this.farmSeed ^ 0x1e57)));
     // Wax jackets at the far end of the same rack, for the rain (npc/coats.js), in this farm's colours too.
@@ -2009,6 +2015,7 @@ export class Game {
     registerTuning('Tea on the rack', this.tea.p, TEA_PARAM_RANGES);
     registerTuning('Things walk off', this.loose.p, LOOSE_PARAM_RANGES);
     registerTuning('Flask at the top of the hill', this.flask.p, FLASK_PARAM_RANGES);
+    registerTuning('Lunch and biscuits', this.lunch.p, LUNCH_PARAM_RANGES);
     registerTuning('Steam and mugs in the hand', steamParams, STEAM_PARAM_RANGES);
     registerTuning('Girls carrying things', carryParams, CARRY_PARAM_RANGES);
     registerTuning('Jumpers', this.jumpers.p, JUMPER_PARAM_RANGES);
@@ -5922,6 +5929,7 @@ export class Game {
       }),
       ...mine(this.tea.offers(this.teaContext(ridden)), (o) => this.handleTeaEvent(this.tea.take(o))),
       ...mine(this.flask.offers(this.flaskContext(ridden)), (o) => this.handleFlaskEvent(this.flask.take(o))),
+      ...mine(this.lunch.offers(this.lunchContext()), (o) => this.handleLunchEvent(this.lunch.take(o))),
       ...mine(this.hutHost.offers(), (o) => this.hutHost.take(o)),
       ...mine(this.fireSit.offers(this.fireSitContext()), (o) => this.handleFireEvent(this.fireSit.take(o, this.fireSit.seatsLeft(this.fireSpots.length)))),
       ...(this.hiding.active ? [] : mine(this.requests.offers(this.requestContext(ridden)), (o) => this.handleRequestEvent(this.requests.take(o)))),
@@ -6069,6 +6077,8 @@ export class Game {
       active: c.fsm.is('walking', 'driving', 'mounting', 'dismounting', 'starting', 'cranking', 'pushing', 'pranking', 'boarding', 'shuffling'),
       sitting: c.fsm.is('resting', 'seated', 'onTrailer'),
       dozing: c.isDozing,
+      hour: this.daylight?.hour ?? 12, // hunger builds towards lunchtime (needs.js)
+      eating: this.lunch.phase(c.character.id) === 'eat',
       idle: c.availability().free || c.sittingAbout(), // sat about on a quad she chose is as good as stood about
       purposeRate: c.purposeRate ?? 0,
       youNear,
@@ -10514,6 +10524,157 @@ export class Game {
   }
 
 
+  // Lunch and the snack tin ---------------------------------------------------
+
+  /** What lunch (npc/lunch.js) needs to know: the hour, whether the tin is there, and how hungry each free girl is. */
+  lunchContext() {
+    return {
+      hour: this.daylight?.hour ?? 12,
+      tin: !!this.biscuitTin,
+      girls: this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, hunger: c.needs.hunger })),
+    };
+  }
+
+  /** Her own car, if it is on the farm and nobody is in it. */
+  lunchCar(id) {
+    const kind = CAR_KINDS.find((k) => ({ fiesta: FIESTA_SPEC, corsa: CORSA_SPEC })[k].owner === id);
+    const u = kind && this.landys[kind]?.unit;
+    return u && Math.abs(u.quad.speed) < 0.3 ? u.quad : null;
+  }
+
+  /** Where a girl eats today: the Tor's tailgate when it is parked and dry, the bales, or the bales in the barn out of the rain. */
+  lunchSpot(c) {
+    const tor = this.landys.landy?.unit?.quad;
+    const here = c.root.position;
+    const torParked = !!tor && Math.abs(tor.speed) < 0.3 && Math.hypot(tor.position.x - here.x, tor.position.z - here.z) < 70;
+    const taken = new Set(this.companions.map((o) => o.restSpot?.id).filter(Boolean));
+    const outside = this.restSpots.filter((s) => s.kind === 'bale' && !taken.has(s.id));
+    const barn = this.restSpots.filter((s) => s.kind === 'shelter' && s.seat !== undefined && !taken.has(s.id));
+    const where = whereToEat({ rain: this.weather.rain, torParked, balesFree: !!nearestSpot(outside, ['bale'], here, new Set(), 80) });
+    if (where === 'tailgate') return { where, tor };
+    return { where, spot: nearestSpot(where === 'barn' ? barn : outside, [where === 'barn' ? 'shelter' : 'bale'], here, new Set(), 200) ?? barn[0] ?? null };
+  }
+
+  /** Acts on lunch (npc/lunch.js): she goes for her bag or the tin, takes the bag to where she eats, tucks in, shares with you, finishes. */
+  handleLunchEvent(e) {
+    if (!e) return;
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    if (!c) return this.lunch.cancel(e.girl);
+    const id = e.girl;
+    const fail = () => this.endLunch(id, 'lost');
+    if (e.type === 'fetch') {
+      c.hold('lunch', 'having her lunch');
+      c.voice.say('lunchOffer', { force: true });
+      const car = this.lunchCar(id);
+      const bag = buildLunchBag(id === 'amy' ? 0xd9cfae : 0xb9c6d4);
+      this.scene.add(bag);
+      this.lunchWhere[id] = { bag };
+      const rear = car ? car.model.localToWorld(new THREE.Vector3(0, 0, -2.4)) : c.root.position.clone();
+      bag.position.set(rear.x, this.world.heightAt(rear.x, rear.z), rear.z);
+      const grab = () => {
+        const started = c.startCarry('bag', bag, 0.1, { onRaised: () => this.handleLunchEvent(this.lunch.gotBag(id)) });
+        if (!started) fail();
+      };
+      // Her car is a few metres from the bag; she walks to it, or the bag is by her feet if the car has gone.
+      if (!car) grab();
+      else if (!c.sneakTo({ x: rear.x, z: rear.z + 0.8 }, grab, this.lunch.p.fetchTimeout - 5)) fail();
+    } else if (e.type === 'go') {
+      const w = this.lunchWhere[id];
+      const pick = this.lunchSpot(c);
+      if (!w || (pick.where !== 'tailgate' && !pick.spot)) return fail();
+      w.where = pick.where;
+      w.spot = pick.spot ?? null;
+      if (pick.where === 'tailgate') {
+        const q = pick.tor;
+        const stand = q.model.localToWorld(new THREE.Vector3(0.1, 0, SERIES_END - 1.3));
+        const onGate = q.model.localToWorld(new THREE.Vector3(0.28, SERIES_GATE.hingeY + 0.01, SERIES_END - 0.18));
+        w.q = q;
+        const arrive = () => {
+          const wasOpen = q.tailgate.want;
+          q.tailgate.want = true;
+          w.shut = !wasOpen;
+          setTimeout(() => {
+            const back = new THREE.Vector3(0, 0, -1).transformDirection(q.model.matrixWorld);
+            if (!c.putDownCarry({ x: onGate.x, y: onGate.y, z: onGate.z }, Math.atan2(back.x, back.z), () => this.handleLunchEvent({ type: 'sat', girl: id }))) fail();
+          }, 900);
+        };
+        if (!c.carryTo(stand, arrive)) fail();
+      } else {
+        const stand = c.restStandPoint(w.spot);
+        const side = { x: stand.x + Math.cos(w.spot.yaw) * 0.7, z: stand.z - Math.sin(w.spot.yaw) * 0.7 };
+        const down = () => {
+          if (!c.putDownCarry({ x: side.x, z: side.z }, w.spot.yaw, () => c.goRest(w.spot, { stay: Infinity }) || fail())) fail();
+        };
+        if (!c.carryTo(stand, down)) fail();
+      }
+    } else if (e.type === 'sat') {
+      // Stood at the Tor's tailgate: she is eating as soon as the bag is on it.
+      this.eatLunch(id);
+    } else if (e.type === 'tin') {
+      c.hold('lunch', 'having a biscuit');
+      c.voice.say('biscuitGo', { force: true });
+      const at = this.biscuitTin.front;
+      if (!c.sneakTo({ x: at.x, z: at.z }, () => this.eatLunch(id), this.lunch.p.goTimeout - 5)) fail();
+    } else if (e.type === 'eat') {
+      if (e.kind === 'biscuit') this.biscuitTin.want(true);
+    } else if (e.type === 'say') {
+      c.voice.say(e.line, { force: true });
+    } else if (e.type === 'join') {
+      this.favour.add(id, this.lunch.p.joinFavour);
+    } else if (e.type === 'end') {
+      this.endLunch(id, e.why, true);
+    }
+  }
+
+  /** She is in place: the eating starts (lunch.js says what is spoken). */
+  eatLunch(id) {
+    for (const ev of this.lunch.startedEating(id)) this.handleLunchEvent(ev);
+  }
+
+  /** It is over, or it fell through: she lets go, the bag goes, the tailgate is put back and the lid comes down. */
+  endLunch(id, why, ended = false) {
+    const c = this.companions.find((o) => o.character.id === id);
+    const w = this.lunchWhere[id];
+    if (!ended) this.lunch.cancel(id);
+    delete this.lunchWhere[id];
+    if (c) {
+      c.release('lunch');
+      c.dropCarry();
+      if (c.isResting) c.leaveRest();
+    }
+    if (w?.bag) this.scene.remove(w.bag);
+    if (w?.q && w.shut) w.q.tailgate.want = false;
+    if (!Object.values(this.lunch.sessions).some((s) => s.kind === 'biscuit' && s.phase === 'eat')) this.biscuitTin.want(false);
+  }
+
+  updateLunch(dt) {
+    this.biscuitTin.update(dt);
+    // Sat on her seat with her bag beside her: now she eats.
+    for (const c of this.companions) {
+      const id = c.character.id;
+      const w = this.lunchWhere[id];
+      if (w?.spot && this.lunch.phase(id) === 'go' && c.isResting && c.restPhase === 'sat' && c.restSpot === w.spot) this.eatLunch(id);
+    }
+    const youDistance = {};
+    const hungers = {};
+    for (const c of this.companions) {
+      youDistance[c.character.id] = Math.hypot(this.camera.position.x - c.root.position.x, this.camera.position.z - c.root.position.z);
+      hungers[c.character.id] = c.needs.hunger;
+    }
+    for (const e of this.lunch.update(dt, { hour: this.daylight?.hour ?? 12, day: this.farm.day, youDistance, girls: hungers })) this.handleLunchEvent(e);
+  }
+
+  /** Debug panel and console: this girl fetches her lunch now (or a biscuit), however hungry she is. */
+  debugLunch(id, kind = 'lunch') {
+    const c = this.companions.find((o) => o.character.id === id);
+    if (!c) return 'no such girl';
+    if (this.lunch.has(id)) return `${c.name} is already at it`;
+    if (!c.availability({ asked: true }).free) return `${c.name} is busy: ${c.availability({ asked: true }).why}`;
+    c.needs.hunger = Math.max(c.needs.hunger, 0.7);
+    this.handleLunchEvent(this.lunch.begin(id, kind));
+    return `${c.name} is off for her ${kind === 'lunch' ? 'lunch' : 'biscuit'}`;
+  }
+
   // Flask at the top of the hill ------------------------------------------------
 
   /** The rock's seat as a rest spot (a girl sits on it like a bale) and the E prompt at it; the rock itself is built with the hill's props. */
@@ -13565,6 +13726,7 @@ export class Game {
     this.guard.run('updateSteam', () => this.updateSteam(dt));
     this.guard.run('updateRackLoads', () => this.updateRackLoads(dt, input));
     if (auto || this.flask.active) this.guard.run('updateFlask', () => this.updateFlask(dt));
+    this.guard.run('updateLunch', () => this.updateLunch(dt));
     this.guard.run('updateBonfire', () => this.updateBonfire(dt, ridden));
     this.guard.run('updateHut', () => this.hutHost.update(dt));
     if (auto || this.girlBench.active || this.girlBench.pending) this.guard.run('updateGirlBench', () => this.updateGirlBench(dt));

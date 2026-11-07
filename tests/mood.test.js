@@ -17,7 +17,7 @@ const run = (mood, needs, ctx, seconds) => {
 describe('her mood', () => {
   it('is more uneasy with more pressing, and not at all with nothing wanted', () => {
     expect(unease(new Needs())).toBe(0);
-    expect(unease(new Needs({ warmth: 1, purpose: 1, excitement: 1, company: 1, rest: 1 }))).toBeCloseTo(1);
+    expect(unease(new Needs({ warmth: 1, purpose: 1, excitement: 1, company: 1, rest: 1, hunger: 1 }))).toBeCloseTo(1);
     expect(unease(new Needs({ warmth: 1 }))).toBeGreaterThan(unease(new Needs({ rest: 1 })));
   });
 
