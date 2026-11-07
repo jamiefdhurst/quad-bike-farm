@@ -24,6 +24,8 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | lawns | The yard lawn at the yard's east edge and the paddock's floor, the grass the mower stripes | lawn patches, mowing plots |
 | cork board | The board on the barn's back wall where photos are pinned | corkboard, cork-board |
 | money tin | The tin on the shelf under the cork board that holds the farm's money | biscuit tin |
+| snack tin | The round cream-and-blue tin of biscuits on its own shelf in the barn that the girls help themselves from | biscuit tin (the money tin's old nickname), cookie jar |
+| lunch bag | The canvas tote a girl fetches from her car at lunchtime | picnic basket, lunch box |
 | workbench | The bench along the barn's north wall where jobs are done and the bay is | work bench |
 | toolbox | The red box you carry and open at a quad | tool box |
 | rack | The rack over a quad's back wheels, where the girls leave their tea and where you can strap a jerry can or the toolbox | luggage rack |

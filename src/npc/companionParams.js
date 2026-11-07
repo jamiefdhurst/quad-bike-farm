@@ -170,6 +170,8 @@ export const DEFAULT_COMPANION_PARAMS = {
   needAttentionRange: 8, // metres: how near you have to be to her friend, to count as with her (and to her, for it to ease)
   needSlightBump: 0.2, // you talk to her friend with her stood there
   needTalkEase: 0.3, // you talk to her
+  needHungerRise: 0.001, // hunger: per second at the day's peak (half past twelve), under a fifth of it before ten (needs.js hungerCurve): about 0.8 by lunch
+  needEatFall: 0.04, // per second sat eating lunch
   needBusyFall: 0.05, // something to do: per second it fades while she's busy (it builds at her boredom wait's pace while she stands about)
   wanderFarChance: 0.25, // a longer stroll, two and a half times as far
   boredRestChance: 0.35, // on a fine day, goes and sits on the bales or the fence (weighed against the others; only when there's a spot)
@@ -509,6 +511,8 @@ export const COMPANION_PARAM_RANGES = {
   needAttentionRange: [2, 30, 0.5],
   needSlightBump: [0, 1, 0.01],
   needTalkEase: [0, 1, 0.01],
+  needHungerRise: [0, 0.01, 0.0001],
+  needEatFall: [0, 0.2, 0.005],
   needBusyFall: [0, 0.5, 0.005],
   boredJoinChance: [0, 2, 0.05],
   askChance: [0, 3, 0.05],

@@ -1,4 +1,4 @@
-// What a girl wants: six needs, each 0 (met) to 1 (pressing), that build and get met as she goes about the farm. The chooser
+// What a girl wants: eight needs, each 0 (met) to 1 (pressing), that build and get met as she goes about the farm. The chooser
 // (chooser.js) weighs what she could do against them, so what she does next follows from how she feels rather than a roll of the dice.
 // Pure: the game says each frame what she's doing and what it's like where she is.
 //
@@ -8,13 +8,25 @@
 //   rest        rises while she's on the go; met by sitting down
 //   sleep       creeps up all the time (a bit faster on the go); met only by dozing; the sleepier she is, the less she does and the slower she thinks
 //   purpose     rises while she stands about with nothing to do (at the old boredom wait's pace); met by starting anything she chose
+//   hunger      rises through the morning towards the middle of the day (hungerCurve), a little through the afternoon; met by eating lunch (fully)
+//               or a biscuit (a little)
 //   attention   rises while she's with her friend and you're not near her (faster the closer you are to the friend); met by you coming over
 //               or talking to her. Jealousy: it is what 'neglected' now means (favour.js), and makes showing off and pranks likelier
 
-export const NEEDS = ['warmth', 'company', 'excitement', 'rest', 'sleep', 'purpose', 'attention'];
+export const NEEDS = ['warmth', 'company', 'excitement', 'rest', 'sleep', 'purpose', 'attention', 'hunger'];
 
 /** What each need is called in the debug panel. */
-export const NEED_LABELS = { warmth: 'warmth', company: 'company', excitement: 'excitement', rest: 'rest', sleep: 'sleepiness', purpose: 'something to do', attention: 'your attention' };
+export const NEED_LABELS = { warmth: 'warmth', company: 'company', excitement: 'excitement', rest: 'rest', sleep: 'sleepiness', purpose: 'something to do', attention: 'your attention', hunger: 'hunger' };
+
+/** How fast hunger builds at this hour of the day, 0..1 of needHungerRise: breakfast holds her till about eight, then it climbs to a peak
+ * at half past twelve, and eases to a slow afternoon creep. */
+export function hungerCurve(hour) {
+  if (hour < 8) return 0.05;
+  if (hour < 12.5) return 0.15 + 0.85 * ((hour - 8) / 4.5) ** 1.5;
+  if (hour < 14) return 1;
+  if (hour < 18) return 0.35;
+  return 0.1;
+}
 
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
@@ -28,7 +40,7 @@ export class Needs {
    * hands over an engine, a running cab, the barn), alone (nobody within her lonely range), together (someone close, or riding with
    * her), thrill (0..1: speed and shake), active (on the go: walking, driving, getting about), sitting, dozing (asleep or nodding off on the bales), idle (stood about with nothing
    * to do), purposeRate (per second while idle: 1 over her current boredom wait), withFriend (her friend is close), youNear (you are close to her),
-   * youWithFriend (you are close to her friend and not to her). `p` her params (the need* keys).
+   * youWithFriend (you are close to her friend and not to her), hour (the time of day, for hunger), eating (sat with her lunch). `p` her params (the need* keys).
    */
   update(dt, ctx, p) {
     this.warmth += dt * (ctx.chill * p.needColdRise + (ctx.wet ? p.needWetRise : 0) + (ctx.cold ?? 0) * p.needSoakedRise);
@@ -46,6 +58,8 @@ export class Needs {
     if (ctx.youNear) this.attention -= dt * p.needAttentionFall;
     else if (ctx.withFriend) this.attention += dt * p.needJealousRise * (ctx.youWithFriend ? p.needJealousFriend : 1);
     else this.attention -= dt * p.needAttentionFade; // on her own, it fades slowly: there's nobody to be jealous of
+    if (ctx.eating) this.hunger -= dt * p.needEatFall;
+    else this.hunger += dt * p.needHungerRise * hungerCurve(ctx.hour ?? 0);
     for (const n of NEEDS) this[n] = clamp01(this[n]);
   }
 

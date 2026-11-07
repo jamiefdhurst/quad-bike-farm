@@ -6,7 +6,7 @@
 // Not the favour mood in favour.js (how she rates you), nor the driving mood in driveMood.js (how sure she is on a quad).
 
 /** How much each need weighs in how uneasy she is (cold and boredom most). */
-export const UNEASE_WEIGHTS = { warmth: 1, purpose: 1, excitement: 0.8, company: 0.8, rest: 0.5 };
+export const UNEASE_WEIGHTS = { warmth: 1, purpose: 1, excitement: 0.8, company: 0.8, rest: 0.5, hunger: 0.6 };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 

@@ -385,6 +385,16 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'lunch',
+      label: '% has her lunch (fetches her bag from her car and eats on the Tor\'s tailgate, the bales or, in rain, in the barn; hungry at once)',
+      run: (id) => toast(g.debugLunch(id, 'lunch')),
+    },
+    {
+      verb: 'biscuit',
+      label: '% has a biscuit (from the snack tin in the barn; hungry at once)',
+      run: (id) => toast(g.debugLunch(id, 'biscuit')),
+    },
+    {
       verb: 'fire',
       label: '% sits on a log by the bonfire (needs it lit and blazing: build one with the button on the shared section)',
       run: (id) => {
