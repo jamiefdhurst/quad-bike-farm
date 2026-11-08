@@ -308,3 +308,9 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 - The fixture is only as good as its keys, so the test reads the keys `captureFarm` returns in `game.js` and fails if the fixture lacks one. A new thing the farm keeps therefore needs a line in the fixtures (a missing part in an old save is fine; a missing part in the fixture is not).
 - Raising `SAVE_VERSION` fails the "a fixture for every version" test until the new version's fixture is added (a real save from `save copy`). The older fixtures stay as they are: they are what an old browser still holds. Version 1 is the only one so far.
 - A dropped or renamed key shows up as a failing round trip here, which is the "breaking" case in CLAUDE.md's versions section.
+
+## Not finished until merged (#727)
+
+- Sessions reported items finished while their PR was still open: `/todo` said to watch with `gh pr checks --watch`, which returns when the checks finish, or at once if none have started yet after a push, before auto-merge has merged anything. Jamie wants an item never reported done until its PR has merged, with the session waiting by itself.
+- `tools/waitMerged.mjs <pr>` polls the PR every 20 s until it is merged (prints `merged <time>`, exit 0), or stops with the reason it needs the session: a failed check by name (the latest run of each, since a label change re-runs "Version label"), a conflict, the PR closed, or every check green with auto-merge off. It waits through "no checks yet" and gives up after 45 minutes. The decision is `verdict()`, with `tests/waitMerged.test.js`.
+- `/todo` runs it in the background at step 8; cleaning up and the report to Jamie come only after it prints `merged`, and the report gives the merge time. `/tidy` and `/perf` follow `/todo` for this.
