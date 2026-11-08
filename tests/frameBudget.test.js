@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { BUDGETS, KNOWN_OVER, SPOTS, check, summary } from '../tools/frameBudget.mjs';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { BUDGETS, KNOWN_OVER, MEASURE_ARGS, SPOTS, check, measureInPage, summary } from '../tools/frameBudget.mjs';
 
 const under = () => Object.fromEntries(SPOTS.map((s) => [s, { calls: BUDGETS[s].calls - 10, triangles: BUDGETS[s].triangles - 1000 }]));
 
@@ -42,8 +42,8 @@ describe('the frame budget', () => {
     expect(check(m).missing).toEqual(['village']);
   });
 
-  it('keeps spawn at the budget the game has had since it was set', () => {
-    expect(BUDGETS.spawn).toEqual({ calls: 2040, triangles: 3.5e6 });
+  it('keeps spawn at the budget it was given when the count was made repeatable (#597)', () => {
+    expect(BUDGETS.spawn).toEqual({ calls: 640, triangles: 3.25e6 });
   });
 
   it('only knows overruns for spots that have a budget', () => {
@@ -66,5 +66,78 @@ describe('the frame budget', () => {
     const text = summary(m);
     expect(text).toContain('No numbers from main');
     expect(text).toContain('Over budget: hilltop');
+  });
+});
+
+describe('counting the draws (#597)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  // A stand-in page: a game whose renderer counts one call a visible thing, so what is hidden while it counts shows in the number.
+  const standIn = () => {
+    const mk = (name, extra = {}) => ({ name, visible: true, isSprite: false, ...extra });
+    const flock = mk('flock');
+    const halo = mk('headlightHalo', { isSprite: true });
+    const wall = mk('wall');
+    const girl = { root: mk('girl') };
+    const bus = mk('bus');
+    const items = [flock, halo, wall, girl.root, bus];
+    const trafficUpdate = () => {};
+    const info = { autoReset: true, render: { frame: 0, calls: 0, triangles: 0 }, reset() { this.render.calls = 0; this.render.triangles = 0; } };
+    const seen = [];
+    const g = {
+      renderer: { info },
+      camera: { position: {} },
+      scene: { children: [flock, wall], traverse: (f) => items.forEach(f) },
+      companions: [girl],
+      daylight: { p: { clockRate: 1 } },
+      world: {
+        farDetail: { update() {}, viewHeight: 0 },
+        sky: { fit: { ready: true } },
+        layout: { yard: { x: 0, z: 0 } },
+        groundHeightAt: () => 0,
+      },
+      trafficHost: { view: { update: trafficUpdate, shown: new Map([['v', { object: bus }]]), kidBikes: new Map(), rigs: {}, kidRigs: [], parcels: [] } },
+      player: { isRiding: false, position: { x: 0, y: 0, z: 0 }, moveTo() {}, yaw: 0, pitch: 0 },
+      frameStats: { summary: () => ({ ms: 1, worstMs: 2 }), since: () => ({}) },
+      guard: { slowest: () => [] },
+      frameBreakdown: { summary: () => [] },
+    };
+    vi.stubGlobal('window', { game: g });
+    vi.stubGlobal('performance', { now: () => 0 });
+    vi.stubGlobal('requestAnimationFrame', (f) => {
+      info.render.frame++;
+      info.render.calls += items.filter((o) => o.visible).length;
+      seen.push({ clock: g.daylight.p.clockRate, fit: g.world.sky.fit.ready, update: g.trafficHost.view.update });
+      queueMicrotask(f);
+    });
+    return { g, items, seen, trafficUpdate };
+  };
+
+  const args = { ...MEASURE_ARGS, spots: ['yard'], headings: [0], frames: 1 };
+
+  it('counts without what moves, with the clock stopped and the shadow window snapped, and puts it all back', async () => {
+    const { g, items, trafficUpdate } = standIn();
+    const r = await measureInPage(args);
+    expect(r.spots.yard.calls).toBe(1); // only the wall: the flock, the girl, the bus and the lamp's halo are out of the count
+    expect(items.every((o) => o.visible)).toBe(true);
+    expect(g.daylight.p.clockRate).toBe(1);
+    expect(g.trafficHost.view.update).toBe(trafficUpdate);
+  });
+
+  it('stops the clock and freezes the traffic only while it counts', async () => {
+    const { seen, trafficUpdate } = standIn();
+    await measureInPage(args);
+    const counting = seen.filter((s) => s.clock === 0);
+    expect(counting.length).toBeGreaterThan(0);
+    expect(counting.every((s) => s.update !== trafficUpdate)).toBe(true);
+    expect(seen.some((s) => s.fit === false)).toBe(true);
+  });
+
+  it('times with everything moving as in play', async () => {
+    const { items } = standIn();
+    const during = [];
+    vi.stubGlobal('setTimeout', (f) => { during.push(items.every((o) => o.visible)); f(); });
+    await measureInPage({ ...args, dwell: 1 });
+    expect(during).toEqual([true]);
   });
 });
