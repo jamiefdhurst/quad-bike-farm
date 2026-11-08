@@ -33,6 +33,16 @@ const smoothstep = (a, b, v) => {
   return t * t * (3 - 2 * t);
 };
 
+/** Where the dashes of a broken line go: `on` m long every `on + off` m from `from` to `to` m along, `width` m wide: [{ s, len, a, b }] (s the middle of each). `whole`: every dash is full length, even the last, which then runs past `to`. */
+export function dashes({ on, off, from = 0, to, width = 0.14, whole = false }) {
+  const out = [];
+  for (let start = from; start < to; start += on + off) {
+    const len = whole ? on : Math.min(on, to - start);
+    if (len > 0.05) out.push({ s: start + len / 2, len, a: -width / 2, b: width / 2 });
+  }
+  return out;
+}
+
 /** A Catmull-Rom curve through `points` ([x, z]), sampled about every `step` m: [{ x, z, tx, tz }] with (tx, tz) the unit direction of travel. */
 export function smoothRoad(points, step = 1) {
   const p = [points[0], ...points, points[points.length - 1]];

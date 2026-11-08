@@ -1,7 +1,7 @@
 // The village (layout.village): the shape of it, from the layout. Pure: the side road's curve, the buildings' footprints, the ground levelled
 // under them, the walls that shut the village in and the spot the girls ask to be taken to at the pub. world/villageProps.js draws it.
 
-import { roadNetwork, smoothRoad } from './roads.js';
+import { roadNetwork, smoothRoad, dashes } from './roads.js';
 
 const rect = (x, z, hx, hz) => ({ minX: x - hx, maxX: x + hx, minZ: z - hz, maxZ: z + hz });
 const inRect = (r, x, z, margin = 0) => x > r.minX - margin && x < r.maxX + margin && z > r.minZ - margin && z < r.maxZ + margin;
@@ -15,7 +15,7 @@ export { smoothRoad };
 /** The marks on the village road: a broken white line down the middle (it is two-way) and one give-way line across the lane going out, not both. */
 export function roadMarks(S) {
   const centre = [];
-  for (let s = S.giveWay + 3; s < S.road.length - 3; s += 6) centre.push({ s: s + 1, len: 2, a: -0.05, b: 0.05 });
+  centre.push(...dashes({ on: 2, off: 4, from: S.giveWay + 3, to: S.road.length - 3, width: 0.1, whole: true }));
   // The give-way line: a double broken line across the north half only, the traffic leaving the village (it keeps left, so heading east is on the north).
   const giveWay = [];
   for (const row of [0, 0.5]) {
