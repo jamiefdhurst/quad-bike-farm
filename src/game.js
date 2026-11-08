@@ -115,8 +115,8 @@ import { CargoHold, CARGO_PARAM_RANGES, slideLimits } from './vehicle/cargoHold.
 import { DEFAULT_LOOSE_PARAMS, LOOSE_PARAM_RANGES, newLoose, creepStep, offRack, shuffleStep, tipStep, looseDrive, floorPush, slideStep, slideTip, fallsOut } from './vehicle/looseThings.js';
 import { DEF_LOAD_ROOM, DEF_LOAD_YAWS, DEF_LOAD_YAW } from './vehicle/defenderBody.js';
 import { SERIES_TUB_ROOM, SERIES_END, SERIES_GATE } from './vehicle/seriesBody.js';
-import { DEFAULT_RACK_PARAMS, RACK_PARAM_RANGES, RackLoad, rackEffect, slidePush } from './vehicle/rackLoad.js';
-import { buildRackStrap } from './items/rackStrap.js';
+import { RackHost } from './items/rackHost.js';
+import { TowHost } from './items/towHost.js';
 import { Tailgate, TAILGATE_PARAM_RANGES } from './vehicle/tailgate.js';
 import { UtvRide, UTV_RIDE_PARAM_RANGES, DEFAULT_UTV_RIDE_PARAMS } from './npc/utvRide.js';
 import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
@@ -302,7 +302,7 @@ import { Toolbox } from './items/toolbox.js';
 import { JumpLeads, JUMP_LEAD_PARAM_RANGES } from './items/jumpLeads.js';
 import { Hose, HOSE_PARAM_RANGES } from './items/hose.js';
 import { Winch, WINCH_PARAM_RANGES } from './items/winch.js';
-import { pickTree, isHeavy } from './items/winchAnchor.js';
+import { isHeavy } from './items/winchAnchor.js';
 import { WinchAudio } from './audio/winchAudio.js';
 import { Chain, CHAIN_PARAM_RANGES } from './items/chain.js';
 import { TowRope, TOW_ROPE_PARAM_RANGES } from './items/towRope.js';
@@ -1540,7 +1540,7 @@ export class Game {
     for (const can of [this.petrolCan, this.premixCan, this.dieselCan]) {
       this.interaction.add({
         target: can.proxy,
-        isAvailable: () => !this.handsFull && !can.carried && !this.onRack(can),
+        isAvailable: () => !this.handsFull && !can.carried && !this.rackLoads.onRack(can),
         prompt: () => `Pick up the ${can === this.premixCan ? 'yellow' : can === this.dieselCan ? 'dark green' : 'red'} jerry can (${can.litres.toFixed(1)} L, ${fuelText(can.oil, can.diesel, can.water, can.additive)})`,
         feedback: 'pickUp',
         interact: () => can.pickUp(this.camera),
@@ -1661,6 +1661,7 @@ export class Game {
     registerTuning('Phone calls', this.phoneCalls.p, PHONE_PARAM_RANGES);
     // A hosepipe for washing the mud off.
     this.hose = new Hose({ scene: this.scene, world: this.world, position: L.hose, yaw: L.hose.yaw });
+    this.towing = new TowHost(this); // the winch, the tow rope and the chain (items/towHost.js)
     // The green quad's winch, for pulling a stuck quad out of a bog.
     const winchUnit = this.units.find((u) => u.spec.winch);
     this.winch = winchUnit ? new Winch({ scene: this.scene, unit: winchUnit }) : null;
@@ -1705,12 +1706,13 @@ export class Game {
     this.interaction.add({
       target: this.toolbox.proxy,
       priority: 1, // it sits on the bench, whose box would otherwise be hit first
-      isAvailable: () => !this.handsFull && !this.toolbox.carried && !this.onRack(this.toolbox),
+      isAvailable: () => !this.handsFull && !this.toolbox.carried && !this.rackLoads.onRack(this.toolbox),
       prompt: () => 'Pick up the toolbox',
       feedback: 'pickUp',
       interact: () => this.toolbox.pickUp(this.camera),
     });
-    this.setUpRackLoads();
+    this.rackLoads = new RackHost(this); // the cans and toolbox on the rear racks (items/rackHost.js)
+    this.rackLoads.setUpRackLoads();
     this.restoreLandyCargo();
     // The workbench: jobs on a quad parked in the painted bay (workshop/bench.js).
     this.interaction.add({
@@ -3588,7 +3590,7 @@ export class Game {
       if (!l.unit || !l.cargo) continue;
       for (const c of this.farm.save?.vehicles?.[l.unit.id]?.cargo ?? []) {
         const item = LANDY_LOADS.includes(c.item) ? this[c.item] : null;
-        if (item && !item.held && !this.onRack(item) && !l.cargo.holds(item)) l.cargo.load(item, c.spot);
+        if (item && !item.held && !this.rackLoads.onRack(item) && !l.cargo.holds(item)) l.cargo.load(item, c.spot);
       }
     }
   }
@@ -4904,7 +4906,7 @@ export class Game {
   captureFarm() {
     const vehicles = {};
     for (const unit of this.units) {
-      vehicles[unit.id] = captureVehicle(unit, { settings: this.history.settingsFor(unit), barnFind: unit.barnFind?.toJSON(), rack: this.rackSave(unit), cargo: this.landyCargoSave(unit) });
+      vehicles[unit.id] = captureVehicle(unit, { settings: this.history.settingsFor(unit), barnFind: unit.barnFind?.toJSON(), rack: this.rackLoads.rackSave(unit), cargo: this.landyCargoSave(unit) });
     }
     return {
       day: this.farm.day,
@@ -5915,7 +5917,7 @@ export class Game {
       });
     }
     const r = this.towRope;
-    for (const unit of this.units.filter((u) => this.ropeQuadFor(u))) {
+    for (const unit of this.units.filter((u) => this.towing.ropeQuadFor(u))) {
       const quad = unit.quad;
       const p = r.params;
       spot(quad.model, [0, p.hitchHeight, -p.hitchBack], [0.4, 0.3, 0.3], {
@@ -7676,7 +7678,7 @@ export class Game {
   /** What is lying on the ground near this Land Rover that would go in its back, nearest first. */
   looseLoadsNear(l, range = this.tidyLoad.p.itemRange) {
     const at = l.unit.quad.position;
-    return LANDY_LOADS.map((k) => this[k]).filter((i) => i && !i.held && i.model.parent === this.scene && !this.onRack(i))
+    return LANDY_LOADS.map((k) => this[k]).filter((i) => i && !i.held && i.model.parent === this.scene && !this.rackLoads.onRack(i))
       .map((i) => ({ i, d: Math.hypot(i.model.position.x - at.x, i.model.position.z - at.z) })).filter((x) => x.d <= range).sort((a, b) => a.d - b.d).map((x) => x.i);
   }
 
@@ -7731,7 +7733,7 @@ export class Game {
     }
     const item = what === 'toolbox' ? this.toolbox : this.petrolCan;
     if (item.held) return `you are holding the ${what}: put it down first`;
-    if (this.onRack(item)) return `the ${what} is strapped on a rack: clear that first`;
+    if (this.rackLoads.onRack(item)) return `the ${what} is strapped on a rack: clear that first`;
     if (!l.cargo.load(item)) return 'the back is full';
     return `the ${what} is in the back`;
   }
@@ -7751,7 +7753,7 @@ export class Game {
     const out = this.trafficHost.leftOpenGates().map((gt) => ({ id: `gate:${gt.id}`, kind: 'gate', x: gt.x, z: gt.z }));
     for (const [key, home] of Object.entries(this.canHomes)) {
       const can = this[key];
-      if (can.held || can.carried || can.model.parent !== this.scene || this.onRack(can)) continue;
+      if (can.held || can.carried || can.model.parent !== this.scene || this.rackLoads.onRack(can)) continue;
       const at = can.model.position;
       if (this.tidyUp.canOutOfPlace(at, home)) out.push({ id: `can:${key}`, kind: 'can', x: at.x, z: at.z });
     }
@@ -8079,105 +8081,6 @@ export class Game {
 
   get handsFull() {
     return this.petrolCan.held || this.premixCan.held || this.dieselCan.held || this.hose.held || this.toolbox.held || this.leads.held || this.oilBottle.held || this.coolantBottle.held || this.antiGelBottle.held || this.feedBucket.held || !!this.heldBrushwood || !!this.heldWood || !!this.power.heldBattery() || this.winch?.state === 'carried' || this.chain?.state === 'carried' || this.towRope?.state === 'carried';
-  }
-
-  /** The debug panel's winch button: the green's winch onto this vehicle (or, on the green itself, onto the nearest tree), or off again. */
-  debugWinch(unit) {
-    const w = this.winch;
-    if (!w) return 'No winch in this game';
-    const onIt = unit === w.unit ? !!w.anchor : w.target === unit.quad;
-    if (w.state === 'hooked' && onIt) {
-      w.stow();
-      return 'Winch off';
-    }
-    w.stow();
-    w.take(this.camera);
-    if (unit !== w.unit) {
-      w.hookOn(unit.quad);
-      return `Winch hooked on the ${unit.label}${w.selfPull ? `: the ${w.unit.label} pulls itself up to it` : ''}`;
-    }
-    const at = w.quad.position;
-    const tree = w.anchors.map((a) => ({ a, d: Math.hypot(a.x - at.x, a.z - at.z) })).sort((p, q) => p.d - q.d)[0];
-    if (!tree || tree.d > 30) {
-      w.stow();
-      return 'No tree within 30 m';
-    }
-    w.hookTree(tree.a);
-    return `Winch hooked on a tree ${Math.round(tree.d)} m away`;
-  }
-
-  /** The debug panel's tow rope button: hook the rope from the nearest utility quad onto this vehicle, or take it off again. */
-  debugTowRope(unit) {
-    const r = this.towRope;
-    if (r.state === 'hooked' && r.target === unit.quad) {
-      r.stow();
-      return 'Tow rope off';
-    }
-    const near = this.units
-      .filter((u) => u !== unit && this.ropeQuadFor(u))
-      .map((u) => ({ u, d: u.quad.position.distanceTo(unit.quad.position) }))
-      .sort((a, b) => a.d - b.d)[0];
-    if (!near || near.d > 8) return 'No utility quad within 8 m to tow it with';
-    r.stow();
-    r.take(this.camera, near.u.quad);
-    r.hookOn(unit.quad);
-    return `Tow rope from the ${near.u.label} to the ${unit.label}`;
-  }
-
-  /** A quad that carries the tow rope on its rack: a utility quad, not the green (its X is the winch) and not the tractor or the Land Rover. */
-  ropeQuadFor(unit) {
-    return !!unit && unit !== this.winch?.unit && !unit.spec.tractor && !unit.spec.landRover && !unit.spec.car && !unit.spec.utv && !!unit.quad.mugAnchor;
-  }
-
-  /** The tow rope: it comes out of your hand if you go further than it reaches, or when you get on something; a snatch makes her on the dead quad shout. */
-  updateTowRope() {
-    const r = this.towRope;
-    if (r.state === 'carried' && this.player.isRiding) r.stow();
-    if (r.state === 'carried' && r.distanceFrom(this.player.position) > r.params.reach) {
-      r.stow();
-      this.hud.toast('The rope won\'t reach any further: the hook pulled out of your hand');
-    }
-    r.update();
-    for (const e of r.events.splice(0)) {
-      const girl = this.companions.find((c) => c.fsm.is('driving') && c.quad === r.target && c.drive?.towing);
-      if (girl && e === 'snatch') girl.driveEvents.push('snatch');
-    }
-  }
-
-  /** The tow chain: it comes out of your hand if you go further than it reaches, or when you get on something. */
-  updateChain() {
-    const c = this.chain;
-    if (!c) return;
-    if (c.state === 'carried' && this.player.isRiding) c.stow();
-    if (c.state === 'carried' && c.distanceFrom(this.player.position) > c.params.length) {
-      c.stow();
-      this.hud.toast('The chain won\'t reach any further: the hook pulled out of your hand');
-    }
-    c.update();
-  }
-
-  /** The winch: the cable's reach, and winding in while X is held by the green (or on it). */
-  updateWinch(dt = 0) {
-    const w = this.winch;
-    if (!w) return;
-    if (w.state === 'carried' && this.player.isRiding) w.stow();
-    if (w.state === 'carried' && w.distanceFrom(this.player.position) > w.params.length) {
-      w.stow();
-      this.hud.toast('The winch cable won\'t reach any further: the hook pulled out of your hand');
-    }
-    const onIt = this.boardUnit === w.unit;
-    const near = !this.player.isRiding && w.distanceFrom(this.player.position) < w.params.remoteReach;
-    this.winchReel = w.state === 'hooked' && (onIt || near) && !this.menu.isOpen && this.input.isDown('KeyX');
-    w.update(dt);
-  }
-
-  /** The trunk you are looking at while you hold the winch hook (or have it on a tree), if any. */
-  winchTreeLooked() {
-    const w = this.winch;
-    if (!w || this.player.isRiding || !(w.state === 'carried' || w.anchor)) return null;
-    const origin = this.camera.getWorldPosition(new THREE.Vector3());
-    const dir = this.camera.getWorldDirection(new THREE.Vector3());
-    return pickTree(w.anchors, origin, dir, 6);
   }
 
   /** Off the back: only once she's stopped (or nearly). */
@@ -9913,249 +9816,6 @@ export class Game {
       m.position.set(s.x + s.sx, s.tipped ? 0.18 : 0, s.z + s.sz); // on its side it sits half its width up
       m.rotation.order = 'YXZ';
       m.rotation.set(0, yaw, s.tipped ? Math.PI / 2 : 0);
-    }
-  }
-
-  // Loads on the rear rack -----------------------------------------------------
-
-  /** A quad with a rear rack that takes a load: the farm quads (not the tractor, the UTV, the Land Rovers or the cars). */
-  hasRackForLoad(unit) {
-    const s = unit.spec;
-    return !!unit.quad.mugAnchor && !s.tractor && !s.utv && !s.landRover && !s.car;
-  }
-
-  /** Which sort of load a thing is for the rack, or null when it will not go on one. */
-  rackKind(item) {
-    return item === this.toolbox ? 'toolbox' : [this.petrolCan, this.premixCan, this.dieselCan].includes(item) ? 'can' : null;
-  }
-
-  /** Whether this can or the toolbox is standing on a rack. */
-  onRack(item) {
-    return this.rackKits?.some((k) => k.rack.item === item) ?? false;
-  }
-
-  /** What to call a thing on the rack in a prompt. */
-  rackName(item) {
-    return item === this.toolbox ? 'toolbox' : 'jerry can';
-  }
-
-  /** The key a strapped load is kept under in the save, or null. */
-  rackSave(unit) {
-    const kit = this.rackKits?.find((k) => k.unit === unit);
-    if (!kit?.rack.strapped) return null;
-    return ['petrolCan', 'premixCan', 'dieselCan', 'toolbox'].find((k) => this[k] === kit.rack.item) ?? null;
-  }
-
-  /**
-   * A place on each rack-carrying quad's rear rack for a jerry can or the toolbox, and a ratchet strap to hold it (vehicle/rackLoad.js).
-   * E with one in your hands sets it on the rack; with it there, a tap on E takes it off and holding E straps it down (or, strapped,
-   * undoes the strap and takes it).
-   */
-  setUpRackLoads() {
-    this.rackParams = { ...DEFAULT_RACK_PARAMS };
-    registerTuning('Rack loads', this.rackParams, RACK_PARAM_RANGES);
-    this.rackKits = [];
-    for (const unit of this.units) {
-      if (!this.hasRackForLoad(unit)) continue;
-      const quad = unit.quad;
-      const anchor = new THREE.Object3D();
-      anchor.name = 'rackLoadAnchor';
-      anchor.position.copy(quad.mugAnchor.position);
-      quad.mugAnchor.parent.add(anchor);
-      const proxy = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.5, 0.5), new THREE.MeshBasicMaterial({ visible: false }));
-      proxy.position.y = 0.2;
-      anchor.add(proxy);
-      const hold = new CargoHold({
-        scene: this.scene,
-        ground: (x, z) => this.world.heightAt(x, z),
-        anchors: [anchor],
-        yawFor: (item) => (item === this.toolbox ? 0 : Math.PI / 2),
-      });
-      const kit = { unit, quad, anchor, hold, rack: new RackLoad(this.rackParams), strap: null, touched: false, prev: null };
-      this.rackKits.push(kit);
-      this.interaction.add({
-        target: proxy,
-        priority: 2, // over a can or the toolbox standing on it, whose own box would otherwise be hit first
-        isAvailable: () => !this.player.isRiding && !quad.isTipped && (kit.rack.loaded || !!this.rackKind(this.heldLoad())),
-        prompt: () => this.rackPrompt(kit),
-        feedback: () => (kit.rack.loaded ? 'own' : 'putDown'), // the strap has its own click
-        interact: () => this.rackPress(kit),
-        hold: (dt) => {
-          kit.touched = true;
-          const done = kit.rack.hold(dt);
-          if (done) this.rackDone(kit, done);
-          return false;
-        },
-      });
-      // A strapped load kept in the save is back on its rack.
-      const key = this.farm.save?.vehicles?.[unit.id]?.rack;
-      const item = ['petrolCan', 'premixCan', 'dieselCan', 'toolbox'].includes(key) ? this[key] : null;
-      if (item && !item.held && !this.onRack(item)) {
-        this.rackPut(kit, item);
-        kit.rack.strapped = true;
-        this.rackShowStrap(kit);
-      }
-    }
-  }
-
-  /** Debug panel and console: put the can or toolbox on this quad's rack (loose), strap or unstrap what is there, or clear the rack. */
-  debugRack(unit, what) {
-    const kit = this.rackKits?.find((k) => k.unit === unit);
-    if (!kit) return 'it has no rack for a load';
-    const { rack } = kit;
-    if (what === 'clear') {
-      if (!rack.loaded) return 'nothing on the rack';
-      const item = rack.clear();
-      this.rackHideStrap(kit);
-      this.rackWeigh(kit);
-      item.putDown(item.model.getWorldPosition(new THREE.Vector3()), 0); // down on the ground where it stood
-      return 'rack cleared';
-    }
-    if (what === 'strap') {
-      if (!rack.loaded) return 'nothing on the rack to strap';
-      rack.strapped = !rack.strapped;
-      rack.slide = 0;
-      if (rack.strapped) this.rackShowStrap(kit);
-      else this.rackHideStrap(kit);
-      return rack.strapped ? 'strapped down' : 'strap undone';
-    }
-    const item = what === 'toolbox' ? this.toolbox : this.petrolCan;
-    if (rack.loaded) return 'the rack is taken';
-    if (item.held || this.onRack(item)) return `the ${this.rackName(item)} is in your hands or on another rack`;
-    this.rackPut(kit, item);
-    return `${this.rackName(item)} on the rack`;
-  }
-
-  /** For the panel and console: what is on this quad's rack. */
-  rackSummary(unit) {
-    const kit = this.rackKits?.find((k) => k.unit === unit);
-    if (!kit) return 'no rack for a load';
-    const { rack } = kit;
-    if (!rack.loaded) return 'empty';
-    return `${this.rackName(rack.item)}, ${rack.strapped ? 'strapped' : `loose (slide-off ${rack.slide.toFixed(2)})`}, ${rack.kg} kg`;
-  }
-
-  rackPrompt(kit) {
-    const { rack } = kit;
-    const held = this.heldLoad();
-    if (!rack.loaded) return `Put the ${this.rackName(held)} on the rack`;
-    const what = this.rackName(rack.item);
-    if (Object.values(this.teaMugs).some((m) => m.parent === kit.quad.mugAnchor)) return { text: 'There is tea on the rack' };
-    if (this.handsFull) return { text: `The ${what} is on the rack   ·   G put what you are holding down` };
-    if (rack.strapped) return { text: `Hold E to undo the strap and take the ${what}` };
-    return { text: `Hold E to strap the ${what} down`, keys: [['E', 'Tap to take it off']] };
-  }
-
-  /** E pressed on a rack: a load in your hands goes on, one already there starts a tap or a hold. */
-  rackPress(kit) {
-    if (!kit.rack.loaded) {
-      const item = this.heldLoad();
-      const kind = this.rackKind(item);
-      if (kind && !Object.values(this.teaMugs).some((m) => m.parent === kit.quad.mugAnchor)) this.rackPut(kit, item);
-      return;
-    }
-    if (!this.handsFull) kit.rack.press();
-  }
-
-  /** Draws every part of a load again: the far-detail pass left some out while it stood somewhere far off, and no longer looks at it once it is on a rack. */
-  rackShow(item) {
-    item.model.traverse((o) => o.layers.set(0));
-  }
-
-  /** Stands a held can or the toolbox on the rack, loose. */
-  rackPut(kit, item) {
-    this.rackShow(item);
-    kit.hold.load(item);
-    kit.rack.put(item, this.rackKind(item));
-    kit.prev = null;
-    this.rackWeigh(kit);
-  }
-
-  /** What the load takes off the quad (and the nothing it takes when the rack is bare). */
-  rackWeigh(kit) {
-    const kg = kit.rack.kg;
-    Object.assign(kit.quad.rackLoad, { kg, ...rackEffect(kg, this.rackParams) });
-  }
-
-  rackShowStrap(kit) {
-    this.rackHideStrap(kit);
-    kit.strap = buildRackStrap(kit.rack.kind);
-    kit.anchor.add(kit.strap);
-    const m = kit.rack.item.model;
-    delete m.userData.loose; // righted, and straight, under the strap
-    m.position.set(0, 0, 0);
-    m.rotation.set(0, kit.hold.yawFor(kit.rack.item), 0);
-  }
-
-  rackHideStrap(kit) {
-    if (kit.strap) kit.anchor.remove(kit.strap);
-    kit.strap = null;
-  }
-
-  /** Takes the load off the rack into your hands. */
-  rackTake(kit) {
-    const item = kit.rack.clear();
-    this.rackHideStrap(kit);
-    this.rackWeigh(kit);
-    if (!item) return;
-    this.rackShow(item);
-    item.pickUp(this.camera);
-  }
-
-  /** The hold on a rack finished: the strap is tight, or undone with the load taken. */
-  rackDone(kit, what) {
-    this.audioHub.useCue('latch');
-    if (what === 'strapped') {
-      this.rackShowStrap(kit);
-    } else {
-      this.rackTake(kit);
-      this.audioHub.useCue('pickUp');
-    }
-  }
-
-  updateRackLoads(dt, input) {
-    for (const kit of this.rackKits ?? []) {
-      const { rack, quad } = kit;
-      kit.hold.update(dt);
-      // Let go of E, or looked away, or the quad has gone: the press ends.
-      if (rack.pressing) {
-        if (!input.isDown('KeyE')) {
-          if (rack.release() === 'takeOff' && !this.handsFull) {
-            this.rackTake(kit);
-            this.audioHub.useCue('pickUp');
-          }
-        } else if (!kit.touched && rack.pressed > 0) {
-          rack.cancel();
-        }
-      }
-      if (Math.abs(quad.speed) > 1) rack.cancel();
-      kit.touched = false;
-      if (!rack.loaded) continue;
-      // How hard the quad is shoving the load: its slowing, its bounce, its shake.
-      const y = quad.position.y;
-      let long = 0;
-      let vert = 0;
-      if (kit.prev && dt > 0) {
-        long = (quad.speed - kit.prev.speed) / dt;
-        const vy = (y - kit.prev.y) / dt;
-        vert = (vy - kit.prev.vy) / dt;
-        kit.prev.vy = vy;
-      } else kit.prev = { vy: 0 };
-      kit.prev.speed = quad.speed;
-      kit.prev.y = y;
-      long = Math.max(-40, Math.min(40, long));
-      vert = Math.max(-80, Math.min(80, vert));
-      if (rack.strapped) continue;
-      this.updateLooseBed(kit.hold, quad, dt);
-      const shake = quad.unit?.vibration?.intensity ?? 0;
-      if (rack.update(dt, slidePush(looseDrive(shake, this.loose.p), long, vert, this.rackParams)) === 'slid') {
-        const back = new THREE.Vector3(0, 0, -1).applyQuaternion(quad.model.getWorldQuaternion(new THREE.Quaternion()));
-        back.y = 0;
-        kit.hold.tipOut(back.normalize());
-        rack.clear();
-        this.rackWeigh(kit);
-        this.audioHub.useCue('putDown');
-      }
     }
   }
 
@@ -12742,7 +12402,7 @@ export class Game {
       }
       else if (!focused && input.wasPressed('KeyE') && this.winch) {
         // The winch hook on a tree: E on a trunk hooks it, E on the hooked trunk takes it off.
-        const tree = this.winchTreeLooked();
+        const tree = this.towing.winchTreeLooked();
         if (tree && this.winch.state === 'carried') this.winch.hookTree(tree);
         else if (tree && this.winch.anchor === tree) this.winch.unhook(this.camera);
       }
@@ -12858,7 +12518,7 @@ export class Game {
     if (auto || this.tea.forced) this.guard.run('updateTea', () => this.updateTea(dt, ridden));
     this.guard.run('updateLooseMugs', () => this.updateLooseMugs(dt));
     this.guard.run('updateSteam', () => this.updateSteam(dt));
-    this.guard.run('updateRackLoads', () => this.updateRackLoads(dt, input));
+    this.guard.run('updateRackLoads', () => this.rackLoads.updateRackLoads(dt, input));
     if (auto || this.flask.active) this.guard.run('updateFlask', () => this.updateFlask(dt));
     this.guard.run('updateLunch', () => this.updateLunch(dt));
     this.guard.run('updateBonfire', () => this.updateBonfire(dt, ridden));
@@ -12956,9 +12616,9 @@ export class Game {
     this.dieselCan.update(dt);
     this.guard.run('updateCanWater', () => this.updateCanWater(dt));
     this.guard.run('updateHose', () => this.updateHose(dt));
-    this.guard.run('updateWinch', () => this.updateWinch(dt));
-    this.guard.run('updateChain', () => this.updateChain());
-    this.guard.run('updateTowRope', () => this.updateTowRope());
+    this.guard.run('updateWinch', () => this.towing.updateWinch(dt));
+    this.guard.run('updateChain', () => this.towing.updateChain());
+    this.guard.run('updateTowRope', () => this.towing.updateTowRope());
     this.workshop.update(dt);
     this.bench.update(dt);
     this.guard.run('updateCharger', () => this.power.updateCharger(dt));
@@ -13669,9 +13329,9 @@ export class Game {
     } else if (this.towRope?.state === 'carried') {
       this.hud.setStatus('Tow rope\nE on a dead quad to hook it on, G to put it back\nThen ride off gently: it stretches and can snatch');
     } else if (this.winch?.state === 'carried') {
-      this.hud.setStatus(`Winch hook\n${this.winchTreeLooked() ? 'E to hook the tree: the RB300 will pull itself up to it' : 'E on a tree or a vehicle to hook it on, G to put it back'}`);
+      this.hud.setStatus(`Winch hook\n${this.towing.winchTreeLooked() ? 'E to hook the tree: the RB300 will pull itself up to it' : 'E on a tree or a vehicle to hook it on, G to put it back'}`);
     } else if (this.winch?.state === 'hooked' && this.winch.anchor) {
-      this.hud.setStatus(`Winch on a tree\n${this.winchTreeLooked() === this.winch.anchor ? 'E to unhook it, ' : ''}hold X by the RB300 or on it to wind in`);
+      this.hud.setStatus(`Winch on a tree\n${this.towing.winchTreeLooked() === this.winch.anchor ? 'E to unhook it, ' : ''}hold X by the RB300 or on it to wind in`);
     } else if (this.hose.held) {
       this.hud.setStatus('Hose\nHold E to spray, G to put it back');
     } else if (this.leads.held) {

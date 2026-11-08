@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 
 // game.js only gets smaller (#126): a part of the game goes out to a host of its own, and this number is lowered to match. Raising it
 // means a new feature belongs in a module instead.
-const MAX_LINES = 13796;
+const MAX_LINES = 13456;
 
 describe('game.js', () => {
   it('has not grown past its ceiling', () => {
