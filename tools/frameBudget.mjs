@@ -9,13 +9,14 @@
 // A budget is raised only on purpose, with a line in docs/decisions/performance.md saying why (.claude/rules/checking.md).
 /** Per spot: the most draw calls and triangles a frame may take there. */
 export const BUDGETS = {
-  spawn: { calls: 2040, triangles: 3.5e6 },
-  // The others are what each measured after #451 (yard 2,432 and 3.50M, the most the smoke test saw, village 3,170 and 3.80M, wood 1,232 and 3.80M, hilltop 1,530 and 6.70M)
-  // and about 8% over. Before it (and after #365) they were 2,945, 3,957, 1,901 and 2,396 calls: parts too small to see are no longer drawn.
-  yard: { calls: 2800, triangles: 4.0e6 }, // 2,630 until the farm bike (#75): one more vehicle in the yard is about 100 calls; 3.8M until the mower (#76): CI measured 3.90M and 2,701 calls with it parked in view
-  village: { calls: 2200, triangles: 4.1e6 }, // 3,170 until #399 trimmed the quads parked in it (2,040 now)
-  wood: { calls: 1400, triangles: 4.1e6 }, // 1,330 until the mower (#76): the smoke test measured 1,360 and 1,390 with it parked in view
-  hilltop: { calls: 1800, triangles: 7.2e6 }, // 1,650 until the farm bike (#75), then 1,730 until #97: CI measured 1,704 to 1,747 on one day with nothing changed up there
+  // Each is what the spot measured when the count was made repeatable (#597: spawn 590 calls and 2.99M triangles, yard 2,691 and 3.70M, village 2,000 and 3.67M,
+  // wood 1,266 and 3.76M, hilltop 1,570 and 6.56M, the same on every run) and about 8% over. They are lower than before because the animals, the girls and the
+  // lane's traffic are no longer in the count; the real frame, moving things and all, is `tools/perf.mjs`.
+  spawn: { calls: 640, triangles: 3.25e6 },
+  yard: { calls: 2900, triangles: 4.0e6 },
+  village: { calls: 2160, triangles: 4.0e6 },
+  wood: { calls: 1370, triangles: 4.06e6 },
+  hilltop: { calls: 1700, triangles: 7.1e6 },
 };
 
 /** Spots over their budget today, which are reported and not failed on until the issue that brings them back under makes them strict. None now:
@@ -26,7 +27,8 @@ export const SPOTS = Object.keys(BUDGETS);
 
 /** The spots (and what is measured at each) as the page sees them. Runs in the browser, so it is self-contained. Returns { [spot]: { calls, triangles } } or { error }.
  * With `dwell` (seconds, on a real GPU: tools/perf.mjs) each view is also held that long and timed: `ms` and `worstMs` from frameStats and the three
- * slowest features, the worst view's kept. */
+ * slowest features, the worst view's kept. The draws are counted with everything that moves held still and out of sight (#597), so the count is the
+ * farm's and the same on every run; the timing, if asked for, is with it all moving as in play. */
 export async function measureInPage({ spots, headings, frames, dwell = 0, viewHeight = 0 }) {
   const g = window.game;
   const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
@@ -34,7 +36,36 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
   const info = g.renderer.info;
   const wasAuto = info.autoReset;
   info.autoReset = false;
+  // What moves through a view while it is counted (the animals, the girls, the lane's traffic), the lamps' halos and the sun's slow track (it moves the shadow square)
+  // shifted the count by tens of calls from run to run (#597): they are hidden and the clock stopped for the count, and put back for the timing.
+  const MOVERS = ['flock', 'rabbits', 'rabbitEyes', 'pheasants', 'pheasantWings', 'cat', 'dog', 'farmAnimals'];
+  const hidden = [];
+  let clockRate = null;
+  let trafficUpdate = null;
+  const holdStill = (on) => {
+    if (on === (clockRate !== null)) return;
+    if (on) {
+      clockRate = g.daylight.p.clockRate;
+      g.daylight.p.clockRate = 0;
+      for (const c of g.scene.children) if (MOVERS.includes(c.name) && c.visible) { c.visible = false; hidden.push(c); }
+      for (const c of g.companions) if (c.root.visible) { c.root.visible = false; hidden.push(c.root); }
+      const view = g.trafficHost.view;
+      trafficUpdate = view.update;
+      view.update = () => {}; // its bodies and riders stay where they were, and are hidden below
+      const out = [...view.shown.values(), ...view.kidBikes.values()].map((b) => b.object);
+      out.push(...Object.values(view.rigs).map((r) => r.rig.root), ...view.kidRigs.filter(Boolean).map((k) => k.rig.root), ...view.parcels);
+      g.scene.traverse((o) => { if (o.isSprite && /Halo$/.test(o.name)) out.push(o); }); // the lamps' glows come on and go off as the vehicles' lights settle, in the afternoon too
+      for (const o of out) if (o.visible) { o.visible = false; hidden.push(o); }
+    } else {
+      g.daylight.p.clockRate = clockRate;
+      clockRate = null;
+      g.trafficHost.view.update = trafficUpdate;
+      while (hidden.length) hidden.pop().visible = true;
+    }
+  };
   const count = async () => {
+    holdStill(true);
+    g.world.sky.fit.ready = false; // the shadow window eases round to the way you look over a second or two, so the count would depend on how long it had had: snap it
     await settle(3); // the update that follows a move decides what is drawn
     g.world.farDetail.update(g.camera.position, 0, true); // and the far detail looks only every quarter second, so bring it up to date
     info.reset();
@@ -43,6 +74,7 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
     for (let i = 0; i < 600 && info.render.frame - from < frames; i++) await frame();
     const drawn = Math.max(1, info.render.frame - from);
     const r = { calls: info.render.calls / drawn, triangles: info.render.triangles / drawn };
+    holdStill(false);
     if (dwell > 0) {
       const from = performance.now() / 1000;
       await new Promise((ok) => setTimeout(ok, dwell * 1000)); // longer than frameStats' window, so it is this view's frames only
@@ -113,6 +145,7 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
       } else notes.push('no hill on this farm');
     }
   } finally {
+    holdStill(false);
     g.world.farDetail.viewHeight = 0;
     info.autoReset = wasAuto;
     g.player.moveTo({ x: home.x, y: home.y, z: home.z });
