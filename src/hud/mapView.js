@@ -139,7 +139,7 @@ export class MapView {
     ctx.fillStyle = C.paper;
     ctx.fillRect(0, 0, W, W);
     rect(f.bounds, C.outside);
-    for (const a of f.areas) rect(a.rect, a.fill);
+    for (const a of f.areas) poly(a.points, a.fill);
     for (const wd of [f.wood, f.woodland]) {
       if (!wd) continue;
       if (wd === f.wood) rect(wd, C.wood);

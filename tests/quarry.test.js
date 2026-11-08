@@ -235,7 +235,7 @@ describe('the gravel pit: its field', () => {
     expect(fields.areaOf(gx, gz - 3)).toBe('quarry');
     expect(fields.areaOf(gx, gz + 3)).toBe('north');
     const gap = fields.hedges.find((h) => h.alongX && h.z1 === gz && h.x1 === 80).gaps.find((g) => g.id === 'quarry');
-    expect(gap).toMatchObject({ at: gx, gate: true, shut: false });
+    expect(gap).toMatchObject({ at: gx - 80, gate: true, shut: false }); // along the hedge from its west end, at x 80
     expect(gap.half).toBeCloseTo(quarry.gate.width / 2 + 0.35);
     expect(fields.gates.quarry).toBe(gap);
   });

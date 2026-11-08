@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
 import { dutchBarnShape, dutchBarnScreens } from '../src/world/outbuildings.js';
+import { boundary, gap } from '../src/world/fieldPlan.js';
 import { canSee, hedgeBlocks, buildingBlocks } from '../src/npc/sight.js';
 
 const at = (x, z, y = 1.5) => ({ x, y, z });
-const hedge = { x1: -50, z1: 10, x2: 50, z2: 10, alongX: true, length: 100, gaps: [{ at: 20, half: 3 }] };
+const hedge = boundary(-50, 10, 50, 10, [gap(70, 3)]); // the gap is at x 20
 const barn = { minX: 0, maxX: 10, minZ: 0, maxZ: 8, door: { x: 10, z: 4, halfWidth: 1.5 } };
 
 describe('sight', () => {

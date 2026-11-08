@@ -12029,13 +12029,7 @@ export class Game {
     const inside = (x, z, m = 0.5) => Math.abs(x - b.x) < b.halfX - m && Math.abs(z - b.z) < b.halfZ - m;
     const inDoor = (x, z) => Math.abs(z - b.z) < b.door.halfWidth - 0.4 && x > b.x + b.halfX - 0.6 && x < b.x + b.halfX + 0.6;
     // A hedge stops her except through a gap with its gate open.
-    const hedged = (x, z) => {
-      for (const h of f.hedges) {
-        const d = h.alongX ? Math.hypot(Math.max(h.x1 - x, 0, x - h.x2), z - h.z1) : Math.hypot(x - h.x1, Math.max(h.z1 - z, 0, z - h.z2));
-        if (d < 0.45 && !h.gaps.some((g) => !g.shut && Math.abs((h.alongX ? x : z) - g.at) < g.half)) return true;
-      }
-      return false;
-    };
+    const hedged = (x, z) => f.hedgedAt(x, z, 0.45);
     const allowed = (x, z) => {
       if (inside(x, z) || inDoor(x, z)) return true;
       return !world.inBarn(x, z, 0.4) && !world.outbuildings.builtAt(x, z, 0.5) && !hedged(x, z);

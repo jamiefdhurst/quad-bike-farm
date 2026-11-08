@@ -2,6 +2,7 @@
 // be tested. North is -z and east is +x, so the map puts x across and z down the page, north up. hud/mapView.js draws it.
 
 import { createBrook } from '../world/brook.js';
+import { pointAlong } from '../world/polygons.js';
 import { dutchBarnShape, fieldShedShape } from '../world/outbuildings.js';
 import { neighbourFarmShape } from '../world/neighbourFarm.js';
 import { stripPoint } from '../world/layout.js';
@@ -100,18 +101,16 @@ export function mapTransform(bounds, width, height) {
  * are drawn across their gap.
  */
 export function hedgeRuns(h) {
-  const lo = h.alongX ? h.x1 : h.z1;
-  const hi = lo + h.length;
-  const at = (s) => (h.alongX ? { x: s, z: h.z1 } : { x: h.x1, z: s });
+  const at = (s) => pointAlong(h, s);
   const gaps = [...h.gaps].sort((a, b) => a.at - b.at);
   const runs = [];
-  let from = lo;
+  let from = 0;
   for (const g of gaps) {
-    const a = Math.max(lo, g.at - g.half);
+    const a = Math.max(0, g.at - g.half);
     if (a > from) runs.push([at(from), at(a)]);
-    from = Math.max(from, Math.min(hi, g.at + g.half));
+    from = Math.max(from, Math.min(h.length, g.at + g.half));
   }
-  if (hi > from) runs.push([at(from), at(hi)]);
+  if (h.length > from) runs.push([at(from), at(h.length)]);
   const gates = gaps.filter((g) => g.gate).map((g) => ({ from: at(g.at - g.half), to: at(g.at + g.half), shut: !!g.shut }));
   return { runs, gates };
 }
@@ -141,7 +140,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const hill = fields.hill;
   const crop = (k) => layout.stubbleFields?.[k]?.crop;
   const fieldFill = { grass: C.grass, road: C.verge, end: C.verge, north: crop('north') === 'barley' ? C.barley : C.wheat, south: crop('south') === 'barley' ? C.barley : C.wheat, lane: C.lane, hill: C.pasture, meadow: C.pasture, sheep: C.pasture, riverside: C.pasture, woods: C.woodland, quarry: C.quarryField };
-  const areas = Object.entries(A).map(([kind, rect]) => ({ kind, rect, fill: fieldFill[kind] ?? C.grass }));
+  const areas = Object.entries(A).map(([kind, rect]) => ({ kind, rect, points: fields.polygons[kind], fill: fieldFill[kind] ?? C.grass }));
 
   const hedges = [];
   const gates = [];
