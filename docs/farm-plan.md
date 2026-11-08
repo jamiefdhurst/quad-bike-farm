@@ -2,7 +2,7 @@
 
 Where everything on the farm goes and what each place is for, and the order the work is done in. `docs/what-the-game-is.md` says what each part of the game is for; this says where it is. A new thing you'd see in the world is placed on this plan before it is built: if no place fits, the plan changes first, in its own PR.
 
-Settled with Jamie on 7 November 2026 and extended on 8 November. The map is `docs/farm-plan.svg`.
+Settled with Jamie on 7 November 2026 and extended on 8 November. The map is `docs/farm-plan.svg`, drawn by `docs/farm-plan-map.html` (open it in a browser to click any place for what it is for) and rendered with `node tools/farmPlanSvg.mjs`. These files are the plan: nothing outside the repo is.
 
 ## The farm
 
@@ -178,7 +178,7 @@ Everything else open that doesn't depend on where things are: the girls' minds, 
 - **Every issue has a "Where it fits" section**: its place on this plan (or "not placed"), and the systems it ties into: the girls, jobs and money, the save, the map, and how a player finds it. `/idea` writes it and `/todo` reads it in its plan step.
 - **`/idea` checks this plan** for anything placed in the world, and puts each new issue in a milestone.
 - **`/tidy check` compares the layout with this plan** and files what has drifted.
-- **This plan changes in its own PR**, with a line in `docs/decisions/world.md`, before work that needs the change.
+- **This plan changes in its own PR**, with a line in `docs/decisions/world.md`, before work that needs the change. The PR changes this file and the map page's numbers together and re-renders `docs/farm-plan.svg`.
 
 ## The issues
 
