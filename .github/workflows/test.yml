@@ -7,6 +7,7 @@ permissions:
   contents: read
   actions: read
   pull-requests: read
+  issues: read
 
 concurrency:
   group: test-${{ github.event.pull_request.number }}
@@ -33,6 +34,19 @@ jobs:
         run: |
           gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/${{ github.event.pull_request.number }}/files" --jq '.[].filename' > files.txt || : > files.txt
           node tools/ciChanges.mjs < files.txt | tee -a "$GITHUB_OUTPUT"
+
+  # A PR that says "Closes #n" needs every line of #n answered (tools/issueCheck.mjs, #736). It reads the issue live and runs on prose-only PRs too.
+  Issue:
+    name: Issue check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: tools
+      - name: Is every line of each issue this closes answered?
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node tools/issueCheck.mjs pr ${{ github.event.pull_request.number }}
 
   Unit:
     name: Unit ${{ matrix.shard }}/3
@@ -122,13 +136,14 @@ jobs:
   # always(): if a Unit shard or Smoke fails this would otherwise be skipped, and a skipped required check counts as passed. Skipped shards
   # and Smoke pass only when Changes ran and said the PR is prose alone.
   Test:
-    needs: [Changes, Unit, Smoke]
+    needs: [Changes, Issue, Unit, Smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Every shard and Smoke passed, or the PR is prose alone
+      - name: The issue check passed, and every shard and Smoke did, or the PR is prose alone
         run: |
-          echo "Changes: ${{ needs.Changes.result }} (code ${{ needs.Changes.outputs.code }}), Unit: ${{ needs.Unit.result }}, Smoke: ${{ needs.Smoke.result }}"
+          echo "Changes: ${{ needs.Changes.result }} (code ${{ needs.Changes.outputs.code }}), Issue: ${{ needs.Issue.result }}, Unit: ${{ needs.Unit.result }}, Smoke: ${{ needs.Smoke.result }}"
           [ "${{ needs.Changes.result }}" = success ] || exit 1
+          [ "${{ needs.Issue.result }}" = success ] || exit 1
           [ "${{ needs.Changes.outputs.code }}" = false ] && exit 0
           [ "${{ needs.Unit.result }}" = success ] && [ "${{ needs.Smoke.result }}" = success ]
