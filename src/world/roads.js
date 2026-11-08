@@ -82,7 +82,7 @@ function simplify(samples) {
   return keep;
 }
 
-function buildRoad(def, step) {
+function buildRoad(def, step, cell) {
   if (!SURFACES.includes(def.surface)) throw new Error(`road '${def.id}': surface '${def.surface}' is not one of ${SURFACES.join(', ')}`);
   if (!def.points || def.points.length < 2) throw new Error(`road '${def.id}': needs at least two points`);
   const samples = smoothRoad(def.points, step);
@@ -126,7 +126,59 @@ function buildRoad(def, step) {
     road.bounds.minZ = Math.min(road.bounds.minZ, q.z - q.radius - EDGE);
     road.bounds.maxZ = Math.max(road.bounds.maxZ, q.z + q.radius + EDGE);
   }
+  road.grid = buildGrid(road, cell);
   return road;
+}
+
+export const GRID_CELL = 16; // m: the side of one cell of a road's index (#664)
+
+/** Counts for the tests: how many segments `nearestOn` has looked at, so a return to walking every one fails on any machine. */
+export const counts = { segments: 0 };
+
+/**
+ * An index of a road's segments, built once: a uniform grid over its bounds, each cell listing the segments that pass through it (in order), so a
+ * lookup looks only at the cells near the point. Pads and passing bays are put in the cells they reach by `indexAids`, once the bays are known.
+ */
+function buildGrid(road, cell) {
+  const b = road.bounds;
+  const nx = Math.max(1, Math.ceil((b.maxX - b.minX) / cell) + 1);
+  const nz = Math.max(1, Math.ceil((b.maxZ - b.minZ) / cell) + 1);
+  const cells = new Array(nx * nz).fill(null);
+  const half = cell * Math.SQRT1_2 + 1e-9;
+  road.segs.forEach((g, i) => {
+    const x0 = Math.floor((Math.min(g.a.x, g.b.x) - b.minX) / cell);
+    const x1 = Math.floor((Math.max(g.a.x, g.b.x) - b.minX) / cell);
+    const z0 = Math.floor((Math.min(g.a.z, g.b.z) - b.minZ) / cell);
+    const z1 = Math.floor((Math.max(g.a.z, g.b.z) - b.minZ) / cell);
+    for (let cz = Math.max(0, z0 - 1); cz <= Math.min(nz - 1, z1 + 1); cz++) {
+      for (let cx = Math.max(0, x0 - 1); cx <= Math.min(nx - 1, x1 + 1); cx++) {
+        // A segment is in a cell if it comes within the cell's half diagonal of its middle: every cell it touches, and a few it only nears.
+        const mx = b.minX + (cx + 0.5) * cell;
+        const mz = b.minZ + (cz + 0.5) * cell;
+        const t = Math.min(g.len, Math.max(0, (mx - g.a.x) * g.tx + (mz - g.a.z) * g.tz));
+        if (Math.hypot(mx - (g.a.x + g.tx * t), mz - (g.a.z + g.tz * t)) > half) continue;
+        (cells[cz * nx + cx] ??= []).push(i);
+      }
+    }
+  });
+  road.mark = new Int32Array(road.segs.length);
+  road.stamp = 0;
+  return { cell, minX: b.minX, minZ: b.minZ, nx, nz, cells, pads: new Array(nx * nz).fill(null), bays: new Array(nx * nz).fill(null) };
+}
+
+/** Put a road's pads and passing bays in the grid cells they reach, so a lookup checks only those near it. */
+function indexAids(road) {
+  const { grid } = road;
+  const put = (lists, i, x, z, reach) => {
+    const x0 = Math.max(0, Math.floor((x - reach - grid.minX) / grid.cell));
+    const x1 = Math.min(grid.nx - 1, Math.floor((x + reach - grid.minX) / grid.cell));
+    const z0 = Math.max(0, Math.floor((z - reach - grid.minZ) / grid.cell));
+    const z1 = Math.min(grid.nz - 1, Math.floor((z + reach - grid.minZ) / grid.cell));
+    for (let cz = z0; cz <= z1; cz++) for (let cx = x0; cx <= x1; cx++) (lists[cz * grid.nx + cx] ??= []).push(i);
+  };
+  road.pads.forEach((q, i) => put(grid.pads, i, q.x, q.z, q.radius + EDGE));
+  // A bay counts out to 2 EDGE from its rectangle, so a circle round its middle that holds the rectangle and that margin holds it all.
+  road.bays.forEach((p, i) => put(grid.bays, i, p.x, p.z, Math.hypot(p.length / 2 + EDGE * 2, road.halfWidth + p.bay + EDGE * 2) + 0.01));
 }
 
 /** The road at (x, z) in a line, for the debug panel and the console: which one, its surface, how far from its middle and how much of the ground is hard. */
@@ -166,13 +218,51 @@ export function pointAt(road, s) {
   return { x: a.x + (b.x - a.x) * f, z: a.z + (b.z - a.z) * f, tx: tx / len, tz: tz / len };
 }
 
+// What the last `trySeg` found best, kept here so a lookup makes no objects until it has its answer.
+const S = { d: 0, i: -1, t: 0, cx: 0, cz: 0, raw: 0 };
+
+function trySeg(road, i, x, z, lead) {
+  const g = road.segs[i];
+  counts.segments++;
+  const px = x - g.a.x;
+  const pz = z - g.a.z;
+  const raw = px * g.tx + pz * g.tz;
+  const lo = i === 0 && lead ? -lead[0] : 0;
+  const hi = g.len + (i === road.segs.length - 1 && lead ? lead[1] : 0);
+  const t = Math.min(hi, Math.max(lo, raw));
+  const cx = g.a.x + g.tx * t;
+  const cz = g.a.z + g.tz * t;
+  const d = Math.hypot(x - cx, z - cz);
+  // The lowest segment wins a tie, as when every one was walked in order.
+  if (S.i < 0 || d < S.d || (d === S.d && i < S.i)) {
+    S.d = d;
+    S.i = i;
+    S.t = t;
+    S.cx = cx;
+    S.cz = cz;
+    S.raw = raw;
+  }
+}
+
+function scanCell(road, list, x, z, lead, stamp) {
+  if (!list) return;
+  const { mark } = road;
+  for (let n = 0; n < list.length; n++) {
+    const i = list[n];
+    if (mark[i] === stamp) continue;
+    mark[i] = stamp;
+    trySeg(road, i, x, z, lead);
+  }
+}
+
 /**
  * The nearest point on the road's middle line to (x, z): `d` the distance, `s` the metres along from its start, `across` signed (positive on
  * the left of the way it runs), `at` the point and its heading. A road that joins another is cut square at that end; the others end in a round cap.
  * `lead` is how far past each end [start, end] the line is taken to run on, straight on, for levelling.
+ * `reach` is as far as the caller cares: past it the answer may be any segment, or none, so it only has to be asked about things that far off
+ * to be told "not here". With none, the true nearest is found from anywhere, widening ring by ring through the road's grid until no closer segment can exist.
  */
-function nearestOn(road, x, z, lead = null) {
-  let best = null;
+function nearestOn(road, x, z, lead = null, reach = Infinity) {
   const last = road.segs.length - 1;
   // A road that ends on another is cut square there (a plane across it at that end), not rounded off, so its width never spills over the far side.
   const j = road.junction?.end;
@@ -184,23 +274,42 @@ function nearestOn(road, x, z, lead = null) {
     depth = ((x - e.x) * g.tx + (z - e.z) * g.tz) * sign;
     if (depth < 0) return null;
   }
-  road.segs.forEach((g, i) => {
-    const px = x - g.a.x;
-    const pz = z - g.a.z;
-    const raw = px * g.tx + pz * g.tz;
-    let t = raw;
-    const lo = i === 0 && lead ? -lead[0] : 0;
-    const hi = g.len + (i === last && lead ? lead[1] : 0);
-    t = Math.min(hi, Math.max(lo, t));
-    const cx = g.a.x + g.tx * t;
-    const cz = g.a.z + g.tz * t;
-    const d = Math.hypot(x - cx, z - cz);
-    if (!best || d < best.d) best = { d, g, t, cx, cz, raw };
-  });
-  if (!best) return null;
-  const { g, t, cx, cz } = best;
-  const across = (x - cx) * g.tz - (z - cz) * g.tx; // left of travel: for heading (0, 1) (south) the left is east, +x
-  return { d: best.d, s: g.a.s + t, raw: g.a.s + best.raw, depth, across: across === 0 ? 0 : across, at: { x: cx, z: cz, tx: g.tx, tz: g.tz }, seg: g };
+  S.i = -1;
+  const stamp = ++road.stamp;
+  const { mark, grid } = road;
+  // A lead runs the end segments on past their ends, so they can be nearest from further off than their cells say: always look at them.
+  if (lead) {
+    mark[0] = mark[last] = stamp;
+    trySeg(road, 0, x, z, lead);
+    if (last > 0) trySeg(road, last, x, z, lead);
+  }
+  const { cell, nx, nz, cells } = grid;
+  const cx0 = Math.floor((x - grid.minX) / cell);
+  const cz0 = Math.floor((z - grid.minZ) / cell);
+  // Start at the first ring that reaches the grid, and end at the last ring that has any cell in it.
+  let k = Math.max(cx0 < 0 ? -cx0 : cx0 >= nx ? cx0 - nx + 1 : 0, cz0 < 0 ? -cz0 : cz0 >= nz ? cz0 - nz + 1 : 0);
+  const kLast = Math.max(Math.abs(cx0), Math.abs(cx0 - (nx - 1)), Math.abs(cz0), Math.abs(cz0 - (nz - 1)));
+  for (; k <= kLast; k++) {
+    // Anything in ring k or beyond is at least (k - 1) cells off.
+    const near = (k - 1) * cell;
+    if (near > reach || (S.i >= 0 && S.d < near)) break;
+    const zlo = cz0 - k;
+    const zhi = cz0 + k;
+    const xlo = cx0 - k;
+    const xhi = cx0 + k;
+    for (let cz = Math.max(zlo, 0); cz <= Math.min(zhi, nz - 1); cz++) {
+      if (cz === zlo || cz === zhi) {
+        for (let cx = Math.max(xlo, 0); cx <= Math.min(xhi, nx - 1); cx++) scanCell(road, cells[cz * nx + cx], x, z, lead, stamp);
+      } else {
+        if (xlo >= 0) scanCell(road, cells[cz * nx + xlo], x, z, lead, stamp);
+        if (xhi < nx) scanCell(road, cells[cz * nx + xhi], x, z, lead, stamp);
+      }
+    }
+  }
+  if (S.i < 0) return null;
+  const g = road.segs[S.i];
+  const across = (x - S.cx) * g.tz - (z - S.cz) * g.tx; // left of travel: for heading (0, 1) (south) the left is east, +x
+  return { d: S.d, s: g.a.s + S.t, raw: g.a.s + S.raw, depth, across: across === 0 ? 0 : across, at: { x: S.cx, z: S.cz, tx: g.tx, tz: g.tz }, seg: g };
 }
 
 /**
@@ -212,8 +321,9 @@ export function roadNetwork(layout) {
   return cache.get(layout);
 }
 
-export function createRoads(defs, { step = 1 } = {}) {
-  const roads = defs.map((d) => buildRoad(d, step));
+/** `cell`: the side of a cell of each road's index. A cell bigger than the map makes one cell of the lot, which is a plain walk of every segment: what the tests compare the index with. */
+export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
+  const roads = defs.map((d) => buildRoad(d, step, cell));
   const byId = new Map(roads.map((r) => [r.id, r]));
   if (byId.size !== roads.length) throw new Error('roads: two roads share an id');
   for (const r of roads) {
@@ -241,6 +351,7 @@ export function createRoads(defs, { step = 1 } = {}) {
   for (const r of roads) {
     const places = passingPlaces(r);
     for (const p of places) r.bays.push(p);
+    indexAids(r);
   }
 
   /** 0..1 how much of (x, z) is hard standing from road `r`, of any surface: carriageway, pavements, pads and passing bays, with a soft edge. */
@@ -248,13 +359,21 @@ export function createRoads(defs, { step = 1 } = {}) {
     const b = r.bounds;
     if (x < b.minX || x > b.maxX || z < b.minZ || z > b.maxZ) return 0;
     let t = 0;
-    const n = nearestOn(r, x, z);
+    const n = nearestOn(r, x, z, null, r.hard + EDGE);
     if (n) t = 1 - smoothstep(r.hard - EDGE, r.hard + EDGE, n.d);
-    if (t < 1) {
-      for (const q of r.pads) t = Math.max(t, 1 - smoothstep(q.radius - EDGE, q.radius + EDGE, Math.hypot(x - q.x, z - q.z)));
+    const g = r.grid;
+    const ci = Math.min(g.nz - 1, Math.max(0, Math.floor((z - g.minZ) / g.cell))) * g.nx + Math.min(g.nx - 1, Math.max(0, Math.floor((x - g.minX) / g.cell)));
+    const pads = g.pads[ci];
+    if (t < 1 && pads) {
+      for (const i of pads) {
+        const q = r.pads[i];
+        t = Math.max(t, 1 - smoothstep(q.radius - EDGE, q.radius + EDGE, Math.hypot(x - q.x, z - q.z)));
+      }
     }
-    if (t < 1) {
-      for (const p of r.bays) {
+    const bays = g.bays[ci];
+    if (t < 1 && bays) {
+      for (const bi of bays) {
+        const p = r.bays[bi];
         const dx = x - p.x;
         const dz = z - p.z;
         const out = (dx * p.tz - dz * p.tx) * p.side; // metres out to the bay's side of the middle
@@ -302,7 +421,7 @@ export function createRoads(defs, { step = 1 } = {}) {
   function nearest(x, z, within = Infinity) {
     let best = null;
     for (const r of roads) {
-      const n = nearestOn(r, x, z);
+      const n = nearestOn(r, x, z, null, within);
       if (n && n.d <= within && (!best || n.d < best.d)) best = { road: r, d: n.d, s: n.s, across: n.across, at: n.at };
     }
     return best;
@@ -312,14 +431,14 @@ export function createRoads(defs, { step = 1 } = {}) {
   function onRoad(id, x, z) {
     const r = byId.get(id);
     if (!r) return false;
-    const n = nearestOn(r, x, z, [0, 0]);
+    const n = nearestOn(r, x, z, [0, 0], r.halfWidth);
     return !!n && n.d <= r.halfWidth && n.raw >= 0 && n.raw <= r.length;
   }
 
   /** Whether (x, z) is within the carriageway (not the pavement) of any road, and which. */
   function onCarriageway(x, z) {
     for (const r of roads) {
-      const n = nearestOn(r, x, z);
+      const n = nearestOn(r, x, z, null, r.halfWidth);
       if (n && n.d <= r.halfWidth) return r;
     }
     return null;
@@ -392,7 +511,8 @@ export function createRoads(defs, { step = 1 } = {}) {
       const b = r.bounds;
       const m = shoulder + (r.level.lead ? Math.max(...r.level.lead) : 0);
       if (x < b.minX - m || x > b.maxX + m || z < b.minZ - m || z > b.maxZ + m) continue;
-      const n = nearestOn(r, x, z, r.level.lead ?? null);
+      // Past the shoulder a road with no pads lays nothing, so there is no need to find which part of it is nearest.
+      const n = nearestOn(r, x, z, r.level.lead ?? null, r.pads.length ? Infinity : r.halfWidth + shoulder);
       let d = n ? n.d - r.halfWidth : Infinity;
       let level = null;
       let across = 0;
