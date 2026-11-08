@@ -78,10 +78,10 @@ export function jobActions(g) {
 
   if (g.logStack) {
     add('logs', 'Split and stack logs', () => `${g.splitterFitted ? 'splitter fitted' : 'splitter not fitted'}, ram ${Math.round(g.splitter.ram * 100)}%, ${g.splitter.loaded ? 'a round on the beam' : 'beam empty'}, ${g.logStack.count} of ${g.splitterParams.capacity} logs stacked`, [
-      a('fit', 'Fit the log splitter on the tractor', () => g.fitSplitter(true)),
-      a('unfit', 'Put the bale spike back on the tractor', () => g.fitSplitter(false)),
+      a('fit', 'Fit the log splitter on the tractor', () => g.tractorWork.fitSplitter(true)),
+      a('unfit', 'Put the bale spike back on the tractor', () => g.tractorWork.fitSplitter(false)),
       a('done', 'Finish the log job now', () => g.farmJobs.debugFinishLogs()),
-      a('reset', 'Empty the log stack (rounds dealt back)', () => g.debugResetLogs()),
+      a('reset', 'Empty the log stack (rounds dealt back)', () => g.tractorWork.debugResetLogs()),
     ]);
   }
 

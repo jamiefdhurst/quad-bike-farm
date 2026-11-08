@@ -349,3 +349,12 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 - `tests/fieldWorkHost.test.js` holds the job-done paths and the status lines with a stand-in game.
 - The bale spike and the log splitter were left for the next part: both read the trailers and the tow weight, so they go together as the tractor's work. Then `frame()`. The issue stays open.
 - The smoke test's draw-call budget still fails on the wood (1,416 calls against 1,400), the same as on `main`: #597.
+
+## Splitting up game.js, the tractor's work (#126, was TODO 235)
+
+- `items/tractorWorkHost.js` takes the bale spike and the log splitter out of `game.js`: setting up the spike and the splitter, the spike's lever and hints, the splitter's prompts, hold and fitting, what a split makes, stacking a log, putting wood down and the debug panel's and console's buttons. Moved as they were, no behaviour change. `game.js` went from 12,795 to 12,553 lines and `MAX_LINES` follows. This is the last piece of #126.
+- They went together because both read the trailers and the tow weight, and the splitter takes the spike's place on the lift arms.
+- What others read stays on the game: `baleRig`, `spikeParams`, `siloRect`, `splitter`, `splitterParams`, `splitterFitted`, `logStack`, `stackView`, `woodPieces` and `heldWood` (the job board, the console, the panel, `handsFull` and the save read them). The host keeps the hints, the round on the beam and the push flag. Callers (the console, the job panel, the frame) call `game.tractorWork` directly.
+- `tests/tractorWorkHost.test.js` holds the splitter's prompts, when it is shown and powered, and stacking a log, with a stand-in game.
+- `frame()` stays as it is: its order is the list of what happens in a frame (issue body). `tests/gameSize.test.js` stays so `game.js` can't grow back.
+- The smoke test's draw-call budget still fails on the wood (1,416 calls against 1,400), the same as on `main`: #597.

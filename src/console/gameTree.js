@@ -405,7 +405,7 @@ export function buildGameTree(g, host) {
     hayStacked: ro(() => g.hay?.stacked ?? 0, '', 'hay bales stacked in the Dutch barn (kept from day to day)'),
     hayDone: flag(() => g.jobBoard.finished.has('hay'), (v) => v && g.fieldWork.debugHayStage('done'), 'the hay job is done (ticks the board)'),
     silageDone: flag(() => g.jobBoard.finished.has('silage'), (v) => v && g.farmJobs.debugFinishSilage(), 'the silage job is done (ticks the board)'),
-    splitter: flag(() => !!g.splitterFitted, (v) => g.logStack && g.fitSplitter(!!v), 'the log splitter is fitted on the tractor in place of the bale spike'),
+    splitter: flag(() => !!g.splitterFitted, (v) => g.logStack && g.tractorWork.fitSplitter(!!v), 'the log splitter is fitted on the tractor in place of the bale spike'),
     logsStacked: num(() => g.logStack?.count ?? 0, (v) => g.logStack && (g.logStack.count = Math.max(0, Math.min(g.splitterParams.capacity, Math.round(v))), g.stackView.set(g.logStack.count)), 0, 120, '', 'logs on the stack at the wood (kept from day to day)'),
     logsDone: flag(() => g.jobBoard.finished.has('logs'), (v) => v && g.farmJobs.debugFinishLogs(), 'the log job is done (ticks the board)'),
     spikeLift: num(() => g.baleRig.lift.lift, (v) => { g.baleRig.lift.lift = Math.max(0, Math.min(1, v)); }, 0, 1, '', 'the bale spike arms, 0 down to 1 up'),
