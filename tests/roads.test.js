@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
-import { createRoads, roadNetwork, describeRoad, describeRoadUnder, MAX_CUT, KEEP_LEFT } from '../src/world/roads.js';
+import { createRoads, roadNetwork, describeRoad, describeRoadUnder, MAX_CUT, KEEP_LEFT, counts } from '../src/world/roads.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 
@@ -253,5 +253,99 @@ describe('saying which road you are on', () => {
     expect(describeRoadUnder(game)).toBe('no road within 12 m');
     game.riddenUnit = { quad: { position: { x: 130, z: 2 } } };
     expect(describeRoadUnder(game)).toMatch(/^the farm road/);
+  });
+});
+
+// The index (#664): a lookup looks only at the cells near the point, and must answer as a walk of every segment does.
+describe('the index of a road', () => {
+  const PLAIN = 1e6; // one cell for the whole map: every segment, every pad and every bay walked
+  const winding = (n, seed) => {
+    const r = rng(seed);
+    let x = -1400;
+    let z = 0;
+    let heading = 0;
+    const points = [[x, z]];
+    for (let i = 0; i < n; i++) {
+      heading += (r() - 0.5) * 0.9;
+      heading *= 0.9;
+      x += Math.cos(heading) * 50;
+      z += Math.sin(heading) * 50;
+      points.push([x, z]);
+    }
+    return points;
+  };
+  const longDef = { id: 'long', name: 'Long Road', surface: 'tarmac', halfWidth: 2.2, pavement: 0.4, points: winding(60, 7), camber: 0.1, markings: { centre: 'none' }, level: { shoulder: 3, lead: [2, 3], blend: 8, mouth: 4 }, passing: { spacing: 150, length: 8, bay: 2.5 } };
+  const probe = createRoads([longDef]);
+  const mid = probe.pointAt('long', 1500);
+  const side = (id, onto, end, ox, oz) => ({ id, name: id, surface: 'stone', halfWidth: 1.6, points: [[mid.x + ox, mid.z + oz], [mid.x + ox * 5, mid.z + oz * 5 + 40], [mid.x + ox * 8, mid.z + oz * 8 + 70]], junction: { end, onto }, level: { shoulder: 2, blend: 8, mouth: 4 } });
+  const defs = [
+    { ...longDef, pads: [{ x: mid.x + 20, z: mid.z + 30, radius: 6 }, { x: probe.pointAt('long', 300).x, z: probe.pointAt('long', 300).z + 8, radius: 4 }] },
+    side('lane2', 'long', 'start', 2, 0),
+  ];
+  const fast = createRoads(defs);
+  const plain = createRoads(defs, { cell: PLAIN });
+  const ground = (x, z) => base(x, z);
+  const pick = (a) => (a ? { ...a, road: a.road?.id ?? a.road } : a);
+  const same = (nets, x, z) => {
+    const [f, p] = nets;
+    expect(f.tarmacAt(x, z)).toBe(p.tarmacAt(x, z));
+    expect(f.stoneAt(x, z)).toBe(p.stoneAt(x, z));
+    expect(f.surfaceAt(x, z)).toEqual(p.surfaceAt(x, z));
+    expect(pick(f.nearest(x, z))).toEqual(pick(p.nearest(x, z)));
+    expect(pick(f.nearest(x, z, 12))).toEqual(pick(p.nearest(x, z, 12)));
+    expect(f.onCarriageway(x, z)?.id).toBe(p.onCarriageway(x, z)?.id);
+    for (const id of ['long', 'lane2']) expect(f.onRoad(id, x, z)).toBe(p.onRoad(id, x, z));
+    expect(f.levelAt(x, z, ground)).toEqual(p.levelAt(x, z, ground));
+  };
+
+  it('answers as a walk of every segment does, at 20,000 points over a winding 3 km road with passing places and a junction', () => {
+    expect(fast.road('long').length).toBeGreaterThan(2500);
+    expect(fast.passingPlaces('long').length).toBeGreaterThan(8);
+    const b = fast.road('long').bounds;
+    const r = rng(11);
+    for (let i = 0; i < 20000; i++) {
+      // Most points near the road's middle, so the cases that matter (edges, bays, pads) come up; the rest anywhere in the box.
+      if (i % 2) same([fast, plain], b.minX - 60 + r() * (b.maxX - b.minX + 120), b.minZ - 60 + r() * (b.maxZ - b.minZ + 120));
+      else {
+        const p = fast.pointAt('long', r() * fast.road('long').length);
+        const off = (r() - 0.5) * 16;
+        same([fast, plain], p.x + p.tz * off, p.z - p.tx * off);
+      }
+    }
+  }, 120000);
+
+  it('answers the same past each end, behind a square junction end and far from any road', () => {
+    for (const id of ['long', 'lane2']) {
+      const r = fast.road(id);
+      for (const [s, dir] of [[0, -1], [r.length, 1]]) {
+        const e = fast.pointAt(id, s);
+        for (let along = 0; along <= 40; along += 2.5) for (const off of [-6, -2, 0, 1.5, 5]) same([fast, plain], e.x + e.tx * dir * along + e.tz * off, e.z + e.tz * dir * along - e.tx * off);
+      }
+    }
+    for (const [x, z] of [[0, 0], [5000, -5000], [-9000, 20], [mid.x, mid.z + 3000], [mid.x + 300, mid.z - 300]]) same([fast, plain], x, z);
+    // Behind the square end of the side road, on the far side of the long road: nothing there.
+    const j = fast.road('lane2').segs[0];
+    for (let back = 0.5; back < 12; back += 1.5) same([fast, plain], j.a.x - j.tx * back, j.a.z - j.tz * back);
+  });
+
+  it('answers the same on today\'s three roads', () => {
+    const [f, p] = [createRoads(LAYOUT.roads), createRoads(LAYOUT.roads, { cell: PLAIN })];
+    const r = rng(5);
+    for (let i = 0; i < 20000; i++) same([f, p], -80 + r() * 200, -60 + r() * 520 - 200);
+    for (const road of f.roads) for (let s = -10; s < road.length + 10; s += 3) {
+      const q = f.pointAt(road.id, Math.max(0, Math.min(road.length, s)));
+      for (const off of [-8, -3, 0, 2, 7]) same([f, p], q.x + q.tz * off - q.tx * Math.min(0, s), q.z - q.tx * off - q.tz * Math.min(0, s));
+    }
+  });
+
+  it('looks at few segments for a lookup: under 30 on average across the farm, on a 3 km road', () => {
+    const b = fast.road('long').bounds;
+    const r = rng(3);
+    const before = counts.segments;
+    const N = 20000;
+    for (let i = 0; i < N; i++) fast.tarmacAt(b.minX - 200 + r() * (b.maxX - b.minX + 400), b.minZ - 200 + r() * (b.maxZ - b.minZ + 400));
+    const segments = fast.roads.reduce((n, road) => n + road.segs.length, 0);
+    expect(segments).toBeGreaterThan(1500); // a walk of the lot would be this many a lookup
+    expect((counts.segments - before) / N).toBeLessThan(30);
   });
 });
