@@ -207,7 +207,7 @@ const POLY = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits:
 
 /**
  * A road with `draw: 'mesh'` from the network (world/roads.js) laid over the ground: its carriageway in the tarmac texture, `lift` m up, and its
- * centre line as dashes (`markings.centre: 'dashed'`, `dash: [on, off]`). A road with a kerb has its pavements and kerb built by its own set piece
+ * centre line as dashes (`markings.centre: 'dashed'`, `dash: [on, off]`) and edge lines (`markings.edge`). A road with a kerb has its pavements and kerb built by its own set piece
  * (the village), through roadStrip and kerbFace above. Adds the meshes to `scene` and returns them.
  */
 export function buildRoadMesh({ scene, road, points, heights, texture }) {
@@ -221,6 +221,10 @@ export function buildRoadMesh({ scene, road, points, heights, texture }) {
     const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...POLY });
     const marks = paintMarks(ctx, dashes({ on, off, to: run[run.length - 1].s ?? run.length, width: road.lineWidth ?? 0.14 }), line, (road.lift ?? 0.07) + 0.02);
     if (marks) meshes.push(marks);
+  }
+  if (road.markings.edge) {
+    const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...POLY });
+    for (const side of [-1, 1]) meshes.push(...roadStrip(ctx, side * (road.halfWidth - 0.3), side * (road.halfWidth - 0.2), (road.lift ?? 0.07) + 0.02, line, { cols: 2 }));
   }
   for (const m of meshes) scene.add(m);
   return meshes;

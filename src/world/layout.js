@@ -60,7 +60,7 @@ const RAW = {
     // The village street, off the lane's west side: it ends on the lane, and the give-way line is across the traffic leaving. The village lays its own
     // ground level (a plane along the street, village.js), so the street is not levelled here.
     at('village', {
-      id: 'street', name: 'the village street', surface: 'tarmac', halfWidth: 2.3, pavement: 1.7, junction: { end: 'start', onto: 'lane' }, markings: { centre: 'dashed', giveWay: true },
+      id: 'street', name: 'the village street', surface: 'tarmac', halfWidth: 2.3, pavement: 1.7, junction: { end: 'start', onto: 'lane' }, markings: { centre: 'dashed', edge: true, giveWay: true },
       points: [[56.4, -14], [50, -9], [40, -4.5], [28, -2], [16, -1.5], [4, 0], [-6, 4], [-16, 6], [-28, 8], [-40, 6], [-45, 7.5], [-48, 11], [-48, 16.5]],
       verge: 0, hedged: false, draw: 'mesh', lift: 0.075,
     }),

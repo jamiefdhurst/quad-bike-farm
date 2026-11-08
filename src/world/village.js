@@ -21,7 +21,7 @@ export function roadMarks(S) {
   for (const row of [0, 0.5]) {
     for (let o = 0.1; o < S.roadHalfWidth - 0.3; o += 0.9) giveWay.push({ s: S.giveWay + row, len: 0.2, a: o, b: Math.min(o + 0.6, S.roadHalfWidth - 0.1) });
   }
-  return { centre, giveWay };
+  return { centre, giveWay: S.street.markings.giveWay ? giveWay : [] };
 }
 
 /** Where a building's front is: the z of its front wall, and which way the front faces (+1 south, towards +z; -1 north). */
@@ -160,6 +160,7 @@ function buildShape(layout) {
 
   return {
     v,
+    street,
     name: v.name,
     tarmacAt,
     areaWeight,

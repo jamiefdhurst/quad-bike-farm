@@ -69,6 +69,16 @@ describe('the road mesh builder', () => {
     for (let i = 0; i < line.count; i += 3) expect(line.getY(i)).toBeCloseTo(heights.heightAt(line.getX(i), line.getZ(i)) + LANE_TARMAC_LIFT + 0.02, 3);
   });
 
+  it('lays an edge line down each side when the road has one', () => {
+    const scene = new THREE.Scene();
+    const road = { ...net.road('lane'), markings: { centre: 'none', edge: true } };
+    const meshes = buildRoadMesh({ scene, road, points: net.pointsAlong('lane', { step: 2, to: 30 }), heights, texture: null });
+    expect(meshes.length).toBe(3);
+    const line = meshes[1].geometry.attributes.position;
+    const xs = Array.from({ length: line.count }, (_, i) => line.getX(i));
+    expect(Math.max(...xs) - LAYOUT.publicLane.x).toBeCloseTo(LAYOUT.publicLane.halfWidth - 0.2, 3);
+  });
+
   it('draws a road with no centre line without one', () => {
     const scene = new THREE.Scene();
     const road = { ...net.road('lane'), markings: { centre: 'none' } };

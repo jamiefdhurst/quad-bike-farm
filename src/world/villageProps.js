@@ -597,7 +597,7 @@ export function buildVillage(c) {
   const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...poly, polygonOffsetFactor: -5 });
   const marks = roadMarks(S);
   paintMarks(ctx, [...marks.centre, ...marks.giveWay], line, ROAD_LIFT + 0.004);
-  for (const side of [-1, 1]) {
+  for (const side of S.street.markings.edge ? [-1, 1] : []) {
     roadStrip(ctx, side * (hw - 0.3), side * (hw - 0.2), ROAD_LIFT + 0.004, line, { from: 14, skip: (p) => (side < 0 ? south(p) : north(p)), cols: 2 });
   }
   // Pavements start past the mouth (the road is wider there), one each side, with kerbs.
