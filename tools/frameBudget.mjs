@@ -9,27 +9,30 @@
 // A budget is raised only on purpose, with a line in docs/decisions/performance.md saying why (.claude/rules/checking.md).
 /** Per spot: the most draw calls and triangles a frame may take there. */
 export const BUDGETS = {
-  // Each is what the spot measured when the count was made repeatable (#597: spawn 590 calls and 2.99M triangles, yard 2,691 and 3.70M, village 2,000 and 3.67M,
-  // wood 1,266 and 3.76M, hilltop 1,570 and 6.56M, the same on every run) and about 8% over. They are lower than before because the animals, the girls and the
-  // lane's traffic are no longer in the count; the real frame, moving things and all, is `tools/perf.mjs`.
-  spawn: { calls: 640, triangles: 3.25e6 },
-  yard: { calls: 2900, triangles: 4.0e6 },
-  village: { calls: 2160, triangles: 4.0e6 },
-  wood: { calls: 1370, triangles: 4.06e6 },
-  hilltop: { calls: 1700, triangles: 7.1e6 },
+  // Each is what the spot measured when the count was made the same on every run (#597: spawn 583 calls and 2.99M triangles, yard 2,724 and 3.70M, village 1,993 and
+  // 3.68M, wood 1,394 and 3.75M, hilltop 1,621 and 6.58M, the same on every run) and about 8% over. The animals, the girls and the lane's traffic are not in them; the real
+  // frame, moving things and all, is `tools/perf.mjs`.
+  spawn: { calls: 630, triangles: 3.23e6 },
+  yard: { calls: 2940, triangles: 4.0e6 },
+  village: { calls: 2150, triangles: 3.98e6 },
+  wood: { calls: 1505, triangles: 4.06e6 },
+  hilltop: { calls: 1750, triangles: 7.1e6 },
+  // Everything left out of those counts, drawn up as if all of it were in view (5,275 calls and 1.43M triangles, about 8% over). It is not a frame: it is what a new
+  // herd, rider or vehicle body adds to the farm's moving things, which the spots no longer see. Raise it only on purpose (`MOVERS` in `measureInPage`).
+  movers: { calls: 5700, triangles: 1.55e6 },
 };
 
 /** Spots over their budget today, which are reported and not failed on until the issue that brings them back under makes them strict. None now:
  * spawn came under in #365. */
 export const KNOWN_OVER = [];
 
-export const SPOTS = Object.keys(BUDGETS);
+export const SPOTS = Object.keys(BUDGETS).filter((k) => k !== 'movers');
 
 /** The spots (and what is measured at each) as the page sees them. Runs in the browser, so it is self-contained. Returns { [spot]: { calls, triangles } } or { error }.
  * With `dwell` (seconds, on a real GPU: tools/perf.mjs) each view is also held that long and timed: `ms` and `worstMs` from frameStats and the three
  * slowest features, the worst view's kept. The draws are counted with everything that moves held still and out of sight (#597), so the count is the
  * farm's and the same on every run; the timing, if asked for, is with it all moving as in play. */
-export async function measureInPage({ spots, headings, frames, dwell = 0, viewHeight = 0 }) {
+export async function measureInPage({ spots, headings, frames, dwell = 0, viewHeight = 0, movers = false }) {
   const g = window.game;
   const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
   const settle = async (n) => { for (let i = 0; i < n; i++) await frame(); };
@@ -37,37 +40,71 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
   const wasAuto = info.autoReset;
   info.autoReset = false;
   // What moves through a view while it is counted (the animals, the girls, the lane's traffic), the lamps' halos and the sun's slow track (it moves the shadow square)
-  // shifted the count by tens of calls from run to run (#597): they are hidden and the clock stopped for the count, and put back for the timing.
+  // shifted the count by tens of calls from run to run (#597): they are taken out of the scene and the clock stopped for the count, and put back for the timing.
+  // Taken out, not just hidden: the cat and the dog set their own `visible` every update, so hiding them held on some runs and not others.
   const MOVERS = ['flock', 'rabbits', 'rabbitEyes', 'pheasants', 'pheasantWings', 'cat', 'dog', 'farmAnimals'];
-  const hidden = [];
+  const parked = [];
   let clockRate = null;
   let trafficUpdate = null;
+  const park = (o) => {
+    if (!o.parent) return;
+    parked.push([o, o.parent]);
+    o.parent.remove(o);
+  };
   const holdStill = (on) => {
     if (on === (clockRate !== null)) return;
     if (on) {
       clockRate = g.daylight.p.clockRate;
       g.daylight.p.clockRate = 0;
-      for (const c of g.scene.children) if (MOVERS.includes(c.name) && c.visible) { c.visible = false; hidden.push(c); }
-      for (const c of g.companions) if (c.root.visible) { c.root.visible = false; hidden.push(c.root); }
+      const out = g.scene.children.filter((c) => MOVERS.includes(c.name));
+      out.push(...g.companions.map((c) => c.root));
       const view = g.trafficHost.view;
       trafficUpdate = view.update;
-      view.update = () => {}; // its bodies and riders stay where they were, and are hidden below
-      const out = [...view.shown.values(), ...view.kidBikes.values()].map((b) => b.object);
+      view.update = () => {}; // its bodies and riders stay where they were, and are taken out below
+      out.push(...[...view.shown.values(), ...view.kidBikes.values()].map((b) => b.object));
       out.push(...Object.values(view.rigs).map((r) => r.rig.root), ...view.kidRigs.filter(Boolean).map((k) => k.rig.root), ...view.parcels);
       g.scene.traverse((o) => { if (o.isSprite && /Halo$/.test(o.name)) out.push(o); }); // the lamps' glows come on and go off as the vehicles' lights settle, in the afternoon too
-      for (const o of out) if (o.visible) { o.visible = false; hidden.push(o); }
+      out.forEach(park);
     } else {
       g.daylight.p.clockRate = clockRate;
       clockRate = null;
       g.trafficHost.view.update = trafficUpdate;
-      while (hidden.length) hidden.pop().visible = true;
+      while (parked.length) {
+        const [o, parent] = parked.pop();
+        parent.add(o);
+      }
     }
+  };
+  // What is held out of the count, drawn up on its own as if all of it were in view (nothing is left out for being behind you or too small): the animals, the
+  // girls, the lamps' halos and the lane's traffic (every body and rig it keeps ready, which `stockUp` has finished building, not the few out on the road, which is
+  // chance). A root's own `visible` is ignored, since the game turns it off and on itself; an instanced mesh is one call.
+  const drawsOf = (roots) => {
+    const t = { calls: 0, triangles: 0 };
+    const walk = (o, top) => {
+      if (!top && !o.visible) return;
+      if ((o.isMesh || o.isPoints || o.isLine || o.isSprite) && o.geometry && o.material?.visible !== false) {
+        t.calls += Array.isArray(o.material) ? o.geometry.groups.length || 1 : 1;
+        const geo = o.geometry;
+        if (o.isMesh) t.triangles += ((geo.index?.count ?? geo.attributes.position.count) / 3) * (o.isInstancedMesh ? o.count : 1);
+      }
+      for (const c of o.children) walk(c, false);
+    };
+    for (const r of roots) walk(r, true);
+    return t;
+  };
+  const moverDraws = () => {
+    const view = g.trafficHost.view;
+    const roots = g.scene.children.filter((c) => MOVERS.includes(c.name));
+    roots.push(...g.companions.map((c) => c.root));
+    roots.push(...[...view.pool.values()].flat().map((b) => b.object), ...Object.values(view.rigs).map((r) => r.rig.root), ...view.kidRigs.filter(Boolean).map((k) => k.rig.root));
+    g.scene.traverse((o) => { if (o.isSprite && /Halo$/.test(o.name)) roots.push(o); });
+    return drawsOf(roots);
   };
   const count = async () => {
     holdStill(true);
     g.world.sky.fit.ready = false; // the shadow window eases round to the way you look over a second or two, so the count would depend on how long it had had: snap it
     await settle(3); // the update that follows a move decides what is drawn
-    g.world.farDetail.update(g.camera.position, 0, true); // and the far detail looks only every quarter second, so bring it up to date
+    g.world.farDetail.update(g.camera.position, 0, true, true); // and the far detail looks only every quarter second, so bring it up to date, from scratch: what it left out depends on where it has been
     info.reset();
     // The game does not draw on every animation frame, so count the draws themselves (render.frame goes up once a render).
     const from = info.render.frame;
@@ -115,6 +152,15 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
   try {
     if (g.player.isRiding) return { error: 'you are on a vehicle at the start' };
     await settle(10);
+    while (g.pendingLooks?.length) g.dressFinds(); // the barn finds' damage is put on one at a time after Ready, 50 ms apart: how much of it is there depends on how long the page has had
+    // The girls buckle their belts two seconds after they sit, and a belt is drawn across them until then.
+    const belting = () => g.units.some((u) => u.quad.belts && Object.values(u.quad.belts.seats).some((seat) => seat.who === 'girl' && !seat.belted));
+    for (let i = 0; i < 600 && belting(); i++) await frame();
+    g.bakeWear(1e9); // the vehicles' wear is baked into their coats a little each frame, and the parts it replaces are drawn until it is: so how much is drawn depends on how long the page has had
+    if (movers) {
+      for (let i = 0; i < 400 && g.trafficHost.view.stockUp(); i++); // the traffic builds its bodies one at a time as the day goes on, so how many are ready depends on how long it has had
+      out.movers = moverDraws();
+    }
     if (spots.includes('spawn')) out.spawn = await count(); // the view the game opens on, as it is
     if (spots.includes('yard')) out.yard = await lookFrom(layout.yard.x, layout.yard.z);
     if (spots.includes('village')) {
@@ -155,7 +201,7 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
   return { spots: out, notes };
 }
 
-export const MEASURE_ARGS = { spots: SPOTS, headings: [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2], frames: 3, viewHeight: 1000 };
+export const MEASURE_ARGS = { spots: SPOTS, headings: [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2], frames: 3, viewHeight: 1000, movers: true };
 
 /**
  * Compare measured numbers with the budgets.

@@ -100,23 +100,25 @@ export class FarDetail {
     this.centre = new THREE.Vector3();
   }
 
-  /** Looks at the scene from `position` every quarter second (always when `now`). */
-  update(position, dt, now = false) {
+  /** Looks at the scene from `position` every quarter second (always when `now`). With `fresh` (the frame budget's count, #597) each decision is made as if
+   * for the first time, without the margins that stop a part flickering on a line: what is drawn is then from where you stand and not from the way the
+   * game came there, which depends on how long it has had. */
+  update(position, dt, now = false, fresh = false) {
     this.clock -= dt;
     if (!now && this.clock > 0) return;
     this.clock = EVERY;
     for (const o of this.scene.children) {
-      if (VEHICLE_NAMES.includes(o.name)) this.vehicle(o, position);
+      if (VEHICLE_NAMES.includes(o.name)) this.vehicle(o, position, fresh);
       else if (BARN_PROP_NAMES.includes(o.name)) this.within(o, position, this.params.barnPropsDistance);
       else if (SET_PIECE_NAMES.includes(o.name) && o.userData.farVersion) {
-        this.swap(o, position);
-        if (o.visible) for (const v of this.vehiclesIn(o)) this.vehicle(v, position); // the vehicles standing in it are trimmed like those in the farm (#399)
+        this.swap(o, position, fresh);
+        if (o.visible) for (const v of this.vehiclesIn(o)) this.vehicle(v, position, fresh); // the vehicles standing in it are trimmed like those in the farm (#399)
       }
       else if (SET_PIECE_NAMES.includes(o.name)) this.within(o, position, this.params.setPieceDistance);
       else this.findSmall(o);
     }
-    this.smallShadows(position);
-    this.leaveOutSpecks(position);
+    this.smallShadows(position, fresh);
+    this.leaveOutSpecks(position, fresh);
   }
 
   /** The vehicles standing in a set piece (the village's parked quads), found once: they are not scene children, so the loop above does not reach them. */
@@ -132,7 +134,7 @@ export class FarDetail {
 
   /** Every small mesh that would span under `partPixels` points is moved to a layer nobody draws, and back as it grows. Not the set pieces (which
    * swap by distance and whose hidden matrices are not kept) and not the barn's props. */
-  leaveOutSpecks(position) {
+  leaveOutSpecks(position, fresh = false) {
     const threshold = this.params.partPixels;
     const scale = this.pixelsPerRadian;
     const y = position.y ?? 0;
@@ -142,7 +144,7 @@ export class FarDetail {
       const drawnPiece = o.userData.farVersion && o.visible;
       if (o.isCamera || (SET_PIECE_NAMES.includes(o.name) && !drawnPiece) || BARN_PROP_NAMES.includes(o.name)) continue;
       let e = this.specks.get(o);
-      if (!e || ++e.age > REFIND) e = this.findSpecks(o, e);
+      if (!e || fresh || ++e.age > REFIND) e = this.findSpecks(o, e);
       for (const p of e.parts) {
         const m = p.mesh;
         let points = Infinity;
@@ -154,7 +156,7 @@ export class FarDetail {
           const c = this.centre.copy(s.center).applyMatrix4(m.matrixWorld);
           points = pointsAcross(s.radius * m.matrixWorld.getMaxScaleOnAxis(), Math.hypot(c.x - position.x, c.y - y, c.z - position.z), scale);
         }
-        const off = isSpeck(points, threshold, p.off);
+        const off = isSpeck(points, threshold, p.off && !fresh);
         if (off !== p.off) {
           m.layers.set(off ? SPECK_LAYER : 0);
           p.off = off;
@@ -192,7 +194,7 @@ export class FarDetail {
   }
 
   /** A small thing casts no shadow beyond `smallShadowDistance`: it cannot be told from the shadow of what it sits on. Close up nothing changes. */
-  smallShadows(position) {
+  smallShadows(position, fresh = false) {
     const d = this.params.smallShadowDistance;
     const e = this.small;
     let n = 0;
@@ -207,7 +209,7 @@ export class FarDetail {
       e[n++] = s;
       const x = m.matrixWorld.elements[12] - position.x;
       const z = m.matrixWorld.elements[14] - position.z;
-      const far = d > 0 && Math.hypot(x, z) > (s.off ? d - MARGIN : d);
+      const far = d > 0 && Math.hypot(x, z) > (s.off && !fresh ? d - MARGIN : d);
       if (far && !s.off && m.castShadow) {
         m.castShadow = false;
         s.off = true;
@@ -238,8 +240,8 @@ export class FarDetail {
   }
 
   /** Draws the full `o` within `fullDistance` of its nearest edge and its far version beyond (with a margin, so it doesn't flicker); 0 is always full. */
-  swap(o, position) {
-    const full = drawFull(distanceToTile(this.box(o), position.x, position.z), this.params.fullDistance, this.full.get(o) ?? o.visible, FULL_MARGIN);
+  swap(o, position, fresh = false) {
+    const full = drawFull(distanceToTile(this.box(o), position.x, position.z), this.params.fullDistance, !fresh && (this.full.get(o) ?? o.visible), FULL_MARGIN);
     this.full.set(o, full);
     o.visible = full;
     o.userData.farVersion.visible = !full;
@@ -264,12 +266,13 @@ export class FarDetail {
     });
   }
 
-  vehicle(o, position) {
+  vehicle(o, position, fresh = false) {
     let s = this.vehicles.get(o);
     if (!s) {
       this.vehicles.set(o, (s = { level: 0, small: [], shadows: [] }));
       this.dropSmallShadows(o);
     }
+    if (fresh && s.level > 0) this.bringBack(o, s); // the parts it hid then are not the parts it would hide now (wear is fitted as the day goes on)
     const e = o.matrixWorld.elements; // world, since a vehicle in the village stands inside its group
     const level = detailLevel(Math.hypot(e[12] - position.x, e[14] - position.z), this.params, s.level);
     if (level === s.level) return;
@@ -277,13 +280,12 @@ export class FarDetail {
       o.traverse((m) => {
         if (m.visible && isSmallPart(m)) {
           m.visible = false;
+          m.userData.farHidden = true; // so the barn finds' damage is laid on the same parts wherever you were when it was (rustyDamage.js)
           s.small.push(m);
         }
       });
     } else if (level < 1) {
-      for (const m of s.small) if (!m.visible) m.visible = true;
-      s.small.length = 0;
-      this.dropSmallShadows(o); // parts fitted since
+      this.showSmall(o, s);
     }
     if (level >= 2 && !s.shadows.length) {
       o.traverse((m) => {
@@ -293,9 +295,29 @@ export class FarDetail {
         }
       });
     } else if (level < 2) {
-      for (const m of s.shadows) m.castShadow = true;
-      s.shadows.length = 0;
+      this.showShadows(s);
     }
     s.level = level;
+  }
+
+  showSmall(o, s) {
+    for (const m of s.small) {
+      if (!m.visible) m.visible = true;
+      m.userData.farHidden = false;
+    }
+    s.small.length = 0;
+    this.dropSmallShadows(o); // parts fitted since
+  }
+
+  showShadows(s) {
+    for (const m of s.shadows) m.castShadow = true;
+    s.shadows.length = 0;
+  }
+
+  /** A vehicle back at the full level, as when it was first seen. */
+  bringBack(o, s) {
+    this.showSmall(o, s);
+    this.showShadows(s);
+    s.level = 0;
   }
 }

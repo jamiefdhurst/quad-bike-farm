@@ -108,6 +108,57 @@ describe('FarDetail vehicles', () => {
   });
 });
 
+describe('FarDetail looked at from scratch (#597)', () => {
+  const near = { x: 0, y: 0, z: 0 };
+
+  it('trims a vehicle by where you are, not by the margin it had on the way: the level it would be at first seen', () => {
+    const v = vehicle(0);
+    const far = new FarDetail(sceneWith(v.g), params);
+    far.update({ x: 70, z: 0 }, 1, true); // past the detail distance: small parts out
+    far.update({ x: params.vehicleDetailDistance - 2, z: 0 }, 1, true); // inside the margin: it holds
+    expect(v.bolt.visible).toBe(false);
+    far.update({ x: params.vehicleDetailDistance - 2, z: 0 }, 1, true, true); // from scratch: it is within the distance, so the parts are back
+    expect(v.bolt.visible).toBe(true);
+  });
+
+  it('hides the small parts it hid then and not those it would hide now, so wear fitted since is treated as the rest', () => {
+    const v = vehicle(0);
+    const far = new FarDetail(sceneWith(v.g), params);
+    far.update({ x: 70, z: 0 }, 1, true);
+    const web = box(0.02); // fitted while it was hidden: not in what was hidden
+    v.g.add(web);
+    far.update({ x: 70, z: 0 }, 1, true, true);
+    expect(v.bolt.visible).toBe(false);
+    expect(web.visible).toBe(false);
+  });
+
+  it('marks what it hides, so the barn finds can tell it from what the game hid, and unmarks it when it is back', () => {
+    const v = vehicle(0);
+    const far = new FarDetail(sceneWith(v.g), params);
+    far.update({ x: 70, z: 0 }, 1, true);
+    expect(v.bolt.userData.farHidden).toBe(true);
+    far.update(near, 1, true);
+    expect(v.bolt.userData.farHidden).toBe(false);
+  });
+
+  it('leaves out a speck by where it is now, not by having been out already', () => {
+    const g = new THREE.Group();
+    g.name = 'quad';
+    const m = box(0.02); // a sphere of 0.017 m: 1.1 points across at 10 m, 4.5 at 2.5 m, with 650 points to a radian
+    m.position.set(10, 0, 0);
+    g.add(m);
+    g.updateMatrixWorld(true);
+    const far = new FarDetail(sceneWith(g), { ...params, partPixels: 4 });
+    far.pixelsPerRadian = 650;
+    far.update({ x: 0, y: 0, z: 0 }, 1, true);
+    expect(m.layers.isEnabled(0)).toBe(false);
+    far.update({ x: 7.5, y: 0, z: 0 }, 1, true); // 2.5 m away: over 4 points, but a speck holds until 5
+    expect(m.layers.isEnabled(0)).toBe(false);
+    far.update({ x: 7.5, y: 0, z: 0 }, 1, true, true);
+    expect(m.layers.isEnabled(0)).toBe(true);
+  });
+});
+
 describe('FarDetail set pieces and props', () => {
   function piece(name, x, z) {
     const g = new THREE.Group();
