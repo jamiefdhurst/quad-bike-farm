@@ -95,7 +95,7 @@ export class Bench {
   /** A battery job needs your hands: out wants them empty, back in wants this quad's battery in them. */
   batteryHandsOk(kind, unit) {
     if (kind === 'chargeOn') return !this.game.handsFull;
-    if (kind === 'chargeOff') return this.game.heldBattery()?.unitId === unit.id;
+    if (kind === 'chargeOff') return this.game.power.heldBattery()?.unitId === unit.id;
     return true;
   }
 
@@ -296,7 +296,7 @@ export class Bench {
       else if (e.type === 'done') {
         const job = this.job;
         const unit = this.unit;
-        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump, filter: unit.quad.filter, spotlamps: unit.quad.spotlamps, snorkel: unit.quad.snorkel, motWear: unit.quad.motWear, pullEngine: () => this.pullEngine(unit), fitEngine: (fit) => this.fitEngine(unit, fit), batteryOut: () => this.game.batteryOut(unit), batteryIn: () => this.game.batteryIn(unit) }, this.params));
+        this.game.hud.toast(finishJob(job, { engine: unit.engine, faults: unit.quad.faults, fuel: unit.quad.fuel, tyres: unit.quad.tyres, sump: unit.quad.sump, filter: unit.quad.filter, spotlamps: unit.quad.spotlamps, snorkel: unit.quad.snorkel, motWear: unit.quad.motWear, pullEngine: () => this.pullEngine(unit), fitEngine: (fit) => this.fitEngine(unit, fit), batteryOut: () => this.game.power.batteryOut(unit), batteryIn: () => this.game.power.batteryIn(unit) }, this.params));
         if (!job.service) this.say(job.kind === 'bore' ? (job.botched ? 'boreBotched' : 'boreDone') : job.kind === 'snorkel' ? (unit.quad.snorkel.seal < 1 ? 'snorkelBotched' : 'snorkelDone') : job.botched ? 'botched' : 'done');
         if (this.stillFound(unit)) this.foundJobDone(unit, job.kind);
         this.game.notebook.note(unit, { kind: 'job', job: job.kind, botched: job.botched }, { by: 'you' });
