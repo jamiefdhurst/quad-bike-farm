@@ -88,7 +88,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       plant: (() => { const q = g.world.fields.quarry; const s = q && plantSite(q, ground); return s ? plantPoint(s, -5, 0) : null; })(), // the pit's screening plant, behind its hopper on the pad's line
       viewpoint: layout.hill?.viewpoint, // the flat rock at the top of the pasture, where the flask is
       hut: g.world.hutShape?.footOfSteps ?? null, // the foot of its steps, not inside it
-      terraces: layout.hill?.paddocks?.east.terraces ? { x: 4, z: layout.hill.paddocks.east.terraces.banks[0] - 6 } : null, // the sheep field's top tread, looking down its banks
+      terraces: layout.hill?.paddocks?.east.terraces?.stand ?? null, // the sheep field's top tread, looking down its banks
       pasture: layout.hill ? { x: (layout.hill.pasture.minX + layout.hill.pasture.maxX) / 2, z: (layout.hill.pasture.minZ + layout.hill.pasture.maxZ) / 2 } : null,
     };
     return Object.fromEntries(Object.entries(spots).filter(([, p]) => p && Number.isFinite(p.x) && Number.isFinite(p.z)).map(([k, p]) => [k, { x: p.x, z: p.z }]));

@@ -58,6 +58,6 @@ To recut the recordings, see the instructions at the top of `tools/slice_engine_
 
 **The rolling road** (`src/farm/rollingRoad.js` is the pure part: the power curve, a run as a small state machine that returns the throttle and load to hold, the road days, what the farm keeps and the slip; `src/world/rollingRoadSite.js` the trailer's geometry from where the Land Rover stops; `rollingRoadModel.js` the trailer; `rollingRoadHost.js` the visit, colliders, the screen, the run and the girls; `rollingRoadView.js` the slip and the wall sheet). The tuner is a `Visit` of her own in `traffic.js` with a `stay` step, so the lane's visitors still come. A run reads the engine model's own `power` and `rpm` and feeds `quad.pto` back, the hook the tractor's log splitter uses. Tested in `tests/rollingRoad*.test.js`.
 
-**Layout** (`src/world/layout.js`). Positions for the field, barn, gate, track control points and spawn points all live here.
+**Layout** (`src/world/layout.js`). Positions for the field, barn, gate, track control points and spawn points all live here. What belongs to a building (the barn's bench, the yard's bell, the village's cottages) is written as an offset from that building's anchor, inside `at('barn', ...)`, and `resolveLayout` (`src/world/layoutAnchors.js`) turns it into the absolute numbers every reader of `LAYOUT` uses, so moving a building is changing its anchor.
 
 **Parameters**. Every tunable number lives in a `*Params.js` file next to the code that uses it, with a range for the tuning panel.
