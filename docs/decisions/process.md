@@ -317,7 +317,7 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 
 ## Splitting up game.js, the batteries and the generator (#126, was TODO 235)
 
-- `items/powerHost.js` takes the batteries, the booster pack, the bench charger and the generator out of `game.js` (setting up, carrying, prompts, the charger's and generator's updates, the panel's and console's buttons for them), moved as they were with no behaviour change. `game.js` went from 14,379 to 14,014 lines and `MAX_LINES` follows.
+- `items/powerHost.js` takes the batteries, the booster pack, the bench charger and the generator out of `game.js` (setting up, carrying, prompts, the charger's and generator's updates, the panel's and console's buttons for them), moved as they were with no behaviour change. `game.js` went from 14,379 to 14,015 lines and `MAX_LINES` follows.
 - As before, what other modules read (`batteries`, `charger`, `boosterPack`, `generator`, `generatorAt`, `generatorSmoke`) stays on the game; the host keeps only the models, the sound and the smoke's bookkeeping it alone uses. Callers (the Tune tab, the console, the workshop and bench) call `game.power` directly.
 - The other items (cans, bottles, toolbox, winch, rope and chain, the rack and the bale spike) are still in `game.js` and are the next part of this piece; the put-down methods are near-identical and want one shared helper, not a move.
 
