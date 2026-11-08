@@ -301,3 +301,10 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 - State that many other modules read (`game.weather`, `game.wind`, `game.forecast`, `game.daylight`) stays on the game; a host holds only what it alone owns (`snowCoated`, `shutterBangCool`, `needsAt`). Moving the state too would touch hundreds of lines for no gain yet.
 - Callers (the console, the Tune tab, `tools/smoke.mjs`) call the host directly rather than through a one-line method left on the game.
 - Still to move: the items, the farm jobs, and whatever the next biggest blocks are (`frame()` is 425 lines on its own). The issue stays open.
+
+## Old saves keep loading (#219, was TODO 328)
+
+- `tests/fixtures/saves/v<N>.json` holds a whole save from each `SAVE_VERSION`; `tests/saveCompat.test.js` loads every one into today's code and checks nothing is lost: `validSave` and `openFarm` take it, each vehicle and the girls come back as saved through `restoreVehicle`/`restoreGirls`, and every list, record and stock class with a `toJSON` gives back what it was given.
+- The fixture is only as good as its keys, so the test reads the keys `captureFarm` returns in `game.js` and fails if the fixture lacks one. A new thing the farm keeps therefore needs a line in the fixtures (a missing part in an old save is fine; a missing part in the fixture is not).
+- Raising `SAVE_VERSION` fails the "a fixture for every version" test until the new version's fixture is added (a real save from `save copy`). The older fixtures stay as they are: they are what an old browser still holds. Version 1 is the only one so far.
+- A dropped or renamed key shows up as a failing round trip here, which is the "breaking" case in CLAUDE.md's versions section.
