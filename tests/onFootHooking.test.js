@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Game } from '../src/game.js';
+import { ToolsHost } from '../src/items/toolsHost.js';
 import { normalisePrompt } from '../src/interaction/prompt.js';
 
 // A stand-in host: just what the drawbar, the hitch and the bottle code reads.
@@ -88,13 +89,13 @@ describe('the coolant bottle and anti-gel, held E', () => {
   it('tops the radiator up while E is held and reports that it is pouring', () => {
     const engine = { params: { waterCooled: true }, isRunning: false, heat: 0, soak: 0, coolant: 0.4, thermostat: 1 };
     const { h, unit } = bottleHost(engine, {});
-    expect(Game.prototype.coolantTopUp.call(h, unit, 0.1)).toBe(true);
+    expect(new ToolsHost(h).coolantTopUp(unit, 0.1)).toBe(true);
     expect(engine.coolant).toBeGreaterThan(0.4);
   });
 
   it('does not pour on an air-cooled engine and says why', () => {
     const { h, unit } = bottleHost({ params: { waterCooled: false } }, {});
-    expect(Game.prototype.coolantTopUp.call(h, unit, 0.1)).toBe(false);
+    expect(new ToolsHost(h).coolantTopUp(unit, 0.1)).toBe(false);
     expect(h.hud.toast).toHaveBeenCalledWith(expect.stringContaining('air-cooled'), 2.5);
   });
 });
