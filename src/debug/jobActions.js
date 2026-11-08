@@ -30,12 +30,12 @@ export function jobActions(g) {
   ]);
 
   if (g.hay) {
-    const stages = ['cut', 'bale', 'load', 'stack', 'done'].map((stage) => a(stage, `Jump the hay job to the ${stage} stage`, () => g.debugHayStage(stage)));
+    const stages = ['cut', 'bale', 'load', 'stack', 'done'].map((stage) => a(stage, `Jump the hay job to the ${stage} stage`, () => g.fieldWork.debugHayStage(stage)));
     add('hay', 'Make hay', () => `${g.hay.describe()}; ${g.hayLoading.describe()}`, [
       ...stages,
-      a('regrow', 'Let the cut hay patch grow back', () => g.debugHayRegrow()),
-      a('lift-tracks', 'Lift the tracks in the long grass', () => g.debugHayTracksClear()),
-      a('empty-stack', 'Empty the hay stack in the Dutch barn', () => g.debugHayEmptyStack()),
+      a('regrow', 'Let the cut hay patch grow back', () => g.fieldWork.debugHayRegrow()),
+      a('lift-tracks', 'Lift the tracks in the long grass', () => g.fieldWork.debugHayTracksClear()),
+      a('empty-stack', 'Empty the hay stack in the Dutch barn', () => g.fieldWork.debugHayEmptyStack()),
     ]);
   }
 
@@ -48,10 +48,10 @@ export function jobActions(g) {
   }
 
   if (g.spray) {
-    const spray = (verb, label) => a(verb, label, () => g.debugSpray(verb));
+    const spray = (verb, label) => a(verb, label, () => g.fieldWork.debugSpray(verb));
     add('spray', 'Spray the field', () => g.spray.describe(), [
-      a('boom-out', 'Fold the sprayer boom out', () => g.debugSpray('out')),
-      a('boom-in', 'Fold the sprayer boom in', () => g.debugSpray('in')),
+      a('boom-out', 'Fold the sprayer boom out', () => g.fieldWork.debugSpray('out')),
+      a('boom-in', 'Fold the sprayer boom in', () => g.fieldWork.debugSpray('in')),
       spray('empty', 'Empty the sprayer tank'),
       spray('fill', 'Fill the sprayer tank'),
       spray('half', 'Spray half the field'),
@@ -61,7 +61,7 @@ export function jobActions(g) {
   }
 
   if (g.harrow) {
-    const harrow = (verb, label) => a(verb, label, () => g.debugHarrow(verb));
+    const harrow = (verb, label) => a(verb, label, () => g.fieldWork.debugHarrow(verb));
     add('harrow', 'Harrow the field', () => g.harrow.describe(), [
       harrow('down', 'Lower the harrows\' tines'),
       harrow('up', 'Lift the harrows\' tines'),

@@ -39,7 +39,7 @@ describe('the farm\'s jobs', () => {
     jobs.find('spray').actions.find((a) => a.verb === 'boom-out').run();
     jobs.find('harrow').actions.find((a) => a.verb === 'down').run();
     jobs.find('service').actions.find((a) => a.verb === 'done').run();
-    expect(calls).toEqual(['g.debugHayStage(cut)', 'g.farmJobs.debugFinishMuck()', 'g.debugSpray(out)', 'g.debugHarrow(down)', 'g.farmJobs.debugFinishService()']);
+    expect(calls).toEqual(['g.fieldWork.debugHayStage(cut)', 'g.farmJobs.debugFinishMuck()', 'g.fieldWork.debugSpray(out)', 'g.fieldWork.debugHarrow(down)', 'g.farmJobs.debugFinishService()']);
   });
   it('finds a job whatever the case, and none for a made-up name', () => {
     const jobs = jobActions(standIn().g);
