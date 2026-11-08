@@ -302,7 +302,7 @@ export class Bench {
         this.game.notebook.note(unit, { kind: 'job', job: job.kind, botched: job.botched }, { by: 'you' });
         this.job = null;
         this.game.girlBenchFinished(job);
-        this.game.serviceJobNoted(unit, job.kind, job.botched);
+        this.game.farmJobs.serviceJobNoted(unit, job.kind, job.botched);
         if (job.service) this.serviceStepDone(unit, job.kind, job.botched);
       }
     }

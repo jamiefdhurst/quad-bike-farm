@@ -334,3 +334,10 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 - The bale spike was left where it is: it reads the trailers, the log splitter and the tow weight, so it moves with the tractor's work, not with these.
 - Still to go: the farm jobs, the tractor's work (spike, splitter) and `frame()`. The issue stays open.
 - The smoke test's draw-call budget fails on `main` too (the wood at 1,416 calls against 1,400, the same with and without this change): #597.
+
+## Splitting up game.js, the farm jobs' board wiring (#126, was TODO 235)
+
+- `world/farmJobsHost.js` takes the wiring around the job board out of `game.js`: the muck job (fork, spread, the "not here" toast, the debug buttons), the log and silage finishes and the girls' remarks about the bales, the service job on the board, and `say`, the girls' remark about a job (it was `saySomethingAboutJob`). Moved as they were, no behaviour change. `game.js` went from 13,455 to 13,270 lines and `MAX_LINES` follows.
+- Ticking a job off was the same four lines in nine places (spray, harrow, hay, feed, logs, silage, muck, service, and the mower's own). It is now `farmJobs.tickOff(id, message, seconds)`, which returns whether the job was on the board, so the sprayer and harrows keep their plain "Field sprayed" toast for a field done off the board. `tests/farmJobsHost.test.js` holds it with a stand-in game. The mower still ticks its own, since `MowHost` has its own stand-in.
+- What others read stays on the game: `jobBoard`, `jobBoardView`, `muck`, `muckView`, `muckParams` and `serviceJob`. Callers (the debug panel's job buttons, the console, the bench) call `game.farmJobs` directly.
+- Still to go: the hay, spray and harrow set-ups and the tractor's work (spike, splitter), then `frame()`. The issue stays open.

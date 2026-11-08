@@ -7,7 +7,7 @@ import { MowBlade } from './mowing.js';
 const DECK_AHEAD = 0.1; // metres from the chassis' origin to the middle of the deck
 
 export class MowHost {
-  /** @param {object} game  units, jobBoard, farm (day), hud, audioHub, handsFull, saySomethingAboutJob
+  /** @param {object} game  units, jobBoard, farm (day), hud, audioHub, handsFull, farmJobs.say
    *  @param {{grid: object, params: object, surfaceAt: Function, view: {update: Function, refresh: Function}}} o */
   constructor(game, { grid, params, surfaceAt, view }) {
     this.game = game;
@@ -64,7 +64,7 @@ export class MowHost {
       if (e.type !== 'grit') continue;
       game.audioHub.useCue('tap');
       if (this.gritCool <= 0 && riding) {
-        game.saySomethingAboutJob('mowGrit', false, q.position);
+        game.farmJobs.say('mowGrit', false, q.position);
         this.gritCool = 40;
       }
     }
@@ -75,7 +75,7 @@ export class MowHost {
     const game = this.game;
     if (!game.jobBoard.complete('mow')) return;
     game.hud.toast('Lawns mown. Ticked off the board on the barn door', 3);
-    game.saySomethingAboutJob('mowDone', false, this.unit?.quad.position);
+    game.farmJobs.say('mowDone', false, this.unit?.quad.position);
   }
 
   cutAll() {

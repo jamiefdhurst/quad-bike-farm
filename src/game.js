@@ -362,6 +362,7 @@ import { SparesShelf } from './workshop/sparesShelf.js';
 import { canPull, fitIndex } from './vehicle/engineSwap.js';
 import { FARM_JOBS, MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs, feedWanted } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
+import { FarmJobsHost } from './world/farmJobsHost.js';
 import { ClassifiedsView } from './world/classifiedsView.js';
 import { MoneyTinView } from './world/moneyTinView.js';
 import { Shed, DEFAULT_SHED_PARAMS, SHED_PARAM_RANGES, SHED_PIECES } from './farm/shed.js';
@@ -369,7 +370,6 @@ import { ShedView } from './workshop/shedView.js';
 import { CoinAudio } from './audio/coinAudio.js';
 import { MarketTalk, DEFAULT_MARKET_TALK_PARAMS, MARKET_TALK_RANGES } from './farm/marketTalk.js';
 import { Market, DEFAULT_MARKET_PARAMS, MARKET_PARAM_RANGES, FOR_SALE, dealAds, withBought, withoutSold, sellOffer, moneyFacts, colourName } from './farm/classifieds.js';
-import { ServiceJob, pickServiceJob, serviceChalk, servicePlan, factsOf, stateOf } from './workshop/service.js';
 import { DEFAULT_SPIKE_PARAMS, SPIKE_PARAM_RANGES, keepOutside } from './items/baleSpike.js';
 import { BaleSpikeRig } from './items/baleSpikeRig.js';
 import { dutchBarnShape } from './world/outbuildings.js';
@@ -1106,7 +1106,7 @@ export class Game {
       prompt: () => this.tipTrailerPrompt(),
       feedback: 'putDown',
       interact: () => this.loadTipTrailer(),
-      hold: (dt) => this.forkMuck(dt),
+      hold: (dt) => this.farmJobs.forkMuck(dt),
     });    // Having a go on the tractor: Jess takes it, Amy won't until her day (npc/tractorGo.js). The girls' own numbers are shared objects.
     this.tractorGo = new TractorGo(undefined, createRandom(this.seed ^ 0x70c0));
     this.tractorDrive = { ...DEFAULT_TRACTOR_GO_DRIVE };
@@ -1760,6 +1760,7 @@ export class Game {
     this.setUpLogSplitter();
     this.setUpBonfire();
     this.hutHost = new HutHost(this); // the shepherd's hut on the hill: its stove, its kettle and the girls' stays (world/hutHost.js)
+    this.farmJobs = new FarmJobsHost(this); // ticking jobs off the board, the muck, logs, silage and service jobs (world/farmJobsHost.js)
     this.jobBoardParams = { ...DEFAULT_JOB_BOARD_PARAMS };
     // The silage job needs the tractor, and enough bales still out of the barn for it to be worth asking.
     const hayStacked = Math.max(0, this.farm.save?.hay?.stacked ?? 0);
@@ -1773,7 +1774,7 @@ export class Game {
     this.jobBoard = new JobBoard({ ids: jobIds, random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
     if (this.jobBoard.has('logs')) this.logStack.startJob();
     if (feedWanted(createRandom((this.farmSeed ^ Math.imul(this.farm.day + 1, 0x85ebca6b)) >>> 0), this.jobBoardParams.feedChance)) this.jobBoard.add('feed', FARM_JOBS.feed);
-    this.setUpServiceJob();
+    this.farmJobs.setUpServiceJob();
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records, challenges: this.challenges });
     this.setUpHay();
     this.setUpMowing();
@@ -3621,31 +3622,6 @@ export class Game {
     return hold;
   }
 
-  /** Whether the trailer is by the muck heap with its tub down and room in it, and your hands are empty. */
-  canForkMuck() {
-    const m = this.tipTrailer.motion;
-    return !this.heldLoad() && this.muck.canFork(this.world.layout.muckHeap, m.x, m.z, this.tipTrailer.bed.tip) && !this.player.isRiding;
-  }
-
-  /** Holding E at the trailer by the heap: fork muck in, the girls remark as the job starts and as the tub fills. */
-  forkMuck(dt) {
-    if (!this.canForkMuck()) return false;
-    for (const e of this.muck.fork(dt)) {
-      if (e.type === 'start') this.saySomethingAboutJob('muckStart');
-      else if (e.type === 'full') this.saySomethingAboutJob('muckFull', true);
-    }
-    this.muckView.setLoad(this.muck.load);
-    return true;
-  }
-
-  /** One girl, the nearest who is free to remark (or the other one), says a line about the job. */
-  saySomethingAboutJob(key, other = false, at = this.tipTrailer.model.position) {
-    const ranked = this.companions
-      .filter((c) => c.availability().canRemark && c.root.position.distanceTo(at) < 30)
-      .sort((a, b) => a.root.position.distanceTo(at) - b.root.position.distanceTo(at));
-    ranked[other ? ranked.length - 1 : 0]?.voice.say(key);
-  }
-
   // The bonfire ---------------------------------------------------------------------
 
   /** The bonfire site on the grass field, the hedge cuttings to carry to it, and the girls' sit by it (world/bonfire.js, npc/fireSit.js). */
@@ -3867,9 +3843,9 @@ export class Game {
     for (const e of events) {
       if (e.type === 'speared') {
         this.hud.toast('Bale on the spike: ] raise it to carry, lower it and drive on to leave it', 3);
-        this.saySomethingAboutBale('baleSpiked');
+        this.farmJobs.saySomethingAboutBale('baleSpiked');
       } else if (e.type === 'left') {
-        this.baleSettled();
+        this.farmJobs.baleSettled();
       }
     }
     const weight = rig.held ? this.spikeParams.towWeight : 0;
@@ -4053,15 +4029,7 @@ export class Game {
     log.hide();
     this.stackView.set(this.logStack.count);
     this.hud.toast(`${this.logStack.count} of ${this.splitterParams.capacity} on the stack`, 1.6);
-    if (this.jobBoard.has('logs') && !this.jobBoard.finished.has('logs') && this.logStack.jobComplete) this.finishLogs();
-  }
-
-  finishLogs() {
-    if (this.jobBoard.complete('logs')) {
-      this.hud.toast('Logs stacked. Ticked off the board on the barn door', 3);
-      this.jobBoardView.refresh();
-      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
-    }
+    if (this.jobBoard.has('logs') && !this.jobBoard.finished.has('logs') && this.logStack.jobComplete) this.farmJobs.finishLogs();
   }
 
   putWoodDown() {
@@ -4070,13 +4038,6 @@ export class Game {
     const p = this.player.position;
     const yaw = this.player.yaw;
     w.putDown({ x: p.x - Math.sin(yaw) * 0.8, z: p.z - Math.cos(yaw) * 0.8 }, yaw + Math.PI / 2);
-  }
-
-  debugFinishLogs() {
-    if (!this.logStack) return;
-    while (!this.logStack.jobComplete && !this.logStack.full) this.logStack.add();
-    this.stackView.set(this.logStack.count);
-    if (this.jobBoard.has('logs')) this.finishLogs();
   }
 
   /** Empties the stack and deals the rounds back into their piles (the debug panel). */
@@ -4090,107 +4051,11 @@ export class Game {
   }
 
 
-  /** A bale has been left: if that brings the silage job's bales into the Dutch barn, tick it off. */
-  baleSettled() {
-    if (!this.siloRect || !this.jobBoard.has('silage') || this.jobBoard.finished.has('silage')) return;
-    if (this.baleRig.yard.countIn(this.siloRect) < this.spikeParams.balesNeeded) return;
-    this.finishSilage();
-  }
-
-  finishSilage() {
-    this.achievements.note('silageMoved');
-    if (this.jobBoard.complete('silage')) {
-      this.hud.toast('Silage in. Ticked off the board on the barn door', 3);
-      this.jobBoardView.refresh();
-      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
-    }
-    this.saySomethingAboutBale('silageDone');
-  }
-
-  /** One of the girls near the tractor says something about the bales (npc/farmJobLines.js). */
-  saySomethingAboutBale(key) {
-    const at = this.tractorUnit.quad.model.position;
-    const c = this.companions
-      .filter((g) => g.availability().canRemark && g.root.position.distanceTo(at) < 30)
-      .sort((a, b) => a.root.position.distanceTo(at) - b.root.position.distanceTo(at))[0];
-    c?.voice.say(key);
-  }
-
-  debugFinishSilage() {
-    if (this.tractorUnit) this.finishSilage();
-  }
-
-  /** Puts every silage bale back where it started (the debug panel). */
-  debugResetBales() {
-    this.baleRig.reset();
-  }
-
-  /** The muck in the tub and what it leaves: patches behind the tub on the stubble (world/farmJobs.js). */
-  updateMuck(dt) {
-    const t = this.tipTrailer;
-    this.muckWrongCool = Math.max(0, (this.muckWrongCool ?? 0) - dt);
-    const yaw = t.model.rotation.y;
-    // Muck leaves over the tailgate, a little behind the axle.
-    const x = t.motion.x - Math.sin(yaw) * 1.2;
-    const z = t.motion.z - Math.cos(yaw) * 1.2;
-    const onStubble = this.world.fields.stubbleAt(x, z) > 0.5;
-    const events = this.muck.update(dt, { x, z, speed: Math.abs(t.signedSpeed), tip: t.bed.tip, slideAt: t.bed.p.slideAt, onStubble });
-    for (const e of events) {
-      if (e.type === 'patch') this.muckView.lay(e.x, e.z);
-      else if (e.type === 'pile') {
-        this.muckView.lay(e.x, e.z, 1.3);
-        this.hud.toast('The lot slid out in a heap', 2);
-      } else if (e.type === 'wrong') {
-        this.muckView.lay(e.x, e.z, 0.5);
-        if (this.muckWrongCool <= 0) {
-          this.hud.toast('Spread it on the stubble, not here', 2);
-          this.muckWrongCool = 6;
-        }
-      } else if (e.type === 'done') this.finishMuck();
-    }
-    if (events.length) this.muckView.setLoad(this.muck.load);
-  }
-
-  /** Debug panel and console: set how full the tub is. */
-  debugSetMuck(load) {
-    this.muck.load = Math.max(0, Math.min(1, load));
-    this.muck.started = this.muck.load > 0;
-    this.muckView.setLoad(this.muck.load);
-  }
-
-  debugFillMuck() {
-    this.debugSetMuck(1);
-    this.hud.toast('The tub is full of muck: tip it a little and drive slowly over the stubble', 3);
-  }
-
-  debugFinishMuck() {
-    this.muck.done = true;
-    this.muck.laid = Math.max(this.muck.laid, this.muckParams.patchesNeeded);
-    this.finishMuck();
-  }
-
-  debugResetMuck() {
-    this.muck.reset();
-    this.muckView.setLoad(0);
-    this.muckView.clear();
-  }
-
-  /** The strip is down: tick it off the board. */
-  finishMuck() {
-    this.achievements.note('muckSpread');
-    if (this.jobBoard.complete('muck')) {
-      this.hud.toast('Muck spread. Ticked off the board on the barn door', 3);
-      this.jobBoardView.refresh();
-      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
-    }
-    this.saySomethingAboutJob('muckDone');
-  }
-
   tipTrailerPrompt() {
     const item = this.heldLoad();
     const t = this.tipTrailer;
     if (!item) {
-      if (this.canForkMuck()) return { text: this.muck.full ? 'The tub is full of muck   ·   T to tip it' : 'Hold E to fork muck into the trailer' };
+      if (this.farmJobs.canForkMuck()) return { text: this.muck.full ? 'The tub is full of muck   ·   T to tip it' : 'Hold E to fork muck into the trailer' };
       return { text: t.cargo.length || t.bed.tip > 0.02 || !this.muck.empty ? 'T to tip the trailer' : 'The little tipping trailer   ·   T to tip it' };
     }
     const what = this.loadName(item);
@@ -4210,7 +4075,7 @@ export class Game {
     const t = this.tipTrailer;
     t.update(dt);
     this.noteFolded(t, ridden);
-    this.updateMuck(dt);
+    this.farmJobs.updateMuck(dt);
     // What it takes from the quad (or tractor) in front of it.
     if (this.tipPuller && this.tipPuller !== t.puller) Object.assign(this.tipPuller.tow, { driveFactor: 1, brakeFactor: 1 });
     this.tipPuller = t.puller;
@@ -6849,40 +6714,6 @@ export class Game {
     }
   }
 
-  /** You finished the job a girl left half done at the bench: she is pleased (npc/girlBench.js). */
-  /** A quad in a bad way: a full or partial service goes on the board for the day, on top of the other jobs (workshop/service.js). */
-  setUpServiceJob() {
-    this.serviceJob = null;
-    const quads = this.units
-      .filter((u) => !u.barnFind && u.quad.faults && u.engine)
-      .map((u) => ({ id: u.id, name: shortName(u.name), plan: servicePlan(factsOf(u)), state: stateOf(u) }));
-    const pick = pickServiceJob(quads, createRandom(this.seed ^ 0x5e71), this.bench?.serviceParams);
-    if (!pick) return;
-    this.serviceJob = new ServiceJob(pick);
-    this.jobBoard.add(`service:${pick.id}`, {
-      chalk: serviceChalk(pick),
-      hint: pick.full ? 'Do a full service at the bench: press S on the bench menu' : `At the bench: ${pick.kinds.join(', ')}`,
-    });
-  }
-
-  /** A bench job is finished on a vehicle: it counts towards a service on the board. */
-  serviceJobNoted(unit, kind, botched) {
-    const job = this.serviceJob;
-    if (!job || !job.note(unit.id, kind, botched)) return;
-    if (this.jobBoard.complete(`service:${job.id}`)) {
-      this.hud.toast('Service done: ticked off the board', 4);
-      this.jobBoardView.refresh();
-      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
-    }
-  }
-
-  /** The debug panel and console: every step of the service on the board is done, clean, and the board ticks it off. */
-  debugFinishService() {
-    const job = this.serviceJob;
-    if (!job) return 'There is no service job on the board';
-    for (const kind of [...job.left]) this.serviceJobNoted({ id: job.id }, kind, false);
-  }
-
   girlBenchFinished(job) {
     const pn = this.girlBench.pending;
     if (!pn || pn.job !== job) return;
@@ -7234,11 +7065,7 @@ export class Game {
 
   /** Enough of the field is sprayed: tick the job off the board (if it is on today) and the girls remark. */
   sprayDone() {
-    if (this.jobBoard.complete('spray')) {
-      this.hud.toast('Field sprayed. Ticked off the board on the barn door; fold the boom in', 4);
-      this.jobBoardView.refresh();
-      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
-    } else this.hud.toast('Field sprayed', 3);
+    if (!this.farmJobs.tickOff('spray', 'Field sprayed. Ticked off the board on the barn door; fold the boom in', 4)) this.hud.toast('Field sprayed', 3);
     this.saySomethingAboutSpray('sprayDone');
   }
 
@@ -7331,11 +7158,7 @@ export class Game {
 
   /** Enough of the field is harrowed: tick the job off the board (if it is on today) and the girls remark. */
   harrowDone() {
-    if (this.jobBoard.complete('harrow')) {
-      this.hud.toast('Field harrowed. Ticked off the board on the barn door; lift the tines', 4);
-      this.jobBoardView.refresh();
-      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
-    } else this.hud.toast('Field harrowed', 3);
+    if (!this.farmJobs.tickOff('harrow', 'Field harrowed. Ticked off the board on the barn door; lift the tines', 4)) this.hud.toast('Field harrowed', 3);
     this.saySomethingAboutHarrowing('harrowDone');
   }
 
@@ -7481,11 +7304,7 @@ export class Game {
       this.saySomethingAboutHay('hayLoaded');
     } else if (phase === 'done') {
       this.achievements.note('hayMade');
-      if (this.jobBoard.complete('hay')) {
-        this.hud.toast('Hay stacked. Ticked off the board on the barn door', 3);
-        this.jobBoardView.refresh();
-        if (this.jobBoard.cleared) this.achievements.note('boardCleared');
-      }
+      this.farmJobs.tickOff('hay', 'Hay stacked. Ticked off the board on the barn door');
       this.saySomethingAboutHay('hayDone');
     }
   }
@@ -13022,7 +12841,7 @@ export class Game {
     }
     if (used > 0 && !this.feedStartSaid) {
       this.feedStartSaid = true; // once a game: they remark when you begin, not at every scoop
-      if (this.jobBoard.has('feed') && !this.jobBoard.finished.has('feed')) this.saySomethingAboutJob('feedStart', false, this.feedBin.model.position);
+      if (this.jobBoard.has('feed') && !this.jobBoard.finished.has('feed')) this.farmJobs.say('feedStart', false, this.feedBin.model.position);
     }
     return used > 0;
   }
@@ -13035,12 +12854,8 @@ export class Game {
   }
 
   finishFeeding() {
-    if (this.jobBoard.complete('feed')) {
-      this.hud.toast('Everyone fed. Ticked off the board on the barn door', 3);
-      this.jobBoardView.refresh();
-      if (this.jobBoard.cleared) this.achievements.note('boardCleared');
-    }
-    this.saySomethingAboutJob('feedDone', false, this.feedBin.model.position);
+    this.farmJobs.tickOff('feed', 'Everyone fed. Ticked off the board on the barn door');
+    this.farmJobs.say('feedDone', false, this.feedBin.model.position);
   }
 
   /** The animals' step: what is running near the hens, where you are, and what they did. */
@@ -13057,7 +12872,7 @@ export class Game {
       if (e.type === 'cluck') this.animalAudio.cluck(e);
       else if (e.type === 'scatter') {
         this.animalAudio.squawk(e);
-        this.saySomethingAboutJob('hensScatter', false, new THREE.Vector3(e.x, 0, e.z));
+        this.farmJobs.say('hensScatter', false, new THREE.Vector3(e.x, 0, e.z));
       } else if (e.type === 'squeal') this.animalAudio.squeal(e);
       else if (e.type === 'grunt') this.animalAudio.grunt(e);
     }
