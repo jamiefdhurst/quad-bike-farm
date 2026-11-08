@@ -116,9 +116,9 @@ export class MindsHost {
         c.voice.say('workLightOffer', { urgent: true, force: true });
         g.handleWorkLight(g.workLight.take(o));
       }),
-      ...mine(g.hayLoading?.offers(g.hayLoadContext()) ?? [], (o) => {
+      ...mine(g.hayLoading?.offers(g.fieldWork.hayLoadContext()) ?? [], (o) => {
         g.companions.find((g) => g.character.id === o.girl).voice.say('hayGo', { urgent: true, force: true });
-        g.handleHayLoad(g.hayLoading.take(o));
+        g.fieldWork.handleHayLoad(g.hayLoading.take(o));
       }),
       ...g.lostOffers(c),
       ...mine(g.generatorStart.offers(g.generatorStartContext()), (o) => {

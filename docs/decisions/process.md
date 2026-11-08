@@ -341,3 +341,11 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 - Ticking a job off was the same four lines in nine places (spray, harrow, hay, feed, logs, silage, muck, service, and the mower's own). It is now `farmJobs.tickOff(id, message, seconds)`, which returns whether the job was on the board, so the sprayer and harrows keep their plain "Field sprayed" toast for a field done off the board. `tests/farmJobsHost.test.js` holds it with a stand-in game. The mower still ticks its own, since `MowHost` has its own stand-in.
 - What others read stays on the game: `jobBoard`, `jobBoardView`, `muck`, `muckView`, `muckParams` and `serviceJob`. Callers (the debug panel's job buttons, the console, the bench) call `game.farmJobs` directly.
 - Still to go: the hay, spray and harrow set-ups and the tractor's work (spike, splitter), then `frame()`. The issue stays open.
+
+## Splitting up game.js, spraying, harrowing and making hay (#126, was TODO 235)
+
+- `world/fieldWorkHost.js` takes the three field jobs' wiring out of `game.js`: setting up the spray, harrow and hay jobs, the sprayer's and harrows' drag and T lever, the status lines, the sprayer's mist notice, the bales and the girls who carry them (`hayLoadContext`, `handleHayLoad`, the throw), the stage changes and the debug panel's and console's buttons. Moved as they were, no behaviour change. `game.js` went from 13,270 to 12,795 lines and `MAX_LINES` follows.
+- What others read stays on the game: `spray`, `harrow`, `hay`, `hayLoading`, `grassTracks`, their views and `farmMap`'s hooks. The host keeps the bookkeeping only it uses (the params, the pullers, the "girls have been told" flags, the hay slots and phase). Callers (the minds host, the debug panel, the console) call `game.fieldWork` directly.
+- `tests/fieldWorkHost.test.js` holds the job-done paths and the status lines with a stand-in game.
+- The bale spike and the log splitter were left for the next part: both read the trailers and the tow weight, so they go together as the tractor's work. Then `frame()`. The issue stays open.
+- The smoke test's draw-call budget still fails on the wood (1,416 calls against 1,400), the same as on `main`: #597.

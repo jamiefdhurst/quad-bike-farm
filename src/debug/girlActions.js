@@ -911,10 +911,10 @@ export function girlActions(g) {
     run: (id) => {
       if (!g.hay || g.hay.phase !== 'load') return toast('Jump the hay job to the load stage first (Jobs, in the Girls tab)');
       if (!free(id)) return;
-      const ctx = g.hayLoadContext();
+      const ctx = g.fieldWork.hayLoadContext();
       if (!ctx.ready) return toast('Bring the trailer within reach of a loose bale first');
       const e = g.hayLoading.force(ctx, id);
-      if (e) g.handleHayLoad(e);
+      if (e) g.fieldWork.handleHayLoad(e);
     },
   });
   actions.push({
