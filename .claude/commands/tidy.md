@@ -3,14 +3,14 @@ description: Work one cohesion issue, or check what has drifted from the game's 
 argument-hint: "[issue number; default: the next 🧩 cohesion issue; 'check' for a check-up]"
 ---
 
-Cohesion work on $ARGUMENTS: keeping the game pulled together, so it has one way to use things, one look, one name for each thing and one level of detail. It runs alongside feature work, in its own session. `/todo` takes issues in number order, cohesion ones included; this takes `🧩 cohesion` issues first.
+Cohesion work on $ARGUMENTS: keeping the game pulled together, so it has one way to use things, one look, one name for each thing and one level of detail. It runs alongside feature work, in its own session. `/todo` takes issues by milestone, cohesion ones included; this takes `🧩 cohesion` issues first, but only from the current phase (the earliest open milestone) or Alongside, so a later phase's cohesion pass waits for its phase (#719).
 
 - **A number** works that issue.
-- **Nothing** takes the next cohesion issue: the lowest-numbered open one labelled `🧩 cohesion` and `🔜 next`, else the lowest-numbered open `🧩 cohesion` issue not labelled `💤 later` with no open PR (`gh pr list --search "<n> in:body"`). If there is none, do the check-up.
+- **Nothing** takes the next cohesion issue: the first that `tools/nextTodo.mjs --label "🧩 cohesion"` prints (a `🔜 next` one first, then the current phase, then Alongside, with `/todo`'s rules: not held back, no open PR, its `Depends on:` closed). If it prints none, do the check-up.
 - **`check`** does the check-up.
 
 ```
-gh issue list --state open --label "🧩 cohesion" --json number,title,labels --jq 'sort_by(.number) | .[] | "\(.number) \(.title) \([.labels[].name] | join(","))"'
+tools/nextTodo.mjs --label "🧩 cohesion"
 ```
 
 The rules are the yardstick; read them all first: `.claude/rules/controls.md` (keys, prompts, feedback, names), `.claude/rules/interface.md` (tokens, the close-up frame, messages), `.claude/rules/debug-panel.md` (four tabs, the console mirroring them), `.claude/rules/looks.md` (detail, light, size), `docs/glossary.md`, and "Where things stand" in `docs/decisions/process.md`.

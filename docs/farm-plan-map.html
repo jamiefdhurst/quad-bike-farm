@@ -1,0 +1,906 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farm Plan</title>
+<!-- The farm plan's map (docs/farm-plan.md). Open it in a browser; `node tools/farmPlanSvg.mjs` renders it to docs/farm-plan.svg.
+     A change to the plan edits the numbers here and in docs/farm-plan.md together, in one PR, and re-runs the script. Positions are the plan's
+     metres, x east and z south from the north-west corner; code positions are these minus (520, 365). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,500;0,700;1,400;1,500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
+<style>
+/* Layout: a printed estate plan on the left (the map stays paper in both themes), a reading column on the right that stacks under it on a phone. */
+:root {
+  --bg: #e9ebe3;
+  --fg: #262a22;
+  --muted: #646a5c;
+  --panel: #f6f7f2;
+  --rule: #cfd3c5;
+  --accent: #35663f;
+  --chip-new: #2f6a8a;
+  --chip-move: #8a5a1f;
+  --chip-stay: #4d6b3a;
+  --chip-change: #7a3f6b;
+
+  /* The plan itself: an OS-style sheet, the same in either theme. */
+  --m-paper: #f3f4ec;
+  --m-ink: #2c3126;
+  --m-soft: #6b705f;
+  --m-grass: #dce7c6;
+  --m-ride: #cbdeb0;
+  --m-hay: #e7ecbf;
+  --m-ley: #d3e5bd;
+  --m-arable: #f0e5bd;
+  --m-row: #d9c98f;
+  --m-wood: #b7cd9c;
+  --m-tree: #78985f;
+  --m-water: #a3cbe1;
+  --m-water-edge: #4c86ab;
+  --m-hedge: #587a37;
+  --m-wall: #8d897d;
+  --m-build: #48463f;
+  --m-concrete: #dad7cc;
+  --m-lane: #f0c04c;
+  --m-lane-edge: #8a681c;
+  --m-stone: #cbbd98;
+  --m-track: #87693f;
+  --m-pit: #d8cbae;
+  --m-other: #e7e9de;
+  --m-otherline: #b8bfa6;
+  --m-fire: #d4622b;
+  --m-garden: #c8dcae;
+  --m-later: #9a8fa6;
+  --m-edge: #b2453a;
+
+  --display: 'Alegreya', 'Iowan Old Style', Georgia, serif;
+  --ui: 'IBM Plex Sans Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171a15; --fg: #e3e6da; --muted: #a2a897; --panel: #20241d; --rule: #363c31; --accent: #8cc497;
+    --chip-new: #7ab8d8; --chip-move: #e0a65a; --chip-stay: #9ccb7f; --chip-change: #d494c4;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171a15; --fg: #e3e6da; --muted: #a2a897; --panel: #20241d; --rule: #363c31; --accent: #8cc497;
+  --chip-new: #7ab8d8; --chip-move: #e0a65a; --chip-stay: #9ccb7f; --chip-change: #d494c4;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--ui); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: 2rem; line-height: 1.1; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 4px 0 0; max-width: 62ch; }
+.views { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--panel); }
+.views button {
+  font: 500 0.9rem var(--ui); letter-spacing: 0.04em; text-transform: uppercase; padding: 8px 14px; border: 0;
+  background: transparent; color: var(--muted); cursor: pointer;
+}
+.views button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+.views button:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+@media (max-width: 980px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+.sheet { background: var(--m-paper); border: 1px solid var(--rule); border-radius: 4px; overflow-x: auto; }
+.sheet svg { display: block; width: 100%; min-width: 680px; height: auto; }
+.sheet-foot { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 8px 12px; border-top: 1px solid #d5d8cb; color: #5c6152; font-size: 0.8rem; min-width: 680px; }
+
+aside { display: grid; gap: 14px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; padding: 14px 16px; min-width: 0; }
+.card h2 { font: 600 0.75rem var(--ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.card h3 { font-family: var(--display); font-size: 1.35rem; font-weight: 700; margin: 0; line-height: 1.2; }
+.card p { margin: 6px 0 0; }
+.chip { display: inline-block; font: 600 0.7rem var(--ui); letter-spacing: 0.08em; text-transform: uppercase; padding: 1px 7px; border-radius: 3px; border: 1px solid currentColor; margin-top: 6px; }
+.chip.new { color: var(--chip-new); } .chip.moves { color: var(--chip-move); } .chip.stays { color: var(--chip-stay); } .chip.changes { color: var(--chip-change); }
+.issues { margin-top: 8px; color: var(--muted); font-size: 0.85rem; }
+.hint { color: var(--muted); font-size: 0.85rem; }
+.stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-variant-numeric: tabular-nums; }
+.stats dt { color: var(--muted); }
+.stats dd { margin: 0; }
+ol.settled { margin: 0; padding-left: 1.6em; display: grid; gap: 3px; }
+ul.smooth { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+ol.settled li::marker { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; font-size: 0.85rem; }
+.legend span { display: flex; align-items: center; gap: 8px; }
+.legend svg { flex: none; }
+
+/* Map text */
+.fname { font-family: var(--display); font-style: italic; font-size: 18px; fill: var(--m-ink); text-anchor: middle; }
+.fsub { font-family: var(--ui); font-size: 11px; fill: var(--m-soft); text-anchor: middle; letter-spacing: 0.04em; }
+.bname { font-family: var(--ui); font-size: 10.5px; fill: var(--m-ink); letter-spacing: 0.03em; }
+.bname.sm { font-size: 8.5px; }
+.big { font-family: var(--display); font-weight: 700; font-size: 28px; fill: var(--m-ink); text-anchor: middle; letter-spacing: 0.02em; }
+.grid text { font-family: var(--ui); font-size: 11px; fill: #8b917f; }
+.road-label { font-family: var(--ui); font-size: 11px; fill: var(--m-lane-edge); font-weight: 600; letter-spacing: 0.05em; }
+[data-id] { cursor: pointer; }
+[data-id]:hover, [data-id]:focus { filter: brightness(0.95) saturate(1.15); outline: none; }
+[data-id].on { stroke: #c0392b !important; stroke-width: 2.5 !important; }
+.lbl { pointer-events: none; }
+/* The written plan */
+.plan { max-width: 960px; background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; padding-block: 8px 28px; padding-inline: clamp(16px, 4vw, 40px); min-width: 0; }
+.plan h1 { font-size: 1.9rem; margin-top: 20px; }
+.plan h2 { font-family: var(--display); font-size: 1.5rem; margin: 30px 0 8px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+.plan h3 { font-family: var(--display); font-size: 1.2rem; margin: 22px 0 6px; color: var(--accent); }
+.plan p, .plan li { max-width: 72ch; }
+.plan li { margin: 3px 0; }
+.plan code { font-size: 0.88em; background: var(--bg); padding: 1px 4px; border-radius: 3px; }
+.plan .tbl { overflow-x: auto; margin: 10px 0; }
+.plan table { border-collapse: collapse; font-size: 0.9rem; min-width: 640px; }
+.plan th, .plan td { text-align: left; vertical-align: top; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+.plan th { font-weight: 600; color: var(--muted); font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+@media (prefers-reduced-motion: no-preference) { .view { transition: opacity 0.2s ease; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>The farm, started again</h1>
+      <p class="sub">A plan drawn at true scale, north up. The farmstead sits in the middle at the head of a drive, six arable fields surround it, Back Lane loops right round it, every road leaving the map turns you round where it leaves, and the neighbour and Nether Thornby are across the lane. Field names are examples: each farm is dealt its own.</p>
+    </div>
+    <div class="views" role="group" aria-label="Which map">
+      <button id="v-new" aria-pressed="true">Proposed</button>
+      <button id="v-old" aria-pressed="false">Today, same scale</button>
+    </div>
+  </header>
+
+
+  <div class="main" id="mapview">
+    <div class="sheet">
+      <svg id="map" viewBox="-420 -70 1810 1040" role="img" aria-label="Plan of the farm"></svg>
+      <div class="sheet-foot"><span>Click or tap any field or building for what it is for.</span><span>Grid squares are 100 m.</span></div>
+    </div>
+
+    <aside>
+      <div class="card" id="info" aria-live="polite">
+        <h2>Selected</h2>
+        <h3>The farmstead</h3>
+        <span class="chip moves">Moves</span>
+        <p>Click a field or building on the plan.</p>
+      </div>
+
+      <div class="card">
+        <h2>Size</h2>
+        <dl class="stats" id="stats"></dl>
+      </div>
+
+      <div class="card">
+        <h2>Keeping it smooth at this size</h2>
+        <ul class="smooth">
+          <li><b>Ground in tiles.</b> Fine near you, coarse far off, and only the tiles in view are drawn.</li>
+          <li><b>Hedges with a far version.</b> Kilometres of hedge become a cheap strip beyond about 150 m.</li>
+          <li><b>Distance cut-offs</b> as now: set pieces, small parts, shadows and ground cover drop out with distance, and haze hides the edge.</li>
+          <li><b>Built as you need it.</b> Near tiles first behind the start screen, the rest during play.</li>
+          <li><b>Held in CI.</b> More budget spots in the smoke test, so a heavy corner fails a PR.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Key</h2>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <div class="card">
+        <h2>Settled so far</h2>
+        <ol class="settled">
+          <li>Built for other people, on an ordinary laptop.</li>
+          <li>Farmstead in the middle, at the head of a drive.</li>
+          <li>Re-move anything that needs it.</li>
+          <li>A mixed upland-edge farm: sheep, cattle, cereals, grass.</li>
+          <li>Farmhouse: outside only at first.</li>
+          <li>The new map is a breaking release.</li>
+          <li>Phases as milestones in <code>.github/settings.yml</code>.</li>
+          <li>Close the village tests; test again after the move.</li>
+          <li>A plan in the repo, and this map.</li>
+          <li>A stone track, a grass boundary loop, headlands.</li>
+          <li>Crops through the year, as their own phase.</li>
+          <li>Keep the pit as the farm's old pit; it can move.</li>
+          <li>Field names dealt per farm.</li>
+          <li>More arable: six fields, the farm bigger to the west and south.</li>
+          <li>Back Lane: a winding single-track tarmac road round the farm.</li>
+          <li>The pit by the lane, with its own gate onto it.</li>
+          <li>The hill stays the sheep's rough grazing; the sheep field is the in-bye.</li>
+          <li>A natural outline, and fields that aren't boxes.</li>
+          <li>A review of every existing area before it moves.</li>
+          <li>Back Lane is a loop and never ends.</li>
+          <li>Roads leaving the map meet the A-road; going out turns you round.</li>
+          <li>Nether Thornby, with Upper Thornby up the hill; other signs name other places.</li>
+          <li>An animal year beside the crop year.</li>
+          <li>See further, with far landscape beyond the edges; fog and draw distance tunable.</li>
+          <li>Footpaths and a bridleway; landmarks in every field.</li>
+          <li>Water and ditches, power lines, a scrap corner, sound by place.</li>
+          <li>The moor, built now. No pheasant shoot, ever.</li>
+          <li>One A-road down the valley, not a ring; the lane south runs on to Haddon and turns you round at the edge.</li>
+          <li>The neighbour is a dairy farm; her cows walk the lane.</li>
+          <li>The church is built; the village builds up as you arrive.</li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('map');
+
+// ---------- Info for each area ----------
+const INFO = {
+  stead: { t: 'The farmstead', c: 'moves', b: 'The heart of the farm: the house, a concrete yard and every building you use each day, all within about 80 m of each other. The girls\' daily walks stay short however big the fields get.', i: '#613, #617, #404, #503' },
+  house: { t: 'Farmhouse and garden', c: 'new', b: 'Outside only at first: a kitchen door onto the yard, lit windows at dusk, a washing line, the dog\'s kennel. The girls park beside it. Inside can come later, with Amy\'s mum and lunch.', i: '#658, #116' },
+  barn: { t: 'The barn', c: 'moves', b: 'The workshop: bench, loft, boards, bell, toolbox. Moves with everything inside it as one piece, and gets bigger with one pair of doors facing the yard.', i: '#613, #465, #503, #329, #246, #212, #169, #171' },
+  shed: { t: 'Machinery shed', c: 'new', b: 'Open-fronted, steel-framed. The trailers, mower, harrows, sprayer and splitter live here nose-out, and go back at the end of a day.', i: '#617, #117' },
+  dutch: { t: 'Dutch barn and stackyard', c: 'moves', b: 'Hay and straw stored where they are used, next to the cattle and the barn. Today it stands by the lane gate, 250 m from either.', i: '' },
+  cattle: { t: 'Cattle shed, silage clamp, muck heap', c: 'new', b: 'Where suckler cows winter. The muck heap is behind it, so the muck job has a source, and the silage clamp is beside it, so the silage job has a destination.', i: '#145' },
+  grain: { t: 'Grain store', c: 'new', b: 'Where the harvest goes. It makes the crop year mean something: drill, grow, cut, tip it here.', i: '#697, #698, #699' },
+  pens: { t: 'Sheep pens', c: 'new', b: 'Hurdled handling pens on the way to the hill: gathering, sorting, the shearer\'s day.', i: '#91, #139' },
+  orchard: { t: 'Orchard, hens and pig', c: 'moves', b: 'The hens and the pig move away from the workshop door into the orchard by the house.', i: '' },
+  cars: { t: 'Where the cars park', c: 'moves', b: 'Beside the farmhouse, in the yard. The girls drive up the drive in the morning and park by the house instead of 250 m away.', i: '#601, #304' },
+  home: { t: 'Home Ground', c: 'changes', b: 'The field for messing about: the Home Loop, the jump, the cone course, the line-up and the bonfire. It stops being the yard and the job field as well.', i: '#616' },
+  wood: { t: 'Hollow Wood', c: 'stays', b: 'Kept as it is inside: the Hollow Run, the Fern Trail and the log yard at its gate. The boundary track runs round its edge.', i: '#231, #232, #560' },
+  pit: { t: 'The Old Pit', c: 'moves', b: 'The farm\'s old gravel pit, now in the corner by the lane with its own gate onto it, the one the lorries used. A second gate opens from the stone track. The pit climb and its relics stay.', i: '' },
+  top: { t: 'Top Field', c: 'new', b: 'Arable, barley this year, the biggest field. The stone track runs along its edge to the pit. A grass headland goes round it to ride.', i: '#697, #698, #699' },
+  lanefield: { t: 'Lane Field', c: 'changes', b: 'Arable, oilseed rape this year, north of the drive. Spraying and harrowing happen on whichever field the crop calls for, not a fixed patch.', i: '#697, #698, #699' },
+  longpiece: { t: 'Long Piece', c: 'changes', b: 'Arable, beans this year: the third field in the rotation, south of the drive.', i: '#697, #698, #699' },
+  hay: { t: 'Hay Meadow', c: 'moves', b: 'Shut up in spring, mown and baled in summer, grazed after. Today it is a corner of the play field.', i: '#323, #324' },
+  wet: { t: 'Wet meadow and pond', c: 'moves', b: 'Kept as it is: the pond, the oaks, the reeds. Where the rope swing would go.', i: '#147' },
+  sunk: { t: 'The green lane', c: 'moves', b: 'The sunk lane from Home Ground down to the ford and the hill.', i: '' },
+  sheep: { t: 'Sheep Field', c: 'moves', b: 'The in-bye: the better, walled grass next to the yard where the ewes lamb in spring and come into the pens. The terraces stay, with drystone walls, a stile and a stone field barn.', i: '#622, #624, #625' },
+  hill: { t: 'Hill Pasture', c: 'moves', b: 'Yes, still sheep: ground this steep can\'t be ploughed or cut, so it is the flock\'s rough grazing all summer. The electric fence splits it so they graze one half, then the other. The shepherd\'s hut is for lambing nights. The banks, the climb, the flask rock and the hut move with it as one piece.', i: '#91, #139' },
+  brook: { t: 'Brook Meadow', c: 'changes', b: 'Permanent pasture with the river through it: the cattle\'s summer grazing. Open, and big enough to ride along the river, as #565 asked.', i: '#565, #563, #564' },
+  ley: { t: 'Low Ley', c: 'new', b: 'Grass sown for silage, cut twice a summer and wrapped. The brook crosses its corner.', i: '#93, #172' },
+  drive: { t: 'The drive and the entrance', c: 'new', b: 'A wider stone drive, about 290 m from the lane to the yard, open to the fields either side. A cattle grid at the lane, so you drive in without a gate. The farm sign stands beside it.', i: '#568, #570, #214, #616' },
+  track: { t: 'Tracks', c: 'new', b: 'A stone track runs north from the yard along Top Field to the pit, and south past the sheep field to the river bridge. A rutted grass track runs round the inside of the whole boundary and closes the loop. Headlands go round each arable field, and the green lane drops from Home Ground to the ford.', i: '' },
+  neighbour: { t: 'The neighbour\'s dairy', c: 'moves', b: 'Across the lane, a dairy farm to set against our sheep and beef: a milking parlour with its collecting yard, a bulk milk tank the tanker empties every morning, a slurry store. Her cows walk the lane between the yard and her north field gate twice a day, so now and then you wait at the end of the drive for the herd, with her or her dog behind. Her gateway is a little up the lane from ours, so the two don\'t make a crossroads.', i: '#569, #714, #315, #122' },
+  village: { t: 'Nether Thornby', c: 'moves', b: 'Across the lane at a junction. The brook runs under a bridge and past the green. It builds up as you arrive: 30 signs, three houses and a small farm on the lane, then the garage. The street runs on east to the A-road past the pub, the green with its war memorial, the shop, the cottages and the hall, with the playing field behind and the church at the end.', i: '#688, #361, #362, #536 to #544' },
+  lane: { t: 'The lane', c: 'changes', b: 'A lane other people use: passing places, a grit bin, two other gateways and a pair of cottages, a postbox and a bin stand at the end of our drive. It meets the A-road in the north; in the south it runs straight on out of the valley towards Haddon, and you are turned round where it leaves the map. Back Lane leaves it at the north and comes back below the village; the drive, the pit and the neighbour open onto it. The feed lorry, the fuel tanker, the livestock wagon and the grain lorry come up it to us.', i: '#122, #601, #687' },
+  church: { t: 'The church', c: 'new', b: 'Outside only: a west tower you can see from most of the farm, the nave, a churchyard wall with a lychgate on the street, the graves. The bells ring the hour and on Sunday morning. It gives the street its end and the farm its landmark.', i: '#715' },
+
+  north: { t: 'North Field', c: 'new', b: 'Arable, wheat this year, between the wood and Top Field, with a gate onto Back Lane.', i: '#697, #698, #699' },
+  far: { t: 'Far Field', c: 'new', b: 'Arable, wheat this year, on the west side by Back Lane, above the hill.', i: '#697, #698, #699' },
+  south: { t: 'South Field', c: 'new', b: 'Arable, barley this year, the far side of the brook from Low Ley.', i: '#697, #698, #699' },
+  back: { t: 'Back Lane', c: 'new', b: 'Across the moor it runs unfenced between two cattle grids. The old road over the hill: single-track tarmac with passing places, hedged both sides. It leaves the lane at the north, winds round the farm\'s north and west, through a ford, up over the shoulder of the hill and back east along the south to rejoin the lane below the village: about 3 km, a loop with no end. A footpath off it climbs to Upper Thornby. Gates off it into North Field, the wood and the hill.', i: '' },
+  edge: { t: 'The A-road', c: 'new', b: 'One main road down the valley to the east, curving as real ones do, not a ring round the map. The lane meets it in the north (Kelby 4) and the village street meets it (Ashwell 3); the lane south runs on to Haddon without it. Pull out onto it and the picture fades and turns you round facing home, with a girl\'s line if she is with you. Beyond it is far landscape: seen, never reached.', i: '#687' },
+  vhall: { t: 'Village hall and playing field', c: 'new', b: 'The hall at the east end of the street, and the playing field behind the south cottages with its goalposts, where the kids on mini motos come from. The war memorial stands on the green.', i: '#716' },
+  moor: { t: 'The Moor', c: 'new', b: 'Common grazing beyond Back Lane: heather, bracken, rocks and no fences. The flock goes up in summer through the moor gate in the hill wall. Back Lane crosses it unfenced, with a cattle grid at each end and sheep on the road. It rises to a ridge wall, the end of the common and of the map, with Upper Thornby seen beyond. The footpath to Upper Thornby crosses it to a ladder stile in the wall. Built now, because the map is far harder to extend later.', i: '#713' },
+  paths: { t: 'Footpaths and the bridleway', c: 'new', b: 'Public rights of way, as nearly every British farm has: a footpath from the village bridge along the river, over the hill and across the moor to Upper Thornby, and a bridleway from Back Lane past the wood. Stiles, kissing gates and yellow and blue arrows where they cross a boundary (marked ×). Walkers come later.', i: '#709' },
+  power: { t: 'The 11 kV line', c: 'new', b: 'Wooden poles striding across Lane Field from the lane to the farmstead, with a transformer on the last pole. Telegraph poles carry the phone line along the lane. A line you can follow home.', i: '#711' },
+  scrap: { t: 'The scrap corner', c: 'new', b: 'Nettles behind the machinery shed: a dead baler, old tyres, a rusted quad, a pile of tin. Somewhere to look for a part before buying one.', i: '#712' },
+  water: { t: 'Water for stock', c: 'new', b: 'A spring tank high on the hill feeds a trough in every grazed field. Ditches run along the hedges with culverts under the tracks, and the gateways are churned.', i: '#710, #163' },
+  // Today
+  o_grass: { t: 'The grass field, today', c: 'changes', b: 'Doing three jobs: the yard and barn in one corner, the track, jump and cones in the middle, and the hay, harrow and line-up patches round the edges.', i: '' },
+  o_barn: { t: 'The barn, today', c: 'moves', b: 'In the far south-west corner of the farm, 260 m from the gate onto the lane.', i: '' },
+  o_road: { t: 'The farm road, today', c: 'changes', b: 'Hedged in on both sides, with the cattle grid and a gate in the middle of the farm, not at the lane.', i: '#568' },
+  o_fields: { t: 'The stubble fields, today', c: 'changes', b: 'Stubble every day of the year. Spraying happens on a patch of the wheat stubble.', i: '' },
+  o_neighbour: { t: 'The neighbour, today', c: 'moves', b: 'On the farm\'s own side of the lane, because the ground ends at x 210.', i: '#569' },
+  o_village: { t: 'Nether Thornby, today', c: 'moves', b: 'A dead-end side road off the lane, ending at a "road closed" gate.', i: '' },
+  o_edge: { t: 'The edge of the ground', c: 'changes', b: 'The detailed ground is 420 m square. The lane sits 4 m from its edge, which is why nothing can go across it.', i: '' },
+  o_hill: { t: 'The hill side, today', c: 'stays', b: 'The meadow, the green lane, the sheep field, the river meadow and the hill pasture. They keep their insides in the new plan.', i: '' },
+  o_wood: { t: 'The wood and the pit, today', c: 'stays', b: 'Both keep their insides. The pit is reached through the barley field today.', i: '' },
+};
+const CHIP = { new: 'New', moves: 'Moves', stays: 'Stays', changes: 'Changes' };
+
+function show(id) {
+  const d = INFO[id]; if (!d) return;
+  document.querySelectorAll('.on').forEach(e => e.classList.remove('on'));
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(e => e.classList.add('on'));
+  document.getElementById('info').innerHTML =
+    `<h2>Selected</h2><h3>${d.t}</h3><span class="chip ${d.c}">${CHIP[d.c]}</span><p>${d.b}</p>` +
+    (d.i ? `<div class="issues">Issues: ${d.i}</div>` : '');
+}
+
+// ---------- Drawing helpers ----------
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) if (attrs[k] !== undefined) e.setAttribute(k, attrs[k]);
+  (parent || svg).appendChild(e);
+  return e;
+}
+function g(parent, cls) { return el('g', { class: cls }, parent); }
+function rect(p, x, y, w, h, fill, extra = {}) { return el('rect', { x, y, width: w, height: h, fill, ...extra }, p); }
+function path(p, d, stroke, w, extra = {}) { return el('path', { d, stroke, 'stroke-width': w, fill: 'none', ...extra }, p); }
+function text(p, x, y, s, cls, extra = {}) { const t = el('text', { x, y, class: cls + ' lbl', ...extra }, p); t.textContent = s; return t; }
+function hit(e, id) { e.setAttribute('data-id', id); e.setAttribute('tabindex', '0'); return e; }
+function hedge(p, x, y, w, h, kind = 'hedge') {
+  const s = kind === 'wall' ? { stroke: 'var(--m-wall)', 'stroke-width': 2.2, 'stroke-dasharray': '1.5 1' } : { stroke: 'var(--m-hedge)', 'stroke-width': 2.6 };
+  return rect(p, x, y, w, h, 'none', s);
+}
+function building(p, x, y, w, h, id) { const r = rect(p, x, y, w, h, 'var(--m-build)', { stroke: '#2a2925', 'stroke-width': 0.5 }); if (id) hit(r, id); return r; }
+function trees(p, x, y, w, h, n, seed, r = 2.2) {
+  let s = seed;
+  const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  for (let k = 0; k < n; k++) el('circle', { cx: x + rnd() * w, cy: y + rnd() * h, r: r * (0.7 + rnd() * 0.6), fill: 'var(--m-tree)', opacity: 0.85, class: 'lbl' }, p);
+}
+
+// ---------- Patterns ----------
+const defs = el('defs', {});
+function pattern(id, w, h, draw, rot) {
+  const pt = el('pattern', { id, width: w, height: h, patternUnits: 'userSpaceOnUse', patternTransform: rot ? `rotate(${rot})` : undefined }, defs);
+  draw(pt);
+}
+pattern('arable', 5, 5, p => { rect(p, 0, 0, 5, 5, 'var(--m-arable)'); el('line', { x1: 0, y1: 0, x2: 0, y2: 5, stroke: 'var(--m-row)', 'stroke-width': 0.8 }, p); });
+pattern('arable2', 5, 5, p => { rect(p, 0, 0, 5, 5, 'var(--m-arable)'); el('line', { x1: 0, y1: 0, x2: 5, y2: 0, stroke: 'var(--m-row)', 'stroke-width': 0.8 }, p); });
+pattern('hay', 7, 7, p => { rect(p, 0, 0, 7, 7, 'var(--m-hay)'); el('circle', { cx: 2, cy: 2, r: 0.7, fill: '#b9c07b' }, p); el('circle', { cx: 5.5, cy: 5, r: 0.7, fill: '#b9c07b' }, p); });
+pattern('ley', 8, 8, p => { rect(p, 0, 0, 8, 8, 'var(--m-ley)'); el('path', { d: 'M2 6 l1 -2 l1 2 M6 3 l1 -2 l1 2', stroke: '#9fbf86', 'stroke-width': 0.6, fill: 'none' }, p); });
+pattern('rough', 10, 10, p => { rect(p, 0, 0, 10, 10, 'var(--m-grass)'); el('path', { d: 'M2 4 l1 -2 l1 2 M7 9 l1 -2 l1 2', stroke: '#9cb07f', 'stroke-width': 0.6, fill: 'none' }, p); });
+pattern('moor', 9, 9, p => { rect(p, 0, 0, 9, 9, '#e3dccb'); el('path', { d: 'M1 3 l1 -1.6 l1 1.6 M5 8 l1 -1.6 l1 1.6', stroke: '#a48aa0', 'stroke-width': 0.7, fill: 'none' }, p); });
+pattern('marsh', 9, 9, p => { rect(p, 0, 0, 9, 9, 'var(--m-grass)'); el('path', { d: 'M1 6 h3 M5 3 h3', stroke: '#7ea6b8', 'stroke-width': 0.6 }, p); });
+
+const FILL = { arable: 'url(#arable)', arable2: 'url(#arable2)', hay: 'url(#hay)', ley: 'url(#ley)', grass: 'var(--m-grass)', ride: 'var(--m-ride)', wood: 'var(--m-wood)', rough: 'url(#rough)', marsh: 'url(#marsh)', yardland: 'var(--m-paper)', lane: '#c5d6a8', other: 'var(--m-other)' };
+
+// ---------- Grid ----------
+function grid(p) {
+  const gg = g(p, 'grid');
+  for (let x = -400; x <= 1300; x += 100) { el('line', { x1: x, y1: -70, x2: x, y2: 970, stroke: '#cfd4c2', 'stroke-width': 0.5 }, gg); text(gg, x + 2, -58, x < 0 ? '−' + String(-x / 100).padStart(2, '0') : String(x / 100).padStart(2, '0'), ''); }
+  for (let y = 0; y <= 900; y += 100) { el('line', { x1: -420, y1: y, x2: 1390, y2: y, stroke: '#cfd4c2', 'stroke-width': 0.5 }, gg); text(gg, -416, y - 3, String(y / 100).padStart(2, '0'), ''); }
+}
+function furniture(p) {
+  // scale bar
+  const sb = g(p, 'lbl');
+  for (let k = 0; k < 4; k++) rect(sb, 150 + k * 50, 930, 50, 5, k % 2 ? 'var(--m-paper)' : 'var(--m-ink)', { stroke: 'var(--m-ink)', 'stroke-width': 0.6 });
+  [0, 100, 200].forEach((m, k) => text(sb, 150 + k * 100, 948, `${m} m`, 'bname', { 'text-anchor': 'middle' }));
+  // north arrow
+  const na = g(p, 'lbl');
+  el('path', { d: 'M1290 6 l10 30 l-10 -8 l-10 8 z', fill: 'var(--m-ink)' }, na);
+  text(na, 1290, 0, 'N', 'bname', { 'text-anchor': 'middle', 'font-weight': 600 });
+}
+
+// =========================================================
+// PROPOSED
+// =========================================================
+function drawProposed(root) {
+  grid(root);
+
+  // --- Across the lane: the neighbour's land and the village ground ---
+  const out = g(root);
+  hit(rect(out, 912, -60, 380, 620, 'var(--m-other)'), 'neighbour');
+  [[912, 150, 1290, 150], [1110, -60, 1110, 560], [1230, 150, 1230, 560], [912, 420, 1110, 420]].forEach(([a, b, c, d]) => el('line', { x1: a, y1: b, x2: c, y2: d, stroke: 'var(--m-otherline)', 'stroke-width': 2 }, out));
+  hit(rect(out, 912, 560, 380, 400, 'var(--m-other)'), 'village');
+  [[912, 840, 1290, 840]].forEach(([a, b, c, d]) => el('line', { x1: a, y1: b, x2: c, y2: d, stroke: 'var(--m-otherline)', 'stroke-width': 2 }, out));
+  text(out, 1170, 60, 'her fields', 'fsub');
+  text(out, 1170, 74, 'dairy cows', 'fsub');
+  dots(out, 1000, 10, 200, 120, 22, 29, '#3a3a3a');
+  // the far landscape: seen, never reached, beyond the A-road and Back Lane
+  const far = g(out, 'lbl');
+  rect(far, 1318, -70, 72, 1040, '#e4e6da');
+  text(far, 1356, 450, 'FAR LANDSCAPE · fields and hills, seen, not reached', 'fsub', { transform: 'rotate(90 1356 450)' });
+  text(out, 470, -40, 'far landscape: fields and hills rising', 'fsub');
+  text(out, 640, 958, 'far landscape: the valley', 'fsub');
+
+  // --- The moor: open common beyond Back Lane, up to the ridge wall ---
+  const moor = g(root);
+  const MOOR = 'M-330 40 C-240 46 -120 52 -40 56 C0 58 18 62 22 70 C8 100 12 130 14 160 S4 220 10 250 S20 300 12 340 S2 420 14 470 S22 520 10 560 S-6 640 10 700 S22 760 2 792 C-14 818 -40 806 -30 840 C-24 870 -60 900 -120 920 L-330 920 C-344 820 -320 700 -340 600 S-318 420 -336 330 S-320 120 -330 40 Z';
+  hit(el('path', { d: MOOR, fill: 'url(#moor)' }, moor), 'moor');
+  path(moor, 'M-330 40 C-320 120 -330 230 -330 230 C-344 300 -318 420 -336 520 S-326 700 -340 780 S-330 880 -330 920', 'var(--m-wall)', 3, { 'stroke-dasharray': '1.5 1', class: 'lbl' });
+  [[-260, 140], [-120, 200], [-280, 360], [-200, 470], [-260, 600], [-150, 700], [-240, 800], [-90, 560]].forEach(([x, y]) => el('circle', { cx: x, cy: y, r: 2.2, fill: '#8d897d', class: 'lbl' }, moor));
+  dots(moor, -300, 120, 260, 680, 40, 37, '#ffffff');
+  [[-120, 330], [-80, 420], [-60, 640]].forEach(([x, y], k) => path(moor, `M${x} ${y} c-20 6 -40 18 -70 ${20 + k * 6}`, '#a3a8c8', 1.6, { class: 'lbl' }));
+
+  // --- The farm's fields: shared corners, so the fields tile; the outer ring sits beyond the boundary and is clipped by it ---
+  const V = {
+    o0: [-10, -10], o1: [215, -10], o2: [412, -10], o3: [720, -10], o4: [885, -10],
+    m0: [-10, 215], m1: [200, 225], m2: [412, 235], m3: [618, 228], m4: [720, 195], m5: [885, 200],
+    s0: [618, 335], e1: [885, 335], s1: [618, 355], e2: [885, 355],
+    q0: [-10, 365], q1: [195, 370],
+    p1: [195, 440], p2: [412, 440], p3: [618, 440],
+    r0: [-10, 565], r1: [200, 565], r2: [420, 545], r3: [640, 525], e3: [885, 520],
+    l4: [640, 660], e4: [885, 650],
+    b0: [-10, 880], b2: [420, 880], b3: [640, 880], b4: [885, 880],
+  };
+  const F = [
+    ['wood', 'wood', 'o0 o1 m1 m0', 'hedge'],
+    ['north', 'arable2', 'o1 o2 m2 m1', 'hedge'],
+    ['top', 'arable', 'o2 o3 m4 m3 m2', 'hedge'],
+    ['pit', 'rough', 'o3 o4 m5 m4', 'hedge'],
+    ['wet', 'marsh', 'm0 m1 q1 q0', 'hedge'],
+    ['home', 'ride', 'm1 m2 p2 p1 q1', 'hedge'],
+    ['stead', 'yardland', 'm2 m3 s0 s1 p3 p2', 'hedge'],
+    ['lanefield', 'arable2', 'm3 m4 m5 e1 s0', 'hedge'],
+    ['longpiece', 'arable', 's1 e2 e3 r3 p3', 'hedge'],
+    ['far', 'arable', 'q0 q1 p1 r1 r0', 'hedge'],
+    ['sheep', 'grass', 'p1 p2 r2 r1', 'wall'],
+    ['hay', 'hay', 'p2 p3 r3 r2', 'hedge'],
+    ['hill', 'rough', 'r0 r1 r2 b2 b0', 'wall'],
+    ['brook', 'grass', 'r2 r3 l4 b3 b2', 'hedge'],
+    ['ley', 'ley', 'r3 e3 e4 l4', 'hedge'],
+    ['south', 'arable2', 'l4 e4 b4 b3', 'hedge'],
+  ];
+  const pts = names => names.split(' ').map(n => V[n].join(',')).join(' ');
+
+  const BOUND = [[50, 70], [120, 42], [215, 38], [310, 18], [412, 30], [500, 12], [600, 24], [720, 26], [800, 14], [885, 20], [885, 806], [800, 826], [700, 810], [600, 840], [500, 824], [420, 846], [330, 828], [230, 852], [140, 830], [60, 842], [34, 760], [46, 660], [28, 560], [42, 470], [30, 365], [44, 300], [30, 215], [42, 150]];
+  const boundD = 'M' + BOUND.map(p => p.join(' ')).join(' L') + ' Z';
+  const clip = el('clipPath', { id: 'farmclip' }, defs);
+  el('path', { d: boundD }, clip);
+
+  const fields = g(root); fields.setAttribute('clip-path', 'url(#farmclip)');
+  F.forEach(([id, fill, names]) => hit(el('polygon', { points: pts(names), fill: FILL[fill] }, fields), id));
+  hit(el('polygon', { points: pts('s0 e1 e2 s1'), fill: 'var(--m-grass)' }, fields), 'drive');
+
+  // headlands on the arable
+  const head = g(root, 'lbl'); head.setAttribute('clip-path', 'url(#farmclip)');
+  [[230, 50, 170, 165], [425, 45, 280, 165], [632, 240, 240, 85], [632, 368, 240, 140], [55, 380, 130, 172], [655, 672, 218, 130]]
+    .forEach(([x, y, w, h]) => rect(head, x, y, w, h, 'none', { stroke: '#c9b77a', 'stroke-width': 1, 'stroke-dasharray': '3 2' }));
+
+  // details inside the fields
+  const det = g(root, 'lbl'); det.setAttribute('clip-path', 'url(#farmclip)');
+  trees(det, 40, 40, 160, 175, 260, 7, 3.4);
+  path(det, 'M130 215 C118 180 64 190 58 150 S84 70 132 70 S206 100 194 150 S150 192 136 170', 'var(--m-track)', 1.8, { 'stroke-dasharray': '4 2' });
+  path(det, 'M88 170 C70 140 92 104 130 108 S168 132 150 156', '#a5845a', 1.1, { 'stroke-dasharray': '1.5 2' });
+  el('ellipse', { cx: 82, cy: 120, rx: 9, ry: 6, fill: 'var(--m-water)', stroke: 'var(--m-water-edge)', 'stroke-width': 0.6 }, det);
+  // pit
+  el('ellipse', { cx: 805, cy: 108, rx: 58, ry: 52, fill: 'var(--m-pit)', stroke: '#a8987a', 'stroke-width': 1 }, det);
+  el('ellipse', { cx: 806, cy: 112, rx: 42, ry: 37, fill: 'none', stroke: '#b7a78a', 'stroke-width': 0.8 }, det);
+  el('ellipse', { cx: 808, cy: 116, rx: 26, ry: 21, fill: 'none', stroke: '#b7a78a', 'stroke-width': 0.8 }, det);
+  el('ellipse', { cx: 810, cy: 120, rx: 15, ry: 9, fill: 'var(--m-water)', stroke: 'var(--m-water-edge)', 'stroke-width': 0.6 }, det);
+  path(det, 'M885 110 C860 112 850 90 830 80 M722 150 C750 150 770 140 776 120', 'var(--m-track)', 1.4, { 'stroke-dasharray': '3 2' });
+  rect(det, 770, 70, 7, 3.5, '#9b5b2b');
+  // Home Ground: the Home Loop, jump, cones, sleepers, bonfire
+  path(det, 'M240 272 C270 242 370 242 390 287 S380 400 320 410 S220 405 226 342 S222 300 240 272 Z', '#a3814d', 4.5, { opacity: 0.8 });
+  rect(det, 316, 318, 8, 3.5, '#7a6a52', { transform: 'rotate(-35 320 320)' });
+  for (let k = 0; k < 6; k++) el('circle', { cx: 252 + k * 6, cy: 392 + (k % 2 ? 3 : -3), r: 1.3, fill: '#e07a2a' }, det);
+  for (let k = 0; k < 4; k++) rect(det, 214 + k * 6, 432, 4, 1.2, '#6b5a43');
+  el('circle', { cx: 400, cy: 424, r: 3.4, fill: 'var(--m-fire)' }, det);
+  rect(det, 205, 230, 8, 4, '#8a6a46'); rect(det, 215, 232, 6, 3, '#8a6a46');
+  // wet meadow pond and oaks
+  el('ellipse', { cx: 112, cy: 292, rx: 26, ry: 17, fill: 'var(--m-water)', stroke: 'var(--m-water-edge)', 'stroke-width': 0.8 }, det);
+  trees(det, 50, 245, 140, 110, 12, 21, 3.6);
+  // sheep field (in-bye): terraces, a field barn, ewes
+  [470, 498, 526].forEach(y => path(det, `M200 ${y} C260 ${y - 5} 340 ${y + 5} 415 ${y - 2}`, '#a39572', 0.9));
+  rect(det, 372, 448, 12, 7, 'var(--m-build)');
+  dots(det, 215, 455, 180, 95, 26, 3, '#ffffff');
+  // hill: contours, electric fence, hut, flask rock, climb, gorse, sheep
+  [600, 630, 665, 700, 740, 785].forEach((y, k) => path(det, `M20 ${y} C120 ${y - 8 - k} 300 ${y + 10} 430 ${y - 4}`, '#b49a6a', 0.9));
+  path(det, 'M232 584 C228 660 238 740 230 846', '#c0a020', 1.2, { 'stroke-dasharray': '2 3' });
+  rect(det, 92, 800, 7, 4, 'var(--m-build)');
+  el('circle', { cx: 262, cy: 814, r: 2.6, fill: '#8d897d' }, det);
+  [[330, 598], [344, 650], [326, 705], [290, 772]].forEach(([x, y]) => el('circle', { cx: x, cy: y, r: 1.8, fill: '#e07a2a' }, det));
+  trees(det, 40, 640, 60, 170, 18, 5, 3.2);
+  dots(det, 60, 600, 160, 200, 34, 9, '#ffffff');
+  dots(det, 250, 620, 150, 180, 10, 13, '#ffffff');
+  // brook meadow: oaks and cattle
+  trees(det, 430, 630, 200, 190, 9, 41, 4.4);
+  dots(det, 450, 650, 170, 150, 12, 17, '#6b4a33');
+  // water for stock: a spring tank on the hill feeding a trough in each grazed field
+  [[150, 700], [300, 500], [520, 640], [560, 520], [140, 330]].forEach(([x, y]) => hit(rect(det, x - 3, y - 1.5, 6, 3, 'var(--m-water)', { stroke: 'var(--m-water-edge)', 'stroke-width': 0.6 }), 'water'));
+  hit(el('circle', { cx: 70, cy: 616, r: 3.2, fill: 'var(--m-water)', stroke: 'var(--m-water-edge)', 'stroke-width': 0.8 }, det), 'water');
+
+  // hedges, walls and the boundary
+  const bounds = g(root, 'lbl'); bounds.setAttribute('clip-path', 'url(#farmclip)');
+  F.forEach(([, , names, kind]) => el('polygon', { points: pts(names), fill: 'none', ...(kind === 'wall' ? { stroke: 'var(--m-wall)', 'stroke-width': 2.4, 'stroke-dasharray': '1.5 1' } : { stroke: 'var(--m-hedge)', 'stroke-width': 2.6 }) }, bounds));
+  el('path', { d: boundD, fill: 'none', stroke: 'var(--m-hedge)', 'stroke-width': 3.4, class: 'lbl' }, root);
+
+  // --- Water ---
+  const water = g(root, 'lbl');
+  path(water, 'M-60 575 C-20 572 10 566 40 570 S150 560 250 576 S360 568 420 572', 'var(--m-water-edge)', 4.5);
+  path(water, 'M420 572 C470 592 560 560 650 600', 'var(--m-water-edge)', 13);
+  path(water, 'M420 572 C470 592 560 560 650 600', 'var(--m-water)', 10.5);
+  path(water, 'M650 600 C700 632 790 648 885 650 C900 652 912 656 925 660 C1000 676 1100 662 1342 682', 'var(--m-water-edge)', 4);
+
+  // --- Roads and tracks ---
+  const roads = g(root);
+  // boundary grass track: the boundary pulled in 14 m towards the middle
+  const cx = 460, cz = 430;
+  const inset = BOUND.map(([x, z]) => { const dx = cx - x, dz = cz - z, d = Math.hypot(dx, dz); return [x + dx / d * 14, z + dz / d * 14]; });
+  hit(path(roads, 'M' + inset.map(p => p.map(v => v.toFixed(1)).join(' ')).join(' L') + ' Z', 'var(--m-track)', 1.7, { 'stroke-dasharray': '6 3' }), 'track');
+  // stone tracks: north to Top Field and the pit, south to the bridge and the hill
+  hit(path(roads, 'M546 320 V232 L618 228 L720 195 V150', 'var(--m-stone)', 4.5, { 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }), 'track');
+  hit(path(roads, 'M456 418 L420 444 V720', 'var(--m-stone)', 4.5, { 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }), 'track');
+  path(roads, 'M425 368 H412', 'var(--m-stone)', 4.5, { class: 'lbl' });
+  // the green lane down between Far Field and the sheep field to the ford
+  path(roads, 'M200 440 C196 480 202 530 198 600', 'var(--m-track)', 2.4, { 'stroke-dasharray': '4 2', class: 'lbl' });
+  rect(roads, 413, 566, 14, 13, 'none', { stroke: 'var(--m-ink)', 'stroke-width': 0.9, class: 'lbl' });
+
+  // Back Lane: the old single-track road over the hill, tarmac, winding round the north and west of the farm
+  const BACK = 'M905 -2 C860 -6 830 2 800 0 S730 8 700 6 S620 -2 580 2 S520 -8 480 -6 S400 12 360 4 S270 -6 230 16 S150 20 110 24 S42 38 22 70 C8 100 12 130 14 160 S4 220 10 250 S20 300 12 340 S2 420 14 470 S22 520 10 560 S-6 640 10 700 S22 760 2 792 C-14 818 -40 806 -30 840 S10 870 60 874 S200 862 300 880 S460 864 560 878 S760 866 820 880 S880 886 905 886';
+  hit(path(roads, BACK, 'var(--m-lane-edge)', 6), 'back');
+  path(roads, BACK, 'var(--m-lane)', 4.4, { class: 'lbl' });
+  [[640, 1], [260, 10], [8, 410], [16, 620], [300, 880], [660, 872]].forEach(([x, y]) => el('circle', { cx: x, cy: y, r: 3.4, fill: 'var(--m-lane)', class: 'lbl' }, roads));
+  path(roads, 'M3 563 V582 M19 563 V582', '#2c3126', 0.8, { class: 'lbl' });
+
+  // the A-road: one main road down the valley to the east, curving; the lane and the village street meet it, and going out onto it turns you round
+  const AROAD = 'M1300 -70 C1282 60 1316 220 1298 400 S1270 620 1292 718 S1318 880 1296 970';
+  hit(path(roads, AROAD, '#9c3b2e', 11), 'edge');
+  path(roads, AROAD, '#e4836c', 8.6, { class: 'lbl' });
+  [[1291, -30], [1292, 718]].forEach(([x, y]) => el('circle', { cx: x, cy: y, r: 10, fill: 'none', stroke: '#9c3b2e', 'stroke-width': 1.2, 'stroke-dasharray': '2 2', class: 'lbl' }, roads));
+  // public rights of way: the footpath from the village bridge along the river, over the hill and across the moor to Upper Thornby,
+  // and the bridleway from Back Lane past the wood to Back Lane again
+  const FOOT = 'M905 640 C840 634 740 624 680 604 S560 574 470 580 L432 572 M412 586 C360 640 260 700 160 740 S60 780 10 790 C-40 770 -120 720 -200 690 S-300 640 -334 612';
+  hit(path(roads, FOOT, '#3f6b30', 1.6, { 'stroke-dasharray': '4 3' }), 'paths');
+  const BRIDLE = 'M222 18 C212 80 206 160 200 225 C198 300 196 340 195 368 C140 370 80 366 14 364';
+  hit(path(roads, BRIDLE, '#7a5a2a', 1.8, { 'stroke-dasharray': '7 2 1.5 2' }), 'paths');
+  [[885, 638], [640, 600], [420, 590], [196, 726], [46, 778], [205, 215], [196, 365], [36, 365]].forEach(([x, y]) => el('path', { d: `M${x - 2.5} ${y - 2.5} l5 5 m0 -5 l-5 5`, stroke: '#3f6b30', 'stroke-width': 1, class: 'lbl' }, roads));
+  // the 11 kV line from the lane to the farmstead, poles about 60 m apart
+  const pole = [[905, 168], [848, 186], [790, 204], [732, 222], [674, 240], [616, 258], [566, 274]];
+  hit(path(roads, 'M' + pole.map(p => p.join(' ')).join(' L'), '#555a4c', 0.8), 'power');
+  pole.forEach(([x, y]) => el('circle', { cx: x, cy: y, r: 2, fill: '#555a4c', class: 'lbl' }, roads));
+  // the lane: bends east at both ends to meet the A-road
+  const LANE = 'M1291 -30 C1150 -40 990 -46 936 -26 C914 -16 905 6 905 40 C903 200 909 420 905 600 S901 800 905 890 C906 920 902 950 904 975';
+  hit(path(roads, LANE, 'var(--m-lane-edge)', 8), 'lane');
+  path(roads, LANE, 'var(--m-lane)', 6.4, { class: 'lbl' });
+  // village street
+  hit(path(roads, 'M908 720 C980 724 1080 712 1292 718', 'var(--m-lane-edge)', 7), 'village');
+  path(roads, 'M908 720 C980 724 1080 712 1292 718', 'var(--m-lane)', 5.4, { class: 'lbl' });
+  // cattle grids where Back Lane runs onto the open moor and off it again
+  path(roads, 'M58 26 V42 M62 26 V42 M-38 846 L-22 832 M-35 849 L-19 835', '#2c3126', 0.8, { class: 'lbl' });
+  // drive
+  hit(rect(roads, 606, 341.5, 297, 6.5, 'var(--m-stone)', { stroke: '#9c8d68', 'stroke-width': 0.6 }), 'drive');
+  const cg = g(roads, 'lbl');
+  for (let k = 0; k < 6; k++) el('line', { x1: 878 + k * 1.2, y1: 341, x2: 878 + k * 1.2, y2: 348.5, stroke: 'var(--m-ink)', 'stroke-width': 0.5 }, cg);
+  path(roads, 'M905 292 H950', 'var(--m-stone)', 4, { class: 'lbl' });
+  path(roads, 'M885 110 H902', 'var(--m-stone)', 4, { class: 'lbl' });
+  path(roads, 'M899 652 V666 M911 652 V666', 'var(--m-ink)', 1.2, { class: 'lbl' });
+
+  // gates
+  const gates = g(root, 'lbl');
+  [[130, 215, 'h'], [240, 440, 'h'], [200, 444, 'h'], [412, 368, 'v'], [546, 232, 'h'], [720, 150, 'v'], [885, 110, 'v'], [612, 345, 'v'], [420, 440, 'h'], [420, 545, 'h'], [36, 210, 'v'], [30, 560, 'v'], [380, 30, 'h'], [38, 700, 'v']].forEach(([x, y, o]) => {
+    const r = o === 'h' ? [x - 3.5, y - 1.6, 7, 3.2] : [x - 1.6, y - 3.5, 3.2, 7];
+    rect(gates, ...r, '#ffffff', { stroke: 'var(--m-ink)', 'stroke-width': 0.6 });
+  });
+
+  // --- The farmstead (drawn in its own frame and set in place) ---
+  const fs = g(root); fs.setAttribute('transform', 'translate(210 85)');
+  hit(rect(fs, 215, 232, 190, 98, 'var(--m-concrete)', { stroke: '#b9b5a6', 'stroke-width': 0.6 }), 'stead');
+  hit(rect(fs, 342, 165, 63, 62, 'var(--m-garden)', { stroke: 'var(--m-hedge)', 'stroke-width': 1.4 }), 'house');
+  building(fs, 352, 199, 30, 12, 'house');
+  path(fs, 'M358 180 H392', '#8d897d', 0.6, { 'stroke-dasharray': '1 1.5', class: 'lbl' });
+  rect(fs, 390, 214, 4, 3, '#7a5a3a', { class: 'lbl' });
+  hit(rect(fs, 268, 165, 60, 60, 'var(--m-grass)', { stroke: 'var(--m-hedge)', 'stroke-width': 1.2 }), 'orchard');
+  trees(fs, 272, 168, 52, 30, 14, 61, 2.6);
+  building(fs, 284, 208, 8, 5, 'orchard');
+  building(fs, 312, 210, 6, 4, 'orchard');
+  hit(rect(fs, 210, 168, 52, 56, '#e3dcc6', { stroke: '#b9b5a6', 'stroke-width': 0.6 }), 'dutch');
+  rect(fs, 216, 176, 24, 13, 'none', { stroke: 'var(--m-build)', 'stroke-width': 1.6, 'data-id': 'dutch' });
+  for (let k = 0; k < 3; k++) rect(fs, 218 + k * 7, 200, 6, 5, '#d8c27a', { stroke: '#a89350', 'stroke-width': 0.5, class: 'lbl' });
+  building(fs, 288, 234, 26, 18, 'barn');
+  rect(fs, 318, 242, 6, 6, '#3f6b47', { class: 'lbl' });
+  hit(rect(fs, 202, 240, 12, 46, '#cdbf9f', { stroke: '#8d7a55', 'stroke-width': 0.6 }), 'scrap');
+  [[205, 246], [208, 258], [204, 270], [209, 279]].forEach(([x, y]) => rect(fs, x, y, 3.5, 2.5, '#7a5a3a', { class: 'lbl' }));
+  building(fs, 218, 240, 14, 48, 'shed');
+  path(fs, 'M232 241 V287', '#e9e4d2', 1.4, { class: 'lbl' });
+  building(fs, 372, 270, 30, 26, 'grain');
+  building(fs, 260, 300, 52, 22, 'cattle');
+  path(fs, 'M261 300 H311', '#e9e4d2', 1.4, { class: 'lbl' });
+  hit(rect(fs, 318, 302, 30, 18, '#c2c9a0', { stroke: 'var(--m-build)', 'stroke-width': 1.6 }), 'cattle');
+  hit(el('ellipse', { cx: 276, cy: 331, rx: 11, ry: 5, fill: '#7c6448' }, fs), 'cattle');
+  hit(rect(fs, 222, 298, 30, 26, '#e9e2cc', { stroke: '#8d7a55', 'stroke-width': 1 }), 'pens');
+  [232, 242].forEach(x => path(fs, `M${x} 298 V324`, '#8d7a55', 0.7, { class: 'lbl' }));
+  path(fs, 'M222 311 H252', '#8d7a55', 0.7, { class: 'lbl' });
+  hit(rect(fs, 362, 234, 40, 14, '#cfccc0', { stroke: '#b0ab98', 'stroke-width': 0.5 }), 'cars');
+  [370, 378, 386, 394].forEach(x => path(fs, `M${x} 234 V248`, '#ffffff', 0.6, { class: 'lbl' }));
+  [[366, 241, '#2e5a8c'], [374, 241, '#8c2e2e'], [382, 241, '#5d5d5d']].forEach(([x, y, c]) => rect(fs, x - 1.9, y - 2.6, 3.8, 5.2, c, { class: 'lbl' }));
+  const fb = (x, y, s, anchor = 'start', light) => { const t = text(fs, x, y, s, 'bname sm', { 'text-anchor': anchor }); if (light) t.style.fill = '#f3f4ec'; };
+  fb(346, 196, 'Farmhouse');
+  fb(372, 160, 'garden', 'middle');
+  fb(298, 162, 'orchard, hens, pig', 'middle');
+  fb(236, 162, 'Dutch barn', 'middle');
+  fb(301, 246, 'Barn', 'middle', true);
+  fb(236, 266, 'Machinery');
+  fb(236, 276, 'shed');
+  fb(387, 282, 'Grain', 'middle', true);
+  fb(387, 292, 'store', 'middle', true);
+  fb(286, 314, 'Cattle shed', 'middle', true);
+  fb(333, 314, 'Silage', 'middle');
+  fb(290, 341, 'muck');
+  fb(237, 294, 'Sheep pens', 'middle');
+  fb(382, 230, 'cars', 'middle');
+  fb(310, 285, 'YARD', 'middle');
+
+  // --- Across the lane: buildings ---
+  const nb = g(root);
+  hit(rect(nb, 950, 250, 95, 85, '#e8e2cf', { stroke: 'var(--m-wall)', 'stroke-width': 2 }), 'neighbour');
+  building(nb, 998, 312, 26, 12, 'neighbour');
+  building(nb, 958, 258, 26, 17, 'neighbour');
+  // dairy: the parlour with its collecting yard, the bulk tank by the road for the tanker, a slurry store
+  building(nb, 1000, 256, 30, 13, 'neighbour');
+  hit(rect(nb, 1000, 271, 30, 18, 'var(--m-concrete)', { stroke: 'var(--m-build)', 'stroke-width': 1 }), 'neighbour');
+  el('circle', { cx: 1036, cy: 262, r: 3, fill: '#c9ccd0', stroke: '#6b705f', 'stroke-width': 0.6, class: 'lbl' }, nb);
+  el('circle', { cx: 970, cy: 318, r: 9, fill: '#8a7a5e', stroke: '#5c5240', 'stroke-width': 0.8, class: 'lbl' }, nb);
+  [[985, 300], [960, 292]].forEach(([x, y]) => rect(nb, x, y, 5, 3, '#7a7466', { class: 'lbl' }));
+  // her cows walk the lane between the yard and her north field gate twice a day
+  path(nb, 'M912 286 V130 H930', '#3a3a3a', 1.2, { 'stroke-dasharray': '1 3', class: 'lbl' });
+
+  const vg = g(root);
+  building(vg, 932, 588, 22, 9, 'village');
+  hit(rect(vg, 913, 599, 40, 13, 'var(--m-concrete)', { stroke: '#b9b5a6', 'stroke-width': 0.5 }), 'village');
+  [922, 930, 938].forEach(x => el('circle', { cx: x, cy: 606, r: 1.3, fill: 'var(--m-ink)', class: 'lbl' }, vg));
+  hit(rect(vg, 932, 690, 32, 22, 'var(--m-concrete)', { stroke: '#b9b5a6', 'stroke-width': 0.5 }), 'village');
+  [940, 948, 956].forEach(x => path(vg, `M${x} 690 V698`, '#fff', 0.6, { class: 'lbl' }));
+  building(vg, 970, 692, 22, 12, 'village');
+  rect(vg, 970, 704.5, 22, 5.5, 'var(--m-garden)', { class: 'lbl' });
+  hit(el('circle', { cx: 1022, cy: 699, r: 12, fill: 'var(--m-grass)', stroke: 'var(--m-hedge)', 'stroke-width': 0.6 }, vg), 'village');
+  el('circle', { cx: 1022, cy: 697, r: 5, fill: 'var(--m-tree)', class: 'lbl' }, vg);
+  building(vg, 980, 727, 14, 10, 'village');
+  rect(vg, 1000, 726, 2, 2, '#b8322a', { class: 'lbl' });
+  rect(vg, 1008, 726, 6, 2, '#5b5b5b', { class: 'lbl' });
+  [1052, 1078, 1104, 1132, 1160, 1190].forEach(x => { rect(vg, x - 3, 688, 16, 14, 'var(--m-garden)', { class: 'lbl' }); building(vg, x, 695, 10, 7, 'village'); });
+  [1036, 1064, 1092, 1122, 1152].forEach(x => { building(vg, x, 727, 10, 7, 'village'); rect(vg, x - 3, 734, 16, 14, 'var(--m-garden)', { class: 'lbl' }); });
+  // the church: churchyard wall, lychgate on the street, nave and west tower
+  hit(rect(vg, 1228, 740, 52, 48, 'var(--m-garden)', { stroke: 'var(--m-wall)', 'stroke-width': 1.6 }), 'church');
+  building(vg, 1244, 758, 24, 10, 'church');
+  building(vg, 1236, 758.5, 8, 9, 'church');
+  rect(vg, 1250, 737, 6, 4, 'var(--m-build)', { class: 'lbl' });
+  for (let k = 0; k < 8; k++) rect(vg, 1234 + (k % 4) * 9, 774 + Math.floor(k / 4) * 6, 1.6, 2.4, '#8d897d', { class: 'lbl' });
+  // the village hall, and the playing field behind the south cottages where the lane kids come from
+  building(vg, 1180, 727, 20, 11, 'vhall');
+  hit(rect(vg, 1036, 756, 116, 54, 'var(--m-grass)', { stroke: 'var(--m-hedge)', 'stroke-width': 1.2 }), 'vhall');
+  path(vg, 'M1044 779 V787 M1144 779 V787 M1094 756 V810', '#ffffff', 1, { class: 'lbl' });
+  // the war memorial on the green
+  rect(vg, 1029, 702, 3, 3, 'var(--m-wall)', { class: 'lbl' });
+  // the approach from the north: three houses and a small farm on the lane before the garage
+  [[918, 500], [918, 526], [918, 552]].forEach(([x, y]) => { building(vg, x + 4, y, 10, 7, 'village'); rect(vg, x + 15, y - 2, 12, 11, 'var(--m-garden)', { class: 'lbl' }); });
+  hit(rect(vg, 930, 440, 54, 40, '#e8e2cf', { stroke: 'var(--m-wall)', 'stroke-width': 1.2 }), 'village');
+  building(vg, 936, 446, 18, 9, 'village'); building(vg, 958, 462, 20, 12, 'village');
+  // 30 limit signs where the village begins: on the lane each side and on the street from the A-road
+  [[897, 486], [897, 800], [1262, 712]].forEach(([x, y]) => { el('circle', { cx: x, cy: y, r: 3.4, fill: '#fff', stroke: '#c0392b', 'stroke-width': 1.4, class: 'lbl' }, vg); });
+  el('circle', { cx: 914, cy: 712, r: 1.8, fill: 'var(--m-ink)', class: 'lbl' }, vg);
+  el('circle', { cx: 914, cy: 12, r: 1.8, fill: 'var(--m-ink)', class: 'lbl' }, vg);
+  rect(vg, 888, 330, 6, 2.5, '#2f5a3a', { class: 'lbl' });
+
+  // --- Labels ---
+  const L = g(root, 'lbl');
+  const field = (x, y, name, sub) => { text(L, x, y, name, 'fname'); if (sub) text(L, x, y + 13, sub, 'fsub'); };
+  field(128, 100, 'Hollow Wood', 'Hollow Run, Fern Trail');
+  field(308, 120, 'North Field', 'wheat this year');
+  field(560, 120, 'Top Field', 'barley this year');
+  field(805, 40, 'The Old Pit', 'its own gate onto the lane');
+  field(112, 336, 'Wet Meadow', 'pond');
+  field(305, 268, 'Home Ground', 'Home Loop, jump, cones');
+  field(760, 272, 'Lane Field', 'oilseed rape this year');
+  field(760, 445, 'Long Piece', 'beans this year');
+  field(112, 470, 'Far Field', 'wheat this year');
+  field(305, 552, 'Sheep Field', 'in-bye: lambing, tupping');
+  field(525, 492, 'Hay Meadow', 'shut up for hay');
+  field(150, 660, 'Hill Pasture', 'rough grazing, the flock all summer');
+  field(530, 705, 'Brook Meadow', 'river, cattle in summer');
+  field(770, 590, 'Low Ley', 'grass for silage');
+  field(770, 750, 'South Field', 'barley this year');
+  text(L, 160, 720, 'banks up to 38°', 'fsub');
+
+  const b = (x, y, s, anchor = 'start') => text(L, x, y, s, 'bname', { 'text-anchor': anchor });
+  b(408, 416, 'bonfire', 'end');
+  b(102, 816, "shepherd's hut");
+  b(268, 818, 'flask rock');
+  b(236, 830, 'electric fence');
+  b(430, 590, 'bridge');
+  b(760, 338, 'the drive', 'middle');
+  b(878, 362, 'cattle grid', 'end');
+  b(880, 326, 'farm sign', 'end');
+  b(66, 64, 'boundary track');
+  b(640, 202, 'stone track');
+  b(204, 616, 'green lane, ford');
+  b(370, 444, 'field barn', 'end');
+  b(24, 586, 'ford', 'start');
+
+  text(L, 470, -16, 'BACK LANE · single track, passing places', 'road-label', { 'text-anchor': 'middle' });
+  text(L, 460, 900, 'BACK LANE', 'road-label', { 'text-anchor': 'middle' });
+  text(L, -22, 380, 'BACK LANE', 'road-label', { transform: 'rotate(-90 -22 380)', 'text-anchor': 'middle' });
+  text(L, -250, 640, 'footpath to Upper Thornby', 'bname', { transform: 'rotate(26 -250 640)', 'text-anchor': 'middle' }).style.fill = '#3f6b30';
+  text(L, 640, 626, 'public footpath', 'bname', { transform: 'rotate(14 640 626)', 'text-anchor': 'middle' }).style.fill = '#3f6b30';
+  text(L, 110, 378, 'bridleway', 'bname', { 'text-anchor': 'middle' }).style.fill = '#7a5a2a';
+  text(L, 760, 196, '11 kV line', 'bname', { transform: 'rotate(-17 760 196)', 'text-anchor': 'middle' }).style.fill = '#555a4c';
+  b(409, 334, 'scrap', 'end');
+  b(48, 704, 'moor gate');
+  b(68, 22, 'cattle grid');
+  b(77, 619, 'spring tank');
+  field(-170, 400, 'The Moor', 'common grazing: heather, no fences');
+  text(L, -170, 426, 'the flock goes up in summer', 'fsub');
+  text(L, -350, 200, 'ridge wall: the end of the common', 'bname', { transform: 'rotate(88 -350 200)' });
+  text(L, -404, 640, 'Upper Thornby ←', 'bname', { transform: 'rotate(-90 -404 640)', 'text-anchor': 'middle' });
+  text(L, 920, 4, 'Back Lane', 'bname');
+
+  text(L, 1000, 230, "The Neighbour's", 'fname');
+  b(1011, 340, 'farmhouse', 'middle');
+  b(971, 285, 'barn', 'middle');
+  text(L, 1120, 860, 'Nether Thornby', 'big');
+  b(944, 584, 'Hollis Motors', 'middle');
+  b(981, 688, 'Plough & Harrow', 'middle');
+  b(948, 708, 'car park', 'middle');
+  b(1038, 690, 'green');
+  b(987, 750, 'Stores, Post Office', 'middle');
+  b(1254, 800, 'church', 'middle');
+  b(1190, 750, 'hall', 'middle');
+  b(1094, 822, 'playing field', 'middle');
+  b(918, 738, 'fingerpost');
+  b(957, 436, 'small farm', 'middle');
+  b(1060, 268, 'parlour', 'start');
+  b(1060, 282, 'collecting yard', 'start');
+  text(L, 944, 40, 'her cows walk the lane', 'bname', { transform: 'rotate(90 944 40)' }).style.fill = '#3a3a3a';
+  text(L, 1270, -40, 'Kelby 4', 'road-label', { 'text-anchor': 'end' });
+  text(L, 914, 962, 'Haddon 6 · turn round', 'road-label');
+  path(L, 'M893 955 H917', '#9c3b2e', 1.4, { 'stroke-dasharray': '2 2' });
+  text(L, 1278, 708, 'Ashwell 3', 'road-label', { 'text-anchor': 'end' });
+  text(L, 1312, 300, 'THE A-ROAD · turn round at each junction', 'road-label', { transform: 'rotate(90 1312 300)' });
+  text(L, 922, 160, 'THE LANE', 'road-label', { transform: 'rotate(90 922 160)' });
+
+  furniture(root);
+  return BOUND;
+}
+
+function dots(p, x, y, w, h, n, seed, fill) {
+  let s = seed;
+  const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  for (let k = 0; k < n; k++) el('ellipse', { cx: x + rnd() * w, cy: y + rnd() * h, rx: 1.7, ry: 1.2, fill, stroke: '#6b705f', 'stroke-width': 0.4, class: 'lbl' }, p);
+}
+
+// =========================================================
+// TODAY (the code's coordinates moved by +100 x, +220 z)
+// =========================================================
+function drawToday(root) {
+  grid(root);
+  const X = x => x + 100, Z = z => z + 220;
+  const f = g(root);
+  const R = (id, fill, x0, z0, x1, z1, kind = 'hedge') => { hit(rect(f, X(x0), Z(z0), x1 - x0, z1 - z0, FILL[fill] || fill), id); return [X(x0), Z(z0), x1 - x0, z1 - z0, kind]; };
+  const hedges = [
+    R('o_wood', 'wood', -80, -200, 80, -80),
+    R('o_wood', 'rough', 80, -200, 200, -80),
+    R('o_grass', 'ride', -80, -80, 80, 80),
+    R('o_fields', 'arable', 80, -80, 200, -3),
+    R('o_fields', 'arable2', 80, 7, 200, 80),
+    R('o_hill', 'marsh', -96, 80, -34.6, 134),
+    R('o_hill', 'lane', -34.6, 80, -25.4, 134),
+    R('o_hill', 'grass', -25.4, 80, 34, 134),
+    R('o_hill', 'grass', 34, 118, 80, 203),
+    R('o_hill', 'rough', -96, 134, 34, 203),
+  ];
+  const det = g(root, 'lbl');
+  trees(det, X(-78), Z(-198), 156, 116, 150, 7, 3.2);
+  el('ellipse', { cx: X(140), cy: Z(-140), rx: 45, ry: 35, fill: 'var(--m-pit)', stroke: '#a8987a' }, det);
+  el('ellipse', { cx: X(142), cy: Z(-132), rx: 12, ry: 7, fill: 'var(--m-water)', stroke: 'var(--m-water-edge)', 'stroke-width': 0.6 }, det);
+  path(det, `M${X(-40)} ${Z(-40)} C${X(-10)} ${Z(-70)} ${X(50)} ${Z(-60)} ${X(55)} ${Z(-20)} S${X(30)} ${Z(40)} ${X(-10)} ${Z(35)} S${X(-60)} ${Z(10)} ${X(-40)} ${Z(-40)} Z`, '#a3814d', 4.5, { opacity: 0.8 });
+  rect(det, X(44), Z(52), 32, 18, 'url(#hay)', { stroke: '#a9ae6c', 'stroke-width': 0.6 });
+  rect(det, X(26), Z(8), 24, 16, 'none', { stroke: '#8d897d', 'stroke-dasharray': '2 1.5', 'stroke-width': 0.8 });
+  rect(det, X(134), Z(26), 32, 24, 'none', { stroke: '#8d897d', 'stroke-dasharray': '2 1.5', 'stroke-width': 0.8 });
+  el('circle', { cx: X(-6), cy: Z(71), r: 3, fill: 'var(--m-fire)' }, det);
+  el('ellipse', { cx: X(-66), cy: Z(110), rx: 11, ry: 8, fill: 'var(--m-water)', stroke: 'var(--m-water-edge)', 'stroke-width': 0.6 }, det);
+  [118, 102].forEach(z => path(det, `M${X(-25)} ${Z(z)} H${X(34)}`, '#a39572', 0.9));
+  rect(det, X(-61), Z(194.5), 4, 2.2, 'var(--m-build)');
+  el('circle', { cx: X(-22), cy: Z(198.5), r: 2, fill: '#8d897d' }, det);
+
+  const bnd = g(root, 'lbl');
+  hedges.forEach(([x, y, w, h, kind]) => hedge(bnd, x, y, w, h, kind));
+
+  const w = g(root, 'lbl');
+  path(w, `M${X(-96)} ${Z(140)} H${X(34)}`, 'var(--m-water-edge)', 3.5);
+  path(w, `M${X(34)} ${Z(144)} C${X(60)} ${Z(146)} ${X(100)} ${Z(150)} ${X(124)} ${Z(152)}`, 'var(--m-water-edge)', 12);
+  path(w, `M${X(34)} ${Z(144)} C${X(60)} ${Z(146)} ${X(100)} ${Z(150)} ${X(124)} ${Z(152)}`, 'var(--m-water)', 9.5);
+  path(w, `M${X(124)} ${Z(152)} C${X(160)} ${Z(160)} ${X(200)} ${Z(159)} ${X(250)} ${Z(158)}`, 'var(--m-water-edge)', 3.5);
+
+  // the edge of the ground
+  const edge = g(root);
+  hit(rect(edge, -110, 10, 420, 420, 'none', { stroke: 'var(--m-edge)', 'stroke-width': 1.4, 'stroke-dasharray': '6 4' }), 'o_edge');
+
+  const r = g(root);
+  hit(rect(r, X(78), Z(-0.3), 122, 4.6, 'var(--m-stone)', { stroke: '#9c8d68', 'stroke-width': 0.5 }), 'o_road');
+  el('circle', { cx: X(188), cy: Z(2), r: 9, fill: 'var(--m-stone)', class: 'lbl' }, r);
+  hit(rect(r, X(204.1), Z(-205), 4.6, 410, 'var(--m-lane)', { stroke: 'var(--m-lane-edge)', 'stroke-width': 0.8 }), 'o_edge');
+  const vpts = [[206.4, 171], [200, 176], [190, 180.5], [178, 183], [166, 183.5], [154, 185], [144, 189], [134, 191], [122, 193], [110, 191], [105, 192.5], [102, 196], [102, 201.5]];
+  hit(path(r, 'M' + vpts.map(([x, z]) => `${X(x)} ${Z(z)}`).join(' L'), 'var(--m-lane-edge)', 6), 'o_village');
+  path(r, 'M' + vpts.map(([x, z]) => `${X(x)} ${Z(z)}`).join(' L'), 'var(--m-lane)', 4.6, { class: 'lbl' });
+  path(r, `M${X(-30)} ${Z(80)} V${Z(134)}`, 'var(--m-track)', 1.6, { 'stroke-dasharray': '4 2', class: 'lbl' });
+
+  const b = g(root);
+  building(b, X(-69.2), Z(51.4), 10.4, 18.4, 'o_barn');
+  hit(el('circle', { cx: X(-54), cy: Z(58), r: 20, fill: 'var(--m-concrete)', opacity: 0.55 }, b), 'o_barn');
+  building(b, X(-69.2), Z(51.4), 10.4, 18.4, 'o_barn');
+  building(b, X(178.5), Z(-18.5), 15, 9);
+  building(b, X(85.8), Z(-75.2), 6.4, 4.4);
+  el('ellipse', { cx: X(118), cy: Z(15), rx: 4, ry: 2.5, fill: '#7c6448', class: 'lbl' }, b);
+  rect(b, X(145.6), Z(-5.8), 2.4, 0.8, '#3a3a3a', { class: 'lbl' });
+  rect(b, X(-77), Z(44.5), 6.5, 14, '#c8bfa6', { class: 'lbl' });
+  hit(rect(b, X(146), Z(92), 57, 56, '#e8e2cf', { stroke: 'var(--m-wall)', 'stroke-width': 1.6 }), 'o_neighbour');
+  building(b, X(171), Z(133.8), 14, 8.4, 'o_neighbour');
+  building(b, X(150), Z(102), 16, 12, 'o_neighbour');
+  [[132, 178.3, 8.5, 5.5], [157, 173.5, 5.5, 4.5], [181, 198, 8, 4.2], [172, 174.2, 4, 3.2], [190, 169.9, 3.6, 3], [165, 195.4, 4, 3.2], [154, 196.2, 3.6, 3.2], [143, 199.2, 4, 3.2]]
+    .forEach(([x, z, hx, hz]) => building(b, X(x - hx), Z(z - hz), hx * 2, hz * 2, 'o_village'));
+  hit(rect(b, X(105), Z(171), 16, 13, 'var(--m-concrete)'), 'o_village');
+
+  const L = g(root, 'lbl');
+  const field = (x, z, name, sub) => { text(L, X(x), Z(z), name, 'fname'); if (sub) text(L, X(x), Z(z) + 12, sub, 'fsub'); };
+  field(0, -170, 'Hollow Wood');
+  field(140, -185, 'Gravel pit');
+  field(0, -62, 'Grass field', 'track, jump, cones');
+  field(140, -50, 'Barley stubble');
+  field(140, 70, 'Wheat stubble');
+  field(-30, 165, 'Hill pasture');
+  field(57, 128, 'River', '');
+  const bl = (x, z, s, a = 'start') => text(L, X(x), Z(z), s, 'bname', { 'text-anchor': a });
+  bl(-64, 77, 'Barn and yard', 'middle');
+  bl(48, 50, 'hay', 'end');
+  bl(26, 31, 'harrow patch');
+  bl(150, 23, 'spray patch', 'middle');
+  bl(186, -22, 'Dutch barn, cars', 'end');
+  bl(118, 22, 'muck', 'middle');
+  bl(80, 12, 'cattle grid', 'middle');
+  bl(174, 88, "Neighbour's", 'middle');
+  bl(165, 214, 'Nether Thornby', 'middle');
+  bl(110, 214, 'road closed', 'end');
+  text(L, 306, 442, 'the ground ends here', 'bname', { 'text-anchor': 'end', fill: 'var(--m-edge)', style: 'fill: var(--m-edge)' });
+
+  // ghost of the proposed farm boundary, for size
+  el('path', { d: 'M' + PLAN_BOUND.map(p => p.join(' ')).join(' L') + ' Z', fill: 'none', stroke: '#9aa38a', 'stroke-width': 1.2, 'stroke-dasharray': '2 4', class: 'lbl' }, root);
+  text(root, 880, 870, 'the proposed farm boundary', 'bname', { 'text-anchor': 'end', class: 'bname lbl', fill: '#7d846e' });
+
+  furniture(root);
+}
+
+// ---------- Views ----------
+const vNew = g(svg, 'view'), vOld = g(svg, 'view');
+const PLAN_BOUND = drawProposed(vNew);
+const HA = Math.abs(PLAN_BOUND.reduce((a, [x, z], i) => { const [x2, z2] = PLAN_BOUND[(i + 1) % PLAN_BOUND.length]; return a + x * z2 - x2 * z; }, 0)) / 2 / 10000;
+drawToday(vOld);
+
+const STATS = {
+  new: [
+    ['Farm', `about 870 × 830 m, ${Math.round(HA)} ha`],
+    ['Ground built', 'about 1.7 × 1 km, with the moor, the lane, Back Lane, the neighbour and the village'],
+    ['The moor', 'about 30 ha of open common, west of Back Lane'],
+    ['Arable', '6 fields, about half the farm'],
+    ['Yard to the lane', '290 m by the drive'],
+    ['Yard to the hilltop', 'about 500 m'],
+    ['Daily walks', 'under 80 m: house, barn, sheds, cars'],
+    ['Back Lane', 'about 3 km of tarmac, a loop'],
+  ],
+  old: [
+    ['Farm', 'about 10 ha in its hedges, wood, pit and hill included'],
+    ['Arable', '2 stubble fields'],
+    ['Ground built', '420 × 420 m'],
+    ['Barn to the lane', '260 m'],
+    ['Cars to the barn', 'about 250 m'],
+    ['Fields', '9, the grass field doing three jobs'],
+  ],
+};
+function setView(which) {
+  const isNew = which === 'new';
+  vNew.style.display = isNew ? '' : 'none';
+  vOld.style.display = isNew ? 'none' : '';
+  document.getElementById('v-new').setAttribute('aria-pressed', isNew);
+  document.getElementById('v-old').setAttribute('aria-pressed', !isNew);
+  document.getElementById('stats').innerHTML = STATS[which].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  show(isNew ? 'stead' : 'o_barn');
+}
+document.getElementById('v-new').onclick = () => setView('new');
+document.getElementById('v-old').onclick = () => setView('old');
+
+svg.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if (t) show(t.getAttribute('data-id')); });
+svg.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { const t = e.target.closest('[data-id]'); if (t) { e.preventDefault(); show(t.getAttribute('data-id')); } } });
+
+// ---------- Legend ----------
+const LEG = [
+  ['Arable', s => { rect(s, 0, 0, 22, 14, 'url(#arable)'); }],
+  ['Grass, pasture', s => rect(s, 0, 0, 22, 14, 'var(--m-grass)')],
+  ['Hay, silage ley', s => rect(s, 0, 0, 22, 14, 'url(#hay)')],
+  ['Riding field', s => rect(s, 0, 0, 22, 14, 'var(--m-ride)')],
+  ['Woodland', s => { rect(s, 0, 0, 22, 14, 'var(--m-wood)'); el('circle', { cx: 7, cy: 7, r: 3, fill: 'var(--m-tree)' }, s); el('circle', { cx: 15, cy: 6, r: 3, fill: 'var(--m-tree)' }, s); }],
+  ['Building', s => rect(s, 3, 2, 16, 10, 'var(--m-build)')],
+  ['Hedge', s => path(s, 'M0 7 H22', 'var(--m-hedge)', 2.6)],
+  ['Drystone wall', s => path(s, 'M0 7 H22', 'var(--m-wall)', 2.2, { 'stroke-dasharray': '1.5 1' })],
+  ['Lane, street', s => rect(s, 0, 4, 22, 6, 'var(--m-lane)', { stroke: 'var(--m-lane-edge)', 'stroke-width': 0.8 })],
+  ['Stone track', s => path(s, 'M0 7 H22', 'var(--m-stone)', 4)],
+  ['Grass track', s => path(s, 'M0 7 H22', 'var(--m-track)', 1.6, { 'stroke-dasharray': '6 3' })],
+  ['Headland', s => path(s, 'M0 7 H22', '#c9b77a', 1, { 'stroke-dasharray': '3 2' })],
+  ['Water', s => path(s, 'M0 7 C6 3 14 11 22 7', 'var(--m-water-edge)', 3.5)],
+  ['Gate', s => rect(s, 8, 5, 6, 4, '#ffffff', { stroke: '#2c3126', 'stroke-width': 0.8 })],
+  ['Moor', s => rect(s, 0, 0, 22, 14, 'url(#moor)')],
+  ['Footpath', s => path(s, 'M0 7 H22', '#3f6b30', 1.6, { 'stroke-dasharray': '4 3' })],
+  ['Bridleway', s => path(s, 'M0 7 H22', '#7a5a2a', 1.8, { 'stroke-dasharray': '7 2 1.5 2' })],
+  ['A-road', s => rect(s, 0, 3, 22, 8, '#e4836c', { stroke: '#9c3b2e', 'stroke-width': 1 })],
+];
+const legend = document.getElementById('legend');
+LEG.forEach(([name, draw]) => {
+  const span = document.createElement('span');
+  const s = document.createElementNS(NS, 'svg');
+  s.setAttribute('width', 22); s.setAttribute('height', 14); s.setAttribute('viewBox', '0 0 22 14');
+  s.style.background = 'var(--m-paper)'; s.style.border = '1px solid #c7cbbb';
+  draw(s);
+  span.appendChild(s); span.append(name);
+  legend.appendChild(span);
+});
+
+setView('new');
+</script>

@@ -3,14 +3,14 @@ description: Work one performance issue with measurements before and after, or c
 argument-hint: "[issue number; default: the next 🚀 performance issue; 'check' for a check-up]"
 ---
 
-Performance work on $ARGUMENTS. It runs alongside feature work, in its own session. `/todo` takes issues in number order, performance ones included; this takes `🚀 performance` issues first. The difference from `/todo` is that every change is measured before and after, the same way, and a change that doesn't move the numbers isn't shipped.
+Performance work on $ARGUMENTS. It runs alongside feature work, in its own session. `/todo` takes issues by milestone, performance ones included; this takes `🚀 performance` issues first, but only from the current phase (the earliest open milestone) or Alongside, so a later phase's performance work waits for its phase (#719). The difference from `/todo` is that every change is measured before and after, the same way, and a change that doesn't move the numbers isn't shipped.
 
 - **A number** works that issue.
-- **Nothing** takes the next performance issue: the lowest-numbered open one labelled `🚀 performance` and `🔜 next`, else the lowest-numbered open `🚀 performance` issue not labelled `💤 later` with no open PR (`gh pr list --search "<n> in:body"`). If there is none, do the check-up.
+- **Nothing** takes the next performance issue: the first that `tools/nextTodo.mjs --label "🚀 performance"` prints (a `🔜 next` one first, then the current phase, then Alongside, with `/todo`'s rules: not held back, no open PR, its `Depends on:` closed). If it prints none, do the check-up.
 - **`check`** does the check-up.
 
 ```
-gh issue list --state open --label "🚀 performance" --json number,title,labels --jq 'sort_by(.number) | .[] | "\(.number) \(.title) \([.labels[].name] | join(","))"'
+tools/nextTodo.mjs --label "🚀 performance"
 ```
 
 Read first: `docs/decisions/performance.md` ("Where things stand" and the sections it names), `.claude/rules/checking.md` (the tools) and `.claude/rules/world.md`. The tool is `tools/perf.mjs`: it builds and serves a checkout itself, loads it in Chrome on this Mac's GPU, and measures time to "Ready", then at five spots (spawn, yard, village street, wood gate, hilltop) the draw calls, triangles, ms a frame, the worst frame and the slowest features. Two runs take about 80 s. Draw calls and triangles are exact; ms and load time vary by up to about 1 ms and 0.2 s between runs, and the report calls anything inside that "same".
