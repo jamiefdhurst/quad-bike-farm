@@ -1,4 +1,4 @@
-// Shoots something new in the running game, the one look `.claude/rules/looks.md` asks for: four sides and one close-up of its busiest face, in daylight,
+// Shoots something new in the running game, the one look `.claude/rules/looks.md` asks for: four sides and one close-up of its main face (the largest side), in daylight,
 // with the "Click to play" overlay cleared (and checked to be gone) and the HUD hidden, into .scratch/shots/<name>/, plus a contact sheet.
 //
 //   node tools/shot.mjs --name village            a named group in the scene (its `.name`, as in world/farDetail.js)
@@ -61,6 +61,7 @@ const browser = await puppeteer.launch({
   headless: 'new',
   args: flag('soft') ? CHROME_ARGS : ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'],
 });
+const VIEW = { width: 1100, height: 700 };
 const wait = (s) => new Promise((r) => setTimeout(r, s * 1000));
 
 /** Runs in the page: where the thing is and which of its four faces holds the most. Meshes are found by name, or round the player's place. */
@@ -110,7 +111,8 @@ function findTarget({ name, radius }) {
   const max = [0, 1, 2].map((i) => Math.max(...boxes.map((b) => b.max[i])));
   const centre = [0, 1, 2].map((i) => (min[i] + max[i]) / 2);
   const extent = [0, 1, 2].map((i) => max[i] - min[i]);
-  // The busiest face: the side (+x, -x, +z, -z) whose outer quarter holds the most triangles.
+  // The main face: the side (+x, -x, +z, -z) with the largest area as the bounding box shows it (its width by the height). Sides within a tenth of
+  // the largest area count as the same, and the triangles in the outer quarter choose between those (a flat thing's front and back, say).
   const faces = [
     { side: '+x', axis: 0, dir: 1 },
     { side: '-x', axis: 0, dir: -1 },
@@ -118,15 +120,14 @@ function findTarget({ name, radius }) {
     { side: '-z', axis: 2, dir: -1 },
   ].map((f) => {
     const cut = f.dir > 0 ? max[f.axis] - extent[f.axis] / 4 : min[f.axis] + extent[f.axis] / 4;
-    const near = boxes.filter((b) => (f.dir > 0 ? b.centre[f.axis] >= cut : b.centre[f.axis] <= cut));
-    const tris = near.reduce((s, b) => s + b.tris, 0);
-    const weight = near.reduce((s, b) => s + Math.max(b.tris, 1), 0) || 1;
-    const focus = [0, 1, 2].map((i) => near.reduce((s, b) => s + b.centre[i] * Math.max(b.tris, 1), 0) / weight);
-    return { ...f, tris, focus };
+    const tris = boxes.filter((b) => (f.dir > 0 ? b.centre[f.axis] >= cut : b.centre[f.axis] <= cut)).reduce((s, b) => s + b.tris, 0);
+    const width = f.axis === 0 ? extent[2] : extent[0];
+    return { ...f, tris, width, height: extent[1], depth: extent[f.axis], area: width * extent[1] };
   });
-  faces.sort((a, b) => b.tris - a.tris);
+  const largest = Math.max(...faces.map((f) => f.area));
+  faces.sort((a, b) => (a.area >= largest * 0.9 && b.area >= largest * 0.9 ? b.tris - a.tris : b.area - a.area));
   window.__shotBox = { min, max };
-  return { centre, extent, min, max, busiest: faces[0] };
+  return { centre, extent, min, max, main: faces[0] };
 }
 
 /**
@@ -246,7 +247,7 @@ function restoreHidden() {
 
 try {
   const page = await browser.newPage();
-  await page.setViewport({ width: 1100, height: 700 });
+  await page.setViewport(VIEW);
   const problems = [];
   page.on('pageerror', (e) => problems.push(`page error: ${e.message}`));
   await page.evaluateOnNewDocument(() => {
@@ -311,12 +312,14 @@ try {
   const height = Math.min(cy + t.extent[1] * 0.25 + 0.6, t.max[1] + 2);
   for (const [label, dx, dz] of [['north', 0, -1], ['east', 1, 0], ['south', 0, 1], ['west', -1, 0]]) await take(label, [cx + dx * back, height, cz + dz * back], [cx, cy, cz]);
 
-  // The close-up: in front of the busiest face, near the middle of what is on it.
-  const f = t.busiest;
-  const faceWidth = f.axis === 0 ? t.extent[2] : t.extent[0];
-  const close = Math.max(1.5, Math.min(faceWidth * 0.5, 6));
-  const eye = [f.focus[0] + (f.axis === 0 ? f.dir * close : 0), f.focus[1] + 0.3, f.focus[2] + (f.axis === 2 ? f.dir * close : 0)];
-  await take(`closeup-${f.side}`, eye, f.focus);
+  // The close-up: square on to the main face, level with the middle of it, as far back as it takes for the whole face to fill the frame with a
+  // margin (the view is FOV tall and as wide as the page), however big or small the thing is. hideInTheWay clears what stands in front, as above.
+  const f = t.main;
+  const tanHalf = Math.tan((FOV / 2) * (Math.PI / 180));
+  const fit = Math.max(f.height / 2 / tanHalf, f.width / 2 / (tanHalf * (VIEW.width / VIEW.height))) * 1.15;
+  const away = f.depth / 2 + fit;
+  const eye = [cx + (f.axis === 0 ? f.dir * away : 0), cy, cz + (f.axis === 2 ? f.dir * away : 0)];
+  await take(`closeup-${f.side}`, eye, [cx, cy, cz]);
 
   // The contact sheet: every shot in a grid, to find which to open at full size.
   const sheet = await browser.newPage();
