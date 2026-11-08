@@ -11,7 +11,7 @@ Every value is at a dotted path. Type the path alone to read it, or the path and
 - `vehicle.red.temperature 0.4`, `vehicle.red.faults.carb 0.3`, `vehicle.red.tyres.flPsi 2`, `vehicle.red.quirks.<kind> on`: each vehicle's running state, faults, engine health, quirks, tyres, position, and `vehicle.red.tune.*` for its own engine and controls.
 - `girl.amy.favour 10`, `girl.jess.autonomy off`, `girl.amy.skills.*`, `girl.amy.tune.*`.
 - `weather.kind rain`, `weather.rain`, `weather.wet`, `weather.temperature -4`, `weather.time 17.5` (the time of day, in hours).
-- `player.x`, `player.heading`, `player.flying`; `girls.autonomy`, `girls.speech`, `audio.sound`.
+- `player.x`, `player.heading`, `player.flying`, `player.road` (which road is under you or the quad you ride, its surface and how far from its middle); `girls.autonomy`, `girls.speech`, `audio.sound`.
 - `tune.<group>.<key>`: every number in the Tune tab.
 
 `list`, `find psi`, `get`, `range`, `set`, `add`, `toggle`, `dump` (copies JSON) read and write them. Positions are x east, z south, y up, heading in degrees (0 faces +z, 90 faces +x), the same for you, vehicles, girls and items:
