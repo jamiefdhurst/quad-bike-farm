@@ -1,7 +1,23 @@
 // Where everything sits on the farm. Kept in one place so the map can be
 // rearranged or extended without hunting through the builders.
+//
+// What belongs to a building or a set piece is written as an offset from its anchor (`anchors`, below) inside `at('barn', ...)`, and
+// `resolveLayout` turns it into the absolute numbers `LAYOUT` has always held (world/layoutAnchors.js says how an offset reads). Moving the
+// barn, the yard, the village and the rest is one anchor each; a number that is not inside an `at(...)` is a place of its own.
+import { at, resolveLayout } from './layoutAnchors.js';
 
-export const LAYOUT = {
+const RAW = {
+  // Where each building or set piece is, and the way it faces (`yaw`, as a quad's). Everything given `at(name, ...)` is placed from here.
+  anchors: {
+    barn: { x: -64, z: 60, yaw: 0 }, // the barn's middle: its contents and its walls' fittings
+    yard: { x: -54, z: 58, yaw: 0 }, // the yard's middle: the bell, tanks, parking, pens, lawns, paddock and what stands round the barn
+    hut: { x: -60, z: 196.5, yaw: 0 }, // the shepherd's hut
+    neighbour: { x: 175, z: 120, yaw: 0 }, // the neighbour's yard, in the middle
+    village: { x: 150, z: 185, yaw: 0 }, // Nether Thornby, about the green
+    pit: { x: 140, z: -140, yaw: 0 }, // the gravel pit's field, in the middle
+    logYard: { x: -17.5, z: -68, yaw: 0 }, // where the tractor stands to split logs
+    bonfire: { x: -6, z: 71, yaw: 0 }, // the bonfire's middle
+  },
   // Physics terrain and the detailed visual terrain cover this square, centred: the farm, and the ground through the south gate.
   terrainSize: 420,
   terrainSegments: 420,
@@ -31,59 +47,59 @@ export const LAYOUT = {
   // lane's own west barrier has a gap into it where the road turns off). Every building faces the road, `yaw` 0 looking south (+z) from the road's
   // north side and Math.PI looking north from its south side, so each footprint is a plain rectangle; `halfX` runs along the frontage and
   // `halfZ` is the depth. `limit` is the speed limit in mph, on the signs.
-  village: {
+  village: at('village', {
     name: 'Nether Thornby',
     limit: 20,
     road: {
       halfWidth: 2.3,
       pavement: 1.7,
-      points: [[206.4, 171], [200, 176], [190, 180.5], [178, 183], [166, 183.5], [154, 185], [144, 189], [134, 191], [122, 193], [110, 191], [105, 192.5], [102, 196], [102, 201.5]],
+      points: [[56.4, -14], [50, -9], [40, -4.5], [28, -2], [16, -1.5], [4, 0], [-6, 4], [-16, 6], [-28, 8], [-40, 6], [-45, 7.5], [-48, 11], [-48, 16.5]],
     },
-    area: { minX: 96, maxX: 203, minZ: 163.5, maxZ: 205 },
+    area: { minX: -54, maxX: 53, minZ: -21.5, maxZ: 20 },
     // The pub: front door on its long south side, a beer garden in front and the car park to its west (`carPark`: the tarmac, with its bays).
     pub: {
       name: 'The Plough & Harrow',
-      x: 132, z: 178.3, yaw: 0, halfX: 8.5, halfZ: 5.5, wallHeight: 5.6, ridge: 8.8,
-      door: { x: 132 },
-      carPark: { minX: 105, maxX: 121, minZ: 171, maxZ: 184, entry: { minX: 110, maxX: 116 } }, // `entry`: the dropped kerb where it opens onto the road
-      stop: { x: 113, z: 178 }, // where a quad pulls up for the girls' pub stop (the middle of the car park)
-      benches: [{ x: 126.2, z: 186 }, { x: 137.2, z: 185.1 }],
+      x: -18, z: -6.7, yaw: 0, halfX: 8.5, halfZ: 5.5, wallHeight: 5.6, ridge: 8.8,
+      door: { x: -18, z: -1.2 }, // its front door, on the south side
+      carPark: { minX: -45, maxX: -29, minZ: -14, maxZ: -1, entry: { minX: -40, maxX: -34, minZ: -1, maxZ: -1 } }, // `entry`: the dropped kerb where it opens onto the road
+      stop: { x: -37, z: -7 }, // where a quad pulls up for the girls' pub stop (the middle of the car park)
+      benches: [{ x: -23.8, z: 1 }, { x: -12.8, z: 0.1 }],
     },
-    shop: { name: "Pargeter's Stores", sub: 'Post Office', x: 157, z: 173.5, yaw: 0, halfX: 5.5, halfZ: 4.5, wallHeight: 5.3, ridge: 7.8, door: { x: 160.4 } },
-    garage: { name: 'Hollis Motors', x: 181, z: 198, yaw: Math.PI, halfX: 8, halfZ: 4.2, wallHeight: 4.4, ridge: 5.6, pumps: { z: 189.2, xs: [177.6, 181.6, 185.6] } },
+    shop: { name: "Pargeter's Stores", sub: 'Post Office', x: 7, z: -11.5, yaw: 0, halfX: 5.5, halfZ: 4.5, wallHeight: 5.3, ridge: 7.8, door: { x: 10.4, z: -7 } },
+    garage: { name: 'Hollis Motors', x: 31, z: 13, yaw: Math.PI, halfX: 8, halfZ: 4.2, wallHeight: 4.4, ridge: 5.6, pumps: { spots: [[27.6, 4.2], [31.6, 4.2], [35.6, 4.2]] } }, // `pumps.xs` and `pumps.z` are read off these
     cottages: [
-      { id: 'n1', x: 172, z: 174.2, yaw: 0, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'render', paint: '#d8cfae', door: '#7a2a22' },
-      { id: 'n2', x: 190, z: 169.9, yaw: 0, halfX: 3.6, halfZ: 3, wallHeight: 4.4, ridge: 6.7, wall: 'stone', door: '#2d4a3a' },
-      { id: 's1', x: 165, z: 195.4, yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'brick', door: '#23406b' },
-      { id: 's2', x: 154, z: 196.2, yaw: Math.PI, halfX: 3.6, halfZ: 3.2, wallHeight: 4.4, ridge: 6.7, wall: 'render', paint: '#cfd8c4', door: '#8a5a2b' },
-      { id: 's3', x: 143, z: 199.2, yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'stone', door: '#6b2f4a' },
+      { id: 'n1', x: 22, z: -10.8, yaw: 0, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'render', paint: '#d8cfae', door: '#7a2a22' },
+      { id: 'n2', x: 40, z: -15.1, yaw: 0, halfX: 3.6, halfZ: 3, wallHeight: 4.4, ridge: 6.7, wall: 'stone', door: '#2d4a3a' },
+      { id: 's1', x: 15, z: 10.4, yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'brick', door: '#23406b' },
+      { id: 's2', x: 4, z: 11.2, yaw: Math.PI, halfX: 3.6, halfZ: 3.2, wallHeight: 4.4, ridge: 6.7, wall: 'render', paint: '#cfd8c4', door: '#8a5a2b' },
+      { id: 's3', x: -7, z: 14.2, yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'stone', door: '#6b2f4a' },
     ],
-    green: { x: 146, z: 176, r: 4.5 }, // the little green between the pub and the shop: an oak, a bench, the village sign
+    green: { x: -4, z: -9, r: 4.5 }, // the little green between the pub and the shop: an oak, a bench, the village sign
     // The village's oaks (the green's, and two in the gaps behind the houses): each keeps its crown (about 5.2 m a unit of `scale`) off every building.
-    trees: [{ x: 146, z: 174.5, scale: 0.8 }, { x: 181, z: 168.5, scale: 0.5 }, { x: 122.5, z: 167, scale: 0.6 }],
-    sign: { x: 197.2, z: 172.4 }, // "Nether Thornby", just inside the turning
-    phone: { x: 131.5, z: 197.4 },
-    busStop: { x: 120.5, z: 198.6 },
+    trees: [{ x: -4, z: -10.5, scale: 0.8 }, { x: 31, z: -16.5, scale: 0.5 }, { x: -27.5, z: -18, scale: 0.6 }],
+    sign: { x: 47.2, z: -12.6 }, // "Nether Thornby", just inside the turning
+    phone: { x: -18.5, z: 12.4 },
+    busStop: { x: -29.5, z: 13.6 },
     // The road bends left, south, and is shut at its last point (a gate, with a "road closed" board in front), but the road goes on past it: `beyond`
     // is its middle line, bending away and rising out of reach between hedges.
-    end: { back: 0.3, beyond: [[102, 201.5], [102, 208], [104, 214], [108, 219], [114, 222.5], [120, 224]], rise: 5 },
-  },
+    end: { back: 0.3, beyond: [[-48, 16.5], [-48, 23], [-46, 29], [-42, 34], [-36, 37.5], [-30, 39]], rise: 5 },
+  }),
   // The neighbour's farm (world/neighbourFarm.js, neighbourFarmProps.js): a walled yard on the lane's west side south of the farm, its gateway
   // in the east wall onto the lane. `yard` is the wall's outline (`wall` thick, `wallHeight` high); the farmhouse stands at the south with its
   // door in the north wall, the barn at the west with its big door in the east wall, and three vehicles are parked about. The neighbour herself
   // stands by `stand` (facing `yaw`, 0 being +z) until dark.
-  neighbourFarm: {
-    yard: { minX: 146, maxX: 203, minZ: 92, maxZ: 148, wall: 0.5, wallHeight: 1.3 },
-    gateway: { z: 104, width: 8 },
-    house: { x: 178, z: 138, halfX: 7, halfZ: 4.2, wallHeight: 5.2, ridge: 7.6, door: { x: 178, halfWidth: 0.55, height: 2.05 } },
-    barn: { x: 158, z: 108, halfX: 8, halfZ: 6, wallHeight: 4.6, ridge: 6.6, door: { z: 108, halfWidth: 2.6, height: 3.6 } },
+  neighbourFarm: at('neighbour', {
+    yard: { minX: -29, maxX: 28, minZ: -28, maxZ: 28, wall: 0.5, wallHeight: 1.3 },
+    gateway: { x: 28, z: -16, width: 8 },
+    house: { x: 3, z: 18, halfX: 7, halfZ: 4.2, wallHeight: 5.2, ridge: 7.6, door: { x: 3, z: 13.8, halfWidth: 0.55, height: 2.05 } },
+    barn: { x: -17, z: -12, halfX: 8, halfZ: 6, wallHeight: 4.6, ridge: 6.6, door: { x: -9, z: -12, halfWidth: 2.6, height: 3.6 } },
     parked: [
-      { kind: 'series', x: 192, z: 122, yaw: 1.2, colour: 0x5d6d4a, reg: 'K412 PBW' },
-      { kind: 'utv', x: 183, z: 125.5, yaw: 0.35, colour: 0x7a2a22 },
-      { kind: 'tractor', x: 159, z: 126, yaw: 3.0, colour: 0xb02a20 },
+      { kind: 'series', x: 17, z: 2, yaw: 1.2, colour: 0x5d6d4a, reg: 'K412 PBW' },
+      { kind: 'utv', x: 8, z: 5.5, yaw: 0.35, colour: 0x7a2a22 },
+      { kind: 'tractor', x: -16, z: 6, yaw: 3.0, colour: 0xb02a20 },
     ],
-    stand: { x: 175.8, z: 130.6, yaw: Math.PI },
-  },
+    stand: { x: 0.8, z: 10.6, yaw: Math.PI },
+  }),
   // How each stubble field looks and lies (world/fields.js, groundTexture.js, props.js). `rows` is the way it was drilled (rows along x or z,
   // half a metre apart), `tramlines` the metres between the sprayer's wheel lines, `ground` the straw's colour on the ground, `stalk` the
   // stalks' tip and base colours, `stalkHeight` their cut height range and `density` how thick they stand (1 is the wheat's). The north field,
@@ -156,7 +172,7 @@ export const LAYOUT = {
       east: {
         maxX: 34,
         gate: { z: 112, width: 4.8 },
-        terraces: { banks: [102, 118], width: 7, ease: 10 },
+        terraces: { banks: [102, 118], width: 7, ease: 10, stand: { x: 4, z: 96 } }, // `stand`: its top tread, looking down the banks (the console's `tp terraces`)
         wall: { z: 92, from: -25.4, to: 34, height: 1, gap: { at: -4, half: 2.6 } },
         thorns: [[-8, 118], [-6, 120], [14, 96], [17, 94], [28, 108], [-14, 98], [30, 86]],
       },
@@ -171,7 +187,7 @@ export const LAYOUT = {
     // The shepherd's hut on the flat top of the pasture, west of the flask rock (world/hut.js, hutBuild.js): a wheeled hut `length` by `width` m on iron
     // wheels with its floor `floor` m off the ground, the door end (local +z) facing `yaw`'s way, north over the farm. The ground is levelled
     // for `level` m beyond its walls and eased back over `fade` m more; bracken, gorse and sheep keep `clear` m off it.
-    hut: { x: -60, z: 196.5, yaw: Math.PI, length: 4, width: 2.2, floor: 0.56, level: 2.5, fade: 5, clear: 8 },
+    hut: at('hut', { x: 0, z: 0, yaw: Math.PI, length: 4, width: 2.2, floor: 0.56, level: 2.5, fade: 5, clear: 8 }),
     // The hill climb (npc/hillClimb.js): cones mark a gate at each of `points` ([x, z]: the start just past the stream, two on the way up, the
     // finish near the top), each `gateHalf` m either side of the point and across the way to the next (cones stand just outside). The line between them is yours; the points
     // run up the gentler ground in the east of the pasture, where the banks spread out, so the girls can drive it too.
@@ -232,11 +248,13 @@ export const LAYOUT = {
   // The gravel pit (world/quarry.js): a hedged field north of the barley field, the wood's east neighbour, through a gate in the barley field's
   // north hedge (`gate`: x along it, `width`, tied `open`). The pit's own shape is dealt from the farm's seed (`pit`, `dealPit`); without one
   // the same fixed deal is used.
-  quarry: {
+  quarry: at('pit', {
     name: 'The Gravel Pit',
-    minX: 80, maxX: 200, minZ: -200, maxZ: -80,
-    gate: { x: 150, width: 4.8, open: true },
-  },
+    minX: -60, maxX: 60, minZ: -60, maxZ: 60,
+    gate: { x: 10, z: 60, width: 4.8, open: true },
+  }),
+  // Named places in the open that no feature stands at (npc/spotNames.js): where a stranded girl says she is when she is nearest one.
+  namedSpots: { lane: { x: -30, z: 112 }, hill: { x: 8, z: 172 }, wood: { x: -30, z: -120 }, road: { x: 130, z: 2 } },
   hedgeThickness: 1.8,
   hedgeHeight: 2.4,
 
@@ -260,80 +278,80 @@ export const LAYOUT = {
 
   // The barn (world/barn.js): a hollow shed with its big doors open on the +x side, facing the yard. halfX and halfZ are the outside
   // half-sizes, wall the thickness, wallHeight the eaves and ridge the top of the roof along its length (x). The door is centred on z.
-  barn: { x: -64, z: 60, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 },
+  barn: at('barn', { x: 0, z: 0, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 },
     // A second span of the same size on the south side (world/barn.js), its own gable roof beside the first with a valley between and posts in
     // place of a wall, and its own door in the +x wall, centred on its middle. It is where the tractor, the UTV, the Land Rovers and the cars are mended.
     annex: { halfZ: 4.6, door: { halfWidth: 2.0, height: 3.2 } },
-  },
+  }),
   // The bell on its post just north of the barn's north door leaf (the first door's), arm out towards the yard (world/bellBuild.js): ring it to call the girls back.
-  bell: { x: -58.1, z: 54.1, yaw: 0 },
+  bell: at('yard', { x: -4.1, z: -3.9, yaw: 0 }),
   // The wrapped silage, stacked beside the barn's west wall (world/props.js): `x`, `z` are the stack's north-west corner.
-  silage: { x: -76.5, z: 62.5 },
+  silage: at('yard', { x: -22.5, z: 4.5 }),
   // Straw bales inside the barn, [x, z, yaw] (she sits facing yaw, climbing up from behind it): somewhere dry to sit out of the rain.
-  barnBaleSpots: [
-    [-66.4, 57.3, Math.PI / 2],
-    [-66.4, 62.7, Math.PI / 2],
-  ],
+  barnBaleSpots: at('barn', [
+    [-2.4, -2.7, Math.PI / 2],
+    [-2.4, 2.7, Math.PI / 2],
+  ]),
   // The hayloft over the front of the barn, above the big doors (world/loft.js): planks `floor` m above the barn floor (clear of the doorway's
   // 3.2 m and its header) from the end wall back to `edgeX`, an open edge with a rail and a gap at the ladder, and a hay door in the end wall
   // at head height (from `sill` to `top` above the barn floor). The roof comes down at the sides, so you can only walk `band` m either side of
   // the centre line; hay is stacked outside that, the north stack (`hay`) being the one you hide in. A girl sits on a bale at the open edge.
-  loft: {
+  loft: at('barn', {
     floor: 3.5,
-    edgeX: -62.5,
+    edge: { x: 1.5, z: 0 }, // the middle of the open edge; `edgeX` is read off it
     band: 1.9,
     rail: 1,
-    ladder: { z: 61.3, footX: -63.4, gap: 0.7, width: 0.55 },
+    ladder: { x: 0.6, z: 1.3, gap: 0.7, width: 0.55 },
     hayDoor: { halfWidth: 0.8, sill: 4.1, top: 5.5 },
-    hay: { x: -60.75, z: 56.85, halfX: 1.75, halfZ: 1.25, height: 1.3 },
-    hideSpot: { x: -60.75, z: 56.85 },
-    seat: { id: 'loft0', kind: 'loft', x: -62.0, z: 59.2, yaw: -Math.PI / 2, seat: 3.5 + 0.53 }, // sat on a bale at the edge, facing out over the barn
+    hay: { x: 3.25, z: -3.15, halfX: 1.75, halfZ: 1.25, height: 1.3 },
+    hideSpot: { x: 3.25, z: -3.15 },
+    seat: { id: 'loft0', kind: 'loft', x: 2, z: -0.8, yaw: -Math.PI / 2, seat: 3.5 + 0.53 }, // sat on a bale at the edge, facing out over the barn
     strawDx: -0.4, // Jess tips her straw from this far towards the edge
-  },
+  }),
   // The workbench along the north wall: where the toolbox sits (its height is `lift`).
   // (4.2 long: the east end, with the vice, is where it was; the extra metre at the west end holds the battery charger.)
-  bench: { x: -62.8, z: 56.1, length: 4.2, depth: 0.7, height: 0.92 },
+  bench: at('barn', { x: 1.2, z: -3.9, yaw: 0, length: 4.2, depth: 0.7, height: 0.92 }),
   // The trickle charger at the west end of the workbench (workshop/chargerModel.js): faces the bay, the way you stand at the bench.
-  benchCharger: { x: -64.5, z: 56.2 },
+  benchCharger: at('barn', { x: -0.5, z: -3.8, yaw: 0 }),
   // The woodpile at the wood's gate, on the grass field's north side (items/logSplitter.js): `piles` are where the rounds lie, as [x, z, yaw],
   // `park` where the tractor stands to split them with the stack close by, and `stack` the log stack against the north hedge (`yaw` along it).
-  logYard: { piles: [[-22, -72.5, 0.3], [-13.5, -71.5, 1.1]], park: { x: -17.5, z: -68, yaw: Math.PI / 2 }, stack: { x: -6, z: -77.2, yaw: 0 } },
+  logYard: at('logYard', { piles: [[-4.5, -4.5, 0.3], [4, -3.5, 1.1]], park: { x: 0, z: 0, yaw: Math.PI / 2 }, stack: { x: 11.5, z: -9.2, yaw: 0 } }),
   // The bonfire site (world/bonfire.js): on the grass field's south side, well clear of the track, the yard's parking and the south hedge. The logs
   // the girls sit on stand round it. `brushwood` is where the hedge cuttings lie, as [x, z, yaw], along the inside of the south hedge: carry three to the pile.
-  bonfire: { x: -6, z: 71, seatRadius: 2.4 },
+  bonfire: at('bonfire', { x: 0, z: 0, seatRadius: 2.4 }),
   brushwood: [[-30, 77, 0.3], [-20, 77.5, 2], [-12, 77, 1.1], [2, 77.5, 0.5], [14, 77, 2.5], [26, 77.5, 1.7]],
   // The diesel generator along the barn's south wall, towards the back, its panel facing away from the wall (items/generator.js): it powers the barn bulb and the charger.
-  generator: { x: -63.5, z: 75.7, yaw: 0, stand: { x: -62.8, z: 76.7 } }, // `stand`: where a girl stands to pull the cord
+  generator: at('yard', { x: -9.5, z: 17.7, yaw: 0, stand: { x: -8.8, z: 18.7 } }), // `stand`: where a girl stands to pull the cord
   // The clock and weather station (world/weatherStation.js) on the north wall past the door end of the bench, at eye height above the floor.
-  weatherStation: { x: -59.85, y: 1.65 },
+  weatherStation: at('barn', { x: 4.15, z: -4.4, yaw: 0, y: 1.65 }),
   // The freestanding clothes rack by the barn's south wall where the two jumpers hang (npc/jumpers.js): its bar runs along x at height `y`, `length`
   // long, so they hang edge-on to the wall. A girl stands at `stand`, at the end of the rack, to take one down or hang it up, going in and out by the doorway (`door`).
-  jumperRail: { x: -61.2, z: 72.4, y: 1.7, length: 1.3, stand: { x: -60.0, z: 72.4 }, door: { in: [{ x: -56.5, z: 69.2 }, { x: -59.8, z: 69.2 }], out: { x: -56.5, z: 69.2 } } },
+  jumperRail: at('barn', { x: 2.8, z: 12.4, yaw: 0, y: 1.7, length: 1.3, stand: { x: 4, z: 12.4 }, door: { in: [{ x: 7.5, z: 9.2 }, { x: 4.2, z: 9.2 }], out: { x: 7.5, z: 9.2 } } }),
   // The hooks on the inside of the barn's south wall for the helmets and goggles (world/helmetHooks.js, npc/headgear.js): the board's middle is at `y`
   // above the floor and `length` long; a girl stands at `stand` in front of it to take hers down, going in and out by the doorway (`door`).
-  helmetHooks: { x: -64.5, z: 73.58, y: 1.5, length: 1.6, stand: { x: -64.5, z: 72.6 }, door: { in: [{ x: -56.5, z: 69.2 }, { x: -59.8, z: 69.2 }, { x: -62, z: 71.8 }], out: { x: -56.5, z: 69.2 } } },
+  helmetHooks: at('barn', { x: -0.5, z: 13.58, yaw: 0, y: 1.5, length: 1.6, stand: { x: -0.5, z: 12.6 }, door: { in: [{ x: 7.5, z: 9.2 }, { x: 4.2, z: 9.2 }, { x: 2, z: 11.8 }], out: { x: 7.5, z: 9.2 } } }),
   // The bay painted on the barn floor in front of the bench: park a quad here to work on it at the bench (workshop/bench.js).
-  bay: { x: -62.3, z: 58.5, halfX: 1.5, halfZ: 1.1, yaw: 0 },
+  bay: at('barn', { x: 1.7, z: -1.5, halfX: 1.5, halfZ: 1.1, yaw: 0 }),
   // The big bay in the barn's second span, nose-in from its door: the tractor, UTV, Land Rovers and cars are worked on here, at the same bench
   // (workshop/bench.js). A trolley jack and axle stands stand by it (workshop/jackModel.js), and a second bulb hangs over it.
-  bay2: { x: -65.4, z: 69.2, halfX: 3.0, halfZ: 1.9, yaw: 0 },
+  bay2: at('barn', { x: -1.4, z: 9.2, halfX: 3.0, halfZ: 1.9, yaw: 0 }),
   // The shed kit bought from the catalogue under the cork board (farm/shed.js, workshop/shedModels.js), standing in the barn the morning after it is paid for.
   // The compressor stands on the west wall beside the barn find, facing the room (yaw is the way it faces, 0 being +z); the parts washer on the floor at the
   // east end of the bench; the pit is the dark trench in the big bay's floor, `halfX` by `halfZ`, along the bay so a car's wheels straddle it.
-  shed: {
-    compressor: { x: -68.65, z: 61.4, yaw: Math.PI / 2 },
-    washer: { x: -60.15, z: 56.35, yaw: 0 },
-    pit: { x: -65.4, z: 69.2, halfX: 1.9, halfZ: 0.45 },
-    catalogue: { z: 62.75, y: 1.0 }, // hung on a nail on the west wall under the cork board's left edge
-  },
-  jack: { x: -63.2, z: 66.6, yaw: 0.25 },
-  axleStands: [{ x: -66.6, z: 66.7, yaw: 0.1 }, { x: -66.0, z: 66.9, yaw: -0.3 }],
+  shed: at('barn', {
+    compressor: { x: -4.65, z: 1.4, yaw: Math.PI / 2 },
+    washer: { x: 3.85, z: -3.65, yaw: 0 },
+    pit: { x: -1.4, z: 9.2, halfX: 1.9, halfZ: 0.45 },
+    catalogue: { x: -5, z: 2.75, yaw: 0, y: 1.0 }, // hung on a nail on the west wall under the cork board's left edge
+  }),
+  jack: at('barn', { x: 0.8, z: 6.6, yaw: 0.25 }),
+  axleStands: at('barn', [{ x: -2.6, z: 6.7, yaw: 0.1 }, { x: -2, z: 6.9, yaw: -0.3 }]),
   // Where the barn find stands under its tarp (vehicle/barnFind.js), at the back of the barn: clear of the bay, the bales and the ladder.
-  rusty: { x: -66.7, z: 59.9, yaw: 0.15 },
+  rusty: at('barn', { x: -2.7, z: -0.1, yaw: 0.15 }),
   // Where the old bike stands under its tarp (the Plover, vehicle/bantamModel.js), always: in the open floor in the middle of the barn, a metre east of the bales and
   // the barn find, nose to the north wall, so its right side (the kickstart, the carb and the exhaust) is to the room and the girls can walk round to it.
-  plover: { x: -65.0, z: 61.9, yaw: Math.PI },
-  yard: { x: -54, z: 58, radius: 20 },
+  plover: at('barn', { x: -1, z: 1.9, yaw: Math.PI }),
+  yard: at('yard', { x: 0, z: 0, radius: 20 }),
   // Where the cars park (game.js): on the tarmac pad at the end of the farm road, in front of the Dutch barn's open side, in a row and nosed in
   // towards it, yours at the west end (#491: Jamie wanted it beside theirs). 5.2 m apart, so there's room for a girl to walk between them; the row
   // sits 0.8 m nearer the road than the two did and the pad is 9 m across the radius (it was 8), so all three stand wholly on it. The pad is flat, so nothing needs laying.
@@ -342,20 +360,20 @@ export const LAYOUT = {
     fiesta: { x: 188, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
     corsa: { x: 193.2, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
   },
-  paddock: { x: -66, z: 34, half: 7 },
+  paddock: at('yard', { x: -12, z: -24, half: 7 }),
   // The lawns the ride-on mower cuts (world/mowing.js, the 'Mow the lawns' job): the open grass at the yard's east edge, beyond its bare ground (the yard's dirt ends about 13 m from its middle, rideEvents.js) and clear of
   // the tank, the trailers and the barn's doorway, and the paddock's floor inside its rails (the east side facing the yard is open, so the mower can get in).
   lawns: {
-    yard: { minX: -38, maxX: -24, minZ: 55, maxZ: 69 },
-    paddock: { minX: -72, maxX: -60, minZ: 28, maxZ: 40 },
+    yard: at('yard', { minX: 16, maxX: 30, minZ: -3, maxZ: 11 }),
+    paddock: at('yard', { minX: -18, maxX: -6, minZ: -30, maxZ: -18 }),
   },
   // The yard's animals (world/farmAnimals.js, farmAnimalsView.js): the hens' run and the pig's sty west of the barn, clear of the silage, the paddock
   // and the west hedge; you feed over the fence. The feed bin stands against the barn's north wall, with the bucket beside it (items/feedBucket.js).
   farmAnimals: {
-    pen: { minX: -77, maxX: -70.5, minZ: 44.5, maxZ: 51.5 },
-    sty: { minX: -77, maxX: -72.5, minZ: 53.5, maxZ: 58.5 },
-    bin: { x: -66.6, z: 54.6, yaw: 0 },
-    bucket: { x: -65.5, z: 54.4, yaw: 0.4 },
+    pen: at('yard', { minX: -23, maxX: -16.5, minZ: -13.5, maxZ: -6.5 }),
+    sty: at('yard', { minX: -23, maxX: -18.5, minZ: -4.5, maxZ: 0.5 }),
+    bin: at('barn', { x: -2.6, z: -5.4, yaw: 0 }),
+    bucket: at('barn', { x: -1.5, z: -5.6, yaw: 0.4 }),
   },
   gate: { x: -30, side: 'south', width: 4.2, open: true }, // swung back into the field and tied, onto the lane to the hill
 
@@ -373,7 +391,7 @@ export const LAYOUT = {
   // extension doorway and west of the field gate, for the tidiest line-up challenge on the barn's chalkboard. `bays` of them side by side `spacing` m
   // apart along the hedge, centred on x, z, each `length` m deep with a quad's nose to yaw (a quad's yaw, here towards the hedge); the sleeper lies
   // across the nose end. Clear of the spawn keep-out and the track (a test checks).
-  lineUp: { x: -44, z: 75, yaw: 0, bays: 4, spacing: 3, length: 3 },
+  lineUp: at('yard', { x: 10, z: 17, yaw: 0, bays: 4, spacing: 3, length: 3 }),
 
   // Amy's cone course (npc/coneCourse.js): a slalom across the grass west of the middle, ridden from x, z in the direction yaw (a quad's yaw, so
   // towards -z). `gates` pairs of cones, `spacing` m apart from `lead` m past the start and swinging `swing` m either side of the line in turn, each
@@ -429,10 +447,10 @@ export const LAYOUT = {
   // Places the girls sit or shelter (npc/places.js). yaw is the way she faces; seat is how high up she sits (none: she stands).
   // Straw bales are added from strawBaleSpots by the game. Fence seats are on the paddock rail, facing in from outside it.
   restSpots: [
-    { id: 'fenceNorth', kind: 'fence', x: -62.5, z: 27, yaw: 0, seat: 1.05 },
-    { id: 'fenceSouth', kind: 'fence', x: -69.5, z: 41, yaw: Math.PI, seat: 1.05 },
-    { id: 'fenceEast', kind: 'fence', x: -59, z: 30.5, yaw: -Math.PI / 2, seat: 1.05 },
-    { id: 'fenceWest', kind: 'fence', x: -73, z: 37.5, yaw: Math.PI / 2, seat: 1.05 },
+    at('yard', { id: 'fenceNorth', kind: 'fence', x: -8.5, z: -31, yaw: 0, seat: 1.05 }),
+    at('yard', { id: 'fenceSouth', kind: 'fence', x: -15.5, z: -17, yaw: Math.PI, seat: 1.05 }),
+    at('yard', { id: 'fenceEast', kind: 'fence', x: -5, z: -27.5, yaw: -Math.PI / 2, seat: 1.05 }),
+    at('yard', { id: 'fenceWest', kind: 'fence', x: -19, z: -20.5, yaw: Math.PI / 2, seat: 1.05 }),
     // Out of the rain in the east fields. Under the Dutch barn, sat on the two round bales on the ground at the front, facing out, going in between
     // them (`door`) to climb up from behind. In the field shed, stood just inside the doorway, going in through it.
     { id: 'dutchBarn0', kind: 'shelter', x: 184.8, z: -11.4, yaw: 0, seat: 1.52, door: { x: 186.7, z: -12.6 } },
@@ -443,36 +461,36 @@ export const LAYOUT = {
   baleSeat: 1.52, // how high her hips sit above the ground on a straw bale (the top is at 1.44, and her hips want to be a little above it)
 
   // Petrol tank by the barn. Each of the three jerry cans (petrol, pre-mix, diesel) starts at a different one of these spots, picked at random.
-  fuelTank: { x: -61, z: 52.3, yaw: Math.PI / 2 }, // labelled side facing the yard
+  fuelTank: at('yard', { x: -7, z: -5.7, yaw: Math.PI / 2 }), // labelled side facing the yard
   jerryCanSpots: [
-    { x: -58.6, z: 51.6, yaw: 0.4, where: 'by the petrol tank' },
-    { x: -57.6, z: 56.6, yaw: 1.2, where: 'by the barn doors' },
-    { x: -58.4, z: 38.5, yaw: 2.1, where: 'by the paddock' },
-    { x: -72.6, z: 66.3, yaw: -0.6, where: 'by the silage bales' },
-    { x: -33.4, z: 76.6, yaw: 0.9, where: 'by the field gate' }, // clear of the gate, swung open into the field, and of the line-up sleepers
+    at('yard', { x: -4.6, z: -6.4, yaw: 0.4, where: 'by the petrol tank' }),
+    at('yard', { x: -3.6, z: -1.4, yaw: 1.2, where: 'by the barn doors' }),
+    at('yard', { x: -4.4, z: -19.5, yaw: 2.1, where: 'by the paddock' }),
+    at('yard', { x: -18.6, z: 8.3, yaw: -0.6, where: 'by the silage bales' }),
+    at('yard', { x: 20.6, z: 18.6, yaw: 0.9, where: 'by the field gate' }), // clear of the gate, swung open into the field, and of the line-up sleepers
     { x: 177.2, z: -8.6, yaw: 2.4, where: 'by the Dutch barn' }, // by its front corner stanchion, under the eaves
     { x: 92.9, z: -69.6, yaw: -0.5, where: 'by the field shed' }, // against its wall, beside the doorway
   ],
   // The tractor, UTV and Land Rover have no spot of their own: each game they're dealt a parking slot or an open spot like the quads (spawn, below).
-  trailer: { x: -42, z: 37, yaw: 2.7 }, // the bale trailer's axle, up the yard past the sprayer with its drawbar to the yard, 8 m or more from every parking and away spot and the line-up sleepers (it was in their way). The tractor is wherever the game put it
-  tipTrailer: { x: -49, z: 33.5, yaw: 0.2 }, // the little tipping trailer's axle, in the clear by the paddock with its tongue towards the yard, for a quad to back up to
-  sprayer: { x: -39, z: 46, yaw: 0.3 }, // the sprayer trailer's axle, east of the yard spots within the hose's reach, with its tongue towards the yard, for the green quad to back up to
+  trailer: at('yard', { x: 12, z: -21, yaw: 2.7 }), // the bale trailer's axle, up the yard past the sprayer with its drawbar to the yard, 8 m or more from every parking and away spot and the line-up sleepers (it was in their way). The tractor is wherever the game put it
+  tipTrailer: at('yard', { x: 5, z: -24.5, yaw: 0.2 }), // the little tipping trailer's axle, in the clear by the paddock with its tongue towards the yard, for a quad to back up to
+  sprayer: at('yard', { x: 15, z: -12, yaw: 0.3 }), // the sprayer trailer's axle, east of the yard spots within the hose's reach, with its tongue towards the yard, for the green quad to back up to
   harrows: { x: 20, z: 17, yaw: -Math.PI / 2 }, // the chain harrows' carrier axle, left at the harrow field's west edge with its tongue towards the yard, for the tractor or a quad to back up to
-  dieselBowser: { x: -61, z: 45.6, yaw: Math.PI / 2 }, // red diesel for the tractor, south of the petrol tank (and the hose)
+  dieselBowser: at('yard', { x: -7, z: -12.4, yaw: Math.PI / 2 }), // red diesel for the tractor, south of the petrol tank (and the hose)
   jerryCanJitter: 0.8, // metres of extra random shift around the chosen spot
   // The toolbox for tinkering with the quads, on the workbench in the barn.
-  toolbox: { x: -62.9, z: 56.1, yaw: 0.1, lift: 0.92 }, // on the barn workbench
-  benchOil: { x: -62.05, z: 56.1, yaw: 0.2 }, // the oil bottle's place on the workbench
-  oilBottle: { x: -59.3, z: 52.9, yaw: 0.3 }, // two-stroke oil, by the petrol tank
-  coolantBottle: { x: -58.7, z: 53.3, yaw: 0.6 }, // radiator coolant, beside the oil
-  antiGelBottle: { x: -58.15, z: 52.8, yaw: 0.9 }, // diesel anti-gel, beside the coolant
-  plugAdditive: { x: -59.75, z: 53.2, yaw: -0.3 }, // plug-saver, a little way from the oil bottle
-  benchLeads: { x: -63.55, z: 56.1, yaw: 0.4 }, // where the jump leads lie on the workbench, at the start and when you put them back (the toolbox's place is `toolbox`)
-  benchPack: { x: -61.8, z: 56.32, yaw: 0.15 }, // the booster pack's place on the back edge of the workbench, clear of the oil bottle and the logbook
-  hose: { x: -61.2, z: 49.4, yaw: 0.2 }, // hose reel at the south end of the petrol tank
+  toolbox: at('barn', { x: 1.1, z: -3.9, yaw: 0.1, lift: 0.92 }), // on the barn workbench
+  benchOil: at('barn', { x: 1.95, z: -3.9, yaw: 0.2 }), // the oil bottle's place on the workbench
+  oilBottle: at('yard', { x: -5.3, z: -5.1, yaw: 0.3 }), // two-stroke oil, by the petrol tank
+  coolantBottle: at('yard', { x: -4.7, z: -4.7, yaw: 0.6 }), // radiator coolant, beside the oil
+  antiGelBottle: at('yard', { x: -4.15, z: -5.2, yaw: 0.9 }), // diesel anti-gel, beside the coolant
+  plugAdditive: at('yard', { x: -5.75, z: -4.8, yaw: -0.3 }), // plug-saver, a little way from the oil bottle
+  benchLeads: at('barn', { x: 0.45, z: -3.9, yaw: 0.4 }), // where the jump leads lie on the workbench, at the start and when you put them back (the toolbox's place is `toolbox`)
+  benchPack: at('barn', { x: 2.2, z: -3.68, yaw: 0.15 }), // the booster pack's place on the back edge of the workbench, clear of the oil bottle and the logbook
+  hose: at('yard', { x: -7.2, z: -8.6, yaw: 0.2 }), // hose reel at the south end of the petrol tank
 
   spawn: {
-    player: { x: -47, z: 46, yaw: -2.68 }, // facing the quad
+    player: at('yard', { x: 7, z: -12, yaw: -2.68 }), // facing the quad
     // Parking slots in the yard. Each start the quads are shuffled between them and
     // nudged (quadJitter metres, quadYawJitter radians), and sometimes parked the
     // other way round (quadFlipChance). No more than `yardMax` start in the yard (hers
@@ -483,15 +501,15 @@ export const LAYOUT = {
     yardMax: 4,
     // Spread round the yard, 8 to 12 m apart, so a girl can get one out without a jam. Each is clear of the trailers, the tank, the bowser,
     // the barn and its doorway, the bales and the track by its jitter (spawnKeepOut, a test checks).
-    quads: [
-      { x: -46, z: 48, yaw: Math.PI * 0.62 },
-      { x: -34, z: 52, yaw: Math.PI * 0.62 },
-      { x: -38, z: 62, yaw: Math.PI * 0.62 },
-      { x: -52, z: 42, yaw: Math.PI * 0.62 },
-      { x: -24, z: 58, yaw: Math.PI * 0.62 },
-      { x: -44, z: 56, yaw: Math.PI * 0.62 },
-      { x: -30, z: 68, yaw: Math.PI * 0.62 },
-    ],
+    quads: at('yard', [
+      { x: 8, z: -10, yaw: Math.PI * 0.62 },
+      { x: 20, z: -6, yaw: Math.PI * 0.62 },
+      { x: 16, z: 4, yaw: Math.PI * 0.62 },
+      { x: 2, z: -16, yaw: Math.PI * 0.62 },
+      { x: 30, z: 0, yaw: Math.PI * 0.62 },
+      { x: 10, z: -2, yaw: Math.PI * 0.62 },
+      { x: 24, z: 10, yaw: Math.PI * 0.62 },
+    ]),
     // Every quad but the one she's standing by has this chance of having been left
     // somewhere else on the farm instead, at any angle, within awayJitter metres of
     // one of these spots. The tractor, UTV and Land Rovers always are.
@@ -519,6 +537,17 @@ export const LAYOUT = {
     ],
   },
 };
+
+/** The layout as it is written, with its `at(...)` offsets, for the tests that move and turn the anchors. */
+export const RAW_LAYOUT = RAW;
+
+export const LAYOUT = resolveLayout(RAW);
+
+// A few readers want one coordinate of a point on its own. They are read off the points (which are what turn with the anchor), once, here.
+LAYOUT.loft.edgeX = LAYOUT.loft.edge.x;
+LAYOUT.loft.ladder.footX = LAYOUT.loft.ladder.x;
+LAYOUT.village.garage.pumps.xs = LAYOUT.village.garage.pumps.spots.map(([x]) => x);
+LAYOUT.village.garage.pumps.z = LAYOUT.village.garage.pumps.spots[0][1];
 
 /**
  * Where (x, z) is on the drag strip: `along` metres from the start line (negative behind it) and `across` metres from its middle line, positive to the
