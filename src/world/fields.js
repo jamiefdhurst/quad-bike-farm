@@ -9,6 +9,7 @@ import { createWoods } from './woods.js';
 import { createQuarry } from './quarry.js';
 import { createOutbuildings } from './outbuildings.js';
 import { villageShape } from './village.js';
+import { roadNetwork } from './roads.js';
 import { createBrook } from './brook.js';
 import { fieldPlan } from './fieldPlan.js';
 import { createFieldMap } from './fieldMap.js';
@@ -63,30 +64,18 @@ export function createFields(layout) {
   const quarry = createQuarry(layout);
   const built = createOutbuildings(layout);
   const plan = fieldPlan(layout, { hill, woods, quarry, brook: createBrook(layout) });
-  const padX = road?.pad?.x ?? 0;
   const { gateways, gates } = plan;
   const { polygons, areas, kinds, hedges, areaOf, inGap, hedgeDistance, hedgedAt, hedgeAhead, route, nextWaypoint, inFarm, clampToArea, outsideFarm } = createFieldMap(plan, farm);
   const grass = areas.grass;
 
   /**
-   * 0..1 how much of (x, z) is tarmac or concrete: the farm road and the hardstanding at its end, the public lane, and the village's road,
-   * pavements, car park and forecourt, with a soft edge a hand's width across.
+   * 0..1 how much of (x, z) is tarmac or concrete: every road (world/roads.js: the farm road and the hardstanding at its end, the public lane,
+   * and the village's street with its pavements), and the village's car park and forecourt, with a soft edge a hand's width across.
    */
-  const lane = layout.publicLane;
+  const roads = roadNetwork(layout);
   const village = villageShape(layout);
   function tarmacAt(x, z) {
-    const edge = 0.15;
-    let t = 0;
-    if (road) {
-      const along = Math.max(road.fromX - x, 0, x - road.toX);
-      const onRoad = 1 - smoothstep(road.halfWidth - edge, road.halfWidth + edge, Math.hypot(along, z - road.z));
-      const onPad = road.pad ? 1 - smoothstep(road.pad.radius - edge, road.pad.radius + edge, Math.hypot(x - padX, z - road.z)) : 0;
-      t = Math.max(onRoad, onPad);
-    }
-    if (lane && t < 1) {
-      const along = Math.max(lane.minZ - z, 0, z - lane.maxZ);
-      t = Math.max(t, 1 - smoothstep(lane.halfWidth - edge, lane.halfWidth + edge, Math.hypot(along, x - lane.x)));
-    }
+    const t = roads.tarmacAt(x, z);
     return village && t < 1 ? Math.max(t, village.tarmacAt(x, z)) : t;
   }
 

@@ -6,6 +6,12 @@
 // barn, the yard, the village and the rest is one anchor each; a number that is not inside an `at(...)` is a place of its own.
 import { at, resolveLayout } from './layoutAnchors.js';
 
+// The numbers a road is written with in `roads` and read with by everything beside it (the lane's barriers, the farm's hedges and gates), so each is
+// written once.
+const LANE = { x: 206.4, halfWidth: 2.3, minZ: -205, maxZ: 205 };
+const FARM_ROAD = { z: 2, fromX: 78, toX: 199.5, halfWidth: 2.3 };
+const FARM_PAD = { x: 188, radius: 9 };
+
 const RAW = {
   // Where each building or set piece is, and the way it faces (`yaw`, as a quad's). Everything given `at(name, ...)` is placed from here.
   anchors: {
@@ -35,12 +41,30 @@ const RAW = {
   // gate (`gate`, `width` m across) in the farm's east hedge, closed. The cattle grid (`grid`) fills the grass field's gateway: `length` m along
   // the road, bars `pitch` m apart, `margin` m of pit beyond the tarmac each side (world/cattleGrid.js). A steel gate shuts the whole
   // corridor, hedge to hedge, `gateOffset` m east of the grid's middle, so it has to be opened before you can cross.
-  road: { z: 2, fromX: 78, toX: 199.5, halfWidth: 2.3, verge: 2.8, hedgeTo: 176, pad: { x: 188, radius: 9 }, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6, gate: { width: 7 }, grid: { length: 3.2, pitch: 0.16, margin: 0.3, gateOffset: 2.4 } },
+  road: { ...FARM_ROAD, verge: 2.8, hedgeTo: 176, pad: FARM_PAD, gaps: { north: [112, 152], south: [128, 166] }, gapWidth: 6, gate: { width: 7 }, grid: { length: 3.2, pitch: 0.16, margin: 0.3, gateOffset: 2.4 } },
   // The public lane outside the farm's east hedge, running north to south past the big gate (world/traffic.js): its middle `x`, `halfWidth`,
   // and the `minZ` to `maxZ` that is drawn and driven on. Vehicles go by on it and visitors turn in at the gate.
   // `open` is the stretch you can ride or walk along (z from `minZ` to `maxZ`, between the farm's hedge and an invisible wall just east of
   // the tarmac); the rest is as it was, shut off by the wall along its near edge.
-  publicLane: { x: 206.4, halfWidth: 2.3, minZ: -205, maxZ: 205, open: { minZ: -60, maxZ: 200 } },
+  publicLane: { ...LANE, open: { minZ: -60, maxZ: 200 } },
+  // Every road (world/roads.js says what a road is and what is asked of one). Roads are drawn by world/roadMesh.js: the lane and the village street
+  // are laid over the ground (`draw: 'mesh'`), the farm road is painted into it (`draw: 'ground'`) so mud, rain, frost and snow lie on it.
+  roads: [
+    // The public lane, straight north to south past the farm's big gate: single carriageway with a broken white line down its middle.
+    { id: 'lane', name: 'the lane', surface: 'tarmac', halfWidth: LANE.halfWidth, points: [[LANE.x, LANE.minZ], [LANE.x, LANE.maxZ]], markings: { centre: 'dashed' }, verge: 1, hedged: false, draw: 'mesh', lift: 0.07 },
+    // The farm road from the cattle grid to the hardstanding, laid level across with a 3 m shoulder (starting 2 m before its tarmac does).
+    {
+      id: 'farm', name: 'the farm road', surface: 'tarmac', halfWidth: FARM_ROAD.halfWidth, points: [[FARM_ROAD.fromX, FARM_ROAD.z], [FARM_ROAD.toX, FARM_ROAD.z]],
+      markings: { centre: 'none' }, verge: 2.8, hedged: true, draw: 'ground', level: { shoulder: 3, lead: [2, 0] }, pads: [{ x: FARM_PAD.x, z: FARM_ROAD.z, radius: FARM_PAD.radius }],
+    },
+    // The village street, off the lane's west side: it ends on the lane, and the give-way line is across the traffic leaving. The village lays its own
+    // ground level (a plane along the street, village.js), so the street is not levelled here.
+    at('village', {
+      id: 'street', name: 'the village street', surface: 'tarmac', halfWidth: 2.3, pavement: 1.7, junction: { end: 'start', onto: 'lane' }, markings: { centre: 'dashed', giveWay: true },
+      points: [[56.4, -14], [50, -9], [40, -4.5], [28, -2], [16, -1.5], [4, 0], [-6, 4], [-16, 6], [-28, 8], [-40, 6], [-45, 7.5], [-48, 11], [-48, 16.5]],
+      verge: 0, hedged: false, draw: 'mesh', lift: 0.075,
+    }),
+  ],
   // The village, Nether Thornby (world/village.js, villageProps.js): a short ride south down the public lane, where a side road turns off to the
   // west past the shop, the pub and the garage, with a few cottages along it, ending at a closed gate. `road` is its middle line (smoothed into a
   // curve, `halfWidth` m either side of it with a `pavement` each side); `area` is the ground you can ride on, shut in by drystone walls (the
@@ -50,11 +74,7 @@ const RAW = {
   village: at('village', {
     name: 'Nether Thornby',
     limit: 20,
-    road: {
-      halfWidth: 2.3,
-      pavement: 1.7,
-      points: [[56.4, -14], [50, -9], [40, -4.5], [28, -2], [16, -1.5], [4, 0], [-6, 4], [-16, 6], [-28, 8], [-40, 6], [-45, 7.5], [-48, 11], [-48, 16.5]],
-    },
+    road: { pavement: 1.7 }, // its middle line and width are the village street in `roads`
     area: { minX: -54, maxX: 53, minZ: -21.5, maxZ: 20 },
     // The pub: front door on its long south side, a beer garden in front and the car park to its west (`carPark`: the tarmac, with its bays).
     pub: {

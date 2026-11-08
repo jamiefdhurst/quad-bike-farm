@@ -62,7 +62,7 @@ describe('the farm fields', () => {
     expect(f.tarmacAt(lane.x - lane.halfWidth - 1, 100)).toBe(0); // the verge
     expect(f.tarmacAt(lane.x + lane.halfWidth + 1, 100)).toBe(0);
     expect(f.tarmacAt(166, 183.5)).toBe(1); // the village road
-    expect(f.tarmacAt(166, 183.5 + v.road.halfWidth + v.road.pavement - 0.5)).toBe(1); // its pavement
+    expect(f.tarmacAt(166, 183.5 + LAYOUT.roads.find((r) => r.id === "street").halfWidth + v.road.pavement - 0.5)).toBe(1); // its pavement
     expect(f.tarmacAt(166, 183.5 + 6)).toBe(0); // behind the pavement
     const cp = v.pub.carPark;
     expect(f.tarmacAt((cp.minX + cp.maxX) / 2, (cp.minZ + cp.maxZ) / 2)).toBe(1);
