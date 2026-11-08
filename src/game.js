@@ -59,7 +59,7 @@ import { VehicleLights, VEHICLE_LIGHT_PARAM_RANGES } from './effects/vehicleLigh
 import { MUD_STATE_RANGES } from './effects/quadMud.js';
 import { WEAR_LOOK_RANGES } from './effects/mudCoat.js';
 import { WeatherStation } from './world/weatherStation.js';
-import { Forecast, DEFAULT_FORECAST_PARAMS, FORECAST_PARAM_RANGES, KIND_WARMTH } from './world/forecast.js';
+import { Forecast, DEFAULT_FORECAST_PARAMS, FORECAST_PARAM_RANGES } from './world/forecast.js';
 import { choose, mainNeed, nextThink, OFFER_KINDS } from './npc/chooser.js';
 import { pickThen, planKey } from './npc/plans.js';
 import { Agenda, agendaKey } from './npc/agenda.js';
@@ -271,7 +271,7 @@ import { Charger, CHARGER_PARAM_RANGES } from './workshop/charger.js';
 import { buildChargerModel, CHARGER_SLOT } from './workshop/chargerModel.js';
 import { PlugAdditive, PLUG_ADDITIVE_PARAM_RANGES } from './items/plugAdditive.js';
 import { ratioText } from './engine/lubrication.js';
-import { GIRL_CONTROLS_PARAMS, GIRL_CONTROLS_PARAM_RANGES, lightsWanted, bowlNeedsDraining } from './npc/girlControls.js';
+import { GIRL_CONTROLS_PARAMS, GIRL_CONTROLS_PARAM_RANGES, bowlNeedsDraining } from './npc/girlControls.js';
 import { walkRound, DEFAULT_WALK_PARAMS, WALK_PARAM_RANGES } from './npc/walkRound.js';
 import { DEFAULT_MOTO_PARAMS, MOTO_PARAM_RANGES } from './npc/motoGo.js';
 import { DEFAULT_THROWN_PARAMS, THROWN_PARAM_RANGES } from './npc/companionThrown.js';
@@ -319,10 +319,10 @@ import { TRACTOR_GROUND_OFFSET, SPLITTER, poseLogSplitter } from './vehicle/trac
 import { DEFAULT_SPLITTER_PARAMS, SPLITTER_PARAM_RANGES, LogSplitter, LogStack, splitterPowered } from './items/logSplitter.js';
 import { WoodPiece, StackView } from './items/woodPieces.js';
 import { SplitAudio } from './audio/splitAudio.js';
+import { WeatherHost } from './world/weatherHost.js';
 import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
 import { dateToday, daylightParams, weatherWeights, temperatureBandWeights, groundFor, isAutumn, isWinter } from './world/seasons.js';
 import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } from './world/wind.js';
-import { windUniforms, swayMetres } from './effects/windSway.js';
 import { DoorAudio } from './audio/doorAudio.js';
 import { TrafficHost } from './world/trafficHost.js';
 import { showOffBoost } from './world/kids.js';
@@ -330,8 +330,8 @@ import { NeighbourHost } from './world/neighbourHost.js';
 import { MOT_PARAMS, withCertificate, girlMinds } from './farm/mot.js';
 import { VillageHost } from './world/villageHost.js';
 import { Snow } from './effects/snow.js';
-import { DEFAULT_SNOW_COAT_PARAMS, SNOW_COAT_PARAM_RANGES, snowUniforms, topsCover, vehicleSnowAfter } from './world/snowCoat.js';
-import { coatTree, WorldSnow } from './world/snowCoatView.js';
+import { DEFAULT_SNOW_COAT_PARAMS, SNOW_COAT_PARAM_RANGES } from './world/snowCoat.js';
+import { WorldSnow } from './world/snowCoatView.js';
 import { leavesInAir, DEFAULT_AUTUMN_PARAMS, AUTUMN_PARAM_RANGES } from './world/autumn.js';
 import { LeafFall } from './world/autumnView.js';
 import { Conkers } from './npc/conkers.js';
@@ -801,8 +801,8 @@ export class Game {
     this.snowCoatParams = { ...DEFAULT_SNOW_COAT_PARAMS };
     registerTuning('Snow coat', this.snowCoatParams, SNOW_COAT_PARAM_RANGES);
     this.worldSnow = new WorldSnow(this.snowCoatParams);
-    this.snowCoated = false;
-    if (this.weather.cover > 0 || this.weather.snow > 0) this.coatSnow();
+    this.weatherHost = new WeatherHost(this); // the weather's switches, the time of day, the wind and the snow coat (world/weatherHost.js)
+    if (this.weather.cover > 0 || this.weather.snow > 0) this.weatherHost.coatSnow();
     // Leaves coming down under the trees, and Jess's conkers (world/autumn.js, npc/conkers.js): only on an autumn day.
     this.autumnParams = { ...DEFAULT_AUTUMN_PARAMS };
     this.leafFall = new LeafFall(this.scene);
@@ -960,7 +960,6 @@ export class Game {
     // The hay door's shutter bangs about in a gale, and loose hay blows out of the door (updateWind).
     this.hayBlow = new StrawFall(this.scene);
     this.shutter = new Shutter(this.wind.p);
-    this.shutterBangCool = 0;
     this.doorAudio = new DoorAudio(this.audioHub, this.world.props.barn.hayDoor);
     this.climb = null; // Climb of you on the ladder, when you are
     this.hiddenFrom = null; // where you were stood before you ducked into the hay
@@ -2176,23 +2175,12 @@ export class Game {
 
   // The console's switches (src/console) ---------------------------------------------------------------
 
-  /** Changes the weather to a kind at once, with the sky, the rain and the frost on the seats following. */
   /** The debug panel's and the console's stream level: sets it at once, for the water, the hill and the engine's drowning to follow. */
   setStreamLevel(level) {
     this.world.streamLevel.set(level);
     this.world.setStreamLevel();
   }
 
-  setWeatherKind(kind) {
-    if (!this.weather.setKind(kind)) return false;
-    this.forecast.cancel(); // set by hand: the day no longer turns, and the board has nothing to say
-    this.weather.promise = null;
-    this.world.setWeather(this.weather);
-    for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
-    return true;
-  }
-
-  /** How hard it is raining now, 0 to 1 (it settles back to what the weather would do in time). */
   /** Holds the mist in the barley hollow at a level now (the console), or null to let the morning decide. */
   setMist(level) {
     this.mist.forced = level === null ? null : Math.max(0, Math.min(1, level));
@@ -2203,37 +2191,6 @@ export class Game {
   setRainbow(strength) {
     this.rainbow.forced = strength === null ? null : Math.max(0, Math.min(1, strength));
     if (this.rainbow.forced !== null) this.rainbow.strength = this.rainbow.forced;
-  }
-
-  setRain(amount) {
-    this.weather.rain = this.weather.target = Math.max(0, Math.min(1, amount));
-  }
-
-  /** How hard it is snowing now, 0 to 1 (it settles back to what the weather would do in time). */
-  setSnow(amount) {
-    this.weather.snow = this.weather.snowTarget = Math.max(0, Math.min(1, amount));
-  }
-
-  /** How far the ground and the seats are under snow, 0 to 1. */
-  setSnowCover(amount) {
-    this.weather.cover = Math.max(0, Math.min(1, amount));
-    for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
-  }
-
-  /** The day's temperature in degrees C. */
-  setTemperature(celsius) {
-    // It goes on following the time of day from there: the day's warmest moves so that it is this now.
-    if (this.daylight) this.weather.peak = this.daylight.peakFor(celsius);
-    this.weather.temperature = celsius;
-    for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
-  }
-
-  /** Sets the time of day (hours after midnight; past 24 is the same night going on), with the temperature and the frost following at once. */
-  setTime(hour) {
-    if (!this.daylight) return;
-    this.daylight.hour = hour;
-    this.weather.temperature = Math.round(this.daylight.temperature(this.weather.peak) * 10) / 10;
-    for (const unit of this.units) unit.quad.seatFrost = this.weather.seatFrost;
   }
 
   /** On: the girls start things on their own as usual. Off: nothing new starts; they follow, ride and answer you. */
@@ -8214,129 +8171,9 @@ export class Game {
     return !!hit;
   }
 
-  /**
-   * The time of day moving on (world/daylight.js): the temperature with it, so the frost on the ground and the seats forms as the night
-   * cools and thaws as the morning warms. The sky follows in world.update.
-   */
-  updateDaylight(dt) {
-    const d = this.daylight;
-    if (!d) return;
-    d.update(dt);
-    const w = this.weather;
-    w.temperature = Math.round(d.temperature(w.peak) * 10) / 10;
-    w.sunUp = d.sun.light;
-    w.dark = d.darkness; // for what the girls say about it (companionVoice.watchWeather)
-    for (const unit of this.units) {
-      unit.quad.dayFrost = w.seatFrost;
-      // A girl driving a cab in the dark puts its lights on, and puts them off again once she has parked (but not the work light's).
-      const q = unit.quad;
-      if (!q.lights) continue;
-      const driving = this.companions.some((c) => c.quad === q && c.fsm.is('driving'));
-      const act = lightsWanted(driving, d.darkness, q.lights.mode, !q.girlLights || this.workLight.job?.vehicle === unit.id);
-      if (act) q.lights.set(act);
-      q.girlLights = driving ? q.girlLights || act === 'low' : q.girlLights && !act;
-    }
-    const turn = this.forecast.update(d.hour);
-    if (turn) this.turnWeather(turn);
-    this.station.update(d.hour, w.temperature, w.kind, w.rain, w.target, w.from, w.mix);
-    this.station.setForecast(this.forecast.board(d.hour));
-    const board = this.boardUnit ?? this.player.vehicle?.unit ?? null;
-    this.vehicleLights.update(this.units, this.camera.position, board, this.lightingUnit ?? null, d.darkness);
-  }
-
-  /** The weather turns to another kind (forecast.js): the sky eases across, the rain follows and the day's warmest moves; the girls notice. */
-  turnWeather(turn) {
-    const seconds = (this.forecastParams.shiftHours * 3600) / this.daylight.p.clockRate;
-    const warmth = ((KIND_WARMTH[turn.to] ?? 0) - (KIND_WARMTH[turn.from] ?? 0)) * this.forecastParams.tempShiftScale;
-    this.weather.beginShift(turn.to, seconds, { warmth, note: { ...turn } });
-    console.info(`The weather turns from ${turn.from} to ${turn.to} (${turn.told ? 'as the board said' : 'not on the board'}) over ${Math.round(seconds)} s`);
-  }
-
-  /** Turns the weather now, as it would at its time (the debug panel and the console). Returns false if this kind has nowhere to turn. */
-  turnWeatherNow() {
-    const turn = this.forecast.turnNow(this.weather.kind, this.daylight.hour, this.forecastRandom);
-    if (!turn) return false;
-    this.turnWeather(turn);
-    return true;
-  }
-
-  /**
-   * The wind (world/wind.js): ticks the day's wind and gusts, leans the hedges and trees with it, swings the hay door's shutter (a bang
-   * when it slams, which the girls hear) and now and then blows loose hay out of the loft door.
-   */
-  updateWind(dt) {
-    const wind = this.wind;
-    wind.update(dt, this.weather.wind);
-    const p = wind.p;
-    windUniforms.uWindDir.value = [Math.sin(wind.heading), Math.cos(wind.heading)];
-    windUniforms.uWindPush.value = wind.strength;
-    windUniforms.uWindTime.value += dt;
-    swayMetres.hedge.value = p.swayHedge;
-    swayMetres.tree.value = p.swayTree;
-    const barn = this.world.props?.barn;
-    if (!barn?.shutter) return;
-    const OUT = Math.PI / 2; // the hay door looks east: out of it is +x
-    const bang = this.shutter.update(dt, wind.along(OUT));
-    barn.shutter.rotation.y = -this.shutter.angle;
-    this.shutterBangCool = Math.max(0, this.shutterBangCool - dt);
-    if (bang && this.shutterBangCool <= 0) {
-      this.shutterBangCool = 3;
-      this.doorAudio.bang(bang.strength);
-      this.notice('bang', { x: barn.hayDoor.x + 0.3, y: barn.hayDoor.y + 0.7, z: barn.hayDoor.z }, { key: 'shutter', strength: 0.6 * bang.strength });
-    }
-    if (wind.hayBlows(OUT)) this.blowHay();
-    this.hayBlow.update(dt);
-  }
-
-  /** Loose hay lifted off the loft floor and out of the hay door on a strong gust, to land in the yard downwind. */
-  blowHay() {
-    const door = this.world.props.barn.hayDoor;
-    const wind = this.wind;
-    const len = Math.max(0.1, Math.hypot(wind.x, wind.z));
-    const to = { x: door.x + (wind.x / len) * 8, y: door.y, z: door.z + (wind.z / len) * 8 };
-    this.hayBlow.drop({ x: door.x + 0.2, y: door.y + 0.3, z: door.z }, to, this.world.heightAt(to.x, to.z));
-  }
-
-  /** Rain round you and its sound, and the wind on the exhaust smoke. */
-  /** Lays the snow shader over the world and over each vehicle (once). The ground and the vehicles are left out of the world's, which they don't share. */
-  coatSnow() {
-    if (this.snowCoated) return;
-    this.snowCoated = true;
-    const p = this.snowCoatParams;
-    const covered = (x, z) => this.world.covered(x, z);
-    this.world.terrain.mesh.userData.snowOwn = true; // the terrain shader draws the ground's own
-    for (const unit of this.units) {
-      unit.snowUniforms = snowUniforms(p);
-      unit.snowLevel = covered(unit.quad.position.x, unit.quad.position.z) ? 0 : topsCover(this.weather.cover, p);
-      unit.snowUniforms.uSnowTops.value = unit.snowLevel;
-      unit.quad.model.userData.snowOwn = true;
-      coatTree(unit.quad.model, unit.snowUniforms, { covered: () => false, p });
-    }
-    coatTree(this.scene, this.worldSnow.uniforms, { covered, p });
-  }
-
-  /** The world's snow follows the ground's cover; a vehicle's settles while it snows, slides off as it moves and thaws indoors (snowCoat.js). */
-  updateSnowCoat(dt) {
-    const w = this.weather;
-    if (!this.snowCoated) {
-      if (w.cover <= 0 && w.snow <= 0) return;
-      this.coatSnow();
-    }
-    this.worldSnow.update(dt, w.cover);
-    const p = this.snowCoatParams;
-    for (const unit of this.units) {
-      if (!unit.snowUniforms) continue;
-      const q = unit.quad;
-      unit.snowLevel = vehicleSnowAfter(unit.snowLevel, dt, { snow: w.snow, cover: w.cover, speed: q.speed, indoors: !!this.world.covered(q.position.x, q.position.z) }, p);
-      unit.snowUniforms.uSnowTops.value = unit.snowLevel;
-      unit.snowUniforms.uSnowWet.value = this.worldSnow.uniforms.uSnowWet.value;
-      unit.snowUniforms.uSnowEdge.value = p.holdEdge;
-    }
-  }
-
   updateWeather(dt) {
     const w = this.weather;
-    this.updateSnowCoat(dt);
+    this.weatherHost.updateSnowCoat(dt);
     if (this.world.streamEvent) {
       // The stream came up or went back down: whoever is stood about near you says so.
       const near = this.companions.filter((c) => c.availability().canRemark && c.root.position.distanceTo(this.camera.position) < 40);
@@ -8346,7 +8183,7 @@ export class Game {
     const world = this.world;
     // The barn: no rain under its roof, the drumming of it on the tin, a dimmer light inside with the bulb on, and a room's echo.
     const indoor = world.indoor(cam.x, cam.z);
-    this.updateWind(dt);
+    this.weatherHost.updateWind(dt);
     const wind = this.wind;
     this.rain.wind = { x: wind.x, z: wind.z };
     this.snow.wind = { x: wind.x, z: wind.z };
@@ -13941,7 +13778,7 @@ export class Game {
     this.tidyLoad.update(dt);
     this.guard.run('updateTidyUp', () => this.updateTidyUp(dt));
     this.guard.run('updateLostThings', () => this.updateLostThings(dt));
-    this.guard.run('updateDaylight', () => this.updateDaylight(dt));
+    this.guard.run('updateDaylight', () => this.weatherHost.updateDaylight(dt));
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);
     this.guard.run('updateWeather', () => this.updateWeather(dt));
     fb.lap('world, weather and effects', performance.now());

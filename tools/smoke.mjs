@@ -83,7 +83,7 @@ async function run() {
   }
   for (const phase of PHASES) {
     await page.evaluate((ph) => {
-      game.setWeatherKind(ph.weather);
+      game.weatherHost.setKind(ph.weather);
       game.daylight.p.clockRate = ph.clockRate;
     }, phase);
     for (let t = 0; t < phase.seconds; t += 2) {
