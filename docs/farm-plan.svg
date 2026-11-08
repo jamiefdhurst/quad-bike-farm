@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-420 -110 1900 1130" width="1900" height="1130" font-family="Georgia, serif">
+<title>The farm plan</title>
+<style>.lab{font-size:15px;fill:#2b3a1f}.big{font-size:30px;fill:#555;opacity:.7}.sm{font-size:11px;fill:#333}.rd{font-size:12px;fill:#fff;paint-order:stroke;stroke:#333;stroke-width:3px}</style>
+<defs><clipPath id="farm"><polygon points="50,70 120,42 215,38 310,18 412,30 500,12 600,24 720,26 800,14 885,20 885,806 800,826 700,810 600,840 500,824 420,846 330,828 230,852 140,830 60,842 34,760 46,660 28,560 42,470 30,365 44,300 30,215 42,150"/></clipPath></defs>
+<rect x="-420" y="-110" width="1900" height="1130" fill="#e6efd8"/>
+<rect x="-330" y="40" width="360" height="880" fill="#b9b08a" opacity=".55"/><text x="-150" y="470" class="big" text-anchor="middle">The Moor</text>
+<g clip-path="url(#farm)">
+<polygon points="-10,-10 215,-10 200,225 -10,215" fill="#5f7a46" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="215,-10 412,-10 412,235 200,225" fill="#d8c27a" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="412,-10 720,-10 720,195 618,228 412,235" fill="#d8c27a" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="720,-10 885,-10 885,200 720,195" fill="#a8a091" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="-10,215 200,225 195,370 -10,365" fill="#8fb98a" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="200,225 412,235 412,440 195,440 195,370" fill="#a9cf7f" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="412,235 618,228 618,335 618,355 618,440 412,440" fill="#cfc9bb" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="618,228 720,195 885,200 885,335 618,335" fill="#d8c27a" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="618,335 885,335 885,355 618,355" fill="#b9d49a" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="618,355 885,355 885,520 640,525 618,440" fill="#d8c27a" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="-10,365 195,370 195,440 200,565 -10,565" fill="#d8c27a" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="195,440 412,440 420,545 200,565" fill="#9fc58a" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="412,440 618,440 640,525 420,545" fill="#b7d68a" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="-10,565 200,565 420,545 420,880 -10,880" fill="#8da56c" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="420,545 640,525 640,660 640,880 420,880" fill="#8fb98a" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="640,525 885,520 885,650 640,660" fill="#a4cf6e" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+<polygon points="640,660 885,650 885,880 640,880" fill="#d8c27a" stroke="#fff" stroke-opacity=".7" stroke-width="1.5"/>
+</g><polygon points="50,70 120,42 215,38 310,18 412,30 500,12 600,24 720,26 800,14 885,20 885,806 800,826 700,810 600,840 500,824 420,846 330,828 230,852 140,830 60,842 34,760 46,660 28,560 42,470 30,365 44,300 30,215 42,150" fill="none" stroke="#3f5f2a" stroke-width="3"/>
+<text x="99" y="105" class="lab" text-anchor="middle">Hollow Wood</text>
+<text x="310" y="110" class="lab" text-anchor="middle">North Field</text>
+<text x="576" y="128" class="lab" text-anchor="middle">Top Field</text>
+<text x="803" y="94" class="lab" text-anchor="middle">The Old Pit</text>
+<text x="94" y="294" class="lab" text-anchor="middle">Wet Meadow</text>
+<text x="283" y="342" class="lab" text-anchor="middle">Home Ground</text>
+<text x="745" y="259" class="lab" text-anchor="middle">Lane Field</text>
+<text x="729" y="439" class="lab" text-anchor="middle">Long Piece</text>
+<text x="114" y="461" class="lab" text-anchor="middle">Far Field</text>
+<text x="307" y="498" class="lab" text-anchor="middle">Sheep Field</text>
+<text x="523" y="488" class="lab" text-anchor="middle">Hay Meadow</text>
+<text x="204" y="687" class="lab" text-anchor="middle">Hill Pasture</text>
+<text x="552" y="698" class="lab" text-anchor="middle">Brook Meadow</text>
+<text x="763" y="589" class="lab" text-anchor="middle">Low Ley</text>
+<text x="763" y="768" class="lab" text-anchor="middle">South Field</text>
+<polyline points="905,-2 800,0 700,6 580,2 480,-6 360,4 230,16 110,24 22,70 14,160 10,250 12,340 14,470 10,560 10,700 2,792 -30,840 60,874 300,880 560,878 820,880 905,886" fill="none" stroke="#6b6b6b" stroke-width="5" stroke-linejoin="round"/><text x="300" y="868" class="rd" text-anchor="middle">Back Lane</text>
+<polyline points="905,-60 905,40 905,886 905,970" fill="none" stroke="#555" stroke-width="7"/><text transform="translate(897,200) rotate(-90)" class="rd">The lane</text>
+<polyline points="905,40 936,-26 1291,-30 1300,-70" fill="none" stroke="#555" stroke-width="6"/>
+<polyline points="1300,-70 1290,60 1298,400 1292,718 1305,880 1296,970" fill="none" stroke="#333" stroke-width="12"/><text transform="translate(1316,300) rotate(-90)" class="rd">The A-road</text>
+<line x1="908" y1="720" x2="1330" y2="718" stroke="#555" stroke-width="6"/><text x="1160" y="710" class="rd" text-anchor="middle">Village street</text>
+<line x1="905" y1="345" x2="618" y2="345" stroke="#b5a58a" stroke-width="8"/><text x="760" y="338" class="rd" text-anchor="middle">The drive</text>
+<polyline points="546,232 600,232 720,150 805,108" fill="none" stroke="#b5a58a" stroke-width="3" stroke-dasharray="8 4"/>
+<rect x="425" y="317" width="190" height="98" fill="#bdb8ac" stroke="#888"/><text x="520" y="406" class="sm" text-anchor="middle">Yard</text>
+<rect x="498" y="319" width="26" height="18" fill="#a2492f" stroke="#444"/><text x="511" y="350" class="sm" text-anchor="middle">Barn</text>
+<rect x="420" y="253" width="52" height="56" fill="#b8a56a" stroke="#444"/><text x="446" y="322" class="sm" text-anchor="middle">Dutch barn</text>
+<rect x="478" y="250" width="60" height="60" fill="#8cbf6a" stroke="#444"/><text x="508" y="247" class="sm" text-anchor="middle">Orchard</text>
+<rect x="552" y="250" width="63" height="62" fill="#78b25a" stroke="#444"/><text x="583.5" y="247" class="sm" text-anchor="middle">House</text>
+<rect x="572" y="319" width="40" height="14" fill="#7b8794" stroke="#444"/><text x="592" y="346" class="sm" text-anchor="middle">Cars</text>
+<circle cx="486" cy="416" r="7" fill="#6b4a2a"/><text x="486" y="432" class="sm" text-anchor="middle">Muck heap</text>
+<rect x="950" y="250" width="95" height="85" fill="#cdbba0" stroke="#444"/><text x="998" y="244" class="lab" text-anchor="middle">The neighbour's</text>
+<rect x="932" y="588" width="22" height="9" fill="#c0392b"/><rect x="913" y="599" width="40" height="13" fill="#bbb"/><text x="1040" y="585" class="sm" text-anchor="middle">Hollis Motors</text>
+<circle cx="1022" cy="699" r="14" fill="#7fb069"/><text x="1022" y="740" class="sm" text-anchor="middle">The green</text>
+<rect x="930" y="520" width="420" height="300" fill="#d8cdb8" opacity=".35"/><text x="1140" y="560" class="big" text-anchor="middle">Nether Thornby</text>
+<line x1="1310" y1="-60" x2="1310" y2="960" stroke="none"/><text x="1040" y="940" class="sm" text-anchor="middle">The lane runs on south to Haddon</text>
+<polyline points="900,300 700,285 566,274" fill="none" stroke="#a33" stroke-width="1.5" stroke-dasharray="3 5"/><text x="720" y="278" class="sm" fill="#a33">11 kV line</text>
+<g transform="translate(-380,-60)"><path d="M0 0 L8 24 L0 18 L-8 24Z" fill="#333"/><text x="0" y="40" class="sm" text-anchor="middle">N</text></g>
+<line x1="-380" y1="990" x2="-180" y2="990" stroke="#333" stroke-width="3"/><text x="-280" y="1008" class="sm" text-anchor="middle">200 m</text>
+</svg>

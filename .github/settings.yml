@@ -92,6 +92,29 @@ labels:
   - name: "🤦‍♂️ wontfix"
     color: ffffff
     description: This won't be worked on
+milestones:
+  # The phases of docs/farm-plan.md, in the order /todo works them (tools/nextTodo.mjs). Title order is the run order.
+  - title: "0 · Foundations"
+    description: Nothing new to see: what the new map needs underneath. docs/farm-plan.md, 'The phases'.
+    state: open
+  - title: "1 · The new map"
+    description: Review each area, then move it onto the new plan, behind ?layout=2 until 'Open the new farm'.
+    state: open
+  - title: "2 · The farmstead"
+    description: The farmhouse, sheds, pens, boundaries and everything placed on the new map.
+    state: open
+  - title: "3 · Crops"
+    description: The crop year: ploughing, drilling, growing and harvest on the six arable fields.
+    state: open
+  - title: "4 · Pulled together"
+    description: 'The cohesion passes on the finished map: detail, light and size, saving, discovery, money, screens.'
+    state: open
+  - title: "5 · Ready for players"
+    description: Settings, quality, subtitles, crash screen, the first ten minutes, browsers and download size.
+    state: open
+  - title: Alongside
+    description: Work that doesn't depend on where things are: the girls, vehicles, engine, sound and items. /todo alongside.
+    state: open
 branches:
   - name: main
     protection:

@@ -31,3 +31,7 @@ Closed as dropped when the oldest 30 issues were gone through. Raise them again 
 - A vehicle spec editor in the debug panel, #89: new vehicles are written as specs by a session, not tuned by hand, so it would pay back little.
 - The romance as a slow thread across days (from #85): no clear first step yet. Amy's driving test (#85) and Jess saving for a bike (#519) go first.
 - More variety in how far the polos are undone, #307 (dropped in batch 6): Jess is already dealt anything from none to all five, and Amy keeping hers mostly done up is who she is.
+
+## Farm plan (2026-11-08)
+
+- No pheasant shoot or any shooting: too big, and Jamie isn't keen on shooting animals.

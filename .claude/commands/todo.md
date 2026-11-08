@@ -3,17 +3,19 @@ description: Work through one GitHub issue, start to finish, as a pull request t
 argument-hint: "[issue number; default: the next one]"
 ---
 
-Work on GitHub issue $ARGUMENTS. If no number is given, take the next one: the lowest-numbered open issue labelled `🔜 next`, or if none is, the lowest-numbered open issue that isn't labelled `❓ question`, `🤦‍♂️ wontfix`, `🧪 testing` or `💤 later` and has no open PR yet (`gh pr list --search "<n> in:body"`):
+Work on GitHub issue $ARGUMENTS. If no number is given, take the next one, in this order (the plan is `docs/farm-plan.md`; the phases are the milestones in `.github/settings.yml`):
+
+- **`alongside`** takes the lowest-numbered eligible issue in the **Alongside** milestone.
+- **Otherwise**, the lowest-numbered open issue labelled `🔜 next`; or if none, the lowest-numbered eligible issue in the earliest open milestone (by title order: `0 · Foundations` first, `Alongside` last, so it is only reached by `/todo alongside`).
+- **Eligible** means open, not labelled `❓ question`, `🤦‍♂️ wontfix`, `🧪 testing` or `💤 later`, with no open PR yet (`gh pr list --search "<n> in:body"`), and a `Depends on:` line (if it has one) that names only closed issues. An issue with no milestone is taken only by number.
 
 ```
 gh issue list --state open --label "🔜 next" --json number,title --jq 'sort_by(.number) | .[0]'
-gh issue list --state open --limit 500 --json number,title,labels --jq '[.[] | select(all(.labels[].name; . != "❓ question" and . != "🤦‍♂️ wontfix" and . != "🧪 testing" and . != "💤 later"))] | sort_by(.number) | .[0:5]'
+tools/nextTodo.mjs            # the eligible issues in order, first five; `tools/nextTodo.mjs alongside` for that milestone
 ```
 
-Other sessions work in this checkout at the same time, so every item gets its own worktree and branch. Never switch branch in the main checkout, and never commit to main.
-
 1. **Say which issue it is.** Before anything else, say its number, title and link: "Working on #260: Every frame throws since asleep-on-the-back (https://github.com/jamiefdhurst/quad-bike-sim/issues/260)".
-   Then **read it.** `gh issue view <n> --comments`. Then the `.claude/rules/` files for the areas it touches (CLAUDE.md lists them; they don't load on their own in a worktree), the "Where things stand" summary of each `docs/decisions/` area it touches, and only the code and the sections it touches; don't read the whole codebase. The body ends "Was TODO <old number>" for items moved from the README: DECISIONS and the code call it by that number.
+   Then **read it.** `gh issue view <n> --comments`, including its **Where it fits** section and the entry for its place in `docs/farm-plan.md` (an issue that puts something in the world isn't started before its phase, and a place that isn't on the plan changes the plan first, in its own PR). Then the `.claude/rules/` files for the areas it touches (CLAUDE.md lists them; they don't load on their own in a worktree), the "Where things stand" summary of each `docs/decisions/` area it touches, and only the code and the sections it touches; don't read the whole codebase. The body ends "Was TODO <old number>" for items moved from the README: DECISIONS and the code call it by that number.
 2. **Ask if it needs it.** If the item adds anything you'll see, read `.claude/rules/looks.md` and copy the issue's **Looks like** list into your plan (write one from the real thing and add it to the issue if it has none). If anything is genuinely undecided, ask Jamie now: a short numbered list of questions, each with your recommendation, then stop and wait. If it's clear, say in two or three lines what you're going to do and carry on without waiting. Write what was settled as a comment on the issue (`gh issue comment`) as well as in DECISIONS.md.
 3. **Make the worktree.** `tools/worktree.sh start <n>` prints its path. Do all the work there: absolute paths for every edit and command (the shell's directory resets to the main checkout), your own dev server from it (`npx vite --port 5180`) for any headless check, and the voice recording run from it so the banks land in its `public/audio`. `node_modules` and `.scratch` are links to the main checkout's; if the item changes `package.json`, delete the link and `npm ci`.
 4. **Build it**, the look first as its own commit if there's something new to see, then the rest, following CLAUDE.md: pure logic with unit tests where possible, tunables with ranges, the girls' lines in the voice files (re-record in the background if you add any, wait for it, and commit the banks on the branch before the PR is merged; see `.claude/rules/voice-lines.md`).

@@ -4,7 +4,7 @@
 //   gh api --paginate repos/<owner>/<repo>/pulls/<n>/files --jq '.[].filename' | node tools/ciChanges.mjs    prints code=true or code=false
 
 /** Markdown files the unit tests read, so a change to one still runs them. */
-export const READ_BY_TESTS = ['docs/glossary.md', 'docs/game.md'];
+export const READ_BY_TESTS = ['docs/glossary.md', 'docs/game.md', 'docs/farm-plan.md'];
 
 /** Whether a path is prose nothing in CI reads. */
 export function isProse(path) {

@@ -8,6 +8,15 @@ paths:
 
 # Making a new thing look right the first time
 
+## Definition of done
+
+The line to check before opening a PR for anything you'll see. Jamie keeps getting plain boxes.
+
+- The issue's **Looks like** list is in the PR, every feature ticked, each one something you saw in the shot.
+- The bare-block test passes with nothing added to `KNOWN_PLAIN` (#384).
+- One look with `tools/shot.mjs` (#384), two rounds at most. Until #384 is merged, one look with `.scratch` and puppeteer as now.
+
+
 New areas and items used to land as plain blocks, and Jamie had to ask for detail afterwards. These rules hold, in the style `docs/style.md` sets (era, wear, colour, light), for anything new you'll see in the world: a building, a yard, a prop, a thing you carry, a fixture. Vehicles have their own, stricter rules (`vehicle-detail.md`); the girls' clothes and figures are in docs/decisions/girls.md. docs/decisions/process.md, "Making new things look right (#383)".
 
 ## Before building
