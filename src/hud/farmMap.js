@@ -7,6 +7,7 @@ import { dutchBarnShape, fieldShedShape } from '../world/outbuildings.js';
 import { neighbourFarmShape } from '../world/neighbourFarm.js';
 import { stripPoint } from '../world/layout.js';
 import { nearestTrackFraction } from '../world/startLine.js';
+import { roadNetwork } from '../world/roads.js';
 
 export const DEFAULT_MAP_PARAMS = {
   size: 0.88, // the map's side as a share of the shorter side of the screen
@@ -166,7 +167,9 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const woodsTrack = woods ? { points: woods.track.points, leadIn: woods.leadIn, half: woods.halfWidth } : null;
   const woodsTrail = woods?.trail ? { points: woods.trailTrack.points, half: woods.trailHalf } : null;
   const woodsBogs = woods ? woods.bogs.map((b) => ({ x: b.x, z: b.z, r: b.radius })) : [];
-  const road = layout.road ? { x1: layout.road.fromX, x2: layout.road.toX, z: layout.road.z, half: layout.road.halfWidth, pad: layout.road.pad ? { x: layout.road.pad.x, z: layout.road.z, r: layout.road.pad.radius } : null } : null;
+  // The roads the map shows (`map: true` in layout.roads): each its middle line, half width and any round hardstanding, drawn by hud/mapView.js.
+  const net = roadNetwork(layout);
+  const roads = net.roads.filter((r) => r.map).map((r) => ({ id: r.id, name: r.name, points: net.pointsAlong(r.id, { step: 4 }).map((p) => [p.x, p.z]), half: r.halfWidth, pads: r.pads.map((q) => ({ x: q.x, z: q.z, r: q.radius })) }));
 
   const bogs = (layout.bogs ?? []).map((b) => {
     const p = b.track !== undefined ? track.sample(b.track) : b;
@@ -231,7 +234,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (paddock) place('Paddock', p.x, p.z, p.half + 4);
   if (strip) place('Drag strip', strip.x + 6, strip.z + 6);
   if (r) place('Jump', r.x, r.z, -6);
-  if (road) place('Farm road', (road.x1 + layout.road.hedgeTo) / 2 - 20, road.z - 9);
+  if (roads.some((r) => r.id === 'farm')) place('Farm road', (layout.road.fromX + layout.road.hedgeTo) / 2 - 20, layout.road.z - 9);
   if (dutch) place('Dutch barn', layout.dutchBarn.x - 4, layout.dutchBarn.z - layout.dutchBarn.halfZ - 4);
   if (shed) place('Field shed', layout.fieldShed.x + 21, layout.fieldShed.z + 1);
   if (nf) place('Neighbour', nf.yard.minX + 14, nf.yard.minZ + 7);
@@ -273,7 +276,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     : { minX: (A.hill?.maxX ?? fields.farm.minX) + (nf ? 4 : 10), maxX: Math.min(bounds.maxX - 4, nf ? nf.yard.minX - 6 : Infinity), minZ: fields.farm.maxZ + 8, maxZ: bounds.maxZ - 4 };
 
   return {
-    bounds, key, areas, hedges, gates, stream, ford, pond, road, track: { points: track.points, half: layout.trackHalfWidth }, bogs, dragStrip, ramp,
+    bounds, key, areas, hedges, gates, stream, ford, pond, roads, track: { points: track.points, half: layout.trackHalfWidth }, bogs, dragStrip, ramp,
     woodsTrack, woodsTrail, woodsBogs, woodsPond: woods?.pond ?? null, woodland: woods ? { ...woods.rect } : null,
     quarryPit: quarry ? quarryOutline(quarry) : null,
     buildings, small, muckHeap, paddock, yard, wood, labels, marks,

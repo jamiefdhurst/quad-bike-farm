@@ -282,6 +282,14 @@ export function createRoads(defs, { step = 1 } = {}) {
     return best;
   }
 
+  /** Whether (x, z) is on road `id`'s own carriageway (not its verge, pavement or a pad), between its two ends. */
+  function onRoad(id, x, z) {
+    const r = byId.get(id);
+    if (!r) return false;
+    const n = nearestOn(r, x, z, [0, 0]);
+    return !!n && n.d <= r.halfWidth && n.raw >= 0 && n.raw <= r.length;
+  }
+
   /** Whether (x, z) is within the carriageway (not the pavement) of any road, and which. */
   function onCarriageway(x, z) {
     for (const r of roads) {
@@ -310,14 +318,18 @@ export function createRoads(defs, { step = 1 } = {}) {
     return dir < 0 ? out.reverse() : out;
   }
 
-  /** Where a vehicle driving road `id` the way `dir` (+1 with its points, -1 against) keeps to: `offset` m left of its middle, from `lead` m before its start to `lead` m past its end. */
+  /**
+   * Where a vehicle driving road `id` the way `dir` (+1 with its points, -1 against) keeps to: from `lead[0]` m before the start of that way to
+   * `lead[1]` m past its end (one number is both), `KEEP_LEFT` of the half width to the left of its middle. [{ x, z }, { x, z }] for a straight road.
+   */
   function lanePath(id, dir, lead = 0) {
     const r = byId.get(id);
+    const [before, after] = Array.isArray(lead) ? lead : [lead, lead];
     const off = r.halfWidth * KEEP_LEFT;
     const [a, b] = [pointAt(r, 0), pointAt(r, r.length)];
     const ends = dir > 0 ? [a, b] : [b, a];
-    const along = (p, sign) => ({ x: p.x + p.tx * dir * sign * lead + p.tz * dir * off, z: p.z + p.tz * dir * sign * lead - p.tx * dir * off });
-    return [along(ends[0], -1), along(ends[1], 1)];
+    const at = (p, along) => ({ x: p.x + p.tx * dir * along + p.tz * dir * off, z: p.z + p.tz * dir * along - p.tx * dir * off });
+    return [at(ends[0], -before), at(ends[1], after)];
   }
 
   /** The metres of ground a levelled road's centre sits at `s` m along, from `ground(x, z)`; the ends that join another road take that road's level there. */
@@ -438,5 +450,5 @@ export function createRoads(defs, { step = 1 } = {}) {
     return out;
   }
 
-  return { roads, road, tarmacAt, stoneAt, surfaceAt, nearest, onCarriageway, pointsAlong, lanePath, passingPlaces: (id) => byId.get(id).bays, levelAt, cuttings, boundsOf, pointAt: (id, s) => pointAt(byId.get(id), s) };
+  return { roads, road, onRoad, tarmacAt, stoneAt, surfaceAt, nearest, onCarriageway, pointsAlong, lanePath, passingPlaces: (id) => byId.get(id).bays, levelAt, cuttings, boundsOf, pointAt: (id, s) => pointAt(byId.get(id), s) };
 }

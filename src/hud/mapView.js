@@ -227,14 +227,13 @@ export class MapView {
       ctx.setLineDash([]);
     }
 
-    // The road and the hardstanding, edged.
-    if (f.road) {
-      const r = f.road;
+    // The roads and any hardstanding, edged.
+    for (const r of f.roads) {
       ctx.lineCap = 'butt';
-      line([[r.x1, r.z], [r.x2, r.z]], r.half * 2 * s + 2, C.roadEdge);
-      if (r.pad) disc(r.pad.x, r.pad.z, r.pad.r + 1 / s, C.roadEdge);
-      line([[r.x1, r.z], [r.x2, r.z]], r.half * 2 * s, C.road);
-      if (r.pad) disc(r.pad.x, r.pad.z, r.pad.r, C.road);
+      line(r.points, r.half * 2 * s + 2, C.roadEdge);
+      for (const q of r.pads) disc(q.x, q.z, q.r + 1 / s, C.roadEdge);
+      line(r.points, r.half * 2 * s, C.road);
+      for (const q of r.pads) disc(q.x, q.z, q.r, C.road);
     }
 
     // Hedges, and the gates across their gaps (a shut one solid, the tied-open one dashed).

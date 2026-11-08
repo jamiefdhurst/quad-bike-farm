@@ -1,5 +1,6 @@
 import { createRiver } from './river.js';
 import { createCattleGrid } from './cattleGrid.js';
+import { roadNetwork, EDGE } from './roads.js';
 import { LAYOUT } from './layout.js';
 import { Track } from './track.js';
 import { createTerrainHeight } from './terrainHeight.js';
@@ -31,6 +32,8 @@ import { PuddleIceView } from './puddleIceView.js';
 import * as THREE from 'three';
 
 /** The farm: terrain, track, sky and static props. */
+const GRID_MARGIN = 1 - EDGE; // a road's bounds already include its soft edge: a grid reaches a metre past the tarmac
+
 export class World {
   constructor({ scene, physics, RAPIER, renderer, models, layout = LAYOUT, graphics = { ...DEFAULT_GRAPHICS_PARAMS }, autumn = false, winter = false }) {
     this.layout = layout;
@@ -41,6 +44,7 @@ export class World {
     this.heights = createTerrainHeight(layout, this.track);
     this.fields = createFields(layout);
     this.river = createRiver(layout, this.heights.brook); // the river's crossing and what zone a point is in (river.js)
+    this.roads = roadNetwork(layout); // every road: world/roads.js
     this.cattleGrid = createCattleGrid(layout); // across the road in the grass field's east gateway, or null
     this.outbuildings = createOutbuildings(layout); // the Dutch barn, the field shed, the muck heap and the trough out east
     this.hutShape = hutShape(layout); // the shepherd's hut on the hill (hut.js), or null
@@ -103,17 +107,17 @@ export class World {
     // Mud the tyres carry onto the road (roadMud.js), on a fine grid over the tarmac.
     this.roadMudParams = { ...DEFAULT_ROAD_MUD_PARAMS };
     registerTuning('Road mud', this.roadMudParams, ROAD_MUD_PARAM_RANGES);
-    const road = layout.road;
-    const reach = (road?.pad?.radius ?? road?.halfWidth ?? 0) + 1;
     const grid = (bounds) => new RoadMud({ bounds, tarmacAt: this.fields.tarmacAt, params: this.roadMudParams });
-    const grids = road
-      ? [grid({ minX: road.fromX - 1, maxX: Math.max(road.toX + 1, (road.pad?.x ?? 0) + reach), minZ: road.z - reach, maxZ: road.z + reach })]
-      : [];
-    // The rest of the tarmac: the lane you can ride, and the village's ground (the lane's grid takes the mouth of its road).
-    const lane = layout.publicLane;
-    if (grids.length && lane) grids.push(grid({ minX: lane.x - lane.halfWidth - 1, maxX: lane.x + lane.halfWidth + 1, minZ: lane.open.minZ, maxZ: lane.open.maxZ }));
+    // One grid for each stretch of road you can ride: the farm road with its hardstanding, the lane you can ride (its `open` stretch), and the
+    // village's ground (the lane's grid takes the mouth of its street). The first is `main`, the grid the ground shader shows.
+    const grids = [];
+    const farm = this.roads.road('farm');
+    const lane = this.roads.road('lane');
+    const street = this.roads.road('street');
+    if (farm) grids.push(grid(this.roads.boundsOf('farm', GRID_MARGIN)));
+    if (farm && lane) grids.push(grid(this.roads.boundsOf('lane', GRID_MARGIN, layout.publicLane.open)));
     const vArea = layout.village?.area;
-    if (grids.length && vArea && lane) grids.push(grid({ minX: vArea.minX, maxX: lane.x - lane.halfWidth - 1, minZ: vArea.minZ, maxZ: vArea.maxZ }));
+    if (farm && street && lane && vArea) grids.push(grid({ minX: vArea.minX, maxX: lane.points[0][0] - lane.halfWidth - 1, minZ: vArea.minZ, maxZ: vArea.maxZ }));
     this.roadMud = grids.length ? new RoadMudSet(grids) : null;
     // How wet the tarmac is, for the shine (roadWet.js): rain wets it at once and it dries over many minutes, in patches.
     this.roadWetParams = { ...DEFAULT_ROAD_WET_PARAMS };

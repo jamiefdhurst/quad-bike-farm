@@ -205,7 +205,7 @@ export const drivingStates = {
         park,
         doughnut: doughnut ? { ...doughnut, spinning: false, t: 0 } : null,
         jump,
-        tarmac: this.tarmacParams && this.world.layout.road && !q.tractor && !q.driverStand ? { at: (x, z) => onTarmac(this.world.layout.road, x, z), p: this.tarmacParams } : null,
+        tarmac: this.tarmacParams && this.world.roads.road('farm') && !q.tractor && !q.driverStand ? { at: (x, z) => onTarmac(this.world.roads, x, z), p: this.tarmacParams } : null,
         showOff: showOff ? { ...showOff, you: () => this.showOffYou() } : null,
         outing: q.car && this.outingParams && this.outingSpots && this.world.fields
           ? this.outingFor(q, { road: true })
@@ -721,7 +721,7 @@ export const drivingMethods = {
   stepMoto(dt) {
     const q = this.quad;
     const d = this.drive;
-    const road = this.world.layout.road;
+    const road = this.world.roads;
     const r = this.motoNerve.update(dt, { speed: Math.abs(q.speed), grass: !onTarmac(road, q.position.x, q.position.z) });
     d.controls.steer = Math.max(-1, Math.min(1, d.controls.steer + r.wobble));
     if (Math.abs(r.wobble) > this.motoParams.wobbleAmp * 0.2) this.voice.say('motoWobble', { chance: 0.3 });
