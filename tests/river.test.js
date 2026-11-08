@@ -121,7 +121,7 @@ describe('the riverside meadow', () => {
     // Open at the gateway, shut everywhere else along that hedge.
     const east = fields.hedges.find((h) => h.x1 === LAYOUT.hill.pasture.maxX && h.z1 === LAYOUT.hill.pasture.minZ);
     expect(east.gaps).toHaveLength(1);
-    expect(east.gaps[0].at).toBe(M.gate.z);
+    expect(east.z1 + east.gaps[0].at).toBe(M.gate.z);
     expect(fields.hedgeAhead(30, M.gate.z, Math.PI / 2)).toBeGreaterThan(M.maxX - 30 - 1);
     expect(fields.hedgeAhead(30, M.gate.z + 12, Math.PI / 2)).toBeLessThan(6);
   });
@@ -134,7 +134,7 @@ describe('the riverside meadow', () => {
     }
     const gap = fields.hedges.find((e) => e.x1 === M.maxX && e.z1 === M.minZ).gaps[0];
     expect(gap.shut).toBe(true);
-    expect(gap.at).toBeCloseTo(h.z, 6);
+    expect(M.minZ + gap.at).toBeCloseTo(h.z, 6);
   });
 
   it('stands its willows on the banks, clear of the water and the crossing', () => {

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
 import { createFields } from '../src/world/fields.js';
 import { Track } from '../src/world/track.js';
+import { boundary, gap } from '../src/world/fieldPlan.js';
 import { mapBounds, mapTransform, hedgeRuns, farmMapFeatures, placeMarkers, mapAngle, boxCorners, DEFAULT_MAP_PARAMS, MAP_PARAM_RANGES, MAP_KEY_STRIP } from '../src/hud/farmMap.js';
 
 const fields = createFields(LAYOUT);
@@ -39,7 +40,7 @@ describe('the farm map', () => {
   });
 
   it('leaves the gaps out of a hedge and draws a gate across a gated one', () => {
-    const h = { x1: -10, z1: 5, x2: 30, z2: 5, alongX: true, length: 40, gaps: [{ at: 20, half: 3, gate: true, shut: true }, { at: 0, half: 2 }] };
+    const h = boundary(-10, 5, 30, 5, [gap(30, 3, { gate: true, shut: true }), gap(10, 2)]); // gaps at x 20 and 0
     const { runs, gates } = hedgeRuns(h);
     expect(runs.map(([a, b]) => [a.x, b.x])).toEqual([[-10, -2], [2, 17], [23, 30]]);
     expect(runs.every(([a, b]) => a.z === 5 && b.z === 5)).toBe(true);

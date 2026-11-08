@@ -45,7 +45,7 @@ describe('the wood through the north gate', () => {
 
   it('has a gate in the grass field\'s north hedge that the girls can route through', () => {
     const gap = fields.gates.north;
-    expect(gap.at).toBe(W.gate.x);
+    expect(gap.at - LAYOUT.fieldHalf).toBe(W.gate.x); // along the hedge from its west end
     expect(fields.areaOf(W.gate.x, -90)).toBe('woods');
     expect(fields.areaOf(W.gate.x, -70)).toBe('grass');
     expect(fields.route({ x: 0, z: 0 }, { x: -20, z: -120 }).length).toBeGreaterThan(1);

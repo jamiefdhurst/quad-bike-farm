@@ -4,17 +4,16 @@
 
 import { segmentHits } from './detour.js';
 
-/** Whether the segment a to b crosses a hedge line anywhere that is not a gap. */
+/** Whether the segment a to b crosses a hedge line (any way it runs) anywhere that is not a gap. */
 export function hedgeBlocks(hedges, a, b) {
   for (const h of hedges) {
-    const from = h.alongX ? a.z : a.x;
-    const to = h.alongX ? b.z : b.x;
-    const line = h.alongX ? h.z1 : h.x1;
-    if ((from - line) * (to - line) > 0 || from === to) continue; // both on one side, or running along it
-    const t = (line - from) / (to - from);
-    const s = h.alongX ? a.x + (b.x - a.x) * t : a.z + (b.z - a.z) * t;
-    const lo = h.alongX ? h.x1 : h.z1;
-    if (s < lo || s > lo + h.length) continue;
+    // Which side of the line each end is on (positive to the left of the way it runs).
+    const sa = (a.x - h.x1) * h.dz - (a.z - h.z1) * h.dx;
+    const sb = (b.x - h.x1) * h.dz - (b.z - h.z1) * h.dx;
+    if (sa * sb > 0 || sa === sb) continue; // both on one side, or running along it
+    const t = sa / (sa - sb);
+    const s = (a.x + (b.x - a.x) * t - h.x1) * h.dx + (a.z + (b.z - a.z) * t - h.z1) * h.dz;
+    if (s < 0 || s > h.length) continue;
     if (h.gaps.some((g) => Math.abs(s - g.at) < g.half)) continue;
     return true;
   }

@@ -92,16 +92,16 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random 
     const H = h.height ?? layout.hedgeHeight;
     const hy = H / 2 + 0.5;
     const cy = (x, z) => heights.heightAt(x, z) + H / 2 - 0.3;
-    const lo = h.alongX ? h.x1 : h.z1;
-    const hi = lo + h.length;
-    const at = h.alongX ? h.z1 : h.x1;
+    // `s` is metres along the hedge from its first end, so a hedge can run any way; `side` is the way its blocks are jittered across it.
+    const flip = h.dx - h.dz < 0 ? -1 : 1;
+    const side = { x: -h.dz * flip, z: h.dx * flip };
+    const pointAt = (s, across = 0) => ({ x: h.x1 + h.dx * s + side.x * across, z: h.z1 + h.dz * s + side.z * across });
     // The gate's leaf needs a little more room than an open gap.
     const skip = (s) => h.gaps.some((g) => Math.abs(s - g.at) < g.half + (g.gate ? 0.9 : 0.4));
-    for (let s = lo - 1; s <= hi + 1; s += h.coarse ? 2.2 + random() * 0.6 : 1.1 + random() * 0.5) {
+    for (let s = -1; s <= h.length + 1; s += h.coarse ? 2.2 + random() * 0.6 : 1.1 + random() * 0.5) {
       if (skip(s)) continue;
       const wobble = (random() - 0.5) * 0.6;
-      const x = h.alongX ? s : at + wobble;
-      const z = h.alongX ? at + wobble : s;
+      const { x, z } = pointAt(s, wobble);
       const y = heights.heightAt(x, z) - 0.2;
       const width = T * (0.95 + random() * 0.4) * (h.coarse ? 1.5 : 1);
       hedgeMatrices.push(
@@ -117,17 +117,20 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random 
       );
       if (!h.coarse && random() < 0.3) {
         const off = (random() - 0.5) * T * 0.8;
-        const bx = h.alongX ? s + (random() - 0.5) : at + off;
-        const bz = h.alongX ? at + off : s + (random() - 0.5);
+        const b = pointAt(s + (random() - 0.5), off);
         const bs = (2.3 + random() * 1.6) / bushSize.y;
-        bushMatrices.push(matrixAt(bx, heights.heightAt(bx, bz) - 0.3, bz, random() * Math.PI * 2, bs));
+        bushMatrices.push(matrixAt(b.x, heights.heightAt(b.x, b.z) - 0.3, b.z, random() * Math.PI * 2, bs));
       }
     }
 
     // Colliders: boxes between the gaps, at most 20 m long and shorter where the ground climbs (the hill's), so they follow it to within
-    // about half a metre.
-    const cuts = [lo - 2, ...h.gaps.flatMap((g) => [g.at - g.half, g.at + g.half]).sort((a, b) => a - b), hi + 2];
-    const groundAt = (s) => (h.alongX ? heights.heightAt(s, at) : heights.heightAt(at, s));
+    // about half a metre. A hedge along x or z gets a box square to the axes; a slanted one a turned box.
+    const cuts = [-2, ...h.gaps.flatMap((g) => [g.at - g.half, g.at + g.half]).sort((a, b) => a - b), h.length + 2];
+    const groundAt = (s) => {
+      const p = pointAt(s);
+      return heights.heightAt(p.x, p.z);
+    };
+    const turn = h.alongX === null ? Math.atan2(-h.dz, h.dx) : 0;
     for (let i = 0; i < cuts.length; i += 2) {
       const a = cuts[i];
       const b = cuts[i + 1];
@@ -141,10 +144,11 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random 
       for (let k = 0; k < pieces; k++) {
         const pa = a + ((b - a) * k) / pieces;
         const pb = a + ((b - a) * (k + 1)) / pieces;
-        const mid = (pa + pb) / 2;
+        const mid = pointAt((pa + pb) / 2);
         const half = (pb - pa) / 2;
-        if (h.alongX) fixedBox(mid, cy(mid, at), at, half, hy, T / 2);
-        else fixedBox(at, cy(at, mid), mid, T / 2, hy, half);
+        if (h.alongX === true) fixedBox(mid.x, cy(mid.x, mid.z), mid.z, half, hy, T / 2);
+        else if (h.alongX === false) fixedBox(mid.x, cy(mid.x, mid.z), mid.z, T / 2, hy, half);
+        else fixedBox(mid.x, cy(mid.x, mid.z), mid.z, half, hy, T / 2, turn);
       }
     }
   }

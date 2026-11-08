@@ -73,20 +73,22 @@ const pick = (random, lo, hi) => lo + random() * Math.max(0, hi - lo);
 
 /**
  * Places along the hedges, on the field side, a metre and a half out from the hedge's middle: where a rabbit's burrow could be or a
- * pheasant could hide. `hedges` as fields.js makes them (straight along x or z, with gaps), `inGap(h, s)` says whether the point
- * along a hedge is in a gap, `ok(x, z)` whether the place is any good. Each spot is `{ x, z, nx, nz }`, `n` pointing into the hedge.
+ * pheasant could hide. `hedges` as fields.js makes them (straight lines, with gaps), `inGap(h, s)` says whether the point
+ * `s` metres along a hedge is in a gap, `ok(x, z)` whether the place is any good. Each spot is `{ x, z, nx, nz }`, `n` pointing into the hedge.
  */
 export function hedgeSpots(hedges, inGap, ok, { every = 6, offset = 1.5 } = {}) {
   const out = [];
   for (const h of hedges) {
-    const len = h.length ?? (h.alongX ? h.x2 - h.x1 : h.z2 - h.z1);
-    for (let s = every / 2; s < len; s += every) {
-      const along = (h.alongX ? h.x1 : h.z1) + s;
-      if (inGap(h, along) || inGap(h, along - 1.5) || inGap(h, along + 1.5)) continue;
+    // Across the hedge, the way that turns from its direction towards +x or +z (so a hedge along x or z puts its first spot where it always did).
+    const flip = h.dx - h.dz < 0 ? -1 : 1;
+    const nx = -h.dz * flip;
+    const nz = h.dx * flip;
+    for (let s = every / 2; s < h.length; s += every) {
+      if (inGap(h, s) || inGap(h, s - 1.5) || inGap(h, s + 1.5)) continue;
       for (const side of [-1, 1]) {
-        const x = h.alongX ? along : h.x1 + side * offset;
-        const z = h.alongX ? h.z1 + side * offset : along;
-        if (ok(x, z)) out.push({ x, z, nx: h.alongX ? 0 : -side, nz: h.alongX ? -side : 0 });
+        const x = h.x1 + h.dx * s + nx * side * offset;
+        const z = h.z1 + h.dz * s + nz * side * offset;
+        if (ok(x, z)) out.push({ x, z, nx: -nx * side, nz: -nz * side });
       }
     }
   }

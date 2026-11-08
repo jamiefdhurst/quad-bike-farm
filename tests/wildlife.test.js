@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { Rabbits, Pheasants, hedgeSpots, DEFAULT_WILDLIFE_PARAMS as P, WILDLIFE_PARAM_RANGES } from '../src/world/wildlife.js';
 import { createRandom } from '../src/core/random.js';
+import { boundary, gap } from '../src/world/fieldPlan.js';
 
-const hedges = [{ x1: -50, z1: 50, x2: 50, z2: 50, alongX: true, length: 100, gaps: [{ at: 0, half: 4 }] }];
+const hedges = [boundary(-50, 50, 50, 50, [gap(50, 4)])]; // the gap is 50 m along, at x 0
 const inGap = (h, s) => h.gaps.some((g) => Math.abs(s - g.at) < g.half);
 const inField = (x, z) => z < 49 && Math.abs(x) < 60;
 const spots = () => hedgeSpots(hedges, inGap, inField);
