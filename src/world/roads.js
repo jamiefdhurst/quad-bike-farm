@@ -129,8 +129,8 @@ function buildRoad(def, step) {
   return road;
 }
 
-/** The point `s` m along a road: { x, z, tx, tz }. Clamped to its ends. */
-function pointAt(road, s) {
+/** The point `s` m along a road (one of the network's `roads`): { x, z, tx, tz }. Clamped to its ends. */
+export function pointAt(road, s) {
   const S = road.samples;
   if (s <= 0) return { ...S[0] };
   if (s >= road.length) return { ...S[S.length - 1] };
