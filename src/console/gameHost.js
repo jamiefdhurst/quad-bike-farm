@@ -187,13 +187,13 @@ export function createHost(g, { copy = () => {} } = {}) {
         case 'demist': if (!g.debugCabMist(u, 'clear')) return `${id} has no cab to mist`; break;
         case 'load': return `${id}: ${g.debugLoad(u)}`;
         case 'unload': return `${id}: ${g.debugUnload(u)}`;
-        case 'rackcan': return `${id}: ${g.debugRack(u, 'can')}`;
-        case 'racktoolbox': return `${id}: ${g.debugRack(u, 'toolbox')}`;
-        case 'strap': return `${id}: ${g.debugRack(u, 'strap')}`;
+        case 'rackcan': return `${id}: ${g.rackLoads.debugRack(u, 'can')}`;
+        case 'racktoolbox': return `${id}: ${g.rackLoads.debugRack(u, 'toolbox')}`;
+        case 'strap': return `${id}: ${g.rackLoads.debugRack(u, 'strap')}`;
         case 'backcan': return `${id}: ${g.debugBack(u, 'can')}`;
         case 'backtoolbox': return `${id}: ${g.debugBack(u, 'toolbox')}`;
         case 'clearback': return `${id}: ${g.debugBack(u, 'clear')}`;
-        case 'clearrack': return `${id}: ${g.debugRack(u, 'clear')}`;
+        case 'clearrack': return `${id}: ${g.rackLoads.debugRack(u, 'clear')}`;
         default: throw new Error(`no such thing as ${verb}`);
       }
       return `${id}: ${verb}`;

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { Game } from '../src/game.js';
+import { RackHost } from '../src/items/rackHost.js';
 import { normalisePrompt } from '../src/interaction/prompt.js';
-import { DEFAULT_RACK_PARAMS, RackLoad } from '../src/vehicle/rackLoad.js';
+import { RackLoad } from '../src/vehicle/rackLoad.js';
 
 // A stand-in game with just what the rack's prompts and acts read: E on a rack with a can or the toolbox in your hands, then the tap and
 // the hold that follow. The models and the quad are stubs; the wording, the keys and what the strap does to the quad are what is held here.
@@ -9,7 +9,7 @@ function setup() {
   const model = () => ({ userData: {}, getWorldPosition: (v) => v, traverse: (f) => f({ layers: { set: () => {} } }) });
   const toolbox = { held: false, pickUp: vi.fn(), putDown: vi.fn(), model: model() };
   const petrolCan = { held: false, pickUp: vi.fn(), putDown: vi.fn(), model: model() };
-  const h = {
+  const g = {
     toolbox,
     petrolCan,
     premixCan: { held: false },
@@ -17,14 +17,10 @@ function setup() {
     teaMugs: {},
     handsFull: false,
     camera: {},
-    rackParams: { ...DEFAULT_RACK_PARAMS },
-    rackKits: [],
     audioHub: { useCue: vi.fn() },
     heldLoad: () => [toolbox, petrolCan].find((i) => i.held) ?? null,
   };
-  for (const m of ['rackKind', 'onRack', 'rackName', 'rackPrompt', 'rackPress', 'rackPut', 'rackWeigh', 'rackTake', 'rackShow', 'rackDone', 'rackHideStrap', 'rackSummary', 'rackSave', 'debugRack']) {
-    h[m] = Game.prototype[m].bind(h);
-  }
+  const h = new RackHost(g);
   h.rackShowStrap = vi.fn();
   const quad = { mugAnchor: {}, rackLoad: { kg: 0, driveFactor: 1, brakeFactor: 1 } };
   const unit = { quad };
@@ -33,11 +29,11 @@ function setup() {
     quad,
     anchor: { remove: vi.fn() },
     hold: { load: vi.fn((item) => (item.held = false)) },
-    rack: new RackLoad(h.rackParams),
+    rack: new RackLoad(h.params),
     strap: null,
   };
-  h.rackKits.push(kit);
-  return { h, kit, quad, unit, toolbox, petrolCan };
+  h.kits.push(kit);
+  return { h, g, kit, quad, unit, toolbox, petrolCan };
 }
 
 const shown = (p) => normalisePrompt(p);
@@ -56,7 +52,7 @@ describe('a load on a quad\'s rack', () => {
     expect(kit.hold.load).toHaveBeenCalledWith(toolbox);
     expect(kit.rack.loaded).toBe(true);
     expect(kit.rack.strapped).toBe(false);
-    expect(quad.rackLoad.kg).toBe(DEFAULT_RACK_PARAMS.toolboxKg);
+    expect(quad.rackLoad.kg).toBe(h.params.toolboxKg);
     expect(quad.rackLoad.driveFactor).toBeLessThan(1);
     expect(quad.rackLoad.brakeFactor).toBeLessThan(1);
   });
@@ -73,7 +69,7 @@ describe('a load on a quad\'s rack', () => {
   });
 
   it('says to hold E to undo a strapped load, and a hold straps then unstraps it', () => {
-    const { h, kit, petrolCan } = setup();
+    const { h, g, kit, petrolCan } = setup();
     petrolCan.held = true;
     h.rackPress(kit);
     h.rackPress(kit);
@@ -82,7 +78,7 @@ describe('a load on a quad\'s rack', () => {
     h.rackDone(kit, done);
     expect(kit.rack.strapped).toBe(true);
     expect(h.rackShowStrap).toHaveBeenCalled();
-    expect(h.audioHub.useCue).toHaveBeenCalledWith('latch');
+    expect(g.audioHub.useCue).toHaveBeenCalledWith('latch');
     expect(shown(h.rackPrompt(kit))).toMatchObject({ action: 'Undo the strap and take the jerry can', hold: true });
     expect(h.rackSave(kit.unit)).toBe('petrolCan');
     h.rackPress(kit);
@@ -95,16 +91,16 @@ describe('a load on a quad\'s rack', () => {
   });
 
   it('gives a reason, not an act, when your hands are full or tea is on the rack', () => {
-    const { h, kit, petrolCan, toolbox } = setup();
+    const { h, g, kit, petrolCan, toolbox } = setup();
     petrolCan.held = true;
     h.rackPress(kit);
-    h.handsFull = true;
+    g.handsFull = true;
     toolbox.held = true;
     expect(shown(h.rackPrompt(kit))).toMatchObject({ info: expect.stringContaining('on the rack') });
     h.rackPress(kit);
     expect(kit.rack.pressing).toBe(false);
-    h.handsFull = false;
-    h.teaMugs = { amy: { parent: kit.quad.mugAnchor } };
+    g.handsFull = false;
+    g.teaMugs = { amy: { parent: kit.quad.mugAnchor } };
     expect(shown(h.rackPrompt(kit))).toMatchObject({ info: 'There is tea on the rack' });
   });
 

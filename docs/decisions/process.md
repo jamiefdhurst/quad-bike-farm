@@ -325,4 +325,12 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 
 - `items/toolsHost.js` takes the hand tools and bottles out of `game.js`: putting the can, toolbox, jump leads, oil, coolant and anti-gel bottles and the feed bucket down, the jump leads' clamp, the bench's places for what you carry (`benchItem`, `putOnBench`), the oil dipstick and tank dip, Amy's walk-round (`updateOilChecks`, still called inside the frame guard) and pouring coolant or anti-gel. Moved as they were, no behaviour change. `game.js` went from 14,015 to 13,795 lines and `MAX_LINES` follows.
 - The seven put-down methods were identical bar the item (the can lies across it), so they share `putInFront(item, turn)`; `tests/toolsHost.test.js` holds it. The items stay on the game for the rest of the code to read.
-- Still to go in this piece: the winch, rope, chain, rack and bale spike (they are wired into kit spots and the rack loads, not hand-held, so a different shape from these), the farm jobs and `frame()`.
+- Still to go in this piece: the bale spike, the farm jobs and `frame()` (the winch, rope, chain and rack are in the next section).
+
+## Splitting up game.js, the rack loads and the winch, rope and chain (#126, was TODO 235)
+
+- `items/rackHost.js` takes the loads on the rear racks out of `game.js` (a can or the toolbox set on a rack, the strap, what the load takes off the quad, the slide-off, the save key and the panel's and console's rack buttons) and `items/towHost.js` the winch, the tow rope and the chain (their debug buttons, the update that takes each out of your hand past its reach, `ropeQuadFor`, `winchTreeLooked`). Moved as they were, no behaviour change. `game.js` went from 13,795 to 13,455 lines and `MAX_LINES` follows.
+- The rack's own state (`kits`, `params`) lives on its host, since nothing else reads it; the cans, the toolbox and the winch, rope and chain stay on the game. Callers use `game.rackLoads` and `game.towing` directly. `towing` is built before the tow rope's setup, which asks it `ropeQuadFor`.
+- The bale spike was left where it is: it reads the trailers, the log splitter and the tow weight, so it moves with the tractor's work, not with these.
+- Still to go: the farm jobs, the tractor's work (spike, splitter) and `frame()`. The issue stays open.
+- The smoke test's draw-call budget fails on `main` too (the wood at 1,416 calls against 1,400, the same with and without this change): #597.
