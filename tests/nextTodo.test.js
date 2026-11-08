@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { dependsOn, eligible } from '../tools/nextTodo.mjs';
+import { currentPhase, dependsOn, eligible } from '../tools/nextTodo.mjs';
 
 const issue = (number, milestone, extra = {}) => ({ number, title: `t${number}`, body: '', labels: [], milestone, ...extra });
 const order = (issues, open, pr, opts) => eligible(issues, open ?? issues.map((i) => i.number), pr, opts).map((i) => i.number);
@@ -41,6 +41,27 @@ describe('which issue /todo takes next', () => {
     expect(order(issues, undefined, [], { alongside: true })).toEqual([117, 118]);
     const next = [issue(661, '0 · Foundations', { labels: ['🔜 next'] }), issue(118, 'Alongside')];
     expect(order(next, undefined, [], { alongside: true })).toEqual([118]);
+  });
+
+  it('gives /tidy and /perf only their label, in the current phase or Alongside', () => {
+    const tidy = { labels: ['🧩 cohesion'] };
+    const issues = [
+      issue(126, '0 · Foundations', tidy), issue(412, '4 · Pulled together', tidy), issue(300, 'Alongside', tidy),
+      issue(661, '0 · Foundations'), issue(175, '5 · Ready for players', { labels: ['🚀 performance'] }),
+    ];
+    expect(currentPhase(issues)).toBe('0 · Foundations');
+    expect(order(issues, undefined, [], { label: '🧩 cohesion' })).toEqual([126, 300]);
+    expect(order(issues, undefined, [], { label: '🚀 performance' })).toEqual([]);
+    // Once Foundations is done, the next phase is current and its cohesion issues come up.
+    const later = issues.filter((i) => i.milestone !== '0 · Foundations');
+    expect(currentPhase(later)).toBe('4 · Pulled together');
+    expect(order(later, undefined, [], { label: '🧩 cohesion' })).toEqual([412, 300]);
+  });
+
+  it('keeps a labelled issue waiting on its Depends on line', () => {
+    const tidy = { labels: ['🧩 cohesion'] };
+    const issues = [issue(130, '0 · Foundations', { ...tidy, body: 'Depends on: #661' }), issue(661, '0 · Foundations')];
+    expect(order(issues, undefined, [], { label: '🧩 cohesion' })).toEqual([]);
   });
 });
 
