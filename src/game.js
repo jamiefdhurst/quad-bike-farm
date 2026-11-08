@@ -208,6 +208,7 @@ import { TrailerGuide, TRAILER_GUIDE_PARAM_RANGES, guideSpot } from './npc/trail
 import { WorkLight, WORK_LIGHT_PARAM_RANGES } from './npc/workLight.js';
 import { GeneratorStart, GENERATOR_START_PARAM_RANGES } from './npc/generatorStart.js';
 import { TidyLoad, TIDY_LOAD_PARAM_RANGES } from './npc/tidyLoad.js';
+import { TidyUp, TIDY_UP_PARAM_RANGES } from './npc/tidyUp.js';
 import { LostThings, LOST_PARAM_RANGES, LOSABLE, coverAt, seen, sinkFor } from './items/lostThings.js';
 import { finishJob } from './workshop/benchJobs.js';
 import { Dares, DARE_PARAM_RANGES, DARE_KINDS, steepestBank } from './npc/dares.js';
@@ -1270,6 +1271,8 @@ export class Game {
     this.askAlong = new AskAlong(); // asking you along to what she's chosen, and what a no does (npc/askAlong.js)
     this.askGo = {}; // girl id -> { together, alone }: how to carry out what she asked about
     this.pair = new Pair(); // the two as a pair: going over to each other, tagging along, letting you in (npc/pair.js)
+    this.tidyUp = new TidyUp(); // Amy shutting a gate you left open, putting a can back, hanging up a helmet (npc/tidyUp.js)
+    this.helmetCarried = null; // { owner, by }: a helmet a girl has picked up off the ground to hang on the hooks
     this.tidyLoad = new TidyLoad(); // a girl loading or unloading a Land Rover's back (npc/tidyLoad.js)
     this.generatorStart = new GeneratorStart(); // a girl pulling the generator's cord (npc/generatorStart.js)
     this.lost = new LostThings(); // jump leads and bottles left lying in the field, and a girl bringing them back (items/lostThings.js)
@@ -1493,6 +1496,7 @@ export class Game {
       yaw: L.fuelTank.yaw,
     });
     const [canSpot, premixSpot, dieselSpot] = randomJerryCanSpots(L, random, 3); // the three cans start in different places
+    this.canHomes = { petrolCan: canSpot, premixCan: premixSpot, dieselCan: dieselSpot }; // where each lives, for putting it back (npc/tidyUp.js)
     this.petrolCan = new JerryCan({
       scene: this.scene,
       world: this.world,
@@ -1977,6 +1981,7 @@ export class Game {
     registerTuning('Lights to work by', this.workLight.p, WORK_LIGHT_PARAM_RANGES);
     registerTuning('Starting the generator', this.generatorStart.p, GENERATOR_START_PARAM_RANGES);
     registerTuning('Loading a Land Rover', this.tidyLoad.p, TIDY_LOAD_PARAM_RANGES);
+    registerTuning('Tidying up after you', this.tidyUp.p, TIDY_UP_PARAM_RANGES);
     registerTuning('Things left lying', this.lost.p, LOST_PARAM_RANGES);
     registerTuning('Numb bum', this.numbParams, NUMB_PARAM_RANGES);
     registerTuning('Minding a fix', this.dontFix.p, DONTFIX_PARAM_RANGES);
@@ -5923,6 +5928,7 @@ export class Game {
         this.companions.find((g) => g.character.id === o.girl).voice.say('generatorGo', { urgent: true, force: true });
         this.handleGeneratorStart(this.generatorStart.take(o));
       }),
+      ...mine(this.tidyUp.offers(this.tidyUpContext()), (o) => this.handleTidyUp(this.tidyUp.take(o))),
       ...mine(this.tidyLoad.offers(this.tidyLoadContext()), (o) => {
         this.companions.find((g) => g.character.id === o.girl).voice.say(o.mode === 'load' ? 'tidyLoadIn' : 'tidyLoadOut', { urgent: true, force: true });
         this.handleTidyLoad(this.tidyLoad.take(o));
@@ -8002,6 +8008,94 @@ export class Game {
     if (!l) return 'no tub or load space';
     const names = l.cargo.items.map((i) => this.loadName(i));
     return names.length ? names.join(', ') : 'empty';
+  }
+
+  // Tidying up after you ----------------------------------------------------
+
+  /** What is out of place and left (npc/tidyUp.js): a gate open with nobody near, a can away from where it lives, a helmet on the ground. */
+  tidyUpThings() {
+    const out = this.trafficHost.leftOpenGates().map((gt) => ({ id: `gate:${gt.id}`, kind: 'gate', x: gt.x, z: gt.z }));
+    for (const [key, home] of Object.entries(this.canHomes)) {
+      const can = this[key];
+      if (can.held || can.carried || can.model.parent !== this.scene || this.onRack(can)) continue;
+      const at = can.model.position;
+      if (this.tidyUp.canOutOfPlace(at, home)) out.push({ id: `can:${key}`, kind: 'can', x: at.x, z: at.z });
+    }
+    for (const c of this.companions) {
+      const h = this.headgear.girl(c.character.id);
+      if (h.place === 'ground') out.push({ id: `helmet:${c.character.id}`, kind: 'helmet', x: h.x, z: h.z });
+    }
+    return out;
+  }
+
+  tidyUpContext() {
+    return { girls: this.companions.map((c) => ({ id: c.character.id, x: c.root.position.x, z: c.root.position.z, free: c.availability().free, weight: c.params.tidyUpWeight ?? 0 })) };
+  }
+
+  updateTidyUp(dt) {
+    this.tidyUp.update(dt, this.tidyUpThings());
+    if (this.helmetCarried && !this.tidyUp.job) this.dropTidiedHelmet(); // she was called away with it in her hand
+  }
+
+  /** The helmet she picked up goes back down where she stands (she couldn't get it to the hooks). */
+  dropTidiedHelmet() {
+    const { owner, by } = this.helmetCarried;
+    this.helmetCarried = null;
+    const at = this.companions.find((o) => o.character.id === by)?.root.position;
+    if (at) this.headgear.leave(owner, 'ground', { x: at.x, z: at.z });
+    this.helmetSeen[owner] = undefined;
+  }
+
+  /** She goes and puts it right: shuts the gate, carries the can home, or takes the helmet to the hooks (a choice she made, or the debug panel's). */
+  handleTidyUp(e) {
+    if (!e) return;
+    const c = this.companions.find((o) => o.character.id === e.girl);
+    const m = this.tidyUp;
+    const t = m.out.get(e.thing);
+    if (!c || !t) return m.cancel();
+    const here = c.root.position;
+    const d = Math.hypot(here.x - t.x, here.z - t.z) || 1;
+    const stand = (gap) => ({ x: t.x + ((here.x - t.x) / d) * gap, z: t.z + ((here.z - t.z) / d) * gap });
+    c.voice.say({ gate: 'tidyGate', can: 'tidyCan', helmet: 'tidyHelmet' }[e.kind], { urgent: true, force: true });
+    const sec = (s) => s * 1000;
+    if (e.kind === 'gate') {
+      const gate = this.trafficHost.gate(e.thing.slice(5));
+      const act = () => {
+        if (gate.isOpen && gate.set(false, this.trafficHost.blockers().filter((b) => Math.hypot(b.x - c.root.position.x, b.z - c.root.position.z) > 0.01)).ok && gate.id === 'grid') {
+          this.trafficHost.minder.taken();
+        }
+        setTimeout(() => m.finished(), sec(1.2));
+      };
+      if (!c.sneakTo(stand(this.trafficHost.gateStand), act, m.p.jobTimeout - 5)) m.cancel();
+    } else if (e.kind === 'can') {
+      const key = e.thing.slice(4);
+      const can = this[key];
+      const home = this.canHomes[key];
+      const act = () => {
+        if (can.held || can.carried || can.model.parent !== this.scene || !this.carryThing(c, can, 'can', { x: home.x, z: home.z, yaw: home.yaw }, () => m.finished())) m.cancel();
+      };
+      if (!c.sneakTo(stand(0.9), act, m.p.jobTimeout - 5)) m.cancel();
+    } else {
+      const owner = e.thing.slice(7);
+      const hooks = this.world.layout.helmetHooks;
+      const toHooks = () => {
+        const go = c.sneakTo(hooks.stand, () => {
+          this.helmetCarried = null;
+          this.headgear.leave(owner, 'rack');
+          this.helmetSeen[owner] = undefined;
+          this.helmetHooks.show(this.headgear.onHooks());
+          m.finished();
+        }, m.p.jobTimeout - 5, { via: hooks.door.in, out: hooks.door.out });
+        if (!go) this.dropTidiedHelmet();
+      };
+      const act = () => {
+        if (this.headgear.girl(owner).place !== 'ground') return m.cancel();
+        this.helmetCarried = { owner, by: e.girl };
+        this.helmetView.setLoose(owner, null);
+        setTimeout(toHooks, sec(0.8));
+      };
+      if (!c.sneakTo(stand(0.7), act, m.p.jobTimeout - 5)) m.cancel();
+    }
   }
 
   // Starting the generator --------------------------------------------------
@@ -10950,6 +11044,7 @@ export class Game {
     if (!e) return;
     const c = this.companions.find((o) => o.character.id === e.girl);
     if (e.type === 'drop') return void c.voice.say('helmetFell', { chance: 0.7 });
+    if (e.type === 'doff' && e.place === 'ground') return void c.voice.say('leaveItLying', { chance: 0.5 }); // Jess says so; Amy has no line for it
     if (e.type === 'don' && e.from === 'rack') return void this.helmetHooks.show(this.headgear.onHooks());
     if (e.type !== 'fetch' && e.type !== 'hang') return;
     const hooks = this.world.layout.helmetHooks;
@@ -10971,6 +11066,7 @@ export class Game {
     for (const c of this.companions) {
       const id = c.character.id;
       const g = this.headgear.girl(id);
+      if (this.helmetCarried?.owner === id) continue; // in a girl's hand, on its way to the hooks (tidyUp)
       this.helmetView.setWorn(id, g.place === 'head', id === 'jess' && !g.riding, this.headgear.p.helmetFit * c.params.helmetSize, this.headgear.p.helmetLift + c.params.helmetRaise);
       c.setUnderHelmet(g.place === 'head'); // her ponytail out under the back of it
       let where = null;
@@ -13843,6 +13939,7 @@ export class Game {
     this.guard.run('updateTrailerGuide', () => this.updateTrailerGuide(dt, this.riddenUnit));
     this.generatorStart.update(dt);
     this.tidyLoad.update(dt);
+    this.guard.run('updateTidyUp', () => this.updateTidyUp(dt));
     this.guard.run('updateLostThings', () => this.updateLostThings(dt));
     this.guard.run('updateDaylight', () => this.updateDaylight(dt));
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);

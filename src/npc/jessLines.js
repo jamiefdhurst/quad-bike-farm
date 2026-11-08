@@ -97,6 +97,7 @@ import { JESS_TRAILER_LINES } from './trailerLines.js';
 import { JESS_FARM_JOB_LINES } from './farmJobLines.js';
 import { JESS_MOW_LINES } from './mowLines.js';
 import { JESS_TIDY_LOAD_LINES } from './tidyLoadLines.js';
+import { JESS_TIDY_UP_LINES } from './tidyUpLines.js';
 import { JESS_MONEY_LINES } from './moneyLines.js';
 import { JESS_SHED_LINES } from './shedLines.js';
 import { JESS_FIRE_LINES } from './fireLines.js';
@@ -611,6 +612,8 @@ export const JESS_LINES = {
   ...JESS_MOW_LINES,
   // Loading and unloading a Land Rover's back (tidyLoadLines.js), after that.
   ...JESS_TIDY_LOAD_LINES,
+  // Tidying up after you (tidyUpLines.js), after that.
+  ...JESS_TIDY_UP_LINES,
   // Harrowing the field (harrowLines.js), last so the banks before it stay as they are.
   ...JESS_HARROW_LINES,
   // The sheep field's terraces (terraceLines.js), after that.
