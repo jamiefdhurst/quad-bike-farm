@@ -27,6 +27,7 @@ import { lensCoverage } from '../effects/lensMud.js';
 import { screenCover } from '../effects/screenRain.js';
 import { cabMistCover } from '../effects/cabMist.js';
 import { WEATHER_KINDS } from '../world/weather.js';
+import { describeRoadUnder } from '../world/roads.js';
 import { completeStyle, outfitsFor, shirtButtonsUndone, withShirtButtons } from '../npc/outfits.js';
 
 const DEG = 180 / Math.PI;
@@ -320,6 +321,7 @@ export function buildGameTree(g, host) {
   // You, the day, sound --------------------------------------------------------------------------------------------------
   const player = group(() => ({
     ...where('me'),
+    road: text(() => describeRoadUnder(g), 'the road under you (or the quad you ride): which one, its surface and how far from its middle (world/roads.js)'),
     pitch: num(() => g.player.pitch * DEG, (v) => (g.player.pitch = v / DEG), -88, 88, '°', 'up is positive'),
     flying: flag(() => !!g.player.flying, (v) => g.setFlying(v), 'free-fly: no gravity, no walls'),
     riding: text(() => (g.riddenUnit ? g.riddenUnit.id : 'on foot')),

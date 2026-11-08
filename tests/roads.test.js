@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
-import { createRoads, roadNetwork, MAX_CUT, KEEP_LEFT } from '../src/world/roads.js';
+import { createRoads, roadNetwork, describeRoad, describeRoadUnder, MAX_CUT, KEEP_LEFT } from '../src/world/roads.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 
@@ -237,5 +237,21 @@ describe('levelling the ground across a road', () => {
     const heights = createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints));
     const free = net.cuttings((x, z) => heights.heightAt(x, z));
     expect(free.filter((c) => !c.flagged)).toEqual([]);
+  });
+});
+
+describe('saying which road you are on', () => {
+  it('names the road, its surface and how far from its middle', () => {
+    expect(describeRoad(net, 130, 2)).toBe('the farm road (tarmac, 100%), on the carriageway, 0.0 m from its middle (52 m along)');
+    expect(describeRoad(net, 130, 5)).toMatch(/on the verge/);
+    expect(describeRoad(net, 130, 40)).toBe('no road within 12 m');
+    expect(describeRoad(net, LAYOUT.publicLane.x, 0)).toMatch(/^the lane \(tarmac/);
+  });
+
+  it('reads the quad you ride before your feet', () => {
+    const game = { world: { roads: net }, player: { position: { x: 130, z: 40 } }, riddenUnit: null };
+    expect(describeRoadUnder(game)).toBe('no road within 12 m');
+    game.riddenUnit = { quad: { position: { x: 130, z: 2 } } };
+    expect(describeRoadUnder(game)).toMatch(/^the farm road/);
   });
 });

@@ -129,6 +129,22 @@ function buildRoad(def, step) {
   return road;
 }
 
+/** The road at (x, z) in a line, for the debug panel and the console: which one, its surface, how far from its middle and how much of the ground is hard. */
+export function describeRoad(net, x, z) {
+  const n = net.nearest(x, z, 12);
+  if (!n) return 'no road within 12 m';
+  const r = n.road;
+  const hard = net.surfaceAt(x, z);
+  const where = n.d <= r.halfWidth ? 'on the carriageway' : hard ? 'on the pavement or a pad' : 'on the verge';
+  return `${r.name} (${hard ? `${hard.surface}, ${Math.round(hard.t * 100)}%` : `${r.surface}, none under you`}), ${where}, ${n.d.toFixed(1)} m from its middle (${n.s.toFixed(0)} m along)`;
+}
+
+/** The road under you, or under the quad you ride, for the panel and the console (`game` is the Game). */
+export function describeRoadUnder(game) {
+  const p = game.riddenUnit?.quad.position ?? game.player.position;
+  return describeRoad(game.world.roads, p.x, p.z);
+}
+
 /** The point `s` m along a road (one of the network's `roads`): { x, z, tx, tz }. Clamped to its ends. */
 export function pointAt(road, s) {
   const S = road.samples;
