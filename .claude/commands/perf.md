@@ -5,6 +5,8 @@ argument-hint: "[issue number; default: the next 🚀 performance issue; 'check'
 
 Performance work on $ARGUMENTS. It runs alongside feature work, in its own session. `/todo` takes issues by milestone, performance ones included; this takes `🚀 performance` issues first, but only from the current phase (the earliest open milestone) or Alongside, so a later phase's performance work waits for its phase (#719). The difference from `/todo` is that every change is measured before and after, the same way, and a change that doesn't move the numbers isn't shipped.
 
+**First, `tools/upToDate.sh`.** These instructions are read from the main checkout, so if it is behind `origin/main` they are old ones. If the script doesn't print `ok`, stop and pass its message on to Jamie before choosing or starting anything (#721).
+
 - **A number** works that issue.
 - **Nothing** takes the next performance issue: the first that `tools/nextTodo.mjs --label "🚀 performance"` prints (a `🔜 next` one first, then the current phase, then Alongside, with `/todo`'s rules: not held back, no open PR, its `Depends on:` closed). If it prints none, do the check-up.
 - **`check`** does the check-up.
