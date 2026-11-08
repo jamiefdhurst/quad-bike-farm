@@ -288,3 +288,8 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 - The map's source is now in the repo: `docs/farm-plan-map.html` draws it with script, and `tools/farmPlanSvg.mjs` renders it headless to `docs/farm-plan.svg` (the proposed map only, its colours and text styles written in). Its output is pixel-identical to #718's. A plan change edits the page and `docs/farm-plan.md` together and re-runs the script.
 - `/tidy` and `/perf` picked their labelled issues by number, so they would have taken #412 (Pulled together) and #175 (Ready for players) during Foundations. `tools/nextTodo.mjs --label <name>` now gives only issues with that label in the current phase (the earliest open milestone other than Alongside) or Alongside, with `/todo`'s other rules.
 - #717 had dropped `/todo`'s line about worktrees and never committing to main; it is back.
+
+## Commands from an out-of-date checkout (#721)
+
+- Slash commands are read from the main checkout, which only Jamie pulls. After #660 and #719 merged, a `/todo` in a checkout 20 commits behind ran the old rules and took #117 by number instead of #126 by milestone. Nothing showed it was out of date.
+- `tools/upToDate.sh` fetches and compares the main checkout's `HEAD` with `origin/main`; `/todo`, `/tidy` and `/perf` run it first and stop with its message (how far behind, and the pull line for Jamie) if it isn't `ok`. It never pulls itself: other sessions work in that checkout, and a pull under them could change files mid-item.

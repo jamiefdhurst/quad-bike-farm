@@ -3,6 +3,8 @@ description: Work through one GitHub issue, start to finish, as a pull request t
 argument-hint: "[issue number; default: the next one]"
 ---
 
+**First, `tools/upToDate.sh`.** These instructions are read from the main checkout, so if it is behind `origin/main` they are old ones. If the script doesn't print `ok`, stop and pass its message on to Jamie before choosing or starting anything (#721).
+
 Work on GitHub issue $ARGUMENTS. If no number is given, take the next one, in this order (the plan is `docs/farm-plan.md`; the phases are the milestones in `.github/settings.yml`):
 
 - **`alongside`** takes the lowest-numbered eligible issue in the **Alongside** milestone.
