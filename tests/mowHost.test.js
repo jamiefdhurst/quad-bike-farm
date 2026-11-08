@@ -23,7 +23,7 @@ function setup({ running = true, onBoard = true, surface = { grass: 1 } } = {}) 
     hud: { toast: (t) => toasts.push(t) },
     audioHub: { useCue: (c) => cues.push(c) },
     handsFull: false,
-    saySomethingAboutJob: (key) => said.push(key),
+    farmJobs: { say: (key) => said.push(key) },
   };
   const view = { update: vi.fn(), refresh: vi.fn() };
   const host = new MowHost(game, { grid, params: { ...P }, surfaceAt: () => surface, view });

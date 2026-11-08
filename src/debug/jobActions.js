@@ -24,9 +24,9 @@ export function jobActions(g) {
   const add = (id, name, describe, actions) => jobs.push({ id, name, describe, actions });
 
   add('muck', 'Muck out', () => `${Math.round(g.muck.load * 100)}% in the tub, ${g.muck.laid} patches laid on the stubble${g.muck.done ? ', done' : ''}`, [
-    a('fill', 'Fill the trailer with muck', () => g.debugFillMuck()),
-    a('done', 'Muck job done now', () => g.debugFinishMuck()),
-    a('reset', 'Empty the tub and clear the ground', () => g.debugResetMuck()),
+    a('fill', 'Fill the trailer with muck', () => g.farmJobs.debugFillMuck()),
+    a('done', 'Muck job done now', () => g.farmJobs.debugFinishMuck()),
+    a('reset', 'Empty the tub and clear the ground', () => g.farmJobs.debugResetMuck()),
   ]);
 
   if (g.hay) {
@@ -72,7 +72,7 @@ export function jobActions(g) {
   }
 
   add('silage', 'Silage to the Dutch barn', () => `${g.jobBoard.finished.has('silage') ? 'done' : g.jobBoard.has('silage') ? 'on the board' : 'not on the board'}; on the spike: ${g.baleRig.held?.id ?? 'nothing'}`, [
-    a('done', 'Silage job done now', () => g.debugFinishSilage()),
+    a('done', 'Silage job done now', () => g.farmJobs.debugFinishSilage()),
     a('reset', 'Put the silage bales back', () => g.debugResetBales()),
   ]);
 
@@ -80,7 +80,7 @@ export function jobActions(g) {
     add('logs', 'Split and stack logs', () => `${g.splitterFitted ? 'splitter fitted' : 'splitter not fitted'}, ram ${Math.round(g.splitter.ram * 100)}%, ${g.splitter.loaded ? 'a round on the beam' : 'beam empty'}, ${g.logStack.count} of ${g.splitterParams.capacity} logs stacked`, [
       a('fit', 'Fit the log splitter on the tractor', () => g.fitSplitter(true)),
       a('unfit', 'Put the bale spike back on the tractor', () => g.fitSplitter(false)),
-      a('done', 'Finish the log job now', () => g.debugFinishLogs()),
+      a('done', 'Finish the log job now', () => g.farmJobs.debugFinishLogs()),
       a('reset', 'Empty the log stack (rounds dealt back)', () => g.debugResetLogs()),
     ]);
   }
@@ -109,7 +109,7 @@ export function jobActions(g) {
 
   if (g.serviceJob) {
     add('service', 'The service at the bench', () => `${g.serviceJob.name}: ${g.serviceJob.kinds.join(', ')} (${g.serviceJob.left.size} left)`, [
-      a('done', 'Service job done now', () => g.debugFinishService()),
+      a('done', 'Service job done now', () => g.farmJobs.debugFinishService()),
     ]);
   }
 
