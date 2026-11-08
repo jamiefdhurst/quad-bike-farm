@@ -263,6 +263,7 @@ function sidewallTexture(seed) {
 // Placing --------------------------------------------------------------------
 
 const _ray = new THREE.Raycaster();
+_ray.layers.enableAll(); // a part FarDetail has left out for being small on the screen is on layer 1 (#597): the damage must land the same wherever you stand when it is put on
 
 function isScenery(o) {
   for (let p = o; p; p = p.parent) {
@@ -271,11 +272,11 @@ function isScenery(o) {
   return false;
 }
 
-/** The body's own meshes a patch may sit on (the seat is only for its rips): everything visible but the wheels, the tarp and the damage. */
+/** The body's own meshes a patch may sit on (the seat is only for its rips): everything visible (or only hidden for being far off) but the wheels, the tarp and the damage. */
 function bodyMeshes(root, { seat = false } = {}) {
   const meshes = [];
   root.traverse((o) => {
-    if (!o.isMesh || !o.visible || isScenery(o)) return;
+    if (!o.isMesh || !(o.visible || o.userData.farHidden) || isScenery(o)) return; // a small part FarDetail has hidden for being far off is still there
     const isSeat = o.name === 'seat' || o.name === 'pillionSeat';
     if (seat ? isSeat : !isSeat) meshes.push(o);
   });
@@ -435,9 +436,33 @@ export class RustyLook {
  * them in step with the jobs.
  */
 export function applyDamage(model, plan, tarp = null) {
-  const look = new RustyLook();
   const root = model.getObjectByName('bodyRoot');
-  if (!root) return look;
+  if (!root) return new RustyLook();
+  // The rays and the seats' boxes are in world axes, so where the vehicle stood (how it had settled on its springs, which way it faced) changed where the
+  // damage landed, and with it every later throw of the dice: put on with the model upright at the origin and put back as it was (#597).
+  // The same goes for the bars' steering, which is still settling in the first seconds of a game.
+  const was = { position: model.position.clone(), quaternion: model.quaternion.clone(), body: root.quaternion.clone() };
+  const steered = [];
+  root.traverse((o) => {
+    if (o.name === 'handlebars' || o.name === 'steeringColumn') steered.push([o, o.quaternion.clone()]);
+  });
+  model.position.set(0, 0, 0);
+  model.quaternion.identity();
+  root.quaternion.identity();
+  for (const [o] of steered) o.quaternion.identity();
+  try {
+    return layDamage(model, root, plan, tarp);
+  } finally {
+    model.position.copy(was.position);
+    model.quaternion.copy(was.quaternion);
+    root.quaternion.copy(was.body);
+    for (const [o, q] of steered) o.quaternion.copy(q);
+    model.updateMatrixWorld(true);
+  }
+}
+
+function layDamage(model, root, plan, tarp) {
+  const look = new RustyLook();
   model.updateMatrixWorld(true);
   const random = rng(plan.seed);
   const patchMaps = [rustTexture(plan.seed + 1), rustTexture(plan.seed + 2), rustTexture(plan.seed + 3)];
