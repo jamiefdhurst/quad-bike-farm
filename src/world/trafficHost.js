@@ -72,6 +72,18 @@ export class TrafficHost {
     return out;
   }
 
+  /** The gates left open with nobody near (the girls' own to shut do not count, nor the road gate, which the visitors use). */
+  leftOpenGates() {
+    const near = this.blockers();
+    const r = this.mindParams.shutRadius;
+    return this.gates.filter((gt) => gt.isOpen && gt.id !== 'road' && !(gt.id === 'grid' && this.minder.byGirl) && !near.some((b) => Math.hypot(b.x - gt.x, b.z - gt.z) < r));
+  }
+
+  /** How far from a gate's middle a girl stands to shut it (just outside its clear radius, 3 m). */
+  get gateStand() {
+    return 3.4;
+  }
+
   /** An E prompt on each gate: open it, or shut it. */
   addGatePrompts() {
     const g = this.g;

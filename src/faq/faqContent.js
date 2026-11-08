@@ -709,7 +709,16 @@ export const FAQ_SECTIONS = [
         q: 'Why are the girls\' helmets lying about?',
         a: `Each girl fetches her helmet from the hooks and wears it on an open vehicle, then mostly takes it off again as soon as she gets off: Amy
           puts hers neatly on the seat, Jess drops hers on the grass or wears it pushed back on her head. They pick it up again when they get on, if
-          it is near. A helmet left on a seat falls off if the vehicle drives away, so if you take their quad, expect it in the grass. Amy would like it hung up.`,
+          it is near. A helmet left on a seat falls off if the vehicle drives away, so if you take their quad, expect it in the grass. Amy would like it hung up, and
+          if one has been lying about for a while she will go and hang it on its hook herself.`,
+      },
+      {
+        q: 'Will the girls tidy up after me?',
+        a: `Amy will, when she has nothing better to do. A gate you opened and walked away from (a minute or so with nobody near it) she shuts. A jerry can
+          you left more than a few metres from where it lives she picks up and carries back. And a helmet lying on the ground she hangs on the hooks in the barn.
+          She leaves the big gate by the road to the visitors, and never takes the can you have only just put down. Jess leaves things where she drops them,
+          and tells you so.`,
+        tip: 'Amy puts left-open gates, stray cans and helmets on the grass back where they belong. Jess does not.',
       },
       {
         q: 'Why is the puddle white, and why did my quad slide across it?',

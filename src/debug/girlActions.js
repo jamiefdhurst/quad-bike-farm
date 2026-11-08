@@ -876,6 +876,16 @@ export function girlActions(g) {
     },
   });
   actions.push({
+    verb: 'tidy-up',
+    label: '% tidies up after you',
+    run: (id) => {
+      if (!free(id)) return;
+      const e = g.tidyUp.force(g.tidyUpContext(), id);
+      if (e) g.handleTidyUp(e);
+      else toast('Nothing is out of place: leave a gate open (away from it), a can far from where it lives, or a helmet on the ground first');
+    },
+  });
+  actions.push({
     verb: 'tidy-load',
     label: '% loads or unloads a Land Rover',
     run: (id) => {
