@@ -13,8 +13,8 @@ paths:
 The line to check before opening a PR for anything you'll see. Jamie keeps getting plain boxes.
 
 - The issue's **Looks like** list is in the PR, every feature ticked, each one something you saw in the shot.
-- The bare-block test passes with nothing added to `KNOWN_PLAIN` (#384).
-- One look with `tools/shot.mjs` (#384), two rounds at most. Until #384 is merged, one look with `.scratch` and puppeteer as now.
+- The bare-block test (`tests/bareBlocks.test.js`) passes with nothing added to `KNOWN_PLAIN`. A new named set piece or barn prop goes in `buildWorldModels` (`tests/helpers/worldModels.js`) and a new item's or fixture's `build...` function in `CATALOGUED_BUILDERS` beside it, or the test fails until it is.
+- One look with `tools/shot.mjs`, two rounds at most.
 
 
 New areas and items used to land as plain blocks, and Jamie had to ask for detail afterwards. These rules hold, in the style `docs/style.md` sets (era, wear, colour, light), for anything new you'll see in the world: a building, a yard, a prop, a thing you carry, a fixture. Vehicles have their own, stricter rules (`vehicle-detail.md`); the girls' clothes and figures are in docs/decisions/girls.md. docs/decisions/process.md, "Making new things look right (#383)".
@@ -45,7 +45,7 @@ And these, every time:
 
 One look per new thing, two rounds at most. A unit test can't tell a shop from a block, so this is the exception to CLAUDE.md's "no screenshot rounds".
 
-- Shoot it in the running game with the overlay cleared and the HUD hidden: four sides and one close-up of the busiest face, in daylight. `tools/shot.mjs` (#384) once it exists; until then `.scratch/pp/villageshot.mjs` and `redshot.mjs` are the pattern to copy (`checking.md` for the dev server and the overlay).
+- Shoot it in the running game with the overlay cleared and the HUD hidden: four sides and one close-up of the busiest face, in daylight. `node tools/shot.mjs --name <group.name>` (or `--at <place>`) does it: it starts its own dev server, clears the overlay and checks it is gone, hides the HUD, sets daylight, and writes four sides, a close-up of the busiest face and a contact sheet to `.scratch/shots/<name>/` (`--fov` crops in on lettering; the top of the file lists the rest). Open the shots at full size; the sheet is for choosing which. Attach them to the testing issue if there is one.
 - Look at each shot at full size, and crop the original for anything small (never judge detail from a shrunken contact sheet), against the "Looks like" list. Fix what's missing or wrong and take one more round if you must, then stop.
 - Say in the PR summary to Jamie what you looked at, and put anything you couldn't judge (it reads right at dusk, it looks right from the lane) on the item's testing issue.
 
