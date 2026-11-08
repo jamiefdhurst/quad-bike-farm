@@ -469,17 +469,17 @@ export function buildGameTree(g, host) {
     zap: flag(() => false, (v) => v && g.debugZapFence(), 'set to true: you (or the quad you are on) catch the wire now'),
   }), 'the electric fence across the hill pasture');
   const generator = group(() => ({
-    now: text(() => g.describeGenerator(), 'whether it runs, its fuel and what it powers'),
-    fuel: num(() => g.generator.fuel, (v) => g.debugGeneratorFuel(v), 0, 20, ' L', 'diesel in the tank (setting it switches the set off)'),
-    running: flag(() => g.generator.running, (v) => (v ? g.debugGeneratorPull() : g.switchGeneratorOff()), 'set to true: pull the cord once (it may not catch); false: switch it off'),
+    now: text(() => g.power.describeGenerator(), 'whether it runs, its fuel and what it powers'),
+    fuel: num(() => g.generator.fuel, (v) => g.power.debugGeneratorFuel(v), 0, 20, ' L', 'diesel in the tank (setting it switches the set off)'),
+    running: flag(() => g.generator.running, (v) => (v ? g.power.debugGeneratorPull() : g.power.switchGeneratorOff()), 'set to true: pull the cord once (it may not catch); false: switch it off'),
   }), 'the diesel generator outside the barn');
   const lying = group(() => ({
     now: text(() => g.lost.describe(), 'what is lying out in the field, what Jess has kept and who is fetching'),
     ...Object.fromEntries(Object.entries(LOSABLE).map(([kind, { name }]) => [kind, flag(() => !!g.lost.lying[kind], (v) => v && g.debugLoseThing(kind), `set to true: leave the ${name} lying in the grass ahead of you`)])),
   }), 'jump leads and bottles left lying in the field');
   const boosterPack = group(() => ({
-    now: text(() => g.describeBoosterPack(), 'its charge and where it is'),
-    charge: num(() => g.boosterPack.engine.battery, (v) => g.debugBoosterCharge(v), 0, 1, '', 'its charge (0 flat, 1 full)'),
+    now: text(() => g.power.describeBoosterPack(), 'its charge and where it is'),
+    charge: num(() => g.boosterPack.engine.battery, (v) => g.power.debugBoosterCharge(v), 0, 1, '', 'its charge (0 flat, 1 full)'),
   }), 'the booster pack from the workbench');
   const spares = group(() => ({
     now: text(() => g.sparesShelf.describe(), 'what is on the rack, on order and in the parcel'),

@@ -453,7 +453,7 @@ export class Workshop {
     const g = this.game;
     const e = unit.engine;
     if (!e.batteryOut) {
-      const b = g.batteryOf(unit);
+      const b = g.power.batteryOf(unit);
       const p = g.player.position;
       const yaw = g.player.yaw;
       b.putDown({ x: p.x - Math.sin(yaw) * 0.7, z: p.z - Math.cos(yaw) * 0.7 }, yaw);
@@ -464,7 +464,7 @@ export class Workshop {
         g.hud.toast(b?.where === 'charger' ? 'Its battery is on the charger in the barn' : `Bring the ${unit.label} battery over to fit it`);
         return;
       }
-      g.batteryIn(unit);
+      g.power.batteryIn(unit);
       g.hud.toast(e.battery >= 0.9 ? `The ${unit.label} battery is back in, fully charged` : `The ${unit.label} battery is back in, though it is not fully charged`);
     }
     for (const c of g.companions) c.voice.onTinker?.('service');

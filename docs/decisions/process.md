@@ -314,3 +314,10 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 - Sessions reported items finished while their PR was still open: `/todo` said to watch with `gh pr checks --watch`, which returns when the checks finish, or at once if none have started yet after a push, before auto-merge has merged anything. Jamie wants an item never reported done until its PR has merged, with the session waiting by itself.
 - `tools/waitMerged.mjs <pr>` polls the PR every 20 s until it is merged (prints `merged <time>`, exit 0), or stops with the reason it needs the session: a failed check by name (the latest run of each, since a label change re-runs "Version label"), a conflict, the PR closed, or every check green with auto-merge off. It waits through "no checks yet" and gives up after 45 minutes. The decision is `verdict()`, with `tests/waitMerged.test.js`.
 - `/todo` runs it in the background at step 8; cleaning up and the report to Jamie come only after it prints `merged`, and the report gives the merge time. `/tidy` and `/perf` follow `/todo` for this.
+
+## Splitting up game.js, the batteries and the generator (#126, was TODO 235)
+
+- `items/powerHost.js` takes the batteries, the booster pack, the bench charger and the generator out of `game.js` (setting up, carrying, prompts, the charger's and generator's updates, the panel's and console's buttons for them), moved as they were with no behaviour change. `game.js` went from 14,379 to 14,015 lines and `MAX_LINES` follows.
+- As before, what other modules read (`batteries`, `charger`, `boosterPack`, `generator`, `generatorAt`, `generatorSmoke`) stays on the game; the host keeps only the models, the sound and the smoke's bookkeeping it alone uses. Callers (the Tune tab, the console, the workshop and bench) call `game.power` directly.
+- The other items (cans, bottles, toolbox, winch, rope and chain, the rack and the bale spike) are still in `game.js` and are the next part of this piece; the put-down methods are near-identical and want one shared helper, not a move.
+
