@@ -210,7 +210,7 @@ export function createHost(g, { copy = () => {} } = {}) {
     weatherKinds: () => Object.keys(WEATHER_KINDS),
     weatherNow: () => `${g.weather.name}, ${g.weather.temperature} °C (${g.weather.band}), rain ${round(g.weather.rain, 2)}, ground wetness ${round(g.weather.wet, 2)}, snow cover ${round(g.weather.cover, 2)}`,
     setWeather(kind) {
-      g.setWeatherKind(kind);
+      g.weatherHost.setKind(kind);
       return host.weatherNow();
     },
 

@@ -293,3 +293,11 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 
 - Slash commands are read from the main checkout, which only Jamie pulls. After #660 and #719 merged, a `/todo` in a checkout 20 commits behind ran the old rules and took #117 by number instead of #126 by milestone. Nothing showed it was out of date.
 - `tools/upToDate.sh` fetches and compares the main checkout's `HEAD` with `origin/main`; `/todo`, `/tidy` and `/perf` run it first and stop with its message (how far behind, and the pull line for Jamie) if it isn't `ok`. It never pulls itself: other sessions work in that checkout, and a pull under them could change files mid-item.
+
+## Splitting up game.js, first pieces (#126, was TODO 235)
+
+- `game.js` was 14,763 lines. `tests/gameSize.test.js` now fails if it grows past `MAX_LINES`; each piece taken out lowers the number to match, so it only gets smaller. A feature that would add to it goes in a module instead.
+- Two pieces so far, both moved as they were, no behaviour changed: `world/weatherHost.js` (the console's and panel's weather switches, the time of day, the forecast turning the day, the wind and hay-door shutter, the snow coat) and `npc/mindsHost.js` (`updateMinds`, `offersFor`, `needsContext` and the offers they gather). That took it to    14379 lines.
+- State that many other modules read (`game.weather`, `game.wind`, `game.forecast`, `game.daylight`) stays on the game; a host holds only what it alone owns (`snowCoated`, `shutterBangCool`, `needsAt`). Moving the state too would touch hundreds of lines for no gain yet.
+- Callers (the console, the Tune tab, `tools/smoke.mjs`) call the host directly rather than through a one-line method left on the game.
+- Still to move: the items, the farm jobs, and whatever the next biggest blocks are (`frame()` is 425 lines on its own). The issue stays open.

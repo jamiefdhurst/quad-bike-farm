@@ -262,10 +262,10 @@ export function buildGirlsTab(d) {
   // The weather and the light, which change over a game.
   const sky = sub('The day and the weather');
   show(sky, 'the clock', () => `${g.daylight.text()}, ${Math.round(g.daylight.darkness * 100)}% dark, falling ${g.daylight.drop.toFixed(1)} °C into the night`);
-  slider(sky, 'time of day (hours)', () => g.daylight.hour, (v) => g.setTime(v), 0, 30, 0.05);
+  slider(sky, 'time of day (hours)', () => g.daylight.hour, (v) => g.weatherHost.setTime(v), 0, 30, 0.05);
   show(sky, 'the day', () => `${g.weather.temperature} °C (${g.weather.band}), chill ${g.weather.chill.toFixed(2)}, frost ${g.weather.frost.toFixed(2)}`);
   show(sky, 'the forecast', () => g.forecast.describe(g.daylight.hour));
-  button(sky, 'Turn the weather now (as forecast)', () => toast(g.turnWeatherNow() ? `The weather is turning to ${g.weather.name}` : 'This weather has nowhere to turn'));
+  button(sky, 'Turn the weather now (as forecast)', () => toast(g.weatherHost.turnNow() ? `The weather is turning to ${g.weather.name}` : 'This weather has nowhere to turn'));
   button(sky, 'Lightning, close', () => g.strikeNow(150));
   button(sky, 'Lightning, far off', () => g.strikeNow(2400));
   show(sky, 'the stream', () => `${Math.round(g.world.streamLevel.level * 100)}% up, ${(g.world.streamLevel.rise * 100).toFixed(0)} cm above usual, running ${g.world.streamLevel.flow.toFixed(1)}x`);
