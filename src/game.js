@@ -60,9 +60,9 @@ import { MUD_STATE_RANGES } from './effects/quadMud.js';
 import { WEAR_LOOK_RANGES } from './effects/mudCoat.js';
 import { WeatherStation } from './world/weatherStation.js';
 import { Forecast, DEFAULT_FORECAST_PARAMS, FORECAST_PARAM_RANGES } from './world/forecast.js';
-import { choose, mainNeed, nextThink, OFFER_KINDS } from './npc/chooser.js';
+import { OFFER_KINDS } from './npc/chooser.js';
 import { pickThen, planKey } from './npc/plans.js';
-import { Agenda, agendaKey } from './npc/agenda.js';
+import { Agenda } from './npc/agenda.js';
 import { FAULT_KINDS } from './vehicle/faults.js';
 import { Briefing, planBriefing, worstTrouble, yesterdayOf, DEFAULT_BRIEFING_PARAMS, BRIEFING_PARAM_RANGES } from './npc/briefing.js';
 import { girlsLeftOut } from './npc/leftOut.js';
@@ -319,13 +319,13 @@ import { TRACTOR_GROUND_OFFSET, SPLITTER, poseLogSplitter } from './vehicle/trac
 import { DEFAULT_SPLITTER_PARAMS, SPLITTER_PARAM_RANGES, LogSplitter, LogStack, splitterPowered } from './items/logSplitter.js';
 import { WoodPiece, StackView } from './items/woodPieces.js';
 import { SplitAudio } from './audio/splitAudio.js';
+import { MindsHost } from './npc/mindsHost.js';
 import { WeatherHost } from './world/weatherHost.js';
 import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
 import { dateToday, daylightParams, weatherWeights, temperatureBandWeights, groundFor, isAutumn, isWinter } from './world/seasons.js';
 import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } from './world/wind.js';
 import { DoorAudio } from './audio/doorAudio.js';
 import { TrafficHost } from './world/trafficHost.js';
-import { showOffBoost } from './world/kids.js';
 import { NeighbourHost } from './world/neighbourHost.js';
 import { MOT_PARAMS, withCertificate, girlMinds } from './farm/mot.js';
 import { VillageHost } from './world/villageHost.js';
@@ -349,7 +349,7 @@ import { DEFAULT_CAB_MIST_PARAMS, CAB_MIST_PARAM_RANGES, createCabMist, cabMistR
 import { CabMistView } from './effects/cabMistView.js';
 import { DEFAULT_LENS_PARAMS, LENS_PARAM_RANGES, createLens, updateLens, wipeLens, leaderAhead, isOpenVehicle, lensCoverage, addSplat } from './effects/lensMud.js';
 import { LensMudView } from './effects/lensMudView.js';
-import { DEFAULT_SOAK_PARAMS, SOAK_PARAM_RANGES, updateSoak, soakNoticing, soakRemarked, underCover } from './npc/soaking.js';
+import { DEFAULT_SOAK_PARAMS, SOAK_PARAM_RANGES, updateSoak, soakNoticing, soakRemarked } from './npc/soaking.js';
 import { DEFAULT_MUDDY_PARAMS, MUDDY_PARAM_RANGES, updateMuddiness, noticing, markRemarked } from './npc/muddiness.js';
 import { Workshop } from './workshop/workshop.js';
 import { PodRack } from './vehicle/pods.js';
@@ -801,6 +801,7 @@ export class Game {
     this.snowCoatParams = { ...DEFAULT_SNOW_COAT_PARAMS };
     registerTuning('Snow coat', this.snowCoatParams, SNOW_COAT_PARAM_RANGES);
     this.worldSnow = new WorldSnow(this.snowCoatParams);
+    this.mindsHost = new MindsHost(this); // the girls' needs, moods and choosing (npc/mindsHost.js)
     this.weatherHost = new WeatherHost(this); // the weather's switches, the time of day, the wind and the snow coat (world/weatherHost.js)
     if (this.weather.cover > 0 || this.weather.snow > 0) this.weatherHost.coatSnow();
     // Leaves coming down under the trees, and Jess's conkers (world/autumn.js, npc/conkers.js): only on an autumn day.
@@ -5673,85 +5674,6 @@ export class Game {
     for (const c of this.companions) c.notice({ kind, key, x: at.x, y: at.y, z: at.z, strength });
   }
 
-  /**
-   * The girls' minds (npc/needs.js, npc/chooser.js): each girl's needs move with what she's doing and where she is, and every couple of
-   * seconds while she's free she weighs what she could do against them and takes the best. With autonomy off nothing new starts. A
-   * girl only doing something idle (sat resting, warming her hands) weighs only the urgent things, like shelter from the rain.
-   */
-  updateMinds(dt, ridden) {
-    for (const c of this.companions) {
-      const ctx = this.needsContext(c);
-      c.needs.update(dt, ctx, c.params);
-      this.favour.setWant(c.character.id, c.needs.attention); // her jealousy is what 'neglected' is made of (favour.js)
-      const swing = c.mood.update(dt, c.needs, ctx, c.params);
-      if (swing && c.availability().canRemark) c.voice.say(swing === 'low' ? 'moodLow' : 'moodHigh', { chance: 1 });
-      c.wetNow = ctx.wet;
-      c.warmedNow = ctx.warmed; // and what warms and chills her, for how soaked she is (updateSoaking)
-      c.chillNow = ctx.chill;
-      // What the day is doing, for the ways she waits about (npc/waiting.js): the cold, the sun, a shower coming on.
-      const w = this.weather;
-      c.waitWeather = { chill: ctx.chill, wet: ctx.wet, sun: Math.min(1, w.def.sky.sunIntensity / 2.6) * (1 - w.rain) * w.sunUp, clouding: Math.max(0, w.target - w.rain), shiver: c.soaked.cold };
-      c.intent.update(dt, `${c.fsm.name}:${c.fsm.data?.goal ?? ''}`);
-      c.memory.update(dt, c.params);
-      // What she has in mind for the day, said early on once she's stood about with nothing holding her (npc/agenda.js).
-      if (c.agenda.due(dt) && c.availability().canRemark) {
-        c.agenda.mention();
-        c.voice.say(agendaKey(c.agenda.id), { chance: 1 });
-      }
-      const m = c.mind;
-      m.since += dt;
-      if ((m.thinkIn -= dt) > 0) continue;
-      m.thinkIn = nextThink(c.params.thinkEvery, c.params.sleepySlowThink * c.needs.sleep); // sleepy, she thinks slowly
-      if (!c.params.ownMind) {
-        m.waiting = 'her own mind is off';
-        continue;
-      }
-      const a = c.availability();
-      // Sat about on a quad of her own choosing she can choose to get off; doing something idle, only something urgent takes her.
-      const sitting = !a.free && (c.sittingAbout() || this.lessonGirls(ridden).includes(c.character.id));
-      const urgentOnly = !a.free && !sitting && c.interruptible();
-      if (!a.free && !urgentOnly && !sitting) {
-        m.waiting = a.why;
-        continue;
-      }
-      m.waiting = null;
-      // Something you stopped her doing is still on her mind, so she's keener on it for a while (npc/intent.js).
-      // Sleepy, she can't be bothered with anything but a doze (companionParams: sleepyLazy).
-      const lazy = 1 - c.params.sleepyLazy * c.needs.sleep;
-      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * c.memory.weight(o.key) * c.agenda.boost(o.key, c.params) * showOffBoost(o.key, this.trafficHost.kidsWatching, this.trafficHost.kidsParams) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy * c.mood.keen(c.params)) }));
-      if (sitting) offers = offers.filter((o) => OFFER_KINDS[o.key]?.fromSeat);
-      else if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
-      // Free again with a plan to carry on (npc/plans.js): the second part, if it's still on offer, is taken without weighing.
-      const planned = a.free ? c.intent.nextStep(offers) : null;
-      const { pick: chosen, scored } = choose(c.needs, offers, c.params);
-      const pick = planned ?? chosen;
-      // What she weighed and didn't take, for the debug panel's "nearly chose".
-      m.scored = scored.filter((s) => s.offer !== pick).slice(0, 4).map((s) => ({ key: s.offer.key, score: s.score }));
-      if (!pick) continue;
-      const need = mainNeed(pick, c.needs);
-      this.trafficHost.girlChose(c, pick.key);
-      // Wanting company, she may ask you along first and wait for your answer (npc/askAlong.js).
-      if (this.askBeforeGoing(c, pick, planned)) {
-        m.last = { key: pick.key, need, score: scored[0].score, asking: true };
-        m.since = 0;
-        continue;
-      }
-      pick.take();
-      c.needs.met(OFFER_KINDS[pick.key].satisfies);
-      c.chose();
-      // She walks to it at its pace, and on her way she can be stopped (npc/intent.js).
-      c.pace = OFFER_KINDS[pick.key].pace ?? null;
-      if (c.intent.chose(pick.key, `${c.fsm.name}:${c.fsm.data?.goal ?? ''}`)) c.voice.say('resumed', { urgent: true, chance: 0.8 });
-      else {
-        // Something that went badly or well before: she says so now and then (npc/memory.js).
-        const feeling = c.memory.attitude(pick.key, c.params);
-        if (feeling) c.voice.say(feeling < 0 ? 'memoryWary' : 'memoryKeen', { urgent: true, chance: c.params.memoryLineChance });
-      }
-      m.last = { key: pick.key, need, score: scored[0].score };
-      m.since = 0;
-    }
-  }
-
   /** She's chosen `pick`; if it's something to ask you along to, she asks and waits instead (returns true). */
   askBeforeGoing(c, pick, planned) {
     const id = c.character.id;
@@ -5855,100 +5777,6 @@ export class Game {
     ];
   }
 
-  /** Everything this girl could choose to do now (npc/chooser.js): her boredom choices and what the moved features offer her. */
-  offersFor(c, ridden) {
-    const id = c.character.id;
-    const mine = (list, act) => list.filter((o) => o.girl === id).map((o) => ({ ...o, take: () => act(o) }));
-    const cabs = this.cabShelterContext();
-    return [
-      ...c.boredOffers(c.viewer),
-      ...mine(this.warming.offers(this.warmingContext()), (o) => this.handleWarmingEvent(this.warming.take(o))),
-      ...mine(this.cabShelter.offers(cabs), (o) => {
-        const e = this.cabShelter.take(o, cabs);
-        if (e) this.handleCabEvent(e);
-      }),
-      ...mine(this.places.offers(this.placesContext()), (o) => this.handlePlaceAction(this.places.take(o))),
-      ...mine(this.dares.offers(this.daresContext()), (o) => this.handleDare(this.dares.take(o))),
-      ...mine(this.phoneCalls.offers(this.phoneContext()), (o) => this.handlePhoneCall(this.phoneCalls.take(o))),
-      ...mine(this.girlBench.offers(this.girlBenchContext()), (o) => this.handleGirlBench(this.girlBench.take(o))),
-      ...mine(this.trailerGuide.offers(this.trailerGuideContext(ridden)), (o) => this.handleTrailerGuide(this.trailerGuide.take(o))),
-      ...mine(this.workLight.offers(this.workLightContext(c)), (o) => {
-        c.voice.say('workLightOffer', { urgent: true, force: true });
-        this.handleWorkLight(this.workLight.take(o));
-      }),
-      ...mine(this.hayLoading?.offers(this.hayLoadContext()) ?? [], (o) => {
-        this.companions.find((g) => g.character.id === o.girl).voice.say('hayGo', { urgent: true, force: true });
-        this.handleHayLoad(this.hayLoading.take(o));
-      }),
-      ...this.lostOffers(c),
-      ...mine(this.generatorStart.offers(this.generatorStartContext()), (o) => {
-        this.companions.find((g) => g.character.id === o.girl).voice.say('generatorGo', { urgent: true, force: true });
-        this.handleGeneratorStart(this.generatorStart.take(o));
-      }),
-      ...mine(this.tidyUp.offers(this.tidyUpContext()), (o) => this.handleTidyUp(this.tidyUp.take(o))),
-      ...mine(this.tidyLoad.offers(this.tidyLoadContext()), (o) => {
-        this.companions.find((g) => g.character.id === o.girl).voice.say(o.mode === 'load' ? 'tidyLoadIn' : 'tidyLoadOut', { urgent: true, force: true });
-        this.handleTidyLoad(this.tidyLoad.take(o));
-      }),
-      ...mine(this.tea.offers(this.teaContext(ridden)), (o) => this.handleTeaEvent(this.tea.take(o))),
-      ...mine(this.flask.offers(this.flaskContext(ridden)), (o) => this.handleFlaskEvent(this.flask.take(o))),
-      ...mine(this.lunch.offers(this.lunchContext()), (o) => this.handleLunchEvent(this.lunch.take(o))),
-      ...mine(this.hutHost.offers(), (o) => this.hutHost.take(o)),
-      ...mine(this.fireSit.offers(this.fireSitContext()), (o) => this.handleFireEvent(this.fireSit.take(o, this.fireSit.seatsLeft(this.fireSpots.length)))),
-      ...(this.hiding.active ? [] : mine(this.requests.offers(this.requestContext(ridden)), (o) => this.handleRequestEvent(this.requests.take(o)))),
-      ...mine(this.jumpers.offers(this.jumpersContext()), (o) => this.handleJumperEvent(this.jumpers.take(o))),
-      ...mine(this.coats.offers(this.jumpersContext()), (o) => this.handleCoatEvent(this.coats.take(o))),
-      ...mine(this.headgear.offers(this.headgearContext()), (o) => this.handleHeadgearEvent(this.headgear.take(o))),
-      ...mine(this.dieselMistake.offers(this.dieselContext(ridden)), (o) => this.handleDieselEvent(this.dieselMistake.take(o))),
-      ...mine(this.pranks.offers(this.prankContext(ridden)), (o) => this.handlePrankEvent(this.pranks.take(o))),
-      ...this.conkerOffers(c, ridden),
-      ...this.rockPrankOffers(c),
-      ...mine(this.headStart.offers(this.headStartContext()), (o) => this.handleHeadStartEvent(this.headStart.take(o))),
-      ...mine(this.practising.offers(this.practiseContext()), (o) => this.handlePractiseGo(this.practising.take(o))),
-      ...mine(this.nicking.offers(this.nickContext(ridden)), (o) => this.handleNickEvent(this.nicking.take(o))),
-      ...(GO_KINDS.some((k) => this.goVehicle(k)) ? mine(this.tractorGo.offers(this.tractorGoContext(ridden)), (o) => this.handleGoEvent(this.tractorGo.take(o))) : []),
-      ...mine(this.carGo.offers(this.carGoContext(ridden)), (o) => this.handleCarGoEvent(this.carGo.take(o))),
-      ...this.lPlateOffers(id),
-      ...this.togetherOffers(c, ridden),
-      ...(this.tryst ? [] : mine(this.romance.offers(this.romanceContext()), (o) => {
-        const e = this.romance.take(o);
-        if (e) this.handleRomanceEvent(e);
-      })),
-      ...this.lessonOffers(id, ridden),
-      ...c.seatOffers(),
-    ];
-  }
-
-  /** The L plates, as offers for this girl (npc/lPlates.js). */
-  lPlateOffers(id) {
-    const ctx = this.lPlatesContext();
-    if (!ctx) return [];
-    return this.lPlates.offers(ctx).filter((o) => o.girl === id).map((o) => ({ ...o, take: () => this.handleLPlateEvent(this.lPlates.take(o)) }));
-  }
-
-  /** The things the two of them do together, as offers for this girl: a ride together, a race, Jess's drag dare, comparing notes. */
-  togetherOffers(c, ridden) {
-    if (this.recalling) return [];
-    const id = c.character.id;
-    const mine = (list, act) => list.filter((o) => o.girl === id).map((o) => ({ ...o, take: () => act(o) }));
-    const compare = this.comparingContext();
-    return [
-      ...mine(this.makeUp.offers(this.makeUpContext()), (o) => this.handleMakeUp(this.makeUp.take(o))),
-      ...mine(this.convoy.offers(this.convoyContext(ridden)), (o) => this.handleConvoyEvent(this.convoy.take(o))),
-      ...(this.drag.active || this.hillClimb.active || this.coneCourse.active
-        ? []
-        : mine(this.race.offers(this.raceContext(ridden)), (o) => this.handleRaceEvent(this.race.take(o))).map((o) => ({
-            ...o,
-            takeAlone: () => this.handleRaceEvent(this.race.take({ ...o, youRiding: null })), // she goes without you after a not now
-          }))),
-      ...(this.race.active || this.hillClimb.active || this.coneCourse.active ? [] : mine(this.drag.offers(this.dragContext(ridden)), (o) => this.dragApproach(this.drag.take(o), ridden))),
-      ...mine(this.hillClimb.offers(this.climbContext(ridden)), (o) => this.startHillClimb(this.hillClimb.take(o))),
-      ...mine(this.coneCourse.offers(this.climbContext(ridden, 'cones')), (o) => this.startConeCourse(this.coneCourse.take(o))),
-      ...mine(this.comparing.offers(compare), (o) => this.runComparing(this.comparing.take(o, compare))),
-      ...mine(this.pair.offers(this.pairContext()), (o) => this.handlePairEvent(this.pair.take(o))),
-    ];
-  }
-
   /** What the two as a pair needs to know (npc/pair.js): where each girl is, whether she's free, settled or setting off somewhere. */
   pairContext() {
     return {
@@ -5999,55 +5827,6 @@ export class Game {
       if (!c) continue;
       c.pairFacing = paired ? pairFacing(c.root.position, f.root.position, you, this.pair.p) : null;
     }
-  }
-
-  /** What moves a girl's needs this frame (npc/needs.js): the cold where she is, who's near, how fast she's going, what she's at. */
-  needsContext(c) {
-    const p = c.params;
-    const at = c.root.getWorldPosition(this.needsAt ??= new THREE.Vector3());
-    const inBarn = this.world.inBarn(at.x, at.z);
-    const inCab = this.cabShelter.of(c.character.id)?.state === 'in';
-    const inHut = this.hutHost.inside(at.x, at.z);
-    const onBoard = c.root.parent !== this.scene;
-    const aboardSpec = onBoard && c.quad ? this.units.find((u) => u.quad === c.quad)?.spec.id ?? null : null; // a cab or a roof keeps the rain off her too
-    const covered = underCover({ inBarn, inCab, inHut, aboardSpec });
-    c.coveredNow = covered; // in the barn, the hut or a cab, for what she says about the dark (companionVoice.watchWeather)
-    const w = this.weather;
-    // A dull or wet day feels cold (as warming hands always had it), and a cold one colder.
-    const dayChill = Math.min(1, Math.max(0, (0.6 - w.warmth) / 0.6) * 0.8 + w.chill * 0.5);
-    const ridingWith = onBoard && (this.riddenUnit?.quad === c.quad || c.others().some((o) => o.quad === c.quad && o.root.parent !== this.scene));
-    const youAway = Math.hypot(this.camera.position.x - at.x, this.camera.position.z - at.z);
-    let near = youAway;
-    let friendAway = Infinity;
-    let friendFromYou = Infinity;
-    for (const o of c.others()) {
-      const op = o.root.getWorldPosition(this.needsOther ??= new THREE.Vector3());
-      friendAway = Math.min(friendAway, op.distanceTo(at));
-      friendFromYou = Math.min(friendFromYou, Math.hypot(this.camera.position.x - op.x, this.camera.position.z - op.z));
-    }
-    near = Math.min(near, friendAway);
-    // Jealousy (the attention need): you're with her if you're close or she's on your quad; she's with her friend if one is close.
-    const youNear = youAway < p.needAttentionRange || (onBoard && this.riddenUnit?.quad === c.quad);
-    const speed = onBoard && c.quad ? Math.abs(c.quad.speed) : 0;
-    return {
-      chill: covered ? 0 : dayChill,
-      cold: c.soaked.cold, // soaked through and chilled by it: it keeps her wanting somewhere warm (needs.js)
-      wet: !covered && w.rain > 0.25 && !this.coats.worn[c.character.id], // a wax jacket keeps the rain off
-      warmed: !!c.warmingAt || inCab || inBarn || this.hutHost.warmsAt(at.x, at.z) || this.bonfire.warms(Math.hypot(at.x - this.world.layout.bonfire.x, at.z - this.world.layout.bonfire.z)),
-      alone: near > p.needLonelyRange && !ridingWith,
-      together: near < p.needCloseRange || ridingWith,
-      thrill: Math.min(1, speed / 12 + (onBoard && c.quad?.airborne ? 0.5 : 0)),
-      active: c.fsm.is('walking', 'driving', 'mounting', 'dismounting', 'starting', 'cranking', 'pushing', 'pranking', 'boarding', 'shuffling'),
-      sitting: c.fsm.is('resting', 'seated', 'onTrailer'),
-      dozing: c.isDozing,
-      hour: this.daylight?.hour ?? 12, // hunger builds towards lunchtime (needs.js)
-      eating: this.lunch.phase(c.character.id) === 'eat',
-      idle: c.availability().free || c.sittingAbout(), // sat about on a quad she chose is as good as stood about
-      purposeRate: c.purposeRate ?? 0,
-      youNear,
-      withFriend: friendAway < p.needCloseRange,
-      youWithFriend: friendFromYou < p.needAttentionRange,
-    };
   }
 
   /** What the girls can see and hear this frame (attention.js): the people and moving vehicles about, and what the vehicles just did. */
@@ -13704,7 +13483,7 @@ export class Game {
     if (auto || this.tryst) this.guard.run('updateRomance', () => this.updateRomance(dt));
     this.guard.run('updateBanter', () => this.updateBanter(dt, ridden));
     fb.lap('farm features', performance.now());
-    this.guard.run('updateMinds', () => this.updateMinds(dt, ridden));
+    this.guard.run('updateMinds', () => this.mindsHost.updateMinds(dt, ridden));
     this.guard.run('updateMuddiness', () => this.updateMuddiness(dt));
     this.guard.run('updateSoaking', () => this.updateSoaking(dt));
     this.guard.run('updateMoneyTin', () => this.moneyTin.update(dt));
