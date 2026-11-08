@@ -47,6 +47,15 @@ describe('the farm map', () => {
     expect(gates).toEqual([{ from: { x: 17, z: 5 }, to: { x: 23, z: 5 }, shut: true }]);
   });
 
+  it('draws the farm road and its hardstanding from the road network', () => {
+    const farm = features.roads.find((r) => r.id === 'farm');
+    expect(farm.half).toBe(LAYOUT.road.halfWidth);
+    expect(farm.points[0]).toEqual([LAYOUT.road.fromX, LAYOUT.road.z]);
+    expect(farm.points[farm.points.length - 1]).toEqual([LAYOUT.road.toX, LAYOUT.road.z]);
+    expect(farm.pads).toEqual([{ x: LAYOUT.road.pad.x, z: LAYOUT.road.z, r: LAYOUT.road.pad.radius }]);
+    expect(features.roads.map((r) => r.id)).toEqual(['farm']); // the lane and the village are off the farm's map
+  });
+
   it('has a gap in the grass field east hedge for the road, and the road gate shut', () => {
     const east = fields.hedges.find((h) => !h.alongX && h.x1 === LAYOUT.fieldHalf);
     const { runs } = hedgeRuns(east);

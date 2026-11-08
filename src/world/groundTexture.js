@@ -3,6 +3,7 @@
 
 import { patchColor, patchBlend } from './patchwork.js';
 import { createOutbuildings } from './outbuildings.js';
+import { roadNetwork, pointAt } from './roads.js';
 
 function rand(seed) {
   return () => {
@@ -773,19 +774,38 @@ function paintOutbuildings(ctx, toPx, s, layout, random, wear) {
   }
 }
 
-/** The farm road and its hardstanding: dark grey tarmac, speckled, a little lighter where the wheels run, with crumbling edges. */
+/**
+ * The roads painted into the ground (the farm road and its hardstanding): dark grey tarmac, speckled, a little lighter where the wheels run, with
+ * crumbling edges. They are drawn from the road network (world/roads.js) like every road; they are painted rather than laid so the mud, the rain,
+ * the frost and the snow that lie on the ground lie on them.
+ */
 function paintTarmac(ctx, toPx, s, layout, fields, random) {
-  const road = layout.road;
-  if (!road) return;
+  for (const road of roadNetwork(layout).roads) if (road.draw === 'ground') paintRoadOnGround(ctx, toPx, s, road, fields, random);
+}
+
+/** One road with `draw: 'ground'`, painted: see paintTarmac. Exported for the tests. */
+export function paintRoadOnGround(ctx, toPx, s, road, fields, random) {
+  const pads = road.pads;
   const shape = (grow) => {
     ctx.beginPath();
-    const [ax, az] = toPx(road.fromX - grow, road.z - road.halfWidth - grow);
-    const [bx, bz] = toPx(road.toX + grow, road.z + road.halfWidth + grow);
-    ctx.rect(ax, az, bx - ax, bz - az);
-    if (road.pad) {
-      const [px, pz] = toPx(road.pad.x, road.z);
-      ctx.moveTo(px + (road.pad.radius + grow) * s, pz);
-      ctx.arc(px, pz, (road.pad.radius + grow) * s, 0, Math.PI * 2);
+    // Each straight piece of the road as a band `grow` m wider than it each side, the ends of the whole road `grow` m longer.
+    road.segs.forEach((g, i) => {
+      const n = { x: -g.tz, z: g.tx };
+      const w = road.halfWidth + grow;
+      const lo = i === 0 ? -grow : 0;
+      const hi = g.len + (i === road.segs.length - 1 ? grow : 0);
+      const at = (t, side) => toPx(g.a.x + g.tx * t + n.x * w * side, g.a.z + g.tz * t + n.z * w * side);
+      const [p0, p1, p2, p3] = [at(lo, -1), at(hi, -1), at(hi, 1), at(lo, 1)];
+      ctx.moveTo(p0[0], p0[1]);
+      ctx.lineTo(p1[0], p1[1]);
+      ctx.lineTo(p2[0], p2[1]);
+      ctx.lineTo(p3[0], p3[1]);
+      ctx.closePath();
+    });
+    for (const q of pads) {
+      const [px, pz] = toPx(q.x, q.z);
+      ctx.moveTo(px + (q.radius + grow) * s, pz);
+      ctx.arc(px, pz, (q.radius + grow) * s, 0, Math.PI * 2);
     }
   };
   // A worn, gritty margin where the edge has broken up into the verge.
@@ -799,13 +819,16 @@ function paintTarmac(ctx, toPx, s, layout, fields, random) {
   shape(0);
   ctx.clip();
   // Speckle: the stone in the tarmac.
-  const minX = road.fromX;
-  const maxX = Math.max(road.toX, road.pad ? road.pad.x + road.pad.radius : road.toX);
-  const reach = road.pad ? road.pad.radius : road.halfWidth;
-  const area = (maxX - minX) * reach * 2;
+  const xs = [...road.points.map((p) => p[0]), ...pads.flatMap((q) => [q.x - q.radius, q.x + q.radius])];
+  const zs = [...road.points.map((p) => p[1]), ...pads.flatMap((q) => [q.z - q.radius, q.z + q.radius])];
+  const [minX, maxX, minZ, maxZ] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+  const reach = Math.max(road.halfWidth, ...pads.map((q) => q.radius));
+  const zMid = (road.points[0][1] + road.points[road.points.length - 1][1]) / 2;
+  const [z0, z1] = [Math.min(minZ, zMid - reach), Math.max(maxZ, zMid + reach)];
+  const area = (maxX - minX) * (z1 - z0);
   for (let i = 0; i < area * 6; i++) {
     const x = minX + random() * (maxX - minX);
-    const z = road.z + (random() * 2 - 1) * reach;
+    const z = z0 + random() * (z1 - z0);
     if (fields.tarmacAt(x, z) < 0.5) continue;
     const [px, pz] = toPx(x, z);
     ctx.fillStyle = random() < 0.5 ? 'rgba(120,118,112,0.5)' : 'rgba(35,35,34,0.5)';
@@ -815,20 +838,23 @@ function paintTarmac(ctx, toPx, s, layout, fields, random) {
   ctx.strokeStyle = 'rgba(120,118,110,0.18)';
   ctx.lineWidth = 0.5 * s;
   for (const off of [-0.8, 0.8]) {
-    const [ax, az] = toPx(road.fromX, road.z + off);
-    const [bx] = toPx(road.toX, road.z + off);
     ctx.beginPath();
-    ctx.moveTo(ax, az);
-    ctx.lineTo(bx, az);
+    road.samples.forEach((p, i) => {
+      const [px, pz] = toPx(p.x + p.tz * off, p.z - p.tx * off);
+      if (i) ctx.lineTo(px, pz);
+      else ctx.moveTo(px, pz);
+    });
     ctx.stroke();
   }
   ctx.restore();
   // Bites out of the edge.
-  for (let x = road.fromX; x < road.toX; x += 1.5 + random() * 4) {
+  for (let at = 0; at < road.length; at += 1.5 + random() * 4) {
+    const p = pointAt(road, at);
     for (const side of [-1, 1]) {
       if (random() < 0.5) continue;
-      if (fields.tarmacAt(x, road.z + side * (road.halfWidth + 0.4)) > 0.5) continue; // across the hardstanding, there's no edge
-      const [px, pz] = toPx(x, road.z + side * (road.halfWidth + 0.05));
+      const out = (d) => [p.x - p.tz * side * d, p.z + p.tx * side * d];
+      if (fields.tarmacAt(...out(road.halfWidth + 0.4)) > 0.5) continue; // across the hardstanding, there's no edge
+      const [px, pz] = toPx(...out(road.halfWidth + 0.05));
       ctx.fillStyle = 'rgba(95,88,70,0.8)';
       ctx.beginPath();
       ctx.ellipse(px, pz, (0.2 + random() * 0.5) * s, (0.08 + random() * 0.15) * s, 0, 0, Math.PI * 2);

@@ -1,6 +1,8 @@
 // The village (layout.village): the shape of it, from the layout. Pure: the side road's curve, the buildings' footprints, the ground levelled
 // under them, the walls that shut the village in and the spot the girls ask to be taken to at the pub. world/villageProps.js draws it.
 
+import { roadNetwork, smoothRoad, dashes } from './roads.js';
+
 const rect = (x, z, hx, hz) => ({ minX: x - hx, maxX: x + hx, minZ: z - hz, maxZ: z + hz });
 const inRect = (r, x, z, margin = 0) => x > r.minX - margin && x < r.maxX + margin && z > r.minZ - margin && z < r.maxZ + margin;
 export const OAK_CROWN = 5.2; // m a crown spreads from its trunk, a unit of scale (the oak in villageProps.js)
@@ -8,41 +10,18 @@ const outside = (r, x, z) => Math.hypot(Math.max(r.minX - x, 0, x - r.maxX), Mat
 const smooth = (t) => t * t * (3 - 2 * t);
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
-/** A Catmull-Rom curve through `points` ([x, z]), sampled about every `step` m: [{ x, z, tx, tz }] with (tx, tz) the unit direction of travel. */
-export function smoothRoad(points, step = 1) {
-  const p = [points[0], ...points, points[points.length - 1]];
-  const out = [];
-  for (let i = 1; i < p.length - 2; i++) {
-    const [p0, p1, p2, p3] = [p[i - 1], p[i], p[i + 1], p[i + 2]];
-    const n = Math.max(2, Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / step));
-    for (let k = 0; k < n; k++) {
-      const t = k / n;
-      const c = (a, b, c2, d) => 0.5 * (2 * b + (-a + c2) * t + (2 * a - 5 * b + 4 * c2 - d) * t * t + (-a + 3 * b - 3 * c2 + d) * t * t * t);
-      out.push({ x: c(p0[0], p1[0], p2[0], p3[0]), z: c(p0[1], p1[1], p2[1], p3[1]) });
-    }
-  }
-  const last = points[points.length - 1];
-  out.push({ x: last[0], z: last[1] });
-  for (let i = 0; i < out.length; i++) {
-    const a = out[Math.max(0, i - 1)];
-    const b = out[Math.min(out.length - 1, i + 1)];
-    const len = Math.hypot(b.x - a.x, b.z - a.z) || 1;
-    out[i].tx = (b.x - a.x) / len;
-    out[i].tz = (b.z - a.z) / len;
-  }
-  return out;
-}
+export { smoothRoad };
 
 /** The marks on the village road: a broken white line down the middle (it is two-way) and one give-way line across the lane going out, not both. */
 export function roadMarks(S) {
   const centre = [];
-  for (let s = S.giveWay + 3; s < S.road.length - 3; s += 6) centre.push({ s: s + 1, len: 2, a: -0.05, b: 0.05 });
+  centre.push(...dashes({ on: 2, off: 4, from: S.giveWay + 3, to: S.road.length - 3, width: 0.1, whole: true }));
   // The give-way line: a double broken line across the north half only, the traffic leaving the village (it keeps left, so heading east is on the north).
   const giveWay = [];
   for (const row of [0, 0.5]) {
     for (let o = 0.1; o < S.roadHalfWidth - 0.3; o += 0.9) giveWay.push({ s: S.giveWay + row, len: 0.2, a: o, b: Math.min(o + 0.6, S.roadHalfWidth - 0.1) });
   }
-  return { centre, giveWay };
+  return { centre, giveWay: S.street.markings.giveWay ? giveWay : [] };
 }
 
 /** Where a building's front is: the z of its front wall, and which way the front faces (+1 south, towards +z; -1 north). */
@@ -73,8 +52,9 @@ export function villageShape(layout) {
 function buildShape(layout) {
   const v = layout.village;
   if (!v) return null;
-  const road = smoothRoad(v.road.points, 1);
-  const curb = v.road.halfWidth + v.road.pavement;
+  const street = roadNetwork(layout).road('street'); // the village street: the centreline, width and pavements are in `layout.roads`
+  const road = street.samples;
+  const curb = street.halfWidth + v.road.pavement;
   const buildings = [
     { id: 'pub', kind: 'pub', ...v.pub },
     { id: 'shop', kind: 'shop', ...v.shop },
@@ -161,26 +141,26 @@ function buildShape(layout) {
   };
   /** The level of that plane at x: the natural ground at the lane's end of the road, to the natural ground at the other end, straight between. */
   function planeAt(x, natural) {
-    const p0 = v.road.points[0];
-    const p1 = v.road.points[v.road.points.length - 1];
+    const p0 = street.points[0];
+    const p1 = street.points[street.points.length - 1];
     const t = clamp01((p0[0] - x) / (p0[0] - p1[0]));
     return natural(p0[0], p0[1]) * (1 - t) + natural(p1[0], p1[1]) * t;
   }
 
   /**
-   * 0..1 how much of (x, z) is hard standing: the road and its pavements, the car park and the garage's forecourt, with the same soft
-   * edge a hand's width across as the farm road's.
+   * 0..1 how much of (x, z) is the village's own hard standing besides the street (which is a road, world/roads.js): the car park and the
+   * garage's forecourt, with the same soft edge a hand's width across as the roads'.
    */
   const EDGE = 0.15;
   function tarmacAt(x, z) {
     if (!inRect(a, x, z, 1)) return 0;
-    const onRoad = 1 - smooth(clamp01((roadAt(x, z).d - (curb - EDGE)) / (2 * EDGE)));
     const onRect = (r) => 1 - smooth(clamp01(outside(r, x, z) / (2 * EDGE)));
-    return Math.max(onRoad, onRect(carPark), onRect(forecourt));
+    return Math.max(onRect(carPark), onRect(forecourt));
   }
 
   return {
     v,
+    street,
     name: v.name,
     tarmacAt,
     areaWeight,
@@ -195,7 +175,7 @@ function buildShape(layout) {
     /** The closed gate: `end.back` m before the road's last sample, facing along the road's heading there (the gate runs across it). */
     gate: { x: road[road.length - 1].x - road[road.length - 1].tx * v.end.back, z: road[road.length - 1].z - road[road.length - 1].tz * v.end.back, tx: road[road.length - 1].tx, tz: road[road.length - 1].tz },
     beyondRise: v.end.rise,
-    roadHalfWidth: v.road.halfWidth,
+    roadHalfWidth: street.halfWidth,
     curb,
     area: a,
     buildings,
@@ -215,7 +195,7 @@ function buildShape(layout) {
     nearVillage,
     floorAt,
     /** The gap in the lane's west barrier where the side road turns off: [minZ, maxZ]. */
-    laneGap: [a.minZ + 1, v.road.points[0][1] + 15],
+    laneGap: [a.minZ + 1, street.points[0][1] + 15],
   };
 }
 

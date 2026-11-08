@@ -9667,7 +9667,7 @@ export class Game {
 
   /** Jess egging you on and Amy telling you off for squealing the tyres, while you ride the farm road. */
   updateTarmac(dt) {
-    const road = this.world.layout.road;
+    const road = this.world.roads.road('farm') ? this.world.roads : null;
     const unit = this.riddenUnit;
     const q = unit?.quad;
     let you = null;

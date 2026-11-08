@@ -14,6 +14,7 @@ import { REMEMBERED_KINDS } from '../npc/memory.js';
 import { DRILLS } from '../npc/lessons.js';
 import { rampPoint } from '../npc/jumps.js';
 import { FACE_PICKS, pickFace } from '../npc/faceExpression.js';
+import { describeRoadUnder } from '../world/roads.js';
 import { OUTFIT_KINDS, describeOutfit, completeStyle, outfitsFor, shirtButtonsUndone, withShirtButtons } from '../npc/outfits.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
@@ -337,6 +338,7 @@ export function buildGirlsTab(d) {
 
   // Animals, the fence, the gates and what comes along the lane.
   const out = sub('Animals, gates and the lane');
+  show(out, 'the road under you', () => describeRoadUnder(g));
   show(out, 'wildlife', () => `${g.rabbits.rabbits.filter((r) => r.mode !== 'down').length} rabbits about (${g.rabbits.rabbits.filter((r) => r.mode === 'caught').length} in a beam), pheasants ${g.pheasants.birds.map((b) => b.mode).join('/')}`);
   button(out, 'Flush the nearest pheasant', () => g.debugFlushPheasant());
   show(out, 'the cat', () => `${g.cat.mode}${g.cat.perchId != null ? ` on ${g.cat.perchId}` : ''}${g.cat.purring ? ', purring' : ''}`);

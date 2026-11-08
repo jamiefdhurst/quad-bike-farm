@@ -27,10 +27,9 @@ export const TARMAC_PARAM_RANGES = {
   scoldRange: [5, 100, 1],
 };
 
-/** Whether (x, z) is on the tarmac of the farm road (layout.road), not its verge. False if there is no road. */
-export function onTarmac(road, x, z) {
-  if (!road) return false;
-  return x >= road.fromX && x <= road.toX && Math.abs(z - road.z) <= road.halfWidth;
+/** Whether (x, z) is on the tarmac of the farm road (`roads`, world/roads.js), not its verge. False if there is no such road. */
+export function onTarmac(roads, x, z) {
+  return !!roads && roads.onRoad('farm', x, z);
 }
 
 /** One step of how settled into the road's pace she is: 0 off it, 1 on it. */

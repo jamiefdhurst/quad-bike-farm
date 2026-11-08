@@ -4,8 +4,9 @@ import { AMY_TARMAC_LINES, JESS_TARMAC_LINES } from '../src/npc/tarmacLines.js';
 import { HerDrive } from '../src/npc/herDriving.js';
 import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
 import { LAYOUT } from '../src/world/layout.js';
+import { createRoads } from '../src/world/roads.js';
 
-const road = { z: 2, fromX: 78, toX: 199.5, halfWidth: 2.3 };
+const road = createRoads([{ id: 'farm', surface: 'tarmac', halfWidth: 2.3, points: [[78, 2], [199.5, 2]] }]);
 
 describe('the tarmac', () => {
   it('is the road itself, not its verge or the fields', () => {

@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { villageShape, roadMarks, roadLeadIn } from './village.js';
+import { roadStrip as sharedStrip, paintMarks as sharedMarks, kerbFace as sharedKerb } from './roadMesh.js';
 import { makeVillageMaterials } from './villageMaterials.js';
 import { buildCottage, buildPub, buildCarPark, buildShop, buildGarage, frameFor, signMaterial } from './villageBuildings.js';
 import { villageSignTexture, limitSignTexture, roadClosedTexture, noticeTexture } from './villageTextures.js';
@@ -55,101 +56,16 @@ function mergeInto(root) {
 }
 
 /** A strip along the road's samples from offset `a` to `b` across (positive is the north side, to the right heading west), lying `lift` m over the ground. */
-function roadStrip(ctx, a, b, lift, material, { from = 0, to = Infinity, skip = null, flare = false, uv = 1, cols = 5, clampX = Infinity } = {}) {
-  const { S, heights } = ctx;
+function roadStrip(ctx, a, b, lift, material, { flare = false, clampX = Infinity, ...opts } = {}) {
   // A strip clamped to the lane's edge starts out over the lane, so its slanting end is squashed flat onto the edge whole.
-  const lead = Number.isFinite(clampX) ? roadLeadIn(S.road[0], LEAD_COUNT, LEAD_STEP) : [];
-  const at = (i) => (i < 0 ? lead[lead.length + i] : S.road[i]);
-  const runs = [];
-  let run = null;
-  [...lead, ...S.road].forEach((p, n) => {
-    const i = n - lead.length;
-    const ok = i >= from && i <= to && !(skip && skip(p, i)) || i < 0;
-    if (ok) (run ??= []).push(i);
-    else if (run) {
-      runs.push(run);
-      run = null;
-    }
-  });
-  if (run) runs.push(run);
-  for (const r of runs) {
-    if (r.length < 2) continue;
-    const pos = [];
-    const uvs = [];
-    const idx = [];
-    r.forEach((i, k) => {
-      const p = at(i);
-      const nx = -p.tz;
-      const nz = p.tx;
-      const widen = flare ? FLARE * (1 - smooth(clamp01(i / FLARE_LENGTH))) : 0;
-      for (let c = 0; c < cols; c++) {
-        const t = c / (cols - 1);
-        const o = a + (b - a) * t + (flare ? (t - 0.5) * 2 * widen : 0);
-        const x = Math.min(clampX, p.x + nx * o); // a strip meeting the lane stops at its edge, so the lane's tarmac is never drawn over
-        const z = p.z + nz * o;
-        pos.push(x, heights.heightAt(x, z) + lift, z);
-        uvs.push(t * uv, i / 4);
-      }
-      if (k > 0) {
-        for (let c = 0; c < cols - 1; c++) {
-          const i0 = (k - 1) * cols + c;
-          const i1 = k * cols + c;
-          idx.push(i0, i0 + 1, i1, i0 + 1, i1 + 1, i1);
-        }
-      }
-    });
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-    g.setIndex(idx);
-    g.computeVertexNormals();
-    const m = new THREE.Mesh(g, material);
-    m.receiveShadow = true;
-    m.userData.keep = true; // it follows the ground: merging would only bake what it is
-    m.frustumCulled = false;
-    ctx.root.add(m);
-  }
+  const lead = Number.isFinite(clampX) ? roadLeadIn(ctx.S.road[0], LEAD_COUNT, LEAD_STEP) : [];
+  for (const m of sharedStrip({ samples: ctx.S.road, heights: ctx.heights }, a, b, lift, material, { ...opts, clampX, lead, flare: flare ? { width: FLARE, length: FLARE_LENGTH } : null })) ctx.root.add(m);
 }
 
-/** The road's middle line at sample position `s` (fractional): where it is and which way it runs. */
-function roadPoint(S, s) {
-  const i = Math.max(0, Math.min(S.road.length - 2, Math.floor(s)));
-  const f = s - i;
-  const a = S.road[i];
-  const b = S.road[i + 1];
-  return { x: a.x + (b.x - a.x) * f, z: a.z + (b.z - a.z) * f, tx: a.tx + (b.tx - a.tx) * f, tz: a.tz + (b.tz - a.tz) * f };
-}
-
-/**
- * Paint on the road: each mark is { s, len, a, b }, `len` m along the road about sample position `s` and from offset `a` to `b` across (positive
- * is the north side), laid on the ground like the road itself and merged into one mesh.
- */
+/** Paint on the road: each mark is { s, len, a, b } (world/roadMesh.js), merged into one mesh. */
 function paintMarks(ctx, marks, material, lift) {
-  const { S, heights } = ctx;
-  const pos = [];
-  const idx = [];
-  for (const m of marks) {
-    const base = pos.length / 3;
-    for (const along of [m.s - m.len / 2, m.s + m.len / 2]) {
-      const p = roadPoint(S, along);
-      for (const o of [m.a, m.b]) {
-        const x = p.x - p.tz * o;
-        const z = p.z + p.tx * o;
-        pos.push(x, heights.heightAt(x, z) + lift, z);
-      }
-    }
-    idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
-  }
-  if (!marks.length) return;
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  g.setIndex(idx);
-  g.computeVertexNormals();
-  const mesh = new THREE.Mesh(g, material);
-  mesh.receiveShadow = true;
-  mesh.userData.keep = true;
-  mesh.frustumCulled = false;
-  ctx.root.add(mesh);
+  const mesh = sharedMarks({ samples: ctx.S.road, heights: ctx.heights }, marks, material, lift);
+  if (mesh) ctx.root.add(mesh);
 }
 
 /** A flat patch of paving over the ground from (x0, z0) to (x1, z1), following it on a 1 m grid, `lift` m up. */
@@ -187,33 +103,7 @@ function groundPatch(ctx, x0, z0, x1, z1, lift, material) {
 
 /** A vertical face along the road at offset `off`, from `y0` to `y1` over the ground: a kerb. */
 function kerbFace(ctx, off, y0, y1, material, opts) {
-  const { S, heights } = ctx;
-  const pos = [];
-  const idx = [];
-  let n = 0;
-  S.road.forEach((p, i) => {
-    if (i < opts.from || (opts.skip && opts.skip(p, i))) {
-      n = 0;
-      return;
-    }
-    const x = p.x + -p.tz * off;
-    const z = p.z + p.tx * off;
-    const g = heights.heightAt(x, z);
-    pos.push(x, g + y0, z, x, g + y1, z);
-    if (n > 0) {
-      const a = pos.length / 3 - 4;
-      idx.push(a, a + 1, a + 2, a + 2, a + 1, a + 3, a + 2, a + 1, a, a + 3, a + 1, a + 2);
-    }
-    n++;
-  });
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  g.setIndex(idx);
-  g.computeVertexNormals();
-  const m = new THREE.Mesh(g, material);
-  m.userData.keep = true;
-  m.frustumCulled = false;
-  ctx.root.add(m);
+  ctx.root.add(sharedKerb({ samples: ctx.S.road, heights: ctx.heights }, off, y0, y1, material, opts));
 }
 
 /** A cast-iron lamp post at (x, z) with its arm over the road: a fluted base, a tapering post, a scroll bracket and a glowing lantern. */
@@ -707,7 +597,7 @@ export function buildVillage(c) {
   const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...poly, polygonOffsetFactor: -5 });
   const marks = roadMarks(S);
   paintMarks(ctx, [...marks.centre, ...marks.giveWay], line, ROAD_LIFT + 0.004);
-  for (const side of [-1, 1]) {
+  for (const side of S.street.markings.edge ? [-1, 1] : []) {
     roadStrip(ctx, side * (hw - 0.3), side * (hw - 0.2), ROAD_LIFT + 0.004, line, { from: 14, skip: (p) => (side < 0 ? south(p) : north(p)), cols: 2 });
   }
   // Pavements start past the mouth (the road is wider there), one each side, with kerbs.

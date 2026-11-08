@@ -52,6 +52,7 @@ const KNOWN_PLAIN = {
  * (tests/helpers/worldModels.js) instead; this is only for what has none, and a name here must still exist and must not be built there.
  */
 const NOT_MODELS = {
+  'world/roadMesh.js: buildRoadMesh': 'a road laid over the ground as a strip, the lane and the village street; no model of its own (its look is tests/roadMesh.test.js)',
   'world/autumnView.js: buildConkers': 'the conkers under the woods\' trees, made inside buildWoods (the "logs" and "trailMarkers" pieces)',
   'world/hillProps.js: buildPond': 'the hill\'s pond, made inside buildHill ("hill")',
   'world/trailProps.js: buildTrail': 'the trail markers, made inside buildWoods ("trailMarkers")',

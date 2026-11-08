@@ -26,9 +26,10 @@ import { createQuarry } from './quarry.js';
 import { createOutbuildings } from './outbuildings.js';
 import { createBrook } from './brook.js';
 import { villageShape } from './village.js';
+import { roadNetwork } from './roads.js';
 
 export function createTerrainHeight(layout, track) {
-  const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf, road } = layout;
+  const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
   const farm = layout.farm ?? { minX: -fieldHalf, maxX: fieldHalf, minZ: -fieldHalf, maxZ: fieldHalf };
   const fieldShape = createFieldShape(layout);
   const hill = createHill(layout);
@@ -37,6 +38,7 @@ export function createTerrainHeight(layout, track) {
   const outbuildings = createOutbuildings(layout);
   const brook = createBrook(layout);
   const village = villageShape(layout);
+  const roads = roadNetwork(layout);
   const hut = hutShape(layout);
   let hutLevel = null; // the ground at the hut's middle as the land lies, found the first time it's needed
   let findingHutLevel = false;
@@ -80,19 +82,10 @@ export function createTerrainHeight(layout, track) {
       if (w > 0) h += (village.planeAt(x, natural) - h) * w;
     }
 
-    // The farm road is laid level across, following the lie of the land along its middle, with a 3 m shoulder each side; the
-    // hardstanding at its end is flat.
-    if (road) {
-      const along = Math.max(road.fromX - 2 - x, 0, x - road.toX);
-      const dRoad = Math.hypot(along, z - road.z) - road.halfWidth;
-      const dPad = road.pad ? Math.hypot(x - road.pad.x, z - road.z) - road.pad.radius : Infinity;
-      const k = 1 - smoothstep(0, 3, Math.min(dRoad, dPad));
-      if (k > 0) {
-        const padK = road.pad ? 1 - smoothstep(-4, 2, dPad) : 0;
-        const level = baseHeight(Math.min(x, road.toX), road.z) * (1 - padK) + baseHeight(road.pad?.x ?? x, road.z) * padK;
-        h += (level - h) * k;
-      }
-    }
+    // Every levelled road is laid level across, following the lie of the land along its middle, with a shoulder each side (world/roads.js): the
+    // farm road, whose hardstanding at its end is flat.
+    const laid = roads.levelAt(x, z, baseHeight);
+    if (laid) h += (laid.level - h) * laid.k;
 
     // Flatten the yard around the barn.
     const yd = Math.hypot(x - yard.x, z - yard.z);

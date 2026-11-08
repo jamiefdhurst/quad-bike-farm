@@ -5,6 +5,7 @@
 // stays all day (a `stay` step), as a visit of her own that the traffic does not deal.
 
 import { rigSite } from './rollingRoadSite.js';
+import { roadNetwork, KEEP_LEFT } from './roads.js';
 
 export const DEFAULT_TRAFFIC_PARAMS = {
   passEvery: 160, // s: on average between vehicles going by on the lane by day (0 turns the lane's traffic off)
@@ -160,6 +161,7 @@ export function visitPlaces(layout) {
   const doorZ = barn.z + barn.halfZ;
   return {
     lane,
+    lanes: roadNetwork(layout), // the lane's route in and out is asked of the road network (world/roads.js)
     gate,
     road,
     outside: { x: gate.x + 3.8, z: gate.z }, // where a vehicle waits outside the gate
@@ -177,7 +179,7 @@ export function visitPlaces(layout) {
 }
 
 /** The lane x for a vehicle heading `dir` (+1 south, towards +z, -1 north): the left of the road, as it is here. */
-export const laneX = (lane, dir) => lane.x + (dir > 0 ? 1 : -1) * lane.halfWidth * 0.48;
+export const laneX = (lane, dir) => lane.x + (dir > 0 ? 1 : -1) * lane.halfWidth * KEEP_LEFT;
 
 /**
  * The steps of one visit, in order. `from` is the way it comes in (+1 heading south, -1 north), `to` the way it leaves, `leaveOpen` whether
@@ -185,7 +187,7 @@ export const laneX = (lane, dir) => lane.x + (dir > 0 ? 1 : -1) * lane.halfWidth
  * (the driver walks to the gate and swings it; only if it is not already so; `gate: 'grid'` is the one by the cattle grid), wait { seconds, event }.
  */
 export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
-  const { lane, gate, road, outside, inside, stop, door, turn, grid } = places;
+  const { lane, lanes, gate, road, outside, inside, stop, door, turn, grid } = places;
   const steps = [];
   const sp = (p) => ({ ...p, speed: farmSpeed });
   // In along the lane, turn across it into the gateway and stop outside the gate.
@@ -282,7 +284,7 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
       { x: outside.x + 1.5, z: gate.z, speed: 4 },
       { x: laneX(lane, to) - to * 0.3, z: gate.z + to * 6, speed: 5 },
       { x: laneX(lane, to), z: gate.z + to * 18 },
-      { x: laneX(lane, to), z: to > 0 ? lane.maxZ + 20 : lane.minZ - 20 },
+      lanes.lanePath('lane', to, 20)[1],
     ],
   });
   return steps;
@@ -305,9 +307,8 @@ export class Visit {
     const spec = VISITOR_KINDS[kind];
     this.model = spec.model;
     this.steps = planVisit({ places, from, to, does: spec.does, leaveOpen, farmSpeed: params.farmSpeed });
-    const lane = places.lane;
-    const startZ = from > 0 ? lane.minZ - 10 : lane.maxZ + 10;
-    this.drive = new Drive({ x: laneX(lane, from), z: startZ, yaw: from > 0 ? 0 : Math.PI, speed: 10, cruise: 12 });
+    const start = places.lanes.lanePath('lane', from, 10)[0];
+    this.drive = new Drive({ x: start.x, z: start.z, yaw: from > 0 ? 0 : Math.PI, speed: 10, cruise: 12 });
     this.driver = { mode: 'seat', x: 0, z: 0, heading: 0, walking: false };
     this.step = -1;
     this.t = 0;
@@ -452,15 +453,13 @@ export class Traffic {
 
   /** Sets a vehicle off along the lane now (the debug panel's button, and the timer). `kind` a LANE_KINDS id, or random. */
   spawnPass(kind) {
-    const lane = this.places.lane;
     const [id, spec] = kind && LANE_KINDS[kind] ? [kind, LANE_KINDS[kind]] : pickKind(this.random);
     const dir = this.random() < 0.5 ? 1 : -1;
     const p = this.p;
     const speed = spec.speed === 'tractor' ? p.tractorSpeed : p.laneSpeedMin + this.random() * Math.max(0, p.laneSpeedMax - p.laneSpeedMin);
-    const z0 = dir > 0 ? lane.minZ - 12 : lane.maxZ + 12;
-    const z1 = dir > 0 ? lane.maxZ + 30 : lane.minZ - 30;
-    const drive = new Drive({ x: laneX(lane, dir), z: z0, yaw: dir > 0 ? 0 : Math.PI, speed, cruise: speed });
-    drive.go([{ x: laneX(lane, dir), z: z1, speed }]);
+    const [from, to] = this.places.lanes.lanePath('lane', dir, [12, 30]);
+    const drive = new Drive({ x: from.x, z: from.z, yaw: dir > 0 ? 0 : Math.PI, speed, cruise: speed });
+    drive.go([{ x: to.x, z: to.z, speed }]);
     const colour = spec.colours[Math.floor(this.random() * spec.colours.length)];
     const v = { id: ++this.count, kind: id, model: spec.model, colour, dir, drive, passed: false };
     this.vehicles.push(v);
