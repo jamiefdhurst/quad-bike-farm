@@ -13,7 +13,7 @@ paths:
 The line to check before opening a PR for anything you'll see. Jamie keeps getting plain boxes.
 
 - The issue's **Looks like** list is in the PR, every feature ticked, each one something you saw in the shot.
-- The bare-block test (`tests/bareBlocks.test.js`) passes with nothing added to `KNOWN_PLAIN`. A new named set piece or barn prop goes in `buildWorldModels` (`tests/helpers/worldModels.js`) and a new item's or fixture's `build...` function in `CATALOGUED_BUILDERS` beside it, or the test fails until it is.
+- The bare-block test (`tests/bareBlocks.test.js`) passes with nothing added to a `KNOWN_` list. It fails a solid box of 1.5 m or more on every side wherever it hides (a big group, a merged mesh), a few boxes, too few triangles for the surface, and a large plain-colour model. To put a new thing under it, build it in `buildWorldModels` (`tests/helpers/worldModels.js`) with `add(kind, name, builder, call)`, where `builder` is the exported function or class itself and `call` makes the model with it. The test compares what the source exports (every `build...` function of `items`, `workshop` and `world`, every class of `items` and `workshop`) with what was actually called, so a builder that is named and not built fails. Only a thing with no model of its own goes in `NOT_MODELS`, with a line saying why.
 - One look with `tools/shot.mjs`, two rounds at most.
 
 
@@ -45,7 +45,7 @@ And these, every time:
 
 One look per new thing, two rounds at most. A unit test can't tell a shop from a block, so this is the exception to CLAUDE.md's "no screenshot rounds".
 
-- Shoot it in the running game with the overlay cleared and the HUD hidden: four sides and one close-up of the busiest face, in daylight. `node tools/shot.mjs --name <group.name>` (or `--at <place>`) does it: it starts its own dev server, clears the overlay and checks it is gone, hides the HUD, sets daylight, and writes four sides, a close-up of the busiest face and a contact sheet to `.scratch/shots/<name>/` (`--fov` crops in on lettering; the top of the file lists the rest). Open the shots at full size; the sheet is for choosing which. Attach them to the testing issue if there is one.
+- Shoot it in the running game with the overlay cleared and the HUD hidden: four sides and one close-up of the busiest face, in daylight. `node tools/shot.mjs --name <group.name>` (or `--at <place>`) does it: it starts its own dev server, clears the overlay and checks it is gone, hides the HUD, sets daylight, hides whatever stands between the camera and the target for each shot (never the ground or the sky; it prints what it hid and puts it back, and `--keep` leaves it all in), and writes four sides, a close-up of the busiest face and a contact sheet to `.scratch/shots/<name>/` (`--fov` crops in on lettering; the top of the file lists the rest). Open the shots at full size; the sheet is for choosing which. Attach them to the testing issue if there is one.
 - Look at each shot at full size, and crop the original for anything small (never judge detail from a shrunken contact sheet), against the "Looks like" list. Fix what's missing or wrong and take one more round if you must, then stop.
 - Say in the PR summary to Jamie what you looked at, and put anything you couldn't judge (it reads right at dusk, it looks right from the lane) on the item's testing issue.
 
