@@ -260,8 +260,8 @@ import { Earlier, DEFAULT_EARLIER_PARAMS, EARLIER_PARAM_RANGES } from './npc/ear
 const FRICTION_BANTER = ['idle', 'favoured', 'rivals', 'strengths', 'watching', 'sharing', 'riding', 'corrected', 'swapped', 'stuck'];
 import { JerryCan, DEFAULT_JERRY_CAN_PARAMS, JERRY_CAN_PARAM_RANGES, PREMIX_CAN_COLOURS, DIESEL_CAN_COLOURS } from './items/jerryCan.js';
 import { OilBottle, OIL_BOTTLE_PARAM_RANGES } from './items/oilBottle.js';
-import { CoolantBottle, COOLANT_BOTTLE_PARAM_RANGES, pourStep } from './items/coolantBottle.js';
-import { AntiGelBottle, ANTI_GEL_BOTTLE_PARAM_RANGES, doseStep } from './items/antiGelBottle.js';
+import { CoolantBottle, COOLANT_BOTTLE_PARAM_RANGES } from './items/coolantBottle.js';
+import { AntiGelBottle, ANTI_GEL_BOTTLE_PARAM_RANGES } from './items/antiGelBottle.js';
 import { DEFAULT_BLEED_PARAMS, BLEED_PARAM_RANGES } from './vehicle/bleeding.js';
 import { DEFAULT_STICKY_PARAMS, STICKY_PARAM_RANGES, StuckHelp, TrickLearner, canStick, dealSticky } from './vehicle/stickyStarter.js';
 import { DEFAULT_DIESEL_WAX_PARAMS, DIESEL_WAX_PARAM_RANGES, dealWax } from './vehicle/dieselWax.js';
@@ -269,13 +269,13 @@ import { BatteryItem } from './items/battery.js';
 import { BOOSTER_ID } from './items/boosterPack.js';
 import { PlugAdditive, PLUG_ADDITIVE_PARAM_RANGES } from './items/plugAdditive.js';
 import { ratioText } from './engine/lubrication.js';
-import { GIRL_CONTROLS_PARAMS, GIRL_CONTROLS_PARAM_RANGES, bowlNeedsDraining } from './npc/girlControls.js';
-import { walkRound, DEFAULT_WALK_PARAMS, WALK_PARAM_RANGES } from './npc/walkRound.js';
+import { GIRL_CONTROLS_PARAMS, GIRL_CONTROLS_PARAM_RANGES } from './npc/girlControls.js';
+import { DEFAULT_WALK_PARAMS, WALK_PARAM_RANGES } from './npc/walkRound.js';
 import { DEFAULT_MOTO_PARAMS, MOTO_PARAM_RANGES } from './npc/motoGo.js';
 import { DEFAULT_THROWN_PARAMS, THROWN_PARAM_RANGES } from './npc/companionThrown.js';
-import { FaultKnowledge, DEFAULT_WONT_PARAMS, WONT_PARAM_RANGES, WONT_LINE } from './npc/wontRide.js';
-import { Sump, DEFAULT_SUMP_PARAMS, SUMP_PARAM_RANGES, pickBurner, startLevel, readStick } from './vehicle/sump.js';
-import { DEFAULT_DIP_PARAMS, DIP_PARAM_RANGES, readTank, dipMessage, gaugeLies } from './vehicle/tankDip.js';
+import { FaultKnowledge, DEFAULT_WONT_PARAMS, WONT_PARAM_RANGES } from './npc/wontRide.js';
+import { Sump, DEFAULT_SUMP_PARAMS, SUMP_PARAM_RANGES, pickBurner, startLevel } from './vehicle/sump.js';
+import { DEFAULT_DIP_PARAMS, DIP_PARAM_RANGES } from './vehicle/tankDip.js';
 import { fuelText } from './engine/diesel.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Bell } from './world/bellBuild.js';
@@ -315,6 +315,7 @@ import { WoodPiece, StackView } from './items/woodPieces.js';
 import { SplitAudio } from './audio/splitAudio.js';
 import { MindsHost } from './npc/mindsHost.js';
 import { PowerHost } from './items/powerHost.js';
+import { ToolsHost } from './items/toolsHost.js';
 import { WeatherHost } from './world/weatherHost.js';
 import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
 import { dateToday, daylightParams, weatherWeights, temperatureBandWeights, groundFor, isAutumn, isWinter } from './world/seasons.js';
@@ -1404,7 +1405,7 @@ export class Game {
         interact: () => {
           if (quad.loadedOn) return this.audioHub.useCue('latch'), this.strapDown(quad);
           if (unit.barnFind && !unit.barnFind.tarpOff) return;
-          if (this.leads.held) return this.audioHub.useCue('latch'), this.clampLeads(quad);
+          if (this.leads.held) return this.audioHub.useCue('latch'), this.tools.clampLeads(quad);
           if (this.leads.ends.includes(quad)) return this.audioHub.useCue('latch'), this.leads.unclamp(this.camera);
           if (this.winch?.state === 'carried') {
             if (unit !== this.winch.unit) (this.audioHub.useCue('latch'), this.winch.hookOn(quad));
@@ -1455,8 +1456,8 @@ export class Game {
           else this.mount(unit);
         },
         hold: (dt) => {
-          if (this.coolantBottle.held) return this.coolantTopUp(unit, dt);
-          if (this.antiGelBottle.held) return this.antiGelDose(unit, dt);
+          if (this.coolantBottle.held) return this.tools.coolantTopUp(unit, dt);
+          if (this.antiGelBottle.held) return this.tools.antiGelDose(unit, dt);
           if (this.power.heldBattery()?.unitId === BOOSTER_ID) return this.power.boostWithPack(unit, dt);
           if (this.hose.held) {
             // Close enough and the jet reaches it: the mud comes off.
@@ -1685,6 +1686,7 @@ export class Game {
     // Jump leads, for a flat battery: a running quad charges it.
     this.leads = new JumpLeads({ scene: this.scene, world: this.world, position: L.benchLeads, yaw: L.benchLeads.yaw });
     this.leads.model.position.y += L.bench.height; // they start on the workbench
+    this.tools = new ToolsHost(this); // putting the bottles and tools down, the dipstick, the bench's places (items/toolsHost.js)
     this.power = new PowerHost(this); // the batteries, the charger, the booster pack and the generator (items/powerHost.js)
     this.power.setUpBatteries();
     this.power.setUpGenerator();
@@ -1713,10 +1715,10 @@ export class Game {
     // The workbench: jobs on a quad parked in the painted bay (workshop/bench.js).
     this.interaction.add({
       target: this.bench.proxy,
-      isAvailable: () => !this.handsFull || !!this.benchItem() || !!this.power.heldBattery(), // a battery in your hands is fitted from the bench's job list
-      prompt: () => (this.benchItem() ? `Put the ${this.benchItem().name} back on the bench` : this.bench.prompt()),
-      feedback: () => (this.benchItem() ? 'putDown' : 'paper'),
-      interact: () => (this.benchItem() ? this.putOnBench(this.benchItem()) : (this.achievements.note('bench'), this.bench.open())),
+      isAvailable: () => !this.handsFull || !!this.tools.benchItem() || !!this.power.heldBattery(), // a battery in your hands is fitted from the bench's job list
+      prompt: () => (this.tools.benchItem() ? `Put the ${this.tools.benchItem().name} back on the bench` : this.bench.prompt()),
+      feedback: () => (this.tools.benchItem() ? 'putDown' : 'paper'),
+      interact: () => (this.tools.benchItem() ? this.tools.putOnBench(this.tools.benchItem()) : (this.achievements.note('bench'), this.bench.open())),
     });
     // Her asking for a hand at the bench (npc/girlBench.js): the spanner, or the torch.
     this.interaction.add({
@@ -12497,230 +12499,15 @@ export class Game {
     return null;
   }
 
-  /** Puts the jerry can on the ground just in front of the player. */
-  putCanDown() {
-    const p = this.player.position;
-    const yaw = this.player.yaw;
-    const spot = new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7);
-    this.can.putDown(spot, yaw + Math.PI / 2);
-  }
-
-  /**
-   * Stood looking at a four-stroke: Y pulls the dipstick and says where the oil is; holding it near the oil bottle (by the petrol tank)
-   * pours some in, up to the top mark.
-   */
-  dipstick(unit, input, dt) {
-    const sump = unit.quad.sump;
-    if (!sump) {
-      if (input.wasPressed('KeyY') && !unit.quad.engine.params.tickler) this.hud.toast('A two-stroke has no dipstick: its oil goes in with the petrol'); // (Y is the old bike's tickler)
-      return;
-    }
-    if (input.wasPressed('KeyY')) {
-      this.yHeld = 0;
-      const { text } = readStick(sump.level, Math.random() * 2 - 1, this.sumpParams);
-      sump.checked = true;
-      this.achievements.note('dipstick');
-      this.hud.toast(`Dipstick: ${text}${sump.low ? '. Hold Y beside the oil bottle to top it up' : sump.tooMuch ? '. Hold Y away from the bottle to let some out at the drain plug' : ''}`, 3);
-      return;
-    }
-    if (!input.isDown('KeyY')) {
-      this.yHeld = 0;
-      return;
-    }
-    this.yHeld = (this.yHeld ?? 0) + dt;
-    if (this.yHeld < 0.5) return;
-    const bottle = this.oilBottle.worldPosition();
-    const q = unit.quad.position;
-    if (Math.hypot(q.x - bottle.x, q.z - bottle.z) > this.sumpParams.bottleRange) {
-      // Too much in: away from the bottle, holding the key lets it out at the drain plug, down to the line.
-      if (sump.tooMuch || sump.level > 1) {
-        sump.drain(dt);
-        this.hud.setStatus(`Letting oil out at the drain plug: ${readStick(sump.level, 0, this.sumpParams).text}`);
-      } else if (this.yHeld < 0.6) this.hud.toast('The oil bottle is by the petrol tank: pick it up and bring it here', 2.5);
-      return;
-    }
-    if (sump.pour(dt) > 0) {
-      this.achievements.note('oilPoured');
-      this.hud.setStatus(`${sump.level > 1 ? 'Too much oil' : 'Topping up the oil'}: ${readStick(sump.level, 0, this.sumpParams).text}`);
-    } else if (this.yHeld < 0.6) this.hud.toast('As full as it will hold');
-  }
-
-  /** What a dip of this quad's tank shows: the stick's reading and whether it has a fuel gauge to compare with (null: none to show). */
-  tankDipOf(unit) {
-    const f = unit.quad.fuel;
-    const reading = readTank({ litres: f.litres, capacity: f.params.tankCapacity, reserve: f.params.noTap ? 0 : f.params.reserveLitres, noise: Math.random() * 2 - 1 }, this.dipParams);
-    const hasGauge = featuresOf(unit.spec, !!unit.quad.pod).fuelGauge;
-    return { reading, shown: hasGauge ? unit.quad.shownFuel : null };
-  }
-
-  /**
-   * Stood looking at a quad: U puts a stick down the tank and says what is really in it, and whether the gauge agrees. If Amy is near
-   * enough to see it, a gauge that is off goes in her logbook.
-   */
-  dipTank(unit) {
-    const { reading, shown } = this.tankDipOf(unit);
-    this.audioHub.useCue('latch');
-    this.hud.toast(dipMessage(reading, shown, this.dipParams), 3.5);
-    const quirk = ['fuelSticks', 'fuelHigh'].find((k) => unit.quad.quirks.has(k));
-    if (quirk && shown !== null && gaugeLies(shown, reading.share, this.dipParams)) this.notebook.note(unit, { kind: 'quirk', quirk });
-  }
-
-  /**
-   * Amy walks round a quad before she rides it: squeezes the tyres, looks it over and checks the dipstick, and tops it up if it wants some,
-   * saying what she finds. Jess goes straight to the starter. Once per ride. `c.walkFound` keeps what she found, for the girls to act on later.
-   */
-  updateOilChecks() {
-    for (const c of this.companions) {
-      const driving = c.fsm.is('driving');
-      if (!driving) {
-        c.oilChecked = null;
-        continue;
-      }
-      if (!c.quad || c.oilChecked === c.quad) continue;
-      c.oilChecked = c.quad;
-      c.walkFound = [];
-      const driven = this.units.find((u) => u.quad === c.quad);
-      if (c.character.id !== 'amy') continue;
-      if (Math.random() < this.walkParams.amyWalks) {
-        c.walkFound = walkRound({ tyres: c.quad.tyres, faults: c.quad.faults }, this.walkParams);
-        if (driven) c.knows.learn(driven.spec.id, c.walkFound);
-        const refused = driven ? c.wontRide(c.quad) : null;
-        if (refused && !this.eventOn()) {
-          // Not on that: she says why instead of the usual remark, pulls up and gets off.
-          c.voice.say(WONT_LINE[refused], { urgent: true, chance: 1 });
-          c.requestStandBeside(c.quad);
-          if (driven) for (const finding of c.walkFound) this.notebook.note(driven, { kind: 'walk', finding }, { saw: true });
-          continue;
-        } else {
-          c.walkFound.forEach((key, i) => c.voice.say(key, { urgent: i === 0, chance: 1 }));
-        }
-        if (driven) for (const finding of c.walkFound) this.notebook.note(driven, { kind: 'walk', finding }, { saw: true });
-      }
-      if (driven && !c.walkFound.length && this.amyDipsTank(c, driven)) continue;
-      if (driven && bowlNeedsDraining(c.quad.fuel)) {
-        c.quad.fuel.drainSediment(); // she opens the drain on the tap's bowl and shuts it again
-        c.voice.say('bowlDrained', { urgent: true, chance: 1 });
-        continue;
-      }
-      const sump = c.quad.sump;
-      if (!sump || Math.random() > this.sumpParams.amyChecks) continue;
-      if (sump.tooMuch) {
-        sump.drain(1e6); // she has the drain plug out and back in without ceremony
-        c.voice.say('oilOver', { urgent: true, chance: 1 });
-        if (driven) this.notebook.note(driven, { kind: 'oil' }, { saw: true });
-      } else if (sump.level < this.sumpParams.minMark + this.sumpParams.amyTopUpMargin) {
-        sump.fill();
-        c.voice.say('oilTopUp', { urgent: true, chance: 1 });
-        if (driven) this.notebook.note(driven, { kind: 'oil' }, { saw: true });
-      } else if (!c.walkFound.length) {
-        c.voice.say('oilFine', { chance: 0.35 });
-      }
-    }
-  }
-
-  /**
-   * Amy dips the tank of a quad whose gauge she knows lies, before she rides it, and says what she finds. Returns true if she did,
-   * which is her remark for the walk-round. She writes it up as she does the oil.
-   */
-  amyDipsTank(c, unit) {
-    const quirk = ['fuelSticks', 'fuelHigh'].find((k) => c.voice.knowsQuirk(unit, k));
-    if (!quirk || Math.random() > this.dipParams.amyDips) return false;
-    const { reading, shown } = this.tankDipOf(unit);
-    if (shown === null) return false;
-    c.voice.say(reading.low ? 'tankDipLow' : gaugeLies(shown, reading.share, this.dipParams) ? 'tankDipLies' : 'tankDipFine', { urgent: true, chance: 1 });
-    if (unit.quad.quirks.has(quirk)) this.notebook.note(unit, { kind: 'quirk', quirk }, { saw: true });
-    return true;
-  }
-
   /** A race, drag race, follow the leader or recall is on, so a girl shouldn't walk out of it. */
   eventOn() {
     return this.race.active || this.drag.active || this.convoy.active || !!this.recalling;
-  }
-
-  /** E on a quad with the jump leads in hand. */
-  clampLeads(quad) {
-    this.achievements.note('leads');
-    const result = this.leads.clamp(quad);
-    if (result === 'first') this.hud.toast('Clamped on. Now the other end on a running quad');
-    else if (result === 'joined') this.hud.toast('Leads on: a running quad charges a flat one. Keep them close, nose to nose');
-  }
-
-  putLeadsDown() {
-    const p = this.player.position;
-    const yaw = this.player.yaw;
-    this.leads.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
-  }
-
-  /** The toolbox, jump leads or oil bottle in your hands, which the workbench has a place for: { name, item, spot }, or null. */
-  benchItem() {
-    const L = this.world.layout;
-    if (this.toolbox.held) return { name: 'toolbox', item: this.toolbox, spot: L.toolbox };
-    if (this.leads.held) return { name: 'jump leads', item: this.leads, spot: L.benchLeads };
-    if (this.power.heldBattery()?.unitId === BOOSTER_ID) return { name: 'booster pack', item: this.power.heldBattery(), spot: L.benchPack };
-    if (this.oilBottle.held) return { name: 'oil bottle', item: this.oilBottle, spot: L.benchOil };
-    return null;
-  }
-
-  /** E at the workbench with the toolbox or the leads in your hands: back in their place on top of it. */
-  putOnBench({ item, spot }) {
-    item.putDown(new THREE.Vector3(spot.x, 0, spot.z), spot.yaw);
-    item.model.position.y += this.world.layout.bench.height;
-  }
-
-  putCoolantBottleDown() {
-    const p = this.player.position;
-    const yaw = this.player.yaw;
-    this.coolantBottle.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
-  }
-
-  /** Holding E looking at a vehicle with the coolant bottle in your hands: tops the radiator up, then flushes a stuck thermostat free (items/coolantBottle.js). True while it pours. */
-  coolantTopUp(unit, dt) {
-    const e = unit.engine;
-    const how = pourStep(e, dt, this.coolantBottle.params);
-    this.eHeld = (this.eHeld ?? 0) + dt;
-    if (how === 'pouring') this.hud.setStatus(`Topping up the coolant: ${levelText(e.coolant)}`);
-    else if (how === 'flushing') this.hud.setStatus('Flushing coolant through the engine');
-    else if (how === 'freed') this.hud.toast('Flushed right through: the thermostat has freed up', 3);
-    else if (this.eHeld < 0.6) {
-      this.hud.toast(how === 'air' ? 'No radiator: that one is air-cooled' : how === 'hot' ? 'Too hot to open the cap: switch it off and let it cool' : 'The radiator is full', 2.5);
-    }
-    return how === 'pouring' || how === 'flushing';
-  }
-
-  putAntiGelBottleDown() {
-    const p = this.player.position;
-    const yaw = this.player.yaw;
-    this.antiGelBottle.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
-  }
-
-  /** Holding E looking at a vehicle with the anti-gel in your hands: doses a diesel's tank (items/antiGelBottle.js). True while it pours. */
-  antiGelDose(unit, dt) {
-    const q = unit.quad;
-    const how = doseStep(q.fuel, unit.engine, dt, this.antiGelBottle.params);
-    this.eHeld = (this.eHeld ?? 0) + dt;
-    if (how === 'pouring') this.hud.setStatus(`Treating the diesel: ${Math.round(q.fuel.antiGel * 100)}% of the tank`);
-    else if (this.eHeld < 0.6) {
-      this.hud.toast(how === 'petrol' ? 'That runs on petrol: it never waxes' : how === 'empty' ? 'Nothing in the tank to treat' : 'The tank is already treated', 2.5);
-    }
-    return how === 'pouring';
-  }
-
-  putOilBottleDown() {
-    const p = this.player.position;
-    const yaw = this.player.yaw;
-    this.oilBottle.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
   }
 
   /** The panel's and the console's engine swap: true takes the engine out onto the floor by the parts rack, false fits the first spare that suits it. Same as the bench. */
   debugEngineOut(unit, out) {
     if (out && canPull(unit)) this.hud.toast(this.bench.pullEngine(unit));
     else if (!out && unit.engineOut && fitIndex(this.spares.engines, unit) >= 0) this.hud.toast(this.bench.fitEngine(unit, 1));
-  }
-
-  putToolboxDown() {
-    const p = this.player.position;
-    const yaw = this.player.yaw;
-    this.toolbox.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
   }
 
   // The bucket list ----------------------------------------------------------
@@ -12939,8 +12726,8 @@ export class Game {
       if (focused?.unit) {
         focused.unit.quad.setRemote(input);
         focused.unit.quad.handleFrameInput(dt);
-        if (!this.coolantBottle.held && !this.antiGelBottle.held) this.dipstick(focused.unit, input, dt);
-        if (input.wasPressed('KeyU')) this.dipTank(focused.unit);
+        if (!this.coolantBottle.held && !this.antiGelBottle.held) this.tools.dipstick(focused.unit, input, dt);
+        if (input.wasPressed('KeyU')) this.tools.dipTank(focused.unit);
         this.lastUnit = focused.unit;
       }
       if (focused && !focused.person && input.wasPressed('KeyE')) {
@@ -12973,13 +12760,13 @@ export class Game {
         else if (this.towRope.state === 'carried') this.towRope.stow();
       }
       if (this.hose.held && input.wasPressed('KeyG')) this.hose.putBack();
-      else if (this.can.held && input.wasPressed('KeyG')) this.putCanDown();
-      else if (this.toolbox.held && input.wasPressed('KeyG')) this.putToolboxDown();
-      else if (this.leads.held && input.wasPressed('KeyG')) this.putLeadsDown();
-      else if (this.oilBottle.held && input.wasPressed('KeyG')) this.putOilBottleDown();
-      else if (this.coolantBottle.held && input.wasPressed('KeyG')) this.putCoolantBottleDown();
-      else if (this.antiGelBottle.held && input.wasPressed('KeyG')) this.putAntiGelBottleDown();
-      else if (this.feedBucket.held && input.wasPressed('KeyG')) this.putFeedBucketDown();
+      else if (this.can.held && input.wasPressed('KeyG')) this.tools.putCanDown();
+      else if (this.toolbox.held && input.wasPressed('KeyG')) this.tools.putToolboxDown();
+      else if (this.leads.held && input.wasPressed('KeyG')) this.tools.putLeadsDown();
+      else if (this.oilBottle.held && input.wasPressed('KeyG')) this.tools.putOilBottleDown();
+      else if (this.coolantBottle.held && input.wasPressed('KeyG')) this.tools.putCoolantBottleDown();
+      else if (this.antiGelBottle.held && input.wasPressed('KeyG')) this.tools.putAntiGelBottleDown();
+      else if (this.feedBucket.held && input.wasPressed('KeyG')) this.tools.putFeedBucketDown();
       else if (this.heldBrushwood && input.wasPressed('KeyG')) this.putBrushwoodDown();
       else if (this.heldWood && input.wasPressed('KeyG')) this.putWoodDown();
       else if (this.power.heldBattery() && input.wasPressed('KeyG')) this.power.putBatteryDown();
@@ -13009,7 +12796,7 @@ export class Game {
     this.guard.run('updateCoolantLeak', () => this.updateCoolantLeak(dt));
     this.guard.run('updateQuirks', () => this.updateQuirks(dt, ridden));
     this.guard.run('updateStickyStarter', () => this.updateStickyStarter(dt));
-    this.guard.run('updateOilChecks', () => this.updateOilChecks());
+    this.guard.run('updateOilChecks', () => this.tools.updateOilChecks());
     this.guard.run('updateHandbrake', () => this.updateHandbrake(dt));
     this.guard.run('updateFourWd', () => this.updateFourWd(dt));
     this.skills.update(dt);
@@ -13546,12 +13333,6 @@ export class Game {
         if (!this.handsFull) this.feedBucket.pickUp(this.camera);
       },
     });
-  }
-
-  putFeedBucketDown() {
-    const p = this.player.position;
-    const yaw = this.player.yaw;
-    this.feedBucket.putDown(new THREE.Vector3(p.x - Math.sin(yaw) * 0.7, 0, p.z - Math.cos(yaw) * 0.7), yaw);
   }
 
   /** What the prompt says at the hens' run or the pig's sty. */

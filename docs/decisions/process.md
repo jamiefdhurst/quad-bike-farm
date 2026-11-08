@@ -319,5 +319,10 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 
 - `items/powerHost.js` takes the batteries, the booster pack, the bench charger and the generator out of `game.js` (setting up, carrying, prompts, the charger's and generator's updates, the panel's and console's buttons for them), moved as they were with no behaviour change. `game.js` went from 14,379 to 14,015 lines and `MAX_LINES` follows.
 - As before, what other modules read (`batteries`, `charger`, `boosterPack`, `generator`, `generatorAt`, `generatorSmoke`) stays on the game; the host keeps only the models, the sound and the smoke's bookkeeping it alone uses. Callers (the Tune tab, the console, the workshop and bench) call `game.power` directly.
-- The other items (cans, bottles, toolbox, winch, rope and chain, the rack and the bale spike) are still in `game.js` and are the next part of this piece; the put-down methods are near-identical and want one shared helper, not a move.
+- The other items (cans, bottles, toolbox, winch, rope and chain, the rack and the bale spike) were left for the next part: see the tools host below.
 
+## Splitting up game.js, the cans, bottles and tools (#126, was TODO 235)
+
+- `items/toolsHost.js` takes the hand tools and bottles out of `game.js`: putting the can, toolbox, jump leads, oil, coolant and anti-gel bottles and the feed bucket down, the jump leads' clamp, the bench's places for what you carry (`benchItem`, `putOnBench`), the oil dipstick and tank dip, Amy's walk-round (`updateOilChecks`, still called inside the frame guard) and pouring coolant or anti-gel. Moved as they were, no behaviour change. `game.js` went from 14,015 to 13,795 lines and `MAX_LINES` follows.
+- The seven put-down methods were identical bar the item (the can lies across it), so they share `putInFront(item, turn)`; `tests/toolsHost.test.js` holds it. The items stay on the game for the rest of the code to read.
+- Still to go in this piece: the winch, rope, chain, rack and bale spike (they are wired into kit spots and the rack loads, not hand-held, so a different shape from these), the farm jobs and `frame()`.
