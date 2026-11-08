@@ -34,6 +34,7 @@ Follow `/todo` (`.claude/commands/todo.md`) for everything not said here. The ex
    - colours, fonts or sizes written loose in a stylesheet; a close-up screen not using the frame; new toasts against the message rule;
    - names in prompts, toasts, the girls' lines, the FAQ and the console against `docs/glossary.md`, and new things with no entry;
    - new visible things against `looks.md` (bare blocks, unlit materials, wrong sizes);
+   - **the layout against the plan**: compare `src/world/layout.js` (and `layoutNew.js` once it exists) with `docs/farm-plan.md`: every place on the plan is where it says (the farmstead's buildings within about 80 m of the yard, each field's landmark, each job on its own field), nothing in the world is on no place in the plan, and the plan's tables still name what is built. List what has drifted; fix the plan or the layout, whichever is wrong, as a small PR, and file the rest;
    - **docs that no longer match**: for each player-facing commit since the last tidy, does the FAQ (`src/faq/faqContent.js`), `docs/game.md` and `src/hud/controls.js` say what the game now does?
 3. **Fix the small drift** (a stray button, a loose colour, a wrong name, a missing FAQ line, a missing prompt) in one PR from a worktree, labelled `🔨 task` and `🧩 cohesion`, as `/todo` does.
 4. **Propose issues for the rest**, as `/idea` does (labels `🧩 cohesion` and the area), and ask Jamie before filing.
