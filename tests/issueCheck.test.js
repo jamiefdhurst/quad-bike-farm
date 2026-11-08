@@ -104,6 +104,36 @@ describe('judging a list against the issue', () => {
   });
 });
 
+describe('a line done another way', () => {
+  const other = (note) => ({ ticked: false, text: 'Two', note, differently: true });
+
+  it('reads back as a [~] line', () => {
+    const entries = [done('One'), other('built it in fieldPlan.js, as hill.js owns the numbers')];
+    expect(writeList(entries)).toContain('- [~] Two');
+    expect(parseList(writeList(entries))).toEqual(entries);
+  });
+
+  it('can be posted with what was done instead, but cannot close the issue', () => {
+    expect(judge(['One', 'Two'], [done('One'), other('built it in fieldPlan.js')])).toMatchObject({ valid: true, complete: false, unagreed: ['Two'], undone: [] });
+  });
+
+  it('is refused with no note', () => {
+    expect(judge(['One', 'Two'], [done('One'), other('')])).toMatchObject({ valid: false, noReason: ['Two'] });
+  });
+
+  it('closes once its note says Jamie agreed, with his words', () => {
+    expect(judge(['One', 'Two'], [done('One'), other('Jamie agreed: "yes, leave it there"')])).toMatchObject({ valid: true, complete: true, unagreed: [] });
+    expect(judge(['One', 'Two'], [done('One'), other('Jamie agreed:')]).complete).toBe(false);
+    expect(judge(['One', 'Two'], [done('One'), other('I think Jamie agreed: yes')]).complete).toBe(false);
+  });
+
+  it('is counted on the comment', () => {
+    const body = commentBody([done('One'), other('Jamie agreed: yes'), { ...other('built it elsewhere'), text: 'Three' }]);
+    expect(body).toContain('1 of 3 lines done. 2 done differently: 1 agreed by Jamie, 1 waiting for him.');
+    expect(commentBody([done('One')])).not.toContain('differently');
+  });
+});
+
 describe('whether a PR can close an issue', () => {
   const issue = (comments, extra) => ({ number: 7, title: 'T', body: '- One\n- Two', labels: [], comments, ...extra });
   const posted = (entries) => [{ body: 'A chat about it' }, { body: commentBody(entries), url: 'x#issuecomment-1' }];
@@ -124,6 +154,15 @@ describe('whether a PR can close an issue', () => {
     expect(r.ok).toBe(false);
     expect(r.say).toContain('not done: Two');
     expect(r.say).toContain('Part of');
+  });
+
+  it('fails a line done another way until Jamie has agreed, naming it, and passes once he has', () => {
+    const line = (note) => ({ ticked: false, text: 'Two', note, differently: true });
+    const r = canClose(issue(posted([done('One'), line('built it elsewhere')])));
+    expect(r.ok).toBe(false);
+    expect(r.say).toContain("done another way, and Jamie hasn't agreed: Two");
+    expect(r.say).toContain('Jamie agreed:');
+    expect(canClose(issue(posted([done('One'), line('Jamie agreed: "fine, leave it"')])))).toMatchObject({ ok: true });
   });
 
   it('fails when a line was added to the issue after the comment', () => {

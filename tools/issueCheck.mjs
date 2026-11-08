@@ -5,6 +5,9 @@
 //   node tools/issueCheck.mjs start <n>   writes .scratch/issue-check-<n>.md: every line of the issue, unticked (run again, it keeps your ticks)
 //   node tools/issueCheck.mjs post <n>    checks that file against the issue and posts it as one comment there; prints "Closes #n" or "Part of #n"
 //   node tools/issueCheck.mjs pr <pr>     the CI check (test.yml): fails if the PR would close an issue whose comment doesn't pass
+//
+// A line is `- [x]` done, with evidence under it; `- [ ]` not done, with why; or `- [~]` done another way, with what was done instead and why (#745). A
+// `[~]` line can't close the issue until its note starts "Jamie agreed:" with his words, so a changed line reaches him before the merge, not after.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -19,6 +22,8 @@ const NOT_PROSE = /^(depends on:|builds on:|was todo\b|\||>|<!--|---)/i;
 
 // Evidence names something that can be looked at: a file, an issue or PR, or anything in backticks (a test's name, a command).
 const EVIDENCE = /^context:\s*\S|[\w./-]+\.(js|mjs|md|sh|ya?ml|json|html|svg|glsl|py)\b|#\d+|`[^`]+`/i;
+
+const AGREED = /^jamie agreed:\s*\S/i;
 
 const tidy = (s) => s.replace(/\s+/g, ' ').trim();
 
@@ -54,12 +59,12 @@ export function requirements(body = '', title = '') {
   return tidy(title) ? [tidy(title)] : [];
 }
 
-/** The list as written in the file or the comment: [{ ticked, text, note }], with `note` the lines under each one. */
+/** The list as written in the file or the comment: [{ ticked, text, note }], with `note` the lines under each one and `differently` on a `[~]` line. */
 export function parseList(text = '') {
   const entries = [];
   for (const raw of text.split('\n')) {
-    const line = /^- \[( |x|X)\] (.*)$/.exec(raw);
-    if (line) entries.push({ ticked: line[1] !== ' ', text: tidy(line[2]), note: '' });
+    const line = /^- \[( |x|X|~)\] (.*)$/.exec(raw);
+    if (line) entries.push({ ticked: /x/i.test(line[1]), text: tidy(line[2]), note: '', ...(line[1] === '~' ? { differently: true } : {}) });
     else if (entries.length && /^\s+\S/.test(raw)) {
       const last = entries[entries.length - 1];
       last.note = tidy(`${last.note} ${raw.replace(/^\s*→?/, '')}`);
@@ -70,7 +75,7 @@ export function parseList(text = '') {
 
 /** The list as text, each line with its note under it. */
 export function writeList(entries) {
-  return `${entries.map((e) => `- [${e.ticked ? 'x' : ' '}] ${e.text}\n  → ${e.note}`).join('\n')}\n`;
+  return `${entries.map((e) => `- [${e.differently ? '~' : e.ticked ? 'x' : ' '}] ${e.text}\n  → ${e.note}`).join('\n')}\n`;
 }
 
 /** The issue's lines as a list, keeping what is already written for any that are still there, and any lines the session added. */
@@ -82,16 +87,18 @@ export function refresh(required, entries = []) {
 
 /**
  * Whether a list answers the issue: `missing` lines of the issue it dropped, `unproven` ticked lines with no evidence, `noReason` unticked lines with no
- * reason, `undone` unticked lines. `valid` means it can be posted; `complete` means the PR can say "Closes".
+ * reason, `undone` unticked lines, `unagreed` lines done another way that Jamie hasn't agreed. `valid` means it can be posted; `complete` means the PR can
+ * say "Closes".
  */
 export function judge(required, entries) {
   const texts = new Set(entries.map((e) => e.text));
   const missing = required.filter((r) => !texts.has(r));
   const unproven = entries.filter((e) => e.ticked && !EVIDENCE.test(e.note)).map((e) => e.text);
   const noReason = entries.filter((e) => !e.ticked && !tidy(e.note)).map((e) => e.text);
-  const undone = entries.filter((e) => !e.ticked).map((e) => e.text);
+  const undone = entries.filter((e) => !e.ticked && !e.differently).map((e) => e.text);
+  const unagreed = entries.filter((e) => e.differently && !AGREED.test(e.note)).map((e) => e.text);
   const valid = !missing.length && !unproven.length && !noReason.length;
-  return { missing, unproven, noReason, undone, valid, complete: valid && !undone.length };
+  return { missing, unproven, noReason, undone, unagreed, valid, complete: valid && !undone.length && !unagreed.length };
 }
 
 /** What is wrong with a list, one line each, for a session to act on. */
@@ -106,7 +113,10 @@ export function problems({ missing, unproven, noReason }) {
 /** The comment on the issue: how many lines are done, then the list. */
 export function commentBody(entries) {
   const done = entries.filter((e) => e.ticked).length;
-  return `${MARK}\n**Checked against the issue:** ${done} of ${entries.length} lines done.\n\n${writeList(entries)}`;
+  const other = entries.filter((e) => e.differently);
+  const agreed = other.filter((e) => AGREED.test(e.note)).length;
+  const differently = other.length ? ` ${other.length} done differently: ${agreed} agreed by Jamie, ${other.length - agreed} waiting for him.` : '';
+  return `${MARK}\n**Checked against the issue:** ${done} of ${entries.length} lines done.${differently}\n\n${writeList(entries)}`;
 }
 
 /** The latest list posted on an issue, from `gh issue view --json comments`. */
@@ -123,8 +133,12 @@ export function canClose(issue) {
   if (!posted) return { ok: false, say: `#${number}: this PR would close it, but no one has checked it line by line. ${again}` };
   const verdict = judge(requirements(issue.body, issue.title), parseList(posted.body));
   if (verdict.complete) return { ok: true, say: `#${number}: every line done` };
-  const list = [...problems(verdict), ...verdict.undone.filter((t) => !verdict.noReason.includes(t)).map((t) => `not done: ${t}`)];
-  const partly = verdict.undone.length ? ' If those lines can\'t be done in this PR, it says "Part of" rather than "Closes", and the issue stays open.' : '';
+  const list = [
+    ...problems(verdict),
+    ...verdict.undone.filter((t) => !verdict.noReason.includes(t)).map((t) => `not done: ${t}`),
+    ...verdict.unagreed.filter((t) => !verdict.noReason.includes(t)).map((t) => `done another way, and Jamie hasn't agreed: ${t}`),
+  ];
+  const partly = verdict.undone.length || verdict.unagreed.length ? ' If those lines can\'t be settled in this PR, it says "Part of" rather than "Closes", and the issue stays open. On a yes from Jamie, start a `[~]` line\'s note "Jamie agreed:" with his words.' : '';
   return { ok: false, say: `#${number}: this PR would close it with lines unanswered:\n${list.map((l) => `  - ${l}`).join('\n')}\n${again}${partly}` };
 }
 
@@ -139,7 +153,7 @@ function start(n) {
   const entries = refresh(requirements(issue.body, issue.title), had);
   mkdirSync(resolve('.scratch'), { recursive: true });
   writeFileSync(file, writeList(entries));
-  console.log(`${entries.length} lines to answer in ${file}\nTick each with where it is (a file, a test in backticks, a command), or leave it with why it can't be done.`);
+  console.log(`${entries.length} lines to answer in ${file}\nTick each with where it is (a file, a test in backticks, a command), leave it with why it can't be done, or mark it [~] with what you did instead and ask Jamie.`);
 }
 
 function post(n) {
@@ -160,7 +174,11 @@ function post(n) {
   if (id) gh('api', '-X', 'PATCH', `repos/{owner}/{repo}/issues/comments/${id}`, '-f', `body=${commentBody(entries)}`);
   else gh('api', '-X', 'POST', `repos/{owner}/{repo}/issues/${n}/comments`, '-f', `body=${commentBody(entries)}`);
   if (verdict.complete) console.log(`Closes #${n}`);
-  else console.log(`Part of #${n}\nNot done, and the issue stays open:\n${verdict.undone.map((t) => `  - ${t}`).join('\n')}`);
+  else {
+    console.log(`Part of #${n}`);
+    if (verdict.undone.length) console.log(`Not done, and the issue stays open:\n${verdict.undone.map((t) => `  - ${t}`).join('\n')}`);
+    if (verdict.unagreed.length) console.log(`Done another way, so ask Jamie. On a yes, start the note "Jamie agreed:" with his words and post again:\n${verdict.unagreed.map((t) => `  - ${t}`).join('\n')}`);
+  }
 }
 
 function pr(n) {
