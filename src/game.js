@@ -24,7 +24,7 @@ import { DayEvents, writeStory, keepStory, validStories } from './farm/dayStory.
 import { StoriesView } from './farm/storiesView.js';
 import { DEFAULT_SHOW_PARAMS, SHOW_PARAM_RANGES, ShowKeeper, isShowDay, isShowEve, runShow, showCard, showSpeech, judgeQuad, previewText, rosetteSvg } from './farm/showDay.js';
 import { formatEntry } from './workshop/logbook.js';
-import { DEFAULT_FARM_PARAMS, FARM_PARAM_RANGES, browserStorage, openFarm, writeSave, wipeSave, fleetFromSave, describeFarm, validSave } from './farm/farmSave.js';
+import { DEFAULT_FARM_PARAMS, FARM_PARAM_RANGES, LAYOUT_RESET_TOAST, browserStorage, openFarm, writeSave, wipeSave, fleetFromSave, describeFarm, validSave } from './farm/farmSave.js';
 import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from './farm/farmState.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
@@ -4932,7 +4932,7 @@ export class Game {
     if (!this.farmStarted) {
       this.farmStarted = true;
       document.getElementById('overlay')?.classList.add('started');
-      this.saveFarm();
+      if (this.saveFarm() && this.farm.layoutReset) this.hud.toast(LAYOUT_RESET_TOAST, 6); // the save now carries the new layout, so it is said once
     }
     this.farmClock = (this.farmClock ?? 0) + dt;
     if (this.farmClock < this.farmParams.saveEvery) return;

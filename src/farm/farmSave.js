@@ -1,8 +1,11 @@
 // The farm that remembers: one save in the browser, read when the page loads and written while you play. Each load is the next
 // day. `?seed=N` ignores the save and never writes it, so a seeded game repeats exactly. Pure (the storage is passed in), tested.
 
+import { LAYOUT_VERSION } from '../world/layout.js';
+
 export const SAVE_KEY = 'quadBikeFarm';
 export const SAVE_VERSION = 1;
+export const LAYOUT_RESET_TOAST = 'The farm has been laid out again. Your vehicles, money and the girls are as you left them.';
 
 export const DEFAULT_FARM_PARAMS = {
   saveEvery: 30, // seconds of play between saves (it also saves when the tab is hidden or closed)
@@ -89,7 +92,7 @@ export function readSave(storage) {
 export function writeSave(storage, save) {
   if (!storage) return false;
   try {
-    storage.setItem(SAVE_KEY, JSON.stringify({ ...save, version: SAVE_VERSION }));
+    storage.setItem(SAVE_KEY, JSON.stringify({ ...save, version: SAVE_VERSION, layoutVersion: LAYOUT_VERSION }));
     return true;
   } catch {
     return false;
@@ -105,18 +108,36 @@ export function wipeSave(storage) {
 }
 
 /**
+ * The save as the map the game has now can use it. A save from another layout version (one with none is version 1) loses every kept
+ * position, so those are dealt afresh as on a new farm: the bales, the lane's ruts, the mown, cut, sprayed and combed ground, the loose
+ * batteries and what was left lying about. Everything else carries over (condition, money, favour, records, the calendar, the stocks).
+ * Returns { save, reset }; the same save and false when the versions match.
+ */
+export function forLayout(save, layoutVersion = LAYOUT_VERSION) {
+  if (!save || (save.layoutVersion ?? 1) === layoutVersion) return { save, reset: false };
+  const kept = { ...save, layoutVersion };
+  for (const key of ['bales', 'lane', 'mowing', 'harrow', 'batteries', 'lostThings']) delete kept[key];
+  if (kept.hay) kept.hay = { stacked: kept.hay.stacked }; // the stack in the shed is a count; the cut grass was in a place
+  if (kept.spray) kept.spray = { tank: kept.spray.tank }; // what is left in the sprayer, not where it went
+  if (kept.boosterPack) kept.boosterPack = { ...kept.boosterPack, where: 'loose' };
+  return { save: kept, reset: true };
+}
+
+/**
  * What this load is, from the URL and the save:
  * - seeded: `?seed=` is in the URL; the save is left alone and never written, and it is a plain first day.
  * - continuing: there is a save; this is the day after it, on the same farm (its farmSeed deals the farm's character).
  * - otherwise a new farm, Day 1, whose farm seed is the game's own seed.
- * Returns { seeded, continuing, save, day, farmSeed } (farmSeed null for a new farm: the game uses its seed).
+ * Returns { seeded, continuing, save, day, farmSeed, layoutReset } (farmSeed null for a new farm: the game uses its seed; layoutReset when
+ * the save was from another layout version and its positions were dropped).
  */
-export function openFarm({ search = '', storage = null } = {}) {
+export function openFarm({ search = '', storage = null, layoutVersion = LAYOUT_VERSION } = {}) {
   const seeded = new URLSearchParams(search).has('seed');
   if (seeded) return { seeded: true, continuing: false, save: null, day: 1, farmSeed: null };
-  const save = readSave(storage);
-  if (!save) return { seeded: false, continuing: false, save: null, day: 1, farmSeed: null };
-  return { seeded: false, continuing: true, save, day: save.day + 1, farmSeed: save.farmSeed };
+  const read = readSave(storage);
+  if (!read) return { seeded: false, continuing: false, save: null, day: 1, farmSeed: null };
+  const { save, reset } = forLayout(read, layoutVersion);
+  return { seeded: false, continuing: true, save, day: save.day + 1, farmSeed: save.farmSeed, layoutReset: reset };
 }
 
 /** The start screen's view of the save: { day } for the day "Continue" plays, or null with no save (or a seeded game). */

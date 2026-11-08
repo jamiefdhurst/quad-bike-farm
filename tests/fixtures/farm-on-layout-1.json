@@ -1,0 +1,454 @@
+{
+ "version": 1,
+ "day": 12,
+ "farmSeed": 4242,
+ "savedAt": 1790000000000,
+ "fleet": [
+  "red",
+  "blue",
+  "landrover"
+ ],
+ "market": {
+  "purse": 340,
+  "bought": [
+   {
+    "specId": "green",
+    "colour": 3,
+    "hours": 400,
+    "wear": 0.3,
+    "price": 650
+   }
+  ],
+  "sold": [
+   "yellow"
+  ],
+  "ledger": [
+   {
+    "deal": "bought",
+    "specId": "green",
+    "price": 650,
+    "day": 9
+   }
+  ]
+ },
+ "shed": {
+  "bought": [
+   {
+    "piece": "compressor",
+    "boughtDay": 5
+   },
+   {
+    "piece": "washer",
+    "boughtDay": null
+   }
+  ]
+ },
+ "vehicles": {
+  "red": {
+   "idle": 1450,
+   "roughness": 0.08,
+   "hours": 120,
+   "odo": 800,
+   "engine": {
+    "wear": 0.2,
+    "pistonWear": null,
+    "fouling": 0,
+    "scuff": 0,
+    "seized": false,
+    "silencerBlown": 0,
+    "silencerOff": false,
+    "runIn": 0,
+    "scar": 0,
+    "coolant": 1,
+    "coolantLeak": 0,
+    "thermostat": 0,
+    "boiled": false,
+    "dieselSoak": 0,
+    "bore": 0,
+    "boreFit": 1,
+    "battery": 1,
+    "batteryOut": false
+   },
+   "keyOn": false,
+   "running": false,
+   "filter": 0,
+   "fuel": {
+    "litres": 6,
+    "tap": "on",
+    "oil": 0.02,
+    "diesel": 0,
+    "water": 0,
+    "sediment": 0,
+    "additive": 0,
+    "wax": 0,
+    "antiGel": 0,
+    "airLock": 0
+   },
+   "faults": {
+    "tyre": -1,
+    "rodWheel": -1,
+    "rimWheel": -1,
+    "levels": {
+     "puncture": 0,
+     "belt": 0,
+     "cable": 0,
+     "carb": 0,
+     "mounts": 0,
+     "chain": 0,
+     "valves": 0,
+     "rod": 0,
+     "rim": 0,
+     "leak": 0,
+     "clutch": 0,
+     "terminals": 0,
+     "tyreLeak": 0,
+     "tyreCold": 0,
+     "tyreUneven": 0,
+     "valveCore": 0,
+     "carbGum": 0,
+     "tapClog": 0,
+     "chainGrit": 0,
+     "brakeMud": 0,
+     "exhaustHole": 0,
+     "gasket": 0,
+     "caliper": 0,
+     "bearing": 0
+    },
+    "started": {
+     "puncture": false,
+     "belt": false,
+     "cable": false,
+     "carb": false,
+     "mounts": false,
+     "chain": false,
+     "valves": false,
+     "rod": false,
+     "rim": false,
+     "leak": false,
+     "clutch": false,
+     "terminals": false,
+     "tyreLeak": false,
+     "tyreCold": false,
+     "tyreUneven": false,
+     "valveCore": false,
+     "carbGum": false,
+     "tapClog": false,
+     "chainGrit": false,
+     "brakeMud": false,
+     "exhaustHole": false,
+     "gasket": false,
+     "caliper": false,
+     "bearing": false
+    },
+    "caps": {
+     "puncture": 1,
+     "belt": 1,
+     "cable": 1,
+     "carb": 1,
+     "mounts": 1,
+     "chain": 1,
+     "valves": 1,
+     "rod": 1,
+     "rim": 1,
+     "leak": 1,
+     "clutch": 1,
+     "terminals": 1,
+     "tyreLeak": 1,
+     "tyreCold": 1,
+     "tyreUneven": 1,
+     "valveCore": 1,
+     "carbGum": 1,
+     "tapClog": 1,
+     "chainGrit": 1,
+     "brakeMud": 1,
+     "exhaustHole": 1,
+     "gasket": 1,
+     "caliper": 1,
+     "bearing": 1
+    },
+    "kept": {
+     "chainLube": 1,
+     "chainOff": false,
+     "valveTight": false
+    },
+    "wheelOf": {
+     "tyreUneven": -1,
+     "valveCore": -1,
+     "caliper": -1,
+     "bearing": -1
+    }
+   },
+   "tyres": {
+    "psi": [
+     4,
+     4,
+     4,
+     4
+    ],
+    "brand": {
+     "front": "trackmaster",
+     "rear": "trackmaster"
+    },
+    "tread": {
+     "front": 1,
+     "rear": 1
+    }
+   },
+   "sump": 0.8,
+   "spotlamps": null,
+   "snorkel": null,
+   "tapStiff": 1,
+   "motWear": {
+    "bulbs": 0,
+    "blades": 0,
+    "horn": 0
+   },
+   "swap": null,
+   "engineOut": false,
+   "mud": {
+    "body": 0,
+    "wheels": 0
+   }
+  }
+ },
+ "pods": {},
+ "girls": {
+  "care": {
+   "amy": 0.4,
+   "jess": 0.4
+  },
+  "favour": {
+   "amy": 3,
+   "jess": 0
+  },
+  "friction": 0,
+  "fallenOut": false,
+  "skills": {
+   "amy": {
+    "starting": 0.5,
+    "choke": 0.3,
+    "cornering": 0.6,
+    "mud": 0.35,
+    "bumpStart": 0,
+    "doubleDeclutch": 0.95
+   },
+   "jess": {
+    "starting": 0.45,
+    "choke": 0.3,
+    "cornering": 0.4,
+    "mud": 0.65,
+    "bumpStart": 0,
+    "doubleDeclutch": 0
+   }
+  },
+  "lessons": {
+   "amy": [],
+   "jess": []
+  },
+  "memories": {},
+  "opinions": {},
+  "romance": {
+   "amy": {
+    "locked": false,
+    "betrayed": false
+   },
+   "jess": {
+    "locked": false,
+    "betrayed": false
+   }
+  }
+ },
+ "bucket": [
+  "ride-red",
+  "ride-blue"
+ ],
+ "learnt": [
+  "chokeFlood",
+  "flood"
+ ],
+ "records": {
+  "bests": {
+   "lap": {
+    "value": 61.5,
+    "who": "amy",
+    "day": 8
+   }
+  },
+  "byQuad": {
+   "lap": {
+    "red": {
+     "value": 63.2,
+     "who": "you",
+     "day": 7
+    }
+   }
+  }
+ },
+ "challenges": {
+  "bests": {
+   "coldStart": {
+    "value": 4.2,
+    "day": 6
+   }
+  }
+ },
+ "photos": [
+  {
+   "data": "data:image/png;base64,AAAA",
+   "day": 4,
+   "time": "10:15",
+   "girls": [
+    "amy"
+   ],
+   "x": 0.5,
+   "y": 0.4
+  }
+ ],
+ "logbook": [
+  {
+   "text": "Red went well",
+   "day": 11
+  }
+ ],
+ "stories": [],
+ "spares": {
+  "counts": {
+   "plug": 3,
+   "tube": 1
+  },
+  "ordered": {
+   "belt": 1
+  },
+  "waiting": {},
+  "engines": []
+ },
+ "generator": {
+  "fuel": 3.5
+ },
+ "lostThings": {
+  "lying": {
+   "leads": {
+    "x": 10,
+    "z": -4,
+    "yaw": 1.2
+   }
+  }
+ },
+ "headgear": {},
+ "bales": [
+  [
+   "b1",
+   12.5,
+   -30.2,
+   0.4,
+   0.0
+  ],
+  [
+   "b2",
+   14.1,
+   -30.2,
+   0.1,
+   0.0
+  ]
+ ],
+ "hay": {
+  "cut": [
+   3,
+   4,
+   5
+  ],
+  "cutDay": 11,
+  "stacked": 6
+ },
+ "mowing": {
+  "lawn": {
+   "cols": 4,
+   "rows": 4,
+   "cells": [
+    0,
+    11,
+    1,
+    1,
+    11,
+    2
+   ]
+  }
+ },
+ "spray": {
+  "tank": 0.6,
+  "since": 10,
+  "doneDay": 11,
+  "cells": "0123"
+ },
+ "harrow": {
+  "since": 9,
+  "doneDay": 10,
+  "cells": "0120"
+ },
+ "lane": [
+  10,
+  200,
+  11,
+  180,
+  12,
+  90
+ ],
+ "boosterPack": {
+  "charge": 0.8,
+  "where": "charger"
+ },
+ "batteries": {
+  "red": {
+   "where": "loose"
+  }
+ },
+ "shows": [
+  {
+   "day": 10,
+   "place": 2,
+   "total": 31
+  }
+ ],
+ "road": {
+  "red": [
+   {
+    "day": 6,
+    "bhp": 12.5,
+    "rpm": 6200,
+    "torque": 14,
+    "diff": 0.4,
+    "curve": [
+     {
+      "rpm": 3000,
+      "bhp": 6
+     },
+     {
+      "rpm": 6200,
+      "bhp": 12.5
+     }
+    ]
+   }
+  ]
+ },
+ "mot": {
+  "last": {
+   "landrover": {
+    "day": 9,
+    "passed": false,
+    "fails": [
+     "lights",
+     "tyres"
+    ]
+   }
+  },
+  "certificate": {
+   "landrover": 3
+  },
+  "history": []
+ },
+ "logs": {
+  "count": 20,
+  "day": 11,
+  "fitted": false
+ }
+}

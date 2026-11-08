@@ -538,6 +538,12 @@ const RAW = {
   },
 };
 
+/**
+ * Which map the farm is on. Saved with the farm: a save from another layout version keeps its vehicles, money and girls but not where
+ * things were (farm/farmSave.js `forLayout`). Raised by the PR that moves the farm onto a new plan (#692), never by anything else.
+ */
+export const LAYOUT_VERSION = 1;
+
 /** The layout as it is written, with its `at(...)` offsets, for the tests that move and turn the anchors. */
 export const RAW_LAYOUT = RAW;
 
