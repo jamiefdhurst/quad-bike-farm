@@ -4,6 +4,7 @@
 import { girlActions } from './girlActions.js';
 import { completeStyle, outfitsFor } from '../npc/outfits.js';
 import { wardrobeLook, styleFor, describeLook } from './wardrobe.js';
+import { DEFAULT_GRAPHICS_PARAMS } from '../core/graphics.js';
 
 const HOLD = 'scene';
 const ground = (g, x, z) => g.world.heightAt(x, z);
@@ -33,7 +34,8 @@ export function getOff(g) {
 /** Lets the girls go about their day again. */
 export function endScene(g) {
   for (const c of g.companions) c.release(HOLD);
-  return ['the girls are free again'];
+  g.graphics.hedgeFullDistance = DEFAULT_GRAPHICS_PARAMS.hedgeFullDistance;
+  return ['the girls are free again, and the hedges go back to swapping at their usual distance'];
 }
 
 export function wardrobe(g, say) {
@@ -115,4 +117,10 @@ export function earlier(g) {
   return ['Jess has beaten Amy in a race and Amy has tipped a quad, as far as the day goes; stand near them and wait half a minute or so'];
 }
 
-export const SETUPS = { prepare: getOff, wardrobe, moto, flock, flask, earlier, end: endScene };
+/** The hedges' far strips (world/hedgeFar.js) brought in to 25 m, so the farm's hedges are mostly strips from the yard and you can compare. */
+export function farHedges(g) {
+  g.graphics.hedgeFullDistance = 25;
+  return ['every hedge more than 25 m from you is its plain far strip (usually 150 m), the nearer ones leafy; walk along a hedge to see the swap, scene end puts it back'];
+}
+
+export const SETUPS = { farHedges, prepare: getOff, wardrobe, moto, flock, flask, earlier, end: endScene };
