@@ -16,7 +16,7 @@ import { resolve, walk, show, describe, parseValue, pathCandidates } from './she
  *   notebookLearnt(): [{ id, text, learnt }]   learnThing(id): boolean   learnAll(): void   forgetAll(): void   (the notebook's "Things I've learnt")
  *   scenes(): [{ id, label }]   runScene(id, shell): string[]   (a feature set up at once: debug/scenes.js)
  *   errors(): [{ name, count, message }]   clearErrors(): void   (features whose update threw, caught by core/featureGuard.js)
- *   perf(): { fps, ms, worstMs, p99Ms, longFrames, longTotal, longFrameCauses, heapMb, allocMbPerSecond, calls, triangles, width, height, pixelRatio, maxFps }   (how hard the game is working)
+ *   perf(): { fps, ms, worstMs, p99Ms, longFrames, longTotal, longFrameCauses, ground, heapMb, allocMbPerSecond, calls, triangles, width, height, pixelRatio, maxFps }   (how hard the game is working)
  */
 
 const GROUPS = ['Looking', 'Changing', 'Moving', 'Vehicles', 'Girls', 'World', 'Console'];
@@ -516,6 +516,7 @@ export function buildCommands(host) {
           `${p.width} x ${p.height} pixels (render scale ${p.pixelRatio})`,
           ...(p.p99Ms === undefined ? [] : [`slowest 1% of frames ${round(p.p99Ms, 1)} ms; ${p.longFrames} over 33 ms in the last 10 s (${p.longTotal} since the game started)`]),
           ...(p.longFrameCauses?.length ? [`last long frames: ${p.longFrameCauses.join('; ')}`] : []),
+          ...(p.ground ? [`ground: ${p.ground.built} of ${p.ground.tiles} tiles drawn (${Object.entries(p.ground.bySteps).map(([step, n]) => `${n} every ${step} m`).join(', ')}), ${p.ground.waiting} waiting; the slowest took ${round(p.ground.worstBuildMs, 1)} ms to build`] : []),
           ...(p.heapMb ? [`memory ${Math.round(p.heapMb)} MB, allocating ${round(p.allocMbPerSecond, 1)} MB a second`] : []),
           ...(p.stages?.length ? [`where the time goes: ${p.stages.map((x) => `${x.name} ${round(x.ms, 2)}`).join(', ')} (ms)`] : []),
         ];
