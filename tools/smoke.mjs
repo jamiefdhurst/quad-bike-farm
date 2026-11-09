@@ -119,7 +119,13 @@ async function run() {
     const heard = () => g.radioAudio.chains.has(set.spec.id);
     const waiting = () => g.companions.filter((c) => !c.mind.last);
     while (performance.now() - t0 < limit * 1000 && (waiting().length || !heard())) {
-      for (const c of waiting()) c.mind.thinkIn = 0;
+      for (const c of waiting()) {
+        c.mind.thinkIn = 0;
+        if (c.fsm.name === 'onTrailer' && Math.round((performance.now() - t0) / 250) % 40 === 0) {
+          g.settleGirl(c); // one slow runner left Amy on it for the whole wait
+          c.settled.left = 0.1;
+        }
+      }
       await new Promise((r) => setTimeout(r, 250));
     }
     return {
