@@ -4,6 +4,7 @@
 // because a bog is judged on wear and wetness together. Pure logic; the world feeds it wheels, the weather's wetness and a texture.
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+const THAW_SHOWS = 0.002; // thaw under this rounds to nothing in the texture
 const smoothstep = (a, b, x) => {
   const t = clamp((x - a) / (b - a), 0, 1);
   return t * t * (3 - 2 * t);
@@ -90,6 +91,8 @@ export class GroundWear {
     this.thaw = new Float32Array(this.nx * this.nz);
     this.dirty = false;
     this.packClock = 0;
+    this.anyWear = false; // whether any point is worn (or was, at the last update): a sparse store skips the grids that are not
+    this.anyThaw = false; // whether any point's frost is melted enough to show
   }
 
   /** Metres the grid covers along x and z. */
@@ -128,6 +131,8 @@ export class GroundWear {
     const i = ix * this.nz + iz;
     this.wear[i] = Math.min(1, this.wear[i] + amount);
     this.thaw[i] = Math.min(1, Math.max(this.thaw[i], this.wear[i] / this.p.thawAt));
+    this.anyWear = true;
+    if (this.thaw[i] >= THAW_SHOWS) this.anyThaw = true;
   }
 
   /** Grass grows back, quicker when it's dry. `wet` is 0..1 how wet the ground is; refreshes `data` about twice a second if anything moved. */
@@ -137,12 +142,15 @@ export class GroundWear {
     if (rec > 0) {
       const w = this.wear;
       const laneRec = rec * p.laneRecovery;
+      let any = false;
       for (let i = 0; i < w.length; i++) {
         if (w[i] > 0) {
           w[i] = Math.max(0, w[i] - (this.lanes[i] >= 0.5 ? laneRec : rec));
           this.dirty = true;
+          if (w[i] > 0) any = true;
         }
       }
+      this.anyWear = any;
     }
     this.packClock += dt;
     if (this.dirty && this.packClock >= 0.5) {
@@ -191,6 +199,7 @@ export class GroundWear {
   /** Sets every lane grid point's wear to `v` (0 puts the lane right, 1 ruts it to a bog): for the debug panel. */
   setLane(v) {
     for (let i = 0; i < this.wear.length; i++) if (this.lanes[i] >= 0.5) this.wear[i] = clamp(v, 0, 1);
+    this.anyWear = v > 0;
     this.dirty = true;
   }
 
@@ -213,6 +222,7 @@ export class GroundWear {
       const q = pairs[k + 1];
       if (!Number.isInteger(i) || i < 0 || i >= this.wear.length || !(this.lanes[i] >= 0.5) || !Number.isFinite(q)) continue;
       this.wear[i] = clamp(q / 255, 0, 1) * clamp(kept, 0, 1);
+      if (this.wear[i] > 0) this.anyWear = true;
     }
     this.dirty = true;
   }
@@ -270,8 +280,13 @@ export class GroundWear {
     this.packed = true;
   }
 
-  /** The bogs wear has made, as {x, z, radius} for the girls to plan round, capped at the worst `max`. */
-  hazards(wet = 0, max = 24) {
+  /** Whether nothing is worn or thawed here any more, so a sparse store (wearTiles.js) can let this grid go. */
+  isClear() {
+    return !this.anyWear && !this.anyThaw && !this.dirty;
+  }
+
+  /** The bogs wear has made, as {x, z, radius} for the girls to plan round, capped at the worst `max`; `keep(x, z)` leaves out a point. */
+  hazards(wet = 0, max = 24, keep = null) {
     const out = [];
     const r = this.cell * 1.5;
     for (let ix = 0; ix < this.nx; ix++) {
@@ -279,7 +294,9 @@ export class GroundWear {
         const w = this.wear[ix * this.nz + iz];
         if (w < 0.4) continue;
         const depth = this.#bog(w, this.#soaked(wet, Math.max(this.soaks[ix * this.nz + iz], this.lanes[ix * this.nz + iz] * this.p.laneSoak)));
-        if (depth >= this.p.hazardAt) out.push({ x: this.minX + (ix + 0.5) * this.cell, z: this.minZ + (iz + 0.5) * this.cell, radius: r, depth });
+        const x = this.minX + (ix + 0.5) * this.cell;
+        const z = this.minZ + (iz + 0.5) * this.cell;
+        if (depth >= this.p.hazardAt && (!keep || keep(x, z))) out.push({ x, z, radius: r, depth });
       }
     }
     return out.sort((a, b) => b.depth - a.depth).slice(0, max);

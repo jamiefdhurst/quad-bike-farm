@@ -5,13 +5,14 @@ import { LAYOUT } from './layout.js';
 import { Track } from './track.js';
 import { createTerrainHeight } from './terrainHeight.js';
 import { createTerrain } from './terrain.js';
-import { DEFAULT_GROUND_PARAMS, GROUND_PARAM_RANGES } from './groundTiles.js';
+import { DEFAULT_GROUND_PARAMS, GROUND_PARAM_RANGES, groundBounds } from './groundTiles.js';
 import { DrawDistance } from './tiledInstances.js';
 import { FarDetail, pixelsPerRadian } from './farDetail.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../core/graphics.js';
 import { buildProps } from './props.js';
 import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLevel, barnShape } from './barn.js';
-import { GroundWear, DEFAULT_WEAR_PARAMS, WEAR_PARAM_RANGES } from './groundWear.js';
+import { DEFAULT_WEAR_PARAMS, WEAR_PARAM_RANGES } from './groundWear.js';
+import { WearTiles } from './wearTiles.js';
 import { stripFrame } from './layout.js';
 import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
 import { createFields } from './fields.js';
@@ -103,7 +104,7 @@ export class World {
     };
     this.wearParams = { ...DEFAULT_WEAR_PARAMS };
     registerTuning('Ground wear', this.wearParams, WEAR_PARAM_RANGES);
-    this.wear = new GroundWear({ bounds: this.fields.wearBounds, exempt, soak: this.fields.soakAt, lane: this.fields.laneAt, params: this.wearParams });
+    this.wear = new WearTiles({ bounds: this.fields.wearBounds, ground: groundBounds(layout), exempt, soak: this.fields.soakAt, lane: this.fields.laneAt, params: this.wearParams });
 
     // Mud the tyres carry onto the road (roadMud.js), on a fine grid over the tarmac.
     this.roadMudParams = { ...DEFAULT_ROAD_MUD_PARAMS };
@@ -320,7 +321,7 @@ export class World {
   update(dt, focus, camera, guard = null) {
     this.streamLastDt = dt;
     this.wear.update(dt, this.wet);
-    if (this.wear.packed) this.terrain.wearTexture.needsUpdate = true;
+    if (this.wear.packed) this.terrain.wearTexture.needsUpdate = this.terrain.wearIndexTexture.needsUpdate = true;
     this.wear.packed = false;
     if (this.roadMud) {
       this.roadMud.update(dt, this.weather?.rain ?? 0);
