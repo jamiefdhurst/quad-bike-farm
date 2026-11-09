@@ -53,18 +53,47 @@ export class RoadWet {
 }
 
 /**
- * A 0..255 mask of the tarmac over a square of ground, one texel a `cell` metres, row after row along z, for the ground shader to know where
- * the road is. `size` is the width of the square, centred on the origin.
+ * A 0..255 mask of the tarmac over `rect` ({ minX, maxX, minZ, maxZ }), one texel a `cell` metres, row after row along z, for the ground shader to
+ * know where the road is. `boxes` are the places a road could be (`fields.tarmacBoxes()`): `tarmacAt` is asked only there, once for each texel
+ * (`lookups` counts them), so the mask costs by the length of road and not by the size of the ground. Null when no box reaches `rect`: no road here.
+ * A generator that pauses every `every` lookups (a few thousand are a millisecond), for painting a tile a little a frame; `tarmacMask` runs it through.
  */
-export function tarmacMask(tarmacAt, size, cell = 0.5) {
-  const n = Math.ceil(size / cell);
-  const half = size / 2;
-  const data = new Uint8Array(n * n);
-  for (let iz = 0; iz < n; iz++) {
-    for (let ix = 0; ix < n; ix++) {
-      const t = tarmacAt(-half + (ix + 0.5) * cell, -half + (iz + 0.5) * cell);
-      data[iz * n + ix] = t <= 0 ? 0 : t >= 1 ? 255 : Math.round(t * 255);
+export function* tarmacMaskSteps(tarmacAt, rect, cell = 0.5, boxes = [], every = 2000) {
+  const nx = Math.ceil((rect.maxX - rect.minX) / cell);
+  const nz = Math.ceil((rect.maxZ - rect.minZ) / cell);
+  let data = null;
+  let seen = null;
+  let lookups = 0;
+  for (const b of boxes) {
+    if (b.maxX < rect.minX || b.minX > rect.maxX || b.maxZ < rect.minZ || b.minZ > rect.maxZ) continue;
+    if (!data) {
+      data = new Uint8Array(nx * nz);
+      seen = new Uint8Array(nx * nz);
+    }
+    // The texels whose middles are in the box.
+    const ix0 = Math.max(0, Math.ceil((b.minX - rect.minX) / cell - 0.5));
+    const ix1 = Math.min(nx - 1, Math.floor((b.maxX - rect.minX) / cell - 0.5));
+    const iz0 = Math.max(0, Math.ceil((b.minZ - rect.minZ) / cell - 0.5));
+    const iz1 = Math.min(nz - 1, Math.floor((b.maxZ - rect.minZ) / cell - 0.5));
+    for (let iz = iz0; iz <= iz1; iz++) {
+      for (let ix = ix0; ix <= ix1; ix++) {
+        const k = iz * nx + ix;
+        if (seen[k]) continue;
+        seen[k] = 1;
+        lookups++;
+        const t = tarmacAt(rect.minX + (ix + 0.5) * cell, rect.minZ + (iz + 0.5) * cell);
+        data[k] = t <= 0 ? 0 : t >= 1 ? 255 : Math.round(t * 255);
+        if (lookups % every === 0) yield;
+      }
     }
   }
-  return { data, n, size, cell, minX: -half, minZ: -half };
+  return data ? { data, nx, nz, cell, minX: rect.minX, minZ: rect.minZ, sizeX: nx * cell, sizeZ: nz * cell, lookups } : null;
+}
+
+/** The tarmac mask in one go: see `tarmacMaskSteps`. */
+export function tarmacMask(tarmacAt, rect, cell = 0.5, boxes = []) {
+  const job = tarmacMaskSteps(tarmacAt, rect, cell, boxes);
+  let r = job.next();
+  while (!r.done) r = job.next();
+  return r.value;
 }

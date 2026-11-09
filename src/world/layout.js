@@ -24,11 +24,10 @@ const RAW = {
     logYard: { x: -17.5, z: -68, yaw: 0 }, // where the tractor stands to split logs
     bonfire: { x: -6, z: 71, yaw: 0 }, // the bonfire's middle
   },
-  // The ground: the rectangle (whole metres) that has physics and is drawn in tiles, fine near you and coarse far off (world/groundTiles.js). Not
-  // centred on anything: it is as big as the farm and what is round it needs (#665).
+  // The ground: the rectangle (whole metres) that has physics, is drawn in tiles, fine near you and coarse far off (world/groundTiles.js), and is
+  // painted a tile at a time as you come near it (world/groundPaint.js). Not centred on anything: it is as big as the farm and what is round it
+  // needs (#665).
   ground: { minX: -210, maxX: 210, minZ: -210, maxZ: 210 },
-  // The square the painted ground texture covers (world/groundTexture.js), centred. It is 4096 pixels across, so ground beyond it has no painting.
-  terrainSize: 420,
   // A coarser visual ring extends this far beyond the ground's edge for the horizon (world/terrain.js).
   outerMargin: 290,
   // The size of the old centred ring (outerMargin and the ground together), which the distant trees still scatter over.

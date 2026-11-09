@@ -38,8 +38,8 @@ describe('the hill through the south gate', () => {
   });
 
   it('fits on the detailed terrain', () => {
-    expect(pasture.maxZ).toBeLessThan(LAYOUT.terrainSize / 2 - 5);
-    expect(pasture.minX).toBeGreaterThan(-LAYOUT.terrainSize / 2 + 5);
+    expect(pasture.maxZ).toBeLessThan(LAYOUT.ground.maxZ - 5);
+    expect(pasture.minX).toBeGreaterThan(LAYOUT.ground.minX + 5);
   });
 
   it('runs the lane through the gate, sunk between its banks', () => {

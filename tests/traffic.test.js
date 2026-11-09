@@ -61,7 +61,7 @@ describe('the lane and the plan', () => {
   it('has the lane outside the farm and on the terrain', () => {
     const lane = LAYOUT.publicLane;
     expect(lane.x - lane.halfWidth).toBeGreaterThan(LAYOUT.farm.maxX + 1);
-    expect(lane.x + lane.halfWidth).toBeLessThan(LAYOUT.terrainSize / 2);
+    expect(lane.x + lane.halfWidth).toBeLessThan(LAYOUT.ground.maxX);
   });
 
   it('drives on the left', () => {

@@ -82,6 +82,9 @@ export function createFields(layout) {
     return village && t < 1 ? Math.max(t, village.tarmacAt(x, z)) : t;
   }
 
+  /** Boxes that hold every place `tarmacAt` could be above 0: the roads' and the village's (roadWet.js builds the shine's mask only inside them). */
+  const tarmacBoxes = () => [...roads.hardBoxes('tarmac'), ...(village ? village.tarmacBoxes() : [])];
+
   /** 0..1 how much of (x, z) is stubble: the two fields either side of the road, up to the tarmac, and not under the buildings out there. */
   function stubbleAt(x, z) {
     if (!road) return 0;
@@ -118,5 +121,5 @@ export function createFields(layout) {
     if (!hill || z < hill.laneRect.minZ || z > hill.laneRect.maxZ) return 0;
     return 1 - smoothstep(hill.lane.halfWidth, hill.lane.halfWidth + 1.5, Math.abs(x - hill.lane.x));
   };
-  return { wearBounds, laneAt, farm, hill, woods, quarry, gates, outside: outsideAll, grass, areas, polygons, kinds, boundaries: plan.boundaries, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, hedgedAt, tarmacAt, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
+  return { wearBounds, laneAt, farm, hill, woods, quarry, gates, outside: outsideAll, grass, areas, polygons, kinds, boundaries: plan.boundaries, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, hedgedAt, tarmacAt, tarmacBoxes, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
 }

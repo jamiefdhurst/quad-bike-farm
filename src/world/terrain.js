@@ -1,18 +1,19 @@
 import * as THREE from 'three';
-import { createGroundCanvas, createDetailCanvas } from './groundTexture.js';
+import { createGroundPlan, paintGround, paintContext, createDetailCanvas } from './groundTexture.js';
 import { patchColor, patchBlend } from './patchwork.js';
-import { tarmacMask } from './roadWet.js';
+import { tarmacMask, tarmacMaskSteps } from './roadWet.js';
 import { TILE_CELLS, TILE_MARGIN, SLOT } from './wearTiles.js';
 import { DEFAULT_GROUND_PARAMS, GroundGrid, TileSet, tileMeshData, cutTiles, groundBounds } from './groundTiles.js';
+import { PaintSet, PAINT_PX, paintWindow, overviewScale } from './groundPaint.js';
 
 export { patchAt } from './patchwork.js';
 
 /**
  * Builds the ground: one Rapier heightfield over the whole of `layout.ground` and the visual terrain in tiles that are built as they are needed
- * (groundTiles.js), plus a coarser patchwork ring of neighbouring fields out to the horizon.
+ * (groundTiles.js), plus a coarser patchwork ring of neighbouring fields out to the horizon. The ground is painted a tile at a time as you come
+ * near it, over a coarse painting of the whole of it (groundPaint.js).
  */
 export function createTerrain({ scene, physics, RAPIER, layout, heights, track, renderer, wear, fields, roadMud, autumn = false, params = { ...DEFAULT_GROUND_PARAMS } }) {
-  const size = layout.terrainSize; // the square the ground texture is painted over
   const bounds = groundBounds(layout);
 
   // Sample heights once; shared by the tiles and the collider.
@@ -25,18 +26,18 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
       .setFriction(0.9),
   );
 
-  const groundTex = new THREE.CanvasTexture(
-    // About 10 pixels a metre, as it was on the old 200 m square at 2048.
-    createGroundCanvas({ size: 4096, worldSize: size, track, layout, fields, puddles: heights.puddles, bogs: heights.bogs, autumn }),
-  );
-  groundTex.flipY = false;
-  groundTex.colorSpace = THREE.SRGBColorSpace;
-  groundTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const plan = createGroundPlan({ track, layout, fields, puddles: heights.puddles, bogs: heights.bogs, autumn });
+  const groundTexture = (canvas) => {
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.flipY = false;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    return tex;
+  };
 
   const detailTex = new THREE.CanvasTexture(createDetailCanvas());
   detailTex.wrapS = detailTex.wrapT = THREE.RepeatWrapping;
 
-  const mat = new THREE.MeshStandardMaterial({ map: groundTex, vertexColors: true, roughness: 0.95 });
   // Worn ground, from the wear tiles (wearTiles.js): an atlas of the tiles that exist, a texel a grid point, soft in red, bog in green and
   // thawed frost in blue, and a table of which slot holds each tile.
   const wearTex = new THREE.DataTexture(wear.atlas, wear.atlasSize, wear.atlasSize, THREE.RGBAFormat);
@@ -54,7 +55,6 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   const frost = { value: 0 }; // 0..1 how hard the frost is (the weather's); the World feeds it
   const roadWet = { value: 0 }; // 0..1 how wet the tarmac is (roadWet.js); the World feeds it
   const skyTint = { value: new THREE.Color() }; // what the wet tarmac mirrors: the horizon's colour now, the World feeds it
-  // Where the tarmac is, for the shine (roadWet.js): the farm road, the lane and the village's streets.
   // The hay meadow (hayMask.js, hayView.js): the view fills these when the hay job is set up. Until then they point at a blank texel far away.
   const blank = new THREE.DataTexture(new Uint8Array(4), 1, 1, THREE.RGBAFormat);
   blank.needsUpdate = true;
@@ -62,46 +62,76 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
     map: { value: blank }, origin: { value: new THREE.Vector2(1e6, 1e6) }, size: { value: new THREE.Vector2(1, 1) },
     trackMap: { value: blank }, trackOrigin: { value: new THREE.Vector2(1e6, 1e6) }, trackSize: { value: new THREE.Vector2(1, 1) },
   };
-  const mask = tarmacMask(fields.tarmacAt, size);
-  const tarmacTex = new THREE.DataTexture(mask.data, mask.n, mask.n, THREE.RedFormat);
-  tarmacTex.magFilter = tarmacTex.minFilter = THREE.LinearFilter;
-  tarmacTex.needsUpdate = true;
   const qr = fields.quarry?.rect;
   const quarryRect = new THREE.Vector4(...(qr ? [qr.minX, qr.minZ, qr.maxX, qr.maxZ] : [1e6, 1e6, 1e6 + 1, 1e6 + 1])); // the pit's field, for its gravel grain
-  addDetailLayer(mat, detailTex, 0.45, {
+  const shared = {
+    detailTex,
     quarryRect,
     frost,
     snow,
     roadWet,
     skyTint,
     hayPatch,
-    tarmac: { map: tarmacTex, origin: new THREE.Vector2(mask.minX, mask.minZ), size: new THREE.Vector2(mask.size, mask.size) },
     wear: { map: wearTex, index: wearIndexTex, origin: new THREE.Vector2(wear.originX, wear.originZ), tile: wear.tileSize, dims: new THREE.Vector2(wear.dimX, wear.dimZ), atlas: wear.atlasSize },
     roadMud: { map: roadMudTex, origin: new THREE.Vector2(mudData.minX, mudData.minZ), size: new THREE.Vector2(mudData.sizeX, mudData.sizeZ) },
-  });
+  };
+
+  // Every ground material (the overview's, and one for each tile painted), so the wet can darken them all. They share one program.
+  const materials = new Set();
+  let wet = 0;
+  const wetten = (m) => {
+    m.color.setScalar(1 - 0.24 * wet);
+    m.roughness = 0.95 - 0.25 * wet;
+  };
+  // Where the tarmac is, for the shine (roadWet.js): the farm road, the lane and the village's streets, a texture over the ground it was made for
+  // and none (a blank texel far away) where there is no road.
+  const noTarmac = { map: blank, origin: new THREE.Vector2(1e6, 1e6), size: new THREE.Vector2(1, 1) };
+  const tarmacBoxes = fields.tarmacBoxes();
+  const tarmacOf = (mask) => {
+    if (!mask) return { tarmac: noTarmac, texture: null };
+    const texture = new THREE.DataTexture(mask.data, mask.nx, mask.nz, THREE.RedFormat);
+    texture.magFilter = texture.minFilter = THREE.LinearFilter;
+    texture.unpackAlignment = 1;
+    texture.needsUpdate = true;
+    return { tarmac: { map: texture, origin: new THREE.Vector2(mask.minX, mask.minZ), size: new THREE.Vector2(mask.sizeX, mask.sizeZ) }, texture };
+  };
+  const makeMaterial = (map, win, tarmac) => {
+    const m = new THREE.MeshStandardMaterial({ map, vertexColors: true, roughness: 0.95 });
+    addDetailLayer(m, shared, { origin: new THREE.Vector2(win.minX, win.minZ), size: new THREE.Vector2(win.maxX - win.minX, win.maxZ - win.minZ), tarmac });
+    wetten(m);
+    materials.add(m);
+    return m;
+  };
+
+  // The overview: the whole of the ground painted coarsely, once, for the tiles not painted yet and for what is too far to need more.
+  const ovScale = overviewScale(bounds);
+  const ovCanvas = document.createElement('canvas');
+  ovCanvas.width = Math.ceil((bounds.maxX - bounds.minX) * ovScale);
+  ovCanvas.height = Math.ceil((bounds.maxZ - bounds.minZ) * ovScale);
+  for (const _ of paintGround(plan, paintContext(ovCanvas.getContext('2d'), bounds, ovScale)));
+  const ovTarmac = tarmacOf(tarmacMask(fields.tarmacAt, bounds, 2, tarmacBoxes)); // two metres a texel is as fine as the overview needs
+  const overviewMat = makeMaterial(groundTexture(ovCanvas), bounds, ovTarmac.tarmac);
 
   // The tiles. A tile's mesh is made the first time it is wanted and its geometry swapped when its detail changes.
   const mesh = new THREE.Group();
   mesh.name = 'terrainTiles';
   scene.add(mesh);
   const meshes = new Map();
-  const paintHalf = size / 2;
-  const uvOf = (x, z) => [(x + paintHalf) / size, (z + paintHalf) / size];
+  const paintedTiles = new Map(); // tile id -> { material, texture, tarmacTexture, canvas } for the tiles painted at full size
   // Low-frequency tint, a little darker in the hedge shadow.
   const tint = (x, z) => (0.92 + 0.08 * Math.sin(x * 0.05 + 1.3) * Math.cos(z * 0.06)) * (fields.hedgeDistance(x, z) < 4 ? 0.82 : 1);
   const { tiles, cols, rows } = cutTiles(bounds);
   const tileSet = new TileSet(tiles, cols, rows, params, {
     build(tile, step, edges) {
-      const t = tileMeshData(grid, tile, step, edges, tint, uvOf);
+      const t = tileMeshData(grid, tile, step, edges, tint);
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.BufferAttribute(t.positions, 3));
       geo.setAttribute('normal', new THREE.BufferAttribute(t.normals, 3));
-      geo.setAttribute('uv', new THREE.BufferAttribute(t.uvs, 2));
       geo.setAttribute('color', new THREE.BufferAttribute(t.colors, 3));
       geo.setIndex(new THREE.BufferAttribute(t.index, 1));
       let m = meshes.get(tile.id);
       if (!m) {
-        m = new THREE.Mesh(geo, mat);
+        m = new THREE.Mesh(geo, paintedTiles.get(tile.id)?.material ?? overviewMat);
         m.receiveShadow = true;
         m.name = 'terrain';
         meshes.set(tile.id, m);
@@ -113,19 +143,87 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
     },
   });
 
+  // The painting of tiles at full size, a little at a time as you come near (groundPaint.js). The canvases are kept to be painted again.
+  const spare = new Map();
+  const takeCanvas = (w, h) => spare.get(`${w}x${h}`)?.pop() ?? Object.assign(document.createElement('canvas'), { width: w, height: h });
+  const giveCanvas = (c) => {
+    const list = spare.get(`${c.width}x${c.height}`) ?? [];
+    if (list.length < 6) list.push(c);
+    spare.set(`${c.width}x${c.height}`, list);
+  };
+  const paintSet = new PaintSet(tiles, params, {
+    begin(tile) {
+      const win = paintWindow(tile);
+      const canvas = takeCanvas(Math.round((win.maxX - win.minX) * PAINT_PX), Math.round((win.maxZ - win.minZ) * PAINT_PX));
+      const ctx = canvas.getContext('2d');
+      ctx.reset?.();
+      const painting = paintGround(plan, paintContext(ctx, win, PAINT_PX));
+      const roadMask = tarmacMaskSteps(fields.tarmacAt, win, 0.5, tarmacBoxes);
+      const job = { win, canvas, mask: null, painting, roadMask, step: null };
+      let painted = false;
+      job.step = () => {
+        if (!painted) painted = painting.next().done;
+        else {
+          const r = roadMask.next();
+          if (r.done) job.mask = r.value;
+          return r.done;
+        }
+        return false;
+      };
+      return job;
+    },
+    finish(tile, job) {
+      const texture = groundTexture(job.canvas);
+      const { tarmac, texture: tarmacTexture } = tarmacOf(job.mask);
+      const material = makeMaterial(texture, job.win, tarmac);
+      // Uploaded now, in the frame that painted it and counted in its time, not whenever it is first drawn.
+      renderer.initTexture(texture);
+      if (tarmacTexture) renderer.initTexture(tarmacTexture);
+      paintedTiles.set(tile.id, { material, texture, tarmacTexture, canvas: job.canvas });
+      const m = meshes.get(tile.id);
+      if (m) m.material = material;
+    },
+    drop(tile) {
+      const p = paintedTiles.get(tile.id);
+      if (!p) return;
+      paintedTiles.delete(tile.id);
+      const m = meshes.get(tile.id);
+      if (m) m.material = overviewMat;
+      p.texture.dispose();
+      p.tarmacTexture?.dispose();
+      p.material.dispose();
+      materials.delete(p.material);
+      giveCanvas(p.canvas);
+    },
+  });
+
   scene.add(createOuterRing(layout, bounds, heights, fields));
 
   return {
     mesh,
-    material: mat,
     collider,
     bounds,
     grid,
     tileSet,
+    paintSet,
     /** Builds the tiles round (x, z) that the start screen can hide. */
-    prime: (x, z) => tileSet.prime(x, z),
-    /** Keeps the tiles as fine as the distance wants, building a few a frame. */
-    update: (x, z) => tileSet.update(x, z),
+    prime: (x, z) => {
+      tileSet.prime(x, z);
+      paintSet.prime(x, z);
+    },
+    /** Keeps the tiles as fine as the distance wants, building a few a frame, and painted as you come near them. */
+    update: (x, z) => {
+      tileSet.update(x, z);
+      paintSet.update(x, z);
+    },
+    /** How the painting is getting on: tiles painted at full size, those waiting, the time it has taken. */
+    paintStats: () => paintSet.stats(),
+    /** Darkens the ground as it wets (0..1), every material of it. */
+    setWet: (w) => {
+      if (w === wet) return;
+      wet = w;
+      for (const m of materials) wetten(m);
+    },
     hayPatch,
     frost,
     snow,
@@ -138,9 +236,16 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   };
 }
 
-/** Multiplies a tiling greyscale texture over the diffuse colour in world space, and lays the worn ground and the road's mud over it. */
-function addDetailLayer(material, detailTex, scale, { quarryRect, wear, roadMud, frost, snow, roadWet, skyTint, tarmac, hayPatch }) {
+/**
+ * Multiplies a tiling greyscale texture over the diffuse colour in world space, and lays the worn ground and the road's mud over it. `shared` is
+ * what every ground material reads alike; `own` is what this one's painting covers: the `origin` and `size` of its rectangle of ground (the map is
+ * read through them, not through the mesh's uvs, so a tile can be given a painting of its own or the overview's) and the `tarmac` map over it.
+ */
+function addDetailLayer(material, { detailTex, quarryRect, wear, roadMud, frost, snow, roadWet, skyTint, hayPatch }, { origin, size, tarmac }) {
+  const scale = 0.45;
   material.onBeforeCompile = (shader) => {
+    shader.uniforms.groundOrigin = { value: origin };
+    shader.uniforms.groundSize = { value: size };
     shader.uniforms.detailMap = { value: detailTex };
     shader.uniforms.wearMap = { value: wear.map };
     shader.uniforms.wearIndex = { value: wear.index };
@@ -166,8 +271,8 @@ function addDetailLayer(material, detailTex, scale, { quarryRect, wear, roadMud,
     shader.uniforms.roadMudOrigin = { value: roadMud.origin };
     shader.uniforms.roadMudSize = { value: roadMud.size };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vWorldXZ;\nvarying float vWorldY;\nvarying vec3 vWorldN;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;\nvWorldY = (modelMatrix * vec4(transformed, 1.0)).y;\nvWorldN = normalize(mat3(modelMatrix) * objectNormal);');
+      .replace('#include <common>', '#include <common>\nuniform vec2 groundOrigin;\nuniform vec2 groundSize;\nvarying vec2 vWorldXZ;\nvarying float vWorldY;\nvarying vec3 vWorldN;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;\nvWorldY = (modelMatrix * vec4(transformed, 1.0)).y;\nvWorldN = normalize(mat3(modelMatrix) * objectNormal);\nvMapUv = (vWorldXZ - groundOrigin) / groundSize;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform sampler2D wearIndex;\nuniform vec2 wearOrigin;\nuniform float wearTile;\nuniform vec2 wearDims;\nuniform float wearAtlas;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nuniform float uRoadWet;\nuniform vec3 uSkyTint;\nuniform sampler2D hayMap;\nuniform vec2 hayOrigin;\nuniform vec2 haySize;\nuniform sampler2D hayTrackMap;\nuniform vec2 hayTrackOrigin;\nuniform vec2 hayTrackSize;\nuniform sampler2D tarmacMap;\nuniform vec2 tarmacOrigin;\nuniform vec2 tarmacSize;\nuniform vec4 quarryRect;\nvarying vec2 vWorldXZ;\nvarying float vWorldY;\nvarying vec3 vWorldN;')
       .replace(

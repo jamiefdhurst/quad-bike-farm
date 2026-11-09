@@ -655,7 +655,7 @@ function buildDistantTrees({ scene, layout, heights, fields, random }) {
     const z = (random() * 2 - 1) * reach;
     // Well clear of the farm's hedges, and none on the ground through the south gate, which is kept for the hill.
     if (fields.outside(x, z) < 40) continue;
-    if (x > -100 && x < 100 && z > fields.farm.maxZ && z < layout.terrainSize / 2 + 10) continue;
+    if (x > -100 && x < 100 && z > fields.farm.maxZ && z < layout.ground.maxZ + 10) continue;
     if (patchAt(x, z).border > 4 && random() > 0.04) continue;
     const s = 0.8 + random() * 0.9;
     const y = heights.heightAt(x, z);

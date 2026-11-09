@@ -23,7 +23,7 @@ describe('the wood through the north gate', () => {
     expect(W.maxX).toBe(LAYOUT.fieldHalf);
     expect(W.maxZ).toBe(LAYOUT.farm.minZ);
     expect(W.maxX).toBe(LAYOUT.road ? LAYOUT.fieldHalf : W.maxX);
-    expect(W.minZ).toBeGreaterThan(-LAYOUT.terrainSize / 2 + 5);
+    expect(W.minZ).toBeGreaterThan(LAYOUT.ground.minZ + 5);
   });
 
   it('has its own circuit name, different from the home track', () => {

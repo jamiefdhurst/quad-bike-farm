@@ -27,6 +27,8 @@ export function buildFrameTime(d) {
   // The worn ground (world/wearTiles.js): tiles exist only where something has worn the ground or thawed its frost.
   show(f, 'Worn ground', () => { const w = g.world.wear.stats(); return `${w.tiles} tiles (${w.far} coarse), ${w.slots} of ${w.of} slots drawn, ${(w.bytes / 1048576).toFixed(2)} MB`; });
   show(f, 'Ground tiles', () => { const t = g.world.terrain.tileSet.stats(); return `${t.built} of ${t.tiles} (${Object.entries(t.bySteps).map(([s, n]) => `${n} at ${s} m`).join(', ')}), ${t.waiting} waiting, slowest build ${t.worstBuildMs.toFixed(1)} ms`; });
+  // The ground's painting (world/groundPaint.js): the tiles painted at full size, those waiting, and the longest a frame has spent painting one.
+  show(f, 'Ground painting', () => { const t = g.world.terrain.paintStats(); return `${t.painted} tiles painted, ${t.waiting} waiting, slowest frame ${t.worstFrameMs.toFixed(1)} ms (hand-over ${t.worstFinishMs.toFixed(1)} ms)`; });
   show(f, 'Drawn', () => `${info().calls} calls, ${Math.round(info().triangles / 1000)}k triangles`);
   return f;
 }

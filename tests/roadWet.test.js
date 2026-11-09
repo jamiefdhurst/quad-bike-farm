@@ -40,16 +40,35 @@ describe('wet tarmac', () => {
 });
 
 describe('the tarmac mask', () => {
+  const rect = { minX: -10, maxX: 10, minZ: -10, maxZ: 10 };
+  const everywhere = [{ minX: -100, maxX: 100, minZ: -100, maxZ: 100 }];
+
   it('marks the road and nothing else, with the road where it should be', () => {
-    const m = tarmacMask((x, z) => (Math.abs(z) < 2 ? 1 : 0), 20, 1);
-    expect(m.n).toBe(20);
+    const m = tarmacMask((x, z) => (Math.abs(z) < 2 ? 1 : 0), rect, 1, everywhere);
+    expect([m.nx, m.nz]).toEqual([20, 20]);
     expect(m.data[10 * 20 + 3]).toBe(255); // z = 0.5
     expect(m.data[3 * 20 + 3]).toBe(0); // z = -6.5
-    expect(m.minX).toBe(-10);
+    expect([m.minX, m.minZ]).toEqual([-10, -10]);
   });
 
   it('keeps a soft edge as a part value', () => {
-    const m = tarmacMask(() => 0.5, 4, 1);
+    const m = tarmacMask(() => 0.5, { minX: 0, maxX: 4, minZ: 0, maxZ: 4 }, 1, everywhere);
     expect(m.data[0]).toBe(128);
+  });
+
+  it('asks only inside the boxes where a road could be, and each texel once however many boxes cover it', () => {
+    const asked = [];
+    const boxes = [{ minX: -4, maxX: 0, minZ: -10, maxZ: 10 }, { minX: -2, maxX: 3, minZ: -10, maxZ: 10 }];
+    const m = tarmacMask((x, z) => (asked.push([x, z]), 1), rect, 1, boxes);
+    expect(asked.every(([x]) => x > -4 && x < 3)).toBe(true);
+    expect(new Set(asked.map((a) => a.join())).size).toBe(asked.length);
+    expect(m.lookups).toBe(asked.length);
+    expect(asked.length).toBe(7 * 20);
+    expect(m.data[5]).toBe(0); // x = -9.5, outside both
+  });
+
+  it('is nothing at all where no box reaches', () => {
+    expect(tarmacMask(() => 1, rect, 1, [{ minX: 50, maxX: 60, minZ: 0, maxZ: 10 }])).toBeNull();
+    expect(tarmacMask(() => 1, rect, 1, [])).toBeNull();
   });
 });
