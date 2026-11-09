@@ -1133,3 +1133,10 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - Today's farm, `tools/perf.mjs` before and after: draw calls and triangles the same at all five spots; ms a frame 6.7 to 6.6, 12.4 to 12.2, 11.5 to 11.2, 10.0 to 10.0, 11.0 to 11.1; "Ready" 3.28 to 3.26 s, 32.3 MB fetched either way.
 - Not scaled with the ground: road mud (`roadMud.js`) has a grid for each road (#664), already sized by the road, and puddle ice is one value for each puddle. The painted texture is #665's.
 - Seen: the green lane dry and set to `1` (`setLane`) from the south end, the ruts alone against a churned brown band with ragged edges. A first look showed no change at all: the table of tiles was written down the columns of a texture that is read along its rows, and the node test had the same mistake, so it now finds each tile as the shader does.
+
+## The far landscape waits for the new map (#708)
+
+- #708 moved from 0 · Foundations to 1 · The new map on 9 November 2026. Foundations is for what has nothing new to see, and the far landscape is a new thing to see that has to meet the new map: the ring starts at the map's edge and matches its ground, and its looks and budget spots are from the ridge and Back Lane. Built on today's 420 m farm it would be built twice.
+- It depends on #681, #682, #686, #687, #688 and #713, and #692 depends on it, so the new farm doesn't open with its edges showing.
+- The church tower's far version came out of it: #715 builds the tower and depends on #708, so holding #708 open for the tower could never finish.
+- The default of 1500 m goes in with the ring. On a map with no far landscape, a longer view would show the edge.
