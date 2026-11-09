@@ -43,8 +43,71 @@ export function gatewayAcross(edge, at, a, b, outA = 2.5, outB = 2.5) {
   return { pa: { x: mid.x + nx * side * outA, z: mid.z + nz * side * outA }, pb: { x: mid.x - nx * side * outB, z: mid.z - nz * side * outB } };
 }
 
+/**
+ * A boundary written as a list of points (`layout.boundaries`): one straight `boundary()` per stretch, each with the gaps whose centre falls on it.
+ * A gap's `at` is metres along the whole line from its first point, as a gateway's is.
+ */
+function bentBoundary(def, i) {
+  const pts = def.points;
+  if (!Array.isArray(pts) || pts.length < 2) throw new Error(`boundary ${i}: needs two points or more`);
+  const { points, kind = 'hedge', gaps = [], ...extra } = def;
+  if (!BOUNDARY_KINDS.includes(kind)) throw new Error(`boundary ${i}: unknown kind ${kind}`);
+  const stretches = [];
+  let from = 0;
+  for (let k = 0; k + 1 < pts.length; k++) {
+    const e = edgeBetween(pts[k][0], pts[k][1], pts[k + 1][0], pts[k + 1][1]);
+    stretches.push({ from, to: from + e.length, pts: [pts[k], pts[k + 1]], gaps: [] });
+    from += e.length;
+  }
+  const place = (g) => {
+    const s = stretches.find((st, k) => g.at < st.to || k === stretches.length - 1);
+    s.gaps.push({ ...g, at: g.at - s.from });
+    return s.gaps[s.gaps.length - 1];
+  };
+  return { stretches, place, kind, gaps, extra };
+}
+
+/**
+ * The plan from data alone (`layout.fields`, `layout.boundaries`, `layout.gateways`), for a layout that says what its fields are rather than
+ * leaving today's farm to be built from its numbers. Plain data, no functions: `fields` are `{ name, kind, points }`; `boundaries` are
+ * `{ points, kind, gaps: [{ at, half, ...extra }], ...extra }` (`at` metres along from the first point); `gateways` are
+ * `{ a, b, boundary, at, half, gate, id, shut, outA, outB }`: the way from field `a` to field `b` through the `boundary`-th boundary, `at` metres
+ * along it. With a `half` it is a gap in that boundary (the one already there at `at`, if the boundary has it); without, only the way across.
+ */
+function planFromData(layout) {
+  const fields = layout.fields.map((f) => field(f.name, f.kind, f.points));
+  const polygons = Object.fromEntries(fields.map((f) => [f.name, f.points]));
+  const defs = (layout.boundaries ?? []).map(bentBoundary);
+  (layout.boundaries ?? []).forEach((b, i) => {
+    for (const g of b.gaps ?? []) defs[i].place({ ...g });
+  });
+  const gateways = [];
+  for (const [i, w] of (layout.gateways ?? []).entries()) {
+    const def = defs[w.boundary];
+    if (!def) throw new Error(`gateway ${i}: no boundary ${w.boundary}`);
+    for (const n of [w.a, w.b]) if (n !== 'out' && !polygons[n]) throw new Error(`gateway ${i}: no field ${n}`);
+    let gapOf = null;
+    if (w.half) {
+      const { a, b, boundary: _b, at, half, outA, outB, ...rest } = w;
+      const was = def.stretches.flatMap((st) => st.gaps.map((x) => ({ x, st }))).find(({ x, st }) => Math.abs(st.from + x.at - at) < 1e-6);
+      gapOf = was ? was.x : def.place({ at, half, ...rest });
+      Object.assign(gapOf, { half, ...rest });
+    }
+    const st = def.stretches.find((s, k) => w.at < s.to || k === def.stretches.length - 1);
+    const edge = edgeBetween(st.pts[0][0], st.pts[0][1], st.pts[1][0], st.pts[1][1]);
+    const { pa, pb } = gatewayAcross(edge, w.at - st.from, polygons[w.a], polygons[w.b], w.outA, w.outB);
+    gateways.push({ a: w.a, pa, b: w.b, pb, gap: gapOf, via: { edge, at: w.at - st.from, outA: w.outA, outB: w.outB } });
+  }
+  const boundaries = defs.flatMap((d) => d.stretches.map((st) => boundary(st.pts[0][0], st.pts[0][1], st.pts[1][0], st.pts[1][1], st.gaps, d.kind, d.extra)));
+  const gates = {};
+  for (const b of boundaries) for (const g of b.gaps) if (g.id) gates[g.id] = g;
+  const wander = Object.fromEntries(Object.entries(layout.wander ?? {}).map(([k, pts]) => [k, clockwise(pts)]));
+  return { fields, boundaries, gateways, gates, wander };
+}
+
 /** The plan for the layout; `hill`, `woods`, `quarry` and `brook` are the places through the gates, each null if the layout has none. */
 export function fieldPlan(layout, { hill, woods, quarry, brook }) {
+  if (layout.fields) return planFromData(layout);
   const F = layout.fieldHalf;
   const farm = layout.farm ?? { minX: -F, maxX: F, minZ: -F, maxZ: F };
   const road = layout.road;
@@ -163,7 +226,7 @@ export function fieldPlan(layout, { hill, woods, quarry, brook }) {
   const gateways = [];
   const link = (a, b, edge, at, outA, outB, gapOf = null) => {
     const { pa, pb } = gatewayAcross(edge, at, polygons[a], polygons[b], outA, outB);
-    gateways.push({ a, pa, b, pb, gap: gapOf ? gapOf : null });
+    gateways.push({ a, pa, b, pb, gap: gapOf ? gapOf : null, via: { edge, at, outA, outB } });
   };
   const gapOn = (h, extra) => h.gaps.find((x) => x.id === extra);
   link('grass', hill ? 'lane' : 'out', southHedge, gate.x - southHedge.x1, 2.5, 2.5, gapOn(southHedge, 'south'));

@@ -2,12 +2,14 @@
 // is ahead, and the way round from one field to another through the gateways. Pure, and it knows nothing of the farm's own layout, so a field
 // of any outline can be tried in a test.
 
-import { rectPolygon, polygonBounds, polygonEdges, pointInPolygon, outsidePolygon, nearestOnEdge, rayHitsEdge, clampIntoPolygon, notchCorners, segmentInside } from './polygons.js';
+import { clockwise, rectPolygon, polygonBounds, polygonEdges, pointInPolygon, outsidePolygon, nearestOnEdge, rayHitsEdge, clampIntoPolygon, notchCorners, segmentInside } from './polygons.js';
 
-/** `farm` is the rectangle inside the outer hedges. */
+/** `farm` is the farm's outline inside the outer hedges: a rectangle, or a polygon (a list of [x, z] points). */
 export function createFieldMap(plan, farm) {
   const { gateways } = plan;
   const hedges = plan.boundaries.filter((b) => b.kind === 'hedge');
+  // What stops you and what you can't see through: a hedge, a wall, a fence or a rail (not a `none` line between two fields that run together).
+  const solid = plan.boundaries.filter((b) => b.kind !== 'none');
 
   // The fields as polygons (`polygons`), and the rectangle that holds each (`areas`) for what wants a box: the stubble drawn over a field, the map's bounds.
   const polygons = {};
@@ -20,7 +22,7 @@ export function createFieldMap(plan, farm) {
   }
   const kinds = Object.fromEntries(plan.fields.map((f) => [f.name, f.kind]));
   const order = plan.fields.map((f) => f.name);
-  const farmShape = rectPolygon(farm);
+  const farmShape = Array.isArray(farm) ? clockwise(farm) : rectPolygon(farm);
   const farmEdges = polygonEdges(farmShape);
 
   /** Which field (x, z) is in: 'grass', 'road', 'end', 'north', 'south', 'lane', 'hill', 'meadow' (west of the lane), 'sheep' (east of it), 'riverside' (beyond the pasture's east hedge, where the river runs), 'woods' (through the north gate), 'quarry' (the gravel pit's field, through the barley field's north hedge), or 'out' beyond the hedges. */
@@ -35,7 +37,7 @@ export function createFieldMap(plan, farm) {
   /** Metres to the nearest hedge line (gaps and all). */
   function hedgeDistance(x, z) {
     let best = Infinity;
-    for (const h of hedges) {
+    for (const h of solid) {
       const d = nearestOnEdge(h, x, z).d;
       if (d < best) best = d;
     }
@@ -44,7 +46,7 @@ export function createFieldMap(plan, farm) {
 
   /** Whether a hedge is within `reach` metres of (x, z) there is no way through: not in a gap, unless its gate is shut. */
   function hedgedAt(x, z, reach) {
-    for (const h of hedges) {
+    for (const h of solid) {
       const { s, d } = nearestOnEdge(h, x, z);
       if (d < reach && !h.gaps.some((g) => !g.shut && Math.abs(s - g.at) < g.half)) return true;
     }
@@ -56,7 +58,7 @@ export function createFieldMap(plan, farm) {
     const dx = Math.sin(yaw);
     const dz = Math.cos(yaw);
     let best = Infinity;
-    for (const h of hedges) {
+    for (const h of solid) {
       const hit = rayHitsEdge(x, z, dx, dz, h);
       if (!hit || hit.t >= best || h.gaps.some((g) => !g.shut && Math.abs(hit.s - g.at) < g.half)) continue;
       best = hit.t;
