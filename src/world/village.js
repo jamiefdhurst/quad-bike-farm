@@ -163,6 +163,8 @@ function buildShape(layout) {
     street,
     name: v.name,
     tarmacAt,
+    /** Where its own hard standing could be (the car park and the forecourt, and the edge's width round them). */
+    tarmacBoxes: () => [carPark, forecourt].map((r) => ({ minX: r.minX - 2 * EDGE, maxX: r.maxX + 2 * EDGE, minZ: r.minZ - 2 * EDGE, maxZ: r.maxZ + 2 * EDGE })),
     areaWeight,
     planeAt,
     limit: v.limit,

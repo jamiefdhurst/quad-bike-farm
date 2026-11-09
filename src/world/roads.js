@@ -596,5 +596,29 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
     return out;
   }
 
-  return { roads, road, onRoad, tarmacAt, stoneAt, surfaceAt, nearest, onCarriageway, pointsAlong, lanePath, passingPlaces: (id) => byId.get(id).bays, levelAt, cuttings, boundsOf, pointAt: (id, s) => pointAt(byId.get(id), s) };
+  /**
+   * Boxes that hold every place the `surface` hard standing could be, one for each cell of each road's index that a segment, a pad or a bay
+   * reaches, grown by how far that road's hard standing reaches beyond them (they overlap). `tarmacAt` is only worth asking inside them, so a mask
+   * of the tarmac over a big ground costs by the length of the road and not by the size of the ground.
+   */
+  function hardBoxes(surface = 'tarmac') {
+    const out = [];
+    for (const r of roads) {
+      if (r.surface !== surface) continue;
+      const g = r.grid;
+      const reach = r.hard + EDGE + (r.passing ? r.passing.bay : 0);
+      for (let cz = 0; cz < g.nz; cz++) {
+        for (let cx = 0; cx < g.nx; cx++) {
+          const i = cz * g.nx + cx;
+          if (!g.cells[i] && !g.pads[i] && !g.bays[i]) continue;
+          const x = g.minX + cx * g.cell;
+          const z = g.minZ + cz * g.cell;
+          out.push({ minX: x - reach, maxX: x + g.cell + reach, minZ: z - reach, maxZ: z + g.cell + reach });
+        }
+      }
+    }
+    return out;
+  }
+
+  return { roads, road, onRoad, tarmacAt, hardBoxes, stoneAt, surfaceAt, nearest, onCarriageway, pointsAlong, lanePath, passingPlaces: (id) => byId.get(id).bays, levelAt, cuttings, boundsOf, pointAt: (id, s) => pointAt(byId.get(id), s) };
 }
