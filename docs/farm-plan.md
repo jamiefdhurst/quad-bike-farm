@@ -76,6 +76,8 @@ New:
 - #667 Give hedges and walls a cheap far version
 - #759 Paint the ground sharp at full size, and build the tarmac map only near roads
 - #760 Stop the smoke test timing out on CI while the game loads
+- #764 Let the girls choose again, stop the radio throwing, and make the checks able to see both
+- #767 Run far more of the game in the smoke test, fail if that share falls, and check the methods the hosts call
 
 Existing: #126 (split up `game.js`), #219 (old saves keep loading), #360 (rewritten: the farm map drawn from the layout, with the key clear of it; #319 folded in), #384 (bare-block test and shot tool), #597 (a steady draw-call count).
 
@@ -188,7 +190,7 @@ The plan was filed as 57 new issues on 7 and 8 November 2026: #660 for this plan
 
 Four were rewritten: #360, #565, #568, #569. #122, #145, #569, #681, #682, #687, #688, #690, #692, #696, #697, #699 and every review were added to on 8 November (each review names its landmark and its sound).
 
-#708 moved from Foundations to The new map on 9 November: the far landscape starts at the new map's edge, and #692 now depends on it. The review of Foundations added #759 and #760 the same day.
+#708 moved from Foundations to The new map on 9 November: the far landscape starts at the new map's edge, and #692 now depends on it. The review of Foundations added #759 and #760 the same day. Its second review added #764 and #767, and Foundations closes after them.
 
 Turned down on 8 November: a pheasant shoot, or any shooting (`docs/decisions/ideas-turned-down.md`).
 
