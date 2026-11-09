@@ -338,9 +338,7 @@ export class World {
       this.updatePuddleIce(dt);
       Object.assign(this.sky.params, this.skyNow());
       // Wet ground looks darker, and a little glossier.
-      const m = this.terrain.material;
-      m.color.setScalar(1 - 0.24 * this.weather.wet);
-      m.roughness = 0.95 - 0.25 * this.weather.wet;
+      this.terrain.setWet(this.weather.wet);
     }
     this.sky.update(dt, focus, camera);
     const ground = () => this.terrain.update(camera.position.x, camera.position.z); // the tiles as fine as their distance wants, a few built a frame

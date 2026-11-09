@@ -16,6 +16,9 @@ export const DEFAULT_GROUND_PARAMS = {
   hysteresis: 0.1, // how far past a distance (as a fraction of it) a tile must be before it changes detail, so it doesn't flicker on the line
   primeRadius: 400, // metres round where you start that are built behind the start screen
   buildMs: 2, // milliseconds a frame spent building tiles in play
+  paintNear: 200, // metres out to which the ground is painted at full size, a tile at a time (groundPaint.js); beyond, the coarse overview shows
+  paintPrime: 100, // metres round where you start that are painted behind the start screen
+  paintMs: 2, // milliseconds a frame spent painting tiles in play
 };
 
 export const GROUND_PARAM_RANGES = {
@@ -25,14 +28,16 @@ export const GROUND_PARAM_RANGES = {
   hysteresis: [0, 0.4, 0.01],
   primeRadius: [100, 1500, 50],
   buildMs: [0.5, 6, 0.1],
+  paintNear: [60, 600, 10],
+  paintPrime: [0, 400, 10],
+  paintMs: [0.5, 6, 0.1],
 };
 
 /**
- * The ground's rectangle in whole metres, from `layout.ground` ({ minX, maxX, minZ, maxZ }), rounded outward. A layout without one has the square
- * `terrainSize` across, centred, as the ground was before there was a layout for it.
+ * The ground's rectangle in whole metres, from `layout.ground` ({ minX, maxX, minZ, maxZ }), rounded outward. It need not be centred on anything.
  */
 export function groundBounds(layout) {
-  const g = layout.ground ?? { minX: -layout.terrainSize / 2, maxX: layout.terrainSize / 2, minZ: -layout.terrainSize / 2, maxZ: layout.terrainSize / 2 };
+  const g = layout.ground;
   return { minX: Math.floor(g.minX), maxX: Math.ceil(g.maxX), minZ: Math.floor(g.minZ), maxZ: Math.ceil(g.maxZ) };
 }
 
@@ -151,18 +156,18 @@ export function tileIndices(nx, nz) {
 /**
  * The vertices of `tile` every `step` metres. `edges` is the step of the tile on each side ([minX, maxX, minZ, maxZ]); where that is coarser than
  * `step`, the tile's edge vertices lie on the straight line between the neighbour's, so the two meet exactly. `tint(x, z)` gives a grey to
- * multiply the ground by and `uvOf(x, z)` the texture's [u, v]. Normals are the slope of the grid at this tile's own step, so tiles at the same step
- * shade the same across their seam.
- * @returns {{ positions: Float32Array, normals: Float32Array, uvs: Float32Array, colors: Float32Array, index: Uint16Array, nx: number, nz: number }}
+ * multiply the ground by, and `uvOf(x, z)`, if given, the [u, v] of a texture (the ground's own are worked out in its shader from where it is, so
+ * the terrain gives none). Normals are the slope of the grid at this tile's own step, so tiles at the same step shade the same across their seam.
+ * @returns {{ positions: Float32Array, normals: Float32Array, uvs: Float32Array | null, colors: Float32Array, index: Uint16Array, nx: number, nz: number }}
  */
-export function tileMeshData(grid, tile, step, edges, tint, uvOf) {
+export function tileMeshData(grid, tile, step, edges, tint, uvOf = null) {
   const nx = (tile.maxX - tile.minX) / step;
   const nz = (tile.maxZ - tile.minZ) / step;
   const n = nz + 1;
   const count = (nx + 1) * n;
   const positions = new Float32Array(count * 3);
   const normals = new Float32Array(count * 3);
-  const uvs = new Float32Array(count * 2);
+  const uvs = uvOf ? new Float32Array(count * 2) : null;
   const colors = new Float32Array(count * 3);
   const gx0 = tile.minX - grid.minX;
   const gz0 = tile.minZ - grid.minZ;
@@ -190,9 +195,11 @@ export function tileMeshData(grid, tile, step, edges, tint, uvOf) {
       normals[i * 3] = -sx / len;
       normals[i * 3 + 1] = (2 * step) / len;
       normals[i * 3 + 2] = -sz / len;
-      const [u, v] = uvOf(x, z);
-      uvs[i * 2] = u;
-      uvs[i * 2 + 1] = v;
+      if (uvs) {
+        const [u, v] = uvOf(x, z);
+        uvs[i * 2] = u;
+        uvs[i * 2 + 1] = v;
+      }
       const t = tint(x, z);
       colors[i * 3] = t;
       colors[i * 3 + 1] = t;

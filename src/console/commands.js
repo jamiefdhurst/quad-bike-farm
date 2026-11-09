@@ -517,6 +517,7 @@ export function buildCommands(host) {
           ...(p.p99Ms === undefined ? [] : [`slowest 1% of frames ${round(p.p99Ms, 1)} ms; ${p.longFrames} over 33 ms in the last 10 s (${p.longTotal} since the game started)`]),
           ...(p.longFrameCauses?.length ? [`last long frames: ${p.longFrameCauses.join('; ')}`] : []),
           ...(p.ground ? [`ground: ${p.ground.built} of ${p.ground.tiles} tiles drawn (${Object.entries(p.ground.bySteps).map(([step, n]) => `${n} every ${step} m`).join(', ')}), ${p.ground.waiting} waiting; the slowest took ${round(p.ground.worstBuildMs, 1)} ms to build`] : []),
+          ...(p.groundPainting ? [`ground painting: ${p.groundPainting.painted} tiles painted at full size, ${p.groundPainting.waiting} waiting; the slowest frame took ${round(p.groundPainting.worstFrameMs, 1)} ms (${round(p.groundPainting.worstFinishMs, 1)} ms of it handing a tile over)`] : []),
           ...(p.heapMb ? [`memory ${Math.round(p.heapMb)} MB, allocating ${round(p.allocMbPerSecond, 1)} MB a second`] : []),
           ...(p.stages?.length ? [`where the time goes: ${p.stages.map((x) => `${x.name} ${round(x.ms, 2)}`).join(', ')} (ms)`] : []),
         ];

@@ -3,6 +3,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { LAYOUT } from '../src/world/layout.js';
 import { Track } from '../src/world/track.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
+import { PaintSet, paintWindow, overviewScale } from '../src/world/groundPaint.js';
 import { DEFAULT_GROUND_PARAMS, GROUND_PARAM_RANGES, GroundGrid, TileSet, cutTiles, groundBounds, stepFor, tileDistance, tileMeshData } from '../src/world/groundTiles.js';
 
 const P = DEFAULT_GROUND_PARAMS;
@@ -23,20 +24,25 @@ describe('the ground\'s rectangle', () => {
     expect(groundBounds({ ground: { minX: -10.4, maxX: 20.2, minZ: 3, maxZ: 9 } })).toEqual({ minX: -11, maxX: 21, minZ: 3, maxZ: 9 });
   });
 
-  it('is the old centred square when the layout gives none', () => {
-    expect(groundBounds({ terrainSize: 420 })).toEqual({ minX: -210, maxX: 210, minZ: -210, maxZ: 210 });
+  it('is, for today\'s farm, the layout\'s 420 m square', () => {
+    expect(groundBounds(LAYOUT)).toEqual({ minX: -210, maxX: 210, minZ: -210, maxZ: 210 });
   });
 
-  it('is, for today\'s farm, the painted square, so the texture covers all of it', () => {
-    const g = groundBounds(LAYOUT);
-    const half = LAYOUT.terrainSize / 2;
-    expect(g).toEqual({ minX: -half, maxX: half, minZ: -half, maxZ: half });
-  });
-
-  it('is within the painted square, or the ground beyond it would have no painting (grow terrainSize with it, or paint it another way)', () => {
-    const g = groundBounds(LAYOUT);
-    const half = LAYOUT.terrainSize / 2;
-    expect([g.minX, g.maxX, g.minZ, g.maxZ].every((v) => Math.abs(v) <= half)).toBe(true);
+  it('has painting for every part of it: each tile has a painting of its own, and the overview covers the lot', () => {
+    // Today\'s ground and a big one that is not centred on the origin.
+    for (const layout of [LAYOUT, BIG]) {
+      const bounds = groundBounds(layout);
+      const { tiles } = cutTiles(bounds);
+      const painted = new Set();
+      const paint = new PaintSet(tiles, { ...DEFAULT_GROUND_PARAMS, paintNear: 1e6 }, { begin: () => ({ step: () => true }), finish: (t) => painted.add(t.id), drop: () => {} });
+      paint.prime(0, 0, 1e6);
+      expect(painted.size).toBe(tiles.length);
+      for (const t of tiles) {
+        const w = paintWindow(t);
+        expect([w.minX <= t.minX, w.maxX >= t.maxX, w.minZ <= t.minZ, w.maxZ >= t.maxZ]).toEqual([true, true, true, true]);
+      }
+      expect(Math.ceil((bounds.maxX - bounds.minX) * overviewScale(bounds))).toBeLessThanOrEqual(4096);
+    }
   });
 });
 

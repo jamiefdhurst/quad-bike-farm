@@ -27,8 +27,8 @@ describe('the farm fields', () => {
     const area = (r) => (r.maxX - r.minX) * (r.maxZ - r.minZ);
     expect(area(f.farm) / area(f.grass)).toBeGreaterThan(1.6);
     // The detailed terrain covers it, with room to spare.
-    const half = LAYOUT.terrainSize / 2;
-    expect(Math.max(-f.farm.minX, f.farm.maxX, -f.farm.minZ, f.farm.maxZ)).toBeLessThan(half - 5);
+    const g = LAYOUT.ground;
+    expect(Math.min(f.farm.minX - g.minX, g.maxX - f.farm.maxX, f.farm.minZ - g.minZ, g.maxZ - f.farm.maxZ)).toBeGreaterThan(5);
   });
 
   it('keeps the road clear of the track and runs it out of the grass field through the east gateway', () => {
