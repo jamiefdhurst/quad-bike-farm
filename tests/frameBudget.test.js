@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { BUDGETS, KNOWN_OVER, MEASURE_ARGS, SPOTS, check, measureInPage, summary } from '../tools/frameBudget.mjs';
+import { BUDGETS, BUILT_IN_SPOTS, KNOWN_OVER, MEASURE_ARGS, SPOTS, check, measureInPage, summary } from '../tools/frameBudget.mjs';
+import { LAYOUT } from '../src/world/layout.js';
 
 const under = () => Object.fromEntries(Object.keys(BUDGETS).map((s) => [s, { calls: BUDGETS[s].calls - 10, triangles: BUDGETS[s].triangles - 1000 }]));
 
@@ -42,8 +43,8 @@ describe('the frame budget', () => {
     expect(check(m).missing).toEqual(['village']);
   });
 
-  it('keeps spawn at the budget it was given when the count was made repeatable (#597)', () => {
-    expect(BUDGETS.spawn).toEqual({ calls: 630, triangles: 3.23e6 });
+  it('keeps spawn at the budget it was given when the count was made repeatable (#597), its triangles tightened by the ground in tiles (#665)', () => {
+    expect(BUDGETS.spawn).toEqual({ calls: 630, triangles: 2.93e6 });
   });
 
   it('has a budget for what is left out of the spots, which is not a spot to stand at (#597)', () => {
@@ -181,6 +182,29 @@ describe('counting the draws (#597)', () => {
     expect(halo.parent).toBe(lamp);
     expect(g.daylight.p.clockRate).toBe(1);
     expect(g.trafficHost.view.update).toBe(trafficUpdate);
+  });
+
+  describe('spots by the layout\'s names (#665)', () => {
+    it('stands you at a place the layout names and counts there, under that name', async () => {
+      const { g } = standIn();
+      g.world.layout.budgetSpots = { dairy: { x: 700, z: -250 } };
+      const stood = [];
+      g.player.moveTo = (p) => stood.push([p.x, p.z]);
+      const r = await measureInPage({ ...args, spots: ['yard', 'dairy'] });
+      expect(stood).toContainEqual([700, -250]);
+      expect(r.spots.dairy.calls).toBe(2);
+    });
+
+    it('says so, and measures nothing, for a name the layout does not have', async () => {
+      standIn();
+      const r = await measureInPage({ ...args, spots: ['yard', 'dairy'] });
+      expect(r.spots.dairy).toBeUndefined();
+      expect(r.notes.join()).toContain('dairy');
+    });
+
+    it('has, for every spot in BUDGETS, a way to find it: a built-in one or a name in the layout', () => {
+      for (const s of SPOTS) expect(BUILT_IN_SPOTS.includes(s) || LAYOUT.budgetSpots?.[s], `no way to stand at the budget spot ${s}: add it to layout.budgetSpots`).toBeTruthy();
+    });
   });
 
   it('keeps out a thing that turns itself visible every frame, which hiding it would not (the dog and the cat do)', async () => {
