@@ -5,6 +5,7 @@ import { LAYOUT } from './layout.js';
 import { Track } from './track.js';
 import { createTerrainHeight } from './terrainHeight.js';
 import { createTerrain } from './terrain.js';
+import { DEFAULT_GROUND_PARAMS, GROUND_PARAM_RANGES } from './groundTiles.js';
 import { DrawDistance } from './tiledInstances.js';
 import { FarDetail, pixelsPerRadian } from './farDetail.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../core/graphics.js';
@@ -127,8 +128,12 @@ export class World {
 
     if (autumn) applyAutumnTint(models);
     else if (winter) applyAutumnTint(models, WINTER_TINTS); // the leaves dull and dark in winter (seasons.js) // before anything is built from the models
-    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud?.main, drawDistance: this.drawDistance, autumn };
+    // The ground is drawn in tiles (groundTiles.js): those round where you start are built now, behind the start screen, and the rest as you move.
+    this.groundParams = { ...DEFAULT_GROUND_PARAMS };
+    registerTuning('Ground tiles', this.groundParams, GROUND_PARAM_RANGES);
+    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud?.main, drawDistance: this.drawDistance, autumn, params: this.groundParams };
     this.terrain = createTerrain(ctx);
+    this.terrain.prime(layout.spawn.player.x, layout.spawn.player.z);
     this.props = buildProps(ctx);
 
     // A skin of ice on the track's puddles on a frosty day (puddleIce.js): wheels crack it and break it.
@@ -311,7 +316,8 @@ export class World {
     this.props.stream?.update(this.streamLastDt ?? 0, s.level, s.rise, s.flow);
   }
 
-  update(dt, focus, camera) {
+  /** `guard` (the game's FeatureGuard) times the ground's tiles as a feature of their own, `updateGround`. */
+  update(dt, focus, camera, guard = null) {
     this.streamLastDt = dt;
     this.wear.update(dt, this.wet);
     if (this.wear.packed) this.terrain.wearTexture.needsUpdate = true;
@@ -330,11 +336,14 @@ export class World {
       this.updatePuddleIce(dt);
       Object.assign(this.sky.params, this.skyNow());
       // Wet ground looks darker, and a little glossier.
-      const m = this.terrain.mesh.material;
+      const m = this.terrain.material;
       m.color.setScalar(1 - 0.24 * this.weather.wet);
       m.roughness = 0.95 - 0.25 * this.weather.wet;
     }
     this.sky.update(dt, focus, camera);
+    const ground = () => this.terrain.update(camera.position.x, camera.position.z); // the tiles as fine as their distance wants, a few built a frame
+    if (guard) guard.run('updateGround', ground);
+    else ground();
     this.drawDistance.update(camera.position);
     this.farDetail.pixelsPerRadian = pixelsPerRadian(camera.fov, this.farDetail.viewHeight || window.innerHeight);
     this.farDetail.update(camera.position, dt);
