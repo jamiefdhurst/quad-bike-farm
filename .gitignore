@@ -30,3 +30,4 @@ budget-*.json
 public/audio/radio-extra/*/*
 !public/audio/radio-extra/*/.gitkeep
 public/audio/radio/extra-*.mp3
+smoke-coverage.md

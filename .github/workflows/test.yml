@@ -117,9 +117,11 @@ jobs:
       # FAQ's "Recently changed" has one entry; the release builds it again on main with 300.
       - name: Build
         run: npm run build
-      # Runs the real game in headless Chrome (the runner's own) with software GL and fails on any error or oddity (tools/smoke.mjs).
+      # Runs the real game in headless Chrome (the runner's own) with software GL and fails on any error or oddity (tools/smoke.mjs). It plays
+      # the dev server's modules, not the build: Chrome's coverage needs a file for each module to say how much of each the run reached, and the
+      # build is one bundle (SMOKE_DEV=1; #767). The Build step above is still the check that it builds.
       - name: Smoke test
-        run: CHROME_PATH=$(which google-chrome) npm run smoke
+        run: SMOKE_DEV=1 CHROME_PATH=$(which google-chrome) npm run smoke
         timeout-minutes: 12
       # The smoke test also holds the frame to its budget (draw calls and triangles from fixed spots, tools/frameBudget.mjs) and fails a PR over it.
       # This prints the numbers in the job summary with the change from main: main's numbers are the newest merge in the history the Release
@@ -132,6 +134,10 @@ jobs:
           [ -f budget-pr.json ] || { echo "No frame budget numbers: the smoke test stopped before measuring." >> "$GITHUB_STEP_SUMMARY"; exit 0; }
           tools/fetchBudgetHistory.sh history.json
           node tools/budget.mjs --summary budget-pr.json --history history.json >> "$GITHUB_STEP_SUMMARY"
+      # How much of game.js, of each host file and of all of src the run reached, beside its floor (tools/smokeCoverage.mjs).
+      - name: What the smoke run reached
+        if: always()
+        run: '[ -f smoke-coverage.md ] && { echo; cat smoke-coverage.md; } >> "$GITHUB_STEP_SUMMARY" || true'
 
   # always(): if a Unit shard or Smoke fails this would otherwise be skipped, and a skipped required check counts as passed. Skipped shards
   # and Smoke pass only when Changes ran and said the PR is prose alone.

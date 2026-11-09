@@ -6,6 +6,14 @@
 // The girls and the sound are made to run, as neither happens on its own in a run this short (#764): the girls are still riding the trailer when it ends unless
 // they are got down, so each is asked to choose something and it fails if she doesn't; the audio runs live and silent, not muted, with a radio on within earshot,
 // and it fails if the audio context isn't running or the radio's live path didn't run.
+// Then it does what a player and the girls can do (#767, tools/smokeActions.mjs): every girl action for each girl who can do it, every vehicle verb on every
+// vehicle, E on every prompt that offers an action (stood beside it, held ones held), a ride on every vehicle, and every scene. Each is read from the game's own
+// list, so a new one is covered with nothing added, and a throw in any of them fails the run naming it. What would end the run is left out, in one list each at
+// the top of smokeActions.mjs. It also fails if a list comes back empty.
+// And it measures how much of the code that reached (tools/smokeCoverage.mjs): the share of game.js, of each host file and of all of src, against a floor for each
+// in that file. Chrome's coverage needs a file per module, so this needs the dev server (SMOKE_DEV=1, which CI sets); on the build it says so and skips it.
+// A share under its floor fails the run and says which. To raise a floor, run the Smoke job a few times, read the shares in its summary and set it 2 points
+// under the lowest. A new host file needs a line there (a test fails until it has one).
 //
 // It uses the built game in dist/ if there is one (?smoke exposes window.game in a build), else the dev server (SMOKE_DEV=1 forces that).
 // Drawing is skipped (the GL draw calls do nothing): on software GL the first frame alone took half a minute, and drawing finds nothing the update doesn't.
@@ -18,6 +26,8 @@ import { createServer, preview } from 'vite';
 import puppeteer from 'puppeteer-core';
 import { MEASURE_ARGS, check, measureInPage } from './frameBudget.mjs';
 import { CHROME_ARGS, chromePath, loadStepLines, recordLoadSteps, stubDraws, waitForReady } from './frameBudgetRun.mjs';
+import { ACTION_WAIT_MS, GIRL_ACTIONS_LEFT_OUT, PROMPTS_LEFT_OUT, RIDE_MS, VERB_WAIT_MS, VEHICLE_VERBS_LEFT_OUT, doGirlActions, doVehicleVerbs, pressPrompts, rideEach, runEveryScene } from './smokeActions.mjs';
+import { bytesByFile, checkShares, sharesOf, summaryMarkdown } from './smokeCoverage.mjs';
 
 const SECONDS = Number(process.env.SMOKE_SECONDS || 20);
 const MADE_TO_RUN_SECONDS = 120; // how long the girls have to choose and the radio to be heard, on a runner that may be slow; only a failure waits this long
@@ -62,6 +72,7 @@ async function run() {
   page.on('console', (m) => { if (m.type() === 'error') note(`console.error: ${m.text().slice(0, 300)}`); });
   await page.evaluateOnNewDocument(stubDraws);
   await page.evaluateOnNewDocument(recordLoadSteps);
+  if (!built) await page.coverage.startJSCoverage({ resetOnNavigation: false }); // what the run reaches, per file (smokeCoverage.mjs)
   await page.goto(`${base}?smoke&${QUERY}`, { waitUntil: 'load' });
   try {
     await waitForReady(page);
@@ -108,7 +119,13 @@ async function run() {
     const heard = () => g.radioAudio.chains.has(set.spec.id);
     const waiting = () => g.companions.filter((c) => !c.mind.last);
     while (performance.now() - t0 < limit * 1000 && (waiting().length || !heard())) {
-      for (const c of waiting()) c.mind.thinkIn = 0;
+      for (const c of waiting()) {
+        c.mind.thinkIn = 0;
+        if (c.fsm.name === 'onTrailer' && Math.round((performance.now() - t0) / 250) % 40 === 0) {
+          g.settleGirl(c); // one slow runner left Amy on it for the whole wait
+          c.settled.left = 0.1;
+        }
+      }
       await new Promise((r) => setTimeout(r, 250));
     }
     return {
@@ -122,6 +139,27 @@ async function run() {
   if (madeToRun.audio !== 'running') note(`audio context is ${madeToRun.audio}, so the sound's code did not run`);
   if (!madeToRun.radio) note(`no radio was heard in ${MADE_TO_RUN_SECONDS} s, so the radio's live path did not run`);
   for (const c of madeToRun.girls) if (!c.chose) note(`${c.name} chose nothing in ${MADE_TO_RUN_SECONDS} s (${c.state}${c.waiting ? `, ${c.waiting}` : ''})`);
+  // Then everything a player and the girls can do, each read from the game's own list (tools/smokeActions.mjs).
+  const stages = [
+    ['girl actions', doGirlActions, { wait: ACTION_WAIT_MS, leftOut: GIRL_ACTIONS_LEFT_OUT, vehicle: 'red' }],
+    ['vehicle verbs', doVehicleVerbs, { wait: VERB_WAIT_MS, leftOut: VEHICLE_VERBS_LEFT_OUT }],
+    ['prompts', pressPrompts, { wait: VERB_WAIT_MS, leftOut: PROMPTS_LEFT_OUT.map((p) => p.name) }],
+    ['rides', rideEach, { ms: RIDE_MS }],
+    ['scenes', runEveryScene, { wait: ACTION_WAIT_MS }],
+  ];
+  for (const [name, fn, arg] of stages) {
+    const started = Date.now();
+    const r = await page.evaluate(fn, arg);
+    console.log(`${name}: ${r.ran} of ${r.listed} done in ${Math.round((Date.now() - started) / 1000)} s`);
+    if (!r.listed) note(`${name}: the list came back empty, so nothing of it was tried`);
+    for (const p of r.problems) note(p);
+  }
+  await page.evaluate(() => {
+    for (const c of game.companions) {
+      for (const k of [...c.holds.keys()]) c.release(k);
+      game.settleGirl(c);
+    }
+  });
   for (const phase of PHASES) {
     await page.evaluate((ph) => {
       game.weatherHost.setKind(ph.weather);
@@ -152,6 +190,12 @@ async function run() {
   for (const g of guarded) note(`feature ${g.name} threw ${g.count}x: ${g.message}`);
   const ran = await page.evaluate(() => game.firstFrameDone === true);
   if (!ran) note('no frame ever finished');
+  if (!built) {
+    const { rows, failures } = checkShares(sharesOf(bytesByFile(await page.coverage.stopJSCoverage())));
+    writeFileSync(process.env.SMOKE_COVERAGE_OUT ?? 'smoke-coverage.md', summaryMarkdown(rows));
+    console.log(`what the run reached, against each floor (tools/smokeCoverage.mjs):\n${rows.map((r) => `  ${r.label.padEnd(32)} ${r.share.toFixed(1).padStart(5)}%  floor ${r.floor ?? 'none'}%`).join('\n')}`);
+    for (const f of failures) note(`reach: ${f}`);
+  } else console.log('reached: not measured (it needs the dev server: SMOKE_DEV=1)');
   await page.close();
   const bad = [...seen].map(([k, n]) => `${n}x ${k}`);
   console.log(`${bad.length ? 'FAIL' : 'ok  '} ${PHASES.map((p) => p.name).join(', then ')} (loaded in ${Math.round((loaded - t0) / 1000)} s, ${Math.round((Date.now() - loaded) / 1000)} s played)${bad.length ? '\n  ' + bad.join('\n  ') : ''}`);

@@ -26,9 +26,10 @@ function stand(g, c, x, z, facing) {
   c.hold(HOLD, 'a scene has her standing here (scene end lets her go)');
 }
 
-/** Before any scene: off whatever you are riding (the console's tp refuses while you are on one). */
+/** Before any scene: off whatever you are on, driving it or riding on the back (the console's tp refuses while you are on one). */
 export function getOff(g) {
-  if (g.player.isRiding) g.tryDismount();
+  if (g.riddenUnit) g.tryDismount();
+  else if (g.boardUnit) g.getOffBack();
 }
 
 /** Lets the girls go about their day again. */
