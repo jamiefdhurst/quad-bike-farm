@@ -4,6 +4,9 @@
 // from that piece's anchor, `{ x, z, yaw }`, wrapped in `at('barn', ...)`. `resolveLayout` turns each one into the absolute numbers every reader of
 // `LAYOUT` already uses. Moving a piece is then one anchor, and turning it turns everything with it.
 //
+// A turn is refused (`resolveLayout` throws) for an anchor with a non-zero `yaw` unless it also says `turnable: true`, which it does only once the
+// code building that piece draws it turned: the data turns, but a builder that ignores the yaw would leave its contents standing in the field.
+//
 // An offset is in the anchor's own frame: with yaw 0 it is the world's, and a yaw turns the frame the way Three.js turns an object about y, so
 // local +z points where a thing with that yaw faces (sin yaw, cos yaw). Inside an `at(...)`:
 //   - `{ x, z }` is a point. A `yaw` beside it turns with the anchor. `halfX` and `halfZ` with no `yaw` are an axis-aligned box and swap on a quarter turn.
@@ -43,6 +46,9 @@ const isPlain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v) 
 function frameOf(anchor, name) {
   if (!anchor || !isNumber(anchor.x) || !isNumber(anchor.z)) throw new Error(`layout: no anchor called '${name}'`);
   const yaw = anchor.yaw ?? 0;
+  if (yaw !== 0 && !anchor.turnable) {
+    throw new Error(`layout: anchor '${name}' has a yaw of ${yaw}, but the code that builds it doesn't honour a yaw yet: say 'turnable: true' once it does`);
+  }
   const q = quarterTurns(yaw);
   return { x: anchor.x, z: anchor.z, yaw, q, c: q === null ? Math.cos(yaw) : COS[q], s: q === null ? Math.sin(yaw) : SIN[q] };
 }

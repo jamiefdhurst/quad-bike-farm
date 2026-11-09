@@ -124,7 +124,28 @@ describe('moving and turning an anchor', () => {
     });
 
     it(`turns ${name} a quarter and everything of its turns with it, and nothing else`, () => {
-      expect(run('turn', () => ({ yaw: (a.yaw ?? 0) + Math.PI / 2 }))).toEqual([]);
+      expect(run('turn', () => ({ yaw: (a.yaw ?? 0) + Math.PI / 2, turnable: true }))).toEqual([]);
     });
   }
+});
+
+describe('an anchor the game cannot draw turned', () => {
+  const withAnchor = (change) => ({ ...RAW_LAYOUT, anchors: { ...RAW_LAYOUT.anchors, barn: { ...RAW_LAYOUT.anchors.barn, ...change } } });
+
+  it('is refused, naming the anchor, when it has a yaw and is not turnable', () => {
+    expect(() => resolveLayout(withAnchor({ yaw: Math.PI / 2 }))).toThrow(/anchor 'barn'.*doesn't honour a yaw/);
+  });
+
+  it('is allowed once the anchor says turnable', () => {
+    expect(() => resolveLayout(withAnchor({ yaw: Math.PI / 2, turnable: true }))).not.toThrow();
+  });
+
+  it('needs nothing when the yaw is 0', () => {
+    expect(() => resolveLayout(withAnchor({ yaw: 0 }))).not.toThrow();
+    expect(() => resolveLayout({ ...RAW_LAYOUT, anchors: { ...RAW_LAYOUT.anchors, barn: { x: -64, z: 60 } } })).not.toThrow();
+  });
+
+  it('applies to the shipped layout: no anchor is turned or turnable yet', () => {
+    for (const a of Object.values(RAW_LAYOUT.anchors)) expect(a.yaw ?? 0).toBe(0);
+  });
 });
