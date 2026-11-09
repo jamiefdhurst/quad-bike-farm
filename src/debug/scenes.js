@@ -34,6 +34,7 @@ export const SCENES = [
     lines: ['weather fair', 'weather.time 11'],
     setup: 'wardrobe',
   },
+  { id: 'farhedges', label: 'Put you in the yard with the hedges swapping to their far strips at 25 m instead of 150 m', lines: ['weather sunny', 'weather.time 12', 'tp me to yard'], setup: 'farHedges' },
   { id: 'end', label: 'Let the girls go about their day again after a scene', lines: [], setup: 'end' },
 ];
 
