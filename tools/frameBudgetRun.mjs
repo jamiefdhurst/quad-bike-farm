@@ -27,6 +27,50 @@ export const stubDraws = () => {
 
 export const CHROME_ARGS = ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'];
 
+/** How long a page may take to reach "Ready": one limit for the smoke test and the budget run (CI's software GL has taken 79 to 134 s, #760). */
+export const LOAD_TIMEOUT_MS = 300000;
+
+/** Records the loading screen's steps with the time each first showed, in `window.__loadSteps`, so a slow load can say where it spent its time. */
+export const recordLoadSteps = () => {
+  const steps = (window.__loadSteps = []);
+  let last = '';
+  new MutationObserver(() => {
+    const s = document.getElementById('overlay-status')?.textContent;
+    if (s !== last) steps.push([Math.round(performance.now()) / 1000, (last = s)]);
+  }).observe(document, { subtree: true, childList: true, characterData: true });
+};
+
+/** The steps seen so far as "12.3 s  Building the farm", each once (a step that counts "3/14" is shown at its first count). */
+export async function loadStepLines(page) {
+  const marks = await page.evaluate(() => window.__loadSteps || []).catch(() => []);
+  const seen = new Set();
+  const lines = [];
+  for (const [t, s] of marks) {
+    const step = (s || '').replace(/\s*\d+\/\d+$/, '');
+    if (!step || seen.has(step)) continue;
+    seen.add(step);
+    lines.push(`${t.toFixed(1).padStart(6)} s  ${s}`);
+  }
+  return lines;
+}
+
+/** Waits for the game object, its companions and the "Ready" status. On a timeout the error names which of the three were missing and the steps' timeline. */
+export async function waitForReady(page, { timeout = LOAD_TIMEOUT_MS, polling = 250 } = {}) {
+  try {
+    await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout, polling });
+  } catch (err) {
+    const got = await page.evaluate(() => ({
+      game: !!window.game,
+      companions: !!window.game?.companions,
+      status: document.getElementById('overlay-status')?.textContent,
+      href: location.href,
+    })).catch(() => null);
+    const missing = !got ? ['the page (gone)'] : [!got.game && 'the game object', !got.companions && 'the companions', got.status !== 'Ready' && `the Ready status (it says "${got.status}")`].filter(Boolean);
+    const steps = await loadStepLines(page);
+    throw new Error(`still loading after ${Math.round(timeout / 1000)} s, missing: ${missing.join(', ')}${got ? ` (${got.href})` : ''}${steps.length ? `\nloading steps:\n${steps.join('\n')}` : ''}`, { cause: err });
+  }
+}
+
 /** Measure the build in `dist` (the one checked out at `root`, default here): { [spot]: { calls, triangles } }. The farm is the smoke test's. */
 export async function measureBuild({ dist = 'dist', root = '.', query = 'seed=3&weather=sunny&time=15.5' } = {}) {
   const executablePath = chromePath();
@@ -37,8 +81,9 @@ export async function measureBuild({ dist = 'dist', root = '.', query = 'seed=3&
     const page = await browser.newPage();
     await page.setViewport({ width: 320, height: 200 });
     await page.evaluateOnNewDocument(stubDraws);
+    await page.evaluateOnNewDocument(recordLoadSteps);
     await page.goto(`${server.resolvedUrls.local[0]}?smoke&${query}`, { waitUntil: 'load' });
-    await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000, polling: 250 });
+    await waitForReady(page);
     await page.evaluate(() => {
       const o = document.getElementById('overlay');
       o.classList.add('hidden');

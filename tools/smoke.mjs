@@ -10,10 +10,11 @@
 //   npm run smoke                  SMOKE_SECONDS=10 npm run smoke   shorter phases
 //   CHROME_PATH=/path/to/chrome    to use a particular Chrome (else a system Chrome is looked for)
 import { existsSync, writeFileSync } from 'node:fs';
+import { cpus, totalmem } from 'node:os';
 import { createServer, preview } from 'vite';
 import puppeteer from 'puppeteer-core';
 import { MEASURE_ARGS, check, measureInPage } from './frameBudget.mjs';
-import { CHROME_ARGS, chromePath, stubDraws } from './frameBudgetRun.mjs';
+import { CHROME_ARGS, chromePath, loadStepLines, recordLoadSteps, stubDraws, waitForReady } from './frameBudgetRun.mjs';
 
 const SECONDS = Number(process.env.SMOKE_SECONDS || 20);
 // One load (about 20 s here, minutes on a CI runner), then phases: sunny at the real clock, then snow with the clock fast so the evening comes in.
@@ -45,6 +46,7 @@ const browser = await puppeteer.launch({
   args: CHROME_ARGS, // software GL, so it runs on a CI runner with no GPU
 });
 
+console.log(`smoke: ${await browser.version()}, ${cpus().length} cpus, ${Math.round(totalmem() / 1e9)} GB, node ${process.version}`);
 const problems = [];
 async function run() {
   const t0 = Date.now();
@@ -55,16 +57,17 @@ async function run() {
   page.on('pageerror', (e) => note(`page error: ${e.message} @ ${(e.stack || '').split('\n').slice(1, 3).join(' | ').trim()}`));
   page.on('console', (m) => { if (m.type() === 'error') note(`console.error: ${m.text().slice(0, 300)}`); });
   await page.evaluateOnNewDocument(stubDraws);
+  await page.evaluateOnNewDocument(recordLoadSteps);
   await page.goto(`${base}?smoke&${QUERY}`, { waitUntil: 'load' });
   try {
-    await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000, polling: 250 });
+    await waitForReady(page);
   } catch (err) {
-    // Say where the load had got to, so a slow runner is told from a game that threw while starting.
-    const status = await page.evaluate(() => `${document.getElementById('overlay-status')?.textContent} (game ${typeof window.game}, companions ${typeof window.game?.companions}, ${location.href})`).catch(() => '(page gone)');
-    console.log(`smoke: still loading after 150 s, the overlay says "${status}"${seen.size ? `; seen: ${[...seen.keys()].join(' // ')}` : ''}`);
+    // The error says what was missing and where the load had got to, so a slow runner is told from a game that threw while starting.
+    if (seen.size) console.log(`smoke: seen while loading: ${[...seen.keys()].join(' // ')}`);
     throw err;
   }
   const loaded = Date.now();
+  console.log(`loading steps (seconds from the page's start):\n${(await loadStepLines(page)).join('\n')}`);
   await page.evaluate(() => {
     const o = document.getElementById('overlay');
     o.classList.add('hidden');

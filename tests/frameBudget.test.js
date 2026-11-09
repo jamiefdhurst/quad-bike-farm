@@ -121,7 +121,7 @@ describe('counting the draws (#597)', () => {
     const trafficUpdate = () => {};
     const info = { autoReset: true, render: { frame: 0, calls: 0, triangles: 0 }, reset() { this.render.calls = 0; this.render.triangles = 0; } };
     const seen = [];
-    const calls = { dressed: 0, baked: 0, stocked: 0, fresh: [] };
+    const calls = { dressed: 0, baked: 0, stocked: 0, fresh: [], tileBudgets: [] };
     let toStock = stock;
     const g = {
       renderer: { info },
@@ -135,6 +135,7 @@ describe('counting the draws (#597)', () => {
       daylight: { p: { clockRate: 1 } },
       world: {
         farDetail: { update(p, dt, now, fresh) { calls.fresh.push(fresh); }, viewHeight: 0 },
+        terrain: { tileSet: { update(x, z, budgetMs) { calls.tileBudgets.push(budgetMs); } } },
         sky: { fit: { ready: true } },
         layout: { yard: { x: 0, z: 0 } },
         groundHeightAt: () => 0,
@@ -239,6 +240,9 @@ describe('counting the draws (#597)', () => {
     expect(calls.stocked).toBe(4); // the traffic's bodies, until it has none left to make
     expect(calls.fresh.length).toBeGreaterThan(0);
     expect(calls.fresh.every((f) => f === true)).toBe(true);
+    // The ground builds its tiles a few milliseconds a frame in play, so a slow machine would count fewer of the fine ones (#760): every one is built first.
+    expect(calls.tileBudgets.length).toBe(calls.fresh.length);
+    expect(calls.tileBudgets.every((b) => b === Infinity)).toBe(true);
   });
 
   describe('the movers', () => {
