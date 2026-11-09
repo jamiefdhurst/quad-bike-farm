@@ -24,6 +24,8 @@ export function buildFrameTime(d) {
   // A feature whose update threw is caught so the rest of the frame runs (core/featureGuard.js); it is listed here so it is not hidden.
   show(f, 'Features that threw', () => (g.guard.total ? g.guard.summary().map((e) => `${e.name} x${e.count}`).join(', ') : 'none'));
   // The ground's tiles (world/groundTiles.js): how many are drawn at each detail, and the slowest one to build.
+  // The worn ground (world/wearTiles.js): tiles exist only where something has worn the ground or thawed its frost.
+  show(f, 'Worn ground', () => { const w = g.world.wear.stats(); return `${w.tiles} tiles (${w.far} coarse), ${w.slots} of ${w.of} slots drawn, ${(w.bytes / 1048576).toFixed(2)} MB`; });
   show(f, 'Ground tiles', () => { const t = g.world.terrain.tileSet.stats(); return `${t.built} of ${t.tiles} (${Object.entries(t.bySteps).map(([s, n]) => `${n} at ${s} m`).join(', ')}), ${t.waiting} waiting, slowest build ${t.worstBuildMs.toFixed(1)} ms`; });
   show(f, 'Drawn', () => `${info().calls} calls, ${Math.round(info().triangles / 1000)}k triangles`);
   return f;

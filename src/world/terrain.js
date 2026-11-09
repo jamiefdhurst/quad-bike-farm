@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { createGroundCanvas, createDetailCanvas } from './groundTexture.js';
 import { patchColor, patchBlend } from './patchwork.js';
 import { tarmacMask } from './roadWet.js';
+import { TILE_CELLS, TILE_MARGIN, SLOT } from './wearTiles.js';
 import { DEFAULT_GROUND_PARAMS, GroundGrid, TileSet, tileMeshData, cutTiles, groundBounds } from './groundTiles.js';
 
 export { patchAt } from './patchwork.js';
@@ -36,10 +37,14 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   detailTex.wrapS = detailTex.wrapT = THREE.RepeatWrapping;
 
   const mat = new THREE.MeshStandardMaterial({ map: groundTex, vertexColors: true, roughness: 0.95 });
-  // Worn ground, from the wear grid (groundWear.js): one texel a grid point, soft in red and bog in green.
-  const wearTex = new THREE.DataTexture(wear.data, wear.nx, wear.nz, THREE.RGBAFormat);
+  // Worn ground, from the wear tiles (wearTiles.js): an atlas of the tiles that exist, a texel a grid point, soft in red, bog in green and
+  // thawed frost in blue, and a table of which slot holds each tile.
+  const wearTex = new THREE.DataTexture(wear.atlas, wear.atlasSize, wear.atlasSize, THREE.RGBAFormat);
   wearTex.magFilter = wearTex.minFilter = THREE.LinearFilter;
   wearTex.needsUpdate = true;
+  const wearIndexTex = new THREE.DataTexture(wear.index, wear.dimX, wear.dimZ, THREE.RGBAFormat);
+  wearIndexTex.magFilter = wearIndexTex.minFilter = THREE.NearestFilter;
+  wearIndexTex.needsUpdate = true;
   // Mud carried onto the road (roadMud.js): one texel a grid point, the smear in red.
   const mudData = roadMud ?? { data: new Uint8Array(4), nx: 1, nz: 1, minX: 0, minZ: 0, sizeX: 1, sizeZ: 1 };
   const roadMudTex = new THREE.DataTexture(mudData.data, mudData.nx, mudData.nz, THREE.RGBAFormat);
@@ -71,7 +76,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
     skyTint,
     hayPatch,
     tarmac: { map: tarmacTex, origin: new THREE.Vector2(mask.minX, mask.minZ), size: new THREE.Vector2(mask.size, mask.size) },
-    wear: { map: wearTex, origin: new THREE.Vector2(wear.minX, wear.minZ), size: new THREE.Vector2(wear.sizeX, wear.sizeZ) },
+    wear: { map: wearTex, index: wearIndexTex, origin: new THREE.Vector2(wear.originX, wear.originZ), tile: wear.tileSize, dims: new THREE.Vector2(wear.dimX, wear.dimZ), atlas: wear.atlasSize },
     roadMud: { map: roadMudTex, origin: new THREE.Vector2(mudData.minX, mudData.minZ), size: new THREE.Vector2(mudData.sizeX, mudData.sizeZ) },
   });
 
@@ -127,6 +132,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
     roadWet,
     skyTint,
     wearTexture: wearTex,
+    wearIndexTexture: wearIndexTex,
     roadMudTexture: roadMudTex,
     meshHeightAt: (x, z) => grid.surfaceAt(x, z),
   };
@@ -137,8 +143,11 @@ function addDetailLayer(material, detailTex, scale, { quarryRect, wear, roadMud,
   material.onBeforeCompile = (shader) => {
     shader.uniforms.detailMap = { value: detailTex };
     shader.uniforms.wearMap = { value: wear.map };
+    shader.uniforms.wearIndex = { value: wear.index };
     shader.uniforms.wearOrigin = { value: wear.origin };
-    shader.uniforms.wearSize = { value: wear.size };
+    shader.uniforms.wearTile = { value: wear.tile };
+    shader.uniforms.wearDims = { value: wear.dims };
+    shader.uniforms.wearAtlas = { value: wear.atlas };
     shader.uniforms.quarryRect = { value: quarryRect };
     shader.uniforms.uFrost = frost;
     shader.uniforms.uSnow = snow;
@@ -160,7 +169,7 @@ function addDetailLayer(material, detailTex, scale, { quarryRect, wear, roadMud,
       .replace('#include <common>', '#include <common>\nvarying vec2 vWorldXZ;\nvarying float vWorldY;\nvarying vec3 vWorldN;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;\nvWorldY = (modelMatrix * vec4(transformed, 1.0)).y;\nvWorldN = normalize(mat3(modelMatrix) * objectNormal);');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform vec2 wearOrigin;\nuniform vec2 wearSize;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nuniform float uRoadWet;\nuniform vec3 uSkyTint;\nuniform sampler2D hayMap;\nuniform vec2 hayOrigin;\nuniform vec2 haySize;\nuniform sampler2D hayTrackMap;\nuniform vec2 hayTrackOrigin;\nuniform vec2 hayTrackSize;\nuniform sampler2D tarmacMap;\nuniform vec2 tarmacOrigin;\nuniform vec2 tarmacSize;\nuniform vec4 quarryRect;\nvarying vec2 vWorldXZ;\nvarying float vWorldY;\nvarying vec3 vWorldN;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform sampler2D wearIndex;\nuniform vec2 wearOrigin;\nuniform float wearTile;\nuniform vec2 wearDims;\nuniform float wearAtlas;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nuniform float uRoadWet;\nuniform vec3 uSkyTint;\nuniform sampler2D hayMap;\nuniform vec2 hayOrigin;\nuniform vec2 haySize;\nuniform sampler2D hayTrackMap;\nuniform vec2 hayTrackOrigin;\nuniform vec2 hayTrackSize;\nuniform sampler2D tarmacMap;\nuniform vec2 tarmacOrigin;\nuniform vec2 tarmacSize;\nuniform vec4 quarryRect;\nvarying vec2 vWorldXZ;\nvarying float vWorldY;\nvarying vec3 vWorldN;')
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
@@ -196,9 +205,15 @@ function addDetailLayer(material, detailTex, scale, { quarryRect, wear, roadMud,
         hayCol = mix(hayCol, vec3(0.42, 0.5, 0.2) * mix(0.9, 1.1, hayGrain), hayPressed * 0.9);
         diffuseColor.rgb = mix(diffuseColor.rgb, hayCol, hayIn * 0.94);
         // Ground the tyres have worn: churned brown where it's soft, dark and glossy where it's a bog, ragged at the edges.
-        vec2 wearUv = (vWorldXZ - wearOrigin) / wearSize;
-        float wearIn = step(0.0, wearUv.x) * step(wearUv.x, 1.0) * step(0.0, wearUv.y) * step(wearUv.y, 1.0);
-        vec2 worn = texture2D(wearMap, wearUv).rg * wearIn;
+        // Found through the table of tiles: where a tile has been worn its slot in the atlas, else nothing and the ground is as it was painted.
+        vec2 wearTp = (vWorldXZ - wearOrigin) / wearTile;
+        vec2 wearTi = floor(wearTp);
+        float wearIn = step(0.0, wearTi.x) * step(0.0, wearTi.y) * step(wearTi.x, wearDims.x - 1.0) * step(wearTi.y, wearDims.y - 1.0);
+        vec4 wearSlot = texture2D(wearIndex, (wearTi + 0.5) / wearDims);
+        wearIn *= step(0.5, wearSlot.r * 255.0);
+        vec2 wearTexel = (floor(wearSlot.rg * 255.0 + 0.5) - 1.0) * ${SLOT}.0 + (wearTp - wearTi) * ${TILE_CELLS}.0 + ${TILE_MARGIN}.0;
+        vec4 wearS = texture2D(wearMap, wearTexel / wearAtlas) * wearIn;
+        vec2 worn = wearS.rg;
         float rag = (texture2D(detailMap, vWorldXZ * 0.9).r - 0.5) * 0.4;
         float wornSoft = smoothstep(0.15, 0.55, worn.r + rag);
         float wornBog = smoothstep(0.25, 0.65, worn.g + rag);
@@ -212,7 +227,7 @@ function addDetailLayer(material, detailTex, scale, { quarryRect, wear, roadMud,
         diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.3, 0.23, 0.15), vec3(0.17, 0.12, 0.075), smoothstep(0.3, 0.9, smear)), onRoad * 0.85);
         // Frost on a freezing morning: white on the grass with a glitter of crystals, melted along the lines the tyres have rolled (the
         // wear map's blue) and gone where the ground is churned. It sits less thickly on the road.
-        float thawed = texture2D(wearMap, wearUv).b * wearIn;
+        float thawed = wearS.b;
         float grain = texture2D(detailMap, vWorldXZ * 2.3).r;
         float patchy = 0.75 + 0.25 * (texture2D(detailMap, vWorldXZ * 0.07).r - 0.5) * 2.0;
         float frostAmt = uFrost * patchy * (1.0 - smoothstep(0.1, 0.6, thawed)) * (1.0 - wornSoft) * (1.0 - 0.45 * onRoad);
