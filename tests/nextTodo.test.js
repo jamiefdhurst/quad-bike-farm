@@ -68,11 +68,14 @@ describe('which issue /todo takes next', () => {
 describe('the milestones', () => {
   const titles = ['0 · Foundations', '1 · The new map', '2 · The farmstead', '3 · Crops', '4 · Pulled together', '5 · Ready for players', 'Alongside'];
 
-  it('are in .github/settings.yml, open, in the order the plan runs them', () => {
+  it('are in .github/settings.yml, each open or closed, in the order the plan runs them', () => {
     const yml = readFileSync('.github/settings.yml', 'utf8');
     const found = [...yml.matchAll(/^ {2}- title: "?([^"\n]+?)"?\s*$/gm)].map((m) => m[1]);
     expect(found).toEqual(titles);
-    expect(yml.match(/state: open/g)?.length).toBeGreaterThanOrEqual(titles.length);
+    const states = [...yml.matchAll(/^ {4}state: (\w+)$/gm)].map((m) => m[1]);
+    expect(states).toHaveLength(titles.length);
+    for (const s of states) expect(['open', 'closed']).toContain(s);
+    expect(states.at(-1)).toBe('open'); // Alongside never closes
   });
 
   it('each has a section in docs/farm-plan.md', () => {
