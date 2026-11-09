@@ -54,6 +54,7 @@ export function runScene(scene, shell, game, setups = SETUPS) {
     if (scene.setup) out.push(...setups[scene.setup](game, say));
   } catch (e) {
     out.push(e.message);
+    out.failed = true; // the smoke test tells a scene that broke from one that printed something (tools/smokeActions.mjs)
   }
   shell.history.length = keep; // the scene's own lines are not what was typed
   return out;
