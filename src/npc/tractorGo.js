@@ -6,6 +6,9 @@
 //   jessGo   Jess walks over, climbs on and has a go (`vehicle` is the one she picked)
 //   amyDay   Amy's day: she has a go, and from now on she'll do it when asked
 
+// The vehicles the girls take for a go (and are asked to start): the tractor, the UTV, the two Land Rovers and the cars.
+export const GO_KINDS = ['tractor', 'utv', 'landy', 'defender', 'fiesta', 'corsa', 'p309'];
+
 export const DEFAULT_TRACTORGO_PARAMS = {
   jessAfter: 150, // seconds into the game before Jess first takes it
   jessEvery: 300, // seconds between anyone's goes
