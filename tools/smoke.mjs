@@ -19,6 +19,7 @@
 // Drawing is skipped (the GL draw calls do nothing): on software GL the first frame alone took half a minute, and drawing finds nothing the update doesn't.
 //
 //   npm run smoke                  SMOKE_SECONDS=10 npm run smoke   shorter phases
+//   SMOKE_CPU_THROTTLE=6 npm run smoke   the CPU slowed six times, as a starved machine is: every wait counts game time (#770), so this passes
 //   CHROME_PATH=/path/to/chrome    to use a particular Chrome (else a system Chrome is looked for)
 import { existsSync, writeFileSync } from 'node:fs';
 import { cpus, totalmem } from 'node:os';
@@ -26,11 +27,11 @@ import { createServer, preview } from 'vite';
 import puppeteer from 'puppeteer-core';
 import { MEASURE_ARGS, check, measureInPage } from './frameBudget.mjs';
 import { CHROME_ARGS, chromePath, loadStepLines, recordLoadSteps, stubDraws, waitForReady } from './frameBudgetRun.mjs';
-import { ACTION_WAIT_MS, GIRL_ACTIONS_LEFT_OUT, PROMPTS_LEFT_OUT, RIDE_MS, VERB_WAIT_MS, VEHICLE_VERBS_LEFT_OUT, doGirlActions, doVehicleVerbs, pressPrompts, rideEach, runEveryScene } from './smokeActions.mjs';
+import { ACTION_WAIT_MS, GIRL_ACTIONS_LEFT_OUT, HUNG_FACTOR, HUNG_FLAT_S, PROMPTS_LEFT_OUT, RIDE_MS, VERB_WAIT_MS, VEHICLE_VERBS_LEFT_OUT, doGirlActions, doVehicleVerbs, installGameClock, pressPrompts, rideEach, runEveryScene } from './smokeActions.mjs';
 import { bytesByFile, checkShares, sharesOf, summaryMarkdown } from './smokeCoverage.mjs';
 
 const SECONDS = Number(process.env.SMOKE_SECONDS || 20);
-const MADE_TO_RUN_SECONDS = 120; // how long the girls have to choose and the radio to be heard, on a runner that may be slow; only a failure waits this long
+const MADE_TO_RUN_SECONDS = 60; // how long, in the game's time, the girls have to choose and the radio to be heard; only a failure waits this long (#770)
 // One load (about 20 s here, minutes on a CI runner), then phases: sunny at the real clock, then snow with the clock fast so the evening comes in.
 const QUERY = process.env.SMOKE_QUERY ?? 'seed=3&weather=sunny&time=15.5'; // SMOKE_QUERY tries another set-up, e.g. a season
 const PHASES = [
@@ -70,6 +71,7 @@ async function run() {
   await page.setViewport({ width: 320, height: 200 });
   page.on('pageerror', (e) => note(`page error: ${e.message} @ ${(e.stack || '').split('\n').slice(1, 3).join(' | ').trim()}`));
   page.on('console', (m) => { if (m.type() === 'error') note(`console.error: ${m.text().slice(0, 300)}`); });
+  if (process.env.SMOKE_CPU_THROTTLE) await (await page.createCDPSession()).send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.SMOKE_CPU_THROTTLE) }); // a starved machine (#770)
   await page.evaluateOnNewDocument(stubDraws);
   await page.evaluateOnNewDocument(recordLoadSteps);
   if (!built) await page.coverage.startJSCoverage({ resetOnNavigation: false }); // what the run reaches, per file (smokeCoverage.mjs)
@@ -91,6 +93,7 @@ async function run() {
     game.audioHub.params.masterVolume = 0;
     game.audioHub.unlock();
   });
+  await page.evaluate(installGameClock, { factor: HUNG_FACTOR, flat: HUNG_FLAT_S }); // every wait below counts the game's time, not real seconds (#770)
   // The frame's budget, from fixed spots on the farm while it is still sunny at the start (tools/frameBudget.mjs); the numbers go to a file for the job summary.
   const measured = await page.evaluate(measureInPage, MEASURE_ARGS);
   if (measured.error) note(`budget: ${measured.error}`);
@@ -115,30 +118,41 @@ async function run() {
       g.settleGirl(c); // down off the trailer, and stood about
       c.settled.left = 0.1; // for no time at all: settling holds her own mind off
     }
-    const t0 = performance.now();
+    const t0 = smokeGameTime();
     const heard = () => g.radioAudio.chains.has(set.spec.id);
     const waiting = () => g.companions.filter((c) => !c.mind.last);
-    while (performance.now() - t0 < limit * 1000 && (waiting().length || !heard())) {
-      for (const c of waiting()) {
-        c.mind.thinkIn = 0;
-        if (c.fsm.name === 'onTrailer' && Math.round((performance.now() - t0) / 250) % 40 === 0) {
-          g.settleGirl(c); // one slow runner left Amy on it for the whole wait
-          c.settled.left = 0.1;
+    let hung = null;
+    try {
+      // In game time: a slow machine takes longer to get there but gets there. Only the real-time limit in smokeWait ends it early.
+      while (smokeGameTime() - t0 < limit && (waiting().length || !heard())) {
+        for (const c of waiting()) {
+          c.mind.thinkIn = 0;
+          // Stood by the radio's vehicle with a trailer on it, a girl climbs back on, as the game has her do (not a slow machine, which game time covers):
+          // down again every 5 game seconds she is found on it.
+          if (c.fsm.name === 'onTrailer' && Math.floor((smokeGameTime() - t0) / 5) > (c.smokeSettledAt ?? -1)) {
+            c.smokeSettledAt = Math.floor((smokeGameTime() - t0) / 5);
+            g.settleGirl(c);
+            c.settled.left = 0.1;
+          }
         }
+        await smokeWait(0.25);
       }
-      await new Promise((r) => setTimeout(r, 250));
+    } catch (e) {
+      hung = e.message;
     }
     return {
-      seconds: Math.round((performance.now() - t0) / 1000),
+      seconds: Math.round(smokeGameTime() - t0),
+      hung,
       audio: g.audioHub.ctx?.state ?? 'no audio context',
       radio: heard() ? set.spec.id : null,
       girls: g.companions.map((c) => ({ name: c.name, chose: c.mind.last?.key ?? null, state: c.fsm.name, waiting: c.mind.waiting })),
     };
   }, MADE_TO_RUN_SECONDS);
-  console.log(`made to run in ${madeToRun.seconds} s: audio ${madeToRun.audio}, radio ${madeToRun.radio ?? 'not heard'}, ${madeToRun.girls.map((c) => `${c.name} chose ${c.chose}`).join(', ')}`);
+  console.log(`made to run in ${madeToRun.seconds} s of game time: audio ${madeToRun.audio}, radio ${madeToRun.radio ?? 'not heard'}, ${madeToRun.girls.map((c) => `${c.name} chose ${c.chose}`).join(', ')}`);
+  if (madeToRun.hung) note(`made to run: ${madeToRun.hung}`);
   if (madeToRun.audio !== 'running') note(`audio context is ${madeToRun.audio}, so the sound's code did not run`);
-  if (!madeToRun.radio) note(`no radio was heard in ${MADE_TO_RUN_SECONDS} s, so the radio's live path did not run`);
-  for (const c of madeToRun.girls) if (!c.chose) note(`${c.name} chose nothing in ${MADE_TO_RUN_SECONDS} s (${c.state}${c.waiting ? `, ${c.waiting}` : ''})`);
+  if (!madeToRun.radio) note(`no radio was heard in ${MADE_TO_RUN_SECONDS} s of game time, so the radio's live path did not run`);
+  for (const c of madeToRun.girls) if (!c.chose) note(`${c.name} chose nothing in ${MADE_TO_RUN_SECONDS} s of game time (${c.state}${c.waiting ? `, ${c.waiting}` : ''})`);
   // Then everything a player and the girls can do, each read from the game's own list (tools/smokeActions.mjs).
   const stages = [
     ['girl actions', doGirlActions, { wait: ACTION_WAIT_MS, leftOut: GIRL_ACTIONS_LEFT_OUT, vehicle: 'red' }],
@@ -166,7 +180,7 @@ async function run() {
       game.daylight.p.clockRate = ph.clockRate;
     }, phase);
     for (let t = 0; t < phase.seconds; t += 2) {
-      await new Promise((r) => setTimeout(r, 2000));
+      await page.evaluate(() => smokeWait(2)); // game seconds (#770)
       const out = await page.evaluate(() => {
         const out = [];
         for (const c of game.companions) {
