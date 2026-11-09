@@ -125,7 +125,7 @@ async function measureOnce(root, profileFor, showSteps) {
     });
     await new Promise((ok) => setTimeout(ok, 4000)); // shaders and the first frames' building settle
     if (profileFor) await profile(page, profileFor);
-    const r = await page.evaluate(measureInPage, { ...MEASURE_ARGS, frames: 10, dwell });
+    const r = await page.evaluate(measureInPage, { ...MEASURE_ARGS, frames: 10, dwell, movers: false });
     if (r.error) throw new Error(r.error);
     for (const n of r.notes ?? []) console.error(`perf: ${n}`);
     if (args.includes('--stages')) for (const [spot, v] of Object.entries(r.spots)) console.error(`perf: ${spot} stages (ms): ${(v.stages ?? []).map(([n, ms]) => `${n} ${ms}`).join(', ')}`);

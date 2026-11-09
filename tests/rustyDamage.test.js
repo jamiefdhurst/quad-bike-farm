@@ -181,4 +181,65 @@ describe('the look on each donor', () => {
     look.sync({ tarpOff: true, isDone: () => false }, { instant: true });
     expect(tarp.visible).toBe(false);
   });
+  describe('lands the same wherever and however the vehicle stands (#597)', () => {
+    // The geometry of each decal, as the sum of its vertices' distances from the origin in the body's own frame: the same placing gives the same figures.
+    const signature = (model) => {
+      const out = [];
+      model.traverse((o) => {
+        if (!o.userData.rustyDamage || !o.geometry) return;
+        const p = o.geometry.attributes.position;
+        let sum = 0;
+        for (let i = 0; i < p.count; i++) sum += Math.hypot(p.getX(i), p.getY(i), p.getZ(i));
+        out.push(`${o.name}:${p.count}:${sum.toFixed(3)}`);
+      });
+      return out.join(' ');
+    };
+    const dressed = (id, setUp) => {
+      const plan = planDamage(createRandom(7), id);
+      const model = build(id, plan);
+      setUp?.(model);
+      model.updateMatrixWorld(true);
+      applyDamage(model, plan, null);
+      return model;
+    };
+
+    for (const id of DONORS) {
+      it(`for the ${id}: turned, tilted on its springs, with the bars steered, or with parts left out for being small`, () => {
+        const plain = signature(dressed(id));
+        expect(plain.length).toBeGreaterThan(0);
+        const moved = dressed(id, (m) => {
+          m.position.set(30, 0.4, -12);
+          m.rotation.y = 2.1;
+          const body = m.getObjectByName('bodyRoot');
+          body.rotation.x = 0.04;
+          body.rotation.z = -0.03;
+          const bars = m.getObjectByName('handlebars');
+          if (bars) bars.rotation.y = 0.15;
+          m.traverse((o) => { if (o.isMesh && o.name.length % 3 === 0) o.layers.set(1); }); // FarDetail's leaving out of specks
+        });
+        expect(signature(moved)).toBe(plain);
+      });
+    }
+
+    it('puts a vehicle back as it was stood, steered and tilted', () => {
+      const plan = planDamage(createRandom(7), 'red');
+      const model = build('red', plan);
+      model.position.set(3, 0.2, 4);
+      model.rotation.y = 1;
+      const bars = model.getObjectByName('handlebars');
+      bars.rotation.y = 0.2;
+      const before = [model.quaternion.clone(), bars.quaternion.clone(), model.getObjectByName('bodyRoot').quaternion.clone()];
+      applyDamage(model, plan, null);
+      expect(model.position.toArray()).toEqual([3, 0.2, 4]);
+      expect(model.quaternion.angleTo(before[0])).toBeLessThan(1e-6);
+      expect(bars.quaternion.angleTo(before[1])).toBeLessThan(1e-6);
+      expect(model.getObjectByName('bodyRoot').quaternion.angleTo(before[2])).toBeLessThan(1e-6);
+    });
+
+    it('counts a small part FarDetail has hidden for being far off as still there, and leaves out one the game hid', { timeout: 30000 }, () => {
+      const plain = signature(dressed('red'));
+      expect(signature(dressed('red', (m) => m.traverse((o) => { if (o.isMesh && o.name === 'seat') { o.visible = false; o.userData.farHidden = true; } })))).toBe(plain);
+      expect(signature(dressed('red', (m) => m.traverse((o) => { if (o.isMesh && o.name === 'seat') o.visible = false; })))).not.toBe(plain);
+    });
+  });
 });

@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { BUDGETS, KNOWN_OVER, MEASURE_ARGS, SPOTS, check, measureInPage, summary } from '../tools/frameBudget.mjs';
 
-const under = () => Object.fromEntries(SPOTS.map((s) => [s, { calls: BUDGETS[s].calls - 10, triangles: BUDGETS[s].triangles - 1000 }]));
+const under = () => Object.fromEntries(Object.keys(BUDGETS).map((s) => [s, { calls: BUDGETS[s].calls - 10, triangles: BUDGETS[s].triangles - 1000 }]));
 
 describe('the frame budget', () => {
   it('passes when every spot is under', () => {
     const r = check(under());
     expect(r.failures).toEqual([]);
     expect(r.missing).toEqual([]);
-    expect(r.rows).toHaveLength(SPOTS.length);
+    expect(r.rows).toHaveLength(SPOTS.length + 1); // the spots and the movers
   });
 
   it('fails a spot over on calls or on triangles, naming it', () => {
@@ -43,7 +43,25 @@ describe('the frame budget', () => {
   });
 
   it('keeps spawn at the budget it was given when the count was made repeatable (#597)', () => {
-    expect(BUDGETS.spawn).toEqual({ calls: 640, triangles: 3.25e6 });
+    expect(BUDGETS.spawn).toEqual({ calls: 630, triangles: 3.23e6 });
+  });
+
+  it('has a budget for what is left out of the spots, which is not a spot to stand at (#597)', () => {
+    expect(BUDGETS.movers.calls).toBeGreaterThan(0);
+    expect(BUDGETS.movers.triangles).toBeGreaterThan(0);
+    expect(SPOTS).not.toContain('movers');
+  });
+
+  it('fails the movers over their budget, as a spot is', () => {
+    const m = under();
+    m.movers = { calls: BUDGETS.movers.calls + 1, triangles: 0 };
+    const r = check(m);
+    expect(r.failures).toHaveLength(1);
+    expect(r.failures[0]).toContain('movers');
+  });
+
+  it('lists the movers in the summary', () => {
+    expect(summary(under())).toContain('| movers |');
   });
 
   it('only knows overruns for spots that have a budget', () => {
@@ -72,56 +90,104 @@ describe('the frame budget', () => {
 describe('counting the draws (#597)', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  // A stand-in page: a game whose renderer counts one call a visible thing, so what is hidden while it counts shows in the number.
-  const standIn = () => {
-    const mk = (name, extra = {}) => ({ name, visible: true, isSprite: false, ...extra });
-    const flock = mk('flock');
-    const halo = mk('headlightHalo', { isSprite: true });
-    const wall = mk('wall');
-    const girl = { root: mk('girl') };
-    const bus = mk('bus');
-    const items = [flock, halo, wall, girl.root, bus];
+  // A stand-in page: a scene whose renderer counts one call for each thing still attached to it, so what is taken out while it counts shows in the number.
+  const node = (name, extra = {}) => {
+    const o = { name, visible: true, parent: null, children: [], isMesh: true, geometry: { groups: [], attributes: { position: { count: 3 } } }, material: {}, ...extra };
+    o.add = (c) => { c.parent?.remove(c); c.parent = o; o.children.push(c); };
+    o.remove = (c) => { o.children = o.children.filter((x) => x !== c); c.parent = null; };
+    return o;
+  };
+
+  const standIn = ({ pool = [], stock = 0 } = {}) => {
+    const scene = node('scene', { isMesh: false });
+    const flock = node('flock');
+    const wall = node('wall');
+    // The dog sets its own `visible` every frame, so hiding it would not hold.
+    const dog = node('dog', { visible: true });
+    const halo = node('headlightHalo', { isSprite: true, isMesh: false });
+    const lamp = node('lamp');
+    lamp.add(halo);
+    const girl = { root: node('girl') };
+    const bus = node('bus');
+    scene.add(flock);
+    scene.add(wall);
+    scene.add(dog);
+    scene.add(lamp);
+    scene.add(girl.root);
+    scene.add(bus);
+    const attached = (o) => { for (let p = o; p; p = p.parent) if (p === scene) return true; return false; };
+    const all = [flock, wall, dog, halo, lamp, girl.root, bus];
     const trafficUpdate = () => {};
     const info = { autoReset: true, render: { frame: 0, calls: 0, triangles: 0 }, reset() { this.render.calls = 0; this.render.triangles = 0; } };
     const seen = [];
+    const calls = { dressed: 0, baked: 0, stocked: 0, fresh: [] };
+    let toStock = stock;
     const g = {
       renderer: { info },
       camera: { position: {} },
-      scene: { children: [flock, wall], traverse: (f) => items.forEach(f) },
+      scene: { children: scene.children, remove: (o) => scene.remove(o), add: (o) => scene.add(o), traverse: (f) => all.forEach(f) },
       companions: [girl],
+      units: [],
+      pendingLooks: [1, 2],
+      dressFinds() { calls.dressed++; this.pendingLooks.shift(); },
+      bakeWear() { calls.baked++; },
       daylight: { p: { clockRate: 1 } },
       world: {
-        farDetail: { update() {}, viewHeight: 0 },
+        farDetail: { update(p, dt, now, fresh) { calls.fresh.push(fresh); }, viewHeight: 0 },
         sky: { fit: { ready: true } },
         layout: { yard: { x: 0, z: 0 } },
         groundHeightAt: () => 0,
       },
-      trafficHost: { view: { update: trafficUpdate, shown: new Map([['v', { object: bus }]]), kidBikes: new Map(), rigs: {}, kidRigs: [], parcels: [] } },
+      trafficHost: {
+        view: {
+          update: trafficUpdate,
+          shown: new Map([['v', { object: bus }]]),
+          kidBikes: new Map(),
+          rigs: {},
+          kidRigs: [],
+          parcels: [],
+          pool: new Map([['a', pool]]),
+          stockUp: () => { calls.stocked++; return toStock-- > 0; },
+        },
+      },
       player: { isRiding: false, position: { x: 0, y: 0, z: 0 }, moveTo() {}, yaw: 0, pitch: 0 },
       frameStats: { summary: () => ({ ms: 1, worstMs: 2 }), since: () => ({}) },
       guard: { slowest: () => [] },
       frameBreakdown: { summary: () => [] },
     };
+    // The scene's children are the real list, for the game's own look-ups.
+    g.scene.children = scene.children;
+    Object.defineProperty(g.scene, 'children', { get: () => scene.children });
     vi.stubGlobal('window', { game: g });
     vi.stubGlobal('performance', { now: () => 0 });
     vi.stubGlobal('requestAnimationFrame', (f) => {
+      dog.visible = true;
       info.render.frame++;
-      info.render.calls += items.filter((o) => o.visible).length;
+      info.render.calls += all.filter((o) => o.isMesh && attached(o)).length;
       seen.push({ clock: g.daylight.p.clockRate, fit: g.world.sky.fit.ready, update: g.trafficHost.view.update });
       queueMicrotask(f);
     });
-    return { g, items, seen, trafficUpdate };
+    return { g, scene, all, seen, trafficUpdate, calls, dog, bus, girl, halo, lamp };
   };
 
-  const args = { ...MEASURE_ARGS, spots: ['yard'], headings: [0], frames: 1 };
+  const args = { ...MEASURE_ARGS, spots: ['yard'], headings: [0], frames: 1, movers: false };
 
   it('counts without what moves, with the clock stopped and the shadow window snapped, and puts it all back', async () => {
-    const { g, items, trafficUpdate } = standIn();
+    const { g, all, scene, trafficUpdate, halo, lamp } = standIn();
     const r = await measureInPage(args);
-    expect(r.spots.yard.calls).toBe(1); // only the wall: the flock, the girl, the bus and the lamp's halo are out of the count
-    expect(items.every((o) => o.visible)).toBe(true);
+    expect(r.spots.yard.calls).toBe(2); // the wall and the lamp: the flock, the dog, the girl, the bus and the lamp's halo are out of the count
+    expect(all.filter((o) => o !== halo).every((o) => o.parent === scene || o.parent === null || o.parent === lamp)).toBe(true);
+    expect(all.every((o) => o.parent !== null)).toBe(true);
+    expect(halo.parent).toBe(lamp);
     expect(g.daylight.p.clockRate).toBe(1);
     expect(g.trafficHost.view.update).toBe(trafficUpdate);
+  });
+
+  it('keeps out a thing that turns itself visible every frame, which hiding it would not (the dog and the cat do)', async () => {
+    const { dog } = standIn();
+    const r = await measureInPage(args);
+    expect(dog.visible).toBe(true);
+    expect(r.spots.yard.calls).toBe(2);
   });
 
   it('stops the clock and freezes the traffic only while it counts', async () => {
@@ -134,10 +200,58 @@ describe('counting the draws (#597)', () => {
   });
 
   it('times with everything moving as in play', async () => {
-    const { items } = standIn();
+    const { all, scene, lamp } = standIn();
     const during = [];
-    vi.stubGlobal('setTimeout', (f) => { during.push(items.every((o) => o.visible)); f(); });
+    vi.stubGlobal('setTimeout', (f) => { during.push(all.every((o) => o.parent === scene || o.parent === lamp)); f(); });
     await measureInPage({ ...args, dwell: 1 });
     expect(during).toEqual([true]);
+  });
+
+  it('finishes what the page does a little at a time after Ready before it counts, and looks at the far detail from scratch', async () => {
+    const { calls } = standIn({ stock: 3 });
+    await measureInPage({ ...args, movers: true });
+    expect(calls.dressed).toBe(2); // the barn finds' damage
+    expect(calls.baked).toBe(1); // the wear
+    expect(calls.stocked).toBe(4); // the traffic's bodies, until it has none left to make
+    expect(calls.fresh.length).toBeGreaterThan(0);
+    expect(calls.fresh.every((f) => f === true)).toBe(true);
+  });
+
+  describe('the movers', () => {
+    const body = () => {
+      const root = node('body', { isMesh: false, visible: false }); // an idle body is kept hidden: its own flag is not what counts
+      const a = node('panel');
+      const b = node('glass', { material: [{}, {}], geometry: { groups: [{}, {}], index: { count: 6 }, attributes: { position: { count: 4 } } } });
+      const hidden = node('part', { visible: false });
+      const instanced = node('bolts', { isInstancedMesh: true, count: 50, geometry: { groups: [], index: { count: 36 }, attributes: { position: { count: 8 } } } });
+      root.add(a);
+      root.add(b);
+      root.add(hidden);
+      root.add(instanced);
+      return root;
+    };
+
+    it('adds up what is held out as if all of it were in view, an instanced mesh counting once', async () => {
+      const { girl } = standIn({ pool: [{ object: body() }, { object: body() }] });
+      girl.root.add(node('shirt'));
+      const r = await measureInPage({ ...args, movers: true });
+      // each body: a panel, two for the glass, one instanced mesh = 4 calls; two of them = 8. The flock, the dog, the girl (and her shirt), the lamp's halo: 1, 1, 2, 1.
+      expect(r.spots.movers.calls).toBe(8 + 1 + 1 + 2 + 1);
+      // triangles: a panel 1, the glass 2, the bolts 12 each of 50 = 600; so 603 a body
+      expect(r.spots.movers.triangles).toBeGreaterThanOrEqual(2 * 603);
+    });
+
+    it('is the same however often it is measured, and does not count the few vehicles out on the road', async () => {
+      standIn({ pool: [{ object: body() }] });
+      const a = await measureInPage({ ...args, movers: true });
+      const b = await measureInPage({ ...args, movers: true });
+      expect(b.spots.movers).toEqual(a.spots.movers);
+    });
+
+    it('is not worked out unless asked (perf.mjs does not want it)', async () => {
+      standIn();
+      const r = await measureInPage(args);
+      expect(r.spots.movers).toBeUndefined();
+    });
   });
 });
