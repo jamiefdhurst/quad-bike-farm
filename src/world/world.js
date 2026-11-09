@@ -136,6 +136,7 @@ export class World {
     this.terrain = createTerrain(ctx);
     this.terrain.prime(layout.spawn.player.x, layout.spawn.player.z);
     this.props = buildProps(ctx);
+    this.farDetail.hedges = this.props.hedgeSwap; // the hedges' far strips swap in by distance (hedgeFar.js)
 
     // A skin of ice on the track's puddles on a frosty day (puddleIce.js): wheels crack it and break it.
     this.puddleIceParams = { ...DEFAULT_PUDDLE_ICE_PARAMS };
