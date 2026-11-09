@@ -9,6 +9,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | Name | What it is | Not |
 | --- | --- | --- |
 | radio station | One of the radio's two stations: Dale FM (easy listening and pop) and Quarry Rock (rock). The radio key changes between them | radio channel, radio frequency |
+| woodpile | The stack of split logs by the wood's gate, with the rounds lying beside it. The farm map names it, with how many logs are on the stack | wood pile |
 | Fern Trail | The narrow single-track path for the two-wheelers through the wood, marked by the blue-banded posts | Fern Path, Bike Trail, the trail loop |
 | way-marker post | The timber post with a blue band and an arrow beside the Fern Trail | waymarker, waymark post |
 | shepherd's hut | The little wheeled hut on top of the hill pasture, with the bunk, the stove and the kettle | shepherds hut, shepherd's shed, hill hut, hut on wheels |
