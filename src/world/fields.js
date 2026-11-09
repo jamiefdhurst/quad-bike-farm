@@ -13,6 +13,7 @@ import { roadNetwork } from './roads.js';
 import { createBrook } from './brook.js';
 import { fieldPlan } from './fieldPlan.js';
 import { createFieldMap } from './fieldMap.js';
+import { clockwise, polygonBounds } from './polygons.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -57,7 +58,9 @@ export function createFieldShape(layout) {
 
 export function createFields(layout) {
   const F = layout.fieldHalf;
-  const farm = layout.farm ?? { minX: -F, maxX: F, minZ: -F, maxZ: F };
+  // The farm's outer boundary: a polygon if the layout gives one (`outline`), whose bounding box is `farm` for what wants a box.
+  const outline = layout.outline ? clockwise(layout.outline) : null;
+  const farm = outline ? polygonBounds(outline) : layout.farm ?? { minX: -F, maxX: F, minZ: -F, maxZ: F };
   const road = layout.road;
   const hill = createHill(layout);
   const woods = createWoods(layout);
@@ -65,8 +68,8 @@ export function createFields(layout) {
   const built = createOutbuildings(layout);
   const plan = fieldPlan(layout, { hill, woods, quarry, brook: createBrook(layout) });
   const { gateways, gates } = plan;
-  const { polygons, areas, kinds, hedges, areaOf, inGap, hedgeDistance, hedgedAt, hedgeAhead, route, nextWaypoint, inFarm, clampToArea, outsideFarm } = createFieldMap(plan, farm);
-  const grass = areas.grass;
+  const { polygons, areas, kinds, hedges, areaOf, inGap, hedgeDistance, hedgedAt, hedgeAhead, route, nextWaypoint, inFarm, clampToArea, outsideFarm } = createFieldMap(plan, outline ?? farm);
+  const grass = areas.grass ?? farm;
 
   /**
    * 0..1 how much of (x, z) is tarmac or concrete: every road (world/roads.js: the farm road and the hardstanding at its end, the public lane,

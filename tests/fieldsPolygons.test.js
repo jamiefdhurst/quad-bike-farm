@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { LAYOUT } from '../src/world/layout.js';
 import { createFields } from '../src/world/fields.js';
+import { planAsData } from './helpers/planAsData.js';
 
 // tests/fixtures/rectFields.json is what the fields answered when every field was a rectangle (#662), over the farm, the lane, the hill and the
 // wood on a 2 m grid, written once from that code. Making them polygons changed nothing a player could see, and this is what says so.
 const golden = JSON.parse(readFileSync(new URL('./fixtures/rectFields.json', import.meta.url), 'utf8'));
-const f = createFields(LAYOUT);
 const { grid } = golden;
 
 function sample(visit) {
@@ -18,7 +18,14 @@ function sample(visit) {
   }
 }
 
-describe('the fields as polygons answer as the rectangles did', () => {
+// Both ways of supplying them: built from the layout's numbers, and written out as `fields`, `boundaries` and `gateways` in the layout.
+const data = planAsData(LAYOUT);
+const ways = {
+  'built from the layout': createFields(LAYOUT),
+  'written out as data': createFields({ ...LAYOUT, fields: data.fields, boundaries: data.boundaries, gateways: data.gateways }),
+};
+
+describe.each(Object.entries(ways))('the fields as polygons answer as the rectangles did, %s', (_way, f) => {
   it('names the same field at every point of a 2 m grid', () => {
     const wrong = [];
     sample((x, z, row, col) => {
