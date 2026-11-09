@@ -73,7 +73,7 @@ export function jobActions(g) {
 
   add('silage', 'Silage to the Dutch barn', () => `${g.jobBoard.finished.has('silage') ? 'done' : g.jobBoard.has('silage') ? 'on the board' : 'not on the board'}; on the spike: ${g.baleRig.held?.id ?? 'nothing'}`, [
     a('done', 'Silage job done now', () => g.farmJobs.debugFinishSilage()),
-    a('reset', 'Put the silage bales back', () => g.debugResetBales()),
+    a('reset', 'Put the silage bales back', () => g.baleRig.reset()),
   ]);
 
   if (g.logStack) {
