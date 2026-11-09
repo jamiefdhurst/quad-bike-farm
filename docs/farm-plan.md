@@ -74,7 +74,6 @@ New:
 - #665 Build the ground in tiles, sized from the layout: fine near you, coarse far off
 - #666 Keep wear, mud, ruts, frost and snow working over a bigger farm
 - #667 Give hedges and walls a cheap far version
-- #708 See further on a clear day, with a far landscape beyond the map's edges
 
 Existing: #126 (split up `game.js`), #219 (old saves keep loading), #360 (rewritten: the farm map drawn from the layout, with the key clear of it; #319 folded in), #384 (bare-block test and shot tool), #597 (a steady draw-call count).
 
@@ -112,6 +111,7 @@ New moves:
 - #690 The girls on the bigger farm: routes, how far they walk, where they wait
 - #691 Put the jobs on the new fields
 - #713 The Moor: open common grazing beyond Back Lane, up to the ridge wall
+- #708 See further on a clear day, with a far landscape beyond the map's edges
 - #692 Open the new farm: make it the default (the breaking release; until then the new map is built behind `?layout=2`)
 
 Existing: #565 (rewritten: Brook Meadow), #568 (rewritten: the drive), #569 (the neighbour across the lane), #616 (drag races on the drive), #615 (girls stuck behind the Dutch barn), #558, #563, #564, #561, #311, and the village fixes #386, #392, #536, #537, #539, #540, #541, #542, #543.
@@ -185,6 +185,8 @@ Everything else open that doesn't depend on where things are: the girls' minds, 
 The plan was filed as 57 new issues on 7 and 8 November 2026: #660 for this plan and its process, 8 in Foundations, 26 in The new map (13 reviews, 12 moves and opening the new farm), 10 in The farmstead, 4 in Crops, 1 in Pulled together, 7 in Ready for players. Ten of them (the view, the Moor, footpaths, water, the power line, the scrap corner, the church, the village hall, the animal year and the dairy herd) were added on 8 November.
 
 Four were rewritten: #360, #565, #568, #569. #122, #145, #569, #681, #682, #687, #688, #690, #692, #696, #697, #699 and every review were added to on 8 November (each review names its landmark and its sound).
+
+#708 moved from Foundations to The new map on 9 November: the far landscape starts at the new map's edge, and #692 now depends on it.
 
 Turned down on 8 November: a pheasant shoot, or any shooting (`docs/decisions/ideas-turned-down.md`).
 
