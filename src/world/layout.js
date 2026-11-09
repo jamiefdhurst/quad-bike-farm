@@ -24,12 +24,18 @@ const RAW = {
     logYard: { x: -17.5, z: -68, yaw: 0 }, // where the tractor stands to split logs
     bonfire: { x: -6, z: 71, yaw: 0 }, // the bonfire's middle
   },
-  // Physics terrain and the detailed visual terrain cover this square, centred: the farm, and the ground through the south gate.
+  // The ground: the rectangle (whole metres) that has physics and is drawn in tiles, fine near you and coarse far off (world/groundTiles.js). Not
+  // centred on anything: it is as big as the farm and what is round it needs (#665).
+  ground: { minX: -210, maxX: 210, minZ: -210, maxZ: 210 },
+  // The square the painted ground texture covers (world/groundTexture.js), centred. It is 4096 pixels across, so ground beyond it has no painting.
   terrainSize: 420,
-  terrainSegments: 420,
-  // A coarser visual ring extends out to this size for the horizon.
+  // A coarser visual ring extends this far beyond the ground's edge for the horizon (world/terrain.js).
+  outerMargin: 290,
+  // The size of the old centred ring (outerMargin and the ground together), which the distant trees still scatter over.
   outerSize: 1000,
-  outerSegments: 250,
+  // Places the frame budget stands at besides its built-in ones, by the name `BUDGETS` has them under: `{ x, z }`, written with `at(...)` from the
+  // place's anchor (tools/frameBudget.mjs). Each move adds the spots for what it puts on the map.
+  budgetSpots: {},
 
   // The grass field (the track, the yard and the barn are in it) is bounded by hedges on this square.
   fieldHalf: 80,

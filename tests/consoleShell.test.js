@@ -385,6 +385,12 @@ describe('perf', () => {
     expect(lines).toContain('last long frames: 41 ms, memory clean-up; 36 ms, drawing (30 ms)');
     expect(lines).toContain('memory 183 MB, allocating 12.3 MB a second');
   });
+
+  it('says how the ground\'s tiles are drawn (#665)', () => {
+    const { shell, state } = makeWorld();
+    state.perfExtra = { ground: { tiles: 49, built: 49, waiting: 0, bySteps: { 1: 29, 2: 20 }, worstBuildMs: 3.456 } };
+    expect(text(shell.run('perf')).split('\n')).toContain('ground: 49 of 49 tiles drawn (29 every 1 m, 20 every 2 m), 0 waiting; the slowest took 3.5 ms to build');
+  });
 });
 
 describe('scenes', () => {

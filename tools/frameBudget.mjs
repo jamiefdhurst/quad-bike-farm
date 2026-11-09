@@ -12,11 +12,12 @@ export const BUDGETS = {
   // Each is what the spot measured when the count was made the same on every run (#597: spawn 583 calls and 2.99M triangles, yard 2,724 and 3.70M, village 1,993 and
   // 3.68M, wood 1,394 and 3.75M, hilltop 1,621 and 6.58M, the same on every run) and about 8% over. The animals, the girls and the lane's traffic are not in them; the real
   // frame, moving things and all, is `tools/perf.mjs`.
-  spawn: { calls: 630, triangles: 3.23e6 },
-  yard: { calls: 2940, triangles: 4.0e6 },
-  village: { calls: 2150, triangles: 3.98e6 },
-  wood: { calls: 1505, triangles: 4.06e6 },
-  hilltop: { calls: 1750, triangles: 7.1e6 },
+  // The triangle budgets were tightened to about 8% over what the ground in tiles drew (#665: 2.71M, 3.47M, 3.49M, 3.53M and 6.49M), which is 8% fewer than before.
+  spawn: { calls: 630, triangles: 2.93e6 },
+  yard: { calls: 2940, triangles: 3.75e6 },
+  village: { calls: 2150, triangles: 3.77e6 },
+  wood: { calls: 1505, triangles: 3.81e6 },
+  hilltop: { calls: 1750, triangles: 7.0e6 },
   // Everything left out of those counts, drawn up as if all of it were in view (5,275 calls and 1.43M triangles, about 8% over). It is not a frame: it is what a new
   // herd, rider or vehicle body adds to the farm's moving things, which the spots no longer see. Raise it only on purpose (`MOVERS` in `measureInPage`).
   movers: { calls: 5700, triangles: 1.55e6 },
@@ -25,6 +26,9 @@ export const BUDGETS = {
 /** Spots over their budget today, which are reported and not failed on until the issue that brings them back under makes them strict. None now:
  * spawn came under in #365. */
 export const KNOWN_OVER = [];
+
+/** The spots `measureInPage` knows how to find by itself; any other name in `BUDGETS` has to be in `layout.budgetSpots` (a test checks). */
+export const BUILT_IN_SPOTS = ['spawn', 'yard', 'village', 'wood', 'hilltop'];
 
 export const SPOTS = Object.keys(BUDGETS).filter((k) => k !== 'movers');
 
@@ -178,6 +182,13 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
     if (spots.includes('wood')) {
       if (layout.woods) out.wood = await lookFrom(layout.woods.gate.x, layout.woods.leadIn[1][1]);
       else notes.push('no wood on this farm');
+    }
+    // The spots the layout names (`layout.budgetSpots`: { x, z } each, written from the place's anchor), by the name `BUDGETS` has them under.
+    for (const name of spots) {
+      if (['spawn', 'yard', 'village', 'wood', 'hilltop'].includes(name)) continue; // (this runs in the page, so it cannot use BUILT_IN_SPOTS)
+      const at = layout.budgetSpots?.[name];
+      if (at) out[name] = await lookFrom(at.x, at.z);
+      else notes.push(`no spot called ${name} in the layout`);
     }
     if (spots.includes('hilltop')) {
       if (layout.hill) {

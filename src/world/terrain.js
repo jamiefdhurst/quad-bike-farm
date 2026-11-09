@@ -2,65 +2,27 @@ import * as THREE from 'three';
 import { createGroundCanvas, createDetailCanvas } from './groundTexture.js';
 import { patchColor, patchBlend } from './patchwork.js';
 import { tarmacMask } from './roadWet.js';
+import { DEFAULT_GROUND_PARAMS, GroundGrid, TileSet, tileMeshData, cutTiles, groundBounds } from './groundTiles.js';
 
 export { patchAt } from './patchwork.js';
 
 /**
- * Builds the detailed field terrain (visual mesh plus Rapier heightfield) and a
- * coarser patchwork ring of neighbouring fields out to the horizon.
+ * Builds the ground: one Rapier heightfield over the whole of `layout.ground` and the visual terrain in tiles that are built as they are needed
+ * (groundTiles.js), plus a coarser patchwork ring of neighbouring fields out to the horizon.
  */
-export function createTerrain({ scene, physics, RAPIER, layout, heights, track, renderer, wear, fields, roadMud, autumn = false }) {
-  const { terrainSize: size, terrainSegments: segs } = layout;
-  const half = size / 2;
-  const step = size / segs;
-  const n = segs + 1;
+export function createTerrain({ scene, physics, RAPIER, layout, heights, track, renderer, wear, fields, roadMud, autumn = false, params = { ...DEFAULT_GROUND_PARAMS } }) {
+  const size = layout.terrainSize; // the square the ground texture is painted over
+  const bounds = groundBounds(layout);
 
-  // Sample heights once; shared by the mesh and the collider.
-  const grid = new Float32Array(n * n); // grid[ix * n + iz]
-  for (let ix = 0; ix < n; ix++) {
-    for (let iz = 0; iz < n; iz++) {
-      grid[ix * n + iz] = heights.heightAt(-half + ix * step, -half + iz * step);
-    }
-  }
+  // Sample heights once; shared by the tiles and the collider.
+  const grid = new GroundGrid(bounds, heights.heightAt);
 
-  // Physics. Rapier's heightfield is column-major with rows along z.
+  // Physics. Rapier's heightfield is column-major with rows along z, and centred on the collider's translation.
   const collider = physics.createCollider(
-    RAPIER.ColliderDesc.heightfield(segs, segs, grid, { x: size, y: 1, z: size }).setFriction(0.9),
+    RAPIER.ColliderDesc.heightfield(grid.nz, grid.nx, grid.heights, { x: grid.nx, y: 1, z: grid.nz })
+      .setTranslation((bounds.minX + bounds.maxX) / 2, 0, (bounds.minZ + bounds.maxZ) / 2)
+      .setFriction(0.9),
   );
-
-  // Visual mesh.
-  const positions = new Float32Array(n * n * 3);
-  const uvs = new Float32Array(n * n * 2);
-  const colors = new Float32Array(n * n * 3);
-  for (let ix = 0; ix < n; ix++) {
-    for (let iz = 0; iz < n; iz++) {
-      const i = ix * n + iz;
-      const x = -half + ix * step;
-      const z = -half + iz * step;
-      positions.set([x, grid[i], z], i * 3);
-      uvs.set([ix / segs, iz / segs], i * 2);
-      // Low-frequency tint, a little darker in the hedge shadow.
-      const shade = fields.hedgeDistance(x, z) < 4 ? 0.82 : 1;
-      const v = (0.92 + 0.08 * Math.sin(x * 0.05 + 1.3) * Math.cos(z * 0.06)) * shade;
-      colors.set([v, v, v], i * 3);
-    }
-  }
-  const indices = [];
-  for (let ix = 0; ix < segs; ix++) {
-    for (let iz = 0; iz < segs; iz++) {
-      const a = ix * n + iz;
-      const b = a + 1;
-      const c = a + n;
-      const d = c + 1;
-      indices.push(a, b, c, c, b, d);
-    }
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  geo.setIndex(indices);
-  geo.computeVertexNormals();
 
   const groundTex = new THREE.CanvasTexture(
     // About 10 pixels a metre, as it was on the old 200 m square at 2048.
@@ -113,36 +75,61 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
     roadMud: { map: roadMudTex, origin: new THREE.Vector2(mudData.minX, mudData.minZ), size: new THREE.Vector2(mudData.sizeX, mudData.sizeZ) },
   });
 
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.receiveShadow = true;
-  mesh.name = 'terrain';
+  // The tiles. A tile's mesh is made the first time it is wanted and its geometry swapped when its detail changes.
+  const mesh = new THREE.Group();
+  mesh.name = 'terrainTiles';
   scene.add(mesh);
+  const meshes = new Map();
+  const paintHalf = size / 2;
+  const uvOf = (x, z) => [(x + paintHalf) / size, (z + paintHalf) / size];
+  // Low-frequency tint, a little darker in the hedge shadow.
+  const tint = (x, z) => (0.92 + 0.08 * Math.sin(x * 0.05 + 1.3) * Math.cos(z * 0.06)) * (fields.hedgeDistance(x, z) < 4 ? 0.82 : 1);
+  const { tiles, cols, rows } = cutTiles(bounds);
+  const tileSet = new TileSet(tiles, cols, rows, params, {
+    build(tile, step, edges) {
+      const t = tileMeshData(grid, tile, step, edges, tint, uvOf);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(t.positions, 3));
+      geo.setAttribute('normal', new THREE.BufferAttribute(t.normals, 3));
+      geo.setAttribute('uv', new THREE.BufferAttribute(t.uvs, 2));
+      geo.setAttribute('color', new THREE.BufferAttribute(t.colors, 3));
+      geo.setIndex(new THREE.BufferAttribute(t.index, 1));
+      let m = meshes.get(tile.id);
+      if (!m) {
+        m = new THREE.Mesh(geo, mat);
+        m.receiveShadow = true;
+        m.name = 'terrain';
+        meshes.set(tile.id, m);
+        mesh.add(m);
+      } else {
+        m.geometry.dispose();
+        m.geometry = geo;
+      }
+    },
+  });
 
-  scene.add(createOuterRing(layout, heights, fields));
+  scene.add(createOuterRing(layout, bounds, heights, fields));
 
-  return { mesh, collider, hayPatch, frost, snow, roadWet, skyTint, wearTexture: wearTex, roadMudTexture: roadMudTex, meshHeightAt: (x, z) => gridHeight(grid, n, step, half, x, z) };
-}
-
-/**
- * Height of the visual terrain mesh itself (flat triangles between the 1 m
- * samples), or NaN off the detailed square. Cheap; for things that must sit
- * exactly on the drawn ground, like wheel ruts and mud specks.
- */
-function gridHeight(grid, n, step, half, x, z) {
-  const gx = (x + half) / step;
-  const gz = (z + half) / step;
-  const ix = Math.floor(gx);
-  const iz = Math.floor(gz);
-  if (ix < 0 || iz < 0 || ix >= n - 1 || iz >= n - 1) return NaN;
-  const fx = gx - ix;
-  const fz = gz - iz;
-  const a = grid[ix * n + iz];
-  const b = grid[ix * n + iz + 1];
-  const c = grid[(ix + 1) * n + iz];
-  const d = grid[(ix + 1) * n + iz + 1];
-  // Each cell is split along its b-c diagonal, as in the index buffer.
-  if (fx + fz <= 1) return a + (c - a) * fx + (b - a) * fz;
-  return d + (b - d) * (1 - fx) + (c - d) * (1 - fz);
+  return {
+    mesh,
+    material: mat,
+    collider,
+    bounds,
+    grid,
+    tileSet,
+    /** Builds the tiles round (x, z) that the start screen can hide. */
+    prime: (x, z) => tileSet.prime(x, z),
+    /** Keeps the tiles as fine as the distance wants, building a few a frame. */
+    update: (x, z) => tileSet.update(x, z),
+    hayPatch,
+    frost,
+    snow,
+    roadWet,
+    skyTint,
+    wearTexture: wearTex,
+    roadMudTexture: roadMudTex,
+    meshHeightAt: (x, z) => grid.surfaceAt(x, z),
+  };
 }
 
 /** Multiplies a tiling greyscale texture over the diffuse colour in world space, and lays the worn ground and the road's mud over it. */
@@ -251,19 +238,26 @@ function addDetailLayer(material, detailTex, scale, { quarryRect, wear, roadMud,
   };
 }
 
-function createOuterRing(layout, heights, fields) {
-  const { outerSize: size, outerSegments: segs, terrainSize } = layout;
-  const half = size / 2;
-  const inner = terrainSize / 2;
-  const step = size / segs;
-  const n = segs + 1;
-  const positions = new Float32Array(n * n * 3);
-  const colors = new Float32Array(n * n * 3);
-  for (let ix = 0; ix < n; ix++) {
-    for (let iz = 0; iz < n; iz++) {
-      const i = ix * n + iz;
-      const x = -half + ix * step;
-      const z = -half + iz * step;
+function createOuterRing(layout, bounds, heights, fields) {
+  const m = layout.outerMargin;
+  const minX = bounds.minX - m;
+  const minZ = bounds.minZ - m;
+  const spanX = bounds.maxX - bounds.minX + 2 * m;
+  const spanZ = bounds.maxZ - bounds.minZ + 2 * m;
+  const stepTarget = 4;
+  const segX = Math.ceil(spanX / stepTarget);
+  const segZ = Math.ceil(spanZ / stepTarget);
+  const stepX = spanX / segX;
+  const stepZ = spanZ / segZ;
+  const nz = segZ + 1;
+  const count = (segX + 1) * nz;
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  for (let ix = 0; ix <= segX; ix++) {
+    for (let iz = 0; iz <= segZ; iz++) {
+      const i = ix * nz + iz;
+      const x = minX + ix * stepX;
+      const z = minZ + iz * stepZ;
       positions.set([x, heights.heightAt(x, z), z], i * 3);
       // Fading from the farm's grass just beyond its hedges, as the ground texture does (groundTexture.js).
       colors.set(patchColor(x, z, patchBlend(fields.outside(x, z))), i * 3);
@@ -271,16 +265,16 @@ function createOuterRing(layout, heights, fields) {
   }
   const indices = [];
   const inside = (ix, iz) => {
-    const x = -half + ix * step;
-    const z = -half + iz * step;
-    return Math.abs(x) <= inner + 1e-3 && Math.abs(z) <= inner + 1e-3;
+    const x = minX + ix * stepX;
+    const z = minZ + iz * stepZ;
+    return x >= bounds.minX - 1e-3 && x <= bounds.maxX + 1e-3 && z >= bounds.minZ - 1e-3 && z <= bounds.maxZ + 1e-3;
   };
-  for (let ix = 0; ix < segs; ix++) {
-    for (let iz = 0; iz < segs; iz++) {
+  for (let ix = 0; ix < segX; ix++) {
+    for (let iz = 0; iz < segZ; iz++) {
       if (inside(ix, iz) && inside(ix + 1, iz + 1) && inside(ix + 1, iz) && inside(ix, iz + 1)) continue;
-      const a = ix * n + iz;
+      const a = ix * nz + iz;
       const b = a + 1;
-      const c = a + n;
+      const c = a + nz;
       const d = c + 1;
       indices.push(a, b, c, c, b, d);
     }

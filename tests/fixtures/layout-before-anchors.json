@@ -1,8 +1,6 @@
 {
  "terrainSize": 420,
- "terrainSegments": 420,
  "outerSize": 1000,
- "outerSegments": 250,
  "fieldHalf": 80,
  "farm": {
   "minX": -80,

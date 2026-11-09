@@ -11742,7 +11742,7 @@ export class Game {
     this.guard.run('updateTidyUp', () => this.updateTidyUp(dt));
     this.guard.run('updateLostThings', () => this.updateLostThings(dt));
     this.guard.run('updateDaylight', () => this.weatherHost.updateDaylight(dt));
-    this.world.update(dt, board ? board.quad.position : this.player.position, this.camera);
+    this.world.update(dt, board ? board.quad.position : this.player.position, this.camera, this.guard);
     this.guard.run('updateWeather', () => this.updateWeather(dt));
     fb.lap('world, weather and effects', performance.now());
     this.guard.run('updateAchievements', () => this.updateAchievements(dt, ridden));
