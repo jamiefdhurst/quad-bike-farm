@@ -82,7 +82,8 @@ export function instanceModel(modelRoot, matrices, { castShadow = true, receiveS
     if (!o.isMesh) return;
     const placed = matrices.map((m) => new THREE.Matrix4().multiplyMatrices(m, o.matrixWorld));
     const tiles = tiledInstances(o.geometry, o.material, placed, { tileSize: MODEL_TILE, castShadow, receiveShadow });
-    group.add(...tiles.children);
+    // `add()` with no arguments logs an error, which a model with nothing to place (a hedge-less layout) would trigger.
+    if (tiles.children.length) group.add(...tiles.children);
   });
   return group;
 }
