@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { stationLibrary, idsInUse, musicFiles, RadioLibrary } from '../src/audio/radioLibrary.js';
 import { RadioAudio, distortionCurve } from '../src/audio/radioAudio.js';
+import { Radio, RADIO_PARAMS } from '../src/vehicle/radio.js';
 
 const manifests = {
   music: [
@@ -66,6 +67,21 @@ describe('the radio audio', () => {
     a.library.revision = 1;
     return a;
   };
+
+  it('hands the browser finite numbers for a radio that has never been retuned, which throws otherwise (#764)', () => {
+    const a = audio();
+    const param = { setTargetAtTime: (v) => { if (!Number.isFinite(v)) throw new TypeError('The provided float value is non-finite.'); } };
+    const radio = new Radio('corsa');
+    radio.set(true);
+    radio.update(0.1, { power: true });
+    expect(radio.sinceRetune).toBe(Infinity);
+    a.chains.set('corsa', {
+      station: radio.station, silentFor: 0, popDebt: 0, speaker: {}, out: { gain: param }, dull: { frequency: param },
+      programme: { gain: param }, hiss: { gain: param }, hissFilter: { frequency: param },
+    });
+    a.schedule = () => {}; // what is on, which is not what this is about
+    expect(() => a.update([{ key: 'corsa', radio, distance: 2, inside: true }], 0, RADIO_PARAMS)).not.toThrow();
+  });
 
   it('has one programme a station, shared, that follows the library as it grows', () => {
     const a = audio();

@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { choose, mainNeed, nextThink, OFFER_KINDS } from './chooser.js';
 import { agendaKey } from './agenda.js';
+import { GO_KINDS } from './tractorGo.js';
 import { showOffBoost } from '../world/kids.js';
 import { underCover } from './soaking.js';
 

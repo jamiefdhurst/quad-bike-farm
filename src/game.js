@@ -119,7 +119,7 @@ import { RackHost } from './items/rackHost.js';
 import { TowHost } from './items/towHost.js';
 import { Tailgate, TAILGATE_PARAM_RANGES } from './vehicle/tailgate.js';
 import { UtvRide, UTV_RIDE_PARAM_RANGES, DEFAULT_UTV_RIDE_PARAMS } from './npc/utvRide.js';
-import { TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
+import { GO_KINDS, TractorGo, TRACTORGO_PARAM_RANGES } from './npc/tractorGo.js';
 import { vehicleOptions, wheelChildren } from './npc/vehicleWheel.js';
 import { RadioAudio } from './audio/radioAudio.js';
 import { STATION_PARAMS, STATION_PARAM_RANGES, stationById } from './audio/radioStation.js';
@@ -410,8 +410,6 @@ const SETTLE_SECONDS = 2; // physics run while loading so the vehicles are on th
 const MAX_FRAME_DT = 0.1;
 const RACE_STAGE_BACK = 14; // metres behind the start line the girls stage before they come up to the grid
 
-// The vehicles the girls take for a go (and are asked to start): the tractor, the UTV and the two Land Rovers.
-const GO_KINDS = ['tractor', 'utv', 'landy', 'defender', 'fiesta', 'corsa', 'p309'];
 const CAR_KINDS = ['fiesta', 'corsa']; // the girls' own cars: each goes out only with her owner at the wheel (npc/carGo.js)
 const OWNED_KINDS = [...CAR_KINDS, 'p309']; // every car with an owner, yours too (#229): only its owner drives it, so no girl takes it for a go
 const CAB_KINDS = ['landy', 'defender', ...OWNED_KINDS]; // the Land Rovers and the cars: in `landys`, a cab with seats behind the wheel

@@ -262,7 +262,8 @@ export class RadioAudio {
       // a weak station is thin in the noise: the voice drops, the hiss comes up
       chain.programme.gain.setTargetAtTime((0.25 + 0.75 * signal * signal) * (1 - 0.9 * between), t, between > 0 ? 0.02 : 0.15);
       chain.hiss.gain.setTargetAtTime(prof.hiss * (0.012 + 0.16 * (1 - signal)) + 0.35 * between, t, between > 0 ? 0.02 : 0.15);
-      chain.hissFilter.frequency.setTargetAtTime(2200 + 2500 * between * Math.sin(radio.sinceRetune * 40), t, 0.03);
+      // (only between stations: a radio never retuned has been on its station for an infinity of seconds, and the sine of that is not a number, #764)
+      chain.hissFilter.frequency.setTargetAtTime(2200 + (between > 0 ? 2500 * between * Math.sin(radio.sinceRetune * 40) : 0), t, 0.03);
       // pops and spits: more in static, and the ignition's tick rising with the revs
       chain.popDebt += dt * this.p.crackleRate * (prof.crackle * (0.3 + 2.2 * (1 - signal)) + prof.whine * radio.rev * 3);
       while (chain.popDebt >= 1) {
