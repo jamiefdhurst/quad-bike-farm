@@ -55,7 +55,7 @@ const RAW = {
     // The farm road from the cattle grid to the hardstanding, laid level across with a 3 m shoulder (starting 2 m before its tarmac does).
     {
       id: 'farm', name: 'the farm road', surface: 'tarmac', halfWidth: FARM_ROAD.halfWidth, points: [[FARM_ROAD.fromX, FARM_ROAD.z], [FARM_ROAD.toX, FARM_ROAD.z]],
-      markings: { centre: 'none' }, verge: 2.8, hedged: true, map: true, draw: 'ground', level: { shoulder: 3, lead: [2, 0] }, pads: [{ x: FARM_PAD.x, z: FARM_ROAD.z, radius: FARM_PAD.radius }],
+      markings: { centre: 'none' }, verge: 2.8, hedged: true, draw: 'ground', level: { shoulder: 3, lead: [2, 0] }, pads: [{ x: FARM_PAD.x, z: FARM_ROAD.z, radius: FARM_PAD.radius }],
     },
     // The village street, off the lane's west side: it ends on the lane, and the give-way line is across the traffic leaving. The village lays its own
     // ground level (a plane along the street, village.js), so the street is not levelled here.

@@ -1684,7 +1684,7 @@ export class Game {
     // The farm map on M (hud/farmMap.js, mapView.js).
     this.mapParams = { ...DEFAULT_MAP_PARAMS };
     registerTuning('Map', this.mapParams, MAP_PARAM_RANGES);
-    this.farmMap = new MapView(document.getElementById('hud'), farmMapFeatures(L, this.world.fields, this.world.track), this.mapParams);
+    this.farmMap = new MapView(document.getElementById('hud'), farmMapFeatures(L, this.world.fields, this.world.track), this.mapParams, { woodpile: () => this.logStack?.count });
     this.interaction.add({
       target: this.leads.proxy,
       priority: 1, // they lie on the bench, whose box would otherwise be hit first
