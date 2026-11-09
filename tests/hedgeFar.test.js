@@ -51,7 +51,8 @@ describe('far hedge strips', () => {
     };
     const wall = grey('wall');
     const lum = (i) => wall[i] * 0.3 + wall[i + 1] * 0.59 + wall[i + 2] * 0.11;
-    expect(Math.abs(wall[0] - wall[2])).toBeLessThan(0.05); // grey, not green
+    expect(Math.abs(wall[0] - wall[2])).toBeLessThan(0.1); // a warm grey, not green
+    expect(wall[1]).toBeLessThan(wall[0] + 0.02); // no more green than red
     const lums = [];
     for (let i = 0; i < wall.length; i += 3) lums.push(lum(i));
     expect(Math.max(...lums)).toBeGreaterThan(Math.min(...lums) * 1.2); // the cope is lighter than the stone under it
