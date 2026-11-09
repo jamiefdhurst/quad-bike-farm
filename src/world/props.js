@@ -75,7 +75,7 @@ export function buildProps(ctx) {
   if (ctx.fields.woods) buildWoods(c);
   if (ctx.fields.quarry) buildQuarry(c);
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { hedgeSwap, barn, jumpRamp, silage, puddles, gates, neighbourFarm, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
+  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap].filter(Boolean), barn, jumpRamp, silage, puddles, gates, neighbourFarm, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
 }
 
 function buildBarn(c) {

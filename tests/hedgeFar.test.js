@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { farHedgeTriangles, buildFarHedges, HedgeSwap, leafTint } from '../src/world/hedgeFar.js';
+import { farHedgeTriangles, buildFarHedges, wallFarPieces, HedgeSwap, leafTint } from '../src/world/hedgeFar.js';
+import { tiledInstances, MODEL_TILE } from '../src/world/tiledInstances.js';
 
 const piece = (x, over = {}) => ({ x, z: 0, along: [1, 0], length: 1.2, width: 1.6, top: 3, groundA: 0, groundB: 0, kind: 'hedge', gap: false, ...over });
 const run = (xs, over = {}) => xs.map((x, i) => piece(x, { gap: i === 0, ...over }));
@@ -154,6 +155,40 @@ describe('the swap between blocks and strips', () => {
   it('puts a strip in the same tile as its block, so the two swap together', () => {
     const far = buildFarHedges([piece(10), piece(70, { gap: true })]);
     expect(far.children.map((m) => m.userData.tile.key).sort()).toEqual(['0,0', '1,0']);
+  });
+});
+
+describe('the far strips for a tiled wall', () => {
+  // Stones along z = 60 (a tile's edge) with the wall's jitter either side of it, over two spans with a gateway between, across a tile edge at x = 60.
+  const stones = [];
+  for (const [a, b] of [[40, 70], [75, 130]]) for (let x = a; x < b; x += 0.5) for (let c = 0; c < 4; c++) {
+    stones.push(new THREE.Matrix4().makeTranslation(x + (c % 2) * 0.05, 1, 60 + (c < 2 ? -0.06 : 0.06)));
+  }
+  const spans = [[40, 70], [75, 130]];
+  const near = tiledInstances(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial(), stones, { tileSize: MODEL_TILE });
+  const opts = { z: 60, height: 1, width: 0.55, groundAt: (x) => x * 0.01 };
+  const pieces = wallFarPieces(near, spans, opts);
+
+  it('puts a strip in the same tile as each of the wall\'s stones, even where the stones straddle a tile edge', () => {
+    const far = buildFarHedges(pieces, { name: 'wall' });
+    const keys = (g) => [...new Set(g.children.map((m) => m.userData.tile.key))].sort();
+    expect(keys(far)).toEqual(keys(near));
+    expect(new HedgeSwap(near, far).tiles.size).toBe(keys(near).length); // none is a strip with no blocks to swap with, or the other way
+  });
+
+  it('covers the wall along its length and none of the gateway, a gap where it starts', () => {
+    const ends = pieces.map((p) => [p.cx - p.length / 2, p.cx + p.length / 2]);
+    expect(Math.min(...ends.map((e) => e[0]))).toBeCloseTo(40, 1);
+    expect(ends.some(([a, b]) => b > 70.3 && a < 74.7)).toBe(false);
+    expect(pieces.filter((p) => p.gap).length).toBeGreaterThanOrEqual(2);
+    expect(pieces.every((p) => p.kind === 'wall' && p.cz === 60)).toBe(true);
+  });
+
+  it('follows the ground, the top a wall\'s height above it', () => {
+    for (const p of pieces) {
+      expect(p.top).toBeCloseTo(((p.groundA + p.groundB) / 2) + 1, 1);
+      expect(p.length).toBeLessThan(3.5);
+    }
   });
 });
 
