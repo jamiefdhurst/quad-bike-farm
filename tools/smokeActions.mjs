@@ -5,6 +5,41 @@
 // throws on a frame.
 //
 // These functions run in the page (puppeteer sends their source), so each is self-contained and takes what it needs as its argument.
+//
+// Every wait counts the game's time, not real seconds (#770): each frame's step is capped at 0.1 s, so on a slow or busy machine a second of game time can take
+// many seconds of real time, and a wait in real time then gives up before the game has done anything. `installGameClock` puts `smokeWait` on the page,
+// which waits for the game's own clock to move; a limit in real time stays, far above, only to stop a hung run.
+
+/** The most real seconds a wait may take over its game seconds, plus a flat allowance, before it is called hung: well above the 10 x the 0.1 s cap on a frame can cost. */
+export const HUNG_FACTOR = 60;
+export const HUNG_FLAT_S = 30;
+
+/**
+ * Run in the page once, after the game is up: `window.smokeWait(gameSeconds)` resolves when that much game time has passed (the frames' own steps, capped
+ * as the game caps them) and throws, saying it is the real-time limit, if the page was hung. `smokeGameTime()` reads the clock.
+ */
+export function installGameClock({ factor, flat }) {
+  const cap = 0.1; // MAX_FRAME_DT in game.js
+  let now = 0;
+  const getDelta = game.timer.getDelta.bind(game.timer);
+  game.timer.getDelta = () => {
+    const dt = getDelta();
+    now += Math.min(dt, cap);
+    return dt;
+  };
+  window.smokeGameTime = () => now;
+  window.smokeWait = async (seconds, until = () => false) => {
+    const from = now;
+    const started = performance.now();
+    const limit = (seconds * factor + flat) * 1000;
+    while (now - from < seconds && !until()) {
+      if (performance.now() - started > limit) {
+        throw new Error(`hung: ${seconds} s of game time took over ${Math.round(limit / 1000)} s of real time (the real-time limit, not the game-time one)`);
+      }
+      await new Promise((r) => setTimeout(r, 10));
+    }
+  };
+}
 
 /** Prompts the smoke test does not press E on, because they end the run: matched on the game's own object for each, with why. */
 export const PROMPTS_LEFT_OUT = [
@@ -28,7 +63,7 @@ export const RIDE_MS = 1500;
  */
 export async function doGirlActions({ wait, leftOut, vehicle }) {
   const g = game;
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const sleep = (ms) => smokeWait(ms / 1000); // game time (#770)
   const problems = [];
   let ran = 0;
   const unit = g.units.find((u) => u.id === vehicle) ?? g.units[0];
@@ -57,7 +92,7 @@ export async function doGirlActions({ wait, leftOut, vehicle }) {
 /** Every vehicle verb on every vehicle (a verb that does not fit one says so and does nothing, which is fine). Returns { ran, listed, problems }. */
 export async function doVehicleVerbs({ wait, leftOut }) {
   const g = game;
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const sleep = (ms) => smokeWait(ms / 1000); // game time (#770)
   const problems = [];
   let ran = 0;
   const verbs = g.console.host.vehicleVerbs.map((v) => v.name).filter((v) => !leftOut.includes(v));
@@ -81,7 +116,7 @@ export async function doVehicleVerbs({ wait, leftOut }) {
  */
 export async function pressPrompts({ wait, leftOut }) {
   const g = game;
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const sleep = (ms) => smokeWait(ms / 1000); // game time (#770)
   const problems = [];
   let ran = 0;
   // Off whatever you are on, driving it or on the back of a girl's (she may need a moment to stop).
@@ -140,7 +175,7 @@ export async function pressPrompts({ wait, leftOut }) {
 /** Each vehicle mounted, started, the throttle held for a moment, and got off. Returns { ran, listed, problems }. */
 export async function rideEach({ ms }) {
   const g = game;
-  const sleep = (t) => new Promise((r) => setTimeout(r, t));
+  const sleep = (ms) => smokeWait(ms / 1000); // game time (#770)
   // Off whatever you are on, driving it or on the back of a girl's (she may need a moment to stop).
   const getOff = async () => {
     for (let i = 0; i < 20 && g.boardUnit; i++) {
@@ -180,7 +215,7 @@ export async function rideEach({ ms }) {
 /** Every scene in SCENES, then `scene end`. A scene that stops at a line says so in what it returns (runScene catches), which is a problem. */
 export async function runEveryScene({ wait }) {
   const g = game;
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const sleep = (ms) => smokeWait(ms / 1000); // game time (#770)
   const problems = [];
   let ran = 0;
   // Off whatever you are on, driving it or on the back of a girl's (she may need a moment to stop).

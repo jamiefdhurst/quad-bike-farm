@@ -47,5 +47,7 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.js'],
     environment: 'node',
+    // Tests that build vehicle models took 3 to 5 s of the default 5 s on a busy Mac and timed out with nothing wrong (#770); the slowest set their own longer limit.
+    testTimeout: 30000,
   },
 });
