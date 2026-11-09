@@ -23,7 +23,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createServer } from 'vite';
 import puppeteer from 'puppeteer-core';
-import { CHROME_ARGS, chromePath } from './frameBudgetRun.mjs';
+import { CHROME_ARGS, LOAD_TIMEOUT_MS, chromePath } from './frameBudgetRun.mjs';
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => {
@@ -255,7 +255,7 @@ try {
     localStorage.clear();
   });
   await page.goto(`${base}?smoke&${query}`, { waitUntil: 'load' });
-  await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 180000, polling: 250 });
+  await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: LOAD_TIMEOUT_MS, polling: 250 });
 
   // Click through the overlay, then check it really went (it kept staying up in old screenshots), and hide the HUD.
   await page.click('#overlay').catch(() => {});

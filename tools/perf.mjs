@@ -18,7 +18,7 @@ import { dirname, resolve } from 'node:path';
 import { createServer, preview } from 'vite';
 import puppeteer from 'puppeteer-core';
 import { MEASURE_ARGS, measureInPage } from './frameBudget.mjs';
-import { chromePath } from './frameBudgetRun.mjs';
+import { LOAD_TIMEOUT_MS, chromePath } from './frameBudgetRun.mjs';
 import { combineRuns, report } from './perfReport.mjs';
 
 const args = process.argv.slice(2);
@@ -107,7 +107,7 @@ async function measureOnce(root, profileFor, showSteps) {
       }).observe(document, { subtree: true, childList: true, characterData: true });
     });
     await page.goto(`${server.resolvedUrls.local[0]}?smoke&seed=3&weather=sunny&time=15.5${query ? `&${query}` : ''}`, { waitUntil: 'load' });
-    await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: 150000, polling: 50 });
+    await page.waitForFunction(() => window.game?.companions && document.getElementById('overlay-status')?.textContent === 'Ready', { timeout: LOAD_TIMEOUT_MS, polling: 50 });
     const readyS = marks.find(([, s]) => s === 'Ready')?.[0] ?? (Date.now() - t0) / 1000;
     // Each step once, at the time it first showed (a step that counts "3/14" shows once per count otherwise).
     const seen = new Set();
