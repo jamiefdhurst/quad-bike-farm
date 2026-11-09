@@ -108,6 +108,7 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
     holdStill(true);
     g.world.sky.fit.ready = false; // the shadow window eases round to the way you look over a second or two, so the count would depend on how long it had had: snap it
     await settle(3); // the update that follows a move decides what is drawn
+    g.world.terrain.tileSet.update(g.camera.position.x, g.camera.position.z, Infinity); // the ground builds its tiles a few milliseconds a frame, so a slow machine had drawn fewer of the fine ones (#760): build them all
     g.world.farDetail.update(g.camera.position, 0, true, true); // and the far detail looks only every quarter second, so bring it up to date, from scratch: what it left out depends on where it has been
     info.reset();
     // The game does not draw on every animation frame, so count the draws themselves (render.frame goes up once a render).
