@@ -63,7 +63,7 @@ Each phase is a GitHub milestone, kept in `.github/settings.yml`. `/todo` takes 
 
 ### 0 · Foundations
 
-Nothing new to see; everything after this depends on it.
+Nothing new to see; everything after this depends on it. **Closed on 9 November 2026,** after three reviews.
 
 New:
 

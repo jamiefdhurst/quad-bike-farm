@@ -96,7 +96,7 @@ milestones:
   # The phases of docs/farm-plan.md, in the order /todo works them (tools/nextTodo.mjs). Title order is the run order.
   - title: "0 · Foundations"
     description: Nothing new to see: what the new map needs underneath. docs/farm-plan.md, 'The phases'.
-    state: open
+    state: closed
   - title: "1 · The new map"
     description: Review each area, then move it onto the new plan, behind ?layout=2 until 'Open the new farm'.
     state: open
