@@ -108,9 +108,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where is everything?',
-        a: `Press <kbd>M</kbd> for the farm map. It shows the fields, hedges and their gaps, the track and its bogs, the barns, the road, the
+        a: `Press <kbd>M</kbd> for the farm map. It shows the fields by name, hedges and their gaps, the track and its bogs, the barns, the lane and the
+          farm road, the neighbour's yard, Nether Thornby with its pub, shop and garage, the woodpile (with how many logs are on the stack), the
           hill and the wood, with you, the girls, every vehicle, the trailers, the jerry cans, the toolbox, the jump leads and the oil bottle marked on it.
-          The game keeps going while it's open, so you can glance at it as you ride.`,
+          The key is in its own strip along the bottom, clear of the map. The game keeps going while it's open, so you can glance at it as you ride.`,
         tip: 'Lost? M shows the farm map, with the girls, the vehicles and the jerry cans on it.',
       },
       {

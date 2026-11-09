@@ -1,13 +1,13 @@
 // The farm map on M, drawn on a canvas over the middle of the screen: the fixed ground (hud/farmMap.js) once to an offscreen canvas,
 // then you, the girls, the vehicles and the items on top of it each frame it's open. The game carries on underneath.
 
-import { MAP_COLOURS as C, mapTransform, placeMarkers, mapAngle } from './farmMap.js';
+import { MAP_COLOURS as C, mapTransform, placeMarkers, mapAngle, countedName } from './farmMap.js';
 import { sprayRuns, SPRAY_CELL, DOUBLED } from '../world/spraying.js';
 import { harrowRuns, HARROW_CELL, COMBED_ALONG_X } from '../world/harrowing.js';
 
 export class MapView {
-  /** `features` from farmMapFeatures, `params` DEFAULT_MAP_PARAMS (tuned live). */
-  constructor(root, features, params) {
+  /** `features` from farmMapFeatures, `params` DEFAULT_MAP_PARAMS (tuned live), `counts` what to add to a name that carries a count, by the label's `id`. */
+  constructor(root, features, params, counts = {}) {
     this.features = features;
     this.params = params;
     this.canvas = document.createElement('canvas');
@@ -18,6 +18,7 @@ export class MapView {
     this.ground = null; // the fixed layer, redrawn when the size changes
     this.groundKey = '';
     this.isOpen = false;
+    this.counts = counts; // each () => a number or undefined (the woodpile's logs on the stack)
   }
 
   toggle(force) {
@@ -49,6 +50,7 @@ export class MapView {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.drawSprayed(ctx, t);
     this.drawHarrowed(ctx, t);
+    this.drawCounted(ctx, t);
     this.drawLegend(ctx, t, markers);
     const order = { trailer: 0, item: 1, vehicle: 2, girl: 3, you: 4 };
     const placed = placeMarkers([...markers].sort((a, b) => order[a.kind] - order[b.kind]), t, 8);
@@ -99,6 +101,26 @@ export class MapView {
     }
   }
 
+  /** The names that carry a count, `Woodpile (12)`: drawn each frame over the fixed layer, since the count changes. */
+  drawCounted(ctx, t) {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const l of this.features.labels) {
+      if (!l.dynamic) continue;
+      const n = this.counts[l.id]?.();
+      this.drawName(ctx, countedName(l.text, n), l, t.toMap(l.x, l.z));
+    }
+  }
+
+  drawName(ctx, text, l, [u, v]) {
+    ctx.font = l.kind === 'field' ? 'italic 600 13px Georgia, serif' : '11px system-ui, sans-serif';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(240, 236, 222, 0.75)';
+    ctx.strokeText(text, u, v);
+    ctx.fillStyle = C.label;
+    ctx.fillText(text, u, v);
+  }
+
   drawGround(t, px, dpr) {
     const f = this.features;
     const c = document.createElement('canvas');
@@ -138,7 +160,7 @@ export class MapView {
     // Paper, the neighbours' land, then each field.
     ctx.fillStyle = C.paper;
     ctx.fillRect(0, 0, W, W);
-    rect(f.bounds, C.outside);
+    rect(f.ground, C.outside); // the neighbours' land; the sheet below it is the key's strip
     for (const a of f.areas) poly(a.points, a.fill);
     for (const wd of [f.wood, f.woodland]) {
       if (!wd) continue;
@@ -262,19 +284,15 @@ export class MapView {
       ctx.fill();
     }
     for (const b of [...f.buildings, ...f.small]) rect(b.rect, b.fill);
+    if (f.woodpile) {
+      for (const r of f.woodpile.rounds) disc(r.x, r.z, r.r, C.fence);
+      poly(f.woodpile.stack, C.fence, C.ink);
+    }
 
     // The names.
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    for (const l of f.labels) {
-      const [u, v] = P(l.x, l.z);
-      ctx.font = l.kind === 'field' ? 'italic 600 13px Georgia, serif' : '11px system-ui, sans-serif';
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = 'rgba(240, 236, 222, 0.75)';
-      ctx.strokeText(l.text, u, v);
-      ctx.fillStyle = C.label;
-      ctx.fillText(l.text, u, v);
-    }
+    for (const l of f.labels) if (!l.dynamic) this.drawName(ctx, l.text, l, P(l.x, l.z));
 
     // Starts and finishes: a green S or a blue F in a small square, so the letter says it as well as the colour.
     ctx.font = '700 10px system-ui, sans-serif';
@@ -291,8 +309,18 @@ export class MapView {
       ctx.fillText(m.kind === 'start' ? 'S' : 'F', u, v + 0.5);
     }
 
-    // A north arrow and a 50 m scale bar in the bottom corner of the key's corner of the map, and a frame.
-    const [nu, nv] = P(f.key.maxX - 6, f.key.maxZ - 34);
+    // The key's strip, ruled off from the ground: a north arrow and a 50 m scale bar at its right-hand end (the list is drawn each frame, by drawLegend).
+    const rv = P(0, f.ground.maxZ)[1];
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = C.ink;
+    ctx.beginPath();
+    ctx.moveTo(1, rv);
+    ctx.lineTo(W - 1, rv);
+    ctx.stroke();
+    const [, kv0] = P(0, f.key.minZ);
+    const [, kv1] = P(0, f.key.maxZ);
+    const nu = W - 30;
+    const nv = (kv0 + kv1) / 2 - 4;
     ctx.fillStyle = C.ink;
     ctx.beginPath();
     ctx.moveTo(nu, nv - 12);
@@ -301,38 +329,43 @@ export class MapView {
     ctx.lineTo(nu - 6, nv + 6);
     ctx.closePath();
     ctx.fill();
+    ctx.textAlign = 'center';
     ctx.font = '600 11px system-ui, sans-serif';
     ctx.fillText('N', nu, nv - 20);
-    const [su, sv] = P(f.key.maxX - 56, f.key.maxZ - 4);
+    const su = W - 12 - 50 * s;
+    const sv = kv1 - 6;
     ctx.fillRect(su, sv, 50 * s, 3);
     ctx.fillRect(su, sv - 3, 1.5, 9);
     ctx.fillRect(su + 50 * s - 1.5, sv - 3, 1.5, 9);
     ctx.font = '10px system-ui, sans-serif';
     ctx.fillText('50 m', su + 25 * s, sv - 8);
     ctx.lineWidth = 2;
-    ctx.strokeStyle = C.ink;
     ctx.strokeRect(1, 1, W - 2, W - 2);
     return c;
   }
 
-  /** The key, in the neighbours' land south of the farm and east of the hill: a line for each person, vehicle and item on the map. */
+  /**
+   * The key, in its strip below the ground: a line for each person, vehicle and item on the map, in as many columns as fit across the sheet's
+   * width (past the strip's ends, the north arrow and the scale bar keep the right-hand end), the rows drawn closer if they would not fit down it.
+   */
   drawLegend(ctx, t, markers) {
     const k = this.features.key;
-    const [u0, v0] = t.toMap(k.minX, k.minZ);
-    const [u1, v1] = t.toMap(k.maxX, k.maxZ);
-    const row = 15;
+    const [, v0] = t.toMap(0, k.minZ);
+    const [, v1] = t.toMap(0, k.maxZ);
+    const u0 = 10;
+    const u1 = t.width - 100; // the arrow and the scale bar
     const seen = new Set();
     const rows = markers.filter((m) => m.label && !seen.has(m.label) && seen.add(m.label));
-    // The bottom right is the north arrow's and the scale bar's.
-    const perCol = Math.max(1, Math.floor((v1 - v0 - 34) / row));
-    const cols = Math.ceil(rows.length / perCol);
-    const colWidth = (u1 - u0 - 30) / Math.max(1, cols);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.font = '11px system-ui, sans-serif';
+    const colWidth = Math.max(60, ...rows.map((m) => ctx.measureText(m.label).width)) + 26;
+    const cols = Math.max(1, Math.min(rows.length, Math.floor((u1 - u0) / colWidth)));
+    const perCol = Math.ceil(rows.length / cols);
+    const row = Math.min(15, (v1 - v0 - 4) / Math.max(1, perCol));
     rows.forEach((m, i) => {
       const x = u0 + Math.floor(i / perCol) * colWidth;
-      const y = v0 + 6 + (i % perCol) * row;
+      const y = v0 + 8 + (i % perCol) * row;
       this.drawMarker(ctx, { ...m, u: x + 6, v: y, yaw: Math.PI, off: false }, 0.85, true);
       ctx.fillStyle = C.ink;
       ctx.fillText(m.label, x + 16, y);
