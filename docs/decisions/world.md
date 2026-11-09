@@ -1140,3 +1140,10 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - It depends on #681, #682, #686, #687, #688 and #713, and #692 depends on it, so the new farm doesn't open with its edges showing.
 - The church tower's far version came out of it: #715 builds the tower and depends on #708, so holding #708 open for the tower could never finish.
 - The default of 1500 m goes in with the ring. On a map with no far landscape, a longer view would show the edge.
+
+## A piece not yet moved stays where it is (#681, the review of Foundations)
+
+- Settled with Jamie on 9 November 2026. `layoutNew.js` starts from today's layout and replaces only what has moved, with `NOT_MOVED_YET` naming every place still at today's numbers. Each move takes its own off the list, and #692 needs it empty. The issues first said a piece not yet moved is left out of layout 2.
+- Why: leaving out a piece stopped the game loading for 16 of the 21 pieces tried, with only the wood, the quarry, the neighbour, the muck heap and the log yard coming through, and each showed only its first error. Only 27 of the 510 reads of the layout guard against a missing piece. Guarding them all is a large job that nothing on the new map needs.
+- A throwaway copy with #681's ground, outline, fields and hedges, a road of about 3 km and today's pieces where they stood loaded and played with no page errors, at about 1 ms more a frame. Old pieces sit oddly on the new map until they move, but only behind `?layout=2`.
+- The same trial showed what #759 and #760 now own: "Ready" going from 3.29 s to 5.68 s and every road edge blurred if the painted square is stretched to fit (#759), and CI's load taking 79 to 134 s of the smoke test's 150 s (#760).
