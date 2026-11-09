@@ -27,6 +27,16 @@ function sceneWith(...children) {
   return scene;
 }
 
+describe('the hedges and the wall', () => {
+  it('runs every swap it is given, each judged by the same distance', () => {
+    const seen = [];
+    const far = new FarDetail(sceneWith(), params);
+    far.hedgeSwaps = [{ update: (p, d, fresh) => seen.push(['hedges', p.x, d, fresh]) }, { update: (p, d, fresh) => seen.push(['wall', p.x, d, fresh]) }];
+    far.update(new THREE.Vector3(5, 0, 0), 0, true, true);
+    expect(seen).toEqual([['hedges', 5, params.hedgeFullDistance, true], ['wall', 5, params.hedgeFullDistance, true]]);
+  });
+});
+
 describe('detailLevel', () => {
   it('is 0 near, 1 past the detail distance and 2 past the shadow distance', () => {
     expect(detailLevel(10, params)).toBe(0);

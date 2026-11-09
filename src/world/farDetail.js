@@ -98,7 +98,7 @@ export class FarDetail {
     this.specks = new WeakMap(); // scene child -> { parts: [{ mesh, off }], age }: its small meshes, left out while too small on the screen to see
     this.inside = new WeakMap(); // set piece -> the vehicles standing in it
     this.centre = new THREE.Vector3();
-    this.hedges = null; // the swap of the hedges' blocks for far strips (hedgeFar.js), set by the world once the props are built
+    this.hedgeSwaps = []; // the swaps of the hedges' blocks and the wall's stones for far strips (hedgeFar.js), set by the world once the props are built
   }
 
   /** Looks at the scene from `position` every quarter second (always when `now`). With `fresh` (the frame budget's count, #597) each decision is made as if
@@ -118,7 +118,7 @@ export class FarDetail {
       else if (SET_PIECE_NAMES.includes(o.name)) this.within(o, position, this.params.setPieceDistance);
       else this.findSmall(o);
     }
-    this.hedges?.update(position, this.params.hedgeFullDistance, fresh);
+    for (const swap of this.hedgeSwaps) swap.update(position, this.params.hedgeFullDistance, fresh);
     this.smallShadows(position, fresh);
     this.leaveOutSpecks(position, fresh);
   }

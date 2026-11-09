@@ -5,11 +5,13 @@
 import * as THREE from 'three';
 import { instanceModel, modelBounds } from './assets.js';
 import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
+import { buildFarHedges, wallFarPieces, HedgeSwap } from './hedgeFar.js';
 import { buildElectricFence } from './electricFenceBuild.js';
 import { buildRiverside } from './riverProps.js';
 import { buildHut } from './hutBuild.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
+const WALL_WIDTH = 0.55; // m across the drystone wall's stones, for its far strip
 
 export function matrixAt(x, y, z, yaw, sx, sy = sx, sz = sx) {
   const q = new THREE.Quaternion().setFromAxisAngle(UP, yaw);
@@ -26,14 +28,15 @@ export function buildHill(c) {
   buildViewpoint(c);
   const hut = buildHut(c);
   buildElectricFence(c);
+  let wallSwap = null;
   if (c.fields.hill.riverside) buildRiverside(c);
   if (c.fields.hill.west) {
     buildPond(c, c.fields.hill, (x, z) => c.fields.hill.lineDistance(c.layout.hill.paddocks.west.track, x, z) < 3);
     buildMeadowTrees(c);
-    buildWall(c);
+    wallSwap = buildWall(c);
     buildThorns(c);
   }
-  return { stream, hut };
+  return { stream, hut, wallSwap };
 }
 
 /** Faint pale streaks along the stream, so the water's drift shows (the ribbon scrolls this across it). */
@@ -406,10 +409,14 @@ function buildMeadowTrees({ scene, models, layout, heights, physics, RAPIER, ran
   scene.add(instanceModel(models.bush.scene, bushes, { castShadow: false }));
 }
 
-/** The drystone wall across the sheep field (layout.hill.paddocks.east.wall): three courses of grey stones and a capping row, a gap in it, a collider along each side. */
+/**
+ * The drystone wall across the sheep field (layout.hill.paddocks.east.wall): three courses of grey stones and a capping row, a gap in it, a collider
+ * along each side. The stones are in tiles (`MODEL_TILE`) and a plain grey strip stands for each tile far off; returns the swap between them
+ * (hedgeFar.js, "Hedges and walls far away (#667)"), or null with no wall.
+ */
 function buildWall({ scene, layout, heights, fixedBox, random }) {
   const w = layout.hill.paddocks.east.wall;
-  if (!w) return;
+  if (!w) return null;
   const spans = [[w.from, w.gap.at - w.gap.half], [w.gap.at + w.gap.half, w.to]];
   const stones = [];
   for (const [a, b] of spans) {
@@ -432,21 +439,15 @@ function buildWall({ scene, layout, heights, fixedBox, random }) {
       fixedBox((pa + pb) / 2, top + w.height / 2 - 0.2, w.z, (pb - pa) / 2, w.height / 2 + 0.2, 0.25);
     }
   }
-  const mesh = new THREE.InstancedMesh(
-    new THREE.IcosahedronGeometry(1, 0),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true }),
-    stones.length,
-  );
   const col = new THREE.Color();
-  stones.forEach((m, i) => {
-    mesh.setMatrixAt(i, m);
-    col.setHSL(0.1 + random() * 0.05, 0.05 + random() * 0.08, 0.2 + random() * 0.14); // the material is lit white, so this reads as weathered grey
-    mesh.setColorAt(i, col);
+  const colors = stones.map(() => col.clone().setHSL(0.1 + random() * 0.05, 0.05 + random() * 0.08, 0.2 + random() * 0.14)); // the material is lit white, so this reads as weathered grey
+  const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true });
+  const near = tiledInstances(new THREE.IcosahedronGeometry(1, 0), material, stones, {
+    colors, tileSize: MODEL_TILE, castShadow: true, name: 'drystone wall',
   });
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.name = 'drystone wall';
-  scene.add(mesh);
+  const far = buildFarHedges(wallFarPieces(near, spans, { z: w.z, height: w.height, width: WALL_WIDTH, groundAt: (x, z) => heights.heightAt(x, z) }), { name: 'drystone wall far' });
+  scene.add(near, far);
+  return new HedgeSwap(near, far);
 }
 
 /** Thorn bushes in the sheep field: the farm's bush, big, with a trunk's worth of collider. */

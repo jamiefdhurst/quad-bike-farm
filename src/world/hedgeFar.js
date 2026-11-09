@@ -12,11 +12,12 @@ const FOOT = 0.6; // how dark the bottom of a hedge is against its top: the insi
 const KINDS = {
   // The share of its foot's width the top keeps (a hedge is clipped narrower at the top; a wall batters in), the colours as the near one has them.
   hedge: { taper: 0.65, side: 0x5d7d3f, top: 0x72925a, foot: FOOT },
-  wall: { taper: 0.8, side: 0x8d8b83, top: 0xb4b1a6, foot: 0.8 }, // grey stone, lighter copes along the top
+  wall: { taper: 0.8, side: 0xa39e90, top: 0xb5b0a2, foot: 0.85 }, // the drystone wall's weathered grey, a little lighter and warmer than its stones' average (hsl 0.125, 0.09, 0.27), as seen at 150 m; lighter along the cope
 };
 export const FAR_HEDGE_TOP = 0.96; // the strip's top against the block's bounding box: a block is leafy and thins at its top, so its eye-level top is a little under it
 export const FAR_HEDGE_WIDTH = 0.9; // and its width against the block's: the same
 export const FAR_HEDGE_END = 0.7; // m a stretch's strip runs past its last block's middle
+const WALL_END = 0.25; // m a wall's strip runs past its last stone's middle
 const MARGIN = 10; // m a tile of the near version holds past the distance once drawn, so the swap doesn't flicker on the line
 
 /**
@@ -98,6 +99,34 @@ export function farHedgeTriangles(runs, kind = 'hedge') {
     for (let k = 0; k < 3; k++) normals.set([x, y, z], i + k * 3);
   }
   return { positions: new Float32Array(positions), colors: new Float32Array(colors), normals, pieces: pieces.length };
+}
+
+/**
+ * The far pieces for a wall built of tiled stones (`hillProps.js`, buildWall): for each tile of `near` (a group of meshes with `userData.tile`)
+ * and each of the wall's `spans` ([from, to] along x) it crosses, short pieces `step` m long that follow the ground, in the tile's own bounds
+ * so a piece is in the same tile as the stones it stands for (`z` is the tile's, `cz` the wall's line). The first piece of a span has a `gap`.
+ */
+export function wallFarPieces(near, spans, { z, height, width, groundAt, step = 3 }) {
+  const pieces = [];
+  for (const mesh of near.children) {
+    const tile = mesh.userData.tile;
+    for (const [a, b] of spans) {
+      const lo = Math.max(a, tile.minX - WALL_END);
+      const hi = Math.min(b, tile.maxX + WALL_END);
+      if (hi - lo < WALL_END) continue;
+      const n = Math.max(1, Math.round((hi - lo) / step));
+      for (let k = 0; k < n; k++) {
+        const from = lo + ((hi - lo) * k) / n;
+        const to = lo + ((hi - lo) * (k + 1)) / n;
+        const mid = (from + to) / 2;
+        pieces.push({
+          x: mid, z: tile.minZ, cx: mid, cz: z, along: [1, 0], length: to - from, width, top: groundAt(mid, z) + height, gap: k === 0, kind: 'wall',
+          groundA: groundAt(from, z), groundB: groundAt(to, z),
+        });
+      }
+    }
+  }
+  return pieces;
 }
 
 /**
