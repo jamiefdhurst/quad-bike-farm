@@ -10,7 +10,7 @@ Graded from `tools/shot.mjs` shots (daylight and 20:00; the framing was far, so 
 | --- | --- | --- |
 | Barn, first span (`barnBuild.js`: walls, white corner posts, door frame, header, hay door frame and shutter, sliding doors on a rail) | good | Two door sizes differ (2.3 m and 2.0 m half widths); the hay door's top goes through the roof line |
 | Barn, second span (annex) | passable | Plain boards over the door up to the eaves, posts in place of a wall (open to the weather), no trim on the valley |
-| Barn roof | passable | No gutters or downpipes, no weather vane (#169) |
+| Barn roof | passable | A gutter on one edge only and no downpipes seen, no weather vane (#169) |
 | Loft (`loft.js`) | good | |
 | Workbench, toolbox, boards, cork board | good | The boards read as flat painted panels (#503) |
 | Bays 1 and 2 | block | Painted lines on a concrete floor: no kerb, no oil stain, no wheel stops (#404) |
