@@ -66,7 +66,7 @@ describe('which issue /todo takes next', () => {
 });
 
 describe('the milestones', () => {
-  const titles = ['0 · Foundations', '1 · The new map', '2 · The farmstead', '3 · Crops', '4 · Pulled together', '5 · Ready for players', 'Alongside'];
+  const titles = ['0 · Foundations', '1 · The new map', '2 · The farmstead', '3 · Crops', '4 · The vehicles', '5 · Pulled together', '6 · Ready for players', 'Alongside'];
 
   it('are in .github/settings.yml, each open or closed, in the order the plan runs them', () => {
     const yml = readFileSync('.github/settings.yml', 'utf8');
