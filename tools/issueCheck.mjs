@@ -21,7 +21,7 @@ import { pathToFileURL } from 'node:url';
 const MARK = '<!-- issue-check -->';
 
 // Sections that say where or why rather than what to do. Anything else is work, and a bullet in it that isn't gets ticked as `context:`.
-const NOT_WORK = /^(where it fits|questions?( to settle first)?|what is there now|settled with jamie|open issues for this area|findings|already done)\b/i;
+const NOT_WORK = /^(where it fits|questions?( to settle first)?|what is there now|settled with jamie|open issues for this area|findings|from the review|already done)\b/i;
 const NOT_PROSE = /^(depends on:|builds on:|was todo\b|\||>|<!--|---)/i;
 
 // Evidence names something that can be looked at: a file, an issue or PR, or anything in backticks (a test's name, a command).
