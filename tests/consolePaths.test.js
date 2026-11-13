@@ -7,6 +7,7 @@ import { VEHICLE_VERBS } from '../src/console/gameHost.js';
 import { VEHICLE_NAMES } from '../src/vehicle/names.js';
 import { girlActions } from '../src/debug/girlActions.js';
 import { jobActions } from '../src/debug/jobActions.js';
+import { SCENES } from '../src/debug/scenes.js';
 
 // `tools/consolePath.sh 'lane.kids on' 'tp me 105 -17' 'mist vauclair'` runs each line through the real command table and tree, so nothing
 // reaches Jamie unrun. The game is a stand-in: it has no vehicles of its own (the stand-in knows every vehicle by its model name:
@@ -39,12 +40,17 @@ const standIn = () => {
     vehicleVerb: (id, verb) => `${id}: ${verb}`,
     jobs: () => standInJobs().map((j) => ({ id: j.id, name: j.name, stage: '', verbs: j.actions.map((a) => ({ verb: a.verb, label: a.label })) })),
     jobVerb: () => undefined,
+    scenes: () => SCENES.map(({ id, label }) => ({ id, label })),
+    runScene: () => [],
   };
   return new Proxy(base, { get: (t, k) => (k in t ? t[k] : () => undefined) });
 };
 
+// `tools/issueLint.mjs` sends every backticked phrase of an issue and wants only the console lines judged: with CONSOLE_KNOWN_ONLY a line whose first
+// word is neither a command nor a folder of the tree is skipped, not called wrong.
 const check = (shell, line) => {
   const [head, ...rest] = line.trim().split(/\s+/);
+  if (process.env.CONSOLE_KNOWN_ONLY && !shell.command(head) && !Object.keys(shell.root.children()).includes(head.split('.')[0])) return `skip ${line}`;
   if (shell.command(head)) {
     const out = shell.run(line);
     const bad = out.find((o) => o.kind === 'error');

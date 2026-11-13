@@ -5,4 +5,4 @@
 # what it knows): paths under `vehicle.<id>` and `girl.<name>` can't be checked this way, so read gameTree.js for those.
 set -eu
 cd "$(dirname "$0")/.."
-CONSOLE_LINES=$(printf '%s\n' "$@") npx vitest run tests/consolePaths.test.js 2>&1 | grep -E '^(ok|NO) '
+CONSOLE_LINES=$(printf '%s\n' "$@") npx vitest run tests/consolePaths.test.js 2>&1 | grep -E '^(ok|NO|skip) '
