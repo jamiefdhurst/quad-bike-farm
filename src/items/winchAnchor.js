@@ -4,7 +4,7 @@
 const TRUNK_TOP = 4; // metres above the ground a trunk is hookable up to
 const HOOK_HEIGHT = 0.6; // metres above the ground the hook sits on a trunk
 
-/** A vehicle the winch never drags: the tractor, the cars, the Land Rovers and the UTV. The green pulls itself to them instead. */
+/** A vehicle the winch never drags: the tractor, the cars, the Tor, the Crag and the UTV. The green pulls itself to them instead. */
 export function isHeavy(spec) {
   return !!(spec && (spec.tractor || spec.landRover || spec.car || spec.utv));
 }

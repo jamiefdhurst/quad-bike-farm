@@ -50,7 +50,7 @@ export function vehicleFacts(spec) {
   const start = [];
   if (engine.compressionIgnition) start.push('glow plugs and the key');
   else if (!engine.noStarter) start.push('the key and the starter');
-  // The Land Rover's pullStart is its starting handle (a swing is the engine's pull).
+  // The Tor's or Crag's pullStart is its starting handle (a swing is the engine's pull).
   if (engine.crankHandle) start.push('a starting handle (P) for a flat battery');
   else if (spec.pullStart || engine.pullStart) start.push('a pull-start (P)');
   if (start.length) facts.push(['Starting', start.join(', ').replace(/^./, (c) => c.toUpperCase())]);

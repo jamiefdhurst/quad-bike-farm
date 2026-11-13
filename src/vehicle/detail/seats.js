@@ -9,7 +9,7 @@ import { loftGeometry, sweepGeometry } from '../quadGeometry.js';
 
 export const SEAT_KINDS = {
   bucket: { width: 0.5, depth: 0.5, thick: 0.12, back: 0.62, bolster: 0.06, pleats: 3 }, // a car's front seat: bolsters each side, pleated middle
-  bench: { width: 1.3, depth: 0.48, thick: 0.13, back: 0.45, bolster: 0, pleats: 7 }, // a Land Rover's or a UTV's bench, pleated across
+  bench: { width: 1.3, depth: 0.48, thick: 0.13, back: 0.45, bolster: 0, pleats: 7 }, // a Tor's or Crag's or a UTV's bench, pleated across
   single: { width: 0.48, depth: 0.46, thick: 0.12, back: 0.45, bolster: 0, pleats: 4 }, // a cab's plain single seat
   pan: { width: 0.44, depth: 0.4, thick: 0.03, back: 0.16, bolster: 0, pleats: 0 }, // a tractor's: a dished steel pan, a low lip behind
 };

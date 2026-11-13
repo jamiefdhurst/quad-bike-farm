@@ -5,7 +5,7 @@ import { QUAD_LAYOUT } from '../src/vehicle/quadPhysics.js';
 import { TOR_SPEC } from '../src/vehicle/quadSpecs.js';
 
 describe('stepping off', () => {
-  it('moves the side, front and back spots clear of the Land Rover at its size', () => {
+  it('moves the side, front and back spots clear of the Tor or Crag at its size', () => {
     const c = TOR_LAYOUT.chassis;
     const k = TOR_SPEC.scale ?? 1;
     const [x, z] = clearOfChassis([1.0, -0.15], c, k, 0.3);

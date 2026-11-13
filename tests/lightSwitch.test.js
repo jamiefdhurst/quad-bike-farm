@@ -49,7 +49,7 @@ describe('lightLamps', () => {
 });
 
 describe('the UTV', () => {
-  it('has the switches the console shows, and starts in 2WD like the Land Rover', () => {
+  it('has the switches the console shows, and starts in 2WD like the Tor or Crag', () => {
     expect(YAK_SPEC.driveSwitch).toBe(true);
     expect(YAK_SPEC.diffLock).toBe(true);
     expect(YAK_SPEC.vehicle.fourWheelDrive).toBe(0);

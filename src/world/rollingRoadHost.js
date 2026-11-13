@@ -1,5 +1,5 @@
 // The rolling road in the running game (farm/rollingRoad.js has the rules): the tuner turns up on her day as a visit of her own (traffic.js, a
-// `stay` step), her Land Rover towing the trailer (rollingRoadModel.js), and sets up in front of the barn. You ride a quad onto the rollers, get off, look
+// `stay` step), her Crag towing the trailer (rollingRoadModel.js), and sets up in front of the barn. You ride a quad onto the rollers, get off, look
 // at the screen on its post and press E: it takes the money from the tin, straps the quad down, holds its engine at a sweeping throttle against the rollers
 // (`quad.pto`, as the tractor's log splitter does) and writes down what the real engine model makes. The slip is handed over, the girls have their say, and
 // the results go up on the barn wall. TrafficHost builds it and calls update(); the debug panel and the console use the debug* methods.
@@ -159,7 +159,7 @@ export class RollingRoadHost {
     this.updateRun(dt);
   }
 
-  /** The Land Rover is on its way in (the schedule, or the console). */
+  /** The Tor or Crag is on its way in (the schedule, or the console). */
   call() {
     if (this.visit) return false;
     this.cameToday = true;
@@ -220,7 +220,7 @@ export class RollingRoadHost {
     }
   }
 
-  /** The Land Rover has stopped: the trailer stays where it is, the ramp comes down and the deck becomes solid. */
+  /** The Tor or Crag has stopped: the trailer stays where it is, the ramp comes down and the deck becomes solid. */
   setUp() {
     const d = this.visit.drive;
     this.site = rigSite({ x: d.x, z: d.z, yaw: d.yaw });
@@ -311,7 +311,7 @@ export class RollingRoadHost {
     this.screen();
   }
 
-  /** The trailer behind the Land Rover as it drives: the same heading, a hitch's length back, on the ground there. */
+  /** The trailer behind the Tor or Crag as it drives: the same heading, a hitch's length back, on the ground there. */
   followTow(d) {
     const m = this.model;
     const x = d.x - Math.sin(d.yaw) * RIG.hitch;

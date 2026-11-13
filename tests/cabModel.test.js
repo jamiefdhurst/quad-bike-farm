@@ -12,7 +12,7 @@ function fakeCanvas() {
   return { width: 0, height: 0, getContext: () => ctx, style: {} };
 }
 
-describe('Land Rover wheel arches', () => {
+describe('Tor and Crag wheel arches', () => {
   const wheel = TOR_LAYOUT.wheels[0];
   const centreY = wheel.radius + 0.2; // tyre radius plus the suspension's rest length: the wheel's height above the ground
   const make = (x, yBottom, yTop, z0, z1, zc) => {
@@ -43,7 +43,7 @@ describe('Land Rover wheel arches', () => {
   });
 });
 
-describe('Land Rover model', () => {
+describe('Tor model', () => {
   let model;
   beforeAll(() => {
     vi.stubGlobal('document', { createElement: () => fakeCanvas() });

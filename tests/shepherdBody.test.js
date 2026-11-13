@@ -10,7 +10,7 @@ import { FOR_SALE } from '../src/farm/classifieds.js';
 import { measureModel, proportionErrors, REAL_SIZES, IN_PROPORTION, PROPORTION_TOLERANCE } from '../src/vehicle/detail/realSizes.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
-// The farm bike (#75) as a Ridgeback Shepherd 200 after a Yamaha SHEPHERD: the numbers read off the photos, the parts it must have by name, the
+// The farm bike (#75) as a Ridgeback Shepherd 200: the numbers read off the photos, the parts it must have by name, the
 // controls the game poses, the room on the back and the front end turning about the bars' axis.
 
 const spec = EXTRA_SPECS.find((s) => s.id === 'shepherd');

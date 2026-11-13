@@ -388,7 +388,7 @@ class RecordedEngine {
         return true;
       }
       case 'handCrankOn':
-        // The Land Rover's starting handle: one clunk per swing, from its own recording.
+        // The Tor's or Crag's starting handle: one clunk per swing, from its own recording.
         this.playOneshot('handCrank', p.recStarterVolume);
         return true;
       case 'starterOff':

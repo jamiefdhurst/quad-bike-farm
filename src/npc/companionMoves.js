@@ -29,7 +29,7 @@ function pathPoint(from, to, heading, over, along, out) {
 export const DEFAULT_MOVE_PARAMS = {
   mountLift: 0.3, // metres: a foot up on a quad's footrest as she swings a leg over
   hopLift: 0.12, // metres of hop sitting back onto a seat
-  stepLift: 0.32, // metres up onto the sill of the UTV or Land Rover
+  stepLift: 0.32, // metres up onto the sill of the UTV, Tor or Crag
   climbLift: 0.55, // metres hauled up onto a trailer, an arch or a seat that high, unless the seat says otherwise
 };
 

@@ -1,4 +1,4 @@
-// A hand throttle (the tractor's lever, the Land Rover's dash knob): it moves while its key is held and stays wherever it is left.
+// A hand throttle (the tractor's lever, the Tor's or Crag's dash knob): it moves while its key is held and stays wherever it is left.
 // Pure logic, so it is tested without the quad (tests/handLever.test.js).
 
 export const HAND_THROTTLE_RATE = 0.35; // per second the lever moves while its key is held

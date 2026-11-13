@@ -47,7 +47,7 @@ describe('the novice', () => {
   });
 });
 
-describe('grinding the Land Rover\'s gears', () => {
+describe('grinding the Tor or Crag\'s gears', () => {
   const box = { crashGears: 2, crashSpeed: 1 };
   it('Jess grinds first and second while it is moving, not third or from a standstill', () => {
     const jess = new NoviceShifter();

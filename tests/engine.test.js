@@ -226,7 +226,7 @@ describe('firing pulses', () => {
     expect(fires).toBeCloseTo((avgRpm / 120) * seconds, -1);
   });
 
-  it('fires once per cylinder, evenly, with a four-cylinder (the Land Rover), each firing a quarter of the cycle', () => {
+  it('fires once per cylinder, evenly, with a four-cylinder (the Tor or Crag), each firing a quarter of the cycle', () => {
     const engine = makeEngine({ temperature: 1, params: { cylinders: 4 } });
     crank(engine, 3);
     run(engine, 2);

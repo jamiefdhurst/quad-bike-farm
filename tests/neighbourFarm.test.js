@@ -260,7 +260,7 @@ describe('what is said', () => {
     expect(NEIGHBOUR_VOICE.voiceBank).toBe('companion-voice-neighbour');
   });
 
-  it('matches the paint of a visitor kind that exists (she drives the same Land Rover)', () => {
+  it('matches the paint of a visitor kind that exists (she drives the same Tor or Crag)', () => {
     expect(VISITOR_KINDS.neighbour.model).toBe('tor');
     expect(S.parked.some((p) => p.kind === 'tor')).toBe(true);
   });

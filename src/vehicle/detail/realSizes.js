@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // How big each vehicle's real counterpart is (TODO 87; the real vehicle is named on the first line of its body file), so the detail items (88 to 101) can bring each model into proportion and
 // a test keeps it there. Millimetres, from the makers' published figures as best known; a vehicle item checks its own before
-// relying on them and corrects this table if they are wrong. The game builds some vehicles a size up (the Land Rovers and cars
+// relying on them and corrects this table if they are wrong. The game builds some vehicles a size up (the Tor and the Crag and cars
 // at 1.15, so they don't look small beside the girls), so what is compared is shape, not size: every measure over the wheelbase.
 
 export const REAL_SIZES = {

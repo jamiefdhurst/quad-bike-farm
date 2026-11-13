@@ -89,7 +89,7 @@ export class HarrowView {
     }
   }
 
-  /** Redraws every cell from the state (after a restore or a reset), and shows the molehills that are still on untouched ground. */
+  /** Redraws every cell from the state, and shows the molehills that are still on untouched ground. */
   refresh() {
     for (let i = 0; i < this.h.cells; i++) this.paintCell(i);
     this.texture.needsUpdate = true;

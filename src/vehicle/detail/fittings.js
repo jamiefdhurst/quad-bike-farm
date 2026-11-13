@@ -57,7 +57,7 @@ export function buildBonnetCatch({ open = false, mats = {} } = {}) {
   return g;
 }
 
-/** A strap hinge `len` long (a Land Rover door's, a tailgate's): a strap over the panel, a knuckle at the pin, two bolts. */
+/** A strap hinge `len` long (a Tor or Crag door's, a tailgate's): a strap over the panel, a knuckle at the pin, two bolts. */
 export function buildHinge({ len = 0.12, w = 0.035, mats = {} } = {}) {
   const m = { ...cabMats(), ...mats };
   const g = new THREE.Group();

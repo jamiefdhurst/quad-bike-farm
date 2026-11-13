@@ -119,7 +119,7 @@ describe('engine banks', () => {
     }
   });
 
-  it("cuts the Land Rover's Jeep idle into single beats from its steady stretch, in order, each lasting one of its engine's firings", () => {
+  it("cuts the Tor's or Crag's Jeep idle into single beats from its steady stretch, in order, each lasting one of its engine's firings", () => {
     const bank = JSON.parse(readFileSync('public/audio/engine-bank-tor.json', 'utf8'));
     expect(bank.readThrough).toBe(true);
     const idle = bank.grains.filter((g) => g.kind === 'idle');
@@ -130,7 +130,7 @@ describe('engine banks', () => {
       expect(g.dur).toBeLessThan(0.07);
     }
     expect(TOR_SPEC.engine.cylinders).toBe(4);
-    // The bank's rpm (120 / beat length) is four times the engine's: each beat plays near its own speed at the Land Rover's idle.
+    // The bank's rpm (120 / beat length) is four times the engine's: each beat plays near its own speed at the Tor's or Crag's idle.
     const ok = idle.filter((g) => g.ok !== false).map((g) => g.rpm / 4).sort((a, b) => a - b);
     const median = ok[Math.floor(ok.length / 2)];
     expect(median).toBeGreaterThan(TOR_SPEC.idleRange[0] * 0.85);

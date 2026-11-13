@@ -15,7 +15,7 @@ import { addIgnitionKey } from './dash.js';
 import { FINCH_BODY, FINCH_DOOR, FINCH_HATCH, FINCH_TAIL_LAMP, FINCH_BOOT, FINCH_R, FINCH_TYRE_W, FINCH_RIDE_LIFT } from './finchBody.js';
 
 // The Finch at its real size (TODO 102), built from finchBody.js's numbers after the photos. Driven by Quad through the same named parts as the
-// Land Rovers' (carModel.js: steeringColumn > handlebars, dash, gearLever, parkBrakeLever, chokeKnob, seatBack_driver and seatBack_left that tip,
+// the Tor's and Crag's (carModel.js: steeringColumn > handlebars, dash, gearLever, parkBrakeLever, chokeKnob, seatBack_driver and seatBack_left that tip,
 // riderAnchor, seatLeft, seatRearLeft, seatRearRight, the cameras, exhaustTip, belt_<seat>), plus:
 //
 //   doorLeft, doorRight    groups hinged on their front edges: poseTorDoors swings them (the dirt on them goes with them: `mudRest`)

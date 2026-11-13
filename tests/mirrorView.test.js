@@ -57,7 +57,7 @@ describe('the vehicles with working mirrors', () => {
   });
   const view = (id) => new MirrorView(models.find((m) => m.id === id).model);
 
-  it('gives the Land Rovers and the cars two door or wing mirrors and a rear-view one', () => {
+  it('gives the Tor, the Crag and the cars two door or wing mirrors and a rear-view one', () => {
     const withMirrors = models.filter((m) => m.spec.landRover || m.spec.car);
     expect(withMirrors.length).toBeGreaterThanOrEqual(5);
     for (const m of withMirrors) {

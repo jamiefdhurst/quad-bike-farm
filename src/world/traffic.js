@@ -54,7 +54,7 @@ export const LANE_KINDS = {
 export const VISITOR_KINDS = {
   post: { model: 'crag', colour: 0xc8102e, regs: ['G342 TVR'], does: 'parcel' },
   neighbour: { model: 'tor', colours: [0x5d6d4a, 0x8a3b2e, 0x3d5a80, 0xc9c3b0], regs: ['L915 HRE', 'F604 WGT', 'M227 BDK', 'E158 NFA'], does: 'chat' }, // not the farm's own
-  // The rolling road's tuner: a Land Rover towing the trailer, who stays until she is sent home (rollingRoadHost.js). Not dealt with the others.
+  // The rolling road's tuner: a Tor or Crag towing the trailer, who stays until she is sent home (rollingRoadHost.js). Not dealt with the others.
   tuner: { model: 'crag', colour: 0x2f3b45, regs: ['N481 RRD'], does: 'stay', dealt: false },
 };
 
@@ -173,7 +173,7 @@ export function visitPlaces(layout) {
     door: { x: barn.x + barn.halfX + 1.8, z: barn.z + 2.6 }, // where the driver goes
     parcel: { x: barn.x + barn.halfX + 1.4, z: barn.z + 4.2 },
     turn: { z0: barn.z + 7.5, z1: barn.z + 14.5, r: 3.5, dx: 4 },
-    // The tuner's rig: the Land Rover stops where the other visitors do, facing west, and the trailer stands behind it.
+    // The tuner's rig: the Tor or Crag stops where the other visitors do, facing west, and the trailer stands behind it.
     rig: rigSite({ x: barn.x + 14, z: barn.z + 7.5, yaw: -Math.PI / 2 }),
   };
 }

@@ -53,7 +53,7 @@ export class TowHost {
     return `Tow rope from the ${near.u.label} to the ${unit.label}`;
   }
 
-  /** A quad that carries the tow rope on its rack: a utility quad, not the green (its X is the winch) and not the tractor or the Land Rover. */
+  /** A quad that carries the tow rope on its rack: a utility quad, not the green (its X is the winch) and not the tractor or the Tor or Crag. */
   ropeQuadFor(unit) {
     return !!unit && unit !== this.g.winch?.unit && !unit.spec.tractor && !unit.spec.landRover && !unit.spec.car && !unit.spec.utv && !!unit.quad.mugAnchor;
   }

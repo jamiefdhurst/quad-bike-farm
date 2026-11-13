@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { pourAntiGel } from '../vehicle/dieselWax.js';
 
-// A bottle of diesel anti-gel on the ground by the coolant. Pick it up with E, carry it to a diesel (the tractor, the UTV, a Land Rover) and
+// A bottle of diesel anti-gel on the ground by the coolant. Pick it up with E, carry it to a diesel (the tractor, the UTV, a Tor or Crag) and
 // hold Y beside it to dose the tank. Treated fuel stops waxing in a hard frost and dissolves what has already waxed (vehicle/dieselWax.js);
 // topping up with untreated diesel thins it out. G puts it down.
 

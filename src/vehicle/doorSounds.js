@@ -1,4 +1,4 @@
-// When a car's or Land Rover's door or tailgate does something you should hear: it comes unlatched and swings out, it is pushed shut (or
+// When a car's, Tor's or Crag's door or tailgate does something you should hear: it comes unlatched and swings out, it is pushed shut (or
 // slammed, because you drove off or a girl let it go), a dropped tailgate comes up on its chains. Watches the 0..1 openness that
 // doorSwing.js and tailgate.js already work out and turns the crossings into events for the ride sounds (audio/doorSamples.js makes the
 // noises). Pure logic, tested in tests/doorSounds.test.js.

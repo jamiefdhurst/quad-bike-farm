@@ -11,7 +11,7 @@ const UP = new THREE.Vector3(0, 1, 0);
 export const DEFAULT_HAYSEAT_PARAMS = {
   seatRaise: 0.06, // metres: fine-tunes how high she sits on the bales
   climbSeconds: 1.8, // climbing up onto the bed, an arch or the bales, or down again
-  stepSeconds: 2.0, // stepping into the UTV's or Land Rover's bench, or out again
+  stepSeconds: 2.0, // stepping into the UTV's, Tor's or Crag's bench, or out again
   backStepScale: 1.4, // into the 200TDi's back bench takes this much longer, past the tipped front seat
   climbLift: 0.55, // how high she lifts over the edge on the way, unless the seat says otherwise
   leanBack: 1.15, // radians she lies back from sitting

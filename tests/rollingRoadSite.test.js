@@ -11,7 +11,7 @@ const fakeGate = (open = false) => ({ isOpen: open, set(v) { this.isOpen = v; re
 describe('the rig site', () => {
   const vehicle = { x: 100, z: 50, yaw: -Math.PI / 2 };
   const site = rigSite(vehicle);
-  it('puts the trailer straight behind the Land Rover, the hitch length away', () => {
+  it('puts the trailer straight behind the Tor or Crag, the hitch length away', () => {
     expect(site.trailer.x).toBeCloseTo(100 + RIG.hitch, 5);
     expect(site.trailer.z).toBeCloseTo(50, 5);
     expect(site.trailer.yaw).toBe(vehicle.yaw);
@@ -77,7 +77,7 @@ describe('the tuner visit', () => {
     expect(v.driver.mode).toBe('foot');
     expect(Math.hypot(v.driver.x - places.rig.stand.x, v.driver.z - places.rig.stand.z)).toBeLessThan(0.3);
   });
-  it('stops where the site says the Land Rover is', () => {
+  it('stops where the site says the Tor or Crag is', () => {
     const v = make();
     run(v, () => ({ stayOver: false }), 900);
     expect(Math.hypot(v.drive.x - places.rig.vehicle.x, v.drive.z - places.rig.vehicle.z)).toBeLessThan(1);

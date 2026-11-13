@@ -12,7 +12,7 @@ export const DRONE = {
   utv: { hz: 66, level: 0.4, rough: 0.3 },
   post: { hz: 58, level: 0.5, rough: 0.3 },
   neighbour: { hz: 50, level: 0.55, rough: 0.5 },
-  tuner: { hz: 58, level: 0.5, rough: 0.35 }, // the rolling road's Land Rover (a Crag)
+  tuner: { hz: 58, level: 0.5, rough: 0.35 }, // the rolling road's Crag
 };
 
 /** The drone's pitch and loudness for a speed: it idles at a low note, climbs with speed to the cruise, and goes quiet when stood. */

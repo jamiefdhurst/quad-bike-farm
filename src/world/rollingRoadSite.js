@@ -1,10 +1,10 @@
-// Where the tuner's rig stands when it is set up, worked out from where the Land Rover stops: the trailer behind it, the rollers' cradle, the
+// Where the tuner's rig stands when it is set up, worked out from where the Tor or Crag stops: the trailer behind it, the rollers' cradle, the
 // ramp at the back, the screen on its post and the place the tuner stands. Pure, so the visit (traffic.js), the model, the colliders and the
 // tests all use the same numbers. Heading 0 is +z, as the rest of the game; the trailer's own frame is x to the right of the way it is towed
 // and z along it, y up from the ground.
 
 export const RIG = {
-  hitch: 6, // m from the Land Rover's middle back to the middle of the trailer's deck
+  hitch: 6, // m from the Tor's or Crag's middle back to the middle of the trailer's deck
   deckHalf: 2.2, // the deck is this far either side of its middle, along the trailer
   deckHalfWide: 1.05, // and across
   deckHeight: 0.34, // m above the ground
@@ -30,12 +30,12 @@ export function toWorld(pose, lx, lz) {
   return { x: pose.x + lx * cos(pose.yaw) + lz * sin(pose.yaw), z: pose.z - lx * sin(pose.yaw) + lz * cos(pose.yaw) };
 }
 
-/** The trailer behind a Land Rover at `vehicle` { x, z, yaw }: the same heading, `hitch` metres back. */
+/** The trailer behind a Tor or Crag at `vehicle` { x, z, yaw }: the same heading, `hitch` metres back. */
 export function trailerPose(vehicle) {
   return { x: vehicle.x - sin(vehicle.yaw) * RIG.hitch, z: vehicle.z - cos(vehicle.yaw) * RIG.hitch, yaw: vehicle.yaw };
 }
 
-/** Everything the game needs about the set-up rig whose Land Rover has stopped at `vehicle`. */
+/** Everything the game needs about the set-up rig whose Crag has stopped at `vehicle`. */
 export function rigSite(vehicle) {
   const trailer = trailerPose(vehicle);
   const at = (x, z) => toWorld(trailer, x, z);

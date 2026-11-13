@@ -1,5 +1,5 @@
 // Diesel waxing in a hard frost. Below about -2 degrees the paraffin in red diesel comes out of solution and clogs the filter, so a diesel
-// (the tractor, the UTV, the Land Rovers) left out on a hard frosty night or day starts to struggle and then cuts out and won't start.
+// (the tractor, the UTV, the Tor and the Crag) left out on a hard frosty night or day starts to struggle and then cuts out and won't start.
 // Kept in the barn it is fine. A running engine's warmth, a milder spell or a dose of anti-gel from the bottle at the petrol tank clears it.
 // `wax` is 0 clear .. 1 solid, kept on the fuel system. Petrol never waxes. Pure logic, no Three.js: quad.js feeds it each step.
 

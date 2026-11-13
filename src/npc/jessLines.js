@@ -610,7 +610,7 @@ export const JESS_LINES = {
   ...JESS_LATE_RANK_LINES,
   // The mowing job (mowLines.js), last of all.
   ...JESS_MOW_LINES,
-  // Loading and unloading a Land Rover's back (tidyLoadLines.js), after that.
+  // Loading and unloading a Tor's or Crag's back (tidyLoadLines.js), after that.
   ...JESS_TIDY_LOAD_LINES,
   // Tidying up after you (tidyUpLines.js), after that.
   ...JESS_TIDY_UP_LINES,

@@ -305,7 +305,7 @@ const RAW = {
   // half-sizes, wall the thickness, wallHeight the eaves and ridge the top of the roof along its length (x). The door is centred on z.
   barn: at('barn', { x: 0, z: 0, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 },
     // A second span of the same size on the south side (world/barn.js), its own gable roof beside the first with a valley between and posts in
-    // place of a wall, and its own door in the +x wall, centred on its middle. It is where the tractor, the UTV, the Land Rovers and the cars are mended.
+    // place of a wall, and its own door in the +x wall, centred on its middle. It is where the tractor, the UTV, the Tor, the Crag and the cars are mended.
     annex: { halfZ: 4.6, door: { halfWidth: 2.0, height: 3.2 } },
   }),
   // The bell on its post just north of the barn's north door leaf (the first door's), arm out towards the yard (world/bellBuild.js): ring it to call the girls back.
@@ -357,7 +357,7 @@ const RAW = {
   helmetHooks: at('barn', { x: -0.5, z: 13.58, yaw: 0, y: 1.5, length: 1.6, stand: { x: -0.5, z: 12.6 }, door: { in: [{ x: 7.5, z: 9.2 }, { x: 4.2, z: 9.2 }, { x: 2, z: 11.8 }], out: { x: 7.5, z: 9.2 } } }),
   // The bay painted on the barn floor in front of the bench: park a quad here to work on it at the bench (workshop/bench.js).
   bay: at('barn', { x: 1.7, z: -1.5, halfX: 1.5, halfZ: 1.1, yaw: 0 }),
-  // The big bay in the barn's second span, nose-in from its door: the tractor, UTV, Land Rovers and cars are worked on here, at the same bench
+  // The big bay in the barn's second span, nose-in from its door: the tractor, UTV, the Tor and the Crag and cars are worked on here, at the same bench
   // (workshop/bench.js). A trolley jack and axle stands stand by it (workshop/jackModel.js), and a second bulb hangs over it.
   bay2: at('barn', { x: -1.4, z: 9.2, halfX: 3.0, halfZ: 1.9, yaw: 0 }),
   // The shed kit bought from the catalogue under the cork board (farm/shed.js, workshop/shedModels.js), standing in the barn the morning after it is paid for.
@@ -496,7 +496,7 @@ const RAW = {
     { x: 177.2, z: -8.6, yaw: 2.4, where: 'by the Dutch barn' }, // by its front corner stanchion, under the eaves
     { x: 92.9, z: -69.6, yaw: -0.5, where: 'by the field shed' }, // against its wall, beside the doorway
   ],
-  // The tractor, UTV and Land Rover have no spot of their own: each game they're dealt a parking slot or an open spot like the quads (spawn, below).
+  // The tractor, UTV, Tor and Crag have no spot of their own: each game they're dealt a parking slot or an open spot like the quads (spawn, below).
   trailer: at('yard', { x: 12, z: -21, yaw: 2.7 }), // the bale trailer's axle, up the yard past the sprayer with its drawbar to the yard, 8 m or more from every parking and away spot and the line-up sleepers (it was in their way). The tractor is wherever the game put it
   tipTrailer: at('yard', { x: 5, z: -24.5, yaw: 0.2 }), // the little tipping trailer's axle, in the clear by the paddock with its tongue towards the yard, for a quad to back up to
   sprayer: at('yard', { x: 15, z: -12, yaw: 0.3 }), // the sprayer trailer's axle, east of the yard spots within the hose's reach, with its tongue towards the yard, for the green quad to back up to
@@ -519,7 +519,7 @@ const RAW = {
     // Parking slots in the yard. Each start the quads are shuffled between them and
     // nudged (quadJitter metres, quadYawJitter radians), and sometimes parked the
     // other way round (quadFlipChance). No more than `yardMax` start in the yard (hers
-    // among them) and never the tractor, UTV or a Land Rover: the rest are out on the farm.
+    // among them) and never the tractor, UTV or a Tor or Crag: the rest are out on the farm.
     quadJitter: 1.4,
     quadYawJitter: 0.8,
     quadFlipChance: 0.25,
@@ -537,7 +537,7 @@ const RAW = {
     ]),
     // Every quad but the one she's standing by has this chance of having been left
     // somewhere else on the farm instead, at any angle, within awayJitter metres of
-    // one of these spots. The tractor, UTV and Land Rovers always are.
+    // one of these spots. The tractor, UTV and the Tor and the Crag always are.
     awayChance: 0.4,
     awayJitter: 3,
     away: [
@@ -553,7 +553,7 @@ const RAW = {
       { x: -68, z: -50, where: 'in the far corner' },
       { x: -72, z: -22, where: 'down the west hedge' },
       { x: -68, z: 8, where: 'by the west hedge' },
-    // Out in the east fields. A spot's own `jitter` (metres) is for a tight one: the Dutch barn's open bay. `tight` keeps the tractor, UTV and Land Rover out.
+    // Out in the east fields. A spot's own `jitter` (metres) is for a tight one: the Dutch barn's open bay. `tight` keeps the tractor, UTV, Tor and Crag out.
       { x: 181, z: -13.6, jitter: 0.8, tight: true, where: 'in the Dutch barn' },
       { x: 104, z: 2, jitter: 1, tight: true, where: 'along the road' },
       { x: 112, z: -40, where: 'out in the barley field' },

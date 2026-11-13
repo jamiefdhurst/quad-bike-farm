@@ -6,7 +6,7 @@
 export const DEFAULT_PUSH_PARAMS = {
   force: 520, // N of push, Jess; Amy pushes at `amyShare` of it
   amyShare: 0.8,
-  minAccel: 0.45, // m/s2: even a Land Rover moves, slowly
+  minAccel: 0.45, // m/s2: even a Tor or Crag moves, slowly
   maxAccel: 2.2, // m/s2: a light quad is not flung
   topSpeed: 3.4, // m/s: she walks it up to this, no faster
   shoutSpeed: 2.2, // m/s: fast enough that she shouts for you to let the clutch out

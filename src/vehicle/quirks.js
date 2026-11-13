@@ -68,7 +68,7 @@ export function featuresOf(spec, hasPod = false) {
     tempGauge: gauge,
     choke: !spec.tractor && !spec.utv && !spec.crag && hasChoke(spec.engine), // (Jess's Griffin is injected and your car a diesel: no choke)
     tap: !spec.fuel?.noTap,
-    seat: !spec.tractor && !spec.utv && !spec.landRover && !spec.car && spec.id !== 'asp' && spec.id !== 'tz65', // the Land Rover's is a vinyl bench, the cars' are cloth
+    seat: !spec.tractor && !spec.utv && !spec.landRover && !spec.car && spec.id !== 'asp' && spec.id !== 'tz65', // the Tor's or Crag's is a vinyl bench, the cars' are cloth
     horn: true,
     brakes: true,
     headlight: true,

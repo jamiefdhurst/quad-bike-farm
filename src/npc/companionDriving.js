@@ -57,7 +57,7 @@ export const DEFAULT_UTV_GO_DRIVE = {
   jessMaxStalls: 6,
 };
 
-/** The Land Rover's go: a four-speed with a heavy clutch, so Jess stays in second (8 m/s) and Amy goes up to third. */
+/** The Tor's or Crag's go: a four-speed with a heavy clutch, so Jess stays in second (8 m/s) and Amy goes up to third. */
 export const DEFAULT_CAB_GO_DRIVE = {
   jessSpeedMin: 2,
   jessSpeedMax: 6,
@@ -267,7 +267,7 @@ export const drivingStates = {
     },
   },
 
-  // At the front of the Land Rover with its starting handle in the bumper, swinging it because the battery is flat (crankAttempt.js).
+  // At the front of the Tor or Crag with its starting handle in the bumper, swinging it because the battery is flat (crankAttempt.js).
   cranking: {
     look() {
       return this.lookAtVehicle(this.quad, 0.6, 2);
@@ -401,8 +401,8 @@ export const drivingStates = {
 
 export const drivingMethods = {
   /**
-   * Her go on the tractor, the UTV or the Land Rover: slow and steady, not scared off by speed, and (on the two with a clutch) her own
-   * way with it: Jess's is the novice's (stays in the low gears, kangaroos, stalls it, grinds the Land Rover's first and second),
+   * Her go on the tractor, the UTV or the Tor or Crag: slow and steady, not scared off by speed, and (on the two with a clutch) her own
+   * way with it: Jess's is the novice's (stays in the low gears, kangaroos, stalls it, grinds the Tor's or Crag's first and second),
    * Amy's is a good driver's. `params` is her drive params for this go, changed in place.
    */
   goParams(params) {
@@ -462,7 +462,7 @@ export const drivingMethods = {
     }
     this.quad = quad;
     if (this.needsHandle(quad)) {
-      // A flat battery on the Land Rover: the handle first, then she gets in.
+      // A flat battery on the Tor or Crag: the handle first, then she gets in.
       this.afterCrank = () => this.requestDrive(quad, { giveRide, follow, race, followWho, convoyLead, doughnut, jump, park, showOff });
       this.fsm.transition('walking', { goal: 'crank', target: () => this.crankPoint(quad) });
       return;
@@ -481,7 +481,7 @@ export const drivingMethods = {
     return rope?.state === 'hooked' && rope.target === quad && !quad.passenger && quad.speed < 0.5 && this.canDrive(quad);
   },
 
-  /** The Land Rover's battery is too flat for the starter and it is not running: she will have to swing the handle. */
+  /** The Tor's or Crag's battery is too flat for the starter and it is not running: she will have to swing the handle. */
   needsHandle(quad) {
     return needsStartingHandle(quad);
   },
@@ -763,7 +763,7 @@ export const drivingMethods = {
     const dz = Math.cos(heading);
     let best = Infinity;
     // Down the middle and either side, about the width of the quad.
-    const half = q.driverStand ? 0.95 : 0.6; // the UTV and the Land Rover are wider
+    const half = q.driverStand ? 0.95 : 0.6; // the UTV and the Tor or Crag are wider
     for (const off of [-half, 0, half]) {
       const hit = this.castFrom(pos.x + dz * off, y, pos.z - dx * off, dx, dz, distance, q);
       if (hit < best) best = hit;

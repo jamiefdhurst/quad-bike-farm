@@ -10,7 +10,7 @@ import { buildTorModel } from './torModel.js';
 import { buildCragModel } from './cragModel.js';
 import { DEF_WHEELBASE, DEF_TRACK } from './cragBody.js';
 
-// The old Land Rover: a Series III 88-inch pick-up, procedural like the UTV. Ladder chassis on leaf springs and live axles, flat-topped
+// The Tor: an old 88-inch pick-up, procedural like the UTV. Ladder chassis on leaf springs and live axles, flat-topped
 // front wings with the headlamps in them, a black grille, the spare wheel on the bonnet, a bumper with the hole for the starting
 // handle, an upright windscreen frame, a truck cab with a white roof and a three-seat bench, and an open tub behind with a drop
 // tailgate and a towing jaw. Right-hand drive. Same named parts as the UTV's model so Quad drives it unchanged, plus its own:
@@ -298,7 +298,7 @@ export function badge(parent, { x, y, z, facing, w = 0.2, h = w * 0.4, twoLines 
   return m;
 }
 
-/** The trim's textures, made when a Land Rover is built (they need a canvas). */
+/** The trim's textures, made when a Tor or Crag is built (they need a canvas). */
 export function trimMaterials(crag = false) {
   // Black vinyl, pebbled, with a stitched inset on each face.
   const vinyl = canvasTexture(128, 128, (g, w, h) => {
@@ -510,7 +510,7 @@ export function buildWheel(w, rim) {
   return wheel;
 }
 
-// The Land Rover ----------------------------------------------------------------
+// The Tor or Crag ----------------------------------------------------------------
 
 export function buildCabModel({ bodyColor = 0x3b4a36, dashStyle = 'tor', variant = 'tor', reg = null } = {}) {
   // Each has its own model: cragModel.js, torModel.js. The variant is kept for the snorkel, which stands on a different wing.

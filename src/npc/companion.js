@@ -203,7 +203,7 @@ export class Companion {
     this.seatKind = 'pillion'; // which seat she's after or in on the back: 'pillion', or 'rack' (sat on the front rack)
     this.drive = null; // her go at driving, while she's on the front seat (herDriving.js)
     this.driveEvents = []; // what's happened while she's driving, for her voice
-    this.crankEvents = []; // what's happened at the Land Rover's starting handle ('keyOn', 'swing', 'kick', 'caught', 'noLuck'), for the game to say something about
+    this.crankEvents = []; // what's happened at the Tor's or Crag's starting handle ('keyOn', 'swing', 'kick', 'caught', 'noLuck'), for the game to say something about
     this.pushEvents = []; // what's happened while she pushes a vehicle for a bump-start ('start', 'now', 'caught', 'tired'), for the game to say something about
     this.gripReach = 0; // how far her hands are on the grips, 0..1
     // Holding on, leaning and looking about while she rides pillion.
@@ -1142,7 +1142,7 @@ export class Companion {
     }
     this.quad = quad;
     if (this.needsHandle(quad)) {
-      // The Land Rover on a flat battery: the handle, and she is done once it is running.
+      // The Tor or Crag on a flat battery: the handle, and she is done once it is running.
       this.afterCrank = () => then?.(true);
       this.fsm.transition('walking', { goal: 'crank', target: () => this.crankPoint(quad) });
       return;
@@ -1186,7 +1186,7 @@ export class Companion {
     return { position: p, facing: Math.atan2(c.x - p.x, c.z - p.z) };
   }
 
-  /** The driver's door of the UTV or Land Rover, on the right: where she steps in from and down to, facing the cab. Side is always -1. */
+  /** The driver's door of the UTV, Tor or Crag, on the right: where she steps in from and down to, facing the cab. Side is always -1. */
   driverDoor(quad = this.quad) {
     const d = quad.driverStand;
     const p = quad.model.localToWorld(new THREE.Vector3(d.x, 0, d.z));
@@ -1231,7 +1231,7 @@ export class Companion {
   seatOffset(front = false) {
     const p = this.params;
     if (!front && this.seatKind === 'rack') return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.rackSeatRaise, -this.sitHips.z + p.rackSeatForward);
-    if (front && this.quad?.driverStand) return this.haySeatOffset(); // sat on a bench, as the girls in the UTV and Land Rover are
+    if (front && this.quad?.driverStand) return this.haySeatOffset(); // sat on a bench, as the girls in the UTV, Tor and Crag are
     if (front) return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.driveSeatRaise, -this.sitHips.z + p.driveSeatForward);
     // Turned to one side, her hips swing round with her, so she's put back on the seat by the same amount.
     return new THREE.Vector3(-this.sitHips.x, -this.sitHips.y + p.seatRaise, -this.sitHips.z + p.seatForward).applyAxisAngle(AXIS_Y, this.sideAngle);

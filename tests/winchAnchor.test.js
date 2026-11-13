@@ -7,7 +7,7 @@ import { creakSamples } from '../src/audio/winchAudio.js';
 const tree = { x: 0, y: 0, z: 10, r: 0.4 };
 
 describe('what the winch can hook', () => {
-  it('treats the tractor, cars, Land Rovers and the UTV as anchors, not things to drag', () => {
+  it('treats the tractor, cars, the Tor, the Crag and the UTV as anchors, not things to drag', () => {
     expect(isHeavy({ tractor: true })).toBe(true);
     expect(isHeavy({ landRover: true })).toBe(true);
     expect(isHeavy({ car: true })).toBe(true);

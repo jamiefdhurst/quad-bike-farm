@@ -8,9 +8,9 @@ import { GRIFFIN_BODY } from './griffinBody.js';
 import { build309Model } from './vauclairModel.js';
 import { VAUCLAIR_BODY } from './vauclairBody.js';
 
-// The girls' cars, procedural like the Land Rovers: Amy's Finch (1976 to 1983, boxy, a sloping hatch, square lamps, black
+// The girls' cars, procedural like the Tor and the Crag: Amy's Finch (1976 to 1983, boxy, a sloping hatch, square lamps, black
 // bumpers) and Jess's Griffin B (1993, rounded, oval lamps, body-coloured bumpers, a big-bore exhaust). One builder, a table each
-// (CARS): the side profile, the glasshouse, the seats and the details that differ. Same named parts as the Land Rovers', so Quad, the
+// (CARS): the side profile, the glasshouse, the seats and the details that differ. Same named parts as the Tor's and Crag's, so Quad, the
 // mount and the girls' seats work unchanged:
 //
 //   quad
@@ -60,7 +60,7 @@ export function carLayout(kind) {
       { name: 'wheel_rr', x: -c.track / 2, z: -zF, front: false, radius: c.R, y: wheelY, driven: false },
     ],
     topY: wheelY,
-    // The body from just above the sill to the waist, so a bump in the ground meets it: a road car grounds where a Land Rover wouldn't.
+    // The body from just above the sill to the waist, so a bump in the ground meets it: a road car grounds where a Tor or Crag wouldn't.
     chassis: { hx: c.width / 2 - 0.05, hy: 0.36, hz: (c.nose - c.tail) / 2 - 0.05, y: 0.56 + RIDE_LIFT + CAR_GROUND_OFFSET },
   };
 }
@@ -80,7 +80,7 @@ export const CAR_STAND = {
   rearRight: { x: -1.25, z: -0.4 },
 };
 
-/** How far ahead of the driver's eye the windscreen's glass is, at eye height, and the mirror: in the model's own size (a test holds the cars to the Land Rovers'). */
+/** How far ahead of the driver's eye the windscreen's glass is, at eye height, and the mirror: in the model's own size (a test holds the cars to the Tor's and Crag's). */
 export function carEyeToGlass(kind) {
   const c = CARS[kind];
   const ey = c.seats.driver.y + EYE_UP;
@@ -182,7 +182,7 @@ export function poseCarSeats(model, tips) {
   }
 }
 
-/** The gear lever in its H (four gears or five, as the Land Rovers'), the choke knob pulled out, the handbrake up or down. */
+/** The gear lever in its H (four gears or five, as the Tor's and Crag's), the choke knob pulled out, the handbrake up or down. */
 export function poseCarControls(model, { gear = 0, gears = 4, choke = 0, park = false, clutch = 0, brake = 0, throttle = 0 }) {
   const g = part(model, 'gearLever');
   if (!g) return;

@@ -1588,7 +1588,7 @@ export const VOICE_LINES = {
   ...AMY_MUDGUARD_LINES,
   // Having a go on the tractor, or refusing (tractorGoLines.js).
   ...AMY_TRACTORGO_LINES,
-  // Having a go at the UTV or the Land Rover (vehicleGoLines.js).
+  // Having a go at the UTV or the Tor or Crag (vehicleGoLines.js).
   ...AMY_VEHICLEGO_LINES,
   // Her own car, and you borrowing it (carLines.js).
   ...AMY_CAR_LINES,
@@ -1700,7 +1700,7 @@ export const VOICE_LINES = {
   ...AMY_LATE_RANK_LINES,
   // The mowing job (mowLines.js), last of all.
   ...AMY_MOW_LINES,
-  // Loading and unloading a Land Rover's back (tidyLoadLines.js), after that.
+  // Loading and unloading a Tor's or Crag's back (tidyLoadLines.js), after that.
   ...AMY_TIDY_LOAD_LINES,
   // Tidying up after you (tidyUpLines.js), after that.
   ...AMY_TIDY_UP_LINES,

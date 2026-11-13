@@ -1,8 +1,8 @@
-// A girl swinging the Land Rover's starting handle because the battery is flat: key on, choke if it is cold, then swing after swing
+// A girl swinging the Tor's or Crag's starting handle because the battery is flat: key on, choke if it is cold, then swing after swing
 // (hold the handle, let go to turn it over) until it catches or she has had enough. Jess holds it with her thumb round the handle and
 // now and then gets kicked back, which stops her for a few seconds; Amy keeps her thumb alongside her fingers and never does. Pure
 // logic with the same face as the other start attempts (update, abandon, done, result, events); it drives `quad.helperPull`, which the
-// Land Rover turns into the engine's pull (vehicle/quad.js, crankHandle.js). Tested in tests/crankAttempt.test.js.
+// Tor or Crag turns into the engine's pull (vehicle/quad.js, crankHandle.js). Tested in tests/crankAttempt.test.js.
 
 export const DEFAULT_CRANK_ATTEMPT_PARAMS = {
   keyDelay: 0.8, // seconds before she turns the key
@@ -26,14 +26,14 @@ export const CRANK_ATTEMPT_PARAM_RANGES = {
   settle: [0, 5, 0.1],
 };
 
-/** The Land Rover's battery is too flat for the starter and it is not running: someone has to swing the handle, outside. Otherwise the key will do, from the seat. */
+/** The Tor's or Crag's battery is too flat for the starter and it is not running: someone has to swing the handle, outside. Otherwise the key will do, from the seat. */
 export function needsStartingHandle(quad) {
   const e = quad.engine;
   return !!quad.crank && !e.isRunning && e.starterDead;
 }
 
 export class CrankAttempt {
-  /** @param {object} quad  The Land Rover's quad: engine, crank (CrankHandle), choke, helperPull, helperGrip. @param {string} who 'amy' or 'jess' */
+  /** @param {object} quad  The Tor's or Crag's quad: engine, crank (CrankHandle), choke, helperPull, helperGrip. @param {string} who 'amy' or 'jess' */
   constructor(quad, who, { random = Math.random, params = DEFAULT_CRANK_ATTEMPT_PARAMS } = {}) {
     this.quad = quad;
     this.random = random;

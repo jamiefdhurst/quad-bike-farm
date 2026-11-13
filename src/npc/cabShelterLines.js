@@ -1,4 +1,4 @@
-// What the girls say about getting into the Land Rover or the UTV out of the rain or the cold (cabShelter.js): going, settling in, and getting
+// What the girls say about getting into the Tor or Crag or the UTV out of the rain or the cold (cabShelter.js): going, settling in, and getting
 // out again. Merged into the main line sets (voiceLines.js, jessLines.js), so they're recorded with the rest.
 
 const line = (cooldown, lines) => ({ cooldown, lines });

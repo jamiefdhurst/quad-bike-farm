@@ -332,11 +332,11 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Do the mirrors work?',
-        a: `In the Land Rovers, the Yak and every car (yours and the girls'), yes: the door or wing mirrors and the rear-view mirror show what is
+        a: `In the Tor and the Crag, the Yak and every car (yours and the girls'), yes: the door or wing mirrors and the rear-view mirror show what is
           behind you, so you can back a trailer up, or see who is following. They are fixed where they are, not adjustable, and only the vehicle you are driving
           has live ones; you see them when you look forward. You are not in the picture, but the trailer and everyone else are. If a mirror seems to cost you
           frames, the Tune tab's "Mirrors" folder turns them off or draws them less often.`,
-        tip: 'The Land Rovers, the Yak and the cars have working mirrors: look at them when you back a trailer.',
+        tip: 'The Tor and the Crag, the Yak and the cars have working mirrors: look at them when you back a trailer.',
       },
       {
         q: 'Why does it spin its wheels in the mud?',
@@ -616,7 +616,7 @@ export const FAQ_SECTIONS = [
         a: `Look at the hook on the RB300's front and press <kbd>E</kbd> to take it, walk it to a tree (look at the trunk, within about six metres, and press <kbd>E</kbd>), then
           hold <kbd>X</kbd> by the RB300 or sitting on it. The cable draws tight and the RB300 pulls itself up to the tree with its brakes off, engine running or
           not, and stops a couple of metres short. It groans when it is working hard. <kbd>E</kbd> on the same tree takes the hook off. The hook also goes on the
-          tractor, the cars, the Land Rovers and the UTV: those are too heavy to drag, so the RB300 winds itself up to them instead. Any other quad is still dragged
+          tractor, the cars, the Tor, the Crag and the UTV: those are too heavy to drag, so the RB300 winds itself up to them instead. Any other quad is still dragged
           to the RB300.`,
         tip: 'Take the winch hook with E, hook the tree with E, then hold X by the RB300: it pulls itself up, engine or no engine.',
       },
@@ -2515,8 +2515,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Do the doors make a noise?',
-        a: `Yes, in the Land Rovers and the cars. A door clicks as it comes unlatched and swings out, thumps when it shuts behind you, and slams if it swings shut because you drove
-          off with it open. The Land Rovers' are deeper and ring hollow, the cars' are shorter and tighter. The Tor's tailgate also clanks as it comes up short on its chains. You hear
+        a: `Yes, in the Tor, the Crag and the cars. A door clicks as it comes unlatched and swings out, thumps when it shuts behind you, and slams if it swings shut because you drove
+          off with it open. The Tor's and Crag's are deeper and ring hollow, the cars' are shorter and tighter. The Tor's tailgate also clanks as it comes up short on its chains. You hear
           them from where you stand, so a girl getting out across the yard sounds like it. "Sound" in the Tune tab has a "Door volume".`,
       },
       {

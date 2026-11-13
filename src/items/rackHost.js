@@ -16,7 +16,7 @@ export class RackHost {
     this.kits = [];
   }
 
-  /** A quad with a rear rack that takes a load: the farm quads (not the tractor, the UTV, the Land Rovers or the cars). */
+  /** A quad with a rear rack that takes a load: the farm quads (not the tractor, the UTV, the Tor, the Crag or the cars). */
   hasRackForLoad(unit) {
     const s = unit.spec;
     return !!unit.quad.mugAnchor && !s.tractor && !s.utv && !s.landRover && !s.car;

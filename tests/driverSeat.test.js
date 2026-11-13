@@ -10,7 +10,7 @@ describe('the driver\'s door', () => {
     expect(UTV_SEATS.driver.x).toBeLessThan(0); // the wheel is on the right (x is negative)
   });
 
-  it('is on the right of the Land Rover, clear of its 1.15 scaled body', () => {
+  it('is on the right of the Tor or Crag, clear of its 1.15 scaled body', () => {
     expect(CAB_SEATS.driver.x).toBeLessThan(0);
     expect(CAB_STAND.driver.x).toBeLessThan(CAB_SEATS.driver.x);
     expect(Math.abs(CAB_STAND.driver.x)).toBeGreaterThan(1.1);

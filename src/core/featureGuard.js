@@ -14,7 +14,7 @@ export class FeatureGuard {
     this.log = log;
     this.clock = clock;
     this.smoothing = smoothing;
-    this.frame = new Map(); // feature -> ms so far this frame (a feature run twice in a frame, like each Land Rover's, adds up)
+    this.frame = new Map(); // feature -> ms so far this frame (a feature run twice in a frame, like each Tor's or Crag's, adds up)
     this.ms = new Map(); // feature -> smoothed ms a frame
     /** @type {Map<string, { count: number, first: string, last: string }>} */
     this.failures = new Map();

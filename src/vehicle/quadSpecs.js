@@ -26,7 +26,7 @@ import { sayName, fullName } from './names.js';
 
 export const QUAD_SPECS = [
   {
-    // Honda-style farm quad: soft, steady, low warm idle. The original tuning.
+    // Kestrel-style farm quad: soft, steady, low warm idle. The original tuning.
     id: 'farm300',
     stockBhp: 18, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'hill', // its hidden strength (strength.js): the girls work it out over games
@@ -66,7 +66,7 @@ export const QUAD_SPECS = [
     smoke: {},
   },
   {
-    // Yamaha-style: idles a bit higher, revs harder and higher (6,800 against 6,200), needs more choke
+    // Tamura-style: idles a bit higher, revs harder and higher (6,800 against 6,200), needs more choke
     // when cold and runs lumpier until it's warm, warms a little quicker, and
     // pulls slightly harder. Its idle comes from the other recorded machine.
     id: 'bruin',
@@ -213,7 +213,7 @@ export const QUAD_SPECS = [
       pitchGain: 0.28,
     },
     audio: {
-      recBank: 'engine-bank-yellow', // a Yamaha DT 125 idling, into a Honda CR85 flat out as it revs
+      recBank: 'engine-bank-yellow', // a 125cc trail bike idling, into a 85cc motocross bike flat out as it revs
       pulseRevLo: 3500, // from here it blends into the CR85's own firings
       pulseRevHi: 5000,
       pulseRevGain: 1.4, // revs as loud as its old sound's
@@ -240,7 +240,7 @@ export const QUAD_SPECS = [
     },
   },
   {
-    // Kawasaki-style farm workhorse: older, heavier and slower, with a big lazy
+    // Ridgeback-style farm workhorse: older, heavier and slower, with a big lazy
     // four-stroke that idles low and lumpy, revs slowly, pulls hard low down,
     // takes an age to warm up and wants plenty of choke. Rougher than the others,
     // and strong engine braking. It idles on a different recorded machine.
@@ -307,13 +307,13 @@ export const QUAD_SPECS = [
       barsFreq: 12,
     },
     audio: {
-      recBank: 'engine-bank-green', // a Yamaha Ténéré 250 idling, into kyles's Honda ATV as it revs
+      recBank: 'engine-bank-green', // a 250cc trail bike idling, into a farm ATV as it revs
       recIdleSource: 'quad',
       pulseStretch: 0.5, // its idle firings are twice as quick as its tickover: stretch them half way and leave a gap, a big lazy single
-      pulseRevLo: 1600, // from here it blends into the Honda ATV's own firings
+      pulseRevLo: 1600, // from here it blends into the farm ATV's own firings
       pulseRevHi: 2600,
       pulseRevGain: 1.45, // revs as loud as its old sound's, which was fitted to real engines
-      pulseRevFollow: 0.08, // reads on through the Honda's pull-away, not a firing from anywhere each time
+      pulseRevFollow: 0.08, // reads on through the farm ATV's pull-away, not a firing from anywhere each time
       pulseRefRpm: 1050,
       pulseRevLoudness: 0.05, // its recorded pulses are already punchy when cut short; it hardly needs to get louder
       recVolume: 0.58, // idles as loud as it did on the CRF250
@@ -326,7 +326,7 @@ export const QUAD_SPECS = [
     },
   },
   {
-    // Suzuki LT250R-style two-stroke race quad: lighter and lower than the
+    // Viper-style two-stroke race quad: lighter and lower than the
     // yellow, revs higher and comes on harder still, single seat (no room for
     // her), barely any engine braking, and smokes like a chimney. Its idle is a
     // different two-stroke from the yellow's.
@@ -652,7 +652,7 @@ export const EXTRA_SPECS = [
     barLights: 'switch', // a plain on / off rocker on the left bar (P: off, dipped; lightSwitch.js), starting on
     label: sayName('t185'), // what the girls and the toasts call it (vehicle/names.js)
     name: fullName('t185'),
-    bodyColor: 0xb4553f, // a chalky, sun-bleached Honda red
+    bodyColor: 0xb4553f, // a chalky, sun-bleached Kestrel red
     style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
     dashStyle: 'kidsKey',
     reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
@@ -750,7 +750,7 @@ export const EXTRA_SPECS = [
     },
   },
   {
-    // A smart new quad on loan for the day: the Yamaha's body in neutral silver, fuel injected so it hardly wants any choke, starts on
+    // A smart new quad on loan for the day: the blue quad's body in neutral silver, fuel injected so it hardly wants any choke, starts on
     // the button, idles smooth and quiet and has almost no wear. Full tank, and a bit more power than the old farm quads.
     id: 'ursa',
     stockBhp: 29, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
@@ -1172,7 +1172,7 @@ export const YAK_SPEC = {
   bodyColor: 0x3b5b3a, // a dark olive farm green, as in the photos
   dashStyle: 'utv',
   reverseStyle: 'dashLever', // the forward and reverse lever on the dash wants it stopped (controls.js)
-  driveSwitch: true, // the console's 2WD / 4WD switch (driveMode.js), as on the Land Rover
+  driveSwitch: true, // the console's 2WD / 4WD switch (driveMode.js), as on the Tor or Crag
   diffLock: true, // and its diff lock
   hoursRange: [900, 2600], // engine hours showing when the game starts
   odoRange: [4000, 11000], // odometer miles, kept for the dash's hour meter's company (it has no odometer drum)
@@ -1256,7 +1256,7 @@ export const YAK_SPEC = {
   vibration: {
     mountGain: 0.55, // a small diesel on rubber mounts
     mountFreq: 10.5,
-    steadiness: 0.6, // a small diesel three: a regular rock, but rougher than the Land Rover's petrol four (0.85)
+    steadiness: 0.6, // a small diesel three: a regular rock, but rougher than the Tor's or Crag's petrol four (0.85)
     firingsPerCycle: 3, // a three-cylinder: a quick, even shudder
     idleRpm: 700,
     smoothRpmRange: 1200,
@@ -1271,7 +1271,7 @@ export const YAK_SPEC = {
     barsGain: 0.09,
   },
   audio: {
-    recBank: 'engine-bank-utv', // a John Deere Gator's three-cylinder diesel, recorded on the vehicle
+    recBank: 'engine-bank-utv', // a a farm utility vehicle's three-cylinder diesel, recorded on the vehicle
     recIdleSource: 'quad',
     pulseRefRpm: 970,
     pulseRevLoudness: 0.25,
@@ -1305,7 +1305,7 @@ export const YAK_SPEC = {
   },
 };
 
-// The old Land Rover in the yard: an 88-inch pick-up with a 2.25 litre petrol four, in Bronze Green with a white cab roof. Built
+// The Tor, the old pick-up in the yard: an 88-inch pick-up with a 2.25 litre petrol four, in Bronze Green with a white cab roof. Built
 // like the UTV (a unit you drive, with a bench for three across the front) but treated like a petrol quad: wear, faults, the battery, a
 // choke, the toolbox. A four-speed manual with no synchromesh on first and second, a transfer lever for 2WD and 4WD and a diff lock, a
 // hand throttle on the dash, a towing hitch, and a starting handle at the front for when the battery won't (vehicle/crankHandle.js).
@@ -1453,7 +1453,7 @@ export const TOR_SPEC = {
   },
 };
 
-// The early-90s Land Rover 90 County station wagon, the 200TDi: a 2.5 litre turbo diesel, a square back with the spare on its rear door,
+// The Crag, an early-90s 90-inch station wagon: a 2.5 litre turbo diesel, a square back with the spare on its rear door,
 // a newer dash (a rev counter, a belt lamp and bong) and centre console, in a faded pastel green. Built on the Tor's model and
 // drive: a unit you drive with a clutch and a five-speed (synchro on all of them, unlike the Tor's four), a transfer lever and a diff lock, a
 // bench for three. Its engine and sound borrow the UTV's diesel (a different idle and top end, much rattlier). It has glow plugs and the key
@@ -1540,13 +1540,13 @@ export const CRAG_SPEC = {
     pitchGain: 0.16,
     heaveDamping: 0.45,
   },
-  // Its own bank (engine-bank-tdi): a Ford Transit 2.5 DI's clattery tickover, blending into a Land Rover Safari diesel's revs as
+  // Its own bank (engine-bank-tdi): a Ford Transit 2.5 DI's clattery tickover, blending into a Tor or Crag Safari diesel's revs as
   // it pulls, a Citroen Jumpy van's diesel starter and run-down, and a turbo made in the worklet (turboSample).
   audio: {
     recBank: 'engine-bank-tdi',
     recIdleSource: 'quad',
     pulseRefRpm: 960, // the Transit's tickover, where the rev loudness and EQ start
-    pulseRevLo: 1300, // from here it blends into the Land Rover's own firings
+    pulseRevLo: 1300, // from here it blends into the Tor's or Crag's own firings
     pulseRevHi: 2000,
     pulseRevFollow: 0.08, // reading on through its pull-up, rather than a firing from anywhere each time
     pulseRevLoudness: 0.25,
@@ -1561,7 +1561,7 @@ export const CRAG_SPEC = {
   smoke: { ...YAK_SPEC.smoke },
 };
 
-// The girls' own cars, always parked on the pad by the Dutch barn. Built like the Land Rovers (a unit with a clutch and gears, two
+// The girls' own cars, always parked on the pad by the Dutch barn. Built like the Tor and the Crag (a unit with a clutch and gears, two
 // seats in front and two in the back reached past a tipped front seat, belts) but small, light road cars: front-wheel drive, soft and
 // rolling, on road tyres that slither on wet grass and bog in mud, and low enough to ground on a bump. `owner` is whose it is: she is
 // the only girl who drives it, and minds if you take it.

@@ -165,7 +165,7 @@ export class HayView {
     this.trackTexture.needsUpdate = true;
   }
 
-  /** Redraws the picture from the state (after a restore, or a pass). */
+  /** Redraws the picture from the state. */
   refresh() {
     fillMask(this.maskData, this.layout, this.hay);
     this.maskTexture.needsUpdate = true;

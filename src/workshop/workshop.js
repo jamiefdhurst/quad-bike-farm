@@ -477,7 +477,7 @@ export class Workshop {
     if (kind === 'carb') return !this.isDiesel && !this.unit?.engine.params.injected; // (an injected engine has no carb to clean)
     if (kind === 'tap') return canStick(this.unit?.engine.params ?? {});
     if (kind === 'chain') return !!this.unit?.quad.faults.hasChain; // only the chain-driven ones
-    if (kind === 'belt') return !this.unit?.quad.tractor && !this.unit?.quad.landRover; // the Land Rover has a clutch
+    if (kind === 'belt') return !this.unit?.quad.tractor && !this.unit?.quad.landRover; // the Tor or Crag has a clutch
     return true;
   }
 

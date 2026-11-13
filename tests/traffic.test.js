@@ -112,7 +112,7 @@ describe('the lane and the plan', () => {
     }
   });
 
-  it('gives the post van and the neighbour their own registrations, not the farm\'s Land Rovers\'', () => {
+  it('gives the post van and the neighbour their own registrations, not the farm\'s the Tor and the Crag\'', () => {
     const farm = ['FRM 88L', 'H471 DKP'];
     const t = new Traffic({ places, params: P, random: createRandom(5) });
     const regs = new Set();

@@ -8,7 +8,7 @@ import { MAKER_FOR } from '../src/vehicle/detail/decals.js';
 import { MOTO_LAYOUT } from '../src/vehicle/miniMotoModel.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
-// The mini moto as a Tamura TZ 65 after a Yamaha YZ65 (TODO 94): the numbers read off the photos, the parts it must have by name, the
+// The mini moto as a Tamura TZ 65 (TODO 94): the numbers read off the photos, the parts it must have by name, the
 // choke and tap by the carb, no lights, and the front end turning about the bars' axis.
 
 describe('the mini moto’s numbers', () => {

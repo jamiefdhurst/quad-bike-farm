@@ -12,7 +12,7 @@ import * as THREE from 'three';
 
 /** The styles there are. `draw(g, W, H, on)` paints the face on a canvas `W` by `H`; `on` is whether the display is lit. */
 export const RADIO_STYLES = {
-  // The black digital head unit in the photo of the Series III's dash: a chrome strip top and bottom, a big silver knob at the left, a dark
+  // The black digital head unit in the photo of the Tor's dash: a chrome strip top and bottom, a big silver knob at the left, a dark
   // display with orange digits, a row of blue preset buttons and two dark buttons at the right.
   dab: {
     draw(g, W, H, on) {

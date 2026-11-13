@@ -276,7 +276,7 @@ describe('which gearbox is worn', () => {
   });
 });
 
-describe('gears with no synchromesh (the Land Rover)', () => {
+describe('gears with no synchromesh (the Tor or Crag)', () => {
   const tor = { ...G, gears: 4, crashGears: 2, crashSpeed: 1 };
 
   it('crunches and stays put going into first or second on the move, but takes third and fourth', () => {

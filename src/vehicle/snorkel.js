@@ -1,4 +1,4 @@
-// A snorkel: fitted at the barn bench (the `snorkel` job in workshop/benchJobs.js) to the Land Rovers, which carry the intake up the
+// A snorkel: fitted at the barn bench (the `snorkel` job in workshop/benchJobs.js) to the Tor and the Crag, which carry the intake up the
 // wing and the screen's side to the roofline. The engine only gulps water once the puddle is much deeper (the ford and a quiet stream
 // are nothing), and takes in far less when it does; a flat-out hit on the deepest water in a stream in spate can still drown it.
 // A badly sealed one (joints not bedded in) leaks some of that gulp back. Pure logic, no Three.js; the model is snorkelModel.js.
@@ -18,7 +18,7 @@ export const SNORKEL_PARAM_RANGES = {
 export const SNORKEL_PARAMS = { ...DEFAULT_SNORKEL_PARAMS }; // shared by every vehicle, registered once
 
 export class Snorkel {
-  /** `canFit`: whether this vehicle can have one (the Land Rovers). */
+  /** `canFit`: whether this vehicle can have one (the Tor and the Crag). */
   constructor(canFit = false, p = SNORKEL_PARAMS) {
     this.p = p;
     this.canFit = !!canFit;

@@ -116,7 +116,7 @@ describe('the two cars', () => {
 });
 
 describe('where the driver sits', () => {
-  it("puts the windscreen as far from your eye as in the Land Rovers (both at the same scale), with the mirror well ahead of you", () => {
+  it("puts the windscreen as far from your eye as in the Tor and the Crag (both at the same scale), with the mirror well ahead of you", () => {
     const tor = cabEyeToGlass();
     for (const kind of Object.keys(CARS)) {
       const e = carEyeToGlass(kind);

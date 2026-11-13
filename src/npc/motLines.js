@@ -1,4 +1,4 @@
-// What the girls say about the MOT at Hollis Motors (world/motHost.js): the sheet coming back, and a Land Rover that failed. Merged into the main
+// What the girls say about the MOT at Hollis Motors (world/motHost.js): the sheet coming back, and a Tor or Crag that failed. Merged into the main
 // line sets (voiceLines.js, jessLines.js), so they're recorded with the rest. No vehicle's name is spoken: the lines are recorded once, so they say
 // "it" and the sheet does the naming.
 

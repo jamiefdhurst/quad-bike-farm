@@ -10,16 +10,16 @@ import * as THREE from 'three';
  * an outline), 'block' (capitals in a rounded box) or 'oval' (in an oval). Colours are CSS.
  */
 export const MAKERS = {
-  kestrel: { name: 'Kestrel', badge: 'italic', ink: '#ffffff', edge: '#7a0f0b', box: null }, // the red quad (a Honda's place)
-  tamura: { name: 'Tamura', badge: 'block', ink: '#ffffff', edge: null, box: '#1d3f8f' }, // the blue, the loan and the yellow (Yamaha's)
-  ridgeback: { name: 'Ridgeback', badge: 'italic', ink: '#d9f2d0', edge: '#1f3a17', box: null }, // the green (Kawasaki's)
-  viper: { name: 'Viper', badge: 'italic', ink: '#111111', edge: '#f5d000', box: null }, // the orange (Suzuki's)
+  kestrel: { name: 'Kestrel', badge: 'italic', ink: '#ffffff', edge: '#7a0f0b', box: null }, // the red quad
+  tamura: { name: 'Tamura', badge: 'block', ink: '#ffffff', edge: null, box: '#1d3f8f' }, // the blue, the loan and the yellow
+  ridgeback: { name: 'Ridgeback', badge: 'italic', ink: '#d9f2d0', edge: '#1f3a17', box: null }, // the green
+  viper: { name: 'Viper', badge: 'italic', ink: '#111111', edge: '#f5d000', box: null }, // the orange
   hartley: { name: 'Hartley', badge: 'oval', ink: '#f0e6c8', edge: null, box: '#7d1712' }, // the tractor (Ferguson's)
-  moorland: { name: 'Moorland', badge: 'oval', ink: '#f2f2ea', edge: null, box: '#244a2c' }, // the Land Rovers
+  moorland: { name: 'Moorland', badge: 'oval', ink: '#f2f2ea', edge: null, box: '#244a2c' }, // the Tor and the Crag
   thorne: { name: 'Thorne', badge: 'oval', ink: '#ffffff', edge: null, box: '#1b3d7a' }, // the Finch (Ford's)
   fenwick: { name: 'Fenwick', badge: 'block', ink: '#f4f1e6', edge: null, box: '#3c5a2e' }, // the trailers (an Ifor Williams's place)
-  ashby: { name: 'Ashby', badge: 'block', ink: '#f4f4f4', edge: null, box: '#3a3a3a' }, // the Griffin (Vauxhall's)
-  vauclair: { name: 'Vauclair', badge: 'block', ink: '#d9dadb', edge: null, box: '#1b1c1e' }, // your car (Peugeot's)
+  ashby: { name: 'Ashby', badge: 'block', ink: '#f4f4f4', edge: null, box: '#3a3a3a' }, // the Griffin
+  vauclair: { name: 'Vauclair', badge: 'block', ink: '#d9dadb', edge: null, box: '#1b1c1e' }, // your car
 };
 
 /** Which maker each vehicle's badge names, by spec id. The three-wheeler has none yet (its item says). */

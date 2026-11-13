@@ -75,7 +75,7 @@ describe('steadiness', () => {
     expect(rollSpread(0.85, 3)).toBeLessThan(rollSpread(0, 3) * 0.6);
   });
 
-  it('is on for the Land Rover and off for the quads', async () => {
+  it('is on for the Tor or Crag and off for the quads', async () => {
     const { TOR_SPEC, YAK_SPEC } = await import('../src/vehicle/quadSpecs.js');
     expect(TOR_SPEC.vibration.steadiness).toBeGreaterThan(0.5);
     expect(YAK_SPEC.vibration.steadiness).toBeGreaterThan(0.3);

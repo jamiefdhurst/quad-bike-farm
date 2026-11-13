@@ -1,4 +1,4 @@
-// The radio in the Land Rovers and the girls' cars: on or off, how loud, and how well it holds the one station. It needs the key on (a flat
+// The radio in the Tor and the Crag and the girls' cars: on or off, how loud, and how well it holds the one station. It needs the key on (a flat
 // battery silences it, and so does the starter motor, which takes the supply for as long as it turns). Pure, so it is tested without
 // Web Audio; the sound is audio/radioAudio.js, and what is on air is audio/radioStation.js.
 //
@@ -53,7 +53,7 @@ export function profileFor(id) {
   return RADIO_PROFILES[id] ?? RADIO_PROFILES.tor;
 }
 
-/** Which vehicles have a radio: the Land Rovers and the girls' cars. */
+/** Which vehicles have a radio: the Tor and the Crag and the girls' cars. */
 export function hasRadio(spec) {
   return !!(spec && (spec.landRover || spec.car));
 }

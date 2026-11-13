@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { cabMats, merge, mesh, rounded } from './parts.js';
 import { sweepGeometry } from '../quadGeometry.js';
 
-// Steering wheels (TODO 340). A wheel lies in its group's XZ plane with the column along +Y (as the cars' and Land Rovers' wheels
+// Steering wheels (TODO 340). A wheel lies in its group's XZ plane with the column along +Y (as the cars' and the Tor's and Crag's wheels
 // sit on their columns): +Z is twelve o'clock, +X the driver's left (nine o'clock as they see it). The layout is pure: which way
 // each spoke goes and where the hands hold it. The grips' own names (gripLeft, gripRight) stay with the vehicle, which places
 // them at `userData.grips`.

@@ -57,7 +57,7 @@ describe('the girls choosing the back', () => {
   });
 
   it('have no back to choose in a car without one', () => {
-    const { seats } = planSeats(['jess'], new Set(['mid', 'left', 'bed']), fixed(0.99, 0.1), DEFAULT_UTV_RIDE_PARAMS, []); // (no bed in a Land Rover either)
+    const { seats } = planSeats(['jess'], new Set(['mid', 'left', 'bed']), fixed(0.99, 0.1), DEFAULT_UTV_RIDE_PARAMS, []); // (no bed in a Tor or Crag either)
     expect(seats).toEqual([]);
   });
 

@@ -93,7 +93,7 @@ describe('the bench job', () => {
     expect(B.snorkelBotchedSeal).toBeLessThan(1);
   });
 
-  it('is only offered to a Land Rover without one', () => {
+  it('is only offered to a Tor or Crag without one', () => {
     const e = { params: { strokes: 4 } };
     const s = new Snorkel(true);
     expect(jobAvailable('snorkel', e, B, false, true, false, null, s)).toBe(true);
@@ -130,7 +130,7 @@ describe('the snorkel models', () => {
     ({ addSnorkel } = await import('../src/vehicle/snorkelModel.js'));
   });
 
-  it('is only built on the Land Rovers, hidden until fitted', () => {
+  it('is only built on the Tor and the Crag, hidden until fitted', () => {
     for (const { id, spec, model } of models) {
       const g = addSnorkel(model);
       if (spec.landRover) {

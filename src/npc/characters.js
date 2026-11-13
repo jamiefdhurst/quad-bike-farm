@@ -54,13 +54,13 @@ export const CHARACTERS = [
       stormWont: 1, // won't get on or drive a quad in a thunderstorm, and gets off one stood still in it
       carGoWeight: 0.8, // takes her Finch down the road now and then, carefully, on her L plates
       tidyUpWeight: 1, // shuts the gate you left, puts the can back, hangs up the helmet on the floor
-      tidyLoadWeight: 1, // puts the cans and the toolbox away in the back of a Land Rover, tidily
+      tidyLoadWeight: 1, // puts the cans and the toolbox away in the back of a Tor or Crag, tidily
       generatorWeight: 1.1, // sees the barn dark and the charger waiting, and goes and starts the generator
       trailerGuideWeight: 1.2, // walks round behind a trailer you are reversing and calls the lock
       hayLoadWeight: 1, // carries the hay bales up to the trailer in a steady line, never dropping one
       hayMissChance: 0.03,
       hayCooldown: 5,
-      workLightWeight: 1.2, // brings the Land Rover round to light what you're at in the dark, unasked
+      workLightWeight: 1.2, // brings the Tor or Crag round to light what you're at in the dark, unasked
       sideSaddleChance: 0.4, // sits side-saddle on the back, ladylike
       blownNoticeAt: 0.25,
       remembers4wd: 0.65,
@@ -132,7 +132,7 @@ export const CHARACTERS = [
       hayMissChance: 0.22, // so a few fall short
       hayCooldown: 1.5,
       tidyUpWeight: 0, // leaves things where she drops them, and says so
-      tidyLoadWeight: 0.5, // chucks things in the back of a Land Rover, and sometimes empties it out again
+      tidyLoadWeight: 0.5, // chucks things in the back of a Tor or Crag, and sometimes empties it out again
       generatorWeight: 0.6, // starts the generator if she is bored of the dark, with a lot of tugging and swearing
       carGoWeight: 1.3, // can't leave her Griffin alone: down the road and back, loud
       voiceHardBrakeDecel: 6.5, // takes a sharper stop before she calls it hard braking

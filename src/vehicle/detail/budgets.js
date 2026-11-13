@@ -8,7 +8,7 @@ export const TRIANGLE_BUDGETS = {
   clipper: 60000, // the ride-on mower: a deck, a box and a bonnet, but nothing small or fussy
   hartley: 70000,
   yak: 80000,
-  big: 100000, // the Land Rovers and the cars
+  big: 100000, // the Tor, the Crag and the cars
   trailer: 22000, // each trailer (the bale trailer 21k with its winch, the tipping trailer 13k, after item 101: kit tyres, bolts, lamps, springs, cables)
 };
 

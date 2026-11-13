@@ -1,4 +1,4 @@
-// What the girls' wheel offers for a car or Land Rover, and why an option is greyed out when she can't do it just now.
+// What the girls' wheel offers for a car, Tor or Crag, and why an option is greyed out when she can't do it just now.
 // Pure (no Three.js or DOM): game.js gathers the facts, this says which options show and which are greyed with a reason.
 // A greyed option stays on the wheel so its shape doesn't change from one opening to the next.
 

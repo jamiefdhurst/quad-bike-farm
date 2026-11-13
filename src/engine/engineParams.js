@@ -26,7 +26,7 @@ export const DEFAULT_ENGINE_PARAMS = {
 
   // Cycle: 4 fires every two revolutions, 2 fires every revolution.
   strokes: 4,
-  cylinders: 1, // firings per cycle, evenly spaced: each one a pulse (the Land Rover's four), so a misfire or a lumpy beat is one of them, not the whole cycle
+  cylinders: 1, // firings per cycle, evenly spaced: each one a pulse (the Tor's or Crag's four), so a misfire or a lumpy beat is one of them, not the whole cycle
 
   // Speeds
   maxRpm: 6200, // full throttle: through the CVT a utility quad holds its revs around here under load
@@ -50,7 +50,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   terminalsClickAt: 0.7, // and from this level it only clicks, as a flat battery does (the dash and lamps stay bright)
   terminalsCrankFloor: 0.35, // the starter's speed, as a fraction of normal, just under the click
   pullStart: false, // has a recoil pull-start as well as the starter (the two-strokes)
-  crankHandle: false, // its pull is a starting handle at the front (the Land Rover): each swing sounds a clunk, not the starter
+  crankHandle: false, // its pull is a starting handle at the front (the Tor or Crag): each swing sounds a clunk, not the starter
   noStarter: false, // no starter motor at all, only the cord (the mini moto)
   pullSeconds: 0.9, // how long one good yank turns it over
   pullRpmFactor: 1.1, // a perfect yank's speed, as a fraction of the starter's

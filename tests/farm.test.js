@@ -145,7 +145,7 @@ describe('a vehicle from one day to the next', () => {
     a.quad.sump.level = 0.55;
     a.quad.filter.clog = 0.3;
     a.quad.quirks.tapStiff = 0.2;
-    a.quad.motWear.horn = 0.77; // a Land Rover's horn contacts (the MOT)
+    a.quad.motWear.horn = 0.77; // a Tor's or Crag's horn contacts (the MOT)
     const data = JSON.parse(JSON.stringify(captureVehicle(a, { settings: { idle: 1500 } })));
 
     const b = unit();
@@ -192,7 +192,7 @@ describe('a vehicle from one day to the next', () => {
     expect(b.quad.faults.levels.carb).toBe(0);
   });
 
-  it('keeps what stands in a Land Rover\'s back by spot, and nothing when it is empty', () => {
+  it('keeps what stands in a Tor or Crag\'s back by spot, and nothing when it is empty', () => {
     const a = unit();
     expect(captureVehicle(a).cargo).toBeUndefined();
     expect(captureVehicle(a, { cargo: [] }).cargo).toBeUndefined();

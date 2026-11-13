@@ -122,7 +122,7 @@ export class HayTrailer {
     return this.ramp >= 0.98;
   }
 
-  /** Re-poses the ramps (after a tuning change to their length). */
+  /** Re-poses the ramps. */
   refreshRamps() {
     this.openAngle = rampOpenAngle(this.geometry.rise);
     for (const n of ['rampLeft', 'rampRight']) {

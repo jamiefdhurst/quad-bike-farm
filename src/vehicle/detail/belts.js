@@ -66,7 +66,7 @@ export function ribbonGeometry(points, width, thick, face = [0, 0, 1], { uv = fa
  * A lap-and-diagonal belt for one seat, named `belt_<name>` with `stowed` (hanging down the pillar from the D-loop, the tongue
  * loose at the reel) and `worn` (across the person) children, the worn one hidden. `top`: the D-loop on the pillar; `low`: the
  * reel and sill anchor; `buckle`: the buckle's top on the seat's inner side; `hip`: the seat point. `lapOnly` gives a plain lap belt
- * (a back seat's middle, an old Land Rover's). The D-loop, reel and buckle are added to the group itself, outside both.
+ * (a back seat's middle, an old Tor's). The D-loop, reel and buckle are added to the group itself, outside both.
  */
 export function buildSeatBelt(name, { top, low, buckle, hip, lapOnly = false, mats = {} }) {
   const m = { ...cabMats(), ...mats };

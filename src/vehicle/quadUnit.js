@@ -165,7 +165,7 @@ export class QuadUnit {
       }),
     });
     this.quad.unit = this;
-    this.quad.radio = hasRadio(spec) ? new Radio(spec.id, RADIO_PARAMS) : null; // the Land Rovers' and the girls' cars' (radio.js)
+    this.quad.radio = hasRadio(spec) ? new Radio(spec.id, RADIO_PARAMS) : null; // the Tor's and Crag's and the girls' cars' (radio.js)
     this.torqueRock = new TorqueRock();
     this.vibration = new VibrationModel({ ...DEFAULT_VIBRATION_PARAMS, ...spec.vibration });
     this.airbox = new THREE.Vector3(); // scratch: where a spit back puffs from, under the seat
