@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { pickFleet, DEFAULT_FLEET_PARAMS } from '../src/vehicle/fleet.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { BODY_STYLES } from '../src/vehicle/quadModel.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
 import { createRandom } from '../src/core/random.js';
@@ -11,7 +11,7 @@ import { createFields } from '../src/world/fields.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 
 describe('the fleet', () => {
-  const big = [TRACTOR_SPEC, UTV_SPEC, TOR_SPEC];
+  const big = [HARTLEY_SPEC, YAK_SPEC, TOR_SPEC];
   const others = [...EXTRA_SPECS, ...big];
   const pool = [...QUAD_SPECS, ...others];
   const games = Array.from({ length: 600 }, (_, i) => pickFleet(QUAD_SPECS, others, createRandom(i)));

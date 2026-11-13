@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Radio, RadioKey, RADIO_PROFILES, RADIO_PARAMS, signalAt, heardAt, hasRadio, profileFor } from '../src/vehicle/radio.js';
 import { STATIONS } from '../src/audio/radioStation.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC } from '../src/vehicle/quadSpecs.js';
 
 describe('the radio', () => {
   it('is on or off, and louder or quieter by a step, within 0 and 1', () => {
@@ -55,7 +55,7 @@ describe('the radio', () => {
   });
 
   it('is fitted to the Land Rovers and the cars, not the quads, the UTV or the tractor', () => {
-    const fitted = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC].filter(hasRadio).map((s) => s.id).sort();
+    const fitted = [...QUAD_SPECS, ...EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC].filter(hasRadio).map((s) => s.id).sort();
     expect(fitted).toEqual(['crag', 'finch', 'griffin', 'tor', 'vauclair']);
     expect(Object.keys(RADIO_PROFILES).sort()).toEqual(fitted);
   });

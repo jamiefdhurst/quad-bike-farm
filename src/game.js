@@ -9,7 +9,7 @@ import { World } from './world/world.js';
 import { Player, PLAYER_CAPSULE } from './player/player.js';
 import { DEFAULT_PLAYER_PARAMS, PLAYER_PARAM_RANGES } from './player/playerParams.js';
 import { QuadUnit } from './vehicle/quadUnit.js';
-import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC } from './vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC } from './vehicle/quadSpecs.js';
 import { CAB_STAND, CRAG_REAR_STAND, CRAG_REAR_SEATS } from './vehicle/cabModel.js';
 import { CARS, CAR_STAND } from './vehicle/carModel.js';
 import { nearerPassenger } from './interaction/seatLook.js';
@@ -514,7 +514,7 @@ export class Game {
     // Which vehicles are here (its own random stream, so the rest of a seed's layout doesn't depend on it).
     // The tractor, UTV and Land Rover are in the same pool as the quads and are dealt a place the same way, but they aren't the girls' quads (`girlUnits`).
     const isBig = (spec) => spec.tractor || spec.utv || spec.landRover;
-    const pool = [...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC, CRAG_SPEC];
+    const pool = [...EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC];
     // The purse and what you bought and sold (farm/classifieds.js). A new farm's purse is dealt from the farm seed; a saved one is put back over it.
     this.marketParams = { ...DEFAULT_MARKET_PARAMS };
     registerTuning('Second-hand market', this.marketParams, MARKET_PARAM_RANGES);
@@ -694,9 +694,9 @@ export class Game {
     // The tractor, if it's here this game. It's a unit like the quads (you ride it, fuel it, hear it), but `girlUnits` is what the girls know about:
     // they leave it alone for now. Each of the three is null when it isn't on the farm, and everything that uses it checks.
     this.girlUnits = this.units;
-    this.tractorUnit = this.bigSpecs.hartley ? this.addTractor(bigSpawn(TRACTOR_SPEC)) : null;
-    // The diesel UTV (vehicle/quadSpecs.js UTV_SPEC): another unit that isn't one of the girls' quads, which they ride in but don't drive.
-    this.utvUnit = this.bigSpecs.yak ? this.addUtv(bigSpawn(UTV_SPEC)) : null;
+    this.tractorUnit = this.bigSpecs.hartley ? this.addTractor(bigSpawn(HARTLEY_SPEC)) : null;
+    // The diesel UTV (vehicle/quadSpecs.js YAK_SPEC): another unit that isn't one of the girls' quads, which they ride in but don't drive.
+    this.utvUnit = this.bigSpecs.yak ? this.addUtv(bigSpawn(YAK_SPEC)) : null;
     // The two Land Rovers, the old Series III and the 200TDi (TOR_SPEC, CRAG_SPEC), either, both or neither: units like the UTV with a
     // petrol or diesel quad's quirks, that the girls ride in and take for a go. `cabUnits.<kind>` is { kind, spec, unit, mount, ride }.
     this.cabUnits = {};

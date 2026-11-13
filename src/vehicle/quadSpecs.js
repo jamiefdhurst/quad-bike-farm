@@ -1012,7 +1012,7 @@ export const EXTRA_SPECS = [
 // The tractor: always on the farm (it isn't part of the fleet, src/vehicle/fleet.js). An old diesel in the yard: heavy, slow and strong,
 // with a clutch and a three-speed gearbox, glow plugs for a cold start, a hand throttle and a stop knob. Built as a QuadUnit like the rest, with its own body, wheels and drivetrain
 // (QuadUnit reads `hartley`). Runs on red diesel, so it doesn't mind it. Its sound is kyles's old tractor recordings.
-export const TRACTOR_SPEC = {
+export const HARTLEY_SPEC = {
   id: 'hartley',
   tyreSize: 'tractor', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
@@ -1158,7 +1158,7 @@ export const TRACTOR_SPEC = {
 // Built as a QuadUnit like the rest (QuadUnit reads `yak`). Unlike the tractor it is fussy about its fuel: petrol in it soaks the
 // engine the way diesel soaks the quads' (engine/diesel.js, `petrolFussy`). The girls ride in it (npc/utvRide.js) but don't drive it yet.
 // Its sound borrows the tractor's recordings, played faster.
-export const UTV_SPEC = {
+export const YAK_SPEC = {
   id: 'yak',
   wipers: ['slow'], // the windscreen wipers' speeds after off (wipers.js): one speed, on or off
   tyreSize: 'utv', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
@@ -1502,7 +1502,7 @@ export const CRAG_SPEC = {
   },
   fuel: { tankCapacity: 54, reserveLitres: 5, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.00022, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
   engine: {
-    ...UTV_SPEC.engine,
+    ...YAK_SPEC.engine,
     idleRpmWarm: 800,
     maxRpm: 4400,
     redlineRpm: 4300,
@@ -1558,7 +1558,7 @@ export const CRAG_SPEC = {
     densityRefRpm: 1200,
     turboVolume: 0.14, // its whistle about 18 dB under the engine flat out: there on top, not over it
   },
-  smoke: { ...UTV_SPEC.smoke },
+  smoke: { ...YAK_SPEC.smoke },
 };
 
 // The girls' own cars, always parked on the pad by the Dutch barn. Built like the Land Rovers (a unit with a clutch and gears, two
@@ -1912,7 +1912,7 @@ export const VAUCLAIR_SPEC = {
     pipeLength: 1.8,
     densityRefRpm: 1300,
   },
-  smoke: { ...UTV_SPEC.smoke },
+  smoke: { ...YAK_SPEC.smoke },
 };
 
 // The old bike in the barn (#38, TODO 143): the Ashby Plover 125, after a 1949 rigid-frame single. A restoration project: it stands under a tarp at

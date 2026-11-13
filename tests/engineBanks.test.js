@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import * as SPECS from '../src/vehicle/quadSpecs.js';
-import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
 
 describe('engine banks', () => {
@@ -52,7 +52,7 @@ describe('engine banks', () => {
   });
 
   it('gives the tractor its own bank', () => {
-    expect(TRACTOR_SPEC.audio.recBank).toBe('engine-bank-tractor');
+    expect(HARTLEY_SPEC.audio.recBank).toBe('engine-bank-tractor');
   });
 
   it("cuts the tractor's idle into whole, matching cycles to be played in order, so its tickover stays even", () => {
@@ -104,7 +104,7 @@ describe('engine banks', () => {
   it('gives the mini moto, the T185 and the UTV their own banks', () => {
     expect(EXTRA_SPECS.find((s) => s.id === 'tz65').audio.recBank).toBe('engine-bank-moto');
     expect(EXTRA_SPECS.find((s) => s.id === 't185').audio.recBank).toBe('engine-bank-atc');
-    expect(UTV_SPEC.audio.recBank).toBe('engine-bank-utv');
+    expect(YAK_SPEC.audio.recBank).toBe('engine-bank-utv');
   });
 
   it("cuts the UTV's Gator idle into whole cycles to be played in order, like the tractor's", () => {

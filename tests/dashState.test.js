@@ -80,10 +80,10 @@ describe('gearShown', () => {
 
 describe('the tractor spec', () => {
   it('starts with an odometer in the background and a hand throttle range inside 0..1', async () => {
-    const { TRACTOR_SPEC } = await import('../src/vehicle/quadSpecs.js');
-    expect(TRACTOR_SPEC.odoRange[0]).toBeGreaterThan(0);
-    expect(TRACTOR_SPEC.odoRange[1]).toBeGreaterThan(TRACTOR_SPEC.odoRange[0]);
-    const [lo, hi] = TRACTOR_SPEC.handStartRange;
+    const { HARTLEY_SPEC } = await import('../src/vehicle/quadSpecs.js');
+    expect(HARTLEY_SPEC.odoRange[0]).toBeGreaterThan(0);
+    expect(HARTLEY_SPEC.odoRange[1]).toBeGreaterThan(HARTLEY_SPEC.odoRange[0]);
+    const [lo, hi] = HARTLEY_SPEC.handStartRange;
     expect(lo).toBeGreaterThanOrEqual(0);
     expect(hi).toBeLessThanOrEqual(1);
     expect(hi).toBeGreaterThan(lo);

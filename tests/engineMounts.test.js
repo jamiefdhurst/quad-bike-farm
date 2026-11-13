@@ -4,7 +4,7 @@ import { DEFAULT_VIBRATION_PARAMS } from '../src/vibration/vibrationParams.js';
 import { engineShare, passThrough, lurchKick, MountClonk, DEFAULT_MOUNT_PARAMS as M } from '../src/vibration/engineMounts.js';
 import { Faults, DEFAULT_FAULT_PARAMS } from '../src/vehicle/faults.js';
 import { BenchJob, finishJob, DEFAULT_BENCH_PARAMS as P } from '../src/workshop/benchJobs.js';
-import { QUAD_SPECS, TOR_SPEC, TRACTOR_SPEC, UTV_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, TOR_SPEC, HARTLEY_SPEC, YAK_SPEC } from '../src/vehicle/quadSpecs.js';
 
 // A seeded random so runs compare.
 const seeded = (seed = 7) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
@@ -148,7 +148,7 @@ describe('the mounts fault', () => {
 
 describe('who is on soft mounts', () => {
   it('the diesels and the Land Rovers are, the quads are bolted', () => {
-    for (const spec of [TOR_SPEC, TRACTOR_SPEC, UTV_SPEC]) expect(spec.vibration.mountGain).toBeGreaterThan(0);
+    for (const spec of [TOR_SPEC, HARTLEY_SPEC, YAK_SPEC]) expect(spec.vibration.mountGain).toBeGreaterThan(0);
     for (const spec of QUAD_SPECS) expect(spec.vibration?.mountGain ?? 0).toBe(0);
   });
 });

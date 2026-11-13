@@ -3,7 +3,7 @@ import { EngineModel, EngineState } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { DEFAULT_VEHICLE_PARAMS } from '../src/vehicle/vehicleParams.js';
 import { ManualDrivetrain, DEFAULT_GEARBOX_PARAMS } from '../src/vehicle/manualDrivetrain.js';
-import { TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
+import { HARTLEY_SPEC } from '../src/vehicle/quadSpecs.js';
 import { FuelSystem, DEFAULT_FUEL_PARAMS } from '../src/vehicle/fuelSystem.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
 import { existsSync } from 'node:fs';
@@ -18,11 +18,11 @@ const DT = 1 / 60;
 
 /** A warm, idling tractor with the clutch down and nothing in gear. */
 function warmTractor(seed = 1) {
-  const engine = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...TRACTOR_SPEC.engine, initialTemperature: 1 }, { random: seeded(seed) });
+  const engine = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...HARTLEY_SPEC.engine, initialTemperature: 1 }, { random: seeded(seed) });
   engine.setIgnition(true);
   for (let t = 0; t < 4 && !engine.isRunning; t += DT) engine.update(DT, { starter: true, fuel: 1 });
   for (let t = 0; t < 2; t += DT) engine.update(DT, { fuel: 1 });
-  const drive = new ManualDrivetrain({ ...DEFAULT_VEHICLE_PARAMS, ...TRACTOR_SPEC.vehicle }, DEFAULT_GEARBOX_PARAMS);
+  const drive = new ManualDrivetrain({ ...DEFAULT_VEHICLE_PARAMS, ...HARTLEY_SPEC.vehicle }, DEFAULT_GEARBOX_PARAMS);
   return { engine, drive };
 }
 
@@ -59,25 +59,25 @@ describe('pulling away on the tractor', () => {
 
 describe('the tractor spec', () => {
   it('is a diesel with a manual gearbox, on red diesel', () => {
-    expect(TRACTOR_SPEC.engine.compressionIgnition).toBe(true);
-    expect(TRACTOR_SPEC.engine.runsOnDiesel).toBe(true);
-    expect(new FuelSystem({ ...DEFAULT_FUEL_PARAMS, ...TRACTOR_SPEC.fuel }).diesel).toBe(1);
+    expect(HARTLEY_SPEC.engine.compressionIgnition).toBe(true);
+    expect(HARTLEY_SPEC.engine.runsOnDiesel).toBe(true);
+    expect(new FuelSystem({ ...DEFAULT_FUEL_PARAMS, ...HARTLEY_SPEC.fuel }).diesel).toBe(1);
   });
 
   it('names a dash style and a sound bank that exist', () => {
-    expect(DASH_STYLES).toContain(TRACTOR_SPEC.dashStyle);
-    expect(AUDIO_PARAM_RANGES.recBank).toContain(TRACTOR_SPEC.audio.recBank);
-    expect(existsSync(`public/audio/${TRACTOR_SPEC.audio.recBank}.json`)).toBe(true);
+    expect(DASH_STYLES).toContain(HARTLEY_SPEC.dashStyle);
+    expect(AUDIO_PARAM_RANGES.recBank).toContain(HARTLEY_SPEC.audio.recBank);
+    expect(existsSync(`public/audio/${HARTLEY_SPEC.audio.recBank}.json`)).toBe(true);
   });
 
   it('idles inside its range and above the safe idle', () => {
-    expect(TRACTOR_SPEC.idleRange[0]).toBeGreaterThanOrEqual(TRACTOR_SPEC.safeIdle);
+    expect(HARTLEY_SPEC.idleRange[0]).toBeGreaterThanOrEqual(HARTLEY_SPEC.safeIdle);
   });
 });
 
 describe('the tractor idling', () => {
   const idleSpread = (temperature) => {
-    const engine = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...TRACTOR_SPEC.engine, baseRoughness: 0.08, initialTemperature: temperature }, { random: seeded(7) });
+    const engine = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...HARTLEY_SPEC.engine, baseRoughness: 0.08, initialTemperature: temperature }, { random: seeded(7) });
     engine.setIgnition(true);
     for (let t = 0; t < 8 && !engine.isRunning; t += DT) engine.update(DT, { starter: true, fuel: 1 });
     for (let t = 0; t < 3; t += DT) engine.update(DT, { fuel: 1 });
@@ -102,7 +102,7 @@ describe('the tractor idling', () => {
 
 describe('no fuel tap, and a hand throttle that starts at a working speed', () => {
   it('always feeds the engine from the whole tank, whatever the tap says', () => {
-    const f = new FuelSystem({ ...DEFAULT_FUEL_PARAMS, ...TRACTOR_SPEC.fuel });
+    const f = new FuelSystem({ ...DEFAULT_FUEL_PARAMS, ...HARTLEY_SPEC.fuel });
     f.setLitres(2);
     expect(f.reachable).toBe(2);
     expect(f.cycleTap()).toBe('on');
@@ -110,9 +110,9 @@ describe('no fuel tap, and a hand throttle that starts at a working speed', () =
   });
 
   it('idles low, and the hand throttle is left a little open at the start', () => {
-    expect(TRACTOR_SPEC.engine.idleRpmWarm).toBeLessThanOrEqual(500);
+    expect(HARTLEY_SPEC.engine.idleRpmWarm).toBeLessThanOrEqual(500);
     expect(DEFAULT_GEARBOX_PARAMS.handStart).toBeGreaterThan(0);
-    const e = TRACTOR_SPEC.engine;
+    const e = HARTLEY_SPEC.engine;
     const start = e.idleRpmWarm + DEFAULT_GEARBOX_PARAMS.handStart * (e.maxRpm - e.idleRpmWarm);
     expect(start).toBeGreaterThan(600);
     expect(start).toBeLessThan(800);

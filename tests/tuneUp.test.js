@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { QUAD_SPECS, TRACTOR_SPEC, UTV_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, HARTLEY_SPEC, YAK_SPEC } from '../src/vehicle/quadSpecs.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { DEFAULT_VEHICLE_PARAMS } from '../src/vehicle/vehicleParams.js';
 import { DEFAULT_FUEL_PARAMS } from '../src/vehicle/fuelSystem.js';
@@ -146,7 +146,7 @@ describe('tune-up', () => {
 });
 
 describe('tune-up on the diesels', () => {
-  for (const [name, spec] of [['hartley', TRACTOR_SPEC], ['UTV', UTV_SPEC]]) {
+  for (const [name, spec] of [['hartley', HARTLEY_SPEC], ['UTV', YAK_SPEC]]) {
     it(`takes the ${name}'s idle screw up and down within its safe range and puts stock back`, () => {
       const t = quad(0, undefined, spec);
       const before = snapshot(t);

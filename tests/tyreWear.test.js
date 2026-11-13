@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { TyreSet, newTyres, TYRE_SIZES, TYRE_SIZE_IDS, tyrePart, DEFAULT_TYRE_PARAMS as P } from '../src/vehicle/tyres.js';
 import { DEFAULT_TUNE_PARAMS as T } from '../src/vehicle/tuneUp.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC } from '../src/vehicle/quadSpecs.js';
 import { Faults, DEFAULT_FAULT_PARAMS } from '../src/vehicle/faults.js';
 import { Spares, DEFAULT_SPARES_PARAMS, PARTS, PART_IDS, TYRE_IDS, ALL_PART_IDS } from '../src/workshop/spares.js';
 import { BenchJob, finishJob, tyreJobFor, jobPart, JOBS, DEFAULT_BENCH_PARAMS } from '../src/workshop/benchJobs.js';
@@ -90,7 +90,7 @@ describe('tread wear', () => {
 });
 
 describe('tyre sizes', () => {
-  const specs = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC];
+  const specs = [...QUAD_SPECS, ...EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC];
 
   it('every vehicle names a size the rack stocks', () => {
     for (const s of specs) expect(TYRE_SIZE_IDS, s.id).toContain(s.tyreSize);

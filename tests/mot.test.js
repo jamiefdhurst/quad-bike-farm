@@ -5,7 +5,7 @@ import {
 import { BenchJob, JOBS, JOB_KINDS, finishJob, jobAvailable, DEFAULT_BENCH_PARAMS as B } from '../src/workshop/benchJobs.js';
 import { entryText } from '../src/workshop/logbook.js';
 import { AMY_MOT_LINES, JESS_MOT_LINES } from '../src/npc/motLines.js';
-import { TOR_SPEC, CRAG_SPEC, FINCH_SPEC, TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
+import { TOR_SPEC, CRAG_SPEC, FINCH_SPEC, HARTLEY_SPEC } from '../src/vehicle/quadSpecs.js';
 
 const sound = () => ({
   wear: { bulbs: 0.1, blades: 0.1, horn: 0.1 },
@@ -111,7 +111,7 @@ describe('the bay', () => {
 
   it('is for the Land Rovers only', () => {
     expect([TOR_SPEC, CRAG_SPEC].every(canMot)).toBe(true);
-    expect([FINCH_SPEC, TRACTOR_SPEC].some(canMot)).toBe(false);
+    expect([FINCH_SPEC, HARTLEY_SPEC].some(canMot)).toBe(false);
   });
 });
 

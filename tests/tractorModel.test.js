@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import * as THREE from 'three';
 import { buildTractorModel, TRACTOR_LAYOUT, SPLITTER, poseBaleSpike, poseLogSplitter, poseTractorControls } from '../src/vehicle/tractorModel.js';
-import { TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
+import { HARTLEY_SPEC } from '../src/vehicle/quadSpecs.js';
 import { MF_PANEL, MF_COWL, MF_BONNET, panelY } from '../src/vehicle/hartleyBody.js';
 
 // The dash paints its dials on canvases; nothing here looks at them, so any 2D context that swallows every call will do.
@@ -115,7 +115,7 @@ describe('tractor model', () => {
   });
 
   it('has a lights switch and tail lamps that the lights code finds: P is wired in the spec and the guards’ lamps share the tail material', () => {
-    expect(TRACTOR_SPEC.barLights).toBe('switch');
+    expect(HARTLEY_SPEC.barLights).toBe('switch');
     expect(model.userData.tailMaterial).toBeTruthy();
     expect(model.userData.tailHalos.length).toBe(2);
     expect(model.getObjectByName('headlight')).toBeTruthy();

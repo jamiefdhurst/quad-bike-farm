@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { YAK_BONNET, YAK_DASH, YAK_DOOR, YAK_BED, YAK_ROOF, loftTop } from '../src/vehicle/yakBody.js';
 import { buildBuckledBelt, tongueGeometry } from '../src/vehicle/detail/belts.js';
 import { poseUtvDoors, poseUtvBelts, BELTS, UTV_SEATS } from '../src/vehicle/utvModel.js';
-import { UTV_SPEC } from '../src/vehicle/quadSpecs.js';
+import { YAK_SPEC } from '../src/vehicle/quadSpecs.js';
 import { measureModel, proportionErrors, REAL_SIZES, IN_PROPORTION } from '../src/vehicle/detail/realSizes.js';
 import { MAKER_FOR } from '../src/vehicle/detail/decals.js';
 import { buildAllModels, fakeCanvas } from './helpers/vehicleModels.js';
@@ -63,7 +63,7 @@ describe('the UTV’s model', () => {
     const errors = proportionErrors(measureModel(utv.model, utv.layout), REAL_SIZES.yak);
     for (const [k, e] of Object.entries(errors)) expect(Math.abs(e), k).toBeLessThan(0.08);
     expect(MAKER_FOR.yak).toBe('ridgeback');
-    expect(UTV_SPEC.bodyColor).toBe(0x3b5b3a);
+    expect(YAK_SPEC.bodyColor).toBe(0x3b5b3a);
   });
 
   it('has a belt for each seat, each with a buckle, and poses them stowed or worn', () => {
