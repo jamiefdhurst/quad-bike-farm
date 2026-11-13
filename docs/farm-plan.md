@@ -59,7 +59,7 @@ A mixed upland-edge farm of about 68 ha (870 by 830 m), about seven times today'
 
 ## The phases
 
-Each phase is a GitHub milestone, kept in `.github/settings.yml`. `/todo` takes a `🔜 next` issue first, then the lowest-numbered issue in the earliest open milestone whose `Depends on:` line names only closed issues. Work that doesn't depend on where things are (the girls, the vehicles, the engine, sound, items) is in the **Alongside** milestone and is taken with `/todo alongside` or by number. An issue that puts something in the world isn't started before its phase.
+Each phase is a GitHub milestone, kept in `.github/settings.yml`. `/todo` takes a `🔜 next` issue first, then the lowest-numbered issue in the earliest open milestone whose `Depends on:` line names only closed issues. Work that doesn't depend on where things are (the girls, the vehicles, the engine, sound, items) is in the **Alongside** milestone and is taken with `/todo alongside` or by number. The vehicle reviews are the exception: they are a phase of their own, 4 · The vehicles, so they come before the cohesion passes. An issue that puts something in the world isn't started before its phase.
 
 ### 0 · Foundations
 
@@ -148,7 +148,16 @@ New:
 
 Existing: #323 (haymaking by the season), #324, #148 (scarecrow), #216 (hedge cutting), #143 (topper), #234 (more of the farm seasonal).
 
-### 4 · Pulled together
+### 4 · The vehicles
+
+Each vehicle reviewed in turn, critically, with what's wrong fixed in its own PR or filed. The location reviews in The new map are the pattern; these fix rather than hand over. Before the cohesion passes, so those include the fixes (#777).
+
+New:
+
+- #778 to #797: one review for each vehicle, the Farm 300 first as the detail kit's yardstick, then the Bruin, RB300, Hornet, Adder, Shepherd, Asp 50, TZ 65, T185, Clipper 12, Ursa 450, Plover, the rusty barn find, Hartley 35, Yak, Tor, Crag, Finch, Griffin and Vauclair
+- #798 The trailers and implements
+
+### 5 · Pulled together
 
 The cohesion passes, on the finished map.
 
@@ -158,7 +167,7 @@ New:
 
 Existing: #412, #413, #414, #415 (with #252 folded in or first), #423, #424, #425, #589, #218.
 
-### 5 · Ready for players
+### 6 · Ready for players
 
 New:
 

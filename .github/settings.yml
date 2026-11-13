@@ -106,10 +106,13 @@ milestones:
   - title: "3 · Crops"
     description: The crop year: ploughing, drilling, growing and harvest on the six arable fields.
     state: open
-  - title: "4 · Pulled together"
+  - title: "4 · The vehicles"
+    description: "Review each vehicle in turn, critically, and fix what's wrong or file it, before the cohesion passes and the polish for players."
+    state: open
+  - title: "5 · Pulled together"
     description: 'The cohesion passes on the finished map: detail, light and size, saving, discovery, money, screens.'
     state: open
-  - title: "5 · Ready for players"
+  - title: "6 · Ready for players"
     description: Settings, quality, subtitles, crash screen, the first ten minutes, browsers and download size.
     state: open
   - title: Alongside
