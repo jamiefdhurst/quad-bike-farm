@@ -42,6 +42,7 @@ const standIn = () => {
     jobVerb: () => undefined,
     scenes: () => SCENES.map(({ id, label }) => ({ id, label })),
     runScene: () => [],
+    perf: () => ({ fps: 60, ms: 16, worstMs: 20, maxFps: 0, calls: 0, triangles: 0, width: 0, height: 0, pixelRatio: 1 }),
   };
   return new Proxy(base, { get: (t, k) => (k in t ? t[k] : () => undefined) });
 };
@@ -76,6 +77,11 @@ describe('console lines', () => {
     expect(check(shell, 'tp me 105 -17')).toMatch(/^ok/);
     expect(check(shell, 'tp me to barn')).toMatch(/^ok/);
     expect(check(shell, 'tp me to 105 -17')).toMatch(/^NO/);
+  });
+
+  it('runs perf, which reads the game\'s frame figures', () => {
+    const shell = new Shell({ root: root(), commands: buildCommands(standIn()) });
+    expect(check(shell, 'perf')).toMatch(/^ok/);
   });
 
   it.runIf(asked.length)('answers for the lines asked about', () => {
