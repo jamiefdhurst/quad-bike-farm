@@ -8,7 +8,7 @@ import { boltsMesh, boltRow } from './detail/fixings.js';
 import { buildSteeringWheel } from './detail/steeringWheel.js';
 import { buildGrille } from './detail/fittings.js';
 import { buildLever } from './detail/cabControls.js';
-import { chokeSymbol } from './blasterDetail.js';
+import { chokeSymbol } from './hornetDetail.js';
 import { mesh, rbox, tube, pipe, CHOKE_KNOB, CHOKE_MARK } from './tz65Detail.js';
 import {
   MOWER_WHEELS as W, MOWER_FRAME, MOWER_BONNET, MOWER_GRILLE, MOWER_LAMP, MOWER_FRONT_WING, MOWER_TUB, MOWER_REAR_WING, MOWER_SEAT, MOWER_FOOT, MOWER_DASH,

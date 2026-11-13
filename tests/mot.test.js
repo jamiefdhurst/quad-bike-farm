@@ -5,7 +5,7 @@ import {
 import { BenchJob, JOBS, JOB_KINDS, finishJob, jobAvailable, DEFAULT_BENCH_PARAMS as B } from '../src/workshop/benchJobs.js';
 import { entryText } from '../src/workshop/logbook.js';
 import { AMY_MOT_LINES, JESS_MOT_LINES } from '../src/npc/motLines.js';
-import { LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
+import { TOR_SPEC, CRAG_SPEC, FINCH_SPEC, TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
 
 const sound = () => ({
   wear: { bulbs: 0.1, blades: 0.1, horn: 0.1 },
@@ -63,11 +63,11 @@ describe('the sheet', () => {
   });
 
   it('words a pass and a fail', () => {
-    expect(sheetLines('the Series', inspect(sound()), 3).verdict).toContain('good to day 17');
+    expect(sheetLines('the Tor', inspect(sound()), 3).verdict).toContain('good to day 17');
     const c = sound();
     c.wear.bulbs = 1;
     c.wear.horn = 1;
-    const l = sheetLines('the Series', inspect(c), 3);
+    const l = sheetLines('the Tor', inspect(c), 3);
     expect(l.verdict).toBe('FAIL: lights, horn');
     expect(l.advice).toMatch(/bench/);
   });
@@ -110,8 +110,8 @@ describe('the bay', () => {
   });
 
   it('is for the Land Rovers only', () => {
-    expect([LAND_ROVER_SPEC, DEFENDER_SPEC].every(canMot)).toBe(true);
-    expect([FIESTA_SPEC, TRACTOR_SPEC].some(canMot)).toBe(false);
+    expect([TOR_SPEC, CRAG_SPEC].every(canMot)).toBe(true);
+    expect([FINCH_SPEC, TRACTOR_SPEC].some(canMot)).toBe(false);
   });
 });
 

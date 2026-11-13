@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { vehicleOptions, wheelChildren } from '../src/npc/vehicleWheel.js';
 
 const base = {
-  name: 'Corsa', inside: false, idle: true, busy: null, moving: false, youDriving: false, girlDriving: false, seatFree: true, hasBack: false,
+  name: 'Griffin', inside: false, idle: true, busy: null, moving: false, youDriving: false, girlDriving: false, seatFree: true, hasBack: false,
   backFree: false, mayDrive: true, ownerName: 'Jess', canDrive: true, driveFree: true, running: false, untouched: true,
 };
 const by = (f, key) => vehicleOptions({ ...base, ...f }).find((o) => o.key === key);
@@ -25,7 +25,7 @@ describe('the wheel for a car', () => {
     expect(by({ mayDrive: false, ownerName: 'Amy' }, 'drive').why).toBe('it\'s Amy\'s');
   });
   it('offers only getting out when she is inside', () => {
-    expect(vehicleOptions({ ...base, inside: true })).toEqual([{ key: 'out', label: 'Get out of the Corsa', why: null }]);
+    expect(vehicleOptions({ ...base, inside: true })).toEqual([{ key: 'out', label: 'Get out of the Griffin', why: null }]);
   });
   it('adds the back bench when there is one, greyed when full', () => {
     expect(by({ hasBack: true, backFree: false }, 'back').why).toBe('the back is full');

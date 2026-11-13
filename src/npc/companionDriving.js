@@ -58,7 +58,7 @@ export const DEFAULT_UTV_GO_DRIVE = {
 };
 
 /** The Land Rover's go: a four-speed with a heavy clutch, so Jess stays in second (8 m/s) and Amy goes up to third. */
-export const DEFAULT_LANDY_GO_DRIVE = {
+export const DEFAULT_CAB_GO_DRIVE = {
   jessSpeedMin: 2,
   jessSpeedMax: 6,
   amySpeedMin: 3,
@@ -420,7 +420,7 @@ export const drivingMethods = {
       this.quad.shifter = new AutoShifter();
       return;
     }
-    const t = q.tractor ? this.tractorGo ?? DEFAULT_TRACTOR_GO_DRIVE : q.landRover ? this.landyGo ?? DEFAULT_LANDY_GO_DRIVE : this.utvGo ?? DEFAULT_UTV_GO_DRIVE;
+    const t = q.tractor ? this.tractorGo ?? DEFAULT_TRACTOR_GO_DRIVE : q.landRover ? this.cabGo ?? DEFAULT_CAB_GO_DRIVE : this.utvGo ?? DEFAULT_UTV_GO_DRIVE;
     params.driveSpeedMin = jess ? t.jessSpeedMin : t.amySpeedMin;
     params.driveSpeedMax = jess ? t.jessSpeedMax : t.amySpeedMax;
     params.driveForMin = t.forMin;

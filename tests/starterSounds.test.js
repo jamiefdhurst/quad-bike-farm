@@ -16,7 +16,7 @@ describe('starter sounds', () => {
     }
   });
 
-  it('the UTV, the Series and the 200TDi have starters of their own, looping at their own cranking speed', () => {
+  it('the UTV, the Tor and the 200TDi have starters of their own, looping at their own cranking speed', () => {
     const byId = Object.fromEntries(allSpecs.map((s) => [s.id, s]));
     for (const id of ['yak', 'tor', 'crag']) {
       const spec = byId[id];

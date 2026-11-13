@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import * as THREE from 'three';
 import { buildTractorModel, TRACTOR_LAYOUT, SPLITTER, poseBaleSpike, poseLogSplitter, poseTractorControls } from '../src/vehicle/tractorModel.js';
 import { TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
-import { MF_PANEL, MF_COWL, MF_BONNET, panelY } from '../src/vehicle/mf35Body.js';
+import { MF_PANEL, MF_COWL, MF_BONNET, panelY } from '../src/vehicle/hartleyBody.js';
 
 // The dash paints its dials on canvases; nothing here looks at them, so any 2D context that swallows every call will do.
 const ctx = new Proxy(() => ctx, { get: (t, k) => (k === 'measureText' ? () => ({ width: 10 }) : ctx), set: () => true });
@@ -93,7 +93,7 @@ describe('tractor model', () => {
     }
   });
 
-  it('has real-sized wheels: 1.17 m rears, 0.71 m fronts, at the MF35’s wheelbase', () => {
+  it('has real-sized wheels: 1.17 m rears, 0.71 m fronts, at the HARTLEY’s wheelbase', () => {
     const [fl, , rl] = TRACTOR_LAYOUT.wheels;
     expect(rl.radius * 2).toBeCloseTo(1.17, 2);
     expect(fl.radius * 2).toBeCloseTo(0.71, 2);

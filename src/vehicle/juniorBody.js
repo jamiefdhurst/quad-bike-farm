@@ -1,14 +1,15 @@
-// The kids' quad's body (TODO 93), after three photos of a Suzuki LT50 in `.scratch/quads/viper-50/` (a brochure three-quarter, a yellow
+// After a Suzuki LT50.
+// The kids' quad's body (TODO 93), after three photos in `.scratch/quads/viper-50/` (a brochure three-quarter, a yellow
 // and blue one from the side and one in white and blue on grass). It is bulky: one big front body from the bars down to the fenders,
 // sweeping front fenders and broad rear ones, a thick flat seat, and the small engine in the open between them, on balloon tyres with
 // square blocks. Built at the other quads' size and scaled to 0.65 with its physics (quadSpecs.js), so these numbers are in the same
 // units as the others'. Pure numbers, no materials, so a test can check them.
 
-import { BLASTER_WHEELS } from './blasterBody.js';
+import { HORNET_WHEELS } from './hornetBody.js';
 
 /** The tyres: fat balloons, nearly as wide at the front as at the back (the other sport quads are 0.22 and 0.29). */
 export const JUNIOR_TYRES = { front: 0.25, rear: 0.27 };
-export const JUNIOR_WHEELS = { ...BLASTER_WHEELS, ...JUNIOR_TYRES };
+export const JUNIOR_WHEELS = { ...HORNET_WHEELS, ...JUNIOR_TYRES };
 
 /** The tyres' outer edges: nothing is wider than these. */
 export const JUNIOR_TYRE_OUTER = { front: JUNIOR_WHEELS.x + JUNIOR_TYRES.front / 2, rear: JUNIOR_WHEELS.x + JUNIOR_TYRES.rear / 2 };

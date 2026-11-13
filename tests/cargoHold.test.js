@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { CargoHold, slideLimits } from '../src/vehicle/cargoHold.js';
 import { BED_CARGO_SPOTS, BED_CARGO_YAWS, BED_CARGO_YAW } from '../src/vehicle/utvModel.js';
-import { DEF_LOAD_SPOTS, DEF_LOAD_ROOM, DEF_LOAD_YAWS, DEF_LOAD_YAW } from '../src/vehicle/defenderBody.js';
-import { SERIES_TUB_SPOTS, SERIES_TUB_ROOM } from '../src/vehicle/seriesBody.js';
+import { DEF_LOAD_SPOTS, DEF_LOAD_ROOM, DEF_LOAD_YAWS, DEF_LOAD_YAW } from '../src/vehicle/cragBody.js';
+import { TOR_TUB_SPOTS, TOR_TUB_ROOM } from '../src/vehicle/torBody.js';
 import { CARGO_FOOTPRINTS } from '../src/vehicle/tipTrailerModel.js';
 
 // A stand-in for a jerry can: the bits of an item the hold touches.
@@ -101,7 +101,7 @@ describe('what stands in the Land Rovers\' backs', () => {
   });
 
   it('has every spot in the Tor\'s tub big enough for each thing', () => {
-    fits(SERIES_TUB_SPOTS, SERIES_TUB_ROOM, () => BED_CARGO_YAW);
+    fits(TOR_TUB_SPOTS, TOR_TUB_ROOM, () => BED_CARGO_YAW);
   });
 
   it('lets a thing slide past the edge only with the back open', () => {

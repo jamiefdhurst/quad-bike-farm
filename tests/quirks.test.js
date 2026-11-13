@@ -5,7 +5,7 @@ import { createRandom } from '../src/core/random.js';
 import { AMY_QUIRK_LINES, JESS_QUIRK_LINES } from '../src/npc/quirkLines.js';
 import { setHeadlights, LENS_GLOW } from '../src/vehicle/quadModel.js';
 
-const all = featuresOf({ dashStyle: 'grizzly' });
+const all = featuresOf({ dashStyle: 'bruin' });
 const many = (n, f) => Array.from({ length: n }, (_, i) => f(createRandom(i + 1)));
 const set = (...kinds) => new QuirkSet(kinds, P, createRandom(1));
 

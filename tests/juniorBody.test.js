@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import { juniorRearFenderY, JUNIOR_FENDERS, JUNIOR_SECTION, JUNIOR_FRONT, JUNIOR_SEAT, JUNIOR_TAIL, JUNIOR_FLAP, JUNIOR_SIDE_PLATE, JUNIOR_EXHAUST, JUNIOR_TYRES, JUNIOR_TYRE_OUTER, JUNIOR_WHEELS, juniorTop, juniorHalf } from '../src/vehicle/juniorBody.js';
-import { BLASTER_VBARS } from '../src/vehicle/blasterBody.js';
+import { HORNET_VBARS } from '../src/vehicle/hornetBody.js';
 import { shellGeometry } from '../src/vehicle/quadGeometry.js';
 import { EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
 import { BODY_STYLES } from '../src/vehicle/quadModel.js';
@@ -40,7 +40,7 @@ describe('the kids’ quad body numbers', () => {
     const top = Math.max(...JUNIOR_SEAT.filter((s) => s.z <= -0.18 && s.z >= -0.55).map((s) => s.y1));
     expect(top).toBeGreaterThan(0.9);
     expect(top).toBeLessThan(0.93);
-    const clampBottom = 1.0 + BLASTER_VBARS.centreY + 0.012 - 0.015; // the bars are at y 1.0 over z 0.46
+    const clampBottom = 1.0 + HORNET_VBARS.centreY + 0.012 - 0.015; // the bars are at y 1.0 over z 0.46
     expect(Math.abs(juniorTop(0.46) - clampBottom)).toBeLessThan(0.02);
   });
 
@@ -136,7 +136,7 @@ describe('the kids’ quad’s model', () => {
 
   it('has a thumb throttle that moves with the throttle', async () => {
     const paddle = kids.model.getObjectByName('thumbThrottle');
-    const { poseThumbThrottle } = await import('../src/vehicle/foremanControls.js');
+    const { poseThumbThrottle } = await import('../src/vehicle/farm300Controls.js');
     poseThumbThrottle(kids.model, 0);
     const rest = paddle.rotation.x;
     poseThumbThrottle(kids.model, 1);

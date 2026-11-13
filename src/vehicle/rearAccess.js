@@ -1,5 +1,5 @@
 // Getting into the 200TDi's back bench: the front backrest on that side tips forward while someone climbs past it, and which of the
-// back's seats you take. Pure, tested in tests/rearAccess.test.js; the model's backrests are posed by poseSeatTips (landRoverModel.js).
+// back's seats you take. Pure, tested in tests/rearAccess.test.js; the model's backrests are posed by poseSeatTips (cabModel.js).
 
 export const DEFAULT_REAR_ACCESS_PARAMS = {
   tipSpeed: 2.2, // of a full tip a second, forward or back up

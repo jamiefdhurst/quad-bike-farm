@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { CarGo, Borrowing, mayDriveCar, DEFAULT_CAR_GO_PARAMS } from '../src/npc/carGo.js';
-import { FIESTA_SPEC, CORSA_SPEC, LAND_ROVER_SPEC } from '../src/vehicle/quadSpecs.js';
+import { FINCH_SPEC, GRIFFIN_SPEC, TOR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { OFFER_KINDS } from '../src/npc/chooser.js';
 
 const girls = (over = {}) => ({
-  amy: { free: true, car: 'fiesta', carFree: true, weight: 0.8, ...over.amy },
-  jess: { free: true, car: 'corsa', carFree: true, weight: 1.3, ...over.jess },
+  amy: { free: true, car: 'finch', carFree: true, weight: 0.8, ...over.amy },
+  jess: { free: true, car: 'griffin', carFree: true, weight: 1.3, ...over.jess },
 });
 
 describe('a go in her own car', () => {
@@ -18,7 +18,7 @@ describe('a go in her own car', () => {
     expect(g.offers({ girls: girls() })).toEqual([]);
     g.update(DEFAULT_CAR_GO_PARAMS.firstAfter + 1);
     const offers = g.offers({ girls: girls() });
-    expect(offers.map((o) => [o.girl, o.vehicle])).toEqual([['amy', 'fiesta'], ['jess', 'corsa']]);
+    expect(offers.map((o) => [o.girl, o.vehicle])).toEqual([['amy', 'finch'], ['jess', 'griffin']]);
   });
 
   it("never offers a car that isn't free, or a girl who isn't", () => {
@@ -42,7 +42,7 @@ describe('a go in her own car', () => {
     g.forced = 'amy';
     const [o] = g.offers({ girls: girls() });
     expect(o.girl).toBe('amy');
-    expect(g.take(o)).toEqual({ type: 'carGo', girl: 'amy', vehicle: 'fiesta' });
+    expect(g.take(o)).toEqual({ type: 'carGo', girl: 'amy', vehicle: 'finch' });
     expect(g.forced).toBe(null);
   });
 
@@ -53,11 +53,11 @@ describe('a go in her own car', () => {
   });
 
   it('lets each girl drive only her own car, and any other vehicle as before', () => {
-    expect(mayDriveCar('amy', FIESTA_SPEC)).toBe(true);
-    expect(mayDriveCar('jess', FIESTA_SPEC)).toBe(false);
-    expect(mayDriveCar('jess', CORSA_SPEC)).toBe(true);
-    expect(mayDriveCar('amy', CORSA_SPEC)).toBe(false);
-    expect(mayDriveCar('amy', LAND_ROVER_SPEC)).toBe(true);
+    expect(mayDriveCar('amy', FINCH_SPEC)).toBe(true);
+    expect(mayDriveCar('jess', FINCH_SPEC)).toBe(false);
+    expect(mayDriveCar('jess', GRIFFIN_SPEC)).toBe(true);
+    expect(mayDriveCar('amy', GRIFFIN_SPEC)).toBe(false);
+    expect(mayDriveCar('amy', TOR_SPEC)).toBe(true);
   });
 });
 
@@ -97,10 +97,10 @@ describe('borrowing her car', () => {
 describe('asking a girl to drive a car that is not hers', () => {
   it('gets "it is yours" for your car and "that is hers" for her friend\'s, and nothing for her own', async () => {
     const { refuseCarLine } = await import('../src/npc/carGo.js');
-    const { FIESTA_SPEC, CORSA_SPEC, P309_SPEC } = await import('../src/vehicle/quadSpecs.js');
-    expect(refuseCarLine('amy', P309_SPEC)).toBe('carYours');
-    expect(refuseCarLine('jess', P309_SPEC)).toBe('carYours');
-    expect(refuseCarLine('amy', CORSA_SPEC)).toBe('carNotMine');
-    expect(refuseCarLine('amy', FIESTA_SPEC)).toBeNull();
+    const { FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC } = await import('../src/vehicle/quadSpecs.js');
+    expect(refuseCarLine('amy', VAUCLAIR_SPEC)).toBe('carYours');
+    expect(refuseCarLine('jess', VAUCLAIR_SPEC)).toBe('carYours');
+    expect(refuseCarLine('amy', GRIFFIN_SPEC)).toBe('carNotMine');
+    expect(refuseCarLine('amy', FINCH_SPEC)).toBeNull();
   });
 });

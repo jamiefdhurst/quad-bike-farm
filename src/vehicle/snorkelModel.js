@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { SERIES_WING, SERIES_SCREEN } from './seriesBody.js';
-import { DEF_WING, DEF_SCREEN } from './defenderBody.js';
+import { TOR_WING, TOR_SCREEN } from './torBody.js';
+import { DEF_WING, DEF_SCREEN } from './cragBody.js';
 
 // The snorkel's look: a black pipe up the nearside wing, in front of the screen's side, with a bend at the roofline and a scoop facing
 // forward. Hidden until fitted at the bench. The pipe's foot is sunk into the wing's flat top, so it never floats.
@@ -13,8 +13,8 @@ const CLAMP = 0.1; // the foot's clamp is wider than the pipe
 
 /** Where it stands on each Land Rover (model frame; the driver's left is +x): on the wing's flat top, just ahead of the screen. */
 export const SNORKEL_SPOTS = {
-  series: { x: SERIES_WING.outer - 0.1, z: SERIES_WING.scuttle + 0.1, base: SERIES_WING.top, top: SERIES_SCREEN.topY },
-  defender: { x: DEF_WING.outer - 0.1, z: DEF_WING.scuttle + 0.12, base: DEF_WING.top, top: DEF_SCREEN.topY },
+  tor: { x: TOR_WING.outer - 0.1, z: TOR_WING.scuttle + 0.1, base: TOR_WING.top, top: TOR_SCREEN.topY },
+  crag: { x: DEF_WING.outer - 0.1, z: DEF_WING.scuttle + 0.12, base: DEF_WING.top, top: DEF_SCREEN.topY },
 };
 
 /** Adds the (hidden) snorkel to a Land Rover's model. Returns the group, or null for anything else. */

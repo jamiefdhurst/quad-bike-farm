@@ -276,7 +276,7 @@ describe('Traffic', () => {
 
   it('has a range for every tunable and a model for every kind', () => {
     for (const k of Object.keys(DEFAULT_TRAFFIC_PARAMS)) expect(TRAFFIC_PARAM_RANGES[k], k).toBeTruthy();
-    for (const k of Object.values(LANE_KINDS)) expect(['defender', 'series', 'tractor', 'utv']).toContain(k.model);
+    for (const k of Object.values(LANE_KINDS)) expect(['crag', 'tor', 'tractor', 'utv']).toContain(k.model);
   });
 });
 

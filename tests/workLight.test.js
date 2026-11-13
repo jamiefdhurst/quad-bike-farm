@@ -5,7 +5,7 @@ import { CHARACTERS } from '../src/npc/characters.js';
 
 const vehicles = [
   { id: 'farm300', x: 10, z: 0, cab: false, lights: true, free: true },
-  { id: 'landy', x: 30, z: 0, cab: true, lights: true, free: true },
+  { id: 'tor', x: 30, z: 0, cab: true, lights: true, free: true },
   { id: 'adder', x: 2, z: 0, cab: false, lights: false, free: true },
 ];
 const girls = [
@@ -23,7 +23,7 @@ describe('Lights to work by', () => {
   });
 
   it('brings a cab before a quad, never one without lights or with someone on it', () => {
-    expect(pickVehicle({ x: 0, z: 0 }, vehicles).id).toBe('landy');
+    expect(pickVehicle({ x: 0, z: 0 }, vehicles).id).toBe('tor');
     expect(pickVehicle({ x: 0, z: 0 }, vehicles.filter((v) => !v.cab)).id).toBe('farm300');
     expect(pickVehicle({ x: 0, z: 0 }, [{ ...vehicles[0], free: false }, vehicles[2]])).toBeNull();
     expect(pickVehicle({ x: 0, z: 0 }, [{ ...vehicles[1], x: P.vehicleRange + 50 }])).toBeNull();
@@ -57,7 +57,7 @@ describe('Lights to work by', () => {
   it('when you ask, lights where you stand, or says why not', () => {
     const w = new WorkLight();
     const plan = w.ask(girls[0], ctx({ workAt: null }));
-    expect(plan.vehicle).toBe('landy');
+    expect(plan.vehicle).toBe('tor');
     expect(plan.target).toEqual({ x: 0, z: 0 });
     expect(w.ask(girls[0], ctx({ dark: 0 })).why).toMatch(/light enough/);
     expect(w.ask(girls[0], ctx({ vehicles: [] })).why).toMatch(/nothing/);
@@ -66,22 +66,22 @@ describe('Lights to work by', () => {
   it('moves over to the passenger side most of the time, and otherwise stands by it', () => {
     let r = 0.1;
     const w = new WorkLight({ ...P }, () => r);
-    expect(w.take({ girl: 'amy', vehicle: 'landy', cab: true, spot: { x: 6, z: 0, yaw: 0 }, target: { x: 0, z: 0 } }).passenger).toBe(true);
+    expect(w.take({ girl: 'amy', vehicle: 'tor', cab: true, spot: { x: 6, z: 0, yaw: 0 }, target: { x: 0, z: 0 } }).passenger).toBe(true);
     w.finish('asked');
     r = 0.9;
-    expect(w.take({ girl: 'amy', vehicle: 'landy', cab: true, spot: { x: 6, z: 0, yaw: 0 }, target: { x: 0, z: 0 } }).passenger).toBe(false);
+    expect(w.take({ girl: 'amy', vehicle: 'tor', cab: true, spot: { x: 6, z: 0, yaw: 0 }, target: { x: 0, z: 0 } }).passenger).toBe(false);
   });
 
   it('is over when you ride off or walk away once it is lit, and then waits a while before offering again', () => {
     const w = new WorkLight();
-    w.take({ girl: 'amy', vehicle: 'landy', spot: { x: 6, z: 0, yaw: 0 }, target: { x: 0, z: 0 } });
+    w.take({ girl: 'amy', vehicle: 'tor', spot: { x: 6, z: 0, yaw: 0 }, target: { x: 0, z: 0 } });
     expect(w.update(1, ctx({ you: { x: 0, z: 0, onFoot: false } }))).toEqual([]); // still bringing it
     w.arrived();
     expect(w.update(1, ctx())).toEqual([]);
-    expect(w.update(1, ctx({ you: { x: 0, z: 0, onFoot: false } }))).toEqual([{ type: 'done', girl: 'amy', vehicle: 'landy', why: 'rode' }]);
+    expect(w.update(1, ctx({ you: { x: 0, z: 0, onFoot: false } }))).toEqual([{ type: 'done', girl: 'amy', vehicle: 'tor', why: 'rode' }]);
     w.update(P.workFor + 1, ctx());
     expect(w.offers(ctx())).toEqual([]); // cooling down
-    w.take({ girl: 'amy', vehicle: 'landy', spot: { x: 6, z: 0, yaw: 0 }, target: { x: 0, z: 0 } });
+    w.take({ girl: 'amy', vehicle: 'tor', spot: { x: 6, z: 0, yaw: 0 }, target: { x: 0, z: 0 } });
     w.arrived();
     expect(w.update(1, ctx({ you: { x: 100, z: 0, onFoot: true } }))[0].why).toBe('walked');
   });
@@ -89,7 +89,7 @@ describe('Lights to work by', () => {
   it('says what is going on', () => {
     const w = new WorkLight();
     expect(w.describe()).toBe('no');
-    w.take({ girl: 'amy', vehicle: 'landy', spot: { x: 6, z: 0, yaw: 0 }, target: { x: 0, z: 0 } });
-    expect(w.describe()).toMatch(/amy bringing the landy/);
+    w.take({ girl: 'amy', vehicle: 'tor', spot: { x: 6, z: 0, yaw: 0 }, target: { x: 0, z: 0 } });
+    expect(w.describe()).toMatch(/amy bringing the tor/);
   });
 });

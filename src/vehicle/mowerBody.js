@@ -1,4 +1,5 @@
-// The ride-on mower's numbers (#76): the Ridgeback Clipper 12, after an old British garden tractor of the Westwood or Countax kind. A low
+// After a Westwood garden tractor.
+// The ride-on mower's numbers (#76): the Ridgeback Clipper 12, after an old British garden tractor. A low
 // four-wheeled machine with small front wheels and fat turf-tread rears, a bonnet over a single-cylinder engine with a grille and a
 // headlamp, a moulded seat with a back over the rear wheels, a cutting deck slung under the middle with a chute on the right and a height
 // lever beside the seat, a grass box behind, a steering wheel and a little dash with the key, the choke and the blade lever, and a pull cord on

@@ -166,7 +166,7 @@ export class Faults {
     this.heldThrottle = 0; // what a sticking cable is still holding open
     this.prone = perKind(1); // times as often it starts (see roll)
     this.worsens = perKind(1); // times as fast it gets worse
-    this.hasChain = false; // a chain-driven quad (the sport quad, the mini moto, the ATC) can have a stretched chain; the others never
+    this.hasChain = false; // a chain-driven quad (the sport quad, the mini moto, the T185) can have a stretched chain; the others never
     this.hasBattery = true; // a vehicle with a starter has a battery whose posts can corrode; a pull-start-only machine has none (set by Quad)
     this.hasBoot = true; // a petrol carb or throttle body has an intake boot to split; a diesel has none (set by Quad)
     this.hasClutch = false; // a manual quad has a clutch plate to wear out; the automatics' belt is the belt fault (set by Quad)

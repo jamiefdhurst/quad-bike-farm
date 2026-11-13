@@ -261,7 +261,7 @@ describe('what is said', () => {
   });
 
   it('matches the paint of a visitor kind that exists (she drives the same Land Rover)', () => {
-    expect(VISITOR_KINDS.neighbour.model).toBe('series');
-    expect(S.parked.some((p) => p.kind === 'series')).toBe(true);
+    expect(VISITOR_KINDS.neighbour.model).toBe('tor');
+    expect(S.parked.some((p) => p.kind === 'tor')).toBe(true);
   });
 });

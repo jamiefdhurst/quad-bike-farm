@@ -1,5 +1,5 @@
 // The girls and their own cars. Each takes hers out now and then, for a run down the farm road and back (never into the fields: they're
-// road cars), and nobody else drives it: Jess never takes Amy's Fiesta, and Amy wouldn't be seen in Jess's Corsa at the wheel. You can
+// road cars), and nobody else drives it: Jess never takes Amy's Finch, and Amy wouldn't be seen in Jess's Griffin at the wheel. You can
 // borrow either, and its owner minds (borrowing, below). Pure logic: the game says who is free and whether her car is, and acts on the
 // events; a go is an offer the chooser weighs (chooser.js). Tested in tests/carGo.test.js.
 

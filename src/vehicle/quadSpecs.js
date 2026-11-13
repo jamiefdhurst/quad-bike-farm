@@ -36,10 +36,10 @@ export const QUAD_SPECS = [
     name: fullName('farm300'),
     bodyColor: 0xa8271f,
     style: 'utility',
-    dashStyle: 'foreman',
+    dashStyle: 'farm300',
     driveSwitch: true, // a 2WD / 4WD switch on the bars (driveMode.js)
     reverseStyle: 'bars', // where the reverse is and what it takes to use it (controls.js)
-    chokeStyle: 'slide', // where the choke is and what it takes to reach it: a slider in the left switch pod (foremanControls.js)
+    chokeStyle: 'slide', // where the choke is and what it takes to reach it: a slider in the left switch pod (farm300Controls.js)
     barLights: true, // a lights switch and HI / LO on the bars' pod (P cycles off, dipped, main beam; lightSwitch.js), starting dipped
     tapStyle: 'left', // where the fuel tap sits
     hoursRange: [600, 1500], // engine hours showing when the game starts
@@ -77,12 +77,12 @@ export const QUAD_SPECS = [
     label: sayName('bruin'), // what the girls and the toasts call it (vehicle/names.js)
     name: fullName('bruin'),
     bodyColor: 0x1d4fa3,
-    style: 'grizzly',
-    dashStyle: 'grizzly',
+    style: 'bruin',
+    dashStyle: 'bruin',
     driveSwitch: true,
     diffLock: true, // and a diff lock button
     reverseStyle: 'button', // where the reverse is and what it takes to use it (controls.js)
-    chokeStyle: 'thumb', // where the choke is and what it takes to reach it: the lever hanging from the left switch pod (grizzlyControls.js)
+    chokeStyle: 'thumb', // where the choke is and what it takes to reach it: the lever hanging from the left switch pod (bruinControls.js)
     barLights: true, // a lights rocker on the bars' pod (P cycles off, dipped, main beam; lightSwitch.js), starting dipped
     tapStyle: 'right', // where the fuel tap sits
     hoursRange: [400, 1100], // engine hours showing when the game starts
@@ -133,7 +133,7 @@ export const QUAD_SPECS = [
     },
   },
   {
-    // Two-stroke sport quad, Blaster-style: light, single seat, fires every
+    // Two-stroke sport quad, Hornet: light, single seat, fires every
     // revolution, ring-dings at idle, weak low down then comes on hard around
     // 6,000 rpm, revs past 10,000, loads its plug up if left idling, almost no
     // engine braking, and trails blue-white oil smoke. Sounds like a two-stroke
@@ -147,8 +147,8 @@ export const QUAD_SPECS = [
     label: sayName('hornet'), // what the girls and the toasts call it (vehicle/names.js)
     name: fullName('hornet'),
     bodyColor: 0xe9c21b,
-    style: 'blaster',
-    dashStyle: 'blaster',
+    style: 'hornet',
+    dashStyle: 'hornet',
     reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
     barLights: 'switch', // a plain on / off rocker on the left bar (P: off, dipped; lightSwitch.js), starting on
     chokeStyle: 'plunger', // a knob on the side of the carb, which wants it all but stopped to reach
@@ -252,9 +252,9 @@ export const QUAD_SPECS = [
     label: sayName('rb300'), // what the girls and the toasts call it (vehicle/names.js)
     name: fullName('rb300'),
     bodyColor: 0x33692c, // a deep green, a shade towards olive
-    style: 'bayou',
+    style: 'rb300',
     winch: true, // its front winch works (src/items/winch.js)
-    dashStyle: 'bayou',
+    dashStyle: 'rb300',
     reverseStyle: 'knee', // where the reverse is and what it takes to use it (controls.js)
     chokeStyle: 'slide', // a slider on the left switch housing, as on the real one and the red
     barLights: true, // a lights rocker on the housing (P cycles off, dipped, main beam; lightSwitch.js), starting dipped
@@ -339,7 +339,7 @@ export const QUAD_SPECS = [
     name: fullName('adder'),
     bodyColor: 0xe86a12,
     style: 'racer', // a single race seat: no room for her on the back
-    dashStyle: 'quadracer',
+    dashStyle: 'adder',
     reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
     barLights: 'switch', // a plain on / off rocker on the left pod (P: off, dipped; lightSwitch.js), starting on
     chokeStyle: 'thumb', // a lever on the left pod, in reach on the move
@@ -439,7 +439,7 @@ export const EXTRA_SPECS = [
     label: sayName('asp'), // what the girls and the toasts call it (vehicle/names.js)
     name: fullName('asp'),
     bodyColor: 0xd596ad, // a faded pink, paler than it was
-    style: 'junior', // a Suzuki LT50's bulky plastics (juniorBody.js): the Viper Asp 50
+    style: 'junior', // bulky plastics (juniorBody.js): the Viper Asp 50
     noHeadlight: true, // no lamps at all
     dashStyle: 'asp', // the key, on the clamp block
     reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
@@ -533,7 +533,7 @@ export const EXTRA_SPECS = [
     },
   },
   {
-    // A 50cc two-stroke pit bike (the "mini moto", the Tamura TZ 65 after a Yamaha YZ65): two wheels, one seat, a pull-start as well as the starter, and the kids' quad's
+    // A 50cc two-stroke pit bike (the "mini moto", the Tamura TZ 65): two wheels, one seat, a pull-start as well as the starter, and the kids' quad's
     // sound for now. Built by miniMotoModel.js: it rides on the quad physics with two wheels and the lean model (bikeLean.js) holding it up, and
     // leaning into corners. Anyone can ride it (it's nobody's), but there's no room on the back.
     id: 'tz65',
@@ -640,9 +640,9 @@ export const EXTRA_SPECS = [
     },
   },
   {
-    // The neighbour's beaten-up three-wheeler, an old ATC: a 200cc two-stroke with one front wheel and two fat tyres at the back, a
+    // The neighbour's beaten-up three-wheeler, an old T185: a 200cc two-stroke with one front wheel and two fat tyres at the back, a
     // pull-start only (no starter motor), a clutch (Shift) and a four-speed box, and a tall, narrow stance that tips if you throw it round
-    // a corner. Worn out, hard to start and rough. Built by atcModel.js, with the yellow's sound until it gets its own. Solo.
+    // a corner. Worn out, hard to start and rough. Built by t185Model.js, with the yellow's sound until it gets its own. Solo.
     id: 't185',
     stockBhp: 17, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'trike', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
@@ -760,8 +760,8 @@ export const EXTRA_SPECS = [
     label: sayName('ursa'), // what the girls and the toasts call it (vehicle/names.js)
     name: fullName('ursa'),
     bodyColor: 0xaeb4ba, // a neutral silver
-    style: 'kodiak', // a Kodiak 450's body (kodiakBody.js): the blue's machinery with its own flares, lamps, bumper, wheels and muffler
-    dashStyle: 'kodiak',
+    style: 'ursa', // the Ursa 450's body (ursaBody.js): the blue's machinery with its own flares, lamps, bumper, wheels and muffler
+    dashStyle: 'ursa',
     reverseStyle: 'button', // where the reverse is and what it takes to use it (controls.js)
     barLights: true, // a lights rocker on the bars' pod (P cycles off, dipped, main beam; lightSwitch.js), starting dipped
     chokeStyle: 'none', // fuel injected: no choke at all (controls.js)
@@ -815,9 +815,9 @@ export const EXTRA_SPECS = [
     },
   },
   {
-    // The farm bike (#75): the Ridgeback AG200, a shepherd's trail bike after a Yamaha AG200. A 200 cc air-cooled four-stroke single with a clutch (Shift)
+    // The farm bike (#75): the Ridgeback Shepherd 200, a shepherd's trail bike. A 200 cc air-cooled four-stroke single with a clutch (Shift)
     // and a four-speed box, a button start and a kickstart, and a long dual seat with a rack front and back: the first two-wheeler with room for a girl on
-    // the back. Built by ag200Model.js, on the quad physics with two wheels and the lean model (bikeLean.js) holding it up. Anyone can ride it.
+    // the back. Built by shepherdModel.js, on the quad physics with two wheels and the lean model (bikeLean.js) holding it up. Anyone can ride it.
     id: 'shepherd',
     stockBhp: 13, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES): the nearest it has; a 21 inch tyre of its own is a later idea
@@ -1305,11 +1305,11 @@ export const UTV_SPEC = {
   },
 };
 
-// The old Land Rover in the yard: a Series 88-inch pick-up with a 2.25 litre petrol four, in Bronze Green with a white cab roof. Built
+// The old Land Rover in the yard: an 88-inch pick-up with a 2.25 litre petrol four, in Bronze Green with a white cab roof. Built
 // like the UTV (a unit you drive, with a bench for three across the front) but treated like a petrol quad: wear, faults, the battery, a
 // choke, the toolbox. A four-speed manual with no synchromesh on first and second, a transfer lever for 2WD and 4WD and a diff lock, a
 // hand throttle on the dash, a towing hitch, and a starting handle at the front for when the battery won't (vehicle/crankHandle.js).
-export const LAND_ROVER_SPEC = {
+export const TOR_SPEC = {
   id: 'tor',
   wipers: ['slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a two-speed toggle on the dash
   tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
@@ -1321,7 +1321,7 @@ export const LAND_ROVER_SPEC = {
   steadyLights: true, // a battery runs its lamps
   wheelShake: 0.8,
   bodyColor: 0x3b4a36, // Bronze Green
-  dashStyle: 'series',
+  dashStyle: 'tor',
   driveSwitch: true, // the yellow-knobbed transfer lever: 2WD (rear only) or 4WD (driveMode.js)
   diffLock: true, // and a diff lock
   chokeStyle: 'knob', // a pull-out knob on the dash
@@ -1434,7 +1434,7 @@ export const LAND_ROVER_SPEC = {
     barsGain: 0.1,
   },
   audio: {
-    recBank: 'engine-bank-landy', // an old Jeep's four-cylinder petrol idling (craigsmith), and a car started on a handle
+    recBank: 'engine-bank-tor', // an old Jeep's four-cylinder petrol idling (craigsmith), and a car started on a handle
     recIdleSource: 'quad',
     pulseRefRpm: 490,
     pulseDivide: 3, // Jamie: at its own pace the Jeep's idle sounded far too quick for it; a third of the pace, one beat every third firing
@@ -1454,11 +1454,11 @@ export const LAND_ROVER_SPEC = {
 };
 
 // The early-90s Land Rover 90 County station wagon, the 200TDi: a 2.5 litre turbo diesel, a square back with the spare on its rear door,
-// a newer dash (a rev counter, a belt lamp and bong) and centre console, in a faded pastel green. Built on the Series' model and
-// drive: a unit you drive with a clutch and a five-speed (synchro on all of them, unlike the Series' four), a transfer lever and a diff lock, a
+// a newer dash (a rev counter, a belt lamp and bong) and centre console, in a faded pastel green. Built on the Tor's model and
+// drive: a unit you drive with a clutch and a five-speed (synchro on all of them, unlike the Tor's four), a transfer lever and a diff lock, a
 // bench for three. Its engine and sound borrow the UTV's diesel (a different idle and top end, much rattlier). It has glow plugs and the key
 // stops it, so no choke, no hand throttle and no starting handle.
-export const DEFENDER_SPEC = {
+export const CRAG_SPEC = {
   id: 'crag',
   wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
@@ -1467,11 +1467,11 @@ export const DEFENDER_SPEC = {
   label: sayName('crag'), // what the girls and the toasts call it (vehicle/names.js)
   name: fullName('crag'),
   landRover: true,
-  defender: true,
+  crag: true,
   steadyLights: true,
   wheelShake: 0.55,
   bodyColor: 0x3f5f7a, // Atlantic Blue, as the photos' (not the faded pastel green it had)
-  dashStyle: 'defender',
+  dashStyle: 'crag',
   driveSwitch: true,
   diffLock: true,
   hoursRange: [0, 0], // no hour meter
@@ -1484,7 +1484,7 @@ export const DEFENDER_SPEC = {
   topRpmRange: [4350, 4450],
   manual: true,
   gearbox: {
-    ...LAND_ROVER_SPEC.gearbox,
+    ...TOR_SPEC.gearbox,
     gears: 5, // the LT77: a fifth to cruise in
     crashGears: 0, // synchromesh on all of them
     topSpeed1: 5.0,
@@ -1519,21 +1519,21 @@ export const DEFENDER_SPEC = {
     wearPerMinute: 0.0005,
   },
   vehicle: {
-    ...LAND_ROVER_SPEC.vehicle,
+    ...TOR_SPEC.vehicle,
     mass: 1750,
     maxDriveForce: 8400, // a turbo diesel's torque
     maxSpeed: 32,
     engineBrakeForce: 1300,
     maxBrake: 52,
-    parkingBrake: 30, // 1,750 kg to hold on a slope (the Series' 22 is for 1,350)
+    parkingBrake: 30, // 1,750 kg to hold on a slope (the Tor's 22 is for 1,350)
     suspensionStiffness: 32, // coil springs, but not bouncy: Jamie found the first go too bouncy
-    suspensionCompression: 4.4, // damped harder than the Series' (3) so it settles after a bump instead of rocking
+    suspensionCompression: 4.4, // damped harder than the Tor's (3) so it settles after a bump instead of rocking
     suspensionRelaxation: 3.8, // (2.6)
     maxSuspensionTravel: 0.18,
   },
   vibration: {
-    ...LAND_ROVER_SPEC.vibration,
-    steadiness: 0.4, // a diesel four rattles and shakes: far less regular than the Series' petrol four
+    ...TOR_SPEC.vibration,
+    steadiness: 0.4, // a diesel four rattles and shakes: far less regular than the Tor's petrol four
     idleRpm: 800,
     pulseGain: 1.4, // (the first go had 1.9, 0.2 and 0.26 for these three: too much body motion at idle)
     heaveGain: 0.12,
@@ -1630,9 +1630,9 @@ const CAR_ENGINE = {
   stumbleRate: 0.1,
 };
 
-// Amy's Mk1 Fiesta: a 1.1 petrol four with a carburettor and a pull-out choke, a four-speed, in faded pale blue with a beige inside, kept
+// Amy's Finch: a 1.1 petrol four with a carburettor and a pull-out choke, a four-speed, in faded pale blue with a beige inside, kept
 // clean and looked after. L plates on (she is learning; item 167 has her pass in it).
-export const FIESTA_SPEC = {
+export const FINCH_SPEC = {
   id: 'finch',
   wipers: ['slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk with two speeds
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
@@ -1640,12 +1640,12 @@ export const FIESTA_SPEC = {
   radiatorAt: { x: 0, y: 0.85, z: 1.5 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: sayName('finch'), // what the girls and the toasts call it (vehicle/names.js)
   name: fullName('finch'),
-  car: 'fiesta',
+  car: 'finch',
   owner: 'amy',
   steadyLights: true,
   wheelShake: 0.5,
   bodyColor: 0x7a4f30, // a 70s brown, a little faded (it was pale blue)
-  dashStyle: 'fiesta',
+  dashStyle: 'finch',
   chokeStyle: 'knob', // under the dash
   hoursRange: [0, 0],
   odoRange: [38000, 76000], // a careful owner's miles
@@ -1695,7 +1695,7 @@ export const FIESTA_SPEC = {
   },
   vibration: { ...CAR_VIBRATION, idleRpm: 850 },
   audio: {
-    recBank: 'engine-bank-fiesta', // the BBC's Fiesta 1.1 idling and pulling away, a 1976 Mini revving above that, its own starter
+    recBank: 'engine-bank-fiesta', // the BBC's Finch 1.1 idling and pulling away, a 1976 Mini revving above that, its own starter
     recIdleSource: 'quad',
     pulseDivide: 4, // the bank's grains are whole cycles: one plays every fourth firing, filling the cycle
     pulseRefRpm: 1130, // its recorded idle, where the rev loudness and EQ start
@@ -1710,12 +1710,12 @@ export const FIESTA_SPEC = {
     pipeLength: 1.6,
     densityRefRpm: 1600,
   },
-  smoke: { ...LAND_ROVER_SPEC.smoke, warmDensity: 0.08, coldDensity: 0.5, throttleDensity: 0.5 },
+  smoke: { ...TOR_SPEC.smoke, warmDensity: 0.08, coldDensity: 0.5, throttleDensity: 0.5 },
 };
 
-// Jess's 1993 Corsa B: a 1.2 with fuel injection (no choke, no carburettor to go wrong), a five-speed, in red faded pink on the roof
+// Jess's 1993 Griffin B: a 1.2 with fuel injection (no choke, no carburettor to go wrong), a five-speed, in red faded pink on the roof
 // and bonnet, a grey primer wing, and a big-bore exhaust that makes it sound far quicker than it is.
-export const CORSA_SPEC = {
+export const GRIFFIN_SPEC = {
   id: 'griffin',
   wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
@@ -1723,12 +1723,12 @@ export const CORSA_SPEC = {
   radiatorAt: { x: 0, y: 0.85, z: 1.55 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: sayName('griffin'), // what the girls and the toasts call it (vehicle/names.js)
   name: fullName('griffin'),
-  car: 'corsa',
+  car: 'griffin',
   owner: 'jess',
   steadyLights: true,
   wheelShake: 0.6,
   bodyColor: 0xb8322e, // red, gone pink where the sun gets it
-  dashStyle: 'corsa',
+  dashStyle: 'griffin',
   hoursRange: [0, 0],
   odoRange: [88000, 140000],
   wearRange: [0.06, 0.12], // thrashed (but four cylinders hide it: much more and it hunts and shakes about)
@@ -1739,7 +1739,7 @@ export const CORSA_SPEC = {
   topRpmRange: [6200, 6400],
   manual: true,
   gearbox: {
-    ...FIESTA_SPEC.gearbox,
+    ...FINCH_SPEC.gearbox,
     gears: 5,
     topSpeed1: 8, // 18 mph
     topSpeed2: 14, // 31
@@ -1798,14 +1798,14 @@ export const CORSA_SPEC = {
     pulseDroneFreq: 75,
     densityRefRpm: 1400,
   },
-  smoke: { ...LAND_ROVER_SPEC.smoke, warmDensity: 0.12, coldDensity: 0.6 },
+  smoke: { ...TOR_SPEC.smoke, warmDensity: 0.12, coldDensity: 0.6 },
 };
 
 // Your own car (#229, was TODO 338): a 1987 three-door 309 GLD, the 1.9 diesel (no turbo), a five-speed, in silver-grey with grey cloth inside, a
 // few dents. A car like the girls' (a unit with a clutch and gears, two seats in front and two in the back past a tipped seat, belts), but a diesel:
 // glow plugs on the key, the key stops it, it waxes in a hard frost and needs bleeding if run dry. Only you drive it (`owner: 'you'`); the girls sit in
 // its other seats, and one will start it for you. You arrive in it each morning (farm/arrival.js).
-export const P309_SPEC = {
+export const VAUCLAIR_SPEC = {
   id: 'vauclair',
   wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
@@ -1813,12 +1813,12 @@ export const P309_SPEC = {
   radiatorAt: { x: 0, y: 0.85, z: 1.65 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   label: sayName('vauclair'), // what the girls and the toasts call it (vehicle/names.js)
   name: fullName('vauclair'),
-  car: 'p309',
+  car: 'vauclair',
   owner: 'you',
   steadyLights: true,
   wheelShake: 0.5,
   bodyColor: 0x8f9396, // metallic silver-grey (Jamie: silver or grey)
-  dashStyle: 'p309',
+  dashStyle: 'vauclair',
   hoursRange: [0, 0],
   odoRange: [118000, 164000], // a diesel's miles
   wearRange: [0.05, 0.1],
@@ -1829,7 +1829,7 @@ export const P309_SPEC = {
   topRpmRange: [4950, 5050],
   manual: true,
   gearbox: {
-    ...FIESTA_SPEC.gearbox,
+    ...FINCH_SPEC.gearbox,
     gears: 5,
     topSpeed1: 9, // 20 mph
     topSpeed2: 16, // 36
@@ -1915,10 +1915,10 @@ export const P309_SPEC = {
   smoke: { ...UTV_SPEC.smoke },
 };
 
-// The old bike in the barn (#38, TODO 143): the Ashby Plover 125, after a 1949 rigid-frame Bantam. A restoration project: it stands under a tarp at
+// The old bike in the barn (#38, TODO 143): the Ashby Plover 125, after a 1949 rigid-frame single. A restoration project: it stands under a tarp at
 // the back of the barn every game, needs a handful of jobs at the bench (barnFind.js's, plus the old bike's own), and then starts the old way: tickle
 // the carb, set the advance-retard lever, kick it over (engine/ignitionTiming.js). A 123 cc two-stroke single, a clutch (Shift) and a three-speed
-// foot-change box. Built by bantamModel.js, on the quad physics with two wheels and the lean model holding it up. Solo. Not in the fleet pool.
+// foot-change box. Built by ploverModel.js, on the quad physics with two wheels and the lean model holding it up. Solo. Not in the fleet pool.
 export const PLOVER_SPEC = {
   id: 'plover',
   tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES): the nearest it has; a 19 inch tyre of its own is a later idea
@@ -1929,7 +1929,7 @@ export const PLOVER_SPEC = {
   name: fullName('plover'),
   bodyColor: 0x7f9a74, // a faded sage green
   style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
-  dashStyle: 'smiths',
+  dashStyle: 'plover',
   barLights: 'switch', // a plain on / off rocker on the left bar (P: off, on; lightSwitch.js), starting on: the lamp runs off the magneto, dim at tickover
   reverseStyle: 'none', // where the reverse is and what it takes to use it (controls.js)
   chokeStyle: 'plunger', // a strangler on the carb's air intake, pulled out sideways (the model places it itself)

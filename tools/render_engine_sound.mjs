@@ -16,7 +16,7 @@ import vm from 'node:vm';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { DEFAULT_AUDIO_PARAMS } from '../src/audio/audioParams.js';
-import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC, P309_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC } from '../src/vehicle/quadSpecs.js';
 
 const SR = 48000;
 const DT = 1 / 60;
@@ -31,7 +31,7 @@ const PLAN = [
 
 const args = process.argv.slice(2);
 const [id, outPath] = args;
-const spec = [...QUAD_SPECS, ...EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC, P309_SPEC].find((s) => s.id === id);
+const spec = [...QUAD_SPECS, ...EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC].find((s) => s.id === id);
 if (!spec || !outPath) {
   console.error('usage: node tools/render_engine_sound.mjs <vehicle id> <out.wav> [--bank bank.json] [--set param=value ...]');
   process.exit(1);

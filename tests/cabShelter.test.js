@@ -4,7 +4,7 @@ import { AMY_CAB_LINES, JESS_CAB_LINES } from '../src/npc/cabShelterLines.js';
 import { VOICE_LINES } from '../src/npc/voiceLines.js';
 
 const girl = (id, o = {}) => ({ id, x: 0, z: 0, free: true, cab: null, ...o });
-const cab = (o = {}) => ({ id: 'landy', x: 10, z: 0, open: true, seats: 2, running: false, warm: true, ...o });
+const cab = (o = {}) => ({ id: 'tor', x: 10, z: 0, open: true, seats: 2, running: false, warm: true, ...o });
 const wet = { rain: 0.6, warmth: 0.05 };
 const cold = { rain: 0, warmth: 0.2 };
 const fine = { rain: 0, warmth: 0.9 };
@@ -22,8 +22,8 @@ describe('sheltering in a cab', () => {
   it('in the rain offers a free girl the nearest cab, and taking it sends her (starting a Land Rover now and then)', () => {
     const s = make();
     const offers = s.offers(ctx(wet));
-    expect(offers).toEqual([{ key: 'shelterCab', girl: 'amy', cab: 'landy', reason: 'rain', weight: P.rainWeight }]);
-    expect(s.take(offers[0], ctx(wet))).toEqual({ type: 'go', girl: 'amy', cab: 'landy', reason: 'rain', start: true });
+    expect(offers).toEqual([{ key: 'shelterCab', girl: 'amy', cab: 'tor', reason: 'rain', weight: P.rainWeight }]);
+    expect(s.take(offers[0], ctx(wet))).toEqual({ type: 'go', girl: 'amy', cab: 'tor', reason: 'rain', start: true });
     expect(make({}, () => 0.9).take(offers[0], ctx(wet)).start).toBe(false);
   });
 
@@ -54,8 +54,8 @@ describe('sheltering in a cab', () => {
   it('on a cold dry day offers a Land Rover to start and sit in, more keenly one already running (which she just gets into)', () => {
     const s = make();
     const offer = s.offers(ctx(cold))[0];
-    expect(offer).toEqual({ key: 'warmCab', girl: 'amy', cab: 'landy', reason: 'cold', weight: P.coldWeight });
-    expect(s.take(offer, ctx(cold))).toEqual({ type: 'go', girl: 'amy', cab: 'landy', reason: 'cold', start: true });
+    expect(offer).toEqual({ key: 'warmCab', girl: 'amy', cab: 'tor', reason: 'cold', weight: P.coldWeight });
+    expect(s.take(offer, ctx(cold))).toEqual({ type: 'go', girl: 'amy', cab: 'tor', reason: 'cold', start: true });
     const running = ctx(cold, { cabs: [cab({ running: true })] });
     const r = make();
     expect(r.offers(running)[0].weight).toBe(P.coldWeight * 2);
@@ -76,17 +76,17 @@ describe('sheltering in a cab', () => {
   it('she is in once the game has her aboard, and out again after her stay once the cold has gone', () => {
     const s = make({ coldStayMin: 10, coldStayMax: 10 });
     send(s, ctx(cold));
-    const events = s.update(0.5, ctx(cold, { girls: [girl('amy', { cab: 'landy' })] }));
-    expect(events).toEqual([{ type: 'in', girl: 'amy', cab: 'landy', reason: 'cold' }]);
-    expect(run(s, ctx(cold, { girls: [girl('amy', { cab: 'landy' })] }), 9)).toEqual([]);
-    const out = run(s, ctx(cold, { girls: [girl('amy', { cab: 'landy' })] }), 3);
-    expect(out[0]).toEqual({ type: 'out', girl: 'amy', cab: 'landy' });
+    const events = s.update(0.5, ctx(cold, { girls: [girl('amy', { cab: 'tor' })] }));
+    expect(events).toEqual([{ type: 'in', girl: 'amy', cab: 'tor', reason: 'cold' }]);
+    expect(run(s, ctx(cold, { girls: [girl('amy', { cab: 'tor' })] }), 9)).toEqual([]);
+    const out = run(s, ctx(cold, { girls: [girl('amy', { cab: 'tor' })] }), 3);
+    expect(out[0]).toEqual({ type: 'out', girl: 'amy', cab: 'tor' });
   });
 
   it('a rain shelterer stays while it rains and gets out only after it has dried, past her stay', () => {
     const s = make({ rainStayMin: 5, rainStayMax: 5, dryDelayMin: 4, dryDelayMax: 4 });
     send(s, ctx(wet));
-    const aboard = (w) => ctx(w, { girls: [girl('amy', { cab: 'landy' })] });
+    const aboard = (w) => ctx(w, { girls: [girl('amy', { cab: 'tor' })] });
     s.update(0.5, aboard(wet));
     expect(run(s, aboard(wet), 30)).toEqual([]);
     expect(run(s, aboard(fine), 3)).toEqual([]);
@@ -96,12 +96,12 @@ describe('sheltering in a cab', () => {
   it('an engine she started goes off when she has gone, one she did not start is left alone', () => {
     const s = make();
     send(s, ctx(cold));
-    expect(s.update(0.5, ctx(cold, { girls: [girl('amy', { cab: 'landy' })] })).map((e) => e.type)).toEqual(['in']);
+    expect(s.update(0.5, ctx(cold, { girls: [girl('amy', { cab: 'tor' })] })).map((e) => e.type)).toEqual(['in']);
     const gone = s.update(0.5, ctx(cold));
-    expect(gone).toEqual([{ type: 'switchOff', cab: 'landy' }]);
+    expect(gone).toEqual([{ type: 'switchOff', cab: 'tor' }]);
     const t = make();
     send(t, ctx(cold, { cabs: [cab({ running: true })] }));
-    t.update(0.5, ctx(cold, { cabs: [cab({ running: true })], girls: [girl('amy', { cab: 'landy' })] }));
+    t.update(0.5, ctx(cold, { cabs: [cab({ running: true })], girls: [girl('amy', { cab: 'tor' })] }));
     expect(t.update(0.5, ctx(cold, { cabs: [cab({ running: true })] }))).toEqual([]);
   });
 
@@ -110,14 +110,14 @@ describe('sheltering in a cab', () => {
     send(s, ctx(cold));
     expect(s.of('amy')).not.toBeNull();
     const events = run(s, ctx(cold), 12);
-    expect(events).toEqual([{ type: 'switchOff', cab: 'landy' }]);
+    expect(events).toEqual([{ type: 'switchOff', cab: 'tor' }]);
     expect(s.of('amy')).toBeNull();
     expect(s.offers(ctx(cold))).toEqual([]);
   });
 
   it('force sends her at once, whatever the weather', () => {
     const s = make({}, () => 0.99);
-    expect(s.force('amy', ctx(fine), 'rain')).toMatchObject({ type: 'go', cab: 'landy' });
+    expect(s.force('amy', ctx(fine), 'rain')).toMatchObject({ type: 'go', cab: 'tor' });
     expect(s.force('amy', ctx(fine), 'rain')).toBeNull();
   });
 });

@@ -5,7 +5,7 @@ import { decalMesh, MAKER_FOR } from './detail/decals.js';
 import { JUNIOR_FRONT, JUNIOR_TAIL, JUNIOR_SIDE_PLATE, JUNIOR_FLAP, JUNIOR_SEAT, juniorHalf, juniorRearFenderY } from './juniorBody.js';
 
 // The kids' quad's finer parts (TODO 93): the bulky front body, the tail, the plates under the fenders, the mud flaps and the stickers. The
-// bars, the footrests and the engine bay are the yellow's (blasterDetail.js); the fenders are made by blasterFenders with juniorBody.js's
+// bars, the footrests and the engine bay are the yellow's (hornetDetail.js); the fenders are made by hornetFenders with juniorBody.js's
 // numbers. Each takes the quad's materials (`MAT`, as quadModel has them) and adds to the frame it is given.
 
 const mesh = (geo, mat, parent, name) => {

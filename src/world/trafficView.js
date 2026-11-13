@@ -4,7 +4,7 @@
 // Nothing here is solid: the vehicles are scenery that brake for you.
 
 import * as THREE from 'three';
-import { buildLandRoverModel, LANDY_LAYOUT, DEFENDER_LAYOUT, LANDY_GROUND_OFFSET, LANDY_SEATS } from '../vehicle/landRoverModel.js';
+import { buildCabModel, TOR_LAYOUT, CRAG_LAYOUT, CAB_GROUND_OFFSET, CAB_SEATS } from '../vehicle/cabModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET } from '../vehicle/tractorModel.js';
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_SEATS } from '../vehicle/utvModel.js';
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET } from '../vehicle/miniMotoModel.js';
@@ -15,8 +15,8 @@ import { CharacterRig } from '../npc/characterRig.js';
 import { applyOutfit, withShirt, withJumper, OUTFITS } from '../npc/outfit.js';
 
 const MODELS = {
-  defender: { build: (c, reg) => buildLandRoverModel({ bodyColor: c, dashStyle: 'defender', variant: 'defender', reg }), layout: DEFENDER_LAYOUT, offset: LANDY_GROUND_OFFSET, seat: LANDY_SEATS.driver },
-  series: { build: (c, reg) => buildLandRoverModel({ bodyColor: c, dashStyle: 'series', variant: 'series', reg }), layout: LANDY_LAYOUT, offset: LANDY_GROUND_OFFSET, seat: LANDY_SEATS.driver },
+  crag: { build: (c, reg) => buildCabModel({ bodyColor: c, dashStyle: 'crag', variant: 'crag', reg }), layout: CRAG_LAYOUT, offset: CAB_GROUND_OFFSET, seat: CAB_SEATS.driver },
+  tor: { build: (c, reg) => buildCabModel({ bodyColor: c, dashStyle: 'tor', variant: 'tor', reg }), layout: TOR_LAYOUT, offset: CAB_GROUND_OFFSET, seat: CAB_SEATS.driver },
   tractor: { build: (c) => buildTractorModel({ bodyColor: c, dashStyle: 'tractor' }), layout: TRACTOR_LAYOUT, offset: TRACTOR_GROUND_OFFSET, seat: { x: 0, y: 1.35, z: -0.55 } },
   // The neighbours' kids' mini moto (kids.js): the TZ 65 stood upright on its two wheels, the rider sat on its anchor.
   moto: { build: (c) => buildMiniMotoModel({ bodyColor: c }), layout: { wheels: MOTO_LAYOUT.wheels.map((w) => ({ ...w, radius: TZ_WHEELS.radius })) }, offset: MOTO_GROUND_OFFSET, seat: { x: 0, y: 0.78, z: -0.2 } },
@@ -41,7 +41,7 @@ function silhouette() {
 }
 
 /**
- * One of the farm's own vehicle models (`model`: defender, series, tractor or utv) in a paint, with its tyres set on the ground and the body
+ * One of the farm's own vehicle models (`model`: crag, tor, tractor or utv) in a paint, with its tyres set on the ground and the body
  * sunk by its springs, as quad.js does. Also used for the vehicles parked in the neighbour's yard (neighbourFarmProps.js).
  */
 export function buildVehicleBody(model, colour, reg = null) {

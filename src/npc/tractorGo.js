@@ -7,7 +7,7 @@
 //   amyDay   Amy's day: she has a go, and from now on she'll do it when asked
 
 // The vehicles the girls take for a go (and are asked to start): the tractor, the UTV, the two Land Rovers and the cars.
-export const GO_KINDS = ['tractor', 'utv', 'landy', 'defender', 'fiesta', 'corsa', 'p309'];
+export const GO_KINDS = ['tractor', 'utv', 'tor', 'crag', 'finch', 'griffin', 'vauclair'];
 
 export const DEFAULT_TRACTORGO_PARAMS = {
   jessAfter: 150, // seconds into the game before Jess first takes it
@@ -46,7 +46,7 @@ export class TractorGo {
   /**
    * One step. `ctx`: { free: { amy, jess }, vehicles: the ones free to take (nobody on them or going to them), youOnTractor }. A
    * `tractorFree` boolean instead of `vehicles` means just the tractor.
-   * Returns events: { type: 'amyDay', girl, vehicle: 'tractor' | 'utv' | 'landy' }. Jess's goes are offers (offers, take).
+   * Returns events: { type: 'amyDay', girl, vehicle: 'tractor' | 'utv' | 'tor' }. Jess's goes are offers (offers, take).
    */
   update(dt, ctx) {
     this.clock += dt;

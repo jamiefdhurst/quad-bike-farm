@@ -6,7 +6,7 @@
 //   (also 'dashLever', the UTV's forward and reverse lever on the dash, which wants it stopped)
 //   choke: 'thumb' a lever by the left grip, always in reach; 'slide' the same reach, a slider in the left switch pod (the red); 'knob' a pull knob on the dash, a hand off the bars; 'plunger' a plunger on
 //     the carb under the tank, which you can only reach with the quad all but stopped, and with a hand off the bars even then;
-//     'none' no choke at all (a fuel injected engine meters its own cold start: the loan quad's, Jess's Corsa's).
+//     'none' no choke at all (a fuel injected engine meters its own cold start: the loan quad's, Jess's Griffin's).
 //   tap: where the fuel tap sits (the model places it, quadModel.js) and what its handle looks like ('carbLeft', the yellow's, is on the tank's lower
 //     edge beside the carb, with a hose to it).
 

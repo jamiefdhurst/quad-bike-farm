@@ -78,7 +78,7 @@ describe('going home', () => {
 
 describe('the way out', () => {
   it('runs from in front of each car, through the big gate and away down the lane', () => {
-    for (const slot of [LAYOUT.cars.fiesta, LAYOUT.cars.corsa]) {
+    for (const slot of [LAYOUT.cars.finch, LAYOUT.cars.griffin]) {
       const route = leaveRoute(slot, LAYOUT);
       expect(route[0].x).toBeGreaterThan(slot.x); // heading south-east from the swung-round car
       expect(route[0].z).toBeGreaterThan(slot.z); // the car has been swung round to face the road, to the south

@@ -97,7 +97,7 @@ export function buildScreeningPlant(m, { headX, headY, ground, side = -1 }) {
   boxes.push([(x0 + x1) / 2, -0.25, 0, (x1 - x0) / 2, 0.25, hz]);
 
   // The feed hopper: four legs under bearers, braced, the hopper a funnel of four plates (the corners overlapped so nothing shows through) with a rim,
-  // a grizzly of bars across its mouth, stiffener ribs and a ladder.
+  // a bruin of bars across its mouth, stiffener ribs and a ladder.
   const L = { x: 1.12, z: 1.75, top: 2.95 };
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     p.box(m.frame, 0.2, L.top, 0.2, sx * L.x, L.top / 2, sz * L.z, 0, 2);
@@ -127,7 +127,7 @@ export function buildScreeningPlant(m, { headX, headY, ground, side = -1 }) {
     p.box(m.rustDark, 0.12, 1.5, 0.08, 0.5, mid, sz * (lo.z + hi.z) / 2 + sz * 0.1, 0, 2); // stiffener ribs, standing off the plate
     p.box(m.rustDark, 0.12, 1.5, 0.08, -0.5, mid, sz * (lo.z + hi.z) / 2 + sz * 0.1, 0, 2);
   }
-  // The rim and the grizzly: four angle bars round the top, and bars across the mouth that a lump lands on.
+  // The rim and the bruin: four angle bars round the top, and bars across the mouth that a lump lands on.
   for (const sz of [-1, 1]) p.box(m.frame, 2 * hi.x + 0.1, 0.16, 0.12, 0, hi.y + 0.02, sz * (hi.z + 0.06), 0, 2);
   for (const sx of [-1, 1]) p.box(m.frame, 0.12, 0.18, 2 * hi.z + 0.2, sx * (hi.x + 0.06), hi.y + 0.05, 0, 0, 2);
   for (let i = -5; i <= 5; i++) p.box(m.rustDark, 0.07, 0.07, 2 * hi.z, i * 0.3, hi.y - 0.03, 0, 0, 1);

@@ -47,7 +47,7 @@ export const RADIO_STYLES = {
 };
 
 RADIO_STYLES.cassette = {
-  // A period car cassette player, as Amy's Fiesta has: a silver-grey faceplate, a cassette door in the middle with its slot, a tuning scale above a row of pale
+  // A period car cassette player, as Amy's Finch has: a silver-grey faceplate, a cassette door in the middle with its slot, a tuning scale above a row of pale
   // push buttons, a knob at each end. The scale lights amber when it is on.
   draw(g, W, H, on) {
     g.fillStyle = '#8f9294';

@@ -190,7 +190,7 @@ export class MudCoat {
     this.uniforms.uCabinMin.value.set(...cabin.min);
     this.uniforms.uCabinMax.value.set(...cabin.max);
     const signals = model.userData.signalMaterials; // the indicator and reverse lenses light up, so they keep their own materials
-    // `liveMaterials`: what the game changes directly on the original (a radio's face, the Series' sidelamps, lit with the headlights), so a muddy copy would never show it.
+    // `liveMaterials`: what the game changes directly on the original (a radio's face, the Tor's sidelamps, lit with the headlights), so a muddy copy would never show it.
     const skip = new Set([model.userData.lensMaterial, model.userData.tailMaterial, ...(signals ? Object.values(signals) : []), model.getObjectByName('hazardSwitch')?.userData.mat, ...(model.userData.liveMaterials ?? [])]);
     // A model's `cleanMaterials`: its inside (the seats, the dash, the carpet in a cab), which mud on the outside never reaches. They
     // still wear (seats shiny at the edge, mats rubbed smooth), so they get the patch with the mud left out.

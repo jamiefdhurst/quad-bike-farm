@@ -7,12 +7,12 @@ import { dopplerFactor } from './propagation.js';
 /** Hz of the drone at a cruise by kind, and how loud it is (0..1). */
 export const DRONE = {
   van: { hz: 58, level: 0.5, rough: 0.3 },
-  landy: { hz: 50, level: 0.55, rough: 0.5 },
+  tor: { hz: 50, level: 0.55, rough: 0.5 },
   tractor: { hz: 34, level: 0.8, rough: 0.8 },
   utv: { hz: 66, level: 0.4, rough: 0.3 },
   post: { hz: 58, level: 0.5, rough: 0.3 },
   neighbour: { hz: 50, level: 0.55, rough: 0.5 },
-  tuner: { hz: 58, level: 0.5, rough: 0.35 }, // the rolling road's Land Rover (a Defender)
+  tuner: { hz: 58, level: 0.5, rough: 0.35 }, // the rolling road's Land Rover (a Crag)
 };
 
 /** The drone's pitch and loudness for a speed: it idles at a low note, climbs with speed to the cruise, and goes quiet when stood. */

@@ -4,10 +4,10 @@ import { buildDash } from './dash.js';
 import { loftGeometry, mergeStatic, rod, springGeometry, sweepGeometry } from './quadGeometry.js';
 import { treadTyre } from './detail/tread.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
-import { MF_WHEELS, MF_BONNET, MF_NOSE, MF_GRILLE, MF_NOSE_FACE, MF_LAMP, MF_PANEL, MF_COWL, MF_STEERING, MF_SEAT, MF_GUARD, MF_FOOT, MF_PEDALS, MF_LEVERS, MF_EXHAUST, MF_AIR, MF_ACCEL, MF_HANDBRAKE, cowlTop } from './mf35Body.js';
+import { MF_WHEELS, MF_BONNET, MF_NOSE, MF_GRILLE, MF_NOSE_FACE, MF_LAMP, MF_PANEL, MF_COWL, MF_STEERING, MF_SEAT, MF_GUARD, MF_FOOT, MF_PEDALS, MF_LEVERS, MF_EXHAUST, MF_AIR, MF_ACCEL, MF_HANDBRAKE, cowlTop } from './hartleyBody.js';
 import { addHeadlightBeams, addTailLights } from './quadModel.js';
 
-// The old farm tractor (TODO 98): a Massey-Ferguson-35-style three-cylinder diesel in red and grey (the Hartley 35; mf35Body.js has the
+// The old farm tractor (TODO 98): a three-cylinder diesel in red and grey (the Hartley 35; hartleyBody.js has the
 // numbers), procedural like the quads: a red bonnet over a grey engine, a red cowl behind it with the instruments set straight into its
 // metal, a pan seat between two big rear wheels, a steering wheel on a raked column, an upright exhaust with a flap on top, and a drawbar.
 // No cab. Same named parts as a quad's model so Quad drives it unchanged (see quadModel.js), plus the controls only it has:
@@ -175,7 +175,7 @@ function buildWheel(w, rimMat) {
 }
 
 
-/** The height of the panel's plane at z (see mf35Body.js), for sitting things on the cowl's top. */
+/** The height of the panel's plane at z (see hartleyBody.js), for sitting things on the cowl's top. */
 const panelY0 = (z) => MF_PANEL.at[1] + Math.tan(Math.PI / 2 - MF_PANEL.tilt) * (z - MF_PANEL.at[2]);
 
 // The tractor ------------------------------------------------------------------

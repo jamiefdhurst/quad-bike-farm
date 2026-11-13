@@ -1,4 +1,4 @@
-// The Series' drop tailgate. Pure logic, no Three.js: the game poses the model from `open` (landRoverModel.js poseSeriesTailgate) and
+// The Tor's drop tailgate. Pure logic, no Three.js: the game poses the model from `open` (cabModel.js poseTorTailgate) and
 // tests/tailgate.test.js checks it. T drops it or raises it, from the seat or standing by the tub, only when the truck is nearly stopped; it
 // is thrown shut again if you drive off with it down (the chains would not hold it at speed).
 

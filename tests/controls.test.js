@@ -124,12 +124,12 @@ describe('the quads\' parking brake', () => {
 describe('which engines have a choke', () => {
   it('has none on an injected engine or a diesel (glow plugs warm it instead), and one on a carburettor', async () => {
     const { hasChoke } = await import('../src/vehicle/controls.js');
-    const { P309_SPEC, CORSA_SPEC, FIESTA_SPEC, DEFENDER_SPEC } = await import('../src/vehicle/quadSpecs.js');
+    const { VAUCLAIR_SPEC, GRIFFIN_SPEC, FINCH_SPEC, CRAG_SPEC } = await import('../src/vehicle/quadSpecs.js');
     const { featuresOf } = await import('../src/vehicle/quirks.js');
-    expect(hasChoke(FIESTA_SPEC.engine)).toBe(true);
-    expect(hasChoke(CORSA_SPEC.engine)).toBe(false);
-    expect(hasChoke(P309_SPEC.engine)).toBe(false);
-    expect(hasChoke(DEFENDER_SPEC.engine)).toBe(false);
-    expect(featuresOf(P309_SPEC).choke).toBe(false); // no choke quirk dealt to your car
+    expect(hasChoke(FINCH_SPEC.engine)).toBe(true);
+    expect(hasChoke(GRIFFIN_SPEC.engine)).toBe(false);
+    expect(hasChoke(VAUCLAIR_SPEC.engine)).toBe(false);
+    expect(hasChoke(CRAG_SPEC.engine)).toBe(false);
+    expect(featuresOf(VAUCLAIR_SPEC).choke).toBe(false); // no choke quirk dealt to your car
   });
 });

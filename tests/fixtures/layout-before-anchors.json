@@ -300,7 +300,7 @@
   },
   "parked": [
    {
-    "kind": "series",
+    "kind": "tor",
     "x": 192,
     "z": 122,
     "yaw": 1.2,
@@ -1474,19 +1474,19 @@
   "radius": 20
  },
  "cars": {
-  "p309": {
+  "vauclair": {
    "x": 182.8,
    "z": -1.6,
    "yaw": 3.141592653589793,
    "where": "by the Dutch barn"
   },
-  "fiesta": {
+  "finch": {
    "x": 188,
    "z": -1.6,
    "yaw": 3.141592653589793,
    "where": "by the Dutch barn"
   },
-  "corsa": {
+  "griffin": {
    "x": 193.2,
    "z": -1.6,
    "yaw": 3.141592653589793,

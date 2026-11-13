@@ -353,9 +353,9 @@ export function buildCarPark(ctx) {
   // Cars in the bays, nose to the hedge. The farm's own models, like the neighbour's yard.
   const bw = (w - 2) / 6;
   const parked = [
-    { bay: 1, kind: 'series', colour: 0x3d5a80, reg: 'M227 BDK' },
+    { bay: 1, kind: 'tor', colour: 0x3d5a80, reg: 'M227 BDK' },
     { bay: 3, kind: 'utv', colour: 0x8a3b2e },
-    { bay: 4, kind: 'series', colour: 0xc9c3b0, reg: 'E158 NFA' },
+    { bay: 4, kind: 'tor', colour: 0xc9c3b0, reg: 'E158 NFA' },
   ];
   const cars = [];
   for (const p of parked) {

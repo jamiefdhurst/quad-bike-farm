@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { pickFleet, DEFAULT_FLEET_PARAMS } from '../src/vehicle/fleet.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { BODY_STYLES } from '../src/vehicle/quadModel.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
 import { createRandom } from '../src/core/random.js';
@@ -11,7 +11,7 @@ import { createFields } from '../src/world/fields.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 
 describe('the fleet', () => {
-  const big = [TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC];
+  const big = [TRACTOR_SPEC, UTV_SPEC, TOR_SPEC];
   const others = [...EXTRA_SPECS, ...big];
   const pool = [...QUAD_SPECS, ...others];
   const games = Array.from({ length: 600 }, (_, i) => pickFleet(QUAD_SPECS, others, createRandom(i)));
@@ -107,21 +107,21 @@ describe('extra vehicles', () => {
   });
 
   it('makes the old three-wheeler a worn, solo, cord-start two-stroke with a manual box and three wheels that can tip', async () => {
-    const atc = EXTRA_SPECS.find((s) => s.id === 't185');
+    const t185 = EXTRA_SPECS.find((s) => s.id === 't185');
     const yellow = QUAD_SPECS.find((s) => s.id === 'hornet');
-    expect(atc.solo).toBe(true);
-    expect(atc.manual).toBe(true);
-    expect(atc.engine.strokes).toBe(2);
-    expect(atc.engine.pullStart).toBe(true);
-    expect(atc.engine.noStarter).toBe(true);
-    expect(atc.wearRange[0]).toBeGreaterThanOrEqual(yellow.wearRange[0]); // worn, but not so much that build roughness plus wear dealt it erratic (startingCondition.test.js)
-    expect(atc.audio.recBank).toBe('engine-bank-atc'); // its own sound, a Piaggio Ape's tickover
-    expect(atc.idleRange[0]).toBeGreaterThanOrEqual(1300); // a realistic two-stroke tickover
-    expect(atc.idleRange[1]).toBeLessThanOrEqual(1800);
-    const { ATC_LAYOUT } = await import('../src/vehicle/atcModel.js');
-    expect(ATC_LAYOUT.wheels).toHaveLength(3);
-    expect(ATC_LAYOUT.wheels.filter((w) => w.front)).toHaveLength(1);
-    expect(atc.vehicle.centreOfMassY).toBeGreaterThan(-0.08); // higher than a quad's default, so it can tip
+    expect(t185.solo).toBe(true);
+    expect(t185.manual).toBe(true);
+    expect(t185.engine.strokes).toBe(2);
+    expect(t185.engine.pullStart).toBe(true);
+    expect(t185.engine.noStarter).toBe(true);
+    expect(t185.wearRange[0]).toBeGreaterThanOrEqual(yellow.wearRange[0]); // worn, but not so much that build roughness plus wear dealt it erratic (startingCondition.test.js)
+    expect(t185.audio.recBank).toBe('engine-bank-atc'); // its own sound, a Piaggio Ape's tickover
+    expect(t185.idleRange[0]).toBeGreaterThanOrEqual(1300); // a realistic two-stroke tickover
+    expect(t185.idleRange[1]).toBeLessThanOrEqual(1800);
+    const { T185_LAYOUT } = await import('../src/vehicle/t185Model.js');
+    expect(T185_LAYOUT.wheels).toHaveLength(3);
+    expect(T185_LAYOUT.wheels.filter((w) => w.front)).toHaveLength(1);
+    expect(t185.vehicle.centreOfMassY).toBeGreaterThan(-0.08); // higher than a quad's default, so it can tip
   });
 });
 

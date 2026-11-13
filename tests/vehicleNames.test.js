@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 import * as specModule from '../src/vehicle/quadSpecs.js';
 import { VEHICLE_NAMES, MAKER_NAMES, fullName, sayName, thePhrase, modelOnly } from '../src/vehicle/names.js';
 import { MAKER_FOR } from '../src/vehicle/detail/decals.js';
@@ -11,7 +12,7 @@ import { QUAD_PHRASES } from '../src/npc/quadNames.js';
 const specs = Object.values(specModule).flatMap((v) => (Array.isArray(v) ? v : [v])).filter((s) => s && typeof s.id === 'string' && 'bodyColor' in s);
 
 // Real makes and models the game must never print or say (the made-up makers and models are in vehicle/names.js). "Ford" is left out: the ford is a place.
-const REAL = /\b(honda|yamaha|kawasaki|suzuki|land[ -]?rover|landy|landies|defender|fiesta|corsa|vauxhall|opel|massey|ferguson|john deere|kubota|polaris|can-am|bombardier|grizzly|kodiak|blaster|quadracer|series iii|200 ?tdi|tdi|peugeot)\b/i;
+const REAL = new RegExp(`\\b(${JSON.parse(readFileSync('tools/realMakes.json', 'utf8')).words.join('|')})\\b`, 'i');
 // A quad called by its paint: "the red quad", "the blue one". Red diesel, a red handle, a needle "in the red" and the like are not a vehicle.
 const BY_COLOUR = /\b(red|blue|yellow|green|orange) (quad|one)s?\b|(?<!\b(?:in|on) )\bthe (red|blue|yellow|green|orange)\b(?! (diesel|stuff|box|handle|can|catch|lever|toolbox|lamp|zone|margin|reflectors|petrol|rocker|switch|band|bay|light|puddle))/i;
 

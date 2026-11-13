@@ -47,7 +47,7 @@ export function captureVehicle(unit, extra = {}) {
   if (extra.settings) out.settings = { ...extra.settings };
   if (extra.barnFind) out.barnFind = extra.barnFind;
   if (extra.rack) out.rack = extra.rack; // the strapped load on its rear rack (items/rackHost.js setUpRackLoads puts it back)
-  if (extra.cargo?.length) out.cargo = extra.cargo; // what stands in the tub or load space, by spot (game.js landyCargoSave)
+  if (extra.cargo?.length) out.cargo = extra.cargo; // what stands in the tub or load space, by spot (game.js cabCargoSave)
   return out;
 }
 

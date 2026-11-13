@@ -49,7 +49,7 @@ export class DoorSounds {
       const slam = v >= p.hatchSlamSpeed;
       this.events.push({ part: this.rear, side: 0, what: slam ? 'slam' : 'shut', strength: slam ? 1 : 0.7 });
     }
-    // A dropped tailgate (the Series') stops hard on its chains; the others have nothing to stop against.
+    // A dropped tailgate (the Tor's) stops hard on its chains; the others have nothing to stop against.
     if (this.up.rear && !this.stopped && rear > 0.97) {
       this.stopped = true;
       if (this.rear === 'tailgate') this.events.push({ part: 'tailgate', side: 0, what: 'stop', strength: 0.8 });

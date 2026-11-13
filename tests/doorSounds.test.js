@@ -40,7 +40,7 @@ describe('DoorSounds', () => {
     expect(whats(sounds)).toEqual(['door:1:open']);
   });
 
-  it('gives the Series tailgate a stop on its chains, and the hatch and the back door none', () => {
+  it('gives the Tor tailgate a stop on its chains, and the hatch and the back door none', () => {
     for (const [rear, stops] of [['tailgate', true], ['backDoor', false], ['hatch', false]]) {
       const gate = new Tailgate();
       const sounds = new DoorSounds(rear);

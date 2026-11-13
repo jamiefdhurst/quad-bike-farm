@@ -7,11 +7,11 @@ import { bentTube, loftGeometry, mergeStatic, rod, springGeometry } from './quad
 import { treadTyre } from './detail/tread.js';
 import { buildBuckledBelt, webbingMaterial } from './detail/belts.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
-import { buildMuleSpin, addMuleFront, addMuleCab, addMuleDoors, addMuleBed, addMuleGate, addMuleHitch, addMuleCover, addMuleSplashes } from './muleDetail.js';
-import { MULE_WHEELS, MULE_BED, MULE_DOOR, MULE_HITCH, MULE_DASH, loftTop } from './muleBody.js';
+import { buildYakSpin, addYakFront, addYakCab, addYakDoors, addYakBed, addYakGate, addYakHitch, addYakCover, addYakSplashes } from './yakDetail.js';
+import { YAK_WHEELS, YAK_BED, YAK_DOOR, YAK_HITCH, YAK_DASH, loftTop } from './yakBody.js';
 import { buildHandbrake } from './detail/cabControls.js';
 
-// The farm UTV (TODO 99): the Ridgeback Yak 4010, a Mule-4010-style side-by-side (muleBody.js has the numbers, muleDetail.js the parts),
+// The farm UTV (TODO 99): the Ridgeback Yak 4010, a side-by-side (yakBody.js has the numbers, yakDetail.js the parts),
 // procedural like the quads and the tractor. A diesel, with a bench seat for
 // three under a roll cage and flat roof, a windscreen, a mesh behind the seat and door nets that swing out, a steering wheel on the right (it's British), a pedal pair on the floor, a centre console with the
 // forward and reverse lever, the 4WD and diff lock switches, the light switch and the bed's tip lever, and a black tipping bed behind the seat with a drop-down tailgate. Same named parts as a quad's model so Quad
@@ -32,7 +32,7 @@ import { buildHandbrake } from './detail/cabControls.js';
 // +Z is forward and +X is the driver's left (the driver sits on the right, at -X).
 
 export const UTV_GROUND_OFFSET = -0.6; // chassis origin to the ground at rest, metres
-const R = MULE_WHEELS.radius; // 25 inch tyres
+const R = YAK_WHEELS.radius; // 25 inch tyres
 const REST = 0.2; // suspension rest length: matches the spec's suspensionRestLength
 
 const wheelY = R + REST + UTV_GROUND_OFFSET; // where each wheel's suspension mount sits in the chassis frame
@@ -41,10 +41,10 @@ const wheelY = R + REST + UTV_GROUND_OFFSET; // where each wheel's suspension mo
 export const UTV_LAYOUT = {
   spawnSag: 0.14, // how far the springs sink under its weight when it first lands, measured: it starts already sunk
   wheels: [
-    { name: 'wheel_fl', x: MULE_WHEELS.x, z: MULE_WHEELS.z, front: true, radius: R, y: wheelY },
-    { name: 'wheel_fr', x: -MULE_WHEELS.x, z: MULE_WHEELS.z, front: true, radius: R, y: wheelY },
-    { name: 'wheel_rl', x: MULE_WHEELS.x, z: -MULE_WHEELS.z, front: false, radius: R, y: wheelY },
-    { name: 'wheel_rr', x: -MULE_WHEELS.x, z: -MULE_WHEELS.z, front: false, radius: R, y: wheelY },
+    { name: 'wheel_fl', x: YAK_WHEELS.x, z: YAK_WHEELS.z, front: true, radius: R, y: wheelY },
+    { name: 'wheel_fr', x: -YAK_WHEELS.x, z: YAK_WHEELS.z, front: true, radius: R, y: wheelY },
+    { name: 'wheel_rl', x: YAK_WHEELS.x, z: -YAK_WHEELS.z, front: false, radius: R, y: wheelY },
+    { name: 'wheel_rr', x: -YAK_WHEELS.x, z: -YAK_WHEELS.z, front: false, radius: R, y: wheelY },
   ],
   topY: wheelY,
   chassis: { hx: 0.62, hy: 0.28, hz: 1.45, y: 0.52 + UTV_GROUND_OFFSET },
@@ -89,7 +89,7 @@ export const BED_PROXY = { w: 1.5, h: 0.6, d: 1.15, x: 0, y: 0.3, z: 0.55 };
 export const BED_MAX_TIP = 0.82;
 export const TAILGATE_OPEN = -Math.PI / 2 - 0.04;
 
-const HINGE = MULE_BED.hinge; // the bed's pivot, at the back of its floor
+const HINGE = YAK_BED.hinge; // the bed's pivot, at the back of its floor
 
 const MAT = {
   rubber: new THREE.MeshStandardMaterial({ color: 0x1a1917, roughness: 0.95 }),
@@ -264,7 +264,7 @@ function buildWheel(w) {
   spin.name = 'spin';
   spin.userData.keep = true;
   wheel.add(spin);
-  buildMuleSpin(spin, MAT, w.front, side); // the tyre, the dished black rim and its nuts, all inboard of the tyre's face (muleDetail.js)
+  buildYakSpin(spin, MAT, w.front, side); // the tyre, the dished black rim and its nuts, all inboard of the tyre's face (yakDetail.js)
   mergeStatic(wheel);
   return wheel;
 }
@@ -310,8 +310,8 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     add(springGeometry(0.22, 0.04, 0.007, 3), MAT.yellow, root).position.set(s * 0.57, 0.64, -0.98);
   }
 
-  // The front (muleDetail.js): the ribbed green hood over the mesh grille, the lamps at the nose's corners, the bumper and the black flares.
-  addMuleFront(root, MAT, paint, lensMat);
+  // The front (yakDetail.js): the ribbed green hood over the mesh grille, the lamps at the nose's corners, the bumper and the black flares.
+  addYakFront(root, MAT, paint, lensMat);
 
   // The cab: floor with ribs, rocker panels, the dash panel across the front with its glovebox and grab handle.
   rbox(1.2, 0.03, 1.1, 0.01, MAT.floor, 0, 0.34, 0.0, root);
@@ -320,7 +320,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     rbox(0.1, 0.2, 1.15, 0.03, paint, s * 0.64, 0.42, 0.0, root);
     rbox(0.12, 0.03, 1.0, 0.01, MAT.steel, s * 0.72, 0.34, 0.0, root); // the step along the sill
   }
-  add(loftGeometry(MULE_DASH, { exponent: 3 }), MAT.plastic, root, 'dashPanel');
+  add(loftGeometry(YAK_DASH, { exponent: 3 }), MAT.plastic, root, 'dashPanel');
   // The glovebox: a big moulded lid on the passenger side, flush with the dash's face, with a recessed handle bar and the warning sticker.
   rbox(0.5, 0.27, 0.014, 0.02, MAT.glovebox, 0.3, 0.84, 0.337, root, 'gloveboxLid');
   rbox(0.13, 0.026, 0.02, 0.008, MAT.floor, 0.3, 0.935, 0.326, root); // the recess its handle sits in
@@ -331,11 +331,11 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   root.add(warn);
   // The passenger's grab handle: a bent bar standing on two plates bolted to the dash's top, at its true height there.
   const gx = [0.14, 0.52];
-  const gy = gx.map((x) => loftTop(MULE_DASH, x, 0.4, 3));
+  const gy = gx.map((x) => loftTop(YAK_DASH, x, 0.4, 3));
   add(bentTube([[gx[0], gy[0] - 0.02, 0.4], [gx[0], gy[0] + 0.18, 0.4], [gx[1], gy[1] + 0.18, 0.4], [gx[1], gy[1] - 0.02, 0.4]], 0.014, { bend: 0.03, radial: 6 }), MAT.steel, root, 'grabHandle');
   gx.forEach((x, i) => rbox(0.06, 0.014, 0.06, 0.006, MAT.steel, x, gy[i] + 0.002, 0.4, root));
-  for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.03, 0.026, 0.02, 14), MAT.floor, root).position.set(x, loftTop(MULE_DASH, x, 0.52, 3) - 0.004, 0.52); // cup holders
-  for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.026, 0.026, 0.002, 14), MAT.plastic, root).position.set(x, loftTop(MULE_DASH, x, 0.52, 3) + 0.006, 0.52);
+  for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.03, 0.026, 0.02, 14), MAT.floor, root).position.set(x, loftTop(YAK_DASH, x, 0.52, 3) - 0.004, 0.52); // cup holders
+  for (const x of [0.22, 0.33]) add(new THREE.CylinderGeometry(0.026, 0.026, 0.002, 14), MAT.plastic, root).position.set(x, loftTop(YAK_DASH, x, 0.52, 3) + 0.006, 0.52);
 
   // The bench: a base, a cushion and a split backrest, in grey cloth, with the three seat belts stowed down the back.
   rbox(1.12, 0.3, 0.46, 0.04, MAT.plastic, 0, 0.55, -0.2, root); // the base it sits on, with the engine under it
@@ -361,9 +361,9 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
     root.add(buildBuckledBelt(seat, { top, low, buckle, hip, stowedRun, mats: { webbing: beltWebbing } }));
   }
 
-  // The cage, roof, windscreen, rear net, mirrors and the lamps' plate (muleDetail.js), and the door nets that swing out.
-  addMuleCab(root, MAT, paint);
-  quad.userData.doorNets = addMuleDoors(root, MAT);
+  // The cage, roof, windscreen, rear net, mirrors and the lamps' plate (yakDetail.js), and the door nets that swing out.
+  addYakCab(root, MAT, paint);
+  quad.userData.doorNets = addYakDoors(root, MAT);
 
   // The steering wheel on its column, raked back to the driver (on the right). `handlebars` is the wheel itself, so it turns about the
   // column's axis; the dash sits on the column's shroud so it doesn't turn with it.
@@ -480,18 +480,18 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   root.add(bed);
   const zc = (z) => z - HINGE.z; // a world z, as the bed's own
   const yc = (y) => y - HINGE.y;
-  addMuleBed(bed, MAT, paint, yc, zc);
+  addYakBed(bed, MAT, paint, yc, zc);
   // The tailgate, hinged along its bottom edge: shut, it stands up; open, it lies flat behind the bed (where a girl can sit).
   const gate = new THREE.Group();
   gate.name = 'tailgate';
   gate.userData.keep = true;
-  gate.position.set(0, yc(MULE_BED.floorY + 0.03), zc(MULE_BED.gate));
-  addMuleGate(gate, MAT, paint);
+  gate.position.set(0, yc(YAK_BED.floorY + 0.03), zc(YAK_BED.gate));
+  addYakGate(gate, MAT, paint);
   bed.add(gate);
-  addMuleSplashes(root, bed, gate, yc, zc);
+  addYakSplashes(root, bed, gate, yc, zc);
   bed.userData.mudRest = [0, HINGE.y, HINGE.z]; // the dirt on the bed and the tailgate stays on them as they tip and swing (effects/mudCoat.js)
-  gate.userData.mudRest = [0, MULE_BED.floorY + 0.03, MULE_BED.gate];
-  addMuleHitch(root, MAT);
+  gate.userData.mudRest = [0, YAK_BED.floorY + 0.03, YAK_BED.gate];
+  addYakHitch(root, MAT);
   addSignalLamps(quad, MAT.indicator, MAT.reverse);
   addTailLights(quad, MAT.tail); // before the bed is merged: the cab's lamps become the quad's own tail material, lit by the headlight supply
   // The tailgate's seat: hips on its middle when it's down, facing backwards (a girl riding where she shouldn't).
@@ -796,8 +796,8 @@ export function poseUtvControls(model, { reverse, neutral, lights, horn, fourWd,
 export function poseUtvDoors(model, open) {
   const nets = model.userData.doorNets;
   if (!nets) return;
-  nets.left.rotation.y = -MULE_DOOR.open * open.left; // hinged at the front, the free end at the back swings out to the side
-  nets.right.rotation.y = MULE_DOOR.open * open.right;
+  nets.left.rotation.y = -YAK_DOOR.open * open.left; // hinged at the front, the free end at the back swings out to the side
+  nets.right.rotation.y = YAK_DOOR.open * open.right;
 }
 
 /** Shows each seat's belt worn (across whoever is in it) or stowed down the backrest. `belted` is { driver, mid, left } of booleans. */

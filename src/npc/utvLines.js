@@ -10,7 +10,7 @@
 //   utvBedRefuse    asked to ride in the bed (Amy only)
 //   utvPetrolWarn   you are pouring petrol into it
 //   utvPetrol       it is running badly and there is petrol in the diesel
-//   landyKick       the Land Rover's starting handle has just kicked back on you (the nearest one, within 15 m)
+//   torKick       the Land Rover's starting handle has just kicked back on you (the nearest one, within 15 m)
 // Merged into the main line sets (voiceLines.js, jessLines.js), so they're recorded with the rest.
 
 const line = (cooldown, lines) => ({ cooldown, lines });
@@ -27,7 +27,7 @@ export const AMY_UTV_LINES = {
   utvBedRefuse: line(30, ['No. That is not a seat, it is a bed. I am riding properly.', 'I will not ride in the back. It is against the rules.', 'Not a chance. Ask Jess.']),
   utvPetrolWarn: line(40, ['Stop! That is petrol. The Yak is a diesel!', 'No, no, no. Red diesel only for that one.', 'That is the wrong can. Petrol will ruin it.']),
   utvPetrol: line(60, ['It is running terribly. Did someone put petrol in the diesel?', 'That does not sound right. It is a diesel, it does not like petrol.', 'It is coughing. Check what went in the tank.']),
-  landyKick: line(20, ['Ouch! Are you all right? Keep your thumb out of the way.', 'It kicked back? Thumb on the same side as your fingers. Let me see your hand.', 'That is how people break their thumbs. Hold it properly.']),
+  torKick: line(20, ['Ouch! Are you all right? Keep your thumb out of the way.', 'It kicked back? Thumb on the same side as your fingers. Let me see your hand.', 'That is how people break their thumbs. Hold it properly.']),
 };
 
 export const JESS_UTV_LINES = {
@@ -41,5 +41,5 @@ export const JESS_UTV_LINES = {
   utvTipLaugh: ['Ha ha ha! Did you see her go? Brilliant!', 'She flew! She actually flew! Do it again!', 'I am going to be laughing about that all day.'],
   utvPetrolWarn: ['Oi! That is petrol! It runs on the red stuff!', 'Wrong can, genius. It is a diesel.', 'You are putting petrol in the diesel. I am not even surprised.'],
   utvPetrol: ['It sounds like it is dying. What did you put in it?', 'It is spluttering and I do not think it is meant to.', 'Is it supposed to do that? It cannot be good.'],
-  landyKick: ['Ha! It bit you! Thumb out of the way, muppet.', 'Ooh, that looked like it hurt. Do it again.', 'You are holding it wrong. Even I know that.'],
+  torKick: ['Ha! It bit you! Thumb out of the way, muppet.', 'Ooh, that looked like it hurt. Do it again.', 'You are holding it wrong. Even I know that.'],
 };

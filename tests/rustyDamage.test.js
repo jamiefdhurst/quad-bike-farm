@@ -38,8 +38,8 @@ describe('the look on each donor', () => {
   let weatherModel;
   let buildTarp;
   const build = (id, decay) => {
-    const spec = { farm300: 'utility', bruin: 'grizzly', hornet: 'blaster', rb300: 'bayou', adder: 'racer' }[id];
-    const model = buildQuadModel({ bodyColor: 0x6b4426, dashStyle: { farm300: 'foreman', bruin: 'grizzly', hornet: 'blaster', rb300: 'bayou', adder: 'quadracer' }[id], style: spec, decay });
+    const spec = { farm300: 'utility', bruin: 'bruin', hornet: 'hornet', rb300: 'rb300', adder: 'racer' }[id];
+    const model = buildQuadModel({ bodyColor: 0x6b4426, dashStyle: { farm300: 'farm300', bruin: 'bruin', hornet: 'hornet', rb300: 'rb300', adder: 'adder' }[id], style: spec, decay });
     model.updateMatrixWorld(true);
     return model;
   };

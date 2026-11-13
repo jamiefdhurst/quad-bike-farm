@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import * as SPECS from '../src/vehicle/quadSpecs.js';
-import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, TOR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
 
 describe('engine banks', () => {
@@ -101,7 +101,7 @@ describe('engine banks', () => {
     expect(median).toBeLessThan(PLOVER_SPEC.idleRange[1] * 1.2);
   });
 
-  it('gives the mini moto, the ATC and the UTV their own banks', () => {
+  it('gives the mini moto, the T185 and the UTV their own banks', () => {
     expect(EXTRA_SPECS.find((s) => s.id === 'tz65').audio.recBank).toBe('engine-bank-moto');
     expect(EXTRA_SPECS.find((s) => s.id === 't185').audio.recBank).toBe('engine-bank-atc');
     expect(UTV_SPEC.audio.recBank).toBe('engine-bank-utv');
@@ -120,7 +120,7 @@ describe('engine banks', () => {
   });
 
   it("cuts the Land Rover's Jeep idle into single beats from its steady stretch, in order, each lasting one of its engine's firings", () => {
-    const bank = JSON.parse(readFileSync('public/audio/engine-bank-landy.json', 'utf8'));
+    const bank = JSON.parse(readFileSync('public/audio/engine-bank-tor.json', 'utf8'));
     expect(bank.readThrough).toBe(true);
     const idle = bank.grains.filter((g) => g.kind === 'idle');
     idle.forEach((g, i) => expect(g.slice).toBe(i % 3)); // in groups of three, as the steady stretch repeats
@@ -129,15 +129,15 @@ describe('engine banks', () => {
       expect(g.dur).toBeGreaterThan(0.05);
       expect(g.dur).toBeLessThan(0.07);
     }
-    expect(LAND_ROVER_SPEC.engine.cylinders).toBe(4);
+    expect(TOR_SPEC.engine.cylinders).toBe(4);
     // The bank's rpm (120 / beat length) is four times the engine's: each beat plays near its own speed at the Land Rover's idle.
     const ok = idle.filter((g) => g.ok !== false).map((g) => g.rpm / 4).sort((a, b) => a - b);
     const median = ok[Math.floor(ok.length / 2)];
-    expect(median).toBeGreaterThan(LAND_ROVER_SPEC.idleRange[0] * 0.85);
-    expect(median).toBeLessThan(LAND_ROVER_SPEC.idleRange[1] * 1.1);
+    expect(median).toBeGreaterThan(TOR_SPEC.idleRange[0] * 0.85);
+    expect(median).toBeLessThan(TOR_SPEC.idleRange[1] * 1.1);
   });
 
-  // The moto's Derbi bangs every other turn at idle (two slices a lump), the ATC's Ape about every third (three).
+  // The moto's Derbi bangs every other turn at idle (two slices a lump), the T185's Ape about every third (three).
   for (const [name, n, idleRange] of [['engine-bank-moto', 2, [1800, 2200]], ['engine-bank-atc', 3, [1300, 1800]]]) {
     it(`cuts ${name}'s lumpy two-stroke idle into ${n} slices a lump, in order, with the bang in the first`, () => {
       const dir = name.endsWith('-eq') ? 'source/audio' : 'public/audio'; // the EQ'd one is kept out of the download

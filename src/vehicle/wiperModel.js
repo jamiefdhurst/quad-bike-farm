@@ -130,7 +130,7 @@ function collectWipers(model) {
   return out;
 }
 
-/** The wiper stalk (or the Series' toggle) at notch `notch` of `of` (0 off): the stalk's end lifts, the toggle goes from down to up. */
+/** The wiper stalk (or the Tor's toggle) at notch `notch` of `of` (0 off): the stalk's end lifts, the toggle goes from down to up. */
 export function poseWiperStalk(model, notch, of) {
   const parts = (model.userData.wiperStalk ??= { stalk: model.getObjectByName('wiperStalk'), toggle: model.getObjectByName('wiperSwitch')?.getObjectByName('toggleLever') });
   if (parts.stalk) parts.stalk.quaternion.setFromAxisAngle(parts.stalk.userData.axis, -0.12 * notch); // (-: the tip is on -x, so it rises the other way)

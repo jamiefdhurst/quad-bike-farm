@@ -76,10 +76,10 @@ describe('steadiness', () => {
   });
 
   it('is on for the Land Rover and off for the quads', async () => {
-    const { LAND_ROVER_SPEC, UTV_SPEC } = await import('../src/vehicle/quadSpecs.js');
-    expect(LAND_ROVER_SPEC.vibration.steadiness).toBeGreaterThan(0.5);
+    const { TOR_SPEC, UTV_SPEC } = await import('../src/vehicle/quadSpecs.js');
+    expect(TOR_SPEC.vibration.steadiness).toBeGreaterThan(0.5);
     expect(UTV_SPEC.vibration.steadiness).toBeGreaterThan(0.3);
-    expect(UTV_SPEC.vibration.steadiness).toBeLessThan(LAND_ROVER_SPEC.vibration.steadiness);
+    expect(UTV_SPEC.vibration.steadiness).toBeLessThan(TOR_SPEC.vibration.steadiness);
     expect(DEFAULT_VIBRATION_PARAMS.steadiness).toBe(0);
   });
 });

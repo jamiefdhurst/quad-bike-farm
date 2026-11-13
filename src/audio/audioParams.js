@@ -112,7 +112,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   engineSound: 'pulse', // 'pulse' (revs built from recorded idle firings), 'recorded' (idle and rev recordings) or 'synth' (fully synthesised)
 
   // Recorded engine
-  recBank: 'engine-bank', // which recordings: 'engine-bank' (four-stroke quads), 'engine-bank-plover' (the old bike's 1938 two-stroke), 'engine-bank-2t' (two-stroke dirt bikes), 'engine-bank-50' (the kids' 50cc scooter two-stroke), 'engine-bank-tractor' (the diesel tractor), 'engine-bank-moto' (the mini moto's Derbi 50), 'engine-bank-atc' (the ATC's Piaggio Ape), 'engine-bank-utv' (the UTV's Gator diesel), 'engine-bank-green' (a Ténéré 250 into a Honda ATV), 'engine-bank-yellow' (a DT 125 into a CR85), 'engine-bank-landy' (the Land Rover's old four), 'engine-bank-fiesta' and 'engine-bank-corsa' (the girls' cars), 'engine-bank-309' (your car) or 'engine-bank-tractor-eq' (another old tractor, for later)
+  recBank: 'engine-bank', // which recordings: 'engine-bank' (four-stroke quads), 'engine-bank-plover' (the old bike's 1938 two-stroke), 'engine-bank-2t' (two-stroke dirt bikes), 'engine-bank-50' (the kids' 50cc scooter two-stroke), 'engine-bank-tractor' (the diesel tractor), 'engine-bank-moto' (the mini moto's Derbi 50), 'engine-bank-atc' (the T185's Piaggio Ape), 'engine-bank-utv' (the UTV's Gator diesel), 'engine-bank-green' (a Ténéré 250 into a Honda ATV), 'engine-bank-yellow' (a DT 125 into a CR85), 'engine-bank-tor' (the Land Rover's old four), 'engine-bank-fiesta' and 'engine-bank-corsa' (the girls' cars), 'engine-bank-309' (your car) or 'engine-bank-tractor-eq' (another old tractor, for later)
   recIdleSource: 'quad', // which recorded idle: 'quad' (the main quad), 'rev' (the ATV rev recording, or the CRM250 in the two-stroke bank) or 'third' (the CRF250, four-stroke bank)
   recVolume: 0.6,
   recThrottleLoudness: 0.15, // extra loudness with the throttle open (the rev recording is already louder up the range)
@@ -146,11 +146,11 @@ export const DEFAULT_AUDIO_PARAMS = {
   pulseDivide: 1, // sound only every Nth firing, stretched over N: 2 plays the recording at half its pace and an octave down
   pulseRevGain: 1, // level of those rev firings against the idle ones
   pulseRevFollow: 0, // read on through the rev recording while its next firing is within this rpm ratio (log); 0 picks each afresh
-  pulseCleanUp: 1.3, // idles cut in slices (the moto's and ATC's two-strokes): above this multiple of the recorded idle speed only the bangs play, so it fires every turn
+  pulseCleanUp: 1.3, // idles cut in slices (the moto's and T185's two-strokes): above this multiple of the recorded idle speed only the bangs play, so it fires every turn
   pulseDrive: 0.6, // extra drive into the soft clipper at full throttle
   pulseBoomCut: 0, // dB taken out of a boom in the recording itself (a body resonance), at every rpm; 0 leaves it alone
   pulseBoomFreq: 110, // Hz, the middle of that boom
-  pulseDrone: 0, // dB of low boost for a big-bore exhaust's drone (Jess's Corsa), fullest at idle and half of it high up the revs; 0 leaves it alone
+  pulseDrone: 0, // dB of low boost for a big-bore exhaust's drone (Jess's Griffin), fullest at idle and half of it high up the revs; 0 leaves it alone
   pulseDroneFreq: 80, // Hz, the middle of that drone
   recStarterVolume: 0.9,
   recShutdownVolume: 0.9,
@@ -258,7 +258,7 @@ export const AUDIO_PARAM_RANGES = {
   pulseBoomFreq: [40, 400, 5],
   pulseDrone: [0, 18, 0.5],
   pulseDroneFreq: [30, 300, 5],
-  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-plover', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-landy', 'engine-bank-tdi', 'engine-bank-fiesta', 'engine-bank-corsa', 'engine-bank-309'],
+  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-plover', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-tor', 'engine-bank-tdi', 'engine-bank-fiesta', 'engine-bank-corsa', 'engine-bank-309'],
   recIdleSource: ['quad', 'rev', 'third'],
   recVolume: [0, 3, 0.01],
   recThrottleLoudness: [0, 3, 0.01],

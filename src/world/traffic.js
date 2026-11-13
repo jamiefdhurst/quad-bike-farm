@@ -44,18 +44,18 @@ export const TRAFFIC_PARAM_RANGES = {
  * its speed (a range in m/s, or null for the params' lane speeds).
  */
 export const LANE_KINDS = {
-  van: { model: 'defender', colours: [0xe8e8e4, 0x1d3d73, 0x6b7076, 0xf2f0e6], weight: 3, speed: null },
-  landy: { model: 'series', colours: [0x3b4a36, 0x7a2a22, 0x8c8f90, 0x2d3f66], weight: 2, speed: null },
+  van: { model: 'crag', colours: [0xe8e8e4, 0x1d3d73, 0x6b7076, 0xf2f0e6], weight: 3, speed: null },
+  tor: { model: 'tor', colours: [0x3b4a36, 0x7a2a22, 0x8c8f90, 0x2d3f66], weight: 2, speed: null },
   tractor: { model: 'tractor', colours: [0x2f6b34, 0x234d8a, 0xb02a20], weight: 1, speed: 'tractor' },
   utv: { model: 'utv', colours: [0x4f5b3a, 0xb8860b, 0x7a2a22], weight: 1, speed: null },
 };
 
 /** The two kinds of visitor: what drives, in what paint, and what they do at the barn. */
 export const VISITOR_KINDS = {
-  post: { model: 'defender', colour: 0xc8102e, regs: ['G342 TVR'], does: 'parcel' },
-  neighbour: { model: 'series', colours: [0x5d6d4a, 0x8a3b2e, 0x3d5a80, 0xc9c3b0], regs: ['L915 HRE', 'F604 WGT', 'M227 BDK', 'E158 NFA'], does: 'chat' }, // not the farm's own
+  post: { model: 'crag', colour: 0xc8102e, regs: ['G342 TVR'], does: 'parcel' },
+  neighbour: { model: 'tor', colours: [0x5d6d4a, 0x8a3b2e, 0x3d5a80, 0xc9c3b0], regs: ['L915 HRE', 'F604 WGT', 'M227 BDK', 'E158 NFA'], does: 'chat' }, // not the farm's own
   // The rolling road's tuner: a Land Rover towing the trailer, who stays until she is sent home (rollingRoadHost.js). Not dealt with the others.
-  tuner: { model: 'defender', colour: 0x2f3b45, regs: ['N481 RRD'], does: 'stay', dealt: false },
+  tuner: { model: 'crag', colour: 0x2f3b45, regs: ['N481 RRD'], does: 'stay', dealt: false },
 };
 
 const wrap = (a) => ((((a + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) - Math.PI;

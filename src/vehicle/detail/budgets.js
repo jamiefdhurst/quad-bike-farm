@@ -1,6 +1,6 @@
 // How many triangles each vehicle's model may have (TODO 87), so the detail items (88 to 101) add detail where it shows rather
 // than everywhere. tests/vehicleModels.test.js fails when a model goes over. Measured before the kit: quads 38k to 46k, the
-// tractor 41k, the UTV 53k, the Series 57k, the Defender 70k, the Fiesta 45k, the Corsa 57k, the trailers 13k to 17k (4k to 6k before item 101).
+// tractor 41k, the UTV 53k, the Tor 57k, the Crag 70k, the Finch 45k, the Griffin 57k, the trailers 13k to 17k (4k to 6k before item 101).
 
 export const TRIANGLE_BUDGETS = {
   quad: 65000, // the five quads, the kids' quad and the loan

@@ -79,7 +79,7 @@ export const UTV_RIDE_PARAM_RANGES = {
 
 /**
  * Where the girls in `ids` sit, given the seats already taken (`taken`: a Set of 'mid', 'left', 'bed' and any back seats). `random` is a
- * 0..1 source. `rear` lists a back bench's seats, nearest the door first (the 200TDi's; none in the UTV or the Series): the front fills
+ * 0..1 source. `rear` lists a back bench's seats, nearest the door first (the 200TDi's; none in the UTV or the Tor): the front fills
  * first and the back takes the rest, and now and then one would rather sit in the back anyway. Returns { seats: [{ id, seat }] in the
  * order they should climb in, squabble: { winner, loser } or null }. A girl with no seat to take isn't in the list. `front` is the front's seats
  * beside the driver: the bench's middle and window, or the passenger's seat alone in the girls' cars.
