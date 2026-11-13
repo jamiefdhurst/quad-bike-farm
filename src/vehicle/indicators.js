@@ -1,4 +1,4 @@
-// The Land Rovers' and the UTV's indicators. Three keys: left, right and hazards. A stalk cancels itself once the wheel has been turned
+// The Tor's and Crag's and the UTV's indicators. Three keys: left, right and hazards. A stalk cancels itself once the wheel has been turned
 // the way it points and come back to straight; the hazards stay until pressed again. Pure logic, so it is tested without Three.js; the
 // model lights the lamps (`setSignalLamps` in quadModel.js) and the dash shows a green tell-tale.
 

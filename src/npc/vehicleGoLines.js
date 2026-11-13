@@ -1,6 +1,6 @@
-// What the girls say about having a go at the UTV or the Land Rover (the same go as the tractor's, tractorGoLines.js): taking it
+// What the girls say about having a go at the UTV or the Tor or Crag (the same go as the tractor's, tractorGoLines.js): taking it
 // (utvGoAsk, torGoAsk), setting off (utvGoSetOff, torGoSetOff), finishing (utvGoDone, torGoDone) and the other one's view of it
-// (utvGoWatch, torGoWatch); Amy refusing (utvRefuse, torRefuse) before her day. The Land Rover's own: the starting handle on a flat
+// (utvGoWatch, torGoWatch); Amy refusing (utvRefuse, torRefuse) before her day. The Tor's or Crag's own: the starting handle on a flat
 // battery (torGoSwing as she goes to it, torGoKick when Jess's thumb gets caught and torGoKickWatch from the other one,
 // torGoNoLuck if it will not go), and Jess grinding first or second (torGoCrunch, torGoCrunchWatch). The 200TDi has its own
 // (cragRefuse, cragGoAsk, cragGoSetOff, cragGoDone, cragGoWatch, cragBong): a diesel with a synchro five-speed and a

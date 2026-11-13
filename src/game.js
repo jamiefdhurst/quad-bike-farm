@@ -412,9 +412,9 @@ const RACE_STAGE_BACK = 14; // metres behind the start line the girls stage befo
 
 const CAR_KINDS = ['finch', 'griffin']; // the girls' own cars: each goes out only with her owner at the wheel (npc/carGo.js)
 const OWNED_KINDS = [...CAR_KINDS, 'vauclair']; // every car with an owner, yours too (#229): only its owner drives it, so no girl takes it for a go
-const CAB_KINDS = ['tor', 'crag', ...OWNED_KINDS]; // the Land Rovers and the cars: in `cabUnits`, a cab with seats behind the wheel
+const CAB_KINDS = ['tor', 'crag', ...OWNED_KINDS]; // the Tor, the Crag and the cars: in `cabUnits`, a cab with seats behind the wheel
 
-const CAB_LOADS = ['petrolCan', 'premixCan', 'dieselCan', 'toolbox', 'leads', 'oilBottle']; // what is kept in a Land Rover's back (the keys on the game)
+const CAB_LOADS = ['petrolCan', 'premixCan', 'dieselCan', 'toolbox', 'leads', 'oilBottle']; // what is kept in a Tor's or Crag's back (the keys on the game)
 
 export class Game {
   constructor(RAPIER, canvas) {
@@ -512,7 +512,7 @@ export class Game {
     const kept = this.farm.save?.vehicles ?? {}; // vehicle id -> what it was like when the last day was saved
     if (this.farm.continuing) console.info(`Day ${this.farm.day} on the farm (farm seed ${this.farmSeed})`);
     // Which vehicles are here (its own random stream, so the rest of a seed's layout doesn't depend on it).
-    // The tractor, UTV and Land Rover are in the same pool as the quads and are dealt a place the same way, but they aren't the girls' quads (`girlUnits`).
+    // The tractor, UTV, Tor and Crag are in the same pool as the quads and are dealt a place the same way, but they aren't the girls' quads (`girlUnits`).
     const isBig = (spec) => spec.tractor || spec.utv || spec.landRover;
     const pool = [...EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC];
     // The purse and what you bought and sold (farm/classifieds.js). A new farm's purse is dealt from the farm seed; a saved one is put back over it.
@@ -536,7 +536,7 @@ export class Game {
     this.specsById = bySpecId;
     const fleet = stocked.filter((s) => !isBig(s));
     const bigSpecs = stocked.filter(isBig);
-    this.bigSpecs = Object.fromEntries(bigSpecs.map((s) => [s.id, s])); // the tractor, UTV and Land Rovers as they are this game (some bought, in their own colour)
+    this.bigSpecs = Object.fromEntries(bigSpecs.map((s) => [s.id, s])); // the tractor, UTV and the Tor and the Crag as they are this game (some bought, in their own colour)
     const keepOut = spawnKeepOut(this.world.layout); // nothing starts on a trailer, the tank, the barn doorway, a bale or the track
     const { placed: spawns, home } = randomiseQuadSpawns(this.world.spawn, stocked.length, random, {
       homeCount: fleet.length,
@@ -697,7 +697,7 @@ export class Game {
     this.tractorUnit = this.bigSpecs.hartley ? this.addTractor(bigSpawn(HARTLEY_SPEC)) : null;
     // The diesel UTV (vehicle/quadSpecs.js YAK_SPEC): another unit that isn't one of the girls' quads, which they ride in but don't drive.
     this.utvUnit = this.bigSpecs.yak ? this.addUtv(bigSpawn(YAK_SPEC)) : null;
-    // The two Land Rovers, the old Series III and the 200TDi (TOR_SPEC, CRAG_SPEC), either, both or neither: units like the UTV with a
+    // The Tor and the Crag, the old pick-up and the station wagon (TOR_SPEC, CRAG_SPEC), either, both or neither: units like the UTV with a
     // petrol or diesel quad's quirks, that the girls ride in and take for a go. `cabUnits.<kind>` is { kind, spec, unit, mount, ride }.
     this.cabUnits = {};
     for (const [kind, spec] of [['tor', TOR_SPEC], ['crag', CRAG_SPEC]]) {
@@ -709,7 +709,7 @@ export class Game {
     this.arrivalDeal = dealArrival(createRandom(this.seed ^ 0x2291), girlsLeftOut(location.search) ? [] : CHARACTERS.map((ch) => ch.id), this.arrivalParams);
     const carSpecs = { finch: FINCH_SPEC, griffin: GRIFFIN_SPEC };
     this.carsAway = carsAway(this.arrivalDeal, (g) => CAR_KINDS.find((k) => carSpecs[k].owner === g));
-    // The girls' own cars (vehicle/carModel.js), by the Dutch barn unless she came with you: built and ridden like the Land Rovers, so
+    // The girls' own cars (vehicle/carModel.js), by the Dutch barn unless she came with you: built and ridden like the Tor and the Crag, so
     // they live in `cabUnits` too (with `car` set), but each is driven only by its owner (spec.owner) and minds if you take it (npc/carGo.js).
     for (const kind of CAR_KINDS) {
       const spec = carSpecs[kind];
@@ -1028,7 +1028,7 @@ export class Game {
     this.utvMount = this.utvUnit ? new UtvMount(this.utvUnit.quad, (x, z) => this.world.heightAt(x, z)) : null;
     if (this.utvUnit) this.addUtvCargo(this.utvUnit.quad);
     this.utvPetrolSaid = false; // the girls have remarked on it running badly on petrol
-    // The Land Rovers' benches: the same riding as the UTV's, with no bed to ride in (vehicle/utvMount.js, npc/utvRide.js).
+    // The Tor's and Crag's benches: the same riding as the UTV's, with no bed to ride in (vehicle/utvMount.js, npc/utvRide.js).
     for (const l of Object.values(this.cabUnits)) {
       const tor = l.kind === 'tor';
       // The 200TDi has a back bench too (CRAG_REAR_SEATS): the girls take it when the front's full, or now and then by choice. The cars
@@ -1100,7 +1100,7 @@ export class Game {
     this.tractorDrive = { ...DEFAULT_TRACTOR_GO_DRIVE };
     this.tractorStartParams = { ...DEFAULT_TRACTOR_START_PARAMS };
     this.noviceParams = { ...DEFAULT_NOVICE_PARAMS };
-    this.utvDrive = { ...DEFAULT_UTV_GO_DRIVE }; // and the same for the UTV and the Land Rover (the same ranges)
+    this.utvDrive = { ...DEFAULT_UTV_GO_DRIVE }; // and the same for the UTV and the Tor or Crag (the same ranges)
     this.cabDrive = { ...DEFAULT_CAB_GO_DRIVE };
     // The girls' own cars: each takes hers down the road now and then, and minds if you take it (npc/carGo.js).
     this.carGo = new CarGo(undefined, createRandom(this.seed ^ 0x0ca9));
@@ -1161,7 +1161,7 @@ export class Game {
     for (const c of this.companions) {
       c.walkParams = this.walkParams;
       c.knows = new FaultKnowledge(Math.random, this.wontParams);
-      c.motMinds = (specId) => girlMinds(c.character.id, !!specId && !!this.villageHost?.mot?.failed(specId)); // a Land Rover that failed its MOT (farm/mot.js)
+      c.motMinds = (specId) => girlMinds(c.character.id, !!specId && !!this.villageHost?.mot?.failed(specId)); // a Tor or Crag that failed its MOT (farm/mot.js)
       c.motoParams = this.motoParams;
       c.thrownParams = this.thrownParams;
     }
@@ -1257,7 +1257,7 @@ export class Game {
     this.pair = new Pair(); // the two as a pair: going over to each other, tagging along, letting you in (npc/pair.js)
     this.tidyUp = new TidyUp(); // Amy shutting a gate you left open, putting a can back, hanging up a helmet (npc/tidyUp.js)
     this.helmetCarried = null; // { owner, by }: a helmet a girl has picked up off the ground to hang on the hooks
-    this.tidyLoad = new TidyLoad(); // a girl loading or unloading a Land Rover's back (npc/tidyLoad.js)
+    this.tidyLoad = new TidyLoad(); // a girl loading or unloading a Tor's or Crag's back (npc/tidyLoad.js)
     this.generatorStart = new GeneratorStart(); // a girl pulling the generator's cord (npc/generatorStart.js)
     this.lost = new LostThings(); // jump leads and bottles left lying in the field, and a girl bringing them back (items/lostThings.js)
     this.workLight = new WorkLight(undefined, createRandom(this.seed ^ 0x11e7)); // bringing a vehicle round to light what you're at, after dark (npc/workLight.js)
@@ -1265,8 +1265,8 @@ export class Game {
     this.dontFix = new DontFixIt(); // a girl minding when her favourite is fixed up (npc/dontFixIt.js)
     this.warmSitQuads = new Map(); // girl id -> the quad she is sitting on
     this.readyQuads = new Map(); // girl id -> the quad she is getting ready or waiting on
-    this.sulking = new Sulking(undefined, createRandom(this.seed ^ 0x5011)); // a girl sitting alone in a Land Rover after a row (npc/sulking.js)
-    this.cabShelter = new CabShelter(undefined, createRandom(this.seed ^ 0x0cab)); // into a Land Rover or the UTV out of the rain or cold (npc/cabShelter.js)
+    this.sulking = new Sulking(undefined, createRandom(this.seed ^ 0x5011)); // a girl sitting alone in a Tor or Crag after a row (npc/sulking.js)
+    this.cabShelter = new CabShelter(undefined, createRandom(this.seed ^ 0x0cab)); // into a Tor, Crag or the UTV out of the rain or cold (npc/cabShelter.js)
     this.nicking = new Nicking(undefined, createRandom(this.seed ^ 0x61c3)); // Jess taking a quad you left running (npc/nicking.js)
     this.headStart = new HeadStart(undefined, createRandom(this.seed ^ 0x4ead)); // starting your usual quad for you (npc/headStart.js)
     this.gossip = new Gossip(BANTER.filter((e) => e.when === 'gossip'), undefined, createRandom(this.seed ^ 0x6055)); // talking about you (npc/gossip.js)
@@ -2747,7 +2747,7 @@ export class Game {
     this.askDriveVehicle(c, 'tractor');
   }
 
-  /** The tractor, the UTV and the two Land Rovers as the girls' goes know them: { unit, free(), ask line, refuse line }. */
+  /** The tractor, the UTV and the Tor and the Crag as the girls' goes know them: { unit, free(), ask line, refuse line }. */
   goVehicle(kind) {
     return { tractor: this.tractorUnit, utv: this.utvUnit, tor: this.cabUnits.tor.unit, crag: this.cabUnits.crag.unit, finch: this.cabUnits.finch?.unit, griffin: this.cabUnits.griffin?.unit, vauclair: this.cabUnits.vauclair?.unit }[kind] ?? null;
   }
@@ -2757,7 +2757,7 @@ export class Game {
     return GO_KINDS.find((k) => this.goVehicle(k)?.quad === quad) ?? null;
   }
 
-  /** The seats of a UTV or Land Rover kind ('utv', 'tor', 'crag'): the mount the girls climb into. */
+  /** The seats of a UTV, Tor or Crag kind ('utv', 'tor', 'crag'): the mount the girls climb into. */
   mountOfKind(kind) {
     return kind === 'utv' ? this.utvMount : this.cabUnits[kind].mount;
   }
@@ -2781,7 +2781,7 @@ export class Game {
 
   /**
    * She can be asked to start it: stood about, it isn't running and nobody's on it or going to it. Either girl will, Amy too (she won't drive
-   * them until her day, but she'll start them); on the Land Rover with a flat battery that means the starting handle.
+   * them until her day, but she'll start them); on the Tor or Crag with a flat battery that means the starting handle.
    */
   canAskStart(c, kind) {
     const q = this.goVehicle(kind)?.quad;
@@ -2911,7 +2911,7 @@ export class Game {
     else this.lPlateSet.showOn(where === 'quad' && mine ? mine.quad.bodyRoot : null, 'quad');
   }
 
-  /** She walks over and has a go at starting and driving the tractor, the UTV or the Land Rover. */
+  /** She walks over and has a go at starting and driving the tractor, the UTV or the Tor or Crag. */
   startGo(c, kind) {
     const unit = this.goVehicle(kind);
     if (!c.homeQuad && c.quad !== unit.quad) c.homeQuad = c.quad;
@@ -2923,7 +2923,7 @@ export class Game {
 
   /**
    * Jess takes one now and then, Amy has her day, and each of them says what's happening on her go (npc/tractorGo.js, tractorGoLines.js,
-   * vehicleGoLines.js). On the UTV and the Land Rover the other girl may climb in beside her; on the Land Rover with a flat battery she
+   * vehicleGoLines.js). On the UTV and the Tor or Crag the other girl may climb in beside her; on the Tor or Crag with a flat battery she
    * swings the starting handle first (npc/crankAttempt.js).
    */
   /** What you can show her from where you are: bump-starting a dead manual, double-declutching on a box with no synchromesh. */
@@ -3101,7 +3101,7 @@ export class Game {
     return { girls };
   }
 
-  /** She takes her car out (npc/carGo.js): she says so and goes, the same go as the Land Rovers', down the road and back. */
+  /** She takes her car out (npc/carGo.js): she says so and goes, the same go as the Tor's and Crag's, down the road and back. */
   handleCarGoEvent(ev) {
     const c = this.companions.find((o) => o.character.id === ev.girl);
     if (!c) return;
@@ -3162,7 +3162,7 @@ export class Game {
     aboard[Math.floor(Math.random() * aboard.length)].voice.say('yourCarRide', { chance: 0.8 });
   }
 
-  /** The radios in the Land Rovers and the girls' cars (vehicle/radio.js): their sound, and what each girl does about the one she is sat by. */
+  /** The radios in the Tor and the Crag and the girls' cars (vehicle/radio.js): their sound, and what each girl does about the one she is sat by. */
   setUpRadios() {
     this.radioAudio = new RadioAudio(this.audioHub);
     this.radioTaste = {}; // per girl and vehicle, made when she first sits in one
@@ -3556,7 +3556,7 @@ export class Game {
     }
   }
 
-  /** The things loaded into a Land Rover's tub or load space, as `{ spot, item }` with the item's key on the game, for the save. */
+  /** The things loaded into a Tor's or Crag's tub or load space, as `{ spot, item }` with the item's key on the game, for the save. */
   cabCargoSave(unit) {
     const l = Object.values(this.cabUnits).find((x) => x.unit === unit && x.cargo);
     if (!l) return [];
@@ -3920,7 +3920,7 @@ export class Game {
   }
 
   /**
-   * Builds a Land Rover or one of the girls' cars: a unit like the UTV (not one of the girls' quads), with a quad's wear, faults, quirks and
+   * Builds a Tor, Crag or one of the girls' cars: a unit like the UTV (not one of the girls' quads), with a quad's wear, faults, quirks and
    * oil. Amy's tidy Finch gets at most one quirk; Jess's thrashed Griffin at least two, and its throttle cable is twice as likely to stick.
    */
   addCab(spawn, spec) {
@@ -3973,7 +3973,7 @@ export class Game {
     easeSeatTips(q.seatTips, seatTipTargets(moving, occupied), dt, this.rearAccess.tipSpeed);
   }
 
-  /** What standing at the Land Rover's front says: the starting handle, how you're holding it, and whether your hand still hurts. */
+  /** What standing at the Tor's or Crag's front says: the starting handle, how you're holding it, and whether your hand still hurts. */
   crankPrompt(quad) {
     const c = quad.crank;
     if (!c.ready) return 'Your hand hurts. Give it a moment';
@@ -3982,7 +3982,7 @@ export class Game {
     return `Starting handle (${grip})   ·   hold P, let go to swing   ·   1 thumb round   ·   2 thumb alongside${key}`;
   }
 
-  /** A Land Rover: where you stand for the Tor's starting handle and what a kick-back gets you, and the girls on its bench (npc/utvRide.js). */
+  /** A Tor or Crag: where you stand for the Tor's starting handle and what a kick-back gets you, and the girls on its bench (npc/utvRide.js). */
   updateCab(dt, ridden, input, l) {
     const unit = l.unit;
     const q = unit.quad;
@@ -4054,7 +4054,7 @@ export class Game {
     }
   }
 
-  /** The wheel's slice for a Land Rover or a car (`l`, from `cabUnits`) for a girl: get in (she picks her own seat), or get out again; drive it if she may. */
+  /** The wheel's slice for a Tor, Crag or a car (`l`, from `cabUnits`) for a girl: get in (she picks her own seat), or get out again; drive it if she may. */
   cabWheelOption(c, l) {
     const { mount, ride, kind } = l;
     const q = l.unit.quad;
@@ -4096,7 +4096,7 @@ export class Game {
 
   /**
    * Nobody is at the wheel, or on their way to it, and it's stopped. Unlike goFree, someone sat in the other seats (you, or her friend on the
-   * bench) doesn't stop her taking the wheel, for the Land Rovers and the girls' cars.
+   * bench) doesn't stop her taking the wheel, for the Tor and the Crag and the girls' cars.
    */
   driveFree(kind) {
     if (!CAB_KINDS.includes(kind)) return this.goFree(kind);
@@ -4107,7 +4107,7 @@ export class Game {
     return !q.rider && !q.driver && !q.isTipped && q.speed < 0.5 && !this.companions.some(busy);
   }
 
-  /** You asked her into a Land Rover: she goes at once and stays until you ask her out. `back`: the 200TDi's back bench. */
+  /** You asked her into a Tor or Crag: she goes at once and stays until you ask her out. `back`: the 200TDi's back bench. */
   askIntoCab(c, l, { back = false } = {}) {
     const from = c.root.position;
     const slot = back ? l.mount.freeRearSlot(from) : l.mount.freeSlot(from) ?? l.mount.freeRearSlot(from);
@@ -4281,7 +4281,7 @@ export class Game {
   applyHistory(unit, random, faultChance, kept = null) {
     const [lo, hi] = unit.spec.hoursRange ?? [0, 0];
     const h = pickHistory(unit.spec, random, { faultChance, hoursT: hi > lo ? (unit.quad.usage.hours - lo) / (hi - lo) : 0.5 });
-    // A Land Rover's bulbs, rubbers and horn start a little worn, dealt from the farm's seed on a stream of their own (the MOT, farm/mot.js).
+    // A Tor's or Crag's bulbs, rubbers and horn start a little worn, dealt from the farm's seed on a stream of their own (the MOT, farm/mot.js).
     unit.quad.motWear?.deal(createRandom(this.farmSeed ^ 0x307 ^ [...String(unit.id)].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) | 0, 7)));
     if (kept) {
       // The farm remembers this one: its wear, faults and tuning are put back by restoreVehicles, and nobody else has tinkered with it.
@@ -5613,7 +5613,7 @@ export class Game {
     this.herAtTheFront(unit.quad)?.voice.onRequest('passengerOn');
   }
 
-  /** The UTV's or Land Rover's seats as somewhere to ride (vehicle/utvMount.js), or null for anything else. */
+  /** The UTV's, Tor's or Crag's seats as somewhere to ride (vehicle/utvMount.js), or null for anything else. */
   benchMountOf(quad) {
     if (quad === this.utvUnit?.quad) return this.utvMount;
     return Object.values(this.cabUnits).find((l) => l.unit?.quad === quad)?.mount ?? null;
@@ -5633,12 +5633,12 @@ export class Game {
     return pickBenchSeat(BENCH_SEATS.filter((s) => !mount.slots[s] || mount.slots[s].girl)); // a seat a car hasn't got (the middle) counts as taken
   }
 
-  /** You could get in beside the girl driving the UTV or Land Rover: she's at the wheel, the seat is free and you're not in the middle of something. */
+  /** You could get in beside the girl driving the UTV, Tor or Crag: she's at the wheel, the seat is free and you're not in the middle of something. */
   canRideBench(quad) {
     return quad.hasBench && !!this.herAtTheFront(quad) && !quad.passenger && !quad.rider && !quad.isTipped && !this.handsFull && !!this.benchSeatFor(quad, this.lookingAtBack(quad));
   }
 
-  /** In the UTV's or Land Rover's other seat while she drives (the quads' pillion, on a bench). */
+  /** In the UTV's, Tor's or Crag's other seat while she drives (the quads' pillion, on a bench). */
   mountBench(unit) {
     if (this.player.isRiding) return;
     const back = this.lookingAtBack(unit.quad);
@@ -6766,7 +6766,7 @@ export class Game {
 
   // Loading a Tor or Crag's back ------------------------------------------------
 
-  /** The Land Rovers with a back to load that have nobody in them, and the things lying near each (loose on the ground, not carried). */
+  /** The Tor and the Crag with a back to load that have nobody in them, and the things lying near each (loose on the ground, not carried). */
   tidyLoadVehicles() {
     return Object.values(this.cabUnits).filter((l) => l.unit && l.cargo).map((l) => {
       const q = l.unit.quad;
@@ -6775,14 +6775,14 @@ export class Game {
     });
   }
 
-  /** What is lying on the ground near this Land Rover that would go in its back, nearest first. */
+  /** What is lying on the ground near this Tor or Crag that would go in its back, nearest first. */
   looseLoadsNear(l, range = this.tidyLoad.p.itemRange) {
     const at = l.unit.quad.position;
     return CAB_LOADS.map((k) => this[k]).filter((i) => i && !i.held && i.model.parent === this.scene && !this.rackLoads.onRack(i))
       .map((i) => ({ i, d: Math.hypot(i.model.position.x - at.x, i.model.position.z - at.z) })).filter((x) => x.d <= range).sort((a, b) => a.d - b.d).map((x) => x.i);
   }
 
-  /** What a girl loading a Land Rover's back needs to know (npc/tidyLoad.js). */
+  /** What a girl loading a Tor's or Crag's back needs to know (npc/tidyLoad.js). */
   tidyLoadContext() {
     return {
       vehicles: this.tidyLoadVehicles(),
@@ -6821,7 +6821,7 @@ export class Game {
     if (!c.sneakTo(stand, act, m.p.jobTimeout - 5)) m.finished();
   }
 
-  /** Debug panel and console: put the red jerry can or the toolbox in the Land Rover's back (door or gate open, loose), or clear it. */
+  /** Debug panel and console: put the red jerry can or the toolbox in the Tor's or Crag's back (door or gate open, loose), or clear it. */
   debugBack(unit, what) {
     const l = Object.values(this.cabUnits).find((x) => x.unit === unit && x.cargo);
     if (!l) return 'it has no tub or load space';
@@ -6838,7 +6838,7 @@ export class Game {
     return `the ${what} is in the back`;
   }
 
-  /** What is in a Land Rover's back, for the console. */
+  /** What is in a Tor's or Crag's back, for the console. */
   backSummary(unit) {
     const l = Object.values(this.cabUnits).find((x) => x.unit === unit && x.cargo);
     if (!l) return 'no tub or load space';
@@ -7472,7 +7472,7 @@ export class Game {
       const unit = this.girlUnits.find((u) => this.leftRunning.lastWho.get(u.id) === c.character.id);
       if (unit) this.sendToKeepAlive(c, unit);
       else if (Math.random() < (c.character.id === 'jess' ? this.keepParams.chargeGoJess : 1)) {
-        // A running quad with a weak battery and nobody on it (after a jump, say) wants its revs kept up by whoever is free: Amy mostly.
+        // A running quad with a weak battery and nobody on it wants its revs kept up by whoever is free: Amy mostly.
         const weak = this.girlUnits.find((u) => u.engine.isRunning && u.engine.battery < this.keepParams.weakBatteryBelow && c.root.position.distanceTo(u.quad.position) <= this.keepParams.goRange);
         if (weak) this.sendToKeepAlive(c, weak);
       }
@@ -7935,7 +7935,7 @@ export class Game {
 
   // Sheltering in a cab --------------------------------------------------
 
-  /** The UTV, the Land Rovers and the girls' cars as somewhere to get in out of the weather: where each is, whether it is free to climb into, and how many seats. */
+  /** The UTV, the Tor and the Crag and the girls' cars as somewhere to get in out of the weather: where each is, whether it is free to climb into, and how many seats. */
   cabContext() {
     return ['utv', ...CAB_KINDS].filter((k) => this.goVehicle(k)).map((kind) => {
       const q = this.goVehicle(kind).quad;
@@ -8120,7 +8120,7 @@ export class Game {
 
   // Sulking in the cab ---------------------------------------------------
 
-  /** The girl sulking in this vehicle (a Land Rover), if one is in it. */
+  /** The girl sulking in this vehicle (a Tor or Crag), if one is in it. */
   sulkerIn(quad) {
     const id = this.sulking.who;
     if (!id || !this.sulking.isIn(id)) return null;
@@ -8128,7 +8128,7 @@ export class Game {
     return c && c.quad === quad ? c : null;
   }
 
-  /** She is cross: after a row or a slight she goes and sits alone in a Land Rover, engine on (npc/sulking.js). Each frame. */
+  /** She is cross: after a row or a slight she goes and sits alone in a Tor or Crag, engine on (npc/sulking.js). Each frame. */
   updateSulking(dt) {
     const s = this.sulking;
     const girls = this.companions.map((c) => {
@@ -8186,7 +8186,7 @@ export class Game {
     }
   }
 
-  /** You knock on the window of a Land Rover with a sulking girl in it. */
+  /** You knock on the window of a Tor or Crag with a sulking girl in it. */
   knockOnWindow(c) {
     const id = c.character.id;
     const r = this.sulking.knock(id, { neglected: this.favour.mood(id) === 'neglected' });
@@ -8279,7 +8279,7 @@ export class Game {
 
   // Sitting on it while it warms ---------------------------------------------
 
-  /** Where she could sit while this vehicle warms: the back of a quad, or the passenger seat of a Land Rover or the UTV. null if there is nowhere. */
+  /** Where she could sit while this vehicle warms: the back of a quad, or the passenger seat of a Tor, Crag or the UTV. null if there is nowhere. */
   warmSitSpot(c, unit) {
     const q = unit.quad;
     const cab = ['utv', ...CAB_KINDS].find((k) => this.goVehicle(k) === unit);

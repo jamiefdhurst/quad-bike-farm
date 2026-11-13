@@ -9,7 +9,7 @@ import { CHOKE_STYLES, TAP_STYLES } from '../src/vehicle/controls.js';
 import { MAKER_FOR } from '../src/vehicle/detail/decals.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
-// The orange quad as a Suzuki LT250R Adder (TODO 92): a triangle wedge, flat wings, a shroud with louvres, big flank triangles, a pod
+// The orange quad as the Viper Adder (TODO 92): a triangle wedge, flat wings, a shroud with louvres, big flank triangles, a pod
 // on the left bar with the lights rocker and the choke lever, no number plates.
 
 describe('the Adder body numbers', () => {

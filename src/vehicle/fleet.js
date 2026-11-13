@@ -1,5 +1,5 @@
 // Which vehicles are on the farm this game. Every vehicle is in one pool (the five regular quads, the kids' quad, the loan quad, the mini moto, the old
-// three-wheeler, the tractor, the UTV and the Land Rover) and each game has between four and all of them, so no two games have quite the same
+// three-wheeler, the tractor, the UTV and the Tor or Crag) and each game has between four and all of them, so no two games have quite the same
 // line-up. Pure logic.
 
 export const DEFAULT_FLEET_PARAMS = {

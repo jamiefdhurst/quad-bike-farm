@@ -1,4 +1,4 @@
-// What the girls say about sitting on a quad (or in a Land Rover) while it warms up (warmSit.js): warmSitAsk (asking you first),
+// What the girls say about sitting on a quad (or in a Tor or Crag) while it warms up (warmSit.js): warmSitAsk (asking you first),
 // warmSitIn (settled, enjoying the shake), warmSitSmoothing (it is starting to smooth out) and warmSitSmooth (it has: disappointed),
 // warmSitSlow (you have come: slow to get off) and warmSitGiveUp (nobody came). Merged into the main line sets (voiceLines.js, jessLines.js),
 // so they're recorded with the rest. The girls call you "you", never he, she or they.

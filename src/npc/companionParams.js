@@ -101,7 +101,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   phoneMoodChance: 0.3, // the chance a call she takes is bad news and leaves her in a mood
   phoneMoodSeconds: 240, // how long that mood takes to lift
   tidyUpWeight: 0, // how keen she is to shut a gate you left open, put a can back or hang up a helmet (tidyUp.js)
-  tidyLoadWeight: 0, // how keen she is to load a Land Rover's back with what is lying about, or unload it (tidyLoad.js)
+  tidyLoadWeight: 0, // how keen she is to load a Tor's or Crag's back with what is lying about, or unload it (tidyLoad.js)
   generatorWeight: 0, // how keen she is to go and pull the generator's cord when the barn is dark or the charger is waiting on it (generatorStart.js)
   trailerGuideWeight: 0, // how keen she is to walk round behind the trailer and guide you back when you reverse it
   hayLoadWeight: 0, // how keen she is to carry a bale from the field up onto the trailer while the hay is being loaded (hayLoading.js)

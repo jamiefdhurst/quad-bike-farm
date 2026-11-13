@@ -1,5 +1,5 @@
-// Sheltering in a cab. When it rains a girl who's stood about may climb into the UTV or a Land Rover (they have roofs) instead of running for
-// the barn, and on a cold day she may go and get into a Land Rover, start it and sit with the heater of its engine going. When the weather
+// Sheltering in a cab. When it rains a girl who's stood about may climb into the UTV or a Tor or Crag (they have roofs) instead of running for
+// the barn, and on a cold day she may go and get into a Tor or Crag, start it and sit with the heater of its engine going. When the weather
 // turns, or she's had enough, she climbs out, and switches off an engine she started. Pure logic: the game says who and what is where, this
 // says which cab she could go to (offers, weighed by her needs in chooser.js against the barn doorway and everything else), who comes out
 // and what gets switched off. Tested in tests/cabShelter.test.js.
@@ -7,11 +7,11 @@
 export const DEFAULT_CAB_SHELTER_PARAMS = {
   rainAbove: 0.25, // rain above which a girl thinks of getting into a cab
   dryBelow: 0.08, // rain below which she thinks of getting out again
-  coldBelow: 0.5, // weather warmth under which a dry day is cold enough to sit in a running Land Rover
+  coldBelow: 0.5, // weather warmth under which a dry day is cold enough to sit in a running Tor or Crag
   cabRange: 45, // metres: she'll walk this far to a cab
   rainWeight: 1.1, // how much she'd rather a cab than the barn doorway out of the rain (the barn is 1; chooser.js weighs them)
-  rainStartChance: 0.35, // chance she starts a Land Rover that isn't running when she gets in out of the rain
-  coldWeight: 0.6, // how much she cares for sitting in a Land Rover with the heater on, on a cold dry day (twice that if it's running)
+  rainStartChance: 0.35, // chance she starts a Tor or Crag that isn't running when she gets in out of the rain
+  coldWeight: 0.6, // how much she cares for sitting in a Tor or Crag with the heater on, on a cold dry day (twice that if it's running)
   coldStayMin: 60, // seconds she sits warming up before she gets out
   coldStayMax: 170,
   rainStayMin: 40, // and the least she stays in once the rain has stopped (she waits for it to be properly dry as well)
@@ -105,7 +105,7 @@ export class CabShelter {
    *   rain: 0..1, warmth: 0..1
    *   girls: [{ id, x, z, free, cab }]   free: stood about; cab: the id of the cab she is in or walking to (by the game's own doing), or null
    *   cabs: [{ id, x, z, open, seats, running, warm }]   open: nobody driving, riding or going for it and it's still; seats: free seats;
-   *       warm: it's a Land Rover (an engine to warm up by), not the UTV
+   *       warm: it's a Tor or Crag (an engine to warm up by), not the UTV
    * Returns events: { type: 'in', girl, cab, reason } (she's aboard), { type: 'out', girl, cab },
    *   { type: 'switchOff', cab } (nobody left in a cab whose engine she started). Going is an offer (offers, take), not decided here.
    */
@@ -157,7 +157,7 @@ export class CabShelter {
    * The cabs each girl could go to now (the same `ctx` as update; a girl's `interruptible` means the rain can get her up off a seat or
    * away from something idle like warming her hands):
    * [{ key: 'shelterCab' | 'warmCab', girl, cab, reason, weight }] for the chooser. In the rain the nearest cab with room, or on a cold
-   * dry day the nearest Land Rover, and not before the start, while she's in one, or straight after.
+   * dry day the nearest Tor or Crag, and not before the start, while she's in one, or straight after.
    */
   offers(ctx) {
     const p = this.p;

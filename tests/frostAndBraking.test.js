@@ -14,7 +14,7 @@ const DT = 1 / 60;
 const fuelControls = (spec) => ({ fuel: 1, diesel: spec.engine.petrolFussy ? 1 : 0 });
 
 describe('starting in a hard frost', () => {
-  it('works for the green quad, the red quad and the Land Rover with full choke, and the UTV on its glow plugs', () => {
+  it('works for the green quad, the red quad and the Tor or Crag with full choke, and the UTV on its glow plugs', () => {
     for (const spec of [QUAD_SPECS.find((s) => s.id === 'rb300'), QUAD_SPECS.find((s) => s.id === 'farm300'), TOR_SPEC, YAK_SPEC]) {
       for (let seed = 1; seed <= 8; seed++) {
         const engine = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...spec.engine, initialTemperature: 0 }, { random: seeded(seed) });
@@ -61,7 +61,7 @@ describe('stalling under braking', () => {
     expect(cold).toBeGreaterThan(0);
   });
 
-  it('a warm Land Rover brakes to a stop in first or second without the clutch, but stalls in third or fourth', () => {
+  it('a warm Tor or Crag brakes to a stop in first or second without the clutch, but stalls in third or fourth', () => {
     for (let seed = 1; seed <= 6; seed++) {
       for (const gear of [1, 2]) for (const decel of [3, 8]) expect(stops(TOR_SPEC, { gear, decel, v0: 4, seed }), `g${gear} decel ${decel}`).toBe(false);
       for (const gear of [3, 4]) expect(stops(TOR_SPEC, { gear, decel: 3, v0: 4, seed }), `g${gear}`).toBe(true);

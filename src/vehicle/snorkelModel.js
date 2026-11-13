@@ -11,13 +11,13 @@ const R = 0.045; // metres, the pipe
 const EMBED = 0.03; // the foot goes this far into the wing's top
 const CLAMP = 0.1; // the foot's clamp is wider than the pipe
 
-/** Where it stands on each Land Rover (model frame; the driver's left is +x): on the wing's flat top, just ahead of the screen. */
+/** Where it stands on each Tor or Crag (model frame; the driver's left is +x): on the wing's flat top, just ahead of the screen. */
 export const SNORKEL_SPOTS = {
   tor: { x: TOR_WING.outer - 0.1, z: TOR_WING.scuttle + 0.1, base: TOR_WING.top, top: TOR_SCREEN.topY },
   crag: { x: DEF_WING.outer - 0.1, z: DEF_WING.scuttle + 0.12, base: DEF_WING.top, top: DEF_SCREEN.topY },
 };
 
-/** Adds the (hidden) snorkel to a Land Rover's model. Returns the group, or null for anything else. */
+/** Adds the (hidden) snorkel to a Tor's or Crag's model. Returns the group, or null for anything else. */
 export function addSnorkel(model) {
   const spot = SNORKEL_SPOTS[model.userData.variant];
   if (!spot) return null;

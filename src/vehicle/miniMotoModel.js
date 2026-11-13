@@ -6,7 +6,7 @@ import { DASH_PLACE } from './dash.js';
 import { TZ_WHEELS, TZ_BARS_AT } from './tz65Body.js';
 import { buildTzSpin, buildTzFork, buildTzRearBrake, addTzFrame, addTzBody, addTzPegs, addTzEngine, addTzExhaust, addTzBars, addTzDecals, silverMaterial } from './tz65Detail.js';
 
-// The mini moto (TODO 94): the Tamura TZ 65, a small motocross bike after a Yamaha YZ65 (tz65Body.js has the numbers, tz65Detail.js the
+// The mini moto (TODO 94): the Tamura TZ 65, a small motocross bike (tz65Body.js has the numbers, tz65Detail.js the
 // parts). Same named parts as a quad's model so Quad drives it unchanged (see quadModel.js). It has two wheels in a line and really leans:
 // the chassis rolls under the balance in bikeLean.js (`userData.bike` tells Quad to run it). The whole front end turns about the bars'
 // vertical axis (`userData.steerPivotZ`, which quad.js reads), the fork's gold tubes with the bars and its blue legs with the wheel.

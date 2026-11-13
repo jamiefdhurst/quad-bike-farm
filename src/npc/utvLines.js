@@ -10,7 +10,7 @@
 //   utvBedRefuse    asked to ride in the bed (Amy only)
 //   utvPetrolWarn   you are pouring petrol into it
 //   utvPetrol       it is running badly and there is petrol in the diesel
-//   torKick       the Land Rover's starting handle has just kicked back on you (the nearest one, within 15 m)
+//   torKick       the Tor's or Crag's starting handle has just kicked back on you (the nearest one, within 15 m)
 // Merged into the main line sets (voiceLines.js, jessLines.js), so they're recorded with the rest.
 
 const line = (cooldown, lines) => ({ cooldown, lines });

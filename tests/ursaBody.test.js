@@ -13,7 +13,7 @@ import { spitPropensity } from '../src/engine/spitBack.js';
 import { CarbIcing } from '../src/vehicle/carbIcing.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
-// The loan quad as a Yamaha Ursa 450, the Tamura Ursa 450 (TODO 96): the blue's body machinery with its own flares, lamps, bumper, wheels and
+// The loan quad as the Tamura Ursa 450 (TODO 96): the blue's body machinery with its own flares, lamps, bumper, wheels and
 // muffler, no choke (it is fuel injected), and nothing worn.
 
 describe('the loan quad’s numbers', () => {

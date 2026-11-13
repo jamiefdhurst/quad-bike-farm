@@ -1,4 +1,4 @@
-// The girls and a go on the tractor, the UTV or the Land Rover. Jess is desperate to drive them and, now and then, just takes one. Amy
+// The girls and a go on the tractor, the UTV or the Tor or Crag. Jess is desperate to drive them and, now and then, just takes one. Amy
 // won't go near them, until one day (about twenty minutes in, once Jess has had a go) she has a go herself and is annoyingly good, after
 // which you can ask her, for any of the three. Pure logic: the game says who is free and which of the three are free to take, and acts
 // on the events; Jess's goes are offers the chooser weighs (chooser.js), Amy's day the one story beat. Tested in tests/tractorGo.test.js.
@@ -6,7 +6,7 @@
 //   jessGo   Jess walks over, climbs on and has a go (`vehicle` is the one she picked)
 //   amyDay   Amy's day: she has a go, and from now on she'll do it when asked
 
-// The vehicles the girls take for a go (and are asked to start): the tractor, the UTV, the two Land Rovers and the cars.
+// The vehicles the girls take for a go (and are asked to start): the tractor, the UTV, the Tor, the Crag and the cars.
 export const GO_KINDS = ['tractor', 'utv', 'tor', 'crag', 'finch', 'griffin', 'vauclair'];
 
 export const DEFAULT_TRACTORGO_PARAMS = {
@@ -16,7 +16,7 @@ export const DEFAULT_TRACTORGO_PARAMS = {
   amyDayAfter: 1200, // seconds into the game before Amy's day can come...
   amyDayJessGoes: 1, // ...and not until Jess has had this many goes
   amyDayGap: 90, // seconds after the last go before Amy's day
-  joinChance: 0.5, // chance the other girl, if she's stood about, climbs in beside her on a go at the UTV or Land Rover (the tractor's is under Mudguard ride)
+  joinChance: 0.5, // chance the other girl, if she's stood about, climbs in beside her on a go at the UTV, Tor or Crag (the tractor's is under Mudguard ride)
   joinDelayMin: 0.5, // seconds after the driver starts getting in before the other one sets off
   joinDelayMax: 2,
 };

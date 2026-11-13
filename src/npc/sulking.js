@@ -1,5 +1,5 @@
 // Sulking in the cab. After a falling out goes badly for her, or a slight from you (you favour her friend), a girl goes and sits alone in a
-// Land Rover with the engine on for the heat, and doesn't want company. Knock on the window to talk her round: Amy ignores the first knock,
+// Tor or Crag with the engine on for the heat, and doesn't want company. Knock on the window to talk her round: Amy ignores the first knock,
 // answers the second and forgives you on the third; Jess revs the engine at you instead, three times, and then gives in. Knock too fast
 // and she's worse. Left alone she gets out when she's had enough. Pure logic: the game says who is free and where she is, and acts on
 // what comes back. The cab itself (walking to it, starting it, sitting in it) is cabShelter.js with the reason 'sulk'.

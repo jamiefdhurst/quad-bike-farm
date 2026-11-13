@@ -81,7 +81,7 @@ describe('what stands in the UTV bed', () => {
   });
 });
 
-describe('what stands in the Land Rovers\' backs', () => {
+describe('what stands in the Tor and the Crag\' backs', () => {
   const NAMES = Object.keys(CARGO_FOOTPRINTS);
   const fits = (spots, room, yawFor) => {
     for (const spot of spots) {

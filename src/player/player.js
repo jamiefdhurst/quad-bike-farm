@@ -72,7 +72,7 @@ export class Player {
 
     this.mode = 'foot';
     this.vehicle = null;
-    this.seat = 'rider'; // or 'pillion', riding on the back while she drives (or in the UTV's or Land Rover's bench)
+    this.seat = 'rider'; // or 'pillion', riding on the back while she drives (or in the UTV's, Tor's or Crag's bench)
     this.benchSeat = null; // 'left' or 'mid' when the pillion seat is on a bench, else null
     this.rideYaw = 0;
     this.ridePitch = 0;

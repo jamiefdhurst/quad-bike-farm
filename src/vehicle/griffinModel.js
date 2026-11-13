@@ -13,7 +13,7 @@ import { buildRadio } from './detail/radios.js';
 import { GRIFFIN_BODY, GRIFFIN_DOOR, GRIFFIN_HATCH, GRIFFIN_TAIL_LAMP, GRIFFIN_BOOT, GRIFFIN_BUMPER, GRIFFIN_R, GRIFFIN_TYRE_W, GRIFFIN_RIDE_LIFT } from './griffinBody.js';
 
 // The Griffin B at its real size (TODO 103), built from griffinBody.js's numbers after the photos. Driven by Quad through the same named parts as the
-// Land Rovers' and the Finch's (carModel.js: steeringColumn > handlebars, dash, gearLever, parkBrakeLever, chokeKnob (hidden: it is injected),
+// the Tor's and Crag's and the Finch's (carModel.js: steeringColumn > handlebars, dash, gearLever, parkBrakeLever, chokeKnob (hidden: it is injected),
 // seatBack_driver and seatBack_left that tip, riderAnchor, seatLeft, seatRearLeft, seatRearRight, the cameras, exhaustTip, belt_<seat>), plus:
 //
 //   doorLeft, doorRight    groups hinged on their front edges: poseTorDoors swings them (the dirt on them goes with them: `mudRest`)

@@ -40,7 +40,7 @@ The detailed rules for each part of the game are in `.claude/rules/`. They load 
 - New tunables go in the module's `DEFAULT_*_PARAMS` with a one-line comment, plus a `[min, max, step]` range, registered with `registerTuning` and placed in `TUNE_CATEGORIES` (a test fails until it is).
 - A new per-frame feature update in `game.js` goes through `this.guard.run('updateX', () => this.updateX(dt))`.
 - The farm remembers between loads (`src/farm`). A vehicle's or a girl's lasting condition (wear, a fault, a level she has learnt) goes in `captureVehicle`/`restoreVehicle` (or `ENGINE_KEPT`) or `captureGirls`/`restoreGirls`, with a test; something about the farm's character dealt at random comes from a `this.farmSeed` stream, not `this.seed`. docs/decisions/world.md, "A farm that remembers (TODO 15)".
-- A quad spec must name a `style` and `dashStyle` that exist. A new vehicle goes in `FOR_SALE` or `NOT_FOR_SALE` in `src/farm/classifieds.js`. Tests check both.
+- A quad spec must name a `style` and `dashStyle` that exist, and a vehicle's id, style, files and every name in the code are its in-game model name: the real make is named only on the "After a ..." line at the top of its body file (`tests/noRealMakes.test.js`, `tools/realMakes.json`). A new vehicle goes in `FOR_SALE` or `NOT_FOR_SALE` in `src/farm/classifieds.js`. Tests check both.
 - Style: single quotes, about 140-column lines, comments that say why. No prettier or eslint; don't run either over existing files.
 
 ## Testing (keep it cheap)

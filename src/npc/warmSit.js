@@ -1,6 +1,6 @@
 // The warm-up is the best bit. A cold engine shakes about twice as hard as a warm one at idle, so when a girl starts your usual quad to have
 // it warm for you (headStart.js), she sometimes sits on it while it warms instead of standing beside it: on the back of a quad, or in the
-// passenger seat of a Land Rover or the UTV. She may ask first. She says so as it begins to smooth out, is disappointed when it has, and is slow
+// passenger seat of a Tor, Crag or the UTV. She may ask first. She says so as it begins to smooth out, is disappointed when it has, and is slow
 // to get off when you arrive. Pure logic: the game says whether she is sat on it running, how warm it is and where you are.
 
 export const DEFAULT_WARMSIT_PARAMS = {

@@ -37,7 +37,7 @@ export const DEFAULT_GEARBOX_PARAMS = {
   jumpSlope: 0.1, // how steep a climb has to be (sine of the angle, about 6 degrees) before a worn gear can jump out
   jumpThrottle: 0.5, // and how much throttle it needs: a worn gear only jumps out under load
   jumpRate: 0.6, // chance a second, for a fully worn gear, of it jumping out while it is under that load
-  crashGears: 0, // how many of the bottom gears have no synchromesh (the Land Rover's first and second)
+  crashGears: 0, // how many of the bottom gears have no synchromesh (the Tor's or Crag's first and second)
   crashSpeed: 1, // m/s: going faster than this, a gear with no synchromesh crunches and won't go in
   declutchTime: 0.2, // s in neutral with the clutch up (the first declutch) before a crash gear will take on the move
   matchTolerance: 0.2, // how close the revs (0 idle to 1 flat out) must be to the gear's road speed to go in without a crunch

@@ -19,7 +19,7 @@ const run = (s, c, seconds, dt = 0.5) => {
 };
 
 describe('sheltering in a cab', () => {
-  it('in the rain offers a free girl the nearest cab, and taking it sends her (starting a Land Rover now and then)', () => {
+  it('in the rain offers a free girl the nearest cab, and taking it sends her (starting a Tor or Crag now and then)', () => {
     const s = make();
     const offers = s.offers(ctx(wet));
     expect(offers).toEqual([{ key: 'shelterCab', girl: 'amy', cab: 'tor', reason: 'rain', weight: P.rainWeight }]);
@@ -51,7 +51,7 @@ describe('sheltering in a cab', () => {
     expect(make().offers(ctx(cold, { cabs: [utv] }))).toEqual([]);
   });
 
-  it('on a cold dry day offers a Land Rover to start and sit in, more keenly one already running (which she just gets into)', () => {
+  it('on a cold dry day offers a Tor or Crag to start and sit in, more keenly one already running (which she just gets into)', () => {
     const s = make();
     const offer = s.offers(ctx(cold))[0];
     expect(offer).toEqual({ key: 'warmCab', girl: 'amy', cab: 'tor', reason: 'cold', weight: P.coldWeight });
@@ -132,7 +132,7 @@ describe('what they say', () => {
 });
 
 describe('starting a cab from the seat', () => {
-  it('a Land Rover with a battery that will turn over is started from inside; only a flat one needs the handle outside', async () => {
+  it('a Tor or Crag with a battery that will turn over is started from inside; only a flat one needs the handle outside', async () => {
     const { needsStartingHandle } = await import('../src/npc/crankAttempt.js');
     const lr = (battery, running = false) => ({ crank: {}, engine: { isRunning: running, battery, starterDead: battery < 0.1, params: { batteryDeadBelow: 0.1 } } });
     expect(needsStartingHandle(lr(0.8))).toBe(false);

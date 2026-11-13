@@ -1358,12 +1358,12 @@ function buildFrame(root, sport, barsY = 1.0, tail = -0.98) {
  * @param {string} [opts.dashStyle] one of DASH_STYLES, see dash.js.
  * @param {boolean} [opts.solo]     No racks, pillion seat or anchors for her: a one-person quad (the kids' quad).
  * @param {string} [opts.style]     Body style:
- *   'utility'  Honda-style farm quad: racks front and back, footwells, round headlights in the nose, raised pillion;
- *   'utility2' Yamaha-style farm quad: brush guard, square headlights, deeper railed racks, a grey seat, independent rear;
+ *   'utility'  Kestrel-style farm quad: racks front and back, footwells, round headlights in the nose, raised pillion;
+ *   'utility2' Tamura-style farm quad: brush guard, square headlights, deeper railed racks, a grey seat, independent rear;
  *   'sport'    two-stroke sport quad: number plate, no racks, nerf bars, expansion chamber, chain drive, a slim pillion pad;
- *   'utility3' older Kawasaki-style farm quad: headlight in a nacelle on the bars, flat-topped fenders, flat mesh
+ *   'utility3' older Ridgeback-style farm quad: headlight in a nacelle on the bars, flat-topped fenders, flat mesh
  *              racks, steel bumpers and a winch, mudflaps, a tan seat, square-shouldered tyres;
- *   'sport2'   Suzuki-style two-stroke race quad: lower and longer, big front plate, angular plastics, water-cooled,
+ *   'sport2'   Viper-style two-stroke race quad: lower and longer, big front plate, angular plastics, water-cooled,
  *              wide nerf bars, a big chamber on the right, white rims, one long race seat with a slim pillion pad.
  */
 // Where each fuel tap sits (x is mirrored for the right-hand ones) and what its handle looks like, by tapStyle (controls.js). All of them
@@ -1461,12 +1461,12 @@ function buildChokePlunger(root, choke) {
 
 export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'farm300', style = 'utility', solo = false, plateNumber = '7', chokeStyle = 'thumb', tapStyle = 'left', driveSwitch = null, decay = null } = {}) {
   const racer = style === 'racer'; // the orange (TODO 92): the Adder's triangle wedge, flat wings, shroud and flanks
-  const junior = style === 'junior'; // the kids' quad (TODO 93): a Suzuki LT50's bulky plastics, thick seat and open engine, built full size and scaled
+  const junior = style === 'junior'; // the kids' quad (TODO 93): the Viper Asp 50's bulky plastics, thick seat and open engine, built full size and scaled
   const race = style === 'sport2' || racer;
   const farm = style === 'utility3';
   const rb300 = style === 'rb300'; // the green (TODO 90): the RB300's decks, grey nose cage, round speedo and V bars
   const ursa = style === 'ursa'; // the loan quad (TODO 96): the Ursa 450's, the Bruin's machinery with its own deck numbers, black flares, wheels and bumper
-  const gz = style === 'bruin' || ursa; // the two Yamaha utility bodies, built with the same decks, panels, racks and pod
+  const gz = style === 'bruin' || ursa; // the two Tamura utility bodies, built with the same decks, panels, racks and pod
   const hornet = style === 'hornet'; // the yellow (TODO 91): the Hornet's small plastics, open engine bay and wheels at the edges
   const sport = style === 'sport' || style === 'hornet' || junior || race; // two-stroke chassis
   const cfg = STYLE[style] ?? STYLE.utility;
@@ -1583,7 +1583,7 @@ export function buildQuadModel({ bodyColor = 0xa8271f, dashStyle = 'farm300', st
     pipe([[0.16, 0.74, -0.92], [0.2, 0.77, -1.07], [-0.2, 0.77, -1.07], [-0.16, 0.74, -0.92]], 0.015, MAT.frame, root, { bend: 0.07 });
     rbox(0.1, 0.035, 0.015, 0.008, MAT.tail, 0, 0.78, -1.025, root, undefined, 1);
   } else if (gz) {
-    // The Bruin (a 2000s Yamaha 660; the Ursa shares all but its lamps, bumper and tail): the painted decks are made with the fenders; here are the round lamps in black pods at the face's
+    // The Bruin (a 2000s farm quad; the Ursa shares all but its lamps, bumper and tail): the painted decks are made with the fenders; here are the round lamps in black pods at the face's
     // corners, the grille between them with the steel bumper below (bruinDetail.js), the black dome round the steering column, and the
     // tail lamp panel on the rear deck's face.
     const FACE = ursa ? URSA_FACE : BRUIN_FACE; // (the Ursa's face leans, so its lamps and grille stand further forward)
@@ -2347,7 +2347,7 @@ export function faceAlong(group, normal, up) {
 /** Squeezes the left brake lever in (`amount` 0 to 1, eased by the caller) and shows the red catch that holds it once it is nearly there. */
 export function poseParkBrake(model, amount) {
   const lever = part(model, 'parkBrakeLever');
-  if (!lever) return; // the tractor, UTV and Land Rovers have their own handles
+  if (!lever) return; // the tractor, UTV and the Tor and the Crag have their own handles
   lever.rotation.y = amount * 0.16;
   const hold = part(model, 'parkBrakeCatch');
   if (hold) hold.visible = amount > 0.85;

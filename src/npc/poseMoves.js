@@ -185,7 +185,7 @@ export const MOVES = {
     ],
   },
 
-  // Into a bench seat behind a door (the UTV, the Land Rover), from its left: the right foot in and up on the sill, ducking under
+  // Into a bench seat behind a door (the UTV, the Tor or Crag), from its left: the right foot in and up on the sill, ducking under
   // the roof, in onto the seat turning to face forward, and the other leg in after.
   stepIn: {
     liftFrom: 'step',
@@ -437,7 +437,7 @@ export const STANDING_IDLES = {
   },
 };
 
-// Ways of sitting a while, on top of the sitting clip and the seat's pose: on a bench (the UTV, the Land Rover), or perched with
+// Ways of sitting a while, on top of the sitting clip and the seat's pose: on a bench (the UTV, the Tor or Crag), or perched with
 // her legs hanging (the bales, the tip trailer's tub, the UTV's tailgate, a quad's front rack, the tractor's arch). Hands in the
 // hips frame are placed for the sitting clip, her thighs out level in front of her.
 export const SEATED_IDLES = {

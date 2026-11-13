@@ -90,7 +90,7 @@ export class TipTrailer {
   pinOf(quad) {
     const p = this.p;
     if (quad.towHitch) {
-      // A towing jaw of its own (the Land Rover's): where it is, in the world.
+      // A towing jaw of its own (the Tor's or Crag's): where it is, in the world.
       const w = quad.towHitch.getWorldPosition(new THREE.Vector3());
       return { x: w.x, z: w.z, y: w.y - TIP_TRAILER_SPEC.ringHeight };
     }

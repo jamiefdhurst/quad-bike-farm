@@ -53,5 +53,116 @@
     "p309",
     "mule",
     "mf35"
-  ]
+  ],
+  "makes": [
+    {
+      "word": "Land Rover",
+      "why": "the Tor and the Crag copy these; the game calls them by their own names"
+    },
+    {
+      "word": "Landrover",
+      "why": "a run-together spelling of the same make"
+    },
+    {
+      "word": "Series III",
+      "why": "the Tor's model"
+    },
+    {
+      "word": "Defender",
+      "why": "the Crag's model"
+    },
+    {
+      "word": "Honda",
+      "why": "the Farm 300, the T185 and others copy its quads"
+    },
+    {
+      "word": "Yamaha",
+      "why": "the Bruin, Hornet, Ursa, TZ65 and Shepherd copy its machines"
+    },
+    {
+      "word": "Suzuki",
+      "why": "the Junior and the Racer copy its quads"
+    },
+    {
+      "word": "Kawasaki",
+      "why": "the RB300 and the Yak copy its machines"
+    },
+    {
+      "word": "Massey Ferguson",
+      "why": "the Hartley copies its tractor"
+    },
+    {
+      "word": "John Deere",
+      "why": "a real tractor maker"
+    },
+    {
+      "word": "Kubota",
+      "why": "a real tractor and UTV maker"
+    },
+    {
+      "word": "Polaris",
+      "why": "a real quad maker"
+    },
+    {
+      "word": "Can-Am",
+      "why": "a real quad maker"
+    },
+    {
+      "word": "Ford Fiesta",
+      "why": "the Finch copies it (the ford in the stream is a place, so only the car's model is listed)"
+    },
+    {
+      "word": "Fordson",
+      "why": "a real tractor maker"
+    },
+    {
+      "word": "Vauxhall",
+      "why": "the Griffin copies its car"
+    },
+    {
+      "word": "Peugeot",
+      "why": "the Vauclair copies its car"
+    },
+    {
+      "word": "Fiesta",
+      "why": "the Finch's model"
+    },
+    {
+      "word": "Corsa",
+      "why": "the Griffin's model"
+    },
+    {
+      "word": "Grizzly",
+      "why": "the Bruin's model"
+    },
+    {
+      "word": "Kodiak",
+      "why": "the Ursa's model"
+    },
+    {
+      "word": "Foreman",
+      "why": "a Honda quad the Farm 300 is near"
+    },
+    {
+      "word": "Bayou",
+      "why": "the RB300's model"
+    },
+    {
+      "word": "Fourtrax",
+      "why": "the Farm 300's model"
+    },
+    {
+      "word": "Bantam",
+      "why": "the Plover's model"
+    },
+    {
+      "word": "BSA",
+      "why": "the Plover's make"
+    },
+    {
+      "word": "Quadracer",
+      "why": "the Racer's model"
+    }
+  ],
+  "makesNote": "Real makes and models that appear only on an 'After a ...' line (tests/noRealMakes.test.js): case-sensitive whole words, each with why it is listed. A line that must name one adds it nowhere else."
 }

@@ -293,7 +293,7 @@ export class DebugGui {
     set(r, 'fuel (litres)', () => round(unit().quad.fuel.litres, 1), (v) => (unit().quad.fuel.litres = v), 0, u.quad.fuel.params.tankCapacity, 0.1);
     show(r, 'fuel tap', () => unit().quad.fuel.tap);
     if (!u.quad.fuel.params.noTap) show(r, 'fuel slopped away from the tap (steep bank, low tank)', () => (unit().quad.fuel.uncovered ? 'yes' : 'no'));
-    // The Land Rover has a choke (Q and Z) but no fuel tap, so the tap's absence doesn't mean no choke.
+    // The Tor or Crag has a choke (Q and Z) but no fuel tap, so the tap's absence doesn't mean no choke.
     if (!u.quad.engine.params.injected && (!u.quad.fuel.params.noTap || (u.quad.landRover && !u.quad.engine.params.compressionIgnition))) set(r, 'choke', () => round(unit().quad.choke), (v) => (unit().quad.choke = v), 0, 1, 0.1);
     if (e.params.manualTiming) set(r, 'spark lever (0 retarded, 1 advanced)', () => round(unit().engine.advance), (v) => (unit().engine.advance = v), 0, 1, 0.05);
     if (e.params.tickler) set(r, 'tickler fuel in the bowl (floods past ' + e.params.tickleFloodAbove + ')', () => round(unit().engine.tickled), (v) => (unit().engine.tickled = v), 0, 3, 0.1);
@@ -496,7 +496,7 @@ export class DebugGui {
     row(one, 'Stand the toolbox on its rack, loose', () => g.hud.toast(g.rackLoads.debugRack(this.unit(), 'toolbox')));
     row(one, 'Strap down what is on its rack / undo the strap', () => g.hud.toast(g.rackLoads.debugRack(this.unit(), 'strap')));
     row(one, 'Clear its rack', () => g.hud.toast(g.rackLoads.debugRack(this.unit(), 'clear')));
-    row(one, 'Stand the red jerry can in its back (the Land Rovers), loose', () => g.hud.toast(g.debugBack(this.unit(), 'can')));
+    row(one, 'Stand the red jerry can in its back (the Tor and the Crag), loose', () => g.hud.toast(g.debugBack(this.unit(), 'can')));
     row(one, 'Stand the toolbox in its back, loose', () => g.hud.toast(g.debugBack(this.unit(), 'toolbox')));
     row(one, 'Tip out whatever is in its back', () => g.hud.toast(g.debugBack(this.unit(), 'clear')));
     row(one, 'Hook the green\'s winch on it (the green: on the nearest tree) / take it off', () => g.hud.toast(g.towing.debugWinch(this.unit())));

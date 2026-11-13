@@ -24,7 +24,7 @@ export const TREAD_KINDS = {
   trike: { section: 2.4, depth: 0.2, count: 20 }, // an old three-wheeler's: fat and round, chunky square blocks in staggered rows with big shoulder blocks
   tractor: { section: 5, depth: 0.32, count: 22 }, // a tractor rear: tall bar lugs from each shoulder, angled, open in the middle
   rib: { section: 3, depth: 0, count: 0, crown: [{ x: -0.42, w: 0.16, d: 0.12 }, { x: 0, w: 0.16, d: 0.12 }, { x: 0.42, w: 0.16, d: 0.12 }] }, // a tractor front: three ribs
-  allTerrain: { section: 4, depth: 0.14, count: 26 }, // a Land Rover's or a UTV's: two staggered rows of blocks with a zigzag between, and shoulders
+  allTerrain: { section: 4, depth: 0.14, count: 26 }, // a Tor's or Crag's or a UTV's: two staggered rows of blocks with a zigzag between, and shoulders
   road: { section: 5, depth: 0.05, count: 40, crown: [{ x: -0.32, w: 0.09, d: -0.06 }, { x: 0.32, w: 0.09, d: -0.06 }] }, // a car's: grooves round it, sipes on the shoulders
 };
 

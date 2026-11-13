@@ -3,13 +3,13 @@
 // can is left at one of a few likely spots.
 
 const MIN_GAP = 4.5; // metres between quad centres
-const BIG_GAP = 6; // and between a tractor, UTV or Land Rover and anything else, centre to centre
+const BIG_GAP = 6; // and between a tractor, UTV, Tor or Crag and anything else, centre to centre
 const NUDGES = 8; // goes at a random nudge that misses `blocked` before a vehicle is put on its spot's middle
 
 /**
  * Where each vehicle starts. One quad, picked at random from the first `homeCount`, is hers: it's always in the yard, and she starts beside it.
  * Up to `spawn.yardMax` go in the yard (hers among them); the rest, and now and then one that could have been in the yard, are left elsewhere
- * on the farm. `big` flags the tractor, UTV and Land Rovers (by index): they are always left out on the farm, keep further from their
+ * on the farm. `big` flags the tractor, UTV and the Tor and the Crag (by index): they are always left out on the farm, keep further from their
  * neighbours and aren't left in a tight spot such as the Dutch barn's bay. `blocked(x, z)` says a nudged position is in the way of something
  * (spawnBlocked): it is nudged again, and at worst put on the spot's middle, which the layout keeps clear. Returns { placed: [{ x, z, yaw, where }], home }.
  */

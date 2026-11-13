@@ -1,4 +1,4 @@
-// When a vehicle's doors swing out (the UTV's nets now; the cars' and the Land Rovers' doors when they are made to move): each side's
+// When a vehicle's doors swing out (the UTV's nets now; the cars' and the Tor's and Crag's doors when they are made to move): each side's
 // own door opens for a few seconds when somebody gets on or off at that side, and while a girl is stepping in or climbing down there, only
 // while the vehicle is nearly stopped, and shuts again; the other side's stays shut. Pure logic, tested in tests/doorSwing.test.js.
 

@@ -1,5 +1,5 @@
 // Spotlamps: a pair of long-throw lamps fitted at the barn bench (the `spotlamps` job in workshop/benchJobs.js) to the quads and the
-// Land Rovers, for riding the fields after dark. They have their own switch (9), need the key on and a battery, and load it more than the
+// the Tor and the Crag, for riding the fields after dark. They have their own switch (9), need the key on and a battery, and load it more than the
 // headlights do. A narrow, bright beam that carries much further than a headlamp's. Done badly at the bench, they are aimed wrong
 // (low and a bit off to one side). Pure logic, no Three.js; the model is spotlampModel.js and the real light is in
 // effects/vehicleLights.js.
@@ -33,7 +33,7 @@ export const SPOTLAMP_PARAM_RANGES = {
 export const SPOTLAMP_PARAMS = { ...DEFAULT_SPOTLAMP_PARAMS }; // shared by every vehicle, registered once
 
 export class Spotlamps {
-  /** `canFit`: whether this vehicle can have a pair (the quads and the Land Rovers, with headlamps to mount them by). */
+  /** `canFit`: whether this vehicle can have a pair (the quads and the Tor and the Crag, with headlamps to mount them by). */
   constructor(canFit = false, p = SPOTLAMP_PARAMS) {
     this.p = p;
     this.canFit = !!canFit;

@@ -14,7 +14,7 @@ import { VAUCLAIR_BODY, VAUCLAIR_DOOR, VAUCLAIR_HATCH, VAUCLAIR_TAIL_LAMP, VAUCL
 
 // Your car (#229): a 1987-style three-door diesel at its real size, the Vauclair 39D, built from vauclairBody.js's numbers after the photos. Built as the
 // Finch is (finchModel.js, whose fixes it keeps: watertight panels, the doors' frames, the hatch spanning the quarters, the boot closed underneath),
-// through the same named parts as the Land Rovers' (carModel.js: steeringColumn > handlebars, dash, gearLever, parkBrakeLever, chokeKnob, the
+// through the same named parts as the Tor's and Crag's (carModel.js: steeringColumn > handlebars, dash, gearLever, parkBrakeLever, chokeKnob, the
 // tipping seatBack_driver and seatBack_left, riderAnchor, seatLeft, seatRearLeft, seatRearRight, the cameras, exhaustTip, belt_<seat>), plus:
 //
 //   doorLeft, doorRight    groups hinged on their front edges: poseTorDoors swings them (the dirt on them goes with them: `mudRest`)

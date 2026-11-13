@@ -1,4 +1,4 @@
-// A girl loads or unloads a Land Rover's back. With nobody in the Tor or the Crag and a loose can, the toolbox or the like lying about
+// A girl loads or unloads a Tor's or Crag's back. With nobody in the Tor or the Crag and a loose can, the toolbox or the like lying about
 // near it, a free girl may go and put it in; with something in the back she may take it out and set it down beside. Going is an offer
 // (the chooser, chooser.js); only the debug panel's forced one starts here. Pure logic: the game says what is standing where and who is
 // free, and does the walking, the tailgate and the lifting.

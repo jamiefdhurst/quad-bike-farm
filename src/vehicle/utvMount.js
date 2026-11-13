@@ -7,7 +7,7 @@ const BED_LIFT = 0.45; // up onto the tailgate from behind
 /**
  * The UTV's seats as somewhere to ride, with the same face as the bale trailer and the tractor's mudguards (`model`, `motion`, `slots`,
  * `standPoint`, `freeSlot`) so the girls' climb on, sit and climb down states (npc/companionHayRide.js) work on all three. The slots
- * are named `left` and `mid` (the bench) and `bed` (the open tailgate); the driver's seat is yours. The Land Rover's bench works the same,
+ * are named `left` and `mid` (the bench) and `bed` (the open tailgate); the driver's seat is yours. The Tor's or Crag's bench works the same,
  * with its own stand points (`stand`) and no bed (its model has no `bedSeat`).
  */
 export class UtvMount {
@@ -42,7 +42,7 @@ export class UtvMount {
 
   /**
    * Which side's door a girl is using just now, stepping in, climbing down or walking up to climb in: { left, right } (the bench's seats and
-   * the Land Rover's passenger-side back seats are the left's; a back seat reached by the driver's door, the right's).
+   * the Tor's or Crag's passenger-side back seats are the left's; a back seat reached by the driver's door, the right's).
    */
   get boardingSides() {
     const out = { left: false, right: false };

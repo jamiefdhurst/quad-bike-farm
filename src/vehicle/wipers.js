@@ -1,4 +1,4 @@
-// The windscreen wipers on the cars, the Land Rovers and the UTV. Pure logic, no Three.js: the stalk (or switch) and where the blades are.
+// The windscreen wipers on the cars, the Tor, the Crag and the UTV. Pure logic, no Three.js: the stalk (or switch) and where the blades are.
 //
 // Each vehicle's spec lists the speeds its stalk has, in order (`wipers: ['int', 'slow', 'fast']`), and X steps the stalk through them and
 // back to off. The blades run off the ignition: with the key off they stop where they are, and switched off mid-sweep they carry on to

@@ -48,7 +48,7 @@ export function lightSpot(target, from, p = DEFAULT_WORK_LIGHT_PARAMS) {
 }
 
 /**
- * The vehicle she'd bring: of `vehicles` ([{ id, x, z, cab (a roof and a passenger seat: the Land Rovers, the UTV), lights (it has
+ * The vehicle she'd bring: of `vehicles` ([{ id, x, z, cab (a roof and a passenger seat: the Tor and the Crag, the UTV), lights (it has
  * working headlamps), free (nobody on it, she may drive it) }]), free ones with lights within range of her, a cab before a quad,
  * then the nearest. Or null.
  */

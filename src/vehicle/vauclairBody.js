@@ -24,7 +24,7 @@ export const VAUCLAIR_BODY = {
   // The long sloping bonnet, the waist rising gently to the back, then the bustle's deck falling to the tail.
   upper: [[1.95, 0.7], [1.82, 0.76], [0.8, 0.89], [-1.45, 0.96], [-1.62, 0.96], [-1.84, 0.9], [-1.9, 0.84]],
   screenBase: [0.8, 0.89],
-  screenTop: [0.26, 1.31], // raked: the glass about as far from your eye as the Land Rovers' (a test keeps it so)
+  screenTop: [0.26, 1.31], // raked: the glass about as far from your eye as the Tor's and Crag's (a test keeps it so)
   roofRear: [-1.28, 1.29],
   hatchBottom: [-1.62, 0.97], // where the glass meets the deck
   tumble: 0.16, // how far the glasshouse leans in, metres a metre up

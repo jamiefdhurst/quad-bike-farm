@@ -1,7 +1,7 @@
 // Second-hand buying: the classified ads pinned up in the barn, the purse you pay from, and the vehicles you have bought (they turn up the next
 // morning). Pure logic, no Three.js; the board is drawn in world/classifiedsView.js. Tested in tests/classifieds.test.js.
 //
-// Only a model that is not on the farm this game is advertised: the tractor, UTV and Land Rovers each have one slot in the game, and a
+// Only a model that is not on the farm this game is advertised: the tractor, UTV and the Tor and the Crag each have one slot in the game, and a
 // second quad of a model that is here would share its id. Every vehicle spec has to be in FOR_SALE or NOT_FOR_SALE (a test fails for one that
 // is in neither), so a vehicle added later joins the market or says why it stays out.
 

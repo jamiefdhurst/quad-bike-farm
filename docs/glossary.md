@@ -4,6 +4,8 @@ One name for each place, thing and job, used everywhere a player reads it: promp
 
 `tests/glossary.test.js` reads the "Not" column (variants separated by commas) and fails on any of them in `src/` or `docs/game.md`, so a variant that is listed cannot come back. A new thing gets a row before it gets a prompt. Use the name in the first column, and add the variants you find to the last.
 
+**Vehicles are called by their made-up names, never the real make or model they copy** (the Tor, the Crag, the Bruin, the Finch...). A vehicle's id, style, files and every name in the code are its in-game model name, and the real one is named only on the "After a ..." line at the top of its body file. The farm's two old 4x4s are "the Tor and the Crag", one of them "a Tor or Crag". `tests/noRealMakes.test.js` fails on a real make or model anywhere in `src`, `tests`, `docs` or `.claude` outside an "After a ..." line and the record in `docs/decisions/`; its words are in `tools/realMakes.json`, each with why.
+
 A row is for a name with a choice in it. A thing with one obvious name does not need one.
 
 | Name | What it is | Not |
@@ -34,18 +36,18 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | booster pack | The black and yellow jump-start pack on the back of the workbench: charged on the bench charger, carried to a flat vehicle | jump starter, jump pack, battery pack, power pack |
 | tyre plug | The sticky rubber strip from the plug kit in the toolbox, pushed into a puncture | tire plug, puncture plug, tyre strip, rope plug |
 | jerry can | The 20 litre can you carry and pour from | jerrycan, jerry-can |
-| seat belt | The belt in the Land Rovers and the UTV, on `;` | seatbelt |
-| windscreen | The glass in front of you in the cars, the Land Rovers and the UTV | windshield, front screen |
+| seat belt | The belt in the Tor, the Crag and the UTV, on `;` | seatbelt |
+| windscreen | The glass in front of you in the cars, the Tor, the Crag and the UTV | windshield, front screen |
 | wipers | The blades that sweep the windscreen, worked by the wiper stalk on `X` | windshield wipers, wiper blades |
 | mist | The fog of breath and wet clothes on the inside of a cab's glass; the heater, the wipers and a sleeve clear it | fog on the glass |
-| your car | The Vauclair 39D, the silver-grey diesel you arrive in each morning, parked by the Dutch barn (the girls say "the Vauclair") | your Peugeot |
+| your car | The Vauclair 39D, the silver-grey diesel you arrive in each morning, parked by the Dutch barn (the girls say "the Vauclair") | your saloon |
 | tow rope | The rope on the Farm 300's and Bruin's racks | towrope, tow-rope |
 | tank dip | Putting a stick down the filler, with `U` beside a quad, to read what is really in the tank, whatever its fuel gauge says | dip the fuel, fuel dipstick, tank stick |
 | rolling road | The tuner's trailer with two steel rollers that comes to the farm about once a week: ride a quad onto it and have a run to see how much power it makes | dyno, dynamometer, dyno trailer, power rig |
 | run | One go on the rolling road: the engine held and swept up through its revs while the power is measured, for £15 from the money tin | dyno run, power run |
 | tuner | The woman who brings the rolling road | dyno operator, dyno man |
 | results sheet | The sheet on the barn's back wall with a graph for each quad that has had a run | dyno sheet, power sheet, dyno chart |
-| MOT | The test at Hollis Motors that goes over a Land Rover's lights, brakes, wipers, horn, tyres, leaks and exhaust | M.O.T., roadworthiness test |
-| MOT bay | The white-lined bay on the garage forecourt, in front of the western roller door, where a Land Rover is parked square to be tested | test bay, inspection bay |
+| MOT | The test at Hollis Motors that goes over a Tor's or Crag's lights, brakes, wipers, horn, tyres, leaks and exhaust | M.O.T., roadworthiness test |
+| MOT bay | The white-lined bay on the garage forecourt, in front of the western roller door, where a Tor or Crag is parked square to be tested | test bay, inspection bay |
 | MOT sheet | The card the garage hands you after a test, with a pass or a fail beside each item | test report, MOT report |
 | certificate | What a pass earns: good for a couple of weeks, kept by the farm and worth a little more on the cork board | MOT pass, test certificate |

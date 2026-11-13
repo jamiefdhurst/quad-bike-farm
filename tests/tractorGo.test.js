@@ -74,7 +74,7 @@ describe('Amy', () => {
   });
 });
 
-describe('the UTV and the Land Rover', () => {
+describe('the UTV and the Tor or Crag', () => {
   const vc = (vehicles) => ({ free: { amy: true, jess: true }, vehicles, youOnTractor: false });
 
   it('Jess picks one of the free vehicles', () => {

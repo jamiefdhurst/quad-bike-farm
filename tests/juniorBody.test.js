@@ -10,7 +10,7 @@ import { DASH_STYLES } from '../src/vehicle/dash.js';
 import { MAKER_FOR } from '../src/vehicle/detail/decals.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
-// The kids' quad as a Suzuki LT50 (TODO 93): bulky pink plastics, a thick blue seat, the engine in the open with the choke on the carb, a
+// The kids' quad as the Viper Asp 50 (TODO 93): bulky pink plastics, a thick blue seat, the engine in the open with the choke on the carb, a
 // thumb throttle, a key on the clamp, stickers and no lights.
 
 describe('the kids’ quad body numbers', () => {

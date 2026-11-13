@@ -1,5 +1,5 @@
 // Her own day (#20, was TODO 125). Each girl starts a game with a loose agenda, one thing she has in mind for today ("wants to jump the
-// ramp", "wants the Land Rover out"). Every offer kind on it is boosted in the chooser all game (game.js updateMinds multiplies
+// ramp", "wants the Tor or Crag out"). Every offer kind on it is boosted in the chooser all game (game.js updateMinds multiplies
 // `boost` in beside the memory and the mood), so she keeps drifting back to it without ever being forced, and early on she says what
 // it is. Rolled afresh each load, from her own odds (`agendaOdds` in characters.js), so it isn't kept in the farm's save. Pure.
 

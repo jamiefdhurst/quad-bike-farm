@@ -47,7 +47,7 @@ export class SprayView {
     this.refresh();
   }
 
-  /** Recolours every cell from the state (after a restore or a reset). */
+  /** Recolours every cell from the state. */
   refresh() {
     const col = this.ground.geometry.attributes.color;
     for (let i = 0; i < this.sp.cells; i++) this.paint(col, i, this.sp.state[i]);

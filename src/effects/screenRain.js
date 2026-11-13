@@ -2,7 +2,7 @@
 // blade passing over them does. effects/screenRainView.js draws it on the glass.
 //
 // Everything is in the glass's own frame, in metres: x across, y up the glass, the origin at its middle. The glass is one or more convex
-// panes (a car's trapezoid, a Land Rover's two flat panes), each a list of corners. A drop that lands on another joins it, so the glass
+// panes (a car's trapezoid, a Tor's or Crag's two flat panes), each a list of corners. A drop that lands on another joins it, so the glass
 // beads up; one grown past `runFrom` runs down it, and at speed the air pushes them all up the screen, leaving streaks. When the rain stops
 // they dry. A blade clears what it sweeps over.
 
@@ -96,7 +96,7 @@ export function updateScreenRain(g, dt, s, random, P = DEFAULT_SCREEN_RAIN_PARAM
     for (let tries = 0; g.due >= 1 && tries < 40; tries++) {
       const x = x0 + random() * (x1 - x0);
       const y = y0 + random() * (y1 - y0);
-      if (!onGlass(g, x, y)) continue; // a point off the glass (a car screen's top corners, the Land Rover's centre post): try again
+      if (!onGlass(g, x, y)) continue; // a point off the glass (a car screen's top corners, the Tor's or Crag's centre post): try again
       g.due -= 1;
       addDrop(g, x, y, P.dropMin + random() * (P.dropMax - P.dropMin), P);
       changed = true;

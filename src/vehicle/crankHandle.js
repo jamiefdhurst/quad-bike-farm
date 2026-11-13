@@ -1,4 +1,4 @@
-// The Land Rover's starting handle: stand at the front, put it through the hole in the bumper and swing it, for when the battery is too
+// The Tor's or Crag's starting handle: stand at the front, put it through the hole in the bumper and swing it, for when the battery is too
 // flat for the starter. Hold your thumb on the same side as your fingers. Wrap it round the handle and, now and then, the engine kicks
 // back on a compression and spins the handle the wrong way, and you spend a few seconds nursing your hand. Pure logic, tested
 // (tests/crankHandle.test.js); the swing itself is the engine's pull (engine/engineModel.js), the same as a recoil pull-start.

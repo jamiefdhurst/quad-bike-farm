@@ -2,7 +2,7 @@
 // heater clears it, what a wiper, a sleeve or a finger does to it. effects/cabMistView.js draws it.
 //
 // The windscreen is a grid of cells over the rain glass's frame (screenRain.js: x across, y up the glass, metres), each 0 clear to 1 fogged,
-// with the cells off the glass (a Land Rover's centre post, a car's top corners) never fogging. The side windows and the back are one
+// with the cells off the glass (a Tor's or Crag's centre post, a car's top corners) never fogging. The side windows and the back are one
 // number between them (`rest`): they fog with the screen and clear last, with no pattern to them.
 
 export const DEFAULT_CAB_MIST_PARAMS = {

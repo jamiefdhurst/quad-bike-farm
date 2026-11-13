@@ -21,7 +21,7 @@ export const VEHICLE_NAMES = {
   crag: { maker: 'Moorland', model: 'Crag', say: 'Crag' },
   finch: { maker: 'Thorne', model: 'Finch', say: 'Finch' },
   griffin: { maker: 'Ashby', model: 'Griffin', say: 'Griffin' },
-  vauclair: { maker: 'Vauclair', model: '39D', say: 'Vauclair' }, // your own car (a 309 diesel's place): "the Vauclair", as you'd say "the Peugeot"
+  vauclair: { maker: 'Vauclair', model: '39D', say: 'Vauclair' }, // your own car: "the Vauclair", as you'd say "the Kestrel"
 };
 
 export const MAKER_NAMES = [...new Set(Object.values(VEHICLE_NAMES).map((n) => n.maker))];

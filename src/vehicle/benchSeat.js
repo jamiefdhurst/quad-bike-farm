@@ -1,4 +1,4 @@
-/** The bench seats you can take beside a girl who is driving the UTV or the Land Rover, nearest the door first. */
+/** The bench seats you can take beside a girl who is driving the UTV or the Tor or Crag, nearest the door first. */
 export const BENCH_SEATS = ['left', 'mid'];
 
 /**

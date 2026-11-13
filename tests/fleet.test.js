@@ -37,7 +37,7 @@ describe('the fleet', () => {
     expect(mean).toBeLessThan(9);
   });
 
-  it('has every vehicle in the pool turn up, the tractor, UTV and Land Rover included, and be missing sometimes', () => {
+  it('has every vehicle in the pool turn up, the tractor, UTV, Tor and Crag included, and be missing sometimes', () => {
     for (const spec of pool) {
       expect(games.some((f) => f.includes(spec)), `${spec.id} turns up`).toBe(true);
       expect(games.some((f) => !f.includes(spec)), `${spec.id} is away`).toBe(true);
@@ -149,7 +149,7 @@ describe('where the vehicles start', () => {
     expect(placed.filter((p) => p.where === 'in the yard')).toHaveLength(spawn.yardMax);
   });
 
-  it('never parks the tractor, UTV or a Land Rover in the yard', () => {
+  it('never parks the tractor, UTV or a Tor or Crag in the yard', () => {
     for (let seed = 1; seed <= 100; seed++) {
       const big = kinds(10, [7, 8, 9]);
       const { placed } = randomiseQuadSpawns({ ...spawn, awayChance: 0 }, 10, createRandom(seed), { homeCount: 7, big });
@@ -206,7 +206,7 @@ describe('where the vehicles start', () => {
     expect(spawnBlocked(keepOut, LAYOUT.trailer.x, LAYOUT.trailer.z + 3)).toBe('the bale trailer');
   });
 
-  it('never leaves the tractor, UTV or Land Rover in a tight spot, but does leave them away', () => {
+  it('never leaves the tractor, UTV, Tor or Crag in a tight spot, but does leave them away', () => {
     let away = 0;
     for (let seed = 1; seed <= 200; seed++) {
       const big = kinds(12, [9, 10, 11]);

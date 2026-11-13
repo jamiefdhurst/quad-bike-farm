@@ -1,5 +1,5 @@
 // The noises of a door, made once at load: a latch letting go, a door pushed shut, one slammed, a tailgate coming up short on its chains.
-// A Land Rover's are deeper and ring hollow (big flat panels with a lot of air behind them), a car's are higher, tighter and shorter. Same
+// A Tor's or Crag's are deeper and ring hollow (big flat panels with a lot of air behind them), a car's are higher, tighter and shorter. Same
 // shape as bellAudio.js: pure sample makers here, the Web Audio side in rideAudio.js. Deterministic for a given seed.
 
 export const DOOR_PROFILES = {

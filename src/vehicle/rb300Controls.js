@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { labelMaterial, put, POD } from './farm300Controls.js';
 
-// The green quad's bar controls (TODO 90), after a photo of the left switch housing of a 1990s Kawasaki KLF300: a black housing with a
+// The green quad's bar controls (TODO 90), after a photo of the left switch housing of a 1990s farm quad: a black housing with a
 // wide black lights rocker on top, a red OFF / RUN rocker, a big red ENGINE STOP paddle standing out below, and on a foot under it a
 // ridged black CHOKE slider in a slot (the same slider the red's has, posed by the quad from `chokeLever`'s `baseX`, `POD.slide` of
 // travel) with the start button on the foot's front. Built face to +Z, +X to the picture's right, then turned to face the rider (the

@@ -1,4 +1,4 @@
-// What the girls say about loading and unloading a Land Rover's back (tidyLoad.js): tidyLoadIn (she's off to put something in),
+// What the girls say about loading and unloading a Tor's or Crag's back (tidyLoad.js): tidyLoadIn (she's off to put something in),
 // tidyLoadOut (she's off to take something out). Merged into the main line sets (voiceLines.js, jessLines.js), so they're recorded with
 // the rest.
 

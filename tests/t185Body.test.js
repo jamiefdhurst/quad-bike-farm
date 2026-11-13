@@ -11,7 +11,7 @@ import { MAKER_FOR } from '../src/vehicle/detail/decals.js';
 import { measureModel, proportionErrors, REAL_SIZES, IN_PROPORTION } from '../src/vehicle/detail/realSizes.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
-// The old three-wheeler as a Honda-ATC185S-style trike, the Kestrel T185 (TODO 95): balloon tyres on plain silver rims, chrome legs in black
+// The old three-wheeler as a trike, the Kestrel T185 (TODO 95): balloon tyres on plain silver rims, chrome legs in black
 // boots under two red steering columns, a rectangular headlamp, swept bars, one wide red rear body with a long flat seat, the engine in the
 // open with the choke on the carb, and a headlight and tail light.
 

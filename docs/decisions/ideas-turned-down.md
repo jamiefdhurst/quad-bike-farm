@@ -10,7 +10,7 @@ Jamie's answers when asked for new ideas, so they are not offered again.
 - Skipped when offered: a confirm on "New farm" (it exists), tidying the TODO list's cross-references, puddles that stay and dry, a silent electric UTV, a Reliant-style three-wheeler car, a horse rider on the lane, a vet visit, a kite on windy days, a ghost run on the hill climb, an instant replay.
 - New characters are women, built on the girls' model and wearing the existing clothes.
 - The girls stay on the current base model (the Quaternius "Animated Woman") for now; there is no other base to move to, so improvements work on this one.
-- Dropped from the TODO list: a farm hack estate (a Volvo 240 style). There are cars enough (the girls' two and yours, item 335); carrying round the farm is the Land Rovers' job, so item 183 is now loading the Series III's tub and the 200TDi's back.
+- Dropped from the TODO list: a farm hack estate (a Volvo 240 style). There are cars enough (the girls' two and yours, item 335); carrying round the farm is the Tor's and Crag's job, so item 183 is now loading the Tor's tub and the Crag's back.
 - Not doing (2026-10-14): item 72, a piggyback over the ford. The girls cross on a quad now, so carrying a girl who won't wade isn't needed. The item keeps its number, marked **Not doing.**
 
 ## Performance ideas left for later (2026-10-23)
@@ -25,7 +25,7 @@ Offered alongside #372 to #375. Not wanted yet; raise them again only if the rea
 
 Closed as dropped when the oldest 30 issues were gone through. Raise them again only if the reason no longer holds.
 
-- A moped (a Honda Cub style), #79: Amy has the Finch for the village. A candidate on #520 (more vehicles to buy) if variety on the cork board needs it.
+- A moped (a 50cc step-through style), #79: Amy has the Finch for the village. A candidate on #520 (more vehicles to buy) if variety on the cork board needs it.
 - A home-made go-kart, #78: the races and the mini moto already cover messing about. Also a candidate on that issue.
 - A compact tractor with a front loader, #83: the bale spike on the tractor does the lifting.
 - A vehicle spec editor in the debug panel, #89: new vehicles are written as specs by a session, not tuned by hand, so it would pay back little.

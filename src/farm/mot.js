@@ -1,7 +1,7 @@
-// The MOT at Hollis Motors: a Land Rover parked square in the garage's bay is gone over and given a sheet of what passed and what failed, each
+// The MOT at Hollis Motors: a Tor or Crag parked square in the garage's bay is gone over and given a sheet of what passed and what failed, each
 // from the vehicle's own faults and wear. A pass is a certificate good for a few farm days, kept by the farm; a fail is only a sheet, and the lane stays
 // open (the girls mind, see girlMinds). Pure: no Three.js or DOM, the host reads the unit through `readCondition` and draws what this says.
-// Tested in tests/mot.test.js. docs/decisions/vehicles.md, "An MOT for the Land Rovers (#73, was TODO 178)".
+// Tested in tests/mot.test.js. docs/decisions/vehicles.md, "An MOT for the Tor and the Crag (#73, was TODO 178)".
 
 export const DEFAULT_MOT_PARAMS = {
   price: 20, // pounds from the tin for a test
@@ -24,7 +24,7 @@ export const DEFAULT_MOT_PARAMS = {
   logKept: 12, // tests the farm remembers
 };
 
-export const MOT_PARAMS = { ...DEFAULT_MOT_PARAMS }; // shared by the garage and every Land Rover's wear, registered once
+export const MOT_PARAMS = { ...DEFAULT_MOT_PARAMS }; // shared by the garage and every Tor's or Crag's wear, registered once
 
 export const MOT_PARAM_RANGES = {
   price: [0, 200, 1],
@@ -47,7 +47,7 @@ export const MOT_PARAM_RANGES = {
   logKept: [1, 50, 1],
 };
 
-/** The vehicles the garage tests: the Land Rovers. */
+/** The vehicles the garage tests: the Tor and the Crag. */
 export const canMot = (spec) => !!spec?.landRover;
 
 /** The items on the sheet, in the order the garage goes through them. */
@@ -69,7 +69,7 @@ export const FAIL_NOTES = {
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /**
- * The bulbs, wiper rubbers and horn contacts of a Land Rover: 0 new .. 1 gone. Dealt a little worn at the start of a game and wearing with
+ * The bulbs, wiper rubbers and horn contacts of a Tor or Crag: 0 new .. 1 gone. Dealt a little worn at the start of a game and wearing with
  * the engine hours; the bench's electrics job renews all three. Nothing else reads them but the MOT.
  */
 export class MotWear {
@@ -161,8 +161,8 @@ export function inspect(c, P = DEFAULT_MOT_PARAMS) {
 /** Why a test can't start now, or null. `at` is { dx, dz, yaw } of the vehicle from the bay's middle and heading. */
 export function whyNotTest({ spec, onBay, purse, busy, running }, P = DEFAULT_MOT_PARAMS) {
   if (busy) return 'The garage is going over one now';
-  if (!onBay) return 'Park a Land Rover square in the MOT bay first';
-  if (!canMot(spec)) return 'Hollis Motors only does Land Rovers';
+  if (!onBay) return 'Park a Tor or Crag square in the MOT bay first';
+  if (!canMot(spec)) return 'Hollis Motors only does the Tor and the Crag';
   if (running) return 'Switch the engine off first';
   if (purse < P.price) return `You are £${P.price - purse} short`;
   return null;

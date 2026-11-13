@@ -1,4 +1,4 @@
-// The MOT at Hollis Motors in the running game (farm/mot.js has the rules): park a Land Rover square in the painted bay, get out and press E on the
+// The MOT at Hollis Motors in the running game (farm/mot.js has the rules): park a Tor or Crag square in the painted bay, get out and press E on the
 // clipboard by the east door. The garage takes the money from the tin and goes over it for a while; when the time is up it reads the vehicle's own
 // faults and wear, hands over the sheet, and the result goes in the farm's MOT log and Amy's logbook. VillageHost builds it and calls update();
 // the debug panel and the console use the debug* methods.
@@ -29,7 +29,7 @@ export class MotHost {
     });
   }
 
-  /** The Land Rover sat in the bay now: parked and square in it. */
+  /** The Tor or Crag sat in the bay now: parked and square in it. */
   inTheBay() {
     for (const u of this.g.units) {
       if (!canMot(u.spec)) continue;
@@ -50,7 +50,7 @@ export class MotHost {
     return { action: `Have ${thePhrase(this.inTheBay().spec.id)} MOT tested for ${pounds(this.params.price)}` };
   }
 
-  /** Pays and starts the test on the Land Rover in the bay. True if it began. */
+  /** Pays and starts the test on the Tor or Crag in the bay. True if it began. */
   start({ free = false } = {}) {
     const unit = this.inTheBay();
     if (this.why(unit, free ? Infinity : this.g.market.purse)) return false;
@@ -144,6 +144,6 @@ export class MotHost {
   describe() {
     return [...new Set(this.g.units.filter((u) => canMot(u.spec)).map((u) => u.spec.id))]
       .map((id) => `${thePhrase(id)}: ${this.log.describe(id, this.g.farm?.day ?? 1)}`)
-      .join('; ') || 'no Land Rover on this farm';
+      .join('; ') || 'no Tor or Crag on this farm';
   }
 }

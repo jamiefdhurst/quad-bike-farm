@@ -52,7 +52,7 @@ export class Bench {
   }
 
   /** What the bench works on: the quad in the small bay (or the barn find), else whatever is in the big bay in the barn's second span: any vehicle, since it is
-   *  the one bay the tractor, UTV, Land Rovers and cars fit. The girls only ever work on the small bay (unitInBay). */
+   *  the one bay the tractor, UTV, the Tor and the Crag and cars fit. The girls only ever work on the small bay (unitInBay). */
   unitAtBench() {
     const inBig = this.game.world.layout.bay2;
     const big = inBig && this.game.units.find((u) => !u.barnFind && !u.quad.driver && !u.quad.rider && inBay(inBig, u.quad.position.x, u.quad.position.z, this.params.bayMargin));
@@ -445,7 +445,7 @@ export class Bench {
           const need = this.partFor(k, unit);
           note = k === 'newTyres' ? ` (needs ${need.count} ${need.count === 1 ? PARTS[need.part].one : PARTS[need.part].many} from the tyre rack)` : ` (no ${PARTS[need.part].one} on the shelf)`;
         }
-        else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'electrics' ? ' (Land Rovers only)' : k === 'snorkel' ? (unit.quad.snorkel.fitted ? ' ✓ fitted' : ' (Moorlands only)') : k === 'spotlamps' ? (unit.quad.spotlamps.fitted ? ' ✓ fitted' : ' (quads and Land Rovers only)') : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
+        else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'electrics' ? ' (the Tor and the Crag only)' : k === 'snorkel' ? (unit.quad.snorkel.fitted ? ' ✓ fitted' : ' (Moorlands only)') : k === 'spotlamps' ? (unit.quad.spotlamps.fitted ? ' ✓ fitted' : ' (quads and the Tor and the Crag only)') : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}${this.row === i ? ' picked' : ''}"><span class="key">${jobKey(i)}</span>${JOBS[k].name}${note}</div>`;
       }).join('') + this.serviceRow(unit, this.row === this.kindsFor(unit).length) + `<div class="bn-row${this.row === this.rowsFor(unit).length - 1 ? ' picked' : ''}"><span class="key"></span>Jobs that need the shed kit<div class="bn-sub">Compressor, parts washer and the pit, and swapping engines</div></div>`;
       this.keysEl.textContent = 'W S pick a job   ·   E start it   ·   1 to 0 for the first ten   ·   → the shed kit   ·   B step away';

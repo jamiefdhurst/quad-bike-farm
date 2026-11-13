@@ -109,7 +109,7 @@ export function buildGameTree(g, host) {
         temperature: num(() => e().temperature, (v) => e().setTemperature(v), 0, 1, '', '0 cold, 1 warm'),
         trailer: text(() => (q().loadedOn ? (g.trailer.load.mode === 'aboard' ? (g.trailer.load.strapped ? 'strapped on' : 'on, loose') : 'on the ramps') : 'off'), 'on the bale trailer?'),
         rack: text(() => g.rackLoads.rackSummary(u()), 'what is on its rack, and whether it is strapped (the verbs rackcan, racktoolbox, strap and clearrack change it)'),
-        back: text(() => g.backSummary(u()), 'what is in the back of a Land Rover (the verbs backcan, backtoolbox and clearback change it)'),
+        back: text(() => g.backSummary(u()), 'what is in the back of a Tor or Crag (the verbs backcan, backtoolbox and clearback change it)'),
         hitchAngle: ro(() => (g.trailerOf(q()) ? (g.trailerOf(q()).motion.hitchAngle * 180) / Math.PI : 0), 'deg', 'how far the trailer on its hook is off straight behind it, left positive'),
         folded: flag(() => !!g.trailerOf(q())?.motion.jammed, (v) => g.debugJackknife(u(), !!v), 'is the trailer on its hook folded against it? Set true to fold it, false to straighten it'),
         winch: flag(() => { const w = g.winch; return !!w && w.state === 'hooked' && (u() === w.unit ? !!w.anchor : w.target === q()); }, (v) => { const w = g.winch; const on = !!w && w.state === 'hooked' && (u() === w.unit ? !!w.anchor : w.target === q()); if (!!v !== on) g.hud.toast(g.towing.debugWinch(u())); }, 'is the green\'s winch hooked on it? Set true to hook it (on the green itself, the nearest tree), false to take it off'),
@@ -167,7 +167,7 @@ export function buildGameTree(g, host) {
         if (q().model.userData.cabin) out.screenMist = ro(() => (u().cabMist ? cabMistCover(u().cabMist.grid) : 0), '', 'how much of the windscreen is misted on the inside, 0 to 1');
       }
       if (q().drive) out.drive = choice(q().drive.hasLock ? DRIVE_MODES : ['2wd', '4wd'], () => q().drive.mode, (v) => (q().drive.mode = v), 'the 2WD / 4WD switch');
-      if (!q().engine.params.injected && (!q().fuel.params.noTap || (q().landRover && !q().engine.params.compressionIgnition))) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Land Rover has a choke but no tap
+      if (!q().engine.params.injected && (!q().fuel.params.noTap || (q().landRover && !q().engine.params.compressionIgnition))) out.choke = num(() => q().choke, (v) => (q().choke = v), 0, 1); // the Tor or Crag has a choke but no tap
       for (const m of engineReadouts(e(), { manual: !!q().manual })) out[m.key] = typeof m.get(e()) === 'number' ? ro(() => m.get(e()), '', m.label) : text(() => String(m.get(e())), m.label);
       if (e().params.manualTiming) out.sparkLever = num(() => e().advance, (v) => (e().advance = v), 0, 1, '', 'the advance-retard lever on the left bar: 0 retarded (easy and safe to kick, no power), 1 advanced (kicks back when kicked, wants the revs up)');
       if (e().params.tickler) out.tickled = num(() => e().tickled, (v) => (e().tickled = v), 0, 3, '', 'fuel the tickler has put in the carb: enriches a cold start, floods the plug past ' + e().params.tickleFloodAbove);
@@ -387,7 +387,7 @@ export function buildGameTree(g, host) {
     hensScatter: flag(() => false, (v) => v && g.debugAnimals('scatter'), 'set to true: the hens scatter'),
     muckDone: flag(() => g.muck.done, (v) => v && g.farmJobs.debugFinishMuck(), 'the muck job is done (ticks the board)'),
     bonfire: text(() => `${g.bonfire.state}, ${g.bonfire.piled} on the pile, ${Math.round(g.bonfire.intensity * 100)}% blaze`, 'the bonfire (world/bonfire.js)'),
-    radios: flag(() => g.radioUnits().some((u) => u.quad.radio.on), (v) => g.setAllRadios(v), 'every radio in the Land Rovers and the cars: set on or off together'),
+    radios: flag(() => g.radioUnits().some((u) => u.quad.radio.on), (v) => g.setAllRadios(v), 'every radio in the Tor, the Crag and the cars: set on or off together'),
     hut: text(() => g.hutHost.describe(), "the shepherd's hut stove and kettle (world/hut.js)"),
     hutLit: flag(() => g.hutHost.stove.burning, (v) => (v ? g.hutHost.debugLight() : g.hutHost.debugPutOut()), "the hut's stove is lit (setting it lights it at full heat with the kettle boiled)"),
     hutDoorOpen: flag(() => g.hutHost.door.isOpen, (v) => g.hutHost.debugDoor(v), "the hut's door is open (setting it swings it, as a girl would)"),
@@ -521,9 +521,9 @@ export function buildGameTree(g, host) {
     pond: text(() => { const q = g.world.fields.quarry; return q ? `${q.pond.rx.toFixed(1)} by ${q.pond.rz.toFixed(1)} m, ${q.pond.water} m of water` : 'none'; }, 'the pit\'s pond'),
   }), 'the gravel pit north of the barley field, and its pit climb');
   const mot = group(() => ({
-    now: text(() => g.villageHost.mot?.describe() ?? 'no village on this farm', 'each Land Rover: when it was last tested and how it went'),
+    now: text(() => g.villageHost.mot?.describe() ?? 'no village on this farm', 'each Tor or Crag: when it was last tested and how it went'),
     price: num(() => g.villageHost.mot?.params.price ?? 0, (v) => g.villageHost.mot && (g.villageHost.mot.params.price = Math.round(v)), 0, 200, '£', 'what a test costs from the tin'),
-    test: flag(() => false, (v) => v && (g.villageHost.mot?.debugTest() || g.hud.toast('Park a Land Rover in the MOT bay first')), 'set to true: a free test of the Land Rover in the bay, at once'),
+    test: flag(() => false, (v) => v && (g.villageHost.mot?.debugTest() || g.hud.toast('Park a Tor or Crag in the MOT bay first')), 'set to true: a free test of the Tor or Crag in the bay, at once'),
     forget: flag(() => false, (v) => v && g.villageHost.mot?.debugForget(), 'set to true: forget every test and certificate'),
   }), 'the MOT at Hollis Motors (tp to motbay to park, tp me to mot for the clipboard)');
   const village = group(() => ({

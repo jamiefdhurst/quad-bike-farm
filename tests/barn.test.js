@@ -137,7 +137,7 @@ describe('the second span', () => {
     expect(bay.x + bay.halfX).toBeLessThan(s.door.x);
     expect(bay.z - bay.halfZ).toBeGreaterThan(s.outer.maxZ + 0.3);
     expect(bay.z + bay.halfZ).toBeLessThan(s.innerAll.maxZ);
-    expect(bay.halfX * 2).toBeGreaterThanOrEqual(5.5); // a Land Rover
+    expect(bay.halfX * 2).toBeGreaterThanOrEqual(5.5); // a Tor or Crag
     expect(L.bay.z + L.bay.halfZ).toBeLessThan(bay.z - bay.halfZ);
     for (const p of dividerPosts(L)) expect(Math.abs(p.z - bay.z)).toBeGreaterThan(bay.halfZ);
   });

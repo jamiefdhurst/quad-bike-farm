@@ -116,7 +116,7 @@ export function jobActions(g) {
   const mot = g.villageHost?.mot;
   if (mot) {
     add('mot', 'The MOT at Hollis Motors', () => mot.describe(), [
-      a('test', 'MOT test the Land Rover in the bay (free)', () => (mot.debugTest() ? undefined : mot.why() ?? 'Park a Land Rover in the MOT bay first')),
+      a('test', 'MOT test the Tor or Crag in the bay (free)', () => (mot.debugTest() ? undefined : mot.why() ?? 'Park a Tor or Crag in the MOT bay first')),
       a('forget', 'Forget every MOT test', () => mot.debugForget()),
     ]);
   }

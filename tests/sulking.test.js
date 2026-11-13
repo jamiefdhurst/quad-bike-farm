@@ -148,7 +148,7 @@ describe('the cab', () => {
     const c = new CabShelter(undefined, () => 0.5);
     const cabs = [{ id: 'tor', x: 0, z: 0, open: true, seats: 2, running: false, warm: true }, { id: 'yak', x: 3, z: 0, open: true, seats: 2, running: false, warm: false }];
     const e = c.force('amy', { girls: [{ id: 'amy', x: 1, z: 0, free: true, cab: null }], cabs, rain: 0, warmth: 1 }, 'sulk');
-    expect(e).toMatchObject({ type: 'go', cab: 'tor', reason: 'sulk', start: true }); // a Land Rover, started for the heat
+    expect(e).toMatchObject({ type: 'go', cab: 'tor', reason: 'sulk', start: true }); // a Tor or Crag, started for the heat
     expect(c.isSulkCab('tor')).toBe(true);
     expect(c.isSulkCab('yak')).toBe(false);
   });

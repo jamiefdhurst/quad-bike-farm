@@ -147,7 +147,7 @@ describe('the mounts fault', () => {
 });
 
 describe('who is on soft mounts', () => {
-  it('the diesels and the Land Rovers are, the quads are bolted', () => {
+  it('the diesels and the Tor and the Crag are, the quads are bolted', () => {
     for (const spec of [TOR_SPEC, HARTLEY_SPEC, YAK_SPEC]) expect(spec.vibration.mountGain).toBeGreaterThan(0);
     for (const spec of QUAD_SPECS) expect(spec.vibration?.mountGain ?? 0).toBe(0);
   });

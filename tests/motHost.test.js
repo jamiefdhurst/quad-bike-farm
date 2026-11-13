@@ -53,13 +53,13 @@ beforeEach(() => {
 });
 
 describe('the clipboard', () => {
-  it('offers the test as an E action with the price, to a Land Rover parked in the bay', () => {
+  it('offers the test as an E action with the price, to a Tor or Crag parked in the bay', () => {
     const { clipboard } = setup();
     expect(clipboard.prompt()).toEqual({ action: expect.stringMatching(/^Have .* MOT tested for £20$/) });
   });
 
   it('says why plain, with no key, when there is nothing in the bay, the engine is running or the tin is short', () => {
-    expect(setup({ x: 90 }).clipboard.prompt()).toEqual({ info: expect.stringMatching(/Park a Land Rover/) });
+    expect(setup({ x: 90 }).clipboard.prompt()).toEqual({ info: expect.stringMatching(/Park a Tor or Crag/) });
     expect(setup({ running: true }).clipboard.prompt()).toEqual({ info: expect.stringMatching(/engine off/) });
     expect(setup({ purse: 5 }).clipboard.prompt()).toEqual({ info: 'You are £15 short' });
   });

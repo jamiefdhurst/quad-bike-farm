@@ -22,7 +22,7 @@ export const FINCH_BODY = {
   sill: 0.2,
   upper: [[1.8, 0.7], [1.66, 0.75], [0.7, 0.86], [-1.38, 0.92], [-1.52, 0.92], [-1.64, 0.84]],
   screenBase: [0.7, 0.88],
-  screenTop: [0.22, 1.36], // raked 45 degrees: the glass about as far from your eye as the Land Rovers' (a test keeps it so)
+  screenTop: [0.22, 1.36], // raked 45 degrees: the glass about as far from your eye as the Tor's and Crag's (a test keeps it so)
   roofRear: [-1.08, 1.36],
   hatchBottom: [-1.5, 0.93],
   tumble: 0.16, // how far the glasshouse leans in, metres a metre up

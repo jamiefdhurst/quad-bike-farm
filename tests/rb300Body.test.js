@@ -8,7 +8,7 @@ import { rb300NeedleAngle, RB300_DIAL } from '../src/vehicle/dash.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 import { POD } from '../src/vehicle/farm300Controls.js';
 
-// The green quad as a Kawasaki-style KLF300 Rb300 (TODO 90): the body's numbers, the nose cage, the speedo's dial, the bars and the pod.
+// The green quad as a Ridgeback-style KLF300 Rb300 (TODO 90): the body's numbers, the nose cage, the speedo's dial, the bars and the pod.
 
 const dist = (p, a, b) => {
   const ab = a.map((v, i) => b[i] - v);

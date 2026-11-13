@@ -54,7 +54,7 @@ describe('the radio', () => {
     expect(profileFor('nothing')).toBe(p.tor);
   });
 
-  it('is fitted to the Land Rovers and the cars, not the quads, the UTV or the tractor', () => {
+  it('is fitted to the Tor, the Crag and the cars, not the quads, the UTV or the tractor', () => {
     const fitted = [...QUAD_SPECS, ...EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC].filter(hasRadio).map((s) => s.id).sort();
     expect(fitted).toEqual(['crag', 'finch', 'griffin', 'tor', 'vauclair']);
     expect(Object.keys(RADIO_PROFILES).sort()).toEqual(fitted);

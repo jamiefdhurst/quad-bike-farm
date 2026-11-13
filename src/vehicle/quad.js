@@ -88,7 +88,7 @@ const HAND_THROTTLE_UP_KEY = 'KeyQ';
 const HAND_THROTTLE_DOWN_KEY = 'KeyZ';
 const STOP_KNOB_KEY = 'KeyO'; // not X (the tow chain and winch) or C (look back)
 const PULL_KEY = 'KeyO'; // the recoil pull-start's: P is the lights (the tractor, which has the stop knob on O, has no pull-start)
-// The Land Rover's hand throttle, a knob on the dash: Q and Z are its choke, so the brackets open and close it.
+// The Tor's or Crag's hand throttle, a knob on the dash: Q and Z are its choke, so the brackets open and close it.
 const HAND_KNOB_OUT_KEY = 'BracketRight';
 const HAND_KNOB_IN_KEY = 'BracketLeft';
 const NOTE_SECONDS = 2.5;
@@ -121,23 +121,23 @@ export class Quad {
     this.tapStyle = tapStyle;
     this.controlsParams = controlsParams;
     this.drive = drive ? new DriveSwitch(drive) : null; // the 2WD / 4WD switch (and diff lock), on the red and blue only (driveMode.js)
-    this.handLever = handLever; // a hand throttle knob as well as the tractor's lever (the Land Rover's, on its dash)
-    this.crank = crank; // the Land Rover's starting handle (crankHandle.js), worked from the front
+    this.handLever = handLever; // a hand throttle knob as well as the tractor's lever (the Tor's or Crag's, on its dash)
+    this.crank = crank; // the Tor's or Crag's starting handle (crankHandle.js), worked from the front
     this.atCrank = false; // set by the game while you stand at the front, looking at it
     this.kicked = false; // the handle has just kicked back (the game reads and clears it)
     this.landRover = landRover;
-    this.car = car; // the girls' cars (carModel.js): cab vehicles like the Land Rovers, with two seats in front and two behind
+    this.car = car; // the girls' cars (carModel.js): cab vehicles like the Tor and the Crag, with two seats in front and two behind
     this.utv = utv;
     this.hornHeld = false; // set by the game while the horn sounds (the UTV's wheel pad sinks)
-    this.radio = null; // the Land Rovers' and the girls' cars' radio, fitted by the unit (radio.js)
+    this.radio = null; // the Tor's and Crag's and the girls' cars' radio, fitted by the unit (radio.js)
     this.barLights = barLights ? new LightSwitch('low', barLights === 'switch' ? SIMPLE_LIGHT_MODES : LIGHT_MODES) : null; // the red's lights and HI / LO rockers on the bars: P cycles them, starting dipped (headlights follow the engine as they always did; the switch only turns them off or to main beam)
-    this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's and the Land Rovers' three-way light switch: off, dipped, main beam (lightSwitch.js)
+    this.lights = lightSwitch ? new LightSwitch() : null; // the UTV's and the Tor's and Crag's three-way light switch: off, dipped, main beam (lightSwitch.js)
     this.signals = lightSwitch ? new Indicators() : null; // and their indicators and hazards (indicators.js)
     this.signalClick = null; // the relay's tick: 'on' or 'off' on the frame the lamp changes (the game plays it and clears it)
     this.wipers = wipers ? new Wipers(wipers) : null; // the windscreen wipers, on everything with a screen: X steps the stalk (wipers.js)
     this.wiperClick = false; // the stalk has moved a notch this frame (the game plays it and clears it)
-    this.belts = lightSwitch || landRover ? new SeatBelts() : null; // the UTV's and the Land Rover's seat belts (seatBelts.js)
-    this.driverStand = driverStand; // where a girl climbs in to drive from, on the model's right: the UTV and Land Rover step in through a door ({ x, z } in the model's frame, x negative: the right)
+    this.belts = lightSwitch || landRover ? new SeatBelts() : null; // the UTV's and the Tor's or Crag's seat belts (seatBelts.js)
+    this.driverStand = driverStand; // where a girl climbs in to drive from, on the model's right: the UTV, Tor and Crag step in through a door ({ x, z } in the model's frame, x negative: the right)
     this.benchStand = benchStand; // where you get in and out beside the bench, on the model's left (the other side from the driver's door), same frame as above
     this.driveParams = DEFAULT_DRIVE_PARAMS;
     this.driveShown = 0; // the switch's rocker, eased towards the mode: 0 for 2WD, 1 for 4WD
@@ -163,11 +163,11 @@ export class Quad {
     this.model = build ? build({ dashStyle }) : buildQuadModel({ bodyColor, dashStyle, style, solo, plateNumber, chokeStyle, tapStyle, driveSwitch: drive, decay });
     this.model.scale.setScalar(scale);
     this.dash = this.model.userData.dash;
-    // Spotlamps are fitted at the bench to the quads and the Land Rovers (not the tractor, the UTV or the cars), by their headlamps (spotlamps.js).
+    // Spotlamps are fitted at the bench to the quads and the Tor and the Crag (not the tractor, the UTV or the cars), by their headlamps (spotlamps.js).
     this.spotlamps = new Spotlamps(!tractor && !utv && !car && !noHeadlight && !!addSpotlamps(this.model));
-    // A snorkel is fitted at the bench to the Land Rovers only (snorkel.js).
+    // A snorkel is fitted at the bench to the Tor and the Crag only (snorkel.js).
     this.snorkel = new Snorkel(landRover && !!addSnorkel(this.model));
-    // The Land Rovers' bulbs, wiper rubbers and horn contacts, which the MOT at Hollis Motors looks at (farm/mot.js).
+    // The Tor's and Crag's bulbs, wiper rubbers and horn contacts, which the MOT at Hollis Motors looks at (farm/mot.js).
     this.motWear = landRover ? new MotWear() : null;
     this.fuel = new FuelSystem(fuelParams);
     this.faults = new Faults();
@@ -229,7 +229,7 @@ export class Quad {
     this.riderHands = part('riderHands');
     this.cameraAnchor = part('cameraAnchor');
     this.pillionCameraAnchor = part('pillionCameraAnchor');
-    this.benchCameras = { left: part('cameraLeft') ?? null, mid: part('cameraMid') ?? null }; // your eyes in the UTV's and Land Rover's other seats
+    this.benchCameras = { left: part('cameraLeft') ?? null, mid: part('cameraMid') ?? null }; // your eyes in the UTV's, Tor's and Crag's other seats
     // And in the 200TDi's back bench, which it alone has (its belts too).
     this.rearSeats = REAR_SEATS.filter((s) => part(`camera${s[0].toUpperCase()}${s.slice(1)}`));
     for (const s of this.rearSeats) this.benchCameras[s] = part(`camera${s[0].toUpperCase()}${s.slice(1)}`);
@@ -262,7 +262,7 @@ export class Quad {
     // Wheel centre heights in bodyRoot space, for posing the suspension arms.
     this.wheelHeights = this.wheels.map(() => 0);
     this.exhaustFlap = part('exhaustFlap') ?? null; // the tractor's upright exhaust has a flap that lifts with each beat
-    this.towHitch = part('towHitch') ?? null; // a towing jaw at the back (the Land Rover's), for the little trailer
+    this.towHitch = part('towHitch') ?? null; // a towing jaw at the back (the Tor's or Crag's), for the little trailer
     this.crankHole = part('crankHole') ?? null; // the starting handle's hole in the front bumper
     this.flap = 0; // how far it's lifted, 0..1
 
@@ -323,7 +323,7 @@ export class Quad {
     this.input = null;
     this.remoteInput = null; // set while someone on foot is looking at the bike
     this.helperStarter = false; // she's holding the starter button
-    this.helperPull = false; // she's holding the pull-start cord (or the Land Rover's starting handle)
+    this.helperPull = false; // she's holding the pull-start cord (or the Tor's or Crag's starting handle)
     this.helperGrip = 'along'; // how she holds the starting handle: 'round' (it can kick back) or 'along'
     this.pullByHer = false;
     this.lastLeft = null; // who last got off it and whether they set the parking brake: { who: 'you' | a girl's id, braked } (handbrake.js)
@@ -371,7 +371,7 @@ export class Quad {
     return !!this.rackAnchor;
   }
 
-  /** The UTV and Land Rover: you can ride in the bench's other seats while a girl drives. */
+  /** The UTV, Tor and Crag: you can ride in the bench's other seats while a girl drives. */
   get hasBench() {
     return !!this.benchCameras.left;
   }
@@ -846,7 +846,7 @@ export class Quad {
       if (c.stall && this.engine.stopKnob()) this.creepStalled = true;
     }
 
-    // The recoil pull-start (the two-strokes): hold O to draw the cord, let go to yank. The Land Rover's starting handle works the same
+    // The recoil pull-start (the two-strokes): hold O to draw the cord, let go to yank. The Tor's or Crag's starting handle works the same
     // way, but only from the front of it, and not while you're nursing your hand.
     // A girl swinging it (helperPull) holds it her own way (helperGrip): Jess wraps her thumb round it, Amy never does.
     const byYou = !!this.remoteInput && this.atCrank && this.crank?.ready && this.remoteInput.isDown('KeyP');
@@ -1165,7 +1165,7 @@ export class Quad {
     return this.fuel.drain();
   }
 
-  /** Doors and tailgates that opened, shut or slammed since last asked, for the sound (doorSounds.js; `heavy` for a Land Rover's). */
+  /** Doors and tailgates that opened, shut or slammed since last asked, for the sound (doorSounds.js; `heavy` for a Tor's or Crag's). */
   takeDoorSounds() {
     return this.doorEvents.splice(0);
   }
@@ -1424,7 +1424,7 @@ export class Quad {
       fourWd: this.drive ? this.drive.frontDriven : null, // the 4WD lamp on the red and blue's dashes (null: no switch)
       diffLock: this.drive?.hasLock ? this.drive.locked : null, // null: no diff lock to show
       hand: this.handSetting,
-      choke: this.choke, // the Land Rover's dash has a lamp for it
+      choke: this.choke, // the Tor's or Crag's dash has a lamp for it
       hazardLit: !!this.signals && this.signals.mode === 'hazard' && this.signals.lit, // the 200TDi's hazard button on its cluster flashes
       hazardOn: !!this.signals && this.signals.mode === 'hazard', // and its hazard rocker on the centre stack is down while they are on
       radioOn: !!this.radio?.on, // the radios' rockers and displays
@@ -1520,7 +1520,7 @@ export class Quad {
       poseCarControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, choke: this.choke, park: this.parkBrake, clutch: this.clutchHeld ? 1 : 0, brake: this.brake, throttle: this.throttleKey });
       poseUtvBelts(this.model, this.belts.worn());
       poseCarSeats(this.model, this.seatTips);
-      // The Finch's doors swing out at the side used (as the Land Rovers'), and T lifts its hatch (a model without them poses nothing).
+      // The Finch's doors swing out at the side used (as the Tor's and Crag's), and T lifts its hatch (a model without them poses nothing).
       this.doorSwing ??= new DoorSwing();
       poseTorDoors(this.model, this.doorSwing.update(dt, { speed: this.speed, aboard: { right: !!(this.driver || this.rider), left: !!this.passenger && !(this.driver || this.rider) }, boarding: this.doorBoarding ?? {} }));
       this.tailgate ??= new Tailgate();

@@ -35,7 +35,7 @@ describe('the sheet', () => {
     for (const k of Object.keys(P)) expect(MOT_PARAM_RANGES[k], k).toBeTruthy();
   });
 
-  it('passes a sound Land Rover on every item', () => {
+  it('passes a sound Tor or Crag on every item', () => {
     const s = inspect(sound());
     expect(s.passed).toBe(true);
     expect(s.items.map((i) => i.id)).toEqual(MOT_ITEMS);
@@ -89,7 +89,7 @@ describe('the sheet', () => {
 describe('the bay', () => {
   const bay = { x: 100, z: 50, yaw: Math.PI / 2 };
 
-  it('takes a Land Rover parked along it, either way round', () => {
+  it('takes a Tor or Crag parked along it, either way round', () => {
     expect(inBay({ x: 100.5, z: 50.4, yaw: Math.PI / 2 }, bay)).toBe(true);
     expect(inBay({ x: 100, z: 50, yaw: -Math.PI / 2 }, bay)).toBe(true);
   });
@@ -102,14 +102,14 @@ describe('the bay', () => {
   it('says why a test cannot start', () => {
     const ok = { spec: { landRover: true }, onBay: true, purse: 100, busy: false, running: false };
     expect(whyNotTest(ok)).toBeNull();
-    expect(whyNotTest({ ...ok, onBay: false })).toMatch(/Park a Land Rover/);
-    expect(whyNotTest({ ...ok, spec: { landRover: false } })).toMatch(/only does Land Rovers/);
+    expect(whyNotTest({ ...ok, onBay: false })).toMatch(/Park a Tor or Crag/);
+    expect(whyNotTest({ ...ok, spec: { landRover: false } })).toMatch(/only does the Tor and the Crag/);
     expect(whyNotTest({ ...ok, running: true })).toMatch(/engine off/);
     expect(whyNotTest({ ...ok, purse: P.price - 5 })).toBe('You are £5 short');
     expect(whyNotTest({ ...ok, busy: true })).toMatch(/going over/);
   });
 
-  it('is for the Land Rovers only', () => {
+  it('is for the Tor and the Crag only', () => {
     expect([TOR_SPEC, CRAG_SPEC].every(canMot)).toBe(true);
     expect([FINCH_SPEC, HARTLEY_SPEC].some(canMot)).toBe(false);
   });

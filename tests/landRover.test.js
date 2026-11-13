@@ -10,7 +10,7 @@ import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
 import { LAYOUT } from '../src/world/layout.js';
 import { TOR_LAYOUT, CAB_GROUND_OFFSET } from '../src/vehicle/cabModel.js';
 
-describe('the Land Rover', () => {
+describe('the Tor or Crag', () => {
   it('stands on its tyres at its size: the physics puts the ground where the model draws it, not inside the wheels', () => {
     const k = L.scale ?? 1;
     for (const w of TOR_LAYOUT.wheels) {

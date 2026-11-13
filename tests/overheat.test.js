@@ -37,7 +37,7 @@ describe('the gauge', () => {
 });
 
 describe('which vehicles have a radiator', () => {
-  it('gives every car, Land Rover, the UTV and the tractor one', () => {
+  it('gives every car, Tor, Crag, the UTV and the tractor one', () => {
     for (const spec of [HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, FINCH_SPEC, GRIFFIN_SPEC]) expect(spec.engine.waterCooled, spec.id).toBe(true);
   });
 });

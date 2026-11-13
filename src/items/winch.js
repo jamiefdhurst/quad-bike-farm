@@ -7,7 +7,7 @@ import { isHeavy, trunkHookPoint, cableLoad, creakGap } from './winchAnchor.js';
 // shortens and pulls the hooked quad towards the green, out of a bog if it's
 // stuck. E on the hooked quad unhooks it; X while carrying the hook puts it back.
 // The cable only reaches so far, and pulls out of your hand beyond that.
-// The hook also goes on a tree or on a heavy vehicle (the tractor, a car, a Land Rover, the UTV): those stay put and the green winds itself up to
+// The hook also goes on a tree or on a heavy vehicle (the tractor, a car, a Tor or Crag, the UTV): those stay put and the green winds itself up to
 // them instead, out of a bog or up a bank with its engine dead.
 
 export const DEFAULT_WINCH_PARAMS = {

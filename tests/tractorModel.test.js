@@ -56,7 +56,7 @@ describe('tractor model', () => {
     expect(model.getObjectByName('cameraAnchor').position.toArray()).toEqual([0, 1.86, -0.84]);
   });
 
-  it('is the real size of a Massey Ferguson 35: about 1.7 m across and 1.9 m to the exhaust tip (the parking spaces were sized for something bigger)', () => {
+  it('is the real size of the Hartley 35: about 1.7 m across and 1.9 m to the exhaust tip (the parking spaces were sized for something bigger)', () => {
     const plain = model.clone(); // without the bale spike's mast, which stands taller than the exhaust
     plain.getObjectByName('baleSpike').removeFromParent();
     plain.updateMatrixWorld(true);

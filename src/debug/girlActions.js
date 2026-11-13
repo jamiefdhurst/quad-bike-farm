@@ -528,7 +528,7 @@ export function girlActions(g) {
       run: (id, u) => {
         const c = girl(id);
         if (!free(id)) return;
-        // The tractor, the UTV and the Land Rover are her "go": same as asking from the wheel, so the bookkeeping (her own quad, Amy's day) is the game's.
+        // The tractor, the UTV and the Tor or Crag are her "go": same as asking from the wheel, so the bookkeeping (her own quad, Amy's day) is the game's.
         const kind = g.goKindOf?.(u.quad);
         if (kind) {
           if (!g.goFree(kind) || !c.canDrive(u.quad)) return toast(`${c.name} can't or won't drive the ${u.name} right now`);
@@ -581,7 +581,7 @@ export function girlActions(g) {
     },
     {
       verb: 'start',
-      label: '% starts the picked vehicle (the starting handle on a flat Land Rover)',
+      label: '% starts the picked vehicle (the starting handle on a flat Tor or Crag)',
       vehicle: true,
       run: (id, u) => {
         const c = girl(id);
@@ -887,7 +887,7 @@ export function girlActions(g) {
   });
   actions.push({
     verb: 'tidy-load',
-    label: '% loads or unloads a Land Rover',
+    label: '% loads or unloads a Tor or Crag',
     run: (id) => {
       if (!free(id)) return;
       const e = g.tidyLoad.force(g.tidyLoadContext(), id);
