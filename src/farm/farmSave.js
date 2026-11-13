@@ -4,7 +4,7 @@
 import { LAYOUT_VERSION } from '../world/layout.js';
 
 export const SAVE_KEY = 'quadBikeFarm';
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2; // 2: vehicles are keyed by their model names (#589); a version 1 save is converted as it is read (migrateSave)
 export const LAYOUT_RESET_TOAST = 'The farm has been laid out again. Your vehicles, money and the girls are as you left them.';
 
 export const DEFAULT_FARM_PARAMS = {
@@ -77,12 +77,54 @@ export function validSave(save) {
   );
 }
 
+/** What each vehicle's id was before it became its in-game model name (#589), for saves written then. `plover` and `rusty` kept theirs. */
+export const OLD_VEHICLE_IDS = {
+  red: 'farm300', blue: 'bruin', yellow: 'hornet', green: 'rb300', orange: 'adder', kids: 'asp', moto: 'tz65', ag200: 'shepherd', mower: 'clipper',
+  atc: 't185', loan: 'ursa', tractor: 'hartley', utv: 'yak', landrover: 'tor', landrover200: 'crag', fiesta: 'finch', corsa: 'griffin', p309: 'vauclair',
+};
+
+const newId = (id) => OLD_VEHICLE_IDS[id] ?? id;
+const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+const rekey = (o) => (isObject(o) ? Object.fromEntries(Object.entries(o).map(([id, v]) => [newId(id), v])) : o);
+const renameAll = (list) => (Array.isArray(list) ? list.map((id) => (typeof id === 'string' ? newId(id) : id)) : list);
+const renameSpec = (list) => (Array.isArray(list) ? list.map((e) => (isObject(e) && typeof e.specId === 'string' ? { ...e, specId: newId(e.specId) } : e)) : list);
+
+/**
+ * A version 1 save as version 2: every place the save names a vehicle by id uses its model name now (#589): the fleet, the cork board's
+ * bought, sold and ledger, each vehicle's condition, the pods, what each girl has worked out about each quad, the ticked "Ride the ..."
+ * achievements, each record's quad, the rolling road's runs, the MOT's sheets and certificates, and the batteries. Nothing is dropped, so it
+ * is never `breaking`. A save already at version 2 is returned as it is.
+ */
+export function migrateSave(save) {
+  if (!save || save.version >= 2) return save;
+  const out = { ...save, version: 2 };
+  out.fleet = renameAll(save.fleet);
+  if (isObject(save.market)) out.market = { ...save.market, bought: renameSpec(save.market.bought), sold: renameAll(save.market.sold), ledger: renameSpec(save.market.ledger) };
+  out.vehicles = rekey(save.vehicles);
+  out.pods = rekey(save.pods);
+  out.batteries = rekey(save.batteries);
+  out.road = rekey(save.road);
+  if (isObject(save.girls)) out.girls = { ...save.girls, opinions: isObject(save.girls.opinions) ? Object.fromEntries(Object.entries(save.girls.opinions).map(([girl, seen]) => [girl, rekey(seen)])) : save.girls.opinions };
+  if (Array.isArray(save.bucket)) out.bucket = save.bucket.map((id) => (typeof id === 'string' && id.startsWith('ride-') ? `ride-${newId(id.slice(5))}` : id));
+  if (isObject(save.records)) out.records = { ...save.records, byQuad: isObject(save.records.byQuad) ? Object.fromEntries(Object.entries(save.records.byQuad).map(([kind, quads]) => [kind, rekey(quads)])) : save.records.byQuad };
+  if (isObject(save.mot)) {
+    out.mot = {
+      ...save.mot,
+      last: rekey(save.mot.last),
+      certificate: rekey(save.mot.certificate),
+      history: Array.isArray(save.mot.history) ? save.mot.history.map((h) => (isObject(h) && typeof h.specId === 'string' ? { ...h, specId: newId(h.specId) } : h)) : save.mot.history,
+    };
+  }
+  for (const key of Object.keys(out)) if (out[key] === undefined) delete out[key]; // a part the old save never had stays missing
+  return out;
+}
+
 /** The save in `storage`, or null if there isn't a usable one. */
 export function readSave(storage) {
   if (!storage) return null;
   try {
     const save = JSON.parse(storage.getItem(SAVE_KEY) ?? 'null');
-    return validSave(save) ? save : null;
+    return validSave(save) ? migrateSave(save) : null;
   } catch {
     return null;
   }

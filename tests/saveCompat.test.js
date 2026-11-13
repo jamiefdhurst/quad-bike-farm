@@ -2,7 +2,7 @@
 // without losing anything. Raising SAVE_VERSION fails the first test until the new version's fixture (a real save, copied with `save copy`) is added.
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
-import { SAVE_KEY, SAVE_VERSION, readSave, openFarm, validSave, fleetFromSave } from '../src/farm/farmSave.js';
+import { SAVE_KEY, SAVE_VERSION, readSave, openFarm, validSave, fleetFromSave, migrateSave } from '../src/farm/farmSave.js';
 import { captureVehicle, restoreVehicle, overnight, captureGirls, restoreGirls } from '../src/farm/farmState.js';
 import { MotWear } from '../src/farm/mot.js';
 import { EngineModel } from '../src/engine/engineModel.js';
@@ -75,13 +75,14 @@ describe('old saves keep loading', () => {
     for (const f of fixtures) expect(f.save.version).toBe(f.version);
   });
 
-  for (const { version, save } of fixtures) {
+  for (const { version, save: raw } of fixtures) {
+    const save = migrateSave(raw); // what the game reads it as: a version 1 save under the ids of today, a later one as it is
     describe(`a version ${version} save`, () => {
       it('is accepted and continues on the day after', () => {
-        expect(validSave(save)).toBe(true);
-        expect(readSave(storageWith(save))).toEqual(save);
-        const farm = openFarm({ storage: storageWith(save) });
-        expect(farm).toMatchObject({ continuing: true, day: save.day + 1, farmSeed: save.farmSeed });
+        expect(validSave(raw)).toBe(true);
+        expect(readSave(storageWith(raw))).toEqual(save);
+        const farm = openFarm({ storage: storageWith(raw) });
+        expect(farm).toMatchObject({ continuing: true, day: raw.day + 1, farmSeed: raw.farmSeed });
       });
 
       it('has every key the game saves today (so the fixture is a whole save)', () => {
