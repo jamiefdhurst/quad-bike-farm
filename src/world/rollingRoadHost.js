@@ -196,6 +196,8 @@ export class RollingRoadHost {
     if (this.model) return;
     this.model = buildRollingRoadModel();
     this.model.position.set(0, -100, 0); // out of sight until the first frame of the tow places it
+    // It is towed in and set up wherever she stops, so far detail measures it from where it stands at each look, not from where it was first seen (#823).
+    this.model.userData.moves = true;
     this.g.scene.add(this.model); // whether it is drawn is far detail's call by distance (world/farDetail.js SET_PIECE_NAMES), so `visible` is never touched here
   }
 
