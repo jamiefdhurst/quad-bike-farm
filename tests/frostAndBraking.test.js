@@ -15,7 +15,7 @@ const fuelControls = (spec) => ({ fuel: 1, diesel: spec.engine.petrolFussy ? 1 :
 
 describe('starting in a hard frost', () => {
   it('works for the green quad, the red quad and the Land Rover with full choke, and the UTV on its glow plugs', () => {
-    for (const spec of [QUAD_SPECS.find((s) => s.id === 'green'), QUAD_SPECS.find((s) => s.id === 'red'), LAND_ROVER_SPEC, UTV_SPEC]) {
+    for (const spec of [QUAD_SPECS.find((s) => s.id === 'rb300'), QUAD_SPECS.find((s) => s.id === 'farm300'), LAND_ROVER_SPEC, UTV_SPEC]) {
       for (let seed = 1; seed <= 8; seed++) {
         const engine = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...spec.engine, initialTemperature: 0 }, { random: seeded(seed) });
         engine.setIgnition(true);

@@ -50,29 +50,29 @@ export const ACHIEVEMENT_PARAM_RANGES = {
 export const PLACES = ['ford', 'pasture', 'wood', 'dutchBarn', 'fieldShed', 'cattleGrid', 'farEnd', 'gravelPit'];
 
 const RIDE_NAMES = {
-  red: thePhrase('red'),
-  blue: thePhrase('blue'),
-  yellow: thePhrase('yellow'),
-  green: thePhrase('green'),
-  orange: thePhrase('orange'),
-  kids: 'the kids\' quad',
-  moto: 'the mini moto',
-  atc: 'the three-wheeler',
+  farm300: thePhrase('farm300'),
+  bruin: thePhrase('bruin'),
+  hornet: thePhrase('hornet'),
+  rb300: thePhrase('rb300'),
+  adder: thePhrase('adder'),
+  asp: 'the kids\' quad',
+  tz65: 'the mini moto',
+  t185: 'the three-wheeler',
   plover: thePhrase('plover'),
-  ag200: thePhrase('ag200'),
-  mower: thePhrase('mower'),
-  loan: 'the loan quad',
-  tractor: 'the tractor',
-  utv: thePhrase('utv'),
-  landrover: thePhrase('landrover'),
-  landrover200: thePhrase('landrover200'),
+  shepherd: thePhrase('shepherd'),
+  clipper: thePhrase('clipper'),
+  ursa: 'the loan quad',
+  hartley: 'the tractor',
+  yak: thePhrase('yak'),
+  tor: thePhrase('tor'),
+  crag: thePhrase('crag'),
 };
 
 const rideOf = (id) => ({ id: `ride-${id}`, group: 'Ride', name: `Ride ${RIDE_NAMES[id]}`, hint: 'Take it for a drive', points: 1, needs: id, test: (s) => s.has('rode', id) });
 
 // Each: id, group, name, hint (what to do), points (1 easy, 2 takes a while, 3 hard), test(s) and optionally needs (a vehicle id).
 export const ACHIEVEMENTS = [
-  ...['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'moto', 'ag200', 'mower', 'atc', 'plover', 'loan', 'tractor', 'utv', 'landrover', 'landrover200'].map(rideOf),
+  ...['farm300', 'bruin', 'hornet', 'rb300', 'adder', 'asp', 'tz65', 'shepherd', 'clipper', 't185', 'plover', 'ursa', 'hartley', 'yak', 'tor', 'crag'].map(rideOf),
   { id: 'ride-three', group: 'Ride', name: 'Getting about', hint: 'Ride three different vehicles', points: 1, test: (s) => s.count('rode') >= 3 },
   { id: 'ride-all', group: 'Ride', name: 'Full set', hint: 'Ride every vehicle on the farm this game', points: 3, test: (s) => s.fleet.some((id) => id !== 'rusty' && id !== 'plover') && s.fleet.every((id) => id === 'rusty' || id === 'plover' || s.has('rode', id)) },
   { id: 'all-running', group: 'Ride', name: 'Everything going at once', hint: 'Get every quad on the farm running at the same time', points: 3, test: (s) => s.n('allRunning') > 0 },
@@ -87,15 +87,15 @@ export const ACHIEVEMENTS = [
   { id: 'dare-ramp', group: 'Dares', name: 'Dared and jumped', hint: 'Jump the ramp when Jess dares you to', points: 1, test: (s) => s.n('dareRamp') >= 1 },
   { id: 'dare-ford', group: 'Dares', name: 'Splash, if you dare', hint: 'Take the ford flat out when Jess dares you to', points: 1, test: (s) => s.n('dareFord') >= 1 },
   { id: 'dare-fence', group: 'Dares', name: 'Shocking behaviour', hint: 'Touch the electric fence when Jess dares you to', points: 1, test: (s) => s.n('dareFence') >= 1 },
-  { id: 'dare-bank', group: 'Dares', name: 'Down the big bank', hint: 'Ride the mini moto down the steepest bank when Jess dares you to', points: 2, needs: 'moto', test: (s) => s.n('dareBank') >= 1 },
+  { id: 'dare-bank', group: 'Dares', name: 'Down the big bank', hint: 'Ride the mini moto down the steepest bank when Jess dares you to', points: 2, needs: 'tz65', test: (s) => s.n('dareBank') >= 1 },
   { id: 'doughnut', group: 'Tricks', name: 'Doughnut', hint: 'Spin a full circle on the spot', points: 1, test: (s) => s.n('doughnuts') >= 1 },
   { id: 'roll', group: 'Tricks', name: 'Over she goes', hint: 'Tip a quad onto its side', points: 1, test: (s) => s.n('rolled') >= 1 },
   { id: 'righted', group: 'Tricks', name: 'Back on its wheels', hint: 'Right a tipped quad', points: 1, test: (s) => s.n('righted') >= 1 },
 
   { id: 'bogged', group: 'Mud', name: 'Stuck fast', hint: 'Get a quad stuck in a bog', points: 1, test: (s) => s.n('bogged') >= 1 },
   { id: 'freed', group: 'Mud', name: 'Out again', hint: 'Get a stuck quad out', points: 1, test: (s) => s.n('freed') >= 1 },
-  { id: 'winched', group: 'Mud', name: 'Winched out', hint: 'Pull a bogged quad out with the RB300\'s winch', points: 2, needs: 'green', test: (s) => s.n('winchedOut') >= 1 },
-  { id: 'chained', group: 'Mud', name: 'Tractor to the rescue', hint: 'Pull a bogged quad out with the tractor\'s chain', points: 2, needs: 'tractor', test: (s) => s.n('chainedOut') >= 1 },
+  { id: 'winched', group: 'Mud', name: 'Winched out', hint: 'Pull a bogged quad out with the RB300\'s winch', points: 2, needs: 'rb300', test: (s) => s.n('winchedOut') >= 1 },
+  { id: 'chained', group: 'Mud', name: 'Tractor to the rescue', hint: 'Pull a bogged quad out with the tractor\'s chain', points: 2, needs: 'hartley', test: (s) => s.n('chainedOut') >= 1 },
 
   { id: 'passenger', group: 'Company', name: 'Passenger', hint: 'Ride on the back while a girl drives', points: 1, test: (s) => s.n('pillionSeconds') >= s.p.passengerSeconds },
   { id: 'driven-amy', group: 'Company', name: 'Amy\'s chauffeur service', hint: 'Be driven about by Amy', points: 1, test: (s) => s.n('drivenBy:amy') >= s.p.chauffeurSeconds },

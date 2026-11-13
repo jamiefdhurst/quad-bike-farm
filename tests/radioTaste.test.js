@@ -6,7 +6,7 @@ import { VOICE_LINES } from '../src/npc/voiceLines.js';
 import { JESS_LINES } from '../src/npc/jessLines.js';
 
 const powered = (on, volume = 0.5) => {
-  const r = new Radio('fiesta');
+  const r = new Radio('finch');
   r.set(on);
   r.setVolume(volume);
   r.update(100, { power: true });

@@ -6,7 +6,7 @@ import { fakeCanvas } from './helpers/vehicleModels.js';
 
 // The rusty quad's damage (TODO 97): the plan is seeded and pure; the look is laid on each donor's finished model, and the jobs change it.
 
-const DONORS = ['red', 'blue', 'yellow', 'green', 'orange'];
+const DONORS = ['farm300', 'bruin', 'hornet', 'rb300', 'adder'];
 
 describe('the damage plan', () => {
   it('is the same for the same seed and deals each donor its own: racks have bars to lose, the open engine a nest', () => {
@@ -15,14 +15,14 @@ describe('the damage plan', () => {
       expect(planDamage(createRandom(11), id)).toEqual(a);
       expect(a.patches).toBeGreaterThanOrEqual(DEFAULT_RUSTY_DAMAGE.patches[0]);
       expect(a.patches).toBeLessThanOrEqual(DEFAULT_RUSTY_DAMAGE.patches[1]);
-      expect(a.nest).toBe(id === 'yellow');
-      expect(!!a.rack).toBe(['red', 'blue', 'green'].includes(id));
+      expect(a.nest).toBe(id === 'hornet');
+      expect(!!a.rack).toBe(['farm300', 'bruin', 'rb300'].includes(id));
     }
   });
 
   it('loses a front rack slat and a rear one, never the rails, and does not both lose and hang the same one', () => {
     for (let seed = 1; seed < 40; seed++) {
-      const p = planDamage(createRandom(seed), 'red');
+      const p = planDamage(createRandom(seed), 'farm300');
       expect(p.rack.front.skip.length).toBe(1);
       expect(p.rack.front.skip[0]).toBeGreaterThan(0);
       expect(p.rack.front.skip[0]).toBeLessThan(5);
@@ -38,8 +38,8 @@ describe('the look on each donor', () => {
   let weatherModel;
   let buildTarp;
   const build = (id, decay) => {
-    const spec = { red: 'utility', blue: 'grizzly', yellow: 'blaster', green: 'bayou', orange: 'racer' }[id];
-    const model = buildQuadModel({ bodyColor: 0x6b4426, dashStyle: { red: 'foreman', blue: 'grizzly', yellow: 'blaster', green: 'bayou', orange: 'quadracer' }[id], style: spec, decay });
+    const spec = { farm300: 'utility', bruin: 'grizzly', hornet: 'blaster', rb300: 'bayou', adder: 'racer' }[id];
+    const model = buildQuadModel({ bodyColor: 0x6b4426, dashStyle: { farm300: 'foreman', bruin: 'grizzly', hornet: 'blaster', rb300: 'bayou', adder: 'quadracer' }[id], style: spec, decay });
     model.updateMatrixWorld(true);
     return model;
   };
@@ -72,14 +72,14 @@ describe('the look on each donor', () => {
   it('takes bars off a rack: fewer triangles than the same donor with its rack whole', () => {
     const tri = (m) => { let n = 0; m.traverse((o) => { if (o.isMesh) n += (o.geometry.index?.count ?? o.geometry.attributes.position.count) / 3; }); return n; };
     const plan = { rack: { front: { skip: [1, 3], hang: null }, rear: { skip: [1], hang: null } } };
-    expect(tri(build('red', plan))).toBeLessThan(tri(build('red', null)));
+    expect(tri(build('farm300', plan))).toBeLessThan(tri(build('farm300', null)));
     const hanging = { rack: { front: { skip: [], hang: 2 }, rear: { skip: [], hang: 1 } } };
-    expect(tri(build('red', hanging))).not.toBe(tri(build('red', null))); // a hanging bar is half a bar and a broken end
+    expect(tri(build('farm300', hanging))).not.toBe(tri(build('farm300', null))); // a hanging bar is half a bar and a broken end
   });
 
   it('shows what the jobs did: the tarp slides off and goes, the tyres get fresh black rubber, the nest goes with the carb job', () => {
-    const plan = planDamage(createRandom(5), 'yellow');
-    const model = build('yellow', plan);
+    const plan = planDamage(createRandom(5), 'hornet');
+    const model = build('hornet', plan);
     weatherModel(model);
     const tarp = buildTarp();
     model.getObjectByName('bodyRoot').add(tarp);
@@ -108,8 +108,8 @@ describe('the look on each donor', () => {
   });
 
   it('hangs each web from a point on something, with its top edge level and the plane upright (so it falls straight down)', () => {
-    const plan = planDamage(createRandom(5), 'red');
-    const model = build('red', plan);
+    const plan = planDamage(createRandom(5), 'farm300');
+    const model = build('farm300', plan);
     applyDamage(model, plan, null);
     model.traverse((o) => {
       if (o.name !== 'cobweb') return;
@@ -119,8 +119,8 @@ describe('the look on each donor', () => {
   });
 
   it('keeps every patch and crack on the body: no vertex of one hangs further than a few centimetres from the surface it follows', () => {
-    const plan = planDamage(createRandom(9), 'red');
-    const model = build('red', plan);
+    const plan = planDamage(createRandom(9), 'farm300');
+    const model = build('farm300', plan);
     applyDamage(model, plan, null);
     model.updateMatrixWorld(true);
     const root = model.getObjectByName('bodyRoot');
@@ -150,8 +150,8 @@ describe('the look on each donor', () => {
   });
 
   it('drapes the tarp over the quad’s own shape, down to the ground all round, with nothing of the quad through it', () => {
-    const plan = planDamage(createRandom(5), 'red');
-    const model = build('red', plan);
+    const plan = planDamage(createRandom(5), 'farm300');
+    const model = build('farm300', plan);
     const tarp = buildTarp(model);
     const root = model.getObjectByName('bodyRoot');
     root.add(tarp);
@@ -173,8 +173,8 @@ describe('the look on each donor', () => {
   });
 
   it('puts a loaded farm straight to where it was, with no tarp to drag', () => {
-    const plan = planDamage(createRandom(5), 'red');
-    const model = build('red', plan);
+    const plan = planDamage(createRandom(5), 'farm300');
+    const model = build('farm300', plan);
     const tarp = buildTarp();
     model.getObjectByName('bodyRoot').add(tarp);
     const look = applyDamage(model, plan, tarp);
@@ -222,8 +222,8 @@ describe('the look on each donor', () => {
     }
 
     it('puts a vehicle back as it was stood, steered and tilted', () => {
-      const plan = planDamage(createRandom(7), 'red');
-      const model = build('red', plan);
+      const plan = planDamage(createRandom(7), 'farm300');
+      const model = build('farm300', plan);
       model.position.set(3, 0.2, 4);
       model.rotation.y = 1;
       const bars = model.getObjectByName('handlebars');
@@ -237,9 +237,9 @@ describe('the look on each donor', () => {
     });
 
     it('counts a small part FarDetail has hidden for being far off as still there, and leaves out one the game hid', { timeout: 30000 }, () => {
-      const plain = signature(dressed('red'));
-      expect(signature(dressed('red', (m) => m.traverse((o) => { if (o.isMesh && o.name === 'seat') { o.visible = false; o.userData.farHidden = true; } })))).toBe(plain);
-      expect(signature(dressed('red', (m) => m.traverse((o) => { if (o.isMesh && o.name === 'seat') o.visible = false; })))).not.toBe(plain);
+      const plain = signature(dressed('farm300'));
+      expect(signature(dressed('farm300', (m) => m.traverse((o) => { if (o.isMesh && o.name === 'seat') { o.visible = false; o.userData.farHidden = true; } })))).toBe(plain);
+      expect(signature(dressed('farm300', (m) => m.traverse((o) => { if (o.isMesh && o.name === 'seat') o.visible = false; })))).not.toBe(plain);
     });
   });
 });

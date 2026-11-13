@@ -103,9 +103,9 @@ describe('the save', () => {
   });
 
   it('keeps the saved fleet in its order, and deals again if a vehicle has gone from the game', () => {
-    const specs = [{ id: 'red' }, { id: 'blue' }, { id: 'tractor' }];
-    expect(fleetFromSave(['tractor', 'red'], specs).map((s) => s.id)).toEqual(['tractor', 'red']);
-    expect(fleetFromSave(['red', 'hovercraft'], specs)).toBe(null);
+    const specs = [{ id: 'farm300' }, { id: 'bruin' }, { id: 'hartley' }];
+    expect(fleetFromSave(['hartley', 'farm300'], specs).map((s) => s.id)).toEqual(['hartley', 'farm300']);
+    expect(fleetFromSave(['farm300', 'hovercraft'], specs)).toBe(null);
     expect(fleetFromSave(undefined, specs)).toBe(null);
   });
 
@@ -352,13 +352,13 @@ describe('the girls from one day to the next', () => {
 describe('what else the farm keeps', () => {
   it('the records keep their bests and mark those set today', () => {
     const a = new Records(2);
-    a.submit('climb', 'jess', 50, 'red');
+    a.submit('climb', 'jess', 50, 'farm300');
     const b = new Records(3);
     b.restore(JSON.parse(JSON.stringify(a.toJSON())));
     expect(b.best('climb')).toMatchObject({ who: 'jess', value: 50, day: 2 });
-    expect(b.bestOn('climb', 'red').value).toBe(50);
+    expect(b.bestOn('climb', 'farm300').value).toBe(50);
     expect(b.lines().find((l) => l.kind === 'climb').today).toBe(false);
-    b.submit('climb', 'you', 44, 'red');
+    b.submit('climb', 'you', 44, 'farm300');
     const line = b.lines().find((l) => l.kind === 'climb');
     expect(line.today).toBe(true);
     expect(line.text).toMatch(/\(today\)/);
@@ -395,10 +395,10 @@ describe('what else the farm keeps', () => {
   });
 
   it('the bucket list keeps its ticks, quietly', () => {
-    const a = new Achievements({ fleet: ['red'] });
+    const a = new Achievements({ fleet: ['farm300'] });
     const id = ACHIEVEMENTS[0].id;
     a.unlocked.set(id, 12);
-    const b = new Achievements({ fleet: ['red'] });
+    const b = new Achievements({ fleet: ['farm300'] });
     let heard = 0;
     b.onUnlock(() => heard++);
     b.restore([...a.toJSON(), 'not-a-thing']);

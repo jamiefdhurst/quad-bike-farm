@@ -62,30 +62,30 @@ describe('liking them running', () => {
 describe('the seat buzz', () => {
   it('only shake above her level counts, and a harder shake counts for more up to a cap', () => {
     const c = new Contentment();
-    c.feel(10, 'red', P.buzzFrom - 0.1, P);
-    expect(c.buzz.red).toBeUndefined();
-    c.feel(10, 'red', P.buzzFrom, P);
-    c.feel(10, 'yellow', 1, P);
-    c.feel(10, 'green', 99, P);
-    expect(c.buzz.yellow).toBeGreaterThan(c.buzz.red);
-    expect(c.buzz.green).toBe(10 * P.buzzCap);
+    c.feel(10, 'farm300', P.buzzFrom - 0.1, P);
+    expect(c.buzz.farm300).toBeUndefined();
+    c.feel(10, 'farm300', P.buzzFrom, P);
+    c.feel(10, 'hornet', 1, P);
+    c.feel(10, 'rb300', 99, P);
+    expect(c.buzz.hornet).toBeGreaterThan(c.buzz.farm300);
+    expect(c.buzz.rb300).toBe(10 * P.buzzCap);
   });
 
   it('her favourite moves to the quad that shakes her most, once it leads by enough', () => {
     const c = new Contentment();
-    c.buzz = { red: 50, yellow: 60 };
-    expect(c.favourite('red', P)).toBe('red');
-    c.buzz.yellow = 50 + P.buzzSwitchLead;
-    expect(c.favourite('red', P)).toBe('yellow');
-    expect(c.favourite('red', P, (id) => id !== 'yellow')).toBe('red');
-    expect(new Contentment().favourite('red', P)).toBe('red');
+    c.buzz = { farm300: 50, hornet: 60 };
+    expect(c.favourite('farm300', P)).toBe('farm300');
+    c.buzz.hornet = 50 + P.buzzSwitchLead;
+    expect(c.favourite('farm300', P)).toBe('hornet');
+    expect(c.favourite('farm300', P, (id) => id !== 'hornet')).toBe('farm300');
+    expect(new Contentment().favourite('farm300', P)).toBe('farm300');
   });
 
   it('she says so once she has enjoyed it for long enough', () => {
     const c = new Contentment();
-    expect(c.enjoyed('red', P)).toBe(false);
-    c.feel(P.buzzSaysAfter, 'red', 1, P);
-    expect(c.enjoyed('red', P)).toBe(true);
+    expect(c.enjoyed('farm300', P)).toBe(false);
+    c.feel(P.buzzSaysAfter, 'farm300', 1, P);
+    expect(c.enjoyed('farm300', P)).toBe(true);
   });
 });
 

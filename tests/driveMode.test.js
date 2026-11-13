@@ -135,7 +135,7 @@ describe('a girl who forgot', () => {
 describe('which quads have the switch', () => {
   it('the red and the blue, and only the blue has a diff lock', () => {
     const all = [...QUAD_SPECS, ...EXTRA_SPECS];
-    expect(all.filter((s) => s.driveSwitch).map((s) => s.id).sort()).toEqual(['blue', 'red']);
-    expect(all.filter((s) => s.diffLock).map((s) => s.id)).toEqual(['blue']);
+    expect(all.filter((s) => s.driveSwitch).map((s) => s.id).sort()).toEqual(['bruin', 'farm300']);
+    expect(all.filter((s) => s.diffLock).map((s) => s.id)).toEqual(['bruin']);
   });
 });

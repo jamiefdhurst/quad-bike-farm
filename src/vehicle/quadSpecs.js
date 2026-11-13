@@ -27,13 +27,13 @@ import { sayName, fullName } from './names.js';
 export const QUAD_SPECS = [
   {
     // Honda-style farm quad: soft, steady, low warm idle. The original tuning.
-    id: 'red',
+    id: 'farm300',
     stockBhp: 18, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'hill', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.5, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-    label: sayName('red'), // what the girls and the toasts call it (vehicle/names.js)
-    name: fullName('red'),
+    label: sayName('farm300'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('farm300'),
     bodyColor: 0xa8271f,
     style: 'utility',
     dashStyle: 'foreman',
@@ -69,13 +69,13 @@ export const QUAD_SPECS = [
     // Yamaha-style: idles a bit higher, revs harder and higher (6,800 against 6,200), needs more choke
     // when cold and runs lumpier until it's warm, warms a little quicker, and
     // pulls slightly harder. Its idle comes from the other recorded machine.
-    id: 'blue',
+    id: 'bruin',
     stockBhp: 26, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'mud', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.3, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-    label: sayName('blue'), // what the girls and the toasts call it (vehicle/names.js)
-    name: fullName('blue'),
+    label: sayName('bruin'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('bruin'),
     bodyColor: 0x1d4fa3,
     style: 'grizzly',
     dashStyle: 'grizzly',
@@ -138,14 +138,14 @@ export const QUAD_SPECS = [
     // 6,000 rpm, revs past 10,000, loads its plug up if left idling, almost no
     // engine braking, and trails blue-white oil smoke. Sounds like a two-stroke
     // dirt bike. Automatic like the others.
-    id: 'yellow',
+    id: 'hornet',
     stockBhp: 24, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'tarmac', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'sport', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.4, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
-    label: sayName('yellow'), // what the girls and the toasts call it (vehicle/names.js)
-    name: fullName('yellow'),
+    label: sayName('hornet'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('hornet'),
     bodyColor: 0xe9c21b,
     style: 'blaster',
     dashStyle: 'blaster',
@@ -244,13 +244,13 @@ export const QUAD_SPECS = [
     // four-stroke that idles low and lumpy, revs slowly, pulls hard low down,
     // takes an age to warm up and wants plenty of choke. Rougher than the others,
     // and strong engine braking. It idles on a different recorded machine.
-    id: 'green',
+    id: 'rb300',
     stockBhp: 21, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'mud', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-    label: sayName('green'), // what the girls and the toasts call it (vehicle/names.js)
-    name: fullName('green'),
+    label: sayName('rb300'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('rb300'),
     bodyColor: 0x33692c, // a deep green, a shade towards olive
     style: 'bayou',
     winch: true, // its front winch works (src/items/winch.js)
@@ -330,13 +330,13 @@ export const QUAD_SPECS = [
     // yellow, revs higher and comes on harder still, single seat (no room for
     // her), barely any engine braking, and smokes like a chimney. Its idle is a
     // different two-stroke from the yellow's.
-    id: 'orange',
+    id: 'adder',
     stockBhp: 38, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'tarmac', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'sport', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-    label: sayName('orange'), // what the girls and the toasts call it (vehicle/names.js)
-    name: fullName('orange'),
+    label: sayName('adder'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('adder'),
     bodyColor: 0xe86a12,
     style: 'racer', // a single race seat: no room for her on the back
     dashStyle: 'quadracer',
@@ -432,12 +432,12 @@ export const EXTRA_SPECS = [
     // A kids' 50cc two-stroke that Jess insists on riding. Two thirds the size of the others (scale shrinks the model and the
     // physics together), light and slow, one seat, and it revs very high and sounds like an angry wasp. Pull-start as well as the
     // starter; it runs on the same pre-mix as the yellow.
-    id: 'kids',
+    id: 'asp',
     stockBhp: 4, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.65, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-    label: sayName('kids'), // what the girls and the toasts call it (vehicle/names.js)
-    name: fullName('kids'),
+    label: sayName('asp'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('asp'),
     bodyColor: 0xd596ad, // a faded pink, paler than it was
     style: 'junior', // a Suzuki LT50's bulky plastics (juniorBody.js): the Viper Asp 50
     noHeadlight: true, // no lamps at all
@@ -536,14 +536,14 @@ export const EXTRA_SPECS = [
     // A 50cc two-stroke pit bike (the "mini moto", the Tamura TZ 65 after a Yamaha YZ65): two wheels, one seat, a pull-start as well as the starter, and the kids' quad's
     // sound for now. Built by miniMotoModel.js: it rides on the quad physics with two wheels and the lean model (bikeLean.js) holding it up, and
     // leaning into corners. Anyone can ride it (it's nobody's), but there's no room on the back.
-    id: 'moto',
+    id: 'tz65',
     stockBhp: 6, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     miniMoto: true,
-    label: sayName('moto'), // what the girls and the toasts call it (vehicle/names.js)
-    name: fullName('moto'),
+    label: sayName('tz65'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('tz65'),
     bodyColor: 0x3f6fa8, // a sun-faded blue (the YZ65's own is brighter; this is as it was)
     style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
     dashStyle: 'kidsKey',
@@ -643,15 +643,15 @@ export const EXTRA_SPECS = [
     // The neighbour's beaten-up three-wheeler, an old ATC: a 200cc two-stroke with one front wheel and two fat tyres at the back, a
     // pull-start only (no starter motor), a clutch (Shift) and a four-speed box, and a tall, narrow stance that tips if you throw it round
     // a corner. Worn out, hard to start and rough. Built by atcModel.js, with the yellow's sound until it gets its own. Solo.
-    id: 'atc',
+    id: 't185',
     stockBhp: 17, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'trike', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0.8, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     threeWheeler: true,
     barLights: 'switch', // a plain on / off rocker on the left bar (P: off, dipped; lightSwitch.js), starting on
-    label: sayName('atc'), // what the girls and the toasts call it (vehicle/names.js)
-    name: fullName('atc'),
+    label: sayName('t185'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('t185'),
     bodyColor: 0xb4553f, // a chalky, sun-bleached Honda red
     style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
     dashStyle: 'kidsKey',
@@ -752,13 +752,13 @@ export const EXTRA_SPECS = [
   {
     // A smart new quad on loan for the day: the Yamaha's body in neutral silver, fuel injected so it hardly wants any choke, starts on
     // the button, idles smooth and quiet and has almost no wear. Full tank, and a bit more power than the old farm quads.
-    id: 'loan',
+    id: 'ursa',
     stockBhp: 29, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
     bodyWear: 0, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     steadyLights: true, // a battery runs its headlight, so it doesn't follow the revs like the old quads' (headlight.js)
-    label: sayName('loan'), // what the girls and the toasts call it (vehicle/names.js)
-    name: fullName('loan'),
+    label: sayName('ursa'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('ursa'),
     bodyColor: 0xaeb4ba, // a neutral silver
     style: 'kodiak', // a Kodiak 450's body (kodiakBody.js): the blue's machinery with its own flares, lamps, bumper, wheels and muffler
     dashStyle: 'kodiak',
@@ -818,14 +818,14 @@ export const EXTRA_SPECS = [
     // The farm bike (#75): the Ridgeback AG200, a shepherd's trail bike after a Yamaha AG200. A 200 cc air-cooled four-stroke single with a clutch (Shift)
     // and a four-speed box, a button start and a kickstart, and a long dual seat with a rack front and back: the first two-wheeler with room for a girl on
     // the back. Built by ag200Model.js, on the quad physics with two wheels and the lean model (bikeLean.js) holding it up. Anyone can ride it.
-    id: 'ag200',
+    id: 'shepherd',
     stockBhp: 13, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES): the nearest it has; a 21 inch tyre of its own is a later idea
     bodyWear: 0.45, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     chainDrive: true, // a drive chain that stretches, wants oil and can jump the sprocket (faults.js)
     farmBike: true,
-    label: sayName('ag200'), // what the girls and the toasts call it (vehicle/names.js)
-    name: fullName('ag200'),
+    label: sayName('shepherd'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('shepherd'),
     bodyColor: 0x1d4fa3, // a faded blue
     style: 'sport', // the quad body styles are unused (the model is its own), but the spec must name one that exists
     dashStyle: 'trail',
@@ -916,14 +916,14 @@ export const EXTRA_SPECS = [
     // The ride-on mower (#76): the Ridgeback Clipper 12, an old British garden tractor with a 12 hp single under the bonnet. Slow and simple: a key
     // start with a pull cord for when the battery is flat, a choke, an automatic drive, and a blade you engage with a lever (T; mowing.js).
     // Built by mowerModel.js on the quad physics with small front wheels and big rear ones. One seat. Anyone can drive it; the girls don't yet.
-    id: 'mower',
+    id: 'clipper',
     stockBhp: 8, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     tyreSize: 'kid', // which tyres the barn stocks for it (tyres.js TYRE_SIZES): the nearest it has
     bodyWear: 0.55, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
     mower: true,
     barLights: 'switch', // a plain on / off rocker (P: off, on; lightSwitch.js), starting off
-    label: sayName('mower'), // what the girls and the toasts call it (vehicle/names.js)
-    name: fullName('mower'),
+    label: sayName('clipper'), // what the girls and the toasts call it (vehicle/names.js)
+    name: fullName('clipper'),
     bodyColor: 0x2f5f35, // a faded British racing green
     style: 'utility', // the quad body styles are unused (the model is its own), but the spec must name one that exists
     dashStyle: 'mower',
@@ -1011,16 +1011,16 @@ export const EXTRA_SPECS = [
 
 // The tractor: always on the farm (it isn't part of the fleet, src/vehicle/fleet.js). An old diesel in the yard: heavy, slow and strong,
 // with a clutch and a three-speed gearbox, glow plugs for a cold start, a hand throttle and a stop knob. Built as a QuadUnit like the rest, with its own body, wheels and drivetrain
-// (QuadUnit reads `tractor`). Runs on red diesel, so it doesn't mind it. Its sound is kyles's old tractor recordings.
+// (QuadUnit reads `hartley`). Runs on red diesel, so it doesn't mind it. Its sound is kyles's old tractor recordings.
 export const TRACTOR_SPEC = {
-  id: 'tractor',
+  id: 'hartley',
   tyreSize: 'tractor', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 1.25, z: 1.3 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
   steadyLights: true, // a battery runs its lights
   barLights: 'switch', // a plain on / off switch low on the panel's right (P: off, on; lightSwitch.js), starting on
-  label: sayName('tractor'), // what the girls and the toasts call it (vehicle/names.js)
-  name: fullName('tractor'),
+  label: sayName('hartley'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('hartley'),
   tractor: true,
   wheelShake: 1.3, // its wheels shake with the body (a multiple of the body's own heave, pitch and roll)
   bodyColor: 0xa82a20, // a faded red bonnet
@@ -1155,17 +1155,17 @@ export const TRACTOR_SPEC = {
 // The UTV: always on the farm, parked in the yard (like the tractor it isn't in the fleet and isn't one of the girls' quads). A
 // Gator-style side-by-side on red diesel: a three-cylinder with glow plugs and a key that stops it, an automatic (the quads' CVT
 // drivetrain, with a forward and reverse lever on the dash), a steering wheel on the right, a bench seat for three and a tipping bed.
-// Built as a QuadUnit like the rest (QuadUnit reads `utv`). Unlike the tractor it is fussy about its fuel: petrol in it soaks the
+// Built as a QuadUnit like the rest (QuadUnit reads `yak`). Unlike the tractor it is fussy about its fuel: petrol in it soaks the
 // engine the way diesel soaks the quads' (engine/diesel.js, `petrolFussy`). The girls ride in it (npc/utvRide.js) but don't drive it yet.
 // Its sound borrows the tractor's recordings, played faster.
 export const UTV_SPEC = {
-  id: 'utv',
+  id: 'yak',
   wipers: ['slow'], // the windscreen wipers' speeds after off (wipers.js): one speed, on or off
   tyreSize: 'utv', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.3, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.15 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
-  label: sayName('utv'), // what the girls and the toasts call it (vehicle/names.js)
-  name: fullName('utv'),
+  label: sayName('yak'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('yak'),
   utv: true,
   steadyLights: true, // a battery runs its lamps
   wheelShake: 0.9,
@@ -1310,13 +1310,13 @@ export const UTV_SPEC = {
 // choke, the toolbox. A four-speed manual with no synchromesh on first and second, a transfer lever for 2WD and 4WD and a diff lock, a
 // hand throttle on the dash, a towing hitch, and a starting handle at the front for when the battery won't (vehicle/crankHandle.js).
 export const LAND_ROVER_SPEC = {
-  id: 'landrover',
+  id: 'tor',
   wipers: ['slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a two-speed toggle on the dash
   tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
-  label: sayName('landrover'), // what the girls and the toasts call it (vehicle/names.js)
-  name: fullName('landrover'),
+  label: sayName('tor'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('tor'),
   landRover: true,
   steadyLights: true, // a battery runs its lamps
   wheelShake: 0.8,
@@ -1459,13 +1459,13 @@ export const LAND_ROVER_SPEC = {
 // bench for three. Its engine and sound borrow the UTV's diesel (a different idle and top end, much rattlier). It has glow plugs and the key
 // stops it, so no choke, no hand throttle and no starting handle.
 export const DEFENDER_SPEC = {
-  id: 'landrover200',
+  id: 'crag',
   wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
-  label: sayName('landrover200'), // what the girls and the toasts call it (vehicle/names.js)
-  name: fullName('landrover200'),
+  label: sayName('crag'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('crag'),
   landRover: true,
   defender: true,
   steadyLights: true,
@@ -1633,13 +1633,13 @@ const CAR_ENGINE = {
 // Amy's Mk1 Fiesta: a 1.1 petrol four with a carburettor and a pull-out choke, a four-speed, in faded pale blue with a beige inside, kept
 // clean and looked after. L plates on (she is learning; item 167 has her pass in it).
 export const FIESTA_SPEC = {
-  id: 'fiesta',
+  id: 'finch',
   wipers: ['slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk with two speeds
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.2, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js): a careful owner's car
   radiatorAt: { x: 0, y: 0.85, z: 1.5 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
-  label: sayName('fiesta'), // what the girls and the toasts call it (vehicle/names.js)
-  name: fullName('fiesta'),
+  label: sayName('finch'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('finch'),
   car: 'fiesta',
   owner: 'amy',
   steadyLights: true,
@@ -1716,13 +1716,13 @@ export const FIESTA_SPEC = {
 // Jess's 1993 Corsa B: a 1.2 with fuel injection (no choke, no carburettor to go wrong), a five-speed, in red faded pink on the roof
 // and bonnet, a grey primer wing, and a big-bore exhaust that makes it sound far quicker than it is.
 export const CORSA_SPEC = {
-  id: 'corsa',
+  id: 'griffin',
   wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
   radiatorAt: { x: 0, y: 0.85, z: 1.55 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
-  label: sayName('corsa'), // what the girls and the toasts call it (vehicle/names.js)
-  name: fullName('corsa'),
+  label: sayName('griffin'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('griffin'),
   car: 'corsa',
   owner: 'jess',
   steadyLights: true,
@@ -1806,13 +1806,13 @@ export const CORSA_SPEC = {
 // glow plugs on the key, the key stops it, it waxes in a hard frost and needs bleeding if run dry. Only you drive it (`owner: 'you'`); the girls sit in
 // its other seats, and one will start it for you. You arrive in it each morning (farm/arrival.js).
 export const P309_SPEC = {
-  id: 'p309',
+  id: 'vauclair',
   wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.12, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js): an everyday old car (0.3 and 0.2 read as rusty on silver)
   radiatorAt: { x: 0, y: 0.85, z: 1.65 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
-  label: sayName('p309'), // what the girls and the toasts call it (vehicle/names.js)
-  name: fullName('p309'),
+  label: sayName('vauclair'), // what the girls and the toasts call it (vehicle/names.js)
+  name: fullName('vauclair'),
   car: 'p309',
   owner: 'you',
   steadyLights: true,

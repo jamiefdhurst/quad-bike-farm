@@ -11,8 +11,8 @@ const run = (lens, secs, s, seed = 1) => {
 
 describe('which vehicles get it', () => {
   it('keeps cabs and cars clean and leaves the rest open', () => {
-    for (const id of ['utv', 'landrover', 'landrover200', 'fiesta', 'corsa']) expect(isOpenVehicle(id)).toBe(false);
-    for (const id of ['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'moto', 'atc', 'loan', 'tractor']) expect(isOpenVehicle(id)).toBe(true);
+    for (const id of ['yak', 'tor', 'crag', 'finch', 'griffin']) expect(isOpenVehicle(id)).toBe(false);
+    for (const id of ['farm300', 'bruin', 'hornet', 'rb300', 'adder', 'asp', 'tz65', 't185', 'ursa', 'hartley']) expect(isOpenVehicle(id)).toBe(true);
   });
 });
 

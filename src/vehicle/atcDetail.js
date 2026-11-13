@@ -324,7 +324,7 @@ export function addAtcBars(bars, MAT, paint, lensMat) {
 /** The maker's badge and the model's stripe on each side of the tank, a millimetre off its face (flat at its middle). */
 export function addAtcDecals(root) {
   for (const s of [-1, 1]) {
-    const badge = decalMesh('badge', { maker: MAKER_FOR.atc, model: 'T185' }, { width: 0.12, name: 'badge' });
+    const badge = decalMesh('badge', { maker: MAKER_FOR.t185, model: 'T185' }, { width: 0.12, name: 'badge' });
     badge.position.set(s * 0.1375, 0.86, 0.14);
     badge.rotation.y = s * (Math.PI / 2);
     root.add(badge);

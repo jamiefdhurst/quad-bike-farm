@@ -30,10 +30,10 @@ function unit(spec, engineParams = {}) {
   };
 }
 
-const twoStroke = { id: 'yellow', label: 'yellow', engine: { strokes: 2, pullStart: true, idleRpmWarm: 1500, maxRpm: 8000 } };
-const twoStrokeB = { id: 'green', label: 'green', engine: { strokes: 2, pullStart: true, idleRpmWarm: 1800, maxRpm: 9000, baseRoughness: 0.3 }, audio: { recBank: 'engine-bank-green' } };
-const fourStroke = { id: 'blue', label: 'blue', engine: { strokes: 4 } };
-const manual = { id: 'red', label: 'red', manual: true, engine: { strokes: 4 } };
+const twoStroke = { id: 'hornet', label: 'hornet', engine: { strokes: 2, pullStart: true, idleRpmWarm: 1500, maxRpm: 8000 } };
+const twoStrokeB = { id: 'rb300', label: 'rb300', engine: { strokes: 2, pullStart: true, idleRpmWarm: 1800, maxRpm: 9000, baseRoughness: 0.3 }, audio: { recBank: 'engine-bank-green' } };
+const fourStroke = { id: 'bruin', label: 'bruin', engine: { strokes: 4 } };
+const manual = { id: 'farm300', label: 'farm300', manual: true, engine: { strokes: 4 } };
 
 describe('which engines fit which', () => {
   it('matches two-strokes with two-strokes and a manual only with a manual', () => {
@@ -73,7 +73,7 @@ describe('pulling and fitting', () => {
     expect(pack.params.maxRpm).toBe(9000);
     expect(pack.audio.recBank).toBe('engine-bank-green');
     expect(pack.condition.wear).toBe(0.4);
-    expect(pack.label).toBe('green');
+    expect(pack.label).toBe('rb300');
   });
 
   it('puts the donor\'s character into the new quad, in place, and returns the old engine', () => {
@@ -92,7 +92,7 @@ describe('pulling and fitting', () => {
     expect(audio.recBank).toBe('engine-bank-green');
     expect(target.engine.wear).toBe(0.4);
     expect(target.engine.runIn).toBeGreaterThan(0); // it wants running in
-    expect(target.engineOrigin.label).toBe('green');
+    expect(target.engineOrigin.label).toBe('rb300');
     expect(target.topRpm).toBe(9000);
     expect(old.params.maxRpm).toBe(8000);
     expect(old.condition.wear).toBe(0.1);
@@ -170,12 +170,12 @@ describe('the shelf and the save', () => {
     fitEngine(target, pullEngine(unit(twoStrokeB)), 1, B);
     target.engine.wear = 0.33;
     const saved = JSON.parse(JSON.stringify(captureVehicle(target)));
-    expect(saved.swap.label).toBe('green');
+    expect(saved.swap.label).toBe('rb300');
     const fresh = unit(twoStroke);
     restoreVehicle(fresh, saved);
     expect(fresh.engine.params.maxRpm).toBe(9000);
     expect(fresh.audio.params.recBank).toBe('engine-bank-green');
-    expect(fresh.engineOrigin.label).toBe('green');
+    expect(fresh.engineOrigin.label).toBe('rb300');
     expect(fresh.engine.wear).toBe(0.33);
     expect(captureSwap(unit(twoStroke))).toBeNull();
     restoreSwap(fresh, null); // nothing to put back is fine

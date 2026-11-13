@@ -65,7 +65,7 @@ describe('two companions and one quad', () => {
     Object.defineProperty(c, 'claimedQuad', { get: () => claimed.call(c) });
     return c;
   };
-  const q = { label: 'red' };
+  const q = { label: 'farm300' };
 
   it('a quad is hers while she is heading to it, starting it or on it', () => {
     expect(fake('idle', null, q).claimedQuad).toBe(null);
@@ -79,6 +79,6 @@ describe('two companions and one quad', () => {
     const other = fake('seated', null, q);
     const me = { others: () => [other] };
     expect(Companion.prototype.takenByOther.call(me, q)).toBe(true);
-    expect(Companion.prototype.takenByOther.call(me, { label: 'blue' })).toBe(false);
+    expect(Companion.prototype.takenByOther.call(me, { label: 'bruin' })).toBe(false);
   });
 });

@@ -3,7 +3,7 @@
 //
 //   node tools/render_engine_sound.mjs <vehicle id> <out.wav> [--bank path/to/bank.json] [--set param=value ...] [--start]
 //
-// The vehicle id is a spec's id (red, blue, tractor, utv, landrover, ...). --bank plays another bank (its WAV beside it, same
+// The vehicle id is a spec's id (farm300, bruin, hartley, yak, tor, ...). --bank plays another bank (its WAV beside it, same
 // name) instead of the spec's recBank; --set overrides an audio param (numbers or strings). The engine starts warm and runs
 // one timeline, printed as it goes: idle 4 s, full throttle 7 s, idle 4 s, half throttle 4 s, full throttle 6 s, idle 3 s,
 // with no load (stood still, revving), its roughness the middle of its range and on its own fuel. --start records the start

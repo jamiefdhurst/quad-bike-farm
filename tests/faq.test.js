@@ -31,10 +31,10 @@ describe('FAQ content keeps up with the game', () => {
       expect(labels, spec.id).toEqual(expect.arrayContaining(['Engine', 'Gearbox', 'Tank']));
     }
     const facts = (id) => Object.fromEntries(vehicleFacts(ALL_VEHICLE_SPECS.find((s) => s.id === id)));
-    expect(facts('yellow').Engine).toMatch(/Two-stroke/);
-    expect(facts('tractor').Engine).toMatch(/Diesel/);
-    expect(facts('tractor').Gearbox).toMatch(/three gears/);
-    expect(facts('blue').Gearbox).toBe('Automatic');
+    expect(facts('hornet').Engine).toMatch(/Two-stroke/);
+    expect(facts('hartley').Engine).toMatch(/Diesel/);
+    expect(facts('hartley').Gearbox).toMatch(/three gears/);
+    expect(facts('bruin').Gearbox).toBe('Automatic');
   });
 });
 

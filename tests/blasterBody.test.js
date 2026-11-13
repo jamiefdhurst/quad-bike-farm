@@ -163,14 +163,14 @@ describe('the Blaster bars', () => {
 });
 
 describe('the yellow quad’s spec', () => {
-  const yellow = QUAD_SPECS.find((s) => s.id === 'yellow');
+  const yellow = QUAD_SPECS.find((s) => s.id === 'hornet');
 
   it('names a body style, a choke and a tap that exist, with a Tamura badge', () => {
     expect(BODY_STYLES).toContain(yellow.style);
     expect(yellow.style).toBe('blaster');
     expect(CHOKE_STYLES).toContain(yellow.chokeStyle);
     expect(TAP_STYLES).toContain(yellow.tapStyle);
-    expect(MAKER_FOR.yellow).toBe('tamura');
+    expect(MAKER_FOR.hornet).toBe('tamura');
   });
 
   it('has its choke on the carb: reached only all but stopped, and it takes a hand off the bars', () => {
@@ -193,7 +193,7 @@ describe('the yellow quad’s model', () => {
   let yellow;
   const world = (o) => o.getWorldPosition(new THREE.Vector3());
   beforeAll(async () => {
-    yellow = (await buildAllModels()).find((v) => v.id === 'yellow');
+    yellow = (await buildAllModels()).find((v) => v.id === 'hornet');
   });
 
   it('has the parts the game looks for and the new ones by name', () => {
@@ -287,7 +287,7 @@ describe('the yellow quad’s model', () => {
   });
 
   it('is within 8% of the real Blaster’s length and height, and the tyre', () => {
-    const e = proportionErrors(measureModel(yellow.model, yellow.layout), REAL_SIZES.yellow);
+    const e = proportionErrors(measureModel(yellow.model, yellow.layout), REAL_SIZES.hornet);
     for (const k of ['length', 'height', 'tyre']) expect(Math.abs(e[k]), k).toBeLessThan(0.08);
   });
 });

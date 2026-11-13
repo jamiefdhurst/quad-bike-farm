@@ -41,16 +41,16 @@ export const RADIO_PARAMS = { ...DEFAULT_RADIO_PARAMS }; // shared by every set,
  * debug panel calls it). The old sets sound terrible; Jess's aftermarket head unit is clean, deep and loud, and on the rock station.
  */
 export const RADIO_PROFILES = {
-  landrover: { name: 'old dash radio, tinny speaker', band: [380, 3000], hiss: 0.55, crackle: 0.65, whine: 0.75, drift: 0.55, bass: 0, warble: 0.1, distort: 0.6, loud: 0.8, station: 'dale' },
-  landrover200: { name: 'plain stereo, door speakers', band: [200, 4800], hiss: 0.3, crackle: 0.25, whine: 0.25, drift: 0.25, bass: 3, warble: 0, distort: 0.2, loud: 0.9, station: 'dale' },
-  fiesta: { name: 'cassette radio', band: [160, 5200], hiss: 0.25, crackle: 0.12, whine: 0.1, drift: 0.15, bass: 4, warble: 0.4, distort: 0.3, loud: 0.85, station: 'dale' },
-  corsa: { name: 'aftermarket head unit, big bass', band: [60, 9500], hiss: 0.1, crackle: 0.05, whine: 0.04, drift: 0.08, bass: 10, warble: 0, distort: 0, loud: 1.15, station: 'quarry' },
-  p309: { name: 'factory cassette radio', band: [140, 6000], hiss: 0.22, crackle: 0.1, whine: 0.15, drift: 0.15, bass: 3, warble: 0.25, distort: 0.25, loud: 0.9, station: 'dale' }, // your car's: a diesel's glow plugs and alternator whine into it a little
+  tor: { name: 'old dash radio, tinny speaker', band: [380, 3000], hiss: 0.55, crackle: 0.65, whine: 0.75, drift: 0.55, bass: 0, warble: 0.1, distort: 0.6, loud: 0.8, station: 'dale' },
+  crag: { name: 'plain stereo, door speakers', band: [200, 4800], hiss: 0.3, crackle: 0.25, whine: 0.25, drift: 0.25, bass: 3, warble: 0, distort: 0.2, loud: 0.9, station: 'dale' },
+  finch: { name: 'cassette radio', band: [160, 5200], hiss: 0.25, crackle: 0.12, whine: 0.1, drift: 0.15, bass: 4, warble: 0.4, distort: 0.3, loud: 0.85, station: 'dale' },
+  griffin: { name: 'aftermarket head unit, big bass', band: [60, 9500], hiss: 0.1, crackle: 0.05, whine: 0.04, drift: 0.08, bass: 10, warble: 0, distort: 0, loud: 1.15, station: 'quarry' },
+  vauclair: { name: 'factory cassette radio', band: [140, 6000], hiss: 0.22, crackle: 0.1, whine: 0.15, drift: 0.15, bass: 3, warble: 0.25, distort: 0.25, loud: 0.9, station: 'dale' }, // your car's: a diesel's glow plugs and alternator whine into it a little
 };
 
 /** The profile for a vehicle id (the Series' if it is one we don't know). */
 export function profileFor(id) {
-  return RADIO_PROFILES[id] ?? RADIO_PROFILES.landrover;
+  return RADIO_PROFILES[id] ?? RADIO_PROFILES.tor;
 }
 
 /** Which vehicles have a radio: the Land Rovers and the girls' cars. */

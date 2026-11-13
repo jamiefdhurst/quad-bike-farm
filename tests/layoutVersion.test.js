@@ -1,12 +1,14 @@
 // A new map resets where things were and keeps everything else (#663): the farm save carries the layout version it was made on.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { SAVE_KEY, LAYOUT_RESET_TOAST, openFarm, forLayout, validSave, writeSave } from '../src/farm/farmSave.js';
+import { SAVE_KEY, LAYOUT_RESET_TOAST, openFarm, forLayout, validSave, writeSave, migrateSave } from '../src/farm/farmSave.js';
 import { LAYOUT_VERSION } from '../src/world/layout.js';
 
 // A save from today's game (layout 1) with every kind of kept position filled in. Today's game writes no layoutVersion.
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/farm-on-layout-1.json', import.meta.url), 'utf8'));
 const storageWith = (save) => ({ getItem: (k) => (k === SAVE_KEY ? JSON.stringify(save) : null), setItem() {}, removeItem() {} });
+// The save is version 1, so the game reads it under today's vehicle ids (#589).
+const migrated = migrateSave(fixture);
 const POSITIONS = ['bales', 'lane', 'mowing', 'harrow', 'batteries', 'lostThings'];
 
 describe('the layout version', () => {
@@ -25,7 +27,7 @@ describe('the layout version', () => {
   it('loads a save at the same layout version exactly as it is', () => {
     const farm = openFarm({ storage: storageWith(fixture) });
     expect(farm.layoutReset).toBe(false);
-    expect(farm.save).toEqual(fixture);
+    expect(farm.save).toEqual(migrated);
     expect(openFarm({ storage: storageWith({ ...fixture, layoutVersion: 1 }) }).layoutReset).toBe(false);
   });
 
@@ -39,7 +41,7 @@ describe('the layout version', () => {
     expect(s.spray).toEqual({ tank: 0.6 });
     expect(s.boosterPack).toEqual({ charge: 0.8, where: 'loose' });
     for (const key of ['vehicles', 'fleet', 'market', 'shed', 'girls', 'records', 'challenges', 'bucket', 'learnt', 'logbook', 'stories', 'spares', 'generator', 'logs', 'mot', 'road', 'shows', 'photos', 'pods', 'headgear']) {
-      expect(s[key], key).toEqual(fixture[key]);
+      expect(s[key], key).toEqual(migrated[key]);
     }
     expect(s.market.purse).toBe(340);
     expect(s.girls.favour).toEqual({ amy: 3, jess: 0 });

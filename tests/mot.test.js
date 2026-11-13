@@ -121,40 +121,40 @@ describe('the log', () => {
 
   it('keeps a pass for the days it is good for', () => {
     const log = new MotLog(P);
-    log.record('landrover', 3, pass);
-    expect(log.valid('landrover', 3 + P.validDays)).toBe(true);
-    expect(log.valid('landrover', 3 + P.validDays + 1)).toBe(false);
-    expect(log.valid('landrover200', 3)).toBe(false);
-    expect(log.describe('landrover', 4)).toMatch(/passed on day 3/);
-    expect(log.describe('landrover', 40)).toMatch(/ran out/);
+    log.record('tor', 3, pass);
+    expect(log.valid('tor', 3 + P.validDays)).toBe(true);
+    expect(log.valid('tor', 3 + P.validDays + 1)).toBe(false);
+    expect(log.valid('crag', 3)).toBe(false);
+    expect(log.describe('tor', 4)).toMatch(/passed on day 3/);
+    expect(log.describe('tor', 40)).toMatch(/ran out/);
   });
 
   it('a fail voids the certificate and the girls mind until a pass', () => {
     const log = new MotLog(P);
-    log.record('landrover', 1, pass);
-    log.record('landrover', 2, fail);
-    expect(log.valid('landrover', 2)).toBe(false);
-    expect(log.failed('landrover')).toBe(true);
-    expect(log.describe('landrover', 2)).toBe('failed on day 2: horn');
-    log.record('landrover', 3, pass);
-    expect(log.failed('landrover')).toBe(false);
+    log.record('tor', 1, pass);
+    log.record('tor', 2, fail);
+    expect(log.valid('tor', 2)).toBe(false);
+    expect(log.failed('tor')).toBe(true);
+    expect(log.describe('tor', 2)).toBe('failed on day 2: horn');
+    log.record('tor', 3, pass);
+    expect(log.failed('tor')).toBe(false);
   });
 
   it('survives the farm save and ignores nonsense in it', () => {
     const log = new MotLog(P);
-    log.record('landrover', 5, fail);
-    log.record('landrover200', 6, pass);
+    log.record('tor', 5, fail);
+    log.record('crag', 6, pass);
     const back = new MotLog(P);
     back.restore(JSON.parse(JSON.stringify(log.toJSON())));
-    expect(back.failed('landrover')).toBe(true);
-    expect(back.valid('landrover200', 6)).toBe(true);
+    expect(back.failed('tor')).toBe(true);
+    expect(back.valid('crag', 6)).toBe(true);
     back.restore({ last: { x: { day: 'no' } }, certificate: { y: 'no' }, history: [1] });
     expect(back.failed('x')).toBe(false);
   });
 
   it('keeps only the latest few tests', () => {
     const log = new MotLog({ ...P, logKept: 3 });
-    for (let d = 1; d <= 6; d++) log.record('landrover', d, pass);
+    for (let d = 1; d <= 6; d++) log.record('tor', d, pass);
     expect(log.history.map((h) => h.day)).toEqual([4, 5, 6]);
   });
 });

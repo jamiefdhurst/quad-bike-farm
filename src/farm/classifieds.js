@@ -42,29 +42,29 @@ export const MARKET_PARAM_RANGES = {
 // What can be advertised: `price` is the going rate in pounds for one in fair nick; `colours` are body colours the seller might have it in
 // (the spec's own is always one of them). The ad names it from vehicle/names.js.
 export const FOR_SALE = {
-  red: { price: 520, colours: [0xa8271f, 0x1f5fb0, 0x2e2e30, 0xd8d4c8] },
-  blue: { price: 560, colours: [0x1d4fa3, 0xa8271f, 0x2e2e30, 0x7f8a45] },
-  yellow: { price: 480, colours: [0xe9c21b, 0x1d4fa3, 0xc8c4b8, 0x2e2e30] },
-  green: { price: 600, colours: [0x33692c, 0x8a3a26, 0x2e2e30, 0xd8d4c8] },
-  orange: { price: 640, colours: [0xe86a12, 0x1d4fa3, 0x2e2e30, 0xe9e6dc] },
-  kids: { price: 180, colours: [0xd596ad, 0x4f8fd0, 0x6aa84f, 0xe0b030] },
-  moto: { price: 240, colours: [0x3f6fa8, 0xa8271f, 0xe9c21b, 0x2e2e30] },
-  ag200: { price: 420, colours: [0x1d4fa3, 0xe9c21b, 0xc8c4b8, 0x6b7a3a] },
-  mower: { price: 350, colours: [0x2f5f35, 0xa8271f, 0xe9c21b, 0x3f6fa8] },
-  atc: { price: 280, colours: [0xb4553f, 0x3f6fa8, 0xd8d4c8, 0x6b7a3a] },
-  tractor: { price: 3200, colours: [0xa82a20, 0x2c4f8a, 0x3a6a3a, 0xc8a02c] },
-  utv: { price: 2400, colours: [0x3b5b3a, 0x8a6a3a, 0x2e2e30, 0xa82a20] },
-  landrover: { price: 1700, colours: [0x3b4a36, 0xa8a090, 0x3f5f7a, 0x6b2a22] },
-  landrover200: { price: 2600, colours: [0x3f5f7a, 0x3b4a36, 0xb8b4a8, 0x6b2a22] },
+  farm300: { price: 520, colours: [0xa8271f, 0x1f5fb0, 0x2e2e30, 0xd8d4c8] },
+  bruin: { price: 560, colours: [0x1d4fa3, 0xa8271f, 0x2e2e30, 0x7f8a45] },
+  hornet: { price: 480, colours: [0xe9c21b, 0x1d4fa3, 0xc8c4b8, 0x2e2e30] },
+  rb300: { price: 600, colours: [0x33692c, 0x8a3a26, 0x2e2e30, 0xd8d4c8] },
+  adder: { price: 640, colours: [0xe86a12, 0x1d4fa3, 0x2e2e30, 0xe9e6dc] },
+  asp: { price: 180, colours: [0xd596ad, 0x4f8fd0, 0x6aa84f, 0xe0b030] },
+  tz65: { price: 240, colours: [0x3f6fa8, 0xa8271f, 0xe9c21b, 0x2e2e30] },
+  shepherd: { price: 420, colours: [0x1d4fa3, 0xe9c21b, 0xc8c4b8, 0x6b7a3a] },
+  clipper: { price: 350, colours: [0x2f5f35, 0xa8271f, 0xe9c21b, 0x3f6fa8] },
+  t185: { price: 280, colours: [0xb4553f, 0x3f6fa8, 0xd8d4c8, 0x6b7a3a] },
+  hartley: { price: 3200, colours: [0xa82a20, 0x2c4f8a, 0x3a6a3a, 0xc8a02c] },
+  yak: { price: 2400, colours: [0x3b5b3a, 0x8a6a3a, 0x2e2e30, 0xa82a20] },
+  tor: { price: 1700, colours: [0x3b4a36, 0xa8a090, 0x3f5f7a, 0x6b2a22] },
+  crag: { price: 2600, colours: [0x3f5f7a, 0x3b4a36, 0xb8b4a8, 0x6b2a22] },
 };
 
 // Everything else in the spec files, and why it is not for sale. Another vehicle goes in one list or the other.
 export const NOT_FOR_SALE = {
-  loan: 'it is on loan, not ours to sell',
+  ursa: 'it is on loan, not ours to sell',
   plover: 'the old bike is the barn project, always under its tarp at the back: it is not for sale',
-  fiesta: "the girls' own car, always on the farm (one slot; a second needs vehicles that can have several of a model)",
-  corsa: "the girls' own car, always on the farm (one slot; a second needs vehicles that can have several of a model)",
-  p309: 'your own car: you arrive in it every morning',
+  finch: "the girls' own car, always on the farm (one slot; a second needs vehicles that can have several of a model)",
+  griffin: "the girls' own car, always on the farm (one slot; a second needs vehicles that can have several of a model)",
+  vauclair: 'your own car: you arrive in it every morning',
 };
 
 const COLOUR_NAMES = new Map([

@@ -32,26 +32,26 @@ describe('FaultKnowledge', () => {
     const k = new FaultKnowledge(() => 0);
     const q = sound();
     q.faults.leave('carb', 0.8);
-    k.learn('blue', ['walkCarb']);
-    expect(k.blocking('blue', q)).toBe('walkCarb');
-    expect(k.blocking('red', q)).toBe(null);
+    k.learn('bruin', ['walkCarb']);
+    expect(k.blocking('bruin', q)).toBe('walkCarb');
+    expect(k.blocking('farm300', q)).toBe(null);
     q.faults.leave('carb', 0.05);
-    expect(k.blocking('blue', q)).toBe(null);
+    expect(k.blocking('bruin', q)).toBe(null);
     q.faults.leave('carb', 0.8); // a new fault is a new thing she doesn't know yet
-    expect(k.blocking('blue', q)).toBe(null);
+    expect(k.blocking('bruin', q)).toBe(null);
   });
 
   it('can be switched off', () => {
     const k = new FaultKnowledge(() => 0.5, { ...DEFAULT_WONT_PARAMS, amyWontRide: 0 });
     const q = sound();
     q.faults.leave('belt', 0.8);
-    k.learn('blue', ['walkBelt']);
-    expect(k.blocking('blue', q)).toBe(null);
+    k.learn('bruin', ['walkBelt']);
+    expect(k.blocking('bruin', q)).toBe(null);
   });
 
   it('ignores a finding that is not a fault', () => {
     const k = new FaultKnowledge(() => 0);
-    k.learn('blue', ['somethingElse']);
+    k.learn('bruin', ['somethingElse']);
     expect(k.known.size).toBe(0);
   });
 });

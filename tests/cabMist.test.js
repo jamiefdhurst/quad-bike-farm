@@ -194,7 +194,7 @@ describe('the five cabs', () => {
 
   it('each has its screen mist plane on the rain glass, its side and back glass of their own, and its wipers as the grid sees them', () => {
     const cabs = built.filter(({ model }) => model.userData.cabin);
-    expect(cabs.map((b) => b.spec.id).sort()).toEqual(expect.arrayContaining(['corsa', 'fiesta', 'p309']));
+    expect(cabs.map((b) => b.spec.id).sort()).toEqual(expect.arrayContaining(['griffin', 'finch', 'vauclair']));
     expect(cabs.length).toBeGreaterThanOrEqual(5);
     for (const { spec, model } of cabs) {
       const grid = createCabMist(model.getObjectByName('rainGlass').userData.panes);
@@ -219,12 +219,12 @@ describe('the console mists and clears a cab', () => {
   it('calls the game\'s mist and clear, and says when the vehicle has no cab', async () => {
     const { createHost, VEHICLE_VERBS } = await import('../src/console/gameHost.js');
     const calls = [];
-    const g = { units: [{ id: 'fiesta' }, { id: 'red' }], companions: [], world: { layout: {} }, debugCabMist: (u, what) => (calls.push([u.id, what]), u.id === 'fiesta') };
+    const g = { units: [{ id: 'finch' }, { id: 'farm300' }], companions: [], world: { layout: {} }, debugCabMist: (u, what) => (calls.push([u.id, what]), u.id === 'finch') };
     const host = createHost(g);
     expect(VEHICLE_VERBS.map((v) => v.name)).toEqual(expect.arrayContaining(['mist', 'demist']));
-    expect(host.vehicleVerb('fiesta', 'mist')).toBe('fiesta: mist');
-    expect(host.vehicleVerb('fiesta', 'demist')).toBe('fiesta: demist');
-    expect(host.vehicleVerb('red', 'mist')).toBe('red has no cab to mist');
-    expect(calls).toEqual([['fiesta', 'mist'], ['fiesta', 'clear'], ['red', 'mist']]);
+    expect(host.vehicleVerb('finch', 'mist')).toBe('finch: mist');
+    expect(host.vehicleVerb('finch', 'demist')).toBe('finch: demist');
+    expect(host.vehicleVerb('farm300', 'mist')).toBe('farm300 has no cab to mist');
+    expect(calls).toEqual([['finch', 'mist'], ['finch', 'clear'], ['farm300', 'mist']]);
   });
 });

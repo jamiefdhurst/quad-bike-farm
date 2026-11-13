@@ -60,7 +60,10 @@ export function buildCommands(host) {
     const placeKey = Object.keys(places).find((k) => k === word.toLowerCase());
     if (placeKey) return { ...places[placeKey] };
     const other = host.things().find((t) => t.toLowerCase() === word.toLowerCase());
-    if (!other) throw new Error(`"${word}" is not a place or a thing. Places: ${Object.keys(places).join(', ')}`);
+    if (!other) {
+      const vehicles = host.vehicles().map((v) => v.id); // a vehicle is typed by its model name (tor, not landrover), so say which there are
+      throw new Error(`"${word}" is not a place or a thing. Places: ${Object.keys(places).join(', ')}. Vehicles: ${vehicles.join(', ')}`);
+    }
     const at = host.locate(other);
     if (!at) throw new Error(`cannot tell where ${other} is`);
     // Beside them if it is you being put there, otherwise a few metres in front of them, facing the way they do.
@@ -91,8 +94,8 @@ export function buildCommands(host) {
         }
         const out = [
           'Type a command and press Enter. Tab completes (and goes through the choices), the arrow keys bring back old lines, backslash shuts this.',
-          'Values live in a tree: vehicle.red.temperature, girl.amy.favour, weather.rain, tune.engine... Type a value\'s path alone to read it,',
-          'or the path and a number (vehicle.red.temperature 0.5) to set it. help topics explains the tree and positions.',
+          'Values live in a tree: vehicle.farm300.temperature, girl.amy.favour, weather.rain, tune.engine... Type a value\'s path alone to read it,',
+          'or the path and a number (vehicle.farm300.temperature 0.5) to set it. help topics explains the tree and positions.',
         ];
         for (const group of GROUPS) {
           const here = shell.commands.filter((c) => c.group === group);
@@ -109,7 +112,7 @@ export function buildCommands(host) {
       group: 'Looking',
       usage: 'list [path]',
       help: 'what is inside a folder of values (no path: the top)',
-      examples: ['list', 'list vehicle', 'list vehicle.red', 'ls girl.amy'],
+      examples: ['list', 'list vehicle', 'list vehicle.farm300', 'ls girl.amy'],
       complete: (ctx, tokens, partial) => (tokens.length === 0 ? pathCandidates(ctx.root, partial, { foldersOnly: true }) : []),
       run: ([path], shell) => {
         const { node, path: where } = path ? pathOf(shell, path) : { node: shell.root, path: '' };
@@ -125,10 +128,10 @@ export function buildCommands(host) {
       group: 'Looking',
       usage: 'get <path>',
       help: 'read a value, or every value in a folder',
-      examples: ['get vehicle.red.temperature', 'get weather'],
+      examples: ['get vehicle.farm300.temperature', 'get weather'],
       complete: (ctx, tokens, partial) => (tokens.length === 0 ? pathCandidates(ctx.root, partial) : []),
       run: ([path], shell) => {
-        if (!path) throw new Error('get what? e.g. get vehicle.red.fuel');
+        if (!path) throw new Error('get what? e.g. get vehicle.farm300.fuel');
         return shell.read(pathOf(shell, path));
       },
     },
@@ -165,7 +168,7 @@ export function buildCommands(host) {
       group: 'Looking',
       usage: 'dump [path]',
       help: 'copy every value in a folder as JSON (no path: all the tuning)',
-      examples: ['dump', 'dump vehicle.red'],
+      examples: ['dump', 'dump vehicle.farm300'],
       complete: (ctx, tokens, partial) => (tokens.length === 0 ? pathCandidates(ctx.root, partial, { foldersOnly: true }) : []),
       run: ([path], shell) => {
         const { node, path: where } = pathOf(shell, path ?? 'tune');
@@ -182,7 +185,7 @@ export function buildCommands(host) {
       group: 'Changing',
       usage: 'set <path> <value>',
       help: 'change a value (the path on its own with a value does the same). Numbers, on/off, or one of the listed choices',
-      examples: ['set vehicle.red.temperature 0.4', 'set weather.kind rain', 'vehicle.red.parkbrake on'],
+      examples: ['set vehicle.farm300.temperature 0.4', 'set weather.kind rain', 'vehicle.farm300.parkbrake on'],
       complete: (ctx, tokens, partial) => {
         if (tokens.length === 0) return pathCandidates(ctx.root, partial);
         const r = resolve(ctx.root, tokens[0]);
@@ -190,7 +193,7 @@ export function buildCommands(host) {
         return r.node.type === 'bool' ? ['on', 'off'] : r.node.type === 'choice' ? r.node.choices.map(String) : [];
       },
       run: ([path, ...rest], shell) => {
-        if (!path || !rest.length) throw new Error('set <path> <value>, e.g. set vehicle.red.fuel 5');
+        if (!path || !rest.length) throw new Error('set <path> <value>, e.g. set vehicle.farm300.fuel 5');
         return shell.write(pathOf(shell, path), rest.join(' '));
       },
     },
@@ -199,7 +202,7 @@ export function buildCommands(host) {
       group: 'Changing',
       usage: 'toggle <path>',
       help: 'flip an on/off value',
-      examples: ['toggle vehicle.red.parkbrake', 'toggle player.flying'],
+      examples: ['toggle vehicle.farm300.parkbrake', 'toggle player.flying'],
       complete: (ctx, tokens, partial) => (tokens.length === 0 ? pathCandidates(ctx.root, partial) : []),
       run: ([path], shell) => {
         const r = pathOf(shell, path ?? '');
@@ -213,7 +216,7 @@ export function buildCommands(host) {
       group: 'Changing',
       usage: 'add <path> <amount>',
       help: 'raise (or, with a minus, lower) a number by an amount',
-      examples: ['add vehicle.red.fuel -2', 'add girl.amy.favour 5'],
+      examples: ['add vehicle.farm300.fuel -2', 'add girl.amy.favour 5'],
       complete: (ctx, tokens, partial) => (tokens.length === 0 ? pathCandidates(ctx.root, partial) : []),
       run: ([path, amount], shell) => {
         const r = pathOf(shell, path ?? '');
@@ -226,7 +229,7 @@ export function buildCommands(host) {
       group: 'Changing',
       usage: 'range <path>',
       help: 'what a value will take (the panel\'s slider range, the choices)',
-      examples: ['range vehicle.red.temperature'],
+      examples: ['range vehicle.farm300.temperature'],
       complete: (ctx, tokens, partial) => (tokens.length === 0 ? pathCandidates(ctx.root, partial) : []),
       run: ([path], shell) => {
         const r = pathOf(shell, path ?? '');
@@ -242,7 +245,7 @@ export function buildCommands(host) {
       group: 'Moving',
       usage: 'tp <thing> <x> <z> [heading]  |  tp <thing> to <place or thing>  |  tp <thing> here',
       help: 'put you, a vehicle, a girl or an item anywhere. Heading is degrees, 0 facing +z (south), 90 facing +x',
-      examples: ['tp me 100 20', 'tp red barn', 'tp amy to jess', 'tp tractor here', 'tp me to ramp', 'tp petrol-can 10 10 90'],
+      examples: ['tp me 100 20', 'tp farm300 barn', 'tp amy to jess', 'tp hartley here', 'tp me to ramp', 'tp petrol-can 10 10 90'],
       complete: (ctx, tokens) => {
         if (tokens.length === 0) return thingOptions();
         if (tokens.length === 1) return ['to', 'here', ...placeOptions()];
@@ -268,7 +271,7 @@ export function buildCommands(host) {
       group: 'Moving',
       usage: 'nudge <thing> <dx> <dz> [dheading]',
       help: 'move something a few metres from where it is (x is east, z is south)',
-      examples: ['nudge red 0 -3', 'nudge me 5 0 90'],
+      examples: ['nudge farm300 0 -3', 'nudge me 5 0 90'],
       complete: (ctx, tokens) => (tokens.length === 0 ? thingOptions() : []),
       run: ([thing, dx, dz, dh]) => {
         const t = needThing(thing ?? '');
@@ -283,7 +286,7 @@ export function buildCommands(host) {
       group: 'Moving',
       usage: 'face <thing> <heading>',
       help: 'turn something where it stands (degrees, 0 faces +z, 90 faces +x)',
-      examples: ['face red 180', 'face me 0'],
+      examples: ['face farm300 180', 'face me 0'],
       complete: (ctx, tokens) => (tokens.length === 0 ? thingOptions() : []),
       run: ([thing, h]) => {
         const t = needThing(thing ?? '');
@@ -304,10 +307,10 @@ export function buildCommands(host) {
       group: 'Moving',
       usage: 'reset <thing | vehicles | girls | all>',
       help: 'back to where it started: a vehicle to its spot (on its wheels), a girl stops where she is (off whatever she is on, out of what she is doing) and stands about for a minute, you to the start',
-      examples: ['reset red', 'reset vehicles', 'reset all'],
+      examples: ['reset farm300', 'reset vehicles', 'reset all'],
       complete: (ctx, tokens) => (tokens.length === 0 ? ['vehicles', 'girls', 'all', ...thingOptions()] : []),
       run: ([what]) => {
-        if (!what) throw new Error('reset what? e.g. reset red, reset vehicles, reset all');
+        if (!what) throw new Error('reset what? e.g. reset farm300, reset vehicles, reset all');
         const w = what.toLowerCase();
         if (w === 'vehicles') return vehicleIds().map((id) => host.resetThing(id));
         if (w === 'girls') return host.girls().map((id) => host.resetThing(id));
@@ -349,7 +352,7 @@ export function buildCommands(host) {
       group: 'Girls',
       usage: 'girl <amy | jess> <action> [vehicle]',
       help: 'make her do something now, as the debug panel buttons do. girl amy on its own lists her actions',
-      examples: ['girl jess doughnuts', 'girl amy drive red', 'girl jess ride tractor', 'girl amy invite-barn'],
+      examples: ['girl jess doughnuts', 'girl amy drive farm300', 'girl jess ride hartley', 'girl amy invite-barn'],
       complete: (ctx, tokens) => {
         if (tokens.length === 0) return host.girls();
         const id = host.girls().find((g) => g.toLowerCase() === tokens[0].toLowerCase());
@@ -580,7 +583,7 @@ export function buildCommands(host) {
       'POSITIONS',
       '  x is east, z is south, up is y. Heading is degrees: 0 faces +z, 90 faces +x, 180 faces -z. The same for you, vehicles and girls.',
       '  Things you can move: me, each vehicle id, amy, jess and the items (petrol-can, premix-can, diesel-can, toolbox, oil-bottle, feed-bucket, leads).',
-      '  Or set the values: vehicle.red.x, vehicle.red.z, girl.amy.heading, player.y...',
+      '  Or set the values: vehicle.farm300.x, vehicle.farm300.z, girl.amy.heading, player.y...',
       'TAB',
       '  Completes commands, paths, vehicles, girls, places and values. Press again to go through the choices, Shift+Tab goes back.',
       'GIRLS',

@@ -222,7 +222,7 @@ export function buildTractorModel({ bodyColor = 0xb02a20, dashStyle = 'tractor' 
   add(loftGeometry(MF_NOSE, { exponent: 3.4 }), paint, root, 'nose');
   // The side panel's lower edge: a darker crease line and the maker's name along it.
   for (const s of [-1, 1]) {
-    const name = decalMesh('badge', { maker: MAKER_FOR.tractor, model: '35' }, { width: 0.2, name: 'bonnetName' });
+    const name = decalMesh('badge', { maker: MAKER_FOR.hartley, model: '35' }, { width: 0.2, name: 'bonnetName' });
     name.position.set(s * 0.2305, 1.04, 0.74);
     name.rotation.y = s * (Math.PI / 2);
     root.add(name);

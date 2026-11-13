@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { Requests, DEFAULT_REQUEST_PARAMS } from '../src/npc/requests.js';
 
 const P = DEFAULT_REQUEST_PARAMS;
-const girl = (over = {}) => ({ id: 'amy', x: 5, z: 0, free: true, favourite: 'red', ...over });
+const girl = (over = {}) => ({ id: 'amy', x: 5, z: 0, free: true, favourite: 'farm300', ...over });
 const ctx = (over = {}) => ({
   you: { x: 0, z: 0, onFoot: true },
   girls: [girl()],
-  quads: [{ id: 'red', x: 3, z: 3, muddy: 0.8, speed: 0, ridden: false, pillion: null }],
+  quads: [{ id: 'farm300', x: 3, z: 3, muddy: 0.8, speed: 0, ridden: false, pillion: null }],
   can: { x: 40, z: 40, held: false },
   bales: [{ x: 100, z: 100 }],
   ...over,
@@ -29,7 +29,7 @@ describe('Requests', () => {
     const events = [];
     for (let t = 0; t < P.firstDelay + 60; t++) events.push(...r.update(1, ctx()));
     expect(events).toEqual([]);
-    expect(r.offers(ctx())[0]).toMatchObject({ key: 'favour', girl: 'amy', kind: 'wash', quad: 'red', weight: P.weight });
+    expect(r.offers(ctx())[0]).toMatchObject({ key: 'favour', girl: 'amy', kind: 'wash', quad: 'farm300', weight: P.weight });
   });
   it('asks nothing before the first delay', () => {
     const r = make();
@@ -38,7 +38,7 @@ describe('Requests', () => {
   it('asks to wash her favourite quad when it is muddy', () => {
     const r = make();
     const events = wait(r, ctx({ bales: [] , can: { x: 0, z: 1, held: false } }));
-    expect(events[0]).toMatchObject({ type: 'ask', request: { girl: 'amy', kind: 'wash', quad: 'red' } });
+    expect(events[0]).toMatchObject({ type: 'ask', request: { girl: 'amy', kind: 'wash', quad: 'farm300' } });
     expect(r.openFor('amy')).not.toBeNull();
   });
   it('does not ask for a wash of a clean quad, or while you are riding, or when she is busy or far', () => {
@@ -85,7 +85,7 @@ describe('Requests', () => {
   });
   it('counts the bales as done with her on the back of your quad, stopped near them', () => {
     const r = make();
-    const c = ctx({ quads: [{ id: 'blue', x: 3, z: 3, hasPillion: true, muddy: 0, speed: 0, ridden: false, pillion: null }], can: { x: 0, z: 1, held: false }, bales: [{ x: 50, z: 50 }] });
+    const c = ctx({ quads: [{ id: 'bruin', x: 3, z: 3, hasPillion: true, muddy: 0, speed: 0, ridden: false, pillion: null }], can: { x: 0, z: 1, held: false }, bales: [{ x: 50, z: 50 }] });
     wait(r, c);
     expect(r.openFor('amy')?.kind).toBe('bales');
     c.quads[0] = { ...c.quads[0], x: 52, z: 48, ridden: true, pillion: 'amy', speed: 5 };
@@ -114,7 +114,7 @@ describe('Requests.joiner', () => {
     r.open.push({ girl: 'amy', kind: 'bales', since: 0 });
     return r;
   };
-  const c = (over = {}) => ({ you: { x: 0, z: 0 }, girls: [girl()], ridden: { id: 'red', hasPillion: true, pillion: null }, ...over });
+  const c = (over = {}) => ({ you: { x: 0, z: 0 }, girls: [girl()], ridden: { id: 'farm300', hasPillion: true, pillion: null }, ...over });
   it('sends the girl who asked once you have been on the quad a moment', () => {
     const r = open();
     expect(r.joiner(0.5, c())).toBe(null);
@@ -123,8 +123,8 @@ describe('Requests.joiner', () => {
   });
   it('does nothing on foot, with a taken seat, a busy or distant girl, or no open request', () => {
     expect(open().joiner(5, c({ ridden: null }))).toBe(null);
-    expect(open().joiner(5, c({ ridden: { id: 'red', hasPillion: true, pillion: 'jess' } }))).toBe(null);
-    expect(open().joiner(5, c({ ridden: { id: 'red', hasPillion: false, pillion: null } }))).toBe(null);
+    expect(open().joiner(5, c({ ridden: { id: 'farm300', hasPillion: true, pillion: 'jess' } }))).toBe(null);
+    expect(open().joiner(5, c({ ridden: { id: 'farm300', hasPillion: false, pillion: null } }))).toBe(null);
     expect(open().joiner(5, c({ girls: [girl({ free: false })] }))).toBe(null);
     expect(open().joiner(5, c({ girls: [girl({ x: 100 })] }))).toBe(null);
     expect(make().joiner(5, c())).toBe(null);
@@ -133,7 +133,7 @@ describe('Requests.joiner', () => {
     const r = open();
     r.joiner(5, c());
     r.joiner(1, c({ ridden: null }));
-    expect(r.joiner(5, c({ ridden: { id: 'blue', hasPillion: true, pillion: null } }))).toBe('amy');
+    expect(r.joiner(5, c({ ridden: { id: 'bruin', hasPillion: true, pillion: null } }))).toBe('amy');
   });
 });
 
@@ -155,7 +155,7 @@ describe('the buzz-seeking requests', () => {
   it('asks to go over the cattle grid when there is one and a quad with a free back, and not when there is not', () => {
     const { ask: e } = ask('grid', { tractor: { exists: false } });
     expect(e.request.kind).toBe('grid');
-    expect(wait(new Requests({ ...P }, () => 0), buzzCtx({ grid: false, tractor: { exists: false }, quads: [{ id: 'red', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, pillion: null, hasPillion: false }] }))).toEqual([]);
+    expect(wait(new Requests({ ...P }, () => 0), buzzCtx({ grid: false, tractor: { exists: false }, quads: [{ id: 'farm300', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, pillion: null, hasPillion: false }] }))).toEqual([]);
   });
 
   it('the cattle grid is done when you ride over it with her on the back', () => {
@@ -189,7 +189,7 @@ describe('the buzz-seeking requests', () => {
 
   it('the tractor mudguard is asked only while it is off, and done when it runs with her up on it', () => {
     const r = new Requests({ ...P }, () => 0);
-    const stopped = buzzCtx({ grid: false, quads: [{ id: 'red', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, pillion: null, hasPillion: false }] });
+    const stopped = buzzCtx({ grid: false, quads: [{ id: 'farm300', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, pillion: null, hasPillion: false }] });
     expect(wait(r, stopped)[0].request.kind).toBe('mudguard');
     expect(r.update(1, { ...stopped, tractor: { exists: true, running: true, mudguard: null } })).toEqual([]);
     expect(r.update(1, { ...stopped, tractor: { exists: true, running: true, mudguard: 'amy' } })[0]).toMatchObject({ type: 'done', request: { kind: 'mudguard' } });
@@ -201,7 +201,7 @@ describe('the buzz-seeking requests', () => {
 describe('Requests: the village pub', () => {
   const stopped = (over = {}) => ctx({
     girls: [girl({ x: 2 })],
-    quads: [{ id: 'red', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, hasPillion: true, pillion: null }],
+    quads: [{ id: 'farm300', x: 3, z: 3, muddy: 0, speed: 0, ridden: false, hasPillion: true, pillion: null }],
     bales: [],
     can: { x: 0, z: 1, held: false },
     pub: { x: 200, z: 190 },
@@ -216,7 +216,7 @@ describe('Requests: the village pub', () => {
   it('counts it done when she is on the back of the quad you ride, stopped in the car park', () => {
     const r = make();
     r.force('amy', 'pub');
-    const on = (over = {}) => stopped({ quads: [{ id: 'red', x: 203, z: 190, muddy: 0, speed: 0, ridden: true, hasPillion: true, pillion: 'amy', ...over }] });
+    const on = (over = {}) => stopped({ quads: [{ id: 'farm300', x: 203, z: 190, muddy: 0, speed: 0, ridden: true, hasPillion: true, pillion: 'amy', ...over }] });
     expect(r.update(1, on({ speed: 4 }))).toEqual([]); // still moving
     expect(r.update(1, on({ x: 120 }))).toEqual([]); // not there
     expect(r.update(1, on())[0]).toMatchObject({ type: 'done', request: { kind: 'pub' } });
@@ -232,7 +232,7 @@ describe('Requests: the village pub', () => {
   it('sends the girl who asked to climb on when you get on a quad, as with the bales', () => {
     const r = make();
     r.force('amy', 'pub');
-    const ridden = { id: 'red', hasPillion: true, pillion: null };
+    const ridden = { id: 'farm300', hasPillion: true, pillion: null };
     expect(r.joiner(P.joinDelay + 1, { you: { x: 0, z: 0 }, girls: [{ id: 'amy', x: 5, z: 0, free: true }], ridden })).toBe('amy');
   });
 });

@@ -12,7 +12,7 @@ describe('LightSwitch', () => {
 
   it('ignores a mode it does not know', () => {
     const sw = new LightSwitch('high');
-    sw.set('blue');
+    sw.set('bruin');
     expect(sw.mode).toBe('high');
     expect(new LightSwitch('nonsense').mode).toBe('off');
     expect(LIGHT_MODES).toEqual(['off', 'low', 'high']);

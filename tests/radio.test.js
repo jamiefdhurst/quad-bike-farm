@@ -5,7 +5,7 @@ import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFEN
 
 describe('the radio', () => {
   it('is on or off, and louder or quieter by a step, within 0 and 1', () => {
-    const r = new Radio('fiesta');
+    const r = new Radio('finch');
     expect(r.on).toBe(false);
     expect(r.toggle()).toBe(true);
     for (let i = 0; i < 20; i++) r.louder();
@@ -15,7 +15,7 @@ describe('the radio', () => {
   });
 
   it('needs power, and goes quiet while the starter turns', () => {
-    const r = new Radio('landrover');
+    const r = new Radio('tor');
     r.set(true);
     r.update(1, { power: false });
     expect(r.playing).toBe(false);
@@ -29,7 +29,7 @@ describe('the radio', () => {
   });
 
   it('eases up rather than clicking on', () => {
-    const r = new Radio('corsa');
+    const r = new Radio('griffin');
     r.set(true);
     r.update(0.01, { power: true });
     expect(r.level).toBeGreaterThan(0);
@@ -37,7 +37,7 @@ describe('the radio', () => {
   });
 
   it('counts the time since anyone touched it', () => {
-    const r = new Radio('corsa');
+    const r = new Radio('griffin');
     r.update(10, { power: true });
     expect(r.untouchedFor).toBeGreaterThan(9);
     r.louder();
@@ -46,17 +46,17 @@ describe('the radio', () => {
 
   it('each set has its own character: the Series is the tinniest and the crackliest, the Corsa the bassiest and cleanest', () => {
     const p = RADIO_PROFILES;
-    expect(p.landrover.band[0]).toBeGreaterThan(p.corsa.band[0]);
-    expect(p.landrover.band[1]).toBeLessThan(p.corsa.band[1]);
-    expect(p.landrover.crackle).toBeGreaterThan(p.landrover200.crackle);
-    expect(p.corsa.bass).toBeGreaterThan(p.fiesta.bass);
-    expect(p.fiesta.warble).toBeGreaterThan(p.corsa.warble);
-    expect(profileFor('nothing')).toBe(p.landrover);
+    expect(p.tor.band[0]).toBeGreaterThan(p.griffin.band[0]);
+    expect(p.tor.band[1]).toBeLessThan(p.griffin.band[1]);
+    expect(p.tor.crackle).toBeGreaterThan(p.crag.crackle);
+    expect(p.griffin.bass).toBeGreaterThan(p.finch.bass);
+    expect(p.finch.warble).toBeGreaterThan(p.griffin.warble);
+    expect(profileFor('nothing')).toBe(p.tor);
   });
 
   it('is fitted to the Land Rovers and the cars, not the quads, the UTV or the tractor', () => {
     const fitted = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC, P309_SPEC].filter(hasRadio).map((s) => s.id).sort();
-    expect(fitted).toEqual(['corsa', 'fiesta', 'landrover', 'landrover200', 'p309']);
+    expect(fitted).toEqual(['crag', 'finch', 'griffin', 'tor', 'vauclair']);
     expect(Object.keys(RADIO_PROFILES).sort()).toEqual(fitted);
   });
 });
@@ -91,12 +91,12 @@ describe('how loud it is where you are', () => {
 
 describe('which station a set is on', () => {
   it('starts on its own preset: Jess\'s aftermarket set on the rock station, the rest on the easy one', () => {
-    expect(new Radio('corsa').station).toBe('quarry');
-    for (const id of ['landrover', 'landrover200', 'fiesta', 'p309']) expect(new Radio(id).station).toBe('dale');
+    expect(new Radio('griffin').station).toBe('quarry');
+    for (const id of ['tor', 'crag', 'finch', 'vauclair']) expect(new Radio(id).station).toBe('dale');
   });
 
   it('steps round the stations and says which, and the static of changing is timed from then', () => {
-    const r = new Radio('fiesta');
+    const r = new Radio('finch');
     r.update(5, {});
     expect(r.sinceRetune).toBeGreaterThan(1e6);
     expect(r.nextStation()).toBe('Quarry Rock');
@@ -109,7 +109,7 @@ describe('which station a set is on', () => {
   });
 
   it('says its station when it describes itself', () => {
-    const r = new Radio('corsa');
+    const r = new Radio('griffin');
     r.set(true);
     r.update(1, { power: true });
     expect(r.describe()).toContain('Quarry Rock');
@@ -117,12 +117,12 @@ describe('which station a set is on', () => {
 
   it('sounds worse the older it is: the Series buzzes and is tinny, the Corsa is clean and deepest', () => {
     const p = RADIO_PROFILES;
-    expect(p.landrover.distort).toBeGreaterThan(p.landrover200.distort);
-    expect(p.landrover200.distort).toBeGreaterThan(p.corsa.distort);
-    expect(p.corsa.distort).toBe(0);
-    expect(p.landrover.band[1] - p.landrover.band[0]).toBeLessThan(p.corsa.band[1] - p.corsa.band[0]);
-    expect(p.corsa.bass).toBeGreaterThan(Math.max(p.landrover.bass, p.landrover200.bass, p.fiesta.bass, p.p309.bass));
-    expect(p.fiesta.warble).toBeGreaterThan(p.corsa.warble);
+    expect(p.tor.distort).toBeGreaterThan(p.crag.distort);
+    expect(p.crag.distort).toBeGreaterThan(p.griffin.distort);
+    expect(p.griffin.distort).toBe(0);
+    expect(p.tor.band[1] - p.tor.band[0]).toBeLessThan(p.griffin.band[1] - p.griffin.band[0]);
+    expect(p.griffin.bass).toBeGreaterThan(Math.max(p.tor.bass, p.crag.bass, p.finch.bass, p.vauclair.bass));
+    expect(p.finch.warble).toBeGreaterThan(p.griffin.warble);
     for (const prof of Object.values(p)) expect(STATIONS.map((s) => s.id)).toContain(prof.station);
   });
 });

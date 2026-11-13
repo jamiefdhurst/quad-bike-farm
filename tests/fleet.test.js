@@ -81,19 +81,19 @@ describe('extra vehicles', () => {
   });
 
   it("make the kids' quad small, slow and solo, and the loan quad smooth", () => {
-    const kids = EXTRA_SPECS.find((s) => s.id === 'kids');
-    const loan = EXTRA_SPECS.find((s) => s.id === 'loan');
+    const kids = EXTRA_SPECS.find((s) => s.id === 'asp');
+    const loan = EXTRA_SPECS.find((s) => s.id === 'ursa');
     expect(kids.scale).toBeLessThan(1);
     expect(kids.solo).toBe(true);
     expect(kids.vehicle.wheelRadius).toBeCloseTo(0.3 * kids.scale, 3);
-    expect(kids.idleRange[1]).toBeLessThan(QUAD_SPECS.find((q) => q.id === 'yellow').idleRange[0]); // a lower tickover than either two-stroke
+    expect(kids.idleRange[1]).toBeLessThan(QUAD_SPECS.find((q) => q.id === 'hornet').idleRange[0]); // a lower tickover than either two-stroke
     for (const s of QUAD_SPECS) expect(kids.vehicle.maxSpeed).toBeLessThan(s.vehicle.maxSpeed ?? 17);
     for (const s of QUAD_SPECS) expect(loan.engine.wearPerMinute).toBeLessThan((s.engine?.wearPerMinute ?? 0.012) / 5);
     for (const s of QUAD_SPECS) expect(loan.roughnessRange[1]).toBeLessThanOrEqual(s.roughnessRange[0] + 0.001);
   });
 
   it('makes the mini moto a solo two-stroke with a pull-start, anyone may ride, and two wheels in a line', async () => {
-    const moto = EXTRA_SPECS.find((s) => s.id === 'moto');
+    const moto = EXTRA_SPECS.find((s) => s.id === 'tz65');
     expect(moto.solo).toBe(true);
     expect(moto.owner).toBeUndefined();
     expect(moto.engine.strokes).toBe(2);
@@ -107,8 +107,8 @@ describe('extra vehicles', () => {
   });
 
   it('makes the old three-wheeler a worn, solo, cord-start two-stroke with a manual box and three wheels that can tip', async () => {
-    const atc = EXTRA_SPECS.find((s) => s.id === 'atc');
-    const yellow = QUAD_SPECS.find((s) => s.id === 'yellow');
+    const atc = EXTRA_SPECS.find((s) => s.id === 't185');
+    const yellow = QUAD_SPECS.find((s) => s.id === 'hornet');
     expect(atc.solo).toBe(true);
     expect(atc.manual).toBe(true);
     expect(atc.engine.strokes).toBe(2);

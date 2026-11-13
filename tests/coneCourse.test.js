@@ -139,7 +139,7 @@ describe('the cones falling over', () => {
 
 describe('the girls on the course', () => {
   const girls = [{ id: 'amy', free: true }, { id: 'jess', free: true }];
-  const ctx = { girls, options: { amy: ['red'], jess: ['blue'] }, claims: {}, busy: false, dark: false };
+  const ctx = { girls, options: { amy: ['farm300'], jess: ['bruin'] }, claims: {}, busy: false, dark: false };
   const ready = () => {
     const c = new ConeCourse(gates, { ...P }, () => 0);
     c.update(P.startAfter + 1, { at: {} });

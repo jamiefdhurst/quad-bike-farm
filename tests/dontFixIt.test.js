@@ -3,12 +3,12 @@ import { DontFixIt, DEFAULT_DONTFIX_PARAMS as P } from '../src/npc/dontFixIt.js'
 import { AMY_DONTFIX_LINES, JESS_DONTFIX_LINES } from '../src/npc/dontFixLines.js';
 
 const girls = (o = {}) => [
-  { id: 'amy', favourite: 'red', distance: 5, ...o.amy },
-  { id: 'jess', favourite: 'green', distance: 5, ...o.jess },
+  { id: 'amy', favourite: 'farm300', distance: 5, ...o.amy },
+  { id: 'jess', favourite: 'rb300', distance: 5, ...o.jess },
 ];
 const run = (d, wear, g = girls(), seconds = 1) => {
   const ev = [];
-  for (let t = 0; t < seconds; t += 0.5) ev.push(...d.update(0.5, { units: [{ id: 'red', wear }, { id: 'green', wear: 0.1 }], girls: g }));
+  for (let t = 0; t < seconds; t += 0.5) ev.push(...d.update(0.5, { units: [{ id: 'farm300', wear }, { id: 'rb300', wear: 0.1 }], girls: g }));
   return ev;
 };
 
@@ -16,7 +16,7 @@ describe("don't fix it", () => {
   it('a service that takes the wear off her favourite makes her mind, once', () => {
     const d = new DontFixIt();
     expect(run(d, 0.6, girls(), 2)).toEqual([]);
-    expect(run(d, 0.05)).toEqual([{ type: 'minds', girl: 'amy', unit: 'red' }]);
+    expect(run(d, 0.05)).toEqual([{ type: 'minds', girl: 'amy', unit: 'farm300' }]);
     expect(run(d, 0.05, girls(), 5)).toEqual([]);
   });
 
@@ -25,8 +25,8 @@ describe("don't fix it", () => {
     run(d, 0.6, girls(), 2);
     expect(run(d, 0.05, girls({ amy: { distance: P.hearRange + 5 } }))).toEqual([]);
     const e = new DontFixIt();
-    run(e, 0.6, girls({ amy: { favourite: 'blue' }, jess: { favourite: 'red' } }), 2);
-    expect(run(e, 0.05, girls({ amy: { favourite: 'blue' }, jess: { favourite: 'red' } })).map((x) => x.girl)).toEqual(['jess']);
+    run(e, 0.6, girls({ amy: { favourite: 'bruin' }, jess: { favourite: 'farm300' } }), 2);
+    expect(run(e, 0.05, girls({ amy: { favourite: 'bruin' }, jess: { favourite: 'farm300' } })).map((x) => x.girl)).toEqual(['jess']);
   });
 
   it('a quad that was not rough, or a wear that creeps down slowly, does not count', () => {
@@ -54,7 +54,7 @@ describe("don't fix it", () => {
   });
 
   it('the debug button makes her mind now', () => {
-    expect(new DontFixIt().force('jess', 'green')).toEqual({ type: 'minds', girl: 'jess', unit: 'green' });
+    expect(new DontFixIt().force('jess', 'rb300')).toEqual({ type: 'minds', girl: 'jess', unit: 'rb300' });
   });
 });
 

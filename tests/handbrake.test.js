@@ -4,7 +4,7 @@ import { DEFAULT_VEHICLE_PARAMS } from '../src/vehicle/vehicleParams.js';
 import { AMY_HANDBRAKE_LINES, JESS_HANDBRAKE_LINES } from '../src/npc/handbrakeLines.js';
 import { describeVehicle } from '../src/debug/startReport.js';
 
-const quad = (over = {}) => ({ id: 'red', attended: false, braked: false, speed: 1, left: { who: 'jess', braked: false }, ...over });
+const quad = (over = {}) => ({ id: 'farm300', attended: false, braked: false, speed: 1, left: { who: 'jess', braked: false }, ...over });
 const run = (w, seconds, q, dt = 0.1) => {
   const out = [];
   for (let t = 0; t < seconds; t += dt) out.push(...w.update(dt, [typeof q === 'function' ? q(t) : q]));
@@ -15,7 +15,7 @@ describe('RollWatch', () => {
   it('flags an empty quad with the brake off that is moving, once, blaming who left it', () => {
     const w = new RollWatch();
     const events = run(w, 5, quad({ left: { who: 'jess', braked: false } }));
-    expect(events.filter((e) => e.type === 'roll')).toEqual([{ type: 'roll', id: 'red', who: 'jess' }]);
+    expect(events.filter((e) => e.type === 'roll')).toEqual([{ type: 'roll', id: 'farm300', who: 'jess' }]);
     expect(w.tally.jess).toBe(1);
   });
 
@@ -23,7 +23,7 @@ describe('RollWatch', () => {
     const w = new RollWatch();
     const events = run(w, 5, quad());
     const own = events.find((e) => e.type === 'own');
-    expect(own).toEqual({ type: 'own', id: 'red', who: 'jess' });
+    expect(own).toEqual({ type: 'own', id: 'farm300', who: 'jess' });
     expect(run(new RollWatch(), 5, quad({ left: { who: 'you', braked: false } })).some((e) => e.type === 'own')).toBe(false);
   });
 
@@ -58,23 +58,23 @@ describe('rollReactions', () => {
   ];
 
   it('has the friend blame the girl who forgot', () => {
-    expect(rollReactions({ type: 'roll', id: 'red', who: 'jess' }, both())).toEqual([{ girl: 'amy', situation: 'handbrakeJess' }]);
-    expect(rollReactions({ type: 'roll', id: 'red', who: 'amy' }, both())).toEqual([{ girl: 'jess', situation: 'handbrakeAmy' }]);
+    expect(rollReactions({ type: 'roll', id: 'farm300', who: 'jess' }, both())).toEqual([{ girl: 'amy', situation: 'handbrakeJess' }]);
+    expect(rollReactions({ type: 'roll', id: 'farm300', who: 'amy' }, both())).toEqual([{ girl: 'jess', situation: 'handbrakeAmy' }]);
   });
 
   it('has a girl blame you, and a general shout when it is nobody\'s known fault', () => {
-    expect(rollReactions({ type: 'roll', id: 'red', who: 'you' }, both())[0].situation).toBe('handbrakeYou');
-    expect(rollReactions({ type: 'roll', id: 'red', who: null }, both())[0].situation).toBe('handbrakeRoll');
+    expect(rollReactions({ type: 'roll', id: 'farm300', who: 'you' }, both())[0].situation).toBe('handbrakeYou');
+    expect(rollReactions({ type: 'roll', id: 'farm300', who: null }, both())[0].situation).toBe('handbrakeRoll');
   });
 
   it('has her own up at once if her friend is too far to notice, and later if she is near', () => {
-    expect(rollReactions({ type: 'roll', id: 'red', who: 'jess' }, both(false, true))).toEqual([{ girl: 'jess', situation: 'handbrakeOwn' }]);
-    expect(rollReactions({ type: 'own', id: 'red', who: 'jess' }, both())).toEqual([{ girl: 'jess', situation: 'handbrakeOwn' }]);
-    expect(rollReactions({ type: 'own', id: 'red', who: 'jess' }, both(true, false))).toEqual([]);
+    expect(rollReactions({ type: 'roll', id: 'farm300', who: 'jess' }, both(false, true))).toEqual([{ girl: 'jess', situation: 'handbrakeOwn' }]);
+    expect(rollReactions({ type: 'own', id: 'farm300', who: 'jess' }, both())).toEqual([{ girl: 'jess', situation: 'handbrakeOwn' }]);
+    expect(rollReactions({ type: 'own', id: 'farm300', who: 'jess' }, both(true, false))).toEqual([]);
   });
 
   it('says nothing when nobody is near', () => {
-    expect(rollReactions({ type: 'roll', id: 'red', who: 'you' }, both(false, false))).toEqual([]);
+    expect(rollReactions({ type: 'roll', id: 'farm300', who: 'you' }, both(false, false))).toEqual([]);
   });
 });
 

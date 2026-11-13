@@ -71,7 +71,7 @@ export function addGrizzlyFront(root, MAT, paint, { steel = MAT.alloy, face = GR
   const bars = [-0.03, 0, 0.03].map((x) => box(0.016, 0.134, 0.022, x, 0, 0.009));
   for (const s of [-1, 1]) for (let i = 0; i < 6; i++) bars.push(box(0.065, 0.004, 0.012, s * 0.108, -0.055 + i * 0.022, 0.004));
   mesh(mergeGeometries(bars), MAT.engineDark, g, 'grilleBars');
-  const badge = decalMesh('badge', { maker: MAKER_FOR.blue }, { width: 0.05, name: 'badge' });
+  const badge = decalMesh('badge', { maker: MAKER_FOR.bruin }, { width: 0.05, name: 'badge' });
   badge.position.set(0, face.grilleY, face.z + 0.0155); // on the middle bar's front face, a millimetre off it
   root.add(badge);
 }

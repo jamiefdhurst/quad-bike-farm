@@ -17,8 +17,8 @@ describe('weatherSituation', () => {
 describe('worstTrouble', () => {
   const faults = (levels) => ({ started: Object.fromEntries(Object.keys(levels).map((k) => [k, true])), levels });
   it('names the quad with the worst started fault, if it is bad enough', () => {
-    const f = { red: faults({ belt: 0.3 }), blue: faults({ chain: 0.7 }), green: { started: {}, levels: { belt: 0.9 } } };
-    expect(worstTrouble(f, ['belt', 'chain'], 0.25)).toBe('blue');
+    const f = { farm300: faults({ belt: 0.3 }), bruin: faults({ chain: 0.7 }), rb300: { started: {}, levels: { belt: 0.9 } } };
+    expect(worstTrouble(f, ['belt', 'chain'], 0.25)).toBe('bruin');
     expect(worstTrouble(f, ['belt', 'chain'], 0.8)).toBe(null);
   });
 });
@@ -29,9 +29,9 @@ describe('planBriefing', () => {
     expect(keys).toEqual(['amy:briefingOpen', 'amy:weatherSunny', 'amy:briefingAllWell', `amy:${agendaKey('tea')}`, `jess:${agendaKey('ramp')}`]);
   });
   it('adds the board and names the quad playing up', () => {
-    const steps = planBriefing(day({ promise: { worse: true }, trouble: 'green' }));
+    const steps = planBriefing(day({ promise: { worse: true }, trouble: 'rb300' }));
     expect(steps.map((s) => s.key)).toContain('forecastWorse');
-    expect(steps.find((s) => s.key === 'briefingTrouble').quad).toBe('green');
+    expect(steps.find((s) => s.key === 'briefingTrouble').quad).toBe('rb300');
     expect(steps.map((s) => s.key)).not.toContain('briefingAllWell');
   });
   it('skips a girl with nothing in mind', () => {
@@ -76,23 +76,23 @@ describe('yesterdayOf', () => {
   const key = { keyOn: true, running: false, engine: {} };
   it('says nothing on a new farm or a quiet night', () => {
     expect(yesterdayOf(null)).toEqual([]);
-    expect(yesterdayOf({ girls: { fallenOut: false }, vehicles: { red: { keyOn: false, running: false } } })).toEqual([]);
+    expect(yesterdayOf({ girls: { fallenOut: false }, vehicles: { farm300: { keyOn: false, running: false } } })).toEqual([]);
   });
   it('has Jess cut in on a falling-out that was not made up', () => {
     expect(yesterdayOf({ girls: { fallenOut: true } }).map((s) => `${s.girl}:${s.key}`)).toEqual(['amy:briefingYesterdayFallenOut', 'jess:briefingYesterdayFallenOut']);
   });
   it('mentions a key left on with the engine stopped, but not a running engine or a battery out of the quad', () => {
-    expect(yesterdayOf({ vehicles: { red: key } }).map((s) => s.key)).toEqual(['briefingYesterdayKey']);
-    expect(yesterdayOf({ vehicles: { red: { ...key, running: true } } })).toEqual([]);
-    expect(yesterdayOf({ vehicles: { red: { ...key, engine: { batteryOut: true } } } })).toEqual([]);
+    expect(yesterdayOf({ vehicles: { farm300: key } }).map((s) => s.key)).toEqual(['briefingYesterdayKey']);
+    expect(yesterdayOf({ vehicles: { farm300: { ...key, running: true } } })).toEqual([]);
+    expect(yesterdayOf({ vehicles: { farm300: { ...key, engine: { batteryOut: true } } } })).toEqual([]);
   });
   it('keeps to the most telling, and counts a falling-out as one thing', () => {
-    const save = { girls: { fallenOut: true }, vehicles: { red: key } };
+    const save = { girls: { fallenOut: true }, vehicles: { farm300: key } };
     expect(yesterdayOf(save).map((s) => s.key)).toEqual(['briefingYesterdayFallenOut', 'briefingYesterdayFallenOut', 'briefingYesterdayKey']);
     expect(yesterdayOf(save, 1).map((s) => s.key)).toEqual(['briefingYesterdayFallenOut', 'briefingYesterdayFallenOut']);
   });
   it('goes into the briefing after the opener and before the weather', () => {
-    const keys = planBriefing(day({ yesterday: yesterdayOf({ vehicles: { red: key } }) })).map((s) => s.key);
+    const keys = planBriefing(day({ yesterday: yesterdayOf({ vehicles: { farm300: key } }) })).map((s) => s.key);
     expect(keys.slice(0, 3)).toEqual(['briefingOpen', 'briefingYesterdayKey', 'weatherSunny']);
   });
 });

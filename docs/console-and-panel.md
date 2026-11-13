@@ -8,7 +8,7 @@ Backslash (the key left of Z, or the `#` key on a UK keyboard) opens a command l
 
 Every value is at a dotted path. Type the path alone to read it, or the path and a value to set it:
 
-- `vehicle.red.temperature 0.4`, `vehicle.red.faults.carb 0.3`, `vehicle.red.tyres.flPsi 2`, `vehicle.red.quirks.<kind> on`: each vehicle's running state, faults, engine health, quirks, tyres, position, and `vehicle.red.tune.*` for its own engine and controls.
+- `vehicle.farm300.temperature 0.4`, `vehicle.farm300.faults.carb 0.3`, `vehicle.farm300.tyres.flPsi 2`, `vehicle.farm300.quirks.<kind> on`: each vehicle's running state, faults, engine health, quirks, tyres, position, and `vehicle.farm300.tune.*` for its own engine and controls.
 - `girl.amy.favour 10`, `girl.jess.autonomy off`, `girl.amy.skills.*`, `girl.amy.tune.*`.
 - `weather.kind rain`, `weather.rain`, `weather.wet`, `weather.temperature -4`, `weather.time 17.5` (the time of day, in hours).
 - `player.x`, `player.heading`, `player.flying`, `player.road` (which road is under you or the quad you ride, its surface and how far from its middle); `girls.autonomy`, `girls.speech`, `audio.sound`.
@@ -16,11 +16,11 @@ Every value is at a dotted path. Type the path alone to read it, or the path and
 
 `list`, `find psi`, `get`, `range`, `set`, `add`, `toggle`, `dump` (copies JSON) read and write them. Positions are x east, z south, y up, heading in degrees (0 faces +z, 90 faces +x), the same for you, vehicles, girls and items:
 
-- `tp red barn`, `tp me 100 20`, `tp amy to jess`, `tp tractor here`, `tp petrol-can 10 10 90`, then `nudge`, `face`, `where`, `places`.
-- `reset red`, `reset vehicles`, `reset girls`, `reset all`. On a girl it stops her where she is (off whatever she is on, out of what she is doing) and has her stand about for a minute, starting nothing of her own (Tune: settleSeconds), ready for the next command.
+- `tp farm300 barn`, `tp me 100 20`, `tp amy to jess`, `tp hartley here`, `tp petrol-can 10 10 90`, then `nudge`, `face`, `where`, `places`.
+- `reset farm300`, `reset vehicles`, `reset girls`, `reset all`. On a girl it stops her where she is (off whatever she is on, out of what she is doing) and has her stand about for a minute, starting nothing of her own (Tune: settleSeconds), ready for the next command.
 - `backcan|backtoolbox|clearback <vehicle>` stand the red jerry can or the toolbox in a Land Rover's back, or tip out what is there (`vehicle.<id>.back` says what is in it); `girl <name> tidy-load` sends a girl to load or unload the nearest one. `girl <name> tidy-up` sends her to put right the nearest thing left out of place (a gate left open, a can away from its spot, a helmet on the ground), without the usual wait.
 - `start|stop|warm|cool|fill|soak|dry|fix <vehicle|all>`, `vehicles`, `girls` (`soak` rains on a vehicle's windscreen as in a downpour, `dry` dries it).
-- `girl amy drive red`, `girl jess doughnuts`, `girl amy invite-barn`: the same things as the Girls tab buttons.
+- `girl amy drive farm300`, `girl jess doughnuts`, `girl amy invite-barn`: the same things as the Girls tab buttons.
 - `job` lists the farm's jobs with their stage; `job hay` lists what can be done to one; `job hay cut`, `job muck done`, `job spray boom-out`: the same things as the Jobs folder's buttons.
 - `scene` lists the scenes (a frosty dawn, snow, the flock, the flask, Jess on the mini moto, the girls' wardrobe) and `scene frost` sets one up; the Girls tab's Scenes folder has a button each.
 - `weather rain`, `fly`, `autonomy off` (the girls start nothing on their own, but follow and answer you), `speech off`, `sound off`.

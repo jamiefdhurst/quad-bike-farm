@@ -4,9 +4,9 @@ import { OFFER_KINDS } from '../src/npc/chooser.js';
 import { CHARACTERS } from '../src/npc/characters.js';
 
 const vehicles = [
-  { id: 'red', x: 10, z: 0, cab: false, lights: true, free: true },
+  { id: 'farm300', x: 10, z: 0, cab: false, lights: true, free: true },
   { id: 'landy', x: 30, z: 0, cab: true, lights: true, free: true },
-  { id: 'orange', x: 2, z: 0, cab: false, lights: false, free: true },
+  { id: 'adder', x: 2, z: 0, cab: false, lights: false, free: true },
 ];
 const girls = [
   { id: 'amy', x: 5, z: 5, free: true, weight: 1.2 },
@@ -24,7 +24,7 @@ describe('Lights to work by', () => {
 
   it('brings a cab before a quad, never one without lights or with someone on it', () => {
     expect(pickVehicle({ x: 0, z: 0 }, vehicles).id).toBe('landy');
-    expect(pickVehicle({ x: 0, z: 0 }, vehicles.filter((v) => !v.cab)).id).toBe('red');
+    expect(pickVehicle({ x: 0, z: 0 }, vehicles.filter((v) => !v.cab)).id).toBe('farm300');
     expect(pickVehicle({ x: 0, z: 0 }, [{ ...vehicles[0], free: false }, vehicles[2]])).toBeNull();
     expect(pickVehicle({ x: 0, z: 0 }, [{ ...vehicles[1], x: P.vehicleRange + 50 }])).toBeNull();
   });

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { Achievements, ACHIEVEMENTS, PLACES } from '../src/achievements/achievements.js';
 
-const FLEET = ['red', 'blue', 'tractor', 'utv'];
-const ride = (over = {}) => ({ id: 'red', seat: 'rider', speed: 5, airborne: false, tipped: false, yaw: 0, nearRamp: 100, running: true, girlsOnBoard: 0, driver: null, ...over });
+const FLEET = ['farm300', 'bruin', 'hartley', 'yak'];
+const ride = (over = {}) => ({ id: 'farm300', seat: 'rider', speed: 5, airborne: false, tipped: false, yaw: 0, nearRamp: 100, running: true, girlsOnBoard: 0, driver: null, ...over });
 const run = (a, seconds, snap, dt = 0.1) => {
   for (let t = 0; t < seconds; t += dt) a.update(dt, typeof snap === 'function' ? snap(t) : snap);
 };
@@ -20,25 +20,25 @@ describe('achievements', () => {
     const got = [];
     a.onUnlock((x) => got.push(x.id));
     run(a, 1, { riding: ride({ speed: 0 }) });
-    expect(got).not.toContain('ride-red');
+    expect(got).not.toContain('ride-farm300');
     run(a, 1, { riding: ride() });
-    expect(got.filter((id) => id === 'ride-red')).toHaveLength(1);
+    expect(got.filter((id) => id === 'ride-farm300')).toHaveLength(1);
   });
 
   it('leaves out achievements for vehicles that are not on the farm', () => {
     const a = new Achievements({ fleet: FLEET });
     const names = a.entries().filter((e) => e.available).map((e) => e.id);
-    expect(names).toContain('ride-red');
-    expect(names).not.toContain('ride-orange');
+    expect(names).toContain('ride-farm300');
+    expect(names).not.toContain('ride-adder');
     expect(names).not.toContain('barn-find');
     expect(a.score().totalCount).toBe(names.length);
   });
 
   it('wants every vehicle on this farm for the full set', () => {
-    const a = new Achievements({ fleet: ['red', 'blue'] });
-    run(a, 1, { riding: ride({ id: 'red' }) });
+    const a = new Achievements({ fleet: ['farm300', 'bruin'] });
+    run(a, 1, { riding: ride({ id: 'farm300' }) });
     expect(a.unlocked.has('ride-all')).toBe(false);
-    run(a, 1, { riding: ride({ id: 'blue' }) });
+    run(a, 1, { riding: ride({ id: 'bruin' }) });
     expect(a.unlocked.has('ride-all')).toBe(true);
     expect(a.unlocked.has('ride-three')).toBe(false);
   });
@@ -95,9 +95,9 @@ describe('achievements', () => {
 
   it('notes a bog, being freed, and how', () => {
     const a = new Achievements({ fleet: FLEET });
-    run(a, 1, { stuck: ['red'] });
+    run(a, 1, { stuck: ['farm300'] });
     expect(a.n('bogged')).toBe(1);
-    run(a, 1, { stuck: ['red'], pulling: [{ id: 'red', by: 'winch' }] });
+    run(a, 1, { stuck: ['farm300'], pulling: [{ id: 'farm300', by: 'winch' }] });
     run(a, 0.2, { stuck: [] });
     expect(a.n('freed')).toBe(1);
     expect(a.n('winchedOut')).toBe(1);
@@ -106,7 +106,7 @@ describe('achievements', () => {
 
   it('counts rolling over once and righting after', () => {
     const a = new Achievements({ fleet: FLEET });
-    run(a, 3, { riding: ride({ tipped: true }), tippedIds: ['red'] });
+    run(a, 3, { riding: ride({ tipped: true }), tippedIds: ['farm300'] });
     expect(a.n('rolled')).toBe(1);
     run(a, 0.2, { tippedIds: [] });
     expect(a.n('righted')).toBe(1);
@@ -114,9 +114,9 @@ describe('achievements', () => {
 
   it('wants all the quads running at once', () => {
     const a = new Achievements({ fleet: FLEET });
-    run(a, 1, { quadIds: ['red', 'blue', 'x'], running: ['red', 'blue'] });
+    run(a, 1, { quadIds: ['farm300', 'bruin', 'x'], running: ['farm300', 'bruin'] });
     expect(a.unlocked.has('all-running')).toBe(false);
-    run(a, 1, { quadIds: ['red', 'blue', 'x'], running: ['red', 'blue', 'x', 'utv'] });
+    run(a, 1, { quadIds: ['farm300', 'bruin', 'x'], running: ['farm300', 'bruin', 'x', 'yak'] });
     expect(a.unlocked.has('all-running')).toBe(true);
   });
 

@@ -45,9 +45,9 @@ describe('sheltering in a cab', () => {
   });
 
   it('the UTV is somewhere to sit out the rain, and it is not started or warmed up in', () => {
-    const utv = cab({ id: 'utv', warm: false });
+    const utv = cab({ id: 'yak', warm: false });
     const s = make();
-    expect(s.take(s.offers(ctx(wet, { cabs: [utv] }))[0], ctx(wet, { cabs: [utv] }))).toEqual({ type: 'go', girl: 'amy', cab: 'utv', reason: 'rain', start: false });
+    expect(s.take(s.offers(ctx(wet, { cabs: [utv] }))[0], ctx(wet, { cabs: [utv] }))).toEqual({ type: 'go', girl: 'amy', cab: 'yak', reason: 'rain', start: false });
     expect(make().offers(ctx(cold, { cabs: [utv] }))).toEqual([]);
   });
 

@@ -148,7 +148,7 @@ export function seatTape(MAT, at = [0.07, 0.9, -0.3]) {
 /** The maker's badge on each side panel's outer face, a millimetre off the surface. */
 export function addDecals(root) {
   for (const s of [-1, 1]) {
-    const badge = decalMesh('badge', { maker: MAKER_FOR.red, model: 'Farm 300' }, { width: 0.2, name: 'badge' });
+    const badge = decalMesh('badge', { maker: MAKER_FOR.farm300, model: 'Farm 300' }, { width: 0.2, name: 'badge' });
     badge.position.set(s * 0.273, 0.655, 0.02); // the panel's outer face, with its bevel
     badge.rotation.y = s * (Math.PI / 2);
     root.add(badge);

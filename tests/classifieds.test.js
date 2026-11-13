@@ -66,18 +66,18 @@ describe('the board', () => {
   });
 
   it('leaves out the models that are on the farm or already bought', () => {
-    const onFarm = ['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'moto', 'atc'];
-    const owned = [{ specId: 'tractor' }];
+    const onFarm = ['farm300', 'bruin', 'hornet', 'rb300', 'adder', 'asp', 'tz65', 't185'];
+    const owned = [{ specId: 'hartley' }];
     for (let i = 0; i < 300; i++) {
       for (const a of dealAds(createRandom(i), { specs: byId, onFarm, owned })) {
         expect(onFarm).not.toContain(a.specId);
-        expect(a.specId).not.toBe('tractor');
+        expect(a.specId).not.toBe('hartley');
       }
     }
   });
 
   it('has nothing once you have bought as many as you may', () => {
-    const owned = Array.from({ length: P.maxBought }, () => ({ specId: 'moto' }));
+    const owned = Array.from({ length: P.maxBought }, () => ({ specId: 'tz65' }));
     for (let i = 0; i < 100; i++) expect(dealAds(createRandom(i), { specs: byId, owned })).toEqual([]);
   });
 
@@ -90,14 +90,14 @@ describe('the board', () => {
   });
 
   it('prices a more worn one lower than a good one of the same model', () => {
-    const cheap = Array.from({ length: 200 }, (_, i) => makeAd(createRandom(i), 'tractor', byId.tractor, 0)).sort((a, b) => a.wear - b.wear);
+    const cheap = Array.from({ length: 200 }, (_, i) => makeAd(createRandom(i), 'hartley', byId.hartley, 0)).sort((a, b) => a.wear - b.wear);
     const avg = (xs) => xs.reduce((s, a) => s + a.price, 0) / xs.length;
     expect(avg(cheap.slice(-50))).toBeLessThan(avg(cheap.slice(0, 50)));
   });
 });
 
 describe('buying', () => {
-  const ad = () => makeAd(createRandom(3), 'tractor', byId.tractor, 0);
+  const ad = () => makeAd(createRandom(3), 'hartley', byId.hartley, 0);
 
   it('takes the price from the purse, takes the ad down and keeps a record', () => {
     const m = new Market();
@@ -105,7 +105,7 @@ describe('buying', () => {
     const a = ad();
     m.ads = [a];
     const rec = m.buy(a);
-    expect(rec.specId).toBe('tractor');
+    expect(rec.specId).toBe('hartley');
     expect(m.purse).toBe(5000 - a.price);
     expect(m.ads).toEqual([]);
     expect(m.bought).toHaveLength(1);
@@ -120,7 +120,7 @@ describe('buying', () => {
     expect(m.purse).toBe(P.startPurseMin);
     expect(m.whyNot(ad())).toMatch(/gone/);
     m.purse = 99999;
-    m.bought = Array.from({ length: P.maxBought }, () => ({ specId: 'moto' }));
+    m.bought = Array.from({ length: P.maxBought }, () => ({ specId: 'tz65' }));
     expect(m.whyNot(a)).toMatch(/more than/);
   });
 
@@ -138,30 +138,30 @@ describe('buying', () => {
 
   it('ignores a record for a model that is not for sale', () => {
     const m = new Market();
-    m.restore({ purse: 10, bought: [{ specId: 'corsa', colour: 1 }, { specId: 'moto', colour: 0x123456 }] });
-    expect(m.bought.map((b) => b.specId)).toEqual(['moto']);
+    m.restore({ purse: 10, bought: [{ specId: 'griffin', colour: 1 }, { specId: 'tz65', colour: 0x123456 }] });
+    expect(m.bought.map((b) => b.specId)).toEqual(['tz65']);
   });
 });
 
 describe('what turns up next morning', () => {
-  const rec = { specId: 'tractor', colour: 0x2c4f8a, hours: 3100, miles: 0, wear: 0.6, bodyWear: 0.6, price: 1000 };
+  const rec = { specId: 'hartley', colour: 0x2c4f8a, hours: 3100, miles: 0, wear: 0.6, bodyWear: 0.6, price: 1000 };
 
   it('is the model in the colour and condition it was sold with, under its own id', () => {
-    const u = usedSpec(byId.tractor, rec);
-    expect(u.id).toBe('tractor');
+    const u = usedSpec(byId.hartley, rec);
+    expect(u.id).toBe('hartley');
     expect(u.bodyColor).toBe(0x2c4f8a);
     expect(u.hoursRange).toEqual([3100, 3101]);
     expect(u.bodyWear).toBe(0.6);
-    expect(byId.tractor.bodyColor).not.toBe(0x2c4f8a); // the shared spec is untouched
+    expect(byId.hartley.bodyColor).not.toBe(0x2c4f8a); // the shared spec is untouched
   });
 
   it('replaces the dealt model in the fleet, or joins it', () => {
-    const fleet = [byId.red, byId.tractor];
-    const out = withBought(fleet, [rec, { ...rec, specId: 'utv', colour: 0x2e2e30 }], byId);
-    expect(out.map((s) => s.id)).toEqual(['red', 'tractor', 'utv']);
+    const fleet = [byId.farm300, byId.hartley];
+    const out = withBought(fleet, [rec, { ...rec, specId: 'yak', colour: 0x2e2e30 }], byId);
+    expect(out.map((s) => s.id)).toEqual(['farm300', 'hartley', 'yak']);
     expect(out[1].bodyColor).toBe(0x2c4f8a);
     expect(out[2].bodyColor).toBe(0x2e2e30);
-    expect(fleet[1]).toBe(byId.tractor);
+    expect(fleet[1]).toBe(byId.hartley);
   });
 });
 
@@ -215,61 +215,61 @@ describe('what a buyer offers', () => {
   });
 
   it('says what pulled it down', () => {
-    expect(sellOffer('red', fine).notes).toEqual([]);
-    expect(sellOffer('red', { wear: 0.7, bodyWear: 0.8, faults: 2 }).notes).toEqual(['engine tired', 'rough body', '2 faults']);
-    expect(sellOffer('red', { wear: 0, bodyWear: 0, faults: 1 }).notes).toEqual(['a fault']);
+    expect(sellOffer('farm300', fine).notes).toEqual([]);
+    expect(sellOffer('farm300', { wear: 0.7, bodyWear: 0.8, faults: 2 }).notes).toEqual(['engine tired', 'rough body', '2 faults']);
+    expect(sellOffer('farm300', { wear: 0, bodyWear: 0, faults: 1 }).notes).toEqual(['a fault']);
   });
 
   it('is nothing for what is not for sale', () => {
-    expect(sellOffer('corsa', fine)).toBeNull();
+    expect(sellOffer('griffin', fine)).toBeNull();
   });
 });
 
 describe('selling', () => {
-  const regulars = ['red', 'blue', 'yellow', 'green', 'orange'];
+  const regulars = ['farm300', 'bruin', 'hornet', 'rb300', 'adder'];
   const ctx = (onFarm) => ({ onFarm, regulars });
 
   it('takes the money now and puts a dealt model on the list to go in the morning', () => {
     const m = new Market(P);
     const before = m.purse;
-    const r = m.sell('tractor', { price: 1500 }, ctx(['red', 'blue', 'tractor']));
+    const r = m.sell('hartley', { price: 1500 }, ctx(['farm300', 'bruin', 'hartley']));
     expect(r.price).toBe(1500);
     expect(m.purse).toBe(before + 1500);
-    expect(m.sold).toEqual(['tractor']);
+    expect(m.sold).toEqual(['hartley']);
     expect(m.today.sold).toBe(1500);
   });
 
   it('removes a bought one from the bought list instead', () => {
     const m = new Market(P);
-    m.bought = [{ specId: 'utv', colour: 1 }];
-    m.sell('utv', { price: 900 }, ctx(['utv']));
+    m.bought = [{ specId: 'yak', colour: 1 }];
+    m.sell('yak', { price: 900 }, ctx(['yak']));
     expect(m.bought).toEqual([]);
     expect(m.sold).toEqual([]);
   });
 
   it('will not sell the same one twice, one that is not for sale, or the last regular quads', () => {
     const m = new Market(P);
-    m.sell('tractor', { price: 1 }, ctx(['tractor']));
-    expect(m.sellWhyNot('tractor', ctx(['tractor']))).toMatch(/Already sold/);
-    expect(m.sell('tractor', { price: 1 }, ctx(['tractor']))).toBeNull();
-    expect(m.sellWhyNot('corsa', ctx(['corsa']))).toBeTruthy();
-    expect(m.sellWhyNot('red', ctx(['red', 'blue']))).toMatch(/Keep 2/);
-    expect(m.sellWhyNot('red', ctx(['red', 'blue', 'green']))).toBeNull();
-    m.sold.push('green');
-    expect(m.sellWhyNot('red', ctx(['red', 'blue', 'green']))).toMatch(/Keep 2/); // green is already going
+    m.sell('hartley', { price: 1 }, ctx(['hartley']));
+    expect(m.sellWhyNot('hartley', ctx(['hartley']))).toMatch(/Already sold/);
+    expect(m.sell('hartley', { price: 1 }, ctx(['hartley']))).toBeNull();
+    expect(m.sellWhyNot('griffin', ctx(['griffin']))).toBeTruthy();
+    expect(m.sellWhyNot('farm300', ctx(['farm300', 'bruin']))).toMatch(/Keep 2/);
+    expect(m.sellWhyNot('farm300', ctx(['farm300', 'bruin', 'rb300']))).toBeNull();
+    m.sold.push('rb300');
+    expect(m.sellWhyNot('farm300', ctx(['farm300', 'bruin', 'rb300']))).toMatch(/Keep 2/); // green is already going
   });
 
   it('is kept in the save, and the sold list drops anything that is not a model for sale', () => {
     const m = new Market(P);
-    m.sell('tractor', { price: 5 }, ctx(['tractor']));
+    m.sell('hartley', { price: 5 }, ctx(['hartley']));
     const back = new Market(P);
-    back.restore(JSON.parse(JSON.stringify({ ...m.toJSON(), sold: [...m.sold, 'corsa'] })));
-    expect(back.sold).toEqual(['tractor']);
+    back.restore(JSON.parse(JSON.stringify({ ...m.toJSON(), sold: [...m.sold, 'griffin'] })));
+    expect(back.sold).toEqual(['hartley']);
   });
 
   it('takes the sold models out of the fleet', () => {
-    const out = withoutSold([byId.red, byId.tractor, byId.utv], ['tractor']);
-    expect(out.map((x) => x.id)).toEqual(['red', 'utv']);
+    const out = withoutSold([byId.farm300, byId.hartley, byId.yak], ['hartley']);
+    expect(out.map((x) => x.id)).toEqual(['farm300', 'yak']);
   });
 });
 

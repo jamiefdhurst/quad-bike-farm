@@ -61,7 +61,7 @@ describe('the Bayou body', () => {
 
   it('is a body style the game builds, and the green names it', () => {
     expect(BODY_STYLES).toContain('bayou');
-    const green = QUAD_SPECS.find((s) => s.id === 'green');
+    const green = QUAD_SPECS.find((s) => s.id === 'rb300');
     expect(green.style).toBe('bayou');
     expect(green.dashStyle).toBe('bayou');
     expect(green.chokeStyle).toBe('slide'); // a slider on the switch pod, as on the real one and the red
@@ -115,7 +115,7 @@ describe('the Bayou speedo', () => {
 describe('the green quad’s model', () => {
   let green;
   beforeAll(async () => {
-    green = (await buildAllModels()).find((v) => v.id === 'green');
+    green = (await buildAllModels()).find((v) => v.id === 'rb300');
   });
 
   it('has a choke slider on its pod, a V of bars through the grips’ fixed points, and its parts by name', () => {

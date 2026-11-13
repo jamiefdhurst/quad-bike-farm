@@ -90,7 +90,7 @@ describe('the Quadracer body numbers', () => {
 });
 
 describe('the orange quad’s spec', () => {
-  const orange = QUAD_SPECS.find((s) => s.id === 'orange');
+  const orange = QUAD_SPECS.find((s) => s.id === 'adder');
 
   it('names its own body style, the choke on the pod, a tap that exists, a plain lights switch and a Viper badge', () => {
     expect(BODY_STYLES).toContain(orange.style);
@@ -100,7 +100,7 @@ describe('the orange quad’s spec', () => {
     expect(TAP_STYLES).toContain(orange.tapStyle);
     expect(orange.barLights).toBe('switch');
     expect(orange.noHeadlight).toBeFalsy(); // its lamp shines now it has a switch
-    expect(MAKER_FOR.orange).toBe('viper');
+    expect(MAKER_FOR.adder).toBe('viper');
   });
 });
 
@@ -108,7 +108,7 @@ describe('the orange quad’s model', () => {
   let orange;
   const world = (o) => o.getWorldPosition(new THREE.Vector3());
   beforeAll(async () => {
-    orange = (await buildAllModels()).find((v) => v.id === 'orange');
+    orange = (await buildAllModels()).find((v) => v.id === 'adder');
   });
 
   it('has its own parts by name: shroud, three louvres, two flanks, plates, tail, pod, rocker, choke lever, lamp on the bars, pad on a level crossbar', () => {

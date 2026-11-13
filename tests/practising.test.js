@@ -9,7 +9,7 @@ const seq = (values) => {
   return () => values[i++ % values.length];
 };
 const girl = (o = {}) => ({ id: 'jess', sat: true, running: true, cold: false, level: { starting: 0.45, choke: 0.3 }, youDistance: 30, youOn: false, ...o });
-const offerCtx = (o = {}) => ({ girls: [{ id: 'jess', free: true, unit: 'red', level: 0.45, ...o }] });
+const offerCtx = (o = {}) => ({ girls: [{ id: 'jess', free: true, unit: 'farm300', level: 0.45, ...o }] });
 const params = (o = {}) => ({ ...P, startAfter: 0, ...o });
 
 /** Runs a sitting in 0.1 s steps, calling `react` on each event; returns every event. */
@@ -32,7 +32,7 @@ describe('offering to practise', () => {
   it('is keener in Jess than Amy, and keener the worse she is at it', () => {
     const w = new Practising(params());
     const jess = w.offers(offerCtx())[0].weight;
-    const amy = w.offers({ girls: [{ id: 'amy', free: true, unit: 'red', level: 0.45 }] })[0].weight;
+    const amy = w.offers({ girls: [{ id: 'amy', free: true, unit: 'farm300', level: 0.45 }] })[0].weight;
     expect(jess).toBeGreaterThan(amy);
     expect(w.offers(offerCtx({ level: 0.1 }))[0].weight).toBeGreaterThan(w.offers(offerCtx({ level: 0.9 }))[0].weight);
   });
@@ -43,7 +43,7 @@ describe('offering to practise', () => {
     expect(w.offers(offerCtx({ free: false }))).toEqual([]);
     expect(w.offers(offerCtx({ unit: null }))).toEqual([]);
     const e = w.take(w.offers(offerCtx())[0]);
-    expect(e).toEqual({ type: 'go', girl: 'jess', unit: 'red' });
+    expect(e).toEqual({ type: 'go', girl: 'jess', unit: 'farm300' });
     expect(w.offers(offerCtx())).toEqual([]);
     w.drop('jess');
     expect(w.offers(offerCtx())).toEqual([]); // cooling off

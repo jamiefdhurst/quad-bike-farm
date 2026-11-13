@@ -89,7 +89,7 @@ describe('the specs', () => {
   });
 
   it('give the two-strokes no reverse and the five farm quads their own tap places', () => {
-    for (const id of ['yellow', 'orange', 'kids']) expect(all.find((s) => s.id === id).reverseStyle).toBe('none');
+    for (const id of ['hornet', 'adder', 'asp']) expect(all.find((s) => s.id === id).reverseStyle).toBe('none');
     expect(new Set(QUAD_SPECS.map((s) => s.tapStyle)).size).toBe(QUAD_SPECS.length);
   });
 

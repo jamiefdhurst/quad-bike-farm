@@ -7,7 +7,7 @@ import { DEFAULT_VEHICLE_PARAMS } from '../src/vehicle/vehicleParams.js';
 import { EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
 
 // The old three-wheeler's real physics on flat ground, with the rider's weight shift applied the way quad.js does, without Three.js.
-const atc = EXTRA_SPECS.find((s) => s.id === 'atc');
+const atc = EXTRA_SPECS.find((s) => s.id === 't185');
 const DT = 1 / 60;
 
 /** Rolls in at `speed` and puts the bars over (ramped in over `ramp` s), holding the speed with the throttle. Returns how far over it got. */

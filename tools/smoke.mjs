@@ -155,7 +155,7 @@ async function run() {
   for (const c of madeToRun.girls) if (!c.chose) note(`${c.name} chose nothing in ${MADE_TO_RUN_SECONDS} s of game time (${c.state}${c.waiting ? `, ${c.waiting}` : ''})`);
   // Then everything a player and the girls can do, each read from the game's own list (tools/smokeActions.mjs).
   const stages = [
-    ['girl actions', doGirlActions, { wait: ACTION_WAIT_MS, leftOut: GIRL_ACTIONS_LEFT_OUT, vehicle: 'red' }],
+    ['girl actions', doGirlActions, { wait: ACTION_WAIT_MS, leftOut: GIRL_ACTIONS_LEFT_OUT, vehicle: 'farm300' }],
     ['vehicle verbs', doVehicleVerbs, { wait: VERB_WAIT_MS, leftOut: VEHICLE_VERBS_LEFT_OUT }],
     ['prompts', pressPrompts, { wait: VERB_WAIT_MS, leftOut: PROMPTS_LEFT_OUT.map((p) => p.name) }],
     ['rides', rideEach, { ms: RIDE_MS }],

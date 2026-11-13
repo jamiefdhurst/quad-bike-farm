@@ -110,8 +110,8 @@ describe('what being soaked does to her', () => {
 
 describe('out of the rain aboard a vehicle with a cab (found testing #512)', () => {
   it('keeps her dry in the Land Rovers, the UTV and the cars, but not on a quad or the tractor', () => {
-    for (const id of ['landrover', 'landrover200', 'utv', 'fiesta', 'corsa', 'p309']) expect(underCover({ aboardSpec: id }), id).toBe(true);
-    for (const id of ['red', 'moto', 'tractor']) expect(underCover({ aboardSpec: id }), id).toBe(false);
+    for (const id of ['tor', 'crag', 'yak', 'finch', 'griffin', 'vauclair']) expect(underCover({ aboardSpec: id }), id).toBe(true);
+    for (const id of ['farm300', 'tz65', 'hartley']) expect(underCover({ aboardSpec: id }), id).toBe(false);
   });
 
   it('is still cover in the barn, the hut or a cab she sheltered in, and none on foot', () => {

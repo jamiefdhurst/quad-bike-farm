@@ -10,7 +10,7 @@ function standIn(missing = []) {
       get: (_, k) => (k === Symbol.toPrimitive ? () => 0 : k === 'then' ? undefined : spy(`${path}.${String(k)}`)),
       apply: (_, __, args) => (calls.push(`${path}(${args.join(',')})`), 0),
     });
-  const g = new Proxy({ serviceJob: { id: 'red', name: 'Red', kinds: ['oil'], left: new Set(['oil']) } }, {
+  const g = new Proxy({ serviceJob: { id: 'farm300', name: 'Red', kinds: ['oil'], left: new Set(['oil']) } }, {
     get: (t, k) => (k in t ? t[k] : missing.includes(k) ? undefined : spy(`g.${String(k)}`)),
   });
   return { g, calls };

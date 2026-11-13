@@ -18,7 +18,7 @@ describe('starter sounds', () => {
 
   it('the UTV, the Series and the 200TDi have starters of their own, looping at their own cranking speed', () => {
     const byId = Object.fromEntries(allSpecs.map((s) => [s.id, s]));
-    for (const id of ['utv', 'landrover', 'landrover200']) {
+    for (const id of ['yak', 'tor', 'crag']) {
       const spec = byId[id];
       const loop = bankOf(spec).oneshots.crankLoop;
       const crankRpm = spec.engine?.crankRpm ?? DEFAULT_ENGINE_PARAMS.crankRpm;
@@ -26,6 +26,6 @@ describe('starter sounds', () => {
       expect(loop.gain, id).toBeGreaterThan(0);
     }
     // Each from a bank of its own.
-    expect(new Set(['utv', 'landrover', 'landrover200'].map((id) => byId[id].audio.recBank)).size).toBe(3);
+    expect(new Set(['yak', 'tor', 'crag'].map((id) => byId[id].audio.recBank)).size).toBe(3);
   });
 });

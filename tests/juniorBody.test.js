@@ -68,7 +68,7 @@ describe('the kids’ quad body numbers', () => {
 });
 
 describe('the kids’ quad’s spec', () => {
-  const kids = EXTRA_SPECS.find((s) => s.id === 'kids');
+  const kids = EXTRA_SPECS.find((s) => s.id === 'asp');
 
   it('names its own body style and dash, the choke on the carb, the tap by it, no lamps, a Viper badge and a faded pink', () => {
     expect(BODY_STYLES).toContain(kids.style);
@@ -79,7 +79,7 @@ describe('the kids’ quad’s spec', () => {
     expect(kids.chokeStyle).toBe('plunger');
     expect(kids.noHeadlight).toBe(true);
     expect(kids.barLights).toBeFalsy();
-    expect(MAKER_FOR.kids).toBe('viper');
+    expect(MAKER_FOR.asp).toBe('viper');
     expect(kids.bodyWear).toBeGreaterThan(0.55);
     expect(kids.scale).toBe(0.65);
     expect(kids.solo).toBe(true);
@@ -90,7 +90,7 @@ describe('the kids’ quad’s model', () => {
   let kids;
   const world = (o) => o.getWorldPosition(new THREE.Vector3());
   beforeAll(async () => {
-    kids = (await buildAllModels()).find((v) => v.id === 'kids');
+    kids = (await buildAllModels()).find((v) => v.id === 'asp');
   });
 
   it('has its parts by name and none for lights: no lamp, no lights rocker, no pod', () => {

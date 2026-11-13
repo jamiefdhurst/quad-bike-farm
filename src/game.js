@@ -694,9 +694,9 @@ export class Game {
     // The tractor, if it's here this game. It's a unit like the quads (you ride it, fuel it, hear it), but `girlUnits` is what the girls know about:
     // they leave it alone for now. Each of the three is null when it isn't on the farm, and everything that uses it checks.
     this.girlUnits = this.units;
-    this.tractorUnit = this.bigSpecs.tractor ? this.addTractor(bigSpawn(TRACTOR_SPEC)) : null;
+    this.tractorUnit = this.bigSpecs.hartley ? this.addTractor(bigSpawn(TRACTOR_SPEC)) : null;
     // The diesel UTV (vehicle/quadSpecs.js UTV_SPEC): another unit that isn't one of the girls' quads, which they ride in but don't drive.
-    this.utvUnit = this.bigSpecs.utv ? this.addUtv(bigSpawn(UTV_SPEC)) : null;
+    this.utvUnit = this.bigSpecs.yak ? this.addUtv(bigSpawn(UTV_SPEC)) : null;
     // The two Land Rovers, the old Series III and the 200TDi (LAND_ROVER_SPEC, DEFENDER_SPEC), either, both or neither: units like the UTV with a
     // petrol or diesel quad's quirks, that the girls ride in and take for a go. `landys.<kind>` is { kind, spec, unit, mount, ride }.
     this.landys = {};
@@ -3404,7 +3404,7 @@ export class Game {
 
   /** Builds the UTV, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
   addUtv(spawn) {
-    const spec = this.bigSpecs.utv; // as it is this game: bought, it has its own colour and hours
+    const spec = this.bigSpecs.yak; // as it is this game: bought, it has its own colour and hours
     const random = createRandom(this.farmSeed ^ 0x07c5);
     const unit = new QuadUnit({
       spec,
@@ -3924,7 +3924,7 @@ export class Game {
    * oil. Amy's tidy Fiesta gets at most one quirk; Jess's thrashed Corsa at least two, and its throttle cable is twice as likely to stick.
    */
   addLandRover(spawn, spec) {
-    const seed = { landrover200: 0x1a5c, fiesta: 0x1a6c, corsa: 0x1a7c, p309: 0x1a8c }[spec.id] ?? 0x1a4c; // each its own stream (the Series' first)
+    const seed = { crag: 0x1a5c, finch: 0x1a6c, griffin: 0x1a7c, vauclair: 0x1a8c }[spec.id] ?? 0x1a4c; // each its own stream (the Series' first)
     const random = createRandom(this.farmSeed ^ seed);
     const unit = new QuadUnit({ spec, spawn, scene: this.scene, physics: this.physics, RAPIER: this.RAPIER, world: this.world, audioHub: this.audioHub });
     unit.idleRpm = applyIdle(unit.engine.params, unit.quad.params, pickIdle(spec.idleRange, random));
@@ -3934,7 +3934,7 @@ export class Game {
     unit.engine.wear = spec.wearRange[0] + (spec.wearRange[1] - spec.wearRange[0]) * random();
     unit.quad.tyres = new TyreSet(dealTyres(random, 4, this.tyreParams), this.tyreParams);
     unit.quad.tyres.useLayout(unit.quad.layout.wheels);
-    const quirkCount = spec.id === 'fiesta' ? { countTwo: 0, countThree: 0 } : spec.id === 'corsa' ? { countTwo: 0.7, countThree: 0.3 } : {};
+    const quirkCount = spec.id === 'finch' ? { countTwo: 0, countThree: 0 } : spec.id === 'griffin' ? { countTwo: 0.7, countThree: 0.3 } : {};
     unit.quad.quirks = new QuirkSet(pickQuirks(featuresOf(spec, false), random, { ...this.quirkParams, ...quirkCount }), this.quirkParams);
     unit.quad.brakes = new BrakeState(this.brakeParams, random);
     unit.quad.brakes.setBinding(random() < this.brakeParams.bindChance);
@@ -3945,7 +3945,7 @@ export class Game {
     unit.quad.faults.roll(createRandom(this.farmSeed ^ (seed + 3)));
     unit.quad.faults.prone.belt = 0; // a clutch, not a belt
     if (spec.engine.compressionIgnition || spec.engine.injected) unit.quad.faults.prone.carb = 0; // and a diesel or an injected car has no carb
-    if (spec.id === 'corsa') unit.quad.faults.prone.cable = 2; // Jess's: a throttle cable that sticks
+    if (spec.id === 'griffin') unit.quad.faults.prone.cable = 2; // Jess's: a throttle cable that sticks
     unit.quad.parkBrake = true;
     this.units = [...this.units, unit];
     unit.where = spawn.where;
@@ -4531,7 +4531,7 @@ export class Game {
       fleet: this.fleetIds,
       market: this.market.toJSON(),
       shed: this.shed.toJSON(),
-      vehicles: keepAway(vehicles, this.farm.save?.vehicles, this.carsAway), // a girl's car that stayed at home today keeps what it had (farm/arrival.js)
+      vehicles: keepAway(vehicles, this.farm.save?.vehicles, this.carsAway.map((k) => this.landys[k].spec.id)), // a girl's car that stayed at home today keeps what it had (farm/arrival.js)
       pods: { ...this.podRack.at },
       girls: captureGirls(this),
       bucket: this.achievements.toJSON(),
@@ -5034,7 +5034,7 @@ export class Game {
 
   /** Builds the tractor, with its own seeded idle, roughness, fuel and hours, and adds it to `units` (not `girlUnits`). */
   addTractor(spawn) {
-    const spec = this.bigSpecs.tractor; // as it is this game: bought, it has its own colour and hours
+    const spec = this.bigSpecs.hartley; // as it is this game: bought, it has its own colour and hours
     const random = createRandom(this.farmSeed ^ 0x7ac70);
     const unit = new QuadUnit({
       spec,
@@ -6282,7 +6282,7 @@ export class Game {
     if (L.jumpRamp) kinds.push('ramp');
     kinds.push('ford');
     if (this.fence?.fence) kinds.push('fence');
-    if (this.units.some((u) => u.id === 'moto')) kinds.push('bank');
+    if (this.units.some((u) => u.id === 'tz65')) kinds.push('bank');
     return kinds;
   }
 
@@ -6323,7 +6323,7 @@ export class Game {
       const lip = ramp ? { x: ramp.x + Math.sin(ramp.yaw) * ramp.length, z: ramp.z + Math.cos(ramp.yaw) * ramp.length } : null;
       you = {
         rider: true,
-        moto: board.id === 'moto',
+        moto: board.id === 'tz65',
         speed: Math.abs(q.speed),
         airborne: q.airborne,
         tipped: q.isTipped,
@@ -12492,7 +12492,7 @@ export class Game {
       at(c.root);
       markers.push({ kind: 'girl', x: v.x, z: v.z, colour: ch.mapColour, label: c.stranded ? `${ch.name} (needs help)` : ch.name, short: ch.name[0], help: !!c.stranded });
     });
-    const big = new Set(['tractor', 'utv', 'landrover', 'landrover200']);
+    const big = new Set(['hartley', 'yak', 'tor', 'crag']);
     for (const u of this.units) {
       const q = u.quad;
       const hidden = u.barnFind && !u.barnFind.tarpOff;

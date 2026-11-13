@@ -4,8 +4,8 @@ import { QuadCare, DEFAULT_CARE_PARAMS as P } from '../src/npc/quadCare.js';
 const make = (params = {}) => new QuadCare(['amy', 'jess'], { ...P, ...params });
 const ctx = (q = {}, girls = {}) => ({
   girls: [{ id: 'amy', x: 0, z: 0, ...girls.amy }],
-  owners: { red: 'amy' },
-  quads: [{ id: 'red', x: 3, z: 0, user: 'jess', running: true, throttle: 0.4, revs: 0.5, fuel: 0.5, ...q }],
+  owners: { farm300: 'amy' },
+  quads: [{ id: 'farm300', x: 3, z: 0, user: 'jess', running: true, throttle: 0.4, revs: 0.5, fuel: 0.5, ...q }],
 });
 const run = (c, seconds, x) => {
   const out = [];
@@ -21,7 +21,7 @@ describe('quad care', () => {
   it('complains once she sees her quad used on almost no fuel', () => {
     const c = make();
     const events = run(c, 10, ctx({ fuel: 0.02 }));
-    expect(events).toEqual([{ type: 'dry', girl: 'amy', spec: 'red', by: 'jess' }]);
+    expect(events).toEqual([{ type: 'dry', girl: 'amy', spec: 'farm300', by: 'jess' }]);
     expect(c.care.amy).toBeCloseTo(P.startCare - P.careLostDry);
   });
 

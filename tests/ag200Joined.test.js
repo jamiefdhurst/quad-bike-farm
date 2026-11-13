@@ -40,7 +40,7 @@ function surfacePoints(mesh) {
 describe('the farm bike’s parts are joined up', () => {
   let parts;
   beforeAll(async () => {
-    const bike = (await buildAllModels()).find((v) => v.id === 'ag200').model;
+    const bike = (await buildAllModels()).find((v) => v.id === 'shepherd').model;
     bike.getObjectByName('wheel_fl').position.set(0, AG_WHEELS.radius, AG_WHEELS.frontZ);
     bike.getObjectByName('wheel_rl').position.set(0, AG_WHEELS.radius, AG_WHEELS.rearZ);
     bike.updateMatrixWorld(true);

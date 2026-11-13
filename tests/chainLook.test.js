@@ -151,12 +151,12 @@ describe('the models', () => {
 
   it('carry a chain drive on each of the four with a chain, and on no car or tractor', () => {
     const withDrive = vehicles.filter((v) => driveOf(v.model)).map((v) => v.id);
-    for (const id of ['yellow', 'moto', 'atc', 'plover']) expect(withDrive, id).toContain(id);
+    for (const id of ['hornet', 'tz65', 't185', 'plover']) expect(withDrive, id).toContain(id);
     for (const v of vehicles) if (v.spec.tractor || v.spec.landRover || v.spec.car || v.spec.utv) expect(driveOf(v.model), v.id).toBeUndefined();
   });
 
   it('draw a different chain, and different teeth, when it is stretched', () => {
-    for (const id of ['yellow', 'moto', 'atc', 'plover']) {
+    for (const id of ['hornet', 'tz65', 't185', 'plover']) {
       const drive = driveOf(vehicles.find((v) => v.id === id).model);
       drive.set({ slack: 0, hook: 0, off: false, dry: 0 });
       const snugChain = drive.chain.geometry;
@@ -178,7 +178,7 @@ describe('the models', () => {
   });
 
   it('only rebuild when what is drawn changes', () => {
-    const drive = driveOf(vehicles.find((v) => v.id === 'moto').model);
+    const drive = driveOf(vehicles.find((v) => v.id === 'tz65').model);
     drive.set({ slack: 0.5, hook: hookFor(0.5), off: false, dry: 0.3 });
     const geo = drive.chain.geometry;
     drive.set({ slack: 0.51, hook: hookFor(0.51), off: false, dry: 0.3 });
@@ -188,7 +188,7 @@ describe('the models', () => {
   });
 
   it('turn the sprockets with the rear wheel, the small one faster', () => {
-    const drive = driveOf(vehicles.find((v) => v.id === 'atc').model);
+    const drive = driveOf(vehicles.find((v) => v.id === 't185').model);
     drive.spin(1);
     expect(drive.rear.rotation.x).toBe(1);
     expect(drive.front.rotation.x).toBeGreaterThan(1.5);

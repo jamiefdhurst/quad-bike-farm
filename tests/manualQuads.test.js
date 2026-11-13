@@ -24,7 +24,7 @@ function warm(spec, seed = 1) {
 
 describe('the manual quads', () => {
   it('are the red, green and yellow, each with four gears that climb to its top speed', () => {
-    expect(manualSpecs.map((s) => s.id).sort()).toEqual(['green', 'red', 'yellow']);
+    expect(manualSpecs.map((s) => s.id).sort()).toEqual(['farm300', 'hornet', 'rb300']);
     for (const spec of manualSpecs) {
       const { drive, params } = warm(spec);
       expect(drive.gearbox.gears).toBe(4);

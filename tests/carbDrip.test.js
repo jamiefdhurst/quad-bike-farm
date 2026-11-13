@@ -7,7 +7,7 @@ const always = () => 0;
 const never = () => 0.999;
 const parked = { parked: true, tapOpen: true, litres: 5 };
 
-const make = (random, ids = ['red']) => new CarbDrip(ids, random, { ...P, proneShare: 1 });
+const make = (random, ids = ['farm300']) => new CarbDrip(ids, random, { ...P, proneShare: 1 });
 
 describe('dripping carb', () => {
   it('always makes at least one quad prone, even with a share of none', () => {
@@ -17,12 +17,12 @@ describe('dripping carb', () => {
 
   it('a prone quad parked with the tap on sticks, drips, loses petrol and grows a patch', () => {
     const d = make(always);
-    const res = d.update('red', 1, parked);
+    const res = d.update('farm300', 1, parked);
     expect(res.stuck).toBe(true);
-    const next = d.update('red', 10, parked);
+    const next = d.update('farm300', 10, parked);
     expect(next.lost).toBeCloseTo(P.dripLitres * 10);
-    expect(d.puddle('red')).toBeGreaterThan(0);
-    expect(d.dripping('red')).toBe(true);
+    expect(d.puddle('farm300')).toBeGreaterThan(0);
+    expect(d.dripping('farm300')).toBe(true);
   });
 
   it('a quad that is not prone never sticks', () => {
@@ -34,43 +34,43 @@ describe('dripping carb', () => {
 
   it('the tap off stops the drip, and the patch dries', () => {
     const d = make(always);
-    d.update('red', 1, parked);
-    d.update('red', 60, parked);
-    const grown = d.puddle('red');
-    const res = d.update('red', 10, { ...parked, tapOpen: false });
+    d.update('farm300', 1, parked);
+    d.update('farm300', 60, parked);
+    const grown = d.puddle('farm300');
+    const res = d.update('farm300', 10, { ...parked, tapOpen: false });
     expect(res.lost).toBe(0);
-    expect(d.puddle('red')).toBeLessThan(grown);
+    expect(d.puddle('farm300')).toBeLessThan(grown);
   });
 
   it('does not stick with the tap off, an empty tank or while running', () => {
     const d = make(always);
-    expect(d.update('red', 10, { ...parked, tapOpen: false }).stuck).toBe(false);
-    expect(d.update('red', 10, { ...parked, litres: 0 }).stuck).toBe(false);
-    expect(d.update('red', 10, { ...parked, parked: false }).stuck).toBe(false);
+    expect(d.update('farm300', 10, { ...parked, tapOpen: false }).stuck).toBe(false);
+    expect(d.update('farm300', 10, { ...parked, litres: 0 }).stuck).toBe(false);
+    expect(d.update('farm300', 10, { ...parked, parked: false }).stuck).toBe(false);
   });
 
   it('running it shakes the float free', () => {
     const d = make(always);
-    d.update('red', 1, parked);
-    d.update('red', 5, { ...parked, parked: false });
-    expect(d.update('red', 5, { ...parked, tapOpen: true, litres: 5 }).lost).toBeGreaterThan(0); // sticks again straight away with a rigged random
+    d.update('farm300', 1, parked);
+    d.update('farm300', 5, { ...parked, parked: false });
+    expect(d.update('farm300', 5, { ...parked, tapOpen: true, litres: 5 }).lost).toBeGreaterThan(0); // sticks again straight away with a rigged random
     const calm = make(never);
-    expect(calm.update('red', 100, parked).lost).toBe(0);
+    expect(calm.update('farm300', 100, parked).lost).toBe(0);
   });
 
   it('never loses more than is in the tank', () => {
     const d = make(always);
-    d.update('red', 1, parked);
-    expect(d.update('red', 1000, { ...parked, litres: 0.001 }).lost).toBeLessThanOrEqual(0.001);
+    d.update('farm300', 1, parked);
+    expect(d.update('farm300', 1000, { ...parked, litres: 0.001 }).lost).toBeLessThanOrEqual(0.001);
   });
 
   it('the patch is smelt and floods the next start once it has grown', () => {
     const d = make(always);
-    d.update('red', 1, parked);
-    expect(d.smells('red')).toBe(false);
-    d.update('red', 60, parked);
-    expect(d.smells('red')).toBe(true);
-    expect(d.floodFouling('red')).toBeCloseTo(d.puddle('red') * P.floodFoul);
+    d.update('farm300', 1, parked);
+    expect(d.smells('farm300')).toBe(false);
+    d.update('farm300', 60, parked);
+    expect(d.smells('farm300')).toBe(true);
+    expect(d.floodFouling('farm300')).toBeCloseTo(d.puddle('farm300') * P.floodFoul);
   });
 
   it('both girls have a recorded line for it', () => {

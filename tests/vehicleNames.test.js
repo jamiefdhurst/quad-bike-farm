@@ -51,8 +51,8 @@ describe('every vehicle has an in-game name', () => {
   });
 
   it('says "the Farm 300" and drops the maker for a notebook', () => {
-    expect(thePhrase('red')).toBe('the Farm 300');
-    expect(QUAD_PHRASES.blue).toBe('the Bruin');
+    expect(thePhrase('farm300')).toBe('the Farm 300');
+    expect(QUAD_PHRASES.bruin).toBe('the Bruin');
     expect(modelOnly('Kestrel Farm 300')).toBe('Farm 300');
     expect(MAKER_NAMES).toContain('Moorland');
   });

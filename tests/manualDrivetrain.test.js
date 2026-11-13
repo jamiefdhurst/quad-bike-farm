@@ -259,7 +259,7 @@ describe('a worn gearbox', () => {
 
 describe('which gearbox is worn', () => {
   it('picks one candidate and one of its forward gears above first', () => {
-    const cs = [{ id: 'red', gears: 4 }, { id: 'tractor', gears: 3 }];
+    const cs = [{ id: 'farm300', gears: 4 }, { id: 'hartley', gears: 3 }];
     const seen = new Set();
     for (let i = 0; i < 50; i++) {
       const r = createRandom(i);

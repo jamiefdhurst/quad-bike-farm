@@ -61,6 +61,6 @@ describe('the turbo', () => {
   it('only the 200TDi has one', async () => {
     const specs = await import('../src/vehicle/quadSpecs.js');
     const all = Object.values(specs).flatMap((v) => (Array.isArray(v) ? v : [v])).filter((s) => s?.id && s?.audio);
-    expect(all.filter((s) => s.audio.turboVolume > 0).map((s) => s.id)).toEqual(['landrover200']);
+    expect(all.filter((s) => s.audio.turboVolume > 0).map((s) => s.id)).toEqual(['crag']);
   });
 });

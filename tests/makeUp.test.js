@@ -5,7 +5,7 @@ import { FallingOut } from '../src/npc/fallingOut.js';
 import { CHARACTERS } from '../src/npc/characters.js';
 
 const girl = (id, x, o = {}) => ({ id, x, z: 0, free: true, settled: true, quad: null, ...o });
-const ctx = (o = {}) => ({ fallenOut: true, since: 60, fault: 'jess', girls: [girl('amy', 0), girl('jess', 10, { quad: 'red' })], ...o });
+const ctx = (o = {}) => ({ fallenOut: true, since: 60, fault: 'jess', girls: [girl('amy', 0), girl('jess', 10, { quad: 'farm300' })], ...o });
 const keys = (out) => out.map((o) => `${o.girl}:${o.key}`);
 
 describe('Making up', () => {
@@ -23,7 +23,7 @@ describe('Making up', () => {
   it('only offers a quad she has to give, and every offer meets a need', () => {
     const out = new MakeUp().offers(ctx({ since: 500 }));
     expect(keys(out)).not.toContain('amy:makeUpQuad');
-    expect(out.find((o) => o.key === 'makeUpQuad').quad).toBe('red');
+    expect(out.find((o) => o.key === 'makeUpQuad').quad).toBe('farm300');
     for (const o of out) expect(Object.keys(OFFER_KINDS[o.key].satisfies)).toContain('company');
   });
 

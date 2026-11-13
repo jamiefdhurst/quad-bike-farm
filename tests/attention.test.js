@@ -55,17 +55,17 @@ describe('what catches her eye', () => {
   });
 
   it('looks at you, not away, while you talk to her, however long', () => {
-    const view = base({ people: [you({ talkingToMe: true })], vehicles: [{ key: 'red', x: 4, y: 0.8, z: 6, speed: 8 }] });
+    const view = base({ people: [you({ talkingToMe: true })], vehicles: [{ key: 'farm300', x: 4, y: 0.8, z: 6, speed: 8 }] });
     expect(keysOver(new Attention(P), 30, view)).toEqual(['you']);
   });
 
   it('ignores people and vehicles out of range, and parked vehicles', () => {
-    const far = base({ people: [you({ z: P.attentionRange + 5 })], vehicles: [{ key: 'red', x: 0, y: 0.8, z: 4, speed: 0 }] });
+    const far = base({ people: [you({ z: P.attentionRange + 5 })], vehicles: [{ key: 'farm300', x: 0, y: 0.8, z: 4, speed: 0 }] });
     expect(candidates(far, [], P)).toEqual([]);
   });
 
   it('follows a quad going past', () => {
-    expect(run(new Attention(P), 0.5, base({ vehicles: [{ key: 'red', x: 2, y: 0.8, z: 8, speed: 8 }] })).key).toBe('vehicle:red');
+    expect(run(new Attention(P), 0.5, base({ vehicles: [{ key: 'farm300', x: 2, y: 0.8, z: 8, speed: 8 }] })).key).toBe('vehicle:farm300');
   });
 });
 
@@ -73,14 +73,14 @@ describe('noticing things happen', () => {
   it('turns at once to a backfire behind her, even mid-look at something else', () => {
     const a = new Attention(P);
     run(a, 0.3, base({ people: [you()] }));
-    a.notice({ kind: 'backfire', key: 'red', x: 0, y: 0.8, z: -10 });
-    expect(a.update(dt, base({ people: [you()] })).key).toBe('backfire:red');
+    a.notice({ kind: 'backfire', key: 'farm300', x: 0, y: 0.8, z: -10 });
+    expect(a.update(dt, base({ people: [you()] })).key).toBe('backfire:farm300');
   });
 
   it('loses interest in a notice once it has had its time', () => {
     const a = new Attention(P);
-    a.notice({ kind: 'engineStart', key: 'blue', x: 3, y: 0.8, z: 6 });
-    expect(run(a, 0.5, base()).key).toBe('engineStart:blue');
+    a.notice({ kind: 'engineStart', key: 'bruin', x: 3, y: 0.8, z: 6 });
+    expect(run(a, 0.5, base()).key).toBe('engineStart:bruin');
     expect(run(a, NOTICE_KINDS.engineStart.seconds, base())).toBe(null);
   });
 
@@ -99,8 +99,8 @@ describe('noticing things happen', () => {
 
   it('merges a repeat from the same thing rather than piling them up', () => {
     const a = new Attention(P);
-    a.notice({ kind: 'rev', key: 'red', x: 0, y: 0.8, z: 5 });
-    a.notice({ kind: 'rev', key: 'red', x: 0, y: 0.8, z: 5 });
+    a.notice({ kind: 'rev', key: 'farm300', x: 0, y: 0.8, z: 5 });
+    a.notice({ kind: 'rev', key: 'farm300', x: 0, y: 0.8, z: 5 });
     expect(a.notices).toHaveLength(1);
   });
 
@@ -141,7 +141,7 @@ describe('holding and tiring', () => {
 
   it('looks where she is going over everything but a fright', () => {
     const a = new Attention(P);
-    const view = base({ people: [you({ talkingToMe: false })], vehicles: [{ key: 'red', x: 2, y: 0.8, z: 6, speed: 8 }], intent: { x: -5, y: 0, z: 2 } });
+    const view = base({ people: [you({ talkingToMe: false })], vehicles: [{ key: 'farm300', x: 2, y: 0.8, z: 6, speed: 8 }], intent: { x: -5, y: 0, z: 2 } });
     expect(run(a, 0.5, view).key).toBe('intent');
   });
 });

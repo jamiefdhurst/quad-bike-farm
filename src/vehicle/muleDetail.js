@@ -83,7 +83,7 @@ export function addMuleFront(root, MAT, paint, lensMat) {
   grille.position.set(0, N.grille.y, N.z); // on the nose block's face
   root.add(grille);
   rbox(N.grille.w + 0.08, 0.03, 0.05, 0.012, paint, 0, N.grille.y + N.grille.h / 2 + 0.03, N.z - 0.01, root, 'grilleLip');
-  const badge = decalMesh('badge', { maker: MAKER_FOR.utv }, { width: 0.13, name: 'badge' });
+  const badge = decalMesh('badge', { maker: MAKER_FOR.yak }, { width: 0.13, name: 'badge' });
   badge.position.set(0, N.grille.y + N.grille.h / 2 + 0.03, N.z + 0.0155); // on the lip's face
   root.add(badge);
   // The lamps: a rectangular housing at each corner of the nose in black plastic, a clear lens and reflector in it, an amber indicator on its
@@ -282,7 +282,7 @@ export function addMuleGate(gate, MAT, paint) {
     rbox(0.04, 0.016, 0.026, 0.006, MAT.steel, s * (w / 2 - 0.1), 0.095, -0.03, gate);
     tube([s * (w / 2 - 0.01), 0.26, 0.0], [s * (w / 2 + 0.005), 0.02, 0.15], 0.005, MAT.steel, gate, 4); // the check chain
   }
-  const name = decalMesh('badge', { maker: MAKER_FOR.utv }, { width: 0.3, name: 'gateBadge' });
+  const name = decalMesh('badge', { maker: MAKER_FOR.yak }, { width: 0.3, name: 'gateBadge' });
   name.position.set(0, 0.17, -0.0215); // in the middle of the gate
   name.rotation.y = Math.PI;
   gate.add(name);

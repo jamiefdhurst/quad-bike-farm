@@ -372,7 +372,7 @@ export function addTzBars(bars, MAT, paint) {
 export function addTzDecals(root) {
   const x = TZ_SIDE_BOARD.x + 0.001 + 0.003; // the board's bevel is 3 mm
   for (const s of [-1, 1]) {
-    const badge = decalMesh('badge', { maker: MAKER_FOR.moto, model: 'TZ 65' }, { width: 0.15, name: 'badge' });
+    const badge = decalMesh('badge', { maker: MAKER_FOR.tz65, model: 'TZ 65' }, { width: 0.15, name: 'badge' });
     badge.position.set(s * x, 0.655, -0.38);
     badge.rotation.y = s * (Math.PI / 2);
     root.add(badge);

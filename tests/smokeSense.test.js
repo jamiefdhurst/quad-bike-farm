@@ -3,7 +3,7 @@ import { SmokeSense, smokeLevel, inPlume, DEFAULT_SMOKE_PARAMS as P } from '../s
 import { AMY_SMOKE_LINES, JESS_SMOKE_LINES } from '../src/npc/smokeLines.js';
 
 // A quad at the origin facing +z (north on the map), so its pipe is just behind it.
-const quad = (o = {}) => ({ id: 'yellow', x: 0, z: 0, yaw: 0, twoStroke: true, running: true, throttle: 0.5, temperature: 0.8, ...o });
+const quad = (o = {}) => ({ id: 'hornet', x: 0, z: 0, yaw: 0, twoStroke: true, running: true, throttle: 0.5, temperature: 0.8, ...o });
 const still = { x: 0, z: 0 };
 const girl = (id, o = {}) => ({ id, x: 0, z: -4, free: true, ...o });
 const run = (s, c, seconds) => {
@@ -38,14 +38,14 @@ describe('two-stroke smoke', () => {
     const s = new SmokeSense({ ...P });
     const c = { wind: still, girls: [girl('amy')], quads: [quad()] };
     expect(run(s, c, 1)).toEqual([]);
-    expect(run(s, c, 1)).toEqual([{ type: 'cough', girl: 'amy', spec: 'yellow' }]);
+    expect(run(s, c, 1)).toEqual([{ type: 'cough', girl: 'amy', spec: 'hornet' }]);
     expect(run(s, c, P.coughGap - 3)).toEqual([]);
   });
 
   it('Jess likes it instead', () => {
     const s = new SmokeSense({ ...P });
     const events = run(s, { wind: still, girls: [girl('jess')], quads: [quad()] }, 3);
-    expect(events).toEqual([{ type: 'love', girl: 'jess', spec: 'yellow' }]);
+    expect(events).toEqual([{ type: 'love', girl: 'jess', spec: 'hornet' }]);
   });
 
   it('not when she is busy, upwind, or it is a four-stroke', () => {

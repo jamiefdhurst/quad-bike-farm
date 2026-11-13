@@ -4,7 +4,7 @@ import { AMY_FUMES_LINES, JESS_FUMES_LINES } from '../src/npc/fumesLines.js';
 import { VOICE_LINES } from '../src/npc/voiceLines.js';
 import { JESS_LINES } from '../src/npc/jessLines.js';
 
-const engine = (o = {}) => ({ id: 'red', running: true, throttle: 0, twoStroke: false, diesel: false, inside: true, attended: false, ...o });
+const engine = (o = {}) => ({ id: 'farm300', running: true, throttle: 0, twoStroke: false, diesel: false, inside: true, attended: false, ...o });
 const ctx = (o = {}) => ({ wind: 0.3, engines: [engine()], girls: [], amyFree: false, ...o });
 const run = (f, c, seconds) => {
   const events = [];
@@ -61,8 +61,8 @@ describe('fumes in the barn', () => {
         if (e.type === 'switchOff') on = false;
       }
     }
-    expect(events.filter((e) => e.type === 'amyGoes')).toEqual([{ type: 'amyGoes', engine: 'red' }]);
-    expect(events.filter((e) => e.type === 'switchOff')).toEqual([{ type: 'switchOff', engine: 'red' }]);
+    expect(events.filter((e) => e.type === 'amyGoes')).toEqual([{ type: 'amyGoes', engine: 'farm300' }]);
+    expect(events.filter((e) => e.type === 'switchOff')).toEqual([{ type: 'switchOff', engine: 'farm300' }]);
   });
 
   it('gives up if the engine stalls or someone gets on it before she arrives', () => {

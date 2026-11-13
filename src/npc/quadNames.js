@@ -8,23 +8,23 @@ import { thePhrase } from '../vehicle/names.js';
 
 // The quads that had their lines recorded first, and the ones added since: a new quad's lines are written out after all the others (`expandQuadLines`
 // with `LATE_QUAD_IDS`) and merged last in voiceLines.js and jessLines.js, so the banks before them keep their packing.
-export const EARLY_QUAD_IDS = ['red', 'blue', 'yellow', 'green', 'orange', 'kids', 'loan', 'moto', 'atc'];
-export const LATE_QUAD_IDS = ['ag200', 'mower'];
+export const EARLY_QUAD_IDS = ['farm300', 'bruin', 'hornet', 'rb300', 'adder', 'asp', 'ursa', 'tz65', 't185'];
+export const LATE_QUAD_IDS = ['shepherd', 'clipper'];
 export const QUAD_PHRASES = Object.fromEntries([...EARLY_QUAD_IDS, ...LATE_QUAD_IDS].map((id) => [id, thePhrase(id)]));
 
 // Two to pick from for each, so a game gets one of them. Each reads in "That's ___" and "Come on, ___".
 export const NICKNAMES = {
-  red: ['Postie', 'the tomato'],
-  blue: ['Smurf', 'Bluebell'],
-  yellow: ['the wasp', 'Custard'],
-  green: ['Grandad', 'Kermit'],
-  orange: ['the satsuma', 'Tango'],
-  kids: ['Tiddler', 'the pram'],
-  loan: ['Lucky', 'the loaner'],
-  moto: ['Pogo', 'the bumblebee'],
-  atc: ['the tripod', 'Wobbles'],
-  ag200: ['Dolly', 'the shepherd'],
-  mower: ['Daisy', 'the armchair'],
+  farm300: ['Postie', 'the tomato'],
+  bruin: ['Smurf', 'Bluebell'],
+  hornet: ['the wasp', 'Custard'],
+  rb300: ['Grandad', 'Kermit'],
+  adder: ['the satsuma', 'Tango'],
+  asp: ['Tiddler', 'the pram'],
+  ursa: ['Lucky', 'the loaner'],
+  tz65: ['Pogo', 'the bumblebee'],
+  t185: ['the tripod', 'Wobbles'],
+  shepherd: ['Dolly', 'the shepherd'],
+  clipper: ['Daisy', 'the armchair'],
 };
 
 export const DEFAULT_NAME_PARAMS = {

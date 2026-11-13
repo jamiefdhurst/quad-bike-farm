@@ -4,7 +4,7 @@ import { CHARACTERS } from '../src/npc/characters.js';
 
 const always = () => 0; // dice always say yes, and pick the first of anything
 
-const quad = (o = {}) => ({ id: 'red', x: 50, z: 0, taken: false, running: false, tap: 'on', choke: 0, temperature: 0.8, ...o });
+const quad = (o = {}) => ({ id: 'farm300', x: 50, z: 0, taken: false, running: false, tap: 'on', choke: 0, temperature: 0.8, ...o });
 const ctx = (o = {}) => ({
   you: { x: 0, z: 0, riding: null },
   girls: [{ id: 'jess', free: true, mood: 'even' }, { id: 'amy', free: true, mood: 'even' }],
@@ -28,7 +28,7 @@ describe('pranks', () => {
   it('never plays one on its own: when is the chooser\'s', () => {
     const p = make({ firstDelay: 0, cooldown: 0 });
     for (let t = 0; t < 100; t++) expect(p.update(1, ctx()).filter((e) => e.type === 'start')).toEqual([]);
-    expect(p.offers(ctx())[0]).toMatchObject({ key: 'prank', girl: 'jess', kind: 'tap', quad: 'red', weight: P.weight });
+    expect(p.offers(ctx())[0]).toMatchObject({ key: 'prank', girl: 'jess', kind: 'tap', quad: 'farm300', weight: P.weight });
   });
 
   it('waits for the first delay and then the cooldown', () => {
@@ -49,7 +49,7 @@ describe('pranks', () => {
 
   it('Jess turns the tap off on a quad that is on and parked, Amy hides things', () => {
     const jessOnly = ctx({ girls: [{ id: 'jess', free: true, mood: 'even' }], items: { can: { x: 0, z: 0, held: true, home: {} }, toolbox: { x: 0, z: 0, held: true, home: {} } } });
-    expect(run(make(), jessOnly)).toMatchObject({ girl: 'jess', kind: 'tap', quad: 'red' });
+    expect(run(make(), jessOnly)).toMatchObject({ girl: 'jess', kind: 'tap', quad: 'farm300' });
     const amyOnly = ctx({ girls: [{ id: 'amy', free: true, mood: 'even' }], quads: [], items: { can: { x: 40, z: 0, held: false, home: {} }, toolbox: { x: 0, z: 0, held: true, home: {} } }, spots: [{ x: 10, z: 20 }, { x: 70, z: 0 }] });
     const hide = run(make(), amyOnly);
     expect(hide).toMatchObject({ girl: 'amy', kind: 'hideCan', item: 'can' });
@@ -85,7 +85,7 @@ describe('pranks', () => {
     const c = ctx({ girls: [{ id: 'jess', free: true, mood: 'even' }], items: { can: { x: 0, z: 0, held: true, home: {} }, toolbox: { x: 0, z: 0, held: true, home: {} } } });
     const prank = run(p, c);
     p.apply(prank);
-    const off = ctx({ ...c, quads: [quad({ tap: 'off' })], you: { x: 50, z: 0, riding: 'red' } });
+    const off = ctx({ ...c, quads: [quad({ tap: 'off' })], you: { x: 50, z: 0, riding: 'farm300' } });
     expect(p.update(1, off)).toEqual([]);
     const events = [];
     for (let t = 0; t < 4; t++) events.push(...p.update(1, off));

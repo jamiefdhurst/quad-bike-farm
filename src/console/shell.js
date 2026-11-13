@@ -1,4 +1,4 @@
-// The in-game console's engine: a tree of named values (vehicle.red.temperature), commands that work on them, and tab completion
+// The in-game console's engine: a tree of named values (vehicle.farm300.temperature), commands that work on them, and tab completion
 // over both. Pure (no DOM, no Three.js, no game), so it is tested on its own; gameTree.js and gameHost.js plug the game into it.
 
 /** Lower case, with anything that is not a letter or digit turned into one dash: "Red quad" is "red-quad". */
@@ -184,7 +184,7 @@ export class Shell {
     return out;
   }
 
-  /** "vehicle.red.fuel" reads it, "vehicle.red.fuel 5" and "vehicle.red.fuel = 5" set it. */
+  /** "vehicle.farm300.fuel" reads it, "vehicle.farm300.fuel 5" and "vehicle.farm300.fuel = 5" set it. */
   bare(tokens) {
     const [path, ...rest] = tokens;
     const found = resolve(this.root, path);

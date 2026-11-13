@@ -22,18 +22,18 @@ describe('a quad\'s hidden strength', () => {
     for (const s of QUAD_SPECS) expect(strengthEffects(s, flat)).toEqual({ drive: 1, mudGrip: 1, tarmacGrip: 1 });
   });
   it('helps a hill quad on a slope, in proportion up to the full grade', () => {
-    const red = spec('red');
+    const red = spec('farm300');
     const full = strengthEffects(red, { ...flat, climb: STRENGTH_PARAMS.hillGrade });
     const half = strengthEffects(red, { ...flat, climb: STRENGTH_PARAMS.hillGrade / 2 });
     expect(full.drive).toBeCloseTo(1 + STRENGTH_PARAMS.amount);
     expect(half.drive).toBeCloseTo(1 + STRENGTH_PARAMS.amount / 2);
     expect(strengthEffects(red, { ...flat, climb: -0.3 }).drive).toBe(1); // downhill is no help
-    expect(strengthEffects(spec('blue'), { ...flat, climb: 0.3 }).drive).toBe(1); // another quad's strength
+    expect(strengthEffects(spec('bruin'), { ...flat, climb: 0.3 }).drive).toBe(1); // another quad's strength
   });
   it('helps a mud quad in mud and a tarmac quad on tarmac', () => {
-    expect(strengthEffects(spec('green'), { ...flat, mud: 1 }).mudGrip).toBeCloseTo(1 + STRENGTH_PARAMS.amount);
-    expect(strengthEffects(spec('green'), { ...flat, tarmac: 1 }).tarmacGrip).toBe(1);
-    const t = strengthEffects(spec('orange'), { ...flat, tarmac: 1 });
+    expect(strengthEffects(spec('rb300'), { ...flat, mud: 1 }).mudGrip).toBeCloseTo(1 + STRENGTH_PARAMS.amount);
+    expect(strengthEffects(spec('rb300'), { ...flat, tarmac: 1 }).tarmacGrip).toBe(1);
+    const t = strengthEffects(spec('adder'), { ...flat, tarmac: 1 });
     expect(t.tarmacGrip).toBeCloseTo(1 + STRENGTH_PARAMS.amount);
     expect(t.drive).toBeGreaterThan(1);
   });
@@ -56,25 +56,25 @@ describe('what the girls make of them', () => {
   it('has no view before she has ridden a quad there', () => {
     const op = new QuadOpinion('jess');
     expect(op.best('hill', ids, truthOf)).toBe(null);
-    op.ride(OPINION_PARAMS.minSeconds - 1, 'red', 'hill');
-    expect(op.view('red', 'hill', truthOf('red', 'hill'))).toBe(null);
+    op.ride(OPINION_PARAMS.minSeconds - 1, 'farm300', 'hill');
+    expect(op.view('farm300', 'hill', truthOf('farm300', 'hill'))).toBe(null);
   });
   it('needs two quads to compare', () => {
     const op = new QuadOpinion('jess');
-    op.ride(100, 'red', 'hill');
+    op.ride(100, 'farm300', 'hill');
     expect(op.best('hill', ids, truthOf)).toBe(null);
   });
   it('has her own hunch, steady between loads and different from her friend\'s', () => {
-    expect(hunchOf('jess:red:hill')).toBe(hunchOf('jess:red:hill'));
-    expect(hunchOf('jess:red:hill')).not.toBe(hunchOf('amy:red:hill'));
+    expect(hunchOf('jess:farm300:hill')).toBe(hunchOf('jess:farm300:hill'));
+    expect(hunchOf('jess:farm300:hill')).not.toBe(hunchOf('amy:farm300:hill'));
   });
   it('ends up right once she has ridden enough', () => {
     for (const girl of ['jess', 'amy']) {
       const op = new QuadOpinion(girl);
       ride(op, OPINION_PARAMS.tau * 12);
-      expect(op.best('hill', ids, truthOf)).toBe('red');
-      expect(['blue', 'green']).toContain(op.best('mud', ids, truthOf));
-      expect(['yellow', 'orange']).toContain(op.best('tarmac', ids, truthOf));
+      expect(op.best('hill', ids, truthOf)).toBe('farm300');
+      expect(['bruin', 'rb300']).toContain(op.best('mud', ids, truthOf));
+      expect(['hornet', 'adder']).toContain(op.best('tarmac', ids, truthOf));
     }
   });
   it('and agrees with her friend when they both have', () => {
@@ -83,7 +83,7 @@ describe('what the girls make of them', () => {
     ride(a, OPINION_PARAMS.tau * 12);
     ride(b, OPINION_PARAMS.tau * 12);
     expect(disagreements(a, b, ids, truthOf).filter((d) => d.kind === 'hill')).toEqual([]);
-    expect(agreements(a, b, ids, truthOf).some((x) => x.kind === 'hill' && x.id === 'red')).toBe(true);
+    expect(agreements(a, b, ids, truthOf).some((x) => x.kind === 'hill' && x.id === 'farm300')).toBe(true);
   });
   it('can start by disagreeing, from hunches alone', () => {
     let differs = false;
@@ -95,25 +95,25 @@ describe('what the girls make of them', () => {
   });
   it('leans her choice of quad towards the ones she rates, and not at all with no view', () => {
     const op = new QuadOpinion('amy');
-    expect(op.keenness('red', truthOf, STRENGTH_PARAMS.amount)).toBe(0);
-    op.ride(OPINION_PARAMS.tau * 12, 'red', 'hill');
-    expect(op.keenness('red', truthOf, STRENGTH_PARAMS.amount)).toBeGreaterThan(0.8);
+    expect(op.keenness('farm300', truthOf, STRENGTH_PARAMS.amount)).toBe(0);
+    op.ride(OPINION_PARAMS.tau * 12, 'farm300', 'hill');
+    expect(op.keenness('farm300', truthOf, STRENGTH_PARAMS.amount)).toBeGreaterThan(0.8);
   });
   it('keeps half of it in the save, and loads a save without any', () => {
     const op = new QuadOpinion('amy');
-    op.ride(400, 'red', 'hill');
+    op.ride(400, 'farm300', 'hill');
     const again = new QuadOpinion('amy');
     again.restore(op.capture());
-    expect(again.seconds('red', 'hill')).toBeCloseTo(400 * OPINION_PARAMS.kept);
+    expect(again.seconds('farm300', 'hill')).toBeCloseTo(400 * OPINION_PARAMS.kept);
     again.restore(undefined);
-    expect(again.seconds('red', 'hill')).toBe(0);
-    again.restore({ red: { hill: 'lots', nonsense: 5 }, ghost: null });
-    expect(again.seconds('red', 'hill')).toBe(0);
+    expect(again.seconds('farm300', 'hill')).toBe(0);
+    again.restore({ farm300: { hill: 'lots', nonsense: 5 }, ghost: null });
+    expect(again.seconds('farm300', 'hill')).toBe(0);
   });
   it('never keeps more than the cap', () => {
     const op = new QuadOpinion('amy');
-    op.ride(1e9, 'red', 'hill');
-    expect(op.seconds('red', 'hill')).toBe(OPINION_PARAMS.cap);
+    op.ride(1e9, 'farm300', 'hill');
+    expect(op.seconds('farm300', 'hill')).toBe(OPINION_PARAMS.cap);
   });
 });
 
@@ -142,14 +142,14 @@ describe('in the farm save', () => {
     const { captureGirls, restoreGirls } = await import('../src/farm/farmState.js');
     const mk = (id) => ({ character: { id }, memory: { capture: () => ({}), restore() {} }, opinion: new QuadOpinion(id), params: {} });
     const girls = [mk('jess'), mk('amy')];
-    girls[0].opinion.ride(300, 'red', 'hill');
+    girls[0].opinion.ride(300, 'farm300', 'hill');
     const parts = { favour: { scores: {}, ids: [] }, fallingOut: { friction: 0, active: false }, skills: { levels: {}, ids: [] }, romance: { girls: {}, ids: [] } };
     const saved = captureGirls({ ...parts, companions: girls });
-    expect(saved.opinions.jess.red.hill).toBe(300);
+    expect(saved.opinions.jess.farm300.hill).toBe(300);
     const fresh = [mk('jess'), mk('amy')];
     restoreGirls({ ...parts, companions: fresh }, JSON.parse(JSON.stringify(saved)));
-    expect(fresh[0].opinion.seconds('red', 'hill')).toBeCloseTo(300 * OPINION_PARAMS.kept);
-    expect(fresh[1].opinion.seconds('red', 'hill')).toBe(0);
+    expect(fresh[0].opinion.seconds('farm300', 'hill')).toBeCloseTo(300 * OPINION_PARAMS.kept);
+    expect(fresh[1].opinion.seconds('farm300', 'hill')).toBe(0);
     restoreGirls({ ...parts, companions: fresh }, { favour: {} }); // an older save has none
   });
 });

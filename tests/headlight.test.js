@@ -46,7 +46,7 @@ describe('headlightLook', () => {
   });
 
   it('is only the loan quad and the tractor that have a battery for it', () => {
-    expect([...QUAD_SPECS, ...EXTRA_SPECS].filter((s) => s.steadyLights).map((s) => s.id)).toEqual(['loan']);
+    expect([...QUAD_SPECS, ...EXTRA_SPECS].filter((s) => s.steadyLights).map((s) => s.id)).toEqual(['ursa']);
     expect(TRACTOR_SPEC.steadyLights).toBe(true);
   });
 });

@@ -24,8 +24,8 @@ export const MAKERS = {
 
 /** Which maker each vehicle's badge names, by spec id. The three-wheeler has none yet (its item says). */
 export const MAKER_FOR = {
-  red: 'kestrel', blue: 'tamura', loan: 'tamura', green: 'ridgeback', yellow: 'tamura', orange: 'viper', kids: 'viper', moto: 'tamura', atc: 'kestrel', plover: 'ashby', ag200: 'ridgeback', mower: 'ridgeback',
-  tractor: 'hartley', utv: 'ridgeback', landrover: 'moorland', landrover200: 'moorland', fiesta: 'thorne', corsa: 'ashby', p309: 'vauclair',
+  farm300: 'kestrel', bruin: 'tamura', ursa: 'tamura', rb300: 'ridgeback', hornet: 'tamura', adder: 'viper', asp: 'viper', tz65: 'tamura', t185: 'kestrel', plover: 'ashby', shepherd: 'ridgeback', clipper: 'ridgeback',
+  hartley: 'hartley', yak: 'ridgeback', tor: 'moorland', crag: 'moorland', finch: 'thorne', griffin: 'ashby', vauclair: 'vauclair',
 };
 
 /** Names a decal must never carry. tests/decals.test.js checks every maker and every built-in string against it. */
