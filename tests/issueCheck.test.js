@@ -42,6 +42,7 @@ describe('the lines of an issue', () => {
 
   it('takes the sections after a left-out one again', () => {
     expect(requirements('## Findings\n\n- one\n\n## What to do\n\n- two')).toEqual(['two']);
+    expect(requirements('## From the review\n\n- one\n\n## What to do\n\n- two')).toEqual(['two']);
   });
 
   it('takes the prose of an issue with no bullets, leaving out its plumbing', () => {
