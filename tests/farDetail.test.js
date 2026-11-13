@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { FarDetail, detailLevel, isSmallPart, isSpeck, pointsAcross, pixelsPerRadian, SPECK_LAYER, VEHICLE_NAMES, BARN_PROP_NAMES, SET_PIECE_NAMES } from '../src/world/farDetail.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../src/core/graphics.js';
 import { LAYOUT } from '../src/world/layout.js';
+import { BrushwoodHeap } from '../src/items/brushwood.js';
 
 const params = { ...DEFAULT_GRAPHICS_PARAMS };
 const box = (w, mat) => new THREE.Mesh(new THREE.BoxGeometry(w, w, w), mat ?? new THREE.MeshStandardMaterial());
@@ -205,6 +206,36 @@ describe('FarDetail set pieces and props', () => {
     m.position.x = 250;
     scene.updateMatrixWorld();
     expect(m.matrixWorld.elements[12]).toBe(250);
+  });
+  it('measures a set piece that moves from where it stands at each look, not from where it was first seen (the rolling road trailer, #823)', () => {
+    const trailer = new THREE.Group();
+    trailer.name = 'rolling-road-trailer';
+    trailer.userData.moves = true;
+    trailer.add(box(4));
+    trailer.position.set(0, -100, 0); // built out of sight, as the host does, before the tow places it
+    const far = new FarDetail(sceneWith(trailer), params);
+    far.update({ x: 400, z: 0 }, 1, true);
+    expect(trailer.visible).toBe(false);
+    trailer.position.set(390, 0, 5); // towed up to you
+    trailer.rotation.y = 1;
+    far.update({ x: 400, z: 0 }, 1, true);
+    expect(trailer.visible).toBe(true);
+    trailer.position.set(400 - params.setPieceDistance - 1, 0, 0); // its middle past the distance, its nearest edge (2 m and more out) inside it
+    far.update({ x: 400, z: 0 }, 1, true);
+    expect(trailer.visible).toBe(true);
+    trailer.position.set(0, 0, 0); // and gone again
+    far.update({ x: 400, z: 0 }, 1, true);
+    expect(trailer.visible).toBe(false);
+  });
+  it('draws the brushwood bundle where it was put down, however far from where it lay (#823)', () => {
+    const scene = new THREE.Scene();
+    const heap = new BrushwoodHeap({ scene, world: { heightAt: () => 0 }, x: 0, z: 0 });
+    const far = new FarDetail(scene, params);
+    far.update({ x: 0, z: 0 }, 1, true);
+    expect(heap.model.visible).toBe(true);
+    heap.putDown({ x: 400, z: 0 }, 0);
+    far.update({ x: 401, z: 0 }, 1, true);
+    expect(heap.model.visible).toBe(true);
   });
   it('swaps a set piece with a far version for it beyond fullDistance, with a margin either way', () => {
     const village = piece('village', 200, 0); // spans x 195 to 205

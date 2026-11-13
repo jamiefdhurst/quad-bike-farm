@@ -223,7 +223,9 @@ export class FarDetail {
     e.length = n;
   }
 
-  /** The ground bounds of an object's meshes, found once (set pieces and fixtures do not move). */
+  /** The ground bounds of an object's meshes, found once (set pieces and fixtures do not move). One marked `userData.moves` (the rolling road trailer,
+   * towed in and set up wherever the tuner stops) has its reach from its own middle found once instead, and the box laid round where it stands now,
+   * whichever way it is turned: a box kept from its first look hid it by a spot it had long left (#823). */
   box(o) {
     let b = this.boxes.get(o);
     if (!b) {
@@ -234,11 +236,20 @@ export class FarDetail {
         if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
         box.union(m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld));
       });
-      b = box.isEmpty() ? { minX: o.position.x, maxX: o.position.x, minZ: o.position.z, maxZ: o.position.z } : { minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z };
+      const p = o.position;
+      if (o.userData.moves) {
+        let reach = 0;
+        if (!box.isEmpty()) for (const x of [box.min.x, box.max.x]) for (const z of [box.min.z, box.max.z]) reach = Math.max(reach, Math.hypot(x - p.x, z - p.z));
+        b = { reach };
+      } else {
+        b = box.isEmpty() ? { minX: p.x, maxX: p.x, minZ: p.z, maxZ: p.z } : { minX: box.min.x, maxX: box.max.x, minZ: box.min.z, maxZ: box.max.z };
+      }
       this.boxes.set(o, b);
       skipMatricesWhileHidden(o);
     }
-    return b;
+    if (b.reach === undefined) return b;
+    const p = o.position;
+    return { minX: p.x - b.reach, maxX: p.x + b.reach, minZ: p.z - b.reach, maxZ: p.z + b.reach };
   }
 
   /** Draws the full `o` within `fullDistance` of its nearest edge and its far version beyond (with a margin, so it doesn't flicker); 0 is always full. */

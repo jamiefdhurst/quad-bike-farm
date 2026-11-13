@@ -43,6 +43,7 @@ export class BrushwoodHeap {
     this.world = world;
     this.home = { x, z, yaw };
     this.model = buildBundle(random);
+    this.model.userData.moves = true; // carried and put down anywhere, so far detail measures it from where it lies now (#823)
     this.held = false;
     this.used = false; // on the pile
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.5, 0.5), new THREE.MeshBasicMaterial({ visible: false }));
