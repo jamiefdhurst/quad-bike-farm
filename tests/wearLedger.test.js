@@ -6,12 +6,12 @@ import { AMY_THRASH_LINES, JESS_THRASH_LINES } from '../src/npc/thrashLines.js';
 describe('WearLedger', () => {
   it('pins wear on whoever was riding when it built up', () => {
     const l = new WearLedger();
-    l.record('red', 0.1, null); // the wear it came with
-    l.record('red', 0.2, 'jess');
-    l.record('red', 0.25, 'you');
-    expect(l.worn('red', 'jess')).toBeCloseTo(0.1);
-    expect(l.worn('red', 'you')).toBeCloseTo(0.05);
-    expect(l.culprit('red').who).toBe('jess');
+    l.record('farm300', 0.1, null); // the wear it came with
+    l.record('farm300', 0.2, 'jess');
+    l.record('farm300', 0.25, 'you');
+    expect(l.worn('farm300', 'jess')).toBeCloseTo(0.1);
+    expect(l.worn('farm300', 'you')).toBeCloseTo(0.05);
+    expect(l.culprit('farm300').who).toBe('jess');
   });
 
   it('names nobody when it is evenly shared, or too little to say', () => {

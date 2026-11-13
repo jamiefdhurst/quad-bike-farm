@@ -8,7 +8,7 @@ import { poseParkBrake } from '../src/vehicle/quadModel.js';
 // The red quad's bar controls (TODO 88): the switch pod, the levers, the 2WD / 4WD rocker.
 let red;
 beforeAll(async () => {
-  red = (await buildAllModels()).find((v) => v.id === 'red');
+  red = (await buildAllModels()).find((v) => v.id === 'farm300');
 });
 
 describe('the red quad’s switch pod', () => {

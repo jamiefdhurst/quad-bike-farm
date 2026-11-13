@@ -25,11 +25,11 @@ const eager = (random = () => 0.1) => new ComparingNotes({ ...P, startAfter: 0 }
 
 describe('rankings', () => {
   it('orders the quads by what has shaken her, leaving out those she felt nothing on', () => {
-    expect(ranking({ red: 30, green: 80, blue: 0, orange: 55 })).toEqual(['green', 'orange', 'red']);
-    expect(ranking({ red: 30, green: 80 }, (id) => id !== 'green')).toEqual(['red']);
+    expect(ranking({ farm300: 30, rb300: 80, bruin: 0, adder: 55 })).toEqual(['rb300', 'adder', 'farm300']);
+    expect(ranking({ farm300: 30, rb300: 80 }, (id) => id !== 'rb300')).toEqual(['farm300']);
   });
   it('the two together add up', () => {
-    expect(combinedRanking({ red: 50, green: 10 }, { green: 80, blue: 20 })).toEqual(['green', 'red', 'blue']);
+    expect(combinedRanking({ farm300: 50, rb300: 10 }, { rb300: 80, bruin: 20 })).toEqual(['rb300', 'farm300', 'bruin']);
   });
 });
 
@@ -38,16 +38,16 @@ describe('comparing notes', () => {
 
   it('never starts on its own: that is the chooser\'s, and either can start it', () => {
     const c = eager();
-    const ctx = ctxOf({ red: 100, green: 40 }, { red: 100, green: 40 });
+    const ctx = ctxOf({ farm300: 100, rb300: 40 }, { farm300: 100, rb300: 40 });
     for (let t = 0; t < 30; t++) expect(c.update(1, ctx)).toEqual([]);
     expect(c.offers(ctx).map((o) => o.girl)).toEqual(['amy', 'jess']);
   });
 
   it('waits for the game to get going, a ranking worth having, both of them free, and near each other', () => {
-    const buzz = { red: 100, green: 40 };
+    const buzz = { farm300: 100, rb300: 40 };
     const slow = new ComparingNotes({ ...P }, () => 0);
     expect(run(slow, P.startAfter - 5, ctxOf(buzz, buzz))).toEqual([]);
-    expect(run(eager(), 30, ctxOf({ red: 10 }, buzz))).toEqual([]); // under minTotal
+    expect(run(eager(), 30, ctxOf({ farm300: 10 }, buzz))).toEqual([]); // under minTotal
     expect(run(eager(), 30, ctxOf(buzz, buzz, { g: { jess: { free: false } } }))).toEqual([]);
     expect(run(eager(), 30, ctxOf(buzz, buzz, { g: { jess: { x: 40 } } }))).toEqual([]);
     expect(run(eager(), 30, { ...ctxOf(buzz, buzz), floorFree: false })).toEqual([]);
@@ -56,32 +56,32 @@ describe('comparing notes', () => {
 
   it('when they agree, one asks, each names hers and the other says the same; Amy notes the ranking', () => {
     const c = eager();
-    const buzz = { red: 100, green: 40 };
+    const buzz = { farm300: 100, rb300: 40 };
     const steps = run(c, 40, ctxOf(buzz, buzz));
     expect(steps.map((s) => s.kind ?? s.type)).toEqual(['rankAsk', 'rankTop', 'rankAgree', 'note']);
     expect(steps.find((s) => s.type === 'note').girl).toBe('amy');
-    expect(steps.find((s) => s.kind === 'rankTop').spec).toBe('red');
-    expect(c.last.ranking).toEqual(['red', 'green']);
+    expect(steps.find((s) => s.kind === 'rankTop').spec).toBe('farm300');
+    expect(c.last.ranking).toEqual(['farm300', 'rb300']);
     expect(c.last.agree).toBe(true);
   });
 
   it('when they disagree each names her own, and the first says so', () => {
     const c = eager(() => 0.9); // Jess does not go first; no swap
-    const steps = run(c, 60, ctxOf({ red: 100, green: 40 }, { red: 10, green: 90 }));
+    const steps = run(c, 60, ctxOf({ farm300: 100, rb300: 40 }, { farm300: 10, rb300: 90 }));
     const tops = steps.filter((s) => s.kind === 'rankTop');
-    expect(tops.map((s) => s.spec)).toEqual(['red', 'green']);
+    expect(tops.map((s) => s.spec)).toEqual(['farm300', 'rb300']);
     expect(steps.map((s) => s.kind).filter(Boolean)).toContain('rankDisagree');
     expect(steps.some((s) => s.type === 'swap')).toBe(false);
     expect(c.last.agree).toBe(false);
-    expect(c.last.ranking).toEqual(['green', 'red']); // 130 against 110... green leads together
+    expect(c.last.ranking).toEqual(['rb300', 'farm300']); // 130 against 110... green leads together
   });
 
   it('now and then they swap to settle it: each sits on the other\'s pick, then both give a verdict', () => {
     const c = eager(() => 0.1); // swap roll passes
-    const steps = run(c, P.swapStay + 100, ctxOf({ red: 100, green: 40 }, { red: 10, green: 90 }));
+    const steps = run(c, P.swapStay + 100, ctxOf({ farm300: 100, rb300: 40 }, { farm300: 10, rb300: 90 }));
     const swap = steps.find((s) => s.type === 'swap');
     expect(swap).toBeTruthy();
-    expect(Object.values(swap.picks).sort()).toEqual(['green', 'red']);
+    expect(Object.values(swap.picks).sort()).toEqual(['farm300', 'rb300']);
     const verdicts = steps.filter((s) => s.kind === 'rankVerdict');
     expect(verdicts.map((s) => s.girl).sort()).toEqual(['amy', 'jess']);
     expect(steps.indexOf(verdicts[0])).toBeGreaterThan(steps.indexOf(swap));
@@ -89,7 +89,7 @@ describe('comparing notes', () => {
 
   it('then waits out the cooldown before comparing again', () => {
     const c = eager();
-    const buzz = { red: 100, green: 40 };
+    const buzz = { farm300: 100, rb300: 40 };
     run(c, 40, ctxOf(buzz, buzz));
     expect(c.busy).toBe(false);
     expect(run(c, P.cooldown - 30, ctxOf(buzz, buzz))).toEqual([]);
@@ -97,8 +97,8 @@ describe('comparing notes', () => {
   });
 
   it('has nothing to plan if one has felt nothing on the quads that exist', () => {
-    expect(eager().plan(girls({}, { red: 5 }), () => true)).toBeNull();
-    expect(eager().plan(girls({ red: 5 }, { red: 5 }), (id) => id !== 'red')).toBeNull();
+    expect(eager().plan(girls({}, { farm300: 5 }), () => true)).toBeNull();
+    expect(eager().plan(girls({ farm300: 5 }, { farm300: 5 }), (id) => id !== 'farm300')).toBeNull();
   });
 });
 

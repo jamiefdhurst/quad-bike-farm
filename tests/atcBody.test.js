@@ -96,7 +96,7 @@ describe('the old three-wheeler’s numbers', () => {
 });
 
 describe('the old three-wheeler’s spec', () => {
-  const atc = EXTRA_SPECS.find((s) => s.id === 'atc');
+  const atc = EXTRA_SPECS.find((s) => s.id === 't185');
 
   it('names its dash, the choke on the carb, the tap by it, a Kestrel badge, and keeps the lamp, the cord start and the solo seat', () => {
     expect(DASH_STYLES).toContain(atc.dashStyle);
@@ -106,7 +106,7 @@ describe('the old three-wheeler’s spec', () => {
     expect(atc.tapStyle).toBe('carbLeft');
     expect(atc.noHeadlight).toBeFalsy();
     expect(atc.barLights).toBe('switch');
-    expect(MAKER_FOR.atc).toBe('kestrel');
+    expect(MAKER_FOR.t185).toBe('kestrel');
     expect(atc.engine.pullStart).toBe(true);
     expect(atc.engine.noStarter).toBe(true);
     expect(atc.solo).toBe(true);
@@ -118,7 +118,7 @@ describe('the old three-wheeler’s model', () => {
   let atc;
   const world = (o) => o.getWorldPosition(new THREE.Vector3());
   beforeAll(async () => {
-    atc = (await buildAllModels()).find((v) => v.id === 'atc');
+    atc = (await buildAllModels()).find((v) => v.id === 't185');
   });
 
   it('has its parts by name: the controls, the engine in the open, the exhaust, the body and the lights', () => {
@@ -190,8 +190,8 @@ describe('the old three-wheeler’s model', () => {
   });
 
   it('is in proportion to the real one on every measure', () => {
-    expect(IN_PROPORTION).toContain('atc');
-    const errors = proportionErrors(measureModel(atc.model, atc.layout), REAL_SIZES.atc);
+    expect(IN_PROPORTION).toContain('t185');
+    const errors = proportionErrors(measureModel(atc.model, atc.layout), REAL_SIZES.t185);
     for (const [k, e] of Object.entries(errors)) expect(Math.abs(e), k).toBeLessThan(0.08);
   });
 });

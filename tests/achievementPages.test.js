@@ -6,7 +6,7 @@ const item = (group, i, available = true) => ({ id: `${group}${i}`, group, name:
 
 describe('notebook pages', () => {
   it('never puts more than the row limit on a page and keeps every available entry once', () => {
-    const entries = new Achievements({ fleet: ['red', 'blue', 'tractor', 'utv', 'landrover'] }).entries();
+    const entries = new Achievements({ fleet: ['farm300', 'bruin', 'hartley', 'yak', 'tor'] }).entries();
     const pages = paginate(entries, 11);
     for (const p of pages) expect(p.lines.length).toBeLessThanOrEqual(11);
     const ids = pages.flatMap((p) => p.lines.filter((l) => l.entry).map((l) => l.entry.id));

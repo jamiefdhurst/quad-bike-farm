@@ -8,8 +8,8 @@ import * as THREE from 'three';
 // the nest. Procedural, no assets; the drawing uses a seeded random so a farm's rusty quad is always the same one.
 
 /** The donors with racks (rack bars to lose) and the one whose open engine bay shows an intake to nest in. */
-const RACKED = ['red', 'blue', 'green'];
-const OPEN_ENGINE = ['yellow']; // (the orange's shroud hides its engine)
+const RACKED = ['farm300', 'bruin', 'rb300'];
+const OPEN_ENGINE = ['hornet']; // (the orange's shroud hides its engine)
 
 export const DEFAULT_RUSTY_DAMAGE = {
   patches: [16, 22], // rust patches over the paint and metal
@@ -31,7 +31,7 @@ const between = (random, [a, b]) => a + Math.floor(random() * (b - a + 1));
  */
 export function planDamage(random, donorId, P = DEFAULT_RUSTY_DAMAGE) {
   const racked = RACKED.includes(donorId);
-  const slats = { red: { front: 5, rear: 3 }, blue: { front: 6, rear: 4 }, green: { front: 6, rear: 4 } }[donorId];
+  const slats = { farm300: { front: 5, rear: 3 }, bruin: { front: 6, rear: 4 }, rb300: { front: 6, rear: 4 } }[donorId];
   const rack = racked
     ? {
         front: { skip: [1 + Math.floor(random() * (slats.front - 1))], hang: null },

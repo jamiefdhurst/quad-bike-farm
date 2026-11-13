@@ -48,7 +48,7 @@ describe('the big-bore factors', () => {
 
 describe('fitting it', () => {
   it('only the yellow has a kit, and only once', () => {
-    expect([...QUAD_SPECS, ...EXTRA_SPECS].find((q) => q.id === 'yellow').engine.boreKit).toBe(1);
+    expect([...QUAD_SPECS, ...EXTRA_SPECS].find((q) => q.id === 'hornet').engine.boreKit).toBe(1);
     expect([...QUAD_SPECS, ...EXTRA_SPECS].filter((q) => q.engine.boreKit).length).toBe(1);
     const e = make();
     expect(canFitBore(e)).toBe(true);

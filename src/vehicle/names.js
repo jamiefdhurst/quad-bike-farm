@@ -3,25 +3,25 @@
 // `say` is what the girls and the toasts call it after "the" ("the Farm 300"). Pure; the specs, the girls' lines and the FAQ read it.
 
 export const VEHICLE_NAMES = {
-  red: { maker: 'Kestrel', model: 'Farm 300', say: 'Farm 300' },
-  blue: { maker: 'Tamura', model: 'Bruin 660', say: 'Bruin' },
-  yellow: { maker: 'Tamura', model: 'Hornet 200', say: 'Hornet' },
-  green: { maker: 'Ridgeback', model: 'RB300', say: 'RB300' },
-  orange: { maker: 'Viper', model: 'Adder 250', say: 'Adder' },
-  kids: { maker: 'Viper', model: 'Asp 50', say: "kids' quad" },
-  moto: { maker: 'Tamura', model: 'TZ 65', say: 'mini moto' },
-  ag200: { maker: 'Ridgeback', model: 'Shepherd 200', say: 'Shepherd' },
-  mower: { maker: 'Ridgeback', model: 'Clipper 12', say: 'mower' },
-  atc: { maker: 'Kestrel', model: 'T185', say: 'old three-wheeler' },
+  farm300: { maker: 'Kestrel', model: 'Farm 300', say: 'Farm 300' },
+  bruin: { maker: 'Tamura', model: 'Bruin 660', say: 'Bruin' },
+  hornet: { maker: 'Tamura', model: 'Hornet 200', say: 'Hornet' },
+  rb300: { maker: 'Ridgeback', model: 'RB300', say: 'RB300' },
+  adder: { maker: 'Viper', model: 'Adder 250', say: 'Adder' },
+  asp: { maker: 'Viper', model: 'Asp 50', say: "kids' quad" },
+  tz65: { maker: 'Tamura', model: 'TZ 65', say: 'mini moto' },
+  shepherd: { maker: 'Ridgeback', model: 'Shepherd 200', say: 'Shepherd' },
+  clipper: { maker: 'Ridgeback', model: 'Clipper 12', say: 'mower' },
+  t185: { maker: 'Kestrel', model: 'T185', say: 'old three-wheeler' },
   plover: { maker: 'Ashby', model: 'Plover 125', say: 'Plover' },
-  loan: { maker: 'Tamura', model: 'Ursa 450', say: 'loan quad' },
-  tractor: { maker: 'Hartley', model: '35', say: 'tractor' },
-  utv: { maker: 'Ridgeback', model: 'Yak 4010', say: 'Yak' },
-  landrover: { maker: 'Moorland', model: 'Tor', say: 'Tor' },
-  landrover200: { maker: 'Moorland', model: 'Crag', say: 'Crag' },
-  fiesta: { maker: 'Thorne', model: 'Finch', say: 'Finch' },
-  corsa: { maker: 'Ashby', model: 'Griffin', say: 'Griffin' },
-  p309: { maker: 'Vauclair', model: '39D', say: 'Vauclair' }, // your own car (a 309 diesel's place): "the Vauclair", as you'd say "the Peugeot"
+  ursa: { maker: 'Tamura', model: 'Ursa 450', say: 'loan quad' },
+  hartley: { maker: 'Hartley', model: '35', say: 'tractor' },
+  yak: { maker: 'Ridgeback', model: 'Yak 4010', say: 'Yak' },
+  tor: { maker: 'Moorland', model: 'Tor', say: 'Tor' },
+  crag: { maker: 'Moorland', model: 'Crag', say: 'Crag' },
+  finch: { maker: 'Thorne', model: 'Finch', say: 'Finch' },
+  griffin: { maker: 'Ashby', model: 'Griffin', say: 'Griffin' },
+  vauclair: { maker: 'Vauclair', model: '39D', say: 'Vauclair' }, // your own car (a 309 diesel's place): "the Vauclair", as you'd say "the Peugeot"
 };
 
 export const MAKER_NAMES = [...new Set(Object.values(VEHICLE_NAMES).map((n) => n.maker))];

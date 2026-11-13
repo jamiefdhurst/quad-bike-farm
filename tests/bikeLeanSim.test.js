@@ -7,7 +7,7 @@ import { DEFAULT_VEHICLE_PARAMS } from '../src/vehicle/vehicleParams.js';
 import { EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
 
 // The mini moto's real physics on flat ground with the lean model driving it, the way quad.js does, without Three.js.
-const moto = EXTRA_SPECS.find((s) => s.id === 'moto');
+const moto = EXTRA_SPECS.find((s) => s.id === 'tz65');
 const DT = 1 / 60;
 
 function ride(plan, { grip = 1, safe = false, seconds = 8 } = {}) {

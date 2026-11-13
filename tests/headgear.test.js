@@ -38,15 +38,15 @@ describe('a girl and her helmet', () => {
   it('takes it off on getting off, onto the seat or the ground', () => {
     const h = make();
     h.put('amy');
-    step(h, girl({ riding: true, vehicle: 'red' }));
-    const seat = step(h, girl({ riding: false, vehicle: 'red', x: 3, z: 4 }));
-    expect(seat).toEqual([{ type: 'doff', girl: 'amy', place: 'seat', vehicle: 'red' }]);
-    expect(h.girl('amy')).toMatchObject({ place: 'seat', vehicle: 'red' });
+    step(h, girl({ riding: true, vehicle: 'farm300' }));
+    const seat = step(h, girl({ riding: false, vehicle: 'farm300', x: 3, z: 4 }));
+    expect(seat).toEqual([{ type: 'doff', girl: 'amy', place: 'seat', vehicle: 'farm300' }]);
+    expect(h.girl('amy')).toMatchObject({ place: 'seat', vehicle: 'farm300' });
 
     const j = make();
     j.put('amy');
-    step(j, girl({ riding: true, vehicle: 'red' }));
-    const ground = step(j, girl({ riding: false, vehicle: 'red', x: 3, z: 4, ground: 1 }));
+    step(j, girl({ riding: true, vehicle: 'farm300' }));
+    const ground = step(j, girl({ riding: false, vehicle: 'farm300', x: 3, z: 4, ground: 1 }));
     expect(ground[0]).toMatchObject({ type: 'doff', place: 'ground' });
     expect(j.girl('amy')).toMatchObject({ place: 'ground', x: 3, z: 4 });
   });
@@ -54,8 +54,8 @@ describe('a girl and her helmet', () => {
   it('keeps it on when the roll says to', () => {
     const h = make({}, 0.9);
     h.put('amy');
-    step(h, girl({ riding: true, vehicle: 'red', leave: 0.5 }));
-    expect(step(h, girl({ riding: false, vehicle: 'red', leave: 0.5 }))).toEqual([]);
+    step(h, girl({ riding: true, vehicle: 'farm300', leave: 0.5 }));
+    expect(step(h, girl({ riding: false, vehicle: 'farm300', leave: 0.5 }))).toEqual([]);
     expect(h.wearing('amy')).toBe(true);
   });
 
@@ -71,38 +71,38 @@ describe('a girl and her helmet', () => {
     const h = make();
     h.leave('amy', 'ground', { x: 5, z: 0 });
     step(h, girl());
-    const e = step(h, girl({ riding: true, vehicle: 'red' }));
+    const e = step(h, girl({ riding: true, vehicle: 'farm300' }));
     expect(e).toEqual([{ type: 'don', girl: 'amy', from: 'ground' }]);
     expect(h.wearing('amy')).toBe(true);
 
     const far = make();
     far.leave('amy', 'ground', { x: 500, z: 0 });
     step(far, girl());
-    expect(step(far, girl({ riding: true, vehicle: 'red' }))).toEqual([]);
+    expect(step(far, girl({ riding: true, vehicle: 'farm300' }))).toEqual([]);
     expect(far.wearing('amy')).toBe(false);
 
     const rack = make();
     step(rack, girl({ x: 500 }));
-    expect(step(rack, girl({ x: 500, riding: true, vehicle: 'red' }))).toEqual([]);
+    expect(step(rack, girl({ x: 500, riding: true, vehicle: 'farm300' }))).toEqual([]);
 
     // Near the hooks she takes it off them on her way rather than ride bare-headed.
     const grab = make();
     step(grab, girl());
-    expect(step(grab, girl({ riding: true, vehicle: 'red' }))).toEqual([{ type: 'don', girl: 'amy', from: 'rack' }]);
+    expect(step(grab, girl({ riding: true, vehicle: 'farm300' }))).toEqual([{ type: 'don', girl: 'amy', from: 'rack' }]);
     expect(grab.wearing('amy')).toBe(true);
   });
 
   it('puts on the helmet she left on the very seat she gets back on, however far the vehicle has gone', () => {
     const h = make();
-    h.leave('amy', 'seat', { vehicle: 'red' });
-    step(h, girl(), { red: { speed: 0, x: 400, z: 0 } });
-    expect(step(h, girl({ riding: true, vehicle: 'red' }), { red: { speed: 0, x: 400, z: 0 } })).toHaveLength(1);
+    h.leave('amy', 'seat', { vehicle: 'farm300' });
+    step(h, girl(), { farm300: { speed: 0, x: 400, z: 0 } });
+    expect(step(h, girl({ riding: true, vehicle: 'farm300' }), { farm300: { speed: 0, x: 400, z: 0 } })).toHaveLength(1);
   });
 
   it('lets a helmet fall off a seat once the vehicle is moving', () => {
     const h = make();
-    h.leave('amy', 'seat', { vehicle: 'red' });
-    const e = step(h, girl(), { red: { speed: 6, x: 20, z: 3 } });
+    h.leave('amy', 'seat', { vehicle: 'farm300' });
+    const e = step(h, girl(), { farm300: { speed: 6, x: 20, z: 3 } });
     expect(e).toEqual([{ type: 'drop', girl: 'amy', x: 20, z: 3 }]);
     expect(h.girl('amy')).toMatchObject({ place: 'ground', x: 20, z: 3 });
   });

@@ -46,7 +46,7 @@ export const LENS_PARAM_RANGES = {
 };
 
 /** The vehicles with a windscreen or a cab, which keep your view clean. Everything else is open. */
-const CLOSED = new Set(['utv', 'landrover', 'landrover200', 'fiesta', 'corsa', 'p309']);
+const CLOSED = new Set(['yak', 'tor', 'crag', 'finch', 'griffin', 'vauclair']);
 
 /** Whether a vehicle (by its spec id) leaves you open to what is thrown up. */
 export function isOpenVehicle(specId) {

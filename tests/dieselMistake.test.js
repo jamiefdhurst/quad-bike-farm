@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DieselMistake, DEFAULT_DIESEL_MISTAKE_PARAMS as P } from '../src/npc/dieselMistake.js';
 
 const jess = { id: 'jess', free: true, x: 0, z: 0 };
-const quad = (over = {}) => ({ id: 'red', x: 5, z: 0, speed: 0, rider: false, driver: null, tipped: false, space: 6, level: 0.3, ...over });
+const quad = (over = {}) => ({ id: 'farm300', x: 5, z: 0, speed: 0, rider: false, driver: null, tipped: false, space: 6, level: 0.3, ...over });
 /** One second, taking what Jess is offered (as a chooser that always says yes). */
 const step = (m, ctx) => {
   const events = m.update(1, ctx);
@@ -21,13 +21,13 @@ describe('Jess and the diesel can', () => {
   it('never sends her on its own: that is the chooser\'s', () => {
     const m = new DieselMistake({ ...P, startAfter: 0 }, always);
     expect(m.update(1, { girls: [jess], quads: [quad()] })).toEqual([]);
-    expect(m.offers({ girls: [jess], quads: [quad()] })).toEqual([{ key: 'refuel', girl: 'jess', spec: 'red', weight: P.weight }]);
+    expect(m.offers({ girls: [jess], quads: [quad()] })).toEqual([{ key: 'refuel', girl: 'jess', spec: 'farm300', weight: P.weight }]);
   });
 
   it('waits until the game is a few minutes old', () => {
     const m = new DieselMistake({ ...P }, always);
     expect(run(m, P.startAfter - 5, { girls: [jess], quads: [quad()] })).toEqual([]);
-    expect(run(m, 10, { girls: [jess], quads: [quad()] })[0]).toEqual({ type: 'go', girl: 'jess', spec: 'red' });
+    expect(run(m, 10, { girls: [jess], quads: [quad()] })[0]).toEqual({ type: 'go', girl: 'jess', spec: 'farm300' });
   });
 
   it('picks the quad that is lowest on fuel, parked, and has room for what she pours', () => {

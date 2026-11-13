@@ -13,7 +13,7 @@ import { buildAllModels } from './helpers/vehicleModels.js';
 // The farm bike (#75) as a Ridgeback Shepherd 200 after a Yamaha AG200: the numbers read off the photos, the parts it must have by name, the
 // controls the game poses, the room on the back and the front end turning about the bars' axis.
 
-const spec = EXTRA_SPECS.find((s) => s.id === 'ag200');
+const spec = EXTRA_SPECS.find((s) => s.id === 'shepherd');
 
 describe('the farm bike’s numbers', () => {
   it('put the wheels where the physics layout has them, a wheelbase of 1.33 m', () => {
@@ -69,7 +69,7 @@ describe('the farm bike’s spec', () => {
     expect(DASH_STYLES).toContain(spec.dashStyle);
     expect(CHOKE_STYLES).toContain(spec.chokeStyle);
     expect(TAP_STYLES).toContain(spec.tapStyle);
-    expect(MAKER_FOR.ag200).toBe('ridgeback');
+    expect(MAKER_FOR.shepherd).toBe('ridgeback');
     expect(spec.engine.noStarter).toBeFalsy();
     expect(spec.engine.kickStart).toBe(true);
     expect(spec.engine.pullStart).toBe(true);
@@ -78,11 +78,11 @@ describe('the farm bike’s spec', () => {
 
   it('has room on the back, is for sale, and is in the fleet pool', () => {
     expect(spec.solo).toBeFalsy();
-    expect(FOR_SALE.ag200.colours).toContain(spec.bodyColor);
+    expect(FOR_SALE.shepherd.colours).toContain(spec.bodyColor);
   });
 
   it('sounds like a different machine from the quads it shares a bank with', () => {
-    const quads = EXTRA_SPECS.concat().filter((s) => !s.audio?.recBank && s.id !== 'ag200');
+    const quads = EXTRA_SPECS.concat().filter((s) => !s.audio?.recBank && s.id !== 'shepherd');
     expect(spec.audio.recIdleSource).toBe('rev'); // not the red’s idle
     expect(spec.audio.recToneClosed).toBeGreaterThan(7000); // thinner than the quads’
     expect(quads.every((s) => s.audio?.pulseRefRpm !== spec.audio.pulseRefRpm || s.audio?.recToneClosed !== spec.audio.recToneClosed)).toBe(true);
@@ -94,12 +94,12 @@ describe('the farm bike’s model', () => {
   let bike;
   const world = (o) => o.getWorldPosition(new THREE.Vector3());
   beforeAll(async () => {
-    bike = (await buildAllModels()).find((v) => v.id === 'ag200');
+    bike = (await buildAllModels()).find((v) => v.id === 'shepherd');
   });
 
   it('is in proportion to the real bike', () => {
-    expect(IN_PROPORTION).toContain('ag200');
-    const errors = proportionErrors(measureModel(bike.model, bike.layout), REAL_SIZES.ag200);
+    expect(IN_PROPORTION).toContain('shepherd');
+    const errors = proportionErrors(measureModel(bike.model, bike.layout), REAL_SIZES.shepherd);
     for (const [k, e] of Object.entries(errors)) expect(Math.abs(e), k).toBeLessThan(PROPORTION_TOLERANCE);
   });
 

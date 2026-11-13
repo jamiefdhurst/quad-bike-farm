@@ -52,8 +52,8 @@ describe('the knack', () => {
   });
 
   it('no quad has one now (the green lost it so the girls can start it), and the blue runs rich on choke sooner', () => {
-    const green = QUAD_SPECS.find((s) => s.id === 'green');
-    const blue = QUAD_SPECS.find((s) => s.id === 'blue');
+    const green = QUAD_SPECS.find((s) => s.id === 'rb300');
+    const blue = QUAD_SPECS.find((s) => s.id === 'bruin');
     expect(green.engine.knackBlips ?? 0).toBe(0);
     expect(QUAD_SPECS.filter((s) => s.engine.knackBlips).length).toBe(0);
     expect(blue.engine.chokeEnrichment).toBeGreaterThan(1);

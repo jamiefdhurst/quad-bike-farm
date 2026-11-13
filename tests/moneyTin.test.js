@@ -105,23 +105,23 @@ describe('what the tin shows', () => {
 
   it('keeps the last five deals and words them with the in-game names', () => {
     const m = new Market();
-    for (let i = 0; i < 7; i++) m.note(i + 1, i % 2 ? 'sold' : 'bought', 'tractor', 100 * (i + 1));
+    for (let i = 0; i < 7; i++) m.note(i + 1, i % 2 ? 'sold' : 'bought', 'hartley', 100 * (i + 1));
     expect(m.ledger).toHaveLength(5);
     expect(m.ledger[0].day).toBe(3);
-    expect(ledgerText({ day: 4, deal: 'sold', specId: 'yellow', price: 1250 })).toBe('Day 4: sold the Tamura Hornet 200 for £1,250');
+    expect(ledgerText({ day: 4, deal: 'sold', specId: 'hornet', price: 1250 })).toBe('Day 4: sold the Tamura Hornet 200 for £1,250');
   });
 
   it('keeps the ledger in the save, ignoring anything that is not a deal', () => {
     const m = new Market();
-    m.note(2, 'bought', 'red', 400);
+    m.note(2, 'bought', 'farm300', 400);
     const back = new Market();
-    back.restore(JSON.parse(JSON.stringify({ ...m.toJSON(), ledger: [...m.toJSON().ledger, { deal: 'stolen', specId: 'red', price: 1 }, { deal: 'sold', specId: 'corsa', price: 1 }] })));
-    expect(back.ledger).toEqual([{ day: 2, deal: 'bought', specId: 'red', price: 400 }]);
+    back.restore(JSON.parse(JSON.stringify({ ...m.toJSON(), ledger: [...m.toJSON().ledger, { deal: 'stolen', specId: 'farm300', price: 1 }, { deal: 'sold', specId: 'griffin', price: 1 }] })));
+    expect(back.ledger).toEqual([{ day: 2, deal: 'bought', specId: 'farm300', price: 400 }]);
   });
 
   it('knows which bought vehicles turned up this morning', () => {
     const m = new Market();
-    m.bought = [{ specId: 'red', boughtDay: 3 }, { specId: 'blue', boughtDay: 2 }, { specId: 'green' }];
-    expect(m.arrivals(4).map((b) => b.specId)).toEqual(['red']);
+    m.bought = [{ specId: 'farm300', boughtDay: 3 }, { specId: 'bruin', boughtDay: 2 }, { specId: 'rb300' }];
+    expect(m.arrivals(4).map((b) => b.specId)).toEqual(['farm300']);
   });
 });

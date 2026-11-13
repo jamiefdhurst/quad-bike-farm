@@ -7,7 +7,7 @@ import { HerDrive } from '../src/npc/herDriving.js';
 import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
 
 const free = [{ id: 'amy', free: true }, { id: 'jess', free: true }];
-const ctx = (o = {}) => ({ girls: free, options: { amy: ['red', 'blue'], jess: ['red', 'blue', 'yellow'] }, claims: { amy: 'red', jess: 'yellow' }, ...o });
+const ctx = (o = {}) => ({ girls: free, options: { amy: ['farm300', 'bruin'], jess: ['farm300', 'bruin', 'hornet'] }, claims: { amy: 'farm300', jess: 'hornet' }, ...o });
 const make = (params = {}, random = () => 0) => new Race({ ...P, startAfter: 0, freeFor: 0, ...params }, random);
 /** A step in which one of them takes the race she's offered, the dare first (as a chooser that always says yes): the events. */
 const begin = (r, c = ctx(), dt = 1) => {
@@ -40,13 +40,13 @@ function started(params) {
 
 describe('picking the quads', () => {
   it('gives each their own claim when they can, never the same quad', () => {
-    expect(pickQuads({ amy: ['red', 'blue'], jess: ['red', 'yellow'] }, { amy: 'red', jess: 'yellow' }, () => 0)).toEqual({ amy: 'red', jess: 'yellow' });
-    expect(pickQuads({ amy: ['red', 'blue'], jess: ['red'] }, { amy: 'red', jess: 'red' }, () => 0)).toBeNull(); // only one quad she could have, and Amy has it
+    expect(pickQuads({ amy: ['farm300', 'bruin'], jess: ['farm300', 'hornet'] }, { amy: 'farm300', jess: 'hornet' }, () => 0)).toEqual({ amy: 'farm300', jess: 'hornet' });
+    expect(pickQuads({ amy: ['farm300', 'bruin'], jess: ['farm300'] }, { amy: 'farm300', jess: 'farm300' }, () => 0)).toBeNull(); // only one quad she could have, and Amy has it
   });
 
   it('falls back to something else when the claim is not on offer, and gives up with only one quad between them', () => {
-    expect(pickQuads({ amy: ['blue'], jess: ['blue', 'green'] }, { amy: 'red', jess: 'blue' }, () => 0)).toEqual({ amy: 'blue', jess: 'green' });
-    expect(pickQuads({ amy: ['blue'], jess: ['blue'] }, {}, () => 0)).toBeNull();
+    expect(pickQuads({ amy: ['bruin'], jess: ['bruin', 'rb300'] }, { amy: 'farm300', jess: 'bruin' }, () => 0)).toEqual({ amy: 'bruin', jess: 'rb300' });
+    expect(pickQuads({ amy: ['bruin'], jess: ['bruin'] }, {}, () => 0)).toBeNull();
   });
 });
 
@@ -85,7 +85,7 @@ describe('a race', () => {
     expect(begin(make({ freeFor: 10 }), ctx())).toEqual([]);
     expect(begin(make(), ctx({ girls: [{ id: 'amy', free: true }, { id: 'jess', free: false }] }))).toEqual([]);
     const [invite] = begin(make(), ctx());
-    expect(invite).toMatchObject({ type: 'invite', challenger: 'jess', other: 'amy', picks: { amy: 'red', jess: 'yellow' } });
+    expect(invite).toMatchObject({ type: 'invite', challenger: 'jess', other: 'amy', picks: { amy: 'farm300', jess: 'hornet' } });
   });
 
   it('waits for both on the grid, counts down, then they are off', () => {
@@ -263,12 +263,12 @@ describe('called away', () => {
 });
 
 describe('racing with you', () => {
-  const here = { riding: 'green', near: true, still: true };
+  const here = { riding: 'rb300', near: true, still: true };
   const withYou = (o = {}) => ctx({ you: { ...here, ...o } });
 
   it('invites you when they start a race and you are on a quad near the line, and not otherwise', () => {
     expect(begin(make(), withYou())[0].youIn).toBe(true);
-    expect(begin(make(), withYou())[0].picks.you).toBe('green');
+    expect(begin(make(), withYou())[0].picks.you).toBe('rb300');
     expect(begin(make(), withYou({ near: false }))[0].youIn).toBe(false);
     expect(begin(make(), withYou({ riding: null }))[0].picks.you).toBeUndefined();
   });

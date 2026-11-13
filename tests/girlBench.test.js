@@ -5,7 +5,7 @@ import { OFFER_KINDS } from '../src/npc/chooser.js';
 import { CHARACTERS } from '../src/npc/characters.js';
 import { AMY_BENCH_LINES, JESS_BENCH_LINES } from '../src/npc/benchLines.js';
 
-const bay = { unit: 'red', kind: 'plug' };
+const bay = { unit: 'farm300', kind: 'plug' };
 const girls = [
   { id: 'amy', free: true, distance: 10, weight: 1.3, slip: 0 },
   { id: 'jess', free: true, distance: 10, weight: 0.7, slip: 1 },
@@ -65,9 +65,9 @@ describe('A girl at the bench: choosing', () => {
   it('does not start a second while one is on or left, and ignores unknown jobs', () => {
     const gb = make();
     gb.update(P.startAfter + 1, ok);
-    expect(gb.begin('amy', 'red', 'nope', 'asked')).toBeNull();
-    expect(gb.begin('amy', 'red', 'plug', 'asked')?.type).toBe('go');
-    expect(gb.begin('jess', 'red', 'plug', 'asked')).toBeNull();
+    expect(gb.begin('amy', 'farm300', 'nope', 'asked')).toBeNull();
+    expect(gb.begin('amy', 'farm300', 'plug', 'asked')?.type).toBe('go');
+    expect(gb.begin('jess', 'farm300', 'plug', 'asked')).toBeNull();
     expect(gb.offers({ girls, bay })).toEqual([]);
   });
 });
@@ -75,7 +75,7 @@ describe('A girl at the bench: choosing', () => {
 describe('A girl at the bench: Amy', () => {
   it('waits to get there, then does the whole job and hands the finished job to the game', () => {
     const gb = make(() => 0.99); // never asks, never slips
-    gb.begin('amy', 'red', 'plug', 'asked');
+    gb.begin('amy', 'farm300', 'plug', 'asked');
     expect(gb.update(1, { ...ok, girl: { there: false } })).toEqual([]);
     const events = run(gb);
     const fin = events.find((e) => e.type === 'finish');
@@ -87,20 +87,20 @@ describe('A girl at the bench: Amy', () => {
 
   it('gives up if she cannot get there, or the quad goes, or you open the bench', () => {
     const a = make();
-    a.begin('amy', 'red', 'plug', 'asked');
+    a.begin('amy', 'farm300', 'plug', 'asked');
     const lost = a.update(P.walkTimeout + 1, { ...ok, girl: { there: false } });
     expect(lost.find((e) => e.type === 'end').why).toBe('lost');
     const b = make();
-    b.begin('amy', 'red', 'plug', 'asked');
+    b.begin('amy', 'farm300', 'plug', 'asked');
     expect(b.update(1, { ...ok, unitOk: false }).find((e) => e.type === 'end').why).toBe('lost');
     const c = make();
-    c.begin('amy', 'red', 'plug', 'asked');
+    c.begin('amy', 'farm300', 'plug', 'asked');
     expect(c.update(1, { ...ok, benchOpen: true }).find((e) => e.type === 'end').why).toBe('lost');
   });
 
   it('says what she is asking for while she waits, the spanner or the torch', () => {
     const gb = make(() => 0.5);
-    gb.begin('amy', 'red', 'plug', 'asked');
+    gb.begin('amy', 'farm300', 'plug', 'asked');
     const seen = new Set();
     for (let t = 0; t < 100 && gb.active; t += 0.25) {
       if (gb.asking) {
@@ -114,7 +114,7 @@ describe('A girl at the bench: Amy', () => {
 
   it('only asks maxAsks times in a job, on steps that are in the table', () => {
     const gb = make(() => 0.5);
-    gb.begin('amy', 'red', 'plug', 'asked');
+    gb.begin('amy', 'farm300', 'plug', 'asked');
     const asked = run(gb, { help: true }).filter((e) => e.type === 'say' && /^benchAsk/.test(e.line));
     expect(asked.length).toBeLessThanOrEqual(P.maxAsks);
     expect(asked.length).toBeGreaterThan(0);
@@ -123,11 +123,11 @@ describe('A girl at the bench: Amy', () => {
 
   it('thanks you for quick help, and fetches it herself when you ignore her, slower', () => {
     const quick = make(() => 0.5);
-    quick.begin('amy', 'red', 'plug', 'asked');
+    quick.begin('amy', 'farm300', 'plug', 'asked');
     const a = run(quick, { help: true });
     expect(a.find((e) => e.type === 'help').quick).toBe(true);
     const slow = make(() => 0.5);
-    slow.begin('amy', 'red', 'plug', 'asked');
+    slow.begin('amy', 'farm300', 'plug', 'asked');
     const b = run(slow, { help: false });
     expect(b.some((e) => e.type === 'say' && e.line === 'benchMissed')).toBe(true);
     expect(b.some((e) => e.type === 'help')).toBe(false);
@@ -136,7 +136,7 @@ describe('A girl at the bench: Amy', () => {
 
   it('is slow-help late: passing it after quickWithin is not quick', () => {
     const gb = make(() => 0.5);
-    gb.begin('amy', 'red', 'plug', 'asked');
+    gb.begin('amy', 'farm300', 'plug', 'asked');
     let late = null;
     for (let t = 0; t < 100 && gb.active; t += 0.25) {
       const events = gb.update(0.25, ok);
@@ -149,7 +149,7 @@ describe('A girl at the bench: Amy', () => {
   it('slips more when she had to fetch it herself', () => {
     const slipped = (missed) => {
       const gb = make(() => 0.2); // a slip needs the roll under the chance: over amyBotch 0.05, under missedBotch 0.3
-      gb.begin('amy', 'red', 'plug', 'asked');
+      gb.begin('amy', 'farm300', 'plug', 'asked');
       gb.session.phase = 'working';
       gb.session.missed = missed;
       gb.session.askedAt = 4; // not asking this time
@@ -166,29 +166,29 @@ describe('A girl at the bench: Amy', () => {
 describe('A girl at the bench: Jess', () => {
   it('gets part way, botches a step, and leaves the rest for you', () => {
     const gb = make(() => 0.5);
-    gb.begin('jess', 'red', 'plug', 'asked', { slips: true });
+    gb.begin('jess', 'farm300', 'plug', 'asked', { slips: true });
     const events = run(gb);
     expect(events.some((e) => e.type === 'finish')).toBe(false);
     const hand = events.find((e) => e.type === 'handover');
     expect(hand.kind).toBe('plug');
     expect(gb.active).toBe(false);
-    const left = gb.pendingFor('red');
+    const left = gb.pendingFor('farm300');
     expect(left.job.index).toBeGreaterThanOrEqual(2);
     expect(left.job.index).toBeLessThan(JOBS.plug.steps.length);
     expect(left.job.botched).toBe(true);
-    expect(gb.pendingFor('blue')).toBeNull();
+    expect(gb.pendingFor('bruin')).toBeNull();
   });
 
   it('never asks you for a hand', () => {
     const gb = make(() => 0);
-    gb.begin('jess', 'red', 'carb', 'asked', { slips: true });
+    gb.begin('jess', 'farm300', 'carb', 'asked', { slips: true });
     expect(run(gb).some((e) => e.type === 'say' && /^benchAsk/.test(e.line))).toBe(false);
   });
 
   it('leaves it half done when it is a short job too', () => {
     for (const kind of ['plug', 'carb', 'tyre', 'oil']) {
       const gb = make();
-      gb.begin('jess', 'red', kind, 'asked', { slips: true });
+      gb.begin('jess', 'farm300', kind, 'asked', { slips: true });
       run(gb);
       expect(gb.pending.job.index).toBeLessThan(JOBS[kind].steps.length);
     }
@@ -196,7 +196,7 @@ describe('A girl at the bench: Jess', () => {
 
   it('nags now and then, and gives up if you never come, leaving the quad as it was', () => {
     const gb = make();
-    gb.begin('jess', 'red', 'plug', 'asked', { slips: true });
+    gb.begin('jess', 'farm300', 'plug', 'asked', { slips: true });
     run(gb);
     const events = [];
     for (let t = 0; t < P.waitForYou + 5; t += 1) events.push(...gb.update(1, ok));
@@ -208,7 +208,7 @@ describe('A girl at the bench: Jess', () => {
 
   it('stops waiting if the quad is moved, and does not nag or give up while you have the bench open', () => {
     const gb = make();
-    gb.begin('jess', 'red', 'plug', 'asked', { slips: true });
+    gb.begin('jess', 'farm300', 'plug', 'asked', { slips: true });
     run(gb);
     for (let t = 0; t < P.waitForYou + 5; t += 1) expect(gb.update(1, { ...ok, benchOpen: true })).toEqual([]);
     expect(gb.pending).toBeTruthy();
@@ -217,7 +217,7 @@ describe('A girl at the bench: Jess', () => {
 
   it('lets the bench finish the job she left', () => {
     const gb = make();
-    gb.begin('jess', 'red', 'plug', 'asked', { slips: true });
+    gb.begin('jess', 'farm300', 'plug', 'asked', { slips: true });
     run(gb);
     const job = gb.pending.job;
     expect(job).toBeInstanceOf(BenchJob);

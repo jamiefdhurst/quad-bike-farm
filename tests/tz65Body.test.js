@@ -77,7 +77,7 @@ describe('the mini moto’s numbers', () => {
 });
 
 describe('the mini moto’s spec', () => {
-  const moto = EXTRA_SPECS.find((s) => s.id === 'moto');
+  const moto = EXTRA_SPECS.find((s) => s.id === 'tz65');
 
   it('names a dash, a choke on the carb, a tap by it, a Tamura badge, no lights and the cord alone', () => {
     expect(DASH_STYLES).toContain(moto.dashStyle);
@@ -86,7 +86,7 @@ describe('the mini moto’s spec', () => {
     expect(moto.chokeStyle).toBe('plunger');
     expect(moto.tapStyle).toBe('carbLeft');
     expect(moto.barLights).toBeFalsy();
-    expect(MAKER_FOR.moto).toBe('tamura');
+    expect(MAKER_FOR.tz65).toBe('tamura');
     expect(moto.engine.pullStart).toBe(true);
     expect(moto.engine.noStarter).toBe(true);
     expect(moto.solo).toBe(true);
@@ -97,7 +97,7 @@ describe('the mini moto’s model', () => {
   let moto;
   const world = (o) => o.getWorldPosition(new THREE.Vector3());
   beforeAll(async () => {
-    moto = (await buildAllModels()).find((v) => v.id === 'moto');
+    moto = (await buildAllModels()).find((v) => v.id === 'tz65');
   });
 
   it('has its parts by name: the controls, the engine in the open, the exhaust, the stickers and the pull starter', () => {

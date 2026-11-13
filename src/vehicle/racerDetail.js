@@ -121,7 +121,7 @@ export function racerChokeAt() {
 /** The maker's badge on each flank's outer face, a millimetre off the surface. */
 export function addRacerDecals(root) {
   for (const s of [-1, 1]) {
-    const badge = decalMesh('badge', { maker: MAKER_FOR.orange, model: 'Adder 250' }, { width: 0.2, name: 'badge' });
+    const badge = decalMesh('badge', { maker: MAKER_FOR.adder, model: 'Adder 250' }, { width: 0.2, name: 'badge' });
     badge.position.set(s * (RACER_FLANK.x + 0.01 + 0.006 + 0.001), 0.74, -0.08);
     badge.rotation.y = s * (Math.PI / 2);
     root.add(badge);

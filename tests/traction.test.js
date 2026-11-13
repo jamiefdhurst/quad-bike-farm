@@ -4,7 +4,7 @@ import { DEFAULT_VEHICLE_PARAMS } from '../src/vehicle/vehicleParams.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 
 const params = { ...DEFAULT_VEHICLE_PARAMS };
-const yellow = { ...DEFAULT_VEHICLE_PARAMS, ...QUAD_SPECS.find((s) => s.id === 'yellow').vehicle };
+const yellow = { ...DEFAULT_VEHICLE_PARAMS, ...QUAD_SPECS.find((s) => s.id === 'hornet').vehicle };
 const FRONT = [true, true, false, false];
 
 /** Four wheels on one surface; loads front-light as when accelerating hard. */

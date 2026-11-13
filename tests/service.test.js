@@ -52,24 +52,24 @@ describe('the board', () => {
   const yes = () => 0;
 
   it('posts nothing when every quad is fine, or only one thing is due', () => {
-    expect(pickServiceJob([quad('red', {})], yes)).toBeNull();
-    expect(pickServiceJob([quad('red', { clog: 0.9 })], yes)).toBeNull();
+    expect(pickServiceJob([quad('farm300', {})], yes)).toBeNull();
+    expect(pickServiceJob([quad('farm300', { clog: 0.9 })], yes)).toBeNull();
   });
 
   it('posts a partial service for two things due', () => {
-    const job = pickServiceJob([quad('red', { wear: 0.35, clog: 0.9 })], yes);
-    expect(job).toMatchObject({ id: 'red', kinds: ['plug', 'filter'], full: false });
+    const job = pickServiceJob([quad('farm300', { wear: 0.35, clog: 0.9 })], yes);
+    expect(job).toMatchObject({ id: 'farm300', kinds: ['plug', 'filter'], full: false });
     expect(serviceChalk({ ...job, name: 'Red' })).toBe('Red: plug, air filter');
   });
 
   it('posts a full service past the book wear, and takes the worst quad', () => {
-    const job = pickServiceJob([quad('red', { wear: 0.35, clog: 0.9 }), quad('blue', { wear: 0.7 }), quad('green', { wear: 0.55 })], yes);
-    expect(job).toMatchObject({ id: 'blue', full: true, kinds: servicePlan(petrol4) });
+    const job = pickServiceJob([quad('farm300', { wear: 0.35, clog: 0.9 }), quad('bruin', { wear: 0.7 }), quad('rb300', { wear: 0.55 })], yes);
+    expect(job).toMatchObject({ id: 'bruin', full: true, kinds: servicePlan(petrol4) });
     expect(serviceChalk({ ...job, name: 'Blue' })).toBe('Full service on the Blue');
   });
 
   it('does not always go up', () => {
-    expect(pickServiceJob([quad('blue', { wear: 0.7 })], () => 0.99)).toBeNull();
+    expect(pickServiceJob([quad('bruin', { wear: 0.7 })], () => 0.99)).toBeNull();
   });
 
   it('goes on the board on top of the usual jobs and ticks off when its kinds are done clean', () => {
@@ -77,24 +77,24 @@ describe('the board', () => {
     board.add('service:red', { chalk: 'Red: plug, air filter', hint: '' });
     expect(board.today).toHaveLength(3);
     expect(board.lines()[2].text).toBe('Red: plug, air filter');
-    const job = new ServiceJob({ id: 'red', name: 'Red', kinds: ['plug', 'filter'], full: false });
-    expect(job.note('blue', 'plug', false)).toBe(false); // another quad
-    expect(job.note('red', 'plug', true)).toBe(false); // botched: still to do
-    expect(job.note('red', 'plug', false)).toBe(false);
-    expect(job.note('red', 'filter', false)).toBe(true);
+    const job = new ServiceJob({ id: 'farm300', name: 'Red', kinds: ['plug', 'filter'], full: false });
+    expect(job.note('bruin', 'plug', false)).toBe(false); // another quad
+    expect(job.note('farm300', 'plug', true)).toBe(false); // botched: still to do
+    expect(job.note('farm300', 'plug', false)).toBe(false);
+    expect(job.note('farm300', 'filter', false)).toBe(true);
     expect(board.complete('service:red')).toBe(true);
   });
 });
 
 describe('a full service', () => {
   const run = (botchAt) => {
-    const r = new ServiceRun('red', ['plug', 'filter', 'sump']);
+    const r = new ServiceRun('farm300', ['plug', 'filter', 'sump']);
     for (const k of ['plug', 'filter', 'sump']) r.record(k, k === botchAt);
     return r;
   };
 
   it('goes in order and only counts the next job', () => {
-    const r = new ServiceRun('red', ['plug', 'filter']);
+    const r = new ServiceRun('farm300', ['plug', 'filter']);
     r.record('filter', false);
     expect(r.next).toBe('plug');
     r.record('plug', false);
@@ -119,7 +119,7 @@ describe('a full service', () => {
   it('takes nothing off if any step was botched or it is unfinished', () => {
     const e = { params: { baseRoughness: 0.5 } };
     expect(applyServiceReward(e, 0.2, run('filter'), P)).toBe(0);
-    expect(applyServiceReward(e, 0.2, new ServiceRun('red', ['plug']), P)).toBe(0);
+    expect(applyServiceReward(e, 0.2, new ServiceRun('farm300', ['plug']), P)).toBe(0);
     expect(e.params.baseRoughness).toBe(0.5);
   });
 

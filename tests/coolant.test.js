@@ -102,7 +102,7 @@ describe('what a low radiator does to the heat', () => {
 
 describe('the leaking orange', () => {
   it('only the orange is water-cooled', () => {
-    expect(QUAD_SPECS.filter((s) => s.engine?.waterCooled).map((s) => s.id)).toEqual(['orange']);
+    expect(QUAD_SPECS.filter((s) => s.engine?.waterCooled).map((s) => s.id)).toEqual(['adder']);
   });
 
   it('with no leak, nothing is lost and it never boils', () => {

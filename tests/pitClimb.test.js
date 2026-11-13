@@ -93,9 +93,9 @@ describe('the pit climb', () => {
 
   it('keeps its record, and a better time beats it', () => {
     const r = new Records(1);
-    expect(r.submit('pit', 'you', 50, 'red').record).toBe(true);
-    expect(r.submit('pit', 'you', 60, 'red').record).toBe(false);
-    expect(r.submit('pit', 'you', 44, 'red').record).toBe(true);
+    expect(r.submit('pit', 'you', 50, 'farm300').record).toBe(true);
+    expect(r.submit('pit', 'you', 60, 'farm300').record).toBe(false);
+    expect(r.submit('pit', 'you', 44, 'farm300').record).toBe(true);
     const saved = new Records(2);
     saved.restore(JSON.parse(JSON.stringify(r.toJSON())));
     expect(saved.best('pit').value).toBe(44);

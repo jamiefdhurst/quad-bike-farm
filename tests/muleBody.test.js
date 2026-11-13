@@ -55,14 +55,14 @@ describe('the buckled belt', () => {
 describe('the UTV’s model', () => {
   let utv;
   beforeAll(async () => {
-    utv = (await buildAllModels()).find((v) => v.id === 'utv');
+    utv = (await buildAllModels()).find((v) => v.id === 'yak');
   });
 
   it('is in proportion to the real one on every measure', () => {
-    expect(IN_PROPORTION).toContain('utv');
-    const errors = proportionErrors(measureModel(utv.model, utv.layout), REAL_SIZES.utv);
+    expect(IN_PROPORTION).toContain('yak');
+    const errors = proportionErrors(measureModel(utv.model, utv.layout), REAL_SIZES.yak);
     for (const [k, e] of Object.entries(errors)) expect(Math.abs(e), k).toBeLessThan(0.08);
-    expect(MAKER_FOR.utv).toBe('ridgeback');
+    expect(MAKER_FOR.yak).toBe('ridgeback');
     expect(UTV_SPEC.bodyColor).toBe(0x3b5b3a);
   });
 

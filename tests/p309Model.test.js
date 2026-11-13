@@ -32,7 +32,7 @@ describe('your 309 at its real size', () => {
   });
 
   it('wears the made-up maker on its badges, never the real one', () => {
-    expect(MAKER_FOR.p309).toBe('vauclair');
+    expect(MAKER_FOR.vauclair).toBe('vauclair');
     expect(MAKERS.vauclair.name).toBe('Vauclair');
   });
 

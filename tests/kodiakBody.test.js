@@ -43,7 +43,7 @@ describe('the loan quad’s numbers', () => {
 });
 
 describe('the loan quad’s spec', () => {
-  const loan = EXTRA_SPECS.find((s) => s.id === 'loan');
+  const loan = EXTRA_SPECS.find((s) => s.id === 'ursa');
 
   it('is a Kodiak-bodied, fuel injected quad with no choke, a lights switch and a Tamura badge', () => {
     expect(BODY_STYLES).toContain(loan.style);
@@ -54,14 +54,14 @@ describe('the loan quad’s spec', () => {
     expect(loan.chokeStyle).toBe('none');
     expect(loan.engine.injected).toBe(true);
     expect(loan.engine.coldIdleRpm).toBeGreaterThan(0);
-    expect(MAKER_FOR.loan).toBe('tamura');
+    expect(MAKER_FOR.ursa).toBe('tamura');
     expect(loan.bodyWear).toBe(0);
-    expect(QUAD_SPECS.find((s) => s.id === 'blue').style).toBe('grizzly'); // and the blue keeps its own
+    expect(QUAD_SPECS.find((s) => s.id === 'bruin').style).toBe('grizzly'); // and the blue keeps its own
   });
 });
 
 describe('the loan quad has no carb for the carb’s troubles', () => {
-  const loan = EXTRA_SPECS.find((s) => s.id === 'loan');
+  const loan = EXTRA_SPECS.find((s) => s.id === 'ursa');
 
   it('has no fuel tap, so the dripping float and the sediment bowl cannot happen either', () => {
     expect(loan.fuel.noTap).toBe(true);
@@ -82,7 +82,7 @@ describe('the loan quad has no carb for the carb’s troubles', () => {
 describe('the loan quad’s model', () => {
   let loan;
   beforeAll(async () => {
-    loan = (await buildAllModels()).find((v) => v.id === 'loan');
+    loan = (await buildAllModels()).find((v) => v.id === 'ursa');
   });
 
   it('has no choke lever anywhere, and keeps the lights rocker, the thumb throttle and the pod', () => {
@@ -109,8 +109,8 @@ describe('the loan quad’s model', () => {
   });
 
   it('is in proportion to the real one on every measure', () => {
-    expect(IN_PROPORTION).toContain('loan');
-    const errors = proportionErrors(measureModel(loan.model, loan.layout), REAL_SIZES.loan);
+    expect(IN_PROPORTION).toContain('ursa');
+    const errors = proportionErrors(measureModel(loan.model, loan.layout), REAL_SIZES.ursa);
     for (const [k, e] of Object.entries(errors)) expect(Math.abs(e), k).toBeLessThan(0.08);
   });
 

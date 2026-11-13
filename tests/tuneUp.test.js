@@ -146,7 +146,7 @@ describe('tune-up', () => {
 });
 
 describe('tune-up on the diesels', () => {
-  for (const [name, spec] of [['tractor', TRACTOR_SPEC], ['UTV', UTV_SPEC]]) {
+  for (const [name, spec] of [['hartley', TRACTOR_SPEC], ['UTV', UTV_SPEC]]) {
     it(`takes the ${name}'s idle screw up and down within its safe range and puts stock back`, () => {
       const t = quad(0, undefined, spec);
       const before = snapshot(t);

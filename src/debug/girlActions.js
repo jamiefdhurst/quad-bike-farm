@@ -1,4 +1,4 @@
-// Things you can make a girl do on demand, shared by the debug panel's Girls tab (a button each) and the console (`girl amy drive red`),
+// Things you can make a girl do on demand, shared by the debug panel's Girls tab (a button each) and the console (`girl amy drive farm300`),
 // so both do exactly what the game does. Each action calls the real game methods and says what happened with a toast.
 import { pickTrick } from '../npc/showOff.js';
 import { cleanUp } from '../npc/muddiness.js';
@@ -483,7 +483,7 @@ export function girlActions(g) {
       },
     },
     {
-      verb: 'moto',
+      verb: 'tz65',
       label: '% has a go on the mini moto (Jess wobbles, gets braver and comes off on the grass; Amy says she is not getting on it)',
       run: (id) => {
         const c = girl(id);

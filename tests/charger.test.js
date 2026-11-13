@@ -15,7 +15,7 @@ describe('battery charger', () => {
     e.battery = 0;
     e.batteryOut = true;
     const c = new Charger();
-    c.put('blue', e);
+    c.put('bruin', e);
     let seconds = 0;
     let fullAt = null;
     while (e.battery < 0.999 && seconds < 900) {

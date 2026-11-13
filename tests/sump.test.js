@@ -32,7 +32,7 @@ describe('which vehicles have a sump', () => {
     expect(hasSump({ strokes: 4, runsOnDiesel: true })).toBe(true);
   });
   it('picks one burner from the seed, or none with no four-strokes', () => {
-    const ids = ['red', 'blue', 'green', 'loan'];
+    const ids = ['farm300', 'bruin', 'rb300', 'ursa'];
     const picked = new Set();
     for (let s = 1; s < 60; s++) picked.add(pickBurner(ids, createRandom(s)));
     expect(picked.size).toBeGreaterThan(1);

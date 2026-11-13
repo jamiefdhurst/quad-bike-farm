@@ -100,7 +100,7 @@ export function addBayouFront(root, MAT, lensMat, grey = cageMaterial()) {
   }
   rbox(0.24, 0.15, 0.012, 0.004, MAT.plastic, 0, face.lampY, face.z - 0.03, root, 'radiatorShroud');
   // The maker's name across the slats, where the real one's is, on a plain black strip so it reads.
-  const badge = decalMesh('badge', { maker: MAKER_FOR.green }, { width: 0.1, name: 'badge' });
+  const badge = decalMesh('badge', { maker: MAKER_FOR.rb300 }, { width: 0.1, name: 'badge' });
   badge.position.set(0, face.lampY, face.z + 0.0285);
   root.add(badge);
 }
@@ -186,7 +186,7 @@ export function addBayouRackBlocks(root, MAT) {
  */
 export function addBayouDecals(root) {
   for (const s of [-1, 1]) {
-    const name = decalMesh('badge', { maker: MAKER_FOR.green, model: 'RB300' }, { width: 0.2, name: 'tankDecal' });
+    const name = decalMesh('badge', { maker: MAKER_FOR.rb300, model: 'RB300' }, { width: 0.2, name: 'tankDecal' });
     name.position.set(s * 0.1935, 0.82, 0.3); // the tank cover's side, a millimetre proud
     name.rotation.y = s * (Math.PI / 2);
     root.add(name);

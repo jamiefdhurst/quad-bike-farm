@@ -84,7 +84,7 @@ export function moto(g, say) {
   say(`tp me ${p.x + p.half + 6} ${p.z} 270`);
   g.settleGirl(jess);
   jess.root.position.set(p.x + 3, ground(g, p.x + 3, p.z + 2), p.z + 2);
-  girlActions(g).find('jess', 'moto').run('jess');
+  girlActions(g).find('jess', 'tz65').run('jess');
   return ['the mini moto is in the paddock and Jess is going for it', 'she may refuse it or come off, as she would in play'];
 }
 

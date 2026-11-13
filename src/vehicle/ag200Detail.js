@@ -417,7 +417,7 @@ export function addAgBars(bars, MAT, paint, lensMat, rack) {
 /** The maker's badge on each side of the tank, a millimetre off its panel. */
 export function addAgDecals(root) {
   for (const s of [-1, 1]) {
-    const badge = decalMesh('badge', { maker: MAKER_FOR.ag200, model: 'AG200' }, { width: 0.12, name: 'badge' });
+    const badge = decalMesh('badge', { maker: MAKER_FOR.shepherd, model: 'AG200' }, { width: 0.12, name: 'badge' });
     badge.position.set(s * 0.172, 0.89, 0.07);
     badge.rotation.y = s * (Math.PI / 2);
     root.add(badge);

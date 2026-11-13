@@ -8,8 +8,8 @@ import { Track } from '../src/world/track.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 
 const free = [{ id: 'amy', free: true }, { id: 'jess', free: true }];
-const idleYou = { riding: 'green', still: true, stalled: false, throttle: 0, near: true, across: 1 };
-const ctx = (o = {}) => ({ girls: free, options: { amy: ['red', 'blue'], jess: ['red', 'blue', 'yellow'] }, claims: { amy: 'red', jess: 'yellow' }, you: idleYou, along: {}, length: 70, ...o });
+const idleYou = { riding: 'rb300', still: true, stalled: false, throttle: 0, near: true, across: 1 };
+const ctx = (o = {}) => ({ girls: free, options: { amy: ['farm300', 'bruin'], jess: ['farm300', 'bruin', 'hornet'] }, claims: { amy: 'farm300', jess: 'hornet' }, you: idleYou, along: {}, length: 70, ...o });
 const make = (params = {}, random = () => 0) => new Drag({ ...P, startAfter: 0, ...params }, random);
 /** Time goes by, Jess taking the challenge she's offered (as a chooser that always says yes). */
 const step = (d, seconds, c = ctx(), dt = 0.25) => {
@@ -41,10 +41,10 @@ describe('asking for one at the line', () => {
     expect(d.update(0.5, ctx())).toEqual([]); // not asked, and not still long enough
     d.forced = true;
     const [invite] = d.update(0.5, ctx());
-    expect(invite).toMatchObject({ type: 'invite', girl: 'jess', asked: true, picks: { jess: 'yellow', you: 'green' } });
+    expect(invite).toMatchObject({ type: 'invite', girl: 'jess', asked: true, picks: { jess: 'hornet', you: 'rb300' } });
     const amy = make({}, () => 0.99);
     amy.forced = true;
-    expect(amy.update(0.5, ctx())[0]).toMatchObject({ girl: 'amy', picks: { amy: 'red' } });
+    expect(amy.update(0.5, ctx())[0]).toMatchObject({ girl: 'amy', picks: { amy: 'farm300' } });
   });
 
   it('is happy with one girl free, waits if neither is, and forgets it if you get off', () => {
@@ -193,7 +193,7 @@ describe('Jess pulling up and blipping', () => {
   it('never comes over on its own: that is the chooser\'s', () => {
     const d = make({ blipStill: 3 });
     for (let t = 0; t < 20; t++) expect(d.update(0.25, sat())).toEqual([]);
-    expect(d.offers(sat())).toEqual([{ key: 'dragDare', girl: 'jess', pick: 'yellow', weight: P.blipWeight }]);
+    expect(d.offers(sat())).toEqual([{ key: 'dragDare', girl: 'jess', pick: 'hornet', weight: P.blipWeight }]);
   });
 
   it('is a ten second wait by default', () => {
@@ -202,8 +202,8 @@ describe('Jess pulling up and blipping', () => {
 
   it('is only ever Jess, on a quad you are not on', () => {
     const events = step(make({ blipStill: 3 }), 5, sat());
-    expect(events[0]).toMatchObject({ type: 'approach', girl: 'jess', pick: 'yellow' });
-    expect(step(make({ blipStill: 3 }), 8, ctx({ options: { amy: ['red'], jess: [] }, you: idleYou }))).toEqual([]);
+    expect(events[0]).toMatchObject({ type: 'approach', girl: 'jess', pick: 'hornet' });
+    expect(step(make({ blipStill: 3 }), 8, ctx({ options: { amy: ['farm300'], jess: [] }, you: idleYou }))).toEqual([]);
   });
 
   it('blips her throttle when she is beside you, a set number of times', () => {
@@ -225,7 +225,7 @@ describe('Jess pulling up and blipping', () => {
     step(d, 1.5, sat({ throttle: 0 }));
     const events = d.update(0.1, sat({ throttle: 1 }));
     expect(types(events)).toEqual(['answered', 'invite']);
-    expect(events[1]).toMatchObject({ girl: 'jess', blipped: true, picks: { jess: 'yellow', you: 'green' } });
+    expect(events[1]).toMatchObject({ girl: 'jess', blipped: true, picks: { jess: 'hornet', you: 'rb300' } });
     expect(d.phase).toBe('gather');
   });
 

@@ -1,4 +1,4 @@
-// The game as the console sees it: a tree of values (vehicle.red.temperature, girl.amy.favour, weather.rain, tune.<group>.<key>...)
+// The game as the console sees it: a tree of values (vehicle.farm300.temperature, girl.amy.favour, weather.rain, tune.<group>.<key>...)
 // built over the live game. Every value reads and writes through the same fields and methods the debug panel uses.
 import { tinLevel, ledgerText } from '../farm/classifieds.js';
 import { SEASONS } from '../world/seasons.js';

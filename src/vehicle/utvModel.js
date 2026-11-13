@@ -382,7 +382,7 @@ export function buildUtvModel({ bodyColor = 0x367c2b, dashStyle = 'utv' } = {}) 
   column.add(wheel);
   add(new THREE.TorusGeometry(0.19, 0.017, 8, 32).rotateX(Math.PI / 2), MAT.plastic, wheel);
   const hornPad = add(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 14), MAT.plastic, wheel, 'hornPad'); // the horn pad, which sinks while it sounds
-  const logo = decalMesh('badge', { maker: MAKER_FOR.utv }, { width: 0.075, name: 'wheelBadge' }); // the maker's name on the pad, reading up the wheel to the driver
+  const logo = decalMesh('badge', { maker: MAKER_FOR.yak }, { width: 0.075, name: 'wheelBadge' }); // the maker's name on the pad, reading up the wheel to the driver
   logo.position.set(0, 0.0206, 0);
   logo.rotation.set(-Math.PI / 2, 0, Math.PI);
   hornPad.add(logo);

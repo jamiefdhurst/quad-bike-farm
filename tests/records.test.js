@@ -15,13 +15,13 @@ describe('records', () => {
 
   it('keeps the lower time and the higher jump', () => {
     const r = new Records();
-    expect(r.submit('climb', 'jess', 50, 'red').record).toBe(true);
-    expect(r.submit('climb', 'amy', 55, 'blue').record).toBe(false);
-    expect(r.submit('climb', 'you', 45, 'blue').record).toBe(true);
-    expect(r.best('climb')).toEqual({ who: 'you', value: 45, quad: 'blue', day: 1 });
-    expect(r.submit('jump', 'you', 8, 'red').record).toBe(true);
-    expect(r.submit('jump', 'amy', 6, 'red').record).toBe(false);
-    expect(r.submit('jump', 'amy', 9, 'red').record).toBe(true);
+    expect(r.submit('climb', 'jess', 50, 'farm300').record).toBe(true);
+    expect(r.submit('climb', 'amy', 55, 'bruin').record).toBe(false);
+    expect(r.submit('climb', 'you', 45, 'bruin').record).toBe(true);
+    expect(r.best('climb')).toEqual({ who: 'you', value: 45, quad: 'bruin', day: 1 });
+    expect(r.submit('jump', 'you', 8, 'farm300').record).toBe(true);
+    expect(r.submit('jump', 'amy', 6, 'farm300').record).toBe(false);
+    expect(r.submit('jump', 'amy', 9, 'farm300').record).toBe(true);
   });
 
   it('a tie is not a record', () => {
@@ -32,12 +32,12 @@ describe('records', () => {
 
   it('keeps a best for each quad as well', () => {
     const r = new Records();
-    r.submit('climb', 'you', 40, 'red');
-    const slow = r.submit('climb', 'you', 70, 'green');
+    r.submit('climb', 'you', 40, 'farm300');
+    const slow = r.submit('climb', 'you', 70, 'rb300');
     expect(slow.record).toBe(false);
     expect(slow.quadBest).toBe(true);
-    expect(r.bestOn('climb', 'green').value).toBe(70);
-    expect(r.submit('climb', 'you', 75, 'green').quadBest).toBe(false);
+    expect(r.bestOn('climb', 'rb300').value).toBe(70);
+    expect(r.submit('climb', 'you', 75, 'rb300').quadBest).toBe(false);
   });
 
   it('ignores nonsense', () => {

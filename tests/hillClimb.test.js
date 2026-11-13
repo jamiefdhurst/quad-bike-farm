@@ -162,7 +162,7 @@ describe('climbing for you', () => {
 });
 
 describe('a girl climbing', () => {
-  const ctx = (extra = {}) => ({ busy: false, dark: false, girls: [{ id: 'amy', free: true }, { id: 'jess', free: true }], options: { amy: ['red'], jess: ['blue'] }, claims: {}, ...extra });
+  const ctx = (extra = {}) => ({ busy: false, dark: false, girls: [{ id: 'amy', free: true }, { id: 'jess', free: true }], options: { amy: ['farm300'], jess: ['bruin'] }, claims: {}, ...extra });
   const ready = () => {
     const c = new HillClimb(gates, P, () => 0.1);
     c.update(P.startAfter + 1, { at: {} });

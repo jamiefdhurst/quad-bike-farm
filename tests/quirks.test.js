@@ -24,13 +24,13 @@ describe('picking quirks', () => {
   });
 
   it('only picks what the quad has to act on', () => {
-    const red = QUAD_SPECS.find((s) => s.id === 'red');
+    const red = QUAD_SPECS.find((s) => s.id === 'farm300');
     expect(applicableQuirks(featuresOf(red, false))).not.toContain('fuelHigh'); // no gauge without a pod
     expect(applicableQuirks(featuresOf(red, true))).toContain('fuelHigh');
     const tractor = { tractor: true, fuel: { noTap: true }, dashStyle: 'tractor' };
     const t = applicableQuirks(featuresOf(tractor));
     for (const k of ['tapStiff', 'seatSplit', 'chokeCreeps', 'fuelHigh']) expect(t).not.toContain(k);
-    expect(applicableQuirks(featuresOf({ id: 'kids', dashStyle: 'kidsKey' }))).not.toContain('seatSplit');
+    expect(applicableQuirks(featuresOf({ id: 'asp', dashStyle: 'kidsKey' }))).not.toContain('seatSplit');
   });
 
   it('every real quad can get at least one quirk', () => {

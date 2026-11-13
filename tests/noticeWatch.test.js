@@ -3,7 +3,7 @@ import { NoticeWatch } from '../src/npc/noticeWatch.js';
 import { DEFAULT_NOTICE_PARAMS as P, NOTICE_KINDS } from '../src/npc/attention.js';
 
 const dt = 1 / 30;
-const quad = (o = {}) => ({ id: 'red', x: 1, y: 0.8, z: 2, events: [], rpm: 1200, running: true, speed: 0, horn: false, tipped: false, airborne: false, ...o });
+const quad = (o = {}) => ({ id: 'farm300', x: 1, y: 0.8, z: 2, events: [], rpm: 1200, running: true, speed: 0, horn: false, tipped: false, airborne: false, ...o });
 const kinds = (out) => out.map((n) => n.kind);
 
 describe('NoticeWatch', () => {
@@ -11,7 +11,7 @@ describe('NoticeWatch', () => {
     const w = new NoticeWatch(P);
     const out = w.update(dt, [quad({ events: ['caught', 'backfire', 'backfire', 'starterClick'] })]);
     expect(kinds(out)).toEqual(['engineStart', 'backfire']);
-    expect(out[0]).toMatchObject({ key: 'red', x: 1, y: 0.8, z: 2 });
+    expect(out[0]).toMatchObject({ key: 'farm300', x: 1, y: 0.8, z: 2 });
   });
 
   it('only makes notices of kinds attention knows', () => {

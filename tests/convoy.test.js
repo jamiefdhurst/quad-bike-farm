@@ -4,7 +4,7 @@ import { AMY_CONVOY_LINES, JESS_CONVOY_LINES, CONVOY_BANTER } from '../src/npc/c
 import { BANTER_TIMING } from '../src/npc/banter.js';
 
 const free = [{ id: 'amy', free: true }, { id: 'jess', free: true }];
-const ctx = (o = {}) => ({ girls: free, busy: false, options: { amy: ['red', 'blue'], jess: ['red', 'yellow'] }, claims: { amy: 'red', jess: 'yellow' }, ...o });
+const ctx = (o = {}) => ({ girls: free, busy: false, options: { amy: ['farm300', 'bruin'], jess: ['farm300', 'hornet'] }, claims: { amy: 'farm300', jess: 'hornet' }, ...o });
 const make = (params = {}, random = () => 0) => new Convoy({ ...P, startAfter: 0, freeFor: 0, ...params }, random);
 /** A second goes by and one of them takes the ride she's offered (as a chooser that always says yes): the events. */
 const start = (c, x = ctx()) => {
@@ -32,7 +32,7 @@ describe('follow the leader', () => {
     expect(start(make({ startAfter: 100 }))).toEqual([]);
     expect(start(make(), ctx({ busy: true }))).toEqual([]);
     expect(start(make(), ctx({ girls: [{ id: 'amy', free: true }, { id: 'jess', free: false }] }))).toEqual([]);
-    expect(start(make())[0]).toMatchObject({ type: 'invite', leader: 'jess', follower: 'amy', picks: { amy: 'red', jess: 'yellow' } });
+    expect(start(make())[0]).toMatchObject({ type: 'invite', leader: 'jess', follower: 'amy', picks: { amy: 'farm300', jess: 'hornet' } });
     expect(make().update(1, ctx())).toEqual([]); // never on its own: that's the chooser's
     expect(make().offers(ctx()).map((o) => o.girl)).toEqual(['amy', 'jess']); // either can suggest it
   });

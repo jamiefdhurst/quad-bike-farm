@@ -60,7 +60,7 @@ function onFront(decal, s, z, y) {
 export function addJuniorDecals(root) {
   const seat = JUNIOR_SEAT.find((st) => st.z === -0.45); // the widest part of the seat, straight to the next station
   for (const s of [-1, 1]) {
-    const badge = decalMesh('badge', { maker: MAKER_FOR.kids }, { width: 0.2, name: 'badge' });
+    const badge = decalMesh('badge', { maker: MAKER_FOR.asp }, { width: 0.2, name: 'badge' });
     badge.position.set(s * (seat.w / 2 + 0.002), (seat.y0 + seat.y1) / 2 - 0.005, -0.55);
     badge.rotation.y = s * (Math.PI / 2);
     root.add(badge);

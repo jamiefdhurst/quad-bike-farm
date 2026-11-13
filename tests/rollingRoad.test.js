@@ -22,7 +22,7 @@ import { QUAD_SPECS, EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
 
 const ALL_QUADS = [...QUAD_SPECS, ...EXTRA_SPECS];
 
-const red = QUAD_SPECS.find((s) => s.id === 'red');
+const red = QUAD_SPECS.find((s) => s.id === 'farm300');
 
 /** Runs a quad whose engine revs follow the throttle to its full revs and makes `power`, to the end. */
 function runThrough(spec, power = 1, params = P) {
@@ -53,8 +53,8 @@ describe('every quad has a stock figure', () => {
   });
   it('puts the two-stroke race quad above the farm workhorse and the kids quad below everything', () => {
     const by = Object.fromEntries(ALL_QUADS.map((s) => [s.id, s.stockBhp]));
-    expect(by.orange).toBeGreaterThan(by.green);
-    expect(Math.min(...Object.values(by))).toBe(by.kids);
+    expect(by.adder).toBeGreaterThan(by.rb300);
+    expect(Math.min(...Object.values(by))).toBe(by.asp);
   });
   it('is not for anything but a quad', () => {
     expect(canRun({})).toBe(false);
@@ -238,37 +238,37 @@ describe('what the farm keeps', () => {
   const result = (bhp) => ({ bhp, rpm: 4800, torque: 20, diff: 0, curve: [{ rpm: 3000, bhp: bhp - 3 }, { rpm: 4800, bhp }] });
   it('keeps the latest runs of each quad', () => {
     const log = new RoadLog({ ...P, keptRuns: 3 });
-    for (let i = 0; i < 5; i++) log.add('red', i + 1, result(10 + i));
-    expect(log.runs.red.map((r) => r.day)).toEqual([3, 4, 5]);
-    expect(log.last('red').bhp).toBe(14);
-    expect(log.before('red').bhp).toBe(13);
+    for (let i = 0; i < 5; i++) log.add('farm300', i + 1, result(10 + i));
+    expect(log.runs.farm300.map((r) => r.day)).toEqual([3, 4, 5]);
+    expect(log.last('farm300').bhp).toBe(14);
+    expect(log.before('farm300').bhp).toBe(13);
   });
   it('knows the strongest quad by its latest run', () => {
     const log = new RoadLog();
     expect(log.strongest()).toBeNull();
-    log.add('red', 1, result(18));
-    log.add('blue', 1, result(26));
-    log.add('blue', 2, result(15));
-    expect(log.strongest()).toBe('red');
+    log.add('farm300', 1, result(18));
+    log.add('bruin', 1, result(26));
+    log.add('bruin', 2, result(15));
+    expect(log.strongest()).toBe('farm300');
   });
   it('orders quads by when they were last run', () => {
     const log = new RoadLog();
-    log.add('red', 3, result(18));
-    log.add('blue', 1, result(26));
-    expect(log.ids()).toEqual(['blue', 'red']);
+    log.add('farm300', 3, result(18));
+    log.add('bruin', 1, result(26));
+    expect(log.ids()).toEqual(['bruin', 'farm300']);
   });
   it('saves and loads, and shrugs off rubbish', () => {
     const log = new RoadLog();
-    log.add('red', 1, result(18));
+    log.add('farm300', 1, result(18));
     const copy = new RoadLog();
     copy.restore(JSON.parse(JSON.stringify(log.toJSON())));
     expect(copy.toJSON()).toEqual(log.toJSON());
     copy.restore(undefined);
     expect(copy.runs).toEqual({});
-    copy.restore({ red: 'no', blue: [null, { day: 'x' }, { day: 2, bhp: 9, rpm: 4000 }] });
-    expect(copy.runs.red).toBeUndefined();
-    expect(copy.runs.blue).toHaveLength(1);
-    expect(copy.runs.blue[0].curve).toEqual([]);
+    copy.restore({ farm300: 'no', bruin: [null, { day: 'x' }, { day: 2, bhp: 9, rpm: 4000 }] });
+    expect(copy.runs.farm300).toBeUndefined();
+    expect(copy.runs.bruin).toHaveLength(1);
+    expect(copy.runs.bruin[0].curve).toEqual([]);
   });
 });
 

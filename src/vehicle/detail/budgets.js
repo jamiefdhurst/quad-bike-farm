@@ -5,9 +5,9 @@
 export const TRIANGLE_BUDGETS = {
   quad: 65000, // the five quads, the kids' quad and the loan
   small: 38000, // the mini moto and the three-wheeler (was 35k; the toothed sprockets and link-by-link chain of #48 are 2k to 3k on each)
-  mower: 60000, // the ride-on mower: a deck, a box and a bonnet, but nothing small or fussy
-  tractor: 70000,
-  utv: 80000,
+  clipper: 60000, // the ride-on mower: a deck, a box and a bonnet, but nothing small or fussy
+  hartley: 70000,
+  yak: 80000,
   big: 100000, // the Land Rovers and the cars
   trailer: 22000, // each trailer (the bale trailer 21k with its winch, the tipping trailer 13k, after item 101: kit tyres, bolts, lamps, springs, cables)
 };
@@ -15,9 +15,9 @@ export const TRIANGLE_BUDGETS = {
 /** Which budget a vehicle spec comes under. */
 export function budgetFor(spec) {
   if (spec.miniMoto || spec.threeWheeler || spec.classicBike || spec.farmBike) return TRIANGLE_BUDGETS.small;
-  if (spec.mower) return TRIANGLE_BUDGETS.mower;
-  if (spec.tractor) return TRIANGLE_BUDGETS.tractor;
-  if (spec.utv) return TRIANGLE_BUDGETS.utv;
+  if (spec.mower) return TRIANGLE_BUDGETS.clipper;
+  if (spec.tractor) return TRIANGLE_BUDGETS.hartley;
+  if (spec.utv) return TRIANGLE_BUDGETS.yak;
   if (spec.landRover || spec.car) return TRIANGLE_BUDGETS.big;
   return TRIANGLE_BUDGETS.quad;
 }

@@ -88,11 +88,11 @@ describe('every vehicle with a windscreen has wipers that clear it', () => {
 
   it('has speeds on the spec and two front wipers (one on the UTV) over its rain glass', () => {
     const closed = built.filter((b) => !isOpenVehicle(b.spec.id));
-    expect(closed.map((b) => b.spec.id).sort()).toEqual(['corsa', 'fiesta', 'landrover', 'landrover200', 'p309', 'utv']);
+    expect(closed.map((b) => b.spec.id).sort()).toEqual(['crag', 'finch', 'griffin', 'tor', 'vauclair', 'yak']);
     for (const { spec, model } of closed) {
       expect(spec.wipers?.length, spec.id).toBeGreaterThan(0);
       const geo = wiperGeometry(model);
-      expect(geo.length, spec.id).toBe(spec.id === 'utv' ? 1 : 2);
+      expect(geo.length, spec.id).toBe(spec.id === 'yak' ? 1 : 2);
       const panes = model.getObjectByName('rainGlass').userData.panes;
       const glass = createScreenRain(panes);
       for (const w of geo) {
@@ -119,7 +119,7 @@ describe('every vehicle with a windscreen has wipers that clear it', () => {
       for (const w of geo) for (let b = 0; b < 1; b += 0.05) wipeSector(glass, w, b, b + 0.05);
       // About half the glass or more, the edges and the top corners left wet as on the real thing, and none of the patch the driver looks
       // through: in line with the seat, a little below the middle where the road ahead is seen.
-      expect(glass.drops.length / n, spec.id).toBeLessThan(spec.id === 'utv' ? 0.65 : 0.55); // (the UTV's one blade does the driver's side)
+      expect(glass.drops.length / n, spec.id).toBeLessThan(spec.id === 'yak' ? 0.65 : 0.55); // (the UTV's one blade does the driver's side)
       const eye = model.getObjectByName('riderAnchor').getWorldPosition(new THREE.Vector3());
       const glassAt = model.getObjectByName('rainGlass').worldToLocal(eye);
       const view = glass.drops.filter((d) => Math.abs(d.x - glassAt.x) < 0.08 && Math.abs(d.y - (glass.box[1] * 0.6 + glass.box[3] * 0.4)) < 0.07);
@@ -137,14 +137,14 @@ describe('the console soaks and dries a windscreen', () => {
   it('calls the game\'s soak and dry, and says when the vehicle has no windscreen', async () => {
     const { createHost, VEHICLE_VERBS } = await import('../src/console/gameHost.js');
     const calls = [];
-    const units = [{ id: 'fiesta' }, { id: 'red' }];
-    const g = { units, companions: [], world: { layout: {} }, debugScreenRain: (u, what) => (calls.push([u.id, what]), u.id === 'fiesta') };
+    const units = [{ id: 'finch' }, { id: 'farm300' }];
+    const g = { units, companions: [], world: { layout: {} }, debugScreenRain: (u, what) => (calls.push([u.id, what]), u.id === 'finch') };
     const host = createHost(g);
     expect(VEHICLE_VERBS.map((v) => v.name)).toEqual(expect.arrayContaining(['soak', 'dry']));
-    expect(host.vehicleVerb('fiesta', 'soak')).toBe('fiesta: soak');
-    expect(host.vehicleVerb('fiesta', 'dry')).toBe('fiesta: dry');
-    expect(host.vehicleVerb('red', 'soak')).toBe('red has no windscreen');
-    expect(calls).toEqual([['fiesta', 'soak'], ['fiesta', 'clear'], ['red', 'soak']]);
+    expect(host.vehicleVerb('finch', 'soak')).toBe('finch: soak');
+    expect(host.vehicleVerb('finch', 'dry')).toBe('finch: dry');
+    expect(host.vehicleVerb('farm300', 'soak')).toBe('farm300 has no windscreen');
+    expect(calls).toEqual([['finch', 'soak'], ['finch', 'clear'], ['farm300', 'soak']]);
   });
 
   it('a stalk moving is heard: set marks it for the click and the next update clears it', () => {

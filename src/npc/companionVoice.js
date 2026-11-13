@@ -598,7 +598,7 @@ export class CompanionVoice {
       // You press the starter on a flat battery and it only clicks.
       if (near && e.events.some((x) => x.type === 'starterClick')) this.say('crankFlat', { urgent: true, chance: 0.7 });
       this.watchOil(dt, unit, w, near || hers);
-      if (unit.id === 'blue' && e.isRunning && unit.quad.choke > 0.3 && e.rich > 0.2 && (near || hers)) this.say('chokeOffBlue', { chance: 0.01 });
+      if (unit.id === 'bruin' && e.isRunning && unit.quad.choke > 0.3 && e.rich > 0.2 && (near || hers)) this.say('chokeOffBlue', { chance: 0.01 });
       this.watchHeat(unit, near || hers);
       this.watchDiesel(unit, near || hers);
       this.watchWater(unit, near || hers);

@@ -19,7 +19,7 @@ function setup({ purse = 100, x = 100, z = 50, yaw = Math.PI / 2, running = fals
   const said = [];
   const noted = [];
   const unit = {
-    spec: { id: 'landrover', landRover: true },
+    spec: { id: 'tor', landRover: true },
     engine: { isRunning: running, coolantLeak: 0, silencerBlown: 0 },
     quad: {
       speed: 0,
@@ -72,9 +72,9 @@ describe('the clipboard', () => {
     expect(game.villageHost.chink).toHaveBeenCalled();
     expect(clipboard.prompt()).toEqual({ info: expect.stringMatching(/going over/) });
     host.update(MOT_PARAMS.testSeconds - 1);
-    expect(host.log.last.landrover).toBeUndefined();
+    expect(host.log.last.tor).toBeUndefined();
     host.update(2);
-    expect(host.log.failed('landrover')).toBe(true);
+    expect(host.log.failed('tor')).toBe(true);
     expect(noted[0]).toMatchObject({ kind: 'mot', passed: false, fails: ['horn'] });
     expect(said).toEqual(['motFail']);
     expect(game.saveFarm).toHaveBeenCalled();
@@ -85,7 +85,7 @@ describe('the clipboard', () => {
     const { host, said, game, clipboard } = setup();
     clipboard.interact();
     host.update(MOT_PARAMS.testSeconds + 1);
-    expect(host.log.valid('landrover', game.farm.day)).toBe(true);
+    expect(host.log.valid('tor', game.farm.day)).toBe(true);
     expect(said).toEqual(['motPass']);
   });
 
@@ -115,6 +115,6 @@ describe('the clipboard', () => {
     const saved = JSON.parse(JSON.stringify(host.toJSON()));
     const other = setup().host;
     other.restore(saved);
-    expect(other.log.last.landrover.passed).toBe(true);
+    expect(other.log.last.tor.passed).toBe(true);
   });
 });

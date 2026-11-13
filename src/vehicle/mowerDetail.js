@@ -127,7 +127,7 @@ export function addMowerBody(root, MAT, paint, lensMat, seatMat) {
   const grille = buildGrille({ w: G.w, h: G.h, kind: 'bars', n: 9, mats: { frame: MAT.chrome, bars: MAT.chrome } });
   grille.position.set(0, G.y, G.z - 0.012);
   root.add(grille);
-  const badge = decalMesh('badge', { maker: MAKER_FOR.mower, model: 'Clipper 12' }, { width: 0.1, name: 'badge' });
+  const badge = decalMesh('badge', { maker: MAKER_FOR.clipper, model: 'Clipper 12' }, { width: 0.1, name: 'badge' });
   badge.position.set(0, G.y + 0.1, G.z - 0.045);
   badge.rotation.x = 0.35;
   root.add(badge);
@@ -344,7 +344,7 @@ export function addMowerEngine(root, MAT) {
 /** Faded decals: the maker's name on the bonnet's sides, a 12 on the flank and a sticker on the box. */
 export function addMowerDecals(root) {
   for (const s of [-1, 1]) {
-    const name = decalMesh('badge', { maker: MAKER_FOR.mower, model: 'Clipper 12' }, { width: 0.14, name: 'sideBadge' });
+    const name = decalMesh('badge', { maker: MAKER_FOR.clipper, model: 'Clipper 12' }, { width: 0.14, name: 'sideBadge' });
     name.position.set(s * 0.2525, 0.64, 0.5);
     name.rotation.y = s * (Math.PI / 2);
     root.add(name);

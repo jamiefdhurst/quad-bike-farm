@@ -16,7 +16,7 @@ beforeAll(async () => {
   ({ RollingRoadHost } = await import('../src/world/rollingRoadHost.js'));
 });
 
-const red = QUAD_SPECS.find((s) => s.id === 'red');
+const red = QUAD_SPECS.find((s) => s.id === 'farm300');
 const FULL = stockRpm(red);
 
 function setup({ purse = 100, day = 1, hour = 12 } = {}) {
@@ -36,7 +36,7 @@ function setup({ purse = 100, day = 1, hour = 12 } = {}) {
     pto: { throttle: 0, load: 0 },
     parkBrake: false,
   };
-  const unit = { id: 'red', spec: red, quad };
+  const unit = { id: 'farm300', spec: red, quad };
   const game = {
     seed: 1,
     farmSeed: 7,
@@ -198,7 +198,7 @@ describe('a run', () => {
     t.park();
     t.item.interact();
     t.until(() => !t.host.run);
-    const last = t.host.log.last('red');
+    const last = t.host.log.last('farm300');
     expect(last.bhp).toBeGreaterThan(red.stockBhp - 1);
     expect(last.bhp).toBeLessThan(red.stockBhp + 1);
     expect(t.host.slip.isShown).toBe(true);
@@ -228,7 +228,7 @@ describe('a run', () => {
     t.traffic.remark = (key) => spoken.push(key);
     for (const l of t.traffic.later) l.run();
     expect(spoken).toContain('roadDown');
-    expect(t.host.log.last('red').diff).toBeLessThan(-1);
+    expect(t.host.log.last('farm300').diff).toBeLessThan(-1);
   });
   it('gives the money back and drops the run if the engine cuts out', () => {
     const t = setup();
@@ -240,7 +240,7 @@ describe('a run', () => {
     t.step(2);
     expect(t.host.run).toBeNull();
     expect(t.game.market.purse).toBe(100);
-    expect(t.host.log.last('red')).toBeNull();
+    expect(t.host.log.last('farm300')).toBeNull();
     expect(t.toasts.some((m) => /cut out/.test(m) && /money is back/.test(m))).toBe(true);
     expect(t.quad.parkBrake).toBe(false);
   });
@@ -275,7 +275,7 @@ describe('a run', () => {
   });
   it('lets the girls argue once two quads are on the sheet and the new one is strongest', () => {
     const t = setup();
-    t.host.log.add('blue', 1, { bhp: 12, rpm: 5000, torque: 10, diff: 0, curve: [] });
+    t.host.log.add('bruin', 1, { bhp: 12, rpm: 5000, torque: 10, diff: 0, curve: [] });
     arrive(t);
     t.park();
     t.item.interact();
@@ -332,7 +332,7 @@ describe('what the farm keeps', () => {
     const b = setup();
     expect(b.host.sheet.group.visible).toBe(false);
     b.host.restore(saved);
-    expect(b.host.log.last('red').bhp).toBe(a.host.log.last('red').bhp);
+    expect(b.host.log.last('farm300').bhp).toBe(a.host.log.last('farm300').bhp);
     expect(b.host.sheet.group.visible).toBe(true);
   });
   it('loads an old save with none of it', () => {
@@ -343,7 +343,7 @@ describe('what the farm keeps', () => {
   });
   it('can have the sheet taken down', () => {
     const t = setup();
-    t.host.log.add('red', 1, { bhp: 18, rpm: 4800, torque: 20, diff: 0, curve: [] });
+    t.host.log.add('farm300', 1, { bhp: 18, rpm: 4800, torque: 20, diff: 0, curve: [] });
     t.host.refreshSheet();
     t.host.debugClearSheet();
     expect(t.host.log.ids()).toEqual([]);

@@ -158,7 +158,7 @@ export function chokeSymbol(material) {
 /** The maker's badge on each side plate's outer face, a millimetre off the surface. */
 export function addBlasterDecals(root) {
   for (const s of [-1, 1]) {
-    const badge = decalMesh('badge', { maker: MAKER_FOR.yellow, model: 'Hornet 200' }, { width: 0.2, name: 'badge' });
+    const badge = decalMesh('badge', { maker: MAKER_FOR.hornet, model: 'Hornet 200' }, { width: 0.2, name: 'badge' });
     badge.position.set(s * 0.1835, 0.6, -0.42);
     badge.rotation.y = s * (Math.PI / 2);
     root.add(badge);

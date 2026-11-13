@@ -3,7 +3,7 @@ import { Hearing, soundOf, DEFAULT_EAR_PARAMS as P } from '../src/npc/earing.js'
 import { AMY_QUAD_LINES } from '../src/npc/quadLines.js';
 import { quadKey } from '../src/npc/quadNames.js';
 
-const quad = (o = {}) => ({ id: 'blue', x: 60, z: 0, running: true, driver: 'jess', speed: 3, throttle: 0.3, temperature: 0.8, wear: 0.1, ...o });
+const quad = (o = {}) => ({ id: 'bruin', x: 60, z: 0, running: true, driver: 'jess', speed: 3, throttle: 0.3, temperature: 0.8, wear: 0.1, ...o });
 const ctx = (q = {}, g = {}) => ({ girls: [{ id: 'amy', x: 0, z: 0, free: true, ...g }], quads: [quad(q)] });
 const run = (h, c, seconds) => {
   const out = [];
@@ -24,7 +24,7 @@ describe('placing a quad by ear', () => {
     const h = new Hearing({ ...P, chance: 1 }, () => 0);
     expect(h.update(1, ctx())).toEqual([]);
     const events = run(h, ctx(), 10);
-    expect(events[0]).toEqual({ girl: 'amy', spec: 'blue', driver: 'jess', sound: 'steady' });
+    expect(events[0]).toEqual({ girl: 'amy', spec: 'bruin', driver: 'jess', sound: 'steady' });
   });
 
   it('not when she can see it, when it is too far, when it is you, or when she is busy', () => {
@@ -44,6 +44,6 @@ describe('placing a quad by ear', () => {
   });
 
   it('every sound has a line for it', () => {
-    for (const s of ['hard', 'rough', 'steady']) expect(AMY_QUAD_LINES[quadKey(`ear${s[0].toUpperCase()}${s.slice(1)}`, 'blue')]).toBeTruthy();
+    for (const s of ['hard', 'rough', 'steady']) expect(AMY_QUAD_LINES[quadKey(`ear${s[0].toUpperCase()}${s.slice(1)}`, 'bruin')]).toBeTruthy();
   });
 });
