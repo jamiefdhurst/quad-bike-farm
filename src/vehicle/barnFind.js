@@ -15,7 +15,7 @@ export const DEFAULT_BARN_FIND_PARAMS = {
   wear: [0.55, 0.8], // engine wear it comes with: a lot of years
   hours: [1900, 2800], // hour meter
   odoMiles: [4200, 7800], // odometer
-  classicMinJobs: 4, // the old bike (always in the barn, bantamBody.js) needs at least this many of its seven jobs...
+  classicMinJobs: 4, // the old bike (always in the barn, ploverBody.js) needs at least this many of its seven jobs...
   classicMaxJobs: 5, // ...and at most this many
   bodyWear: 0.95, // how worn its body looks (the wear layer, effects/wearLayer.js): rust in every fold, the edges rubbed bare
 };

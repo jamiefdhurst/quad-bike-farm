@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Radio, RadioKey, RADIO_PROFILES, RADIO_PARAMS, signalAt, heardAt, hasRadio, profileFor } from '../src/vehicle/radio.js';
 import { STATIONS } from '../src/audio/radioStation.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC, P309_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC } from '../src/vehicle/quadSpecs.js';
 
 describe('the radio', () => {
   it('is on or off, and louder or quieter by a step, within 0 and 1', () => {
@@ -44,7 +44,7 @@ describe('the radio', () => {
     expect(r.untouchedFor).toBe(0);
   });
 
-  it('each set has its own character: the Series is the tinniest and the crackliest, the Corsa the bassiest and cleanest', () => {
+  it('each set has its own character: the Tor is the tinniest and the crackliest, the Griffin the bassiest and cleanest', () => {
     const p = RADIO_PROFILES;
     expect(p.tor.band[0]).toBeGreaterThan(p.griffin.band[0]);
     expect(p.tor.band[1]).toBeLessThan(p.griffin.band[1]);
@@ -55,7 +55,7 @@ describe('the radio', () => {
   });
 
   it('is fitted to the Land Rovers and the cars, not the quads, the UTV or the tractor', () => {
-    const fitted = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC, P309_SPEC].filter(hasRadio).map((s) => s.id).sort();
+    const fitted = [...QUAD_SPECS, ...EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC].filter(hasRadio).map((s) => s.id).sort();
     expect(fitted).toEqual(['crag', 'finch', 'griffin', 'tor', 'vauclair']);
     expect(Object.keys(RADIO_PROFILES).sort()).toEqual(fitted);
   });
@@ -115,7 +115,7 @@ describe('which station a set is on', () => {
     expect(r.describe()).toContain('Quarry Rock');
   });
 
-  it('sounds worse the older it is: the Series buzzes and is tinny, the Corsa is clean and deepest', () => {
+  it('sounds worse the older it is: the Tor buzzes and is tinny, the Griffin is clean and deepest', () => {
     const p = RADIO_PROFILES;
     expect(p.tor.distort).toBeGreaterThan(p.crag.distort);
     expect(p.crag.distort).toBeGreaterThan(p.griffin.distort);

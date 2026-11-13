@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, HARTLEY_SPEC } from '../src/vehicle/quadSpecs.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { DEFAULT_VEHICLE_PARAMS } from '../src/vehicle/vehicleParams.js';
 import { DEFAULT_FUEL_PARAMS } from '../src/vehicle/fuelSystem.js';
@@ -7,7 +7,7 @@ import { applyIdle, applyTopRpm } from '../src/vehicle/quadVariation.js';
 import { DEFAULT_TUNE_PARAMS as P, captureStock, stockSettings, nudge, applyTune, limits } from '../src/vehicle/tuneUp.js';
 import { createRandom } from '../src/core/random.js';
 
-const ALL = [...QUAD_SPECS, ...EXTRA_SPECS, TRACTOR_SPEC];
+const ALL = [...QUAD_SPECS, ...EXTRA_SPECS, HARTLEY_SPEC];
 const engineFor = (spec) => ({ ...DEFAULT_ENGINE_PARAMS, ...spec.engine });
 
 describe('top rpm each game', () => {

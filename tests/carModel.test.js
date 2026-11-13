@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { buildCarModel, carLayout, sideShape, poseCarControls, poseCarSeats, carEyeToGlass, carDashThroughWheel, CARS, CAR_GROUND_OFFSET } from '../src/vehicle/carModel.js';
-import { landyEyeToGlass } from '../src/vehicle/landRoverModel.js';
+import { cabEyeToGlass } from '../src/vehicle/cabModel.js';
 import { poseUtvBelts } from '../src/vehicle/utvModel.js';
-import { FIESTA_SPEC, CORSA_SPEC, P309_SPEC } from '../src/vehicle/quadSpecs.js';
+import { FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
@@ -14,7 +14,7 @@ function fakeCanvas() {
   return { width: 0, height: 0, getContext: () => ctx, style: {} };
 }
 
-describe.each([['fiesta', FIESTA_SPEC], ['corsa', CORSA_SPEC], ['p309', P309_SPEC]])('%s', (kind, spec) => {
+describe.each([['finch', FINCH_SPEC], ['griffin', GRIFFIN_SPEC], ['vauclair', VAUCLAIR_SPEC]])('%s', (kind, spec) => {
   let model;
   beforeAll(() => {
     vi.stubGlobal('document', { createElement: () => fakeCanvas() });
@@ -95,32 +95,32 @@ describe.each([['fiesta', FIESTA_SPEC], ['corsa', CORSA_SPEC], ['p309', P309_SPE
 });
 
 describe('the two cars', () => {
-  it("are Amy's carburettor Fiesta with a choke and four gears, and Jess's injected Corsa with five and no choke", () => {
-    expect(FIESTA_SPEC.owner).toBe('amy');
-    expect(CORSA_SPEC.owner).toBe('jess');
-    expect(FIESTA_SPEC.gearbox.gears).toBe(4);
-    expect(CORSA_SPEC.gearbox.gears).toBe(5);
-    expect(FIESTA_SPEC.engine.injected).toBeFalsy();
-    expect(CORSA_SPEC.engine.injected).toBe(true);
+  it("are Amy's carburettor Finch with a choke and four gears, and Jess's injected Griffin with five and no choke", () => {
+    expect(FINCH_SPEC.owner).toBe('amy');
+    expect(GRIFFIN_SPEC.owner).toBe('jess');
+    expect(FINCH_SPEC.gearbox.gears).toBe(4);
+    expect(GRIFFIN_SPEC.gearbox.gears).toBe(5);
+    expect(FINCH_SPEC.engine.injected).toBeFalsy();
+    expect(GRIFFIN_SPEC.engine.injected).toBe(true);
   });
 
   it("idle where Jamie hears them right, with each recorded beat stretched no further than the sound will stretch it", () => {
-    // The Corsa idles at its recording's pace (854 to 909). The Fiesta's recording idles at 1,084 to 1,187, but it sounded too fast
+    // The Griffin idles at its recording's pace (854 to 909). The Finch's recording idles at 1,084 to 1,187, but it sounded too fast
     // there: it idles at about 850, so each beat is stretched to fill the longer cycle, and must stay above pulseSlowest or it leaves a gap.
-    expect(CORSA_SPEC.idleRange[0]).toBeGreaterThan(854 * 0.9);
-    expect(CORSA_SPEC.idleRange[1]).toBeLessThan(909 * 1.05);
-    expect(FIESTA_SPEC.idleRange[1]).toBeLessThan(1000);
-    const slowest = FIESTA_SPEC.audio.pulseSlowest ?? DEFAULT_AUDIO_PARAMS.pulseSlowest;
-    expect(FIESTA_SPEC.idleRange[0] / 1187).toBeGreaterThan(slowest); // the slowest idle against the fastest recorded beat
+    expect(GRIFFIN_SPEC.idleRange[0]).toBeGreaterThan(854 * 0.9);
+    expect(GRIFFIN_SPEC.idleRange[1]).toBeLessThan(909 * 1.05);
+    expect(FINCH_SPEC.idleRange[1]).toBeLessThan(1000);
+    const slowest = FINCH_SPEC.audio.pulseSlowest ?? DEFAULT_AUDIO_PARAMS.pulseSlowest;
+    expect(FINCH_SPEC.idleRange[0] / 1187).toBeGreaterThan(slowest); // the slowest idle against the fastest recorded beat
   });
 });
 
 describe('where the driver sits', () => {
   it("puts the windscreen as far from your eye as in the Land Rovers (both at the same scale), with the mirror well ahead of you", () => {
-    const landy = landyEyeToGlass();
+    const tor = cabEyeToGlass();
     for (const kind of Object.keys(CARS)) {
       const e = carEyeToGlass(kind);
-      expect(Math.abs(e.glass - landy), kind).toBeLessThan(0.06);
+      expect(Math.abs(e.glass - tor), kind).toBeLessThan(0.06);
       expect(e.mirror, kind).toBeGreaterThan(0.4); // in front of you, in view, not over your head
       expect(e.mirrorUp, kind).toBeLessThan(0.15);
     }
@@ -129,17 +129,17 @@ describe('where the driver sits', () => {
 
 const rnd = (s) => () => ((s = (s * 16807) % 2147483647) / 2147483647);
 
-describe('the Corsa\'s injected idle', () => {
+describe('the Griffin\'s injected idle', () => {
   it('has dropped to within 40 rpm of its warm idle by 0.6 up the gauge, and is still fast when cold', () => {
     const idleAt = (temperature) => {
-      const e = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...CORSA_SPEC.engine, initialTemperature: temperature }, { random: rnd(3) });
+      const e = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...GRIFFIN_SPEC.engine, initialTemperature: temperature }, { random: rnd(3) });
       e.setIgnition(true);
       for (let t = 0; t < 6 && !e.isRunning; t += 1 / 60) e.update(1 / 60, { starter: true, fuel: 1 });
       for (let t = 0; t < 3; t += 1 / 60) e.update(1 / 60, { fuel: 1 });
       expect(e.isRunning).toBe(true);
       return e.idleTarget;
     };
-    expect(idleAt(0.6) - CORSA_SPEC.engine.idleRpmWarm).toBeLessThan(40);
+    expect(idleAt(0.6) - GRIFFIN_SPEC.engine.idleRpmWarm).toBeLessThan(40);
     expect(idleAt(0.2)).toBeGreaterThan(1050);
   });
 });

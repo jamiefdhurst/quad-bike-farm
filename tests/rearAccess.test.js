@@ -3,11 +3,11 @@ import * as THREE from 'three';
 import { seatTipTargets, easeSeatTips, pickRearSeat, rearDoor } from '../src/vehicle/rearAccess.js';
 import { UtvMount } from '../src/vehicle/utvMount.js';
 import { unscaleAnchors } from '../src/vehicle/unscaleAnchors.js';
-import { buildLandRoverModel, poseSeatTips, LANDY_STAND, LANDY_REAR_STAND, LANDY_REAR_SEATS, LANDY_SEATS, SEAT_TIP } from '../src/vehicle/landRoverModel.js';
+import { buildCabModel, poseSeatTips, CAB_STAND, CRAG_REAR_STAND, CRAG_REAR_SEATS, CAB_SEATS, SEAT_TIP } from '../src/vehicle/cabModel.js';
 import { SeatBelts, BELT_SEATS } from '../src/vehicle/seatBelts.js';
 import { planSeats, DEFAULT_UTV_RIDE_PARAMS } from '../src/npc/utvRide.js';
 
-const REAR = Object.keys(LANDY_REAR_SEATS);
+const REAR = Object.keys(CRAG_REAR_SEATS);
 
 describe('tipping the front seats', () => {
   it('tips the seat on the side someone is climbing past, unless somebody is sat in it', () => {
@@ -74,7 +74,7 @@ describe('the 200TDi\'s back bench', () => {
   beforeAll(() => {
     const ctx = new Proxy({}, { get: (t, k) => (k === 'measureText' ? () => ({ width: 10 }) : k.startsWith('create') ? () => ({ addColorStop() {} }) : k === 'getImageData' ? () => ({ data: new Uint8ClampedArray(4) }) : () => {}), set: () => true });
     vi.stubGlobal('document', { createElement: () => ({ getContext: () => ctx, width: 0, height: 0 }) });
-    model = buildLandRoverModel({ variant: 'defender', dashStyle: 'defender' });
+    model = buildCabModel({ variant: 'crag', dashStyle: 'crag' });
     model.updateMatrixWorld(true);
   });
 
@@ -99,15 +99,15 @@ describe('the 200TDi\'s back bench', () => {
   });
 
   it('sits its passengers under the roof: hips a little above the front\'s, eyes clear of the roof (1.72 inside)', () => {
-    for (const seat of Object.values(LANDY_REAR_SEATS)) {
-      expect(seat.y).toBeGreaterThanOrEqual(LANDY_SEATS.mid.y);
+    for (const seat of Object.values(CRAG_REAR_SEATS)) {
+      expect(seat.y).toBeGreaterThanOrEqual(CAB_SEATS.mid.y);
       expect(seat.y + 0.69).toBeLessThan(1.72);
     }
   });
 
   it('is in the mount, reached by the passenger\'s door, or the driver\'s for the right-hand seat with nobody driving', () => {
     const quad = { model, yaw: 0, speed: 0, driver: null, rider: null };
-    const mount = new UtvMount(quad, () => 0, { ...LANDY_STAND, ...LANDY_REAR_STAND }, LANDY_REAR_SEATS);
+    const mount = new UtvMount(quad, () => 0, { ...CAB_STAND, ...CRAG_REAR_STAND }, CRAG_REAR_SEATS);
     expect(mount.rearSlots.map((s) => s.name)).toEqual(REAR);
     expect(mount.slots.rearLeft.move).toBe('stepInBack');
     expect(mount.standPoint(1, mount.slots.rearRight).position.x).toBeLessThan(0); // the driver's side

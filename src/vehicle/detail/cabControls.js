@@ -53,7 +53,7 @@ export function buildLever({ length = 0.26, crank = 0, knob = 'ball', knobSize =
 
 /**
  * A handbrake, pivoting at its group's origin, the lever running forward (+Z) and up, ready to be swung up by its poser about X.
- * 'centre' (a car's, between the seats: a grip and a release button at the end), 'pistol' (a Series': a T-grip on a rod under
+ * 'centre' (a car's, between the seats: a grip and a release button at the end), 'pistol' (a Tor's: a T-grip on a rod under
  * the dash), 'ratchet' (a tractor's or UTV's: an upright lever over a toothed quadrant, with a pawl rod).
  */
 export function buildHandbrake(kind = 'centre', { mats = {} } = {}) {

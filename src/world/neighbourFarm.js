@@ -30,7 +30,7 @@ export const NEIGHBOUR_PARAM_RANGES = {
 
 /** How big each parked vehicle is for its collider: half length (along its heading), half width and height, in metres. */
 export const PARKED_SIZES = {
-  series: { hl: 2.15, hw: 0.95, h: 1.95 },
+  tor: { hl: 2.15, hw: 0.95, h: 1.95 },
   utv: { hl: 1.55, hw: 0.85, h: 1.85 },
   tractor: { hl: 1.9, hw: 1.0, h: 2.4 },
 };

@@ -45,7 +45,7 @@ describe('which engines fit which', () => {
 
   it('gives nothing for a tractor, a car or an engine with no starter', () => {
     expect(engineFamily({ tractor: true, engine: {} }, DEFAULT_ENGINE_PARAMS)).toBeNull();
-    expect(engineFamily({ car: 'corsa' }, DEFAULT_ENGINE_PARAMS)).toBeNull();
+    expect(engineFamily({ car: 'griffin' }, DEFAULT_ENGINE_PARAMS)).toBeNull();
     expect(engineFamily({}, { ...DEFAULT_ENGINE_PARAMS, noStarter: true })).toBeNull();
   });
 

@@ -355,7 +355,7 @@ export const DEFAULT_ENGINE_PARAMS = {
 
   // A diesel (the tractor): see compression.js
   compressionIgnition: false, // true: catches on glow plugs and compression rather than the mixture, the key doesn't stop it, a knob does
-  injected: false, // true: petrol injection (Jess's Corsa): it meters what a cold engine needs itself, so no choke and no boiling carb
+  injected: false, // true: petrol injection (Jess's Griffin): it meters what a cold engine needs itself, so no choke and no boiling carb
   coldIdleRpm: 0, // an injected engine's own fast idle, stone cold, falling away as it warms (the choke's lift on a carb)
   runsOnDiesel: false, // red diesel is its fuel, so it doesn't soak it up like a petrol engine
   keyStops: false, // a diesel whose key stops it (the UTV's), where the tractor's carries on until its knob is pulled

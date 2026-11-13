@@ -25,10 +25,10 @@ describe("the day's story", () => {
   });
 
   it('tells it in the order it happened, whichever matters most', () => {
-    const ev = [{ kind: 'race', winner: 'amy', loser: 'jess' }, { kind: 'seized', quad: 'Bayou' }];
+    const ev = [{ kind: 'race', winner: 'amy', loser: 'jess' }, { kind: 'seized', quad: 'Rb300' }];
     const s = writeStory(ev, {}, p, first);
     expect(s[0]).toMatch(/Amy beat Jess/);
-    expect(s[1]).toMatch(/Bayou/);
+    expect(s[1]).toMatch(/Rb300/);
   });
 
   it('keeps to the most notable few and drops the rest', () => {

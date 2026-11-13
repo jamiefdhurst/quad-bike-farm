@@ -7,13 +7,13 @@ import { discGeometry, caliperGeometry } from './detail/brakes.js';
 import { treadTyre } from './detail/tread.js';
 import { buildChainDrive } from './detail/chainDrive.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
-import { chokeSymbol, silverMaterial } from './blasterDetail.js';
+import { chokeSymbol, silverMaterial } from './hornetDetail.js';
 import {
   TZ_WHEELS, TZ_RAKE, forkZ, TZ_BARS_AT, TZ_FORK, TZ_FRONT_FENDER, TZ_PLATE, TZ_BARS, TZ_SEAT, TZ_TAIL, TZ_SHROUD, TZ_TANK, TZ_SIDE_BOARD,
   TZ_RADIATOR, TZ_ENGINE, TZ_CARB, TZ_TAP, TZ_EXHAUST, TZ_SWINGARM, TZ_SHOCK, TZ_FRAME, TZ_CHAIN, TZ_PEGS,
 } from './tz65Body.js';
 
-// The mini moto's parts (TODO 94), after a YZ65: forks with gold tubes and blue legs, a high front fender and a front number plate, level
+// The mini moto's parts (TODO 94), : forks with gold tubes and blue legs, a high front fender and a front number plate, level
 // bars with a crossbar pad, thin shrouds and side boards over a naked engine, an expansion chamber and a silver silencer, an aluminium
 // swingarm and monoshock, spoked wheels with discs. The numbers are tz65Body.js's; each builder takes the quad's materials (`MAT`) and
 // adds to the group it is given.

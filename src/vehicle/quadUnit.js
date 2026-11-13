@@ -21,14 +21,14 @@ import { DEFAULT_FUEL_PARAMS, FUEL_PARAM_RANGES } from './fuelSystem.js';
 import { DEFAULT_CONTROLS_PARAMS, CONTROLS_PARAM_RANGES } from './controls.js';
 import { DEFAULT_GEARBOX_PARAMS, GEARBOX_PARAM_RANGES } from './manualDrivetrain.js';
 import { SHIFTER_PARAM_RANGES } from './autoShifter.js';
-import { buildAtcModel, ATC_LAYOUT, ATC_GROUND_OFFSET, ATC_PROXY } from './atcModel.js';
+import { buildAtcModel, T185_LAYOUT, T185_GROUND_OFFSET, T185_PROXY } from './t185Model.js';
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET, MOTO_PROXY } from './miniMotoModel.js';
-import { buildBantamModel, BANTAM_LAYOUT, BANTAM_GROUND_OFFSET, BANTAM_PROXY } from './bantamModel.js';
-import { buildAgModel, AG_LAYOUT, AG_GROUND_OFFSET, AG_PROXY } from './ag200Model.js';
+import { buildPloverModel, PLOVER_LAYOUT, PLOVER_GROUND_OFFSET, PLOVER_PROXY } from './ploverModel.js';
+import { buildAgModel, AG_LAYOUT, AG_GROUND_OFFSET, AG_PROXY } from './shepherdModel.js';
 import { buildMowerModel, MOWER_LAYOUT, MOWER_GROUND_OFFSET, MOWER_PROXY } from './mowerModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET, TRACTOR_PROXY } from './tractorModel.js';
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_PROXY, UTV_STAND } from './utvModel.js';
-import { buildLandRoverModel, LANDY_LAYOUT, DEFENDER_LAYOUT, LANDY_GROUND_OFFSET, LANDY_PROXY, LANDY_STAND } from './landRoverModel.js';
+import { buildCabModel, TOR_LAYOUT, CRAG_LAYOUT, CAB_GROUND_OFFSET, CAB_PROXY, CAB_STAND } from './cabModel.js';
 import { buildCarModel, carLayout, carProxy, CAR_GROUND_OFFSET, CAR_STAND } from './carModel.js';
 import { CrankHandle, DEFAULT_CRANK_PARAMS, CRANK_PARAM_RANGES } from './crankHandle.js';
 
@@ -88,10 +88,10 @@ export class QuadUnit {
         wheelShake: spec.wheelShake,
       }),
       ...(spec.classicBike && {
-        build: ({ dashStyle }) => buildBantamModel({ bodyColor: spec.bodyColor, dashStyle }),
-        layout: BANTAM_LAYOUT,
-        groundOffset: BANTAM_GROUND_OFFSET,
-        proxy: BANTAM_PROXY,
+        build: ({ dashStyle }) => buildPloverModel({ bodyColor: spec.bodyColor, dashStyle }),
+        layout: PLOVER_LAYOUT,
+        groundOffset: PLOVER_GROUND_OFFSET,
+        proxy: PLOVER_PROXY,
         wheelShake: spec.wheelShake,
       }),
       ...(spec.farmBike && {
@@ -110,9 +110,9 @@ export class QuadUnit {
       }),
       ...(spec.threeWheeler && {
         build: ({ dashStyle }) => buildAtcModel({ bodyColor: spec.bodyColor, dashStyle, chokeStyle: spec.chokeStyle }),
-        layout: ATC_LAYOUT,
-        groundOffset: ATC_GROUND_OFFSET,
-        proxy: ATC_PROXY,
+        layout: T185_LAYOUT,
+        groundOffset: T185_GROUND_OFFSET,
+        proxy: T185_PROXY,
         wheelShake: spec.wheelShake,
       }),
       ...(spec.tractor && {
@@ -138,18 +138,18 @@ export class QuadUnit {
         utv: true,
       }),
       ...(spec.landRover && {
-        build: ({ dashStyle }) => buildLandRoverModel({ bodyColor: spec.bodyColor, dashStyle, variant: spec.defender ? 'defender' : 'series' }),
-        layout: spec.defender ? DEFENDER_LAYOUT : LANDY_LAYOUT,
-        groundOffset: LANDY_GROUND_OFFSET,
-        proxy: LANDY_PROXY,
+        build: ({ dashStyle }) => buildCabModel({ bodyColor: spec.bodyColor, dashStyle, variant: spec.crag ? 'crag' : 'tor' }),
+        layout: spec.crag ? CRAG_LAYOUT : TOR_LAYOUT,
+        groundOffset: CAB_GROUND_OFFSET,
+        proxy: CAB_PROXY,
         wheelShake: spec.wheelShake,
         steadyLights: spec.steadyLights,
         landRover: true,
         lightSwitch: true, // P cycles off, dipped and main beam from the seat (lightSwitch.js)
-        driverStand: LANDY_STAND.driver,
-        benchStand: LANDY_STAND.left,
-        handLever: !spec.defender, // the Series' hand throttle knob on its dash
-        crank: spec.defender ? null : new CrankHandle({ ...DEFAULT_CRANK_PARAMS }), // and its starting handle
+        driverStand: CAB_STAND.driver,
+        benchStand: CAB_STAND.left,
+        handLever: !spec.crag, // the Tor's hand throttle knob on its dash
+        crank: spec.crag ? null : new CrankHandle({ ...DEFAULT_CRANK_PARAMS }), // and its starting handle
       }),
       ...(spec.car && {
         build: ({ dashStyle }) => buildCarModel({ kind: spec.car, bodyColor: spec.bodyColor, dashStyle }),

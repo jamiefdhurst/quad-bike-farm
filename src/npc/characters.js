@@ -52,7 +52,7 @@ export const CHARACTERS = [
       helmetGround: 0.1, // and puts it neatly on the seat
       helmetNags: 1, // and tells you off if you don't
       stormWont: 1, // won't get on or drive a quad in a thunderstorm, and gets off one stood still in it
-      carGoWeight: 0.8, // takes her Fiesta down the road now and then, carefully, on her L plates
+      carGoWeight: 0.8, // takes her Finch down the road now and then, carefully, on her L plates
       tidyUpWeight: 1, // shuts the gate you left, puts the can back, hangs up the helmet on the floor
       tidyLoadWeight: 1, // puts the cans and the toolbox away in the back of a Land Rover, tidily
       generatorWeight: 1.1, // sees the barn dark and the charger waiting, and goes and starts the generator
@@ -134,7 +134,7 @@ export const CHARACTERS = [
       tidyUpWeight: 0, // leaves things where she drops them, and says so
       tidyLoadWeight: 0.5, // chucks things in the back of a Land Rover, and sometimes empties it out again
       generatorWeight: 0.6, // starts the generator if she is bored of the dark, with a lot of tugging and swearing
-      carGoWeight: 1.3, // can't leave her Corsa alone: down the road and back, loud
+      carGoWeight: 1.3, // can't leave her Griffin alone: down the road and back, loud
       voiceHardBrakeDecel: 6.5, // takes a sharper stop before she calls it hard braking
       voiceHardBrakeShed: 3,
       radioKeen: 0.9, // radio on and up, always

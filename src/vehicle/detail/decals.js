@@ -16,9 +16,9 @@ export const MAKERS = {
   viper: { name: 'Viper', badge: 'italic', ink: '#111111', edge: '#f5d000', box: null }, // the orange (Suzuki's)
   hartley: { name: 'Hartley', badge: 'oval', ink: '#f0e6c8', edge: null, box: '#7d1712' }, // the tractor (Ferguson's)
   moorland: { name: 'Moorland', badge: 'oval', ink: '#f2f2ea', edge: null, box: '#244a2c' }, // the Land Rovers
-  thorne: { name: 'Thorne', badge: 'oval', ink: '#ffffff', edge: null, box: '#1b3d7a' }, // the Fiesta (Ford's)
+  thorne: { name: 'Thorne', badge: 'oval', ink: '#ffffff', edge: null, box: '#1b3d7a' }, // the Finch (Ford's)
   fenwick: { name: 'Fenwick', badge: 'block', ink: '#f4f1e6', edge: null, box: '#3c5a2e' }, // the trailers (an Ifor Williams's place)
-  ashby: { name: 'Ashby', badge: 'block', ink: '#f4f4f4', edge: null, box: '#3a3a3a' }, // the Corsa (Vauxhall's)
+  ashby: { name: 'Ashby', badge: 'block', ink: '#f4f4f4', edge: null, box: '#3a3a3a' }, // the Griffin (Vauxhall's)
   vauclair: { name: 'Vauclair', badge: 'block', ink: '#d9dadb', edge: null, box: '#1b1c1e' }, // your car (Peugeot's)
 };
 

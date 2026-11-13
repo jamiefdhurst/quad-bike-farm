@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { QuadPhysics } from '../src/vehicle/quadPhysics.js';
-import { ATC_LAYOUT } from '../src/vehicle/atcModel.js';
+import { T185_LAYOUT } from '../src/vehicle/t185Model.js';
 import { RiderLean, DEFAULT_RIDER_LEAN_PARAMS } from '../src/vehicle/riderLean.js';
 import { DEFAULT_VEHICLE_PARAMS } from '../src/vehicle/vehicleParams.js';
 import { EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
 
 // The old three-wheeler's real physics on flat ground, with the rider's weight shift applied the way quad.js does, without Three.js.
-const atc = EXTRA_SPECS.find((s) => s.id === 't185');
+const t185 = EXTRA_SPECS.find((s) => s.id === 't185');
 const DT = 1 / 60;
 
 /** Rolls in at `speed` and puts the bars over (ramped in over `ramp` s), holding the speed with the throttle. Returns how far over it got. */
@@ -15,8 +15,8 @@ function corner(speed, { lean = true, ramp = 0.3, bars = 1, seconds = 5 } = {}) 
   const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
   world.timestep = DT;
   world.createCollider(RAPIER.ColliderDesc.cuboid(300, 0.5, 300).setTranslation(0, -0.5, 0).setFriction(1));
-  const params = { ...DEFAULT_VEHICLE_PARAMS, ...atc.vehicle, };
-  const phys = new QuadPhysics(world, RAPIER, params, { x: 0, y: 0.4, z: 0, yaw: 0 }, 1, ATC_LAYOUT);
+  const params = { ...DEFAULT_VEHICLE_PARAMS, ...t185.vehicle, };
+  const phys = new QuadPhysics(world, RAPIER, params, { x: 0, y: 0.4, z: 0, yaw: 0 }, 1, T185_LAYOUT);
   const rider = new RiderLean({ ...DEFAULT_RIDER_LEAN_PARAMS });
   for (let i = 0; i < 60; i++) { phys.applyControls({ driveForce: 0, brake: 0, steer: 0, dt: DT }); phys.update(DT); world.step(); } // settle
   phys.body.setLinvel({ x: 0, y: 0, z: speed }, true);

@@ -3,7 +3,7 @@ import { Horns, DEFAULT_HORN_PARAMS as P, hornVoice } from '../src/npc/horns.js'
 import { AMY_HORN_LINES, JESS_HORN_LINES } from '../src/npc/hornLines.js';
 import { VOICE_LINES as AMY_LINES } from '../src/npc/voiceLines.js';
 import { JESS_LINES } from '../src/npc/jessLines.js';
-import { QUAD_SPECS, TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, HARTLEY_SPEC } from '../src/vehicle/quadSpecs.js';
 
 const always = () => 0; // dice always say yes, and pick the first of anything
 const make = (params = {}, random = always) => new Horns({ ...P, ...params }, random);
@@ -92,7 +92,7 @@ describe('Jess creeping up on Amy', () => {
 
 describe('horn voices', () => {
   it('gives the tractor a lower, louder horn than any quad', () => {
-    const tractor = hornVoice(TRACTOR_SPEC);
+    const tractor = hornVoice(HARTLEY_SPEC);
     for (const spec of QUAD_SPECS) {
       const quad = hornVoice(spec);
       expect(tractor.freqs[0]).toBeLessThan(quad.freqs[0]);

@@ -1,12 +1,13 @@
-// The orange quad's body (TODO 92), after photos of a 1980s Suzuki LT250R Quadracer in `.scratch/quads/viper-250/` (a brochure side view,
+// After a Suzuki LT250R Quadracer.
+// The orange quad's body (TODO 92), after photos in `.scratch/quads/viper-250/` (a brochure side view,
 // front and rear three-quarters, two from above and the left switch housing). What sets it apart from the other quads is the wedge: seen
 // from above it is a triangle, a narrow nose and tank shroud widening through the seat to a broad duck-tail; from the side the shroud
 // stands high behind the bars, the seat dips low in front of the tail and the tail's wings kick up behind it; the flanks are big flat
 // triangles; the front fenders are flat blades over the tyres. Pure numbers, no materials, so a test can check them.
 
-import { BLASTER_WHEELS, TYRE_OUTER } from './blasterBody.js';
+import { HORNET_WHEELS, TYRE_OUTER } from './hornetBody.js';
 
-export const RACER_WHEELS = BLASTER_WHEELS;
+export const RACER_WHEELS = HORNET_WHEELS;
 export { TYRE_OUTER };
 
 // Shells swept round each wheel, as the yellow's (quadGeometry.js `shellGeometry`): a side profile [z, y] from the wheel centre, front to
@@ -72,7 +73,7 @@ export const RACER_FLANK = { x: 0.2, corners: [[0.3, 0.88], [-0.34, 0.8], [-0.05
 /** The plate under each wing behind the flank, closing the side between it and the tail (tucked in under the wing). */
 export const RACER_SIDE_PLATE = { x: 0.16, y: 0.6, h: 0.1, z: -0.6, len: 0.4 };
 
-/** The bars' lamp guard is the yellow's: the V, the clamp and the crossbar are shared (blasterBody.js `BLASTER_VBARS`). The pod on the level run: where each thing sits along it. */
+/** The bars' lamp guard is the yellow's: the V, the clamp and the crossbar are shared (hornetBody.js `HORNET_VBARS`). The pod on the level run: where each thing sits along it. */
 export const RACER_POD = { x0: 0.09, x1: 0.21, rockerX: 0.11, chokeX: 0.155, dashX: 0.195, z: -0.075, depth: 0.1 };
 // (everything on the pod stands on its rear half, behind the crossbar, which passes over the pod's front: a lever up there would go through it)
 

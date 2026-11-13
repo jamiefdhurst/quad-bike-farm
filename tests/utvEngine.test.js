@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { contaminant, stepDieselSoak } from '../src/engine/diesel.js';
 import { reverseAllowed, REVERSE_STYLES } from '../src/vehicle/controls.js';
-import { UTV_SPEC, TRACTOR_SPEC, QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
+import { YAK_SPEC, HARTLEY_SPEC, QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { EngineModel } from '../src/engine/engineModel.js';
@@ -22,7 +22,7 @@ describe('what soaks an engine', () => {
   });
 
   it('soaks the UTV once a tankful has petrol in it, and not on clean diesel', () => {
-    const p = { ...P, ...UTV_SPEC.engine };
+    const p = { ...P, ...YAK_SPEC.engine };
     let soak = 0;
     for (let i = 0; i < 4000; i++) soak = stepDieselSoak(soak, 0.05, { diesel: contaminant(p, 1), active: true }, p);
     expect(soak).toBe(0);
@@ -32,7 +32,7 @@ describe('what soaks an engine', () => {
   });
 
   it('pours petrol into the UTV tank and the share is right', () => {
-    const fuel = new FuelSystem({ ...DEFAULT_FUEL_PARAMS, ...UTV_SPEC.fuel });
+    const fuel = new FuelSystem({ ...DEFAULT_FUEL_PARAMS, ...YAK_SPEC.fuel });
     fuel.setLitres(10);
     expect(fuel.diesel).toBe(1);
     fuel.add(5, 0, 0); // petrol
@@ -41,7 +41,7 @@ describe('what soaks an engine', () => {
 });
 
 describe('the UTV engine', () => {
-  const make = (spec = UTV_SPEC) => new EngineModel({ ...P, ...spec.engine, initialTemperature: 0.9 }, { random: seeded(5) });
+  const make = (spec = YAK_SPEC) => new EngineModel({ ...P, ...spec.engine, initialTemperature: 0.9 }, { random: seeded(5) });
   const crank = (e, seconds = 6) => {
     for (let t = 0; t < seconds && !e.isRunning; t += 1 / 60) e.update(1 / 60, { starter: true, fuel: 1, diesel: 1 });
   };
@@ -65,7 +65,7 @@ describe('the UTV engine', () => {
     e.setIgnition(false);
     settle(e, 3);
     expect(e.isRunning).toBe(false);
-    const t = started(TRACTOR_SPEC);
+    const t = started(HARTLEY_SPEC);
     t.setIgnition(false);
     settle(t, 3);
     expect(t.isRunning).toBe(true);
@@ -88,17 +88,17 @@ describe('the UTV engine', () => {
 
 describe('the UTV spec', () => {
   it('names a dash that exists and a reverse style that exists, and is not one of the quads', () => {
-    expect(DASH_STYLES).toContain(UTV_SPEC.dashStyle);
-    expect(REVERSE_STYLES).toContain(UTV_SPEC.reverseStyle);
-    expect(QUAD_SPECS.some((s) => s.id === UTV_SPEC.id)).toBe(false);
+    expect(DASH_STYLES).toContain(YAK_SPEC.dashStyle);
+    expect(REVERSE_STYLES).toContain(YAK_SPEC.reverseStyle);
+    expect(QUAD_SPECS.some((s) => s.id === YAK_SPEC.id)).toBe(false);
   });
 
   it('keeps its idle, redline and top revs in order', () => {
-    const e = UTV_SPEC.engine;
-    expect(UTV_SPEC.idleRange[0]).toBeGreaterThanOrEqual(UTV_SPEC.safeIdle);
-    expect(e.idleRpmWarm).toBeLessThan(UTV_SPEC.idleRange[0] + 100);
+    const e = YAK_SPEC.engine;
+    expect(YAK_SPEC.idleRange[0]).toBeGreaterThanOrEqual(YAK_SPEC.safeIdle);
+    expect(e.idleRpmWarm).toBeLessThan(YAK_SPEC.idleRange[0] + 100);
     expect(e.redlineRpm).toBeLessThan(e.maxRpm);
-    expect(UTV_SPEC.topRpmRange[0]).toBeLessThan(e.maxRpm + 100);
+    expect(YAK_SPEC.topRpmRange[0]).toBeLessThan(e.maxRpm + 100);
   });
 
   it('wants stopping for its dash lever', () => {

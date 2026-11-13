@@ -327,7 +327,7 @@ export function warnSymbol(ctx, kind, x, y, colour, lit, scale = 1, glow = true)
     ctx.lineTo(x + 3.4, y + 3.6);
     ctx.stroke();
   } else if (kind === 'turn' || kind === 'turnLeft' || kind === 'turnRight') {
-    // The indicator tell-tale: "<- ->" for the Series' single lamp, or one arrow (turnLeft, turnRight) for the lamps that come in a pair.
+    // The indicator tell-tale: "<- ->" for the Tor's single lamp, or one arrow (turnLeft, turnRight) for the lamps that come in a pair.
     const single = kind !== 'turn';
     for (const d of single ? [kind === 'turnLeft' ? -1 : 1] : [-1, 1]) {
       const tail = single ? x - d * 6 : x + d * 1.4; // a single arrow is centred on its lamp, a pair sits either side of the middle

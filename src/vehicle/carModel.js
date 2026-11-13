@@ -1,15 +1,15 @@
 import { part } from './part.js';
 import * as THREE from 'three';
-import { gearLeverPose, SEAT_TIP, posePedals } from './landRoverModel.js';
-import { buildFiestaModel } from './fiestaModel.js';
-import { FIESTA_BODY } from './fiestaBody.js';
-import { buildCorsaModel } from './corsaModel.js';
-import { CORSA_BODY } from './corsaBody.js';
-import { build309Model } from './p309Model.js';
-import { P309_BODY } from './p309Body.js';
+import { gearLeverPose, SEAT_TIP, posePedals } from './cabModel.js';
+import { buildFinchModel } from './finchModel.js';
+import { FINCH_BODY } from './finchBody.js';
+import { buildGriffinModel } from './griffinModel.js';
+import { GRIFFIN_BODY } from './griffinBody.js';
+import { build309Model } from './vauclairModel.js';
+import { VAUCLAIR_BODY } from './vauclairBody.js';
 
-// The girls' cars, procedural like the Land Rovers: Amy's Mk1 Fiesta (1976 to 1983, boxy, a sloping hatch, square lamps, black
-// bumpers) and Jess's Corsa B (1993, rounded, oval lamps, body-coloured bumpers, a big-bore exhaust). One builder, a table each
+// The girls' cars, procedural like the Land Rovers: Amy's Finch (1976 to 1983, boxy, a sloping hatch, square lamps, black
+// bumpers) and Jess's Griffin B (1993, rounded, oval lamps, body-coloured bumpers, a big-bore exhaust). One builder, a table each
 // (CARS): the side profile, the glasshouse, the seats and the details that differ. Same named parts as the Land Rovers', so Quad, the
 // mount and the girls' seats work unchanged:
 //
@@ -28,7 +28,7 @@ import { P309_BODY } from './p309Body.js';
 
 export const CAR_GROUND_OFFSET = -0.45; // chassis origin to the ground at rest, metres (in the model's own size)
 const REST = 0.16; // suspension rest length: the spec's suspensionRestLength over its scale
-const KNOB_TRAVEL = 0.06; // how far the Fiesta's choke knob pulls out
+const KNOB_TRAVEL = 0.06; // how far the Finch's choke knob pulls out
 const HANDBRAKE_OFF = 0; // the lever's tilt when off (lying along the top of the tunnel), and pulled up
 const HANDBRAKE_ON = -0.5;
 // The body sits this much higher on its wheels than the arches' first cut (Jamie: it looked low, like a sports model): everything but
@@ -41,9 +41,9 @@ const EYE_UP = 0.66; // your eyes over the hips
  * `screenBase`, `screenTop`, `roofRear` and `hatchBottom` (z, y), with the B pillar at `bPillar`. Seats are hips on the cushions.
  */
 export const CARS = {
-  fiesta: FIESTA_BODY, // its numbers are in fiestaBody.js, with its own model (fiestaModel.js)
-  corsa: CORSA_BODY, // its numbers are in corsaBody.js, with its own model (corsaModel.js)
-  p309: P309_BODY, // your car: p309Body.js and p309Model.js
+  finch: FINCH_BODY, // its numbers are in finchBody.js, with its own model (finchModel.js)
+  griffin: GRIFFIN_BODY, // its numbers are in griffinBody.js, with its own model (griffinModel.js)
+  vauclair: VAUCLAIR_BODY, // your car: vauclairBody.js and vauclairModel.js
 };
 
 /** The wheels and the physics box, per car. The back wheels are not driven (front-wheel drive, with the spec's fourWheelDrive on). */
@@ -93,15 +93,15 @@ export function carEyeToGlass(kind) {
 /**
  * Where the driver's sight line to the binnacle crosses the wheel's plane, as heights up the wheel from its middle (model units): `low` for
  * the bottom of the lamp strip, `high` for the top of the dials. The dials are meant to be seen through the hoop of the wheel above its boss
- * and below the rim (as the Fiesta's are), so `low` has to clear the boss and `high` the rim's inner edge. `boss` and `rimInner` give those.
- * (Jamie: the Corsa's dials were behind the wheel; then its column was too low, so the dash is seen through the wheel, as the Fiesta's.)
+ * and below the rim (as the Finch's are), so `low` has to clear the boss and `high` the rim's inner edge. `boss` and `rimInner` give those.
+ * (Jamie: the Griffin's dials were behind the wheel; then its column was too low, so the dash is seen through the wheel, as the Finch's.)
  */
 export function carDashThroughWheel(kind) {
   const c = CARS[kind];
-  const fiesta = kind === 'fiesta';
+  const finch = kind === 'finch';
   const th = -1.12; // the column's rake, as buildCarModel sets it
   const face = c.screenBase[0] - 0.32;
-  const rimR = c.rim ?? (fiesta ? 0.19 : 0.17);
+  const rimR = c.rim ?? (finch ? 0.19 : 0.17);
   const wy = c.columnY + c.wheelOut * Math.cos(th);
   const wz = face + c.wheelOut * Math.sin(th);
   const ey = c.seats.driver.y + EYE_UP;
@@ -113,7 +113,7 @@ export function carDashThroughWheel(kind) {
     const t = ((wy - ey) * Math.cos(th) + (wz - ez) * Math.sin(th)) / (dY * Math.cos(th) + dZ * Math.sin(th));
     return (ey + t * dY - wy) * -Math.sin(th) + (ez + t * dZ - wz) * Math.cos(th);
   };
-  return { low: at(-0.05), high: at(0.06), boss: c.boss ?? (fiesta ? 0.03 : 0.035), rimInner: rimR - (fiesta || c.rim ? 0.014 : 0.02) };
+  return { low: at(-0.05), high: at(0.06), boss: c.boss ?? (finch ? 0.03 : 0.035), rimInner: rimR - (finch || c.rim ? 0.014 : 0.02) };
 }
 
 /** The backrests that tip forward to let someone into the back. */
@@ -167,11 +167,11 @@ export function sideShape(c) {
   return s;
 }
 
-/** A car's model: each has its own file (fiestaModel.js, corsaModel.js, p309Model.js) built from its own numbers. */
-export function buildCarModel({ kind = 'fiesta', bodyColor = 0x9fb8cc, reg = null } = {}) {
-  if (kind === 'corsa') return buildCorsaModel({ bodyColor, reg });
-  if (kind === 'p309') return build309Model({ bodyColor, reg });
-  return buildFiestaModel({ bodyColor, reg });
+/** A car's model: each has its own file (finchModel.js, griffinModel.js, vauclairModel.js) built from its own numbers. */
+export function buildCarModel({ kind = 'finch', bodyColor = 0x9fb8cc, reg = null } = {}) {
+  if (kind === 'griffin') return buildGriffinModel({ bodyColor, reg });
+  if (kind === 'vauclair') return build309Model({ bodyColor, reg });
+  return buildFinchModel({ bodyColor, reg });
 }
 
 /** The front backrests tipped forward, 0 (upright) to 1 (right forward), by seat name ({ left, driver }). */

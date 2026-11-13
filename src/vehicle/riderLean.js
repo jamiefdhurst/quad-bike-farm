@@ -1,4 +1,4 @@
-// A rider shifting their weight to the inside of a corner on a narrow three-wheeler (the old ATC). It happens by itself from the bars: the
+// A rider shifting their weight to the inside of a corner on a narrow three-wheeler (the old T185). It happens by itself from the bars: the
 // rider leans in as you turn, but not instantly, so a corner that is eased into stays up and one thrown into with the bars flung over
 // catches it out. The weight is a sideways offset from the middle; the roll torque it makes (rider mass times g times the offset) pushes the
 // chassis over towards the inside, against the outward roll of the corner. Pure, no Three.js or Rapier; quad.js feeds it the bars and the

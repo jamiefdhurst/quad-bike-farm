@@ -11,31 +11,31 @@ import {
 // instruments are on the two accessory pods (dashPod.js). Layouts and colours follow docs/briefs/dashes/ (see
 // docs/decisions/vehicles.md, "The dashes").
 //
-//   foreman:   red. A Honda Foreman-style cover: a rectangular speedo with hour and odometer drums, N / R / OIL lamps and the key.
-//   grizzly:   blue. A Grizzly-style pod around a cyan-backlit LCD: a big speed, the odometer (or the trip) and the hours, a thermometer
+//   farm300:   red. A utility-quad cover: a rectangular speedo with hour and odometer drums, N / R / OIL lamps and the key.
+//   bruin:   blue. A big-farm-quad pod around a cyan-backlit LCD: a big speed, the odometer (or the trip) and the hours, a thermometer
 //              and a fuel pump symbol, a column of L, H, R and P lamps, a DIFF.LOCK lamp and two round buttons.
-//   kodiak:    loan quad. The same idea, newer: a wider, glossier pod with a cooler LCD and a gear column.
-//   bayou:     green. A round black speedo on a stalk over the bars: white mph to 40 with a blue km/h scale inside, an odometer window,
+//   ursa:    loan quad. The same idea, newer: a wider, glossier pod with a cooler LCD and a gear column.
+//   rb300:     green. A round black speedo on a stalk over the bars: white mph to 40 with a blue km/h scale inside, an odometer window,
 //              N and R lamps and the key under the needle's hub.
-//   blaster:   yellow. Only the key, in a small housing on the bar clamp.
-//   quadracer: orange. A RUN / OFF kill switch on the left bar and its lanyard.
+//   hornet:   yellow. Only the key, in a small housing on the bar clamp.
+//   adder: orange. A RUN / OFF kill switch on the left bar and its lanyard.
 //   kidsKey:   mini moto, old three-wheeler. A key switch under the bar clamp. asp: the kids' quad's, the same key on the V bars' clamp block.
 //   trail:     the farm bike: a round white-faced speedo to 70 mph in a black bezel, with an odometer drum, an ignition lamp and the key.
 //   mower:     the ride-on mower (#76): a small black panel with an hour meter, a red charge lamp, an amber blade lamp that lights while the blade is engaged, and the key.
-//   smiths:    the old bike: a round Smiths-style speedo to 70 mph with an odometer drum, a red ignition lamp and the key, in a cup on the headlamp's top.
-//   tractor:   the tractor (a Massey-Ferguson-35-style cluster, TODO 98). Three round dials in chrome bezels set straight into the red metal of the cowl, no housing (a big rev counter with an hour meter and the PTO speed marked, water temperature, fuel), a brass ignition switch, and four warning lamps (temperature, GLOW, CHARGE, OIL).
-//   utv:       the UTV (a Mule-style cluster, TODO 99): a round speedo to 40 mph with its odometer between four lamp pockets (glow, charge, oil, parking brake), a strip of the rest of the tell-tales, a separate fuel and hours unit and a key switch in 3D. It was a basic LCD over symbols for glow, charge, oil, park
+//   plover:    the old bike: a round speedo to 70 mph with an odometer drum, a red ignition lamp and the key, in a cup on the headlamp's top.
+//   tractor:   the tractor (a tractor cluster, TODO 98). Three round dials in chrome bezels set straight into the red metal of the cowl, no housing (a big rev counter with an hour meter and the PTO speed marked, water temperature, fuel), a brass ignition switch, and four warning lamps (temperature, GLOW, CHARGE, OIL).
+//   utv:       the UTV (a side-by-side cluster, TODO 99): a round speedo to 40 mph with its odometer between four lamp pockets (glow, charge, oil, parking brake), a strip of the rest of the tell-tales, a separate fuel and hours unit and a key switch in 3D. It was a basic LCD over symbols for glow, charge, oil, park
 //              (parking brake), a belted figure (flashes while someone sits unbelted), a headlamp (green, blue for main beam) and the key.
-//   fiesta:    Amy's Mk1 Fiesta: a speedo and a combined fuel and water gauge the same size, the lamps between them, on brown. corsa: Jess's Corsa B, with a rev counter too.
-//   p309:      your 309: a speedo and a clock, the lamps between, fuel and water in pockets at the ends.
-//   series:    the Land Rover. A Series III binnacle: a big speedo to 90 mph with its odometer, a combined fuel and water gauge,
+//   finch:    Amy's Finch: a speedo and a combined fuel and water gauge the same size, the lamps between them, on brown. griffin: Jess's Griffin, with a rev counter too.
+//   vauclair:      your Vauclair: a speedo and a clock, the lamps between, fuel and water in pockets at the ends.
+//   tor:    the Tor. An old binnacle: a big speedo to 90 mph with its odometer, a combined fuel and water gauge,
 //              IGN, OIL, CHOKE and BRAKE lamps, a 4WD and a DIFF lamp, and the key.
 //
 // buildDash(style) returns { group, update(state), mount } where state is { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel,
 // tap, temperature, overheat, coldBelow, ignition (has power), keyOn, tripMiles, odoMiles, hours, reverse, neutral, clock, seconds }.
 // The group faces the rider along -Z and its +X is on the rider's left. `mount` is where a pod stands (a child of the group) or null.
 
-const LCD = { bg: '#a9b59d', on: '#1f261c', ghost: '#9aa68f', dim: '#b0bba5' }; // Grizzly 660: positive, grey-green
+const LCD = { bg: '#a9b59d', on: '#1f261c', ghost: '#9aa68f', dim: '#b0bba5' }; // Bruin 660: positive, grey-green
 const LCD_COOL = { bg: '#b8c2c7', on: '#151a1e', ghost: '#a9b3b8', dim: '#bcc6cb' }; // the loan quad's newer one
 
 /** Fuel and temperature as lit-segment counts, shared by the LCDs. */
@@ -62,7 +62,7 @@ function podMount(group, x, y, z, dashTilt) {
   return m;
 }
 
-// Red: Honda Foreman ------------------------------------------------------------------
+// Red: Farm 300 ------------------------------------------------------------------
 
 /** The maker's name in its badge style on a dash face, centred at (x, y): italic capitals with an outline, as on the bodywork. */
 function makerBadge(ctx, maker, x, y, size, maxW = 0) {
@@ -84,7 +84,7 @@ function makerBadge(ctx, maker, x, y, size, maxW = 0) {
   ctx.restore();
 }
 
-function buildForeman() {
+function buildFarm300() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 79 };
@@ -146,12 +146,12 @@ function buildForeman() {
 
 // The two LCDs --------------------------------------------------------------------------
 
-/** The Grizzly's gear column letter that is lit: its selector has L, H, R and P, so forward is H, reverse is R and stopped in neutral is P. */
-export function grizzlyGear(s) {
+/** The Bruin's gear column letter that is lit: its selector has L, H, R and P, so forward is H, reverse is R and stopped in neutral is P. */
+export function bruinGear(s) {
   return s.reverse ? 'R' : s.neutral ? 'P' : 'H';
 }
 
-function buildGrizzly() {
+function buildBruin() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 62 };
@@ -280,7 +280,7 @@ function buildGrizzly() {
     update(s) {
       const odoTrip = cycleIndex(s.seconds ?? 0, 2); // the left reading alternates between the odometer and the trip
       const line = odoTrip ? ['TRIP', counterText(s.tripMiles, 4)] : ['ODO', counterText(s.odoMiles, 5)];
-      const L = { on: !!s.ignition, lamps: lampStates(s), speed: speedText(s.speedMph), line, hours: counterText(s.hours, 4), gear: grizzlyGear(s), diffLock: s.diffLock === true };
+      const L = { on: !!s.ignition, lamps: lampStates(s), speed: speedText(s.speedMph), line, hours: counterText(s.hours, 4), gear: bruinGear(s), diffLock: s.diffLock === true };
       const key = lookKey(s, [L.speed, L.gear, L.diffLock, line.join(' '), L.hours]);
       if (gate(key)) face.redraw((ctx) => draw(ctx, s, L));
     },
@@ -294,7 +294,7 @@ function bottomLine(s, tripDigits, odoDigits, labelsFor = ['TRIP', 'ODO', 'HRS']
   return [labelsFor[i], counterText(value, i === 0 ? tripDigits : odoDigits)];
 }
 
-function buildKodiak() {
+function buildUrsa() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 170, oy: 62 };
@@ -379,18 +379,18 @@ function buildKodiak() {
   };
 }
 
-// Green: Kawasaki Bayou ---------------------------------------------------------------
+// Green: RB300 ---------------------------------------------------------------
 
-/** The Bayou's speedo: mph 0 to 40 sweeping 220 degrees from the lower left to the lower right, 20 at the top. */
-export const BAYOU_DIAL = { from: 200, to: -20, maxMph: 40 };
+/** The RB300's speedo: mph 0 to 40 sweeping 220 degrees from the lower left to the lower right, 20 at the top. */
+export const RB300_DIAL = { from: 200, to: -20, maxMph: 40 };
 
 /** The needle's angle in degrees for a speed, held to the dial's end. */
-export function bayouNeedleAngle(mph) {
-  const { from, to, maxMph } = BAYOU_DIAL;
+export function rb300NeedleAngle(mph) {
+  const { from, to, maxMph } = RB300_DIAL;
   return from + ((to - from) * Math.min(maxMph, Math.max(0, mph))) / maxMph;
 }
 
-function buildBayou() {
+function buildRb300() {
   const group = new THREE.Group();
   group.name = 'dash';
   const [cx, cy] = [150, 50];
@@ -409,7 +409,7 @@ function buildBayou() {
   const KMH = [10, 20, 30, 40, 50, 60];
 
   function draw(ctx, s, L) {
-    const { from, to } = BAYOU_DIAL;
+    const { from, to } = RB300_DIAL;
     ctx.fillStyle = '#0a0a0b';
     ctx.beginPath();
     ctx.arc(cx, cy, 45, 0, Math.PI * 2);
@@ -421,7 +421,7 @@ function buildBayou() {
     // The km/h scale inside it, in blue: an arc and small figures.
     arc(ctx, cx, cy, 23, from, to, '#2a8fd6', 0.8);
     KMH.forEach((k) => {
-      const a = bayouNeedleAngle(k / 1.609344);
+      const a = rb300NeedleAngle(k / 1.609344);
       const [x0, y0] = pol(cx, cy, 23, a);
       const [x1, y1] = pol(cx, cy, 20.5, a);
       ctx.strokeStyle = '#2a8fd6';
@@ -439,7 +439,7 @@ function buildBayou() {
     text(ctx, 'mph', cx, 65, 5, '#f2f2ef', { align: 'center', weight: 'bold' });
     makerBadge(ctx, 'ridgeback', cx, 72, 7, 26);
     // The needle, white, and a grey hub on its pivot; then the lamps and the key in the empty sector under the dial.
-    needle(ctx, cx, cy, 41, bayouNeedleAngle(L.mph), '#f4f4ee', 1.5);
+    needle(ctx, cx, cy, 41, rb300NeedleAngle(L.mph), '#f4f4ee', 1.5);
     ctx.fillStyle = '#4a4c4f';
     ctx.beginPath();
     ctx.arc(cx, cy, 4.2, 0, Math.PI * 2);
@@ -464,7 +464,7 @@ function buildBayou() {
 
 // The old bike's speedo ----------------------------------------------------------------
 
-/** The Smiths-style speedo on the old bike: mph 0 to 70 sweeping 270 degrees from the lower left to the lower right, 35 at the top. */
+/** The old bike's speedo: mph 0 to 70 sweeping 270 degrees from the lower left to the lower right, 35 at the top. */
 export const SMITHS_DIAL = { from: 225, to: -45, maxMph: 70 };
 
 export function smithsNeedleAngle(mph) {
@@ -472,7 +472,7 @@ export function smithsNeedleAngle(mph) {
   return from + ((to - from) * Math.min(maxMph, Math.max(0, mph))) / maxMph;
 }
 
-function buildSmiths() {
+function buildPloverDash() {
   const group = new THREE.Group();
   group.name = 'dash';
   const [cx, cy] = [150, 50];
@@ -582,10 +582,10 @@ function buildTrail() {
   };
 }
 
-// Yellow: Yamaha Blaster ----------------------------------------------------------------
+// Yellow: Hornet 200 ----------------------------------------------------------------
 
-// Just the key, in a small black housing on the bar clamp: no lamp, no gauge (the Blaster's headlamp is in its nose, not here).
-function buildBlaster() {
+// Just the key, in a small black housing on the bar clamp: no lamp, no gauge (the Hornet's headlamp is in its nose, not here).
+function buildHornet() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 110, oy: 55 };
@@ -602,9 +602,9 @@ function buildBlaster() {
   };
 }
 
-// Orange: Suzuki quadracer ------------------------------------------------------------------
+// Orange: Adder 250 ------------------------------------------------------------------
 
-function buildQuadracer() {
+function buildAdder() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 47, oy: 40 };
@@ -731,7 +731,7 @@ function buildTractor() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 70 };
-  // The Massey-Ferguson-35-style cluster (TODO 98), set straight into the red metal of the cowl, no housing and no plastic: the model puts
+  // The tractor cluster (TODO 98), set straight into the red metal of the cowl, no housing and no plastic: the model puts
   // a pressed steel panel behind this face, and the dials, the key's brass plate and the lamps are drawn on it. A big rev counter in the
   // middle with its hours drum and the PTO speed marked, fuel on its left over the ignition switch and water temperature on its right,
   // each in a chrome bezel; the four warning lamps in a row centred under the rev counter. All of it inside the plate's edges.
@@ -822,7 +822,7 @@ function buildUtv() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
-  // A Mule-style cluster (TODO 99), after the photos: one grey moulded binnacle holding a round chrome-bezelled speedo (0 to 40 mph, the
+  // A side-by-side cluster (TODO 99), after the photos: one grey moulded binnacle holding a round chrome-bezelled speedo (0 to 40 mph, the
   // odometer's drums under its hub) with a pocket either side of it for two lamps each (glow plug and charge on the left, oil and parking
   // brake on the right), a thin strip of the rest of the tell-tales under it (water, belt, headlamp, indicators, 4WD) and, set into the
   // moulding's left end, a separate small round unit with the fuel gauge (a bar, E to F with quarters marked) over the hours' LCD. The key
@@ -968,7 +968,7 @@ function buildUtv() {
   };
 }
 
-// The Land Rover ----------------------------------------------------------------------------
+// The Tor ----------------------------------------------------------------------------
 
 /**
  * A real ignition on a pod face: a small black bezel with a chrome barrel and a key in it (a steel blade with teeth standing out towards the
@@ -1000,7 +1000,7 @@ export function addIgnitionKey(group, O, key, scale = 1) {
   return ignitionKey;
 }
 
-function buildSeries() {
+function buildTor() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
@@ -1008,7 +1008,7 @@ function buildSeries() {
   housing(group, { x: 80, y: 14, w: 200, h: 92, r: 4, ...O, material: plastic });
   const face = mmPanel({ x: 80, y: 14, w: 200, h: 92, ...O });
   group.add(face.mesh);
-  // After the photo of a real Series III cab: a column of warning lamps down the left edge (main beam, charge, oil, handbrake), the speedometer
+  // After the photo of a real cab: a column of warning lamps down the left edge (main beam, charge, oil, handbrake), the speedometer
   // with the indicators' green lamp and the choke's amber one in the bottom of its dial, a big round combined fuel and water gauge to its right,
   // and the ignition key (a real one, as the UTV's) at the right-hand end.
   const speedo = { cx: 142, cy: 60, r: 31 }; // both dials the same size, and centred on the pod (its middle is y 60)
@@ -1074,7 +1074,7 @@ function buildSeries() {
   // The ignition: a small black bezel with a chrome barrel and a real key in it, as the UTV's (a steel blade standing out towards the driver, a black
   // bow with a ring hole), at the dash's right-hand end. It turns clockwise from OFF at the top to ON and on to START, and the dash eases it to
   // whichever the engine is doing.
-  const ignitionKey = addIgnitionKey(group, O, KEY, 0.6); // the Series' switch is smaller than the UTV's
+  const ignitionKey = addIgnitionKey(group, O, KEY, 0.6); // the Tor's switch is smaller than the UTV's
 
   return {
     group,
@@ -1110,12 +1110,12 @@ function buildSeries() {
 // The 200TDi ---------------------------------------------------------------------------------
 
 /**
- * An early-90s Land Rover 90's dash, after the photo of the real cluster and in a different style from the Series': a flat black moulding with
+ * An early-90s 90's dash, after the photo of the real cluster and in a different style from the Tor's: a flat black moulding with
  * white-on-black dials and orange needles. Three small gauges in a row at the left (the battery's volts, the water temperature, the fuel), the
  * big speedometer at the right with its odometer, a panel of warning symbols in two rows under the small gauges (glow plugs, charge, oil, the
  * handbrake, seat belts, the hazards; side lights, main beam and the indicators), and the ignition's key (a real one) at the far end.
  */
-function buildDefender() {
+function buildCrag() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
@@ -1242,20 +1242,20 @@ function buildDefender() {
 
 // The girls' cars ------------------------------------------------------------------------
 
-const FIESTA_BLACK = new THREE.MeshStandardMaterial({ color: 0x1d1b19, roughness: 0.7 }); // the Fiesta's cluster's black moulding
+const FINCH_BLACK = new THREE.MeshStandardMaterial({ color: 0x1d1b19, roughness: 0.7 }); // the Finch's cluster's black moulding
 
 /**
- * Amy's Mk1 Fiesta, after the photo of the real cluster: a brushed silver panel in a black moulding, the speedometer on the left (to 100 mph with km/h
+ * Amy's Finch, after the photo of the real cluster: a brushed silver panel in a black moulding, the speedometer on the left (to 100 mph with km/h
  * in a smaller ring inside, the odometer under the boss, a yellow needle), a black window of the gear lever's H (R 1 3 over 2 4) in the middle over a
  * row of small slots and five lamps (oil, charge, the indicators, main beam, choke), and on the right a round combined gauge with a black boss in the
- * middle: fuel in its upper half, water temperature in its lower. No rev counter. The key is on the column (fiestaModel.js).
+ * middle: fuel in its upper half, water temperature in its lower. No rev counter. The key is on the column (finchModel.js).
  */
-function buildFiesta() {
+function buildFinch() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
   const P = { x: 60, y: 24, w: 240, h: 72 };
-  housing(group, { ...P, x: P.x - 4, y: P.y - 4, w: P.w + 8, h: P.h + 8, r: 7, ...O, material: FIESTA_BLACK });
+  housing(group, { ...P, x: P.x - 4, y: P.y - 4, w: P.w + 8, h: P.h + 8, r: 7, ...O, material: FINCH_BLACK });
   const face = mmPanel({ ...P, ...O });
   group.add(face.mesh);
   const speedo = { cx: 98, cy: 60, r: 33 };
@@ -1372,12 +1372,12 @@ function buildFiesta() {
 }
 
 /**
- * Jess's Corsa B, after the photo of the real cluster: a rounded charcoal binnacle with the rev counter and the speedometer (to 130 mph, with the
+ * Jess's Griffin, after the photo of the real cluster: a rounded charcoal binnacle with the rev counter and the speedometer (to 130 mph, with the
  * odometer) side by side in the middle, a small fuel gauge at the lower left and a small water gauge at the lower right, the indicators' tell-tales at
  * the two ends and a strip of lamps along the bottom: charge, oil, engine management (it is injected), handbrake, belts, side lights and main beam.
- * The key is a real one on the column (corsaModel.js).
+ * The key is a real one on the column (griffinModel.js).
  */
-function buildCorsa() {
+function buildGriffin() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
@@ -1494,7 +1494,7 @@ function buildCorsa() {
  * main beam), and at each end a pocket of two: the oil lamp over the fuel gauge on the left, the water lamp over the temperature gauge on the right.
  */
 /** Your 309's cluster's layout, in the panel's pixels: each dial's middle and radius, and the left edges of the two end pockets (34 wide). */
-export const P309_CLUSTER = {
+export const VAUCLAIR_CLUSTER = {
   speedo: { cx: 127, cy: 60, r: 31 },
   clock: { cx: 230, cy: 60, r: 30 },
   fuel: { cx: 70, cy: 76, r: 14 },
@@ -1503,17 +1503,17 @@ export const P309_CLUSTER = {
   lamps: [170, 190],
 };
 
-function buildP309() {
+function buildVAUCLAIR() {
   const group = new THREE.Group();
   group.name = 'dash';
   const O = { ox: 180, oy: 60 };
   const P = { x: 50, y: 22, w: 260, h: 76 };
-  housing(group, { ...P, x: P.x - 4, y: P.y - 4, w: P.w + 8, h: P.h + 8, r: 7, ...O, material: FIESTA_BLACK });
+  housing(group, { ...P, x: P.x - 4, y: P.y - 4, w: P.w + 8, h: P.h + 8, r: 7, ...O, material: FINCH_BLACK });
   const face = mmPanel({ ...P, ...O });
   group.add(face.mesh);
   // Laid out left to right with room between (the speedo's rim ran into the left pocket, the clock's into the right): the left pocket 53 to 87, the
-  // speedo 94 to 160, the lamps 170 to 190, the clock 198 to 262, the right pocket 272 to 306. P309_CLUSTER is the same, for the test.
-  const { speedo, clock, fuel, water, pockets } = P309_CLUSTER;
+  // speedo 94 to 160, the lamps 170 to 190, the clock 198 to 262, the right pocket 272 to 306. VAUCLAIR_CLUSTER is the same, for the test.
+  const { speedo, clock, fuel, water, pockets } = VAUCLAIR_CLUSTER;
   const gate = changeGate();
   let shownMph = 0;
   let shownFuel = 0;
@@ -1617,51 +1617,51 @@ function buildP309() {
 }
 
 /** Dash styles buildDash knows: every quad spec must name one of these. */
-export const DASH_STYLES = ['foreman', 'grizzly', 'kodiak', 'bayou', 'blaster', 'quadracer', 'kidsKey', 'asp', 'smiths', 'trail', 'mower', 'tractor', 'utv', 'series', 'defender', 'fiesta', 'corsa', 'p309'];
+export const DASH_STYLES = ['farm300', 'bruin', 'ursa', 'rb300', 'hornet', 'adder', 'kidsKey', 'asp', 'plover', 'trail', 'mower', 'tractor', 'utv', 'tor', 'crag', 'finch', 'griffin', 'vauclair'];
 
 /** Where each dash sits on the bars (metres, in the bars' frame) and how far it tilts back. A nacelle quad carries its own on its top. */
 export const DASH_PLACE = {
-  foreman: { pos: [0, 0.1, 0.02], tilt: 0.75 },
-  grizzly: { pos: [0, 0.1, 0.02], tilt: 0.75 },
-  kodiak: { pos: [0, 0.1, 0.02], tilt: 0.75 },
-  bayou: { pos: [0, 0.05, 0.04], tilt: 0.85 }, // low, just over the middle of the bars
-  blaster: { pos: [0, -0.034, -0.02], tilt: 0.5 }, // sitting on the clamp block at the bars' middle, behind the lamp (the V's middle is 7 cm below the bars' origin)
-  quadracer: { pos: [0.195, -0.022, -0.075], tilt: 0.9 }, // on the pod on the level run of the V bars (the kill switch's panel)
+  farm300: { pos: [0, 0.1, 0.02], tilt: 0.75 },
+  bruin: { pos: [0, 0.1, 0.02], tilt: 0.75 },
+  ursa: { pos: [0, 0.1, 0.02], tilt: 0.75 },
+  rb300: { pos: [0, 0.05, 0.04], tilt: 0.85 }, // low, just over the middle of the bars
+  hornet: { pos: [0, -0.034, -0.02], tilt: 0.5 }, // sitting on the clamp block at the bars' middle, behind the lamp (the V's middle is 7 cm below the bars' origin)
+  adder: { pos: [0.195, -0.022, -0.075], tilt: 0.9 }, // on the pod on the level run of the V bars (the kill switch's panel)
   kidsKey: { pos: [0, 0.075, 0.0], tilt: 0.9 },
-  smiths: { pos: [0, 0, 0], tilt: 0.5 }, // the old bike's speedo: its model sets it in the headlamp nacelle itself
+  plover: { pos: [0, 0, 0], tilt: 0.5 }, // the old bike's speedo: its model sets it in the headlamp nacelle itself
   trail: { pos: [0, 0, 0], tilt: 0.5 }, // the farm bike's: its model sets it on the bars' bracket
   mower: { pos: [0, 0, 0], tilt: 1.1 }, // the mower's: its model sets it on the dash panel's top
   asp: { pos: [0, -0.034, -0.02], tilt: 0.5 }, // the kids' quad's key, on the clamp block at the V bars' middle as the yellow's
   tractor: { pos: [0, 0, 0], tilt: 1.05 }, // the tractor's model places it on its scuttle itself
   utv: { pos: [0, 0, 0], tilt: 0.9 }, // so does the UTV's
-  series: { pos: [0, 0, 0], tilt: 0.55 }, // and the Land Rover's
-  defender: { pos: [0, 0, 0], tilt: 0.55 }, // and the 200TDi's
-  fiesta: { pos: [0, 0, 0], tilt: 0.5 }, // and the girls' cars'
-  corsa: { pos: [0, 0, 0], tilt: 0.5 },
-  p309: { pos: [0, 0, 0], tilt: 0.5 }, // and your car's
+  tor: { pos: [0, 0, 0], tilt: 0.55 }, // and the Tor's
+  crag: { pos: [0, 0, 0], tilt: 0.55 }, // and the 200TDi's
+  finch: { pos: [0, 0, 0], tilt: 0.5 }, // and the girls' cars'
+  griffin: { pos: [0, 0, 0], tilt: 0.5 },
+  vauclair: { pos: [0, 0, 0], tilt: 0.5 }, // and your car's
 };
 
 const BUILDERS = {
-  foreman: buildForeman,
-  grizzly: buildGrizzly,
-  kodiak: buildKodiak,
-  bayou: buildBayou,
-  blaster: buildBlaster,
-  quadracer: buildQuadracer,
+  farm300: buildFarm300,
+  bruin: buildBruin,
+  ursa: buildUrsa,
+  rb300: buildRb300,
+  hornet: buildHornet,
+  adder: buildAdder,
   kidsKey: buildKidsKey,
   asp: buildKidsKey,
-  smiths: buildSmiths,
+  plover: buildPloverDash,
   trail: buildTrail,
   mower: buildMower,
   tractor: buildTractor,
   utv: buildUtv,
-  series: buildSeries,
-  defender: buildDefender,
-  fiesta: buildFiesta,
-  corsa: buildCorsa,
-  p309: buildP309,
+  tor: buildTor,
+  crag: buildCrag,
+  finch: buildFinch,
+  griffin: buildGriffin,
+  vauclair: buildVAUCLAIR,
 };
 
-export function buildDash(style = 'foreman') {
-  return (BUILDERS[style] ?? buildForeman)();
+export function buildDash(style = 'farm300') {
+  return (BUILDERS[style] ?? buildFarm300)();
 }

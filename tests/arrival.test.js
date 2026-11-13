@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { dealArrival, liftSeats, carsAway, keepAway, Arrival, DEFAULT_ARRIVAL_PARAMS, ARRIVAL_PARAM_RANGES } from '../src/farm/arrival.js';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
-import { P309_SPEC } from '../src/vehicle/quadSpecs.js';
+import { VAUCLAIR_SPEC } from '../src/vehicle/quadSpecs.js';
 
 const rnd = (s) => () => ((s = (s * 16807) % 2147483647) / 2147483647);
 const GIRLS = ['amy', 'jess'];
@@ -48,19 +48,19 @@ describe('dealing the morning', () => {
 });
 
 describe('a girl\'s car on a day she came with you', () => {
-  const carOf = (g) => ({ amy: 'fiesta', jess: 'corsa' })[g];
+  const carOf = (g) => ({ amy: 'finch', jess: 'griffin' })[g];
 
   it('stays at home', () => {
-    expect(carsAway({ lift: ['jess'] }, carOf)).toEqual(['corsa']);
+    expect(carsAway({ lift: ['jess'] }, carOf)).toEqual(['griffin']);
     expect(carsAway({ lift: [] }, carOf)).toEqual([]);
   });
 
   it('keeps what the farm remembered about it in tonight\'s save, untouched', () => {
-    const saved = { corsa: { wear: 0.4, fuel: 3 }, fiesta: { wear: 0.1 } };
-    const today = { fiesta: { wear: 0.12 }, p309: { wear: 0.2 } };
-    expect(keepAway(today, saved, ['corsa'])).toEqual({ fiesta: { wear: 0.12 }, p309: { wear: 0.2 }, corsa: { wear: 0.4, fuel: 3 } });
-    expect(keepAway(today, null, ['corsa'])).toEqual(today); // a new farm has nothing to keep
-    expect(keepAway(today, saved, ['fiesta']).fiesta).toEqual({ wear: 0.12 }); // one that is here today is today's
+    const saved = { griffin: { wear: 0.4, fuel: 3 }, finch: { wear: 0.1 } };
+    const today = { finch: { wear: 0.12 }, vauclair: { wear: 0.2 } };
+    expect(keepAway(today, saved, ['griffin'])).toEqual({ finch: { wear: 0.12 }, vauclair: { wear: 0.2 }, griffin: { wear: 0.4, fuel: 3 } });
+    expect(keepAway(today, null, ['griffin'])).toEqual(today); // a new farm has nothing to keep
+    expect(keepAway(today, saved, ['finch']).finch).toEqual({ wear: 0.12 }); // one that is here today is today's
   });
 });
 
@@ -96,13 +96,13 @@ describe('the morning playing out', () => {
 
 describe('the car you arrive in', () => {
   it('is already running, warm, at its idle, and keeps running on its own', () => {
-    const e = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...P309_SPEC.engine }, { random: rnd(5) });
+    const e = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...VAUCLAIR_SPEC.engine }, { random: rnd(5) });
     e.runWarm();
     expect(e.isRunning).toBe(true);
     expect(e.ignitionOn).toBe(true);
     for (let t = 0; t < 5; t += 1 / 60) e.update(1 / 60, { fuel: 1 });
     expect(e.isRunning).toBe(true);
-    expect(Math.abs(e.rpm - P309_SPEC.engine.idleRpmWarm)).toBeLessThan(150);
+    expect(Math.abs(e.rpm - VAUCLAIR_SPEC.engine.idleRpmWarm)).toBeLessThan(150);
     expect(e.temperature).toBeGreaterThan(0.8);
   });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { headlightLook, taillightLevel, DEFAULT_HEADLIGHT_PARAMS as P } from '../src/vehicle/headlight.js';
-import { QUAD_SPECS, EXTRA_SPECS, TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, HARTLEY_SPEC } from '../src/vehicle/quadSpecs.js';
 
 const run = (over = {}) => ({ keyOn: true, running: true, cranking: false, rpm: 1100, idle: 1100, max: 6000, roughness: 0.05, erratic: 0, steady: false, time: 0, ...over });
 
@@ -47,7 +47,7 @@ describe('headlightLook', () => {
 
   it('is only the loan quad and the tractor that have a battery for it', () => {
     expect([...QUAD_SPECS, ...EXTRA_SPECS].filter((s) => s.steadyLights).map((s) => s.id)).toEqual(['ursa']);
-    expect(TRACTOR_SPEC.steadyLights).toBe(true);
+    expect(HARTLEY_SPEC.steadyLights).toBe(true);
   });
 });
 

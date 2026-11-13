@@ -83,14 +83,14 @@ describe('vehicle models', () => {
   });
 });
 
-describe('the red quad’s Foreman fenders', () => {
+describe('the red quad’s Farm300 fenders', () => {
   it('stop short of the tyres at the ends, so the front of the front tyre and the back of the rear one show', async () => {
-    const { FOREMAN } = await import('../src/vehicle/quadModel.js');
+    const { FARM300 } = await import('../src/vehicle/quadModel.js');
     const { WHEELS } = await import('../src/vehicle/quadPhysics.js');
     const front = WHEELS.find((w) => w.front);
     const rear = WHEELS.find((w) => !w.front);
-    expect(FOREMAN.front.to).toBeLessThan(front.z + 0.3);
-    expect(FOREMAN.rear.to).toBeGreaterThan(rear.z - 0.3);
-    expect(FOREMAN.archR).toBeGreaterThan(0.3); // the arch clears the 0.3 m tyre all round
+    expect(FARM300.front.to).toBeLessThan(front.z + 0.3);
+    expect(FARM300.rear.to).toBeGreaterThan(rear.z - 0.3);
+    expect(FARM300.archR).toBeGreaterThan(0.3); // the arch clears the 0.3 m tyre all round
   });
 });

@@ -78,10 +78,10 @@ describe('the UTV and the Land Rover', () => {
   const vc = (vehicles) => ({ free: { amy: true, jess: true }, vehicles, youOnTractor: false });
 
   it('Jess picks one of the free vehicles', () => {
-    const picks = (random) => run(make(random), P.jessAfter + 20, vc(['tractor', 'utv', 'landy'])).find((e) => e.type === 'jessGo')?.vehicle;
+    const picks = (random) => run(make(random), P.jessAfter + 20, vc(['tractor', 'utv', 'tor'])).find((e) => e.type === 'jessGo')?.vehicle;
     expect(picks(() => 0)).toBe('tractor');
     expect(picks(() => 0.5)).toBe('utv');
-    expect(picks(() => 0.999)).toBe('landy');
+    expect(picks(() => 0.999)).toBe('tor');
   });
 
   it('only picks from the ones nobody is on', () => {
@@ -95,8 +95,8 @@ describe('the UTV and the Land Rover', () => {
 
   it('one day for Amy covers all three', () => {
     const g = make(() => 0, { amyDayAfter: 0, amyDayJessGoes: 0, amyDayGap: 0 });
-    const e = run(g, 5, vc(['landy'])).find((x) => x.type === 'amyDay');
-    expect(e.vehicle).toBe('landy');
+    const e = run(g, 5, vc(['tor'])).find((x) => x.type === 'amyDay');
+    expect(e.vehicle).toBe('tor');
     expect(g.ask('amy')).toBe('ok');
   });
 });

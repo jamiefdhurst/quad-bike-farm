@@ -146,18 +146,18 @@ describe('knocking on the window', () => {
 describe('the cab', () => {
   it('knows when a girl is sulking in it, so nobody else gets in with her', () => {
     const c = new CabShelter(undefined, () => 0.5);
-    const cabs = [{ id: 'landy', x: 0, z: 0, open: true, seats: 2, running: false, warm: true }, { id: 'yak', x: 3, z: 0, open: true, seats: 2, running: false, warm: false }];
+    const cabs = [{ id: 'tor', x: 0, z: 0, open: true, seats: 2, running: false, warm: true }, { id: 'yak', x: 3, z: 0, open: true, seats: 2, running: false, warm: false }];
     const e = c.force('amy', { girls: [{ id: 'amy', x: 1, z: 0, free: true, cab: null }], cabs, rain: 0, warmth: 1 }, 'sulk');
-    expect(e).toMatchObject({ type: 'go', cab: 'landy', reason: 'sulk', start: true }); // a Land Rover, started for the heat
-    expect(c.isSulkCab('landy')).toBe(true);
+    expect(e).toMatchObject({ type: 'go', cab: 'tor', reason: 'sulk', start: true }); // a Land Rover, started for the heat
+    expect(c.isSulkCab('tor')).toBe(true);
     expect(c.isSulkCab('yak')).toBe(false);
   });
 
   it('does not let her out on the weather or time: the sulk decides', () => {
     const c = new CabShelter(undefined, () => 0.5);
-    const cabs = [{ id: 'landy', x: 0, z: 0, open: true, seats: 2, running: true, warm: true }];
+    const cabs = [{ id: 'tor', x: 0, z: 0, open: true, seats: 2, running: true, warm: true }];
     c.force('amy', { girls: [{ id: 'amy', x: 1, z: 0, free: true, cab: null }], cabs, rain: 0, warmth: 1 }, 'sulk');
-    const inCab = { girls: [{ id: 'amy', x: 0, z: 0, free: false, cab: 'landy' }], cabs, rain: 0, warmth: 1 };
+    const inCab = { girls: [{ id: 'amy', x: 0, z: 0, free: false, cab: 'tor' }], cabs, rain: 0, warmth: 1 };
     const events = [];
     for (let t = 0; t < 600; t += 1) events.push(...c.update(1, inCab));
     expect(events.map((e) => e.type)).toEqual(['in']);

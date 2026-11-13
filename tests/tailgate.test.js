@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Tailgate } from '../src/vehicle/tailgate.js';
 
-describe('the Series tailgate', () => {
+describe('the Tor tailgate', () => {
   it('drops and raises over its swing time', () => {
     const g = new Tailgate();
     expect(g.toggle(0)).toBeNull();

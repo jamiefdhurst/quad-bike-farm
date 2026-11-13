@@ -3,7 +3,7 @@ import { cabMats, merge, mesh, rounded } from './parts.js';
 import { sweepGeometry } from '../quadGeometry.js';
 
 // Mirrors (TODO 340). The glass faces -Z (back, towards the driver) and the mount is at the group's origin. 'door' a housing on a
-// short stalk off the door's front corner; 'arm' a flat rectangular glass on a bent rod (a Series' or a tractor's); 'wing' a
+// short stalk off the door's front corner; 'arm' a flat rectangular glass on a bent rod (a Tor's or a tractor's); 'wing' a
 // round chrome mirror on a stalk on the front wing; 'interior' a rear-view mirror hanging from the top of the screen.
 
 export const MIRROR_KINDS = ['door', 'arm', 'wing', 'interior'];

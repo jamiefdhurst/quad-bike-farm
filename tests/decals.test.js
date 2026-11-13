@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { MAKERS, MAKER_FOR, REAL_NAMES, WARNING_LINES, DEALER, decalLayout, decalText, chassisNumber, drawDecal } from '../src/vehicle/detail/decals.js';
-import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC, P309_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC } from '../src/vehicle/quadSpecs.js';
 
 const real = (s) => REAL_NAMES.some((n) => s.toLowerCase().includes(n));
 
@@ -14,7 +14,7 @@ describe('decals', () => {
   });
 
   it('every vehicle with a maker names one that exists', () => {
-    const ids = new Set([...QUAD_SPECS, ...EXTRA_SPECS, PLOVER_SPEC, TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, DEFENDER_SPEC, FIESTA_SPEC, CORSA_SPEC, P309_SPEC].map((s) => s.id));
+    const ids = new Set([...QUAD_SPECS, ...EXTRA_SPECS, PLOVER_SPEC, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC].map((s) => s.id));
     for (const [id, maker] of Object.entries(MAKER_FOR)) {
       expect(ids.has(id), id).toBe(true);
       expect(MAKERS[maker], maker).toBeTruthy();

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import { RACER_FENDERS, RACER_SECTION, RACER_SHROUD, RACER_SEAT, RACER_TAIL, RACER_FLANK, RACER_SIDE_PLATE, RACER_LOUVRES, RACER_EXHAUST, RACER_POD, RACER_WHEELS, TYRE_OUTER, shroudTop } from '../src/vehicle/racerBody.js';
-import { barAt, BLASTER_VBARS } from '../src/vehicle/blasterBody.js';
+import { barAt, HORNET_VBARS } from '../src/vehicle/hornetBody.js';
 import { shellGeometry } from '../src/vehicle/quadGeometry.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 import { BODY_STYLES } from '../src/vehicle/quadModel.js';
@@ -9,10 +9,10 @@ import { CHOKE_STYLES, TAP_STYLES } from '../src/vehicle/controls.js';
 import { MAKER_FOR } from '../src/vehicle/detail/decals.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 
-// The orange quad as a Suzuki LT250R Quadracer (TODO 92): a triangle wedge, flat wings, a shroud with louvres, big flank triangles, a pod
+// The orange quad as a Suzuki LT250R Adder (TODO 92): a triangle wedge, flat wings, a shroud with louvres, big flank triangles, a pod
 // on the left bar with the lights rocker and the choke lever, no number plates.
 
-describe('the Quadracer body numbers', () => {
+describe('the Adder body numbers', () => {
   it('keep every wing inside the tyre beside it, and clear of it (4 cm to spare for the tread and a little travel)', () => {
     expect(RACER_FENDERS.front.width[1]).toBeLessThan(TYRE_OUTER.front);
     expect(RACER_FENDERS.rear.width[1]).toBeLessThan(TYRE_OUTER.rear);
@@ -82,10 +82,10 @@ describe('the Quadracer body numbers', () => {
   });
 
   it('puts the pod on the V bars’ level run, with the lights rocker, the choke lever and the dash’s panel on it in order', () => {
-    expect(RACER_POD.x1).toBeLessThanOrEqual(BLASTER_VBARS.run + 0.01);
+    expect(RACER_POD.x1).toBeLessThanOrEqual(HORNET_VBARS.run + 0.01);
     expect(RACER_POD.rockerX).toBeLessThan(RACER_POD.chokeX);
     expect(RACER_POD.chokeX).toBeLessThan(RACER_POD.dashX);
-    expect(barAt(RACER_POD.dashX).y).toBe(BLASTER_VBARS.centreY);
+    expect(barAt(RACER_POD.dashX).y).toBe(HORNET_VBARS.centreY);
   });
 });
 
@@ -177,7 +177,7 @@ describe('the orange quad’s model', () => {
     const paddle = orange.model.getObjectByName('thumbThrottle');
     expect(paddle).toBeTruthy();
     expect(orange.model.getObjectByName('thumbHousing')).toBeTruthy();
-    const { poseThumbThrottle } = await import('../src/vehicle/foremanControls.js');
+    const { poseThumbThrottle } = await import('../src/vehicle/farm300Controls.js');
     poseThumbThrottle(orange.model, 0);
     const rest = paddle.rotation.x;
     poseThumbThrottle(orange.model, 1);
@@ -192,6 +192,6 @@ describe('the orange quad’s model', () => {
     const pod = new THREE.Box3().setFromObject(bars.getObjectByName('controlPod')).expandByScalar(0.02);
     expect(pod.intersectsBox(dash)).toBe(true);
     const cross = new THREE.Box3().setFromObject(bars.getObjectByName('crossbar'));
-    expect(cross.max.y - bars.position.y).toBeLessThan(BLASTER_VBARS.grip[1]);
+    expect(cross.max.y - bars.position.y).toBeLessThan(HORNET_VBARS.grip[1]);
   });
 });

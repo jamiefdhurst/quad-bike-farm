@@ -277,10 +277,10 @@ describe('which gearbox is worn', () => {
 });
 
 describe('gears with no synchromesh (the Land Rover)', () => {
-  const landy = { ...G, gears: 4, crashGears: 2, crashSpeed: 1 };
+  const tor = { ...G, gears: 4, crashGears: 2, crashSpeed: 1 };
 
   it('crunches and stays put going into first or second on the move, but takes third and fourth', () => {
-    const d = new ManualDrivetrain(V, landy);
+    const d = new ManualDrivetrain(V, tor);
     run(d, 0.5, { clutchHeld: true });
     expect(d.select(3, true, 6)).toBe('ok');
     expect(d.select(2, true, 4)).toBe('crunch');
@@ -290,14 +290,14 @@ describe('gears with no synchromesh (the Land Rover)', () => {
   });
 
   it('goes into first or second nearly stopped', () => {
-    const d = new ManualDrivetrain(V, landy);
+    const d = new ManualDrivetrain(V, tor);
     run(d, 0.5, { clutchHeld: true });
     expect(d.select(1, true, 0.5)).toBe('ok');
     expect(d.select(2, true, 0.8)).toBe('ok');
   });
 
   it('takes a crash gear on the move after a double-declutch with the revs matched', () => {
-    const d = new ManualDrivetrain(V, landy);
+    const d = new ManualDrivetrain(V, tor);
     run(d, 0.5, { clutchHeld: true });
     d.select(3, true, 4);
     expect(d.select(0, true, 4)).toBe('ok');
@@ -310,7 +310,7 @@ describe('gears with no synchromesh (the Land Rover)', () => {
   });
 
   it('still crunches when it was not through neutral with the clutch up', () => {
-    const d = new ManualDrivetrain(V, landy);
+    const d = new ManualDrivetrain(V, tor);
     run(d, 0.5, { clutchHeld: true });
     d.select(3, true, 4);
     expect(d.select(2, true, 4, 0.83)).toBe('crunch');

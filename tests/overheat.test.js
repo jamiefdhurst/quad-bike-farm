@@ -3,7 +3,7 @@ import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { radiatorEffect, pickThermostat, thermostatSticks, hotLevel, flushThermostat } from '../src/engine/coolant.js';
 import { pourStep, DEFAULT_COOLANT_BOTTLE_PARAMS } from '../src/items/coolantBottle.js';
-import { TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, FIESTA_SPEC, CORSA_SPEC } from '../src/vehicle/quadSpecs.js';
+import { HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, FINCH_SPEC, GRIFFIN_SPEC } from '../src/vehicle/quadSpecs.js';
 import { tempGaugeFraction, WARM_AT, HOT_FROM } from '../src/vehicle/tempGauge.js';
 
 const P = { ...DEFAULT_ENGINE_PARAMS, waterCooled: true };
@@ -38,7 +38,7 @@ describe('the gauge', () => {
 
 describe('which vehicles have a radiator', () => {
   it('gives every car, Land Rover, the UTV and the tractor one', () => {
-    for (const spec of [TRACTOR_SPEC, UTV_SPEC, LAND_ROVER_SPEC, FIESTA_SPEC, CORSA_SPEC]) expect(spec.engine.waterCooled, spec.id).toBe(true);
+    for (const spec of [HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, FINCH_SPEC, GRIFFIN_SPEC]) expect(spec.engine.waterCooled, spec.id).toBe(true);
   });
 });
 

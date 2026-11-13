@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { LAND_ROVER_SPEC as L } from '../src/vehicle/quadSpecs.js';
+import { TOR_SPEC as L } from '../src/vehicle/quadSpecs.js';
 import { DASH_STYLES } from '../src/vehicle/dash.js';
 import { canTow } from '../src/vehicle/tipTrailer.js';
 import { featuresOf } from '../src/vehicle/quirks.js';
@@ -8,17 +8,17 @@ import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
 import { LAYOUT } from '../src/world/layout.js';
-import { LANDY_LAYOUT, LANDY_GROUND_OFFSET } from '../src/vehicle/landRoverModel.js';
+import { TOR_LAYOUT, CAB_GROUND_OFFSET } from '../src/vehicle/cabModel.js';
 
 describe('the Land Rover', () => {
   it('stands on its tyres at its size: the physics puts the ground where the model draws it, not inside the wheels', () => {
     const k = L.scale ?? 1;
-    for (const w of LANDY_LAYOUT.wheels) {
+    for (const w of TOR_LAYOUT.wheels) {
       // Mount, down the suspension at rest, down the (scaled) wheel: the ground, in chassis space.
       const ground = w.y * k - L.vehicle.suspensionRestLength - w.radius * k;
-      expect(ground).toBeCloseTo(LANDY_GROUND_OFFSET * k, 2);
+      expect(ground).toBeCloseTo(CAB_GROUND_OFFSET * k, 2);
     }
-    expect(L.vehicle.wheelRadius).toBeCloseTo(LANDY_LAYOUT.wheels[0].radius * k, 2);
+    expect(L.vehicle.wheelRadius).toBeCloseTo(TOR_LAYOUT.wheels[0].radius * k, 2);
   });
 
   it('is a petrol four-speed manual with no synchromesh on first and second, a 4WD lever, a diff lock and no fuel tap', () => {
@@ -33,7 +33,7 @@ describe('the Land Rover', () => {
   });
 
   it('idles at the pace of the old Jeep it is recorded from, so its beats play at their own speed', () => {
-    const bank = JSON.parse(readFileSync('public/audio/engine-bank-landy.json', 'utf8'));
+    const bank = JSON.parse(readFileSync('public/audio/engine-bank-tor.json', 'utf8'));
     const rpms = bank.grains.filter((g) => g.kind === 'idle' && g.ok !== false).map((g) => g.rpm / 4).sort((a, b) => a - b);
     const recorded = rpms[Math.floor(rpms.length / 2)];
     expect(L.idleRange[0]).toBeGreaterThan(recorded * 0.92);

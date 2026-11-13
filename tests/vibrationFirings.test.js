@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { VibrationModel } from '../src/vibration/vibrationModel.js';
 import { DEFAULT_VIBRATION_PARAMS } from '../src/vibration/vibrationParams.js';
-import { TRACTOR_SPEC } from '../src/vehicle/quadSpecs.js';
+import { HARTLEY_SPEC } from '../src/vehicle/quadSpecs.js';
 
 // Feeds the model one pulse per engine cycle, as the engine model does, and records when the body is kicked.
 function kicksAt(params, rpm, seconds) {
@@ -44,7 +44,7 @@ describe('a multi-cylinder engine shakes at its firing rate', () => {
   });
 
   it('gives the tractor four cylinders', () => {
-    expect(TRACTOR_SPEC.vibration.firingsPerCycle).toBe(4);
+    expect(HARTLEY_SPEC.vibration.firingsPerCycle).toBe(4);
   });
 });
 
@@ -76,10 +76,10 @@ describe('steadiness', () => {
   });
 
   it('is on for the Land Rover and off for the quads', async () => {
-    const { LAND_ROVER_SPEC, UTV_SPEC } = await import('../src/vehicle/quadSpecs.js');
-    expect(LAND_ROVER_SPEC.vibration.steadiness).toBeGreaterThan(0.5);
-    expect(UTV_SPEC.vibration.steadiness).toBeGreaterThan(0.3);
-    expect(UTV_SPEC.vibration.steadiness).toBeLessThan(LAND_ROVER_SPEC.vibration.steadiness);
+    const { TOR_SPEC, YAK_SPEC } = await import('../src/vehicle/quadSpecs.js');
+    expect(TOR_SPEC.vibration.steadiness).toBeGreaterThan(0.5);
+    expect(YAK_SPEC.vibration.steadiness).toBeGreaterThan(0.3);
+    expect(YAK_SPEC.vibration.steadiness).toBeLessThan(TOR_SPEC.vibration.steadiness);
     expect(DEFAULT_VIBRATION_PARAMS.steadiness).toBe(0);
   });
 });

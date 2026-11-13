@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { ManualDrivetrain, DEFAULT_GEARBOX_PARAMS } from '../src/vehicle/manualDrivetrain.js';
-import { LAND_ROVER_SPEC } from '../src/vehicle/quadSpecs.js';
+import { TOR_SPEC } from '../src/vehicle/quadSpecs.js';
 
 // A manual with the clutch up turns at the road's pace in the gear it is in, whatever the throttle does (the CVT quads' revs jump to the throttle's).
 
@@ -62,7 +62,7 @@ describe('engine gear lock', () => {
 
 describe('a gear\'s revs at a road speed', () => {
   it('are speed over the gear\'s top speed times the full-throttle revs', () => {
-    const d = new ManualDrivetrain({ maxSpeed: 24 }, { ...DEFAULT_GEARBOX_PARAMS, ...LAND_ROVER_SPEC.gearbox });
+    const d = new ManualDrivetrain({ maxSpeed: 24 }, { ...DEFAULT_GEARBOX_PARAMS, ...TOR_SPEC.gearbox });
     d.setGear(2);
     const rpmAt = (mps) => (mps / d.topSpeed(2)) * 4200;
     expect(rpmAt(d.topSpeed(2))).toBe(4200);

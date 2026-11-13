@@ -330,7 +330,7 @@ class RecordedEngine {
           const period = ev.period * every;
           const cycleRpm = period > 0 ? 120 / period : rpm / every;
           const louder = Math.min(p.pulseLoudnessCap, Math.pow(Math.max(1, rpm / p.pulseRefRpm), p.pulseRevLoudness));
-          // An idle cut in slices (the moto's and ATC's two-strokes) bangs every other turn or so, as the recording does. Well
+          // An idle cut in slices (the moto's and T185's two-strokes) bangs every other turn or so, as the recording does. Well
           // above the recorded idle a two-stroke cleans up and fires every turn, so from there only the bang slices play.
           const leads = this.leads[idleKinds[0]];
           // Where the bank has real rev firings and the quad says where to use them (pulseRevLo to pulseRevHi), blend from
@@ -398,7 +398,7 @@ class RecordedEngine {
         for (const v of this.voices) if (v.start === engaged?.start) v.release = true;
         return ev.type === 'caught';
       case 'stalled':
-        // A bank with a stall of its own (the Corsa's cold Carlton dying) plays it; the rest run down as for the key.
+        // A bank with a stall of its own (the Griffin's cold Carlton dying) plays it; the rest run down as for the key.
         this.playOneshot(this.oneshots.stall ? 'stall' : 'shutdown', p.recShutdownVolume);
         return true;
       case 'shutdown':

@@ -2,9 +2,9 @@
 // battery silences it, and so does the starter motor, which takes the supply for as long as it turns). Pure, so it is tested without
 // Web Audio; the sound is audio/radioAudio.js, and what is on air is audio/radioStation.js.
 //
-// Each vehicle's set has its own character (RADIO_PROFILES): the Series' is an old dash radio with a tinny speaker that picks up the
-// ignition and drifts off the station; the 200TDi's is a plainer stereo; Amy's Fiesta has a cassette radio with a little warble; Jess's
-// Corsa has a bassy aftermarket head unit that is loud and clean. Each set is tuned to a station (audio/radioStation.js); a short press of
+// Each vehicle's set has its own character (RADIO_PROFILES): the Tor's is an old dash radio with a tinny speaker that picks up the
+// ignition and drifts off the station; the 200TDi's is a plainer stereo; Amy's Finch has a cassette radio with a little warble; Jess's
+// Griffin has a bassy aftermarket head unit that is loud and clean. Each set is tuned to a station (audio/radioStation.js); a short press of
 // the key on a set that is on steps to the next one, and holding it switches it off (RadioKey).
 
 import { DEFAULT_STATION, nextStationId, stationById } from '../audio/radioStation.js';
@@ -48,7 +48,7 @@ export const RADIO_PROFILES = {
   vauclair: { name: 'factory cassette radio', band: [140, 6000], hiss: 0.22, crackle: 0.1, whine: 0.15, drift: 0.15, bass: 3, warble: 0.25, distort: 0.25, loud: 0.9, station: 'dale' }, // your car's: a diesel's glow plugs and alternator whine into it a little
 };
 
-/** The profile for a vehicle id (the Series' if it is one we don't know). */
+/** The profile for a vehicle id (the Tor's if it is one we don't know). */
 export function profileFor(id) {
   return RADIO_PROFILES[id] ?? RADIO_PROFILES.tor;
 }

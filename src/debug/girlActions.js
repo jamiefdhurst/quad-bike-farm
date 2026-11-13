@@ -360,7 +360,7 @@ export function girlActions(g) {
         if (!free(id)) return;
         const kind = g.carGoContext(g.riddenUnit).girls[id]?.car;
         if (!kind) return toast(`${nameOf(id)} has no car here`);
-        if (!g.goFree(kind)) return toast(`Someone is in or at her ${g.landys[kind].spec.name} just now`);
+        if (!g.goFree(kind)) return toast(`Someone is in or at her ${g.cabUnits[kind].spec.name} just now`);
         g.handleCarGoEvent({ type: 'carGo', girl: id, vehicle: kind });
       },
     },
@@ -572,10 +572,10 @@ export function girlActions(g) {
       label: '% gets in the back of the Crag',
       run: (id) => {
         const c = girl(id);
-        const l = g.landys?.defender;
+        const l = g.cabUnits?.crag;
         if (!l?.unit) return toast('The Crag isn\'t on the farm this game');
         if (!free(id)) return;
-        g.askIntoLandy(c, l, { back: true }); // as asking from her wheel: it says if she can't
+        g.askIntoCab(c, l, { back: true }); // as asking from her wheel: it says if she can't
         if (c.traSlot?.rear) toast(`${c.name} is getting in the back of the 200TDi`);
       },
     },

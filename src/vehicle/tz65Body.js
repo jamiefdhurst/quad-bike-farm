@@ -1,4 +1,5 @@
-// The mini moto's numbers (TODO 94): a Yamaha YZ65 small motocross bike, the Tamura TZ 65, after the photos in `.scratch/quads/tamura-bike/`
+// After a Yamaha YZ65.
+// The mini moto's numbers (TODO 94): the Tamura TZ 65, a small motocross bike, after the photos in `.scratch/quads/tamura-bike/`
 // (a studio three-quarter, the side-on shot, the bars from above). Every point is in the model's own frame (ground at y 0, +z forward, +x
 // the rider's left), read off the side photo at 414 px to the metre (the wheelbase is 1.05 m, the photo's 435 px) and then kept to the fixed
 // points the girls and the dash were already fitted to: the bars at (0, 0.84, 0.34), the grips, the rider's seat. Pure numbers, no

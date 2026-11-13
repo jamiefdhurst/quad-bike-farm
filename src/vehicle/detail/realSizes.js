@@ -1,30 +1,30 @@
 import * as THREE from 'three';
 
-// How big each vehicle's real counterpart is (TODO 87), so the detail items (88 to 101) can bring each model into proportion and
+// How big each vehicle's real counterpart is (TODO 87; the real vehicle is named on the first line of its body file), so the detail items (88 to 101) can bring each model into proportion and
 // a test keeps it there. Millimetres, from the makers' published figures as best known; a vehicle item checks its own before
 // relying on them and corrects this table if they are wrong. The game builds some vehicles a size up (the Land Rovers and cars
 // at 1.15, so they don't look small beside the girls), so what is compared is shape, not size: every measure over the wheelbase.
 
 export const REAL_SIZES = {
-  farm300: { like: 'Honda TRX300FW Fourtrax 4x4', length: 1895, width: 1105, height: 1095, wheelbase: 1210, track: 880, tyre: 610 },
-  bruin: { like: 'Yamaha YFM660F Grizzly', length: 2080, width: 1180, height: 1115, wheelbase: 1250, track: 926, tyre: 635 },
-  ursa: { like: 'Yamaha YFM450 Kodiak (the Tamura Ursa 450)', length: 2050, width: 1170, height: 1190, wheelbase: 1250, track: 930, tyre: 635 },
-  rb300: { like: 'Kawasaki KLF300 Bayou 4x4, winch fitted', length: 2060, width: 1100, height: 1120, wheelbase: 1175, track: 870, tyre: 610 }, // length is the book 1,930 plus the winch's fairlead and hook and a tow drawbar, which the farm's one wears
-  hornet: { like: 'Yamaha YFS200 Blaster (the Tamura Hornet 200)', length: 1710, width: 1035, height: 1045, wheelbase: 1115, track: 790, tyre: 520 },
-  adder: { like: 'Suzuki LT250R Quadracer (the Viper Adder 250)', length: 1830, width: 1175, height: 1105, wheelbase: 1240, track: 925, tyre: 520 },
-  asp: { like: 'Suzuki LT50 (the Viper Asp 50)', length: 1250, width: 800, height: 800, wheelbase: 830, track: 600, tyre: 406 },
-  tz65: { like: 'Yamaha YZ65 (the Tamura TZ 65)', length: 1625, width: 750, height: 990, wheelbase: 1145, track: 0, tyre: 460 }, // read from the side photo: tyre to tyre it is 1.42 wheelbases, the bars top out at 0.86
-  plover: { like: '1949 BSA Bantam D1 (the Ashby Plover 125)', length: 1930, width: 700, height: 1020, wheelbase: 1300, track: 0, tyre: 620 }, // the book: 76 in long, 51 in wheelbase, 2.75-19 tyres, the bars about 40 in up
-  shepherd: { like: 'Yamaha AG200 (the Ridgeback Shepherd 200)', length: 2085, width: 840, height: 1130, wheelbase: 1330, track: 0, tyre: 670 }, // the book: 2,085 long, 840 over the bars, 1,130 high, 1,330 wheelbase, 2.75-21 and 4.10-18 tyres
-  clipper: { like: 'Westwood-style 42 inch garden tractor (the Ridgeback Clipper 12)', length: 2100, width: 1150, height: 1150, wheelbase: 1120, track: 780, tyre: 480 }, // a 42 inch deck tractor: about 2.1 m with the box, 1.15 m over the deck and its chute
-  t185: { like: 'Honda ATC185S (the Kestrel T185)', length: 1780, width: 1040, height: 1050, wheelbase: 1145, track: 780, tyre: 600 },
-  hartley: { like: 'Massey Ferguson 35 (the Hartley 35)', length: 2970, width: 1650, height: 1920, wheelbase: 1830, track: 1270, tyre: 1170 }, // height is to the top of the exhaust
-  yak: { like: 'Kawasaki Mule 4010', length: 3015, width: 1580, height: 1925, wheelbase: 1910, track: 1230, tyre: 650 },
-  tor: { like: 'Land Rover Series III 88 hard-top pick-up', length: 3640, width: 1680, height: 1970, wheelbase: 2235, track: 1310, tyre: 757 },
-  crag: { like: 'Land Rover Defender 90 200Tdi', length: 3883, width: 1790, height: 1963, wheelbase: 2360, track: 1486, tyre: 757 },
-  finch: { like: 'Ford Fiesta Mk1', length: 3565, width: 1567, height: 1360, wheelbase: 2286, track: 1340, tyre: 537 },
-  griffin: { like: 'Vauxhall Corsa B', length: 3729, width: 1608, height: 1420, wheelbase: 2443, track: 1400, tyre: 547 },
-  vauclair: { like: 'Peugeot 309 three-door (the Vauclair 39D)', length: 4051, width: 1628, height: 1380, wheelbase: 2469, track: 1380, tyre: 561 },
+  farm300: { length: 1895, width: 1105, height: 1095, wheelbase: 1210, track: 880, tyre: 610 },
+  bruin: { length: 2080, width: 1180, height: 1115, wheelbase: 1250, track: 926, tyre: 635 },
+  ursa: { length: 2050, width: 1170, height: 1190, wheelbase: 1250, track: 930, tyre: 635 },
+  rb300: { length: 2060, width: 1100, height: 1120, wheelbase: 1175, track: 870, tyre: 610 }, // length is the book 1,930 plus the winch's fairlead and hook and a tow drawbar, which the farm's one wears
+  hornet: { length: 1710, width: 1035, height: 1045, wheelbase: 1115, track: 790, tyre: 520 },
+  adder: { length: 1830, width: 1175, height: 1105, wheelbase: 1240, track: 925, tyre: 520 },
+  asp: { length: 1250, width: 800, height: 800, wheelbase: 830, track: 600, tyre: 406 },
+  tz65: { length: 1625, width: 750, height: 990, wheelbase: 1145, track: 0, tyre: 460 }, // read from the side photo: tyre to tyre it is 1.42 wheelbases, the bars top out at 0.86
+  plover: { length: 1930, width: 700, height: 1020, wheelbase: 1300, track: 0, tyre: 620 }, // the book: 76 in long, 51 in wheelbase, 2.75-19 tyres, the bars about 40 in up
+  shepherd: { length: 2085, width: 840, height: 1130, wheelbase: 1330, track: 0, tyre: 670 }, // the book: 2,085 long, 840 over the bars, 1,130 high, 1,330 wheelbase, 2.75-21 and 4.10-18 tyres
+  clipper: { length: 2100, width: 1150, height: 1150, wheelbase: 1120, track: 780, tyre: 480 }, // a 42 inch deck tractor: about 2.1 m with the box, 1.15 m over the deck and its chute
+  t185: { length: 1780, width: 1040, height: 1050, wheelbase: 1145, track: 780, tyre: 600 },
+  hartley: { length: 2970, width: 1650, height: 1920, wheelbase: 1830, track: 1270, tyre: 1170 }, // height is to the top of the exhaust
+  yak: { length: 3015, width: 1580, height: 1925, wheelbase: 1910, track: 1230, tyre: 650 },
+  tor: { length: 3640, width: 1680, height: 1970, wheelbase: 2235, track: 1310, tyre: 757 },
+  crag: { length: 3883, width: 1790, height: 1963, wheelbase: 2360, track: 1486, tyre: 757 },
+  finch: { length: 3565, width: 1567, height: 1360, wheelbase: 2286, track: 1340, tyre: 537 },
+  griffin: { length: 3729, width: 1608, height: 1420, wheelbase: 2443, track: 1400, tyre: 547 },
+  vauclair: { length: 4051, width: 1628, height: 1380, wheelbase: 2469, track: 1380, tyre: 561 },
 };
 
 /**

@@ -4,7 +4,7 @@ import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { PLOVER_SPEC } from '../src/vehicle/quadSpecs.js';
 
-const bantam = { ...DEFAULT_ENGINE_PARAMS, strokes: 2, pullStart: true, noStarter: true, manualTiming: true, kickStart: true };
+const plover = { ...DEFAULT_ENGINE_PARAMS, strokes: 2, pullStart: true, noStarter: true, manualTiming: true, kickStart: true };
 
 describe('ignition timing', () => {
   it('wants more advance as the revs rise', () => {
@@ -38,7 +38,7 @@ describe('ignition timing', () => {
 
 describe('a manual-timing engine', () => {
   const make = (advance, rnd = () => 0.01) => {
-    const e = new EngineModel(bantam, { random: rnd });
+    const e = new EngineModel(plover, { random: rnd });
     e.advance = advance;
     e.setIgnition(true);
     return e;
@@ -54,7 +54,7 @@ describe('a manual-timing engine', () => {
     expect(e.kicked).toBe(0);
   });
   it('an ordinary engine ignores the lever', () => {
-    const e = new EngineModel({ ...bantam, manualTiming: false }, { random: () => 0.01 });
+    const e = new EngineModel({ ...plover, manualTiming: false }, { random: () => 0.01 });
     e.advance = 1;
     e.setIgnition(true);
     expect(e.pull(0.6)).toBe(1);
@@ -62,10 +62,10 @@ describe('a manual-timing engine', () => {
 });
 
 describe('the tickler', () => {
-  const tick = { ...bantam, tickler: true };
+  const tick = { ...plover, tickler: true };
   const make = () => new EngineModel(tick, { random: () => 0.5 });
   it('does nothing on an engine without one', () => {
-    const e = new EngineModel(bantam, { random: () => 0.5 });
+    const e = new EngineModel(plover, { random: () => 0.5 });
     expect(e.tickle()).toBe(false);
     expect(e.tickled).toBe(0);
   });

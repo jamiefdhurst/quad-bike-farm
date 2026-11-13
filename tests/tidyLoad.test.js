@@ -5,7 +5,7 @@ import { DEFAULT_COMPANION_PARAMS } from '../src/npc/companionParams.js';
 import { AMY_TIDY_LOAD_LINES, JESS_TIDY_LOAD_LINES } from '../src/npc/tidyLoadLines.js';
 
 const ctx = (over = {}) => ({
-  vehicles: [{ id: 'defender', x: 0, z: 0, free: true, loose: 1, loaded: 0, room: 2 }],
+  vehicles: [{ id: 'crag', x: 0, z: 0, free: true, loose: 1, loaded: 0, room: 2 }],
   girls: [
     { id: 'amy', free: true, x: 10, z: 0, weight: 1 },
     { id: 'jess', free: true, x: 20, z: 0, weight: 0.5 },
@@ -40,15 +40,15 @@ describe('TidyLoad', () => {
   it('offers loading when something is lying near and there is room, unloading when the back has something in it', () => {
     const m = ready();
     expect(m.offers(ctx()).map((o) => o.mode)).toEqual(['load', 'load']);
-    const both = ctx({ vehicles: [{ id: 'landy', x: 0, z: 0, free: true, loose: 0, loaded: 2, room: 4 }] });
+    const both = ctx({ vehicles: [{ id: 'tor', x: 0, z: 0, free: true, loose: 0, loaded: 2, room: 4 }] });
     expect(m.offers(both).map((o) => o.mode)).toEqual(['unload', 'unload']);
-    const full = ctx({ vehicles: [{ id: 'landy', x: 0, z: 0, free: true, loose: 3, loaded: 2, room: 0 }] });
+    const full = ctx({ vehicles: [{ id: 'tor', x: 0, z: 0, free: true, loose: 3, loaded: 2, room: 0 }] });
     expect(m.offers(full).map((o) => o.mode)).toEqual(['unload', 'unload']);
   });
 
   it('offers nothing for a vehicle somebody is in, a girl who is busy or has no taste for it, or one too far off', () => {
     const m = ready();
-    expect(m.offers(ctx({ vehicles: [{ id: 'landy', x: 0, z: 0, free: false, loose: 1, loaded: 1, room: 1 }] }))).toEqual([]);
+    expect(m.offers(ctx({ vehicles: [{ id: 'tor', x: 0, z: 0, free: false, loose: 1, loaded: 1, room: 1 }] }))).toEqual([]);
     const c = ctx();
     c.girls[0].free = false;
     c.girls[1].weight = 0;

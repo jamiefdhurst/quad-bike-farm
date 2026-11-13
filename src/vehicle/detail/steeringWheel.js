@@ -12,10 +12,10 @@ import { sweepGeometry } from '../quadGeometry.js';
  * a sport wheel's), `wire` sprung wire spokes (three wires to each), `fingers` finger grips under the rim, `mark` a stripe at twelve.
  */
 export const WHEEL_STYLES = {
-  bakelite: { spokes: 3, rim: 0.015, boss: 'cap', fingers: 16 }, // an old tractor's or Series': a thin hard rim with grips for the fingers
+  bakelite: { spokes: 3, rim: 0.015, boss: 'cap', fingers: 16 }, // an old tractor's or Tor's: a thin hard rim with grips for the fingers
   banjo: { spokes: 4, rim: 0.012, boss: 'cap', wire: true }, // sprung wire spokes, as on old cars and some tractors
   flat: { spokes: 2, rim: 0.016, boss: 'pad' }, // a late-'70s car's: two spokes across and a padded centre
-  utility: { spokes: 3, rim: 0.02, boss: 'pad' }, // a Defender's or a UTV's: thick rim, a big pad
+  utility: { spokes: 3, rim: 0.02, boss: 'pad' }, // a Crag's or a UTV's: thick rim, a big pad
   sport: { spokes: 3, rim: 0.022, boss: 'small', mark: true }, // a small leather sports wheel with a mark at the top
 };
 

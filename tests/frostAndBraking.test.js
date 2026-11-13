@@ -4,7 +4,7 @@ import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { DEFAULT_VEHICLE_PARAMS } from '../src/vehicle/vehicleParams.js';
 import { ManualDrivetrain, DEFAULT_GEARBOX_PARAMS } from '../src/vehicle/manualDrivetrain.js';
 import { Drivetrain } from '../src/vehicle/drivetrain.js';
-import { QUAD_SPECS, UTV_SPEC, LAND_ROVER_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, YAK_SPEC, TOR_SPEC } from '../src/vehicle/quadSpecs.js';
 
 const seeded = (seed) => () => {
   seed = (seed * 16807) % 2147483647;
@@ -15,7 +15,7 @@ const fuelControls = (spec) => ({ fuel: 1, diesel: spec.engine.petrolFussy ? 1 :
 
 describe('starting in a hard frost', () => {
   it('works for the green quad, the red quad and the Land Rover with full choke, and the UTV on its glow plugs', () => {
-    for (const spec of [QUAD_SPECS.find((s) => s.id === 'rb300'), QUAD_SPECS.find((s) => s.id === 'farm300'), LAND_ROVER_SPEC, UTV_SPEC]) {
+    for (const spec of [QUAD_SPECS.find((s) => s.id === 'rb300'), QUAD_SPECS.find((s) => s.id === 'farm300'), TOR_SPEC, YAK_SPEC]) {
       for (let seed = 1; seed <= 8; seed++) {
         const engine = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...spec.engine, initialTemperature: 0 }, { random: seeded(seed) });
         engine.setIgnition(true);
@@ -55,16 +55,16 @@ describe('stalling under braking', () => {
   }
 
   it('a warm UTV does not stall on a hard stop; a stone-cold one still can', () => {
-    for (let seed = 1; seed <= 8; seed++) for (const v0 of [4, 10, 16]) expect(stops(UTV_SPEC, { v0, seed })).toBe(false);
+    for (let seed = 1; seed <= 8; seed++) for (const v0 of [4, 10, 16]) expect(stops(YAK_SPEC, { v0, seed })).toBe(false);
     let cold = 0;
-    for (let seed = 1; seed <= 8; seed++) if (stops(UTV_SPEC, { temperature: 0.02, v0: 10, seed })) cold++;
+    for (let seed = 1; seed <= 8; seed++) if (stops(YAK_SPEC, { temperature: 0.02, v0: 10, seed })) cold++;
     expect(cold).toBeGreaterThan(0);
   });
 
   it('a warm Land Rover brakes to a stop in first or second without the clutch, but stalls in third or fourth', () => {
     for (let seed = 1; seed <= 6; seed++) {
-      for (const gear of [1, 2]) for (const decel of [3, 8]) expect(stops(LAND_ROVER_SPEC, { gear, decel, v0: 4, seed }), `g${gear} decel ${decel}`).toBe(false);
-      for (const gear of [3, 4]) expect(stops(LAND_ROVER_SPEC, { gear, decel: 3, v0: 4, seed }), `g${gear}`).toBe(true);
+      for (const gear of [1, 2]) for (const decel of [3, 8]) expect(stops(TOR_SPEC, { gear, decel, v0: 4, seed }), `g${gear} decel ${decel}`).toBe(false);
+      for (const gear of [3, 4]) expect(stops(TOR_SPEC, { gear, decel: 3, v0: 4, seed }), `g${gear}`).toBe(true);
     }
   });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LightSwitch, LIGHT_MODES, SIMPLE_LIGHT_MODES, lightLook, lightLamps, DEFAULT_LIGHT_SWITCH_PARAMS as P } from '../src/vehicle/lightSwitch.js';
-import { UTV_SPEC } from '../src/vehicle/quadSpecs.js';
+import { YAK_SPEC } from '../src/vehicle/quadSpecs.js';
 import { forwardGearShown } from '../src/vehicle/dashState.js';
 
 describe('LightSwitch', () => {
@@ -50,9 +50,9 @@ describe('lightLamps', () => {
 
 describe('the UTV', () => {
   it('has the switches the console shows, and starts in 2WD like the Land Rover', () => {
-    expect(UTV_SPEC.driveSwitch).toBe(true);
-    expect(UTV_SPEC.diffLock).toBe(true);
-    expect(UTV_SPEC.vehicle.fourWheelDrive).toBe(0);
+    expect(YAK_SPEC.driveSwitch).toBe(true);
+    expect(YAK_SPEC.diffLock).toBe(true);
+    expect(YAK_SPEC.vehicle.fourWheelDrive).toBe(0);
   });
 
   it('shows F, N or R on its cluster', () => {

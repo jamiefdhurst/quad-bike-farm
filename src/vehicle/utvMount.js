@@ -12,7 +12,7 @@ const BED_LIFT = 0.45; // up onto the tailgate from behind
  */
 export class UtvMount {
   /**
-   * `rear`: the back bench's seats where there is one (the 200TDi's LANDY_REAR_SEATS, each with the `door` it's reached by), and `stand`
+   * `rear`: the back bench's seats where there is one (the 200TDi's CRAG_REAR_SEATS, each with the `door` it's reached by), and `stand`
    * then has a stand point for each door (`rearLeft` for the passenger's, `rearRight` for the driver's). `driver`: the driver's seat is a slot
    * too (the cars'), for a girl sat at the wheel of her parked car of a morning (farm/arrival.js); nothing picks it by itself.
    */

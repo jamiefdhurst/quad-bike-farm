@@ -15,7 +15,7 @@ import { addSpotlamps, setSpotlamps } from './spotlampModel.js';
 import { Snorkel } from './snorkel.js';
 import { addSnorkel, setSnorkel } from './snorkelModel.js';
 import { LightSwitch, LIGHT_MODES, SIMPLE_LIGHT_MODES, lightLook, lightLamps } from './lightSwitch.js';
-import { poseBarPod, poseThumbThrottle, POD } from './foremanControls.js';
+import { poseBarPod, poseThumbThrottle, POD } from './farm300Controls.js';
 import { Indicators, INDICATOR_PARAMS } from './indicators.js';
 import { Wipers } from './wipers.js';
 import { poseWipers, poseWiperStalk } from './wiperModel.js';
@@ -27,12 +27,12 @@ import { frostAfter, frostedColour, DEFAULT_FROST_PARAMS } from './seatFrost.js'
 import { ManualDrivetrain, gearLabel } from './manualDrivetrain.js';
 import { AutoShifter, grindsGear } from './autoShifter.js';
 import { poseTractorControls } from './tractorModel.js';
-import { poseLandyControls, poseSeatTips, LANDY_REAR_SEATS } from './landRoverModel.js';
-import { poseSeriesDoors, poseSeriesTailgate } from './seriesModel.js';
-import { poseDefenderBackDoor } from './defenderModel.js';
-import { poseFiestaHatch } from './fiestaModel.js';
-import { pose309Hatch } from './p309Model.js';
-import { poseCorsaHatch } from './corsaModel.js';
+import { poseCabControls, poseSeatTips, CRAG_REAR_SEATS } from './cabModel.js';
+import { poseTorDoors, poseTorTailgate } from './torModel.js';
+import { poseCragBackDoor } from './cragModel.js';
+import { poseFinchHatch } from './finchModel.js';
+import { pose309Hatch } from './vauclairModel.js';
+import { poseGriffinHatch } from './griffinModel.js';
 import { Tailgate } from './tailgate.js';
 import { DoorSounds } from './doorSounds.js';
 import { poseCarControls, poseCarSeats } from './carModel.js';
@@ -70,7 +70,7 @@ import { reverseAllowed, chokeReach, hasChoke, DEFAULT_CONTROLS_PARAMS } from '.
 import { MotWear } from '../farm/mot.js';
 import { advanceUsage, isNeutral, dashClock, lampStates } from './dashState.js';
 
-const REAR_SEATS = Object.keys(LANDY_REAR_SEATS); // a back bench's seats, where a model has one (the 200TDi)
+const REAR_SEATS = Object.keys(CRAG_REAR_SEATS); // a back bench's seats, where a model has one (the 200TDi)
 
 // Height of the ground below the chassis origin with the bike at rest.
 const GROUND_OFFSET = -0.36;
@@ -218,7 +218,7 @@ export class Quad {
     this.bladeShown = 0;
     this.sedimentWater = part('sedimentWater'); // the water showing in the glass bowl under the tap (not on the diesels, which have no tap)
     this.chokeLever = part('chokeLever');
-    this.kickStart = part('kickStart'); // the old bike's pedal, its advance-retard lever's arm and the carb's tickler (bantamModel.js): posed from the engine's state
+    this.kickStart = part('kickStart'); // the old bike's pedal, its advance-retard lever's arm and the carb's tickler (ploverModel.js): posed from the engine's state
     this.advanceArm = part('advanceArm');
     this.tickler = part('tickler');
     this.tickleShown = 0; // how far the tickler's button is down, 0..1
@@ -603,7 +603,7 @@ export class Quad {
     // An automatic's reverse is a button, pressed with the brake held (the two-strokes have none).
     if (this.input && !this.manual && !this.tractor && input.wasPressed('KeyB') && this.reverseCheck(input)) this.reverse = true;
     this.handOff = 1;
-    if (!this.tractor && hasChoke(this.engine.params)) { // (an injected engine or a diesel has no choke: Jess's Corsa, your car)
+    if (!this.tractor && hasChoke(this.engine.params)) { // (an injected engine or a diesel has no choke: Jess's Griffin, your car)
       const reach = chokeReach(this.chokeStyle, Math.abs(this.forwardSpeed), !!this.input, this.controlsParams);
       const keys = [CHOKE_MORE_KEY, CHOKE_LESS_KEY];
       if (reach.ok) {
@@ -852,7 +852,7 @@ export class Quad {
     const byYou = !!this.remoteInput && this.atCrank && this.crank?.ready && this.remoteInput.isDown('KeyP');
     const byHer = this.helperPull && this.crank?.ready;
     const pullDown = this.crank
-      ? byYou || byHer // the Series' starting handle, from the front on foot (its lights are on P too, but only from the seat)
+      ? byYou || byHer // the Tor's starting handle, from the front on foot (its lights are on P too, but only from the seat)
       : this.lights
       ? false // P is the UTV's and the 200TDi's light switch
       : this.input ? this.input.isDown(PULL_KEY) : (!!this.remoteInput && this.remoteInput.isDown(PULL_KEY)) || this.helperPull;
@@ -1501,17 +1501,17 @@ export class Quad {
       poseUtvDoors(this.model, this.doorSwing.update(dt, { speed: this.speed, aboard: { right: !!(this.driver || this.rider), left: !!this.passenger && !(this.driver || this.rider) }, boarding: this.doorBoarding ?? {} }));
     }
     if (this.landRover) {
-      poseLandyControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake, clutch: this.clutchHeld ? 1 : 0, brake: this.brake, throttle: this.throttleKey });
+      poseCabControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, fourWd: !!this.drive?.frontDriven, locked: !!this.drive?.locked, choke: this.choke, hand: this.handSetting, park: this.parkBrake, clutch: this.clutchHeld ? 1 : 0, brake: this.brake, throttle: this.throttleKey });
       poseUtvBelts(this.model, this.belts.worn()); // the same belt names as the UTV's
       if (this.rearSeats.length) poseSeatTips(this.model, this.seatTips);
-      // The doors swing out at the side used, as the UTV's nets do (the Series' and the 200TDi's), and T drops the Series' tailgate or swings the
+      // The doors swing out at the side used, as the UTV's nets do (the Tor's and the 200TDi's), and T drops the Tor's tailgate or swings the
       // 200TDi's back door out on its hinge.
       this.doorSwing ??= new DoorSwing();
-      poseSeriesDoors(this.model, this.doorSwing.update(dt, { speed: this.speed, aboard: { right: !!(this.driver || this.rider), left: !!this.passenger && !(this.driver || this.rider) }, boarding: this.doorBoarding ?? {} }));
+      poseTorDoors(this.model, this.doorSwing.update(dt, { speed: this.speed, aboard: { right: !!(this.driver || this.rider), left: !!this.passenger && !(this.driver || this.rider) }, boarding: this.doorBoarding ?? {} }));
       this.tailgate ??= new Tailgate();
       this.tailgate.update(dt, { speed: this.speed });
-      poseSeriesTailgate(this.model, this.tailgate.open);
-      poseDefenderBackDoor(this.model, this.tailgate.open);
+      poseTorTailgate(this.model, this.tailgate.open);
+      poseCragBackDoor(this.model, this.tailgate.open);
       this.doorSounds ??= new DoorSounds(this.model.getObjectByName('backDoor') ? 'backDoor' : 'tailgate');
       this.doorSounds.update(dt, { doors: this.doorSwing.open, rear: this.tailgate.open, speed: this.speed });
       this.doorEvents.push(...this.doorSounds.take().map((e) => ({ ...e, heavy: true })));
@@ -1520,12 +1520,12 @@ export class Quad {
       poseCarControls(this.model, { gear: this.drivetrain.gear, gears: this.gearbox.gears, choke: this.choke, park: this.parkBrake, clutch: this.clutchHeld ? 1 : 0, brake: this.brake, throttle: this.throttleKey });
       poseUtvBelts(this.model, this.belts.worn());
       poseCarSeats(this.model, this.seatTips);
-      // The Fiesta's doors swing out at the side used (as the Land Rovers'), and T lifts its hatch (a model without them poses nothing).
+      // The Finch's doors swing out at the side used (as the Land Rovers'), and T lifts its hatch (a model without them poses nothing).
       this.doorSwing ??= new DoorSwing();
-      poseSeriesDoors(this.model, this.doorSwing.update(dt, { speed: this.speed, aboard: { right: !!(this.driver || this.rider), left: !!this.passenger && !(this.driver || this.rider) }, boarding: this.doorBoarding ?? {} }));
+      poseTorDoors(this.model, this.doorSwing.update(dt, { speed: this.speed, aboard: { right: !!(this.driver || this.rider), left: !!this.passenger && !(this.driver || this.rider) }, boarding: this.doorBoarding ?? {} }));
       this.tailgate ??= new Tailgate();
       this.tailgate.update(dt, { speed: this.speed });
-      ({ corsa: poseCorsaHatch, p309: pose309Hatch }[this.model.userData.carKind] ?? poseFiestaHatch)(this.model, this.tailgate.open);
+      ({ griffin: poseGriffinHatch, vauclair: pose309Hatch }[this.model.userData.carKind] ?? poseFinchHatch)(this.model, this.tailgate.open);
       this.doorSounds ??= new DoorSounds('hatch');
       this.doorSounds.update(dt, { doors: this.doorSwing.open, rear: this.tailgate.open, speed: this.speed });
       this.doorEvents.push(...this.doorSounds.take().map((e) => ({ ...e, heavy: false })));

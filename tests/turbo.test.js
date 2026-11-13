@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { DEFAULT_AUDIO_PARAMS } from '../src/audio/audioParams.js';
-import { DEFENDER_SPEC } from '../src/vehicle/quadSpecs.js';
+import { CRAG_SPEC } from '../src/vehicle/quadSpecs.js';
 
 // The worklet runs on the audio thread with its own globals, so load it in a sandbox that provides them (as engineWorkletNaN does).
 function processor(params) {
@@ -40,7 +40,7 @@ describe('the turbo', () => {
   });
 
   it('makes no boost at tickover, and comes up to boost a moment after the throttle opens', () => {
-    const proc = processor(DEFENDER_SPEC.audio);
+    const proc = processor(CRAG_SPEC.audio);
     expect(run(proc, 1, 800, 0).boost).toBeLessThan(0.01);
     const soon = run(proc, 0.3, 3600, 1).boost;
     const later = run(proc, 3, 3600, 1).boost;
@@ -50,7 +50,7 @@ describe('the turbo', () => {
   });
 
   it('whistles louder with more boost, and runs down when the throttle shuts', () => {
-    const proc = processor(DEFENDER_SPEC.audio);
+    const proc = processor(CRAG_SPEC.audio);
     const part = run(proc, 3, 2400, 0.4);
     const full = run(proc, 3, 3600, 1);
     expect(full.rms).toBeGreaterThan(part.rms * 2);

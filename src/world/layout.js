@@ -119,7 +119,7 @@ const RAW = {
     house: { x: 3, z: 18, halfX: 7, halfZ: 4.2, wallHeight: 5.2, ridge: 7.6, door: { x: 3, z: 13.8, halfWidth: 0.55, height: 2.05 } },
     barn: { x: -17, z: -12, halfX: 8, halfZ: 6, wallHeight: 4.6, ridge: 6.6, door: { x: -9, z: -12, halfWidth: 2.6, height: 3.6 } },
     parked: [
-      { kind: 'series', x: 17, z: 2, yaw: 1.2, colour: 0x5d6d4a, reg: 'K412 PBW' },
+      { kind: 'tor', x: 17, z: 2, yaw: 1.2, colour: 0x5d6d4a, reg: 'K412 PBW' },
       { kind: 'utv', x: 8, z: 5.5, yaw: 0.35, colour: 0x7a2a22 },
       { kind: 'tractor', x: -16, z: 6, yaw: 3.0, colour: 0xb02a20 },
     ],
@@ -373,7 +373,7 @@ const RAW = {
   axleStands: at('barn', [{ x: -2.6, z: 6.7, yaw: 0.1 }, { x: -2, z: 6.9, yaw: -0.3 }]),
   // Where the barn find stands under its tarp (vehicle/barnFind.js), at the back of the barn: clear of the bay, the bales and the ladder.
   rusty: at('barn', { x: -2.7, z: -0.1, yaw: 0.15 }),
-  // Where the old bike stands under its tarp (the Plover, vehicle/bantamModel.js), always: in the open floor in the middle of the barn, a metre east of the bales and
+  // Where the old bike stands under its tarp (the Plover, vehicle/ploverModel.js), always: in the open floor in the middle of the barn, a metre east of the bales and
   // the barn find, nose to the north wall, so its right side (the kickstart, the carb and the exhaust) is to the room and the girls can walk round to it.
   plover: at('barn', { x: -1, z: 1.9, yaw: Math.PI }),
   yard: at('yard', { x: 0, z: 0, radius: 20 }),
@@ -381,9 +381,9 @@ const RAW = {
   // towards it, yours at the west end (#491: Jamie wanted it beside theirs). 5.2 m apart, so there's room for a girl to walk between them; the row
   // sits 0.8 m nearer the road than the two did and the pad is 9 m across the radius (it was 8), so all three stand wholly on it. The pad is flat, so nothing needs laying.
   cars: {
-    p309: { x: 182.8, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
-    fiesta: { x: 188, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
-    corsa: { x: 193.2, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
+    vauclair: { x: 182.8, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
+    finch: { x: 188, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
+    griffin: { x: 193.2, z: -1.6, yaw: Math.PI, where: 'by the Dutch barn' },
   },
   paddock: at('yard', { x: -12, z: -24, half: 7 }),
   // The lawns the ride-on mower cuts (world/mowing.js, the 'Mow the lawns' job): the open grass at the yard's east edge, beyond its bare ground (the yard's dirt ends about 13 m from its middle, rideEvents.js) and clear of

@@ -8,7 +8,7 @@ import { sweepGeometry } from '../quadGeometry.js';
 
 export const HANDLE_KINDS = ['push', 'pull', 'lever', 'flap'];
 
-/** A door handle: 'push' (a chrome bar with a push button, a Series'), 'pull' (a recessed pull, the Corsa's), 'lever' (a lever over a backplate), 'flap' (a flush flap, a '70s car's). */
+/** A door handle: 'push' (a chrome bar with a push button, a Tor's), 'pull' (a recessed pull, the Griffin's), 'lever' (a lever over a backplate), 'flap' (a flush flap, a '70s car's). */
 export function buildDoorHandle(kind = 'push', { mats = {} } = {}) {
   const m = { ...cabMats(), ...mats };
   const g = new THREE.Group();

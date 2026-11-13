@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { bentTube, loftGeometry, rod } from './quadGeometry.js';
 import { cableGeometry } from './detail/cables.js';
 import { decalMesh, MAKER_FOR } from './detail/decals.js';
-import { BLASTER_VBARS, BLASTER_LAMP, barAt, blasterCross } from './blasterBody.js';
+import { HORNET_VBARS, HORNET_LAMP, barAt, hornetCross } from './hornetBody.js';
 import { RACER_SHROUD, RACER_LOUVRES, RACER_GRILLE, RACER_TAIL, RACER_FLANK, RACER_SIDE_PLATE, RACER_POD, shroudTop } from './racerBody.js';
 
 // The orange quad's finer parts (TODO 92): the shroud with its louvres and radiator grille, the flanks, the tail, the bars with a pad
@@ -79,13 +79,13 @@ export function addRacerBody(root, MAT, paint) {
  * the choke lever's place on it; the dash's kill switch panel stands on it too), and the cables. Bars' frame; the lens is `headlight`.
  */
 export function addRacerBars(bars, MAT, lensMat) {
-  const V = BLASTER_VBARS;
-  const c = blasterCross();
+  const V = HORNET_VBARS;
+  const c = hornetCross();
   tube([-V.crossX, c.y, c.z], [V.crossX, c.y, c.z], 0.0105, MAT.alloy, bars).name = 'crossbar';
   mesh(new THREE.CapsuleGeometry(0.02, 0.13, 4, 10).rotateZ(Math.PI / 2), MAT.plastic, bars, 'barPad').position.set(0, c.y, c.z);
   rbox(0.1, 0.03, 0.045, 0.01, MAT.engineDark, 0, V.centreY + 0.012, -0.012, bars, 'clampBlock');
   // The lamp: a square black housing on a block off the clamp, a reflector and a lens, with a wire guard round it.
-  const L = BLASTER_LAMP;
+  const L = HORNET_LAMP;
   rbox(0.05, 0.03, 0.03, 0.008, MAT.engineDark, 0, V.centreY + 0.015, 0.0, bars, 'lampMount');
   rbox(L.w, L.h, L.d, 0.012, MAT.plastic, 0, L.y, L.z, bars, 'headlightHousing');
   rbox(L.w - 0.025, L.h - 0.025, 0.012, 0.006, MAT.reflector, 0, L.y, L.z + L.d / 2 - 0.004, bars);
@@ -115,7 +115,7 @@ export function addRacerBars(bars, MAT, lensMat) {
 
 /** Where the choke lever stands on the pod (the bars' frame): the pod's top at the lever's place. */
 export function racerChokeAt() {
-  return [RACER_POD.chokeX, BLASTER_VBARS.centreY + 0.036, RACER_POD.z];
+  return [RACER_POD.chokeX, HORNET_VBARS.centreY + 0.036, RACER_POD.z];
 }
 
 /** The maker's badge on each flank's outer face, a millimetre off the surface. */
