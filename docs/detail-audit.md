@@ -4,25 +4,38 @@ Every visible object in the world graded **good**, **passable** or **block** aga
 
 ## The barn and yard (#668)
 
-Graded from `tools/shot.mjs` shots (daylight and 20:00; the framing was far, so none of the small detail was judged at full size) and from the code and the issue's known faults, not from riding or walking it. **Good** here means "no fault found at that distance or in the code" and must be looked at close by whoever rebuilds the piece. The move is #682.
+Graded first from `tools/shot.mjs` shots and the code, then corrected from Jamie's own walk of it (the #668 comment of 13 November), which found most of the small things too basic. #805 rebuilds the blocks and passables to the standard in the move (#682).
 
 | Object | Grade | What it lacks |
 | --- | --- | --- |
-| Barn, first span (`barnBuild.js`: walls, white corner posts, door frame, header, hay door frame and shutter, sliding doors on a rail) | good | Two door sizes differ (2.3 m and 2.0 m half widths); the hay door's top goes through the roof line |
-| Barn, second span (annex) | passable | Plain boards over the door up to the eaves, posts in place of a wall (open to the weather), no trim on the valley |
+| Barn front and doors | passable | The texture differs top and bottom and does not line up; the two doors differ in size and the hay door goes through the roof (#613) |
+| Barn, second span (annex) | passable | Plain boards over the door up to the eaves, posts in place of a wall, no trim on the valley |
 | Barn roof | passable | A gutter on one edge only and no downpipes seen, no weather vane (#169) |
-| Loft (`loft.js`) | good | |
-| Workbench, toolbox, boards, cork board | good | The boards read as flat painted panels (#503) |
-| Bays 1 and 2 | block | Painted lines on a concrete floor: no kerb, no oil stain, no wheel stops (#404) |
+| Barn lighting | passable | Two dim bulbs at the top; more are needed |
+| Loft and its ladder | block | The ladder is very basic and climbing it goes through the floor; the floor and wall alpha-fight; the loft has no use (removed in the move) |
+| Straw on the floor, bales inside | block | Plain pieces; the bales are too regular |
+| Workbench and boards | passable | The boards need headings, the records overlap their lines, the classified board's shadow does not match what is pinned |
+| Pinboard and its tools | block | Poor tool shapes; removed until #517 |
+| Vice, jars, battery charger | block | Very basic textures; the jars have no meaning |
+| Battery booster | block | Alpha-fights |
+| Shelf of parts | block | Plain backing and plain parts |
+| Floor spots | block | Plain circles |
+| Tyre rack | block | No inside to the tyres, plain shelf, a number on each label |
+| Jack | block | Basic textures, a part floats |
+| Calendar, weather display, clock | passable | Spread apart; the weather display reads strangely |
+| Writing in the barn | block | A lot of Comic Sans (#807) |
+| Money tin, parts catalogue | passable | In odd places (#809) |
+| Coat rack, helmet hooks | passable | Too basic; move them in the new barn |
+| Bays 1 and 2 | block | Painted lines on a concrete floor (#404); the rusty quad and the Plover block the bench |
 | Pit | block | A painted rectangle, not a hole (#329) |
-| Shed kit (compressor, parts washer) | good | |
-| Bell and post (`bellBuild.js`) | good | |
-| Generator | good | |
-| Weather station, wall calendar, money tin, job board, helmet hooks, jumper rail | good | |
-| Fuel tanks and bowsers | passable | They float (#614): feet and nozzle holders do not meet the ground; no bund or drip tray |
-| Hens' pen and pig's sty (`farmAnimals.js`) | passable | Plain rail pens, no house or ark with a roof; 151 draw calls for 4,000 triangles |
-| Silage bales | good | |
-| Yard lawn and paddock fences | passable | Fences are one colour; no gate, no worn gateway |
+| Shed kit (compressor, parts washer) | good | Not marked down by the walk |
+| Generator | block | Very basic texture; too loud and runs dry too quickly (#810) |
+| Bell pole | passable | A bit basic |
+| Fuel tanks and bowsers | block | They float (#614); the hose textures are awful |
+| Feed bin and bucket | block | No inside textures |
+| Hens' house and pig's pen | block | No real textures; too tight |
+| Silage bales | passable | The wrapped ones behind the barn are hard to reach |
+| Paddock fences | block | No reason to be there and the girls get stuck (removed in the move) |
 | Line-up sleepers | passable | Plain sleepers, no wear or weeds |
-| Yard ground | block | Grass and a dirt track: no concrete, joints, drain, puddles or scraped muck line (the **Looks like** list in #682) |
+| Yard ground | block | Grass and a dirt track: no concrete, joints, drain, puddles or scraped muck line |
 | Lights at night | block | No yard light: the yard is black at dusk but for the barn's bulb (#171) |
