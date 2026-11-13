@@ -9,13 +9,13 @@ function makeWorld() {
   const state = { temp: 0.2, brake: false, kind: 'sunny', fuel: 3, x: 10, z: 20, heading: 0, busy: false };
   const tree = group(() => ({
     vehicle: group(() => ({
-      red: group(() => ({
+      farm300: group(() => ({
         temperature: value({ get: () => state.temp, set: (v) => (state.temp = v), min: 0, max: 1 }),
         parkbrake: value({ type: 'bool', get: () => state.brake, set: (v) => (state.brake = v) }),
         fuel: value({ get: () => state.fuel, set: (v) => (state.fuel = v), min: 0, max: 10, unit: 'litres' }),
         state: value({ type: 'text', get: () => 'running' }),
       })),
-      refurb: group(() => ({ temperature: value({ get: () => 1, set: () => {}, min: 0, max: 1 }) })),
+      farmhand: group(() => ({ temperature: value({ get: () => 1, set: () => {}, min: 0, max: 1 }) })),
     })),
     weather: group(() => ({ kind: value({ type: 'choice', choices: ['sunny', 'rain', 'rain-heavy'], get: () => state.kind, set: (v) => (state.kind = v) }) })),
     player: group(() => ({ flying: value({ type: 'bool', get: () => false, set: () => {} }) })),
@@ -24,9 +24,9 @@ function makeWorld() {
   }));
   const host = {
     vehicleVerbs: [{ name: 'start', help: 'x' }],
-    vehicles: () => [{ id: 'red', name: 'Red quad' }, { id: 'tractor', name: 'Tractor' }],
+    vehicles: () => [{ id: 'farm300', name: 'Red quad' }, { id: 'hartley', name: 'Tractor' }],
     girls: () => ['amy', 'jess'],
-    things: () => ['me', 'red', 'tractor', 'amy', 'jess', 'toolbox'],
+    things: () => ['me', 'farm300', 'hartley', 'amy', 'jess', 'toolbox'],
     places: () => ({ barn: { x: -64, z: 60 }, ramp: { x: 16, z: -8 } }),
     locate: (t) => (t === 'ghost' ? null : { x: state.x, y: 1, z: state.z, heading: state.heading }),
     put: (t, p) => {
@@ -89,57 +89,57 @@ describe('console tree and parsing', () => {
   });
   it('resolves paths whatever the case and says what is missing', () => {
     const { tree } = makeWorld();
-    expect(resolve(tree, 'Vehicle.RED.temperature').path).toBe('vehicle.red.temperature');
-    expect(resolve(tree, 'vehicle.blue').error).toMatch(/no "blue"/);
+    expect(resolve(tree, 'Vehicle.FARM300.temperature').path).toBe('vehicle.farm300.temperature');
+    expect(resolve(tree, 'vehicle.bruin').error).toMatch(/no "bruin"/);
   });
   it('walks every value', () => {
     const { tree } = makeWorld();
-    expect(walk(tree).map(([p]) => p)).toContain('vehicle.red.fuel');
+    expect(walk(tree).map(([p]) => p)).toContain('vehicle.farm300.fuel');
   });
 });
 
 describe('reading and writing values', () => {
   it('reads by path alone and sets with a value, an equals or set', () => {
     const { shell, state } = makeWorld();
-    expect(text(shell.run('vehicle.red.temperature'))).toBe('vehicle.red.temperature = 0.2');
-    shell.run('vehicle.red.temperature 0.7');
+    expect(text(shell.run('vehicle.farm300.temperature'))).toBe('vehicle.farm300.temperature = 0.2');
+    shell.run('vehicle.farm300.temperature 0.7');
     expect(state.temp).toBe(0.7);
-    shell.run('vehicle.red.temperature = 0.1');
+    shell.run('vehicle.farm300.temperature = 0.1');
     expect(state.temp).toBe(0.1);
-    shell.run('set vehicle.red.temperature 0.9');
+    shell.run('set vehicle.farm300.temperature 0.9');
     expect(state.temp).toBe(0.9);
   });
   it('accepts on/off for bools, choices only from the list, and notes going outside the range', () => {
     const { shell, state } = makeWorld();
-    shell.run('set vehicle.red.parkbrake on');
+    shell.run('set vehicle.farm300.parkbrake on');
     expect(state.brake).toBe(true);
-    expect(text(shell.run('set vehicle.red.parkbrake maybe'))).toMatch(/not on or off/);
+    expect(text(shell.run('set vehicle.farm300.parkbrake maybe'))).toMatch(/not on or off/);
     expect(text(shell.run('set weather.kind hail'))).toMatch(/not one of/);
     shell.run('set weather.kind rain');
     expect(state.kind).toBe('rain');
-    expect(text(shell.run('set vehicle.red.fuel 50'))).toMatch(/outside the panel's 0 to 10/);
+    expect(text(shell.run('set vehicle.farm300.fuel 50'))).toMatch(/outside the panel's 0 to 10/);
     expect(state.fuel).toBe(50);
   });
   it('refuses read-only values, folders and non-numbers', () => {
     const { shell } = makeWorld();
-    expect(text(shell.run('set vehicle.red.state stopped'))).toMatch(/read only/);
-    expect(text(shell.run('set vehicle.red 1'))).toMatch(/folder/);
-    expect(text(shell.run('set vehicle.red.fuel lots'))).toMatch(/not a number/);
+    expect(text(shell.run('set vehicle.farm300.state stopped'))).toMatch(/read only/);
+    expect(text(shell.run('set vehicle.farm300 1'))).toMatch(/folder/);
+    expect(text(shell.run('set vehicle.farm300.fuel lots'))).toMatch(/not a number/);
   });
   it('toggles and adds', () => {
     const { shell, state } = makeWorld();
-    shell.run('toggle vehicle.red.parkbrake');
+    shell.run('toggle vehicle.farm300.parkbrake');
     expect(state.brake).toBe(true);
-    shell.run('add vehicle.red.fuel -2');
+    shell.run('add vehicle.farm300.fuel -2');
     expect(state.fuel).toBe(1);
   });
   it('reads a whole folder, lists, finds and dumps', () => {
     const { shell, state } = makeWorld();
-    expect(text(shell.run('get vehicle.red'))).toMatch(/vehicle.red.fuel = 3 litres/);
+    expect(text(shell.run('get vehicle.farm300'))).toMatch(/vehicle.farm300.fuel = 3 litres/);
     expect(text(shell.run('list'))).toMatch(/vehicle\./);
-    expect(text(shell.run('find red temp'))).toMatch(/vehicle.red.temperature/);
-    shell.run('dump vehicle.red');
-    expect(JSON.parse(state.dumped)['vehicle.red.fuel']).toBe(3);
+    expect(text(shell.run('find farm300 temp'))).toMatch(/vehicle.farm300.temperature/);
+    shell.run('dump vehicle.farm300');
+    expect(JSON.parse(state.dumped)['vehicle.farm300.fuel']).toBe(3);
   });
   it('says so for an unknown command, and does not treat a path as one', () => {
     const { shell } = makeWorld();
@@ -151,27 +151,27 @@ describe('reading and writing values', () => {
 describe('moving things', () => {
   it('tp takes coordinates, a heading, a place or another thing', () => {
     const { shell, state } = makeWorld();
-    shell.run('tp red 100 -5 90');
+    shell.run('tp farm300 100 -5 90');
     expect([state.x, state.z, state.heading]).toEqual([100, -5, 90]);
-    shell.run('tp red barn');
+    shell.run('tp farm300 barn');
     expect([state.x, state.z]).toEqual([-64, 60]);
-    shell.run('tp red to ramp');
+    shell.run('tp farm300 to ramp');
     expect([state.x, state.z]).toEqual([16, -8]);
-    shell.run('tp me to red');
+    shell.run('tp me to farm300');
     expect(state.x).toBeCloseTo(18.5);
   });
   it('tp here puts it in front of you', () => {
     const { shell, state } = makeWorld();
     state.heading = 90;
-    shell.run('tp red here');
+    shell.run('tp farm300 here');
     expect(state.x).toBeCloseTo(14);
     expect(state.z).toBeCloseTo(20);
   });
   it('nudge and face are relative to where it is', () => {
     const { shell, state } = makeWorld();
-    shell.run('nudge red 5 -3');
+    shell.run('nudge farm300 5 -3');
     expect([state.x, state.z]).toEqual([15, 17]);
-    shell.run('face red 180');
+    shell.run('face farm300 180');
     expect(state.heading).toBe(180);
   });
   it('reports a busy girl, an unknown thing and a bad number', () => {
@@ -179,13 +179,13 @@ describe('moving things', () => {
     state.busy = true;
     expect(text(shell.run('tp amy 1 1'))).toMatch(/busy/);
     expect(text(shell.run('tp banana 1 1'))).toMatch(/nothing called "banana"/);
-    expect(text(shell.run('tp red x y'))).toMatch(/not a place or a thing/);
-    expect(text(shell.run('tp red 1'))).toMatch(/z should be a number/);
+    expect(text(shell.run('tp farm300 x y'))).toMatch(/not a place or a thing/);
+    expect(text(shell.run('tp farm300 1'))).toMatch(/z should be a number/);
   });
   it('reset handles one, vehicles and all', () => {
     const { shell } = makeWorld();
-    expect(text(shell.run('reset red'))).toBe('red reset');
-    expect(text(shell.run('reset vehicles'))).toBe('red reset\ntractor reset');
+    expect(text(shell.run('reset farm300'))).toBe('farm300 reset');
+    expect(text(shell.run('reset vehicles'))).toBe('farm300 reset\nhartley reset');
     expect(shell.run('reset all').length).toBe(5);
   });
 });
@@ -193,15 +193,15 @@ describe('moving things', () => {
 describe('verbs and girls', () => {
   it('runs a vehicle verb on one or all', () => {
     const { shell } = makeWorld();
-    expect(text(shell.run('start red'))).toBe('red: start');
-    expect(text(shell.run('start all'))).toBe('red: start\ntractor: start');
+    expect(text(shell.run('start farm300'))).toBe('farm300: start');
+    expect(text(shell.run('start all'))).toBe('farm300: start\nhartley: start');
     expect(text(shell.run('start nonesuch'))).toMatch(/no vehicle/);
   });
   it('runs girl actions, asking for a vehicle when one is needed', () => {
     const { shell, state } = makeWorld();
     expect(text(shell.run('girl amy drive'))).toMatch(/needs a vehicle/);
-    shell.run('girl jess drive tractor');
-    expect(state.last).toEqual(['jess', 'drive', 'tractor']);
+    shell.run('girl jess drive hartley');
+    expect(state.last).toEqual(['jess', 'drive', 'hartley']);
     shell.run('girl amy ramp');
     expect(state.last).toEqual(['amy', 'ramp', undefined]);
     expect(text(shell.run('girl amy'))).toMatch(/drive/);
@@ -260,25 +260,25 @@ describe('tab completion', () => {
     expect(shell.complete('te').candidates).toEqual([]);
     expect(shell.complete('tog').candidates).toEqual(['toggle']);
     expect(shell.complete('get v').candidates).toEqual(['vehicle.']);
-    expect(shell.complete('get vehicle.').candidates).toEqual(['vehicle.red.', 'vehicle.refurb.']);
-    expect(shell.complete('get vehicle.red.t').candidates).toEqual(['vehicle.red.temperature']);
+    expect(shell.complete('get vehicle.').candidates).toEqual(['vehicle.farm300.', 'vehicle.farmhand.']);
+    expect(shell.complete('get vehicle.farm300.t').candidates).toEqual(['vehicle.farm300.temperature']);
   });
   it('completes values by type and the arguments of tp', () => {
     const { shell } = makeWorld();
-    expect(shell.complete('set vehicle.red.parkbrake ').candidates).toEqual(['off', 'on']);
+    expect(shell.complete('set vehicle.farm300.parkbrake ').candidates).toEqual(['off', 'on']);
     expect(shell.complete('set weather.kind r').candidates).toEqual(['rain', 'rain-heavy']);
     expect(shell.complete('tp ').candidates).toContain('toolbox');
-    expect(shell.complete('tp red ').candidates).toEqual(expect.arrayContaining(['barn', 'here', 'to']));
-    expect(shell.complete('tp red to ').candidates).toEqual(expect.arrayContaining(['barn', 'amy']));
-    expect(shell.complete('start ').candidates).toEqual(['all', 'red', 'tractor']);
+    expect(shell.complete('tp farm300 ').candidates).toEqual(expect.arrayContaining(['barn', 'here', 'to']));
+    expect(shell.complete('tp farm300 to ').candidates).toEqual(expect.arrayContaining(['barn', 'amy']));
+    expect(shell.complete('start ').candidates).toEqual(['all', 'farm300', 'hartley']);
     expect(shell.complete('girl ').candidates).toEqual(['amy', 'jess']);
     expect(shell.complete('girl amy ').candidates).toEqual(['drive', 'ramp']);
-    expect(shell.complete('girl amy drive ').candidates).toEqual(['red', 'tractor']);
+    expect(shell.complete('girl amy drive ').candidates).toEqual(['farm300', 'hartley']);
     expect(shell.complete('weather ').candidates).toEqual(['rain', 'sunny']);
   });
   it('completes after a bare path', () => {
     const { shell } = makeWorld();
-    expect(shell.complete('vehicle.red.parkbrake ').candidates).toEqual(['off', 'on']);
+    expect(shell.complete('vehicle.farm300.parkbrake ').candidates).toEqual(['off', 'on']);
   });
   it('Tab fills the shared start, then goes through the choices, and Shift+Tab goes back', () => {
     const { shell } = makeWorld();
@@ -298,17 +298,17 @@ describe('tab completion', () => {
   });
   it('Tab extends to the shared start when the choices differ later', () => {
     const { shell } = makeWorld();
-    const step = tabStep(shell, 'get vehicle.r', null);
-    expect(step.line).toBe('get vehicle.re'); // red and refurb agree as far as "re"
-    expect(step.candidates).toEqual(['vehicle.red.', 'vehicle.refurb.']);
+    const step = tabStep(shell, 'get vehicle.f', null);
+    expect(step.line).toBe('get vehicle.farm'); // farm300 and farmhand agree as far as "farm"
+    expect(step.candidates).toEqual(['vehicle.farm300.', 'vehicle.farmhand.']);
     const next = tabStep(shell, step.line, step);
-    expect(next.line).toBe('get vehicle.red.');
-    expect(tabStep(shell, next.line, next).line).toBe('get vehicle.refurb.');
+    expect(next.line).toBe('get vehicle.farm300.');
+    expect(tabStep(shell, next.line, next).line).toBe('get vehicle.farmhand.');
   });
   it('the hint lists every choice straight after a dot or a space, by its last part', () => {
     const { shell } = makeWorld();
-    expect(hintChoices(shell, 'get vehicle.')).toEqual(['red.', 'refurb.']);
-    expect(hintChoices(shell, 'get vehicle.red.')).toContain('temperature');
+    expect(hintChoices(shell, 'get vehicle.')).toEqual(['farm300.', 'farmhand.']);
+    expect(hintChoices(shell, 'get vehicle.farm300.')).toContain('temperature');
     expect(hintChoices(shell, 'girl ')).toEqual(['amy', 'jess']);
     expect(hintChoices(shell, 'tog')).toEqual(['toggle']); // a lone choice shows too
     expect(hintChoices(shell, 'toggle')).toEqual([]); // already typed in full

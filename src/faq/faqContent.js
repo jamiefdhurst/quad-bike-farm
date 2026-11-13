@@ -2910,7 +2910,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Is there a console?',
         a: `Backslash (<kbd>\\</kbd>, the <kbd>#</kbd> key on a UK keyboard) opens a command line. <code>help</code> lists the commands. You can read and set any value
-          (<code>vehicle.red.temperature 0.4</code>), move things (<code>tp red barn</code>), reset them, change the weather (<code>weather rain</code>), fly
+          (<code>vehicle.farm300.temperature 0.4</code>), move things (<code>tp farm300 barn</code>), reset them, change the weather (<code>weather rain</code>), fly
           (<code>fly</code>) and switch the girls' autonomy and speech off.`,
       },
       {
@@ -2941,43 +2941,43 @@ export const FAQ_SECTIONS = [
 // A note for every vehicle, keyed by spec id (QUAD_SPECS, EXTRA_SPECS and the tractor, Yak and Moorland specs). The facts strip
 // (engine, gearbox, tank, reverse) is generated from the spec; this is what a spec can't say.
 export const VEHICLE_NOTES = {
-  red: {
+  farm300: {
     blurb: 'The Kestrel Farm 300, a 1990s-style farm quad: soft, steady and the smoothest of the lot, with a low warm idle, black wing flares, racks with tie-down hooks front and back, a pillion seat and a tow hitch on the back.',
     tips: ['Starts every game in 2WD: G for 4WD.', 'Reverse wants the bars turned as you press B.', 'Has an OIL lamp on its little dash.'],
   },
-  blue: {
+  bruin: {
     blurb: 'The Tamura Bruin 660, a big farm quad: idles fast and keen, revs harder and higher, and has an LCD dash with fuel and temperature bars, a steel bumper, flat racks and a switch pod on the left bar.',
     tips: ['Floods if you leave the choke on once it’s warming, so ease it off early.', 'U is the diff lock, which pulls hardest in the mud.'],
   },
-  yellow: {
+  hornet: {
     blurb: 'The Tamura Hornet 200, a two-stroke sport quad: the wheels are the edge of it, the plastics are small and the engine is out in the open. Weak low down, then comes on hard around 6,000 rpm and revs past 10,000, trailing blue smoke.',
     tips: ['Loads up its plug if left idling: blip the throttle.', 'Pre-mix only.', 'Room for one on a slim pad at the back.', 'The choke knob and the fuel tap are on the left of the carb: stop to reach the choke.', 'Only a key on the bars: no lamps, no gauges.', 'P is a plain lights switch (the left bar); the pull-start is O.'],
   },
-  green: {
+  rb300: {
     blurb: 'The Ridgeback RB300, the workhorse: older, heavier and slower, with a big lazy four-stroke that idles low and lumpy and pulls hard low down.',
     tips: ['Has the winch: E at the hook to take it.', 'Takes an age to warm up and wants plenty of choke.', 'The choke slides on the switch housing on the left bar.', 'Always four-wheel drive.'],
   },
-  orange: {
+  adder: {
     blurb: 'The Viper Adder 250, a two-stroke race quad: a triangle of a quad on a blue frame with big flat side panels and a wide duck-tail, lighter and lower than the Hornet. It revs to 11,500 and smokes like a chimney.',
     tips: ['Single race seat: nobody on the back.', 'Water-cooled, so it stays cooler, unless the hose is weeping.', 'The pod on the left bar has the lights rocker (P), the choke lever and the kill switch.', 'The pull-start is on O.'],
   },
-  kids: {
+  asp: {
     blurb: 'The Viper Asp 50, a 50cc kids’ quad, two thirds the size of the others and bulky for it, in faded pink with a blue seat. Jess insists on riding it anyway.',
     tips: ['One seat, no reverse.', 'Pull-start (O) as well as the key.', 'No lights at all: the key, the choke knob on the carb and the fuel tap are all it has.'],
   },
-  moto: {
+  tz65: {
     blurb: 'The Tamura TZ 65, a sun-faded blue small motocross bike with gold forks, a high front fender and a silver silencer. Two wheels, one seat, and it leans into corners like a proper bike.',
     tips: ['Lean it to turn it.', 'Grab the brake mid-corner and the front tucks.', 'T picks it up when it goes down.', 'Cord only: the choke knob and the fuel tap are by the carb.'],
   },
-  ag200: {
+  shepherd: {
     blurb: 'The Ridgeback Shepherd 200, a faded blue hill-farm trail bike: tall and narrow, long forks, a long flat seat for two, steel racks front and back with a bit of baler twine on one, hand guards and an upswept silencer. The first bike with room on the back.',
     tips: ['Lean it to turn it, and with someone on the back it leans a little slower.', 'A clutch (Shift) and a four-speed box.', 'The key starts it, or kick it over (O).', 'The choke plunger and the fuel tap are by the carb.', 'P switches the lamp on and off.'],
   },
-  mower: {
+  clipper: {
     blurb: 'The Ridgeback Clipper 12, a faded green ride-on mower: small wheels in front and fat turf tyres behind, a bonnet with a grille and a round lamp, a moulded seat with a back, a cutting deck underneath with grass caked under it and a box on the back. Slow and simple.',
     tips: ['One seat, no reverse, and it is slow: about 7 mph flat out.', 'Key start, or pull the cord on the right of the bonnet (O) when the battery is flat.', 'T engages the blade (the lever by the seat, and the amber BLADE lamp on the dash). It only cuts with the engine running and the mower moving forward, and it loads the engine in long grass.', 'Mowing a lawn is a job on the chalkboard: stripes appear in the grass and grow back over a few days.', 'Do not mow gravel or concrete with the blade engaged: it throws grit and dulls the blade.'],
   },
-  atc: {
+  t185: {
     blurb: 'The neighbour’s worn-out old Kestrel T185 three-wheeler: one front wheel on chrome forks, two fat tyres, a wide red rear body, a long flat seat and a rectangular headlamp.',
     tips: ['Pull-start only.', 'Tips over in a fast tight turn.', 'Lumpy and smoky at idle, and hard to start.', 'The choke knob and the fuel tap are by the carb.'],
   },
@@ -2985,35 +2985,35 @@ export const VEHICLE_NOTES = {
     blurb: 'The Ashby Plover 125, an old green rigid-framed single that stands under a tarp at the back of the barn: sprung saddle, spoked wheels, a long chrome silencer and a kickstart, with a Smiths-style speedo in the headlamp.',
     tips: ['Under a tarp until you take it off at the bench.', 'Starts the old way: tickle the carb, set the advance-retard lever, kick it.', 'A clutch and a three-speed foot-change gearbox.'],
   },
-  loan: {
+  ursa: {
     blurb: 'The dealer’s loan quad, a silver Tamura Ursa 450: fuel injected, starts on the button, idles smooth and quiet, and has almost no wear.',
     tips: ['Fuel injected: no choke and no fuel tap, even on a frosty morning.', 'Full tank and a bit more power than the old farm quads.', 'The dealer’s sticker is on the left rear fender.'],
   },
-  tractor: {
+  hartley: {
     blurb: 'An old red-and-grey Hartley 35 on red diesel: heavy, slow and strong, with three gears, a hand throttle and a lot of hours.',
     tips: ['Wait for the GLOW lamp before cranking.', 'T swings the back door out.', 'The stop knob (O) stops it, not the key.', 'P switches its lights; the tail lamps follow and brighten on the brake.', 'Pulls the bale trailer and the tow chain.'],
   },
-  utv: {
+  yak: {
     blurb: 'A dark green Ridgeback Yak 4010, a side-by-side on red diesel: a bench seat with proper buckled belts, a roll cage with door nets and a tipping bed.',
     tips: ['Reverse is the dash lever: B when stopped.', 'T tips the bed.', 'Belts: ; clicks the buckle. The door nets swing out when it is stopped.', 'The key stops it, unlike the tractor.'],
   },
-  landrover: {
+  tor: {
     blurb: 'The Moorland Tor, an old 88-inch pick-up in Bronze Green with a white roof: a 2.25 litre petrol four with a lot of miles on it, doors that swing open and a drop tailgate.',
     tips: ['First and second crunch on the move: nearly stop first.', 'A starting handle for a flat battery.', 'T drops the tailgate.', '] and [ work the hand throttle.'],
   },
-  landrover200: {
+  crag: {
     blurb: 'The Moorland Crag, an early-90s station wagon in Atlantic Blue with a white roof: a rattly 2.5 litre turbo diesel, a back door that swings out on T with the spare on it, and a moulded dash with a radio.',
     tips: ['Wait for the GLOW lamp before cranking.', 'Every gear has synchromesh: no crunching.', 'The belt lamp flashes and it bongs until you do your belt up.', 'Listen for the turbo whistling as it pulls, and chattering when you lift off.'],
   },
-  fiesta: {
+  finch: {
     blurb: "Amy's car, the Thorne Finch: a late-70s hatchback in 70s brown with a brown vinyl and check cloth inside, a 1.1 with a choke and four gears, clean, careful and on L plates. Its doors swing open and its hatch lifts on T. It lives on the tarmac by the Dutch barn.",
     tips: ['A cold start wants the choke (Q).', 'T lifts the hatch.', 'Front-wheel drive on road tyres: stay on the road and the yard if it is wet.', 'Take it without Amy and she will not be pleased.'],
   },
-  corsa: {
+  griffin: {
     blurb: "Jess's car, the Ashby Griffin: a 1990s hatchback, red gone pink on the roof and bonnet, a grey primer wing, a wheel trim missing and a big exhaust. A 1.2 with fuel injection and five gears that sounds much faster than it is. Its doors swing open and its hatch lifts on T.",
     tips: ['T lifts the hatch.', 'No choke: the injection sorts out a cold start itself.', 'There is rarely much petrol in it.', 'Jess minds less if you borrow it, as long as you do not dawdle.'],
   },
-  p309: {
+  vauclair: {
     blurb: "Your own car, the Vauclair 39D: a late-80s three-door in silver-grey with grey cloth inside, a 1.9 diesel and five gears. A few dents, two bottles of pop in your door pocket and some CDs on the dash. You arrive in it every morning, parked up by the Dutch barn with the engine still running. Its doors swing open and its hatch lifts on T.",
     tips: ['Wait for the glow plug lamp to go out before you crank it.', 'Diesel, so it waxes on a hard frost and needs bleeding if you run it dry.', 'T lifts the hatch.', 'Only you drive it. The girls will sit in it, and either will start it for you.'],
   },

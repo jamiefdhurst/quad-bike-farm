@@ -4,12 +4,13 @@ import { buildGameTree } from '../src/console/gameTree.js';
 import { buildCommands } from '../src/console/commands.js';
 import { Shell, resolve, parseValue } from '../src/console/shell.js';
 import { VEHICLE_VERBS } from '../src/console/gameHost.js';
+import { VEHICLE_NAMES } from '../src/vehicle/names.js';
 import { girlActions } from '../src/debug/girlActions.js';
 import { jobActions } from '../src/debug/jobActions.js';
 
-// `tools/consolePath.sh 'lane.kids on' 'tp me 105 -17' 'mist p309'` runs each line through the real command table and tree, so nothing
-// reaches Jamie unrun. The game is a stand-in: it has no vehicles of its own (the stand-in knows red, blue, green, tractor, utv, landrover and
-// p309), `tp` places are read from gameHost.js, and a value is parsed but never set. A NO about a vehicle id may be the stand-in, not the line.
+// `tools/consolePath.sh 'lane.kids on' 'tp me 105 -17' 'mist vauclair'` runs each line through the real command table and tree, so nothing
+// reaches Jamie unrun. The game is a stand-in: it has no vehicles of its own (the stand-in knows every vehicle by its model name:
+// farm300, tor, crag, vauclair ...), `tp` places are read from gameHost.js, and a value is parsed but never set. A NO about a vehicle id may be the stand-in, not the line.
 const root = () => buildGameTree({ units: [], companions: [], weather: {} }, {});
 const asked = (process.env.CONSOLE_LINES ?? '').split('\n').filter((l) => l.trim());
 
@@ -24,7 +25,7 @@ const anything = () => new Proxy(function () {}, { get: (_, k) => (k === Symbol.
 const standInJobs = () => jobActions(new Proxy({ serviceJob: { name: '', kinds: [], left: new Set() } }, { get: (t, k) => (k in t ? t[k] : anything()) })).jobs;
 
 const standIn = () => {
-  const vehicles = ['red', 'blue', 'green', 'tractor', 'utv', 'landrover', 'p309'];
+  const vehicles = [...Object.keys(VEHICLE_NAMES), 'rusty'];
   const places = Object.fromEntries(placeNames().map((n) => [n, { x: 0, z: 0 }]));
   const base = {
     vehicleVerbs: VEHICLE_VERBS,
