@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { requirements, parseList, writeList, refresh, judge, commentBody, postedComment, canClose } from '../tools/issueCheck.mjs';
+import { requirements, parseList, writeList, refresh, judge, unplanned, commentBody, postedComment, canClose } from '../tools/issueCheck.mjs';
 
 const BODY = `What happens for the player.
 
@@ -180,5 +180,38 @@ describe('whether a PR can close an issue', () => {
 
   it('leaves testing issues to /test', () => {
     expect(canClose(issue([], { labels: [{ name: '🧪 testing' }] }))).toMatchObject({ ok: true });
+  });
+});
+
+describe('a plan for every line (#775)', () => {
+  const planned = (text, plan = 'plan: tools/gate.js, proved by `npm test`', proof = '') => parseList(`- [ ] ${text}\n  → ${plan}${proof ? `\n  ${proof}` : ''}\n`)[0];
+
+  it('names a line with no plan, and passes when every line has one', () => {
+    const bare = { ticked: false, text: 'Two', note: 'waiting on #5' };
+    expect(unplanned([planned('One'), bare])).toEqual(['Two']);
+    expect(unplanned([planned('One'), planned('Two')])).toEqual([]);
+    expect(unplanned([{ ticked: false, text: 'Three', note: '' }])).toEqual(['Three']);
+  });
+
+  it('wants something after the word plan', () => {
+    expect(unplanned([planned('One', 'plan:')])).toEqual(['One']);
+    expect(unplanned([planned('One', 'my plan: later')])).toEqual(['One']);
+  });
+
+  it('keeps the plan and what follows it apart, and reads back what it wrote', () => {
+    const entry = planned('One', 'plan: src/gate.js', 'tests/gate.test.js');
+    expect(entry).toMatchObject({ plan: 'plan: src/gate.js', proof: 'tests/gate.test.js' });
+    expect(parseList(writeList([entry]))).toEqual([entry]);
+  });
+
+  it('does not count a plan as proof of a tick', () => {
+    const only = { ...planned('One'), ticked: true };
+    expect(judge(['One'], [only])).toMatchObject({ valid: false, unproven: ['One'] });
+    const shown = { ...planned('One', 'plan: src/gate.js', 'tests/gate.test.js'), ticked: true };
+    expect(judge(['One'], [shown])).toMatchObject({ valid: true, complete: true });
+  });
+
+  it('counts a plan, nothing done, as 0 of n on the comment', () => {
+    expect(commentBody([planned('One'), planned('Two')])).toContain('0 of 2 lines done');
   });
 });

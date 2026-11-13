@@ -3,8 +3,12 @@
 // that would close an issue with any line missing, unticked or unproven.
 //
 //   node tools/issueCheck.mjs start <n>   writes .scratch/issue-check-<n>.md: every line of the issue, unticked (run again, it keeps your ticks)
+//   node tools/issueCheck.mjs plan <n>    checks every line has a `plan:` note (where it goes, what will prove it) and posts the list, 0 done (#775)
 //   node tools/issueCheck.mjs post <n>    checks that file against the issue and posts it as one comment there; prints "Closes #n" or "Part of #n"
 //   node tools/issueCheck.mjs pr <pr>     the CI check (test.yml): fails if the PR would close an issue whose comment doesn't pass
+//
+// A plan is the first line under a line of the list, `→ plan: ...`; evidence for a tick is read only from the lines after it, so naming a file in the
+// plan doesn't count as the line done (#775).
 //
 // A line is `- [x]` done, with evidence under it; `- [ ]` not done, with why; or `- [~]` done another way, with what was done instead and why (#745). A
 // `[~]` line can't close the issue until its note starts "Jamie agreed:" with his words, so a changed line reaches him before the merge, not after.
@@ -22,6 +26,8 @@ const NOT_PROSE = /^(depends on:|builds on:|was todo\b|\||>|<!--|---)/i;
 
 // Evidence names something that can be looked at: a file, an issue or PR, or anything in backticks (a test's name, a command).
 const EVIDENCE = /^context:\s*\S|[\w./-]+\.(js|mjs|md|sh|ya?ml|json|html|svg|glsl|py)\b|#\d+|`[^`]+`/i;
+
+const PLAN = /^plan:\s*\S/i;
 
 const AGREED = /^jamie agreed:\s*\S/i;
 
@@ -59,23 +65,33 @@ export function requirements(body = '', title = '') {
   return tidy(title) ? [tidy(title)] : [];
 }
 
-/** The list as written in the file or the comment: [{ ticked, text, note }], with `note` the lines under each one and `differently` on a `[~]` line. */
+/**
+ * The list as written in the file or the comment: [{ ticked, text, note }], with `note` the lines under each one and `differently` on a `[~]` line. A line
+ * whose first note line starts `plan:` also has `plan` (that line) and `proof` (the lines after it).
+ */
 export function parseList(text = '') {
   const entries = [];
+  const parts = new Map(); // each entry's note, a line at a time
   for (const raw of text.split('\n')) {
     const line = /^- \[( |x|X|~)\] (.*)$/.exec(raw);
-    if (line) entries.push({ ticked: /x/i.test(line[1]), text: tidy(line[2]), note: '', ...(line[1] === '~' ? { differently: true } : {}) });
-    else if (entries.length && /^\s+\S/.test(raw)) {
+    if (line) {
+      entries.push({ ticked: /x/i.test(line[1]), text: tidy(line[2]), note: '', ...(line[1] === '~' ? { differently: true } : {}) });
+      parts.set(entries[entries.length - 1], []);
+    } else if (entries.length && /^\s+\S/.test(raw)) {
       const last = entries[entries.length - 1];
-      last.note = tidy(`${last.note} ${raw.replace(/^\s*→?/, '')}`);
+      const part = tidy(raw.replace(/^\s*→?/, ''));
+      if (part) parts.get(last).push(part);
+      last.note = tidy(`${last.note} ${part}`);
     }
   }
+  for (const [entry, lines] of parts) if (PLAN.test(lines[0] ?? '')) Object.assign(entry, { plan: lines[0], proof: lines.slice(1).join(' ') });
   return entries;
 }
 
-/** The list as text, each line with its note under it. */
+/** The list as text, each line with its note under it (a plan on its own line, then what came after it). */
 export function writeList(entries) {
-  return `${entries.map((e) => `- [${e.differently ? '~' : e.ticked ? 'x' : ' '}] ${e.text}\n  → ${e.note}`).join('\n')}\n`;
+  const note = (e) => (e.plan === undefined ? e.note : `${e.plan}${e.proof ? `\n  ${e.proof}` : ''}`);
+  return `${entries.map((e) => `- [${e.differently ? '~' : e.ticked ? 'x' : ' '}] ${e.text}\n  → ${note(e)}`).join('\n')}\n`;
 }
 
 /** The issue's lines as a list, keeping what is already written for any that are still there, and any lines the session added. */
@@ -93,12 +109,17 @@ export function refresh(required, entries = []) {
 export function judge(required, entries) {
   const texts = new Set(entries.map((e) => e.text));
   const missing = required.filter((r) => !texts.has(r));
-  const unproven = entries.filter((e) => e.ticked && !EVIDENCE.test(e.note)).map((e) => e.text);
+  const unproven = entries.filter((e) => e.ticked && !EVIDENCE.test(e.plan === undefined ? e.note : e.proof)).map((e) => e.text);
   const noReason = entries.filter((e) => !e.ticked && !tidy(e.note)).map((e) => e.text);
   const undone = entries.filter((e) => !e.ticked && !e.differently).map((e) => e.text);
   const unagreed = entries.filter((e) => e.differently && !AGREED.test(e.note)).map((e) => e.text);
   const valid = !missing.length && !unproven.length && !noReason.length;
   return { missing, unproven, noReason, undone, unagreed, valid, complete: valid && !undone.length && !unagreed.length };
+}
+
+/** The lines of a list with no `plan:` note, or a plan with nothing after the word (#775). */
+export function unplanned(entries) {
+  return entries.filter((e) => !PLAN.test(e.plan ?? e.note)).map((e) => e.text);
 }
 
 /** What is wrong with a list, one line each, for a session to act on. */
@@ -156,7 +177,8 @@ function start(n) {
   console.log(`${entries.length} lines to answer in ${file}\nTick each with where it is (a file, a test in backticks, a command), leave it with why it can't be done, or mark it [~] with what you did instead and ask Jamie.`);
 }
 
-function post(n) {
+/** The issue and its list from the file, or exit saying what to run. */
+function load(n) {
   const issue = readIssue(n);
   const file = listFile(n);
   if (!existsSync(file)) {
@@ -164,15 +186,36 @@ function post(n) {
     process.exit(1);
   }
   const entries = parseList(readFileSync(file, 'utf8'));
-  const verdict = judge(requirements(issue.body, issue.title), entries);
+  return { issue, entries, verdict: judge(requirements(issue.body, issue.title), entries) };
+}
+
+/** Posts the list as the issue's check comment, or updates the one already there. */
+function send(issue, entries) {
+  const id = postedComment(issue.comments)?.url?.split('#issuecomment-')[1];
+  if (id) gh('api', '-X', 'PATCH', `repos/{owner}/{repo}/issues/comments/${id}`, '-f', `body=${commentBody(entries)}`);
+  else gh('api', '-X', 'POST', `repos/{owner}/{repo}/issues/${issue.number}/comments`, '-f', `body=${commentBody(entries)}`);
+}
+
+function plan(n) {
+  const { issue, entries, verdict } = load(n);
+  const lacking = unplanned(entries);
+  const list = [...(verdict.missing.length ? [`run node tools/issueCheck.mjs start ${n} again: ${verdict.missing.length} line(s) of the issue aren't on the list`] : []),
+    ...lacking.map((t) => `no plan (start the note "plan:", say where it goes and what will prove it, or ask Jamie if you can't): ${t}`)];
+  if (list.length) {
+    console.error(`Not posted:\n${list.map((l) => `  - ${l}`).join('\n')}`);
+    process.exit(1);
+  }
+  send(issue, entries);
+  console.log(`Planned all ${entries.length} lines of #${n} and posted the list, ${entries.filter((e) => e.ticked).length} done.`);
+}
+
+function post(n) {
+  const { issue, entries, verdict } = load(n);
   if (!verdict.valid) {
     console.error(`Not posted:\n${problems(verdict).map((l) => `  - ${l}`).join('\n')}`);
     process.exit(1);
   }
-  const posted = postedComment(issue.comments);
-  const id = posted?.url?.split('#issuecomment-')[1];
-  if (id) gh('api', '-X', 'PATCH', `repos/{owner}/{repo}/issues/comments/${id}`, '-f', `body=${commentBody(entries)}`);
-  else gh('api', '-X', 'POST', `repos/{owner}/{repo}/issues/${n}/comments`, '-f', `body=${commentBody(entries)}`);
+  send(issue, entries);
   if (verdict.complete) console.log(`Closes #${n}`);
   else {
     console.log(`Part of #${n}`);
@@ -193,10 +236,10 @@ function pr(n) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const commands = { start, post, pr };
+  const commands = { start, plan, post, pr };
   const [command, n] = process.argv.slice(2);
   if (!commands[command] || !/^\d+$/.test(n ?? '')) {
-    console.error('usage: node tools/issueCheck.mjs start|post <issue> or pr <pr>');
+    console.error('usage: node tools/issueCheck.mjs start|plan|post <issue> or pr <pr>');
     process.exit(2);
   }
   commands[command](n);
