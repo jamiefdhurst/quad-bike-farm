@@ -33,7 +33,7 @@ A mixed upland-edge farm of about 68 ha (870 by 830 m), about seven times today'
 | **The Moor** | Common grazing beyond Back Lane up to the ridge wall: heather, bracken, rocks, the spring the river rises from, the trig pillar. The flock goes up through the moor gate in summer. Back Lane crosses it unfenced between cattle grids; a ladder stile in the ridge wall leads to Upper Thornby (crossing it turns you round) | New | |
 | **Hill Pasture** | The flock's rough grazing all summer, too steep to plough or cut. The electric fence splits it so they graze one half then the other. The banks, the climb, the flask rock, the shepherd's hut | Moves as a piece | |
 | The green lane and the ford | From Home Ground down to the stream and the hill | Moves | |
-| **The drive** | Stone, about 290 m, open to the fields either side, a cattle grid at the lane, the farm sign | Changes: today's hedged farm road with the grid in the middle | #568, #570, #214 |
+| **The drive** | Old tarmac patched and broken to gravel at the edges, about 290 m, open to the fields either side, a cattle grid at the lane, the farm sign | Changes: today's hedged farm road with the grid in the middle | #568, #570, #214 |
 | **Footpaths and the bridleway** | A public footpath from the village bridge along the river, over the hill and across the Moor to Upper Thornby; a bridleway from Back Lane past the wood. Stiles, kissing gates, bridle gates, waymarks, fingerposts | New | |
 | **Water and drainage** | A spring tank on the hill feeding a trough in every grazed field; ditches on the low ground, culverts, drain outfalls | New | #163 |
 | **The 11 kV line** | Poles across Lane Field to a transformer by the farmhouse; telegraph poles along the lane | New | |
