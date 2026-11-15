@@ -59,7 +59,7 @@ A mixed upland-edge farm of about 68 ha (870 by 830 m), about seven times today'
 
 ## The phases
 
-Each phase is a GitHub milestone, kept in `.github/settings.yml`. `/todo` takes a `🔜 next` issue first, then the lowest-numbered issue in the earliest open milestone whose `Depends on:` line names only closed issues. Work that doesn't depend on where things are (the girls, the vehicles, the engine, sound, items) is in the **Alongside** milestone and is taken with `/todo alongside` or by number. The vehicle reviews are the exception: they are a phase of their own, 4 · The vehicles, so they come before the cohesion passes. An issue that puts something in the world isn't started before its phase.
+Each phase is a GitHub milestone, kept in `.github/settings.yml`. `/todo` takes a `🔜 next` issue first, then the lowest-numbered issue in the earliest open milestone whose `Depends on:` line names only closed issues. Work that doesn't depend on where things are (the girls, the vehicles, the engine, sound, items) is in the **alongside** milestones, 6 to 12, grouped by what it is about. `/todo alongside` takes the earliest of those while the map's phases run, and plain `/todo` runs on into them once 5 is done; Ready for players comes after them all, as 13. The vehicle reviews are the exception: they are a phase of their own, 4 · The vehicles, so they come before the cohesion passes. Milestones run by the number their title starts with. An issue that puts something in the world isn't started before its phase.
 
 ### 0 · Foundations
 
@@ -167,7 +167,7 @@ New:
 
 Existing: #412, #413, #414, #415 (with #252 folded in or first), #423, #424, #425, #589, #218.
 
-### 6 · Ready for players
+### 13 · Ready for players
 
 New:
 
@@ -181,9 +181,37 @@ New:
 
 Existing: #173 (more than one farm, and export), #237 (the version in the game), #175 (smaller voice banks).
 
-### Alongside
+### 6 to 12 · Alongside
 
-Everything else open that doesn't depend on where things are: the girls' minds, faces, clothes and bodies, the vehicles, the engine, sound and the items. Held back as now: the `💤 later` issues.
+Everything else open that doesn't depend on where things are, split from the one Alongside milestone on 15 November 2026. Taken with `/todo alongside` in this order, or by number. Held back as now: the `💤 later` issues.
+
+### 6 · Engines and sound
+
+How each engine sounds as it revs (#852 to #859) and how it heats (#860 to #865), new faults you hear, footsteps and voices under a helmet.
+
+### 7 · More from the vehicles
+
+What the vehicles can do and how they wear over days: trailers, more than one of a model, snow chains and a blade, rust, cracked plastics and a previous owner's bodges. Fixes a review in 4 finds that are already here are ticked off there, not filed again.
+
+### 8 · The workshop
+
+The tool kit, the bench menu, spare parts, the manual, and working on a vehicle with your own hands.
+
+### 9 · How the girls move
+
+Their bodies, faces and hands: walking, riding, climbing and signalling, and nothing poking through a seat, a floor, a belt or a polo.
+
+### 10 · What the girls wear
+
+Their clothes and layers (#868 to #874 among them), and how being cold or soaked shows on them.
+
+### 11 · The girls' days
+
+What they do, remember and decide: birthdays, running jokes, days only one comes, games and treats, and the bugs in how they act.
+
+### 12 · The world and you
+
+The dog and the cat, a hot day, low sun, the days of the week, and you getting wet and muddy.
 
 ## How work stays joined up
 
@@ -200,6 +228,8 @@ The plan was filed as 57 new issues on 7 and 8 November 2026: #660 for this plan
 Four were rewritten: #360, #565, #568, #569. #122, #145, #569, #681, #682, #687, #688, #690, #692, #696, #697, #699 and every review were added to on 8 November (each review names its landmark and its sound).
 
 #708 moved from Foundations to The new map on 9 November: the far landscape starts at the new map's edge, and #692 now depends on it. The review of Foundations added #759 and #760 the same day. Its second review added #764 and #767, and Foundations closes after them.
+
+On 15 November the 124 issues in Alongside were split into 6 to 12 (Alongside was renamed 6 · Engines and sound, and 6 · Ready for players became 13). Five that fix places the new map rebuilds moved to 1 · The new map: #828, #829, #837, #846 and #847.
 
 Turned down on 8 November: a pheasant shoot, or any shooting (`docs/decisions/ideas-turned-down.md`).
 

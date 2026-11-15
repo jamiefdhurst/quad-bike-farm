@@ -112,11 +112,31 @@ milestones:
   - title: "5 · Pulled together"
     description: 'The cohesion passes on the finished map: detail, light and size, saving, discovery, money, screens.'
     state: open
-  - title: "6 · Ready for players"
-    description: Settings, quality, subtitles, crash screen, the first ten minutes, browsers and download size.
+  # 6 to 12 are the alongside milestones (ALONGSIDE in tools/nextTodo.mjs): work that doesn't depend on where things are, taken by
+  # /todo alongside while the map's phases run, and by plain /todo once they are done.
+  - title: "6 · Engines and sound"
+    description: How each engine sounds, revs and heats, and the other sounds of the farm. /todo alongside.
     state: open
-  - title: Alongside
-    description: Work that doesn't depend on where things are: the girls, vehicles, engine, sound and items. /todo alongside.
+  - title: "7 · More from the vehicles"
+    description: What the vehicles can do and how they wear, beyond the reviews in 4. /todo alongside.
+    state: open
+  - title: "8 · The workshop"
+    description: Tools, parts, the bench and the manual, and working on a vehicle with your own hands. /todo alongside.
+    state: open
+  - title: "9 · How the girls move"
+    description: Their bodies, faces and hands, how they walk, ride and climb, and nothing poking through. /todo alongside.
+    state: open
+  - title: "10 · What the girls wear"
+    description: Their clothes and layers, and how the weather shows on them. /todo alongside.
+    state: open
+  - title: "11 · The girls' days"
+    description: What they do, remember and decide, and the days that are different. /todo alongside.
+    state: open
+  - title: "12 · The world and you"
+    description: The animals, the weather, the days of the week, and you getting wet and muddy. /todo alongside.
+    state: open
+  - title: "13 · Ready for players"
+    description: Settings, quality, subtitles, crash screen, the first ten minutes, browsers and download size.
     state: open
 branches:
   - name: main
