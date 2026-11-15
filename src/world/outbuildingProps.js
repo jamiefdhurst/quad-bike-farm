@@ -71,8 +71,11 @@ export function corrugatedTexture(random, base, rust) {
   });
 }
 
-/** Rough stone walling, one tile 2 m square: courses of irregular grey-buff stones in pale lime mortar, darker and greener low down. */
-export function stoneTexture(random) {
+/**
+ * Rough stone walling, one tile 2 m square: courses of irregular grey-buff stones in pale lime mortar, darker and greener low down (`damp`).
+ * The damp is in the tile, so a wall taller than the tile gets a second dark band part way up: leave it out (`damp: false`) for one that is.
+ */
+export function stoneTexture(random, { damp = true } = {}) {
   return canvasTexture(512, 512, (ctx, w, h) => {
     ctx.fillStyle = '#9a9384';
     ctx.fillRect(0, 0, w, h);
@@ -107,10 +110,11 @@ export function stoneTexture(random) {
       ctx.arc(x, yy, r, 0, Math.PI * 2);
       ctx.fill();
     }
-    const damp = ctx.createLinearGradient(0, h * 0.6, 0, h);
-    damp.addColorStop(0, 'rgba(50,60,35,0)');
-    damp.addColorStop(1, 'rgba(50,60,35,0.35)');
-    ctx.fillStyle = damp;
+    if (!damp) return;
+    const rise = ctx.createLinearGradient(0, h * 0.6, 0, h);
+    rise.addColorStop(0, 'rgba(50,60,35,0)');
+    rise.addColorStop(1, 'rgba(50,60,35,0.35)');
+    ctx.fillStyle = rise;
     ctx.fillRect(0, 0, w, h);
   });
 }
@@ -294,7 +298,11 @@ function buildDutchBarn({ scene, layout, heights, physics, RAPIER, fixedBox, ran
   const end = new THREE.Mesh(worldBox(0.2, blockH + 0.3, depth, 1.8, 1.2), blocks);
   end.position.set(outer.maxX + 0.18, y0 + blockH / 2 - 0.15, b.z);
   group.add(back, end);
-  const backSheet = new THREE.Mesh(worldBox(len, eaveY - y0 - blockH, 0.03, 1.2, 3), sheet);
+  // One tile of the sheet runs up each wall, rust band at the foot and streaks from the top: a 3 m tile on a wall of 4.5 m showed the band again
+  // part way up, which read as the sheeting in thirds with the rust in a different place on each.
+  const sheetH = eaveY - y0 - blockH;
+  const backSheet = new THREE.Mesh(worldBox(len, sheetH, 0.03, 1.2, sheetH), sheet);
+  backSheet.name = 'dutch-barn-back-sheet';
   backSheet.position.set(b.x, (eaveY + y0 + blockH) / 2, outer.minZ - 0.16);
   group.add(backSheet);
   {
@@ -308,9 +316,11 @@ function buildDutchBarn({ scene, layout, heights, physics, RAPIER, fixedBox, ran
     }
     const geo = new THREE.ShapeGeometry(shape);
     const uv = geo.getAttribute('uv');
-    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 1.2, uv.getY(i) / 3);
+    const crown = top - y0 - blockH; // from the blocks to the top of the curve: one tile up the end as well
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) / 1.2, (uv.getY(i) - blockH) / crown);
     geo.rotateY(Math.PI / 2);
     const gable = new THREE.Mesh(geo, sheet);
+    gable.name = 'dutch-barn-end-sheet';
     gable.position.set(outer.maxX + 0.16, y0, b.z);
     group.add(gable);
   }
@@ -347,7 +357,7 @@ function buildFieldShed({ scene, layout, heights, fixedBox, random }, s) {
   const f = layout.fieldShed;
   const y0 = heights.heightAt(f.x, f.z);
   const { outer, door } = s;
-  const stone = new THREE.MeshStandardMaterial({ map: stoneTexture(random), roughness: 0.95 });
+  const stone = new THREE.MeshStandardMaterial({ map: stoneTexture(random, { damp: false }), roughness: 0.95 }); // its walls are taller than a tile
   const timber = new THREE.MeshStandardMaterial({ color: 0x4a3c2c, roughness: 0.95 });
   const group = new THREE.Group();
   const sink = 0.4; // the walls go this far into the ground, so no gap shows where it isn't quite level
@@ -371,10 +381,12 @@ function buildFieldShed({ scene, layout, heights, fixedBox, random }, s) {
   const rightW = outer.maxX - door.maxX;
   wall(outer.minX + leftW / 2, outer.maxZ - w / 2, leftW, H, w);
   wall(outer.maxX - rightW / 2, outer.maxZ - w / 2, rightW, H, w);
-  const overH = f.wallHeight - door.height;
-  wall(f.x, outer.maxZ - w / 2, door.maxX - door.minX, overH, w, y0 + door.height + overH / 2);
-  const lintel = new THREE.Mesh(new THREE.BoxGeometry(door.maxX - door.minX + 0.5, 0.16, w + 0.04), timber);
-  lintel.position.set(f.x, y0 + door.height + 0.08, outer.maxZ - w / 2);
+  // The lintel is the head of the opening, and the stone stands on top of it: stone starting at the same height as its underside fought it.
+  const lintelH = 0.16;
+  const overH = f.wallHeight - door.height - lintelH;
+  wall(f.x, outer.maxZ - w / 2, door.maxX - door.minX, overH, w, y0 + door.height + lintelH + overH / 2);
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(door.maxX - door.minX + 0.5, lintelH, w + 0.04), timber);
+  lintel.position.set(f.x, y0 + door.height + lintelH / 2, outer.maxZ - w / 2);
   group.add(lintel);
 
   // Gables: stone triangles up to the ridge at each end, with the window in the east one.
@@ -425,7 +437,7 @@ function buildFieldShed({ scene, layout, heights, fixedBox, random }, s) {
     m.position.set(f.x, y0 + f.ridge + 0.03 - drop / 2, f.z + (side * over) / 2);
     group.add(m);
   }
-  const ridge = new THREE.Mesh(new THREE.BoxGeometry(s.roof.maxX - s.roof.minX, 0.08, 0.22), new THREE.MeshStandardMaterial({ color: 0x5d3a24, roughness: 0.8, metalness: 0.3 }));
+  const ridge = new THREE.Mesh(new THREE.BoxGeometry(s.roof.maxX - s.roof.minX + 0.04, 0.08, 0.22), new THREE.MeshStandardMaterial({ color: 0x5d3a24, roughness: 0.8, metalness: 0.3 }));
   ridge.position.set(f.x, y0 + f.ridge + 0.06, f.z);
   group.add(ridge);
   enableShadows(group);
