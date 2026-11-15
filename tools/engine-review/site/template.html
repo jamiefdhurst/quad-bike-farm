@@ -1,0 +1,525 @@
+<title>Engine Sound Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a sticky tachometer-style player over a grid of vehicles (rows) by clip (columns), with the marked moments listed last. */
+:root {
+  --bg: #eef0ea;
+  --panel: #f8f9f5;
+  --ink: #1d2420;
+  --muted: #5b6660;
+  --line: #cfd5cc;
+  --accent: #c96f12;
+  --accent-soft: #f3dfc6;
+  --trace: #1f6f5c;
+  --throttle: #9fb9a6;
+  --mark: #b3261e;
+  --font-display: 'Barlow Semi Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --font-body: 'Barlow', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141a17; --panel: #1c2420; --ink: #e4e9e3; --muted: #95a29a; --line: #2f3a34;
+    --accent: #f0a04b; --accent-soft: #3d2e1c; --trace: #6fd1b4; --throttle: #3c5a4c; --mark: #ff7b6e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141a17; --panel: #1c2420; --ink: #e4e9e3; --muted: #95a29a; --line: #2f3a34;
+  --accent: #f0a04b; --accent-soft: #3d2e1c; --trace: #6fd1b4; --throttle: #3c5a4c; --mark: #ff7b6e; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--panel); }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 24px; }
+header { padding-top: 28px; display: grid; gap: 10px; }
+h1 { font: 700 clamp(28px, 4vw, 40px)/1.05 var(--font-display); letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+h2 { font: 600 20px/1.2 var(--font-display); margin: 0; letter-spacing: 0.02em; }
+.lede { max-width: 68ch; color: var(--muted); margin: 0; }
+.lede b { color: var(--ink); font-weight: 600; }
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px 20px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--muted); }
+.legend b { display: block; color: var(--ink); font: 600 13px/1.3 var(--font-display); text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* The player */
+.player {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 10px;
+  box-shadow: 0 6px 18px -12px rgb(0 0 0 / 0.35);
+}
+.p-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.p-title { min-width: 0; flex: 1 1 220px; }
+.p-title .name { font: 600 18px/1.2 var(--font-display); }
+.p-title .sub { font-size: 13px; color: var(--muted); }
+.readout { display: flex; gap: 14px; font: 500 13px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); flex-wrap: wrap; }
+.readout span b { color: var(--ink); font-weight: 500; }
+.readout .rpm b { color: var(--accent); font-size: 16px; }
+.btns { display: flex; gap: 6px; flex-wrap: wrap; }
+button { font: 600 13px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 11px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button:focus-visible, .clip:focus-visible, .chip:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--panel); min-width: 74px; }
+button.markbtn { color: var(--mark); }
+.scope { position: relative; height: 120px; cursor: pointer; touch-action: none; }
+.scope canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.keys { font-size: 12px; color: var(--muted); }
+.keys kbd { font: 500 11px var(--font-mono); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; background: var(--bg); }
+
+/* Filters */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 600 13px/1 var(--font-display); letter-spacing: 0.05em; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; text-transform: none; }
+.chip[aria-pressed="true"] { color: var(--ink); border-color: var(--ink); background: var(--panel); }
+
+/* The grid */
+.grid { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.sections { display: grid; gap: 40px; }
+.todo { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.todo h2 { font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.todo ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
+.todo a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; font-weight: 600; }
+.todo .q { color: var(--muted); }
+.sec-head { display: flex; align-items: baseline; gap: 12px; }
+.num { font: 700 30px/1 var(--font-display); color: var(--accent); font-variant-numeric: tabular-nums; }
+.question { margin: 0; font: 600 16px/1.4 var(--font-body); max-width: 72ch; }
+.folded { border-top: 1px solid var(--line); padding-top: 14px; }
+.folded > summary { cursor: pointer; font: 600 18px/1.3 var(--font-display); list-style: none; display: flex; gap: 10px; align-items: center; }
+.folded > summary::-webkit-details-marker { display: none; }
+.folded > summary::before { content: '▸'; color: var(--muted); }
+.folded[open] > summary::before { content: '▾'; }
+.folded[open] > summary { margin-bottom: 12px; }
+.status { font: 600 11px/1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); }
+.compare { display: grid; gap: 12px; }
+.compare .lede { font-size: 14.5px; }
+.variants { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px 20px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--muted); }
+.variants b { display: block; color: var(--ink); font: 600 13px/1.3 var(--font-display); text-transform: uppercase; letter-spacing: 0.08em; }
+.row { display: grid; grid-template-columns: 210px repeat(var(--cols, 5), minmax(0, 1fr)); gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: stretch; }
+.colhead { padding: 0 0 6px; border-bottom: none; font: 600 12px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); align-items: end; }
+.veh { min-width: 0; display: grid; gap: 3px; align-content: start; }
+.veh .name { font: 600 17px/1.15 var(--font-display); }
+.veh .meta { font: 400 12px/1.4 var(--font-mono); color: var(--muted); }
+.tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.tag { font: 600 11px/1 var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 6px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); }
+.clip { min-width: 0; text-align: left; display: grid; gap: 4px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; color: var(--ink); font: inherit; text-transform: none; letter-spacing: 0; position: relative; }
+.clip:hover { border-color: var(--muted); }
+.clip.playing { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.clip .cl { display: flex; justify-content: space-between; gap: 6px; font: 500 12px/1.2 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.clip .cl .lab { font: 600 13px/1.2 var(--font-display); color: var(--ink); letter-spacing: 0.03em; display: none; }
+.clip canvas { width: 100%; height: 38px; display: block; }
+.clip .flag { color: var(--mark); font-weight: 500; }
+
+/* Notes */
+.notes { display: grid; gap: 10px; }
+.notes-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.notes-empty { color: var(--muted); margin: 0; max-width: 68ch; }
+.note { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.note .where { font: 500 12.5px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; min-width: 0; }
+.note .where a { color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.note input { width: 100%; font: 14px var(--font-body); padding: 7px 9px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.copied { font-size: 13px; color: var(--muted); }
+.fine { font-size: 13px; color: var(--muted); max-width: 72ch; margin: 0; }
+
+@media (max-width: 860px) {
+  .row { grid-template-columns: repeat(min(3, var(--cols, 5)), minmax(0, 1fr)); }
+  .veh { grid-column: 1 / -1; }
+  .colhead { display: none; }
+  .clip .cl .lab { display: inline; }
+  .note { grid-template-columns: minmax(0, 1fr) auto; }
+  .note input { grid-column: 1 / -1; grid-row: 2; }
+}
+@media (max-width: 480px) { .row { grid-template-columns: repeat(2, minmax(0, 1fr)); } .scope { height: 96px; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Engine Sound Review</h1>
+    <p class="lede">Every engine rendered offline through the game's own <b>engine model and sound worklet</b>, warm and on its own fuel. Pick a clip to play it; the trace under the player shows the revs the engine was asked for. The numbered sections are the ones waiting on your ears, in the order of the questions in chat. Finished and parked work is folded away below them.</p>
+    <nav class="todo" aria-label="Listen to now"><h2>Listen to now</h2><ol id="todo"></ol></nav>
+  </header>
+
+  <section class="player" aria-label="Player">
+    <div class="p-top">
+      <div class="p-title"><div class="name" id="pName">Nothing playing</div><div class="sub" id="pSub">Pick a clip below</div></div>
+      <div class="readout" aria-live="off">
+        <span><b id="rT">0.0</b> s</span>
+        <span class="rpm"><b id="rRpm">0</b> rpm</span>
+        <span>throttle <b id="rThr">0.00</b></span>
+        <span>gear <b id="rGear">–</b></span>
+        <span>rough <b id="rRough">0.00</b></span>
+      </div>
+      <div class="btns">
+        <button class="primary" id="bPlay" type="button">Play</button>
+        <button id="bLoop" type="button" aria-pressed="false">Loop</button>
+        <button class="markbtn" id="bMark" type="button">Mark</button>
+      </div>
+    </div>
+    <div class="scope" id="scope"><canvas id="scopeCanvas"></canvas></div>
+    <div class="keys"><kbd>Space</kbd> play or pause · <kbd>M</kbd> mark this moment · <kbd>L</kbd> loop · <kbd>←</kbd><kbd>→</kbd> a second back or on · <kbd>↑</kbd><kbd>↓</kbd> the same clip on the vehicle above or below · <kbd>[</kbd><kbd>]</kbd> the clip before or after. Click the trace to jump.</div>
+  </section>
+
+  <div class="sections" id="sections"></div>
+
+  <details class="compare folded" id="asnow">
+    <summary><span class="status">Reference</span> Every vehicle as it is now in the game</summary>
+    <ul class="legend">
+      <li><b>Starting</b>Key on (three seconds of glow plugs on a diesel), the starter held until it catches, or a kick every 1.5 s on the kick-start bikes, then four seconds of tickover.</li>
+      <li><b>Idle</b>Six seconds of warm tickover at the middle of the vehicle's roughness range.</li>
+      <li><b>Rough idle</b>The same at the top of its range plus 0.3: a neglected one that badly wants a service.</li>
+      <li><b>Revving</b>Stood still: a small blip, a sharp full blip, then full throttle held for three seconds and let go.</li>
+      <li><b>Driving</b>Scripted, with no physics: pull away, change up through the gears (or the CVT's launch load), cruise, lift off in gear, clutch in and stop.</li>
+    </ul>
+    <div class="chips" id="chips" role="group" aria-label="Show"></div>
+    <section class="grid" id="grid" aria-label="Vehicles"></section>
+  </details>
+
+  <section class="notes" aria-label="Marked moments">
+    <div class="notes-head">
+      <h2>Marked moments</h2>
+      <div class="btns"><span class="copied" id="copied"></span><button id="bCopy" type="button">Copy notes</button><button id="bClear" type="button">Clear all</button></div>
+    </div>
+    <div id="notes"></div>
+    <p class="fine">Marks are kept in this browser only. Copy them and paste them back to Claude to have the problems looked at: each one names the vehicle, the clip, the time, and what the engine was doing then.</p>
+  </section>
+
+  <p class="fine" id="foot"></p>
+</div>
+
+<script>
+const CLIPS = [['start', 'Starting'], ['idle', 'Idle'], ['rough', 'Rough idle'], ['revs', 'Revving'], ['drive', 'Driving']];
+const ALL = /*DATA*/null;
+const DATA = ALL.vehicles;
+const SECTIONS = ALL.compare;
+const SETS = { main: { list: () => visible(), cols: CLIPS, title: 'As now' } };
+for (const sec of SECTIONS) {
+  SETS[sec.id] = { list: () => sec.rows, cols: sec.cols, title: sec.title };
+  for (const v of sec.rows) v.set = sec.id;
+}
+const setOf = (v) => v.set ?? 'main';
+const find = (set, id) => SETS[set]?.list().find((x) => x.id === id);
+const BUILT = '/*BUILT*/';
+const GROUPS = {
+  finch: 'Cars', griffin: 'Cars', vauclair: 'Cars',
+  tor: '4x4s, UTV and tractor', crag: '4x4s, UTV and tractor', yak: '4x4s, UTV and tractor', hartley: '4x4s, UTV and tractor',
+  farm300: 'Quads', bruin: 'Quads', hornet: 'Quads', rb300: 'Quads', adder: 'Quads', ursa: 'Quads',
+  asp: 'Bikes and small', tz65: 'Bikes and small', t185: 'Bikes and small', shepherd: 'Bikes and small', clipper: 'Bikes and small', plover: 'Bikes and small',
+};
+const LAT = 0.05; // the render schedules sound 50 ms after the model's frame
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+let marks = store.get('engineReview.marks', []);
+let group = store.get('engineReview.group', 'All');
+let current = null; // { v, key }
+const audio = new Audio();
+audio.preload = 'auto';
+
+function colors() {
+  const s = getComputedStyle(document.documentElement);
+  const c = (n) => s.getPropertyValue(n).trim();
+  return { ink: c('--ink'), muted: c('--muted'), line: c('--line'), accent: c('--accent'), trace: c('--trace'), throttle: c('--throttle'), mark: c('--mark'), panel: c('--panel') };
+}
+let C = colors();
+
+const yMax = (v) => Math.ceil(Math.max(v.maxRpm, ...Object.values(v.clips).flatMap((c) => c.trace.map((p) => p[1]))) / 1000) * 1000;
+
+function sizeCanvas(cv) {
+  const r = cv.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(r.width * dpr));
+  const h = Math.max(1, Math.round(r.height * dpr));
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  const g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { g, w: r.width, h: r.height };
+}
+
+function drawSpark(cv, v, key) {
+  const { g, w, h } = sizeCanvas(cv);
+  const clip = v.clips[key];
+  const top = yMax(v);
+  g.clearRect(0, 0, w, h);
+  const x = (t) => (t / clip.seconds) * w;
+  const y = (r) => h - 2 - (r / top) * (h - 4);
+  g.fillStyle = C.throttle;
+  g.globalAlpha = 0.55;
+  g.beginPath();
+  g.moveTo(0, h);
+  for (const p of clip.trace) g.lineTo(x(p[0]), h - p[2] * (h * 0.45));
+  g.lineTo(w, h);
+  g.fill();
+  g.globalAlpha = 1;
+  g.strokeStyle = C.trace;
+  g.lineWidth = 1.4;
+  g.beginPath();
+  clip.trace.forEach((p, i) => (i ? g.lineTo(x(p[0]), y(p[1])) : g.moveTo(x(p[0]), y(p[1]))));
+  g.stroke();
+  g.fillStyle = C.mark;
+  for (const m of marks) if ((m.set ?? 'main') === setOf(v) && m.id === v.id && m.key === key) g.fillRect(x(m.t) - 1, 0, 2, h);
+}
+
+function drawScope() {
+  const cv = $('scopeCanvas');
+  const { g, w, h } = sizeCanvas(cv);
+  g.clearRect(0, 0, w, h);
+  if (!current) {
+    g.fillStyle = C.muted;
+    g.font = '13px Barlow, system-ui, sans-serif';
+    g.fillText('The revs, throttle and gear of the clip you pick show here.', 12, h / 2);
+    return;
+  }
+  const { v, key } = current;
+  const clip = v.clips[key];
+  const top = yMax(v);
+  const L = 44, R = 8, T = 8, B = 18;
+  const pw = w - L - R, ph = h - T - B;
+  const x = (t) => L + (t / clip.seconds) * pw;
+  const y = (r) => T + ph - (r / top) * ph;
+  g.font = '11px "JetBrains Mono", ui-monospace, monospace';
+  g.textBaseline = 'middle';
+  const stepR = top > 8000 ? 2000 : 1000;
+  for (let r = 0; r <= top; r += stepR) {
+    g.strokeStyle = C.line; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(L, Math.round(y(r)) + 0.5); g.lineTo(w - R, Math.round(y(r)) + 0.5); g.stroke();
+    g.fillStyle = C.muted; g.textAlign = 'right';
+    g.fillText(r ? `${r / 1000}k` : '0', L - 6, y(r));
+  }
+  g.textAlign = 'center'; g.textBaseline = 'top';
+  const stepT = clip.seconds > 14 ? 2 : 1;
+  for (let t = 0; t <= clip.seconds; t += stepT) g.fillText(`${t}s`, x(t), T + ph + 4);
+  // idle line
+  g.setLineDash([3, 4]); g.strokeStyle = C.muted;
+  g.beginPath(); g.moveTo(L, y(v.idleRpm)); g.lineTo(w - R, y(v.idleRpm)); g.stroke(); g.setLineDash([]);
+  // throttle
+  g.fillStyle = C.throttle; g.globalAlpha = 0.5; g.beginPath(); g.moveTo(L, T + ph);
+  for (const p of clip.trace) g.lineTo(x(p[0]), T + ph - p[2] * ph * 0.5);
+  g.lineTo(x(clip.trace.at(-1)[0]), T + ph); g.fill(); g.globalAlpha = 1;
+  // gear changes
+  g.fillStyle = C.muted; g.textAlign = 'left'; g.textBaseline = 'top';
+  let lastGear = null;
+  for (const p of clip.trace) {
+    if (p[3] !== null && p[3] !== lastGear && p[3] > 0) g.fillText(`G${p[3]}`, x(p[0]) + 2, T + 1);
+    if (p[3] !== null) lastGear = p[3] || lastGear;
+  }
+  // rpm
+  g.strokeStyle = C.trace; g.lineWidth = 2; g.beginPath();
+  clip.trace.forEach((p, i) => (i ? g.lineTo(x(p[0]), y(p[1])) : g.moveTo(x(p[0]), y(p[1]))));
+  g.stroke();
+  // marks
+  g.fillStyle = C.mark;
+  for (const m of marks) if ((m.set ?? 'main') === setOf(v) && m.id === v.id && m.key === key) { g.fillRect(x(m.t) - 1, T, 2, ph); }
+  // playhead
+  const t = audio.currentTime || 0;
+  g.fillStyle = C.accent; g.fillRect(x(t) - 1, T - 4, 2, ph + 8);
+}
+
+function sampleAt(t) {
+  const tr = current.v.clips[current.key].trace;
+  const i = Math.max(0, Math.min(tr.length - 1, Math.floor(Math.max(0, t - LAT) * 20)));
+  return tr[i];
+}
+
+function readout() {
+  if (!current) return;
+  const t = audio.currentTime || 0;
+  const p = sampleAt(t);
+  $('rT').textContent = t.toFixed(1);
+  $('rRpm').textContent = String(p[1]);
+  $('rThr').textContent = p[2].toFixed(2);
+  $('rGear').textContent = p[3] === null ? '–' : p[3] === 0 ? 'N / clutch' : String(p[3]);
+  $('rRough').textContent = p[4].toFixed(2);
+}
+
+let raf = 0;
+function tick() { drawScope(); readout(); raf = audio.paused ? 0 : requestAnimationFrame(tick); }
+function kick() { if (!raf) raf = requestAnimationFrame(tick); }
+
+function select(v, key, play = true) {
+  const same = current && current.v === v && current.key === key;
+  current = { v, key };
+  if (!same) audio.src = `audio/${v.clips[key].file ?? `${v.id}-${key}`}.mp4`;
+  document.querySelectorAll('.clip.playing').forEach((e) => e.classList.remove('playing'));
+  document.querySelector(`.clip[data-set="${setOf(v)}"][data-id="${v.id}"][data-key="${key}"]`)?.classList.add('playing');
+  $('pName').textContent = `${v.name} · ${v.clips[key].label}`;
+  $('pSub').textContent = setOf(v) !== 'main' ? `${SETS[setOf(v)].title} · ${v.bank}${v.note ? ` · ${v.note}` : ''}` : `${v.bank} · ${v.gearbox} · idle ${v.idleRpm} rpm · roughness ${key === 'rough' ? v.roughness.rough : v.roughness.mid}`;
+  if (play) { if (same && !audio.paused) audio.pause(); else audio.play().catch(() => {}); }
+  drawScope(); readout();
+}
+
+audio.addEventListener('play', () => { $('bPlay').textContent = 'Pause'; kick(); });
+audio.addEventListener('pause', () => { $('bPlay').textContent = 'Play'; drawScope(); readout(); });
+audio.addEventListener('ended', () => { $('bPlay').textContent = 'Play'; drawScope(); });
+audio.addEventListener('seeked', () => { drawScope(); readout(); });
+
+$('bPlay').onclick = () => { if (!current) { const v = visible()[0]; if (v) select(v, 'idle'); return; } audio.paused ? audio.play().catch(() => {}) : audio.pause(); };
+$('bLoop').onclick = () => { audio.loop = !audio.loop; $('bLoop').setAttribute('aria-pressed', String(audio.loop)); };
+$('bMark').onclick = addMark;
+
+const scope = $('scope');
+function seekFrom(e) {
+  if (!current) return;
+  const r = scope.getBoundingClientRect();
+  const L = 44, R = 8;
+  const f = Math.min(1, Math.max(0, (e.clientX - r.left - L) / (r.width - L - R)));
+  audio.currentTime = f * current.v.clips[current.key].seconds;
+  drawScope(); readout();
+}
+let dragging = false;
+scope.addEventListener('pointerdown', (e) => { dragging = true; scope.setPointerCapture(e.pointerId); seekFrom(e); });
+scope.addEventListener('pointermove', (e) => dragging && seekFrom(e));
+scope.addEventListener('pointerup', () => (dragging = false));
+
+function visible() { return DATA.filter((v) => group === 'All' || GROUPS[v.id] === group); }
+
+function renderChips() {
+  const names = ['All', ...new Set(DATA.map((v) => GROUPS[v.id]))];
+  $('chips').innerHTML = '';
+  for (const n of names) {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.type = 'button'; b.textContent = n; b.setAttribute('aria-pressed', String(n === group));
+    b.onclick = () => { group = n; store.set('engineReview.group', n); renderChips(); renderGrid(); };
+    $('chips').append(b);
+  }
+}
+
+function renderGrid() {
+  renderInto($('grid'), 'main', visible(), CLIPS, 'Vehicle');
+  for (const sec of SECTIONS) renderInto($(`grid-${sec.id}`), sec.id, sec.rows, sec.cols, 'Vehicle');
+  requestAnimationFrame(drawSparks);
+}
+function renderInto(grid, set, list, cols, first) {
+  grid.innerHTML = '';
+  grid.style.setProperty('--cols', cols.length);
+  const head = document.createElement('div');
+  head.className = 'row colhead';
+  head.innerHTML = `<div>${first}</div>${cols.map(([, l]) => `<div>${l}</div>`).join('')}`;
+  grid.append(head);
+  for (const v of list) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const tags = set !== 'main' ? [] : [v.gearbox, v.diesel ? 'diesel' : 'petrol', v.kick ? 'kick start' : null].filter(Boolean);
+    const meta = set !== 'main' ? `${v.id} · ${v.bank}<br>${v.note || `idle ${v.idleRpm} · top ${v.maxRpm} rpm`}` : `${v.id} · ${v.bank}<br>idle ${v.idleRpm} · top ${v.maxRpm} rpm`;
+    row.innerHTML = `<div class="veh"><div class="name">${v.name}</div><div class="meta">${meta}</div><div class="tags">${tags.map((t) => `<span class="tag">${t}</span>`).join('')}</div></div>`;
+    for (const [key, label] of cols) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'clip'; b.dataset.set = set; b.dataset.id = v.id; b.dataset.key = key;
+      b.setAttribute('aria-label', `Play ${v.name}, ${label}`);
+      const n = marks.filter((m) => (m.set ?? 'main') === set && m.id === v.id && m.key === key).length;
+      b.innerHTML = `<div class="cl"><span class="lab">${label}</span><span>${v.clips[key].seconds.toFixed(1)} s</span>${n ? `<span class="flag">${n} marked</span>` : ''}</div><canvas></canvas>`;
+      b.onclick = () => select(v, key);
+      if (current && current.v === v && current.key === key) b.classList.add('playing');
+      row.append(b);
+    }
+    grid.append(row);
+  }
+}
+function drawSparks() {
+  document.querySelectorAll('.clip').forEach((b) => drawSpark(b.querySelector('canvas'), find(b.dataset.set, b.dataset.id), b.dataset.key));
+}
+
+function describe(m) {
+  const g = m.gear === null ? '' : m.gear === 0 ? ', clutch in' : `, gear ${m.gear}`;
+  return `${m.name}, ${m.set && m.set !== 'main' ? `${SETS[m.set]?.title ?? 'an older comparison'}: ` : ''}${m.label} at ${m.t.toFixed(1)} s (${m.rpm} rpm, throttle ${m.thr.toFixed(2)}${g}, roughness ${m.rough.toFixed(2)})`;
+}
+function addMark() {
+  if (!current) return;
+  const t = audio.currentTime || 0;
+  const p = sampleAt(t);
+  marks.push({ set: setOf(current.v), id: current.v.id, key: current.key, name: current.v.name, label: current.v.clips[current.key].label, t: +t.toFixed(2), rpm: p[1], thr: p[2], gear: p[3], rough: p[4], note: '' });
+  saveMarks(); renderNotes(); renderGrid(); drawScope();
+  requestAnimationFrame(() => document.querySelector('#notes .note:last-child input')?.focus({ preventScroll: true }));
+}
+function saveMarks() { store.set('engineReview.marks', marks); }
+function renderNotes() {
+  const box = $('notes');
+  box.innerHTML = '';
+  if (!marks.length) { box.innerHTML = '<p class="notes-empty">Nothing marked yet. While a clip plays, press Mark (or M) when it sounds wrong, then say what you heard.</p>'; return; }
+  marks.forEach((m, i) => {
+    const d = document.createElement('div');
+    d.className = 'note';
+    d.innerHTML = `<div class="where"><a>${m.name} · ${m.label} · ${m.t.toFixed(1)} s</a><br>${m.rpm} rpm · throttle ${m.thr.toFixed(2)}${m.gear === null ? '' : m.gear === 0 ? ' · clutch in' : ` · gear ${m.gear}`}</div><input id="note-${i}" type="text" placeholder="What does it sound like? (a click, a pitch jump, wrong engine…)"><button type="button">Remove</button>`;
+    const inp = d.querySelector('input');
+    inp.value = m.note;
+    inp.oninput = () => { m.note = inp.value; saveMarks(); };
+    inp.onkeydown = (e) => { if (e.key === 'Enter') inp.blur(); };
+    d.querySelector('a').onclick = () => { const v = find(m.set ?? 'main', m.id); if (!v?.clips[m.key]) return; select(v, m.key, false); audio.currentTime = Math.max(0, m.t - 1); audio.play().catch(() => {}); };
+    d.querySelector('button').onclick = () => { marks.splice(i, 1); saveMarks(); renderNotes(); renderGrid(); drawScope(); };
+    box.append(d);
+  });
+}
+$('bCopy').onclick = async () => {
+  const text = `Engine sound review (render of ${BUILT}):\n` + (marks.length ? marks.map((m) => `- ${describe(m)}: ${m.note || '(no note)'}`).join('\n') : '- nothing marked');
+  try { await navigator.clipboard.writeText(text); $('copied').textContent = `Copied ${marks.length} ${marks.length === 1 ? 'note' : 'notes'}`; }
+  catch {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.width = '100%'; ta.rows = Math.min(12, marks.length + 2);
+    $('notes').append(ta); ta.select(); $('copied').textContent = 'Select and copy the text below';
+  }
+};
+let clearArmed = false;
+$('bClear').onclick = () => {
+  if (!marks.length) return;
+  if (!clearArmed) { clearArmed = true; $('bClear').textContent = 'Clear all?'; setTimeout(() => { clearArmed = false; $('bClear').textContent = 'Clear all'; }, 3000); return; }
+  marks = []; saveMarks(); renderNotes(); renderGrid(); drawScope(); clearArmed = false; $('bClear').textContent = 'Clear all';
+};
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === ' ') { e.preventDefault(); $('bPlay').click(); }
+  else if (e.key === 'm' || e.key === 'M') addMark();
+  else if (e.key === 'l' || e.key === 'L') $('bLoop').click();
+  else if (!current) return;
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); audio.currentTime = Math.max(0, audio.currentTime - 1); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); audio.currentTime = Math.min(current.v.clips[current.key].seconds - 0.05, audio.currentTime + 1); }
+  else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    const list = SETS[setOf(current.v)].list(); const i = list.indexOf(current.v); const n = list[i + (e.key === 'ArrowUp' ? -1 : 1)];
+    if (n) { select(n, current.key, false); audio.play().catch(() => {}); document.querySelector('.clip.playing')?.scrollIntoView({ block: 'nearest' }); }
+  } else if (e.key === '[' || e.key === ']') {
+    const cols = SETS[setOf(current.v)].cols; const i = cols.findIndex(([k]) => k === current.key); const n = cols[i + (e.key === '[' ? -1 : 1)];
+    if (n) { select(current.v, n[0], false); audio.play().catch(() => {}); }
+  }
+});
+
+function retheme() { C = colors(); drawSparks(); drawScope(); }
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retheme);
+new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+let rs = 0;
+addEventListener('resize', () => { cancelAnimationFrame(rs); rs = requestAnimationFrame(() => { drawSparks(); drawScope(); }); });
+
+$('foot').textContent = `Rendered ${BUILT} with tools/engine-review/render.mjs at 48 kHz, played here as 128 kbps AAC. The drive is a script without the physics, so a fault heard only there could be the script's rather than the game's: try the same moment in the game before chasing it.`;
+// Sections waiting on Jamie's ears are numbered as in chat and listed at the top; done and parked ones fold away.
+const folded = [];
+for (const sec of SECTIONS) {
+  const listen = sec.status === 'listen';
+  const el = document.createElement(listen ? 'section' : 'details');
+  el.className = listen ? 'compare' : 'compare folded';
+  el.id = sec.id;
+  el.setAttribute('aria-label', sec.title);
+  el.innerHTML = listen
+    ? `<div class="sec-head"><span class="num">${sec.n}</span><h2></h2></div><p class="question"></p><p class="lede"></p><div class="grid" id="grid-${sec.id}"></div>`
+    : `<summary><span class="status">${sec.status === 'done' ? 'Done' : 'Parked'}</span> <span class="t"></span></summary><p class="lede"></p><div class="grid" id="grid-${sec.id}"></div>`;
+  el.querySelector(listen ? 'h2' : '.t').textContent = sec.title;
+  if (listen) el.querySelector('.question').textContent = sec.question;
+  el.querySelector('.lede').textContent = sec.intro;
+  (listen ? $('sections') : (folded.push(el), null))?.append(el);
+  if (listen) {
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="#${sec.id}"></a> <span class="q"></span>`;
+    li.querySelector('a').textContent = sec.title;
+    li.querySelector('.q').textContent = sec.question;
+    $('todo').append(li);
+  }
+}
+for (const el of folded) $('asnow').before(el);
+// A folded section's canvases have no size until it opens.
+document.querySelectorAll('details').forEach((d) => d.addEventListener('toggle', () => requestAnimationFrame(drawSparks)));
+renderChips(); renderGrid(); renderNotes(); drawScope();
+document.fonts?.ready.then(() => { drawSparks(); drawScope(); });
+</script>

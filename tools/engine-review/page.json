@@ -1,0 +1,27 @@
+[
+  {
+    "id": "q1", "n": 1, "status": "listen", "from": "calibrated", "rows": ["griffin", "finch"],
+    "title": "The Griffin's ticking",
+    "question": "Is the ticking under the Griffin gone, or at least acceptable? (The Finch is there to compare.)",
+    "intro": "Two causes found and mended. Each recorded cycle was cut into its four firings at exactly even points, which on the Carlton recording land right at each bang, so every firing started abruptly: the cuts now go at the quietest moment near each even point (and keep the recording's own spacing). And the Griffin was set the loudest of any vehicle, so its boomiest firings drove the output's soft clipper, a tick each: it is 3 dB lower now, about the Finch's level. Some ticking is left between 2,000 and 3,000 rpm that comes from the Carlton recording itself, less than the game has now; that recording is due to be replaced with a CC0 one anyway."
+  },
+  {
+    "id": "q2", "n": 2, "status": "listen", "from": "top", "rows": ["farm300", "rb300", "tz65", "adder", "finch", "griffin", "crag"],
+    "cols": ["fit-ladder", "short-ladder", "burst-ladder", "short-revs", "burst-revs"],
+    "title": "The top of the revs: your pick against the physics",
+    "question": "Does \"burst fits the gap\" work as well as the half-way version you picked, or better?",
+    "intro": "Shorter pulses at the top is the one you picked: from half the top revs up, each firing's pulse shortens while the pipe's resonances stay put. Burst fits the gap is what the physics says, with nothing to tune: below the revs where firings start running into each other, each one plays as recorded; above them, its burst shortens just enough to fit the gap before the next, with the resonances kept. That point comes from each recording: 53% of the top on the Farm 300 (why half way suited it), 75% on the RB300, about 30% on the two-strokes, about 25% on the cars and the Crag. Listen for ticking on the Griffin and the TZ65: both shortened versions measure more of it there."
+  },
+  {
+    "id": "done-diesels", "status": "done", "from": "calibrated", "rows": ["yak", "crag", "vauclair", "tor"],
+    "title": "The diesels and the Tor",
+    "intro": "You approved these. The diesels: each recorded cycle cut into its firings, the engine firing that many times a cycle, nothing else. The Tor: its own settings with the fitted steadiness. Re-rendered since with the quieter cut points (the Griffin's fix); by the numbers no worse, but say if they sound different."
+  },
+  {
+    "id": "done-singles", "status": "done", "from": "calibrated", "rows": ["farm300", "rb300", "tz65", "adder"],
+    "title": "Quads and bikes, fitted",
+    "intro": "You said these work very well: revs consistent and everything correct. Each is built from its idle, with how alike one firing is to the next fitted to real rev recordings of its type."
+  },
+  { "id": "done-whine", "status": "done", "from": "whine", "title": "The T185's whine" },
+  { "id": "parked-voices", "status": "parked", "from": "voices", "title": "Five machines, one recording" }
+]
