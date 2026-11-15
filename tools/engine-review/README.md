@@ -52,6 +52,11 @@ WORKLET=tools/engine-review/prototype/engineWorklet.js
 The types are the keys of `prototype/calibrated.json`: `four-stroke single`, `two-stroke single`, `petrol four`, `diesel, several
 cylinders`, and the Finch and the Griffin on their own engines' revs.
 
+`prototype/calibrated.json` is the set of values to port. `calibrate.mjs` run today with its click guard picks steady 0.3 for `four-stroke
+single` and prints 0.2 as the best without the guard; **0.2 is the value to port**, as Jamie heard and passed it, and the guard's count
+catches only steep low-frequency steps (`docs/decisions/sound.md`, "The engine review (#851)"). `STEADY_ONLY=1` shows the same picks and
+writes nothing, so it is the safe way to re-run it: a plain run rewrites `.scratch/engine-review/calibrated.json`.
+
 ## The review page
 
 `sections.mjs` renders the comparison sections (each a set of vehicles by settings and script) through the prototype worklet into
