@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { coolingEffect, leakRate, stepPuddle, steamLevel, boilsOver, levelText, pickLeak } from '../src/engine/coolant.js';
-import { heatTarget, gaugeHeat } from '../src/engine/heat.js';
+import { gaugeHeat } from '../src/engine/heat.js';
+import { stepThermal } from '../src/engine/thermal.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 import { createRandom } from '../src/core/random.js';
 import { AMY_COOLANT_LINES, JESS_COOLANT_LINES } from '../src/npc/coolantLines.js';
@@ -92,9 +93,13 @@ describe('the coolant level', () => {
 
 describe('what a low radiator does to the heat', () => {
   it('lets an engine heat like an air-cooled one, and shows it on the gauge', () => {
-    const idling = { ambient: 1, work: 0.1, speed: 0, fan: false };
-    expect(heatTarget({ ...idling, coolant: 0 }, P)).toBeGreaterThan(heatTarget({ ...idling, coolant: 1 }, P));
-    expect(heatTarget({ ...idling, fan: true, coolant: 0 }, P)).toBe(heatTarget({ ...idling, coolant: 0 }, P)); // no fan help
+    const idle = (radiator, fan) => {
+      const s = { metalC: 88, coolantC: 88, fan };
+      for (let t = 0; t < 600; t++) stepThermal(s, 1, { running: true, air: 12, ambient: 1, radiator }, { ...P, fanOnC: fan ? 0 : P.fanOnC, fanOffC: fan ? -1 : P.fanOffC });
+      return s.coolantC;
+    };
+    expect(idle(0, false)).toBeGreaterThan(idle(1, false) + 10);
+    expect(idle(0, true)).toBeCloseTo(idle(0, false), 5); // no fan help with no radiator
     expect(gaugeHeat(0, 0.8, P, 0)).toBeGreaterThan(gaugeHeat(0, 0.8, P, 1));
     expect(gaugeHeat(0, 0.8, P, 0)).toBeCloseTo(0.8);
   });

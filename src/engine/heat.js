@@ -3,7 +3,8 @@
 // Apart from the warm-up (temperature, 0 cold to 1 warm), an engine can run on into being too hot. The
 // air-cooled ones get there idling for ages on a sunny day, or crawling in mud with the throttle open, and
 // start pinking and running rough; riding along at speed blows it away. The water-cooled one has a fan that
-// cuts in and out and never gets that far. Separately, `soak` is how much heat the metal's holding after
+// cuts in and out and never gets that far. Both come from the engine's real temperatures (thermal.js); this
+// file reads the 0..1 heat they give. Separately, `soak` is how much heat the metal's holding after
 // work, whatever the airflow: switched off it ticks as it cools, and a hot carburettor percolates, so a
 // hot engine starts rich until the heat's gone.
 
@@ -12,30 +13,6 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 /** Fraction of full airflow for a ground speed (m/s). */
 export function airflow(speed, p) {
   return clamp01(Math.abs(speed) / Math.max(0.1, p.airflowSpeed));
-}
-
-/** The heat it's heading for: the sun and its work, less what the air (and the fan) carries off. 0..1. */
-export function heatTarget({ ambient, work, speed, fan, coolant = 1, bore = 0 }, p) {
-  // Low on coolant, the radiator does less: the water-cooled engine feels more of the load and the fan carries off less.
-  const scale = p.waterCooled ? 1 + (p.heatWaterScale - 1) * coolant : 1;
-  const load = (p.heatSun * clamp01(ambient) + p.heatWork * clamp01(work) * (1 + (p.boreHeat ?? 0) * bore)) * scale; // a big bore makes more heat working
-  // The radiator does the cooling, wind and fan alike: low on coolant or with a thermostat stuck shut, it does less of both.
-  const cooling = p.waterCooled ? coolant * (p.heatAirCool * airflow(speed, p) + (fan ? p.fanCooling : 0)) : p.heatAirCool * airflow(speed, p);
-  return clamp01(load - cooling);
-}
-
-/**
- * One step of running heat. state is { heat, fan }; the fan (water-cooled only) cuts in above fanOnAt and out
- * below fanOffAt. Off, the engine just sheds its heat.
- */
-export function stepHeat(state, h, { running, ambient, work, speed, coolant = 1, bore = 0 }, p) {
-  if (p.waterCooled && running) {
-    if (state.heat > p.fanOnAt) state.fan = true;
-    else if (state.heat < p.fanOffAt) state.fan = false;
-  } else state.fan = false;
-  const target = running ? heatTarget({ ambient, work, speed, fan: state.fan, coolant, bore }, p) : 0;
-  const seconds = target > state.heat ? p.heatRiseSeconds : p.heatFallSeconds;
-  state.heat = clamp01(state.heat + ((target - state.heat) * h) / Math.max(1, seconds));
 }
 
 /** How badly it's pinking, 0..1 (an air-cooled engine only: the water-cooled one's heat never builds that far). */

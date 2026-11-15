@@ -16,7 +16,7 @@ import { followThrottle, isSnap, spitChance } from './spitBack.js';
 import { stepWater, waterCatchFactor } from './water.js';
 import { stepDieselSoak, dieselCatchFactor, contaminant } from './diesel.js';
 import { stepGlow, glowReady, compressionCatchFactor } from './compression.js';
-import { offTemperature } from '../world/barn.js';
+import { stepThermal, warmth, metalForWarmth, heatLevel, celsiusForHeat, thermostatOpen } from './thermal.js';
 import { runInWearFactor, startRunningIn, stepRunningIn } from './runningIn.js';
 import { boreWearFactor, borePowerFactor } from './bigBore.js';
 import { netCharge, lowBatteryStallRate } from './charging.js';
@@ -24,7 +24,7 @@ import { jetError, leanStarve, jetTrue, jetMixture } from './jetting.js';
 import { airCharge, airPowerFactor, airMixture } from './airDensity.js';
 import { coolingEffect, radiatorEffect, thermostatSticks, hotLevel, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
 import { slapLevel, slapCarry, loosen } from './pistonSlap.js';
-import { stepHeat, stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
+import { stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
 export const EngineState = Object.freeze({
   OFF: 'off',
@@ -60,7 +60,10 @@ export class EngineModel {
 
     this.state = EngineState.OFF;
     this.rpm = 0;
-    this.temperature = clamp(this.params.initialTemperature, 0, 1);
+    this.dayTemp = 12; // the day's temperature in degrees C: the air the engine's own temperatures follow, and what a two-stroke's jet is matched against
+    this.metalC = this.dayTemp; // the metal's temperature in degrees C (see thermal.js); `temperature` is worked out from it
+    this.coolantC = this.dayTemp; // a water-cooled engine's coolant in degrees C (an air-cooled one's follows the metal); `heat` is worked out from it
+    this.temperature = this.params.initialTemperature;
     this.fouling = 0;
     this.startBlocked = false; // won't catch however it's cranked (the barn find, until its jobs are done)
 
@@ -107,7 +110,6 @@ export class EngineModel {
     this.runIn = 0; // 0..1 how much running in a rebuilt engine still wants (see runningIn.js); 0 once it's run in
     this.scar = 0; // 0..1 roughness left for good by thrashing it while it was running in: a service doesn't clear it
     this.seized = false; // locked solid: nothing turns it until it's stripped down
-    this.heat = 0; // 0..1 running too hot (see heat.js)
     this.fan = false; // the radiator fan's on (water-cooled only)
     this.coolant = 1; // water-cooled only: 1 full, 0 dry (see coolant.js); the game sets it and the leak
     this.coolantLeak = 0; // this game's leak, as a multiple of the usual rate; 0 for none
@@ -121,7 +123,6 @@ export class EngineModel {
     this.soak = 0; // 0..1 heat held in the metal after work; ticks as it cools, and a hot carb starts rich
     this.speed = 0; // ground speed in m/s, for the airflow
     this.ambient = 0.5; // 0..1 how warm a day it is
-    this.dayTemp = 12; // the day's temperature in degrees C: what a two-stroke's jet is matched against
     this.dayDamp = this.params.airRefDamp; // 0..1 how damp the day's air is (thins it)
     this.air = 0; // how much denser than the reference day the air is (airDensity.js)
     this.jetErr = 0; // two-strokes: fitted jet size less the right one for the day, negative lean (see jetting.js)
@@ -276,7 +277,7 @@ export class EngineModel {
     this.keyOff = false;
     this.keyPulled = false;
     this.state = EngineState.RUNNING;
-    this.temperature = clamp(temperature, 0, 1);
+    this.temperature = temperature;
     this.rpm = this.params.idleRpmWarm;
     this.caughtBy = 'starter';
   }
@@ -285,8 +286,39 @@ export class EngineModel {
     this.setIgnition(!this.ignitionOn);
   }
 
+  /** Warm-up, 0 (the air's temperature) to 1 (warm): the metal's °C worked out against the day's air and the engine's warm temperature. */
+  get temperature() {
+    return warmth(this.metalC, this.dayTemp, this.params);
+  }
+
+  /** Sets the metal (and a water-cooled engine's coolant) to the °C that gives this warm-up. */
+  set temperature(t) {
+    const p = this.params;
+    this.metalC = metalForWarmth(t, this.dayTemp, p);
+    this.coolantC = p.waterCooled ? this.dayTemp + clamp(t, 0, 1) * (p.coolantWarmC - this.dayTemp) : this.metalC;
+  }
+
+  /** 0..1 how far over its warm temperature it runs: the coolant's °C on a water-cooled engine, the metal's on an air-cooled one (see thermal.js). */
+  get heat() {
+    return heatLevel(this.metalC, this.coolantC, this.params);
+  }
+
+  /** Sets the °C to match a heat; 0 only cools it down to warm, never warms a cold engine. */
+  set heat(v) {
+    const p = this.params;
+    const c = celsiusForHeat(v, p);
+    if (p.waterCooled) this.coolantC = v > 0 ? c : Math.min(this.coolantC, c);
+    else this.metalC = v > 0 ? c : Math.min(this.metalC, c);
+    this.coolantC = p.waterCooled ? this.coolantC : this.metalC;
+  }
+
   setTemperature(t) {
-    this.temperature = clamp(t, 0, 1);
+    this.temperature = t;
+  }
+
+  /** Whether the thermostat is open (water-cooled): it lets the coolant through to the radiator once the coolant is warm. */
+  get thermostatOpen() {
+    return this.params.waterCooled ? thermostatOpen(this.coolantC, this.params) : 0;
   }
 
   /**
@@ -548,11 +580,14 @@ export class EngineModel {
 
   updateTemperature(h) {
     const p = this.params;
-    if (this.state === EngineState.RUNNING) {
-      // Heat follows how hard it's working: revs, and more again pulling under load.
-      const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
-      const work = 1 + p.warmUpRpmBoost * rpmNorm + p.warmUpLoadBoost * this.driveLoad * this.throttle + (p.manualTiming ? p.heatPerError * retardHeat(this.timingErr) : 0);
-      this.temperature += (h / (p.warmUpSeconds * (1 + p.chillWarmUp * this.chill))) * work;
+    const running = this.state === EngineState.RUNNING;
+    const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
+    // The metal and the coolant follow how hard it's working (revs, and more again pulling under load), the sun and the wind, in degrees.
+    stepThermal(this, h, {
+      running, air: this.dayTemp, sheltered: this.sheltered, ambient: this.ambient, rpmNorm, load: this.driveLoad * this.throttle, speed: this.speed, bore: this.bore,
+      extra: p.manualTiming ? p.heatPerError * retardHeat(this.timingErr) : 0, radiator: p.waterCooled ? this.radiator : 1,
+    }, p);
+    if (running) {
       // And it wears: plug, filter and carb slowly go off, faster when it's worked hard.
       // Revving it hard before it's warm is the worst of it.
       const coldThrash = clamp(1 - this.temperature / p.wearColdBelow, 0, 1) * rpmNorm;
@@ -567,10 +602,7 @@ export class EngineModel {
       );
       this.pistonWear = loosen(this.pistonWear, this.wear - wasWear, p.wearMax);
       stepRunningIn(this, h, rpmNorm, p);
-    } else {
-      this.temperature = offTemperature(this.temperature, h, p.coolDownSeconds, this.sheltered, { warmFloor: p.barnWarmFloor, coolFactor: p.barnCoolFactor });
     }
-    this.temperature = clamp(this.temperature, 0, 1);
   }
 
   /** Overrun-pop propensity added by a retarded spark (runOn.js reads it). */
@@ -590,7 +622,6 @@ export class EngineModel {
     const p = this.params;
     const running = this.state === EngineState.RUNNING;
     if (p.waterCooled) this.updateCoolant(h, running);
-    stepHeat(this, h, { running, ambient: this.ambient, work: this.work, speed: this.speed, coolant: p.waterCooled ? this.radiator : 1, bore: this.bore }, p);
     this.soak = stepSoak(this.soak, h, { running, work: this.work, heat: this.heat }, p);
     if (p.waterCooled) this.updateHot(h, running);
     this.pink = running && !p.waterCooled && !p.compressionIgnition ? pinkLevel(this.heat, p) : 0;

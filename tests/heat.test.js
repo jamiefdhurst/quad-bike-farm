@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
-import { hotSteam, heatTarget, pinkLevel, gaugeHeat, stepSoak, coolTickRate, hotStartRich, airflow, condensation } from '../src/engine/heat.js';
+import { hotSteam, pinkLevel, gaugeHeat, stepSoak, coolTickRate, hotStartRich, airflow, condensation } from '../src/engine/heat.js';
+import { heatLevel, metalTarget, fuelHeat, finCooling } from '../src/engine/thermal.js';
 import { Weather, WEATHER_KINDS } from '../src/world/weather.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 import { tempGaugeFraction, HOT_FROM } from '../src/vehicle/tempGauge.js';
@@ -29,9 +30,11 @@ function run(e, seconds, controls) {
 
 describe('running heat', () => {
   it('builds idling in full sun, but not on a dull day or riding along', () => {
-    expect(heatTarget({ ambient: 1, work: 0.1, speed: 0, fan: false }, P)).toBeGreaterThan(P.pinkFrom);
-    expect(heatTarget({ ambient: 0.3, work: 0.1, speed: 0, fan: false }, P)).toBeLessThan(P.pinkFrom);
-    expect(heatTarget({ ambient: 1, work: 1, speed: P.airflowSpeed, fan: false }, P)).toBeLessThan(0.1);
+    // The heat an air-cooled engine settles at (the metal's target, as a 0..1 heat).
+    const settles = ({ ambient, rpmNorm = 0.1, load = 0, speed = 0 }) => heatLevel(metalTarget({ air: 12, ambient, fuel: fuelHeat({ rpmNorm, load }, P), cooling: finCooling({ rpmNorm, speed }, P) }, P), 0, P);
+    expect(settles({ ambient: 1 })).toBeGreaterThan(P.pinkFrom);
+    expect(settles({ ambient: 0.3 })).toBeLessThan(P.pinkFrom);
+    expect(settles({ ambient: 1, rpmNorm: 0.6, speed: P.airflowSpeed })).toBeLessThan(0.1);
     expect(airflow(-P.airflowSpeed * 2, P)).toBe(1);
   });
 
