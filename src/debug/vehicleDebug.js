@@ -172,6 +172,11 @@ export function engineReadouts(engine, { manual = false } = {}) {
   list.push({ key: 'runOn', label: 'running on after switching off (firings left)', get: (e) => (e.keyOff || e.keyPulled ? e.runOnLeft : 0) });
   if (e0(engine).bore) list.push({ key: 'bigBore', label: 'big-bore kit fitted well (1 is right)', get: (e) => e.boreFit });
   if (p.strokes === 2) list.push({ key: 'silencerOff', label: 'silencer off (toolbox job)', get: (e) => (e.silencerOff ? 'yes' : 'no') });
+  list.push({ key: 'metalC', label: "the metal's temperature (°C; warm is the engine's warm temperature)", get: (e) => Math.round(e.metalC) });
+  if (p.waterCooled) {
+    list.push({ key: 'coolantC', label: "the coolant's temperature (°C)", get: (e) => Math.round(e.coolantC) });
+    list.push({ key: 'thermostatOpen', label: 'thermostat open (0 shut, 1 wide open)', get: (e) => e.thermostatOpen });
+  }
   list.push({ key: 'overheating', label: 'overheating', get: (e) => e.heat });
   if (!p.waterCooled && !diesel) list.push({ key: 'pinking', label: 'pinking (heat too high, loses power)', get: (e) => e.pink });
   list.push({ key: 'condensing', label: 'vapour and drips from a cold exhaust in cold air', get: (e) => condensation({ running: e.isRunning, temperature: e.temperature, dayTemp: e.dayTemp }, e.params) });

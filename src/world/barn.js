@@ -159,11 +159,12 @@ export function floorBlend(layout, x, z, reach = 2.5) {
 }
 
 /**
- * How a switched-off engine's temperature moves in a step: it cools toward stone cold (or, in the barn, only down to `warmFloor`,
- * and `coolFactor` times slower; both are the engine's `barnWarmFloor` and `barnCoolFactor`), so a quad left under cover starts better on a cold morning. It never warms up by itself.
+ * How a switched-off engine's temperature moves in a step: it cools toward the open air (`openFloor`, 0 if not given), or, in the barn, only down to
+ * `warmFloor` and `coolFactor` times slower (the engine's `barnWarmC` above the air and `barnCoolFactor`), so a quad left under cover starts better on a
+ * cold morning. It never warms up by itself.
  */
 export function offTemperature(temperature, h, coolDownSeconds, sheltered, p) {
-  const floor = sheltered ? p.warmFloor : 0;
+  const floor = sheltered ? p.warmFloor : (p.openFloor ?? 0); // (the air's own temperature, when it's in degrees)
   if (temperature <= floor) return temperature;
   const tau = Math.max(1, coolDownSeconds) * (sheltered ? p.coolFactor : 1);
   return temperature + ((floor - temperature) * h) / tau;

@@ -39,7 +39,6 @@ export const DEFAULT_ENGINE_PARAMS = {
   batteryChargeRate: 0.0017, // gained per second at full alternator output (flat to full in about 10 minutes revved; slower at idle, see charging.js)
   chillChoke: 0.5, // extra choke a cold engine needs on the coldest day (times 1 + this), see Weather.chill
   chillChokeFlow: 0.9, // share of that extra the choke can deliver, so full choke still starts a frozen engine (1 = as easily as a mild cold one)
-  chillWarmUp: 0.6, // longer a cold engine takes to warm up on the coldest day (times 1 + this)
   chillBattery: 1, // faster the battery drains (ignition and starter) on the coldest day (times 1 + this)
   chillGlow: 0.5, // longer the glow plugs take on the coldest day (times 1 + this)
   batteryWeakBelow: 0.6, // below this the starter turns slower
@@ -81,12 +80,19 @@ export const DEFAULT_ENGINE_PARAMS = {
   lugStallGain: 3, // dragged past idle, the revs fall this many idles per unit of lugging beyond 1
   lugRoughness: 0.35, // extra roughness per unit of lugging when stone cold, fading as it warms
 
-  // Temperature (0 = stone cold, 1 = fully warm)
-  warmUpSeconds: 150, // running at idle from cold to fully warm
-  warmUpRpmBoost: 2.0, // extra warming at high rpm (fraction of the base rate): flat out it warms about three times as fast as at idle
-  warmUpLoadBoost: 1.5, // and more again pulling hard under load (climbing, mud, pulling away)
-  coolDownSeconds: 900, // exponential time constant when off
-  barnWarmFloor: 0.25, // temperature (0..1) a switched-off engine only cools down to in the barn (it never warms up by itself)
+  // Temperature in degrees C (see thermal.js): the metal's, and a water-cooled engine's coolant. 0 to 1 `temperature` and `heat` are worked out from them.
+  warmUpSeconds: 150, // the metal's time to warm: idling from cold to warm at 12 °C takes about this long, and it sets how fast the metal heats and cools
+  warmC: 70, // the metal's temperature (°C) when it is warm: `temperature` 1, and `heat` 0 on an air-cooled engine
+  heatSpanC: 100, // °C over warm at which an air-cooled engine's `heat` is 1
+  idleRiseC: 64, // °C the metal runs over the air idling with no sun in still air (flat out it makes more, and the fins and wind shed more)
+  sunRiseC: 60, // °C more over the air in a full-sun day (`ambient` 1)
+  fuelRevBoost: 1.25, // extra heat from the fuel at full revs, as a share of what idling makes
+  fuelLoadBoost: 0.4, // and more again pulling hard under load (climbing, mud, pulling away)
+  finRevCooling: 0.5, // extra cooling from the flywheel's fan at full revs, as a share of what the fins shed still
+  windCooling: 1.5, // and from full airflow (about airflowSpeed on the ground)
+  coolOffSeconds: 900, // exponential time constant of the metal and coolant cooling towards the air when off
+  hotOffSeconds: 90, // and of the part over its warm temperature, which sheds that much quicker
+  barnWarmC: 15, // °C over the air that a switched-off engine only cools down to in the barn (it never warms up by itself)
   barnCoolFactor: 2.5, // how many times slower it cools in the barn, out of the wind and rain
   warmLightThreshold: 0.65, // dash cold light goes out above this
 
@@ -271,16 +277,22 @@ export const DEFAULT_ENGINE_PARAMS = {
 
   // Heat (see heat.js). Running heat is 0..1 above a normal warm engine; soak is the heat held in the metal.
   waterCooled: false, // a radiator and a fan: the heat stays low and the fan cuts in and out
-  heatSun: 0.75, // heat load of a full-sun day
-  heatWork: 0.5, // heat load of working flat out
-  heatAirCool: 1.2, // heat carried off by full airflow, which needs about airflowSpeed
+  coolantWarmC: 88, // a water-cooled engine's coolant (°C) when it is warm: `heat` 0
+  coolantSpanC: 40, // °C over that at which its `heat` is 1 (about 128 °C)
+  warmRiseC: 60, // °C of coolant the idling fuel heats it by over `warmUpSeconds` (the thermostat holds the radiator shut until it is warm)
+  coolantWork: 0.5, // how much of the fuel's extra heat from working goes into the coolant (the rest goes out of the exhaust)
+  waterSun: 0.6, // extra heat into the coolant in a full-sun day, as a share
+  thermostatOpenC: 82, // the thermostat starts to open at this coolant temperature (°C)
+  thermostatSpanC: 10, // and is open this much (°C) above it
+  fanOnC: 96, // the radiator fan cuts in above this coolant temperature (°C)
+  fanOffC: 91, // and out below this
+  radiatorLoss: 0.3, // the radiator, thermostat open and still air: the coolant's °C over the air it sheds, per `warmUpSeconds` (so a big engine has a big radiator)
+  radiatorWind: 1.2, // times as much with full airflow
+  radiatorFan: 5, // and with the fan on, again
+  bodyLoss: 0.8, // what the block and hoses shed the same way whatever the thermostat does (it is all there is with a stuck one)
+  metalOverC: 6, // °C the metal runs over the coolant idling (more working)
+  metalFollowSeconds: 20, // how quickly the metal follows the coolant
   airflowSpeed: 8, // ground speed in m/s that gives full airflow
-  heatRiseSeconds: 240, // time constant of heating up (an air-cooled engine idling in full sun is pinking in about four minutes)
-  heatFallSeconds: 90, // and of cooling down
-  heatWaterScale: 0.6, // the water-cooled engine feels this much of the load
-  fanOnAt: 0.28, // the radiator fan cuts in above this heat
-  fanOffAt: 0.12, // and out below this
-  fanCooling: 0.7, // heat carried off by the fan
   pinkFrom: 0.45, // pinking starts at this heat
   pinkRoughness: 0.3, // roughness at full pinking
   pinkPowerLoss: 0.25, // power lost at full pinking
@@ -419,7 +431,6 @@ export const ENGINE_PARAM_RANGES = {
   batteryCrankDrain: [0, 0.1, 0.0005],
   chillChoke: [0, 2, 0.05],
   chillChokeFlow: [0, 1, 0.05],
-  chillWarmUp: [0, 3, 0.05],
   chillBattery: [0, 4, 0.05],
   chillGlow: [0, 3, 0.05],
   batteryChargeRate: [0, 0.02, 0.0001],
@@ -460,10 +471,17 @@ export const ENGINE_PARAM_RANGES = {
   lugStallGain: [0, 10, 0.1],
   lugRoughness: [0, 1, 0.01],
   warmUpSeconds: [10, 600, 5],
-  warmUpRpmBoost: [0, 6, 0.05],
-  warmUpLoadBoost: [0, 6, 0.05],
-  coolDownSeconds: [30, 3600, 10],
-  barnWarmFloor: [0, 0.8, 0.01],
+  warmC: [30, 120, 1],
+  heatSpanC: [10, 200, 1],
+  idleRiseC: [10, 150, 1],
+  sunRiseC: [0, 150, 1],
+  fuelRevBoost: [0, 6, 0.05],
+  fuelLoadBoost: [0, 6, 0.05],
+  finRevCooling: [0, 4, 0.05],
+  windCooling: [0, 4, 0.05],
+  coolOffSeconds: [30, 3600, 10],
+  hotOffSeconds: [10, 900, 5],
+  barnWarmC: [0, 40, 1],
   barnCoolFactor: [1, 8, 0.1],
   warmLightThreshold: [0, 1, 0.01],
   coldEnrichmentNeed: [0, 2, 0.01],
@@ -614,16 +632,22 @@ export const ENGINE_PARAM_RANGES = {
   carbIcePowerLoss: [0, 1, 0.01],
   clogPowerLoss: [0, 1, 0.01],
   waterCooled: [0, 1, 1],
-  heatSun: [0, 2, 0.01],
-  heatWork: [0, 2, 0.01],
-  heatAirCool: [0, 3, 0.05],
+  coolantWarmC: [50, 120, 1],
+  coolantSpanC: [10, 100, 1],
+  warmRiseC: [10, 150, 1],
+  coolantWork: [0, 1, 0.05],
+  waterSun: [0, 2, 0.05],
+  thermostatOpenC: [40, 110, 1],
+  thermostatSpanC: [1, 40, 1],
+  fanOnC: [50, 130, 1],
+  fanOffC: [40, 120, 1],
+  radiatorLoss: [0.05, 5, 0.01],
+  radiatorWind: [0, 4, 0.05],
+  radiatorFan: [0, 8, 0.1],
+  bodyLoss: [0, 3, 0.01],
+  metalOverC: [0, 40, 1],
+  metalFollowSeconds: [1, 120, 1],
   airflowSpeed: [1, 20, 0.5],
-  heatRiseSeconds: [10, 900, 5],
-  heatFallSeconds: [10, 900, 5],
-  heatWaterScale: [0, 1, 0.01],
-  fanOnAt: [0, 1, 0.01],
-  fanOffAt: [0, 1, 0.01],
-  fanCooling: [0, 2, 0.01],
   pinkFrom: [0, 0.95, 0.01],
   pinkRoughness: [0, 1, 0.01],
   pinkPowerLoss: [0, 1, 0.01],

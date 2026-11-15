@@ -3,7 +3,7 @@ import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { canFitBore, fitBore, borePowerFactor, boreWearFactor } from '../src/engine/bigBore.js';
 import { idealJet, jetError } from '../src/engine/jetting.js';
-import { heatTarget } from '../src/engine/heat.js';
+import { fuelHeat } from '../src/engine/thermal.js';
 import { BenchJob, JOB_KINDS, finishJob, jobAvailable, DEFAULT_BENCH_PARAMS as B } from '../src/workshop/benchJobs.js';
 import { QUAD_SPECS, EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
 import { AMY_BENCH_LINES, JESS_BENCH_LINES } from '../src/npc/benchLines.js';
@@ -32,15 +32,15 @@ describe('the big-bore factors', () => {
   it('change nothing without the kit', () => {
     expect(borePowerFactor(0, 1, P)).toBe(1);
     expect(boreWearFactor(0, P)).toBe(1);
-    expect(heatTarget({ ambient: 0.5, work: 1, speed: 0, fan: false }, P)).toBe(heatTarget({ ambient: 0.5, work: 1, speed: 0, fan: false, bore: 0 }, P));
+    expect(fuelHeat({ rpmNorm: 1, load: 1 }, P)).toBe(fuelHeat({ rpmNorm: 1, load: 1, bore: 0 }, P));
   });
 
   it('give more power, more heat, faster wear and a richer jet with it', () => {
     expect(borePowerFactor(1, 1, P)).toBeCloseTo(1 + P.borePower);
     expect(borePowerFactor(1, 0.5, P)).toBeLessThan(borePowerFactor(1, 1, P));
     expect(boreWearFactor(1, P)).toBeGreaterThan(2);
-    const args = { ambient: 0.5, work: 1, speed: 0, fan: false };
-    expect(heatTarget({ ...args, bore: 1 }, P)).toBeGreaterThan(heatTarget(args, P));
+    const args = { rpmNorm: 1, load: 1 };
+    expect(fuelHeat({ ...args, bore: 1 }, P)).toBeGreaterThan(fuelHeat(args, P));
     expect(idealJet(12, P, 1)).toBeCloseTo(P.boreJet);
     expect(jetError(0, 12, P, 1)).toBeLessThan(0);
   });
