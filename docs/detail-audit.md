@@ -168,3 +168,20 @@ Graded from my own shots at 18 spots by day (13:00) and 6 at night (19:12): from
 | Things round the top of the pit | passable | (walk) Not enough: a container and signs and little else. A real pit has a weighbridge and its kiosk, a fuel tank and pump, stockpile bays, a tipper or dumper left standing, concrete pipes, fly-tipping and a dead pole (the review's Change list) |
 | Pit climb's cones | block | (walk) Strangely horizontal on the side of the pit. `buildClimbCones` (`startLine.js`) turns each only about the vertical, so on a wall of 30 to 47 degrees it stands plumb against the face; I did not see it. Small cones with START and FINISH on them, plain colour, no base or sleeve (the cones' detail is #738's). A flag in the ground may suit the climb better |
 | The area at night | good | Black, which is right for a disused pit: nothing is lit; the walls' bands still show faintly under the moon; the lane gate will need reflective bands to be seen from the lane |
+
+## The wet meadow and pond (#673)
+
+Graded from my own shots at 14 spots by day (13:00) and 6 at dusk (19:12, already dark in November): from the gateway, along the track, round the pond on all four sides, at an oak and the reeds close to, from the south-east corner, the west end, the north hedge, the lane's far bank and from above; and from the builders' code (`hill.js`, `hillProps.js`: `buildPond`, `buildMeadowTrees`, `buildTussocks`). The meadow's hedges are the lane's and the grass field's and are graded with them (#669). I did not ride or walk it: Jamie's walk is added below when it is done, as for #669 to #672. In the move (#684) the meadow rebuilds the blocks and passables to the standard as it takes them.
+
+| Object | Grade | What it lacks |
+| --- | --- | --- |
+| The pond's water | block | A flat disc in the stream's colour (`0x35332a`) with no sky in it: black from above (shot 10) and at dusk, flat grey up close (shots 08, 13) with one hard white glint; an exact ellipse with a hard edge, no ripple, weed, ducks or movement, and it never rises or browns after rain as the stream does (#563) |
+| The pond's dish and shore | passable | A smooth dish 1.1 m deep with a dark mud ring of even width round it; no bank edge, no shelf, no hoofprints, stones or roots, and a perfect ellipse (`pondR`) |
+| Reeds | passable | 260 clumps of six plain green blades in an even ring (shots 03, 08, 13): no seed heads, brown stems, rushes or flag iris, one thinner patch on the track's side |
+| Oaks (seven) | passable | The farm's two oak models (good shapes, collider 0.32 m) in an even ring within 12 m of the water: no veteran, deadwood, ivy or roots, and oaks where alder and willow would stand |
+| Hazel under the oaks | passable | The farm's hedge bush scaled to 1.4 to 2.6 m, one kind, no collider (you ride through it) |
+| The muddy way in | block | A 14 m, three-point smear of dark mud that ends in a point at the reeds (shots 01, 02): no ruts, puddles, hoofprints or edge, and pale round dabs at even spacing in it like polka dots |
+| The gateway in the lane's hedge | block | A bare mouth in the hedge: no posts, no gate (the south, north, pit and road gates have models, the paddocks have none) and no worn ground except the mud patch |
+| Grass and tussocks | passable | An even mown green with tufts of one shape (shots 09, 10, 11), as Home Ground's; none of the rushes, poached ground, flowers or wet patches a wet meadow has |
+| The meadow's hedges | passable | Graded with the lane's and the grass field's (#669): the same near and far hedges, an even band with no gaps or standard trees |
+| The meadow at night | block | Black, and the water does not catch the moon: the pond is a dark hole at dusk (shots 03, 10) |
