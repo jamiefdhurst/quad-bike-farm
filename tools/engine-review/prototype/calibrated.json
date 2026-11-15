@@ -1,0 +1,68 @@
+{
+ "four-stroke single": {
+  "best": {
+   "pulseSteady": 0.2
+  },
+  "note": 0.14833447246730946,
+  "asNow": 0.22037859350803354
+ },
+ "two-stroke single": {
+  "best": {
+   "pulseSteady": 0.4
+  },
+  "note": 0.1430884464188781,
+  "asNow": 0.1925583146671264
+ },
+ "petrol four": {
+  "best": {
+   "pulseSteady": 0,
+   "pulseCylGain": 4,
+   "pulseCylTime": 0.2,
+   "pulseFireJitter": 0.1,
+   "pulseStrengthJitter": 0.3
+  },
+  "note": 0.4767644247939392,
+  "asNow": 0.5554554334666995,
+  "clicks": 12306,
+  "clicksAsNow": 10654
+ },
+ "diesel, several cylinders": {
+  "best": {
+   "pulseSteady": 0,
+   "pulseCylGain": 0,
+   "pulseCylTime": 0,
+   "pulseFireJitter": 0,
+   "pulseStrengthJitter": 0
+  },
+  "note": 0.2299110874899007,
+  "asNow": 0.2299110874899007,
+  "clicks": 251,
+  "clicksAsNow": 251
+ },
+ "Finch, its own revs": {
+  "best": {
+   "pulseSteady": 0.3,
+   "pulseCylGain": 0,
+   "pulseCylTime": 0,
+   "pulseFireJitter": 0,
+   "pulseStrengthJitter": 0
+  },
+  "note": 0.043736452007298,
+  "asNow": 0.05365414521065862,
+  "clicks": 0,
+  "clicksAsNow": 2
+ },
+ "Griffin, its own revs": {
+  "best": {
+   "pulseSteady": 0,
+   "pulseCylGain": 4,
+   "pulseCylTime": 0.2,
+   "pulseFireJitter": 0.1,
+   "pulseStrengthJitter": 0.3
+  },
+  "note": 0.45800361000695206,
+  "asNow": 0.5966475844406423,
+  "clicks": 6675,
+  "clicksAsNow": 5765
+ }
+}
