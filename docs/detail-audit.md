@@ -103,3 +103,36 @@ Graded from my own shots at about 30 spots by day (13:00) and 5 at night (21:00)
 | Field shed | passable | Rubble stone texture with lichen, a rusty tin roof, a lintel: good outside. (walk) Two stones in different colours on the wall and alpha fighting in the doorway, fixed in #842; and nothing in it to give it a reason to be there: it becomes the sheep field's stone field barn (#624). An empty room with no door or window frame |
 | Hedgerow and boundary trees round the fields | passable | The real GLB trees, good shapes, one of a few kinds repeated; the heaviest thing in view (see the review) |
 | The area at night | block | No light on the road, pad, barn, grid or gates: the pad and drive are black from dusk and the barn is a silhouette; no reflector posts at the lane end |
+
+## Hollow Wood (#671)
+
+Graded from my own shots at about 30 spots by day (13:00), 8 at night (19:30) and 11 in autumn (`?season=autumn`), from the gate, along the Hollow Run and the Fern Trail, at the pond, the bogs, the logs and the log yard and from above, and from the builders' code (`woods.js`, `woodsProps.js`, `trailProps.js`, `autumn.js`, `autumnView.js`, `woodPieces.js`). The conkers were graded from their code only. The log yard shows only on a farm that has the tractor, so those shots are from a farm that does (seed 1). I did not ride or walk it: Jamie's walk is added below when it is done, as for #669. In the move (#683) the wood goes as one piece; it rebuilds the blocks and passables to the standard as it takes them, and #561 and #738 are the plants' and the logs' lists.
+
+| Object | Grade | What it lacks |
+| --- | --- | --- |
+| Wood floor (leaf litter) | passable | Blotchy brown and green with moss patches, and square blocks of tone showing where the texture is too coarse (at the bog and at the sign); no drifts of leaves, fungi, stones or moss on the roots; in autumn the fallen leaves are pastel ellipses |
+| Oaks (170, the farm's two GLB models) | passable | Good shapes, with forked limbs and bark; two models only, one lime green, so the wood reads as one tree repeated; about 6,000 triangles each, the heaviest thing in the wood (see the review) |
+| Hazel and holly (110, one model) | passable | A mound of broad leaves like a lettuce; hazel and holly are the same model, with no catkins, nuts or glossy spiked holly leaf |
+| Hollow Run: bed and ruts | passable | Two dark ruts and a grass strip that read well; no puddles in the ruts, no leaf drift, no root crossings, one colour all the way round |
+| Hollow Run: berms, whoops and the swell | good | The shapes are good and are kept (`woods.profile`) |
+| Lead-in from the gate | passable | As the Run: a plain dark strip, with no gateway mud or worn grass at the gate |
+| Hedges round the wood | passable | A chain of cubes with gaps you can see through, bushes in front; the big leaves can be walked through (#829) and are heavy to draw (#837) |
+| Wood gate (five-bar, tied open) | passable | From the code a leaf tied back with baler twine; seen only from a distance, the posts are plain brown boxes with no caps or staples, as the road's gates (#670) |
+| Logs across the Run (5) | block | One flat brown, an eight-sided cylinder with a flat pale disc at each end and two stubs: no bark, rings, moss or splits (#738) |
+| Deadwood (7) | block | The same plain cylinder, lying on bare ground with no leaves or fungi round it (#738) |
+| Pond: water and shore | passable | Flat slate water with no sky in it, no lilies or frogs and a hard dark lip (ripples when ridden through were not checked) |
+| Pond: reeds | good | A thick ring of long reeds that hides the lip and reads as a pond |
+| Bogs (2) | block | A grey flat polygon laid on the ground like a plastic sheet; no reeds, sheen or standing water |
+| Fern Trail: path | passable | A pale packed-earth way with two dips and a good width, one tone and no puddles in the dips |
+| Fern Trail: roots | passable | The tubes swell and dive into the ground well; the bark texture is stretched into a herringbone zigzag that reads as a snake |
+| Fern Trail: hop log | good | Bark and cut ends with rings, and moss on top |
+| Way-marker posts | good | A blue band with an arrow disc, a foot and a slight lean; 11 along 390 m |
+| Fern Trail sign | good | A painted board with a border, its words and the blue strip, on two posts with a cap |
+| Ferns | block | Flat green stars with hard edges and one colour; in autumn a flat olive (#561) |
+| Brambles | block | A few flat triangles for leaves on thin pink canes: no thorns, berries or arching (#561) |
+| Conkers (from code only) | passable | About 1,200 3 cm brown spheres under the oaks; not looked at closely |
+| Leaves in the air | passable | In autumn they are tan squares that fall straight; no tumble or sway |
+| Autumn tint (oaks, bushes, hedges) | passable | Lime and yellow, never orange or brown, one tone across a whole tree; the bush goes olive. The tint was a guess when built ("Autumn in the wood (TODO 83)") |
+| Log yard: rounds (12) | block | Plain stumps in two heaps of six, one brown (#738); on a farm with no tractor there is nothing at all |
+| Log yard: stack and its posts | block | Two thin posts and, when it is filled, plain half-cylinders with flat ends (`woodStack` in `KNOWN_BLOCKS`, #738) |
+| The wood at night | block | Black from dusk: no light at the gate, on the posts or at the pond, so the track vanishes |
