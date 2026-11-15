@@ -1,6 +1,6 @@
 ---
 description: Work one cohesion issue, or check what has drifted from the game's rules since the last tidy and fix or file it
-argument-hint: "[issue number; default: the next 🧩 cohesion issue; 'check' for a check-up]"
+argument-hint: "[issue number; default: the next 🧩 cohesion issue; 'check' for a check-up] [--solo: no second opinion before a stop]"
 ---
 
 Cohesion work on $ARGUMENTS: keeping the game pulled together, so it has one way to use things, one look, one name for each thing and one level of detail. It runs alongside feature work, in its own session. `/todo` takes issues by milestone, cohesion ones included; this takes `🧩 cohesion` issues first, but only from the current phase (the earliest open milestone) or Alongside, so a later phase's cohesion pass waits for its phase (#719).
@@ -10,6 +10,9 @@ Cohesion work on $ARGUMENTS: keeping the game pulled together, so it has one way
 - **A number** works that issue.
 - **Nothing** takes the next cohesion issue: the first that `tools/nextTodo.mjs --label "🧩 cohesion"` prints (a `🔜 next` one first, then the current phase, then Alongside, with `/todo`'s rules: not held back, no open PR, its `Depends on:` closed). If it prints none, do the check-up.
 - **`check`** does the check-up.
+- **`--solo`** with any of these turns off the second opinion before a stop.
+
+**Before every stop that asks Jamie something** (the audit list in step 1, the proposed issues in step 4 of the check-up, and `/todo`'s own stops), get the second opinion as "Before you stop" at the end of `.claude/commands/todo.md` says, unless `--solo` was given or this session already runs on Opus.
 
 ```
 tools/nextTodo.mjs --label "🧩 cohesion"
