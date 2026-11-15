@@ -78,13 +78,13 @@ Graded from my own shots at about 30 spots by day (13:00) and 5 at night (21:00)
 
 | Object | Grade | What it lacks |
 | --- | --- | --- |
-| Stubble ground (barley and wheat) | passable | One flat straw colour with faint drill stripes: no stones, weeds, straw swathes, headland, mud at the gateways or edge to the field; barley and wheat differ only in tone |
+| Stubble ground (barley and wheat) | passable | (walk) The tramline in the north field runs into the back of the Dutch barn: no headland where it ends (it goes with the move, #689). One flat straw colour with faint drill stripes: no stones, weeds, straw swathes, headland, mud at the gateways or edge to the field; barley and wheat differ only in tone |
 | Stubble clumps (`stubble-north`, `stubble-south`) | passable | Sparse yellow tufts in rows that read well; each clump is 24 triangles for six stalks, which is what makes it the heaviest thing in view (see the review) |
 | Tramlines | good | Two clear wheel lines across each field, a different spacing in each |
 | North field's hollow | passable | A soft dip with a darker tint: no standing water, rushes or wet sheen, and from the road it hardly reads as a hollow |
 | South field's rise | good | A long smooth lift to the far hedge that carries the eye up; to be kept |
 | Spray patch (`SprayView`, from code only) | passable | A skin of cells that tints darker as sprayed and a mist at the nozzles; hard-edged rectangle with no edge to the field; the job moves to a whole field (#691) |
-| Farm road tarmac | passable | An even speckled grey with a soft edge: no patches, cracks, potholes (#214), gravel at the edges, wear down the middle, or mud and straw carried out at the gateways |
+| Farm road tarmac | passable | (walk) The drive is to be tarmac with gravel edges, which it does not have. An even speckled grey with a soft edge: no patches, cracks, potholes (#214), gravel at the edges, wear down the middle, or mud and straw carried out at the gateways |
 | Road verges | passable | A flat strip of short green on each side: no long grass, nettles, docks or cow parsley, and no edge where the tarmac meets the grass |
 | Road hedges, both sides | passable | A dense dark hedge on one side and a big-leaf one on the other, each an even band: no gaps, standard trees or weathering; the big leaves can be walked through (#829) and are heavy to draw (#837) |
 | Hedge gateways into the fields (four) | block | Bare mouths in the hedge: no posts, no gate, no mud, no change in the ground; the shot from above shows them as plain openings |
@@ -95,11 +95,11 @@ Graded from my own shots at about 30 spots by day (13:00) and 5 at night (21:00)
 | Cars' pad | block | A perfect circle of tarmac 18 m across with a hard edge and a ring of bare earth round it, like a stamp; no markings, drain, oil or weeds; the cars move to the house (#682) |
 | Dutch barn: roof | good | Curved corrugated sheet gone rusty over a lattice of arched trusses, purlins and eaves beams, seen from below |
 | Dutch barn: stanchions and blocks | good | I-section posts, a block wall to 1.2 m with sheet above; no gutters or downpipes |
-| Dutch barn: back and end sheeting | passable | The corrugated texture shows a repeating zigzag at close range and is the same on every panel; no rust streaks from the fixings, no holes |
+| Dutch barn: back and end sheeting | passable | (walk) The sheet was banded in thirds, with the rust in a different place on each: a 3 m tile on a 4.5 m wall, fixed in #842. Still the same on every panel; no rust streaks from the fixings, no holes |
 | Dutch barn: bale stack and seat bales | good | Round bales stacked in three layers in the hollows of the layer below, with ends, twine and straw; all the same yellow and size |
 | Dutch barn: floor and inside | passable | Trodden bare floor with straw; nothing else in it (no feeder, rack, tools or light; it is black at night) |
 | Muck heap | passable | A lumpy dark heap with straw in it: one colour, no steam, no flies or fork, no run-off at the foot; goes to the cattle shed's back (#694) |
-| Water trough | block | A grey box with a thin white sliver for a lid on four thin legs: no water, ball valve, pipe or wear; it stands against a hedge in an arable field where no stock graze, half hidden by the leaves; trough models belong with #710 |
-| Field shed | passable | Rubble stone texture with lichen, a rusty tin roof, a lintel: good outside; an empty room with no door, window frame, floor or anything in it, and no place on the plan |
+| Water trough | block | (walk) Makes no sense in an arable field: troughs are for grazed fields (#710), so it goes. A grey box with a thin white sliver for a lid on four thin legs: no water, ball valve, pipe or wear; it stands against a hedge in an arable field where no stock graze, half hidden by the leaves; trough models belong with #710 |
+| Field shed | passable | Rubble stone texture with lichen, a rusty tin roof, a lintel: good outside. (walk) Two stones in different colours on the wall and alpha fighting in the doorway, fixed in #842; and nothing in it to give it a reason to be there: it becomes the sheep field's stone field barn (#624). An empty room with no door or window frame |
 | Hedgerow and boundary trees round the fields | passable | The real GLB trees, good shapes, one of a few kinds repeated; the heaviest thing in view (see the review) |
 | The area at night | block | No light on the road, pad, barn, grid or gates: the pad and drive are black from dusk and the barn is a silhouette; no reflector posts at the lane end |
