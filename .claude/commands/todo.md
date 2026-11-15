@@ -7,14 +7,14 @@ argument-hint: "[issue number; default: the next one] [--solo: no second opinion
 
 Work on GitHub issue $ARGUMENTS. If no number is given, take the next one, in this order (the plan is `docs/farm-plan.md`; the phases are the milestones in `.github/settings.yml`):
 
-- **`alongside`** takes the lowest-numbered eligible issue in the **Alongside** milestone.
-- **Otherwise**, the lowest-numbered open issue labelled `🔜 next`; or if none, the lowest-numbered eligible issue in the earliest open milestone (by title order: `0 · Foundations` first, `Alongside` last, so it is only reached by `/todo alongside`).
+- **`alongside`** takes the lowest-numbered eligible issue in the earliest open **alongside** milestone, 6 to 12 (`ALONGSIDE` in `tools/nextTodo.mjs`): work that doesn't depend on where things are, done while the map's phases run.
+- **Otherwise**, the lowest-numbered open issue labelled `🔜 next`; or if none, the lowest-numbered eligible issue in the earliest open milestone (by the number its title starts with: `0 · Foundations` first, the alongside milestones once 5 is done, `13 · Ready for players` last).
 - **Eligible** means open, not labelled `❓ question`, `🤦‍♂️ wontfix`, `🧪 testing` or `💤 later`, with no open PR yet (`gh pr list --search "<n> in:body"`), and a `Depends on:` line (if it has one) that names only closed issues. An issue with no milestone is taken only by number.
 - **`--solo`** anywhere in the arguments (`/todo 851 --solo`, `/todo alongside --solo`) turns off the second opinion in "Before you stop", at the end, for the whole session, to save its cost.
 
 ```
 gh issue list --state open --label "🔜 next" --json number,title --jq 'sort_by(.number) | .[0]'
-tools/nextTodo.mjs            # the eligible issues in order, first five; `tools/nextTodo.mjs alongside` for that milestone
+tools/nextTodo.mjs            # the eligible issues in order, first five; `tools/nextTodo.mjs alongside` for the alongside milestones
 ```
 
 Other sessions work in this checkout at the same time, so every item gets its own worktree and branch. Never switch branch in the main checkout, and never commit to main.

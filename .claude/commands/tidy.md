@@ -3,12 +3,12 @@ description: Work one cohesion issue, or check what has drifted from the game's 
 argument-hint: "[issue number; default: the next 🧩 cohesion issue; 'check' for a check-up] [--solo: no second opinion before a stop]"
 ---
 
-Cohesion work on $ARGUMENTS: keeping the game pulled together, so it has one way to use things, one look, one name for each thing and one level of detail. It runs alongside feature work, in its own session. `/todo` takes issues by milestone, cohesion ones included; this takes `🧩 cohesion` issues first, but only from the current phase (the earliest open milestone) or Alongside, so a later phase's cohesion pass waits for its phase (#719).
+Cohesion work on $ARGUMENTS: keeping the game pulled together, so it has one way to use things, one look, one name for each thing and one level of detail. It runs alongside feature work, in its own session. `/todo` takes issues by milestone, cohesion ones included; this takes `🧩 cohesion` issues first, but only from the current phase (the earliest open milestone) or the alongside milestones (6 to 12), so a later phase's cohesion pass waits for its phase (#719).
 
 **First, `tools/upToDate.sh`.** These instructions are read from the main checkout, so if it is behind `origin/main` they are old ones. If the script doesn't print `ok`, stop and pass its message on to Jamie before choosing or starting anything (#721).
 
 - **A number** works that issue.
-- **Nothing** takes the next cohesion issue: the first that `tools/nextTodo.mjs --label "🧩 cohesion"` prints (a `🔜 next` one first, then the current phase, then Alongside, with `/todo`'s rules: not held back, no open PR, its `Depends on:` closed). If it prints none, do the check-up.
+- **Nothing** takes the next cohesion issue: the first that `tools/nextTodo.mjs --label "🧩 cohesion"` prints (a `🔜 next` one first, then the current phase and the alongside milestones in run order, with `/todo`'s rules: not held back, no open PR, its `Depends on:` closed). If it prints none, do the check-up.
 - **`check`** does the check-up.
 - **`--solo`** with any of these turns off the second opinion before a stop.
 
