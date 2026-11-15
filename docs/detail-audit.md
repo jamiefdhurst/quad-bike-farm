@@ -137,3 +137,31 @@ Graded from my own shots at about 30 spots by day (13:00), 8 at night (19:30) an
 | Log yard: stack and its posts | block | Two thin posts and, when it is filled, plain half-cylinders with flat ends (`woodStack` in `KNOWN_BLOCKS`, #738) |
 | The wood at night | block | Black from dusk: no light at the gate, on the posts or at the pond, so the track vanishes |
 | The wood on the map | block | (walk) The trees are in an obvious pattern: the map draws a lattice of dots 6 m apart over the whole wood, not the trees that are there (#847) |
+
+## The gravel pit (#672)
+
+Graded from my own shots at 18 spots by day (13:00) and 6 at night (19:12): from the barley field and the gate, along the lead-in, from the lip and the west rim, on the floor at the plant, the excavator, the cabin and the pond, at the signs and the east hedge, and from above; and from the builders' code (`quarry.js`, `quarryProps.js`, `quarryDebris.js`, `quarryTextures.js`, `screeningPlantModel.js`, `excavatorModel.js`, `siteCabinModel.js`, `containerModel.js`). The dead trees and the pit climb's cones were graded from their code only. I did not ride or walk it: Jamie's walk is added below when it is done, as for #669 to #671. A model can be good and still be wrong for a disused pit (fresh paint, doors in use): the grade is against `looks.md`, and what makes a relic read as disused is in the review's Change list. In the move (#685) the pit rebuilds the blocks and passables to the standard as it takes them.
+
+| Object | Grade | What it lacks |
+| --- | --- | --- |
+| The pit's walls | passable | Good shape (lip, middle, scree toe, chutes and buttresses), but the texture is wavy saturated bands of orange, grey and cream that follow the surface, with band edges that step in pixel blocks up close; no level bedding, topsoil line at the lip, roots or fallen turf |
+| The pit floor and the haul roads | passable | A pale gravel with ruts and loose stone that reads well; the floor has no wheel scars, standing water or weeds, and the roads are one width and colour all the way down with no wear or washed-out edge |
+| Field grass | passable | An even mown green with square blocks of tone where the texture is too coarse; no rough grass, thistle, bramble or ride kept open |
+| Scrub (hawthorn and gorse) and boulders | passable | Hawthorn is the farm's bush model and gorse a flat-shaded vertex-coloured mound, spaced out evenly; the boulders are good shapes (welded, split faces, flat base) but pure white |
+| Heaps of gravel and sand | passable | Smooth mounds with a hard circular edge, one colour each: no stones, crust, grass, seedlings or tide line |
+| The pond | passable | A flat grey ellipse with a tint and a few grass tufts at the edge: no reeds, rushes, sheen or reflection |
+| Screening plant (hopper, crusher, conveyors, ladder, generator) | good | Legs, braces, ladder, rail, belts on trestles and a junction box, with a rust texture; no torn belt or weeds at the footings; the cable is a bare black rod that reads as stray lines on the pad (see the review's Fix) |
+| The plant's pad | passable | A hardcore slab with a skirt of stone spreading out and a hard edge; no cracks, oil or weeds |
+| Excavator | good | Tracks with 42 shoes and grousers, slew ring, hood, cab with a door and levers, two-piece boom, stick and bucket with teeth and rams with hoses, each joint on a pin; but the cab and boom are bright fresh yellow over a rusted body, so it reads as working |
+| Site cabin | good | Ribbed cladding cut round the openings, a door ajar, barred windows, gutter and downpipe, an air-con box and a desk and chair inside; fresh cream, so it reads as in use |
+| Steel container | good | Real corrugation with dents, corner castings, two leaves with locking bars, cams, handles and a hasp and padlock, on three sleepers; a dark green with light rust, one leaf ajar; stands on bare lawn with no hardstanding |
+| Drums | passable | A lathe body with hoops, chimes, lid and bungs; bright new blue, green and red, undamaged, no labels or rust |
+| Tyres | passable | Grooved with lugs, plain black; about 1,900 triangles each (13,000 for 7), heavy for a tyre |
+| Pallet | passable | Boards on three bearers in one wood tone: no splits, missing boards or weeds |
+| Dead trees at the rim | block | (code only) A bare cylinder with two stubs in one flat grey-brown colour, no bark texture |
+| Lip fence | passable | Leaning timber posts, 16% gone, two sagging strands that run to the ground in places: the right idea; posts are plain boxes and the wire is a thin grey rod with no barbs or staples |
+| Signs (three) | passable | A board held off its post by straps with lettering on the front and plain steel on the back: good; the wording is American ("NO TRESPASSING"), and all three are fresh |
+| Gate (five-bar, tied open) | passable | A timber leaf in the barley hedge, as the wood's: no steel, no chain, no concrete posts, no bellmouth (all new in the move) |
+| Field hedges (four, far version) | passable | A chain of cubes with trees standing through (shot from the east side); cheap (4,056 triangles for all four) but not a fence a disused pit has (#558) |
+| Pit climb's cones | passable | (code only) Small cones with START and FINISH on them, plain colour, no base or sleeve (the cones' detail is #738's) |
+| The area at night | good | Black, which is right for a disused pit: nothing is lit; the walls' bands still show faintly under the moon; the lane gate will need reflective bands to be seen from the lane |
