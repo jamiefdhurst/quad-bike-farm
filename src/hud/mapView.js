@@ -258,9 +258,9 @@ export class MapView {
       for (const q of r.pads) disc(q.x, q.z, q.r, C.road);
     }
 
-    // Hedges, and the gates across their gaps (a shut one solid, the tied-open one dashed).
+    // Hedges and walls, and the gates across their gaps (a shut one solid, the tied-open one dashed).
     ctx.lineCap = 'round';
-    for (const h of f.hedges) line([[h.x1, h.z1], [h.x2, h.z2]], Math.max(2.5, h.width * s), C.hedge);
+    for (const h of f.hedges) line([[h.x1, h.z1], [h.x2, h.z2]], Math.max(2.5, h.width * s), h.wall ? C.wall : C.hedge);
     ctx.lineCap = 'butt';
     for (const g of f.gates) {
       ctx.setLineDash(g.shut ? [] : [3, 3]);

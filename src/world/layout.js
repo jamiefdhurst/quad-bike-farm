@@ -5,6 +5,7 @@
 // `resolveLayout` turns it into the absolute numbers `LAYOUT` has always held (world/layoutAnchors.js says how an offset reads). Moving the
 // barn, the yard, the village and the rest is one anchor each; a number that is not inside an `at(...)` is a place of its own.
 import { at, resolveLayout } from './layoutAnchors.js';
+import { layoutFromSearch, layoutNew } from './layoutNew.js';
 
 // The numbers a road is written with in `roads` and read with by everything beside it (the lane's barriers, the farm's hedges and gates), so each is
 // written once.
@@ -572,7 +573,13 @@ export const LAYOUT_VERSION = 1;
 /** The layout as it is written, with its `at(...)` offsets, for the tests that move and turn the anchors. */
 export const RAW_LAYOUT = RAW;
 
-export const LAYOUT = resolveLayout(RAW);
+/**
+ * Which farm this load is on: 2 with `?layout=2`, the new farm being built on docs/farm-plan.md (world/layoutNew.js), until #692 makes it the
+ * default; otherwise today's. The console's `layout 2` reloads with it.
+ */
+export const LAYOUT_CHOSEN = layoutFromSearch(globalThis.location?.search ?? '');
+
+export const LAYOUT = LAYOUT_CHOSEN === 2 ? layoutNew(resolveLayout(RAW)) : resolveLayout(RAW);
 
 // A few readers want one coordinate of a point on its own. They are read off the points (which are what turn with the anchor), once, here.
 LAYOUT.loft.edgeX = LAYOUT.loft.edge.x;

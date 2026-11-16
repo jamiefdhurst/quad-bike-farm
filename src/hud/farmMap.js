@@ -48,6 +48,7 @@ export const MAP_COLOURS = {
   pit: '#cdbf9a', // the pit's walls
   pitFloor: '#bfae86', // and its floor and haul road
   hedge: '#3f6b35',
+  wall: '#8a8576', // a drystone wall, grey
   gate: '#7d7d7d',
   road: '#9a9893',
   roadEdge: '#6f6d68',
@@ -163,15 +164,17 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const crop = (k) => layout.stubbleFields?.[k]?.crop;
   const fieldFill = { grass: C.grass, road: C.verge, end: C.verge, north: crop('north') === 'barley' ? C.barley : C.wheat, south: crop('south') === 'barley' ? C.barley : C.wheat, lane: C.lane, hill: C.pasture, meadow: C.pasture, sheep: C.pasture, riverside: C.pasture, woods: C.woodland, quarry: C.quarryField };
   const kindFill = { grass: C.grass, arable: C.arable, hay: C.hay, ley: C.ley, wood: C.woodland, pasture: C.pasture, rough: C.rough, yard: C.gravel, lane: C.lane };
+  const cropFill = (k) => (crop(k) ? (crop(k) === 'barley' ? C.barley : C.wheat) : null);
   const areas = Object.entries(A).map(([kind, rect]) => ({
-    kind, rect, points: fields.polygons[kind], fieldKind: fields.kinds?.[kind], fill: fieldFill[kind] ?? kindFill[fields.kinds?.[kind]] ?? C.grass,
+    kind, rect, points: fields.polygons[kind], fieldKind: fields.kinds?.[kind], fill: fieldFill[kind] ?? cropFill(kind) ?? kindFill[fields.kinds?.[kind]] ?? C.grass,
   }));
 
   const hedges = [];
   const gates = [];
-  for (const h of fields.hedges) {
+  // Hedges, and the drystone walls a plan names (drawn grey; #696 builds them in the world).
+  for (const h of [...fields.hedges, ...(fields.boundaries ?? []).filter((b) => b.kind === 'wall')]) {
     const { runs, gates: g } = hedgeRuns(h);
-    for (const [a, b] of runs) hedges.push({ x1: a.x, z1: a.z, x2: b.x, z2: b.z, width: layout.hedgeThickness ?? 1.8 });
+    for (const [a, b] of runs) hedges.push({ x1: a.x, z1: a.z, x2: b.x, z2: b.z, width: layout.hedgeThickness ?? 1.8, wall: h.kind === 'wall' });
     gates.push(...g);
   }
 
@@ -326,9 +329,10 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     const clear = [...buildings, ...small].map((b) => b.rect);
     for (const l of labels) clear.push(nameBox(l, sheet));
     for (const f of layout.fields) {
-      const at = labelSpot(fields.polygons[f.name], clear, nameBox({ text: f.name, kind: 'field', x: 0, z: 0 }, sheet));
-      field(f.name, at.x, at.z);
-      clear.push(nameBox({ text: f.name, kind: 'field', ...at }, sheet));
+      const text = f.label ?? f.name;
+      const at = labelSpot(fields.polygons[f.name], clear, nameBox({ text, kind: 'field', x: 0, z: 0 }, sheet));
+      field(text, at.x, at.z);
+      clear.push(nameBox({ text, kind: 'field', ...at }, sheet));
     }
   }
 

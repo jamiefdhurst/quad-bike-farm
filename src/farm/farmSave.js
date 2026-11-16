@@ -2,6 +2,7 @@
 // day. `?seed=N` ignores the save and never writes it, so a seeded game repeats exactly. Pure (the storage is passed in), tested.
 
 import { LAYOUT_VERSION } from '../world/layout.js';
+import { layoutFromSearch } from '../world/layoutNew.js';
 
 export const SAVE_KEY = 'quadBikeFarm';
 export const SAVE_VERSION = 2; // 2: vehicles are keyed by their model names (#589); a version 1 save is converted as it is read (migrateSave)
@@ -167,15 +168,16 @@ export function forLayout(save, layoutVersion = LAYOUT_VERSION) {
 
 /**
  * What this load is, from the URL and the save:
- * - seeded: `?seed=` is in the URL; the save is left alone and never written, and it is a plain first day.
+ * - seeded: `?seed=` is in the URL, or `?layout=2` (the new farm, built behind it until #692); the save is left alone and never written, and it
+ *   is a plain first day. `newFarm` says it is the second, so trying the new map never touches the farm you keep.
  * - continuing: there is a save; this is the day after it, on the same farm (its farmSeed deals the farm's character).
  * - otherwise a new farm, Day 1, whose farm seed is the game's own seed.
  * Returns { seeded, continuing, save, day, farmSeed, layoutReset } (farmSeed null for a new farm: the game uses its seed; layoutReset when
  * the save was from another layout version and its positions were dropped).
  */
 export function openFarm({ search = '', storage = null, layoutVersion = LAYOUT_VERSION } = {}) {
-  const seeded = new URLSearchParams(search).has('seed');
-  if (seeded) return { seeded: true, continuing: false, save: null, day: 1, farmSeed: null };
+  const newFarm = layoutFromSearch(search) === 2;
+  if (newFarm || new URLSearchParams(search).has('seed')) return { seeded: true, newFarm, continuing: false, save: null, day: 1, farmSeed: null };
   const read = readSave(storage);
   if (!read) return { seeded: false, continuing: false, save: null, day: 1, farmSeed: null };
   const { save, reset } = forLayout(read, layoutVersion);
@@ -196,7 +198,8 @@ export function fleetFromSave(ids, specs) {
 }
 
 /** One line about the farm for the debug panel and the console. `savedAgo` is seconds since it last saved, or null. */
-export function describeFarm({ day, seeded, wiped, started, savedAgo }) {
+export function describeFarm({ day, seeded, newFarm, wiped, started, savedAgo }) {
+  if (newFarm) return 'the new farm (?layout=2): not saved';
   if (seeded) return 'a seeded game: not saved';
   if (wiped) return `day ${day}, wiped: a new farm next time it loads`;
   if (!started) return `day ${day}, saves once you start playing`;

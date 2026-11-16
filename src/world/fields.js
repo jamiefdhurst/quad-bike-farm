@@ -30,7 +30,7 @@ export function outsideRect(r, x, z) {
 
 /**
  * The lie of the stubble fields: how far each lifts or drops the ground at (x, z), and how much of the wet it holds (0..1, 1 at the bottom of
- * the north field's hollow). The south field's rise starts a few metres off the road and fades in over its first 25 m from the grass field,
+ * a field's hollow: today's north field has one, and on the new farm North Field). The south field's rise starts a few metres off the road and fades in over its first 25 m from the grass field,
  * so neither the road nor the hedge between them has a step in it; past the far hedge it stays up, and the farmland beyond carries on from it.
  */
 export function createFieldShape(layout) {
@@ -40,15 +40,15 @@ export function createFieldShape(layout) {
   if (!sf || !road) return () => ({ lift: 0, soak: 0 });
   const roadEdge = road.z + road.halfWidth + road.verge;
   const farEdge = layout.farm?.maxZ ?? F;
+  const hollows = Object.values(sf).map((f) => f.hollow).filter(Boolean);
   return function shapeAt(x, z) {
     let lift = 0;
     let soak = 0;
-    const h = sf.north?.hollow;
-    if (h) {
+    for (const h of hollows) {
       const r = Math.hypot((x - h.x) / h.rx, (z - h.z) / h.rz);
       if (r < 1) {
         lift -= h.depth * (1 - smoothstep(0, 1, r));
-        soak = 1 - smoothstep(0.3, 1, r);
+        soak = Math.max(soak, 1 - smoothstep(0.3, 1, r));
       }
     }
     if (sf.south?.rise && x > F && z > roadEdge) lift += sf.south.rise * smoothstep(roadEdge + 3, farEdge, z) * smoothstep(F, F + 25, x);
@@ -85,11 +85,11 @@ export function createFields(layout) {
   /** Boxes that hold every place `tarmacAt` could be above 0: the roads' and the village's (roadWet.js builds the shine's mask only inside them). */
   const tarmacBoxes = () => [...roads.hardBoxes('tarmac'), ...(village ? village.tarmacBoxes() : [])];
 
-  /** 0..1 how much of (x, z) is stubble: the two fields either side of the road, up to the tarmac, and not under the buildings out there. */
+  /** 0..1 how much of (x, z) is stubble: every arable field (today's two either side of the road), up to the tarmac, and not under the buildings out there. */
   function stubbleAt(x, z) {
     if (!road) return 0;
     const a = areaOf(x, z);
-    if ((a !== 'north' && a !== 'south') || built.builtAt(x, z)) return 0;
+    if (kinds[a] !== 'arable' || built.builtAt(x, z)) return 0;
     return 1 - tarmacAt(x, z);
   }
 
@@ -100,8 +100,9 @@ export function createFields(layout) {
     return shape(x, z).soak;
   }
 
-  /** The stubble field's own settings (layout.stubbleFields) for 'north' or 'south'. */
+  /** The stubble field's own settings (layout.stubbleFields) for a field ('north' or 'south' today), and the fields that have them, in order. */
   const stubbleField = (area) => layout.stubbleFields?.[area] ?? null;
+  const stubbleFields = Object.keys(layout.stubbleFields ?? {}).filter((k) => areas[k]);
 
   /** Metres (x, z) is outside the farm and the hill's hedges: how far into the neighbours' farmland (0 inside). */
   function outsideAll(x, z) {
@@ -121,5 +122,5 @@ export function createFields(layout) {
     if (!hill || z < hill.laneRect.minZ || z > hill.laneRect.maxZ) return 0;
     return 1 - smoothstep(hill.lane.halfWidth, hill.lane.halfWidth + 1.5, Math.abs(x - hill.lane.x));
   };
-  return { wearBounds, laneAt, farm, hill, woods, quarry, gates, outside: outsideAll, grass, areas, polygons, kinds, boundaries: plan.boundaries, hedges, gateways, soakAt, stubbleField, areaOf, hedgeDistance, hedgeAhead, hedgedAt, tarmacAt, tarmacBoxes, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
+  return { wearBounds, laneAt, farm, hill, woods, quarry, gates, outside: outsideAll, grass, areas, polygons, kinds, boundaries: plan.boundaries, hedges, gateways, soakAt, stubbleField, stubbleFields, areaOf, hedgeDistance, hedgeAhead, hedgedAt, tarmacAt, tarmacBoxes, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
 }

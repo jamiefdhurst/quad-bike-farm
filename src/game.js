@@ -4966,7 +4966,7 @@ export class Game {
   /** One line about the save, for the debug panel and the console. */
   farmText() {
     const savedAgo = this.farmSavedAt === undefined ? null : (performance.now() - this.farmSavedAt) / 1000;
-    return describeFarm({ day: this.farm.day, seeded: this.farm.seeded, wiped: !!this.farmWiped, started: !!this.farmStarted, savedAgo });
+    return describeFarm({ day: this.farm.day, seeded: this.farm.seeded, newFarm: !!this.farm.newFarm, wiped: !!this.farmWiped, started: !!this.farmStarted, savedAgo });
   }
 
   /** One line about the farm's date and season, for the debug panel and the console. */
