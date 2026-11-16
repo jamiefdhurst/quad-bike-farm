@@ -372,6 +372,9 @@ function sampleSites(root, random, count, { flanks = 0.45 } = {}) {
 
 // The whole look ----------------------------------------------------------------
 
+/** Where the tarp ends up, in the vehicle's frame: out to its right, nearly flat (about a metre by a metre and a quarter, 15 cm high), clear of the wheels. */
+const TARP_FOLDED = { x: 1.55, y: 0.012, z: -0.2, sx: 0.5, sy: 0.2, sz: 0.4 }; // `y`: a hair above the floor, or its edges sink into the barn floor's slab
+
 /**
  * What the barn find looks like and what its jobs change. Build one with `applyDamage` once the model has its materials weathered, call
  * `sync` when the jobs change (or the farm loads) and `step` each frame.
@@ -381,42 +384,71 @@ export class RustyLook {
     this.tarp = null;
     this.tyres = []; // { mesh, perished, fresh, ring }
     this.nest = null;
-    this.tarpOffFor = 0; // seconds since the tarp came off, or -1 not yet
+    this.tarpOffFor = -1; // seconds since the tarp came off, or -1 not yet (or settled)
+    this.tarpFolded = false; // it has come off and lies on the floor beside the vehicle, no longer on it
     this.tyresFresh = false;
   }
 
   /** Brings what shows in line with what is done (a loaded farm too: instantly, no tarp to drag). */
   sync(find, { instant = false } = {}) {
     if (!find) return;
-    if (find.tarpOff && this.tarp?.visible) {
-      if (instant) this.tarp.visible = false;
+    if (find.tarpOff && this.tarp && !this.tarpFolded) {
+      if (instant) this.foldTarp();
       else if (this.tarpOffFor < 0) this.tarpOffFor = 0;
     }
     if (!find.tarpOff && this.tarp) {
+      this.unfoldTarp();
       this.tarp.visible = true;
       this.tarpOffFor = -1;
-      this.resetTarp();
     }
     this.setTyresFresh(!!find.isDone?.('tyre'));
     if (this.nest) this.nest.visible = !find.isDone?.('carb');
   }
 
-  /** The tarp slides off the side and slumps, then is gone. */
+  /** The tarp slides off the side and slumps into a heap on the floor beside the vehicle, where it stays. */
   step(dt) {
-    if (!this.tarp || this.tarpOffFor < 0 || !this.tarp.visible) return;
+    if (!this.tarp || this.tarpOffFor < 0 || this.tarpFolded) return;
     this.tarpOffFor += dt;
     const k = Math.min(1, this.tarpOffFor / 1.3);
     const e = k * k * (3 - 2 * k);
-    this.tarp.position.set(this.tarpHome.x + 1.9 * e, this.tarpHome.y - 0.18 * e, this.tarpHome.z - 0.2 * e);
-    this.tarp.rotation.z = -0.5 * e;
-    this.tarp.scale.set(1 - 0.15 * e, 1 - 0.45 * e, 1);
-    if (k >= 1) this.tarp.visible = false;
+    this.setTarp(e);
+    if (k >= 1) this.foldTarp();
   }
 
-  resetTarp() {
+  /** The tarp `e` of the way (0 over the vehicle, 1 lying folded beside it): slid out, tipping over on the way, squashed down to a heap. */
+  setTarp(e) {
+    const t = TARP_FOLDED;
+    this.tarp.position.set(this.tarpHome.x + t.x * e, this.tarpHome.y + t.y * e, this.tarpHome.z + t.z * e);
+    this.tarp.rotation.z = -0.5 * 4 * e * (1 - e);
+    this.tarp.scale.set(1 + (t.sx - 1) * e, 1 + (t.sy - 1) * e, 1 + (t.sz - 1) * e);
+  }
+
+  /**
+   * It lies where it fell. It is moved out of the vehicle's own frame, into the scene where it lay, or it would ride away on the vehicle
+   * the day that is driven out of the barn (nothing to do if the model is not in a scene).
+   */
+  foldTarp() {
     if (!this.tarp) return;
+    this.setTarp(1);
+    this.tarp.visible = true;
+    this.tarpOffFor = -1;
+    this.tarpFolded = true;
+    this.tarpParent ??= this.tarp.parent;
+    let root = this.tarp;
+    while (root.parent) root = root.parent;
+    if (root.isScene) {
+      this.tarp.updateWorldMatrix(true, false);
+      root.attach(this.tarp);
+    }
+  }
+
+  /** Back over the vehicle, as it was (the tarp is put back, or the farm is dealt again). */
+  unfoldTarp() {
+    if (!this.tarp) return;
+    if (this.tarpFolded && this.tarpParent && this.tarp.parent !== this.tarpParent) this.tarpParent.add(this.tarp);
+    this.tarpFolded = false;
     this.tarp.position.copy(this.tarpHome);
-    this.tarp.rotation.z = 0;
+    this.tarp.rotation.set(0, 0, 0);
     this.tarp.scale.set(1, 1, 1);
   }
 

@@ -4321,7 +4321,7 @@ export class Game {
       if (unit.barnFind && s.barnFind) {
         unit.barnFind.restore(s.barnFind);
         unit.engine.startBlocked = unit.barnFind.startBlocked;
-        if (unit.barnFind.tarpOff && unit.tarp) unit.tarp.visible = false; // (its look is not on yet: dressFinds does the rest)
+        if (unit.barnFind.tarpOff && unit.tarp) unit.tarp.visible = false; // (its look is not on yet: dressFinds lays the tarp folded on the floor, visible again)
         unit.rustyLook?.sync(unit.barnFind, { instant: true });
       }
       const h = this.history.quads[unit.id];
