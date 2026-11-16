@@ -25,7 +25,8 @@ const box = (x, y, z) => new THREE.BoxGeometry(x, y, z);
 /**
  * A long-reach hydraulic trolley jack: two steel channels for a chassis, fixed wheels at the front and swivel castors at the back, the
  * red pump housing with its filler plug, a chrome ram, a lift arm with a rubber-padded saddle, and a handle with a grip. About 0.9 m long
- * without the handle, 0.3 m high.
+ * without the handle, 0.4 m high. Every part is held by another: the housing and the ram stand on plates between the channels, the arm
+ * turns on a pin through two ears on them, and the ram's rod pushes up on the arm's underside.
  */
 export function buildJack() {
   const g = new THREE.Group();
@@ -37,35 +38,44 @@ export function buildJack() {
   }
   put(g, box(0.03, 0.06, 0.2), red, -0.36, 0.1, 0);
   put(g, box(0.03, 0.06, 0.2), red, 0.32, 0.1, 0);
+  // Deck plates under the pump housing and under the ram, across and into the channels (their tops 5 mm below the channels', so no two share a plane).
+  put(g, box(0.2, 0.03, 0.2), red, -0.22, 0.115, 0);
+  put(g, box(0.1, 0.03, 0.2), red, 0, 0.115, 0).name = 'jackRamPlate';
   // Front wheels on an axle, rear castors on short forks.
   put(g, cyl(0.034, 0.03), black, 0.3, 0.034, 0.12, [Math.PI / 2, 0, 0]);
   put(g, cyl(0.034, 0.03), black, 0.3, 0.034, -0.12, [Math.PI / 2, 0, 0]);
   put(g, cyl(0.008, 0.28), steel, 0.3, 0.034, 0, [Math.PI / 2, 0, 0]);
+  for (const z of [-0.1, 0.1]) put(g, box(0.03, 0.05, 0.012), steel, 0.3, 0.05, z); // the axle's brackets, up into the channels' lips
   for (const z of [-0.115, 0.115]) {
     put(g, box(0.03, 0.05, 0.012), steel, -0.34, 0.075, z);
     put(g, cyl(0.026, 0.026), black, -0.34, 0.028, z, [Math.PI / 2, 0, 0]);
   }
   // The pump housing at the back: a red block with a filler plug and a steel handle socket.
-  put(g, box(0.16, 0.13, 0.15), red, -0.22, 0.2, 0);
-  put(g, cyl(0.014, 0.02, 8), black, -0.22, 0.275, 0.03);
+  put(g, box(0.16, 0.13, 0.15), red, -0.22, 0.192, 0); // its foot 3 mm into the deck plate
+  put(g, cyl(0.014, 0.02, 8), black, -0.22, 0.262, 0.03);
   put(g, cyl(0.02, 0.07, 8), steel, -0.3, 0.2, 0, [0, 0, Math.PI / 2]);
-  // The ram: a cylinder up from the housing with a chrome rod inside it, leaning towards the arm.
+  // The ram: a cylinder standing on its deck plate (sunk 1 cm into it, as it leans) with a chrome rod out of the top, leaning towards the arm
+  // and ending 3 mm into the arm's underside, 0.108 m up the lean (where a line up that lean meets the arm's underside).
   const ram = new THREE.Group();
-  put(ram, cyl(0.03, 0.15), red, 0, 0.075, 0);
-  put(ram, cyl(0.016, 0.12), chrome, 0, 0.19, 0);
-  ram.position.set(-0.04, 0.14, 0);
-  ram.rotation.z = -0.35;
+  ram.name = 'jackRam';
+  put(ram, cyl(0.03, 0.06), red, 0, 0.03, 0);
+  put(ram, cyl(0.016, 0.058), chrome, 0, 0.079, 0);
+  ram.position.set(0, 0.12, 0);
+  ram.rotation.z = -0.25;
   g.add(ram);
-  // The lift arm: a deep steel box section pivoting at the chassis and rising to the saddle, with a cross brace.
+  // Two ears up from the channels, with the arm's pivot pin through them and the arm.
+  for (const z of [-0.082, 0.082]) put(g, box(0.06, 0.145, 0.012), steel, -0.06, 0.2025, z).name = 'jackEar';
+  // The lift arm: a deep steel box section pivoting on its pin and rising to the saddle, with a cross brace.
   const arm = new THREE.Group();
+  arm.name = 'jackArm';
   put(arm, box(0.5, 0.07, 0.1), steel, 0.25, 0, 0);
   put(arm, box(0.4, 0.012, 0.11), red, 0.22, 0.04, 0);
-  put(arm, cyl(0.012, 0.13, 8), steel, 0.02, 0, 0, [Math.PI / 2, 0, 0]);
+  put(arm, cyl(0.012, 0.19, 8), steel, 0.02, 0, 0, [Math.PI / 2, 0, 0]).name = 'jackPivot';
   // Saddle: a rubber pad in a steel cup, with a raised lip round it.
   put(arm, cyl(0.05, 0.022, 16), steel, 0.5, 0.045, 0);
   put(arm, new THREE.TorusGeometry(0.047, 0.007, 6, 16), steel, 0.5, 0.058, 0, [Math.PI / 2, 0, 0]);
   put(arm, cyl(0.04, 0.012, 16), black, 0.5, 0.06, 0);
-  arm.position.set(-0.08, 0.17, 0);
+  arm.position.set(-0.08, 0.25, 0);
   arm.rotation.z = 0.12;
   g.add(arm);
   // The handle: a tube from the socket, angled up and back, with a rubber grip and a chrome cap.
