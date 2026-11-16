@@ -7,6 +7,7 @@ import { Track } from '../src/world/track.js';
 import { createOutbuildings } from '../src/world/outbuildings.js';
 import { NEIGHBOUR_VOICE, AMY_NEIGHBOUR_LINES, JESS_NEIGHBOUR_LINES } from '../src/npc/neighbourLines.js';
 import { VISITOR_KINDS } from '../src/world/traffic.js';
+import { logPile } from '../src/world/neighbourFarmProps.js';
 
 const S = neighbourFarmShape(LAYOUT);
 const lane = LAYOUT.publicLane;
@@ -263,5 +264,23 @@ describe('what is said', () => {
   it('matches the paint of a visitor kind that exists (she drives the same Tor or Crag)', () => {
     expect(VISITOR_KINDS.neighbour.model).toBe('tor');
     expect(S.parked.some((p) => p.kind === 'tor')).toBe(true);
+  });
+});
+
+describe('the log pile by her barn (#909)', () => {
+  it('stands clear of the barn\'s wall, so no log\'s end shows inside the barn', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const pile = logPile(S.barn.outer, createRandom(seed));
+      expect(pile.logs).toHaveLength(15);
+      for (const l of pile.logs) {
+        const nearEnd = pile.z - (l.len / 2) * Math.cos(l.yaw) - l.r * Math.abs(Math.sin(l.yaw));
+        expect(nearEnd, `seed ${seed}`).toBeGreaterThan(S.barn.outer.maxZ + 0.01);
+      }
+    }
+  });
+
+  it('is not left standing off the wall by more than a log\'s length', () => {
+    const pile = logPile(S.barn.outer, createRandom(3));
+    expect(pile.z - S.barn.outer.maxZ).toBeLessThan(0.8);
   });
 });
