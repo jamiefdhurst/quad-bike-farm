@@ -172,7 +172,7 @@ export const FAQ_SECTIONS = [
         q: 'Can I play the same farm again?',
         a: `Yes. The browser console prints the game's seed when it loads. Add <code>?seed=</code> and that number to the address and you get
           the same layout, weather and luck again, as a first day: a seeded game doesn't touch your saved farm and isn't saved. <code>?weather=rain</code> (or <code>sunny</code>, <code>overcast</code>, <code>drizzle</code>,
-          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) plays a day in the middle of that season, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>shirtTie</code>, <code>cropTop</code>) puts both girls in that outfit. <code>?body=flat</code> shows the girls' bodies without the smoothing.`,
+          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) plays a day in the middle of that season, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>shirtTie</code>, <code>cropTop</code>) puts both girls in that outfit. <code>?body=flat</code> shows the girls' bodies without the smoothing. <code>?layout=2</code> loads the bigger farm being built (not saved).`,
         tip: 'Add ?seed= and a number to the address to play the same farm again.',
       },
       {
@@ -2912,6 +2912,14 @@ export const FAQ_SECTIONS = [
         a: `Backslash (<kbd>\\</kbd>, the <kbd>#</kbd> key on a UK keyboard) opens a command line. <code>help</code> lists the commands. You can read and set any value
           (<code>vehicle.farm300.temperature 0.4</code>), move things (<code>tp farm300 barn</code>), reset them, change the weather (<code>weather rain</code>), fly
           (<code>fly</code>) and switch the girls' autonomy and speech off.`,
+      },
+      {
+        q: 'Can I see the bigger farm that is being built?',
+        a: `Yes, as it goes. Add <code>?layout=2</code> to the address, or type <code>layout 2</code> in the console, and the game loads on the new farm: about 870 by 830 m
+          with a natural outline, six arable fields in stubble, meadows, pasture, the wood's and the pit's fields and Home Ground, each with its hedges and gateways, and
+          all of them on the map (<kbd>M</kbd>). It is being built a piece at a time, so everything you know from the old farm (the barn, the track, the wood, the hill)
+          still stands where it was until its turn to move, and the walls round the sheep field and the hill are only on the map so far. It plays as a fresh first day
+          and is never saved, so your own farm is just as you left it. <code>layout 1</code> goes back.`,
       },
       {
         q: 'How do I find the name of something in the console?',

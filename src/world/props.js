@@ -747,10 +747,11 @@ function buildGrass({ scene, layout, heights, random, drawDistance }) {
 
 /**
  * Cut straw stalks standing in the stubble fields, in the drill rows (half a metre apart, the way each field was drilled), off the tarmac and
- * clear of the hedges: each field's own crop (layout.stubbleFields), the barley shorter, greyer and thicker than the wheat.
+ * clear of the hedges: each field's own crop (layout.stubbleFields), the barley shorter, greyer and thicker than the wheat. The same 60,000
+ * clumps are shared over however many arable fields there are, so the new farm's six stand thinner than today's two (#813 sets a budget).
  */
 function buildStubble({ scene, fields, heights, random, drawDistance }) {
-  const areas = ['north', 'south'].filter((k) => fields.areas[k]);
+  const areas = fields.stubbleFields ?? ['north', 'south'].filter((k) => fields.areas[k]);
   if (!areas.length) return;
   const perArea = (r) => (r.maxX - r.minX) * (r.maxZ - r.minZ);
   const fieldsList = areas.map((k) => ({ r: fields.areas[k], f: fields.stubbleField(k) ?? {} }));

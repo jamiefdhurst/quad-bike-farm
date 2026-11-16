@@ -949,11 +949,11 @@ function paintPatchwork(c, fields) {
 /**
  * The stubble fields, each as layout.stubbleFields has it: its straw colour with darker drill rows every half metre the way it was drilled,
  * the odd bare or weedy patch, and the tramlines (the sprayer's wheel lines, two dark stripes 1.8 m apart) every British arable field has.
- * The north field's hollow is damper: darker, with more green coming through.
+ * A field's hollow (the north field's) is damper: darker, with more green coming through.
  */
 function paintStubble(c, fields) {
   const { ctx, s, win } = c;
-  for (const [fi, key] of ['north', 'south'].entries()) {
+  for (const [fi, key] of (fields.stubbleFields ?? ['north', 'south']).entries()) {
     const r = fields.areas[key];
     if (!r || !c.over(r, 1)) continue;
     const f = fields.stubbleField(key) ?? { rows: 'x', tramlines: 24, ground: '#b3a06a' };

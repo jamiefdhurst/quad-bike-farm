@@ -11,6 +11,7 @@ import { resolve, walk, show, describe, parseValue, pathCandidates } from './she
  *   girlVerbs(id): [{ verb, label, vehicle }]         girlVerb(id, verb, vehicleId): void
  *   jobs(): [{ id, name, stage, verbs: [{ verb, label }] }]   jobVerb(id, verb): string | void   (the farm's jobs, as the panel's Jobs folder)
  *   weatherKinds(): string[]              setWeather(kind): string
+ *   layoutNow(): string   setLayout(n): string   (which farm: today's, or the new one behind ?layout=2; setting it reloads)
  *   dump(text): void                      (copies to the clipboard)
  *   farmText(): string   farmSave(): boolean   farmJson(): string   farmLoad(json): string   farmWipe(): void   farmEndDay(): string   farmSendHome(): string   (the farm that remembers)
  *   notebookLearnt(): [{ id, text, learnt }]   learnThing(id): boolean   learnAll(): void   forgetAll(): void   (the notebook's "Things I've learnt")
@@ -420,6 +421,19 @@ export function buildCommands(host) {
         const k = host.weatherKinds().find((w) => w.toLowerCase() === kind.toLowerCase());
         if (!k) throw new Error(`no weather "${kind}". There is ${host.weatherKinds().join(', ')}`);
         return host.setWeather(k);
+      },
+    },
+    {
+      name: 'layout',
+      group: 'World',
+      usage: 'layout [1 | 2]',
+      help: 'which farm this is: 1 today\'s, 2 the new farm being built on the farm plan (not saved). Setting it loads the game again',
+      examples: ['layout', 'layout 2', 'layout 1'],
+      complete: (ctx, tokens) => (tokens.length === 0 ? ['1', '2'] : []),
+      run: ([n]) => {
+        if (n === undefined) return host.layoutNow();
+        if (n !== '1' && n !== '2') throw new Error(`no layout "${n}". There is 1 (today's farm) and 2 (the new one)`);
+        return host.setLayout(Number(n));
       },
     },
     {

@@ -51,6 +51,8 @@ function makeWorld() {
     weatherKinds: () => ['sunny', 'rain'],
     weatherNow: () => 'sunny',
     setWeather: (k) => `now ${k}`,
+    layoutNow: () => `layout ${state.layout ?? 1}`,
+    setLayout: (n) => ((state.layout = n), `loading layout ${n}`),
     scenes: () => [{ id: 'frost', label: 'Set up a frosty dawn' }],
     runScene: (id) => [`ran ${id}`],
     dump: (t) => (state.dumped = t),
@@ -337,6 +339,18 @@ describe('the notebook\'s things I\'ve learnt', () => {
     expect(text(shell.run('learn all'))).toBe('wrote them all down');
     expect(text(shell.run('learn none'))).toBe('rubbed them all out');
     expect(text(shell.run('learn'))).toContain('[ ] wax');
+  });
+});
+
+describe('which farm', () => {
+  it('says which layout this is, loads the other, and refuses one there isn\'t (#681)', () => {
+    const { shell, state } = makeWorld();
+    expect(text(shell.run('layout'))).toBe('layout 1');
+    expect(text(shell.run('layout 2'))).toBe('loading layout 2');
+    expect(state.layout).toBe(2);
+    expect(text(shell.run('layout 3'))).toMatch(/no layout "3"/);
+    expect(state.layout).toBe(2);
+    expect(shell.complete('layout ').candidates).toEqual(['1', '2']);
   });
 });
 
