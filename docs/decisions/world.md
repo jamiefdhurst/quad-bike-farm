@@ -1270,6 +1270,7 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - Found: no plain bug that survives the move. A far-detail count taken right after a teleport reads the previous spot (the swap looks every quarter second from the camera), so `farDetail.update(camera.position, 0, true, true)` goes before a count.
 - Sorted: #315 and #122 after the move (her vehicles' places and the visit route are rebuilt by it, #568 and #687 first), #714 and #145 after it; the rest folds in. The grades are in `docs/detail-audit.md`; the findings and the sorting are on #679, and the hand-over is in #569's "From the review".
 - Not done: a ride at her gate (a scripted throttle moved no vehicle in the headless page), a girl walked into her yard, and her wave and turning in motion.
+- Jamie's walk (16 November 2026) added, and where each went: a different house from the village's (#910); a different hairstyle and a proper outfit for her (#913); more in the yard (#911); the spots on the concrete too regular and plainly circles (#912); the dairy's things, which are #569's list; logs showing through the barn wall (#909, fixed) and she should leave her yard when she calls at the farm (#908, fixed), both plain bugs that my pass missed. Whether her vehicles make sense, whether she needs others and whether any should be driveable was asked of him in chat, with #315 as where borrowing would land.
 
 ## Her log pile no longer goes through the barn's wall (#909)
 
