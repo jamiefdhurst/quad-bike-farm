@@ -286,3 +286,28 @@ Graded from my own shots at 28 spots by day (13:00) and 7 at dusk (19:12, alread
 | The brook's spring end | block | The ribbon thins to nothing at x 250 on flat ground (shot 19): no spring, seep, rushes or damp patch. The plan's river rises on the Moor, so this goes |
 | The ground beyond the lane | block | A flat pale green with no texture (`outerTerrain`, shots 18, 19), the "big green thing" #565 asks to be gone |
 | The river and its meadow at night | block | Black (dusk shots 03, 04): the water has no sheen and the posts, the willows and the gateway nothing to find them by; no light, as with the rest of the farm |
+
+## The lane and its traffic (#678)
+
+Graded from my own shots at 16 spots by day (13:00), at dusk (19:30, already dark in November), at night (22:00), in rain and in snow: along the lane from the big gate both ways, both ends of the open stretch, across the lane from the farm's hedge, the neighbour's wall, the village turning and the culvert, the east side, a passing van and the tuner's rig; the code (`layout.js`, `props.js`, `roadMesh.js`, `traffic.js`, `trafficView.js`, `kids.js`, `gateMinding.js`, `roadMud.js`, `roadWet.js`); and the cost at five spots. I did not ride or walk it, so Jamie's walk is added below when it is done, as for #669 to #677. I did not see a kid in motion or a passing driver close up, so those are graded from the code and the decisions. The neighbour's wall and yard are graded in #679, the village in #680. The move (#687, with #568 and #686 for the drive and Back Lane) rebuilds the blocks and lifts the passables.
+
+| Object | Grade | What it lacks |
+| --- | --- | --- |
+| Lane tarmac | passable | A flat 4.6 m strip with a speckle texture, two darker wheel bands and a pale gritty edge: no camber, patches (`patches` is 0 here), cracks, crumbling edge into the verge, gullies, drain or manhole; it keeps a hard line to the grass |
+| The centre line | passable | A clean dashed white line (3 m on, 6 m off) of tidy rectangles; no wear along it. A lane with passing places is single track and has none (decide in the move) |
+| Verge on our side | passable | A strip of mown-looking grass 3 to 4 m wide between the tarmac and the hedge: no stones, ruts, nettles, cow parsley, dung or a muddy gateway lip |
+| The lane's side of our hedge | passable | The near hedge's big-leaf parts read well but are heavy (#837) and can be walked through (#829); one even band of one height, no standards, gaps or gateway stakes |
+| The big gate and its posts | passable | A good galvanised five-bar-style gate (seven bars, a brace, a latch); the timber posts are plain boxes with no cap, weather or hinges seen |
+| The gateway's apron | block | A flat dark rectangle with a fuzzy edge on the grass inside the hedge, not joined to the lane: no bellmouth, kerb, concrete or tarmac to the road, no mud, no worn edge, about 4 m of grass between it and the tarmac |
+| The east side beyond the verge | block | 1.3 m of detailed verge, a hard edge with jagged green slivers, then the outer ring's flat pale green with low-poly ball trees in another style: no hedge, wall, fence, field or gateway |
+| Trees along the lane | passable | The GLB trees (4,310 and 956 triangles) are good shapes and the heaviest thing in view; all the same few, and left unnamed so the census cannot count them |
+| Lane's ends | block | The tarmac stops square at z -205 and 205 on bare (south: tan) ground; vehicles appear and vanish there |
+| Lane furniture | block | None: no passing places, grit bin, fingerpost, sign, postbox (it is on the neighbour's gatepost), pole, gateway or cottage the plan has |
+| The brook's culvert under the lane | passable | A stone headwall and a pipe mouth each side (shot at the village turning); plain stone texture, a simple pipe, no weed, flow or stain (#215 is the yard's culvert) |
+| Weather on the tarmac | block | The lane is a mesh outside the ground's paint: dry and matt in rain (the farm road shines), white with the line gone in snow, mud shed onto it not drawn (#363), frost not seen |
+| The lane at night | block | Black: no lamp, cat's eye, reflective sign or lit window along it; only a passing vehicle's lamps and the village's windows |
+| Passing vehicles (van, Land Rover, tractor, UTV) | good | The farm's own models in a few paints, with lamps and beams at night (vehicle rules, `trafficView.js`); the van is the Crag. Graded from the code and the vehicle reviews: a passing one was too far off in my shots to judge close |
+| Passing drivers | block | (from the code) A dark torso and head; no hands, face or clothes |
+| The post van and the neighbour's car | passable | The Crag in red with a registration, and the Tor in four paints; #122 asks for a real van; the drivers are the girls' rig in a plain outfit |
+| The kids and their mini motos | block | (from the code and #474) The girls' rig scaled to 1.3 m with one hair colour and a jumper in five colours, static on the TZ 65, silent (#547, #548) |
+| The lane's sound | block | A synthesised drone and tyre hiss per vehicle, nothing of the lane's own (no wind, birds, stock or distance) |
