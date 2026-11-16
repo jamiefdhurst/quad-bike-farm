@@ -24,6 +24,21 @@ describe("the shepherd's hut model", () => {
     expect(fights.map((f) => `${f.a}/${f.b} at ${f.at.map((v) => v.toFixed(2))}`)).toEqual([]);
   });
 
+  it('keeps the door leaves as their own groups with their boards in them, so swinging them moves the door (merging them left them empty)', async () => {
+    const { parts } = await build();
+    for (const leaf of [parts.topLeaf, parts.lowerLeaf]) {
+      expect(leaf.name).toBe('hutLeaf');
+      expect(leaf.children.some((c) => c.isMesh)).toBe(true);
+    }
+    const box = () => new THREE.Box3().setFromObject(parts.topLeaf);
+    parts.topLeaf.parent.updateMatrixWorld(true);
+    const open = box();
+    parts.topLeaf.rotation.y = 0;
+    parts.topLeaf.parent.updateMatrixWorld(true);
+    const shut = box();
+    expect(Math.abs(shut.min.x - open.min.x) + Math.abs(shut.min.z - open.min.z)).toBeGreaterThan(0.3);
+  });
+
   it('has a stovepipe that goes down into the collar on the stove, not stopping short of it', async () => {
     const { group } = await build();
     const box = (name) => new THREE.Box3().setFromObject(group.getObjectByName(name));

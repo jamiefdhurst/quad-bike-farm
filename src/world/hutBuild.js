@@ -305,6 +305,7 @@ export function buildHut(c) {
   const lowerLeaf = new THREE.Group();
   lowerLeaf.position.set(-DOOR_W / 2, F + 0.03 + leafH / 2, hl + 0.012);
   lowerLeaf.rotation.y = -1.75;
+  lowerLeaf.name = 'hutLeaf';
   const lower = new THREE.Mesh(plank(DOOR_W - 0.02, leafH, 0.045, 0.4), mat(paintedTexture(random, '#4f6a4c')));
   lower.position.set((DOOR_W - 0.02) / 2, 0, 0);
   lower.castShadow = true;
@@ -315,6 +316,7 @@ export function buildHut(c) {
   const topLeaf = new THREE.Group();
   topLeaf.position.set(-DOOR_W / 2, F + 0.03 + leafH + (DOOR_H - leafH - 0.03) / 2, hl + 0.01);
   topLeaf.rotation.y = -1.75;
+  topLeaf.name = 'hutLeaf';
   const leaf = new THREE.Mesh(plank(DOOR_W - 0.02, DOOR_H - leafH - 0.05, 0.045, 0.4), mat(paintedTexture(random, '#4f6a4c')));
   leaf.position.set((DOOR_W - 0.02) / 2, 0, 0);
   leaf.castShadow = true;
@@ -532,15 +534,21 @@ export function buildHut(c) {
 
 /**
  * Merges the group's plain static meshes into one mesh for each material (and shadow setting), so the whole hut is a handful of draw calls and
- * not a hundred. Named meshes (the glass, the stove's door, the roof, the mug) and the kettle, which move or change, are left as they are.
+ * not a hundred. Named meshes (the glass, the stove's door, the roof, the mug), the kettle and the door's leaves, which move or change, are left as they are.
  */
+/** Whether `o` stands anywhere under a group called `name`. */
+const insideNamed = (o, name) => {
+  for (let p = o.parent; p; p = p.parent) if (p.name === name) return true;
+  return false;
+};
+
 function mergeByMaterial(group) {
   group.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
   const buckets = new Map();
   const victims = [];
   group.traverse((o) => {
-    if (!o.isMesh || o.name || o.parent?.name === 'hutKettle') return;
+    if (!o.isMesh || o.name || insideNamed(o, 'hutKettle') || insideNamed(o, 'hutLeaf')) return;
     const key = `${o.material.uuid}/${o.castShadow ? 1 : 0}/${o.receiveShadow ? 1 : 0}`;
     const geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
     geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
