@@ -55,12 +55,35 @@ export function loftShape(layout, floorY) {
     // Where the ladder stands on the barn floor, and where it lands on the loft (just inside the gap in the rail).
     ladderFoot: { x: l.ladder.footX, y: floorY, z: l.ladder.z },
     ladderTop: { x: l.edgeX + 0.35, y: top, z: l.ladder.z },
+    // The ladder leans from its foot to `ladderTopX`, `ladderOver` above the planks (barnBuild.js draws it and `climbPoints` climbs it).
+    ladderTopX: l.edgeX + 0.1,
+    ladderOver: 0.7,
     // The rail along the open edge in two pieces, with the gap at the ladder between them: { z0, z1 }.
     railSpans: [
       { z0: inner.minZ, z1: l.ladder.z - l.ladder.gap / 2 },
       { z0: l.ladder.z + l.ladder.gap / 2, z1: inner.maxZ },
     ],
   };
+}
+
+/** How far from the ladder's rails you stand on it: a capsule's radius, so the top of the climb stops short of the planks' edge until you step onto them. */
+export const CLIMB_STAND_OFF = 0.3;
+
+/** Where the ladder's rails are, in x, at height `y`: it leans, so they move towards the loft as they rise. */
+export function ladderXAt(lf, y) {
+  const rise = lf.top + lf.ladderOver - lf.ladderFoot.y;
+  return lf.ladderFoot.x + ((y - lf.ladderFoot.y) * (lf.ladderTopX - lf.ladderFoot.x)) / rise;
+}
+
+/**
+ * The way up (or down) the ladder after `from`: [from, ...via, to]. Up the ladder's lean to the height of the planks, stood off it so your
+ * head passes the planks' open edge rather than through them, then over the edge to `ladderTop`. Going down is the same points the other way.
+ */
+export function climbPoints(lf, from, up) {
+  const foot = { x: lf.ladderFoot.x - 0.1, y: lf.ladderFoot.y, z: lf.ladderFoot.z };
+  const high = { x: ladderXAt(lf, lf.top) - CLIMB_STAND_OFF, y: lf.top, z: lf.ladderTop.z };
+  const top = { x: lf.ladderTop.x, y: lf.top, z: lf.ladderTop.z };
+  return up ? [from, foot, high, top] : [from, top, high, foot];
 }
 
 /** Whether (x, z) is over the loft's planks, `margin` metres in from the edges. */
@@ -74,24 +97,18 @@ export function onLoft(layout, x, y, z, floorY) {
   return overLoft(layout, x, z) && y > floorY + layout.loft.floor * 0.5;
 }
 
-/** A climb between two points, eased, over `seconds`. update() returns the position and whether it's done. */
+/** A climb between two points, by way of `via` if given, eased, over `seconds`. update() returns the position and whether it's done. */
 export class Climb {
-  constructor(from, to, seconds) {
-    this.from = from;
-    this.to = to;
+  constructor(from, to, seconds, via = []) {
+    this.points = [from, ...via, to];
     this.seconds = Math.max(0.1, seconds);
     this.t = 0;
   }
 
   update(dt) {
     this.t = Math.min(1, this.t + dt / this.seconds);
-    const k = smooth(this.t);
-    return {
-      x: this.from.x + (this.to.x - this.from.x) * k,
-      y: this.from.y + (this.to.y - this.from.y) * k,
-      z: this.from.z + (this.to.z - this.from.z) * k,
-      done: this.t >= 1,
-    };
+    const { x, y, z } = pathAt(this.points, smooth(this.t));
+    return { x, y, z, done: this.t >= 1 };
   }
 }
 
