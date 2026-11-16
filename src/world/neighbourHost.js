@@ -8,7 +8,8 @@ import { registerTuning } from '../core/tuning.js';
 import { Neighbour, DEFAULT_NEIGHBOUR_PARAMS, NEIGHBOUR_PARAM_RANGES } from './neighbourFarm.js';
 import { NEIGHBOUR_VOICE } from '../npc/neighbourLines.js';
 import { CharacterRig } from '../npc/characterRig.js';
-import { applyOutfit, withJumper, OUTFITS } from '../npc/outfit.js';
+import { applyOutfit } from '../npc/outfit.js';
+import { neighbourOutfit, NEIGHBOUR_HEIGHT } from './neighbourLook.js';
 import { CompanionSounds } from '../audio/companionAudio.js';
 
 const WAVE_SECONDS = 2.4;
@@ -39,8 +40,8 @@ export class NeighbourHost {
   /** Her rig, made on first use (the girls' model is shared, so it is built once the game has it). */
   ensureRig() {
     if (this.rig || !this.g.models.companion) return this.rig;
-    const rig = new CharacterRig(this.g.models.companion, 1.68);
-    applyOutfit(rig, withJumper({ ...OUTFITS.original, colors: { hair: '#b9b4aa' } }, '#6b4a6e'));
+    const rig = new CharacterRig(this.g.models.companion, NEIGHBOUR_HEIGHT);
+    applyOutfit(rig, neighbourOutfit());
     rig.play('Idle', { fade: 0 });
     this.g.scene.add(rig.root);
     this.rig = rig;
@@ -61,6 +62,7 @@ export class NeighbourHost {
     const n = this.neighbour;
     const dark = g.daylight?.darkness ?? 0;
     for (const [k, t] of this.said) this.said.set(k, t + dt);
+    this.syncAway();
     const events = n.update(dt, { targets: this.targets(), darkness: dark, rain: g.weather?.rain ?? 0 });
     for (const e of events) this.onEvent(e);
     this.props.setNight(dark, n.indoors);
@@ -69,12 +71,24 @@ export class NeighbourHost {
     this.show(dt);
   }
 
+  /**
+   * She is out while a neighbour is calling at the farm (the visit is her, driving her own Tor): she and the Tor parked in her yard are gone from
+   * the start of the visit until it ends, then she is back at her door.
+   */
+  syncAway() {
+    const away = this.g.trafficHost?.traffic?.visit?.kind === 'neighbour';
+    if (away === this.neighbour.away) return;
+    this.neighbour.setAway(away);
+    this.props.setAway('tor', away);
+    this.lastEvent = away ? 'went out to call at the farm' : 'came home';
+  }
+
   watchArrival(dt) {
     const p = this.g.player.position;
     const inside = this.g.world.outbuildings.neighbour.inYard(p.x, p.z, -1);
     if (inside && !this.inYard) this.arrivedFor = 2.5;
     this.inYard = inside;
-    if (this.arrivedFor > 0 && (this.arrivedFor -= dt) <= 0 && !this.neighbour.indoors) this.g.trafficHost.remark('neighbourFarm', this.neighbour, 0.9);
+    if (this.arrivedFor > 0 && (this.arrivedFor -= dt) <= 0 && !this.neighbour.indoors && !this.neighbour.away) this.g.trafficHost.remark('neighbourFarm', this.neighbour, 0.9);
   }
 
   onEvent(e) {
@@ -117,7 +131,7 @@ export class NeighbourHost {
     const rig = this.ensureRig();
     if (!rig) return;
     const n = this.neighbour;
-    rig.root.visible = !n.indoors && this.props.group.visible;
+    rig.root.visible = !n.indoors && !n.away && this.props.group.visible;
     if (!rig.root.visible) return;
     this.groundY = this.g.world.groundHeightAt(n.x, n.z);
     rig.root.position.set(n.x, this.groundY, n.z);
@@ -141,7 +155,7 @@ export class NeighbourHost {
 
   /** Makes her greet now, whoever is near (or just wave and speak if no one is). */
   debugGreet() {
-    if (!this.active || this.neighbour.indoors) return false;
+    if (!this.active || this.neighbour.indoors || this.neighbour.away) return false;
     this.onEvent({ type: 'greet', key: this.neighbour.metBefore ? 'greetAgain' : 'greet', who: 'you' });
     this.neighbour.metBefore = true;
     return true;
@@ -159,6 +173,7 @@ export class NeighbourHost {
   describe() {
     if (!this.active) return 'no neighbour on this farm';
     const n = this.neighbour;
+    if (n.away) return `out, calling at the farm; last: ${this.lastEvent}`;
     return `${n.indoors ? 'indoors' : `in the yard, ${n.watching ? `watching ${n.watching.kind}` : 'looking about'}`}; last: ${this.lastEvent}`;
   }
 }

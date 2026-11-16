@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
 import { createRandom } from '../src/core/random.js';
-import { Drive, Traffic, Visit, DEFAULT_TRAFFIC_PARAMS, TRAFFIC_PARAM_RANGES, visitPlaces, planVisit, laneX, LANE_KINDS } from '../src/world/traffic.js';
+import { Drive, Traffic, Visit, DEFAULT_TRAFFIC_PARAMS, TRAFFIC_PARAM_RANGES, visitPlaces, planVisit, laneX, LANE_KINDS, VISITOR_KINDS } from '../src/world/traffic.js';
 import { wantedBodies } from '../src/world/trafficView.js';
 import { createFields } from '../src/world/fields.js';
 
@@ -123,7 +123,19 @@ describe('the lane and the plan', () => {
       expect(farm).not.toContain(v.reg);
     }
     expect(regs.has('G342 TVR')).toBe(true);
-    expect(regs.size).toBeGreaterThan(2);
+    expect(regs.has('K412 PBW')).toBe(true); // she drives her own Tor, the one parked in her yard
+    expect(regs.size).toBe(2);
+  });
+
+  it('has the neighbour call in the Tor parked in her yard, in its paint and with its registration (#908)', () => {
+    const tor = LAYOUT.neighbourFarm.parked.find((p) => p.kind === 'tor');
+    expect(VISITOR_KINDS.neighbour.model).toBe('tor');
+    expect(VISITOR_KINDS.neighbour.colour).toBe(tor.colour);
+    expect(VISITOR_KINDS.neighbour.regs).toEqual([tor.reg]);
+    const t = new Traffic({ places, params: P, random: createRandom(9) });
+    const v = t.startVisit('neighbour');
+    expect(v.colour).toBe(tor.colour);
+    expect(v.reg).toBe(tor.reg);
   });
 });
 

@@ -171,6 +171,7 @@ export class Neighbour {
     this.z = shape.stand.z;
     this.yaw = shape.stand.yaw;
     this.indoors = false;
+    this.away = false; // out calling at the farm: not in her yard, so she does nothing here (setAway)
     this.greetedFor = 0; // s left before she greets again
     this.chatFor = 0;
     this.nearTime = 0; // s someone has been near her this visit
@@ -178,9 +179,21 @@ export class Neighbour {
     this.watching = null; // who she is looking at now
   }
 
+  /** She goes out (calling at the farm) or comes home: home, she is at her door facing the yard again, as she was left. */
+  setAway(away) {
+    if (away === this.away) return;
+    this.away = away;
+    this.watching = null;
+    this.nearTime = 0;
+    this.x = this.shape.stand.x;
+    this.z = this.shape.stand.z;
+    this.yaw = this.shape.stand.yaw;
+  }
+
   update(dt, { targets = [], darkness = 0, rain = 0 }) {
     const events = [];
     const p = this.p;
+    if (this.away) return events; // she is out: her yard has nobody to greet, chat to or go indoors
     this.greetedFor = Math.max(0, this.greetedFor - dt);
     this.chatFor = Math.max(0, this.chatFor - dt);
     const wantsIn = darkness > p.indoorsDark;

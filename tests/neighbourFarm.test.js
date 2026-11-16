@@ -284,3 +284,28 @@ describe('the log pile by her barn (#909)', () => {
     expect(pile.z - S.barn.outer.maxZ).toBeLessThan(0.8);
   });
 });
+
+describe('the neighbour out calling at the farm (#908)', () => {
+  const make = () => new Neighbour(S, { ...DEFAULT_NEIGHBOUR_PARAMS }, createRandom(2));
+  const near = { x: S.stand.x, z: S.stand.z + 3, kind: 'you', onFoot: true };
+
+  it('does nothing in her yard while she is away: no greeting, no chat, no watching, no going indoors', () => {
+    const n = make();
+    n.setAway(true);
+    for (let i = 0; i < 400; i++) expect(n.update(0.1, { targets: [near], darkness: i > 200 ? 1 : 0 })).toEqual([]);
+    expect(n.watching).toBe(null);
+    expect(n.indoors).toBe(false);
+  });
+
+  it('is back at her door facing the yard when she comes home, and greets again', () => {
+    const n = make();
+    n.update(0.1, { targets: [near] });
+    n.x += 9;
+    n.yaw = 1;
+    n.setAway(true);
+    n.setAway(false);
+    expect([n.x, n.z, n.yaw]).toEqual([S.stand.x, S.stand.z, S.stand.yaw]);
+    n.greetedFor = 0;
+    expect(n.update(0.1, { targets: [near] }).some((e) => e.type === 'greet')).toBe(true);
+  });
+});
