@@ -311,3 +311,33 @@ Graded from my own shots at 16 spots by day (13:00), at dusk (19:30, already dar
 | The post van and the neighbour's car | passable | The Crag in red with a registration, and the Tor in four paints; #122 asks for a real van; the drivers are the girls' rig in a plain outfit |
 | The kids and their mini motos | block | (from the code and #474) The girls' rig scaled to 1.3 m with one hair colour and a jumper in five colours, static on the TZ 65, silent (#547, #548) |
 | The lane's sound | block | A synthesised drone and tyre hiss per vehicle, nothing of the lane's own (no wind, birds, stock or distance) |
+
+## The neighbour's farm (#679)
+
+Graded from my own shots at 22 spots by day (13:00: the lane at her gate and along her wall both ways, the west field behind it, inside the gate, the house's north face, the door close up, the house's south face, the barn's four faces and inside, the three vehicles close up, the postbox, the logs, her, two aerials, and 50 m and 140 m up the lane), at dusk (19:42) and at night (22:00), and from the code (`neighbourFarmProps.js`, `neighbourFarm.js`, `neighbourTextures.js`). The shots are in the main checkout's `.scratch/a679/shots`. I could not ride a quad at the gate (a scripted throttle moved nothing in the headless page), so how the gate and the yard ride is not graded. Jamie's walk is not in these yet.
+
+| Object | Grade | What it lacks |
+| --- | --- | --- |
+| The yard's drystone wall | passable | One even 1.3 m band of one stone texture with round moss blotches that read as polka dots close up (shots 07, 15, 18) and a flat grey capping slab; no throughs, uneven top, weeds or ivy at the foot, and no gap, gate or stile on the three sides that are not the lane's |
+| The gateposts | passable | Two 0.8 m stone pillars with a cap each (shot 15): no gate stops, hinge irons shown or name plate |
+| The postbox | good | A cast-iron box with a hood, a lip, a plate of times and a collar, readable from the lane (shots 01, 15); no collection mark or weather |
+| The five-bar gate | good | Two leaves, five bars, a brace, strap hinges, hinge pins and a latch plate, swinging in and opening with E (shots 01, 15); no chain or wear |
+| The yard's concrete | block | One 54 by 36 m slab of a single 4 m tile with the same oil spots in a grid (shots 05, 09); no falls, drain, puddles, scraped muck line, kerb or step to a door, and it stops 1.2 m short of the house (shot 07) |
+| The grass inside the wall | passable | Flat mown lawn round the slab and up to the house on its south (shot 08): no worn edge, weeds at the wall or path |
+| The farmhouse walls and roof | passable | Stone walls, a slate roof with a ridge, a chimney with pots and gable ends (shots 06, 08); no gutters or downpipes, no eaves or fascia, one chimney, no back door, no aerial, moss blotches as on the wall |
+| The farmhouse windows | passable | A painted frame, glazing bars, a cill and a lintel each (shot 06), all one size; no curtains, blinds or shutters, and all ten glow at once the same colour at night (shot d1) |
+| The front door, step and porch | good | A panelled door with a letterbox, knob and handle plate, a lintel, a stone step, and a porch of two posts on stone bases, beams, a slate lean-to, a bargeboard and a lamp (shot 07); the lamp is a plain box, no doormat, boots or number, and the step stands in grass |
+| The bench by the door | passable | Three seat slats, two back slats and iron ends (shot 07); plain, no wear or lichen |
+| The wheelie bins and water butt | passable | Ribbed bins with lids, handles and wheels, a butt with a lid and a tap (shot 18); no number or label, and nothing feeds the butt, no downpipe |
+| The barn's walls | passable | Grey block to 1.4 m under green sheeting (shots 09 to 11, 16); the sheeting's rust bands repeat in stripes, and there is no window, vent, door, gutter or downpipe on any of it |
+| The barn's roof | passable | Rusty tin with a ridge cap and overhangs (shot 10); no gutters, rooflights, fixings or holes |
+| The barn's door opening | block | A bare 5.2 by 3.6 m gap with a black lintel bar across it (shots 09, 17): no door leaves, track, frame or step |
+| The barn's inside and bales | block | An empty room: bare walls, a brown flat roof underside, no trusses, light or floor wear, and 30 straw bales in a stack 1.4 m high in one corner (shot 17); black at night (shot n4) |
+| The log pile | good | Fifteen logs with bark and sawn rings, two rows and a leaner (shot 16); small, no axe marks or chopping block |
+| The parked Tor, Ridgeback and tractor | good | The farm's own models built to the vehicle kit (shots 12 to 14); heavy for scenery: 204 to 268 meshes and 43,800 to 78,300 triangles each, 382 draw calls for the three (the review's Optimise) |
+| The neighbour herself | passable | The girls' rig with grey hair, a plum jumper, jeans and red shoes at 1.68 m (shot 18); she only stands, and the wave and her turning to face you were not seen in motion |
+| Her dairy: parlour, collecting yard, bulk tank room, slurry store, north field gate | block | None of them exists (#569's list); the review's Change 2 |
+| Her fields and herd | block | None: the farm's flat ground and the patchwork ring round her wall, no gate or track out of the yard (shots 04, 10, 11) |
+| The yard at night | block | Black but for the house's windows and a lamp that lights nothing (shots n1 to n4): no yard light, lit parlour or reflective gate |
+| The yard's sound | block | Only her voice (`NEIGHBOUR_VOICE`): no milking machine, stock, tank hum, dog, hens, trough or wind |
+| The far version | good | One mesh of 82 triangles, boxes with gabled roofs in flat colours beyond 45 m (shots 20, 21); plain on purpose (`tests/bareBlocks.test.js`) |
