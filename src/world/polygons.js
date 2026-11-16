@@ -172,3 +172,149 @@ export function segmentInside(pts, a, b, edges = polygonEdges(pts)) {
   }
   return pointInPolygon(pts, a.x + dx / 2, a.z + dz / 2, 0, edges);
 }
+
+/** Whether every corner of the polygon turns the same way as the polygon (no notch), a straight run counting as either. */
+export function isConvex(pts) {
+  const sign = Math.sign(polygonArea(pts));
+  for (let i = 0; i < pts.length; i++) {
+    const [ax, az] = pts[i];
+    const [bx, bz] = pts[(i + 1) % pts.length];
+    const [cx, cz] = pts[(i + 2) % pts.length];
+    if (((bx - ax) * (cz - bz) - (bz - az) * (cx - bx)) * sign < -EPS) return false;
+  }
+  return true;
+}
+
+/** The polygon cut into triangles by its corners (ear clipping), each clockwise. A simple polygon of n corners gives n - 2. */
+export function triangulate(pts) {
+  const p = clockwise(pts);
+  const idx = p.map((_, i) => i);
+  const cross = (a, b, c) => (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+  const inTri = (q, a, b, c) => cross(a, b, q) >= -EPS && cross(b, c, q) >= -EPS && cross(c, a, q) >= -EPS;
+  const out = [];
+  let guard = idx.length * idx.length;
+  while (idx.length > 3 && guard-- > 0) {
+    for (let k = 0; k < idx.length; k++) {
+      const [ia, ib, ic] = [idx[(k + idx.length - 1) % idx.length], idx[k], idx[(k + 1) % idx.length]];
+      const [a, b, c] = [p[ia], p[ib], p[ic]];
+      if (cross(a, b, c) <= EPS) continue; // a notch's corner, or a straight run: not an ear
+      if (idx.some((j) => j !== ia && j !== ib && j !== ic && inTri(p[j], a, b, c))) continue;
+      out.push([a, b, c]);
+      idx.splice(k, 1);
+      break;
+    }
+  }
+  if (idx.length !== 3) throw new Error('triangulate: not a simple polygon');
+  out.push(idx.map((i) => p[i]));
+  return out;
+}
+
+/** The part of `subject` (any simple polygon) inside `convex` (a convex one): Sutherland-Hodgman, its sides counting as inside. */
+function clipToConvex(subject, convex) {
+  const c = clockwise(convex);
+  let out = subject;
+  for (let i = 0; i < c.length && out.length; i++) {
+    const [ax, az] = c[i];
+    const [bx, bz] = c[(i + 1) % c.length];
+    const side = ([x, z]) => (bx - ax) * (z - az) - (bz - az) * (x - ax);
+    const input = out;
+    out = [];
+    for (let k = 0; k < input.length; k++) {
+      const p = input[k];
+      const q = input[(k + 1) % input.length];
+      const sp = side(p);
+      const sq = side(q);
+      if (sp >= -EPS) out.push(p);
+      if ((sp > EPS && sq < -EPS) || (sp < -EPS && sq > EPS)) {
+        const t = sp / (sp - sq);
+        out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
+      }
+    }
+  }
+  return out;
+}
+
+const near = (a, b, tol) => Math.abs(a[0] - b[0]) <= tol && Math.abs(a[1] - b[1]) <= tol;
+
+/** The points, without a repeat of the one before or a corner on a straight run. */
+function tidyPolygon(pts, tol) {
+  let p = pts.filter((q, i) => !near(q, pts[(i + 1) % pts.length], tol));
+  for (let changed = true; changed && p.length > 2; ) {
+    changed = false;
+    for (let i = 0; i < p.length; i++) {
+      const a = p[(i + p.length - 1) % p.length];
+      const b = p[i];
+      const c = p[(i + 1) % p.length];
+      const len = Math.hypot(c[0] - a[0], c[1] - a[1]) || 1;
+      if (Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) / len <= tol) {
+        p = p.filter((_, j) => j !== i);
+        changed = true;
+        break;
+      }
+    }
+  }
+  return p;
+}
+
+/**
+ * Pieces of polygons that together make one shape, joined back into polygons: every side two pieces share (one each way) is taken out, and
+ * the sides left are followed round. A side that another piece's corner lies along is split there first, so a shared side cut differently on
+ * each piece still cancels out. `tol` metres counts as the same point.
+ */
+export function joinPieces(pieces, tol = 1e-6) {
+  const corners = pieces.flat();
+  let sides = [];
+  for (const piece of pieces) {
+    for (let i = 0; i < piece.length; i++) {
+      const a = piece[i];
+      const b = piece[(i + 1) % piece.length];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (len <= tol) continue;
+      const cuts = [];
+      for (const q of corners) {
+        const s = ((q[0] - a[0]) * (b[0] - a[0]) + (q[1] - a[1]) * (b[1] - a[1])) / len;
+        if (s <= tol || s >= len - tol) continue;
+        const off = Math.abs((q[0] - a[0]) * (b[1] - a[1]) - (q[1] - a[1]) * (b[0] - a[0])) / len;
+        if (off <= tol) cuts.push([s, q]);
+      }
+      cuts.sort((u, v) => u[0] - v[0]);
+      let from = a;
+      for (const [, q] of cuts) {
+        if (!near(from, q, tol)) sides.push([from, q]);
+        from = q;
+      }
+      if (!near(from, b, tol)) sides.push([from, b]);
+    }
+  }
+  const gone = new Set();
+  for (let i = 0; i < sides.length; i++) {
+    if (gone.has(i)) continue;
+    const j = sides.findIndex(([a, b], k) => k !== i && !gone.has(k) && near(a, sides[i][1], tol) && near(b, sides[i][0], tol));
+    if (j >= 0) gone.add(i).add(j);
+  }
+  sides = sides.filter((_, i) => !gone.has(i));
+  const loops = [];
+  const used = new Set();
+  for (let i = 0; i < sides.length; i++) {
+    if (used.has(i)) continue;
+    const loop = [];
+    for (let k = i; k >= 0 && !used.has(k); k = sides.findIndex(([a], m) => !used.has(m) && near(a, sides[k][1], tol))) {
+      used.add(k);
+      loop.push(sides[k][0]);
+    }
+    const tidy = tidyPolygon(loop, tol);
+    if (tidy.length >= 3 && Math.abs(polygonArea(tidy)) > tol) loops.push(clockwise(tidy));
+  }
+  return loops;
+}
+
+/**
+ * Where two simple polygons overlap, as a list of polygons (clockwise; empty if they don't). Either may have notches: `clip` is cut into
+ * triangles unless it is convex, `subject` is clipped by each, and the pieces are joined again. Sides lying along each other and corners on
+ * the other's sides are fine (the farm's fields share the outline's east side and meet it at its corners).
+ */
+export function intersectPolygons(subject, clip, tol = 1e-6) {
+  const s = clockwise(subject);
+  const parts = isConvex(clip) ? [clockwise(clip)] : triangulate(clip);
+  return joinPieces(parts.map((part) => clipToConvex(s, part)).filter((p) => p.length >= 3), tol);
+}
