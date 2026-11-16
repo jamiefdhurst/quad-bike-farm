@@ -170,7 +170,7 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     add(box(wall + 0.2, door.height + 0.06, 0.24, white), door.x - wall / 2, floorY + (door.height + 0.06) / 2, z);
   }
   // The beam over the doorway, and the end wall above it up to the eaves.
-  add(box(wall + 0.22, 0.3, door.maxZ - door.minZ + 0.56, white), door.x - wall / 2, floorY + door.height + 0.15, shape.z);
+  add(box(wall + 0.22, 0.29, door.maxZ - door.minZ + 0.56, white), door.x - wall / 2, floorY + door.height + 0.145, shape.z); // 1 cm shy of the loft planks' top, which would share its plane
   // The hay door is a gap in it (and in the gable above, below), so the loft looks out over the yard.
   const above = wallHeight - door.height - 0.28;
   const hd = layout.loft.hayDoor;
@@ -222,18 +222,18 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   const proud = 0.02;
   const fx = door.x - wall / 2;
   add(box(wall + 0.14, 0.1, hd.halfWidth * 2 + 0.3, white), fx, sillTop + proud - 0.05, shape.z); // top at sillTop + proud
-  const postH = doorTop - sillTop + 0.13; // up into the lintel
-  for (const side of [-1, 1]) add(box(wall + 0.14, postH, 0.1 + proud, white), fx, sillTop - 0.08 + postH / 2, shape.z + side * (hd.halfWidth + 0.05 - proud / 2));
+  const postH = doorTop - sillTop + 0.09; // up into the lintel, from 4 cm below the sill's top: not from the sill's own underside, which would share its plane
+  for (const side of [-1, 1]) add(box(wall + 0.1, postH, 0.1 + proud, white), fx, sillTop - 0.04 + postH / 2, shape.z + side * (hd.halfWidth + 0.05 - proud / 2));
   add(box(wall + 0.14, 0.1, hd.halfWidth * 2 + 0.3, white), fx, doorTop - proud + 0.05, shape.z); // underside at doorTop - proud
   add(box(0.9, 0.12, 0.12, timber), door.x + 0.35, doorTop + 0.2, shape.z);
   // The hay door's shutter, hooked back against the outside of the wall so you can see out. A wind out of the door lifts it off and it
-  // swings about on its hinge (`angle` radians away from the wall, world/wind.js Shutter) and bangs back. Boards with two battens.
+  // swings about on its hinge (`angle` radians away from the wall, world/wind.js Shutter) and bangs back. Boards with two battens, 2 cm short of the boards' ends so the end faces differ.
   const shutterW = hd.halfWidth * 2 - 0.1;
   const shutterH = hd.top - hd.sill - 0.08;
   const shutter = new THREE.Group();
   shutter.position.set(door.x + 0.115, floorY + (hd.sill + hd.top) / 2, shape.z - hd.halfWidth - 0.1);
   const boardsMat = new THREE.MeshStandardMaterial({ map: boards([1.5, 1]), roughness: 0.9, color: 0xb9b0a4 });
-  for (const [sx, sy, sz, mat, dx, dy] of [[0.035, shutterH, shutterW, boardsMat, 0, 0], [0.03, 0.1, shutterW, timber, 0.03, shutterH * 0.3], [0.03, 0.1, shutterW, timber, 0.03, -shutterH * 0.3]]) {
+  for (const [sx, sy, sz, mat, dx, dy] of [[0.035, shutterH, shutterW, boardsMat, 0, 0], [0.03, 0.1, shutterW - 0.04, timber, 0.03, shutterH * 0.3], [0.03, 0.1, shutterW - 0.04, timber, 0.03, -shutterH * 0.3]]) {
     const part = box(sx, sy, sz, mat);
     part.position.set(dx, dy, -shutterW / 2);
     part.castShadow = true;
@@ -453,7 +453,8 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   const ldIn = ld + 0.1;
   add(box(lwIn, 0.1, ldIn, plankMat), lx + 0.025, lf.top - 0.05, lz);
   fixedBox(lx, lf.top - 0.06, lz, lw / 2, 0.06, ld / 2);
-  for (let z = lf.minZ + 0.6; z < lf.maxZ; z += 1.2) add(box(lwIn, 0.18, 0.1, timber), lx + 0.025, lf.top - 0.19, z, { cast: false });
+  // (the joists stop 6 cm short of the open edge, inside its beam, whose end face they would share)
+  for (let z = lf.minZ + 0.6; z < lf.maxZ; z += 1.2) add(box(lwIn - 0.06, 0.18, 0.1, timber), lx + 0.055, lf.top - 0.19, z, { cast: false });
   add(box(0.14, 0.26, ldIn, timber), lf.edgeX + 0.07, lf.top - 0.23, lz); // the beam under the open edge
   for (const z of [lf.minZ + 0.1, lz, lf.maxZ - 0.1]) add(box(0.14, l.floor - 0.1, 0.14, timber), lf.edgeX + 0.1, floorY + (l.floor - 0.1) / 2, z); // and its posts
   // Rail: two rails and posts in each span, each with a collider you can't climb over.
@@ -466,7 +467,7 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     const v0 = Math.max(span.z0, shape.z - 3.7);
     const v1 = Math.min(span.z1, shape.z + 3.7);
     if (v1 - v0 > 0.05) {
-      add(box(0.07, 0.07, v1 - v0, timber), lf.edgeX + 0.04, lf.top + l.rail, (v0 + v1) / 2, { cast: false });
+      add(box(0.06, 0.07, v1 - v0, timber), lf.edgeX + 0.04, lf.top + l.rail, (v0 + v1) / 2, { cast: false }); // narrower than the posts, or their faces share planes
       add(box(0.05, 0.05, v1 - v0, timber), lf.edgeX + 0.04, lf.top + l.rail * 0.5, (v0 + v1) / 2, { cast: false });
       for (const z of [v0 + 0.05, v1 - 0.05]) add(box(0.07, l.rail, 0.07, timber), lf.edgeX + 0.04, lf.top + l.rail / 2, z, { cast: false });
     }
@@ -476,8 +477,8 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
   const lad = new THREE.Group();
   const top = lf.ladderTop;
   const foot = lf.ladderFoot;
-  const ladRise = top.y + 0.7 - foot.y;
-  const run = lf.edgeX + 0.1 - foot.x;
+  const ladRise = top.y + lf.ladderOver - foot.y;
+  const run = lf.ladderTopX - foot.x;
   const len = Math.hypot(ladRise, run);
   lad.position.set(foot.x, foot.y, foot.z);
   lad.rotation.z = Math.atan2(-run, ladRise); // leans its top over towards the loft (+x)

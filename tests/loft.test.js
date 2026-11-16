@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
-import { DEFAULT_LOFT_PARAMS, loftShape, overLoft, onLoft, Climb, pathAt, Hiding, StrawDrop } from '../src/world/loft.js';
+import { DEFAULT_LOFT_PARAMS, loftShape, overLoft, onLoft, Climb, climbPoints, ladderXAt, pathAt, Hiding, StrawDrop } from '../src/world/loft.js';
 
 const P = DEFAULT_LOFT_PARAMS;
 
@@ -61,6 +61,30 @@ describe('Climb', () => {
     expect(mid.done).toBe(false);
     const end = c.update(1.5);
     expect(end).toMatchObject({ x: 1, y: 2, z: 3, done: true });
+  });
+
+  it('goes by way of the points between, ending on the last', () => {
+    const c = new Climb({ x: 0, y: 0, z: 0 }, { x: 2, y: 2, z: 0 }, 2, [{ x: 0, y: 2, z: 0 }]);
+    expect(c.update(1)).toMatchObject({ x: 0, y: 2 }); // half way by time and by length: at the corner
+    expect(c.update(1)).toMatchObject({ x: 2, y: 2, done: true });
+  });
+
+  it('follows the ladder up, stood off it, and down by the same points', () => {
+    const s = loftShape(LAYOUT, 10);
+    const from = { x: s.ladderFoot.x - 0.5, y: 10, z: s.ladderFoot.z };
+    const up = climbPoints(s, from, true);
+    expect(up[0]).toBe(from);
+    expect(up[up.length - 1]).toEqual(s.ladderTop);
+    expect(up[2].x).toBeLessThan(ladderXAt(s, s.top)); // stood off the rails at the planks' height
+    expect(up[2].x).toBeLessThan(s.edgeX); // and short of the planks' edge
+    const down = climbPoints(s, s.ladderTop, false);
+    expect(down.slice(1)).toEqual([up[3], up[2], up[1]]);
+  });
+
+  it('has the ladder lean from its foot to just over the planks', () => {
+    const s = loftShape(LAYOUT, 10);
+    expect(ladderXAt(s, s.ladderFoot.y)).toBeCloseTo(s.ladderFoot.x);
+    expect(ladderXAt(s, s.top + s.ladderOver)).toBeCloseTo(s.ladderTopX);
   });
 });
 

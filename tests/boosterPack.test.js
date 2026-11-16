@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { fakeCanvas } from './helpers/vehicleModels.js';
+import { coplanarOverlaps } from './helpers/coplanar.js';
 import { boostStep, packOvernight, DEFAULT_BOOSTER_PARAMS as P } from '../src/items/boosterPack.js';
 
 const flat = (battery = 0.05) => ({ battery, batteryOut: false, isRunning: false, state: 'off' });
@@ -62,5 +64,14 @@ describe('the booster pack', () => {
   it('loses a little overnight and never goes negative', () => {
     expect(packOvernight(1, P)).toBeCloseTo(1 - P.nightDrain, 5);
     expect(packOvernight(0.01, P)).toBe(0);
+  });
+});
+
+describe('the booster pack model', () => {
+  it('has no two faces on one plane, which flicker as alpha fighting (the label is textured and sits off the face on purpose, so the check leaves it out)', async () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const { buildBoosterModel } = await import('../src/items/boosterPack.js');
+    const fights = coplanarOverlaps(buildBoosterModel(), { gap: 0.003, minArea: 2e-5 });
+    expect(fights.map((f) => `${f.a} ${'xyz'[f.axis]}${f.dir > 0 ? '+' : '-'} at ${f.at.map((v) => v.toFixed(3))} area ${f.area.toFixed(4)}`)).toEqual([]);
   });
 });

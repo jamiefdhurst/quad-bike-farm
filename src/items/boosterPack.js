@@ -90,14 +90,15 @@ export function buildBoosterModel() {
     g.add(m);
     return m;
   };
-  part(new THREE.BoxGeometry(w, h * 0.78, d), MAT.body, 0, h * 0.39, 0);
-  part(new THREE.BoxGeometry(w * 1.02, h * 0.1, d * 1.04), MAT.rubber, 0, h * 0.05, 0); // the rubber foot
-  for (const sx of [-1, 1]) part(new THREE.BoxGeometry(w * 0.12, h * 0.8, d * 1.04), MAT.trim, sx * w * 0.47, h * 0.4, 0); // end caps, proud of the body so the faces are not coplanar
+  // Every part's faces stand at least 4 mm off its neighbours' planes (the foot widest, then the end caps, then the body), so none fights for the same depth.
+  part(new THREE.BoxGeometry(w, h * 0.74, d), MAT.body, 0, h * 0.04 + h * 0.37, 0);
+  part(new THREE.BoxGeometry(w * 1.1, h * 0.1, d * 1.2), MAT.rubber, 0, h * 0.05, 0); // the rubber foot, wider than the caps all round
+  for (const sx of [-1, 1]) part(new THREE.BoxGeometry(w * 0.12, h * 0.73, d * 1.1), MAT.trim, sx * w * 0.47, h * 0.07 + h * 0.365, 0); // end caps, proud of the body
   part(new THREE.BoxGeometry(w * 0.8, h * 0.06, d * 0.9), MAT.trim, 0, h * 0.8, 0); // the lid trim, standing above the body's top
-  // The handle across the top, from two posts.
+  // The handle across the top, from two posts that stop short of the bar's ends.
   for (const sx of [-1, 1]) part(new THREE.BoxGeometry(0.014, h * 0.2, 0.014), MAT.rubber, sx * w * 0.3, h * 0.9, 0);
-  part(new THREE.BoxGeometry(w * 0.64, 0.016, 0.02), MAT.rubber, 0, h * 1.0, 0);
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.7, h * 0.5), new THREE.MeshStandardMaterial({ map: faceTexture(), roughness: 0.7 }));
+  part(new THREE.BoxGeometry(w * 0.7, 0.016, 0.026), MAT.rubber, 0, h * 1.0, 0);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.7, h * 0.5), new THREE.MeshStandardMaterial({ map: faceTexture(), roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2 }));
   face.position.set(0, h * 0.42, d / 2 + 0.0015);
   g.add(face);
   // Four charge lamps in a row under the label, and the 12 V socket beside them.
@@ -105,7 +106,7 @@ export function buildBoosterModel() {
     const lamp = part(new THREE.CylinderGeometry(0.006, 0.006, 0.004, 8), i < 3 ? MAT.trim : MAT.red, (i - 1.5) * 0.026, h * 0.13, d / 2 + 0.002);
     lamp.rotation.x = Math.PI / 2;
   }
-  const socket = part(new THREE.CylinderGeometry(0.014, 0.014, 0.012, 10), MAT.rubber, w * 0.3, h * 0.13, d / 2 + 0.004);
+  const socket = part(new THREE.CylinderGeometry(0.014, 0.014, 0.02, 10), MAT.rubber, w * 0.3, h * 0.13, d / 2 + 0.005);
   socket.rotation.x = Math.PI / 2;
   // The clamps hang from the side: a red and a black jaw on short cables.
   for (const [mat, dz] of [[MAT.red, -0.025], [MAT.rubber, 0.025]]) {

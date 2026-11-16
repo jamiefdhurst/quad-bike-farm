@@ -241,7 +241,7 @@ import { paginate } from './achievements/pages.js';
 import { Discoveries, stallDiscovery, prankDiscovery } from './achievements/discoveries.js';
 import { achievementSnapshot, placesAt } from './achievements/snapshot.js';
 import { buildStartLine, buildClimbCones, buildConeCourse, layCone, nearestTrackFraction } from './world/startLine.js';
-import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, Hiding, StrawDrop } from './world/loft.js';
+import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, climbPoints, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
 import { dozeStay } from './npc/dozing.js';
@@ -4321,7 +4321,7 @@ export class Game {
       if (unit.barnFind && s.barnFind) {
         unit.barnFind.restore(s.barnFind);
         unit.engine.startBlocked = unit.barnFind.startBlocked;
-        if (unit.barnFind.tarpOff && unit.tarp) unit.tarp.visible = false; // (its look is not on yet: dressFinds does the rest)
+        if (unit.barnFind.tarpOff && unit.tarp) unit.tarp.visible = false; // (its look is not on yet: dressFinds lays the tarp folded on the floor, visible again)
         unit.rustyLook?.sync(unit.barnFind, { instant: true });
       }
       const h = this.history.quads[unit.id];
@@ -7551,9 +7551,8 @@ export class Game {
     const p = this.player.position;
     const lf = this.loft;
     const from = { x: p.x, y: p.y, z: p.z };
-    const top = { x: lf.ladderTop.x, y: lf.top, z: lf.ladderTop.z };
-    const foot = { x: lf.ladderFoot.x - 0.1, y: lf.ladderFoot.y, z: lf.ladderFoot.z };
-    this.climb = new Climb(from, up ? top : foot, this.loftParams.climbSeconds);
+    const [first, ...via] = climbPoints(lf, from, up);
+    this.climb = new Climb(first, via.pop(), this.loftParams.climbSeconds, via);
     this.climbUp = up;
     this.player.moveEnabled = false;
   }
