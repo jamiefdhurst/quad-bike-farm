@@ -13,6 +13,7 @@ import { LANE_KINDS, VISITOR_KINDS } from './traffic.js';
 import { KIDS_BIKES, KIDS_TOPS, KIDS_PARAM_RANGES } from './kids.js';
 import { CharacterRig } from '../npc/characterRig.js';
 import { applyOutfit, withShirt, withJumper, OUTFITS } from '../npc/outfit.js';
+import { neighbourOutfit, NEIGHBOUR_HEIGHT } from './neighbourLook.js';
 
 const MODELS = {
   crag: { build: (c, reg) => buildCabModel({ bodyColor: c, dashStyle: 'crag', variant: 'crag', reg }), layout: CRAG_LAYOUT, offset: CAB_GROUND_OFFSET, seat: CAB_SEATS.driver },
@@ -174,8 +175,9 @@ export class TrafficView {
   /** A visitor's rig, made the first time she comes. */
   rigFor(kind) {
     if (this.rigs[kind] || !this.gltf) return this.rigs[kind] ?? null;
-    const rig = new CharacterRig(this.gltf, kind === 'post' ? 1.66 : kind === 'tuner' ? 1.68 : 1.72);
-    const outfit = kind === 'post' ? withShirt(OUTFITS.original, '#b8282a') : kind === 'tuner' ? withJumper(OUTFITS.original, '#2b3d52') : withJumper(OUTFITS.original, '#5b6b3c');
+    const rig = new CharacterRig(this.gltf, kind === 'post' ? 1.66 : kind === 'tuner' ? 1.68 : NEIGHBOUR_HEIGHT);
+    // The neighbour who calls is the woman from the yard in her Tor, so she is dressed as she is there (neighbourLook.js).
+    const outfit = kind === 'post' ? withShirt(OUTFITS.original, '#b8282a') : kind === 'tuner' ? withJumper(OUTFITS.original, '#2b3d52') : neighbourOutfit();
     applyOutfit(rig, outfit);
     const sitHips = rig.measureHips('SitIdle', 0);
     rig.play('Idle', { fade: 0 });

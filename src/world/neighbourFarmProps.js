@@ -435,8 +435,8 @@ export function buildNeighbourFarm(c) {
     body.object.rotation.y = p.yaw;
     if (p.kind === 'tractor') poseBaleSpike(body.object, 0, false);
     group.add(body.object);
-    fixedBox(p.x, y0 + p.h / 2, p.z, p.hw, p.h / 2, p.hl, p.yaw);
-    vehicles.push({ ...p, object: body.object });
+    const collider = fixedBox(p.x, y0 + p.h / 2, p.z, p.hw, p.h / 2, p.hl, p.yaw);
+    vehicles.push({ ...p, object: body.object, collider });
   }
 
   enableShadows(group);
@@ -450,6 +450,14 @@ export function buildNeighbourFarm(c) {
     far,
     vehicles,
     gate,
+    /** Takes a kind of parked vehicle (her Tor, when she drives it to the farm) out of the yard, and its collider with it, or puts it back. */
+    setAway(kind, away) {
+      for (const v of vehicles) {
+        if (v.kind !== kind) continue;
+        v.object.visible = !away;
+        v.collider.setEnabled(!away);
+      }
+    },
     /** 0..1 how dark it is: the windows and the porch lamp glow once it is (the house is lived in). */
     setNight(darkness, indoors = false) {
       const k = Math.max(0, Math.min(1, (darkness - 0.3) / 0.5));

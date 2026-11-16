@@ -377,7 +377,7 @@ export function buildGirlsTab(d) {
   button(out, 'Take the results sheet down', () => g.trafficHost.road.debugClearSheet());
   show(out, 'the neighbour over the lane', () => g.neighbourHost.describe());
   button(out, 'Take you to the neighbour\'s gate', () => g.neighbourHost.debugGoTo() || toast('Get off your vehicle first'));
-  button(out, 'Make the neighbour say hello', () => g.neighbourHost.debugGreet() || toast('She has gone indoors'));
+  button(out, 'Make the neighbour say hello', () => g.neighbourHost.debugGreet() || toast('She is indoors, or out calling at the farm'));
   show(out, 'the river', () => g.describeRiver());
   show(out, 'the gravel pit', () => g.describeQuarry());
   button(out, 'Ask to be timed up the pit climb', () => g.askForPit());

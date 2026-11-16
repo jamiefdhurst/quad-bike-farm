@@ -53,7 +53,7 @@ export const LANE_KINDS = {
 /** The two kinds of visitor: what drives, in what paint, and what they do at the barn. */
 export const VISITOR_KINDS = {
   post: { model: 'crag', colour: 0xc8102e, regs: ['G342 TVR'], does: 'parcel' },
-  neighbour: { model: 'tor', colours: [0x5d6d4a, 0x8a3b2e, 0x3d5a80, 0xc9c3b0], regs: ['L915 HRE', 'F604 WGT', 'M227 BDK', 'E158 NFA'], does: 'chat' }, // not the farm's own
+  neighbour: { model: 'tor', colour: 0x5d6d4a, regs: ['K412 PBW'], does: 'chat' }, // her own Tor, the one parked in her yard (layout.neighbourFarm.parked)
   // The rolling road's tuner: a Tor or Crag towing the trailer, who stays until she is sent home (rollingRoadHost.js). Not dealt with the others.
   tuner: { model: 'crag', colour: 0x2f3b45, regs: ['N481 RRD'], does: 'stay', dealt: false },
 };

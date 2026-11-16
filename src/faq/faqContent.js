@@ -1954,7 +1954,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Who is that on the lane, and why has someone come in at the gate?',
-        a: `Beyond the big gate is a quiet public lane, which you can ride along (see “Can I ride out onto the lane?”). A van, a Moorland, a tractor or a Yak goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or a neighbour who parks at the barn and stands about for a while. About once a week the tuner comes too, towing her rolling road (see “What is the rolling road?”). Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
+        a: `Beyond the big gate is a quiet public lane, which you can ride along (see “Can I ride out onto the lane?”). A van, a Moorland, a tractor or a Yak goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or the neighbour from over the lane, who drives in in her green Moorland Tor, parks at the barn and stands about for a while (her yard is empty while she is out). About once a week the tuner comes too, towing her rolling road (see “What is the rolling road?”). Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
         tip: 'The post van and neighbours come in at the big gate. Pull over for them.',
       },
       {
@@ -2039,7 +2039,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why is the neighbour not in her yard?',
-        a: `She goes indoors when it gets dark and comes back out in the morning, so at night you will see only her windows and the lamp over her door lit. By day she may also be out of earshot of whoever is in the yard: she only turns and speaks when you, or a girl, comes within about 16 m.`,
+        a: `She goes indoors when it gets dark and comes back out in the morning, so at night you will see only her windows and the lamp over her door lit. When she calls at your farm (a green Moorland Tor comes in at the big gate and stops at the barn) she is out, and so is her Tor: her yard is empty until she has driven home. Otherwise by day she may be out of earshot of whoever is in the yard: she only turns and speaks when you, or a girl, comes within about 16 m.`,
       },
       {
         q: 'Why is the barn dark, and why has the charger gone dead?',
