@@ -1229,3 +1229,9 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - The hill's landmark is the flask rock and the hut (#815), and neither reads from the gate or the ford: the hut is a speck by day and a black shape at dusk. The review recommends smoke and a lit window, a wind-bent hawthorn and a cairn by the rock (needs Jamie's yes). Its sound is only bleats, the fence's tick and the stove: one open-hill layer (wind, skylark, curlew, crow) is recommended.
 - Measured on this Mac's GPU, four spots on the hill: 1,548 to 1,982 draw calls, 4.17M to 5.61M triangles, 10.2 to 11.5 ms (budget 8). Tussocks are 2.06M of 5.36M at the top and 1.52M of 2.41M at the foot; at the plan's area the same density is about 190,000 clumps and 27M triangles, and 260 gorse clumps with a collider each become about 3,400, so scale by area with a cap and collide per swathe.
 - The grades are in `docs/detail-audit.md`; the findings and the sorting of the area's open issues are on #676, and the hand-over is in #684's "From the review". I did not ride or walk it.
+
+## The hut's door leaves swing again (#676)
+
+- Found on Jamie's walk of the hill (16 November 2026): pressing E at the hut's door clicked and blocked the doorway but nothing moved. `mergeByMaterial` in `hutBuild.js` merges every unnamed mesh into one per material, which took the boards, hinges and latch out of the two leaf groups and baked them in the open pose, so `HutHost.applyDoor` was rotating two empty groups.
+- The leaf groups are now named `hutLeaf` and the merge skips anything under one (as it does the kettle). `tests/hutModel.test.js` builds the hut and checks the leaves hold their boards and that turning one moves its box; it failed before the fix. The host test never saw this because it mocks `parts`.
+- Looked at once: the door shut from the front (`.scratch/a676/door.mjs`). The leaves cost a few more draw calls, no triangles.
