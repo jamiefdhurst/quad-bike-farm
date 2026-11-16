@@ -1270,3 +1270,9 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - Found: no plain bug that survives the move. A far-detail count taken right after a teleport reads the previous spot (the swap looks every quarter second from the camera), so `farDetail.update(camera.position, 0, true, true)` goes before a count.
 - Sorted: #315 and #122 after the move (her vehicles' places and the visit route are rebuilt by it, #568 and #687 first), #714 and #145 after it; the rest folds in. The grades are in `docs/detail-audit.md`; the findings and the sorting are on #679, and the hand-over is in #569's "From the review".
 - Not done: a ride at her gate (a scripted throttle moved no vehicle in the headless page), a girl walked into her yard, and her wave and turning in motion.
+
+## Her log pile no longer goes through the barn's wall (#909)
+
+- Found on Jamie's walk of her farm (#679): the pile's middle stood 0.3 m off the wall, but logs run up to 1.25 m long across that line, so the ends of the longer ones (and their pale sawn discs) went 1 to 5 cm through the wall's 16 cm and showed inside the barn.
+- `logPile(outer, random)` in `neighbourFarmProps.js` makes the logs (the same random calls in the same order as before, so nothing else in the yard moves) and stands the pile off the wall by its longest log's reach plus 2 cm. The collider uses the same middle and reach. A test over 200 seeds checks every log's near end is more than a centimetre clear of the barn's outer face; with the old 0.3 m it fails.
+

@@ -132,6 +132,22 @@ function mergeStatic(group) {
   for (const [material, geos] of byMaterial) group.add(new THREE.Mesh(mergeGeometries(geos), material));
 }
 
+/**
+ * The log pile against a barn's south wall (`outer`: its outer face as a rect): fifteen logs in three rows, each lying along z and turned a little
+ * off square, with `z` the pile's middle and `reach` the farthest any log's end or bark gets from it. The pile stands off the wall by that reach, so
+ * no log's end goes into the wall and shows from inside the barn.
+ */
+export function logPile(outer, random) {
+  const logs = [];
+  for (let i = 0; i < 15; i++) {
+    const row = i < 8 ? 0 : i < 13 ? 1 : 2;
+    const col = row === 0 ? i : row === 1 ? i - 8 + 0.5 : i - 13 + 1.2;
+    logs.push({ r: 0.1 + random() * 0.035, len: 0.95 + random() * 0.3, x: outer.minX + 1 + col * 0.25, y: 0.11 + row * 0.19, yaw: (random() - 0.5) * 0.18 });
+  }
+  const reach = Math.max(...logs.map((l) => (l.len / 2) * Math.cos(l.yaw) + l.r * Math.abs(Math.sin(l.yaw))));
+  return { logs, z: outer.maxZ + reach + 0.02, reach: reach + 0.02 };
+}
+
 /** Builds the neighbour's farm and its colliders. `c` is the props context (props.js). Returns null on a farm without one. */
 /** The yard from afar (world/farVersion.js): the house, the barn and the low drystone wall round the yard, no vehicles. */
 export function farNeighbourFarm(s, y0) {
@@ -394,13 +410,9 @@ export function buildNeighbourFarm(c) {
   // Logs against the barn's south wall, two rows with the odd one leaning: bark on the side, sawn rings on each end.
   const bark = new THREE.MeshStandardMaterial({ map: barkTexture(random), roughness: 1 });
   const rings = new THREE.MeshStandardMaterial({ map: logEndTexture(random), roughness: 0.9 });
-  const logs = [];
-  for (let i = 0; i < 15; i++) {
-    const row = i < 8 ? 0 : i < 13 ? 1 : 2;
-    const col = row === 0 ? i : row === 1 ? i - 8 + 0.5 : i - 13 + 1.2;
-    logs.push({ r: 0.1 + random() * 0.035, len: 0.95 + random() * 0.3, x: b.outer.minX + 1 + col * 0.25, y: 0.11 + row * 0.19, yaw: (random() - 0.5) * 0.18 });
-  }
-  const logZ = b.outer.maxZ + 0.3;
+  const pile = logPile(b.outer, random);
+  const logs = pile.logs;
+  const logZ = pile.z;
   for (const l of logs) {
     const side = add(new THREE.CylinderGeometry(l.r, l.r, l.len, 10, 1, true), bark, l.x, y0 + l.y, logZ);
     side.rotation.order = 'YXZ'; // lie along z, then turn a little off square
@@ -410,7 +422,7 @@ export function buildNeighbourFarm(c) {
       end.rotation.y = e > 0 ? l.yaw : l.yaw + Math.PI;
     }
   }
-  fixedBox(b.outer.minX + 2.9, y0 + 0.3, logZ, 1.9, 0.3, 0.55);
+  fixedBox(b.outer.minX + 2.9, y0 + 0.3, logZ, 1.9, 0.3, pile.reach);
 
   mergeStatic(group);
 
