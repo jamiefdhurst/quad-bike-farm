@@ -5,6 +5,8 @@ import { jobActions } from '../debug/jobActions.js';
 import { fixEverything, startWarm, switchOff } from '../debug/vehicleDebug.js';
 import { SCENES, runScene } from '../debug/scenes.js';
 import { WEATHER_KINDS } from '../world/weather.js';
+import { LAYOUT_CHOSEN } from '../world/layout.js';
+import { describeLayout, searchForLayout } from '../world/layoutNew.js';
 import { plantSite, plantPoint } from '../world/plantSite.js';
 
 const DEG = 180 / Math.PI;
@@ -212,6 +214,12 @@ export function createHost(g, { copy = () => {} } = {}) {
     setWeather(kind) {
       g.weatherHost.setKind(kind);
       return host.weatherNow();
+    },
+
+    layoutNow: () => describeLayout(LAYOUT_CHOSEN),
+    setLayout(n) {
+      location.search = searchForLayout(location.search, n);
+      return n === 2 ? 'loading the new farm' : 'loading today\'s farm';
     },
 
     dump(text) {
