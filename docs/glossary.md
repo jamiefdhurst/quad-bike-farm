@@ -24,6 +24,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | blade lever | The red-knobbed lever on the left of the mower's seat that engages the blade (T), with the amber BLADE lamp on the dash | PTO lever, cutter lever, deck lever |
 | chain harrows | The set of harrows on the little two-wheeled carrier: a mat of steel links with a tine at each joint that you lower with T and drag over the harrow field | drag harrows, disc harrows, harrow mat |
 | harrow field | The marked rectangle of the grass field, east of the middle inside the Home Loop, that the harrowing job combs | harrow paddock, harrowing paddock |
+| field name | What a field of the new farm is called, dealt to each farm from its own seed and kept in its save: a name of its kind, such as Top Field for arable, Brook Meadow for wet grazing, Hill Pasture for the hill. It is written on the map and the chalkboard, never spoken: the girls say the kind of field, "the barley field", "the hay meadow" | parcel name, plot name, paddock name |
 | lawns | The yard lawn at the yard's east edge and the paddock's floor, the grass the mower stripes | lawn patches, mowing plots |
 | cork board | The board on the barn's back wall where photos are pinned | corkboard, cork-board |
 | money tin | The tin on the corner shelf in the barn that holds the farm's money | biscuit tin |

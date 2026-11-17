@@ -15,3 +15,5 @@ paths:
 - Unrecorded lines fall back to browser speech, so the game works before recording finishes; commit the banks when it's done.
 
 - **A new vehicle that can be on the farm** needs a phrase and nicknames in `quadNames.js`, and its id goes in `LATE_QUAD_IDS` there, not `EARLY_QUAD_IDS`: the lines about each quad are written out per quad and nickname, and putting a new quad among them re-packs the banks. Late ones are expanded after the rest and merged last (`AMY_LATE_*`, `JESS_LATE_*`), so only new banks change (#75).
+- **A girl never says a field's name.** The farm's field names (`src/world/fieldNames.js`) are dealt per farm, and a recorded line can't carry one, so a line about where she is says the kind of field with `fieldPhrase(kind, crop)` ("the barley field", "the hay meadow", "the meadow"): written out per kind, not per name. The name is for what you read: the map, the chalkboard, the console (#814).
+
