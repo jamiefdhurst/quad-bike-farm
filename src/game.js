@@ -194,6 +194,7 @@ import { buildLineUpBays } from './world/lineUpBays.js';
 import { Records, JumpMeasure, DEFAULT_RECORD_PARAMS, RECORD_PARAM_RANGES, RECORD_KINDS, WHO_NAMES, formatValue } from './world/records.js';
 import { LAYOUT, stripFrame, stripPoint } from './world/layout.js';
 import { dealtLayout } from './world/quarry.js';
+import { namedLayout } from './world/fieldNames.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
 import { DoughnutWatch, DOUGHNUT_PARAM_RANGES } from './npc/doughnuts.js';
@@ -468,7 +469,7 @@ export class Game {
     this.season = this.date.season;
     this.autumn = isAutumn(this.season);
     this.world = new World({
-      layout: dealtLayout(LAYOUT, farmPeek.farmSeed ?? this.seed),
+      layout: namedLayout(dealtLayout(LAYOUT, farmPeek.farmSeed ?? this.seed), farmPeek.farmSeed ?? this.seed, farmPeek.save?.fieldNames), // the farm's field names: kept, or dealt from its seed (world/fieldNames.js)
       autumn: this.autumn,
       winter: isWinter(this.season),
       scene: this.scene,
@@ -4530,6 +4531,7 @@ export class Game {
       farmSeed: this.farmSeed,
       savedAt: Date.now(),
       fleet: this.fleetIds,
+      fieldNames: this.world.layout.dealtFieldNames, // what the farm's fields are called, kept so a change to the list never renames them (world/fieldNames.js)
       market: this.market.toJSON(),
       shed: this.shed.toJSON(),
       vehicles: keepAway(vehicles, this.farm.save?.vehicles, this.carsAway.map((k) => this.cabUnits[k].spec.id)), // a girl's car that stayed at home today keeps what it had (farm/arrival.js)

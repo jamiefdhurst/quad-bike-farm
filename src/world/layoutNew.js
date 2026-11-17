@@ -8,7 +8,7 @@
 // corner), so they can be checked against it by eye. The game's (0, 0) is the middle of the yard, so a game position is the plan position
 // less `PLAN_ORIGIN`. Pure: no Three.js.
 
-import { intersectPolygons, polygonArea, clockwise, edgeBetween } from './polygons.js';
+import { intersectPolygons, polygonArea, polygonBounds, clockwise, edgeBetween, insetPolygon, pointInPolygon, distanceToEdges, polygonEdges } from './polygons.js';
 
 /** Where the game's (0, 0) is on the plan: the middle of the yard. */
 export const PLAN_ORIGIN = [520, 365];
@@ -280,6 +280,275 @@ export function landformPoints(plan = LANDFORM_PLAN) {
   return plan.map(([x, h]) => [x - PLAN_ORIGIN[0], h - yard[1]]);
 }
 
+/**
+ * The fields whose names stay as the plan has them (#814): Hollow Wood and the Old Pit are places the game already names, Home Ground is the girls'
+ * and your own, and the farmstead and the drive are the yard and the road. Every other field is dealt a name per farm (fieldNames.js).
+ */
+export const FIXED_NAMES = ['wood', 'pit', 'home', 'farmstead', 'drive'];
+
+/** What the plan knows about a field that its shape and height don't say (fieldNames.js `FIELD_TRAITS`), by the field's key. */
+const HAND_TRAITS = {
+  water: ['wet', 'brook', 'ley'], // beside the pond, the river or its meadow
+  pond: ['wet'],
+  wood: ['north', 'wet'], // touching Hollow Wood's side
+  pit: ['top'], // touching the gravel pit's field
+  lane: ['lanefield', 'longpiece', 'north'], // beside the drive or Back Lane
+};
+
+/** The land's height above the valley floor at plan x (the straight line between `LANDFORM_PLAN`'s heights: near enough for what stands on it). */
+export function landformHeightAt(x, plan = LANDFORM_PLAN) {
+  if (x <= plan[0][0]) return plan[0][1];
+  for (let i = 1; i < plan.length; i++) {
+    if (x <= plan[i][0]) {
+      const [x0, h0] = plan[i - 1];
+      const [x1, h1] = plan[i];
+      return h0 + ((h1 - h0) * (x - x0)) / (x1 - x0);
+    }
+  }
+  return plan[plan.length - 1][1];
+}
+
+/** What a field is for the name it can be given: how it lies, how it is shaped and what it is beside, in plan metres (fieldNames.js `FIELD_TRAITS`). */
+export function traitsOf(f) {
+  const b = polygonBounds(f.points);
+  const cx = (b.minX + b.maxX) / 2;
+  const cz = (b.minZ + b.maxZ) / 2;
+  const away = Math.hypot(cx - PLAN_ORIGIN[0], cz - PLAN_ORIGIN[1]);
+  const h = landformHeightAt(cx);
+  const along = Math.max(b.maxX - b.minX, b.maxZ - b.minZ) / Math.min(b.maxX - b.minX, b.maxZ - b.minZ);
+  const traits = [];
+  if (cz < 300) traits.push('north');
+  if (cz > 500) traits.push('south');
+  if (away > 300) traits.push('far');
+  if (away < 180) traits.push('near');
+  if (along >= 1.5) traits.push('long');
+  if (h > 42) traits.push('high');
+  if (h < 20) traits.push('low');
+  for (const [t, keys] of Object.entries(HAND_TRAITS)) if (keys.includes(f.name)) traits.push(t);
+  return traits;
+}
+
+/**
+ * The stewardship strips on the arable, placed now (their look through the year is #697), in plan metres: `margin` m of grass round each arable
+ * field (the headlands), a wildflower strip along Long Piece beside the drive, a beetle bank across the middle of Top Field and a skylark plot in
+ * each of Top Field and Far Field. Every other measure is the issue's, or the usual one for the kind of strip.
+ */
+export const STEWARDSHIP_PLAN = {
+  margin: 6,
+  wildflower: { field: 'longpiece', beside: 'drive', width: 6 }, // just inside the headland, the drive's side of the field, 6 m wide (a usual strip)
+  beetleBank: { field: 'top', width: 2, height: 0.4 }, // across the field's long way, headland to headland; 2 m wide and 40 cm high is a usual bank
+  skylarkPlots: [{ field: 'top', clearOfBank: 25 }, { field: 'far' }], // about 4 m square, in the field's roomiest place
+  plotSize: 4,
+};
+
+/** The point inside `points` furthest from its sides that `ok` allows, found on a grid: where there is most room. */
+function roomiestPoint(points, ok = () => true) {
+  const edges = polygonEdges(points);
+  const b = polygonBounds(points);
+  const step = Math.max(1, Math.max(b.maxX - b.minX, b.maxZ - b.minZ) / 80);
+  let best = null;
+  for (let x = b.minX + step / 2; x < b.maxX; x += step) {
+    for (let z = b.minZ + step / 2; z < b.maxZ; z += step) {
+      if (!pointInPolygon(points, x, z, 0, edges) || !ok(x, z)) continue;
+      const d = distanceToEdges(edges, x, z);
+      if (!best || d > best.d) best = { x, z, d };
+    }
+  }
+  return best && [best.x, best.z];
+}
+
+/** The lowest and highest z the polygon has at x, where a vertical line crosses its sides. */
+function acrossAt(points, x) {
+  const zs = [];
+  points.forEach((a, i) => {
+    const c = points[(i + 1) % points.length];
+    if ((a[0] <= x && x <= c[0]) || (c[0] <= x && x <= a[0])) zs.push(a[0] === c[0] ? a[1] : a[1] + ((c[1] - a[1]) * (x - a[0])) / (c[0] - a[0]));
+  });
+  return [Math.min(...zs), Math.max(...zs)];
+}
+
+/**
+ * A field's corners with the tiny sides folded away: a side shorter than `min` metres (where the outline cuts a field's corner, 3 m long) becomes one
+ * point in its middle, so the margin's inner line doesn't fold back on itself there.
+ */
+function withoutShortSides(points, min) {
+  let pts = points;
+  for (let i = 0; i < pts.length && pts.length > 3; ) {
+    const a = pts[i];
+    const b = pts[(i + 1) % pts.length];
+    if (Math.hypot(b[0] - a[0], b[1] - a[1]) >= min) {
+      i++;
+      continue;
+    }
+    const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    pts = pts.filter((_, k) => k !== i && k !== (i + 1) % pts.length);
+    pts.splice(Math.min(i, pts.length), 0, mid);
+    i = 0;
+  }
+  return pts;
+}
+
+/** The strips as the plan has them, from the fields (clippedFields) and the lines between them (boundariesOf): plan metres. */
+export function stewardshipPlan(fields = clippedFields(), runs = boundariesOf(fields), S = STEWARDSHIP_PLAN) {
+  const byName = Object.fromEntries(fields.map((f) => [f.name, f]));
+  const margins = fields.filter((f) => f.kind === 'arable').map((f) => ({ field: f.name, width: S.margin, outer: f.points, inner: insetPolygon(clockwise(withoutShortSides(f.points, S.margin * 2)), S.margin) }));
+  const inner = (name) => margins.find((m) => m.field === name).inner;
+
+  // The wildflower strip: along the line Long Piece shares with the drive, S.width m wide, the headland's width in from it and kept off the headland at each end.
+  const w = S.wildflower;
+  const run = runs.find((r) => (r.a === w.field && r.b === w.beside) || (r.a === w.beside && r.b === w.field));
+  if (!run) throw new Error(`${w.field} and ${w.beside} share no line for the wildflower strip`);
+  const [p, q] = [run.points[0], run.points[run.points.length - 1]];
+  const e = edgeBetween(p[0], p[1], q[0], q[1]);
+  const mid = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+  const inward = pointInPolygon(byName[w.field].points, mid[0] - e.dz * 0.5, mid[1] + e.dx * 0.5) ? 1 : -1;
+  const nx = -e.dz * inward;
+  const nz = e.dx * inward;
+  const endGap = S.margin + 1;
+  const at = (s, d) => [p[0] + e.dx * s + nx * d, p[1] + e.dz * s + nz * d];
+  const wildflower = { field: w.field, width: w.width, points: clockwise([at(endGap, S.margin + 0.5), at(e.length - endGap, S.margin + 0.5), at(e.length - endGap, S.margin + 0.5 + w.width), at(endGap, S.margin + 0.5 + w.width)]) };
+
+  // The beetle bank: a line across Top Field's long way (north to south here) through the middle, from one headland to the other.
+  const bb = S.beetleBank;
+  const top = polygonBounds(inner(bb.field));
+  const bankX = (top.minX + top.maxX) / 2;
+  const [z0, z1] = acrossAt(inner(bb.field), bankX);
+  const beetleBank = { field: bb.field, width: bb.width, height: bb.height, points: [[bankX, z0], [bankX, z1]] };
+
+  // The skylark plots: each in the roomiest place of its field, clear of the bank in Top Field.
+  const skylarkPlots = S.skylarkPlots.map((sp) => {
+    const clear = (x) => sp.clearOfBank === undefined || (sp.field === bb.field && Math.abs(x - bankX) >= sp.clearOfBank);
+    const [x, z] = roomiestPoint(inner(sp.field), (px) => clear(px));
+    return { field: sp.field, at: [x, z], size: S.plotSize };
+  });
+  return { margin: S.margin, margins, wildflower, beetleBank, skylarkPlots };
+}
+
+/** The strips in game metres, as the layout has them. */
+function stewardshipLayout(plan = stewardshipPlan()) {
+  return {
+    margin: plan.margin,
+    margins: plan.margins.map((m) => ({ field: m.field, width: m.width, outer: movePoints(m.outer), inner: movePoints(m.inner) })),
+    wildflower: { ...plan.wildflower, points: movePoints(plan.wildflower.points) },
+    beetleBank: { ...plan.beetleBank, points: movePoints(plan.beetleBank.points) },
+    skylarkPlots: plan.skylarkPlots.map((sp) => ({ ...sp, at: fromPlan(sp.at) })),
+  };
+}
+
+/**
+ * Things the later items put on the farm, given their places now so nothing else is built over them (#709, #713, #710, #711), plan metres. The routes
+ * are the curves on the plan's own map (docs/farm-plan.svg): M a new run, L a line, C a cubic curve, S one that carries on smoothly from the last.
+ */
+export const RESERVED_PLAN = {
+  // The public footpath, the village bridge west along the river to the stone track's bridge, then over the hill pasture, Back Lane and the moor to the ladder stile in the ridge wall.
+  footpath: 'M905 640 C840 634 740 624 680 604 S560 574 470 580 L432 572 M412 586 C360 640 260 700 160 740 S60 780 10 790 C-40 770 -120 720 -200 690 S-300 640 -334 612',
+  // The bridleway, Back Lane in the north down the wood's east edge, between the Wet Meadow and Home Ground, then west along the Wet Meadow's south hedge to Back Lane.
+  bridleway: 'M222 18 C212 80 206 160 200 225 C198 300 196 340 195 368 C140 370 80 366 14 364',
+  crossings: [
+    { route: 'footpath', at: [885, 638] }, { route: 'footpath', at: [640, 600] }, { route: 'footpath', at: [420, 590] }, { route: 'footpath', at: [196, 726] },
+    { route: 'footpath', at: [46, 778] }, { route: 'bridleway', at: [205, 215] }, { route: 'bridleway', at: [196, 365] }, { route: 'bridleway', at: [36, 365] },
+  ],
+  moorGate: { at: [38, 700], field: 'hill' }, // in the hill pasture's wall, onto Back Lane and the moor
+  troughs: [
+    { field: 'hill', at: [150, 700] }, { field: 'sheep', at: [300, 500] }, { field: 'brook', at: [520, 640] }, { field: 'hay', at: [560, 520] }, { field: 'wet', at: [140, 330] },
+  ],
+  // The 11 kV line: a pole on the lane, then across the fields to the last pole by the farmhouse, which carries the transformer.
+  powerLine: { poles: [[905, 168], [848, 186], [790, 204], [732, 222], [674, 240], [616, 258], [566, 274]], transformerPole: 6 },
+};
+
+/** A path of M, L, C and S commands as runs of points, `steps` points on each curve. */
+export function flattenPath(d, steps = 24) {
+  const tokens = d.match(/[MLCS]|-?\d+(?:\.\d+)?/g);
+  const runs = [];
+  let cur = null;
+  let pen = null;
+  let ctrl = null;
+  for (let i = 0; i < tokens.length; ) {
+    const c = tokens[i++];
+    const num = (k) => tokens.slice(i, i + k).map(Number);
+    if (c === 'M') {
+      [pen] = [num(2)];
+      i += 2;
+      cur = [pen];
+      runs.push(cur);
+      ctrl = null;
+    } else if (c === 'L') {
+      pen = num(2);
+      i += 2;
+      cur.push(pen);
+      ctrl = null;
+    } else {
+      let c1;
+      let c2;
+      let end;
+      if (c === 'C') {
+        const v = num(6);
+        c1 = [v[0], v[1]];
+        c2 = [v[2], v[3]];
+        end = [v[4], v[5]];
+        i += 6;
+      } else {
+        const v = num(4);
+        c1 = ctrl ? [2 * pen[0] - ctrl[0], 2 * pen[1] - ctrl[1]] : pen;
+        c2 = [v[0], v[1]];
+        end = [v[2], v[3]];
+        i += 4;
+      }
+      for (let k = 1; k <= steps; k++) {
+        const t = k / steps;
+        const u = 1 - t;
+        cur.push([0, 1].map((a) => u * u * u * pen[a] + 3 * u * u * t * c1[a] + 3 * u * t * t * c2[a] + t * t * t * end[a]));
+      }
+      ctrl = c2;
+      pen = end;
+    }
+  }
+  return runs;
+}
+
+/** The reserved places in game metres: the routes as runs of points, the crossings, the moor gate, the troughs and the power line's poles. */
+function reservedLayout(R = RESERVED_PLAN) {
+  return {
+    footpath: flattenPath(R.footpath).map(movePoints),
+    bridleway: flattenPath(R.bridleway).map(movePoints),
+    crossings: R.crossings.map((c) => ({ route: c.route, at: fromPlan(c.at) })),
+    moorGate: { ...R.moorGate, at: fromPlan(R.moorGate.at) },
+    troughs: R.troughs.map((t) => ({ field: t.field, at: fromPlan(t.at) })),
+    powerLine: { poles: movePoints(R.powerLine.poles), transformerPole: R.powerLine.transformerPole },
+  };
+}
+
+/**
+ * The tall things seen from across the farm: the church tower (#715), the Dutch barn's roof (#682's stackyard), the trig pillar on the moor's ridge
+ * (#713) and the 11 kV line's last pole (#711). Plan metres and the metres each stands above the ground under it.
+ */
+export const LANDMARKS_PLAN = [
+  { name: 'church tower', at: [1240, 763], height: 18 },
+  { name: 'Dutch barn roof', at: [446, 281], height: 7 },
+  { name: 'trig pillar', at: [-330, 480], height: 1.2 },
+  { name: 'last pole', at: [566, 274], height: 9.5 },
+];
+
+/** How far the farm's views are taken to reach: the draw distance on a clear day (#708). */
+const VIEW_DISTANCE = 1500;
+
+/**
+ * Whether you standing at `from` (an eye 1.7 m up) can see the top of a landmark, by the lie of the land alone: the ground between, from
+ * `LANDFORM_PLAN`, must stay under the line of sight. Hedges and trees aren't counted, which a tall thing clears from a gateway's gap.
+ */
+export function canSee(from, landmark, plan = LANDFORM_PLAN) {
+  const d = Math.hypot(landmark.at[0] - from[0], landmark.at[1] - from[1]);
+  if (d > VIEW_DISTANCE) return false;
+  const eye = landformHeightAt(from[0], plan) + 1.7;
+  const top = landformHeightAt(landmark.at[0], plan) + landmark.height;
+  const steps = Math.max(2, Math.ceil(d / 10));
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps;
+    if (landformHeightAt(from[0] + (landmark.at[0] - from[0]) * t, plan) > eye + (top - eye) * t) return false;
+  }
+  return true;
+}
+
 /** The fields, boundaries, gateways and outline in game metres, as fieldPlan.js `planFromData` reads them. */
 export function newFields() {
   const fields = clippedFields();
@@ -287,7 +556,7 @@ export function newFields() {
   const gateways = placeGateways(runs);
   return {
     outline: movePoints(clockwise(OUTLINE_PLAN)),
-    fields: fields.map((f) => ({ name: f.name, label: f.label, kind: f.kind, points: movePoints(f.points) })),
+    fields: fields.map((f) => ({ name: f.name, label: f.label, kind: f.kind, points: movePoints(f.points), traits: traitsOf(f), fixed: FIXED_NAMES.includes(f.name) })),
     boundaries: runs.map((r) => ({ points: movePoints(r.points), kind: r.kind, between: [r.a, r.b] })),
     gateways: gateways.map(({ a, b, boundary, at, half }) => ({ a, b, boundary, at, half })),
   };
@@ -306,7 +575,11 @@ export function layoutNew(today) {
   const [hx, hz] = fromPlan(NORTH_HOLLOW_PLAN.at);
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
-  return { ...today, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields() };
+  return {
+    ...today, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
+    stewardship: stewardshipLayout(), reserved: reservedLayout(),
+    landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
+  };
 }
 
 /** One line about which farm this is, for the console's `layout` and the panel. */

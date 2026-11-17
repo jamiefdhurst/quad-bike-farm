@@ -8,6 +8,20 @@
   "bruin",
   "tor"
  ],
+ "fieldNames": {
+  "north": "Great Close",
+  "top": "Back Field",
+  "wet": "Far Meadow",
+  "lanefield": "Twelve Acre",
+  "longpiece": "Low Piece",
+  "far": "Far Field",
+  "sheep": "Long Meadow",
+  "hay": "Barn Meadow",
+  "hill": "Hill Pasture",
+  "brook": "Brook Meadow",
+  "ley": "Water Meadow",
+  "south": "Brick Field"
+ },
  "market": {
   "purse": 340,
   "bought": [

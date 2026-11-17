@@ -3,9 +3,10 @@ import { LAYOUT, LAYOUT_CHOSEN } from '../src/world/layout.js';
 import {
   layoutNew, fromPlan, layoutFromSearch, searchForLayout, describeLayout, clippedFields, boundariesOf, placeGateways, areasOf,
   OUTLINE_PLAN, CORNERS_PLAN, FIELDS_PLAN, GATEWAYS_PLAN, NOT_MOVED_YET, SETTINGS, REPLACED,
+  STEWARDSHIP_PLAN, stewardshipPlan, RESERVED_PLAN, flattenPath, LANDMARKS_PLAN, LANDFORM_PLAN, canSee, landformHeightAt, traitsOf,
 } from '../src/world/layoutNew.js';
 import { createFields } from '../src/world/fields.js';
-import { pointInPolygon, polygonArea, polygonBounds } from '../src/world/polygons.js';
+import { pointInPolygon, polygonArea, polygonBounds, polygonEdges, distanceToEdges } from '../src/world/polygons.js';
 import { openFarm, describeFarm } from '../src/farm/farmSave.js';
 import { farmMapFeatures } from '../src/hud/farmMap.js';
 import { Track } from '../src/world/track.js';
@@ -272,3 +273,217 @@ function centre(points) {
   const n = points.length;
   return { x: points.reduce((s, p) => s + p[0], 0) / n, z: points.reduce((s, p) => s + p[1], 0) / n };
 }
+
+// The stewardship strips, the places reserved for later items and what is seen from every gate (#814), in the plan's metres.
+describe('the stewardship strips', () => {
+  const steward = stewardshipPlan();
+  const inner = (name) => steward.margins.find((m) => m.field === name).inner;
+  const inside = (poly, [x, z], margin = 0) => pointInPolygon(poly, x, z, margin);
+  const along = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+
+  it('puts a 6 m grass margin round each of the six arable fields, a ring inside its own sides', () => {
+    expect(steward.margin).toBe(6);
+    expect(steward.margins.map((m) => m.field).sort()).toEqual(['far', 'lanefield', 'longpiece', 'north', 'south', 'top']);
+    for (const m of steward.margins) {
+      const outer = byName[m.field].points;
+      expect(m.width, m.field).toBe(6);
+      for (const p of m.inner) {
+        expect(inside(outer, p), `${m.field} ${p}`).toBe(true);
+        // 6 m in from its sides; a corner the outline cuts with a short side is folded to a point first, which can move that corner by a metre or so
+        const d = distanceToEdges(polygonEdges(outer), p[0], p[1]);
+        expect(d, `${m.field} ${p}`).toBeGreaterThan(5.5);
+        expect(d, `${m.field} ${p}`).toBeLessThan(7.5);
+      }
+      const ring = polygonArea(outer) - polygonArea(m.inner);
+      const perimeter = outer.reduce((s, p, i) => s + along(p, outer[(i + 1) % outer.length]), 0);
+      expect(ring / perimeter, m.field).toBeGreaterThan(5.5);
+      expect(ring / perimeter, m.field).toBeLessThan(6.3);
+    }
+  });
+  it('has no margin on a field that is not arable', () => {
+    for (const f of FIELDS_PLAN.filter((x) => x.kind !== 'arable')) expect(steward.margins.some((m) => m.field === f.name), f.name).toBe(false);
+  });
+  it('lays a wildflower strip along Long Piece beside the drive: 6 m wide, just inside the headland, over 200 m long', () => {
+    const w = steward.wildflower;
+    expect(w.field).toBe('longpiece');
+    for (const p of w.points) expect(inside(inner('longpiece'), p), `${p}`).toBe(true);
+    const [a, b, c] = w.points;
+    const long = Math.max(along(a, b), along(b, c));
+    const short = Math.min(along(a, b), along(b, c));
+    expect(short).toBeCloseTo(6, 3);
+    expect(long).toBeGreaterThan(200);
+    // The drive's side of Long Piece is its north one, z 355: the strip lies 6.5 to 12.5 m south of it, level with it.
+    for (const [, z] of w.points) {
+      expect(z).toBeGreaterThan(355 + 6.4);
+      expect(z).toBeLessThan(355 + 12.6);
+    }
+  });
+  it('lays a beetle bank across the middle of Top Field, headland to headland, 2 m wide and 40 cm high', () => {
+    const bank = steward.beetleBank;
+    expect(bank.field).toBe('top');
+    expect([bank.width, bank.height]).toEqual([2, 0.4]);
+    const [a, b] = bank.points;
+    const bounds = polygonBounds(byName.top.points);
+    expect(a[0]).toBe(b[0]);
+    expect(Math.abs(a[0] - (bounds.minX + bounds.maxX) / 2)).toBeLessThan(2);
+    expect(along(a, b)).toBeGreaterThan(150);
+    for (const p of [a, b, [a[0], (a[1] + b[1]) / 2]]) expect(inside(byName.top.points, p), `${p}`).toBe(true);
+    // Its ends are at the headland: within a metre of the margin's inner line, and nothing of it goes into the margin.
+    expect(distanceToEdges(polygonEdges(inner('top')), a[0], a[1])).toBeLessThan(1);
+    expect(distanceToEdges(polygonEdges(inner('top')), b[0], b[1])).toBeLessThan(1);
+  });
+  it('lays a skylark plot 4 m square in each of Top Field and Far Field, well in from every side and clear of the bank', () => {
+    expect(steward.skylarkPlots.map((s) => s.field).sort()).toEqual(['far', 'top']);
+    for (const s of steward.skylarkPlots) {
+      expect(s.size, s.field).toBe(4);
+      const half = s.size / 2;
+      for (const [dx, dz] of [[-half, -half], [half, -half], [half, half], [-half, half]]) expect(inside(inner(s.field), [s.at[0] + dx, s.at[1] + dz]), s.field).toBe(true);
+      expect(distanceToEdges(polygonEdges(inner(s.field)), s.at[0], s.at[1]), s.field).toBeGreaterThan(20);
+    }
+    const top = steward.skylarkPlots.find((s) => s.field === 'top');
+    expect(Math.abs(top.at[0] - steward.beetleBank.points[0][0])).toBeGreaterThanOrEqual(25);
+  });
+  it('is in the layout in game metres: the plan\'s places less the yard\'s', () => {
+    const s = two.stewardship;
+    expect(s.margin).toBe(6);
+    expect(s.margins).toHaveLength(6);
+    expect(s.beetleBank.points[0]).toEqual(fromPlan(steward.beetleBank.points[0]));
+    expect(s.wildflower.points[2]).toEqual(fromPlan(steward.wildflower.points[2]));
+    expect(s.skylarkPlots.map((p) => p.at)).toEqual(steward.skylarkPlots.map((p) => fromPlan(p.at)));
+    const g = createFields(two);
+    for (const m of s.margins) expect(pointInPolygon(two.fields.find((f) => f.name === m.field).points, m.inner[0][0], m.inner[0][1]), m.field).toBe(true);
+    expect(g.areaOf(s.beetleBank.points[0][0], (s.beetleBank.points[0][1] + s.beetleBank.points[1][1]) / 2)).toBe('top');
+  });
+  it('throws if the drive and Long Piece share no line for the strip to lie along', () => {
+    expect(() => stewardshipPlan(plan, [], STEWARDSHIP_PLAN)).toThrow(/share no line/);
+  });
+});
+
+describe('the places reserved for later items', () => {
+  const R = RESERVED_PLAN;
+  const footpath = flattenPath(R.footpath);
+  const bridleway = flattenPath(R.bridleway);
+  const routes = { footpath, bridleway };
+  const nearest = (runs, [x, z]) => Math.min(...runs.map((pts) => distanceToEdges(polygonEdges(pts.length > 2 ? pts : [...pts, pts[0]]), x, z)));
+  const near = (runs, p) => {
+    let best = Infinity;
+    for (const pts of runs) {
+      for (let i = 0; i + 1 < pts.length; i++) {
+        const [x1, z1] = pts[i];
+        const [x2, z2] = pts[i + 1];
+        const t = Math.max(0, Math.min(1, ((p[0] - x1) * (x2 - x1) + (p[1] - z1) * (z2 - z1)) / ((x2 - x1) ** 2 + (z2 - z1) ** 2 || 1)));
+        best = Math.min(best, Math.hypot(p[0] - x1 - (x2 - x1) * t, p[1] - z1 - (z2 - z1) * t));
+      }
+    }
+    return best;
+  };
+  void nearest;
+
+  it('has the footpath from the village bridge to the ladder stile in the ridge wall, in two runs that break at the stone track\'s bridge', () => {
+    expect(footpath).toHaveLength(2);
+    expect(footpath[0][0]).toEqual([905, 640]);
+    expect(footpath[0].at(-1)).toEqual([432, 572]);
+    expect(footpath[1][0]).toEqual([412, 586]);
+    expect(footpath[1].at(-1)).toEqual([-334, 612]);
+    expect(footpath[1].some(([x, z]) => Math.hypot(x - 10, z - 790) < 1)).toBe(true); // Back Lane at (10, 790)
+  });
+  it('has the bridleway from Back Lane in the north to Back Lane in the west, round the Wet Meadow', () => {
+    expect(bridleway).toHaveLength(1);
+    expect(bridleway[0][0]).toEqual([222, 18]);
+    expect(bridleway[0].at(-1)).toEqual([14, 364]);
+    expect(bridleway[0].some(([x, z]) => Math.hypot(x - 200, z - 225) < 1)).toBe(true); // down Hollow Wood's east edge
+    expect(bridleway[0].some(([x, z]) => Math.hypot(x - 195, z - 368) < 1)).toBe(true); // the corner of the Wet Meadow
+  });
+  it('has the eight crossings, each on its own route', () => {
+    expect(R.crossings).toHaveLength(8);
+    expect(R.crossings.filter((c) => c.route === 'footpath')).toHaveLength(5);
+    expect(R.crossings.filter((c) => c.route === 'bridleway')).toHaveLength(3);
+    for (const c of R.crossings) expect(near(routes[c.route], c.at), `${c.route} ${c.at}`).toBeLessThan(10);
+  });
+  it('has the moor gate at (38, 700) in the hill pasture\'s west wall', () => {
+    expect(R.moorGate.at).toEqual([38, 700]);
+    expect(R.moorGate.field).toBe('hill');
+    expect(distanceToEdges(polygonEdges(OUTLINE_PLAN), 38, 700)).toBeLessThan(5);
+  });
+  it('has five trough spots, each inside its own field', () => {
+    expect(R.troughs.map((t) => t.field).sort()).toEqual(['brook', 'hay', 'hill', 'sheep', 'wet']);
+    for (const t of R.troughs) expect(pointInPolygon(byName[t.field].points, t.at[0], t.at[1]), t.field).toBe(true);
+  });
+  it('has the 11 kV line: a pole on the lane, seven poles 50 to 65 m apart in a straight line, the last in the farmstead', () => {
+    const poles = R.powerLine.poles;
+    expect(poles).toHaveLength(7);
+    expect(poles[0]).toEqual([905, 168]);
+    expect(poles.at(-1)).toEqual([566, 274]);
+    expect(R.powerLine.transformerPole).toBe(6);
+    expect(pointInPolygon(OUTLINE_PLAN, 905, 168)).toBe(false); // on the lane, beyond the farm's east side
+    for (let i = 1; i < poles.length - 1; i++) {
+      const d = Math.hypot(poles[i + 1][0] - poles[i][0], poles[i + 1][1] - poles[i][1]);
+      expect(d, `pole ${i}`).toBeGreaterThan(50);
+      expect(d, `pole ${i}`).toBeLessThan(65);
+    }
+    const [a, b] = [poles[0], poles.at(-1)];
+    for (const p of poles) {
+      const off = Math.abs((b[0] - a[0]) * (a[1] - p[1]) - (a[0] - p[0]) * (b[1] - a[1])) / Math.hypot(b[0] - a[0], b[1] - a[1]);
+      expect(off, `${p}`).toBeLessThan(1);
+    }
+    expect(pointInPolygon(byName.farmstead.points, ...poles.at(-1))).toBe(true);
+    expect(poles.filter((p) => pointInPolygon(byName.lanefield.points, p[0], p[1])).length).toBeGreaterThanOrEqual(3);
+  });
+  it('is in the layout in game metres', () => {
+    expect(two.reserved.moorGate.at).toEqual([38 - 520, 700 - 365]);
+    expect(two.reserved.troughs).toHaveLength(5);
+    expect(two.reserved.crossings).toHaveLength(8);
+    expect(two.reserved.footpath[0][0]).toEqual(fromPlan([905, 640]));
+    expect(two.reserved.powerLine.poles.at(-1)).toEqual(fromPlan([566, 274]));
+  });
+  it('does not stop the new farm loading: nothing else in the layout reads them yet', () => {
+    expect(Object.keys(two)).toEqual(expect.arrayContaining(['stewardship', 'reserved', 'landmarks']));
+  });
+});
+
+describe('what is seen from every gate', () => {
+  it('is something tall: from every gateway, at least one of the church tower, the Dutch barn\'s roof, the trig pillar and the last pole', () => {
+    for (const g of GATEWAYS_PLAN) {
+      const seen = LANDMARKS_PLAN.filter((l) => canSee(g.at, l));
+      expect(seen.length, `${g.a} to ${g.b}`).toBeGreaterThan(0);
+    }
+  });
+  it('knows a ridge in the way: from behind a hill the thing is hidden', () => {
+    const hill = [[0, 0], [100, 60], [200, 0]]; // a 60 m hill between x 0 and 200
+    expect(canSee([0, 0], { at: [200, 0], height: 10 }, hill)).toBe(false);
+    expect(canSee([0, 0], { at: [200, 0], height: 150 }, hill)).toBe(true);
+    expect(canSee([0, 0], { at: [100, 0], height: 10 }, hill)).toBe(true);
+  });
+  it('stops at the draw distance: nothing is seen from 1500 m or more', () => {
+    expect(canSee([0, 0], { at: [1400, 0], height: 500 }, [[0, 0], [2000, 0]])).toBe(true);
+    expect(canSee([0, 0], { at: [1600, 0], height: 500 }, [[0, 0], [2000, 0]])).toBe(false);
+  });
+  it('reads the landform\'s heights: 26 m at the yard, falling to the valley floor at the A-road', () => {
+    expect(landformHeightAt(520)).toBe(26);
+    expect(landformHeightAt(1000)).toBe(0);
+    expect(landformHeightAt(2000)).toBe(0);
+    expect(landformHeightAt(-330)).toBe(100);
+    expect(LANDFORM_PLAN[0]).toEqual([-330, 100]);
+  });
+  it('puts the landmarks in the layout in game metres', () => {
+    expect(two.landmarks.map((l) => l.name)).toEqual(LANDMARKS_PLAN.map((l) => l.name));
+    expect(two.landmarks[0].at).toEqual(fromPlan([1240, 763]));
+  });
+});
+
+describe('what a field is for its name', () => {
+  it('works out how each field lies: Top Field is north and by the pit, Hill Pasture high and far, Low Ley low and wet', () => {
+    const traits = Object.fromEntries(plan.map((f) => [f.name, traitsOf(f)]));
+    expect(traits.top).toEqual(expect.arrayContaining(['north', 'pit']));
+    expect(traits.hill).toEqual(expect.arrayContaining(['high', 'far']));
+    expect(traits.ley).toEqual(expect.arrayContaining(['low', 'water']));
+    expect(traits.wet).toEqual(expect.arrayContaining(['pond', 'water', 'wood']));
+    expect(traits.longpiece).toEqual(expect.arrayContaining(['long', 'lane']));
+    expect(traits.hay).toContain('long');
+    expect(traits.south).not.toContain('high');
+  });
+  it('marks the wood, the pit, Home Ground, the farmstead and the drive as keeping their names', () => {
+    expect(two.fields.filter((f) => f.fixed).map((f) => f.name).sort()).toEqual(['drive', 'farmstead', 'home', 'pit', 'wood']);
+    for (const f of two.fields) expect(Array.isArray(f.traits), f.name).toBe(true);
+  });
+});
