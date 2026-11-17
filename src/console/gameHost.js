@@ -97,8 +97,9 @@ export function createHost(g, { copy = () => {} } = {}) {
       pasture: layout.hill ? { x: (layout.hill.pasture.minX + layout.hill.pasture.maxX) / 2, z: (layout.hill.pasture.minZ + layout.hill.pasture.maxZ) / 2 } : null,
     };
     // On a plan that says what its fields are (the new farm), one place per field by its key (top, north, lanefield, hay ...), where it has the most room.
+    // A place the game already has by that name wins (wood, pit): today's wood and pit stand where they did until #683 and #685 move them.
     const inFields = layout.fields ? Object.fromEntries(layout.fields.map((f) => [f.name, labelSpot(g.world.fields.polygons[f.name])])) : {};
-    return Object.fromEntries(Object.entries({ ...spots, ...inFields }).filter(([, p]) => p && Number.isFinite(p.x) && Number.isFinite(p.z)).map(([k, p]) => [k, { x: p.x, z: p.z }]));
+    return Object.fromEntries(Object.entries({ ...inFields, ...spots }).filter(([, p]) => p && Number.isFinite(p.x) && Number.isFinite(p.z)).map(([k, p]) => [k, { x: p.x, z: p.z }]));
   };
 
   const riding = () => (g.player.isRiding ? g.riddenUnit : null);
