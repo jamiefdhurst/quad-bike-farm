@@ -94,7 +94,7 @@ export function buildCattleGrid(c) {
     deck.add(clod);
   }
 
-  // The sign: a red-bordered triangle over a plate, on a galvanised post by the verge, facing the lane.
+  // The sign: a red-bordered triangle over a plate, on a galvanised post by the verge, facing the lane. Today's farm has none: the gate across its road swings through that verge.
   const sign = new THREE.Group();
   const sx = grid.x + length / 2 + 2.2;
   const sz = grid.z - (width / 2 + 1.1);
@@ -109,11 +109,13 @@ export function buildCattleGrid(c) {
   const cap = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), steel);
   cap.position.y = 2.2;
   sign.add(cap);
-  group.add(sign);
+  if (!layout.road.grid.gateOffset) group.add(sign);
   enableShadows(group);
   scene.add(group);
 
-  // Wings: a post-and-rail fence from each side of the grid to the edge of the gateway, in line with the hedge.
+  // Wings: a post-and-rail fence from each side of the grid to the edge of the gateway, in line with the hedge (the drive's stand in the boundary, `wingX`,
+  // so there is no way round the grid; today's stand at the grid's own x).
+  const wingX = layout.road.grid?.wingX ?? grid.x;
   const mouth = layout.road.grid?.mouth ?? layout.road.halfWidth + layout.road.verge;
   const reach = mouth - width / 2;
   const timber = std(tex.timber);
@@ -122,9 +124,9 @@ export function buildCattleGrid(c) {
     const z1 = grid.z + side * (width / 2 + Math.max(0.5, reach));
     const len = Math.abs(z1 - z0);
     const mid = (z0 + z1) / 2;
-    const fy = heights.heightAt(grid.x, mid);
+    const fy = heights.heightAt(wingX, mid);
     const w = new THREE.Group();
-    w.position.set(grid.x, fy, mid);
+    w.position.set(wingX, fy, mid);
     for (const pz of [-len / 2, len / 2]) {
       const p = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.25, 0.14), timber);
       p.position.set(0, 0.55, pz);
@@ -140,7 +142,7 @@ export function buildCattleGrid(c) {
     }
     enableShadows(w);
     group.add(w);
-    fixedBox(grid.x, fy + 0.65, mid, 0.12, 0.65, len / 2 + 0.07);
+    fixedBox(wingX, fy + 0.65, mid, 0.12, 0.65, len / 2 + 0.07);
   }
   return group;
 }

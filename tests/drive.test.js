@@ -117,6 +117,42 @@ describe('the cattle grid on the drive', () => {
     expect(fights.map((f) => `${f.a}/${f.b} at ${f.at.map((v) => v.toFixed(2))}`)).toEqual([]);
   });
 
+  it('closes the gateway round the grid: the wings stand in the lane boundary, kerb to mouth edge, so the only way past is the grid or the field gate (#961)', async () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const { buildCattleGrid } = await import('../src/world/driveProps.js');
+    const boxes = [];
+    const heights = createTerrainHeight(two, new Track(two.trackPoints));
+    buildCattleGrid({ scene: new THREE.Scene(), layout: two, heights, fixedBox: (...a) => boxes.push(a), grid, random: createRandom(3) });
+    const boundaryX = fromPlan([885, 0])[0];
+    expect(road.grid.wingX).toBeCloseTo(boundaryX);
+    expect(road.grid.mouth).toBe(GATEWAYS_PLAN.find((g) => g.a === 'drive' && g.b === 'out' && !g.id).half);
+    const spans = boxes.map(([x, , z, , , hz]) => ({ x, lo: z - hz, hi: z + hz })).sort((p, q) => p.lo - q.lo);
+    expect(spans).toHaveLength(2);
+    for (const w of spans) expect(w.x).toBeCloseTo(boundaryX);
+    // North wing from the mouth's edge to the grid's kerb, south wing from the kerb to the mouth's other edge, within half a metre each end.
+    expect(spans[0].lo).toBeLessThan(road.z - road.grid.mouth + 0.5);
+    expect(spans[0].hi).toBeGreaterThan(grid.minZ - 0.5);
+    expect(spans[1].lo).toBeLessThan(grid.maxZ + 0.5);
+    expect(spans[1].hi).toBeGreaterThan(road.z + road.grid.mouth - 0.5);
+    expect(spans[0].hi).toBeLessThan(road.z - road.halfWidth);
+    expect(spans[1].lo).toBeGreaterThan(road.z + road.halfWidth);
+  });
+
+  it('builds today\'s grid with no sign (the gate across its road swings through that verge) and no two faces on a plane (#961)', async () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const { buildCattleGrid } = await import('../src/world/driveProps.js');
+    const heights = createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints));
+    const old = createCattleGrid(LAYOUT);
+    const boxes = [];
+    const group = buildCattleGrid({ scene: new THREE.Scene(), layout: LAYOUT, heights, fixedBox: (...a) => boxes.push(a), grid: old, random: createRandom(3) });
+    expect(group.children).toHaveLength(3); // the deck and two wings
+    expect(boxes.map((b) => b[0])).toEqual([LAYOUT.fieldHalf, LAYOUT.fieldHalf]); // the wings stand at the grid's own x, as they always did
+    group.updateMatrixWorld(true);
+    expect(coplanarOverlaps(group, { gap: 0.003, minArea: 2e-5, textured: true })).toEqual([]);
+    const newGroup = buildCattleGrid({ scene: new THREE.Scene(), layout: two, heights: createTerrainHeight(two, new Track(two.trackPoints)), fixedBox: () => {}, grid, random: createRandom(3) });
+    expect(newGroup.children).toHaveLength(4); // and the new farm's has its sign
+  });
+
   it('builds reflector posts at the lane end, two a side, standing clear of the carriageway', async () => {
     vi.stubGlobal('document', { createElement: () => fakeCanvas() });
     const { buildReflectorPosts } = await import('../src/world/driveProps.js');
