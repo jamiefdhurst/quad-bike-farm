@@ -113,7 +113,7 @@ export class PhotoWall {
     let bestGap = -1;
     for (let i = 0; i < 8; i++) {
       const x = 0.12 + random() * 0.76;
-      const y = 0.16 + random() * 0.68;
+      const y = 0.25 + random() * 0.6; // below the board's heading: a print's top edge is 0.11 above its middle, the heading ends at 0.1
       const gap = this.photos.reduce((m, o) => Math.min(m, Math.hypot((o.x - x) * 1.3, o.y - y)), Infinity);
       if (gap > bestGap) {
         best = { x, y };
