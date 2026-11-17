@@ -172,7 +172,7 @@ export const FAQ_SECTIONS = [
         q: 'Can I play the same farm again?',
         a: `Yes. The browser console prints the game's seed when it loads. Add <code>?seed=</code> and that number to the address and you get
           the same layout, weather and luck again, as a first day: a seeded game doesn't touch your saved farm and isn't saved. <code>?weather=rain</code> (or <code>sunny</code>, <code>overcast</code>, <code>drizzle</code>,
-          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) plays a day in the middle of that season, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>shirtTie</code>, <code>cropTop</code>) puts both girls in that outfit. <code>?body=flat</code> shows the girls' bodies without the smoothing. <code>?layout=2</code> loads the bigger farm being built (not saved). On it each field has one thing of its own you can see from its gate (a lone oak, old gateposts, a dead elm, a pond with willows, an old roller, a lone ash, alders along the brook, big oaks), and <code>tp me to</code> any of <code>loneoak</code>, <code>oldgateposts</code>, <code>deadelm</code>, <code>farpond</code>, <code>castroller</code>, <code>loneash</code>, <code>brookalders</code> or <code>bigoaks</code> takes you to it.`,
+          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) plays a day in the middle of that season, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>shirtTie</code>, <code>cropTop</code>) puts both girls in that outfit. <code>?body=flat</code> shows the girls' bodies without the smoothing. <code>?layout=2</code> loads the bigger farm being built (not saved).`,
         tip: 'Add ?seed= and a number to the address to play the same farm again.',
       },
       {
@@ -2920,6 +2920,14 @@ export const FAQ_SECTIONS = [
           all of them on the map (<kbd>M</kbd>). It is being built a piece at a time, so everything you know from the old farm (the barn, the track, the wood, the hill)
           still stands where it was until its turn to move, and the walls round the sheep field and the hill are only on the map so far. It plays as a fresh first day
           and is never saved, so your own farm is just as you left it. <code>layout 1</code> goes back.`,
+      },
+      {
+        q: 'What are the things standing by themselves in the new farm\'s fields?',
+        a: `Each field of the bigger farm (<code>?layout=2</code>) has one thing of its own you can see from its gate: a lone oak in North Field, a pair of old gateposts in
+          Top Field, a dead elm in Long Piece's hedge, a pond with two willows in Far Field, an old roller in South Field, a lone ash in Hay Meadow, alders along the
+          brook in Low Ley and big oaks in Brook Meadow. The rest (the power line, the field barn, the hut and its rock, the trig pillar on the moor) come with their own
+          pieces. In the console, <code>tp me to loneoak</code> (or <code>oldgateposts</code>, <code>deadelm</code>, <code>farpond</code>, <code>castroller</code>,
+          <code>loneash</code>, <code>brookalders</code>, <code>bigoaks</code>) takes you to each, and <code>scene landmarks</code> sets up the ash in daylight.`,
       },
       {
         q: 'How do I find the name of something in the console?',

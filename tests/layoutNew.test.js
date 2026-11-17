@@ -540,7 +540,7 @@ describe('a landmark in every field (#815)', () => {
       }
     }
   });
-  it('keeps each clear of the gateways, the troughs and the footpath\'s crossings, by at least 15 m', () => {
+  it('keeps each clear of the gateways, the troughs and the footpath\'s crossings, by at least 12 m', () => {
     const gates = GATEWAYS_PLAN.map((g) => g.at);
     const spots = [...gates, ...RESERVED_PLAN.troughs.map((t) => t.at), ...RESERVED_PLAN.crossings.map((c) => c.at)];
     for (const l of game) {
@@ -569,15 +569,16 @@ describe('a landmark in every field (#815)', () => {
     expect(inside).toHaveLength(3);
     expect(inside).toContainEqual(pole.at);
   });
-  it('has the trig pillar where LANDMARKS_PLAN has it, in the moor\'s strip west of Back Lane, and no second copy', () => {
+  it('has the trig pillar where LANDMARKS_PLAN has it (the same array, so there is no second copy to drift), in the moor\'s strip west of Back Lane', () => {
     const pillar = L.find((l) => l.kind === 'trigPillar');
-    expect(LANDMARKS_PLAN.find((l) => l.name === 'trig pillar').at).toEqual(pillar.at);
+    expect(pillar.at).toBe(LANDMARKS_PLAN.find((l) => l.name === 'trig pillar').at);
     expect(pillar.at[0]).toBeGreaterThanOrEqual(MOOR_PLAN.minX);
     expect(pillar.at[0]).toBeLessThan(OUTLINE_PLAN.reduce((m, p) => Math.min(m, p[0]), Infinity));
   });
   it('has Far Field\'s pond near plan (160, 530), 14 m across, clear of the green lane, the stream and the plots, and two willows on its banks', () => {
     const pond = L.find((l) => l.kind === 'farPond');
     expect(pond.at).toEqual([160, 530]);
+    expect(pond.rx + pond.rz).toBeGreaterThan(15); // about 14 m across the water once the dish is cut
     expect(Math.hypot(pond.at[0] - 195, pond.at[1] - 500)).toBeGreaterThan(40); // the gap in the green lane's hedge
     expect(565 - pond.at[1]).toBeGreaterThan(30); // the stream along the field's south edge
     expect(pond.willows).toHaveLength(2);

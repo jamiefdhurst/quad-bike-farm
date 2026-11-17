@@ -146,8 +146,71 @@ export function barrelTexture() {
   });
 }
 
-/** Bark: deep vertical fissures in brown and grey with paler lichen flecks. One tile is a log's side. */
-export function barkTexture(random) {
+/** A colour with alpha, for the standing trees' bark. */
+const rgba = (r, g, b, a = 1) => `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${a})`;
+
+/**
+ * Bark by `kind`: 'oak' deep brown with wide furrows, 'elm' dead and bleached (grey wood, peeling, beetle galleries), 'ash' pale grey with diamond-crossing fissures, 'alder' dark
+ * brown-grey and rough with lighter cracked plates, 'willow' deep grey ridges. One tile is a metre of trunk.
+ */
+function treeBarkTexture(random, kind) {
+  const base = { oak: [88, 72, 54], elm: [128, 120, 108], ash: [124, 122, 112], alder: [74, 62, 52], willow: [86, 78, 66] }[kind] ?? [100, 90, 80];
+  return canvasTexture(128, 256, (ctx, w, h) => {
+    ctx.fillStyle = rgba(...base);
+    ctx.fillRect(0, 0, w, h);
+    const fissures = kind === 'ash' ? 70 : 110;
+    for (let i = 0; i < fissures; i++) {
+      const x = random() * w;
+      const y = random() * h;
+      const len = 14 + random() * (kind === 'willow' ? 90 : 60);
+      ctx.strokeStyle = rgba(24, 20, 16, 0.3 + random() * 0.3);
+      ctx.lineWidth = 1 + random() * 2.4;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (random() - 0.5) * 6, y + len);
+      ctx.stroke();
+      if (kind === 'ash' && random() < 0.8) {
+        ctx.beginPath();
+        ctx.moveTo(x, y + len * 0.3);
+        ctx.lineTo(x + (random() < 0.5 ? -1 : 1) * (8 + random() * 10), y + len * 0.3 + 8 + random() * 10);
+        ctx.stroke();
+      }
+    }
+    for (let i = 0; i < 120; i++) {
+      const l = random() < 0.5;
+      ctx.fillStyle = l ? rgba(210, 205, 190, 0.1 + random() * 0.12) : rgba(0, 0, 0, 0.08 + random() * 0.1);
+      ctx.fillRect(random() * w, random() * h, 1 + random() * 4, 4 + random() * 22);
+    }
+    if (kind === 'elm') {
+      // Where the bark has come away: long pale strips of bare wood with fine dark galleries across them, and a few dark knots.
+      for (let i = 0; i < 9; i++) {
+        const x = random() * (w - 20);
+        const y = random() * h * 0.8;
+        ctx.fillStyle = rgba(196, 188, 170, 0.8);
+        ctx.fillRect(x, y, 10 + random() * 16, 30 + random() * 80);
+        for (let k = 0; k < 24; k++) {
+          ctx.strokeStyle = rgba(70, 56, 40, 0.5);
+          ctx.beginPath();
+          ctx.moveTo(x + random() * 20, y + random() * 90);
+          ctx.lineTo(x + random() * 20, y + random() * 90);
+          ctx.stroke();
+        }
+      }
+    }
+    if (kind === 'alder' || kind === 'willow') {
+      for (let i = 0; i < 30; i++) {
+        ctx.fillStyle = rgba(110, 130, 70, 0.22);
+        ctx.beginPath();
+        ctx.arc(random() * w, random() * h, 2 + random() * 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+}
+
+/** Bark: deep vertical fissures in brown and grey with paler lichen flecks. One tile is a log's side. `kind` 'oak', 'elm', 'ash', 'alder' or 'willow' paints a standing tree's (a tile a metre of trunk, #815). */
+export function barkTexture(random, kind = 'log') {
+  if (kind !== 'log') return treeBarkTexture(random, kind);
   return canvasTexture(128, 128, (ctx, w, h) => {
     ctx.fillStyle = '#5a4430';
     ctx.fillRect(0, 0, w, h);

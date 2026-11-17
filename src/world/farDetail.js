@@ -235,8 +235,10 @@ export class FarDetail {
       const box = new THREE.Box3();
       o.traverse((m) => {
         if (!m.isMesh || !m.geometry) return;
-        if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
-        box.union(m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld));
+        // An instanced mesh is where its instances stand, not the one shared shape at its origin (a tree placed far from the origin reached back to it, #815).
+        if (m.isInstancedMesh) m.computeBoundingBox();
+        else if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+        box.union((m.isInstancedMesh ? m.boundingBox : m.geometry.boundingBox).clone().applyMatrix4(m.matrixWorld));
       });
       const p = o.position;
       if (o.userData.moves) {

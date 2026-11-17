@@ -581,7 +581,7 @@ export const FIELD_LANDMARKS_PLAN = [
   // A dead elm in the hedge along Long Piece's south side.
   { field: 'longpiece', kind: 'deadElm', at: [760, 520.5] },
   // A small pond in Far Field's low east side with two willows, clear of the green lane, the stream and the skylark plot.
-  { field: 'far', kind: 'farPond', at: [160, 530], rx: 7, rz: 6, willows: [[151.5, 525], [168, 537]] },
+  { field: 'far', kind: 'farPond', at: [160, 530], rx: 9, rz: 7.5, willows: [[151, 525], [168.2, 535]] },
   // An old roller left in the corner nearest the stone track's end.
   { field: 'south', kind: 'castRoller', at: [650, 672], yaw: 0.6 },
   // A lone ash in the middle of Hay Meadow, well clear of the stone track and the trough.
@@ -596,7 +596,7 @@ export const FIELD_LANDMARKS_PLAN = [
   { field: 'hill', kind: 'hut', at: [95, 802], builtBy: '#684' },
   { field: 'hill', kind: 'flaskRock', at: [262, 814], builtBy: '#684' },
   // The trig pillar on the moor's ridge, where `LANDMARKS_PLAN` has it.
-  { field: 'moor', kind: 'trigPillar', at: [-330, 480], builtBy: '#713' },
+  { field: 'moor', kind: 'trigPillar', at: LANDMARKS_PLAN.find((l) => l.name === 'trig pillar').at, builtBy: '#713' },
 ];
 
 /** How far the farm's views are taken to reach: the draw distance on a clear day (#708). */

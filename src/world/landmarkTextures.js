@@ -1,6 +1,6 @@
-// Painted canvases for the field landmarks (landmarkProps.js): weathered gritstone with lichen, rusting cast iron, three kinds of bark, and the
-// worn earth under a tree. Each is drawn once at build time from the props' seeded random; one tile is a metre across, so `limb` and `worldBox`
-// lay it over any shape.
+// Painted canvases for the field landmarks (landmarkProps.js): weathered gritstone with lichen and the worn earth under a tree or a gate. The cast iron is
+// quarryTextures.js `rustTexture` and the barks are neighbourTextures.js `barkTexture`. Each is drawn once at build time from the props' seeded random;
+// one tile is a metre across, so `limb` and `worldBox` lay it over any shape.
 
 import { canvasTexture } from './outbuildingProps.js';
 
@@ -45,102 +45,6 @@ export function gritstoneTexture(random) {
     for (let i = 0; i < 7; i++) {
       ctx.fillStyle = rgb(40, 38, 32, 0.12 + random() * 0.1);
       ctx.fillRect(random() * w, random() * h * 0.4, 2 + random() * 5, h * (0.3 + random() * 0.6));
-    }
-  });
-}
-
-/** Old cast iron: dark ribbed metal with orange rust blooms, flaked black paint, vertical ribs shaded light and dark. */
-export function castIronTexture(random) {
-  return canvasTexture(256, 256, (ctx, w, h) => {
-    ctx.fillStyle = rgb(70, 66, 62);
-    ctx.fillRect(0, 0, w, h);
-    for (let x = 0; x < w; x += 32) {
-      ctx.fillStyle = 'rgba(210,210,200,0.06)';
-      ctx.fillRect(x, 0, 2, h);
-      ctx.fillStyle = 'rgba(0,0,0,0.12)';
-      ctx.fillRect(x + 12, 0, 3, h);
-    }
-    for (let i = 0; i < 60; i++) {
-      const x = random() * w;
-      const y = random() * h;
-      const r = 3 + random() * 16;
-      ctx.fillStyle = rgb(120 + random() * 40, 66 + random() * 24, 34, 0.25 + random() * 0.3);
-      ctx.beginPath();
-      ctx.ellipse(x, y, r, r * (0.5 + random() * 0.6), random() * 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    // Flaked paint: patches of old green-black that survive.
-    for (let i = 0; i < 24; i++) {
-      ctx.fillStyle = rgb(34, 50, 38, 0.5);
-      ctx.fillRect(random() * w, random() * h, 6 + random() * 24, 4 + random() * 14);
-    }
-    for (let i = 0; i < 400; i++) {
-      ctx.fillStyle = rgb(20, 14, 10, 0.3);
-      ctx.fillRect(random() * w, random() * h, 1, 1 + random() * 3);
-    }
-    // Rust running down from the top.
-    for (let i = 0; i < 14; i++) {
-      ctx.fillStyle = rgb(130, 60, 26, 0.18);
-      ctx.fillRect(random() * w, 0, 2 + random() * 4, h * (0.2 + random() * 0.5));
-    }
-  });
-}
-
-/**
- * Bark by `kind`: 'oak' deep brown with wide furrows, 'elm' dead and bleached (grey wood, peeling, beetle galleries), 'ash' pale grey with diamond-crossing fissures, 'alder' dark
- * brown-grey and rough with lighter cracked plates, 'willow' deep grey ridges. One tile is a metre of trunk.
- */
-export function treeBarkTexture(random, kind = 'ash') {
-  const base = { oak: [88, 72, 54], elm: [128, 120, 108], ash: [124, 122, 112], alder: [74, 62, 52], willow: [86, 78, 66] }[kind] ?? [100, 90, 80];
-  return canvasTexture(128, 256, (ctx, w, h) => {
-    ctx.fillStyle = rgb(...base);
-    ctx.fillRect(0, 0, w, h);
-    const fissures = kind === 'ash' ? 70 : 110;
-    for (let i = 0; i < fissures; i++) {
-      const x = random() * w;
-      const y = random() * h;
-      const len = 14 + random() * (kind === 'willow' ? 90 : 60);
-      ctx.strokeStyle = rgb(24, 20, 16, 0.3 + random() * 0.3);
-      ctx.lineWidth = 1 + random() * 2.4;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + (random() - 0.5) * 6, y + len);
-      ctx.stroke();
-      if (kind === 'ash' && random() < 0.8) {
-        ctx.beginPath();
-        ctx.moveTo(x, y + len * 0.3);
-        ctx.lineTo(x + (random() < 0.5 ? -1 : 1) * (8 + random() * 10), y + len * 0.3 + 8 + random() * 10);
-        ctx.stroke();
-      }
-    }
-    for (let i = 0; i < 120; i++) {
-      const l = random() < 0.5;
-      ctx.fillStyle = l ? rgb(210, 205, 190, 0.1 + random() * 0.12) : rgb(0, 0, 0, 0.08 + random() * 0.1);
-      ctx.fillRect(random() * w, random() * h, 1 + random() * 4, 4 + random() * 22);
-    }
-    if (kind === 'elm') {
-      // Where the bark has come away: long pale strips of bare wood with fine dark galleries across them, and a few dark knots.
-      for (let i = 0; i < 9; i++) {
-        const x = random() * (w - 20);
-        const y = random() * h * 0.8;
-        ctx.fillStyle = rgb(196, 188, 170, 0.8);
-        ctx.fillRect(x, y, 10 + random() * 16, 30 + random() * 80);
-        for (let k = 0; k < 24; k++) {
-          ctx.strokeStyle = rgb(70, 56, 40, 0.5);
-          ctx.beginPath();
-          ctx.moveTo(x + random() * 20, y + random() * 90);
-          ctx.lineTo(x + random() * 20, y + random() * 90);
-          ctx.stroke();
-        }
-      }
-    }
-    if (kind === 'alder' || kind === 'willow') {
-      for (let i = 0; i < 30; i++) {
-        ctx.fillStyle = rgb(110, 130, 70, 0.22);
-        ctx.beginPath();
-        ctx.arc(random() * w, random() * h, 2 + random() * 6, 0, Math.PI * 2);
-        ctx.fill();
-      }
     }
   });
 }

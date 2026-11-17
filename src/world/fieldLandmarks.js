@@ -21,7 +21,9 @@ export const landmarksOf = (layout, kind) => (layout.fieldLandmarks ?? []).filte
  */
 export function pondShape(spot, p = POND) {
   const [cx, cz] = spot.at;
-  const through = (x, z) => Math.hypot((x - cx) / (spot.rx * p.reach), (z - cz) / (spot.rz * p.reach));
+  // An irregular outline, not an ellipse: the reach swells and shrinks a tenth or so round the bank.
+  const reach = (angle) => 1 + 0.1 * Math.sin(2 * angle + 1.3) + 0.06 * Math.sin(3 * angle + 0.4);
+  const through = (x, z) => Math.hypot((x - cx) / (spot.rx * p.reach), (z - cz) / (spot.rz * p.reach)) / reach(Math.atan2(z - cz, x - cx));
   return {
     through,
     cut(x, z) {

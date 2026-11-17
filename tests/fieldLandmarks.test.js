@@ -8,7 +8,7 @@ import { layoutNew } from '../src/world/layoutNew.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 import { BUILT_KINDS, POND, landmarksOf, pondShape } from '../src/world/fieldLandmarks.js';
-import { SET_PIECE_NAMES } from '../src/world/farDetail.js';
+import { SET_PIECE_NAMES, FarDetail } from '../src/world/farDetail.js';
 
 // The eight landmarks #815 builds (the line, the barn, the hut and rock and the pillar only have their place): each is built on the new farm's ground
 // with its own place, and checked for what a look at one angle can't find, faces fighting on one plane, and for what stops you and what stays in sight.
@@ -19,6 +19,13 @@ let land;
 let ctx;
 let colliders;
 const built = {};
+/** A landmark with its body (its trunk and crown, or its water) as one: what you see of it. */
+const whole = (kind) => {
+  const all = new THREE.Group();
+  all.add(built[kind].group.clone(), ...(built[kind].group.userData.body ? [built[kind].group.userData.body.clone()] : []));
+  all.updateMatrixWorld(true);
+  return all;
+};
 
 /** A physics stand-in that records every collider asked for, as { kind: 'cylinder' | 'cuboid', at: [x, y, z] }. */
 function recordingPhysics() {
@@ -58,17 +65,16 @@ describe('the eight landmarks', () => {
   });
 
   it.each(BUILT_KINDS)('%s has no two faces on one plane, which flicker as alpha fighting', (kind) => {
-    const { group } = built[kind];
-    group.updateMatrixWorld(true);
-    const fights = coplanarOverlaps(group, { gap: 0.003, minArea: 2e-5, textured: true });
-    expect(fights.map((f) => `${f.a}/${f.b} at ${f.at.map((v) => v.toFixed(2))}`)).toEqual([]);
+    for (const part of [built[kind].group, built[kind].group.userData.body].filter(Boolean)) {
+      part.updateMatrixWorld(true);
+      const fights = coplanarOverlaps(part, { gap: 0.003, minArea: 2e-5, textured: true });
+      expect(fights.map((f) => `${f.a}/${f.b} at ${f.at.map((v) => v.toFixed(2))}`)).toEqual([]);
+    }
   });
 
   it.each(BUILT_KINDS)('%s has only lit materials, so nothing glows at night', (kind) => {
     const unlit = [];
-    built[kind].group.traverse((o) => {
-      // (the oaks' own models are the game's, loaded in the game: a stand-in is in their place here)
-      if (o.isInstancedMesh) return;
+    whole(kind).traverse((o) => {
       for (const m of o.isMesh ? [].concat(o.material) : []) if (m.isMeshBasicMaterial) unlit.push(o.name);
     });
     expect(unlit).toEqual([]);
@@ -91,19 +97,32 @@ describe('the eight landmarks', () => {
     expect(c.size[0]).toBeGreaterThan(2); // half its height
   });
 
-  it('have a far version for each tree and the pond, and none for the gateposts and the roller', () => {
+  it('keep each tree\'s trunk and crown and the pond\'s water out of the named group, as a body in the scene of its own, so a tree stays in sight from a gate beyond setPieceDistance; the gateposts and the roller are all detail', () => {
     for (const kind of ['loneOak', 'bigOaks', 'loneAsh', 'deadElm', 'brookAlders', 'farPond']) {
-      const far = built[kind].group.userData.farVersion;
-      expect(far?.children.length, `${kind} far version`).toBe(1);
-      expect(far.visible).toBe(false);
+      const body = built[kind].group.userData.body;
+      expect(body, kind).toBeDefined();
+      expect(body.name, 'unnamed, so FarDetail treats it like the farm\'s other trees and never hides it by distance').toBe('');
+      let meshes = 0;
+      body.traverse((o) => o.isMesh && meshes++);
+      expect(meshes, kind).toBeGreaterThan(1);
+      expect(SET_PIECE_NAMES).not.toContain(body.name);
+      expect(built[kind].group.userData.farVersion, 'no far version: the body is drawn whole').toBeUndefined();
     }
-    for (const kind of ['oldGateposts', 'castRoller']) expect(built[kind].group.userData.farVersion).toBeUndefined();
+    for (const kind of ['oldGateposts', 'castRoller']) expect(built[kind].group.userData.body).toBeUndefined();
   });
 
-  it('keep each far version cheap: a few hundred triangles at most', () => {
-    for (const kind of ['loneOak', 'bigOaks', 'loneAsh', 'deadElm', 'brookAlders', 'farPond']) {
-      const geo = built[kind].group.userData.farVersion.children[0].geometry;
-      expect(geo.attributes.position.count / 3, kind).toBeLessThan(400);
+  it('give FarDetail a box round each group where it stands, not one that reaches back to the origin: every group\'s box is within 25 m of its spots', () => {
+    const detail = new FarDetail(new THREE.Scene(), {});
+    for (const kind of BUILT_KINDS) {
+      const l = spot(kind);
+      const spots = [l.at, ...(l.trees ?? []), ...(l.willows ?? [])];
+      const box = detail.box(built[kind].group);
+      const xs = spots.map((p) => p[0]);
+      const zs = spots.map((p) => p[1]);
+      expect(box.minX, kind).toBeGreaterThan(Math.min(...xs) - 25);
+      expect(box.maxX, kind).toBeLessThan(Math.max(...xs) + 25);
+      expect(box.minZ, kind).toBeGreaterThan(Math.min(...zs) - 25);
+      expect(box.maxZ, kind).toBeLessThan(Math.max(...zs) + 25);
     }
   });
 
@@ -117,25 +136,43 @@ describe('the eight landmarks', () => {
     }
   });
 
-  it('build the real sizes: gateposts about 1.9 m with a 3 m gap, the roller about 1.2 m wide and 2.2 m long, the ash and the elm well over 10 m, alders 6 to 9 m', () => {
-    // The plants and the oak models are instanced, so only the made parts are measured.
-    const size = (kind) => {
+  it('build the real sizes: gateposts about 1.9 m, the roller about 1.2 m wide, a field oak about 20 m across and under 14 m tall, the ash and the elm over 10 m, an alder 5 to 11 m', () => {
+    // The plants are instanced, so only the made parts are measured.
+    const size = (obj) => {
       const box = new THREE.Box3();
-      built[kind].group.traverse((o) => o.isMesh && !o.isInstancedMesh && o.geometry.attributes.position && box.expandByObject(o));
+      obj.traverse((o) => o.isMesh && !o.isInstancedMesh && o.geometry.attributes.position?.count && box.expandByObject(o));
       return box.getSize(new THREE.Vector3());
     };
-    const posts = size('oldGateposts');
+    const posts = size(whole('oldGateposts'));
     expect(posts.y).toBeGreaterThan(1.8);
     expect(posts.y).toBeLessThan(2.3);
-    const roller = size('castRoller');
+    const roller = size(whole('castRoller'));
     expect(roller.x).toBeGreaterThan(1.1);
     expect(Math.max(roller.x, roller.z)).toBeLessThan(3.2);
-    expect(size('loneAsh').y).toBeGreaterThan(10);
-    expect(size('deadElm').y).toBeGreaterThan(10);
+    const oak = new THREE.Box3();
+    built.loneOak.group.userData.body.traverse((o) => o.isMesh && o.name === 'oakLeaves' && oak.expandByObject(o));
+    const across = oak.getSize(new THREE.Vector3());
+    expect(Math.max(across.x, across.z)).toBeGreaterThan(17);
+    expect(Math.max(across.x, across.z)).toBeLessThan(26);
+    expect(across.y).toBeLessThan(14);
+    expect(size(whole('loneAsh')).y).toBeGreaterThan(10);
+    expect(size(whole('deadElm')).y).toBeGreaterThan(10);
     // The line of alders falls with the land over 150 m, so one alder is measured.
-    const alders = new THREE.Box3().setFromObject(built.brookAlders.group.children[0]).getSize(new THREE.Vector3());
-    expect(alders.y).toBeGreaterThan(5);
-    expect(alders.y).toBeLessThan(11);
+    const alder = size(built.brookAlders.group.userData.body.children[0]);
+    expect(alder.y).toBeGreaterThan(5);
+    expect(alder.y).toBeLessThan(11);
+  });
+
+  it('put the oak\'s ivy and hollow on its bole: no clump of ivy stands off the trunk by more than a clump itself is (35 cm)', () => {
+    const detail = built.loneOak.group.children.find((o) => o.children.some((m) => m.name === 'oakIvy'));
+    const ivy = detail.children.find((m) => m.name === 'oakIvy');
+    // The bole is 1.1 m across at the foot and narrows to 0.86 at 2.8 m: the ivy is laid to that.
+    const p = ivy.geometry.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const r = Math.hypot(p.getX(i), p.getZ(i));
+      const bole = 0.55 * (1 - 0.22 * Math.min(1, p.getY(i) / 2.8));
+      expect(r - bole, `vertex ${i} at ${p.getY(i).toFixed(2)} m`).toBeLessThan(0.35);
+    }
   });
 });
 
@@ -166,8 +203,8 @@ describe('Far Field\'s pond', () => {
   it('is cut into the ground 0.9 m at its middle and not at all beyond the dish', () => {
     expect(flat.heightAt(cx, cz) - dished.heightAt(cx, cz)).toBeCloseTo(POND.depth, 2);
     const reach = pond.rx * POND.reach;
-    expect(flat.heightAt(cx + reach + 1, cz)).toBe(dished.heightAt(cx + reach + 1, cz));
-    expect(flat.heightAt(cx, cz + pond.rz * POND.reach + 1)).toBe(dished.heightAt(cx, cz + pond.rz * POND.reach + 1));
+    expect(flat.heightAt(cx + reach * 1.2 + 1, cz)).toBe(dished.heightAt(cx + reach * 1.2 + 1, cz));
+    expect(flat.heightAt(cx, cz + pond.rz * POND.reach * 1.2 + 1)).toBe(dished.heightAt(cx, cz + pond.rz * POND.reach * 1.2 + 1));
   });
 
   it('is flat across the bottom and eases up the banks, no step', () => {
@@ -184,15 +221,29 @@ describe('Far Field\'s pond', () => {
   });
 
   it('has water that stands 0.5 m deep at the middle: the surface is above the bottom and below the bank', () => {
-    const water = built.farPond.group.getObjectByName('pondWater');
+    const water = built.farPond.group.userData.body.getObjectByName('pondWater');
     const level = water.geometry.attributes.position.getY(0);
     expect(level - dished.heightAt(cx, cz)).toBeCloseTo(POND.water, 2);
     expect(level).toBeLessThan(flat.heightAt(cx, cz));
   });
 
-  it('is about 14 m across, as the issue says', () => {
-    expect(pond.rx * 2).toBeGreaterThanOrEqual(13);
-    expect(pond.rx * 2).toBeLessThanOrEqual(15);
+  it('is about 14 m across, as the issue says: the water\'s own extent, not its radius', () => {
+    const box = new THREE.Box3().setFromObject(built.farPond.group.userData.body.getObjectByName('pondWater'));
+    const size = box.getSize(new THREE.Vector3());
+    expect(Math.max(size.x, size.z)).toBeGreaterThan(13);
+    expect(Math.max(size.x, size.z)).toBeLessThan(16);
+    expect(Math.min(size.x, size.z)).toBeGreaterThan(10);
+  });
+
+  it('has an outline that is not an ellipse: the dish\'s reach differs by a tenth or more round the bank', () => {
+    const shape = pondShape(pond);
+    const reaches = Array.from({ length: 24 }, (_, i) => {
+      const a = (i / 24) * Math.PI * 2;
+      let r = 0;
+      while (shape.through(cx + Math.cos(a) * r, cz + Math.sin(a) * r) < 1) r += 0.05;
+      return r;
+    });
+    expect(Math.max(...reaches) / Math.min(...reaches)).toBeGreaterThan(1.1);
   });
 });
 
@@ -202,11 +253,11 @@ describe('today\'s farm', () => {
     expect(land.buildFieldLandmarks({ ...ctx, layout: LAYOUT, scene: new THREE.Scene() })).toBeNull();
   });
 
-  it('builds them all on the new farm, into the scene with the far versions beside them', () => {
+  it('builds them all on the new farm, into the scene with the bodies beside them', () => {
     const scene = new THREE.Scene();
     const made = land.buildFieldLandmarks({ ...ctx, scene, random: headlessContext().random });
     expect(Object.keys(made).sort()).toEqual([...BUILT_KINDS].sort());
     for (const kind of BUILT_KINDS) expect(scene.children).toContain(made[kind]);
-    expect(scene.children.filter((o) => o.name.endsWith('Far')).length).toBe(6);
+    expect(scene.children.filter((o) => o.name === '').length, 'a body for each of the six trees and the pond, in the scene on its own').toBe(6);
   });
 });
