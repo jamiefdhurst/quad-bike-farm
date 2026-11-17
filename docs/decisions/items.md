@@ -221,3 +221,10 @@ Jamie, before building: cover the carried things that exist now (the jump leads,
 - **Lying out** means on the ground, in cover, more than 3 m from where it lives. Those, and only those, go in the save (`lostThings`, item, x, z, yaw). An old save has none and loads as before, so it is not breaking.
 - **The girls.** A chooser offer `fetchLost`: a free girl who is within sight range of a thing (grass cuts it as it cuts yours) walks up and carries it to its place in front of her (new carry kinds `bottle` and `leads`). Amy's weight 1.1, Jess's 0.7; two minutes between jobs. Jess keeps it six times in ten: it leaves the world until you ask from her wheel, or ten minutes pass and it goes back to its place.
 - **Not done:** the tow rope and the mug (they have hooking and tea states of their own), and the tyre gauge and spanner, which wait for #517. A kept thing is pocketed, not drawn in her hand.
+
+## A longer-running, quieter generator (#810)
+
+Jamie, walking the barn (#668): it runs out of diesel too quickly and is too loud.
+
+- **Run per tank.** `burn` halved to 0.001 L a second and `loadBurn` to 0.0005, so a full 5 L tank runs about 83 minutes with nothing on it and about 55 with the charger drawing (it was 42 and 28). The tank stays 5 L and the fuel can's pour rate is unchanged, so refilling costs the same trip. Both were already in the Tune tab's "Generator" group and the console's `tune` path. `tests/generator.test.js` runs a full tank dry both ways.
+- **Level.** The 0.9 that `GeneratorAudio` carried is now `generatorVolume` in `DEFAULT_SOUND_PARAMS` (0.45, range 0 to 2), so it is in the "Sound" group of the Tune tab and read each frame, not fixed at build. Halved by a guess against the engines, the ride layers and the radio; #424 is still open, so there is no loudness table to set it from, and it should be checked against that table when it lands.

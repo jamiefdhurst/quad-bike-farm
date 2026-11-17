@@ -2048,7 +2048,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I refuel the generator?',
-        a: `Switch it off (<kbd>E</kbd>), pick up the dark green diesel can, and hold <kbd>E</kbd> at the generator. It takes red diesel only, so the red petrol can and the yellow pre-mix can are refused, and it will not take fuel while it is running. The can fills at the diesel tank by the barn like the others. A full tank (5 litres) lasts about forty minutes, a little less while the charger is on. It puffs a little grey smoke from its stack while it runs, more when it catches and when the charger is on.`,
+        a: `Switch it off (<kbd>E</kbd>), pick up the dark green diesel can, and hold <kbd>E</kbd> at the generator. It takes red diesel only, so the red petrol can and the yellow pre-mix can are refused, and it will not take fuel while it is running. The can fills at the diesel tank by the barn like the others. A full tank (5 litres) lasts about an hour and twenty minutes, a little less while the charger is on. It puffs a little grey smoke from its stack while it runs, more when it catches and when the charger is on.`,
       },
       {
         q: 'Why did the generator stop?',

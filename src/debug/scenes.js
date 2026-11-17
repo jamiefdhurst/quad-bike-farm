@@ -22,6 +22,7 @@ export const SCENES = [
   },
   { id: 'controls', label: 'Make it dusk and send Amy off in the Tor or Crag and Jess on the red: lights, indicators, and what they leave behind', lines: ['weather.time 21.5', 'girl amy drive tor', 'girl jess drive farm300'] },
   { id: 'earlier', label: 'Put you stood by the girls with a race and a tipped quad already in the day, so they bring them up in half a minute', lines: ['weather fair', 'weather.time 11', 'tp me to yard'], setup: 'earlier' },
+  { id: 'generator', label: 'Put you at the barn generator with a full tank, in daylight, to start it, listen to it run and see how long it lasts', lines: ['weather fair', 'weather.time 12', 'generator.fuel 5', 'tp me to generator'] },
   { id: 'snow', label: 'Set up snow falling at midday, in the yard', lines: ['weather snow', 'weather.time 12', 'tp me to yard'] },
   { id: 'flock', label: 'Put the flock at the end of the lane, south of the gate, and you looking at it', lines: ['weather fair', 'weather.time 10'], setup: 'flock' },
   { id: 'terraces', label: 'Put you on the top tread of the sheep field, above its two banks', lines: ['weather fair', 'weather.time 11', 'tp me to terraces'] },

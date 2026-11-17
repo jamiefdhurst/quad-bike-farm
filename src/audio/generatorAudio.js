@@ -2,6 +2,8 @@
 // to loop (cross-faded at its seam) and the stop. Loaded the first time you are near enough to hear it. It sits in the world at the
 // generator through a panner, and goes duller and quieter with distance and when you are indoors with the barn wall between you.
 
+import { DEFAULT_SOUND_PARAMS } from './audioParams.js';
+
 export const GENERATOR_CLIP = {
   start: [0, 3.7], // cranking up to about 1.6 s, then the engine catches and picks up
   loop: [3.7, 31.7],
@@ -14,12 +16,17 @@ const HEARD_WITHIN = 120;
 export class GeneratorAudio {
   constructor(hub, params = {}) {
     this.hub = hub;
-    this.p = { volume: 0.9, refDistance: 3.5, ...params };
+    this.p = { refDistance: 3.5, ...params };
     this.buffer = null;
     this.loading = null;
     this.chain = null; // { panner, filter, gain } once built
     this.loop = null;
     this.looping = false;
+  }
+
+  /** The set's level, from the Sound tuning so it can be changed while it runs. */
+  get volume() {
+    return this.hub.params?.generatorVolume ?? DEFAULT_SOUND_PARAMS.generatorVolume;
   }
 
   async load() {
@@ -56,7 +63,7 @@ export class GeneratorAudio {
     filter.type = 'lowpass';
     filter.frequency.value = 9000;
     const gain = ctx.createGain();
-    gain.gain.value = this.p.volume;
+    gain.gain.value = this.volume;
     filter.connect(gain).connect(panner).connect(this.hub.master);
     this.chain = { panner, filter, gain };
     this.place(at);
@@ -147,7 +154,7 @@ export class GeneratorAudio {
     const d = l ? Math.hypot(l.x - at.x, l.y - at.y, l.z - at.z) : 0;
     const t = hub.ctx.currentTime;
     this.chain.filter.frequency.setTargetAtTime(Math.max(700, (9000 - d * 70) * (1 - indoor * 0.75)), t, 0.1);
-    this.chain.gain.gain.setTargetAtTime(this.p.volume * (1 - indoor * 0.45) * (hub.paused ? 0 : 1), t, 0.1);
+    this.chain.gain.gain.setTargetAtTime(this.volume * (1 - indoor * 0.45) * (hub.paused ? 0 : 1), t, 0.1);
   }
 
   /** Dropped when the game ends or the audio is torn down. */

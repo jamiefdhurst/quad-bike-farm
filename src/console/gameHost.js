@@ -64,6 +64,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       start: { x: layout.spawn.player.x, z: layout.spawn.player.z },
       yard: layout.yard,
       barn: layout.barn,
+      generator: layout.generator?.stand, // the barn generator's cord end, where a girl stands to pull it
       bell: layout.bell,
       ramp: layout.jumpRamp,
       dragstrip: layout.dragStrip,
