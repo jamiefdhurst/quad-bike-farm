@@ -23,6 +23,7 @@ import { laneBarriers, nearNeighbourYard } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
 import { roadNetwork } from './roads.js';
 import { buildRoadMesh, roadTexture } from './roadMesh.js';
+import { buildCattleGrid, buildReflectorPosts, buildDriveVerge } from './driveProps.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -56,8 +57,10 @@ export function buildProps(ctx) {
   const barn = buildBarn(c);
   const hedgeSwap = buildHedges(c);
   c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
-  const gates = [buildGate(c), buildNorthGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c)].filter(Boolean);
+  const gates = [buildGate(c), buildNorthGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c), buildBypassGate(c)].filter(Boolean);
   buildCattleGrid(c);
+  buildReflectorPosts(c);
+  buildDriveVerge(c);
   buildPublicLane(c);
   buildPaddock(c);
   const bale = buildBales(c);
@@ -290,6 +293,16 @@ function buildGridGate({ layout, ...c }) {
   return buildSteelGate({ ...c, layout, id: 'grid', x: layout.fieldHalf + road.grid.gateOffset, z: road.z, w, swing: 1, gap: null });
 }
 
+/**
+ * The field gate beside the drive's cattle grid (layout.road.bypass), in the boundary on the lane: for stock and horses, which can't cross the grid, on its own
+ * posts so it stands clear of the grid's wing, shut and chained. The same steel gates as the big one, swung back into the drive. Only the new farm has it.
+ */
+function buildBypassGate({ layout, fields, ...c }) {
+  const b = layout.road?.bypass;
+  if (!b) return;
+  return buildSteelGate({ ...c, layout, id: 'bypass', x: b.x, z: b.z, w: b.width, swing: -1, gap: fields.gates.bypass });
+}
+
 /** Two steel leaves hung from timber posts across the road at (x, z), `w` m between the posts; `swing` -1 opens them west, 1 east. */
 function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swing, gap }) {
   const y = heights.heightAt(x, z);
@@ -380,65 +393,6 @@ function buildPublicLane({ scene, layout, heights, fixedBox }) {
 /** Worn grey tarmac: speckle, a darker band down each wheel track and a pale, crumbling edge (world/roadMesh.js). */
 export function laneTexture() {
   return roadTexture();
-}
-
-/**
- * The cattle grid (world/cattleGrid.js) in the grass field's east gateway: a dark pit sunk across the road with galvanised tubes laid
- * over it, concrete kerbs along its sides, and post-and-rail wings closing the rest of the gap so the grid is the way through. The
- * ground stays solid under it (the wheels ride it flat); the rumble is in the vibration model.
- */
-function buildCattleGrid({ scene, layout, heights, fixedBox, grid }) {
-  if (!grid) return;
-  const length = grid.maxX - grid.minX;
-  const width = grid.maxZ - grid.minZ;
-  const y = heights.heightAt(grid.x, grid.z);
-  const steel = new THREE.MeshStandardMaterial({ color: 0xb4b9bb, metalness: 0.65, roughness: 0.4 });
-  const concrete = new THREE.MeshStandardMaterial({ color: 0x8b8a84, roughness: 0.95 });
-  const timber = new THREE.MeshStandardMaterial({ color: 0x5e4c38, roughness: 0.95 });
-  const g = new THREE.Group();
-  g.position.set(grid.x, y, grid.z);
-
-  const pit = new THREE.Mesh(new THREE.BoxGeometry(length, 0.02, width), new THREE.MeshStandardMaterial({ color: 0x0c0b0a, roughness: 1 }));
-  pit.position.y = 0.015;
-  g.add(pit);
-  // The tubes lie across the road, one every pitch, just proud of the tarmac so the wheels run over them.
-  const n = Math.floor(length / grid.pitch);
-  const tubes = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.035, 0.035, width, 8).rotateX(Math.PI / 2), steel, n);
-  const m = new THREE.Matrix4();
-  for (let i = 0; i < n; i++) tubes.setMatrixAt(i, m.makeTranslation(-length / 2 + (i + 0.5) * grid.pitch, 0.05, 0));
-  g.add(tubes);
-  // Kerbs along the road's edge of each end and a rail under the tubes.
-  for (const sx of [-1, 1]) {
-    const kerb = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.1, width + 0.2), concrete);
-    kerb.position.set(sx * (length / 2 + 0.11), 0.05, 0);
-    g.add(kerb);
-  }
-  enableShadows(g);
-  scene.add(g);
-
-  // Wings: a post-and-rail fence from each side of the grid to the edge of the gateway, in line with the hedge.
-  const reach = (layout.road.halfWidth + layout.road.verge) - (width / 2);
-  for (const side of [-1, 1]) {
-    const z0 = grid.z + side * (width / 2);
-    const z1 = grid.z + side * (width / 2 + reach);
-    const fy = heights.heightAt(grid.x, (z0 + z1) / 2);
-    const w = new THREE.Group();
-    w.position.set(grid.x, fy, (z0 + z1) / 2);
-    const len = Math.abs(z1 - z0);
-    for (const pz of [-len / 2, 0, len / 2]) {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.25, 0.14), timber);
-      post.position.set(0, 0.55, pz);
-      w.add(post);
-    }
-    for (const ry of [0.45, 0.8, 1.1]) {
-      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, len), timber);
-      rail.position.set(0, ry, 0);
-      w.add(rail);
-    }
-    enableShadows(w);
-    scene.add(w);
-    fixedBox(grid.x, fy + 0.65, (z0 + z1) / 2, 0.12, 0.65, len / 2 + 0.07);
-  }
 }
 
 function buildPaddock({ scene, models, layout, heights, fixedBox }) {

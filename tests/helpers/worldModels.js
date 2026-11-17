@@ -123,6 +123,13 @@ export async function buildWorldModels() {
   add('setPiece', 'brookAlders', land.buildAlders, (b) => b(c2, spot('brookAlders')));
   add('setPiece', 'bigOaks', land.buildBigOaks, (b) => b(c2, spot('bigOaks')));
 
+  // The drive's cattle grid and reflector posts (#568): the grid is built with today's layout's and the new farm's, which place it in different gateways.
+  const drive = await import('../../src/world/driveProps.js');
+  const { createCattleGrid } = await import('../../src/world/cattleGrid.js');
+  add('setPiece', 'cattleGrid', drive.buildCattleGrid, (b) => b({ ...c2, grid: createCattleGrid(two) }));
+  add('setPiece', 'driveReflectors', drive.buildReflectorPosts, (b) => b(c2));
+  add('world', 'driveVerge', drive.buildDriveVerge, (b) => b(c2));
+
   const { buildTyreRackModel } = await import('../../src/workshop/tyreRackModel.js');
   add('barnProp', 'tyreRack', buildTyreRackModel);
   const { buildSparesModel } = await import('../../src/workshop/sparesModel.js');

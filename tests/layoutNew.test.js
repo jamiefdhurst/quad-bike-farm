@@ -140,12 +140,16 @@ describe('the boundaries', () => {
     }
     expect(outside).toBeCloseTo(perimeter, 6);
   });
-  it('are drystone walls round the sheep field and the hill, and hedges everywhere else', () => {
-    for (const r of runs) expect(r.kind, `${r.a}|${r.b}`).toBe(['sheep', 'hill'].includes(r.a) || ['sheep', 'hill'].includes(r.b) ? 'wall' : 'hedge');
+  it('are drystone walls round the sheep field and the hill, nothing along the drive, and hedges everywhere else', () => {
+    const open = ['drive|lanefield', 'drive|longpiece', 'drive|farmstead'];
+    for (const r of runs) {
+      const wall = ['sheep', 'hill'].includes(r.a) || ['sheep', 'hill'].includes(r.b);
+      expect(r.kind, `${r.a}|${r.b}`).toBe(open.includes([r.a, r.b].sort().join('|')) ? 'none' : wall ? 'wall' : 'hedge');
+    }
     expect(runs.filter((r) => r.kind === 'wall').map((r) => [r.a, r.b].sort().join('|')).sort()).toEqual(
       ['brook|hill', 'far|hill', 'far|sheep', 'hay|sheep', 'hill|out', 'hill|sheep', 'home|sheep'].sort(),
     );
-    expect(fields.hedges.length + fields.boundaries.filter((b) => b.kind === 'wall').length).toBe(fields.boundaries.length);
+    expect(fields.hedges.length + fields.boundaries.filter((b) => b.kind === 'wall' || b.kind === 'none').length).toBe(fields.boundaries.length);
   });
 });
 

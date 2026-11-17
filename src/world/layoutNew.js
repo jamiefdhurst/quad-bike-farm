@@ -77,6 +77,9 @@ export const FIELDS_PLAN = [
 /** The fields walled in drystone (#696 sets every edge's real kind); every other edge is a hedge for now. */
 const WALLED = ['sheep', 'hill'];
 
+/** The lines with nothing on them (#568): the drive is open to the fields either side and to the yard, so the crops come up to its verge. */
+const OPEN_LINES = ['drive|lanefield', 'drive|longpiece', 'drive|farmstead'];
+
 /**
  * The gateways, plan metres: from field `a` to `b` (or 'out', off the farm), at the point on the line between them nearest `at`, `half` m
  * either side. A point nearer a corner than its half and a metre is moved along to clear it. Open gaps for now; gates by kind are #696's.
@@ -95,7 +98,8 @@ export const GATEWAYS_PLAN = [
   { a: 'north', b: 'out', at: [380, 30], why: 'North Field onto Back Lane (#686)' },
   { a: 'home', b: 'north', at: [306, 230], why: 'North Field from Home Ground: its only other way in is Back Lane' },
   { a: 'home', b: 'wet', at: [197, 296], why: 'Wet Meadow from Home Ground, level with the pond (#684)' },
-  { a: 'drive', b: 'out', at: [885, 345], half: 4, why: 'the drive onto the lane (#568 puts the cattle grid in it)' },
+  { a: 'drive', b: 'out', at: [885, 345], half: 4.5, why: 'the drive onto the lane: the cattle grid fills it (#568)' },
+  { a: 'drive', b: 'out', at: [885, 351.8], half: 2.05, gate: true, id: 'bypass', shut: true, why: 'the field gate beside the grid, for stock and horses (#568)' },
   { a: 'farmstead', b: 'drive', at: [618, 345], half: 4, why: 'the drive into the yard' },
   { a: 'drive', b: 'lanefield', at: [700, 335], why: 'Lane Field from the drive' },
   { a: 'drive', b: 'longpiece', at: [700, 355], why: 'Long Piece from the drive' },
@@ -103,6 +107,26 @@ export const GATEWAYS_PLAN = [
   { a: 'brook', b: 'ley', at: [640, 580], why: 'Low Ley from Brook Meadow, north of the river' },
   { a: 'brook', b: 'south', at: [640, 720], why: 'South Field from the end of the stone track' },
 ];
+
+/**
+ * The drive (#568), plan metres: the road from the lane at (905, 345) west to the yard at (612, 345), 6 m of tarmac with 7 m of verge each side
+ * (the drive's field is 20 m across), open to Lane Field and Long Piece. The cattle grid is at the lane end, inside the boundary at x 885, with a
+ * five-bar field gate beside it on the south side for stock and horses (the big gate onto the lane is gone). `signSpot` is on the north verge by
+ * the grid, where #570's farm sign stands; `reflectors` are the white posts at the lane end; `potholes` hold water; `washes` are where the mud and
+ * straw from the fields' gateways lie on the tarmac. `patches` is how many squares of repair the tarmac has.
+ */
+export const DRIVE_PLAN = {
+  z: 345, fromX: 612, toX: 905, halfWidth: 3, verge: 7,
+  grid: { x: 881.7, length: 3.6, pitch: 0.16, margin: 0.3 },
+  signSpot: [877, 338.2],
+  reflectors: [[889, 341.4], [889, 348.6], [897, 341.4], [897, 348.6]],
+  potholes: [[798, 343.6, 0.55], [736, 346.4, 0.4], [668, 343.2, 0.6], [851, 347.2, 0.35]],
+  washes: [[700, 341.6], [700, 348.4], [790, 341.8]],
+  patches: 70,
+};
+
+/** The lane (#568): straight at plan x 905 for the length of the ground. #687 bends it round to the A-road and #686 hangs Back Lane off it. */
+export const LANE_PLAN = { x: 905, halfWidth: 2.3, minZ: -70, maxZ: 970, ridden: [245, 445] };
 
 /** How wide a gateway is either side of its middle when it doesn't say: a five-metre mouth, a field gate and its posts. */
 const GATEWAY_HALF = 2.5;
@@ -145,8 +169,8 @@ export const NOT_MOVED_YET = {
   'anchors.pit': '#685', quarry: '#685',
   'anchors.neighbour': '#569', neighbourFarm: '#569',
   'anchors.village': '#688', village: '#688',
-  // Today's farm road and its rectangle of farm, the lane and the street.
-  farm: '#568', road: '#568', publicLane: '#568', roads: '#568 (the drive), #686 (Back Lane), #688 (the street)',
+  // Today's rectangle of farm, which the wood, the hill and the quarry still place themselves from, and the village street.
+  farm: '#683 (the wood), #684 (the hill), #685 (the quarry)', 'roads.2': '#688 (the village street)',
   hayMeadow: '#691', sprayField: '#691', harrowField: '#691',
   muckHeap: '#694', trough: '#710', fieldShed: '#624',
   namedSpots: '#690',
@@ -159,7 +183,7 @@ export const SETTINGS = [
 ];
 
 /** What the new farm puts in place of today's, by key. */
-export const REPLACED = ['ground', 'stubbleFields'];
+export const REPLACED = ['ground', 'stubbleFields', 'road', 'publicLane', 'roads'];
 
 const cornersOf = (f) => f.corners.split(' ').map((k) => {
   if (!CORNERS_PLAN[k]) throw new Error(`field ${f.name}: no corner ${k}`);
@@ -236,7 +260,8 @@ export function boundariesOf(fields) {
         break;
       }
     }
-    runs.push({ ...run, kind: WALLED.includes(run.a) || WALLED.includes(run.b) ? 'wall' : 'hedge' });
+    const open = OPEN_LINES.includes([run.a, run.b].sort().join('|'));
+    runs.push({ ...run, kind: open ? 'none' : WALLED.includes(run.a) || WALLED.includes(run.b) ? 'wall' : 'hedge' });
   }
   return runs;
 }
@@ -267,7 +292,7 @@ export function placeGateways(runs, gateways = GATEWAYS_PLAN) {
     if (!best) throw new Error(`gateway ${g.a} to ${g.b}: they share no line`);
     const half = g.half ?? GATEWAY_HALF;
     const at = Math.min(Math.max(best.s, half + 1), best.length - half - 1);
-    return { a: g.a, b: g.b, boundary: best.boundary, at, half, moved: Math.abs(at - best.s) + best.d };
+    return { a: g.a, b: g.b, boundary: best.boundary, at, half, moved: Math.abs(at - best.s) + best.d, ...(g.gate && { gate: true, id: g.id, shut: !!g.shut }) };
   });
 }
 
@@ -628,7 +653,7 @@ export function newFields() {
     outline: movePoints(clockwise(OUTLINE_PLAN)),
     fields: fields.map((f) => ({ name: f.name, label: f.label, kind: f.kind, points: movePoints(f.points), traits: traitsOf(f), fixed: FIXED_NAMES.includes(f.name) })),
     boundaries: runs.map((r) => ({ points: movePoints(r.points), kind: r.kind, between: [r.a, r.b] })),
-    gateways: gateways.map(({ a, b, boundary, at, half }) => ({ a, b, boundary, at, half })),
+    gateways: gateways.map(({ a, b, boundary, at, half, gate, id, shut }) => ({ a, b, boundary, at, half, ...(gate && { gate, id, shut }) })),
   };
 }
 
@@ -637,17 +662,53 @@ export function areasOf(fields = clippedFields()) {
   return { outline: polygonArea(clockwise(OUTLINE_PLAN)), fields: Object.fromEntries(fields.map((f) => [f.name, polygonArea(f.points)])) };
 }
 
+/** The drive and the lane in game metres (#568): `road` as every reader of the farm road has it, `publicLane`, and the road network's two roads. */
+export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
+  const [fromX, z] = fromPlan([D.fromX, D.z]);
+  const [toX] = fromPlan([D.toX, D.z]);
+  const [gridX] = fromPlan([D.grid.x, D.z]);
+  const bypass = GATEWAYS_PLAN.find((g) => g.id === 'bypass');
+  const [bx, bz] = fromPlan(bypass.at);
+  const at = (p) => fromPlan(p);
+  const road = {
+    z, fromX, toX, halfWidth: D.halfWidth, verge: D.verge,
+    grid: { x: gridX, length: D.grid.length, pitch: D.grid.pitch, margin: D.grid.margin },
+    bypass: { x: bx, z: bz, width: 2 * bypass.half - 0.7 }, // the gate between its posts: the gap less the posts' own room
+    signSpot: at(D.signSpot),
+    reflectors: D.reflectors.map(at),
+    potholes: D.potholes.map(([x, pz, r]) => ({ x: x - PLAN_ORIGIN[0], z: pz - PLAN_ORIGIN[1], r })),
+    washes: D.washes.map(at),
+    patches: D.patches,
+  };
+  const [laneX, laneMin] = fromPlan([L.x, L.minZ]);
+  const [, laneMax] = fromPlan([L.x, L.maxZ]);
+  const [, rideMin] = fromPlan([L.x, L.ridden[0]]);
+  const [, rideMax] = fromPlan([L.x, L.ridden[1]]);
+  const publicLane = { x: laneX, halfWidth: L.halfWidth, minZ: laneMin, maxZ: laneMax, open: { minZ: rideMin, maxZ: rideMax } };
+  const roads = [
+    { id: 'lane', name: 'the lane', surface: 'tarmac', halfWidth: L.halfWidth, points: [[laneX, laneMin], [laneX, laneMax]], markings: { centre: 'dashed' }, verge: 1, hedged: false, draw: 'mesh', lift: 0.07 },
+    {
+      id: 'farm', name: 'the drive', surface: 'tarmac', halfWidth: D.halfWidth, points: [[fromX, z], [toX, z]], junction: { end: 'end', onto: 'lane' },
+      markings: { centre: 'none' }, verge: D.verge, hedged: false, draw: 'ground', level: { shoulder: 3, lead: [2, 0] }, edge: 'gravel', patches: D.patches,
+      potholes: road.potholes.map(({ x, z, r }) => ({ x, z, r })), washes: road.washes,
+    },
+  ];
+  return { road, publicLane, roads };
+}
+
 /** The new farm: today's layout (resolved) with what has moved put in its place. */
 export function layoutNew(today) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
   const [gx1, gz1] = fromPlan([GROUND_PLAN.maxX, GROUND_PLAN.maxZ]);
   const arable = FIELDS_PLAN.filter((f) => f.kind === 'arable');
   const [hx, hz] = fromPlan(NORTH_HOLLOW_PLAN.at);
+  const drive = driveLayout();
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
   return {
     ...today, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
+    ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street')],
     fieldLandmarks: fieldLandmarksLayout(),
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
   };

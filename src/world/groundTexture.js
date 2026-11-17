@@ -174,7 +174,7 @@ export function* paintGround(plan, c) {
   wear(yard.x, yard.z, yard.radius * 0.8, 'rgba(105,92,66,0.85)');
   wear(yard.x - 4, yard.z + 2, yard.radius * 0.45, 'rgba(92,80,58,0.7)');
   wear(gate.x, fieldHalf - 3, 7, 'rgba(90,72,48,0.8)');
-  if (layout.road) wear(fieldHalf - 4, layout.road.z, 6, 'rgba(90,72,48,0.6)'); // the quads cut the corner onto the road
+  if (layout.road && !layout.newFarm) wear(fieldHalf - 4, layout.road.z, 6, 'rgba(90,72,48,0.6)'); // the quads cut the corner onto the road
   paintOutbuildings(c, plan, wear); // its own draws, leaving the rest of the ground as it was
   yield;
 
@@ -1136,7 +1136,53 @@ export function planRoad(road, fields, random) {
       bites.push({ x, z, rx: 0.2 + random() * 0.5, rz: 0.08 + random() * 0.15 });
     }
   }
-  return { speckle: Float64Array.from(speckle), bites };
+  return { speckle: Float64Array.from(speckle), bites, ...planWear(road, random) };
+}
+
+/**
+ * What an old farm drive has that the plain road does not (#568), worked out once like the speckle: `patches` squares of repair laid in the tarmac, the
+ * gravel the edges have broken into, the water-filled `potholes` and the mud and straw the tractors have carried out of the gateways (`washes`). A road
+ * that asks for none of them draws nothing here, and takes nothing from the random stream the others are painted by.
+ */
+function planWear(road, random) {
+  const out = {};
+  const pt = (s, across) => {
+    const p = pointAt(road, s);
+    return { x: p.x - p.tz * across, z: p.z + p.tx * across, tx: p.tx, tz: p.tz };
+  };
+  if (road.patches) {
+    // Squares of repair, each a tarmac a little darker or lighter than what it mends, set square to the road, some of them laid over another.
+    out.patches = [];
+    for (let i = 0; i < road.patches; i++) {
+      const size = 0.9 + random() * 1.9;
+      const at = pt(random() * road.length, (random() * 2 - 1) * (road.halfWidth - size * 0.5 - 0.1));
+      out.patches.push({ ...at, w: size * (0.8 + random() * 0.6), l: size, tone: random() < 0.6 ? 0 : 1, shade: 0.5 + random() * 0.5 });
+    }
+  }
+  if (road.edge === 'gravel') {
+    // Where the edge has broken up: grit and stones across the margin, thickest at the tarmac's edge and scattering out over the verge.
+    const gravel = [];
+    for (let at = 0; at < road.length; at += 0.12) {
+      for (const side of [-1, 1]) {
+        const reach = 0.1 + random() * (random() < 0.15 ? 1.1 : 0.45);
+        const p = pt(at + (random() - 0.5) * 0.3, side * (road.halfWidth - 0.3 + reach));
+        gravel.push(p.x, p.z, random() < 0.45 ? 0 : random() < 0.5 ? 1 : 2, 0.02 + random() * 0.05);
+      }
+    }
+    out.gravel = Float64Array.from(gravel);
+  }
+  if (road.potholes) out.potholes = road.potholes.map((h) => ({ ...h, tilt: random() * Math.PI, rim: random() }));
+  if (road.washes) {
+    out.washes = road.washes.map((w) => {
+      const side = w[1] < road.points[0][1] ? -1 : 1; // the gateway is on the side its z is on
+      const smears = [];
+      for (let i = 0; i < 16; i++) smears.push({ x: w[0] + (random() - 0.5) * 5, z: w[1] - side * random() * 2.6, rx: 0.5 + random() * 1.3, rz: 0.25 + random() * 0.5, a: 0.12 + random() * 0.22 });
+      const straw = [];
+      for (let i = 0; i < 40; i++) straw.push({ x: w[0] + (random() - 0.5) * 6, z: w[1] - side * (random() * 3.4 - 0.6), yaw: random() * Math.PI, len: 0.12 + random() * 0.22 });
+      return { smears, straw };
+    });
+  }
+  return out;
 }
 
 /**
@@ -1193,6 +1239,40 @@ export function drawRoad(c, road, plan) {
       ctx.fillRect(px, pz, size, size);
     }
   }
+  // Squares of repair: a different tarmac let in, its edge a hairline of tar, the odd one cracked.
+  for (const q of plan.patches ?? []) {
+    if (!c.inWin(q.x, q.z, 2.5)) continue;
+    const corner = (a, b) => c.toPx(q.x + q.tx * q.l * a - q.tz * q.w * b, q.z + q.tz * q.l * a + q.tx * q.w * b);
+    const [p0, p1, p2, p3] = [corner(-0.5, -0.5), corner(0.5, -0.5), corner(0.5, 0.5), corner(-0.5, 0.5)];
+    ctx.beginPath();
+    ctx.moveTo(p0[0], p0[1]);
+    ctx.lineTo(p1[0], p1[1]);
+    ctx.lineTo(p2[0], p2[1]);
+    ctx.lineTo(p3[0], p3[1]);
+    ctx.closePath();
+    ctx.fillStyle = q.tone ? `rgba(92,90,86,${0.3 * q.shade})` : `rgba(24,24,24,${0.28 * q.shade})`;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(18,18,18,0.3)';
+    ctx.lineWidth = Math.max(1, 0.03 * s);
+    ctx.stroke();
+  }
+  // Potholes, holding last night's rain: a dark rim of broken edge, the water pale with the sky, a bright edge on its far side.
+  for (const h of plan.potholes ?? []) {
+    if (!c.inWin(h.x, h.z, h.r + 1)) continue;
+    const [px, pz] = c.toPx(h.x, h.z);
+    ctx.fillStyle = 'rgba(14,14,13,0.85)';
+    ctx.beginPath();
+    ctx.ellipse(px, pz, (h.r + 0.1) * s, (h.r * 0.75 + 0.08) * s, h.tilt, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(118,132,142,0.75)';
+    ctx.beginPath();
+    ctx.ellipse(px, pz, h.r * s, h.r * 0.75 * s, h.tilt, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(210,222,230,0.5)';
+    ctx.beginPath();
+    ctx.ellipse(px - h.r * 0.2 * s, pz - h.r * 0.22 * s, h.r * 0.55 * s, h.r * 0.22 * s, h.tilt, 0, Math.PI * 2);
+    ctx.fill();
+  }
   // Polished a little lighter where the wheels run, about 1.6 m apart.
   ctx.strokeStyle = 'rgba(120,118,110,0.18)';
   ctx.lineWidth = 0.5 * s;
@@ -1214,6 +1294,38 @@ export function drawRoad(c, road, plan) {
     ctx.stroke();
   }
   ctx.restore();
+  // The edge broken into gravel: grit and stones in three tones over the margin and the verge beyond.
+  if (plan.gravel && c.fine) {
+    const tones = ['rgba(150,144,128,0.85)', 'rgba(104,98,86,0.85)', 'rgba(190,182,160,0.8)'];
+    const g = plan.gravel;
+    for (let i = 0; i < g.length; i += 4) {
+      if (!c.inWin(g[i], g[i + 1], 0.3)) continue;
+      const [px, pz] = c.toPx(g[i], g[i + 1]);
+      ctx.fillStyle = tones[g[i + 2]];
+      ctx.fillRect(px, pz, Math.max(1, g[i + 3] * s), Math.max(1, g[i + 3] * s * 0.8));
+    }
+  }
+  // Mud and straw carried out of the gateways, thinning along the road each way.
+  for (const w of plan.washes ?? []) {
+    for (const m of w.smears) {
+      if (!c.inWin(m.x, m.z, m.rx + 1)) continue;
+      const [px, pz] = c.toPx(m.x, m.z);
+      ctx.fillStyle = `rgba(78,58,36,${m.a})`;
+      ctx.beginPath();
+      ctx.ellipse(px, pz, m.rx * s, m.rz * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(204,184,118,0.85)';
+    ctx.lineWidth = Math.max(1, 0.018 * s);
+    for (const t of w.straw) {
+      if (!c.inWin(t.x, t.z, 0.5)) continue;
+      const [px, pz] = c.toPx(t.x, t.z);
+      ctx.beginPath();
+      ctx.moveTo(px, pz);
+      ctx.lineTo(px + Math.cos(t.yaw) * t.len * s, pz + Math.sin(t.yaw) * t.len * s);
+      ctx.stroke();
+    }
+  }
   // Bites out of the edge.
   for (const b of plan.bites) {
     if (!c.inWin(b.x, b.z, 1)) continue;
