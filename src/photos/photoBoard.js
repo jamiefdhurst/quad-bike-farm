@@ -8,6 +8,7 @@ const PX_W = 1040; // 800 px a metre, so a 160 px shot is a print about 20 cm ac
 const PX_H = 800;
 const PRINT_W = 220; // pixels: white border included
 const PRINT_H = 176;
+export const HEADING = 'PHOTOS'; // lettered across the top of the cork
 const PIN_COLOURS = ['#c43a2e', '#2f6fb5', '#e0b42c', '#3f9a4c'];
 
 /**
@@ -106,10 +107,13 @@ export class PhotoBoardView {
       ctx.fillStyle = rnd() < 0.5 ? 'rgba(120,80,40,0.35)' : 'rgba(220,180,130,0.3)';
       ctx.fillRect(rnd() * PX_W, rnd() * PX_H, 2 + rnd() * 5, 2 + rnd() * 4);
     }
+    ctx.fillStyle = 'rgba(40,25,10,0.7)';
+    ctx.font = 'bold 56px "Comic Sans MS", "Segoe Print", cursive';
+    ctx.textAlign = 'center';
+    ctx.fillText(HEADING, PX_W / 2, 70);
     if (!this.wall.photos.length) {
       ctx.fillStyle = 'rgba(60,40,20,0.55)';
       ctx.font = 'bold 44px "Comic Sans MS", "Segoe Print", cursive';
-      ctx.textAlign = 'center';
       ctx.fillText('Photos go here', PX_W / 2, PX_H / 2);
     }
     for (const ph of this.wall.photos) {

@@ -3,11 +3,18 @@ import * as THREE from 'three';
 import { barnShape } from './barn.js';
 
 const BOARD_W = 1.2; // metres
-const BOARD_H = 1.1;
+const BOARD_H = 1.15;
 const PX_W = 480;
-const PX_H = 440; // the same scrap-per-metre as the width
+const PX_H = 460; // the same scrap-per-metre as the width
 const SLIP_H = 118; // a pinned slip, in pixels
 const SLIPS = 3;
+export const HEADING = 'SMALL ADS'; // lettered across the top of the cork
+const HEADING_H = 62; // the heading's strip, in pixels; the slips start under it
+
+/** Where slip `i` is pinned on the cork, untilted: the one footprint the slip, its shadow and the faded patch a gone slip leaves all share. */
+export function slipRect(i) {
+  return { x: 24, y: HEADING_H + 8 + i * (SLIP_H + 8), w: PX_W - 48, h: SLIP_H };
+}
 const SELL_ROWS = 9; // the number keys
 
 /**
@@ -122,26 +129,35 @@ export class ClassifiedsView {
       ctx.fillStyle = i % 2 ? 'rgba(90,58,30,0.35)' : 'rgba(210,170,120,0.35)';
       ctx.fillRect((i * 97) % PX_W, (i * 53) % PX_H, 4 + (i % 3), 3);
     }
+    // The heading, in marker on a card strip tacked across the top.
+    ctx.fillStyle = 'rgba(40,25,10,0.7)';
+    ctx.font = 'bold 40px "Comic Sans MS", "Segoe Print", cursive';
+    ctx.textAlign = 'center';
+    ctx.fillText(HEADING, PX_W / 2, 46);
+    ctx.textAlign = 'left';
     const ads = this.market.ads;
     if (!ads.length) {
-      // Bare cork with the pins left in it and a faded corner where a slip hung.
+      // Bare cork with the pins left in it and the faded patch where a slip hung, the size of a slip and where the first one goes.
+      const gone = slipRect(0);
       ctx.fillStyle = 'rgba(80,50,25,0.25)';
-      ctx.fillRect(40, 60, 160, 110);
+      ctx.fillRect(gone.x, gone.y, gone.w, gone.h);
       ctx.fillStyle = '#c0392b';
-      for (const [x, y] of [[120, 64], [330, 250], [60, 330]]) {
+      for (const [x, y] of [[PX_W / 2, gone.y + 8], [330, 300], [60, 400]]) {
         ctx.beginPath();
         ctx.arc(x, y, 6, 0, Math.PI * 2);
         ctx.fill();
       }
     }
     ads.slice(0, SLIPS).forEach((ad, i) => {
-      const y = 14 + i * (SLIP_H + 8);
+      const r = slipRect(i);
       const tilt = (i % 2 ? 1 : -1) * 0.012;
       ctx.save();
-      ctx.translate(PX_W / 2, y + SLIP_H / 2);
+      ctx.translate(r.x + r.w / 2, r.y + r.h / 2);
       ctx.rotate(tilt);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)'; // its shadow on the cork, offset down and right like the photos'
+      ctx.fillRect(-r.w / 2 + 4, -r.h / 2 + 5, r.w, r.h);
       ctx.fillStyle = i % 2 ? '#f3efd8' : '#e9eef2';
-      ctx.fillRect(-PX_W / 2 + 24, -SLIP_H / 2, PX_W - 48, SLIP_H);
+      ctx.fillRect(-r.w / 2, -r.h / 2, r.w, r.h);
       ctx.fillStyle = '#1d1d1d';
       ctx.font = 'bold 22px "Courier New", monospace';
       ctx.fillText('FOR SALE', -PX_W / 2 + 40, -SLIP_H / 2 + 30);

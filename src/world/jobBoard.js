@@ -6,6 +6,15 @@ const BOARD_W = 1.5; // metres
 const BOARD_H = 1.3; // tall enough for the five records with room to spare
 const BOARD_PX_W = 512;
 const BOARD_PX_H = 444; // the same chalk-per-metre as the width
+const RECORDS_FIRST = 112; // the first record's baseline, under the heading's underline
+const RECORDS_PITCH = 56; // the most room a record line gets, in pixels; the more lines, the closer they sit
+const RECORDS_LAST = BOARD_PX_H - 24; // the lowest a baseline may sit, clear of the frame
+
+/** Baselines for a table of `count` records, one line each, evenly spaced between the heading and the foot of the board. */
+export function recordRowYs(count) {
+  const pitch = count > 1 ? Math.min(RECORDS_PITCH, (RECORDS_LAST - RECORDS_FIRST) / (count - 1)) : 0;
+  return Array.from({ length: count }, (_, i) => RECORDS_FIRST + i * pitch);
+}
 
 /**
  * The chalkboards hung inside the barn on its back wall: today's farm jobs (farmJobs.js JobBoard), ticked off in chalk as they're done. Look at it
@@ -123,19 +132,23 @@ export class JobBoardView {
     return { ctx, w, h };
   }
 
-  /** The records board: each of the game's bests in chalk, with who set it. */
+  /** The records board: a table of the game's bests in chalk, one line each, the event on the left and the time and who set it on the right. */
   drawRecords() {
     const { ctx, w } = this.slate(this.recordsBoard, 'RECORDS', 230);
     const rows = this.records.allLines();
+    const ys = recordRowYs(rows.length);
     rows.forEach((l, i) => {
-      const y = 112 + i * (rows.length > 6 ? 46 : rows.length > 5 ? 52 : 58);
-      ctx.fillStyle = '#ece8d8';
       ctx.font = '24px "Comic Sans MS", "Segoe Print", cursive';
-      ctx.fillText(l.label, 28, y);
+      ctx.textAlign = 'right';
       ctx.fillStyle = l.set ? '#f3d98a' : 'rgba(236,232,216,0.45)';
-      ctx.font = '28px "Comic Sans MS", "Segoe Print", cursive';
-      ctx.fillText(l.text, 60, y + 30, w - 90);
+      ctx.fillText(l.text, w - 28, ys[i]);
+      const room = w - 56 - ctx.measureText(l.text).width - 16; // what the value leaves for the event's name
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#ece8d8';
+      ctx.font = '22px "Comic Sans MS", "Segoe Print", cursive';
+      ctx.fillText(l.label, 28, ys[i], Math.max(room, 60));
     });
+    ctx.textAlign = 'left';
     this.recordsBoard.texture.needsUpdate = true;
   }
 
