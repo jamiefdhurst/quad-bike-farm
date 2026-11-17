@@ -9,7 +9,7 @@ const PX_H = 460; // the same scrap-per-metre as the width
 const SLIP_H = 118; // a pinned slip, in pixels
 const SLIPS = 3;
 export const HEADING = 'SMALL ADS'; // lettered across the top of the cork
-const HEADING_H = 62; // the heading's strip, in pixels; the slips start under it
+const HEADING_H = 62; // the room for the heading, in pixels; the slips start under it
 
 /** Where slip `i` is pinned on the cork, untilted: the one footprint the slip, its shadow and the faded patch a gone slip leaves all share. */
 export function slipRect(i) {
@@ -129,7 +129,7 @@ export class ClassifiedsView {
       ctx.fillStyle = i % 2 ? 'rgba(90,58,30,0.35)' : 'rgba(210,170,120,0.35)';
       ctx.fillRect((i * 97) % PX_W, (i * 53) % PX_H, 4 + (i % 3), 3);
     }
-    // The heading, in marker on a card strip tacked across the top.
+    // The heading, lettered in marker straight onto the cork across the top.
     ctx.fillStyle = 'rgba(40,25,10,0.7)';
     ctx.font = 'bold 40px "Comic Sans MS", "Segoe Print", cursive';
     ctx.textAlign = 'center';

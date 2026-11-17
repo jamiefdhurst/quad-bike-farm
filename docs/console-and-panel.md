@@ -23,7 +23,7 @@ Every value is at a dotted path. Type the path alone to read it, or the path and
 - `girl amy drive farm300`, `girl jess doughnuts`, `girl amy invite-barn`: the same things as the Girls tab buttons.
 - `job` lists the farm's jobs with their stage; `job hay` lists what can be done to one; `job hay cut`, `job muck done`, `job spray boom-out`: the same things as the Jobs folder's buttons.
 - `layout` says which farm this is, and `layout 2` loads the new one being built on the farm plan (not saved; `layout 1` goes back). The Girls tab's "The farm that remembers" folder has the same as a button.
-- `scene` lists the scenes (a frosty dawn, snow, the flock, the flask, Jess on the mini moto, the girls' wardrobe) and `scene frost` sets one up; the Girls tab's Scenes folder has a button each.
+- `scene` lists the scenes (a frosty dawn, snow, the flock, the flask, Jess on the mini moto, the girls' wardrobe, the barn's boards) and `scene frost` sets one up; the Girls tab's Scenes folder has a button each.
 - `weather rain`, `fly`, `autonomy off` (the girls start nothing on their own, but follow and answer you), `speech off`, `sound off`.
 
 ## Tuning panel
