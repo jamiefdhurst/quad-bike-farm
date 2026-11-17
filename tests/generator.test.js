@@ -70,6 +70,23 @@ describe('Generator', () => {
     expect(g.powered).toBe(false);
   });
 
+  it('runs a full tank for over an hour, and for less with the charger drawing on it (#810)', () => {
+    const minutes = (loaded) => {
+      const g = make({ startLitres: 5 }, [0]);
+      g.pull();
+      g.update(2, 0);
+      let seconds = 0;
+      while (g.running && seconds < 20000) {
+        g.update(1, loaded ? 1 : 0);
+        seconds++;
+      }
+      return seconds / 60;
+    };
+    expect(minutes(false)).toBeGreaterThan(60);
+    expect(minutes(true)).toBeGreaterThan(40);
+    expect(minutes(true)).toBeLessThan(minutes(false));
+  });
+
   it('takes only red diesel, only when off, and only up to the top', () => {
     const g = make({ startLitres: 4 }, [0]);
     expect(g.add(1, 0)).toBe(0); // petrol
