@@ -27,6 +27,7 @@ import { createOutbuildings } from './outbuildings.js';
 import { createBrook } from './brook.js';
 import { villageShape } from './village.js';
 import { roadNetwork } from './roads.js';
+import { createLandform } from './landform.js';
 
 export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
@@ -39,21 +40,24 @@ export function createTerrainHeight(layout, track) {
   const brook = createBrook(layout);
   const village = villageShape(layout);
   const roads = roadNetwork(layout);
+  const landform = layout.landform ? createLandform(layout.landform) : null; // the new farm's lie (#813); today's rises beyond its hedges instead
+  /** The farm's rolling, on the land's lie where there is one: what a level piece (the yard, a road, a floor) is laid to. */
+  const lie = landform ? (x, z) => baseHeight(x, z) + landform(x) : baseHeight;
   const hut = hutShape(layout);
   let hutLevel = null; // the ground at the hut's middle as the land lies, found the first time it's needed
   let findingHutLevel = false;
-  const yardHeight = baseHeight(yard.x, yard.z);
+  const yardHeight = lie(yard.x, yard.z);
   const puddles = layout.puddles.map((u) => track.sample(u));
   const bogs = (layout.bogs ?? []).map((b) => (b.track !== undefined ? { ...track.sample(b.track), radius: b.radius } : { ...b }));
   if (woods) bogs.push(...woods.bogs.map((b) => ({ ...b })));
   const trackReach = trackHalfWidth + 1.5;
   // The drag strip is level: the average of the ground along it, blended back into the field over its shoulders.
   const strip = layout.dragStrip;
-  const stripLevel = strip ? [0, 0.25, 0.5, 0.75, 1].reduce((sum, t) => sum + baseHeight(strip.x + Math.sin(strip.yaw) * strip.length * t, strip.z + Math.cos(strip.yaw) * strip.length * t), 0) / 5 : 0;
+  const stripLevel = strip ? [0, 0.25, 0.5, 0.75, 1].reduce((sum, t) => sum + lie(strip.x + Math.sin(strip.yaw) * strip.length * t, strip.z + Math.cos(strip.yaw) * strip.length * t), 0) / 5 : 0;
 
   /** The ground as the land lies, before anything is built on it or cut into it. */
   function natural(x, z) {
-    let h = baseHeight(x, z);
+    let h = lie(x, z);
 
     // Land rises gently beyond the farm's hedges towards distant hills; through the south gate, the lane and the hill pasture have their own
     // shape (world/hill.js), fading back into it beyond their hedges.
@@ -61,7 +65,8 @@ export function createTerrainHeight(layout, track) {
     const w = hill ? hill.weight(x, z) : 0;
     const ww = woods ? woods.weight(x, z) : 0;
     const qw = quarry ? quarry.weight(x, z) : 0;
-    h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013)) * (1 - Math.max(w, ww, qw));
+    // The new farm's landform (layout.landform) is already in `lie`, so it has no rise of its own beyond the hedges.
+    if (!landform) h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013)) * (1 - Math.max(w, ww, qw));
     if (w > 0) h += w * hill.profile(x, z);
     if (ww > 0) h += ww * woods.profile(x, z);
 
@@ -84,7 +89,7 @@ export function createTerrainHeight(layout, track) {
 
     // Every levelled road is laid level across, following the lie of the land along its middle, with a shoulder each side (world/roads.js): the
     // farm road, whose hardstanding at its end is flat.
-    const laid = roads.levelAt(x, z, baseHeight);
+    const laid = roads.levelAt(x, z, lie);
     if (laid) h += (laid.level - h) * laid.k;
 
     // Flatten the yard around the barn.
@@ -95,7 +100,7 @@ export function createTerrainHeight(layout, track) {
     if (layout.barn) h += (yardHeight - h) * floorBlend(layout, x, z);
 
     // And under the Dutch barn and the field shed, to the lie of the land at their middles.
-    const floor = outbuildings.floorAt(x, z, (fx, fz) => baseHeight(fx, fz) + fieldShape(fx, fz).lift);
+    const floor = outbuildings.floorAt(x, z, (fx, fz) => lie(fx, fz) + fieldShape(fx, fz).lift);
     if (floor) h += (floor.level - h) * floor.k;
 
     // And under the village's buildings, its car park and the garage's forecourt.

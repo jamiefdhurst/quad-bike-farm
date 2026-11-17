@@ -108,11 +108,21 @@ export const GATEWAYS_PLAN = [
 const GATEWAY_HALF = 2.5;
 
 /**
+ * The lie of the land (#813): metres above the valley floor at each plan x, the heights the farm's rolling rides on (landform.js joins them
+ * smoothly, level at both ends). The land falls east to the valley floor, where the river, the village and the A-road run (flat from the A-road
+ * out); it rises west through the farm and the hill pasture and over Back Lane to the moor's ridge wall, 100 m above the floor, where the crest
+ * levels off and #708 carries the far land on. About 3 degrees across the farm and up to 10 on the moor: nothing near the hill's banks (38).
+ */
+export const LANDFORM_PLAN = [[-330, 100], [-150, 84], [30, 56], [300, 40], [520, 26], [885, 7], [1000, 0]];
+
+/**
  * How each arable field's stubble looks until the crop year (#697): today's barley and wheat in turn, the barley's hollow (26 by 16 m, 1.3 m
- * deep) in North Field. The wheat's rise is today's landform, not the field's, and the new landform is #813's. Plan metres for the hollow.
+ * deep) in North Field. Plan metres for the hollow. The wheat's rise was today's landform's; the land's lie is `LANDFORM_PLAN`'s now.
  */
 const BARLEY = { crop: 'barley', rows: 'z', tramlines: 20, ground: '#a7a07c', stalk: [[0.72, 0.68, 0.52], [0.45, 0.42, 0.3]], stalkHeight: [0.05, 0.1], density: 1.6 };
 const WHEAT = { crop: 'wheat', rows: 'x', tramlines: 24, ground: '#b3a06a', stalk: [[0.8, 0.66, 0.38], [0.5, 0.4, 0.22]], stalkHeight: [0.08, 0.16], density: 1 };
+/** How many clumps of straw the six stubble fields share (today's two share 60,000: props.js `buildStubble`). */
+const STUBBLE_CLUMPS = 150000;
 const NORTH_HOLLOW_PLAN = { at: [300, 120], rx: 26, rz: 16, depth: 1.3 };
 
 /**
@@ -263,6 +273,13 @@ export function placeGateways(runs, gateways = GATEWAYS_PLAN) {
 
 const movePoints = (pts) => pts.map(fromPlan);
 
+/** The landform as the game reads it: game x and the height above the yard's ground, so the yard keeps the height it has today. */
+export function landformPoints(plan = LANDFORM_PLAN) {
+  const yard = plan.find(([x]) => x === PLAN_ORIGIN[0]);
+  if (!yard) throw new Error('the landform has no height at the yard');
+  return plan.map(([x, h]) => [x - PLAN_ORIGIN[0], h - yard[1]]);
+}
+
 /** The fields, boundaries, gateways and outline in game metres, as fieldPlan.js `planFromData` reads them. */
 export function newFields() {
   const fields = clippedFields();
@@ -289,7 +306,7 @@ export function layoutNew(today) {
   const [hx, hz] = fromPlan(NORTH_HOLLOW_PLAN.at);
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
-  return { ...today, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, stubbleFields, ...newFields() };
+  return { ...today, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields() };
 }
 
 /** One line about which farm this is, for the console's `layout` and the panel. */
