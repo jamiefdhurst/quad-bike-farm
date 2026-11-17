@@ -263,7 +263,7 @@ const INFO = {
   church: { t: 'The church', c: 'new', b: 'Outside only: a west tower you can see from most of the farm, the nave, a churchyard wall with a lychgate on the street, the graves. The bells ring the hour and on Sunday morning. It gives the street its end and the farm its landmark.', i: '#715' },
 
   north: { t: 'North Field', c: 'new', b: 'Arable, wheat this year, between the wood and Top Field, with a gate onto Back Lane.', i: '#697, #698, #699' },
-  far: { t: 'Far Field', c: 'new', b: 'Arable, wheat this year, on the west side by Back Lane, above the hill.', i: '#697, #698, #699' },
+  far: { t: 'Far Field', c: 'new', b: 'Arable, wheat this year, on the west side by Back Lane, above the hill. A small field pond with two willows on its low east side, at (160, 530), with an uncropped margin round it.', i: '#697, #698, #699, #815' },
   south: { t: 'South Field', c: 'new', b: 'Arable, barley this year, the far side of the brook from Low Ley.', i: '#697, #698, #699' },
   back: { t: 'Back Lane', c: 'new', b: 'Across the moor it runs unfenced between two cattle grids. The old road over the hill: single-track tarmac with passing places, hedged both sides. It leaves the lane at the north, winds round the farm\'s north and west, through a ford, up over the shoulder of the hill and back east along the south to rejoin the lane below the village: about 3 km, a loop with no end. A footpath off it climbs to Upper Thornby. Gates off it into North Field, the wood and the hill.', i: '' },
   edge: { t: 'The A-road', c: 'new', b: 'One main road down the valley to the east, curving as real ones do, not a ring round the map. The lane meets it in the north (Kelby 4) and the village street meets it (Ashwell 3); the lane south runs on to Haddon without it. Pull out onto it and the picture fades and turns you round facing home, with a girl\'s line if she is with you. Beyond it is far landscape: seen, never reached.', i: '#687' },
@@ -450,6 +450,9 @@ function drawProposed(root) {
   // wet meadow pond and oaks
   el('ellipse', { cx: 112, cy: 292, rx: 26, ry: 17, fill: 'var(--m-water)', stroke: 'var(--m-water-edge)', 'stroke-width': 0.8 }, det);
   trees(det, 50, 245, 140, 110, 12, 21, 3.6);
+  // Far Field's field pond and its two willows (#815, on the plan by #956)
+  el('ellipse', { cx: 160, cy: 530, rx: 9, ry: 7.5, fill: 'var(--m-water)', stroke: 'var(--m-water-edge)', 'stroke-width': 0.7 }, det);
+  [[151, 525], [168.2, 535]].forEach(([x, y]) => el('circle', { cx: x, cy: y, r: 3.2, fill: 'var(--m-tree)', opacity: 0.85, class: 'lbl' }, det));
   // sheep field (in-bye): terraces, a field barn, ewes
   [470, 498, 526].forEach(y => path(det, `M200 ${y} C260 ${y - 5} 340 ${y + 5} 415 ${y - 2}`, '#a39572', 0.9));
   rect(det, 372, 448, 12, 7, 'var(--m-build)');
