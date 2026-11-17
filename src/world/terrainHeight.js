@@ -28,6 +28,7 @@ import { createBrook } from './brook.js';
 import { villageShape } from './village.js';
 import { roadNetwork } from './roads.js';
 import { createLandform } from './landform.js';
+import { landmarksOf, pondShape } from './fieldLandmarks.js';
 
 export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
@@ -44,6 +45,7 @@ export function createTerrainHeight(layout, track) {
   /** The farm's rolling, on the land's lie where there is one: what a level piece (the yard, a road, a floor) is laid to. */
   const lie = landform ? (x, z) => baseHeight(x, z) + landform(x) : baseHeight;
   const hut = hutShape(layout);
+  const ponds = landmarksOf(layout, 'farPond').map((l) => pondShape(l)); // Far Field's pond dish (#815): the new farm only
   let hutLevel = null; // the ground at the hut's middle as the land lies, found the first time it's needed
   let findingHutLevel = false;
   const yardHeight = lie(yard.x, yard.z);
@@ -72,6 +74,7 @@ export function createTerrainHeight(layout, track) {
 
     // The stubble fields' own lie: the north one's hollow, the south one's rise.
     h += fieldShape(x, z).lift;
+    for (const pond of ponds) h -= pond.cut(x, z);
     return h;
   }
 

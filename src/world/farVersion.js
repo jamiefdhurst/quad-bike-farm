@@ -16,9 +16,10 @@ const rgb = (hex) => {
 /**
  * Triangles for the shapes the far version is made of, as flat arrays: `positions` (x, y, z a vertex) and `colors` (r, g, b a vertex).
  * A building is `{ x, z, y, halfX, halfZ, wallHeight, ridge, wall, roof }` (y the floor's level, the ridge running along x, colours any
- * THREE.Color input); a wall is `{ x, z, hx, hz, y, height, color }`.
+ * THREE.Color input); a wall is `{ x, z, hx, hz, y, height, color }`; a tree (#815) is `{ x, z, y, trunk, crownR, crownH, color, trunkColor, trunkHalf }`,
+ * a box of trunk `trunk` m tall with an octahedron of crown `crownR` wide and `crownH` tall on it.
  */
-export function farTriangles({ buildings = [], walls = [] }) {
+export function farTriangles({ buildings = [], walls = [], trees = [] }) {
   const positions = [];
   const colors = [];
   const tri = (a, b, c, col) => {
@@ -54,6 +55,17 @@ export function farTriangles({ buildings = [], walls = [] }) {
     for (const side of [-1, 1]) {
       const ez = b.z + side * (b.halfZ + EAVE);
       quad([x0 - EAVE, eave - drop, ez], [x1 + EAVE, eave - drop, ez], [x1 + EAVE, top, b.z], [x0 - EAVE, top, b.z], roof);
+    }
+  }
+  for (const t of trees) {
+    const hw = t.trunkHalf ?? 0.3;
+    box(t.x - hw, t.x + hw, t.y - SINK, t.y + t.trunk, t.z - hw, t.z + hw, rgb(t.trunkColor ?? '#5a4a3a'));
+    const mid = t.y + t.trunk + t.crownH / 2;
+    const crown = rgb(t.color);
+    const ring = [[t.crownR, 0], [0, t.crownR], [-t.crownR, 0], [0, -t.crownR]].map(([dx, dz]) => [t.x + dx, mid, t.z + dz]);
+    for (let i = 0; i < 4; i++) {
+      tri([t.x, mid + t.crownH / 2, t.z], ring[i], ring[(i + 1) % 4], crown);
+      tri([t.x, mid - t.crownH / 2, t.z], ring[(i + 1) % 4], ring[i], crown);
     }
   }
   for (const w of walls) box(w.x - w.hx, w.x + w.hx, w.y - SINK, w.y + w.height, w.z - w.hz, w.z + w.hz, rgb(w.color));
