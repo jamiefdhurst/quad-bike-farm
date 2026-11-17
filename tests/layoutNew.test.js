@@ -364,7 +364,6 @@ describe('the places reserved for later items', () => {
   const footpath = flattenPath(R.footpath);
   const bridleway = flattenPath(R.bridleway);
   const routes = { footpath, bridleway };
-  const nearest = (runs, [x, z]) => Math.min(...runs.map((pts) => distanceToEdges(polygonEdges(pts.length > 2 ? pts : [...pts, pts[0]]), x, z)));
   const near = (runs, p) => {
     let best = Infinity;
     for (const pts of runs) {
@@ -377,7 +376,6 @@ describe('the places reserved for later items', () => {
     }
     return best;
   };
-  void nearest;
 
   it('has the footpath from the village bridge to the ladder stile in the ridge wall, in two runs that break at the stone track\'s bridge', () => {
     expect(footpath).toHaveLength(2);
