@@ -191,16 +191,22 @@ export function continueInfo({ search = '', storage = null } = {}) {
 }
 
 /**
- * What the save kept as the names of the farm's fields (#814): the name for every one of `fields` (each `{ name }`, its key in the layout) when
- * there is one for each, none blank, too long or used twice. Otherwise null, and the game deals them again from the farm's seed, as it does for a
- * save from before the fields had names. A key for a field the layout doesn't have is dropped.
+ * What the save kept as the names of the farm's fields (#814), for `fields` (each `{ name }`, its key in the layout): the name of each one the save
+ * has a good name for (a string that isn't blank or over 40 characters, and not one an earlier field already has). The fields it has none for are
+ * left out, and the game deals just those from the farm's seed, so a farm saved before the fields had names, or one that gains a field later, keeps
+ * every name it has. A key for a field the layout doesn't have is dropped.
  */
 export function keptFieldNames(saved, fields) {
-  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return null;
-  const names = fields.map((f) => saved[f.name]);
-  if (!names.every((s) => typeof s === 'string' && s.trim() && s.length <= 40)) return null;
-  if (new Set(names).size !== names.length) return null;
-  return Object.fromEntries(fields.map((f, i) => [f.name, names[i]]));
+  const kept = {};
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return kept;
+  const used = new Set();
+  for (const f of fields) {
+    const name = saved[f.name];
+    if (typeof name !== 'string' || !name.trim() || name.length > 40 || used.has(name)) continue;
+    kept[f.name] = name;
+    used.add(name);
+  }
+  return kept;
 }
 
 /** Specs for a saved fleet, in its order, or null if any of them is no longer in the game (the fleet is dealt again). */

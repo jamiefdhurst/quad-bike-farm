@@ -293,6 +293,7 @@ const HAND_TRAITS = {
   wood: ['north', 'wet'], // touching Hollow Wood's side
   pit: ['top'], // touching the gravel pit's field
   lane: ['lanefield', 'longpiece', 'north'], // beside the drive or Back Lane
+  sheep: ['sheep'], // the sheep field itself
 };
 
 /** The land's height above the valley floor at plan x (the straight line between `LANDFORM_PLAN`'s heights: near enough for what stands on it). */

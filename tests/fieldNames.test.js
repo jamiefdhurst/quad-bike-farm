@@ -136,16 +136,32 @@ describe('kept by the save', () => {
     expect(f.save.fieldNames).toBeUndefined();
     expect(namedLayout(two, f.farmSeed, f.save.fieldNames).dealtFieldNames).toEqual(deal(555));
   });
-  it('deals again from the seed when what was kept is damaged: missing, the wrong kind of thing, blank or repeated', () => {
+  it('keeps each good name a save has and deals only the fields it has none for, out of the names left', () => {
     const good = deal(8);
     const keys = dealable.map((f) => f.name);
-    const bad = [
-      null, 'Top Field', [], { ...good, top: undefined }, { ...good, top: '' }, { ...good, top: 7 }, { ...good, top: 'x'.repeat(41) },
-      { ...good, top: good.north }, Object.fromEntries(keys.slice(1).map((k) => [k, good[k]])),
-    ];
-    for (const saved of bad) {
-      expect(usableFieldNames(saved, dealable), JSON.stringify(saved)).toBeNull();
-      expect(namedLayout(two, 8, saved).dealtFieldNames).toEqual(good);
+    const some = Object.fromEntries(keys.slice(0, 7).map((k) => [k, good[k]]));
+    const again = namedLayout(two, 8, some).dealtFieldNames;
+    for (const k of keys.slice(0, 7)) expect(again[k], k).toBe(good[k]);
+    expect(new Set(Object.values(again)).size).toBe(keys.length);
+    for (const f of dealable) {
+      const n = byName[again[f.name]];
+      expect(n.kinds, f.name).toContain(f.kind);
+      for (const t of n.needs) expect(f.traits, `${f.name} ${n.name}`).toContain(t);
+    }
+    // A field added since the save was written is the only one dealt: none of the others is renamed, and a name a save has is never dealt to another.
+    const wider = { ...two, fields: [...two.fields, { name: 'extra', kind: 'pasture', traits: [], points: [[0, 0], [1, 0], [1, 1]] }] };
+    const grown = namedLayout(wider, 8, good).dealtFieldNames;
+    for (const k of keys) expect(grown[k], k).toBe(good[k]);
+    expect(Object.values(good)).not.toContain(grown.extra);
+  });
+  it('drops a damaged name but keeps the rest: missing, the wrong kind of thing, blank, too long or repeated', () => {
+    const good = deal(8);
+    const keys = dealable.map((f) => f.name);
+    for (const saved of [null, 'Top Field', []]) expect(usableFieldNames(saved, dealable), JSON.stringify(saved)).toEqual({});
+    for (const bad of [undefined, '', 7, 'x'.repeat(41), good.north]) {
+      const kept = usableFieldNames({ ...good, top: bad }, dealable);
+      expect(Object.keys(kept), String(bad)).toEqual(keys.filter((k) => k !== 'top'));
+      expect(namedLayout(two, 8, { ...good, top: bad }).dealtFieldNames.top, String(bad)).toBeTruthy();
     }
     expect(usableFieldNames(good, dealable)).toEqual(good);
     expect(usableFieldNames({ ...good, extra: 'Ghost Field' }, dealable)).toEqual(good);
@@ -176,13 +192,51 @@ describe('where the names are used', () => {
     expect(line).toMatch(/^the fields: /);
     for (const f of named.fields) expect(line).toContain(`${f.label} (${f.name})`);
   });
-  it('is never said by a girl: she says the kind of field, and the crop on the stubble', () => {
-    expect(fieldPhrase('arable', 'barley')).toBe('the barley field');
-    expect(fieldPhrase('arable')).toBe('the field');
-    for (const kind of FIELD_KINDS) {
-      const said = fieldPhrase(kind);
-      expect(said, kind).toMatch(/^the [a-z ]+$/);
-      for (const n of FIELD_NAMES) expect(said, kind).not.toBe(n.name);
+  it('is never said by a girl: she says the place if it is one of its own, otherwise the kind of field and the crop on the stubble', () => {
+    expect(fieldPhrase('top', 'arable', 'barley')).toBe('the barley field');
+    expect(fieldPhrase('top', 'arable')).toBe('the field');
+    expect(fieldPhrase('pit', 'rough')).toBe('the pit');
+    expect(fieldPhrase('hill', 'rough')).toBe('the hill');
+    expect(fieldPhrase('sheep', 'pasture')).toBe('the sheep field');
+    expect(fieldPhrase('brook', 'pasture')).toBe('the meadow');
+    expect(fieldPhrase('wood', 'wood')).toBe('the wood');
+    expect(fieldPhrase('farmstead', 'yard')).toBe('the yard');
+    expect(fieldPhrase('drive', 'lane')).toBe('the drive');
+    for (const f of two.fields) {
+      const said = fieldPhrase(f.name, f.kind);
+      expect(said, f.name).toMatch(/^the [a-z ]+$/);
+      for (const n of FIELD_NAMES) expect(said, f.name).not.toBe(n.name);
     }
+    for (const kind of FIELD_KINDS) expect(fieldPhrase('x', kind), kind).toMatch(/^the [a-z ]+$/);
+  });
+});
+
+describe('names that read well together', () => {
+  const many = Array.from({ length: 2000 }, (_, i) => 3 + i * 104729);
+  it('never start two names on one farm with the same word, on 2,000 farms, and every farm deals', () => {
+    for (const seed of many) {
+      const words = Object.values(deal(seed)).map((n) => n.split(' ')[0]);
+      expect(new Set(words).size, `${seed} ${words}`).toBe(words.length);
+    }
+  });
+  it('leaves a kept name\'s first word to it: a field dealt beside a kept "Long Piece" is not another Long', () => {
+    for (const seed of many.slice(0, 300)) {
+      const names = namedLayout(two, seed, { south: 'Long Piece' }).dealtFieldNames;
+      expect(Object.entries(names).filter(([, n]) => n.startsWith('Long ')).map(([k]) => k), `${seed}`).toEqual(['south']);
+    }
+  });
+  it('gives "Sheep Field" only to the sheep field', () => {
+    let given = 0;
+    for (const seed of many) {
+      for (const [key, name] of Object.entries(deal(seed))) {
+        if (name === 'Sheep Field') {
+          expect(key, `${seed}`).toBe('sheep');
+          given++;
+        }
+      }
+    }
+    expect(given).toBeGreaterThan(100);
+    expect(byName['Sheep Field'].needs).toEqual(['sheep']);
+    expect(two.fields.find((f) => f.name === 'sheep').traits).toContain('sheep');
   });
 });
