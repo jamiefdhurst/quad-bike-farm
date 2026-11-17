@@ -3,8 +3,8 @@ import { treadTyre } from '../vehicle/detail/tread.js';
 import { TYRE_SIZES, tyrePart } from '../vehicle/tyres.js';
 
 // The tyre rack along the annex's south wall: a timber and steel frame with two decks, a bay for each size of tyre (tyres.js TYRE_SIZES) with the
-// tyres lying in a stack, as many as the spares shelf has (up to what the bay holds), and a card tag on the front rail that says the size and the
-// count. Origin on the floor under the middle of the rack, the wall behind it (0.16 m back from the origin), facing +z. `setCounts` shows the stacks.
+// tyres lying in a stack, as many as the spares shelf has (up to what the bay holds), and a card tag on the front rail that says the size (and NONE when it is empty).
+// Origin on the floor under the middle of the rack, the wall behind it (0.16 m back from the origin), facing +z. `setCounts` shows the stacks.
 
 export const TYRE_RACK_WIDTH = 3.5;
 const BAY = 0.85;
@@ -27,7 +27,12 @@ const STACK_HEIGHT = 1.12; // clear height above a deck
 
 const mat = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.8, ...o });
 
-/** The tag's card: the size in capitals and, to the right, how many there are. Redrawn when the count changes. */
+/** What a tag says: the size, and NONE on the right when the bay is empty. The tyres are there to be counted, so no number. */
+export function tagText(label, n) {
+  return { label, none: n > 0 ? '' : 'NONE' };
+}
+
+/** The tag's card: the size in capitals and, to the right, NONE if the bay is empty. Redrawn when the bay empties or fills. */
 function drawTag(ctx, label, n) {
   ctx.fillStyle = '#e9e1c6';
   ctx.fillRect(0, 0, 256, 64);
@@ -38,10 +43,11 @@ function drawTag(ctx, label, n) {
   ctx.textBaseline = 'middle';
   ctx.font = 'bold 26px sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText(label, 14, 34);
+  const text = tagText(label, n);
+  ctx.fillText(text.label, 14, 34);
   ctx.textAlign = 'right';
-  ctx.fillStyle = n > 0 ? '#2a241a' : '#a3281c';
-  ctx.fillText(n > 0 ? `x ${n}` : 'NONE', 242, 34);
+  ctx.fillStyle = '#a3281c';
+  ctx.fillText(text.none, 242, 34);
 }
 
 export function buildTyreRackModel() {
@@ -120,13 +126,14 @@ export function buildTyreRackModel() {
     stacks.push({ b, mesh, ctx, tex, shown: -1, label: -1 });
   });
 
-  // Shows that many of each size, and writes the count on the tag.
+  // Shows that many of each size, and marks an empty bay's tag.
   g.userData.setCounts = (counts) => {
     for (const s of stacks) {
       const n = counts[tyrePart(s.b.size)] ?? 0;
       s.mesh.count = Math.min(n, s.mesh.instanceMatrix.count);
-      if (n !== s.label) {
-        s.label = n;
+      const empty = n > 0 ? 1 : 0; // the tag only shows whether the bay is empty
+      if (empty !== s.label) {
+        s.label = empty;
         drawTag(s.ctx, s.b.label, n);
         s.tex.needsUpdate = true;
       }
