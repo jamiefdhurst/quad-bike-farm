@@ -37,7 +37,7 @@ export const SCENES = [
     setup: 'wardrobe',
   },
   { id: 'farhedges', label: 'Put you in the yard with the hedges swapping to their far strips at 25 m instead of 150 m', lines: ['weather sunny', 'weather.time 12', 'tp me to yard'], setup: 'farHedges' },
-  { id: 'landform', label: 'Put you at the west edge of the farm, 30 m above the yard, to see the land fall away east (on layout 2: today\'s farm is not tilted)', lines: ['weather sunny', 'weather.time 12', 'tp me -450 0'] },
+  { id: 'landform', label: 'Put you at the west edge of the farm, about 20 m above the yard, to see the land fall away east (on layout 2: today\'s farm is not tilted)', lines: ['weather sunny', 'weather.time 12', 'tp me -450 0'] },
   { id: 'end', label: 'Let the girls go about their day again after a scene', lines: [], setup: 'end' },
 ];
 
