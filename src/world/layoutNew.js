@@ -669,10 +669,11 @@ export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
   const [gridX] = fromPlan([D.grid.x, D.z]);
   const bypass = GATEWAYS_PLAN.find((g) => g.id === 'bypass');
   const [bx, bz] = fromPlan(bypass.at);
+  const mouth = GATEWAYS_PLAN.find((g) => g.a === 'drive' && g.b === 'out' && !g.id);
   const at = (p) => fromPlan(p);
   const road = {
     z, fromX, toX, halfWidth: D.halfWidth, verge: D.verge,
-    grid: { x: gridX, length: D.grid.length, pitch: D.grid.pitch, margin: D.grid.margin },
+    grid: { x: gridX, length: D.grid.length, pitch: D.grid.pitch, margin: D.grid.margin, mouth: mouth.half, wingX: fromPlan(mouth.at)[0] }, // the wings close the mouth in the boundary
     bypass: { x: bx, z: bz, width: 2 * bypass.half - 0.7 }, // the gate between its posts: the gap less the posts' own room
     signSpot: at(D.signSpot),
     reflectors: D.reflectors.map(at),
