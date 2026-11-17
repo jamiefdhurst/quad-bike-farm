@@ -804,6 +804,17 @@ export function tyreJobFor(tyres, size) {
   return { part: tyrePart(size), count: tyres.axleWheels(axle).length, axle };
 }
 
+/**
+ * What the bench could work on, in the order it offers them: what is parked in the small bay, what is parked in the big one, then the barn finds still
+ * standing under their tarps (the one nearest `from` first). A find never keeps a vehicle in a bay from the bench, and the first is what opens.
+ * `small` and `big` are the units that could be parked in each bay, `finds` the finds that still have work to do; each has `quad.position`.
+ */
+export function benchCandidates({ bay, bay2, margin = 0, small = [], big = [], finds = [], from }) {
+  const parked = (b, units) => (b ? units.find((u) => inBay(b, u.quad.position.x, u.quad.position.z, margin)) : undefined);
+  const near = [...finds].sort((a, b) => a.quad.position.distanceTo(from) - b.quad.position.distanceTo(from));
+  return [...new Set([parked(bay, small), parked(bay2, big), ...near].filter(Boolean))];
+}
+
 /** Is a quad's middle inside the bay painted on the floor? */
 export function inBay(bay, x, z, margin = 0) {
   const c = Math.cos(bay.yaw ?? 0);
