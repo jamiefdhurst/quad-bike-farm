@@ -201,22 +201,28 @@ function hazardTexture() {
   return t;
 }
 
-/** The catalogue hung on a nail: a thin booklet with a string loop, its cover printed with a made-up supplier. Faces +z. */
+/** The catalogue: a thin booklet lying flat on the workbench, cover up and its top to -z, its cover printed with a made-up supplier. */
 export function buildCatalogue() {
-  const g = new THREE.Group();
-  g.name = 'shed-catalogue';
+  const book = new THREE.Group();
+  const card = mat(0xe8dfc8, 0.9);
+  const paper = mat(0xf1ead6, 0.95);
+  const spine = mat(0xb02a22, 0.7);
+  book.add(box(0.215, 0.295, 0.002, card, 0, 0, -0.003)); // the back cover
+  book.add(box(0.205, 0.285, 0.008, paper, 0.003, 0, 0.002)); // the pages, set in from the edges
+  book.add(box(0.215, 0.295, 0.002, card, 0, 0, 0.007)); // the front cover
+  book.add(box(0.008, 0.297, 0.013, spine, -0.1075, 0, 0.002)); // the spine, bound along the left edge
+  book.add(box(0.004, 0.06, 0.0012, spine, 0.04, 0.165, 0.0065)); // a ribbon marker hanging out of the head
   const cover = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.21, 0.29),
+    new THREE.PlaneGeometry(0.205, 0.285),
     new THREE.MeshStandardMaterial({ map: coverTexture(), roughness: 0.85 }),
   );
-  cover.position.z = 0.009;
-  g.add(cover);
-  g.add(box(0.215, 0.295, 0.012, mat(0xe8dfc8, 0.9), 0, 0, 0.002));
-  const string = mat(0xcab98a, 0.9);
-  g.add(box(0.004, 0.2, 0.004, string, -0.04, 0.19, 0.0));
-  g.add(box(0.004, 0.2, 0.004, string, 0.04, 0.19, 0.0));
-  g.add(cyl(0.012, 0.012, 0.03, mat(0x3a3a3a, 0.5, 0.6), 0, 0.29, 0.02, 'z', 10));
-  return { group: g, size: { x: 0.26, y: 0.55, z: 0.12 } };
+  cover.position.set(0.003, 0, 0.0082);
+  book.add(cover);
+  book.rotation.x = -Math.PI / 2; // laid down inside its own group, so turning that about y turns the way it lies
+  const g = new THREE.Group();
+  g.name = 'shed-catalogue';
+  g.add(book);
+  return { group: g, size: { x: 0.26, y: 0.03, z: 0.32 } };
 }
 
 function coverTexture() {

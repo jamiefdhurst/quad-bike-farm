@@ -969,7 +969,7 @@ export const FAQ_SECTIONS = [
         q: 'How do I mend a bent rod or rim on the tractor, the Yak, a Moorland or a car?',
         a: `The same way as on a quad, in the big bay in the barn's second span. Drive it in through the second door (the one nearer the generator), nose to the back
           wall, switch it off and use the bench with the toolbox on it. The big bay is the one with the trolley jack and axle stands beside it. The quads use the small bay
-          in front of the bench. Jobs that don't apply (spark plugs on a diesel, a carb on the Griffin) are greyed out.`,
+          in front of the bench. Jobs that don't apply (spark plugs on a diesel, a carb on the Griffin) are greyed out. The bench opens on what is parked in a bay, so the rusty quad and the old bike under their tarps never keep a vehicle from it: with one of them still standing there the last row of the menu is "Work on the ... instead", and <kbd>E</kbd> on it swaps to the other.`,
         tip: 'The tractor, Yak, Moorlands and cars are mended in the barn’s big bay, through the second door.',
       },
       {
@@ -1171,10 +1171,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I buy a compressor, a parts washer or a pit?',
-        a: `Look at the shed catalogue hanging on a nail under the cork board on the barn's back wall and press <kbd>E</kbd>. Three pieces are in it, and you can buy them in any order,
+        a: `Look at the shed catalogue lying on the workbench in the barn, at the front edge between the toolbox and the booster pack, and press <kbd>E</kbd>. Three pieces are in it, and you can buy them in any order,
           with money from the tin: the compressor (£120), the parts washer (£200) and the inspection pit (£450). Press the number once to ask and again to buy. A piece you pay for turns up in the barn
           the next morning: the compressor on the back wall beside the barn find, the parts washer at the end of the workbench and the pit in the floor of the big bay. Each one puts right faults that nothing else can.`,
-        tip: 'The shed catalogue hangs under the cork board. Compressor £120, parts washer £200, pit £450; they turn up the next morning.',
+        tip: 'The shed catalogue lies on the workbench. Compressor £120, parts washer £200, pit £450; they turn up the next morning.',
       },
       {
         q: 'What does each piece of the shed kit mend?',
@@ -2228,10 +2228,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where do I see how much money we have?',
-        a: `On the shelf under the cork board on the barn's back wall there is a money tin: look at it and press <kbd>E</kbd> and the lid comes up. A card says what is in it,
+        a: `In the barn's north-west corner, on a little shelf on the north wall beyond the workbench, there is a money tin: look at it and press <kbd>E</kbd> and the lid comes up. A card says what is in it,
           what came in, went out and was sold today, and the last five deals. What shows in the tin grows with the money: a coin or two when it is nearly empty, change, stacks of coins, bundles
           of notes, and notes piled over the rim when you are doing well. A toast also tells you the tin's total each time a job pays, and the end-of-day card says what moved.`,
-        tip: 'The money tin on the shelf in the barn holds the farm\'s money. Look at it and press E.',
+        tip: 'The money tin on the corner shelf in the barn holds the farm\'s money. Look at it and press E.',
       },
       {
         q: 'Do the girls say anything about the money?',

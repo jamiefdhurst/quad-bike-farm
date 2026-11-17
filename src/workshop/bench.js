@@ -5,7 +5,7 @@ import { canPull, engineName, fitEngine, fitIndex, pullEngine, unitFamily } from
 import { SHED_JOBS, SHED_JOB_KINDS, shedJobWhyNot, shedLook } from './shedJobs.js';
 import { registerTuning } from '../core/tuning.js';
 import { DEFAULT_SERVICE_PARAMS, SERVICE_PARAM_RANGES, ServiceRun, servicePlan, factsOf, stateOf, dueBook, applyServiceReward } from './service.js';
-import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, ENGINE_JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, tyreJobFor, inBay, plugCondition, readPlug, scoringLook, chainLook, bootLook, clutchLook, valvesLook, crashLook } from './benchJobs.js';
+import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, ENGINE_JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, tyreJobFor, inBay, benchCandidates, plugCondition, readPlug, scoringLook, chainLook, bootLook, clutchLook, valvesLook, crashLook } from './benchJobs.js';
 
 // The first ten jobs have a number as a shortcut (the tenth on 0); the rest are picked with W, S and E, and carry no key.
 const jobKey = (i) => (i < 10 ? String((i + 1) % 10) : '');
@@ -51,12 +51,32 @@ export class Bench {
     return parked ?? finds[0] ?? null;
   }
 
-  /** What the bench works on: the quad in the small bay (or the barn find), else whatever is in the big bay in the barn's second span: any vehicle, since it is
-   *  the one bay the tractor, UTV, the Tor and the Crag and cars fit. The girls only ever work on the small bay (unitInBay). */
+  /** Everything the bench could work on now, the first being what it opens on: the quad in the small bay, then whatever is in the big bay in the barn's second
+   *  span (any vehicle, since it is the one bay the tractor, UTV, the Tor and the Crag and cars fit), then the barn finds, which stand where they are and so
+   *  never keep a vehicle in a bay from the bench. The girls only ever work on the small bay (unitInBay). */
+  candidates() {
+    const g = this.game;
+    const L = g.world.layout;
+    const rusty = g.rustyUnit?.barnFind.ready ? [g.rustyUnit] : [];
+    return benchCandidates({
+      bay: L.bay,
+      bay2: L.bay2,
+      margin: this.params.bayMargin,
+      small: [...g.girlUnits, ...rusty].filter((u) => !u.quad.driver),
+      big: g.units.filter((u) => !u.barnFind && !u.quad.driver && !u.quad.rider),
+      finds: [g.rustyUnit, g.ploverUnit].filter((u) => u && !u.barnFind.ready),
+      from: g.player.position,
+    });
+  }
+
   unitAtBench() {
-    const inBig = this.game.world.layout.bay2;
-    const big = inBig && this.game.units.find((u) => !u.barnFind && !u.quad.driver && !u.quad.rider && inBay(inBig, u.quad.position.x, u.quad.position.z, this.params.bayMargin));
-    return this.unitInBay() ?? big ?? null;
+    return this.candidates()[0] ?? null;
+  }
+
+  /** The one the "work on the other" row switches to: the next of the candidates after this one that is switched off, or null when there is no other. */
+  otherUnit(unit = this.unit) {
+    const all = this.candidates().filter((u) => u === unit || (!u.engine.isRunning && u.engine.state !== 'cranking'));
+    return all.some((u) => u !== unit) ? all[(all.indexOf(unit) + 1) % all.length] : null;
   }
 
   /** Whether this is a barn find that still has its jobs to do (one that runs is worked on like any other quad). */
@@ -182,8 +202,16 @@ export class Bench {
   open() {
     const unit = this.unitAtBench();
     if (!unit || !this.toolboxHere() || unit.engine.isRunning || unit.engine.state === 'cranking') return;
+    const left = this.show(unit);
+    this.el.style.display = 'block';
+    document.body.classList.add('bench-open');
+    this.game.player.moveEnabled = false;
+    if (!left) this.say(unit.engine.params.boreKit && !unit.engine.bore ? 'catalogue' : !this.stillFound(unit) && dueBook(stateOf(unit), this.serviceParams) ? 'serviceDue' : 'start');
+  }
+
+  /** Lays the menu out for this vehicle: the job a girl left half done for you to finish (it carries on from the step she got to) or the list. Returns that job's record. */
+  show(unit) {
     this.unit = unit;
-    // A girl left a job half done for you to finish: it carries on from the step she got to.
     const left = this.game.girlBench.pendingFor(unit.id);
     this.job = left?.job ?? null;
     if (this.job) {
@@ -193,10 +221,7 @@ export class Bench {
     this.page = 0;
     this.row = 0;
     this.render();
-    this.el.style.display = 'block';
-    document.body.classList.add('bench-open');
-    this.game.player.moveEnabled = false;
-    if (!left) this.say(unit.engine.params.boreKit && !unit.engine.bore ? 'catalogue' : !this.stillFound(unit) && dueBook(stateOf(unit), this.serviceParams) ? 'serviceDue' : 'start');
+    return left;
   }
 
   close() {
@@ -320,6 +345,7 @@ export class Bench {
     const rows = this.kindsFor(unit).map((kind) => ({ kind }));
     if (this.page === 0 && this.servicePlanFor(unit).length) rows.push({ service: true });
     rows.push({ turn: true });
+    if (this.page === 0 && this.otherUnit(unit)) rows.push({ other: true });
     return rows;
   }
 
@@ -334,6 +360,7 @@ export class Bench {
   pressRow(row) {
     if (row.kind) this.begin(row.kind);
     else if (row.service) this.startService();
+    else if (row.other) this.show(this.otherUnit());
     else this.turnPage(1 - this.page);
   }
 
@@ -436,6 +463,8 @@ export class Bench {
       const find = this.stillFound(unit) ? unit.barnFind : null;
       this.row = Math.min(this.row, this.rowsFor(unit).length - 1);
       if (this.page === 1) return this.renderShed(unit);
+      const rows = this.rowsFor(unit);
+      const other = rows.some((r) => r.other) ? this.otherUnit(unit) : null;
       this.bodyEl.innerHTML = this.kindsFor(unit).map((k, i) => {
         const ok = this.canBegin(k, unit);
         let note = '';
@@ -447,7 +476,8 @@ export class Bench {
         }
         else if (!ok) note = k === 'chargeOn' ? (unit.engine.params.noStarter ? ' (no battery to take out)' : ' (empty your hands first)') : k === 'chargeOff' ? ' (carry its battery here first)' : k === 'newTyres' ? ' (the tread is fine)' : k === 'sump' ? ' (petrol four-strokes only)' : k === 'coolant' ? ' (water-cooled only)' : k === 'electrics' ? ' (the Tor and the Crag only)' : k === 'snorkel' ? (unit.quad.snorkel.fitted ? ' ✓ fitted' : ' (Moorlands only)') : k === 'spotlamps' ? (unit.quad.spotlamps.fitted ? ' ✓ fitted' : ' (quads and the Tor and the Crag only)') : k === 'bore' ? (unit.engine.bore ? ' ✓ fitted' : ' (yellow only)') : k === 'chain' ? ' (chain-driven quads only)' : k === 'valves' ? ' (two-strokes have none)' : k === 'topEnd' ? (unit.engine.params.strokes === 2 ? ' (nothing wrong with it)' : ' (two-strokes only)') : ' (two-strokes only)';
         return `<div class="bn-row${ok ? '' : ' off'}${this.row === i ? ' picked' : ''}"><span class="key">${jobKey(i)}</span>${JOBS[k].name}${note}</div>`;
-      }).join('') + this.serviceRow(unit, this.row === this.kindsFor(unit).length) + `<div class="bn-row${this.row === this.rowsFor(unit).length - 1 ? ' picked' : ''}"><span class="key"></span>Jobs that need the shed kit<div class="bn-sub">Compressor, parts washer and the pit, and swapping engines</div></div>`;
+      }).join('') + this.serviceRow(unit, this.row === this.kindsFor(unit).length) + `<div class="bn-row${rows[this.row]?.turn ? ' picked' : ''}"><span class="key"></span>Jobs that need the shed kit<div class="bn-sub">Compressor, parts washer and the pit, and swapping engines</div></div>`
+        + (other ? `<div class="bn-row${rows[this.row]?.other ? ' picked' : ''}"><span class="key"></span>Work on the ${other.label} instead<div class="bn-sub">It is also at the bench</div></div>` : '');
       this.keysEl.textContent = 'W S pick a job   ·   E start it   ·   1 to 0 for the first ten   ·   → the shed kit   ·   B step away';
       return;
     }

@@ -1,26 +1,26 @@
 import './classifieds.css';
 import * as THREE from 'three';
-import { barnShape } from './barn.js';
 import { buildTin, TIN } from './moneyTin.js';
 import { tinLevel, ledgerText } from '../farm/classifieds.js';
 import { moneyFacts } from '../farm/classifieds.js';
 
-const SHELF = { long: 0.5, deep: 0.25, thick: 0.03, height: 0.8 }; // metres; height is the shelf's top above the barn floor
+const SHELF = { long: 0.5, deep: 0.25, thick: 0.03 }; // metres
 const SPEED = 3.2; // lid openness per second
 
 /**
- * The money tin on its shelf under the cork board, on the barn's back wall: a tin with the farm's money in it (world/moneyTin.js). Look at it
- * and press E: the lid comes up and a card says what is in it, what moved today and the last few deals. What shows in the tin grows with the balance.
+ * The money tin on its shelf in the barn's north-west corner, on the north wall (`layout.moneyTin`), out of the way of the bench: a tin with the farm's money in it
+ * (world/moneyTin.js). Look at it and press E: the lid comes up and a card says what is in it, what moved today and the last few deals. What shows in the tin grows
+ * with the balance.
  */
 export class MoneyTinView {
   constructor({ game, market }) {
     this.game = game;
     this.market = market;
-    const shape = barnShape(game.world.layout);
-    const floorY = game.world.heightAt(shape.x, shape.z);
-    const wallX = shape.inner.minX;
-    const z = shape.z + 3.75; // under the cork board
-    // A plank on two brackets, against the plaster.
+    const spot = game.world.layout.moneyTin;
+    const floorY = game.world.heightAt(spot.x, spot.z);
+    const top = floorY + spot.y;
+    const wallZ = spot.z + 0.005; // the plank's back, against the plaster
+    // The shelf and the tin are built with their backs to a wall along z and their fronts to +x; turned a quarter, they stand on the north wall with their fronts to +z.
     const wood = new THREE.MeshStandardMaterial({ color: 0x6a4a2e, roughness: 0.85 });
     const iron = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.6, metalness: 0.5 });
     const shelf = new THREE.Group();
@@ -30,14 +30,16 @@ export class MoneyTinView {
       shelf.add(this.box(0.02, 0.17, 0.02, iron, 0.012, -SHELF.thick - 0.085 + 0.02, dz)); // upright against the wall
       shelf.add(this.box(0.17, 0.02, 0.02, iron, 0.09, -SHELF.thick - 0.0, dz)); // arm under the plank
     }
-    shelf.position.set(wallX + 0.005, floorY + SHELF.height, z);
+    shelf.position.set(spot.x, top, wallZ);
+    shelf.rotation.y = -Math.PI / 2;
     game.scene.add(shelf);
     this.tin = buildTin();
     // The tin sits a little off the wall so its lid, standing open, clears it; the lid hinge is the back edge.
-    this.tin.group.position.set(wallX + 0.005 + 0.09 + TIN.deep / 2, floorY + SHELF.height, z);
+    this.tin.group.position.set(spot.x, top, wallZ + 0.09 + TIN.deep / 2);
+    this.tin.group.rotation.y = -Math.PI / 2;
     game.scene.add(this.tin.group);
-    this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.3, 0.46), new THREE.MeshBasicMaterial({ visible: false }));
-    this.proxy.position.set(this.tin.group.position.x, floorY + SHELF.height + 0.12, z);
+    this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.3, 0.36), new THREE.MeshBasicMaterial({ visible: false }));
+    this.proxy.position.set(spot.x, top + 0.12, this.tin.group.position.z);
     game.scene.add(this.proxy);
     this.position = this.tin.group.position;
     this.target = 0;

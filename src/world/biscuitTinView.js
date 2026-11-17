@@ -6,7 +6,7 @@ const SPEED = 3; // lid openness per second
 const SHELF_HEIGHT = 0.85; // metres: the shelf's top above the barn floor (the money tin's is 0.8)
 
 /**
- * The snack tin on a plank of its own on the barn's back wall, a few metres along from the money tin under the cork board. The girls
+ * The snack tin on a plank of its own on the barn's back wall, a few metres along from the cork board. The girls
  * help themselves (npc/lunch.js); `want(true)` lifts the lid and `update` swings it. `front` is where a girl stands to reach it.
  */
 export class BiscuitTinView {

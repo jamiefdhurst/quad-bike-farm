@@ -1,6 +1,5 @@
 // The barn's shed kit, built up over games (docs/decisions/items.md, #32): a compressor, a parts washer and a pit, bought from the
-// catalogue that hangs under
-// the cork board with money from the tin. A piece paid for today stands in the barn tomorrow morning, like a second-hand vehicle. Each puts
+// catalogue that lies on the workbench with money from the tin. A piece paid for today stands in the barn tomorrow morning, like a second-hand vehicle. Each puts
 // right faults that nothing else can (vehicle/shedFaults.js, workshop/shedJobs.js). Pure, tested.
 
 export const SHED_PIECES = {
@@ -114,7 +113,7 @@ export function pressureWhyNot(shed, day, compressor, x, z, reach = DEFAULT_SHED
   if (!shed.has('compressor', day)) {
     return shed.onTheWay('compressor', day)
       ? 'The compressor turns up tomorrow morning'
-      : 'The toolbox pump is gone: tyre pressures are set at a compressor. There is one in the catalogue under the cork board';
+      : 'The toolbox pump is gone: tyre pressures are set at a compressor. There is one in the catalogue on the workbench';
   }
   return inHoseReach(compressor, x, z, reach) ? null : "The compressor's hose does not reach this far: bring it into the barn";
 }
