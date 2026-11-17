@@ -123,7 +123,7 @@ export const NOT_MOVED_YET = {
   // The farmstead, with Home Ground's play things (the Home Loop, jump, cones, line-up, bonfire), the Dutch barn and the girls' places.
   'anchors.barn': '#682', 'anchors.yard': '#682', 'anchors.bonfire': '#682', fieldHalf: '#682', gate: '#682', barn: '#682', bell: '#682',
   silage: '#682', barnBaleSpots: '#682', loft: '#682', bench: '#682', benchCharger: '#682', generator: '#682', weatherStation: '#682',
-  jumperRail: '#682', helmetHooks: '#682', bay: '#682', bay2: '#682', shed: '#682', jack: '#682', axleStands: '#682', rusty: '#682',
+  jumperRail: '#682', helmetHooks: '#682', bay: '#682', bay2: '#682', moneyTin: '#682', shed: '#682', jack: '#682', axleStands: '#682', rusty: '#682',
   plover: '#682', yard: '#682', cars: '#682', paddock: '#682', lawns: '#682', farmAnimals: '#682', fuelTank: '#682', jerryCanSpots: '#682',
   trailer: '#682', tipTrailer: '#682', sprayer: '#682', harrows: '#682', dieselBowser: '#682', toolbox: '#682', benchOil: '#682',
   oilBottle: '#682', coolantBottle: '#682', antiGelBottle: '#682', plugAdditive: '#682', benchLeads: '#682', benchPack: '#682', hose: '#682',

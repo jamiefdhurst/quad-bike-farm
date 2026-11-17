@@ -1,6 +1,5 @@
 import '../world/classifieds.css';
 import * as THREE from 'three';
-import { barnShape } from '../world/barn.js';
 import { SHED_PIECES, SHED_PIECE_IDS } from '../farm/shed.js';
 import { SHED_KINDS, SHED_PIECE_OF } from '../vehicle/shedFaults.js';
 import { buildCatalogue, buildCompressor, buildWasher, buildPit } from './shedModels.js';
@@ -8,7 +7,7 @@ import { buildCatalogue, buildCompressor, buildWasher, buildPit } from './shedMo
 const FLOOR_TOP = 0.011;
 
 /**
- * The barn's shed kit (farm/shed.js): the catalogue hung on a nail under the cork board, and the compressor, the parts washer and the pit that
+ * The barn's shed kit (farm/shed.js): the catalogue lying on the workbench, and the compressor, the parts washer and the pit that
  * stand in the barn the morning after they are paid for. Look at the catalogue and press E for the card: 1 to 3 buy a piece from the tin.
  * What stands in the barn is decided when the day loads, since a piece turns up overnight.
  */
@@ -18,17 +17,18 @@ export class ShedView {
     this.shed = shed;
     this.market = market;
     const L = game.world.layout;
-    const shape = barnShape(L);
     const heightAt = (x, z) => game.world.heightAt(x, z);
-    // The catalogue on the west wall, facing out over the barn (+x), a hand's width clear of the plaster.
+    // The catalogue lying on the workbench's front edge, cover up with its top to the wall, where you stand to work.
     const cat = buildCatalogue();
-    cat.group.position.set(shape.inner.minX + 0.03, heightAt(shape.x, L.shed.catalogue.z) + L.shed.catalogue.y, L.shed.catalogue.z);
-    cat.group.rotation.y = Math.PI / 2;
+    const spot = L.shed.catalogue;
+    cat.group.position.set(spot.x, heightAt(spot.x, spot.z) + L.bench.height + 0.004, spot.z);
+    cat.group.rotation.y = spot.yaw;
     game.scene.add(cat.group);
     this.catalogue = cat.group;
-    this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.4), new THREE.MeshBasicMaterial({ visible: false }));
+    this.proxy = new THREE.Mesh(new THREE.BoxGeometry(cat.size.x, 0.1, cat.size.z), new THREE.MeshBasicMaterial({ visible: false }));
     this.proxy.position.copy(cat.group.position);
-    this.proxy.position.x += 0.05;
+    this.proxy.position.y += 0.03;
+    this.proxy.rotation.y = spot.yaw;
     game.scene.add(this.proxy);
     // The pieces, built once and shown only if they have been delivered.
     this.pieces = {};

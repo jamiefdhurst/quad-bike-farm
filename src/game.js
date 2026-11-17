@@ -1768,7 +1768,7 @@ export class Game {
     };
     this.market.ads = dealAds(createRandom((this.farmSeed ^ Math.imul(this.farm.day, 0x9e3779b1)) >>> 0), { specs: this.specsById, onFarm: this.stockedIds, owned: this.market.bought, P: this.marketParams });
     this.classifiedsView = new ClassifiedsView({ game: this, market: this.market });
-    // The money tin on its shelf under the cork board, its coin chink, and when the girls remark on the money (farm/marketTalk.js).
+    // The money tin on its shelf in the barn's corner, its coin chink, and when the girls remark on the money (farm/marketTalk.js).
     this.moneyTin = new MoneyTinView({ game: this, market: this.market });
     this.coinAudio = new CoinAudio(this.audioHub, this.moneyTin.position);
     this.villageHost = new VillageHost(this); // the village down the lane: its pumps, its shop, its draw distance and its glow after dark (world/villageHost.js)
@@ -1800,6 +1800,7 @@ export class Game {
     });
     this.interaction.add({
       target: this.shedView.proxy,
+      priority: 1, // it lies on the bench, whose box would otherwise be hit first
       isAvailable: () => !this.handsFull && !this.player.isRiding,
       prompt: () => this.shedView.prompt(),
       feedback: 'paper',

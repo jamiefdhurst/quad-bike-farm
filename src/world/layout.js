@@ -356,19 +356,22 @@ const RAW = {
   // The hooks on the inside of the barn's south wall for the helmets and goggles (world/helmetHooks.js, npc/headgear.js): the board's middle is at `y`
   // above the floor and `length` long; a girl stands at `stand` in front of it to take hers down, going in and out by the doorway (`door`).
   helmetHooks: at('barn', { x: -0.5, z: 13.58, yaw: 0, y: 1.5, length: 1.6, stand: { x: -0.5, z: 12.6 }, door: { in: [{ x: 7.5, z: 9.2 }, { x: 4.2, z: 9.2 }, { x: 2, z: 11.8 }], out: { x: 7.5, z: 9.2 } } }),
+  // The money tin on a shelf on the barn's north wall, in the north-west corner out of the way of the bench (world/moneyTinView.js): `x` along the wall, `z` the
+  // wall's inner face and `y` the shelf's top above the floor.
+  moneyTin: at('barn', { x: -3.9, z: -4.4, y: 1.05 }),
   // The bay painted on the barn floor in front of the bench: park a quad here to work on it at the bench (workshop/bench.js).
   bay: at('barn', { x: 1.7, z: -1.5, halfX: 1.5, halfZ: 1.1, yaw: 0 }),
   // The big bay in the barn's second span, nose-in from its door: the tractor, UTV, the Tor and the Crag and cars are worked on here, at the same bench
   // (workshop/bench.js). A trolley jack and axle stands stand by it (workshop/jackModel.js), and a second bulb hangs over it.
   bay2: at('barn', { x: -1.4, z: 9.2, halfX: 3.0, halfZ: 1.9, yaw: 0 }),
-  // The shed kit bought from the catalogue under the cork board (farm/shed.js, workshop/shedModels.js), standing in the barn the morning after it is paid for.
+  // The shed kit bought from the catalogue on the workbench (farm/shed.js, workshop/shedModels.js), standing in the barn the morning after it is paid for.
   // The compressor stands on the west wall beside the barn find, facing the room (yaw is the way it faces, 0 being +z); the parts washer on the floor at the
   // east end of the bench; the pit is the dark trench in the big bay's floor, `halfX` by `halfZ`, along the bay so a car's wheels straddle it.
   shed: at('barn', {
     compressor: { x: -4.65, z: 1.4, yaw: Math.PI / 2 },
     washer: { x: 3.85, z: -3.65, yaw: 0 },
     pit: { x: -1.4, z: 9.2, halfX: 1.9, halfZ: 0.45 },
-    catalogue: { x: -5, z: 2.75, yaw: 0, y: 1.0 }, // hung on a nail on the west wall under the cork board's left edge
+    catalogue: { x: 1.65, z: -3.74, yaw: 0.2 }, // lying on the workbench's front edge between the toolbox and the oil bottle (on the top: `bench.height`)
   }),
   jack: at('barn', { x: 0.8, z: 6.6, yaw: 0.25 }),
   axleStands: at('barn', [{ x: -2.6, z: 6.7, yaw: 0.1 }, { x: -2, z: 6.9, yaw: -0.3 }]),
