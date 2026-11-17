@@ -14,6 +14,7 @@ import { visitPlaces, planVisit, Traffic, Visit, DEFAULT_TRAFFIC_PARAMS } from '
 import { leaveRoute, hasGone, goneBeyond } from '../src/npc/goingHome.js';
 import { vergeGrassHeight } from '../src/world/driveProps.js';
 import { createRandom } from '../src/core/random.js';
+import { planRoad, paintRoadOnGround } from '../src/world/groundTexture.js';
 
 const two = layoutNew(LAYOUT);
 const road = two.road;
@@ -198,5 +199,60 @@ describe('the girls\' cars and the visitors on the drive', () => {
     let passed = 0;
     for (let i = 0; i < 6000 && !passed; i++) passed += traffic.update(0.1, { darkness: 0, blockers: [], swingSeconds: 1.8 }).filter((e) => e.type === 'pass').length;
     expect(passed).toBeGreaterThan(0);
+  });
+});
+
+describe('the drive\'s old tarmac, painted into the ground', () => {
+  const drive = net.road('farm');
+  const plan = planRoad(drive, fields, createRandom(5));
+  const painted = () => {
+    const calls = [];
+    const ctx = new Proxy({}, { get: (_, name) => (name === 'calls' ? calls : (...args) => calls.push([name, ...args])), set: () => true });
+    paintRoadOnGround(ctx, (x, z) => [x, z], 20, drive, fields, createRandom(5));
+    return calls;
+  };
+
+  it('lays 70 squares of repair, each inside the carriageway', () => {
+    expect(plan.patches).toHaveLength(70);
+    for (const q of plan.patches) {
+      expect(Math.abs(q.z - drive.points[0][1]) + q.w / 2 * 0.99, `patch at ${q.x}`).toBeLessThanOrEqual(drive.halfWidth + 0.4);
+    }
+  });
+
+  it('breaks the edges into gravel along the whole drive, on both sides', () => {
+    expect(plan.gravel.length / 4).toBeGreaterThan(drive.length * 2 * 4);
+    const sides = new Set();
+    for (let i = 0; i < plan.gravel.length; i += 4) sides.add(Math.sign(plan.gravel[i + 1] - drive.points[0][1]));
+    expect([...sides].sort()).toEqual([-1, 1]);
+  });
+
+  it('puts the four potholes on the tarmac, away from the grid, and paints each as water', () => {
+    expect(plan.potholes).toHaveLength(4);
+    for (const h of plan.potholes) {
+      expect(fields.tarmacAt(h.x, h.z), `pothole at ${h.x}`).toBeGreaterThan(0.9);
+      expect(Math.abs(h.x - grid.x)).toBeGreaterThan(20);
+    }
+    expect(painted().filter(([name]) => name === 'ellipse').length).toBeGreaterThanOrEqual(4 * 3);
+  });
+
+  it('carries mud and straw out of the gateways at the road\'s edge, thinning away from it', () => {
+    expect(plan.washes).toHaveLength(3);
+    for (const [i, w] of plan.washes.entries()) {
+      expect(w.smears).toHaveLength(16);
+      expect(w.straw).toHaveLength(40);
+      const gate = road.washes[i];
+      const side = Math.sign(gate[1] - road.z);
+      // The smears lie from just inside the verge to a few metres in on the tarmac, on the gateway's side of the middle.
+      for (const m of w.smears) expect(Math.sign(m.z - road.z) * side).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('is plain on a road that asks for none of it: today\'s farm road gets none of these', () => {
+    const today = createRoads(LAYOUT.roads).road('farm');
+    const p = planRoad(today, createFields(LAYOUT), createRandom(5));
+    expect(p.patches).toBeUndefined();
+    expect(p.gravel).toBeUndefined();
+    expect(p.potholes).toBeUndefined();
+    expect(p.washes).toBeUndefined();
   });
 });
