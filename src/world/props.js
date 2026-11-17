@@ -3,6 +3,7 @@ import { swayMaterials } from '../effects/windSway.js';
 import { stripFrame } from './layout.js';
 import { enableShadows, instanceModel, modelBounds } from './assets.js';
 import { tiledInstances } from './tiledInstances.js';
+import { scatterStubble, stubbleShares } from './stubbleScatter.js';
 import { patchAt } from './terrain.js';
 import { buildBarnShed } from './barnBuild.js';
 import { underRoof } from './barn.js';
@@ -746,19 +747,18 @@ function buildGrass({ scene, layout, heights, random, drawDistance }) {
 }
 
 /**
- * Cut straw stalks standing in the stubble fields, in the drill rows (half a metre apart, the way each field was drilled), off the tarmac and
- * clear of the hedges: each field's own crop (layout.stubbleFields), the barley shorter, greyer and thicker than the wheat. The same 60,000
- * clumps are shared over however many arable fields there are, so the new farm's six stand thinner than today's two (#813 sets a budget).
+ * Cut straw stalks standing in the stubble fields, in the drill rows (half a metre apart, the way each field was drilled), inside each field's
+ * own outline, off the tarmac and clear of the hedges: each field's own crop (layout.stubbleFields), the barley shorter, greyer and thicker
+ * than the wheat. `layout.stubbleClumps` clumps are shared out by the fields' areas: today's two fields (1.8 ha) get 60,000 and the new farm's
+ * six (25.5 ha) 150,000, a sixth as thick, which is what the load and the memory stand (#813).
  */
-function buildStubble({ scene, fields, heights, random, drawDistance }) {
+function buildStubble({ scene, layout, fields, heights, random, drawDistance }) {
   const areas = fields.stubbleFields ?? ['north', 'south'].filter((k) => fields.areas[k]);
   if (!areas.length) return;
-  const perArea = (r) => (r.maxX - r.minX) * (r.maxZ - r.minZ);
-  const fieldsList = areas.map((k) => ({ r: fields.areas[k], f: fields.stubbleField(k) ?? {} }));
-  const weight = fieldsList.map(({ r, f }) => perArea(r) * (f.density ?? 1));
-  const total = 60000;
+  const fieldsList = areas.map((k) => ({ polygon: fields.polygons[k], f: fields.stubbleField(k) ?? {} }));
+  const shares = stubbleShares(fieldsList.map(({ polygon, f }) => ({ polygon, density: f.density })), layout.stubbleClumps ?? 60000);
   for (let n = 0; n < fieldsList.length; n++) {
-    const { r, f } = fieldsList[n];
+    const { polygon, f } = fieldsList[n];
     const [lowH, highH] = f.stalkHeight ?? [0.08, 0.16];
     const [tip, base] = f.stalk ?? [[0.8, 0.66, 0.38], [0.5, 0.4, 0.22]];
     const stalks = 6;
@@ -792,23 +792,22 @@ function buildStubble({ scene, fields, heights, random, drawDistance }) {
     const normals = geo.getAttribute('normal');
     for (let i = 0; i < normals.count; i++) normals.setXYZ(i, 0, 1, 0);
 
-    const count = Math.round((total * weight[n]) / weight.reduce((a, b) => a + b, 0));
     const matrices = [];
     const tints = [];
     const alongX = f.rows !== 'z';
-    let tries = 0;
-    while (matrices.length < count && tries++ < count * 3) {
-      const span = alongX ? r.maxZ - r.minZ : r.maxX - r.minX;
-      const row = (alongX ? r.minZ : r.minX) + 0.25 + Math.floor(random() * (span / 0.5)) * 0.5 + (random() - 0.5) * 0.06;
-      const along = alongX ? r.minX + random() * (r.maxX - r.minX) : r.minZ + random() * (r.maxZ - r.minZ);
-      const x = alongX ? along : row;
-      const z = alongX ? row : along;
-      if (fields.stubbleAt(x, z) < 0.99 || fields.hedgeDistance(x, z) < 1.5) continue;
-      const sc = 0.8 + random() * 0.5;
-      const yaw = (alongX ? 0 : Math.PI / 2) + (random() - 0.5) * 0.3;
-      matrices.push(matrixAt(x, heights.heightAt(x, z) - 0.01, z, yaw, sc, sc * (0.7 + random() * 0.6), sc));
-      tints.push(new THREE.Color().setHSL(0.11 + random() * 0.03, (f.crop === 'barley' ? 0.25 : 0.45) + random() * 0.15, 0.5 + random() * 0.12));
-    }
+    scatterStubble({
+      polygon,
+      alongX,
+      count: shares[n],
+      random,
+      accept: (x, z) => fields.stubbleAt(x, z) >= 0.99 && fields.hedgeDistance(x, z) >= 1.5,
+      make(x, z) {
+        const sc = 0.8 + random() * 0.5;
+        const yaw = (alongX ? 0 : Math.PI / 2) + (random() - 0.5) * 0.3;
+        matrices.push(matrixAt(x, heights.heightAt(x, z) - 0.01, z, yaw, sc, sc * (0.7 + random() * 0.6), sc));
+        tints.push(new THREE.Color().setHSL(0.11 + random() * 0.03, (f.crop === 'barley' ? 0.25 : 0.45) + random() * 0.15, 0.5 + random() * 0.12));
+      },
+    });
     const material = new THREE.MeshLambertMaterial({ vertexColors: true });
     scene.add(drawDistance.add(tiledInstances(geo, material, matrices, { colors: tints, name: `stubble-${areas[n]}` }), 'coverDistance'));
   }

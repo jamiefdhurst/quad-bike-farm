@@ -949,20 +949,27 @@ function paintPatchwork(c, fields) {
 /**
  * The stubble fields, each as layout.stubbleFields has it: its straw colour with darker drill rows every half metre the way it was drilled,
  * the odd bare or weedy patch, and the tramlines (the sprayer's wheel lines, two dark stripes 1.8 m apart) every British arable field has.
- * A field's hollow (the north field's) is damper: darker, with more green coming through.
+ * A field's hollow (the north field's) is damper: darker, with more green coming through. Each is painted inside its polygon, not its box.
  */
-function paintStubble(c, fields) {
+export function paintStubble(c, fields) {
   const { ctx, s, win } = c;
   for (const [fi, key] of (fields.stubbleFields ?? ['north', 'south']).entries()) {
     const r = fields.areas[key];
     if (!r || !c.over(r, 1)) continue;
+    const polygon = fields.polygons[key];
     const f = fields.stubbleField(key) ?? { rows: 'x', tramlines: 24, ground: '#b3a06a' };
     // Only the part of the field in the window.
     const [x0, z0] = c.toPx(Math.max(r.minX, win.minX - 1), Math.max(r.minZ, win.minZ - 1));
     const [x1, z1] = c.toPx(Math.min(r.maxX, win.maxX + 1), Math.min(r.maxZ, win.maxZ + 1));
+    // Paint only inside the field's own outline: the box it is cut from is more than the field when it isn't a rectangle (#813).
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x0, z0, x1 - x0, z1 - z0);
+    polygon.forEach(([px, pz], i) => {
+      const [qx, qz] = c.toPx(px, pz);
+      if (i === 0) ctx.moveTo(qx, qz);
+      else ctx.lineTo(qx, qz);
+    });
+    ctx.closePath();
     ctx.clip();
     ctx.fillStyle = f.ground;
     ctx.fillRect(x0, z0, x1 - x0, z1 - z0);
