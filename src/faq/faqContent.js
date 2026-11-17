@@ -1246,7 +1246,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Where do the new tyres come from, and what if there are none?',
         a: `The tyre rack on the barn's second span, on the south wall left of the helmets, keeps a stack for each size: small quads (the kids' quad and the mini moto), quads, sport quads, the old three-wheeler, the Yak, the Moorlands,
-          the cars and the tractor. The tag on each shelf says the size, and NONE when there are no tyres left; the stack is how many there are. Look at the rack and press <kbd>E</kbd>, then the number of a size to order two. The post van brings them like any other part (see "How do I order spare parts"), and you open the parcel by the barn door to put them on the rack. A quad starts with some in stock, but the Yak, Moorlands, cars and tractor have none until you order, so watch their tread. With too few on the rack the bench greys the job out and says how many it wants.`,
+          the cars and the tractor. The tag on each shelf says the size, and NONE when there are no tyres left; the stack shows how many, up to five. Look at the rack and press <kbd>E</kbd> for the exact number, then the number of a size to order two. The post van brings them like any other part (see "How do I order spare parts"), and you open the parcel by the barn door to put them on the rack. A quad starts with some in stock, but the Yak, Moorlands, cars and tractor have none until you order, so watch their tread. With too few on the rack the bench greys the job out and says how many it wants.`,
       },
       {
         q: 'Why does it pull to one side and feel draggy?',

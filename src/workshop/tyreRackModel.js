@@ -131,9 +131,9 @@ export function buildTyreRackModel() {
     for (const s of stacks) {
       const n = counts[tyrePart(s.b.size)] ?? 0;
       s.mesh.count = Math.min(n, s.mesh.instanceMatrix.count);
-      const empty = n > 0 ? 1 : 0; // the tag only shows whether the bay is empty
-      if (empty !== s.label) {
-        s.label = empty;
+      const stocked = n > 0 ? 1 : 0; // the tag only shows whether the bay is empty
+      if (stocked !== s.label) {
+        s.label = stocked;
         drawTag(s.ctx, s.b.label, n);
         s.tex.needsUpdate = true;
       }
