@@ -4,6 +4,7 @@ import {
   layoutNew, fromPlan, layoutFromSearch, searchForLayout, describeLayout, clippedFields, boundariesOf, placeGateways, areasOf,
   OUTLINE_PLAN, CORNERS_PLAN, FIELDS_PLAN, GATEWAYS_PLAN, NOT_MOVED_YET, SETTINGS, REPLACED,
   STEWARDSHIP_PLAN, stewardshipPlan, RESERVED_PLAN, flattenPath, LANDMARKS_PLAN, LANDFORM_PLAN, canSee, landformHeightAt, traitsOf,
+  FIELD_LANDMARKS_PLAN, MOOR_PLAN, fieldLandmarksLayout,
 } from '../src/world/layoutNew.js';
 import { createFields } from '../src/world/fields.js';
 import { pointInPolygon, polygonArea, polygonBounds, polygonEdges, distanceToEdges } from '../src/world/polygons.js';
@@ -435,7 +436,7 @@ describe('the places reserved for later items', () => {
     expect(two.reserved.powerLine.poles.at(-1)).toEqual(fromPlan([566, 274]));
   });
   it('does not stop the new farm loading: nothing else in the layout reads them yet', () => {
-    expect(Object.keys(two)).toEqual(expect.arrayContaining(['stewardship', 'reserved', 'landmarks']));
+    expect(Object.keys(two)).toEqual(expect.arrayContaining(['stewardship', 'reserved', 'landmarks', 'fieldLandmarks']));
   });
 });
 
@@ -483,5 +484,140 @@ describe('what a field is for its name', () => {
   it('marks the wood, the pit, Home Ground, the farmstead and the drive as keeping their names', () => {
     expect(two.fields.filter((f) => f.fixed).map((f) => f.name).sort()).toEqual(['drive', 'farmstead', 'home', 'pit', 'wood']);
     for (const f of two.fields) expect(Array.isArray(f.traits), f.name).toBe(true);
+  });
+});
+
+describe('a landmark in every field (#815)', () => {
+  const L = FIELD_LANDMARKS_PLAN;
+  const inField = (l, p) => (l.field === 'moor' ? p[0] >= MOOR_PLAN.minX && p[0] <= MOOR_PLAN.maxX && p[1] >= MOOR_PLAN.minZ && p[1] <= MOOR_PLAN.maxZ : pointInPolygon(byName[l.field].points, p[0], p[1]));
+  const pointsOf = (l) => [l.at, ...(l.trees ?? []), ...(l.willows ?? [])];
+  const game = fieldLandmarksLayout();
+  const toPlan = ([x, z]) => [x + 520, z + 365];
+  const TWELVE = ['north', 'top', 'lanefield', 'longpiece', 'far', 'south', 'hay', 'ley', 'brook', 'sheep', 'hill', 'moor'];
+
+  it('has one in each of the twelve fields the issue lists, and none in the others', () => {
+    expect([...new Set(L.map((l) => l.field))].sort()).toEqual([...TWELVE].sort());
+    for (const f of ['wood', 'pit', 'wet', 'home', 'farmstead', 'drive']) expect(L.some((l) => l.field === f), f).toBe(false);
+  });
+  it('has the kind the issue names in each', () => {
+    const kind = Object.fromEntries(L.filter((l) => l.field !== 'hill').map((l) => [l.field, l.kind]));
+    expect(kind).toEqual({
+      north: 'loneOak', top: 'oldGateposts', lanefield: 'powerLine', longpiece: 'deadElm', far: 'farPond', south: 'castRoller', hay: 'loneAsh',
+      ley: 'brookAlders', brook: 'bigOaks', sheep: 'fieldBarn', moor: 'trigPillar',
+    });
+    expect(L.filter((l) => l.field === 'hill').map((l) => l.kind).sort()).toEqual(['flaskRock', 'hut']);
+  });
+  it('puts every one, and every tree and willow of it, inside its own field', () => {
+    for (const l of game) for (const p of pointsOf(l)) expect(inField(l, toPlan(p)), `${l.field} ${l.kind} ${toPlan(p)}`).toBe(true);
+  });
+  it('puts each a little way in from its field\'s sides (the dead elm, which stands in the hedge, is two metres in)', () => {
+    for (const l of game) {
+      if (l.field === 'moor') continue;
+      const edges = polygonEdges(byName[l.field].points);
+      for (const p of pointsOf(l)) {
+        const d = distanceToEdges(edges, ...toPlan(p));
+        if (l.kind === 'deadElm') {
+          expect(d, 'in the hedge').toBeLessThan(3);
+          expect(d).toBeGreaterThan(1);
+        } else expect(d, `${l.kind} ${toPlan(p)}`).toBeGreaterThan(8);
+      }
+    }
+  });
+  it('keeps each clear of the strips: the grass margin, the beetle bank, the skylark plots, the wildflower strip and the barley\'s hollow', () => {
+    const S = stewardshipPlan(plan);
+    for (const l of game) {
+      if (l.field === 'moor' || l.kind === 'deadElm') continue;
+      for (const q of pointsOf(l)) {
+        const p = toPlan(q);
+        const margin = S.margins.find((m) => m.field === l.field);
+        if (margin) expect(pointInPolygon(margin.inner, p[0], p[1]), `${l.kind} in the headland`).toBe(true);
+        if (S.beetleBank.field === l.field) expect(Math.abs(p[0] - S.beetleBank.points[0][0]), 'beetle bank').toBeGreaterThan(10);
+        for (const sp of S.skylarkPlots) if (sp.field === l.field) expect(Math.hypot(p[0] - sp.at[0], p[1] - sp.at[1]), 'skylark plot').toBeGreaterThan(12);
+        if (l.field === 'north') {
+          const h = { x: 300, z: 120, rx: 26, rz: 16 };
+          expect(Math.hypot((p[0] - h.x) / (h.rx + 10), (p[1] - h.z) / (h.rz + 10)), 'the hollow').toBeGreaterThan(1);
+        }
+      }
+    }
+  });
+  it('keeps each clear of the gateways, the troughs and the footpath\'s crossings, by at least 12 m', () => {
+    const gates = GATEWAYS_PLAN.map((g) => g.at);
+    const spots = [...gates, ...RESERVED_PLAN.troughs.map((t) => t.at), ...RESERVED_PLAN.crossings.map((c) => c.at)];
+    for (const l of game) {
+      if (l.field === 'moor' || l.kind === 'deadElm' || l.builtBy) continue;
+      for (const q of pointsOf(l)) {
+        const p = toPlan(q);
+        for (const o of spots) expect(Math.hypot(p[0] - o[0], p[1] - o[1]), `${l.kind} ${p} near ${o}`).toBeGreaterThan(12);
+      }
+    }
+  });
+  it('has the places the other issues were promised: the barn at (378, 451), the hut at (95, 802), the rock at (262, 814)', () => {
+    const at = (kind) => L.find((l) => l.kind === kind).at;
+    expect(at('fieldBarn')).toEqual([378, 451]);
+    expect(at('hut')).toEqual([95, 802]);
+    expect(at('flaskRock')).toEqual([262, 814]);
+  });
+  it('names who builds the pieces this issue only places: #711 the line, #624 the barn, #684 the hut and the rock, #713 the pillar', () => {
+    expect(Object.fromEntries(L.filter((l) => l.builtBy).map((l) => [l.kind, l.builtBy]))).toEqual({
+      powerLine: '#711', fieldBarn: '#624', hut: '#684', flaskRock: '#684', trigPillar: '#713',
+    });
+  });
+  it('has the 11 kV line\'s pole in Lane Field the line\'s own, and three of its poles in the field', () => {
+    const pole = L.find((l) => l.kind === 'powerLine');
+    expect(RESERVED_PLAN.powerLine.poles).toContainEqual(pole.at);
+    const inside = RESERVED_PLAN.powerLine.poles.filter((p) => pointInPolygon(byName.lanefield.points, p[0], p[1]));
+    expect(inside).toHaveLength(3);
+    expect(inside).toContainEqual(pole.at);
+  });
+  it('has the trig pillar where LANDMARKS_PLAN has it (the same array, so there is no second copy to drift), in the moor\'s strip west of Back Lane', () => {
+    const pillar = L.find((l) => l.kind === 'trigPillar');
+    expect(pillar.at).toBe(LANDMARKS_PLAN.find((l) => l.name === 'trig pillar').at);
+    expect(pillar.at[0]).toBeGreaterThanOrEqual(MOOR_PLAN.minX);
+    expect(pillar.at[0]).toBeLessThan(OUTLINE_PLAN.reduce((m, p) => Math.min(m, p[0]), Infinity));
+  });
+  it('has Far Field\'s pond near plan (160, 530), 14 m across, clear of the green lane, the stream and the plots, and two willows on its banks', () => {
+    const pond = L.find((l) => l.kind === 'farPond');
+    expect(pond.at).toEqual([160, 530]);
+    expect(pond.rx + pond.rz).toBeGreaterThan(15); // about 14 m across the water once the dish is cut
+    expect(Math.hypot(pond.at[0] - 195, pond.at[1] - 500)).toBeGreaterThan(40); // the gap in the green lane's hedge
+    expect(565 - pond.at[1]).toBeGreaterThan(30); // the stream along the field's south edge
+    expect(pond.willows).toHaveLength(2);
+    for (const w of pond.willows) {
+      const d = Math.hypot(w[0] - pond.at[0], w[1] - pond.at[1]);
+      expect(d).toBeGreaterThan(Math.min(pond.rx, pond.rz));
+      expect(d).toBeLessThan(pond.rx + 4);
+    }
+  });
+  it('has the Wet Meadow\'s pond to itself: nothing of Far Field\'s stands in the Wet Meadow', () => {
+    for (const l of L.filter((o) => o.field === 'far')) for (const p of pointsOf(l)) expect(pointInPolygon(byName.wet.points, p[0], p[1])).toBe(false);
+  });
+  it('has the alders in a line along the brook\'s north bank: six, 4 m off the plan\'s curve and 20 to 40 m apart', () => {
+    const alders = game.find((l) => l.kind === 'brookAlders');
+    expect(alders.trees).toHaveLength(6);
+    const run = flattenPath('M650 600 C700 632 790 648 885 650')[0];
+    for (const t of alders.trees) {
+      const p = toPlan(t);
+      let best = Infinity;
+      for (let i = 0; i + 1 < run.length; i++) {
+        const [x1, z1] = run[i];
+        const [x2, z2] = run[i + 1];
+        const k = Math.max(0, Math.min(1, ((p[0] - x1) * (x2 - x1) + (p[1] - z1) * (z2 - z1)) / ((x2 - x1) ** 2 + (z2 - z1) ** 2 || 1)));
+        best = Math.min(best, Math.hypot(p[0] - x1 - (x2 - x1) * k, p[1] - z1 - (z2 - z1) * k));
+      }
+      expect(best).toBeGreaterThan(3.5);
+      expect(best).toBeLessThan(4.5);
+    }
+    for (let i = 0; i + 1 < alders.trees.length; i++) {
+      const d = Math.hypot(alders.trees[i + 1][0] - alders.trees[i][0], alders.trees[i + 1][1] - alders.trees[i][1]);
+      expect(d).toBeGreaterThan(20);
+      expect(d).toBeLessThan(40);
+    }
+  });
+  it('is in the layout in game metres, and not on today\'s farm', () => {
+    expect(LAYOUT.fieldLandmarks).toBeUndefined();
+    expect(two.fieldLandmarks).toHaveLength(L.length);
+    const oak = two.fieldLandmarks.find((l) => l.kind === 'loneOak');
+    expect(oak.at).toEqual([352 - 520, 150 - 365]);
+    expect(oak).toMatchObject({ field: 'north' });
   });
 });

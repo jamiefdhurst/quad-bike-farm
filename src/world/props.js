@@ -11,6 +11,7 @@ import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
 import { buildQuarry } from './quarryProps.js';
+import { buildFieldLandmarks } from './landmarkProps.js';
 import { boundaryTreeBlocked } from './boundaryTrees.js';
 import { buildOutbuildings } from './outbuildingProps.js';
 import { buildNeighbourFarm } from './neighbourFarmProps.js';
@@ -75,6 +76,7 @@ export function buildProps(ctx) {
   const hillProps = ctx.fields.hill ? buildHill(c) : null;
   if (ctx.fields.woods) buildWoods(c);
   if (ctx.fields.quarry) buildQuarry(c);
+  buildFieldLandmarks(c); // the new farm's landmark in each field (#815); today's farm has none
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
   return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap].filter(Boolean), barn, jumpRamp, silage, puddles, gates, neighbourFarm, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
 }

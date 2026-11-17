@@ -10,6 +10,7 @@ import { describeLayout, searchForLayout } from '../world/layoutNew.js';
 import { describeFieldNames } from '../world/fieldNames.js';
 import { plantSite, plantPoint } from '../world/plantSite.js';
 import { labelSpot } from '../hud/farmMap.js';
+import { BUILT_KINDS } from '../world/fieldLandmarks.js';
 
 const DEG = 180 / Math.PI;
 const norm = (deg) => ((deg % 360) + 360) % 360;
@@ -99,7 +100,10 @@ export function createHost(g, { copy = () => {} } = {}) {
     // On a plan that says what its fields are (the new farm), one place per field by its key (top, north, lanefield, hay ...), where it has the most room.
     // A place the game already has by that name wins (wood, pit): today's wood and pit stand where they did until #683 and #685 move them.
     const inFields = layout.fields ? Object.fromEntries(layout.fields.map((f) => [f.name, labelSpot(g.world.fields.polygons[f.name])])) : {};
-    return Object.fromEntries(Object.entries({ ...inFields, ...spots }).filter(([, p]) => p && Number.isFinite(p.x) && Number.isFinite(p.z)).map(([k, p]) => [k, { x: p.x, z: p.z }]));
+    // And the field landmarks (#815) by their kind in lower case (loneoak, oldgateposts, deadelm, farpond, castroller, loneash, brookalders, bigoaks), ten metres
+    // south of each: the ones the game builds, so you stand where you can see them. The new farm only.
+    const landmarks = Object.fromEntries((layout.fieldLandmarks ?? []).filter((l) => BUILT_KINDS.includes(l.kind)).map((l) => [l.kind.toLowerCase(), { x: l.at[0], z: l.at[1] + 10 }]));
+    return Object.fromEntries(Object.entries({ ...landmarks, ...inFields, ...spots }).filter(([, p]) => p && Number.isFinite(p.x) && Number.isFinite(p.z)).map(([k, p]) => [k, { x: p.x, z: p.z }]));
   };
 
   const riding = () => (g.player.isRiding ? g.riddenUnit : null);

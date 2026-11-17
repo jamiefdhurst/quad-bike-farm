@@ -520,6 +520,38 @@ function reservedLayout(R = RESERVED_PLAN) {
 }
 
 /**
+ * The landmarks in game metres: each with its `at`, and `trees`/`willows` points where it has several. A brook route is dealt out into the points the
+ * alders stand at, `bank` m to one side of the curve.
+ */
+export function fieldLandmarksLayout(plan = FIELD_LANDMARKS_PLAN) {
+  return plan.map((l) => {
+    const out = { ...l };
+    if (l.at) out.at = fromPlan(l.at);
+    if (l.willows) out.willows = l.willows.map(fromPlan);
+    if (l.trees) out.trees = l.trees.map(fromPlan);
+    if (out.trees && !out.at) out.at = out.trees[0];
+    if (l.route) {
+      const run = flattenPath(l.route)[0];
+      const pts = run.slice(1);
+      out.trees = Array.from({ length: l.count }, (_, i) => {
+        const t = l.along[0] + ((l.along[1] - l.along[0]) * i) / (l.count - 1);
+        const k = Math.min(pts.length - 2, Math.floor(t * (pts.length - 1)));
+        const f = t * (pts.length - 1) - k;
+        const [x0, z0] = pts[k];
+        const [x1, z1] = pts[k + 1];
+        const dx = x1 - x0;
+        const dz = z1 - z0;
+        const len = Math.hypot(dx, dz) || 1;
+        return fromPlan([x0 + dx * f - (dz / len) * l.bank, z0 + dz * f + (dx / len) * l.bank]);
+      });
+      delete out.route;
+      out.at = out.trees[Math.floor(l.count / 2)];
+    }
+    return out;
+  });
+}
+
+/**
  * The tall things seen from across the farm: the church tower (#715), the Dutch barn's roof (#682's stackyard), the trig pillar on the moor's ridge
  * (#713) and the 11 kV line's last pole (#711). Plan metres and the metres each stands above the ground under it.
  */
@@ -528,6 +560,43 @@ export const LANDMARKS_PLAN = [
   { name: 'Dutch barn roof', at: [446, 281], height: 7 },
   { name: 'trig pillar', at: [-330, 480], height: 1.2 },
   { name: 'last pole', at: [566, 274], height: 9.5 },
+];
+
+/** The Moor, beyond Back Lane up to the ridge wall (#713), plan metres: not a field of the plan's own, so it has no polygon. */
+export const MOOR_PLAN = { minX: -330, maxX: 30, minZ: 40, maxZ: 920 };
+
+/**
+ * One thing in each field that is its own and can be seen from its gate (#815), plan metres: its `field` (a key of `FIELDS_PLAN`, or 'moor'), its `kind`
+ * and `at`. The place is written here once and a move reads it from here: #624 the field barn, #684 the hut and the flask rock, #713 the trig
+ * pillar, #711 the line (its poles are `RESERVED_PLAN.powerLine`'s). The others are built from it (world/landmarkProps.js). `builtBy` names who builds
+ * a piece this issue only places. The farm plan says each field has one (docs/farm-plan.md, "Every field has a landmark").
+ */
+export const FIELD_LANDMARKS_PLAN = [
+  // A lone oak in mid-field, east of the barley's hollow (300, 120), which is 26 by 16 m.
+  { field: 'north', kind: 'loneOak', at: [352, 150] },
+  // Two old gateposts 3 m apart, where a hedge across the field was grubbed out, the old line running east to west.
+  { field: 'top', kind: 'oldGateposts', at: [480, 150], yaw: 0, gap: 3 },
+  // The 11 kV line's third pole from the lane, in Lane Field: three of its poles stand there.
+  { field: 'lanefield', kind: 'powerLine', at: RESERVED_PLAN.powerLine.poles[3], builtBy: '#711' },
+  // A dead elm in the hedge along Long Piece's south side.
+  { field: 'longpiece', kind: 'deadElm', at: [760, 520.5] },
+  // A small pond in Far Field's low east side with two willows, clear of the green lane, the stream and the skylark plot.
+  { field: 'far', kind: 'farPond', at: [160, 530], rx: 9, rz: 7.5, willows: [[151, 525], [168.2, 535]] },
+  // An old roller left in the corner nearest the stone track's end.
+  { field: 'south', kind: 'castRoller', at: [650, 672], yaw: 0.6 },
+  // A lone ash in the middle of Hay Meadow, well clear of the stone track and the trough.
+  { field: 'hay', kind: 'loneAsh', at: [520, 488] },
+  // Alders on the brook's north bank through Low Ley (the plan map's own curve, flattened), `count` of them from `along` of its run, `bank` m off it.
+  { field: 'ley', kind: 'brookAlders', route: 'M650 600 C700 632 790 648 885 650', along: [0.08, 0.78], count: 6, bank: -4 },
+  // Big old oaks scattered over the meadow south of the river.
+  { field: 'brook', kind: 'bigOaks', trees: [[480, 670], [560, 700], [590, 640], [500, 775]] },
+  // The field barn at the top tread of the sheep field (#684's spot).
+  { field: 'sheep', kind: 'fieldBarn', at: [378, 451], builtBy: '#624' },
+  // The shepherd's hut and the flask rock, as the plan has them.
+  { field: 'hill', kind: 'hut', at: [95, 802], builtBy: '#684' },
+  { field: 'hill', kind: 'flaskRock', at: [262, 814], builtBy: '#684' },
+  // The trig pillar on the moor's ridge, where `LANDMARKS_PLAN` has it.
+  { field: 'moor', kind: 'trigPillar', at: LANDMARKS_PLAN.find((l) => l.name === 'trig pillar').at, builtBy: '#713' },
 ];
 
 /** How far the farm's views are taken to reach: the draw distance on a clear day (#708). */
@@ -579,6 +648,7 @@ export function layoutNew(today) {
   return {
     ...today, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
+    fieldLandmarks: fieldLandmarksLayout(),
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
   };
 }

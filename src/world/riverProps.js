@@ -28,9 +28,9 @@ function postGeometry(h) {
 }
 
 /** A weeping willow: a leaning trunk, a ragged pale crown and a skirt of long thin curtains hanging from it almost to the ground. */
-function willowGeometry(random) {
+export function willowGeometry(random, { trunk = true } = {}) {
   const parts = [];
-  parts.push(part(new THREE.CylinderGeometry(0.16, 0.36, 3, 7).rotateZ(0.08), 0, 1.5, 0, '#5b4b3a'));
+  if (trunk) parts.push(part(new THREE.CylinderGeometry(0.16, 0.36, 3, 7).rotateZ(0.08), 0, 1.5, 0, '#5b4b3a'));
   for (const [x, y, z, r] of [[0, 3.6, 0, 1.2], [0.9, 3.3, 0.3, 0.9], [-0.8, 3.2, -0.4, 1], [0.1, 3.4, -1, 0.8]]) {
     const lump = new THREE.IcosahedronGeometry(r, 1);
     lump.scale(1.2, 0.65, 1.2);

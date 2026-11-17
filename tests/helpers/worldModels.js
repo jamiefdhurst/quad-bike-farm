@@ -108,6 +108,20 @@ export async function buildWorldModels() {
   add('setPiece', 'rolling-road-trailer', buildRollingRoadModel);
   const { buildBundle } = await import('../../src/items/brushwood.js');
   add('setPiece', 'brushwood', buildBundle, (b) => b(c.random));
+  // The field landmarks (#815) stand on the new farm, so they are built on its ground and with its places.
+  const { layoutNew } = await import('../../src/world/layoutNew.js');
+  const two = layoutNew(LAYOUT);
+  const c2 = { ...c, layout: two, heights: createTerrainHeight(two, new Track(two.trackPoints)) };
+  const spot = (kind) => two.fieldLandmarks.find((l) => l.kind === kind);
+  const land = await import('../../src/world/landmarkProps.js');
+  add('setPiece', 'loneOak', land.buildLoneOak, (b) => b(c2, spot('loneOak')));
+  add('setPiece', 'oldGateposts', land.buildGateposts, (b) => b(c2, spot('oldGateposts')));
+  add('setPiece', 'deadElm', land.buildDeadElm, (b) => b(c2, spot('deadElm')));
+  add('setPiece', 'farPond', land.buildFarPond, (b) => b(c2, spot('farPond')));
+  add('setPiece', 'castRoller', land.buildRoller, (b) => b(c2, spot('castRoller')));
+  add('setPiece', 'loneAsh', land.buildLoneAsh, (b) => b(c2, spot('loneAsh')));
+  add('setPiece', 'brookAlders', land.buildAlders, (b) => b(c2, spot('brookAlders')));
+  add('setPiece', 'bigOaks', land.buildBigOaks, (b) => b(c2, spot('bigOaks')));
 
   const { buildTyreRackModel } = await import('../../src/workshop/tyreRackModel.js');
   add('barnProp', 'tyreRack', buildTyreRackModel);

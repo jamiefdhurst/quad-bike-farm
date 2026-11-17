@@ -10,8 +10,9 @@ const fields = [
   { name: 'top', kind: 'arable', points: square(0, -200) },
 ];
 
-const standIn = () => {
+const standIn = (extra = {}) => {
   const layout = {
+    ...extra,
     spawn: { player: { x: 1, z: 2 } },
     woods: { gate: { x: 10, z: 11 }, leadIn: [[0, 0], [0, 30]], circuit: { points: [[12, 13]] } },
     fields,
@@ -41,3 +42,22 @@ describe('tp places on the new farm', () => {
     expect(standIn().places().pit).toBeUndefined();
   });
 });
+
+describe('tp places for the field landmarks (#815)', () => {
+  const landmarks = [
+    { field: 'hay', kind: 'loneAsh', at: [100, 50] },
+    { field: 'north', kind: 'loneOak', at: [-20, -150] },
+    { field: 'sheep', kind: 'fieldBarn', at: [30, 30], builtBy: '#624' },
+  ];
+  it('has a place for each landmark the game builds, by its kind in lower case, ten metres south of it', () => {
+    const places = standIn({ fieldLandmarks: landmarks }).places();
+    expect(places.loneash).toEqual({ x: 100, z: 60 });
+    expect(places.loneoak).toEqual({ x: -20, z: -140 });
+  });
+  it('has none for a landmark another issue builds, and none on today\'s farm', () => {
+    expect(standIn({ fieldLandmarks: landmarks }).places().fieldbarn).toBeUndefined();
+    const today = standIn().places();
+    for (const k of ['loneash', 'loneoak', 'oldgateposts', 'deadelm', 'farpond', 'castroller', 'brookalders', 'bigoaks']) expect(today[k], k).toBeUndefined();
+  });
+});
+

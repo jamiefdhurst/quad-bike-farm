@@ -2922,6 +2922,14 @@ export const FAQ_SECTIONS = [
           and is never saved, so your own farm is just as you left it. <code>layout 1</code> goes back.`,
       },
       {
+        q: 'What are the things standing by themselves in the new farm\'s fields?',
+        a: `Each field of the bigger farm (<code>?layout=2</code>) has one thing of its own you can see from its gate: a lone oak in North Field, a pair of old gateposts in
+          Top Field, a dead elm in Long Piece's hedge, a pond with two willows in Far Field, an old roller in South Field, a lone ash in Hay Meadow, alders along the
+          brook in Low Ley and big oaks in Brook Meadow. The rest (the power line, the field barn, the hut and its rock, the trig pillar on the moor) come with their own
+          pieces. In the console, <code>tp me to loneoak</code> (or <code>oldgateposts</code>, <code>deadelm</code>, <code>farpond</code>, <code>castroller</code>,
+          <code>loneash</code>, <code>brookalders</code>, <code>bigoaks</code>) takes you to each, and <code>scene landmarks</code> sets up the ash in daylight.`,
+      },
+      {
         q: 'How do I find the name of something in the console?',
         a: `Type a <code>.</code> or a space and every choice for the next word is listed under the line (scroll it if it is long). <kbd>Tab</kbd> fills in what you have started,
           and pressing it again goes through the choices. <kbd>Shift</kbd>+<kbd>Tab</kbd> goes back.`,

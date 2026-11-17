@@ -10,6 +10,7 @@
 //   --radius <m>          how far round --at to look (default 8)
 //   --fov <deg>           the camera's field of view (default 50); a small one crops in on lettering
 //   --time <hour>         the clock (default 13); --weather <name> (default sunny); --seed <n> (default 3)
+//   --layout <n>          2 shoots the new farm (?layout=2, #815), whose places are the field keys (`tp me north`); default is today's
 //   --out <name>          the folder under .scratch/shots/ (default: the --name, or the --at)
 //   --url <address>       use a dev server that is already running (else this starts its own, from this checkout)
 //   --keep                keep what stands between the camera and the target (else it is hidden for that shot and put back, and the tool says what)
@@ -41,7 +42,7 @@ const RADIUS = Number(opt('radius', 8));
 const FOV = Number(opt('fov', 50));
 const OUT = opt('out', (NAME ?? AT).replace(/[^\w.-]+/g, '_'));
 const dir = resolve('.scratch', 'shots', OUT);
-const query = `seed=${opt('seed', 3)}&weather=${opt('weather', 'sunny')}&time=${opt('time', 13)}`;
+const query = `seed=${opt('seed', 3)}&weather=${opt('weather', 'sunny')}&time=${opt('time', 13)}${opt('layout') ? `&layout=${opt('layout')}` : ''}`;
 
 const executablePath = chromePath();
 if (!executablePath) {
@@ -92,8 +93,10 @@ function findTarget({ name, radius }) {
   window.__shotTarget = new Set();
   for (const m of meshes) {
     m.updateWorldMatrix(true, false);
-    if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
-    const b = m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld);
+    // An instanced mesh's box has to be the instances' (placed in the world), not the one shared shape at the origin, or a lone tree frames from miles off.
+    if (m.isInstancedMesh) m.computeBoundingBox();
+    else if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+    const b = (m.isInstancedMesh ? m.boundingBox : m.geometry.boundingBox).clone().applyMatrix4(m.matrixWorld);
     const size = [b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z];
     const centre = [(b.max.x + b.min.x) / 2, (b.max.y + b.min.y) / 2, (b.max.z + b.min.z) / 2];
     if (!name) {

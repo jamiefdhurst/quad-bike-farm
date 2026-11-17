@@ -17,7 +17,9 @@ export const BARN_PROP_NAMES = ['tyreRack', 'sparesRack', 'batteryCharger', 'hel
  * Whole set pieces, drawn only within `setPieceDistance` of their nearest edge. The village and the neighbour's farm have a cheap far version
  * (`userData.farVersion`, world/farVersion.js) instead: always drawn, and swapped for the full one within `fullDistance`.
  */
-export const SET_PIECE_NAMES = ['village', 'neighbourFarm', 'brushwood', 'logs', 'trailMarkers', 'coneCourse', 'climbCones', 'riverside', 'lineUpSleepers', 'quarrySite', 'shepherdsHut', 'rolling-road-trailer'];
+export const SET_PIECE_NAMES = ['village', 'neighbourFarm', 'brushwood', 'logs', 'trailMarkers', 'coneCourse', 'climbCones', 'riverside', 'lineUpSleepers', 'quarrySite', 'shepherdsHut', 'rolling-road-trailer',
+  // The field landmarks (#815): the trees have a far version, so they stay in sight from the gates; the others go beyond `setPieceDistance`.
+  'loneOak', 'oldGateposts', 'deadElm', 'farPond', 'castRoller', 'loneAsh', 'brookAlders', 'bigOaks'];
 
 const SMALL = 0.15; // m: a part with a bounding sphere smaller than this is a small part
 const MARGIN = 5; // m: a vehicle crossing a distance has to come this far back before it changes again, so it doesn't flicker on the line
@@ -233,8 +235,10 @@ export class FarDetail {
       const box = new THREE.Box3();
       o.traverse((m) => {
         if (!m.isMesh || !m.geometry) return;
-        if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
-        box.union(m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld));
+        // An instanced mesh is where its instances stand, not the one shared shape at its origin (a tree placed far from the origin reached back to it, #815).
+        if (m.isInstancedMesh) m.computeBoundingBox();
+        else if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+        box.union((m.isInstancedMesh ? m.boundingBox : m.geometry.boundingBox).clone().applyMatrix4(m.matrixWorld));
       });
       const p = o.position;
       if (o.userData.moves) {

@@ -69,6 +69,7 @@ const NOT_MODELS = {
   'world/trafficView.js: buildVehicleBody': 'a car or van body, made inside buildVillage and buildNeighbourFarm and by the traffic; vehicles have their own detail kit and tests (.claude/rules/vehicle-detail.md)',
   'world/hedgeFar.js: buildFarHedges': 'the hedges\' far strips: plain on purpose, drawn only beyond 150 m, where the leafy blocks of the near version (made inside buildProps) are left out',
   'world/farVersion.js: buildFarVersion': 'the far version of the village and the neighbour\'s farm: plain boxes on purpose, hung on `userData.farVersion` and never in the scene up close',
+  'world/landmarkProps.js: buildFieldLandmarks': 'calls each field landmark\'s builder in turn; each is built on its own ("loneOak", "oldGateposts", "deadElm", "farPond", "castRoller", "loneAsh", "brookAlders", "bigOaks")',
   'world/props.js: buildProps': 'calls every world builder above in turn; each of them is built on its own',
   'items/baleSpike.js: SpikeLift': 'logic only: where the spike\'s plate is (the spike is part of the tractor\'s model)',
   'items/baleSpike.js: BaleYard': 'logic only: where the bales are',

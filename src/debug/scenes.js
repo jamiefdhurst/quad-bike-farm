@@ -38,6 +38,7 @@ export const SCENES = [
   },
   { id: 'farhedges', label: 'Put you in the yard with the hedges swapping to their far strips at 25 m instead of 150 m', lines: ['weather sunny', 'weather.time 12', 'tp me to yard'], setup: 'farHedges' },
   { id: 'landform', label: 'Put you at the west edge of the farm, about 20 m above the yard, to see the land fall away east (on layout 2: today\'s farm is not tilted)', lines: ['weather sunny', 'weather.time 12', 'tp me -450 0'] },
+  { id: 'landmarks', label: 'Put you ten metres south of Hay Meadow\'s lone ash in daylight, to look at the field landmarks (on layout 2: today\'s farm has none; tp me to loneoak, oldgateposts, deadelm, farpond, castroller, brookalders or bigoaks for the rest)', lines: ['weather sunny', 'weather.time 12', 'tp me 0 133'] },
   { id: 'end', label: 'Let the girls go about their day again after a scene', lines: [], setup: 'end' },
 ];
 
