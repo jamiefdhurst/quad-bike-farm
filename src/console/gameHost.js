@@ -7,7 +7,9 @@ import { SCENES, runScene } from '../debug/scenes.js';
 import { WEATHER_KINDS } from '../world/weather.js';
 import { LAYOUT_CHOSEN } from '../world/layout.js';
 import { describeLayout, searchForLayout } from '../world/layoutNew.js';
+import { describeFieldNames } from '../world/fieldNames.js';
 import { plantSite, plantPoint } from '../world/plantSite.js';
+import { labelSpot } from '../hud/farmMap.js';
 
 const DEG = 180 / Math.PI;
 const norm = (deg) => ((deg % 360) + 360) % 360;
@@ -94,7 +96,9 @@ export function createHost(g, { copy = () => {} } = {}) {
       terraces: layout.hill?.paddocks?.east.terraces?.stand ?? null, // the sheep field's top tread, looking down its banks
       pasture: layout.hill ? { x: (layout.hill.pasture.minX + layout.hill.pasture.maxX) / 2, z: (layout.hill.pasture.minZ + layout.hill.pasture.maxZ) / 2 } : null,
     };
-    return Object.fromEntries(Object.entries(spots).filter(([, p]) => p && Number.isFinite(p.x) && Number.isFinite(p.z)).map(([k, p]) => [k, { x: p.x, z: p.z }]));
+    // On a plan that says what its fields are (the new farm), one place per field by its key (top, north, lanefield, hay ...), where it has the most room.
+    const inFields = layout.fields ? Object.fromEntries(layout.fields.map((f) => [f.name, labelSpot(g.world.fields.polygons[f.name])])) : {};
+    return Object.fromEntries(Object.entries({ ...spots, ...inFields }).filter(([, p]) => p && Number.isFinite(p.x) && Number.isFinite(p.z)).map(([k, p]) => [k, { x: p.x, z: p.z }]));
   };
 
   const riding = () => (g.player.isRiding ? g.riddenUnit : null);
@@ -217,7 +221,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       return host.weatherNow();
     },
 
-    layoutNow: () => describeLayout(LAYOUT_CHOSEN),
+    layoutNow: () => [describeLayout(LAYOUT_CHOSEN), describeFieldNames(g.world.layout)].filter(Boolean).join('. '),
     setLayout(n) {
       location.search = searchForLayout(location.search, n);
       return n === 2 ? 'loading the new farm' : 'loading today\'s farm';
