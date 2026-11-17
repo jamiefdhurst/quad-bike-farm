@@ -102,12 +102,10 @@ describe('the ground that is built from it', () => {
     expect(worst).toBeLessThan(2);
   });
   it('is today\'s ground, untouched, where there is no landform', () => {
-    // A layout with the landform taken off is today's: the beyond-the-hedges rise and the same heights.
-    const { landform, ...without } = two;
-    expect(landform).toBeDefined();
-    const h = createTerrainHeight({ ...LAYOUT, newFarm: true }, new Track(LAYOUT.trackPoints));
-    for (const [x, z] of [[0, 0], [60, 30], [-120, 90], [400, -300], [-300, 200]]) expect(h.heightAt(x, z)).toBeCloseTo(heights1.heightAt(x, z), 9);
-    expect(without.landform).toBeUndefined();
+    // Heights of today's layout at fixed points, as they were before the landform (a tilt in `lie` for it would move every one).
+    const want = [[0, 0, 1.6460890288], [60, 30, 0.8064915988], [-120, 90, -0.5862847487], [400, -300, 13.4696480121], [-300, 200, 7.3323836692], [-30, 190, 13.3675426727]];
+    for (const [x, z, h] of want) expect(heights1.heightAt(x, z), `${x}, ${z}`).toBeCloseTo(h, 6);
+    expect(LAYOUT.landform).toBeUndefined();
   });
   it('has no step the land\'s lie added: the steepest metre is the one today\'s ground has', () => {
     const ground = two.ground;
