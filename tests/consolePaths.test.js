@@ -9,6 +9,7 @@ import { girlActions } from '../src/debug/girlActions.js';
 import { jobActions } from '../src/debug/jobActions.js';
 import { SCENES } from '../src/debug/scenes.js';
 import { FIELDS_PLAN } from '../src/world/layoutNew.js';
+import { BUILT_KINDS } from '../src/world/fieldLandmarks.js';
 
 // `tools/consolePath.sh 'lane.kids on' 'tp me 105 -17' 'mist vauclair'` runs each line through the real command table and tree, so nothing
 // reaches Jamie unrun. The game is a stand-in: it has no vehicles of its own (the stand-in knows every vehicle by its model name:
@@ -19,8 +20,8 @@ const asked = (process.env.CONSOLE_LINES ?? '').split('\n').filter((l) => l.trim
 const placeNames = () => {
   const src = readFileSync(new URL('../src/console/gameHost.js', import.meta.url), 'utf8');
   const spots = src.slice(src.indexOf('const spots = {'), src.indexOf('return Object.fromEntries'));
-  // and, on the new farm, one for each of its fields by its key (gameHost.js `inFields`)
-  return [...new Set([...spots.matchAll(/^ {6}(\w+):/gm)].map((m) => m[1]).concat(FIELDS_PLAN.map((f) => f.name)))];
+  // and, on the new farm, one for each of its fields by its key (gameHost.js `inFields`) and one for each landmark the game builds, by its kind in lower case (`landmarks`)
+  return [...new Set([...spots.matchAll(/^ {6}(\w+):/gm)].map((m) => m[1]).concat(FIELDS_PLAN.map((f) => f.name), BUILT_KINDS.map((k) => k.toLowerCase())))];
 };
 
 // Every job is on this stand-in farm, so a job line that is NO here may be a job a real farm does not have (`job` on its own lists them).
