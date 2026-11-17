@@ -69,8 +69,10 @@ export class Bench {
     });
   }
 
+  /** What the bench opens on: the first candidate that is switched off, so a vehicle left running in a bay never keeps you from a find standing there. */
   unitAtBench() {
-    return this.candidates()[0] ?? null;
+    const all = this.candidates();
+    return all.find((u) => !u.engine.isRunning && u.engine.state !== 'cranking') ?? all[0] ?? null;
   }
 
   /** The one the "work on the other" row switches to: the next of the candidates after this one that is switched off, or null when there is no other. */
