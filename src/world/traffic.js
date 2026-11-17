@@ -156,17 +156,21 @@ const exponential = (random, mean) => -Math.log(1 - random() * 0.999) * mean;
 export function visitPlaces(layout) {
   const lane = layout.publicLane;
   const road = layout.road;
-  const gate = { x: layout.farm.maxX, z: road.z };
+  // The drive (#568) is open to the lane over its cattle grid: no gate, so the visitor goes straight in, and `gate` is only where it meets the lane.
+  const open = road.grid.x !== undefined;
+  const gate = open ? { x: lane.x, z: road.z } : { x: layout.farm.maxX, z: road.z };
   const barn = layout.barn;
   const doorZ = barn.z + barn.halfZ;
   return {
     lane,
     lanes: roadNetwork(layout), // the lane's route in and out is asked of the road network (world/roads.js)
     gate,
+    open,
     road,
     outside: { x: gate.x + 3.8, z: gate.z }, // where a vehicle waits outside the gate
     inside: { x: gate.x - 3.8, z: gate.z },
     grid: road.grid?.gateOffset == null ? null : { x: layout.fieldHalf + road.grid.gateOffset, z: road.z }, // the gate just east of the cattle grid
+    over: open ? { x: road.grid.x, z: road.z } : null, // the drive's cattle grid, which a visitor drives over
     // The barn's big doors face east, onto the yard; the wrapped silage is stacked beside its west wall, the bell
     // is by the north leaf and the second span's door is at z + 9.2. The vehicle stops east of the door, facing west, and turns round to the south, clear of both.
     stop: { x: barn.x + 14, z: barn.z + 7.5 },
@@ -187,21 +191,31 @@ export const laneX = (lane, dir) => lane.x + (dir > 0 ? 1 : -1) * lane.halfWidth
  * (the driver walks to the gate and swings it; only if it is not already so; `gate: 'grid'` is the one by the cattle grid), wait { seconds, event }.
  */
 export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
-  const { lane, lanes, gate, road, outside, inside, stop, door, turn, grid } = places;
+  const { lane, lanes, gate, road, outside, inside, stop, door, turn, grid, open, over } = places;
   const steps = [];
   const sp = (p) => ({ ...p, speed: farmSpeed });
+  // The drive has no gate: in along the lane, turn across it into the drive and over the grid, and out the same way (the stretch the shared steps leave out).
+  const inLane = open && [
+    { x: laneX(lane, from), z: road.z - from * 16 },
+    { x: lane.x - 0.8, z: road.z - from * 6, speed: 5 },
+    { x: lane.x - 6, z: road.z + 1, speed: 5 },
+    sp({ x: over.x + 4, z: road.z + 1, speed: 3 }),
+    sp({ x: over.x - 4, z: road.z + 1, speed: 3 }),
+  ];
   // In along the lane, turn across it into the gateway and stop outside the gate.
-  steps.push({
-    type: 'drive',
-    path: [
-      { x: laneX(lane, from), z: gate.z - from * 16 },
-      { x: lane.x - 0.8, z: gate.z - from * 6, speed: 5 },
-      { x: outside.x + 1.2, z: gate.z, speed: 4 },
-      { ...outside, stop: true },
-    ],
-  });
+  if (!open) {
+    steps.push({
+      type: 'drive',
+      path: [
+        { x: laneX(lane, from), z: gate.z - from * 16 },
+        { x: lane.x - 0.8, z: gate.z - from * 6, speed: 5 },
+        { x: outside.x + 1.2, z: gate.z, speed: 4 },
+        { ...outside, stop: true },
+      ],
+    });
+  }
   const gateWalk = (side) => ({ x: gate.x + side * 2.4, z: gate.z + 3.4 });
-  steps.push({ type: 'gate', open: true, at: gateWalk(1), side: 'out' });
+  if (!open) steps.push({ type: 'gate', open: true, at: gateWalk(1), side: 'out' });
   // Through the gate and along the farm road on the left (heading west, that is the south side).
   const inZ = road.z + 1;
   // The gate by the cattle grid: stop short of it, the driver opens it, and after the grid she shuts it behind her. `from` is the side she
@@ -211,11 +225,13 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
   const west = grid ? grid.x - 5.5 : 0;
   steps.push({
     type: 'drive',
-    path: [
-      sp({ x: gate.x - 2, z: gate.z, speed: 4 }),
-      sp({ x: gate.x - 14, z: inZ }),
-      ...(grid ? [sp({ x: east, z: inZ, stop: true })] : [sp({ x: road.fromX + 6, z: inZ })]),
-    ],
+    path: open
+      ? [...inLane, sp({ x: road.fromX + 6, z: inZ })]
+      : [
+        sp({ x: gate.x - 2, z: gate.z, speed: 4 }),
+        sp({ x: gate.x - 14, z: inZ }),
+        ...(grid ? [sp({ x: east, z: inZ, stop: true })] : [sp({ x: road.fromX + 6, z: inZ })]),
+      ],
   });
   if (grid) {
     steps.push(gridGate(true));
@@ -255,13 +271,29 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
       { x: cx, z: turn.z1, speed: 4 },
       { x: stop.x + 6, z: turn.z1 - 1, speed: 5 },
       sp({ x: (road.fromX + stop.x) / 2, z: (road.z - 1 + stop.z) / 2 }),
-      sp({ x: grid ? west : road.fromX - 6, z: road.z - 1, stop: !!grid }),
+      sp({ x: grid ? west : open ? road.fromX + 6 : road.fromX - 6, z: road.z - 1, stop: !!grid }),
     ],
   });
   if (grid) {
     steps.push({ ...gridGate(true), if: 'shut' });
     steps.push({ type: 'drive', path: [sp({ x: east, z: road.z - 1, stop: true })] });
     steps.push(gridGate(false));
+  }
+  if (open) {
+    // Back along the drive on its north side, over the grid and out onto the lane.
+    steps.push({
+      type: 'drive',
+      path: [
+        sp({ x: road.fromX + 6, z: road.z - 1 }),
+        sp({ x: over.x - 4, z: road.z - 1, speed: 3 }),
+        sp({ x: over.x + 4, z: road.z - 1, speed: 3 }),
+        { x: lane.x - 5, z: road.z - 1, speed: 5 },
+        { x: laneX(lane, to) - to * 0.3, z: road.z + to * 6, speed: 5 },
+        { x: laneX(lane, to), z: road.z + to * 18 },
+        lanes.lanePath('lane', to, 20)[1],
+      ],
+    });
+    return steps;
   }
   steps.push({
     type: 'drive',

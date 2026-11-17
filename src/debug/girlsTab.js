@@ -365,10 +365,12 @@ export function buildGirlsTab(d) {
   button(out, 'Make the dog bark', () => g.debugDog('bark'));
   show(out, 'electric fence', () => `${g.fence.live ? 'on' : 'off'}; last zapped: ${g.fence.lastZap ? `${g.fence.lastZap.id} (${g.fence.lastZap.kind})` : 'nobody yet'}`);
   button(out, 'Zap you on the fence', () => g.debugZapFence());
-  show(out, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road').isOpen ? 'open' : 'shut'}, grid gate ${g.trafficHost.gate('grid')?.isOpen ? 'open' : 'shut'}`);
+  show(out, 'the lane and the gates', () => `${g.trafficHost.describe()}; south gate ${g.trafficHost.gate('south').isOpen ? 'open' : 'shut'}, big gate ${g.trafficHost.gate('road')?.isOpen ? 'open' : 'shut'}, grid gate ${g.trafficHost.gate('grid')?.isOpen ? 'open' : 'shut'}, bypass gate ${g.trafficHost.gate('bypass')?.isOpen ? 'open' : 'shut'}`);
   button(out, 'Swing the south gate', () => g.trafficHost.toggle(g.trafficHost.gate('south')));
-  button(out, 'Swing the big gate', () => g.trafficHost.toggle(g.trafficHost.gate('road')));
-  button(out, 'Swing the cattle grid gate', () => g.trafficHost.toggle(g.trafficHost.gate('grid')));
+  // Today's farm has the big gate and the gate across the road by the cattle grid; the new farm's drive has the field gate beside its grid.
+  button(out, 'Swing the big gate', () => g.trafficHost.gate('road') ? g.trafficHost.toggle(g.trafficHost.gate('road')) : toast('This farm has no big gate'));
+  button(out, 'Swing the cattle grid gate', () => g.trafficHost.gate('grid') ? g.trafficHost.toggle(g.trafficHost.gate('grid')) : toast('This farm has no gate across the grid'));
+  button(out, 'Swing the bypass gate', () => g.trafficHost.gate('bypass') ? g.trafficHost.toggle(g.trafficHost.gate('bypass')) : toast('Only the new farm has a gate beside its grid'));
   button(out, 'Send a vehicle along the lane', () => g.trafficHost.debugPass());
   button(out, 'Send the kids along the lane', () => g.trafficHost.debugKids() || toast('The kids are already out'));
   button(out, 'Send the post van', () => g.trafficHost.debugVisit('post') || toast('A visitor is already about'));

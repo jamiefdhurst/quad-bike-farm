@@ -77,7 +77,8 @@ export function createHost(g, { copy = () => {} } = {}) {
       harrows: layout.harrows, // the chain harrows, left at the harrow field's west edge
       animals: layout.farmAnimals ? { x: layout.farmAnimals.pen.maxX + 2.5, z: (layout.farmAnimals.pen.minZ + layout.farmAnimals.sty.maxZ) / 2 } : null,
       trough: layout.trough,
-      road: layout.road?.pad,
+      road: layout.road?.pad ?? (layout.road ? { x: (layout.road.fromX + layout.road.toX) / 2, z: layout.road.z } : null), // the pad, or halfway along the drive
+      cattlegrid: layout.road?.grid ? { x: (layout.road.grid.x ?? layout.fieldHalf) - 8, z: layout.road.z } : null, // the cattle grid, from the yard side: the drive's on the new farm
       lane: layout.publicLane ? { x: layout.publicLane.x, z: layout.publicLane.open.minZ + 100 } : null, // the public lane's tarmac, on the farm side of the village turning
       village: layout.village?.green, // the green, between the pub and the shop
       carpark: layout.village?.pub?.stop, // the pub's car park
