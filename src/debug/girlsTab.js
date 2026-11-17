@@ -310,7 +310,7 @@ export function buildGirlsTab(d) {
   button(market, 'Put ads up now', () => toast(`${g.debugDealAds()} ad(s) on the board`));
   button(market, 'Take the ads down', () => g.debugClearAds());
 
-  // The shed kit: the compressor, the parts washer and the pit bought from the catalogue under the cork board (farm/shed.js).
+  // The shed kit: the compressor, the parts washer and the pit bought from the catalogue on the workbench (farm/shed.js).
   const shedKit = sub('Shed kit: compressor, parts washer and pit');
   show(shedKit, 'the shed', () => g.describeShed());
   for (const [id, name] of [['compressor', 'compressor'], ['washer', 'parts washer'], ['pit', 'pit']]) {
