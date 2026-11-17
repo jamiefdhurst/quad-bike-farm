@@ -24,11 +24,11 @@ A mixed upland-edge farm of about 68 ha (870 by 830 m), about seven times today'
 | **Home Ground** | The field for messing about: the Home Loop, jump, cones, line-up, bonfire | Changes: the grass field stops being the yard and job field too | #616 |
 | **Hollow Wood** (north-west) | The Hollow Run, the Fern Trail, the log yard at its gate | Moves as a piece | #231, #232, #560, #561 |
 | **The Old Pit** (north-east) | The farm's disused gravel pit and the pit climb, with its own gate onto the lane and one from the stone track | Moves from behind the barley | #558 |
-| **Six arable fields**: North Field, Top Field, Lane Field, Long Piece, Far Field, South Field | Cereals, beans and rape in rotation through the year, with grass headlands to ride | Today two stubble fields, stubble all year | Crops phase |
+| **Six arable fields**: North Field, Top Field, Lane Field, Long Piece, Far Field, South Field | Cereals, beans and rape in rotation through the year, with grass headlands to ride. Far Field has a small field pond about 14 m across with two willows on its low east side, at plan (160, 530), with an uncropped margin round it (#815) | Today two stubble fields, stubble all year | Crops phase |
 | **Hay Meadow** | Shut up in spring, mown and baled in summer, grazed after | Moves out of the play field's corner | #323, #324 |
 | **Low Ley** | Grass for silage, cut twice a summer | New | #93, #172 |
 | **Brook Meadow** | Permanent pasture with the river through it; the cattle in summer | Changes: today's small hedged riverside meadow | #565, #563, #564 |
-| **Wet Meadow** | The pond, the oaks, the reeds | Moves as a piece | #147 |
+| **Wet Meadow** | The pond, the oaks, the reeds (its own pond: Far Field's is a different, smaller one) | Moves as a piece | #147 |
 | **Sheep Field** | The in-bye: walled, better grass by the yard where the ewes lamb and come into the pens. Terraces, stile, field barn | Moves as a piece | #622, #623, #624, #625 |
 | **The Moor** | Common grazing beyond Back Lane up to the ridge wall: heather, bracken, rocks, the spring the river rises from, the trig pillar. The flock goes up through the moor gate in summer. Back Lane crosses it unfenced between cattle grids; a ladder stile in the ridge wall leads to Upper Thornby (crossing it turns you round) | New | |
 | **Hill Pasture** | The flock's rough grazing all summer, too steep to plough or cut. The electric fence splits it so they graze one half then the other. The banks, the climb, the flask rock, the shepherd's hut | Moves as a piece | |
