@@ -707,3 +707,115 @@ export function noticeTexture(random, heading, lines = 9) {
     for (let i = 0; i < lines; i++) ctx.fillRect(14, 62 + i * 20, 90 + random() * (w - 120), 5);
   });
 }
+
+/** Poured concrete, one tile 1 m square: pale grey, mottled, with a few pits, a hairline crack and a green-black stain of damp along the bottom edge. */
+export function concreteTexture(random) {
+  return canvasTexture(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#9b9a93';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 90; i++) {
+      ctx.fillStyle = `rgba(${random() < 0.5 ? '70,70,64' : '200,198,188'},${0.05 + random() * 0.1})`;
+      ctx.beginPath();
+      ctx.ellipse(random() * w, random() * h, 8 + random() * 26, 6 + random() * 18, random() * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    grain(ctx, w, h, random, 700, 0.14);
+    ctx.fillStyle = 'rgba(40,40,36,0.6)';
+    for (let i = 0; i < 18; i++) ctx.fillRect(random() * w, random() * h, 1 + random() * 2, 1 + random() * 2); // pits
+    ctx.strokeStyle = 'rgba(50,50,46,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    let x = random() * w;
+    let y = 0;
+    ctx.moveTo(x, y);
+    while (y < h * 0.7) {
+      x += (random() - 0.5) * 18;
+      y += 8 + random() * 14;
+      ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    const damp = ctx.createLinearGradient(0, h * 0.72, 0, h);
+    damp.addColorStop(0, 'rgba(48,58,40,0)');
+    damp.addColorStop(1, 'rgba(48,58,40,0.55)');
+    ctx.fillStyle = damp;
+    ctx.fillRect(0, h * 0.72, w, h * 0.28);
+  });
+}
+
+/** Hot-dip galvanised steel, one tile 1 m square: spangled silver-grey with darker streaks and a little white and red rust at the edges. */
+export function galvanisedTexture(random) {
+  return canvasTexture(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#a9aeb0';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 60; i++) {
+      ctx.fillStyle = `rgba(${random() < 0.5 ? '230,234,235' : '110,116,120'},${0.1 + random() * 0.25})`;
+      ctx.beginPath();
+      ctx.ellipse(random() * w, random() * h, 3 + random() * 11, 2 + random() * 8, random() * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (let i = 0; i < 14; i++) {
+      ctx.fillStyle = `rgba(${random() < 0.7 ? '150,104,64' : '236,236,230'},${0.2 + random() * 0.3})`;
+      ctx.fillRect(random() * w, random() * h, 1 + random() * 3, 3 + random() * 14);
+    }
+  });
+}
+
+/** The warning sign for a cattle grid: a red-bordered white triangle with a black cow in it, and a plate under it that says so. One texture is the sign, triangle over plate. */
+export function cattleGridSignTexture() {
+  return canvasTexture(256, 320, (ctx, w, h) => {
+    ctx.fillStyle = '#9a9ea0'; // the back, showing round the edges
+    ctx.fillRect(0, 0, w, h);
+    const tri = (inset, colour) => {
+      ctx.fillStyle = colour;
+      ctx.beginPath();
+      ctx.moveTo(w / 2, 6 + inset * 1.7);
+      ctx.lineTo(w - 8 - inset * 1.5, 226 - inset * 0.55);
+      ctx.lineTo(8 + inset * 1.5, 226 - inset * 0.55);
+      ctx.closePath();
+      ctx.fill();
+    };
+    tri(0, '#c4171d');
+    tri(20, '#fff');
+    // The cow: body, head and horns, four legs, a tail, in black.
+    ctx.fillStyle = '#111';
+    ctx.fillRect(86, 130, 82, 34);
+    ctx.fillRect(160, 112, 22, 28);
+    ctx.fillRect(178, 120, 14, 12);
+    ctx.fillRect(166, 104, 4, 10);
+    ctx.fillRect(180, 104, 4, 10);
+    for (const lx of [92, 108, 140, 158]) ctx.fillRect(lx, 160, 7, 30);
+    ctx.fillRect(80, 134, 6, 24);
+    // The plate: black lettering on white in a black border.
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(18, 240, w - 36, 64);
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(18, 240, w - 36, 64);
+    ctx.fillStyle = '#111';
+    ctx.font = 'bold 34px Arial, Helvetica, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('CATTLE GRID', w / 2, 273);
+  });
+}
+
+/** A white plastic road-edge post: white, a black band under the top and a red reflector, dulled with road dirt up from the foot. One tile wraps round once. */
+export function reflectorPostTexture(random) {
+  return canvasTexture(64, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#e6e6e0';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#18181a';
+    ctx.fillRect(0, h * 0.16, w, h * 0.2);
+    ctx.fillStyle = '#b3171c';
+    ctx.fillRect(w * 0.3, h * 0.2, w * 0.4, h * 0.12);
+    for (let i = 0; i < 60; i++) {
+      ctx.fillStyle = `rgba(70,60,40,${0.05 + random() * 0.12})`;
+      ctx.fillRect(random() * w, h * 0.5 + random() * h * 0.5, 1 + random() * 4, 1 + random() * 8);
+    }
+    const dirt = ctx.createLinearGradient(0, h * 0.62, 0, h);
+    dirt.addColorStop(0, 'rgba(80,66,44,0)');
+    dirt.addColorStop(1, 'rgba(80,66,44,0.6)');
+    ctx.fillStyle = dirt;
+    ctx.fillRect(0, h * 0.62, w, h * 0.38);
+  });
+}

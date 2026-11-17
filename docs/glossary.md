@@ -10,6 +10,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 
 | Name | What it is | Not |
 | --- | --- | --- |
+| the drive | The old tarmac road on the new farm from the lane to the yard, open to the fields either side, with the cattle grid at the lane end (today's farm has the farm road instead) | driveway, farm track |
 | radio station | One of the radio's two stations: Dale FM (easy listening and pop) and Quarry Rock (rock). The radio key changes between them | radio channel, radio frequency |
 | woodpile | The stack of split logs by the wood's gate, with the rounds lying beside it. The farm map names it, with how many logs are on the stack | wood pile |
 | Fern Trail | The narrow single-track path for the two-wheelers through the wood, marked by the blue-banded posts | Fern Path, Bike Trail, the trail loop |

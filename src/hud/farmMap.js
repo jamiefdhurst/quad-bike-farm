@@ -292,7 +292,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (paddock) place('Paddock', p.x, p.z, p.half + 4);
   if (strip) place('Drag strip', strip.x + 6, strip.z + 6);
   if (r) place('Jump', r.x, r.z, -6);
-  if (roads.some((r) => r.id === 'farm')) place('Farm road', (layout.road.fromX + layout.road.hedgeTo) / 2 - 20, layout.road.z - 9);
+  if (roads.some((r) => r.id === 'farm')) place(layout.newFarm ? 'The drive' : 'Farm road', (layout.road.fromX + (layout.road.hedgeTo ?? layout.road.toX)) / 2 - 20, layout.road.z - 9);
   if (dutch) place('Dutch barn', layout.dutchBarn.x - 4, layout.dutchBarn.z - layout.dutchBarn.halfZ - 4);
   if (shed) place('Field shed', layout.fieldShed.x + 21, layout.fieldShed.z + 1);
   if (nf) place('Neighbour', nf.yard.minX + 14, nf.yard.minZ + 7);

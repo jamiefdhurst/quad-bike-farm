@@ -2922,6 +2922,14 @@ export const FAQ_SECTIONS = [
           and is never saved, so your own farm is just as you left it. <code>layout 1</code> goes back.`,
       },
       {
+        q: 'What is the drive on the new farm?',
+        a: `On <code>?layout=2</code> the farm road is a drive: 290 m of old tarmac from the yard straight out to the lane, patched in squares with its edges broken into gravel and a few
+          potholes holding water, open to the crops either side (no hedges, just a grass verge, cut short by the lane and longer further in). The cattle grid is at the lane end, so you
+          drive in without opening a gate, and the big gate is gone. For stock and horses, which can't cross a grid, there is a shut field gate beside it (press <kbd>E</kbd> at it). The girls' cars
+          and the visitors come and go over the grid. The lane is straight at the foot of it, with no invisible walls. <code>tp me cattlegrid</code> takes you there,
+          <code>scene drive</code> sets it up in daylight and <code>lane.bypassGate true</code> opens the field gate.`,
+      },
+      {
         q: 'What are the things standing by themselves in the new farm\'s fields?',
         a: `Each field of the bigger farm (<code>?layout=2</code>) has one thing of its own you can see from its gate: a lone oak in North Field, a pair of old gateposts in
           Top Field, a dead elm in Long Piece's hedge, a pond with two willows in Far Field, an old roller in South Field, a lone ash in Hay Meadow, alders along the

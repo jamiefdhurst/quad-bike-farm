@@ -1,4 +1,4 @@
-// The cattle grid in the farm road's gateway (layout.road.grid): where it is, which bars a wheel has rolled over and how hard it rattles
+// The cattle grid in the farm road's gateway, or the drive's at the lane (layout.road.grid): where it is, which bars a wheel has rolled over and how hard it rattles
 // the vehicle. Pure logic, no Three.js; the pit and its bars are built in props.js, the shake is in vibration/vibrationModel.js and the
 // sound in audio/rideAudio.js.
 
@@ -10,7 +10,7 @@ export function createCattleGrid(layout) {
   const road = layout.road;
   const g = road?.grid;
   if (!g) return null;
-  const x = layout.fieldHalf;
+  const x = g.x ?? layout.fieldHalf; // the drive says where its own is; today's fills the grass field's east gateway
   const half = road.halfWidth + g.margin;
   const grid = { minX: x - g.length / 2, maxX: x + g.length / 2, minZ: road.z - half, maxZ: road.z + half, pitch: g.pitch, x, z: road.z, half };
   /** Whether (x, z) is over the bars. */

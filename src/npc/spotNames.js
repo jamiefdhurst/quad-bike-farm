@@ -23,7 +23,7 @@ export const SPOTS = [
   spot('hill', L.namedSpots.hill, 'on the hill'),
   spot('pond', L.hill.paddocks.west.pond, 'by the pond'),
   spot('wood', L.namedSpots.wood, 'in the wood'),
-  spot('cattleGrid', { x: L.road.fromX, z: L.road.z }, 'by the cattle grid'),
+  spot('cattleGrid', { x: L.road.grid.x ?? L.road.fromX, z: L.road.z }, 'by the cattle grid'),
   spot('road', L.namedSpots.road, 'out on the farm road'),
   spot('trough', L.trough, 'by the trough'),
   spot('barley', away('out in the barley field'), 'in the barley field'),

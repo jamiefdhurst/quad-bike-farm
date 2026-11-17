@@ -25,6 +25,20 @@ export const GOING_HOME_PARAM_RANGES = {
 export function leaveRoute(slot, layout, p = DEFAULT_GOING_HOME_PARAMS) {
   const lane = layout.publicLane;
   const roadZ = layout.road.z;
+  const gone = goneBeyond(layout, p);
+  if (layout.road.grid.x !== undefined) {
+    // The drive (#568): along it, over the cattle grid (no gate to open) and out onto the lane.
+    const over = layout.road.grid.x;
+    return [
+      { x: slot.x + 3.5, z: roadZ + 1.5 },
+      { x: over - 6, z: roadZ + 1.5 },
+      { x: over + 6, z: roadZ + 1.5 },
+      { x: lane.x - 5, z: roadZ + 1.5 },
+      { x: lane.x - 1.3, z: roadZ + 4.5 },
+      { x: lane.x, z: roadZ + 10 },
+      { x: lane.x, z: gone.z },
+    ];
+  }
   return [
     { x: slot.x + 3.5, z: roadZ + 1.5 },
     { x: p.gateX - 2.5, z: roadZ + 1.5 },
@@ -33,6 +47,22 @@ export function leaveRoute(slot, layout, p = DEFAULT_GOING_HOME_PARAMS) {
     { x: lane.x, z: roadZ + 10 },
     { x: lane.x, z: p.laneZ },
   ];
+}
+
+/**
+ * Where a girl is counted gone: past the big gate and `laneZ` down the lane. On the new farm's drive there is no gate, so it is past the drive's mouth
+ * and as far down the lane from it as today's is from the farm road.
+ */
+export function goneBeyond(layout, p = DEFAULT_GOING_HOME_PARAMS) {
+  const road = layout.road;
+  if (road.grid.x === undefined) return { x: p.gateX, z: p.laneZ };
+  return { x: layout.publicLane.x - 5, z: road.z + (p.laneZ - 2) };
+}
+
+/** Whether a car at `position` is past where its girl is counted gone (`goneBeyond`, with ten metres' give on the way down the lane). */
+export function hasGone(layout, p, position) {
+  const away = goneBeyond(layout, p);
+  return position.x > away.x && position.z > away.z - 10;
 }
 
 export class GoingHome {

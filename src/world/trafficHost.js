@@ -88,7 +88,7 @@ export class TrafficHost {
   addGatePrompts() {
     const g = this.g;
     for (const gate of this.gates) {
-      const wide = gate.id === 'south' || gate.id === 'north' || gate.id === 'quarry' ? { x: 4.8, z: 1.4 } : { x: 1.4, z: gate.id === 'grid' ? 9.4 : 7.8 };
+      const wide = gate.id === 'south' || gate.id === 'north' || gate.id === 'quarry' ? { x: 4.8, z: 1.4 } : { x: 1.4, z: gate.id === 'grid' ? 9.4 : gate.id === 'bypass' ? 4.2 : 7.8 };
       const proxy = new THREE.Mesh(new THREE.BoxGeometry(wide.x, 2.2, wide.z), new THREE.MeshBasicMaterial({ visible: false }));
       proxy.position.set(gate.x, g.world.groundHeightAt(gate.x, gate.z) + 1.1, gate.z);
       g.scene.add(proxy);
@@ -141,13 +141,13 @@ export class TrafficHost {
     const g = this.g;
     for (const gate of this.gates) gate.update(dt);
     const dark = g.daylight?.darkness ?? 0;
-    const road = this.gate('road');
+    const road = this.gate('road'); // the new farm's drive has no big gate: visitors drive straight in over the grid
     const blockers = this.blockers();
     const ctx = {
       darkness: dark,
       blockers,
-      swingSeconds: road.state.p.swingSeconds,
-      gate: { get isOpen() { return road.isOpen; }, set: (open) => road.set(open, blockers).ok },
+      swingSeconds: (road ?? this.gates[0]).state.p.swingSeconds,
+      gate: road ? { get isOpen() { return road.isOpen; }, set: (open) => road.set(open, blockers).ok } : undefined,
       gates: { grid: this.gridGate() },
     };
     for (const e of this.traffic.update(dt, ctx)) this.onEvent(e);

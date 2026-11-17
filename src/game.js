@@ -127,7 +127,7 @@ import { pickMusicFiles } from './audio/pickMusic.js';
 import { RADIO_PARAMS, RADIO_PARAM_RANGES } from './vehicle/radio.js';
 import { RadioTaste, applyRadioMove, RADIO_TASTE_PARAMS, RADIO_TASTE_PARAM_RANGES } from './npc/radioTaste.js';
 import { CarGo, Borrowing, mayDriveCar, refuseCarLine, CAR_GO_PARAM_RANGES } from './npc/carGo.js';
-import { GoingHome, GOING_HOME_PARAM_RANGES, leaveRoute } from './npc/goingHome.js';
+import { GoingHome, GOING_HOME_PARAM_RANGES, leaveRoute, hasGone } from './npc/goingHome.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
 import { DrivingTest, DRIVING_TEST_PARAM_RANGES } from './npc/drivingTest.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
@@ -4819,7 +4819,7 @@ export class Game {
       const q = this.goVehicle(this.homeKinds[id])?.quad;
       if (!q) continue;
       if (q.speed > 1.5) gh.setOff(id);
-      if (q.position.x > p.gateX && q.position.z > p.laneZ - 10) this.girlGone(id);
+      if (hasGone(this.world.layout, p, q.position)) this.girlGone(id);
     }
     for (const ev of gh.update(dt)) {
       if (ev.type === 'tut') this.companions.find((o) => o.character.id === ev.girl)?.voice.say('carJessFast', { force: true });

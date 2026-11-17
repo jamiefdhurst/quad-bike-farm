@@ -89,7 +89,7 @@ export function neighbourFarmShape(layout) {
 export function laneBarriers(layout) {
   const lane = layout.publicLane;
   const open = lane?.open;
-  if (!lane || !open) return [];
+  if (!lane || !open || layout.newFarm) return []; // the new farm's lane has no invisible walls (#568, #687): its `open` is the stretch the road mud is kept for
   const westX = lane.x - lane.halfWidth - 1.2;
   const eastX = lane.x + lane.halfWidth + 1.2;
   const road = layout.road;

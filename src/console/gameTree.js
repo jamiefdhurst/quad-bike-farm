@@ -496,8 +496,9 @@ export function buildGameTree(g, host) {
     post: flag(() => false, (v) => v && g.trafficHost.debugVisit('post'), 'set to true: the post van comes in at the big gate'),
     neighbour: flag(() => false, (v) => v && g.trafficHost.debugVisit('neighbour'), 'set to true: a neighbour calls'),
     southGate: flag(() => g.trafficHost.gate('south').isOpen, (v) => g.trafficHost.gate('south').set(!!v), 'the south gate onto the green lane: true is open'),
-    gridGate: flag(() => g.trafficHost.gate('grid').isOpen, (v) => g.trafficHost.setGridGate(!!v), 'the gate by the cattle grid: true is open'),
-    bigGate: flag(() => g.trafficHost.gate('road').isOpen, (v) => g.trafficHost.gate('road').set(!!v), 'the big gate in the east hedge: true is open'),
+    gridGate: flag(() => !!g.trafficHost.gate('grid')?.isOpen, (v) => g.trafficHost.gate('grid') && g.trafficHost.setGridGate(!!v), 'the gate across the road by the cattle grid: true is open (today\'s farm only)'),
+    bigGate: flag(() => !!g.trafficHost.gate('road')?.isOpen, (v) => g.trafficHost.gate('road')?.set(!!v), 'the big gate in the east hedge: true is open (today\'s farm only)'),
+    bypassGate: flag(() => !!g.trafficHost.gate('bypass')?.isOpen, (v) => g.trafficHost.gate('bypass')?.set(!!v), 'the field gate beside the drive\'s cattle grid: true is open (the new farm only)'),
   }), 'the public lane, the visitors and the two gates');
   const road = group(() => ({
     now: text(() => g.trafficHost.road.describe(), 'the tuner and her rolling road: the next road day, where she is and what is on the sheet'),

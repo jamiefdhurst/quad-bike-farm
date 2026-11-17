@@ -20,8 +20,10 @@ export function placesAt(p, layout) {
   const q = layout.quarry;
   if (q && inBox(p, q.minX, q.maxX, q.minZ, q.maxZ)) out.push('gravelPit');
   const r = layout.road;
-  if (inBox(p, r.fromX, r.fromX + r.grid.length + 0.5, r.z - r.halfWidth, r.z + r.halfWidth)) out.push('cattleGrid');
-  if (p.x >= r.pad.x - r.pad.radius && Math.abs(p.z - r.z) <= r.pad.radius) out.push('farEnd');
+  // The drive's grid says where it is; today's starts at the road's end.
+  const [gx0, gx1] = r.grid.x === undefined ? [r.fromX, r.fromX + r.grid.length + 0.5] : [r.grid.x - r.grid.length / 2 - 0.5, r.grid.x + r.grid.length / 2 + 0.5];
+  if (inBox(p, gx0, gx1, r.z - r.halfWidth, r.z + r.halfWidth)) out.push('cattleGrid');
+  if (r.pad ? p.x >= r.pad.x - r.pad.radius && Math.abs(p.z - r.z) <= r.pad.radius : p.x >= r.toX - 8 && Math.abs(p.z - r.z) <= r.halfWidth + 1) out.push('farEnd'); // the drive's is its lane end
   return out;
 }
 

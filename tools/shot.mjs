@@ -10,6 +10,8 @@
 //   --radius <m>          how far round --at to look (default 8)
 //   --fov <deg>           the camera's field of view (default 50); a small one crops in on lettering
 //   --time <hour>         the clock (default 13); --weather <name> (default sunny); --seed <n> (default 3)
+//   --eye <x,y,z> --look <x,y,z>   one shot from a camera you place (game metres), with --at to stand you there so the ground and the small things draw in: for a patch of
+//                         painted ground or a detail the four sides do not frame (#568). Needs --at or --name only to name the folder
 //   --layout <n>          2 shoots the new farm (?layout=2, #815), whose places are the field keys (`tp me north`); default is today's
 //   --out <name>          the folder under .scratch/shots/ (default: the --name, or the --at)
 //   --url <address>       use a dev server that is already running (else this starts its own, from this checkout)
@@ -282,6 +284,25 @@ try {
     const said = await page.evaluate((l) => game.console.shell.run(l), line);
     if (said && said.ok === false) throw new Error(`"${line}" failed: ${said.text ?? JSON.stringify(said)}`);
     await wait(2); // the ground and the set pieces round the new spot draw in
+  }
+  if (opt('eye') && opt('look')) {
+    const eye = opt('eye').split(',').map(Number);
+    const look = opt('look').split(',').map(Number);
+    mkdirSync(dir, { recursive: true });
+    await page.evaluate((e, l, f) => {
+      game.camera.fov = f;
+      game.camera.updateProjectionMatrix();
+      game.camera.position.set(e[0], e[1], e[2]);
+      game.camera.lookAt(l[0], l[1], l[2]);
+    }, eye, look, FOV);
+    await wait(1);
+    const file = join(dir, 'view.png');
+    await page.screenshot({ path: file });
+    console.log(`shot: ${file}`);
+    if (problems.length) console.log(`page errors seen:\n  ${problems.join('\n  ')}`);
+    await browser.close();
+    await server?.close();
+    process.exit(0);
   }
   const t = await page.evaluate(findTarget, { name: NAME, radius: RADIUS });
   if (t.error) throw new Error(t.error);

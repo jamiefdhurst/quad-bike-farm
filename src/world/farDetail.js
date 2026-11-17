@@ -19,7 +19,9 @@ export const BARN_PROP_NAMES = ['tyreRack', 'sparesRack', 'batteryCharger', 'hel
  */
 export const SET_PIECE_NAMES = ['village', 'neighbourFarm', 'brushwood', 'logs', 'trailMarkers', 'coneCourse', 'climbCones', 'riverside', 'lineUpSleepers', 'quarrySite', 'shepherdsHut', 'rolling-road-trailer',
   // The field landmarks (#815): the trees have a far version, so they stay in sight from the gates; the others go beyond `setPieceDistance`.
-  'loneOak', 'oldGateposts', 'deadElm', 'farPond', 'castRoller', 'loneAsh', 'brookAlders', 'bigOaks'];
+  'loneOak', 'oldGateposts', 'deadElm', 'farPond', 'castRoller', 'loneAsh', 'brookAlders', 'bigOaks',
+  // The drive's cattle grid with its sign and wings, and the reflector posts at the lane end (#568).
+  'cattleGrid', 'driveReflectors'];
 
 const SMALL = 0.15; // m: a part with a bounding sphere smaller than this is a small part
 const MARGIN = 5; // m: a vehicle crossing a distance has to come this far back before it changes again, so it doesn't flicker on the line
