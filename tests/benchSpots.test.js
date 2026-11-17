@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
 import { barnShape } from '../src/world/barn.js';
+import { RACK_WIDTH } from '../src/workshop/sparesModel.js';
 
 describe('the workbench', () => {
   const b = LAYOUT.bench;
@@ -55,7 +56,7 @@ describe('the money tin', () => {
     const inner = barnShape(LAYOUT).inner;
     expect(t.z).toBeCloseTo(inner.minZ, 5); // against the north wall's inner face
     expect(t.x).toBeGreaterThan(inner.minX + 0.6); // a plank 0.5 m long, clear of the west wall
-    expect(t.x + 0.25).toBeLessThan(LAYOUT.bench.x - LAYOUT.bench.length / 2 - 1.2 - 0.6); // the spares shelf's left edge (workshop/sparesShelf.js) is further along
+    expect(t.x + 0.25).toBeLessThan(LAYOUT.bench.x - LAYOUT.bench.length / 2 - 1.2 - RACK_WIDTH / 2); // the spares rack (workshop/sparesShelf.js) is centred there, so this is its left edge
     expect(t.y).toBeGreaterThan(0.9); // above the bench and the bales, at hand height
     expect(t.y).toBeLessThan(1.4);
   });

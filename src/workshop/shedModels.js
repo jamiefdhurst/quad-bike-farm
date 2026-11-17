@@ -207,16 +207,17 @@ export function buildCatalogue() {
   const card = mat(0xe8dfc8, 0.9);
   const paper = mat(0xf1ead6, 0.95);
   const spine = mat(0xb02a22, 0.7);
+  // Every part stands at least 3 mm off the nearest parallel face of its neighbours (tests/catalogueModel.test.js), or the two flicker.
   book.add(box(0.215, 0.295, 0.002, card, 0, 0, -0.003)); // the back cover
-  book.add(box(0.205, 0.285, 0.008, paper, 0.003, 0, 0.002)); // the pages, set in from the edges
+  book.add(box(0.205, 0.285, 0.005, paper, 0.003, 0, 0.002)); // the pages, set in from the edges and shy of both covers
   book.add(box(0.215, 0.295, 0.002, card, 0, 0, 0.007)); // the front cover
-  book.add(box(0.008, 0.297, 0.013, spine, -0.1075, 0, 0.002)); // the spine, bound along the left edge
-  book.add(box(0.004, 0.06, 0.0012, spine, 0.04, 0.165, 0.0065)); // a ribbon marker hanging out of the head
+  book.add(box(0.004, 0.295, 0.012, spine, -0.1095, 0, 0.002)); // the spine, bound along the left edge, beside the covers
+  book.add(box(0.004, 0.06, 0.0012, spine, 0.04, 0.1755, 0.0052)); // a ribbon marker hanging out of the head between the pages and the cover
   const cover = new THREE.Mesh(
     new THREE.PlaneGeometry(0.205, 0.285),
     new THREE.MeshStandardMaterial({ map: coverTexture(), roughness: 0.85 }),
   );
-  cover.position.set(0.003, 0, 0.0082);
+  cover.position.set(0.003, 0, 0.0092); // printed over the front cover, 1.2 mm off it
   book.add(cover);
   book.rotation.x = -Math.PI / 2; // laid down inside its own group, so turning that about y turns the way it lies
   const g = new THREE.Group();

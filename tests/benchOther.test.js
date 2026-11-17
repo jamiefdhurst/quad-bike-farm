@@ -39,6 +39,15 @@ describe('the bench with the barn finds standing', () => {
     expect(bench.unitAtBench()).toBe(tor);
   });
 
+  it('opens on the find when the vehicle in the big bay is running, and only asks for it to be switched off when there is nothing else', () => {
+    const tor = unit('tor', at(LAYOUT.bay2));
+    tor.engine.isRunning = true;
+    const { bench } = setup({ big: [tor], plover: null });
+    expect(bench.unitAtBench().id).toBe('rusty');
+    const alone = setup({ big: [tor], rusty: null, plover: null });
+    expect(alone.bench.unitAtBench()).toBe(tor); // the prompt then says to switch it off
+  });
+
   it('opens on the nearest find when nothing is parked', () => {
     const { bench } = setup();
     expect(['rusty', 'plover']).toContain(bench.unitAtBench().id);
