@@ -225,7 +225,7 @@ describe('the ground under her yard', () => {
 });
 
 describe('her yard seen from afar and from behind its buildings', () => {
-  it('has a far version over the yard on its new ground: the house, the barn and the wall, as one mesh', () => {
+  it('has a far version over the yard on its new ground: the house, the barn, the dairy and the wall, as one mesh', () => {
     const far = farNeighbourFarm(S, 3);
     far.updateMatrixWorld(true);
     expect(far.children).toHaveLength(1);
@@ -234,7 +234,8 @@ describe('her yard seen from afar and from behind its buildings', () => {
     expect(box.max.x).toBeCloseTo(S.yard.maxX, 0);
     expect(box.min.z).toBeCloseTo(S.yard.minZ, 0);
     expect(box.max.z).toBeCloseTo(S.yard.maxZ, 0);
-    expect(far.children[0].geometry.getAttribute('position').count / 3).toBe(2 * 16 + S.walls.length * 10);
+    // The house, the barn, the parlour and the tank room (16 triangles each) and the five walls and the slurry store (10 each).
+    expect(far.children[0].geometry.getAttribute('position').count / 3).toBe(4 * 16 + (S.walls.length + 1) * 10);
   });
 
   it('hides you from a girl behind her barn or her house (#654), and not across the open yard', () => {
@@ -305,5 +306,28 @@ describe('her yard built on the new farm', () => {
     const onWall = ([x, , z]) => x < y.minX + 1 || x > y.maxX - 1 || z < y.minZ + 1 || z > y.maxZ - 1; // along the wall's line, the gateposts and the gate
     const fights = coplanarOverlaps(built.group, { gap: 0.003, minArea: 2e-5, textured: true }).filter((f) => onWall(f.at));
     expect(fights.map((f) => `${f.axis}${f.dir > 0 ? '+' : '-'} at ${f.at.map((v) => v.toFixed(2)).join(',')} area ${f.area.toFixed(3)}`)).toEqual([]);
+  });
+});
+
+describe('her barn\'s big door is framed (#569)', () => {
+  it('has a steel jamb each side, a header, a ramp over the threshold and the top rail for the sliding leaves, so the opening is not a bare gap', async () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const { buildNeighbourFarm } = await import('../src/world/neighbourFarmProps.js');
+    const c = headlessContext();
+    const heights = createTerrainHeight(two, new Track(two.trackPoints));
+    const built = buildNeighbourFarm({ ...c, layout: two, heights, gateParams: { swingSeconds: 1, blockBelow: 0.5, clearRadius: 3 } });
+    built.group.updateMatrixWorld(true);
+    let frame = null;
+    built.group.traverse((o) => {
+      if (o.isMesh && o.material?.name === 'barnDoorFrame') frame = o;
+    });
+    expect(frame, 'a mesh in the frame\'s steel').toBeTruthy();
+    const box = new THREE.Box3().setFromObject(frame, true);
+    const door = S.barn.door;
+    expect(box.min.z).toBeLessThan(door.z - door.halfWidth - 0.2); // a jamb beyond the opening on the north
+    expect(box.max.z).toBeGreaterThan(door.z + door.halfWidth + 0.2); // and the south
+    expect(box.max.x).toBeGreaterThan(S.barn.outer.maxX + 0.15); // standing proud of the wall
+    expect(box.max.y - heights.heightAt(door.x, door.z)).toBeGreaterThan(door.height + 0.7); // the header and the rail above the opening
+    expect(box.min.z).toBeLessThan(door.z - door.halfWidth - 5); // the rail runs back along the wall for the leaves to slide on
   });
 });

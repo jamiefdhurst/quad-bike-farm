@@ -10,6 +10,7 @@ import { canvasTexture, corrugatedTexture, stoneTexture, blockTexture, worldBox 
 import { buildVehicleBody } from './trafficView.js';
 import { enableShadows } from './assets.js';
 import { buildFarVersion } from './farVersion.js';
+import { dairyMaterials, buildParlour, buildCollectingYard, buildTankRoom, buildSlurryStore } from './dairyKit.js';
 import { Gate } from './gates.js';
 import { poseBaleSpike } from '../vehicle/tractorModel.js';
 import { woodTexture, paintedTexture, doorTexture, sashTexture, binTexture, barrelTexture, barkTexture, logEndTexture, postboxTexture } from './neighbourTextures.js';
@@ -187,7 +188,13 @@ export function farNeighbourFarm(s, y0) {
   const house = { x: s.house.x, z: s.house.z, y: y0, halfX: s.house.halfX, halfZ: s.house.halfZ, wallHeight: s.house.wallHeight, ridge: s.house.ridge, wall: '#8c877a', roof: '#42474c' };
   const barn = { x: s.barn.x, z: s.barn.z, y: y0, halfX: s.barn.halfX, halfZ: s.barn.halfZ, wallHeight: s.barn.wallHeight, ridge: s.barn.ridge, wall: '#5d6e58', roof: '#7b5a42' };
   const walls = s.walls.map((w) => ({ ...w, y: y0, height: s.yard.wallHeight, color: '#8c877a' }));
-  return buildFarVersion('neighbourFarmFar', { buildings: [house, barn], walls });
+  const buildings = [house, barn];
+  // The dairy: the parlour and the tank room as low buildings in fibre-cement grey, the round slurry store as a square-sided drum of the same height.
+  for (const d of [s.parlour, s.tankRoom]) {
+    if (d) buildings.push({ x: d.x, z: d.z, y: y0, halfX: d.halfX, halfZ: d.halfZ, wallHeight: d.wallHeight, ridge: d.ridge ?? d.wallHeight + 0.5, wall: '#9a9d97', roof: '#8a8e88' });
+  }
+  if (s.slurry) walls.push({ x: s.slurry.x, z: s.slurry.z, hx: s.slurry.r * 0.88, hz: s.slurry.r * 0.88, y: y0, height: s.slurry.height, color: '#9b9890' });
+  return buildFarVersion('neighbourFarmFar', { buildings, walls });
 }
 
 export function buildNeighbourFarm(c) {
@@ -224,7 +231,8 @@ export function buildNeighbourFarm(c) {
   // The yard's concrete, a hair above the ground (which is level at y0 inside the wall), so a tyre on it sits 1.5 cm in at most.
   const slab = s.slab;
   const top = y0 + 0.015;
-  box(slab.maxX - slab.minX, 0.08, slab.maxZ - slab.minZ, new THREE.MeshStandardMaterial({ map: concreteTexture(random), roughness: 0.95 }), (slab.minX + slab.maxX) / 2, top - 0.04, (slab.minZ + slab.maxZ) / 2, 4);
+  const yardConcrete = new THREE.MeshStandardMaterial({ map: concreteTexture(random), roughness: 0.95 });
+  box(slab.maxX - slab.minX, 0.08, slab.maxZ - slab.minZ, yardConcrete, (slab.minX + slab.maxX) / 2, top - 0.04, (slab.minZ + slab.maxZ) / 2, 4);
 
   // The wall: drystone with a capping course, and a stone pillar either side of the gateway.
   const cap = mat(0x77736a);
@@ -385,6 +393,19 @@ export function buildNeighbourFarm(c) {
   wall(b.outer.maxX - t / 2, (dz1 + b.outer.maxZ - t) / 2, t, b.outer.maxZ - t - dz1); // east, south of the door
   wall(b.outer.maxX - t / 2, b.door.z, t, dz1 - dz0, b.wallHeight, b.door.height); // over the door
   box(t + 0.1, 0.22, dz1 - dz0 + 0.3, mat(0x33383a, { metalness: 0.4 }), b.outer.maxX - t / 2, y0 + b.door.height - 0.1, b.door.z, 1);
+  // The big door's frame (#569): a steel jamb each side standing proud of the wall, a header across them, a concrete ramp up over the threshold and the top rail
+  // the sliding leaves will hang from (#963 hangs them), running back along the wall with its brackets and end stop. The opening is no longer a bare gap.
+  const steel = mat(0x4a4f52, { metalness: 0.55, roughness: 0.5 });
+  steel.name = 'barnDoorFrame';
+  const dh = b.door.height;
+  const outerX = b.outer.maxX;
+  for (const dz of [dz0 - 0.12, dz1 + 0.12]) box(0.3, dh + 0.14, 0.24, steel, outerX + 0.04, y0 + (dh + 0.14) / 2 - 0.02, dz, 0.5);
+  box(0.3, 0.34, dz1 - dz0 + 0.72, steel, outerX + 0.04, y0 + dh + 0.34, b.door.z, 0.5);
+  box(1.0, 0.1, dz1 - dz0 + 0.9, new THREE.MeshStandardMaterial({ map: concreteTexture(random), roughness: 0.95 }), outerX + 0.55, y0 + 0.05, b.door.z, 2); // the ramp's block, a hair under the slab's edge
+  const railLen = 5.4;
+  box(0.1, 0.14, railLen + (dz1 - dz0) + 0.3, steel, outerX + 0.2, y0 + dh + 0.82, (dz0 - railLen + dz1 + 0.3) / 2, 0.5); // the top rail, along the wall to the north of the door
+  for (let k = 0; k <= 4; k++) box(0.16, 0.12, 0.1, steel, outerX + 0.1, y0 + dh + 0.82, dz0 - railLen + (k * (railLen + (dz1 - dz0) + 0.3)) / 4, 0.3); // its brackets
+  box(0.14, 0.2, 0.14, steel, outerX + 0.2, y0 + dh + 0.82, dz0 - railLen - 0.07, 0.3); // the end stop
   // Gables in sheeting, then the roof.
   const bGable = new THREE.Shape();
   bGable.moveTo(-bd / 2, 0);
@@ -461,6 +482,15 @@ export function buildNeighbourFarm(c) {
     }
   }
   fixedBox(b.outer.minX + 2.9, y0 + 0.3, logZ, 1.9, 0.3, pile.reach);
+
+  // The dairy, on the new farm's neighbour: the parlour, the collecting yard, the bulk tank's room and the slurry store (dairyKit.js), merged with the rest by material.
+  if (s.parlour) {
+    const dm = dairyMaterials(random, yardConcrete);
+    const deps = { fixedBox };
+    for (const made of [buildParlour(s.parlour, y0, dm, deps), buildCollectingYard(s.collecting, s.parlour, y0, dm, deps), buildTankRoom(s.tankRoom, s.parlour, y0, dm, deps), buildSlurryStore(s.slurry, y0, dm, deps)]) {
+      for (const o of [...made.children]) group.add(o);
+    }
+  }
 
   mergeStatic(group);
 
