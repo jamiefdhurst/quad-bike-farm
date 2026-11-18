@@ -104,7 +104,7 @@ export function gateLeaf(wood, iron, len) {
   g.add(brace);
   for (const y of [0.3, 1.0]) {
     const strap = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.6), iron);
-    strap.position.set(0, y, 0.3);
+    strap.position.set(0, y, 0.31); // 1 cm in from the bars' ends, so the two don't share a plane
     g.add(strap);
   }
   const latch = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.16), iron);
@@ -130,6 +130,39 @@ function mergeStatic(group) {
     o.geometry.dispose();
   }
   for (const [material, geos] of byMaterial) group.add(new THREE.Mesh(mergeGeometries(geos), material));
+}
+
+/**
+ * Merges the meshes of a parked vehicle (it never moves) into one mesh a material, in its own frame: the three vehicles were 93% of the yard's draw
+ * calls (200-odd meshes each, #679). Skinned and instanced meshes, lights and anything with several materials stay as they are. Returns how many
+ * meshes it made. The object keeps its group, so hiding it (she drives her Tor away) hides them all.
+ */
+export function mergeParkedVehicle(object) {
+  object.updateMatrixWorld(true);
+  const toLocal = new THREE.Matrix4().copy(object.matrixWorld).invert();
+  const byMaterial = new Map();
+  const merged = [];
+  object.traverse((o) => {
+    if (!o.isMesh || o.isSkinnedMesh || o.isInstancedMesh || !o.geometry || Array.isArray(o.material)) return;
+    const g = o.geometry;
+    if (!g.attributes.position) return;
+    merged.push(o);
+    const geo = (g.index ? g.toNonIndexed() : g.clone()).applyMatrix4(new THREE.Matrix4().multiplyMatrices(toLocal, o.matrixWorld));
+    if (!geo.attributes.normal) geo.computeVertexNormals();
+    if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2)); // the detail kit's parts have none
+    const keep = o.material.vertexColors && geo.attributes.color ? ['position', 'normal', 'uv', 'color'] : ['position', 'normal', 'uv'];
+    for (const name of Object.keys(geo.attributes)) if (!keep.includes(name)) geo.deleteAttribute(name);
+    if (!byMaterial.has(o.material)) byMaterial.set(o.material, []);
+    byMaterial.get(o.material).push(geo);
+  });
+  for (const o of merged) o.parent.remove(o);
+  for (const [material, geos] of byMaterial) {
+    const mesh = new THREE.Mesh(mergeGeometries(geos), material);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    object.add(mesh);
+  }
+  return byMaterial.size;
 }
 
 /**
@@ -195,15 +228,20 @@ export function buildNeighbourFarm(c) {
 
   // The wall: drystone with a capping course, and a stone pillar either side of the gateway.
   const cap = mat(0x77736a);
-  const H = s.yard.wallHeight + sink;
-  for (const w of s.walls) {
-    box(w.hx * 2, H, w.hz * 2, stone, w.x, y0 - sink + H / 2, w.z);
-    box(w.hx * 2 + 0.12, 0.1, w.hz * 2 + 0.12, cap, w.x, y0 + s.yard.wallHeight + 0.05, w.z, 1);
+  // The north and south walls run the whole width; the pieces that meet them at the corners go a little deeper, and their caps a hair higher and
+  // narrower, so no two faces of one way lie on one plane where the walls meet (tests/helpers/coplanar.js).
+  s.walls.forEach((w, i) => {
+    const down = i >= 2 ? sink + 0.02 : sink;
+    const H = s.yard.wallHeight + down;
+    const trim = i >= 2 ? 0.108 : 0.12;
+    box(w.hx * 2, H, w.hz * 2, stone, w.x, y0 - down + H / 2, w.z);
+    box(w.hx * 2 + trim, 0.1, w.hz * 2 + trim, cap, w.x, y0 + s.yard.wallHeight + (i >= 2 ? 0.056 : 0.05), w.z, 1);
     fixedBox(w.x, y0 + s.yard.wallHeight / 2, w.z, w.hx, s.yard.wallHeight / 2 + 0.5, w.hz);
-  }
+  });
   const gx = s.gateway.x;
+  const out = s.gateway.side === 'west' ? -1 : 1; // which way the lane is from the gateway: east on today's farm, west on the new one
   for (const z of [s.gateway.minZ - 0.3, s.gateway.maxZ + 0.3]) {
-    box(0.8, 2 + sink, 0.8, stone, gx, y0 - sink + (2 + sink) / 2, z);
+    box(0.8, 2 + sink + 0.05, 0.8, stone, gx, y0 - sink - 0.05 + (2 + sink + 0.05) / 2, z); // a little deeper than the wall it stands in
     box(0.95, 0.12, 0.95, cap, gx, y0 + 2.06, z, 1);
     fixedBox(gx, y0 + 1, z, 0.4, 1, 0.4);
   }
@@ -230,20 +268,20 @@ export function buildNeighbourFarm(c) {
     z: s.gateway.z,
     open: false,
     pose: (a) => {
-      for (const { pivot, side } of leaves) pivot.rotation.y = side * a * (Math.PI / 2 - 0.08);
+      for (const { pivot, side } of leaves) pivot.rotation.y = out * side * a * (Math.PI / 2 - 0.08);
     },
     solid: fixedBox(gx, gateY, s.gateway.z, 0.1, 0.9, gap / 2),
   });
 
   // The postbox: a cast-iron box set into the south gatepost's lane face, with a hood over its slot, a plate of times and a collar.
   const pz = s.gateway.maxZ + 0.3;
-  const faceX = gx + 0.4;
+  const faceX = gx + 0.4 * out;
   const postbox = new THREE.MeshStandardMaterial({ map: postboxTexture(random), roughness: 0.45, metalness: 0.2 });
   const ironRed = mat(0x9c1218, { roughness: 0.45, metalness: 0.2 });
-  box(0.04, 0.5, 0.4, ironRed, faceX + 0.01, y0 + 1.1, pz, 1); // the frame
-  add(worldBox(0.03, 0.42, 0.3, 0.3, 0.42), postbox, faceX + 0.04, y0 + 1.1, pz); // the face: one texture tile, reading from the lane
-  add(new THREE.BoxGeometry(0.1, 0.05, 0.36), ironRed, faceX + 0.07, y0 + 1.28, pz); // the hood over the slot
-  add(new THREE.BoxGeometry(0.06, 0.02, 0.32), iron, faceX + 0.05, y0 + 1.31, pz); // the hood's lip
+  box(0.04, 0.5, 0.4, ironRed, faceX + 0.01 * out, y0 + 1.1, pz, 1); // the frame
+  add(worldBox(0.03, 0.42, 0.3, 0.3, 0.42), postbox, faceX + 0.04 * out, y0 + 1.1, pz); // the face: one texture tile, reading from the lane
+  add(new THREE.BoxGeometry(0.1, 0.05, 0.36), ironRed, faceX + 0.07 * out, y0 + 1.28, pz); // the hood over the slot
+  add(new THREE.BoxGeometry(0.06, 0.02, 0.32), iron, faceX + 0.05 * out, y0 + 1.31, pz); // the hood's lip
 
   // The farmhouse: stone walls, a slate roof, a chimney at the east end, the door in the north wall under a porch, windows on both floors.
   const h = s.house;
@@ -434,6 +472,7 @@ export function buildNeighbourFarm(c) {
     body.object.position.set(p.x, top - body.spec.offset - (body.spec.layout.spawnSag ?? 0), p.z);
     body.object.rotation.y = p.yaw;
     if (p.kind === 'tractor') poseBaleSpike(body.object, 0, false);
+    mergeParkedVehicle(body.object);
     group.add(body.object);
     const collider = fixedBox(p.x, y0 + p.h / 2, p.z, p.hw, p.h / 2, p.hl, p.yaw);
     vehicles.push({ ...p, object: body.object, collider });

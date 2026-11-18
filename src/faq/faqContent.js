@@ -2930,6 +2930,13 @@ export const FAQ_SECTIONS = [
           <code>scene drive</code> sets it up in daylight and <code>lane.bypassGate true</code> opens the field gate.`,
       },
       {
+        q: 'Where is the neighbour on the new farm?',
+        a: `On <code>?layout=2</code> she is across the lane from the drive, a little way up from it, so the two gateways don't make a crossroads: a walled yard about 95 by 85 m with her gateway in its west wall, at the
+          end of her own short track off the lane, and her farmhouse at the south of it, her barn at the north-west with its big door facing the yard, and her Moorland, buggy and old tractor parked about. She stands by her
+          door until dark as before. Her fields lie behind it and up the lane, hedged, with her black and white dairy cows out in the two north ones; her north field gate is in the lane's hedge a little way north of
+          her track, and opens with <kbd>E</kbd>. <code>tp me neighbour</code> stands you just inside her gateway and <code>scene neighbour</code> sets that up in daylight.`,
+      },
+      {
         q: 'What are the things standing by themselves in the new farm\'s fields?',
         a: `Each field of the bigger farm (<code>?layout=2</code>) has one thing of its own you can see from its gate: a lone oak in North Field, a pair of old gateposts in
           Top Field, a dead elm in Long Piece's hedge, a pond with two willows in Far Field, an old roller in South Field, a lone ash in Hay Meadow, alders along the

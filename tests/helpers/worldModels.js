@@ -128,6 +128,13 @@ export async function buildWorldModels() {
   const { createCattleGrid } = await import('../../src/world/cattleGrid.js');
   add('setPiece', 'cattleGrid', drive.buildCattleGrid, (b) => b({ ...c2, grid: createCattleGrid(two) }));
   add('setPiece', 'driveReflectors', drive.buildReflectorPosts, (b) => b(c2));
+
+  // The neighbour's land across the lane (#569) and her cows, on the new farm's ground.
+  const { buildNeighbourLand } = await import('../../src/world/neighbourLandProps.js');
+  add('setPiece', 'neighbourLand', buildNeighbourLand, (b) => (b(c2), found('neighbourLand')));
+  const cattle = await import('../../src/world/cattleModel.js');
+  add('world', 'cow', cattle.buildCow, (b) => b(0));
+  add('world', 'herd', cattle.buildHerd, (b) => b(two.neighbourLand.cows, () => 0));
   add('world', 'driveVerge', drive.buildDriveVerge, (b) => b(c2));
 
   const { buildTyreRackModel } = await import('../../src/workshop/tyreRackModel.js');

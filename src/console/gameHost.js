@@ -11,6 +11,7 @@ import { describeFieldNames } from '../world/fieldNames.js';
 import { plantSite, plantPoint } from '../world/plantSite.js';
 import { labelSpot } from '../hud/farmMap.js';
 import { BUILT_KINDS } from '../world/fieldLandmarks.js';
+import { neighbourGate } from '../world/neighbourFarm.js';
 
 const DEG = 180 / Math.PI;
 const norm = (deg) => ((deg % 360) + 360) % 360;
@@ -80,6 +81,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       road: layout.road?.pad ?? (layout.road ? { x: (layout.road.fromX + layout.road.toX) / 2, z: layout.road.z } : null), // the pad, or halfway along the drive
       cattlegrid: layout.road?.grid ? { x: (layout.road.grid.x ?? layout.fieldHalf) - 8, z: layout.road.z } : null, // the cattle grid, from the yard side: the drive's on the new farm
       lane: layout.publicLane ? { x: layout.publicLane.x, z: layout.publicLane.open.minZ + 100 } : null, // the public lane's tarmac, on the farm side of the village turning
+      neighbour: neighbourGate(layout), // just inside her gateway, looking into her yard
       village: layout.village?.green, // the green, between the pub and the shop
       carpark: layout.village?.pub?.stop, // the pub's car park
       rollingroad: g.trafficHost.places.rig.stand, // beside the tuner's trailer when it is set up (the Farm tab's "Send the tuner" brings it)

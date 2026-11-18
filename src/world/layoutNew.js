@@ -128,6 +128,67 @@ export const DRIVE_PLAN = {
 /** The lane (#568): straight at plan x 905 for the length of the ground. #687 bends it round to the A-road and #686 hangs Back Lane off it. */
 export const LANE_PLAN = { x: 905, halfWidth: 2.3, minZ: -70, maxZ: 970, ridden: [245, 445] };
 
+/**
+ * The neighbour's yard (#569), plan metres: a walled yard across the lane, her gateway in its west wall at plan z 292 (our drive meets the lane at
+ * 345, so the two make no crossroads) and a short track out to the lane at x 905, her farmhouse at its south with its door facing in, her barn at the
+ * north-west with its big door in the east wall facing the yard (the plan's footprint, 26 by 17 m), three of her vehicles parked about clear of the
+ * way in, and where she stands by her door. Her ground is levelled to the lie at x 946, just before her gate (the land falls 3 m across the yard, so the far side is built up), and eases out over 16 m so no bank is steeper than 25 degrees.
+ * The plan's parlour, collecting yard, bulk tank room and slurry store are the dairy's (the second half of #569).
+ */
+export const NEIGHBOUR_PLAN = {
+  yard: { minX: 950, maxX: 1045, minZ: 250, maxZ: 335, wall: 0.5, wallHeight: 1.3 },
+  gateway: { z: 292, width: 8, side: 'west' },
+  track: { halfWidth: 2, from: [905, 292] },
+  house: { x: 1011, z: 318, halfX: 7, halfZ: 4.2, wallHeight: 5.2, ridge: 7.6, door: { x: 1011, z: 313.8, halfWidth: 0.55, height: 2.05 } },
+  barn: { x: 971, z: 266.5, halfX: 13, halfZ: 8.5, wallHeight: 4.8, ridge: 7.6, door: { x: 984, z: 266.5, halfWidth: 2.6, height: 3.6 } },
+  // Her Tor, the one she drives to the farm (traffic.js `VISITOR_KINDS.neighbour`), her UTV and her old tractor: none in the way in or the tanker's way.
+  parked: [
+    { kind: 'tor', x: 1028, z: 306, yaw: 1.2, colour: 0x5d6d4a, reg: 'K412 PBW' },
+    { kind: 'utv', x: 1038, z: 322, yaw: 0.35, colour: 0x7a2a22 },
+    { kind: 'tractor', x: 987, z: 302, yaw: 3.0, colour: 0xb02a20 },
+  ],
+  stand: { x: 1008.8, z: 310.6, yaw: Math.PI },
+  floor: { at: [946, 292.5], reach: 16 },
+  slab: { minX: 950.5, maxX: 1044.5, minZ: 250.5, maxZ: 313.8 },
+};
+
+/**
+ * The neighbour's land (#569), plan metres: her fields east of the lane as the plan's map has them, a block from the lane's hedge (x 912) to x 1290
+ * and from z -60 to 560, cut by hedges at z 150, x 1110, x 1230 (below z 150) and z 420. Drawn at far-ground detail: each field's own grass tone in
+ * the ground and the outer ring, her hedges as plain strips (hedgeFar.js) with a collider each, no leaves, and her 22 dairy cows on the plan's map
+ * as scenery in the two north fields. `lines` run along x (`x`: a hedge at that x from `from` to `to` in z) or along z (`z`), with `gaps` open
+ * where a gate or a way through will be (the lane's hedge has her track's and her north field gate's). The north field gate is in the lane's hedge
+ * at plan z 130 (the map ends the herd's walk, `M912 286 V130 H930`, there: #714 walks them). The village's field (z 560 on) is #688's.
+ */
+export const NEIGHBOUR_LAND_PLAN = {
+  fields: [
+    { name: 'northWest', rect: [912, -60, 1110, 150], tone: [0.4, 0.53, 0.25] },
+    { name: 'northEast', rect: [1110, -60, 1290, 150], tone: [0.36, 0.48, 0.22] },
+    { name: 'yardField', rect: [912, 150, 1110, 420], tone: [0.44, 0.56, 0.27] },
+    { name: 'middle', rect: [1110, 150, 1230, 560], tone: [0.38, 0.5, 0.24] },
+    { name: 'east', rect: [1230, 150, 1290, 560], tone: [0.52, 0.54, 0.28] },
+    { name: 'south', rect: [912, 420, 1110, 560], tone: [0.42, 0.54, 0.26] },
+  ],
+  lines: [
+    { x: 912, from: -60, to: 560, gaps: [[289, 295], [127.5, 132.5]] },
+    { x: 1110, from: -60, to: 560, gaps: [[98, 103], [290, 295]] },
+    { x: 1230, from: 150, to: 560, gaps: [[300, 305]] },
+    { x: 1290, from: -60, to: 560, gaps: [] },
+    { z: -60, from: 912, to: 1290, gaps: [] },
+    { z: 150, from: 912, to: 1290, gaps: [[1000, 1005], [1170, 1175]] },
+    { z: 420, from: 912, to: 1110, gaps: [[1000, 1005]] },
+    { z: 560, from: 912, to: 1290, gaps: [] },
+  ],
+  northGate: { at: [912, 130], width: 5 },
+  hedge: { width: 1.6, height: 2.2 },
+  // The map's own 22 dairy cows, from its drawing code.
+  cows: [
+    [1073.5, 124.1], [1123.4, 126.9], [1052.1, 117.8], [1143.6, 111.5], [1052.2, 11.8], [1024.7, 24.5], [1056.3, 71.2], [1179.1, 122.2], [1084.3, 10.1],
+    [1078.3, 43], [1170.8, 18.1], [1097.6, 114.5], [1076.1, 67.1], [1093.9, 99.6], [1131.3, 17.9], [1116.6, 63.5], [1015.3, 46.7], [1052, 120.1],
+    [1066.3, 72], [1001.4, 19.3], [1126.4, 101.3], [1192, 12.8],
+  ],
+};
+
 /** How wide a gateway is either side of its middle when it doesn't say: a five-metre mouth, a field gate and its posts. */
 const GATEWAY_HALF = 2.5;
 
@@ -167,7 +228,6 @@ export const NOT_MOVED_YET = {
   'anchors.logYard': '#683', woods: '#683', logYard: '#683',
   'anchors.hut': '#684', hill: '#684 (its river and riverside meadow #565)',
   'anchors.pit': '#685', quarry: '#685',
-  'anchors.neighbour': '#569', neighbourFarm: '#569',
   'anchors.village': '#688', village: '#688',
   // Today's rectangle of farm, which the wood, the hill and the quarry still place themselves from, and the village street.
   farm: '#683 (the wood), #684 (the hill), #685 (the quarry)', 'roads.2': '#688 (the village street)',
@@ -183,7 +243,7 @@ export const SETTINGS = [
 ];
 
 /** What the new farm puts in place of today's, by key. */
-export const REPLACED = ['ground', 'stubbleFields', 'road', 'publicLane', 'roads'];
+export const REPLACED = ['ground', 'stubbleFields', 'road', 'publicLane', 'roads', 'anchors.neighbour', 'neighbourFarm'];
 
 const cornersOf = (f) => f.corners.split(' ').map((k) => {
   if (!CORNERS_PLAN[k]) throw new Error(`field ${f.name}: no corner ${k}`);
@@ -697,6 +757,51 @@ export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
   return { road, publicLane, roads };
 }
 
+/** The neighbour's yard, her anchor and the track to her gate in game metres (#569): `neighbourFarm` as the yard's shape reads it. */
+export function neighbourLayout(N = NEIGHBOUR_PLAN) {
+  const at = (o) => ({ ...o, ...(o.x !== undefined && { x: fromPlan([o.x, o.z])[0], z: fromPlan([o.x, o.z])[1] }) });
+  const y = N.yard;
+  const [minX, minZ] = fromPlan([y.minX, y.minZ]);
+  const [maxX, maxZ] = fromPlan([y.maxX, y.maxZ]);
+  const [, gz] = fromPlan([y.minX, N.gateway.z]);
+  const [sMinX, sMinZ] = fromPlan([N.slab.minX, N.slab.minZ]);
+  const [sMaxX, sMaxZ] = fromPlan([N.slab.maxX, N.slab.maxZ]);
+  const [fx, fz] = fromPlan(N.floor.at);
+  const centre = fromPlan([(y.minX + y.maxX) / 2, (y.minZ + y.maxZ) / 2]);
+  const neighbourFarm = {
+    yard: { minX, maxX, minZ, maxZ, wall: y.wall, wallHeight: y.wallHeight },
+    gateway: { x: minX, z: gz, width: N.gateway.width, side: N.gateway.side },
+    house: { ...at(N.house), door: at(N.house.door) },
+    barn: { ...at(N.barn), door: at(N.barn.door) },
+    parked: N.parked.map(at),
+    stand: at(N.stand),
+    floor: { at: { x: fx, z: fz }, reach: N.floor.reach },
+    slab: { minX: sMinX, maxX: sMaxX, minZ: sMinZ, maxZ: sMaxZ },
+  };
+  const [tx0, tz0] = fromPlan(N.track.from);
+  const track = {
+    id: 'neighbour', name: 'her track', surface: 'tarmac', halfWidth: N.track.halfWidth, points: [[tx0, tz0], [minX, gz]], junction: { end: 'start', onto: 'lane' },
+    markings: { centre: 'none' }, verge: 1.5, hedged: false, draw: 'ground', level: { shoulder: 3, lead: [0, 2] }, edge: 'gravel',
+  };
+  return { anchor: { x: centre[0], z: centre[1], yaw: 0 }, neighbourFarm, track };
+}
+
+/** Her land in game metres (#569): the fields with their tones, each line as `{ axis, at, from, to, gaps }` (`axis` 'x' runs along z), the gate and the cows. */
+export function neighbourLandLayout(L = NEIGHBOUR_LAND_PLAN) {
+  const px = (x) => x - PLAN_ORIGIN[0];
+  const pz = (z) => z - PLAN_ORIGIN[1];
+  const golden = 2.399963; // the cows face every way, and the same way every game
+  return {
+    fields: L.fields.map((f) => ({ name: f.name, minX: px(f.rect[0]), minZ: pz(f.rect[1]), maxX: px(f.rect[2]), maxZ: pz(f.rect[3]), tone: f.tone })),
+    lines: L.lines.map((l) => (l.x !== undefined
+      ? { axis: 'x', at: px(l.x), from: pz(l.from), to: pz(l.to), gaps: l.gaps.map(([a, b]) => [pz(a), pz(b)]) }
+      : { axis: 'z', at: pz(l.z), from: px(l.from), to: px(l.to), gaps: l.gaps.map(([a, b]) => [px(a), px(b)]) })),
+    gate: { x: px(L.northGate.at[0]), z: pz(L.northGate.at[1]), width: L.northGate.width },
+    hedge: { ...L.hedge },
+    cows: L.cows.map(([x, z], i) => ({ x: px(x), z: pz(z), yaw: (i * golden) % (2 * Math.PI) })),
+  };
+}
+
 /** The new farm: today's layout (resolved) with what has moved put in its place. */
 export function layoutNew(today) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
@@ -704,12 +809,15 @@ export function layoutNew(today) {
   const arable = FIELDS_PLAN.filter((f) => f.kind === 'arable');
   const [hx, hz] = fromPlan(NORTH_HOLLOW_PLAN.at);
   const drive = driveLayout();
+  const neighbour = neighbourLayout();
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
   return {
     ...today, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
-    ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street')],
+    ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track],
+    anchors: { ...today.anchors, neighbour: neighbour.anchor }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
+    budgetSpots: { ...today.budgetSpots, neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
     fieldLandmarks: fieldLandmarksLayout(),
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
   };

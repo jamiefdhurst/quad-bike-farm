@@ -75,3 +75,14 @@ describe('tp me cattlegrid (#568)', () => {
     expect(standIn({ fieldHalf: 80 }).places().cattlegrid).toBeUndefined();
   });
 });
+
+describe('tp me neighbour (#569)', () => {
+  const yard = (side) => ({ neighbourFarm: { yard: { minX: 100, maxX: 195, minZ: -40, maxZ: 45, wall: 0.5, wallHeight: 1.3 }, gateway: { x: 100, z: 2, width: 8, side }, house: { x: 150, z: 30, halfX: 7, halfZ: 4.2, wallHeight: 5, ridge: 7, door: { x: 150, z: 25.8, halfWidth: 0.55, height: 2 } }, barn: { x: 120, z: -20, halfX: 13, halfZ: 8.5, wallHeight: 4.8, ridge: 7.6, door: { x: 133, z: -20, halfWidth: 2.6, height: 3.6 } }, parked: [], stand: { x: 148, z: 22, yaw: 3 } } });
+  it('stands you three metres inside her gateway, whichever wall it is in', () => {
+    expect(standIn(yard('west')).places().neighbour).toEqual({ x: 103.25, z: 2 });
+    expect(standIn(yard('east')).places().neighbour).toEqual({ x: 191.75, z: 2 });
+  });
+  it('has no such place on a farm with no neighbour', () => {
+    expect(standIn().places().neighbour).toBeUndefined();
+  });
+});
