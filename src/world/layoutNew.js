@@ -10,7 +10,7 @@
 
 import { resolveLayout, at } from './layoutAnchors.js';
 import { resolveWithBarnLocal } from './layoutBarn.js';
-import { intersectPolygons, polygonArea, polygonBounds, clockwise, edgeBetween, insetPolygon, pointInPolygon, distanceToEdges, polygonEdges } from './polygons.js';
+import { intersectPolygons, polygonArea, polygonBounds, clockwise, edgeBetween, insetPolygon, pointInPolygon, distanceToEdges, polygonEdges, pointAlong } from './polygons.js';
 
 /** Where the game's (0, 0) is on the plan: the middle of the yard. */
 export const PLAN_ORIGIN = [520, 365];
@@ -91,6 +91,7 @@ const OPEN_LINES = ['drive|lanefield', 'drive|longpiece', 'drive|farmstead'];
  */
 export const GATEWAYS_PLAN = [
   { a: 'wood', b: 'wet', at: [130, 215], why: 'the wood\'s gate (the wood touches Home Ground only at a corner)' },
+  { a: 'wood', b: 'out', at: [38, 130], why: 'the wood\'s gate onto Back Lane on its west side (#686 lays the lane)' },
   { a: 'home', b: 'farmstead', at: [412, 368], why: 'Home Ground from the yard' },
   { a: 'home', b: 'sheep', at: [200, 444], why: 'the head of the green lane, which runs down between Far Field and the sheep field (#684)' },
   { a: 'home', b: 'sheep', at: [240, 440], why: 'Home Ground to the sheep field, on the plan\'s map' },
@@ -229,14 +230,13 @@ const NORTH_HOLLOW_PLAN = { at: [300, 120], rx: 26, rz: 16, depth: 1.3 };
  */
 export const NOT_MOVED_YET = {
   // The farmstead's own pieces are placed now (#682, `farmsteadLayout`, below); what is left of today's grass field is the hill's and the wood's reference.
-  fieldHalf: '#684 (the hill and the wood still place themselves from the grass field)', gate: '#684 (the gate onto the green lane)',
+  fieldHalf: '#684 (the hill still places itself from the grass field)', gate: '#684 (the gate onto the green lane)',
   dragStrip: '#616',
-  'anchors.logYard': '#683', woods: '#683', logYard: '#683',
   'anchors.hut': '#684', hill: '#684 (its river and riverside meadow #565)',
   'anchors.pit': '#685', quarry: '#685',
   'anchors.village': '#688', village: '#688',
-  // Today's rectangle of farm, which the wood, the hill and the quarry still place themselves from, and the village street.
-  farm: '#683 (the wood), #684 (the hill), #685 (the quarry)', 'roads.2': '#688 (the village street)',
+  // Today's rectangle of farm, which the hill and the quarry still place themselves from, and the village street.
+  farm: '#684 (the hill), #685 (the quarry)', 'roads.2': '#688 (the village street)',
   hayMeadow: '#691', sprayField: '#691', harrowField: '#691',
   trough: '#710', fieldShed: '#624',
   namedSpots: '#690',
@@ -257,6 +257,8 @@ export const REPLACED = [
   'fuelTank', 'jerryCanSpots', 'trailer', 'tipTrailer', 'sprayer', 'harrows', 'dieselBowser', 'toolbox', 'benchOil', 'oilBottle', 'coolantBottle',
   'antiGelBottle', 'plugAdditive', 'benchLeads', 'benchPack', 'hose', 'dutchBarn', 'jumpRamp', 'lineUp', 'coneCourse', 'trackPoints', 'puddles', 'bogs',
   'bonfire', 'brushwood', 'strawBaleSpots', 'restSpots', 'spawn', 'muckHeap',
+  // Hollow Wood and its log yard (#683).
+  'woods', 'anchors.logYard', 'logYard',
 ];
 
 const cornersOf = (f) => f.corners.split(' ').map((k) => {
@@ -938,6 +940,87 @@ function farmsteadAway() {
   ];
 }
 
+/**
+ * Hollow Wood on the new farm (#683), plan metres. The Run, the Fern Trail, the pond, the logs and the deadwood keep their shapes and are carried over
+ * as they are (Jamie: "keep its shape, the Run and the Trail"); only their place changes. `runAt` is where the Run's middle lies: the field's middle,
+ * 5 m east of it, because the field's north-west corner is cut by the outline and the Run's own would stand 1.6 m from it (5 m east leaves 6.4 m). The
+ * gate is the Wet Meadow gateway in `GATEWAYS_PLAN` (the wood's south side), 38 m east of where the Run's lead-in meets it once the Run is in the
+ * middle, so the lead-in bends west inside the south hedge (`leadIn`: 12 m straight in from the gate, then these points to where it runs straight into the
+ * Run's junction as today's does); Jamie chose that over moving the gateway (18 November 2026). `deadwood` lies in the bands north and south of the Run, where the
+ * extra ground is. `logYard` is the anchor of the woodpile, in the Wet Meadow just east of the gate with the south hedge at its back (the stack
+ * stands against it as it stood against the grass field's north hedge).
+ */
+export const WOOD_PLAN = {
+  runAt: [126, 131.5],
+  leadIn: [[127, 203.5], [120, 198.5], [110, 194.5], [100, 192], [95, 189]],
+  deadwood: [[165, 204, 0.6, 4.4], [62, 202, 2.4, 3.8], [150, 66, 1.1, 4.8], [108, 60, 2.9, 3.6]],
+  oak: [80, 113], // the veteran oak, in the glade north of the pond (19 m from the nearest track)
+  logYard: [142, 235],
+  // The woodpile's scenery, as offsets from `logYard`'s anchor: a lean-to with an old stack under it along the south hedge beyond the working stack (which
+  // stands 9.8 to 13.2 m east of the anchor), and a chopping block by the rounds. The hedge's face is 10.9 m north of the anchor there.
+  scenery: { leanTo: { x: 20.2, z: -9.4, yaw: 0, length: 4.6, depth: 2.3 }, block: { x: 5.8, z: -1.6 } },
+};
+
+/** The point `s` metres along a run of points from its first. */
+function pointOnRun(points, s) {
+  let left = s;
+  for (let i = 0; i + 1 < points.length; i++) {
+    const e = edgeBetween(points[i][0], points[i][1], points[i + 1][0], points[i + 1][1]);
+    if (left <= e.length || i + 2 === points.length) {
+      const p = pointAlong(e, left);
+      return [p.x, p.z];
+    }
+    left -= e.length;
+  }
+  return points[0];
+}
+
+/**
+ * Today's wood carried to the new farm in game metres (#683): `woods` with its field's outline (`outline`, which `woods.js` reads trees, mud and the
+ * ground's weight from), the south side's line (`south`), the gate at its gateway, the lead-in bent from it to the Run, everything of the Run's and the
+ * Trail's carried by the one shift, the trees and bushes scaled to the area (today's density), and the woodpile's anchor beside the gate.
+ */
+export function woodsLayout(today, raw, P = WOOD_PLAN) {
+  const W = today.woods;
+  const fields = clippedFields();
+  const runs = boundariesOf(fields);
+  const gateway = placeGateways(runs).find((g) => [g.a, g.b].sort().join('|') === 'wet|wood');
+  const south = runs[gateway.boundary].points;
+  const outlinePlan = fields.find((f) => f.name === 'wood').points;
+  const outline = movePoints(outlinePlan);
+  const b = polygonBounds(outline);
+  const gate = fromPlan(pointOnRun(south, gateway.at));
+  const west = placeGateways(runs).find((g) => [g.a, g.b].sort().join('|') === 'out|wood');
+  const back = fromPlan(pointOnRun(runs[west.boundary].points, west.at));
+  const runBox = polygonBounds(W.circuit.points);
+  const [tx, tz] = fromPlan(P.runAt);
+  const dx = tx - (runBox.minX + runBox.maxX) / 2;
+  const dz = tz - (runBox.minZ + runBox.maxZ) / 2;
+  const moved = ([x, z]) => [x + dx, z + dz];
+  const area = polygonArea(outline) / ((W.maxX - W.minX) * (W.maxZ - W.minZ));
+  const anchor = { x: fromPlan(P.logYard)[0], z: fromPlan(P.logYard)[1], yaw: 0 };
+  const resolved = resolveLayout({ anchors: { logYard: anchor }, logYard: raw.logYard, scenery: at('logYard', P.scenery) });
+  return {
+    woods: {
+      ...W,
+      minX: b.minX, maxX: b.maxX, minZ: b.minZ, maxZ: b.maxZ, outline, south: [fromPlan(south[0]), fromPlan(south[south.length - 1])],
+      gate: { x: gate[0], z: gate[1], width: W.gate.width, open: true },
+      circuit: { ...W.circuit, points: W.circuit.points.map(moved) },
+      backLane: { x: back[0], z: back[1], width: 2 * west.half },
+      leadIn: [gate, [gate[0], gate[1] - 12], ...P.leadIn.map(fromPlan), ...W.leadIn.slice(1).map(moved)],
+      hump: { ...W.hump, x: W.hump.x + dx, z: W.hump.z + dz },
+      pond: { ...W.pond, x: W.pond.x + dx, z: W.pond.z + dz },
+      deadwood: [...W.deadwood.map(([x, z, yaw, len]) => [x + dx, z + dz, yaw, len]), ...P.deadwood.map(([x, z, yaw, len]) => [...fromPlan([x, z]), yaw, len])],
+      trail: { ...W.trail, points: W.trail.points.map(moved), entrance: { x: W.trail.entrance.x + dx, z: W.trail.entrance.z + dz } },
+      oak: { x: fromPlan(P.oak)[0], z: fromPlan(P.oak)[1], clear: 11 },
+      trees: Math.round(W.trees * area),
+      bushes: Math.round(W.bushes * area),
+    },
+    anchor,
+    logYard: { ...resolved.logYard, scenery: resolved.scenery },
+  };
+}
+
 /** The new farm: today's layout (resolved) with what has moved put in its place. */
 export function layoutNew(today, raw) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
@@ -947,13 +1030,15 @@ export function layoutNew(today, raw) {
   const drive = driveLayout();
   const neighbour = neighbourLayout();
   const farmstead = farmsteadLayout(today, raw);
+  const wood = woodsLayout(today, raw);
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
   return {
     ...farmstead, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
     ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track],
-    anchors: { ...farmstead.anchors, neighbour: neighbour.anchor }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
+    woods: wood.woods, logYard: wood.logYard,
+    anchors: { ...farmstead.anchors, neighbour: neighbour.anchor, logYard: wood.anchor }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
     budgetSpots: { ...farmstead.budgetSpots, neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
     fieldLandmarks: fieldLandmarksLayout(),
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),

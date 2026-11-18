@@ -200,7 +200,7 @@ function buildGate(c) {
 /** The gate in the grass field's north hedge onto the wood (layout.woods.gate): the south gate's twin, swung back into the field and tied. */
 function buildNorthGate(c) {
   const { layout } = c;
-  if (!layout.woods) return null;
+  if (!layout.woods || layout.newFarm) return null; // the new farm's gates are #696's: the wood's is a gap in its hedge for now
   return buildFiveBarGate(c, { id: 'north', gate: layout.woods.gate, z: -layout.fieldHalf, dir: -1, gap: c.fields.gates.north });
 }
 
