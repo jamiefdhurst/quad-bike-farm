@@ -2917,9 +2917,21 @@ export const FAQ_SECTIONS = [
         q: 'Can I see the bigger farm that is being built?',
         a: `Yes, as it goes. Add <code>?layout=2</code> to the address, or type <code>layout 2</code> in the console, and the game loads on the new farm: about 870 by 830 m
           with a natural outline, six arable fields in stubble, meadows, pasture, the wood's and the pit's fields and Home Ground, each with its hedges and gateways, and
-          all of them on the map (<kbd>M</kbd>). It is being built a piece at a time, so everything you know from the old farm (the barn, the track, the wood, the hill)
-          still stands where it was until its turn to move, and the walls round the sheep field and the hill are only on the map so far. It plays as a fresh first day
+          all of them on the map (<kbd>M</kbd>). It is being built a piece at a time: the barn, the yard and Home Ground have moved to their new places (see the next question), and the wood, the hill and the gravel pit
+          still stand where they were until their turn, and the walls round the sheep field and the hill are only on the map so far. It plays as a fresh first day
           and is never saved, so your own farm is just as you left it. <code>layout 1</code> goes back.`,
+      },
+      {
+        q: 'Where is the barn on the new farm?',
+        a: `On <code>?layout=2</code> the farmstead is in the middle of the farm, at the head of the drive, and you can use everything within about 80 m of it each day. The barn is the same barn,
+          turned a quarter so its big doors face south onto the yard: the workbench, the boards, the loft and the bays are all as they were inside, with the bell by the first door, the fuel
+          tanks against its east wall and the generator along its west one. The yard is concrete, 190 by 98 m. North of the barn is the stackyard, with the Dutch barn at its far end and
+          round bales stacked in it, then the orchard, where the hens have a proper house and the pig has an ark, each in a fenced run with the feed bin beside them. East of that is the
+          garden, a lawn behind a stone wall with a gate on the yard side (the house comes later), and the girls park their cars south of it. The muck heap is behind where the cattle shed will be,
+          and the machinery shed, the grain store, the cattle shed and the sheep pens have their places kept clear on the yard. Home Ground, the old grass field, is just west of the yard behind a
+          post and rail fence (the girls sit on it to watch you ride), with the Home Loop, the cones, the jump and the line-up as they were, and the bonfire in its south-east corner. In the console,
+          <code>tp me yard</code>, <code>barn</code>, <code>bench</code>, <code>stackyard</code>, <code>orchard</code>, <code>garden</code>, <code>cars</code>, <code>muckheap</code>, <code>home</code> and
+          <code>bonfire</code> take you to each.`,
       },
       {
         q: 'What is the drive on the new farm?',
