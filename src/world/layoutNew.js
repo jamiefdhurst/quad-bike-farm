@@ -824,10 +824,12 @@ export const FARMSTEAD_PLAN = {
   cars: { z: 326, xs: [578, 583.2, 588.4], yaw: Math.PI }, // beside the garden, nosed in towards its wall (plan 572 to 612 by 319 to 333)
   muck: [486, 416],
   harrows: { at: [548, 372], yaw: -Math.PI / 2 },
+  // The trailers, off the visitors' lane (the drive's line, z 345, and the loop south of the barn's doors to z 353) and clear of the kept-clear places and the spawns.
+  trailers: { trailer: { at: [572, 398], yaw: 2.7 }, tipTrailer: { at: [562, 366], yaw: 0.2 }, sprayer: { at: [560, 380], yaw: 0.3 } },
   silage: [500, 315], // the stack's north-west corner, behind the barn's back wall
   animals: { pen: [486, 270, 492.5, 277], sty: [500, 270, 504.5, 275], bin: [496.5, 266, 0], bucket: [498, 266.4, 0.4] }, // in the orchard
   fenceSeats: [340, 352, 384, 396], // on Home Ground's rail, at plan z, facing out over the field
-  frontage: [317, 415], // the stretch of Home Ground's rail the yard fronts
+  frontage: [317, 415], // the stretch of Home Ground's rail the yard fronts: where the girls' seats are (the rail itself runs the whole side)
   // What the later items build, held clear now: no placeholder, plain yard or grass.
   keptClear: [
     { name: 'machinery shed', by: '#617', rect: [428, 325, 442, 373] },
@@ -894,7 +896,6 @@ export function farmsteadLayout(today, raw) {
       slab, stackyard: rectOf(P.stackyard), orchard: rectOf(P.orchard),
       garden: { ...rectOf(P.garden.rect), gate: { x: fromPlan([P.garden.gate.x, 0])[0], width: P.garden.gate.width } },
       keptClear: P.keptClear.map(({ name, by, rect }) => ({ name, by, ...rectOf(rect) })),
-      rails: { minZ: fromPlan([0, P.frontage[0]])[1], maxZ: fromPlan([0, P.frontage[1]])[1] },
     },
     trackPoints: again.track,
     bogs: again.bogs,
@@ -906,6 +907,7 @@ export function farmsteadLayout(today, raw) {
     strawBaleSpots: [...again.homeBales, ...again.dutchBales],
     cars,
     harrows: { x: pt(P.harrows.at)[0], z: pt(P.harrows.at)[1], yaw: P.harrows.yaw },
+    ...Object.fromEntries(Object.entries(P.trailers).map(([k, t]) => [k, { x: pt(t.at)[0], z: pt(t.at)[1], yaw: t.yaw }])),
     silage: { x: pt(P.silage)[0], z: pt(P.silage)[1] },
     muckHeap: { ...today.muckHeap, x: pt(P.muck)[0], z: pt(P.muck)[1] },
     paddock: undefined, // the paddock's fences are Home Ground's rails now
