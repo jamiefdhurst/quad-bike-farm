@@ -89,13 +89,11 @@ export function buildGardenWall({ scene, layout, heights, fixedBox, random }) {
 }
 
 /**
- * The post-and-rail fence along each boundary of kind 'rail' (Home Ground's side to the yard) for the stretch the yard fronts (`layout.farmstead.rails`),
- * with a gap at each gateway. Posts every 3 m and three rails, in weathered timber; a collider along each piece.
+ * The post-and-rail fence along each boundary of kind 'rail' (Home Ground's whole side to the farmstead, plan z 235 to 440), with a gap at each gateway. Posts every 3 m and three rails, in weathered timber; a collider along each piece.
  */
 export function buildHomeRails({ scene, layout, heights, fixedBox, random }) {
-  const span = layout.farmstead?.rails;
   const lines = (layout.boundaries ?? []).map((b, index) => ({ b, index })).filter(({ b }) => b.kind === 'rail');
-  if (!span || !lines.length) return null;
+  if (!lines.length) return null;
   const timber = new THREE.MeshStandardMaterial({ map: woodTexture(random, [118, 98, 72]), roughness: 0.95 });
   const post = new THREE.MeshStandardMaterial({ map: woodTexture(random, [84, 62, 40]), roughness: 0.95 });
   const capMat = new THREE.MeshStandardMaterial({ map: woodTexture(random, [64, 48, 32]), roughness: 0.95 });
@@ -122,7 +120,6 @@ export function buildHomeRails({ scene, layout, heights, fixedBox, random }) {
         const ez = z0 + uz * e;
         const sa = s0 + a;
         const se = s0 + e;
-        if (Math.min(az, ez) < span.minZ || Math.max(az, ez) > span.maxZ) continue;
         if (gaps.some(([g0, g1]) => se > g0 && sa < g1)) continue;
         const ga = heights.heightAt(ax, az);
         const ge = heights.heightAt(ex, ez);
