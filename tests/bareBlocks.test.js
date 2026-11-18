@@ -26,7 +26,6 @@ const KNOWN_THIN = {
 
 /** Existing models that are plain colour all over, with why; each is for a detail item to fix and then remove. Never add a new thing here. */
 const KNOWN_PLAIN = {
-  logs: 'bark in two flat browns, no grain or rings on the ends',
   coneCourse: 'moulded orange rubber cones, no texture',
   tyreRack: 'black tyres and a plain steel frame',
   helmetHooks: 'a painted board and plain hooks',
@@ -44,7 +43,6 @@ const KNOWN_PLAIN = {
   fuelTank: 'a painted green tank and plain steel stands, with only the lettering textured',
   hose: 'plain green rubber and brass fittings in flat colour',
   toolbox: 'a painted steel box and plain tools in flat colour',
-  woodStack: 'logs in flat bark brown with flat pale ends, no grain or rings',
 };
 
 /**

@@ -3,6 +3,7 @@
 // Nothing here is drawn; the meshes are in woodsProps.js.
 
 import { Track } from './track.js';
+import { polygonEdges, pointInPolygon, outsidePolygon } from './polygons.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -28,6 +29,16 @@ export function createWoods(layout) {
   const n = pts.length;
   const farm = layout.farm ?? { minX: -layout.fieldHalf, maxX: layout.fieldHalf, minZ: -layout.fieldHalf, maxZ: layout.fieldHalf };
   const pond = w.pond ?? null;
+  // The new farm's wood is the shape of its field (`outline`, game metres), cut by the farm's outline at one corner, with its gate part way along a south
+  // side that is not quite level (`south`, its two ends): the rectangle is then only its bounds. Today's wood is its rectangle, with the gate in its south side.
+  const outline = w.outline ?? null;
+  const outlineEdges = outline ? polygonEdges(outline) : null;
+  const southZ = (x) => {
+    if (!w.south) return rect.maxZ;
+    const [[x0, z0], [x1, z1]] = w.south;
+    return z0 + ((z1 - z0) * clamp((x - x0) / (x1 - x0 || 1), 0, 1));
+  };
+  const gateZ = w.gate.z ?? rect.maxZ;
 
   /** The point `metres` round the circuit from its first control point (the junction with the lead-in). */
   const at = (metres) => track.sample(metres / track.totalLength);
@@ -195,7 +206,7 @@ export function createWoods(layout) {
    * over the first 14 m from the grass field's hedge, so there is no step at the gate.
    */
   function profile(x, z) {
-    const edge = smoothstep(0, 14, rect.maxZ - z);
+    const edge = smoothstep(0, 14, southZ(x) - z);
     if (edge <= 0) return 0;
     let h = 0.4 * Math.sin(x * 0.21 + 1.3) * Math.sin(z * 0.17 + 0.4) + 0.25 * Math.sin(x * 0.11 - z * 0.13 + 2);
     const hump = w.hump;
@@ -238,7 +249,7 @@ export function createWoods(layout) {
   /** 0..1 how much of the ground at (x, z) is the wood's own rather than the farmland round it, fading out over 40 m beyond its hedges. */
   function weight(x, z) {
     if (inRect(farm, x, z)) return 0;
-    return 1 - smoothstep(0, 40, outside(rect, x, z));
+    return 1 - smoothstep(0, 40, outline ? outsidePolygon(outline, x, z, outlineEdges) : outside(rect, x, z));
   }
 
   /** 0..1 how much water stands at (x, z): the pond, where it is cut deeper than the water stands. */
@@ -250,7 +261,7 @@ export function createWoods(layout) {
 
   /** 0..1 mud: churned along the circuit and the lead-in, and round the pond's shore. */
   function mudAt(x, z) {
-    if (!inRect(rect, x, z, -3)) return 0;
+    if (!inWoods(x, z, -3)) return 0;
     let m = 0.85 * (1 - smoothstep(half * 0.7, half + 0.6, nearest(x, z).d));
     m = Math.max(m, 0.7 * (1 - smoothstep(half * 0.7, half + 0.6, lineDistance(w.leadIn, x, z))));
     if (pond) m = Math.max(m, 0.8 * (1 - smoothstep(1, 1.3, pondR(x, z))));
@@ -266,10 +277,10 @@ export function createWoods(layout) {
     return m;
   }
 
-  const inWoods = (x, z, margin = 0) => inRect(rect, x, z, margin);
+  const inWoods = (x, z, margin = 0) => (outline ? pointInPolygon(outline, x, z, margin, outlineEdges) : inRect(rect, x, z, margin));
   /** Whether (x, z) is some way in from the gate: where a girl following you stops short and waits (`waitSpot`) rather than driving in among the trees. */
-  const pastGate = (x, z) => inWoods(x, z) && z < rect.maxZ - 8;
-  const waitSpot = { x: w.gate.x + 3, z: rect.maxZ - 3.5 };
+  const pastGate = (x, z) => inWoods(x, z) && z < gateZ - 8;
+  const waitSpot = { x: w.gate.x + 3, z: gateZ - 3.5 };
 
   /** Whether a trunk may stand at (x, z): inside the hedges, clear of the track, the pond, the bogs and the logs. `clear` is the room left beside the track. */
   function treeOk(x, z, clear = 2.6) {
@@ -277,6 +288,7 @@ export function createWoods(layout) {
     if (trackDistance(x, z) < half + clear) return false;
     if (trailNearest && trailNearest(x, z).d < trailHalf + (clear > 2 ? 1.1 : 0.5)) return false; // close enough to steer round, not to block it
     if (pondR(x, z) < 1.5) return false;
+    if (w.oak && Math.hypot(x - w.oak.x, z - w.oak.z) < w.oak.clear) return false; // the veteran oak's glade
     for (const b of bogs) if (Math.hypot(x - b.x, z - b.z) < b.radius + 1.5) return false;
     for (const l of [...logs, ...deadwood]) if (Math.hypot(x - l.x, z - l.z) < 2.5 + l.len / 2) return false;
     if (hop && Math.hypot(x - hop.x, z - hop.z) < 2.5) return false;
@@ -288,7 +300,7 @@ export function createWoods(layout) {
     rect, name: w.name, circuitName: c.name, trailName: tr?.name ?? null, trailTrack, trailHalf, trailDepth: tr?.depth ?? 0, track, leadIn: w.leadIn, halfWidth: half, pond, bogs, logs, deadwood, whoops, gate: w.gate, waitSpot,
     trail: tr ? { name: tr.name, entrance: tr.entrance, hop, dips, roots, posts } : null, trailAt, trailNearest, trailMetres,
     at, nearest, trackDistance, lineDistance, profile, weight, waterAt, pondCut, mudAt, inWoods, pastGate, treeOk,
-    outside: (x, z) => outside(rect, x, z),
+    outline, outside: (x, z) => (outline ? outsidePolygon(outline, x, z, outlineEdges) : outside(rect, x, z)),
   };
 }
 

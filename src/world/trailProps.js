@@ -5,7 +5,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { tiledInstances } from './tiledInstances.js';
-import { matrixAt, frondGeometry } from './hillProps.js';
+import { matrixAt } from './hillProps.js';
+import { plantMaterial, fernTexture, brambleLeafTexture, fernGeometry, brambleGeometry } from './woodPlants.js';
 import { worldBox, canvasTexture } from './outbuildingProps.js';
 import { woodTexture, barkTexture, logEndTexture } from './neighbourTextures.js';
 
@@ -244,61 +245,16 @@ function buildSign(c, trail, group) {
   group.add(sign);
 }
 
-/** A clump of arching bramble canes: brown stems and a scatter of toothed green leaves, a metre or so high. Colours are baked in. */
-function brambleGeometry(random) {
-  const pos = [];
-  const colors = [];
-  const quad = (a, b, c2, d, col) => {
-    for (const tri of [[a, b, c2], [a, c2, d], [a, c2, b], [a, d, c2]]) {
-      for (const v of tri) {
-        pos.push(...v);
-        colors.push(...col);
-      }
-    }
-  };
-  for (let k = 0; k < 6; k++) {
-    const yaw = (k / 6) * Math.PI * 2 + random() * 0.6;
-    const dx = Math.cos(yaw);
-    const dz = Math.sin(yaw);
-    const reach = 0.6 + random() * 0.5;
-    const rise = 0.45 + random() * 0.35;
-    let prev = null;
-    for (let i = 0; i <= 5; i++) {
-      const t = i / 5;
-      const p = [dx * reach * t, rise * Math.sin(t * Math.PI * 0.8) - t * t * 0.25, dz * reach * t];
-      if (prev) {
-        const w = 0.016 * (1 - t * 0.5);
-        quad([prev[0] - dz * w, prev[1], prev[2] + dx * w], [prev[0] + dz * w, prev[1], prev[2] - dx * w], [p[0] + dz * w, p[1], p[2] - dx * w], [p[0] - dz * w, p[1], p[2] + dx * w], [0.26, 0.15, 0.1]);
-        if (i > 1) {
-          // A leaf of three lobes on each side of the cane.
-          for (const side of [-1, 1]) {
-            const lx = p[0] - dz * side * 0.1;
-            const lz = p[2] + dx * side * 0.1;
-            const s = 0.1 + random() * 0.05;
-            const g = 0.24 + random() * 0.14;
-            quad([p[0], p[1], p[2]], [lx - dx * s, p[1] + 0.02, lz - dz * s], [lx + dz * s * 0.3, p[1] + 0.05, lz - dx * s * 0.3], [lx + dx * s, p[1] + 0.02, lz + dz * s], [0.12, g * 0.9, 0.07]);
-          }
-        }
-      }
-      prev = p;
-    }
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-  geo.computeVertexNormals();
-  const normals = geo.getAttribute('normal');
-  for (let i = 0; i < normals.count; i++) normals.setXYZ(i, 0, 1, 0);
-  return geo;
-}
-
-/** Ferns on both edges of the trail, brambles thrown in here and there. Kept off the Hollow Run, the pond and the logs, and thinner in the dips. */
+/**
+ * Ferns on both edges of the trail, brambles thrown in here and there (woodPlants.js: textured leaves, a colour of their own each, turning in autumn from their tips in).
+ * Kept off the Hollow Run, the pond and the logs, and thinner in the dips. Two kinds of each (one further into its autumn), so the plants along the way differ.
+ */
 function buildEdges({ scene, heights, random, drawDistance, autumn }, woods) {
   const half = woods.trailHalf;
   const total = woods.trailTrack.totalLength;
-  const ferns = [];
-  const fernColors = [];
-  const brambles = [];
+  const ferns = [[], []];
+  const fernColors = [[], []];
+  const brambles = [[], []];
   const clear = (x, z) => woods.nearest(x, z).d > woods.halfWidth + 1.4 && woods.waterAt(x, z) === 0 && !woods.trail.posts.some((p) => Math.hypot(p.x - x, p.z - z) < 0.5);
   for (let m = 0; m < total; m += 0.9) {
     const p = woods.trailAt(m + random() * 0.8);
@@ -308,22 +264,23 @@ function buildEdges({ scene, heights, random, drawDistance, autumn }, woods) {
       const x = p.x - p.tz * lat;
       const z = p.z + p.tx * lat;
       if (!clear(x, z)) continue;
+      const kind = random() < 0.5 ? 0 : 1;
       const bramble = random() < 0.07;
       const s = bramble ? 0.9 + random() * 0.7 : 0.8 + random() * 0.7;
       if (bramble) {
-        brambles.push(matrixAt(x, heights.heightAt(x, z) - 0.04, z, random() * 6.28, s, s * (0.8 + random() * 0.4), s));
+        brambles[kind].push(matrixAt(x, heights.heightAt(x, z) - 0.04, z, random() * 6.28, s, s * (0.8 + random() * 0.4), s));
         continue;
       }
-      ferns.push(matrixAt(x, heights.heightAt(x, z) - 0.03, z, random() * 6.28, s, s * (0.8 + random() * 0.4), s));
-      const turning = random() < (autumn ? 0.75 : 0.12); // brown and rusty fronds, mostly in autumn
-      const col = new THREE.Color();
-      if (turning) col.setHSL(0.07 + random() * 0.04, 0.55, 0.4);
-      else col.setHSL(0.27 + random() * 0.05, 0.4 + random() * 0.15, 0.32 + random() * 0.14);
-      fernColors.push(col);
+      ferns[kind].push(matrixAt(x, heights.heightAt(x, z) - 0.03, z, random() * 6.28, s, s * (0.8 + random() * 0.4), s));
+      const shade = 0.85 + random() * 0.3; // a plant is a little lighter or darker than the next
+      fernColors[kind].push(new THREE.Color(shade, shade, shade));
     }
   }
-  const fernMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
-  // Ferns arch out from a crown: many broad, drooping fronds.
-  scene.add(drawDistance.add(tiledInstances(frondGeometry(random, 13, 0.8, 0.1, 0.8), fernMaterial, ferns, { colors: fernColors, name: 'ferns' }), 'roughDistance'));
-  if (brambles.length) scene.add(drawDistance.add(tiledInstances(brambleGeometry(random), fernMaterial, brambles, { name: 'brambles' }), 'roughDistance'));
+  const fernMaterial = plantMaterial(fernTexture(random));
+  const brambleMaterial = plantMaterial(brambleLeafTexture(random));
+  const turns = autumn ? [0.25, 0.7] : [0, 0.15];
+  turns.forEach((turn, kind) => {
+    if (ferns[kind].length) scene.add(drawDistance.add(tiledInstances(fernGeometry(random, { autumn, turn }), fernMaterial, ferns[kind], { colors: fernColors[kind], name: 'ferns' }), 'roughDistance'));
+    if (brambles[kind].length) scene.add(drawDistance.add(tiledInstances(brambleGeometry(random, { autumn, turn }), brambleMaterial, brambles[kind], { name: 'brambles' }), 'roughDistance'));
+  });
 }

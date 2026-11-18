@@ -12,6 +12,7 @@
 //   --time <hour>         the clock (default 13); --weather <name> (default sunny); --seed <n> (default 3)
 //   --eye <x,y,z> --look <x,y,z>   one shot from a camera you place (game metres), with --at to stand you there so the ground and the small things draw in: for a patch of
 //                         painted ground or a detail the four sides do not frame (#568). Needs --at or --name only to name the folder
+//   --season <name>       spring, summer, autumn or winter (?season=); default is the farm's own date
 //   --layout <n>          2 shoots the new farm (?layout=2, #815), whose places are the field keys (`tp me north`); default is today's
 //   --out <name>          the folder under .scratch/shots/ (default: the --name, or the --at)
 //   --url <address>       use a dev server that is already running (else this starts its own, from this checkout)
@@ -44,7 +45,7 @@ const RADIUS = Number(opt('radius', 8));
 const FOV = Number(opt('fov', 50));
 const OUT = opt('out', (NAME ?? AT).replace(/[^\w.-]+/g, '_'));
 const dir = resolve('.scratch', 'shots', OUT);
-const query = `seed=${opt('seed', 3)}&weather=${opt('weather', 'sunny')}&time=${opt('time', 13)}${opt('layout') ? `&layout=${opt('layout')}` : ''}`;
+const query = `seed=${opt('seed', 3)}&weather=${opt('weather', 'sunny')}&time=${opt('time', 13)}${opt('layout') ? `&layout=${opt('layout')}` : ''}${opt('season') ? `&season=${opt('season')}` : ''}`;
 
 const executablePath = chromePath();
 if (!executablePath) {

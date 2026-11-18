@@ -118,6 +118,8 @@ export function createHost(g, { copy = () => {} } = {}) {
       wood: layout.woods ? { x: layout.woods.gate.x, z: layout.woods.leadIn[1][1] } : null,
       fern: layout.woods?.trail ? { x: layout.woods.trail.entrance.x, z: layout.woods.trail.entrance.z } : null,
       hollowrun: layout.woods ? { x: layout.woods.circuit.points[0][0], z: layout.woods.circuit.points[0][1] } : null,
+      woodpile: layout.logYard?.scenery ? { x: layout.logYard.park.x, z: layout.logYard.park.z + 6 } : null, // the woodpile at the wood's gate, with its lean-to and block: the new farm's, #683
+      veteranoak: layout.woods?.oak ? { x: layout.woods.oak.x, z: layout.woods.oak.z + 12 } : null, // the great oak in the glade by the pond, twelve metres south of it
       river: layout.hill?.river ? { x: layout.hill.river.crossing.x, z: layout.hill.stream.z + layout.hill.river.halfWidth + 8 } : null,
       pit: g.world.fields.quarry ? (() => { const r = g.world.fields.quarry.roadPoints.find((p) => p.t > 0.02); return r ? { x: r.x, z: r.z } : null; })() : null,
       pitwall: g.world.fields.quarry ? { x: g.pitGates[0].x - g.pitGates[0].tx * 4, z: g.pitGates[0].z - g.pitGates[0].tz * 4 } : null,
@@ -128,7 +130,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       pasture: layout.hill ? { x: (layout.hill.pasture.minX + layout.hill.pasture.maxX) / 2, z: (layout.hill.pasture.minZ + layout.hill.pasture.maxZ) / 2 } : null,
     };
     // On a plan that says what its fields are (the new farm), one place per field by its key (top, north, lanefield, hay ...), where it has the most room.
-    // A place the game already has by that name wins (wood, pit): today's wood and pit stand where they did until #683 and #685 move them.
+    // A place the game already has by that name wins (wood, pit): the wood is moved (#683) and has its own, and the pit stands where it did until #685 moves it.
     const inFields = layout.fields ? Object.fromEntries(layout.fields.map((f) => [f.name, labelSpot(g.world.fields.polygons[f.name])])) : {};
     // And the field landmarks (#815) by their kind in lower case (loneoak, oldgateposts, deadelm, farpond, castroller, loneash, brookalders, bigoaks), ten metres
     // south of each: the ones the game builds, so you stand where you can see them. The new farm only.

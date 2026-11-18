@@ -1,0 +1,129 @@
+// The wood's oaks from far away (#683): the farm's oak model is 4,300 triangles of bark and 1,300 to 1,900 of leaf cards, and at the wood's density (about
+// 250 oaks) they were most of what the wood gate spot drew (1.0M to 1.5M of its 3.1M triangles). Beyond `treeFullDistance` each tile of oaks is swapped for
+// the same oaks with a lighter trunk (the bark's vertices clustered on a grid, keeping its outline) and a quarter of the leaf cards grown to cover the
+// gaps, 500 to 750 triangles in all, by the same tile swap the hedges use (hedgeFar.js `HedgeSwap`). See docs/decisions/performance.md, "Oaks far away (#683)".
+
+import * as THREE from 'three';
+
+/** Triangles a far oak's trunk is simplified to at most. */
+export const FAR_BARK_TRIANGLES = 260;
+/** One leaf card in this many is kept, each grown by `FAR_LEAF_GROW` about its middle, so the crown keeps its mass. */
+export const FAR_LEAF_KEEP = 4;
+export const FAR_LEAF_GROW = 1.75;
+
+const trianglesOf = (geo) => (geo.index ? geo.index.count : geo.attributes.position.count) / 3;
+
+/** Averages every attribute of `geo` within each cell of a grid `cell` m across (vertex clustering), and drops the triangles that fall into one point or one line. */
+function cluster(geo, cell) {
+  const names = Object.keys(geo.attributes);
+  const pos = geo.attributes.position;
+  const ids = new Int32Array(pos.count);
+  const keys = new Map();
+  for (let i = 0; i < pos.count; i++) {
+    const key = `${Math.round(pos.getX(i) / cell)},${Math.round(pos.getY(i) / cell)},${Math.round(pos.getZ(i) / cell)}`;
+    let id = keys.get(key);
+    if (id === undefined) keys.set(key, (id = keys.size));
+    ids[i] = id;
+  }
+  const count = keys.size;
+  const sums = names.map((n) => new Float32Array(count * geo.attributes[n].itemSize));
+  const weight = new Float32Array(count);
+  for (let i = 0; i < pos.count; i++) {
+    weight[ids[i]]++;
+    names.forEach((n, k) => {
+      const a = geo.attributes[n];
+      for (let c = 0; c < a.itemSize; c++) sums[k][ids[i] * a.itemSize + c] += a.array[i * a.itemSize + c];
+    });
+  }
+  const out = new THREE.BufferGeometry();
+  names.forEach((n, k) => {
+    const a = geo.attributes[n];
+    const arr = new Float32Array(count * a.itemSize);
+    for (let v = 0; v < count; v++) for (let c = 0; c < a.itemSize; c++) arr[v * a.itemSize + c] = sums[k][v * a.itemSize + c] / weight[v];
+    out.setAttribute(n, new THREE.BufferAttribute(arr, a.itemSize));
+  });
+  const normal = out.attributes.normal;
+  if (normal) {
+    for (let v = 0; v < count; v++) {
+      const l = Math.hypot(normal.getX(v), normal.getY(v), normal.getZ(v)) || 1;
+      normal.setXYZ(v, normal.getX(v) / l, normal.getY(v) / l, normal.getZ(v) / l);
+    }
+  }
+  const indexed = geo.index ? geo.index.array : null;
+  const seen = new Set();
+  const index = [];
+  for (let t = 0; t < trianglesOf(geo); t++) {
+    const a = ids[indexed ? indexed[t * 3] : t * 3];
+    const b = ids[indexed ? indexed[t * 3 + 1] : t * 3 + 1];
+    const c = ids[indexed ? indexed[t * 3 + 2] : t * 3 + 2];
+    if (a === b || b === c || a === c) continue;
+    const key = [a, b, c].sort((x, y) => x - y).join(',');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    index.push(a, b, c);
+  }
+  out.setIndex(index);
+  return out;
+}
+
+/** `geo` with its vertices clustered on a grid, coarser until it has `target` triangles or fewer (and at least 12: a trunk of a few planks). */
+export function simplifyGeometry(geo, target = FAR_BARK_TRIANGLES) {
+  geo.computeBoundingBox();
+  const size = geo.boundingBox.getSize(new THREE.Vector3());
+  let cell = Math.max(size.x, size.y, size.z) / 80;
+  let out = cluster(geo, cell);
+  for (let tries = 0; trianglesOf(out) > target && tries < 40; tries++) {
+    cell *= 1.18;
+    out = cluster(geo, cell);
+  }
+  return out;
+}
+
+/**
+ * A leaf mesh of cards (two triangles each, in order) with one card in `keep` left, each grown by `grow` about its middle, as a plain list of triangles.
+ * The cards are blended, so a missing one is a gap and a bigger one fills it: the crown keeps its mass with a quarter of the triangles.
+ */
+export function thinCards(geo, keep = FAR_LEAF_KEEP, grow = FAR_LEAF_GROW) {
+  const names = Object.keys(geo.attributes);
+  const index = geo.index ? geo.index.array : null;
+  const vertex = (t, k) => (index ? index[t * 3 + k] : t * 3 + k);
+  const cards = Math.floor(trianglesOf(geo) / 2);
+  const kept = [];
+  for (let card = 0; card < cards; card += keep) kept.push(card);
+  const arrays = names.map((n) => new Float32Array(kept.length * 6 * geo.attributes[n].itemSize));
+  const pos = geo.attributes.position;
+  kept.forEach((card, i) => {
+    const verts = [0, 1, 2, 3, 4, 5].map((k) => vertex(card * 2 + (k < 3 ? 0 : 1), k % 3));
+    const mid = [0, 1, 2].map((c) => verts.reduce((s, v) => s + pos.array[v * 3 + c], 0) / 6);
+    verts.forEach((v, k) => {
+      names.forEach((n, j) => {
+        const a = geo.attributes[n];
+        for (let c = 0; c < a.itemSize; c++) {
+          let value = a.array[v * a.itemSize + c];
+          if (n === 'position') value = mid[c] + (value - mid[c]) * grow;
+          arrays[j][(i * 6 + k) * a.itemSize + c] = value;
+        }
+      });
+    });
+  });
+  const out = new THREE.BufferGeometry();
+  names.forEach((n, j) => out.setAttribute(n, new THREE.BufferAttribute(arrays[j], geo.attributes[n].itemSize)));
+  return out;
+}
+
+/**
+ * The far version of a tree model: the same meshes and materials with each opaque mesh's triangles simplified (`FAR_BARK_TRIANGLES`) and each blended
+ * one thinned to cards (`thinCards`). A group, placed where `root` is, for `instanceModel` to scatter like the near one so their tiles match.
+ */
+export function farTree(root) {
+  root.updateMatrixWorld(true);
+  const group = new THREE.Group();
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const leaves = !!o.material?.transparent || o.material?.alphaTest > 0;
+    const far = new THREE.Mesh(leaves ? thinCards(o.geometry) : simplifyGeometry(o.geometry), o.material);
+    far.applyMatrix4(o.matrixWorld);
+    group.add(far);
+  });
+  return group;
+}

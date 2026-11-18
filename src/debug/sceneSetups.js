@@ -36,6 +36,7 @@ export function getOff(g) {
 export function endScene(g) {
   for (const c of g.companions) c.release(HOLD);
   g.graphics.hedgeFullDistance = DEFAULT_GRAPHICS_PARAMS.hedgeFullDistance;
+  g.graphics.treeFullDistance = DEFAULT_GRAPHICS_PARAMS.treeFullDistance;
   return ['the girls are free again, and the hedges go back to swapping at their usual distance'];
 }
 

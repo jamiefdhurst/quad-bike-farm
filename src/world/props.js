@@ -83,11 +83,11 @@ export function buildProps(ctx) {
   const puddles = buildPuddles(c);
   buildBogs(c);
   const hillProps = ctx.fields.hill ? buildHill(c) : null;
-  if (ctx.fields.woods) buildWoods(c);
+  const woodProps = ctx.fields.woods ? buildWoods(c) : null;
   if (ctx.fields.quarry) buildQuarry(c);
   buildFieldLandmarks(c); // the new farm's landmark in each field (#815); today's farm has none
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap].filter(Boolean), barn, jumpRamp, silage, puddles, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
+  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap].filter(Boolean), treeSwaps: woodProps?.treeSwaps ?? [], barn, jumpRamp, silage, puddles, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
 }
 
 function buildBarn(c) {
@@ -200,7 +200,7 @@ function buildGate(c) {
 /** The gate in the grass field's north hedge onto the wood (layout.woods.gate): the south gate's twin, swung back into the field and tied. */
 function buildNorthGate(c) {
   const { layout } = c;
-  if (!layout.woods) return null;
+  if (!layout.woods || layout.newFarm) return null; // the new farm's gates are #696's: the wood's is a gap in its hedge for now
   return buildFiveBarGate(c, { id: 'north', gate: layout.woods.gate, z: -layout.fieldHalf, dir: -1, gap: c.fields.gates.north });
 }
 
