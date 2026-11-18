@@ -15,6 +15,7 @@ import { buildFieldLandmarks } from './landmarkProps.js';
 import { boundaryTreeBlocked } from './boundaryTrees.js';
 import { buildOutbuildings } from './outbuildingProps.js';
 import { buildNeighbourFarm } from './neighbourFarmProps.js';
+import { buildNeighbourLand } from './neighbourLandProps.js';
 import { buildVillage } from './villageProps.js';
 import { inVillage } from './village.js';
 import { buildBrookCulvert } from './brookProps.js';
@@ -66,9 +67,11 @@ export function buildProps(ctx) {
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
   const neighbourFarm = buildNeighbourFarm(c);
+  const neighbourLand = buildNeighbourLand(c); // her fields across the lane, at far-ground detail (#569)
   const village = buildVillage({ ...c, laneTexture });
   buildBrookCulvert(c);
   if (neighbourFarm) gates.push(neighbourFarm.gate); // the yard's own gate opens and shuts like the farm's
+  if (neighbourLand) gates.push(neighbourLand.gate); // and so does her north field gate
   const silage = bale.silage;
   buildTrees(c);
   buildDistantTrees(c);
@@ -81,7 +84,7 @@ export function buildProps(ctx) {
   if (ctx.fields.quarry) buildQuarry(c);
   buildFieldLandmarks(c); // the new farm's landmark in each field (#815); today's farm has none
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap].filter(Boolean), barn, jumpRamp, silage, puddles, gates, neighbourFarm, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
+  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap].filter(Boolean), barn, jumpRamp, silage, puddles, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
 }
 
 function buildBarn(c) {

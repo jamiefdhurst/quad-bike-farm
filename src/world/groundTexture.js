@@ -150,7 +150,7 @@ export function* paintGround(plan, c) {
   yield* paintBase(c);
   yield;
   if (fields) {
-    paintPatchwork(c, fields);
+    paintPatchwork(c, fields, layout.neighbourLand);
     yield;
     paintStubble(c, fields);
     for (const { road, plan: roadPlan } of plan.roads) drawRoad(c, road, roadPlan, fields);
@@ -915,7 +915,7 @@ function smoothScree(u) {
 }
 
 /** The neighbouring farmland beyond the farm's hedges, at 2 m a pixel (4 on the overview), fading in from the grass a few metres out (as the outer ring does). */
-function paintPatchwork(c, fields) {
+function paintPatchwork(c, fields, land = null) {
   const { ctx, win, s } = c;
   const cell = c.fine ? 2 : 4;
   const i0 = Math.floor(win.minX / cell) - 1;
@@ -934,7 +934,7 @@ function paintPatchwork(c, fields) {
       const blend = patchBlend(fields.outside(x, z));
       const o = (j * nx + i) * 4;
       if (blend <= 0) continue;
-      const col = patchColor(x, z, 1);
+      const col = patchColor(x, z, 1, land);
       img.data[o] = col[0] * 255;
       img.data[o + 1] = col[1] * 255;
       img.data[o + 2] = col[2] * 255;

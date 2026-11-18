@@ -380,7 +380,7 @@ function createOuterRing(layout, bounds, heights, fields) {
       const z = minZ + iz * stepZ;
       positions.set([x, heights.heightAt(x, z), z], i * 3);
       // Fading from the farm's grass just beyond its hedges, as the ground texture does (groundTexture.js).
-      colors.set(patchColor(x, z, patchBlend(fields.outside(x, z))), i * 3);
+      colors.set(patchColor(x, z, patchBlend(fields.outside(x, z)), layout.neighbourLand), i * 3);
     }
   }
   const indices = [];
