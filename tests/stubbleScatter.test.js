@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew } from '../src/world/layoutNew.js';
 import { createFields } from '../src/world/fields.js';
 import { scatterStubble, stubbleShares } from '../src/world/stubbleScatter.js';
 import { pointInPolygon, polygonArea, polygonBounds } from '../src/world/polygons.js';
 
 // Stubble stands in each field's own outline, not the box round it (#813).
-const two = layoutNew(LAYOUT);
+const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const fields = createFields(two);
 
 const seeded = (seed) => () => {

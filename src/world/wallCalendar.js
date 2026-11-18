@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { barnShape } from './barn.js';
+import { barnShape, placeInBarn } from './barn.js';
 import { MONTH_DAYS } from './seasons.js';
 
 const CAL_W = 0.9; // metres
@@ -173,7 +173,7 @@ export class WallCalendar {
     nail.position.set(0.012, CAL_H / 2 - 0.02, 0);
     group.add(nail);
     // Level with the boards' middle; the boards' backing is 1 cm off the plaster, this is the same.
-    group.position.set(shape.inner.minX + 0.06, floorY + 1.75, shape.z);
+    placeInBarn(game.world.layout, group, shape.inner.minX + 0.06, floorY + 1.75, shape.z);
     game.scene.add(group);
     this.group = group;
     this.draw(date);

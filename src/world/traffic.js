@@ -6,6 +6,7 @@
 
 import { rigSite } from './rollingRoadSite.js';
 import { roadNetwork, KEEP_LEFT } from './roads.js';
+import { barnFrame } from './barn.js';
 
 export const DEFAULT_TRAFFIC_PARAMS = {
   passEvery: 160, // s: on average between vehicles going by on the lane by day (0 turns the lane's traffic off)
@@ -160,7 +161,8 @@ export function visitPlaces(layout) {
   const open = road.grid.x !== undefined;
   const gate = open ? { x: lane.x, z: road.z } : { x: layout.farm.maxX, z: road.z };
   const barn = layout.barn;
-  const doorZ = barn.z + barn.halfZ;
+  const frame = barnFrame(layout); // the places below are written for a barn whose doors face east: they turn with it
+  const at = (dx, dz) => frame.toWorld(barn.x + dx, barn.z + dz);
   return {
     lane,
     lanes: roadNetwork(layout), // the lane's route in and out is asked of the road network (world/roads.js)
@@ -171,14 +173,14 @@ export function visitPlaces(layout) {
     inside: { x: gate.x - 3.8, z: gate.z },
     grid: road.grid?.gateOffset == null ? null : { x: layout.fieldHalf + road.grid.gateOffset, z: road.z }, // the gate just east of the cattle grid
     over: open ? { x: road.grid.x, z: road.z } : null, // the drive's cattle grid, which a visitor drives over
-    // The barn's big doors face east, onto the yard; the wrapped silage is stacked beside its west wall, the bell
-    // is by the north leaf and the second span's door is at z + 9.2. The vehicle stops east of the door, facing west, and turns round to the south, clear of both.
-    stop: { x: barn.x + 14, z: barn.z + 7.5 },
-    door: { x: barn.x + barn.halfX + 1.8, z: barn.z + 2.6 }, // where the driver goes
-    parcel: { x: barn.x + barn.halfX + 1.4, z: barn.z + 4.2 },
-    turn: { z0: barn.z + 7.5, z1: barn.z + 14.5, r: 3.5, dx: 4 },
+    // The barn's big doors face out onto the yard (east on today's farm); the wrapped silage is stacked beside its back wall, the bell
+    // is by the first leaf and the second span's door is 9.2 m along. The vehicle stops out from the door, facing west, and turns round, clear of both.
+    stop: at(14, 7.5),
+    door: at(barn.halfX + 1.8, 2.6), // where the driver goes
+    parcel: at(barn.halfX + 1.4, 4.2),
+    turn: { z0: at(14, 7.5).z, z1: at(14, 7.5).z + 9, r: 4.5, dx: 5 }, // a loop wider than the vehicle's own turning circle (4 m), or it can orbit a waypoint it cannot reach
     // The tuner's rig: the Tor or Crag stops where the other visitors do, facing west, and the trailer stands behind it.
-    rig: rigSite({ x: barn.x + 14, z: barn.z + 7.5, yaw: -Math.PI / 2 }),
+    rig: rigSite({ ...at(14, 7.5), yaw: -Math.PI / 2 }),
   };
 }
 

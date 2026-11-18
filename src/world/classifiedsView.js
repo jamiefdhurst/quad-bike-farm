@@ -1,6 +1,6 @@
 import './classifieds.css';
 import * as THREE from 'three';
-import { barnShape } from './barn.js';
+import { barnShape, placeInBarn } from './barn.js';
 
 const BOARD_W = 1.2; // metres
 const BOARD_H = 1.15;
@@ -47,11 +47,12 @@ export class ClassifiedsView {
       bar.position.set(0.005, dy, dz);
       group.add(bar);
     }
-    group.position.set(shape.inner.minX + 0.06, floorY + 1.7, shape.z + 3.75);
+    placeInBarn(game.world.layout, group, shape.inner.minX + 0.06, floorY + 1.7, shape.z + 3.75);
     game.scene.add(group);
     this.group = group;
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.4, BOARD_H + 0.1, BOARD_W + 0.1), new THREE.MeshBasicMaterial({ visible: false }));
     this.proxy.position.copy(group.position);
+    this.proxy.quaternion.copy(group.quaternion);
     game.scene.add(this.proxy);
     this.page = 'buy';
     this.armed = null; // the sell page's row waiting for a second press

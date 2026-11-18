@@ -1,7 +1,8 @@
 // Walking round a building. The girls steer by ray probes ahead of them, which cannot see round a whole barn: with the barn between her
 // and where she is going she tries one way, then the other, and shuffles about at its back wall. So a walk that would cross a building's
 // footprint is first aimed at one of its corners (and a walk into or out of one that has a doorway goes through the doorway). Pure and tested.
-// A building is { minX, maxX, minZ, maxZ, door?: { x, z, halfWidth } } where the door is in the +x wall, centred on z, `x` the wall's outer face.
+// A building is { minX, maxX, minZ, maxZ, door?: { x, z, halfWidth, out? } } where the door is in the wall `out` points out of ({ x, z }, a unit step: +x if it
+// is not given), centred on (x, z), which is the middle of the wall's outer face.
 
 export const DEFAULT_DETOUR_PARAMS = {
   body: 0.6, // metres from a wall at which the straight way counts as blocked
@@ -50,12 +51,16 @@ export function detourVia(from, to, buildings, P = DEFAULT_DETOUR_PARAMS, prefer
     const toIn = inside(grown(b, 0.2), to);
     if (b.door && (fromIn || toIn)) {
       const door = b.door;
-      const inCone = Math.abs(from.z - door.z) < door.halfWidth && from.x > door.x - P.doorIn - 0.4;
+      const out = door.out ?? { x: 1, z: 0 };
+      const dist = (p) => (p.x - door.x) * out.x + (p.z - door.z) * out.z; // metres out of the doorway's wall (negative: inside)
+      const across = (p) => -(p.x - door.x) * out.z + (p.z - door.z) * out.x; // metres along the wall from the doorway's middle
+      const at = (d) => ({ x: door.x + out.x * d, z: door.z + out.z * d });
+      const inCone = Math.abs(across(from)) < door.halfWidth && dist(from) > -P.doorIn - 0.4;
       if (fromIn && toIn) continue; // the way about inside is her own (the bales, the loft)
-      if (fromIn) return inCone && from.x < door.x + 0.3 ? { x: door.x + P.doorOut, z: door.z } : inCone ? null : { x: door.x - P.doorIn, z: door.z };
+      if (fromIn) return inCone && dist(from) < 0.3 ? at(P.doorOut) : inCone ? null : at(-P.doorIn);
       // On the way in: line up on the doorway first, going round the building to get there if she is at the back.
-      if (from.x > door.x - 0.3 && Math.abs(from.z - door.z) < door.halfWidth + 0.6) return null;
-      const lineUp = { x: door.x + P.doorOut, z: door.z };
+      if (dist(from) > -0.3 && Math.abs(across(from)) < door.halfWidth + 0.6) return null;
+      const lineUp = at(P.doorOut);
       return detourVia(from, lineUp, [b], P, prefer) ?? lineUp;
     }
     if (fromIn || toIn || inside(wall, from)) continue; // hard against a wall already: her own steering's

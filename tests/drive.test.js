@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import * as THREE from 'three';
 import { fakeCanvas } from './helpers/vehicleModels.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, fromPlan, DRIVE_PLAN, LANE_PLAN, GATEWAYS_PLAN, newFields } from '../src/world/layoutNew.js';
 import { createRoads } from '../src/world/roads.js';
 import { createFields } from '../src/world/fields.js';
@@ -16,7 +16,7 @@ import { vergeGrassHeight } from '../src/world/driveProps.js';
 import { createRandom } from '../src/core/random.js';
 import { planRoad, paintRoadOnGround } from '../src/world/groundTexture.js';
 
-const two = layoutNew(LAYOUT);
+const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const road = two.road;
 const net = createRoads(two.roads);
 const fields = createFields(two);

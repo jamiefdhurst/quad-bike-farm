@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import fs from 'node:fs';
 import { vi } from 'vitest';
 import { fakeCanvas } from './vehicleModels.js';
-import { LAYOUT } from '../../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../../src/world/layout.js';
 import { createTerrainHeight } from '../../src/world/terrainHeight.js';
 import { createFields } from '../../src/world/fields.js';
 import { Track } from '../../src/world/track.js';
@@ -104,13 +104,16 @@ export async function buildWorldModels() {
   const gates = [0, 1, 2].map((i) => ({ x: i * 6, z: 0, tx: 1, tz: 0, half: 2 }));
   add('setPiece', 'climbCones', buildClimbCones, (b) => b(c.scene, heightAt, gates));
   add('setPiece', 'coneCourse', buildConeCourse, (b) => b(c.scene, heightAt, [0, 1, 2, 3].map((i) => ({ x: i * 4, z: 0 }))).group);
+  const { buildHenHouse, buildPigArk } = await import('../../src/world/orchardKit.js');
+  add('world', 'henHouse', buildHenHouse);
+  add('world', 'pigArk', buildPigArk);
   const { buildRollingRoadModel } = await import('../../src/world/rollingRoadModel.js');
   add('setPiece', 'rolling-road-trailer', buildRollingRoadModel);
   const { buildBundle } = await import('../../src/items/brushwood.js');
   add('setPiece', 'brushwood', buildBundle, (b) => b(c.random));
   // The field landmarks (#815) stand on the new farm, so they are built on its ground and with its places.
   const { layoutNew } = await import('../../src/world/layoutNew.js');
-  const two = layoutNew(LAYOUT);
+  const two = layoutNew(LAYOUT, RAW_LAYOUT);
   const c2 = { ...c, layout: two, heights: createTerrainHeight(two, new Track(two.trackPoints)) };
   const spot = (kind) => two.fieldLandmarks.find((l) => l.kind === kind);
   const land = await import('../../src/world/landmarkProps.js');
@@ -122,6 +125,11 @@ export async function buildWorldModels() {
   add('setPiece', 'loneAsh', land.buildLoneAsh, (b) => b(c2, spot('loneAsh')));
   add('setPiece', 'brookAlders', land.buildAlders, (b) => b(c2, spot('brookAlders')));
   add('setPiece', 'bigOaks', land.buildBigOaks, (b) => b(c2, spot('bigOaks')));
+
+  // The farmstead's garden wall and the rail along Home Ground (#682), on the new farm.
+  const farmstead = await import('../../src/world/farmsteadProps.js');
+  add('setPiece', 'gardenWall', farmstead.buildGardenWall, (b) => b(c2));
+  add('setPiece', 'homeRails', farmstead.buildHomeRails, (b) => b(c2));
 
   // The drive's cattle grid and reflector posts (#568): the grid is built with today's layout's and the new farm's, which place it in different gateways.
   const drive = await import('../../src/world/driveProps.js');

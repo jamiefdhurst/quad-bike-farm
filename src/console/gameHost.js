@@ -12,6 +12,7 @@ import { plantSite, plantPoint } from '../world/plantSite.js';
 import { labelSpot } from '../hud/farmMap.js';
 import { BUILT_KINDS } from '../world/fieldLandmarks.js';
 import { neighbourGate } from '../world/neighbourFarm.js';
+import { barnFrame, barnLocal } from '../world/barn.js';
 
 const DEG = 180 / Math.PI;
 const norm = (deg) => ((deg % 360) + 360) % 360;
@@ -40,6 +41,25 @@ export const VEHICLE_VERBS = [
   { name: 'fix', help: 'put right: faults, plug, filter, wear, scuffing, seizure, water (quirks stay)' },
 ];
 
+/** In front of the workbench, inside the barn, whichever way the barn is turned. */
+export function benchSpot(layout) {
+  const b = barnLocal(layout).bench;
+  return b && layout.barn ? barnFrame(layout).toWorld(b.x, b.z + 1.4) : null;
+}
+
+/** The new farm's farmstead places (#682): the stackyard, the orchard, the garden's gate and the cars. Today's farm has none of them. */
+export function farmsteadPlaces(layout) {
+  const f = layout.farmstead;
+  if (!f) return {}; // (the places read as undefined, and are left out)
+  const mid = (r) => ({ x: (r.minX + r.maxX) / 2, z: (r.minZ + r.maxZ) / 2 });
+  return {
+    stackyard: { x: mid(f.stackyard).x, z: layout.dutchBarn.z + layout.dutchBarn.halfZ + 10 }, // in front of the Dutch barn
+    orchard: mid(f.orchard),
+    garden: { x: f.garden.gate.x, z: f.garden.maxZ + 3 }, // at its gate, on the yard side
+    cars: { x: layout.cars.finch.x, z: layout.cars.finch.z + 5 }, // in front of the girls' cars
+  };
+}
+
 /** @param {import('../game.js').Game} g @param {{ copy: (text: string) => void }} io */
 export function createHost(g, { copy = () => {} } = {}) {
   const unitOf = (id) => g.units.find((u) => u.id === id);
@@ -64,10 +84,13 @@ export function createHost(g, { copy = () => {} } = {}) {
 
   const layout = g.world.layout;
   const places = () => {
+    const farmstead = farmsteadPlaces(layout);
     const spots = {
       start: { x: layout.spawn.player.x, z: layout.spawn.player.z },
       yard: layout.yard,
       barn: layout.barn,
+      bench: benchSpot(layout), // stood in front of the workbench in the barn
+      bonfire: layout.bonfire,
       generator: layout.generator?.stand, // the barn generator's cord end, where a girl stands to pull it
       bell: layout.bell,
       ramp: layout.jumpRamp,
@@ -76,6 +99,10 @@ export function createHost(g, { copy = () => {} } = {}) {
       fieldshed: layout.fieldShed,
       muckheap: layout.muckHeap,
       harrows: layout.harrows, // the chain harrows, left at the harrow field's west edge
+      stackyard: farmstead.stackyard, // the new farm's: in front of the Dutch barn
+      orchard: farmstead.orchard, // the hens' run and the pig's ark
+      garden: farmstead.garden, // the garden plot's gate
+      cars: farmstead.cars, // in front of the girls' cars
       animals: layout.farmAnimals ? { x: layout.farmAnimals.pen.maxX + 2.5, z: (layout.farmAnimals.pen.minZ + layout.farmAnimals.sty.maxZ) / 2 } : null,
       trough: layout.trough,
       road: layout.road?.pad ?? (layout.road ? { x: (layout.road.fromX + layout.road.toX) / 2, z: layout.road.z } : null), // the pad, or halfway along the drive

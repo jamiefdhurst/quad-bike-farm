@@ -31,7 +31,8 @@ export class Bench {
     // Something to look at to start work: a box over the bench top.
     const b = game.world.layout.bench;
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(b.length, 0.5, b.depth + 0.4), new THREE.MeshBasicMaterial({ visible: false }));
-    this.proxy.position.set(b.x, game.world.heightAt(b.x, b.z) + b.height + 0.2, b.z + 0.1);
+    this.proxy.position.set(b.x + 0.1 * Math.sin(b.yaw ?? 0), game.world.heightAt(b.x, b.z) + b.height + 0.2, b.z + 0.1 * Math.cos(b.yaw ?? 0));
+    this.proxy.rotation.y = b.yaw ?? 0; // its length runs along the bench, which turns with the barn
     game.scene.add(this.proxy);
     this.build();
   }

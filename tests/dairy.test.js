@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import { fakeCanvas } from './helpers/vehicleModels.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, fromPlan } from '../src/world/layoutNew.js';
 import { neighbourFarmShape, createNeighbourFarm } from '../src/world/neighbourFarm.js';
 import { createRandom } from '../src/core/random.js';
 
-const two = layoutNew(LAYOUT);
+const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const S = neighbourFarmShape(two);
 const inRect = (r, x, z) => x > r.minX && x < r.maxX && z > r.minZ && z < r.maxZ;
 const overlap = (a, b) => a.minX < b.maxX && a.maxX > b.minX && a.minZ < b.maxZ && a.maxZ > b.minZ;

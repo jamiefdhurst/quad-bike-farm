@@ -3,6 +3,8 @@
 // animals are not: they are kinematic and keep to their own rectangles.
 
 import * as THREE from 'three';
+import { buildHenHouse, buildPigArk } from './orchardKit.js';
+import { createRandom } from '../core/random.js';
 
 const WOOD = 0x7a5a3a;
 const WOOD_DARK = 0x4f3a24;
@@ -179,63 +181,10 @@ function buildFence(rect, { boards, groundAt, physics, RAPIER }) {
   return shadowed(g);
 }
 
-/** The pig's house in the sty's north-west corner: three walls and a sloping tin roof, open to the south-east. */
-function buildShelter(sty, groundAt) {
-  const g = new THREE.Group();
-  const w = 2.0;
-  const d = 1.7;
-  const h = 1.25;
-  const x = sty.minX + 0.2 + w / 2;
-  const z = sty.maxZ - 0.2 - d / 2;
-  const ground = groundAt(x, z);
-  const wood = mat(WOOD);
-  const tin = mat(0x6c747c, { metalness: 0.5, roughness: 0.55 });
-  const back = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.08), wood);
-  back.position.set(x, ground + h / 2, z + d / 2);
-  g.add(back);
-  for (const side of [-1, 1]) {
-    const s = new THREE.Mesh(new THREE.BoxGeometry(0.08, h, d), wood);
-    s.position.set(x + side * (w / 2 - 0.04), ground + h / 2, z);
-    g.add(s);
-  }
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.2, 0.05, d + 0.3), tin);
-  roof.position.set(x, ground + h + 0.06, z + 0.02);
-  roof.rotation.x = 0.12;
-  g.add(roof);
-  const straw = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.06, d - 0.2), mat(0xcdb26a));
-  straw.position.set(x, ground + 0.03, z);
-  g.add(straw);
-  return shadowed(g);
-}
-
-/** The hens' coop: a little house on legs in the run's corner, with a pop-hole and a ramp. */
-function buildCoop(pen, groundAt) {
-  const g = new THREE.Group();
-  const x = pen.minX + 1.3;
-  const z = pen.minZ + 1.2;
-  const ground = groundAt(x, z);
-  const wood = mat(0xb9573a);
-  const roofMat = mat(0x4b4f55, { metalness: 0.4 });
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.8, 0.9), wood);
-  body.position.set(x, ground + 0.35 + 0.4, z);
-  g.add(body);
-  for (const [dx, dz] of [[-0.55, -0.35], [0.55, -0.35], [-0.55, 0.35], [0.55, 0.35]]) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.35, 0.07), mat(WOOD_DARK));
-    leg.position.set(x + dx, ground + 0.175, z + dz);
-    g.add(leg);
-  }
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.05, 1.1), roofMat);
-  roof.position.set(x, ground + 1.2, z);
-  roof.rotation.z = 0.08;
-  g.add(roof);
-  const hole = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.3, 0.24), mat(0x1a1410));
-  hole.position.set(x + 0.656, ground + 0.62, z);
-  g.add(hole);
-  const ramp = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.03, 0.22), mat(WOOD));
-  ramp.position.set(x + 1.0, ground + 0.32, z);
-  ramp.rotation.z = -0.45;
-  g.add(ramp);
-  return shadowed(g);
+/** A house from orchardKit.js stood on the ground at (x, z). */
+function placed(house, x, z, groundAt) {
+  house.position.set(x, groundAt(x, z), z);
+  return house;
 }
 
 function buildTrough(x, z, yaw, groundAt) {
@@ -256,10 +205,11 @@ export class FarmAnimalsView {
     this.root.name = 'farmAnimals';
     scene.add(this.root);
     const { pen, sty } = animals;
+    const random = createRandom(0x0c4a); // the same boards and tin on every farm
     this.root.add(buildFence(pen, { boards: false, groundAt, physics, RAPIER }));
     this.root.add(buildFence(sty, { boards: true, groundAt, physics, RAPIER }));
-    this.root.add(buildCoop(pen, groundAt));
-    this.root.add(buildShelter(sty, groundAt));
+    this.root.add(placed(buildHenHouse(random), pen.minX + 1.5, pen.minZ + 1.5, groundAt));
+    this.root.add(placed(buildPigArk(random), sty.minX + 1.6, sty.maxZ - 1.2, groundAt));
     this.root.add(buildTrough(sty.maxX - 0.9, sty.minZ + 0.6, 0, groundAt));
     this.hens = animals.hens.map((h, i) => {
       const built = buildHen(HEN_COLOURS[i % HEN_COLOURS.length]);

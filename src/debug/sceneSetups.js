@@ -78,6 +78,7 @@ export function moto(g, say) {
   const u = g.units.find((x) => x.spec.miniMoto);
   if (!u) return ['this farm has no mini moto (one is bought from the barn\'s ads and turns up the next morning), so there is nothing to put in the paddock'];
   const p = g.world.layout.paddock;
+  if (!p) return ['this farm has no paddock (the new farm\'s is Home Ground, so ride the mini moto there with tp me home)'];
   const jess = g.companions.find((c) => c.character.id === 'jess');
   if (u.quad.rider || u.quad.driver) return ['the mini moto has someone on it already: scene end, then reset it'];
   u.quad.placeAt(p.x, p.z, Math.PI / 2); // along the paddock, nose to the yard

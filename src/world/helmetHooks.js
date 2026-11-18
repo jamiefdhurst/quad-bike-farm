@@ -18,7 +18,7 @@ export class HelmetHooks {
     this.group = new THREE.Group();
     this.group.name = 'helmetHooks';
     this.group.position.set(h.x, floor, h.z);
-    this.group.rotation.y = Math.PI; // the board is on the wall at +z and its front faces -z, into the barn
+    this.group.rotation.y = Math.PI + (h.yaw ?? 0); // the board is on the wall at +z and its front faces -z, into the barn (turned with it)
     const board = new THREE.Mesh(new THREE.BoxGeometry(h.length, 0.16, 0.03), wood);
     board.position.set(0, h.y, 0);
     board.castShadow = true;

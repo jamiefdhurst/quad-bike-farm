@@ -21,7 +21,9 @@ export const SET_PIECE_NAMES = ['village', 'neighbourFarm', 'neighbourLand', 'br
   // The field landmarks (#815): the trees have a far version, so they stay in sight from the gates; the others go beyond `setPieceDistance`.
   'loneOak', 'oldGateposts', 'deadElm', 'farPond', 'castRoller', 'loneAsh', 'brookAlders', 'bigOaks',
   // The drive's cattle grid with its sign and wings, and the reflector posts at the lane end (#568).
-  'cattleGrid', 'driveReflectors'];
+  'cattleGrid', 'driveReflectors',
+  // The farmstead's garden wall and the rail along Home Ground (#682).
+  'gardenWall', 'homeRails'];
 
 const SMALL = 0.15; // m: a part with a bounding sphere smaller than this is a small part
 const MARGIN = 5; // m: a vehicle crossing a distance has to come this far back before it changes again, so it doesn't flicker on the line

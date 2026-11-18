@@ -179,7 +179,7 @@ import { HazeLayer } from './effects/hazeLayer.js';
 import { Mist, Rainbow, MIST_PARAM_RANGES, RAINBOW_PARAM_RANGES } from './world/mist.js';
 import { RainbowView } from './effects/rainbowView.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
-import { barnShape } from './world/barn.js';
+import { barnShape, barnFrame, barnLocal, placeInBarn, inFirstSpan, inDoorway, outsideDoor } from './world/barn.js';
 import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid, pickQuads } from './npc/race.js';
 import { DEFAULT_SIGHT_PARAMS, SIGHT_PARAM_RANGES, gatesFoundOpen } from './npc/sights.js';
 import { DEFAULT_OUTING_PARAMS, OUTING_PARAM_RANGES, pickOuting, outingSpots } from './npc/outings.js';
@@ -242,7 +242,7 @@ import { paginate } from './achievements/pages.js';
 import { Discoveries, stallDiscovery, prankDiscovery } from './achievements/discoveries.js';
 import { achievementSnapshot, placesAt } from './achievements/snapshot.js';
 import { buildStartLine, buildClimbCones, buildConeCourse, layCone, nearestTrackFraction } from './world/startLine.js';
-import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, climbPoints, Hiding, StrawDrop } from './world/loft.js';
+import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, worldClimbPoints, loftRestSpot, strawTip, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
 import { dozeStay } from './npc/dozing.js';
@@ -929,18 +929,10 @@ export class Game {
     this.loftParams = { ...DEFAULT_LOFT_PARAMS };
     this.loft = this.world.props.barn.loft;
     // The clock and weather station on the barn wall (world/weatherStation.js).
-    const ws = this.world.layout.weatherStation;
-    this.station = new WeatherStation(this.scene, { x: ws.x, y: this.world.props.barn.floorY + ws.y, z: barnShape(this.world.layout).inner.minZ });
-    const L0 = this.world.layout;
-    this.loftSpot = {
-      ...L0.loft.seat,
-      stand: { x: this.loft.ladderFoot.x, z: this.loft.ladderFoot.z },
-      via: [
-        { x: this.loft.ladderTop.x, z: this.loft.ladderTop.z, rise: L0.loft.floor },
-        { x: L0.loft.seat.x + 0.1, z: L0.loft.seat.z + 1.8, rise: L0.loft.floor },
-      ],
-      climbSeconds: 4,
-    };
+    const ws = barnLocal(this.world.layout).weatherStation; // in the barn's own frame, put in the world turned with it
+    this.station = new WeatherStation(this.scene, { x: 0, y: 0, z: 0 });
+    placeInBarn(this.world.layout, this.station.group, ws.x, this.world.props.barn.floorY + ws.y, barnShape(this.world.layout).inner.minZ);
+    this.loftSpot = loftRestSpot(this.world.layout, this.loft);
     this.restSpots.push(this.loftSpot);
     this.hiding = new Hiding(this.loftParams);
     this.strawDrop = new StrawDrop(this.loftParams);
@@ -6219,12 +6211,13 @@ export class Game {
         if (kind === 'barn') {
           // Behind the barn, you facing her.
           const b = this.world.layout.barn;
-          const x = b.x - b.halfX - 3.2;
-          const you = { x, y: this.world.heightAt(x, b.z), z: b.z };
+          const frame = barnFrame(this.world.layout);
+          const behind = frame.toWorld(b.x - b.halfX - 3.2, b.z);
+          const you = { x: behind.x, y: this.world.heightAt(behind.x, behind.z), z: behind.z };
           this.player.moveTo(you);
-          const hx = x + 1.2;
-          c.root.position.set(hx, this.world.heightAt(hx, b.z), b.z);
-          c.heading = -Math.PI / 2;
+          const her = frame.toWorld(b.x - b.halfX - 2, b.z);
+          c.root.position.set(her.x, this.world.heightAt(her.x, her.z), her.z);
+          c.heading = frame.headingToWorld(-Math.PI / 2);
           c.root.rotation.y = c.heading;
         }
         this.lookAtHer(c);
@@ -7554,7 +7547,7 @@ export class Game {
     const p = this.player.position;
     const lf = this.loft;
     const from = { x: p.x, y: p.y, z: p.z };
-    const [first, ...via] = climbPoints(lf, from, up);
+    const [first, ...via] = worldClimbPoints(this.world.layout, lf, from, up);
     this.climb = new Climb(first, via.pop(), this.loftParams.climbSeconds, via);
     this.climbUp = up;
     this.player.moveEnabled = false;
@@ -7605,7 +7598,8 @@ export class Game {
     const p = this.player.position;
     const jessUp = !!jess && girlUp === jess;
     if (this.strawDrop.update(dt, { jessUp, you: { x: p.x, z: p.z, below: !this.youOnLoft() && !this.player.isRiding }, jess: { x: this.loftSpot.x, z: this.loftSpot.z } })) {
-      this.strawFall.drop({ x: this.loftSpot.x + this.world.layout.loft.strawDx, y: this.loft.top + 0.5, z: this.loftSpot.z }, p, this.loft.ladderFoot.y);
+      const tip = strawTip(this.world.layout, this.loftSpot);
+      this.strawFall.drop({ x: tip.x, y: this.loft.top + 0.5, z: tip.z }, p, this.loft.ladderFoot.y);
       for (const c of this.companions) c.voice.say('loftDrop', { force: c === jess, urgent: true });
     }
   }
@@ -8688,7 +8682,6 @@ export class Game {
   /** An engine run in the barn fills it with fumes; free girls inside cough and walk out, and Amy switches it off from the doorway (world/barnFumes.js). */
   updateBarnFumes(dt) {
     const w = this.weather;
-    const bs = barnShape(this.world.layout);
     const engines = this.units.map((u) => {
       const q = u.quad;
       const e = q.engine;
@@ -8703,15 +8696,17 @@ export class Game {
       id: c.character.id, free: c.availability().canRemark, inside: this.world.inBarn(c.root.position.x, c.root.position.z),
     }));
     const events = this.barnFumes.update(dt, { wind: w.wind, engines, girls, amyFree: !!amy && amy.availability().free });
-    const out = new THREE.Vector3(bs.door.x + 1.4, 0, bs.z);
+    const outAt = outsideDoor(this.world.layout, 1.4);
+    const out = new THREE.Vector3(outAt.x, 0, outAt.z);
+    const outStep = barnFrame(this.world.layout).vecToWorld(2, 0); // two metres further out of the door
     for (const e of events) {
       const c = this.companions.find((o) => o.character.id === (e.girl ?? 'amy'));
       if (e.type === 'cough') {
         // Out of the barn doors and into the yard, coughing; a girl on her way to switch it off stays put.
-        if (!(e.girl === 'amy' && this.barnFumes.going)) c.recall(new THREE.Vector3(out.x + 2, this.world.heightAt(out.x + 2, out.z), out.z), Math.PI / 2);
+        if (!(e.girl === 'amy' && this.barnFumes.going)) c.recall(new THREE.Vector3(out.x + outStep.x, this.world.heightAt(out.x + outStep.x, out.z + outStep.z), out.z + outStep.z), outAt.facing);
         c.voice.say('fumesCough', { urgent: true });
       } else if (e.type === 'amyGoes') {
-        c.recall(new THREE.Vector3(out.x, this.world.heightAt(out.x, out.z), out.z), -Math.PI / 2);
+        c.recall(new THREE.Vector3(out.x, this.world.heightAt(out.x, out.z), out.z), outAt.facing + Math.PI);
         c.voice.say('fumesSwitchOff', { urgent: true });
       } else if (e.type === 'switchOff') {
         this.units.find((u) => u.id === e.engine)?.quad.engine.setIgnition(false);
@@ -8735,10 +8730,9 @@ export class Game {
 
   /** Where each girl stands when called back: in front of the barn doors, side by side. */
   recallSpot(i) {
-    const b = this.world.layout.barn;
-    const x = b.x + b.halfX + 3;
     const side = this.fallingOut.active ? 3.5 : 1.4; // fallen out, they keep their distance
-    return { point: new THREE.Vector3(x, this.world.heightAt(x, b.z + (i === 0 ? -side : side)), b.z + (i === 0 ? -side : side)), facing: Math.PI / 2 };
+    const at = outsideDoor(this.world.layout, 3, i === 0 ? -side : side);
+    return { point: new THREE.Vector3(at.x, this.world.heightAt(at.x, at.z), at.z), facing: at.facing };
   }
 
   /** Ends the shared things the girls can be part of (a race, a climb, the cones, a convoy), so nobody is left waiting on them. */
@@ -11864,15 +11858,16 @@ export class Game {
     registerTuning('Cat', this.catParams, CAT_PARAM_RANGES);
     const world = this.world;
     const f = world.fields;
-    const inside = (x, z, m = 0.5) => Math.abs(x - b.x) < b.halfX - m && Math.abs(z - b.z) < b.halfZ - m;
-    // The barn's wall is shut except at its door on the +x side; the cat comes and goes by the door.
-    const inDoor = (x, z) => Math.abs(z - b.z) < b.door.halfWidth - 0.4 && x > b.x + b.halfX - 0.6 && x < b.x + b.halfX + 0.6;
+    const inside = (x, z, m = 0.5) => inFirstSpan(L, x, z, m);
+    // The barn's wall is shut except at its door; the cat comes and goes by the door.
+    const inDoor = (x, z) => inDoorway(L, x, z);
     const allowed = (x, z) => {
       if (inside(x, z) || inDoor(x, z)) return true;
       if (world.inBarn(x, z, 0.4) || world.outbuildings.builtAt(x, z, 0.5)) return false;
       return Math.hypot(x - L.yard.x, z - L.yard.z) < L.yard.radius + 12 && f.hedgeDistance(x, z) > 0.8;
     };
-    const home = { x: b.x - 1.5, z: b.z + 2.2, via: { x: b.x + b.halfX + 1.2, z: b.z } };
+    const frame = barnFrame(L);
+    const home = { ...frame.toWorld(b.x - 1.5, b.z + 2.2), via: outsideDoor(L, 1.2) };
     const random = createRandom(this.farmSeed ^ 0xca7);
     this.cat = new Cat({ allowed, home, inHome: (x, z) => inside(x, z, 0.1), groundAt: (x, z) => world.groundHeightAt(x, z), random, params: this.catParams });
     // Starts somewhere in the yard, off the barn's wall, as the farm's seed has it.
@@ -12021,13 +12016,12 @@ export class Game {
    */
   setUpDog() {
     const L = this.world.layout;
-    const b = L.barn;
     const world = this.world;
     const f = world.fields;
     this.dogParams = { ...DEFAULT_DOG_PARAMS };
     registerTuning('Dog', this.dogParams, DOG_PARAM_RANGES);
-    const inside = (x, z, m = 0.5) => Math.abs(x - b.x) < b.halfX - m && Math.abs(z - b.z) < b.halfZ - m;
-    const inDoor = (x, z) => Math.abs(z - b.z) < b.door.halfWidth - 0.4 && x > b.x + b.halfX - 0.6 && x < b.x + b.halfX + 0.6;
+    const inside = (x, z, m = 0.5) => inFirstSpan(L, x, z, m);
+    const inDoor = (x, z) => inDoorway(L, x, z);
     // A hedge stops her except through a gap with its gate open.
     const hedged = (x, z) => f.hedgedAt(x, z, 0.45);
     const allowed = (x, z) => {

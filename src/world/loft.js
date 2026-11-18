@@ -3,7 +3,7 @@
 // to someone hiding in the hay or stood under a girl who has a handful of straw. Pure logic, no Three.js; barnBuild.js
 // draws it and game.js wires it up.
 
-import { barnShape } from './barn.js';
+import { barnShape, barnFrame, barnLocal } from './barn.js';
 
 export const DEFAULT_LOFT_PARAMS = {
   climbSeconds: 2.6, // how long the ladder takes, up or down
@@ -34,12 +34,13 @@ export const LOFT_PARAM_RANGES = {
 const smooth = (t) => t * t * (3 - 2 * t);
 
 /**
- * Heights and places of the loft, from the layout. `floorY` is the barn floor's height. The planks run from the open edge (`edgeX`,
+ * Heights and places of the loft, from the layout, in the barn's own frame (barn.js: the same as the world's while the barn is not turned).
+ * `floorY` is the barn floor's height. The planks run from the open edge (`edgeX`,
  * looking back into the barn) to the east end wall. You can only walk the middle band of it: the roof comes down at the sides, so
  * hay is stacked there, north and south of `band` metres either side of the barn's centre line.
  */
 export function loftShape(layout, floorY) {
-  const l = layout.loft;
+  const l = barnLocal(layout).loft;
   const { inner, z: midZ } = barnShape(layout);
   const top = floorY + l.floor;
   return {
@@ -86,10 +87,43 @@ export function climbPoints(lf, from, up) {
   return up ? [from, foot, high, top] : [from, top, high, foot];
 }
 
-/** Whether (x, z) is over the loft's planks, `margin` metres in from the edges. */
-export function overLoft(layout, x, z, margin = 0) {
+/**
+ * The way up the ladder as `climbPoints` has it, with `from` and every point of it in the world (the loft is worked out in the barn's own frame,
+ * which is a turn about the barn's anchor in the world).
+ */
+export function worldClimbPoints(layout, lf, from, up) {
+  const f = barnFrame(layout);
+  const local = (p) => ({ ...p, ...f.toLocal(p.x, p.z) });
+  const world = (p) => ({ ...p, ...f.toWorld(p.x, p.z) });
+  return climbPoints(lf, local(from), up).map(world);
+}
+
+/** The girl's place in the loft for the rest-spot list, in the world: her seat, where she stands to climb, and the points she goes through. */
+export function loftRestSpot(layout, lf) {
+  const f = barnFrame(layout);
+  const foot = f.toWorld(lf.ladderFoot.x, lf.ladderFoot.z);
+  const top = f.toWorld(lf.ladderTop.x, lf.ladderTop.z);
+  const seat = barnLocal(layout).loft.seat;
+  const seatIn = f.toWorld(seat.x + 0.1, seat.z + 1.8); // a step in from the seat along the barn's own axes
+  return {
+    ...layout.loft.seat,
+    stand: { x: foot.x, z: foot.z },
+    via: [{ x: top.x, z: top.z, rise: layout.loft.floor }, { x: seatIn.x, z: seatIn.z, rise: layout.loft.floor }],
+    climbSeconds: 4,
+  };
+}
+
+/** Where Jess tips her straw from: `strawDx` towards the edge, along the barn's own x, from her seat. */
+export function strawTip(layout, seat) {
+  const d = barnFrame(layout).vecToWorld(layout.loft.strawDx, 0);
+  return { x: seat.x + d.x, z: seat.z + d.z };
+}
+
+/** Whether the world point (x, z) is over the loft's planks, `margin` metres in from the edges. */
+export function overLoft(layout, wx, wz, margin = 0) {
   const { inner } = barnShape(layout);
-  return x > layout.loft.edgeX + margin && x < inner.maxX - margin && z > inner.minZ + margin && z < inner.maxZ - margin;
+  const { x, z } = barnFrame(layout).toLocal(wx, wz);
+  return x > barnLocal(layout).loft.edgeX + margin && x < inner.maxX - margin && z > inner.minZ + margin && z < inner.maxZ - margin;
 }
 
 /** Whether you're up there: over the planks and standing on them (feet more than half the floor height up). */

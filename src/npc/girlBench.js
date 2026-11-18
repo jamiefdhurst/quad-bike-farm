@@ -80,8 +80,12 @@ export function pickJob(s, can = () => true) {
 
 /** Where she stands to work: beside the quad in the bay, towards the bench end, facing the quad. `bay`: layout.bay. Heading as atan2(dx, dz). */
 export function workSpot(bay) {
-  const x = bay.x + bay.halfX - 0.35;
-  const z = bay.z - bay.halfZ * 0.3;
+  const c = Math.cos(bay.yaw ?? 0); // the bay turns with the barn: its offsets are along its own axes
+  const s = Math.sin(bay.yaw ?? 0);
+  const ox = bay.halfX - 0.35;
+  const oz = -bay.halfZ * 0.3;
+  const x = bay.x + ox * c + oz * s;
+  const z = bay.z - ox * s + oz * c;
   return { x, z, yaw: Math.atan2(bay.x - x, bay.z - z) };
 }
 

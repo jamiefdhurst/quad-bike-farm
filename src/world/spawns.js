@@ -1,3 +1,4 @@
+import { barnFrame } from './barn.js';
 // Starting positions that vary each game: the quads are shuffled between their
 // parking slots and nudged, sometimes left elsewhere on the farm, and the jerry
 // can is left at one of a few likely spots.
@@ -87,12 +88,16 @@ export function spawnKeepOut(layout) {
   if (L.hose) add(L.hose.x, L.hose.z, 3, 'the hose');
   if (L.bell) add(L.bell.x, L.bell.z, 3, 'the bell');
   if (L.barn) {
+    const f = barnFrame(L); // written along the barn's own axes, put in the world turned with it
+    const own = (x, z) => f.toWorld(x, z);
     add(L.barn.x, L.barn.z, Math.hypot(L.barn.halfX, L.barn.halfZ) + 3, 'the barn');
-    add(L.barn.x + L.barn.halfX + 3, L.barn.z, 5, 'the barn doorway');
+    add(own(L.barn.x + L.barn.halfX + 3, L.barn.z).x, own(L.barn.x + L.barn.halfX + 3, L.barn.z).z, 5, 'the barn doorway');
     if (L.barn.annex) {
       const az = L.barn.z + L.barn.halfZ + L.barn.annex.halfZ; // the second span, and its doorway
-      add(L.barn.x, az, Math.hypot(L.barn.halfX, L.barn.annex.halfZ) + 3, 'the barn extension');
-      add(L.barn.x + L.barn.halfX + 3, az, 5, 'the extension doorway');
+      const span = own(L.barn.x, az);
+      const doorway = own(L.barn.x + L.barn.halfX + 3, az);
+      add(span.x, span.z, Math.hypot(L.barn.halfX, L.barn.annex.halfZ) + 3, 'the barn extension');
+      add(doorway.x, doorway.z, 5, 'the extension doorway');
     }
     if (L.silage) add(L.silage.x + 2.5, L.silage.z + 1.5, 5, 'the silage'); // the wrapped bales stacked beside the barn (props.js)
   }

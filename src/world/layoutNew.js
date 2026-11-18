@@ -9,6 +9,7 @@
 // less `PLAN_ORIGIN`. Pure: no Three.js.
 
 import { resolveLayout, at } from './layoutAnchors.js';
+import { resolveWithBarnLocal } from './layoutBarn.js';
 import { intersectPolygons, polygonArea, polygonBounds, clockwise, edgeBetween, insetPolygon, pointInPolygon, distanceToEdges, polygonEdges } from './polygons.js';
 
 /** Where the game's (0, 0) is on the plan: the middle of the yard. */
@@ -77,6 +78,9 @@ export const FIELDS_PLAN = [
 
 /** The fields walled in drystone (#696 sets every edge's real kind); every other edge is a hedge for now. */
 const WALLED = ['sheep', 'hill'];
+
+/** The lines railed, post and rail (#682): Home Ground's side to the yard, where the paddock's fences were. */
+const RAILED = ['farmstead|home'];
 
 /** The lines with nothing on them (#568): the drive is open to the fields either side and to the yard, so the crops come up to its verge. */
 const OPEN_LINES = ['drive|lanefield', 'drive|longpiece', 'drive|farmstead'];
@@ -224,15 +228,8 @@ const NORTH_HOLLOW_PLAN = { at: [300, 120], rx: 26, rz: 16, depth: 1.3 };
  * its own off this list, and #692 needs it empty.
  */
 export const NOT_MOVED_YET = {
-  // The farmstead, with Home Ground's play things (the Home Loop, jump, cones, line-up, bonfire), the Dutch barn and the girls' places.
-  'anchors.barn': '#682', 'anchors.yard': '#682', 'anchors.bonfire': '#682', fieldHalf: '#682', gate: '#682', barn: '#682', bell: '#682',
-  silage: '#682', barnBaleSpots: '#682', loft: '#682', bench: '#682', benchCharger: '#682', generator: '#682', weatherStation: '#682',
-  jumperRail: '#682', helmetHooks: '#682', bay: '#682', bay2: '#682', moneyTin: '#682', shed: '#682', jack: '#682', axleStands: '#682', rusty: '#682',
-  plover: '#682', yard: '#682', cars: '#682', paddock: '#682', lawns: '#682', farmAnimals: '#682', fuelTank: '#682', jerryCanSpots: '#682',
-  trailer: '#682', tipTrailer: '#682', sprayer: '#682', harrows: '#682', dieselBowser: '#682', toolbox: '#682', benchOil: '#682',
-  oilBottle: '#682', coolantBottle: '#682', antiGelBottle: '#682', plugAdditive: '#682', benchLeads: '#682', benchPack: '#682', hose: '#682',
-  dutchBarn: '#682', jumpRamp: '#682', lineUp: '#682', coneCourse: '#682', trackPoints: '#682', puddles: '#682', bogs: '#682',
-  bonfire: '#682', brushwood: '#682', strawBaleSpots: '#682', restSpots: '#682', spawn: '#682',
+  // The farmstead's own pieces are placed now (#682, `farmsteadLayout`, below); what is left of today's grass field is the hill's and the wood's reference.
+  fieldHalf: '#684 (the hill and the wood still place themselves from the grass field)', gate: '#684 (the gate onto the green lane)',
   dragStrip: '#616',
   'anchors.logYard': '#683', woods: '#683', logYard: '#683',
   'anchors.hut': '#684', hill: '#684 (its river and riverside meadow #565)',
@@ -241,7 +238,7 @@ export const NOT_MOVED_YET = {
   // Today's rectangle of farm, which the wood, the hill and the quarry still place themselves from, and the village street.
   farm: '#683 (the wood), #684 (the hill), #685 (the quarry)', 'roads.2': '#688 (the village street)',
   hayMeadow: '#691', sprayField: '#691', harrowField: '#691',
-  muckHeap: '#694', trough: '#710', fieldShed: '#624',
+  trough: '#710', fieldShed: '#624',
   namedSpots: '#690',
 };
 
@@ -252,7 +249,15 @@ export const SETTINGS = [
 ];
 
 /** What the new farm puts in place of today's, by key. */
-export const REPLACED = ['ground', 'stubbleFields', 'road', 'publicLane', 'roads', 'anchors.neighbour', 'neighbourFarm'];
+export const REPLACED = [
+  'ground', 'stubbleFields', 'road', 'publicLane', 'roads', 'anchors.neighbour', 'neighbourFarm', 'barnLocal',
+  // The farmstead (#682): the barn and the yard with all that stands in them, the stackyard and its Dutch barn, the cars, the muck heap, and Home Ground's play things.
+  'anchors.barn', 'anchors.yard', 'anchors.bonfire', 'barn', 'bell', 'silage', 'barnBaleSpots', 'loft', 'bench', 'benchCharger', 'generator', 'weatherStation',
+  'jumperRail', 'helmetHooks', 'bay', 'bay2', 'moneyTin', 'shed', 'jack', 'axleStands', 'rusty', 'plover', 'yard', 'cars', 'paddock', 'lawns', 'farmAnimals',
+  'fuelTank', 'jerryCanSpots', 'trailer', 'tipTrailer', 'sprayer', 'harrows', 'dieselBowser', 'toolbox', 'benchOil', 'oilBottle', 'coolantBottle',
+  'antiGelBottle', 'plugAdditive', 'benchLeads', 'benchPack', 'hose', 'dutchBarn', 'jumpRamp', 'lineUp', 'coneCourse', 'trackPoints', 'puddles', 'bogs',
+  'bonfire', 'brushwood', 'strawBaleSpots', 'restSpots', 'spawn', 'muckHeap',
+];
 
 const cornersOf = (f) => f.corners.split(' ').map((k) => {
   if (!CORNERS_PLAN[k]) throw new Error(`field ${f.name}: no corner ${k}`);
@@ -330,7 +335,7 @@ export function boundariesOf(fields) {
       }
     }
     const open = OPEN_LINES.includes([run.a, run.b].sort().join('|'));
-    runs.push({ ...run, kind: open ? 'none' : WALLED.includes(run.a) || WALLED.includes(run.b) ? 'wall' : 'hedge' });
+    runs.push({ ...run, kind: open ? 'none' : RAILED.includes([run.a, run.b].sort().join('|')) ? 'rail' : WALLED.includes(run.a) || WALLED.includes(run.b) ? 'wall' : 'hedge' });
   }
   return runs;
 }
@@ -651,7 +656,7 @@ export function fieldLandmarksLayout(plan = FIELD_LANDMARKS_PLAN) {
  */
 export const LANDMARKS_PLAN = [
   { name: 'church tower', at: [1240, 763], height: 18 },
-  { name: 'Dutch barn roof', at: [446, 281], height: 7 },
+  { name: 'Dutch barn roof', at: [446, 268], height: 7 },
   { name: 'trig pillar', at: [-330, 480], height: 1.2 },
   { name: 'last pole', at: [566, 274], height: 9.5 },
 ];
@@ -800,22 +805,154 @@ export function neighbourLandLayout(L = NEIGHBOUR_LAND_PLAN) {
   };
 }
 
+/**
+ * The farmstead (#682), plan metres: the middle of the farm at the head of the drive, laid out as a real farmstead (docs/farm-plan.md). Rectangles are
+ * [minX, minZ, maxX, maxZ]. The barn is today's barn as it is (#613 rebuilds it in place), turned a quarter left so its doors face south onto the yard, and
+ * the yard's anchor sits 10 m out of those doors and 2 m along, as today's does from today's barn, so everything in the yard keeps its place beside the barn.
+ * `home` is where today's grass field's middle falls on Home Ground, so the Home Loop, the cones, the jump and the line-up keep today's shape in it.
+ */
+export const FARMSTEAD_PLAN = {
+  barn: { at: [515.6, 329.8], yaw: -Math.PI / 2 }, // the first span's middle: the walls stand at plan x 501.8 to 520.2 and z 324.6 to 335, inside the plan's 498 to 524 by 319 to 337
+  yard: { at: [517.6, 339.8], yaw: -Math.PI / 2 },
+  home: { at: [332, 360] },
+  bonfire: { at: [400, 424] }, // Home Ground's south-east corner
+  dutch: { at: [446, 268] }, // the Dutch barn's middle, at the stackyard's north, its open front facing south
+  slab: [425, 317, 615, 415], // the yard, concrete
+  stackyard: [420, 253, 472, 309],
+  orchard: [478, 250, 538, 310],
+  garden: { rect: [552, 250, 615, 312], gate: { x: 583, width: 3.6 } }, // lawn behind a stone wall, its gate on the yard side
+  cars: { z: 326, xs: [578, 583.2, 588.4], yaw: Math.PI }, // beside the garden, nosed in towards its wall (plan 572 to 612 by 319 to 333)
+  muck: [486, 416],
+  harrows: { at: [548, 372], yaw: -Math.PI / 2 },
+  silage: [500, 315], // the stack's north-west corner, behind the barn's back wall
+  animals: { pen: [486, 270, 492.5, 277], sty: [500, 270, 504.5, 275], bin: [496.5, 266, 0], bucket: [498, 266.4, 0.4] }, // in the orchard
+  fenceSeats: [340, 352, 384, 396], // on Home Ground's rail, at plan z, facing out over the field
+  frontage: [317, 415], // the stretch of Home Ground's rail the yard fronts
+  // What the later items build, held clear now: no placeholder, plain yard or grass.
+  keptClear: [
+    { name: 'machinery shed', by: '#617', rect: [428, 325, 442, 373] },
+    { name: 'grain store', by: '#699', rect: [582, 355, 612, 381] },
+    { name: 'cattle shed and clamp', by: '#694', rect: [470, 385, 558, 407] },
+    { name: 'sheep pens', by: '#695', rect: [432, 383, 462, 409] },
+  ],
+};
+
+const rectOf = ([x0, z0, x1, z1]) => {
+  const [minX, minZ] = fromPlan([x0, z0]);
+  const [maxX, maxZ] = fromPlan([x1, z1]);
+  return { minX, minZ, maxX, maxZ };
+};
+
+/** Today's grass field's things that go with Home Ground, and which of today's straw bales stood in it (the rest were at the Dutch barn). */
+const inGrassField = (p) => {
+  const [x, z] = Array.isArray(p) ? p : [p.x, p.z];
+  return Math.abs(x) <= 80 && Math.abs(z) <= 80;
+};
+
+/**
+ * Today's layout with the farmstead put in place (#682), in game metres: `anchors` for the barn, yard, bonfire, Home Ground and the Dutch barn, everything
+ * written from them resolved again from `raw` (with the barn's own things in its own frame, `barnLocal`), and the places that were not written from one.
+ * Everything here is what `NOT_MOVED_YET` named '#682'.
+ */
+export function farmsteadLayout(today, raw) {
+  const P = FARMSTEAD_PLAN;
+  const anchor = (p, yaw = 0, turnable = false) => ({ x: fromPlan(p.at)[0], z: fromPlan(p.at)[1], yaw, ...(turnable && { turnable: true }) });
+  const anchors = {
+    ...raw.anchors,
+    barn: anchor(P.barn, P.barn.yaw, true),
+    yard: anchor(P.yard, P.yard.yaw, true),
+    bonfire: anchor(P.bonfire),
+    home: anchor(P.home),
+    dutch: anchor(P.dutch),
+  };
+  const [gx, gz] = fromPlan(P.garden.rect.slice(0, 2));
+  const slab = rectOf(P.slab);
+  // Resolved against the new anchors: all of today's that is written from `barn`, `yard` and `bonfire`, and Home Ground's and the Dutch barn's pieces.
+  const homeBales = today.strawBaleSpots.filter(inGrassField);
+  const dutchBales = today.strawBaleSpots.filter((b) => !inGrassField(b)).map(([x, z, yaw]) => [x - today.dutchBarn.x, z - today.dutchBarn.z, yaw]);
+  const dutchSeats = today.restSpots.filter((r) => r.id.startsWith('dutchBarn')).map((r) => ({ ...r, x: r.x - today.dutchBarn.x, z: r.z - today.dutchBarn.z, door: { x: r.door.x - today.dutchBarn.x, z: r.door.z - today.dutchBarn.z } }));
+  const away = today.spawn.away;
+  const homeAway = away.filter(inGrassField);
+  const dutchAway = away.filter((a) => a.where === 'in the Dutch barn').map((a) => ({ ...a, x: a.x - today.dutchBarn.x, z: a.z - today.dutchBarn.z }));
+  const jerry = today.jerryCanSpots.find((j) => j.where === 'by the Dutch barn');
+  const placed = {
+    track: at('home', today.trackPoints), bogs: at('home', today.bogs), jumpRamp: at('home', today.jumpRamp), coneCourse: at('home', today.coneCourse),
+    brushwood: at('home', today.brushwood), lineUp: at('home', { ...today.lineUp }), homeBales: at('home', homeBales), dutchBales: at('dutch', dutchBales),
+    dutchBarn: at('dutch', { ...today.dutchBarn, x: 0, z: 0 }), dutchSeats: at('dutch', dutchSeats), homeAway: at('home', homeAway), dutchAway: at('dutch', dutchAway),
+    dutchCan: at('dutch', { ...jerry, x: jerry.x - today.dutchBarn.x, z: jerry.z - today.dutchBarn.z }),
+  };
+  const again = resolveLayout({ anchors, ...placed });
+  const base = resolveWithBarnLocal(raw, anchors);
+  const pt = (p) => fromPlan(p);
+  const bin = fromPlan(P.animals.bin);
+  const bucket = fromPlan(P.animals.bucket);
+  const fences = P.fenceSeats.map((z, i) => ({ id: ['fenceNorth', 'fenceSouth', 'fenceEast', 'fenceWest'][i], kind: 'fence', x: fromPlan([412.45, z])[0], z: fromPlan([412.45, z])[1], yaw: -Math.PI / 2, seat: 1.05 }));
+  const cars = Object.fromEntries(Object.keys(today.cars).map((k, i) => [k, { x: fromPlan([P.cars.xs[i], P.cars.z])[0], z: fromPlan([P.cars.xs[i], P.cars.z])[1], yaw: P.cars.yaw, where: 'by the garden' }]));
+  return {
+    ...base,
+    farmstead: {
+      slab, stackyard: rectOf(P.stackyard), orchard: rectOf(P.orchard),
+      garden: { ...rectOf(P.garden.rect), gate: { x: fromPlan([P.garden.gate.x, 0])[0], width: P.garden.gate.width } },
+      keptClear: P.keptClear.map(({ name, by, rect }) => ({ name, by, ...rectOf(rect) })),
+      rails: { minZ: fromPlan([0, P.frontage[0]])[1], maxZ: fromPlan([0, P.frontage[1]])[1] },
+    },
+    trackPoints: again.track,
+    bogs: again.bogs,
+    jumpRamp: again.jumpRamp,
+    coneCourse: again.coneCourse,
+    brushwood: again.brushwood,
+    lineUp: again.lineUp,
+    dutchBarn: again.dutchBarn,
+    strawBaleSpots: [...again.homeBales, ...again.dutchBales],
+    cars,
+    harrows: { x: pt(P.harrows.at)[0], z: pt(P.harrows.at)[1], yaw: P.harrows.yaw },
+    silage: { x: pt(P.silage)[0], z: pt(P.silage)[1] },
+    muckHeap: { ...today.muckHeap, x: pt(P.muck)[0], z: pt(P.muck)[1] },
+    paddock: undefined, // the paddock's fences are Home Ground's rails now
+    lawns: { garden: { ...rectOf([P.garden.rect[0] + 2, P.garden.rect[1] + 2, P.garden.rect[2] - 2, P.garden.rect[3] - 2]) } },
+    farmAnimals: {
+      pen: rectOf(P.animals.pen), sty: rectOf(P.animals.sty),
+      bin: { x: bin[0], z: bin[1], yaw: P.animals.bin[2] }, bucket: { x: bucket[0], z: bucket[1], yaw: P.animals.bucket[2] },
+    },
+    jerryCanSpots: [
+      ...base.jerryCanSpots.filter((j) => j.where !== 'by the Dutch barn' && j.where !== 'by the field shed').map((j) => ({ ...j, where: { 'by the paddock': 'by the trailers', 'by the field gate': 'out in the yard' }[j.where] ?? j.where })),
+      again.dutchCan,
+      ...today.jerryCanSpots.filter((j) => j.where === 'by the field shed'),
+    ],
+    restSpots: [...fences, ...again.dutchSeats, ...today.restSpots.filter((r) => r.id.startsWith('fieldShed'))],
+    // The grass field's spots go with Home Ground and the Dutch barn's with the Dutch barn; the east fields' stay where they were (named spots read them, #690).
+    spawn: { ...base.spawn, away: [...again.homeAway, ...farmsteadAway(), ...again.dutchAway, ...away.filter((a) => !inGrassField(a) && a.where !== 'in the Dutch barn')] },
+  };
+}
+
+/** Where a vehicle can be left in the farmstead and on the drive when the day deals it away from the yard (spawn.away), game metres. */
+function farmsteadAway() {
+  const spot = (plan, where, extra = {}) => ({ x: fromPlan(plan)[0], z: fromPlan(plan)[1], where, ...extra });
+  return [
+    spot([447, 345], 'by the stackyard'),
+    spot([560, 400], 'out in the yard'),
+    spot([600, 345.5], 'along the drive', { jitter: 1, tight: true }),
+    spot([455, 352], 'across the yard'),
+  ];
+}
+
 /** The new farm: today's layout (resolved) with what has moved put in its place. */
-export function layoutNew(today) {
+export function layoutNew(today, raw) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
   const [gx1, gz1] = fromPlan([GROUND_PLAN.maxX, GROUND_PLAN.maxZ]);
   const arable = FIELDS_PLAN.filter((f) => f.kind === 'arable');
   const [hx, hz] = fromPlan(NORTH_HOLLOW_PLAN.at);
   const drive = driveLayout();
   const neighbour = neighbourLayout();
+  const farmstead = farmsteadLayout(today, raw);
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
   return {
-    ...today, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
+    ...farmstead, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
     ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track],
-    anchors: { ...today.anchors, neighbour: neighbour.anchor }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
-    budgetSpots: { ...today.budgetSpots, neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
+    anchors: { ...farmstead.anchors, neighbour: neighbour.anchor }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
+    budgetSpots: { ...farmstead.budgetSpots, neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
     fieldLandmarks: fieldLandmarksLayout(),
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
   };

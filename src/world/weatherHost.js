@@ -4,12 +4,13 @@
 // code reads. game.js builds this and calls updateDaylight(), updateWind() and updateSnowCoat() inside the frame guard.
 
 import { KIND_WARMTH } from './forecast.js';
+import { barnFrame } from './barn.js';
 import { windUniforms, swayMetres } from '../effects/windSway.js';
 import { lightsWanted } from '../npc/girlControls.js';
 import { snowUniforms, topsCover, vehicleSnowAfter } from './snowCoat.js';
 import { coatTree } from './snowCoatView.js';
 
-const HAY_DOOR_OUT = Math.PI / 2; // the hay door looks east: out of it is +x
+const HAY_DOOR_OUT = Math.PI / 2; // the hay door looks out of the barn's door end: east at yaw 0 (turned with the barn)
 const BANG_COOLDOWN = 3; // seconds between the shutter's bangs the girls hear
 
 export class WeatherHost {
@@ -133,7 +134,8 @@ export class WeatherHost {
     swayMetres.tree.value = p.swayTree;
     const barn = g.world.props?.barn;
     if (!barn?.shutter) return;
-    const bang = g.shutter.update(dt, wind.along(HAY_DOOR_OUT));
+    const out = barnFrame(g.world.layout).headingToWorld(HAY_DOOR_OUT);
+    const bang = g.shutter.update(dt, wind.along(out));
     barn.shutter.rotation.y = -g.shutter.angle;
     this.shutterBangCool = Math.max(0, this.shutterBangCool - dt);
     if (bang && this.shutterBangCool <= 0) {
@@ -141,7 +143,7 @@ export class WeatherHost {
       g.doorAudio.bang(bang.strength);
       g.notice('bang', { x: barn.hayDoor.x + 0.3, y: barn.hayDoor.y + 0.7, z: barn.hayDoor.z }, { key: 'shutter', strength: 0.6 * bang.strength });
     }
-    if (wind.hayBlows(HAY_DOOR_OUT)) this.blowHay();
+    if (wind.hayBlows(out)) this.blowHay();
     g.hayBlow.update(dt);
   }
 

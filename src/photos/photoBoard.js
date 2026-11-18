@@ -1,6 +1,6 @@
 import './photoBoard.css';
 import * as THREE from 'three';
-import { barnShape } from '../world/barn.js';
+import { barnShape, placeInBarn } from '../world/barn.js';
 
 const BOARD_W = 1.3; // metres
 const BOARD_H = 1;
@@ -39,11 +39,12 @@ export class PhotoBoardView {
       group.add(bar);
     }
     // South of the two chalkboards (z - 2 each side of the calendar), clear of the barn's end wall.
-    group.position.set(shape.inner.minX + 0.06, floorY + 1.6, shape.z - 3.65);
+    placeInBarn(game.world.layout, group, shape.inner.minX + 0.06, floorY + 1.6, shape.z - 3.65);
     game.scene.add(group);
     this.group = group;
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.4, BOARD_H + 0.1, BOARD_W + 0.1), new THREE.MeshBasicMaterial({ visible: false }));
     this.proxy.position.copy(group.position);
+    this.proxy.quaternion.copy(group.quaternion);
     game.scene.add(this.proxy);
     this.images = new Map(); // data URL -> a loaded Image
     this.buildCard();

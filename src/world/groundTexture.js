@@ -68,6 +68,42 @@ const mix = (a, b) => {
   return (h ^ (h >>> 15)) >>> 0;
 };
 
+/** A concrete yard: pale grey in 6 m bays with a dark joint between each, mottled and stained here and there by cell (the same every time). */
+function paintSlab(c, ctx, s, r) {
+  const mid = [(r.minX + r.maxX) / 2, (r.minZ + r.maxZ) / 2];
+  if (!c.inWin(mid[0], mid[1], Math.max(r.maxX - r.minX, r.maxZ - r.minZ) / 2 + 1)) return;
+  const [px0, pz0] = c.toPx(r.minX, r.minZ);
+  const [px1, pz1] = c.toPx(r.maxX, r.maxZ);
+  ctx.fillStyle = '#8d8b85';
+  ctx.fillRect(px0, pz0, px1 - px0, pz1 - pz0);
+  const cell = 2;
+  for (let x = r.minX; x < r.maxX; x += cell) {
+    for (let z = r.minZ; z < r.maxZ; z += cell) {
+      if (!c.inWin(x, z, cell)) continue;
+      const h = hash01(S.slab, Math.floor(x / cell), Math.floor(z / cell));
+      const [qx, qz] = c.toPx(x, z);
+      ctx.fillStyle = h < 0.5 ? `rgba(255,255,255,${0.03 + h * 0.08})` : h > 0.93 ? `rgba(40,34,26,${0.06 + (h - 0.93) * 1.5})` : `rgba(0,0,0,${0.02 + (h - 0.5) * 0.1})`;
+      ctx.fillRect(qx, qz, cell * s, cell * s);
+    }
+  }
+  ctx.strokeStyle = 'rgba(55,53,49,0.6)'; // the joints between the bays
+  ctx.lineWidth = Math.max(1, 0.06 * s);
+  ctx.beginPath();
+  for (let x = Math.ceil(r.minX / 6) * 6; x < r.maxX; x += 6) {
+    const [a, b] = c.toPx(x, r.minZ);
+    const [, d] = c.toPx(x, r.maxZ);
+    ctx.moveTo(a, b);
+    ctx.lineTo(a, d);
+  }
+  for (let z = Math.ceil(r.minZ / 6) * 6; z < r.maxZ; z += 6) {
+    const [a, b] = c.toPx(r.minX, z);
+    const [d] = c.toPx(r.maxX, z);
+    ctx.moveTo(a, b);
+    ctx.lineTo(d, b);
+  }
+  ctx.stroke();
+}
+
 /** A number from 0 to 1 for cell (i, j) of kind `salt`: the same every time. */
 export const hash01 = (salt, i, j = 0) => mix(mix(salt, i | 0), j | 0) / 4294967296;
 
@@ -86,7 +122,7 @@ export function itemRandom(salt, i) {
 const S = {
   blotch: 1, mid: 2, fine: 3, stubble: 10, hillGrass: 20, tussock: 21, woodEdge: 22, woodCell: 23, laneA: 24, laneB: 25, stream: 26, ford: 27, paddock: 28, mud: 29, tuft: 30, pondA: 31,
   woodFloor: 40, leaf: 41, trailSpeck: 42, rootA: 43, mottleWood: 44, pondB: 45, quarryField: 50, grit: 51, gritJ: 52, stone: 53, heap: 54, fleck: 55, pondC: 56,
-  barnWear: 60, straw: 61, mottle: 62, bog: 63,
+  barnWear: 60, straw: 61, mottle: 62, bog: 63, slab: 64,
 };
 
 const INFINITE = { minX: -Infinity, maxX: Infinity, minZ: -Infinity, maxZ: Infinity };
@@ -171,8 +207,11 @@ export function* paintGround(plan, c) {
     ctx.fillRect(px - r * s, pz - r * s, r * 2 * s, r * 2 * s);
   };
   const { yard, gate, fieldHalf } = layout;
-  wear(yard.x, yard.z, yard.radius * 0.8, 'rgba(105,92,66,0.85)');
-  wear(yard.x - 4, yard.z + 2, yard.radius * 0.45, 'rgba(92,80,58,0.7)');
+  if (layout.farmstead?.slab) paintSlab(c, ctx, s, layout.farmstead.slab); // the new farm's yard is concrete, not bare earth (#682)
+  else {
+    wear(yard.x, yard.z, yard.radius * 0.8, 'rgba(105,92,66,0.85)');
+    wear(yard.x - 4, yard.z + 2, yard.radius * 0.45, 'rgba(92,80,58,0.7)');
+  }
   wear(gate.x, fieldHalf - 3, 7, 'rgba(90,72,48,0.8)');
   if (layout.road && !layout.newFarm) wear(fieldHalf - 4, layout.road.z, 6, 'rgba(90,72,48,0.6)'); // the quads cut the corner onto the road
   paintOutbuildings(c, plan, wear); // its own draws, leaving the rest of the ground as it was
