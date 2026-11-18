@@ -52,9 +52,9 @@ export function cowParts(variant = 0) {
   const coat = (x, y, z) => lerp3(BLACK, WHITE, patches(x, y, z, variant));
   const geos = [];
   // The barrel, the hips (high, with pin bones) and the shoulders, as overlapping ellipsoids.
-  geos.push(paint(sphere(), at(0, 1.02, 0, 0, 0, 0, 0.4, 0.46, 0.98), coat));
-  geos.push(paint(sphere(), at(0, 1.12, -0.72, 0, 0, 0, 0.36, 0.4, 0.42), coat));
-  geos.push(paint(sphere(), at(0, 1.1, 0.55, 0, 0, 0, 0.32, 0.4, 0.4), coat));
+  geos.push(paint(sphere(), at(0, 1.0, 0, 0, 0, 0, 0.44, 0.5, 1.0), coat));
+  geos.push(paint(sphere(), at(0, 1.1, -0.72, 0, 0, 0, 0.4, 0.44, 0.44), coat));
+  geos.push(paint(sphere(), at(0, 1.08, 0.55, 0, 0, 0, 0.36, 0.44, 0.42), coat));
   // The neck, rising from the shoulders and out to the head, and the head with its muzzle, a white blaze and a dark nose.
   geos.push(paint(new THREE.CylinderGeometry(0.15, 0.22, 0.62, 10), at(0, 1.12, 1.05, 1.1), (x, y, z) => lerp3(BLACK, WHITE, patches(x * 1.3, y, z, variant + 1))));
   geos.push(paint(new THREE.BoxGeometry(0.26, 0.3, 0.42, 2, 2, 2), at(0, 0.95, 1.42, 0.5), (x, y, z) => (Math.abs(x) < 0.04 && z > 1.25 ? WHITE : BLACK)));
@@ -67,12 +67,12 @@ export function cowParts(variant = 0) {
   const leg = (x, z, hind) => {
     const colour = (px, py, pz) => (py > 0.35 ? lerp3(BLACK, WHITE, patches(px, py, pz, variant + 2)) : WHITE);
     if (hind) {
-      geos.push(paint(new THREE.CylinderGeometry(0.075, 0.06, 0.52, 8), at(x, 0.78, z + 0.02, -0.25), colour));
-      geos.push(paint(new THREE.CylinderGeometry(0.055, 0.05, 0.5, 8), at(x, 0.27, z - 0.05, 0.15), colour));
+      geos.push(paint(new THREE.CylinderGeometry(0.115, 0.075, 0.52, 8), at(x, 0.78, z + 0.02, -0.25), colour));
+      geos.push(paint(new THREE.CylinderGeometry(0.07, 0.055, 0.5, 8), at(x, 0.27, z - 0.05, 0.15), colour));
     } else {
-      geos.push(paint(new THREE.CylinderGeometry(0.075, 0.05, 0.9, 8), at(x, 0.5, z), colour));
+      geos.push(paint(new THREE.CylinderGeometry(0.105, 0.06, 0.9, 8), at(x, 0.5, z), colour));
     }
-    geos.push(paint(new THREE.BoxGeometry(0.1, 0.07, 0.14), at(x, 0.035, z + (hind ? -0.1 : 0.01)), () => HOOF));
+    geos.push(paint(new THREE.BoxGeometry(0.13, 0.08, 0.17), at(x, 0.04, z + (hind ? -0.1 : 0.01)), () => HOOF));
   };
   for (const s of [-1, 1]) {
     leg(s * 0.24, 0.62, false);
