@@ -10,6 +10,7 @@ export const DEFAULT_GRAPHICS_PARAMS = {
   fullDistance: 45, // metres from its nearest edge within which the village is drawn in full, not as a plain far version (0: always full)
   neighbourFullDistance: 90, // the same for the neighbour's farm, which is seen from the lane 45 m off its wall: from the lane you see the dairy's detail (0: always full)
   hedgeFullDistance: 150, // metres from a tile of hedge or wall within which its leafy blocks are drawn, and beyond which a plain strip is (0: always the blocks)
+  treeFullDistance: 70, // metres from a tile of the wood's oaks within which they are drawn in full, and beyond which as lighter far oaks (0: always in full)
   barnPropsDistance: 25, // metres the barn's racks, charger, generator and jacks are drawn out to, from their nearest edge: more than the barn's corner to corner, so none vanish from inside it (0: all of them)
   vehicleDetailDistance: 60, // metres beyond which a vehicle loses its small parts (bolts, cables, decals, brake bits; 0: never)
   shadowDistance: 80, // metres beyond which a vehicle casts no shadow (0: always)
@@ -28,6 +29,7 @@ export const GRAPHICS_PARAM_RANGES = {
   fullDistance: [0, 400, 5],
   neighbourFullDistance: [0, 400, 5],
   hedgeFullDistance: [0, 600, 10],
+  treeFullDistance: [0, 300, 5],
   barnPropsDistance: [0, 200, 5],
   vehicleDetailDistance: [0, 300, 5],
   shadowDistance: [0, 400, 5],

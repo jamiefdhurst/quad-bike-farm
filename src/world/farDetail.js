@@ -20,6 +20,8 @@ export const BARN_PROP_NAMES = ['tyreRack', 'sparesRack', 'batteryCharger', 'hel
 export const SET_PIECE_NAMES = ['village', 'neighbourFarm', 'neighbourLand', 'brushwood', 'logs', 'trailMarkers', 'coneCourse', 'climbCones', 'riverside', 'lineUpSleepers', 'quarrySite', 'shepherdsHut', 'rolling-road-trailer',
   // The field landmarks (#815): the trees have a far version, so they stay in sight from the gates; the others go beyond `setPieceDistance`.
   'loneOak', 'oldGateposts', 'deadElm', 'farPond', 'castRoller', 'loneAsh', 'brookAlders', 'bigOaks',
+  // Hollow Wood's veteran oak and the woodpile's lean-to and block (#683).
+  'veteranOak', 'logYardScenery',
   // The drive's cattle grid with its sign and wings, and the reflector posts at the lane end (#568).
   'cattleGrid', 'driveReflectors',
   // The farmstead's garden wall and the rail along Home Ground (#682).
@@ -105,6 +107,7 @@ export class FarDetail {
     this.inside = new WeakMap(); // set piece -> the vehicles standing in it
     this.centre = new THREE.Vector3();
     this.hedgeSwaps = []; // the swaps of the hedges' blocks and the wall's stones for far strips (hedgeFar.js), set by the world once the props are built
+    this.treeSwaps = []; // the swaps of the wood's oaks for far oaks (treeFar.js), set the same way
   }
 
   /** Looks at the scene from `position` every quarter second (always when `now`). With `fresh` (the frame budget's count, #597) each decision is made as if
@@ -125,6 +128,7 @@ export class FarDetail {
       else this.findSmall(o);
     }
     for (const swap of this.hedgeSwaps) swap.update(position, this.params.hedgeFullDistance, fresh);
+    for (const swap of this.treeSwaps) swap.update(position, this.params.treeFullDistance, fresh);
     this.smallShadows(position, fresh);
     this.leaveOutSpecks(position, fresh);
   }
