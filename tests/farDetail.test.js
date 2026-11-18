@@ -253,6 +253,37 @@ describe('FarDetail set pieces and props', () => {
     far.update({ x: 150, z: 0 }, 1, true); // 45 from the edge: back inside the distance only just
     expect([village.visible, farVersion.visible]).toEqual([false, true]);
   });
+  it('swaps the neighbour\'s farm at its own, longer distance and the village at the usual one (#973)', () => {
+    const make = (name, key) => {
+      const o = piece(name, 200, 0); // spans x 195 to 205
+      if (key) o.userData.fullDistanceKey = key;
+      o.userData.farVersion = new THREE.Group();
+      return o;
+    };
+    const village = make('village');
+    const neighbour = make('neighbourFarm', 'neighbourFullDistance');
+    const scene = new THREE.Scene();
+    for (const o of [village, village.userData.farVersion, neighbour, neighbour.userData.farVersion]) scene.add(o);
+    const far = new FarDetail(scene, { ...params, fullDistance: 45, neighbourFullDistance: 90 });
+    far.update({ x: 120, z: 0 }, 1, true); // 75 from the edge: past the village's distance, inside hers
+    expect([village.visible, neighbour.visible]).toEqual([false, true]);
+    expect([village.userData.farVersion.visible, neighbour.userData.farVersion.visible]).toEqual([true, false]);
+    far.update({ x: 60, z: 0 }, 1, true); // 135 from the edge: past both, the far version shows
+    expect([village.visible, neighbour.visible]).toEqual([false, false]);
+    expect(neighbour.userData.farVersion.visible).toBe(true);
+    far.update({ x: 0, z: 0 }, 1, true);
+    far.update({ x: 108, z: 0 }, 1, true); // 87 from the edge: back inside 90 only just, so full (the margin holds it past 90 once full, not before)
+    expect(neighbour.visible).toBe(true);
+    const zero = new FarDetail(scene, { ...params, neighbourFullDistance: 0 });
+    zero.update({ x: 0, z: 0 }, 1, true);
+    expect(neighbour.visible).toBe(true); // 0: always full
+  });
+  it('has her yard on the longer distance: neighbourFarm names its own key', async () => {
+    const { DEFAULT_GRAPHICS_PARAMS: g, GRAPHICS_PARAM_RANGES: r } = await import('../src/core/graphics.js');
+    expect(g.neighbourFullDistance).toBe(90);
+    expect(g.neighbourFullDistance).toBeGreaterThan(g.fullDistance);
+    expect(r.neighbourFullDistance).toEqual([0, 400, 5]);
+  });
   it('always draws the full one with a fullDistance of 0', () => {
     const village = piece('village', 500, 0);
     const farVersion = new THREE.Group();

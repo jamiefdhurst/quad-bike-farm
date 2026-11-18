@@ -7,7 +7,8 @@ export const DEFAULT_GRAPHICS_PARAMS = {
   coverDistance: 70, // metres the grass and the stubble are drawn out to (0: all of it)
   roughDistance: 75, // metres the tussocks and bracken on the hill are drawn out to (0: all of it)
   setPieceDistance: 160, // metres a set piece (the neighbour's farm, brushwood, logs, cone courses, the village) is drawn out to, from its nearest edge (0: all)
-  fullDistance: 45, // metres from its nearest edge within which the village and the neighbour's farm are drawn in full, not as a plain far version (0: always full)
+  fullDistance: 45, // metres from its nearest edge within which the village is drawn in full, not as a plain far version (0: always full)
+  neighbourFullDistance: 90, // the same for the neighbour's farm, which is seen from the lane 45 m off its wall: from the lane you see the dairy's detail (0: always full)
   hedgeFullDistance: 150, // metres from a tile of hedge or wall within which its leafy blocks are drawn, and beyond which a plain strip is (0: always the blocks)
   barnPropsDistance: 25, // metres the barn's racks, charger, generator and jacks are drawn out to, from their nearest edge: more than the barn's corner to corner, so none vanish from inside it (0: all of them)
   vehicleDetailDistance: 60, // metres beyond which a vehicle loses its small parts (bolts, cables, decals, brake bits; 0: never)
@@ -25,6 +26,7 @@ export const GRAPHICS_PARAM_RANGES = {
   roughDistance: [0, 400, 5],
   setPieceDistance: [0, 600, 10],
   fullDistance: [0, 400, 5],
+  neighbourFullDistance: [0, 400, 5],
   hedgeFullDistance: [0, 600, 10],
   barnPropsDistance: [0, 200, 5],
   vehicleDetailDistance: [0, 300, 5],
