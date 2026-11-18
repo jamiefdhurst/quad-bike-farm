@@ -63,6 +63,16 @@ describe('the barn', () => {
   });
 });
 
+describe('where a vehicle may not start', () => {
+  it('keeps clear of the barn\'s doorways on the turned barn: out of the doors, south of them, not east where they used to face', () => {
+    const keep = spawnKeepOut(two);
+    const doorway = keep.find((k) => k.what === 'the barn doorway');
+    const extension = keep.find((k) => k.what === 'the extension doorway');
+    for (const k of [doorway, extension]) expect(k.z).toBeGreaterThan(two.barn.z + two.barn.halfX); // south of the first door's wall
+    expect(extension.x).toBeLessThan(doorway.x); // the second span is to the west
+  });
+});
+
 describe('the yard, stackyard, orchard and garden', () => {
   const places = farmsteadPlaces(two);
   it('has a concrete yard over plan (425 to 615, 317 to 415), with the drive coming in on its east side at z 345', () => {
