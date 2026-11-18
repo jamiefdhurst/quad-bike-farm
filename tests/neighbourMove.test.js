@@ -12,6 +12,8 @@ import { farNeighbourFarm, mergeParkedVehicle } from '../src/world/neighbourFarm
 import * as THREE from 'three';
 import { vi } from 'vitest';
 import { fakeCanvas } from './helpers/vehicleModels.js';
+import { headlessContext } from './helpers/worldModels.js';
+import { coplanarOverlaps } from './helpers/coplanar.js';
 
 const two = layoutNew(LAYOUT);
 const S = neighbourFarmShape(two);
@@ -286,5 +288,22 @@ describe('her parked vehicles drawn as a few meshes', () => {
       }
       expect(object.children.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('her yard built on the new farm', () => {
+  it('has no faces fighting on one plane in its walls, gateposts and gate (the house and the barn are lifted by #910 and #963, which do the same for theirs)', async () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const { buildNeighbourFarm } = await import('../src/world/neighbourFarmProps.js');
+    const c = headlessContext();
+    const heights = createTerrainHeight(two, new Track(two.trackPoints));
+    const built = buildNeighbourFarm({ ...c, layout: two, heights, gateParams: { swingSeconds: 1, blockBelow: 0.5, clearRadius: 3 } });
+    built.group.updateMatrixWorld(true);
+    expect(built.group.name).toBe('neighbourFarm');
+    expect(built.gate.x).toBeCloseTo(S.gateway.x, 6);
+    const y = S.yard;
+    const onWall = ([x, , z]) => x < y.minX + 1 || x > y.maxX - 1 || z < y.minZ + 1 || z > y.maxZ - 1; // along the wall's line, the gateposts and the gate
+    const fights = coplanarOverlaps(built.group, { gap: 0.003, minArea: 2e-5, textured: true }).filter((f) => onWall(f.at));
+    expect(fights.map((f) => `${f.axis}${f.dir > 0 ? '+' : '-'} at ${f.at.map((v) => v.toFixed(2)).join(',')} area ${f.area.toFixed(3)}`)).toEqual([]);
   });
 });

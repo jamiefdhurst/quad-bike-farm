@@ -104,7 +104,7 @@ export function gateLeaf(wood, iron, len) {
   g.add(brace);
   for (const y of [0.3, 1.0]) {
     const strap = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.6), iron);
-    strap.position.set(0, y, 0.3);
+    strap.position.set(0, y, 0.31); // 1 cm in from the bars' ends, so the two don't share a plane
     g.add(strap);
   }
   const latch = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.16), iron);
@@ -228,16 +228,20 @@ export function buildNeighbourFarm(c) {
 
   // The wall: drystone with a capping course, and a stone pillar either side of the gateway.
   const cap = mat(0x77736a);
-  const H = s.yard.wallHeight + sink;
-  for (const w of s.walls) {
-    box(w.hx * 2, H, w.hz * 2, stone, w.x, y0 - sink + H / 2, w.z);
-    box(w.hx * 2 + 0.12, 0.1, w.hz * 2 + 0.12, cap, w.x, y0 + s.yard.wallHeight + 0.05, w.z, 1);
+  // The north and south walls run the whole width; the pieces that meet them at the corners go a little deeper, and their caps a hair higher and
+  // narrower, so no two faces of one way lie on one plane where the walls meet (tests/helpers/coplanar.js).
+  s.walls.forEach((w, i) => {
+    const down = i >= 2 ? sink + 0.02 : sink;
+    const H = s.yard.wallHeight + down;
+    const trim = i >= 2 ? 0.108 : 0.12;
+    box(w.hx * 2, H, w.hz * 2, stone, w.x, y0 - down + H / 2, w.z);
+    box(w.hx * 2 + trim, 0.1, w.hz * 2 + trim, cap, w.x, y0 + s.yard.wallHeight + (i >= 2 ? 0.056 : 0.05), w.z, 1);
     fixedBox(w.x, y0 + s.yard.wallHeight / 2, w.z, w.hx, s.yard.wallHeight / 2 + 0.5, w.hz);
-  }
+  });
   const gx = s.gateway.x;
   const out = s.gateway.side === 'west' ? -1 : 1; // which way the lane is from the gateway: east on today's farm, west on the new one
   for (const z of [s.gateway.minZ - 0.3, s.gateway.maxZ + 0.3]) {
-    box(0.8, 2 + sink, 0.8, stone, gx, y0 - sink + (2 + sink) / 2, z);
+    box(0.8, 2 + sink + 0.05, 0.8, stone, gx, y0 - sink - 0.05 + (2 + sink + 0.05) / 2, z); // a little deeper than the wall it stands in
     box(0.95, 0.12, 0.95, cap, gx, y0 + 2.06, z, 1);
     fixedBox(gx, y0 + 1, z, 0.4, 1, 0.4);
   }

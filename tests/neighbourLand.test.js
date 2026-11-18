@@ -10,6 +10,7 @@ import { landColor, patchColor } from '../src/world/patchwork.js';
 import { COW_VARIANTS, buildCow, cowGeometry } from '../src/world/cattleModel.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
+import { coplanarOverlaps } from './helpers/coplanar.js';
 
 const two = layoutNew(LAYOUT);
 const land = neighbourLandShape(two);
@@ -173,6 +174,15 @@ describe('her land built', () => {
     const [, trackZ] = fromPlan([0, 292]);
     const laneX = fromPlan([912, 0])[0];
     for (const [x, , z, hx, , hz] of boxes) if (Math.abs(x - laneX) < 1 && hz > 1) expect(Math.abs(z - trackZ) - hz, `box at z ${z}`).toBeGreaterThan(1);
+  });
+
+  it('has no faces fighting on one plane in her gate, its posts or a cow', () => {
+    built.group.updateMatrixWorld(true);
+    const fights = coplanarOverlaps(built.group, { gap: 0.003, minArea: 2e-5, textured: true });
+    expect(fights.map((f) => `${f.axis}${f.dir > 0 ? '+' : '-'} at ${f.at.map((v) => v.toFixed(2)).join(',')} area ${f.area.toFixed(4)}`)).toEqual([]);
+    const cow = buildCow(0);
+    cow.updateMatrixWorld(true);
+    expect(coplanarOverlaps(cow, { gap: 0.003, minArea: 2e-5, textured: true })).toEqual([]);
   });
 
   it('opens her gate with E like the others, swinging in to her field', () => {
