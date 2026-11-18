@@ -2934,7 +2934,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where is Hollow Wood on the new farm?',
-        a: `On <code>?layout=2</code> the wood is in the north-west corner, about half as big again as before (nearly 2.8 hectares), with the Hollow Run and the Fern Trail just as they were, laps
+        a: `On <code>?layout=2</code> the wood is in the north-west corner, about half as big again as before (about 2.8 hectares), with the Hollow Run and the Fern Trail just as they were, laps
           and all, in the middle of it. The gate is in its south side, onto the Wet Meadow; a muddy lead-in bends west inside the hedge from it to the Run, a good deal longer than the old one, and the Fern
           Trail's sign still stands beside it. There is a second gate on the west side for Back Lane, which is not laid yet. The extra ground is more of the same oaks, hazel, holly and fallen
           branches, thorn and bramble along the hedges, and one great old oak in the glade by the pond, much bigger than the rest, so you can see where you are. Beside the gate, in the Wet Meadow, is the woodpile:

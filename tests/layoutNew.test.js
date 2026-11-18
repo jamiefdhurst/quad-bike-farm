@@ -268,6 +268,11 @@ describe('the map', () => {
     for (const x of FIELDS_PLAN) expect(names, x.label).toContain(x.label);
     expect(new Set(f.areas.map((a) => a.fill)).size).toBeGreaterThan(5);
   });
+  it('writes each field\'s name once: the wood\'s own label is the plan\'s (#985)', () => {
+    const names = f.labels.filter((l) => l.kind === 'field').map((l) => l.text);
+    expect(names.filter((n) => n === 'Hollow Wood')).toHaveLength(1);
+    expect(new Set(names).size).toBe(names.length);
+  });
   it('draws the walls grey and the hedges green', () => {
     expect(f.hedges.some((h) => h.wall)).toBe(true);
     expect(f.hedges.some((h) => !h.wall)).toBe(true);

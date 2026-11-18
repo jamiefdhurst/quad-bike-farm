@@ -1430,3 +1430,10 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - **Not here.** The wood's sound, its night lamp and bands and the bogs' water are #980, #981 and #982; new kinds of tree and the autumn colours of trees #848; timing the Run and the Trail #230 and #560 (there are no records for them; Jamie, 18 November: leave them to those). #231 (grow the wood east) closes with this: the new wood is big enough and has its second gate.
 - **Looked at** with `tools/shot.mjs --layout 2`: the lean-to, stack, block and axe (two rounds), the wood from the gate, the great oak across the pond, and the Fern Trail's ferns in autumn. Not looked at closely: the thorn and bramble edge, the wood at dusk.
 
+
+## What the recheck of Hollow Wood's move found (#985)
+
+- **The floor was still a box.** `paintWoods` painted the leaf litter and the fallen-leaf drifts over `woods.rect`, which on the new farm is only the bounds of the seven-sided outline: about 5,500 m2 of litter lay outside the wood, up the slanted east hedge into North Field and in a sliver of the Wet Meadow. A wood with an `outline` now paints a floor cell and a drift only where `woods.inWoods` says it is in the wood (no canvas clip: the painter yields part way, and a clip held across a yield would catch another tile's drawing). Today's rectangular wood is painted as before.
+- **Two names on the map.** The wood's own label and the plan's field label both said "Hollow Wood"; on a plan that names its fields only the plan's is written.
+- **A tint that went the wrong way.** `barkPale` was the bark texture multiplied by a colour, which can only darken, so it was darker than `bark`. The dark kind carries the tint now and the pale one is the texture as painted. The FAQ's "nearly 2.8 hectares" is "about 2.8".
+- **Left to #847:** the map's tree dots are still a lattice over the wood's bounding box.

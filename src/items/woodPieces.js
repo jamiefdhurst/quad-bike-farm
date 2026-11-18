@@ -17,8 +17,8 @@ function materials() {
   const random = createRandom(0x10c5);
   const barkMap = painted ? barkTexture(random) : null;
   made = {
-    bark: new THREE.MeshStandardMaterial(painted ? { map: barkMap, roughness: 0.95 } : { color: 0x4d3a28, roughness: 0.95 }),
-    barkPale: new THREE.MeshStandardMaterial(painted ? { map: barkMap, color: 0xd6c3a8, roughness: 0.95 } : { color: 0x6a5238, roughness: 0.95 }),
+    bark: new THREE.MeshStandardMaterial(painted ? { map: barkMap, color: 0xb0a08a, roughness: 0.95 } : { color: 0x4d3a28, roughness: 0.95 }),
+    barkPale: new THREE.MeshStandardMaterial(painted ? { map: barkMap, roughness: 0.95 } : { color: 0x6a5238, roughness: 0.95 }),
     heart: new THREE.MeshStandardMaterial(painted ? { map: logEndTexture(random), roughness: 0.85 } : { color: 0xc9a46a, roughness: 0.85 }), // the cut face, fresh wood
     split: new THREE.MeshStandardMaterial(painted ? { map: woodTexture(random, [196, 164, 112]), roughness: 0.85 } : { color: 0xc9a46a, roughness: 0.85 }), // the face a log is split along: bare grain
     post: new THREE.MeshStandardMaterial(painted ? { map: woodTexture(random, [92, 72, 50]), roughness: 0.9 } : { color: 0x5a5148, roughness: 0.9 }),

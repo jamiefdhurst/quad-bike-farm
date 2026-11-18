@@ -284,3 +284,38 @@ describe('the thorn and bramble edge', () => {
     for (const near of [(s) => s.x > b.maxX - 12, (s) => s.x < b.minX + 25, (s) => s.z < b.minZ + 25, (s) => s.z > b.maxZ - 12]) expect(spots.filter(near).length).toBeGreaterThan(15);
   });
 });
+
+describe('the wood\'s floor on the new farm (#985)', () => {
+  /** What paintWoods draws, as [x, z] metres: the floor's cells and the fallen leaves, on a canvas that only records. */
+  async function painted(layout, fine = true) {
+    const { paintWoods } = await import('../src/world/groundTexture.js');
+    const w = createWoods(layout);
+    const b = { minX: w.rect.minX - 20, maxX: w.rect.maxX + 20, minZ: w.rect.minZ - 20, maxZ: w.rect.maxZ + 20 };
+    const spots = [];
+    const toPx = (x, z) => [x - b.minX, z - b.minZ];
+    const ctx = new Proxy({ fillRect: (px, pz, wide, tall) => spots.push([px + b.minX + wide / 2, pz + b.minZ + tall / 2]), ellipse: (px, pz) => spots.push([px + b.minX, pz + b.minZ]) }, { get: (t, k) => (k in t ? t[k] : () => {}), set: () => true });
+    const c = { ctx, s: 1, win: b, fine, toPx, over: () => true, inWin: () => true, due: () => false };
+    for (const _ of paintWoods(c, { woods: w }, false));
+    return { spots, w };
+  }
+  it('is painted inside the wood\'s outline only, not over the whole of its bounding box', async () => {
+    const { spots, w } = await painted(two);
+    expect(spots.length).toBeGreaterThan(20000);
+    const edges = polygonEdges(W.outline);
+    // A cell is a half metre across and a drift's ellipse reaches under a metre, so a spot may lie a metre outside the line, no more.
+    for (const [x, z] of spots) if (!w.inWoods(x, z)) expect(distanceToEdges(edges, x, z)).toBeLessThan(1.2);
+    const bounds = polygonArea(W.outline) / ((W.maxX - W.minX) * (W.maxZ - W.minZ));
+    expect(bounds).toBeLessThan(0.9); // the box is a good deal more than the wood, so painting it all would show
+    const outside = spots.filter(([x, z]) => !w.inWoods(x, z)).length;
+    expect(outside / spots.length).toBeLessThan(0.02);
+  });
+  it('still covers today\'s rectangular wood, which has no outline', async () => {
+    const { spots, w } = await painted(LAYOUT, false);
+    expect(spots.length).toBeGreaterThan(1000);
+    const r = w.rect;
+    for (const [x, z] of spots) {
+      expect(x).toBeGreaterThanOrEqual(r.minX - 2);
+      expect(x).toBeLessThanOrEqual(r.maxX + 2);
+    }
+  });
+});
