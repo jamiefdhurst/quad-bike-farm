@@ -154,6 +154,22 @@ describe('her land built', () => {
     expect([built.gate.x, built.gate.z]).toEqual([land.gate.x, land.gate.z]);
   });
 
+  it('puts her hedges in the scene, not in the set piece that is hidden at 160 m, and none of them casts a shadow', () => {
+    const hedges = [];
+    for (const t of built.hedgeSwap.tiles.values()) hedges.push(...t.near, ...t.far);
+    expect(hedges.length).toBeGreaterThan(20);
+    for (const m of hedges) {
+      expect(m.castShadow, 'a hedge mesh').toBe(false);
+      for (let up = m.parent; up; up = up.parent) expect(up, 'not inside the set piece').not.toBe(built.group);
+      expect(m.parent.parent ?? m.parent, 'in the scene').toBeTruthy();
+    }
+    // The herd and the gate do cast.
+    const herd = built.group.children.find((o) => o.name === 'neighbourHerd');
+    let casting = 0;
+    herd.traverse((o) => { if (o.isMesh && o.castShadow) casting++; });
+    expect(casting).toBeGreaterThan(0);
+  });
+
   it('draws 22 cows in a handful of instanced meshes, never one for each', () => {
     const herd = built.group.children.find((o) => o.name === 'neighbourHerd');
     let cows = 0;

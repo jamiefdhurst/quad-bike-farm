@@ -1,7 +1,7 @@
-// The neighbour's land across the lane drawn (world/neighbourLand.js has its shape): her hedges as the farm's own leafy blocks within
+// The neighbour's land across the lane drawn (world/neighbourLand.js has its shape): her hedges, in the scene like the farm's own, as leafy blocks within
 // `hedgeFullDistance` and plain far strips beyond (hedgeFar.js, swapped by distance like props.js's) with a collider a stretch, her north field gate in
 // the lane's hedge, and her dairy cows in the two north fields (cattleModel.js). Far-ground detail: the grass and the dark hedge lines are in the
-// ground (patchwork.js). The set piece is named in farDetail.js, so it is drawn out to `setPieceDistance` from its nearest edge.
+// ground (patchwork.js). The gate and the herd are the set piece named in farDetail.js, drawn out to `setPieceDistance` from its nearest edge.
 
 import * as THREE from 'three';
 import { neighbourLandShape } from './neighbourLand.js';
@@ -113,12 +113,12 @@ export function buildNeighbourLand(c) {
   }
   const near = instanceModel(models.hedge.scene, matrices, { castShadow: false }); // no shadows: hundreds of instances, as the farm's own hedges
   const far = buildFarHedges(farPieces, { tint: leafTint(models.hedge.scene), name: 'neighbourHedgesFar' });
-  group.add(near, far);
+  scene.add(near, far); // straight into the scene as the farm's own are: a set piece is hidden beyond `setPieceDistance`, which would take her far strips with it
   const hedgeSwap = new HedgeSwap(near, far);
 
   const gate = buildNorthFieldGate({ ...c, land, group, fixedBox, gateParams: c.gateParams });
   group.add(buildHerd(land.cows, groundAt, 'neighbourHerd'));
-  enableShadows(group);
+  enableShadows(group); // the gate and the herd only: the hedges are in the scene, not here, and cast none
   scene.add(group);
   return { group, gate, land, hedgeSwap };
 }
