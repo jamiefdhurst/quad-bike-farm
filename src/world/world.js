@@ -79,7 +79,7 @@ export class World {
     ];
 
     // What hides you from a girl as well (npc/sight.js): those, the Dutch barn's clad back and east end (its front and west end are open) and
-    // its bale stack, and the neighbour's house and barn. The muck heap, the trough and the neighbour's parked vehicles are too low or too varied.
+    // its bale stack, and the neighbour's house, barn, parlour, tank room and slurry store. The muck heap, the trough and the neighbour's parked vehicles are too low or too varied.
     const db = this.outbuildings.barn;
     const nb = this.outbuildings.neighbour?.shape;
     this.sightBuildings = [

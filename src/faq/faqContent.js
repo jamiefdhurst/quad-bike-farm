@@ -2936,7 +2936,7 @@ export const FAQ_SECTIONS = [
           door until dark as before. She is a dairy farmer: across the yard from her gate is the milking parlour, a long low block building with a row of small high windows, an
           extractor fan in its end and two cow gates, with the collecting yard in front of it where the herd waits, railed in galvanised steel with a backing gate, a hosepipe and a
           channel for the muck. Beside the parlour's end is the little room for the bulk milk tank, its door open so you can see the stainless tank (you can walk in), with the
-          pipe stub outside where the milk tanker connects, and the round slurry store with its ladder and its danger board stands by the house (don't climb it). Her fields lie behind it and up the lane, hedged, with her black and white dairy cows out in the two north ones; her north field gate is in the lane's hedge a little way north of
+          pipe stub outside where the milk tanker connects, and the round slurry store with its ladder and its danger board stands by the house (don't climb it). Her fields lie behind it and up the lane, hedged, with her black and white dairy cows out in the two north ones; her north field gate is in the lane's hedge about 160 m north of
           her track, and opens with <kbd>E</kbd>. <code>tp me neighbour</code> stands you just inside her gateway and <code>scene neighbour</code> sets that up in daylight.`,
       },
       {

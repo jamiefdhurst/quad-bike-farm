@@ -401,7 +401,7 @@ export function buildNeighbourFarm(c) {
   const outerX = b.outer.maxX;
   for (const dz of [dz0 - 0.12, dz1 + 0.12]) box(0.3, dh + 0.14, 0.24, steel, outerX + 0.04, y0 + (dh + 0.14) / 2 - 0.02, dz, 0.5);
   box(0.3, 0.34, dz1 - dz0 + 0.72, steel, outerX + 0.04, y0 + dh + 0.34, b.door.z, 0.5);
-  box(1.0, 0.1, dz1 - dz0 + 0.9, new THREE.MeshStandardMaterial({ map: concreteTexture(random), roughness: 0.95 }), outerX + 0.55, y0 + 0.05, b.door.z, 2); // the ramp's block, a hair under the slab's edge
+  box(1.0, 0.1, dz1 - dz0 + 0.9, yardConcrete, outerX + 0.55, y0 + 0.05, b.door.z, 2); // the ramp's block, a hair under the slab's edge
   const railLen = 5.4;
   box(0.1, 0.14, railLen + (dz1 - dz0) + 0.3, steel, outerX + 0.2, y0 + dh + 0.82, (dz0 - railLen + dz1 + 0.3) / 2, 0.5); // the top rail, along the wall to the north of the door
   for (let k = 0; k <= 4; k++) box(0.16, 0.12, 0.1, steel, outerX + 0.1, y0 + dh + 0.82, dz0 - railLen + (k * (railLen + (dz1 - dz0) + 0.3)) / 4, 0.3); // its brackets

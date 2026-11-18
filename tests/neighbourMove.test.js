@@ -331,3 +331,40 @@ describe('her barn\'s big door is framed (#569)', () => {
     expect(box.min.z).toBeLessThan(door.z - door.halfWidth - 5); // the rail runs back along the wall for the leaves to slide on
   });
 });
+
+describe('her gate and today\'s farm\'s random stream (#969)', () => {
+  const ctx = (layout, random) => {
+    const c = headlessContext();
+    return { ...c, layout, random, heights: createTerrainHeight(layout, new Track(layout.trackPoints)), gateParams: { swingSeconds: 1, blockBelow: 0.5, clearRadius: 3 } };
+  };
+
+  it('swings its leaves in to the yard when it is open: east on the new farm (gateway in the west wall), west on today\'s', async () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const { buildNeighbourFarm } = await import('../src/world/neighbourFarmProps.js');
+    for (const [layout, into] of [[two, 1], [LAYOUT, -1]]) {
+      const built = buildNeighbourFarm(ctx(layout, () => 0.5));
+      built.gate.state.setOpen(true);
+      built.gate.state.update(10);
+      built.gate.apply();
+      const gx = neighbourFarmShape(layout).gateway.x;
+      const pivots = built.group.children.filter((o) => o.isGroup && Math.abs(o.position.x - gx) < 0.01 && o.children.length === 1);
+      expect(pivots.length).toBe(2);
+      for (const pivot of pivots) {
+        // A leaf runs along z from its hinge; turned by `ry` its far end is at sin(ry) along x, which must point into the yard.
+        const leaf = pivot.children[0];
+        const along = leaf.rotation.y === 0 ? 1 : -1; // the east leaf is turned back to run towards the middle
+        expect(Math.sign(Math.sin(pivot.rotation.y) * along), `leaf at z ${pivot.position.z}`).toBe(into);
+      }
+    }
+  });
+
+  it('takes the same numbers from the random stream on today\'s farm as it did before the new farm (the trees dealt after it stand where they did)', async () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const { buildNeighbourFarm } = await import('../src/world/neighbourFarmProps.js');
+    let n = 0;
+    let seed = 1234;
+    const random = () => { n++; seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    buildNeighbourFarm(ctx(LAYOUT, random));
+    expect(n).toBe(9873);
+  });
+});
