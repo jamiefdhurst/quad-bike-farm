@@ -6,6 +6,7 @@ import { pointAlong, polygonBounds, polygonEdges, pointInPolygon, distanceToEdge
 import { dutchBarnShape, fieldShedShape } from '../world/outbuildings.js';
 import { neighbourFarmShape } from '../world/neighbourFarm.js';
 import { stripPoint } from '../world/layout.js';
+import { barnFrame } from '../world/barn.js';
 import { nearestTrackFraction } from '../world/startLine.js';
 import { roadNetwork } from '../world/roads.js';
 
@@ -223,7 +224,12 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const shed = fieldShedShape(layout);
   const b = layout.barn;
   const buildings = [];
-  if (b) buildings.push({ name: 'barn', rect: centred(b.x, b.z + (b.annex?.halfZ ?? 0), b.halfX, b.halfZ + (b.annex?.halfZ ?? 0)), fill: C.building });
+  if (b) {
+    const f = barnFrame(layout); // both spans, drawn in the barn's own frame and turned with it
+    const mid = f.toWorld(b.x, b.z + (b.annex?.halfZ ?? 0));
+    const [hx, hz] = f.q % 2 ? [b.halfZ + (b.annex?.halfZ ?? 0), b.halfX] : [b.halfX, b.halfZ + (b.annex?.halfZ ?? 0)];
+    buildings.push({ name: 'barn', rect: centred(mid.x, mid.z, hx, hz), fill: C.building });
+  }
   if (dutch) buildings.push({ name: 'dutchBarn', rect: dutch.roof, fill: C.building });
   if (shed) buildings.push({ name: 'fieldShed', rect: shed.outer, fill: C.building });
   const hut = layout.hill?.hut;
@@ -239,8 +245,10 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const fh = layout.farmhouse; // a farm plan's own house, when it has one (today's farm has none: the one house is the neighbour's)
   if (fh) buildings.push({ name: 'farmhouse', rect: centred(fh.x, fh.z, fh.halfX, fh.halfZ), fill: C.building });
   const small = [];
-  if (layout.fuelTank) small.push({ name: 'fuelTank', rect: centred(layout.fuelTank.x, layout.fuelTank.z, 0.8, 1.4), fill: C.shed });
-  if (layout.dieselBowser) small.push({ name: 'dieselBowser', rect: centred(layout.dieselBowser.x, layout.dieselBowser.z, 0.7, 1.2), fill: C.shed });
+  const yardTurned = Math.abs(Math.sin(layout.anchors?.yard?.yaw ?? 0)) > 0.7; // a quarter turn of the yard turns a tank's rectangle with it
+  const side = (o, w, l) => (yardTurned ? [l, w] : [w, l]);
+  if (layout.fuelTank) small.push({ name: 'fuelTank', rect: centred(layout.fuelTank.x, layout.fuelTank.z, ...side(layout.fuelTank, 0.8, 1.4)), fill: C.shed });
+  if (layout.dieselBowser) small.push({ name: 'dieselBowser', rect: centred(layout.dieselBowser.x, layout.dieselBowser.z, ...side(layout.dieselBowser, 0.7, 1.2)), fill: C.shed });
   const t = layout.trough;
   if (t) small.push({ name: 'trough', rect: centred(t.x, t.z, t.length / 2, t.width / 2), fill: C.trough });
   const m = layout.muckHeap;

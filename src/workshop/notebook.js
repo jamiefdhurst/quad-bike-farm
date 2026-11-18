@@ -5,6 +5,7 @@ import { FINDING_OF_FAULT } from '../npc/wontRide.js';
 import { Logbook, DEFAULT_LOGBOOK_PARAMS, LOGBOOK_PARAM_RANGES, shortName, startingCandidates, startingEntries } from './logbook.js';
 import { buildNotebookModel } from './notebookModel.js';
 import { createRandom } from '../core/random.js';
+import { barnLocal, placeInBarn } from '../world/barn.js';
 
 const FAULT_OF_FINDING = Object.fromEntries(Object.entries(FINDING_OF_FAULT).map(([fault, finding]) => [finding, fault]));
 
@@ -43,8 +44,9 @@ export class Notebook {
     const b = game.world.layout.bench;
     const top = game.world.heightAt(b.x, b.z) + b.height;
     this.model = buildNotebookModel();
-    this.model.position.set(b.x + b.length / 2 - 0.7, top, b.z + 0.05); // by the east end, with the vice
+    const own = barnLocal(game.world.layout).bench;
     this.model.rotation.y = 0.35;
+    placeInBarn(game.world.layout, this.model, own.x + own.length / 2 - 0.7, top, own.z + 0.05); // by the east end, with the vice
     game.scene.add(this.model);
     // Something to look at: a box a little bigger than the notebook, so you don't have to aim at the cover.
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.45), new THREE.MeshBasicMaterial({ visible: false }));

@@ -1,6 +1,6 @@
 import './rollingRoad.css';
 import * as THREE from 'three';
-import { barnShape } from './barn.js';
+import { barnShape, placeInBarn } from './barn.js';
 import { stockRpm, slipLines } from '../farm/rollingRoad.js';
 
 // What the rolling road leaves behind: the slip she hands you after a run (a small card that fades by itself, because it is not a screen to
@@ -48,7 +48,7 @@ export class RoadSheet {
       strip.rotation.x = dz < 0 ? 0.5 : -0.5;
       group.add(strip);
     }
-    group.position.set(anchor.x, anchor.y, anchor.z);
+    placeInBarn(game.world.layout, group, anchor.x, anchor.y, anchor.z); // `anchor` is in the barn's own frame
     group.visible = false;
     game.scene.add(group);
     this.group = group;

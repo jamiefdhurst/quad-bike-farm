@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { barnShape } from './barn.js';
+import { barnShape, barnFrame, placeInBarn } from './barn.js';
 import { buildBiscuitTin, buildPlankShelf, BISCUIT_TIN } from './biscuitTin.js';
 
 const SPEED = 3; // lid openness per second
@@ -19,15 +19,19 @@ export class BiscuitTinView {
     const set = new THREE.Group();
     set.name = 'snackTin';
     scene.add(set);
+    // Built in the barn's own frame, the shelf at the group's origin, and the whole group put where that is in the world, turned with the barn.
+    const frame = barnFrame(world.layout);
+    placeInBarn(world.layout, set, wallX + 0.005, floorY + SHELF_HEIGHT, z);
     const shelf = buildPlankShelf();
-    shelf.position.set(wallX + 0.005, floorY + SHELF_HEIGHT, z);
     set.add(shelf);
     this.tin = buildBiscuitTin();
     // Set off the wall so the lid, standing open, clears it: the hinge is the back edge.
-    this.tin.group.position.set(wallX + 0.005 + 0.03 + BISCUIT_TIN.radius * 1.0, floorY + SHELF_HEIGHT, z);
+    this.tin.group.position.set(0.03 + BISCUIT_TIN.radius * 1.0, 0, 0);
     set.add(this.tin.group);
-    this.position = this.tin.group.position;
-    this.front = new THREE.Vector3(wallX + 0.8, world.heightAt(wallX + 0.8, z), z);
+    const tinAt = frame.toWorld(wallX + 0.005 + 0.03 + BISCUIT_TIN.radius * 1.0, z);
+    this.position = new THREE.Vector3(tinAt.x, floorY + SHELF_HEIGHT, tinAt.z); // the tin, in the world
+    const frontAt = frame.toWorld(wallX + 0.8, z);
+    this.front = new THREE.Vector3(frontAt.x, world.heightAt(frontAt.x, frontAt.z), frontAt.z);
     this.target = 0;
   }
 

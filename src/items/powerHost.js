@@ -13,6 +13,7 @@ import { GeneratorAudio } from '../audio/generatorAudio.js';
 import { Generator, GENERATOR_PARAM_RANGES } from './generator.js';
 import { buildGeneratorModel, GENERATOR_SIZE, GENERATOR_EXHAUST } from './generatorModel.js';
 import { ExhaustSmoke, DEFAULT_SMOKE_PARAMS } from '../effects/exhaustSmoke.js';
+import { barnFrame, barnLocal } from '../world/barn.js';
 
 export class PowerHost {
   constructor(game) {
@@ -32,6 +33,7 @@ export class PowerHost {
     this.chargerModel = built;
     const top = this.g.world.heightAt(L.benchCharger.x, L.benchCharger.z) + L.bench.height;
     built.group.position.set(L.benchCharger.x, top, L.benchCharger.z);
+    built.group.rotation.y = L.benchCharger.yaw ?? 0; // it faces the bay, turned with the barn
     this.g.scene.add(built.group);
     const proxy = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.3, 0.4), new THREE.MeshBasicMaterial({ visible: false }));
     proxy.position.set(CHARGER_SLOT.x / 2, 0.12, 0.02);
@@ -66,7 +68,9 @@ export class PowerHost {
         unit.engine.battery = 1;
         this.g.charger.full = true;
       } else {
-        b.putDown(new THREE.Vector3(L.bench.x - 1.4 + n * 0.4, 0, L.bench.z + 0.85), 0.3 * n);
+        const bench = barnLocal(L).bench; // on the floor in front of the bench, along it
+        const spot = barnFrame(L).toWorld(bench.x - 1.4 + n * 0.4, bench.z + 0.85);
+        b.putDown(new THREE.Vector3(spot.x, 0, spot.z), 0.3 * n);
         n++;
       }
     }

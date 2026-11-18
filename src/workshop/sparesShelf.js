@@ -4,7 +4,7 @@ import { registerTuning } from '../core/tuning.js';
 import { createRandom } from '../core/random.js';
 import { buildSparesModel } from './sparesModel.js';
 import { buildTyreRackModel } from './tyreRackModel.js';
-import { barnShape } from '../world/barn.js';
+import { barnShape, barnLocal, placeInBarn } from '../world/barn.js';
 import { engineName, familyWords } from '../vehicle/engineSwap.js';
 import { Spares, DEFAULT_SPARES_PARAMS, SPARES_PARAM_RANGES, PARTS, PART_IDS, TYRE_IDS, ALL_PART_IDS, partCount } from './spares.js';
 
@@ -20,27 +20,28 @@ export class SparesShelf {
     this.spares = new Spares(this.params, createRandom(game.seed ^ 0x5b3a));
     registerTuning('Spares shelf', this.params, SPARES_PARAM_RANGES);
     const L = game.world.layout;
-    const x = L.bench.x - L.bench.length / 2 - 1.2;
-    const z = L.barn.z - L.barn.halfZ + L.barn.wall + 0.16;
-    const floor = game.world.heightAt(x, z);
+    const own = barnLocal(L); // the racks are placed in the barn's own frame and put in the world turned with it
+    const x = own.bench.x - own.bench.length / 2 - 1.2;
+    const z = own.barn.z - own.barn.halfZ + own.barn.wall + 0.16;
+    const floor = game.world.heightAt(L.barn.x, L.barn.z); // the barn's floor is level
     this.model = buildSparesModel();
-    this.model.position.set(x, floor, z);
+    placeInBarn(L, this.model, x, floor, z);
     game.scene.add(this.model);
     // The tyre rack on the annex's south wall, facing north into the big bay's span.
     const inner = barnShape(L).innerAll;
-    const hooks = L.helmetHooks; // the helmet hooks take the middle of that wall: the rack fills the corner to their left
+    const hooks = own.helmetHooks; // the helmet hooks take the middle of that wall: the rack fills the corner to their left
     const tx = (inner.minX + hooks.x - hooks.length / 2 - 0.1) / 2;
     const tz = inner.maxZ - 0.22; // the rack's back posts just touch the wall
     this.tyreModel = buildTyreRackModel();
-    this.tyreModel.position.set(tx, game.world.heightAt(tx, tz), tz);
     this.tyreModel.rotation.y = Math.PI;
+    placeInBarn(L, this.tyreModel, tx, floor, tz);
     game.scene.add(this.tyreModel);
     this.tyreProxy = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.6, 1), new THREE.MeshBasicMaterial({ visible: false }));
-    this.tyreProxy.position.set(tx, game.world.heightAt(tx, tz) + 1.3, tz - 0.4);
+    placeInBarn(L, this.tyreProxy, tx, floor + 1.3, tz - 0.4);
     game.scene.add(this.tyreProxy);
     this.mode = 'parts'; // which rack's panel is open: 'parts' or 'tyres'
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.8, 0.5), new THREE.MeshBasicMaterial({ visible: false }));
-    this.proxy.position.set(x, floor + 1.4, z + 0.1);
+    placeInBarn(L, this.proxy, x, floor + 1.4, z + 0.1);
     game.scene.add(this.proxy);
     const door = game.trafficHost.places.parcel;
     this.parcelProxy = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 0.9), new THREE.MeshBasicMaterial({ visible: false }));

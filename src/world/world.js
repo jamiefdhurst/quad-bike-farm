@@ -10,7 +10,7 @@ import { DrawDistance } from './tiledInstances.js';
 import { FarDetail, pixelsPerRadian } from './farDetail.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../core/graphics.js';
 import { buildProps } from './props.js';
-import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLevel, barnShape } from './barn.js';
+import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLevel, detourBoxes } from './barn.js';
 import { DEFAULT_WEAR_PARAMS, WEAR_PARAM_RANGES } from './groundWear.js';
 import { WearTiles } from './wearTiles.js';
 import { stripFrame } from './layout.js';
@@ -69,11 +69,9 @@ export class World {
     // The buildings she walks round rather than into (npc/detour.js): the barn, with its doorway, and the field shed.
     this.detourParams = { ...DEFAULT_DETOUR_PARAMS };
     registerTuning('Walking round buildings', this.detourParams, DETOUR_PARAM_RANGES);
-    const bo = barnShape(layout);
     const sh = layout.fieldShed;
     this.detourBuildings = [
-      { ...bo.outer, door: { x: bo.door.x, z: bo.z, halfWidth: bo.door.maxZ - bo.z } },
-      ...(bo.annex ? [{ ...bo.annex.outer, door: { x: bo.annex.door.x, z: bo.annex.z, halfWidth: bo.annex.door.maxZ - bo.annex.z } }] : []),
+      ...detourBoxes(layout),
       ...(sh ? [{ minX: sh.x - sh.halfX, maxX: sh.x + sh.halfX, minZ: sh.z - sh.halfZ, maxZ: sh.z + sh.halfZ }] : []),
       ...(this.hutShape ? [this.hutShape.box()] : []),
     ];

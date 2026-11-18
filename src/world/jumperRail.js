@@ -229,6 +229,7 @@ export class JumperRail {
     this.group = new THREE.Group();
     this.group.name = 'jumperRack';
     this.group.position.set(r.x, floor, r.z);
+    this.group.rotation.y = r.yaw ?? 0; // the rack turns with the barn
     const add = (geo, x, y, z, rx = 0, rz = 0) => {
       const m = new THREE.Mesh(geo, metal);
       m.position.set(x, y, z);

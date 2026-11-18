@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { barnShape } from './barn.js';
+import { barnShape, placeInBarn } from './barn.js';
 
 const SHELF_W = 0.9; // as wide as the calendar above it
 const SHELF_D = 0.14;
@@ -43,7 +43,7 @@ export class TrophyShelf {
     }
     this.rosettes = new THREE.Group();
     group.add(this.rosettes);
-    group.position.set(shape.inner.minX + 0.06, floorY + 1.02, shape.z); // under the calendar (its middle 1.75 m up, 1.2 m tall)
+    placeInBarn(game.world.layout, group, shape.inner.minX + 0.06, floorY + 1.02, shape.z); // under the calendar (its middle 1.75 m up, 1.2 m tall)
     game.scene.add(group);
     this.group = group;
   }

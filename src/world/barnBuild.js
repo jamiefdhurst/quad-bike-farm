@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { barnShape, wallBoxes, dividerPosts } from './barn.js';
+import { barnShape, localWallBoxes, dividerPosts, barnFrame } from './barn.js';
 import { buildJack, buildAxleStand } from '../workshop/jackModel.js';
 import { loftShape } from './loft.js';
 import { squareBaleGeometry, squareBaleMaterials, strawClumpGeometry } from './squareBale.js';
@@ -102,14 +102,31 @@ function concreteTexture(random, repeat) {
   );
 }
 
-/** Builds the barn and its colliders. Returns { group, light, bulb } (light is the bulb's glow, dimmed to nothing by day). */
-export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
+/**
+ * Builds the barn and its colliders. Returns { group, light, bulb } (light is the bulb's glow, dimmed to nothing by day).
+ *
+ * It is all drawn in the barn's own frame (the one it has at yaw 0 about its anchor: `layout.barnLocal` has its things there), inside a group that
+ * stands at the anchor turned by the barn's yaw (#682), and the colliders are put through the same turn. What it hands back that the world reads
+ * (`hayDoor`) is in the world's frame, and the loft's numbers (`loft`) in the barn's, as loft.js has them.
+ */
+export function buildBarnShed({ scene, layout: worldLayout, heights, fixedBox: fixedWorldBox, random }) {
+  const layout = { ...worldLayout, ...worldLayout.barnLocal };
+  const frame = barnFrame(worldLayout);
   const shape = barnShape(layout);
   const { outer, inner, wall, wallHeight, ridge, door } = shape;
   const floorY = heights.heightAt(shape.x, shape.z);
+  const fixedBox = (x, y, z, hx, hy, hz, rotY = 0) => {
+    const p = frame.toWorld(x, z);
+    return fixedWorldBox(p.x, y, p.z, hx, hy, hz, rotY + frame.yaw);
+  };
+  const pivot = new THREE.Group(); // at the anchor, turned: what is inside is placed as it would be unturned
+  pivot.name = 'barn';
+  pivot.position.set(shape.x, 0, shape.z);
+  pivot.rotation.y = frame.yaw;
   const group = new THREE.Group();
-  group.name = 'barn';
-  scene.add(group);
+  group.position.set(-shape.x, 0, -shape.z);
+  pivot.add(group);
+  scene.add(pivot);
 
   const sizeX = outer.maxX - outer.minX;
   const sizeZ = outer.maxZ - outer.minZ; // one span's width: the roof, gables and ties are drawn once for each span
@@ -141,7 +158,7 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     const m = new THREE.MeshStandardMaterial({ map: boards([len / 2.4, hgt / 2.4]), roughness: 0.85 });
     return m;
   };
-  for (const w of wallBoxes(layout)) {
+  for (const w of localWallBoxes(layout)) {
     const len = Math.max(w.hx, w.hz) * 2;
     add(box(w.hx * 2, wallHeight, w.hz * 2, wallMat(len, wallHeight)), w.x, floorY + wallHeight / 2, w.z);
     fixedBox(w.x, floorY + wallHeight / 2, w.z, w.hx, wallHeight / 2, w.hz);
@@ -598,5 +615,6 @@ export function buildBarnShed({ scene, layout, heights, fixedBox, random }) {
     group.add(light2);
   }
 
-  return { group, light, bulb, light2, bulb2, floorY, shutter, hayDoor: { x: door.x, y: floorY + hd.sill, z: shape.z }, loft: { ...lf, ladderProxy, hayProxy } };
+  const hayDoorAt = frame.toWorld(door.x, shape.z);
+  return { group: pivot, light, bulb, light2, bulb2, floorY, shutter, hayDoor: { x: hayDoorAt.x, y: floorY + hd.sill, z: hayDoorAt.z }, loft: { ...lf, ladderProxy, hayProxy } };
 }

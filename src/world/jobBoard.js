@@ -1,6 +1,6 @@
 import './jobBoard.css';
 import * as THREE from 'three';
-import { barnShape } from './barn.js';
+import { barnShape, placeInBarn } from './barn.js';
 
 const BOARD_W = 1.5; // metres
 const BOARD_H = 1.3; // tall enough for the five records with room to spare
@@ -62,10 +62,11 @@ export class JobBoardView {
       bar.position.set(0.005, dy, dx);
       group.add(bar);
     }
-    group.position.set(x, y, z);
+    placeInBarn(this.game.world.layout, group, x, y, z);
     this.game.scene.add(group);
     const proxy = new THREE.Mesh(new THREE.BoxGeometry(0.4, BOARD_H + 0.1, BOARD_W + 0.1), new THREE.MeshBasicMaterial({ visible: false }));
     proxy.position.copy(group.position);
+    proxy.quaternion.copy(group.quaternion);
     this.game.scene.add(proxy);
     return { canvas, texture, group, proxy };
   }
