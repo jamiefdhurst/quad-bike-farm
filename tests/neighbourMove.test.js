@@ -301,6 +301,7 @@ describe('her yard built on the new farm', () => {
     const built = buildNeighbourFarm({ ...c, layout: two, heights, gateParams: { swingSeconds: 1, blockBelow: 0.5, clearRadius: 3 } });
     built.group.updateMatrixWorld(true);
     expect(built.group.name).toBe('neighbourFarm');
+    expect(built.group.userData.fullDistanceKey).toBe('neighbourFullDistance'); // drawn in full from the lane (#973)
     expect(built.gate.x).toBeCloseTo(S.gateway.x, 6);
     const y = S.yard;
     const onWall = ([x, , z]) => x < y.minX + 1 || x > y.maxX - 1 || z < y.minZ + 1 || z > y.maxZ - 1; // along the wall's line, the gateposts and the gate

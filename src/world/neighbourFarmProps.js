@@ -205,6 +205,7 @@ export function buildNeighbourFarm(c) {
   const y0 = heights.heightAt((s.outline.minX + s.outline.maxX) / 2, (s.outline.minZ + s.outline.maxZ) / 2);
   const group = new THREE.Group();
   group.name = 'neighbourFarm';
+  group.userData.fullDistanceKey = 'neighbourFullDistance'; // FarDetail swaps it for its far version at its own distance (the lane is 45 m off her wall)
   const sink = 0.4; // walls go this far into the ground, so no gap shows where it isn't quite level
   const stone = new THREE.MeshStandardMaterial({ map: stoneTexture(random), roughness: 0.95 });
   const slate = new THREE.MeshStandardMaterial({ map: slateTexture(random), roughness: 0.8, side: THREE.DoubleSide });

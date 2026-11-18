@@ -258,9 +258,12 @@ export class FarDetail {
     return { minX: p.x - b.reach, maxX: p.x + b.reach, minZ: p.z - b.reach, maxZ: p.z + b.reach };
   }
 
-  /** Draws the full `o` within `fullDistance` of its nearest edge and its far version beyond (with a margin, so it doesn't flicker); 0 is always full. */
+  /**
+   * Draws the full `o` within its full distance of its nearest edge and its far version beyond (with a margin, so it doesn't flicker); 0 is always full.
+   * The distance is the graphics param `o.userData.fullDistanceKey` names (the neighbour's farm has its own, `neighbourFullDistance`), else `fullDistance`.
+   */
   swap(o, position, fresh = false) {
-    const full = drawFull(distanceToTile(this.box(o), position.x, position.z), this.params.fullDistance, !fresh && (this.full.get(o) ?? o.visible), FULL_MARGIN);
+    const full = drawFull(distanceToTile(this.box(o), position.x, position.z), this.params[o.userData.fullDistanceKey ?? 'fullDistance'], !fresh && (this.full.get(o) ?? o.visible), FULL_MARGIN);
     this.full.set(o, full);
     o.visible = full;
     o.userData.farVersion.visible = !full;
