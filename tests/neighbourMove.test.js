@@ -7,6 +7,11 @@ import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { createOutbuildings } from '../src/world/outbuildings.js';
 import { Track } from '../src/world/track.js';
 import { visitPlaces, planVisit } from '../src/world/traffic.js';
+import { buildingBlocks } from '../src/npc/sight.js';
+import { farNeighbourFarm, mergeParkedVehicle } from '../src/world/neighbourFarmProps.js';
+import * as THREE from 'three';
+import { vi } from 'vitest';
+import { fakeCanvas } from './helpers/vehicleModels.js';
 
 const two = layoutNew(LAYOUT);
 const S = neighbourFarmShape(two);
@@ -214,5 +219,72 @@ describe('the ground under her yard', () => {
       }
     }
     expect(worst).toBeLessThan(Math.tan((25 * Math.PI) / 180));
+  });
+});
+
+describe('her yard seen from afar and from behind its buildings', () => {
+  it('has a far version over the yard on its new ground: the house, the barn and the wall, as one mesh', () => {
+    const far = farNeighbourFarm(S, 3);
+    far.updateMatrixWorld(true);
+    expect(far.children).toHaveLength(1);
+    const box = new THREE.Box3().setFromObject(far);
+    expect(box.min.x).toBeCloseTo(S.yard.minX, 0);
+    expect(box.max.x).toBeCloseTo(S.yard.maxX, 0);
+    expect(box.min.z).toBeCloseTo(S.yard.minZ, 0);
+    expect(box.max.z).toBeCloseTo(S.yard.maxZ, 0);
+    expect(far.children[0].geometry.getAttribute('position').count / 3).toBe(2 * 16 + S.walls.length * 10);
+  });
+
+  it('hides you from a girl behind her barn or her house (#654), and not across the open yard', () => {
+    const buildings = [S.house.outer, S.barn.outer];
+    const eye = (x, z) => ({ x, z });
+    expect(buildingBlocks(buildings, eye(S.barn.outer.minX - 5, S.barn.z), eye(S.barn.outer.maxX + 20, S.barn.z - 1))).toBe(true);
+    expect(buildingBlocks(buildings, eye(S.house.x, S.house.outer.maxZ + 5), eye(S.house.x, S.house.outer.minZ - 8))).toBe(true);
+    expect(buildingBlocks(buildings, eye(S.gateway.x + 2, S.gateway.z), eye(S.yard.maxX - 3, S.gateway.z))).toBe(false);
+  });
+
+  it('is where the girls and you are counted as in her yard (arriving, her greeting), by the wall', () => {
+    const nf = createNeighbourFarm(two);
+    expect(nf.inYard(S.stand.x, S.stand.z)).toBe(true);
+    expect(nf.inYard(S.gateway.x - 3, S.gateway.z)).toBe(false);
+    expect(nf.inYard(S.gateway.x + 3, S.gateway.z)).toBe(true);
+  });
+});
+
+describe('her parked vehicles drawn as a few meshes', () => {
+  it('are merged to one mesh a material, with every triangle and the same shape, and still hide as one', async () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const { buildVehicleBody } = await import('../src/world/trafficView.js');
+    for (const kind of ['tor', 'utv', 'tractor']) {
+      const { object } = buildVehicleBody(kind, 0x5d6d4a, null);
+      object.position.set(5, 1, -3);
+      object.rotation.y = 0.7;
+      object.updateMatrixWorld(true);
+      const count = () => {
+        let meshes = 0;
+        let triangles = 0;
+        object.traverse((o) => {
+          if (!o.isMesh) return;
+          meshes++;
+          const g = o.geometry;
+          triangles += (g.index ? g.index.count : g.attributes.position.count) / 3;
+        });
+        return { meshes, triangles };
+      };
+      const before = count();
+      const box0 = new THREE.Box3().setFromObject(object, true);
+      const made = mergeParkedVehicle(object);
+      const after = count();
+      object.updateMatrixWorld(true);
+      const box1 = new THREE.Box3().setFromObject(object, true);
+      expect(after.meshes, kind).toBe(made);
+      expect(after.meshes, kind).toBeLessThan(before.meshes / 3);
+      expect(after.triangles, kind).toBe(before.triangles);
+      for (const k of ['x', 'y', 'z']) {
+        expect(box1.min[k], `${kind} min ${k}`).toBeCloseTo(box0.min[k], 3);
+        expect(box1.max[k], `${kind} max ${k}`).toBeCloseTo(box0.max[k], 3);
+      }
+      expect(object.children.length).toBeGreaterThan(0);
+    }
   });
 });

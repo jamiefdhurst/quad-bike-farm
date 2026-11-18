@@ -133,6 +133,39 @@ function mergeStatic(group) {
 }
 
 /**
+ * Merges the meshes of a parked vehicle (it never moves) into one mesh a material, in its own frame: the three vehicles were 93% of the yard's draw
+ * calls (200-odd meshes each, #679). Skinned and instanced meshes, lights and anything with several materials stay as they are. Returns how many
+ * meshes it made. The object keeps its group, so hiding it (she drives her Tor away) hides them all.
+ */
+export function mergeParkedVehicle(object) {
+  object.updateMatrixWorld(true);
+  const toLocal = new THREE.Matrix4().copy(object.matrixWorld).invert();
+  const byMaterial = new Map();
+  const merged = [];
+  object.traverse((o) => {
+    if (!o.isMesh || o.isSkinnedMesh || o.isInstancedMesh || !o.geometry || Array.isArray(o.material)) return;
+    const g = o.geometry;
+    if (!g.attributes.position) return;
+    merged.push(o);
+    const geo = (g.index ? g.toNonIndexed() : g.clone()).applyMatrix4(new THREE.Matrix4().multiplyMatrices(toLocal, o.matrixWorld));
+    if (!geo.attributes.normal) geo.computeVertexNormals();
+    if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2)); // the detail kit's parts have none
+    const keep = o.material.vertexColors && geo.attributes.color ? ['position', 'normal', 'uv', 'color'] : ['position', 'normal', 'uv'];
+    for (const name of Object.keys(geo.attributes)) if (!keep.includes(name)) geo.deleteAttribute(name);
+    if (!byMaterial.has(o.material)) byMaterial.set(o.material, []);
+    byMaterial.get(o.material).push(geo);
+  });
+  for (const o of merged) o.parent.remove(o);
+  for (const [material, geos] of byMaterial) {
+    const mesh = new THREE.Mesh(mergeGeometries(geos), material);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    object.add(mesh);
+  }
+  return byMaterial.size;
+}
+
+/**
  * The log pile against a barn's south wall (`outer`: its outer face as a rect): fifteen logs in three rows, each lying along z and turned a little
  * off square, with `z` the pile's middle and `reach` the farthest any log's end or bark gets from it. The pile stands off the wall by that reach, so
  * no log's end goes into the wall and shows from inside the barn.
@@ -435,6 +468,7 @@ export function buildNeighbourFarm(c) {
     body.object.position.set(p.x, top - body.spec.offset - (body.spec.layout.spawnSag ?? 0), p.z);
     body.object.rotation.y = p.yaw;
     if (p.kind === 'tractor') poseBaleSpike(body.object, 0, false);
+    mergeParkedVehicle(body.object);
     group.add(body.object);
     const collider = fixedBox(p.x, y0 + p.h / 2, p.z, p.hw, p.h / 2, p.hl, p.yaw);
     vehicles.push({ ...p, object: body.object, collider });
