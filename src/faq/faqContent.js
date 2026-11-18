@@ -2917,7 +2917,7 @@ export const FAQ_SECTIONS = [
         q: 'Can I see the bigger farm that is being built?',
         a: `Yes, as it goes. Add <code>?layout=2</code> to the address, or type <code>layout 2</code> in the console, and the game loads on the new farm: about 870 by 830 m
           with a natural outline, six arable fields in stubble, meadows, pasture, the wood's and the pit's fields and Home Ground, each with its hedges and gateways, and
-          all of them on the map (<kbd>M</kbd>). It is being built a piece at a time: the barn, the yard and Home Ground have moved to their new places (see the next question), and the wood, the hill and the gravel pit
+          all of them on the map (<kbd>M</kbd>). It is being built a piece at a time: the barn, the yard and Home Ground have moved to their new places (see the next question), Hollow Wood is in the north-west corner (see "Where is Hollow Wood on the new farm?"), and the hill and the gravel pit
           still stand where they were until their turn, and the walls round the sheep field and the hill are only on the map so far. It plays as a fresh first day
           and is never saved, so your own farm is just as you left it. <code>layout 1</code> goes back.`,
       },
@@ -2931,6 +2931,16 @@ export const FAQ_SECTIONS = [
           post and rail fence (the girls sit on it to watch you ride), with the Home Loop, the cones, the jump and the line-up as they were, and the bonfire in its south-east corner. In the console,
           <code>tp me yard</code>, <code>barn</code>, <code>bench</code>, <code>stackyard</code>, <code>orchard</code>, <code>garden</code>, <code>cars</code>, <code>muckheap</code>, <code>home</code> and
           <code>bonfire</code> take you to each.`,
+      },
+      {
+        q: 'Where is Hollow Wood on the new farm?',
+        a: `On <code>?layout=2</code> the wood is in the north-west corner, about half as big again as before (nearly 2.8 hectares), with the Hollow Run and the Fern Trail just as they were, laps
+          and all, in the middle of it. The gate is in its south side, onto the Wet Meadow; a muddy lead-in bends west inside the hedge from it to the Run, a good deal longer than the old one, and the Fern
+          Trail's sign still stands beside it. There is a second gate on the west side for Back Lane, which is not laid yet. The extra ground is more of the same oaks, hazel, holly and fallen
+          branches, thorn and bramble along the hedges, and one great old oak in the glade by the pond, much bigger than the rest, so you can see where you are. Beside the gate, in the Wet Meadow, is the woodpile:
+          a lean-to against the hedge with an old stack of logs under it, and a chopping block with an axe in it. They are there on every farm; the rounds to split and the stack you build are the tractor's, as
+          before. The oaks look lighter once they are more than about 70 m away. In the console, <code>tp me wood</code>, <code>woodpile</code>, <code>veteranoak</code>, <code>fern</code> and <code>hollowrun</code>
+          take you to each, and <code>scene hollowwood</code> sets up a look at the gate in daylight.`,
       },
       {
         q: 'What is the drive on the new farm?',

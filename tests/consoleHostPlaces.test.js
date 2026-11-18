@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createHost } from '../src/console/gameHost.js';
 
-// `tp me to <place>` on the new farm (#949): one place per field by its key, but the wood and the pit, which are still where they were until
-// #683 and #685 move them, go to the wood and the pit, not to the plan's empty fields of the same names.
+// `tp me to <place>` on the new farm (#949): one place per field by its key, but the wood and the pit go to the wood and the pit, not to the plan's empty
+// fields of the same names (the wood is moved by #683, the pit is still where it was until #685).
 const square = (x, z) => [[x, z], [x + 40, z], [x + 40, z + 40], [x, z + 40]];
 const fields = [
   { name: 'wood', kind: 'wood', points: square(-300, -200) },
@@ -14,7 +14,7 @@ const standIn = (extra = {}) => {
   const layout = {
     ...extra,
     spawn: { player: { x: 1, z: 2 } },
-    woods: { gate: { x: 10, z: 11 }, leadIn: [[0, 0], [0, 30]], circuit: { points: [[12, 13]] } },
+    woods: { gate: { x: 10, z: 11 }, leadIn: [[0, 0], [0, 30]], circuit: { points: [[12, 13]] }, ...extra.woods },
     fields,
   };
   const g = {
@@ -40,6 +40,20 @@ describe('tp places on the new farm', () => {
   });
   it('has no pit place while there is no pit built, rather than the plan\'s empty pit field', () => {
     expect(standIn().places().pit).toBeUndefined();
+  });
+});
+
+describe('tp places in Hollow Wood on the new farm (#683)', () => {
+  const wood = { woods: { oak: { x: -40, z: -60 } }, logYard: { park: { x: 5, z: 6 }, scenery: { block: { x: 1, z: 1 } } } };
+  it('has a place at the woodpile, six metres south of where the tractor stands, and one south of the great oak', () => {
+    const places = standIn(wood).places();
+    expect(places.woodpile).toEqual({ x: 5, z: 12 });
+    expect(places.veteranoak).toEqual({ x: -40, z: -48 });
+  });
+  it('has neither on today\'s farm, which has no scenery at its woodpile and no great oak', () => {
+    const today = standIn({ logYard: { park: { x: 0, z: 0 } } }).places();
+    expect(today.woodpile).toBeUndefined();
+    expect(today.veteranoak).toBeUndefined();
   });
 });
 
