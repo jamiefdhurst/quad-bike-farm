@@ -202,6 +202,7 @@ export function buildNeighbourFarm(c) {
     fixedBox(w.x, y0 + s.yard.wallHeight / 2, w.z, w.hx, s.yard.wallHeight / 2 + 0.5, w.hz);
   }
   const gx = s.gateway.x;
+  const out = s.gateway.side === 'west' ? -1 : 1; // which way the lane is from the gateway: east on today's farm, west on the new one
   for (const z of [s.gateway.minZ - 0.3, s.gateway.maxZ + 0.3]) {
     box(0.8, 2 + sink, 0.8, stone, gx, y0 - sink + (2 + sink) / 2, z);
     box(0.95, 0.12, 0.95, cap, gx, y0 + 2.06, z, 1);
@@ -230,20 +231,20 @@ export function buildNeighbourFarm(c) {
     z: s.gateway.z,
     open: false,
     pose: (a) => {
-      for (const { pivot, side } of leaves) pivot.rotation.y = side * a * (Math.PI / 2 - 0.08);
+      for (const { pivot, side } of leaves) pivot.rotation.y = out * side * a * (Math.PI / 2 - 0.08);
     },
     solid: fixedBox(gx, gateY, s.gateway.z, 0.1, 0.9, gap / 2),
   });
 
   // The postbox: a cast-iron box set into the south gatepost's lane face, with a hood over its slot, a plate of times and a collar.
   const pz = s.gateway.maxZ + 0.3;
-  const faceX = gx + 0.4;
+  const faceX = gx + 0.4 * out;
   const postbox = new THREE.MeshStandardMaterial({ map: postboxTexture(random), roughness: 0.45, metalness: 0.2 });
   const ironRed = mat(0x9c1218, { roughness: 0.45, metalness: 0.2 });
-  box(0.04, 0.5, 0.4, ironRed, faceX + 0.01, y0 + 1.1, pz, 1); // the frame
-  add(worldBox(0.03, 0.42, 0.3, 0.3, 0.42), postbox, faceX + 0.04, y0 + 1.1, pz); // the face: one texture tile, reading from the lane
-  add(new THREE.BoxGeometry(0.1, 0.05, 0.36), ironRed, faceX + 0.07, y0 + 1.28, pz); // the hood over the slot
-  add(new THREE.BoxGeometry(0.06, 0.02, 0.32), iron, faceX + 0.05, y0 + 1.31, pz); // the hood's lip
+  box(0.04, 0.5, 0.4, ironRed, faceX + 0.01 * out, y0 + 1.1, pz, 1); // the frame
+  add(worldBox(0.03, 0.42, 0.3, 0.3, 0.42), postbox, faceX + 0.04 * out, y0 + 1.1, pz); // the face: one texture tile, reading from the lane
+  add(new THREE.BoxGeometry(0.1, 0.05, 0.36), ironRed, faceX + 0.07 * out, y0 + 1.28, pz); // the hood over the slot
+  add(new THREE.BoxGeometry(0.06, 0.02, 0.32), iron, faceX + 0.05 * out, y0 + 1.31, pz); // the hood's lip
 
   // The farmhouse: stone walls, a slate roof, a chimney at the east end, the door in the north wall under a porch, windows on both floors.
   const h = s.house;

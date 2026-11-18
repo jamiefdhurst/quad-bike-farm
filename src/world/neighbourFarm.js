@@ -35,7 +35,7 @@ export const PARKED_SIZES = {
   tractor: { hl: 1.9, hw: 1.0, h: 2.4 },
 };
 
-const EAST_REACH = 1; // m the levelling eases over on the lane side, away from the gateway (see floorAt)
+const EAST_REACH = 1; // m the levelling eases over on the lane side, away from the gateway (see floorAt), on a farm whose lane runs by the wall
 const rect = (x, z, hx, hz) => ({ minX: x - hx, maxX: x + hx, minZ: z - hz, maxZ: z + hz });
 const inRect = (r, x, z, margin = 0) => x > r.minX - margin && x < r.maxX + margin && z > r.minZ - margin && z < r.maxZ + margin;
 const outside = (r, x, z) => Math.hypot(Math.max(r.minX - x, 0, x - r.maxX), Math.max(r.minZ - z, 0, z - r.maxZ));
@@ -43,23 +43,27 @@ const smooth = (t) => t * t * (3 - 2 * t);
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /**
- * The yard's shape from the layout, or null on a farm without one: the wall's outline and the boxes it is built from (the east wall has the
- * gateway in it), the house and the barn (outside, roof and door), the parked vehicles with their footprints, and where she stands.
+ * The yard's shape from the layout, or null on a farm without one: the wall's outline and the boxes it is built from (the wall on the gateway's
+ * side, `gateway.side` 'east' or 'west', has the gateway in it), the house and the barn (outside, roof and door), the parked vehicles with
+ * their footprints, and where she stands.
  */
 export function neighbourFarmShape(layout) {
   const n = layout.neighbourFarm;
   if (!n) return null;
   const y = n.yard;
   const w = y.wall;
+  const side = n.gateway.side ?? 'east'; // which wall the gateway is in: the east wall on today's farm (the lane is beside it), the west on the new one (the lane is away to the west)
+  const gx = side === 'west' ? y.minX + w / 2 : y.maxX - w / 2;
+  const otherX = side === 'west' ? y.maxX - w / 2 : y.minX + w / 2;
   const gz0 = n.gateway.z - n.gateway.width / 2;
   const gz1 = n.gateway.z + n.gateway.width / 2;
-  // The wall as boxes { x, z, hx, hz } (centre and half sizes in plan): north, south and west whole, the east in two pieces round the gateway.
+  // The wall as boxes { x, z, hx, hz } (centre and half sizes in plan): north, south and the wall opposite the gateway whole, the gateway's wall in two pieces round it.
   const walls = [
     { x: (y.minX + y.maxX) / 2, z: y.minZ + w / 2, hx: (y.maxX - y.minX) / 2, hz: w / 2 },
     { x: (y.minX + y.maxX) / 2, z: y.maxZ - w / 2, hx: (y.maxX - y.minX) / 2, hz: w / 2 },
-    { x: y.minX + w / 2, z: (y.minZ + y.maxZ) / 2, hx: w / 2, hz: (y.maxZ - y.minZ) / 2 - w },
-    { x: y.maxX - w / 2, z: (y.minZ + w + gz0) / 2, hx: w / 2, hz: (gz0 - y.minZ - w) / 2 },
-    { x: y.maxX - w / 2, z: (gz1 + y.maxZ - w) / 2, hx: w / 2, hz: (y.maxZ - w - gz1) / 2 },
+    { x: otherX, z: (y.minZ + y.maxZ) / 2, hx: w / 2, hz: (y.maxZ - y.minZ) / 2 - w },
+    { x: gx, z: (y.minZ + w + gz0) / 2, hx: w / 2, hz: (gz0 - y.minZ - w) / 2 },
+    { x: gx, z: (gz1 + y.maxZ - w) / 2, hx: w / 2, hz: (y.maxZ - w - gz1) / 2 },
   ];
   const h = n.house;
   const b = n.barn;
@@ -73,16 +77,26 @@ export function neighbourFarmShape(layout) {
     yard: y,
     outline: rect((y.minX + y.maxX) / 2, (y.minZ + y.maxZ) / 2, (y.maxX - y.minX) / 2, (y.maxZ - y.minZ) / 2),
     walls,
-    gateway: { x: y.maxX - w / 2, z: n.gateway.z, minZ: gz0, maxZ: gz1, half: n.gateway.width / 2 },
+    gateway: { x: gx, z: n.gateway.z, minZ: gz0, maxZ: gz1, half: n.gateway.width / 2, side },
+    // Where the ground is levelled from (`floor.at`, default her yard's middle) and how far it eases out over (`floor.reach`, default 4 m): a yard on a slope.
+    floor: n.floor ?? null,
     house,
     barn,
     parked,
     stand: n.stand,
     // Where she is when she is indoors, so a nearby sound can come from the house.
     indoors: { x: h.x, z: h.z },
-    // The concrete in front of the buildings and round the gateway, inside the wall.
-    slab: { minX: y.minX + w + 2, maxX: y.maxX - w, minZ: y.minZ + w + 4, maxZ: house.outer.minZ - 1.2 },
+    // The concrete in front of the buildings and round the gateway, inside the wall (`slab` in the layout when the yard has its own shape of it).
+    slab: n.slab ?? (side === 'west'
+      ? { minX: y.minX + w, maxX: y.maxX - w - 2, minZ: y.minZ + w + 4, maxZ: house.outer.minZ - 1.2 }
+      : { minX: y.minX + w + 2, maxX: y.maxX - w, minZ: y.minZ + w + 4, maxZ: house.outer.minZ - 1.2 }),
   };
+}
+
+/** Three metres inside her gateway, or null on a farm without her yard: where `tp neighbour` and the panel's button put you. */
+export function neighbourGate(layout) {
+  const s = neighbourFarmShape(layout);
+  return s ? { x: s.gateway.x + (s.gateway.side === 'west' ? 3 : -3), z: s.gateway.z } : null;
 }
 
 /** The boxes that shut the lane's stretch: { x, z, hx, hz }, with the lane west and east of its tarmac and across at the ends of what is open. */
@@ -141,14 +155,15 @@ export function createNeighbourFarm(layout) {
    * wall) except about the gateway, where it takes the full reach to ramp up from the lane; pulled further, the yard's level would drag the
    * tarmac sideways across a slope and give it a camber.
    */
-  function floorAt(x, z, ground, reach = 4) {
+  function floorAt(x, z, ground, reach = s.floor?.reach ?? 4) {
     const c = s.outline;
     const near = Math.abs(z - s.gateway.z);
     const eastReach = EAST_REACH + (reach - EAST_REACH) * (1 - smooth(clamp01((near - 6) / 14)));
-    const r = x > c.maxX ? Math.min(reach, eastReach) : reach;
+    const r = !s.floor && x > c.maxX ? Math.min(reach, eastReach) : reach; // only a lane right beside the wall (today's farm) narrows it
     const d = outside(c, x, z);
     if (d >= r) return null;
-    return { k: 1 - smooth(clamp01(d / r)), level: ground((c.minX + c.maxX) / 2, (c.minZ + c.maxZ) / 2) };
+    const from = s.floor?.at ?? { x: (c.minX + c.maxX) / 2, z: (c.minZ + c.maxZ) / 2 };
+    return { k: 1 - smooth(clamp01(d / r)), level: ground(from.x, from.z) };
   }
   return { shape: s, footprints, covered, builtAt, inYard, floorAt };
 }

@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { createRandom } from '../core/random.js';
 import { registerTuning } from '../core/tuning.js';
-import { Neighbour, DEFAULT_NEIGHBOUR_PARAMS, NEIGHBOUR_PARAM_RANGES } from './neighbourFarm.js';
+import { Neighbour, DEFAULT_NEIGHBOUR_PARAMS, NEIGHBOUR_PARAM_RANGES, neighbourGate } from './neighbourFarm.js';
 import { NEIGHBOUR_VOICE } from '../npc/neighbourLines.js';
 import { CharacterRig } from '../npc/characterRig.js';
 import { applyOutfit } from '../npc/outfit.js';
@@ -165,8 +165,8 @@ export class NeighbourHost {
   debugGoTo() {
     const s = this.shape;
     if (!s || this.g.player.isRiding) return false;
-    const x = s.gateway.x - 3;
-    this.g.player.moveTo({ x, y: this.g.world.groundHeightAt(x, s.gateway.z), z: s.gateway.z });
+    const at = neighbourGate(this.g.world.layout);
+    this.g.player.moveTo({ x: at.x, y: this.g.world.groundHeightAt(at.x, at.z), z: at.z });
     return true;
   }
 
