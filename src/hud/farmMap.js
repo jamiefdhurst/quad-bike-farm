@@ -230,6 +230,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (hut) buildings.push({ name: 'hut', rect: centred(hut.x, hut.z, hut.width / 2, hut.length / 2), fill: C.building });
   const nf = neighbourFarmShape(layout);
   if (nf) buildings.push({ name: 'neighbourHouse', rect: nf.house.outer, fill: C.building }, { name: 'neighbourBarn', rect: nf.barn.outer, fill: C.building });
+  if (nf?.parlour) buildings.push({ name: 'neighbourParlour', rect: nf.parlour.outer, fill: C.building }, { name: 'neighbourTankRoom', rect: nf.tankRoom.outer, fill: C.building }, { name: 'neighbourSlurry', rect: nf.slurry.outer, fill: C.building });
   const v = layout.village;
   if (v) {
     for (const k of ['pub', 'shop', 'garage']) if (v[k]) buildings.push({ name: k, rect: centred(v[k].x, v[k].z, v[k].halfX, v[k].halfZ), fill: C.building });

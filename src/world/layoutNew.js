@@ -148,6 +148,13 @@ export const NEIGHBOUR_PLAN = {
     { kind: 'tractor', x: 987, z: 302, yaw: 3.0, colour: 0xb02a20 },
   ],
   stand: { x: 1008.8, z: 310.6, yaw: Math.PI },
+  // The dairy, at the map's places: the parlour (plan 1000 to 1030, 256 to 269) with the collecting yard in front of it (1000 to 1030, 271 to 289, open on its
+  // west side for the herd), the bulk tank's room at (1036, 262) against the parlour's east end with its door to the south, where the tanker comes in
+  // through her gateway, across the yard and up the strip between the collecting yard and the east wall, and the slurry store, round, at (970, 318).
+  parlour: { x: 1015, z: 262.5, halfX: 15, halfZ: 6.5, wallHeight: 3.3, ridge: 4.5 },
+  collecting: { minX: 1000, maxX: 1030, minZ: 271, maxZ: 289, gap: { z: 280, width: 6 } },
+  tankRoom: { x: 1036, z: 262, halfX: 2.5, halfZ: 1.75, wallHeight: 2.9 },
+  slurry: { x: 970, z: 318, r: 9, height: 3.6 },
   floor: { at: [946, 292.5], reach: 16 },
   slab: { minX: 950.5, maxX: 1044.5, minZ: 250.5, maxZ: 313.8 },
 };
@@ -772,6 +779,10 @@ export function neighbourLayout(N = NEIGHBOUR_PLAN) {
     yard: { minX, maxX, minZ, maxZ, wall: y.wall, wallHeight: y.wallHeight },
     gateway: { x: minX, z: gz, width: N.gateway.width, side: N.gateway.side },
     house: { ...at(N.house), door: at(N.house.door) },
+    parlour: at(N.parlour),
+    collecting: { minX: fromPlan([N.collecting.minX, 0])[0], maxX: fromPlan([N.collecting.maxX, 0])[0], minZ: fromPlan([0, N.collecting.minZ])[1], maxZ: fromPlan([0, N.collecting.maxZ])[1], gap: { z: fromPlan([0, N.collecting.gap.z])[1], width: N.collecting.gap.width } },
+    tankRoom: at(N.tankRoom),
+    slurry: at(N.slurry),
     barn: { ...at(N.barn), door: at(N.barn.door) },
     parked: N.parked.map(at),
     stand: at(N.stand),
