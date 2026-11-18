@@ -3,6 +3,7 @@
 // All ordinary lit materials, so the day's light and the night dim them.
 
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { woodTexture } from './neighbourTextures.js';
 import { corrugatedTexture } from './outbuildingProps.js';
 
@@ -27,10 +28,34 @@ const box = (sx, sy, sz, material, x, y, z, parent, rot = [0, 0, 0]) => {
 };
 
 /**
+ * The house's meshes merged into one a material, so it is a handful of draw calls and not eighty (#978). Every part is a lit mesh with position, normal and uv,
+ * built once and never moved. The unmerged group is what the coplanar test looks at (`buildHenHouse(random, false)`).
+ */
+function mergedByMaterial(group) {
+  group.updateMatrixWorld(true);
+  const byMat = new Map();
+  group.traverse((o) => {
+    if (!o.isMesh) return;
+    const g = o.geometry.clone();
+    g.applyMatrix4(o.matrixWorld);
+    if (!byMat.has(o.material)) byMat.set(o.material, []);
+    byMat.get(o.material).push(g);
+  });
+  const out = new THREE.Group();
+  out.name = group.name;
+  for (const [material, geos] of byMat) {
+    const mesh = new THREE.Mesh(mergeGeometries(geos), material);
+    mesh.castShadow = mesh.receiveShadow = true;
+    out.add(mesh);
+  }
+  return out;
+}
+
+/**
  * The hens' house: a raised timber house on four legs with a pitched tin roof, a pop-hole with a ramp and cleats, a nest box on the back with a hinged
  * lid, a hatch for you, a wire-covered vent, corner trims and fascia, and a perch and a hanging feeder in the run. About 1.6 by 1.1 m on the ground, 1.7 m high.
  */
-export function buildHenHouse(random = Math.random) {
+export function buildHenHouse(random = Math.random, merge = true) {
   const g = new THREE.Group();
   g.name = 'henHouse';
   const paint = textured(woodTexture(random, [185, 87, 58]), [1, 1]); // red-oxide boards
@@ -88,14 +113,15 @@ export function buildHenHouse(random = Math.random) {
   feeder.position.set(D / 2 + 0.9, 0.46, 0.55);
   g.add(feeder);
   box(0.01, 0.4, 0.01, timber, D / 2 + 0.9, 0.78, 0.55, g);
-  return shadowed(g);
+  shadowed(g);
+  return merge ? mergedByMaterial(g) : g;
 }
 
 /**
  * The pig's ark: a timber-skidded shelter with a curved corrugated tin roof, a boarded back, a door frame with a lintel at the front and a drop-down board
  * across the foot of the doorway, a bed of straw inside and a hook for the chain it is towed by. 2.4 m long, 1.5 m wide, 1.35 m high.
  */
-export function buildPigArk(random = Math.random) {
+export function buildPigArk(random = Math.random, merge = true) {
   const g = new THREE.Group();
   g.name = 'pigArk';
   const wood = textured(woodTexture(random, [122, 90, 58]), [1, 1]);
@@ -137,5 +163,6 @@ export function buildPigArk(random = Math.random) {
   hook.rotation.y = Math.PI / 2;
   g.add(hook);
   box(L - 0.4, 0.07, 2 * R - 0.35, mat(0xcdb26a), -0.05, 0.225, 0, g);
-  return shadowed(g);
+  shadowed(g);
+  return merge ? mergedByMaterial(g) : g;
 }

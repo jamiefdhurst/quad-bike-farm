@@ -4,10 +4,10 @@ import { fakeCanvas } from './helpers/vehicleModels.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
 
 // The orchard's hen house and pig ark (#682): no two faces on one plane (which flicker as alpha fighting), and their real sizes.
-const build = async (name) => {
+const build = async (name, merge = false) => {
   vi.stubGlobal('document', { createElement: () => fakeCanvas() });
   const kit = await import('../src/world/orchardKit.js');
-  return kit[name](() => 0.5);
+  return kit[name](() => 0.5, merge); // unmerged: the coplanar check compares part with part
 };
 const size = (g) => new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3());
 
@@ -46,3 +46,20 @@ describe('the pig ark', () => {
     expect(s.y).toBeLessThan(1.6);
   });
 });
+
+describe('the houses as the game draws them', () => {
+  it('are a handful of draw calls each, not a mesh a part, with every part still in them', async () => {
+    for (const name of ['buildHenHouse', 'buildPigArk']) {
+      const parts = await build(name, false);
+      const merged = await build(name, true);
+      const count = (g) => { let n = 0; let tris = 0; g.traverse((o) => { if (o.isMesh) { n++; tris += (o.geometry.index?.count ?? o.geometry.attributes.position.count) / 3; } }); return [n, tris]; };
+      const [pn, pt] = count(parts);
+      const [mn, mt] = count(merged);
+      expect(pn, name).toBeGreaterThan(20);
+      expect(mn, name).toBeLessThanOrEqual(8);
+      expect(mt, name).toBe(pt);
+      expect(size(merged).x, name).toBeCloseTo(size(parts).x, 6);
+    }
+  });
+});
+
