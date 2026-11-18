@@ -58,13 +58,13 @@ export function buildHenHouse(random = Math.random) {
   const slope = Math.atan2(roofRise, W / 2);
   const slopeLen = Math.hypot(W / 2 + 0.12, roofRise);
   for (const s of [-1, 1]) {
-    box(D + 0.34, 0.03, slopeLen, tin, 0.08, lift + 0.03 + H + roofRise / 2 + 0.01, s * (W / 4 + 0.06), g, [s * slope, 0, 0]);
-    box(D + 0.34, 0.07, 0.025, trim, 0.08, lift + 0.03 + H - 0.01, s * (W / 2 + 0.11), g);
+    box(D + 0.3, 0.03, slopeLen, tin, 0.08, lift + 0.03 + H + roofRise / 2 + 0.012, s * (W / 4 + 0.06), g, [s * slope, 0, 0]);
+    box(D + 0.32, 0.07, 0.025, trim, 0.08, lift + 0.03 + H - 0.012, s * (W / 2 + 0.108), g);
   }
-  box(D + 0.36, 0.05, 0.1, tin, 0.08, lift + 0.03 + H + roofRise + 0.03, 0, g);
+  box(D + 0.38, 0.05, 0.1, tin, 0.08, lift + 0.03 + H + roofRise + 0.033, 0, g);
   // The front: the pop-hole (a dark opening in a white frame) with its ramp and cleats, and a perch on two stands.
   box(0.025, 0.34, 0.3, trim, D / 2 + 0.005, lift + 0.5, 0.35, g);
-  box(0.03, 0.3, 0.26, dark, D / 2 + 0.012, lift + 0.5, 0.35, g);
+  box(0.03, 0.3, 0.26, dark, D / 2 + 0.0185, lift + 0.5, 0.35, g);
   box(0.7, 0.025, 0.24, timber, D / 2 + 0.3, lift + 0.2, 0.35, g, [0, 0, -0.5]);
   for (let i = 0; i < 4; i++) box(0.02, 0.03, 0.22, trim, D / 2 + 0.12 + i * 0.12, lift + 0.33 - i * 0.07, 0.35, g, [0, 0, -0.5]);
   const perch = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.9, 8), timber);
@@ -74,11 +74,11 @@ export function buildHenHouse(random = Math.random) {
   for (const dz of [-0.5, 0.3]) box(0.05, 0.42, 0.05, timber, D / 2 + 0.5, 0.21, dz, g);
   // The hatch you clean it out by, hinged and latched, and a vent covered in wire.
   box(0.025, 0.5, 0.42, trim, D / 2 + 0.005, lift + 0.4, -0.36, g);
-  box(0.02, 0.44, 0.36, paint, D / 2 + 0.018, lift + 0.4, -0.36, g);
-  for (const dy of [-0.18, 0.18]) box(0.03, 0.03, 0.08, tin, D / 2 + 0.03, lift + 0.4 + dy, -0.53, g);
-  box(0.035, 0.1, 0.03, tin, D / 2 + 0.035, lift + 0.4, -0.2, g);
+  box(0.02, 0.44, 0.36, paint, D / 2 + 0.0215, lift + 0.4, -0.36, g);
+  for (const dy of [-0.18, 0.18]) box(0.03, 0.03, 0.08, tin, D / 2 + 0.05, lift + 0.4 + dy, -0.53, g);
+  box(0.035, 0.1, 0.03, tin, D / 2 + 0.055, lift + 0.4, -0.2, g);
   box(0.025, 0.14, 0.3, trim, -D / 2 - 0.005, lift + 0.62, 0.15, g);
-  box(0.03, 0.1, 0.26, mat(0x9a9ea3, { transparent: true, opacity: 0.5 }), -D / 2 - 0.012, lift + 0.62, 0.15, g);
+  box(0.03, 0.1, 0.26, mat(0x9a9ea3, { transparent: true, opacity: 0.5 }), -D / 2 - 0.0185, lift + 0.62, 0.15, g);
   // The nest box on one end, a lean-to with a hinged lid lifted a little, and a step.
   box(0.5, 0.34, 0.4, paint, 0, lift + 0.2, W / 2 + 0.22, g);
   box(0.56, 0.03, 0.46, tin, 0, lift + 0.4, W / 2 + 0.22, g, [0.18, 0, 0]);
@@ -107,13 +107,13 @@ export function buildPigArk(random = Math.random) {
   // Two skids, upturned at the front, with cross-bearers between them.
   for (const s of [-1, 1]) {
     box(L + 0.3, 0.1, 0.12, timber, 0, 0.05, s * (R - 0.04), g);
-    box(0.3, 0.1, 0.12, timber, L / 2 + 0.2, 0.1, s * (R - 0.04), g, [0, 0, 0.5]);
+    box(0.3, 0.1, 0.1, timber, L / 2 + 0.2, 0.1, s * (R - 0.04), g, [0, 0, 0.5]);
   }
   for (const x of [-0.9, 0, 0.9]) box(0.1, 0.08, 2 * R, timber, x, 0.14, 0, g);
   // The arch: a half-cylinder of tin along x, with a rib every 0.4 m across it (the corrugations) and a boarded back with a tin skirt.
-  const arch = new THREE.Mesh(new THREE.CylinderGeometry(R, R, L, 24, 1, true, 0, Math.PI), tin);
-  arch.rotation.z = Math.PI / 2;
-  arch.rotation.y = Math.PI / 2;
+  const archGeo = new THREE.CylinderGeometry(R, R, L, 24, 1, true, 0, Math.PI); // its axis is y: turned along x, the half that is above the ground
+  archGeo.rotateZ(Math.PI / 2);
+  const arch = new THREE.Mesh(archGeo, tin);
   arch.position.set(0, 0.18, 0);
   g.add(arch);
   for (let i = 0; i <= 6; i++) {
@@ -129,13 +129,13 @@ export function buildPigArk(random = Math.random) {
   // The doorway at the front: two jambs, a lintel, and a board across the foot to keep the straw in.
   for (const s of [-1, 1]) box(0.08, 0.95, 0.09, timber, L / 2 - 0.02, 0.18 + 0.475, s * 0.5, g);
   box(0.1, 0.1, 1.1, timber, L / 2 - 0.02, 0.18 + 0.97, 0, g);
-  for (const s of [-1, 1]) box(0.06, 0.32, 0.2, wood, L / 2 - 0.04, 0.18 + 1.12 - Math.abs(s) * 0.08, s * 0.42, g); // the gable fill each side, down to the arch
+  for (const s of [-1, 1]) box(0.06, 0.32, 0.2, wood, L / 2 - 0.045, 0.18 + 1.12 - Math.abs(s) * 0.08, s * 0.42, g); // the gable fill each side, down to the arch
   box(0.04, 0.18, 0.94, wood, L / 2 - 0.02, 0.18 + 0.1, 0, g);
   // The chain hook, and straw on the floor.
   const hook = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.01, 6, 12), rib);
   hook.position.set(L / 2 + 0.4, 0.13, 0.55);
   hook.rotation.y = Math.PI / 2;
   g.add(hook);
-  box(L - 0.4, 0.07, 2 * R - 0.35, mat(0xcdb26a), -0.05, 0.2, 0, g);
+  box(L - 0.4, 0.07, 2 * R - 0.35, mat(0xcdb26a), -0.05, 0.225, 0, g);
   return shadowed(g);
 }

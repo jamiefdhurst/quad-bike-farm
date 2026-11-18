@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, fromPlan, LANDFORM_PLAN, landformPoints, PLAN_ORIGIN } from '../src/world/layoutNew.js';
 import { createLandform } from '../src/world/landform.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
@@ -7,7 +7,7 @@ import { Track } from '../src/world/track.js';
 import { stripFrame } from '../src/world/layout.js';
 
 // The land's lie on the new farm (#813): falling east to the valley floor, rising west to the moor's ridge 100 m up.
-const two = layoutNew(LAYOUT);
+const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const plan = createLandform(LANDFORM_PLAN);
 const game = createLandform(two.landform);
 const heights2 = createTerrainHeight(two, new Track(two.trackPoints));

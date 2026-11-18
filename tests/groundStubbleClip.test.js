@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew } from '../src/world/layoutNew.js';
 import { createFields } from '../src/world/fields.js';
 import { paintContext, paintStubble } from '../src/world/groundTexture.js';
 import { polygonArea } from '../src/world/polygons.js';
 
 // The ground texture paints each stubble field inside its polygon, not its box (#813).
-const two = layoutNew(LAYOUT);
+const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const fields = createFields(two);
 
 /** A canvas that only remembers: the path being drawn, the clips in force, and every fill with the clip it was made under. */

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { coplanarOverlaps } from './helpers/coplanar.js';
 import { headlessContext } from './helpers/worldModels.js';
 import { fakeCanvas } from './helpers/vehicleModels.js';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew } from '../src/world/layoutNew.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
@@ -13,7 +13,7 @@ import { SET_PIECE_NAMES, FarDetail } from '../src/world/farDetail.js';
 // The eight landmarks #815 builds (the line, the barn, the hut and rock and the pillar only have their place): each is built on the new farm's ground
 // with its own place, and checked for what a look at one angle can't find, faces fighting on one plane, and for what stops you and what stays in sight.
 
-const two = layoutNew(LAYOUT);
+const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const spot = (kind) => landmarksOf(two, kind)[0];
 let land;
 let ctx;

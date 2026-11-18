@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, fromPlan, NEIGHBOUR_PLAN, NOT_MOVED_YET, REPLACED, describeLayout } from '../src/world/layoutNew.js';
 import { neighbourFarmShape, createNeighbourFarm, neighbourGate, nearNeighbourYard } from '../src/world/neighbourFarm.js';
 import { createRoads } from '../src/world/roads.js';
@@ -15,7 +15,7 @@ import { fakeCanvas } from './helpers/vehicleModels.js';
 import { headlessContext } from './helpers/worldModels.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
 
-const two = layoutNew(LAYOUT);
+const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const S = neighbourFarmShape(two);
 const lane = two.publicLane;
 const net = createRoads(two.roads);

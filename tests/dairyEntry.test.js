@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { fakeCanvas } from './helpers/vehicleModels.js';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew } from '../src/world/layoutNew.js';
 import { neighbourFarmShape } from '../src/world/neighbourFarm.js';
 import { createRandom } from '../src/core/random.js';
@@ -14,7 +14,7 @@ import { DEFAULT_PLAYER_PARAMS } from '../src/player/playerParams.js';
 const HALF_HEIGHT = 0.55;
 const WALK = DEFAULT_PLAYER_PARAMS.walkSpeed;
 const GRAVITY = DEFAULT_PLAYER_PARAMS.gravity;
-const S = neighbourFarmShape(layoutNew(LAYOUT));
+const S = neighbourFarmShape(layoutNew(LAYOUT, RAW_LAYOUT));
 const GROUND = 3;
 let world;
 

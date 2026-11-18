@@ -6,6 +6,7 @@
 // barn, the yard, the village and the rest is one anchor each; a number that is not inside an `at(...)` is a place of its own.
 import { at, resolveLayout } from './layoutAnchors.js';
 import { layoutFromSearch, layoutNew } from './layoutNew.js';
+import { resolveWithBarnLocal } from './layoutBarn.js';
 
 // The numbers a road is written with in `roads` and read with by everything beside it (the lane's barriers, the farm's hedges and gates), so each is
 // written once.
@@ -304,7 +305,7 @@ const RAW = {
 
   // The barn (world/barn.js): a hollow shed with its big doors open on the +x side, facing the yard. halfX and halfZ are the outside
   // half-sizes, wall the thickness, wallHeight the eaves and ridge the top of the roof along its length (x). The door is centred on z.
-  barn: at('barn', { x: 0, z: 0, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 },
+  barn: at('barn', { x: 0, z: 0, yaw: 0, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 },
     // A second span of the same size on the south side (world/barn.js), its own gable roof beside the first with a valley between and posts in
     // place of a wall, and its own door in the +x wall, centred on its middle. It is where the tractor, the UTV, the Tor, the Crag and the cars are mended.
     annex: { halfZ: 4.6, door: { halfWidth: 2.0, height: 3.2 } },
@@ -582,7 +583,7 @@ export const RAW_LAYOUT = RAW;
  */
 export const LAYOUT_CHOSEN = layoutFromSearch(globalThis.location?.search ?? '');
 
-export const LAYOUT = LAYOUT_CHOSEN === 2 ? layoutNew(resolveLayout(RAW)) : resolveLayout(RAW);
+export const LAYOUT = LAYOUT_CHOSEN === 2 ? layoutNew(resolveLayout(RAW), RAW) : resolveWithBarnLocal(RAW, RAW.anchors);
 
 // A few readers want one coordinate of a point on its own. They are read off the points (which are what turn with the anchor), once, here.
 LAYOUT.loft.edgeX = LAYOUT.loft.edge.x;

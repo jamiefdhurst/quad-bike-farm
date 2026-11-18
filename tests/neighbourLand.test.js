@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import { fakeCanvas } from './helpers/vehicleModels.js';
 import { headlessContext } from './helpers/worldModels.js';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, fromPlan, NEIGHBOUR_LAND_PLAN } from '../src/world/layoutNew.js';
 import { neighbourFarmShape } from '../src/world/neighbourFarm.js';
 import { neighbourLandShape, stretchesOf, hedgeStretches, landFieldAt } from '../src/world/neighbourLand.js';
@@ -12,7 +12,7 @@ import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
 
-const two = layoutNew(LAYOUT);
+const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const land = neighbourLandShape(two);
 const S = neighbourFarmShape(two);
 const lane = two.publicLane;

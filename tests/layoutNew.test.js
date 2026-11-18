@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LAYOUT, LAYOUT_CHOSEN } from '../src/world/layout.js';
+import { LAYOUT, LAYOUT_CHOSEN, RAW_LAYOUT } from '../src/world/layout.js';
 import {
   layoutNew, fromPlan, layoutFromSearch, searchForLayout, describeLayout, clippedFields, boundariesOf, placeGateways, areasOf,
   OUTLINE_PLAN, CORNERS_PLAN, FIELDS_PLAN, GATEWAYS_PLAN, NOT_MOVED_YET, SETTINGS, REPLACED,
@@ -14,7 +14,7 @@ import { Track } from '../src/world/track.js';
 
 // The new farm behind ?layout=2 (#681): its ground, outline and sixteen fields with the farmstead and the drive, their boundaries and
 // gateways, as the issue gives them in the plan's metres.
-const two = layoutNew(LAYOUT);
+const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const fields = createFields(two);
 const plan = clippedFields();
 const byName = Object.fromEntries(plan.map((f) => [f.name, f]));
@@ -140,16 +140,17 @@ describe('the boundaries', () => {
     }
     expect(outside).toBeCloseTo(perimeter, 6);
   });
-  it('are drystone walls round the sheep field and the hill, nothing along the drive, and hedges everywhere else', () => {
+  it('are drystone walls round the sheep field and the hill, nothing along the drive, a rail between Home Ground and the yard, and hedges everywhere else', () => {
     const open = ['drive|lanefield', 'drive|longpiece', 'drive|farmstead'];
     for (const r of runs) {
       const wall = ['sheep', 'hill'].includes(r.a) || ['sheep', 'hill'].includes(r.b);
-      expect(r.kind, `${r.a}|${r.b}`).toBe(open.includes([r.a, r.b].sort().join('|')) ? 'none' : wall ? 'wall' : 'hedge');
+      const railed = [r.a, r.b].sort().join('|') === 'farmstead|home';
+      expect(r.kind, `${r.a}|${r.b}`).toBe(open.includes([r.a, r.b].sort().join('|')) ? 'none' : railed ? 'rail' : wall ? 'wall' : 'hedge');
     }
     expect(runs.filter((r) => r.kind === 'wall').map((r) => [r.a, r.b].sort().join('|')).sort()).toEqual(
       ['brook|hill', 'far|hill', 'far|sheep', 'hay|sheep', 'hill|out', 'hill|sheep', 'home|sheep'].sort(),
     );
-    expect(fields.hedges.length + fields.boundaries.filter((b) => b.kind === 'wall' || b.kind === 'none').length).toBe(fields.boundaries.length);
+    expect(fields.hedges.length + fields.boundaries.filter((b) => ['wall', 'none', 'rail'].includes(b.kind)).length).toBe(fields.boundaries.length);
   });
 });
 
@@ -661,7 +662,7 @@ describe('the neighbour\'s yard is placed from its anchor (#972)', () => {
   });
 
   it('is the yard\'s middle, at plan (997.5, 292.5), turned by nothing: layout 2 has it as `anchors.neighbour`', () => {
-    const two = layoutNew(LAYOUT);
+    const two = layoutNew(LAYOUT, RAW_LAYOUT);
     const [x, z] = fromPlan(NEIGHBOUR_PLAN.anchor);
     expect(two.anchors.neighbour).toEqual({ x, z, yaw: 0 });
     const yard = two.neighbourFarm.yard;

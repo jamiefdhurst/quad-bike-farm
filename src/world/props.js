@@ -7,6 +7,7 @@ import { scatterStubble, stubbleShares } from './stubbleScatter.js';
 import { patchAt } from './terrain.js';
 import { buildBarnShed } from './barnBuild.js';
 import { underRoof } from './barn.js';
+import { buildGardenWall, buildHomeRails } from './farmsteadProps.js';
 import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
@@ -64,6 +65,8 @@ export function buildProps(ctx) {
   buildDriveVerge(c);
   buildPublicLane(c);
   buildPaddock(c);
+  buildGardenWall(c); // the new farm's garden plot and Home Ground's rail (#682); today's farm has neither
+  buildHomeRails(c);
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
   const neighbourFarm = buildNeighbourFarm(c);
@@ -398,7 +401,11 @@ export function laneTexture() {
   return roadTexture();
 }
 
+/** Whether (x, z) is on the concrete yard `slab` (a rectangle), if the farm has one. */
+const onSlab = (slab, x, z) => !!slab && x > slab.minX && x < slab.maxX && z > slab.minZ && z < slab.maxZ;
+
 function buildPaddock({ scene, models, layout, heights, fixedBox }) {
+  if (!layout.paddock) return; // the new farm has none: its fences are Home Ground's rails
   const { x: px, z: pz, half } = layout.paddock;
   const fenceLen = modelBounds(models.fence.scene).getSize(new THREE.Vector3()).x;
   const segLen = half;
@@ -691,6 +698,7 @@ function buildGrass({ scene, layout, heights, random, drawDistance }) {
     const z = (random() * 2 - 1) * F;
     if (heights.mudAt(x, z) > 0.02) continue;
     if (Math.hypot(x - yard.x, z - yard.z) < yard.radius * 0.75) continue;
+    if (onSlab(layout.farmstead?.slab, x, z)) continue; // the new farm's yard is concrete: nothing grows through it
     if (underRoof(layout, x, z)) continue; // none growing up through the barn floor, in either span
     if (inHayMeadow(layout, x, z)) continue; // the meadow has its own long grass, and cut hay has none standing in it
     if (strip) {

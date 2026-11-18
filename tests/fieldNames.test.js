@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, FIELDS_PLAN, FIXED_NAMES } from '../src/world/layoutNew.js';
 import {
   FIELD_NAMES, FIELD_TRAITS, DEALT_KINDS, dealFieldNames, usableFieldNames, namedLayout, fieldLabel, fieldPhrase, describeFieldNames,
@@ -12,7 +12,7 @@ import { Track } from '../src/world/track.js';
 import { openFarm, writeSave, readSave, SAVE_KEY } from '../src/farm/farmSave.js';
 
 // What the new farm's fields are called (#814): a list by kind, dealt to each farm from its seed, kept in its save.
-const two = layoutNew(LAYOUT);
+const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const dealable = two.fields.filter((f) => !f.fixed && DEALT_KINDS.includes(f.kind));
 const seeds = Array.from({ length: 300 }, (_, i) => 1 + i * 7919);
 const byName = Object.fromEntries(FIELD_NAMES.map((n) => [n.name, n]));
