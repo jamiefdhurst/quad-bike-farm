@@ -258,9 +258,29 @@ describe('the woodpile at the gate', () => {
     const lean = { minX: s.leanTo.x - s.leanTo.length / 2 - 0.3, maxX: s.leanTo.x + s.leanTo.length / 2 + 0.3 };
     expect(lean.minX).toBeGreaterThan(yard.stack.x + 3.5); // the working stack is 3.5 m long
     expect(Math.abs(lean.minX - W.gate.x)).toBeGreaterThan(8);
-    expect(s.leanTo.z - s.leanTo.depth / 2 - hedgeZ(s.leanTo.x)).toBeGreaterThan(0.9 + 0.2); // against the hedge's face (1.8 m thick), not in it
-    expect(s.leanTo.z - s.leanTo.depth / 2 - hedgeZ(s.leanTo.x)).toBeLessThan(2);
+    // The back posts are off the hedge's face (it is 1.8 m thick) by more than its bushes reach out (about 1 m), so the stack isn't hidden behind them, and not far.
+    expect(s.leanTo.z - s.leanTo.depth / 2 - hedgeZ(s.leanTo.x)).toBeGreaterThan(0.9 + 1.5);
+    expect(s.leanTo.z - s.leanTo.depth / 2 - hedgeZ(s.leanTo.x)).toBeLessThan(0.9 + 3);
     for (const [x, z] of yard.piles) expect(Math.hypot(x - s.block.x, z - s.block.z)).toBeGreaterThan(1.5);
     expect(pointInPolygon(wet, s.block.x, s.block.z, 3)).toBe(true);
+  });
+});
+
+describe('the thorn and bramble edge', () => {
+  it('lines every hedge of the wood a metre or three in, leaves the gates open and keeps off the track and the pond', async () => {
+    const { edgeScrubSpots } = await import('../src/world/woodsProps.js');
+    const spots = edgeScrubSpots(woods, [W.gate, W.backLane], createRandom(11));
+    expect(spots.length).toBeGreaterThan(200);
+    for (const { x, z } of spots) {
+      expect(pointInPolygon(outline, x, z)).toBe(true);
+      expect(clearOfEdge(x, z)).toBeLessThan(3.6);
+      expect(woods.trackDistance(x, z)).toBeGreaterThanOrEqual(W.circuit.halfWidth + 3);
+      for (const g of [W.gate, W.backLane]) expect(Math.hypot(g.x - x, g.z - z)).toBeGreaterThanOrEqual(5.5);
+    }
+    expect(spots.some((s) => s.bramble)).toBe(true);
+    expect(spots.some((s) => !s.bramble)).toBe(true);
+    // Every side of the wood has some: the east against North Field, the north and the west against the lane, the south against the Wet Meadow.
+    const b = polygonBounds(outline);
+    for (const near of [(s) => s.x > b.maxX - 12, (s) => s.x < b.minX + 25, (s) => s.z < b.minZ + 25, (s) => s.z > b.maxZ - 12]) expect(spots.filter(near).length).toBeGreaterThan(15);
   });
 });

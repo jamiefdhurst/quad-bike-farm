@@ -125,6 +125,10 @@ export async function buildWorldModels() {
   add('setPiece', 'loneAsh', land.buildLoneAsh, (b) => b(c2, spot('loneAsh')));
   add('setPiece', 'brookAlders', land.buildAlders, (b) => b(c2, spot('brookAlders')));
   add('setPiece', 'bigOaks', land.buildBigOaks, (b) => b(c2, spot('bigOaks')));
+  // Hollow Wood's veteran oak and the woodpile's scenery (#683), on the new farm.
+  add('setPiece', 'veteranOak', land.buildVeteranOak, (b) => b(c2, { at: [two.woods.oak.x, two.woods.oak.z] }));
+  const { buildLogYardScenery } = await import('../../src/world/logYardProps.js');
+  add('setPiece', 'logYardScenery', buildLogYardScenery, (b) => (b(c2), found('logYardScenery')));
 
   // The farmstead's garden wall and the rail along Home Ground (#682), on the new farm.
   const farmstead = await import('../../src/world/farmsteadProps.js');

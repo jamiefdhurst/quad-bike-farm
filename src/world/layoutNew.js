@@ -957,8 +957,8 @@ export const WOOD_PLAN = {
   oak: [80, 113], // the veteran oak, in the glade north of the pond (19 m from the nearest track)
   logYard: [142, 235],
   // The woodpile's scenery, as offsets from `logYard`'s anchor: a lean-to with an old stack under it along the south hedge beyond the working stack (which
-  // stands 9.8 to 13.2 m east of the anchor), and a chopping block by the rounds. The hedge's face is 10.9 m north of the anchor there.
-  scenery: { leanTo: { x: 20.2, z: -9.4, yaw: 0, length: 4.6, depth: 2.3 }, block: { x: 5.8, z: -1.6 } },
+  // stands 9.8 to 13.2 m east of the anchor), and a chopping block by the rounds. The hedge's face is 10.9 m north of the anchor there, and its bushes reach about 1 m past it, so the lean-to stands 2 m off.
+  scenery: { leanTo: { x: 20.2, z: -7.6, yaw: 0, length: 4.6, depth: 2.3 }, block: { x: 5.8, z: -1.6 } },
 };
 
 /** The point `s` metres along a run of points from its first. */

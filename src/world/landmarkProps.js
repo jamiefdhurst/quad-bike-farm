@@ -284,6 +284,21 @@ export function buildLoneOak(c, spot) {
   return group;
 }
 
+/**
+ * Hollow Wood's veteran oak (#683): a field oak with a hollow in its bole, in the glade north of the pond, so one tree stands over the wood from the gate.
+ * Its crown is about 20 m across and 12 m high, more than twice the size of the wood's oaks (4 to 8 m across), and the ground beneath it is bare.
+ */
+export function buildVeteranOak(c, spot) {
+  const group = new THREE.Group();
+  group.name = 'veteranOak';
+  const body = new THREE.Group();
+  group.userData.body = body;
+  fieldOak(c, group, body, spot.at[0], spot.at[1], 1, { hollow: true, ivySide: 2.4, name: 'veteranOak' });
+  finish(group);
+  finish(body);
+  return group;
+}
+
 /** Brook Meadow's big old oaks: four, a little smaller and bigger than each other, one with a hollow in its bole, bare ground and a fallen limb under each. */
 export function buildBigOaks(c, spot) {
   const group = new THREE.Group();
