@@ -8,6 +8,7 @@
 // corner), so they can be checked against it by eye. The game's (0, 0) is the middle of the yard, so a game position is the plan position
 // less `PLAN_ORIGIN`. Pure: no Three.js.
 
+import { resolveLayout, at } from './layoutAnchors.js';
 import { intersectPolygons, polygonArea, polygonBounds, clockwise, edgeBetween, insetPolygon, pointInPolygon, distanceToEdges, polygonEdges } from './polygons.js';
 
 /** Where the game's (0, 0) is on the plan: the middle of the yard. */
@@ -136,27 +137,28 @@ export const LANE_PLAN = { x: 905, halfWidth: 2.3, minZ: -70, maxZ: 970, ridden:
  * The plan's parlour, collecting yard, bulk tank room and slurry store are the dairy's (the second half of #569).
  */
 export const NEIGHBOUR_PLAN = {
-  yard: { minX: 950, maxX: 1045, minZ: 250, maxZ: 335, wall: 0.5, wallHeight: 1.3 },
-  gateway: { z: 292, width: 8, side: 'west' },
-  track: { halfWidth: 2, from: [905, 292] },
-  house: { x: 1011, z: 318, halfX: 7, halfZ: 4.2, wallHeight: 5.2, ridge: 7.6, door: { x: 1011, z: 313.8, halfWidth: 0.55, height: 2.05 } },
-  barn: { x: 971, z: 266.5, halfX: 13, halfZ: 8.5, wallHeight: 4.8, ridge: 7.6, door: { x: 984, z: 266.5, halfWidth: 2.6, height: 3.6 } },
+  anchor: [997.5, 292.5], // the yard's middle, in plan metres: everything below is an offset from it (x east, z south), so the yard moves as one (#972)
+  track: { halfWidth: 2, from: [905, 292] }, // from the lane, plan metres: it runs to her gate
+  yard: { minX: -47.5, maxX: 47.5, minZ: -42.5, maxZ: 42.5, wall: 0.5, wallHeight: 1.3 }, // plan (950 to 1045, 250 to 335)
+  gateway: { x: -47.5, z: -0.5, width: 8, side: 'west' }, // plan z 292
+  house: { x: 13.5, z: 25.5, halfX: 7, halfZ: 4.2, wallHeight: 5.2, ridge: 7.6, door: { x: 13.5, z: 21.3, halfWidth: 0.55, height: 2.05 } }, // plan (1011, 318)
+  barn: { x: -26.5, z: -26, halfX: 13, halfZ: 8.5, wallHeight: 4.8, ridge: 7.6, door: { x: -13.5, z: -26, halfWidth: 2.6, height: 3.6 } }, // plan (971, 266.5)
   // Her Tor, the one she drives to the farm (traffic.js `VISITOR_KINDS.neighbour`), her UTV and her old tractor: none in the way in or the tanker's way.
   parked: [
-    { kind: 'tor', x: 1028, z: 306, yaw: 1.2, colour: 0x5d6d4a, reg: 'K412 PBW' },
-    { kind: 'utv', x: 1038, z: 322, yaw: 0.35, colour: 0x7a2a22 },
-    { kind: 'tractor', x: 987, z: 302, yaw: 3.0, colour: 0xb02a20 },
+    { kind: 'tor', x: 30.5, z: 13.5, yaw: 1.2, colour: 0x5d6d4a, reg: 'K412 PBW' }, // plan (1028, 306)
+    { kind: 'utv', x: 40.5, z: 29.5, yaw: 0.35, colour: 0x7a2a22 }, // plan (1038, 322)
+    { kind: 'tractor', x: -10.5, z: 9.5, yaw: 3.0, colour: 0xb02a20 }, // plan (987, 302)
   ],
-  stand: { x: 1008.8, z: 310.6, yaw: Math.PI },
+  stand: { x: 11.3, z: 18.1, yaw: Math.PI }, // plan (1008.8, 310.6)
   // The dairy, at the map's places: the parlour (plan 1000 to 1030, 256 to 269) with the collecting yard in front of it (1000 to 1030, 271 to 289, open on its
   // west side for the herd), the bulk tank's room at (1036, 262) against the parlour's east end with its door to the south, where the tanker comes in
   // through her gateway, across the yard and up the strip between the collecting yard and the east wall, and the slurry store, round, at (970, 318).
-  parlour: { x: 1015, z: 262.5, halfX: 15, halfZ: 6.5, wallHeight: 3.3, ridge: 4.5 },
-  collecting: { minX: 1000, maxX: 1030, minZ: 271, maxZ: 289, gap: { z: 280, width: 6 } },
-  tankRoom: { x: 1036, z: 262, halfX: 2.5, halfZ: 1.75, wallHeight: 2.9 },
-  slurry: { x: 970, z: 318, r: 9, height: 3.6 },
-  floor: { at: [946, 292.5], reach: 16 },
-  slab: { minX: 950.5, maxX: 1044.5, minZ: 250.5, maxZ: 313.8 },
+  parlour: { x: 17.5, z: -30, halfX: 15, halfZ: 6.5, wallHeight: 3.3, ridge: 4.5 },
+  collecting: { minX: 2.5, maxX: 32.5, minZ: -21.5, maxZ: -3.5, gap: { z: -12.5, width: 6 } },
+  tankRoom: { x: 38.5, z: -30.5, halfX: 2.5, halfZ: 1.75, wallHeight: 2.9 },
+  slurry: { x: -27.5, z: 25.5, r: 9, height: 3.6 },
+  floor: { at: { x: -51.5, z: 0 }, reach: 16 }, // levelled to the lie at plan (946, 292.5)
+  slab: { minX: -47, maxX: 47, minZ: -42, maxZ: 21.3 },
 };
 
 /**
@@ -764,37 +766,22 @@ export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
   return { road, publicLane, roads };
 }
 
-/** The neighbour's yard, her anchor and the track to her gate in game metres (#569): `neighbourFarm` as the yard's shape reads it. */
+/**
+ * The neighbour's yard, her anchor and the track to her gate in game metres (#569): `neighbourFarm` as the yard's shape reads it. The yard's contents are
+ * `at('neighbour', ...)` offsets from her anchor and are resolved with the anchors' own resolver (layoutAnchors.js), so moving `anchor` moves the lot (#972).
+ * The anchor does not turn (`yaw` 0, not `turnable`): the yard was written with its gateway in the west wall, not turned.
+ */
 export function neighbourLayout(N = NEIGHBOUR_PLAN) {
-  const at = (o) => ({ ...o, ...(o.x !== undefined && { x: fromPlan([o.x, o.z])[0], z: fromPlan([o.x, o.z])[1] }) });
-  const y = N.yard;
-  const [minX, minZ] = fromPlan([y.minX, y.minZ]);
-  const [maxX, maxZ] = fromPlan([y.maxX, y.maxZ]);
-  const [, gz] = fromPlan([y.minX, N.gateway.z]);
-  const [sMinX, sMinZ] = fromPlan([N.slab.minX, N.slab.minZ]);
-  const [sMaxX, sMaxZ] = fromPlan([N.slab.maxX, N.slab.maxZ]);
-  const [fx, fz] = fromPlan(N.floor.at);
-  const centre = fromPlan([(y.minX + y.maxX) / 2, (y.minZ + y.maxZ) / 2]);
-  const neighbourFarm = {
-    yard: { minX, maxX, minZ, maxZ, wall: y.wall, wallHeight: y.wallHeight },
-    gateway: { x: minX, z: gz, width: N.gateway.width, side: N.gateway.side },
-    house: { ...at(N.house), door: at(N.house.door) },
-    parlour: at(N.parlour),
-    collecting: { minX: fromPlan([N.collecting.minX, 0])[0], maxX: fromPlan([N.collecting.maxX, 0])[0], minZ: fromPlan([0, N.collecting.minZ])[1], maxZ: fromPlan([0, N.collecting.maxZ])[1], gap: { z: fromPlan([0, N.collecting.gap.z])[1], width: N.collecting.gap.width } },
-    tankRoom: at(N.tankRoom),
-    slurry: at(N.slurry),
-    barn: { ...at(N.barn), door: at(N.barn.door) },
-    parked: N.parked.map(at),
-    stand: at(N.stand),
-    floor: { at: { x: fx, z: fz }, reach: N.floor.reach },
-    slab: { minX: sMinX, maxX: sMaxX, minZ: sMinZ, maxZ: sMaxZ },
-  };
-  const [tx0, tz0] = fromPlan(N.track.from);
+  const [ax, az] = fromPlan(N.anchor);
+  const { anchor, track: trackPlan, ...local } = N;
+  const { neighbourFarm } = resolveLayout({ anchors: { neighbour: { x: ax, z: az, yaw: 0 } }, neighbourFarm: at('neighbour', local) });
+  const g = neighbourFarm.gateway;
+  const [tx0, tz0] = fromPlan(trackPlan.from);
   const track = {
-    id: 'neighbour', name: 'her track', surface: 'tarmac', halfWidth: N.track.halfWidth, points: [[tx0, tz0], [minX, gz]], junction: { end: 'start', onto: 'lane' },
+    id: 'neighbour', name: 'her track', surface: 'tarmac', halfWidth: trackPlan.halfWidth, points: [[tx0, tz0], [neighbourFarm.yard.minX, g.z]], junction: { end: 'start', onto: 'lane' },
     markings: { centre: 'none' }, verge: 1.5, hedged: false, draw: 'ground', level: { shoulder: 3, lead: [0, 2] }, edge: 'gravel',
   };
-  return { anchor: { x: centre[0], z: centre[1], yaw: 0 }, neighbourFarm, track };
+  return { anchor: { x: ax, z: az, yaw: 0 }, neighbourFarm, track };
 }
 
 /** Her land in game metres (#569): the fields with their tones, each line as `{ axis, at, from, to, gaps }` (`axis` 'x' runs along z), the gate and the cows. */

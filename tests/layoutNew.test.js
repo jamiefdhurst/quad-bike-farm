@@ -4,7 +4,7 @@ import {
   layoutNew, fromPlan, layoutFromSearch, searchForLayout, describeLayout, clippedFields, boundariesOf, placeGateways, areasOf,
   OUTLINE_PLAN, CORNERS_PLAN, FIELDS_PLAN, GATEWAYS_PLAN, NOT_MOVED_YET, SETTINGS, REPLACED,
   STEWARDSHIP_PLAN, stewardshipPlan, RESERVED_PLAN, flattenPath, LANDMARKS_PLAN, LANDFORM_PLAN, canSee, landformHeightAt, traitsOf,
-  FIELD_LANDMARKS_PLAN, MOOR_PLAN, fieldLandmarksLayout,
+  FIELD_LANDMARKS_PLAN, MOOR_PLAN, fieldLandmarksLayout, NEIGHBOUR_PLAN, neighbourLayout,
 } from '../src/world/layoutNew.js';
 import { createFields } from '../src/world/fields.js';
 import { pointInPolygon, polygonArea, polygonBounds, polygonEdges, distanceToEdges } from '../src/world/polygons.js';
@@ -623,5 +623,49 @@ describe('a landmark in every field (#815)', () => {
     const oak = two.fieldLandmarks.find((l) => l.kind === 'loneOak');
     expect(oak.at).toEqual([352 - 520, 150 - 365]);
     expect(oak).toMatchObject({ field: 'north' });
+  });
+});
+
+describe('the neighbour\'s yard is placed from its anchor (#972)', () => {
+  const X = new Set(['x', 'minX', 'maxX']);
+  const Z = new Set(['z', 'minZ', 'maxZ']);
+  /** Every number of `b` against `a`: x and z numbers differ by (dx, dz) and nothing else differs. Returns the paths that did not follow. */
+  const unmoved = (a, b, dx, dz, path = '') => {
+    if (typeof a === 'number') {
+      const key = path.split('.').pop();
+      const want = a + (X.has(key) ? dx : Z.has(key) ? dz : 0);
+      return Math.abs(b - want) < 1e-9 ? [] : [`${path}: ${a} -> ${b}, wanted ${want}`];
+    }
+    if (a && typeof a === 'object') return Object.keys(a).flatMap((k) => unmoved(a[k], b[k], dx, dz, path ? `${path}.${k}` : k));
+    return a === b ? [] : [`${path}: ${a} -> ${b}`];
+  };
+
+  it('moves the house, the barn, her vehicles, where she stands, the wall, the dairy and her gateway with the anchor, and nothing else', () => {
+    const here = neighbourLayout();
+    const [ax, az] = NEIGHBOUR_PLAN.anchor;
+    const moved = neighbourLayout({ ...NEIGHBOUR_PLAN, anchor: [ax + 10, az + 5] });
+    expect(unmoved(here.neighbourFarm, moved.neighbourFarm, 10, 5)).toEqual([]);
+    expect(moved.anchor.x - here.anchor.x).toBeCloseTo(10, 9);
+    expect(moved.anchor.z - here.anchor.z).toBeCloseTo(5, 9);
+    expect(moved.neighbourFarm.parlour.x - here.neighbourFarm.parlour.x).toBeCloseTo(10, 9); // the dairy really is in what was compared
+    expect(moved.neighbourFarm.stand.x - here.neighbourFarm.stand.x).toBeCloseTo(10, 9);
+  });
+
+  it('takes her track\'s yard end with it and leaves its lane end on the lane', () => {
+    const here = neighbourLayout();
+    const [ax, az] = NEIGHBOUR_PLAN.anchor;
+    const moved = neighbourLayout({ ...NEIGHBOUR_PLAN, anchor: [ax + 10, az + 5] });
+    expect(moved.track.points[0]).toEqual(here.track.points[0]);
+    expect(moved.track.points[1][0] - here.track.points[1][0]).toBeCloseTo(10, 9);
+    expect(moved.track.points[1][1] - here.track.points[1][1]).toBeCloseTo(5, 9);
+  });
+
+  it('is the yard\'s middle, at plan (997.5, 292.5), turned by nothing: layout 2 has it as `anchors.neighbour`', () => {
+    const two = layoutNew(LAYOUT);
+    const [x, z] = fromPlan(NEIGHBOUR_PLAN.anchor);
+    expect(two.anchors.neighbour).toEqual({ x, z, yaw: 0 });
+    const yard = two.neighbourFarm.yard;
+    expect([(yard.minX + yard.maxX) / 2, (yard.minZ + yard.maxZ) / 2]).toEqual([x, z]);
+    expect(two.anchors.neighbour.turnable).toBeUndefined();
   });
 });
