@@ -178,7 +178,7 @@ export function visitPlaces(layout) {
     stop: at(14, 7.5),
     door: at(barn.halfX + 1.8, 2.6), // where the driver goes
     parcel: at(barn.halfX + 1.4, 4.2),
-    turn: { z0: at(14, 7.5).z, z1: at(14, 7.5).z + 9, r: 4.5, dx: 5 }, // a loop wider than the vehicle's own turning circle (4 m), or it can orbit a waypoint it cannot reach
+    turn: { z0: at(14, 7.5).z, z1: at(14, 7.5).z + 9, r: 4.5, dx: 3 }, // a loop as wide as the vehicle's own turning circle (4 m) needs, or it orbits a waypoint it cannot reach; its far side is 1.3 m clear of the second span's wall
     // The tuner's rig: the Tor or Crag stops where the other visitors do, facing west, and the trailer stands behind it.
     rig: rigSite({ ...at(14, 7.5), yaw: -Math.PI / 2 }),
   };

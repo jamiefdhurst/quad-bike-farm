@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { buildTin, TIN } from './moneyTin.js';
 import { tinLevel, ledgerText } from '../farm/classifieds.js';
 import { moneyFacts } from '../farm/classifieds.js';
+import { barnFrame, barnLocal, placeInBarn } from './barn.js';
 
 const SHELF = { long: 0.5, deep: 0.25, thick: 0.03 }; // metres
 const SPEED = 3.2; // lid openness per second
@@ -16,10 +17,15 @@ export class MoneyTinView {
   constructor({ game, market }) {
     this.game = game;
     this.market = market;
-    const spot = game.world.layout.moneyTin;
-    const floorY = game.world.heightAt(spot.x, spot.z);
+    const layout = game.world.layout;
+    const spot = barnLocal(layout).moneyTin; // in the barn's own frame: the whole set is put in the world turned with the barn
+    const floorY = game.world.heightAt(layout.barn.x, layout.barn.z); // the barn's floor is level
     const top = floorY + spot.y;
     const wallZ = spot.z + 0.005; // the plank's back, against the plaster
+    const set = new THREE.Group();
+    set.name = 'tin-set';
+    placeInBarn(layout, set, spot.x, top, wallZ);
+    game.scene.add(set);
     // The shelf and the tin are built with their backs to a wall along z and their fronts to +x; turned a quarter, they stand on the north wall with their fronts to +z.
     const wood = new THREE.MeshStandardMaterial({ color: 0x6a4a2e, roughness: 0.85 });
     const iron = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.6, metalness: 0.5 });
@@ -30,18 +36,19 @@ export class MoneyTinView {
       shelf.add(this.box(0.02, 0.17, 0.02, iron, 0.012, -SHELF.thick - 0.085 + 0.02, dz)); // upright against the wall
       shelf.add(this.box(0.17, 0.02, 0.02, iron, 0.09, -SHELF.thick - 0.0, dz)); // arm under the plank
     }
-    shelf.position.set(spot.x, top, wallZ);
     shelf.rotation.y = -Math.PI / 2;
-    game.scene.add(shelf);
+    set.add(shelf);
     this.tin = buildTin();
     // The tin sits a little off the wall so its lid, standing open, clears it; the lid hinge is the back edge.
-    this.tin.group.position.set(spot.x, top, wallZ + 0.09 + TIN.deep / 2);
+    const off = 0.09 + TIN.deep / 2;
+    this.tin.group.position.set(0, 0, off);
     this.tin.group.rotation.y = -Math.PI / 2;
-    game.scene.add(this.tin.group);
+    set.add(this.tin.group);
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.3, 0.36), new THREE.MeshBasicMaterial({ visible: false }));
-    this.proxy.position.set(spot.x, top + 0.12, this.tin.group.position.z);
-    game.scene.add(this.proxy);
-    this.position = this.tin.group.position;
+    this.proxy.position.set(0, 0.12, off);
+    set.add(this.proxy);
+    const tinAt = barnFrame(layout).toWorld(spot.x, wallZ + off);
+    this.position = new THREE.Vector3(tinAt.x, top, tinAt.z); // the tin in the world: the coins' sound and how far you are from it
     this.target = 0;
     this.buildCard();
     this.refresh();

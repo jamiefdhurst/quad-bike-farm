@@ -4,6 +4,9 @@ import { resolveWithBarnLocal, BARN_KEYS } from '../src/world/layoutBarn.js';
 import { barnFrame, barnShape, insideBarn, underRoof, indoorLevel, wallBoxes, floorBlend, detourBoxes, outsideDoor, inFirstSpan, inDoorway } from '../src/world/barn.js';
 import { loftShape, overLoft, worldClimbPoints, climbPoints, loftRestSpot } from '../src/world/loft.js';
 import { detourVia } from '../src/npc/detour.js';
+import { workSpot } from '../src/npc/girlBench.js';
+import { strawTip } from '../src/world/loft.js';
+import { placeInBarn } from '../src/world/barn.js';
 
 // The barn turned a quarter left on the new farm: its doors face south (+z) and its second span is to the west.
 const A = RAW_LAYOUT.anchors;
@@ -47,6 +50,12 @@ describe('the barn turned a quarter', () => {
     expect(hits(L.barn.x + L.barn.door.halfWidth + 0.3, south - 0.1)).toBe(true);
     expect(hits(L.barn.x, L.barn.z)).toBe(false); // the inside is open
     expect(hits(L.barn.x, L.barn.z - L.barn.halfX + 0.1)).toBe(true); // the back wall, north
+  });
+
+  it('keeps the pit\'s sizes its own: the shed kit\'s pit is turned by its yaw, not by swapping its half-sizes', () => {
+    expect(L.shed.pit.halfX).toBe(L0.shed.pit.halfX);
+    expect(L.shed.pit.halfZ).toBe(L0.shed.pit.halfZ);
+    expect(near(L.shed.pit.yaw, -Math.PI / 2)).toBe(true);
   });
 
   it('is inside, under the roof and indoors where the turned walls are, and not where they were', () => {
@@ -110,7 +119,8 @@ describe('the barn turned a quarter', () => {
     // from the north side (the back wall) she goes round, not through
     const behind = { x: L.barn.x, z: L.barn.z - L.barn.halfX - 4 };
     const round = detourVia(behind, inYard, boxes);
-    expect(round === null || round.x !== behind.x || round.z !== behind.z).toBe(true);
+    expect(round).not.toBeNull(); // the barn is in the way: she heads for a corner, which is outside every box
+    for (const b of boxes) expect(round.x > b.minX && round.x < b.maxX && round.z > b.minZ && round.z < b.maxZ).toBe(false);
   });
 
   it('is what the cat and dog and the girls call the door: out of it is south', () => {
@@ -125,5 +135,30 @@ describe('the barn turned a quarter', () => {
     expect(barnShape(L0).outer.maxX).toBeCloseTo(L0.barn.x + L0.barn.halfX, 6);
     expect(barnFrame(L0).turned).toBe(false);
     expect(wallBoxes(L0).length).toBe(6);
+  });
+
+  it('stands a girl at the bay, puts Jess\'s straw and aims the hay door as the unturned barn does, turned with the barn', () => {
+    const turn = (v) => f.toWorld(L0.barn.x + v.x, L0.barn.z + v.z); // a point of the unturned barn about its anchor, in the world
+    // workSpot: beside the quad in the bay, towards the bench end: the same place relative to the bay, and facing the quad.
+    const w0 = workSpot(L0.bay);
+    const w = workSpot(L.bay);
+    const want = f.toWorld(w0.x, w0.z);
+    expect(near(w.x, want.x) && near(w.z, want.z)).toBe(true);
+    expect(Math.hypot(w.x - L.bay.x, w.z - L.bay.z)).toBeCloseTo(Math.hypot(w0.x - L0.bay.x, w0.z - L0.bay.z), 6);
+    // strawTip: towards the loft's open edge, along the barn's own x
+    const t0 = strawTip(L0, { x: 0, z: 0 });
+    const t = strawTip(L, { x: 0, z: 0 });
+    const step = f.vecToWorld(t0.x, t0.z);
+    expect(near(t.x, step.x) && near(t.z, step.z)).toBe(true);
+    // the hay door looks out of the barn's door end: south here, as the doors do
+    const out = f.headingToWorld(Math.PI / 2);
+    expect(near(Math.sin(out), 0) && near(Math.cos(out), 1)).toBe(true);
+    expect(turn({ x: 0, z: 0 }).x).toBeCloseTo(L.barn.x, 6);
+    // placeInBarn: a wall fixture's place and facing
+    const obj = { position: { set(x, y, z) { Object.assign(this, { x, y, z }); } }, rotation: { y: 0 } };
+    placeInBarn(L, obj, L.barn.x + 2, 1.5, L.barn.z - 1);
+    const p = f.toWorld(L.barn.x + 2, L.barn.z - 1);
+    expect(near(obj.position.x, p.x) && near(obj.position.z, p.z) && obj.position.y === 1.5).toBe(true);
+    expect(near(obj.rotation.y, -Math.PI / 2)).toBe(true);
   });
 });

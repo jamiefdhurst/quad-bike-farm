@@ -297,7 +297,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     place(text, Math.min(ground.maxX - half, Math.max(ground.minX + half, mid[0] - rd.half - half)), mid[1]);
   }
   if (hut) place('Hut', hut.x - 2, hut.z - 7.5);
-  if (b) place('Barn', b.x - 5, b.z + b.halfZ + 6); // south-west of it, clear of the quads parked in the yard (which has no name: it's crowded)
+  if (b) place('Barn', barnFrame(layout).toWorld(b.x - 5, b.z + b.halfZ + 6).x, barnFrame(layout).toWorld(b.x - 5, b.z + b.halfZ + 6).z); // south-west of it (turned with the barn), clear of the quads parked in the yard (which has no name: it's crowded)
   if (paddock) place('Paddock', p.x, p.z, p.half + 4);
   if (strip) place('Drag strip', strip.x + 6, strip.z + 6);
   if (r) place('Jump', r.x, r.z, -6);
