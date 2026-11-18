@@ -1,20 +1,38 @@
 import * as THREE from 'three';
 import { SPLITTER } from '../vehicle/tractorModel.js';
 import { STACK_SHAPE, stackSlot } from './logSplitter.js';
+import { barkTexture, logEndTexture, woodTexture } from '../world/neighbourTextures.js';
+import { createRandom } from '../core/random.js';
 
 // The rounds, the split logs and the stack they go in (items/logSplitter.js is the logic). A round is a short length of trunk lying where the
 // piles are; carry one at a time like the brushwood, put it on the splitter's beam, and the logs it makes lie on the ground to be carried to
 // the stack. Drawn and held here; nothing in this file decides anything.
 
-const bark = new THREE.MeshStandardMaterial({ color: 0x4d3a28, roughness: 0.95 });
-const barkPale = new THREE.MeshStandardMaterial({ color: 0x6a5238, roughness: 0.95 });
-const heart = new THREE.MeshStandardMaterial({ color: 0xc9a46a, roughness: 0.85 }); // the cut face, fresh wood
+// The materials, made on first use (a canvas needs a page): bark with grain and lichen, and the cut face with its rings, a paler sapwood edge and a split, the
+// textures the hop log on the Fern Trail has (#738's logs, taken in #683); flat browns where there is no page to paint on (a test without one).
+let made = null;
+function materials() {
+  if (made) return made;
+  const painted = typeof document !== 'undefined';
+  const random = createRandom(0x10c5);
+  const barkMap = painted ? barkTexture(random) : null;
+  made = {
+    bark: new THREE.MeshStandardMaterial(painted ? { map: barkMap, roughness: 0.95 } : { color: 0x4d3a28, roughness: 0.95 }),
+    barkPale: new THREE.MeshStandardMaterial(painted ? { map: barkMap, color: 0xd6c3a8, roughness: 0.95 } : { color: 0x6a5238, roughness: 0.95 }),
+    heart: new THREE.MeshStandardMaterial(painted ? { map: logEndTexture(random), roughness: 0.85 } : { color: 0xc9a46a, roughness: 0.85 }), // the cut face, fresh wood
+    split: new THREE.MeshStandardMaterial(painted ? { map: woodTexture(random, [196, 164, 112]), roughness: 0.85 } : { color: 0xc9a46a, roughness: 0.85 }), // the face a log is split along: bare grain
+    post: new THREE.MeshStandardMaterial(painted ? { map: woodTexture(random, [92, 72, 50]), roughness: 0.9 } : { color: 0x5a5148, roughness: 0.9 }),
+  };
+  return made;
+}
 
 export const ROUND = { radius: 0.15, height: 0.3 };
 export const LOG = { radius: 0.15, length: STACK_SHAPE.logLength };
+const BEARER = 0.08; // m: the bearers the stack's lowest logs lie on
 
 /** A round: a short bit of trunk, bark all round and a pale cut face at each end with a ring or two. */
 export function buildRound(random = Math.random) {
+  const { bark, barkPale, heart } = materials();
   const g = new THREE.Group();
   g.name = 'woodRound';
   const r = ROUND.radius * (0.9 + random() * 0.2);
@@ -25,10 +43,6 @@ export function buildRound(random = Math.random) {
     cap.rotation.x = -s * Math.PI / 2;
     cap.position.y = s * (ROUND.height / 2 + 0.001);
     g.add(cap);
-    const ring = new THREE.Mesh(new THREE.RingGeometry(r * 0.45, r * 0.5, 14), bark);
-    ring.rotation.x = -s * Math.PI / 2;
-    ring.position.y = s * (ROUND.height / 2 + 0.002);
-    g.add(ring);
   }
   g.traverse((o) => {
     if (o.isMesh) o.castShadow = o.receiveShadow = true;
@@ -46,10 +60,11 @@ export function logGeometry() {
 
 /** One split log as a mesh group: the bark side and the pale flat face. */
 export function buildLog() {
+  const { bark, heart, split } = materials();
   const { half, face } = logGeometry();
   const g = new THREE.Group();
   g.name = 'woodLog';
-  g.add(new THREE.Mesh(half, bark), new THREE.Mesh(face, heart));
+  g.add(new THREE.Mesh(half, [bark, heart, heart]), new THREE.Mesh(face, split));
   g.traverse((o) => {
     if (o.isMesh) o.castShadow = o.receiveShadow = true;
   });
@@ -128,9 +143,10 @@ export class StackView {
   constructor({ scene, heightAt, site, capacity }) {
     this.site = site;
     this.heightAt = heightAt;
+    const { bark, heart, split, post } = materials();
     const { half } = logGeometry();
-    this.mesh = new THREE.InstancedMesh(half, bark, capacity);
-    this.face = new THREE.InstancedMesh(logGeometry().face, heart, capacity);
+    this.mesh = new THREE.InstancedMesh(half, [bark, heart, heart], capacity);
+    this.face = new THREE.InstancedMesh(logGeometry().face, split, capacity);
     this.mesh.castShadow = this.mesh.receiveShadow = true;
     this.face.receiveShadow = true;
     this.group = new THREE.Group();
@@ -138,14 +154,24 @@ export class StackView {
     this.group.add(this.mesh, this.face);
     this.group.position.set(site.x, heightAt(site.x, site.z), site.z);
     this.group.rotation.y = site.yaw;
-    // Two posts at the ends so it reads as a stack and not a heap, and the box that is looked at to add to it.
-    const post = new THREE.MeshStandardMaterial({ color: 0x5a5148, roughness: 0.9 });
+    // Two stakes at the ends so it reads as a stack and not a heap, with a rail across the top of each pair, the lowest logs on two bearers, and the box that is looked at to add to it.
     const half_ = (STACK_SHAPE.perLayer * STACK_SHAPE.spacing) / 2 + 0.1;
     for (const s of [-1, 1]) {
-      const p = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.1, 0.08), post);
-      p.position.set(s * half_, 0.55, 0);
-      p.castShadow = true;
-      this.group.add(p);
+      for (const z of [-0.2, 0.2]) {
+        const p = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 1.25, 7), post);
+        p.position.set(s * half_, 0.55, z);
+        p.castShadow = true;
+        this.group.add(p);
+      }
+      const tie = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.46), post);
+      tie.position.set(s * half_, 1.16, 0);
+      this.group.add(tie);
+    }
+    for (const z of [-0.12, 0.12]) {
+      const bearer = new THREE.Mesh(new THREE.BoxGeometry(half_ * 2 - 0.05, 0.09, 0.1), post);
+      bearer.position.set(0, 0.04, z);
+      bearer.castShadow = bearer.receiveShadow = true;
+      this.group.add(bearer);
     }
     this.proxy = new THREE.Mesh(new THREE.BoxGeometry(half_ * 2 + 0.3, 1.2, 0.8), new THREE.MeshBasicMaterial({ visible: false }));
     this.proxy.position.y = 0.6;
@@ -159,7 +185,7 @@ export class StackView {
     const m = new THREE.Matrix4();
     for (let i = 0; i < count; i++) {
       const s = stackSlot(i);
-      m.makeTranslation(s.x, s.y + LOG.radius * 0.95, s.z); // the origin is the flat face, so the curved side hangs below it
+      m.makeTranslation(s.x, s.y + LOG.radius * 0.95 + BEARER, s.z); // the origin is the flat face, so the curved side hangs below it; the bearers lift the lowest layer
       this.mesh.setMatrixAt(i, m);
       this.face.setMatrixAt(i, m);
     }
