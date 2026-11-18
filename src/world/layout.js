@@ -371,7 +371,7 @@ const RAW = {
   shed: at('barn', {
     compressor: { x: -4.65, z: 1.4, yaw: Math.PI / 2 },
     washer: { x: 3.85, z: -3.65, yaw: 0 },
-    pit: { x: -1.4, z: 9.2, halfX: 1.9, halfZ: 0.45 },
+    pit: { x: -1.4, z: 9.2, yaw: 0, halfX: 1.9, halfZ: 0.45 }, // `yaw` keeps its sizes its own when the barn turns (shedView turns the pit by it)
     catalogue: { x: 1.65, z: -3.74, yaw: 0.2 }, // lying on the workbench's front edge between the toolbox and the oil bottle (on the top: `bench.height`)
   }),
   jack: at('barn', { x: 0.8, z: 6.6, yaw: 0.25 }),
