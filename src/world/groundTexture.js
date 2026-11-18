@@ -565,7 +565,7 @@ function paddockCells(c, hill, r, ri, cell) {
  * The wood through the north gate (world/woods.js): a floor of leaf litter, darker and browner than the grass field, patched with moss and
  * bare earth; the Hollow Run and its lead-in worn into a narrow dark track with two ruts and a grass strip between; the pond's silt and rushes.
  */
-function* paintWoods(c, fields, autumn = false) {
+export function* paintWoods(c, fields, autumn = false) {
   const { ctx, s, win } = c;
   const woods = fields.woods;
   const r = woods.rect;
@@ -585,6 +585,7 @@ function* paintWoods(c, fields, autumn = false) {
       for (let kz = kz0; kz < kz1; kz++) {
         const x = r.minX + kx * ws;
         const z = r.minZ + kz * ws;
+        if (woods.outline && !woods.inWoods(x + ws / 2, z + ws / 2)) continue; // the new wood is its field's shape, not its bounding box (#985)
         const v = hash01(S.woodFloor, kx, kz);
         const moss = 0.5 + 0.5 * Math.sin(x * 0.19 + z * 0.13) * Math.sin(z * 0.17 - x * 0.11);
         if (moss > 0.62 && v < 0.6) cell(x, z, ws, ws, `rgba(${52 + v * 20},${72 + v * 22},${34 + v * 10},0.6)`);
@@ -601,6 +602,7 @@ function* paintWoods(c, fields, autumn = false) {
         const random = itemRandom(S.leaf, i);
         const x = r.minX + random() * (r.maxX - r.minX);
         const z = r.minZ + random() * (r.maxZ - r.minZ);
+        if (woods.outline && !woods.inWoods(x, z)) continue;
         const colour = autumn ? (random() < 0.85 ? AUTUMN_LEAVES[Math.floor(random() * AUTUMN_LEAVES.length)] : 'rgba(40,32,20,0.35)') : random() < 0.6 ? 'rgba(150,104,48,0.3)' : 'rgba(40,32,20,0.35)';
         const rx = (0.2 + random() * 0.5) * s;
         const rz = (0.12 + random() * 0.25) * s;

@@ -317,7 +317,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (wood) place('Wood', (wood.minX + wood.maxX) / 2, (wood.minZ + wood.maxZ) / 2);
   if (woods) {
     const r = woods.rect;
-    field(woods.name, (r.minX + r.maxX) / 2 + 20, r.minZ + 10);
+    if (!layout.fields) field(woods.name, (r.minX + r.maxX) / 2 + 20, r.minZ + 10); // a plan that names its fields writes it below
     const p = woods.at(woods.track.totalLength * 0.97); // on the way back to the junction, in the open by the gate
     place(woods.circuitName, p.x + 6, p.z - 10);
     if (woods.trail) {
