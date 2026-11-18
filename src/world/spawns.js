@@ -1,7 +1,8 @@
-import { barnFrame } from './barn.js';
 // Starting positions that vary each game: the quads are shuffled between their
 // parking slots and nudged, sometimes left elsewhere on the farm, and the jerry
 // can is left at one of a few likely spots.
+
+import { barnFrame } from './barn.js';
 
 const MIN_GAP = 4.5; // metres between quad centres
 const BIG_GAP = 6; // and between a tractor, UTV, Tor or Crag and anything else, centre to centre

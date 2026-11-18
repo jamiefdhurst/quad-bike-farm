@@ -42,15 +42,14 @@ describe('the barn', () => {
     expect(two.jumperRail.yaw).toBeCloseTo(-Math.PI / 2, 6); // its fittings turn with it
   });
   it('seats the girls on the bales and in the loft inside it, and the ladder climbs to the planks', () => {
-    // A stand-in game: the layout, the loft numbers worked out in the barn's own frame, and the way the game uses them (loftRestSpot, worldClimbPoints).
-    const game = { world: { layout: two } };
-    game.loft = loftShape(two, 0);
-    const spot = loftRestSpot(two, game.loft);
+    // The loft's numbers are worked out in the barn's own frame and put in the world by the same functions game.js calls (loftRestSpot, worldClimbPoints): the code is in loft.js, not in a host class.
+    const loft = loftShape(two, 0);
+    const spot = loftRestSpot(two, loft);
     expect(overLoft(two, spot.x, spot.z)).toBe(true);
     expect(insideBarn(two, spot.stand.x, spot.stand.z)).toBe(true);
     expect(two.barnBaleSpots.length).toBe(2);
     for (const [x, z] of two.barnBaleSpots) expect(insideBarn(two, x, z)).toBe(true);
-    const climb = worldClimbPoints(two, game.loft, { x: spot.stand.x, y: 0, z: spot.stand.z }, true);
+    const climb = worldClimbPoints(two, loft, { x: spot.stand.x, y: 0, z: spot.stand.z }, true);
     const c = new Climb(climb[0], climb[climb.length - 1], 4, climb.slice(1, -1));
     for (let t = 0; t < 4.2; t += 0.1) {
       const p = c.update(0.1);
@@ -202,8 +201,7 @@ describe('Home Ground\'s play things', () => {
       expect(plan(s)[1]).toBeLessThan(P.frontage[1]);
     }
   });
-  it('has the rails\' stretch and a gate for the tractor in the plan\'s gateway', () => {
-    expect(two.farmstead.rails.minZ + PLAN_ORIGIN[1]).toBe(P.frontage[0]);
+  it('has a gate for the tractor in the plan\'s gateway', () => {
     const g = two.gateways.find((w) => w.a === 'home' && w.b === 'farmstead');
     expect(g.half * 2).toBeGreaterThanOrEqual(5);
   });

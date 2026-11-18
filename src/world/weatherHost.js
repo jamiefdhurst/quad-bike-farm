@@ -141,7 +141,8 @@ export class WeatherHost {
     if (bang && this.shutterBangCool <= 0) {
       this.shutterBangCool = BANG_COOLDOWN;
       g.doorAudio.bang(bang.strength);
-      g.notice('bang', { x: barn.hayDoor.x + 0.3, y: barn.hayDoor.y + 0.7, z: barn.hayDoor.z }, { key: 'shutter', strength: 0.6 * bang.strength });
+      const outOf = (d) => barnFrame(g.world.layout).vecToWorld(d, 0); // out of the door: along the barn's own x, whichever way it is turned
+      g.notice('bang', { x: barn.hayDoor.x + outOf(0.3).x, y: barn.hayDoor.y + 0.7, z: barn.hayDoor.z + outOf(0.3).z }, { key: 'shutter', strength: 0.6 * bang.strength });
     }
     if (wind.hayBlows(out)) this.blowHay();
     g.hayBlow.update(dt);
@@ -154,7 +155,8 @@ export class WeatherHost {
     const wind = g.wind;
     const len = Math.max(0.1, Math.hypot(wind.x, wind.z));
     const to = { x: door.x + (wind.x / len) * 8, y: door.y, z: door.z + (wind.z / len) * 8 };
-    g.hayBlow.drop({ x: door.x + 0.2, y: door.y + 0.3, z: door.z }, to, g.world.heightAt(to.x, to.z));
+    const lip = barnFrame(g.world.layout).vecToWorld(0.2, 0);
+    g.hayBlow.drop({ x: door.x + lip.x, y: door.y + 0.3, z: door.z + lip.z }, to, g.world.heightAt(to.x, to.z));
   }
 
   /** Lays the snow shader over the world and over each vehicle (once). The ground and the vehicles are left out of the world's, which they don't share. */

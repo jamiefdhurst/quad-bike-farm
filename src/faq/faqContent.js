@@ -2925,8 +2925,7 @@ export const FAQ_SECTIONS = [
         q: 'Where is the barn on the new farm?',
         a: `On <code>?layout=2</code> the farmstead is in the middle of the farm, at the head of the drive, and you can use everything within about 80 m of it each day. The barn is the same barn,
           turned a quarter so its big doors face south onto the yard: the workbench, the boards, the loft and the bays are all as they were inside, with the bell by the first door, the fuel
-          tanks against its east wall and the generator along its west one. The yard is concrete, 190 by 98 m. North of the barn is the stackyard, with the Dutch barn at its far end and
-          round bales stacked in it, then the orchard, where the hens have a proper house and the pig has an ark, each in a fenced run with the feed bin beside them. East of that is the
+          tanks against its east wall and the generator along its west one. The yard is concrete, 190 by 98 m. North of the barn is the orchard, where the hens have a proper house and the pig has an ark, each in a fenced run with the feed bin beside them. West of it is the stackyard, with the Dutch barn at its far end and round bales stacked in it. East of the orchard is the
           garden, a lawn behind a stone wall with a gate on the yard side (the house comes later), and the girls park their cars south of it. The muck heap is behind where the cattle shed will be,
           and the machinery shed, the grain store, the cattle shed and the sheep pens have their places kept clear on the yard. Home Ground, the old grass field, is just west of the yard behind a
           post and rail fence (the girls sit on it to watch you ride), with the Home Loop, the cones, the jump and the line-up as they were, and the bonfire in its south-east corner. In the console,
