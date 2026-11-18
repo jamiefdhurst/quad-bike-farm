@@ -225,7 +225,7 @@ describe('the ground under her yard', () => {
 });
 
 describe('her yard seen from afar and from behind its buildings', () => {
-  it('has a far version over the yard on its new ground: the house, the barn and the wall, as one mesh', () => {
+  it('has a far version over the yard on its new ground: the house, the barn, the dairy and the wall, as one mesh', () => {
     const far = farNeighbourFarm(S, 3);
     far.updateMatrixWorld(true);
     expect(far.children).toHaveLength(1);
@@ -234,7 +234,8 @@ describe('her yard seen from afar and from behind its buildings', () => {
     expect(box.max.x).toBeCloseTo(S.yard.maxX, 0);
     expect(box.min.z).toBeCloseTo(S.yard.minZ, 0);
     expect(box.max.z).toBeCloseTo(S.yard.maxZ, 0);
-    expect(far.children[0].geometry.getAttribute('position').count / 3).toBe(2 * 16 + S.walls.length * 10);
+    // The house, the barn, the parlour and the tank room (16 triangles each) and the five walls and the slurry store (10 each).
+    expect(far.children[0].geometry.getAttribute('position').count / 3).toBe(4 * 16 + (S.walls.length + 1) * 10);
   });
 
   it('hides you from a girl behind her barn or her house (#654), and not across the open yard', () => {

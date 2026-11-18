@@ -132,6 +132,16 @@ export async function buildWorldModels() {
   // The neighbour's land across the lane (#569) and her cows, on the new farm's ground.
   const { buildNeighbourLand } = await import('../../src/world/neighbourLandProps.js');
   add('setPiece', 'neighbourLand', buildNeighbourLand, (b) => (b(c2), found('neighbourLand')));
+  // The neighbour's dairy (#569): the four pieces, each on the new farm's neighbour's own shape and yard ground, with the materials they share.
+  const dairy = await import('../../src/world/dairyKit.js');
+  const { neighbourFarmShape } = await import('../../src/world/neighbourFarm.js');
+  const nf = neighbourFarmShape(two);
+  const dm = dairy.dairyMaterials(c.random, new THREE.MeshStandardMaterial({ color: 0x9d9b94 }));
+  const y0 = c2.heights.heightAt(...[(nf.outline.minX + nf.outline.maxX) / 2, (nf.outline.minZ + nf.outline.maxZ) / 2]);
+  add('world', 'parlour', dairy.buildParlour, (b) => b(nf.parlour, y0, dm));
+  add('world', 'collectingYard', dairy.buildCollectingYard, (b) => b(nf.collecting, nf.parlour, y0, dm));
+  add('world', 'tankRoom', dairy.buildTankRoom, (b) => b(nf.tankRoom, nf.parlour, y0, dm));
+  add('world', 'slurryStore', dairy.buildSlurryStore, (b) => b(nf.slurry, y0, dm));
   const cattle = await import('../../src/world/cattleModel.js');
   add('world', 'cow', cattle.buildCow, (b) => b(0));
   add('world', 'herd', cattle.buildHerd, (b) => b(two.neighbourLand.cows, () => 0));
