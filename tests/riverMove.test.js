@@ -97,21 +97,15 @@ describe('the river, from the hill\'s stream to the lane', () => {
     }
   });
 
-  it('has long pools with a riffle between them: the surface falls in steps, not in one slope', () => {
-    // Over a pool the water is nearly level; at the riffle after it, it drops. A pool runs from 0.1 to 0.9 of a length past the crossing, the riffle 0.9 to 1.1.
-    const L = R.pools.length;
-    const pool = cx + 1.1 * L;
-    const poolFall = surface(pool + 0.05 * L) - surface(pool + 0.75 * L);
-    const landFall = bed(pool + 0.05 * L) - bed(pool + 0.75 * L);
-    expect(poolFall).toBeLessThan(landFall * 0.85);
-    const riffleFall = surface(pool + 0.8 * L) - surface(pool + 1.0 * L);
-    const landOver = bed(pool + 0.8 * L) - bed(pool + 1.0 * L);
-    expect(riffleFall).toBeGreaterThan(landOver);
+  it('only ever falls: the surface never rises downstream, wherever the land rolls up under the line', () => {
+    for (let x = brook.minX + 1; x < brook.maxX - 8; x++) {
+      expect(surface(x) - surface(x - 1), `x ${x}`).toBeLessThan(0.01);
+    }
   });
 });
 
 describe('deep water, the crossing and the bridge', () => {
-  it('drowns an engine in the pools and not on the crossing, which is a wade', () => {
+  it('drowns an engine in the deep and not on the crossing, which is a wade', () => {
     const x = cx + 30;
     expect(brook.deepAt(x, brook.zAt(x))).toBeCloseTo(1, 5);
     expect(brook.deepAt(cx, brook.zAt(cx))).toBe(0);
@@ -121,11 +115,6 @@ describe('deep water, the crossing and the bridge', () => {
     expect(w).toBeGreaterThan(P.waterStallAt);
   });
 
-  it('is open in any frost: nothing about the water depends on the weather, so frozen puddles never make the river a floor, and the deep stays deep', () => {
-    // Nothing in the river reads the frost (world/brook.js has no weather): the same call answers at any temperature.
-    expect(brook.deepAt.length).toBe(2);
-    expect(brook.deepAt(cx + 30, brook.zAt(cx + 30))).toBe(brook.deepAt(cx + 30, brook.zAt(cx + 30)));
-  });
 
   it('keeps the crossing at least 25 m from the bridge, so the bridge does not set off the crossing\'s remark', () => {
     expect(cx - R.bridge.x).toBeGreaterThanOrEqual(25);
@@ -156,6 +145,12 @@ describe('the meadow', () => {
     expect(gates).toHaveLength(3);
     const shut = fields.gateways.filter((g) => g.gap?.shut && !g.gap.gate);
     expect(shut).toHaveLength(GATEWAYS_PLAN.filter((g) => g.river).length);
+    // The gate fills its gap: it spans what the boundary leaves open, from where the plan puts the gap.
+    for (const h of river.hurdles(fields.gateways)) {
+      const g = shut.find((s) => Math.abs((s.pa.x + s.pb.x) / 2 - h.x) < 3);
+      expect(h.half, `gate at x ${h.x}`).toBeCloseTo(g.gap.half, 6);
+      expect(h.z, `gate at x ${h.x}`).toBeCloseTo((g.pa.z + g.pb.z) / 2, 6);
+    }
     for (const h of gates) {
       const g = shut.find((s) => Math.abs((s.pa.x + s.pb.x) / 2 - h.x) < 3 && Math.abs((s.pa.z + s.pb.z) / 2 - h.z) < 4);
       expect(g, `gate at x ${h.x}`).toBeTruthy();

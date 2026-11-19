@@ -2,7 +2,7 @@
 // the neighbour's, where it runs past the south of her yard and goes under the public lane in a culvert, then wanders on to a spring in the
 // field beyond. On today's farm the water flows west, downhill: the land rises all the way from the pasture's bottom (about -2 m) to the lane
 // (about 6 m). On the new farm (#565) the land falls east, so the river runs east with it, in bends (`river.bends`), a width that varies
-// (`river.vary`), long pools with a riffle between them (`river.pools`) and drinking places (`river.drinks`), to the lane's verge with no culvert
+// (`river.vary`), a surface that only ever falls (`useGround`) and drinking places (`river.drinks`), to the lane's verge with no culvert
 // (`brook.noCulvert`) where the village takes it on (#688).
 // Pure: its line, how deep it is cut, where the water stands and where the culvert is, for the terrain, the water's drawing, the map and
 // how wet a quad gets.
@@ -42,13 +42,6 @@ export function createBrook(layout) {
   const mix = (a, c, k) => a + (c - a) * k;
   const bends = river?.bends ?? null;
   const vary = river?.vary ?? null;
-  const pools = river?.pools ?? null;
-  /** How far the long pools have deepened the channel at x: a pool fills along `length` m and the riffle drops it back, so the surface stays near level in each pool. */
-  const poolExtra = (x) => {
-    if (!pools || !cross) return 0;
-    const f = (((x - cross.x) / pools.length + 0.9) % 1 + 1) % 1; // the crossing sits mid-riffle
-    return riverK(x) * pools.extra * Math.min(f / 0.8, 1) * (1 - smoothstep(0.8, 1, f));
-  };
 
   /** The brook's middle line at x: smooth steps between its waypoints, with a little wander of its own once it is away from the hedge. */
   function zAt(x) {
@@ -75,13 +68,35 @@ export function createBrook(layout) {
     return k;
   }
   // The river keeps the surface where it was and deepens the bed under it; the crossing raises the bed again until `cross.water` m stand over it.
-  const riverDepth = (x) => mix(depth0, river.depth, riverK(x)) + poolExtra(x);
-  const riverWater = (x) => mix(water0, river.water, riverK(x)) + poolExtra(x);
-  const depthAt = (x) => {
+  const riverDepth = (x) => mix(depth0, river.depth, riverK(x));
+  const riverWater = (x) => mix(water0, river.water, riverK(x));
+  const baseDepthAt = (x) => {
     if (!river) return depth0 * fullness(x);
     const d = riverDepth(x);
     return (cross ? mix(d, d - riverWater(x) + cross.water, crossK(x)) : d) * fullness(x);
   };
+  // Where the land rises downstream the water would run uphill (the surface is the ground at its middle less the cut plus the water standing). With
+  // the ground along the line (`useGround`, from terrainHeight.js) on a river that runs east (`river.eastward`, the new farm's) the channel is cut that much deeper there, so its surface only ever falls (#565).
+  let ground = null;
+  let lower = null;
+  const surfaceAt = (x) => ground(x) - baseDepthAt(x) + waterDepthAt(x);
+  function lowerAt(x) {
+    if (!ground || x <= minX + 1 || x >= maxX) return 0;
+    if (!lower) {
+      // From a metre past the pasture's hedge: at `minX` the ground still has the stream's own channel in it (hill.js).
+      lower = [];
+      let low = Infinity;
+      for (let xx = minX + 1; xx <= maxX; xx++) {
+        const s = surfaceAt(xx);
+        low = Math.min(low, s);
+        lower.push(s - low);
+      }
+    }
+    const f = x - (minX + 1);
+    const i = Math.min(lower.length - 2, Math.floor(f));
+    return lower[i] + (lower[i + 1] - lower[i]) * (f - i);
+  }
+  const depthAt = (x) => baseDepthAt(x) + lowerAt(x);
   const halfAt = (x) => (half0 * (0.55 + 0.45 * fullness(x))) * (river ? mix(1, river.halfWidth / half0, riverK(x)) : 1) * (vary ? 1 + vary.amount * Math.sin(x * vary.k + vary.phase) * riverK(x) : 1);
   /** How deep the water stands in the channel at x (before any rise after rain). */
   const waterDepthAt = (x) => (river ? (cross ? mix(riverWater(x), cross.water, crossK(x)) : riverWater(x)) : water0) * fullness(x);
@@ -163,5 +178,5 @@ export function createBrook(layout) {
     return out;
   }
 
-  return { minX, maxX, zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt, drinks };
+  return { minX, maxX, zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt, drinks, useGround: (fn) => { ground = river?.eastward ? fn : null; lower = null; } };
 }

@@ -1071,7 +1071,7 @@ export const HILL_PLAN = {
  * The river and the brook on the new farm (#565), plan metres: the hill's stream widens at (420, 572) into the river through Brook Meadow, full width
  * to about x 650, and narrows back to the brook, which runs east to the lane's verge (the village's bridge there is #688's). The land falls east, so
  * the water runs with it. `points` are the brook's waypoints after the stream's end; `river` is world/brook.js's (`fromX`, `rampIn`, `toX`,
- * `rampOut`, `halfWidth`, `bends`, `vary`, `pools`, `drinks`: [x, side]); `crossing` is the raised bed (its x a plan x); `bridge` is where the farm
+ * `rampOut`, `halfWidth`, `bends`, `vary`, `drinks`: [x, side]); `crossing` is the raised bed (its x a plan x); `bridge` is where the farm
  * bridge (#689) goes over the river, `willows` are [x, side, metres out from the bank] and `crackWillow` the big one by the bridge.
  */
 export const RIVER_PLAN = {
@@ -1079,8 +1079,8 @@ export const RIVER_PLAN = {
   wander: 1.2,
   source: 8,
   river: {
-    fromX: 420, rampIn: 40, toX: 710, rampOut: 60, halfWidth: 5.25, depth: 1.3, water: 0.95, deepFrom: 0.45, level: 9,
-    bends: { amp: 8, k: 0.068, phase: 0.6 }, vary: { amount: 0.25, k: 0.17, phase: 1 }, pools: { length: 44, extra: 0.8 },
+    eastward: true, fromX: 420, rampIn: 40, toX: 710, rampOut: 60, halfWidth: 5.25, depth: 1.3, water: 0.95, deepFrom: 0.45, level: 9,
+    bends: { amp: 8, k: 0.068, phase: 0.6 }, vary: { amount: 0.25, k: 0.17, phase: 1 },
     drinks: [[505, -1], [560, -1], [615, -1], [530, 1], [585, 1], [630, 1]],
     worn: [[424, 544, 6], [420, 640, 5]], // [x, z, r] the trodden ground at the gateways from Hay Meadow and the stone track
   },
