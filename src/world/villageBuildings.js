@@ -54,14 +54,34 @@ const mixed = (M, over) => ({ ...M, ...over });
 
 // Cottages --------------------------------------------------------------------------------------------------------------------------------
 
-export function buildCottage(ctx, b, index) {
+/**
+ * One cottage, in the village (a solid block of wall, which you cannot see into) or `hollow` (#687, the lane's pair: the walls and the garden shed are thin
+ * panels round an empty shell, so nothing is a solid block).
+ */
+export function buildCottage(ctx, b, index, { hollow = false } = {}) {
   const { M } = ctx;
   const f = frameFor(ctx, b);
   const wall = b.wall === 'brick' ? M.brick : b.wall === 'stone' ? M.stone : M.renders[b.paint];
   const roof = b.wall === 'stone' ? M.slate : M.clay;
   const m = mixed(M, { wall, roof, ridgeCap: roof });
-  const info = shellAndRoof(f, b, m, { plinthMat: b.wall === 'brick' ? M.brickDark : M.stone });
-  f.solid(0, b.wallHeight / 2, 0, b.halfX, b.wallHeight / 2 + 0.6, b.halfZ);
+  const plinthMat = b.wall === 'brick' ? M.brickDark : M.stone;
+  const info = shellAndRoof(f, b, m, { plinthMat, solidWalls: !hollow });
+  if (hollow) {
+    // Four walls 0.3 m thick (a plinth course under each, sunk 0.4 m), the floor and a ceiling, round a hollow house.
+    const wH = b.wallHeight;
+    const t = 0.3;
+    for (const sz of [-1, 1]) {
+      f.box(b.halfX * 2, wH + 0.4, t, m.wall, 0, (wH - 0.4) / 2, sz * (b.halfZ - t / 2), 1.2);
+      f.box(b.halfX * 2 + 0.08, 0.9, t + 0.08, plinthMat, 0, 0.05, sz * (b.halfZ - t / 2), 1);
+    }
+    for (const sx of [-1, 1]) {
+      f.box(t, wH + 0.4, b.halfZ * 2 - 2 * t, m.wall, sx * (b.halfX - t / 2), (wH - 0.4) / 2, 0, 1.2);
+      f.box(t + 0.08, 0.9, b.halfZ * 2 - 2 * t, plinthMat, sx * (b.halfX - t / 2), 0.05, 0, 1);
+    }
+    f.box(b.halfX * 2 - 2 * t, 0.12, b.halfZ * 2 - 2 * t, M.weathered, 0, 0.02, 0, 1.2); // the floor
+    f.box(b.halfX * 2 - 2 * t, 0.12, b.halfZ * 2 - 2 * t, m.wall, 0, wH - 0.2, 0, 1.2); // the ceiling under the roof
+  }
+  if (!hollow) f.solid(0, b.wallHeight / 2, 0, b.halfX, b.wallHeight / 2 + 0.6, b.halfZ);
   const stackMat = b.wall === 'render' ? M.brick : wall;
   chimney(f, b, mixed(m, { brick: stackMat }), -b.halfX + 0.9, { pots: 2 });
   chimney(f, b, mixed(m, { brick: stackMat }), b.halfX - 0.9, { pots: 1 + (index % 2) });
@@ -104,10 +124,15 @@ export function buildCottage(ctx, b, index) {
   // A shed and a washing line out the back, where the garden is deep enough.
   if (depth >= 4) {
     const shedZ = back - depth * 0.6;
-    f.box(2.2, 2.0, 1.7, M.weathered, b.halfX - 1.4, 1.0, shedZ, 1);
+    if (hollow) {
+      // The shed as boards round a hollow: two long sides, two ends and a floor.
+      for (const sz of [-1, 1]) f.box(2.2, 2.0, 0.06, M.weathered, b.halfX - 1.4, 1.0, shedZ + sz * 0.82, 1);
+      for (const sx of [-1, 1]) f.box(0.06, 2.0, 1.7, M.weathered, b.halfX - 1.4 + sx * 1.07, 1.0, shedZ, 1);
+      f.box(2.1, 0.06, 1.6, M.weathered, b.halfX - 1.4, 0.03, shedZ, 1);
+    } else f.box(2.2, 2.0, 1.7, M.weathered, b.halfX - 1.4, 1.0, shedZ, 1);
     const roofShed = f.box(2.5, 0.07, 2.0, M.lead, b.halfX - 1.4, 2.05, shedZ, 1);
     roofShed.rotation.x = 0.07;
-    f.solid(b.halfX - 1.4, 1, shedZ, 1.1, 1, 0.85);
+    if (!hollow) f.solid(b.halfX - 1.4, 1, shedZ, 1.1, 1, 0.85);
   }
   return f;
 }

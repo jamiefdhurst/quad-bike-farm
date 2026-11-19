@@ -25,7 +25,9 @@ export const SET_PIECE_NAMES = ['village', 'neighbourFarm', 'neighbourLand', 'ba
   // The drive's cattle grid with its sign and wings, and the reflector posts at the lane end (#568).
   'cattleGrid', 'driveReflectors',
   // The farmstead's garden wall and the rail along Home Ground (#682).
-  'gardenWall', 'homeRails'];
+  'gardenWall', 'homeRails',
+  // The A-road's junctions and the lane's cottages and fittings (#687).
+  'junctions', 'laneCottages'];
 
 const SMALL = 0.15; // m: a part with a bounding sphere smaller than this is a small part
 const MARGIN = 5; // m: a vehicle crossing a distance has to come this far back before it changes again, so it doesn't flicker on the line
