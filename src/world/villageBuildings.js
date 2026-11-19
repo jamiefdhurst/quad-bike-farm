@@ -786,11 +786,29 @@ function forecourt(ctx, w, S, b, random) {
   ctx.night.push({ mat: fascia, strength: 0.7 });
   for (const s of [-1, 1]) w.add(new THREE.PlaneGeometry(4.64, 0.58), fascia, cx, cy, pz + s * (cd / 2 + 0.025)).rotation.y = s > 0 ? 0 : Math.PI;
   w.box(cw + 0.1, 0.1, cd + 0.1, M.iron, cx, cy + 0.36, pz, 2);
+  // The columns stand on a concrete plinth and are clad: a navy band at the height of a hand on the rail, a collar under the roof and a yellow and black
+  // strip on the plinth, so they read as a built thing and not a pole (#386).
+  const yellow = new THREE.MeshStandardMaterial({ color: 0xe8c23a, roughness: 0.5 });
   for (const px of [x0 + 0.9, x1 - 0.9]) {
-    w.box(0.34, cy, 0.34, M.paint, px, cy / 2 + 0.0, pz, 0.6);
+    w.box(0.34, cy + 1, 0.34, M.paint, px, (cy - 1) / 2, pz, 0.6); // sunk a metre, so it never floats where the land falls away
+    w.box(0.56, 0.5, 0.56, M.concrete, px, 0.25, pz, 1); // the plinth
+    w.box(0.58, 0.08, 0.58, yellow, px, 0.54, pz, 0.6); // its yellow cap
+    w.box(0.4, 1.1, 0.4, band, px, 1.35, pz, 0.6); // the navy cladding
+    w.box(0.44, 0.1, 0.44, M.iron, px, cy - 0.4, pz, 0.6); // the collar under the roof
     w.solid(px, cy / 2, pz, 0.17, cy / 2, 0.17);
   }
   for (const px of xs) w.box(0.5, 0.05, 0.5, M.signGlow, px, cy - 0.17, pz, 0.6);
+  // Lit panels under the roof (a row of long strips along it, glowing after dark, so it is not black below) and a yellow stripe round its fascia.
+  for (const dz of [-1.6, 0, 1.6]) w.box(cw - 1.6, 0.04, 0.4, M.signGlow, cx, cy - 0.2, pz + dz, 0.6);
+  w.box(cw + 0.08, 0.09, cd + 0.08, yellow, cx, cy - 0.12, pz, 0.6);
+  // Painted on the slab: a pale line across the front of each pump's bay and a drain grating in a row between them, at the land's height there.
+  const paintMat = new THREE.MeshStandardMaterial({ color: 0xe9e7dc, roughness: 0.85 });
+  const onGround = (px, pzz, lift) => ctx.heights.heightAt(px, pzz) - w.y0 + lift;
+  for (const px of xs) {
+    for (const dz of [-2.6, 2.6]) w.box(3.6, 0.012, 0.1, paintMat, px, onGround(px, pz + dz, 0.11), pz + dz, 0.6);
+    for (const dx of [-1.8, 1.8]) w.box(0.1, 0.012, 5.2, paintMat, px + dx, onGround(px + dx, pz, 0.11), pz, 0.6);
+    w.box(1.0, 0.012, 0.26, M.iron, px, onGround(px, pz + 3.4, 0.11), pz + 3.4, 0.6); // the drain grating
+  }
   // The price board on its post at the east end of the frontage, by the lane the traffic comes in on, turned (both faces) to look back along the
   // road at whoever is coming, not straight at the pavement.
   const own = S.v.garage.board; // the new farm's stands by the lane's mouth, face-on to the traffic along the lane
