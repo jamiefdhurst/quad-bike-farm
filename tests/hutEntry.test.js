@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { fakeCanvas } from './helpers/vehicleModels.js';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
+import { layoutNew } from '../src/world/layoutNew.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 import { hutShape } from '../src/world/hut.js';
@@ -16,20 +17,24 @@ const WALK = DEFAULT_PLAYER_PARAMS.walkSpeed;
 const GRAVITY = DEFAULT_PLAYER_PARAMS.gravity;
 let world;
 let ground;
-const shape = hutShape(LAYOUT);
+let shape;
 
-beforeAll(async () => {
+/** The hut on today's farm and on the new farm's hill (#684), where it stands at the plan's place: built the same, walked into the same. */
+const LAYOUTS = [['today\'s farm', LAYOUT], ['the new farm', layoutNew(LAYOUT, RAW_LAYOUT)]];
+
+async function build(layout) {
+  shape = hutShape(layout);
   await RAPIER.init();
   vi.stubGlobal('document', { createElement: () => fakeCanvas() });
   const { buildHut } = await import('../src/world/hutBuild.js');
   world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
-  const heights = createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints));
+  const heights = createTerrainHeight(layout, new Track(layout.trackPoints));
   ground = heights.heightAt(shape.x, shape.z);
   world.createCollider(RAPIER.ColliderDesc.cuboid(300, 0.5, 300).setTranslation(shape.x, ground - 0.5, shape.z));
   const fixedBox = (x, y, z, hx, hy, hz, rotY = 0) =>
     world.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z).setRotation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rotY)));
-  buildHut({ layout: LAYOUT, scene: new THREE.Scene(), heights: { heightAt: () => ground }, fixedBox, physics: world, RAPIER, random: () => 0.5 });
-});
+  buildHut({ layout, scene: new THREE.Scene(), heights: { heightAt: () => ground }, fixedBox, physics: world, RAPIER, random: () => 0.5 });
+}
 
 function walkIn(startLocalX) {
   const start = shape.toWorld(startLocalX, shape.halfLength + 2.5);
@@ -65,7 +70,8 @@ function walkIn(startLocalX) {
   return local;
 }
 
-describe("the shepherd's hut: getting in", () => {
+describe.each(LAYOUTS)("the shepherd's hut on %s: getting in", (name, layout) => {
+  beforeAll(() => build(layout));
   it('lets a walking player up the steps, through the doorway and onto the floor', () => {
     const end = walkIn(0);
     expect(end.z).toBeLessThan(shape.halfLength - 0.3); // inside the walls

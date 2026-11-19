@@ -4,6 +4,7 @@
 
 export const DEFAULT_FLOCK_PARAMS = {
   count: 9, // sheep in the hill pasture's flock (read when the game is dealt)
+  hillHalf: 1, // which half of the hill pasture the electric fence leaves the flock: 0 the left of the line from its first end (west on the new farm), 1 the right (the climb's side)
   fieldCount: 5, // sheep in the sheep field's own, smaller flock beside the lane (read when the game is dealt)
   walkSpeed: 0.8, // m/s drifting from one patch of grass to the next
   runSpeed: 4.2, // m/s moving off from something
@@ -25,6 +26,7 @@ export const DEFAULT_FLOCK_PARAMS = {
 
 export const FLOCK_PARAM_RANGES = {
   count: [0, 20, 1],
+  hillHalf: [0, 1, 1],
   fieldCount: [0, 12, 1],
   walkSpeed: [0.2, 2, 0.05],
   runSpeed: [1, 8, 0.1],

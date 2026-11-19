@@ -11767,15 +11767,17 @@ export class Game {
     this.flock = null;
     this.flocks = [];
     if (!hill) return;
+    this.flockParams = { ...DEFAULT_FLOCK_PARAMS };
+    registerTuning('Sheep', this.flockParams, FLOCK_PARAM_RANGES);
+    // The electric fence splits the pasture: the flock grazes one half (`hillHalf`) and never steps across the wire.
+    const fence = createElectricFence(this.world.layout);
     const allowed = (x, z) =>
       hill.inPasture(x, z, 3) && z > hill.farEdge(x) + this.world.layout.hill.foot + 2 && !hill.inWood(x, z, -2) && hill.waterAt(x, z) < 0.05 &&
-      hill.gorseAt(x, z) < 0.25 && hill.climbSlope(x, z) < 0.45 && !hill.nearHut(x, z);
+      hill.gorseAt(x, z) < 0.25 && hill.climbSlope(x, z) < 0.45 && !hill.nearHut(x, z) && (!fence || fence.onHalf(x, z, this.flockParams.hillHalf));
     const p = hill.pasture;
     const random = createRandom(this.seed ^ 0x5eed);
     const spot = findFlockSpot(allowed, { minX: p.minX + 8, maxX: p.maxX - 8, minZ: p.minZ + 20, maxZ: p.maxZ - 8 }, random);
     if (!spot) return;
-    this.flockParams = { ...DEFAULT_FLOCK_PARAMS };
-    registerTuning('Sheep', this.flockParams, FLOCK_PARAM_RANGES);
     this.flock = new Flock({ allowed, random, params: this.flockParams });
     this.flock.place(spot);
     this.flockView = new FlockView(this.scene, this.flock, (x, z) => this.world.groundHeightAt(x, z));
@@ -12293,7 +12295,7 @@ export class Game {
   /** Where the energiser stands, for the tick's sound. */
   fenceEnergiser() {
     const f = this.fence.fence;
-    return { x: f.toX, y: this.world.groundHeightAt(f.toX, f.z) + 1.1, z: f.z };
+    return { x: f.to[0], y: this.world.groundHeightAt(f.to[0], f.to[1]) + 1.1, z: f.to[1] };
   }
 
   /** Who could be touching the wire: every moving quad (its nose, middle and tail) and you on foot. */
@@ -12358,7 +12360,8 @@ export class Game {
     const f = this.fence.fence;
     const pos = this.player.position;
     const unit = this.units.find((u) => u.quad.rider || (this.player.isRiding && u.quad.passenger)) ?? null;
-    const e = this.fence.zapNow(unit ? unit.id : 'you', unit ? 'vehicle' : 'foot', pos.x, f.z);
+    const at = f.pointAt(Math.max(0, Math.min(f.length, f.along(pos.x, pos.z).s))); // the nearest point on the wire
+    const e = this.fence.zapNow(unit ? unit.id : 'you', unit ? 'vehicle' : 'foot', at.x, at.z);
     this.fireFenceZap(e, unit);
     return true;
   }

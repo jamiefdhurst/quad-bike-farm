@@ -308,7 +308,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (m) place('Muck heap', m.x, m.z, m.halfZ + 4);
   if (t) place('Trough', t.x, t.z - 5);
   if (hill) {
-    place('Lane', hill.lane.x + 9, (layout.fieldHalf + hill.lane.toZ) / 2);
+    place('Lane', hill.lane.x + 9, (hill.top + hill.lane.toZ) / 2);
     place('Ford', hill.lane.x + 9, ford.z + 1);
     place('Stream', hill.pasture.maxX - 16, hill.streamZ(hill.pasture.maxX - 16) - 4);
     const cr = layout.hill.river?.crossing;

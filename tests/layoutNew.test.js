@@ -12,7 +12,7 @@ import { openFarm, describeFarm } from '../src/farm/farmSave.js';
 import { farmMapFeatures } from '../src/hud/farmMap.js';
 import { Track } from '../src/world/track.js';
 
-// The new farm behind ?layout=2 (#681): its ground, outline and sixteen fields with the farmstead and the drive, their boundaries and
+// The new farm behind ?layout=2 (#681): its ground, outline and seventeen fields with the farmstead and the drive, their boundaries and
 // gateways, as the issue gives them in the plan's metres.
 const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const fields = createFields(two);
@@ -79,8 +79,8 @@ describe('the fields', () => {
       o0: [-10, -10], o1: [215, -10], o2: [412, -10], o3: [720, -10], o4: [885, -10],
       m0: [-10, 215], m1: [200, 225], m2: [412, 235], m3: [618, 228], m4: [720, 195], m5: [885, 200],
       s0: [618, 335], e1: [885, 335], s1: [618, 355], e2: [885, 355], q0: [-10, 365], q1: [195, 370],
-      p1: [195, 440], p2: [412, 440], p3: [618, 440],
-      r0: [-10, 565], r1: [200, 565], r2: [420, 545], r3: [640, 525], e3: [885, 520], l4: [640, 660], e4: [885, 650],
+      p1: [195, 440], pe: [204.2, 440], p2: [412, 440], p3: [618, 440],
+      r0: [-10, 565], r1: [195, 565], re: [204.2, 565], r2: [420, 545], r3: [640, 525], e3: [885, 520], l4: [640, 660], e4: [885, 650],
       b0: [-10, 880], b2: [420, 880], b3: [640, 880], b4: [885, 880],
     });
   });
@@ -88,10 +88,10 @@ describe('the fields', () => {
     const table = Object.fromEntries(FIELDS_PLAN.map((f) => [f.label, `${f.kind}: ${f.corners}`]));
     expect(table).toEqual({
       'Hollow Wood': 'wood: o0 o1 m1 m0', 'North Field': 'arable: o1 o2 m2 m1', 'Top Field': 'arable: o2 o3 m4 m3 m2', 'The Old Pit': 'rough: o3 o4 m5 m4',
-      'Wet Meadow': 'pasture: m0 m1 q1 q0', 'Home Ground': 'grass: m1 m2 p2 p1 q1', 'The farmstead': 'yard: m2 m3 s0 s1 p3 p2',
+      'Wet Meadow': 'pasture: m0 m1 q1 q0', 'Home Ground': 'grass: m1 m2 p2 pe p1 q1', 'The farmstead': 'yard: m2 m3 s0 s1 p3 p2',
       'Lane Field': 'arable: m3 m4 m5 e1 s0', 'The drive': 'lane: s0 e1 e2 s1', 'Long Piece': 'arable: s1 e2 e3 r3 p3',
-      'Far Field': 'arable: q0 q1 p1 r1 r0', 'Sheep Field': 'pasture: p1 p2 r2 r1', 'Hay Meadow': 'hay: p2 p3 r3 r2',
-      'Hill Pasture': 'rough: r0 r1 r2 b2 b0', 'Brook Meadow': 'pasture: r2 r3 l4 b3 b2', 'Low Ley': 'ley: r3 e3 e4 l4', 'South Field': 'arable: l4 e4 b4 b3',
+      'Far Field': 'arable: q0 q1 p1 r1 r0', 'The green lane': 'lane: p1 pe re r1', 'Sheep Field': 'pasture: pe p2 r2 re', 'Hay Meadow': 'hay: p2 p3 r3 r2',
+      'Hill Pasture': 'rough: r0 r1 re r2 b2 b0', 'Brook Meadow': 'pasture: r2 r3 l4 b3 b2', 'Low Ley': 'ley: r3 e3 e4 l4', 'South Field': 'arable: l4 e4 b4 b3',
     });
     expect(FIELDS_PLAN.filter((f) => f.kind === 'arable')).toHaveLength(6);
   });
@@ -141,14 +141,14 @@ describe('the boundaries', () => {
     expect(outside).toBeCloseTo(perimeter, 6);
   });
   it('are drystone walls round the sheep field and the hill, nothing along the drive, a rail between Home Ground and the yard, and hedges everywhere else', () => {
-    const open = ['drive|lanefield', 'drive|longpiece', 'drive|farmstead'];
+    const open = ['drive|lanefield', 'drive|longpiece', 'drive|farmstead', 'hill|lane'];
     for (const r of runs) {
-      const wall = ['sheep', 'hill'].includes(r.a) || ['sheep', 'hill'].includes(r.b);
+      const wall = (['sheep', 'hill'].includes(r.a) || ['sheep', 'hill'].includes(r.b)) && r.a !== 'lane' && r.b !== 'lane'; // the lane's sides are hedges on its banks (#684)
       const railed = [r.a, r.b].sort().join('|') === 'farmstead|home';
       expect(r.kind, `${r.a}|${r.b}`).toBe(open.includes([r.a, r.b].sort().join('|')) ? 'none' : railed ? 'rail' : wall ? 'wall' : 'hedge');
     }
     expect(runs.filter((r) => r.kind === 'wall').map((r) => [r.a, r.b].sort().join('|')).sort()).toEqual(
-      ['brook|hill', 'far|hill', 'far|sheep', 'hay|sheep', 'hill|out', 'hill|sheep', 'home|sheep'].sort(),
+      ['brook|hill', 'far|hill', 'hay|sheep', 'hill|out', 'hill|sheep', 'home|sheep'].sort(),
     );
     expect(fields.hedges.length + fields.boundaries.filter((b) => ['wall', 'none', 'rail'].includes(b.kind)).length).toBe(fields.boundaries.length);
   });
@@ -169,17 +169,19 @@ describe('the gateways', () => {
     const at = (a, b, x, z) => GATEWAYS_PLAN.some((g) => [g.a, g.b].sort().join() === [a, b].sort().join() && g.at[0] === x && g.at[1] === z);
     expect(at('wood', 'wet', 130, 215)).toBe(true);
     expect(at('home', 'farmstead', 412, 368)).toBe(true);
-    expect(at('home', 'sheep', 200, 444)).toBe(true); // the green lane's head
+    expect(at('home', 'lane', 199.6, 440)).toBe(true); // the green lane's head (#684)
     expect(at('farmstead', 'hay', 420, 440)).toBe(true);
     expect(GATEWAYS_PLAN.some((g) => g.a === 'hay' && g.b === 'sheep')).toBe(true); // and on into the sheep field
-    expect(at('far', 'sheep', 195, 500)).toBe(true); // the sheep field's west side from the green lane (#674)
+    expect(at('far', 'lane', 195, 500)).toBe(true); // Far Field's gate onto the green lane
+    expect(at('lane', 'sheep', 204.2, 500)).toBe(true); // the sheep field's west side from the green lane (#674)
+    expect(GATEWAYS_PLAN.some((g) => [g.a, g.b].sort().join() === 'hill,lane')).toBe(true); // the ford
     expect(at('hay', 'brook', 420, 545)).toBe(true);
     expect(at('farmstead', 'top', 546, 232)).toBe(true);
     expect(at('top', 'pit', 720, 150)).toBe(true);
     expect(at('north', 'out', 380, 30)).toBe(true);
   });
   it('give each arable field a way in from a track: the stone tracks, the drive, the green lane or Back Lane', () => {
-    const ways = { north: ['out'], top: ['farmstead'], lanefield: ['drive'], longpiece: ['drive'], far: ['sheep'], south: ['brook'] };
+    const ways = { north: ['out'], top: ['farmstead'], lanefield: ['drive'], longpiece: ['drive'], far: ['lane'], south: ['brook'] };
     for (const [f, from] of Object.entries(ways)) expect(GATEWAYS_PLAN.some((g) => [g.a, g.b].includes(f) && from.some((o) => [g.a, g.b].includes(o))), f).toBe(true);
   });
   it('reach every field from the farmstead', () => {
@@ -492,7 +494,7 @@ describe('what a field is for its name', () => {
     expect(traits.south).not.toContain('high');
   });
   it('marks the wood, the pit, Home Ground, the farmstead and the drive as keeping their names', () => {
-    expect(two.fields.filter((f) => f.fixed).map((f) => f.name).sort()).toEqual(['drive', 'farmstead', 'home', 'pit', 'wood']);
+    expect(two.fields.filter((f) => f.fixed).map((f) => f.name).sort()).toEqual(['drive', 'farmstead', 'home', 'lane', 'pit', 'wood']);
     for (const f of two.fields) expect(Array.isArray(f.traits), f.name).toBe(true);
   });
 });

@@ -196,6 +196,7 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
         const p = layout.hill.pasture;
         let best = null;
         for (let x = p.minX; x <= p.maxX; x += 4) for (let z = p.minZ; z <= p.maxZ; z += 4) {
+          if (p.points && !g.world.fields.hill.inPasture(x, z)) continue; // the new farm's pasture is an outline: not its rectangle's corners
           const h = g.world.heightAt(x, z);
           if (!best || h > best.h) best = { x, z, h };
         }

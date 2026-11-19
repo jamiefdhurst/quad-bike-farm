@@ -1931,7 +1931,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What is the ticking fence on the hill, and what happens if I touch it?',
-        a: `It is an electric fence across the hill pasture, two strands of yellow tape on white stakes, with a gap in it for you to ride through (look for the pair of stout posts and the sign with the lightning bolt). The box on the hedge at the east end ticks and blinks. Touch the tape with the front or back of a quad, or walk into it, and it jolts you: the view shakes, you lose some speed, and whoever is on the quad yelps. A girl who sees it will say something about it. It only zaps once for each brush, so you won't be stuck in a loop.`,
+        a: `It is an electric fence across the hill pasture, two strands of yellow tape on white stakes, with a gap in it for you to ride through (look for the pair of stout posts and the sign with the lightning bolt). The box on the hedge at the east end ticks and blinks. Touch the tape with the front or back of a quad, or walk into it, and it jolts you: the view shakes, you lose some speed, and whoever is on the quad yelps. A girl who sees it will say something about it. It only zaps once for each brush, so you won't be stuck in a loop. The sheep keep to their side of it and never cross the tape.`,
         tip: 'The fence across the hill pasture is live. Go through the gap by the sign, not the tape.',
       },
       {

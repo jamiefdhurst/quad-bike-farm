@@ -91,12 +91,11 @@ export function moto(g, say) {
 }
 
 export function flock(g, say) {
-  const lane = g.world.layout.hill.lane;
-  const pasture = g.world.layout.hill.pasture;
+  const [cx, cz] = g.world.layout.hill.climb.points[0];
   if (!g.flock) return ['there is no flock on this farm'];
-  g.flock.place({ x: lane.x, z: pasture.minZ + 22 });
-  say(`tp me ${lane.x} ${lane.toZ - 4} 0`);
-  return ['the flock is grazing just past the end of the lane, south of the gate; walk on and they will look up'];
+  g.flock.place({ x: cx, z: cz + 14 }); // on the half of the hill the electric fence leaves them, by the climb's first cones
+  say(`tp me ${cx} ${cz - 6} 0`);
+  return ['the flock is grazing just past the stream, by the climb\'s first cones; walk on and they will look up'];
 }
 
 export function flask(g, say) {

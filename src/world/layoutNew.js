@@ -46,8 +46,8 @@ export const CORNERS_PLAN = {
   m0: [-10, 215], m1: [200, 225], m2: [412, 235], m3: [618, 228], m4: [720, 195], m5: [885, 200],
   s0: [618, 335], e1: [885, 335], s1: [618, 355], e2: [885, 355],
   q0: [-10, 365], q1: [195, 370],
-  p1: [195, 440], p2: [412, 440], p3: [618, 440],
-  r0: [-10, 565], r1: [200, 565], r2: [420, 545], r3: [640, 525], e3: [885, 520],
+  p1: [195, 440], pe: [204.2, 440], p2: [412, 440], p3: [618, 440],
+  r0: [-10, 565], r1: [195, 565], re: [204.2, 565], r2: [420, 545], r3: [640, 525], e3: [885, 520],
   l4: [640, 660], e4: [885, 650],
   b0: [-10, 880], b2: [420, 880], b3: [640, 880], b4: [885, 880],
 };
@@ -62,15 +62,16 @@ export const FIELDS_PLAN = [
   { name: 'top', label: 'Top Field', kind: 'arable', corners: 'o2 o3 m4 m3 m2' },
   { name: 'pit', label: 'The Old Pit', kind: 'rough', corners: 'o3 o4 m5 m4' },
   { name: 'wet', label: 'Wet Meadow', kind: 'pasture', corners: 'm0 m1 q1 q0' },
-  { name: 'home', label: 'Home Ground', kind: 'grass', corners: 'm1 m2 p2 p1 q1' },
+  { name: 'home', label: 'Home Ground', kind: 'grass', corners: 'm1 m2 p2 pe p1 q1' },
   { name: 'farmstead', label: 'The farmstead', kind: 'yard', corners: 'm2 m3 s0 s1 p3 p2' },
   { name: 'lanefield', label: 'Lane Field', kind: 'arable', corners: 'm3 m4 m5 e1 s0' },
   { name: 'drive', label: 'The drive', kind: 'lane', corners: 's0 e1 e2 s1' },
   { name: 'longpiece', label: 'Long Piece', kind: 'arable', corners: 's1 e2 e3 r3 p3' },
   { name: 'far', label: 'Far Field', kind: 'arable', corners: 'q0 q1 p1 r1 r0' },
-  { name: 'sheep', label: 'Sheep Field', kind: 'pasture', corners: 'p1 p2 r2 r1' },
+  { name: 'lane', label: 'The green lane', kind: 'lane', corners: 'p1 pe re r1' },
+  { name: 'sheep', label: 'Sheep Field', kind: 'pasture', corners: 'pe p2 r2 re' },
   { name: 'hay', label: 'Hay Meadow', kind: 'hay', corners: 'p2 p3 r3 r2' },
-  { name: 'hill', label: 'Hill Pasture', kind: 'rough', corners: 'r0 r1 r2 b2 b0' },
+  { name: 'hill', label: 'Hill Pasture', kind: 'rough', corners: 'r0 r1 re r2 b2 b0' },
   { name: 'brook', label: 'Brook Meadow', kind: 'pasture', corners: 'r2 r3 l4 b3 b2' },
   { name: 'ley', label: 'Low Ley', kind: 'ley', corners: 'r3 e3 e4 l4' },
   { name: 'south', label: 'South Field', kind: 'arable', corners: 'l4 e4 b4 b3' },
@@ -83,7 +84,7 @@ const WALLED = ['sheep', 'hill'];
 const RAILED = ['farmstead|home'];
 
 /** The lines with nothing on them (#568): the drive is open to the fields either side and to the yard, so the crops come up to its verge. */
-const OPEN_LINES = ['drive|lanefield', 'drive|longpiece', 'drive|farmstead'];
+const OPEN_LINES = ['drive|lanefield', 'drive|longpiece', 'drive|farmstead', 'hill|lane'];
 
 /**
  * The gateways, plan metres: from field `a` to `b` (or 'out', off the farm), at the point on the line between them nearest `at`, `half` m
@@ -93,11 +94,13 @@ export const GATEWAYS_PLAN = [
   { a: 'wood', b: 'wet', at: [130, 215], why: 'the wood\'s gate (the wood touches Home Ground only at a corner)' },
   { a: 'wood', b: 'out', at: [38, 130], why: 'the wood\'s gate onto Back Lane on its west side (#686 lays the lane)' },
   { a: 'home', b: 'farmstead', at: [412, 368], why: 'Home Ground from the yard' },
-  { a: 'home', b: 'sheep', at: [200, 444], why: 'the head of the green lane, which runs down between Far Field and the sheep field (#684)' },
+  { a: 'home', b: 'lane', at: [199.6, 440], half: 2.45, gate: true, id: 'south', why: 'the head of the green lane, which runs down between Far Field and the sheep field (#684)' },
   { a: 'home', b: 'sheep', at: [240, 440], why: 'Home Ground to the sheep field, on the plan\'s map' },
   { a: 'farmstead', b: 'hay', at: [420, 440], why: 'the stone track south out of the yard into Hay Meadow' },
   { a: 'hay', b: 'sheep', at: [413, 455], why: 'the sheep field from the stone track just inside Hay Meadow (it touches the farmstead only at a corner)' },
-  { a: 'far', b: 'sheep', at: [195, 500], why: 'the green lane\'s gates into the sheep field and Far Field, one gap until #684 lays the lane between them (#674\'s review)' },
+  { a: 'far', b: 'lane', at: [195, 500], why: 'Far Field\'s gate onto the green lane (#684, #674\'s review)' },
+  { a: 'lane', b: 'sheep', at: [204.2, 500], why: 'the sheep field\'s gate onto the green lane (#684, #674\'s review)' },
+  { a: 'lane', b: 'hill', at: [199.6, 565], half: 3.5, why: 'the ford: the green lane opens into the hill pasture over the stream (#684)' },
   { a: 'hay', b: 'brook', at: [420, 545], why: 'the stone track on south to the river' },
   { a: 'farmstead', b: 'top', at: [546, 232], why: 'Top Field from the stone track north' },
   { a: 'top', b: 'pit', at: [720, 150], why: 'the pit\'s field from the stone track north' },
@@ -230,13 +233,12 @@ const NORTH_HOLLOW_PLAN = { at: [300, 120], rx: 26, rz: 16, depth: 1.3 };
  */
 export const NOT_MOVED_YET = {
   // The farmstead's own pieces are placed now (#682, `farmsteadLayout`, below); what is left of today's grass field is the hill's and the wood's reference.
-  fieldHalf: '#684 (the hill still places itself from the grass field)', gate: '#684 (the gate onto the green lane)',
+  fieldHalf: '#691 (the grass field\'s limit, which the girls\' driving and the quarry\'s code read when a place is in no field)',
   dragStrip: '#616',
-  'anchors.hut': '#684', hill: '#684 (its river and riverside meadow #565)',
   'anchors.pit': '#685', quarry: '#685',
   'anchors.village': '#688', village: '#688',
-  // Today's rectangle of farm, which the hill and the quarry still place themselves from, and the village street.
-  farm: '#684 (the hill), #685 (the quarry)', 'roads.2': '#688 (the village street)',
+  // Today's rectangle of farm, which the quarry still places itself from, and the village street.
+  farm: '#685 (the quarry)', 'roads.2': '#688 (the village street)',
   hayMeadow: '#691', sprayField: '#691', harrowField: '#691',
   trough: '#710', fieldShed: '#624',
   namedSpots: '#690',
@@ -259,6 +261,8 @@ export const REPLACED = [
   'bonfire', 'brushwood', 'strawBaleSpots', 'restSpots', 'spawn', 'muckHeap',
   // Hollow Wood and its log yard (#683).
   'woods', 'anchors.logYard', 'logYard',
+  // The hill side (#684): the hill with its lane, stream, pasture, sheep field and meadow, the shepherd's hut's anchor and the gate at the lane's head.
+  'hill', 'anchors.hut', 'gate',
 ];
 
 const cornersOf = (f) => f.corners.split(' ').map((k) => {
@@ -337,7 +341,7 @@ export function boundariesOf(fields) {
       }
     }
     const open = OPEN_LINES.includes([run.a, run.b].sort().join('|'));
-    runs.push({ ...run, kind: open ? 'none' : RAILED.includes([run.a, run.b].sort().join('|')) ? 'rail' : WALLED.includes(run.a) || WALLED.includes(run.b) ? 'wall' : 'hedge' });
+    runs.push({ ...run, kind: open ? 'none' : RAILED.includes([run.a, run.b].sort().join('|')) ? 'rail' : (WALLED.includes(run.a) || WALLED.includes(run.b)) && run.a !== 'lane' && run.b !== 'lane' ? 'wall' : 'hedge' });
   }
   return runs;
 }
@@ -385,7 +389,7 @@ export function landformPoints(plan = LANDFORM_PLAN) {
  * The fields whose names stay as the plan has them (#814): Hollow Wood and the Old Pit are places the game already names, Home Ground is the girls'
  * and your own, and the farmstead and the drive are the yard and the road. Every other field is dealt a name per farm (fieldNames.js).
  */
-export const FIXED_NAMES = ['wood', 'pit', 'home', 'farmstead', 'drive'];
+export const FIXED_NAMES = ['wood', 'pit', 'home', 'farmstead', 'drive', 'lane'];
 
 /** What the plan knows about a field that its shape and height don't say (fieldNames.js `FIELD_TRAITS`), by the field's key. */
 const HAND_TRAITS = {
@@ -1021,6 +1025,107 @@ export function woodsLayout(today, raw, P = WOOD_PLAN) {
   };
 }
 
+/**
+ * The hill side on the new farm (#684), plan metres: the green lane, the stream and the ford, Hill Pasture with its banks, climb, fence, hut and flask
+ * rock, the Sheep Field and the Wet Meadow. The shapes are today's (`layout.hill` in layout.js, read by world/hill.js), set on the plan's fields.
+ * `lane` is the lane's middle line (the lane field is its hedges' width either side: `CORNERS_PLAN` pe less p1) from the head at Home Ground's
+ * edge to `toZ`, just short of the stream at `stream.z`. `bankStretch` carries today's six banks out from the stream to about 175 m deep, where
+ * the plan's map draws them (Jamie, 16 November 2026): each bank keeps its rise and width, so each is still 38 degrees at its steepest, and the
+ * treads between them lengthen. `gentle` is the easy way up at the east end by Brook Meadow, which the climb takes. `fence` runs north to south
+ * from the foot to the south hedge, its gap 18 m along from the foot where quads cross it on the way to the climb. `wood` is the copse in the
+ * pasture's north-west, thicker than today's (`trees`, `bushes`). The meadow's pond is at the plan's (112, 292) with its way in from the gateway
+ * at (197, 296); its oaks stand round it as they did, by their offsets from it. The sheep field's wall runs across it near the top at z 468,
+ * its gap mid-field, and its banks fall in two terraces; `thorns` are in clumps clear of the wall, the gateways and the barn's spot.
+ */
+export const HILL_PLAN = {
+  lane: { x: 199.6, top: 440, toZ: 564, halfWidth: 2.1, sink: 1, hedgeOff: 4.6, hedgeHeight: 3.3 },
+  gates: [{ side: -1, z: 500, width: 4.8 }, { side: 1, z: 500, width: 4.8 }],
+  stream: { z: 570, wander: 2.5, halfWidth: 1.6, depth: 0.75, water: 0.32, ford: { halfWidth: 3.4, depth: 0.42, reach: 6 } },
+  valley: 2.5,
+  bankStretch: 3.3,
+  slowWander: 4,
+  gentle: { fromX: 300, toX: 380, factor: 2.4 },
+  wood: { minX: 52, maxX: 100, minZ: 610, maxZ: 690, trees: 85, bushes: 150 },
+  crown: { rise: 3.5, r: 55 }, // a swell under the hut, so its roof shows over the last bank from the ford (the plan's landform alone hides it by 2 m)
+  hedgeOaks: [[190, 841, 1.4], [290, 836.5, 1.3], [375, 836, 1.5], [419, 650, 1.5], [419, 790, 1.2]],
+  fence: { from: [232, 576], to: [232, 848], gap: { at: 18, half: 3.5 } },
+  viewpoint: { at: [262, 814], yaw: Math.PI, height: 0.45 },
+  climb: { points: [[372, 598], [380, 660], [368, 715], [352, 772]], gateHalf: 4.5 },
+  meadow: {
+    pond: { at: [112, 292], rx: 11, rz: 8, depth: 1.1, water: 0.6 },
+    track: [[193, 296], [176, 295.4], [160, 294.6], [144, 293.6], [126, 292.6]],
+    trees: [[-10, -3], [-8, 6], [4, 10], [11, 4], [9, -9], [-2, -10], [-11, -12]], // offsets from the pond, today's
+  },
+  sheep: {
+    terraces: { banks: [491, 527], width: 7, ease: 10, stand: [330, 478] },
+    wall: { z: 468, to: 414, gap: { at: 330, half: 2.6 }, height: 1 },
+    thorns: [[222, 512], [231, 540], [258, 498], [266, 553], [290, 486], [312, 530], [336, 548], [348, 500], [362, 525], [384, 492], [396, 538], [240, 478], [318, 478], [404, 512]],
+  },
+};
+
+const boundsRect = (pts) => {
+  const b = polygonBounds(pts);
+  return { minX: b.minX, maxX: b.maxX, minZ: b.minZ, maxZ: b.maxZ };
+};
+
+/**
+ * `layout.hill` on the new farm, game metres (#684): today's, with the places in `HILL_PLAN` and each field's own outline for the pasture, the sheep
+ * field and the meadow. The river and the riverside meadow it had on the east are #565's, so none is here, and the stream ends at the pasture's hedges.
+ */
+export function hillLayout(today, P = HILL_PLAN) {
+  const T = today.hill;
+  const fields = Object.fromEntries(clippedFields().map((f) => [f.name, movePoints(f.points)]));
+  const pt = (p) => fromPlan(p);
+  const here = (name) => ({ ...boundsRect(fields[name]), points: fields[name] });
+  const [lx] = pt([P.lane.x, 0]);
+  const [, top] = pt([0, P.lane.top]);
+  const [, toZ] = pt([0, P.lane.toZ]);
+  const [, streamZ] = pt([0, P.stream.z]);
+  const [, wallZ] = pt([0, P.sheep.wall.z]);
+  const pond = pt(P.meadow.pond.at);
+  const climbStand = pt(P.sheep.terraces.stand);
+  const [fx0, fz0] = pt(P.fence.from);
+  const [fx1, fz1] = pt(P.fence.to);
+  const hill = {
+    ...T,
+    lane: { ...T.lane, x: lx, top, toZ, halfWidth: P.lane.halfWidth, sink: P.lane.sink, hedgeOff: P.lane.hedgeOff, hedgeHeight: P.lane.hedgeHeight },
+    pasture: here('hill'),
+    stream: { ...T.stream, ...P.stream, z: streamZ },
+    valley: P.valley,
+    slowWander: P.slowWander,
+    banks: T.banks.map((b) => ({ ...b, at: Math.round(b.at * P.bankStretch) })),
+    gentle: { ...T.gentle, fromX: pt([P.gentle.fromX, 0])[0], toX: pt([P.gentle.toX, 0])[0], factor: P.gentle.factor },
+    wood: { minX: pt([P.wood.minX, 0])[0], maxX: pt([P.wood.maxX, 0])[0], minZ: pt([0, P.wood.minZ])[1], maxZ: pt([0, P.wood.maxZ])[1], trees: P.wood.trees, bushes: P.wood.bushes },
+    crown: { x: pt(FIELD_LANDMARKS_PLAN.find((l) => l.kind === 'hut').at)[0], z: pt(FIELD_LANDMARKS_PLAN.find((l) => l.kind === 'hut').at)[1], ...P.crown },
+    hedgeOaks: P.hedgeOaks.map(([x, z, s]) => [...pt([x, z]), s]),
+    gates: P.gates.map((g) => ({ ...g, z: pt([0, g.z])[1] })),
+    paddocks: {
+      ramp: T.paddocks.ramp,
+      west: {
+        rect: here('wet'),
+        pond: { ...T.paddocks.west.pond, ...P.meadow.pond, x: pond[0], z: pond[1], at: undefined },
+        track: P.meadow.track.map(pt),
+        trees: P.meadow.trees.map(([dx, dz]) => [pond[0] + dx, pond[1] + dz]),
+      },
+      east: {
+        rect: here('sheep'),
+        terraces: { banks: P.sheep.terraces.banks.map((z) => pt([0, z])[1]), width: P.sheep.terraces.width, ease: P.sheep.terraces.ease, stand: { x: climbStand[0], z: climbStand[1] } },
+        wall: { z: wallZ, from: lx + P.lane.hedgeOff, to: pt([P.sheep.wall.to, 0])[0], height: P.sheep.wall.height, gap: { at: pt([P.sheep.wall.gap.at, 0])[0], half: P.sheep.wall.gap.half } },
+        thorns: P.sheep.thorns.map(pt),
+      },
+    },
+    fence: { from: [fx0, fz0], to: [fx1, fz1], gap: P.fence.gap },
+    viewpoint: { x: pt(P.viewpoint.at)[0], z: pt(P.viewpoint.at)[1], yaw: P.viewpoint.yaw, height: P.viewpoint.height },
+    hut: { ...T.hut, x: pt(FIELD_LANDMARKS_PLAN.find((l) => l.kind === 'hut').at)[0], z: pt(FIELD_LANDMARKS_PLAN.find((l) => l.kind === 'hut').at)[1] },
+    climb: { points: P.climb.points.map(pt), gateHalf: P.climb.gateHalf },
+  };
+  delete hill.brook;
+  delete hill.river;
+  delete hill.riverside;
+  delete hill.paddocks.west.pond.at;
+  return hill;
+}
+
 /** The new farm: today's layout (resolved) with what has moved put in its place. */
 export function layoutNew(today, raw) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
@@ -1031,14 +1136,15 @@ export function layoutNew(today, raw) {
   const neighbour = neighbourLayout();
   const farmstead = farmsteadLayout(today, raw);
   const wood = woodsLayout(today, raw);
+  const hill = hillLayout(today);
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
   return {
     ...farmstead, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
     ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track],
-    woods: wood.woods, logYard: wood.logYard,
-    anchors: { ...farmstead.anchors, neighbour: neighbour.anchor, logYard: wood.anchor }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
+    woods: wood.woods, logYard: wood.logYard, hill, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
+    anchors: { ...farmstead.anchors, neighbour: neighbour.anchor, logYard: wood.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
     budgetSpots: { ...farmstead.budgetSpots, neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
     fieldLandmarks: fieldLandmarksLayout(),
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
