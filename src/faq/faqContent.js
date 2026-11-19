@@ -440,6 +440,24 @@ export const FAQ_SECTIONS = [
         tip: 'The river is through the gateway in the pasture\'s east hedge. Cross it between the white posts.',
       },
       {
+        q: 'Where is Back Lane, and what is on it?',
+        a: `Back Lane is on the bigger farm being built (<code>?layout=2</code>). It is an old single-track road that leaves the public lane at the north, runs round the farm's north and west, goes through a ford, over the hill's shoulder in two hairpins and along the south, and rejoins the lane below the village. Hedges line both sides, a strip of grass runs down the middle on the west and south, and a white diamond sign marks a passing place every 190 m or so. Cars, vans and tractors use it now and then, so expect to meet one. <code>tp me to backlane</code> takes you onto it in the console.`,
+        tip: 'Back Lane is single track: pull into a passing place when something comes the other way.',
+      },
+      {
+        q: 'Why did the car on Back Lane stop?',
+        a: `On a single track two vehicles can only pass at a passing place. The one with a passing place on its left, nearest, pulls in and waits until the other has gone by, and one with no bay either side creeps past. If you stop on the road, they wait for you. Pull into a bay yourself, on your left, and they carry on.`,
+      },
+      {
+        q: 'Can I take Back Lane\'s ford flat out?',
+        a: `You can, but it is the stream running over the road on a concrete bed, 0.18 m deep when it is dry and deeper after rain (the depth post by it has the marks). Rush it when the stream is up and the engine can drown, as in the river. Take it slowly.`,
+        tip: 'Back Lane\'s ford gets deeper after rain. Read the depth post, then go slowly.',
+      },
+      {
+        q: 'Where does the footpath off Back Lane go?',
+        a: `The fingerpost and the stile in the hedge on the west side, towards the south, point up the hill to Upper Thornby (1 mile). You can see its roofs and church tower on the hill to the west, but it is too far to reach.`,
+      },
+      {
         q: 'What happens if I miss the posts and ride into the river?',
         a: `Outside the posts the river is deep, nearly a metre, and it is over the intake whatever speed you are doing, so the engine drowns within a second
           or two, however slowly you go in. Reverse out, then let it drain (about 45 s standing, quicker running with the throttle open) before it will

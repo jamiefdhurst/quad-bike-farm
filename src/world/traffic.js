@@ -7,6 +7,7 @@
 import { rigSite } from './rollingRoadSite.js';
 import { roadNetwork, KEEP_LEFT } from './roads.js';
 import { barnFrame } from './barn.js';
+import { LaneDrive } from './backLaneTraffic.js';
 
 export const DEFAULT_TRAFFIC_PARAMS = {
   passEvery: 160, // s: on average between vehicles going by on the lane by day (0 turns the lane's traffic off)
@@ -22,6 +23,9 @@ export const DEFAULT_TRAFFIC_PARAMS = {
   parcelSeconds: 5, // s the post van's driver spends at the barn door
   chatSeconds: 30, // s a neighbour stands about at the barn
   honkAfter: 3, // s a visitor waits behind something in the way before she hoots
+  backEvery: 300, // s: on average between vehicles setting off round Back Lane on the new farm (0 turns it off)
+  backSpeedMin: 5, // m/s: a car or van on Back Lane, single track, so slower than on the lane
+  backSpeedMax: 9,
 };
 
 export const TRAFFIC_PARAM_RANGES = {
@@ -38,6 +42,9 @@ export const TRAFFIC_PARAM_RANGES = {
   parcelSeconds: [1, 20, 1],
   chatSeconds: [5, 90, 5],
   honkAfter: [1, 10, 0.5],
+  backEvery: [0, 900, 10],
+  backSpeedMin: [2, 15, 0.5],
+  backSpeedMax: [2, 20, 0.5],
 };
 
 /**
@@ -480,6 +487,9 @@ export class Traffic {
     this.visit = null;
     this.clock = 0;
     this.nextPass = exponential(random, Math.max(1, params.passEvery)) * 0.5;
+    this.backRoad = places.lanes?.road?.('backLane') ?? null; // Back Lane, on the new farm
+    this.backAll = []; // the vehicles on it, which watch each other for meeting on the single track
+    this.nextBack = exponential(random, Math.max(1, params.backEvery)) * 0.5;
     this.nextVisit = params.firstVisit + exponential(random, Math.max(1, params.visitEvery) * 0.5);
     this.count = 0;
     this.forcedVisit = null;
@@ -496,6 +506,20 @@ export class Traffic {
     drive.go([{ x: to.x, z: to.z, speed }]);
     const colour = spec.colours[Math.floor(this.random() * spec.colours.length)];
     const v = { id: ++this.count, kind: id, model: spec.model, colour, dir, drive, passed: false };
+    this.vehicles.push(v);
+    return v;
+  }
+
+  /** Sets a vehicle off round Back Lane now, from one end or the other (new farm only). `kind` a LANE_KINDS id, or random. Null where there is no Back Lane. */
+  spawnBackLane(kind, dir = this.random() < 0.5 ? 1 : -1) {
+    if (!this.backRoad) return null;
+    const [id, spec] = kind && LANE_KINDS[kind] ? [kind, LANE_KINDS[kind]] : pickKind(this.random);
+    const p = this.p;
+    const speed = spec.speed === 'tractor' ? Math.min(p.tractorSpeed, p.backSpeedMax) : p.backSpeedMin + this.random() * Math.max(0, p.backSpeedMax - p.backSpeedMin);
+    const drive = new LaneDrive({ id: this.count + 1, road: this.backRoad, all: this.backAll, dir, speed });
+    this.backAll.push(drive);
+    const colour = spec.colours[Math.floor(this.random() * spec.colours.length)];
+    const v = { id: ++this.count, kind: id, model: spec.model, colour, dir, drive, passed: true, backLane: true };
     this.vehicles.push(v);
     return v;
   }
@@ -532,7 +556,14 @@ export class Traffic {
     const p = this.p;
     this.clock += dt;
     const quiet = 1 + (p.nightQuiet - 1) * (ctx.darkness ?? 0);
-    if (p.passEvery > 0 && this.vehicles.length < 3) {
+    if (this.backRoad && p.backEvery > 0 && this.backAll.length < 3) {
+      this.nextBack -= dt;
+      if (this.nextBack <= 0) {
+        this.spawnBackLane();
+        this.nextBack = exponential(this.random, p.backEvery * quiet);
+      }
+    }
+    if (p.passEvery > 0 && this.vehicles.filter((v) => !v.backLane).length < 3) {
       this.nextPass -= dt;
       if (this.nextPass <= 0) {
         this.spawnPass();
@@ -547,6 +578,7 @@ export class Traffic {
         events.push({ type: 'pass', vehicle: v });
       }
       if (v.drive.arrived) {
+        if (v.backLane) this.backAll.splice(this.backAll.indexOf(v.drive), 1);
         this.vehicles.splice(i, 1);
         events.push({ type: 'gone', vehicle: v });
       }

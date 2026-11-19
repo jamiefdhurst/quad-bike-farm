@@ -7,12 +7,13 @@
 
 import * as THREE from 'three';
 import { dashes } from './roads.js';
+import { canvasTexture } from './outbuildingProps.js';
 
 /**
  * The tarmac as pixels, `size` square RGBA: speckle, a darker band down each wheel track, a pale gritty edge, and `patches` repairs (darker or paler
  * rectangles, a few cm of crack at their sides). Seeded, so a road looks the same every time. Pure, so it can be tested; roadTexture() puts it on a canvas.
  */
-export function tarmacPixels({ size = 128, seed = 99, patches = 0, base = [0x43, 0x44, 0x46] } = {}) {
+export function tarmacPixels({ size = 128, seed = 99, patches = 0, base = [0x43, 0x44, 0x46], bands = 0, crumble = 0 } = {}) {
   const data = new Uint8ClampedArray(size * size * 4);
   let s = seed;
   const rand = () => {
@@ -48,7 +49,104 @@ export function tarmacPixels({ size = 128, seed = 99, patches = 0, base = [0x43,
       }
     }
   }
+  // Tar bands: thin dark seams across the road where cracks were sealed, one a little off square. Crumbling edges: the verge's green and grit creeping in
+  // along each side in irregular bites up to `crumble` of the width. Both draw after the rest, so a road that has neither is the same pixels.
+  for (let b = 0; b < bands; b++) {
+    const y0 = Math.floor(rand() * size);
+    const lean = (rand() - 0.5) * 0.12;
+    for (let x = 0; x < size; x++) {
+      const y = (y0 + Math.round(x * lean) + size) % size;
+      const i = (y * size + x) * 4;
+      for (let c = 0; c < 3; c++) data[i + c] -= 22;
+    }
+  }
+  if (crumble > 0) {
+    for (let y = 0; y < size; y++) {
+      for (const side of [0, 1]) {
+        const bite = Math.floor(rand() * rand() * crumble * size);
+        for (let k = 0; k < bite; k++) {
+          const x = side ? size - 1 - k : k;
+          const i = (y * size + x) * 4;
+          data[i] = 0x4a + rand() * 14;
+          data[i + 1] = 0x52 + rand() * 18;
+          data[i + 2] = 0x38 + rand() * 10;
+        }
+      }
+    }
+  }
   return data;
+}
+
+/**
+ * Gravel and mud washed out across a gateway onto the road, `size` square RGBA: grey and brown grit over churned mud, darker in ruts, its edges fading to
+ * nothing in noise so it lies on the ground without a border. Seeded, pure.
+ */
+export function washPixels({ size = 64, seed = 21 } = {}) {
+  const data = new Uint8ClampedArray(size * size * 4);
+  let s = seed;
+  const rand = () => {
+    s = (s * 16807) % 2147483647;
+    return s / 2147483647;
+  };
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = (x + 0.5) / size;
+      const v = (y + 0.5) / size;
+      const edge = Math.min(u, 1 - u, v, 1 - v) * 2; // 0 at the border, 1 in the middle
+      const rut = Math.exp(-(((u - 0.3) / 0.07) ** 2)) + Math.exp(-(((u - 0.7) / 0.07) ** 2));
+      const grit = rand();
+      const i = (y * size + x) * 4;
+      const mud = 0.55 + rut * 0.3 - grit * 0.15;
+      data[i] = grit > 0.82 ? 150 : 92 * mud + 20;
+      data[i + 1] = grit > 0.82 ? 146 : 76 * mud + 18;
+      data[i + 2] = grit > 0.82 ? 138 : 58 * mud + 12;
+      data[i + 3] = Math.max(0, Math.min(255, (edge * 3.2 - 0.35 - rand() * 0.55) * 255));
+    }
+  }
+  return data;
+}
+
+/** The wash as a canvas: see washPixels (painted a pixel at a time, as it is small and made once for each gate). */
+export function washTexture(opts = {}) {
+  const size = opts.size ?? 64;
+  return canvasTexture(size, size, (ctx) => {
+    const px = washPixels({ ...opts, size });
+    for (let i = 0; i < size * size; i++) {
+      ctx.fillStyle = `rgba(${px[i * 4]},${px[i * 4 + 1]},${px[i * 4 + 2]},${px[i * 4 + 3] / 255})`;
+      ctx.fillRect(i % size, Math.floor(i / size), 1, 1);
+    }
+  });
+}
+
+/** The grass strip down the middle of a little-used lane as pixels, `size` square RGBA: blades in two greens with the odd bare grit fleck. Seeded, pure. */
+export function grassStripPixels({ size = 64, seed = 7 } = {}) {
+  const data = new Uint8ClampedArray(size * size * 4);
+  let s = seed;
+  const rand = () => {
+    s = (s * 16807) % 2147483647;
+    return s / 2147483647;
+  };
+  for (let i = 0; i < size * size; i++) {
+    const t = rand();
+    const grit = rand() < 0.04;
+    data[i * 4] = grit ? 0x70 : 0x3a + t * 26;
+    data[i * 4 + 1] = grit ? 0x6a : 0x54 + t * 34;
+    data[i * 4 + 2] = grit ? 0x5a : 0x26 + t * 16;
+    data[i * 4 + 3] = 255;
+  }
+  return data;
+}
+
+/** The grass strip as a canvas: see grassStripPixels. */
+export function grassStripTexture(opts = {}) {
+  const size = opts.size ?? 64;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  const img = g.createImageData(size, size);
+  img.data.set(grassStripPixels({ ...opts, size }));
+  g.putImageData(img, 0, 0);
+  return c;
 }
 
 /** The tarmac as a canvas (the textures of the lane and the village street): see tarmacPixels. */
@@ -225,6 +323,33 @@ export function buildRoadMesh({ scene, road, points, heights, texture }) {
   if (road.markings.edge) {
     const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...POLY });
     for (const side of [-1, 1]) meshes.push(...roadStrip(ctx, side * (road.halfWidth - 0.3), side * (road.halfWidth - 0.2), (road.lift ?? 0.07) + 0.02, line, { cols: 2 }));
+  }
+  // A strip of grass down the middle where the lane is least used (`strip: { half, rects }`: the rectangles, [minX, minZ, maxX, maxZ], it grows in).
+  if (road.strip && road.strip.texture) {
+    const grass = new THREE.MeshStandardMaterial({ map: road.strip.texture, color: 0xffffff, roughness: 1, ...POLY });
+    const inside = (p) => road.strip.rects.some(([x0, z0, x1, z1]) => p.x >= x0 && p.x <= x1 && p.z >= z0 && p.z <= z1);
+    meshes.push(...roadStrip(ctx, -road.strip.half, road.strip.half, (road.lift ?? 0.07) + 0.015, grass, { skip: (p) => !inside(p) }));
+  }
+  // Passing places: each widens the carriageway on its side by `bay` m for `length` m (the road's `bays`, roads.js), in the same tarmac, a hair above the road's
+  // own strip so the two meet without a seam, and with a gritty edge where it meets the verge.
+  for (const b of road.bays ?? []) {
+    const from = Math.floor(b.s - b.length / 2);
+    const to = Math.ceil(b.s + b.length / 2);
+    const [a, z] = b.side > 0 ? [-(road.halfWidth + b.bay), -road.halfWidth + 0.1] : [road.halfWidth - 0.1, road.halfWidth + b.bay]; // roadStrip's offsets run the other way round from a side's
+    meshes.push(...roadStrip(ctx, a, z, (road.lift ?? 0.07) + 0.004, body, { from, to, cols: 3 }));
+  }
+  // Give-way lines (`markings.giveWay`): a double row of dashes across the road, 3 m in from each end, for traffic leaving onto the lane.
+  if (road.markings.giveWay) {
+    const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...POLY });
+    const end = run[run.length - 1].s ?? run.length;
+    const marks = [];
+    for (const s of [3, end - 3]) {
+      for (const off of [0, 0.45]) {
+        for (let a = -road.halfWidth + 0.2; a < road.halfWidth - 0.4; a += 0.6) marks.push({ s: s + off - 0.45 / 2, len: 0.3, a, b: a + 0.35 });
+      }
+    }
+    const lines = paintMarks(ctx, marks, line, (road.lift ?? 0.07) + 0.02);
+    if (lines) meshes.push(lines);
   }
   for (const m of meshes) scene.add(m);
   return meshes;

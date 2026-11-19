@@ -18,6 +18,9 @@ export const BUDGETS = {
   village: { calls: 2150, triangles: 3.77e6 },
   wood: { calls: 1505, triangles: 3.81e6 },
   hilltop: { calls: 1750, triangles: 7.0e6 },
+  // Back Lane between its two hairpins on the new farm (#686, `?layout=2`: 1,136 calls and 3.07M triangles, the same on every run) and about 8% over. Today's farm has no
+  // such spot, so it is noted and skipped there; #692 makes layout 2 the one measured and brings the other budgets onto it.
+  hairpins: { calls: 1230, triangles: 3.32e6 },
   // Everything left out of those counts, drawn up as if all of it were in view (5,275 calls and 1.43M triangles, about 8% over). It is not a frame: it is what a new
   // herd, rider or vehicle body adds to the farm's moving things, which the spots no longer see. Raise it only on purpose (`MOVERS` in `measureInPage`).
   movers: { calls: 5700, triangles: 1.55e6 },
@@ -29,6 +32,9 @@ export const KNOWN_OVER = [];
 
 /** The spots `measureInPage` knows how to find by itself; any other name in `BUDGETS` has to be in `layout.budgetSpots` (a test checks). */
 export const BUILT_IN_SPOTS = ['spawn', 'yard', 'village', 'wood', 'hilltop'];
+
+/** Spots only the new farm (`?layout=2`) has: today's farm, which CI measures, notes their absence and carries on, instead of failing for them (#692 makes layout 2 the one measured). */
+export const NEW_FARM_ONLY = ['hairpins'];
 
 export const SPOTS = Object.keys(BUDGETS).filter((k) => k !== 'movers');
 
@@ -226,7 +232,10 @@ export function check(measured, budgets = BUDGETS, knownOver = KNOWN_OVER) {
   const missing = [];
   for (const [spot, budget] of Object.entries(budgets)) {
     const m = measured[spot];
-    if (!m) { missing.push(spot); continue; }
+    if (!m) {
+      if (!NEW_FARM_ONLY.includes(spot)) missing.push(spot);
+      continue;
+    }
     const over = [];
     if (m.calls > budget.calls) over.push(`${Math.round(m.calls)} calls > ${budget.calls}`);
     if (m.triangles > budget.triangles) over.push(`${Math.round(m.triangles)} triangles > ${budget.triangles}`);

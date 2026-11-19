@@ -70,6 +70,7 @@ export function createTerrainHeight(layout, track) {
     // The new farm's landform (layout.landform) is already in `lie`, so it has no rise of its own beyond the hedges.
     if (!landform) h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013)) * (1 - Math.max(w, ww, qw));
     if (w > 0) h += w * hill.profile(x, z);
+    if (hill && hill.westCut) h -= hill.westCut(x, z); // the stream on west of the pasture's hedge to Back Lane's ford (#686)
     if (ww > 0) h += ww * woods.profile(x, z);
 
     // The stubble fields' own lie: the north one's hollow, the south one's rise.
@@ -95,8 +96,9 @@ export function createTerrainHeight(layout, track) {
 
     // Every levelled road is laid level across, following the lie of the land along its middle, with a shoulder each side (world/roads.js): the
     // farm road, whose hardstanding at its end is flat.
-    const laid = roads.levelAt(x, z, lie);
+    const laid = roads.levelAt(x, z, lie, natural);
     if (laid) h += (laid.level - h) * laid.k;
+    h -= roads.ditchAt(x, z); // the ditch along the low side of Back Lane (#686)
 
     // Flatten the yard around the barn.
     const yd = Math.hypot(x - yard.x, z - yard.z);
@@ -194,5 +196,5 @@ export function createTerrainHeight(layout, track) {
     return w;
   }
 
-  return { heightAt, mudAt, puddleAt, bogAt, puddles, bogs, hill, woods, quarry, brook };
+  return { heightAt, naturalAt: natural, mudAt, puddleAt, bogAt, puddles, bogs, hill, woods, quarry, brook };
 }

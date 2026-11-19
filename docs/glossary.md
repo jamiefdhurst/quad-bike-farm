@@ -11,6 +11,9 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | Name | What it is | Not |
 | --- | --- | --- |
 | the drive | The old tarmac road on the new farm from the lane to the yard, open to the fields either side, with the cattle grid at the lane end (today's farm has the farm road instead) | driveway, farm track |
+| Back Lane | The old single-track road round the farm's north, west and south on the new farm, with passing places, hedges and a ford; it leaves the public lane at the north and rejoins it below the village | the back road |
+| passing place | A widened bay in Back Lane's edge with a white diamond sign, where one vehicle pulls in to let another by | lay-by, pull-in |
+| Upper Thornby | The hamlet on the hill to the west that the footpath off Back Lane climbs to; seen as roofs and a church tower, never reached | the village (that is Nether Thornby) |
 | radio station | One of the radio's two stations: Dale FM (easy listening and pop) and Quarry Rock (rock). The radio key changes between them | radio channel, radio frequency |
 | woodpile | The stack of split logs by the wood's gate, with the rounds lying beside it. The farm map names it, with how many logs are on the stack. On the new farm it also has a lean-to with an old stack under it and a chopping block, which are there with or without the tractor | wood pile |
 | Fern Trail | The narrow single-track path for the two-wheelers through the wood, marked by the blue-banded posts | Fern Path, Bike Trail, the trail loop |

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { BUDGETS, BUILT_IN_SPOTS, KNOWN_OVER, MEASURE_ARGS, SPOTS, check, measureInPage, summary } from '../tools/frameBudget.mjs';
-import { LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
+import { layoutNew } from '../src/world/layoutNew.js';
 
 const under = () => Object.fromEntries(Object.keys(BUDGETS).map((s) => [s, { calls: BUDGETS[s].calls - 10, triangles: BUDGETS[s].triangles - 1000 }]));
 
@@ -204,7 +205,8 @@ describe('counting the draws (#597)', () => {
     });
 
     it('has, for every spot in BUDGETS, a way to find it: a built-in one or a name in the layout', () => {
-      for (const s of SPOTS) expect(BUILT_IN_SPOTS.includes(s) || LAYOUT.budgetSpots?.[s], `no way to stand at the budget spot ${s}: add it to layout.budgetSpots`).toBeTruthy();
+      const two = layoutNew(LAYOUT, RAW_LAYOUT);
+      for (const s of SPOTS) expect(BUILT_IN_SPOTS.includes(s) || LAYOUT.budgetSpots?.[s] || two.budgetSpots?.[s], `no way to stand at the budget spot ${s}: add it to layout.budgetSpots`).toBeTruthy();
     });
   });
 
@@ -281,5 +283,16 @@ describe('counting the draws (#597)', () => {
       const r = await measureInPage(args);
       expect(r.spots.movers).toBeUndefined();
     });
+  });
+});
+
+describe('a spot only the new farm has (#686)', () => {
+  it('is not missing on a farm that has none, and is held to its budget where it is measured', async () => {
+    const { NEW_FARM_ONLY } = await import('../tools/frameBudget.mjs');
+    expect(NEW_FARM_ONLY).toContain('hairpins');
+    const none = check({ spawn: { calls: 1, triangles: 1 } }, { spawn: BUDGETS.spawn, hairpins: BUDGETS.hairpins }, []);
+    expect(none.missing).toEqual([]);
+    const over = check({ hairpins: { calls: BUDGETS.hairpins.calls + 1, triangles: 1 } }, { hairpins: BUDGETS.hairpins }, []);
+    expect(over.failures.length).toBe(1);
   });
 });

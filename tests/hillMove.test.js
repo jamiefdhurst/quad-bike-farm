@@ -172,12 +172,14 @@ describe('the climb', () => {
 });
 
 describe('the stream and the ford', () => {
-  it('runs the pasture\'s length at plan z 570 and ends at its hedges, with the ford where the lane crosses', () => {
+  it('runs the pasture\'s length at plan z 570, on west to Back Lane\'s ford and the moor\'s edge (#686), with the ford where the lane crosses', () => {
     const [, z] = fromPlan([0, 570]);
     expect(H.stream.z).toBe(z);
     for (const x of [H.pasture.minX + 10, H.lane.x, H.pasture.maxX - 10]) expect(hill.waterAt(x, hill.streamZ(x))).toBeGreaterThan(0.9);
     expect(hill.waterAt(H.pasture.maxX + 15, hill.streamZ(H.pasture.maxX + 15))).toBe(0);
-    expect(hill.waterAt(H.pasture.minX - 15, hill.streamZ(H.pasture.minX - 15))).toBe(0);
+    expect(hill.waterAt(H.pasture.minX - 15, hill.streamZ(H.pasture.minX - 15))).toBeGreaterThan(0.9);
+    expect(hill.waterAt(H.stream.west.x, hill.streamZ(H.stream.west.x))).toBeGreaterThan(0.9);
+    expect(hill.waterAt(H.stream.west.minX - 15, hill.streamZ(H.stream.west.minX - 15))).toBe(0);
     expect(hill.channelAt(H.pasture.maxX + 12, hill.streamZ(H.pasture.maxX + 12))).toBe(0);
     expect(hill.halfAt(H.lane.x)).toBeCloseTo(H.stream.ford.halfWidth, 1);
     expect(hill.depthAt(H.lane.x)).toBeLessThan(hill.depthAt(H.lane.x + 40));
