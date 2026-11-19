@@ -112,6 +112,7 @@ export const GATEWAYS_PLAN = [
   { a: 'north', b: 'out', at: [380, 30], why: 'North Field onto Back Lane (#686)' },
   { a: 'far', b: 'out', at: [40, 440], why: 'Far Field onto Back Lane on its west side (#686)' },
   { a: 'hill', b: 'out', at: [36, 640], why: 'Hill Pasture onto Back Lane, short of the moor gate (#686)' },
+  { a: 'hill', b: 'out', at: [38, 700], half: 2.45, gate: true, id: 'moor', why: 'the moor gate: Hill Pasture onto Back Lane and the common beyond, where the flock goes up in summer (#713)' },
   { a: 'home', b: 'north', at: [306, 230], why: 'North Field from Home Ground: its only other way in is Back Lane' },
   { a: 'home', b: 'wet', at: [197, 296], why: 'Wet Meadow from Home Ground, level with the pond (#684)' },
   { a: 'drive', b: 'out', at: [885, 345], half: 4.5, why: 'the drive onto the lane: the cattle grid fills it (#568)' },
@@ -917,7 +918,7 @@ export const BACK_LANE_PLAN = {
   footpath: { at: [2, 792], to: [-60, 760] }, // off the road's west side, up the hill: the stile in the hedge at `at`, the path on to `to` (plan metres)
   upperThornby: [-215, 745], // the hamlet the footpath climbs to, far to the west on the hill (plan metres): seen from the lane, never reached
   // The gates in the lane's own hedge, each across from the farm's gateway onto the strip between (plan metres), with the lane's gravel track to it.
-  gates: [{ id: 'north', farm: [380, 30] }, { id: 'wood', farm: [38, 130] }, { id: 'far', farm: [40, 440] }, { id: 'hill', farm: [36, 640] }],
+  gates: [{ id: 'north', farm: [380, 30] }, { id: 'wood', farm: [38, 130] }, { id: 'far', farm: [40, 440] }, { id: 'hill', farm: [36, 640] }, { id: 'moor', farm: [38, 700] }],
 };
 
 /** Back Lane as a road of the network, in game metres, joined to the lane at both ends. */
@@ -1475,6 +1476,26 @@ export function villageLayout(P = VILLAGE_PLAN) {
   return { village, anchor: { x: ax, z: az, yaw: 0 }, street };
 }
 
+/**
+ * The moor gate (#713) in game metres: the point of the outline's wall nearest `RESERVED_PLAN.moorGate`, the way the wall runs there (`yaw`, the gate's length along it) and
+ * the width between its posts, which is the gateway's gap less the posts' own room, as the drive's bypass gate has it.
+ */
+export function moorGateLayout() {
+  const gw = GATEWAYS_PLAN.find((g) => g.id === 'moor');
+  const [px, pz] = RESERVED_PLAN.moorGate.at;
+  let best = null;
+  OUTLINE_PLAN.forEach((a, i) => {
+    const b = OUTLINE_PLAN[(i + 1) % OUTLINE_PLAN.length];
+    const dx = b[0] - a[0];
+    const dz = b[1] - a[1];
+    const t = Math.min(1, Math.max(0, ((px - a[0]) * dx + (pz - a[1]) * dz) / (dx * dx + dz * dz)));
+    const d = Math.hypot(px - (a[0] + dx * t), pz - (a[1] + dz * t));
+    if (!best || d < best.d) best = { d, at: [a[0] + dx * t, a[1] + dz * t], yaw: Math.atan2(dx, dz) };
+  });
+  const [x, z] = fromPlan(best.at);
+  return { x, z, yaw: best.yaw, width: 2 * gw.half - 0.7 };
+}
+
 /** The new farm: today's layout (resolved) with what has moved put in its place. */
 export function layoutNew(today, raw) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
@@ -1499,7 +1520,7 @@ export function layoutNew(today, raw) {
     woods: wood.woods, logYard: wood.logYard, hill, village: village.village, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, village: village.anchor, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
     budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
-    fieldLandmarks: fieldLandmarksLayout(), moor: moorLayout(MOOR_FEATURES_PLAN, MOOR_PLAN, fromPlan),
+    fieldLandmarks: fieldLandmarksLayout(), moor: { ...moorLayout(MOOR_FEATURES_PLAN, MOOR_PLAN, fromPlan), gate: moorGateLayout() },
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
   };
 }

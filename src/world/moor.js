@@ -185,10 +185,16 @@ export function createMoor(M, { keepClear = () => false } = {}) {
     return low * smoothstep(0.42, 0.62, patch(x, z, 24, 11)) * (1 - wetAt(x, z));
   };
   /** Heather's cover, 0 to 1: everywhere but the flushes, the bracken and the bare outcrops; its age (0 young, 1 old and leggy) is `heatherAge`. */
-  const heatherAt = (x, z) => (1 - wetAt(x, z)) * (1 - 0.85 * brackenAt(x, z)) * smoothstep(bounds.minX + 5, bounds.minX + 70, x) * (0.35 + 0.65 * smoothstep(0.1, 0.5, patch(x, z, 18, 3)));
+  /** How worn a sheep track makes (x, z), 0 to 1: nothing grows in the middle of one. */
+  const trackAt = (x, z) => {
+    let t = 0;
+    for (const line of M.tracks) t = Math.max(t, 1 - smoothstep(0.25, 1.1, distToLine(line, x, z)));
+    return t;
+  };
+  const heatherAt = (x, z) => (1 - 0.95 * trackAt(x, z)) * (1 - wetAt(x, z)) * (1 - 0.85 * brackenAt(x, z)) * smoothstep(bounds.minX + 5, bounds.minX + 70, x) * (0.35 + 0.65 * smoothstep(0.1, 0.5, patch(x, z, 18, 3)));
   const heatherAge = (x, z) => patch(x, z, 30, 7);
 
-  return { M, bounds, inside, outcrops, boulders, reliefAt, wetAt, brackenAt, heatherAt, heatherAge, clear, patch };
+  return { M, bounds, inside, outcrops, boulders, reliefAt, wetAt, trackAt, brackenAt, heatherAt, heatherAge, clear, patch };
 }
 
 /**
