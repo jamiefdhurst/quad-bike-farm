@@ -9,7 +9,7 @@
  * under the worst of five CI runs, so the ordinary differences between runs don't fail a PR. To raise one, run the Smoke job a few times (it prints the
  * shares in its summary) and set it 2 under the lowest. To add a host file, add a line here: a test fails until it has one. */
 export const FLOORS = {
-  all: 78,
+  all: 77, // was 78: the Moor (#713, about 1,500 lines of src) is on the new farm only, and the smoke run loads today's farm
   'src/game.js': 63,
   hosts: {
     'src/console/gameHost.js': 69,
