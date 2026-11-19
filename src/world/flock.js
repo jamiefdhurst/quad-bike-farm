@@ -49,6 +49,14 @@ export const FLOCK_PARAM_RANGES = {
 /** Which half of the hill the flock grazes on farm day `day`: the one `param` says, or with -1 the new farm's alternate day by day and today's stay on the climb's side. */
 export const hillHalfFor = (param, day, newFarm) => (param >= 0 ? param : newFarm ? Math.abs(Math.trunc(day)) % 2 : 1);
 
+/**
+ * Whether a sheep may stand at (x, z) on the hill: inside the pasture and past its foot, out of the wood, the water, the gorse, the steep banks and the hut's
+ * clearing, and on half `half` of the pasture if there is an electric fence to split it.
+ */
+export const hillFlockAllowed = (hill, foot, fence, half) => (x, z) =>
+  hill.inPasture(x, z, 3) && z > hill.farEdge(x) + foot + 2 && !hill.inWood(x, z, -2) && hill.waterAt(x, z) < 0.05 &&
+  hill.gorseAt(x, z) < 0.25 && hill.climbSlope(x, z) < 0.45 && !hill.nearHut(x, z) && (!fence || fence.onHalf(x, z, half));
+
 const TAU = Math.PI * 2;
 /** The shortest signed turn from angle a to angle b. */
 const angleDiff = (a, b) => ((((b - a) % TAU) + 3 * Math.PI) % TAU) - Math.PI;

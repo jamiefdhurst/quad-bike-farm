@@ -13,6 +13,9 @@ const within = (r, x, z, margin = 0) => (r.points ? pointInPolygon(r.points, x, 
 
 import { pointInPolygon, outsidePolygon, polygonEdges } from './polygons.js';
 
+/** How many tries the hill wood's oak loop gets: 60 for each oak a layout asks for, and today's own 2000 where it asks for none (so today's draws are as they were). */
+export const woodTries = (wood) => (wood.trees ? wood.trees * 60 : 2000);
+
 /** Null when the layout has no hill. */
 export function createHill(layout) {
   const hill = layout.hill;

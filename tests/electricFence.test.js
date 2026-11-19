@@ -48,6 +48,12 @@ describe('the electric fence', () => {
     expect(f.spans()).toEqual([[0, 57], [63, 80]]); // metres along the line from its first end
   });
 
+  it('turns its warning sign across the wire: unturned on today\'s east-west fence, a quarter turn on a north-south one (#994)', () => {
+    expect(createElectricFence(layout).signYaw).toBe(0);
+    expect(createElectricFence(LAYOUT).signYaw).toBe(0);
+    expect(createElectricFence({ hill: { fence: { from: [0, 0], to: [0, 100], gap: { at: 10, half: 3 } } } }).signYaw).toBeCloseTo(Math.PI / 2, 9);
+  });
+
   it('can run north to south, as the new farm\'s does: the gap and the ends are measured along it', () => {
     const f = createElectricFence({ hill: { fence: { from: [-288, 210], to: [-288, 480], gap: { at: 18, half: 3.5 } } } });
     expect(f.length).toBe(270);

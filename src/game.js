@@ -280,7 +280,7 @@ import { DEFAULT_DIP_PARAMS, DIP_PARAM_RANGES } from './vehicle/tankDip.js';
 import { fuelText } from './engine/diesel.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Bell } from './world/bellBuild.js';
-import { Flock, findFlockSpot, hillHalfFor, DEFAULT_FLOCK_PARAMS, FLOCK_PARAM_RANGES } from './world/flock.js';
+import { Flock, findFlockSpot, hillHalfFor, hillFlockAllowed, DEFAULT_FLOCK_PARAMS, FLOCK_PARAM_RANGES } from './world/flock.js';
 import { FlockView } from './world/flockView.js';
 import { SheepAudio } from './audio/sheepAudio.js';
 import { Rabbits, Pheasants, hedgeSpots, DEFAULT_WILDLIFE_PARAMS, WILDLIFE_PARAM_RANGES } from './world/wildlife.js';
@@ -6625,7 +6625,7 @@ export class Game {
     const cam = this.camera.position;
     const you = { x: cam.x, z: cam.z, onFoot: !this.player.isRiding };
     const L = this.world.layout;
-    const things = [...this.units.map((u) => u.quad).filter((q) => Math.abs(q.speed) < 0.5).map((q) => ({ x: q.position.x, z: q.position.z })), ...(L.gate ? [{ x: L.gate.x, z: L.fieldHalf }] : [])];
+    const things = [...this.units.map((u) => u.quad).filter((q) => Math.abs(q.speed) < 0.5).map((q) => ({ x: q.position.x, z: q.position.z })), ...(L.gate ? [{ x: L.gate.x, z: L.gate.z ?? L.fieldHalf }] : [])];
     let workAt = null;
     for (const t of things) if (Math.hypot(t.x - you.x, t.z - you.z) < p.workNear && (!workAt || Math.hypot(t.x - you.x, t.z - you.z) < Math.hypot(workAt.x - you.x, workAt.z - you.z))) workAt = t;
     const lit = (q) => !q.noHeadlight && !!q.model?.userData.beams?.length;
@@ -11772,9 +11772,8 @@ export class Game {
     // The electric fence splits the pasture: the flock grazes one half (`hillHalf`) and never steps across the wire.
     const fence = createElectricFence(this.world.layout);
     const half = hillHalfFor(this.flockParams.hillHalf, this.farm?.day ?? 1, !!this.world.layout.newFarm);
-    const allowed = (x, z) =>
-      hill.inPasture(x, z, 3) && z > hill.farEdge(x) + this.world.layout.hill.foot + 2 && !hill.inWood(x, z, -2) && hill.waterAt(x, z) < 0.05 &&
-      hill.gorseAt(x, z) < 0.25 && hill.climbSlope(x, z) < 0.45 && !hill.nearHut(x, z) && (!fence || fence.onHalf(x, z, half));
+    const allowed = hillFlockAllowed(hill, this.world.layout.hill.foot, fence, half);
+    this.hillFlockAllowed = allowed; // the flock scene looks for ground by the same rule
     const p = hill.pasture;
     const random = createRandom(this.seed ^ 0x5eed);
     const spot = findFlockSpot(allowed, { minX: p.minX + 8, maxX: p.maxX - 8, minZ: p.minZ + 20, maxZ: p.maxZ - 8 }, random);

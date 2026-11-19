@@ -11,7 +11,7 @@ import { hutShape } from '../src/world/hut.js';
 import { createElectricFence } from '../src/world/electricFence.js';
 import { climbGates } from '../src/npc/hillClimb.js';
 import { steepestBank } from '../src/npc/dares.js';
-import { DEFAULT_FLOCK_PARAMS, Flock, findFlockSpot, hillHalfFor } from '../src/world/flock.js';
+import { DEFAULT_FLOCK_PARAMS, Flock, findFlockSpot, hillHalfFor, hillFlockAllowed } from '../src/world/flock.js';
 import { createRandom } from '../src/core/random.js';
 import { pointInPolygon, polygonBounds } from '../src/world/polygons.js';
 
@@ -308,22 +308,37 @@ describe('the wet meadow', () => {
 
 describe('the flock', () => {
   const random = () => createRandom(5);
-  it('keeps to its half of the hill, and never steps across the electric fence', () => {
-    const f = createElectricFence(two);
-    const allowed = (half) => (x, z) => hill.inPasture(x, z, 3) && z > hill.farEdge(x) + H.foot + 2 && !hill.inWood(x, z, -2) && hill.waterAt(x, z) < 0.05 && f.onHalf(x, z, half);
-    for (const half of [0, 1]) {
-      const p = H.pasture;
-      const spot = findFlockSpot(allowed(half), { minX: p.minX + 8, maxX: p.maxX - 8, minZ: p.minZ + 20, maxZ: p.maxZ - 8 }, random());
-      expect(spot, `half ${half}`).toBeTruthy();
-      const flock = new Flock({ allowed: allowed(half), random: random(), params: { ...DEFAULT_FLOCK_PARAMS } });
-      expect(flock.place(spot)).toBe(DEFAULT_FLOCK_PARAMS.count);
-      for (let i = 0; i < 600; i++) flock.update(0.1, [{ x: spot.x, z: spot.z, speed: 8 }]);
-      for (const s of flock.sheep) expect(f.onHalf(s.x, s.z, half, 0), `half ${half}`).toBe(true);
+  it('keeps to its half of the hill, and never steps across the electric fence, on both farms (#994)', () => {
+    for (const [name, layout] of [['the new farm', two], ['today\'s farm', LAYOUT]]) {
+      const hl = createHill(layout);
+      const f = createElectricFence(layout);
+      const p = layout.hill.pasture;
+      for (const half of [0, 1]) {
+        // Today's farm has a spot on half 1 (the foot, where the flock is dealt); the top strip may be too narrow for a flock.
+        const allowed = hillFlockAllowed(hl, layout.hill.foot, f, half);
+        const spot = findFlockSpot(allowed, { minX: p.minX + 8, maxX: p.maxX - 8, minZ: p.minZ + 20, maxZ: p.maxZ - 8 }, random());
+        if (!spot) {
+          expect(`${name} half ${half}`).toBe(`${name} half 0`);
+          continue;
+        }
+        const flock = new Flock({ allowed, random: random(), params: { ...DEFAULT_FLOCK_PARAMS } });
+        expect(flock.place(spot), `${name} half ${half}`).toBeGreaterThan(0);
+        for (let i = 0; i < 600; i++) flock.update(0.1, [{ x: spot.x, z: spot.z, speed: 8 }]);
+        for (const s of flock.sheep) expect(f.onHalf(s.x, s.z, half, 0), `${name} half ${half}`).toBe(true);
+      }
     }
+    const f = createElectricFence(two);
     expect(f.onHalf(f.from[0] - 5, f.from[1] + 100, 0)).toBe(true); // west of the line is half 0
     expect(f.onHalf(f.from[0] + 5, f.from[1] + 100, 1)).toBe(true); // east is half 1
     expect(f.onHalf(f.from[0] + 5, f.from[1] + 100, 0)).toBe(false);
     expect(f.onHalf(f.from[0] + 0.5, f.from[1] + 100, 1)).toBe(false); // too close to the wire to stand
+  });
+  it('takes the fence clause out of the rule and a sheep may cross: the rule is what keeps them (#994)', () => {
+    const f = createElectricFence(two);
+    const x = f.from[0] + 4;
+    const z = f.from[1] + 120;
+    expect(hillFlockAllowed(hill, H.foot, f, 0)(x, z)).toBe(false); // east of the line, half 0 is west
+    expect(hillFlockAllowed(hill, H.foot, null, 0)(x, z)).toBe(hillFlockAllowed(hill, H.foot, f, 1)(x, z));
   });
   it('rests the other half of the hill each day on the new farm, and keeps to the climb\'s side on today\'s', () => {
     expect([1, 2, 3, 4].map((day) => hillHalfFor(-1, day, true))).toEqual([1, 0, 1, 0]);

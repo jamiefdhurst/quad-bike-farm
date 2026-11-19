@@ -40,6 +40,8 @@ export function createElectricFence(layout) {
   const dir = { x: (to[0] - from[0]) / length, z: (to[1] - from[1]) / length };
   const gap = { at: f.from ? f.gap.at : f.gap.at - f.fromX, half: f.gap.half };
   const fence = { ...f, from, to, length, dir, gap, heights: f.heights ?? [0.55, 0.95] };
+  /** The yaw that turns the warning sign (a plane facing +z) to face across the wire: 0 for a wire along x. */
+  fence.signYaw = Math.atan2(dir.z, dir.x);
   /** The point `s` m along the line. */
   fence.pointAt = (s) => ({ x: from[0] + dir.x * s, z: from[1] + dir.z * s });
   /** Where (x, z) is against the line: `s` m along it and `off` m to one side. */
