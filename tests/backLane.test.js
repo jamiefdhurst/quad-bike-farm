@@ -89,3 +89,25 @@ describe('the hedges along it', () => {
     expect(Math.max(...runs.map((r) => r.to))).toBeCloseTo(road.length - JUNCTION_OPEN, 6);
   });
 });
+
+describe('the signs along it', () => {
+  it('has the entry signs at both ends, a passing place sign each way at every bay, bends and chevrons at the hairpins, and the ford\'s signs', async () => {
+    const { laneSigns, SIGN_KINDS } = await import('../src/world/laneSigns.js');
+    const signs = laneSigns(road);
+    const of = (k) => signs.filter((s) => s.kind === k);
+    for (const k of SIGN_KINDS) expect(of(k).length, k).toBeGreaterThan(0);
+    expect(of('singleTrack').map((s) => s.facing).sort()).toEqual([-1, 1]);
+    expect(of('nationalLimit').length).toBe(2);
+    expect(of('passingPlace').length).toBe(2 * road.bays.length);
+    expect(of('chevron').length).toBe(3 * 2);
+    expect(of('gauge').length).toBe(1);
+    expect(of('bends').length).toBe(2);
+    expect(of('ford').length).toBe(2);
+    // Each one stands on the left of the way that reads it.
+    for (const s of signs.filter((x) => ['singleTrack', 'nationalLimit', 'bends', 'ford'].includes(x.kind))) expect(s.side).toBe(s.facing);
+    for (const s of signs) {
+      expect(s.s).toBeGreaterThan(0);
+      expect(s.s).toBeLessThan(road.length);
+    }
+  });
+});

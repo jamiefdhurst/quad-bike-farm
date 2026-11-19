@@ -5,6 +5,8 @@
 import * as THREE from 'three';
 import { roadNetwork } from './roads.js';
 import { laneHedgeRuns, hedgeOffset, sidePoint, sideOf } from './laneHedges.js';
+import { laneSigns, sAlong, footpathSide } from './laneSigns.js';
+import * as kit from './roadSigns.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { matrixAt } from './hillProps.js';
 import { gateLeaf } from './neighbourFarmProps.js';
@@ -13,6 +15,7 @@ import { instanceModel, modelBounds } from './assets.js';
 
 export const LANE_HEDGE_HEIGHT = 2.5; // m: a tall hedge on a single-track lane, taller than the farm's
 export const GATE_HALF = 2.2; // m either side of a gate's middle that the hedge leaves open: the leaf's length and a post each side
+export const STILE_HALF = 1.1; // m either side of the stile that the hedge is open
 const CHUNK = 6; // m a hedge collider is at longest
 
 /** How far along the road (m) the point (x, z) is nearest: a walk of the samples, run once for each of a few gates. */
@@ -36,7 +39,9 @@ export function laneGates(road) {
 
 /** The hedge's gaps: the gates now, a stile and its footpath when #686's footpath is placed. */
 export function laneGaps(road) {
-  return laneGates(road).map((g) => ({ s: g.s, half: GATE_HALF, side: g.side }));
+  const gaps = laneGates(road).map((g) => ({ s: g.s, half: GATE_HALF, side: g.side }));
+  if (road.footpath) gaps.push({ s: sAlong(road, road.footpath.at[0], road.footpath.at[1]), half: STILE_HALF, side: footpathSide(road) });
+  return gaps;
 }
 
 function buildGate(road, g, c, group) {
@@ -73,6 +78,56 @@ function buildGate(road, g, c, group) {
   swing.rotation.y = -g.side * 1.35;
   pivot.add(swing);
   group.add(pivot);
+}
+
+/** What each kind of sign is made with: a builder, and how high it stands off the verge's ground. */
+const SIGN_MAKERS = {
+  singleTrack: () => kit.buildSingleTrackSign(),
+  nationalLimit: () => kit.buildNationalLimitSign(),
+  passingPlace: () => kit.buildPassingPlaceSign(),
+  bends: () => kit.buildBendsSign(),
+  chevron: () => kit.buildChevronBoard(),
+  ford: () => kit.buildFordSign(),
+};
+
+/** Puts every sign, the gauge, the fingerpost and the stile where laneSigns.js says, into `group`. */
+function buildFurniture(road, c, group) {
+  const { heights, fixedBox, random } = c;
+  const proto = {};
+  const place = (obj, s, side, offset, yaw) => {
+    const p = sidePoint(road, s, side, offset);
+    obj.position.set(p.x, heights.heightAt(p.x, p.z), p.z);
+    obj.rotation.y = yaw;
+    group.add(obj);
+    return p;
+  };
+  for (const sg of laneSigns(road)) {
+    if (sg.kind === 'fingerpost') continue; // placed with the stile below
+    const off = hedgeOffset(road, sg.s, sg.side) - 0.9;
+    const t = pointAtTangent(road, sg.s);
+    // A sign faces the traffic that reads it: back along the way they come, or across the road for a chevron or the gauge.
+    const toward = sg.facing === 0 ? { x: -t.tz * sg.side, z: t.tx * sg.side } : { x: -t.tx * sg.facing, z: -t.tz * sg.facing };
+    const yaw = Math.atan2(toward.x, toward.z);
+    const make = sg.kind === 'gauge' ? () => kit.buildDepthGauge(random) : SIGN_MAKERS[sg.kind];
+    const obj = (proto[sg.kind] ??= make()).clone();
+    const p = place(obj, sg.s, sg.side, sg.kind === 'gauge' ? road.halfWidth + 0.9 : off, yaw);
+    fixedBox(p.x, heights.heightAt(p.x, p.z) + 1, p.z, 0.07, 1.1, 0.07);
+  }
+  if (road.footpath) {
+    const s = sAlong(road, road.footpath.at[0], road.footpath.at[1]);
+    const side = footpathSide(road);
+    const t = pointAtTangent(road, s);
+    const dir = { x: road.footpath.to[0] - road.footpath.at[0], z: road.footpath.to[1] - road.footpath.at[1] };
+    const post = place(kit.buildFingerpost(random), s - 3, side, road.halfWidth + 0.8, Math.atan2(-dir.z, dir.x));
+    fixedBox(post.x, heights.heightAt(post.x, post.z) + 1, post.z, 0.1, 1.1, 0.1);
+    const stile = place(kit.buildStile(random), s, side, hedgeOffset(road, s, side), Math.atan2(-t.tz, t.tx));
+    void stile;
+  }
+}
+
+function pointAtTangent(road, s) {
+  const p = sidePoint(road, s, 1, 0);
+  return { tx: p.tx, tz: p.tz };
 }
 
 /** Builds the lane's hedges, their colliders and its gates. `c` is the props context (props.js). Null on a farm with no Back Lane. */
@@ -126,6 +181,7 @@ export function buildBackLaneProps(c) {
   const far = buildFarHedges(farPieces, { tint: leafTint(models.hedge.scene), name: 'backLaneHedgesFar' });
   scene.add(near, far);
   for (const g of laneGates(road)) buildGate(road, g, c, group);
+  buildFurniture(road, c, group);
   scene.add(group);
   return { group, hedgeSwap: new HedgeSwap(near, far), road };
 }

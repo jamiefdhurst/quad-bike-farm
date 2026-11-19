@@ -809,6 +809,7 @@ export const BACK_LANE_PLAN = {
   cuttings: [[1740, 2170]], // m along: the hairpins, where the lane runs in a hollow way up to 2.1 m into the hill's shoulder (flagged so `cuttings()` accepts it)
   ford: { at: [10, 572], reach: 14 },
   hairpins: [[-30, 840], [60, 874]],
+  footpath: { at: [2, 792], to: [-60, 760] }, // off the road's west side, up the hill: the stile in the hedge at `at`, the path on to `to` (plan metres)
   // The gates in the lane's own hedge, each across from the farm's gateway onto the strip between (plan metres), with the lane's gravel track to it.
   gates: [{ id: 'north', farm: [380, 30] }, { id: 'wood', farm: [38, 130] }, { id: 'far', farm: [40, 440] }, { id: 'hill', farm: [36, 640] }],
 };
@@ -825,6 +826,7 @@ export function backLaneLayout(B = BACK_LANE_PLAN) {
     gates: B.gates.map((g) => ({ id: g.id, farm: fromPlan(g.farm) })),
     ford: { at: fromPlan(B.ford.at), reach: B.ford.reach },
     hairpins: B.hairpins.map(fromPlan),
+    footpath: { at: fromPlan(B.footpath.at), to: fromPlan(B.footpath.to) },
   };
 }
 

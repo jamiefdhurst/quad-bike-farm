@@ -288,6 +288,19 @@ export function buildRoadMesh({ scene, road, points, heights, texture }) {
     const inside = (p) => road.strip.rects.some(([x0, z0, x1, z1]) => p.x >= x0 && p.x <= x1 && p.z >= z0 && p.z <= z1);
     meshes.push(...roadStrip(ctx, -road.strip.half, road.strip.half, (road.lift ?? 0.07) + 0.015, grass, { skip: (p) => !inside(p) }));
   }
+  // Give-way lines (`markings.giveWay`): a double row of dashes across the road, 3 m in from each end, for traffic leaving onto the lane.
+  if (road.markings.giveWay) {
+    const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...POLY });
+    const end = run[run.length - 1].s ?? run.length;
+    const marks = [];
+    for (const s of [3, end - 3]) {
+      for (const off of [0, 0.45]) {
+        for (let a = -road.halfWidth + 0.2; a < road.halfWidth - 0.4; a += 0.6) marks.push({ s: s + off - 0.45 / 2, len: 0.3, a, b: a + 0.35 });
+      }
+    }
+    const lines = paintMarks(ctx, marks, line, (road.lift ?? 0.07) + 0.02);
+    if (lines) meshes.push(lines);
+  }
   for (const m of meshes) scene.add(m);
   return meshes;
 }
