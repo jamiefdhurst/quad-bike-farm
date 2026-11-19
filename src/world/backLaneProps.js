@@ -92,7 +92,7 @@ function buildGate(road, g, c, group, points) {
   const leaf = gateLeaf(wood, iron, 2 * GATE_HALF - 0.5);
   const swing = new THREE.Group();
   swing.add(leaf);
-  swing.rotation.y = -g.side * 1.35;
+  swing.rotation.y = g.side * 1.35;
   pivot.add(swing);
   group.add(pivot);
 }
