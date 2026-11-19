@@ -1751,7 +1751,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I time a run up the pit\'s wall?',
-        a: `Ride to the green START cones on the pit's floor, at the foot of the climb wall, and press <kbd>Enter</kbd> and pick “The pit climb”, then ride through them when you are ready. The clock runs from there. Go
+        a: `Ride to the green START cones on the pit's floor, at the foot of the climb wall (on the new farm, <code>?layout=2</code>, they are flags planted in the ground instead, the same colours with the same words on the cloth), and press <kbd>Enter</kbd> and pick “The pit climb”, then ride through them when you are ready. The clock runs from there. Go
           through the gate of cones halfway up the wall (it is nine metres either side of the middle of the wall) and on through the finish cones over the lip. The line is yours. You are out if you get off or stall for eight seconds, or take over two minutes. Your time goes up as a toast, and the best goes on the barn's records board as the pit climb. Only you
           run it; whoever is near the top times you and says something.`,
         tip: 'Press Enter by the green START cones on the pit floor, then ride up the wall and through the blue FINISH cones to be timed.',
@@ -2917,8 +2917,7 @@ export const FAQ_SECTIONS = [
         q: 'Can I see the bigger farm that is being built?',
         a: `Yes, as it goes. Add <code>?layout=2</code> to the address, or type <code>layout 2</code> in the console, and the game loads on the new farm: about 870 by 830 m
           with a natural outline, six arable fields in stubble, meadows, pasture, the wood's and the pit's fields and Home Ground, each with its hedges and gateways, and
-          all of them on the map (<kbd>M</kbd>). It is being built a piece at a time: the barn, the yard and Home Ground have moved to their new places (see the next question), Hollow Wood is in the north-west corner (see "Where is Hollow Wood on the new farm?"), and the hill and the gravel pit
-          still stand where they were until their turn, and the walls round the sheep field and the hill are only on the map so far. It plays as a fresh first day
+          all of them on the map (<kbd>M</kbd>). It is being built a piece at a time: the barn, the yard and Home Ground have moved to their new places (see the next question), Hollow Wood is in the north-west corner (see "Where is Hollow Wood on the new farm?"), the gravel pit is in the north-east corner by the lane (see "Where is the gravel pit on the new farm?"), and the hill has moved to the south-west, and the walls round the sheep field and the hill are only on the map so far. It plays as a fresh first day
           and is never saved, so your own farm is just as you left it. <code>layout 1</code> goes back.`,
       },
       {
@@ -2941,6 +2940,16 @@ export const FAQ_SECTIONS = [
           a lean-to against the hedge with an old stack of logs under it, and a chopping block with an axe in it. They are there on every farm; the rounds to split and the stack you build are the tractor's, as
           before. The oaks look lighter once they are more than about 70 m away. In the console, <code>tp me wood</code>, <code>woodpile</code>, <code>veteranoak</code>, <code>fern</code> and <code>hollowrun</code>
           take you to each, and <code>scene hollowwood</code> sets up a look at the gate in daylight.`,
+      },
+      {
+        q: 'Where is the gravel pit on the new farm?',
+        a: `On <code>?layout=2</code> the pit is in the north-east corner, beside the lane, in a field of its own about 165 by 185 m, fenced all round in post and wire (barbed, with a strainer post and
+          a strut at every corner, and a post down here and there). It is the same pit as before, the same size and shape on every farm, with its two gravel roads, its plant, pond and heaps, and the
+          pit climb up its long wall, still timed on the records board; the flags that mark the climb are planted in the wall, green for the start, blue for the finish and orange between, with START and FINISH on the cloth. There are two gates.
+          The one onto the lane is the way the lorries used to come in, and it is shut and chained for good: the gravel road starts at it, but you cannot get through it, and the girls will not try. You
+          come in by the farm gate in the west fence, from the stone track, which stands tied open; look at it and press <kbd>E</kbd> to shut it or open it. The girls follow you as far as just inside it and wait
+          there, rather than driving down the pit after you. Ride from it round the rim to where the roads fork on the lane side. The fence along the lip is solid now too: it has gaps where the roads come in and where the climb goes over the edge, and nowhere else. In the console, <code>tp me pitgate</code> and <code>pitlane</code> take you to each gate, <code>pitwall</code> to the foot of the climb,
+          and <code>scene pitgate</code> sets up a look at the farm gate in daylight.`,
       },
       {
         q: 'What is the drive on the new farm?',
