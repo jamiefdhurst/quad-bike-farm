@@ -80,6 +80,9 @@ export const FIELDS_PLAN = [
 /** The fields walled in drystone (#696 sets every edge's real kind); every other edge is a hedge for now. */
 const WALLED = ['sheep', 'hill'];
 
+/** The field fenced in post and wire (#685): every side of the Old Pit, whatever is beyond it. */
+const FENCED = ['pit'];
+
 /** The lines railed, post and rail (#682): Home Ground's side to the yard, where the paddock's fences were. */
 const RAILED = ['farmstead|home'];
 
@@ -103,7 +106,8 @@ export const GATEWAYS_PLAN = [
   { a: 'lane', b: 'hill', at: [199.6, 565], half: 3.5, why: 'the ford: the green lane opens into the hill pasture over the stream (#684)' },
   { a: 'hay', b: 'brook', at: [420, 545], why: 'the stone track on south to the river' },
   { a: 'farmstead', b: 'top', at: [546, 232], why: 'Top Field from the stone track north' },
-  { a: 'top', b: 'pit', at: [720, 150], why: 'the pit\'s field from the stone track north' },
+  { a: 'top', b: 'pit', at: [720, 150], half: 2.45, gate: true, id: 'quarry', why: 'the farm gate into the pit\'s field from the stone track north: the way in, tied open (#685)' },
+  { a: 'pit', b: 'out', at: [885, 110], half: 2.45, gate: true, id: 'pitlane', shut: true, why: 'the lane gate the lorries used: shut, chained and solid, no way through (#685)' },
   { a: 'north', b: 'out', at: [380, 30], why: 'North Field onto Back Lane (#686)' },
   { a: 'home', b: 'north', at: [306, 230], why: 'North Field from Home Ground: its only other way in is Back Lane' },
   { a: 'home', b: 'wet', at: [197, 296], why: 'Wet Meadow from Home Ground, level with the pond (#684)' },
@@ -239,10 +243,9 @@ export const NOT_MOVED_YET = {
   // The farmstead's own pieces are placed now (#682, `farmsteadLayout`, below); what is left of today's grass field is the hill's and the wood's reference.
   fieldHalf: '#691 (the grass field\'s limit, which the girls\' driving and the quarry\'s code read when a place is in no field)',
   dragStrip: '#616',
-  'anchors.pit': '#685', quarry: '#685',
   'anchors.village': '#688', village: '#688',
-  // Today's rectangle of farm, which the quarry still places itself from, and the village street.
-  farm: '#685 (the quarry)', 'roads.2': '#688 (the village street)',
+  // Today's rectangle of farm, which only today's farm road and the terrain's rise beyond it read (the pit no longer does), and the village street.
+  farm: '#692 (today\'s rectangle of farm, which goes with layout 1)', 'roads.2': '#688 (the village street)',
   hayMeadow: '#691', sprayField: '#691', harrowField: '#691',
   trough: '#710', fieldShed: '#624',
   namedSpots: '#690',
@@ -267,6 +270,8 @@ export const REPLACED = [
   'woods', 'anchors.logYard', 'logYard',
   // The hill side (#684): the hill with its lane, stream, pasture, sheep field and meadow, the shepherd's hut's anchor and the gate at the lane's head.
   'hill', 'anchors.hut', 'gate',
+  // The Old Pit (#685): its field, gates and the anchor the pit is dealt about.
+  'quarry', 'anchors.pit',
 ];
 
 const cornersOf = (f) => f.corners.split(' ').map((k) => {
@@ -345,7 +350,8 @@ export function boundariesOf(fields) {
       }
     }
     const open = OPEN_LINES.includes([run.a, run.b].sort().join('|'));
-    runs.push({ ...run, kind: open ? 'none' : RAILED.includes([run.a, run.b].sort().join('|')) ? 'rail' : WALLED.includes(run.a) || WALLED.includes(run.b) ? 'wall' : 'hedge' });
+    const fenced = FENCED.includes(run.a) || FENCED.includes(run.b);
+    runs.push({ ...run, kind: open ? 'none' : RAILED.includes([run.a, run.b].sort().join('|')) ? 'rail' : fenced ? 'fence' : WALLED.includes(run.a) || WALLED.includes(run.b) ? 'wall' : 'hedge' });
   }
   return runs;
 }
@@ -1029,6 +1035,48 @@ export function woodsLayout(today, raw, P = WOOD_PLAN) {
   };
 }
 
+/** The Old Pit on the new farm (#685), plan metres: where the dealt pit is centred, in the field's west of centre so the lane side has the entrance. */
+export const PIT_PLAN = { centre: [805, 108], gateWidth: 4.8 };
+
+/**
+ * `layout.quarry` on the new farm, game metres (#685): today's, with the pit's field as its own shape (`outline`, with `minX` to `maxZ` its bounds),
+ * the pit centred about `PIT_PLAN.centre`, and its two gates (`gates`): the lane gate the haul road ends in, shut and solid, and the farm gate from the
+ * stone track, tied open, the way in. Each is `{ id, x, z, width, open, inward }` where `inward` is the unit vector from it into the field.
+ */
+export function quarryLayout(today, P = PIT_PLAN) {
+  const Q = today.quarry;
+  const fields = clippedFields();
+  const runs = boundariesOf(fields);
+  const outline = movePoints(fields.find((f) => f.name === 'pit').points);
+  const b = polygonBounds(outline);
+  const gateways = placeGateways(runs);
+  const [mx, mz] = [(b.minX + b.maxX) / 2, (b.minZ + b.maxZ) / 2];
+  const gateOf = (id, extra) => {
+    const g = gateways.find((w) => w.id === id);
+    const run = movePoints(runs[g.boundary].points);
+    const [x, z] = movePoints([pointOnRun(runs[g.boundary].points, g.at)])[0];
+    // The stretch of the line the gate is on, and the normal to it that points into the field.
+    const edges = run.slice(1).map((q, i) => edgeBetween(run[i][0], run[i][1], q[0], q[1]));
+    const edge = edges.reduce((best, e) => {
+      const t = Math.max(0, Math.min(e.length, (x - e.x1) * e.dx + (z - e.z1) * e.dz));
+      const d = Math.hypot(x - (e.x1 + e.dx * t), z - (e.z1 + e.dz * t));
+      return d < best.d ? { e, d } : best;
+    }, { e: edges[0], d: Infinity }).e;
+    const turn = (mx - x) * -edge.dz + (mz - z) * edge.dx >= 0 ? 1 : -1;
+    return { id, x, z, width: P.gateWidth, inward: [-edge.dz * turn, edge.dx * turn], ...extra };
+  };
+  const centre = fromPlan(P.centre);
+  const lane = gateOf('pitlane', { open: false, haul: true });
+  return {
+    quarry: {
+      name: Q.name, minX: b.minX, maxX: b.maxX, minZ: b.minZ, maxZ: b.maxZ, outline, centre: { x: centre[0], z: centre[1] },
+      gates: [lane, gateOf('quarry', { open: true })],
+    },
+    anchor: { x: centre[0], z: centre[1], yaw: 0 },
+    budgetSpots: { pitlane: { x: lane.x + lane.inward[0] * 8, z: lane.z + lane.inward[1] * 8 } }, // just inside the shut lane gate, looking out at it and in at the pit (#685)
+  };
+}
+
 /**
  * The hill side on the new farm (#684), plan metres: the green lane, the stream and the ford, Hill Pasture with its banks, climb, fence, hut and flask
  * rock, the Sheep Field and the Wet Meadow. The shapes are today's (`layout.hill` in layout.js, read by world/hill.js), set on the plan's fields.
@@ -1183,15 +1231,16 @@ export function layoutNew(today, raw) {
   const farmstead = farmsteadLayout(today, raw);
   const wood = woodsLayout(today, raw);
   const hill = hillLayout(today);
+  const pit = quarryLayout(today);
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
   return {
     ...farmstead, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
     ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track],
-    woods: wood.woods, logYard: wood.logYard, hill, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
-    anchors: { ...farmstead.anchors, neighbour: neighbour.anchor, logYard: wood.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
-    budgetSpots: { ...farmstead.budgetSpots, neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
+    woods: wood.woods, logYard: wood.logYard, hill, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
+    anchors: { ...farmstead.anchors, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
+    budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
     fieldLandmarks: fieldLandmarksLayout(),
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
   };

@@ -9,6 +9,7 @@
 
 import { createRandom } from '../core/random.js';
 import { dealPlant, inPlantsWay, plantPadWeight } from './plantSite.js';
+import { polygonEdges, pointInPolygon, outsidePolygon } from './polygons.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -32,7 +33,19 @@ const outside = (r, x, z) => Math.hypot(Math.max(r.minX - x, 0, x - r.maxX), Mat
 const ROAD_STEP = 2.5; // metres between the haul road's sample points
 const ROAD_SHOULDER = 4; // metres the road's ledge takes to ease into the wall either side of its surface
 const ZONE_FADE = 14; // metres beyond the rim that the ground is eased from the pit's level back into the field's
-const RIM_MARGIN = 7; // the closest a rim may come to the field's hedges
+const RIM_MARGIN = 7; // the closest a rim may come to the field's hedges (today's small field only: a field with an `outline` has room for the pit as dealt)
+const WAIT_IN = 3.5; // metres inside the way-in gate, and along from it, where a girl following you waits
+const PAST_GATE = 8; // metres in from the way-in gate that counts as having gone in
+
+/**
+ * The pit's gates, whatever shape the field is (#685). Today's field has one, in its south side, which the haul road and the girls both use; the
+ * new farm's has two: the lane gate (shut, the haul road ends in it) and the farm gate from the stone track (open, the way in). Each is
+ * `{ id, x, z, width, open, inward }`, `inward` the unit vector from it into the field. `haul` is the one the road starts at, `way` the one you come in by.
+ */
+export function gatesOf(q) {
+  const gates = q.gates ?? [{ id: 'quarry', ...q.gate, z: q.maxZ, inward: [0, -1] }];
+  return { gates, haul: gates.find((g) => g.haul) ?? gates[0], way: gates.find((g) => g.open) ?? gates[0] };
+}
 
 /** The ellipse's radius at angle `a` (in the pit's own frame) before the rim's ragged bumps. */
 const ellipseRadius = (pit, a) => (pit.rx * pit.rz) / Math.hypot(pit.rz * Math.cos(a), pit.rx * Math.sin(a));
@@ -84,8 +97,9 @@ const bankAt = (t) => {
  */
 export function dealPit(q, random) {
   const r = (lo, hi) => lo + random() * (hi - lo);
-  const x = (q.minX + q.maxX) / 2 + r(-4, 4);
-  const z = q.maxZ - 66 + r(-3, 3);
+  const { haul } = gatesOf(q);
+  const x = (q.centre ? q.centre.x : (q.minX + q.maxX) / 2) + r(-4, 4);
+  const z = (q.centre ? q.centre.z : q.maxZ - 66) + r(-3, 3);
   const depth = r(13, 16);
   const pit = {
     x, z,
@@ -105,7 +119,7 @@ export function dealPit(q, random) {
     plant: null, // where the screening plant stands, if the floor had room (plantSite.js); its heap is the first of `heaps`
   };
   // The haul roads leave the rim on the side facing the gate and go down either side; the climb wall is where they don't reach, opposite.
-  const toGate = Math.atan2(q.maxZ - z, q.gate.x - x) - pit.yaw;
+  const toGate = Math.atan2(haul.z - z, haul.x - x) - pit.yaw;
   pit.road.from = toGate;
   pit.climbAt = toGate + Math.PI + r(-0.12, 0.12);
 
@@ -128,7 +142,7 @@ export function dealPit(q, random) {
     }
     return out;
   };
-  for (let k = 0; k < 14 && short(pit) > 0; k++) {
+  for (let k = 0; k < 14 && !q.outline && short(pit) > 0; k++) {
     pit.rx *= 0.97;
     pit.rz *= 0.97;
   }
@@ -222,6 +236,9 @@ export function createQuarry(layout) {
   const rect = { minX: q.minX, maxX: q.maxX, minZ: q.minZ, maxZ: q.maxZ };
   const pit = q.pit;
   const farm = layout.farm ?? { minX: -layout.fieldHalf, maxX: layout.fieldHalf, minZ: -layout.fieldHalf, maxZ: layout.fieldHalf };
+  const outline = q.outline ?? null; // the new farm's field is its own shape, not a rectangle (`rect` is its bounds)
+  const outlineEdges = outline ? polygonEdges(outline) : null;
+  const { gates, haul: gate, way } = gatesOf(q);
   const cosY = Math.cos(pit.yaw);
   const sinY = Math.sin(pit.yaw);
 
@@ -248,14 +265,14 @@ export function createQuarry(layout) {
   const road = pit.road;
   const roadHalf = road.halfWidth;
   const startRim = frameAt(road.from, rimAt(road.from));
-  const gate = q.gate;
-  const leadLen = Math.hypot(startRim.x - gate.x, startRim.z - q.maxZ);
+  const leadLen = Math.hypot(startRim.x - gate.x, startRim.z - gate.z);
   const leadN = Math.max(2, Math.round(leadLen / ROAD_STEP));
+  const side = [-gate.inward[1], gate.inward[0]]; // across the lead-in, which is the way the bend goes
   const lead = [];
   for (let i = 0; i <= leadN; i++) {
     const f = i / leadN;
     const bend = Math.sin(f * Math.PI) * road.bend;
-    lead.push({ x: gate.x + (startRim.x - gate.x) * f + bend, z: q.maxZ + (startRim.z - q.maxZ) * f, t: 0, at: 0, a: road.from, s: rimAt(road.from) });
+    lead.push({ x: gate.x + (startRim.x - gate.x) * f + bend * side[0], z: gate.z + (startRim.z - gate.z) * f + bend * side[1], t: 0, at: 0, a: road.from, s: rimAt(road.from) });
   }
   for (let i = 1; i < lead.length; i++) lead[i].at = lead[i - 1].at + Math.hypot(lead[i].x - lead[i - 1].x, lead[i].z - lead[i - 1].z);
   const leadAt = lead[lead.length - 1].at;
@@ -343,6 +360,7 @@ export function createQuarry(layout) {
 
   /** 0..1 how much of the ground at (x, z) is the pit's own rather than the farmland round it: 1 in the field, fading out 40 m beyond its hedges. */
   function weight(x, z) {
+    if (outline) return 1 - smoothstep(0, 40, outsidePolygon(outline, x, z, outlineEdges));
     if (inRect(farm, x, z)) return 0;
     return 1 - smoothstep(0, 40, outside(rect, x, z));
   }
@@ -435,10 +453,11 @@ export function createQuarry(layout) {
   /** Whether the lip's fence must be open at angle `a` (the post at (x, z)): where the haul road comes in, and over the lip where the climb finishes. */
   const fenceOpen = (a, x, z) => roadNear(x, z).d < roadHalf + 6 || Math.abs(angleDiff(a, cAngle)) * (rimAt(cAngle) + 2.4) < climb.gateHalf + 1.5;
 
-  const inQuarry = (x, z, margin = 0) => inRect(rect, x, z, margin);
-  /** Whether (x, z) is some way in from the gate: where a girl following you stops short and waits (`waitSpot`) rather than driving in. */
-  const pastGate = (x, z) => inQuarry(x, z) && z < rect.maxZ - 8;
-  const waitSpot = { x: gate.x + 3.5, z: rect.maxZ - 3.5 };
+  const inQuarry = (x, z, margin = 0) => (outline ? pointInPolygon(outline, x, z, margin, outlineEdges) : inRect(rect, x, z, margin));
+  /** Whether (x, z) is some way in from the way-in gate: where a girl following you stops short and waits (`waitSpot`) rather than driving in. */
+  const [wx, wz] = way.inward;
+  const pastGate = (x, z) => inQuarry(x, z) && (x - way.x) * wx + (z - way.z) * wz > PAST_GATE;
+  const waitSpot = { x: way.x + wx * WAIT_IN - wz * WAIT_IN, z: way.z + wz * WAIT_IN + wx * WAIT_IN };
   /** Whether (x, z) is inside the pit: below the lip. */
   const inPit = (x, z) => {
     const { a, s } = polar(x, z);
@@ -451,14 +470,14 @@ export function createQuarry(layout) {
     const { a, s } = polar(x, z);
     if (s < rimAt(a) + clear) return false;
     if (roadNear(x, z).d < roadHalf + 2.5) return false;
-    return Math.hypot(x - gate.x, z - rect.maxZ) >= 9;
+    return gates.every((g) => Math.hypot(x - g.x, z - g.z) >= 9);
   }
 
   return {
-    rect, name: q.name, pit, gate, pond, waitSpot, climb,
+    rect, outline, name: q.name, pit, gate, gates, way, pond, waitSpot, climb,
     weight, groundAt, waterAt, mudAt, gravelAt, roadAt, pondCut, bowlCut, heapRise, inQuarry, inPit, pastGate, plantOk,
     polar, frameAt, rimAt, runAt, floorEdge, roadNear, fenceOpen, roadPoints: roadPts, rampPoints: rampPts, roadHalf, roadLength, reachMax,
-    outside: (x, z) => outside(rect, x, z),
+    outside: (x, z) => (outline ? outsidePolygon(outline, x, z, outlineEdges) : outside(rect, x, z)),
   };
 }
 

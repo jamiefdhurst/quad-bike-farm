@@ -122,6 +122,8 @@ export function createHost(g, { copy = () => {} } = {}) {
       veteranoak: layout.woods?.oak ? { x: layout.woods.oak.x, z: layout.woods.oak.z + 12 } : null, // the great oak in the glade by the pond, twelve metres south of it
       river: layout.hill?.river ? { x: layout.hill.river.crossing.x, z: (layout.newFarm ? g.world.heights.brook.zAt(layout.hill.river.crossing.x) : layout.hill.stream.z) + layout.hill.river.halfWidth + 8 } : null,
       pit: g.world.fields.quarry ? (() => { const r = g.world.fields.quarry.roadPoints.find((p) => p.t > 0.02); return r ? { x: r.x, z: r.z } : null; })() : null,
+      pitgate: g.world.fields.quarry ? (() => { const w = g.world.fields.quarry.way; return { x: w.x + w.inward[0] * 6, z: w.z + w.inward[1] * 6 }; })() : null, // just inside the gate you come in by: the farm gate on the new farm (#685)
+      pitlane: g.world.fields.quarry?.gates.length > 1 ? (() => { const w = g.world.fields.quarry.gate; return { x: w.x + w.inward[0] * 8, z: w.z + w.inward[1] * 8 }; })() : null, // inside the shut lane gate, looking out at it: the new farm only
       pitwall: g.world.fields.quarry ? { x: g.pitGates[0].x - g.pitGates[0].tx * 4, z: g.pitGates[0].z - g.pitGates[0].tz * 4 } : null,
       plant: (() => { const q = g.world.fields.quarry; const s = q && plantSite(q, ground); return s ? plantPoint(s, -5, 0) : null; })(), // the pit's screening plant, behind its hopper on the pad's line
       viewpoint: layout.hill?.viewpoint, // the flat rock at the top of the pasture, where the flask is
@@ -130,7 +132,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       pasture: layout.hill ? { x: (layout.hill.pasture.minX + layout.hill.pasture.maxX) / 2, z: (layout.hill.pasture.minZ + layout.hill.pasture.maxZ) / 2 } : null,
     };
     // On a plan that says what its fields are (the new farm), one place per field by its key (top, north, lanefield, hay ...), where it has the most room.
-    // A place the game already has by that name wins (wood, pit): the wood is moved (#683) and has its own, and the pit stands where it did until #685 moves it.
+    // A place the game already has by that name wins (wood, pit): the wood and the pit have their own, at the wood's gate and the pit's lip.
     const inFields = layout.fields ? Object.fromEntries(layout.fields.map((f) => [f.name, labelSpot(g.world.fields.polygons[f.name])])) : {};
     // And the field landmarks (#815) by their kind in lower case (loneoak, oldgateposts, deadelm, farpond, castroller, loneash, brookalders, bigoaks), ten metres
     // south of each: the ones the game builds, so you stand where you can see them. The new farm only.
