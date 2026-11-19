@@ -46,12 +46,13 @@ describe('the river, from the hill\'s stream to the lane', () => {
     expect(brook.zAt(brook.minX)).toBeCloseTo(pz, 0);
   });
 
-  it('runs unbroken to the lane\'s verge: water along every metre of it but the last few, carried level and open to where the village takes it on', () => {
-    expect(brook.culvert).toBeNull();
-    const verge = two.publicLane.x - two.publicLane.halfWidth - 2.2;
-    expect(brook.maxX).toBeGreaterThan(verge - 6);
-    expect(brook.maxX).toBeLessThan(two.publicLane.x);
-    for (let x = brook.minX; x < brook.maxX - 8; x += 1) {
+  it('runs on east under the lane\'s bridge and past the village to a spring short of the A-road (#688)', () => {
+    expect(brook.culvert).toBeTruthy();
+    expect(brook.culvert.x).toBe(two.publicLane.x);
+    const [endX] = fromPlan([1250, 0]);
+    expect(brook.maxX).toBeCloseTo(endX, 0);
+    for (let x = brook.minX; x < brook.maxX - 32; x += 1) {
+      if (Math.abs(x - brook.culvert.x) < brook.culvert.half + brook.culvert.ease) continue; // the bridge's span has no channel across the tarmac
       expect(brook.waterDepthAt(x), `x ${x}`).toBeGreaterThanOrEqual(R.crossing.water - 0.01);
       expect(brook.depthAt(x), `x ${x}`).toBeGreaterThan(0.5);
     }
@@ -195,9 +196,9 @@ describe('the meadow', () => {
 });
 
 describe('what the move leaves behind', () => {
-  it('is not on the list of places at today\'s numbers, and leaves the culvert and spring to today\'s farm', () => {
+  it('is not on the list of places at today\'s numbers, and carries on east past the lane\'s bridge, and today\'s farm keeps its culvert and spring', () => {
     expect(NOT_MOVED_YET.river).toBeUndefined();
-    expect(RIVER_PLAN.points.at(-1)[0]).toBeLessThan(905);
+    expect(RIVER_PLAN.points.at(-1)[0]).toBeGreaterThan(905); // on, past the lane's bridge (#688)
     expect(createFields(LAYOUT).brook.culvert).toBeTruthy();
   });
 });

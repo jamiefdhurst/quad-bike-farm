@@ -113,7 +113,7 @@ export function createTerrainHeight(layout, track) {
 
     // And under the village's buildings, its car park and the garage's forecourt.
     if (village) {
-      const pad = village.floorAt(x, z, (fx) => village.planeAt(fx, natural));
+      const pad = village.floorAt(x, z, (fx, fz) => village.planeAt(fx, natural, fz));
       if (pad) h += (pad.level - h) * pad.k;
     }
 

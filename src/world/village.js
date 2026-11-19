@@ -12,11 +12,13 @@ const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 export { smoothRoad };
 
-/** The marks on the village road: a broken white line down the middle (it is two-way) and one give-way line across the lane going out, not both. */
+/** The marks on the village road: a broken white line down the middle (it is two-way) and one give-way line across the lane going out, not both.
+ * The line is on the positive side of the road (the right of the way it is drawn, the left of whoever leaves): on the north half of a road that runs west
+ * from the lane, and the south half of one that runs east (the new farm's, #688). */
 export function roadMarks(S) {
   const centre = [];
   centre.push(...dashes({ on: 2, off: 4, from: S.giveWay + 3, to: S.road.length - 3, width: 0.1, whole: true }));
-  // The give-way line: a double broken line across the north half only, the traffic leaving the village (it keeps left, so heading east is on the north).
+  // The give-way line: a double broken line across the half that carries the traffic leaving the village (it keeps left).
   const giveWay = [];
   for (const row of [0, 0.5]) {
     for (let o = 0.1; o < S.roadHalfWidth - 0.3; o += 0.9) giveWay.push({ s: S.giveWay + row, len: 0.2, a: o, b: Math.min(o + 0.6, S.roadHalfWidth - 0.1) });
@@ -64,21 +66,25 @@ function buildShape(layout) {
   const carPark = v.pub.carPark;
   // Where the side road meets the lane: it starts at the lane's west edge (the lane's own tarmac is under the rest), and the give-way line sits
   // just inside that, across the half of the road that carries traffic out (the north side, the left heading east).
+  // A street that runs east from the lane (the new farm's) leaves its east edge instead of its west, and ends on the A-road's side, not at a closed gate.
   const lane = layout.publicLane;
-  const laneEdge = lane.x - lane.halfWidth;
-  const mouth = Math.max(0, road.findIndex((p) => p.x <= laneEdge));
-  const giveWay = Math.max(mouth + 1, road.findIndex((p) => p.x <= laneEdge - 2.4));
+  const eastward = road[road.length - 1].x > road[0].x;
+  const laneEdge = eastward ? lane.x + lane.halfWidth : lane.x - lane.halfWidth;
+  const past = (p, d = 0) => (eastward ? p.x >= laneEdge + d : p.x <= laneEdge - d);
+  const mouth = Math.max(0, road.findIndex((p) => past(p)));
+  const giveWay = Math.max(mouth + 1, road.findIndex((p) => past(p, 2.4)));
+  const closed = !!v.end; // a road shut by a gate, with the village's walls round it
   // The garage's forecourt: from its front to the road's pavement.
   const garage = buildings.find((b) => b.kind === 'garage');
-  const forecourt = { minX: garage.outer.minX, maxX: garage.outer.maxX, minZ: garage.outer.minZ - 9.2, maxZ: garage.outer.minZ };
+  const forecourt = v.garage.forecourt ?? { minX: garage.outer.minX, maxX: garage.outer.maxX, minZ: garage.outer.minZ - 9.2, maxZ: garage.outer.minZ };
   const a = v.area;
   const t = 0.3;
   // Drystone walls shutting the village in (north, south and west; the lane's own barrier is the east): boxes { x, z, hx, hz }.
-  const walls = [
+  const walls = closed ? [
     { x: (a.minX + a.maxX) / 2, z: a.minZ, hx: (a.maxX - a.minX) / 2, hz: t },
     { x: (a.minX + a.maxX) / 2, z: a.maxZ, hx: (a.maxX - a.minX) / 2, hz: t },
     { x: a.minX, z: (a.minZ + a.maxZ) / 2, hx: t, hz: (a.maxZ - a.minZ) / 2 },
-  ];
+  ] : [];
   // What is levelled: each building to the ground at its middle, the forecourt likewise, and the car park to the ground at its mouth on the road's
   // side, easing back over longer, so the way in from the road isn't a ramp.
   const pads = [
@@ -104,6 +110,7 @@ function buildShape(layout) {
    * over the brook beyond.
    */
   const gardenDepth = (b) => {
+    if (v.gardenDepth !== undefined) return v.gardenDepth;
     const room = b.yaw === 0 ? b.z - b.halfZ - a.minZ : a.maxZ - (b.z + b.halfZ);
     return Math.max(0, Math.min(6, room - 1));
   };
@@ -136,11 +143,13 @@ function buildShape(layout) {
    */
   const AREA_EASE = 9;
   const areaWeight = (x, z) => {
+    if (v.flat === false) return 0;
     const d = outside(a, x, z);
     return d >= AREA_EASE ? 0 : 1 - smooth(clamp01(d / AREA_EASE));
   };
   /** The level of that plane at x: the natural ground at the lane's end of the road, to the natural ground at the other end, straight between. */
-  function planeAt(x, natural) {
+  function planeAt(x, natural, z) {
+    if (v.flat === false) return natural(x, z); // the land's own lie
     const p0 = street.points[0];
     const p1 = street.points[street.points.length - 1];
     const t = clamp01((p0[0] - x) / (p0[0] - p1[0]));
@@ -172,11 +181,13 @@ function buildShape(layout) {
     laneEdge,
     mouth,
     giveWay,
-    /** The road past its closed gate: a middle line bending away and the metres it rises. */
-    beyond: smoothRoad(v.end.beyond, 1),
+    eastward,
+    closed,
+    /** The road past its closed gate: a middle line bending away and the metres it rises (none on a street that goes through). */
+    beyond: closed ? smoothRoad(v.end.beyond, 1) : [],
     /** The closed gate: `end.back` m before the road's last sample, facing along the road's heading there (the gate runs across it). */
-    gate: { x: road[road.length - 1].x - road[road.length - 1].tx * v.end.back, z: road[road.length - 1].z - road[road.length - 1].tz * v.end.back, tx: road[road.length - 1].tx, tz: road[road.length - 1].tz },
-    beyondRise: v.end.rise,
+    gate: closed ? { x: road[road.length - 1].x - road[road.length - 1].tx * v.end.back, z: road[road.length - 1].z - road[road.length - 1].tz * v.end.back, tx: road[road.length - 1].tx, tz: road[road.length - 1].tz } : null,
+    beyondRise: closed ? v.end.rise : 0,
     roadHalfWidth: street.halfWidth,
     curb,
     area: a,
@@ -197,7 +208,7 @@ function buildShape(layout) {
     nearVillage,
     floorAt,
     /** The gap in the lane's west barrier where the side road turns off: [minZ, maxZ]. */
-    laneGap: [a.minZ + 1, street.points[0][1] + 15],
+    laneGap: closed ? [a.minZ + 1, street.points[0][1] + 15] : null,
   };
 }
 

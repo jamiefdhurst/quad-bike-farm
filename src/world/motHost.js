@@ -100,7 +100,8 @@ export class MotHost {
   /** Where you stand to read the clipboard: before it on the forecourt. */
   stand() {
     const at = this.props.motProxy.mesh.getWorldPosition(new THREE.Vector3());
-    return { x: at.x, z: at.z - 1.4 };
+    const face = Math.cos(this.props.shape.garage.yaw) > 0 ? 1 : -1; // the way the garage faces: north (yaw PI) on today's farm, south on the new one
+    return { x: at.x, z: at.z + face * 1.4 };
   }
 
   /** Whether the latest test of this model failed (the girls mind it). */

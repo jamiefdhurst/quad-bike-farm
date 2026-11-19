@@ -123,7 +123,7 @@ export function laneBarriers(layout) {
   if (road) gaps.push([road.z - (road.gate?.width ?? 7) / 2 - 1.5, road.z + (road.gate?.width ?? 7) / 2 + 1.5]);
   if (shape) gaps.push([shape.yard.minZ - 1, shape.yard.maxZ + 1]);
   const village = villageShape(layout);
-  if (village) gaps.push(village.laneGap); // the side road into the village turns off here
+  if (village?.laneGap) gaps.push(village.laneGap); // the side road into the village turns off here
   gaps.sort((a, b) => a[0] - b[0]);
   const west = [];
   let from = lane.minZ - 20;
