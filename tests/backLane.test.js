@@ -183,3 +183,30 @@ describe('the hedgerow trees', () => {
     }
   });
 });
+
+describe('the ditch', () => {
+  it('runs along the low (east) side of the west stretch, at the hedge\'s foot, and nowhere along the north and south stretches', () => {
+    const [, z0] = fromPlan([13, 300]); // on the west stretch
+    const mid = road.samples.reduce((a, p) => (Math.abs(p.z - z0) < Math.abs(a.z - z0) ? p : a));
+    const x0 = mid.x; // the middle of the road there, which runs south
+    const at = (dx) => net.ditchAt(x0 + dx, mid.z);
+    const centre = road.halfWidth + BACK_LANE_PLAN.ditch.centre;
+    expect(at(centre)).toBeCloseTo(BACK_LANE_PLAN.ditch.depth, 1);
+    expect(at(-centre)).toBe(0); // not on the uphill side
+    expect(at(0)).toBe(0);
+    for (const [px, pz] of [[400, 0], [600, 880]]) {
+      const [x, z] = fromPlan([px, pz]);
+      const m = road.samples.reduce((a, p) => (Math.abs(p.x - x) < Math.abs(a.x - x) && Math.abs(p.z - z) < 20 ? p : a), road.samples[0]);
+      for (const d of [-centre, centre]) expect(net.ditchAt(m.x, m.z + d)).toBe(0);
+    }
+  });
+});
+
+describe('the drains', () => {
+  it('are a few, one about every 330 m, clear of the ford and the passing places', async () => {
+    const { laneGrates } = await import('../src/world/laneSigns.js');
+    const grates = laneGrates(road);
+    expect(grates.length).toBeGreaterThanOrEqual(6);
+    for (const g of grates) for (const b of road.bays) expect(Math.abs(g.s - b.s)).toBeGreaterThanOrEqual(b.length);
+  });
+});

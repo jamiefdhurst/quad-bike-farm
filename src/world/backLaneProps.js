@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { roadNetwork } from './roads.js';
 import { laneHedgeRuns, laneTrees, hedgeOffset, sidePoint, sideOf } from './laneHedges.js';
-import { laneSigns, sAlong, footpathSide } from './laneSigns.js';
+import { laneSigns, laneGrates, sAlong, footpathSide } from './laneSigns.js';
 import * as kit from './roadSigns.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { matrixAt } from './hillProps.js';
@@ -129,6 +129,14 @@ function buildFurniture(road, c, group) {
     const obj = (proto[sg.kind] ??= make()).clone();
     const p = place(obj, sg.s, sg.side, sg.kind === 'gauge' ? road.halfWidth + 0.9 : off, yaw);
     fixedBox(p.x, heights.heightAt(p.x, p.z) + 1, p.z, 0.07, 1.1, 0.07);
+  }
+  const grate = kit.buildDrainGrate();
+  for (const g of laneGrates(road)) {
+    const p = sidePoint(road, g.s, g.side, road.halfWidth - 0.3);
+    const m = grate.clone();
+    m.position.set(p.x, heights.heightAt(p.x, p.z) + 0.062, p.z);
+    m.rotation.y = Math.atan2(-p.tz, p.tx);
+    group.add(m);
   }
   if (road.footpath) {
     const s = sAlong(road, road.footpath.at[0], road.footpath.at[1]);

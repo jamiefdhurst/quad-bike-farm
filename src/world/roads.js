@@ -20,6 +20,7 @@
 //   pads               [{ x, z, radius }] round hard standing along it (the farm road's hardstanding)
 //   passing            { spacing, length, bay } for single track: a widening every `spacing` m (see passingPlaces)
 //   cuttings           [{ from, to }] stretches (m along) where the road may run in a cutting deeper than MAX_CUT
+//   ditch              { centre, half, depth }: a ditch cut along the low side of a road that runs across the land's fall (see ditchAt), `centre` m from its edge
 //   draw               'mesh' (laid over the ground) or 'ground' (painted into the ground, so mud and wet and snow lie on it)
 
 export const MAX_CUT = 1.5; // m a levelled road may sink into a bank before the cutting has to be flagged on the road
@@ -559,6 +560,32 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
   }
 
   /**
+   * Metres a roadside ditch is cut into the ground at (x, z): along the side of a road with a `ditch` that the land falls towards. The land falls east
+   * (layout.landform), so on a road running north to south it is the east side, and where the road turns east to west there is no low side and no ditch,
+   * fading out between a quarter and a half turn.
+   */
+  function ditchAt(x, z) {
+    let cut = 0;
+    for (const r of roads) {
+      if (!r.ditch) continue;
+      const reach = r.halfWidth + r.ditch.centre + r.ditch.half + 0.1;
+      const b = r.bounds;
+      if (x < b.minX - reach || x > b.maxX + reach || z < b.minZ - reach || z > b.maxZ + reach) continue;
+      const n = nearestOn(r, x, z, null, reach);
+      if (!n) continue;
+      const p = pointAt(r, n.s);
+      const side = (x - p.x) * p.tz - (z - p.z) * p.tx >= 0 ? 1 : -1; // (tz, -tx) is the side's normal, as laneHedges.js has it
+      const across = Math.abs(p.tz); // how far the road runs north to south: 1 is the land's fall straight across it
+      if (side * Math.sign(p.tz) < 0) continue; // the low side is the one whose normal points east (+x)
+      const lowness = smoothstep(0.35, 0.7, across);
+      if (lowness <= 0) continue;
+      const k = 1 - smoothstep(0, r.ditch.half, Math.abs(n.d - (r.halfWidth + r.ditch.centre)));
+      cut = Math.max(cut, r.ditch.depth * k * lowness);
+    }
+    return cut;
+  }
+
+  /**
    * Where a levelled road runs in a cutting: stretches where the land at the edge of the road stands more than MAX_CUT above the road's level,
    * checked every `every` m along: [{ road, from, to, depth }]. A cutting the road lists in `cuttings` is flagged (`flagged: true`) and fine.
    */
@@ -628,5 +655,5 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
     return out;
   }
 
-  return { roads, road, onRoad, tarmacAt, hardBoxes, stoneAt, surfaceAt, nearest, onCarriageway, pointsAlong, lanePath, passingPlaces: (id) => byId.get(id).bays, levelAt, cuttings, boundsOf, pointAt: (id, s) => pointAt(byId.get(id), s) };
+  return { roads, road, onRoad, tarmacAt, hardBoxes, stoneAt, surfaceAt, nearest, onCarriageway, pointsAlong, lanePath, passingPlaces: (id) => byId.get(id).bays, levelAt, ditchAt, cuttings, boundsOf, pointAt: (id, s) => pointAt(byId.get(id), s) };
 }

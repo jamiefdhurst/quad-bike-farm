@@ -167,6 +167,7 @@ export async function buildWorldModels() {
   add('world', 'signPost', signs.buildSignPost, (b) => b(signs.chevronTexture(), 0.9, 0.56));
   add('world', 'depthGauge', signs.buildDepthGauge, (b) => b(c.random));
   add('world', 'fingerpost', signs.buildFingerpost, (b) => b(c.random));
+  add('world', 'drainGrate', signs.buildDrainGrate);
   add('world', 'stile', signs.buildStile, (b) => b(c.random));
   // The neighbour's dairy (#569): the four pieces, each on the new farm's neighbour's own shape and yard ground, with the materials they share.
   const dairy = await import('../../src/world/dairyKit.js');

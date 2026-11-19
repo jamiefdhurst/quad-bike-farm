@@ -807,6 +807,7 @@ export const BACK_LANE_PLAN = {
   verge: 2.6,
   level: { shoulder: 2.5, lead: [2, 2], blend: 10, natural: true },
   cuttings: [[1555, 1640], [1730, 2175]], // m along: where the lane runs in a hollow way into the hill's shoulder (up to 2.6 m, as a sunken old road does), flagged so `cuttings()` accepts it
+  ditch: { centre: 1.9, half: 0.55, depth: 0.45 }, // along the low side, at the hedge's foot: m out from the tarmac's edge, half its width, how deep
   ford: { at: [10, 572], reach: 14, west: -40 }, // the stream runs on west from the pasture's hedge to the ford, and to plan x `west` (the moor's edge)
   hairpins: [[-30, 840], [60, 874]],
   footpath: { at: [2, 792], to: [-60, 760] }, // off the road's west side, up the hill: the stile in the hedge at `at`, the path on to `to` (plan metres)
@@ -821,6 +822,7 @@ export function backLaneLayout(B = BACK_LANE_PLAN) {
     junction: [{ end: 'start', onto: 'lane' }, { end: 'end', onto: 'lane' }], passing: { ...B.passing },
     markings: { centre: 'none', giveWay: true }, verge: B.verge, hedged: true, draw: 'mesh', lift: 0.05, level: { ...B.level }, camber: 0.04,
     cuttings: B.cuttings.map(([from, to]) => ({ from, to })),
+    ditch: { ...B.ditch },
     strip: { half: B.strip.half, rects: B.strip.rects.map(([x0, z0, x1, z1]) => [...fromPlan([x0, z0]), ...fromPlan([x1, z1])]) },
     texture: { patches: 6, bands: 9, crumble: 0.07 },
     gates: B.gates.map((g) => ({ id: g.id, farm: fromPlan(g.farm) })),

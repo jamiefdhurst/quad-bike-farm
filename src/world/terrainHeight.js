@@ -98,6 +98,7 @@ export function createTerrainHeight(layout, track) {
     // farm road, whose hardstanding at its end is flat.
     const laid = roads.levelAt(x, z, lie, natural);
     if (laid) h += (laid.level - h) * laid.k;
+    h -= roads.ditchAt(x, z); // the ditch along the low side of Back Lane (#686)
 
     // Flatten the yard around the barn.
     const yd = Math.hypot(x - yard.x, z - yard.z);

@@ -64,3 +64,16 @@ export function footpathSide(road) {
   const dz = road.footpath.to[1] - road.footpath.at[1];
   return dx * p.tz - dz * p.tx >= 0 ? 1 : -1;
 }
+
+/** The road drains: [{ s, side }] one about every 330 m, alternating sides, clear of the ends, the ford and the passing places. */
+export function laneGrates(road, every = 330) {
+  const ford = road.ford ? sAlong(road, road.ford.at[0], road.ford.at[1]) : -1e9;
+  const out = [];
+  let side = 1;
+  for (let s = every / 2; s < road.length - 30; s += every) {
+    if (Math.abs(s - ford) < 20 || road.bays.some((b) => Math.abs(s - b.s) < b.length)) continue;
+    out.push({ s, side });
+    side = -side;
+  }
+  return out;
+}

@@ -305,3 +305,35 @@ export function buildStile(random) {
   add(1.0, 0.07, 0.07, 0, 0.62, 0.0); // a middle rail so the gap under the top rail is closed
   return g;
 }
+
+/** A road drain: a cast-iron grating of slotted bars in a concrete frame, flush with the carriageway's edge, 0.6 by 0.4 m. Lies flat, its slots across +x. */
+export function buildDrainGrate() {
+  const g = new THREE.Group();
+  const grit = canvasTexture(64, 64, (ctx, w, h) => {
+    ctx.fillStyle = '#8f8d86';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 260; i++) {
+      ctx.fillStyle = i % 3 ? 'rgba(60,58,52,0.35)' : 'rgba(190,188,178,0.4)';
+      ctx.fillRect((i * 37) % w, (i * 53) % h, 2, 2);
+    }
+    ctx.fillStyle = 'rgba(70,64,50,0.3)'; // silt in the corners
+    ctx.fillRect(0, 0, 10, h);
+  });
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.04, 0.5), new THREE.MeshStandardMaterial({ map: grit, roughness: 1 }));
+  g.add(frame);
+  const iron = new THREE.MeshStandardMaterial({ color: 0x23262a, metalness: 0.5, roughness: 0.55 });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.02, 0.4), new THREE.MeshStandardMaterial({ color: 0x0b0c0d, roughness: 1 })); // the dark below the bars
+  base.position.y = 0.022;
+  g.add(base);
+  for (let i = 0; i < 7; i++) {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.025, 0.4), iron);
+    bar.position.set(-0.27 + i * 0.09, 0.04, 0);
+    g.add(bar);
+  }
+  for (const z of [-0.19, 0.19]) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.025, 0.03), iron);
+    rail.position.set(0, 0.04, z);
+    g.add(rail);
+  }
+  return g;
+}
