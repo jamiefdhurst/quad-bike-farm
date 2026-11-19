@@ -373,6 +373,9 @@ export function buildGirlsTab(d) {
   button(out, 'Swing the bypass gate', () => g.trafficHost.gate('bypass') ? g.trafficHost.toggle(g.trafficHost.gate('bypass')) : toast('Only the new farm has a gate beside its grid'));
   button(out, 'Send a vehicle along the lane', () => g.trafficHost.debugPass());
   button(out, 'Send a vehicle round Back Lane', () => g.trafficHost.debugBackLane() || toast('This farm has no Back Lane (try layout 2)'));
+  button(out, 'Send a vehicle down the A-road', () => g.trafficHost.debugARoad() || toast('This farm has no A-road (try layout 2)'));
+  button(out, 'Turn you round', () => g.trafficHost.turnRound.debugStart() || toast('Nothing turns you round here (try layout 2)'));
+  show(out, 'being turned round', () => g.trafficHost.turnRound.describe());
   button(out, 'Send the kids along the lane', () => g.trafficHost.debugKids() || toast('The kids are already out'));
   button(out, 'Send the post van', () => g.trafficHost.debugVisit('post') || toast('A visitor is already about'));
   button(out, 'Send a neighbour', () => g.trafficHost.debugVisit('neighbour') || toast('A visitor is already about'));

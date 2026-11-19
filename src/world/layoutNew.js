@@ -168,6 +168,9 @@ export const A_ROAD_PLAN = {
   layBy: { z: 640, length: 30, width: 3.2, side: 1 }, // on the east side (side 1 reads east on a road that runs south), with the bus stop flag at its south end
 };
 
+/** How far from the A-road's middle a side road's give-way line is, in metres: clear of its 3.65 m half width (#1022), so a line across it is crossed before the A-road's tarmac. */
+export const GIVE_WAY_AT = 5.2;
+
 /**
  * The village street's end at the A-road (#687): a stub of the street from the junction at (1292, 718), 60 m west, with a give-way line and the signs.
  * #688 moves the street across the lane and runs it to here, replacing the stub.
@@ -193,8 +196,8 @@ export const SOUTH_FINGERPOST_PLAN = { at: [911, 880], lines: ['Haddon 6', 'Back
  */
 export const TURN_ROUND_PLAN = {
   lines: [
-    { id: 'lane-north', road: 'lane', end: 'start', s: 3 },
-    { id: 'village', road: 'streetEnd', end: 'end', s: 3 },
+    { id: 'lane-north', road: 'lane', end: 'start', s: GIVE_WAY_AT },
+    { id: 'village', road: 'streetEnd', end: 'end', s: GIVE_WAY_AT },
     { id: 'lane-south', road: 'lane', end: 'end', s: 15, wide: true }, // z 955 on a lane that ends at 970
   ],
 };
@@ -848,7 +851,7 @@ export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
   const lanePoints = [...L.north, ...Array.from({ length: Math.floor((L.maxZ - 40) / L.southStep) }, (_, i) => [L.x, 40 + (i + 1) * L.southStep]), [L.x, L.maxZ]].map(fromPlan);
   const publicLane = { x: laneX, halfWidth: L.halfWidth, minZ: laneMin, maxZ: laneMax, open: { minZ: rideMin, maxZ: rideMax } };
   const roads = [
-    { id: 'lane', name: 'the lane', surface: 'tarmac', halfWidth: L.halfWidth, points: lanePoints, junction: { end: 'start', onto: 'aRoad' }, markings: { centre: 'dashed', giveWay: 'start' }, verge: 1, hedged: false, draw: 'mesh', lift: 0.076, camber: 0.03, bellmouth: { width: 2.2, length: 8 } },
+    { id: 'lane', name: 'the lane', surface: 'tarmac', halfWidth: L.halfWidth, points: lanePoints, junction: { end: 'start', onto: 'aRoad' }, markings: { centre: 'dashed', giveWay: 'start', giveWayAt: GIVE_WAY_AT }, verge: 1, hedged: false, draw: 'mesh', lift: 0.076, camber: 0.03, bellmouth: { width: 2.2, length: 8 } },
     {
       id: 'farm', name: 'the drive', surface: 'tarmac', halfWidth: D.halfWidth, points: [[fromX, z], [toX, z]], junction: { end: 'end', onto: 'lane' },
       markings: { centre: 'none' }, verge: D.verge, hedged: false, draw: 'ground', level: { shoulder: 3, lead: [2, 0] }, edge: 'gravel', patches: D.patches,
@@ -870,7 +873,7 @@ export function aRoadLayout(A = A_ROAD_PLAN) {
 export function streetStubLayout(S = STREET_STUB_PLAN) {
   return {
     id: 'streetEnd', name: 'the village street', surface: 'tarmac', halfWidth: S.halfWidth, points: [S.from, S.to].map(fromPlan), junction: { end: 'end', onto: 'aRoad' },
-    markings: { centre: 'none', giveWay: 'end' }, verge: 2, hedged: false, draw: 'mesh', lift: 0.076, camber: 0.03, bellmouth: { width: 2.2, length: 8 },
+    markings: { centre: 'none', giveWay: 'end', giveWayAt: GIVE_WAY_AT }, verge: 2, hedged: false, draw: 'mesh', lift: 0.076, camber: 0.03, bellmouth: { width: 2.2, length: 8 },
   };
 }
 
