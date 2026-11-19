@@ -1,6 +1,9 @@
 // The brook (layout.hill.brook): the hill pasture's stream carried on east, out under the pasture's east hedge and across the open country to
 // the neighbour's, where it runs past the south of her yard and goes under the public lane in a culvert, then wanders on to a spring in the
-// field beyond. The water flows west, downhill: the land rises all the way from the pasture's bottom (about -2 m) to the lane (about 6 m).
+// field beyond. On today's farm the water flows west, downhill: the land rises all the way from the pasture's bottom (about -2 m) to the lane
+// (about 6 m). On the new farm (#565) the land falls east, so the river runs east with it, in bends (`river.bends`), a width that varies
+// (`river.vary`), long pools with a riffle between them (`river.pools`) and drinking places (`river.drinks`), to the lane's verge with no culvert
+// (`brook.noCulvert`) where the village takes it on (#688).
 // Pure: its line, how deep it is cut, where the water stands and where the culvert is, for the terrain, the water's drawing, the map and
 // how wet a quad gets.
 //
@@ -37,6 +40,15 @@ export function createBrook(layout) {
   /** 0..1 how much of the crossing it is at x: the raised bed, with a short ramp down to the deep either side. */
   const crossK = (x) => (cross ? riverK(x) * (1 - smoothstep(cross.half, cross.half + cross.ramp, Math.abs(x - cross.x))) : 0);
   const mix = (a, c, k) => a + (c - a) * k;
+  const bends = river?.bends ?? null;
+  const vary = river?.vary ?? null;
+  const pools = river?.pools ?? null;
+  /** How far the long pools have deepened the channel at x: a pool fills along `length` m and the riffle drops it back, so the surface stays near level in each pool. */
+  const poolExtra = (x) => {
+    if (!pools || !cross) return 0;
+    const f = (((x - cross.x) / pools.length + 0.9) % 1 + 1) % 1; // the crossing sits mid-riffle
+    return riverK(x) * pools.extra * Math.min(f / 0.8, 1) * (1 - smoothstep(0.8, 1, f));
+  };
 
   /** The brook's middle line at x: smooth steps between its waypoints, with a little wander of its own once it is away from the hedge. */
   function zAt(x) {
@@ -46,36 +58,37 @@ export function createBrook(layout) {
     const [x0, z0] = pts[i];
     const [x1, z1] = pts[i + 1];
     const t = smoothstep(x0, x1, xc);
-    return z0 + (z1 - z0) * t + b.wander * Math.sin(xc * 0.11 + 0.7) * smoothstep(minX, minX + 25, xc);
+    const sway = bends ? bends.amp * Math.sin(xc * bends.k + bends.phase) * riverK(xc) : 0;
+    return z0 + (z1 - z0) * t + b.wander * Math.sin(xc * 0.11 + 0.7) * smoothstep(minX, minX + 25, xc) + sway;
   }
 
   // Where it goes under the lane: no channel across the tarmac and its verges (`culvert.half` either side of the lane's middle), so the road is
   // as level as it was, and the channel deepens back to full over `culvert.ease` m either side.
-  const culvert = lane ? { x: lane.x, half: lane.halfWidth + 2.2, ease: 4 } : null;
+  const culvert = lane && !b.noCulvert ? { x: lane.x, half: lane.halfWidth + 2.2, ease: 4 } : null;
   const sourceReach = b.source ?? 16; // m before its end it shallows out to a spring
 
   /** 0..1 how much of its full depth the channel has at x. */
   function fullness(x) {
     if (x < minX || x > maxX) return 0;
-    let k = 1 - smoothstep(maxX - sourceReach, maxX, x);
+    let k = sourceReach > 0 ? 1 - smoothstep(maxX - sourceReach, maxX, x) : 1;
     if (culvert) k *= smoothstep(0, culvert.ease, Math.abs(x - culvert.x) - culvert.half);
     return k;
   }
   // The river keeps the surface where it was and deepens the bed under it; the crossing raises the bed again until `cross.water` m stand over it.
-  const riverDepth = (x) => mix(depth0, river.depth, riverK(x));
-  const riverWater = (x) => mix(water0, river.water, riverK(x));
+  const riverDepth = (x) => mix(depth0, river.depth, riverK(x)) + poolExtra(x);
+  const riverWater = (x) => mix(water0, river.water, riverK(x)) + poolExtra(x);
   const depthAt = (x) => {
     if (!river) return depth0 * fullness(x);
     const d = riverDepth(x);
     return (cross ? mix(d, d - riverWater(x) + cross.water, crossK(x)) : d) * fullness(x);
   };
-  const halfAt = (x) => (half0 * (0.55 + 0.45 * fullness(x))) * (river ? mix(1, river.halfWidth / half0, riverK(x)) : 1);
+  const halfAt = (x) => (half0 * (0.55 + 0.45 * fullness(x))) * (river ? mix(1, river.halfWidth / half0, riverK(x)) : 1) * (vary ? 1 + vary.amount * Math.sin(x * vary.k + vary.phase) * riverK(x) : 1);
   /** How deep the water stands in the channel at x (before any rise after rain). */
   const waterDepthAt = (x) => (river ? (cross ? mix(riverWater(x), cross.water, crossK(x)) : riverWater(x)) : water0) * fullness(x);
 
   /** Metres the channel is cut into the ground at (x, z). */
   function cutAt(x, z) {
-    if (x < minX || x > maxX) return 0;
+    if (x <= minX || x > maxX) return 0; // at `minX` itself it is still the pasture's stream cut (hill.js), or the two cut there and leave a pit
     const half = halfAt(x);
     const r = Math.abs(z - zAt(x));
     if (r > half + 1.2) return 0;
@@ -111,13 +124,28 @@ export function createBrook(layout) {
     return k * (1 - smoothstep(halfAt(x) + 1, halfAt(x) + (river.level ?? 7), r));
   }
 
-  /** 0..1 how muddy the ground is at (x, z): the worn landing where the tyres come down to the crossing, on each bank. */
+  /** The poached drinking places (`river.drinks`: [x, side], side -1 north and 1 south): where the cattle come down to the water, a trodden patch of mud; and `river.worn` ([x, z, r]) the gateways'. */
+  const drinks = (river?.drinks ?? []).map(([x, side]) => ({ x, side }));
+  function drinkMud(x, z) {
+    let m = 0;
+    for (const d of drinks) {
+      if (Math.abs(x - d.x) > 7) continue;
+      const out = (z - zAt(d.x)) * d.side - halfAt(d.x);
+      if (out < -0.8 || out > 5) continue;
+      m = Math.max(m, 0.8 * (1 - smoothstep(2.5, 6.5, Math.hypot(x - d.x, out - 0.8))));
+    }
+    for (const [wx, wz, wr] of river?.worn ?? []) m = Math.max(m, 0.7 * (1 - smoothstep(wr * 0.4, wr, Math.hypot(x - wx, z - wz)))); // the trodden ground at the gateways
+    return m;
+  }
+
+  /** 0..1 how muddy the ground is at (x, z): the worn landing where the tyres come down to the crossing, on each bank, and the cattle's drinking places. */
   function mudAt(x, z) {
     if (!cross) return 0;
+    const drink = drinkMud(x, z);
     const across = clamp(1 - (Math.abs(x - cross.x) - cross.half) / 1.5, 0, 1);
-    if (across <= 0) return 0;
+    if (across <= 0) return drink;
     const out = Math.abs(z - zAt(x)) - halfAt(x);
-    return out < -0.5 || out > 3.5 ? 0 : clamp(1 - Math.abs(out - 1.2) / 2.4, 0, 1) * across;
+    return Math.max(drink, out < -0.5 || out > 3.5 ? 0 : clamp(1 - Math.abs(out - 1.2) / 2.4, 0, 1) * across);
   }
 
   /** The two mouths of the culvert (west, east): where the water goes in and comes out, facing along x. */
@@ -135,5 +163,5 @@ export function createBrook(layout) {
     return out;
   }
 
-  return { minX, maxX, zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt };
+  return { minX, maxX, zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt, drinks };
 }

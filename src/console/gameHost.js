@@ -120,7 +120,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       hollowrun: layout.woods ? { x: layout.woods.circuit.points[0][0], z: layout.woods.circuit.points[0][1] } : null,
       woodpile: layout.logYard?.scenery ? { x: layout.logYard.park.x, z: layout.logYard.park.z + 6 } : null, // the woodpile at the wood's gate, with its lean-to and block: the new farm's, #683
       veteranoak: layout.woods?.oak ? { x: layout.woods.oak.x, z: layout.woods.oak.z + 12 } : null, // the great oak in the glade by the pond, twelve metres south of it
-      river: layout.hill?.river ? { x: layout.hill.river.crossing.x, z: layout.hill.stream.z + layout.hill.river.halfWidth + 8 } : null,
+      river: layout.hill?.river ? { x: layout.hill.river.crossing.x, z: (layout.newFarm ? g.world.heights.brook.zAt(layout.hill.river.crossing.x) : layout.hill.stream.z) + layout.hill.river.halfWidth + 8 } : null,
       pit: g.world.fields.quarry ? (() => { const r = g.world.fields.quarry.roadPoints.find((p) => p.t > 0.02); return r ? { x: r.x, z: r.z } : null; })() : null,
       pitwall: g.world.fields.quarry ? { x: g.pitGates[0].x - g.pitGates[0].tx * 4, z: g.pitGates[0].z - g.pitGates[0].tz * 4 } : null,
       plant: (() => { const q = g.world.fields.quarry; const s = q && plantSite(q, ground); return s ? plantPoint(s, -5, 0) : null; })(), // the pit's screening plant, behind its hopper on the pad's line

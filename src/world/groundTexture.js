@@ -463,6 +463,26 @@ function* paintHill(c, fields) {
     }
     if (c.due(kz1 - kz0)) yield;
   }
+  // On the new farm the river carries the same silt on east from the stream's end, so the bank's dirt doesn't stop square where it starts (#565).
+  const brook = fields.brook;
+  if (brook?.river?.bends) {
+    const bx0 = p.maxX + 3;
+    const [bk0, bk1] = span(bx0, brook.maxX, ss, win.minX, win.maxX, 3);
+    for (let kx = bk0; kx < bk1; kx++) {
+      const x = bx0 + kx * ss;
+      const sz = brook.zAt(x);
+      const half = brook.halfAt(x);
+      const zlo = sz - half - 1;
+      const [kz0, kz1] = span(zlo, sz + half + 1, ss, win.minZ, win.maxZ, 1);
+      for (let kz = kz0; kz < kz1; kz++) {
+        const z = zlo + kz * ss;
+        const r = Math.abs(z - sz) / (half + 1);
+        const v = hash01(S.stream, Math.round(x / ss), Math.round(z / ss));
+        cell(x, z, ss, ss, `rgba(${50 + v * 20},${42 + v * 15},${30 + v * 10},${0.95 - r * 0.5})`);
+      }
+      if (c.due(kz1 - kz0)) yield;
+    }
+  }
   // Stones in the ford.
   if (fine) {
     for (let i = 0; i < 500; i++) {

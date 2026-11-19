@@ -42,10 +42,10 @@ describe('what the hill side has left behind', () => {
       expect(REPLACED, k).toContain(k);
     }
   });
-  it('drops the river and its meadow, which are #565\'s, and keeps the hut\'s anchor with the hut', () => {
-    expect(H.river).toBeUndefined();
-    expect(H.riverside).toBeUndefined();
-    expect(H.brook).toBeUndefined();
+  it('keeps the hut\'s anchor with the hut, and puts the river, the brook and Brook Meadow on at the end (#565)', () => {
+    expect(H.river).toBeDefined();
+    expect(H.riverside).toBeDefined();
+    expect(H.brook).toBeDefined();
     expect(two.anchors.hut).toEqual({ x: H.hut.x, z: H.hut.z, yaw: 0 });
   });
 });

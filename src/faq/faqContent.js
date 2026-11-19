@@ -436,7 +436,7 @@ export const FAQ_SECTIONS = [
         a: `Ride up the green lane, over the ford and up the hill pasture, then look for the gateway in its east hedge, just up from
           the stream at the east side. It opens onto the riverside meadow, with a wide, slow river across it. The only safe way over is the crossing, a strip of pale
           gravel between two lines of white posts with a red band, where the water is about 20 cm deep. Keep your wheels between the posts and
-          you can ride it at a walking pace or faster. A willow stands on the bank either side and a hurdle shuts the river in at the far end.`,
+          you can ride it at a walking pace or faster. A willow stands on the bank either side and a hurdle shuts the river in at the far end. On the new farm (?layout=2) the river is in Brook Meadow, the big open pasture south of Hay Meadow: through the gateway on the stone track's way south, at the meadow's north-west corner. It runs east with the land, wide and in bends, in long pools with a quicker riffle between them, and the crossing is the riffle at the meadow's head. Willows stand along both banks, the cattle's drinking places are poached bare, and a river gate of hung boards shuts the water in wherever it crosses a boundary.`,
         tip: 'The river is through the gateway in the pasture\'s east hedge. Cross it between the white posts.',
       },
       {
