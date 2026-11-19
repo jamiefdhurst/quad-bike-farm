@@ -223,3 +223,16 @@ describe('where the common is painted and where you are taken', () => {
     expect(moorPlaces(LAYOUT, roadNetwork(LAYOUT))).toEqual({}); // today's farm has none
   });
 });
+
+describe('big skies from the ridge', () => {
+  it('falls away east from the wall to the farm below, all the way down, 85 m or more', () => {
+    const z = fromPlan([0, 480])[1];
+    let last = Infinity;
+    for (let px = -330; px <= 900; px += 30) {
+      const h = heights.heightAt(fromPlan([px, 0])[0], z);
+      expect(h, `plan x ${px}`).toBeLessThan(last + 0.5); // never rises more than the rolling of the farm
+      last = Math.min(last, h + 0.5);
+    }
+    expect(heights.heightAt(fromPlan([-330, 0])[0], z) - heights.heightAt(fromPlan([900, 0])[0], z)).toBeGreaterThan(85);
+  });
+});

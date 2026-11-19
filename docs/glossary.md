@@ -20,6 +20,11 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | woodpile | The stack of split logs by the wood's gate, with the rounds lying beside it. The farm map names it, with how many logs are on the stack. On the new farm it also has a lean-to with an old stack under it and a chopping block, which are there with or without the tractor | wood pile |
 | Fern Trail | The narrow single-track path for the two-wheelers through the wood, marked by the blue-banded posts | Fern Path, Bike Trail, the trail loop |
 | way-marker post | The timber post with a blue band and an arrow beside the Fern Trail | waymarker, waymark post |
+| the Moor | The open common beyond Back Lane's west side, up to the ridge wall: heather, bracken, flushes, outcrops, peat banks, the spring and the trig pillar (the new farm) | the common, the fell, the hill moor |
+| ridge wall | The drystone wall along the top of the Moor, the end of the map, with the ladder stile in it | moor wall, top wall |
+| ladder stile | The timber stile over the ridge wall: climbing it turns you round | moor stile |
+| trig pillar | The white concrete pillar, a metre and a bit high with a brass plate on top, on the Moor's ridge | trig point, triangulation pillar |
+| moor gate | The gate in the hill pasture's wall onto Back Lane and the Moor | hill gate |
 | shepherd's hut | The little wheeled hut on top of the hill pasture, with the bunk, the stove and the kettle | shepherds hut, shepherd's shed, hill hut, hut on wheels |
 | river | The wide river across the riverside meadow, past the pasture's east hedge: the brook widened | big stream |
 | crossing | The marked shallows across the river, between the white posts | river ford |
