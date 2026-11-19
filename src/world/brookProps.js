@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { stoneTexture, worldBox } from './outbuildingProps.js';
 import { enableShadows } from './assets.js';
+import { mergeInto } from './villageProps.js';
 
 /** Builds the culvert's two headwalls and their colliders (or the village's bridge, on the new farm). `c` is the props context (props.js). */
 export function buildBrookCulvert(c) {
@@ -109,6 +110,7 @@ function buildLaneBridge(c) {
     door.rotation.y = hole.rotation.y;
     fixedBox(wall.position.x, wall.position.y, z, 0.35, h / 2, width / 2);
   }
-  enableShadows(group);
   scene.add(group);
+  mergeInto(group); // a mesh a material, not 28
+  enableShadows(group);
 }

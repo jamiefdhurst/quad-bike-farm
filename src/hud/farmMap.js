@@ -279,7 +279,8 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   }
   if (v) {
     // Nether Thornby across the lane: its name, and the three buildings you'd go to.
-    if (v.area) place(v.name, v.area.minX + 38, v.area.maxZ - 3);
+    if (layout.newFarm && v.green) place(v.name, v.green.x, v.green.z, -v.green.r - 3); // on the new farm the street is 325 m long: the name is over its green
+    else if (v.area) place(v.name, v.area.minX + 38, v.area.maxZ - 3);
     if (v.pub) place('Pub', v.pub.x, v.pub.z, -v.pub.halfZ - 3);
     if (v.shop) place('Shop', v.shop.x, v.shop.z, -v.shop.halfZ - 3);
     if (v.garage) place('Garage', v.garage.x, v.garage.z, v.garage.halfZ + 3);

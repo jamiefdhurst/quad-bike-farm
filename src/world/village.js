@@ -13,6 +13,43 @@ const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 /** The MOT bay in the garage's own frame: its middle `x` along the front and `front` m out from it, `len` along the wall and `wid` across, in m. */
 export const MOT_BAY = { x: -4.4, front: 2.4, len: 5.2, wid: 2.5 };
 
+/** The MOT bay's rectangle in the world, from the garage (which faces south at yaw 0 and north at yaw Math.PI): where the painted bay lies on the forecourt. */
+export function motBayRect(garage) {
+  const t = Math.cos(garage.yaw) > 0 ? 1 : -1;
+  const x = garage.x + t * MOT_BAY.x;
+  const z = garage.z + t * (garage.halfZ + MOT_BAY.front);
+  return { minX: x - MOT_BAY.len / 2, maxX: x + MOT_BAY.len / 2, minZ: z - MOT_BAY.wid / 2, maxZ: z + MOT_BAY.wid / 2 };
+}
+
+/**
+ * What is painted on the forecourt at each pump, in the world: a pale line across the far end of its bay (away from the garage, the way you drive in) and
+ * a line down each side of it from there to the pump, and a drain grating beyond. Each is { x, z, w, d } (a box `w` along x and `d` along z). None is on the
+ * side of the pumps the garage is on, so none can lie in the MOT bay.
+ */
+export function forecourtMarkings(garage, pumps) {
+  const t = Math.cos(garage.yaw) > 0 ? 1 : -1; // the way from the garage out over the forecourt: +z facing south, -z facing north
+  const out = { lines: [], drains: [] };
+  const pz = pumps.z;
+  for (const px of pumps.xs) {
+    out.lines.push({ x: px, z: pz + t * 2.6, w: 3.6, d: 0.1 });
+    for (const dx of [-1.8, 1.8]) out.lines.push({ x: px + dx, z: pz + t * 1.3, w: 0.1, d: 2.6 });
+    out.drains.push({ x: px, z: pz + t * 3.4, w: 1.0, d: 0.26 });
+  }
+  return out;
+}
+
+/**
+ * The rectangles of the village's ground that carry road mud (one grid each, world.js): on today's farm the village's whole area west of the lane; on the
+ * new farm, whose village is a 325 m street with a car park and a forecourt off it, the street's own bounds, the car park and the forecourt (a grid
+ * over the whole 325 by 226 m of it was 294,000 cells looped every frame, almost all grass, #1031). `roads` is the road network.
+ */
+export function villageMudBounds(layout, roads, margin) {
+  const v = layout.village;
+  const lane = layout.publicLane;
+  if (v.garage.forecourt) return [roads.boundsOf('street', margin), v.pub.carPark, v.garage.forecourt];
+  return [{ minX: v.area.minX, maxX: lane.x - lane.halfWidth - 1, minZ: v.area.minZ, maxZ: v.area.maxZ }];
+}
+
 export { smoothRoad };
 
 /** The marks on the village road: a broken white line down the middle (it is two-way) and one give-way line across the lane going out, not both.

@@ -231,7 +231,7 @@ export async function buildWorldModels() {
   // The new farm's lane crosses the brook on the village's bridge (#688): the same builder, on layout 2.
   const layoutTwo = layoutNew(LAYOUT, RAW_LAYOUT);
   const heightsTwo = createTerrainHeight(layoutTwo, new Track(layoutTwo.trackPoints));
-  add('world', 'laneBridge', buildBrookCulvert, (b, scene) => into(b, scene, { layout: layoutTwo, heights: heightsTwo }));
+  add('setPiece', 'laneBridge', buildBrookCulvert, (b, scene) => into(b, scene, { layout: layoutTwo, heights: heightsTwo }));
   const { buildElectricFence } = await import('../../src/world/electricFenceBuild.js');
   add('world', 'electricFence', buildElectricFence, (b, scene) => into(b, scene));
   const { buildJumpRamp } = await import('../../src/world/jumpRamp.js');
