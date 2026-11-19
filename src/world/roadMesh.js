@@ -355,7 +355,7 @@ export function buildRoadMesh({ scene, road, points, heights, texture }) {
     const [a, z] = b.side > 0 ? [-(road.halfWidth + b.bay), -road.halfWidth + 0.1] : [road.halfWidth - 0.1, road.halfWidth + b.bay]; // roadStrip's offsets run the other way round from a side's
     meshes.push(...roadStrip(ctx, a, z, lift + 0.004, body, { from, to, cols: 3 }));
   }
-  // Give-way lines (`markings.giveWay`: true for both ends, 'start' or 'end' for one): a double row of dashes across the road, 3 m in from the end, for
+  // Give-way lines (`markings.giveWay`: true for both ends, 'start' or 'end' for one): a double row of dashes across the road, `markings.giveWayAt` m (3 if none) in from the end, which a road joining a wider road sets to clear its edge, for
   // traffic leaving onto another road, and a white triangle painted in the way in (`giveWayMarks`).
   if (road.markings.giveWay) {
     const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...POLY });
@@ -380,6 +380,7 @@ export function reversed(samples) {
  */
 export function giveWayMarks(road, run) {
   const gw = road.markings.giveWay;
+  const gap = road.markings.giveWayAt ?? 3;
   const total = run[run.length - 1].s ?? run.length;
   const ends = gw === true ? ['start', 'end'] : [gw];
   const marks = [];
@@ -387,7 +388,7 @@ export function giveWayMarks(road, run) {
     const dir = end === 'start' ? 1 : -1; // along the road, away from the junction
     const at = (d) => (end === 'start' ? d : total - d); // s of a point `d` m from the junction end
     for (const off of [0, 0.45]) {
-      for (let a = -road.halfWidth + 0.2; a < road.halfWidth - 0.4; a += 0.6) marks.push({ s: at(3 + off), len: 0.3, a, b: a + 0.35 });
+      for (let a = -road.halfWidth + 0.2; a < road.halfWidth - 0.4; a += 0.6) marks.push({ s: at(gap + off), len: 0.3, a, b: a + 0.35 });
     }
     // The way in keeps left as it comes to the junction: that is the +offset side of a road whose junction is its start, the -offset side where it is its end.
     const lane = end === 'start' ? 1 : -1;
@@ -395,7 +396,7 @@ export function giveWayMarks(road, run) {
       const mid = lane * road.halfWidth * 0.5;
       for (let d = 0; d < 5; d += 0.35) {
         const w = 0.9 * (1 - d / 5); // half the width, narrowing to the point
-        marks.push({ s: at(6.5 + d + 0.175), len: 0.35, a: mid - w, b: mid + w });
+        marks.push({ s: at(gap + 3.5 + d + 0.175), len: 0.35, a: mid - w, b: mid + w });
       }
     }
   }

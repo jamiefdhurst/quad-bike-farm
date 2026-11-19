@@ -118,6 +118,15 @@ export class TurnRound {
     this.last = null;
   }
 
+  /**
+   * Where you are put when you are on the A-road by no line (across open ground, or from the bus stop): back up the nearest junction's road, on the farm
+   * side, on its left and facing home. With no junction line, back along your way.
+   */
+  fromRoad(pos) {
+    const near = this.lines.filter((l) => !l.wide).sort((a, b) => Math.hypot(a.point.x - pos.x, a.point.z - pos.z) - Math.hypot(b.point.x - pos.x, b.point.z - pos.z))[0];
+    return near ? putBackAlong(this.net, near, this.p.back) : backAlong(this.last ?? pos, pos, this.p.back);
+  }
+
   /** Starts a turn round now, as if `line` had been crossed from `from` to `to` (the debug panel's way in): false if one is already under way. */
   force(line, from, to) {
     if (this.phase !== 'idle') return false;
@@ -138,7 +147,7 @@ export class TurnRound {
       if (!hit && this.net.onRoad(this.aRoad, pos.x, pos.z)) hit = { id: 'road', road: null };
       if (!hit) return { fade: 0, move: null, line: null };
       this.line = hit;
-      this.pending = hit.road ? putBack(this.net, hit, from, pos, p.back) : backAlong(from, pos, p.back);
+      this.pending = hit.road ? putBack(this.net, hit, from, pos, p.back) : this.fromRoad(pos);
       this.phase = 'out';
       this.t = 0;
       return { fade: 0, move: null, line: hit, started: true };

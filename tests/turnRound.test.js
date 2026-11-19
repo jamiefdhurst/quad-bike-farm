@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, fromPlan } from '../src/world/layoutNew.js';
 import { roadNetwork } from '../src/world/roads.js';
+import { GIVE_WAY_AT } from '../src/world/layoutNew.js';
 import { turnRoundLines, crossed, putBack, TurnRound, DEFAULT_TURN_ROUND_PARAMS as P, headingOf } from '../src/world/turnRound.js';
 
 const two = layoutNew(LAYOUT, RAW_LAYOUT);
@@ -15,7 +16,9 @@ describe('the lines you are turned round at (#687)', () => {
   it('has one at each junction\'s give-way line and one across the lane at plan z 955', () => {
     expect(lines.map((l) => l.id)).toEqual(['lane-north', 'village', 'lane-south']);
     expect(byId['lane-north'].point.x).toBeGreaterThan(fromPlan([1280, 0])[0]); // 3 m in from the A-road
-    expect(dist(byId['lane-north'].point, lane.samples[0])).toBeCloseTo(3, 0);
+    expect(dist(byId['lane-north'].point, lane.samples[0])).toBeCloseTo(GIVE_WAY_AT, 0);
+    expect(net.onRoad('aRoad', byId['lane-north'].point.x, byId['lane-north'].point.z)).toBe(false); // short of the A-road's tarmac (#1022)
+    expect(net.onRoad('aRoad', byId.village.point.x, byId.village.point.z)).toBe(false);
     expect(byId['lane-south'].point.z).toBeCloseTo(fromPlan([0, 955])[1], 1);
     expect(byId['lane-south'].wide).toBe(true);
     expect(byId['lane-south'].a.x).toBeLessThan(two.ground.minX); // all the way across the ground, so there is no way round it
@@ -43,8 +46,8 @@ describe('where you are put back, and which way you face', () => {
     expect(at.along).toBe(true);
     expect(net.onRoad('lane', at.x, at.z)).toBe(true);
     const sNow = lane.samples.reduce((best, p) => (dist(p, at) < dist(best, at) ? p : best)).s;
-    expect(sNow).toBeGreaterThan(3 + 25 - 1.5);
-    expect(sNow).toBeLessThan(3 + 25 + 1.5);
+    expect(sNow).toBeGreaterThan(l.s + 25 - 1.5);
+    expect(sNow).toBeLessThan(l.s + 25 + 1.5);
     const h = heading(at.yaw);
     const tangent = net.pointAt('lane', sNow);
     expect(h.x * tangent.tx + h.z * tangent.tz).toBeGreaterThan(0.99); // along the lane, away from its end on the A-road
@@ -132,5 +135,34 @@ describe('the fade and the move', () => {
     expect(m).toBeTruthy();
     expect(m.line.id).toBe('road');
     expect(m.move.x).toBeLessThan(p.x - 15);
+  });
+
+  it('fires a junction\'s own line, not the A-road catch, coming diagonally across the bellmouth or down the stub (#1022)', () => {
+    for (const id of ['lane-north', 'village']) {
+      const l = byId[id];
+      const road = net.road(l.road);
+      const p = net.pointAt(l.road, l.sign > 0 ? l.s + 6.13 : l.s - 6.13); // 6 m short of the line, on the farm side
+      const q = net.pointAt(l.road, l.sign > 0 ? l.s - 2.07 : l.s + 2.07); // 2 m past it, towards the A-road
+      const side = (road.halfWidth - 0.3) * l.sign; // coming in off to one side of the road, diagonally
+      const path = (i) => ({ x: p.x + (q.x - p.x) * Math.min(i / 40, 1) + p.tz * side * Math.min(i / 40, 1), z: p.z + (q.z - p.z) * Math.min(i / 40, 1) - p.tx * side * Math.min(i / 40, 1) });
+      const { log } = run(path, 0.02, 1.5);
+      const first = log.find((e) => e.started);
+      expect(first?.line.id, id).toBe(id);
+      const m = log.find((e) => e.move).move;
+      expect(m.along, id).toBe(true);
+      expect(net.onRoad(l.road, m.x, m.z), id).toBe(true); // on the road it came along, not out on the verge
+    }
+  });
+
+  it('puts you back up a junction\'s road, on the farm side, from the A-road reached from open ground (the bus stop)', () => {
+    const a = net.road('aRoad');
+    const east = a.samples.find((q) => q.z > two.ground.minZ + 700);
+    const path = (i) => ({ x: east.x + 8 - Math.min(i * 0.4, 12), z: east.z }); // from the east verge, west onto the tarmac
+    const { log } = run(path, 0.05, 3);
+    const m = log.find((e) => e.move);
+    expect(m.line.id).toBe('road');
+    expect(m.move.along).toBe(true);
+    expect(m.move.x).toBeLessThan(east.x - 3); // on the farm side of the A-road, not thrown on across it
+    expect(['lane', 'streetEnd'].some((id) => net.onRoad(id, m.move.x, m.move.z))).toBe(true);
   });
 });
