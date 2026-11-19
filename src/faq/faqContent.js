@@ -449,6 +449,16 @@ export const FAQ_SECTIONS = [
         a: `On a single track two vehicles can only pass at a passing place. The one with a passing place on its left, nearest, pulls in and waits until the other has gone by, and one with no bay either side creeps past. If you stop on the road, they wait for you. Pull into a bay yourself, on your left, and they carry on.`,
       },
       {
+        q: 'What is the A-road, and why does the screen go black when I pull out onto it?',
+        a: `On the bigger farm (<code>?layout=2</code>) the farm's public lane bends round in the north and runs out to the A-road, the big road down the valley, a wide two-lane road with a white dashed centre line and cat's eyes. The village street meets it too. Nothing is walled off: each road simply carries on into the distance. But there is nothing for you in town today, so cross a junction's give-way line onto the A-road, or the lane's southern line before it leaves the farm's land, and the picture fades to black and puts you, on foot or on whatever you are riding, about 25 m back up the road you came along, facing home, stopped. A girl with you says why. On your own you get a note: "Nothing needs doing in town today."`,
+        tip: 'Pull out onto the A-road and you are turned round, facing home. A girl with you says why.',
+      },
+      {
+        q: 'Who uses the lane, and what is by it?',
+        a: `The lane is a proper two-lane road, wider than Back Lane, with a dashed centre line, and other people use it: vans, cars and the odd tractor go by, and the post van and the neighbour turn in from the A-road to call at the farm. Along it there are the pair of cottages on its east side, field gateways in the neighbour's hedge, a yellow grit bin on the bend and, at the end of our drive, a postbox on its post and a bin stand. At each junction with the A-road there is a give-way sign, a fingerpost (Kelby 4 miles up the A-road, Ashwell 3 miles down it, and Haddon 6 miles on down the lane), a grit bin or a heap of grit, and the national speed limit sign across the way. The A-road has its own traffic: cars, vans and lorries going by at 50 to 60 mph. They are only for show and never come onto the farm.`,
+        tip: 'The A-road is for show: its cars and lorries go by at 50 to 60 mph and never come onto the farm.',
+      },
+      {
         q: 'Can I take Back Lane\'s ford flat out?',
         a: `You can, but it is the stream running over the road on a concrete bed, 0.18 m deep when it is dry and deeper after rain (the depth post by it has the marks). Rush it when the stream is up and the engine can drown, as in the river. Take it slowly.`,
         tip: 'Back Lane\'s ford gets deeper after rain. Read the depth post, then go slowly.',
