@@ -493,6 +493,9 @@ export function buildGameTree(g, host) {
     now: text(() => g.trafficHost.describe(), 'what is on the lane and who is visiting'),
     pass: flag(() => false, (v) => v && g.trafficHost.debugPass(), 'set to true: a vehicle goes along the lane now'),
     backLane: flag(() => false, (v) => v && g.trafficHost.debugBackLane(), 'set to true: a vehicle sets off round Back Lane now (the new farm, layout 2)'),
+    aRoad: flag(() => false, (v) => v && g.trafficHost.debugARoad(), 'set to true: a car, van or lorry sets off down the A-road now (the new farm, layout 2)'),
+    turnRound: text(() => g.trafficHost.turnRound.describe(), 'being turned round at the A-road\'s junctions and the lane\'s southern line: the lines, and the last time it happened'),
+    turnYouRound: flag(() => false, (v) => v && g.trafficHost.turnRound.debugStart(), 'set to true: the fade to black, and you are put 25 m back up the lane from the nearest line, as if you had crossed it (the new farm, layout 2)'),
     kids: flag(() => false, (v) => v && g.trafficHost.debugKids(), 'set to true: the neighbours\' kids ride along the lane now (they stop at the big gate to watch if you or a girl are near it)'),
     post: flag(() => false, (v) => v && g.trafficHost.debugVisit('post'), 'set to true: the post van comes in at the big gate'),
     neighbour: flag(() => false, (v) => v && g.trafficHost.debugVisit('neighbour'), 'set to true: a neighbour calls'),
@@ -500,7 +503,7 @@ export function buildGameTree(g, host) {
     gridGate: flag(() => !!g.trafficHost.gate('grid')?.isOpen, (v) => g.trafficHost.gate('grid') && g.trafficHost.setGridGate(!!v), 'the gate across the road by the cattle grid: true is open (today\'s farm only)'),
     bigGate: flag(() => !!g.trafficHost.gate('road')?.isOpen, (v) => g.trafficHost.gate('road')?.set(!!v), 'the big gate in the east hedge: true is open (today\'s farm only)'),
     bypassGate: flag(() => !!g.trafficHost.gate('bypass')?.isOpen, (v) => g.trafficHost.gate('bypass')?.set(!!v), 'the field gate beside the drive\'s cattle grid: true is open (the new farm only)'),
-  }), 'the public lane, the visitors and the two gates');
+  }), 'the public lane, the A-road, the visitors and the two gates');
   const road = group(() => ({
     now: text(() => g.trafficHost.road.describe(), 'the tuner and her rolling road: the next road day, where she is and what is on the sheet'),
     price: num(() => g.trafficHost.road.params.price, (v) => (g.trafficHost.road.params.price = Math.round(v)), 0, 100, '£', 'what a run costs from the tin'),

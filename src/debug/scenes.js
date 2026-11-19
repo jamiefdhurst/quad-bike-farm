@@ -27,6 +27,7 @@ export const SCENES = [
   { id: 'snow', label: 'Set up snow falling at midday, in the yard', lines: ['weather snow', 'weather.time 12', 'tp me to yard'] },
   { id: 'flock', label: 'Put the flock on its half of the hill just past the stream, and you looking at it', lines: ['weather fair', 'weather.time 10'], setup: 'flock' },
   { id: 'backlane', label: 'Set up daylight for Back Lane (the new farm, ?layout=2): then `tp me to backlane`, `backlaneford`, `hairpins` or `footpath` to look at the hedges, verge, signs, passing places and ford', lines: ['weather fair', 'weather.time 12'] },
+  { id: 'aroad', label: 'Set up daylight for the A-road and the lane (the new farm, ?layout=2) with a vehicle on the A-road: then `tp me to junction`, `villagejunction`, `lanesouth`, `cottages`, `postbox` or `busstop`, and walk or ride over a give-way line to be turned round (or `lane.turnYouRound on`)', lines: ['weather fair', 'weather.time 12', 'lane.aRoad on', 'tp me to junction'] },
   { id: 'terraces', label: 'Put you on the top tread of the sheep field, above its two banks', lines: ['weather fair', 'weather.time 11', 'tp me to terraces'] },
   { id: 'flask', label: 'Put Amy by the flask on the rock at the top of the hill, with you beside it', lines: [], setup: 'flask' },
   { id: 'lunch', label: 'Set up midday with both girls hungry, and you in the yard, so they fetch their bags and have lunch', lines: ['weather fair', 'weather.time 12.3', 'tp me to yard', 'girl.amy.needs.hunger 0.9', 'girl.jess.needs.hunger 0.9'] },

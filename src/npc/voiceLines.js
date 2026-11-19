@@ -53,6 +53,7 @@ import { AMY_ADDITIVE_LINES } from './additiveLines.js';
 import { AMY_DUSK_LINES } from './duskLines.js';
 import { AMY_FORECAST_LINES } from './forecastLines.js';
 import { AMY_CAR_LINES } from './carLines.js';
+import { AMY_TURN_ROUND_LINES } from './turnRoundLines.js';
 import { AMY_RADIO_LINES } from './radioLines.js';
 import { AMY_DAY_LINES } from './dayLines.js';
 import { AMY_WORK_LIGHT_LINES } from './workLightLines.js';
@@ -1592,6 +1593,7 @@ export const VOICE_LINES = {
   ...AMY_VEHICLEGO_LINES,
   // Her own car, and you borrowing it (carLines.js).
   ...AMY_CAR_LINES,
+  ...AMY_TURN_ROUND_LINES,
   // The radio in a vehicle she is sat in (radioLines.js).
   ...AMY_RADIO_LINES,
   ...AMY_DAY_LINES,

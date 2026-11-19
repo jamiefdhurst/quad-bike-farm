@@ -48,6 +48,7 @@ import { JESS_ADDITIVE_LINES } from './additiveLines.js';
 import { JESS_DUSK_LINES } from './duskLines.js';
 import { JESS_FORECAST_LINES } from './forecastLines.js';
 import { JESS_CAR_LINES } from './carLines.js';
+import { JESS_TURN_ROUND_LINES } from './turnRoundLines.js';
 import { JESS_RADIO_LINES } from './radioLines.js';
 import { JESS_DAY_LINES } from './dayLines.js';
 import { JESS_WORK_LIGHT_LINES } from './workLightLines.js';
@@ -541,6 +542,7 @@ export const JESS_LINES = {
   ...JESS_TRACTORGO_LINES,
   ...JESS_VEHICLEGO_LINES,
   ...JESS_CAR_LINES,
+  ...JESS_TURN_ROUND_LINES,
   ...JESS_RADIO_LINES,
   ...JESS_DAY_LINES,
   ...JESS_TRACTORRUNAWAY_LINES,

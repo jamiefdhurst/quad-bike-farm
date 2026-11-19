@@ -14,6 +14,7 @@ import { BUILT_KINDS } from '../world/fieldLandmarks.js';
 import { neighbourGate } from '../world/neighbourFarm.js';
 import { barnFrame, barnLocal } from '../world/barn.js';
 import { sAlong } from '../world/laneSigns.js';
+import { layByOf } from '../world/aRoadFittings.js';
 
 const DEG = 180 / Math.PI;
 const norm = (deg) => ((deg % 360) + 360) % 360;
@@ -83,6 +84,32 @@ export function backLanePlaces(layout, roads) {
   };
 }
 
+/**
+ * The A-road's and the lane's places (#687), on the new farm: `junction` 14 m up the lane from the give-way line at the A-road, `villagejunction` the same on the
+ * village street's end, `lanesouth` 30 m before the lane's southern line, `cottages` in front of the pair on the lane, `postbox` at the end of our drive and
+ * `busstop` by the A-road's bus bay. Each on the road or its verge, so you stand where you can see the thing. None of them is on the A-road itself, which turns
+ * you round. Today's farm has none.
+ */
+export function aRoadPlaces(layout, roads) {
+  const lane = roads?.road('lane');
+  const stub = roads?.road('streetEnd');
+  if (!lane || !layout.laneFittings) return {};
+  const on = (id, s) => {
+    const p = roads.pointAt(id, s);
+    return { x: p.x, z: p.z };
+  };
+  const F = layout.laneFittings;
+  const by = layout.aRoadFittings?.layBy && roads.road('aRoad') ? layByOf(roads.road('aRoad'), layout.aRoadFittings.layBy) : null;
+  return {
+    junction: on('lane', 17),
+    villagejunction: stub ? on('streetEnd', stub.length - 17) : null,
+    lanesouth: on('lane', lane.length - 45),
+    cottages: { x: F.cottages.minX + 3, z: (F.cottages.minZ + F.cottages.maxZ) / 2 },
+    postbox: { x: F.postbox.x - 2, z: F.postbox.z },
+    busstop: by ? { x: by.flag.x, z: by.flag.z - 4 } : null,
+  };
+}
+
 /** @param {import('../game.js').Game} g @param {{ copy: (text: string) => void }} io */
 export function createHost(g, { copy = () => {} } = {}) {
   const unitOf = (id) => g.units.find((u) => u.id === id);
@@ -109,6 +136,7 @@ export function createHost(g, { copy = () => {} } = {}) {
   const places = () => {
     const farmstead = farmsteadPlaces(layout);
     const backLane = backLanePlaces(layout, g.world.roads);
+    const aRoad = aRoadPlaces(layout, g.world.roads);
     const spots = {
       start: { x: layout.spawn.player.x, z: layout.spawn.player.z },
       yard: layout.yard,
@@ -127,6 +155,12 @@ export function createHost(g, { copy = () => {} } = {}) {
       backlaneford: backLane.backlaneford, // 12 m before its ford
       hairpins: backLane.hairpins, // between its two hairpins
       footpath: backLane.footpath, // at the fingerpost of the footpath to Upper Thornby
+      junction: aRoad.junction, // up the lane from its give-way line at the A-road: the new farm's (#687)
+      villagejunction: aRoad.villagejunction, // the same on the village street's end
+      lanesouth: aRoad.lanesouth, // 30 m before the lane's southern line, where you are turned round
+      cottages: aRoad.cottages, // in front of the pair of cottages on the lane
+      postbox: aRoad.postbox, // the postbox and bin stand at the end of our drive
+      busstop: aRoad.busstop, // the bus bay on the A-road and its bus stop flag
       stackyard: farmstead.stackyard, // the new farm's: in front of the Dutch barn
       orchard: farmstead.orchard, // the hens' run and the pig's ark
       garden: farmstead.garden, // the garden plot's gate
