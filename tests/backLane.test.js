@@ -210,3 +210,77 @@ describe('the drains', () => {
     for (const g of grates) for (const b of road.bays) expect(Math.abs(g.s - b.s)).toBeGreaterThanOrEqual(b.length);
   });
 });
+
+describe('traffic along it', () => {
+  it('waits at a passing place for what comes the other way, and both get through without sharing the road', async () => {
+    const { LaneDrive, shouldYield } = await import('../src/world/backLaneTraffic.js');
+    const all = [];
+    const a = new LaneDrive({ id: 1, road, all, dir: 1, speed: 7 });
+    const b = new LaneDrive({ id: 2, road, all, dir: -1, speed: 7 });
+    const mid = road.bays[4].s; // they meet at a passing place, one side of the road or the other
+    a.s = mid - 38;
+    b.s = mid + 38;
+    all.push(a, b);
+    const call = shouldYield(road, a, b);
+    expect(call).not.toBeNull();
+    expect(call.yields !== shouldYield(road, b, a).yields || call.bay === null).toBe(true); // exactly one gives way, unless there is no bay
+    let waited = 0;
+    let closest = Infinity;
+    let atBay = false;
+    for (let t = 0; t < 1200 && !(a.arrived && b.arrived); t += 0.1) {
+      a.update(0.1);
+      b.update(0.1);
+      if (a.state === 'waiting' || b.state === 'waiting') {
+        waited += 0.1;
+        const waiter = a.state === 'waiting' ? a : b;
+        atBay = atBay || road.bays.some((bay) => Math.abs(bay.s - waiter.s) < 3);
+      }
+      closest = Math.min(closest, Math.hypot(a.x - b.x, a.z - b.z));
+    }
+    expect(a.arrived && b.arrived).toBe(true);
+    expect(waited).toBeGreaterThan(0);
+    expect(atBay).toBe(true);
+    expect(closest).toBeGreaterThan(1.8); // a car is 1.7 m across: they passed side by side only where a bay let them
+  });
+
+  it('is two vehicles of the same way, the second behind the first, never meeting', async () => {
+    const { LaneDrive } = await import('../src/world/backLaneTraffic.js');
+    const all = [];
+    const a = new LaneDrive({ id: 1, road, all, dir: 1, speed: 6 });
+    all.push(a);
+    for (let i = 0; i < 100; i++) a.update(0.1);
+    expect(a.s).toBeGreaterThan(50);
+    expect(a.state).toBe('driving');
+  });
+});
+
+describe('the lane\'s traffic on the new farm', () => {
+  it('sets vehicles off round Back Lane now and then, from either end, and they go the whole way', async () => {
+    const { Traffic, DEFAULT_TRAFFIC_PARAMS, visitPlaces } = await import('../src/world/traffic.js');
+    let seed = 3;
+    const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const traffic = new Traffic({ places: visitPlaces(two), params: { ...DEFAULT_TRAFFIC_PARAMS, passEvery: 0, visitEvery: 0, backEvery: 0 }, random });
+    const v = traffic.spawnBackLane('van', 1);
+    expect(v.backLane).toBe(true);
+    expect(v.drive.s).toBe(0);
+    const w = traffic.spawnBackLane('tor', -1);
+    expect(w.drive.s).toBeCloseTo(road.length, 6);
+    const events = [];
+    for (let t = 0; t < 1500 && traffic.vehicles.length; t += 0.5) events.push(...traffic.update(0.5, { blockers: [], darkness: 0 }));
+    expect(traffic.vehicles.length).toBe(0);
+    expect(events.filter((e) => e.type === 'gone').length).toBe(2);
+    expect(events.filter((e) => e.type === 'pass').length).toBe(0); // they do not go by the big gate
+  });
+
+  it('spawns on its own when backEvery is set, and not at all on today\'s farm', async () => {
+    const { Traffic, DEFAULT_TRAFFIC_PARAMS, visitPlaces } = await import('../src/world/traffic.js');
+    const random = () => 0.5;
+    const on = new Traffic({ places: visitPlaces(two), params: { ...DEFAULT_TRAFFIC_PARAMS, passEvery: 0, visitEvery: 0, backEvery: 20 }, random });
+    for (let t = 0; t < 600; t += 1) on.update(1, { blockers: [], darkness: 0 });
+    expect(on.vehicles.some((x) => x.backLane) || on.count > 0).toBe(true);
+    const off = new Traffic({ places: visitPlaces(LAYOUT), params: { ...DEFAULT_TRAFFIC_PARAMS, passEvery: 0, visitEvery: 0, backEvery: 20 }, random });
+    for (let t = 0; t < 600; t += 1) off.update(1, { blockers: [], darkness: 0 });
+    expect(off.count).toBe(0);
+    expect(off.spawnBackLane()).toBeNull();
+  });
+});

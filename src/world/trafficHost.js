@@ -290,6 +290,13 @@ export class TrafficHost {
     return true;
   }
 
+  /** Sets a vehicle off round Back Lane (the new farm's), from either end; false on a farm without it. */
+  debugBackLane(kind, dir) {
+    const v = this.traffic.spawnBackLane(kind, dir);
+    if (v) this.lastEvent = `a ${v.kind} is on Back Lane`;
+    return !!v;
+  }
+
   debugVisit(kind, leaveOpen) {
     const v = this.traffic.startVisit(kind, leaveOpen);
     if (v) this.lastEvent = `${v.kind} is coming`;
@@ -305,7 +312,8 @@ export class TrafficHost {
   describe() {
     const t = this.traffic;
     const v = t.visit;
-    const lane = t.vehicles.map((x) => x.kind).join(', ') || 'empty';
+    const lane = t.vehicles.filter((x) => !x.backLane).map((x) => x.kind).join(', ') || 'empty';
+    const back = t.backRoad ? `; Back Lane ${t.vehicles.filter((x) => x.backLane).map((x) => `${x.kind}${x.drive.state === 'waiting' ? ' (waiting in a passing place)' : ''}`).join(', ') || 'empty'}` : '';
     const step = v?.current ? v.current.type : '';
     return `lane ${lane}${this.kids.group ? `; kids ${this.kids.group.phase}` : ''}; ${v ? `${v.kind} visit (${step})` : 'no visitor'}; last: ${this.lastEvent}`;
   }
