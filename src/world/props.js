@@ -18,6 +18,7 @@ import { buildOutbuildings } from './outbuildingProps.js';
 import { buildNeighbourFarm } from './neighbourFarmProps.js';
 import { buildNeighbourLand } from './neighbourLandProps.js';
 import { buildBackLaneProps } from './backLaneProps.js';
+import { buildUpperThornby } from './upperThornby.js';
 import { buildVillage } from './villageProps.js';
 import { inVillage } from './village.js';
 import { buildBrookCulvert } from './brookProps.js';
@@ -73,6 +74,7 @@ export function buildProps(ctx) {
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
   const neighbourFarm = buildNeighbourFarm(c);
+  buildUpperThornby(c); // the far hamlet on the hill to the west, seen from Back Lane (#686, layout 2)
   const backLane = buildBackLaneProps(c); // Back Lane's hedges and gates (#686, layout 2)
   const neighbourLand = buildNeighbourLand(c); // her fields across the lane, at far-ground detail (#569)
   const village = buildVillage({ ...c, laneTexture });

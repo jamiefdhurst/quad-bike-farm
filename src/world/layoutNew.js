@@ -811,6 +811,7 @@ export const BACK_LANE_PLAN = {
   ford: { at: [10, 572], reach: 14, west: -40 }, // the stream runs on west from the pasture's hedge to the ford, and to plan x `west` (the moor's edge)
   hairpins: [[-30, 840], [60, 874]],
   footpath: { at: [2, 792], to: [-60, 760] }, // off the road's west side, up the hill: the stile in the hedge at `at`, the path on to `to` (plan metres)
+  upperThornby: [-215, 745], // the hamlet the footpath climbs to, far to the west on the hill (plan metres): seen from the lane, never reached
   // The gates in the lane's own hedge, each across from the farm's gateway onto the strip between (plan metres), with the lane's gravel track to it.
   gates: [{ id: 'north', farm: [380, 30] }, { id: 'wood', farm: [38, 130] }, { id: 'far', farm: [40, 440] }, { id: 'hill', farm: [36, 640] }],
 };
@@ -1282,6 +1283,7 @@ export function layoutNew(today, raw) {
   return {
     ...farmstead, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
+    upperThornby: { at: fromPlan(BACK_LANE_PLAN.upperThornby) },
     ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track, backLaneLayout()],
     woods: wood.woods, logYard: wood.logYard, hill, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
