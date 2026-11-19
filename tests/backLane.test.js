@@ -284,3 +284,15 @@ describe('the lane\'s traffic on the new farm', () => {
     expect(off.spawnBackLane()).toBeNull();
   });
 });
+
+describe('the places you can go to', () => {
+  it('has Back Lane\'s on the tarmac, and none on today\'s farm', async () => {
+    const { backLanePlaces } = await import('../src/console/gameHost.js');
+    const places = backLanePlaces(two, net);
+    for (const k of ['backlane', 'backlaneford', 'hairpins', 'footpath']) {
+      expect(places[k], k).toBeTruthy();
+      expect(net.onCarriageway(places[k].x, places[k].z) ?? net.tarmacAt(places[k].x, places[k].z), k).toBeTruthy();
+    }
+    expect(backLanePlaces(LAYOUT, roadNetwork(LAYOUT))).toEqual({});
+  });
+});

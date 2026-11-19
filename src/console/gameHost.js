@@ -13,6 +13,7 @@ import { labelSpot } from '../hud/farmMap.js';
 import { BUILT_KINDS } from '../world/fieldLandmarks.js';
 import { neighbourGate } from '../world/neighbourFarm.js';
 import { barnFrame, barnLocal } from '../world/barn.js';
+import { sAlong } from '../world/laneSigns.js';
 
 const DEG = 180 / Math.PI;
 const norm = (deg) => ((deg % 360) + 360) % 360;
@@ -60,6 +61,28 @@ export function farmsteadPlaces(layout) {
   };
 }
 
+/**
+ * Back Lane's places (#686), on the new farm: `backlane` 40 m in from the lane at the north end, `backlaneford` 12 m before the ford, `hairpins` on the road
+ * between them, and `footpath` at the fingerpost. The road's own point, so you stand on the tarmac. Today's farm has none.
+ */
+export function backLanePlaces(layout, roads) {
+  const road = roads?.road('backLane');
+  if (!road) return {};
+  const onRoad = (s) => {
+    const p = roads.pointAt('backLane', s);
+    return { x: p.x, z: p.z };
+  };
+  const hairpin = road.hairpins?.[0] ? sAlong(road, road.hairpins[0][0], road.hairpins[0][1]) : null;
+  const ford = road.ford ? sAlong(road, road.ford.at[0], road.ford.at[1]) : null;
+  const path = road.footpath ? sAlong(road, road.footpath.at[0], road.footpath.at[1]) : null;
+  return {
+    backlane: onRoad(40),
+    backlaneford: ford === null ? null : onRoad(ford - 12),
+    hairpins: hairpin === null ? null : onRoad((hairpin + (road.hairpins[1] ? sAlong(road, road.hairpins[1][0], road.hairpins[1][1]) : hairpin)) / 2),
+    footpath: path === null ? null : onRoad(path - 6),
+  };
+}
+
 /** @param {import('../game.js').Game} g @param {{ copy: (text: string) => void }} io */
 export function createHost(g, { copy = () => {} } = {}) {
   const unitOf = (id) => g.units.find((u) => u.id === id);
@@ -85,6 +108,7 @@ export function createHost(g, { copy = () => {} } = {}) {
   const layout = g.world.layout;
   const places = () => {
     const farmstead = farmsteadPlaces(layout);
+    const backLane = backLanePlaces(layout, g.world.roads);
     const spots = {
       start: { x: layout.spawn.player.x, z: layout.spawn.player.z },
       yard: layout.yard,
@@ -99,6 +123,10 @@ export function createHost(g, { copy = () => {} } = {}) {
       fieldshed: layout.fieldShed,
       muckheap: layout.muckHeap,
       harrows: layout.harrows, // the chain harrows, left at the harrow field's west edge
+      backlane: backLane.backlane, // Back Lane, 40 m in from the lane at the north end: the new farm's
+      backlaneford: backLane.backlaneford, // 12 m before its ford
+      hairpins: backLane.hairpins, // between its two hairpins
+      footpath: backLane.footpath, // at the fingerpost of the footpath to Upper Thornby
       stackyard: farmstead.stackyard, // the new farm's: in front of the Dutch barn
       orchard: farmstead.orchard, // the hens' run and the pig's ark
       garden: farmstead.garden, // the garden plot's gate

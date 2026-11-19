@@ -285,3 +285,14 @@ describe('counting the draws (#597)', () => {
     });
   });
 });
+
+describe('a spot only the new farm has (#686)', () => {
+  it('is not missing on a farm that has none, and is held to its budget where it is measured', async () => {
+    const { NEW_FARM_ONLY } = await import('../tools/frameBudget.mjs');
+    expect(NEW_FARM_ONLY).toContain('hairpins');
+    const none = check({ spawn: { calls: 1, triangles: 1 } }, { spawn: BUDGETS.spawn, hairpins: BUDGETS.hairpins }, []);
+    expect(none.missing).toEqual([]);
+    const over = check({ hairpins: { calls: BUDGETS.hairpins.calls + 1, triangles: 1 } }, { hairpins: BUDGETS.hairpins }, []);
+    expect(over.failures.length).toBe(1);
+  });
+});

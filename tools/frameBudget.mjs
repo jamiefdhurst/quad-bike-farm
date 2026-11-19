@@ -33,6 +33,9 @@ export const KNOWN_OVER = [];
 /** The spots `measureInPage` knows how to find by itself; any other name in `BUDGETS` has to be in `layout.budgetSpots` (a test checks). */
 export const BUILT_IN_SPOTS = ['spawn', 'yard', 'village', 'wood', 'hilltop'];
 
+/** Spots only the new farm (`?layout=2`) has: today's farm, which CI measures, notes their absence and carries on, instead of failing for them (#692 makes layout 2 the one measured). */
+export const NEW_FARM_ONLY = ['hairpins'];
+
 export const SPOTS = Object.keys(BUDGETS).filter((k) => k !== 'movers');
 
 /** The spots (and what is measured at each) as the page sees them. Runs in the browser, so it is self-contained. Returns { [spot]: { calls, triangles } } or { error }.
@@ -229,7 +232,10 @@ export function check(measured, budgets = BUDGETS, knownOver = KNOWN_OVER) {
   const missing = [];
   for (const [spot, budget] of Object.entries(budgets)) {
     const m = measured[spot];
-    if (!m) { missing.push(spot); continue; }
+    if (!m) {
+      if (!NEW_FARM_ONLY.includes(spot)) missing.push(spot);
+      continue;
+    }
     const over = [];
     if (m.calls > budget.calls) over.push(`${Math.round(m.calls)} calls > ${budget.calls}`);
     if (m.triangles > budget.triangles) over.push(`${Math.round(m.triangles)} triangles > ${budget.triangles}`);
