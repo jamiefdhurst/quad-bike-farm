@@ -194,7 +194,7 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random 
 
 function buildGate(c) {
   const { layout } = c;
-  return buildFiveBarGate(c, { id: 'south', gate: layout.gate, z: layout.fieldHalf, dir: 1, gap: c.fields.gates.south });
+  return buildFiveBarGate(c, { id: 'south', gate: layout.gate, z: layout.gate.z ?? layout.fieldHalf, dir: 1, gap: c.fields.gates.south });
 }
 
 /** The gate in the grass field's north hedge onto the wood (layout.woods.gate): the south gate's twin, swung back into the field and tied. */

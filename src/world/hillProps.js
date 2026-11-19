@@ -149,7 +149,8 @@ function buildWood({ scene, models, layout, heights, fields, physics, RAPIER, ra
   const hill = fields.hill;
   const wood = layout.hill.wood;
   const spots = [];
-  for (let tries = 0; spots.length < 34 && tries < 2000; tries++) {
+  const trees = wood.trees ?? 34;
+  for (let tries = 0; spots.length < trees && tries < trees * 60; tries++) {
     const x = wood.minX + random() * (wood.maxX - wood.minX);
     const z = wood.minZ + random() * (wood.maxZ - wood.minZ);
     // A ragged edge: fewer towards the pasture side.
@@ -159,8 +160,11 @@ function buildWood({ scene, models, layout, heights, fields, physics, RAPIER, ra
   }
   // Hedgerow oaks along the pasture's far and side hedges.
   const p = hill.pasture;
-  for (const x of [-48, -6, 22]) spots.push([x + (random() - 0.5) * 6, p.maxZ + 0.5, 1.3 + random() * 0.5]);
-  spots.push([p.maxX + 0.5, 168 + random() * 8, 1.5], [p.maxX + 0.5, 190, 1.2]);
+  if (layout.hill.hedgeOaks) spots.push(...layout.hill.hedgeOaks); // the new farm names them, along its irregular edge
+  else {
+    for (const x of [-48, -6, 22]) spots.push([x + (random() - 0.5) * 6, p.maxZ + 0.5, 1.3 + random() * 0.5]);
+    spots.push([p.maxX + 0.5, 168 + random() * 8, 1.5], [p.maxX + 0.5, 190, 1.2]);
+  }
 
   const mats = [[], []];
   for (const [x, z, s] of spots) {
@@ -174,7 +178,8 @@ function buildWood({ scene, models, layout, heights, fields, physics, RAPIER, ra
   // Hazel and holly under the oaks: the farm's bush, smaller.
   const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
   const bushes = [];
-  for (let tries = 0; bushes.length < 60 && tries < 600; tries++) {
+  const bushCount = wood.bushes ?? 60;
+  for (let tries = 0; bushes.length < bushCount && tries < bushCount * 10; tries++) {
     const x = wood.minX + random() * (wood.maxX - wood.minX) * 0.8;
     const z = wood.minZ + random() * (wood.maxZ - wood.minZ);
     const s = (1.4 + random() * 1.4) / bushSize.y;
@@ -311,18 +316,18 @@ function buildTussocks({ scene, heights, fields, random, drawDistance }) {
   const matrices = [];
   const colors = [];
   // Where they grow and how thick (the fields beside the lane are grazed a little closer).
-  const areas = [{ r: hill.laneRect, k: 1, lane: true }, { r: hill.pasture, k: 1 }];
-  if (hill.west) areas.push({ r: hill.west, k: 0.5 }, { r: hill.east, k: 0.5 });
+  const areas = [{ r: hill.laneRect, k: 1, lane: true, in: (x, z) => hill.inLane(x, z) }, { r: hill.pasture, k: 1, in: (x, z) => hill.inPasture(x, z) }];
+  if (hill.west) areas.push({ r: hill.west, k: 0.5, in: (x, z) => hill.inWest(x, z) }, { r: hill.east, k: 0.5, in: (x, z) => hill.inEast(x, z) });
   const weights = areas.map((a) => (a.r.maxX - a.r.minX) * (a.r.maxZ - a.r.minZ) * a.k);
   const total = weights.reduce((a, b) => a + b, 0);
   for (let tries = 0; matrices.length < count && tries < count * 4; tries++) {
     let pick = random() * total;
     let i = 0;
     while (i < areas.length - 1 && pick > weights[i]) pick -= weights[i++];
-    const { r, lane: inLane } = areas[i];
+    const { r, lane: inLane, in: inside } = areas[i];
     const x = r.minX + random() * (r.maxX - r.minX);
     const z = r.minZ + random() * (r.maxZ - r.minZ);
-    if (heights.puddleAt(x, z) > 0 || heights.mudAt(x, z) > 0.2 || hill.inWood(x, z, 2) || hill.nearHut(x, z)) continue;
+    if (!inside(x, z) || heights.puddleAt(x, z) > 0 || heights.mudAt(x, z) > 0.2 || hill.inWood(x, z, 2) || hill.nearHut(x, z)) continue;
     // In the lane, on the banks and up the middle between the wheel tracks, not in them.
     if (inLane) {
       const dx = Math.abs(x - hill.lane.x);

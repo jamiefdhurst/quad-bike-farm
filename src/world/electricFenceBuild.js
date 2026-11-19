@@ -39,15 +39,16 @@ function signTexture() {
 export function buildElectricFence({ scene, layout, heights }) {
   const fence = createElectricFence(layout);
   if (!fence) return;
-  const ground = (x) => heights.heightAt(x, fence.z);
+  const ground = (p) => heights.heightAt(p.x, p.z);
   const group = new THREE.Group();
   group.name = 'electric fence';
 
   // Posts: thin white plastic stakes, and stouter timber ones either side of the gap.
   const posts = [];
-  const post = (x, h, w) => {
+  const post = (s, h, w) => {
+    const p = fence.pointAt(s);
     const g = new THREE.BoxGeometry(w, h, w);
-    g.translate(x, ground(x) + h / 2 - 0.1, fence.z);
+    g.translate(p.x, ground(p) + h / 2 - 0.1, p.z);
     posts.push(g);
   };
   for (const [a, b] of fence.spans()) {
@@ -69,10 +70,10 @@ export function buildElectricFence({ scene, layout, heights }) {
       const base = pos.length / 3;
       const steps = n * 4;
       for (let i = 0; i <= steps; i++) {
-        const x = a + ((b - a) * i) / steps;
+        const p = fence.pointAt(a + ((b - a) * i) / steps);
         const phase = (i % 4) / 4;
-        const y = ground(x) + h - SAG * 4 * phase * (1 - phase);
-        pos.push(x, y - 0.012, fence.z, x, y + 0.012, fence.z);
+        const y = ground(p) + h - SAG * 4 * phase * (1 - phase);
+        pos.push(p.x, y - 0.012, p.z, p.x, y + 0.012, p.z);
       }
       for (let i = 0; i < steps; i++) index.push(base + i * 2, base + i * 2 + 1, base + i * 2 + 2, base + i * 2 + 2, base + i * 2 + 1, base + i * 2 + 3);
     }
@@ -85,19 +86,20 @@ export function buildElectricFence({ scene, layout, heights }) {
   group.add(tape);
 
   // The warning sign on the west stout post, facing both ways.
-  const sx = stout[0];
+  const sp = fence.pointAt(stout[0]);
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.3), new THREE.MeshStandardMaterial({ map: signTexture(), roughness: 0.7, side: THREE.DoubleSide }));
-  sign.position.set(sx, ground(sx) + 1.15, fence.z);
+  sign.position.set(sp.x, ground(sp) + 1.15, sp.z);
   group.add(sign);
 
   // The energiser: a grey box on a post at the east end, a red light on it.
-  const ex = fence.toX;
+  const [ex, ez] = fence.to;
+  const eg = ground({ x: ex, z: ez });
   const box = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.26, 0.16), new THREE.MeshStandardMaterial({ color: 0x3d4a3a, roughness: 0.6 }));
-  box.position.set(ex, ground(ex) + 1.05, fence.z - 0.1);
+  box.position.set(ex, eg + 1.05, ez - 0.1);
   group.add(box);
-  post(ex, 1.25, 0.1);
+  post(fence.length, 1.25, 0.1);
   const led = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), new THREE.MeshBasicMaterial({ color: 0x400000 }));
-  led.position.set(ex + 0.1, ground(ex) + 1.1, fence.z - 0.19);
+  led.position.set(ex + 0.1, eg + 1.1, ez - 0.19);
   led.name = 'fence led';
   group.add(led);
   const stake = new THREE.Mesh(mergeGeometries([posts[posts.length - 1]]), stakes.material);

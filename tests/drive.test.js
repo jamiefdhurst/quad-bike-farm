@@ -51,7 +51,7 @@ describe('the drive on the new farm', () => {
       if (x < road.toX - 25) for (const side of [-1, 1]) expect(fields.hedgeDistance(x, road.z + side * 8), `hedge x ${x}`).toBeGreaterThan(1.5);
     }
     const nones = newFields().boundaries.filter((b) => b.kind === 'none').map((b) => b.between.slice().sort().join('|')).sort();
-    expect(nones).toEqual(['drive|farmstead', 'drive|lanefield', 'drive|longpiece']);
+    expect(nones).toEqual(['drive|farmstead', 'drive|lanefield', 'drive|longpiece', 'hill|lane']); // and the green lane's open end, over the ford
   });
 
   it('is levelled across, so a wheel either side of it stands at the same height', () => {

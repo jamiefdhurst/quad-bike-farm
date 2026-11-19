@@ -1,5 +1,5 @@
 // The electric fence across the hill pasture (layout.hill.fence): a line of poles with two strands of tape and a gap you can ride through,
-// an energiser on the east hedge that ticks. Touch a strand with a quad's nose or tail, or on foot, and it gives a jolt, with a cooldown so
+// an energiser on the hedge at its end that ticks. Touch a strand with a quad's nose or tail, or on foot, and it gives a jolt, with a cooldown so
 // one brush is one zap. Pure logic, no Three.js: where the wire is, who is touching it, and the tick; the posts and tape are built in
 // world/electricFenceBuild.js, the jolt and the yelps are in game.js, the sound in audio/fenceAudio.js.
 
@@ -26,17 +26,40 @@ export const FENCE_PARAM_RANGES = {
 };
 
 /**
- * The fence as a line across the pasture, or null if the layout has none: along x at `z` from `fromX` to `toX` (the energiser is at
- * `toX`, on the hedge), with a gap `half` m either side of `gap.at` where the wire is down. `heights` are the strands' heights.
+ * The fence as a line across the pasture, or null if the layout has none. Written either along x at `z` from `fromX` to `toX` with its gap at x
+ * `gap.at` (today's farm), or as a line from `from` to `to` ([x, z] each) with the gap `gap.at` m along it from `from` (the new farm's runs north
+ * to south). Either way the energiser is at the end, on the hedge, the gap is `half` m either side of its middle where the wire is down, and
+ * `heights` are the strands' heights. Everything below is in metres along the line from its first end.
  */
 export function createElectricFence(layout) {
   const f = layout.hill?.fence;
   if (!f) return null;
-  const fence = { ...f, heights: f.heights ?? [0.55, 0.95] };
+  const from = f.from ?? [f.fromX, f.z];
+  const to = f.to ?? [f.toX, f.z];
+  const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+  const dir = { x: (to[0] - from[0]) / length, z: (to[1] - from[1]) / length };
+  const gap = { at: f.from ? f.gap.at : f.gap.at - f.fromX, half: f.gap.half };
+  const fence = { ...f, from, to, length, dir, gap, heights: f.heights ?? [0.55, 0.95] };
+  /** The point `s` m along the line. */
+  fence.pointAt = (s) => ({ x: from[0] + dir.x * s, z: from[1] + dir.z * s });
+  /** Where (x, z) is against the line: `s` m along it and `off` m to one side. */
+  fence.along = (x, z) => ({ s: (x - from[0]) * dir.x + (z - from[1]) * dir.z, off: (z - from[1]) * dir.x - (x - from[0]) * dir.z });
   /** Whether (x, z) is within `reach` m of a strand that is up (not in the gap, and between the ends). */
-  fence.near = (x, z, reach) => Math.abs(z - f.z) <= reach && x >= f.fromX && x <= f.toX && Math.abs(x - f.gap.at) > f.gap.half;
-  /** The runs of wire either side of the gap, as [fromX, toX] pairs. */
-  fence.spans = () => [[f.fromX, f.gap.at - f.gap.half], [f.gap.at + f.gap.half, f.toX]];
+  fence.near = (x, z, reach) => {
+    const { s, off } = fence.along(x, z);
+    return Math.abs(off) <= reach && s >= 0 && s <= length && Math.abs(s - gap.at) > gap.half;
+  };
+  /**
+   * Whether (x, z) is on half `half` of the pasture (0 or 1) and `margin` m clear of the wire: the flock keeps to the half it is given, and never
+   * crosses the line, the gap included. Half 0 is the left of the line looking from its first end (the west half of a fence that runs north to south
+   * from its north end, the south side of one that runs east), half 1 the right.
+   */
+  fence.onHalf = (x, z, half, margin = 1.5) => {
+    const { off } = fence.along(x, z);
+    return Math.abs(off) > margin && (off >= 0 ? 0 : 1) === half;
+  };
+  /** The runs of wire either side of the gap, as [from, to] pairs in metres along the line. */
+  fence.spans = () => [[0, gap.at - gap.half], [gap.at + gap.half, length]];
   return fence;
 }
 

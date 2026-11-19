@@ -25,7 +25,7 @@ export const SCENES = [
   { id: 'generator', label: 'Put you at the barn generator with a full tank, in daylight, to start it, listen to it run and see how long it lasts', lines: ['weather fair', 'weather.time 12', 'generator.fuel 5', 'tp me to generator'] },
   { id: 'boards', label: 'Put you at the barn with ads pinned on the small ads board, in daylight, to look at the boards on its back wall', lines: ['weather.time 12', 'farm.ads on', 'tp me to barn'] },
   { id: 'snow', label: 'Set up snow falling at midday, in the yard', lines: ['weather snow', 'weather.time 12', 'tp me to yard'] },
-  { id: 'flock', label: 'Put the flock at the end of the lane, south of the gate, and you looking at it', lines: ['weather fair', 'weather.time 10'], setup: 'flock' },
+  { id: 'flock', label: 'Put the flock on the hill just past the stream, by the climb\'s first cones, and you looking at it', lines: ['weather fair', 'weather.time 10'], setup: 'flock' },
   { id: 'terraces', label: 'Put you on the top tread of the sheep field, above its two banks', lines: ['weather fair', 'weather.time 11', 'tp me to terraces'] },
   { id: 'flask', label: 'Put Amy by the flask on the rock at the top of the hill, with you beside it', lines: [], setup: 'flask' },
   { id: 'lunch', label: 'Set up midday with both girls hungry, and you in the yard, so they fetch their bags and have lunch', lines: ['weather fair', 'weather.time 12.3', 'tp me to yard', 'girl.amy.needs.hunger 0.9', 'girl.jess.needs.hunger 0.9'] },

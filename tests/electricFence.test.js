@@ -20,18 +20,21 @@ describe('the electric fence', () => {
     const f = createElectricFence(LAYOUT);
     const pasture = LAYOUT.hill.pasture;
     expect(f).toBeTruthy();
-    expect(f.fromX).toBeGreaterThanOrEqual(pasture.minX);
-    expect(f.toX).toBeLessThanOrEqual(pasture.maxX);
-    expect(f.z).toBeGreaterThan(pasture.minZ);
-    expect(f.z).toBeLessThan(pasture.maxZ);
+    for (const [x, z] of [f.from, f.to]) {
+      expect(x).toBeGreaterThanOrEqual(pasture.minX);
+      expect(x).toBeLessThanOrEqual(pasture.maxX);
+      expect(z).toBeGreaterThan(pasture.minZ);
+      expect(z).toBeLessThan(pasture.maxZ);
+    }
     // The climb's line crosses the fence's z inside the gap.
     const pts = LAYOUT.hill.climb.points;
+    const gapAt = f.pointAt(f.gap.at);
     for (let i = 0; i < pts.length - 1; i++) {
       const [x0, z0] = pts[i];
       const [x1, z1] = pts[i + 1];
-      if (z0 < f.z && z1 >= f.z) {
-        const x = x0 + ((x1 - x0) * (f.z - z0)) / (z1 - z0);
-        expect(Math.abs(x - f.gap.at)).toBeLessThan(f.gap.half);
+      if (z0 < f.from[1] && z1 >= f.from[1]) {
+        const x = x0 + ((x1 - x0) * (f.from[1] - z0)) / (z1 - z0);
+        expect(Math.abs(x - gapAt.x)).toBeLessThan(f.gap.half);
       }
     }
   });
@@ -42,7 +45,18 @@ describe('the electric fence', () => {
     expect(f.near(0, 101, 0.5)).toBe(false);
     expect(f.near(10, 100, 0.5)).toBe(false); // in the gap
     expect(f.near(-60, 100, 0.5)).toBe(false); // past the end
-    expect(f.spans()).toEqual([[-50, 7], [13, 30]]);
+    expect(f.spans()).toEqual([[0, 57], [63, 80]]); // metres along the line from its first end
+  });
+
+  it('can run north to south, as the new farm\'s does: the gap and the ends are measured along it', () => {
+    const f = createElectricFence({ hill: { fence: { from: [-288, 210], to: [-288, 480], gap: { at: 18, half: 3.5 } } } });
+    expect(f.length).toBe(270);
+    expect(f.near(-288.3, 300, 0.5)).toBe(true);
+    expect(f.near(-285, 300, 0.5)).toBe(false);
+    expect(f.near(-288, 228, 0.5)).toBe(false); // in the gap, 18 m from the first end
+    expect(f.near(-288, 490, 0.5)).toBe(false); // past the end
+    expect(f.pointAt(18)).toEqual({ x: -288, z: 228 });
+    expect(f.spans()).toEqual([[0, 14.5], [21.5, 270]]);
   });
 
   it('zaps a quad that touches it, once, then not again until the cooldown is over', () => {

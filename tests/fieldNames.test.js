@@ -62,8 +62,8 @@ describe('the list of names', () => {
 });
 
 describe('what is named', () => {
-  it('is every field but the wood, the pit, Home Ground, the farmstead and the drive, which keep their names', () => {
-    expect(FIXED_NAMES.sort()).toEqual(['drive', 'farmstead', 'home', 'pit', 'wood']);
+  it('is every field but the wood, the pit, Home Ground, the farmstead, the drive and the green lane, which keep their names', () => {
+    expect(FIXED_NAMES.sort()).toEqual(['drive', 'farmstead', 'home', 'lane', 'pit', 'wood']);
     expect(dealable.map((f) => f.name).sort()).toEqual(['brook', 'far', 'hay', 'hill', 'lanefield', 'ley', 'longpiece', 'north', 'sheep', 'south', 'top', 'wet']);
     for (const f of two.fields.filter((x) => x.fixed)) expect(namedLayout(two, 5).fields.find((x) => x.name === f.name).label).toBe(FIELDS_PLAN.find((x) => x.name === f.name).label);
   });

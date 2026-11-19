@@ -212,7 +212,7 @@ export function* paintGround(plan, c) {
     wear(yard.x, yard.z, yard.radius * 0.8, 'rgba(105,92,66,0.85)');
     wear(yard.x - 4, yard.z + 2, yard.radius * 0.45, 'rgba(92,80,58,0.7)');
   }
-  wear(gate.x, fieldHalf - 3, 7, 'rgba(90,72,48,0.8)');
+  wear(gate.x, (gate.z ?? fieldHalf) - 3, 7, 'rgba(90,72,48,0.8)');
   if (layout.road && !layout.newFarm) wear(fieldHalf - 4, layout.road.z, 6, 'rgba(90,72,48,0.6)'); // the quads cut the corner onto the road
   paintOutbuildings(c, plan, wear); // its own draws, leaving the rest of the ground as it was
   yield;
@@ -377,6 +377,7 @@ function* paintHill(c, fields) {
       for (let kz = az0; kz < az1; kz++) {
         const x = p.minX + kx;
         const z = p.minZ + kz;
+        if (p.points && !hill.inPasture(x + 0.5, z + 0.5)) continue; // the new farm's pasture has an irregular edge: its rectangle's corners are other fields
         const v = hash01(S.hillGrass, kx, kz);
         cell(x, z, 1, 1, `rgba(${130 + v * 40},${128 + v * 30},${60 + v * 20},0.22)`);
         const b = hill.brackenAt(x + 0.5, z + 0.5);
@@ -395,7 +396,7 @@ function* paintHill(c, fields) {
         const rx = (0.2 + random() * 0.3) * s;
         const rz = (0.15 + random() * 0.2) * s;
         const turn = random() * Math.PI;
-        if (!c.inWin(x, z, 1)) continue;
+        if (!c.inWin(x, z, 1) || (p.points && !hill.inPasture(x, z))) continue;
         const [px, pz] = c.toPx(x, z);
         ctx.fillStyle = dark ? 'rgba(45,60,25,0.35)' : 'rgba(170,165,95,0.3)';
         ctx.beginPath();
@@ -509,7 +510,7 @@ function* paintPaddocks(c, hill) {
       const rx = (0.2 + random() * 0.3) * s;
       const rz = (0.15 + random() * 0.2) * s;
       const turn = random() * Math.PI;
-      if (!c.inWin(x, z, 1)) continue;
+      if (!c.inWin(x, z, 1) || (r.points && !(ri === 0 ? hill.inWest(x, z) : hill.inEast(x, z)))) continue;
       const [px, pz] = c.toPx(x, z);
       ctx.fillStyle = dark ? 'rgba(45,62,28,0.32)' : 'rgba(165,160,95,0.28)';
       ctx.beginPath();
@@ -542,6 +543,7 @@ function paddockCells(c, hill, r, ri, cell) {
     for (let kz = kz0; kz < kz1; kz++) {
       const x = r.minX + kx;
       const z = r.minZ + kz;
+      if (r.points && !(ri === 0 ? hill.inWest(x + 0.5, z + 0.5) : hill.inEast(x + 0.5, z + 0.5))) continue; // the new farm's fields have outlines: the rectangle's corners are others
       const v = hash01(S.paddock + ri, kx, kz);
       cell(x, z, 1, 1, `rgba(${110 + v * 30},${124 + v * 30},${56 + v * 20},0.2)`);
       // Mud in soft daubs, so the edge of a track or a shore is not a row of squares.

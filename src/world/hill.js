@@ -8,6 +8,10 @@ const smoothstep = (a, b, x) => {
 };
 const inRect = (r, x, z, margin = 0) => x >= r.minX + margin && x <= r.maxX - margin && z >= r.minZ + margin && z <= r.maxZ - margin;
 const outside = (r, x, z) => Math.hypot(Math.max(r.minX - x, 0, x - r.maxX), Math.max(r.minZ - z, 0, z - r.maxZ));
+/** Whether (x, z) is in a field: its rectangle, or its own outline (`points`, the new farm's) when it has one, `margin` m in from its edge (out for a negative). */
+const within = (r, x, z, margin = 0) => (r.points ? pointInPolygon(r.points, x, z, margin, r.edges) : inRect(r, x, z, margin));
+
+import { pointInPolygon, outsidePolygon, polygonEdges } from './polygons.js';
 
 /** Null when the layout has no hill. */
 export function createHill(layout) {
@@ -18,15 +22,20 @@ export function createHill(layout) {
   /** Metres the water stands above its usual after rain (world/streamLevel.js sets it); the channel's cut and the bed don't change. */
   let rise = 0;
   const farm = layout.farm ?? { minX: -layout.fieldHalf, maxX: layout.fieldHalf, minZ: -layout.fieldHalf, maxZ: layout.fieldHalf };
-  const top = layout.fieldHalf; // the grass field's south hedge, where the gate is
+  const top = lane.top ?? layout.fieldHalf; // where the lane starts: the grass field's south hedge, where the gate is (the new farm says its own)
+  // The new farm's fields are outlines, not rectangles: each keeps its bounding rectangle for the ground's weight and gets its edges once.
+  for (const r of [pasture, hill.paddocks?.west?.rect, hill.paddocks?.east?.rect]) if (r?.points && !r.edges) r.edges = polygonEdges(r.points);
   const laneRect = { minX: lane.x - lane.hedgeOff, maxX: lane.x + lane.hedgeOff, minZ: top, maxZ: lane.toZ };
 
   // The two fields either side of the lane, through gateways in its hedges: the wet meadow to the west, the sheep field to the east.
   const pad = hill.paddocks ?? null;
-  const west = pad ? { minX: pad.west.minX, maxX: laneRect.minX, minZ: top, maxZ: lane.toZ } : null;
-  const east = pad ? { minX: laneRect.maxX, maxX: pad.east.maxX, minZ: top, maxZ: lane.toZ } : null;
+  // On the new farm the meadow is not beside the lane: it says its own `rect`.
+  const west = pad ? pad.west.rect ?? { minX: pad.west.minX, maxX: laneRect.minX, minZ: top, maxZ: lane.toZ } : null;
+  const east = pad ? pad.east.rect ?? { minX: laneRect.maxX, maxX: pad.east.maxX, minZ: top, maxZ: lane.toZ } : null;
   // `side` is which way out of the lane the gateway faces (-1 west, 1 east); `x` is the hedge line it is in.
-  const gates = pad
+  const gates = hill.gates
+    ? hill.gates.map((g) => ({ side: g.side, x: g.side < 0 ? laneRect.minX : laneRect.maxX, z: g.z, half: g.width / 2 }))
+    : pad
     ? [
         { side: -1, x: laneRect.minX, z: pad.west.gate.z, half: pad.west.gate.width / 2 },
         { side: 1, x: laneRect.maxX, z: pad.east.gate.z, half: pad.east.gate.width / 2 },
@@ -69,7 +78,8 @@ export function createHill(layout) {
   const farEdge = (x) => streamZ(x) + halfAt(x);
 
   // The banks wander a few metres up and down the hill with x, and spread out towards the east end, the gentle way up.
-  const shift = (x) => 3 * Math.sin(x * 0.045 + 0.8);
+  // The bigger hill adds a second, slower wander (`slowWander` m, a swing every 140 m) so a bank does not repeat itself along 390 m.
+  const shift = (x) => 3 * Math.sin(x * 0.045 + 0.8) + (hill.slowWander ?? 0) * Math.sin((x * 2 * Math.PI) / 140 + 0.3);
   const spread = (x) => 1 + (hill.gentle.factor - 1) * smoothstep(hill.gentle.fromX, hill.gentle.toX, x);
   function bankSum(x, d) {
     let h = 0;
@@ -86,6 +96,8 @@ export function createHill(layout) {
     const d = z - farEdge(x);
     return d <= 0 ? 0 : bankSum(x, d) - bankSum(x, 0);
   };
+  /** A gentle swell on the flat top (`crown`: x, z, `r` m across, `rise` m high), so the hut on it stands clear of the last bank against the sky seen from below. */
+  const crown = hill.crown ?? null;
   /** The height of the top above the ford, for the tests and the docs. */
   const total = banks.reduce((s, b) => s + b.rise, 0);
 
@@ -116,10 +128,13 @@ export function createHill(layout) {
   /** Metres the stream's channel is cut into the ground at (x, z). */
   function channelAt(x, z) {
     if (x > pasture.maxX && hill.brook) return 0; // beyond the hedge it is the brook's (brook.js)
+    // With no brook the stream ends at the pasture's hedges: the ground eases back over 8 m beyond them.
+    const ends = hill.brook ? 1 : 1 - smoothstep(0, 8, Math.max(pasture.minX - x, x - pasture.maxX, 0));
+    if (ends <= 0) return 0;
     const r = Math.abs(z - streamZ(x));
     const half = halfAt(x);
     if (r > half + 1.2) return 0;
-    return depthAt(x) * (1 - smoothstep(half * 0.4, half + 1.2, r));
+    return ends * depthAt(x) * (1 - smoothstep(half * 0.4, half + 1.2, r));
   }
 
   /**
@@ -132,6 +147,7 @@ export function createHill(layout) {
     h -= channelAt(x, z);
     h -= pondCut(x, z);
     h += terraceLift(x, z);
+    if (crown) h += crown.rise * (1 - smoothstep(0, crown.r, Math.hypot(x - crown.x, z - crown.z)));
     // Tussocks and old anthills: rough ground, kept off the lane and out of the stream.
     const rough = inPasture(x, z) || inPaddock(x, z) ? smoothstep(1, 4, Math.abs(z - streamZ(x)) - halfAt(x)) : 0;
     if (rough > 0) h += rough * 0.09 * Math.sin(x * 0.93 + z * 0.31) * Math.sin(z * 0.81 - x * 0.27);
@@ -190,10 +206,10 @@ export function createHill(layout) {
     return 0.8 * onLane * (1 - smoothstep(0.5, 6, fromWater));
   }
 
-  const inPasture = (x, z, margin = 0) => inRect(pasture, x, z, margin);
+  const inPasture = (x, z, margin = 0) => within(pasture, x, z, margin);
   const inLane = (x, z, margin = 0) => inRect(laneRect, x, z, margin);
-  const inWest = (x, z, margin = 0) => !!west && inRect(west, x, z, margin);
-  const inEast = (x, z, margin = 0) => !!east && inRect(east, x, z, margin);
+  const inWest = (x, z, margin = 0) => !!west && within(west, x, z, margin);
+  const inEast = (x, z, margin = 0) => !!east && within(east, x, z, margin);
   const inPaddock = (x, z, margin = 0) => inWest(x, z, margin) || inEast(x, z, margin);
   const inWood = (x, z, margin = 0) => inRect(hill.wood, x, z, margin);
 
@@ -273,7 +289,9 @@ export function createHill(layout) {
   const setRise = (metres) => {
     rise = Math.max(0, metres);
   };
-  const outsideHill = (x, z) => Math.min(outside(pasture, x, z), outside(laneRect, x, z), west ? outside(west, x, z) : Infinity, east ? outside(east, x, z) : Infinity, riverside ? outside(riverside, x, z) : Infinity);
+  /** How far (x, z) is from a field: its outline's distance when it has one, else the rectangle's. */
+  const outsideField = (r, x, z) => (r.points ? outsidePolygon(r.points, x, z, r.edges) : outside(r, x, z));
+  const outsideHill = (x, z) => Math.min(outsideField(pasture, x, z), outside(laneRect, x, z), west ? outsideField(west, x, z) : Infinity, east ? outsideField(east, x, z) : Infinity, riverside ? outside(riverside, x, z) : Infinity);
   return {
     lane, pasture, stream, laneRect, west, east, riverside, gates, pond, terraces, top, total, waitSpot,
     streamZ, halfAt, depthAt, waterDepthAt, farEdge, climb, climbSlope, sinkAt, channelAt, profile, weight,
