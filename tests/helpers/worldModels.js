@@ -150,6 +150,11 @@ export async function buildWorldModels() {
   // Back Lane's gates and hedges (#686), on the new farm's ground.
   const { buildBackLaneProps } = await import('../../src/world/backLaneProps.js');
   add('setPiece', 'backLane', buildBackLaneProps, (b) => (b(c2), found('backLane')));
+  // The A-road's hedges, junction furniture and bus stop flag, and the lane's cottages, gateways, bin and postbox (#687), on the new farm's ground.
+  const { buildARoadProps } = await import('../../src/world/aRoadProps.js');
+  add('setPiece', 'junctions', buildARoadProps, (b) => (b(c2), found('junctions')));
+  const { buildLaneFittings } = await import('../../src/world/laneFittingsProps.js');
+  add('setPiece', 'laneCottages', buildLaneFittings, (b) => (b(c2), found('laneCottages')));
   const { buildVerge } = await import('../../src/world/laneVerge.js');
   const { roadNetwork } = await import('../../src/world/roads.js');
   add('world', 'laneVerge', buildVerge, (b) => {
@@ -167,6 +172,17 @@ export async function buildWorldModels() {
   add('world', 'signPost', signs.buildSignPost, (b) => b(signs.chevronTexture(), 0.9, 0.56));
   add('world', 'depthGauge', signs.buildDepthGauge, (b) => b(c.random));
   add('world', 'fingerpost', signs.buildFingerpost, (b) => b(c.random));
+  // The A-road's junctions and the lane's fittings (#687).
+  add('world', 'giveWaySign', signs.buildGiveWaySign);
+  add('world', 'fingerpostArms', signs.buildFingerpostArms, (b) => b(c.random, [{ lines: ['Kelby 4'], yaw: 0 }, { lines: ['Ashwell 3'], yaw: Math.PI }]));
+  const furniture = await import('../../src/world/roadFurniture.js');
+  add('world', 'gritBin', furniture.buildGritBin);
+  add('world', 'gritHeap', furniture.buildGritHeap);
+  add('world', 'postbox', furniture.buildPostbox, (b) => b(c.random));
+  add('world', 'binStand', furniture.buildBinStand, (b) => b(c.random));
+  add('world', 'busStopFlag', furniture.buildBusStopFlag);
+  const lorry = await import('../../src/world/lorryModel.js');
+  add('world', 'lorry', lorry.buildLorryModel);
   add('world', 'drainGrate', signs.buildDrainGrate);
   add('world', 'stile', signs.buildStile, (b) => b(c.random));
   // The neighbour's dairy (#569): the four pieces, each on the new farm's neighbour's own shape and yard ground, with the materials they share.
