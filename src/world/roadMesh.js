@@ -12,7 +12,7 @@ import { dashes } from './roads.js';
  * The tarmac as pixels, `size` square RGBA: speckle, a darker band down each wheel track, a pale gritty edge, and `patches` repairs (darker or paler
  * rectangles, a few cm of crack at their sides). Seeded, so a road looks the same every time. Pure, so it can be tested; roadTexture() puts it on a canvas.
  */
-export function tarmacPixels({ size = 128, seed = 99, patches = 0, base = [0x43, 0x44, 0x46] } = {}) {
+export function tarmacPixels({ size = 128, seed = 99, patches = 0, base = [0x43, 0x44, 0x46], bands = 0, crumble = 0 } = {}) {
   const data = new Uint8ClampedArray(size * size * 4);
   let s = seed;
   const rand = () => {
@@ -48,7 +48,63 @@ export function tarmacPixels({ size = 128, seed = 99, patches = 0, base = [0x43,
       }
     }
   }
+  // Tar bands: thin dark seams across the road where cracks were sealed, one a little off square. Crumbling edges: the verge's green and grit creeping in
+  // along each side in irregular bites up to `crumble` of the width. Both draw after the rest, so a road that has neither is the same pixels.
+  for (let b = 0; b < bands; b++) {
+    const y0 = Math.floor(rand() * size);
+    const lean = (rand() - 0.5) * 0.12;
+    for (let x = 0; x < size; x++) {
+      const y = (y0 + Math.round(x * lean) + size) % size;
+      const i = (y * size + x) * 4;
+      for (let c = 0; c < 3; c++) data[i + c] -= 22;
+    }
+  }
+  if (crumble > 0) {
+    for (let y = 0; y < size; y++) {
+      for (const side of [0, 1]) {
+        const bite = Math.floor(rand() * rand() * crumble * size);
+        for (let k = 0; k < bite; k++) {
+          const x = side ? size - 1 - k : k;
+          const i = (y * size + x) * 4;
+          data[i] = 0x4a + rand() * 14;
+          data[i + 1] = 0x52 + rand() * 18;
+          data[i + 2] = 0x38 + rand() * 10;
+        }
+      }
+    }
+  }
   return data;
+}
+
+/** The grass strip down the middle of a little-used lane as pixels, `size` square RGBA: blades in two greens with the odd bare grit fleck. Seeded, pure. */
+export function grassStripPixels({ size = 64, seed = 7 } = {}) {
+  const data = new Uint8ClampedArray(size * size * 4);
+  let s = seed;
+  const rand = () => {
+    s = (s * 16807) % 2147483647;
+    return s / 2147483647;
+  };
+  for (let i = 0; i < size * size; i++) {
+    const t = rand();
+    const grit = rand() < 0.04;
+    data[i * 4] = grit ? 0x70 : 0x44 + t * 34;
+    data[i * 4 + 1] = grit ? 0x6a : 0x62 + t * 46;
+    data[i * 4 + 2] = grit ? 0x5a : 0x2a + t * 22;
+    data[i * 4 + 3] = 255;
+  }
+  return data;
+}
+
+/** The grass strip as a canvas: see grassStripPixels. */
+export function grassStripTexture(opts = {}) {
+  const size = opts.size ?? 64;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  const img = g.createImageData(size, size);
+  img.data.set(grassStripPixels({ ...opts, size }));
+  g.putImageData(img, 0, 0);
+  return c;
 }
 
 /** The tarmac as a canvas (the textures of the lane and the village street): see tarmacPixels. */
@@ -225,6 +281,12 @@ export function buildRoadMesh({ scene, road, points, heights, texture }) {
   if (road.markings.edge) {
     const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...POLY });
     for (const side of [-1, 1]) meshes.push(...roadStrip(ctx, side * (road.halfWidth - 0.3), side * (road.halfWidth - 0.2), (road.lift ?? 0.07) + 0.02, line, { cols: 2 }));
+  }
+  // A strip of grass down the middle where the lane is least used (`strip: { half, rects }`: the rectangles, [minX, minZ, maxX, maxZ], it grows in).
+  if (road.strip && road.strip.texture) {
+    const grass = new THREE.MeshStandardMaterial({ map: road.strip.texture, color: 0xffffff, roughness: 1, ...POLY });
+    const inside = (p) => road.strip.rects.some(([x0, z0, x1, z1]) => p.x >= x0 && p.x <= x1 && p.z >= z0 && p.z <= z1);
+    meshes.push(...roadStrip(ctx, -road.strip.half, road.strip.half, (road.lift ?? 0.07) + 0.015, grass, { skip: (p) => !inside(p) }));
   }
   for (const m of meshes) scene.add(m);
   return meshes;

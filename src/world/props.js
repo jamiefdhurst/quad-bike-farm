@@ -24,7 +24,7 @@ import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FA
 import { laneBarriers, nearNeighbourYard } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
 import { roadNetwork } from './roads.js';
-import { buildRoadMesh, roadTexture } from './roadMesh.js';
+import { buildRoadMesh, roadTexture, grassStripTexture } from './roadMesh.js';
 import { buildCattleGrid, buildReflectorPosts, buildDriveVerge } from './driveProps.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -65,6 +65,7 @@ export function buildProps(ctx) {
   buildReflectorPosts(c);
   buildDriveVerge(c);
   buildPublicLane(c);
+  buildBackLane(c);
   buildPaddock(c);
   buildGardenWall(c); // the new farm's garden plot and Home Ground's rail (#682); today's farm has neither
   buildHomeRails(c);
@@ -422,6 +423,20 @@ function buildPublicLane({ scene, layout, heights, fixedBox }) {
   // One point a metre, as fine as the terrain's own grid, or its bumps show through.
   const points = roadNetwork(layout).pointsAlong('lane', { step: 1 });
   buildRoadMesh({ scene, road, points, heights, texture: tarmac });
+}
+
+/** Back Lane (#686, layout 2 only): the single-track loop, in its own worn tarmac with tar-banded cracks and crumbling edges, and the grass down its middle. */
+function buildBackLane({ scene, layout, heights }) {
+  const net = roadNetwork(layout);
+  const road = net.road('backLane');
+  if (!road) return;
+  const tarmac = new THREE.CanvasTexture(roadTexture({ seed: 311, ...road.texture }));
+  tarmac.wrapS = tarmac.wrapT = THREE.RepeatWrapping;
+  tarmac.colorSpace = THREE.SRGBColorSpace;
+  const grass = new THREE.CanvasTexture(grassStripTexture());
+  grass.wrapS = grass.wrapT = THREE.RepeatWrapping;
+  grass.colorSpace = THREE.SRGBColorSpace;
+  buildRoadMesh({ scene, road: { ...road, strip: { ...road.strip, texture: grass } }, points: net.pointsAlong('backLane', { step: 1 }), heights, texture: tarmac });
 }
 
 /** Worn grey tarmac: speckle, a darker band down each wheel track and a pale, crumbling edge (world/roadMesh.js). */

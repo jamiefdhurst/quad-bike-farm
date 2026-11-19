@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { LAYOUT } from '../src/world/layout.js';
 import { roadNetwork, dashes } from '../src/world/roads.js';
-import { tarmacPixels, buildRoadMesh, roadStrip, paintMarks, kerbFace } from '../src/world/roadMesh.js';
+import { grassStripPixels, tarmacPixels, buildRoadMesh, roadStrip, paintMarks, kerbFace } from '../src/world/roadMesh.js';
 import { LANE_TARMAC_LIFT } from '../src/world/props.js';
 
 const net = roadNetwork(LAYOUT);
@@ -94,5 +94,27 @@ describe('the road mesh builder', () => {
     expect(paintMarks(ctx, dashes({ on: 2, off: 4, to: 30, width: 0.1 }), mat, 0.08)).toBeTruthy();
     expect(paintMarks(ctx, [], mat, 0.08)).toBeNull();
     expect(kerbFace(ctx, 2.3, 0.075, 0.16, mat, { from: 16 }).geometry.index.count).toBeGreaterThan(0);
+  });
+});
+
+describe('a worn single-track lane (#686)', () => {
+  it('has tar bands and crumbling edges only when asked, and the plain tarmac is unchanged by them', () => {
+    const plain = Array.from(tarmacPixels({ size: 64, seed: 3, patches: 2 }));
+    const worn = Array.from(tarmacPixels({ size: 64, seed: 3, patches: 2, bands: 6, crumble: 0.08 }));
+    expect(worn).not.toEqual(plain);
+    expect(Array.from(tarmacPixels({ size: 64, seed: 3, patches: 2, bands: 0, crumble: 0 }))).toEqual(plain);
+    // The crumbled edge is greener than the tarmac beside it.
+    const green = (d, x, y) => d[(y * 64 + x) * 4 + 1] - d[(y * 64 + x) * 4];
+    let bitten = 0;
+    for (let y = 0; y < 64; y++) if (green(worn, 0, y) > 6) bitten++;
+    expect(bitten).toBeGreaterThan(5);
+  });
+
+  it('has a grass strip of two greens, seeded', () => {
+    const a = grassStripPixels({ size: 32 });
+    expect(Array.from(a)).toEqual(Array.from(grassStripPixels({ size: 32 })));
+    const greens = new Set();
+    for (let i = 0; i < 32 * 32; i++) greens.add(Math.round(a[i * 4 + 1] / 16));
+    expect(greens.size).toBeGreaterThan(2);
   });
 });

@@ -801,7 +801,7 @@ export const BACK_LANE_PLAN = {
   ],
   halfWidth: 1.6,
   passing: { spacing: 190, length: 10, bay: 1.7 },
-  strip: { half: 0.35, west: [90, 800], south: [60, 880] }, // the grass down the middle: from this far down the west side (plan z) and along the south (plan x)
+  strip: { half: 0.35, rects: [[-20, 90, 60, 800], [60, 850, 880, 900]] }, // the grass down the middle, on the west and south stretches only: plan rectangles [minX, minZ, maxX, maxZ] (settled 13 November)
   verge: 1.8,
   level: { shoulder: 2.5, lead: [2, 2], blend: 10, natural: true },
   cuttings: [[1740, 2170]], // m along: the hairpins, where the lane runs in a hollow way up to 2.1 m into the hill's shoulder (flagged so `cuttings()` accepts it)
@@ -816,6 +816,8 @@ export function backLaneLayout(B = BACK_LANE_PLAN) {
     junction: [{ end: 'start', onto: 'lane' }, { end: 'end', onto: 'lane' }], passing: { ...B.passing },
     markings: { centre: 'none', giveWay: true }, verge: B.verge, hedged: true, draw: 'mesh', lift: 0.05, level: { ...B.level }, camber: 0.04,
     cuttings: B.cuttings.map(([from, to]) => ({ from, to })),
+    strip: { half: B.strip.half, rects: B.strip.rects.map(([x0, z0, x1, z1]) => [...fromPlan([x0, z0]), ...fromPlan([x1, z1])]) },
+    texture: { patches: 14, bands: 9, crumble: 0.07 },
   };
 }
 
