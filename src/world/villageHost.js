@@ -20,7 +20,6 @@ export class VillageHost {
     this.till = new Till();
     this.bill = new PumpBill();
     this.filling = null; // the pump being filled from, while E is held
-    this.centre = new THREE.Vector3(150, 0, 185);
     this.lastBought = 'nothing yet';
     this.coins = new CoinAudio(game.audioHub, new THREE.Vector3(), 0.7); // chinks at the counter or the rack you are at, not at the farm's tin
     this.addTargets();

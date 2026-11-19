@@ -2,6 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { VillageHost } from '../src/world/villageHost.js';
 import { Spares } from '../src/workshop/spares.js';
 import { Market } from '../src/farm/classifieds.js';
+import { MotHost } from '../src/world/motHost.js';
+import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
+import { layoutNew } from '../src/world/layoutNew.js';
+import { villageShape } from '../src/world/village.js';
 
 // The village's counters as the player meets them: what the prompt says (an E action carries the key, a refusal is plain text), what the toast
 // says after a purchase, and that a purchase makes its noise and a refusal does not. A stand-in game, since game.js is never built in tests.
@@ -83,5 +87,66 @@ describe('the garage rack and the shop counter', () => {
     const { at, toasts } = setup();
     at('sweets').interact();
     expect(toasts[0]).toMatch(/^Bought a bag of sweets/);
+  });
+});
+
+// The same counters and places on the new farm (#688), where the village is across the lane, the shop on the street's south side facing north and the garage on the
+// lane facing south: the stand-in game has the new farm's real shape, so where a console line puts you is checked against where things really are.
+describe('the village on the new farm (#688)', () => {
+  const two = layoutNew(LAYOUT, RAW_LAYOUT);
+  const shape = villageShape(two);
+
+  function onNewFarm() {
+    const put = [];
+    const game = {
+      interaction: { add: () => {} },
+      market: new Market(),
+      audioHub: {},
+      player: { isRiding: false, moveTo: (p) => put.push(p) },
+      world: { groundHeightAt: () => 3, props: { village: { shape, pumpProxies: [], partProxies: [], shopProxies: [] } } },
+    };
+    return { host: new VillageHost(game), put };
+  }
+  const inside = (r, p, m = 0) => p.x > r.minX - m && p.x < r.maxX + m && p.z > r.minZ - m && p.z < r.maxZ + m;
+
+  it('is active, and describes itself by name', () => {
+    const { host } = onNewFarm();
+    expect(host.active).toBe(true);
+    expect(host.describe()).toMatch(/^Nether Thornby: 20 mph/);
+  });
+
+  it('puts you in the pub\'s car park, on the street side of the shop and at the pumps', () => {
+    const { host, put } = onNewFarm();
+    expect(host.debugGoTo('pub')).toBe(true);
+    expect(inside(shape.carPark, put.at(-1))).toBe(true);
+    host.debugGoTo('shop');
+    const shop = put.at(-1);
+    expect(shop.z).toBeLessThan(shape.shop.outer.minZ); // the shop is on the south side with its front to the north: you stand in front of it, between it and the street
+    expect(shop.z).toBeGreaterThan(shape.roadAt(shop.x, shop.z).at.z);
+    expect(Math.abs(shop.x - shape.shop.x)).toBeLessThan(shape.shop.halfX);
+    host.debugGoTo('garage');
+    const pumps = two.village.garage.pumps;
+    expect(put.at(-1).z).toBeGreaterThan(pumps.z);
+    expect(inside(shape.forecourt, put.at(-1))).toBe(true);
+  });
+
+  it('puts you at the parts rack in front of the garage, which faces south, on the forecourt side', () => {
+    const { host, put } = onNewFarm();
+    host.debugGoTo('parts');
+    const p = put.at(-1);
+    expect(p.z).toBeGreaterThan(shape.garage.outer.maxZ);
+    expect(p.z).toBeLessThan(shape.garage.outer.maxZ + 2.5);
+    expect(Math.abs(p.x - shape.garage.x)).toBeLessThan(2);
+  });
+
+  it('puts you in front of the MOT clipboard on the forecourt, not behind the garage', () => {
+    const at = { x: shape.garage.x + 5.4, y: 1.5, z: shape.garage.outer.maxZ + 0.3 };
+    const stand = MotHost.prototype.stand.call({ props: { shape, motProxy: { mesh: { getWorldPosition: (v) => v.set(at.x, at.y, at.z) } } } });
+    expect(stand.z).toBeGreaterThan(shape.garage.outer.maxZ);
+    expect(Math.hypot(stand.x - at.x, stand.z - at.z)).toBeLessThan(2);
+  });
+
+  it('has the girls\' pub stop in the car park', () => {
+    expect(inside(shape.carPark, shape.pubStop)).toBe(true);
   });
 });

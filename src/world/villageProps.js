@@ -130,8 +130,7 @@ function lampPost(ctx, x, z, towards) {
   add(new THREE.CylinderGeometry(0.14, 0.09, 0.3, 6), M.lampGlow, 0, 3.72, 0.8);
   add(new THREE.ConeGeometry(0.2, 0.14, 6), M.iron, 0, 3.94, 0.8);
   add(new THREE.SphereGeometry(0.03, 6, 4), M.iron, 0, 4.03, 0.8);
-  ctx.root.add(g);
-  ctx.groups.push(g);
+  ctx.furniture.add(g);
   ctx.fixedBox(x, y + 1.6, z, 0.14, 1.6, 0.14);
 }
 
@@ -155,8 +154,7 @@ function signPost(ctx, x, z, yaw, texture, w, h, { height = 2.1, round = false }
   const ring = new THREE.Mesh(round ? new THREE.TorusGeometry(w / 2, 0.012, 6, 28) : new THREE.BoxGeometry(w + 0.02, h + 0.02, 0.02), M.lead);
   ring.position.set(0, height - h / 2 + 0.1, 0.045);
   g.add(ring);
-  ctx.root.add(g);
-  ctx.groups.push(g);
+  ctx.furniture.add(g);
   ctx.fixedBox(x, y + 1, z, 0.08, 1.1, 0.08);
 }
 
@@ -569,6 +567,7 @@ export function buildVillage(c) {
     shopProxies: [],
     partProxies: [],
     pumpProxies: [],
+    furniture: null, // every lamp post and road sign in one group, so the street's lot merge into a mesh or two a material, not two a post
     rootGroup: (name, y = 0) => {
       const g = new THREE.Group();
       g.name = name;
@@ -578,6 +577,8 @@ export function buildVillage(c) {
       return g;
     },
   };
+
+  ctx.furniture = ctx.rootGroup('village-furniture');
 
   // The road and its pavements. The road is the lane's tarmac, widening at its mouth; the pavements stand 8 cm proud with a kerb; they stop for the
   // garage's forecourt and the car park's mouth.

@@ -8,6 +8,7 @@ import { barrelTexture } from './neighbourTextures.js';
 import { buildVehicleBody } from './trafficView.js';
 import { PARKED_SIZES } from './neighbourFarm.js';
 import { poseBaleSpike } from '../vehicle/tractorModel.js';
+import { MOT_BAY } from './village.js';
 import { Frame, shellAndRoof, chimney, windowAt, bayWindow, doorAt, porch, dormer, flowerBox } from './villageKit.js';
 import { fasciaTexture, pubSignTexture, shopInteriorTexture, awningTexture, chalkBoardTexture, rollerDoorTexture, pumpFaceTexture, partPacketTexture, pumpSideTexture, pumpHeaderTexture, bollardTexture, priceBoardTexture, carParkTexture, noticeTexture } from './villageTextures.js';
 
@@ -307,7 +308,7 @@ export function buildPub(ctx, b) {
   f.solid(3.2, 0.5, front + 1.1, 0.3, 0.5, 0.3);
   // The beer garden's picnic tables and the car park.
   const parasol = new THREE.MeshStandardMaterial({ color: 0xb02a2a, roughness: 0.8, side: THREE.DoubleSide });
-  for (const t of ctx.S.v.pub.benches) picnicTable(ctx, t.x, t.z, t.x > 130 ? parasol : null);
+  ctx.S.v.pub.benches.forEach((t, i) => picnicTable(ctx, t.x, t.z, i > 0 ? parasol : null)); // the second table has the parasol
   void S;
   return f;
 }
@@ -639,10 +640,10 @@ export function buildGarage(ctx, b) {
   ctx.partProxies.push(proxyAt(ctx, f, 'tyreQuad', -7.9, 0.75, front + 0.45, 0.9, 1.5, 0.9));
   // The MOT bay: a white-lined rectangle on the forecourt in front of the western roller door, long side along the wall, and a test centre board with a
   // clipboard on the wall by the east door (a garage facing north has its frame turned about, so a world x is the frame's x negated; one facing south does not).
-  const bayX = -4.4;
-  const bayZ = front + 2.4;
-  const bayLen = 5.2;
-  const bayWid = 2.5;
+  const bayX = MOT_BAY.x;
+  const bayZ = front + MOT_BAY.front;
+  const bayLen = MOT_BAY.len;
+  const bayWid = MOT_BAY.wid;
   const turn = Math.cos(b.yaw) > 0 ? 1 : -1; // the frame is turned about when the garage faces north (yaw Math.PI), so its offsets are the world's negated
   const bayWorld = { x: b.x + turn * bayX, z: b.z + turn * bayZ };
   const bayY = ctx.heights.heightAt(bayWorld.x, bayWorld.z) - f.y0 + 0.07;

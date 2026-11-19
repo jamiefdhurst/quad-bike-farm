@@ -10,6 +10,9 @@ const outside = (r, x, z) => Math.hypot(Math.max(r.minX - x, 0, x - r.maxX), Mat
 const smooth = (t) => t * t * (3 - 2 * t);
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
+/** The MOT bay in the garage's own frame: its middle `x` along the front and `front` m out from it, `len` along the wall and `wid` across, in m. */
+export const MOT_BAY = { x: -4.4, front: 2.4, len: 5.2, wid: 2.5 };
+
 export { smoothRoad };
 
 /** The marks on the village road: a broken white line down the middle (it is two-way) and one give-way line across the lane going out, not both.
@@ -89,9 +92,19 @@ function buildShape(layout) {
   // side, easing back over longer, so the way in from the road isn't a ramp.
   const pads = [
     ...buildings.map((b) => ({ r: b.outer, at: [b.x, b.z], reach: 3.5 })),
-    { r: forecourt, at: [(forecourt.minX + forecourt.maxX) / 2, (forecourt.minZ + forecourt.maxZ) / 2], reach: 3.5 },
     { r: carPark, at: [(carPark.minX + carPark.maxX) / 2, carPark.maxZ + 3], reach: 7 },
   ];
+  if (v.garage.forecourt) {
+    // On the new farm the land falls 6% east along a 46 m forecourt, so the slab follows it, and only what must stand level is levelled: the pumps' island
+    // and canopy (to the ground at its middle, easing out over 4 m) and the MOT bay (to the garage's own floor level, so it meets the front flush).
+    const { xs, z } = v.garage.pumps;
+    const island = { minX: xs[0] - 1.6, maxX: xs[xs.length - 1] + 1.6, minZ: z - 2.4, maxZ: z + 2.4 };
+    const turn = Math.cos(garage.yaw) > 0 ? 1 : -1;
+    const bay = rect(garage.x + turn * MOT_BAY.x, garage.z + turn * (garage.halfZ + MOT_BAY.front), MOT_BAY.len / 2 + 0.6, MOT_BAY.wid / 2 + 0.6);
+    pads.push({ r: island, at: [(island.minX + island.maxX) / 2, z], reach: 4 }, { r: bay, at: [garage.x, garage.z], reach: 2.5 });
+  } else {
+    pads.push({ r: forecourt, at: [(forecourt.minX + forecourt.maxX) / 2, (forecourt.minZ + forecourt.maxZ) / 2], reach: 3.5 });
+  }
   const footprints = buildings.map((b) => b.outer);
 
   /** Distance from (x, z) to the road's middle line, and how far along it that point is (s, in samples, about metres). */

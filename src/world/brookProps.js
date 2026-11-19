@@ -80,7 +80,7 @@ function buildLaneBridge(c) {
     put(worldBox(thick + 0.14, 0.1, len + 0.3, 1), coping, x, road + high + 0.05, z0); // the coping, a hand's width proud of the wall each side
     for (const e of [-1, 1]) {
       const pz = z0 + e * (reach + 0.1);
-      put(worldBox(0.8, high + 0.95, 0.8, 2), stone, x, road - 0.7 + (high + 0.95) / 2, pz); // the end pier, taller than the wall
+      put(worldBox(0.8, high + 1.05, 0.8, 2), stone, x, road - 0.8 + (high + 1.05) / 2, pz); // the end pier, taller than the wall and sunk a little deeper
       put(worldBox(0.94, 0.12, 0.94, 1), coping, x, road + high + 0.31, pz);
     }
     fixedBox(x, road + high / 2, z0, thick / 2, high / 2 + 0.3, reach + 0.5);
