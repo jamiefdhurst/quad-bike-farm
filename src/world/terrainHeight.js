@@ -78,6 +78,9 @@ export function createTerrainHeight(layout, track) {
     return h;
   }
 
+  // The river's surface only falls: it is cut deeper where the land along its line rises (brook.js).
+  if (brook) brook.useGround((x) => natural(x, brook.zAt(x)));
+
   // The ground the gravel pit is cut into: the lie at its middle, the whole patch round it eased to it (quarry.groundAt).
   const quarryLevel = quarry ? natural(quarry.pit.x, quarry.pit.z) : 0;
 

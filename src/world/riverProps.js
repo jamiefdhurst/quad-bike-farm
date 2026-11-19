@@ -143,7 +143,7 @@ export function buildRiverside(c) {
 
   // The river gates, wherever the river crosses a boundary: two stout posts, a rail across and boards hung from it by a chain's length that swing out
   // downstream in the current, so the water runs through and nothing rides out. Their fence either side is #696's.
-  for (const h of river.hurdles()) {
+  for (const h of river.hurdles(fields.gateways)) {
     const base = surface(h.x, h.z);
     const top = base + 1.25;
     const span = h.half * 2;

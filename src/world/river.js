@@ -31,8 +31,14 @@ export function createRiver(layout, brook) {
     return { x, z: brook.zAt(x), half: gap };
   }
 
-  /** Every river gate: where the river crosses a boundary (`meadow.gates` are the xs), each with its middle and the half-length it spans (#565). */
-  const hurdles = () => (meadow.gates ?? [meadow.maxX]).map((x) => ({ x, z: brook.zAt(x), half: brook.halfAt(x) + 1.6 }));
+  /**
+   * Every river gate: where the river crosses a boundary (`meadow.gates` are the xs), each with its middle and the half-length it spans (#565). Given
+   * the field gateways it fills the boundary's own shut gap there (which the plan sizes, and a boundary's end can move), else it spans the river.
+   */
+  const hurdles = (gateways = []) => (meadow.gates ?? [meadow.maxX]).map((x) => {
+    const g = gateways.find((w) => w.gap?.shut && !w.gap.gate && Math.abs((w.pa.x + w.pb.x) / 2 - x) < 3 && Math.abs((w.pa.z + w.pb.z) / 2 - brook.zAt(x)) < 4);
+    return g ? { x: (g.pa.x + g.pb.x) / 2, z: (g.pa.z + g.pb.z) / 2, half: g.gap.half } : { x, z: brook.zAt(x), half: brook.halfAt(x) + 1.6 };
+  });
 
   /** The farm bridge's place (#689) and the crossing, named for the girls' routes (#690): the new farm's river has the bridge, the old one has none. */
   const places = () => ({ ...(river.bridge ? { bridge: { x: river.bridge.x, z: brook.zAt(river.bridge.x) } } : {}), crossing: { x: cross.x, z: brook.zAt(cross.x) } });
@@ -56,7 +62,7 @@ export function createRiver(layout, brook) {
   const nearCrossing = (x, z, reach = 14) => Math.hypot(x - cross.x, z - brook.zAt(cross.x)) < reach;
 
   /**
-   * Reed clumps. The new farm's (`meadow.gates`): drifts in the shallows of the pools, `kind` 'shallow', and a thin stand now and then up the bank,
+   * Reed clumps. The new farm's (`meadow.gates`): drifts in the shallows, `kind` 'shallow', and a thin stand now and then up the bank,
    * 'bank', none by the crossing, the drinking places or the bridge (#565). Today's: one every stride along both banks from the hedge to the hurdle.
    */
   function reeds(random) {
