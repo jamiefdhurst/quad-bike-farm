@@ -113,6 +113,14 @@ export class TurnRound {
     return this.phase !== 'idle';
   }
 
+  /** Whether `pos` is on the A-road or its verge (the road nearest to you is the A-road, within its half width and verge): the verge is the A-road too (#1025). */
+  onARoad(pos) {
+    const a = this.net.road(this.aRoad);
+    if (!a) return false;
+    const n = this.net.nearest(pos.x, pos.z, a.halfWidth + (a.verge ?? 0));
+    return n?.road.id === this.aRoad;
+  }
+
   /** Forgets where you were, so the next step is not counted as a crossing (you were put somewhere on purpose: a teleport, a new game). */
   reset() {
     this.last = null;
@@ -144,7 +152,7 @@ export class TurnRound {
       this.last = { x: pos.x, z: pos.z };
       if (!from || Math.hypot(pos.x - from.x, pos.z - from.z) > p.jump) return { fade: 0, move: null, line: null };
       let hit = this.lines.find((l) => crossed(l, from, pos)) ?? null;
-      if (!hit && this.net.onRoad(this.aRoad, pos.x, pos.z)) hit = { id: 'road', road: null };
+      if (!hit && this.onARoad(pos)) hit = { id: 'road', road: null };
       if (!hit) return { fade: 0, move: null, line: null };
       this.line = hit;
       this.pending = hit.road ? putBack(this.net, hit, from, pos, p.back) : this.fromRoad(pos);
