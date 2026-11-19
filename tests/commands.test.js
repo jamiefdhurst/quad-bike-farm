@@ -20,3 +20,21 @@ describe('the second opinion before a stop', () => {
     });
   }
 });
+
+// The reviewers read one pack, batch their reads, open no images and stop at a budget, as they were costing more than they found (#1010).
+describe('keeping the reviewers cheap', () => {
+  const beforeYouStop = read('.claude/commands/todo.md').split(/^## Before you stop$/m)[1] ?? '';
+  const recheck = read('.claude/commands/recheck.md');
+  for (const [name, text] of [['"Before you stop"', beforeYouStop], ['/recheck', recheck]]) {
+    it(`${name} hands over the pack, a request budget and no images`, () => {
+      expect(text, 'the pack').toContain('tools/reviewPack.mjs');
+      expect(text, 'a budget').toMatch(/stop at about \d+ requests/i);
+      expect(text, 'no images').toMatch(/open no images/i);
+      expect(text, 'batched reads').toMatch(/batch (its|your) reads/);
+    });
+  }
+
+  it('tells every session to batch what it reads', () => {
+    expect(read('CLAUDE.md')).toMatch(/\*\*Batch what you read\.\*\*/);
+  });
+});

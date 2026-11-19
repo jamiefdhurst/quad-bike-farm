@@ -10,7 +10,7 @@ Jamie runs this part-way through or at the end of a piece of work, most often a 
 1. **Write the brief.** The reviewer can't see this conversation, so give it:
    - **What the work is:** the issue's number, title and link, or what Jamie asked for in a line if there is no issue.
    - **Where it is:** the worktree's absolute path (`tools/worktree.sh path <n>`), the branch, and the PR number if one is open. The change is `git diff origin/main...HEAD` plus anything uncommitted (`git status --short`); say which.
-   - **The issue's list:** `.scratch/issue-check-<n>.md` as it stands, if there is one, ticks and evidence included.
+   - **The pack:** the path `node tools/reviewPack.mjs <n> --worktree <path>` prints, made after the list is up to date. It holds the issue and its comments, `.scratch/issue-check-<n>.md` with its ticks and evidence, the branch's commits and changed files, the `.claude/rules/` files for them and the "Where things stand" summaries, so the reviewer reads one file once rather than fetching each (#1010).
    - **What Jamie has settled** this session, in his words where you can (his numbered answers, a `Jamie agreed:` line), so the reviewer doesn't reopen it.
    - **What you checked:** each command you ran (`npm test`, `npm run smoke`, a look) and its result, trimmed to the summary lines, and which commit it ran on.
    - **What you're unsure of.** Say it plainly: a doubt left out of the brief is one the review won't look at.
@@ -29,7 +29,8 @@ Jamie runs this part-way through or at the end of a piece of work, most often a 
 
 Pass these on as they are, after the brief.
 
-- **Read first:** the issue in full (`gh issue view <n> --comments`), `CLAUDE.md`, the `.claude/rules/` file for each area the diff touches (`CLAUDE.md` lists them; they don't load on their own in a worktree), and the "Where things stand" summary of each `docs/decisions/` file for those areas. Then the diff and the code round it, not the whole codebase.
+- **Read first:** the pack, once. It has the issue and its comments, the list, the `.claude/rules/` files for the changed files and the "Where things stand" summaries, so don't fetch those again; `CLAUDE.md` is already in your context. With no pack (no issue), read the rules file for each area the diff touches (`CLAUDE.md` lists them) and those areas' summaries in `docs/decisions/`. Then the diff and the code round it, not the whole codebase.
+- **Keep it cheap** (#1010). Every request reads your whole context again, so batch your reads: several `sed -n` or `grep` in one Bash call, or calls side by side, and the diff a few files at a time rather than one by one. Open no images: a look is Jamie's to judge. Once a finding has its evidence, move on. Stop at about 40 requests and put what you didn't reach under what you couldn't check.
 - **Check, in this order:**
   1. **The issue.** Every line is done as it says, all of it: a list of cases means every case, and a phrase like "for its size" is part of the job. Each tick's evidence exists and shows what it claims (open the file, find the test, run the command). Nothing the issue didn't ask for has crept in.
   2. **Correctness.** Bugs in the change: a wrong condition, state that isn't reset, something the farm should remember that the save drops (`captureVehicle`/`restoreVehicle`, `captureGirls`/`restoreGirls`), a per-frame update outside `this.guard.run`, a throw when a girl or vehicle isn't there, a value in the wrong units or along the wrong axis (Y up, a vehicle's forward is +Z), random farm character drawn from `this.seed` rather than a `this.farmSeed` stream.
