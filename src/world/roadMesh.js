@@ -7,6 +7,7 @@
 
 import * as THREE from 'three';
 import { dashes } from './roads.js';
+import { canvasTexture } from './outbuildingProps.js';
 
 /**
  * The tarmac as pixels, `size` square RGBA: speckle, a darker band down each wheel track, a pale gritty edge, and `patches` repairs (darker or paler
@@ -74,6 +75,47 @@ export function tarmacPixels({ size = 128, seed = 99, patches = 0, base = [0x43,
     }
   }
   return data;
+}
+
+/**
+ * Gravel and mud washed out across a gateway onto the road, `size` square RGBA: grey and brown grit over churned mud, darker in ruts, its edges fading to
+ * nothing in noise so it lies on the ground without a border. Seeded, pure.
+ */
+export function washPixels({ size = 64, seed = 21 } = {}) {
+  const data = new Uint8ClampedArray(size * size * 4);
+  let s = seed;
+  const rand = () => {
+    s = (s * 16807) % 2147483647;
+    return s / 2147483647;
+  };
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = (x + 0.5) / size;
+      const v = (y + 0.5) / size;
+      const edge = Math.min(u, 1 - u, v, 1 - v) * 2; // 0 at the border, 1 in the middle
+      const rut = Math.exp(-(((u - 0.3) / 0.07) ** 2)) + Math.exp(-(((u - 0.7) / 0.07) ** 2));
+      const grit = rand();
+      const i = (y * size + x) * 4;
+      const mud = 0.55 + rut * 0.3 - grit * 0.15;
+      data[i] = grit > 0.82 ? 150 : 92 * mud + 20;
+      data[i + 1] = grit > 0.82 ? 146 : 76 * mud + 18;
+      data[i + 2] = grit > 0.82 ? 138 : 58 * mud + 12;
+      data[i + 3] = Math.max(0, Math.min(255, (edge * 3.2 - 0.35 - rand() * 0.55) * 255));
+    }
+  }
+  return data;
+}
+
+/** The wash as a canvas: see washPixels (painted a pixel at a time, as it is small and made once for each gate). */
+export function washTexture(opts = {}) {
+  const size = opts.size ?? 64;
+  return canvasTexture(size, size, (ctx) => {
+    const px = washPixels({ ...opts, size });
+    for (let i = 0; i < size * size; i++) {
+      ctx.fillStyle = `rgba(${px[i * 4]},${px[i * 4 + 1]},${px[i * 4 + 2]},${px[i * 4 + 3] / 255})`;
+      ctx.fillRect(i % size, Math.floor(i / size), 1, 1);
+    }
+  });
 }
 
 /** The grass strip down the middle of a little-used lane as pixels, `size` square RGBA: blades in two greens with the odd bare grit fleck. Seeded, pure. */

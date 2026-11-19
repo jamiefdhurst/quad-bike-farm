@@ -118,3 +118,14 @@ describe('a worn single-track lane (#686)', () => {
     expect(greens.size).toBeGreaterThan(2);
   });
 });
+
+describe('mud and gravel washed out of a gateway (#686)', () => {
+  it('is seeded, opaque in the middle and gone at its border', async () => {
+    const { washPixels } = await import('../src/world/roadMesh.js');
+    const a = washPixels({ size: 32 });
+    expect(Array.from(a)).toEqual(Array.from(washPixels({ size: 32 })));
+    const alpha = (x, y) => a[(y * 32 + x) * 4 + 3];
+    expect(alpha(16, 16)).toBeGreaterThan(200);
+    for (let i = 0; i < 32; i++) expect(alpha(i, 0)).toBe(0);
+  });
+});

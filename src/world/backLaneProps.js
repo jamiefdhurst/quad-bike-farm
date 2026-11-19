@@ -12,7 +12,7 @@ import { matrixAt } from './hillProps.js';
 import { gateLeaf } from './neighbourFarmProps.js';
 import { woodTexture } from './neighbourTextures.js';
 import { instanceModel, modelBounds } from './assets.js';
-import { roadStrip } from './roadMesh.js';
+import { roadStrip, washTexture } from './roadMesh.js';
 import { buildVerge } from './laneVerge.js';
 import { concreteTexture } from './villageTextures.js';
 import { stoneTexture } from './outbuildingProps.js';
@@ -50,7 +50,7 @@ export function laneGaps(road) {
   return gaps;
 }
 
-function buildGate(road, g, c, group) {
+function buildGate(road, g, c, group, points) {
   const { heights, fixedBox, random } = c;
   const off = hedgeOffset(road, g.s, g.side);
   const mid = sidePoint(road, g.s, g.side, off);
@@ -72,6 +72,17 @@ function buildGate(road, g, c, group) {
     cap.rotation.y = yaw;
     group.add(cap);
     fixedBox(q.x, py + 0.7, q.z, 0.12, 0.95, 0.12, yaw);
+  }
+  // Mud and gravel washed out across the gateway onto the road, from the tarmac to a metre past the gate.
+  const wash = washTexture({ seed: 21 + Math.round(g.s) });
+  wash.wrapS = wash.wrapT = THREE.ClampToEdgeWrapping;
+  const mat = new THREE.MeshStandardMaterial({ map: wash, roughness: 1, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+  const inner = road.halfWidth - 0.3;
+  const outer = off + 1.6;
+  const [a, b] = g.side > 0 ? [-outer, -inner] : [inner, outer]; // roadStrip's offsets run the other way round from sidePoint's sides
+  for (const m of roadStrip({ samples: points, heights }, a, b, 0.07, mat, { from: Math.floor(g.s - GATE_HALF - 0.5), to: Math.ceil(g.s + GATE_HALF + 0.5), cols: 4 })) {
+    m.renderOrder = 2;
+    group.add(m);
   }
   // Hung from the hinge post and swung open back along the hedge, as a gate left open for the tractor.
   const hinge = along(-GATE_HALF + 0.25);
@@ -216,9 +227,10 @@ export function buildBackLaneProps(c) {
   const near = instanceModel(models.hedge.scene, matrices, { castShadow: false });
   const far = buildFarHedges(farPieces, { tint: leafTint(models.hedge.scene), name: 'backLaneHedgesFar' });
   scene.add(near, far);
-  for (const g of laneGates(road)) buildGate(road, g, c, group);
+  const points = net.pointsAlong('backLane', { step: 1 });
+  for (const g of laneGates(road)) buildGate(road, g, c, group, points);
   buildFurniture(road, c, group);
-  buildFord(road, c, group, net.pointsAlong('backLane', { step: 1 }));
+  buildFord(road, c, group, points);
   // Hedgerow trees, oaks and ash alternately, in the hedge line with a trunk collider each (the winch can hook them).
   const { physics, RAPIER, anchors } = c;
   const mats = [[], []];
