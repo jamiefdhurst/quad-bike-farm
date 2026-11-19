@@ -26,6 +26,7 @@ export const SCENES = [
   { id: 'boards', label: 'Put you at the barn with ads pinned on the small ads board, in daylight, to look at the boards on its back wall', lines: ['weather.time 12', 'farm.ads on', 'tp me to barn'] },
   { id: 'snow', label: 'Set up snow falling at midday, in the yard', lines: ['weather snow', 'weather.time 12', 'tp me to yard'] },
   { id: 'flock', label: 'Put the flock on its half of the hill just past the stream, and you looking at it', lines: ['weather fair', 'weather.time 10'], setup: 'flock' },
+  { id: 'backlane', label: 'Put you on Back Lane in daylight (the new farm: ?layout=2), to look at the hedges, verge, signs and passing places, then `tp me to backlaneford`, `hairpins` or `footpath`', lines: ['weather fair', 'weather.time 12', 'tp me to backlane'] },
   { id: 'terraces', label: 'Put you on the top tread of the sheep field, above its two banks', lines: ['weather fair', 'weather.time 11', 'tp me to terraces'] },
   { id: 'flask', label: 'Put Amy by the flask on the rock at the top of the hill, with you beside it', lines: [], setup: 'flask' },
   { id: 'lunch', label: 'Set up midday with both girls hungry, and you in the yard, so they fetch their bags and have lunch', lines: ['weather fair', 'weather.time 12.3', 'tp me to yard', 'girl.amy.needs.hunger 0.9', 'girl.jess.needs.hunger 0.9'] },
