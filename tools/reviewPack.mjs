@@ -88,9 +88,9 @@ export function packText({ issue, list, branch, rules = [], summaries = [] }) {
   for (const c of comments) out.push('', `### ${c.author?.login ?? 'someone'}, ${c.createdAt ?? ''}`.trim(), '', nest(c.body));
   out.push('', `## The list (.scratch/issue-check-${issue.number}.md)`, '', list?.trim() || 'No list yet.');
   if (branch) {
-    out.push('', `## The branch (${branch.path})`, '', '### Commits on it', '', '```', branch.log.trim() || 'none', '```',
-      '', '### Changed from origin/main', '', '```', branch.stat.trim() || 'nothing', '```',
-      '', '### Not committed', '', '```', branch.status.trim() || 'nothing', '```');
+    out.push('', `## The branch (${branch.path})`, '', '### Commits on it', '', '```', branch.log.trimEnd() || 'none', '```',
+      '', '### Changed from origin/main', '', '```', branch.stat.trimEnd() || 'nothing', '```',
+      '', '### Not committed', '', '```', branch.status.trimEnd() || 'nothing', '```');
   }
   if (rules.length) {
     out.push('', '## The rules for the changed files');
