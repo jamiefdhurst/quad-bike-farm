@@ -788,6 +788,38 @@ export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
 }
 
 /**
+ * Back Lane (#686), plan metres: the old single-track road over the hill, leaving the lane at the north, west round the farm, down its west side
+ * through the ford (the stream at about z 572), over the hill's shoulder in two hairpins, east along the south and back to the lane below the village.
+ * About 3 km, outside the farm's outline everywhere (`tests/backLane.test.js`). `passing` is a widening every `spacing` m (12 to 20 round the loop);
+ * `strip` is the stretches (plan z along the west side, plan x along the south) with a grass strip down the middle; `hairpins` and `ford` are where
+ * their signs and boards go. The line is the issue's, smoothed by the road network.
+ */
+export const BACK_LANE_PLAN = {
+  points: [
+    [905, -2], [800, 0], [700, 6], [580, 2], [480, -6], [360, 4], [230, 16], [110, 24], [22, 70], [14, 160], [10, 250], [12, 340], [14, 470], [10, 560],
+    [10, 572], [10, 700], [2, 792], [-30, 840], [60, 874], [300, 880], [560, 878], [820, 880], [905, 886],
+  ],
+  halfWidth: 1.6,
+  passing: { spacing: 190, length: 10, bay: 1.7 },
+  strip: { half: 0.35, west: [90, 800], south: [60, 880] }, // the grass down the middle: from this far down the west side (plan z) and along the south (plan x)
+  verge: 1.8,
+  level: { shoulder: 2.5, lead: [2, 2], blend: 10, natural: true },
+  cuttings: [[1740, 2170]], // m along: the hairpins, where the lane runs in a hollow way up to 2.1 m into the hill's shoulder (flagged so `cuttings()` accepts it)
+  ford: { at: [10, 572], reach: 14 },
+  hairpins: [[-30, 840], [60, 874]],
+};
+
+/** Back Lane as a road of the network, in game metres, joined to the lane at both ends. */
+export function backLaneLayout(B = BACK_LANE_PLAN) {
+  return {
+    id: 'backLane', name: 'Back Lane', surface: 'tarmac', halfWidth: B.halfWidth, points: B.points.map(fromPlan),
+    junction: [{ end: 'start', onto: 'lane' }, { end: 'end', onto: 'lane' }], passing: { ...B.passing },
+    markings: { centre: 'none', giveWay: true }, verge: B.verge, hedged: true, draw: 'mesh', lift: 0.05, level: { ...B.level }, camber: 0.04,
+    cuttings: B.cuttings.map(([from, to]) => ({ from, to })),
+  };
+}
+
+/**
  * The neighbour's yard, her anchor and the track to her gate in game metres (#569): `neighbourFarm` as the yard's shape reads it. The yard's contents are
  * `at('neighbour', ...)` offsets from her anchor and are resolved with the anchors' own resolver (layoutAnchors.js), so moving `anchor` moves the lot (#972).
  * The anchor does not turn (`yaw` 0, not `turnable`): the yard was written with its gateway in the west wall, not turned.
@@ -1237,7 +1269,7 @@ export function layoutNew(today, raw) {
   return {
     ...farmstead, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
-    ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track],
+    ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track, backLaneLayout()],
     woods: wood.woods, logYard: wood.logYard, hill, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
     budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)

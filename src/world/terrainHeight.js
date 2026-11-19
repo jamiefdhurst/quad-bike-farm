@@ -95,7 +95,7 @@ export function createTerrainHeight(layout, track) {
 
     // Every levelled road is laid level across, following the lie of the land along its middle, with a shoulder each side (world/roads.js): the
     // farm road, whose hardstanding at its end is flat.
-    const laid = roads.levelAt(x, z, lie);
+    const laid = roads.levelAt(x, z, lie, natural);
     if (laid) h += (laid.level - h) * laid.k;
 
     // Flatten the yard around the barn.
@@ -194,5 +194,5 @@ export function createTerrainHeight(layout, track) {
     return w;
   }
 
-  return { heightAt, mudAt, puddleAt, bogAt, puddles, bogs, hill, woods, quarry, brook };
+  return { heightAt, naturalAt: natural, mudAt, puddleAt, bogAt, puddles, bogs, hill, woods, quarry, brook };
 }

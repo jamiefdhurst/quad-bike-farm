@@ -14,8 +14,9 @@
 //   pavement           m of hard standing beyond that each side (the village's pavements): hard, but not carriageway
 //   markings           { centre: 'dashed' | 'solid' | 'none', edge: bool, giveWay: bool } ('none' for single track), see MARKINGS
 //   verge, hedged      m of grass between the edge and the hedges, and whether hedges line it
-//   junction           { end: 'start' | 'end', onto: <road id> }: that end meets the side of the other road
-//   level              null, or { shoulder, lead: [start, end], blend, mouth }: laid level across (see levelAt); `camber` is the crown's height
+//   junction           { end: 'start' | 'end', onto: <road id> }: that end meets the side of the other road; a loop that leaves a road and rejoins it
+//                      gives a list of two (Back Lane, #686)
+//   level              null, or { shoulder, lead: [start, end], blend, mouth, natural }: (`natural`: laid to the ground with the hill's shape, not the lie alone) laid level across (see levelAt); `camber` is the crown's height
 //   pads               [{ x, z, radius }] round hard standing along it (the farm road's hardstanding)
 //   passing            { spacing, length, bay } for single track: a widening every `spacing` m (see passingPlaces)
 //   cuttings           [{ from, to }] stretches (m along) where the road may run in a cutting deeper than MAX_CUT
@@ -110,6 +111,7 @@ function buildRoad(def, step, cell) {
     pads,
     markings: { centre: 'none', edge: false, giveWay: false, ...(def.markings ?? {}) },
     camber: def.camber ?? 0,
+    junctions: [].concat(def.junction ?? []),
     samples,
     length: s,
     segs,
@@ -265,14 +267,14 @@ function scanCell(road, list, x, z, lead, stamp) {
 function nearestOn(road, x, z, lead = null, reach = Infinity) {
   const last = road.segs.length - 1;
   // A road that ends on another is cut square there (a plane across it at that end), not rounded off, so its width never spills over the far side.
-  const j = road.junction?.end;
-  let depth = Infinity; // how far in from that square end
-  if (j) {
+  let depth = Infinity; // how far in from the nearest square end
+  for (const { end: j } of road.junctions) {
     const g = j === 'start' ? road.segs[0] : road.segs[last];
     const e = j === 'start' ? g.a : g.b;
     const sign = j === 'start' ? 1 : -1;
-    depth = ((x - e.x) * g.tx + (z - e.z) * g.tz) * sign;
-    if (depth < 0) return null;
+    const d = ((x - e.x) * g.tx + (z - e.z) * g.tz) * sign;
+    if (d < 0) return null;
+    depth = Math.min(depth, d);
   }
   S.i = -1;
   const stamp = ++road.stamp;
@@ -327,8 +329,10 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
   const byId = new Map(roads.map((r) => [r.id, r]));
   if (byId.size !== roads.length) throw new Error('roads: two roads share an id');
   for (const r of roads) {
-    if (r.junction && !byId.has(r.junction.onto)) throw new Error(`road '${r.id}': joins '${r.junction.onto}', which is not a road`);
-    if (r.junction && !['start', 'end'].includes(r.junction.end)) throw new Error(`road '${r.id}': a junction is at its 'start' or 'end'`);
+    for (const j of r.junctions) {
+      if (!byId.has(j.onto)) throw new Error(`road '${r.id}': joins '${j.onto}', which is not a road`);
+      if (!['start', 'end'].includes(j.end)) throw new Error(`road '${r.id}': a junction is at its 'start' or 'end'`);
+    }
   }
 
   const road = (id) => byId.get(id) ?? null;
@@ -481,15 +485,17 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
   function centreLevel(r, s, ground, depth = 0) {
     const p = pointAt(r, s);
     let level = ground(p.x, p.z);
-    if (r.junction && depth < 4) {
-      const parent = byId.get(r.junction.onto);
-      const blend = r.level?.blend ?? 8;
-      const dEnd = r.junction.end === 'start' ? s : r.length - s;
-      const w = 1 - smoothstep(0, blend, dEnd);
-      if (w > 0) {
-        const hit = nearestOn(parent, p.x, p.z);
-        const join = parent.level ? centreLevel(parent, hit.s, ground, depth + 1) : ground(hit.at.x, hit.at.z);
-        level += (join - level) * w;
+    if (depth < 4) {
+      for (const j of r.junctions) {
+        const parent = byId.get(j.onto);
+        const blend = r.level?.blend ?? 8;
+        const dEnd = j.end === 'start' ? s : r.length - s;
+        const w = 1 - smoothstep(0, blend, dEnd);
+        if (w > 0) {
+          const hit = nearestOn(parent, p.x, p.z);
+          const join = parent.level ? centreLevel(parent, hit.s, ground, depth + 1) : ground(hit.at.x, hit.at.z);
+          level += (join - level) * w;
+        }
       }
     }
     return level;
@@ -501,12 +507,13 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
    * (`ground(x, z)`, the land's lie), plus a camber that crowns the middle by `camber` m. A pad is flat, at the ground's height at its middle.
    * Where roads overlap their levels are mixed by how far each reaches, so there is no step between them, and at a junction they agree (centreLevel).
    */
-  function levelAt(x, z, ground) {
+  function levelAt(x, z, lie, natural = lie) {
     let sumK = 0;
     let sumKL = 0;
     let none = 1;
     for (const r of roads) {
       if (!r.level) continue;
+      const ground = r.level.natural ? natural : lie; // Back Lane lies on the hill's own shape too (#686), the farm road on the land's lie alone
       const shoulder = r.level.shoulder ?? 3;
       const b = r.bounds;
       const m = shoulder + (r.level.lead ? Math.max(...r.level.lead) : 0);
@@ -543,7 +550,7 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
       if (level !== null && padK > 0) lv = level * (1 - padK) + padLevel * padK;
       if (r.camber && n && across < r.halfWidth) lv += r.camber * (1 - (across / r.halfWidth) ** 2) * (1 - padK);
       // A road that joins another fades in from its square end over `mouth` m, so the main road is all there is at the join and its levels meet.
-      if (n && r.junction) k *= smoothstep(0, r.level.mouth ?? 4, n.depth);
+      if (n && r.junctions.length) k *= smoothstep(0, r.level.mouth ?? 4, n.depth);
       sumK += k;
       sumKL += k * lv;
       none *= 1 - k;
@@ -555,10 +562,11 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
    * Where a levelled road runs in a cutting: stretches where the land at the edge of the road stands more than MAX_CUT above the road's level,
    * checked every `every` m along: [{ road, from, to, depth }]. A cutting the road lists in `cuttings` is flagged (`flagged: true`) and fine.
    */
-  function cuttings(ground, every = 2) {
+  function cuttings(lie, every = 2, natural = lie) {
     const found = [];
     for (const r of roads) {
       if (!r.level) continue;
+      const ground = r.level.natural ? natural : lie;
       let run = null;
       for (let s = 0; s <= r.length + 1e-9; s += every) {
         const c = pointAt(r, Math.min(s, r.length));
