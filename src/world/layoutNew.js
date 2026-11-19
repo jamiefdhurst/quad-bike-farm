@@ -115,6 +115,10 @@ export const GATEWAYS_PLAN = [
   { a: 'brook', b: 'hill', at: [420, 640], why: 'Hill Pasture from the stone track, past the river' },
   { a: 'brook', b: 'ley', at: [640, 580], why: 'Low Ley from Brook Meadow, north of the river' },
   { a: 'brook', b: 'south', at: [640, 720], why: 'South Field from the end of the stone track' },
+  // Where the river crosses a boundary: a gap wide enough for the water and its banks, shut with a river gate (hung boards, #565). No way through for you or the girls.
+  { a: 'hill', b: 'brook', at: [420, 572], half: 7, shut: true, river: true, why: 'the river leaves Hill Pasture under its wall (the stream\'s end, the farm bridge\'s place)' },
+  { a: 'brook', b: 'ley', at: [640, 606], half: 8, shut: true, river: true, why: 'the river leaves Brook Meadow for Low Ley' },
+  { a: 'ley', b: 'out', at: [885, 647], half: 3.5, shut: true, river: true, why: 'the brook leaves the farm for the lane\'s verge' },
 ];
 
 /**
@@ -372,7 +376,7 @@ export function placeGateways(runs, gateways = GATEWAYS_PLAN) {
     if (!best) throw new Error(`gateway ${g.a} to ${g.b}: they share no line`);
     const half = g.half ?? GATEWAY_HALF;
     const at = Math.min(Math.max(best.s, half + 1), best.length - half - 1);
-    return { a: g.a, b: g.b, boundary: best.boundary, at, half, moved: Math.abs(at - best.s) + best.d, ...(g.gate && { gate: true, id: g.id, shut: !!g.shut }) };
+    return { a: g.a, b: g.b, boundary: best.boundary, at, half, moved: Math.abs(at - best.s) + best.d, ...(g.gate && { gate: true, id: g.id, shut: !!g.shut }), ...(!g.gate && g.shut && { shut: true }) };
   });
 }
 
@@ -733,7 +737,7 @@ export function newFields() {
     outline: movePoints(clockwise(OUTLINE_PLAN)),
     fields: fields.map((f) => ({ name: f.name, label: f.label, kind: f.kind, points: movePoints(f.points), traits: traitsOf(f), fixed: FIXED_NAMES.includes(f.name) })),
     boundaries: runs.map((r) => ({ points: movePoints(r.points), kind: r.kind, between: [r.a, r.b] })),
-    gateways: gateways.map(({ a, b, boundary, at, half, gate, id, shut }) => ({ a, b, boundary, at, half, ...(gate && { gate, id, shut }) })),
+    gateways: gateways.map(({ a, b, boundary, at, half, gate, id, shut }) => ({ a, b, boundary, at, half, ...(gate && { gate, id }), ...(shut && { shut }) })),
   };
 }
 
@@ -1063,14 +1067,58 @@ export const HILL_PLAN = {
   },
 };
 
+/**
+ * The river and the brook on the new farm (#565), plan metres: the hill's stream widens at (420, 572) into the river through Brook Meadow, full width
+ * to about x 650, and narrows back to the brook, which runs east to the lane's verge (the village's bridge there is #688's). The land falls east, so
+ * the water runs with it. `points` are the brook's waypoints after the stream's end; `river` is world/brook.js's (`fromX`, `rampIn`, `toX`,
+ * `rampOut`, `halfWidth`, `bends`, `vary`, `pools`, `drinks`: [x, side]); `crossing` is the raised bed (its x a plan x); `bridge` is where the farm
+ * bridge (#689) goes over the river, `willows` are [x, side, metres out from the bank] and `crackWillow` the big one by the bridge.
+ */
+export const RIVER_PLAN = {
+  points: [[535, 586], [650, 600], [694, 621], [751, 636], [815, 645], [885, 647], [898, 649]],
+  wander: 1.2,
+  source: 8,
+  river: {
+    fromX: 420, rampIn: 40, toX: 710, rampOut: 60, halfWidth: 5.25, depth: 1.3, water: 0.95, deepFrom: 0.45, level: 9,
+    bends: { amp: 8, k: 0.068, phase: 0.6 }, vary: { amount: 0.25, k: 0.17, phase: 1 }, pools: { length: 44, extra: 0.8 },
+    drinks: [[505, -1], [560, -1], [615, -1], [530, 1], [585, 1], [630, 1]],
+    worn: [[424, 544, 6], [420, 640, 5]], // [x, z, r] the trodden ground at the gateways from Hay Meadow and the stone track
+  },
+  crossing: { x: 475, half: 4.5, ramp: 3, water: 0.2, posts: 4 },
+  bridge: [420, 572],
+  crackWillow: [431, 563],
+  willows: [
+    [447, -1, 3.5], [452, -1, 6.5], [466, 1, 4], [497, 1, 5], [503, 1, 8.5], [521, -1, 4.5], [549, 1, 4], [556, 1, 7.5],
+    [572, -1, 5], [578, -1, 8], [601, 1, 4.5], [606, 1, 8], [624, -1, 4], [628, -1, 7],
+  ],
+};
+
 const boundsRect = (pts) => {
   const b = polygonBounds(pts);
   return { minX: b.minX, maxX: b.maxX, minZ: b.minZ, maxZ: b.maxZ };
 };
 
+/** The brook, the river and its meadow for `layout.hill` on the new farm, game metres (#565): `meadow` is Brook Meadow's own outline. */
+export function riverLayout(hill, meadow, P = RIVER_PLAN) {
+  const R = P.river;
+  const [crossX] = fromPlan([P.crossing.x, 0]);
+  const gateXs = [meadow.minX, meadow.maxX, fromPlan([885, 0])[0]]; // the farm's east boundary, along the lane
+  return {
+    brook: { points: P.points.map(fromPlan), wander: P.wander, source: P.source, noCulvert: true },
+    river: {
+      ...R, fromX: fromPlan([R.fromX, 0])[0], toX: fromPlan([R.toX, 0])[0], drinks: R.drinks.map(([x, side]) => [fromPlan([x, 0])[0], side]), worn: R.worn.map(([x, z, r]) => [...fromPlan([x, z]), r]),
+      crossing: { ...P.crossing, x: crossX }, bridge: { x: fromPlan(P.bridge)[0], z: fromPlan(P.bridge)[1] },
+    },
+    riverside: {
+      ...meadow, gates: gateXs, trees: [],
+      willows: P.willows.map(([x, side, off]) => [fromPlan([x, 0])[0], side, off]), crackWillow: fromPlan(P.crackWillow),
+    },
+  };
+}
+
 /**
  * `layout.hill` on the new farm, game metres (#684): today's, with the places in `HILL_PLAN` and each field's own outline for the pasture, the sheep
- * field and the meadow. The river and the riverside meadow it had on the east are #565's, so none is here, and the stream ends at the pasture's hedges.
+ * field and the meadow. The river, the brook and Brook Meadow are put on at the end (`riverLayout`, #565).
  */
 export function hillLayout(today, P = HILL_PLAN) {
   const T = today.hill;
@@ -1119,9 +1167,7 @@ export function hillLayout(today, P = HILL_PLAN) {
     hut: { ...T.hut, x: pt(FIELD_LANDMARKS_PLAN.find((l) => l.kind === 'hut').at)[0], z: pt(FIELD_LANDMARKS_PLAN.find((l) => l.kind === 'hut').at)[1] },
     climb: { points: P.climb.points.map(pt), gateHalf: P.climb.gateHalf },
   };
-  delete hill.brook;
-  delete hill.river;
-  delete hill.riverside;
+  Object.assign(hill, riverLayout(hill, here('brook')));
   delete hill.paddocks.west.pond.at;
   return hill;
 }
