@@ -43,6 +43,7 @@ export const SCENES = [
   { id: 'drive', label: 'Put you on the road eight metres from the cattle grid in daylight, to look at it and the tarmac, gravel edges, potholes and verges beside it (on layout 2 it is the drive, with its field gate and reflector posts)', lines: ['weather sunny', 'weather.time 12', 'tp me cattlegrid'] },
   { id: 'neighbour', label: 'Put you just inside the neighbour\'s gateway in daylight, to look at her yard, her barn and her house (on layout 2 she is across the lane, with her track from it and her fields behind)', lines: ['weather sunny', 'weather.time 12', 'tp me neighbour'] },
   { id: 'farmstead', label: 'Put you in the yard in daylight, to look at the barn with its doors facing it, the bell, tanks and generator by it, and from here the stackyard, orchard, garden wall and Home Ground\'s rail (on layout 2: tp me stackyard, orchard, garden, cars and home go round them)', lines: ['weather sunny', 'weather.time 12', 'tp me yard'] },
+  { id: 'pitgate', label: 'Put you just inside the gravel pit\'s gate in daylight, to look at the fence round its field and the road from the gate to the lip (on layout 2: the farm gate in post and wire; tp me pitlane for the shut lane gate, pitwall for the flags at the foot of the climb)', lines: ['weather sunny', 'weather.time 12', 'tp me pitgate'] },
   { id: 'end', label: 'Let the girls go about their day again after a scene', lines: [], setup: 'end' },
 ];
 

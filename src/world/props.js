@@ -60,6 +60,7 @@ export function buildProps(ctx) {
   const hedgeSwap = buildHedges(c);
   c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
   const gates = [buildGate(c), buildNorthGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c), buildBypassGate(c)].filter(Boolean);
+  buildPitLaneGate(c);
   buildCattleGrid(c);
   buildReflectorPosts(c);
   buildDriveVerge(c);
@@ -208,16 +209,35 @@ function buildNorthGate(c) {
 function buildQuarryGate(c) {
   const { layout } = c;
   if (!layout.quarry) return null;
+  if (layout.quarry.gates) {
+    // The new farm's pit (#685): the farm gate in the pit's west fence, a field gate tied open into the field.
+    const way = layout.quarry.gates.find((g) => g.open);
+    return buildFiveBarGate(c, { id: 'quarry', gate: { x: way.x, width: way.width, open: true }, z: way.z, dir: -1, yaw: Math.atan2(way.inward[0], way.inward[1]), gap: c.fields.gates.quarry });
+  }
   return buildFiveBarGate(c, { id: 'quarry', gate: layout.quarry.gate, z: layout.farm.minZ, dir: -1, gap: c.fields.gates.quarry });
 }
 
-/** A five-bar field gate at (gate.x, z) in a hedge along x. `dir` is the way it swings back into the grass field: 1 towards -z (the south hedge), -1 towards +z. */
-function buildFiveBarGate({ scene, heights, fixedBox, gateParams }, { id, gate, z: F, dir, gap }) {
+/**
+ * The pit's lane gate on the new farm (#685): the way the lorries came in, now shut and chained for good (Jamie, 15 November 2026). Solid and
+ * never a `Gate`, so nothing opens it: the haul road ends in it, and you and the girls come in by the farm gate.
+ */
+function buildPitLaneGate(c) {
+  const lane = c.layout.quarry?.gates?.find((g) => !g.open);
+  if (!lane) return;
+  buildSteelGate({ ...c, id: 'pitlane', x: lane.x, z: lane.z, w: lane.width - 0.4, fixed: true });
+}
+
+/**
+ * A five-bar field gate at (gate.x, z) in a hedge along x. `dir` is the way it swings back into the grass field: 1 towards -z (the south hedge), -1 towards +z.
+ * `yaw` turns the whole gate about its middle, for a fence along z (the pit's west side): then +z in the gate's own frame points along `yaw` into the field.
+ */
+function buildFiveBarGate({ scene, heights, fixedBox, gateParams }, { id, gate, z: F, dir, gap, yaw = 0 }) {
   const y = heights.heightAt(gate.x, F);
   const wood = new THREE.MeshStandardMaterial({ color: 0x8b7d66, roughness: 0.9 });
   const postMat = new THREE.MeshStandardMaterial({ color: 0x6b5a45, roughness: 0.95 });
   const g = new THREE.Group();
   g.position.set(gate.x, y, F);
+  g.rotation.y = yaw;
   const w = gate.width;
 
   for (const sx of [-1, 1]) {
@@ -260,7 +280,7 @@ function buildFiveBarGate({ scene, heights, fixedBox, gateParams }, { id, gate, 
   enableShadows(g);
   scene.add(g);
   // Shut, the whole gap is solid; swung open, only the leaf standing out into the field.
-  const mid = new THREE.Vector3(leafW / 2, 0, 0).applyAxisAngle(UP, swing).add(leaf.position);
+  const mid = new THREE.Vector3(leafW / 2, 0, 0).applyAxisAngle(UP, swing).add(leaf.position).applyAxisAngle(UP, yaw);
   return new Gate({
     id,
     params: gateParams,
@@ -271,8 +291,8 @@ function buildFiveBarGate({ scene, heights, fixedBox, gateParams }, { id, gate, 
       leaf.rotation.y = a * swing;
       tie.visible = a > 0.99;
     },
-    solid: fixedBox(gate.x, y + 0.8, F, w / 2 + 0.2, 0.9, 0.2),
-    swungSolid: fixedBox(gate.x + mid.x, y + 0.7, F + mid.z, leafW / 2, 0.7, 0.08, swing),
+    solid: fixedBox(gate.x, y + 0.8, F, w / 2 + 0.2, 0.9, 0.2, yaw),
+    swungSolid: fixedBox(gate.x + mid.x, y + 0.7, F + mid.z, leafW / 2, 0.7, 0.08, swing + yaw),
     gap,
   });
 }
@@ -309,8 +329,11 @@ function buildBypassGate({ layout, fields, ...c }) {
   return buildSteelGate({ ...c, layout, id: 'bypass', x: b.x, z: b.z, w: b.width, swing: -1, gap: fields.gates.bypass });
 }
 
-/** Two steel leaves hung from timber posts across the road at (x, z), `w` m between the posts; `swing` -1 opens them west, 1 east. */
-function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swing, gap }) {
+/**
+ * Two steel leaves hung from timber posts across the road at (x, z), `w` m between the posts; `swing` -1 opens them west, 1 east. `fixed` makes it
+ * a gate that is shut for good: solid, and not a `Gate`, so there is nothing to open (the pit's lane gate).
+ */
+function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swing, gap, fixed = false }) {
   const y = heights.heightAt(x, z);
   const steel = new THREE.MeshStandardMaterial({ color: 0xa8adaf, metalness: 0.6, roughness: 0.45 });
   const timber = new THREE.MeshStandardMaterial({ color: 0x5e4c38, roughness: 0.95 });
@@ -359,6 +382,8 @@ function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swi
   g.add(chain);
   enableShadows(g);
   scene.add(g);
+  const solid = fixedBox(x, y + 0.8, z, 0.2, 0.9, w / 2 + 0.3);
+  if (fixed) return null;
   return new Gate({
     id,
     params: gateParams,
@@ -369,10 +394,13 @@ function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swi
       for (const { leaf, side } of leaves) leaf.rotation.y = swing * side * a * (Math.PI / 2 - 0.05); // inwards for the big gate, out for the grid's
       chain.visible = a < 0.05;
     },
-    solid: fixedBox(x, y + 0.8, z, 0.2, 0.9, w / 2 + 0.3),
+    solid,
     gap,
   });
 }
+
+/** The pit's two gates on the new farm, for the tests that walk at them (the game builds them in `buildProps`). */
+export { buildQuarryGate as pitFarmGate, buildPitLaneGate as pitLaneGate };
 
 export const LANE_TARMAC_LIFT = 0.07; // m the lane's tarmac is laid above the ground, so things standing on it are lifted by this
 

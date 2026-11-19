@@ -18,7 +18,9 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | shepherd's hut | The little wheeled hut on top of the hill pasture, with the bunk, the stove and the kettle | shepherds hut, shepherd's shed, hill hut, hut on wheels |
 | river | The wide river across the riverside meadow, past the pasture's east hedge: the brook widened | big stream |
 | crossing | The marked shallows across the river, between the white posts | river ford |
-| gravel pit | The old pit in the hedged field north of the barley field, through the gate in its north hedge: the deep cut, its haul roads, pond and heaps | sandpit, sand pit, gravel quarry, borrow pit |
+| gravel pit | The old pit in the hedged field north of the barley field, through the gate in its north hedge (on the new farm, the Old Pit in the north-east corner by the lane, fenced in post and wire): the deep cut, its haul roads, pond and heaps | sandpit, sand pit, gravel quarry, borrow pit |
+| lane gate | The gravel pit's gate onto the lane on the new farm, where the lorries came in: shut and chained for good, the haul road starts at it and nothing goes through it | pit gate, quarry gate, main gate |
+| farm gate | The gate in the gravel pit's west fence on the new farm, from the stone track: tied open, the way in, where the girls wait just inside | pit gate, quarry gate, back gate |
 | haul road | One of the two wide gravel roads that fork at the gravel pit's lip and wind down its wall, each way round, to the floor | access road, ramp road |
 | pit climb | The timed run up the gravel pit's steep wall, from the cones on the floor to the cones over the lip | gravel climb, wall climb |
 | mower | The Ridgeback Clipper 12, the little ride-on with the cutting deck and the grass box; its job is mowing the lawns | lawnmower, lawn mower, lawn tractor, grass cutter |
