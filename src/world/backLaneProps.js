@@ -12,9 +12,13 @@ import { matrixAt } from './hillProps.js';
 import { gateLeaf } from './neighbourFarmProps.js';
 import { woodTexture } from './neighbourTextures.js';
 import { instanceModel, modelBounds } from './assets.js';
+import { roadStrip } from './roadMesh.js';
+import { concreteTexture } from './villageTextures.js';
+import { stoneTexture } from './outbuildingProps.js';
 
 export const LANE_HEDGE_HEIGHT = 2.5; // m: a tall hedge on a single-track lane, taller than the farm's
 export const GATE_HALF = 2.2; // m either side of a gate's middle that the hedge leaves open: the leaf's length and a post each side
+export const FORD_OPEN = 6; // m either side of the ford that the hedges are open, for the stream
 export const STILE_HALF = 1.1; // m either side of the stile that the hedge is open
 const CHUNK = 6; // m a hedge collider is at longest
 
@@ -40,6 +44,7 @@ export function laneGates(road) {
 /** The hedge's gaps: the gates now, a stile and its footpath when #686's footpath is placed. */
 export function laneGaps(road) {
   const gaps = laneGates(road).map((g) => ({ s: g.s, half: GATE_HALF, side: g.side }));
+  if (road.ford) gaps.push({ s: sAlong(road, road.ford.at[0], road.ford.at[1]), half: FORD_OPEN }); // the stream runs through the hedge line on both sides
   if (road.footpath) gaps.push({ s: sAlong(road, road.footpath.at[0], road.footpath.at[1]), half: STILE_HALF, side: footpathSide(road) });
   return gaps;
 }
@@ -130,10 +135,40 @@ function pointAtTangent(road, s) {
   return { tx: p.tx, tz: p.tz };
 }
 
+/**
+ * The ford's concrete bed laid over the road for 11 m, a band of dressed stone laid along each edge of it (a low kerb of blocks, the way a ford is lined), and the
+ * depth gauge and the warning signs are with the other furniture. The water is the stream's own (hillProps.js).
+ */
+function buildFord(road, c, group, points) {
+  const { heights, random } = c;
+  if (!road.ford) return;
+  const s = sAlong(road, road.ford.at[0], road.ford.at[1]);
+  const mat = new THREE.MeshStandardMaterial({ map: concreteTexture(random), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+  const ctx = { samples: points, heights };
+  for (const m of roadStrip(ctx, -road.halfWidth - 0.3, road.halfWidth + 0.3, 0.08, mat, { from: Math.floor(s - 6), to: Math.ceil(s + 6), uv: 1, cols: 3 })) group.add(m);
+  // The kerb: blocks 0.5 by 0.3 m and 0.22 m high, on each side, each a little different in length, partly sunk.
+  const stone = new THREE.MeshStandardMaterial({ map: stoneTexture(random), roughness: 0.95 });
+  const blocks = [];
+  for (const side of [1, -1]) {
+    for (let d = -5.4; d <= 5.4; d += 0.62) {
+      const p = sidePoint(road, s + d, side, road.halfWidth + 0.38);
+      const yaw = Math.atan2(-p.tz, p.tx);
+      const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw + (random() - 0.5) * 0.1);
+      const long = 0.5 + random() * 0.1;
+      blocks.push(new THREE.Matrix4().compose(new THREE.Vector3(p.x, heights.heightAt(p.x, p.z) + 0.1, p.z), q, new THREE.Vector3(long, 0.26 + random() * 0.05, 0.3)));
+    }
+  }
+  const lining = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), stone, blocks.length);
+  blocks.forEach((m, i) => lining.setMatrixAt(i, m));
+  lining.receiveShadow = true;
+  group.add(lining);
+}
+
 /** Builds the lane's hedges, their colliders and its gates. `c` is the props context (props.js). Null on a farm with no Back Lane. */
 export function buildBackLaneProps(c) {
   const { scene, layout, heights, fixedBox, models, random } = c;
-  const road = roadNetwork(layout).road('backLane');
+  const net = roadNetwork(layout);
+  const road = net.road('backLane');
   if (!road) return null;
   const group = new THREE.Group();
   group.name = 'backLane';
@@ -182,6 +217,7 @@ export function buildBackLaneProps(c) {
   scene.add(near, far);
   for (const g of laneGates(road)) buildGate(road, g, c, group);
   buildFurniture(road, c, group);
+  buildFord(road, c, group, net.pointsAlong('backLane', { step: 1 }));
   scene.add(group);
   return { group, hedgeSwap: new HedgeSwap(near, far), road };
 }
