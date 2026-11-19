@@ -53,3 +53,19 @@ export function sideOf(road, s, x, z) {
   const p = pointAt(road, s);
   return (x - p.x) * p.tz - (z - p.z) * p.tx >= 0 ? 1 : -1;
 }
+
+/**
+ * The hedgerow trees: [{ side, s, scale }] a tree every 35 to 75 m along each side, standing in the hedge, not in a gap, a bay or within `JUNCTION_OPEN` plus
+ * 12 m of an end. `random` is a 0..1 source.
+ */
+export function laneTrees(road, random, gaps = []) {
+  const out = [];
+  for (const side of [1, -1]) {
+    for (let s = JUNCTION_OPEN + 12 + random() * 30; s < road.length - JUNCTION_OPEN - 12; s += 35 + random() * 40) {
+      if (gaps.some((g) => Math.abs(s - g.s) < g.half + 4 && (g.side === undefined || g.side === side))) continue;
+      if (road.bays.some((b) => b.side === side && Math.abs(s - b.s) < b.length / 2 + 3)) continue;
+      out.push({ side, s, scale: 1.1 + random() * 0.6 });
+    }
+  }
+  return out;
+}

@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 import { roadNetwork } from './roads.js';
-import { laneHedgeRuns, hedgeOffset, sidePoint, sideOf } from './laneHedges.js';
+import { laneHedgeRuns, laneTrees, hedgeOffset, sidePoint, sideOf } from './laneHedges.js';
 import { laneSigns, sAlong, footpathSide } from './laneSigns.js';
 import * as kit from './roadSigns.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
@@ -219,6 +219,17 @@ export function buildBackLaneProps(c) {
   for (const g of laneGates(road)) buildGate(road, g, c, group);
   buildFurniture(road, c, group);
   buildFord(road, c, group, net.pointsAlong('backLane', { step: 1 }));
+  // Hedgerow trees, oaks and ash alternately, in the hedge line with a trunk collider each (the winch can hook them).
+  const { physics, RAPIER, anchors } = c;
+  const mats = [[], []];
+  for (const t of laneTrees(road, random, laneGaps(road))) {
+    const p = sidePoint(road, t.s, t.side, hedgeOffset(road, t.s, t.side));
+    const y = heights.heightAt(p.x, p.z);
+    mats[random() < 0.5 ? 0 : 1].push(matrixAt(p.x, y - 0.15, p.z, random() * Math.PI * 2, t.scale));
+    physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * t.scale, 0.32 * t.scale).setTranslation(p.x, y + 2.5 * t.scale, p.z));
+    anchors?.push({ x: p.x, y, z: p.z, r: 0.32 * t.scale });
+  }
+  scene.add(instanceModel(models.treeA.scene, mats[0]), instanceModel(models.treeB.scene, mats[1]));
   // The verge: bare at the gates, the stile and the ford, where it is trampled or washed.
   const gaps = laneGaps(road);
   buildVerge(c, road, (s, side) => gaps.some((g) => Math.abs(s - g.s) < g.half + 1 && (g.side === undefined || g.side === side)));

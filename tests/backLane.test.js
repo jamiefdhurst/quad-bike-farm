@@ -162,3 +162,24 @@ describe('the verge', () => {
     }
   });
 });
+
+describe('the hedgerow trees', () => {
+  it('stand 35 to 75 m apart on each side, in the hedge, clear of the gates, the ford and the ends', async () => {
+    const { laneTrees, JUNCTION_OPEN } = await import('../src/world/laneHedges.js');
+    const { laneGaps } = await import('../src/world/backLaneProps.js');
+    let seed = 9;
+    const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const gaps = laneGaps(road);
+    const trees = laneTrees(road, random, gaps);
+    expect(trees.length).toBeGreaterThan(50);
+    for (const side of [1, -1]) {
+      const mine = trees.filter((t) => t.side === side).map((t) => t.s);
+      for (let i = 1; i < mine.length; i++) expect(mine[i] - mine[i - 1]).toBeGreaterThanOrEqual(35);
+    }
+    for (const t of trees) {
+      expect(t.s).toBeGreaterThan(JUNCTION_OPEN + 12);
+      expect(t.s).toBeLessThan(road.length - JUNCTION_OPEN - 12);
+      for (const g of gaps) if (g.side === undefined || g.side === t.side) expect(Math.abs(t.s - g.s)).toBeGreaterThan(g.half);
+    }
+  });
+});
