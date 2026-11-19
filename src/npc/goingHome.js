@@ -4,6 +4,7 @@
 // Jess's speed on the way out is her own in carGo.js (she gives it everything), and Amy tuts at it. Tested in tests/goingHome.test.js.
 
 import { roadNetwork } from '../world/roads.js';
+import { laneDeparture, aRoadOut, junctionSOf } from '../world/laneRoutes.js';
 
 export const DEFAULT_GOING_HOME_PARAMS = {
   giveUpAfter: 360, // seconds before a girl who still hasn't got away is counted gone anyway (stuck, or a very long walk to the pad)
@@ -13,12 +14,18 @@ export const DEFAULT_GOING_HOME_PARAMS = {
   backLaneAmy: 0.15, // 0..1 the chance Amy drives home round Back Lane rather than down the lane, where the farm has one (the new farm)
   backLaneJess: 0.45, // and Jess, who likes the road better and drives it as she drives everything
   backLaneMetres: 160, // m along Back Lane from the lane that she is counted gone
+  aRoadAmy: 0.4, // 0..1 the chance (of what is left after Back Lane) she drives home north up the lane and out onto the A-road, where the farm has one (#687)
+  aRoadJess: 0.4,
+  aRoadMetres: 25, // m from the end of her route on the A-road that she is counted gone
 };
 
 export const GOING_HOME_PARAM_RANGES = {
   backLaneAmy: [0, 1, 0.05],
   backLaneJess: [0, 1, 0.05],
   backLaneMetres: [60, 400, 10],
+  aRoadAmy: [0, 1, 0.05],
+  aRoadJess: [0, 1, 0.05],
+  aRoadMetres: [10, 80, 5],
   giveUpAfter: [60, 900, 10],
   gateX: [190, 210, 0.5],
   laneZ: [20, 200, 5],
@@ -50,6 +57,17 @@ export function leaveRoute(slot, layout, p = DEFAULT_GOING_HOME_PARAMS, via = 'l
         ...lead.map((q) => ({ x: q.x, z: q.z })),
       ];
     }
+    if (via === 'aRoad' && aRoadOf(layout)) {
+      // Or north up the lane, round its bend to the A-road and out onto it (#687): the route ends where the A-road leaves the map.
+      return [
+        { x: slot.x + 3.5, z: roadZ + 1.5 },
+        { x: over - 6, z: roadZ + 1.5 },
+        { x: over + 6, z: roadZ + 1.5 },
+        { x: lane.x - 5, z: roadZ + 1.5 },
+        { x: lane.x - 1.3, z: roadZ - 6 },
+        ...aRoadRoute(layout, roadZ).map(({ x, z }) => ({ x, z })),
+      ];
+    }
     return [
       { x: slot.x + 3.5, z: roadZ + 1.5 },
       { x: over - 6, z: roadZ + 1.5 },
@@ -75,6 +93,10 @@ export function leaveRoute(slot, layout, p = DEFAULT_GOING_HOME_PARAMS, via = 'l
  * and as far down the lane from it as today's is from the farm road.
  */
 export function goneBeyond(layout, p = DEFAULT_GOING_HOME_PARAMS, via = 'lane') {
+  if (via === 'aRoad' && aRoadOf(layout)) {
+    const end = aRoadRoute(layout, layout.road.z).at(-1);
+    return { x: end.x, z: end.z, aRoad: true };
+  }
   if (via === 'backLane' && backLaneOf(layout)) {
     const lead = backLaneOf(layout).pointsAlong('backLane', { step: 14, from: 0, to: p.backLaneMetres });
     return { x: lead[lead.length - 1].x, z: lead[lead.length - 1].z, backLane: true };
@@ -88,6 +110,7 @@ export function goneBeyond(layout, p = DEFAULT_GOING_HOME_PARAMS, via = 'lane') 
 export function hasGone(layout, p, position, via = 'lane') {
   const away = goneBeyond(layout, p, via);
   if (away.backLane) return Math.hypot(position.x - away.x, position.z - away.z) < 20;
+  if (away.aRoad) return Math.hypot(position.x - away.x, position.z - away.z) < p.aRoadMetres;
   return position.x > away.x && position.z > away.z - 10;
 }
 
@@ -179,11 +202,30 @@ function backLaneOf(layout) {
   return networks.get(layout);
 }
 
+/** The road network if the farm has an A-road (the new farm), else null. */
+const aNetworks = new WeakMap();
+function aRoadOf(layout) {
+  if (!aNetworks.has(layout)) {
+    const net = roadNetwork(layout);
+    aNetworks.set(layout, net.road('aRoad') ? net : null);
+  }
+  return aNetworks.get(layout);
+}
+
+/** Her way out along the lane from the drive at z `roadZ`, north round the bend and onto the A-road, up it to where it leaves the map: waypoints { x, z }. */
+function aRoadRoute(layout, roadZ) {
+  const net = aRoadOf(layout);
+  return [...laneDeparture(net, -1, roadZ), ...aRoadOut(net, junctionSOf(net), true)];
+}
+
 /**
- * How a girl drives home today: 'backLane' or 'lane'. `roll` is a 0..1 draw the game makes for her. Only where the farm has a Back Lane and a drive onto the
+ * How a girl drives home today: 'backLane', 'aRoad' or 'lane'. `roll` is a 0..1 draw the game makes for her. Only where the farm has a Back Lane and a drive onto the
  * lane (the new farm); Jess takes it more often than Amy (`backLaneJess` against `backLaneAmy`).
  */
 export function homeVia(layout, id, roll, p = DEFAULT_GOING_HOME_PARAMS) {
   if (!backLaneOf(layout) || layout.road.grid.x === undefined) return 'lane';
-  return roll < (id === 'jess' ? p.backLaneJess : p.backLaneAmy) ? 'backLane' : 'lane';
+  const back = id === 'jess' ? p.backLaneJess : p.backLaneAmy;
+  if (roll < back) return 'backLane';
+  if (aRoadOf(layout) && roll < back + (1 - back) * (id === 'jess' ? p.aRoadJess : p.aRoadAmy)) return 'aRoad';
+  return 'lane';
 }

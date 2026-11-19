@@ -9,7 +9,9 @@ import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET } from '../veh
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_SEATS } from '../vehicle/utvModel.js';
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET } from '../vehicle/miniMotoModel.js';
 import { TZ_WHEELS } from '../vehicle/tz65Body.js';
-import { LANE_KINDS, VISITOR_KINDS } from './traffic.js';
+import { buildCarModel, carLayout, CAR_GROUND_OFFSET } from '../vehicle/carModel.js';
+import { buildLorryModel, LORRY_LAYOUT, LORRY_GROUND_OFFSET, LORRY_SEAT } from './lorryModel.js';
+import { LANE_KINDS, A_ROAD_KINDS, VISITOR_KINDS } from './traffic.js';
 import { KIDS_BIKES, KIDS_TOPS, KIDS_PARAM_RANGES } from './kids.js';
 import { CharacterRig } from '../npc/characterRig.js';
 import { applyOutfit, withShirt, withJumper, OUTFITS } from '../npc/outfit.js';
@@ -22,6 +24,10 @@ const MODELS = {
   // The neighbours' kids' mini moto (kids.js): the TZ 65 stood upright on its two wheels, the rider sat on its anchor.
   moto: { build: (c) => buildMiniMotoModel({ bodyColor: c }), layout: { wheels: MOTO_LAYOUT.wheels.map((w) => ({ ...w, radius: TZ_WHEELS.radius })) }, offset: MOTO_GROUND_OFFSET, seat: { x: 0, y: 0.78, z: -0.2 } },
   utv: { build: (c) => buildUtvModel({ bodyColor: c, dashStyle: 'utv' }), layout: UTV_LAYOUT, offset: UTV_GROUND_OFFSET, seat: UTV_SEATS.driver ?? { x: -0.4, y: 0.9, z: -0.1 } },
+  // The A-road's traffic (#687): the girls' cars, and a box lorry (lorryModel.js). Drawn only.
+  finch: { build: (c, reg) => buildCarModel({ kind: 'finch', bodyColor: c, reg }), layout: carLayout('finch'), offset: CAR_GROUND_OFFSET, seat: { x: -0.38, y: 0.9, z: 0.05 } },
+  griffin: { build: (c, reg) => buildCarModel({ kind: 'griffin', bodyColor: c, reg }), layout: carLayout('griffin'), offset: CAR_GROUND_OFFSET, seat: { x: -0.38, y: 0.9, z: 0.05 } },
+  lorry: { build: (c) => buildLorryModel({ bodyColor: c }), layout: LORRY_LAYOUT, offset: LORRY_GROUND_OFFSET, seat: LORRY_SEAT },
 };
 
 const KID_HEIGHT = 1.3; // m: a ten-year-old
@@ -68,6 +74,10 @@ export function wantedBodies() {
   const out = [];
   const lane = Object.values(LANE_KINDS).sort((a, b) => b.weight - a.weight);
   for (const k of lane) for (const colour of k.colours) out.push({ model: k.model, colour, reg: null, driver: true });
+  const have = new Set(out.map((b) => bodyKey(b.model, b.colour, b.reg)));
+  for (const k of Object.values(A_ROAD_KINDS).sort((a, b) => b.weight - a.weight)) {
+    for (const colour of k.colours) if (!have.has(bodyKey(k.model, colour, null))) out.push({ model: k.model, colour, reg: null, driver: true });
+  }
   for (const k of Object.values(VISITOR_KINDS)) {
     const paints = k.colours ?? [k.colour];
     paints.forEach((colour, i) => out.push({ model: k.model, colour, reg: k.regs[i % k.regs.length], driver: false }));
