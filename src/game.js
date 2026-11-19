@@ -241,7 +241,7 @@ import { Achievements, DEFAULT_ACHIEVEMENT_PARAMS, ACHIEVEMENT_PARAM_RANGES } fr
 import { paginate } from './achievements/pages.js';
 import { Discoveries, stallDiscovery, prankDiscovery } from './achievements/discoveries.js';
 import { achievementSnapshot, placesAt } from './achievements/snapshot.js';
-import { buildStartLine, buildClimbCones, buildConeCourse, layCone, nearestTrackFraction } from './world/startLine.js';
+import { buildStartLine, buildClimbCones, buildClimbFlags, buildConeCourse, layCone, nearestTrackFraction } from './world/startLine.js';
 import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, worldClimbPoints, loftRestSpot, strawTip, Hiding, StrawDrop } from './world/loft.js';
 import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
@@ -1213,7 +1213,7 @@ export class Game {
     this.pitGates = quarry ? climbGates(quarry.climb) : null;
     this.pitClimb = quarry ? new PitClimb(this.pitGates) : null;
     if (quarry) {
-      buildClimbCones(this.scene, (x, z) => this.world.heightAt(x, z), this.pitGates);
+      buildClimbFlags(this.scene, (x, z) => this.world.heightAt(x, z), this.pitGates); // flags planted in the wall, not cones standing plumb against it
       registerTuning('Pit climb', this.pitClimb.p, PIT_PARAM_RANGES);
     }
     // Amy's cone course (npc/coneCourse.js): the same kind of timed run on the grass, with cones that fall over and penalties for them.

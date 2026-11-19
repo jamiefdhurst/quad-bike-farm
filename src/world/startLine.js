@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Parts } from './parts.js';
 
 // The start and finish line the girls race from: a few traffic cones either side of the track, near the yard. Just
 // something to look at (no collider), so a quad can drive straight through one.
@@ -125,6 +126,87 @@ export function buildClimbCones(scene, heightAt, gates, { scale = 1.8, endScale 
       group.add(c);
     }
   });
+  scene.add(group);
+  return group;
+}
+
+// A flag for the pit climb's gates (#685): on a wall of 30 to 47 degrees a cone stands plumb against the face and reads as lying flat, so the pit plants a
+// pole in the ground instead, upright whatever the slope, with a cloth reaching in across the gate. The same colours and words as the cones.
+export const FLAG = { pole: 0.03, height: 2.1, endHeight: 2.7, cloth: [0.8, 0.5], sink: 0.4, collar: 0.07 };
+
+const poleMaterial = new THREE.MeshStandardMaterial({ color: 0xd9d4c6, roughness: 0.55, metalness: 0.25 });
+const collarMaterial = new THREE.MeshStandardMaterial({ color: 0x2a2825, roughness: 0.85 });
+const clothMaterials = {};
+
+/** A flag's cloth: its colour with the word across it, or two white stripes on the orange gates. Plain colour with no canvas (tests). */
+function clothMaterial(kind) {
+  if (clothMaterials[kind]) return clothMaterials[kind];
+  const k = CONE_KINDS[kind];
+  const colour = `#${k.colour.toString(16).padStart(6, '0')}`;
+  let map = null;
+  if (typeof document !== 'undefined') {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 160;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = colour;
+    ctx.fillRect(0, 0, 256, 160);
+    ctx.fillStyle = '#f2f2ee';
+    if (k.word) {
+      ctx.font = '700 64px Arial Narrow, Arial, Helvetica, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(k.word, 128, 84, 220);
+    } else {
+      ctx.fillRect(0, 46, 256, 14);
+      ctx.fillRect(0, 100, 256, 14);
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillRect(0, 0, 256, 8); // a hem at the top and a darker one at the foot, as a sewn flag has
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.fillRect(0, 152, 256, 8);
+    map = new THREE.CanvasTexture(canvas);
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.anisotropy = 4;
+  }
+  return (clothMaterials[kind] = new THREE.MeshStandardMaterial({ color: map ? 0xffffff : k.colour, map, roughness: 0.8, side: THREE.DoubleSide }));
+}
+
+/**
+ * Flags for a climb's gates (npc/hillClimb.js climbGates) in place of cones: a pole planted in the ground at each side of each gate, plumb whatever the
+ * slope, a collar at its foot and a finial on top, and a cloth reaching in across the gate and facing along the course. Green at the start, blue at the
+ * finish and orange between, with START and FINISH written on the cloth. The poles are taller at the two ends. One group, a few meshes (a set piece).
+ */
+export function buildClimbFlags(scene, heightAt, gates) {
+  const parts = new Parts();
+  gates.forEach((g, i) => {
+    const end = i === 0 || i === gates.length - 1;
+    const kind = i === 0 ? 'start' : end ? 'finish' : 'orange';
+    const height = end ? FLAG.endHeight : FLAG.height;
+    const [cw, ch] = FLAG.cloth;
+    const cloth = clothMaterial(kind);
+    for (const side of [-1, 1]) {
+      const x = g.x - g.tz * (g.half + 0.5) * side;
+      const z = g.z + g.tx * (g.half + 0.5) * side;
+      const y = heightAt(x, z);
+      parts.rod(poleMaterial, [x, y - FLAG.sink, z], [x, y + height, z], FLAG.pole, FLAG.pole * 0.8, 6);
+      parts.add(collarMaterial, new THREE.CylinderGeometry(FLAG.collar, FLAG.collar * 1.3, 0.12, 8), x, y + 0.04, z);
+      parts.add(cloth, new THREE.SphereGeometry(0.05, 8, 6), x, y + height + 0.04, z); // the finial, in the cloth's colour
+      // The cloth hangs from the pole towards the middle of the gate, facing the way the course runs (so the word reads riding in), with a wave
+      // that grows away from the pole.
+      const plane = new THREE.PlaneGeometry(cw, ch, 6, 3);
+      const pos = plane.getAttribute('position');
+      for (let v = 0; v < pos.count; v++) {
+        const away = Math.abs(pos.getX(v) - (side < 0 ? -cw / 2 : cw / 2)) / cw; // 0 at the pole, 1 at the free edge
+        pos.setZ(v, Math.sin(away * 5 + pos.getY(v) * 3) * 0.05 * away);
+      }
+      plane.computeVertexNormals();
+      const toward = [side * g.tz, -side * g.tx]; // the unit vector from the pole to the gate's middle
+      parts.add(cloth, plane, x + (toward[0] * cw) / 2, y + height - ch / 2 - 0.1, z + (toward[1] * cw) / 2, 0, Math.atan2(-g.tx, -g.tz), 0);
+    }
+  });
+  const group = parts.build({ castShadow: false });
+  group.name = 'pitFlags';
   scene.add(group);
   return group;
 }

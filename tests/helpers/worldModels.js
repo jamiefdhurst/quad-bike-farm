@@ -96,13 +96,18 @@ export async function buildWorldModels() {
   add('setPiece', 'trailMarkers', buildWoods, () => found('trailMarkers')); // made by the same call
   const { buildQuarry } = await import('../../src/world/quarryProps.js');
   add('setPiece', 'quarrySite', buildQuarry, (b) => (b(c), found('quarrySite')));
+  const { buildPitBoundary } = await import('../../src/world/quarryProps.js');
+  const { layoutNew } = await import('../../src/world/layoutNew.js');
+  const two = layoutNew(LAYOUT, RAW_LAYOUT);
+  add('setPiece', 'pitFence', buildPitBoundary, (b) => b({ ...c, layout: two })); // the new farm's pit boundary needs the new farm's fields
   const { buildHut } = await import('../../src/world/hutBuild.js');
   add('setPiece', 'shepherdsHut', buildHut, (b) => b(c).group);
   const { buildLineUpBays } = await import('../../src/world/lineUpBays.js');
   add('setPiece', 'lineUpSleepers', buildLineUpBays, (b) => b(c.scene, heightAt, LAYOUT.lineUp ?? { x: 0, z: 0, yaw: 0, length: 6, bays: 3 }).group);
-  const { buildClimbCones, buildConeCourse } = await import('../../src/world/startLine.js');
+  const { buildClimbCones, buildClimbFlags, buildConeCourse } = await import('../../src/world/startLine.js');
   const gates = [0, 1, 2].map((i) => ({ x: i * 6, z: 0, tx: 1, tz: 0, half: 2 }));
   add('setPiece', 'climbCones', buildClimbCones, (b) => b(c.scene, heightAt, gates));
+  add('setPiece', 'pitFlags', buildClimbFlags, (b) => b(c.scene, heightAt, gates));
   add('setPiece', 'coneCourse', buildConeCourse, (b) => b(c.scene, heightAt, [0, 1, 2, 3].map((i) => ({ x: i * 4, z: 0 }))).group);
   const { buildHenHouse, buildPigArk } = await import('../../src/world/orchardKit.js');
   add('world', 'henHouse', buildHenHouse);
@@ -112,8 +117,6 @@ export async function buildWorldModels() {
   const { buildBundle } = await import('../../src/items/brushwood.js');
   add('setPiece', 'brushwood', buildBundle, (b) => b(c.random));
   // The field landmarks (#815) stand on the new farm, so they are built on its ground and with its places.
-  const { layoutNew } = await import('../../src/world/layoutNew.js');
-  const two = layoutNew(LAYOUT, RAW_LAYOUT);
   const c2 = { ...c, layout: two, heights: createTerrainHeight(two, new Track(two.trackPoints)) };
   const spot = (kind) => two.fieldLandmarks.find((l) => l.kind === kind);
   const land = await import('../../src/world/landmarkProps.js');

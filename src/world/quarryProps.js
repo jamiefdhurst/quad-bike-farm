@@ -18,6 +18,7 @@ import { buildCabin, cabinMaterials } from './siteCabinModel.js';
 import { buildScreeningPlant, plantMaterials } from './screeningPlantModel.js';
 import { plantSite, plantPoint, inPlantsWay, PLANT } from './plantSite.js';
 import { buildSign, debrisMaterials, drumGeometry, scatterClear, tyreGeometry, DRUM, TYRE } from './quarryDebris.js';
+import { wireFenceMaterials, wireFenceRun, addPost, addSpan } from './wireFence.js';
 
 const TAU = Math.PI * 2;
 
@@ -34,6 +35,31 @@ export function buildQuarry(c) {
   buildSite(c, quarry, site);
   c.scene.add(site);
   buildPond(c, quarry, () => false);
+  buildPitBoundary(c);
+}
+
+/**
+ * The pit's field's own fence (#685): post and wire along every boundary of kind 'fence' (all four sides of the Old Pit), open at each gateway's gap, with
+ * a collider along every span so it is as solid as the hedges it replaces (`hedgeDistance` and `hedgeAhead` count the line from the plan, this is what
+ * stops the quad). A set piece for `farDetail.js` (`pitFence`). Null on today's farm, which has hedges.
+ */
+export function buildPitBoundary({ scene, layout, heights, fixedBox, random }) {
+  const lines = (layout.boundaries ?? []).map((b, index) => ({ b, index })).filter(({ b }) => b.kind === 'fence');
+  if (!lines.length) return null;
+  const parts = new Parts();
+  const mats = wireFenceMaterials(random);
+  const count = { spans: 0, posts: 0, strainers: 0 };
+  const standing = new Set(); // where a strainer already stands, so a corner shared by two sides has one
+  for (const { b, index } of lines) {
+    const gaps = (layout.gateways ?? []).filter((g) => g.boundary === index && g.half).map((g) => [g.at - g.half, g.at + g.half]);
+    const done = wireFenceRun({ parts, mats, points: b.points, gaps, groundY: (x, z) => heights.heightAt(x, z), fixedBox, random, standing });
+    for (const k of Object.keys(count)) count[k] += done[k];
+  }
+  const group = parts.build({ castShadow: false });
+  group.name = 'pitFence';
+  group.userData.count = count;
+  scene.add(group);
+  return group;
 }
 
 /** Puts a model's colliders ([x, y, z, half x, half y, half z] in its own frame) in the world where it stands: at `at`, on `y0`, turned `turn` about y. */
@@ -187,11 +213,13 @@ function buildSite(c, quarry, site) {
   const groundY = (x, z) => heights.heightAt(x, z);
   const floorAt = (a, back) => quarry.frameAt(a, quarry.floorEdge(a) - back);
 
-  buildFence(things, quarry, { wood, wire, groundY, random });
+  buildFence(things, quarry, { mats: wireFenceMaterials(random), groundY, random, fixedBox, wood });
 
   // The steel container: the site's store, in the field a little off the gate, on sleepers, one door leaf ajar and the other padlocked.
-  const gate = quarry.gate;
-  const hut = findSpot(400, (p) => quarry.plantOk(p.x, p.z, 8) && Math.hypot(p.x - gate.x, p.z - quarry.rect.maxZ) > 14, () => ({ x: gate.x - 10 - random() * 24, z: quarry.rect.maxZ - 12 - random() * 14 })) ?? { x: gate.x - 18, z: quarry.rect.maxZ - 18 };
+  const way = quarry.way;
+  const [wx, wz] = way.inward;
+  const offGate = (along, inward) => ({ x: way.x - wz * -along + wx * inward, z: way.z + wx * -along + wz * inward }); // `along` m to the gate's left, `inward` m into the field
+  const hut = findSpot(400, (p) => quarry.plantOk(p.x, p.z, 8) && Math.hypot(p.x - way.x, p.z - way.z) > 14, () => offGate(10 + random() * 24, 12 + random() * 14)) ?? offGate(18, 18);
   const hutYaw = (random() - 0.5) * 0.7;
   {
     const { group, boxes } = buildContainer(containerMaterials(random), random);
@@ -355,10 +383,13 @@ function buildSite(c, quarry, site) {
   site.add(things);
 }
 
-/** Posts every few metres round the lip, leaning, some gone, with two strands of wire between those that are left (some sagging to the ground), and the signs. */
-function buildFence(site, quarry, { wood, wire, groundY, random }) {
+/**
+ * Posts every few metres round the lip, leaning, some gone, with three strands of barbed wire between those that are left (some sagging to the ground), and
+ * the signs. Made from the same posts and wire as the field's boundary (wireFence.js), and solid along every span that has its wire: a low collider, open
+ * where the road comes in and the climb goes over the lip, as the fence is.
+ */
+function buildFence(site, quarry, { mats, wood, groundY, random, fixedBox }) {
   const parts = new Parts();
-  const wires = new Parts();
   const posts = [];
   const N = 64;
   for (let i = 0; i < N; i++) {
@@ -369,8 +400,7 @@ function buildFence(site, quarry, { wood, wire, groundY, random }) {
   }
   for (const po of posts) {
     if (po.gone) continue;
-    const y = groundY(po.x, po.z);
-    parts.add(wood, new THREE.BoxGeometry(0.11, po.h, 0.11), po.x, y + po.h / 2 - 0.05, po.z, po.lean2, po.a, po.lean);
+    addPost(parts, mats, po.x, groundY(po.x, po.z), po.z, { height: po.h, lean: po.lean, lean2: po.lean2, yaw: po.a });
   }
   for (let i = 0; i < posts.length; i++) {
     const a = posts[i];
@@ -378,18 +408,14 @@ function buildFence(site, quarry, { wood, wire, groundY, random }) {
     if (a.gone || b.gone) continue;
     const d = Math.hypot(b.x - a.x, b.z - a.z);
     if (d > 9) continue;
-    for (const k of [0.45, 0.85]) {
-      const sag = random() < 0.12 ? 0.5 : 0.05;
-      const ya = groundY(a.x, a.z) + a.h * k;
-      const yb = groundY(b.x, b.z) + b.h * k;
-      const heading = Math.atan2(b.x - a.x, b.z - a.z);
-      wires.add(wire, new THREE.CylinderGeometry(0.008, 0.008, d, 4), (a.x + b.x) / 2, (ya + yb) / 2 - sag, (a.z + b.z) / 2, 0, heading - Math.PI / 2, Math.PI / 2);
-    }
+    const ya = groundY(a.x, a.z);
+    const yb = groundY(b.x, b.z);
+    addSpan(parts, mats, [a.x, ya, a.z], [b.x, yb, b.z], random, random() < 0.12 ? 0.4 : 0);
+    fixedBox((a.x + b.x) / 2, (ya + yb) / 2 + 0.45, (a.z + b.z) / 2, d / 2, 0.45, 0.07, Math.atan2(-(b.z - a.z), b.x - a.x));
   }
   const fence = parts.build({ castShadow: false });
-  const wireGroup = wires.build({ castShadow: false });
   fence.name = 'quarryFence';
-  site.add(fence, wireGroup);
+  site.add(fence);
 
   // The signs: where the road comes in, over the pond, and one on the far side, each on a post of its own, leaning a little.
   const road = quarry.pit.road;
