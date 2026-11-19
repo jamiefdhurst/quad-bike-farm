@@ -42,11 +42,29 @@ export function laneGates(road) {
   });
 }
 
+/** The common is on the lane's west side as it runs south, which is side -1 (laneHedges.js `sideOf`). */
+export const MOOR_SIDE = -1;
+export const BRIDLE_GATE_OFFSET = 3.2; // m along the lane from a cattle grid to its bridle gate, outside the unhedged stretch
+export const BRIDLE_HALF = 0.85; // m either side of a bridle gate's middle that the hedge leaves open: the leaf and a post each side
+
+/** Where the lane crosses the common: { from, to } m along it, from the first cattle grid to the second, or null with no grids. */
+export function moorStretch(road) {
+  const grids = road.moor?.grids;
+  if (!grids || grids.length < 2) return null;
+  const [a, b] = grids.map((g) => nearestS(road, g.near[0], g.near[1])).sort((x, y) => x - y);
+  return { from: a, to: b };
+}
+
 /** The hedge's gaps: the gates now, a stile and its footpath when #686's footpath is placed. */
 export function laneGaps(road) {
   const gaps = laneGates(road).map((g) => ({ s: g.s, half: GATE_HALF, side: g.side }));
   if (road.ford) gaps.push({ s: sAlong(road, road.ford.at[0], road.ford.at[1]), half: FORD_OPEN }); // the stream runs through the hedge line on both sides
   if (road.footpath) gaps.push({ s: sAlong(road, road.footpath.at[0], road.footpath.at[1]), half: STILE_HALF, side: footpathSide(road) });
+  const moor = moorStretch(road);
+  if (moor) {
+    gaps.push({ s: (moor.from + moor.to) / 2, half: (moor.to - moor.from) / 2, side: MOOR_SIDE }); // the common's side is open between the grids (#713)
+    gaps.push({ s: moor.from - BRIDLE_GATE_OFFSET, half: BRIDLE_HALF, side: MOOR_SIDE }, { s: moor.to + BRIDLE_GATE_OFFSET, half: BRIDLE_HALF, side: MOOR_SIDE }); // and each grid's bridle gate
+  }
   return gaps;
 }
 

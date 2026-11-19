@@ -129,6 +129,15 @@ export async function buildWorldModels() {
   add('setPiece', 'loneAsh', land.buildLoneAsh, (b) => b(c2, spot('loneAsh')));
   add('setPiece', 'brookAlders', land.buildAlders, (b) => b(c2, spot('brookAlders')));
   add('setPiece', 'bigOaks', land.buildBigOaks, (b) => b(c2, spot('bigOaks')));
+  // The Moor's set pieces and the models they are made of (#713), on the new farm.
+  const moor = await import('../../src/world/moorProps.js');
+  add('setPiece', 'moor', moor.buildMoorProps, (b) => (b(c2), found('moor')));
+  add('world', 'trigPillar', moor.buildTrigPillar, (b) => b(c.random));
+  add('world', 'cairn', moor.buildCairn, (b) => b(c.random));
+  add('world', 'moorGrid', moor.buildMoorGrid, (b) => b(c2, 1.6));
+  add('world', 'bridleGate', moor.buildBridleGate, (b) => b(c.random));
+  const signKit = await import('../../src/world/roadSigns.js');
+  add('world', 'ladderStile', signKit.buildLadderStile, (b) => b(c.random));
   // Hollow Wood's veteran oak and the woodpile's scenery (#683), on the new farm.
   add('setPiece', 'veteranOak', land.buildVeteranOak, (b) => b(c2, { at: [two.woods.oak.x, two.woods.oak.z] }));
   const { buildLogYardScenery } = await import('../../src/world/logYardProps.js');

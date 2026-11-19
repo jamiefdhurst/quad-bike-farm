@@ -1,10 +1,11 @@
 // What the girls say when you are turned round at the edge of the map (#687, world/turnRoundHost.js): you crossed a junction's give-way line onto the A-road
 // (`turnRound`) or the lane's southern line (`turnRoundSouth`), and the girl with you says why you are not going. Alone, the game puts up a toast instead
-// (`TURN_ROUND_TOAST`). Merged into the main line sets (voiceLines.js, jessLines.js).
+// (`TURN_ROUND_TOAST`), or the Moor's ladder stile (`turnRoundMoor`, #713: the footpath over the top to Upper Thornby, which is never reached). Merged into the main line sets (voiceLines.js, jessLines.js).
 
 const line = (cooldown, lines) => ({ cooldown, lines });
 
 export const TURN_ROUND_TOAST = 'Nothing needs doing in town today.';
+export const TURN_ROUND_MOOR_TOAST = 'Upper Thornby is an hour over the top. Not today.';
 
 export const AMY_TURN_ROUND_LINES = {
   turnRound: line(20, [
@@ -18,6 +19,12 @@ export const AMY_TURN_ROUND_LINES = {
     'That is the road to Haddon. We are not going there today.',
     'It is a long way to Haddon and there is a lot to do here.',
     'Turn round, please. Nothing needs doing in Haddon.',
+  ]),
+  turnRoundMoor: line(20, [
+    'Upper Thornby is an hour over the top. We have not got an hour.',
+    'That path goes to Upper Thornby, and it is an hour over the top. Come back down.',
+    'Not over the wall, you will have us lost. Upper Thornby can wait.',
+    'It is a long way over the top to Upper Thornby, and the sheep will not mind themselves.',
   ]),
 };
 
@@ -33,5 +40,11 @@ export const JESS_TURN_ROUND_LINES = {
     'We are not going to Haddon. Nobody goes to Haddon.',
     'Keep going and you will end up in Haddon. Do not.',
     'Wrong way. Home is the other way, you know.',
+  ],
+  turnRoundMoor: [
+    'Upper Thornby is an hour over the top. I am not walking that.',
+    'Over the stile and you will be in Upper Thornby by tea time. No.',
+    'We are not going over the top. My feet are cold already.',
+    'There is nothing up there but more hill. Back down.',
   ],
 };

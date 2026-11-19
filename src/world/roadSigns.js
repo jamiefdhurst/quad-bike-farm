@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { canvasTexture, worldBox } from './outbuildingProps.js';
 import { woodTexture } from './neighbourTextures.js';
+import { cattleGridSignTexture } from './villageTextures.js';
 
 function text(ctx, lines, x, y, size, colour, gap = 1.15) {
   ctx.fillStyle = colour;
@@ -389,6 +390,84 @@ export function buildStile(random) {
   add(1.0, 0.07, 0.07, 0, 0.62, 0.0); // a middle rail so the gap under the top rail is closed
   return g;
 }
+
+/**
+ * A ladder stile over a drystone wall `wallHeight` m high and `wallThick` m thick (#713): on each side a ladder of three wide treads between two slanting
+ * rails, up to a plank platform across the wall's top, with an upright post each side of the platform and a handrail between them. It climbs along x and the
+ * wall runs along z, the wall's middle at the origin and the ground at y 0 on both sides (the caller lifts it to the ground). A wall's own stones are the caller's.
+ */
+export function buildLadderStile(random, wallHeight = 1.35, wallThick = 0.6) {
+  const g = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ map: woodTexture(random, [112, 96, 74]), roughness: 0.95 });
+  const add = (w, h, d, x, y, z, rotZ = 0) => {
+    const m = new THREE.Mesh(worldBox(w, h, d, 1), wood);
+    m.position.set(x, y, z);
+    m.rotation.z = rotZ;
+    g.add(m);
+    return m;
+  };
+  const top = wallHeight + 0.08; // the platform's upper face
+  const reach = 1.1; // m the ladder runs out from the wall's face
+  const half = wallThick / 2;
+  const width = 0.9; // across the way, along the wall
+  for (const side of [-1, 1]) {
+    const foot = side * (half + reach);
+    const head = side * (half - 0.05);
+    const len = Math.hypot(head - foot, top);
+    const lean = Math.atan2(top, head - foot);
+    for (const z of [-width / 2, width / 2]) add(len, 0.1, 0.06, (foot + head) / 2, top / 2 - 0.03, z, lean); // the rails
+    for (const t of [0.22, 0.52, 0.82]) add(0.28, 0.05, width + 0.16, foot + (head - foot) * t, top * t + 0.02, 0); // the treads, a hand past the rails each side
+  }
+  add(wallThick + 0.7, 0.05, width, 0, top - 0.025, 0); // the platform, over the wall
+  add(wallThick + 0.7, 0.04, 0.2, 0, top - 0.08, -width / 2 + 0.12); // a bearer under each edge, so it is not one slab
+  add(wallThick + 0.7, 0.04, 0.2, 0, top - 0.08, width / 2 - 0.12);
+  for (const z of [-width / 2 - 0.04, width / 2 + 0.04]) add(0.09, 1.3, 0.09, 0, top + 0.4, z); // the posts, down past the platform's underside
+  add(0.08, 0.07, width + 0.2, 0, top + 0.98, 0); // the handrail
+  add(0.06, 0.05, width + 0.14, 0, top + 0.62, 0); // and a lower one
+  return g;
+}
+
+/** "SHEEP ON ROAD": a red-bordered triangle with a ewe in black, over a white plate in a black border, the cattle grid sign's size. */
+export function sheepSignTexture() {
+  return canvasTexture(256, 320, (ctx, w, h) => {
+    ctx.fillStyle = '#9a9ea0';
+    ctx.fillRect(0, 0, w, h);
+    const tri = (inset, colour) => {
+      ctx.fillStyle = colour;
+      ctx.beginPath();
+      ctx.moveTo(w / 2, 6 + inset * 1.7);
+      ctx.lineTo(w - 8 - inset * 1.5, 226 - inset * 0.55);
+      ctx.lineTo(8 + inset * 1.5, 226 - inset * 0.55);
+      ctx.closePath();
+      ctx.fill();
+    };
+    tri(0, '#c4171d');
+    tri(20, '#fff');
+    // The ewe: a fleecy body, a head with an ear, four thin legs and a tail.
+    ctx.fillStyle = '#111';
+    ctx.beginPath();
+    ctx.ellipse(122, 148, 44, 26, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(160, 124, 26, 24);
+    ctx.beginPath();
+    ctx.ellipse(184, 134, 15, 11, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(166, 114, 6, 12);
+    for (const lx of [96, 110, 138, 150]) ctx.fillRect(lx, 164, 5, 28);
+    ctx.fillRect(74, 138, 8, 8);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(18, 240, w - 36, 64);
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(18, 240, w - 36, 64);
+    text(ctx, ['SHEEP', 'ON ROAD'], w / 2, 272, 26, '#111', 1.05);
+  });
+}
+
+/** The "Cattle grid" warning on a post, 0.78 by 0.97 m with its plate. */
+export const buildCattleGridSign = () => buildSignPost(cattleGridSignTexture(), 0.78, 0.97, { bottom: 0.95 });
+/** The "Sheep on road" warning on a post, the same size. */
+export const buildSheepSign = () => buildSignPost(sheepSignTexture(), 0.78, 0.97, { bottom: 0.95 });
 
 /** A road drain: a cast-iron grating of slotted bars in a concrete frame, flush with the carriageway's edge, 0.6 by 0.4 m. Lies flat, its slots across +x. */
 export function buildDrainGrate() {

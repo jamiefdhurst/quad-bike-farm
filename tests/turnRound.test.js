@@ -13,8 +13,8 @@ const lane = net.road('lane');
 const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
 describe('the lines you are turned round at (#687)', () => {
-  it('has one at each junction\'s give-way line and one across the lane at plan z 955', () => {
-    expect(lines.map((l) => l.id)).toEqual(['lane-north', 'village', 'lane-south']);
+  it('has one at each junction\'s give-way line, one across the lane at plan z 955 and one at the moor\'s stile (#713)', () => {
+    expect(lines.map((l) => l.id)).toEqual(['lane-north', 'village', 'lane-south', 'moor-stile']);
     expect(byId['lane-north'].point.x).toBeGreaterThan(fromPlan([1280, 0])[0]); // 3 m in from the A-road
     expect(dist(byId['lane-north'].point, lane.samples[0])).toBeCloseTo(GIVE_WAY_AT, 0);
     expect(net.onRoad('aRoad', byId['lane-north'].point.x, byId['lane-north'].point.z)).toBe(false); // short of the A-road's tarmac (#1022)

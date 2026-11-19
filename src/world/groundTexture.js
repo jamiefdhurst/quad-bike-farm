@@ -5,6 +5,7 @@
 import { patchColor, patchBlend } from './patchwork.js';
 import { createOutbuildings } from './outbuildings.js';
 import { roadNetwork, pointAt } from './roads.js';
+import { paintMoor } from './moorPaint.js';
 
 function rand(seed) {
   return () => {
@@ -192,6 +193,7 @@ export function* paintGround(plan, c) {
     for (const { road, plan: roadPlan } of plan.roads) drawRoad(c, road, roadPlan, fields);
     yield;
     if (fields.hill) yield* paintHill(c, fields);
+    if (layout.moor) yield* paintMoor(c, layout); // the common beyond Back Lane (#713)
     if (fields.woods) yield* paintWoods(c, fields, autumn);
     if (fields.quarry) yield* paintQuarry(c, fields.quarry);
   }

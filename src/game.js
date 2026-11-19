@@ -759,7 +759,7 @@ export class Game {
     this.weather.season = this.season; // for the girls' remark on the time of year (companionVoice.watchWeather)
     this.weather.groundWet = groundFor(this.season).wet; // the ground never dries below the season's damp: winter's mud, spring's soft going
     this.weather.wet = Math.max(this.weather.wet, this.weather.groundWet);
-    this.world.dustParams.seasonDust = groundFor(this.season).dust;
+    this.world.dustParams.seasonDust = groundFor(this.season).dust; this.world.props.moor?.setDate(this.date); // the Moor's plants for the farm's date (#713)
     this.weather.temperature = Math.round(this.daylight.temperature(celsius) * 10) / 10;
     // Whether the day turns to something else, and what the barn's forecast board says about it (world/forecast.js); a forced weather stays put.
     this.forecastParams = { ...DEFAULT_FORECAST_PARAMS };

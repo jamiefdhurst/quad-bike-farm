@@ -47,8 +47,8 @@ describe('which farm loads', () => {
 });
 
 describe('the ground and the outline', () => {
-  it('has the ground the issue gives: plan x -70 to 1350, z -70 to 970', () => {
-    expect(two.ground).toEqual({ minX: -590, maxX: 830, minZ: -435, maxZ: 605 });
+  it('has the ground the issue gives: plan x -345 to 1350 (out to the moor\'s ridge wall, #713), z -70 to 970', () => {
+    expect(two.ground).toEqual({ minX: -865, maxX: 830, minZ: -435, maxZ: 605 });
   });
   it('has the issue\'s outline, clockwise from the north-west, moved to the yard\'s origin', () => {
     expect(OUTLINE_PLAN).toEqual([

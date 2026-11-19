@@ -4,7 +4,7 @@
 
 import { TurnRound, turnRoundLines, DEFAULT_TURN_ROUND_PARAMS, TURN_ROUND_PARAM_RANGES } from './turnRound.js';
 import { registerTuning } from '../core/tuning.js';
-import { TURN_ROUND_TOAST } from '../npc/turnRoundLines.js';
+import { TURN_ROUND_TOAST, TURN_ROUND_MOOR_TOAST } from '../npc/turnRoundLines.js';
 
 const WITH_YOU = 25; // m: a girl on foot this close is with you
 const ABOARD = 6; // m: a girl this close to your vehicle is aboard or beside it
@@ -51,9 +51,9 @@ export class TurnRoundHost {
       .map((c) => ({ c, d: Math.hypot(c.root.position.x - where.x, c.root.position.z - where.z) }))
       .filter(({ c, d }) => (here.vehicle ? (c.quad === here.vehicle || d < ABOARD) : d < WITH_YOU) && c.voice)
       .sort((a, b) => a.d - b.d);
-    const key = line.id === 'lane-south' ? 'turnRoundSouth' : 'turnRound';
+    const key = line.id === 'lane-south' ? 'turnRoundSouth' : line.id === 'moor-stile' ? 'turnRoundMoor' : 'turnRound';
     if (near.length) near[0].c.voice.say(key, { urgent: true, force: true });
-    else g.hud.toast(TURN_ROUND_TOAST, 3);
+    else g.hud.toast(line.id === 'moor-stile' ? TURN_ROUND_MOOR_TOAST : TURN_ROUND_TOAST, 3);
   }
 
   /** Puts you (and your vehicle, with anyone aboard) at `to`, facing its `yaw`, stopped. */

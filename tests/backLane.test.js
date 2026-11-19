@@ -302,7 +302,7 @@ describe('walking and riding into the gateways', () => {
     const { laneGaps, laneGates, GATE_HALF } = await import('../src/world/backLaneProps.js');
     const { laneHedgeRuns } = await import('../src/world/laneHedges.js');
     const gates = laneGates(road);
-    expect(gates.length).toBe(4);
+    expect(gates.length).toBe(5); // the north, the wood, the far, the hill and the moor gate (#713)
     expect(2 * (GATE_HALF - 0.1) - 0.24).toBeGreaterThan(3.5); // the posts' clear width
     const runs = laneHedgeRuns(road, laneGaps(road));
     for (const g of gates) {

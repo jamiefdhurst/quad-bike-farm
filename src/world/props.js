@@ -18,6 +18,7 @@ import { buildOutbuildings } from './outbuildingProps.js';
 import { buildNeighbourFarm } from './neighbourFarmProps.js';
 import { buildNeighbourLand } from './neighbourLandProps.js';
 import { buildBackLaneProps } from './backLaneProps.js';
+import { buildMoorProps } from './moorProps.js';
 import { buildUpperThornby } from './upperThornby.js';
 import { buildVillage } from './villageProps.js';
 import { inVillage } from './village.js';
@@ -64,7 +65,7 @@ export function buildProps(ctx) {
   const barn = buildBarn(c);
   const hedgeSwap = buildHedges(c);
   c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
-  const gates = [buildGate(c), buildNorthGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c), buildBypassGate(c)].filter(Boolean);
+  const gates = [buildGate(c), buildNorthGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c), buildBypassGate(c), buildMoorGate(c)].filter(Boolean);
   buildPitLaneGate(c);
   buildCattleGrid(c);
   buildReflectorPosts(c);
@@ -79,6 +80,7 @@ export function buildProps(ctx) {
   const neighbourFarm = buildNeighbourFarm(c);
   buildUpperThornby(c); // the far hamlet on the hill to the west, seen from Back Lane (#686, layout 2)
   const backLane = buildBackLaneProps(c); // Back Lane's hedges and gates (#686, layout 2)
+  const moor = buildMoorProps(c); // the Moor beyond it: ridge wall, stile, trig pillar, grids and plants (#713, layout 2)
   const neighbourLand = buildNeighbourLand(c); // her fields across the lane, at far-ground detail (#569)
   const aRoad = buildARoadProps(c); // the A-road's hedges and the junctions' furniture (#687, layout 2)
   buildLaneFittings(c); // the lane's cottages, gateways, bin and postbox (#687, layout 2)
@@ -98,7 +100,7 @@ export function buildProps(ctx) {
   if (ctx.fields.quarry) buildQuarry(c);
   buildFieldLandmarks(c); // the new farm's landmark in each field (#815); today's farm has none
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: woodProps?.treeSwaps ?? [], barn, jumpRamp, silage, puddles, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
+  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: woodProps?.treeSwaps ?? [], barn, jumpRamp, silage, puddles, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
 }
 
 function buildBarn(c) {
@@ -339,17 +341,24 @@ function buildBypassGate({ layout, fields, ...c }) {
   return buildSteelGate({ ...c, layout, id: 'bypass', x: b.x, z: b.z, w: b.width, swing: -1, gap: fields.gates.bypass });
 }
 
+/** The moor gate in Hill Pasture's wall onto Back Lane and the common (layout.moor.gate, #713): the same steel gates as the bypass, hung across the wall and swung out onto the lane. */
+function buildMoorGate({ layout, fields, ...c }) {
+  const m = layout.moor?.gate;
+  if (!m) return;
+  return buildSteelGate({ ...c, layout, id: 'moor', x: m.x, z: m.z, w: m.width, swing: -1, gap: fields.gates.moor, turn: m.yaw });
+}
+
 /**
  * Two steel leaves hung from timber posts across the road at (x, z), `w` m between the posts; `swing` -1 opens them west, 1 east. `fixed` makes it
  * a gate that is shut for good: solid, and not a `Gate`, so there is nothing to open (the pit's lane gate).
  */
-function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swing, gap, fixed = false }) {
+function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swing, gap, fixed = false, turn = 0 }) {
   const y = heights.heightAt(x, z);
   const steel = new THREE.MeshStandardMaterial({ color: 0xa8adaf, metalness: 0.6, roughness: 0.45 });
   const timber = new THREE.MeshStandardMaterial({ color: 0x5e4c38, roughness: 0.95 });
   const g = new THREE.Group();
   g.position.set(x, y, z);
-  g.rotation.y = Math.PI / 2; // the gate's length (its local x) along the hedge
+  g.rotation.y = Math.PI / 2 + turn; // the gate's length (its local x) along the hedge, or along `turn` (a yaw, 0 north to south) where the wall runs aslant
 
   for (const sx of [-1, 1]) {
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.1, 0.3), timber);
@@ -392,7 +401,7 @@ function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swi
   g.add(chain);
   enableShadows(g);
   scene.add(g);
-  const solid = fixedBox(x, y + 0.8, z, 0.2, 0.9, w / 2 + 0.3);
+  const solid = fixedBox(x, y + 0.8, z, 0.2, 0.9, w / 2 + 0.3, turn);
   if (fixed) return null;
   return new Gate({
     id,

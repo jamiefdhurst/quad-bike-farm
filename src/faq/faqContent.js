@@ -465,7 +465,16 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where does the footpath off Back Lane go?',
-        a: `The fingerpost and the stile in the hedge on the west side, towards the south, point up the hill to Upper Thornby (1 mile). You can see its roofs and church tower on the hill to the west, but it is too far to reach.`,
+        a: `The fingerpost and the stile in the hedge on the west side, towards the south, point up the hill to Upper Thornby (1 mile). You can see its roofs and church tower on the hill to the west, but it is too far to reach: the path crosses the Moor to a ladder stile in the ridge wall, and climbing it turns you round.`,
+      },
+      {
+        q: 'What is the Moor, and what is up there?',
+        a: `The Moor is the open common beyond Back Lane's west side, climbing about a hundred metres to a drystone wall along the ridge (the new farm, <code>?layout=2</code>). It is rough going: heather (brown most of the year, purple in August and September), bracken on the lower slopes (green in summer, rust in autumn), cotton grass and rushes in the wet flushes (white in June), gritstone outcrops and boulders, a couple of cut peat banks and sheep tracks worn pale through the heather. The stream the farm's river grows from rises at a spring on it. The trig pillar and a cairn stand on the ridge. Back Lane crosses it with nothing fenced on the common's side, between two cattle grids with a "Cattle grid" and a "Sheep on road" sign each way, and a bridle gate beside each grid. The moor gate in the hill pasture's wall opens onto the lane. <code>tp me to moor</code>, <code>ridge</code>, <code>stile</code> or <code>moorgrid</code> takes you there in the console.`,
+        tip: 'The Moor is open common: ride up the sheep tracks, and mind the wet flushes.',
+      },
+      {
+        q: 'What happens at the stile in the ridge wall?',
+        a: `The footpath from the farm ends at a ladder stile over the ridge wall, and the way on is to Upper Thornby, an hour over the top. You never go over: walk up to the stile and the screen fades to black and puts you back down the slope, facing home. A girl with you says why ("Upper Thornby is an hour over the top"); on your own you get a note. The wall itself is solid for every vehicle all along the ridge.`,
       },
       {
         q: 'What happens if I miss the posts and ride into the river?',

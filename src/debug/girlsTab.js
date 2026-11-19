@@ -371,6 +371,9 @@ export function buildGirlsTab(d) {
   button(out, 'Swing the big gate', () => g.trafficHost.gate('road') ? g.trafficHost.toggle(g.trafficHost.gate('road')) : toast('This farm has no big gate'));
   button(out, 'Swing the cattle grid gate', () => g.trafficHost.gate('grid') ? g.trafficHost.toggle(g.trafficHost.gate('grid')) : toast('This farm has no gate across the grid'));
   button(out, 'Swing the bypass gate', () => g.trafficHost.gate('bypass') ? g.trafficHost.toggle(g.trafficHost.gate('bypass')) : toast('Only the new farm has a gate beside its grid'));
+  button(out, 'Swing the moor gate', () => g.trafficHost.gate('moor') ? g.trafficHost.toggle(g.trafficHost.gate('moor')) : toast('Only the new farm has a moor gate'));
+  show(out, 'the moor', () => g.world.props.moor?.describe() ?? 'none on this farm (try layout 2)');
+  slider(out, 'moor month (0 January)', () => g.world.props.moor?.month ?? 0, (v) => g.world.props.moor?.setDate({ month: Math.round(v), dom: 15 }), 0, 11, 1);
   button(out, 'Send a vehicle along the lane', () => g.trafficHost.debugPass());
   button(out, 'Send a vehicle round Back Lane', () => g.trafficHost.debugBackLane() || toast('This farm has no Back Lane (try layout 2)'));
   button(out, 'Send a vehicle down the A-road', () => g.trafficHost.debugARoad() || toast('This farm has no A-road (try layout 2)'));

@@ -29,6 +29,7 @@ import { villageShape } from './village.js';
 import { roadNetwork } from './roads.js';
 import { createLandform } from './landform.js';
 import { landmarksOf, pondShape } from './fieldLandmarks.js';
+import { createMoor } from './moor.js';
 
 export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
@@ -45,6 +46,11 @@ export function createTerrainHeight(layout, track) {
   /** The farm's rolling, on the land's lie where there is one: what a level piece (the yard, a road, a floor) is laid to. */
   const lie = landform ? (x, z) => baseHeight(x, z) + landform(x) : baseHeight;
   const hut = hutShape(layout);
+  // The Moor's outcrops and peat cuts (#713), clear of the lane and of the stream's line, which have their own shape.
+  const stream = layout.hill?.stream;
+  const moor = layout.moor ? createMoor(layout.moor, {
+    keepClear: (x, z) => !!roads.nearest(x, z, 9) || (!!stream && Math.abs(z - stream.z) < 12 && x > (stream.west?.minX ?? Infinity) - 10),
+  }) : null;
   const ponds = landmarksOf(layout, 'farPond').map((l) => pondShape(l)); // Far Field's pond dish (#815): the new farm only
   let hutLevel = null; // the ground at the hut's middle as the land lies, found the first time it's needed
   let findingHutLevel = false;
@@ -76,6 +82,7 @@ export function createTerrainHeight(layout, track) {
     // The stubble fields' own lie: the north one's hollow, the south one's rise.
     h += fieldShape(x, z).lift;
     for (const pond of ponds) h -= pond.cut(x, z);
+    if (moor) h += moor.reliefAt(x, z);
     return h;
   }
 
@@ -196,5 +203,5 @@ export function createTerrainHeight(layout, track) {
     return w;
   }
 
-  return { heightAt, naturalAt: natural, mudAt, puddleAt, bogAt, puddles, bogs, hill, woods, quarry, brook };
+  return { heightAt, naturalAt: natural, mudAt, puddleAt, bogAt, puddles, bogs, hill, woods, quarry, brook, moor };
 }
