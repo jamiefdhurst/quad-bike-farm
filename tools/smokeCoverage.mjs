@@ -28,6 +28,7 @@ export const FLOORS = {
     'src/world/neighbourHost.js': 63,
     'src/world/rollingRoadHost.js': 43,
     'src/world/trafficHost.js': 74, // was 76: `debugBackLane` runs only on the new farm (#686), which the smoke does not play until #692 makes it the default
+    'src/world/turnRoundHost.js': 40, // 42.8% in one run: its turn-round code runs only on the new farm (#687), which the smoke does not play until #692 makes it the default
     'src/world/villageHost.js': 80,
     'src/world/weatherHost.js': 78,
   },

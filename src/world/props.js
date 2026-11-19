@@ -26,6 +26,9 @@ import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FA
 import { laneBarriers, nearNeighbourYard } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
 import { roadNetwork } from './roads.js';
+import { junctionBreaks, layByOf, inLaneFittings } from './aRoadFittings.js';
+import { buildARoadProps } from './aRoadProps.js';
+import { buildLaneFittings } from './laneFittingsProps.js';
 import { buildRoadMesh, roadTexture, grassStripTexture } from './roadMesh.js';
 import { buildCattleGrid, buildReflectorPosts, buildDriveVerge } from './driveProps.js';
 
@@ -77,6 +80,8 @@ export function buildProps(ctx) {
   buildUpperThornby(c); // the far hamlet on the hill to the west, seen from Back Lane (#686, layout 2)
   const backLane = buildBackLaneProps(c); // Back Lane's hedges and gates (#686, layout 2)
   const neighbourLand = buildNeighbourLand(c); // her fields across the lane, at far-ground detail (#569)
+  const aRoad = buildARoadProps(c); // the A-road's hedges and the junctions' furniture (#687, layout 2)
+  buildLaneFittings(c); // the lane's cottages, gateways, bin and postbox (#687, layout 2)
   const village = buildVillage({ ...c, laneTexture });
   buildBrookCulvert(c);
   if (neighbourFarm) gates.push(neighbourFarm.gate); // the yard's own gate opens and shuts like the farm's
@@ -93,7 +98,7 @@ export function buildProps(ctx) {
   if (ctx.fields.quarry) buildQuarry(c);
   buildFieldLandmarks(c); // the new farm's landmark in each field (#815); today's farm has none
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap].filter(Boolean), treeSwaps: woodProps?.treeSwaps ?? [], barn, jumpRamp, silage, puddles, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
+  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: woodProps?.treeSwaps ?? [], barn, jumpRamp, silage, puddles, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
 }
 
 function buildBarn(c) {
@@ -416,17 +421,30 @@ export const LANE_TARMAC_LIFT = 0.07; // m the lane's tarmac is laid above the g
 function buildPublicLane({ scene, layout, heights, fixedBox }) {
   const lane = layout.publicLane;
   if (!lane) return;
-  // Invisible walls shut the lane in: along its near edge, you can walk through the gate onto the verge, but not out into the road; along
+  // Invisible walls shut the lane in on today's farm: along its near edge, you can walk through the gate onto the verge, but not out into the road; along
   // the stretch that is open to ride (layout.publicLane.open, world/neighbourFarm.js) they leave the big gate and the neighbour's wall,
-  // and shut its far side and both ends.
+  // and shut its far side and both ends. The new farm has none (#568, #687): its roads end at the A-road's junctions and the lane's southern line, where
+  // you are turned round (world/turnRound.js).
   for (const b of laneBarriers(layout)) fixedBox(b.x, 0, b.z, b.hx, 40, b.hz);
-  const road = roadNetwork(layout).road('lane');
+  const net = roadNetwork(layout);
+  const road = net.road('lane');
   const tarmac = new THREE.CanvasTexture(laneTexture());
   tarmac.wrapS = tarmac.wrapT = THREE.RepeatWrapping;
   tarmac.colorSpace = THREE.SRGBColorSpace;
   // One point a metre, as fine as the terrain's own grid, or its bumps show through.
-  const points = roadNetwork(layout).pointsAlong('lane', { step: 1 });
+  const points = net.pointsAlong('lane', { step: 1 });
   buildRoadMesh({ scene, road, points, heights, texture: tarmac });
+  // The A-road and the village street's end, on the new farm (#687): the same builder, the A-road in its own newer tarmac and with its edge lines
+  // broken where a side road opens onto it.
+  const a = net.road('aRoad');
+  if (a) {
+    const texture = new THREE.CanvasTexture(roadTexture({ seed: 421, ...a.texture }));
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    buildRoadMesh({ scene, road: { ...a, edgeBreaks: junctionBreaks(net, a), layBys: [layByOf(a, layout.aRoadFittings?.layBy)].filter(Boolean) }, points: net.pointsAlong('aRoad', { step: 1 }), heights, texture });
+  }
+  const stub = net.road('streetEnd');
+  if (stub) buildRoadMesh({ scene, road: stub, points: net.pointsAlong('streetEnd', { step: 1 }), heights, texture: tarmac });
 }
 
 /** Back Lane (#686, layout 2 only): the single-track loop, in its own worn tarmac with tar-banded cracks and crumbling edges, and the grass down its middle. */
@@ -660,6 +678,7 @@ function buildTrees({ scene, models, layout, heights, physics, RAPIER, random, a
 
 /** Cheap low-poly tree clumps along the distant hedgerows for depth on the horizon. */
 function buildDistantTrees({ scene, layout, heights, fields, random }) {
+  const roads = roadNetwork(layout);
   const trunks = [];
   const crowns = [];
   const reach = layout.outerSize / 2 - 20;
@@ -677,6 +696,7 @@ function buildDistantTrees({ scene, layout, heights, fields, random }) {
     const crown = matrixAt(x, y + 5 * s, z, random() * 6, s * (3.2 + random() * 1.2), s * (3 + random()), s * (3.2 + random() * 1.2));
     if (nearNeighbourYard(layout, x, z, 45)) continue; // none stand by her yard or the lane beside it
     if (inVillage(layout, x, z, 14)) continue; // nor in the village
+    if (layout.newFarm && (roads.nearest(x, z, 14) || inLaneFittings(layout, x, z, 14))) continue; // nor on a road or its verge, nor in the lane's cottages' gardens (#687)
     trunks.push(trunk);
     crowns.push(crown);
   }

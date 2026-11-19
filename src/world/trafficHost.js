@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { createRandom } from '../core/random.js';
 import { registerTuning } from '../core/tuning.js';
+import { TurnRoundHost } from './turnRoundHost.js';
 import { Traffic, DEFAULT_TRAFFIC_PARAMS, TRAFFIC_PARAM_RANGES, visitPlaces, LANE_KINDS, VISITOR_KINDS } from './traffic.js';
 import { Kids, DEFAULT_KIDS_PARAMS, KIDS_PARAM_RANGES, SHOWY_OFFERS } from './kids.js';
 import { TrafficView } from './trafficView.js';
@@ -34,7 +35,6 @@ export class TrafficHost {
     this.kidsParams = { ...DEFAULT_KIDS_PARAMS };
     registerTuning('Kids on the lane', this.kidsParams, KIDS_PARAM_RANGES);
     this.kids = new Kids({ places: this.places, params: this.kidsParams, random: createRandom(game.seed ^ 0x61d5) });
-    const lane = world.layout.publicLane;
     this.view = new TrafficView(game.scene, (x, z) => world.groundHeightAt(x, z), game.models.companion, (object) => {
       const restore = showHidden(object); // three.js prepares only what it would draw
       try {
@@ -42,11 +42,16 @@ export class TrafficHost {
       } finally {
         restore();
       }
-    }, (x) => (Math.abs(x - lane.x) < lane.halfWidth ? LANE_TARMAC_LIFT : 0)); // the lane's tarmac is laid above the ground
+    }, (x, z) => {
+      // The lane's and the A-road's tarmac are laid above the ground (and so are the roads drawn the same way: roadMesh.js).
+      const r = world.roads.onCarriageway(x, z);
+      return r && r.draw === 'mesh' ? (r.lift ?? LANE_TARMAC_LIFT) : 0;
+    });
     this.audio = new TrafficAudio(game.audioHub);
     this.later = []; // [{ left, run }]: things the girls say a few seconds after
     this.lastEvent = 'nothing yet';
     this.addGatePrompts();
+    this.turnRound = new TurnRoundHost(game); // the fade and the put-back at the A-road's junctions and the lane's southern line (#687)
     this.road = new RollingRoadHost(game, this); // the tuner's rolling road, which comes on certain days (rollingRoadHost.js)
   }
 
@@ -152,6 +157,7 @@ export class TrafficHost {
     };
     for (const e of this.traffic.update(dt, ctx)) this.onEvent(e);
     this.road.update(dt, ctx);
+    this.turnRound.update(dt);
     this.mindGridGate(dt, blockers);
     const w = g.weather;
     const watchers = this.watchers();
@@ -297,6 +303,13 @@ export class TrafficHost {
     return !!v;
   }
 
+  /** Sets a vehicle off down the A-road (the new farm's), from either end; false on a farm without it. */
+  debugARoad(kind, dir) {
+    const v = this.traffic.spawnARoad(kind, dir);
+    if (v) this.lastEvent = `a ${v.kind} is on the A-road`;
+    return !!v;
+  }
+
   debugVisit(kind, leaveOpen) {
     const v = this.traffic.startVisit(kind, leaveOpen);
     if (v) this.lastEvent = `${v.kind} is coming`;
@@ -312,10 +325,11 @@ export class TrafficHost {
   describe() {
     const t = this.traffic;
     const v = t.visit;
-    const lane = t.vehicles.filter((x) => !x.backLane).map((x) => x.kind).join(', ') || 'empty';
+    const lane = t.vehicles.filter((x) => !x.backLane && !x.aRoad).map((x) => x.kind).join(', ') || 'empty';
+    const aRoad = t.aRoad ? `; A-road ${t.vehicles.filter((x) => x.aRoad).length} vehicles` : '';
     const back = t.backRoad ? `; Back Lane ${t.vehicles.filter((x) => x.backLane).map((x) => `${x.kind}${x.drive.state === 'waiting' ? ' (waiting in a passing place)' : ''}`).join(', ') || 'empty'}` : '';
     const step = v?.current ? v.current.type : '';
-    return `lane ${lane}${this.kids.group ? `; kids ${this.kids.group.phase}` : ''}; ${v ? `${v.kind} visit (${step})` : 'no visitor'}; last: ${this.lastEvent}`;
+    return `lane ${lane}${aRoad}${this.kids.group ? `; kids ${this.kids.group.phase}` : ''}; ${v ? `${v.kind} visit (${step})` : 'no visitor'}; last: ${this.lastEvent}`;
   }
 }
 

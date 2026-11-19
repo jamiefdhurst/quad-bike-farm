@@ -35,10 +35,10 @@ describe('the drive on the new farm', () => {
     expect(drive.surface).toBe('tarmac');
   });
 
-  it('meets the straight lane at plan x 905, end to side', () => {
+  it('meets the lane where it runs straight, at plan x 905, end to side', () => {
     const [laneX] = fromPlan([LANE_PLAN.x, 0]);
     expect(two.publicLane.x).toBe(laneX);
-    expect(net.road('lane').points[0][0]).toBe(laneX);
+    expect(net.road('lane').points.at(-1)[0]).toBe(laneX);
     expect(net.road('farm').junction).toEqual({ end: 'end', onto: 'lane' });
     expect(road.toX).toBe(laneX);
   });
@@ -182,7 +182,8 @@ describe('the verge', () => {
 
 describe('the girls\' cars and the visitors on the drive', () => {
   const drivePoint = (p) => Math.abs(p.z - road.z) <= road.halfWidth + 6 && p.x >= road.fromX && p.x <= road.toX + 0.01;
-  const lanePoint = (p) => Math.abs(p.x - two.publicLane.x) <= two.publicLane.halfWidth + 6;
+  // On the lane (it bends round to the A-road now, #687) or on the A-road a visitor comes in by.
+  const lanePoint = (p) => ['lane', 'aRoad'].includes(net.onCarriageway(p.x, p.z)?.id);
 
   it('takes a girl\'s car out along the drive and over the grid, with no gate to open, and away down the lane', () => {
     const slot = two.cars.finch;

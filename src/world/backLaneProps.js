@@ -188,20 +188,18 @@ function buildFord(road, c, group, points) {
   group.add(lining);
 }
 
-/** Builds the lane's hedges, their colliders and its gates. `c` is the props context (props.js). Null on a farm with no Back Lane. */
-export function buildBackLaneProps(c) {
+/**
+ * Lays hedge along `runs` of `road` (laneHedges.js `laneHedgeRuns`): leafy blocks near, plain strips far, and a collider every `CHUNK` m. Added to the scene;
+ * returns the near and far meshes, which the game swaps by distance (`HedgeSwap`). `name` names the far strips. Back Lane's and the A-road's.
+ */
+export function layHedges(c, road, runs, name, height = LANE_HEDGE_HEIGHT) {
   const { scene, layout, heights, fixedBox, models, random } = c;
-  const net = roadNetwork(layout);
-  const road = net.road('backLane');
-  if (!road) return null;
-  const group = new THREE.Group();
-  group.name = 'backLane';
   const hedgeSize = modelBounds(models.hedge.scene).getSize(new THREE.Vector3());
   const T = layout.hedgeThickness;
-  const H = LANE_HEDGE_HEIGHT;
+  const H = height;
   const matrices = [];
   const farPieces = [];
-  for (const run of laneHedgeRuns(road, laneGaps(road))) {
+  for (const run of runs) {
     const at = (s, across = 0) => sidePoint(road, s, run.side, hedgeOffset(road, s, run.side) + across);
     const blocks = [];
     for (let s = run.from; s <= run.to; s += 1.1 + random() * 0.5) {
@@ -237,8 +235,20 @@ export function buildBackLaneProps(c) {
     }
   }
   const near = instanceModel(models.hedge.scene, matrices, { castShadow: false });
-  const far = buildFarHedges(farPieces, { tint: leafTint(models.hedge.scene), name: 'backLaneHedgesFar' });
+  const far = buildFarHedges(farPieces, { tint: leafTint(models.hedge.scene), name: name });
   scene.add(near, far);
+  return { near, far };
+}
+
+/** Builds the lane's hedges, their colliders and its gates. `c` is the props context (props.js). Null on a farm with no Back Lane. */
+export function buildBackLaneProps(c) {
+  const { scene, layout, heights, fixedBox, models, random } = c;
+  const net = roadNetwork(layout);
+  const road = net.road('backLane');
+  if (!road) return null;
+  const group = new THREE.Group();
+  group.name = 'backLane';
+  const { near, far } = layHedges(c, road, laneHedgeRuns(road, laneGaps(road)), 'backLaneHedgesFar');
   const points = net.pointsAlong('backLane', { step: 1 });
   for (const g of laneGates(road)) buildGate(road, g, c, group, points);
   buildFurniture(road, c, group);

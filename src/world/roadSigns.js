@@ -170,6 +170,25 @@ export function gaugeTexture() {
   });
 }
 
+/** "GIVE WAY": a white inverted triangle with a thick red border, on a transparent square (the sign's face is the triangle only). */
+export function giveWayTexture() {
+  return canvasTexture(256, 256, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    const tri = (inset, colour) => {
+      ctx.fillStyle = colour;
+      ctx.beginPath();
+      ctx.moveTo(inset, inset * 0.9 + 6);
+      ctx.lineTo(w - inset, inset * 0.9 + 6);
+      ctx.lineTo(w / 2, h - inset * 1.35 - 4);
+      ctx.closePath();
+      ctx.fill();
+    };
+    tri(6, '#c01818');
+    tri(40, '#f6f6f0');
+    text(ctx, ['GIVE', 'WAY'], w / 2, h * 0.34, 38, '#111', 1.0);
+  });
+}
+
 /** A fingerpost arm: white-painted, black capitals, a pointed end. */
 export function fingerpostTexture(lines) {
   return canvasTexture(512, 96, (ctx, w, h) => {
@@ -197,14 +216,14 @@ export function buildSignPost(texture, w, h, { bottom = 1.5, shape = 'rect' } = 
   const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.03, 8), steel);
   cap.position.set(0, top + 0.02, -0.03);
   g.add(cap);
+  const triangle = shape === 'triangle';
   const geo = shape === 'round' ? new THREE.CircleGeometry(w / 2, 28) : new THREE.PlaneGeometry(w, h);
-  const diamond = shape === 'diamond';
+  const diamond = shape === 'diamond' || triangle;
   const face = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: texture, roughness: 0.45, metalness: 0.1, transparent: diamond, alphaTest: diamond ? 0.5 : 0 }));
   face.position.set(0, bottom + h / 2, 0.012);
   g.add(face);
   // The back plate has the face's own outline: a diamond's is turned, so its corners do not show grey round the white.
-  const plate = new THREE.Mesh(diamond ? new THREE.CircleGeometry(w * 0.5, 4) : geo, back);
-  if (diamond) plate.rotation.z = 0;
+  const plate = new THREE.Mesh(shape === 'diamond' ? new THREE.CircleGeometry(w * 0.5, 4) : triangle ? triangleGeometry(w * 0.97, h * 0.95) : geo, back);
   plate.position.set(0, bottom + h / 2, -0.005);
   plate.rotation.y = Math.PI;
   g.add(plate);
@@ -220,6 +239,17 @@ export function buildSignPost(texture, w, h, { bottom = 1.5, shape = 'rect' } = 
   return g;
 }
 
+/** A downward-pointing triangle `w` wide and `h` tall, centred, facing +z. */
+function triangleGeometry(w, h) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute([-w / 2, h / 2, 0, w / 2, h / 2, 0, 0, -h / 2, 0], 3));
+  g.setIndex([0, 2, 1]);
+  g.computeVertexNormals();
+  return g;
+}
+
+/** The "Give way" triangle, 0.9 m a side, point down, on a post. Its face is the red-bordered white triangle only (the plate behind has its outline). */
+export const buildGiveWaySign = () => buildSignPost(giveWayTexture(), 0.9, 0.78, { bottom: 1.2, shape: 'triangle' });
 /** The "Passing place" diamond, 0.6 m square on a post at 1.7 m. */
 export const buildPassingPlaceSign = () => buildSignPost(passingPlaceTexture(), 0.62, 0.62, { bottom: 1.5, shape: 'diamond' });
 /** The blue "Single track road with passing places" board, 0.9 by 0.68 m. */
@@ -283,6 +313,58 @@ export function buildFingerpost(random, lines = ['Public footpath', 'Upper Thorn
   const foot = new THREE.Mesh(worldBox(0.3, 0.1, 0.3, 1), new THREE.MeshStandardMaterial({ color: 0x9b9a94, roughness: 1 }));
   foot.position.y = -0.1;
   g.add(foot);
+  return g;
+}
+
+/**
+ * A fingerpost with several arms (#687), black and white as the real ones are: a white-painted post with a black-banded foot and a ball finial, and for each
+ * `arms` entry `{ lines, yaw }` an arm 0.85 m long with its tip pointed, a black rim and the place and miles on both faces, pointing along `yaw` (the way
+ * +x is turned by, about y) and each a hand's breadth below the one above. The post stands at the origin.
+ */
+export function buildFingerpostArms(random, arms = [{ lines: ['Kelby 4'], yaw: 0 }]) {
+  const g = new THREE.Group();
+  const paint = new THREE.MeshStandardMaterial({ color: 0xece9de, roughness: 0.9 });
+  const black = new THREE.MeshStandardMaterial({ color: 0x1b1b1c, roughness: 0.85 });
+  const post = new THREE.Mesh(worldBox(0.13, 2.3, 0.13, 1), paint);
+  post.position.y = 0.95;
+  g.add(post);
+  const band = new THREE.Mesh(worldBox(0.145, 0.3, 0.145, 1), black); // the black foot, as the signs of a county's roads have
+  band.position.y = -0.05;
+  g.add(band);
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), paint);
+  ball.position.y = 2.18;
+  g.add(ball);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.075, 0.05, 10), black);
+  cap.position.y = 2.1;
+  g.add(cap);
+  arms.forEach((a, i) => {
+    const arm = new THREE.Group();
+    arm.position.y = 1.8 - i * 0.28;
+    arm.rotation.y = a.yaw;
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.2, 0.035), paint);
+    board.position.x = 0.42;
+    arm.add(board);
+    const rim = new THREE.Mesh(new THREE.BoxGeometry(0.87, 0.222, 0.03), black);
+    rim.position.x = 0.42;
+    arm.add(rim);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.12, 4), paint);
+    tip.rotation.z = -Math.PI / 2;
+    tip.rotation.x = Math.PI / 4;
+    tip.scale.set(1, 1, 0.25);
+    tip.position.x = 0.88;
+    arm.add(tip);
+    const tex = fingerpostTexture(a.lines);
+    for (const side of [1, -1]) {
+      const face = new THREE.Mesh(new THREE.PlaneGeometry(0.82, 0.18), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }));
+      face.position.set(0.42, 0, side * 0.0195);
+      if (side < 0) face.rotation.y = Math.PI;
+      arm.add(face);
+    }
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.05, 0.16), steel);
+    strap.position.x = 0;
+    arm.add(strap);
+    g.add(arm);
+  });
   return g;
 }
 

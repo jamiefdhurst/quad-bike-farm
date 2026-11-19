@@ -8,6 +8,8 @@ import { rigSite } from './rollingRoadSite.js';
 import { roadNetwork, KEEP_LEFT } from './roads.js';
 import { barnFrame } from './barn.js';
 import { LaneDrive } from './backLaneTraffic.js';
+import { passRoute, laneApproach, laneDeparture, pastEnd, aRoadIn, aRoadOut } from './laneRoutes.js';
+import { sAlong } from './laneSigns.js';
 
 export const DEFAULT_TRAFFIC_PARAMS = {
   passEvery: 160, // s: on average between vehicles going by on the lane by day (0 turns the lane's traffic off)
@@ -26,6 +28,9 @@ export const DEFAULT_TRAFFIC_PARAMS = {
   backEvery: 300, // s: on average between vehicles setting off round Back Lane on the new farm (0 turns it off)
   backSpeedMin: 5, // m/s: a car or van on Back Lane, single track, so slower than on the lane
   backSpeedMax: 9,
+  aRoadEvery: 12, // s: on average between vehicles on the A-road on the new farm, drawn only (0 turns it off); 5 to 20 s in practice
+  aRoadSpeedMin: 22, // m/s: 50 mph
+  aRoadSpeedMax: 27, // 60 mph
 };
 
 export const TRAFFIC_PARAM_RANGES = {
@@ -45,6 +50,21 @@ export const TRAFFIC_PARAM_RANGES = {
   backEvery: [0, 900, 10],
   backSpeedMin: [2, 15, 0.5],
   backSpeedMax: [2, 20, 0.5],
+  aRoadEvery: [0, 120, 1],
+  aRoadSpeedMin: [10, 35, 0.5],
+  aRoadSpeedMax: [10, 40, 0.5],
+};
+
+/**
+ * What goes by on the A-road (#687): cars, vans and lorries, the farm's own models in more paints, the cars the girls' Finch and Griffin, the vans the Crag,
+ * the lorries a box-bodied lorry (lorryModel.js).
+ */
+const LANE_KINDS_VAN_COLOURS = [0xe8e8e4, 0x1d3d73, 0x6b7076, 0xf2f0e6];
+export const A_ROAD_KINDS = {
+  finch: { model: 'finch', colours: [0x9fb8cc], weight: 3 },
+  griffin: { model: 'griffin', colours: [0x2c4a36], weight: 3 },
+  van: { model: 'crag', colours: LANE_KINDS_VAN_COLOURS, weight: 2 }, // the lane's own vans' paints, so no more bodies are built for them
+  lorry: { model: 'lorry', colours: [0xe8e8e4, 0xa8261f], weight: 1.5 },
 };
 
 /**
@@ -144,15 +164,15 @@ export class Drive {
   }
 }
 
-/** A weighted pick from LANE_KINDS: [id, kind]. */
-export function pickKind(random) {
-  const total = Object.values(LANE_KINDS).reduce((s, k) => s + k.weight, 0);
+/** A weighted pick from `kinds` (LANE_KINDS unless given): [id, kind]. */
+export function pickKind(random, kinds = LANE_KINDS) {
+  const total = Object.values(kinds).reduce((s, k) => s + k.weight, 0);
   let r = random() * total;
-  for (const [id, k] of Object.entries(LANE_KINDS)) {
+  for (const [id, k] of Object.entries(kinds)) {
     r -= k.weight;
     if (r <= 0) return [id, k];
   }
-  return Object.entries(LANE_KINDS)[0];
+  return Object.entries(kinds)[0];
 }
 
 const exponential = (random, mean) => -Math.log(1 - random() * 0.999) * mean;
@@ -173,6 +193,7 @@ export function visitPlaces(layout) {
   return {
     lane,
     lanes: roadNetwork(layout), // the lane's route in and out is asked of the road network (world/roads.js)
+    route: laneRoutes(roadNetwork(layout), gate.z),
     gate,
     open,
     road,
@@ -191,6 +212,31 @@ export function visitPlaces(layout) {
   };
 }
 
+/**
+ * How a visitor comes in and goes out along the lane, from the road network (#687): `in(from)` is { start, path } (where it appears and the waypoints to the
+ * stretch before the drive; `from` +1 from the north, -1 from the south) and `out(to, north)` the waypoints on from the drive. With an A-road it comes in from
+ * the A-road's end and goes out by the bend and the junction onto it (up it if `north`, else down it) or off the lane's south end; without, between the lane's ends.
+ */
+export function laneRoutes(net, driveZ) {
+  const lane = net.road('lane');
+  const aRoad = net.road('aRoad');
+  const s = lane && aRoad ? sAlong(aRoad, lane.samples[0].x, lane.samples[0].z) : 0;
+  return {
+    in(from) {
+      if (!aRoad) return { start: net.lanePath('lane', from, 10)[0], path: [] };
+      const pts = [...(from > 0 ? aRoadIn(net, s, true) : []), ...laneApproach(net, from, driveZ)];
+      const [first] = pts;
+      const start = from > 0 ? first : { x: first.x, z: first.z - (first.tz ?? 0) * 10 };
+      return { start, path: pts.slice(1) };
+    },
+    out(to, north = true) {
+      if (!aRoad) return [net.lanePath('lane', to, 20)[1]];
+      const pts = laneDeparture(net, to, driveZ);
+      return to > 0 ? [...pts, pastEnd(pts, 30)] : [...pts, ...aRoadOut(net, s, north)];
+    },
+  };
+}
+
 /** The lane x for a vehicle heading `dir` (+1 south, towards +z, -1 north): the left of the road, as it is here. */
 export const laneX = (lane, dir) => lane.x + (dir > 0 ? 1 : -1) * lane.halfWidth * KEEP_LEFT;
 
@@ -199,8 +245,10 @@ export const laneX = (lane, dir) => lane.x + (dir > 0 ? 1 : -1) * lane.halfWidth
  * the gate is left open on the way out. Steps: drive { path }, exit / enter (the driver gets out or in), walk { to }, gate { open, at }
  * (the driver walks to the gate and swings it; only if it is not already so; `gate: 'grid'` is the one by the cattle grid), wait { seconds, event }.
  */
-export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
-  const { lane, lanes, gate, road, outside, inside, stop, door, turn, grid, open, over } = places;
+export function planVisit({ places, from, to, does, leaveOpen, farmSpeed, north = true }) {
+  const { lane, gate, road, outside, inside, stop, door, turn, grid, open, over } = places;
+  const entry = places.route.in(from).path; // along the lane from where it appears (the A-road's end, or the lane's end)
+  const exit = places.route.out(to, north); // and out along it the way it came or the other way, to where it leaves the map
   const steps = [];
   const sp = (p) => ({ ...p, speed: farmSpeed });
   // The drive has no gate: in along the lane, turn across it into the drive and over the grid, and out the same way (the stretch the shared steps leave out).
@@ -216,6 +264,7 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
     steps.push({
       type: 'drive',
       path: [
+        ...entry,
         { x: laneX(lane, from), z: gate.z - from * 16 },
         { x: lane.x - 0.8, z: gate.z - from * 6, speed: 5 },
         { x: outside.x + 1.2, z: gate.z, speed: 4 },
@@ -235,7 +284,7 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
   steps.push({
     type: 'drive',
     path: open
-      ? [...inLane, sp({ x: road.fromX + 6, z: inZ })]
+      ? [...entry, ...inLane, sp({ x: road.fromX + 6, z: inZ })]
       : [
         sp({ x: gate.x - 2, z: gate.z, speed: 4 }),
         sp({ x: gate.x - 14, z: inZ }),
@@ -299,7 +348,7 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
         { x: lane.x - 5, z: road.z - 1, speed: 5 },
         { x: laneX(lane, to) - to * 0.3, z: road.z + to * 6, speed: 5 },
         { x: laneX(lane, to), z: road.z + to * 18 },
-        lanes.lanePath('lane', to, 20)[1],
+        ...exit,
       ],
     });
     return steps;
@@ -325,7 +374,7 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
       { x: outside.x + 1.5, z: gate.z, speed: 4 },
       { x: laneX(lane, to) - to * 0.3, z: gate.z + to * 6, speed: 5 },
       { x: laneX(lane, to), z: gate.z + to * 18 },
-      lanes.lanePath('lane', to, 20)[1],
+      ...exit,
     ],
   });
   return steps;
@@ -337,7 +386,7 @@ export function planVisit({ places, from, to, does, leaveOpen, farmSpeed }) {
  * A `stay` step holds the driver at her spot until ctx.stayOver is true.
  */
 export class Visit {
-  constructor({ kind, places, from, to, leaveOpen, params, colour, reg = null }) {
+  constructor({ kind, places, from, to, leaveOpen, params, colour, reg = null, north = true }) {
     this.kind = kind;
     this.reg = reg ?? VISITOR_KINDS[kind].regs[0];
     this.colour = colour;
@@ -347,8 +396,8 @@ export class Visit {
     this.from = from;
     const spec = VISITOR_KINDS[kind];
     this.model = spec.model;
-    this.steps = planVisit({ places, from, to, does: spec.does, leaveOpen, farmSpeed: params.farmSpeed });
-    const start = places.lanes.lanePath('lane', from, 10)[0];
+    this.steps = planVisit({ places, from, to, does: spec.does, leaveOpen, farmSpeed: params.farmSpeed, north });
+    const start = places.route.in(from).start;
     this.drive = new Drive({ x: start.x, z: start.z, yaw: from > 0 ? 0 : Math.PI, speed: 10, cruise: 12 });
     this.driver = { mode: 'seat', x: 0, z: 0, heading: 0, walking: false };
     this.step = -1;
@@ -490,22 +539,52 @@ export class Traffic {
     this.backRoad = places.lanes?.road?.('backLane') ?? null; // Back Lane, on the new farm
     this.backAll = []; // the vehicles on it, which watch each other for meeting on the single track
     this.nextBack = exponential(random, Math.max(1, params.backEvery)) * 0.5;
+    this.aRoad = places.lanes?.road?.('aRoad') ?? null; // the A-road, on the new farm: where the lane meets it, and the traffic on it
+    this.junctionS = this.aRoad ? sAlong(this.aRoad, places.lanes.road('lane').samples[0].x, places.lanes.road('lane').samples[0].z) : 0;
+    this.aAll = [];
+    this.nextARoad = 3 + random() * 9;
     this.nextVisit = params.firstVisit + exponential(random, Math.max(1, params.visitEvery) * 0.5);
     this.count = 0;
     this.forcedVisit = null;
   }
 
-  /** Sets a vehicle off along the lane now (the debug panel's button, and the timer). `kind` a LANE_KINDS id, or random. */
+  /**
+   * Sets a vehicle off along the lane now (the debug panel's button, and the timer). `kind` a LANE_KINDS id, or random. On the new farm it comes in from the
+   * A-road (up or down it), follows the lane round its bend and out of the south end, or the other way; on today's, between the lane's two ends.
+   */
   spawnPass(kind) {
     const [id, spec] = kind && LANE_KINDS[kind] ? [kind, LANE_KINDS[kind]] : pickKind(this.random);
     const dir = this.random() < 0.5 ? 1 : -1;
     const p = this.p;
     const speed = spec.speed === 'tractor' ? p.tractorSpeed : p.laneSpeedMin + this.random() * Math.max(0, p.laneSpeedMax - p.laneSpeedMin);
-    const [from, to] = this.places.lanes.lanePath('lane', dir, [12, 30]);
-    const drive = new Drive({ x: from.x, z: from.z, yaw: dir > 0 ? 0 : Math.PI, speed, cruise: speed });
-    drive.go([{ x: to.x, z: to.z, speed }]);
+    let path;
+    let start;
+    if (this.aRoad) {
+      const route = passRoute(this.places.lanes, dir, this.junctionS, this.random() < 0.5);
+      [start] = route;
+      path = route.slice(1).map((q) => ({ x: q.x, z: q.z, speed }));
+    } else {
+      const [from, to] = this.places.lanes.lanePath('lane', dir, [12, 30]);
+      start = from;
+      path = [{ x: to.x, z: to.z, speed }];
+    }
+    const drive = new Drive({ x: start.x, z: start.z, yaw: path[0] ? headingTo(start.x, start.z, path[0].x, path[0].z) : dir > 0 ? 0 : Math.PI, speed, cruise: speed });
+    drive.go(path);
     const colour = spec.colours[Math.floor(this.random() * spec.colours.length)];
     const v = { id: ++this.count, kind: id, model: spec.model, colour, dir, drive, passed: false };
+    this.vehicles.push(v);
+    return v;
+  }
+
+  /** Sets a vehicle off down the A-road now (the debug panel's button, and the timer): from either end, at 50 to 60 mph, drawn only. Null where there is no A-road. */
+  spawnARoad(kind, dir = this.random() < 0.5 ? 1 : -1) {
+    if (!this.aRoad) return null;
+    const [id, spec] = kind && A_ROAD_KINDS[kind] ? [kind, A_ROAD_KINDS[kind]] : pickKind(this.random, A_ROAD_KINDS);
+    const p = this.p;
+    const speed = p.aRoadSpeedMin + this.random() * Math.max(0, p.aRoadSpeedMax - p.aRoadSpeedMin);
+    const drive = new LaneDrive({ id: this.count + 1, road: this.aRoad, all: [], dir, speed });
+    const colour = spec.colours[Math.floor(this.random() * spec.colours.length)];
+    const v = { id: ++this.count, kind: id, model: spec.model, colour, dir, drive, passed: true, aRoad: true };
     this.vehicles.push(v);
     return v;
   }
@@ -533,11 +612,13 @@ export class Traffic {
     const colour = spec.colour ?? spec.colours[paint];
     const from = this.random() < 0.5 ? 1 : -1;
     const to = this.random() < 0.5 ? 1 : -1;
+    const north = this.random() < 0.5; // turning onto the A-road, up it or down it
     this.visit = new Visit({
       kind: k,
       places: this.places,
       from,
       to,
+      north,
       leaveOpen: leaveOpen ?? this.random() < this.p.leftOpenChance,
       params: this.p,
       colour,
@@ -563,7 +644,14 @@ export class Traffic {
         this.nextBack = exponential(this.random, p.backEvery * quiet);
       }
     }
-    if (p.passEvery > 0 && this.vehicles.filter((v) => !v.backLane).length < 3) {
+    if (this.aRoad && p.aRoadEvery > 0 && this.vehicles.filter((v) => v.aRoad).length < 8) {
+      this.nextARoad -= dt;
+      if (this.nextARoad <= 0) {
+        this.spawnARoad();
+        this.nextARoad = p.aRoadEvery * quiet * (0.4 + this.random() * 1.2); // 5 to 20 s at the default
+      }
+    }
+    if (p.passEvery > 0 && this.vehicles.filter((v) => !v.backLane && !v.aRoad).length < 3) {
       this.nextPass -= dt;
       if (this.nextPass <= 0) {
         this.spawnPass();
@@ -573,7 +661,7 @@ export class Traffic {
     for (let i = this.vehicles.length - 1; i >= 0; i--) {
       const v = this.vehicles[i];
       v.drive.update(dt, ctx.blockers ?? []);
-      if (!v.passed && Math.abs(v.drive.z - this.places.gate.z) < v.drive.speed * dt + 1) {
+      if (!v.passed && Math.abs(v.drive.x - this.places.gate.x) < 30 && Math.abs(v.drive.z - this.places.gate.z) < v.drive.speed * dt + 1) {
         v.passed = true;
         events.push({ type: 'pass', vehicle: v });
       }

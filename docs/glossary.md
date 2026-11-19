@@ -11,6 +11,8 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | Name | What it is | Not |
 | --- | --- | --- |
 | the drive | The old tarmac road on the new farm from the lane to the yard, open to the fields either side, with the cattle grid at the lane end (today's farm has the farm road instead) | driveway, farm track |
+| the A-road | The main road down the valley east of the farm on the new farm, two lanes with a white dashed centre line, edge lines and cat's eyes. The lane meets it in the north and the village street at the village's junction, each with a give-way line and sign; pull out onto it and you are turned round | the highway, the dual carriageway, the trunk road |
+| town | Where the fingerposts point and the girls say you are not going today: Kelby 4 miles up the A-road, Ashwell 3 miles down it, Haddon 6 miles on down the lane. Never reached; the girls turn you round at the A-road and at the lane's southern line | the city, the market town |
 | Back Lane | The old single-track road round the farm's north, west and south on the new farm, with passing places, hedges and a ford; it leaves the public lane at the north and rejoins it below the village | the back road |
 | passing place | A widened bay in Back Lane's edge with a white diamond sign, where one vehicle pulls in to let another by | lay-by, pull-in |
 | Upper Thornby | The hamlet on the hill to the west that the footpath off Back Lane climbs to; seen as roofs and a church tower, never reached | the village (that is Nether Thornby) |

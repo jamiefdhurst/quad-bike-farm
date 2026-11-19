@@ -22,9 +22,9 @@ describe('her land across the lane (#569)', () => {
     expect(neighbourLandShape(LAYOUT)).toBeNull();
   });
 
-  it('is the plan\'s block of fields east of the lane\'s hedge, from plan z -60 to 560, with the yard inside one of them', () => {
-    const [x0, z0] = fromPlan([912, -60]);
-    const [x1, z1] = fromPlan([1290, 560]);
+  it('is the plan\'s block of fields east of the lane\'s hedge, from plan z -18 to 560 and x 1282 (cut back from the map\'s -60 and 1290 by the roads, #687), with the yard inside one of them', () => {
+    const [x0, z0] = fromPlan([912, -18]);
+    const [x1, z1] = fromPlan([1282, 560]);
     expect(Math.min(...land.fields.map((f) => f.minX))).toBe(x0);
     expect(Math.min(...land.fields.map((f) => f.minZ))).toBe(z0);
     expect(Math.max(...land.fields.map((f) => f.maxX))).toBe(x1);
@@ -46,7 +46,7 @@ describe('her land across the lane (#569)', () => {
     expect(laneHedge.gaps.some(([a, b]) => trackZ > a + 2 && trackZ < b - 2)).toBe(true); // wider than her track's carriageway (4 m)
     expect(land.gate).toMatchObject({ x: fromPlan([912, 0])[0], z: gateZ, width: 5 });
     expect(laneHedge.gaps.some(([a, b]) => gateZ > a && gateZ < b && b - a >= land.gate.width)).toBe(true);
-    expect(stretchesOf(laneHedge)).toHaveLength(3);
+    expect(stretchesOf(laneHedge)).toHaveLength(6); // her track, her north gate, two more gateways (#687) and the cottages' frontage
     // No stretch of any hedge crosses her track, her wall or the lane.
     for (const s of hedgeStretches(land)) {
       const box = { minX: s.x - s.hx, maxX: s.x + s.hx, minZ: s.z - s.hz, maxZ: s.z + s.hz };

@@ -259,7 +259,7 @@ describe('the lane\'s traffic on the new farm', () => {
     const { Traffic, DEFAULT_TRAFFIC_PARAMS, visitPlaces } = await import('../src/world/traffic.js');
     let seed = 3;
     const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-    const traffic = new Traffic({ places: visitPlaces(two), params: { ...DEFAULT_TRAFFIC_PARAMS, passEvery: 0, visitEvery: 0, backEvery: 0 }, random });
+    const traffic = new Traffic({ places: visitPlaces(two), params: { ...DEFAULT_TRAFFIC_PARAMS, passEvery: 0, visitEvery: 0, backEvery: 0, aRoadEvery: 0 }, random });
     const v = traffic.spawnBackLane('van', 1);
     expect(v.backLane).toBe(true);
     expect(v.drive.s).toBe(0);

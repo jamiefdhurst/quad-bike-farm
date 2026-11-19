@@ -144,8 +144,73 @@ export const DRIVE_PLAN = {
   patches: 70,
 };
 
-/** The lane (#568): straight at plan x 905 for the length of the ground. #687 bends it round to the A-road and #686 hangs Back Lane off it. */
-export const LANE_PLAN = { x: 905, halfWidth: 2.3, minZ: -70, maxZ: 970, ridden: [245, 445] };
+/**
+ * The lane (#568, #687), plan metres: from the A-road's junction in the north (1291, -30) east to west along z -31, round the bend through (936, -26) and
+ * (905, -2) (where Back Lane leaves it), then straight at plan x 905 south for the length of the ground. Two lanes 5.2 m wide with a worn dashed centre
+ * line, not single track (Jamie, 19 November 2026: it has to read as a real road, and differ from Back Lane). The control points down the straight are
+ * 80 m apart so the curve through them does not overshoot. The lane ends at z 970, where the ground does, and runs on into the far landscape (#708).
+ */
+export const LANE_PLAN = {
+  x: 905, halfWidth: 2.6, minZ: -70, maxZ: 970, ridden: [245, 445],
+  north: [[1291, -30], [1210, -31], [1130, -31], [1050, -31], [990, -30], [936, -26], [905, -2], [905, 40]],
+  southStep: 80, // m between control points on the straight, from z 40 to maxZ
+};
+
+/**
+ * The A-road (#687), plan metres: one main road down the valley east of the village, from the map's north edge to its south, curving. Two lanes with a
+ * white centre line and edge lines, 7.3 m of carriageway (the width of a rural single carriageway, wider again than the lane's 5.2), verges and the
+ * neighbour's hedge along its west side. The lane joins it at (1291, -30) and the village street at (1292, 718), so those are control points.
+ * `drawn` is what the far landscape (#708) carries on from.
+ */
+export const A_ROAD_PLAN = {
+  points: [[1300, -70], [1291, -30], [1290, 60], [1292, 150], [1294, 250], [1298, 400], [1296, 560], [1292, 718], [1300, 800], [1305, 880], [1296, 970]],
+  halfWidth: 3.65, verge: 2.4, camber: 0.05, dash: [4, 8], eyes: 18,
+  layBy: { z: 640, length: 30, width: 3.2, side: 1 }, // on the east side (side 1 reads east on a road that runs south), with the bus stop flag at its south end
+};
+
+/**
+ * The village street's end at the A-road (#687): a stub of the street from the junction at (1292, 718), 60 m west, with a give-way line and the signs.
+ * #688 moves the street across the lane and runs it to here, replacing the stub.
+ */
+export const STREET_STUB_PLAN = { to: [1292, 718], from: [1232, 718], halfWidth: 3 };
+
+/**
+ * The junctions (#687), plan metres: where a minor road gives way to the A-road, with the fingerpost's place names and miles, and the lane's southern
+ * fingerpost (at Back Lane's south junction, pointing on down the lane). `side` is the side of the minor road the signs stand on, looking out to the A-road.
+ */
+export const JUNCTIONS_PLAN = [
+  { id: 'north', road: 'lane', end: 'start', onto: 'aRoad', lines: ['Kelby 4'] },
+  { id: 'village', road: 'streetEnd', end: 'end', onto: 'aRoad', lines: ['Ashwell 3'] },
+];
+
+/** The fingerpost at Back Lane's south junction, pointing on down the lane (#687). */
+export const SOUTH_FINGERPOST_PLAN = { at: [911, 880], lines: ['Haddon 6', 'Back Lane'] };
+
+/**
+ * Where you are turned round (#687): `s` metres from the `end` of a road, across it. The give-way line of each junction, and the lane's southern line at plan
+ * z 955 (just before the built ground gives way to far landscape, and `wide`, across the whole ground, so there is no way round it). How far back you are
+ * put is the tunable `back` (world/turnRound.js).
+ */
+export const TURN_ROUND_PLAN = {
+  lines: [
+    { id: 'lane-north', road: 'lane', end: 'start', s: 3 },
+    { id: 'village', road: 'streetEnd', end: 'end', s: 3 },
+    { id: 'lane-south', road: 'lane', end: 'end', s: 15, wide: true }, // z 955 on a lane that ends at 970
+  ],
+};
+
+/**
+ * What makes the lane a lane other people use (#687), plan metres: the pair of cottages on its east side, two more field gateways in her hedge, the grit
+ * bins at the bends (one at the northern bend, one at the junction), the postbox on its post and the bin stand at the end of our drive (the drive meets
+ * the lane at z 345, and these stand on its north verge on the lane's west side). The lane's west side at x 905 is the farm boundary at x 885.
+ */
+export const LANE_FITTINGS_PLAN = {
+  cottages: { rect: [920, 418, 944, 442], yaw: Math.PI / 2, gardenDepth: 12 }, // a pair, semi-detached, their fronts to the lane
+  gateways: [{ at: [912, 205], width: 4.5 }, { at: [912, 505], width: 4.5 }],
+  gritBins: [[905, -2]], // by the bend, on its outside; the junctions have their own
+  postbox: [900.8, 338], // west verge, north of the drive's mouth
+  binStand: [900.8, 353], // and south of it
+};
 
 /**
  * The neighbour's yard (#569), plan metres: a walled yard across the lane, her gateway in its west wall at plan z 292 (our drive meets the lane at
@@ -181,7 +246,7 @@ export const NEIGHBOUR_PLAN = {
 
 /**
  * The neighbour's land (#569), plan metres: her fields east of the lane as the plan's map has them, a block from the lane's hedge (x 912) to x 1290
- * and from z -60 to 560, cut by hedges at z 150, x 1110, x 1230 (below z 150) and z 420. Drawn at far-ground detail: each field's own grass tone in
+ * and from z -18 to 560 (#687 cut it back from the map's -60 and 1290), cut by hedges at z 150, x 1110, x 1230 (below z 150) and z 420. Drawn at far-ground detail: each field's own grass tone in
  * the ground and the outer ring, her hedges as plain strips (hedgeFar.js) with a collider each, no leaves, and her 22 dairy cows on the plan's map
  * as scenery in the two north fields. `lines` run along x (`x`: a hedge at that x from `from` to `to` in z) or along z (`z`), with `gaps` open
  * where a gate or a way through will be (the lane's hedge has her track's and her north field gate's). The north field gate is in the lane's hedge
@@ -189,22 +254,25 @@ export const NEIGHBOUR_PLAN = {
  */
 export const NEIGHBOUR_LAND_PLAN = {
   fields: [
-    { name: 'northWest', rect: [912, -60, 1110, 150], tone: [0.4, 0.53, 0.25] },
-    { name: 'northEast', rect: [1110, -60, 1290, 150], tone: [0.36, 0.48, 0.22] },
+    { name: 'northWest', rect: [912, -18, 1110, 150], tone: [0.4, 0.53, 0.25] },
+    { name: 'northEast', rect: [1110, -18, 1282, 150], tone: [0.36, 0.48, 0.22] },
     { name: 'yardField', rect: [912, 150, 1110, 420], tone: [0.44, 0.56, 0.27] },
     { name: 'middle', rect: [1110, 150, 1230, 560], tone: [0.38, 0.5, 0.24] },
-    { name: 'east', rect: [1230, 150, 1290, 560], tone: [0.52, 0.54, 0.28] },
+    { name: 'east', rect: [1230, 150, 1282, 560], tone: [0.52, 0.54, 0.28] },
     { name: 'south', rect: [912, 420, 1110, 560], tone: [0.42, 0.54, 0.26] },
   ],
+  // #687 cut her land back where the roads go through it: the north edge is z -18 (the lane runs along z -31 and bends down at x 905 to 936, so the
+  // hedges start where the bend is past: x 912 from z 8, the north hedge from x 950), the east hedge is at x 1282, clear of the A-road's verge (its
+  // edge is at 1287 at the nearest), and the cottages' plot (plan 912 to 960, 405 to 450) is not hedged across: the lane hedge and the z 420 hedge leave it.
   lines: [
-    { x: 912, from: -60, to: 560, gaps: [[289, 295], [127.5, 132.5]] },
-    { x: 1110, from: -60, to: 560, gaps: [[98, 103], [290, 295]] },
+    { x: 912, from: 8, to: 560, gaps: [[289, 295], [127.5, 132.5], [202.75, 207.25], [502.75, 507.25], [405, 450]] },
+    { x: 1110, from: -18, to: 560, gaps: [[98, 103], [290, 295]] },
     { x: 1230, from: 150, to: 560, gaps: [[300, 305]] },
-    { x: 1290, from: -60, to: 560, gaps: [] },
-    { z: -60, from: 912, to: 1290, gaps: [] },
-    { z: 150, from: 912, to: 1290, gaps: [[1000, 1005], [1170, 1175]] },
-    { z: 420, from: 912, to: 1110, gaps: [[1000, 1005]] },
-    { z: 560, from: 912, to: 1290, gaps: [] },
+    { x: 1282, from: -18, to: 560, gaps: [] },
+    { z: -18, from: 950, to: 1282, gaps: [] },
+    { z: 150, from: 912, to: 1282, gaps: [[1000, 1005], [1170, 1175]] },
+    { z: 420, from: 962, to: 1110, gaps: [[1000, 1005]] },
+    { z: 560, from: 912, to: 1282, gaps: [] },
   ],
   northGate: { at: [912, 130], width: 5 },
   hedge: { width: 1.6, height: 2.2 },
@@ -777,9 +845,10 @@ export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
   const [, laneMax] = fromPlan([L.x, L.maxZ]);
   const [, rideMin] = fromPlan([L.x, L.ridden[0]]);
   const [, rideMax] = fromPlan([L.x, L.ridden[1]]);
+  const lanePoints = [...L.north, ...Array.from({ length: Math.floor((L.maxZ - 40) / L.southStep) }, (_, i) => [L.x, 40 + (i + 1) * L.southStep]), [L.x, L.maxZ]].map(fromPlan);
   const publicLane = { x: laneX, halfWidth: L.halfWidth, minZ: laneMin, maxZ: laneMax, open: { minZ: rideMin, maxZ: rideMax } };
   const roads = [
-    { id: 'lane', name: 'the lane', surface: 'tarmac', halfWidth: L.halfWidth, points: [[laneX, laneMin], [laneX, laneMax]], markings: { centre: 'dashed' }, verge: 1, hedged: false, draw: 'mesh', lift: 0.07 },
+    { id: 'lane', name: 'the lane', surface: 'tarmac', halfWidth: L.halfWidth, points: lanePoints, junction: { end: 'start', onto: 'aRoad' }, markings: { centre: 'dashed', giveWay: 'start' }, verge: 1, hedged: false, draw: 'mesh', lift: 0.076, camber: 0.03, bellmouth: { width: 2.2, length: 8 } },
     {
       id: 'farm', name: 'the drive', surface: 'tarmac', halfWidth: D.halfWidth, points: [[fromX, z], [toX, z]], junction: { end: 'end', onto: 'lane' },
       markings: { centre: 'none' }, verge: D.verge, hedged: false, draw: 'ground', level: { shoulder: 3, lead: [2, 0] }, edge: 'gravel', patches: D.patches,
@@ -787,6 +856,22 @@ export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
     },
   ];
   return { road, publicLane, roads };
+}
+
+/** The A-road as a road of the network, in game metres (#687): two lanes, a dashed white centre line, white edge lines, a crown and cat's eyes. */
+export function aRoadLayout(A = A_ROAD_PLAN) {
+  return {
+    id: 'aRoad', name: 'the A-road', surface: 'tarmac', halfWidth: A.halfWidth, points: A.points.map(fromPlan), markings: { centre: 'dashed', edge: true },
+    dash: A.dash, lineWidth: 0.12, verge: A.verge, hedged: false, draw: 'mesh', lift: 0.07, camber: A.camber, eyes: A.eyes, texture: { patches: 3, bands: 5, crumble: 0.02 },
+  };
+}
+
+/** The village street's end at the A-road, in game metres (#687): the stub #688 replaces. */
+export function streetStubLayout(S = STREET_STUB_PLAN) {
+  return {
+    id: 'streetEnd', name: 'the village street', surface: 'tarmac', halfWidth: S.halfWidth, points: [S.from, S.to].map(fromPlan), junction: { end: 'end', onto: 'aRoad' },
+    markings: { centre: 'none', giveWay: 'end' }, verge: 2, hedged: false, draw: 'mesh', lift: 0.076, camber: 0.03, bellmouth: { width: 2.2, length: 8 },
+  };
 }
 
 /**
@@ -850,6 +935,21 @@ export function neighbourLayout(N = NEIGHBOUR_PLAN) {
     markings: { centre: 'none' }, verge: 1.5, hedged: false, draw: 'ground', level: { shoulder: 3, lead: [0, 2] }, edge: 'gravel',
   };
   return { anchor: { x: ax, z: az, yaw: 0 }, neighbourFarm, track };
+}
+
+/** What makes the lane one other people use, in game metres (#687): see `LANE_FITTINGS_PLAN`. */
+export function laneFittingsLayout(F = LANE_FITTINGS_PLAN) {
+  const [x0, z0, x1, z1] = F.cottages.rect;
+  const [cx0, cz0] = fromPlan([x0, z0]);
+  const [cx1, cz1] = fromPlan([x1, z1]);
+  return {
+    cottages: { minX: cx0, minZ: cz0, maxX: cx1, maxZ: cz1, yaw: F.cottages.yaw, gardenDepth: F.cottages.gardenDepth },
+    gateways: F.gateways.map((g) => ({ x: fromPlan(g.at)[0], z: fromPlan(g.at)[1], width: g.width })),
+    gritBins: F.gritBins.map(fromPlan).map(([x, z]) => ({ x, z })),
+    postbox: (([x, z]) => ({ x, z }))(fromPlan(F.postbox)),
+    binStand: (([x, z]) => ({ x, z }))(fromPlan(F.binStand)),
+    southFingerpost: (([x, z]) => ({ x, z, lines: SOUTH_FINGERPOST_PLAN.lines }))(fromPlan(SOUTH_FINGERPOST_PLAN.at)),
+  };
 }
 
 /** Her land in game metres (#569): the fields with their tones, each line as `{ axis, at, from, to, gaps }` (`axis` 'x' runs along z), the gate and the cows. */
@@ -1285,7 +1385,8 @@ export function layoutNew(today, raw) {
     ...farmstead, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
     upperThornby: { at: fromPlan(BACK_LANE_PLAN.upperThornby) },
-    ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track, backLaneLayout()],
+    junctions: JUNCTIONS_PLAN, turnRound: TURN_ROUND_PLAN, laneFittings: laneFittingsLayout(), aRoadFittings: { layBy: { ...A_ROAD_PLAN.layBy, z: A_ROAD_PLAN.layBy.z - PLAN_ORIGIN[1] } },
+    ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout()],
     woods: wood.woods, logYard: wood.logYard, hill, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
     budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)

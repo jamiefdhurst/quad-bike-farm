@@ -164,6 +164,9 @@ export function roadTexture(opts = {}) {
 export { dashes };
 
 const smooth = (t) => t * t * (3 - 2 * t);
+
+/** How much a crowned road is raised `o` m from its middle (a parabola: `height` at the middle, nothing at `half`). */
+export const crownAt = (crown, o) => (Math.abs(o) >= crown.half ? 0 : crown.height * (1 - (o / crown.half) ** 2));
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 /**
@@ -183,9 +186,11 @@ export function pointOn(samples, s) {
  *   from, to   the sample range it covers; `skip(p, i)` drops samples (a gap for a car park's mouth)
  *   flare      widen it by `flare.width` at the start, easing out over `flare.length` samples (a bellmouth)
  *   uv         texture repeats across
+
+ *   crown      { height, half }: the road's camber, raised `height` m in the middle and falling to nothing `half` m out each side
  *   clampX     stop at this x (a strip meeting another road stops at its edge); `lead` are samples laid out before the first so the slanting end squashes flat
  */
-export function roadStrip({ samples, heights }, a, b, lift, material, { from = 0, to = Infinity, skip = null, flare = null, uv = 1, cols = 5, clampX = Infinity, lead = [] } = {}) {
+export function roadStrip({ samples, heights }, a, b, lift, material, { from = 0, to = Infinity, skip = null, flare = null, uv = 1, cols = 5, clampX = Infinity, lead = [], crown = null } = {}) {
   const at = (i) => (i < 0 ? lead[lead.length + i] : samples[i]);
   const runs = [];
   let run = null;
@@ -215,7 +220,7 @@ export function roadStrip({ samples, heights }, a, b, lift, material, { from = 0
         const o = a + (b - a) * t + (flare ? (t - 0.5) * 2 * widen : 0);
         const x = Math.min(clampX, p.x + nx * o);
         const z = p.z + nz * o;
-        pos.push(x, heights.heightAt(x, z) + lift, z);
+        pos.push(x, heights.heightAt(x, z) + lift + (crown ? crownAt(crown, o) : 0), z);
         uvs.push(t * uv, i / 4);
       }
       if (k > 0) {
@@ -244,7 +249,7 @@ export function roadStrip({ samples, heights }, a, b, lift, material, { from = 0
  * Paint on a road, laid on the ground like the road itself and merged into one mesh: each mark is { s, len, a, b }, `len` m along the road about
  * sample position `s` and from offset `a` to `b` across. Null for no marks.
  */
-export function paintMarks({ samples, heights }, marks, material, lift) {
+export function paintMarks({ samples, heights }, marks, material, lift, crown = null) {
   if (!marks.length) return null;
   const pos = [];
   const idx = [];
@@ -255,7 +260,7 @@ export function paintMarks({ samples, heights }, marks, material, lift) {
       for (const o of [m.a, m.b]) {
         const x = p.x - p.tz * o;
         const z = p.z + p.tx * o;
-        pos.push(x, heights.heightAt(x, z) + lift, z);
+        pos.push(x, heights.heightAt(x, z) + lift + (crown ? crownAt(crown, o) : 0), z);
       }
     }
     idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
@@ -312,45 +317,127 @@ export function buildRoadMesh({ scene, road, points, heights, texture }) {
   const run = points ?? road.samples;
   const ctx = { samples: run, heights };
   const meshes = [];
+  const lift = road.lift ?? 0.07;
+  const crown = road.camber ? { height: road.camber, half: road.halfWidth } : null;
   const body = new THREE.MeshStandardMaterial({ map: texture, color: 0xffffff, roughness: 0.92, ...POLY });
-  meshes.push(...roadStrip(ctx, -road.halfWidth, road.halfWidth, road.lift ?? 0.07, body));
+  const bell = road.bellmouth ?? null;
+  const junctionEnds = road.junctions ?? [];
+  const bellEnd = bell ? (junctionEnds[0]?.end ?? 'start') : null;
+  // The carriageway. A road with a bellmouth is laid from its junction end with the mouth flared; the end that is the junction is the start of `run`
+  // (or, for a road that ends on another, its reverse), so the one strip builder serves both.
+  if (bell && bellEnd === 'end') meshes.push(...roadStrip({ samples: reversed(run), heights }, -road.halfWidth, road.halfWidth, lift, body, { flare: bell, crown }));
+  else meshes.push(...roadStrip(ctx, -road.halfWidth, road.halfWidth, lift, body, { flare: bell, crown }));
   if (road.markings.centre === 'dashed') {
     const [on, off] = road.dash ?? [3, 6];
     const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...POLY });
-    const marks = paintMarks(ctx, dashes({ on, off, to: run[run.length - 1].s ?? run.length, width: road.lineWidth ?? 0.14 }), line, (road.lift ?? 0.07) + 0.02);
+    const marks = paintMarks(ctx, dashes({ on, off, from: bell ? bell.length : 0, to: run[run.length - 1].s ?? run.length, width: road.lineWidth ?? 0.14 }), line, lift + 0.02, crown);
     if (marks) meshes.push(marks);
   }
   if (road.markings.edge) {
     const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...POLY });
-    for (const side of [-1, 1]) meshes.push(...roadStrip(ctx, side * (road.halfWidth - 0.3), side * (road.halfWidth - 0.2), (road.lift ?? 0.07) + 0.02, line, { cols: 2 }));
+    // The edge lines stop for a side road's mouth: `edgeBreaks` are the junctions' s and half-widths, and a road's own bellmouth.
+    const breaks = road.edgeBreaks ?? [];
+    const skip = (p, i) => breaks.some((b) => Math.abs((p.s ?? i) - b.s) < b.half) || (bell && junctionEnds.some((j) => (j.end === 'start' ? i < bell.length : i > run.length - 1 - bell.length)));
+    for (const side of [-1, 1]) meshes.push(...roadStrip(ctx, side * (road.halfWidth - 0.3), side * (road.halfWidth - 0.2), lift + 0.02, line, { cols: 2, crown, skip }));
   }
   // A strip of grass down the middle where the lane is least used (`strip: { half, rects }`: the rectangles, [minX, minZ, maxX, maxZ], it grows in).
   if (road.strip && road.strip.texture) {
     const grass = new THREE.MeshStandardMaterial({ map: road.strip.texture, color: 0xffffff, roughness: 1, ...POLY });
     const inside = (p) => road.strip.rects.some(([x0, z0, x1, z1]) => p.x >= x0 && p.x <= x1 && p.z >= z0 && p.z <= z1);
-    meshes.push(...roadStrip(ctx, -road.strip.half, road.strip.half, (road.lift ?? 0.07) + 0.015, grass, { skip: (p) => !inside(p) }));
+    meshes.push(...roadStrip(ctx, -road.strip.half, road.strip.half, lift + 0.015, grass, { skip: (p) => !inside(p) }));
   }
   // Passing places: each widens the carriageway on its side by `bay` m for `length` m (the road's `bays`, roads.js), in the same tarmac, a hair above the road's
   // own strip so the two meet without a seam, and with a gritty edge where it meets the verge.
-  for (const b of road.bays ?? []) {
+  // A bus bay (`layBys`, the A-road's) is the same widening, `width` m deep.
+  for (const b of [...(road.bays ?? []), ...(road.layBys ?? []).map((l) => ({ ...l, bay: l.width }))]) {
     const from = Math.floor(b.s - b.length / 2);
     const to = Math.ceil(b.s + b.length / 2);
     const [a, z] = b.side > 0 ? [-(road.halfWidth + b.bay), -road.halfWidth + 0.1] : [road.halfWidth - 0.1, road.halfWidth + b.bay]; // roadStrip's offsets run the other way round from a side's
-    meshes.push(...roadStrip(ctx, a, z, (road.lift ?? 0.07) + 0.004, body, { from, to, cols: 3 }));
+    meshes.push(...roadStrip(ctx, a, z, lift + 0.004, body, { from, to, cols: 3 }));
   }
-  // Give-way lines (`markings.giveWay`): a double row of dashes across the road, 3 m in from each end, for traffic leaving onto the lane.
+  // Give-way lines (`markings.giveWay`: true for both ends, 'start' or 'end' for one): a double row of dashes across the road, 3 m in from the end, for
+  // traffic leaving onto another road, and a white triangle painted in the way in (`giveWayMarks`).
   if (road.markings.giveWay) {
     const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...POLY });
-    const end = run[run.length - 1].s ?? run.length;
-    const marks = [];
-    for (const s of [3, end - 3]) {
-      for (const off of [0, 0.45]) {
-        for (let a = -road.halfWidth + 0.2; a < road.halfWidth - 0.4; a += 0.6) marks.push({ s: s + off - 0.45 / 2, len: 0.3, a, b: a + 0.35 });
-      }
-    }
-    const lines = paintMarks(ctx, marks, line, (road.lift ?? 0.07) + 0.02);
+    const lines = paintMarks(ctx, giveWayMarks(road, run), line, lift + 0.02);
     if (lines) meshes.push(lines);
   }
+  if (bell) meshes.push(...bellmouthKerbs({ samples: bellEnd === 'end' ? reversed(run) : run, heights }, road, lift, bellEnd === 'end'));
   for (const m of meshes) scene.add(m);
   return meshes;
+}
+
+/** `samples` the other way round (as a road that ends on another is read from its junction): the order and the way each points. */
+export function reversed(samples) {
+  const end = samples[samples.length - 1].s ?? samples.length - 1;
+  return samples.map((p) => ({ ...p, tx: -p.tx, tz: -p.tz, s: end - (p.s ?? 0) })).reverse();
+}
+
+/**
+ * The marks of a road's give-way lines, `{ s, len, a, b }` each (paintMarks): two rows of dashes across at 3 m from the end that is its junction, and the
+ * painted triangle, its wide edge at the line's back and its point towards the driver, 5 m long, in the way in (the left of the way you come in by).
+ * `markings.giveWay` is true (the two ends), 'start' or 'end'.
+ */
+export function giveWayMarks(road, run) {
+  const gw = road.markings.giveWay;
+  const total = run[run.length - 1].s ?? run.length;
+  const ends = gw === true ? ['start', 'end'] : [gw];
+  const marks = [];
+  for (const end of ends) {
+    const dir = end === 'start' ? 1 : -1; // along the road, away from the junction
+    const at = (d) => (end === 'start' ? d : total - d); // s of a point `d` m from the junction end
+    for (const off of [0, 0.45]) {
+      for (let a = -road.halfWidth + 0.2; a < road.halfWidth - 0.4; a += 0.6) marks.push({ s: at(3 + off), len: 0.3, a, b: a + 0.35 });
+    }
+    // The way in keeps left as it comes to the junction: that is the +offset side of a road whose junction is its start, the -offset side where it is its end.
+    const lane = end === 'start' ? 1 : -1;
+    if (road.markings.triangle !== false && road.halfWidth >= 2) {
+      const mid = lane * road.halfWidth * 0.5;
+      for (let d = 0; d < 5; d += 0.35) {
+        const w = 0.9 * (1 - d / 5); // half the width, narrowing to the point
+        marks.push({ s: at(6.5 + d + 0.175), len: 0.35, a: mid - w, b: mid + w });
+      }
+    }
+  }
+  return marks;
+}
+
+/** Low kerbs along the flared edges of a bellmouth: a pale concrete block on each side, its top 11 cm over the road, following the flare. */
+export function bellmouthKerbs({ samples, heights }, road, lift, reverse) {
+  void reverse;
+  const bell = road.bellmouth;
+  const mat = new THREE.MeshStandardMaterial({ color: 0xb4b2aa, roughness: 0.95 });
+  const out = [];
+  for (const side of [-1, 1]) {
+    const pos = [];
+    const idx = [];
+    const last = Math.min(samples.length - 1, Math.ceil(bell.length));
+    for (let i = 0; i <= last; i++) {
+      const p = samples[i];
+      const widen = bell.width * (1 - smooth(clamp01(i / bell.length)));
+      for (const o of [road.halfWidth + widen, road.halfWidth + widen + 0.16]) {
+        const x = p.x - p.tz * side * o;
+        const z = p.z + p.tx * side * o;
+        const g = heights.heightAt(x, z);
+        pos.push(x, g + lift, z, x, g + lift + 0.11, z); // foot then top, at this offset
+      }
+      if (i > 0) {
+        const k = i * 4;
+        const q = (i - 1) * 4;
+        // road-side face, top, outer face
+        idx.push(q, q + 1, k, q + 1, k + 1, k, q + 1, q + 3, k + 1, q + 3, k + 3, k + 1, q + 3, q + 2, k + 3, q + 2, k + 2, k + 3);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, mat);
+    m.material.side = THREE.DoubleSide;
+    m.receiveShadow = true;
+    m.userData.keep = true;
+    m.frustumCulled = false;
+    out.push(m);
+  }
+  return out;
 }
