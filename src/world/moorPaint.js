@@ -17,7 +17,7 @@ const HEATHER_OLD = [88, 72, 62];
 const HEATHER_YOUNG = [122, 108, 70];
 const MOOR_GRASS = [140, 134, 84];
 const BRACKEN_LITTER = [118, 84, 50];
-const SPHAGNUM = [112, 156, 62];
+const SPHAGNUM = [112, 130, 70];
 const SPHAGNUM_DARK = [58, 74, 40];
 const PEAT = [43, 32, 22];
 
@@ -43,17 +43,17 @@ export function laneEdgeAt(points, z) {
 /** Paints the moor into the window of `c` (groundTexture.js's paintContext), as a generator that pauses now and then. */
 export function* paintMoor(c, layout) {
   const M = layout.moor;
-  if (!M || !c.over(M.bounds, 2)) return;
+  if (!M || !c.over(M.bounds, 16)) return;
   const { ctx, s } = c;
   const moor = moorOf(M);
   const lane = layout.roads.find((r) => r.id === 'backLane');
   const lanePts = lane ? lane.points.filter((p) => p[1] <= M.bounds.maxZ && p[1] >= M.bounds.minZ - 30) : [];
   const edge = (z) => (lanePts.length > 1 ? laneEdgeAt(lanePts, z) - 2.2 : M.bounds.maxX);
   const b = M.bounds;
-  const cell = c.fine ? 3 : 6;
+  const cell = c.fine ? 1.5 : 6;
 
   // The ground itself, in cells: the stands of heather and the grass between, the bracken's litter, the wet. Fades out towards the lane's verge.
-  const x0 = Math.max(b.minX, c.win.minX - cell);
+  const x0 = Math.max(b.minX - 14, c.win.minX - cell); // out to the ridge wall, which stands a few metres beyond the common's plan edge
   const x1 = Math.min(b.maxX, c.win.maxX + cell);
   const z0 = Math.max(b.minZ, c.win.minZ - cell);
   const z1 = Math.min(b.maxZ, c.win.maxZ + cell);
@@ -62,14 +62,14 @@ export function* paintMoor(c, layout) {
     for (let x = Math.floor(x0 / cell) * cell; x < x1; x += cell) {
       const cx = x + cell / 2;
       const cz = z + cell / 2;
-      const fade = smooth(east, east - 14, cx) * smooth(b.minZ, b.minZ + 14, cz) * smooth(b.maxZ + 6, b.maxZ - 12, cz);
+      const fade = smooth(b.minX - 15, b.minX - 6, cx) * smooth(east, east - 14, cx) * smooth(b.minZ, b.minZ + 14, cz) * smooth(b.maxZ + 6, b.maxZ - 12, cz);
       if (fade <= 0.02) continue;
       const heather = moor.heatherAt(cx, cz);
       const age = moor.heatherAge(cx, cz);
       let col = mix(MOOR_GRASS, mix(HEATHER_YOUNG, HEATHER_OLD, age), Math.min(1, heather * 1.4));
       col = mix(col, BRACKEN_LITTER, moor.brackenAt(cx, cz) * 0.8);
-      const lump = moor.patch(cx, cz, 5, 29);
-      col = col.map((v) => Math.round(v * (0.88 + lump * 0.24)));
+      const lump = moor.patch(cx, cz, 5, 29) * 0.6 + moor.patch(cx, cz, 1.7, 31) * 0.4;
+      col = col.map((v) => Math.round(v * (0.84 + lump * 0.32)));
       const [px, pz] = c.toPx(x, z);
       ctx.fillStyle = rgba(col, 0.94 * fade);
       ctx.fillRect(px, pz, cell * s + 1, cell * s + 1);
@@ -89,8 +89,13 @@ export function* paintMoor(c, layout) {
 
   // The flushes: bright green moss over a dark wet floor, with pools.
   M.flushes.forEach((f, i) => {
-    blob(f.x, f.z, f.rx * 1.05, f.rz * 1.05, SPHAGNUM_DARK, 0.55, 0);
-    blob(f.x, f.z, f.rx * 0.85, f.rz * 0.85, SPHAGNUM, 0.75, 0);
+    // A ragged edge: a ring of overlapping blobs rather than one ellipse.
+    for (let k = 0; k < 11; k++) {
+      const a = (k / 11) * Math.PI * 2 + i * 0.7;
+      const j = 0.75 + 0.35 * moor.patch(f.x + k * 3, f.z - k, 4, 13);
+      blob(f.x + Math.cos(a) * f.rx * 0.55 * j, f.z + Math.sin(a) * f.rz * 0.55 * j, f.rx * 0.55, f.rz * 0.55, SPHAGNUM_DARK, 0.34);
+      blob(f.x + Math.cos(a) * f.rx * 0.45 * j, f.z + Math.sin(a) * f.rz * 0.45 * j, f.rx * 0.45, f.rz * 0.45, SPHAGNUM, 0.4);
+    }
     if (!c.fine) return;
     for (let k = 0; k < 14; k++) {
       const a = (k / 14) * Math.PI * 2 + i;
@@ -124,7 +129,7 @@ export function* paintMoor(c, layout) {
     const len = Math.hypot(p.b[0] - p.a[0], p.b[1] - p.a[1]);
     const nx = (p.b[1] - p.a[1]) / len;
     const nz = -(p.b[0] - p.a[0]) / len;
-    for (const [off, w, col, alpha] of [[-1.6, 4.4, PEAT, 0.85], [0, 2.8, [28, 20, 14], 0.95], [1.5, 0.5, [110, 90, 62], 0.55]]) {
+    for (const [off, w, col, alpha] of [[-2, 6.5, PEAT, 0.9], [0, 3.4, [24, 17, 12], 1], [1.7, 0.7, [118, 96, 66], 0.6]]) {
       if (!c.over({ minX: Math.min(p.a[0], p.b[0]) - 6, maxX: Math.max(p.a[0], p.b[0]) + 6, minZ: Math.min(p.a[1], p.b[1]) - 6, maxZ: Math.max(p.a[1], p.b[1]) + 6 })) continue;
       const [ax, az] = c.toPx(p.a[0] + nx * off, p.a[1] + nz * off);
       const [bx, bz] = c.toPx(p.b[0] + nx * off, p.b[1] + nz * off);

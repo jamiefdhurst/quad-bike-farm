@@ -15,6 +15,7 @@ import { neighbourGate } from '../world/neighbourFarm.js';
 import { barnFrame, barnLocal } from '../world/barn.js';
 import { sAlong } from '../world/laneSigns.js';
 import { layByOf } from '../world/aRoadFittings.js';
+import { gridPlace } from '../world/moor.js';
 
 const DEG = 180 / Math.PI;
 const norm = (deg) => ((deg % 360) + 360) % 360;
@@ -110,6 +111,24 @@ export function aRoadPlaces(layout, roads) {
   };
 }
 
+/**
+ * The Moor's places (#713), on the new farm: `moor` 70 m out on the heather west of the moor gate, `ridge` beside the trig pillar on the ridge, `stile` 9 m
+ * short of the ladder stile (the line that turns you round is 1.2 m from the wall), and `moorgrid` on Back Lane 10 m before the first cattle grid. Today's farm has none.
+ */
+export function moorPlaces(layout, roads) {
+  const M = layout.moor;
+  if (!M) return {};
+  const lane = roads?.road('backLane');
+  const grid = lane && M.grids[0] ? gridPlace(lane, M.grids[0].near) : null;
+  const p = grid ? roads.pointAt('backLane', Math.max(0, grid.s - 10)) : null;
+  return {
+    moor: { x: M.gate.x - 70, z: M.gate.z },
+    ridge: { x: M.trig.at[0] + 5, z: M.trig.at[1] },
+    stile: { x: M.stile.at[0] + 9, z: M.stile.at[1] },
+    moorgrid: p ? { x: p.x, z: p.z } : null,
+  };
+}
+
 /** @param {import('../game.js').Game} g @param {{ copy: (text: string) => void }} io */
 export function createHost(g, { copy = () => {} } = {}) {
   const unitOf = (id) => g.units.find((u) => u.id === id);
@@ -137,6 +156,7 @@ export function createHost(g, { copy = () => {} } = {}) {
     const farmstead = farmsteadPlaces(layout);
     const backLane = backLanePlaces(layout, g.world.roads);
     const aRoad = aRoadPlaces(layout, g.world.roads);
+    const moorSpots = moorPlaces(layout, g.world.roads);
     const spots = {
       start: { x: layout.spawn.player.x, z: layout.spawn.player.z },
       yard: layout.yard,
@@ -161,6 +181,10 @@ export function createHost(g, { copy = () => {} } = {}) {
       cottages: aRoad.cottages, // in front of the pair of cottages on the lane
       postbox: aRoad.postbox, // the postbox and bin stand at the end of our drive
       busstop: aRoad.busstop, // the bus bay on the A-road and its bus stop flag
+      moor: moorSpots.moor, // the common beyond Back Lane, on the heather west of the moor gate: the new farm's (#713)
+      ridge: moorSpots.ridge, // beside the trig pillar on the ridge
+      stile: moorSpots.stile, // short of the ladder stile in the ridge wall, where climbing it turns you round
+      moorgrid: moorSpots.moorgrid, // Back Lane before the first cattle grid onto the common
       stackyard: farmstead.stackyard, // the new farm's: in front of the Dutch barn
       orchard: farmstead.orchard, // the hens' run and the pig's ark
       garden: farmstead.garden, // the garden plot's gate

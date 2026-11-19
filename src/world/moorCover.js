@@ -20,11 +20,11 @@ function colourAt(stops, m) {
 }
 
 // Heather is brown most of the year and purple in August and September.
-const HEATHER = [[0, 0x5a4a38], [3.5, 0x5f5237], [6.4, 0x66503f], [7.2, 0x84508a], [8.7, 0x7e4f86], [9.6, 0x6a5040]];
+const HEATHER = [[0, 0x7a6448], [3.5, 0x7d6c48], [6.4, 0x846a50], [7.2, 0xa8689c], [8.7, 0xa2679c], [9.6, 0x86684f]];
 // Bracken is bright green in the spring, green through the summer, rust in the autumn and dead brown in winter.
-const BRACKEN = [[0, 0x6a5238], [3.3, 0x78502e], [4.2, 0x7aa64a], [5, 0x4f7a35], [8.6, 0x547a34], [9.6, 0x9a5a2c], [10.8, 0x7a5030]];
+const BRACKEN = [[0, 0x8a6a46], [3.3, 0x96683a], [4.2, 0x8cc058], [5, 0x62933f], [8.6, 0x6a9640], [9.6, 0xc06f35], [10.8, 0x93653a]];
 // Coarse moor grass and rushes: green-yellow in the growing season, straw after.
-const TUSSOCK = [[0, 0x9c8f62], [3.6, 0x93945a], [4.5, 0x8a9a55], [9, 0x8a9558], [10, 0x9c8f62]];
+const TUSSOCK = [[0, 0xb8aa78], [3.6, 0xa8a868], [4.5, 0x9cb062], [9, 0x9ca868], [10, 0xb8aa78]];
 
 /**
  * The colours today: `heather`, `bracken` and `tussock` (the plants' colour), and `cotton` (the grass's white heads: 0 to 1 how many show, full through

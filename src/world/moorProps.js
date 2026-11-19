@@ -22,9 +22,11 @@ import * as kit from './roadSigns.js';
 import { enableShadows } from './assets.js';
 
 const WALL_HEIGHT_FALLBACK = 1.35;
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 const std = (map, extra = {}) => new THREE.MeshStandardMaterial({ map, roughness: 0.92, metalness: 0, ...extra });
-const grey = (random, l0 = 0.62, l1 = 1) => new THREE.Color().setHSL(0.1, 0.06, l0 + random() * (l1 - l0));
+/** A weathered grey-brown for a lit-white stone: its lightness between `l0` and `l1` (the hill's wall is 0.2 to 0.34). */
+const grey = (random, l0 = 0.2, l1 = 0.36) => new THREE.Color().setHSL(0.09 + random() * 0.04, 0.05 + random() * 0.08, l0 + random() * (l1 - l0));
 
 /**
  * Where each cattle grid and its bridle gate are, on the lane (`road`): [{ id, s, x, z, tx, tz, gate: { s, side } }]. A grid lies across the lane where the common's
@@ -87,7 +89,7 @@ function wallStones(c, M) {
       }
       // The cope: flat stones set on edge along the top.
       stones.push(matrixAt(x, ground + h - 0.07, z, piece.yaw + (random() - 0.5) * 0.3, 0.3 + random() * 0.1, 0.14 + random() * 0.06, 0.26));
-      colors.push(grey(random, 0.7));
+      colors.push(grey(random, 0.3, 0.44));
     }
   }
   return { stones, colors };
@@ -126,15 +128,15 @@ export function buildTrigPillar(random) {
   cap.position.y = 1.225;
   g.add(cap);
   const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.012, 16), brass);
-  plate.position.y = 1.256;
+  plate.position.y = 1.2575; // sunk into the cap
   g.add(plate);
   const dimple = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.012, 8), new THREE.MeshStandardMaterial({ color: 0x3a2f14, roughness: 0.5 }));
-  dimple.position.y = 1.264;
+  dimple.position.y = 1.267;
   g.add(dimple);
   for (let i = 0; i < 4; i++) {
     const a = (i * Math.PI) / 2 + Math.PI / 4;
     const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.012, 6), brass);
-    bolt.position.set(Math.cos(a) * 0.075, 1.258, Math.sin(a) * 0.075);
+    bolt.position.set(Math.cos(a) * 0.075, 1.2625, Math.sin(a) * 0.075);
     g.add(bolt);
   }
   const bracket = new THREE.Mesh(worldBox(0.12, 0.09, 0.012, 0.5), brass); // the flush bracket plate low on the face
@@ -256,20 +258,29 @@ function bareAt(c, M, net, lane) {
     || Math.hypot(x - M.trig.at[0], z - M.trig.at[1]) < 1.6 || Math.hypot(x - M.spring.at[0], z - M.spring.at[1]) < 1.4;
 }
 
-/** A small clump of heather: a flattened dome, uneven, dark at the foot. */
+/** A small clump of heather: a flattened dome of 80 faces, uneven, dark at the foot. */
 function heatherGeometry(random) {
   const geo = new THREE.IcosahedronGeometry(1, 1);
   const pos = geo.getAttribute('position');
   const colors = [];
+  const seen = new Map(); // the geometry is not indexed: one jitter for every corner at the same place, or the dome cracks open
   for (let i = 0; i < pos.count; i++) {
-    const k = 0.78 + random() * 0.34;
+    const key = `${pos.getX(i).toFixed(3)},${pos.getY(i).toFixed(3)},${pos.getZ(i).toFixed(3)}`;
+    if (!seen.has(key)) seen.set(key, 0.78 + random() * 0.34);
+    const k = seen.get(key);
     const y = Math.max(pos.getY(i), -0.2);
-    pos.setXYZ(i, pos.getX(i) * k, y * 0.55 * k + 0.1, pos.getZ(i) * k);
+    pos.setXYZ(i, pos.getX(i) * k, y * 0.5 * k + 0.12, pos.getZ(i) * k);
     const l = 0.62 + 0.38 * Math.min(1, Math.max(0, (y + 0.2) / 1.2));
     colors.push(l, l, l);
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geo.computeVertexNormals();
+  // Lit as a soft dome, not as facets: each normal leans up from the clump's middle, so a heap of twigs reads as one rounded clump from any side.
+  const normals = geo.getAttribute('normal');
+  for (let i = 0; i < normals.count; i++) {
+    const n = new THREE.Vector3(pos.getX(i), pos.getY(i) * 1.6 + 0.5, pos.getZ(i)).normalize();
+    normals.setXYZ(i, n.x, n.y, n.z);
+  }
   return geo;
 }
 
@@ -277,8 +288,9 @@ function heatherGeometry(random) {
 function buildPlants(c, M, moor, bare) {
   const { scene, heights, random, drawDistance } = c;
   const b = M.bounds;
-  const lambert = (extra = {}) => new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, ...extra });
-  const mats = { heather: lambert(), bracken: lambert({ side: THREE.DoubleSide }), tussock: lambert({ side: THREE.DoubleSide }), cotton: new THREE.MeshLambertMaterial({ color: 0xffffff }) };
+  const lambert = (extra = {}) => new THREE.MeshLambertMaterial({ vertexColors: true, ...extra });
+  // The fronds' own vertex colours are the hill's greens: here the day's colour is the whole of it, so they are left off.
+  const mats = { heather: lambert(), bracken: lambert({ vertexColors: false, side: THREE.DoubleSide }), tussock: lambert({ vertexColors: false, side: THREE.DoubleSide }), cotton: new THREE.MeshLambertMaterial({ color: 0xffffff }) };
   const scatter = (count, accept, make, { cell = 1 } = {}) => {
     const matrices = [];
     const colors = [];
@@ -293,9 +305,9 @@ function buildPlants(c, M, moor, bare) {
   const light = (l0, l1) => new THREE.Color().setHSL(0, 0, l0 + random() * (l1 - l0));
 
   // Heather: clumps 0.35 to 0.7 m, in older (bigger, darker) and younger stands.
-  const heather = scatter(16000, (x, z) => random() < moor.heatherAt(x, z), (x, z, m, col) => {
+  const heather = scatter(44000, (x, z) => random() < moor.heatherAt(x, z), (x, z, m, col) => {
     const age = moor.heatherAge(x, z);
-    const s = 0.34 + age * 0.3 + random() * 0.18;
+    const s = 0.5 + age * 0.3 + random() * 0.25;
     m.push(matrixAt(x, heights.heightAt(x, z) - 0.04, z, random() * 6.28, s * 1.2, s * (0.8 + random() * 0.4), s * 1.2));
     col.push(light(0.8 - age * 0.18, 1));
   });
@@ -303,7 +315,7 @@ function buildPlants(c, M, moor, bare) {
 
   // Bracken on the lower slopes.
   const fronds = frondGeometry(random, 4, 0.95, 0.17, 0.45);
-  const bracken = scatter(3800, (x, z) => random() < moor.brackenAt(x, z), (x, z, m, col) => {
+  const bracken = scatter(6500, (x, z) => random() < moor.brackenAt(x, z), (x, z, m, col) => {
     const s = 0.7 + random() * 0.6;
     m.push(matrixAt(x, heights.heightAt(x, z) - 0.03, z, random() * 6.28, s, s * (0.8 + random() * 0.4), s));
     col.push(light(0.7, 1));
@@ -312,7 +324,7 @@ function buildPlants(c, M, moor, bare) {
 
   // Cotton grass, rushes and tussocks in the flushes, and the white heads of the cotton grass on stalks over them.
   const tussockGeo = frondGeometry(random, 9, 0.5, 0.03, 0.55);
-  const tufts = scatter(5200, (x, z) => random() < moor.wetAt(x, z) * 0.9, (x, z, m, col) => {
+  const tufts = scatter(6500, (x, z) => random() < moor.wetAt(x, z) * 0.9, (x, z, m, col) => {
     const s = 0.7 + random() * 0.9;
     m.push(matrixAt(x, heights.heightAt(x, z) - 0.02, z, random() * 6.28, s, s * (0.7 + random() * 0.8), s));
     col.push(light(0.65, 1));
@@ -421,7 +433,7 @@ export function buildMoorProps(c) {
   const lichen = () => new THREE.Color(0.72, 0.8, 0.5);
   const lump = (x, z, sx, sy, sz, yaw, lift = 0) => {
     lumps.push(matrixAt(x, heights.heightAt(x, z) + sy * 0.5 + lift, z, yaw, sx, sy, sz));
-    lumpColors.push(random() < 0.3 ? grey(random, 0.55, 0.8).multiply(lichen()) : grey(random, 0.6, 1));
+    lumpColors.push(random() < 0.3 ? grey(random, 0.45, 0.7).multiply(lichen()) : grey(random, 0.4, 0.75));
   };
   for (const o of moor.outcrops) {
     const n = 7 + Math.floor(random() * 5);
@@ -464,7 +476,9 @@ export function buildMoorProps(c) {
 
   const bare = bareAt(c, M, net, lane);
   const plants = buildPlants(c, M, moor, bare);
+  let shown = null;
   const setDate = (date) => {
+    shown = date;
     const k = moorColours(date);
     plants.mats.heather.color.setHex(k.heather);
     plants.mats.bracken.color.setHex(k.bracken);
@@ -473,5 +487,7 @@ export function buildMoorProps(c) {
     plants.cottonGroup.userData.cover = k.cotton;
     plants.cottonGroup.visible = k.cotton > 0.05;
   };
-  return { group, hedgeSwap: new HedgeSwap(near, far), setDate, grids, plants };
+  /** One line for the console and the panel: which month the plants are dressed for and what stands on the common. */
+  const describe = () => `${grids.length} cattle grids, ${M.flushes.length} flushes, ${moor.outcrops.length} outcrops, ${M.peat.length} peat banks; plants dressed for ${shown ? MONTHS[shown.month] : 'no date yet'}`;
+  return { group, hedgeSwap: new HedgeSwap(near, far), setDate, describe, get month() { return shown?.month ?? 0; }, grids, plants };
 }

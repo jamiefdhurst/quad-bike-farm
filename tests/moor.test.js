@@ -8,6 +8,8 @@ import { MOOR_FEATURES_PLAN, createMoor, wallPieces, distToLine, gridPlace } fro
 import { laneGaps, moorStretch, MOOR_SIDE } from '../src/world/backLaneProps.js';
 import { laneHedgeRuns } from '../src/world/laneHedges.js';
 import { turnRoundLines, TurnRound, crossed } from '../src/world/turnRound.js';
+import { moorColours } from '../src/world/moorCover.js';
+import { laneEdgeAt } from '../src/world/moorPaint.js';
 
 const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const net = roadNetwork(two);
@@ -159,5 +161,65 @@ describe('climbing the stile', () => {
     const a = { x: line.point.x + 3, z: line.point.z + 3 };
     const b = { x: line.point.x + 3, z: line.point.z - 3 };
     expect(crossed(line, a, b)).toBe(false);
+  });
+});
+
+describe('the moor gate', () => {
+  it('is in Hill Pasture\'s wall near the plan\'s place, a gate the game can open onto Back Lane', async () => {
+    const { createFields } = await import('../src/world/fields.js');
+    const fields = createFields(two);
+    expect(fields.gates.moor).toBeTruthy();
+    const [px, pz] = fromPlan(RESERVED_PLAN.moorGate.at);
+    expect(Math.hypot(M.gate.x - px, M.gate.z - pz)).toBeLessThan(5);
+    expect(M.gate.width).toBeGreaterThan(3.5); // a quad goes through between its posts
+    expect(lane.gates.some((g) => g.id === 'moor')).toBe(true); // and the lane's hedge is open across from it
+  });
+});
+
+describe('what the plants look like through the year', () => {
+  const on = (month, dom = 15) => moorColours({ month, dom });
+  const channels = (hex) => [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255];
+  it('has heather brown most of the year and purple in August and September', () => {
+    const [r, g, b] = channels(on(7).heather);
+    expect(r).toBeGreaterThan(g + 30);
+    expect(b).toBeGreaterThan(g + 30); // purple: red and blue over green
+    const [r2, g2, b2] = channels(on(0).heather);
+    expect(b2).toBeLessThan(r2 - 20); // brown: red over blue
+    expect(g2).toBeGreaterThan(b2);
+    expect(channels(on(8).heather)[2]).toBeGreaterThan(channels(on(8).heather)[1] + 30);
+  });
+  it('has bracken green in summer, rust in autumn and brown in winter', () => {
+    const [r, g] = channels(on(6).bracken);
+    expect(g).toBeGreaterThan(r);
+    const [r2, g2] = channels(on(9).bracken);
+    expect(r2).toBeGreaterThan(g2 + 40);
+    const [r3, g3, b3] = channels(on(0).bracken);
+    expect(r3).toBeGreaterThan(b3);
+    expect(Math.abs(r3 - g3)).toBeLessThan(40);
+  });
+  it('has cotton grass white in June, fading by August and gone in winter', () => {
+    expect(on(5).cotton).toBe(1);
+    expect(on(7, 20).cotton).toBe(0);
+    expect(on(0).cotton).toBe(0);
+    expect(on(6, 25).cotton).toBeGreaterThan(0);
+  });
+});
+
+describe('where the common is painted and where you are taken', () => {
+  it('paints west of Back Lane only: the lane\'s edge is where the lane runs', () => {
+    const pts = lane ? two.roads.find((r) => r.id === 'backLane').points.filter((p) => p[1] >= M.bounds.minZ - 30 && p[1] <= M.bounds.maxZ) : [];
+    const first = pts[0];
+    expect(laneEdgeAt(pts, pts[3][1])).toBeCloseTo(pts[3][0], 3);
+    expect(laneEdgeAt(pts, first[1] - 50)).toBeCloseTo(first[0], 3);
+  });
+  it('has a place for the moor and one for the ridge, stile and first grid, each on the common or the lane', async () => {
+    const { moorPlaces } = await import('../src/console/gameHost.js');
+    const p = moorPlaces(two, net);
+    expect(Object.keys(p).sort()).toEqual(['moor', 'moorgrid', 'ridge', 'stile']);
+    expect(p.moor.x).toBeLessThan(M.gate.x - 60); // out on the common, west of the gate
+    expect(Math.hypot(p.ridge.x - M.trig.at[0], p.ridge.z - M.trig.at[1])).toBeLessThan(6);
+    expect(p.stile.x - M.stile.at[0]).toBeGreaterThan(6); // short of the line, on the farm side
+    expect(net.nearest(p.moorgrid.x, p.moorgrid.z, 3)?.road.id).toBe('backLane');
+    expect(moorPlaces(LAYOUT, roadNetwork(LAYOUT))).toEqual({}); // today's farm has none
   });
 });

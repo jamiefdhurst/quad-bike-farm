@@ -191,7 +191,7 @@ export function createMoor(M, { keepClear = () => false } = {}) {
     for (const line of M.tracks) t = Math.max(t, 1 - smoothstep(0.25, 1.1, distToLine(line, x, z)));
     return t;
   };
-  const heatherAt = (x, z) => (1 - 0.95 * trackAt(x, z)) * (1 - wetAt(x, z)) * (1 - 0.85 * brackenAt(x, z)) * smoothstep(bounds.minX + 5, bounds.minX + 70, x) * (0.35 + 0.65 * smoothstep(0.1, 0.5, patch(x, z, 18, 3)));
+  const heatherAt = (x, z) => (1 - 0.95 * trackAt(x, z)) * (1 - wetAt(x, z)) * (1 - 0.85 * brackenAt(x, z)) * smoothstep(bounds.minX - 8, bounds.minX + 25, x) * (0.35 + 0.65 * smoothstep(0.1, 0.5, patch(x, z, 18, 3)));
   const heatherAge = (x, z) => patch(x, z, 30, 7);
 
   return { M, bounds, inside, outcrops, boulders, reliefAt, wetAt, trackAt, brackenAt, heatherAt, heatherAge, clear, patch };

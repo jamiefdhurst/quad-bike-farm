@@ -416,12 +416,12 @@ export function buildLadderStile(random, wallHeight = 1.35, wallThick = 0.6) {
     const len = Math.hypot(head - foot, top);
     const lean = Math.atan2(top, head - foot);
     for (const z of [-width / 2, width / 2]) add(len, 0.1, 0.06, (foot + head) / 2, top / 2 - 0.03, z, lean); // the rails
-    for (const t of [0.22, 0.52, 0.82]) add(0.28, 0.05, width + 0.06, foot + (head - foot) * t, top * t + 0.02, 0); // the treads
+    for (const t of [0.22, 0.52, 0.82]) add(0.28, 0.05, width + 0.16, foot + (head - foot) * t, top * t + 0.02, 0); // the treads, a hand past the rails each side
   }
   add(wallThick + 0.7, 0.05, width, 0, top - 0.025, 0); // the platform, over the wall
-  add(wallThick + 0.7, 0.04, 0.2, 0, top - 0.07, -width / 2 + 0.1); // a bearer under each edge, so it is not one slab
-  add(wallThick + 0.7, 0.04, 0.2, 0, top - 0.07, width / 2 - 0.1);
-  for (const z of [-width / 2 - 0.04, width / 2 + 0.04]) add(0.09, 1.1, 0.09, 0, top + 0.5, z); // the posts
+  add(wallThick + 0.7, 0.04, 0.2, 0, top - 0.08, -width / 2 + 0.12); // a bearer under each edge, so it is not one slab
+  add(wallThick + 0.7, 0.04, 0.2, 0, top - 0.08, width / 2 - 0.12);
+  for (const z of [-width / 2 - 0.04, width / 2 + 0.04]) add(0.09, 1.3, 0.09, 0, top + 0.4, z); // the posts, down past the platform's underside
   add(0.08, 0.07, width + 0.2, 0, top + 0.98, 0); // the handrail
   add(0.06, 0.05, width + 0.14, 0, top + 0.62, 0); // and a lower one
   return g;
