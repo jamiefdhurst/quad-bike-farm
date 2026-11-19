@@ -341,7 +341,7 @@ export function boundariesOf(fields) {
       }
     }
     const open = OPEN_LINES.includes([run.a, run.b].sort().join('|'));
-    runs.push({ ...run, kind: open ? 'none' : RAILED.includes([run.a, run.b].sort().join('|')) ? 'rail' : (WALLED.includes(run.a) || WALLED.includes(run.b)) && run.a !== 'lane' && run.b !== 'lane' ? 'wall' : 'hedge' });
+    runs.push({ ...run, kind: open ? 'none' : RAILED.includes([run.a, run.b].sort().join('|')) ? 'rail' : WALLED.includes(run.a) || WALLED.includes(run.b) ? 'wall' : 'hedge' });
   }
   return runs;
 }
@@ -1032,9 +1032,9 @@ export function woodsLayout(today, raw, P = WOOD_PLAN) {
  * edge to `toZ`, just short of the stream at `stream.z`. `bankStretch` carries today's six banks out from the stream to about 175 m deep, where
  * the plan's map draws them (Jamie, 16 November 2026): each bank keeps its rise and width, so each is still 38 degrees at its steepest, and the
  * treads between them lengthen. `gentle` is the easy way up at the east end by Brook Meadow, which the climb takes. `fence` runs north to south
- * from the foot to the south hedge, its gap 18 m along from the foot where quads cross it on the way to the climb. `wood` is the copse in the
+ * from the stream to the south hedge, its gap 22 m wide from the stream's edge, the whole of the foot, where quads cross it on the way to the climb. `wood` is the copse in the
  * pasture's north-west, thicker than today's (`trees`, `bushes`). The meadow's pond is at the plan's (112, 292) with its way in from the gateway
- * at (197, 296); its oaks stand round it as they did, by their offsets from it. The sheep field's wall runs across it near the top at z 468,
+ * at (197, 296); its oaks stand round it as they did, by their offsets from it. The sheep field is walled all round, the lane's side included (the lane has a hedge on Far Field's side and the wall on the other, #674's review). Its cross wall runs near the top at z 468,
  * its gap mid-field, and its banks fall in two terraces; `thorns` are in clumps clear of the wall, the gateways and the barn's spot.
  */
 export const HILL_PLAN = {
@@ -1048,7 +1048,7 @@ export const HILL_PLAN = {
   wood: { minX: 52, maxX: 100, minZ: 610, maxZ: 690, trees: 85, bushes: 150 },
   crown: { rise: 3.5, r: 55 }, // a swell under the hut, so its roof shows over the last bank from the ford (the plan's landform alone hides it by 2 m)
   hedgeOaks: [[190, 841, 1.4], [290, 836.5, 1.3], [375, 836, 1.5], [419, 650, 1.5], [419, 790, 1.2]],
-  fence: { from: [232, 576], to: [232, 848], gap: { at: 18, half: 3.5 } },
+  fence: { from: [232, 574], to: [232, 848], gap: { at: 14, half: 11 } },
   viewpoint: { at: [262, 814], yaw: Math.PI, height: 0.45 },
   climb: { points: [[372, 598], [380, 660], [368, 715], [352, 772]], gateHalf: 4.5 },
   meadow: {

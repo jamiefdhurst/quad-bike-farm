@@ -280,7 +280,7 @@ import { DEFAULT_DIP_PARAMS, DIP_PARAM_RANGES } from './vehicle/tankDip.js';
 import { fuelText } from './engine/diesel.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Bell } from './world/bellBuild.js';
-import { Flock, findFlockSpot, DEFAULT_FLOCK_PARAMS, FLOCK_PARAM_RANGES } from './world/flock.js';
+import { Flock, findFlockSpot, hillHalfFor, DEFAULT_FLOCK_PARAMS, FLOCK_PARAM_RANGES } from './world/flock.js';
 import { FlockView } from './world/flockView.js';
 import { SheepAudio } from './audio/sheepAudio.js';
 import { Rabbits, Pheasants, hedgeSpots, DEFAULT_WILDLIFE_PARAMS, WILDLIFE_PARAM_RANGES } from './world/wildlife.js';
@@ -11771,9 +11771,10 @@ export class Game {
     registerTuning('Sheep', this.flockParams, FLOCK_PARAM_RANGES);
     // The electric fence splits the pasture: the flock grazes one half (`hillHalf`) and never steps across the wire.
     const fence = createElectricFence(this.world.layout);
+    const half = hillHalfFor(this.flockParams.hillHalf, this.farm?.day ?? 1, !!this.world.layout.newFarm);
     const allowed = (x, z) =>
       hill.inPasture(x, z, 3) && z > hill.farEdge(x) + this.world.layout.hill.foot + 2 && !hill.inWood(x, z, -2) && hill.waterAt(x, z) < 0.05 &&
-      hill.gorseAt(x, z) < 0.25 && hill.climbSlope(x, z) < 0.45 && !hill.nearHut(x, z) && (!fence || fence.onHalf(x, z, this.flockParams.hillHalf));
+      hill.gorseAt(x, z) < 0.25 && hill.climbSlope(x, z) < 0.45 && !hill.nearHut(x, z) && (!fence || fence.onHalf(x, z, half));
     const p = hill.pasture;
     const random = createRandom(this.seed ^ 0x5eed);
     const spot = findFlockSpot(allowed, { minX: p.minX + 8, maxX: p.maxX - 8, minZ: p.minZ + 20, maxZ: p.maxZ - 8 }, random);

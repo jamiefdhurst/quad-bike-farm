@@ -11,7 +11,7 @@ import { hutShape } from '../src/world/hut.js';
 import { createElectricFence } from '../src/world/electricFence.js';
 import { climbGates } from '../src/npc/hillClimb.js';
 import { steepestBank } from '../src/npc/dares.js';
-import { DEFAULT_FLOCK_PARAMS, Flock, findFlockSpot } from '../src/world/flock.js';
+import { DEFAULT_FLOCK_PARAMS, Flock, findFlockSpot, hillHalfFor } from '../src/world/flock.js';
 import { createRandom } from '../src/core/random.js';
 import { pointInPolygon, polygonBounds } from '../src/world/polygons.js';
 
@@ -152,11 +152,16 @@ describe('the climb', () => {
   });
   it('is crossed by the electric fence at its gap, which is where quads cross on the way to it', () => {
     const f = createElectricFence(two);
-    expect(f.near(...f.from, 0.5)).toBe(true);
     const gap = f.pointAt(f.gap.at);
-    expect(f.near(gap.x, gap.z, 1)).toBe(false);
-    expect(f.length).toBeGreaterThan(250); // about 300 m, from the foot to the top
-    expect(gap.z - hill.farEdge(gap.x)).toBeLessThan(hill.farEdge(gap.x) + 40 - hill.farEdge(gap.x)); // at the foot
+    expect(f.length).toBeGreaterThan(250); // about 300 m, from the stream to the south hedge
+    expect(f.near(f.from[0], f.from[1] + 30, 0.5)).toBe(true); // the wire starts past the gap
+    // From the girls' waiting place (just through the ford) to the climb's first cones, straight across the fence: nothing in the way.
+    const from = hill.waitSpot;
+    const to = { x: gates[0].x, z: gates[0].z };
+    for (let t = 0; t <= 1; t += 0.01) expect(f.near(from.x + (to.x - from.x) * t, from.z + (to.z - from.z) * t, 0.7), `${t}`).toBe(false);
+    expect(Math.min(from.x, to.x)).toBeLessThan(f.from[0]);
+    expect(Math.max(from.x, to.x)).toBeGreaterThan(f.from[0]); // and it does cross the fence's line
+    expect(gap.z - hill.farEdge(gap.x)).toBeLessThan(40); // at the foot
     expect(gap.x).toBeLessThan(gates[0].x); // west of the climb: its rides along the foot cross there
   });
   it('is given Jess\'s dare bank in the stretched banks', () => {
@@ -319,6 +324,21 @@ describe('the flock', () => {
     expect(f.onHalf(f.from[0] + 5, f.from[1] + 100, 1)).toBe(true); // east is half 1
     expect(f.onHalf(f.from[0] + 5, f.from[1] + 100, 0)).toBe(false);
     expect(f.onHalf(f.from[0] + 0.5, f.from[1] + 100, 1)).toBe(false); // too close to the wire to stand
+  });
+  it('rests the other half of the hill each day on the new farm, and keeps to the climb\'s side on today\'s', () => {
+    expect([1, 2, 3, 4].map((day) => hillHalfFor(-1, day, true))).toEqual([1, 0, 1, 0]);
+    expect([1, 2, 3, 4].map((day) => hillHalfFor(-1, day, false))).toEqual([1, 1, 1, 1]);
+    expect(hillHalfFor(0, 3, true)).toBe(0); // fixed from the Tune tab
+    expect(hillHalfFor(1, 2, true)).toBe(1);
+    expect(DEFAULT_FLOCK_PARAMS.hillHalf).toBe(-1);
+  });
+  it('can graze either half: a spot is found on each, on the farm\'s own ground', () => {
+    const p = H.pasture;
+    const f = createElectricFence(two);
+    for (const half of [0, 1]) {
+      const ok = (x, z) => hill.inPasture(x, z, 3) && z > hill.farEdge(x) + H.foot + 2 && !hill.inWood(x, z, -2) && hill.waterAt(x, z) < 0.05 && hill.gorseAt(x, z) < 0.25 && hill.climbSlope(x, z) < 0.45 && !hill.nearHut(x, z) && f.onHalf(x, z, half);
+      expect(findFlockSpot(ok, { minX: p.minX + 8, maxX: p.maxX - 8, minZ: p.minZ + 20, maxZ: p.maxZ - 8 }, createRandom(2)), `half ${half}`).toBeTruthy();
+    }
   });
   it('has the sheep field\'s own flock south of its wall', () => {
     const e = hill.east;

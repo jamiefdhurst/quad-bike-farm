@@ -143,12 +143,12 @@ describe('the boundaries', () => {
   it('are drystone walls round the sheep field and the hill, nothing along the drive, a rail between Home Ground and the yard, and hedges everywhere else', () => {
     const open = ['drive|lanefield', 'drive|longpiece', 'drive|farmstead', 'hill|lane'];
     for (const r of runs) {
-      const wall = (['sheep', 'hill'].includes(r.a) || ['sheep', 'hill'].includes(r.b)) && r.a !== 'lane' && r.b !== 'lane'; // the lane's sides are hedges on its banks (#684)
+      const wall = ['sheep', 'hill'].includes(r.a) || ['sheep', 'hill'].includes(r.b);
       const railed = [r.a, r.b].sort().join('|') === 'farmstead|home';
       expect(r.kind, `${r.a}|${r.b}`).toBe(open.includes([r.a, r.b].sort().join('|')) ? 'none' : railed ? 'rail' : wall ? 'wall' : 'hedge');
     }
     expect(runs.filter((r) => r.kind === 'wall').map((r) => [r.a, r.b].sort().join('|')).sort()).toEqual(
-      ['brook|hill', 'far|hill', 'hay|sheep', 'hill|out', 'hill|sheep', 'home|sheep'].sort(),
+      ['brook|hill', 'far|hill', 'hay|sheep', 'hill|out', 'hill|sheep', 'home|sheep', 'lane|sheep'].sort(),
     );
     expect(fields.hedges.length + fields.boundaries.filter((b) => ['wall', 'none', 'rail'].includes(b.kind)).length).toBe(fields.boundaries.length);
   });

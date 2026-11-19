@@ -4,7 +4,7 @@
 
 export const DEFAULT_FLOCK_PARAMS = {
   count: 9, // sheep in the hill pasture's flock (read when the game is dealt)
-  hillHalf: 1, // which half of the hill pasture the electric fence leaves the flock: 0 the left of the line from its first end (west on the new farm), 1 the right (the climb's side)
+  hillHalf: -1, // which half of the hill pasture the electric fence leaves the flock (read when the game is dealt): 0 the left of the line from its first end (west on the new farm), 1 the right (the climb's side), -1 by the day (the new farm swaps them each day, so the other half rests; today's farm keeps 1)
   fieldCount: 5, // sheep in the sheep field's own, smaller flock beside the lane (read when the game is dealt)
   walkSpeed: 0.8, // m/s drifting from one patch of grass to the next
   runSpeed: 4.2, // m/s moving off from something
@@ -26,7 +26,7 @@ export const DEFAULT_FLOCK_PARAMS = {
 
 export const FLOCK_PARAM_RANGES = {
   count: [0, 20, 1],
-  hillHalf: [0, 1, 1],
+  hillHalf: [-1, 1, 1],
   fieldCount: [0, 12, 1],
   walkSpeed: [0.2, 2, 0.05],
   runSpeed: [1, 8, 0.1],
@@ -45,6 +45,9 @@ export const FLOCK_PARAM_RANGES = {
   bleatMax: [4, 120, 1],
   bleatScared: [0.5, 10, 0.5],
 };
+
+/** Which half of the hill the flock grazes on farm day `day`: the one `param` says, or with -1 the new farm's alternate day by day and today's stay on the climb's side. */
+export const hillHalfFor = (param, day, newFarm) => (param >= 0 ? param : newFarm ? Math.abs(Math.trunc(day)) % 2 : 1);
 
 const TAU = Math.PI * 2;
 /** The shortest signed turn from angle a to angle b. */
