@@ -330,6 +330,14 @@ export function buildRoadMesh({ scene, road, points, heights, texture }) {
     const inside = (p) => road.strip.rects.some(([x0, z0, x1, z1]) => p.x >= x0 && p.x <= x1 && p.z >= z0 && p.z <= z1);
     meshes.push(...roadStrip(ctx, -road.strip.half, road.strip.half, (road.lift ?? 0.07) + 0.015, grass, { skip: (p) => !inside(p) }));
   }
+  // Passing places: each widens the carriageway on its side by `bay` m for `length` m (the road's `bays`, roads.js), in the same tarmac, a hair above the road's
+  // own strip so the two meet without a seam, and with a gritty edge where it meets the verge.
+  for (const b of road.bays ?? []) {
+    const from = Math.floor(b.s - b.length / 2);
+    const to = Math.ceil(b.s + b.length / 2);
+    const [a, z] = b.side > 0 ? [-(road.halfWidth + b.bay), -road.halfWidth + 0.1] : [road.halfWidth - 0.1, road.halfWidth + b.bay]; // roadStrip's offsets run the other way round from a side's
+    meshes.push(...roadStrip(ctx, a, z, (road.lift ?? 0.07) + 0.004, body, { from, to, cols: 3 }));
+  }
   // Give-way lines (`markings.giveWay`): a double row of dashes across the road, 3 m in from each end, for traffic leaving onto the lane.
   if (road.markings.giveWay) {
     const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...POLY });

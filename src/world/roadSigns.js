@@ -202,7 +202,9 @@ export function buildSignPost(texture, w, h, { bottom = 1.5, shape = 'rect' } = 
   const face = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: texture, roughness: 0.45, metalness: 0.1, transparent: diamond, alphaTest: diamond ? 0.5 : 0 }));
   face.position.set(0, bottom + h / 2, 0.012);
   g.add(face);
-  const plate = new THREE.Mesh(geo, back);
+  // The back plate has the face's own outline: a diamond's is turned, so its corners do not show grey round the white.
+  const plate = new THREE.Mesh(diamond ? new THREE.CircleGeometry(w * 0.5, 4) : geo, back);
+  if (diamond) plate.rotation.z = 0;
   plate.position.set(0, bottom + h / 2, -0.005);
   plate.rotation.y = Math.PI;
   g.add(plate);

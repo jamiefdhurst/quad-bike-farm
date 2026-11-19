@@ -82,6 +82,10 @@ function buildGate(road, g, c, group, points) {
   const [a, b] = g.side > 0 ? [-outer, -inner] : [inner, outer]; // roadStrip's offsets run the other way round from sidePoint's sides
   for (const m of roadStrip({ samples: points, heights }, a, b, 0.07, mat, { from: Math.floor(g.s - GATE_HALF - 0.5), to: Math.ceil(g.s + GATE_HALF + 0.5), cols: 4 })) {
     m.renderOrder = 2;
+    // The strip's own uv repeats every 4 m along the road; the wash is one patch, its edges fading at the ends too, so it takes 0..1 along its length.
+    const uv = m.geometry.getAttribute('uv');
+    const rows = uv.count / 4;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i), Math.floor(i / 4) / Math.max(1, rows - 1));
     group.add(m);
   }
   // Hung from the hinge post and swung open back along the hedge, as a gate left open for the tractor.

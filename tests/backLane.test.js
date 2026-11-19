@@ -296,3 +296,19 @@ describe('the places you can go to', () => {
     expect(backLanePlaces(LAYOUT, roadNetwork(LAYOUT))).toEqual({});
   });
 });
+
+describe('walking and riding into the gateways', () => {
+  it('leaves each gate\'s opening 3.5 m or more between its posts and the hedge ends beyond them, so a quad goes through', async () => {
+    const { laneGaps, laneGates, GATE_HALF } = await import('../src/world/backLaneProps.js');
+    const { laneHedgeRuns } = await import('../src/world/laneHedges.js');
+    const gates = laneGates(road);
+    expect(gates.length).toBe(4);
+    expect(2 * (GATE_HALF - 0.1) - 0.24).toBeGreaterThan(3.5); // the posts' clear width
+    const runs = laneHedgeRuns(road, laneGaps(road));
+    for (const g of gates) {
+      for (const r of runs.filter((x) => x.side === g.side)) {
+        expect(r.from >= g.s + GATE_HALF - 1e-6 || r.to <= g.s - GATE_HALF + 1e-6, `${g.id}: a hedge run across its opening`).toBe(true);
+      }
+    }
+  });
+});
