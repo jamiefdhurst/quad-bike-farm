@@ -89,6 +89,7 @@ export function buildElectricFence({ scene, layout, heights }) {
   const sp = fence.pointAt(stout[0]);
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.3), new THREE.MeshStandardMaterial({ map: signTexture(), roughness: 0.7, side: THREE.DoubleSide }));
   sign.position.set(sp.x, ground(sp) + 1.15, sp.z);
+  sign.rotation.y = fence.signYaw; // the plane faces +z, which is across an east-west wire; turn it across a north-south one
   group.add(sign);
 
   // The energiser: a grey box on a post at the east end, a red light on it.

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
-import { createHill } from '../src/world/hill.js';
+import { createHill, woodTries } from '../src/world/hill.js';
 import { createFields } from '../src/world/fields.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
@@ -274,5 +274,12 @@ describe('the hill through the south gate', () => {
       }
       for (const [x, z] of pads.west.trees) expect(fields.areaOf(x, z)).toBe('meadow');
     });
+  });
+});
+
+describe('the hill wood\'s oak loop', () => {
+  it('keeps today\'s 2000 tries where the layout asks for no number of oaks, and 60 an oak where it does (#994)', () => {
+    expect(woodTries(LAYOUT.hill.wood)).toBe(2000);
+    expect(woodTries({ trees: 85 })).toBe(5100);
   });
 });

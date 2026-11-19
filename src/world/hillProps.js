@@ -9,6 +9,7 @@ import { buildFarHedges, wallFarPieces, HedgeSwap } from './hedgeFar.js';
 import { buildElectricFence } from './electricFenceBuild.js';
 import { buildRiverside } from './riverProps.js';
 import { buildHut } from './hutBuild.js';
+import { woodTries } from './hill.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const WALL_WIDTH = 0.55; // m across the drystone wall's stones, for its far strip
@@ -150,7 +151,7 @@ function buildWood({ scene, models, layout, heights, fields, physics, RAPIER, ra
   const wood = layout.hill.wood;
   const spots = [];
   const trees = wood.trees ?? 34;
-  for (let tries = 0; spots.length < trees && tries < trees * 60; tries++) {
+  for (let tries = 0; spots.length < trees && tries < woodTries(wood); tries++) {
     const x = wood.minX + random() * (wood.maxX - wood.minX);
     const z = wood.minZ + random() * (wood.maxZ - wood.minZ);
     // A ragged edge: fewer towards the pasture side.

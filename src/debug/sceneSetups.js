@@ -2,6 +2,7 @@
 // with Jess, the flock where you can see it. Each takes the game and a `say(line)` that runs a console line (and throws if it fails),
 // and returns the lines to show. The game methods are the ones the in-game actions use, so a scene shows what play would.
 import { girlActions } from './girlActions.js';
+import { findFlockSpot } from '../world/flock.js';
 import { completeStyle, outfitsFor } from '../npc/outfits.js';
 import { wardrobeLook, styleFor, describeLook } from './wardrobe.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../core/graphics.js';
@@ -93,9 +94,16 @@ export function moto(g, say) {
 export function flock(g, say) {
   const [cx, cz] = g.world.layout.hill.climb.points[0];
   if (!g.flock) return ['there is no flock on this farm'];
-  g.flock.place({ x: cx, z: cz + 14 }); // on the half of the hill the electric fence leaves them, by the climb's first cones
-  say(`tp me ${cx} ${cz - 6} 0`);
-  return ['the flock is grazing just past the stream, by the climb\'s first cones; walk on and they will look up'];
+  // By the climb's first cones if the flock's half of the hill is there, else on the nearest ground it has (the fence leaves it one half, and the day may rest the other).
+  const allowed = g.hillFlockAllowed;
+  let at = { x: cx, z: cz + 14 };
+  if (allowed && !allowed(at.x, at.z)) {
+    const p = g.world.layout.hill.pasture;
+    at = findFlockSpot(allowed, { minX: p.minX + 8, maxX: p.maxX - 8, minZ: p.minZ + 20, maxZ: p.maxZ - 8 }, () => 0.5) ?? at;
+  }
+  g.flock.place(at);
+  say(`tp me ${at.x} ${at.z - 8} 0`);
+  return ['the flock is grazing on its half of the hill, just past the stream where the ground allows; walk on and they will look up'];
 }
 
 export function flask(g, say) {
