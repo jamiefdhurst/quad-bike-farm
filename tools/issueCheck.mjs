@@ -18,7 +18,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const MARK = '<!-- issue-check -->';
+export const MARK = '<!-- issue-check -->';
 
 // Sections that say where or why rather than what to do. Anything else is work, and a bullet in it that isn't gets ticked as `context:`.
 const NOT_WORK = /^(where it fits|questions?( to settle first)?|what is there now|settled with jamie|open issues for this area|findings|from the review|already done)\b/i;
