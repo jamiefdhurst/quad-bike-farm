@@ -87,9 +87,9 @@ export function grassStripPixels({ size = 64, seed = 7 } = {}) {
   for (let i = 0; i < size * size; i++) {
     const t = rand();
     const grit = rand() < 0.04;
-    data[i * 4] = grit ? 0x70 : 0x44 + t * 34;
-    data[i * 4 + 1] = grit ? 0x6a : 0x62 + t * 46;
-    data[i * 4 + 2] = grit ? 0x5a : 0x2a + t * 22;
+    data[i * 4] = grit ? 0x70 : 0x3a + t * 26;
+    data[i * 4 + 1] = grit ? 0x6a : 0x54 + t * 34;
+    data[i * 4 + 2] = grit ? 0x5a : 0x26 + t * 16;
     data[i * 4 + 3] = 255;
   }
   return data;

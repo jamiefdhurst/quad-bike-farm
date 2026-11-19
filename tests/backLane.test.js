@@ -73,3 +73,19 @@ describe('Back Lane', () => {
     });
   });
 });
+
+describe('the hedges along it', () => {
+  it('stand a verge\'s width clear of the carriageway, further out round a passing place', async () => {
+    const { hedgeOffset, laneHedgeRuns, JUNCTION_OPEN } = await import('../src/world/laneHedges.js');
+    const plain = road.halfWidth + road.verge;
+    const bay = road.bays[0];
+    expect(hedgeOffset(road, 3, bay.side)).toBeCloseTo(plain, 6);
+    expect(hedgeOffset(road, bay.s, bay.side)).toBeCloseTo(plain + bay.bay, 6);
+    expect(hedgeOffset(road, bay.s, -bay.side)).toBeCloseTo(plain, 6);
+    const runs = laneHedgeRuns(road, [{ s: 500, half: 2.6, side: 1 }]);
+    expect(runs.filter((r) => r.side === 1).length).toBe(2);
+    expect(runs.filter((r) => r.side === -1).length).toBe(1);
+    expect(Math.min(...runs.map((r) => r.from))).toBe(JUNCTION_OPEN);
+    expect(Math.max(...runs.map((r) => r.to))).toBeCloseTo(road.length - JUNCTION_OPEN, 6);
+  });
+});

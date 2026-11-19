@@ -109,6 +109,8 @@ export const GATEWAYS_PLAN = [
   { a: 'top', b: 'pit', at: [720, 150], half: 2.45, gate: true, id: 'quarry', why: 'the farm gate into the pit\'s field from the stone track north: the way in, tied open (#685)' },
   { a: 'pit', b: 'out', at: [885, 110], half: 2.45, gate: true, id: 'pitlane', shut: true, why: 'the lane gate the lorries used: shut, chained and solid, no way through (#685)' },
   { a: 'north', b: 'out', at: [380, 30], why: 'North Field onto Back Lane (#686)' },
+  { a: 'far', b: 'out', at: [40, 440], why: 'Far Field onto Back Lane on its west side (#686)' },
+  { a: 'hill', b: 'out', at: [36, 640], why: 'Hill Pasture onto Back Lane, short of the moor gate (#686)' },
   { a: 'home', b: 'north', at: [306, 230], why: 'North Field from Home Ground: its only other way in is Back Lane' },
   { a: 'home', b: 'wet', at: [197, 296], why: 'Wet Meadow from Home Ground, level with the pond (#684)' },
   { a: 'drive', b: 'out', at: [885, 345], half: 4.5, why: 'the drive onto the lane: the cattle grid fills it (#568)' },
@@ -807,6 +809,8 @@ export const BACK_LANE_PLAN = {
   cuttings: [[1740, 2170]], // m along: the hairpins, where the lane runs in a hollow way up to 2.1 m into the hill's shoulder (flagged so `cuttings()` accepts it)
   ford: { at: [10, 572], reach: 14 },
   hairpins: [[-30, 840], [60, 874]],
+  // The gates in the lane's own hedge, each across from the farm's gateway onto the strip between (plan metres), with the lane's gravel track to it.
+  gates: [{ id: 'north', farm: [380, 30] }, { id: 'wood', farm: [38, 130] }, { id: 'far', farm: [40, 440] }, { id: 'hill', farm: [36, 640] }],
 };
 
 /** Back Lane as a road of the network, in game metres, joined to the lane at both ends. */
@@ -817,7 +821,10 @@ export function backLaneLayout(B = BACK_LANE_PLAN) {
     markings: { centre: 'none', giveWay: true }, verge: B.verge, hedged: true, draw: 'mesh', lift: 0.05, level: { ...B.level }, camber: 0.04,
     cuttings: B.cuttings.map(([from, to]) => ({ from, to })),
     strip: { half: B.strip.half, rects: B.strip.rects.map(([x0, z0, x1, z1]) => [...fromPlan([x0, z0]), ...fromPlan([x1, z1])]) },
-    texture: { patches: 14, bands: 9, crumble: 0.07 },
+    texture: { patches: 6, bands: 9, crumble: 0.07 },
+    gates: B.gates.map((g) => ({ id: g.id, farm: fromPlan(g.farm) })),
+    ford: { at: fromPlan(B.ford.at), reach: B.ford.reach },
+    hairpins: B.hairpins.map(fromPlan),
   };
 }
 

@@ -147,6 +147,9 @@ export async function buildWorldModels() {
   // The neighbour's land across the lane (#569) and her cows, on the new farm's ground.
   const { buildNeighbourLand } = await import('../../src/world/neighbourLandProps.js');
   add('setPiece', 'neighbourLand', buildNeighbourLand, (b) => (b(c2), found('neighbourLand')));
+  // Back Lane's gates and hedges (#686), on the new farm's ground.
+  const { buildBackLaneProps } = await import('../../src/world/backLaneProps.js');
+  add('setPiece', 'backLane', buildBackLaneProps, (b) => (b(c2), found('backLane')));
   // The neighbour's dairy (#569): the four pieces, each on the new farm's neighbour's own shape and yard ground, with the materials they share.
   const dairy = await import('../../src/world/dairyKit.js');
   const { neighbourFarmShape } = await import('../../src/world/neighbourFarm.js');
