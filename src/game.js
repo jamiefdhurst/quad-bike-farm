@@ -127,7 +127,7 @@ import { pickMusicFiles } from './audio/pickMusic.js';
 import { RADIO_PARAMS, RADIO_PARAM_RANGES } from './vehicle/radio.js';
 import { RadioTaste, applyRadioMove, RADIO_TASTE_PARAMS, RADIO_TASTE_PARAM_RANGES } from './npc/radioTaste.js';
 import { CarGo, Borrowing, mayDriveCar, refuseCarLine, CAR_GO_PARAM_RANGES } from './npc/carGo.js';
-import { GoingHome, GOING_HOME_PARAM_RANGES, leaveRoute, hasGone } from './npc/goingHome.js';
+import { GoingHome, GOING_HOME_PARAM_RANGES, leaveRoute, hasGone, homeVia } from './npc/goingHome.js';
 import { LPlates, LPLATE_PARAM_RANGES, meanSkill } from './npc/lPlates.js';
 import { DrivingTest, DRIVING_TEST_PARAM_RANGES } from './npc/drivingTest.js';
 import { LPlateSet } from './vehicle/lPlateModel.js';
@@ -1100,6 +1100,7 @@ export class Game {
     this.borrowing = Object.fromEntries(CAR_KINDS.map((k) => [k, new Borrowing(this.carGo.p)]));
     this.goingHome = new GoingHome(); // calling it a day sends them home in their cars (npc/goingHome.js)
     this.homeKinds = {}; // girl id -> the car she is driving home in
+    this.homeVia = {}; // girl id -> 'lane' or 'backLane': which way she drives out (npc/goingHome.js)
     this.crankParams = { ...DEFAULT_CRANK_ATTEMPT_PARAMS };
     this.pushParams = { ...DEFAULT_PUSH_PARAMS };
     this.towSteerParams = { ...DEFAULT_TOW_STEER_PARAMS }; // a girl steering a dead quad on the tow rope (npc/towSteer.js)
@@ -4745,6 +4746,8 @@ export class Game {
     }
     if (!girls.length) return false;
     this.homeKinds = Object.fromEntries(girls.filter((g) => g.kind).map((g) => [g.id, g.kind]));
+    const dealRoute = createRandom(this.seed ^ 0xb4c1a);
+    this.homeVia = Object.fromEntries(girls.filter((g) => g.kind).map((g) => [g.id, homeVia(this.world.layout, g.id, dealRoute(), this.goingHome.p)]));
     const gate = this.trafficHost.gate('road');
     gate?.set(true, []);
     for (const ev of this.goingHome.begin(girls)) this.sendHome(ev);
@@ -4777,7 +4780,7 @@ export class Game {
     c.voice.say('carHome', { force: true });
     const spot = this.world.layout.cars[kind];
     unit.quad.placeAt(spot.x, spot.z + 1, Math.PI / 4); // the row is nosed in to the barn with no room to turn: she has it facing the road by the time she is there
-    c.requestDrive(unit.quad, { park: { route: leaveRoute(spot, this.world.layout, this.goingHome.p), light: true, then: () => this.girlGone(ev.girl) } });
+    c.requestDrive(unit.quad, { park: { route: leaveRoute(spot, this.world.layout, this.goingHome.p, this.homeVia[ev.girl]), light: true, then: () => this.girlGone(ev.girl) } });
   }
 
   /** She has got away: her car and she are gone from the farm (hidden, switched off), or she is sat in yours. */
@@ -4811,7 +4814,7 @@ export class Game {
       const q = this.goVehicle(this.homeKinds[id])?.quad;
       if (!q) continue;
       if (q.speed > 1.5) gh.setOff(id);
-      if (hasGone(this.world.layout, p, q.position)) this.girlGone(id);
+      if (hasGone(this.world.layout, p, q.position, this.homeVia[id])) this.girlGone(id);
     }
     for (const ev of gh.update(dt)) {
       if (ev.type === 'tut') this.companions.find((o) => o.character.id === ev.girl)?.voice.say('carJessFast', { force: true });

@@ -109,3 +109,38 @@ describe('the way out', () => {
     expect(AMY_CAR_LINES.carJessFast.lines.length).toBeGreaterThan(0);
   });
 });
+
+describe('the way home round Back Lane (#686)', () => {
+  it('is only on the new farm, which has a Back Lane, and Jess takes it more often than Amy', async () => {
+    const { layoutNew } = await import('../src/world/layoutNew.js');
+    const { LAYOUT: today, RAW_LAYOUT } = await import('../src/world/layout.js');
+    const { homeVia, DEFAULT_GOING_HOME_PARAMS: P } = await import('../src/npc/goingHome.js');
+    const two = layoutNew(today, RAW_LAYOUT);
+    expect(homeVia(today, 'jess', 0, P)).toBe('lane'); // today's farm has none
+    let amy = 0;
+    let jess = 0;
+    for (let i = 0; i < 100; i++) {
+      if (homeVia(two, 'amy', i / 100, P) === 'backLane') amy++;
+      if (homeVia(two, 'jess', i / 100, P) === 'backLane') jess++;
+    }
+    expect(jess).toBeGreaterThan(amy);
+    expect(amy).toBeGreaterThan(0);
+  });
+
+  it('runs out of the drive, north up the lane keeping left and into Back Lane, where she is counted gone 160 m in', async () => {
+    const { layoutNew } = await import('../src/world/layoutNew.js');
+    const { LAYOUT: today, RAW_LAYOUT } = await import('../src/world/layout.js');
+    const { leaveRoute, hasGone, goneBeyond, DEFAULT_GOING_HOME_PARAMS: P } = await import('../src/npc/goingHome.js');
+    const two = layoutNew(today, RAW_LAYOUT);
+    const slot = two.cars.finch;
+    const route = leaveRoute(slot, two, P, 'backLane');
+    const lane = two.publicLane;
+    const onLane = route.filter((pt) => Math.abs(pt.x - (lane.x - 1.3)) < 0.01);
+    expect(onLane.length).toBeGreaterThanOrEqual(2);
+    expect(onLane[0].z).toBeGreaterThan(onLane[1].z); // heading north: z falls
+    const last = route[route.length - 1];
+    expect(hasGone(two, P, { x: last.x, z: last.z }, 'backLane')).toBe(true);
+    expect(hasGone(two, P, { x: lane.x, z: two.road.z + 20 }, 'backLane')).toBe(false); // not counted gone just for being on the lane
+    expect(goneBeyond(two, P, 'lane').z).toBeGreaterThan(two.road.z); // the lane way is as it was
+  });
+});
