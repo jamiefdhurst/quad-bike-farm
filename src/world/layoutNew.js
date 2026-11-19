@@ -159,11 +159,11 @@ export const LANE_PLAN = {
 /**
  * The A-road (#687), plan metres: one main road down the valley east of the village, from the map's north edge to its south, curving. Two lanes with a
  * white centre line and edge lines, 7.3 m of carriageway (the width of a rural single carriageway, wider again than the lane's 5.2), verges and the
- * neighbour's hedge along its west side. The lane joins it at (1291, -30) and the village street at (1292, 718), so those are control points.
+ * neighbour's hedge along its west side. It runs 150 m past the plan's map edge at each end (z -70 and 970, #1025), so what leaves by it goes out of sight 190 m from a junction, not 41. The lane joins it at (1291, -30) and the village street at (1292, 718), so those are control points.
  * `drawn` is what the far landscape (#708) carries on from.
  */
 export const A_ROAD_PLAN = {
-  points: [[1300, -70], [1291, -30], [1290, 60], [1292, 150], [1294, 250], [1298, 400], [1296, 560], [1292, 718], [1300, 800], [1305, 880], [1296, 970]],
+  points: [[1330, -215], [1314, -140], [1300, -70], [1291, -30], [1290, 60], [1292, 150], [1294, 250], [1298, 400], [1296, 560], [1292, 718], [1300, 800], [1305, 880], [1296, 970], [1289, 1045], [1281, 1120]],
   halfWidth: 3.65, verge: 2.4, camber: 0.05, dash: [4, 8], eyes: 18,
   layBy: { z: 640, length: 30, width: 3.2, side: 1 }, // on the east side (side 1 reads east on a road that runs south), with the bus stop flag at its south end
 };

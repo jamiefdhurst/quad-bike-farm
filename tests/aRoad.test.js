@@ -6,6 +6,7 @@ import { neighbourLandShape, hedgeStretches } from '../src/world/neighbourLand.j
 import { laneBarriers } from '../src/world/neighbourFarm.js';
 import { junctionSites, junctionFittings, junctionBreaks, catsEyes, layByOf, bendBins } from '../src/world/aRoadFittings.js';
 import { laneHedgeRuns, sidePoint, hedgeOffset } from '../src/world/laneHedges.js';
+import { aRoadOut, junctionSOf } from '../src/world/laneRoutes.js';
 import { aRoadGaps } from '../src/world/aRoadProps.js';
 import { cottagePlans, cottageBoxes } from '../src/world/laneFittingsProps.js';
 
@@ -22,18 +23,24 @@ describe('the A-road down the valley (#687)', () => {
     const [x1, z1] = fromPlan(A_ROAD_PLAN.points.at(-1));
     expect(aRoad.samples[0]).toMatchObject({ x: x0, z: z0 });
     expect(aRoad.samples.at(-1)).toMatchObject({ x: x1, z: z1 });
-    expect(aRoad.length).toBeGreaterThan(1040);
-    expect(aRoad.length).toBeLessThan(1100); // about 1,040 m of the valley, not round the map
+    expect(aRoad.length).toBeGreaterThan(1300); // the map's 1,040 m and 150 m past each edge (#1025)
+    expect(aRoad.length).toBeLessThan(1400);
+    expect(aRoad.samples[0].z).toBeLessThan(two.ground.minZ - 140);
+    expect(aRoad.samples.at(-1).z).toBeGreaterThan(two.ground.maxZ + 140);
     const xs = aRoad.samples.map((p) => p.x);
     expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(10); // it curves
-    expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(40);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeLessThan(60);
     for (const p of aRoad.samples) {
       expect(p.x).toBeLessThan(two.ground.maxX - 10);
-      expect(p.z).toBeGreaterThanOrEqual(two.ground.minZ - 0.01);
-      expect(p.z).toBeLessThanOrEqual(two.ground.maxZ + 0.01);
     }
     expect(aRoad.markings).toMatchObject({ centre: 'dashed', edge: true });
     expect(aRoad.halfWidth * 2).toBeGreaterThan(7);
+  });
+
+  it('has what leaves by its north end go 190 m from the junction before it is gone (#1025)', () => {
+    const out = aRoadOut(net, junctionSOf(net), true);
+    expect(out.at(-1).z).toBeLessThan(two.ground.minZ - 140);
+    expect(Math.abs(out.at(-1).z - lane.samples[0].z)).toBeGreaterThan(180);
   });
 
   it('is wider than the lane, which is wider than Back Lane: a major road, a real lane, a single track', () => {

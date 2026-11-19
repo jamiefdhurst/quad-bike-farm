@@ -165,4 +165,19 @@ describe('the fade and the move', () => {
     expect(m.move.x).toBeLessThan(east.x - 3); // on the farm side of the A-road, not thrown on across it
     expect(['lane', 'streetEnd'].some((id) => net.onRoad(id, m.move.x, m.move.z))).toBe(true);
   });
+
+  it('turns you round on the A-road\'s verge too, from the bellmouth walking north, and not on the lane\'s own verge (#1025)', () => {
+    const a = net.road('aRoad');
+    const mouth = lane.samples[0];
+    const west = mouth.x - a.halfWidth - 1; // on the A-road's west verge, 1 m off its tarmac
+    const walk = (i) => ({ x: west, z: mouth.z - Math.min(i * 0.3, 20) });
+    const { log } = run(walk, 0.05, 3);
+    const hit = log.find((e) => e.started);
+    expect(net.onRoad('aRoad', west, mouth.z - 5)).toBe(false); // it is not on the tarmac
+    expect(hit?.line.id).toBe('road');
+    // The lane's own verge, well along it, is nobody's catch.
+    const along = net.pointAt('lane', 60);
+    const idle = run(() => ({ x: along.x, z: along.z + 4 }), 0.05, 1);
+    expect(idle.log.some((e) => e.started)).toBe(false);
+  });
 });
