@@ -109,7 +109,7 @@ function buildFurniture(road, c, group) {
   };
   for (const sg of laneSigns(road)) {
     if (sg.kind === 'fingerpost') continue; // placed with the stile below
-    const off = hedgeOffset(road, sg.s, sg.side) - 0.9;
+    const off = hedgeOffset(road, sg.s, sg.side) - 1.3;
     const t = pointAtTangent(road, sg.s);
     // A sign faces the traffic that reads it: back along the way they come, or across the road for a chevron or the gauge.
     const toward = sg.facing === 0 ? { x: -t.tz * sg.side, z: t.tx * sg.side } : { x: -t.tx * sg.facing, z: -t.tz * sg.facing };

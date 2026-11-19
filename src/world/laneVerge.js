@@ -5,7 +5,6 @@
 import * as THREE from 'three';
 import { sidePoint, hedgeOffset } from './laneHedges.js';
 import { canvasTexture } from './outbuildingProps.js';
-import { plantMaterial } from './woodPlants.js';
 import { tiledInstances } from './tiledInstances.js';
 import { matrixAt } from './hillProps.js';
 
@@ -22,7 +21,7 @@ export function vergePlants(road, random, skip = () => false) {
     for (let s = 6; s < road.length - 6; s += VERGE_STEP * (0.5 + random())) {
       if (skip(s, side)) continue;
       const from = road.halfWidth + 0.35;
-      const to = hedgeOffset(road, s, side) - 0.55;
+      const to = hedgeOffset(road, s, side) - 1.3; // a hedge block is up to 2.4 m through
       if (to <= from) continue;
       const pick = random();
       const kind = pick < VERGE_KINDS.parsley ? 'parsley' : pick < VERGE_KINDS.parsley + VERGE_KINDS.nettle ? 'nettle' : 'dock';
@@ -33,6 +32,9 @@ export function vergePlants(road, random, skip = () => false) {
   }
   return out;
 }
+
+/** The leaf material: lit by the cards' own upward normals from either side (both windings are in the geometry), alpha-tested, tinted by vertex colour. */
+const plantMaterial = (map) => new THREE.MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.5 });
 
 const finish = (pos, uv, colors) => {
   const geo = new THREE.BufferGeometry();
@@ -56,10 +58,25 @@ function card(arr, [x0, y0, z0], [x1, y1, z1], w, tint, [u0, v0, u1, v1] = [0, 0
     [x1 + sx, y1, z1 + sz, u1, v1],
     [x1 - sx, y1, z1 - sz, u0, v1],
   ];
-  for (const tri of [[0, 1, 2], [0, 2, 3]]) {
+  for (const tri of [[0, 1, 2], [0, 2, 3], [2, 1, 0], [3, 2, 0]]) { // both windings, so every card is a front face from above and below and lit by its upward normal
     for (const k of tri) {
       arr.pos.push(v[k][0], v[k][1], v[k][2]);
       arr.uv.push(v[k][3], v[k][4]);
+      arr.colors.push(...tint);
+    }
+  }
+}
+
+/** A flat square card, side 2r, centred (x, y, z), turned `yaw` and tipped up at its far edge by `tilt` m: the flower head of a cow parsley. */
+function flat(arr, [x, y, z], r, yaw, tilt, tint, [u0, v0, u1, v1]) {
+  const c = Math.cos(yaw);
+  const s = Math.sin(yaw);
+  const corner = (a, b, lift) => [x + a * c - b * s, y + lift, z + a * s + b * c];
+  const v = [[corner(-r, -r, -tilt), u0, v0], [corner(r, -r, -tilt), u1, v0], [corner(r, r, tilt), u1, v1], [corner(-r, r, tilt), u0, v1]];
+  for (const tri of [[0, 1, 2], [0, 2, 3], [2, 1, 0], [3, 2, 0]]) {
+    for (const k of tri) {
+      arr.pos.push(...v[k][0]);
+      arr.uv.push(v[k][1], v[k][2]);
       arr.colors.push(...tint);
     }
   }
@@ -99,24 +116,38 @@ export function vergeLeafTexture(base = '#4c7a35', serrate = 6) {
   });
 }
 
-/** The cow parsley's flower head: a flat spray of tiny white flowers on fine rays, on transparent. */
+/**
+ * The cow parsley's atlas, 256 by 128: its flower head on the left half (a flat spray of tiny white flowers on fine rays), and on the right a solid green for the
+ * stems (top) and a feathery, finely cut leaf (bottom), on transparent.
+ */
 export function umbelTexture(random) {
-  return canvasTexture(128, 128, (ctx, w, h) => {
+  return canvasTexture(256, 128, (ctx, w, h) => {
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#f2f3ea';
-    for (let r = 0; r < 9; r++) {
-      const a = (r / 9) * Math.PI * 2;
-      for (let k = 0; k < 9; k++) {
-        const d = 14 + k * 5.5;
+    for (let r = 0; r < 11; r++) {
+      const a = (r / 11) * Math.PI * 2;
+      for (let k = 0; k < 8; k++) {
+        const d = 10 + k * 6.5;
         ctx.beginPath();
-        ctx.arc(w / 2 + Math.cos(a) * d + (random() - 0.5) * 5, h / 2 + Math.sin(a) * d + (random() - 0.5) * 5, 3.4 + random() * 1.4, 0, Math.PI * 2);
+        ctx.arc(64 + Math.cos(a) * d + (random() - 0.5) * 5, 64 + Math.sin(a) * d + (random() - 0.5) * 5, 3.6 + random() * 1.6, 0, Math.PI * 2);
         ctx.fill();
       }
     }
-    ctx.fillStyle = '#e4e8d8';
+    ctx.fillStyle = '#dfe4cf';
     ctx.beginPath();
-    ctx.arc(w / 2, h / 2, 12, 0, Math.PI * 2);
+    ctx.arc(64, 64, 10, 0, Math.PI * 2);
     ctx.fill();
+    ctx.fillStyle = '#5b8a3c'; // the stem
+    ctx.fillRect(132, 4, 120, 56);
+    ctx.fillStyle = '#4f8035'; // the leaf: a midrib and fine leaflets either side
+    ctx.fillRect(188, 66, 8, 58);
+    for (let i = 0; i < 9; i++) {
+      const y = 120 - i * 6;
+      ctx.beginPath();
+      ctx.ellipse(192 - 22, y, 20 - i, 3.2, -0.5, 0, Math.PI * 2);
+      ctx.ellipse(192 + 30, y, 20 - i, 3.2, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
   });
 }
 
@@ -125,17 +156,17 @@ export function parsleyGeometry(random) {
   const a = { pos: [], uv: [], colors: [] };
   for (let i = 0; i < 6; i++) {
     const yaw = (i / 6) * Math.PI * 2 + random();
-    const len = 0.32 + random() * 0.18;
-    card(a, [0, 0, 0], [Math.cos(yaw) * len, 0.22 + random() * 0.1, Math.sin(yaw) * len], 0.09, [0.62, 0.9, 0.55], [0, 0, 1, 0.45]);
+    const len = 0.4 + random() * 0.2;
+    card(a, [0, 0, 0], [Math.cos(yaw) * len, 0.22 + random() * 0.1, Math.sin(yaw) * len], 0.15, [0.75, 1.0, 0.65], [0.5, 0, 1, 0.5]);
   }
   for (let i = 0; i < 5; i++) {
     const yaw = random() * Math.PI * 2;
     const lean = 0.05 + random() * 0.18;
     const top = [Math.cos(yaw) * lean, 0.8 + random() * 0.3, Math.sin(yaw) * lean];
-    card(a, [0, 0, 0], top, 0.012, [0.5, 0.65, 0.35], [0.45, 0.5, 0.55, 1]); // the stem, a sliver of leaf texture
-    const r = 0.1 + random() * 0.04;
-    // The umbel: a flat disc as two crossed tilted cards.
-    for (const k of [0, 1]) card(a, [top[0] - r * (k ? 0 : 1), top[1], top[2] - r * (k ? 1 : 0)], [top[0] + r * (k ? 0 : 1), top[1], top[2] + r * (k ? 1 : 0)], r, [1.05, 1.05, 1.0], [0, 0, 1, 1]);
+    card(a, [0, 0, 0], top, 0.014, [0.7, 0.85, 0.5], [0.6, 0.55, 0.9, 0.95]); // the stem, a sliver of the atlas's solid green
+    const r = 0.13 + random() * 0.05;
+    // The umbel: a flat head, the near and far sides of it a little different in height so it is a shallow dome.
+    flat(a, top, r, random() * Math.PI, 0.05, [1.05, 1.05, 1.0], [0, 0, 0.5, 1]);
   }
   return finish(a.pos, a.uv, a.colors);
 }
@@ -192,7 +223,7 @@ export function buildVerge({ scene, heights, random, drawDistance }, road, skip)
       return matrixAt(at.x, heights.heightAt(at.x, at.z) - 0.02, at.z, p.yaw, p.scale);
     });
     if (!matrices.length) continue;
-    const group = tiledInstances(makers[kind][0], makers[kind][1], matrices, { name: `lane-${kind}` });
+    const group = tiledInstances(makers[kind][0], makers[kind][1], matrices, { name: `lane-${kind}`, receiveShadow: false });
     scene.add(drawDistance.add(group, 'coverDistance'));
     groups.push(group);
   }

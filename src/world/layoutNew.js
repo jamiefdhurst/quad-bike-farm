@@ -804,9 +804,9 @@ export const BACK_LANE_PLAN = {
   halfWidth: 1.6,
   passing: { spacing: 190, length: 10, bay: 1.7 },
   strip: { half: 0.35, rects: [[-20, 90, 60, 800], [60, 850, 880, 900]] }, // the grass down the middle, on the west and south stretches only: plan rectangles [minX, minZ, maxX, maxZ] (settled 13 November)
-  verge: 1.8,
+  verge: 2.6,
   level: { shoulder: 2.5, lead: [2, 2], blend: 10, natural: true },
-  cuttings: [[1740, 2170]], // m along: the hairpins, where the lane runs in a hollow way up to 2.1 m into the hill's shoulder (flagged so `cuttings()` accepts it)
+  cuttings: [[1555, 1640], [1730, 2175]], // m along: where the lane runs in a hollow way into the hill's shoulder (up to 2.6 m, as a sunken old road does), flagged so `cuttings()` accepts it
   ford: { at: [10, 572], reach: 14, west: -40 }, // the stream runs on west from the pasture's hedge to the ford, and to plan x `west` (the moor's edge)
   hairpins: [[-30, 840], [60, 874]],
   footpath: { at: [2, 792], to: [-60, 760] }, // off the road's west side, up the hill: the stile in the hedge at `at`, the path on to `to` (plan metres)
