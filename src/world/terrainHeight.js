@@ -70,6 +70,7 @@ export function createTerrainHeight(layout, track) {
     // The new farm's landform (layout.landform) is already in `lie`, so it has no rise of its own beyond the hedges.
     if (!landform) h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013)) * (1 - Math.max(w, ww, qw));
     if (w > 0) h += w * hill.profile(x, z);
+    if (hill && hill.westCut) h -= hill.westCut(x, z); // the stream on west of the pasture's hedge to Back Lane's ford (#686)
     if (ww > 0) h += ww * woods.profile(x, z);
 
     // The stubble fields' own lie: the north one's hollow, the south one's rise.

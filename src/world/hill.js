@@ -72,7 +72,13 @@ export function createHill(layout) {
   /** The stream's middle line at x. */
   const streamZ = (x) => stream.z + stream.wander * Math.sin(x * 0.05 + 1.1);
   /** 1 at the ford (where the lane crosses), 0 along the rest of the stream. */
-  const fordK = (x) => 1 - smoothstep(lane.halfWidth + 1, lane.halfWidth + ford.reach, Math.abs(x - lane.x));
+  // On the new farm the stream runs on west to a second ford where Back Lane crosses it (#686): `stream.west` is { x, minX, halfRoad }, the road's x, how far
+  // west the stream goes (the moor's edge) and the road's half width.
+  const westEnd = stream.west ?? null;
+  const fordK = (x) => Math.max(
+    1 - smoothstep(lane.halfWidth + 1, lane.halfWidth + ford.reach, Math.abs(x - lane.x)),
+    westEnd ? 1 - smoothstep(westEnd.halfRoad + 1, westEnd.halfRoad + ford.reach, Math.abs(x - westEnd.x)) : 0,
+  );
   const halfAt = (x) => stream.halfWidth + (ford.halfWidth - stream.halfWidth) * fordK(x);
   const depthAt = (x) => stream.depth + (ford.depth - stream.depth) * fordK(x);
   /** How deep the water stands in the channel at x: shallower over the ford, in the same proportion as the channel. */
@@ -132,12 +138,22 @@ export function createHill(layout) {
   function channelAt(x, z) {
     if (x > pasture.maxX && hill.brook) return 0; // beyond the hedge it is the brook's (brook.js)
     // With no brook the stream ends at the pasture's hedges: the ground eases back over 8 m beyond them.
-    const ends = hill.brook ? 1 : 1 - smoothstep(0, 8, Math.max(pasture.minX - x, x - pasture.maxX, 0));
+    // (On the new farm the stream's own west end is `stream.west.minX`, beyond the pasture's hedge to the road's ford and the moor's edge.)
+    const ends = hill.brook ? (westEnd ? 1 - smoothstep(0, 8, westEnd.minX - x) : 1) : 1 - smoothstep(0, 8, Math.max(pasture.minX - x, x - pasture.maxX, 0));
     if (ends <= 0) return 0;
     const r = Math.abs(z - streamZ(x));
     const half = halfAt(x);
     if (r > half + 1.2) return 0;
     return ends * depthAt(x) * (1 - smoothstep(half * 0.4, half + 1.2, r));
+  }
+
+  /**
+   * The stream's channel west of the pasture's hedge, to the ford at Back Lane (#686): the hill's own profile fades out there over 40 m, so the cut is what
+   * it leaves out, `(1 - weight)` of the channel, so the two make one channel the whole way. 0 on a farm whose stream ends at the hedge.
+   */
+  function westCut(x, z) {
+    if (!westEnd || x >= pasture.minX) return 0;
+    return (1 - weight(x, z)) * channelAt(x, z);
   }
 
   /**
@@ -171,7 +187,7 @@ export function createHill(layout) {
   /** 0..1 how much water stands at (x, z): the stream, its edges where the channel is cut deeper than the water stands. */
   function waterAt(x, z) {
     let w = 0;
-    if (x >= pasture.minX - 2 && x <= pasture.maxX + 2) {
+    if (x >= (westEnd ? Math.min(westEnd.minX, pasture.minX) : pasture.minX) - 2 && x <= pasture.maxX + 2) {
       const cut = channelAt(x, z);
       const water = waterDepthAt(x);
       const dry = depthAt(x) - water; // the cut above the water's surface
@@ -297,7 +313,7 @@ export function createHill(layout) {
   const outsideHill = (x, z) => Math.min(outsideField(pasture, x, z), outside(laneRect, x, z), west ? outsideField(west, x, z) : Infinity, east ? outsideField(east, x, z) : Infinity, riverside ? outside(riverside, x, z) : Infinity);
   return {
     lane, pasture, stream, laneRect, west, east, riverside, gates, pond, terraces, top, total, waitSpot,
-    streamZ, halfAt, depthAt, waterDepthAt, farEdge, climb, climbSlope, sinkAt, channelAt, profile, weight,
+    streamZ, halfAt, depthAt, waterDepthAt, farEdge, westCut, climb, climbSlope, sinkAt, channelAt, profile, weight,
     setRise, get rise() { return rise; },
     waterAt, mudAt, sheepFieldOk, pondCut, terraceLift, terraceSlope, lineDistance, brackenAt, gorseAt, inPasture, nearHut, inLane, inWest, inEast, inPaddock, inWood, pastFoot, outside: outsideHill,
   };

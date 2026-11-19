@@ -75,7 +75,7 @@ function buildStream({ scene, heights, fields }) {
   // is left out where it goes under the lane in its culvert).
   const runs = [];
   const xs = [];
-  for (let x = p.minX - 3; x <= p.maxX + 3; x += 1) xs.push(x);
+  for (let x = (hill.stream.west ? Math.min(hill.stream.west.minX, p.minX) + 3 : p.minX - 3); x <= p.maxX + 3; x += 1) xs.push(x); // west to Back Lane's ford (#686)
   runs.push(xs.map((x) => ({ x, z: hill.streamZ(x), half: hill.halfAt(x) * 0.95, y: heights.heightAt(x, hill.streamZ(x)) + hill.waterDepthAt(x) })));
   const brook = heights.brook;
   if (brook) {

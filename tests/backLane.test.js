@@ -111,3 +111,36 @@ describe('the signs along it', () => {
     }
   });
 });
+
+describe('the ford', () => {
+  const heights = createTerrainHeight(two, new Track(two.trackPoints));
+  const [fx] = fromPlan(BACK_LANE_PLAN.ford.at);
+  const fz = heights.hill.streamZ(fx);
+  it('has about 0.15 to 0.2 m of water over the road and a channel beside it that runs into the pasture\'s stream', () => {
+    const water = heights.hill.waterDepthAt(fx);
+    expect(water).toBeGreaterThan(0.12);
+    expect(water).toBeLessThan(0.2);
+    expect(heights.waterAt?.(fx, fz) ?? heights.hill.waterAt(fx, fz)).toBeGreaterThan(0.9);
+    const pasture = two.hill.pasture;
+    for (let x = fx; x <= pasture.minX + 10; x += 2) expect(heights.hill.waterAt(x, heights.hill.streamZ(x)), `x ${x}`).toBeGreaterThan(0.5);
+  });
+
+  it('is a dip in the road, the stream\'s bed, with no step in it (the whole centreline test above walks it at 2 cm)', () => {
+    const road2 = net.road('backLane');
+    const s = road2.samples.reduce((a, p) => (Math.hypot(p.x - fx, p.z - fz) < Math.hypot(a.x - fx, a.z - fz) ? p : a)).s;
+    const at = (d) => {
+      const p = net.pointAt('backLane', s + d);
+      return heights.heightAt(p.x, p.z);
+    };
+    // The bed is lower than the road 12 m either side of it, by more than the land's own fall along the road there, and not by more than the stream's channel and that.
+    expect(at(0)).toBeLessThan(at(12) - 0.05);
+    expect(at(0)).toBeLessThan(at(-12) - 0.05);
+    expect(at(-12) - at(0)).toBeLessThan(1.5);
+  });
+
+  it('rises with the stream: the water deepens after rain, by the stream\'s own level', () => {
+    heights.hill.setRise(0.22);
+    expect(heights.hill.waterDepthAt(fx)).toBeGreaterThan(0.35);
+    heights.hill.setRise(0);
+  });
+});

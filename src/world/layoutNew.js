@@ -807,7 +807,7 @@ export const BACK_LANE_PLAN = {
   verge: 1.8,
   level: { shoulder: 2.5, lead: [2, 2], blend: 10, natural: true },
   cuttings: [[1740, 2170]], // m along: the hairpins, where the lane runs in a hollow way up to 2.1 m into the hill's shoulder (flagged so `cuttings()` accepts it)
-  ford: { at: [10, 572], reach: 14 },
+  ford: { at: [10, 572], reach: 14, west: -40 }, // the stream runs on west from the pasture's hedge to the ford, and to plan x `west` (the moor's edge)
   hairpins: [[-30, 840], [60, 874]],
   footpath: { at: [2, 792], to: [-60, 760] }, // off the road's west side, up the hill: the stile in the hedge at `at`, the path on to `to` (plan metres)
   // The gates in the lane's own hedge, each across from the farm's gateway onto the strip between (plan metres), with the lane's gravel track to it.
@@ -1229,7 +1229,7 @@ export function hillLayout(today, P = HILL_PLAN) {
     ...T,
     lane: { ...T.lane, x: lx, top, toZ, halfWidth: P.lane.halfWidth, sink: P.lane.sink, hedgeOff: P.lane.hedgeOff, hedgeHeight: P.lane.hedgeHeight },
     pasture: here('hill'),
-    stream: { ...T.stream, ...P.stream, z: streamZ },
+    stream: { ...T.stream, ...P.stream, z: streamZ, west: { x: fromPlan(BACK_LANE_PLAN.ford.at)[0], minX: fromPlan([BACK_LANE_PLAN.ford.west, 0])[0], halfRoad: BACK_LANE_PLAN.halfWidth } },
     valley: P.valley,
     slowWander: P.slowWander,
     banks: T.banks.map((b) => ({ ...b, at: Math.round(b.at * P.bankStretch) })),

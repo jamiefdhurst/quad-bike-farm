@@ -44,7 +44,7 @@ export function singleTrackTexture() {
     ctx.fillRect(6, 6, w - 12, h - 12);
     ctx.fillStyle = '#12449b';
     ctx.fillRect(16, 16, w - 32, h - 32);
-    text(ctx, ['SINGLE TRACK ROAD', 'WITH', 'PASSING PLACES'], w / 2, h / 2, 34, '#fff');
+    text(ctx, ['SINGLE TRACK ROAD', 'WITH', 'PASSING PLACES'], w / 2, h / 2, 27, '#fff');
   });
 }
 
