@@ -6,6 +6,7 @@ import { LAYOUT, RAW_LAYOUT } from '../../src/world/layout.js';
 import { createTerrainHeight } from '../../src/world/terrainHeight.js';
 import { createFields } from '../../src/world/fields.js';
 import { Track } from '../../src/world/track.js';
+import { layoutNew } from '../../src/world/layoutNew.js';
 
 // Every named set piece (SET_PIECE_NAMES, BARN_PROP_NAMES in world/farDetail.js) and every carried item's and fixture's model, built in node
 // the way the game builds them, for the tests that look at them as a whole (bareBlocks.test.js). The textures draw on canvases, so a canvas that
@@ -227,6 +228,10 @@ export async function buildWorldModels() {
   add('world', 'hill', buildHill, (b, scene) => into(b, scene));
   const { buildBrookCulvert } = await import('../../src/world/brookProps.js');
   add('world', 'brookCulvert', buildBrookCulvert, (b, scene) => into(b, scene));
+  // The new farm's lane crosses the brook on the village's bridge (#688): the same builder, on layout 2.
+  const layoutTwo = layoutNew(LAYOUT, RAW_LAYOUT);
+  const heightsTwo = createTerrainHeight(layoutTwo, new Track(layoutTwo.trackPoints));
+  add('world', 'laneBridge', buildBrookCulvert, (b, scene) => into(b, scene, { layout: layoutTwo, heights: heightsTwo }));
   const { buildElectricFence } = await import('../../src/world/electricFenceBuild.js');
   add('world', 'electricFence', buildElectricFence, (b, scene) => into(b, scene));
   const { buildJumpRamp } = await import('../../src/world/jumpRamp.js');

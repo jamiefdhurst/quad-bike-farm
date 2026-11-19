@@ -55,11 +55,11 @@ function mergeInto(root) {
   }
 }
 
-/** A strip along the road's samples from offset `a` to `b` across (positive is the north side, to the right heading west), lying `lift` m over the ground. */
-function roadStrip(ctx, a, b, lift, material, { flare = false, clampX = Infinity, ...opts } = {}) {
+/** A strip along the road's samples from offset `a` to `b` across (positive is the right of the way it runs: the north side heading west, the south heading east), lying `lift` m over the ground. */
+function roadStrip(ctx, a, b, lift, material, { flare = false, clampX = Infinity, clampMin = -Infinity, ...opts } = {}) {
   // A strip clamped to the lane's edge starts out over the lane, so its slanting end is squashed flat onto the edge whole.
-  const lead = Number.isFinite(clampX) ? roadLeadIn(ctx.S.road[0], LEAD_COUNT, LEAD_STEP) : [];
-  for (const m of sharedStrip({ samples: ctx.S.road, heights: ctx.heights }, a, b, lift, material, { ...opts, clampX, lead, flare: flare ? { width: FLARE, length: FLARE_LENGTH } : null })) ctx.root.add(m);
+  const lead = Number.isFinite(clampX) || Number.isFinite(clampMin) ? roadLeadIn(ctx.S.road[0], LEAD_COUNT, LEAD_STEP) : [];
+  for (const m of sharedStrip({ samples: ctx.S.road, heights: ctx.heights }, a, b, lift, material, { ...opts, clampX, clampMin, lead, flare: flare ? { width: FLARE, length: FLARE_LENGTH } : null })) ctx.root.add(m);
 }
 
 /** Paint on the road: each mark is { s, len, a, b } (world/roadMesh.js), merged into one mesh. */
@@ -130,8 +130,7 @@ function lampPost(ctx, x, z, towards) {
   add(new THREE.CylinderGeometry(0.14, 0.09, 0.3, 6), M.lampGlow, 0, 3.72, 0.8);
   add(new THREE.ConeGeometry(0.2, 0.14, 6), M.iron, 0, 3.94, 0.8);
   add(new THREE.SphereGeometry(0.03, 6, 4), M.iron, 0, 4.03, 0.8);
-  ctx.root.add(g);
-  ctx.groups.push(g);
+  ctx.furniture.add(g);
   ctx.fixedBox(x, y + 1.6, z, 0.14, 1.6, 0.14);
 }
 
@@ -155,8 +154,7 @@ function signPost(ctx, x, z, yaw, texture, w, h, { height = 2.1, round = false }
   const ring = new THREE.Mesh(round ? new THREE.TorusGeometry(w / 2, 0.012, 6, 28) : new THREE.BoxGeometry(w + 0.02, h + 0.02, 0.02), M.lead);
   ring.position.set(0, height - h / 2 + 0.1, 0.045);
   g.add(ring);
-  ctx.root.add(g);
-  ctx.groups.push(g);
+  ctx.furniture.add(g);
   ctx.fixedBox(x, y + 1, z, 0.08, 1.1, 0.08);
 }
 
@@ -167,7 +165,7 @@ function villageSign(ctx) {
   const y = heights.heightAt(x, z);
   const g = new THREE.Group();
   g.position.set(x, y, z);
-  g.rotation.y = Math.PI / 2; // looks along +x, towards the lane
+  g.rotation.y = S.eastward ? -Math.PI / 2 : Math.PI / 2; // looks towards the lane, to the traffic coming in
   const box = (w, h, d, mat, px, py, pz) => {
     const o = new THREE.Mesh(worldBox(w, h, d, 0.6), mat);
     o.position.set(px, py, pz);
@@ -569,6 +567,7 @@ export function buildVillage(c) {
     shopProxies: [],
     partProxies: [],
     pumpProxies: [],
+    furniture: null, // every lamp post and road sign in one group, so the street's lot merge into a mesh or two a material, not two a post
     rootGroup: (name, y = 0) => {
       const g = new THREE.Group();
       g.name = name;
@@ -579,6 +578,8 @@ export function buildVillage(c) {
     },
   };
 
+  ctx.furniture = ctx.rootGroup('village-furniture');
+
   // The road and its pavements. The road is the lane's tarmac, widening at its mouth; the pavements stand 8 cm proud with a kerb; they stop for the
   // garage's forecourt and the car park's mouth.
   const poly = { polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 };
@@ -586,37 +587,51 @@ export function buildVillage(c) {
   const hw = S.roadHalfWidth;
   const curb = S.curb;
   const gap = (s) => (p) => p.x > s.x0 && p.x < s.x1;
-  const south = gap({ x0: S.garage.outer.minX - 0.5, x1: S.garage.outer.maxX + 0.5 });
+  // The street's two sides are the sign of an offset across it: positive is the right of the way it is drawn, the north heading west and the south
+  // heading east. The garage's forecourt opens onto the street on today's farm (the south side); on the new farm it opens onto the lane instead.
+  const northSign = S.eastward ? -1 : 1;
+  const forecourtOnStreet = !S.v.garage.forecourt;
+  const none = () => false;
+  const garageGap = forecourtOnStreet ? gap({ x0: S.garage.outer.minX - 0.5, x1: S.garage.outer.maxX + 0.5 }) : none;
   // The pavement and the road's edge line stop where the car park opens onto the road (a dropped kerb).
-  const north = gap({ x0: S.carPark.entry.minX - 0.5, x1: S.carPark.entry.maxX + 0.5 });
+  const carParkGap = gap({ x0: S.carPark.entry.minX - 0.5, x1: S.carPark.entry.maxX + 0.5 });
+  const skipFor = (side) => (side === northSign ? carParkGap : garageGap);
   // The road ends at the lane's west edge, not its middle: the lane's tarmac is under the rest, so no texture is drawn over another. It is built
   // from its first sample (on the lane's middle) so the cross-sections the clamp squashes onto the edge cover the whole bellmouth: starting at the
   // last sample outside the edge left its slanting end short of the lane, a wedge of bare ground at the junction.
-  roadStrip(ctx, -hw, hw, ROAD_LIFT, road, { flare: true, from: 0, clampX: S.laneEdge });
+  roadStrip(ctx, -hw, hw, ROAD_LIFT, road, { flare: true, from: 0, ...(S.eastward ? { clampMin: S.laneEdge } : { clampX: S.laneEdge }) });
   // A broken line down the middle, a give-way line across the way out onto the lane, and a pale edge line either side.
   const line = new THREE.MeshStandardMaterial({ color: 0xcfcfc4, roughness: 0.9, ...poly, polygonOffsetFactor: -5 });
   const marks = roadMarks(S);
   paintMarks(ctx, [...marks.centre, ...marks.giveWay], line, ROAD_LIFT + 0.004);
   for (const side of S.street.markings.edge ? [-1, 1] : []) {
-    roadStrip(ctx, side * (hw - 0.3), side * (hw - 0.2), ROAD_LIFT + 0.004, line, { from: 14, skip: (p) => (side < 0 ? south(p) : north(p)), cols: 2 });
+    roadStrip(ctx, side * (hw - 0.3), side * (hw - 0.2), ROAD_LIFT + 0.004, line, { from: 14, skip: skipFor(side), cols: 2 });
   }
   // Pavements start past the mouth (the road is wider there), one each side, with kerbs.
   for (const side of [-1, 1]) {
-    const skip = side < 0 ? south : north;
+    const skip = skipFor(side);
     const [a, b] = side < 0 ? [-curb, -hw] : [hw, curb];
     roadStrip(ctx, a, b, PAVEMENT_LIFT, M.paving, { from: 16, skip, uv: 1 });
     kerbFace(ctx, side * hw, ROAD_LIFT, PAVEMENT_LIFT, M.kerb, { from: 16, skip });
   }
 
-  // Paving from each building's front to the pavement (the cottages' doorsteps, the shop's frontage, the pub's terrace).
+  // Paving from each building's front to the pavement (the cottages' doorsteps, the shop's frontage, the pub's terrace). Where a building stands well back
+  // (the new farm's, whose fronts are 10 m and more from the street) it is a terrace by the door of the depth it needs and a path across the rest.
+  const TERRACE = { pub: 7, shop: 5, cottage: 3 };
   for (const b of S.buildings) {
     if (b.kind === 'garage') continue;
     const front = b.yaw === 0 ? b.outer.maxZ : b.outer.minZ;
     const face = b.yaw === 0 ? 1 : -1;
     const at = S.roadAt(b.x, front + face * 4).at;
     const edge = at.z + (face > 0 ? -curb : curb);
-    if (Math.abs(edge - front) < 0.4) continue;
-    groundPatch(ctx, b.outer.minX - 0.3, front - face * 0.1, b.outer.maxX + 0.3, edge, 0.09, M.paving);
+    const gapZ = Math.abs(edge - front);
+    if (gapZ < 0.4) continue;
+    const reach = Math.min(gapZ, TERRACE[b.kind]);
+    groundPatch(ctx, b.outer.minX - 0.3, front - face * 0.1, b.outer.maxX + 0.3, front + face * reach, 0.09, M.paving);
+    if (gapZ > reach + 0.2) {
+      const px = b.door?.x ?? b.x;
+      groundPatch(ctx, px - 0.8, front + face * (reach - 0.1), px + 0.8, edge, 0.09, M.paving);
+    }
   }
 
   // Buildings.
@@ -627,14 +642,15 @@ export function buildVillage(c) {
   buildGarage(ctx, S.garage);
 
   // Street furniture.
-  for (let k = 0; k < 6; k++) {
+  const lamps = S.closed ? 6 : Math.floor((S.road.length - 40) / 15);
+  for (let k = 0; k < lamps; k++) {
     const i = 24 + k * 15;
     const p = S.road[Math.min(S.road.length - 2, i)];
     const side = k % 2 ? -1 : 1;
     const off = side * (curb - 0.35);
     const x = p.x + -p.tz * off;
     const z = p.z + p.tx * off;
-    if ((side < 0 ? south : north)(p) || S.builtAt(x, z, 0.3)) continue;
+    if (skipFor(side)(p) || S.builtAt(x, z, 0.3)) continue;
     lampPost(ctx, x, z, { x: p.x, z: p.z });
   }
   phoneBox(ctx);
@@ -643,17 +659,19 @@ export function buildVillage(c) {
   villageSign(ctx);
   // The 20 mph limit: a sign each side as you turn in, and repeaters (a 20 on a lamp-height post) through the village.
   const limit = limitSignTexture(S.limit);
-  for (const [i, side] of [[18, 1], [18, -1], [58, 1], [92, -1]]) {
+  for (const [i, side] of S.closed ? [[18, 1], [18, -1], [58, 1], [92, -1]] : [[18, 1], [18, -1], [58, 1], [92, -1], [170, 1], [250, -1]]) {
     const p = S.road[Math.min(S.road.length - 2, i)];
     const off = side * (curb + 0.1);
     const x = p.x + -p.tz * off;
     const z = p.z + p.tx * off;
     if (S.builtAt(x, z, 0.6)) continue;
-    signPost(ctx, x, z, side < 0 ? Math.PI / 2 : -Math.PI / 2, limit, 0.75, 0.75, { round: true, height: 2.2 });
+    signPost(ctx, x, z, side * (S.eastward ? -1 : 1) < 0 ? Math.PI / 2 : -Math.PI / 2, limit, 0.75, 0.75, { round: true, height: 2.2 });
   }
-  boundaryWalls(ctx);
-  roadEnd(ctx);
-  beyondRoad(ctx);
+  if (S.closed) {
+    boundaryWalls(ctx);
+    roadEnd(ctx);
+    beyondRoad(ctx);
+  }
   // The oaks: the green's, and two in the gaps behind the houses (layout.village.trees, kept clear of every building).
   for (const t of S.v.trees) oak(ctx, t.x, t.z, t.scale);
 

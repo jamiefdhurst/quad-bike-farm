@@ -117,7 +117,12 @@ export class World {
     if (farm) grids.push(grid(this.roads.boundsOf('farm', GRID_MARGIN)));
     if (farm && lane) grids.push(grid(this.roads.boundsOf('lane', GRID_MARGIN, layout.publicLane.open)));
     const vArea = layout.village?.area;
-    if (farm && street && lane && vArea) grids.push(grid({ minX: vArea.minX, maxX: lane.points[0][0] - lane.halfWidth - 1, minZ: vArea.minZ, maxZ: vArea.maxZ }));
+    if (farm && street && lane && vArea) {
+      // On today's farm the village is west of the lane, on the new one east of it.
+      const laneX = layout.publicLane.x;
+      const east = vArea.minX > laneX;
+      grids.push(grid({ minX: east ? laneX + lane.halfWidth + 1 : vArea.minX, maxX: east ? vArea.maxX : laneX - lane.halfWidth - 1, minZ: vArea.minZ, maxZ: vArea.maxZ }));
+    }
     this.roadMud = grids.length ? new RoadMudSet(grids) : null;
     // How wet the tarmac is, for the shine (roadWet.js): rain wets it at once and it dries over many minutes, in patches.
     this.roadWetParams = { ...DEFAULT_ROAD_WET_PARAMS };

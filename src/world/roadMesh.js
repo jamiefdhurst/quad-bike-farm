@@ -189,8 +189,9 @@ export function pointOn(samples, s) {
 
  *   crown      { height, half }: the road's camber, raised `height` m in the middle and falling to nothing `half` m out each side
  *   clampX     stop at this x (a strip meeting another road stops at its edge); `lead` are samples laid out before the first so the slanting end squashes flat
+ *   clampMin   the same from the other side: start at this x (a street that runs east from the lane's east edge)
  */
-export function roadStrip({ samples, heights }, a, b, lift, material, { from = 0, to = Infinity, skip = null, flare = null, uv = 1, cols = 5, clampX = Infinity, lead = [], crown = null } = {}) {
+export function roadStrip({ samples, heights }, a, b, lift, material, { from = 0, to = Infinity, skip = null, flare = null, uv = 1, cols = 5, clampX = Infinity, clampMin = -Infinity, lead = [], crown = null } = {}) {
   const at = (i) => (i < 0 ? lead[lead.length + i] : samples[i]);
   const runs = [];
   let run = null;
@@ -218,7 +219,7 @@ export function roadStrip({ samples, heights }, a, b, lift, material, { from = 0
       for (let c = 0; c < cols; c++) {
         const t = c / (cols - 1);
         const o = a + (b - a) * t + (flare ? (t - 0.5) * 2 * widen : 0);
-        const x = Math.min(clampX, p.x + nx * o);
+        const x = Math.max(clampMin, Math.min(clampX, p.x + nx * o));
         const z = p.z + nz * o;
         pos.push(x, heights.heightAt(x, z) + lift + (crown ? crownAt(crown, o) : 0), z);
         uvs.push(t * uv, i / 4);

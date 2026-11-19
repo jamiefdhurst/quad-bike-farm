@@ -173,9 +173,9 @@ export const GIVE_WAY_AT = 5.2;
 
 /**
  * The village street's end at the A-road (#687): a stub of the street from the junction at (1292, 718), 60 m west, with a give-way line and the signs.
- * #688 moves the street across the lane and runs it to here, replacing the stub.
+ * #688 runs the village street across from the lane to the stub's start (`VILLAGE_PLAN.street`), so the stub is the street's last 60 m, drawn as a road of the network.
  */
-export const STREET_STUB_PLAN = { to: [1292, 718], from: [1232, 718], halfWidth: 3 };
+export const STREET_STUB_PLAN = { to: [1292, 718], from: [1232, 717], halfWidth: 3 };
 
 /**
  * The junctions (#687), plan metres: where a minor road gives way to the A-road, with the fingerpost's place names and miles, and the lane's southern
@@ -316,9 +316,8 @@ export const NOT_MOVED_YET = {
   // The farmstead's own pieces are placed now (#682, `farmsteadLayout`, below); what is left of today's grass field is the hill's and the wood's reference.
   fieldHalf: '#691 (the grass field\'s limit, which the girls\' driving and the quarry\'s code read when a place is in no field)',
   dragStrip: '#616',
-  'anchors.village': '#688', village: '#688',
-  // Today's rectangle of farm, which only today's farm road and the terrain's rise beyond it read (the pit no longer does), and the village street.
-  farm: '#692 (today\'s rectangle of farm, which goes with layout 1)', 'roads.2': '#688 (the village street)',
+  // Today's rectangle of farm, which only today's farm road and the terrain's rise beyond it read (the pit no longer does).
+  farm: '#692 (today\'s rectangle of farm, which goes with layout 1)',
   hayMeadow: '#691', sprayField: '#691', harrowField: '#691',
   trough: '#710', fieldShed: '#624',
   namedSpots: '#690',
@@ -345,6 +344,8 @@ export const REPLACED = [
   'hill', 'anchors.hut', 'gate',
   // The Old Pit (#685): its field, gates and the anchor the pit is dealt about.
   'quarry', 'anchors.pit',
+  // Nether Thornby (#688): across the lane, its street east to the A-road.
+  'anchors.village', 'village',
 ];
 
 const cornersOf = (f) => f.corners.split(' ').map((k) => {
@@ -873,7 +874,7 @@ export function aRoadLayout(A = A_ROAD_PLAN) {
 export function streetStubLayout(S = STREET_STUB_PLAN) {
   return {
     id: 'streetEnd', name: 'the village street', surface: 'tarmac', halfWidth: S.halfWidth, points: [S.from, S.to].map(fromPlan), junction: { end: 'end', onto: 'aRoad' },
-    markings: { centre: 'none', giveWay: 'end', giveWayAt: GIVE_WAY_AT }, verge: 2, hedged: false, draw: 'mesh', lift: 0.076, camber: 0.03, bellmouth: { width: 2.2, length: 8 },
+    markings: { centre: 'dashed', giveWay: 'end', giveWayAt: GIVE_WAY_AT }, verge: 2, hedged: false, draw: 'mesh', lift: 0.076, camber: 0.03, bellmouth: { width: 2.2, length: 8 },
   };
 }
 
@@ -1267,15 +1268,15 @@ export const HILL_PLAN = {
 
 /**
  * The river and the brook on the new farm (#565), plan metres: the hill's stream widens at (420, 572) into the river through Brook Meadow, full width
- * to about x 650, and narrows back to the brook, which runs east to the lane's verge (the village's bridge there is #688's). The land falls east, so
+ * to about x 650, and narrows back to the brook, which runs east under the lane's bridge (#688) and past the north of the village street to a spring by the A-road. The land falls east, so
  * the water runs with it. `points` are the brook's waypoints after the stream's end; `river` is world/brook.js's (`fromX`, `rampIn`, `toX`,
  * `rampOut`, `halfWidth`, `bends`, `vary`, `drinks`: [x, side]); `crossing` is the raised bed (its x a plan x); `bridge` is where the farm
  * bridge (#689) goes over the river, `willows` are [x, side, metres out from the bank] and `crackWillow` the big one by the bridge.
  */
 export const RIVER_PLAN = {
-  points: [[535, 586], [650, 600], [694, 621], [751, 636], [815, 645], [885, 647], [898, 649]],
+  points: [[535, 586], [650, 600], [694, 621], [751, 636], [815, 645], [885, 647], [905, 653], [925, 660], [960, 668], [1000, 674], [1050, 674], [1100, 670], [1150, 668], [1200, 671], [1250, 676]],
   wander: 1.2,
-  source: 8,
+  source: 30, // it shallows out to a spring 30 m before its end, short of the A-road's verge (#688)
   river: {
     eastward: true, fromX: 420, rampIn: 40, toX: 710, rampOut: 60, halfWidth: 5.25, depth: 1.3, water: 0.95, deepFrom: 0.45, level: 9,
     bends: { amp: 8, k: 0.068, phase: 0.6 }, vary: { amount: 0.25, k: 0.17, phase: 1 },
@@ -1302,7 +1303,7 @@ export function riverLayout(hill, meadow, P = RIVER_PLAN) {
   const [crossX] = fromPlan([P.crossing.x, 0]);
   const gateXs = [meadow.minX, meadow.maxX, fromPlan([885, 0])[0]]; // the farm's east boundary, along the lane
   return {
-    brook: { points: P.points.map(fromPlan), wander: P.wander, source: P.source, noCulvert: true },
+    brook: { points: P.points.map(fromPlan), wander: P.wander, source: P.source, bridge: true },
     river: {
       ...R, fromX: fromPlan([R.fromX, 0])[0], toX: fromPlan([R.toX, 0])[0], drinks: R.drinks.map(([x, side]) => [fromPlan([x, 0])[0], side]), worn: R.worn.map(([x, z, r]) => [...fromPlan([x, z]), r]),
       crossing: { ...P.crossing, x: crossX }, bridge: { x: fromPlan(P.bridge)[0], z: fromPlan(P.bridge)[1] },
@@ -1371,6 +1372,95 @@ export function hillLayout(today, P = HILL_PLAN) {
 }
 
 /** The new farm: today's layout (resolved) with what has moved put in its place. */
+/**
+ * Nether Thornby (#688), plan metres: across the lane, its street leaving the lane's east edge at a junction (the brook passes under the lane's bridge 60 m
+ * north of it) and running east, past the pub, the green, the shop and the cottages, to the stub of it at the A-road (`STREET_STUB_PLAN`). Every building
+ * is centred on its footprint on the plan's map (docs/farm-plan.svg) at the size it was built at, and faces the street: yaw 0 on the north side (its front
+ * to the south), Math.PI on the south. The garage is on the lane itself, its forecourt south of it with a mouth onto the lane. The church's plot, the hall
+ * and the playing field are left clear (`clear`, #715, #716). Everything is an offset from `anchor`, so the village moves as one (layoutAnchors.js).
+ */
+export const VILLAGE_PLAN = {
+  anchor: [1000, 710],
+  limit: 20,
+  pavement: 1.7,
+  street: [[907, 720], [930.5, 720.8], [955, 720.9], [982.6, 720.2], [1013, 719.3], [1047.5, 718.2], [1086, 717.3], [1129, 716.5], [1177.6, 716.3], [1232, 717]],
+  area: [906, 586, 1234, 812], // [minX, minZ, maxX, maxZ]: the street, the garage and its forecourt, the church's plot's front and the playing field
+  pub: {
+    name: 'The Plough & Harrow', at: [981, 698], halfX: 8.5, halfZ: 5.5, wallHeight: 5.6, ridge: 8.8, door: [981, 704.2],
+    carPark: { rect: [932, 690, 964, 712], entry: [942, 951] }, stop: [948, 701], benches: [[974, 710], [988, 709.2]],
+  },
+  shop: { name: "Pargeter's Stores", sub: 'Post Office', at: [987, 732], halfX: 5.5, halfZ: 4.5, wallHeight: 5.3, ridge: 7.8, door: [983.6, 727.2] },
+  garage: {
+    name: 'Hollis Motors', at: [943, 592.5], halfX: 8, halfZ: 4.2, wallHeight: 4.4, ridge: 5.6,
+    pumps: [[922, 606], [930, 606], [938, 606]], forecourt: [907.4, 596.7, 953, 612], board: [910.6, 610.6],
+  },
+  cottages: [
+    { id: 'n1', at: [1057, 698.5], yaw: 0, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'render', paint: '#d8cfae', door: '#7a2a22' },
+    { id: 'n2', at: [1083, 698.5], yaw: 0, halfX: 3.6, halfZ: 3, wallHeight: 4.4, ridge: 6.7, wall: 'stone', door: '#2d4a3a' },
+    { id: 'n3', at: [1109, 698.5], yaw: 0, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'brick', door: '#23406b' },
+    { id: 'n4', at: [1137, 698.5], yaw: 0, halfX: 3.6, halfZ: 3.2, wallHeight: 4.4, ridge: 6.7, wall: 'render', paint: '#cfd8c4', door: '#8a5a2b' },
+    { id: 'n5', at: [1165, 698.5], yaw: 0, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'stone', door: '#6b2f4a' },
+    { id: 'n6', at: [1195, 698.5], yaw: 0, halfX: 3.6, halfZ: 3, wallHeight: 4.4, ridge: 6.7, wall: 'render', paint: '#d8cfae', door: '#2d4a3a' },
+    { id: 's1', at: [1041, 730.5], yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'brick', door: '#23406b' },
+    { id: 's2', at: [1069, 730.5], yaw: Math.PI, halfX: 3.6, halfZ: 3.2, wallHeight: 4.4, ridge: 6.7, wall: 'render', paint: '#cfd8c4', door: '#8a5a2b' },
+    { id: 's3', at: [1097, 730.5], yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'stone', door: '#6b2f4a' },
+    { id: 's4', at: [1127, 730.5], yaw: Math.PI, halfX: 3.6, halfZ: 3.2, wallHeight: 4.4, ridge: 6.7, wall: 'render', paint: '#d8cfae', door: '#7a2a22' },
+    { id: 's5', at: [1157, 730.5], yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'brick', door: '#2d4a3a' },
+  ],
+  green: { at: [1022, 699], r: 9 }, // the plan's green is 12 m across the middle of it: its oak, a bench and the war memorial's place (#716) stand on it
+  trees: [{ at: [1022, 697], scale: 0.8 }, { at: [1070, 697], scale: 0.5 }, { at: [1151, 697], scale: 0.5 }],
+  sign: [917, 714], // "Nether Thornby", at the junction on the street's north side
+  phone: [1002, 725.6],
+  busStop: [972, 725.6],
+  // Left clear (the church's plot, the hall and the playing field): plan rectangles [minX, minZ, maxX, maxZ].
+  clear: { church: [1228, 740, 1280, 788], hall: [1180, 727, 1200, 738], field: [1036, 756, 1152, 810] },
+  gardenDepth: 6,
+};
+
+/** Nether Thornby on the new farm, game metres (#688): `layout.village` as the village's code reads it, and the anchor it is placed from. */
+export function villageLayout(P = VILLAGE_PLAN) {
+  const [ax, az] = fromPlan(P.anchor);
+  const rel = ([x, z]) => { const [gx, gz] = fromPlan([x, z]); return [gx - ax, gz - az]; };
+  const pt = (p) => { const [x, z] = rel(p); return { x, z }; };
+  const rect = ([x0, z0, x1, z1]) => { const [a, b] = rel([x0, z0]); const [c, d] = rel([x1, z1]); return { minX: a, maxX: c, minZ: b, maxZ: d }; };
+  const building = ({ at: p, door, ...b }) => ({ ...pt(p), ...b, ...(door ? { door: Array.isArray(door) ? pt(door) : door } : {}) });
+  const G = P.garage;
+  const cp = P.pub.carPark;
+  const [, ez0] = rel([0, cp.rect[3]]);
+  const local = {
+    name: 'Nether Thornby',
+    limit: P.limit,
+    road: { pavement: P.pavement },
+    area: rect(P.area),
+    pub: {
+      ...building(P.pub),
+      yaw: 0,
+      carPark: { ...rect(cp.rect), entry: { minX: rel([cp.entry[0], 0])[0], maxX: rel([cp.entry[1], 0])[0], minZ: ez0, maxZ: ez0 } },
+      stop: pt(P.pub.stop),
+      benches: P.pub.benches.map(pt),
+    },
+    shop: { ...building(P.shop), yaw: Math.PI },
+    garage: { ...building(G), yaw: 0, pumps: { spots: G.pumps.map((p) => [rel(p)[0], rel(p)[1]]) }, forecourt: rect(G.forecourt), board: pt(G.board) },
+    cottages: P.cottages.map(building),
+    green: { ...pt(P.green.at), r: P.green.r },
+    trees: P.trees.map(({ at: p, scale }) => ({ ...pt(p), scale })),
+    sign: pt(P.sign),
+    phone: pt(P.phone),
+    busStop: pt(P.busStop),
+    clear: Object.fromEntries(Object.entries(P.clear).map(([k, r]) => [k, rect(r)])),
+    gardenDepth: P.gardenDepth,
+    flat: false, // the ground is the land's own, not laid to a plane along the street (the street runs 325 m)
+  };
+  const { village } = resolveLayout({ anchors: { village: { x: ax, z: az, yaw: 0 } }, village: at('village', local) });
+  village.garage.pumps.xs = village.garage.pumps.spots.map(([x]) => x);
+  village.garage.pumps.z = village.garage.pumps.spots[0][1];
+  const street = {
+    id: 'street', name: 'the village street', surface: 'tarmac', halfWidth: 2.3, pavement: P.pavement, junction: { end: 'start', onto: 'lane' },
+    markings: { centre: 'dashed', edge: true, giveWay: true }, points: P.street.map(fromPlan), verge: 0, hedged: false, draw: 'mesh', lift: 0.075,
+  };
+  return { village, anchor: { x: ax, z: az, yaw: 0 }, street };
+}
+
 export function layoutNew(today, raw) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
   const [gx1, gz1] = fromPlan([GROUND_PLAN.maxX, GROUND_PLAN.maxZ]);
@@ -1382,6 +1472,7 @@ export function layoutNew(today, raw) {
   const wood = woodsLayout(today, raw);
   const hill = hillLayout(today);
   const pit = quarryLayout(today);
+  const village = villageLayout();
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
   return {
@@ -1389,9 +1480,9 @@ export function layoutNew(today, raw) {
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
     upperThornby: { at: fromPlan(BACK_LANE_PLAN.upperThornby) },
     junctions: JUNCTIONS_PLAN, turnRound: TURN_ROUND_PLAN, laneFittings: laneFittingsLayout(), aRoadFittings: { layBy: { ...A_ROAD_PLAN.layBy, z: A_ROAD_PLAN.layBy.z - PLAN_ORIGIN[1] } },
-    ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout()],
-    woods: wood.woods, logYard: wood.logYard, hill, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
-    anchors: { ...farmstead.anchors, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
+    ...drive, roads: [...drive.roads, village.street, neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout()],
+    woods: wood.woods, logYard: wood.logYard, hill, village: village.village, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
+    anchors: { ...farmstead.anchors, village: village.anchor, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
     budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
     fieldLandmarks: fieldLandmarksLayout(),
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),

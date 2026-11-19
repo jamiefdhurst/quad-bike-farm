@@ -282,8 +282,16 @@ try {
   if (AT) {
     const numbers = AT.trim().split(/[\s,]+/).map(Number);
     const line = numbers.length === 2 && numbers.every(Number.isFinite) ? `tp me ${numbers[0]} ${numbers[1]}` : `tp me ${AT}`;
+    // The game opens with you on a quad, which `tp me` refuses: step off where you are first.
+    await page.evaluate(() => {
+      if (game.player.isRiding) {
+        const c = game.camera.position;
+        game.player.dismount({ x: c.x + 3, y: game.world.groundHeightAt(c.x + 3, c.z), z: c.z }, 0);
+      }
+    });
     const said = await page.evaluate((l) => game.console.shell.run(l), line);
-    if (said && said.ok === false) throw new Error(`"${line}" failed: ${said.text ?? JSON.stringify(said)}`);
+    const failed = Array.isArray(said) ? said.find((o) => o.kind === 'error') : said?.ok === false ? said : null;
+    if (failed) throw new Error(`"${line}" failed: ${failed.text ?? JSON.stringify(failed)}`);
     await wait(2); // the ground and the set pieces round the new spot draw in
   }
   if (opt('eye') && opt('look')) {

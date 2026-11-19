@@ -4,6 +4,7 @@
 // (about 6 m). On the new farm (#565) the land falls east, so the river runs east with it, in bends (`river.bends`), a width that varies
 // (`river.vary`), a surface that only ever falls (`useGround`) and drinking places (`river.drinks`), to the lane's verge with no culvert
 // (`brook.noCulvert`) where the village takes it on (#688).
+// On the new farm the lane crosses it on the village's bridge (`brook.bridge`, brookProps.js): the same span with no channel across the tarmac, and the brook runs on east past the village.
 // Pure: its line, how deep it is cut, where the water stands and where the culvert is, for the terrain, the water's drawing, the map and
 // how wet a quad gets.
 //
@@ -178,5 +179,5 @@ export function createBrook(layout) {
     return out;
   }
 
-  return { minX, maxX, zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt, drinks, useGround: (fn) => { ground = river?.eastward ? fn : null; lower = null; } };
+  return { minX, maxX, bridge: !!(culvert && b.bridge), zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt, drinks, useGround: (fn) => { ground = river?.eastward ? fn : null; lower = null; } };
 }

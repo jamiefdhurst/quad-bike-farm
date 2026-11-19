@@ -8,6 +8,7 @@ import { barrelTexture } from './neighbourTextures.js';
 import { buildVehicleBody } from './trafficView.js';
 import { PARKED_SIZES } from './neighbourFarm.js';
 import { poseBaleSpike } from '../vehicle/tractorModel.js';
+import { MOT_BAY } from './village.js';
 import { Frame, shellAndRoof, chimney, windowAt, bayWindow, doorAt, porch, dormer, flowerBox } from './villageKit.js';
 import { fasciaTexture, pubSignTexture, shopInteriorTexture, awningTexture, chalkBoardTexture, rollerDoorTexture, pumpFaceTexture, partPacketTexture, pumpSideTexture, pumpHeaderTexture, bollardTexture, priceBoardTexture, carParkTexture, noticeTexture } from './villageTextures.js';
 
@@ -307,7 +308,7 @@ export function buildPub(ctx, b) {
   f.solid(3.2, 0.5, front + 1.1, 0.3, 0.5, 0.3);
   // The beer garden's picnic tables and the car park.
   const parasol = new THREE.MeshStandardMaterial({ color: 0xb02a2a, roughness: 0.8, side: THREE.DoubleSide });
-  for (const t of ctx.S.v.pub.benches) picnicTable(ctx, t.x, t.z, t.x > 130 ? parasol : null);
+  ctx.S.v.pub.benches.forEach((t, i) => picnicTable(ctx, t.x, t.z, i > 0 ? parasol : null)); // the second table has the parasol
   void S;
   return f;
 }
@@ -354,7 +355,7 @@ export function buildCarPark(ctx) {
   for (let k = 0; k <= columns; k++) {
     const px = apronX0 + ((apronX1 - apronX0) * k) / columns;
     const at = S.roadAt(px, apronZ0 + 6).at;
-    const edge = at.z + at.tx * (S.roadHalfWidth - 0.4); // the road's north edge here, tucked a little under it
+    const edge = at.z - Math.abs(at.tx) * (S.roadHalfWidth - 0.4); // the road's north edge here, tucked a little under it
     for (let r = 0; r <= rows; r++) {
       const pz = apronZ0 + ((edge - apronZ0) * r) / rows;
       pos.push(px, heights.heightAt(px, pz) + lift, pz);
@@ -418,7 +419,7 @@ export function buildShop(ctx, b) {
   for (const sx of [-1, 1]) wallBox(t, wH + 0.4, halfZ * 2, sx * (halfX - t / 2), (wH - 0.4) / 2, 0);
   const bayX = -2.4;
   const bayHalf = 2.1;
-  const doorX = b.door.x - b.x;
+  const doorX = (b.door.x - b.x) * (Math.cos(b.yaw) > 0 ? 1 : -1); // the door's place along the front, in the frame (turned about on a south-side shop)
   const doorHalf = 0.55;
   const frontZ = halfZ - t / 2;
   const seg = (x0, x1, y0, y1) => {
@@ -638,12 +639,14 @@ export function buildGarage(ctx, b) {
   for (const pk of packets) ctx.partProxies.push(proxyAt(ctx, f, pk.id, pk.x, 1.2, front + 0.3, 0.6, 1.2, 0.5));
   ctx.partProxies.push(proxyAt(ctx, f, 'tyreQuad', -7.9, 0.75, front + 0.45, 0.9, 1.5, 0.9));
   // The MOT bay: a white-lined rectangle on the forecourt in front of the western roller door, long side along the wall, and a test centre board with a
-  // clipboard on the wall by the east door (the garage faces -z, so a world x is the frame's x turned about).
-  const bayX = -4.4;
-  const bayZ = front + 2.4;
-  const bayLen = 5.2;
-  const bayWid = 2.5;
-  const bayY = ctx.heights.heightAt(S.v.garage.x - bayX, S.v.garage.z - bayZ) - f.y0 + 0.07;
+  // clipboard on the wall by the east door (a garage facing north has its frame turned about, so a world x is the frame's x negated; one facing south does not).
+  const bayX = MOT_BAY.x;
+  const bayZ = front + MOT_BAY.front;
+  const bayLen = MOT_BAY.len;
+  const bayWid = MOT_BAY.wid;
+  const turn = Math.cos(b.yaw) > 0 ? 1 : -1; // the frame is turned about when the garage faces north (yaw Math.PI), so its offsets are the world's negated
+  const bayWorld = { x: b.x + turn * bayX, z: b.z + turn * bayZ };
+  const bayY = ctx.heights.heightAt(bayWorld.x, bayWorld.z) - f.y0 + 0.07;
   const lineMat = new THREE.MeshStandardMaterial({ color: 0xe9e7dc, roughness: 0.85 });
   const paint = (w, d, x, z) => f.box(w, 0.012, d, lineMat, x, bayY, z, 0.6);
   paint(bayLen, 0.1, bayX, bayZ - bayWid / 2);
@@ -656,7 +659,7 @@ export function buildGarage(ctx, b) {
   f.box(0.3, 0.42, 0.012, lineMat, 5.4, 1.5, front + 0.12, 0.6); // its sheet
   f.box(0.12, 0.04, 0.03, M.iron, 5.4, 1.78, front + 0.11, 0.6); // and the clip
   ctx.motProxy = proxyAt(ctx, f, 'mot', 5.4, 1.5, front + 0.3, 1.1, 1.6, 0.7);
-  ctx.motBay = { x: S.v.garage.x - bayX, z: S.v.garage.z - bayZ, yaw: Math.PI / 2 }; // world middle and heading of a vehicle parked along it (the wall runs along x)
+  ctx.motBay = { x: bayWorld.x, z: bayWorld.z, yaw: Math.PI / 2 }; // world middle and heading of a vehicle parked along it (the wall runs along x)
   // The forecourt's pumps: three, on an island under the canopy.
   const pumps = b.pumps;
   const island = [S.v.garage.pumps.xs[0] - 1.2, S.v.garage.pumps.xs[2] + 1.2];
@@ -686,8 +689,8 @@ function forecourt(ctx, w, S, b, random) {
   const fidx = [];
   for (let k = 0; k <= fcCols; k++) {
     const px = fc.minX + ((fc.maxX - fc.minX) * k) / fcCols;
-    const at = S.roadAt(px, fc.minZ).at;
-    const edge = at.z - at.tx * (S.roadHalfWidth - 0.4);
+    // On today's farm the slab runs from the street's edge, tucked under it; on the new farm it has its own rectangle (its west edge meets the lane's).
+    const edge = S.v.garage.forecourt ? fc.minZ : S.roadAt(px, fc.minZ).at.z - S.roadAt(px, fc.minZ).at.tx * (S.roadHalfWidth - 0.4);
     for (let r = 0; r <= fcRows; r++) {
       const pz = edge + ((fc.maxZ - edge) * r) / fcRows;
       fpos.push(px, ctx.heights.heightAt(px, pz) + 0.07, pz);
@@ -783,17 +786,36 @@ function forecourt(ctx, w, S, b, random) {
   ctx.night.push({ mat: fascia, strength: 0.7 });
   for (const s of [-1, 1]) w.add(new THREE.PlaneGeometry(4.64, 0.58), fascia, cx, cy, pz + s * (cd / 2 + 0.025)).rotation.y = s > 0 ? 0 : Math.PI;
   w.box(cw + 0.1, 0.1, cd + 0.1, M.iron, cx, cy + 0.36, pz, 2);
+  // The columns stand on a concrete plinth and are clad: a navy band at the height of a hand on the rail, a collar under the roof and a yellow and black
+  // strip on the plinth, so they read as a built thing and not a pole (#386).
+  const yellow = new THREE.MeshStandardMaterial({ color: 0xe8c23a, roughness: 0.5 });
   for (const px of [x0 + 0.9, x1 - 0.9]) {
-    w.box(0.34, cy, 0.34, M.paint, px, cy / 2 + 0.0, pz, 0.6);
+    w.box(0.34, cy + 1, 0.34, M.paint, px, (cy - 1) / 2, pz, 0.6); // sunk a metre, so it never floats where the land falls away
+    w.box(0.56, 0.5, 0.56, M.concrete, px, 0.25, pz, 1); // the plinth
+    w.box(0.58, 0.08, 0.58, yellow, px, 0.54, pz, 0.6); // its yellow cap
+    w.box(0.4, 1.1, 0.4, band, px, 1.35, pz, 0.6); // the navy cladding
+    w.box(0.44, 0.1, 0.44, M.iron, px, cy - 0.4, pz, 0.6); // the collar under the roof
     w.solid(px, cy / 2, pz, 0.17, cy / 2, 0.17);
   }
   for (const px of xs) w.box(0.5, 0.05, 0.5, M.signGlow, px, cy - 0.17, pz, 0.6);
+  // Lit panels under the roof (a row of long strips along it, glowing after dark, so it is not black below) and a yellow stripe round its fascia.
+  for (const dz of [-1.6, 0, 1.6]) w.box(cw - 1.6, 0.04, 0.4, M.signGlow, cx, cy - 0.2, pz + dz, 0.6);
+  w.box(cw + 0.08, 0.09, cd + 0.08, yellow, cx, cy - 0.12, pz, 0.6);
+  // Painted on the slab: a pale line across the front of each pump's bay and a drain grating in a row between them, at the land's height there.
+  const paintMat = new THREE.MeshStandardMaterial({ color: 0xe9e7dc, roughness: 0.85 });
+  const onGround = (px, pzz, lift) => ctx.heights.heightAt(px, pzz) - w.y0 + lift;
+  for (const px of xs) {
+    for (const dz of [-2.6, 2.6]) w.box(3.6, 0.012, 0.1, paintMat, px, onGround(px, pz + dz, 0.11), pz + dz, 0.6);
+    for (const dx of [-1.8, 1.8]) w.box(0.1, 0.012, 5.2, paintMat, px + dx, onGround(px + dx, pz, 0.11), pz, 0.6);
+    w.box(1.0, 0.012, 0.26, M.iron, px, onGround(px, pz + 3.4, 0.11), pz + 3.4, 0.6); // the drain grating
+  }
   // The price board on its post at the east end of the frontage, by the lane the traffic comes in on, turned (both faces) to look back along the
   // road at whoever is coming, not straight at the pavement.
-  const bx = S.forecourt.maxX + 1.4;
-  const bz = S.forecourt.minZ + 1.0;
+  const own = S.v.garage.board; // the new farm's stands by the lane's mouth, face-on to the traffic along the lane
+  const bx = own ? own.x : S.forecourt.maxX + 1.4;
+  const bz = own ? own.z : S.forecourt.minZ + 1.0;
   const by = ctx.heights.heightAt(bx, bz) - w.y0;
-  const turn = (3 * Math.PI) / 4;
+  const turn = own ? 0 : (3 * Math.PI) / 4;
   w.box(0.12, 2.0, 0.12, M.iron, bx, by + 1.0, bz, 0.6); // the post stops at the board's foot, so it never shows through the text
   w.box(0.2, 0.2, 0.2, M.iron, bx, by + 0.1, bz, 0.6);
   const priceMat = new THREE.MeshStandardMaterial({

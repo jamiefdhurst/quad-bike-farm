@@ -5,11 +5,12 @@ import * as THREE from 'three';
 import { stoneTexture, worldBox } from './outbuildingProps.js';
 import { enableShadows } from './assets.js';
 
-/** Builds the culvert's two headwalls and their colliders. `c` is the props context (props.js). */
+/** Builds the culvert's two headwalls and their colliders (or the village's bridge, on the new farm). `c` is the props context (props.js). */
 export function buildBrookCulvert(c) {
   const { scene, heights, fixedBox, random } = c;
   const brook = heights.brook;
   if (!brook?.culvert) return;
+  if (brook.bridge) return buildLaneBridge(c);
   const group = new THREE.Group();
   group.name = 'brookCulvert';
   const stone = new THREE.MeshStandardMaterial({ map: stoneTexture(random), roughness: 0.95 });
@@ -41,6 +42,72 @@ export function buildBrookCulvert(c) {
     hole.position.set(faceX + m.side * 0.02, bed + 0.5, z);
     group.add(hole);
     fixedBox(wall.position.x, wall.position.y, z, thick / 2, h / 2, width / 2);
+  }
+  enableShadows(group);
+  scene.add(group);
+}
+
+/**
+ * The village's bridge (#688): the lane crosses the brook on a low stone bridge. The tarmac is the terrain's, level across the span (the brook has no channel
+ * under it, brook.js), so what is built is what makes it a bridge: a stone parapet along each edge of the road with a pier and a cap at each end, and at
+ * each end of the span a headwall with the brook running into a stone arch. The parapets are solid, so nothing goes off the side of it.
+ */
+function buildLaneBridge(c) {
+  const { scene, heights, fixedBox, random, layout } = c;
+  const brook = heights.brook;
+  const lane = layout.publicLane;
+  const group = new THREE.Group();
+  group.name = 'laneBridge';
+  const stone = new THREE.MeshStandardMaterial({ map: stoneTexture(random), roughness: 0.95 });
+  const coping = new THREE.MeshStandardMaterial({ color: 0xa9a699, roughness: 0.9 });
+  const dark = new THREE.MeshBasicMaterial({ color: 0x0a0b0a });
+  const z0 = brook.zAt(lane.x);
+  const road = heights.heightAt(lane.x, z0) + 0.07;
+  const span = brook.culvert.half;
+  const reach = 5.2; // m of parapet either side of the brook's line
+  const thick = 0.5;
+  const high = 0.95; // m over the road
+  const put = (geo, mat, x, y, z) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    group.add(m);
+    return m;
+  };
+  for (const s of [-1, 1]) {
+    const x = lane.x + s * (lane.halfWidth + 0.3 + thick / 2);
+    const len = reach * 2;
+    put(worldBox(thick, high + 0.7, len, 2), stone, x, road - 0.7 + (high + 0.7) / 2, z0);
+    put(worldBox(thick + 0.14, 0.1, len + 0.3, 1), coping, x, road + high + 0.05, z0); // the coping, a hand's width proud of the wall each side
+    for (const e of [-1, 1]) {
+      const pz = z0 + e * (reach + 0.1);
+      put(worldBox(0.8, high + 1.05, 0.8, 2), stone, x, road - 0.8 + (high + 1.05) / 2, pz); // the end pier, taller than the wall and sunk a little deeper
+      put(worldBox(0.94, 0.12, 0.94, 1), coping, x, road + high + 0.31, pz);
+    }
+    fixedBox(x, road + high / 2, z0, thick / 2, high / 2 + 0.3, reach + 0.5);
+  }
+  // The headwalls and their arches, at the two mouths of the span.
+  for (const m of brook.mouths) {
+    const x = m.x + m.side * 0.6;
+    const z = brook.zAt(x);
+    const bed = heights.heightAt(x, z);
+    const width = 4.6;
+    const top = Math.max(road - 0.3, bed + 1.9);
+    const h = top - (bed - 0.4);
+    const faceX = x + m.side * 0.01;
+    const wall = put(worldBox(0.7, h, width, 2), stone, x - m.side * 0.35, bed - 0.4 + h / 2, z);
+    put(worldBox(0.84, 0.12, width + 0.14, 1), coping, wall.position.x, top + 0.06, z);
+    // The arch: a stone ring standing out of the face over the dark of the span, its jambs and a keystone.
+    const r = 0.8;
+    const spring = bed + 0.35;
+    const ring = put(new THREE.TorusGeometry(r + 0.1, 0.12, 8, 18, Math.PI), stone, faceX + m.side * 0.06, spring + 0.5, z);
+    ring.rotation.y = Math.PI / 2;
+    for (const j of [-1, 1]) put(worldBox(0.22, 0.5, 0.24, 1), stone, faceX + m.side * 0.06, spring + 0.25, z + j * (r + 0.1));
+    put(worldBox(0.2, 0.3, 0.3, 1), coping, faceX + m.side * 0.1, spring + 0.5 + r + 0.16, z);
+    const hole = put(new THREE.CircleGeometry(r, 18, 0, Math.PI), dark, faceX + m.side * 0.03, spring + 0.5, z);
+    hole.rotation.y = m.side > 0 ? Math.PI / 2 : -Math.PI / 2;
+    const door = put(new THREE.PlaneGeometry(r * 2, 0.5), dark, faceX + m.side * 0.03, spring + 0.25, z);
+    door.rotation.y = hole.rotation.y;
+    fixedBox(wall.position.x, wall.position.y, z, 0.35, h / 2, width / 2);
   }
   enableShadows(group);
   scene.add(group);

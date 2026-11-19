@@ -20,7 +20,6 @@ export class VillageHost {
     this.till = new Till();
     this.bill = new PumpBill();
     this.filling = null; // the pump being filled from, while E is held
-    this.centre = new THREE.Vector3(150, 0, 185);
     this.lastBought = 'nothing yet';
     this.coins = new CoinAudio(game.audioHub, new THREE.Vector3(), 0.7); // chinks at the counter or the rack you are at, not at the farm's tin
     this.addTargets();
@@ -149,11 +148,13 @@ export class VillageHost {
   debugGoTo(where = 'pub') {
     if (!this.active || this.g.player.isRiding) return false;
     const s = this.props.shape;
+    const face = (b) => (Math.cos(b.yaw) > 0 ? 1 : -1);
     const spots = {
       pub: { x: s.pubStop.x, z: s.pubStop.z },
-      shop: { x: s.shop.x + 1.5, z: s.shop.outer.maxZ + 2.2 },
+      // The shop's and the garage's fronts face north (yaw PI) or south (yaw 0): in front is the way they face, and a turned frame's x runs the other way.
+      shop: { x: s.shop.x + 1.5 * face(s.shop), z: face(s.shop) > 0 ? s.shop.outer.maxZ + 2.2 : s.shop.outer.minZ - 2.2 },
       garage: { x: s.v.garage.pumps.xs[1], z: s.v.garage.pumps.z + 1.6 },
-      parts: { x: s.v.garage.x + 0.6, z: s.v.garage.z - s.v.garage.halfZ - 1.4 }, // the garage faces -z (yaw PI): its rack is 0.6 m west of the middle
+      parts: { x: s.v.garage.x - 0.6 * face(s.v.garage), z: s.v.garage.z + face(s.v.garage) * (s.v.garage.halfZ + 1.4) }, // its rack is 0.6 m along from the middle
     };
     const at = spots[where] ?? spots.pub;
     this.g.player.moveTo({ x: at.x, y: this.g.world.groundHeightAt(at.x, at.z), z: at.z });
