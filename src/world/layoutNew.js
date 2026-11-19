@@ -9,6 +9,7 @@
 // less `PLAN_ORIGIN`. Pure: no Three.js.
 
 import { resolveLayout, at } from './layoutAnchors.js';
+import { MOOR_FEATURES_PLAN, moorLayout } from './moor.js';
 import { resolveWithBarnLocal } from './layoutBarn.js';
 import { intersectPolygons, polygonArea, polygonBounds, clockwise, edgeBetween, insetPolygon, pointInPolygon, distanceToEdges, polygonEdges, pointAlong } from './polygons.js';
 
@@ -30,8 +31,8 @@ export function searchForLayout(search, n) {
   return q ? `?${q}` : '';
 }
 
-/** The rectangle of ground with physics, drawn in tiles (#665): the farm, Back Lane round it and the far side of the lane, in plan metres. */
-const GROUND_PLAN = { minX: -70, maxX: 1350, minZ: -70, maxZ: 970 };
+/** The rectangle of ground with physics, drawn in tiles (#665): the farm, Back Lane round it, the far side of the lane and the Moor up to its ridge wall, in plan metres. */
+const GROUND_PLAN = { minX: -345, maxX: 1350, minZ: -70, maxZ: 970 };
 
 /** The farm's outer boundary, clockwise from the north-west, plan metres. The east side is straight along the lane. */
 export const OUTLINE_PLAN = [
@@ -176,6 +177,19 @@ export const GIVE_WAY_AT = 5.2;
  * #688 runs the village street across from the lane to the stub's start (`VILLAGE_PLAN.street`), so the stub is the street's last 60 m, drawn as a road of the network.
  */
 export const STREET_STUB_PLAN = { to: [1292, 718], from: [1232, 717], halfWidth: 3 };
+
+/**
+ * The ladder stile in the ridge wall turns you round too (#713): a line across the way up to it, 1.2 m short of the wall at the stile, so climbing it is
+ * crossing the line. It is free of any road: you are put back along your way (world/turnRound.js).
+ */
+const MOOR_STILE_LINE = { id: 'moor-stile', free: true, reach: 1.1, short: 1.2 };
+
+/** `TURN_ROUND_PLAN` with the moor's stile line laid across the stile, in game metres. */
+function turnRoundLayout() {
+  const [x, z] = fromPlan(MOOR_FEATURES_PLAN.stile.at);
+  const { reach, short, ...line } = MOOR_STILE_LINE;
+  return { lines: [...TURN_ROUND_PLAN.lines, { ...line, a: { x: x + short, z: z - reach }, b: { x: x + short, z: z + reach }, home: { x: 1, z: 0 } }] };
+}
 
 /**
  * The junctions (#687), plan metres: where a minor road gives way to the A-road, with the fingerpost's place names and miles, and the lane's southern
@@ -897,7 +911,7 @@ export const BACK_LANE_PLAN = {
   level: { shoulder: 2.5, lead: [2, 2], blend: 10, natural: true },
   cuttings: [[1555, 1640], [1730, 2175]], // m along: where the lane runs in a hollow way into the hill's shoulder (up to 2.6 m, as a sunken old road does), flagged so `cuttings()` accepts it
   ditch: { centre: 1.9, half: 0.55, depth: 0.45 }, // along the low side, at the hedge's foot: m out from the tarmac's edge, half its width, how deep
-  ford: { at: [10, 572], reach: 14, west: -40 }, // the stream runs on west from the pasture's hedge to the ford, and to plan x `west` (the moor's edge)
+  ford: { at: [10, 572], reach: 14, west: -200 }, // the stream runs on west from the pasture's hedge to the ford, and to plan x `west`: its spring on the moor (#713)
   hairpins: [[-30, 840], [60, 874]],
   budgetSpot: [-8, 860], // the frame budget's spot (tools/frameBudget.mjs `hairpins`): on the lane between the two hairpins, looking along it, the most hedge and verge in one view
   footpath: { at: [2, 792], to: [-60, 760] }, // off the road's west side, up the hill: the stile in the hedge at `at`, the path on to `to` (plan metres)
@@ -918,6 +932,7 @@ export function backLaneLayout(B = BACK_LANE_PLAN) {
     texture: { patches: 6, bands: 9, crumble: 0.07 },
     gates: B.gates.map((g) => ({ id: g.id, farm: fromPlan(g.farm) })),
     ford: { at: fromPlan(B.ford.at), reach: B.ford.reach },
+    moor: { grids: MOOR_FEATURES_PLAN.grids.map((g) => ({ id: g.id, near: fromPlan(g.near) })) }, // where it crosses the common: unhedged on its moor side between the two cattle grids (#713)
     hairpins: B.hairpins.map(fromPlan),
     footpath: { at: fromPlan(B.footpath.at), to: fromPlan(B.footpath.to) },
   };
@@ -1479,12 +1494,12 @@ export function layoutNew(today, raw) {
     ...farmstead, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
     upperThornby: { at: fromPlan(BACK_LANE_PLAN.upperThornby) },
-    junctions: JUNCTIONS_PLAN, turnRound: TURN_ROUND_PLAN, laneFittings: laneFittingsLayout(), aRoadFittings: { layBy: { ...A_ROAD_PLAN.layBy, z: A_ROAD_PLAN.layBy.z - PLAN_ORIGIN[1] } },
+    junctions: JUNCTIONS_PLAN, turnRound: turnRoundLayout(), laneFittings: laneFittingsLayout(), aRoadFittings: { layBy: { ...A_ROAD_PLAN.layBy, z: A_ROAD_PLAN.layBy.z - PLAN_ORIGIN[1] } },
     ...drive, roads: [...drive.roads, village.street, neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout()],
     woods: wood.woods, logYard: wood.logYard, hill, village: village.village, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, village: village.anchor, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
     budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
-    fieldLandmarks: fieldLandmarksLayout(),
+    fieldLandmarks: fieldLandmarksLayout(), moor: moorLayout(MOOR_FEATURES_PLAN, MOOR_PLAN, fromPlan),
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
   };
 }

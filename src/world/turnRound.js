@@ -32,6 +32,11 @@ export const headingOf = (dx, dz) => Math.atan2(dx, dz);
 export function turnRoundLines(net, plan, ground = null) {
   const lines = [];
   for (const spec of plan.lines) {
+    if (spec.free) {
+      // A line on open ground (the moor's stile, #713): game metres already, `a` to `b`, with no road to be put back up.
+      lines.push({ id: spec.id, road: null, free: true, home: spec.home, s: 0, sign: 1, wide: false, a: spec.a, b: spec.b, point: { x: (spec.a.x + spec.b.x) / 2, z: (spec.a.z + spec.b.z) / 2 } });
+      continue;
+    }
     const r = net.road(spec.road);
     if (!r) continue;
     const sLine = spec.end === 'start' ? spec.s : r.length - spec.s;
@@ -139,7 +144,11 @@ export class TurnRound {
   force(line, from, to) {
     if (this.phase !== 'idle') return false;
     this.line = line;
-    this.pending = line.road ? putBackAlong(this.net, line, this.p.back) : backAlong(from, to, this.p.back); // the road's way, wherever you stand
+    this.pending = line.road
+      ? putBackAlong(this.net, line, this.p.back) // the road's way, wherever you stand
+      : line.free
+        ? { x: line.point.x + line.home.x * this.p.back, z: line.point.z + line.home.z * this.p.back, yaw: headingOf(line.home.x, line.home.z), along: false } // home, from a free line
+        : backAlong(from, to, this.p.back);
     this.phase = 'out';
     this.t = 0;
     return true;
@@ -155,7 +164,7 @@ export class TurnRound {
       if (!hit && this.onARoad(pos)) hit = { id: 'road', road: null };
       if (!hit) return { fade: 0, move: null, line: null };
       this.line = hit;
-      this.pending = hit.road ? putBack(this.net, hit, from, pos, p.back) : this.fromRoad(pos);
+      this.pending = hit.road ? putBack(this.net, hit, from, pos, p.back) : hit.free ? backAlong(from, pos, p.back) : this.fromRoad(pos);
       this.phase = 'out';
       this.t = 0;
       return { fade: 0, move: null, line: hit, started: true };
