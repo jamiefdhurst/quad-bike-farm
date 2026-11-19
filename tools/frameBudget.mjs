@@ -18,6 +18,9 @@ export const BUDGETS = {
   village: { calls: 2150, triangles: 3.77e6 },
   wood: { calls: 1505, triangles: 3.81e6 },
   hilltop: { calls: 1750, triangles: 7.0e6 },
+  // Back Lane between its two hairpins on the new farm (#686, `?layout=2`: 1,136 calls and 3.07M triangles, the same on every run) and about 8% over. Today's farm has no
+  // such spot, so it is noted and skipped there; #692 makes layout 2 the one measured and brings the other budgets onto it.
+  hairpins: { calls: 1230, triangles: 3.32e6 },
   // Everything left out of those counts, drawn up as if all of it were in view (5,275 calls and 1.43M triangles, about 8% over). It is not a frame: it is what a new
   // herd, rider or vehicle body adds to the farm's moving things, which the spots no longer see. Raise it only on purpose (`MOVERS` in `measureInPage`).
   movers: { calls: 5700, triangles: 1.55e6 },

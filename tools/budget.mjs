@@ -1,5 +1,6 @@
 // The frame budget's command line (tools/frameBudget.mjs says what it is for):
-//   node tools/budget.mjs --dist dist [--root <checkout>] --out numbers.json     measure a build on its own
+//   node tools/budget.mjs --dist dist [--root <checkout>] [--query layout=2] --out numbers.json     measure a build on its own (`--query` is the page's address query
+//                                                    after `?smoke&`, its default `seed=3&weather=sunny&time=15.5`: add `&layout=2` to measure the new farm)
 //   node tools/budget.mjs --summary pr.json [main.json] [--history history.json]  the markdown table for the job summary, and the trend of the last ten merges;
 //                                                                                 without main.json the change is from the history's newest merge
 //   node tools/budget.mjs --record numbers.json --history history.json --sha <sha> --label <text>   add a merge to the history (release.yml)
@@ -36,7 +37,7 @@ if (args.includes('--record')) {
   const t = trend(history);
   if (t) console.log(`\n${t}`);
 } else {
-  const result = await measureBuild({ dist: arg('--dist'), root: arg('--root') });
+  const result = await measureBuild({ dist: arg('--dist'), root: arg('--root'), ...(arg('--query') ? { query: arg('--query') } : {}) });
   if (arg('--out')) writeFileSync(arg('--out'), JSON.stringify(result, null, 1));
   else console.log(JSON.stringify(result, null, 1));
   process.exit(0);

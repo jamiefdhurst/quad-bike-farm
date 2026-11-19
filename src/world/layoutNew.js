@@ -810,6 +810,7 @@ export const BACK_LANE_PLAN = {
   ditch: { centre: 1.9, half: 0.55, depth: 0.45 }, // along the low side, at the hedge's foot: m out from the tarmac's edge, half its width, how deep
   ford: { at: [10, 572], reach: 14, west: -40 }, // the stream runs on west from the pasture's hedge to the ford, and to plan x `west` (the moor's edge)
   hairpins: [[-30, 840], [60, 874]],
+  budgetSpot: [-8, 860], // the frame budget's spot (tools/frameBudget.mjs `hairpins`): on the lane between the two hairpins, looking along it, the most hedge and verge in one view
   footpath: { at: [2, 792], to: [-60, 760] }, // off the road's west side, up the hill: the stile in the hedge at `at`, the path on to `to` (plan metres)
   upperThornby: [-215, 745], // the hamlet the footpath climbs to, far to the west on the hill (plan metres): seen from the lane, never reached
   // The gates in the lane's own hedge, each across from the farm's gateway onto the strip between (plan metres), with the lane's gravel track to it.
@@ -1287,7 +1288,7 @@ export function layoutNew(today, raw) {
     ...drive, roads: [...drive.roads, ...today.roads.filter((r) => r.id === 'street'), neighbour.track, backLaneLayout()],
     woods: wood.woods, logYard: wood.logYard, hill, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
-    budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
+    budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
     fieldLandmarks: fieldLandmarksLayout(),
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
   };
