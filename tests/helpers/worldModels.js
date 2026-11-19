@@ -150,6 +150,13 @@ export async function buildWorldModels() {
   // Back Lane's gates and hedges (#686), on the new farm's ground.
   const { buildBackLaneProps } = await import('../../src/world/backLaneProps.js');
   add('setPiece', 'backLane', buildBackLaneProps, (b) => (b(c2), found('backLane')));
+  const { buildVerge } = await import('../../src/world/laneVerge.js');
+  const { roadNetwork } = await import('../../src/world/roads.js');
+  add('world', 'laneVerge', buildVerge, (b) => {
+    const g = new THREE.Group();
+    for (const x of b({ ...c2, scene: new THREE.Group() }, roadNetwork(two).road('backLane'), () => false)) g.add(x);
+    return g;
+  });
   const signs = await import('../../src/world/roadSigns.js');
   add('world', 'passingPlaceSign', signs.buildPassingPlaceSign);
   add('world', 'singleTrackSign', signs.buildSingleTrackSign);

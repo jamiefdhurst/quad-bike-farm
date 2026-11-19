@@ -13,6 +13,7 @@ import { gateLeaf } from './neighbourFarmProps.js';
 import { woodTexture } from './neighbourTextures.js';
 import { instanceModel, modelBounds } from './assets.js';
 import { roadStrip } from './roadMesh.js';
+import { buildVerge } from './laneVerge.js';
 import { concreteTexture } from './villageTextures.js';
 import { stoneTexture } from './outbuildingProps.js';
 
@@ -218,6 +219,9 @@ export function buildBackLaneProps(c) {
   for (const g of laneGates(road)) buildGate(road, g, c, group);
   buildFurniture(road, c, group);
   buildFord(road, c, group, net.pointsAlong('backLane', { step: 1 }));
+  // The verge: bare at the gates, the stile and the ford, where it is trampled or washed.
+  const gaps = laneGaps(road);
+  buildVerge(c, road, (s, side) => gaps.some((g) => Math.abs(s - g.s) < g.half + 1 && (g.side === undefined || g.side === side)));
   scene.add(group);
   return { group, hedgeSwap: new HedgeSwap(near, far), road };
 }

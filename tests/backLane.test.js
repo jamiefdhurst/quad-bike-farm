@@ -144,3 +144,21 @@ describe('the ford', () => {
     heights.hill.setRise(0);
   });
 });
+
+describe('the verge', () => {
+  it('has cow parsley, nettles and dock along both sides, between the tarmac and the hedge and clear of the gaps', async () => {
+    const { vergePlants } = await import('../src/world/laneVerge.js');
+    const { hedgeOffset } = await import('../src/world/laneHedges.js');
+    let seed = 5;
+    const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const plants = vergePlants(road, random, (s) => s > 100 && s < 140);
+    expect(new Set(plants.map((p) => p.kind))).toEqual(new Set(['parsley', 'nettle', 'dock']));
+    expect(new Set(plants.map((p) => p.side))).toEqual(new Set([1, -1]));
+    expect(plants.length).toBeGreaterThan(2500);
+    for (const p of plants) {
+      expect(p.off).toBeGreaterThan(road.halfWidth);
+      expect(p.off).toBeLessThan(hedgeOffset(road, p.s, p.side));
+      expect(p.s > 100 && p.s < 140).toBe(false);
+    }
+  });
+});
