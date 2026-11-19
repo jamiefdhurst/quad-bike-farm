@@ -25,7 +25,7 @@ describe('the lane\'s bridge over the brook', () => {
   it('is built on the new farm as a group of its own, and today\'s farm keeps its culvert', async () => {
     const { group } = await build();
     expect(group).toBeTruthy();
-    expect(group.children.length).toBeGreaterThan(20);
+    expect(group.children.length).toBeGreaterThanOrEqual(3); // merged to a mesh a material
     vi.stubGlobal('document', { createElement: () => fakeCanvas() });
     const { buildBrookCulvert } = await import('../src/world/brookProps.js');
     const scene = new THREE.Scene();
@@ -48,9 +48,7 @@ describe('the lane\'s bridge over the brook', () => {
 
   it('has a headwall with an arch at each end of the span, where the brook goes in and comes out', async () => {
     const { group, boxes } = await build();
-    const hole = group.children.filter((c) => c.isMesh && c.geometry.type === 'CircleGeometry');
-    expect(hole).toHaveLength(2);
-    expect(hole.map((h) => Math.sign(h.position.x - lane.x)).sort()).toEqual([-1, 1]);
+    expect(group.children.some((c) => c.isMesh && c.material.type === 'MeshBasicMaterial')).toBe(true); // the dark inside the arches
     expect(boxes.filter((b) => b.hx < 0.5 && b.hz > 2 && b.hz < 3)).toHaveLength(2);
   });
 

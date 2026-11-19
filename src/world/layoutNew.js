@@ -1371,7 +1371,6 @@ export function hillLayout(today, P = HILL_PLAN) {
   return hill;
 }
 
-/** The new farm: today's layout (resolved) with what has moved put in its place. */
 /**
  * Nether Thornby (#688), plan metres: across the lane, its street leaving the lane's east edge at a junction (the brook passes under the lane's bridge 60 m
  * north of it) and running east, past the pub, the green, the shop and the cottages, to the stub of it at the A-road (`STREET_STUB_PLAN`). Every building
@@ -1461,6 +1460,7 @@ export function villageLayout(P = VILLAGE_PLAN) {
   return { village, anchor: { x: ax, z: az, yaw: 0 }, street };
 }
 
+/** The new farm: today's layout (resolved) with what has moved put in its place. */
 export function layoutNew(today, raw) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
   const [gx1, gz1] = fromPlan([GROUND_PLAN.maxX, GROUND_PLAN.maxZ]);

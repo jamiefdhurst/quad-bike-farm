@@ -32,7 +32,7 @@ const BEYOND_HEDGE = 2.4; // m the hedges stand over that road
  * Merges every mesh under `root` (its sub-groups too) into one mesh per material, baked into `root`'s frame. Walls, roofs and windows never move,
  * so nothing is lost; meshes with `userData.proxyId` (things to look at and press E on) and cars are left as they are.
  */
-function mergeInto(root) {
+export function mergeInto(root) {
   root.updateMatrixWorld(true);
   const inverse = new THREE.Matrix4().copy(root.matrixWorld).invert();
   const byMaterial = new Map();

@@ -2,9 +2,8 @@
 // the neighbour's, where it runs past the south of her yard and goes under the public lane in a culvert, then wanders on to a spring in the
 // field beyond. On today's farm the water flows west, downhill: the land rises all the way from the pasture's bottom (about -2 m) to the lane
 // (about 6 m). On the new farm (#565) the land falls east, so the river runs east with it, in bends (`river.bends`), a width that varies
-// (`river.vary`), a surface that only ever falls (`useGround`) and drinking places (`river.drinks`), to the lane's verge with no culvert
-// (`brook.noCulvert`) where the village takes it on (#688).
-// On the new farm the lane crosses it on the village's bridge (`brook.bridge`, brookProps.js): the same span with no channel across the tarmac, and the brook runs on east past the village.
+// (`river.vary`), a surface that only ever falls (`useGround`) and drinking places (`river.drinks`), to the lane, which crosses it on the village's
+// bridge (`brook.bridge`, brookProps.js: the culvert's span, no channel across the tarmac), and on east past the north of the village (#688) to a spring.
 // Pure: its line, how deep it is cut, where the water stands and where the culvert is, for the terrain, the water's drawing, the map and
 // how wet a quad gets.
 //

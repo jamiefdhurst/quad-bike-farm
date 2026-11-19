@@ -8,7 +8,7 @@ import { barrelTexture } from './neighbourTextures.js';
 import { buildVehicleBody } from './trafficView.js';
 import { PARKED_SIZES } from './neighbourFarm.js';
 import { poseBaleSpike } from '../vehicle/tractorModel.js';
-import { MOT_BAY } from './village.js';
+import { MOT_BAY, forecourtMarkings } from './village.js';
 import { Frame, shellAndRoof, chimney, windowAt, bayWindow, doorAt, porch, dormer, flowerBox } from './villageKit.js';
 import { fasciaTexture, pubSignTexture, shopInteriorTexture, awningTexture, chalkBoardTexture, rollerDoorTexture, pumpFaceTexture, partPacketTexture, pumpSideTexture, pumpHeaderTexture, bollardTexture, priceBoardTexture, carParkTexture, noticeTexture } from './villageTextures.js';
 
@@ -797,18 +797,17 @@ function forecourt(ctx, w, S, b, random) {
     w.box(0.44, 0.1, 0.44, M.iron, px, cy - 0.4, pz, 0.6); // the collar under the roof
     w.solid(px, cy / 2, pz, 0.17, cy / 2, 0.17);
   }
-  for (const px of xs) w.box(0.5, 0.05, 0.5, M.signGlow, px, cy - 0.17, pz, 0.6);
-  // Lit panels under the roof (a row of long strips along it, glowing after dark, so it is not black below) and a yellow stripe round its fascia.
-  for (const dz of [-1.6, 0, 1.6]) w.box(cw - 1.6, 0.04, 0.4, M.signGlow, cx, cy - 0.2, pz + dz, 0.6);
+  // Lit panels hung under the band's bottom face (a closed box, so lights inside it are never seen), glowing after dark, so it is not black below: one
+  // over each pump and a long strip along the roof each side of them.
+  for (const px of xs) w.box(0.5, 0.05, 0.5, M.signGlow, px, cy - 0.345, pz, 0.6);
+  for (const dz of [-1.6, 1.6]) w.box(cw - 1.6, 0.04, 0.4, M.signGlow, cx, cy - 0.34, pz + dz, 0.6);
   w.box(cw + 0.08, 0.09, cd + 0.08, yellow, cx, cy - 0.12, pz, 0.6);
-  // Painted on the slab: a pale line across the front of each pump's bay and a drain grating in a row between them, at the land's height there.
+  // Painted on the slab at the land's height there: each bay's far line and sides, and a drain grating beyond (village.js `forecourtMarkings`).
   const paintMat = new THREE.MeshStandardMaterial({ color: 0xe9e7dc, roughness: 0.85 });
   const onGround = (px, pzz, lift) => ctx.heights.heightAt(px, pzz) - w.y0 + lift;
-  for (const px of xs) {
-    for (const dz of [-2.6, 2.6]) w.box(3.6, 0.012, 0.1, paintMat, px, onGround(px, pz + dz, 0.11), pz + dz, 0.6);
-    for (const dx of [-1.8, 1.8]) w.box(0.1, 0.012, 5.2, paintMat, px + dx, onGround(px + dx, pz, 0.11), pz, 0.6);
-    w.box(1.0, 0.012, 0.26, M.iron, px, onGround(px, pz + 3.4, 0.11), pz + 3.4, 0.6); // the drain grating
-  }
+  const marks = forecourtMarkings(S.v.garage, S.v.garage.pumps);
+  for (const m of marks.lines) w.box(m.w, 0.012, m.d, paintMat, m.x, onGround(m.x, m.z, 0.11), m.z, 0.6);
+  for (const m of marks.drains) w.box(m.w, 0.012, m.d, M.iron, m.x, onGround(m.x, m.z, 0.11), m.z, 0.6);
   // The price board on its post at the east end of the frontage, by the lane the traffic comes in on, turned (both faces) to look back along the
   // road at whoever is coming, not straight at the pavement.
   const own = S.v.garage.board; // the new farm's stands by the lane's mouth, face-on to the traffic along the lane

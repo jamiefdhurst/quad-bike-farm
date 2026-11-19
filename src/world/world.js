@@ -32,6 +32,7 @@ import { StreamLevel, STREAM_PARAM_RANGES } from './streamLevel.js';
 import { PuddleIce, DEFAULT_PUDDLE_ICE_PARAMS, PUDDLE_ICE_PARAM_RANGES } from './puddleIce.js';
 import { PuddleIceView } from './puddleIceView.js';
 import * as THREE from 'three';
+import { villageMudBounds } from './village.js';
 
 /** The farm: terrain, track, sky and static props. */
 const GRID_MARGIN = 1 - EDGE; // a road's bounds already include its soft edge: a grid reaches a metre past the tarmac
@@ -118,10 +119,7 @@ export class World {
     if (farm && lane) grids.push(grid(this.roads.boundsOf('lane', GRID_MARGIN, layout.publicLane.open)));
     const vArea = layout.village?.area;
     if (farm && street && lane && vArea) {
-      // On today's farm the village is west of the lane, on the new one east of it.
-      const laneX = layout.publicLane.x;
-      const east = vArea.minX > laneX;
-      grids.push(grid({ minX: east ? laneX + lane.halfWidth + 1 : vArea.minX, maxX: east ? vArea.maxX : laneX - lane.halfWidth - 1, minZ: vArea.minZ, maxZ: vArea.maxZ }));
+      for (const b of villageMudBounds(layout, this.roads, GRID_MARGIN)) grids.push(grid(b));
     }
     this.roadMud = grids.length ? new RoadMudSet(grids) : null;
     // How wet the tarmac is, for the shine (roadWet.js): rain wets it at once and it dries over many minutes, in patches.
