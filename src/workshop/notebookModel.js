@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boardFont } from '../world/boardFont.js';
 
 // Amy's logbook as it lies on the bench: a hardback with a rounded spine, an elastic band, a ribbon, a label and a pencil. Origin on the
 // bench top, the spine along -x, 0.2 by 0.28 m.
@@ -35,7 +36,7 @@ function labelTexture() {
   ctx.lineWidth = 3;
   ctx.strokeRect(4, 4, 120, 88);
   ctx.fillStyle = '#3a2a22';
-  ctx.font = 'bold 20px serif';
+  ctx.font = boardFont('board', 20, 'bold');
   ctx.textAlign = 'center';
   ctx.fillText('QUAD LOG', 64, 36);
   ctx.fillRect(18, 46, 92, 1.5);

@@ -22,7 +22,7 @@
   color: #ece8d8;
   border: 4px solid #5a3f28;
   border-radius: 6px;
-  font-family: "Comic Sans MS", "Segoe Print", cursive;
+  font-family: var(--font-board);
 }
 
 .jb-title {

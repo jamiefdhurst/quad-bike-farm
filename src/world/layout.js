@@ -586,8 +586,10 @@ export const LAYOUT_CHOSEN = layoutFromSearch(globalThis.location?.search ?? '')
 export const LAYOUT = LAYOUT_CHOSEN === 2 ? layoutNew(resolveLayout(RAW), RAW) : resolveWithBarnLocal(RAW, RAW.anchors);
 
 // A few readers want one coordinate of a point on its own. They are read off the points (which are what turn with the anchor), once, here.
-LAYOUT.loft.edgeX = LAYOUT.loft.edge.x;
-LAYOUT.loft.ladder.footX = LAYOUT.loft.ladder.x;
+if (LAYOUT.loft) {
+  LAYOUT.loft.edgeX = LAYOUT.loft.edge.x; // (the new barn has no hayloft)
+  LAYOUT.loft.ladder.footX = LAYOUT.loft.ladder.x;
+}
 LAYOUT.village.garage.pumps.xs = LAYOUT.village.garage.pumps.spots.map(([x]) => x);
 LAYOUT.village.garage.pumps.z = LAYOUT.village.garage.pumps.spots[0][1];
 

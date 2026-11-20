@@ -88,7 +88,7 @@ export function buildWeatherVane({ scene, layout, heights, random }) {
   const s = barnShape({ ...layout, ...layout.barnLocal });
   const frame = barnFrame(layout);
   const floorY = heights.heightAt(s.x, s.z);
-  const p = frame.toWorld(s.outer.maxX - 1.7, s.z);
+  const p = s.wide ? frame.toWorld(s.x, s.outer.maxZ - 1.7) : frame.toWorld(s.outer.maxX - 1.7, s.z); // (the new barn's ridge runs across it: near its east end)
   const top = floorY + s.ridge + 0.12; // the ridge cap's top
   const iron = new THREE.MeshStandardMaterial({ map: ironTexture(random), roughness: 0.6, metalness: 0.55 });
   const gilt = new THREE.MeshStandardMaterial({ color: 0xb48c34, roughness: 0.4, metalness: 0.7 }); // the collar's ball, gilded as they are
@@ -97,7 +97,7 @@ export function buildWeatherVane({ scene, layout, heights, random }) {
   group.position.set(p.x, top, p.z);
 
   const fixed = bag();
-  const along = frame.yaw; // the ridge runs along the barn's x; the bracket's straps lie across it
+  const along = frame.yaw + (s.wide ? Math.PI / 2 : 0); // the ridge runs along the barn's x (the new barn's: along z); the bracket's straps lie across it
   fixed.add(iron, put(worldBox(0.34, 0.05, 0.2, 1), 0, 0.01, 0, along)); // the bracket's plate on the ridge
   for (const dx of [-0.1, 0.1]) fixed.add(iron, put(worldBox(0.03, 0.3, 0.03, 1), dx * Math.cos(along), -0.1, -dx * Math.sin(along))); // and its straps down either side of the cap
   fixed.add(iron, put(new THREE.CylinderGeometry(0.014, 0.018, 1.2, 8), 0, 0.6, 0)); // the spindle

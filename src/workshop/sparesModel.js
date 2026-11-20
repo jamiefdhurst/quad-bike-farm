@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boardFont } from '../world/boardFont.js';
 
 // The parts rack on the barn's back wall: a plywood back board on timber uprights with two shelves and pegs, and the five parts in the
 // kind of thing each comes in. Origin on the floor under the middle of the board, the board against the wall, facing +z. Every part
@@ -22,7 +23,7 @@ function tagTexture(text) {
   ctx.lineWidth = 3;
   ctx.strokeRect(2, 2, 188, 44);
   ctx.fillStyle = '#2a241a';
-  ctx.font = 'bold 26px sans-serif';
+  ctx.font = boardFont('label', 26, 'bold');
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, 96, 25);

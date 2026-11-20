@@ -1,5 +1,7 @@
 import * as THREE from 'three';
+import { barnLocal, placeInBarn } from './barn.js';
 import { clockHands } from './daylight.js';
+import { boardFont } from './boardFont.js';
 
 // The clock and the little weather station on the barn's north wall, by the door end of the bench: three round dials on a board, a
 // clock, a thermometer and a barometer. The time and the temperature are the day's (daylight.js); the barometer reads the weather and
@@ -78,11 +80,11 @@ function drawFace(ctx, { sweep, ticks, labels, title }) {
   const steps = sweep >= Math.PI * 2 - 1e-6 ? labels.length : labels.length - 1;
   labels.forEach((text, i) => {
     const a = start + (sweep * i) / steps;
-    ctx.font = `${text.length > 3 ? 20 : 26}px Georgia, serif`;
+    ctx.font = boardFont('label', text.length > 3 ? 20 : 26);
     ctx.fillText(text, r + Math.sin(a) * (r - 62), r - Math.cos(a) * (r - 62));
   });
   if (title) {
-    ctx.font = '18px Georgia, serif';
+    ctx.font = boardFont('label', 18);
     ctx.fillText(title, r, r + 52);
   }
 }
@@ -168,21 +170,26 @@ const SYMBOL_WORDS = { sun: 'Sunny', sunCloud: 'Sunny spells', cloud: 'Overcast'
 const HOURS = ['12', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'];
 
 export class WeatherStation {
-  /** On the barn's north wall at `at` ({ x, y, z }: the board's middle), facing into the barn (+z). */
-  constructor(scene, at) {
+  /**
+   * On the barn's wall at `at` ({ x, y, z }: the board's middle), facing into the barn (+z). `clock: false` leaves the clock off the board
+   * (the new barn hangs it on its own, `WallClock`): the thermometer, the barometer and the forecast are then one narrower board.
+   */
+  constructor(scene, at, { clock = true } = {}) {
     this.group = new THREE.Group();
     this.group.position.set(at.x, at.y, at.z);
     this.group.scale.setScalar(1.25); // big enough to read from the bench
-    const board = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.36, 0.025), new THREE.MeshStandardMaterial({ color: 0x6a4a2c, roughness: 0.8 }));
+    const names = clock ? ['clock', 'thermo', 'baro'] : ['thermo', 'baro'];
+    const step = clock ? 0.29 : 0.34; // the dials' spacing across the board
+    const board = new THREE.Mesh(new THREE.BoxGeometry(clock ? 0.92 : 0.74, 0.36, 0.025), new THREE.MeshStandardMaterial({ color: 0x6a4a2c, roughness: 0.8 }));
     board.position.z = 0.0125;
     this.group.add(board);
-    this.dials = ['clock', 'thermo', 'baro'].map((name, i) => {
+    this.dials = names.map((name, i) => {
       const canvas = dialCanvas();
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.anisotropy = 4;
       const face = new THREE.Mesh(new THREE.CircleGeometry(0.13, 40), new THREE.MeshStandardMaterial({ map: texture, roughness: 0.55 }));
-      face.position.set(-0.29 + i * 0.29, 0, 0.027);
+      face.position.set(-step * (names.length - 1) / 2 + i * step, 0, 0.027);
       this.group.add(face);
       // A rim standing proud of the board, and glass over it.
       const rim = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.008, 6, 40), new THREE.MeshStandardMaterial({ color: 0xa8833e, metalness: 0.8, roughness: 0.35 }));
@@ -197,10 +204,10 @@ export class WeatherStation {
     const slateTexture = new THREE.CanvasTexture(slate);
     slateTexture.colorSpace = THREE.SRGBColorSpace;
     slateTexture.anisotropy = 4;
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.32, 0.02), new THREE.MeshStandardMaterial({ color: 0x6a4a2c, roughness: 0.8 }));
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(clock ? 0.96 : 0.78, 0.32, 0.02), new THREE.MeshStandardMaterial({ color: 0x6a4a2c, roughness: 0.8 }));
     frame.position.set(0, -0.37, 0.01);
     this.group.add(frame);
-    const slateFace = new THREE.Mesh(new THREE.PlaneGeometry(0.9, (0.9 * 160) / 512), new THREE.MeshStandardMaterial({ map: slateTexture, roughness: 0.9 }));
+    const slateFace = new THREE.Mesh(new THREE.PlaneGeometry(clock ? 0.9 : 0.72, ((clock ? 0.9 : 0.72) * 160) / 512), new THREE.MeshStandardMaterial({ map: slateTexture, roughness: 0.9 }));
     slateFace.position.set(0, -0.37, 0.0215);
     this.group.add(slateFace);
     this.slate = { canvas: slate, ctx: slate.getContext('2d'), texture: slateTexture, shown: null };
@@ -221,10 +228,10 @@ export class WeatherStation {
       const cx = w * (i + 0.5);
       ctx.globalAlpha = s.past ? 0.35 : 1;
       ctx.fillStyle = CHALK;
-      ctx.font = '26px "Comic Sans MS", cursive, sans-serif';
+      ctx.font = boardFont('label', 26);
       ctx.fillText(s.label, cx, 32);
       drawSymbol(ctx, s.symbol, cx, 82, 90);
-      ctx.font = '22px "Comic Sans MS", cursive, sans-serif';
+      ctx.font = boardFont('label', 22);
       ctx.fillText(SYMBOL_WORDS[s.symbol] ?? '', cx, 148);
       if (s.now) {
         ctx.strokeStyle = CHALK;
@@ -238,18 +245,8 @@ export class WeatherStation {
 
   /** Redraws whatever has moved on: `hour` (time of day), `celsius`, and the weather (`kind`, `rain`, `target`). */
   update(hour, celsius, kind, rain, target, from = null, mix = 1) {
-    const [clock, thermo, baro] = this.dials;
-    const minute = Math.floor(hour * 60);
-    if (clock.shown !== minute) {
-      clock.shown = minute;
-      const { ctx } = clock;
-      drawFace(ctx, { sweep: Math.PI * 2, ticks: 60, labels: HOURS });
-      const h = clockHands(hour);
-      drawHand(ctx, h.hour, 62, 9, '#1d1a17');
-      drawHand(ctx, h.minute, 92, 5, '#1d1a17');
-      drawPin(ctx);
-      clock.texture.needsUpdate = true;
-    }
+    const [clock, thermo, baro] = this.dials.length === 3 ? this.dials : [null, ...this.dials];
+    if (clock) drawClock(clock, hour);
     const tenth = Math.round(celsius * 2) / 2;
     if (thermo.shown !== tenth) {
       thermo.shown = tenth;
@@ -269,4 +266,60 @@ export class WeatherStation {
       baro.texture.needsUpdate = true;
     }
   }
+}
+
+/** Redraws a clock dial (`{ ctx, texture, shown }`) when the minute has changed. */
+function drawClock(clock, hour) {
+  const minute = Math.floor(hour * 60);
+  if (clock.shown === minute) return;
+  clock.shown = minute;
+  const { ctx } = clock;
+  drawFace(ctx, { sweep: Math.PI * 2, ticks: 60, labels: HOURS });
+  const h = clockHands(hour);
+  drawHand(ctx, h.hour, 62, 9, '#1d1a17');
+  drawHand(ctx, h.minute, 92, 5, '#1d1a17');
+  drawPin(ctx);
+  clock.texture.needsUpdate = true;
+}
+
+/** A round wall clock on its own (the new barn's, on the back wall over the bench's end): a painted white face in a dark ring and a brass bezel, facing +z, 0.34 m across. */
+export class WallClock {
+  constructor(scene) {
+    this.group = new THREE.Group();
+    this.group.name = 'wallClock';
+    const canvas = dialCanvas();
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 4;
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 32), new THREE.MeshStandardMaterial({ color: 0x2c2a27, roughness: 0.6 }));
+    body.rotation.x = Math.PI / 2;
+    body.position.z = 0.025;
+    this.group.add(body);
+    const face = new THREE.Mesh(new THREE.CircleGeometry(0.17, 40), new THREE.MeshStandardMaterial({ map: texture, roughness: 0.55 }));
+    face.position.z = 0.053;
+    this.group.add(face);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.01, 6, 40), new THREE.MeshStandardMaterial({ color: 0xa8833e, metalness: 0.8, roughness: 0.35 }));
+    rim.position.z = 0.052;
+    this.group.add(rim);
+    this.dial = { canvas, ctx: canvas.getContext('2d'), texture, shown: null };
+    scene.add(this.group);
+  }
+
+  update(hour) {
+    drawClock(this.dial, hour);
+  }
+}
+
+/** Hangs the weather station on the barn's wall (and the clock on its own where the layout has one), in the barn's frame turned with it. Returns `{ station, wallClock }`. */
+export function hangBarnBoards(scene, layout, floorY) {
+  const own = barnLocal(layout);
+  const station = new WeatherStation(scene, { x: 0, y: 0, z: 0 }, { clock: !own.clock }); // the new barn hangs the clock by itself
+  const hang = (thing, at) => {
+    thing.group.rotation.y = at.yaw ?? 0; // facing into the barn from its wall (+z at yaw 0: the north wall's)
+    placeInBarn(layout, thing.group, at.x, floorY + at.y, at.z);
+  };
+  hang(station, own.weatherStation);
+  const wallClock = own.clock ? new WallClock(scene) : null;
+  if (wallClock) hang(wallClock, own.clock);
+  return { station, wallClock };
 }

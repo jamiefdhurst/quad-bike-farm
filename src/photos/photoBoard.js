@@ -1,6 +1,7 @@
 import './photoBoard.css';
 import * as THREE from 'three';
 import { barnShape, placeInBarn } from '../world/barn.js';
+import { boardFont } from '../world/boardFont.js';
 
 const BOARD_W = 1.3; // metres
 const BOARD_H = 1;
@@ -109,12 +110,12 @@ export class PhotoBoardView {
       ctx.fillRect(rnd() * PX_W, rnd() * PX_H, 2 + rnd() * 5, 2 + rnd() * 4);
     }
     ctx.fillStyle = 'rgba(40,25,10,0.7)';
-    ctx.font = 'bold 56px "Comic Sans MS", "Segoe Print", cursive';
+    ctx.font = boardFont('board', 56, 'bold');
     ctx.textAlign = 'center';
     ctx.fillText(HEADING, PX_W / 2, 70);
     if (!this.wall.photos.length) {
       ctx.fillStyle = 'rgba(60,40,20,0.55)';
-      ctx.font = 'bold 44px "Comic Sans MS", "Segoe Print", cursive';
+      ctx.font = boardFont('board', 44, 'bold');
       ctx.fillText('Photos go here', PX_W / 2, PX_H / 2);
     }
     for (const ph of this.wall.photos) {
@@ -136,7 +137,7 @@ export class PhotoBoardView {
         ctx.fillRect(-iw / 2, -PRINT_H / 2 + 8, iw, ih);
       }
       ctx.fillStyle = '#3a3a3a';
-      ctx.font = '19px "Comic Sans MS", "Segoe Print", cursive';
+      ctx.font = boardFont('board', 19);
       ctx.textAlign = 'center';
       ctx.fillText(`Day ${ph.day}`, 0, PRINT_H / 2 - 7);
       ctx.fillStyle = PIN_COLOURS[ph.pin % PIN_COLOURS.length];

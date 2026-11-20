@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boardFont } from '../world/boardFont.js';
 
 // The shed kit for the barn (farm/shed.js), built from plain boxes and cylinders (no rounded boxes: a notch where two meet is the lesson of the
 // vehicles). Each is a group with its feet at y 0 and its front towards +z, placed by the layout. The names and the maker are made up.
@@ -19,7 +20,7 @@ function cyl(rTop, rBottom, h, material, x, y, z, axis = 'y', segments = 20) {
   return m;
 }
 
-function label(text, w, h, bg, fg, font = 'bold 22px sans-serif') {
+function label(text, w, h, bg, fg, px = 22) {
   const c = document.createElement('canvas');
   c.width = 256;
   c.height = Math.round((256 * h) / w);
@@ -27,7 +28,7 @@ function label(text, w, h, bg, fg, font = 'bold 22px sans-serif') {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, c.width, c.height);
   ctx.fillStyle = fg;
-  ctx.font = font;
+  ctx.font = boardFont('label', px, 'bold');
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, c.width / 2, c.height / 2);
@@ -80,7 +81,7 @@ export function buildCompressor() {
   // The gauge and regulator on the front: a round face and a brass knob.
   const face = new THREE.Mesh(
     new THREE.CircleGeometry(0.045, 24),
-    new THREE.MeshStandardMaterial({ map: label('PSI', 0.09, 0.09, '#eeeae0', '#222', 'bold 56px sans-serif'), roughness: 0.4 }),
+    new THREE.MeshStandardMaterial({ map: label('PSI', 0.09, 0.09, '#eeeae0', '#222', 56), roughness: 0.4 }),
   );
   face.position.set(-0.12, 0.58, 0.2);
   g.add(cyl(0.05, 0.05, 0.03, steel, -0.12, 0.58, 0.19, 'z'));
@@ -376,15 +377,15 @@ function coverTexture() {
   ctx.fillStyle = '#b02a22';
   ctx.fillRect(0, 0, 210, 70);
   ctx.fillStyle = '#f4efe2';
-  ctx.font = 'bold 26px sans-serif';
+  ctx.font = boardFont('label', 26, 'bold');
   ctx.textAlign = 'center';
   ctx.fillText('ASHBY', 105, 34);
-  ctx.font = 'bold 15px sans-serif';
+  ctx.font = boardFont('label', 15, 'bold');
   ctx.fillText('WORKSHOP SUPPLIES', 105, 58);
   ctx.fillStyle = '#222';
-  ctx.font = 'bold 22px sans-serif';
+  ctx.font = boardFont('label', 22, 'bold');
   ctx.fillText('SHED KIT', 105, 130);
-  ctx.font = '15px sans-serif';
+  ctx.font = boardFont('label', 15);
   for (const [i, t] of ['Compressors', 'Parts washers', 'Inspection pits', 'Spanners & oil'].entries()) ctx.fillText(t, 105, 170 + i * 24);
   ctx.strokeStyle = '#b02a22';
   ctx.lineWidth = 3;

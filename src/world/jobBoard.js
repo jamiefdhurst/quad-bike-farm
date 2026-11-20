@@ -1,6 +1,7 @@
 import './jobBoard.css';
 import * as THREE from 'three';
 import { barnShape, placeInBarn } from './barn.js';
+import { boardFont } from './boardFont.js';
 
 const BOARD_W = 1.5; // metres
 const BOARD_H = 1.3; // tall enough for the five records with room to spare
@@ -126,10 +127,10 @@ export class JobBoardView {
     ctx.fillStyle = 'rgba(255,255,255,0.05)'; // smeared chalk dust
     for (let i = 0; i < 6; i++) ctx.fillRect(20 + i * 70, 30 + ((i * 53) % 200), 160, 26);
     ctx.fillStyle = '#ece8d8';
-    ctx.font = 'bold 40px "Comic Sans MS", "Segoe Print", cursive';
+    ctx.font = boardFont('board', 40, 'bold');
     ctx.fillText(heading, 28, 58);
     ctx.fillRect(28, 68, underline, 3);
-    ctx.font = '28px "Comic Sans MS", "Segoe Print", cursive';
+    ctx.font = boardFont('board', 28);
     return { ctx, w, h };
   }
 
@@ -139,14 +140,14 @@ export class JobBoardView {
     const rows = this.records.allLines();
     const ys = recordRowYs(rows.length);
     rows.forEach((l, i) => {
-      ctx.font = '24px "Comic Sans MS", "Segoe Print", cursive';
+      ctx.font = boardFont('board', 24);
       ctx.textAlign = 'right';
       ctx.fillStyle = l.set ? '#f3d98a' : 'rgba(236,232,216,0.45)';
       ctx.fillText(l.text, w - 28, ys[i]);
       const room = w - 56 - ctx.measureText(l.text).width - 16; // what the value leaves for the event's name
       ctx.textAlign = 'left';
       ctx.fillStyle = '#ece8d8';
-      ctx.font = '22px "Comic Sans MS", "Segoe Print", cursive';
+      ctx.font = boardFont('board', 22);
       ctx.fillText(l.label, 28, ys[i], Math.max(room, 60));
     });
     ctx.textAlign = 'left';

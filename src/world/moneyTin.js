@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boardFont } from './boardFont.js';
 
 // The farm's money tin: a printed tin with a hinged lid, the kind that lives on a shelf in a barn. Procedural, no assets. Metres, in its own
 // frame: x from the back (towards the wall) to the front, y up from its base, z along the wall. The lid hinges on the back top edge (`lid`, turned
@@ -61,11 +62,11 @@ export function lidTexture() {
   ctx.stroke();
   ctx.fillStyle = '#3a1410';
   ctx.textAlign = 'center';
-  ctx.font = 'italic bold 46px Georgia, serif';
+  ctx.font = boardFont('label', 46, 'italic bold');
   ctx.fillText('Dales & Moor', 256, 138);
-  ctx.font = 'bold 30px Georgia, serif';
+  ctx.font = boardFont('label', 30, 'bold');
   ctx.fillText('MIXED BISCUITS', 256, 184);
-  ctx.font = '22px Georgia, serif';
+  ctx.font = boardFont('label', 22);
   ctx.fillText('Baked in the valley · Since 1921', 256, 224);
   // A sheaf of wheat under the name.
   ctx.strokeStyle = '#a07b22';

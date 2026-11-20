@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boardFont } from './boardFont.js';
 
 // The snack tin on the barn's back wall: a round cream-and-blue tin with a lid that comes up, a few biscuits inside, on a plank shelf of its
 // own. The girls help themselves (npc/lunch.js). Procedural, no assets. Metres; the origin is the middle of the tin's base.
@@ -28,7 +29,7 @@ function label() {
   g.fillRect(0, 0, 512, 12);
   g.fillRect(0, 116, 512, 12);
   g.fillStyle = '#a8322d';
-  g.font = 'bold 40px serif';
+  g.font = boardFont('label', 40, 'bold');
   g.textAlign = 'center';
   g.fillText('FARMHOUSE', 128, 60);
   g.fillText('BISCUITS', 128, 100);

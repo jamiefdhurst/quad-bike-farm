@@ -83,7 +83,8 @@ describe('the ground that is built from it', () => {
     expect(moor - valley).toBeLessThan(110);
   });
   it('keeps the yard at today\'s height and levels the road, the floors and the strip to the lie', () => {
-    expect(heights2.heightAt(0, 0)).toBeCloseTo(heights1.heightAt(0, 0), 6);
+    // The yard's own middle is 18 m north of the plan's origin now (the barn is bigger, #818), so the origin is no longer inside its flat: compare a point just beyond it.
+    expect(heights2.heightAt(0, 40)).toBeCloseTo(heights1.heightAt(0, 40), 6);
     // Inside today's farm rectangle everything laid level sits where it does today plus the lie there, less the tilt across its own length.
     // The drag strip is a flat cut level across a slope, 2 m into it at its ends: it is #616's to move, so it is left out here.
     const strip = LAYOUT.dragStrip;

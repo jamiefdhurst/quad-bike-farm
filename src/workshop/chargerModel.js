@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { boardFont } from '../world/boardFont.js';
 
 // The trickle charger on the workbench: a pressed-steel case with vents, a carrying handle, an ammeter with a needle that climbs as the
 // battery fills, a red and a green lamp, a rotary switch, rubber feet, and two leads with crocodile clips lying on a rubber mat where the
@@ -36,11 +37,11 @@ function dialTexture() {
   ctx.arc(cx, cy, 58, -Math.PI / 2 + 1.0, -Math.PI / 2 + 0.78, true);
   ctx.fill();
   ctx.fillStyle = '#2a261c';
-  ctx.font = 'bold 13px sans-serif';
+  ctx.font = boardFont('label', 13, 'bold');
   ctx.textAlign = 'center';
   ctx.fillText('E', 24, 30);
   ctx.fillText('F', 104, 30);
-  ctx.font = 'bold 11px sans-serif';
+  ctx.font = boardFont('label', 11, 'bold');
   ctx.fillText('CHARGE', 64, 58);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
