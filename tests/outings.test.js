@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { pickOuting, pathLength, outingSpots, DEFAULT_OUTING_PARAMS as P } from '../src/npc/outings.js';
 import { LAYOUT, stripPoint } from '../src/world/layout.js';
 
-const spots = [{ name: 'near', x: 10, z: 0 }, { name: 'mid', x: 80, z: 0 }, { name: 'far', x: 300, z: 0 }];
+const spots = [{ name: 'near', x: 10, z: 0 }, { name: 'mid', x: 80, z: 0 }, { name: 'far', x: 700, z: 0 }];
 const direct = (_from, to) => [to];
 const open = () => true;
 
