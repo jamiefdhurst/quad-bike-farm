@@ -31,6 +31,8 @@ export const SET_PIECE_NAMES = ['village', 'laneBridge', 'neighbourFarm', 'neigh
   'yardGates', 'yardFurniture', 'stackyardKit', 'yardLights', 'weatherVane',
   // The A-road's junctions and the lane's cottages and fittings (#687).
   'junctions', 'laneCottages',
+  // The farm bridge where the stone track crosses the river's head (#689).
+  'farmBridge',
   // The Moor's stile, pillar, cairn, grids, gates, signs and spring (#713); its wall, plants and rocks are tiled and have their own far version or draw distance.
   'moor'];
 

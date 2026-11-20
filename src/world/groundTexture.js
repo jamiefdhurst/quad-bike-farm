@@ -7,6 +7,7 @@ import { patchColor, patchBlend } from './patchwork.js';
 import { createOutbuildings } from './outbuildings.js';
 import { roadNetwork, pointAt, filletOutline } from './roads.js';
 import { paintMoor } from './moorPaint.js';
+import { pointInPolygon } from './polygons.js';
 
 function rand(seed) {
   return () => {
@@ -137,7 +138,7 @@ function pathNear(c, pts, m, closed = false) {
 /** Everything the painters need that is the same for every window, made once: the outbuildings, the roads and their speckle. */
 export function createGroundPlan({ track, layout, fields, puddles = [], bogs = [], autumn = false }) {
   const net = roadNetwork(layout);
-  const roads = net.roads.filter((r) => r.draw === 'ground').map((road) => ({ road, plan: planRoad(road, fields, rand(5)) }));
+  const roads = net.roads.filter((r) => r.draw === 'ground').map((road) => ({ road, plan: road.surface === 'tarmac' ? planRoad(road, fields, rand(5)) : planTrack(road, fields, rand(5 + net.roads.indexOf(road))) }));
   return { track, layout, fields, puddles, bogs, autumn, ob: createOutbuildings(layout), roads };
 }
 
@@ -155,7 +156,7 @@ export function* paintGround(plan, c) {
     paintPatchwork(c, fields, layout.neighbourLand);
     yield;
     paintStubble(c, fields);
-    for (const { road, plan: roadPlan } of plan.roads) drawRoad(c, road, roadPlan, fields);
+    for (const { road, plan: roadPlan } of plan.roads) (road.surface === 'tarmac' ? drawRoad : drawTrack)(c, road, roadPlan, fields);
     yield;
     if (fields.hill) yield* paintHill(c, fields);
     if (layout.moor) yield* paintMoor(c, layout); // the common beyond Back Lane (#713)
@@ -1064,6 +1065,7 @@ export function paintStubble(c, fields) {
       const [t0, t1] = span(lo + 12, hi - 6, f.tramlines, wlo, whi, 2);
       for (let k = t0; k < t1; k++) for (const off of [-0.9, 0.9]) line(lo + 12 + k * f.tramlines + off);
     }
+    if (fields.headlandWidth) paintHeadland(c, polygon, fields.headlandWidth, fi);
     ctx.restore();
   }
 }
@@ -1135,6 +1137,249 @@ function paintOutbuildings(c, plan, wear) {
     wear(t.x, t.z - 1, 3.2, 'rgba(84,66,44,0.9)');
     wear(t.x + 0.6, t.z - 1.3, 1.8, 'rgba(66,50,32,0.8)');
   }
+}
+
+/**
+ * The headland (#689): a strip of grass the width of `width` inside the field's own edge, where the crop is never drilled, so the stubble stops short of it.
+ * Painted over the field's stubble, inside the clip of its outline: the edge stroked as a wide line, a paler band in its middle and tufts along its
+ * inner edge.
+ */
+function paintHeadland(c, polygon, width, fi) {
+  const { ctx, s } = c;
+  const trace = () => {
+    ctx.beginPath();
+    polygon.forEach(([px, pz], i) => {
+      const [qx, qz] = c.toPx(px, pz);
+      if (i === 0) ctx.moveTo(qx, qz);
+      else ctx.lineTo(qx, qz);
+    });
+    ctx.closePath();
+  };
+  ctx.lineJoin = 'round';
+  trace();
+  ctx.strokeStyle = 'rgba(112,124,70,0.55)'; // where the drill stopped short: grass thinning into the stubble
+  ctx.lineWidth = 2 * (width + 0.7) * s;
+  ctx.stroke();
+  trace();
+  ctx.strokeStyle = 'rgba(92,124,58,0.95)'; // the headland itself: a green that is grass, not stubble
+  ctx.lineWidth = 2 * width * s;
+  ctx.stroke();
+  trace();
+  ctx.strokeStyle = 'rgba(128,150,84,0.4)'; // the lighter, flattened band the tractor turns on
+  ctx.lineWidth = 2 * (width * 0.55) * s;
+  ctx.stroke();
+  if (!c.fine) return;
+  // Tufts of longer grass along the inner edge, every few metres.
+  const tuft = (x, z, r, a) => {
+    if (!c.inWin(x, z, r)) return;
+    const [px, pz] = c.toPx(x, z);
+    ctx.fillStyle = `rgba(70,100,44,${a})`;
+    ctx.beginPath();
+    ctx.ellipse(px, pz, r * s, r * 0.6 * s, 0, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  polygon.forEach((a, i) => {
+    const b = polygon[(i + 1) % polygon.length];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const nx = -(b[1] - a[1]) / len;
+    const nz = (b[0] - a[0]) / len;
+    for (let k = 0; k * 2.5 < len; k++) {
+      const random = itemRandom(S.stubble + 40 + fi, i * 4000 + k);
+      const along = k * 2.5 + random();
+      const out = width - 0.3 + random() * 1.2;
+      // The polygon is clockwise, so its inside is on one side of each edge: try both and keep the one that falls in the field.
+      for (const side of [-1, 1]) {
+        const x = a[0] + ((b[0] - a[0]) / len) * along + nx * side * out;
+        const z = a[1] + ((b[1] - a[1]) / len) * along + nz * side * out;
+        if (pointInPolygon(polygon, x, z)) tuft(x, z, 0.3 + random() * 0.5, 0.35 + random() * 0.3);
+      }
+    }
+  });
+}
+
+/**
+ * What the farm's tracks have that the plain road does not (#689), worked out once like `planRoad`'s: for the stone track, the potholes holding water, the
+ * drainage grips cut across it, the loose stones at its edges and the nettles and docks of its verge, and the crown's grass in broken runs; for the grass
+ * track, the tyre-puddles and the mud at every gateway it goes through, where the ruts are deepest.
+ */
+export function planTrack(road, fields, random) {
+  const pt = (s, across) => {
+    const p = pointAt(road, Math.min(road.length, Math.max(0, s)));
+    return { x: p.x - p.tz * across, z: p.z + p.tx * across, tx: p.tx, tz: p.tz };
+  };
+  const stone = road.surface === 'stone';
+  const out = { puddles: [], grips: [], stones: [], tufts: [], crown: [], gates: [], worn: road.worn ?? [] };
+  for (let s = 20 + random() * 30; s < road.length; s += (stone ? 45 : 35) + random() * (stone ? 70 : 60)) {
+    const at = pt(s, (random() * 2 - 1) * road.halfWidth * 0.6);
+    out.puddles.push({ x: at.x, z: at.z, r: (stone ? 0.28 : 0.16) + random() * (stone ? 0.3 : 0.25), tilt: random() * Math.PI, rim: random() });
+  }
+  if (stone) {
+    for (let s = 30 + random() * 40; s < road.length - 10; s += 55 + random() * 40) {
+      const at = pt(s, 0);
+      out.grips.push({ x: at.x, z: at.z, tx: at.tx, tz: at.tz, wobble: random() * 0.3 });
+    }
+    for (let s = 0; s < road.length; s += 0.35) {
+      for (const side of [-1, 1]) {
+        if (random() < 0.55) continue;
+        const reach = road.halfWidth - 0.35 + random() * (random() < 0.2 ? 1.3 : 0.6);
+        const at = pt(s + random() * 0.3, side * reach);
+        out.stones.push(at.x, at.z, random() < 0.4 ? 0 : random() < 0.5 ? 1 : 2, 0.025 + random() * 0.05);
+      }
+    }
+    for (let s = 1; s < road.length; s += 2.5 + random() * 5) {
+      for (const side of [-1, 1]) {
+        if (random() < 0.35) continue;
+        const at = pt(s, side * (road.halfWidth + 0.35 + random() * 1.1));
+        out.tufts.push({ x: at.x, z: at.z, r: 0.25 + random() * 0.5, dock: random() < 0.35 });
+      }
+    }
+    // The grass crown between the ruts: broken runs, not a line.
+    for (let s = 0; s < road.length; s += 4 + random() * 9) out.crown.push({ s, len: 2 + random() * 7, w: 0.3 + random() * 0.45 });
+  } else {
+    // Gateways: where the track meets a hedge line, within 2.5 m of it; one patch of mud for every 8 m of track that is.
+    let last = -99;
+    for (let s = 0; s < road.length; s += 1) {
+      const p = pt(s, 0);
+      if (s - last < 8 || fields.hedgeDistance(p.x, p.z) > 2.5) continue;
+      last = s;
+      const smears = [];
+      for (let i = 0; i < 12; i++) smears.push({ s: s + (random() - 0.5) * 7, across: (random() * 2 - 1) * 1.2, rx: 0.7 + random() * 1.5, rz: 0.4 + random() * 0.6, a: 0.2 + random() * 0.3 });
+      out.gates.push({ s, smears });
+    }
+  }
+  return out;
+}
+
+/**
+ * A track of the farm's own painted into the ground (`draw: 'ground'` on a `stone` or `grass` road), so the mud, the rain, the frost and the snow lie on it. The stone
+ * track is two wheel ruts of compacted chippings with a grass crown between them, potholes holding water, loose stones at the edges, a verge of
+ * nettles and docks and a drainage grip across it here and there. The grass track is two bare wheel lines worn into the grass, with flattened grass between,
+ * the ruts deepest and muddiest at the gateways, and a few tyre-puddles. `plan` is `planTrack`'s.
+ */
+export function drawTrack(c, road, plan) {
+  const { ctx, s } = c;
+  const stone = road.surface === 'stone';
+  const sm = road.samples;
+  const near = (i) => i >= 0 && i < sm.length && c.inWin(sm[i].x, sm[i].z, road.halfWidth + 3);
+  /** The run of the road as one stroked line `off` m to the left of its middle (negative to the right), `width` m wide. */
+  const line = (off, width, style, dash = null) => {
+    ctx.strokeStyle = style;
+    ctx.lineWidth = Math.max(1, width * s);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    let pen = false;
+    sm.forEach((p, i) => {
+      if (!near(i) && !near(i - 1) && !near(i + 1)) {
+        pen = false;
+        return;
+      }
+      const [px, pz] = c.toPx(p.x + p.tz * off, p.z - p.tx * off);
+      if (pen) ctx.lineTo(px, pz);
+      else ctx.moveTo(px, pz);
+      pen = true;
+    });
+    ctx.stroke();
+  };
+  const blot = (x, z, rx, rz, style, tilt = 0) => {
+    if (!c.inWin(x, z, Math.max(rx, rz) + 1)) return;
+    const [px, pz] = c.toPx(x, z);
+    ctx.fillStyle = style;
+    ctx.beginPath();
+    ctx.ellipse(px, pz, rx * s, rz * s, tilt, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  const puddle = (h) => {
+    blot(h.x, h.z, h.r + 0.08, h.r * 0.75 + 0.06, stone ? 'rgba(48,42,34,0.8)' : 'rgba(54,42,28,0.7)', h.tilt);
+    blot(h.x, h.z, h.r, h.r * 0.75, 'rgba(118,132,142,0.7)', h.tilt);
+    blot(h.x - h.r * 0.2, h.z - h.r * 0.22, h.r * 0.55, h.r * 0.22, 'rgba(210,222,230,0.45)', h.tilt);
+  };
+  if (stone) {
+    line(0, road.halfWidth * 2 + 0.6, 'rgba(104,98,76,0.5)'); // the worn margin, merging into the verge
+    line(0, road.halfWidth * 2, '#8b867a'); // the chippings: limestone grey
+    line(0, road.halfWidth * 2 - 0.5, 'rgba(150,143,126,0.5)'); // paler where they are packed
+    for (const off of [-0.8, 0.8]) {
+      line(off, 0.62, 'rgba(176,168,148,0.6)'); // the wheel ruts: compacted bright chippings
+      line(off, 0.3, 'rgba(206,198,176,0.35)');
+    }
+    // The crown: a broken run of grass between the ruts.
+    for (const k of plan.crown) {
+      const a = pointAt(road, Math.min(road.length, k.s));
+      if (!c.inWin(a.x, a.z, k.len + 2)) continue;
+      const b = pointAt(road, Math.min(road.length, k.s + k.len));
+      const [x0, z0] = c.toPx(a.x, a.z);
+      const [x1, z1] = c.toPx(b.x, b.z);
+      ctx.strokeStyle = 'rgba(84,110,52,0.85)';
+      ctx.lineWidth = k.w * s;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x0, z0);
+      ctx.lineTo(x1, z1);
+      ctx.stroke();
+    }
+    // Drainage grips: a trench cut across it at a slant, dark with a pale lip of what was thrown out.
+    for (const g of plan.grips) {
+      if (!c.inWin(g.x, g.z, road.halfWidth + 2)) continue;
+      const across = [-g.tz + g.tx * 0.35, g.tx + g.tz * 0.35];
+      const len = Math.hypot(...across);
+      const ex = (across[0] / len) * (road.halfWidth + 0.6);
+      const ez = (across[1] / len) * (road.halfWidth + 0.6);
+      const [x0, z0] = c.toPx(g.x - ex, g.z - ez);
+      const [x1, z1] = c.toPx(g.x + ex, g.z + ez);
+      ctx.lineCap = 'butt';
+      ctx.strokeStyle = 'rgba(190,182,160,0.6)';
+      ctx.lineWidth = 0.7 * s;
+      ctx.beginPath();
+      ctx.moveTo(x0, z0);
+      ctx.lineTo(x1, z1);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(58,52,42,0.9)';
+      ctx.lineWidth = 0.34 * s;
+      ctx.beginPath();
+      ctx.moveTo(x0, z0);
+      ctx.lineTo(x1, z1);
+      ctx.stroke();
+    }
+    // Ground trodden bare where the track meets a bridge or a gateway: earth, darker and damp at its middle.
+    for (const [wx, wz, wr] of plan.worn) {
+      if (!c.inWin(wx, wz, wr + 1)) continue;
+      const [px, pz] = c.toPx(wx, wz);
+      const g = ctx.createRadialGradient(px, pz, 0, px, pz, wr * s);
+      g.addColorStop(0, 'rgba(96,76,52,0.9)');
+      g.addColorStop(0.6, 'rgba(108,88,60,0.7)');
+      g.addColorStop(1, 'rgba(108,88,60,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(px - wr * s, pz - wr * s, wr * 2 * s, wr * 2 * s);
+    }
+    for (const h of plan.puddles) puddle(h);
+    // The verge: nettles and docks, dark green with the odd paler dock leaf.
+    for (const t of plan.tufts) blot(t.x, t.z, t.r, t.r * 0.7, t.dock ? 'rgba(92,118,50,0.8)' : 'rgba(52,86,40,0.85)', t.r * 5);
+    if (c.fine) {
+      const tones = ['rgba(150,144,128,0.85)', 'rgba(104,98,86,0.85)', 'rgba(190,182,160,0.8)'];
+      const g = plan.stones;
+      for (let i = 0; i < g.length; i += 4) {
+        if (!c.inWin(g[i], g[i + 1], 0.3)) continue;
+        const [px, pz] = c.toPx(g[i], g[i + 1]);
+        ctx.fillStyle = tones[g[i + 2]];
+        ctx.fillRect(px, pz, Math.max(1, g[i + 3] * s), Math.max(1, g[i + 3] * s * 0.8));
+      }
+    }
+    return;
+  }
+  // The grass track: flattened grass between two bare, muddy wheel lines, a worn margin either side.
+  line(0, road.halfWidth * 2 + 0.8, 'rgba(120,128,70,0.35)');
+  line(0, road.halfWidth * 2 - 0.4, 'rgba(138,142,76,0.5)'); // the grass laid over by the wheels and the belly of every quad
+  for (const off of [-0.8, 0.8]) {
+    line(off, 0.62, 'rgba(92,72,48,0.8)'); // the ruts: bare earth
+    line(off, 0.3, 'rgba(58,44,30,0.55)'); // and darker in their bottoms
+  }
+  for (const gate of plan.gates) {
+    for (const m of gate.smears) {
+      const p = pointAt(road, Math.min(road.length, Math.max(0, m.s)));
+      blot(p.x - p.tz * m.across, p.z + p.tx * m.across, m.rx, m.rz, `rgba(66,48,30,${m.a})`);
+    }
+  }
+  for (const h of plan.puddles) puddle(h);
 }
 
 /**

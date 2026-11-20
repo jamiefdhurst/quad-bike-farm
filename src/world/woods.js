@@ -282,12 +282,23 @@ export function createWoods(layout) {
   const pastGate = (x, z) => inWoods(x, z) && z < gateZ - 8;
   const waitSpot = { x: w.gate.x + 3, z: gateZ - 3.5 };
 
+  // The grass boundary track (#689) goes through the wood along its edge: no trunk or bush stands in it, nor within a verge of it. Only the pieces of a road
+  // in the wood's own reach are kept, each a pair of its points, so the stretch that leaves the wood and comes back is not joined across it.
+  const tracks = [];
+  for (const r of layout.roads ?? []) {
+    if (r.surface !== 'grass') continue;
+    for (let i = 0; i + 1 < r.points.length; i++) {
+      if (inWoods(r.points[i][0], r.points[i][1], -25) || inWoods(r.points[i + 1][0], r.points[i + 1][1], -25)) tracks.push({ half: r.halfWidth, pts: [r.points[i], r.points[i + 1]] });
+    }
+  }
+
   /** Whether a trunk may stand at (x, z): inside the hedges, clear of the track, the pond, the bogs and the logs. `clear` is the room left beside the track. */
   function treeOk(x, z, clear = 2.6) {
     if (!inWoods(x, z, 3.5)) return false;
     if (trackDistance(x, z) < half + clear) return false;
     if (trailNearest && trailNearest(x, z).d < trailHalf + (clear > 2 ? 1.1 : 0.5)) return false; // close enough to steer round, not to block it
     if (pondR(x, z) < 1.5) return false;
+    for (const t of tracks) if (lineDistance(t.pts, x, z) < t.half + clear) return false;
     if (w.oak && Math.hypot(x - w.oak.x, z - w.oak.z) < w.oak.clear) return false; // the veteran oak's glade
     for (const b of bogs) if (Math.hypot(x - b.x, z - b.z) < b.radius + 1.5) return false;
     for (const l of [...logs, ...deadwood]) if (Math.hypot(x - l.x, z - l.z) < 2.5 + l.len / 2) return false;

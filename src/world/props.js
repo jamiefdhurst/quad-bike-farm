@@ -26,6 +26,7 @@ import { buildUpperThornby } from './upperThornby.js';
 import { buildVillage } from './villageProps.js';
 import { inVillage } from './village.js';
 import { buildBrookCulvert } from './brookProps.js';
+import { buildFarmBridge } from './farmBridge.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { laneBarriers, nearNeighbourYard } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
@@ -94,6 +95,7 @@ export function buildProps(ctx) {
   buildLaneFittings(c); // the lane's cottages, gateways, bin and postbox (#687, layout 2)
   const village = buildVillage({ ...c, laneTexture });
   buildBrookCulvert(c);
+  buildFarmBridge(c); // where the stone track south crosses the river's head (#689, layout 2)
   if (neighbourFarm) gates.push(neighbourFarm.gate); // the yard's own gate opens and shuts like the farm's
   if (neighbourLand) gates.push(neighbourLand.gate); // and so does her north field gate
   const silage = bale.silage;
@@ -745,7 +747,7 @@ export function inHayMeadow(layout, x, z) {
 }
 
 /** Instanced grass tufts across the field, kept off the track, the yard and the hay meadow. */
-function buildGrass({ scene, layout, heights, random, drawDistance }) {
+function buildGrass({ scene, layout, heights, random, drawDistance, fields }) {
   const blades = 7;
   const pos = [];
   const colors = [];
@@ -785,6 +787,7 @@ function buildGrass({ scene, layout, heights, random, drawDistance }) {
     if (onSlab(layout.farmstead?.slab, x, z)) continue; // the new farm's yard is concrete: nothing grows through it
     if (underRoof(layout, x, z)) continue; // none growing up through the barn floor, in either span
     if (inHayMeadow(layout, x, z)) continue; // the meadow has its own long grass, and cut hay has none standing in it
+    if (fields?.stoneAt?.(x, z) > 0.2 || fields?.grassTrackAt?.(x, z) > 0.5) continue; // none on the farm's stone tracks, nor in the wheel lines of the grass one (#689)
     if (strip) {
       // None growing through the gravel of the drag strip.
       const f = stripFrame(strip, x, z);

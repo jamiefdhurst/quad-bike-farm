@@ -134,6 +134,26 @@ export function moorPlaces(layout, roads) {
   };
 }
 
+/**
+ * The farm's tracks' places (#689), on the new farm: `stonetrack` on the stone track north a third of the way to the pit, `farmbridge` 9 m up the south track from the
+ * bridge, `boundarytrack` on the grass track in Lane Field, and `headland` on the headland inside Lane Field's north-west corner. Today's farm has none.
+ */
+export function trackPlaces(layout, roads) {
+  if (!layout.farmBridge || !roads) return {};
+  const on = (id, f) => {
+    const p = roads.pointAt(id, roads.road(id).length * f);
+    return { x: p.x, z: p.z };
+  };
+  const ring = layout.headlands.fields.find((h) => h.field === 'lanefield')?.ring[0];
+  const edge = layout.fields.find((f) => f.name === 'lanefield')?.points[0];
+  return {
+    stonetrack: on('stoneNorth', 0.35),
+    farmbridge: { x: layout.farmBridge.x, z: layout.farmBridge.z - 9 },
+    boundarytrack: on('boundaryTrack', 0.3),
+    headland: ring && edge ? { x: (ring[0] + edge[0]) / 2, z: (ring[1] + edge[1]) / 2 } : null,
+  };
+}
+
 /** @param {import('../game.js').Game} g @param {{ copy: (text: string) => void }} io */
 export function createHost(g, { copy = () => {} } = {}) {
   const unitOf = (id) => g.units.find((u) => u.id === id);
@@ -162,6 +182,7 @@ export function createHost(g, { copy = () => {} } = {}) {
     const backLane = backLanePlaces(layout, g.world.roads);
     const aRoad = aRoadPlaces(layout, g.world.roads);
     const moorSpots = moorPlaces(layout, g.world.roads);
+    const trackSpots = trackPlaces(layout, g.world.roads);
     const spots = {
       start: { x: layout.spawn.player.x, z: layout.spawn.player.z },
       yard: layout.yard,
@@ -190,6 +211,10 @@ export function createHost(g, { copy = () => {} } = {}) {
       ridge: moorSpots.ridge, // beside the trig pillar on the ridge
       stile: moorSpots.stile, // short of the ladder stile in the ridge wall, where climbing it turns you round
       moorgrid: moorSpots.moorgrid, // Back Lane before the first cattle grid onto the common
+      stonetrack: trackSpots.stonetrack, // the stone track north of the yard, on the way to the pit: the new farm's (#689)
+      farmbridge: trackSpots.farmbridge, // 9 m up the stone track south from the farm bridge over the river's head
+      boundarytrack: trackSpots.boundarytrack, // the grass track round the boundary, in Lane Field
+      headland: trackSpots.headland, // the grass headland inside Lane Field's north-west corner
       stackyard: farmstead.stackyard, // the new farm's: in front of the Dutch barn
       orchard: farmstead.orchard, // the hens' run and the pig's ark
       garden: farmstead.garden, // the garden plot's gate

@@ -8,7 +8,7 @@
 //
 // A road is:
 //   id, name           what to call it
-//   surface            'tarmac' | 'stone'
+//   surface            'tarmac' | 'stone' | 'grass' (a grass track is not hard standing for the tyres: it is the wear and the girls' routes that read it, see trackAt)
 //   points             [[x, z], ...] the centreline, smoothed through a Catmull-Rom curve
 //   halfWidth          m from the middle to the edge of the carriageway
 //   pavement           m of hard standing beyond that each side (the village's pavements): hard, but not carriageway
@@ -30,7 +30,7 @@ export const MAX_CUT = 1.5; // m a levelled road may sink into a bank before the
 export const EDGE = 0.15; // m: the soft edge of hard standing, a hand's width across
 export const KEEP_LEFT = 0.48; // of a road's half width: where a vehicle drives, to the left of its way
 
-export const SURFACES = ['tarmac', 'stone'];
+export const SURFACES = ['tarmac', 'stone', 'grass'];
 export const MARKINGS = ['dashed', 'solid', 'none'];
 
 const smoothstep = (a, b, v) => {
@@ -462,6 +462,16 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
     return t;
   };
 
+  /** 0..1 how much of (x, z) is a grass track (the boundary track): ground that ruts like the green lane, and that the girls' routes prefer. */
+  const grassTrackAt = (x, z) => {
+    let t = 0;
+    for (const r of roads) if (r.surface === 'grass') t = Math.max(t, coverOf(r, x, z));
+    return t;
+  };
+
+  /** 0..1 how much of (x, z) is any of the farm's own tracks, stone or grass: what the girls' routes prefer. */
+  const trackAt = (x, z) => Math.max(stoneAt(x, z), grassTrackAt(x, z));
+
   /** The nearest road to (x, z) within `within` m of its middle: { road, d, s, across, at } or null. */
   function nearest(x, z, within = Infinity) {
     let best = null;
@@ -695,5 +705,5 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
     return out;
   }
 
-  return { roads, road, onRoad, tarmacAt, hardBoxes, stoneAt, surfaceAt, nearest, onCarriageway, pointsAlong, lanePath, passingPlaces: (id) => byId.get(id).bays, levelAt, ditchAt, cuttings, boundsOf, pointAt: (id, s) => pointAt(byId.get(id), s) };
+  return { roads, road, onRoad, tarmacAt, hardBoxes, stoneAt, grassTrackAt, trackAt, surfaceAt, nearest, onCarriageway, pointsAlong, lanePath, passingPlaces: (id) => byId.get(id).bays, levelAt, ditchAt, cuttings, boundsOf, pointAt: (id, s) => pointAt(byId.get(id), s) };
 }

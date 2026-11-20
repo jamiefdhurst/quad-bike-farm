@@ -96,7 +96,7 @@ export class World {
     const strip = layout.dragStrip;
     const exempt = (x, z) => {
       if (Math.hypot(x - layout.yard.x, z - layout.yard.z) < layout.yard.radius) return true;
-      if (this.fields.tarmacAt(x, z) > 0.3) return true;
+      if (this.fields.tarmacAt(x, z) > 0.3 || this.fields.stoneAt(x, z) > 0.3) return true; // the stone tracks are hardcore (#689)
       if (this.inBarn(x, z, 1) || this.outbuildings.builtAt(x, z, 0.5)) return true;
       if (!strip) return false;
       const f = stripFrame(strip, x, z);
@@ -170,7 +170,7 @@ export class World {
 
   /** Grip and rolling drag here as factors on grass, in today's wetness (surfaces.js). */
   surfaceFeelAt(x, z) {
-    return surfaceFeel(this.surfaceParams, this.fields.tarmacAt(x, z), this.fields.stubbleAt(x, z), this.wet, this.weather?.cover ?? 0, this.autumn ? leafCover(this.fields.woods, x, z) : 0, this.fields.quarry?.gravelAt(x, z) ?? 0);
+    return surfaceFeel(this.surfaceParams, this.fields.tarmacAt(x, z), this.fields.stubbleAt(x, z), this.wet, this.weather?.cover ?? 0, this.autumn ? leafCover(this.fields.woods, x, z) : 0, Math.max(this.fields.quarry?.gravelAt(x, z) ?? 0, this.fields.stoneAt(x, z) * this.surfaceParams.stoneLoose));
   }
 
   /** The next point on the way from `from` to `to` that doesn't go through a hedge (fields.js): `to` itself in the same field. */

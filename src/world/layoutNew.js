@@ -12,6 +12,7 @@ import { resolveLayout, at } from './layoutAnchors.js';
 import { MOOR_FEATURES_PLAN, moorLayout } from './moor.js';
 import { resolveWithBarnLocal } from './layoutBarn.js';
 import { barnRaw } from './barnPlan.js';
+import { STONE_TRACKS_PLAN, FARM_BRIDGE_PLAN, BOUNDARY_TRACK_PLAN, HEADLAND_WIDTH, boundaryTrackPoints, trackGateways, headlandRing, densify } from './farmTracks.js';
 import { intersectPolygons, polygonArea, polygonBounds, clockwise, edgeBetween, insetPolygon, pointInPolygon, distanceToEdges, polygonEdges, pointAlong } from './polygons.js';
 
 /** Where the game's (0, 0) is on the plan: the middle of the yard. */
@@ -482,6 +483,10 @@ export function placeGateways(runs, gateways = GATEWAYS_PLAN) {
     return { a: g.a, b: g.b, boundary: best.boundary, at, half, moved: Math.abs(at - best.s) + best.d, ...(g.gate && { gate: true, id: g.id, shut: !!g.shut }), ...(!g.gate && g.shut && { shut: true }) };
   });
 }
+
+// The grass track round the boundary (#689) crosses every line between two fields once: each crossing is a gateway, an open gap, added here so the
+// plan's own list above stays the places the plan names.
+GATEWAYS_PLAN.push(...trackGateways(boundaryTrackPoints(OUTLINE_PLAN), boundariesOf(clippedFields()), GATEWAYS_PLAN));
 
 const movePoints = (pts) => pts.map(fromPlan);
 
@@ -1580,6 +1585,28 @@ export function moorGateLayout() {
   return { x, z, yaw: best.yaw, width: 2 * gw.half - 0.7 };
 }
 
+/**
+ * The farm's tracks, bridge and headlands in game metres (#689): the two stone tracks and the grass boundary track as roads of the network (painted into
+ * the ground, so the weather lies on them), the farm bridge where the south track crosses the river's head, and each arable field's headland as `{ field, ring }`
+ * (the ring is the strip's inner edge, `width` m in from the field's own edge).
+ */
+export function tracksLayout(T = STONE_TRACKS_PLAN) {
+  const stone = (id, name, pts, worn = []) => ({
+    id, name, surface: 'stone', halfWidth: T.halfWidth, points: densify(pts, 25).map(fromPlan), markings: { centre: 'none' }, verge: T.verge, hedged: false, draw: 'ground',
+    worn: worn.map(([x, z, r]) => [...fromPlan([x, z]), r]), // [x, z, r] ground trodden bare: the banks at the farm bridge's two ends
+  });
+  const loop = boundaryTrackPoints(OUTLINE_PLAN);
+  const B = BOUNDARY_TRACK_PLAN;
+  const roads = [
+    stone('stoneNorth', 'the stone track north', T.north),
+    stone('stoneSouth', 'the stone track south', T.south, [[FARM_BRIDGE_PLAN.at[0], FARM_BRIDGE_PLAN.at[1] - FARM_BRIDGE_PLAN.length / 2 - 2.2, 3.2], [FARM_BRIDGE_PLAN.at[0], FARM_BRIDGE_PLAN.at[1] + FARM_BRIDGE_PLAN.length / 2 + 2.2, 3.2]]),
+    { id: 'boundaryTrack', name: 'the boundary track', surface: 'grass', halfWidth: B.halfWidth, points: [...loop, loop[0]].map(fromPlan), markings: { centre: 'none' }, verge: B.verge, hedged: false, draw: 'ground', loop: true },
+  ];
+  const [bx, bz] = fromPlan(FARM_BRIDGE_PLAN.at);
+  const headlands = clippedFields().filter((f) => f.kind === 'arable').map((f) => ({ field: f.name, ring: movePoints(headlandRing(f.points)) }));
+  return { roads, farmBridge: { x: bx, z: bz, length: FARM_BRIDGE_PLAN.length, width: FARM_BRIDGE_PLAN.width, yaw: FARM_BRIDGE_PLAN.yaw }, headlands: { width: HEADLAND_WIDTH, fields: headlands } };
+}
+
 /** The new farm: today's layout (resolved) with what has moved put in its place. */
 export function layoutNew(today, raw) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
@@ -1593,6 +1620,7 @@ export function layoutNew(today, raw) {
   const hill = hillLayout(today);
   const pit = quarryLayout(today);
   const village = villageLayout();
+  const tracks = tracksLayout();
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
   return {
@@ -1600,7 +1628,7 @@ export function layoutNew(today, raw) {
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
     upperThornby: { at: fromPlan(BACK_LANE_PLAN.upperThornby) },
     junctions: JUNCTIONS_PLAN, turnRound: turnRoundLayout(), laneFittings: laneFittingsLayout(), aRoadFittings: { layBy: { ...A_ROAD_PLAN.layBy, z: A_ROAD_PLAN.layBy.z - PLAN_ORIGIN[1] } },
-    ...drive, roads: [...drive.roads, village.street, neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout()],
+    ...drive, roads: [...drive.roads, village.street, neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout(), ...tracks.roads], farmBridge: tracks.farmBridge, headlands: tracks.headlands,
     woods: wood.woods, logYard: wood.logYard, hill, village: village.village, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, village: village.anchor, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
     budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
