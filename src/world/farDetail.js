@@ -163,12 +163,13 @@ export class FarDetail {
       return;
     }
     let again = 0;
-    for (const o of this.scene.children) {
-      if (!MERGED_NAMES.includes(o.name)) continue;
-      if (!fresh && this.elapsed < (this.nextLook.get(o) ?? 0)) continue;
-      if (!fresh && again >= MERGES_A_LOOK) continue;
+    const due = [];
+    for (const o of this.scene.children) if (MERGED_NAMES.includes(o.name) && (fresh || this.elapsed >= (this.nextLook.get(o) ?? 0))) due.push(o);
+    due.sort((a, b) => (this.nextLook.get(a) ?? 0) - (this.nextLook.get(b) ?? 0)); // the one that has waited longest first, so a root that comes late in the scene is not starved by those that keep changing
+    for (const o of due) {
       const e = o.matrixWorld.elements;
       const near = Math.hypot(e[12] - position.x, e[14] - position.z) < MERGE_NEAR;
+      if (!fresh && again >= MERGES_A_LOOK) break;
       this.nextLook.set(o, this.elapsed + (near ? 0 : MERGE_FAR_EVERY * (0.75 + 0.5 * ((this.looks++ * 0.618) % 1)))); // the far ones' turns fall at different looks
       this.merging.add(o);
       if (this.merge.update(o, this.elapsed, fresh)) again++;
