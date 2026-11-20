@@ -4,6 +4,8 @@ import { layoutNew, fromPlan, clippedFields, boundariesOf, FIELDS_PLAN, GATEWAYS
 import { createFields } from '../src/world/fields.js';
 import { roadNetwork } from '../src/world/roads.js';
 import { STONE_TRACKS_PLAN, BOUNDARY_TRACK_PLAN, HEADLAND_WIDTH, boundaryTrackPoints, trackGateways, runLength } from '../src/world/farmTracks.js';
+import { planTrack, drawTrack, paintContext, paintStubble } from '../src/world/groundTexture.js';
+import { createRandom } from '../src/core/random.js';
 import { createFieldMap } from '../src/world/fieldMap.js';
 import { boundary, gap, field, gatewayAcross } from '../src/world/fieldPlan.js';
 import { surfaceFeel, DEFAULT_SURFACE_PARAMS } from '../src/world/surfaces.js';
@@ -208,5 +210,49 @@ describe('how the tracks ride and wear', () => {
     // And never on a track.
     const p = net.pointAt('boundaryTrack', 0);
     expect(fields.stubbleAt(p.x, p.z)).toBe(0);
+  });
+});
+
+describe('how the tracks are painted into the ground', () => {
+  const recorder = () => {
+    const calls = [];
+    const ctx = new Proxy({}, {
+      get: (_, name) => (name === 'calls' ? calls : (...args) => (calls.push([name, ...args]), { addColorStop() {} })),
+      set: (_, name, v) => (calls.push(['set', name, v]), true),
+    });
+    return { ctx, calls };
+  };
+  const whole = { minX: -1e5, maxX: 1e5, minZ: -1e5, maxZ: 1e5 };
+  const context = (ctx) => paintContext(ctx, whole, 8, { fine: true, toPx: (x, z) => [x, z] });
+
+  it('gives the stone track potholes with water, drainage grips, loose stones, verge tufts and a broken crown', () => {
+    const plan = planTrack(north, fields, createRandom(5));
+    expect(plan.puddles.length).toBeGreaterThanOrEqual(2);
+    expect(plan.grips.length).toBeGreaterThanOrEqual(1);
+    expect(plan.stones.length / 4).toBeGreaterThan(north.length);
+    expect(plan.tufts.length).toBeGreaterThan(20);
+    expect(plan.crown.length).toBeGreaterThan(10);
+    const { ctx, calls } = recorder();
+    drawTrack(context(ctx), north, plan);
+    const styles = calls.filter((c) => c[0] === 'set' && c[1] === 'strokeStyle').map((c) => c[2]);
+    expect(styles).toContain('#8b867a'); // the chippings
+    expect(calls.filter((c) => c[0] === 'ellipse').length).toBeGreaterThan(plan.puddles.length * 3); // each puddle in three, then the tufts
+  });
+  it('gives the grass track two bare wheel lines, flattened grass between and mud at every gateway it goes through', () => {
+    const plan = planTrack(loop, fields, createRandom(6));
+    expect(plan.gates.length).toBeGreaterThanOrEqual(9);
+    expect(plan.puddles.length).toBeGreaterThan(20);
+    const { ctx, calls } = recorder();
+    drawTrack(context(ctx), loop, plan);
+    const styles = calls.filter((c) => c[0] === 'set' && c[1] === 'strokeStyle').map((c) => c[2]);
+    expect(styles).toContain('rgba(92,72,48,0.8)'); // the ruts
+    expect(styles).toContain('rgba(138,142,76,0.5)'); // the grass laid over
+  });
+  it('paints a grass headland inside the edge of each arable field, over the stubble', () => {
+    const { ctx, calls } = recorder();
+    paintStubble(context(ctx), fields);
+    const widths = calls.filter((c) => c[0] === 'set' && c[1] === 'lineWidth').map((c) => c[2]);
+    expect(widths.filter((w) => w === 2 * HEADLAND_WIDTH * 8).length).toBeGreaterThanOrEqual(6);
+    expect(calls.filter((c) => c[0] === 'set' && c[1] === 'strokeStyle' && c[2] === 'rgba(92,124,58,0.95)').length).toBeGreaterThanOrEqual(6);
   });
 });

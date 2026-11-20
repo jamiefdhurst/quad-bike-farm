@@ -138,5 +138,5 @@ export function createFields(layout) {
     if (!hill || z < hill.laneRect.minZ || z > hill.laneRect.maxZ) return track;
     return Math.max(track, 1 - smoothstep(hill.lane.halfWidth, hill.lane.halfWidth + 1.5, Math.abs(x - hill.lane.x)));
   };
-  return { wearBounds, laneAt, farm, hill, brook, woods, quarry, gates, outside: outsideAll, grass, areas, polygons, kinds, boundaries: plan.boundaries, hedges, gateways, soakAt, stubbleField, stubbleFields, areaOf, hedgeDistance, hedgeAhead, hedgedAt, tarmacAt, tarmacBoxes, stubbleAt, stoneAt, headlandAt, route, nextWaypoint, inFarm, clampToArea, inGap };
+  return { wearBounds, laneAt, farm, hill, brook, woods, quarry, gates, outside: outsideAll, grass, areas, polygons, kinds, boundaries: plan.boundaries, hedges, gateways, soakAt, stubbleField, stubbleFields, areaOf, hedgeDistance, hedgeAhead, hedgedAt, tarmacAt, tarmacBoxes, stubbleAt, stoneAt, headlandAt, headlandWidth, route, nextWaypoint, inFarm, clampToArea, inGap };
 }
