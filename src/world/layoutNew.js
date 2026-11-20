@@ -356,7 +356,7 @@ export const SETTINGS = [
 export const REPLACED = [
   'ground', 'stubbleFields', 'road', 'publicLane', 'roads', 'anchors.neighbour', 'neighbourFarm', 'barnLocal',
   // The farmstead (#682): the barn and the yard with all that stands in them, the stackyard and its Dutch barn, the cars, the muck heap, and Home Ground's play things.
-  'anchors.barn', 'anchors.yard', 'anchors.bonfire', 'barn', 'bell', 'silage', 'barnBaleSpots', 'loft', 'clock', 'bench', 'benchCharger', 'generator', 'weatherStation',
+  'anchors.barn', 'anchors.yard', 'anchors.bonfire', 'barn', 'bell', 'silage', 'barnBaleSpots', 'loft', 'clock', 'desk', 'bench', 'benchCharger', 'generator', 'weatherStation',
   'jumperRail', 'helmetHooks', 'bay', 'bay2', 'moneyTin', 'shed', 'jack', 'axleStands', 'rusty', 'plover', 'yard', 'cars', 'paddock', 'lawns', 'farmAnimals',
   'fuelTank', 'jerryCanSpots', 'trailer', 'tipTrailer', 'sprayer', 'harrows', 'dieselBowser', 'toolbox', 'benchOil', 'oilBottle', 'coolantBottle',
   'antiGelBottle', 'plugAdditive', 'benchLeads', 'benchPack', 'hose', 'dutchBarn', 'jumpRamp', 'lineUp', 'coneCourse', 'trackPoints', 'puddles', 'bogs',

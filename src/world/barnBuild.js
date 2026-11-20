@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { barnShape, localWallBoxes, dividerPosts, barnFrame } from './barn.js';
 import { buildJack, buildAxleStand } from '../workshop/jackModel.js';
+import { buildDesk, DESK } from '../workshop/deskModel.js';
 import { loftShape } from './loft.js';
 import { buildBayKit } from './bayKit.js';
 import { buildBarnTrim } from './barnTrim.js';
@@ -366,24 +367,34 @@ export function buildBarnShed({ scene, layout: worldLayout, heights, fixedBox: f
   const rag = box(0.22, 0.015, 0.16, new THREE.MeshStandardMaterial({ color: 0x3a3c3e, roughness: 1 }));
   rag.rotation.y = 0.4;
   add(rag, b.x + b.length / 2 - 1.1, benchTop + 0.008, b.z + 0.05, { cast: false });
-  // Pegboard above it with a few tools hung up.
-  add(box(b.length, 0.9, 0.03, new THREE.MeshStandardMaterial({ color: 0x9c8a66, roughness: 0.9 })), b.x, benchTop + 1.1, inner.minZ + 0.03, { cast: false });
-  // A grid of holes across the pegboard, as dark dots.
-  const holeMat = new THREE.MeshBasicMaterial({ color: 0x3b3224 });
-  const holes = new THREE.InstancedMesh(new THREE.CircleGeometry(0.008, 6), holeMat, Math.floor(b.length / 0.1) * 8);
   const m4 = new THREE.Matrix4();
-  let hi = 0;
-  for (let ix = 0; ix < Math.floor(b.length / 0.1); ix++) {
-    for (let iy = 0; iy < 8; iy++) holes.setMatrixAt(hi++, m4.makeTranslation(b.x - b.length / 2 + 0.05 + ix * 0.1, benchTop + 0.7 + iy * 0.1, inner.minZ + 0.047));
-  }
-  group.add(holes);
-  for (let i = 0; i < 7; i++) {
-    const tool = box(0.03, 0.2 + random() * 0.25, 0.03, i % 2 ? steel : new THREE.MeshStandardMaterial({ color: 0xb3201a, roughness: 0.6 }));
-    add(tool, b.x - b.length / 2 + 0.3 + i * ((b.length - 0.6) / 6), benchTop + 1.2 + random() * 0.15, inner.minZ + 0.08, { cast: false });
+  // Pegboard above it with a few tools hung up (today's barn: the new one has none until there are real tools to hang on it, #517).
+  if (!wide) {
+    add(box(b.length, 0.9, 0.03, new THREE.MeshStandardMaterial({ color: 0x9c8a66, roughness: 0.9 })), b.x, benchTop + 1.1, inner.minZ + 0.03, { cast: false });
+    // A grid of holes across the pegboard, as dark dots.
+    const holeMat = new THREE.MeshBasicMaterial({ color: 0x3b3224 });
+    const holes = new THREE.InstancedMesh(new THREE.CircleGeometry(0.008, 6), holeMat, Math.floor(b.length / 0.1) * 8);
+    let hi = 0;
+    for (let ix = 0; ix < Math.floor(b.length / 0.1); ix++) {
+      for (let iy = 0; iy < 8; iy++) holes.setMatrixAt(hi++, m4.makeTranslation(b.x - b.length / 2 + 0.05 + ix * 0.1, benchTop + 0.7 + iy * 0.1, inner.minZ + 0.047));
+    }
+    group.add(holes);
+    for (let i = 0; i < 7; i++) {
+      const tool = box(0.03, 0.2 + random() * 0.25, 0.03, i % 2 ? steel : new THREE.MeshStandardMaterial({ color: 0xb3201a, roughness: 0.6 }));
+      add(tool, b.x - b.length / 2 + 0.3 + i * ((b.length - 0.6) / 6), benchTop + 1.2 + random() * 0.15, inner.minZ + 0.08, { cast: false });
+    }
   }
   fixedBox(b.x, floorY + b.height / 2, b.z, b.length / 2, b.height / 2, b.depth / 2);
   // The bays for working on a quad: a wheel stop, corner kerbs, an oil stain and a drip tray each, with no paint on the floor (bayKit.js, #404).
   group.add(buildBayKit({ bays: [layout.bay, layout.bay2].filter(Boolean), floorY, random }));
+  if (layout.desk) {
+    // The farm desk and its stool, against the back wall by the boards (the new barn's).
+    const desk = buildDesk(random);
+    desk.position.set(layout.desk.x, floorY, layout.desk.z);
+    desk.rotation.y = layout.desk.yaw;
+    group.add(desk);
+    fixedBox(layout.desk.x, floorY + DESK.height / 2, layout.desk.z, DESK.depth / 2, DESK.height / 2, DESK.length / 2);
+  }
   if (layout.bay2) {
     // A trolley jack and a pair of axle stands wait beside the big bay in the second span.
     const jack = buildJack();

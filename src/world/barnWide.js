@@ -32,10 +32,18 @@ export function buildWideShell(c) {
   const dw = (door.maxZ - door.minZ) / 2;
 
   // Walls as one extruded outline each, so the boards run on across the whole face (the extrusion's UVs are its own metres). The shape is drawn as (u along the wall, v up).
-  const wallMesh = (points, depth, material = boardMat()) => {
+  const wallMesh = (points, depth, material = boardMat(), holes = []) => {
     const s = new THREE.Shape();
     points.forEach(([u, v], i) => (i ? s.lineTo(u, v) : s.moveTo(u, v)));
     s.closePath();
+    for (const [cu, cv, w, h] of holes) {
+      const hole = new THREE.Path();
+      hole.moveTo(cu - w / 2, cv - h / 2);
+      hole.lineTo(cu + w / 2, cv - h / 2);
+      hole.lineTo(cu + w / 2, cv + h / 2);
+      hole.lineTo(cu - w / 2, cv + h / 2);
+      s.holes.push(hole);
+    }
     return new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth, bevelEnabled: false }), material);
   };
   const hz = sizeZ / 2 - wall; // the back and doors' walls run between the side walls
@@ -45,9 +53,39 @@ export function buildWideShell(c) {
   const back = add(wallMesh([[-hz, 0], [hz, 0], [hz, wallHeight], [-hz, wallHeight]], wall), outer.minX + wall, floorY, shape.z);
   back.rotation.y = -Math.PI / 2;
   // The side walls, each with its gable up to the ridge.
+  const windows = [[-3.6, 2.7], [3.6, 2.7]]; // each gable's two windows, 1.2 m by 0.9 m, [along the wall from its middle, height of the middle]
+  const glass = new THREE.MeshStandardMaterial({ color: 0xa9c0c4, roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.35 });
   for (const side of [-1, 1]) {
-    const gable = wallMesh([[-sizeX / 2, 0], [sizeX / 2, 0], [sizeX / 2, wallHeight], [0, ridge], [-sizeX / 2, wallHeight]], wall);
-    add(gable, shape.x, floorY, side < 0 ? outer.minZ : outer.maxZ - wall);
+    const gable = wallMesh([[-sizeX / 2, 0], [sizeX / 2, 0], [sizeX / 2, wallHeight], [0, ridge], [-sizeX / 2, wallHeight]], wall, boardMat(THREE.DoubleSide), windows.map(([u, v]) => [u, v, 1.2, 0.9]));
+    const zIn = side < 0 ? outer.minZ : outer.maxZ - wall; // the wall's z from its inside face to its outside face is wall thick
+    add(gable, shape.x, floorY, zIn);
+    const zOut = side < 0 ? outer.minZ : outer.maxZ; // the outer face
+    const out = side; // which way the outside is
+    for (const [u, v] of windows) {
+      const x = shape.x + u;
+      const y = floorY + v;
+      // The frame on the outside: head, cill and two jambs standing 3 cm proud of the boards, a cill that overhangs them, a pane in the middle of the wall and a glazing bar each way.
+      add(box(1.38, 0.08, 0.06, white), x, y + 0.5, zOut + out * 0.02, { cast: false }); // (every part a centimetre clear of the opening's edges, which are faces of the boards' own)
+      add(box(1.38, 0.07, 0.14, white), x, y - 0.5, zOut + out * 0.05, { cast: false });
+      for (const sx of [-1, 1]) add(box(0.09, 0.92, 0.06, white), x + sx * 0.655, y, zOut + out * 0.02, { cast: false });
+      add(box(1.2, 0.9, 0.012, glass), x, y, zOut - out * wall / 2, { cast: false });
+      add(box(1.2, 0.035, 0.03, white), x, y, zOut - out * wall / 2 + out * 0.012, { cast: false });
+      add(box(0.035, 0.9, 0.03, white), x, y, zOut - out * wall / 2 + out * 0.012 - out * 0.02, { cast: false });
+      // And inside, a timber surround.
+      const zi = zOut - out * wall;
+      add(box(1.34, 0.06, 0.05, timber), x, y + 0.5, zi - out * 0.02, { cast: false });
+      add(box(1.4, 0.05, 0.12, timber), x, y - 0.485, zi - out * 0.05, { cast: false });
+      for (const sx of [-1, 1]) add(box(0.07, 0.92, 0.07, timber), x + sx * 0.645, y, zi - out * 0.03, { cast: false });
+    }
+    // A louvred vent in the apex: a frame and slats, so the gable is not plain boards up to the ridge.
+    const vx = shape.x;
+    const vy = floorY + wallHeight + 1.6;
+    add(box(1.0, 0.7, 0.05, white), vx, vy, zOut + out * 0.02, { cast: false });
+    for (let i = 0; i < 5; i++) {
+      const slat = box(0.84, 0.05, 0.1, timber);
+      slat.rotation.x = out * 0.5;
+      add(slat, vx, vy - 0.24 + i * 0.12, zOut + out * 0.07, { cast: false });
+    }
   }
   for (const w of localWallBoxes(layout)) fixedBox(w.x, floorY + wallHeight / 2, w.z, w.hx, wallHeight / 2, w.hz);
 

@@ -46,7 +46,9 @@ export function barnRaw() {
     moneyTin: at('barn', { x: -7.7, z: -INNER_Z, y: 1.05 }),
     // On the doors' wall beside the doorway: the thermometer, the barometer and the forecast together (the clock is on the back wall, `clock`).
     weatherStation: at('barn', { x: INNER_X, z: -6.4, yaw: -Math.PI / 2, y: 1.65 }), // on the doors' wall, facing back into the barn
-    clock: at('barn', { x: -INNER_X, z: 0, yaw: Math.PI / 2, y: 3.6 }), // high on the back wall, facing the doors
+    clock: at('barn', { x: 1, z: -INNER_Z, yaw: 0, y: 3.9 }), // high on the bench's wall over the bays, so it is seen from the bench and the big bay, apart from the calendar on the back wall
+    // The farm desk against the back wall and its stool, by the boards: where the paperwork is done (the computer for the classifieds is #806's).
+    desk: at('barn', { x: -8.45, z: -8.6, yaw: 0 }), // facing the doors, its back to the wall
     // By the doors, on the yard side: the bell on its post beside the east leaf's resting place, and the generator off the west wall (yard frame: plan z 347 is its 0).
     bell: at('yard', { x: -7.8, z: -1, yaw: 0 }),
     generator: at('yard', { x: -16, z: 21.4, yaw: 0, stand: { x: -15.3, z: 22.4 } }),

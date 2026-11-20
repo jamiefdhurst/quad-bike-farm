@@ -120,3 +120,36 @@ describe('getting into the barn', () => {
     expect(end.x).toBeGreaterThan(shape.outer.maxX); // outside the wall, not through it
   });
 });
+
+describe('the seats and the desk in the barn', async () => {
+  const { barnBaleSeats, insideBarn } = await import('../src/world/barn.js');
+  const { DESK } = await import('../src/workshop/deskModel.js');
+  const inside = (p, m = 0.5) => insideBarn(two, p.x, p.z, m);
+  it('has the girls sit on bale seats scattered inside, not in a row, with no loft seat', () => {
+    const seats = barnBaleSeats(two);
+    expect(seats.length).toBeGreaterThanOrEqual(4);
+    expect(new Set(seats.map((s) => s.id)).size).toBe(seats.length);
+    for (const s of seats) {
+      expect(s.kind).toBe('shelter');
+      expect(inside(s, 1), s.id).toBe(true);
+      expect(s.seat).toBe(two.baleSeat);
+    }
+    expect(seats.some((s) => s.kind === 'loft' || /loft/.test(s.id))).toBe(false);
+    // Scattered: no two turned the same way, and not all on one line.
+    expect(new Set(seats.map((s) => s.yaw.toFixed(2))).size).toBe(seats.length);
+    const zs = seats.map((s) => frame.toLocal(s.x, s.z));
+    expect(Math.max(...zs.map((p) => p.x)) - Math.min(...zs.map((p) => p.x))).toBeGreaterThan(0.8);
+  });
+  it('keeps each bale seat 1.5 m from the bench, the desk, the bays and the covered vehicles', () => {
+    const local = (o) => ({ x: o.x, z: o.z });
+    const things = [local(L.bench), local(L.desk), local(L.bay), local(L.bay2), local(L.rusty), local(L.plover)];
+    for (const [x, z] of L.barnBaleSpots) for (const t of things) expect(Math.hypot(x - t.x, z - t.z)).toBeGreaterThan(1.5);
+  });
+  it('stands the desk against the back wall facing the doors, with its stool in front of it, and inside', () => {
+    expect(L.desk.x - DESK.depth / 2).toBeGreaterThan(shape.inner.minX - 0.01);
+    expect(L.desk.x - DESK.depth / 2).toBeLessThan(shape.inner.minX + 0.2);
+    expect(L.desk.yaw).toBe(0);
+    for (const p of [L.desk, L.bench, L.bay, L.bay2, L.jack, L.rusty, L.plover]) expect(inside(frame.toWorld(p.x, p.z), 0.3)).toBe(true);
+    expect(boxes.some((b) => Math.abs(b.x - L.desk.x) < 0.01 && Math.abs(b.z - L.desk.z) < 0.01 || (b.hx === DESK.depth / 2 && b.hz === DESK.length / 2))).toBe(true); // the desk has a collider
+  });
+});

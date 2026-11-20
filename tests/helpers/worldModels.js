@@ -240,6 +240,8 @@ export async function buildWorldModels() {
   add('barnProp', 'jumperRack', JumperRail, (Rail, scene) => new Rail(scene, LAYOUT, heightAt));
   const { HelmetHooks } = await import('../../src/world/helmetHooks.js');
   add('barnProp', 'helmetHooks', HelmetHooks, (Hooks, scene) => new Hooks(scene, LAYOUT, heightAt));
+  const { buildDesk } = await import('../../src/workshop/deskModel.js');
+  add('barnProp', 'barn-desk', buildDesk);
   const { WallClock } = await import('../../src/world/weatherStation.js');
   add('barnProp', 'wallClock', WallClock, (Clock, scene) => (new Clock(scene), scene));
   const { BiscuitTinView } = await import('../../src/world/biscuitTinView.js');

@@ -179,7 +179,7 @@ import { HazeLayer } from './effects/hazeLayer.js';
 import { Mist, Rainbow, MIST_PARAM_RANGES, RAINBOW_PARAM_RANGES } from './world/mist.js';
 import { RainbowView } from './effects/rainbowView.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
-import { barnShape, barnFrame, barnLocal, placeInBarn, inFirstSpan, inDoorway, outsideDoor } from './world/barn.js';
+import { barnShape, barnFrame, barnLocal, placeInBarn, inFirstSpan, inDoorway, outsideDoor, barnBaleSeats } from './world/barn.js';
 import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid, pickQuads } from './npc/race.js';
 import { DEFAULT_SIGHT_PARAMS, SIGHT_PARAM_RANGES, gatesFoundOpen } from './npc/sights.js';
 import { DEFAULT_OUTING_PARAMS, OUTING_PARAM_RANGES, pickOuting, outingSpots } from './npc/outings.js';
@@ -915,7 +915,7 @@ export class Game {
     this.restSpots = [
       ...this.world.layout.restSpots,
       // Inside the barn, sat on the bales out of the rain, facing the doors.
-      ...(this.world.layout.barnBaleSpots ?? []).map(([x, z, yaw], i) => ({ id: `barnBale${i}`, kind: 'shelter', x, z, yaw, seat: this.world.layout.baleSeat })),
+      ...barnBaleSeats(this.world.layout),
       ...this.world.layout.strawBaleSpots
         .filter(([x, z]) => this.world.track.distanceTo(x, z, 10) >= this.world.layout.trackHalfWidth + 3)
         .map(([x, z, yaw], i) => ({ id: `bale${i}`, kind: 'bale', x, z, yaw, seat: this.world.layout.baleSeat })),

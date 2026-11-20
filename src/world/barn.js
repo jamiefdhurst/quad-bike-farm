@@ -73,6 +73,9 @@ export function placeInBarn(layout, object, lx, y, lz) {
   return object;
 }
 
+/** The seats on the bales inside the barn, as the girls' rest spots (npc/places.js): each sat on facing `yaw`, out of the rain. */
+export const barnBaleSeats = (layout) => (layout.barnBaleSpots ?? []).map(([x, z, yaw], i) => ({ id: `barnBale${i}`, kind: 'shelter', x, z, yaw, seat: layout.baleSeat }));
+
 /** The barn's own things (`bench`, `loft`, `bay`...) in the barn's frame: `layout.barnLocal`, or the layout itself when the barn is not turned. */
 export const barnLocal = (layout) => layout.barnLocal ?? layout;
 
