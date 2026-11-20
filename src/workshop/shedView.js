@@ -6,6 +6,7 @@ import { buildCatalogue, buildCompressor, buildWasher, buildPit } from './shedMo
 import { pitHoleRect, NO_HOLE } from './pitHole.js';
 
 const FLOOR_TOP = 0.011;
+const PIT_LAMP_GLOW = 0.7; // the pit lamps' emissive intensity while the generator runs
 
 /**
  * The barn's shed kit (farm/shed.js): the catalogue lying on the workbench, and the compressor, the parts washer and the pit that
@@ -54,6 +55,12 @@ export class ShedView {
     const plug = this.game.world.props?.barn?.pitPlug;
     if (plug) plug.visible = !on;
     this.game.world.terrain?.pitHole?.set(...(on ? pitHoleRect(this.game.world.layout.shed.pit) : NO_HOLE));
+  }
+
+  /** The pit's lamps burn off the generator, like the barn's bulbs (game.js). */
+  setLamps(lit) {
+    const lamp = this.pieces.pit?.lamp;
+    if (lamp) lamp.emissiveIntensity = lit ? PIT_LAMP_GLOW : 0;
   }
 
   /** Is this piece standing in the barn now (it was shown when the day loaded)? */

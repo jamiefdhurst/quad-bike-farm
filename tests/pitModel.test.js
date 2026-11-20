@@ -5,6 +5,7 @@ import { coplanarOverlaps } from './helpers/coplanar.js';
 import { LAYOUT } from '../src/world/layout.js';
 import { headlessContext } from './helpers/worldModels.js';
 import { pitHoleRect, NO_HOLE } from '../src/workshop/pitHole.js';
+import { MERGED_NAMES } from '../src/world/farDetail.js';
 
 const down = new THREE.Vector3(0, -1, 0);
 const hitsAt = (root, x, y, z) => new THREE.Raycaster(new THREE.Vector3(x, y, z), down).intersectObject(root, true).map((h) => h.point.y);
@@ -79,5 +80,21 @@ describe('the inspection pit (#817)', () => {
     ShedView.prototype.cutPit.call(self, false);
     expect(plug.visible).toBe(true);
     expect(pitHole.x).toBeGreaterThan(1e5);
+  });
+
+  it('is merged for drawing, so its many parts cost a few draw calls', () => {
+    expect(MERGED_NAMES).toContain('inspection-pit');
+  });
+
+  it('has lamps that burn with the generator and go dark without it (ShedView.setLamps)', async () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const { buildPit } = await import('../src/workshop/shedModels.js');
+    const { ShedView } = await import('../src/workshop/shedView.js');
+    const { lamp } = buildPit();
+    const self = { pieces: { pit: { lamp } } };
+    ShedView.prototype.setLamps.call(self, true);
+    expect(lamp.emissiveIntensity).toBeGreaterThan(0);
+    ShedView.prototype.setLamps.call(self, false);
+    expect(lamp.emissiveIntensity).toBe(0);
   });
 });

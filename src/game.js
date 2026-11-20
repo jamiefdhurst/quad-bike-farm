@@ -7085,7 +7085,7 @@ export class Game {
       if (this.bulbLit !== lit) {
         this.bulbLit = lit;
         barn.bulb.material.color.setHex(lit ? 0xfff1c9 : 0x5d5c55);
-        barn.bulb2?.material.color.setHex(lit ? 0xfff1c9 : 0x5d5c55);
+        barn.bulb2?.material.color.setHex(lit ? 0xfff1c9 : 0x5d5c55); this.shedView?.setLamps(lit); // (and the inspection pit's lamps)
       }
     }
     // Smoke, steam, dust and mud are drawn with their own fixed light, so they're dimmed with the daylight or they'd glow at night.

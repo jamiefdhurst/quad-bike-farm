@@ -35,7 +35,7 @@ export const SET_PIECE_NAMES = ['village', 'laneBridge', 'neighbourFarm', 'neigh
   'moor'];
 
 /** Scene children whose still meshes are merged by material (`staticMerge.js`, #816): the vehicles, the barn and the farm animals' pens and huts. */
-export const MERGED_NAMES = [...VEHICLE_NAMES, 'barn', 'farmAnimals'];
+export const MERGED_NAMES = [...VEHICLE_NAMES, 'barn', 'farmAnimals', 'inspection-pit']; // the pit never moves, and is not hidden by distance: with its plug gone and the ground cut it would leave a hole in the floor
 const MERGE_NEAR = 15; // m: a vehicle or the barn this close to you is looked at for changes every quarter second
 const MERGE_FAR_EVERY = 2; // s between looks at one further off, about
 const MERGES_A_LOOK = 1; // roots merged again in one look at the scene, so a crowd of vehicles that all stop at once is not all done in one frame
