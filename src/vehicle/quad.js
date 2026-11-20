@@ -468,6 +468,7 @@ export class Quad {
     this.input = input;
     this.riderHands.visible = !!rider;
     this.ghost = null;
+    if (rider) this.world?.farDetail?.wake(this.model); // what far detail has merged of it is put back before its parts move (world/staticMerge.js)
     if (!rider) {
       this.throttle = 0;
       this.starter = false;

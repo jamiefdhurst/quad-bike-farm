@@ -145,8 +145,8 @@ describe('the yard, stackyard, orchard and garden', () => {
 
 describe('what is kept clear for later', () => {
   const clear = two.farmstead.keptClear;
-  it('is the machinery shed, grain store, cattle shed with its clamp and the sheep pens, at the plan\'s places', () => {
-    expect(clear.map((k) => [k.name, k.by])).toEqual([['machinery shed', '#617'], ['grain store', '#699'], ['cattle shed and clamp', '#694'], ['sheep pens', '#695']]);
+  it('is the machinery shed, grain store, cattle shed with its clamp, the sheep pens, the scrap corner, the last 11 kV pole and the lorry\'s turning circle, at the plan\'s places', () => {
+    expect(clear.map((k) => [k.name, k.by])).toEqual([['machinery shed', '#617'], ['grain store', '#699'], ['cattle shed and clamp', '#694'], ['sheep pens', '#695'], ['scrap corner', '#712'], ['11 kV pole', '#711'], ['lorry turning circle', '#816']]);
     expect(clear.map((k) => [k.minX, k.minZ, k.maxX, k.maxZ].map((v, i) => v + PLAN_ORIGIN[i % 2]))).toEqual(P.keptClear.map((k) => k.rect));
   });
   it('has nothing of ours standing in any of them: no building, bale, vehicle spot, seat, can, animal or heap', () => {

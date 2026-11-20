@@ -13,11 +13,13 @@ export const BUDGETS = {
   // 3.68M, wood 1,394 and 3.75M, hilltop 1,621 and 6.58M, the same on every run) and about 8% over. The animals, the girls and the lane's traffic are not in them; the real
   // frame, moving things and all, is `tools/perf.mjs`.
   // The triangle budgets were tightened to about 8% over what the ground in tiles drew (#665: 2.71M, 3.47M, 3.49M, 3.53M and 6.49M), which is 8% fewer than before.
-  spawn: { calls: 630, triangles: 2.93e6 },
-  yard: { calls: 2940, triangles: 3.75e6 },
-  village: { calls: 2150, triangles: 3.77e6 },
-  wood: { calls: 1505, triangles: 3.81e6 },
-  hilltop: { calls: 1750, triangles: 7.0e6 },
+  // Merging what stands still (#816, `world/staticMerge.js`) took the calls down by a fifth to a quarter (spawn 491, yard 1,937, village 1,787, wood 1,101, hilltop 1,350: the triangles
+  // the same to within 2%) and they are held to about 8% over that.
+  spawn: { calls: 535, triangles: 2.93e6 },
+  yard: { calls: 2095, triangles: 3.75e6 },
+  village: { calls: 1930, triangles: 3.77e6 },
+  wood: { calls: 1190, triangles: 3.81e6 },
+  hilltop: { calls: 1460, triangles: 7.0e6 },
   // Back Lane between its two hairpins on the new farm (#686, `?layout=2`: 1,136 calls and 3.07M triangles, the same on every run) and about 8% over. Today's farm has no
   // such spot, so it is noted and skipped there; #692 makes layout 2 the one measured and brings the other budgets onto it.
   hairpins: { calls: 1230, triangles: 3.32e6 },
