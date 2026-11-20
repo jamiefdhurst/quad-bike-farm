@@ -4,6 +4,9 @@ import { layoutNew, fromPlan, clippedFields, boundariesOf, FIELDS_PLAN, GATEWAYS
 import { createFields } from '../src/world/fields.js';
 import { roadNetwork } from '../src/world/roads.js';
 import { STONE_TRACKS_PLAN, BOUNDARY_TRACK_PLAN, HEADLAND_WIDTH, boundaryTrackPoints, trackGateways, runLength } from '../src/world/farmTracks.js';
+import { createFieldMap } from '../src/world/fieldMap.js';
+import { boundary, gap, field, gatewayAcross } from '../src/world/fieldPlan.js';
+import { surfaceFeel, DEFAULT_SURFACE_PARAMS } from '../src/world/surfaces.js';
 import { polygonArea, pointInPolygon, distanceToEdges, polygonEdges } from '../src/world/polygons.js';
 
 // The stone tracks, the grass boundary track and the headlands (#689), on the new farm behind ?layout=2.
@@ -149,5 +152,61 @@ describe('the plan', () => {
     expect(STONE_TRACKS_PLAN.halfWidth * 2).toBe(3.5);
     expect(BOUNDARY_TRACK_PLAN.inset).toBe(14);
     expect(runLength(boundaryTrackPoints(OUTLINE_PLAN), true)).toBeGreaterThan(3000);
+  });
+});
+
+describe('how the tracks ride and wear', () => {
+  const mid = (road, s) => net.pointAt(road.id, s);
+  it('makes the stone tracks gravel: loose, but less than the pit, and never worn into mud', () => {
+    const p = mid(north, 100);
+    expect(fields.stoneAt(p.x, p.z)).toBeCloseTo(1, 1);
+    expect(fields.stoneAt(p.x - p.tz * 6, p.z + p.tx * 6)).toBe(0);
+    const p1 = DEFAULT_SURFACE_PARAMS;
+    const stone = surfaceFeel(p1, 0, 0, 0, 0, 0, fields.stoneAt(p.x, p.z) * p1.stoneLoose);
+    const pit = surfaceFeel(p1, 0, 0, 0, 0, 0, 1);
+    const grass = surfaceFeel(p1, 0, 0);
+    expect(stone.grip).toBeLessThan(grass.grip);
+    expect(stone.grip).toBeGreaterThan(pit.grip);
+  });
+  it('ruts the grass track like the green lane, and the girls\' routes prefer a track', () => {
+    const p = mid(loop, 500);
+    expect(fields.laneAt(p.x, p.z)).toBeGreaterThan(0.9);
+    expect(fields.laneAt(p.x + 10, p.z + 10)).toBeLessThan(0.1);
+    // Three fields in a row with two gateways in each line, 20 m apart: the track along the south ones takes the route, and the north ones when the track is there.
+    const f = [field('a', 'grass', [[0, 0], [20, 0], [20, 40], [0, 40]]), field('b', 'grass', [[20, 0], [40, 0], [40, 40], [20, 40]]), field('c', 'grass', [[40, 0], [60, 0], [60, 40], [40, 40]])];
+    const lines = [20, 40].map((x) => boundary(x, 0, x, 40, [gap(10, 2.5), gap(30, 2.5)]));
+    const e = (x) => ({ x1: x, z1: 0, x2: x, z2: 40 });
+    const gateways = [[20, 'a', 'b'], [40, 'b', 'c']].flatMap(([x, a, b]) => [10, 30].map((at) => {
+      const edge = lines[x === 20 ? 0 : 1];
+      return { a, b, gap: edge.gaps[at === 10 ? 0 : 1], ...gatewayAcross(edge, at, f[a === 'a' ? 0 : 1].points, f[a === 'a' ? 1 : 2].points) };
+    }));
+    const way = (trackAt) => createFieldMap({ fields: f, boundaries: lines, gateways }, [[0, 0], [60, 0], [60, 40], [0, 40]], { trackAt }).route({ x: 10, z: 20 }, { x: 50, z: 20 });
+    expect(e(20).x1).toBe(20);
+    expect(way((x, z) => (z > 20 ? 1 : 0)).some((q) => q.z > 25)).toBe(true);
+    expect(way((x, z) => (z < 20 ? 1 : 0)).some((q) => q.z < 15)).toBe(true);
+  });
+  it('keeps the headland and the tracks free of stubble, and stubble in the rest of the field', () => {
+    const north = fields.polygons.north;
+    const edges = polygonEdges(north);
+    // A point 3 m in from the field's edge is headland, one 30 m in is stubble (the middle of the field is clear of the tracks).
+    const inner = two.headlands.fields.find((h) => h.field === 'north').ring;
+    const [rx, rz] = inner[0];
+    const mid2 = fields.polygons.north.reduce((a, q) => [a[0] + q[0] / north.length, a[1] + q[1] / north.length], [0, 0]);
+    expect(fields.stubbleAt(mid2[0], mid2[1])).toBe(1);
+    const out = (() => {
+      for (let t = 0; t < 40; t += 0.5) {
+        const x = rx + (mid2[0] - rx) * (t / 40) * -1;
+        if (!pointInPolygon(north, x, rz)) return [x, rz];
+      }
+      return null;
+    })();
+    expect(out === null || distanceToEdges(edges, out[0], out[1]) < 6).toBe(true);
+    expect(fields.headlandAt('north', rx, rz)).toBeLessThan(0.6);
+    const edgeSide = [(inner[0][0] + (north[0][0] - inner[0][0]) * 0.5), (inner[0][1] + (north[0][1] - inner[0][1]) * 0.5)];
+    expect(fields.headlandAt('north', edgeSide[0], edgeSide[1])).toBeGreaterThan(0.9);
+    expect(fields.stubbleAt(edgeSide[0], edgeSide[1])).toBe(0);
+    // And never on a track.
+    const p = net.pointAt('boundaryTrack', 0);
+    expect(fields.stubbleAt(p.x, p.z)).toBe(0);
   });
 });

@@ -16,6 +16,7 @@ export const DEFAULT_SURFACE_PARAMS = {
   leafDryShare: 0.35, // how much of that slip a dry day has: dry leaves are loose but not greasy
   leafRoll: 1.12, // and the extra rolling drag in wet leaves, at most
   gravelGrip: 0.72, // grip on loose gravel (the pit's walls, floor and haul road) as a factor on grass, at full looseness; the walls are looser than the floor
+  stoneLoose: 0.45, // how loose the farm's stone tracks are, as a share of the pit's gravel: hardcore compacted by years of wheels
   gravelRoll: 1.2, // and its rolling drag: tyres sink in and push it about
 };
 
@@ -33,6 +34,7 @@ export const SURFACE_PARAM_RANGES = {
   leafRoll: [1, 1.6, 0.01],
   gravelGrip: [0.3, 1, 0.01],
   gravelRoll: [1, 1.8, 0.01],
+  stoneLoose: [0, 1, 0.01],
 };
 
 /**

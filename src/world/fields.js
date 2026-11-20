@@ -13,7 +13,7 @@ import { roadNetwork } from './roads.js';
 import { createBrook } from './brook.js';
 import { fieldPlan } from './fieldPlan.js';
 import { createFieldMap } from './fieldMap.js';
-import { clockwise, polygonBounds } from './polygons.js';
+import { clockwise, polygonBounds, polygonEdges, distanceToEdges } from './polygons.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -69,14 +69,14 @@ export function createFields(layout) {
   const brook = createBrook(layout);
   const plan = fieldPlan(layout, { hill, woods, quarry, brook });
   const { gateways, gates } = plan;
-  const { polygons, areas, kinds, hedges, areaOf, inGap, hedgeDistance, hedgedAt, hedgeAhead, route, nextWaypoint, inFarm, clampToArea, outsideFarm } = createFieldMap(plan, outline ?? farm);
+  const roads = roadNetwork(layout);
+  const { polygons, areas, kinds, hedges, areaOf, inGap, hedgeDistance, hedgedAt, hedgeAhead, route, nextWaypoint, inFarm, clampToArea, outsideFarm } = createFieldMap(plan, outline ?? farm, { trackAt: roads.trackAt });
   const grass = areas.grass ?? farm;
 
   /**
    * 0..1 how much of (x, z) is tarmac or concrete: every road (world/roads.js: the farm road and the hardstanding at its end, the public lane,
    * and the village's street with its pavements), and the village's car park and forecourt, with a soft edge a hand's width across.
    */
-  const roads = roadNetwork(layout);
   const village = villageShape(layout);
   function tarmacAt(x, z) {
     const t = roads.tarmacAt(x, z);
@@ -86,13 +86,26 @@ export function createFields(layout) {
   /** Boxes that hold every place `tarmacAt` could be above 0: the roads' and the village's (roadWet.js builds the shine's mask only inside them). */
   const tarmacBoxes = () => [...roads.hardBoxes('tarmac'), ...(village ? village.tarmacBoxes() : [])];
 
-  /** 0..1 how much of (x, z) is stubble: every arable field (today's two either side of the road), up to the tarmac, and not under the buildings out there. */
+  // The headland (#689): a strip of grass this wide inside every arable field's own edge, where the crop never grows.
+  const headlandWidth = layout.headlands?.width ?? 0;
+  const arableEdges = {};
+  /** 0..1 how much of (x, z) is headland of the arable field `a`: grass, with a soft inner edge a metre across. */
+  function headlandAt(a, x, z) {
+    if (!headlandWidth) return 0;
+    const edges = (arableEdges[a] ??= polygonEdges(polygons[a]));
+    return 1 - smoothstep(headlandWidth - 0.5, headlandWidth + 0.5, distanceToEdges(edges, x, z));
+  }
+
+  /** 0..1 how much of (x, z) is stubble: every arable field (today's two either side of the road), up to the tarmac, the headland and the tracks, and not under the buildings out there. */
   function stubbleAt(x, z) {
     if (!road) return 0;
     const a = areaOf(x, z);
     if (kinds[a] !== 'arable' || built.builtAt(x, z)) return 0;
-    return 1 - tarmacAt(x, z);
+    return (1 - tarmacAt(x, z)) * (1 - headlandAt(a, x, z)) * (1 - roads.trackAt(x, z));
   }
+
+  /** 0..1 how loose the ground is here, as the gravel pit's is: the pit's own and the stone tracks', which are compacted, so less (`stoneLoose`, surfaces.js). */
+  const stoneAt = (x, z) => roads.stoneAt(x, z);
 
   const shape = createFieldShape(layout);
 
@@ -120,8 +133,10 @@ export function createFields(layout) {
     : farm;
   /** 0..1 how much of the ground at (x, z) is the green lane's own, which ruts deeper and dries slower than a field (groundWear.js). */
   const laneAt = (x, z) => {
-    if (!hill || z < hill.laneRect.minZ || z > hill.laneRect.maxZ) return 0;
-    return 1 - smoothstep(hill.lane.halfWidth, hill.lane.halfWidth + 1.5, Math.abs(x - hill.lane.x));
+    // The grass boundary track ruts like the green lane (#689): everyone rides the same two lines.
+    const track = roads.grassTrackAt(x, z);
+    if (!hill || z < hill.laneRect.minZ || z > hill.laneRect.maxZ) return track;
+    return Math.max(track, 1 - smoothstep(hill.lane.halfWidth, hill.lane.halfWidth + 1.5, Math.abs(x - hill.lane.x)));
   };
-  return { wearBounds, laneAt, farm, hill, brook, woods, quarry, gates, outside: outsideAll, grass, areas, polygons, kinds, boundaries: plan.boundaries, hedges, gateways, soakAt, stubbleField, stubbleFields, areaOf, hedgeDistance, hedgeAhead, hedgedAt, tarmacAt, tarmacBoxes, stubbleAt, route, nextWaypoint, inFarm, clampToArea, inGap };
+  return { wearBounds, laneAt, farm, hill, brook, woods, quarry, gates, outside: outsideAll, grass, areas, polygons, kinds, boundaries: plan.boundaries, hedges, gateways, soakAt, stubbleField, stubbleFields, areaOf, hedgeDistance, hedgeAhead, hedgedAt, tarmacAt, tarmacBoxes, stubbleAt, stoneAt, headlandAt, route, nextWaypoint, inFarm, clampToArea, inGap };
 }

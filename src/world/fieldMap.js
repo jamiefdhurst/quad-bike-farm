@@ -4,8 +4,11 @@
 
 import { clockwise, rectPolygon, polygonBounds, polygonEdges, pointInPolygon, outsidePolygon, nearestOnEdge, rayHitsEdge, clampIntoPolygon, notchCorners, segmentInside } from './polygons.js';
 
-/** `farm` is the farm's outline inside the outer hedges: a rectangle, or a polygon (a list of [x, z] points). */
-export function createFieldMap(plan, farm) {
+/**
+ * `farm` is the farm's outline inside the outer hedges: a rectangle, or a polygon (a list of [x, z] points). `trackAt` (0..1 how much of a point is one of
+ * the farm's own tracks, roads.js) makes the way between two gateways that runs along a track cost less, so the girls' routes prefer tracks (#689).
+ */
+export function createFieldMap(plan, farm, { trackAt = null } = {}) {
   const { gateways } = plan;
   const hedges = plan.boundaries.filter((b) => b.kind === 'hedge');
   // What stops you and what you can't see through: a hedge, a wall, a fence or a rail (not a `none` line between two fields that run together).
@@ -82,6 +85,27 @@ export function createFieldMap(plan, farm) {
    * go round), then `to`. Just [to] when they're in the same field and nothing is in the way. Shortest by straight lines between those points
    * (there are only a dozen gateways, so a plain Dijkstra).
    */
+  // How much a walk between two gateway points costs less for running along a track: a quarter off at most, for a way that is track all along. Worked out
+  // once for each pair (the gateways do not move) at a point every 6 m.
+  const TRACK_DISCOUNT = 0.25;
+  const shares = new Map();
+  const trackCost = (i, j, nodes, len) => {
+    if (!trackAt || i < 2 || j < 2 || len < 1) return len;
+    const key = i < j ? `${i}|${j}` : `${j}|${i}`;
+    let share = shares.get(key);
+    if (share === undefined) {
+      const n = Math.max(2, Math.ceil(len / 6));
+      let on = 0;
+      for (let k = 0; k <= n; k++) {
+        const t = k / n;
+        if (trackAt(nodes[i].p.x + (nodes[j].p.x - nodes[i].p.x) * t, nodes[i].p.z + (nodes[j].p.z - nodes[i].p.z) * t) > 0.5) on++;
+      }
+      share = on / (n + 1);
+      shares.set(key, share);
+    }
+    return len * (1 - TRACK_DISCOUNT * share);
+  };
+
   function route(from, to) {
     const start = areaOf(from.x, from.z);
     const goal = areaOf(to.x, to.z);
@@ -100,7 +124,7 @@ export function createFieldMap(plan, farm) {
       if (u < 0 || u === 1) break;
       done[u] = true;
       const relax = (v) => {
-        const d = dist[u] + Math.hypot(nodes[v].p.x - nodes[u].p.x, nodes[v].p.z - nodes[u].p.z);
+        const d = dist[u] + trackCost(u, v, nodes, Math.hypot(nodes[v].p.x - nodes[u].p.x, nodes[v].p.z - nodes[u].p.z));
         if (d < dist[v]) {
           dist[v] = d;
           prev[v] = u;
