@@ -1210,7 +1210,7 @@ export const FAQ_SECTIONS = [
         q: 'How do I buy a compressor, a parts washer or a pit?',
         a: `Look at the shed catalogue lying on the workbench in the barn, at the front edge between the toolbox and the booster pack, and press <kbd>E</kbd>. Three pieces are in it, and you can buy them in any order,
           with money from the tin: the compressor (£120), the parts washer (£200) and the inspection pit (£450). Press the number once to ask and again to buy. A piece you pay for turns up in the barn
-          the next morning: the compressor on the back wall beside the barn find, the parts washer at the end of the workbench and the pit in the floor of the big bay. Each one puts right faults that nothing else can.`,
+          the next morning: the compressor on the back wall beside the barn find, the parts washer at the end of the workbench and the pit in the floor of the big bay: a real trench about a metre and a half deep, lined in block, with steps and a grab rail at one end and a roll-up steel cover wound back over the rest. You cross it at floor level, so you can't fall in; it is there to look down into and to work from. Each one puts right faults that nothing else can.`,
         tip: 'The shed catalogue lies on the workbench. Compressor £120, parts washer £200, pit £450; they turn up the next morning.',
       },
       {
