@@ -289,7 +289,7 @@ export function buildPit({ halfX = 1.9, halfZ = 0.45 } = {}) {
     strip.position.set(0, 0.039, s * (halfZ + kerb / 2)); // 4 mm off the kerb it is printed on
     g.add(strip);
   }
-  // The grab rail at the head of the steps: two posts up from the second tread and a bar across, 45 cm above the floor.
+  // The grab rail at the head of the steps: two posts up from the floor of the pit through the first tread and a bar across, 45 cm above the floor.
   for (const dz of [-0.33, 0.33]) g.add(cyl(0.015, 0.015, 0.45 + rise * 2, steel, halfX - 0.2, (0.45 - rise * 2) / 2, dz));
   g.add(cyl(0.015, 0.015, 0.66, steel, halfX - 0.2, 0.45, 0, 'z'));
   // Two caged lamps on the -z wall, 60 cm below the floor: a bracket, a frosted tube along the wall and two cage bars. The tube glows (it is the lamp).
@@ -315,7 +315,7 @@ export function buildPit({ halfX = 1.9, halfZ = 0.45 } = {}) {
   g.add(cyl(0.125, 0.125, 0.02, steel, -halfX - kerb - 0.2, 0.12, -spanZ / 2 - 0.04, 'z', 24));
   for (const s of [-1, 1]) g.add(box(0.06, 0.1, 0.05, steel, -halfX - kerb - 0.2, 0.05, s * (spanZ / 2 + 0.07))); // the two cradles it turns in
   for (const m of g.children) m.receiveShadow = true;
-  return { group: g, size: { x: halfX * 2 + 0.6, y: D, z: halfZ * 2 + 0.4 } };
+  return { group: g, size: { x: halfX * 2 + 0.6, y: D, z: halfZ * 2 + 0.4 }, lamp: lens }; // `lamp` is the glowing material: it goes dark with the barn's bulb when the generator stops (ShedView.setLamps)
 }
 
 function hazardTexture() {
