@@ -1198,7 +1198,7 @@ function paintHeadland(c, polygon, width, fi) {
 }
 
 /**
- * What a farm track has that the plain road does not (#689), worked out once like `planRoad`'s: for the stone track, the potholes holding water, the
+ * What the farm's tracks have that the plain road does not (#689), worked out once like `planRoad`'s: for the stone track, the potholes holding water, the
  * drainage grips cut across it, the loose stones at its edges and the nettles and docks of its verge, and the crown's grass in broken runs; for the grass
  * track, the tyre-puddles and the mud at every gateway it goes through, where the ruts are deepest.
  */
@@ -1208,7 +1208,7 @@ export function planTrack(road, fields, random) {
     return { x: p.x - p.tz * across, z: p.z + p.tx * across, tx: p.tx, tz: p.tz };
   };
   const stone = road.surface === 'stone';
-  const out = { puddles: [], grips: [], stones: [], tufts: [], crown: [], gates: [] };
+  const out = { puddles: [], grips: [], stones: [], tufts: [], crown: [], gates: [], worn: road.worn ?? [] };
   for (let s = 20 + random() * 30; s < road.length; s += (stone ? 45 : 35) + random() * (stone ? 70 : 60)) {
     const at = pt(s, (random() * 2 - 1) * road.halfWidth * 0.6);
     out.puddles.push({ x: at.x, z: at.z, r: (stone ? 0.28 : 0.16) + random() * (stone ? 0.3 : 0.25), tilt: random() * Math.PI, rim: random() });
@@ -1251,7 +1251,7 @@ export function planTrack(road, fields, random) {
 }
 
 /**
- * A farm track painted into the ground (`draw: 'ground'` on a `stone` or `grass` road), so the mud, the rain, the frost and the snow lie on it. The stone
+ * A track of the farm's own painted into the ground (`draw: 'ground'` on a `stone` or `grass` road), so the mud, the rain, the frost and the snow lie on it. The stone
  * track is two wheel ruts of compacted chippings with a grass crown between them, potholes holding water, loose stones at the edges, a verge of
  * nettles and docks and a drainage grip across it here and there. The grass track is two bare wheel lines worn into the grass, with flattened grass between,
  * the ruts deepest and muddiest at the gateways, and a few tyre-puddles. `plan` is `planTrack`'s.
@@ -1339,6 +1339,17 @@ export function drawTrack(c, road, plan) {
       ctx.moveTo(x0, z0);
       ctx.lineTo(x1, z1);
       ctx.stroke();
+    }
+    // Ground trodden bare where the track meets a bridge or a gateway: earth, darker and damp at its middle.
+    for (const [wx, wz, wr] of plan.worn) {
+      if (!c.inWin(wx, wz, wr + 1)) continue;
+      const [px, pz] = c.toPx(wx, wz);
+      const g = ctx.createRadialGradient(px, pz, 0, px, pz, wr * s);
+      g.addColorStop(0, 'rgba(96,76,52,0.9)');
+      g.addColorStop(0.6, 'rgba(108,88,60,0.7)');
+      g.addColorStop(1, 'rgba(108,88,60,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(px - wr * s, pz - wr * s, wr * 2 * s, wr * 2 * s);
     }
     for (const h of plan.puddles) puddle(h);
     // The verge: nettles and docks, dark green with the odd paler dock leaf.

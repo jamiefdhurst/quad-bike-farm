@@ -30,6 +30,10 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | crossing | The marked shallows across the river, between the white posts | river ford |
 | gravel pit | The old pit in the hedged field north of the barley field, through the gate in its north hedge (on the new farm, the Old Pit in the north-east corner by the lane, fenced in post and wire): the deep cut, its haul roads, pond and heaps | sandpit, sand pit, gravel quarry, borrow pit |
 | lane gate | The gravel pit's gate onto the lane on the new farm, where the lorries came in: shut and chained for good, the haul road starts at it and nothing goes through it | pit gate, quarry gate, main gate |
+| stone track | The farm's own hardcore track on the new farm, two arms from the yard: north to the pit's farm gate and south over the farm bridge into Brook Meadow; two wheel ruts of chippings with a grass crown | hardcore road |
+| boundary track | The grass track round the inside of the new farm's boundary, about 14 m in, closing the loop; it goes round the Old Pit and over the stream at the green lane's ford | perimeter track, ring road |
+| headland | The 6 m strip of grass inside every arable field's edge on the new farm, where the crop is never drilled and you can ride | headland strip |
+| farm bridge | The small bridge on the stone track south that crosses the head of the river: sleeper deck on stone abutments, steel tube rails | plank bridge |
 | farm gate | The gate in the gravel pit's west fence on the new farm, from the stone track: tied open, the way in, where the girls wait just inside | pit gate, quarry gate, back gate |
 | haul road | One of the two wide gravel roads that fork at the gravel pit's lip and wind down its wall, each way round, to the floor | access road, ramp road |
 | pit climb | The timed run up the gravel pit's steep wall, from the cones on the floor to the cones over the lip | gravel climb, wall climb |

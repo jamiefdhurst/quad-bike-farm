@@ -5,6 +5,7 @@ import { createFields } from '../src/world/fields.js';
 import { roadNetwork } from '../src/world/roads.js';
 import { STONE_TRACKS_PLAN, BOUNDARY_TRACK_PLAN, HEADLAND_WIDTH, boundaryTrackPoints, trackGateways, runLength } from '../src/world/farmTracks.js';
 import { planTrack, drawTrack, paintContext, paintStubble } from '../src/world/groundTexture.js';
+import { trackPlaces } from '../src/console/gameHost.js';
 import { createRandom } from '../src/core/random.js';
 import { createFieldMap } from '../src/world/fieldMap.js';
 import { boundary, gap, field, gatewayAcross } from '../src/world/fieldPlan.js';
@@ -254,5 +255,34 @@ describe('how the tracks are painted into the ground', () => {
     const widths = calls.filter((c) => c[0] === 'set' && c[1] === 'lineWidth').map((c) => c[2]);
     expect(widths.filter((w) => w === 2 * HEADLAND_WIDTH * 8).length).toBeGreaterThanOrEqual(6);
     expect(calls.filter((c) => c[0] === 'set' && c[1] === 'strokeStyle' && c[2] === 'rgba(92,124,58,0.95)').length).toBeGreaterThanOrEqual(6);
+  });
+});
+
+describe('the places to go to', () => {
+  const p = trackPlaces(two, net);
+  it('puts you on each track, at the bridge and on the headland on the new farm', () => {
+    expect(fields.stoneAt(p.stonetrack.x, p.stonetrack.z)).toBeGreaterThan(0.9);
+    expect(fields.grassTrackAt(p.boundarytrack.x, p.boundarytrack.z)).toBeGreaterThan(0.9);
+    expect(Math.hypot(p.farmbridge.x - two.farmBridge.x, p.farmbridge.z - two.farmBridge.z)).toBeCloseTo(9, 5);
+    expect(fields.areaOf(p.headland.x, p.headland.z)).toBe('lanefield');
+    expect(fields.headlandAt('lanefield', p.headland.x, p.headland.z)).toBeGreaterThan(0.3);
+  });
+  it('has none on today\'s farm', () => {
+    expect(trackPlaces(LAYOUT, roadNetwork(LAYOUT))).toEqual({});
+  });
+});
+
+describe('the wood the boundary track goes through', () => {
+  it('has no trunk or bush within a verge of the track, which runs along its edge', async () => {
+    const { woodsPlants } = await import('../src/world/woods.js');
+    let seed = 11;
+    const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const { trees, bushes } = woodsPlants(fields.woods, two, random);
+    expect(trees.length).toBeGreaterThan(20);
+    const inWood = step(loop, 2).filter((p) => fields.areaOf(p.x, p.z) === 'wood');
+    expect(inWood.length).toBeGreaterThan(40); // along its north and west edges
+    for (const [x, z] of [...trees, ...bushes]) {
+      for (const p of inWood) expect(Math.hypot(x - p.x, z - p.z), `a trunk at ${x.toFixed(0)}, ${z.toFixed(0)}`).toBeGreaterThan(loop.halfWidth + 1.5);
+    }
   });
 });

@@ -432,6 +432,11 @@ export const FAQ_SECTIONS = [
         tip: 'A snorkel, fitted at the barn workbench, lets a Moorland take the ford fast.',
       },
       {
+        q: 'What are the tracks round the new farm, and where do they go?',
+        a: `On the new farm (?layout=2) the farm has its own ways round. The stone track leaves the yard two ways: north, through the gateway into Top Field and along the hedge to the farm gate of the Old Pit, and south, down Hay Meadow beside the sheep field, over the farm bridge at the head of the river and on into Brook Meadow. It is two wheel ruts of compacted chippings with a grass crown between, a few potholes holding water and a drainage grip cut across it here and there; it is gravel under the tyres, a little looser than tarmac is grippy, and it never wears into mud. The farm bridge is a sleeper deck on stone abutments with steel tube rails and a "Weak bridge" plate: it is solid, so ride across it. The boundary track is a grass track round the inside of the whole farm, about 14 m in from the hedge, with a gateway wherever it goes through a hedge. It goes round the outside of the Old Pit's fence, and crosses the hill pasture's stream at the green lane's ford. It is two bare wheel lines in the grass, and it ruts up in the wet like the green lane does. Inside each arable field there is a 6 m headland of grass where the crop never grows, which you can ride. The girls take the tracks when they can. \`tp me to stonetrack\`, \`farmbridge\`, \`boundarytrack\` or \`headland\` takes you there.`,
+        tip: 'On the new farm the stone track runs north to the pit and south over the farm bridge; a grass track rings the farm.',
+      },
+      {
         q: 'Where is the river, and how do I cross it?',
         a: `Ride up the green lane, over the ford and up the hill pasture, then look for the gateway in its east hedge, just up from
           the stream at the east side. It opens onto the riverside meadow, with a wide, slow river across it. The only safe way over is the crossing, a strip of pale

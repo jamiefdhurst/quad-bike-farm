@@ -36,7 +36,7 @@ export const BOUNDARY_TRACK_PLAN = {
   ],
 };
 
-/** The width of the headland strip inside every arable field, metres: where the crop never grows. */
+/** The width of the headland inside every arable field, metres: where the crop never grows. */
 export const HEADLAND_WIDTH = 6;
 
 /**

@@ -1591,12 +1591,15 @@ export function moorGateLayout() {
  * (the ring is the strip's inner edge, `width` m in from the field's own edge).
  */
 export function tracksLayout(T = STONE_TRACKS_PLAN) {
-  const stone = (id, name, pts) => ({ id, name, surface: 'stone', halfWidth: T.halfWidth, points: densify(pts, 25).map(fromPlan), markings: { centre: 'none' }, verge: T.verge, hedged: false, draw: 'ground' });
+  const stone = (id, name, pts, worn = []) => ({
+    id, name, surface: 'stone', halfWidth: T.halfWidth, points: densify(pts, 25).map(fromPlan), markings: { centre: 'none' }, verge: T.verge, hedged: false, draw: 'ground',
+    worn: worn.map(([x, z, r]) => [...fromPlan([x, z]), r]), // [x, z, r] ground trodden bare: the banks at the farm bridge's two ends
+  });
   const loop = boundaryTrackPoints(OUTLINE_PLAN);
   const B = BOUNDARY_TRACK_PLAN;
   const roads = [
     stone('stoneNorth', 'the stone track north', T.north),
-    stone('stoneSouth', 'the stone track south', T.south),
+    stone('stoneSouth', 'the stone track south', T.south, [[FARM_BRIDGE_PLAN.at[0], FARM_BRIDGE_PLAN.at[1] - FARM_BRIDGE_PLAN.length / 2 - 2.2, 3.2], [FARM_BRIDGE_PLAN.at[0], FARM_BRIDGE_PLAN.at[1] + FARM_BRIDGE_PLAN.length / 2 + 2.2, 3.2]]),
     { id: 'boundaryTrack', name: 'the boundary track', surface: 'grass', halfWidth: B.halfWidth, points: [...loop, loop[0]].map(fromPlan), markings: { centre: 'none' }, verge: B.verge, hedged: false, draw: 'ground', loop: true },
   ];
   const [bx, bz] = fromPlan(FARM_BRIDGE_PLAN.at);

@@ -747,7 +747,7 @@ export function inHayMeadow(layout, x, z) {
 }
 
 /** Instanced grass tufts across the field, kept off the track, the yard and the hay meadow. */
-function buildGrass({ scene, layout, heights, random, drawDistance }) {
+function buildGrass({ scene, layout, heights, random, drawDistance, fields }) {
   const blades = 7;
   const pos = [];
   const colors = [];
@@ -787,6 +787,7 @@ function buildGrass({ scene, layout, heights, random, drawDistance }) {
     if (onSlab(layout.farmstead?.slab, x, z)) continue; // the new farm's yard is concrete: nothing grows through it
     if (underRoof(layout, x, z)) continue; // none growing up through the barn floor, in either span
     if (inHayMeadow(layout, x, z)) continue; // the meadow has its own long grass, and cut hay has none standing in it
+    if (fields?.stoneAt?.(x, z) > 0.2 || fields?.grassTrackAt?.(x, z) > 0.5) continue; // none on the farm's stone tracks, nor in the wheel lines of the grass one (#689)
     if (strip) {
       // None growing through the gravel of the drag strip.
       const f = stripFrame(strip, x, z);

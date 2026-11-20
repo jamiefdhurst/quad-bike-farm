@@ -1,6 +1,6 @@
 // The farm bridge (#689): where the stone track south crosses the head of the river, a small farm bridge over a lowland stream as every livestock farm has one.
 // A sleeper deck on two stone abutments with a concrete bearing on each and a pair of steel beams under it, a timber kerb along each side and steel tube
-// rails, painted once and rusting, with a plate that says what it will carry; the bank worn bare either end and mud and straw trodden onto the deck.
+// rails, painted once and rusting, with a plate that says what it will carry; the bank worn bare either end (painted into the ground, `worn` on the road) and mud and straw trodden onto the deck.
 // Built along the track (the z axis, the track runs north to south here) over the stream's line, with a collider for the deck and for each rail.
 
 import * as THREE from 'three';
@@ -106,8 +106,7 @@ export function buildFarmBridge(c) {
   const timber = new THREE.MeshStandardMaterial({ map: woodTexture(random, [92, 74, 54]), roughness: 0.92 });
   const steel = new THREE.MeshStandardMaterial({ map: paintedSteelTexture(random), roughness: 0.7, metalness: 0.3 });
   const iron = new THREE.MeshStandardMaterial({ color: 0x4a4540, roughness: 0.8, metalness: 0.4 });
-  const dirt = new THREE.MeshStandardMaterial({ color: 0x6e5a40, roughness: 1 });
-  const plate = new THREE.MeshStandardMaterial({ map: plateTexture(), roughness: 0.5 });
+    const plate = new THREE.MeshStandardMaterial({ map: plateTexture(), roughness: 0.5 });
   const litterMat = new THREE.MeshStandardMaterial({ map: litterTexture(random), roughness: 1, alphaTest: 0.4, polygonOffset: true, polygonOffsetFactor: -2 });
   const put = (geo, mat, x, y, z) => {
     const m = new THREE.Mesh(geo, mat);
@@ -178,9 +177,6 @@ export function buildFarmBridge(c) {
     const litter = put(new THREE.PlaneGeometry(S.width - 0.7, 2.6), litterMat, x0, deck + 0.012, z0 + e * (half - 1.5));
     litter.rotation.x = -Math.PI / 2;
     litter.rotation.z = e > 0 ? 0 : Math.PI;
-    // The bank worn bare at each end: trodden earth, a disc laid just over the grass.
-    const bare = put(new THREE.CylinderGeometry(2.6, 2.6, 0.02, 14), dirt, x0, heights.heightAt(x0, z0 + e * (half + 1.6)) + 0.012, z0 + e * (half + 1.6));
-    bare.scale.set(0.8, 1, 0.7);
   }
   // Solid: the deck for a wheel to ride on, a rail down each side so nothing goes off it.
   fixedBox(x0, deck - 0.1, z0, wide, 0.1, half);
