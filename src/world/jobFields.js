@@ -8,8 +8,8 @@ import { HEADLAND_WIDTH } from './farmTracks.js';
 
 /**
  * The field (a key of the plan's fields) each job happens on, on the new farm. Until the crop year decides (#697, #698) the muck goes on Long Piece,
- * the spraying on Lane Field and the harrowing on Low Ley (settled with Jamie, 13 November 2026). The feeding is in the yard's orchard and, for the
- * sheep, the sheep field.
+ * the spraying on Lane Field and the harrowing on Low Ley (settled with Jamie, 13 November 2026). The feeding is the hens and the pig in the yard's
+ * orchard; nothing feeds the sheep yet.
  */
 export const JOB_FIELDS = {
   muck: 'longpiece',
@@ -19,7 +19,6 @@ export const JOB_FIELDS = {
   harrow: 'ley',
   logs: 'wood',
   feed: 'farmstead',
-  feedSheep: 'sheep',
 };
 
 /** The jobs whose place is a patch of a field that is worked cell by cell, with the layout key each reads it from, and whether its edge is the headland's. */
