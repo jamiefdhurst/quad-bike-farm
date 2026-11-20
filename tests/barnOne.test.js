@@ -7,7 +7,7 @@ import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, PLAN_ORIGIN } from '../src/world/layoutNew.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
-import { barnShape, barnFrame, barnDoors, localWallBoxes, detourBoxes } from '../src/world/barn.js';
+import { barnShape, barnFrame, barnDoors, localWallBoxes, detourBoxes, barnLampShare, insideBarn } from '../src/world/barn.js';
 import { CAPSULE_RADIUS } from '../src/player/player.js';
 import { DEFAULT_PLAYER_PARAMS } from '../src/player/playerParams.js';
 
@@ -65,8 +65,11 @@ describe('the barn on the new farm', () => {
     expect(built.bulbs.length).toBe(6);
     expect(built.lights.length).toBe(3);
     expect(built.bulbs.length).toBeGreaterThan(2);
-    // game.js gives each light 2 x BARN_BULB / lights, so the sum is what two bulbs gave: a bulb's share falls as there are more of them.
-    expect(built.lights.length * (2 / built.lights.length)).toBe(2);
+    // game.js gives each light barnLampShare(BARN_BULB, lights): all of them together give what two bulbs did, on either layout.
+    expect(barnLampShare(30, built.lights.length) * built.lights.length).toBeCloseTo(60, 9);
+    expect(barnLampShare(30, 2) * 2).toBe(60);
+    expect(barnLampShare(30, 2)).toBe(30); // today's two lights each give what one did
+    expect(barnLampShare(30, 3)).toBeLessThan(30);
     for (const l of built.lights) expect(l.intensity).toBe(0); // dark until the generator runs
   });
   it('has no two faces on one plane, which would flicker', () => {
@@ -122,7 +125,7 @@ describe('getting into the barn', () => {
 });
 
 describe('the seats and the desk in the barn', async () => {
-  const { barnBaleSeats, insideBarn } = await import('../src/world/barn.js');
+  const { barnBaleSeats } = await import('../src/world/barn.js');
   const { DESK } = await import('../src/workshop/deskModel.js');
   const inside = (p, m = 0.5) => insideBarn(two, p.x, p.z, m);
   it('has the girls sit on bale seats scattered inside, not in a row, with no loft seat', () => {
@@ -172,5 +175,16 @@ describe('the weather, the clock and the calendar in the barn', async () => {
     const today = hangBarnBoards(new THREE.Scene(), LAYOUT, 0);
     expect(today.wallClock).toBeNull();
     expect(today.station.dials.length).toBe(3);
+  });
+});
+
+describe('what the yard keeps out of the barn', () => {
+  it('has no jerry can, parking or away spot, quad spawn or rest spot inside the new barn', () => {
+    const things = [...two.jerryCanSpots, ...two.spawn.away, ...two.spawn.quads, ...two.restSpots.filter((r) => !r.id.startsWith('barnBale'))];
+    for (const t of things) expect(insideBarn(two, t.x, t.z, -0.5), JSON.stringify(t)).toBe(false);
+  });
+  it('has the silage can beside the silage, behind the back wall', () => {
+    const can = two.jerryCanSpots.find((j) => j.where === 'by the silage bales');
+    expect(Math.hypot(can.x - two.silage.x, can.z - two.silage.z)).toBeLessThan(12);
   });
 });

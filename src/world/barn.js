@@ -73,6 +73,9 @@ export function placeInBarn(layout, object, lx, y, lz) {
   return object;
 }
 
+/** What each of `count` lamps in the barn gives, so that all of them together give what two bulbs of `each` did (the new barn hangs three lights, today's two). */
+export const barnLampShare = (each, count) => (each * 2) / Math.max(1, count);
+
 /** The seats on the bales inside the barn, as the girls' rest spots (npc/places.js): each sat on facing `yaw`, out of the rain. */
 export const barnBaleSeats = (layout) => (layout.barnBaleSpots ?? []).map(([x, z, yaw], i) => ({ id: `barnBale${i}`, kind: 'shelter', x, z, yaw, seat: layout.baleSeat }));
 

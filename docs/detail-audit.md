@@ -13,7 +13,7 @@ Graded first from `tools/shot.mjs` shots and the code, then corrected from Jamie
 | Barn roof | passable | A gutter on one edge only and no downpipes seen, no weather vane (#169) (rebuilt in #817: fascia and barge boards, gutters on both outer eaves, downpipes, the vane) |
 | Barn lighting | passable | Two dim bulbs at the top; more are needed (rebuilt in #818 on the new farm: six bulbs with shades on three lights at the same overall level) |
 | Loft and its ladder | block | The ladder is very basic and climbing it goes through the floor; the floor and wall alpha-fight; the loft has no use (removed in the move) |
-| Straw on the floor, bales inside | block | Plain pieces; the bales are too regular |
+| Straw on the floor, bales inside | block | Plain pieces; the bales are too regular (the bales inside are scattered, each turned its own way, on the new farm, #818) |
 | Workbench and boards | passable | The boards need headings, the records overlap their lines, the classified board's shadow does not match what is pinned |
 | Pinboard and its tools | block | Poor tool shapes; removed until #517 |
 | Vice, jars, battery charger | block | Very basic textures; the jars have no meaning |
@@ -22,7 +22,7 @@ Graded first from `tools/shot.mjs` shots and the code, then corrected from Jamie
 | Floor spots | block | Plain circles |
 | Tyre rack | block | No inside to the tyres, plain shelf, a number on each label |
 | Jack | block | Basic textures, a part floats |
-| Calendar, weather display, clock | passable | Spread apart; the weather display reads strangely |
+| Calendar, weather display, clock | passable | Spread apart; the weather display reads strangely (on the new farm the weather is one board by the doors, the clock on the bench's wall and the calendar on the back wall, #818) |
 | Writing in the barn | block | A lot of Comic Sans (#807) (the barn's boards, dials, labels and notebook now use two roles in `boardFont.js`, #818; the rest of the game is #807) |
 | Money tin, parts catalogue | passable | In odd places (#809) |
 | Coat rack, helmet hooks | passable | Too basic; move them in the new barn (moved in the new barn to the south side wall with a way in round the big bay, #818; the models are #805's) |
