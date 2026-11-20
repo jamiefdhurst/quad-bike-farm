@@ -180,16 +180,22 @@ export const GIVE_WAY_AT = 5.2;
 export const STREET_STUB_PLAN = { to: [1292, 718], from: [1232, 717], halfWidth: 3 };
 
 /**
- * The ladder stile in the ridge wall turns you round too (#713): a line across the way up to it, 1.2 m short of the wall at the stile, so climbing it is
+ * The ladder stile in the ridge wall turns you round too (#713): a line across the way up to it, 1.2 m short of the wall at the stile and 3 m either side of it (so walking along the wall's face to the ladder crosses it too), so climbing it is
  * crossing the line. It is free of any road: you are put back along your way (world/turnRound.js).
  */
-const MOOR_STILE_LINE = { id: 'moor-stile', free: true, reach: 1.1, short: 1.2 };
+const MOOR_STILE_LINE = { id: 'moor-stile', free: true, reach: 3, short: 1.2 };
 
-/** `TURN_ROUND_PLAN` with the moor's stile line laid across the stile, in game metres. */
+/**
+ * `TURN_ROUND_PLAN` with the moor's stile lines laid across the stile, in game metres: the line across the way up to it and, at each end of it, a short line from
+ * its end to the wall, so walking to the wall 4 m off and along its face to the ladder crosses one of them (#1035). All three are `moor-stile`.
+ */
 function turnRoundLayout() {
   const [x, z] = fromPlan(MOOR_FEATURES_PLAN.stile.at);
   const { reach, short, ...line } = MOOR_STILE_LINE;
-  return { lines: [...TURN_ROUND_PLAN.lines, { ...line, a: { x: x + short, z: z - reach }, b: { x: x + short, z: z + reach }, home: { x: 1, z: 0 } }] };
+  const home = { x: 1, z: 0 };
+  const across = { ...line, a: { x: x + short, z: z - reach }, b: { x: x + short, z: z + reach }, home };
+  const caps = [-1, 1].map((side) => ({ ...line, a: { x: x + short, z: z + side * reach }, b: { x: x - 0.3, z: z + side * reach }, home }));
+  return { lines: [...TURN_ROUND_PLAN.lines, across, ...caps] };
 }
 
 /**

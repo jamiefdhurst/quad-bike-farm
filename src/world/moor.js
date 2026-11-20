@@ -60,6 +60,19 @@ export const MOOR_FEATURES_PLAN = {
   boulders: 60,
 };
 
+/**
+ * Where Back Lane's west edge is at z, game metres, a straight run of the lane's own points down the common (the lane runs north to south there); the moor is
+ * on the far side of it. Past the last of the run the common is west of the hairpin.
+ */
+export function laneEdgeAt(points, z) {
+  const run = points.filter((p, i) => i === 0 || p[1] >= points[i - 1][1]);
+  if (z <= run[0][1]) return run[0][0];
+  for (let i = 0; i < run.length - 1; i++) {
+    if (z <= run[i + 1][1]) return run[i][0] + ((run[i + 1][0] - run[i][0]) * (z - run[i][1])) / (run[i + 1][1] - run[i][1] || 1);
+  }
+  return run[run.length - 1][0];
+}
+
 /** The grid's place: the lane's own point nearest `near`, found on `road` (roads.js), as { x, z, s }. */
 export function gridPlace(road, near) {
   let best = Infinity;
@@ -103,15 +116,17 @@ export function moorLayout(F, bounds, fromPlan) {
  * cover at a point, how wet it is, and the outcrops and boulders dealt out on a fixed seed clear of everything with a place of its own.
  * `keepClear(x, z)` (optional) says where nothing may stand besides the moor's own places (the lane, the stream, the gate).
  */
-export function createMoor(M, { keepClear = () => false } = {}) {
+export function createMoor(M, { keepClear = () => false, laneEdge = () => Infinity } = {}) {
   const { bounds } = M;
   const inside = (x, z, m = 0) => x > bounds.minX - m && x < bounds.maxX + m && z > bounds.minZ - m && z < bounds.maxZ + m;
   const wallPts = M.wall.points;
   const distTo = (x, z, pts) => distToLine(pts, x, z);
   const own = [
-    [M.trig.at, 6], [M.cairn.at, 5], [M.spring.at, 8], [M.stile.at, 6], [M.trig.at, 6],
+    [M.trig.at, 6], [M.cairn.at, 5], [M.spring.at, 8], [M.stile.at, 6],
   ];
-  const clear = (x, z, pad = 0) => !keepClear(x, z) && distTo(x, z, wallPts) > 3 + pad && own.every(([a, r]) => Math.hypot(x - a[0], z - a[1]) > r + pad) && !M.peat.some((p) => distTo(x, z, [p.a, p.b]) < 7 + pad);
+  /** Whether (x, z) is on the common: west of Back Lane's edge (`laneEdge(z)`, game x) with its verge to spare, never the farm's side of it. */
+  const onCommon = (x, z) => x < laneEdge(z) - 2.2;
+  const clear = (x, z, pad = 0) => onCommon(x, z) && !keepClear(x, z) && distTo(x, z, wallPts) > 3 + pad && own.every(([a, r]) => Math.hypot(x - a[0], z - a[1]) > r + pad) && !M.peat.some((p) => distTo(x, z, [p.a, p.b]) < 7 + pad);
 
   // Outcrops: low gritstone humps with a cluster of lumps on each, more of them higher up where the soil is thin.
   const rnd = stream(0x4d007);
@@ -184,22 +199,22 @@ export function createMoor(M, { keepClear = () => false } = {}) {
     const low = smoothstep(bounds.minX + 170, bounds.minX + 270, x); // 0 at the high end, 1 on the lower slopes
     return low * smoothstep(0.42, 0.62, patch(x, z, 24, 11)) * (1 - wetAt(x, z));
   };
-  /** Heather's cover, 0 to 1: everywhere but the flushes, the bracken and the bare outcrops; its age (0 young, 1 old and leggy) is `heatherAge`. */
   /** How worn a sheep track makes (x, z), 0 to 1: nothing grows in the middle of one. */
   const trackAt = (x, z) => {
     let t = 0;
     for (const line of M.tracks) t = Math.max(t, 1 - smoothstep(0.25, 1.1, distToLine(line, x, z)));
     return t;
   };
+  /** Heather's cover, 0 to 1: everywhere but the flushes, the bracken and the sheep tracks; its age (0 young, 1 old and leggy) is `heatherAge`. */
   const heatherAt = (x, z) => (1 - 0.95 * trackAt(x, z)) * (1 - wetAt(x, z)) * (1 - 0.85 * brackenAt(x, z)) * smoothstep(bounds.minX - 8, bounds.minX + 25, x) * (0.35 + 0.65 * smoothstep(0.1, 0.5, patch(x, z, 18, 3)));
   const heatherAge = (x, z) => patch(x, z, 30, 7);
 
-  return { M, bounds, inside, outcrops, boulders, reliefAt, wetAt, trackAt, brackenAt, heatherAt, heatherAge, clear, patch };
+  return { M, bounds, inside, onCommon, outcrops, boulders, reliefAt, wetAt, trackAt, brackenAt, heatherAt, heatherAge, clear, patch };
 }
 
 /**
  * The wall's collider pieces: [{ x, z, len, yaw }] along its line, at most `chunk` m each, none across the stile's gap (a ladder stile climbs over the wall,
- * so the wall is whole there; `stileGap` is how much of it the stile's own steps cover, for the model only).
+ * so the wall is whole there).
  */
 export function wallPieces(wall, chunk = 3) {
   const out = [];

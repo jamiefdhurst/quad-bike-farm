@@ -29,7 +29,7 @@ import { villageShape } from './village.js';
 import { roadNetwork } from './roads.js';
 import { createLandform } from './landform.js';
 import { landmarksOf, pondShape } from './fieldLandmarks.js';
-import { createMoor } from './moor.js';
+import { createMoor, laneEdgeAt } from './moor.js';
 
 export function createTerrainHeight(layout, track) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
@@ -48,7 +48,10 @@ export function createTerrainHeight(layout, track) {
   const hut = hutShape(layout);
   // The Moor's outcrops and peat cuts (#713), clear of the lane and of the stream's line, which have their own shape.
   const stream = layout.hill?.stream;
+  const backLane = layout.roads?.find((r) => r.id === 'backLane');
+  const lanePts = backLane ? backLane.points.filter((p) => layout.moor && p[1] <= layout.moor.bounds.maxZ && p[1] >= layout.moor.bounds.minZ - 30) : [];
   const moor = layout.moor ? createMoor(layout.moor, {
+    laneEdge: (z) => (lanePts.length > 1 ? laneEdgeAt(lanePts, z) : Infinity),
     keepClear: (x, z) => !!roads.nearest(x, z, 9) || (!!stream && Math.abs(z - stream.z) < 12 && x > (stream.west?.minX ?? Infinity) - 10),
   }) : null;
   const ponds = landmarksOf(layout, 'farPond').map((l) => pondShape(l)); // Far Field's pond dish (#815): the new farm only

@@ -236,3 +236,25 @@ describe('big skies from the ridge', () => {
     expect(heights.heightAt(fromPlan([-330, 0])[0], z) - heights.heightAt(fromPlan([900, 0])[0], z)).toBeGreaterThan(85);
   });
 });
+
+describe('the common is west of Back Lane only (#1035)', () => {
+  const edge = (z) => laneEdgeAt(two.roads.find((r) => r.id === 'backLane').points.filter((p) => p[1] <= M.bounds.maxZ && p[1] >= M.bounds.minZ - 30), z);
+  it('has no outcrop or boulder east of the lane\'s edge, and says the farm\'s side is not the common', () => {
+    const moor = heights.moor;
+    for (const p of [...moor.outcrops, ...moor.boulders]) expect(p.x, `at z ${p.z.toFixed(0)}`).toBeLessThan(edge(p.z));
+    expect(moor.onCommon(edge(300) + 3, 300)).toBe(false);
+    expect(moor.onCommon(edge(300) - 30, 300)).toBe(true);
+  });
+});
+
+describe('reaching the stile along the wall (#1035)', () => {
+  it('crosses the line when walking along the wall\'s face to the ladder from either side', () => {
+    const lines = turnRoundLines(net, two.turnRound, two.ground).filter((l) => l.id === 'moor-stile');
+    const [sx, sz] = M.stile.at;
+    for (const side of [-1, 1]) {
+      // along the wall, 0.7 m from its middle (the capsule's centre can get no nearer), from 6 m out to the stile's foot
+      expect(lines.some((l) => crossed(l, { x: sx + 0.7, z: sz + side * 6 }, { x: sx + 0.7, z: sz }))).toBe(true);
+    }
+    expect(lines.length).toBe(3);
+  });
+});

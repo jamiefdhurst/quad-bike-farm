@@ -3,7 +3,7 @@
 // time like the rest (groundTexture.js `paintGround`, which calls `paintMoor`), over the grass, west of Back Lane only: the verge and the farm's side are left
 // as they were. The plants over it are moorProps.js; where each stand is comes from moor.js, so the paint and the plants agree.
 
-import { createMoor } from './moor.js';
+import { createMoor, laneEdgeAt } from './moor.js';
 
 const smooth = (a, b, x) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -27,18 +27,7 @@ const moorOf = (M) => {
   return cache.get(M);
 };
 
-/**
- * Where Back Lane's west edge is at z, game metres, a straight run of the lane's own points down the common (the lane runs north to south there); the moor is painted
- * on the far side of it. Past the last of the run the common is west of the hairpin.
- */
-export function laneEdgeAt(points, z) {
-  const run = points.filter((p, i) => i === 0 || p[1] >= points[i - 1][1]);
-  if (z <= run[0][1]) return run[0][0];
-  for (let i = 0; i < run.length - 1; i++) {
-    if (z <= run[i + 1][1]) return run[i][0] + ((run[i + 1][0] - run[i][0]) * (z - run[i][1])) / (run[i + 1][1] - run[i][1] || 1);
-  }
-  return run[run.length - 1][0];
-}
+export { laneEdgeAt };
 
 /** Paints the moor into the window of `c` (groundTexture.js's paintContext), as a generator that pauses now and then. */
 export function* paintMoor(c, layout) {
