@@ -6,6 +6,8 @@
 import { KIND_WARMTH } from './forecast.js';
 import { barnFrame } from './barn.js';
 import { windUniforms, swayMetres } from '../effects/windSway.js';
+import { vaneHeading } from './weatherVane.js';
+import { yardLightLevel } from './yardLights.js';
 import { lightsWanted } from '../npc/girlControls.js';
 import { snowUniforms, topsCover, vehicleSnowAfter } from './snowCoat.js';
 import { coatTree } from './snowCoatView.js';
@@ -132,6 +134,12 @@ export class WeatherHost {
     windUniforms.uWindTime.value += dt;
     swayMetres.hedge.value = p.swayHedge;
     swayMetres.tree.value = p.swayTree;
+    g.world.props?.yardLights?.userData.set(yardLightLevel(g.daylight?.darkness ?? 0, g.generator.powered)); // the yard's floodlights come on after dark, off the generator like the barn's bulb (#817)
+    const vane = g.world.props?.vane;
+    if (vane) {
+      vane.userData.heading = vaneHeading(vane.userData.heading ?? wind.heading + Math.PI, wind.heading, wind.strength, dt, windUniforms.uWindTime.value); // into the wind
+      vane.userData.set(vane.userData.heading);
+    }
     const barn = g.world.props?.barn;
     if (!barn?.shutter) return;
     const out = barnFrame(g.world.layout).headingToWorld(HAY_DOOR_OUT);

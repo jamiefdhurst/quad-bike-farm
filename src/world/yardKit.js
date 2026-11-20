@@ -32,6 +32,54 @@ export function galvanisedTexture(random) {
   });
 }
 
+/** Weathered precast concrete: mid grey with fine grit, a few air holes, damp streaks down it and green at the foot, a shuttering seam across the middle. */
+export function concreteTexture(random) {
+  return canvasTexture(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = rgb(136, 135, 130);
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 700; i++) {
+      ctx.fillStyle = `rgba(${random() > 0.5 ? '190,188,180' : '70,70,68'},${0.08 + random() * 0.2})`;
+      ctx.fillRect(random() * w, random() * h, 1 + random() * 2, 1 + random() * 2);
+    }
+    for (let i = 0; i < 9; i++) {
+      ctx.fillStyle = 'rgba(40,40,38,0.45)';
+      ctx.beginPath();
+      ctx.arc(random() * w, random() * h, 0.6 + random() * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (let i = 0; i < 6; i++) {
+      const x = random() * w;
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, 'rgba(60,60,56,0)');
+      g.addColorStop(1, 'rgba(60,64,52,0.35)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x, 0, 2 + random() * 5, h);
+    }
+    ctx.fillStyle = 'rgba(70,92,56,0.3)'; // algae at the foot
+    ctx.fillRect(0, h - 14, w, 14);
+    ctx.fillStyle = 'rgba(30,30,28,0.35)'; // the seam where the shutter was
+    ctx.fillRect(0, h / 2, w, 1);
+  });
+}
+
+/** Black wrought iron, hammered and pitted, with a brown rust bloom where the paint has gone. */
+export function ironTexture(random) {
+  return canvasTexture(64, 64, (ctx, w, h) => {
+    ctx.fillStyle = rgb(34, 34, 36);
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 260; i++) {
+      ctx.fillStyle = `rgba(${random() > 0.6 ? '90,92,96' : '8,8,9'},${0.12 + random() * 0.3})`;
+      ctx.fillRect(random() * w, random() * h, 1 + random() * 2, 1 + random() * 2);
+    }
+    for (let i = 0; i < 7; i++) {
+      ctx.fillStyle = `rgba(${110 + random() * 40},${60 + random() * 20},30,${0.25 + random() * 0.3})`;
+      ctx.beginPath();
+      ctx.ellipse(random() * w, random() * h, 1 + random() * 4, 1 + random() * 3, random() * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
 /** Old rubber: near black, flecked grey, with a pale bloom where the sun has had it. */
 export function rubberTexture(random) {
   return canvasTexture(128, 128, (ctx, w, h) => {
@@ -97,7 +145,7 @@ export function nettleTexture(random) {
 export const standingWater = (wet) => Math.max(0, Math.min(1, (wet - 0.15) / 0.5)) * 0.78;
 
 /** Geometry bag: `add(material, geometry)` then `group()` merges each material's. */
-function bag() {
+export function bag() {
   const by = new Map();
   return {
     add(material, geo) {
@@ -122,7 +170,7 @@ export function restingHeight(ground, x, z, hx, hz) {
 }
 
 /** `geo` turned about x, z then y, and set at (x, y, z). */
-const put = (geo, x, y, z, ry = 0, rx = 0, rz = 0) => {
+export const put = (geo, x, y, z, ry = 0, rx = 0, rz = 0) => {
   if (rx) geo.rotateX(rx);
   if (rz) geo.rotateZ(rz);
   if (ry) geo.rotateY(ry);

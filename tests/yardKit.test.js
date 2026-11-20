@@ -22,7 +22,7 @@ describe('the yard kit as models', () => {
   beforeAll(async () => {
     models = (await buildWorldModels()).models;
   });
-  for (const name of ['yardGates', 'yardFurniture', 'stackyardKit']) {
+  for (const name of ['yardGates', 'yardFurniture', 'stackyardKit', 'yardLights', 'weatherVane']) {
     it(`${name} is built, in a few merged meshes, with no two faces on one plane`, () => {
       const m = models.find((x) => x.name === name);
       expect(m, name).toBeTruthy();

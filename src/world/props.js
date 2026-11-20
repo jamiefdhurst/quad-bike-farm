@@ -9,6 +9,8 @@ import { buildBarnShed } from './barnBuild.js';
 import { underRoof } from './barn.js';
 import { buildGardenWall, buildHomeRails } from './farmsteadProps.js';
 import { buildYardGates, buildYardFurniture, buildStackyardKit } from './yardKit.js';
+import { buildYardLights } from './yardLights.js';
+import { buildWeatherVane } from './weatherVane.js';
 import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
@@ -79,6 +81,8 @@ export function buildProps(ctx) {
   buildYardGates(c); // the yard's dressing on the new farm (#817): its steel gates, the barn wall's gear, the heaps and the stackyard's bales
   const yard = buildYardFurniture(c);
   buildStackyardKit(c);
+  const yardLights = buildYardLights(c); // the floodlights on the barn's gable and on a pole behind the tanks, dimmed up after dark (#817)
+  const vane = buildWeatherVane(c); // on the barn's ridge, turning into the wind (#169)
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
   const neighbourFarm = buildNeighbourFarm(c);
@@ -104,7 +108,7 @@ export function buildProps(ctx) {
   if (ctx.fields.quarry) buildQuarry(c);
   buildFieldLandmarks(c); // the new farm's landmark in each field (#815); today's farm has none
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: woodProps?.treeSwaps ?? [], barn, jumpRamp, silage, puddles, yard, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
+  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: woodProps?.treeSwaps ?? [], barn, yardLights, vane, jumpRamp, silage, puddles, yard, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
 }
 
 function buildBarn(c) {
