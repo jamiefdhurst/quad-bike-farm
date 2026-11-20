@@ -27,14 +27,14 @@ export const spotsFor = (L) => {
     farCorner: away('in the far corner'), westHedge: away('down the west hedge'),
     ford: L.hill && { x: L.hill.lane.x, z: L.hill.stream.z }, pond: L.hill?.paddocks?.west?.pond, trough: L.trough,
     barley: away('out in the barley field'), wheat: away('out in the wheat field'), fieldShed: away('by the field shed'), dutchBarn: L.dutchBarn,
+    lane: L.namedSpots?.lane, hill: L.namedSpots?.hill, wood: L.namedSpots?.wood,
     ...(newFarm
       ? {
-          lane: L.hill && { x: L.hill.lane.x, z: L.hill.stream.z - 85 }, hill: L.hill?.viewpoint, wood: L.woods?.gate,
           cattleGrid: L.road?.grid?.x !== undefined && { x: L.road.grid.x, z: L.road.z },
           drive: L.road?.grid?.x !== undefined && { x: L.road.grid.x - 100, z: L.road.z },
           backLane: L.woods?.backLane, moor: L.moor?.trig && { x: L.moor.trig.at[0], z: L.moor.trig.at[1] }, pit: L.quarry?.centre,
         }
-      : { lane: L.namedSpots?.lane, hill: L.namedSpots?.hill, wood: L.namedSpots?.wood, cattleGrid: L.road && { x: L.road.fromX, z: L.road.z }, road: L.namedSpots?.road }),
+      : { cattleGrid: L.road && { x: L.road.fromX, z: L.road.z }, road: L.namedSpots?.road }),
   };
   return Object.keys(ALL_SPOT_NAMES).filter((id) => at[id]).map((id) => ({ id, x: at[id].x, z: at[id].z, name: ALL_SPOT_NAMES[id] }));
 };

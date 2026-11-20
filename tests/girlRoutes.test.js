@@ -70,7 +70,7 @@ describe('the places a girl can name on the new farm', () => {
     const ids = spots.map((s) => s.id);
     for (const id of ['yard', 'ford', 'hill', 'wood', 'pit', 'drive', 'backLane', 'moor', 'cattleGrid', 'lane']) expect(ids, id).toContain(id);
     for (const s of spots) expect(Number.isFinite(s.x) && Number.isFinite(s.z), s.id).toBe(true);
-    expect(spots.find((s) => s.id === 'wood')).toMatchObject({ x: two.woods.gate.x, z: two.woods.gate.z });
+    expect(spots.find((s) => s.id === 'wood')).toMatchObject({ x: two.woods.gate.x, z: two.woods.gate.z - 12 });
     expect(nearestNamedSpot(two.hill.lane.x, two.hill.stream.z, spots).id).toBe('ford');
   });
   it('names a place that is in the table, so each has a recorded line', () => {
@@ -80,5 +80,77 @@ describe('the places a girl can name on the new farm', () => {
         for (const k of ['callout_bog_', 'callout_tip_', 'called_']) expect(lines[k + id].lines[0], k + id).toContain(name);
       }
     }
+  });
+});
+
+import { barnBaleSeats } from '../src/world/barn.js';
+
+// The rest spots (#690) and the places the review found girls stuck (#668 to #680, #615): one test for each kind.
+const strawSeats = (L) => L.strawBaleSpots.map(([x, z, yaw], i) => ({ id: `bale${i}`, kind: 'bale', x, z, yaw }));
+const restSpots = [...two.restSpots, ...barnBaleSeats(two), ...strawSeats(two), { id: 'flask', kind: 'rock', ...two.hill.viewpoint }];
+
+describe('where the girls sit on the new farm', () => {
+  it('has Home Ground\'s rails, the barn\'s bales, the stackyard\'s bales and the flask rock, all in the farm', () => {
+    const kinds = new Set(restSpots.map((s) => s.id.replace(/\d+$/, '')));
+    for (const k of ['fenceNorth', 'barnBale', 'bale', 'flask']) expect(kinds.has(k), k).toBe(true);
+    for (const s of restSpots) expect(fields.areaOf(s.x, s.z), s.id).toBeTruthy();
+  });
+
+  it('keeps a seat clear of a hedge (the fence seats are the rails themselves), and gives every one a way in from the yard', () => {
+    for (const s of restSpots) {
+      if (s.kind !== 'fence') expect(fields.hedgeDistance(s.x, s.z), `${s.id} against a hedge`).toBeGreaterThan(0.3);
+      const to = { x: s.x, z: s.z };
+      expect(crossings(yard, fields.route(yard, to)), `${s.id} there`).toEqual([]);
+    }
+  });
+
+  it('a seat that is a long way off is a lift away, never a long walk (the flask rock is past the walking limit)', () => {
+    const rock = fields.route(yard, two.hill.viewpoint);
+    expect(wayLength(yard, rock)).toBeGreaterThan(FAR.liftFrom);
+  });
+});
+
+describe('the places girls got stuck on the old farm, on the new one', () => {
+  it('the Dutch barn: its seats open onto ground a girl can leave by, and the way out of its back is not a dead end', () => {
+    const barn = two.dutchBarn;
+    for (const s of two.restSpots.filter((r) => r.id.startsWith('dutchBarn'))) {
+      const door = s.door;
+      expect(Math.hypot(door.x - s.x, door.z - s.z), `${s.id} is by its door`).toBeLessThan(6);
+      expect(fields.hedgeDistance(door.x, door.z), `${s.id}'s door is not in a hedge`).toBeGreaterThan(1);
+      expect(crossings(door, fields.route(door, yard)), `${s.id} out`).toEqual([]);
+    }
+    // A girl behind the barn (its far side from the door) gets out to the yard by a way no longer than three times the straight line.
+    const behind = { x: barn.x, z: barn.z - barn.halfZ - 3 };
+    const way = wayLength(behind, fields.route(behind, yard));
+    expect(way).toBeLessThan(3 * Math.hypot(behind.x, behind.z));
+  });
+
+  it('the paddock: Home Ground\'s rails have a gate from the yard wide enough for the mower and a trailer', () => {
+    const gates = two.gateways.filter((g) => ['home', 'farmstead'].includes(g.a) && ['home', 'farmstead'].includes(g.b));
+    expect(gates.length).toBeGreaterThan(0);
+    expect(Math.max(...gates.map((g) => g.half * 2))).toBeGreaterThanOrEqual(3);
+  });
+
+  it('a place a girl names is not on a hedge (those on the road and the common are named, never walked to)', () => {
+    for (const s of spotsFor(two)) {
+      if (['backLane', 'cattleGrid', 'moor'].includes(s.id)) continue; // on the road or the common: places to be named, not goals
+      expect(fields.hedgeDistance(s.x, s.z), s.id).toBeGreaterThan(0.2);
+    }
+  });
+});
+
+import { outingSpots } from '../src/npc/outings.js';
+
+describe('places a girl drives to on the new farm', () => {
+  const spots = outingSpots(two, fields.hill.waitSpot, () => ({ x: 0, z: 0 }));
+  it('includes the moor gate, inside the hill pasture, reachable from the yard', () => {
+    const gate = spots.find((s) => s.name === 'the moor gate');
+    expect(gate).toBeTruthy();
+    expect(fields.areaOf(gate.x, gate.z)).toBe('hill');
+    expect(fields.hedgeDistance(gate.x, gate.z)).toBeGreaterThan(1);
+    expect(crossings(yard, fields.route(yard, gate))).toEqual([]);
+  });
+  it('and the foot of the hill, 250 m or more from the hut: the places she waits are places she drives to', () => {
+    expect(spots.some((s) => s.name === 'the foot of the hill')).toBe(true);
   });
 });

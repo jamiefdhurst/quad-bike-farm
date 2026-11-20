@@ -344,7 +344,6 @@ export const NOT_MOVED_YET = {
   farm: '#692 (today\'s rectangle of farm, which goes with layout 1)',
   hayMeadow: '#691', sprayField: '#691', harrowField: '#691',
   trough: '#710', fieldShed: '#624',
-  namedSpots: '#690',
 };
 
 /** What in today's layout is a setting rather than a place, so it never moves. */
@@ -370,6 +369,8 @@ export const REPLACED = [
   'quarry', 'anchors.pit',
   // Nether Thornby (#688): across the lane, its street east to the A-road.
   'anchors.village', 'village',
+  // The places the girls name where they are (#690).
+  'namedSpots',
 ];
 
 const cornersOf = (f) => f.corners.split(' ').map((k) => {
@@ -1634,6 +1635,8 @@ export function layoutNew(today, raw) {
     budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
     fieldLandmarks: fieldLandmarksLayout(), moor: { ...moorLayout(MOOR_FEATURES_PLAN, MOOR_PLAN, fromPlan), gate: moorGateLayout() },
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
+    // The places a girl names where she is (npc/spotNames.js), where the new farm has them (#690): down the green lane, on the hill by the flask rock, just inside the wood's gate.
+    namedSpots: { lane: { x: hill.lane.x, z: hill.stream.z - 85 }, hill: { x: hill.viewpoint.x, z: hill.viewpoint.z }, wood: { x: wood.woods.gate.x, z: wood.woods.gate.z - 12 } },
   };
 }
 
