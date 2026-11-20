@@ -108,7 +108,7 @@ export function buildWeatherVane({ scene, layout, heights, random }) {
   for (const [ch, dx, dz] of [['N', 0, -1], ['S', 0, 1], ['E', 1, 0], ['W', -1, 0]]) { // north is -z, the plan's up
     fixed.add(iron, put(new THREE.CylinderGeometry(0.009, 0.009, arm, 6), dx * arm / 2, 0.5, dz * arm / 2, 0, dz ? Math.PI / 2 : 0, dx ? Math.PI / 2 : 0));
     fixed.add(iron, put(new THREE.SphereGeometry(0.018, 8, 6), dx * arm, 0.5, dz * arm)); // a bead on each arm's end
-    const m = new THREE.MeshBasicMaterial({ map: letterTexture(ch), transparent: true, alphaTest: 0.4, side: THREE.DoubleSide });
+    const m = new THREE.MeshStandardMaterial({ map: letterTexture(ch), roughness: 0.8, transparent: true, alphaTest: 0.4, side: THREE.DoubleSide });
     letters.set(ch, m);
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.17), m);
     plane.position.set(dx * (arm + 0.12), 0.5, dz * (arm + 0.12));
