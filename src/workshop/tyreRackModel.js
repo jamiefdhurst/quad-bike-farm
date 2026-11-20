@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { treadTyre } from '../vehicle/detail/tread.js';
 import { TYRE_SIZES, tyrePart } from '../vehicle/tyres.js';
+import { boardFont } from '../world/boardFont.js';
 
 // The tyre rack along the annex's south wall: a timber and steel frame with two decks, a bay for each size of tyre (tyres.js TYRE_SIZES) with the
 // tyres lying in a stack, as many as the spares shelf has (up to what the bay holds), and a card tag on the front rail that says the size (and NONE when it is empty).
@@ -41,7 +42,7 @@ function drawTag(ctx, label, n) {
   ctx.strokeRect(2, 2, 252, 60);
   ctx.fillStyle = '#2a241a';
   ctx.textBaseline = 'middle';
-  ctx.font = 'bold 26px sans-serif';
+  ctx.font = boardFont('label', 26, 'bold');
   ctx.textAlign = 'left';
   const text = tagText(label, n);
   ctx.fillText(text.label, 14, 34);

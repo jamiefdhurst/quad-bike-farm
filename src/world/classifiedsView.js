@@ -1,6 +1,7 @@
 import './classifieds.css';
 import * as THREE from 'three';
 import { barnShape, placeInBarn } from './barn.js';
+import { boardFont } from './boardFont.js';
 
 const BOARD_W = 1.2; // metres
 const BOARD_H = 1.15;
@@ -132,7 +133,7 @@ export class ClassifiedsView {
     }
     // The heading, lettered in marker straight onto the cork across the top.
     ctx.fillStyle = 'rgba(40,25,10,0.7)';
-    ctx.font = 'bold 40px "Comic Sans MS", "Segoe Print", cursive';
+    ctx.font = boardFont('label', 40, 'bold');
     ctx.textAlign = 'center';
     ctx.fillText(HEADING, PX_W / 2, 46);
     ctx.textAlign = 'left';
@@ -160,9 +161,9 @@ export class ClassifiedsView {
       ctx.fillStyle = i % 2 ? '#f3efd8' : '#e9eef2';
       ctx.fillRect(-r.w / 2, -r.h / 2, r.w, r.h);
       ctx.fillStyle = '#1d1d1d';
-      ctx.font = 'bold 22px "Courier New", monospace';
+      ctx.font = boardFont('label', 22, 'bold');
       ctx.fillText('FOR SALE', -PX_W / 2 + 40, -SLIP_H / 2 + 30);
-      ctx.font = '19px "Courier New", monospace';
+      ctx.font = boardFont('label', 19);
       this.wrap(ctx, ad.text, -PX_W / 2 + 40, -SLIP_H / 2 + 56, PX_W - 100, 23);
       ctx.fillStyle = '#c0392b';
       ctx.beginPath();

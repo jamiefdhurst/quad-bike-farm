@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { barnShape, placeInBarn } from './barn.js';
 import { MONTH_DAYS } from './seasons.js';
+import { boardFont } from './boardFont.js';
 
 const CAL_W = 0.9; // metres
 const CAL_H = 1.2;
@@ -134,7 +135,7 @@ function missMudguard(ctx, x0, y0, w, h) {
   ctx.fillStyle = 'rgba(255,255,255,0.88)';
   ctx.fillRect(x0 + w - 178, y0 + 10, 168, 46);
   ctx.fillStyle = '#7a1f1f';
-  ctx.font = 'bold 20px "Comic Sans MS", "Segoe Print", cursive';
+  ctx.font = boardFont('board', 20, 'bold');
   ctx.textAlign = 'center';
   ctx.fillText('MISS', x0 + w - 94, y0 + 31);
   ctx.fillText('MUDGUARD', x0 + w - 94, y0 + 50);
@@ -188,9 +189,9 @@ export class WallCalendar {
 
     ctx.fillStyle = '#2b2b2b';
     ctx.textAlign = 'center';
-    ctx.font = 'bold 40px "Comic Sans MS", "Segoe Print", cursive';
+    ctx.font = boardFont('board', 40, 'bold');
     ctx.fillText(page.year > 1 ? `${page.month}, year ${page.year}` : page.month, PX_W / 2, 262);
-    ctx.font = 'bold 22px "Comic Sans MS", "Segoe Print", cursive';
+    ctx.font = boardFont('board', 22, 'bold');
     const colW = PX_W / PAGE_COLUMNS;
     const left = colW / 2;
     WEEKDAYS.forEach((w, i) => {
@@ -213,7 +214,7 @@ export class WallCalendar {
         ctx.fill();
       }
       ctx.fillStyle = c.state === 'past' ? '#777' : '#222';
-      ctx.font = `${c.state === 'today' ? 'bold ' : ''}24px "Comic Sans MS", "Segoe Print", cursive`;
+      ctx.font = boardFont('label', 24, c.state === 'today' ? 'bold' : '');
       ctx.fillText(String(c.label), x, y);
       ctx.strokeStyle = '#c0281c';
       ctx.lineCap = 'round';

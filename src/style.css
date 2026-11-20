@@ -621,7 +621,7 @@ body {
   transform: translate(-50%, -50%);
   width: min(860px, 94vw);
   color: #23304a; /* blue-black biro */
-  font-family: 'Bradley Hand', 'Segoe Print', 'Comic Sans MS', 'Marker Felt', cursive;
+  font-family: var(--font-board);
   font-size: clamp(11px, 1.9vh, 15px);
 }
 
