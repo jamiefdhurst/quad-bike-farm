@@ -922,7 +922,7 @@ export const BACK_LANE_PLAN = {
   hairpins: [[-30, 840], [60, 874]],
   budgetSpot: [-8, 860], // the frame budget's spot (tools/frameBudget.mjs `hairpins`): on the lane between the two hairpins, looking along it, the most hedge and verge in one view
   footpath: { at: [2, 792], to: [-60, 760] }, // off the road's west side, up the hill: the stile in the hedge at `at`, the path on to `to` (plan metres)
-  upperThornby: [-215, 745], // the hamlet the footpath climbs to, far to the west on the hill (plan metres): seen from the lane, never reached
+  upperThornby: [-460, 745], // the hamlet the footpath climbs to, over the Moor's ridge wall on the plateau beyond (plan metres): seen from the ridge, never reached (#1037; it stood on the common at -215)
   // The gates in the lane's own hedge, each across from the farm's gateway onto the strip between (plan metres), with the lane's gravel track to it.
   gates: [{ id: 'north', farm: [380, 30] }, { id: 'wood', farm: [38, 130] }, { id: 'far', farm: [40, 440] }, { id: 'hill', farm: [36, 640] }, { id: 'moor', farm: [38, 700] }],
 };
