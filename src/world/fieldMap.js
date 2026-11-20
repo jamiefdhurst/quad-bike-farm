@@ -86,13 +86,14 @@ export function createFieldMap(plan, farm, { trackAt = null } = {}) {
    * (there are only a dozen gateways, so a plain Dijkstra).
    */
   // How much a walk between two gateway points costs less for running along a track: a quarter off at most, for a way that is track all along. Worked out
-  // once for each pair (the gateways do not move) at a point every 6 m.
+  // once for each pair of points at a point every 6 m, and kept by the points themselves (the gateways' own, which do not move), not by node numbers: those
+  // shift whenever a gate shuts or opens, which changes which gateways are nodes.
   const TRACK_DISCOUNT = 0.25;
-  const shares = new Map();
+  const shares = new WeakMap();
   const trackCost = (i, j, nodes, len) => {
     if (!trackAt || i < 2 || j < 2 || len < 1) return len;
-    const key = i < j ? `${i}|${j}` : `${j}|${i}`;
-    let share = shares.get(key);
+    const [a, b] = [nodes[i].p, nodes[j].p];
+    let share = shares.get(a)?.get(b) ?? shares.get(b)?.get(a);
     if (share === undefined) {
       const n = Math.max(2, Math.ceil(len / 6));
       let on = 0;
@@ -101,7 +102,8 @@ export function createFieldMap(plan, farm, { trackAt = null } = {}) {
         if (trackAt(nodes[i].p.x + (nodes[j].p.x - nodes[i].p.x) * t, nodes[i].p.z + (nodes[j].p.z - nodes[i].p.z) * t) > 0.5) on++;
       }
       share = on / (n + 1);
-      shares.set(key, share);
+      if (!shares.has(a)) shares.set(a, new Map());
+      shares.get(a).set(b, share);
     }
     return len * (1 - TRACK_DISCOUNT * share);
   };
