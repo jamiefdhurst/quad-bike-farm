@@ -172,7 +172,7 @@ export function buildYardGates({ scene, layout, heights, fixedBox, random }) {
     b.add(post, put(worldBox(POST.cap, 0.07, POST.cap, 1), x, y + POST.h + 0.025, z)); // a cap wider than the post, to throw the wet off
     b.add(timber, put(worldBox(0.9, 0.05, 0.9, 1), x, y + 0.002, z)); // a plank footing for the post's foot out of the mud
     // The leaf lies back along the fence on the yard side of its line (0.45 m off a rail, 1.2 m off a hedge's face), its hinge straps on the post.
-    const off = alongZ ? 0.45 : -1.2;
+    const off = alongZ ? 0.45 : 1.2 * gate.inward; // towards the yard side of the line
     const lx = alongZ ? x + off : x + side * (POST.w / 2 + 0.02);
     const lz = alongZ ? z + side * (POST.w / 2 + 0.02) : z + off;
     const yaw = alongZ ? (side > 0 ? -Math.PI / 2 : Math.PI / 2) : side > 0 ? 0 : Math.PI;

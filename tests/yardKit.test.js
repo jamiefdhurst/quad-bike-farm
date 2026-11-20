@@ -60,8 +60,8 @@ describe('where the yard is dressed', () => {
     }
     expect(things().length).toBeGreaterThan(10);
   });
-  it('hangs a steel gate at the Home Ground rail\'s gateway and the hay field\'s, where the layout has them', () => {
-    expect(k.gates.length).toBe(2);
+  it('hangs a steel gate at the Home Ground rail\'s gateway, the hay field\'s and Top Field\'s, where the layout has them (the drive\'s mouth stays open for the lorry)', () => {
+    expect(k.gates.length).toBe(3);
     for (const g of k.gates) {
       const hit = two.gateways.find((gw) => {
         const b = two.boundaries[gw.boundary];
@@ -79,7 +79,7 @@ describe('where the yard is dressed', () => {
       expect(hit, `a gateway at ${g.x}, ${g.z}`).toBeTruthy();
     }
     const posts = gatePosts(k.gates);
-    expect(posts.length).toBe(4);
+    expect(posts.length).toBe(6);
     for (const p of posts) expect(Math.abs(Math.hypot(p.x - p.gate.x, p.z - p.gate.z) - 2.6)).toBeLessThan(1e-9);
   });
   it('puts the drain along the yard, the puddles on the slab, the mud at the ways in and the muck line along the barn', () => {
@@ -88,7 +88,7 @@ describe('where the yard is dressed', () => {
     expect(Math.hypot(k.gully.x - k.drain.x, k.gully.z - k.drain.z1)).toBeLessThan(1.5);
     expect(puddleSpots(two).length).toBeGreaterThanOrEqual(4);
     for (const p of puddleSpots(two)) expect(inRect(two.farmstead.slab, p.x, p.z)).toBe(true);
-    expect(k.mud.length).toBe(3);
+    expect(k.mud.length).toBe(2);
     expect(k.muckLines[0].z0 + PLAN_ORIGIN[1]).toBeGreaterThan(335);
   });
   it('scatters nettles along the walls and gates without covering the barn\'s doors, the same every time', () => {
@@ -185,5 +185,15 @@ describe('standing on the slope (the yard falls about 3 cm a metre to the east)'
       expect(low - top, `ring at ${cx} floats`).toBeLessThan(0.04);
       expect(low - top, `ring at ${cx} buried`).toBeGreaterThan(-0.04);
     }
+  });
+  it('stops the drain, the tyre paths and the mud short of the places kept clear for the buildings still to come', () => {
+    const rects = two.farmstead.keptClear.filter((c) => !/lorry|pole/.test(c.name));
+    const along = (pts) => pts.flatMap((a, i) => (i ? Array.from({ length: 21 }, (_, t) => [pts[i - 1][0] + ((a[0] - pts[i - 1][0]) * t) / 20, pts[i - 1][1] + ((a[1] - pts[i - 1][1]) * t) / 20]) : []));
+    const marks = [
+      ...along([[k.drain.x, k.drain.z0], [k.drain.x, k.drain.z1]]),
+      ...k.paths.flatMap((p) => along(p.points)),
+      ...k.mud.flatMap((m) => [[m.x, m.z], [m.x + m.dx * m.radius, m.z + m.dz * m.radius]]),
+    ];
+    for (const [x, z] of marks) for (const c of rects) expect(inRect(c, x, z), `${c.name} at ${x.toFixed(1)}, ${z.toFixed(1)}`).toBe(false);
   });
 });
