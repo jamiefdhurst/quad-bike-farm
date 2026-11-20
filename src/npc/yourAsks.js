@@ -3,14 +3,15 @@
  * "A race" (the lap) always. Pure, so the labels and the order are tested; game.js says where you are and what each one runs.
  */
 export function yourAsks({ riding, near }) {
-  if (!riding) return [{ id: 'race', label: 'A race', disabled: true, hint: 'you need to be driving a quad' }];
+  const call = { id: 'call', label: 'Call them' }; // a whistle for whoever hears it (callThem.js): on foot or on a quad
+  if (!riding) return [call, { id: 'race', label: 'A race', disabled: true, hint: 'you need to be driving a quad' }];
   const here = [
     near.climb && { id: 'climb', label: 'The hill climb' },
     near.pit && { id: 'pit', label: 'The pit climb' },
     near.cones && { id: 'cones', label: 'The cone course' },
     near.drag && { id: 'drag', label: 'A drag race' },
   ].filter(Boolean);
-  return [...here, { id: 'race', label: 'A race' }];
+  return [call, ...here, { id: 'race', label: 'A race' }];
 }
 
 /**

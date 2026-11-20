@@ -325,6 +325,7 @@ export function buildGameTree(g, host) {
     pitch: num(() => g.player.pitch * DEG, (v) => (g.player.pitch = v / DEG), -88, 88, '°', 'up is positive'),
     flying: flag(() => !!g.player.flying, (v) => g.setFlying(v), 'free-fly: no gravity, no walls'),
     riding: text(() => (g.riddenUnit ? g.riddenUnit.id : 'on foot')),
+    call: flag(() => false, (v) => v && g.mindsHost.callThem(), 'set to true: whistle for the girls, as Call them on your wheel does: those who can walk to you come, those further off say where they are'),
   }), 'you');
 
   const w = () => g.weather;

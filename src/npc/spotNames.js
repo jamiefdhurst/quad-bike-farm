@@ -10,9 +10,11 @@ export const SPOT_NAMES = {
   lane: 'down the lane', ford: 'by the ford', hill: 'on the hill', pond: 'by the pond', wood: 'in the wood', cattleGrid: 'by the cattle grid',
   road: 'out on the farm road', trough: 'by the trough', barley: 'in the barley field', wheat: 'in the wheat field', fieldShed: 'by the field shed',
   dutchBarn: 'by the Dutch barn',
-  // The new farm's (#690): the drive, Back Lane, the Moor and the pit.
-  drive: 'on the drive', backLane: 'on Back Lane', moor: 'out on the moor', pit: 'in the pit',
 };
+
+/** The places only the new farm has (#690): the drive, Back Lane, the Moor and the pit. Their lines are recorded after all the rest (callThemLines.js), so no bank before them moves. */
+export const NEW_FARM_SPOT_NAMES = { drive: 'on the drive', backLane: 'on Back Lane', moor: 'out on the moor', pit: 'in the pit' };
+export const ALL_SPOT_NAMES = { ...SPOT_NAMES, ...NEW_FARM_SPOT_NAMES };
 
 // Every place comes from the layout (a building's anchor, a feature, a parking spot), so the names move when the map does. On the new farm
 // (it has `fields`) the places that were at today's numbers (`namedSpots`) are put where the new farm has them.
@@ -34,7 +36,7 @@ export const spotsFor = (L) => {
         }
       : { lane: L.namedSpots?.lane, hill: L.namedSpots?.hill, wood: L.namedSpots?.wood, cattleGrid: L.road && { x: L.road.fromX, z: L.road.z }, road: L.namedSpots?.road }),
   };
-  return Object.keys(SPOT_NAMES).filter((id) => at[id]).map((id) => ({ id, x: at[id].x, z: at[id].z, name: SPOT_NAMES[id] }));
+  return Object.keys(ALL_SPOT_NAMES).filter((id) => at[id]).map((id) => ({ id, x: at[id].x, z: at[id].z, name: ALL_SPOT_NAMES[id] }));
 };
 
 export const SPOTS = spotsFor(LAYOUT);

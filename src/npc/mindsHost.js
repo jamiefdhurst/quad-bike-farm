@@ -8,6 +8,8 @@ import { agendaKey } from './agenda.js';
 import { GO_KINDS } from './tractorGo.js';
 import { showOffBoost } from '../world/kids.js';
 import { registerTuning } from '../core/tuning.js';
+import { DEFAULT_CALL_PARAMS, CALL_PARAM_RANGES, callThem, callSummary } from './callThem.js';
+import { nearestNamedSpot } from './spotNames.js';
 import { underCover } from './soaking.js';
 import { DEFAULT_FAR_WALK_PARAMS, FAR_WALK_PARAM_RANGES, splitFar, liftOffer, howShePlans, wayLength } from './farWalk.js';
 
@@ -23,6 +25,8 @@ export class MindsHost {
     this.needsAt = null;
     this.farParams = { ...DEFAULT_FAR_WALK_PARAMS }; // how far she walks on her own choice (npc/farWalk.js)
     registerTuning('Far is far', this.farParams, FAR_WALK_PARAM_RANGES);
+    this.callParams = { ...DEFAULT_CALL_PARAMS }; // calling them from your wheel (npc/callThem.js)
+    registerTuning('Calling them', this.callParams, CALL_PARAM_RANGES);
   }
 
   /**
@@ -112,6 +116,31 @@ export class MindsHost {
   waitingAtFoot(c) {
     const w = this.g.world.fields?.hill?.waitSpot;
     return !!w && Math.hypot(c.root.position.x - w.x, c.root.position.z - w.z) < this.farParams.waitingRadius;
+  }
+
+  /**
+   * You call them from your wheel (npc/callThem.js): a whistle, then each girl in earshot who is free comes to you, or calls back where she is.
+   * Returns what each did, for the console and the panel.
+   */
+  callThem() {
+    const g = this.g;
+    const you = g.player.position;
+    g.phoneAudio?.whistle(this.callParams.loudness);
+    const answers = callThem(g.companions.map((c) => ({ id: c.character.id, distance: c.root.position.distanceTo(you), free: c.availability({ asked: true }).free })), this.callParams);
+    for (const a of answers) {
+      const c = g.companions.find((o) => o.character.id === a.id);
+      if (a.answer === 'come') {
+        c.interrupt();
+        g.leaveRides(c);
+        c.requestComeHere(you);
+        c.voice.say('calledComing', { force: true });
+      } else if (a.answer === 'here') {
+        c.voice.say(`called_${nearestNamedSpot(c.root.position.x, c.root.position.z).id}`, { force: true });
+      }
+    }
+    const said = callSummary(answers);
+    if (said) g.hud.toast(said, 2.5);
+    return answers;
   }
 
   /** The places an offer can take her to, in the world: { hut, flask, fire, barn } as { x, z } (any that this farm lacks left out). */

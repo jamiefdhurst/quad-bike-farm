@@ -7227,7 +7227,7 @@ export class Game {
   /** Your own wheel: what you ask for rather than ask of her. Enter looking at nobody. */
   openYourWheel() {
     const ridden = this.player.isRiding && this.player.seat !== 'pillion' ? this.riddenUnit : null;
-    const runs = { climb: () => this.askForClimb(), pit: () => this.askForPit(), cones: () => this.askForCones(), drag: () => this.askForDrag(ridden), race: () => this.askForRace(ridden) };
+    const runs = { call: () => this.mindsHost.callThem(), climb: () => this.askForClimb(), pit: () => this.askForPit(), cones: () => this.askForCones(), drag: () => this.askForDrag(ridden), race: () => this.askForRace(ridden) };
     this.openWheel('You ask for', yourAsks({ riding: !!ridden, near: ridden ? this.askNear(ridden) : {} }).map((a) => ({ ...a, run: runs[a.id] })));
     this.player.lookEnabled = false;
     this.player.moveEnabled = false;

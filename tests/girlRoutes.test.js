@@ -60,7 +60,9 @@ describe('girls routing on the new farm', () => {
   });
 });
 
-import { spotsFor, SPOT_NAMES, nearestNamedSpot } from '../src/npc/spotNames.js';
+import { spotsFor, ALL_SPOT_NAMES, nearestNamedSpot } from '../src/npc/spotNames.js';
+import { AMY_CALL_THEM_LINES, JESS_CALL_THEM_LINES } from '../src/npc/callThemLines.js';
+import { AMY_STRANDED_LINES, JESS_STRANDED_LINES } from '../src/npc/strandedLines.js';
 
 describe('the places a girl can name on the new farm', () => {
   const spots = spotsFor(two);
@@ -72,6 +74,11 @@ describe('the places a girl can name on the new farm', () => {
     expect(nearestNamedSpot(two.hill.lane.x, two.hill.stream.z, spots).id).toBe('ford');
   });
   it('names a place that is in the table, so each has a recorded line', () => {
-    for (const s of spots) expect(SPOT_NAMES[s.id], s.id).toBe(s.name);
+    for (const s of spots) expect(ALL_SPOT_NAMES[s.id], s.id).toBe(s.name);
+    for (const lines of [{ ...AMY_STRANDED_LINES, ...AMY_CALL_THEM_LINES }, { ...JESS_STRANDED_LINES, ...JESS_CALL_THEM_LINES }]) {
+      for (const [id, name] of Object.entries(ALL_SPOT_NAMES)) {
+        for (const k of ['callout_bog_', 'callout_tip_', 'called_']) expect(lines[k + id].lines[0], k + id).toContain(name);
+      }
+    }
   });
 });

@@ -69,3 +69,39 @@ describe('far is far in the running game', () => {
     expect(host.waitingAtFoot(girl)).toBe(false);
   });
 });
+
+describe('calling them in the running game', () => {
+  const callGame = (girls) => {
+    const said = [];
+    const g = {
+      player: { position: { x: 0, z: 0, distanceTo() {} } },
+      companions: girls.map((x) => ({
+        character: { id: x.id },
+        root: { position: { x: x.at, z: 0, distanceTo: (p) => Math.abs(x.at - p.x) } },
+        availability: () => ({ free: x.free ?? true }),
+        interrupt() { said.push([x.id, 'interrupt']); },
+        requestComeHere() { said.push([x.id, 'come']); },
+        voice: { say: (k) => said.push([x.id, k]) },
+      })),
+      leaveRides() {},
+      phoneAudio: { whistle: () => said.push(['whistle']) },
+      hud: { toast: (t) => said.push(['toast', t]) },
+    };
+    return { host: new MindsHost(g), said };
+  };
+
+  it('whistles, brings the near girl and has the far one say where she is', () => {
+    const { host, said } = callGame([{ id: 'amy', at: 30 }, { id: 'jess', at: 100 }]);
+    host.callThem();
+    expect(said).toContainEqual(['whistle']);
+    expect(said).toContainEqual(['amy', 'come']);
+    expect(said).toContainEqual(['amy', 'calledComing']);
+    expect(said.find((s) => s[0] === 'jess' && s[1].startsWith('called_'))).toBeTruthy();
+  });
+
+  it('says nobody hears you when nobody does', () => {
+    const { host, said } = callGame([{ id: 'amy', at: 900 }, { id: 'jess', at: 700 }]);
+    host.callThem();
+    expect(said).toContainEqual(['toast', 'nobody hears you']);
+  });
+});
