@@ -1892,7 +1892,7 @@ export class Game {
     registerTuning('Bell', this.bell.params, BELL_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
     registerTuning('Achievements', this.achievements.p, ACHIEVEMENT_PARAM_RANGES);
-    this.achievements.fleet = [...this.units.map((u) => u.id), ...(this.rustyUnit ? ['rusty'] : [])];
+    this.achievements.setFarm([...this.units.map((u) => u.id), ...(this.rustyUnit ? ['rusty'] : [])], this.loft ? [] : ['loft']); // (no hayloft in the new barn)
     this.achievements.onUnlock((a) => this.achievementUnlocked(a));
     this.discoveries.onLearn(() => this.discoveryLearnt());
     registerTuning('Falling out', this.fallingOut.p, FALLING_OUT_PARAM_RANGES);

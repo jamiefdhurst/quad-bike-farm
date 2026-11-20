@@ -177,3 +177,22 @@ describe('places you start the day in (#229)', () => {
     expect(earnedPlaces(['ford'], undefined).places).toEqual(['ford']);
   });
 });
+
+describe('achievements for what the farm has none of', () => {
+  it('leaves the hayloft ones off the list and the total on a farm without a loft, and keeps them on one with', () => {
+    const withLoft = new Achievements({ fleet: FLEET });
+    const without = new Achievements({ fleet: FLEET });
+    without.setFarm(FLEET, ['loft']);
+    for (const id of ['loft', 'hide']) {
+      const a = ACHIEVEMENTS.find((x) => x.id === id);
+      expect(withLoft.available(a), id).toBe(true);
+      expect(without.available(a), id).toBe(false);
+    }
+    expect(without.entries().filter((x) => x.available).length).toBe(withLoft.entries().filter((x) => x.available).length - 2);
+    without.note('loft');
+    const got = [];
+    without.onUnlock((x) => got.push(x.id));
+    run(without, 1, {});
+    expect(got).not.toContain('loft');
+  });
+});
