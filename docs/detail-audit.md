@@ -8,10 +8,10 @@ Graded first from `tools/shot.mjs` shots and the code, then corrected from Jamie
 
 | Object | Grade | What it lacks |
 | --- | --- | --- |
-| Barn front and doors | passable | The texture differs top and bottom and does not line up; the two doors differ in size and the hay door goes through the roof (#613) |
+| Barn front and doors | passable | The texture differs top and bottom and does not line up; the two doors differ in size and the hay door goes through the roof (#613) (rebuilt in #818 on the new farm: one wall outline so the boards run on across the doorway, one pair of doors 6.4 m wide, a hood and rail) |
 | Barn, second span (annex) | passable | Plain boards over the door up to the eaves, posts in place of a wall, no trim on the valley (rebuilt in #817: a rain hood and cover battens over the door, pads and knee braces at the posts, the valley's end stops and drop) |
 | Barn roof | passable | A gutter on one edge only and no downpipes seen, no weather vane (#169) (rebuilt in #817: fascia and barge boards, gutters on both outer eaves, downpipes, the vane) |
-| Barn lighting | passable | Two dim bulbs at the top; more are needed |
+| Barn lighting | passable | Two dim bulbs at the top; more are needed (rebuilt in #818 on the new farm: six bulbs with shades on three lights at the same overall level) |
 | Loft and its ladder | block | The ladder is very basic and climbing it goes through the floor; the floor and wall alpha-fight; the loft has no use (removed in the move) |
 | Straw on the floor, bales inside | block | Plain pieces; the bales are too regular |
 | Workbench and boards | passable | The boards need headings, the records overlap their lines, the classified board's shadow does not match what is pinned |
@@ -23,9 +23,9 @@ Graded first from `tools/shot.mjs` shots and the code, then corrected from Jamie
 | Tyre rack | block | No inside to the tyres, plain shelf, a number on each label |
 | Jack | block | Basic textures, a part floats |
 | Calendar, weather display, clock | passable | Spread apart; the weather display reads strangely |
-| Writing in the barn | block | A lot of Comic Sans (#807) |
+| Writing in the barn | block | A lot of Comic Sans (#807) (the barn's boards, dials, labels and notebook now use two roles in `boardFont.js`, #818; the rest of the game is #807) |
 | Money tin, parts catalogue | passable | In odd places (#809) |
-| Coat rack, helmet hooks | passable | Too basic; move them in the new barn |
+| Coat rack, helmet hooks | passable | Too basic; move them in the new barn (moved in the new barn to the south side wall with a way in round the big bay, #818; the models are #805's) |
 | Bays 1 and 2 | block | Painted lines on a concrete floor; the rusty quad and the Plover block the bench (rebuilt in #817: wheel stop, corner kerbs, oil stain and drip tray, no paint) |
 | Pit | block | A painted rectangle, not a hole (#329; rebuilt in #817 as a real trench: the slab and the ground are cut, block walls, floor and drain, steps, a grab rail, lamps and a part-rolled cover; crossed at floor level, with nothing to fall into) |
 | Shed kit (compressor, parts washer) | good | Not marked down by the walk |
