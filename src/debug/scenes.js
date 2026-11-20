@@ -15,7 +15,7 @@ import { SETUPS } from './sceneSetups.js';
 
 /** @type {Scene[]} */
 export const SCENES = [
-  { id: 'callThem', label: 'Put Amy at the hill\'s foot and Jess in Far Field, you in the yard: Call them, and the lift Amy asks for to the hut', lines: ['weather.time 11', 'tp amy to ford', 'tp jess to far', 'tp me to yard'] },
+  { id: 'callThem', label: 'Put you out in Home Ground in daylight with the girls in the yard: open your wheel (Enter at nobody) and Call them', lines: ['weather.time 11', 'tp me to home'] },
   {
     id: 'frost',
     label: 'Set up a frosty dawn, every vehicle stone cold',
