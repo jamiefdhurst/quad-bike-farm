@@ -258,3 +258,15 @@ describe('reaching the stile along the wall (#1035)', () => {
     expect(lines.length).toBe(3);
   });
 });
+
+describe('Upper Thornby is beyond the ridge wall (#1037)', () => {
+  it('stands, every building and wall, west of the wall\'s furthest point and the built ground\'s edge', async () => {
+    const { upperThornbyShapes } = await import('../src/world/upperThornby.js');
+    const { buildings, walls } = upperThornbyShapes(two.upperThornby.at, (x, z) => heights.heightAt(x, z));
+    const wallWest = Math.min(...M.wall.points.map((p) => p[0]));
+    expect(buildings.length).toBeGreaterThan(10);
+    for (const b of buildings) expect(b.x + b.halfX, 'a building').toBeLessThan(Math.min(wallWest, two.ground.minX));
+    expect(walls.length).toBeGreaterThan(5);
+    for (const w of walls) expect(w.x + w.hx, 'a field wall').toBeLessThan(Math.min(wallWest, two.ground.minX));
+  });
+});

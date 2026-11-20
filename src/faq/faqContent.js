@@ -465,7 +465,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where does the footpath off Back Lane go?',
-        a: `The fingerpost and the stile in the hedge on the west side, towards the south, point up the hill to Upper Thornby (1 mile). You can see its roofs and church tower on the hill to the west, but it is too far to reach: the path crosses the Moor to a ladder stile in the ridge wall, and climbing it turns you round.`,
+        a: `The fingerpost and the stile in the hedge on the west side, towards the south, point up the hill to Upper Thornby (1 mile). You can see its roofs and church tower from the ridge, over the wall, but it is too far to reach: the path crosses the Moor to a ladder stile in the ridge wall, and climbing it turns you round.`,
       },
       {
         q: 'What is the Moor, and what is up there?',
