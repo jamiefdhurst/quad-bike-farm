@@ -58,7 +58,7 @@ import { Daylight, DEFAULT_DAYLIGHT_PARAMS, DAYLIGHT_PARAM_RANGES } from './worl
 import { VehicleLights, VEHICLE_LIGHT_PARAM_RANGES } from './effects/vehicleLights.js';
 import { MUD_STATE_RANGES } from './effects/quadMud.js';
 import { WEAR_LOOK_RANGES } from './effects/mudCoat.js';
-import { WeatherStation } from './world/weatherStation.js';
+import { hangBarnBoards } from './world/weatherStation.js';
 import { Forecast, DEFAULT_FORECAST_PARAMS, FORECAST_PARAM_RANGES } from './world/forecast.js';
 import { OFFER_KINDS } from './npc/chooser.js';
 import { pickThen, planKey } from './npc/plans.js';
@@ -929,18 +929,15 @@ export class Game {
     this.loftParams = { ...DEFAULT_LOFT_PARAMS };
     this.loft = this.world.props.barn.loft;
     // The clock and weather station on the barn wall (world/weatherStation.js).
-    const ws = barnLocal(this.world.layout).weatherStation; // in the barn's own frame, put in the world turned with it
-    this.station = new WeatherStation(this.scene, { x: 0, y: 0, z: 0 });
-    placeInBarn(this.world.layout, this.station.group, ws.x, this.world.props.barn.floorY + ws.y, barnShape(this.world.layout).inner.minZ);
-    this.loftSpot = loftRestSpot(this.world.layout, this.loft);
-    this.restSpots.push(this.loftSpot);
+    ({ station: this.station, wallClock: this.wallClock } = hangBarnBoards(this.scene, this.world.layout, this.world.props.barn.floorY));
+    if (this.loft) this.restSpots.push((this.loftSpot = loftRestSpot(this.world.layout, this.loft))); // (the new barn has no hayloft, #818)
     this.hiding = new Hiding(this.loftParams);
     this.strawDrop = new StrawDrop(this.loftParams);
     this.strawFall = new StrawFall(this.scene);
     // The hay door's shutter bangs about in a gale, and loose hay blows out of the door (updateWind).
     this.hayBlow = new StrawFall(this.scene);
     this.shutter = new Shutter(this.wind.p);
-    this.doorAudio = new DoorAudio(this.audioHub, this.world.props.barn.hayDoor);
+    this.doorAudio = this.world.props.barn.hayDoor ? new DoorAudio(this.audioHub, this.world.props.barn.hayDoor) : null;
     this.climb = null; // Climb of you on the ladder, when you are
     this.hiddenFrom = null; // where you were stood before you ducked into the hay
     const fine = () => isFine(this.weather.name, this.weather.rain, this.places.p);
@@ -964,7 +961,7 @@ export class Game {
       c.restSpotsNear = (here) => {
         if (!fine()) return [];
         const free = this.restSpots.filter((s) => s.kind !== 'shelter' && !spotTaken(s));
-        const loftFree = !spotTaken(this.loftSpot) && Math.hypot(this.loftSpot.x - here.x, this.loftSpot.z - here.z) < this.places.p.restFrom;
+        const loftFree = this.loftSpot && !spotTaken(this.loftSpot) && Math.hypot(this.loftSpot.x - here.x, this.loftSpot.z - here.z) < this.places.p.restFrom;
         if (loftFree && Math.random() < this.loftParams.girlLoftChance) return [this.loftSpot];
         const near = nearestSpot(free, ['bale', 'fence', 'bench'], here, new Set(), this.places.p.restFrom);
         return near ? [near] : [];
@@ -1842,21 +1839,23 @@ export class Game {
       interact: () => this.standCones(),
     });
 
-    // The hayloft: the ladder up and down, and the hay to hide in.
-    this.interaction.add({
-      target: this.loft.ladderProxy,
-      isAvailable: () => !this.handsFull && !this.climb && !this.hiding.active,
-      prompt: () => (this.youOnLoft() ? 'Climb down the ladder' : 'Climb up to the hayloft'),
-      feedback: 'own',
-      interact: () => this.startClimb(),
-    });
-    this.interaction.add({
-      target: this.loft.hayProxy,
-      isAvailable: () => !this.handsFull && !this.climb && !this.hiding.active && this.youOnLoft(),
-      prompt: () => 'Duck into the hay and hide',
-      feedback: 'paper',
-      interact: () => this.startHiding(),
-    });
+    // The hayloft: the ladder up and down, and the hay to hide in (today's barn only).
+    if (this.loft) {
+      this.interaction.add({
+        target: this.loft.ladderProxy,
+        isAvailable: () => !this.handsFull && !this.climb && !this.hiding.active,
+        prompt: () => (this.youOnLoft() ? 'Climb down the ladder' : 'Climb up to the hayloft'),
+        feedback: 'own',
+        interact: () => this.startClimb(),
+      });
+      this.interaction.add({
+        target: this.loft.hayProxy,
+        isAvailable: () => !this.handsFull && !this.climb && !this.hiding.active && this.youOnLoft(),
+        prompt: () => 'Duck into the hay and hide',
+        feedback: 'paper',
+        interact: () => this.startHiding(),
+      });
+    }
 
     // Start facing the quad she's standing by, wherever it ended up.
     const q = this.homeUnit.quad.position;
@@ -2009,7 +2008,7 @@ export class Game {
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
     registerTuning('Watching you', this.watching.p, WATCH_PARAM_RANGES);
     registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
-    registerTuning('Hayloft', this.loftParams, LOFT_PARAM_RANGES);
+    if (this.loft) registerTuning('Hayloft', this.loftParams, LOFT_PARAM_RANGES);
     registerTuning('Wind', this.wind.p, WIND_PARAM_RANGES);
     registerTuning('Favours asked', this.requests.p, REQUEST_PARAM_RANGES);
     registerTuning('Girls at the pub', this.pubParams, PUB_PARAM_RANGES);
@@ -7080,12 +7079,12 @@ export class Game {
       const dark = this.daylight?.darkness ?? 0;
       // The bulb and the light work off the generator (items/generator.js): with it off the barn is as dark as the day makes it.
       const lit = this.generator.powered;
-      barn.light.intensity = lit ? BARN_BULB * Math.max(indoor * gloom, dark > 0.5 ? 0.8 : 0) : 0;
-      if (barn.light2) barn.light2.intensity = barn.light.intensity;
+      const lamps = barn.lights ?? [barn.light, barn.light2].filter(Boolean); // however many hang in it, they share what two bulbs gave
+      const level = lit ? ((BARN_BULB * 2) / lamps.length) * Math.max(indoor * gloom, dark > 0.5 ? 0.8 : 0) : 0;
+      for (const l of lamps) l.intensity = level;
       if (this.bulbLit !== lit) {
         this.bulbLit = lit;
-        barn.bulb.material.color.setHex(lit ? 0xfff1c9 : 0x5d5c55);
-        barn.bulb2?.material.color.setHex(lit ? 0xfff1c9 : 0x5d5c55); this.shedView?.setLamps(lit); // (and the inspection pit's lamps)
+        for (const b of barn.bulbs ?? [barn.bulb, barn.bulb2]) b?.material.color.setHex(lit ? 0xfff1c9 : 0x5d5c55); this.shedView?.setLamps(lit); // (and the inspection pit's lamps)
       }
     }
     // Smoke, steam, dust and mud are drawn with their own fixed light, so they're dimmed with the daylight or they'd glow at night.
@@ -7578,6 +7577,7 @@ export class Game {
   /** The ladder climb, hiding in the hay, a girl up in the loft, and Jess's straw. */
   updateLoft(dt) {
     this.strawFall.update(dt);
+    if (!this.loft) return;
     if (this.climb) {
       const at = this.climb.update(dt);
       this.player.moveTo(at);

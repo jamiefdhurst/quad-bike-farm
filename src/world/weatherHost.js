@@ -96,6 +96,7 @@ export class WeatherHost {
     }
     const turn = g.forecast.update(d.hour);
     if (turn) this.turn(turn);
+    g.wallClock?.update(d.hour);
     g.station.update(d.hour, w.temperature, w.kind, w.rain, w.target, w.from, w.mix);
     g.station.setForecast(g.forecast.board(d.hour));
     const board = g.boardUnit ?? g.player.vehicle?.unit ?? null;

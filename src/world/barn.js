@@ -105,6 +105,7 @@ export function barnShape(layout) {
     wall: b.wall,
     wallHeight: b.wallHeight,
     ridge: b.ridge,
+    wide: !!b.wide, // the new farm's one building: its doors in an eaves wall with the roof's ridge running along it (barnWide.js)
     // The doorway is in the +x wall, centred on the barn's z.
     door: { x: b.x + b.halfX, minZ: b.z - b.door.halfWidth, maxZ: b.z + b.door.halfWidth, height: b.door.height },
   };

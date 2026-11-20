@@ -119,8 +119,8 @@ describe('where the yard is dressed', () => {
     expect(hits(f.garden)).toBe(false);
     for (const c of f.keptClear) expect(hits(c), c.name).toBe(false);
     for (const w of wallBoxes(two)) expect(hits({ minX: w.x - w.hx, maxX: w.x + w.hx, minZ: w.z - w.hz, maxZ: w.z + w.hz }), w.id).toBe(false);
-    expect(lane.minZ).toBeGreaterThan(f.orchard.maxZ + 2); // and the fence of the orchard is not in it
-    expect(stack.maxZ + 1).toBeLessThan(wallBoxes(two).find((w) => w.id === 'west').z - 2); // nor the barn's back wall
+    expect(lane.minZ).toBeGreaterThan(f.orchard.maxZ + 1.5); // and the fence of the orchard is not in it
+    expect(stack.maxZ + 1).toBeLessThan(wallBoxes(two).find((w) => w.id === 'west').z - 1.5); // nor the barn's back wall
   });
 });
 

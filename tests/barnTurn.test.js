@@ -29,6 +29,7 @@ describe('the barn turned a quarter', () => {
     // Each point of `barnLocal`, turned with the frame, is the point the layout resolved with the anchor turned.
     for (const k of BARN_KEYS.filter((k) => !['barn', 'loft', 'shed', 'barnBaleSpots', 'axleStands'].includes(k))) {
       const local = L.barnLocal[k];
+      if (!local) continue; // (the clock is only on the new barn's wall)
       const world = L[k];
       const p = f.toWorld(local.x, local.z);
       expect(near(p.x, world.x) && near(p.z, world.z), k).toBe(true);

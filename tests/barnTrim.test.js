@@ -1,15 +1,13 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import * as THREE from 'three';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
-import { layoutNew } from '../src/world/layoutNew.js';
 import { barnShape, dividerPosts } from '../src/world/barn.js';
 import { buildBarnTrim, pipeXs } from '../src/world/barnTrim.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
 import { fakeCanvas } from './helpers/vehicleModels.js';
 
 // The barn's roof and second-span trim (#817): gutters and downpipes on both outer eaves, the valley's drop, a hood over the second door, pads and braces at the posts.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
-const L = { ...two, ...two.barnLocal };
+const L = { ...LAYOUT, ...LAYOUT.barnLocal }; // today's barn, with its two spans
 const shape = barnShape(L);
 
 describe('the barn\'s trim', () => {

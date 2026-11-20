@@ -157,8 +157,11 @@ export async function buildWorldModels() {
   add('setPiece', 'weatherVane', vane.buildWeatherVane, (b) => b(c2));
   const trim = await import('../../src/world/barnTrim.js');
   const { barnShape, dividerPosts } = await import('../../src/world/barn.js');
-  const barnL = { ...two, ...two.barnLocal };
+  const barnL = { ...LAYOUT, ...LAYOUT.barnLocal }; // today's barn, with its two spans
   add('world', 'barnTrim', trim.buildBarnTrim, (b) => b({ shape: barnShape(barnL), floorY: 0, eaveZ: 2.95, eaveY: 3.9, posts: dividerPosts(barnL), random: c.random }));
+  const barnTwo = { ...two, ...two.barnLocal }; // the new farm's one building (#818)
+  const { roofOf } = await import('../../src/world/barnWide.js');
+  add('world', 'barnWideTrim', trim.buildWideTrim, (b) => b({ shape: barnShape(barnTwo), floorY: 0, roof: roofOf(barnShape(barnTwo)), random: c.random }));
   const bayKit = await import('../../src/world/bayKit.js');
   add('world', 'bayKit', bayKit.buildBayKit, (b) => b({ bays: [c.layout.bay, c.layout.bay2], floorY: 0, random: c.random }));
 
@@ -237,6 +240,8 @@ export async function buildWorldModels() {
   add('barnProp', 'jumperRack', JumperRail, (Rail, scene) => new Rail(scene, LAYOUT, heightAt));
   const { HelmetHooks } = await import('../../src/world/helmetHooks.js');
   add('barnProp', 'helmetHooks', HelmetHooks, (Hooks, scene) => new Hooks(scene, LAYOUT, heightAt));
+  const { WallClock } = await import('../../src/world/weatherStation.js');
+  add('barnProp', 'wallClock', WallClock, (Clock, scene) => (new Clock(scene), scene));
   const { BiscuitTinView } = await import('../../src/world/biscuitTinView.js');
   add('barnProp', 'snackTin', BiscuitTinView, (View, scene) => (new View({ scene, world: { layout: LAYOUT, heightAt } }), scene));
 
@@ -244,6 +249,7 @@ export async function buildWorldModels() {
   const into = (b, scene, more = {}) => (b({ ...c, scene, ...more }), scene);
   const { buildBarnShed } = await import('../../src/world/barnBuild.js');
   add('world', 'barn', buildBarnShed, (b, scene) => into(b, scene));
+  add('world', 'barnOne', buildBarnShed, (b, scene) => into(b, scene, { layout: layoutNew(LAYOUT, RAW_LAYOUT), heights: { heightAt: () => 0 } })); // the new farm's one building
   const { buildOutbuildings } = await import('../../src/world/outbuildingProps.js');
   const bale = { geo: new THREE.CylinderGeometry(0.7, 0.7, 1.2, 12), straw: new THREE.MeshStandardMaterial({ color: 0xc8a850 }) };
   add('world', 'outbuildings', buildOutbuildings, (b, scene) => into(b, scene, { bale }));

@@ -48,6 +48,7 @@ const KNOWN_PLAIN = {
  * (tests/helpers/worldModels.js) instead; this is only for what has none, and a name here must still exist and must not be built there.
  */
 const NOT_MODELS = {
+  'world/barnWide.js: buildWideShell': 'the new farm\'s barn shell, made inside buildBarnShed ("barnOne")',
   'world/upperThornby.js: buildUpperThornby': 'Upper Thornby, a far cluster of roofs and a church tower on the hill that is seen from Back Lane and never reached: it is only ever a far version (farVersion.js boxes with gabled roofs in flat colours), so it has none of the surface detail a near piece is held to (#686)',
   'world/roadMesh.js: buildRoadMesh': 'a road laid over the ground as a strip, the lane and the village street; no model of its own (its look is tests/roadMesh.test.js)',
   'world/autumnView.js: buildConkers': 'the conkers under the woods\' trees, made inside buildWoods (the "logs" and "trailMarkers" pieces)',

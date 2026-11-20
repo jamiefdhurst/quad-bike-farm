@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, FARMSTEAD_PLAN as P, PLAN_ORIGIN, fromPlan, boundariesOf, clippedFields } from '../src/world/layoutNew.js';
 import { barnFrame, barnShape, insideBarn, wallBoxes, outsideDoor } from '../src/world/barn.js';
-import { loftShape, loftRestSpot, worldClimbPoints, Climb, overLoft } from '../src/world/loft.js';
 import { pointInPolygon, distanceToEdges, polygonEdges } from '../src/world/polygons.js';
 import { spawnKeepOut } from '../src/world/spawns.js';
 import { leaveRoute } from '../src/npc/goingHome.js';
@@ -31,31 +30,21 @@ describe('the barn', () => {
     expect(plan(out)[1]).toBeGreaterThan(335);
     expect(inPlanRect(plan(out), P.slab)).toBe(true); // out of the doors is the yard
   });
-  it('has the bell by its door, the tanks against its east wall and the generator along its west one', () => {
+  it('has the bell by its doors, the tanks by its east end and the generator along its west wall', () => {
     const outer = barnShape(two).outerAll;
     const corners = [f.toWorld(outer.minX, outer.minZ), f.toWorld(outer.maxX, outer.maxZ)];
     const east = Math.max(corners[0].x, corners[1].x);
     const west = Math.min(corners[0].x, corners[1].x);
     expect(Math.abs(two.fuelTank.x - east)).toBeLessThan(4);
     expect(two.generator.x).toBeLessThan(west + 0.5);
-    expect(Math.hypot(two.bell.x - east, two.bell.z - (two.barn.z + two.barn.halfX))).toBeLessThan(4);
+    const door = f.toWorld(two.barn.x + two.barn.halfX, two.barn.z);
+    expect(Math.hypot(two.bell.x - door.x, two.bell.z - door.z)).toBeLessThan(10);
     expect(two.jumperRail.yaw).toBeCloseTo(-Math.PI / 2, 6); // its fittings turn with it
   });
-  it('seats the girls on the bales and in the loft inside it, and the ladder climbs to the planks', () => {
-    // The loft's numbers are worked out in the barn's own frame and put in the world by the same functions game.js calls (loftRestSpot, worldClimbPoints): the code is in loft.js, not in a host class.
-    const loft = loftShape(two, 0);
-    const spot = loftRestSpot(two, loft);
-    expect(overLoft(two, spot.x, spot.z)).toBe(true);
-    expect(insideBarn(two, spot.stand.x, spot.stand.z)).toBe(true);
-    expect(two.barnBaleSpots.length).toBe(2);
+  it('seats the girls on bales scattered inside it, with no hayloft', () => {
+    expect(two.loft).toBeUndefined();
+    expect(two.barnBaleSpots.length).toBeGreaterThanOrEqual(4);
     for (const [x, z] of two.barnBaleSpots) expect(insideBarn(two, x, z)).toBe(true);
-    const climb = worldClimbPoints(two, loft, { x: spot.stand.x, y: 0, z: spot.stand.z }, true);
-    const c = new Climb(climb[0], climb[climb.length - 1], 4, climb.slice(1, -1));
-    for (let t = 0; t < 4.2; t += 0.1) {
-      const p = c.update(0.1);
-      expect(insideBarn(two, p.x, p.z, -0.6), `at ${t.toFixed(1)} s: ${p.x.toFixed(2)}, ${p.z.toFixed(2)}`).toBe(true); // the ladder stands inside, to a girl's own width
-    }
-    expect(overLoft(two, climb[3].x, climb[3].z, -0.5)).toBe(true);
     // And you can work at the bench: the bay, the bench and where she stands are inside it, and the console's `tp me bench` puts you in front of it.
     for (const p of [two.bay, two.bench, benchSpot(two)]) expect(insideBarn(two, p.x, p.z)).toBe(true);
     expect(insideBarn(two, two.helmetHooks.stand.x, two.helmetHooks.stand.z)).toBe(true);
@@ -66,9 +55,8 @@ describe('where a vehicle may not start', () => {
   it('keeps clear of the barn\'s doorways on the turned barn: out of the doors, south of them, not east where they used to face', () => {
     const keep = spawnKeepOut(two);
     const doorway = keep.find((k) => k.what === 'the barn doorway');
-    const extension = keep.find((k) => k.what === 'the extension doorway');
-    for (const k of [doorway, extension]) expect(k.z).toBeGreaterThan(two.barn.z + two.barn.halfX); // south of the first door's wall
-    expect(extension.x).toBeLessThan(doorway.x); // the second span is to the west
+    expect(doorway.z).toBeGreaterThan(two.barn.z + two.barn.halfX); // south of the door wall
+    expect(keep.find((k) => k.what === 'the extension doorway')).toBeUndefined(); // one building, one pair of doors
   });
 });
 
