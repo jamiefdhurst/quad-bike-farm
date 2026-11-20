@@ -197,7 +197,8 @@
   "audio/companion-voice-194.mp3",
   "audio/companion-voice-195.mp3",
   "audio/companion-voice-196.mp3",
-  "audio/companion-voice-197.mp3"
+  "audio/companion-voice-197.mp3",
+  "audio/companion-voice-198.mp3"
  ],
  "voice": "chatterbox|7fda5df3df9d",
  "clips": {
@@ -22101,954 +22102,1144 @@
    "start": 14.02,
    "dur": 2.83
   },
-  "At least mine fits, Jess.": {
+  "I am stuck on the drive! Can you help me?": {
    "file": 191,
    "start": 16.93,
+   "dur": 1.91
+  },
+  "I have tipped it over on the drive! Please come!": {
+   "file": 191,
+   "start": 18.92,
+   "dur": 2.55
+  },
+  "I am stuck on Back Lane! Can you help me?": {
+   "file": 191,
+   "start": 21.55,
+   "dur": 2.62
+  },
+  "I have tipped it over on Back Lane! Please come!": {
+   "file": 191,
+   "start": 24.25,
+   "dur": 2.53
+  },
+  "I am stuck out on the moor! Can you help me?": {
+   "file": 191,
+   "start": 26.86,
+   "dur": 2.04
+  },
+  "I have tipped it over out on the moor! Please come!": {
+   "file": 191,
+   "start": 28.98,
+   "dur": 2.7
+  },
+  "I am stuck in the pit! Can you help me?": {
+   "file": 191,
+   "start": 31.76,
+   "dur": 2.63
+  },
+  "I have tipped it over in the pit! Please come!": {
+   "file": 191,
+   "start": 34.47,
+   "dur": 2.43
+  },
+  "I am in the yard! Do you see me?": {
+   "file": 191,
+   "start": 36.98,
+   "dur": 1.53
+  },
+  "I am by the jump! Do you see me?": {
+   "file": 191,
+   "start": 38.59,
+   "dur": 1.92
+  },
+  "I am on the drag strip! Do you see me?": {
+   "file": 191,
+   "start": 40.59,
+   "dur": 1.92
+  },
+  "I am in the low bog! Do you see me?": {
+   "file": 191,
+   "start": 42.59,
+   "dur": 2.0
+  },
+  "I am by the bottom of the track! Do you see me?": {
+   "file": 191,
+   "start": 44.67,
+   "dur": 2.35
+  },
+  "I am in the middle of the field! Do you see me?": {
+   "file": 191,
+   "start": 47.1,
+   "dur": 2.35
+  },
+  "I am by the north hedge! Do you see me?": {
+   "file": 191,
+   "start": 49.53,
+   "dur": 1.84
+  },
+  "I am in the far corner! Do you see me?": {
+   "file": 191,
+   "start": 51.45,
+   "dur": 1.91
+  },
+  "I am down the west hedge! Do you see me?": {
+   "file": 191,
+   "start": 53.44,
+   "dur": 2.21
+  },
+  "I am down the lane! Do you see me?": {
+   "file": 191,
+   "start": 55.73,
+   "dur": 1.93
+  },
+  "I am by the ford! Do you see me?": {
+   "file": 191,
+   "start": 57.74,
+   "dur": 1.92
+  },
+  "I am on the hill! Do you see me?": {
+   "file": 191,
+   "start": 59.74,
+   "dur": 1.61
+  },
+  "I am by the pond! Do you see me?": {
+   "file": 192,
+   "start": 0.1,
+   "dur": 1.86
+  },
+  "I am in the wood! Do you see me?": {
+   "file": 192,
+   "start": 2.04,
+   "dur": 2.03
+  },
+  "I am by the cattle grid! Do you see me?": {
+   "file": 192,
+   "start": 4.15,
+   "dur": 1.85
+  },
+  "I am out on the farm road! Do you see me?": {
+   "file": 192,
+   "start": 6.08,
+   "dur": 2.36
+  },
+  "I am by the trough! Do you see me?": {
+   "file": 192,
+   "start": 8.52,
+   "dur": 1.96
+  },
+  "I am in the barley field! Do you see me?": {
+   "file": 192,
+   "start": 10.56,
+   "dur": 1.93
+  },
+  "I am in the wheat field! Do you see me?": {
+   "file": 192,
+   "start": 12.57,
+   "dur": 1.93
+  },
+  "I am by the field shed! Do you see me?": {
+   "file": 192,
+   "start": 14.58,
+   "dur": 1.97
+  },
+  "I am by the Dutch barn! Do you see me?": {
+   "file": 192,
+   "start": 16.63,
+   "dur": 2.06
+  },
+  "I am on the drive! Do you see me?": {
+   "file": 192,
+   "start": 18.77,
+   "dur": 1.92
+  },
+  "I am on Back Lane! Do you see me?": {
+   "file": 192,
+   "start": 20.77,
+   "dur": 1.92
+  },
+  "I am out on the moor! Do you see me?": {
+   "file": 192,
+   "start": 22.77,
+   "dur": 1.82
+  },
+  "I am in the pit! Do you see me?": {
+   "file": 192,
+   "start": 24.67,
+   "dur": 1.66
+  },
+  "One moment, I am coming.": {
+   "file": 192,
+   "start": 26.41,
+   "dur": 1.46
+  },
+  "I heard you. I am on my way.": {
+   "file": 192,
+   "start": 27.95,
+   "dur": 1.61
+  },
+  "Wait! That is much too far to walk. Come back for me!": {
+   "file": 192,
+   "start": 29.64,
+   "dur": 3.29
+  },
+  "You are miles away! Can you give me a lift?": {
+   "file": 192,
+   "start": 33.01,
+   "dur": 2.42
+  },
+  "I am not walking all that way. Come and fetch me!": {
+   "file": 192,
+   "start": 35.51,
+   "dur": 2.36
+  },
+  "At least mine fits, Jess.": {
+   "file": 192,
+   "start": 37.95,
    "dur": 1.33
   },
   "I'm going on the back next. I asked first.": {
-   "file": 191,
-   "start": 18.34,
+   "file": 192,
+   "start": 39.36,
    "dur": 2.38
   },
   "I asked in my head.": {
-   "file": 191,
-   "start": 20.8,
+   "file": 192,
+   "start": 41.82,
    "dur": 1.32
   },
   "Bet you're not.": {
-   "file": 191,
-   "start": 22.2,
+   "file": 192,
+   "start": 43.22,
    "dur": 0.9
   },
   "Some of us actually help around here.": {
-   "file": 191,
-   "start": 23.18,
+   "file": 192,
+   "start": 44.2,
    "dur": 1.68
   },
   "At least I've never put one in a hedge.": {
-   "file": 191,
-   "start": 24.94,
+   "file": 192,
+   "start": 45.96,
    "dur": 1.53
   },
   "I made everyone a cup of tea earlier.": {
-   "file": 191,
-   "start": 26.55,
+   "file": 192,
+   "start": 47.57,
    "dur": 1.55
   },
   "Well. Not you.": {
-   "file": 191,
-   "start": 28.18,
+   "file": 192,
+   "start": 49.2,
    "dur": 1.08
   },
   "And yours looks like you've been dragged through that hedge.": {
-   "file": 191,
-   "start": 29.34,
+   "file": 192,
+   "start": 50.36,
    "dur": 2.32
   },
   "You're standing very close, Jess.": {
-   "file": 191,
-   "start": 31.74,
+   "file": 192,
+   "start": 52.76,
    "dur": 1.5
   },
   "Course you hadn't.": {
-   "file": 191,
-   "start": 33.32,
+   "file": 192,
+   "start": 54.34,
    "dur": 1.76
   },
   "Is that what you call it?": {
-   "file": 191,
-   "start": 35.16,
+   "file": 192,
+   "start": 56.18,
    "dur": 1.06
   },
   "I'll have you know I've been coming here for years.": {
-   "file": 191,
-   "start": 36.3,
+   "file": 192,
+   "start": 57.32,
    "dur": 2.34
   },
   "It floods. Everyone knows it floods.": {
-   "file": 191,
-   "start": 38.72,
+   "file": 192,
+   "start": 59.74,
    "dur": 2.78
   },
   "It's called making an effort, Jess.": {
-   "file": 191,
-   "start": 41.58,
+   "file": 193,
+   "start": 0.1,
    "dur": 1.84
   },
   "Don't you have somewhere else to be, Jess?": {
-   "file": 191,
-   "start": 43.5,
+   "file": 193,
+   "start": 2.02,
    "dur": 1.69
   },
   "Don't answer that.": {
-   "file": 191,
-   "start": 45.27,
+   "file": 193,
+   "start": 3.79,
    "dur": 0.91
   },
   "I brought biscuits, if anyone nice wants one.": {
-   "file": 191,
-   "start": 46.26,
+   "file": 193,
+   "start": 4.78,
    "dur": 2.49
   },
   "I said nice.": {
-   "file": 191,
-   "start": 48.83,
+   "file": 193,
+   "start": 7.35,
    "dur": 2.06
   },
   "That's not how this works, Jess.": {
-   "file": 191,
-   "start": 50.97,
+   "file": 193,
+   "start": 9.49,
    "dur": 1.48
   },
   "Oh, did I get the last ride? Silly me.": {
-   "file": 191,
-   "start": 52.53,
+   "file": 193,
+   "start": 11.05,
    "dur": 2.2
   },
   "Just a bit.": {
-   "file": 191,
-   "start": 54.81,
+   "file": 193,
+   "start": 13.33,
    "dur": 0.66
   },
   "Maybe try being nicer, Jess.": {
-   "file": 191,
-   "start": 55.55,
+   "file": 193,
+   "start": 14.07,
    "dur": 1.39
   },
   "I've saved you a seat, Jess. Right at the back.": {
-   "file": 191,
-   "start": 57.02,
+   "file": 193,
+   "start": 15.54,
    "dur": 2.29
   },
   "Of course you will, Jess.": {
-   "file": 191,
-   "start": 59.39,
+   "file": 193,
+   "start": 17.91,
    "dur": 1.1
   },
   "Gloat quietly, please.": {
-   "file": 192,
-   "start": 0.1,
+   "file": 193,
+   "start": 19.09,
    "dur": 1.64
   },
   "It won't last, you know.": {
-   "file": 192,
-   "start": 1.82,
+   "file": 193,
+   "start": 20.81,
    "dur": 1.03
   },
   "I'm not sulking. I'm resting my face.": {
-   "file": 192,
-   "start": 2.93,
+   "file": 193,
+   "start": 21.92,
    "dur": 2.09
   },
   "I made the tea and everything.": {
-   "file": 192,
-   "start": 5.1,
+   "file": 193,
+   "start": 24.09,
    "dur": 1.36
   },
   "Oh, shut up.": {
-   "file": 192,
-   "start": 6.54,
+   "file": 193,
+   "start": 25.53,
    "dur": 1.17
   },
   "Yes. Me again.": {
-   "file": 192,
-   "start": 7.79,
+   "file": 193,
+   "start": 26.78,
    "dur": 1.05
   },
   "That's not the boast you think it is.": {
-   "file": 192,
-   "start": 8.92,
+   "file": 193,
+   "start": 27.91,
    "dur": 1.68
   },
   "This is my normal voice.": {
-   "file": 192,
-   "start": 10.68,
+   "file": 193,
+   "start": 29.67,
    "dur": 1.32
   },
   "Don't let her talk you into anything daft.": {
-   "file": 192,
-   "start": 12.08,
+   "file": 193,
+   "start": 31.07,
    "dur": 1.91
   },
   "I'm right here, you know.": {
-   "file": 192,
-   "start": 14.07,
+   "file": 193,
+   "start": 33.06,
    "dur": 1.11
   },
   "Whatever she says, I said it first.": {
-   "file": 192,
-   "start": 15.26,
+   "file": 193,
+   "start": 34.25,
    "dur": 1.86
   },
   "Don't let her lean on you like that!": {
-   "file": 192,
-   "start": 17.2,
+   "file": 193,
+   "start": 36.19,
    "dur": 1.63
   },
   "Hope you fall off!": {
-   "file": 192,
-   "start": 18.91,
+   "file": 193,
+   "start": 37.9,
    "dur": 1.01
   },
   "It's my turn after this!": {
-   "file": 192,
-   "start": 20.0,
+   "file": 193,
+   "start": 38.99,
    "dur": 1.51
   },
   "I will not scream!": {
-   "file": 192,
-   "start": 21.59,
+   "file": 193,
+   "start": 40.58,
    "dur": 1.21
   },
   "Wave to Jess!": {
-   "file": 192,
-   "start": 22.88,
+   "file": 193,
+   "start": 41.87,
    "dur": 1.35
   },
   "Says who?": {
-   "file": 192,
-   "start": 24.31,
+   "file": 193,
+   "start": 43.3,
    "dur": 0.58
   },
   "Have a nice time, did we?": {
-   "file": 192,
-   "start": 24.97,
+   "file": 193,
+   "start": 43.96,
    "dur": 1.25
   },
   "You say that every time.": {
-   "file": 192,
-   "start": 26.3,
+   "file": 193,
+   "start": 45.29,
    "dur": 2.36
   },
   "You were gone ages.": {
-   "file": 192,
-   "start": 28.74,
+   "file": 193,
+   "start": 47.73,
    "dur": 1.46
   },
   "No.": {
-   "file": 192,
-   "start": 30.28,
+   "file": 193,
+   "start": 49.27,
    "dur": 0.38
   },
   "Too late. I already have.": {
-   "file": 192,
-   "start": 30.74,
+   "file": 193,
+   "start": 49.73,
    "dur": 1.88
   },
   "That was lovely. Very gentle.": {
-   "file": 192,
-   "start": 32.7,
+   "file": 193,
+   "start": 51.69,
    "dur": 2.07
   },
   "I haven't even got off yet!": {
-   "file": 192,
-   "start": 34.85,
+   "file": 193,
+   "start": 53.84,
    "dur": 1.32
   },
   "I'm being careful!": {
-   "file": 192,
-   "start": 36.25,
+   "file": 193,
+   "start": 55.24,
    "dur": 1.0
   },
   "There is no hedge, Jess!": {
-   "file": 192,
-   "start": 37.33,
+   "file": 193,
+   "start": 56.32,
    "dur": 1.35
   },
   "Ha ha.": {
-   "file": 192,
-   "start": 38.76,
+   "file": 193,
+   "start": 57.75,
    "dur": 0.81
   },
   "Slow down! You'll break it!": {
-   "file": 192,
-   "start": 39.65,
+   "file": 193,
+   "start": 58.64,
    "dur": 1.97
   },
   "Show off!": {
-   "file": 192,
-   "start": 41.7,
+   "file": 194,
+   "start": 0.1,
    "dur": 0.49
   },
   "I'd rather not.": {
-   "file": 192,
-   "start": 42.27,
+   "file": 194,
+   "start": 0.67,
    "dur": 1.13
   },
   "Not from you!": {
-   "file": 192,
-   "start": 43.48,
+   "file": 194,
+   "start": 1.88,
    "dur": 0.81
   },
   "Don't you dare!": {
-   "file": 192,
-   "start": 44.37,
+   "file": 194,
+   "start": 2.77,
    "dur": 0.94
   },
   "Best driver on the farm, was it?": {
-   "file": 192,
-   "start": 45.39,
+   "file": 194,
+   "start": 3.79,
    "dur": 1.54
   },
   "Oh no. Anyway.": {
-   "file": 192,
-   "start": 47.01,
+   "file": 194,
+   "start": 5.41,
    "dur": 2.13
   },
   "Say please.": {
-   "file": 192,
-   "start": 49.22,
+   "file": 194,
+   "start": 7.62,
    "dur": 1.73
   },
   "You don't have to go round every corner like that.": {
-   "file": 192,
-   "start": 51.03,
+   "file": 194,
+   "start": 9.43,
    "dur": 2.27
   },
   "Just drive.": {
-   "file": 192,
-   "start": 53.38,
+   "file": 194,
+   "start": 11.78,
    "dur": 0.82
   },
   "It doesn't have gears, Jess.": {
-   "file": 192,
-   "start": 54.28,
+   "file": 194,
+   "start": 12.68,
    "dur": 1.29
   },
   "Stop wriggling, you'll have us over.": {
-   "file": 192,
-   "start": 55.65,
+   "file": 194,
+   "start": 14.05,
    "dur": 1.95
   },
   "No, Jess. It's cold. Listen to how it's running.": {
-   "file": 192,
-   "start": 57.68,
+   "file": 194,
+   "start": 16.08,
    "dur": 2.81
   },
   "We will see.": {
-   "file": 193,
-   "start": 0.1,
+   "file": 194,
+   "start": 18.97,
    "dur": 1.05
   },
   "It's only cold. It hasn't warmed up yet.": {
-   "file": 193,
-   "start": 1.23,
+   "file": 194,
+   "start": 20.1,
    "dur": 2.13
   },
   "Listen properly, Jess.": {
-   "file": 193,
-   "start": 3.44,
+   "file": 194,
+   "start": 22.31,
    "dur": 1.24
   },
   "You have not listened once.": {
-   "file": 193,
-   "start": 4.76,
+   "file": 194,
+   "start": 23.63,
    "dur": 1.34
   },
   "Fine. Be wrong.": {
-   "file": 193,
-   "start": 6.18,
+   "file": 194,
+   "start": 25.05,
    "dur": 1.07
   },
   "No, it's running rich. Hear it hunting?": {
-   "file": 193,
-   "start": 7.33,
+   "file": 194,
+   "start": 26.2,
    "dur": 2.66
   },
   "It's rich, Jess. It's too much fuel.": {
-   "file": 193,
-   "start": 10.07,
+   "file": 194,
+   "start": 28.94,
    "dur": 2.31
   },
   "No, that plug is fouled. It's missing.": {
-   "file": 193,
-   "start": 12.46,
+   "file": 194,
+   "start": 31.33,
    "dur": 2.31
   },
   "It's the plug, Jess. It's sooty.": {
-   "file": 193,
-   "start": 14.85,
+   "file": 194,
+   "start": 33.72,
    "dur": 1.93
   },
   "No, that one's worn. Listen to the rattle.": {
-   "file": 193,
-   "start": 16.86,
+   "file": 194,
+   "start": 35.73,
    "dur": 2.44
   },
   "It's tired, Jess. That's wear, not that.": {
-   "file": 193,
-   "start": 19.38,
+   "file": 194,
+   "start": 38.25,
    "dur": 2.73
   },
   "There's nothing wrong with it, Jess.": {
-   "file": 193,
-   "start": 22.19,
+   "file": 194,
+   "start": 41.06,
    "dur": 1.5
   },
   "That's a healthy engine. You're imagining it.": {
-   "file": 193,
-   "start": 23.77,
+   "file": 194,
+   "start": 42.64,
    "dur": 2.4
   },
   "That was a very nice drive, if I say so myself.": {
-   "file": 193,
-   "start": 26.25,
+   "file": 194,
+   "start": 45.12,
    "dur": 2.25
   },
   "I took the racing line.": {
-   "file": 193,
-   "start": 28.58,
+   "file": 194,
+   "start": 47.45,
    "dur": 1.22
   },
   "Of course. I will win that too.": {
-   "file": 193,
-   "start": 29.88,
+   "file": 194,
+   "start": 48.75,
    "dur": 2.01
   },
   "Do not worry, Jess. Second is a perfectly good place.": {
-   "file": 193,
-   "start": 31.97,
+   "file": 194,
+   "start": 50.84,
    "dur": 3.08
   },
   "You were lucky. The ground was in your favour.": {
-   "file": 193,
-   "start": 35.13,
+   "file": 194,
+   "start": 54.0,
    "dur": 2.21
   },
   "I was just being careful.": {
-   "file": 193,
-   "start": 37.42,
+   "file": 194,
+   "start": 56.29,
    "dur": 1.25
   },
   "That was not in the rules.": {
-   "file": 193,
-   "start": 38.75,
+   "file": 194,
+   "start": 57.62,
    "dur": 1.36
   },
   "Wait until the next one.": {
-   "file": 193,
-   "start": 40.19,
+   "file": 194,
+   "start": 59.06,
    "dur": 1.11
   },
   "I am only letting you win to be kind.": {
-   "file": 193,
-   "start": 41.38,
+   "file": 195,
+   "start": 0.1,
    "dur": 2.26
   },
   "Do you want me to read out the scores again?": {
-   "file": 193,
-   "start": 43.72,
+   "file": 195,
+   "start": 2.44,
    "dur": 1.59
   },
   "Twice is not a fluke, Jess.": {
-   "file": 193,
-   "start": 45.39,
+   "file": 195,
+   "start": 4.11,
    "dur": 1.39
   },
   "I do. We do not agree on which, though.": {
-   "file": 193,
-   "start": 46.86,
+   "file": 195,
+   "start": 5.58,
    "dur": 2.11
   },
   "It is steady. Steady gets there.": {
-   "file": 193,
-   "start": 49.05,
+   "file": 195,
+   "start": 7.77,
    "dur": 1.88
   },
   "I have noticed that one quad does the hill better than the others. Not the one you think.": {
-   "file": 193,
-   "start": 51.01,
+   "file": 195,
+   "start": 9.73,
    "dur": 4.45
   },
   "It is not.": {
-   "file": 193,
-   "start": 55.54,
+   "file": 195,
+   "start": 14.26,
    "dur": 1.88
   },
   "You take the flashy one up the hill, and then you wonder why it slows down.": {
-   "file": 193,
-   "start": 57.5,
+   "file": 195,
+   "start": 16.22,
    "dur": 3.33
   },
   "Yours spins its wheels and throws it about.": {
-   "file": 194,
-   "start": 0.1,
+   "file": 195,
+   "start": 19.63,
    "dur": 2.37
   },
   "I pick the one that does not get stuck. You were not looking.": {
-   "file": 194,
-   "start": 2.55,
+   "file": 195,
+   "start": 22.08,
    "dur": 3.07
   },
   "In the wet, there is a quad that grips and a quad that does not. I have been keeping track.": {
-   "file": 194,
-   "start": 5.7,
+   "file": 195,
+   "start": 25.23,
    "dur": 4.88
   },
   "And it is not the one you keep taking.": {
-   "file": 194,
-   "start": 10.66,
+   "file": 195,
+   "start": 30.19,
    "dur": 1.84
   },
   "Mud is where you find out which one is any good.": {
-   "file": 194,
-   "start": 12.58,
+   "file": 195,
+   "start": 32.11,
    "dur": 2.65
   },
   "And you are wrong again.": {
-   "file": 194,
-   "start": 15.31,
+   "file": 195,
+   "start": 34.84,
    "dur": 2.11
   },
   "It is not the one you are on.": {
-   "file": 194,
-   "start": 17.5,
+   "file": 195,
+   "start": 37.03,
    "dur": 1.69
   },
   "I know which is quickest. It is not yours.": {
-   "file": 194,
-   "start": 19.27,
+   "file": 195,
+   "start": 38.8,
    "dur": 3.04
   },
   "Some of these are much nicer on the tarmac. It is quite obvious.": {
-   "file": 194,
-   "start": 22.39,
+   "file": 195,
+   "start": 41.92,
    "dur": 3.38
   },
   "You do not get the tarmac at all, do you? The grip is the whole thing.": {
-   "file": 194,
-   "start": 25.85,
+   "file": 195,
+   "start": 45.38,
    "dur": 3.63
   },
   "We do agree about one thing. That quad is the best up the hill.": {
-   "file": 194,
-   "start": 29.56,
+   "file": 195,
+   "start": 49.09,
    "dur": 3.23
   },
   "We do. It is the one that does not bog.": {
-   "file": 194,
-   "start": 32.87,
+   "file": 195,
+   "start": 52.4,
    "dur": 2.1
   },
   "For the road, there is only one choice, really.": {
-   "file": 194,
-   "start": 35.05,
+   "file": 195,
+   "start": 54.58,
    "dur": 2.14
   },
   "I am not slow. And I am not talking to you.": {
-   "file": 194,
-   "start": 37.27,
+   "file": 195,
+   "start": 56.8,
    "dur": 2.56
   },
   "You forced me off the line. I saw you.": {
-   "file": 194,
-   "start": 39.91,
+   "file": 195,
+   "start": 59.44,
    "dur": 2.25
   },
   "That is it. I am not racing you again.": {
-   "file": 194,
-   "start": 42.24,
+   "file": 196,
+   "start": 0.1,
    "dur": 2.39
   },
   "Get off my quad, Jess. Now.": {
-   "file": 194,
-   "start": 44.71,
+   "file": 196,
+   "start": 2.57,
    "dur": 1.81
   },
   "That one is. And I am done with you today.": {
-   "file": 194,
-   "start": 46.6,
+   "file": 196,
+   "start": 4.46,
    "dur": 2.45
   },
   "Nobody said it was.": {
-   "file": 194,
-   "start": 49.13,
+   "file": 196,
+   "start": 6.99,
    "dur": 1.79
   },
   "Do not tell me to shut up.": {
-   "file": 194,
-   "start": 51.0,
+   "file": 196,
+   "start": 8.86,
    "dur": 1.42
   },
   "Do you know what? That was unkind.": {
-   "file": 194,
-   "start": 52.5,
+   "file": 196,
+   "start": 10.36,
    "dur": 2.2
   },
   "It was not funny. I am going over here.": {
-   "file": 194,
-   "start": 54.78,
+   "file": 196,
+   "start": 12.64,
    "dur": 2.15
   },
   "Not to you.": {
-   "file": 194,
-   "start": 57.01,
+   "file": 196,
+   "start": 14.87,
    "dur": 0.87
   },
   "Some people should apologise.": {
-   "file": 194,
-   "start": 57.96,
+   "file": 196,
+   "start": 15.82,
    "dur": 2.02
   },
   "Only everyone who asked.": {
-   "file": 195,
-   "start": 0.1,
+   "file": 196,
+   "start": 17.92,
    "dur": 1.76
   },
   "Do not stand near me.": {
-   "file": 195,
-   "start": 1.94,
+   "file": 196,
+   "start": 19.76,
    "dur": 1.8
   },
   "Then we will be waiting a long time.": {
-   "file": 195,
-   "start": 3.82,
+   "file": 196,
+   "start": 21.64,
    "dur": 2.08
   },
   "I am being perfectly civil.": {
-   "file": 195,
-   "start": 5.98,
+   "file": 196,
+   "start": 23.8,
    "dur": 1.41
   },
   "Same thing.": {
-   "file": 195,
-   "start": 7.47,
+   "file": 196,
+   "start": 25.29,
    "dur": 1.46
   },
   "Look. I was snippy. I am sorry.": {
-   "file": 195,
-   "start": 9.01,
+   "file": 196,
+   "start": 26.83,
    "dur": 3.29
   },
   "Jess.": {
-   "file": 195,
-   "start": 12.38,
+   "file": 196,
+   "start": 30.2,
    "dur": 0.69
   },
   "This is silly. I am not cross any more.": {
-   "file": 195,
-   "start": 13.15,
+   "file": 196,
+   "start": 30.97,
    "dur": 2.46
   },
   "Might have?": {
-   "file": 195,
-   "start": 15.69,
+   "file": 196,
+   "start": 33.51,
    "dur": 0.66
   },
   "Thrilled.": {
-   "file": 195,
-   "start": 16.43,
+   "file": 196,
+   "start": 34.25,
    "dur": 0.73
   },
   "Yes. Please. I missed you slightly.": {
-   "file": 195,
-   "start": 17.24,
+   "file": 196,
+   "start": 35.06,
    "dur": 2.1
   },
   "Some of us obey the speed limit.": {
-   "file": 195,
-   "start": 19.42,
+   "file": 196,
+   "start": 37.24,
    "dur": 1.51
   },
   "You are going far too fast!": {
-   "file": 195,
-   "start": 21.01,
+   "file": 196,
+   "start": 38.83,
    "dur": 1.37
   },
   "Is this a good speed for you, Jess?": {
-   "file": 195,
-   "start": 22.46,
+   "file": 196,
+   "start": 40.28,
    "dur": 1.49
   },
   "Maybe because you have not been.": {
-   "file": 195,
-   "start": 24.03,
+   "file": 196,
+   "start": 41.85,
    "dur": 1.57
   },
   "Did you see the way our friend took that corner earlier?": {
-   "file": 195,
-   "start": 25.68,
+   "file": 196,
+   "start": 43.5,
    "dur": 2.33
   },
   "Near the hedge. Be kind.": {
-   "file": 195,
-   "start": 28.09,
+   "file": 196,
+   "start": 45.91,
    "dur": 1.38
   },
   "Do not be silly.": {
-   "file": 195,
-   "start": 29.55,
+   "file": 196,
+   "start": 47.37,
    "dur": 1.1
   },
   "Someone has been riding the Bruin like it owes money.": {
-   "file": 195,
-   "start": 30.73,
+   "file": 196,
+   "start": 48.55,
    "dur": 2.32
   },
   "I am not asking.": {
-   "file": 195,
-   "start": 33.13,
+   "file": 196,
+   "start": 50.95,
    "dur": 1.06
   },
   "Do not say anything, but the choke is getting better.": {
-   "file": 195,
-   "start": 34.27,
+   "file": 196,
+   "start": 52.09,
    "dur": 2.74
   },
   "Keep your voice down.": {
-   "file": 195,
-   "start": 37.09,
+   "file": 196,
+   "start": 54.91,
    "dur": 1.03
   },
   "It is nice having someone to ride with, though.": {
-   "file": 195,
-   "start": 38.2,
+   "file": 196,
+   "start": 56.02,
    "dur": 1.94
   },
   "I am only saying.": {
-   "file": 195,
-   "start": 40.22,
+   "file": 196,
+   "start": 58.04,
    "dur": 1.48
   },
   "The door is painted on, Jess.": {
-   "file": 195,
-   "start": 41.78,
+   "file": 196,
+   "start": 59.6,
    "dur": 1.46
   },
   "That sign is lovely, you know. Someone has taken real care over it.": {
-   "file": 195,
-   "start": 43.32,
+   "file": 197,
+   "start": 0.1,
    "dur": 3.57
   },
   "A lemonade. A proper one, with ice.": {
-   "file": 195,
-   "start": 46.97,
+   "file": 197,
+   "start": 3.75,
    "dur": 2.11
   },
   "I could sit in a beer garden all afternoon.": {
-   "file": 195,
-   "start": 49.16,
+   "file": 197,
+   "start": 5.94,
    "dur": 2.13
   },
   "You do not have a plan. You have a thirst.": {
-   "file": 195,
-   "start": 51.37,
+   "file": 197,
+   "start": 8.15,
    "dur": 2.22
   },
   "Do you think they do a Sunday roast?": {
-   "file": 195,
-   "start": 53.67,
+   "file": 197,
+   "start": 10.45,
    "dur": 1.44
   },
   "I would be good at the quiz.": {
-   "file": 195,
-   "start": 55.19,
+   "file": 197,
+   "start": 11.97,
    "dur": 1.21
   },
   "We are already next to the picnic table.": {
-   "file": 195,
-   "start": 56.48,
+   "file": 197,
+   "start": 13.26,
    "dur": 1.97
   },
   "It is nice, being somewhere that is not the farm.": {
-   "file": 195,
-   "start": 58.53,
+   "file": 197,
+   "start": 15.31,
    "dur": 2.59
   },
   "You wanted one very much.": {
-   "file": 196,
-   "start": 0.1,
+   "file": 197,
+   "start": 17.98,
    "dur": 1.4
   },
   "Thank you for bringing us. It was nice to sit somewhere with a view of a pub.": {
-   "file": 196,
-   "start": 1.58,
+   "file": 197,
+   "start": 19.46,
    "dur": 3.62
   },
   "You said that last time.": {
-   "file": 196,
-   "start": 5.28,
+   "file": 197,
+   "start": 23.16,
    "dur": 1.86
   },
   "We should come back on a warm evening.": {
-   "file": 196,
-   "start": 7.22,
+   "file": 197,
+   "start": 25.1,
    "dur": 1.47
   },
   "Jess, it cannot hear you.": {
-   "file": 196,
-   "start": 8.77,
+   "file": 197,
+   "start": 26.65,
    "dur": 2.08
   },
   "I bet you do.": {
-   "file": 196,
-   "start": 10.93,
+   "file": 197,
+   "start": 28.81,
    "dur": 0.99
   },
   "You only won because I let you.": {
-   "file": 196,
-   "start": 12.0,
+   "file": 197,
+   "start": 29.88,
    "dur": 2.11
   },
   "It was a long time ago.": {
-   "file": 196,
-   "start": 14.19,
+   "file": 197,
+   "start": 32.07,
    "dur": 1.64
   },
   "I did beat you in that race, you know.": {
-   "file": 196,
-   "start": 15.91,
+   "file": 197,
+   "start": 33.79,
    "dur": 1.7
   },
   "I have not finished telling you.": {
-   "file": 196,
-   "start": 17.69,
+   "file": 197,
+   "start": 35.57,
    "dur": 1.48
   },
   "A fluke that finished ahead of you.": {
-   "file": 196,
-   "start": 19.25,
+   "file": 197,
+   "start": 37.13,
    "dur": 1.48
   },
   "Do not make a fuss, Jess.": {
-   "file": 196,
-   "start": 20.81,
+   "file": 197,
+   "start": 38.69,
    "dur": 1.39
   },
   "I thought you were brilliant in that race.": {
-   "file": 196,
-   "start": 22.28,
+   "file": 197,
+   "start": 40.16,
    "dur": 1.62
   },
   "I am allowed to say so.": {
-   "file": 196,
-   "start": 23.98,
+   "file": 197,
+   "start": 41.86,
    "dur": 1.21
   },
   "We did not go easy on you this time.": {
-   "file": 196,
-   "start": 25.27,
+   "file": 197,
+   "start": 43.15,
    "dur": 1.91
   },
   "You can win the next race. I will say a prayer.": {
-   "file": 196,
-   "start": 27.26,
+   "file": 197,
+   "start": 45.14,
    "dur": 2.62
   },
   "That was one time.": {
-   "file": 196,
-   "start": 29.96,
+   "file": 197,
+   "start": 47.84,
    "dur": 1.72
   },
   "I am not going near that mud again.": {
-   "file": 196,
-   "start": 31.76,
+   "file": 197,
+   "start": 49.64,
    "dur": 2.41
   },
   "Do not.": {
-   "file": 196,
-   "start": 34.25,
+   "file": 197,
+   "start": 52.13,
    "dur": 0.63
   },
   "Still got mud in your boots, Jess?": {
-   "file": 196,
-   "start": 34.96,
+   "file": 197,
+   "start": 52.84,
    "dur": 1.52
   },
   "It was a shortcut to the bottom.": {
-   "file": 196,
-   "start": 36.56,
+   "file": 197,
+   "start": 54.44,
    "dur": 1.63
   },
   "Which bog?": {
-   "file": 196,
-   "start": 38.27,
+   "file": 197,
+   "start": 56.15,
    "dur": 0.75
   },
   "I landed on my feet.": {
-   "file": 196,
-   "start": 39.1,
+   "file": 197,
+   "start": 56.98,
    "dur": 1.14
   },
   "My shoulder is still sore from earlier.": {
-   "file": 196,
-   "start": 40.32,
+   "file": 197,
+   "start": 58.2,
    "dur": 1.74
   },
   "From you laughing at me.": {
-   "file": 196,
-   "start": 42.14,
+   "file": 198,
+   "start": 0.1,
    "dur": 1.58
   },
   "Jess, I have never seen anyone go over so fast.": {
-   "file": 196,
-   "start": 43.8,
+   "file": 198,
+   "start": 1.76,
    "dur": 3.04
   },
   "It really was not.": {
-   "file": 196,
-   "start": 46.92,
+   "file": 198,
+   "start": 4.88,
    "dur": 2.21
   },
   "Nobody said a word.": {
-   "file": 196,
-   "start": 49.21,
+   "file": 198,
+   "start": 7.17,
    "dur": 1.69
   },
   "Do you think it will start again, the one that seized?": {
-   "file": 196,
-   "start": 50.98,
+   "file": 198,
+   "start": 8.94,
    "dur": 2.27
   },
   "That is the same problem.": {
-   "file": 196,
-   "start": 53.33,
+   "file": 198,
+   "start": 11.29,
    "dur": 1.13
   },
   "Someone. Not looking at anyone.": {
-   "file": 196,
-   "start": 54.54,
+   "file": 198,
+   "start": 12.5,
    "dur": 2.34
   },
   "I am sorry about before, Jess. Mostly.": {
-   "file": 196,
-   "start": 56.96,
+   "file": 198,
+   "start": 14.92,
    "dur": 2.4
   },
   "You were awful. I was justified.": {
-   "file": 196,
-   "start": 59.44,
+   "file": 198,
+   "start": 17.4,
    "dur": 2.82
   },
   "You have seen it six times.": {
-   "file": 197,
-   "start": 0.1,
+   "file": 198,
+   "start": 20.3,
    "dur": 1.77
   },
   "I keep checking my pocket for the licence.": {
-   "file": 197,
-   "start": 1.95,
+   "file": 198,
+   "start": 22.15,
    "dur": 1.82
   },
   "I know. I like checking.": {
-   "file": 197,
-   "start": 3.85,
+   "file": 198,
+   "start": 24.05,
    "dur": 1.8
   },
   "Thank you. That is kind.": {
-   "file": 197,
-   "start": 5.73,
+   "file": 198,
+   "start": 25.93,
    "dur": 2.05
   },
   "I do not want to talk about the test.": {
-   "file": 197,
-   "start": 7.86,
+   "file": 198,
+   "start": 28.06,
    "dur": 1.52
   },
   "You had your mouth open.": {
-   "file": 197,
-   "start": 9.46,
+   "file": 198,
+   "start": 29.66,
    "dur": 1.16
   }
  }
