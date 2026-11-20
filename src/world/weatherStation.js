@@ -228,10 +228,10 @@ export class WeatherStation {
       const cx = w * (i + 0.5);
       ctx.globalAlpha = s.past ? 0.35 : 1;
       ctx.fillStyle = CHALK;
-      ctx.font = boardFont('label', 26);
+      ctx.font = boardFont('board', 26);
       ctx.fillText(s.label, cx, 32);
       drawSymbol(ctx, s.symbol, cx, 82, 90);
-      ctx.font = boardFont('label', 22);
+      ctx.font = boardFont('board', 22);
       ctx.fillText(SYMBOL_WORDS[s.symbol] ?? '', cx, 148);
       if (s.now) {
         ctx.strokeStyle = CHALK;
@@ -282,7 +282,7 @@ function drawClock(clock, hour) {
   clock.texture.needsUpdate = true;
 }
 
-/** A round wall clock on its own (the new barn's, on the back wall over the bench's end): a painted white face in a dark ring and a brass bezel, facing +z, 0.34 m across. */
+/** A round wall clock on its own (the new barn's, high on the bench's wall): a painted white face in a dark ring and a brass bezel, facing +z, 0.34 m across. */
 export class WallClock {
   constructor(scene) {
     this.group = new THREE.Group();

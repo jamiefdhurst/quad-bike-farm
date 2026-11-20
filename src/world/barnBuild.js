@@ -562,7 +562,8 @@ export function buildBarnShed({ scene, layout: worldLayout, heights, fixedBox: f
   const bulbs = bulbAt.map((p) => {
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0xfff1c9 }));
     add(bulb, p.x, p.y, p.z, { cast: false, receive: false });
-    add(box(0.015, 0.9, 0.015, steel), p.x, p.y + 0.5, p.z, { cast: false, receive: false });
+    const flex = wide ? 1.8 : 0.9; // the new barn's hang from the purlins, 1.8 m up
+    add(box(0.015, flex, 0.015, steel), p.x, p.y + flex / 2 + 0.05, p.z, { cast: false, receive: false });
     if (wide) add(new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.05, 0.1, 10, 1, true), steel), p.x, p.y + 0.12, p.z, { cast: false, receive: false }); // a shade over it
     return bulb;
   });

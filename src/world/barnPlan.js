@@ -32,10 +32,10 @@ export function barnRaw() {
     barn: at('barn', { x: 0, z: 0, yaw: 0, ...BARN_NEW, door: { ...BARN_NEW.door } }),
     // Straw bales to sit on, scattered by the back wall where it is dry, and not in a row (each turned a different way).
     barnBaleSpots: at('barn', [
-      [-7.6, 3.9, Math.PI / 2 + 0.2],
-      [-6.9, 5.9, Math.PI / 2 - 0.35],
-      [-7.7, 8.3, Math.PI / 2 + 0.05],
-      [-5.6, 10.6, Math.PI * 0.8],
+      [-7.2, 6.1, Math.PI / 2 + 0.2],
+      [-6.5, 8.0, Math.PI / 2 - 0.35],
+      [-7.7, 9.8, Math.PI / 2 + 0.05],
+      [-5.6, 11.2, Math.PI * 0.8],
     ]),
     bench: at('barn', { ...bench, yaw: 0, depth: 0.7, height: 0.92 }),
     benchCharger: at('barn', { x: bench.x - 1.7, z: -12.2, yaw: 0 }),
@@ -44,7 +44,7 @@ export function barnRaw() {
     benchLeads: at('barn', { x: bench.x - 0.75, z: -12.3, yaw: 0.4 }),
     benchPack: at('barn', { x: bench.x + 1, z: -12.08, yaw: 0.15 }),
     moneyTin: at('barn', { x: -7.7, z: -INNER_Z, y: 1.05 }),
-    // On the doors' wall beside the doorway: the thermometer, the barometer and the forecast together (the clock is on the back wall, `clock`).
+    // On the doors' wall beside the doorway: the thermometer, the barometer and the forecast together (the clock is on the bench's wall, `clock`).
     weatherStation: at('barn', { x: INNER_X, z: -6.4, yaw: -Math.PI / 2, y: 1.65 }), // on the doors' wall, facing back into the barn
     clock: at('barn', { x: 1, z: -INNER_Z, yaw: 0, y: 3.9 }), // high on the bench's wall over the bays, so it is seen from the bench and the big bay, apart from the calendar on the back wall
     // The farm desk against the back wall and its stool, by the boards: where the paperwork is done (the computer for the classifieds is #806's).

@@ -179,7 +179,7 @@ import { HazeLayer } from './effects/hazeLayer.js';
 import { Mist, Rainbow, MIST_PARAM_RANGES, RAINBOW_PARAM_RANGES } from './world/mist.js';
 import { RainbowView } from './effects/rainbowView.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
-import { barnShape, barnFrame, barnLocal, placeInBarn, inFirstSpan, inDoorway, outsideDoor, barnBaleSeats } from './world/barn.js';
+import { barnShape, barnFrame, barnLocal, placeInBarn, inFirstSpan, inDoorway, outsideDoor, barnBaleSeats, barnLampShare } from './world/barn.js';
 import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid, pickQuads } from './npc/race.js';
 import { DEFAULT_SIGHT_PARAMS, SIGHT_PARAM_RANGES, gatesFoundOpen } from './npc/sights.js';
 import { DEFAULT_OUTING_PARAMS, OUTING_PARAM_RANGES, pickOuting, outingSpots } from './npc/outings.js';
@@ -7080,7 +7080,7 @@ export class Game {
       // The bulb and the light work off the generator (items/generator.js): with it off the barn is as dark as the day makes it.
       const lit = this.generator.powered;
       const lamps = barn.lights ?? [barn.light, barn.light2].filter(Boolean); // however many hang in it, they share what two bulbs gave
-      const level = lit ? ((BARN_BULB * 2) / lamps.length) * Math.max(indoor * gloom, dark > 0.5 ? 0.8 : 0) : 0;
+      const level = lit ? barnLampShare(BARN_BULB, lamps.length) * Math.max(indoor * gloom, dark > 0.5 ? 0.8 : 0) : 0;
       for (const l of lamps) l.intensity = level;
       if (this.bulbLit !== lit) {
         this.bulbLit = lit;

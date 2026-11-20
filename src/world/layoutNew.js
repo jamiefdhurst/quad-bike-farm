@@ -1162,7 +1162,7 @@ export function farmsteadLayout(today, raw) {
       bin: { x: bin[0], z: bin[1], yaw: P.animals.bin[2] }, bucket: { x: bucket[0], z: bucket[1], yaw: P.animals.bucket[2] },
     },
     jerryCanSpots: [
-      ...base.jerryCanSpots.filter((j) => j.where !== 'by the Dutch barn' && j.where !== 'by the field shed').map((j) => (j.where === 'by the petrol tank' ? tanks(j) : j)).map((j) => ({ ...j, where: { 'by the paddock': 'by the trailers', 'by the field gate': 'out in the yard' }[j.where] ?? j.where })),
+      ...base.jerryCanSpots.filter((j) => j.where !== 'by the Dutch barn' && j.where !== 'by the field shed').map((j) => (j.where === 'by the petrol tank' ? tanks(j) : j.where === 'by the silage bales' ? { ...j, x: pt(P.silage)[0] + 8, z: pt(P.silage)[1] + 3 } : j)).map((j) => ({ ...j, where: { 'by the paddock': 'by the trailers', 'by the field gate': 'out in the yard' }[j.where] ?? j.where })),
       again.dutchCan,
       ...today.jerryCanSpots.filter((j) => j.where === 'by the field shed'),
     ],
