@@ -35,7 +35,6 @@ const KNOWN_PLAIN = {
   washer: 'a white painted body in flat colour',
   brushwood: 'sticks in flat brown, no bark texture',
   'trolley-jack': 'painted steel in flat colour',
-  pit: 'concrete and steel edging in flat colour',
   electricFence: 'plain posts, tape and a battery box in flat colour',
   jumpRamp: 'an earth ramp in flat colour',
   brushwoodHeap: 'sticks in flat brown, no bark texture (as brushwood)',
