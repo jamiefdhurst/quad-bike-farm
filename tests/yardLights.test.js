@@ -43,17 +43,18 @@ describe('where the floodlights are', () => {
     expect(p.z).toBeLessThan(Math.min(two.fuelTank.z, two.dieselBowser.z) - 1.5); // the tanks' labels face south, the pole stands on their back
     for (const r of keepRects) expect(inRect(r, p.x, p.z, 1), JSON.stringify(r)).toBe(false);
   });
-  it('hangs the gable lamp on the barn\'s door gable above the doors, facing out of it', () => {
+  it('hangs the floodlight on the barn\'s doors\' wall under the eaves, past where the door leaves rest, facing out of it', () => {
     const floorY = heights.heightAt(two.barn.x, two.barn.z);
     const g = gableSpot(two, floorY);
     const s = barnShape({ ...two, ...two.barnLocal });
     const f = barnFrame(two);
     const out = f.vecToWorld(1, 0);
-    const gate = f.toWorld(s.outer.maxX, s.z); // the door gable's middle
+    const gate = f.toWorld(s.outer.maxX, s.z); // the doors' wall, at the doorway
     expect((g.x - gate.x) * out.x + (g.z - gate.z) * out.z).toBeGreaterThan(0.1); // outside the wall
     expect((g.x - gate.x) * out.x + (g.z - gate.z) * out.z).toBeLessThan(0.6); // and on it
-    expect(g.y).toBeGreaterThan(floorY + s.wallHeight); // in the gable, over the eaves
-    expect(g.y).toBeLessThan(floorY + s.ridge);
+    expect(g.y).toBeGreaterThan(floorY + s.door.height); // above the doorway's header
+    expect(g.y).toBeLessThan(floorY + s.wallHeight); // under the eaves
+    expect(Math.hypot(g.x - gate.x, g.z - gate.z)).toBeGreaterThan(s.door.maxZ - s.z + 3.5); // beyond the leaves parked either side of the doors
     expect(Math.sin(g.heading)).toBeCloseTo(out.x, 6);
     expect(Math.cos(g.heading)).toBeCloseTo(out.z, 6);
   });
@@ -121,7 +122,8 @@ describe('the weather vane', () => {
     const floorY = heights.heightAt(s.x, s.z);
     expect(vane.position.y).toBeCloseTo(floorY + s.ridge + 0.12, 6);
     const f = barnFrame(two);
-    const ridgeEnds = [f.toWorld(s.outer.minX, s.z), f.toWorld(s.outer.maxX, s.z)];
+    // The new barn's ridge runs along the doors' wall (the barn's z), the vane near its east end; today's ran out of the doors.
+    const ridgeEnds = s.wide ? [f.toWorld(s.x, s.outer.minZ), f.toWorld(s.x, s.outer.maxZ)] : [f.toWorld(s.outer.minX, s.z), f.toWorld(s.outer.maxX, s.z)];
     const along = new THREE.Vector2(ridgeEnds[1].x - ridgeEnds[0].x, ridgeEnds[1].z - ridgeEnds[0].z);
     const rel = new THREE.Vector2(vane.position.x - ridgeEnds[0].x, vane.position.z - ridgeEnds[0].z);
     const t = rel.dot(along) / along.lengthSq();
