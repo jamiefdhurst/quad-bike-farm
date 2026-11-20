@@ -7,12 +7,22 @@ import { choose, mainNeed, nextThink, OFFER_KINDS } from './chooser.js';
 import { agendaKey } from './agenda.js';
 import { GO_KINDS } from './tractorGo.js';
 import { showOffBoost } from '../world/kids.js';
+import { registerTuning } from '../core/tuning.js';
 import { underCover } from './soaking.js';
+import { DEFAULT_FAR_WALK_PARAMS, FAR_WALK_PARAM_RANGES, splitFar, liftOffer, howShePlans, wayLength } from './farWalk.js';
+
+/** Where each kind of offer takes her, by the name of the place (`farPlaces`); a kind not listed has no place to walk to, or one near her by its own range. */
+export const FAR_PLACE_OF_KIND = {
+  hut: 'hut', flask: 'flask', fire: 'fire',
+  tea: 'barn', lunch: 'barn', biscuit: 'barn', jumper: 'barn', coat: 'barn', helmet: 'barn', benchWork: 'barn', generatorStart: 'barn', goIn: 'barn',
+};
 
 export class MindsHost {
   constructor(game) {
     this.g = game;
     this.needsAt = null;
+    this.farParams = { ...DEFAULT_FAR_WALK_PARAMS }; // how far she walks on her own choice (npc/farWalk.js)
+    registerTuning('Far is far', this.farParams, FAR_WALK_PARAM_RANGES);
   }
 
   /**
@@ -61,7 +71,7 @@ export class MindsHost {
       // Something you stopped her doing is still on her mind, so she's keener on it for a while (npc/intent.js).
       // Sleepy, she can't be bothered with anything but a doze (companionParams: sleepyLazy).
       const lazy = 1 - c.params.sleepyLazy * c.needs.sleep;
-      let offers = this.offersFor(c, ridden).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * c.memory.weight(o.key) * c.agenda.boost(o.key, c.params) * showOffBoost(o.key, g.trafficHost.kidsWatching, g.trafficHost.kidsParams) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy * c.mood.keen(c.params)) }));
+      let offers = this.farWalkOffers(c, ridden, this.offersFor(c, ridden)).map((o) => ({ ...o, weight: o.weight * c.intent.boost(o.key, c.params) * c.memory.weight(o.key) * c.agenda.boost(o.key, c.params) * showOffBoost(o.key, g.trafficHost.kidsWatching, g.trafficHost.kidsParams) * (o.key === 'doze' || OFFER_KINDS[o.key]?.urgent ? 1 : lazy * c.mood.keen(c.params)) }));
       if (sitting) offers = offers.filter((o) => OFFER_KINDS[o.key]?.fromSeat);
       else if (urgentOnly) offers = offers.filter((o) => OFFER_KINDS[o.key]?.urgent);
       // Free again with a plan to carry on (npc/plans.js): the second part, if it's still on offer, is taken without weighing.
@@ -93,6 +103,61 @@ export class MindsHost {
       m.last = { key: pick.key, need, score: scored[0].score };
       m.since = 0;
     }
+  }
+
+  /**
+   * Whether she is waiting at the hill's foot, where the girls wait while you go up it (#690): about 250 m from the hut and the flask rock, so
+   * her range to either is counted from here, and the way up is the lift that far-is-far gives her (npc/farWalk.js).
+   */
+  waitingAtFoot(c) {
+    const w = this.g.world.fields?.hill?.waitSpot;
+    return !!w && Math.hypot(c.root.position.x - w.x, c.root.position.z - w.z) < this.farParams.waitingRadius;
+  }
+
+  /** The places an offer can take her to, in the world: { hut, flask, fire, barn } as { x, z } (any that this farm lacks left out). */
+  farPlaces() {
+    const g = this.g;
+    const L = g.world.layout;
+    const hut = g.hutHost?.spots?.[0];
+    return { hut, flask: g.flaskSpot, fire: g.fireSpots?.[0], barn: L.yard && { x: L.yard.x, z: L.yard.z } };
+  }
+
+  /**
+   * Far is far (npc/farWalk.js): an offer that would take her more than the walking limit on foot is put aside, and in its place she is
+   * offered one lift: asking you if you are close and sat still with room on the back, or a quad of her own to take there.
+   */
+  farWalkOffers(c, ridden, offers) {
+    const g = this.g;
+    const p = this.farParams;
+    const here = c.root.position;
+    const from = { x: here.x, z: here.z };
+    const places = this.farPlaces();
+    const route = (to) => g.world.fields.route(from, to).map((pt) => ({ x: pt.x, z: pt.z }));
+    const { near, far } = splitFar(offers, from, (o) => (FAR_PLACE_OF_KIND[o.key] ? places[FAR_PLACE_OF_KIND[o.key]] : null), route, p);
+    if (!far.length) return offers;
+    const yours = ridden?.quad;
+    const quad = c.quads?.find((q) => c.canDrive(q) && !q.rider && q.position.distanceTo(c.root.position) < p.liftFrom * 0.4);
+    const how = howShePlans({
+      youDistance: yours ? yours.position.distanceTo(c.root.position) : Infinity,
+      youStopped: !!yours && Math.abs(yours.speed) < 0.5,
+      youRoom: !!yours && c.canRidePillion(yours),
+      quadFree: !!quad,
+    }, p);
+    const lift = liftOffer(far, how, p);
+    if (!lift) return near;
+    const take = () => this.takeLift(c, lift, yours, quad);
+    return [...near, { ...lift, take }];
+  }
+
+  /** She goes the far way: onto the back of your quad, or on a quad of her own, driving to the place by the gateways (herDriving's outing). */
+  takeLift(c, lift, yours, quad) {
+    if (lift.how === 'ask') {
+      c.selfEvents.push('join'); // "Shove up, I want a ride"
+      c.requestMount(yours, { ownChoice: true, seat: 'pillion' });
+      return;
+    }
+    c.outingTo = { name: 'where she was going', x: lift.place.x, z: lift.place.z };
+    c.requestDrive(quad);
   }
 
   /** Everything this girl could choose to do now (npc/chooser.js): her boredom choices and what the moved features offer her. */

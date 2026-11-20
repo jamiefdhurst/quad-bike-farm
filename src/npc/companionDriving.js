@@ -798,9 +798,12 @@ export const drivingMethods = {
     const way = (from, to) => fields.route(from, to).map((pt) => ({ x: pt.x, z: pt.z }));
     const forced = this.outingForced; // from the debug panel: this drive goes somewhere for certain
     this.outingForced = false;
+    // Sent somewhere far on her own choice (farWalk.js): that one place, certain, however far.
+    const to = this.outingTo;
+    this.outingTo = null;
     // A car only ever goes out along the farm road and back (outings.js roadSpots), every time, however far the road's end is.
-    const p = road ? { ...this.outingParams, chance: 1, maxDistance: Infinity } : forced ? { ...this.outingParams, chance: 1 } : this.outingParams;
-    const spots = () => (road ? roadSpots(this.world.layout) : this.outingSpots());
+    const p = to ? { ...this.outingParams, chance: 1, minDistance: 0, maxDistance: Infinity } : road ? { ...this.outingParams, chance: 1, maxDistance: Infinity } : forced ? { ...this.outingParams, chance: 1 } : this.outingParams;
+    const spots = () => (to ? [to] : road ? roadSpots(this.world.layout) : this.outingSpots());
     // With you on the back, somewhere to show you (sights.js). Forced (the debug panel): even with nobody on, and certain.
     const sp = this.sightParams ?? DEFAULT_SIGHT_PARAMS;
     const sightForced = this.sightForced;

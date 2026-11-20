@@ -9196,7 +9196,7 @@ export class Game {
   flaskContext(ridden) {
     const v = this.flaskSpot;
     if (!v) return { girls: [], youDistance: Infinity, youSlow: false, weather: this.flaskWeather() };
-    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, distance: Math.hypot(c.root.position.x - v.x, c.root.position.z - v.z) }));
+    const girls = this.companions.map((c) => ({ id: c.character.id, free: c.availability().free, distance: this.mindsHost.waitingAtFoot(c) ? 0 : Math.hypot(c.root.position.x - v.x, c.root.position.z - v.z) }));
     const speed = ridden ? Math.abs(ridden.quad.speed) : 0;
     return { girls, youDistance: Math.hypot(this.player.position.x - v.x, this.player.position.z - v.z), youSlow: speed < 2, weather: this.flaskWeather() };
   }

@@ -206,7 +206,7 @@ export class HutHost {
       cold: coldness(g.weather.temperature),
       darkness: g.daylight?.darkness ?? 0,
       stoveWarm: this.stove.warm,
-      girls: g.companions.map((c) => ({ id: c.character.id, free: c.availability().free, distance: Math.hypot(c.root.position.x - s.x, c.root.position.z - s.z) })),
+      girls: g.companions.map((c) => ({ id: c.character.id, free: c.availability().free, distance: g.mindsHost?.waitingAtFoot(c) ? 0 : Math.hypot(c.root.position.x - s.x, c.root.position.z - s.z) })),
     };
   }
 
