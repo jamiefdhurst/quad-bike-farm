@@ -5,9 +5,9 @@
 import * as THREE from 'three';
 import { buildHenHouse, buildPigArk } from './orchardKit.js';
 import { createRandom } from '../core/random.js';
+import { worldBox } from './outbuildingProps.js';
+import { woodTexture } from './neighbourTextures.js';
 
-const WOOD = 0x7a5a3a;
-const WOOD_DARK = 0x4f3a24;
 const HEN_COLOURS = [
   { body: 0x9a5a2c, wing: 0x7e4520 }, // brown
   { body: 0xe9e4d6, wing: 0xd3ccb8 }, // white
@@ -136,8 +136,11 @@ function buildPig() {
 /** A fence of posts and rails (or boards) along a rectangle's four sides, solid in the physics world. Returns the group. */
 function buildFence(rect, { boards, groundAt, physics, RAPIER }) {
   const g = new THREE.Group();
-  const wood = mat(WOOD);
-  const post = mat(WOOD_DARK);
+  const random = createRandom(0xfe4ce + Math.round(rect.minX * 3 + rect.minZ * 5));
+  const wood = mat(0xffffff, { map: woodTexture(random, [128, 98, 66]) }); // weathered boards, the grain along them
+  const post = mat(0xffffff, { map: woodTexture(random, [84, 62, 40]) }); // creosoted posts
+  const cx = (rect.minX + rect.maxX) / 2;
+  const cz = (rect.minZ + rect.maxZ) / 2;
   const sides = [
     { x1: rect.minX, z1: rect.minZ, x2: rect.maxX, z2: rect.minZ },
     { x1: rect.maxX, z1: rect.minZ, x2: rect.maxX, z2: rect.maxZ },
@@ -155,14 +158,19 @@ function buildFence(rect, { boards, groundAt, physics, RAPIER }) {
       const t = i / (posts - 1);
       const px = s.x1 + (s.x2 - s.x1) * t;
       const pz = s.z1 + (s.z2 - s.z1) * t;
-      const p = new THREE.Mesh(new THREE.BoxGeometry(0.1, FENCE_H + 0.1, 0.1), post);
+      const p = new THREE.Mesh(worldBox(0.1, FENCE_H + 0.1, 0.1, 1), post);
       p.position.set(px, groundAt(px, pz) + (FENCE_H + 0.1) / 2 - 0.05, pz);
       g.add(p);
+      const cap = new THREE.Mesh(worldBox(0.14, 0.035, 0.14, 1), post); // a cap wider than the post, to throw the wet off
+      cap.position.set(px, groundAt(px, pz) + FENCE_H + 0.0675, pz);
+      cap.rotation.y = 0.6 * random();
+      g.add(cap);
     }
+    const out = { x: s.x1 === s.x2 ? Math.sign(mx - cx) : 0, z: s.z1 === s.z2 ? Math.sign(mz - cz) : 0 }; // the rails are nailed on the outer face of the posts
     const rails = boards ? [0.18, 0.42, 0.66, 0.9] : [0.35, 0.7, 1.02];
     for (const y of rails) {
-      const r = new THREE.Mesh(new THREE.BoxGeometry(0.04, boards ? 0.2 : 0.07, len), wood);
-      r.position.set(mx, ground + y, mz);
+      const r = new THREE.Mesh(worldBox(0.04, boards ? 0.2 : 0.07, len, 1), wood);
+      r.position.set(mx + out.x * 0.07, ground + y, mz + out.z * 0.07);
       r.rotation.y = yaw;
       g.add(r);
     }

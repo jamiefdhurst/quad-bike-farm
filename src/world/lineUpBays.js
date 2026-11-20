@@ -61,6 +61,7 @@ export function buildLineUpBays(scene, heightAt, lineUp) {
   const across = new THREE.Vector3(Math.cos(lineUp.yaw), 0, -Math.sin(lineUp.yaw));
   const wood = [];
   const iron = [];
+  const weeds = [];
   for (const bay of bays) {
     const at = new THREE.Vector3(bay.x, 0, bay.z).addScaledVector(nose, lineUp.length / 2);
     const len = LENGTH - random() * 0.12;
@@ -74,12 +75,31 @@ export function buildLineUpBays(scene, heightAt, lineUp) {
     const end = random() < 0.5 ? -1 : 1;
     piece(new THREE.BoxGeometry(0.17, 0.012, 0.13), iron, end * (len / 2 - 0.3), THICK * 0.66); // a rusty chair plate where a rail sat
     piece(new THREE.CylinderGeometry(0.018, 0.018, 0.02, 6), iron, end * (len / 2 - 0.3), THICK * 0.7); // and its bolt
+    for (const e of [-1, 1]) { // a long pegging spike driven through near each end, its head standing proud and bent over
+      piece(new THREE.CylinderGeometry(0.014, 0.012, 0.05, 6), iron, e * (len / 2 - 0.12), THICK * 0.66);
+      piece(new THREE.BoxGeometry(0.05, 0.012, 0.014), iron, e * (len / 2 - 0.12), THICK * 0.7);
+    }
+    // Weeds where the grass has grown up against the sleeper's back edge and ends: tufts of docks and long grass, each leaning its own way.
+    for (const [u, v] of [[-0.46, -1], [-0.2, -1], [0.1, -1], [0.38, -1], [-0.55, 0], [0.55, 0]]) {
+      if (random() < 0.25) continue;
+      const wx = at.x + across.x * u * len + nose.x * v * (WIDTH / 2 + 0.03);
+      const wz = at.z + across.z * u * len + nose.z * v * (WIDTH / 2 + 0.03);
+      for (let blade = 0; blade < 4; blade++) {
+        const h = 0.16 + random() * 0.22;
+        const geo = new THREE.ConeGeometry(0.012 + random() * 0.012, h, 3).translate(0, h / 2, 0);
+        geo.rotateZ((random() - 0.5) * 0.7);
+        geo.rotateX((random() - 0.5) * 0.7);
+        geo.translate(wx + (random() - 0.5) * 0.08, heightAt(wx, wz) - 0.01, wz + (random() - 0.5) * 0.08);
+        weeds.push(geo);
+      }
+    }
   }
   const group = new THREE.Group();
   group.name = 'lineUpSleepers';
   const timber = new THREE.MeshStandardMaterial({ map: sleeperTexture(random), roughness: 0.95 });
   const rust = new THREE.MeshStandardMaterial({ color: 0x5a3a26, roughness: 0.8, metalness: 0.4 });
-  for (const [list, material] of [[wood, timber], [iron, rust]]) {
+  const green = new THREE.MeshStandardMaterial({ color: 0x5b7a34, roughness: 0.9 });
+  for (const [list, material] of [[wood, timber], [iron, rust], [weeds, green]]) {
     const mesh = new THREE.Mesh(mergeGeometries(list.map((g) => g.toNonIndexed())), material);
     mesh.receiveShadow = true;
     group.add(mesh);
