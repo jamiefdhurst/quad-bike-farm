@@ -472,3 +472,8 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 - Budgets are soft (about 12 requests for a second opinion, 40 for a recheck), ending in what it couldn't check rather than a hard stop that loses a half-proven finding. Neither opens images, as a look is Jamie's.
 - CLAUDE.md tells every session to batch its reads, since the main sessions are where most of the cost is.
 - The skip on an Opus session now says to read the model from the system prompt: one Opus session launched a second opinion anyway.
+
+## The smoke run's overall floor, lowered by a point (#1035, after #713)
+
+- `all` in `FLOORS` went from 78 to 77 with #713: about 1,500 lines of src for the Moor were added, and the smoke run loads today's farm, where none of them runs (the run reached 77.9%). This is code added that the run cannot reach, not code removed or moved, so it is a deliberate exception to `checking.md`'s rule.
+- It should come back up when the new farm becomes the default (#692), when the smoke run reaches the Moor again: raise it then, from a few CI runs.

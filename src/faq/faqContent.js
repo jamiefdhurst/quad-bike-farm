@@ -470,7 +470,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What is the Moor, and what is up there?',
         a: `The Moor is the open common beyond Back Lane's west side, climbing about a hundred metres to a drystone wall along the ridge (the new farm, <code>?layout=2</code>). It is rough going: heather (brown most of the year, purple in August and September), bracken on the lower slopes (green in summer, rust in autumn), cotton grass and rushes in the wet flushes (white in June), gritstone outcrops and boulders, a couple of cut peat banks and sheep tracks worn pale through the heather. The stream the farm's river grows from rises at a spring on it. The trig pillar and a cairn stand on the ridge. Back Lane crosses it with nothing fenced on the common's side, between two cattle grids with a "Cattle grid" and a "Sheep on road" sign each way, and a bridle gate beside each grid. The moor gate in the hill pasture's wall opens onto the lane. <code>tp me to moor</code>, <code>ridge</code>, <code>stile</code> or <code>moorgrid</code> takes you there in the console.`,
-        tip: 'The Moor is open common: ride up the sheep tracks, and mind the wet flushes.',
+        tip: 'The Moor is open common: ride up the sheep tracks to the ridge and its trig pillar.',
       },
       {
         q: 'What happens at the stile in the ridge wall?',

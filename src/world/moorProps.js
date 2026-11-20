@@ -36,10 +36,10 @@ const grey = (random, l0 = 0.2, l1 = 0.36) => new THREE.Color().setHSL(0.09 + ra
 export function moorGrids(road, layout) {
   const stretch = moorStretch(road);
   if (!stretch) return [];
-  return layout.moor.grids.map((g, i) => {
+  return layout.moor.grids.map((g) => {
     const place = gridPlace(road, g.near);
     const p = sidePoint(road, place.s, 1, 0);
-    return { id: g.id, s: place.s, x: place.x, z: place.z, tx: p.tx, tz: p.tz, gate: { s: place.s + (i === 0 ? -BRIDLE_GATE_OFFSET : BRIDLE_GATE_OFFSET), side: MOOR_SIDE } };
+    return { id: g.id, s: place.s, x: place.x, z: place.z, tx: p.tx, tz: p.tz, gate: { s: place.s + (place.s <= stretch.from + 1e-6 ? -BRIDLE_GATE_OFFSET : BRIDLE_GATE_OFFSET), side: MOOR_SIDE } };
   });
 }
 
@@ -151,7 +151,6 @@ export function buildCairn(random, radius = 1.5, height = 1.6) {
   g.name = 'cairn';
   const geo = stoneGeometry(random, 0);
   const mat = new THREE.MeshStandardMaterial({ map: gritstoneTexture(random), roughness: 0.95, flatShading: true });
-  const stones = [];
   const rings = 7;
   for (let ring = 0; ring < rings; ring++) {
     const t = ring / (rings - 1);
@@ -165,15 +164,14 @@ export function buildCairn(random, radius = 1.5, height = 1.6) {
       m.scale.set(size * (1.1 + random() * 0.5), size * (0.7 + random() * 0.3), size * (1 + random() * 0.4));
       m.rotation.set(random() * 0.6, random() * Math.PI * 2, random() * 0.6);
       g.add(m);
-      stones.push(m);
     }
   }
   return g;
 }
 
 /**
- * A cattle grid across the lane, its deck along the road: steel bars over a pit between concrete sills, kerbs painted white on top, wing walls of the moor's own
- * stone either side holding the common's edge, and a `Cattle grid` sign each way. Local +x is the way along the road and the grid's middle is the origin.
+ * A cattle grid across the lane, its deck along the road: steel bars over a pit between concrete sills, kerbs painted white on top (the bridle gate and the signs are placed
+ * round it in `buildMoorProps`). Local +x is the way along the road and the grid's middle is the origin.
  */
 export function buildMoorGrid(c, halfRoad) {
   const { random } = c;
@@ -249,7 +247,7 @@ function buildSpring(c, M, group) {
   }
 }
 
-/** Where the plants must not grow: on the lane, in the stream's bed and its banks, on the pillar's and the stile's ground. */
+/** Where the plants must not grow: on the lane, in the stream's bed and its banks, on the pillar's and the spring's ground. */
 function bareAt(c, M, net, lane) {
   const stream = c.layout.hill?.stream;
   const west = stream?.west?.minX ?? -Infinity;
@@ -291,13 +289,13 @@ function buildPlants(c, M, moor, bare) {
   const lambert = (extra = {}) => new THREE.MeshLambertMaterial({ vertexColors: true, ...extra });
   // The fronds' own vertex colours are the hill's greens: here the day's colour is the whole of it, so they are left off.
   const mats = { heather: lambert(), bracken: lambert({ vertexColors: false, side: THREE.DoubleSide }), tussock: lambert({ vertexColors: false, side: THREE.DoubleSide }), cotton: new THREE.MeshLambertMaterial({ color: 0xffffff }) };
-  const scatter = (count, accept, make, { cell = 1 } = {}) => {
+  const scatter = (count, accept, make) => {
     const matrices = [];
     const colors = [];
     for (let tries = 0; matrices.length < count && tries < count * 14; tries++) {
       const x = b.minX + random() * (b.maxX - b.minX);
       const z = b.minZ + random() * (b.maxZ - b.minZ);
-      if (bare(x, z) || !accept(x, z)) continue;
+      if (!moor.onCommon(x, z) || bare(x, z) || !accept(x, z)) continue; // the common only: never the farm's side of the lane
       make(x, z, matrices, colors);
     }
     return { matrices, colors };
@@ -484,7 +482,6 @@ export function buildMoorProps(c) {
     plants.mats.bracken.color.setHex(k.bracken);
     plants.mats.tussock.color.setHex(k.tussock);
     plants.mats.cotton.color.setHex(0xf4f2ea);
-    plants.cottonGroup.userData.cover = k.cotton;
     plants.cottonGroup.visible = k.cotton > 0.05;
   };
   /** One line for the console and the panel: which month the plants are dressed for and what stands on the common. */
