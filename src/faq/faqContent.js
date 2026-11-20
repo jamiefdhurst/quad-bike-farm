@@ -2511,6 +2511,11 @@ export const FAQ_SECTIONS = [
         tip: 'Spraying: hitch the sprayer with J, T folds the boom out, then drive slowly in overlapping lines.',
       },
       {
+        q: 'Which field is a job on, and how much of it do I have to do?',
+        a: `On the bigger farm the chalkboard names the field a job is on ("Spray Lane Field", "Harrow Low Ley"), and each farm has its own names for its fields. The field is where you do the job, not how much: spraying and harrowing tick off after a few hundred square metres,
+          wherever on the field you do them, and the map draws your lines. Hay is the same, anywhere on the hay meadow. Muck only counts on the field the board names, and the silage bales are out in Low Ley.`,
+      },
+      {
         q: 'How do I fill the sprayer?',
         a: `Pick up the hose (it is on its reel by the petrol tank), take it to the sprayer and hold <kbd>E</kbd> with the nozzle at the tank. It fills in about fourteen seconds, and the little blue tube on the back of the tank shows how much is left.
           A full tank sprays a little over two hundred metres of line, so a field takes most of one with some overlap, and a sloppy go can run it dry. When it does, the spraying stops and you go back to the hose.`,

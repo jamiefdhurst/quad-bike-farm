@@ -183,8 +183,9 @@ describe('what the yard keeps out of the barn', () => {
     const things = [...two.jerryCanSpots, ...two.spawn.away, ...two.spawn.quads, ...two.restSpots.filter((r) => !r.id.startsWith('barnBale'))];
     for (const t of things) expect(insideBarn(two, t.x, t.z, -0.5), JSON.stringify(t)).toBe(false);
   });
-  it('has the silage can beside the silage, behind the back wall', () => {
-    const can = two.jerryCanSpots.find((j) => j.where === 'by the silage bales');
-    expect(Math.hypot(can.x - two.silage.x, can.z - two.silage.z)).toBeLessThan(12);
+  it('has the can that stood by the silage behind the back wall, the silage now being out in Low Ley (#691)', () => {
+    const can = two.jerryCanSpots.find((j) => j.where === 'behind the barn');
+    expect(Math.hypot(can.x - two.barn.x, can.z - two.barn.z)).toBeLessThan(20);
+    expect(insideBarn(two, can.x, can.z, -0.5)).toBe(false);
   });
 });

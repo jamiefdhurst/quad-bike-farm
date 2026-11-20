@@ -4,6 +4,7 @@
 // service job themselves stay on the game for the rest of the code to read.
 
 import { createRandom } from '../core/random.js';
+import { jobFieldLabel } from './jobFields.js';
 import { shortName } from '../workshop/logbook.js';
 import { ServiceJob, pickServiceJob, serviceChalk, servicePlan, factsOf, stateOf } from '../workshop/service.js';
 
@@ -59,7 +60,9 @@ export class FarmJobsHost {
     // Muck leaves over the tailgate, a little behind the axle.
     const x = t.motion.x - Math.sin(yaw) * 1.2;
     const z = t.motion.z - Math.cos(yaw) * 1.2;
-    const onStubble = g.world.fields.stubbleAt(x, z) > 0.5;
+    // On the new farm the muck goes on the field the job names (Long Piece), not on any stubble.
+    const muckField = g.world.layout.jobFields?.muck;
+    const onStubble = g.world.fields.stubbleAt(x, z) > 0.5 && (!muckField || g.world.fields.areaOf(x, z) === muckField);
     const events = g.muck.update(dt, { x, z, speed: Math.abs(t.signedSpeed), tip: t.bed.tip, slideAt: t.bed.p.slideAt, onStubble });
     for (const e of events) {
       if (e.type === 'patch') g.muckView.lay(e.x, e.z);
@@ -69,7 +72,7 @@ export class FarmJobsHost {
       } else if (e.type === 'wrong') {
         g.muckView.lay(e.x, e.z, 0.5);
         if (this.muckWrongCool <= 0) {
-          g.hud.toast('Spread it on the stubble, not here', 2);
+          g.hud.toast(muckField ? `Spread it on the stubble in ${jobFieldLabel(g.world.layout, 'muck')}, not here` : 'Spread it on the stubble, not here', 2);
           this.muckWrongCool = 6;
         }
       } else if (e.type === 'done') this.finishMuck();

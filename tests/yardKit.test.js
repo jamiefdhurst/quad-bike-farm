@@ -3,7 +3,7 @@ import { coplanarOverlaps } from './helpers/coplanar.js';
 import { buildWorldModels } from './helpers/worldModels.js';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, PLAN_ORIGIN } from '../src/world/layoutNew.js';
-import { edgeBetween, pointAlong } from '../src/world/polygons.js';
+import { edgeBetween, pointAlong, pointInPolygon } from '../src/world/polygons.js';
 import { wallBoxes } from '../src/world/barn.js';
 import { gatePosts, weedSpots, standingWater, restingHeight } from '../src/world/yardKit.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
@@ -110,17 +110,14 @@ describe('where the yard is dressed', () => {
     expect(LAYOUT.farmstead).toBeUndefined();
   });
 
-  it('leaves the wrapped bales behind the barn a clear way in from the west that a tractor can drive, well off the walls, the orchard, the garden and the kept-clear places', () => {
-    const { silage, farmstead: f } = two;
+  it('stands the wrapped bales out in Low Ley (#691), well inside it, with a clear way in from the west that a tractor can drive', () => {
+    const { silage } = two;
+    const ley = two.fields.find((f) => f.name === 'ley').points;
     const stack = { minX: silage.x - 0.75, maxX: silage.x + 3 * 1.55 + 0.75, minZ: silage.z - 0.75, maxZ: silage.z + 1.6 + 0.75 };
     const lane = { minX: stack.minX - 7, maxX: stack.minX, minZ: stack.minZ - 1, maxZ: stack.maxZ + 1 }; // 7 m long, wider than the stack by a metre each side
-    const hits = (r) => lane.minX < r.maxX && lane.maxX > r.minX && lane.minZ < r.maxZ && lane.maxZ > r.minZ;
-    expect(hits(f.orchard)).toBe(false);
-    expect(hits(f.garden)).toBe(false);
-    for (const c of f.keptClear) expect(hits(c), c.name).toBe(false);
-    for (const w of wallBoxes(two)) expect(hits({ minX: w.x - w.hx, maxX: w.x + w.hx, minZ: w.z - w.hz, maxZ: w.z + w.hz }), w.id).toBe(false);
-    expect(lane.minZ).toBeGreaterThan(f.orchard.maxZ + 1.5); // and the fence of the orchard is not in it
-    expect(stack.maxZ + 1).toBeLessThan(wallBoxes(two).find((w) => w.id === 'west').z - 1.5); // nor the barn's back wall
+    for (const r of [stack, lane]) {
+      for (const [x, z] of [[r.minX, r.minZ], [r.maxX, r.minZ], [r.maxX, r.maxZ], [r.minX, r.maxZ]]) expect(pointInPolygon(ley, x, z, 3), `${x} ${z}`).toBe(true);
+    }
   });
 });
 

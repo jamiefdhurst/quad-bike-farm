@@ -4,6 +4,7 @@
 
 import { SPRAY_JOB } from './spraying.js';
 import { HARROW_JOB } from './harrowing.js';
+import { jobFieldLabel } from './jobFields.js';
 
 export const DEFAULT_MUCK_PARAMS = {
   forkSeconds: 12, // holding E at the heap fills an empty tub in this long
@@ -176,6 +177,26 @@ export const FARM_JOBS = {
   spray: SPRAY_JOB, // only on the board while the field wants it (the game leaves it off for the days a spray lasts)
   harrow: HARROW_JOB, // likewise: off the board for the days a harrowing lasts
 };
+
+/**
+ * The jobs as this farm's chalkboard words them. On the new farm each job happens on a field of its own (jobFields.js) and the board names it by its
+ * dealt name ("Spray Lane Field"); the girls never say it, a recorded line can't carry a name dealt per farm (fieldNames.js `fieldPhrase`). Today's
+ * farm has no such fields and keeps the words above.
+ */
+export function jobsFor(layout, jobs = FARM_JOBS) {
+  const on = (id) => jobFieldLabel(layout, id);
+  if (!on('muck')) return jobs;
+  const word = (id, chalk, hint) => ({ ...jobs[id], chalk, ...(hint && { hint }) });
+  return {
+    ...jobs,
+    muck: word('muck', `Spread muck on ${on('muck')}`, `Fork it from the heap into the little trailer, tip the tub a bit and drive slowly over the stubble in ${on('muck')}`),
+    silage: word('silage', `Three silage bales from ${on('silage')} into the Dutch barn`, `Spike them with the tractor in ${on('silage')}, carry them to the stackyard and leave them on the floor of the open bay`),
+    hay: word('hay', `Cut ${on('hay')}, bale it and stack it in the Dutch barn`, `Mow and bale ${on('hay')} with the tractor, load the bales on the trailer and take them to the Dutch barn`),
+    spray: word('spray', `Spray ${on('spray')}`),
+    harrow: word('harrow', `Harrow ${on('harrow')}`),
+    logs: word('logs', `Split some logs and stack them at ${on('logs')}`),
+  };
+}
 
 export const DEFAULT_JOB_BOARD_PARAMS = {
   jobsPerDay: 2, // how many of the jobs that exist go on the board (all of them, while there are fewer)

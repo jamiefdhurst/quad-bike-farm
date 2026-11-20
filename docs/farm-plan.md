@@ -26,7 +26,7 @@ A mixed upland-edge farm of about 68 ha (870 by 830 m), about seven times today'
 | **The Old Pit** (north-east) | The farm's disused gravel pit and the pit climb, with its own gate onto the lane and one from the stone track | Moves from behind the barley | #558 |
 | **Six arable fields**: North Field, Top Field, Lane Field, Long Piece, Far Field, South Field | Cereals, beans and rape in rotation through the year, with grass headlands to ride. Far Field has a small field pond about 14 m across with two willows on its low east side, at plan (160, 530), with an uncropped margin round it (#815) | Today two stubble fields, stubble all year | Crops phase |
 | **Hay Meadow** | Shut up in spring, mown and baled in summer, grazed after | Moves out of the play field's corner | #323, #324 |
-| **Low Ley** | Grass for silage, cut twice a summer | New | #93, #172 |
+| **Low Ley** | Grass for silage, cut twice a summer; the wrapped bales the silage job fetches stand in it at plan (700, 545), and the harrowing is done on it until the crop year says otherwise (#691) | New | #93, #172 |
 | **Brook Meadow** | Permanent pasture with the river through it; the cattle in summer | Changes: today's small hedged riverside meadow | #565, #563, #564 |
 | **Wet Meadow** | The pond, the oaks, the reeds (its own pond: Far Field's is a different, smaller one) | Moves as a piece | #147 |
 | **Sheep Field** | The in-bye: walled, better grass by the yard where the ewes lamb and come into the pens. Terraces, stile, field barn | Moves as a piece | #622, #623, #624, #625 |

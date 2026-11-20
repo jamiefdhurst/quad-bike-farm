@@ -4,6 +4,8 @@
 // crosses, so a strip two passes cover shows as doubled. A field that has been sprayed stays sprayed for a few days and is not on the board
 // until then. Tested in tests/spraying.test.js.
 
+import { liveCells, countLive } from './jobFields.js';
+
 export const SPRAY_CELL = 1; // metres a side of one cell of the field (fixed: the grid is built from it)
 
 export const DEFAULT_SPRAY_PARAMS = {
@@ -18,6 +20,7 @@ export const DEFAULT_SPRAY_PARAMS = {
   sprayedAt: 0.6, // a dose over this counts as sprayed
   doubledAt: 1.7, // and over this as sprayed twice (the overlap shows darker)
   coverNeeded: 0.88, // the share of the field sprayed for the job to count as done
+  areaNeeded: 680, // square metres sprayed for it to count as done on a big field, where the share would be an hour's driving (#691): the less of the two
   lastsDays: 6, // farm days the field stays sprayed (and off the board)
 };
 
@@ -33,6 +36,7 @@ export const SPRAY_PARAM_RANGES = {
   sprayedAt: [0.1, 1.5, 0.05],
   doubledAt: [1, 4, 0.1],
   coverNeeded: [0.3, 1, 0.01],
+  areaNeeded: [50, 40000, 10],
   lastsDays: [1, 30, 1],
 };
 
@@ -72,6 +76,8 @@ export class Spraying {
     this.cols = Math.max(1, Math.round((rect.maxX - rect.minX) / SPRAY_CELL));
     this.rows = Math.max(1, Math.round((rect.maxZ - rect.minZ) / SPRAY_CELL));
     this.cells = this.cols * this.rows;
+    this.live = liveCells(rect, this.cols, this.rows, SPRAY_CELL); // the cells that are the field (the rectangle's corners are not, on the new farm)
+    this.liveCount = countLive(this.live);
     this.dose = new Float32Array(this.cells);
     this.state = new Uint8Array(this.cells);
     this.tank = 1; // 0..1
@@ -92,7 +98,8 @@ export class Spraying {
   index(x, z) {
     const c = Math.floor((x - this.rect.minX) / SPRAY_CELL);
     const r = Math.floor((z - this.rect.minZ) / SPRAY_CELL);
-    return c < 0 || r < 0 || c >= this.cols || r >= this.rows ? -1 : r * this.cols + c;
+    if (c < 0 || r < 0 || c >= this.cols || r >= this.rows) return -1;
+    return this.live[r * this.cols + c] ? r * this.cols + c : -1;
   }
 
   centre(i) {
@@ -109,12 +116,22 @@ export class Spraying {
 
   /** The share of the field with spray on it, 0..1. */
   get coverage() {
-    return (this.count(SPRAYED) + this.count(DOUBLED)) / this.cells;
+    return (this.count(SPRAYED) + this.count(DOUBLED)) / this.liveCount;
+  }
+
+  /** The share of the field that counts as the job: `coverNeeded`, or the `areaNeeded` square metres where that is less of the field. */
+  get needed() {
+    return Math.min(this.p.coverNeeded, this.p.areaNeeded / (this.liveCount * SPRAY_CELL * SPRAY_CELL));
+  }
+
+  /** How far through the job it is, 0..1. */
+  get progress() {
+    return Math.min(1, this.coverage / this.needed);
   }
 
   /** The share sprayed twice: how much overlap there was. */
   get overlap() {
-    return this.count(DOUBLED) / this.cells;
+    return this.count(DOUBLED) / this.liveCount;
   }
 
   get done() {
@@ -204,7 +221,7 @@ export class Spraying {
       events.push({ type: 'sprayed', cells: [...changed] });
     }
     if (!wasEmpty && this.tank <= 0.001) events.push({ type: 'empty' });
-    if (!this.done && this.coverage >= p.coverNeeded) {
+    if (!this.done && this.coverage >= this.needed) {
       this.doneDay = s.day ?? 0;
       events.push({ type: 'done' });
     }
@@ -233,8 +250,10 @@ export class Spraying {
 
   /** Fills the field at once, as if sprayed in good straight lines (the debug panel). */
   sprayAll(day) {
-    this.dose.fill(1);
-    this.state.fill(SPRAYED);
+    for (let i = 0; i < this.cells; i++) {
+      this.dose[i] = this.live[i];
+      this.state[i] = this.live[i] ? SPRAYED : UNSPRAYED;
+    }
     this.started = true;
     this.since ??= day;
     this.doneDay = day;
@@ -265,9 +284,10 @@ export class Spraying {
         this.state[i] = stateOf(d, this.p);
       }
     }
+    for (let i = 0; i < this.cells; i++) if (!this.live[i]) (this.dose[i] = 0), (this.state[i] = UNSPRAYED);
     this.since = save.since;
     this.doneDay = Number.isInteger(save.doneDay) ? save.doneDay : null;
-    this.started = this.count(UNSPRAYED) < this.cells;
+    this.started = this.coverage > 0;
   }
 
   describe() {

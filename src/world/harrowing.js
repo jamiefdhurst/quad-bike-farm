@@ -4,6 +4,8 @@
 // untouched or combed along the way the mat went (the two ways show as different stripes). A harrowed field stays harrowed for a few days
 // and is not on the board until then. Tested in tests/harrowing.test.js.
 
+import { liveCells, countLive, inPlace } from './jobFields.js';
+
 export const HARROW_CELL = 1; // metres a side of one cell of the field (fixed: the grid is built from it)
 
 export const DEFAULT_HARROW_PARAMS = {
@@ -13,6 +15,7 @@ export const DEFAULT_HARROW_PARAMS = {
   maxSpeed: 7.5, // m/s: faster than this the mat skips over the top
   lowerSeconds: 1.6, // the mat takes this long to come down onto the ground or lift off it
   coverNeeded: 0.9, // the share of the field combed for the job to count as done
+  areaNeeded: 350, // square metres combed for it to count as done on a big field, where the share would be a quarter of an hour's driving (#691): the less of the two
   lastsDays: 5, // farm days the field stays harrowed (and off the board) before the molehills are back
   moleHills: 16, // molehills dealt over the field
   towWeight: 2, // a mat on the ground drags like this many things in the tow load (npc/towLoad)
@@ -25,6 +28,7 @@ export const HARROW_PARAM_RANGES = {
   maxSpeed: [2, 14, 0.5],
   lowerSeconds: [0.3, 6, 0.1],
   coverNeeded: [0.3, 1, 0.01],
+  areaNeeded: [50, 40000, 10],
   lastsDays: [1, 30, 1],
   moleHills: [0, 40, 1],
   towWeight: [0, 8, 0.5],
@@ -62,6 +66,7 @@ export function dealMolehills(rect, count, random) {
   for (let tries = 0; out.length < count && tries < count * 40; tries++) {
     const x = rect.minX + 1 + random() * (rect.maxX - rect.minX - 2);
     const z = rect.minZ + 1 + random() * (rect.maxZ - rect.minZ - 2);
+    if (!inPlace(rect, x, z, -1)) continue; // in the field, a metre off its edge
     if (out.some((m) => Math.hypot(m.x - x, m.z - z) < 2.5)) continue;
     out.push({ x, z, size: 0.8 + random() * 0.5 });
   }
@@ -75,6 +80,8 @@ export class Harrowing {
     this.cols = Math.max(1, Math.round((rect.maxX - rect.minX) / HARROW_CELL));
     this.rows = Math.max(1, Math.round((rect.maxZ - rect.minZ) / HARROW_CELL));
     this.cells = this.cols * this.rows;
+    this.live = liveCells(rect, this.cols, this.rows, HARROW_CELL); // the cells that are the field (the rectangle's corners are not, on the new farm)
+    this.liveCount = countLive(this.live);
     this.state = new Uint8Array(this.cells);
     this.combed = 0; // how many cells are combed
     this.down = 0; // 0 tines up, 1 tines down on the ground (eased)
@@ -93,12 +100,23 @@ export class Harrowing {
   index(x, z) {
     const c = Math.floor((x - this.rect.minX) / HARROW_CELL);
     const r = Math.floor((z - this.rect.minZ) / HARROW_CELL);
-    return c < 0 || r < 0 || c >= this.cols || r >= this.rows ? -1 : r * this.cols + c;
+    if (c < 0 || r < 0 || c >= this.cols || r >= this.rows) return -1;
+    return this.live[r * this.cols + c] ? r * this.cols + c : -1;
   }
 
   /** The share of the field combed, 0..1. */
   get coverage() {
-    return this.combed / this.cells;
+    return this.combed / this.liveCount;
+  }
+
+  /** The share of the field that counts as the job: `coverNeeded`, or the `areaNeeded` square metres where that is less of the field. */
+  get needed() {
+    return Math.min(this.p.coverNeeded, this.p.areaNeeded / (this.liveCount * HARROW_CELL * HARROW_CELL));
+  }
+
+  /** How far through the job it is, 0..1. */
+  get progress() {
+    return Math.min(1, this.coverage / this.needed);
   }
 
   get done() {
@@ -174,7 +192,7 @@ export class Harrowing {
       this.since ??= s.day ?? 0;
       events.push({ type: 'combed', cells: [...changed] });
     }
-    if (!this.done && this.coverage >= p.coverNeeded) {
+    if (!this.done && this.coverage >= this.needed) {
       this.doneDay = s.day ?? 0;
       events.push({ type: 'done' });
     }
@@ -193,8 +211,8 @@ export class Harrowing {
 
   /** Combs the whole field at once, as if done in good straight lines (the debug panel). */
   combAll(day) {
-    this.state.fill(COMBED_ALONG_Z);
-    this.combed = this.cells;
+    for (let i = 0; i < this.cells; i++) this.state[i] = this.live[i] ? COMBED_ALONG_Z : UNTOUCHED;
+    this.combed = this.liveCount;
     this.since ??= day;
     this.doneDay = day;
   }
@@ -217,7 +235,7 @@ export class Harrowing {
     if (day - marked >= this.p.lastsDays) return;
     for (let i = 0; i < this.cells && i < save.cells.length; i++) {
       const v = Number(save.cells[i]);
-      if (v === COMBED_ALONG_Z || v === COMBED_ALONG_X) {
+      if (this.live[i] && (v === COMBED_ALONG_Z || v === COMBED_ALONG_X)) {
         this.state[i] = v;
         this.combed++;
       }

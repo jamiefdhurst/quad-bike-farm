@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { FarmJobsHost } from '../src/world/farmJobsHost.js';
+import { MuckLoad, DEFAULT_MUCK_PARAMS } from '../src/world/farmJobs.js';
 
 // A stand-in game: a board that ticks off what is on it, and the things the host tells when a job is done.
 function standIn({ onBoard = ['muck'], girls = [] } = {}) {
@@ -52,3 +53,48 @@ describe('FarmJobsHost', () => {
     expect(said).toEqual(['near:muckStart', 'far:muckFull']);
   });
 });
+
+describe('spreading the muck on the new farm (#691)', () => {
+  // The trailer drives along z over the field `areaOf` names at its x: the muck counts only on the one the job names.
+  function spreader() {
+    const { game, log, host } = standIn();
+    const laid = [];
+    const field = { name: 'longpiece', label: 'Long Piece' };
+    game.world = {
+      layout: { jobFields: { muck: 'longpiece' }, fields: [field] },
+      fields: { stubbleAt: () => 1, areaOf: (x) => (x < 100 ? 'lanefield' : 'longpiece') },
+    };
+    game.muck = new MuckLoad({ ...DEFAULT_MUCK_PARAMS });
+    game.muck.load = 1;
+    game.muck.started = true;
+    game.muckView = { lay: (x, z) => laid.push([x, z]), setLoad: () => {} };
+    game.tipTrailer = { model: { rotation: { y: 0 } }, motion: { x: 0, z: 0 }, signedSpeed: 1, bed: { tip: 0.4, p: { slideAt: 0.9 } } };
+    const drive = (x, metres) => {
+      for (let z = 0; z < metres; z += 0.5) {
+        game.tipTrailer.motion = { x, z };
+        host.updateMuck(0.5);
+      }
+    };
+    return { game, log, host, laid, drive };
+  }
+
+  it('wastes muck spread on stubble in another field, and says which field the job wants', () => {
+    const { game, log, laid, drive } = spreader();
+    drive(50, 60);
+    expect(game.muck.laid).toBe(0);
+    expect(game.muck.done).toBe(false);
+    const toasts = log.filter((l) => l.startsWith('toast'));
+    expect(toasts.length).toBeGreaterThan(0); // once every few seconds, not every frame
+    expect(toasts.length).toBeLessThan(10);
+    for (const t of toasts) expect(t).toBe('toast Spread it on the stubble in Long Piece, not here 2');
+    expect(laid.length).toBeGreaterThan(0); // the heap still drops where it fell, thinner
+  });
+
+  it('counts muck spread on the field the job names, and ticks the job off', () => {
+    const { game, drive } = spreader();
+    game.muck.load = 1;
+    drive(150, 60);
+    expect(game.muck.laid).toBeGreaterThan(0);
+  });
+});
+

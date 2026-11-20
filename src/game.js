@@ -359,7 +359,7 @@ import { planDamage, applyDamage } from './vehicle/rustyDamage.js';
 import { Notebook } from './workshop/notebook.js';
 import { SparesShelf } from './workshop/sparesShelf.js';
 import { canPull, fitIndex } from './vehicle/engineSwap.js';
-import { FARM_JOBS, MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs, feedWanted } from './world/farmJobs.js';
+import { jobsFor, MuckLoad, DEFAULT_MUCK_PARAMS, MUCK_PARAM_RANGES, JobBoard, DEFAULT_JOB_BOARD_PARAMS, JOB_BOARD_PARAM_RANGES, availableJobs, feedWanted } from './world/farmJobs.js';
 import { JobBoardView } from './world/jobBoard.js';
 import { FarmJobsHost } from './world/farmJobsHost.js';
 import { ClassifiedsView } from './world/classifiedsView.js';
@@ -1740,9 +1740,9 @@ export class Game {
       .filter((id) => id !== 'spray' || sprayWanted(this.farm.save?.spray, this.farm.day)) // a sprayed field stays off the board for a few days
       .filter((id) => id !== 'harrow' || harrowWanted(this.farm.save?.harrow, this.farm.day)) // and a harrowed one
       .filter((id) => id !== 'hay' || (!!this.tractorUnit && !!this.siloRect && hayStacked + DEFAULT_HAY_PARAMS.balesNeeded <= STACK_CAPACITY)); // the hay needs the tractor and room in the barn
-    this.jobBoard = new JobBoard({ ids: jobIds, random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams });
+    this.jobBoard = new JobBoard({ ids: jobIds, random: createRandom(this.seed ^ 0x7ab0), params: this.jobBoardParams, jobs: (this.jobDefs = jobsFor(this.world.layout)) }); // the chalkboard's words name each job's field on the new farm
     if (this.jobBoard.has('logs')) this.logStack.startJob();
-    if (feedWanted(createRandom((this.farmSeed ^ Math.imul(this.farm.day + 1, 0x85ebca6b)) >>> 0), this.jobBoardParams.feedChance)) this.jobBoard.add('feed', FARM_JOBS.feed);
+    if (feedWanted(createRandom((this.farmSeed ^ Math.imul(this.farm.day + 1, 0x85ebca6b)) >>> 0), this.jobBoardParams.feedChance)) this.jobBoard.add('feed', this.jobDefs.feed);
     this.farmJobs.setUpServiceJob();
     this.jobBoardView = new JobBoardView({ game: this, board: this.jobBoard, records: this.records, challenges: this.challenges });
     this.fieldWork.setUpHay();
@@ -12172,7 +12172,7 @@ export class Game {
       a.reset();
       this.feedBucket.setFeed(0);
     } else if (action === 'job') {
-      if (!this.jobBoard.has('feed')) this.jobBoard.add('feed', FARM_JOBS.feed);
+      if (!this.jobBoard.has('feed')) this.jobBoard.add('feed', this.jobDefs.feed);
       this.jobBoardView.refresh();
     } else return false;
     return true;
