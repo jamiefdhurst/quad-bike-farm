@@ -26,7 +26,7 @@ Graded first from `tools/shot.mjs` shots and the code, then corrected from Jamie
 | Writing in the barn | block | A lot of Comic Sans (#807) |
 | Money tin, parts catalogue | passable | In odd places (#809) |
 | Coat rack, helmet hooks | passable | Too basic; move them in the new barn |
-| Bays 1 and 2 | block | Painted lines on a concrete floor (#404); the rusty quad and the Plover block the bench (rebuilt in #817: wheel stop, corner kerbs, oil stain and drip tray, no paint) |
+| Bays 1 and 2 | block | Painted lines on a concrete floor; the rusty quad and the Plover block the bench (rebuilt in #817: wheel stop, corner kerbs, oil stain and drip tray, no paint) |
 | Pit | block | A painted rectangle, not a hole (#329) |
 | Shed kit (compressor, parts washer) | good | Not marked down by the walk |
 | Generator | block | Very basic texture; too loud and runs dry too quickly (#810) |

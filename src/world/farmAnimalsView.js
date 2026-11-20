@@ -169,7 +169,7 @@ function buildFence(rect, { boards, groundAt, physics, RAPIER }) {
     const out = { x: s.x1 === s.x2 ? Math.sign(mx - cx) : 0, z: s.z1 === s.z2 ? Math.sign(mz - cz) : 0 }; // the rails are nailed on the outer face of the posts
     const rails = boards ? [0.18, 0.42, 0.66, 0.9] : [0.35, 0.7, 1.02];
     for (const y of rails) {
-      const r = new THREE.Mesh(worldBox(0.04, boards ? 0.2 : 0.07, len, 1), wood);
+      const r = new THREE.Mesh(worldBox(0.04, boards ? 0.2 : 0.07, len + 0.14, 1), wood);
       r.position.set(mx + out.x * 0.07, ground + y, mz + out.z * 0.07);
       r.rotation.y = yaw;
       g.add(r);

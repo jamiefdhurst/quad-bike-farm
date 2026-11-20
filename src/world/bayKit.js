@@ -1,4 +1,4 @@
-// The barn's two working bays, built the way a farm would mark them (#404, #817): a precast concrete wheel stop at the back and a low kerb at each corner with its faces
+// The barn's two working bays, built the way a farm would mark them (#817): a precast concrete wheel stop at the back and a low kerb at each corner with its faces
 // striped hazard yellow and black and worn through, in place of lines painted on the floor, with an oil stain where the engine drips and a steel drip tray at the front.
 // Drawn in the barn's own frame (x along the barn, z across it) from the numbers in `layout.bay` and `layout.bay2`; nothing here has a collider, so a quad drives over the kerbs.
 

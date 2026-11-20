@@ -104,6 +104,7 @@ export class FuelTank {
     for (const cap of [-1, 1]) {
       const end = add(new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), green)); // the domed ends
       end.rotation.z = -cap * Math.PI / 2;
+      end.scale.y = 0.22; // a shallow dished end, so the pump post stands clear of it (the sphere's local y runs along the tank)
       end.position.set(cap * 1.0, 1.45, 0);
       const bead = add(new THREE.Mesh(new THREE.TorusGeometry(0.555, 0.015, 6, 20), steel)); // the weld bead round each end
       bead.position.set(cap * 0.98, 1.45, 0);
@@ -128,17 +129,17 @@ export class FuelTank {
     const valve = add(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.12, 10), steel));
     valve.position.set(0.85, 0.9, 0.2);
     const post = add(new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.0, 0.07), steel));
-    post.position.set(1.15, 0.5, 0.42);
-    add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.015, 0.22), steel)).position.set(1.15, 0.0075, 0.42); // the post's base plate
+    post.position.set(1.3, 0.5, 0.42);
+    add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.015, 0.22), steel)).position.set(1.3, 0.0075, 0.42); // the post's base plate
     const holster = add(new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.04, 0.13, 12, 1, true), steel));
     holster.name = 'holster';
     holster.material = steel.clone();
     holster.material.side = THREE.DoubleSide;
-    holster.position.set(1.15, 1.04, 0.42);
-    add(new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.03, 0.09), steel)).position.set(1.15, 0.99, 0.42); // the bracket under the cup
+    holster.position.set(1.3, 1.04, 0.42);
+    add(new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.03, 0.09), steel)).position.set(1.3, 0.99, 0.42); // the bracket under the cup
     const nozzle = new THREE.Group();
     nozzle.name = 'nozzle'; // the spout down in the cup, the grip above it, the swivel where the hose goes in
-    nozzle.position.set(1.15, 1.04, 0.42);
+    nozzle.position.set(1.3, 1.04, 0.42);
     const part = (mesh, x, y, z) => {
       mesh.position.set(x, y, z);
       nozzle.add(mesh);
@@ -148,7 +149,7 @@ export class FuelTank {
     part(new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.012, 0.09), steel), 0, 0.1, 0.055); // the trigger guard
     part(new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.05, 8), brass), 0, 0.235, 0); // the swivel
     add(nozzle);
-    const { hose, clamps } = hoseGeometry([[0.88, 0.86, 0.2], [1.0, 0.6, 0.33], [1.13, 0.95, 0.4], [1.15, 1.27, 0.42]], 0.018, { sag: 0.02, steps: 10 });
+    const { hose, clamps } = hoseGeometry([[0.88, 0.86, 0.2], [1.05, 0.6, 0.33], [1.28, 0.95, 0.4], [1.3, 1.27, 0.42]], 0.018, { sag: 0.02, steps: 10 });
     add(new THREE.Mesh(hose, rubber)).name = 'hose';
     if (clamps) add(new THREE.Mesh(clamps, steel));
 
@@ -168,7 +169,7 @@ export class FuelTank {
 
     const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
     physics.createCollider(
-      RAPIER.ColliderDesc.cuboid(1.05 * scale, 1.0 * scale, 0.6 * scale).setTranslation(position.x, stand.top + 1.0 * scale, position.z).setRotation(q),
+      RAPIER.ColliderDesc.cuboid(1.15 * scale, 1.0 * scale, 0.6 * scale).setTranslation(position.x, stand.top + 1.0 * scale, position.z).setRotation(q),
     );
   }
 }

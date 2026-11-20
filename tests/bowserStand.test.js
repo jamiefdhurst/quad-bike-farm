@@ -62,4 +62,17 @@ describe('the nozzle on the bowser', () => {
     const swivel = nozzle.position.clone().setY(nozzle.position.y + 0.235);
     expect(box.expandByScalar(0.03).containsPoint(swivel)).toBe(true); // its far end reaches the swivel rather than ending in the air
   });
+  it('keeps the nozzle, holster and hose out of the tank\'s body, and the collider long enough for its ends', () => {
+    const tank = make(() => 0, { x: 0, z: 0 });
+    const holster = tank.model.getObjectByName('holster');
+    const nozzle = tank.model.getObjectByName('nozzle');
+    const inBody = (p) => { // the tank: a cylinder of r 0.55 along x from -1 to 1 at y 1.45, with a dished end 0.12 deep each side
+      const r = Math.hypot(p.y - 1.45, p.z);
+      const ex = Math.abs(p.x) - 1;
+      return Math.abs(p.x) <= 1 ? r < 0.55 : ex < 0.12 && r < 0.55 * Math.sqrt(Math.max(0, 1 - (ex / 0.12) ** 2));
+    };
+    for (const p of [holster.position, nozzle.position, nozzle.position.clone().setY(nozzle.position.y + 0.235)]) expect(inBody(p)).toBe(false);
+    const hose = tank.model.getObjectByName('hose').geometry.getAttribute('position');
+    for (let i = 0; i < hose.count; i += 4) expect(inBody(new THREE.Vector3(hose.getX(i), hose.getY(i), hose.getZ(i)))).toBe(false);
+  });
 });
