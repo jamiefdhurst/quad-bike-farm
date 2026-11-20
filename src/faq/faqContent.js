@@ -2969,6 +2969,15 @@ export const FAQ_SECTIONS = [
           <code>bonfire</code> take you to each.`,
       },
       {
+        q: 'What is in the new farm\'s yard?',
+        a: `On <code>?layout=2</code> the yard is old concrete, laid in bays with tarred joints, a few bays patched and cracked, a drain down its middle to a gully by the barn doors, darker polished
+          tracks where the quads run in and mud tracked in from each way out. After rain the low spots fill with water (the ground has to have been wet a while). Against the barn's east end wall hang a hose
+          reel, a yard brush, a shovel and a bucket, with a coil of blue baler twine on a nail and a pallet leant by them; a stack of pallets and a pile of old tyres stand at the west corner, and nettles
+          grow along the wall's foot. Steel field gates, hung open on stone and timber posts, stand at the ways out to Home Ground and the south field. The stackyard has a hardcore floor, square bales
+          stacked in the Dutch barn beside the round ones, loose straw and a bale spike. In the yard you can hear the loose tin on the barn roof rattle in the wind and a tap drip; it goes quiet inside the barn and
+          fades away beyond the concrete. <code>tp me barnwall</code>, <code>homegate</code> and <code>stackbales</code> take you to the wall's gear, the gate and the bales.`,
+      },
+      {
         q: 'Where is Hollow Wood on the new farm?',
         a: `On <code>?layout=2</code> the wood is in the north-west corner, about half as big again as before (about 2.8 hectares), with the Hollow Run and the Fern Trail just as they were, laps
           and all, in the middle of it. The gate is in its south side, onto the Wet Meadow; a muddy lead-in bends west inside the hedge from it to the Run, a good deal longer than the old one, and the Fern
