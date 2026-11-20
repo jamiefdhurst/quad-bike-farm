@@ -26,6 +26,7 @@ import { buildUpperThornby } from './upperThornby.js';
 import { buildVillage } from './villageProps.js';
 import { inVillage } from './village.js';
 import { buildBrookCulvert } from './brookProps.js';
+import { buildFarmBridge } from './farmBridge.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { laneBarriers, nearNeighbourYard } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
@@ -94,6 +95,7 @@ export function buildProps(ctx) {
   buildLaneFittings(c); // the lane's cottages, gateways, bin and postbox (#687, layout 2)
   const village = buildVillage({ ...c, laneTexture });
   buildBrookCulvert(c);
+  buildFarmBridge(c); // where the stone track south crosses the river's head (#689, layout 2)
   if (neighbourFarm) gates.push(neighbourFarm.gate); // the yard's own gate opens and shuts like the farm's
   if (neighbourLand) gates.push(neighbourLand.gate); // and so does her north field gate
   const silage = bale.silage;

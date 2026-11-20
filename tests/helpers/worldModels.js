@@ -101,6 +101,8 @@ export async function buildWorldModels() {
   const { layoutNew } = await import('../../src/world/layoutNew.js');
   const two = layoutNew(LAYOUT, RAW_LAYOUT);
   add('setPiece', 'pitFence', buildPitBoundary, (b) => b({ ...c, layout: two })); // the new farm's pit boundary needs the new farm's fields
+  const { buildFarmBridge } = await import('../../src/world/farmBridge.js');
+  add('setPiece', 'farmBridge', buildFarmBridge, (b) => b({ ...c, layout: two, heights: createTerrainHeight(two, new Track(two.trackPoints)) })); // on the new farm's river (#689)
   const { buildHut } = await import('../../src/world/hutBuild.js');
   add('setPiece', 'shepherdsHut', buildHut, (b) => b(c).group);
   const { buildLineUpBays } = await import('../../src/world/lineUpBays.js');
