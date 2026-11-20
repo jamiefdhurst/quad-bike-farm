@@ -1023,20 +1023,20 @@ export const FARMSTEAD_PLAN = {
   // What the yard is dressed with (#817), plan metres. The barn's door wall is the plane z 335 (x 501.8 to 520.2), its doors' leaves covering most of it, so `wall` is the gear on
   // the east end wall and the pallets and tyres stand at the door wall's west corner. `gates` are the yard's ways out that are gateways (`layout.gateways`), `along` the way the rail or hedge runs there.
   yardKit: {
-    drain: { x: 517.6, z0: 402, z1: 347 }, // the channel along the yard's middle, falling north to the gully
+    drain: { x: 517.6, z0: 385, z1: 347 }, // stops at the cattle shed's rectangle (#694), as the paths and the mud stop short of the kept-clear places // the channel along the yard's middle, falling north to the gully
     paths: [
       { points: [[615, 345], [540, 345], [524, 342], [517.6, 338]], width: 1.7 },
-      { points: [[517.6, 338], [517.6, 372], [500, 392]], width: 1.7 },
-      { points: [[517.6, 352], [470, 357], [416, 368]], width: 1.7 },
+      { points: [[517.6, 338], [517.6, 360], [517.6, 380]], width: 1.7 },
+      { points: [[517.6, 352], [480, 356], [446, 360]], width: 1.7 }, // on towards Home Ground's gate; the rest waits for the machinery shed and scrap corner (#617, #712)
     ],
-    mud: [{ at: [613, 345], d: [-1, 0], radius: 5 }, { at: [416, 368], d: [1, 0], radius: 4 }, { at: [420, 436], d: [0, -1], radius: 4 }],
+    mud: [{ at: [613, 345], d: [-1, 0], radius: 5 }, { at: [420, 436], d: [0, -1], radius: 4 }],
     muckLines: [[501.8, 335.7, 520.2, 335.7], [520.9, 324.6, 520.9, 335]],
     puddles: [[516, 378, 1.6, 1.0], [549, 353, 2.0, 1.3], [468, 372, 1.5, 1.0], [506, 347, 1.1, 0.8], [586, 392, 1.8, 1.1]],
     gully: [517.6, 347],
     wall: { at: [520.2, 329.4], yaw: Math.PI / 2 }, // the barn's east end wall, clear of the tanks, the doors' leaves and the bell: the gear's own frame has x along the wall (north) and z out
     pallets: { at: [497.6, 337.0], yaw: 0.12 },
     tyres: { at: [500.6, 337.8] },
-    gates: [{ at: [412, 368], along: 'z' }, { at: [420, 440], along: 'x' }],
+    gates: [{ at: [412, 368], along: 'z' }, { at: [420, 440], along: 'x' }, { at: [545.9, 230.4], along: 'x', inward: 1 }], // the drive's 8 m mouth stays open for the lorry (#816)
     stack: { at: [440.6, 265.0] }, // square bales under the Dutch barn's west bay, beside its round ones (the stanchion at 443.5 and the first round bale at 444.2 are clear)
     round: [[436, 279], [437.7, 282.6]], // two out on the hardcore
     spike: [455.5, 276],
@@ -1180,7 +1180,7 @@ function yardKitLayout(k) {
     wall: { ...pt(k.wall.at), yaw: k.wall.yaw },
     pallets: { ...pt(k.pallets.at), yaw: k.pallets.yaw },
     tyres: pt(k.tyres.at),
-    gates: k.gates.map((g) => ({ ...pt(g.at), along: g.along })),
+    gates: k.gates.map((g) => ({ ...pt(g.at), along: g.along, inward: g.inward ?? -1 })),
     stack: pt(k.stack.at),
     round: k.round.map(pt),
     spike: pt(k.spike),
