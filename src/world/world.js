@@ -1,4 +1,5 @@
 import { createRiver } from './river.js';
+import { yardHeard } from './yardBed.js';
 import { createCattleGrid } from './cattleGrid.js';
 import { roadNetwork, EDGE } from './roads.js';
 import { LAYOUT } from './layout.js';
@@ -302,6 +303,11 @@ export class World {
     this.setStreamLevel();
   }
 
+  /** 0..1 how much of the yard's sound bed to play at (x, z): see `yardHeard`. */
+  yardHeard(x, z, indoor = 0) {
+    return yardHeard(this.layout, x, z, indoor);
+  }
+
   /** The puddles freeze and thaw with the day's temperature; they start as a night at that temperature would leave them. */
   updatePuddleIce(dt) {
     if (!this.puddleIceStarted) {
@@ -310,6 +316,7 @@ export class World {
     }
     this.puddleIce.update(dt, this.weather.temperature, this.weather.rain);
     this.puddleIceView.sync();
+    this.props.yard?.userData.setWet(this.wet); // the water standing in the yard's low spots (#817)
   }
 
   /** Gives the hill, and the water drawn, the stream's level as it is now. */

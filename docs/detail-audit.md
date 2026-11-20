@@ -34,10 +34,10 @@ Graded first from `tools/shot.mjs` shots and the code, then corrected from Jamie
 | Fuel tanks and bowsers | block | They float (#614); the hose textures are awful |
 | Feed bin and bucket | block | No inside textures |
 | Hens' house and pig's pen | block | No real textures; too tight |
-| Silage bales | passable | The wrapped ones behind the barn are hard to reach |
+| Silage bales | passable | The wrapped ones behind the barn are hard to reach (on the new farm they stand in the strip behind the barn with a clear way in from the west: `tests/yardKit.test.js`, #817) |
 | Paddock fences | block | No reason to be there and the girls get stuck (removed in the move) |
 | Line-up sleepers | passable | Plain sleepers, no wear or weeds |
-| Yard ground | block | Grass and a dirt track: no concrete, joints, drain, puddles or scraped muck line |
+| Yard ground | block | Grass and a dirt track: no concrete, joints, drain, puddles or scraped muck line (rebuilt in #817: tarred joints, patches, cracks, the drain and gully, tyre paths, mud, puddles that fill when it is wet, the muck line and the stackyard's hardcore) |
 | Lights at night | block | No yard light: the yard is black at dusk but for the barn's bulb (#171) |
 
 ## The grass field, Home Ground (#669)

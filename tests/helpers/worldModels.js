@@ -147,6 +147,10 @@ export async function buildWorldModels() {
   const farmstead = await import('../../src/world/farmsteadProps.js');
   add('setPiece', 'gardenWall', farmstead.buildGardenWall, (b) => b(c2));
   add('setPiece', 'homeRails', farmstead.buildHomeRails, (b) => b(c2));
+  const yardKit = await import('../../src/world/yardKit.js');
+  add('setPiece', 'yardGates', yardKit.buildYardGates, (b) => b(c2));
+  add('setPiece', 'yardFurniture', yardKit.buildYardFurniture, (b) => b(c2));
+  add('setPiece', 'stackyardKit', yardKit.buildStackyardKit, (b) => b(c2));
 
   // The drive's cattle grid and reflector posts (#568): the grid is built with today's layout's and the new farm's, which place it in different gateways.
   const drive = await import('../../src/world/driveProps.js');

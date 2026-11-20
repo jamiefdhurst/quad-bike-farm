@@ -1020,6 +1020,29 @@ export const FARMSTEAD_PLAN = {
   garden: { rect: [552, 250, 615, 312], gate: { x: 583, width: 3.6 } }, // lawn behind a stone wall, its gate on the yard side
   cars: { z: 326, xs: [578, 583.2, 588.4], yaw: Math.PI }, // beside the garden, nosed in towards its wall (plan 572 to 612 by 319 to 333)
   muck: [486, 416],
+  // What the yard is dressed with (#817), plan metres. The barn's door wall is the plane z 335 (x 501.8 to 520.2); `wall` things stand against it between its door
+  // and its west corner. `gates` are the yard's ways out that are gateways (`layout.gateways`), `along` the way the rail or hedge runs there.
+  yardKit: {
+    drain: { x: 517.6, z0: 402, z1: 347 }, // the channel along the yard's middle, falling north to the gully
+    paths: [
+      { points: [[615, 345], [540, 345], [524, 342], [517.6, 338]], width: 1.7 },
+      { points: [[517.6, 338], [517.6, 372], [500, 392]], width: 1.7 },
+      { points: [[517.6, 352], [470, 357], [416, 368]], width: 1.7 },
+    ],
+    mud: [{ at: [613, 345], d: [-1, 0], radius: 5 }, { at: [416, 368], d: [1, 0], radius: 4 }, { at: [420, 436], d: [0, -1], radius: 4 }],
+    muckLines: [[501.8, 335.7, 520.2, 335.7], [520.9, 324.6, 520.9, 335]],
+    puddles: [[516, 378, 1.6, 1.0], [549, 353, 2.0, 1.3], [468, 372, 1.5, 1.0], [506, 347, 1.1, 0.8], [586, 392, 1.8, 1.1]],
+    gully: [517.6, 347],
+    wall: { at: [520.2, 329.4], yaw: Math.PI / 2 }, // the barn's east end wall, clear of the tanks, the doors' leaves and the bell: the gear's own frame has x along the wall (north) and z out
+    pallets: { at: [497.6, 337.0], yaw: 0.12 },
+    tyres: { at: [500.6, 337.8] },
+    gates: [{ at: [412, 368], along: 'z' }, { at: [420, 440], along: 'x' }],
+    stack: { at: [440.6, 265.0] }, // square bales under the Dutch barn's west bay, beside its round ones (the stanchion at 443.5 and the first round bale at 444.2 are clear)
+    round: [[436, 279], [437.7, 282.6]], // two out on the hardcore
+    spike: [455.5, 276],
+    straw: [[444, 275], [452, 278], [446, 272.5]],
+    stackyardTrack: [[446, 285, 4], [440, 296, 3]],
+  },
   harrows: { at: [548, 372], yaw: -Math.PI / 2 },
   // The trailers, off the visitors' lane (the drive's line, z 345, and the loop south of the barn's doors to z 353) and clear of the kept-clear places and the spawns.
   trailers: { trailer: { at: [572, 398], yaw: 2.7 }, tipTrailer: { at: [588, 394], yaw: 0.2 }, sprayer: { at: [560, 380], yaw: 0.3 } }, // (the tipping trailer stood at (562, 366), in the lorry's way to the grain store: #816)
@@ -1112,6 +1135,7 @@ export function farmsteadLayout(today, raw) {
       slab, stackyard: rectOf(P.stackyard), orchard: rectOf(P.orchard),
       garden: { ...rectOf(P.garden.rect), gate: { x: fromPlan([P.garden.gate.x, 0])[0], width: P.garden.gate.width } },
       keptClear: P.keptClear.map(({ name, by, rect }) => ({ name, by, ...rectOf(rect) })),
+      yard: yardKitLayout(P.yardKit),
     },
     trackPoints: again.track,
     bogs: again.bogs,
@@ -1140,6 +1164,28 @@ export function farmsteadLayout(today, raw) {
     restSpots: [...fences, ...again.dutchSeats, ...today.restSpots.filter((r) => r.id.startsWith('fieldShed'))],
     // The grass field's spots go with Home Ground and the Dutch barn's with the Dutch barn; the east fields' stay where they were (named spots read them, #690).
     spawn: { ...base.spawn, away: [...again.homeAway, ...farmsteadAway(), ...again.dutchAway, ...away.filter((a) => !inGrassField(a) && a.where !== 'in the Dutch barn')] },
+  };
+}
+
+/** The yard's dressing (#817) in game metres: `FARMSTEAD_PLAN.yardKit` with each plan position taken from the plan's origin. */
+function yardKitLayout(k) {
+  const pt = ([x, z]) => ({ x: fromPlan([x, z])[0], z: fromPlan([x, z])[1] });
+  return {
+    drain: { x: fromPlan([k.drain.x, 0])[0], z0: fromPlan([0, k.drain.z0])[1], z1: fromPlan([0, k.drain.z1])[1] },
+    paths: k.paths.map((p) => ({ points: p.points.map(fromPlan), width: p.width })),
+    mud: k.mud.map((m) => ({ ...pt(m.at), dx: m.d[0], dz: m.d[1], radius: m.radius })),
+    muckLines: k.muckLines.map(([x0, z0, x1, z1]) => ({ x0: fromPlan([x0, z0])[0], z0: fromPlan([x0, z0])[1], x1: fromPlan([x1, z1])[0], z1: fromPlan([x1, z1])[1] })),
+    puddles: k.puddles.map(([x, z, rx, rz]) => ({ ...pt([x, z]), rx, rz })),
+    gully: pt(k.gully),
+    wall: { ...pt(k.wall.at), yaw: k.wall.yaw },
+    pallets: { ...pt(k.pallets.at), yaw: k.pallets.yaw },
+    tyres: pt(k.tyres.at),
+    gates: k.gates.map((g) => ({ ...pt(g.at), along: g.along })),
+    stack: pt(k.stack.at),
+    round: k.round.map(pt),
+    spike: pt(k.spike),
+    straw: k.straw.map(pt),
+    stackyardTrack: k.stackyardTrack.map(([x, z, radius]) => ({ ...pt([x, z]), radius })),
   };
 }
 

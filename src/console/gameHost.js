@@ -50,7 +50,7 @@ export function benchSpot(layout) {
   return b && layout.barn ? barnFrame(layout).toWorld(b.x, b.z + 1.4) : null;
 }
 
-/** The new farm's farmstead places (#682): the stackyard, the orchard, the garden's gate and the cars. Today's farm has none of them. */
+/** The new farm's farmstead places (#682): the stackyard, the orchard, the garden's gate and the cars, and the yard's dressing (#817): the barn wall's gear, Home Ground's steel gate and the stackyard's bales. Today's farm has none of them. */
 export function farmsteadPlaces(layout) {
   const f = layout.farmstead;
   if (!f) return {}; // (the places read as undefined, and are left out)
@@ -60,6 +60,11 @@ export function farmsteadPlaces(layout) {
     orchard: mid(f.orchard),
     garden: { x: f.garden.gate.x, z: f.garden.maxZ + 3 }, // at its gate, on the yard side
     cars: { x: layout.cars.finch.x, z: layout.cars.finch.z + 5 }, // in front of the girls' cars
+    ...(f.yard && {
+      barnwall: { x: f.yard.wall.x + 4, z: f.yard.wall.z + 3 }, // the hose reel, brush, shovel and bucket on the barn's east wall (#817)
+      homegate: { x: f.yard.gates[0].x + 6, z: f.yard.gates[0].z + 3 }, // the steel gate at Home Ground's rail
+      stackbales: { x: f.yard.stack.x + 6, z: f.yard.stack.z + 9 }, // the square bales under the Dutch barn, and the straw and bale spike beyond
+    }),
   };
 }
 
@@ -189,6 +194,9 @@ export function createHost(g, { copy = () => {} } = {}) {
       orchard: farmstead.orchard, // the hens' run and the pig's ark
       garden: farmstead.garden, // the garden plot's gate
       cars: farmstead.cars, // in front of the girls' cars
+      barnwall: farmstead.barnwall, // the barn's east wall's gear: the new farm's (#817)
+      homegate: farmstead.homegate, // the steel gate at Home Ground's rail
+      stackbales: farmstead.stackbales, // the square bales, straw and spike in the stackyard
       animals: layout.farmAnimals ? { x: layout.farmAnimals.pen.maxX + 2.5, z: (layout.farmAnimals.pen.minZ + layout.farmAnimals.sty.maxZ) / 2 } : null,
       trough: layout.trough,
       road: layout.road?.pad ?? (layout.road ? { x: (layout.road.fromX + layout.road.toX) / 2, z: layout.road.z } : null), // the pad, or halfway along the drive

@@ -8,6 +8,7 @@ import { patchAt } from './terrain.js';
 import { buildBarnShed } from './barnBuild.js';
 import { underRoof } from './barn.js';
 import { buildGardenWall, buildHomeRails } from './farmsteadProps.js';
+import { buildYardGates, buildYardFurniture, buildStackyardKit } from './yardKit.js';
 import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
@@ -75,6 +76,9 @@ export function buildProps(ctx) {
   buildPaddock(c);
   buildGardenWall(c); // the new farm's garden plot and Home Ground's rail (#682); today's farm has neither
   buildHomeRails(c);
+  buildYardGates(c); // the yard's dressing on the new farm (#817): its steel gates, the barn wall's gear, the heaps and the stackyard's bales
+  const yard = buildYardFurniture(c);
+  buildStackyardKit(c);
   const bale = buildBales(c);
   buildOutbuildings({ ...c, bale });
   const neighbourFarm = buildNeighbourFarm(c);
@@ -100,7 +104,7 @@ export function buildProps(ctx) {
   if (ctx.fields.quarry) buildQuarry(c);
   buildFieldLandmarks(c); // the new farm's landmark in each field (#815); today's farm has none
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: woodProps?.treeSwaps ?? [], barn, jumpRamp, silage, puddles, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
+  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: woodProps?.treeSwaps ?? [], barn, jumpRamp, silage, puddles, yard, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
 }
 
 function buildBarn(c) {

@@ -11,7 +11,7 @@ const WALL = { height: 1.1, thickness: 0.45, piece: 2.6, sink: 0.45, coping: 0.0
 const RAIL = { piece: 3, post: [0.14, 1.3, 0.14], rails: [0.42, 0.78, 1.14], section: [0.05, 0.12] };
 
 /** Meshes from lists of geometries by material: one merged mesh each. */
-function mergedGroup(byMaterial) {
+export function mergedGroup(byMaterial) {
   const g = new THREE.Group();
   for (const [material, geos] of byMaterial) {
     if (!geos.length) continue;
@@ -23,7 +23,7 @@ function mergedGroup(byMaterial) {
 }
 
 /** A box `sx` by `sy` by `sz` standing on its middle point (x, z) with its base at `y0`, turned `yaw` about y, as geometry in the world's frame. */
-function placedBox(geo, x, y, z, yaw) {
+export function placedBox(geo, x, y, z, yaw) {
   geo.rotateY(yaw);
   geo.translate(x, y, z);
   return geo;

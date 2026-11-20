@@ -2,6 +2,7 @@
 // variation, the neighbouring farmland beyond the hedges, the stubble fields and the tarmac road, the muddy track with ruts and puddles, and worn
 // patches in the yard and gateways.
 
+import { paintYardConcrete, paintYardWear, paintHardcore } from './yardGround.js';
 import { patchColor, patchBlend } from './patchwork.js';
 import { createOutbuildings } from './outbuildings.js';
 import { roadNetwork, pointAt, filletOutline } from './roads.js';
@@ -68,42 +69,6 @@ const mix = (a, b) => {
   h = Math.imul(h, 0x297a2d39);
   return (h ^ (h >>> 15)) >>> 0;
 };
-
-/** A concrete yard: pale grey in 6 m bays with a dark joint between each, mottled and stained here and there by cell (the same every time). */
-function paintSlab(c, ctx, s, r) {
-  const mid = [(r.minX + r.maxX) / 2, (r.minZ + r.maxZ) / 2];
-  if (!c.inWin(mid[0], mid[1], Math.max(r.maxX - r.minX, r.maxZ - r.minZ) / 2 + 1)) return;
-  const [px0, pz0] = c.toPx(r.minX, r.minZ);
-  const [px1, pz1] = c.toPx(r.maxX, r.maxZ);
-  ctx.fillStyle = '#8d8b85';
-  ctx.fillRect(px0, pz0, px1 - px0, pz1 - pz0);
-  const cell = 2;
-  for (let x = r.minX; x < r.maxX; x += cell) {
-    for (let z = r.minZ; z < r.maxZ; z += cell) {
-      if (!c.inWin(x, z, cell)) continue;
-      const h = hash01(S.slab, Math.floor(x / cell), Math.floor(z / cell));
-      const [qx, qz] = c.toPx(x, z);
-      ctx.fillStyle = h < 0.5 ? `rgba(255,255,255,${0.03 + h * 0.08})` : h > 0.93 ? `rgba(40,34,26,${0.06 + (h - 0.93) * 1.5})` : `rgba(0,0,0,${0.02 + (h - 0.5) * 0.1})`;
-      ctx.fillRect(qx, qz, cell * s, cell * s);
-    }
-  }
-  ctx.strokeStyle = 'rgba(55,53,49,0.6)'; // the joints between the bays
-  ctx.lineWidth = Math.max(1, 0.06 * s);
-  ctx.beginPath();
-  for (let x = Math.ceil(r.minX / 6) * 6; x < r.maxX; x += 6) {
-    const [a, b] = c.toPx(x, r.minZ);
-    const [, d] = c.toPx(x, r.maxZ);
-    ctx.moveTo(a, b);
-    ctx.lineTo(a, d);
-  }
-  for (let z = Math.ceil(r.minZ / 6) * 6; z < r.maxZ; z += 6) {
-    const [a, b] = c.toPx(r.minX, z);
-    const [d] = c.toPx(r.maxX, z);
-    ctx.moveTo(a, b);
-    ctx.lineTo(d, b);
-  }
-  ctx.stroke();
-}
 
 /** A number from 0 to 1 for cell (i, j) of kind `salt`: the same every time. */
 export const hash01 = (salt, i, j = 0) => mix(mix(salt, i | 0), j | 0) / 4294967296;
@@ -209,7 +174,11 @@ export function* paintGround(plan, c) {
     ctx.fillRect(px - r * s, pz - r * s, r * 2 * s, r * 2 * s);
   };
   const { yard, gate, fieldHalf } = layout;
-  if (layout.farmstead?.slab) paintSlab(c, ctx, s, layout.farmstead.slab); // the new farm's yard is concrete, not bare earth (#682)
+  if (layout.farmstead?.slab) {
+    paintYardConcrete(c, ctx, s, layout, hash01); // the new farm's yard is old concrete, not bare earth (#682, #817)
+    paintHardcore(c, ctx, s, layout, hash01);
+    paintYardWear(c, ctx, s, layout);
+  }
   else {
     wear(yard.x, yard.z, yard.radius * 0.8, 'rgba(105,92,66,0.85)');
     wear(yard.x - 4, yard.z + 2, yard.radius * 0.45, 'rgba(92,80,58,0.7)');
