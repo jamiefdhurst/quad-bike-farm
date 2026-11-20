@@ -152,8 +152,39 @@ export function buildBarnShed({ scene, layout: worldLayout, heights, fixedBox: f
   const box = (sx, sy, sz, mat) => new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
 
   // Floor: a slab just proud of the flattened ground.
-  const floorMat = new THREE.MeshStandardMaterial({ map: concreteTexture(random, [4, 4 * (sizeAllZ / sizeZ)]), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2 });
-  add(box(sizeX - 0.02, 0.03, sizeAllZ - 0.02, floorMat), shape.x, floorY - 0.004, allZ, { cast: false });
+  // The inspection pit's opening is cut through it (workshop/shedModels.js builds the trench below); `pitPlug` fills the hole while the pit isn't bought.
+  const floorMat = new THREE.MeshStandardMaterial({ map: concreteTexture(random, [4 / sizeX, 4 / sizeZ]), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2 });
+  const slabMesh = (path) => {
+    const geometry = new THREE.ExtrudeGeometry(path, { depth: 0.03, bevelEnabled: false });
+    geometry.rotateX(-Math.PI / 2); // drawn in (x, -z), then laid down: the picture runs in metres, so the concrete is the same size on every piece
+    const mesh = new THREE.Mesh(geometry, floorMat);
+    mesh.position.y = floorY - 0.019;
+    mesh.receiveShadow = true;
+    return mesh;
+  };
+  const rectOn = (path, minX, maxX, minZ, maxZ) => {
+    path.moveTo(minX, -minZ);
+    path.lineTo(maxX, -minZ);
+    path.lineTo(maxX, -maxZ);
+    path.lineTo(minX, -maxZ);
+    return path;
+  };
+  const slabShape = rectOn(new THREE.Shape(), shape.x - sizeX / 2 + 0.01, shape.x + sizeX / 2 - 0.01, allZ - sizeAllZ / 2 + 0.01, allZ + sizeAllZ / 2 - 0.01);
+  const pit = layout.shed?.pit;
+  let pitPlug = null;
+  if (pit) {
+    const [x0, x1, z0, z1] = [pit.x - pit.halfX, pit.x + pit.halfX, pit.z - pit.halfZ, pit.z + pit.halfZ];
+    slabShape.holes.push(rectOn(new THREE.Path(), x0, x1, z0, z1));
+    pitPlug = new THREE.Group(); // at the anchor, turned, like the barn, but outside its group, which is merged for drawing (farDetail.js): shown and hidden on its own
+    pitPlug.position.set(shape.x, 0, shape.z);
+    pitPlug.rotation.y = frame.yaw;
+    const inner = new THREE.Group();
+    inner.position.set(-shape.x, 0, -shape.z);
+    inner.add(slabMesh(rectOn(new THREE.Shape(), x0, x1, z0, z1)));
+    pitPlug.add(inner);
+    scene.add(pitPlug);
+  }
+  group.add(slabMesh(slabShape));
 
   // Walls with colliders. The east wall's two halves leave the doorway between them.
   const wallMat = (len, hgt) => {
@@ -611,5 +642,5 @@ export function buildBarnShed({ scene, layout: worldLayout, heights, fixedBox: f
   }
 
   const hayDoorAt = frame.toWorld(door.x, shape.z);
-  return { group: pivot, light, bulb, light2, bulb2, floorY, shutter, hayDoor: { x: hayDoorAt.x, y: floorY + hd.sill, z: hayDoorAt.z }, loft: { ...lf, ladderProxy, hayProxy } };
+  return { group: pivot, light, bulb, light2, bulb2, floorY, pitPlug, shutter, hayDoor: { x: hayDoorAt.x, y: floorY + hd.sill, z: hayDoorAt.z }, loft: { ...lf, ladderProxy, hayProxy } };
 }

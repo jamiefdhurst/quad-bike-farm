@@ -27,7 +27,7 @@ Graded first from `tools/shot.mjs` shots and the code, then corrected from Jamie
 | Money tin, parts catalogue | passable | In odd places (#809) |
 | Coat rack, helmet hooks | passable | Too basic; move them in the new barn |
 | Bays 1 and 2 | block | Painted lines on a concrete floor; the rusty quad and the Plover block the bench (rebuilt in #817: wheel stop, corner kerbs, oil stain and drip tray, no paint) |
-| Pit | block | A painted rectangle, not a hole (#329) |
+| Pit | block | A painted rectangle, not a hole (#329; rebuilt in #817 as a real trench: the slab and the ground are cut, block walls, floor and drain, steps, a grab rail, lamps and a part-rolled cover; crossed at floor level, with nothing to fall into) |
 | Shed kit (compressor, parts washer) | good | Not marked down by the walk |
 | Generator | block | Very basic texture; too loud and runs dry too quickly (#810) |
 | Bell pole | passable | A bit basic |

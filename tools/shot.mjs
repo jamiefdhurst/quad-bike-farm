@@ -14,6 +14,7 @@
 //                         painted ground or a detail the four sides do not frame (#568). Needs --at or --name only to name the folder
 //   --season <name>       spring, summer, autumn or winter (?season=); default is the farm's own date
 //   --layout <n>          2 shoots the new farm (?layout=2, #815), whose places are the field keys (`tp me north`); default is today's
+//   --run <line;line>     console lines to run once you are there, before the shot (`--run "farm.pit on"`): to stand a piece that has to be bought first
 //   --out <name>          the folder under .scratch/shots/ (default: the --name, or the --at)
 //   --url <address>       use a dev server that is already running (else this starts its own, from this checkout)
 //   --keep                keep what stands between the camera and the target (else it is hidden for that shot and put back, and the tool says what)
@@ -293,6 +294,12 @@ try {
     const failed = Array.isArray(said) ? said.find((o) => o.kind === 'error') : said?.ok === false ? said : null;
     if (failed) throw new Error(`"${line}" failed: ${failed.text ?? JSON.stringify(failed)}`);
     await wait(2); // the ground and the set pieces round the new spot draw in
+  }
+  for (const line of (opt('run') ?? '').split(';').map((l) => l.trim()).filter(Boolean)) {
+    const said = await page.evaluate((l) => game.console.shell.run(l), line);
+    const failed = Array.isArray(said) ? said.find((o) => o.kind === 'error') : said?.ok === false ? said : null;
+    if (failed) throw new Error(`"${line}" failed: ${failed.text ?? JSON.stringify(failed)}`);
+    await wait(1);
   }
   if (opt('eye') && opt('look')) {
     const eye = opt('eye').split(',').map(Number);

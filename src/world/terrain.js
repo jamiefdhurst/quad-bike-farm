@@ -64,9 +64,11 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   };
   const qr = fields.quarry?.rect;
   const quarryRect = new THREE.Vector4(...(qr ? [qr.minX, qr.minZ, qr.maxX, qr.maxZ] : [1e6, 1e6, 1e6 + 1, 1e6 + 1])); // the pit's field, for its gravel grain
+  const pitHole = new THREE.Vector4(1e6, 1e6, 1e6 + 1, 1e6 + 1); // the barn's inspection pit, once bought: nothing of the ground is drawn inside it (shedView.js)
   const shared = {
     detailTex,
     quarryRect,
+    pitHole,
     frost,
     snow,
     roadWet,
@@ -225,6 +227,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
       for (const m of materials) wetten(m);
     },
     hayPatch,
+    pitHole,
     frost,
     snow,
     roadWet,
@@ -241,7 +244,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
  * what every ground material reads alike; `own` is what this one's painting covers: the `origin` and `size` of its rectangle of ground (the map is
  * read through them, not through the mesh's uvs, so a tile can be given a painting of its own or the overview's) and the `tarmac` map over it.
  */
-function addDetailLayer(material, { detailTex, quarryRect, wear, roadMud, frost, snow, roadWet, skyTint, hayPatch }, { origin, size, tarmac }) {
+function addDetailLayer(material, { detailTex, quarryRect, pitHole, wear, roadMud, frost, snow, roadWet, skyTint, hayPatch }, { origin, size, tarmac }) {
   const scale = 0.45;
   material.onBeforeCompile = (shader) => {
     shader.uniforms.groundOrigin = { value: origin };
@@ -254,6 +257,7 @@ function addDetailLayer(material, { detailTex, quarryRect, wear, roadMud, frost,
     shader.uniforms.wearDims = { value: wear.dims };
     shader.uniforms.wearAtlas = { value: wear.atlas };
     shader.uniforms.quarryRect = { value: quarryRect };
+    shader.uniforms.pitHole = { value: pitHole };
     shader.uniforms.uFrost = frost;
     shader.uniforms.uSnow = snow;
     shader.uniforms.uRoadWet = roadWet;
@@ -274,10 +278,11 @@ function addDetailLayer(material, { detailTex, quarryRect, wear, roadMud, frost,
       .replace('#include <common>', '#include <common>\nuniform vec2 groundOrigin;\nuniform vec2 groundSize;\nvarying vec2 vWorldXZ;\nvarying float vWorldY;\nvarying vec3 vWorldN;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWorldXZ = (modelMatrix * vec4(transformed, 1.0)).xz;\nvWorldY = (modelMatrix * vec4(transformed, 1.0)).y;\nvWorldN = normalize(mat3(modelMatrix) * objectNormal);\nvMapUv = (vWorldXZ - groundOrigin) / groundSize;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform sampler2D wearIndex;\nuniform vec2 wearOrigin;\nuniform float wearTile;\nuniform vec2 wearDims;\nuniform float wearAtlas;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nuniform float uRoadWet;\nuniform vec3 uSkyTint;\nuniform sampler2D hayMap;\nuniform vec2 hayOrigin;\nuniform vec2 haySize;\nuniform sampler2D hayTrackMap;\nuniform vec2 hayTrackOrigin;\nuniform vec2 hayTrackSize;\nuniform sampler2D tarmacMap;\nuniform vec2 tarmacOrigin;\nuniform vec2 tarmacSize;\nuniform vec4 quarryRect;\nvarying vec2 vWorldXZ;\nvarying float vWorldY;\nvarying vec3 vWorldN;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;\nuniform sampler2D wearMap;\nuniform sampler2D wearIndex;\nuniform vec2 wearOrigin;\nuniform float wearTile;\nuniform vec2 wearDims;\nuniform float wearAtlas;\nuniform sampler2D roadMudMap;\nuniform vec2 roadMudOrigin;\nuniform vec2 roadMudSize;\nuniform float uFrost;\nuniform float uSnow;\nuniform float uRoadWet;\nuniform vec3 uSkyTint;\nuniform sampler2D hayMap;\nuniform vec2 hayOrigin;\nuniform vec2 haySize;\nuniform sampler2D hayTrackMap;\nuniform vec2 hayTrackOrigin;\nuniform vec2 hayTrackSize;\nuniform sampler2D tarmacMap;\nuniform vec2 tarmacOrigin;\nuniform vec2 tarmacSize;\nuniform vec4 quarryRect;\nuniform vec4 pitHole;\nvarying vec2 vWorldXZ;\nvarying float vWorldY;\nvarying vec3 vWorldN;')
       .replace(
         '#include <map_fragment>',
         `#include <map_fragment>
+        if (vWorldXZ.x > pitHole.x && vWorldXZ.x < pitHole.z && vWorldXZ.y > pitHole.y && vWorldXZ.y < pitHole.w) discard; // the inspection pit is a hole in the floor
         float detail = texture2D(detailMap, vWorldXZ * ${scale.toFixed(3)}).r;
         float detail2 = texture2D(detailMap, vWorldXZ * ${(scale * 0.13).toFixed(3)}).r;
         diffuseColor.rgb *= mix(0.72, 1.28, detail) * mix(0.85, 1.15, detail2);

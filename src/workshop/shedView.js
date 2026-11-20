@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { SHED_PIECES, SHED_PIECE_IDS } from '../farm/shed.js';
 import { SHED_KINDS, SHED_PIECE_OF } from '../vehicle/shedFaults.js';
 import { buildCatalogue, buildCompressor, buildWasher, buildPit } from './shedModels.js';
+import { pitHoleRect, NO_HOLE } from './pitHole.js';
 
 const FLOOR_TOP = 0.011;
 
@@ -43,8 +44,16 @@ export class ShedView {
       game.scene.add(built.group);
       this.pieces[id] = { ...built, collider: null };
     }
+    this.cutPit(this.standing('pit'));
     this.armed = null;
     this.buildCard();
+  }
+
+  /** The pit is a hole in the floor while it stands: the barn's slab has the opening, so the plug that fills it goes and the drawn ground under it is cut away. */
+  cutPit(on) {
+    const plug = this.game.world.props?.barn?.pitPlug;
+    if (plug) plug.visible = !on;
+    this.game.world.terrain?.pitHole?.set(...(on ? pitHoleRect(this.game.world.layout.shed.pit) : NO_HOLE));
   }
 
   /** Is this piece standing in the barn now (it was shown when the day loaded)? */
@@ -57,10 +66,11 @@ export class ShedView {
     const p = this.pieces[id];
     if (!p) return;
     p.group.visible = on;
+    if (id === 'pit') this.cutPit(on);
     if (on && !p.collider && id !== 'pit') this.addCollider(id, p);
   }
 
-  /** Compressor and washer cannot be walked or driven through. The pit is flat, so nothing blocks it. */
+  /** Compressor and washer cannot be walked or driven through. The pit has none: you and the girls cross it at floor level (the ground is one heightfield, which cannot be cut), so the cover is a look, not a floor. */
   addCollider(id, p) {
     const game = this.game;
     if (!game.RAPIER || !game.physics?.createCollider) return;

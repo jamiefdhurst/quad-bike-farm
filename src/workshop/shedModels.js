@@ -137,45 +137,185 @@ export function buildWasher() {
   return { group: g, size: { x: W + 0.06, y: 1.2, z: D + 0.1 } };
 }
 
+/** How deep the inspection pit goes below the barn's floor, in metres: a man stands up in it with his head just clear of the floor. */
+export const PIT_DEPTH = 1.4;
+const PIT_STEPS = 4; // concrete steps down at the +x end, each a fifth of the way
+const PIT_KERB = 0.09; // the angle iron round the opening, standing 3.5 cm proud of the floor
+
+/** Limewashed block walls: courses and mortar, a grimy foot, damp streaks and the odd oil smear. `w` by `h` metres is what the picture covers. */
+function pitWallTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#c9c5b6';
+  ctx.fillRect(0, 0, 512, 256);
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const v = 190 + ((row * 7 + col * 13) % 5) * 5;
+      ctx.fillStyle = `rgb(${v},${v - 3},${v - 14})`;
+      ctx.fillRect(col * 64 + (row % 2) * 32 + 1, row * 32 + 1, 62, 30);
+    }
+  }
+  ctx.fillStyle = 'rgba(70,66,58,0.55)'; // the mortar joints, grey-brown
+  for (let row = 0; row <= 8; row++) ctx.fillRect(0, row * 32 - 1, 512, 2);
+  for (let row = 0; row < 8; row++) for (let col = 0; col <= 8; col++) ctx.fillRect(col * 64 + (row % 2) * 32 - 1, row * 32, 2, 32);
+  const foot = ctx.createLinearGradient(0, 120, 0, 256); // damp and grime climb from the floor
+  foot.addColorStop(0, 'rgba(45,40,32,0)');
+  foot.addColorStop(1, 'rgba(45,40,32,0.6)');
+  ctx.fillStyle = foot;
+  ctx.fillRect(0, 120, 512, 136);
+  ctx.fillStyle = 'rgba(60,56,48,0.22)';
+  for (const x of [60, 190, 330, 450]) ctx.fillRect(x, 0, 6 + (x % 7), 150 + (x % 60));
+  const oil = ctx.createRadialGradient(380, 190, 4, 380, 190, 40);
+  oil.addColorStop(0, 'rgba(20,18,14,0.55)');
+  oil.addColorStop(1, 'rgba(20,18,14,0)');
+  ctx.fillStyle = oil;
+  ctx.fillRect(330, 140, 100, 100);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+/** The pit's floor: damp concrete with a drain channel down the middle, a sump grate at one end, tyre-black and oil. */
+function pitFloorTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#6f6d68';
+  ctx.fillRect(0, 0, 512, 128);
+  for (let i = 0; i < 700; i++) {
+    const v = 80 + ((i * 37) % 60);
+    ctx.fillStyle = `rgba(${v},${v},${v - 4},0.35)`;
+    ctx.fillRect((i * 97) % 512, (i * 53) % 128, 2 + (i % 3), 2 + (i % 2));
+  }
+  ctx.fillStyle = '#2a2927'; // the channel
+  ctx.fillRect(0, 58, 512, 12);
+  ctx.fillStyle = '#4b4d4f'; // the sump's grate at the west end
+  ctx.fillRect(20, 40, 64, 48);
+  ctx.fillStyle = '#161616';
+  for (let i = 0; i < 8; i++) ctx.fillRect(24 + i * 8, 44, 4, 40);
+  const oil = ctx.createRadialGradient(300, 36, 4, 300, 36, 50);
+  oil.addColorStop(0, 'rgba(15,12,8,0.6)');
+  oil.addColorStop(1, 'rgba(15,12,8,0)');
+  ctx.fillStyle = oil;
+  ctx.fillRect(240, 0, 120, 100);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Steel chequer plate: raised diamonds on a worn grey, for the cover's slats. */
+function chequerTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#7d8286';
+  ctx.fillRect(0, 0, 128, 128);
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const a = (x + y) % 2 ? 0.7854 : -0.7854;
+      ctx.save();
+      ctx.translate(x * 16 + 8, y * 16 + 8);
+      ctx.rotate(a);
+      ctx.fillStyle = '#a3a8ac';
+      ctx.fillRect(-6, -2, 12, 4);
+      ctx.restore();
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+/** A texture shared by the faces of one surface, repeated `u` by `v` times over it. */
+const tiled = (map, u, v) => {
+  const t = map.clone();
+  t.needsUpdate = true;
+  t.repeat.set(u, v);
+  return t;
+};
+
 /**
- * The inspection pit: a dark trench set into the big bay's floor under a steel kerb frame with yellow and black edging and a ladder rail at the end.
- * The floor is flat, so the trench is drawn as a black pool with ribbed sides below the rim and a lamp hook; `halfX` by `halfZ` is its opening.
+ * The inspection pit: a real trench `PIT_DEPTH` deep below the barn's floor, lined with limewashed block and a concrete floor with a drain, four
+ * concrete steps down at the +x end with a grab rail, a caged lamp in each end wall and a steel kerb round the opening with yellow and black edging.
+ * A chequer-plate roll-up cover lies over the -x end (rolled back over the rest, on its drum), so that is the part you can't see into. The group
+ * stands at the floor's top (y 0 is the floor), and `halfX` by `halfZ` is the opening. The barn's slab has the same hole in it (barnBuild.js) and the
+ * ground under it is cut away (terrain.js); you and the girls still stand at floor level, so the cover is not a floor you could fall through.
  */
 export function buildPit({ halfX = 1.9, halfZ = 0.45 } = {}) {
   const g = new THREE.Group();
   g.name = 'inspection-pit';
   const steel = mat(0x7f868c, 0.4, 0.8);
   const hazard = new THREE.MeshStandardMaterial({ map: hazardTexture(), roughness: 0.6 });
-  const black = mat(0x050505, 0.95);
-  const wall = mat(0x2c2d2f, 0.9);
-  // The opening and the black below it: the floor level is y 0, so everything below it is a trench seen through the opening.
-  g.add(box(halfX * 2, 0.004, halfZ * 2, black, 0, 0.012, 0));
-  // Ribbed side walls a little below the floor, so a low look shows some depth on the near side.
+  const D = PIT_DEPTH;
+  const T = 0.2; // the lining's thickness
+  const top = -0.03; // the lining stops at the underside of the slab (3 cm thick), so the two meet without overlapping
+  const h = D + top; // the lining's height, from the floor of the pit up to the slab
+  const wallMap = pitWallTexture();
+  const side = new THREE.MeshStandardMaterial({ map: tiled(wallMap, (halfX * 2 + 0.4) / 2, 1), roughness: 0.92 });
+  const end = new THREE.MeshStandardMaterial({ map: tiled(wallMap, halfZ, 1), roughness: 0.92 });
+  const floorMat = new THREE.MeshStandardMaterial({ map: pitFloorTexture(), roughness: 0.85 });
+  const stepMat = new THREE.MeshStandardMaterial({ map: tiled(wallMap, 0.5, 0.25), roughness: 0.9, color: 0xb8b4a8 });
+  const cy = -D + h / 2;
+  // The long walls and the end walls, their inner faces on the edge of the opening.
   for (const s of [-1, 1]) {
-    g.add(box(halfX * 2, 0.012, 0.03, wall, 0, 0.0, s * (halfZ - 0.02)));
-    for (let i = -3; i <= 3; i++) g.add(box(0.02, 0.01, 0.06, wall, (i * halfX * 2) / 7, 0.014, s * (halfZ - 0.05)));
+    g.add(box(halfX * 2 + T * 2, h, T, side, 0, cy, s * (halfZ + T / 2)));
+    g.add(box(T, h, halfZ * 2, end, s * (halfX + T / 2), cy, 0));
+  }
+  // The floor, with its drain and sump, a little under the walls' feet so the two overlap, not touch.
+  g.add(box(halfX * 2 + T * 2, 0.1, halfZ * 2 + T * 2, floorMat, 0, -D - 0.05, 0));
+  // The steps down from the +x end: each a block as wide as the pit and as deep as a tread, the top one a step below the floor.
+  const rise = D / (PIT_STEPS + 1);
+  const tread = 0.28;
+  for (let i = 0; i < PIT_STEPS; i++) {
+    const top2 = -rise * (i + 1);
+    const x = halfX - tread * (i + 0.5);
+    g.add(box(tread, top2 + D, halfZ * 2 + 0.01, stepMat, x, -D + (top2 + D) / 2, 0));
+    g.add(box(tread + 0.01, 0.02, halfZ * 2 + 0.01, steel, x, top2 - 0.01 + 0.012, 0)); // a steel nosing on each tread, 12 mm proud
   }
   // The kerb frame: angle iron round the opening, standing a little proud so a wheel rolls up and over it.
-  const kerb = 0.09;
+  const kerb = PIT_KERB;
   g.add(box(halfX * 2 + kerb * 2, 0.035, kerb, steel, 0, 0.0175, halfZ + kerb / 2));
   g.add(box(halfX * 2 + kerb * 2, 0.035, kerb, steel, 0, 0.0175, -halfZ - kerb / 2));
   for (const s of [-1, 1]) g.add(box(kerb, 0.035, halfZ * 2, steel, s * (halfX + kerb / 2), 0.0175, 0));
-  // Yellow and black edging inside the kerb on the long sides.
   for (const s of [-1, 1]) {
     const strip = new THREE.Mesh(new THREE.PlaneGeometry(halfX * 2, 0.07), new THREE.MeshStandardMaterial({ map: hazard.map, roughness: 0.6 }));
     strip.rotation.x = -Math.PI / 2;
-    strip.position.set(0, 0.037, s * (halfZ + kerb / 2));
+    strip.position.set(0, 0.039, s * (halfZ + kerb / 2)); // 4 mm off the kerb it is printed on
     g.add(strip);
   }
-  // A ladder rail at the +x end, down into it, and a lamp hook at the -x end.
-  for (const dz of [-0.2, 0.2]) {
-    g.add(box(0.03, 0.03, 0.03, steel, halfX - 0.12, 0.05, dz));
-    g.add(box(0.03, 0.34, 0.03, steel, halfX - 0.12, 0.2, dz));
+  // The grab rail at the head of the steps: two posts up from the second tread and a bar across, 45 cm above the floor.
+  for (const dz of [-0.33, 0.33]) g.add(cyl(0.015, 0.015, 0.45 + rise * 2, steel, halfX - 0.2, (0.45 - rise * 2) / 2, dz));
+  g.add(cyl(0.015, 0.015, 0.66, steel, halfX - 0.2, 0.45, 0, 'z'));
+  // Two caged lamps on the -z wall, 60 cm below the floor: a bracket, a frosted tube along the wall and two cage bars. The tube glows (it is the lamp).
+  const lens = new THREE.MeshStandardMaterial({ color: 0xf4ecc8, emissive: 0xffe9a8, emissiveIntensity: 0.7, roughness: 0.4 });
+  for (const lampX of [-0.2, 0.45]) {
+    g.add(box(0.26, 0.1, 0.05, steel, lampX, -0.6, -halfZ + 0.015));
+    const tube = cyl(0.035, 0.035, 0.22, lens, lampX, -0.6, -halfZ + 0.075, 'x', 14);
+    tube.name = 'lens';
+    g.add(tube);
+    for (const dy of [-0.05, 0.05]) g.add(box(0.24, 0.012, 0.012, steel, lampX, -0.6 + dy, -halfZ + 0.075));
   }
-  g.add(box(0.03, 0.03, 0.46, steel, halfX - 0.12, 0.37, 0));
-  g.add(box(0.03, 0.12, 0.03, steel, -halfX - 0.02, 0.06, 0));
+  // The roll-up cover: chequer-plate slats on the kerb over the -x end, and the rest wound onto a drum standing beyond the end.
+  const slatMap = chequerTexture();
+  const slatMat = new THREE.MeshStandardMaterial({ map: tiled(slatMap, 1, 2), roughness: 0.5, metalness: 0.5 });
+  const covered = 1.35; // m of the opening the cover still spans
+  const slatW = 0.1;
+  const slats = Math.round(covered / slatW);
+  const spanZ = halfZ * 2 + kerb * 2 + 0.02;
+  for (let i = 0; i < slats; i++) g.add(box(slatW - 0.006, 0.01, spanZ, slatMat, -halfX - kerb + slatW * (i + 0.5), 0.04, 0));
+  const drum = cyl(0.12, 0.12, spanZ + 0.06, steel, -halfX - kerb - 0.2, 0.12, 0, 'z', 24);
+  g.add(drum);
+  g.add(cyl(0.125, 0.125, 0.02, steel, -halfX - kerb - 0.2, 0.12, spanZ / 2 + 0.04, 'z', 24)); // its end plates
+  g.add(cyl(0.125, 0.125, 0.02, steel, -halfX - kerb - 0.2, 0.12, -spanZ / 2 - 0.04, 'z', 24));
+  for (const s of [-1, 1]) g.add(box(0.06, 0.1, 0.05, steel, -halfX - kerb - 0.2, 0.05, s * (spanZ / 2 + 0.07))); // the two cradles it turns in
   for (const m of g.children) m.receiveShadow = true;
-  return { group: g, size: { x: halfX * 2 + 0.2, y: 0.4, z: halfZ * 2 + 0.2 } };
+  return { group: g, size: { x: halfX * 2 + 0.6, y: D, z: halfZ * 2 + 0.4 } };
 }
 
 function hazardTexture() {
