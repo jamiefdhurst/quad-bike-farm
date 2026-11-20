@@ -318,10 +318,10 @@ export class AudioHub {
     this.hoseFilter.frequency.setTargetAtTime(onTarget ? 1800 : 3200, t, 0.1);
   }
 
-  /** How hard it's raining, 0..1, and how far indoors you are (0..1): under the barn's tin roof it drums (see `rainHeard`). `yard` is the yard's share (`yardHeard`), with the wind's speed. */
-  setRain(level, indoor = 0, barnParams, yard = 0, windSpeed = 0) {
+  /** How hard it's raining, 0..1, and how far indoors you are (0..1): under the barn's tin roof it drums (see `rainHeard`). `yard` is the yard's share (`yardHeard`), with the weather's windiness (`weather.wind`, not the gusts). */
+  setRain(level, indoor = 0, barnParams, yard = 0, windiness = 0) {
     if (!this.ready) return;
-    this.setYard(yard, Math.min(1, windSpeed / 1.5), level);
+    this.setYard(yard, Math.min(1, windiness / 1.5), level);
     const t = this.ctx.currentTime;
     const heard = barnParams ? rainHeard(level, indoor, barnParams) : { level, tin: 0 };
     this.rainGain.gain.setTargetAtTime(this.params.rainVolume * Math.sqrt(Math.max(0, heard.level)), t, 0.5);

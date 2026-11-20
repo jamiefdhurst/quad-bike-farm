@@ -114,6 +114,13 @@ function bag() {
   };
 }
 
+/** The height to set something with a footprint of half-sizes (hx, hz) about (x, z) on: the highest ground under it, so on a slope the low side is buried a little rather than floating. */
+export function restingHeight(ground, x, z, hx, hz) {
+  let y = -Infinity;
+  for (const dx of [-1, 0, 1]) for (const dz of [-1, 0, 1]) y = Math.max(y, ground(x + dx * hx, z + dz * hz));
+  return y;
+}
+
 /** `geo` turned about x, z then y, and set at (x, y, z). */
 const put = (geo, x, y, z, ry = 0, rx = 0, rz = 0) => {
   if (rx) geo.rotateX(rx);
@@ -159,7 +166,7 @@ export function buildYardGates({ scene, layout, heights, fixedBox, random }) {
   const b = bag();
   for (const { x, z, side, gate } of gatePosts(gates)) {
     const alongZ = gate.along === 'z';
-    const y = heights.heightAt(x, z);
+    const y = restingHeight((px, pz) => heights.heightAt(px, pz), x, z, POST.cap / 2, POST.cap / 2);
     const post = alongZ ? stone : timber; // the rail's end is stone, the hedge's timber
     b.add(post, put(worldBox(POST.w, POST.h + POST.sink, POST.w, 1), x, y + (POST.h - POST.sink) / 2, z));
     b.add(post, put(worldBox(POST.cap, 0.07, POST.cap, 1), x, y + POST.h + 0.025, z)); // a cap wider than the post, to throw the wet off
@@ -238,13 +245,14 @@ export function buildYardFurniture({ scene, layout, heights, fixedBox, random, d
     for (let i = 0; i < 5; i++) g(oldTimber, put(worldBox(1.2, 0.022, 0.1, 0.6), 3.0, 0.4 + (i - 2) * 0.175 * 0.97, 0.13 - (i - 2) * 0.03, 0, -0.17));
     for (const dx of [-0.5, 0, 0.5]) g(oldTimber, put(worldBox(0.1, 0.8, 0.09, 0.5), 3.0 + dx, 0.4, 0.16, 0, -0.17));
   }
+  const gearY = restingHeight(ground, k.wall.x + 0.6, k.wall.z - 1.2, 0.6, 2.4); // 1.2 m out of the wall and 3.6 m along it
   for (const [material, geos] of gear.entries()) {
-    for (const geo of geos) b.add(material, geo.rotateY(k.wall.yaw).translate(k.wall.x, ground(k.wall.x, k.wall.z), k.wall.z));
+    for (const geo of geos) b.add(material, geo.rotateY(k.wall.yaw).translate(k.wall.x, gearY, k.wall.z));
   }
   // A stack of pallets, each as it was dropped.
   {
     const { x, z, yaw } = k.pallets;
-    const y0 = ground(x, z);
+    const y0 = restingHeight(ground, x, z, 0.65, 0.5);
     for (let n = 0; n < 5; n++) {
       const dy = y0 + n * 0.145;
       const jy = yaw + (n % 2 ? 0.07 : -0.05) * (n + 1) * 0.3;
@@ -256,21 +264,25 @@ export function buildYardFurniture({ scene, layout, heights, fixedBox, random, d
     }
     fixedBox(x, y0 + 0.36, z, 0.62, 0.36, 0.45, yaw);
   }
-  // A pile of old tyres: three lying flat, two on those, one on top, and one stood against the pile.
+  // A pile of old tyres: three lying flat, two on those, one on top, and one stood against the pile. Each ring sits on the ground under it, or on the rings it rests on.
   {
     const { x, z } = k.tyres;
-    const y0 = ground(x, z);
-    const ring = (cx, cz, y) => b.add(rubber, put(new THREE.TorusGeometry(0.3, 0.1, 10, 20), cx, y + 0.1, cz, 0, Math.PI / 2));
-    for (let i = 0; i < 3; i++) ring(x + (i - 1) * 0.82, z + (i % 2) * 0.06, y0);
-    for (let i = 0; i < 2; i++) ring(x + (i - 0.5) * 0.82, z + 0.02, y0 + 0.2);
-    ring(x, z, y0 + 0.4);
-    b.add(rubber, put(new THREE.TorusGeometry(0.3, 0.1, 10, 20), x + 1.5, y0 + 0.4, z + 0.1, 0.4, 0.05));
-    fixedBox(x, y0 + 0.25, z, 1.2, 0.27, 0.42, 0);
+    const ring = (cx, cz, under) => {
+      const y = under.length ? Math.max(...under.map((r) => r.top)) : restingHeight(ground, cx, cz, 0.4, 0.4);
+      b.add(rubber, put(new THREE.TorusGeometry(0.3, 0.1, 10, 20), cx, y + 0.1, cz, 0, Math.PI / 2));
+      return { x: cx, top: y + 0.2 };
+    };
+    const low = [0, 1, 2].map((i) => ring(x + (i - 1) * 0.82, z + (i % 2) * 0.06, []));
+    const mid = [0, 1].map((i) => ring(x + (i - 0.5) * 0.82, z + 0.02, low.filter((r) => Math.abs(r.x - (x + (i - 0.5) * 0.82)) < 0.5)));
+    ring(x, z, mid);
+    const leanY = restingHeight(ground, x + 1.5, z + 0.1, 0.2, 0.35);
+    b.add(rubber, put(new THREE.TorusGeometry(0.3, 0.1, 10, 20), x + 1.5, leanY + 0.4, z + 0.1, 0.4, 0.05));
+    fixedBox(x, restingHeight(ground, x, z, 1.2, 0.42) + 0.25, z, 1.2, 0.27, 0.42, 0);
   }
   // The gully grate: a kerbed frame flush with the concrete, a dark sump, slots across it.
   {
     const { x, z } = k.gully;
-    const y = ground(x, z);
+    const y = restingHeight(ground, x, z, 0.4, 0.4);
     b.add(iron, put(worldBox(0.64, 0.012, 0.64, 1), x, y + 0.001, z));
     for (const [dx, dz, sx, sz] of [[0, -0.33, 0.7, 0.05], [0, 0.33, 0.7, 0.05], [-0.33, 0, 0.05, 0.6], [0.33, 0, 0.05, 0.6]]) b.add(steel, put(worldBox(sx, 0.03, sz, 0.5), x + dx, y + 0.014, z + dz));
     for (let i = 0; i < 6; i++) b.add(steel, put(worldBox(0.04, 0.022, 0.62, 0.5), x - 0.25 + i * 0.1, y + 0.012, z));
@@ -280,7 +292,10 @@ export function buildYardFurniture({ scene, layout, heights, fixedBox, random, d
   // Standing water: a flat gloss disc over each low spot that shows with the ground's wetness (`standingWater`).
   const water = k.puddles.map((p) => {
     const material = new THREE.MeshStandardMaterial({ color: 0x353a3f, roughness: 0.04, metalness: 0.15, transparent: true, opacity: 0, depthWrite: false });
-    const disc = new THREE.Mesh(new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2), material);
+    const geo = new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2);
+    const at = geo.getAttribute('position');
+    for (let v = 0; v < at.count; v++) at.setY(v, ground(p.x + at.getX(v) * p.rx, p.z + at.getZ(v) * p.rz) - ground(p.x, p.z)); // lies on the ground, each vertex
+    const disc = new THREE.Mesh(geo, material);
     disc.scale.set(p.rx, 1, p.rz);
     disc.position.set(p.x, ground(p.x, p.z) + 0.012, p.z);
     disc.receiveShadow = true;
@@ -352,7 +367,7 @@ export function buildStackyardKit({ scene, layout, heights, fixedBox, random }) 
   // Square bales, 0.8 by 0.45 by 0.4: three along, two deep, four courses, each course shifted half a bale so it ties.
   {
     const { x, z } = k.stack;
-    const y0 = ground(x, z);
+    const y0 = restingHeight(ground, x + 0.6, z + 0.2, 1.4, 0.5);
     for (let layer = 0; layer < 4; layer++) {
       for (let row = 0; row < 2; row++) {
         for (let i = 0; i < 3; i++) {
@@ -364,11 +379,11 @@ export function buildStackyardKit({ scene, layout, heights, fixedBox, random }) 
         }
       }
     }
-    fixedBox(x + 0.4, y0 + 0.9, z + 0.215, 1.6, 0.9, 0.42, 0);
+    fixedBox(x + 0.6, y0 + 0.9, z + 0.215, 1.4, 0.9, 0.42, 0);
   }
   // Round bales on their sides, 1.2 m across and wide, string in bands round the curved face.
   for (const { x: rx, z: rz } of k.round) {
-    const y0 = ground(rx, rz);
+    const y0 = restingHeight(ground, rx, rz, 0.6, 0.6);
     b.add(straw, put(new THREE.CylinderGeometry(0.6, 0.6, 1.2, 24), rx, y0 + 0.6, rz, 0, 0, Math.PI / 2));
     for (let i = 0; i < 4; i++) b.add(twine, put(new THREE.CylinderGeometry(0.606, 0.606, 0.014, 24), rx - 0.45 + i * 0.3, y0 + 0.6, rz, 0, 0, Math.PI / 2));
     fixedBox(rx, y0 + 0.6, rz, 0.6, 0.6, 0.6, 0);
@@ -387,7 +402,7 @@ export function buildStackyardKit({ scene, layout, heights, fixedBox, random }) 
   // The bale spike: a steel stand on a plate, a tapering spike on top, a gusset each side.
   {
     const { x, z } = k.spike;
-    const y0 = ground(x, z);
+    const y0 = restingHeight(ground, x, z, 0.35, 0.35);
     b.add(steel, put(worldBox(0.7, 0.04, 0.7, 0.5), x, y0 + 0.02, z));
     b.add(steel, put(worldBox(0.1, 0.45, 0.1, 0.5), x, y0 + 0.27, z));
     b.add(steel, put(new THREE.CylinderGeometry(0.012, 0.042, 1.2, 10), x, y0 + 1.07, z));

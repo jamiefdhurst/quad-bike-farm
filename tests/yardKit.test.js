@@ -5,13 +5,16 @@ import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, PLAN_ORIGIN } from '../src/world/layoutNew.js';
 import { edgeBetween, pointAlong } from '../src/world/polygons.js';
 import { wallBoxes } from '../src/world/barn.js';
-import { gatePosts, weedSpots, standingWater } from '../src/world/yardKit.js';
+import { gatePosts, weedSpots, standingWater, restingHeight } from '../src/world/yardKit.js';
+import { createTerrainHeight } from '../src/world/terrainHeight.js';
+import { Track } from '../src/world/track.js';
 import { puddleSpots } from '../src/world/yardGround.js';
 
 // The yard's dressing (#817): the steel gates, the barn wall's gear, the heaps, the stackyard, and the places they are given in the new farm's layout.
 const two = layoutNew(LAYOUT, RAW_LAYOUT);
 const k = two.farmstead.yard;
 const inRect = (r, x, z, m = 0) => x > r.minX - m && x < r.maxX + m && z > r.minZ - m && z < r.maxZ + m;
+const heights = createTerrainHeight(two, new Track(two.trackPoints));
 const stream = (seed) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 
 describe('the yard kit as models', () => {
@@ -132,5 +135,55 @@ describe('the stackyard\'s bales', () => {
     for (const b of ob.bales) expect(box.maxX < b.x - 0.6 || box.minX > b.x + 0.6 || box.maxZ < b.z - 0.6 || box.minZ > b.z + 0.6, `bale at ${b.x}, ${b.z}`).toBe(true);
     for (const x of ob.postXs) expect(x < box.minX - 0.2 || x > box.maxX + 0.2, `stanchion at ${x}`).toBe(true);
     for (const r of k.round) expect(inRect(two.farmstead.stackyard, r.x, r.z, -1)).toBe(true);
+  });
+});
+
+describe('standing on the slope (the yard falls about 3 cm a metre to the east)', () => {
+  let furniture;
+  beforeAll(async () => {
+    furniture = (await buildWorldModels()).models.find((m) => m.name === 'yardFurniture').group;
+  });
+  const worldVertices = (group, keep) => {
+    const out = [];
+    group.traverse((o) => {
+      if (!o.isMesh || o.userData.keepFar) return;
+      const at = o.geometry.getAttribute('position');
+      for (let i = 0; i < at.count; i++) {
+        const x = o.position.x + at.getX(i);
+        const z = o.position.z + at.getZ(i);
+        if (keep(x, z)) out.push([x, o.position.y + at.getY(i), z]);
+      }
+    });
+    return out;
+  };
+  it('lays each puddle\'s water on the ground at every point of it, not flat over a slope', () => {
+    const discs = [];
+    furniture.traverse((o) => o.userData.keepFar && discs.push(o));
+    expect(discs.length).toBe(k.puddles.length);
+    for (const d of discs) {
+      const at = d.geometry.getAttribute('position');
+      for (let i = 0; i < at.count; i++) {
+        const x = d.position.x + at.getX(i) * d.scale.x;
+        const z = d.position.z + at.getZ(i) * d.scale.z;
+        expect(Math.abs(d.position.y + at.getY(i) - (heights.heightAt(x, z) + 0.012)), `${x}, ${z}`).toBeLessThan(0.002);
+      }
+    }
+  });
+  it('sets something on the highest ground under its footprint, so a low side is buried and none floats', () => {
+    const ground = (x, z) => heights.heightAt(x, z);
+    const y = restingHeight(ground, k.pallets.x, k.pallets.z, 0.65, 0.5);
+    for (const dx of [-0.65, 0, 0.65]) for (const dz of [-0.5, 0, 0.5]) expect(y).toBeGreaterThanOrEqual(ground(k.pallets.x + dx, k.pallets.z + dz) - 1e-9);
+  });
+  it('stands the tyre pile\'s bottom rings and the leaning tyre on the ground under each, within 4 cm of it', () => {
+    const t = k.tyres;
+    for (const cx of [t.x - 0.82, t.x, t.x + 0.82, t.x + 1.5]) {
+      const verts = worldVertices(furniture, (x, z) => Math.abs(x - cx) < 0.38 && Math.abs(z - t.z) < 0.45);
+      expect(verts.length, `ring at ${cx}`).toBeGreaterThan(0);
+      const low = Math.min(...verts.map((v) => v[1]));
+      let top = -Infinity;
+      for (const dx of [-0.4, 0, 0.4]) for (const dz of [-0.4, 0, 0.4]) top = Math.max(top, heights.heightAt(cx + dx, t.z + dz));
+      expect(low - top, `ring at ${cx} floats`).toBeLessThan(0.04);
+      expect(low - top, `ring at ${cx} buried`).toBeGreaterThan(-0.04);
+    }
   });
 });
