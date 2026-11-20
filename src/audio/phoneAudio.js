@@ -7,6 +7,30 @@ export class PhoneAudio {
     this.p = { volume: 0.35, hearWithin: 45, ...params };
   }
 
+  /** Your own loud two-note whistle for calling the girls (npc/callThem.js), from where you stand: nothing if the audio isn't running. */
+  whistle(volume = 0.5) {
+    const hub = this.hub;
+    if (!hub.ready || hub.paused) return;
+    const ctx = hub.ctx;
+    const t0 = ctx.currentTime;
+    const gain = ctx.createGain();
+    gain.gain.value = volume * 0.5;
+    gain.connect(hub.master);
+    [[0, 0.32, 1500, 2300], [0.4, 0.5, 1800, 2600]].forEach(([at, len, from, to]) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(from, t0 + at);
+      osc.frequency.exponentialRampToValueAtTime(to, t0 + at + len);
+      const env = ctx.createGain();
+      env.gain.setValueAtTime(0.0001, t0 + at);
+      env.gain.exponentialRampToValueAtTime(1, t0 + at + 0.03);
+      env.gain.exponentialRampToValueAtTime(0.0001, t0 + at + len);
+      osc.connect(env).connect(gain);
+      osc.start(t0 + at);
+      osc.stop(t0 + at + len + 0.02);
+    });
+  }
+
   /** One ring at (x, y, z): nothing if the audio isn't running or it is too far. */
   ring(at) {
     const hub = this.hub;

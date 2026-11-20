@@ -20,6 +20,8 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | woodpile | The stack of split logs by the wood's gate, with the rounds lying beside it. The farm map names it, with how many logs are on the stack. On the new farm it also has a lean-to with an old stack under it and a chopping block, which are there with or without the tractor | wood pile |
 | Fern Trail | The narrow single-track path for the two-wheelers through the wood, marked by the blue-banded posts | Fern Path, Bike Trail, the trail loop |
 | way-marker post | The timber post with a blue band and an arrow beside the Fern Trail | waymarker, waymark post |
+| Call them | The choice on your own wheel (`Enter` looking at nobody) that whistles for the girls: those in reach come, those further off in earshot say where they are | summon |
+| a lift | What a girl asks for, or takes a quad to get, when where she wants to be is more than about 150 m of walking away: a ride on the back of your quad, or her own quad | carpool |
 | the Moor | The open common beyond Back Lane's west side, up to the ridge wall: heather, bracken, flushes, outcrops, peat banks, the spring and the trig pillar (the new farm) | the fell, the hill moor |
 | ridge wall | The drystone wall along the top of the Moor, the end of the map, with the ladder stile in it | moor wall, top wall |
 | ladder stile | The timber stile over the ridge wall: climbing it turns you round | moor stile |

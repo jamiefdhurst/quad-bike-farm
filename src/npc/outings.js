@@ -5,7 +5,7 @@
 export const DEFAULT_OUTING_PARAMS = {
   chance: 0.6, // at the start of each of her drives (and each time she plans afresh), the chance she sets off somewhere instead of looping
   minDistance: 35, // metres: nearer than this isn't worth the trip
-  maxDistance: 230, // metres: further than this and she'd be gone all day
+  maxDistance: 600, // metres: further than this and she'd be gone all day (the new farm is 870 m across; on a quad the far ends are an outing, #690)
   speedScale: 1.3, // how much quicker she goes on the way than on her loops (she is going somewhere)
   stopMin: 4, // seconds she stops at the place before turning back
   stopMax: 9,
@@ -15,7 +15,7 @@ export const DEFAULT_OUTING_PARAMS = {
 export const OUTING_PARAM_RANGES = {
   chance: [0, 1, 0.05],
   minDistance: [10, 150, 5],
-  maxDistance: [50, 400, 10],
+  maxDistance: [50, 1000, 10],
   speedScale: [1, 3, 0.05],
   stopMin: [0, 30, 1],
   stopMax: [0, 60, 1],
@@ -79,6 +79,8 @@ export function outingSpots(layout, hillWait, stripPoint) {
   if (layout.trough) add('the trough', layout.trough.x, layout.trough.z + 5);
   if (layout.jumpRamp) add('the jump', layout.jumpRamp.x + 9, layout.jumpRamp.z + 9);
   if (hillWait) add('the foot of the hill', hillWait.x, hillWait.z);
+  // The common beyond the hill pasture's gate onto Back Lane (the new farm, #713): a girl drives up to look out over the Moor.
+  if (layout.moor?.gate) add('the moor gate', layout.moor.gate.x + 6, layout.moor.gate.z);
   if (layout.road?.gaps) {
     add('the barley field', layout.road.gaps.north[0], layout.road.z - 22);
     add('the wheat field', layout.road.gaps.south[0], layout.road.z + 22);

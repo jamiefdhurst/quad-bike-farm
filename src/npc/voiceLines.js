@@ -14,6 +14,7 @@ import { AMY_LOFT_LINES } from './loftLines.js';
 import { AMY_BATTERY_LINES } from './batteryLines.js';
 import { AMY_PUSH_LINES } from './pushLines.js';
 import { AMY_STRANDED_LINES } from './strandedLines.js';
+import { AMY_CALL_THEM_LINES } from './callThemLines.js';
 import { AMY_TOW_LINES } from './towLines.js';
 import { AMY_MIND_LINES } from './mindLines.js';
 import { AMY_KNACK_LINES } from './knackLines.js';
@@ -1710,4 +1711,6 @@ export const VOICE_LINES = {
   ...AMY_HARROW_LINES,
   // The sheep field's terraces (terraceLines.js), after that.
   ...AMY_TERRACE_LINES,
+  // Called from your wheel, and the new farm's places for being stuck (callThemLines.js), after that.
+  ...AMY_CALL_THEM_LINES,
 };

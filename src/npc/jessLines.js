@@ -11,6 +11,7 @@ import { JESS_LOFT_LINES } from './loftLines.js';
 import { JESS_BATTERY_LINES } from './batteryLines.js';
 import { JESS_PUSH_LINES } from './pushLines.js';
 import { JESS_STRANDED_LINES } from './strandedLines.js';
+import { JESS_CALL_THEM_LINES } from './callThemLines.js';
 import { JESS_TOW_LINES } from './towLines.js';
 import { JESS_MIND_LINES } from './mindLines.js';
 import { JESS_KNACK_LINES } from './knackLines.js';
@@ -620,4 +621,6 @@ export const JESS_LINES = {
   ...JESS_HARROW_LINES,
   // The sheep field's terraces (terraceLines.js), after that.
   ...JESS_TERRACE_LINES,
+  // Called from your wheel, and the new farm's places for being stuck (callThemLines.js), after that.
+  ...JESS_CALL_THEM_LINES,
 };

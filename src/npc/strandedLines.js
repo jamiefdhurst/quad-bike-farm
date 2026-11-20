@@ -2,16 +2,16 @@
 // or tipped: spotNames.js), shouting again, thanks when you come (quickly or after a wait), having been left, and giving up. Merged into the
 // main line sets (voiceLines.js, jessLines.js), so they're recorded with the rest.
 
-import { SPOTS } from './spotNames.js';
+import { SPOT_NAMES } from './spotNames.js';
 
 const shout = (lines, cooldown = 0) => ({ shout: true, cooldown, lines });
 const line = (cooldown, lines) => ({ cooldown, lines });
 
 const spotLines = (bog, tip) => {
   const out = {};
-  for (const s of SPOTS) {
-    out[`callout_bog_${s.id}`] = shout([bog(s.name)]);
-    out[`callout_tip_${s.id}`] = shout([tip(s.name)]);
+  for (const [id, name] of Object.entries(SPOT_NAMES)) {
+    out[`callout_bog_${id}`] = shout([bog(name)]);
+    out[`callout_tip_${id}`] = shout([tip(name)]);
   }
   return out;
 };

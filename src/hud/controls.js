@@ -166,7 +166,7 @@ export const CONTROLS = [
   {
     title: 'Other',
     lines: [
-      `<kbd>H</kbd> help, <kbd>Tab</kbd> bucket list (<kbd>&larr;</kbd><kbd>&rarr;</kbd> turn the page), <kbd>Enter</kbd> talk to the girl you are looking at, on foot or from the seat, or at nobody to open your own wheel: "A race" (on a quad, by the yard or at the drag strip) a timed hill climb (by the cones past the stream) or the cone course (by the cones west of the middle of the field), <kbd>M</kbd> farm map, <kbd>N</kbd> mute, <kbd>Esc</kbd> pause, <kbd>\`</kbd> tuning panel, <kbd>\\</kbd> console`,
+      `<kbd>H</kbd> help, <kbd>Tab</kbd> bucket list (<kbd>&larr;</kbd><kbd>&rarr;</kbd> turn the page), <kbd>Enter</kbd> talk to the girl you are looking at, on foot or from the seat, or at nobody to open your own wheel: "Call them" (a whistle for the girls), "A race" (on a quad, by the yard or at the drag strip) a timed hill climb (by the cones past the stream) or the cone course (by the cones west of the middle of the field), <kbd>M</kbd> farm map, <kbd>N</kbd> mute, <kbd>Esc</kbd> pause, <kbd>\`</kbd> tuning panel, <kbd>\\</kbd> console`,
     ],
   },
   {
