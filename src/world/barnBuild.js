@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { barnShape, localWallBoxes, dividerPosts, barnFrame } from './barn.js';
 import { buildJack, buildAxleStand } from '../workshop/jackModel.js';
 import { loftShape } from './loft.js';
+import { buildBayKit } from './bayKit.js';
+import { buildBarnTrim } from './barnTrim.js';
 import { squareBaleGeometry, squareBaleMaterials, strawClumpGeometry } from './squareBale.js';
 
 // Draws the barn (the shape and numbers are in barn.js): board walls, a tin gable roof on timber ties, the big
@@ -290,6 +292,8 @@ export function buildBarnShed({ scene, layout: worldLayout, heights, fixedBox: f
     add(box(sizeX + 0.8, 0.1, 0.35, steel), shape.x, floorY + ridge + 0.07, zc);
   }
 
+  group.add(buildBarnTrim({ shape, floorY, eaveZ, eaveY, posts: dividerPosts(layout), random })); // fascia, gutters, downpipes, barge boards, the valley's drop, the door hood (barnTrim.js)
+
   // Timber inside: a tie beam across the barn every few metres, a collar and a ridge beam.
   for (let x = outer.minX + 1.4; x < outer.maxX - 0.8; x += 2.6) {
     // None over the loft: you stand there with your head at their height. (Its edge beam does their job.)
@@ -431,19 +435,10 @@ export function buildBarnShed({ scene, layout: worldLayout, heights, fixedBox: f
     add(tool, b.x - b.length / 2 + 0.3 + i * ((b.length - 0.6) / 6), benchTop + 1.2 + random() * 0.15, inner.minZ + 0.08, { cast: false });
   }
   fixedBox(b.x, floorY + b.height / 2, b.z, b.length / 2, b.height / 2, b.depth / 2);
-  // The bay for working on a quad, painted on the floor in front of the bench.
-  const bay = layout.bay;
-  // The floor is pulled towards the camera by a polygon offset of -2, so the paint needs a bigger one or the floor hides it from a distance.
-  const paint = new THREE.MeshStandardMaterial({ color: 0xd9b82a, roughness: 0.9, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
-  for (const [w, d, x, z] of [[bay.halfX * 2, 0.08, 0, -bay.halfZ], [bay.halfX * 2, 0.08, 0, bay.halfZ], [0.08, bay.halfZ * 2, -bay.halfX, 0], [0.08, bay.halfZ * 2, bay.halfX, 0]]) {
-    add(box(w, 0.012, d, paint), bay.x + x, floorY + 0.016, bay.z + z, { cast: false });
-  }
+  // The bays for working on a quad: a wheel stop, corner kerbs, an oil stain and a drip tray each, with no paint on the floor (bayKit.js, #404).
+  group.add(buildBayKit({ bays: [layout.bay, layout.bay2].filter(Boolean), floorY, random }));
   if (layout.bay2) {
-    // The big bay in the second span, painted the same, with a trolley jack and a pair of axle stands waiting beside it.
-    const b2 = layout.bay2;
-    for (const [w, d, x, z] of [[b2.halfX * 2, 0.08, 0, -b2.halfZ], [b2.halfX * 2, 0.08, 0, b2.halfZ], [0.08, b2.halfZ * 2, -b2.halfX, 0], [0.08, b2.halfZ * 2, b2.halfX, 0]]) {
-      add(box(w, 0.012, d, paint), b2.x + x, floorY + 0.016, b2.z + z, { cast: false });
-    }
+    // A trolley jack and a pair of axle stands wait beside the big bay in the second span.
     const jack = buildJack();
     jack.position.set(layout.jack.x, floorY, layout.jack.z);
     jack.rotation.y = layout.jack.yaw;
