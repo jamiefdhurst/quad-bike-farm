@@ -1020,8 +1020,8 @@ export const FARMSTEAD_PLAN = {
   garden: { rect: [552, 250, 615, 312], gate: { x: 583, width: 3.6 } }, // lawn behind a stone wall, its gate on the yard side
   cars: { z: 326, xs: [578, 583.2, 588.4], yaw: Math.PI }, // beside the garden, nosed in towards its wall (plan 572 to 612 by 319 to 333)
   muck: [486, 416],
-  // What the yard is dressed with (#817), plan metres. The barn's door wall is the plane z 335 (x 501.8 to 520.2); `wall` things stand against it between its door
-  // and its west corner. `gates` are the yard's ways out that are gateways (`layout.gateways`), `along` the way the rail or hedge runs there.
+  // What the yard is dressed with (#817), plan metres. The barn's door wall is the plane z 335 (x 501.8 to 520.2), its doors' leaves covering most of it, so `wall` is the gear on
+  // the east end wall and the pallets and tyres stand at the door wall's west corner. `gates` are the yard's ways out that are gateways (`layout.gateways`), `along` the way the rail or hedge runs there.
   yardKit: {
     drain: { x: 517.6, z0: 402, z1: 347 }, // the channel along the yard's middle, falling north to the gully
     paths: [

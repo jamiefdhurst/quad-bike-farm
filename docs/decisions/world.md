@@ -1556,6 +1556,6 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - **Sound.** `yardHeard` (`yardBed.js`) is 1 on the slab, fading to 0 over 14 m beyond it, scaled by how far outdoors you are, so it is silent in the barn and on today's farm. `EngineAudio.setYard` plays loose tin (the tin-rain ticks slowed and put through a band that opens with the wind) and a drip every 0.8 to 3.2 s (faster in rain), at `yardVolume` (0.07; range 0 to 0.5). It rides on `setRain`'s call, as `game.js` is at its line ceiling.
 - **The wrapped bales** behind the barn are not hard to reach on this layout: a test proves a 7 m approach from the west, a metre wider than the stack either side, clear of walls, the orchard, the garden and the kept-clear places.
 - **The paddock** was already gone with Home Ground's rails (#682): `tests/farmstead.test.js` holds it.
-- **Looked at** with `tools/shot.mjs --layout 2`: the barn wall's gear, the heaps, a gate at each post, the stackyard's bales and spike. Not looked at: at dusk, in rain, the sound by ear.
+- **Looked at** with `tools/shot.mjs --layout 2`: the barn wall's gear, the heaps, a gate at each post, the stackyard's bales and spike.
 - **Not in this part:** the bays, bowsers, lights, vane (part b) and the pit (part c).
 
