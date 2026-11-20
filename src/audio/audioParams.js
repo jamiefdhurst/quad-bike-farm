@@ -9,6 +9,7 @@ export const DEFAULT_SOUND_PARAMS = {
   pourVolume: 0.12,
   hoseVolume: 0.1,
   rainVolume: 0.09,
+  yardVolume: 0.07, // the yard's own bed: loose tin and a dripping tap (world/yardBed.js)
 
   // How each quad's sound reaches you (propagation.js)
   doppler: true, // passing quads rise and fall in pitch
@@ -63,6 +64,7 @@ export const SOUND_PARAM_RANGES = {
   pourVolume: [0, 1, 0.01],
   hoseVolume: [0, 1, 0.01],
   rainVolume: [0, 1, 0.01],
+  yardVolume: [0, 0.5, 0.005],
   masterVolume: [0, 2, 0.01],
   latency: [0.02, 0.2, 0.005],
   ambientVolume: [0, 0.5, 0.005],

@@ -11,6 +11,7 @@ import workletUrl from './engineWorklet.js?url';
 import { DEFAULT_AUDIO_PARAMS, DEFAULT_SOUND_PARAMS } from './audioParams.js';
 import { SoundPath, distanceLevel, airCutoff } from './propagation.js';
 import { rainHeard } from '../world/barn.js';
+import { yardBed } from '../world/yardBed.js';
 import { USE_CUES, useSamples } from './useAudio.js';
 import { wantsBank } from './bankWant.js';
 
@@ -189,6 +190,20 @@ export class AudioHub {
     this.tinGain.gain.value = 0;
     tin.connect(this.tinGain).connect(this.master);
     tin.start();
+    // The yard's loose tin: the same ticks put through a band that opens with the wind, only heard in the yard (`setYard`).
+    const yardTin = ctx.createBufferSource();
+    yardTin.buffer = tinRain(ctx, 4);
+    yardTin.loop = true;
+    yardTin.playbackRate.value = 0.37;
+    const yardBand = ctx.createBiquadFilter();
+    yardBand.type = 'bandpass';
+    yardBand.frequency.value = 900;
+    yardBand.Q.value = 1.4;
+    this.yardGain = ctx.createGain();
+    this.yardGain.gain.value = 0;
+    yardTin.connect(yardBand).connect(this.yardGain).connect(this.master);
+    yardTin.start();
+    this.nextDrip = 0;
     // The barn's echo: every quad's sound path can send into this (propagation.js).
     this.reverb = ctx.createConvolver();
     this.reverb.buffer = barnImpulse(ctx);
@@ -303,14 +318,34 @@ export class AudioHub {
     this.hoseFilter.frequency.setTargetAtTime(onTarget ? 1800 : 3200, t, 0.1);
   }
 
-  /** How hard it's raining, 0..1, and how far indoors you are (0..1): under the barn's tin roof it drums (see `rainHeard`). */
-  setRain(level, indoor = 0, barnParams) {
+  /** How hard it's raining, 0..1, and how far indoors you are (0..1): under the barn's tin roof it drums (see `rainHeard`). `yard` is the yard's share (`yardHeard`), with the wind's speed. */
+  setRain(level, indoor = 0, barnParams, yard = 0, windSpeed = 0) {
     if (!this.ready) return;
+    this.setYard(yard, Math.min(1, windSpeed / 1.5), level);
     const t = this.ctx.currentTime;
     const heard = barnParams ? rainHeard(level, indoor, barnParams) : { level, tin: 0 };
     this.rainGain.gain.setTargetAtTime(this.params.rainVolume * Math.sqrt(Math.max(0, heard.level)), t, 0.5);
     this.rainFilter.frequency.setTargetAtTime(1000 + 1400 * level, t, 0.5);
     this.tinGain.gain.setTargetAtTime(this.params.rainVolume * 2.2 * heard.tin * Math.sqrt(Math.max(0, level)), t, 0.4);
+  }
+
+  /** The yard's bed: `level` (world/yardBed.js `yardHeard`), the wind and the rain 0..1. The loose tin rattles with the wind; a tap drips every so often. */
+  setYard(level, wind, rain) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const bed = yardBed(level, wind, rain);
+    this.yardGain.gain.setTargetAtTime(this.params.yardVolume * bed.tin, t, 0.6);
+    if (t < this.nextDrip || bed.dripEvery === Infinity) return;
+    this.nextDrip = t + bed.dripEvery * (0.6 + Math.random() * 0.8);
+    const osc = this.ctx.createOscillator();
+    const env = this.ctx.createGain();
+    osc.frequency.setValueAtTime(1500 + Math.random() * 700, t);
+    osc.frequency.exponentialRampToValueAtTime(700, t + 0.08);
+    env.gain.setValueAtTime(this.params.yardVolume * level * 0.9, t);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    osc.connect(env).connect(this.master);
+    osc.start(t);
+    osc.stop(t + 0.14);
   }
 
   setPouring(active, dt) {

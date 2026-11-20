@@ -7068,7 +7068,7 @@ export class Game {
     this.rain.update(dt, this.camera, w.rain, 1, (x, z) => world.covered(x, z));
     this.snow.update(dt, this.camera, w.snow, 1, (x, z) => world.covered(x, z));
     this.updateLeafFall(dt);
-    this.audioHub.setRain(w.rain, indoor, world.barnParams);
+    this.audioHub.setRain(w.rain, indoor, world.barnParams, world.yardHeard(cam.x, cam.z, indoor), w.wind); // and the yard's tin and tap (#817)
     this.updateStorm(dt, indoor);
     this.audioHub.room ??= { inside: (x, z) => world.inBarn(x, z), params: world.barnParams, listenerIn: false };
     this.audioHub.room.listenerIn = world.inBarn(cam.x, cam.z);
