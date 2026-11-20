@@ -9,7 +9,6 @@ import { createRandom } from '../core/random.js';
 import { registerTuning } from '../core/tuning.js';
 import { carryWeight } from '../npc/carrying.js';
 import { towEffect, towLoad } from '../vehicle/towing.js';
-import { FARM_JOBS } from './farmJobs.js';
 import { Spraying, DEFAULT_SPRAY_PARAMS, SPRAY_PARAM_RANGES, SPRAY_PHASE_TEXT } from './spraying.js';
 import { SprayView } from './sprayView.js';
 import { Harrowing, DEFAULT_HARROW_PARAMS, HARROW_PARAM_RANGES, HARROW_PHASE_TEXT, dealMolehills } from './harrowing.js';
@@ -71,7 +70,7 @@ export class FieldWorkHost {
     const sp = g.spray;
     const level = `${Math.round(sp.tank * 100)}% in the tank`;
     if (!sp.out) return `Sprayer hitched, ${level}\nT to fold the boom ${sp.boomWant ? 'in' : 'out'}, J to unhitch`;
-    return `${SPRAY_PHASE_TEXT[sp.phase]}\nBoom out, ${level}, ${Math.round(sp.coverage * 100)}% of the field sprayed\nT to fold it in`;
+    return `${SPRAY_PHASE_TEXT[sp.phase]}\nBoom out, ${level}, ${Math.round(sp.progress * 100)}% of the spraying done\nT to fold it in`;
   }
 
   /** One of the girls near the sprayer says something about the spraying (npc/sprayLines.js). */
@@ -136,7 +135,7 @@ export class FieldWorkHost {
     const g = this.g;
     const sp = g.spray;
     if (!sp) return;
-    if (!g.jobBoard.has('spray') && (what === 'done' || what === 'half')) g.jobBoard.add('spray', FARM_JOBS.spray);
+    if (!g.jobBoard.has('spray') && (what === 'done' || what === 'half')) g.jobBoard.add('spray', g.jobDefs.spray);
     if (what === 'out') sp.setBoom(true);
     else if (what === 'in') sp.setBoom(false);
     else if (what === 'empty') sp.tank = 0;
@@ -182,7 +181,7 @@ export class FieldWorkHost {
     const g = this.g;
     const h = g.harrow;
     if (!h.isDown) return `Harrows hitched, tines ${h.downWant ? 'lowering' : 'up'}\nT to lower the tines, J to unhitch`;
-    return `${HARROW_PHASE_TEXT[h.phase]}\nTines down, ${Math.round(h.coverage * 100)}% of the field harrowed\nT to lift them`;
+    return `${HARROW_PHASE_TEXT[h.phase]}\nTines down, ${Math.round(h.progress * 100)}% of the harrowing done\nT to lift them`;
   }
 
   /** One of the girls near the harrows says something about the harrowing (npc/harrowLines.js). */
@@ -235,7 +234,7 @@ export class FieldWorkHost {
     const g = this.g;
     const h = g.harrow;
     if (!h) return;
-    if (!g.jobBoard.has('harrow') && (what === 'done' || what === 'half')) g.jobBoard.add('harrow', FARM_JOBS.harrow);
+    if (!g.jobBoard.has('harrow') && (what === 'done' || what === 'half')) g.jobBoard.add('harrow', g.jobDefs.harrow);
     if (what === 'down') h.setDown(true);
     else if (what === 'up') h.setDown(false);
     else if (what === 'clear') {
@@ -494,7 +493,7 @@ export class FieldWorkHost {
     const g = this.g;
     const hay = g.hay;
     if (!hay) return;
-    if (!g.jobBoard.has('hay')) g.jobBoard.add('hay', FARM_JOBS.hay);
+    if (!g.jobBoard.has('hay')) g.jobBoard.add('hay', g.jobDefs.hay);
     if (!hay.active) hay.start();
     const order = ['cut', 'bale', 'load', 'stack', 'done'];
     const at = order.indexOf(stage);
@@ -504,11 +503,13 @@ export class FieldWorkHost {
     hay.cut = hay.made = hay.loaded = hay.delivered = 0;
     if (at >= 1) {
       hay.cut = hay.p.cutNeeded;
-      for (let i = 0; i < hay.p.cutNeeded; i++) hay.state[i] = 1;
+      const cells = [...hay.live.keys()].filter((i) => hay.live[i]); // the field's own cells, in the middle first: the corners of its bounds are not it
+      cells.sort((a, b) => Math.abs(a % hay.cols - hay.cols / 2) + Math.abs(Math.floor(a / hay.cols) - hay.rows / 2) - (Math.abs(b % hay.cols - hay.cols / 2) + Math.abs(Math.floor(b / hay.cols) - hay.rows / 2)));
+      for (const i of cells.slice(0, hay.p.cutNeeded)) hay.state[i] = 1;
       g.hayView.refresh();
     }
     if (at >= 2) {
-      for (let i = hay.made; i < hay.p.balesNeeded; i++) g.hayView.addLoose(hay.drop({ x: hay.rect.minX + 6 + i * 3, z: (hay.rect.minZ + hay.rect.maxZ) / 2, heading: 0 }));
+      for (let i = hay.made; i < hay.p.balesNeeded; i++) g.hayView.addLoose(hay.drop({ x: (hay.rect.minX + hay.rect.maxX) / 2 + i * 3, z: (hay.rect.minZ + hay.rect.maxZ) / 2, heading: 0 }));
     }
     if (at >= 3) {
       for (const b of hay.bales) {
