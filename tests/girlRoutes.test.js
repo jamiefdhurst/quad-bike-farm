@@ -59,3 +59,19 @@ describe('girls routing on the new farm', () => {
     expect(wayLength(yard, fields.route(yard, to))).toBeGreaterThan(FAR.liftFrom);
   });
 });
+
+import { spotsFor, SPOT_NAMES, nearestNamedSpot } from '../src/npc/spotNames.js';
+
+describe('the places a girl can name on the new farm', () => {
+  const spots = spotsFor(two);
+  it('has the new farm\'s own places, each in the farm or on the common, and none at today\'s numbers', () => {
+    const ids = spots.map((s) => s.id);
+    for (const id of ['yard', 'ford', 'hill', 'wood', 'pit', 'drive', 'backLane', 'moor', 'cattleGrid', 'lane']) expect(ids, id).toContain(id);
+    for (const s of spots) expect(Number.isFinite(s.x) && Number.isFinite(s.z), s.id).toBe(true);
+    expect(spots.find((s) => s.id === 'wood')).toMatchObject({ x: two.woods.gate.x, z: two.woods.gate.z });
+    expect(nearestNamedSpot(two.hill.lane.x, two.hill.stream.z, spots).id).toBe('ford');
+  });
+  it('names a place that is in the table, so each has a recorded line', () => {
+    for (const s of spots) expect(SPOT_NAMES[s.id], s.id).toBe(s.name);
+  });
+});

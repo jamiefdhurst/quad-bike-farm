@@ -3,34 +3,41 @@
 
 import { LAYOUT } from '../world/layout.js';
 
-const L = LAYOUT;
-const spot = (id, p, name) => ({ id, x: p.x, z: p.z, name });
-const away = (where) => L.spawn.away.find((a) => a.where === where);
+/** Every place she can name, by id (the key of her line: strandedLines.js writes one per id), whichever farm is loaded: a place the farm lacks just isn't found. */
+export const SPOT_NAMES = {
+  yard: 'in the yard', ramp: 'by the jump', dragStrip: 'on the drag strip', lowBog: 'in the low bog', bottomTrack: 'by the bottom of the track',
+  middleField: 'in the middle of the field', northHedge: 'by the north hedge', farCorner: 'in the far corner', westHedge: 'down the west hedge',
+  lane: 'down the lane', ford: 'by the ford', hill: 'on the hill', pond: 'by the pond', wood: 'in the wood', cattleGrid: 'by the cattle grid',
+  road: 'out on the farm road', trough: 'by the trough', barley: 'in the barley field', wheat: 'in the wheat field', fieldShed: 'by the field shed',
+  dutchBarn: 'by the Dutch barn',
+  // The new farm's (#690): the drive, Back Lane, the Moor and the pit.
+  drive: 'on the drive', backLane: 'on Back Lane', moor: 'out on the moor', pit: 'in the pit',
+};
 
-// Every place comes from the layout (a building's anchor, a feature, a parking spot), so the names move when the map does.
-export const SPOTS = [
-  spot('yard', L.yard, 'in the yard'),
-  spot('ramp', L.jumpRamp, 'by the jump'),
-  spot('dragStrip', L.dragStrip, 'on the drag strip'),
-  spot('lowBog', L.bogs.find((b) => b.x !== undefined), 'in the low bog'),
-  spot('bottomTrack', away('by the bottom of the track'), 'by the bottom of the track'),
-  spot('middleField', away('in the middle of the field'), 'in the middle of the field'),
-  spot('northHedge', away('by the north hedge'), 'by the north hedge'),
-  spot('farCorner', away('in the far corner'), 'in the far corner'),
-  spot('westHedge', away('down the west hedge'), 'down the west hedge'),
-  spot('lane', L.namedSpots.lane, 'down the lane'),
-  spot('ford', { x: L.hill.lane.x, z: L.hill.stream.z }, 'by the ford'),
-  spot('hill', L.namedSpots.hill, 'on the hill'),
-  spot('pond', L.hill.paddocks.west.pond, 'by the pond'),
-  spot('wood', L.namedSpots.wood, 'in the wood'),
-  spot('cattleGrid', { x: L.road.fromX, z: L.road.z }, 'by the cattle grid'),
-  spot('road', L.namedSpots.road, 'out on the farm road'),
-  spot('trough', L.trough, 'by the trough'),
-  spot('barley', away('out in the barley field'), 'in the barley field'),
-  spot('wheat', away('out in the wheat field'), 'in the wheat field'),
-  spot('fieldShed', away('by the field shed'), 'by the field shed'),
-  spot('dutchBarn', L.dutchBarn, 'by the Dutch barn'),
-];
+// Every place comes from the layout (a building's anchor, a feature, a parking spot), so the names move when the map does. On the new farm
+// (it has `fields`) the places that were at today's numbers (`namedSpots`) are put where the new farm has them.
+export const spotsFor = (L) => {
+  const away = (where) => L.spawn?.away?.find((a) => a.where === where);
+  const newFarm = !!L.fields;
+  const at = {
+    yard: L.yard, ramp: L.jumpRamp, dragStrip: L.dragStrip, lowBog: L.bogs?.find((b) => b.x !== undefined),
+    bottomTrack: away('by the bottom of the track'), middleField: away('in the middle of the field'), northHedge: away('by the north hedge'),
+    farCorner: away('in the far corner'), westHedge: away('down the west hedge'),
+    ford: L.hill && { x: L.hill.lane.x, z: L.hill.stream.z }, pond: L.hill?.paddocks?.west?.pond, trough: L.trough,
+    barley: away('out in the barley field'), wheat: away('out in the wheat field'), fieldShed: away('by the field shed'), dutchBarn: L.dutchBarn,
+    ...(newFarm
+      ? {
+          lane: L.hill && { x: L.hill.lane.x, z: L.hill.stream.z - 85 }, hill: L.hill?.viewpoint, wood: L.woods?.gate,
+          cattleGrid: L.road?.grid?.x !== undefined && { x: L.road.grid.x, z: L.road.z },
+          drive: L.road?.grid?.x !== undefined && { x: L.road.grid.x - 100, z: L.road.z },
+          backLane: L.woods?.backLane, moor: L.moor?.trig && { x: L.moor.trig.at[0], z: L.moor.trig.at[1] }, pit: L.quarry?.centre,
+        }
+      : { lane: L.namedSpots?.lane, hill: L.namedSpots?.hill, wood: L.namedSpots?.wood, cattleGrid: L.road && { x: L.road.fromX, z: L.road.z }, road: L.namedSpots?.road }),
+  };
+  return Object.keys(SPOT_NAMES).filter((id) => at[id]).map((id) => ({ id, x: at[id].x, z: at[id].z, name: SPOT_NAMES[id] }));
+};
+
+export const SPOTS = spotsFor(LAYOUT);
 
 /** The named spot nearest to (x, z), with how far off it is: { id, name, distance }. */
 export function nearestNamedSpot(x, z, spots = SPOTS) {
