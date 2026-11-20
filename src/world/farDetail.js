@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { distanceToTile } from './tiles.js';
 import { drawFull } from './farVersion.js';
+import { StaticMerge } from './staticMerge.js';
 
 /** Scene children that are vehicles (and trailers, the sprayer): they lose small parts and then their shadow with distance. */
 export const VEHICLE_NAMES = ['quad', 'trailer', 'tipTrailer', 'sprayer', 'harrows'];
@@ -30,6 +31,12 @@ export const SET_PIECE_NAMES = ['village', 'laneBridge', 'neighbourFarm', 'neigh
   'junctions', 'laneCottages',
   // The Moor's stile, pillar, cairn, grids, gates, signs and spring (#713); its wall, plants and rocks are tiled and have their own far version or draw distance.
   'moor'];
+
+/** Scene children whose still meshes are merged by material (`staticMerge.js`, #816): the vehicles, the barn and the farm animals' pens and huts. */
+export const MERGED_NAMES = [...VEHICLE_NAMES, 'barn', 'farmAnimals'];
+const MERGE_NEAR = 15; // m: a vehicle or the barn this close to you is looked at for changes every quarter second
+const MERGE_FAR_EVERY = 2; // s between looks at one further off, about
+const MERGES_A_LOOK = 1; // roots merged again in one look at the scene, so a crowd of vehicles that all stop at once is not all done in one frame
 
 const SMALL = 0.15; // m: a part with a bounding sphere smaller than this is a small part
 const MARGIN = 5; // m: a vehicle crossing a distance has to come this far back before it changes again, so it doesn't flicker on the line
@@ -99,6 +106,7 @@ export class FarDetail {
     this.scene = scene;
     this.params = params;
     this.clock = 0;
+    this.elapsed = 0; // seconds, from the dt each update is given: what the merge measures how long a mesh has held still by
     this.vehicles = new WeakMap(); // object -> { level, small: [meshes hidden], shadows: [meshes that stopped casting] }
     this.hidden = new WeakSet(); // set pieces and props we have hidden (so we only show what we hid)
     this.boxes = new WeakMap();
@@ -112,6 +120,10 @@ export class FarDetail {
     this.centre = new THREE.Vector3();
     this.hedgeSwaps = []; // the swaps of the hedges' blocks and the wall's stones for far strips (hedgeFar.js), set by the world once the props are built
     this.treeSwaps = []; // the swaps of the wood's oaks for far oaks (treeFar.js), set the same way
+    this.merge = new StaticMerge(); // the still meshes of the vehicles, the barn and the farm animals, drawn as a few
+    this.nextLook = new WeakMap(); // root -> when it is next looked at (seconds on `elapsed`)
+    this.looks = 0;
+    this.merging = new Set(); // the roots it has looked at, so a switch off puts them all back
   }
 
   /** Looks at the scene from `position` every quarter second (always when `now`). With `fresh` (the frame budget's count, #597) each decision is made as if
@@ -119,6 +131,7 @@ export class FarDetail {
    * game came there, which depends on how long it has had. */
   update(position, dt, now = false, fresh = false) {
     this.clock -= dt;
+    this.elapsed += dt;
     if (!now && this.clock > 0) return;
     this.clock = EVERY;
     for (const o of this.scene.children) {
@@ -135,6 +148,38 @@ export class FarDetail {
     for (const swap of this.treeSwaps) swap.update(position, this.params.treeFullDistance, fresh);
     this.smallShadows(position, fresh);
     this.leaveOutSpecks(position, fresh);
+    this.mergeStill(position, fresh);
+  }
+
+  /**
+   * Looks at each root that has meshes to merge, and merges again where its still meshes have changed. A look walks all of a root's objects (about 2 ms for
+   * every vehicle and the barn at once), so a root within `MERGE_NEAR` of you is looked at every quarter second and the rest every `MERGE_FAR_EVERY` seconds, each
+   * root's turn staggered. At most `MERGES_A_LOOK` roots are merged again in one look, all of them for the budget's count.
+   */
+  mergeStill(position, fresh = false) {
+    if (!(this.params.mergeStill > 0)) {
+      for (const o of this.merging) this.merge.release(o);
+      this.merging.clear();
+      return;
+    }
+    let again = 0;
+    for (const o of this.scene.children) {
+      if (!MERGED_NAMES.includes(o.name)) continue;
+      if (!fresh && this.elapsed < (this.nextLook.get(o) ?? 0)) continue;
+      if (!fresh && again >= MERGES_A_LOOK) continue;
+      const e = o.matrixWorld.elements;
+      const near = Math.hypot(e[12] - position.x, e[14] - position.z) < MERGE_NEAR;
+      this.nextLook.set(o, this.elapsed + (near ? 0 : MERGE_FAR_EVERY * (0.75 + 0.5 * ((this.looks++ * 0.618) % 1)))); // the far ones' turns fall at different looks
+      this.merging.add(o);
+      if (this.merge.update(o, this.elapsed, fresh)) again++;
+    }
+  }
+
+  /** A vehicle's parts are about to move (you get on it): whatever is merged of it is put back now, rather than at the next look. */
+  wake(root) {
+    this.merge.release(root);
+    this.merging.delete(root);
+    this.nextLook.delete(root);
   }
 
   /** The vehicles standing in a set piece (the village's parked quads), found once: they are not scene children, so the loop above does not reach them. */
@@ -163,6 +208,7 @@ export class FarDetail {
       if (!e || fresh || ++e.age > REFIND) e = this.findSpecks(o, e);
       for (const p of e.parts) {
         const m = p.mesh;
+        if (m.userData.mergedAway) continue; // drawn as part of a merged mesh, on a layer of its own (staticMerge.js)
         let points = Infinity;
         if (threshold > 0 && scale > 0) {
           const geo = m.geometry; // swapped or changed since it was found: its sphere is worked out again
