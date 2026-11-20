@@ -153,3 +153,24 @@ describe('the seats and the desk in the barn', async () => {
     expect(boxes.some((b) => Math.abs(b.x - L.desk.x) < 0.01 && Math.abs(b.z - L.desk.z) < 0.01 || (b.hx === DESK.depth / 2 && b.hz === DESK.length / 2))).toBe(true); // the desk has a collider
   });
 });
+
+describe('the weather, the clock and the calendar in the barn', async () => {
+  const { WeatherStation, WallClock, hangBarnBoards } = await import('../src/world/weatherStation.js');
+  it('has the thermometer, barometer and forecast as one board by the doors and the clock hung apart, on the bench\'s wall', () => {
+    expect(L.weatherStation.x).toBeCloseTo(shape.inner.maxX, 6); // on the doors' wall
+    expect(Math.abs(L.weatherStation.z - shape.z)).toBeGreaterThan(shape.door.maxZ - shape.z); // beside the doorway, not over it
+    expect(L.clock.z).toBeCloseTo(shape.inner.minZ, 6); // on the wall the bench is on
+    expect(L.clock.y).toBeGreaterThan(3);
+    expect(Math.hypot(L.clock.x - L.weatherStation.x, L.clock.z - L.weatherStation.z)).toBeGreaterThan(10); // far from the weather board
+  });
+  it('hangs the station with two dials and no clock when the layout has a clock of its own, and with three where it has none', () => {
+    const scene = new THREE.Scene();
+    const parts = hangBarnBoards(scene, two, 0);
+    expect(parts.station.dials.map((d) => d.name)).toEqual(['thermo', 'baro']);
+    expect(parts.wallClock).toBeInstanceOf(WallClock);
+    expect(new WeatherStation(new THREE.Scene(), { x: 0, y: 0, z: 0 }).dials.map((d) => d.name)).toEqual(['clock', 'thermo', 'baro']);
+    const today = hangBarnBoards(new THREE.Scene(), LAYOUT, 0);
+    expect(today.wallClock).toBeNull();
+    expect(today.station.dials.length).toBe(3);
+  });
+});
