@@ -19,9 +19,11 @@ const made = (bog, tip, here) => {
 export const AMY_CALL_THEM_LINES = {
   ...made((at) => `I am stuck ${at}! Can you help me?`, (at) => `I have tipped it over ${at}! Please come!`, (at) => `I am ${at}! Do you see me?`),
   calledComing: line(0, ['Coming!', 'One moment, I am coming.', 'I heard you. I am on my way.']),
+  farStop: line(0, ['Wait! That is much too far to walk. Come back for me!', 'You are miles away! Can you give me a lift?', 'I am not walking all that way. Come and fetch me!']),
 };
 
 export const JESS_CALL_THEM_LINES = {
   ...made((at) => `Oi! I'm stuck ${at}! Come and get me out!`, (at) => `I've flipped it ${at}! Quick, come on!`, (at) => `I'm ${at}! Over here!`),
   calledComing: line(0, ['Yeah, yeah, coming!', 'Hold your horses, I\'m coming!', 'Alright, alright, on my way!']),
+  farStop: line(0, ['Oi! I\'m not walking all that way! Come and get me!', 'Are you serious? That\'s miles! Give us a lift!', 'No chance. Come back for me!']),
 };

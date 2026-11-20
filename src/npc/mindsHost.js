@@ -37,6 +37,7 @@ export class MindsHost {
   updateMinds(dt, ridden) {
     const g = this.g;
     for (const c of g.companions) {
+      c.farFrom = this.farParams.liftFrom; // how far she walks on her own choice or follows you on foot (npc/farWalk.js)
       const ctx = this.needsContext(c);
       c.needs.update(dt, ctx, c.params);
       g.favour.setWant(c.character.id, c.needs.attention); // her jealousy is what 'neglected' is made of (favour.js)

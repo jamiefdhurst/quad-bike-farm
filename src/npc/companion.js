@@ -33,6 +33,7 @@ import { DEFAULT_SHOWOFF_PARAMS, pickTrick } from './showOff.js';
 import { DEFAULT_JUMP_PARAMS } from './jumps.js';
 import { DEFAULT_LINEUP_PARAMS, nextJob, assignSlots, rowSlots, crookedSlot, parkRoute, nudgePose } from './lineUp.js';
 import { DEFAULT_HOME_PARAMS, jogging } from './homeParking.js';
+import { callsAfter } from './farWalk.js';
 import { PillionPose } from './pillionPose.js';
 import { createMuddiness } from './muddiness.js';
 import { GirlMud } from '../effects/girlMud.js';
@@ -761,6 +762,7 @@ export class Companion {
     this.throwing = null;
     this.fsm.transition('walking', {
       goal: 'stand',
+      callAfter: true, // past the walking limit from you she stops and calls (farWalk.js)
       target: () => {
         const r = this.root.position;
         const d = Math.hypot(you.x - r.x, you.z - r.z) || 1;
@@ -1745,6 +1747,12 @@ export const STATES = {
       // Wait for the trailer to slow down before climbing on, as she does for a quad.
       if (data.goal === 'board' && this.trailer.motion.speed > 1.2 && t.position.distanceTo(this.root.position) < 1.2) {
         this.rig.setTimeScale(0);
+        return;
+      }
+      // Walking to you from further than she'd walk on her own choice: she stops where she is and calls after you (npc/farWalk.js).
+      if (data.callAfter && this.farFrom && callsAfter(t.position.distanceTo(this.root.position), { liftFrom: this.farFrom })) {
+        this.voice.say('farStop', { force: true });
+        this.fsm.transition('idle', { facing: t.facing });
         return;
       }
       // Tagging along, she waits a step behind until her friend gets there.

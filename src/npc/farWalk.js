@@ -27,6 +27,9 @@ export function wayLength(from, route) {
   return total;
 }
 
+/** Whether she is too far from you to follow you on foot: she stops and calls after you instead of trudging (companion.js, the walk to you). */
+export const callsAfter = (metres, p = DEFAULT_FAR_WALK_PARAMS) => metres > p.liftFrom;
+
 /** Whether the way to a place is too far to walk on her own choice. */
 export const tooFar = (metres, p = DEFAULT_FAR_WALK_PARAMS) => metres > p.liftFrom;
 

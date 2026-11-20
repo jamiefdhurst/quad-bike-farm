@@ -154,3 +154,17 @@ describe('places a girl drives to on the new farm', () => {
     expect(spots.some((s) => s.name === 'the foot of the hill')).toBe(true);
   });
 });
+
+import { leaveRoute, hasGone, DEFAULT_GOING_HOME_PARAMS as HOME } from '../src/npc/goingHome.js';
+
+describe('their cars on the new farm', () => {
+  it('leave by the drive, over the cattle grid and out onto the lane, where they are counted gone (and some days by Back Lane, tests/goingHome.test.js)', () => {
+    const slot = two.cars.finch;
+    expect(fields.areaOf(slot.x, slot.z)).toBe('farmstead');
+    const route = leaveRoute(slot, two, HOME);
+    expect(route.some((pt) => pt.x >= two.road.grid.x)).toBe(true);
+    const last = route[route.length - 1];
+    expect(hasGone(two, HOME, { x: last.x, z: last.z })).toBe(true);
+    expect(hasGone(two, HOME, { x: slot.x, z: slot.z })).toBe(false);
+  });
+});

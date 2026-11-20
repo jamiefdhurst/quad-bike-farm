@@ -1410,9 +1410,21 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I talk to them?',
-        a: `Look at one and press <kbd>Enter</kbd> to open her wheel (<kbd>E</kbd> is for things, <kbd>Enter</kbd> for people). It works from the saddle too, and on the back of a quad while she drives; look at nobody and it opens your own wheel, where you ask for a race. Move the mouse to a slice and click, or press its number. The first ring has a slice
+        a: `Look at one and press <kbd>Enter</kbd> to open her wheel (<kbd>E</kbd> is for things, <kbd>Enter</kbd> for people). It works from the saddle too, and on the back of a quad while she drives; look at nobody and it opens your own wheel, where "Call them" whistles for the girls and you ask for a race. Move the mouse to a slice and click, or press its number. The first ring has a slice
           for each vehicle she could do something with; a vehicle's slice opens a second ring of what she could do with it. Right-click or Backspace
           goes back; <kbd>B</kbd> goes back a ring and closes it from the first.`,
+      },
+      {
+        q: 'How do I find the girls on a farm this big?',
+        a: `Look at nobody, press <kbd>Enter</kbd> and pick "Call them": you whistle, loud. A girl you could walk to in a minute comes over; one further off, but still in earshot,
+          calls back where she is ("I'm by the ford!"). Beyond earshot nobody hears you. You can whistle on foot or on a quad.`,
+        tip: 'Enter at nobody, then "Call them", whistles for the girls.',
+      },
+      {
+        q: 'Why will not the girls walk across the whole farm?',
+        a: `On the new farm a girl will not set off on a walk of more than about 150 metres by her own choice. If she wants the hut, the flask or a cup of tea from the barn and it is
+          further than that, she asks for a lift on the back of your quad when you are sat still close by, or takes a quad of her own and drives there. Ask her to come to you from
+          further than that and she stops where she is and calls out for you to come back for her.`,
       },
       {
         q: 'What can I ask them to do?',

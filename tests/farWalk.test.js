@@ -62,3 +62,11 @@ describe('far is far', () => {
     expect(near).toHaveLength(2);
   });
 });
+
+import { callsAfter } from '../src/npc/farWalk.js';
+describe('following you on foot', () => {
+  it('she stops and calls after you past the walking limit, and not within it', () => {
+    expect(callsAfter(150)).toBe(false);
+    expect(callsAfter(151)).toBe(true);
+  });
+});
