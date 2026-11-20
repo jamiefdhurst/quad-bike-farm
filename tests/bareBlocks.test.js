@@ -40,7 +40,6 @@ const KNOWN_PLAIN = {
   jumpRamp: 'an earth ramp in flat colour',
   brushwoodHeap: 'sticks in flat brown, no bark texture (as brushwood)',
   feedBin: 'a plain plastic bin and lid in flat colour',
-  fuelTank: 'a painted green tank and plain steel stands, with only the lettering textured',
   hose: 'plain green rubber and brass fittings in flat colour',
   toolbox: 'a painted steel box and plain tools in flat colour',
 };

@@ -2080,8 +2080,17 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why is the barn dark, and why has the charger gone dead?',
-        a: `The barn light and the bench charger both run off the generator along the barn's south wall, round the back, and it is switched off every morning. Walk up to it and press <kbd>E</kbd> to pull the cord. It may take a few pulls. If nothing happens at all and it only wheezes, the tank is empty.`,
+        a: `The barn light, the yard's floodlights and the bench charger all run off the generator along the barn's south wall, round the back, and it is switched off every morning. Walk up to it and press <kbd>E</kbd> to pull the cord. It may take a few pulls. If nothing happens at all and it only wheezes, the tank is empty.`,
         tip: 'The barn light and the charger need the generator running: pull its cord with E.',
+      },
+      {
+        q: 'Why is the yard dark at night, and what is the lamp on the pole?',
+        a: `Two floodlights light the yard once it is dark: one on the barn's door gable, over the doors, and one on a timber pole behind the two fuel tanks, shining out over the yard. They run off the same generator as the barn light, so with it switched off the yard is as dark as the night makes it. Start the generator (<kbd>E</kbd> at it) and they come up through dusk.`,
+        tip: 'The yard floodlights, like the barn light, need the generator running.',
+      },
+      {
+        q: 'What is the weather vane on the barn for?',
+        a: `It shows which way the wind is blowing. The iron cockerel on the barn's ridge turns to point into the wind, so it faces where the wind is coming from, and flutters a little in a gust. The letters under it are fixed: N is the top of the farm map, S the bottom, E to the right and W to the left.`,
       },
       {
         q: 'How do I refuel the generator?',

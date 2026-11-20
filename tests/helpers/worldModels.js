@@ -151,6 +151,16 @@ export async function buildWorldModels() {
   add('setPiece', 'yardGates', yardKit.buildYardGates, (b) => b(c2));
   add('setPiece', 'yardFurniture', yardKit.buildYardFurniture, (b) => b(c2));
   add('setPiece', 'stackyardKit', yardKit.buildStackyardKit, (b) => b(c2));
+  const yardLights = await import('../../src/world/yardLights.js');
+  add('setPiece', 'yardLights', yardLights.buildYardLights, (b) => b(c2));
+  const vane = await import('../../src/world/weatherVane.js');
+  add('setPiece', 'weatherVane', vane.buildWeatherVane, (b) => b(c2));
+  const trim = await import('../../src/world/barnTrim.js');
+  const { barnShape, dividerPosts } = await import('../../src/world/barn.js');
+  const barnL = { ...two, ...two.barnLocal };
+  add('world', 'barnTrim', trim.buildBarnTrim, (b) => b({ shape: barnShape(barnL), floorY: 0, eaveZ: 2.95, eaveY: 3.9, posts: dividerPosts(barnL), random: c.random }));
+  const bayKit = await import('../../src/world/bayKit.js');
+  add('world', 'bayKit', bayKit.buildBayKit, (b) => b({ bays: [c.layout.bay, c.layout.bay2], floorY: 0, random: c.random }));
 
   // The drive's cattle grid and reflector posts (#568): the grid is built with today's layout's and the new farm's, which place it in different gateways.
   const drive = await import('../../src/world/driveProps.js');

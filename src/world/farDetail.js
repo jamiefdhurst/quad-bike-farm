@@ -28,7 +28,7 @@ export const SET_PIECE_NAMES = ['village', 'laneBridge', 'neighbourFarm', 'neigh
   // The farmstead's garden wall and the rail along Home Ground (#682).
   'gardenWall', 'homeRails',
   // The yard's steel gates, its furniture and the stackyard's bales and spike (#817).
-  'yardGates', 'yardFurniture', 'stackyardKit',
+  'yardGates', 'yardFurniture', 'stackyardKit', 'yardLights', 'weatherVane',
   // The A-road's junctions and the lane's cottages and fittings (#687).
   'junctions', 'laneCottages',
   // The Moor's stile, pillar, cairn, grids, gates, signs and spring (#713); its wall, plants and rocks are tiled and have their own far version or draw distance.

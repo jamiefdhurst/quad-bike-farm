@@ -9,8 +9,8 @@ Graded first from `tools/shot.mjs` shots and the code, then corrected from Jamie
 | Object | Grade | What it lacks |
 | --- | --- | --- |
 | Barn front and doors | passable | The texture differs top and bottom and does not line up; the two doors differ in size and the hay door goes through the roof (#613) |
-| Barn, second span (annex) | passable | Plain boards over the door up to the eaves, posts in place of a wall, no trim on the valley |
-| Barn roof | passable | A gutter on one edge only and no downpipes seen, no weather vane (#169) |
+| Barn, second span (annex) | passable | Plain boards over the door up to the eaves, posts in place of a wall, no trim on the valley (rebuilt in #817: a rain hood and cover battens over the door, pads and knee braces at the posts, the valley's end stops and drop) |
+| Barn roof | passable | A gutter on one edge only and no downpipes seen, no weather vane (#169) (rebuilt in #817: fascia and barge boards, gutters on both outer eaves, downpipes, the vane) |
 | Barn lighting | passable | Two dim bulbs at the top; more are needed |
 | Loft and its ladder | block | The ladder is very basic and climbing it goes through the floor; the floor and wall alpha-fight; the loft has no use (removed in the move) |
 | Straw on the floor, bales inside | block | Plain pieces; the bales are too regular |
@@ -26,19 +26,19 @@ Graded first from `tools/shot.mjs` shots and the code, then corrected from Jamie
 | Writing in the barn | block | A lot of Comic Sans (#807) |
 | Money tin, parts catalogue | passable | In odd places (#809) |
 | Coat rack, helmet hooks | passable | Too basic; move them in the new barn |
-| Bays 1 and 2 | block | Painted lines on a concrete floor (#404); the rusty quad and the Plover block the bench |
+| Bays 1 and 2 | block | Painted lines on a concrete floor (#404); the rusty quad and the Plover block the bench (rebuilt in #817: wheel stop, corner kerbs, oil stain and drip tray, no paint) |
 | Pit | block | A painted rectangle, not a hole (#329) |
 | Shed kit (compressor, parts washer) | good | Not marked down by the walk |
 | Generator | block | Very basic texture; too loud and runs dry too quickly (#810) |
 | Bell pole | passable | A bit basic |
-| Fuel tanks and bowsers | block | They float (#614); the hose textures are awful |
+| Fuel tanks and bowsers | block | They float (#614); the hose textures are awful (rebuilt in #817: a slab that follows the ground, a textured tank and hose, the nozzle in a holster) |
 | Feed bin and bucket | block | No inside textures |
-| Hens' house and pig's pen | block | No real textures; too tight |
+| Hens' house and pig's pen | block | No real textures; too tight (the houses were rebuilt in #682, and the fences' rails and posts textured in #817) |
 | Silage bales | passable | The wrapped ones behind the barn are hard to reach (on the new farm they stand in the strip behind the barn with a clear way in from the west: `tests/yardKit.test.js`, #817) |
 | Paddock fences | block | No reason to be there and the girls get stuck (removed in the move) |
-| Line-up sleepers | passable | Plain sleepers, no wear or weeds |
+| Line-up sleepers | passable | Plain sleepers, no wear or weeds (#817: pegging spikes and weeds at the back edge and ends) |
 | Yard ground | block | Grass and a dirt track: no concrete, joints, drain, puddles or scraped muck line (rebuilt in #817: tarred joints, patches, cracks, the drain and gully, tyre paths, mud, puddles that fill when it is wet, the muck line and the stackyard's hardcore) |
-| Lights at night | block | No yard light: the yard is black at dusk but for the barn's bulb (#171) |
+| Lights at night | block | No yard light: the yard is black at dusk but for the barn's bulb (#171) (rebuilt in #817: a floodlight on the gable and one on a pole, off the generator) |
 
 ## The grass field, Home Ground (#669)
 
