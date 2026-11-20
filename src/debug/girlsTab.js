@@ -426,8 +426,8 @@ export function buildGirlsTab(d) {
   button(mem, 'Save the farm now', () => toast(g.saveFarm() ? 'Farm saved' : 'Not saved (a seeded game, wiped, or not started)'));
   button(mem, 'Send the girls home in their cars (then the card)', () => toast(g.sendGirlsHome() ? 'The girls are going home' : 'Nobody has a car here to go home in'));
   button(mem, 'Call it a day now (fade, save)', () => g.callItADay({ force: true }));
-  button(mem, 'Rut the green lane to a bog', () => g.world.wear.setLane(1));
-  button(mem, 'Dry the green lane out', () => g.world.wear.setLane(0));
+  button(mem, 'Rut the green lane and the boundary track to a bog', () => g.world.wear.setLane(1));
+  button(mem, 'Dry the green lane and the boundary track out', () => g.world.wear.setLane(0));
   button(mem, 'Wipe the farm (new one next load)', () => {
     g.wipeFarm();
     toast('Farm wiped: the next load deals a new one');

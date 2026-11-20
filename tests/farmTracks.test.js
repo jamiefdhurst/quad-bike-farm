@@ -286,3 +286,27 @@ describe('the wood the boundary track goes through', () => {
     }
   });
 });
+
+describe('what the girls\' route discount does when a gate shuts', () => {
+  it('gives the same routes as a fresh map with that gate shut, however many it has worked out before', () => {
+    const a = createFields(two);
+    const b = createFields(two);
+    const spots = step(loop, 110).map((p) => ({ x: p.x, z: p.z }));
+    const pairs = spots.flatMap((p, i) => spots.slice(i + 1).map((q) => [p, q]));
+    for (const [p, q] of pairs) a.route(p, q); // the discount is worked out and kept for every pair of gateway points on the way
+    const open = a.gateways.findIndex((g) => g.gap && !g.gap.shut && g.a === 'wood' && g.b === 'wet');
+    expect(open).toBeGreaterThanOrEqual(0);
+    a.gateways[open].gap.shut = true;
+    b.gateways[open].gap.shut = true;
+    const differ = pairs.filter(([p, q]) => JSON.stringify(a.route(p, q)) !== JSON.stringify(b.route(p, q)));
+    expect(differ.length).toBe(0);
+  });
+});
+
+describe('the tracks meet', () => {
+  it('has the stone track north join the boundary track, so every track is reached from the yard', () => {
+    const loopPts = step(loop, 1);
+    const closest = Math.min(...step(north, 1).map((p) => Math.min(...loopPts.map((q) => Math.hypot(p.x - q.x, p.z - q.z)))));
+    expect(closest).toBeLessThan(loop.halfWidth);
+  });
+});

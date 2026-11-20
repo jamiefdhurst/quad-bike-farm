@@ -1605,3 +1605,7 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - **Home Ground and the sheep field** are the two fields no track enters: the first opens straight onto the yard, the second's gate is on the south track.
 - **Looked at** with `tools/shot.mjs --layout 2`: the bridge's four sides and close-up, a length of the stone track and the grass track with a headland. The grass was growing through the stone track (fixed: the grass scatter skips tracks); the first bridge had a dirt disc for its worn bank that floated over the abutment (now painted into the ground).
 
+
+## The track discount keeps to its points (#1058)
+
+- The girls' discount along tracks (`trackCost`, `fieldMap.js`) was cached by node number, and the nodes are numbered over the gateways that are not shut, so a gate shutting made cached shares belong to other pairs: 8 of 400 probe routes differed from a fresh map. It is now kept by the two points themselves. The green lane's console value and panel buttons say they cover the boundary track too (the wear's lane includes it, #689); the stone track's FAQ line says what the grip is.
