@@ -20,7 +20,7 @@ A mixed upland-edge farm of about 68 ha (870 by 830 m), about seven times today'
 | Sheep pens | Gathering, sorting, shearing, on the way to the hill | New | #91, #139 |
 | Where the cars park | Beside the farmhouse | Moves from the Dutch barn | #601, #304 |
 | The scrap corner | Behind the machinery shed: dead machines, tin, tyres, nettles; somewhere to find a part | New | |
-| Room to turn | A clear circle in the yard for an articulated lorry: the livestock wagon, grain lorry, feed lorry and fuel tanker | New | |
+| Room to turn | A clear circle 25 m across in the yard for an articulated lorry (16.5 m): the livestock wagon, grain lorry, feed lorry and fuel tanker. Its middle is at plan (478, 355), the drive's line its north side; the lorry comes up the lane, turns in at the drive's 12 m bellmouth, turns round on the circle and backs to the sheep pens' ramp (the tail at plan (460, 383), facing north) or the grain store's door (plan (582, 367), facing west) | New | #816 |
 | **Home Ground** | The field for messing about: the Home Loop, jump, cones, line-up, bonfire | Changes: the grass field stops being the yard and job field too | #616 |
 | **Hollow Wood** (north-west) | The Hollow Run, the Fern Trail, the log yard at its gate | Moves as a piece | #231, #232, #560, #561 |
 | **The Old Pit** (north-east) | The farm's disused gravel pit and the pit climb, with its own gate onto the lane and one from the stone track | Moves from behind the barley | #558 |

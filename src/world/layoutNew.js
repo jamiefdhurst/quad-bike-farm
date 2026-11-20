@@ -138,6 +138,7 @@ export const GATEWAYS_PLAN = [
  */
 export const DRIVE_PLAN = {
   z: 345, fromX: 612, toX: 905, halfWidth: 3, verge: 7,
+  bellmouth: 12, // m: the radius the drive's two corners at the lane are rounded with, so a 16.5 m lorry can turn in off the lane (#816, `LORRY_PLAN`)
   grid: { x: 881.7, length: 3.6, pitch: 0.16, margin: 0.3 },
   signSpot: [877, 338.2],
   reflectors: [[889, 341.4], [889, 348.6], [897, 341.4], [897, 348.6]],
@@ -847,6 +848,12 @@ export function areasOf(fields = clippedFields()) {
   return { outline: polygonArea(clockwise(OUTLINE_PLAN)), fields: Object.fromEntries(fields.map((f) => [f.name, polygonArea(f.points)])) };
 }
 
+/** The drive's two bellmouth corners at the lane (#816), game metres: where its edges meet the lane's, rounded with `D.bellmouth`. */
+function driveFillets(D, L) {
+  const [cornerX, z] = fromPlan([D.toX - L.halfWidth, D.z]);
+  return [-1, 1].map((side) => ({ x: cornerX, z: z + side * D.halfWidth, ux: -1, uz: 0, vx: 0, vz: side, r: D.bellmouth }));
+}
+
 /** The drive and the lane in game metres (#568): `road` as every reader of the farm road has it, `publicLane`, and the road network's two roads. */
 export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
   const [fromX, z] = fromPlan([D.fromX, D.z]);
@@ -861,6 +868,7 @@ export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
     grid: { x: gridX, length: D.grid.length, pitch: D.grid.pitch, margin: D.grid.margin, mouth: mouth.half, wingX: fromPlan(mouth.at)[0] }, // the wings close the mouth in the boundary
     bypass: { x: bx, z: bz, width: 2 * bypass.half - 0.7 }, // the gate between its posts: the gap less the posts' own room
     signSpot: at(D.signSpot),
+    bellmouth: D.bellmouth,
     reflectors: D.reflectors.map(at),
     potholes: D.potholes.map(([x, pz, r]) => ({ x: x - PLAN_ORIGIN[0], z: pz - PLAN_ORIGIN[1], r })),
     washes: D.washes.map(at),
@@ -875,7 +883,7 @@ export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
   const roads = [
     { id: 'lane', name: 'the lane', surface: 'tarmac', halfWidth: L.halfWidth, points: lanePoints, junction: { end: 'start', onto: 'aRoad' }, markings: { centre: 'dashed', giveWay: 'start', giveWayAt: GIVE_WAY_AT }, verge: 1, hedged: false, draw: 'mesh', lift: 0.076, camber: 0.03, bellmouth: { width: 2.2, length: 8 } },
     {
-      id: 'farm', name: 'the drive', surface: 'tarmac', halfWidth: D.halfWidth, points: [[fromX, z], [toX, z]], junction: { end: 'end', onto: 'lane' },
+      id: 'farm', name: 'the drive', surface: 'tarmac', halfWidth: D.halfWidth, points: [[fromX, z], [toX, z]], junction: { end: 'end', onto: 'lane' }, fillets: driveFillets(D, L),
       markings: { centre: 'none' }, verge: D.verge, hedged: false, draw: 'ground', level: { shoulder: 3, lead: [2, 0] }, edge: 'gravel', patches: D.patches,
       potholes: road.potholes.map(({ x, z, r }) => ({ x, z, r })), washes: road.washes,
     },
@@ -1014,7 +1022,7 @@ export const FARMSTEAD_PLAN = {
   muck: [486, 416],
   harrows: { at: [548, 372], yaw: -Math.PI / 2 },
   // The trailers, off the visitors' lane (the drive's line, z 345, and the loop south of the barn's doors to z 353) and clear of the kept-clear places and the spawns.
-  trailers: { trailer: { at: [572, 398], yaw: 2.7 }, tipTrailer: { at: [562, 366], yaw: 0.2 }, sprayer: { at: [560, 380], yaw: 0.3 } },
+  trailers: { trailer: { at: [572, 398], yaw: 2.7 }, tipTrailer: { at: [588, 394], yaw: 0.2 }, sprayer: { at: [560, 380], yaw: 0.3 } }, // (the tipping trailer stood at (562, 366), in the lorry's way to the grain store: #816)
   silage: [500, 315], // the stack's north-west corner, behind the barn's back wall
   animals: { pen: [486, 270, 492.5, 277], sty: [500, 270, 504.5, 275], bin: [496.5, 266, 0], bucket: [498, 266.4, 0.4] }, // in the orchard
   fenceSeats: [340, 352, 384, 396], // on Home Ground's rail, at plan z, facing out over the field
@@ -1025,7 +1033,26 @@ export const FARMSTEAD_PLAN = {
     { name: 'grain store', by: '#699', rect: [582, 355, 612, 381] },
     { name: 'cattle shed and clamp', by: '#694', rect: [470, 385, 558, 407] },
     { name: 'sheep pens', by: '#695', rect: [432, 383, 462, 409] },
+    { name: 'scrap corner', by: '#712', rect: [412.5, 325, 424, 371] }, // behind the machinery shed, from Home Ground's rail (plan x 412.45, where the girls' seats are) in
+    { name: '11 kV pole', by: '#711', rect: [564.5, 272.5, 567.5, 275.5] }, // the last pole of the line, by the farmhouse
+    { name: 'lorry turning circle', by: '#816', rect: [465.5, 342.9, 490.5, 367.9] }, // the square round `LORRY_PLAN.circle`, which the lorry's turn needs clear
   ],
+};
+
+/**
+ * The articulated lorry the farm is laid out for (#816), plan metres: 16.5 m long (`LORRY`, `lorryPath.js`), carrying the livestock wagon, the grain lorry, the feed
+ * lorry and the fuel tanker (#707, #699, #122). It comes up the lane from the south in the west carriageway (`lane`: its middle) and turns left onto the drive
+ * (`turnIn`: the radius its rear axle turns on, which with the drive's 12 m bellmouth keeps its wheels within 1.5 m of the tarmac), along the drive and into the yard to
+ * `circle`, a clear disc 25 m across where it turns round (the drive's line is its north side), and backs to the sheep pens' ramp (`sheep.tail`: where the trailer's
+ * tail meets the ramp's foot, the lorry facing north) or the grain store's door (`grain.tail`, facing west; it stands `run` m short of the circle to back in).
+ * The ramp and the door are #695's and #699's to place, on those faces. `bend`, `settle`, `straighten`, `leaveR` and `leaveRun` shape the legs between (see `lorryJourneys`).
+ */
+export const LORRY_PLAN = {
+  lane: 903.7, turnIn: 11,
+  circle: { at: [478, 355.4], diameter: 25 },
+  sheep: { tail: [460, 383] },
+  grain: { tail: [582, 367], run: 28 },
+  bend: 11, settle: 30, straighten: 20, leaveR: 40, leaveRun: 120,
 };
 
 const rectOf = ([x0, z0, x1, z1]) => {

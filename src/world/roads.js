@@ -18,6 +18,9 @@
 //                      gives a list of two (Back Lane, #686)
 //   level              null, or { shoulder, lead: [start, end], blend, mouth, natural }: (`natural`: laid to the ground with the hill's shape, not the lie alone) laid level across (see levelAt); `camber` is the crown's height
 //   pads               [{ x, z, radius }] round hard standing along it (the farm road's hardstanding)
+//   fillets            [{ x, z, ux, uz, vx, vz, r }] a bellmouth's two corners where a side road meets another (#816): the point `x, z` where the side road's edge meets the
+//                      other road's, `u` the way along the side road away from it, `v` the way out from the side road's middle, and `r` the radius the corner is rounded
+//                      with. Hard standing between the two edges and the arc, so the corner is not square.
 //   passing            { spacing, length, bay } for single track: a widening every `spacing` m (see passingPlaces)
 //   cuttings           [{ from, to }] stretches (m along) where the road may run in a cutting deeper than MAX_CUT
 //   ditch              { centre, half, depth }: a ditch cut along the low side of a road that runs across the land's fall (see ditchAt), `centre` m from its edge
@@ -104,12 +107,14 @@ function buildRoad(def, step, cell) {
   const pavement = def.pavement ?? 0;
   const hard = def.halfWidth + pavement;
   const pads = (def.pads ?? []).map((q) => ({ ...q }));
+  const fillets = (def.fillets ?? []).map((f) => ({ ...f }));
   const bays = [];
   const road = {
     ...def,
     pavement,
     hard,
     pads,
+    fillets,
     markings: { centre: 'none', edge: false, giveWay: false, ...(def.markings ?? {}) },
     camber: def.camber ?? 0,
     junctions: [].concat(def.junction ?? []),
@@ -128,6 +133,14 @@ function buildRoad(def, step, cell) {
     road.bounds.maxX = Math.max(road.bounds.maxX, q.x + q.radius + EDGE);
     road.bounds.minZ = Math.min(road.bounds.minZ, q.z - q.radius - EDGE);
     road.bounds.maxZ = Math.max(road.bounds.maxZ, q.z + q.radius + EDGE);
+  }
+  for (const f of fillets) {
+    for (const [x, z] of [[f.x, f.z], [f.x + f.ux * f.r + f.vx * f.r, f.z + f.uz * f.r + f.vz * f.r]]) {
+      road.bounds.minX = Math.min(road.bounds.minX, x - EDGE);
+      road.bounds.maxX = Math.max(road.bounds.maxX, x + EDGE);
+      road.bounds.minZ = Math.min(road.bounds.minZ, z - EDGE);
+      road.bounds.maxZ = Math.max(road.bounds.maxZ, z + EDGE);
+    }
   }
   road.grid = buildGrid(road, cell);
   return road;
@@ -167,6 +180,32 @@ function buildGrid(road, cell) {
   road.mark = new Int32Array(road.segs.length);
   road.stamp = 0;
   return { cell, minX: b.minX, minZ: b.minZ, nx, nz, cells, pads: new Array(nx * nz).fill(null), bays: new Array(nx * nz).fill(null) };
+}
+
+/**
+ * How far (x, z) is outside a fillet (negative inside): the corner between a side road's edge and the road it meets, rounded off with an arc of radius `r`.
+ * In the fillet's own axes, `a` along the side road from its corner and `b` out from the side road, it is the square [0, r] by [0, r] less the disc of radius `r`
+ * about (r, r).
+ */
+export function filletDistance(f, x, z) {
+  const dx = x - f.x;
+  const dz = z - f.z;
+  const a = dx * f.ux + dz * f.uz;
+  const b = dx * f.vx + dz * f.vz;
+  return Math.max(-a, -b, a - f.r, b - f.r, f.r - Math.hypot(f.r - a, f.r - b));
+}
+
+/** The points round a fillet's edge ([x, z] each, in order), for painting it: the corner, along the side road to where the arc starts, round the arc, and back. */
+export function filletOutline(f, steps = 14) {
+  const at = (a, b) => [f.x + f.ux * a + f.vx * b, f.z + f.uz * a + f.vz * b];
+  const out = [at(0, 0), at(f.r, 0)];
+  // The arc runs from (r, 0), straight down the disc's middle from (r, r), round to (0, r): a quarter turn.
+  for (let i = 1; i < steps; i++) {
+    const t = (i / steps) * (Math.PI / 2);
+    out.push(at(f.r - f.r * Math.sin(t), f.r - f.r * Math.cos(t)));
+  }
+  out.push(at(0, f.r));
+  return out;
 }
 
 /** Put a road's pads and passing bays in the grid cells they reach, so a lookup checks only those near it. */
@@ -375,6 +414,7 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
         t = Math.max(t, 1 - smoothstep(q.radius - EDGE, q.radius + EDGE, Math.hypot(x - q.x, z - q.z)));
       }
     }
+    for (const f of r.fillets ?? []) t = Math.max(t, 1 - smoothstep(-EDGE, EDGE, filletDistance(f, x, z)));
     const bays = g.bays[ci];
     if (t < 1 && bays) {
       for (const bi of bays) {

@@ -4,7 +4,7 @@
 
 import { patchColor, patchBlend } from './patchwork.js';
 import { createOutbuildings } from './outbuildings.js';
-import { roadNetwork, pointAt } from './roads.js';
+import { roadNetwork, pointAt, filletOutline } from './roads.js';
 import { paintMoor } from './moorPaint.js';
 
 function rand(seed) {
@@ -1177,7 +1177,7 @@ export function planRoad(road, fields, random) {
   const xs = [...road.points.map((p) => p[0]), ...pads.flatMap((q) => [q.x - q.radius, q.x + q.radius])];
   const zs = [...road.points.map((p) => p[1]), ...pads.flatMap((q) => [q.z - q.radius, q.z + q.radius])];
   const [minX, maxX, minZ, maxZ] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
-  const reach = Math.max(road.halfWidth, ...pads.map((q) => q.radius));
+  const reach = Math.max(road.halfWidth, ...pads.map((q) => q.radius), ...(road.fillets ?? []).map((f) => road.halfWidth + f.r));
   const zMid = (road.points[0][1] + road.points[road.points.length - 1][1]) / 2;
   const [z0, z1] = [Math.min(minZ, zMid - reach), Math.max(maxZ, zMid + reach)];
   const area = (maxX - minX) * (z1 - z0);
@@ -1276,6 +1276,15 @@ export function drawRoad(c, road, plan) {
       ctx.lineTo(p3[0], p3[1]);
       ctx.closePath();
     });
+    for (const f of road.fillets ?? []) {
+      if (!c.inWin(f.x + (f.ux + f.vx) * f.r / 2, f.z + (f.uz + f.vz) * f.r / 2, f.r * 1.5)) continue;
+      filletOutline(f).forEach(([x, z], k) => {
+        const [px, pz] = c.toPx(x, z);
+        if (k === 0) ctx.moveTo(px, pz);
+        else ctx.lineTo(px, pz);
+      });
+      ctx.closePath();
+    }
     for (const q of pads) {
       if (!c.inWin(q.x, q.z, q.radius + grow + 1)) continue;
       const [px, pz] = c.toPx(q.x, q.z);
