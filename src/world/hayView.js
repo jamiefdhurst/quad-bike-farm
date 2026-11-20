@@ -14,6 +14,7 @@ import { tiledInstances } from './tiledInstances.js';
 const BALE = { w: 0.98, h: 0.38, d: 0.44 }; // the trailer's own bales
 const TRACK_EVERY = 0.2; // seconds between redraws of the pressed lines
 const TUFTS_PER_M2 = 14; // long grass: tufts a square metre (before the ragged edge thins them)
+const TUFTS_MAX = 60000; // and the most there are in all: a field of two hectares gets them thinner, and each a little bigger
 const BLADES = 9; // in a tuft
 const BLADE_HEIGHT = 0.7; // metres, the tallest blade of a tuft at scale 1
 const _a = new THREE.Vector3();
@@ -49,12 +50,14 @@ export function tuftGeometry(random) {
 export function tuftSpots(rect, heightAt, random) {
   const l = maskLayout(rect);
   const out = [];
-  const tries = Math.round(l.sizeX * l.sizeZ * TUFTS_PER_M2);
+  const density = Math.min(TUFTS_PER_M2, TUFTS_MAX / (l.sizeX * l.sizeZ));
+  const grow = Math.sqrt(TUFTS_PER_M2 / density); // thinner, so each stands a little bigger to keep the meadow looking full
+  const tries = Math.round(l.sizeX * l.sizeZ * density);
   for (let i = 0; i < tries; i++) {
     const x = l.minX + random() * l.sizeX;
     const z = l.minZ + random() * l.sizeZ;
     if (random() > presence(rect, x, z)) continue;
-    const s = 0.7 + random() * 0.6;
+    const s = (0.7 + random() * 0.6) * grow;
     out.push(new THREE.Matrix4().compose(
       new THREE.Vector3(x, heightAt(x, z) - 0.02, z),
       new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), random() * 6.28),

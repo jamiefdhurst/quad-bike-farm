@@ -4,6 +4,8 @@
 // and draws what it says (world/hayView.js). The patch is a grid of cells, each standing, cut or baled; the cut ones grow back over game
 // days. Tested in tests/haymaking.test.js.
 
+import { liveCells } from './jobFields.js';
+
 export const DEFAULT_HAY_PARAMS = {
   cutNeeded: 60, // cells mown for the cutting to count as done
   swath: 1.6, // metres either side of the tractor's middle that are cut
@@ -86,6 +88,7 @@ export class Haymaking {
     this.cell = cell;
     this.cols = Math.max(1, Math.floor((rect.maxX - rect.minX) / cell));
     this.rows = Math.max(1, Math.floor((rect.maxZ - rect.minZ) / cell));
+    this.live = liveCells(rect, this.cols, this.rows, cell); // the cells that are the field (the rectangle's corners are not, on the new farm)
     this.state = new Uint8Array(this.cols * this.rows);
     this.cut = 0; // cells mown this job
     this.baledCells = 0; // cells baled this job
@@ -105,7 +108,15 @@ export class Haymaking {
   index(x, z) {
     const c = Math.floor((x - this.rect.minX) / this.cell);
     const r = Math.floor((z - this.rect.minZ) / this.cell);
-    return c < 0 || r < 0 || c >= this.cols || r >= this.rows ? -1 : r * this.cols + c;
+    if (c < 0 || r < 0 || c >= this.cols || r >= this.rows) return -1;
+    return this.live[r * this.cols + c] ? r * this.cols + c : -1;
+  }
+
+  /** The cell nearest (x, z) whether it is the field or not: what the picture reads at the ragged edge. */
+  nearestCell(x, z) {
+    const c = Math.min(this.cols - 1, Math.max(0, Math.floor((x - this.rect.minX) / this.cell)));
+    const r = Math.min(this.rows - 1, Math.max(0, Math.floor((z - this.rect.minZ) / this.cell)));
+    return r * this.cols + c;
   }
 
   /** The middle of cell `i`, { x, z }. */
@@ -208,7 +219,7 @@ export class Haymaking {
         const mz = this.rect.minZ + (r + 0.5) * this.cell - s.z;
         const across = mx * cos - mz * sin; // sideways of its heading
         const along = mx * sin + mz * cos;
-        if (Math.abs(across) <= this.p.swath && Math.abs(along) <= 1.2 + this.cell * 0.5) out.push(r * this.cols + c);
+        if (this.live[r * this.cols + c] && Math.abs(across) <= this.p.swath && Math.abs(along) <= 1.2 + this.cell * 0.5) out.push(r * this.cols + c);
       }
     }
     return out;
@@ -337,7 +348,7 @@ export class Haymaking {
     this.stacked = Math.max(0, Math.min(Math.floor(save?.stacked ?? 0), STACK_CAPACITY));
     if (!save || !Array.isArray(save.cut) || !Number.isInteger(save.cutDay)) return;
     if (day - save.cutDay >= this.p.regrowDays) return;
-    for (const i of save.cut) if (Number.isInteger(i) && i >= 0 && i < this.state.length) this.state[i] = CUT;
+    for (const i of save.cut) if (Number.isInteger(i) && i >= 0 && i < this.state.length && this.live[i]) this.state[i] = CUT;
     this.cutDay = save.cutDay;
     this.cut = this.count(CUT);
   }

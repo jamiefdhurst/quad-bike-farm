@@ -13,6 +13,7 @@ import { MOOR_FEATURES_PLAN, moorLayout } from './moor.js';
 import { resolveWithBarnLocal } from './layoutBarn.js';
 import { barnRaw } from './barnPlan.js';
 import { STONE_TRACKS_PLAN, FARM_BRIDGE_PLAN, BOUNDARY_TRACK_PLAN, HEADLAND_WIDTH, boundaryTrackPoints, trackGateways, headlandRing, densify } from './farmTracks.js';
+import { JOB_FIELDS, fieldWorkPlaces } from './jobFields.js';
 import { intersectPolygons, polygonArea, polygonBounds, clockwise, edgeBetween, insetPolygon, pointInPolygon, distanceToEdges, polygonEdges, pointAlong } from './polygons.js';
 
 /** Where the game's (0, 0) is on the plan: the middle of the yard. */
@@ -342,7 +343,6 @@ export const NOT_MOVED_YET = {
   dragStrip: '#616',
   // Today's rectangle of farm, which only today's farm road and the terrain's rise beyond it read (the pit no longer does).
   farm: '#692 (today\'s rectangle of farm, which goes with layout 1)',
-  hayMeadow: '#691', sprayField: '#691', harrowField: '#691',
   trough: '#710', fieldShed: '#624',
 };
 
@@ -361,6 +361,8 @@ export const REPLACED = [
   'fuelTank', 'jerryCanSpots', 'trailer', 'tipTrailer', 'sprayer', 'harrows', 'dieselBowser', 'toolbox', 'benchOil', 'oilBottle', 'coolantBottle',
   'antiGelBottle', 'plugAdditive', 'benchLeads', 'benchPack', 'hose', 'dutchBarn', 'jumpRamp', 'lineUp', 'coneCourse', 'trackPoints', 'puddles', 'bogs',
   'bonfire', 'brushwood', 'strawBaleSpots', 'restSpots', 'spawn', 'muckHeap',
+  // The jobs' fields (#691): each is its field's polygon, with the bounds the job's grid is laid over.
+  'hayMeadow', 'sprayField', 'harrowField',
   // Hollow Wood and its log yard (#683).
   'woods', 'anchors.logYard', 'logYard',
   // The hill side (#684): the hill with its lane, stream, pasture, sheep field and meadow, the shepherd's hut's anchor and the gate at the lane's head.
@@ -1054,7 +1056,8 @@ export const FARMSTEAD_PLAN = {
   harrows: { at: [548, 372], yaw: -Math.PI / 2 },
   // The trailers, off the visitors' lane (the drive's line, z 345, and the loop south of the barn's doors to z 353) and clear of the kept-clear places and the spawns.
   trailers: { trailer: { at: [572, 398], yaw: 2.7 }, tipTrailer: { at: [588, 394], yaw: 0.2 }, sprayer: { at: [560, 380], yaw: 0.3 } }, // (the tipping trailer stood at (562, 366), in the lorry's way to the grain store: #816)
-  silage: [500, 313.5], // the stack's north-west corner, behind the barn's back wall (z 319), the orchard's fence at 310
+  silage: [700, 545], // the wrapped silage's stack's north-west corner, out in Low Ley (#691), 60 m in from its gateway from Brook Meadow and clear of the river
+  jerryCan: [508, 316.5], // the can that stood by the silage, behind the barn's back wall (z 319), the orchard's fence at 310
   animals: { pen: [486, 270, 492.5, 277], sty: [500, 270, 504.5, 275], bin: [496.5, 266, 0], bucket: [498, 266.4, 0.4] }, // in the orchard
   fenceSeats: [340, 352, 384, 396], // on Home Ground's rail, at plan z, facing out over the field
   frontage: [317, 415], // the stretch of Home Ground's rail the yard fronts: where the girls' seats are (the rail itself runs the whole side)
@@ -1168,7 +1171,7 @@ export function farmsteadLayout(today, raw) {
       bin: { x: bin[0], z: bin[1], yaw: P.animals.bin[2] }, bucket: { x: bucket[0], z: bucket[1], yaw: P.animals.bucket[2] },
     },
     jerryCanSpots: [
-      ...base.jerryCanSpots.filter((j) => j.where !== 'by the Dutch barn' && j.where !== 'by the field shed').map((j) => (j.where === 'by the petrol tank' ? tanks(j) : j.where === 'by the silage bales' ? { ...j, x: pt(P.silage)[0] + 8, z: pt(P.silage)[1] + 3 } : j)).map((j) => ({ ...j, where: { 'by the paddock': 'by the trailers', 'by the field gate': 'out in the yard' }[j.where] ?? j.where })),
+      ...base.jerryCanSpots.filter((j) => j.where !== 'by the Dutch barn' && j.where !== 'by the field shed').map((j) => (j.where === 'by the petrol tank' ? tanks(j) : j.where === 'by the silage bales' ? { ...j, x: pt(P.jerryCan)[0], z: pt(P.jerryCan)[1], where: 'behind the barn' } : j)).map((j) => ({ ...j, where: { 'by the paddock': 'by the trailers', 'by the field gate': 'out in the yard' }[j.where] ?? j.where })),
       again.dutchCan,
       ...today.jerryCanSpots.filter((j) => j.where === 'by the field shed'),
     ],
@@ -1623,9 +1626,10 @@ export function layoutNew(today, raw) {
   const village = villageLayout();
   const tracks = tracksLayout();
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
+  const fieldsLayout = newFields();
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
   return {
-    ...farmstead, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...newFields(),
+    ...farmstead, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...fieldsLayout, ...fieldWorkPlaces(fieldsLayout.fields), jobFields: JOB_FIELDS,
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
     upperThornby: { at: fromPlan(BACK_LANE_PLAN.upperThornby) },
     junctions: JUNCTIONS_PLAN, turnRound: turnRoundLayout(), laneFittings: laneFittingsLayout(), aRoadFittings: { layBy: { ...A_ROAD_PLAN.layBy, z: A_ROAD_PLAN.layBy.z - PLAN_ORIGIN[1] } },

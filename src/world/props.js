@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { swayMaterials } from '../effects/windSway.js';
 import { stripFrame } from './layout.js';
+import { inPlace } from './jobFields.js';
 import { enableShadows, instanceModel, modelBounds } from './assets.js';
 import { tiledInstances } from './tiledInstances.js';
 import { scatterStubble, stubbleShares } from './stubbleScatter.js';
@@ -742,8 +743,7 @@ function buildDistantTrees({ scene, layout, heights, fields, random }) {
 /** Whether (x, z) is in the hay meadow or the ragged margin of it (world/hayMask.js), where no other ground cover grows. */
 export function inHayMeadow(layout, x, z) {
   const m = layout.hayMeadow;
-  const pad = 4;
-  return !!m && x > m.minX - pad && x < m.maxX + pad && z > m.minZ - pad && z < m.maxZ + pad;
+  return !!m && inPlace(m, x, z, 4);
 }
 
 /** Instanced grass tufts across the field, kept off the track, the yard and the hay meadow. */
