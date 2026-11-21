@@ -108,7 +108,8 @@ function wiperSymbol() {
   g.fill();
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  symbolMaterial = new THREE.MeshBasicMaterial({ map: tex, transparent: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  // Printed on the stalk, not a lamp: lit like the stalk, so it doesn't glow in the cab at night.
+  symbolMaterial = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   return symbolMaterial;
 }
 

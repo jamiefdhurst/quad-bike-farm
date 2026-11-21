@@ -372,7 +372,7 @@ export function buildBarnShed({ scene, layout: worldLayout, heights, fixedBox: f
   if (!wide) {
     add(box(b.length, 0.9, 0.03, new THREE.MeshStandardMaterial({ color: 0x9c8a66, roughness: 0.9 })), b.x, benchTop + 1.1, inner.minZ + 0.03, { cast: false });
     // A grid of holes across the pegboard, as dark dots.
-    const holeMat = new THREE.MeshBasicMaterial({ color: 0x3b3224 });
+    const holeMat = new THREE.MeshStandardMaterial({ color: 0x3b3224, roughness: 1 }); // lit, so the dots don't glow in the dark barn
     const holes = new THREE.InstancedMesh(new THREE.CircleGeometry(0.008, 6), holeMat, Math.floor(b.length / 0.1) * 8);
     let hi = 0;
     for (let ix = 0; ix < Math.floor(b.length / 0.1); ix++) {

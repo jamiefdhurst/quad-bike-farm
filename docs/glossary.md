@@ -56,6 +56,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | booster pack | The black and yellow jump-start pack on the back of the workbench: charged on the bench charger, carried to a flat vehicle | jump starter, jump pack, battery pack, power pack |
 | tyre plug | The sticky rubber strip from the plug kit in the toolbox, pushed into a puncture | tire plug, puncture plug, tyre strip, rope plug |
 | jerry can | The 20 litre can you carry and pour from | jerrycan, jerry-can |
+| diesel bowser | The squat dark green tank labelled RED DIESEL beside the farm's petrol tank, where a can is filled with diesel | diesel tank |
 | seat belt | The belt in the Tor, the Crag and the UTV, on `;` | seatbelt |
 | windscreen | The glass in front of you in the cars, the Tor, the Crag and the UTV | windshield, front screen |
 | wipers | The blades that sweep the windscreen, worked by the wiper stalk on `X` | windshield wipers, wiper blades |

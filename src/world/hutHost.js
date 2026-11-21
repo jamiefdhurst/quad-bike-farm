@@ -166,15 +166,14 @@ export class HutHost {
   light(by) {
     if (!this.stove.light()) return false;
     this.audio.light(this.stovePos);
+    // Yours needs no toast: the whump and the glow in the door show it caught. Hers may be out of sight.
     if (by === 'you') this.g.achievements.note('hutLit');
-    this.g.hud.toast(by === 'you' ? 'The stove catches' : 'She lights the stove', 2.4);
+    else this.g.hud.toast('She lights the stove', 2.4);
     return true;
   }
 
-  stoke(by) {
-    if (!this.stove.stoke()) return false;
-    if (by === 'you') this.g.hud.toast('Another log on', 1.6);
-    return true;
+  stoke() {
+    return this.stove.stoke(); // the log going in has the put-down cue and the fire picking up: no toast
   }
 
   /** The girl you'd ask up: the nearest free one close enough, with a bunk place free. */

@@ -113,6 +113,7 @@ Things to know:
 
 - A warm engine with lots of choke is hard to start.
 - Braking hard from speed while it's still cold can stall it. Roll off early and brake gently until it's warm.
+- On a cold morning a cold engine puffs white vapour and drips water from the exhaust tip. It is only water, and it stops as the engine warms up.
 - If you flood it, take the choke off and crank with the throttle held open (`W` + `R`) to clear it.
 - The bike keeps idling when you get off, and you can watch and hear it shake from outside. With nobody on it, it also jolts over the ground as it moves, harder the faster it goes, so a quad driving itself round in circles visibly bounces. Riding it, the shake is as it always was.
 

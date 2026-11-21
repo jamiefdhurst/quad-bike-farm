@@ -83,14 +83,23 @@ describe("the shepherd's hut stove", () => {
     expect(stove.isAvailable()).toBe(false);
   });
 
-  it('toasts the lighting and ticks the bucket list, but not when a girl does it', () => {
+  it('toasts a girl lighting it, which may be out of sight, and ticks the bucket list only when you do', () => {
     const { host, toasts, notes } = setup();
     host.light('her');
     expect(notes).not.toContain('hutLit');
+    expect(toasts.length).toBe(1);
     host.stove.reset();
     host.light('you');
     expect(notes).toContain('hutLit');
-    expect(toasts.length).toBe(2);
+    expect(toasts.length).toBe(1); // yours has the whump and the glow in the door (interface.md: no toast for what you see happen)
+  });
+
+  it('puts a log on without a toast: the put-down cue and the fire show it', () => {
+    const { host, toasts } = setup();
+    host.light('you');
+    const before = toasts.length;
+    expect(host.stoke('you')).toBe(true);
+    expect(toasts.length).toBe(before);
   });
 });
 
