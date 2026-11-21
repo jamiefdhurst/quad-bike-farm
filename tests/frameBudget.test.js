@@ -44,8 +44,8 @@ describe('the frame budget', () => {
     expect(check(m).missing).toEqual(['village']);
   });
 
-  it('keeps spawn at the budget it was given when the count was made repeatable (#597), its triangles tightened by the ground in tiles (#665) and its calls by merging what stands still (#816)', () => {
-    expect(BUDGETS.spawn).toEqual({ calls: 535, triangles: 2.93e6 }); // the calls tightened by merging what stands still (#816)
+  it('keeps spawn at the budget it was given when the count was made repeatable (#597), its calls tightened by merging what stands still (#816) and its triangles by the far oaks and bushes (#837)', () => {
+    expect(BUDGETS.spawn).toEqual({ calls: 535, triangles: 1.91e6 }); // the triangles tightened to about 8% over 1.77M (#837)
   });
 
   it('has a budget for what is left out of the spots, which is not a spot to stand at (#597)', () => {

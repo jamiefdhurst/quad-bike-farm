@@ -139,7 +139,7 @@ export class World {
     this.terrain.prime(layout.spawn.player.x, layout.spawn.player.z);
     this.props = buildProps(ctx);
     this.farDetail.hedgeSwaps = this.props.hedgeSwaps; // the hedges' and the sheep field wall's far strips swap in by distance (hedgeFar.js)
-    this.farDetail.treeSwaps = this.props.treeSwaps; // and so do the wood's oaks (treeFar.js)
+    this.farDetail.treeSwaps = this.props.treeSwaps; // and so do the oaks and bushes, every builder's (scatter.js, treeFar.js)
 
     // A skin of ice on the track's puddles on a frosty day (puddleIce.js): wheels crack it and break it.
     this.puddleIceParams = { ...DEFAULT_PUDDLE_ICE_PARAMS };

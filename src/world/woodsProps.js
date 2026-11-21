@@ -2,9 +2,7 @@
 // Hollow Run and branches in the leaf litter, and the pond. The farm's own models for the trees; the logs are procedural.
 
 import * as THREE from 'three';
-import { instanceModel, modelBounds } from './assets.js';
-import { farTree } from './treeFar.js';
-import { HedgeSwap } from './hedgeFar.js';
+import { modelBounds } from './assets.js';
 import { matrixAt, buildPond } from './hillProps.js';
 import { woodsPlants } from './woods.js';
 import { buildConkers } from './autumnView.js';
@@ -21,7 +19,7 @@ import { polygonEdges } from './polygons.js';
 export function buildWoods(c) {
   const { fields } = c;
   const woods = fields.woods;
-  const treeSwap = buildTrees(c, woods);
+  buildTrees(c, woods);
   buildLogs(c, woods);
   buildTrail(c, woods);
   if (woods.outline) buildEdgeScrub(c, woods);
@@ -32,15 +30,15 @@ export function buildWoods(c) {
     c.scene.add(tree, tree.userData.body);
   }
   if (woods.pond) buildPond(c, woods, () => false);
-  return { treeSwaps: [treeSwap] };
+  return {};
 }
 
 /**
  * Oaks of all sizes with trunks you can't ride through, and hazel and holly between them. The oaks are the wood's frame cost, so each tile of them is
- * drawn in full within `treeFullDistance` and as the far oak (treeFar.js) beyond: the swap this returns, which FarDetail updates.
+ * drawn in full within `treeFullDistance` and as the far oak (treeFar.js) beyond, scattered with the farm's other oaks and bushes (scatter.js).
  */
 function buildTrees(c, woods) {
-  const { scene, models, layout, heights, physics, RAPIER, random, anchors } = c;
+  const { models, layout, heights, physics, RAPIER, random, anchors } = c;
   const { trees, bushes } = woodsPlants(woods, layout, random);
   const mats = [[], []];
   for (const [x, z, s] of trees) {
@@ -49,18 +47,11 @@ function buildTrees(c, woods) {
     physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, y + 2.5 * s, z));
     anchors.push({ x, y, z, r: 0.32 * s });
   }
-  const near = new THREE.Group();
-  const far = new THREE.Group();
-  for (const [model, list] of [[models.treeA.scene, mats[0]], [models.treeB.scene, mats[1]]]) {
-    near.add(...instanceModel(model, list).children);
-    far.add(...instanceModel(farTree(model), list).children);
-  }
-  scene.add(near, far);
+  c.scatter.oaks(models, mats); // with the farm's other oaks, the far oak beyond treeFullDistance (scatter.js)
   if (c.autumn) buildConkers(c, woods, trees, CONKERS_PER_TREE, random);
   const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
   const matrices = bushes.map(([x, z]) => matrixAt(x, heights.heightAt(x, z) - 0.2, z, random() * Math.PI * 2, (1.2 + random() * 1.4) / bushSize.y));
-  scene.add(instanceModel(models.bush.scene, matrices, { castShadow: false }));
-  return new HedgeSwap(near, far);
+  c.scatter.bushes(models, matrices);
 }
 
 /** How far apart along the wood's hedges the edge scrub stands, how far in from the hedge's line it stands, and how far it keeps from a gate. */
@@ -110,7 +101,7 @@ function buildEdgeScrub(c, woods) {
       brambles.push(matrixAt(x, y - 0.04, z, random() * Math.PI * 2, s, s * (0.9 + random() * 0.5), s));
     } else thorns.push(matrixAt(x, y - 0.25, z, random() * Math.PI * 2, (1.6 + random() * 1.2) / bushSize.y));
   }
-  if (thorns.length) scene.add(instanceModel(models.bush.scene, thorns, { castShadow: false }));
+  c.scatter.bushes(models, thorns);
   const material = plantMaterial(brambleLeafTexture(random));
   for (const turn of autumn ? [0.3, 0.75] : [0, 0.2]) {
     const mine = brambles.filter((_, i) => (i % 2 === 0) === (turn < 0.5));

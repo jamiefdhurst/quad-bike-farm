@@ -3,7 +3,7 @@
 // farm's own models.
 
 import * as THREE from 'three';
-import { instanceModel, modelBounds } from './assets.js';
+import { modelBounds } from './assets.js';
 import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
 import { buildFarHedges, wallFarPieces, HedgeSwap } from './hedgeFar.js';
 import { buildElectricFence } from './electricFenceBuild.js';
@@ -146,7 +146,7 @@ function buildStream({ scene, heights, fields }) {
  * The small wood on the west flank: oaks of all sizes with bushes under them, trunks you can't ride through. And a few oaks standing in the
  * pasture's hedges, as old hedgerow trees do.
  */
-function buildWood({ scene, models, layout, heights, fields, physics, RAPIER, random, anchors }) {
+function buildWood({ models, layout, heights, fields, physics, RAPIER, random, anchors, scatter }) {
   const hill = fields.hill;
   const wood = layout.hill.wood;
   const spots = [];
@@ -173,8 +173,7 @@ function buildWood({ scene, models, layout, heights, fields, physics, RAPIER, ra
     physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, heights.heightAt(x, z) + 2.5 * s, z));
     anchors.push({ x, y: heights.heightAt(x, z), z, r: 0.32 * s });
   }
-  scene.add(instanceModel(models.treeA.scene, mats[0]));
-  scene.add(instanceModel(models.treeB.scene, mats[1]));
+  scatter.oaks(models, mats);
 
   // Hazel and holly under the oaks: the farm's bush, smaller.
   const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
@@ -186,7 +185,7 @@ function buildWood({ scene, models, layout, heights, fields, physics, RAPIER, ra
     const s = (1.4 + random() * 1.4) / bushSize.y;
     bushes.push(matrixAt(x, heights.heightAt(x, z) - 0.2, z, random() * Math.PI * 2, s));
   }
-  scene.add(instanceModel(models.bush.scene, bushes, { castShadow: false }));
+  scatter.bushes(models, bushes);
 }
 
 /** One gorse clump's geometry: seven lumps stuck together, nearly black-green with the odd yellow flower. */
@@ -393,7 +392,7 @@ export function buildPond({ scene, heights, random, drawDistance }, source, keep
 }
 
 /** Oaks round the pond with hazel under them: the farm's models, trunks you cannot ride through. */
-function buildMeadowTrees({ scene, models, layout, heights, physics, RAPIER, random, anchors }) {
+function buildMeadowTrees({ models, layout, heights, physics, RAPIER, random, anchors, scatter }) {
   const west = layout.hill.paddocks.west;
   const mats = [[], []];
   for (const [x, z] of west.trees) {
@@ -402,8 +401,7 @@ function buildMeadowTrees({ scene, models, layout, heights, physics, RAPIER, ran
     physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, heights.heightAt(x, z) + 2.5 * s, z));
     anchors.push({ x, y: heights.heightAt(x, z), z, r: 0.32 * s });
   }
-  scene.add(instanceModel(models.treeA.scene, mats[0]));
-  scene.add(instanceModel(models.treeB.scene, mats[1]));
+  scatter.oaks(models, mats);
   const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
   const bushes = [];
   for (const [tx, tz] of west.trees) {
@@ -412,7 +410,7 @@ function buildMeadowTrees({ scene, models, layout, heights, physics, RAPIER, ran
     const z = tz + (random() - 0.5) * 6;
     bushes.push(matrixAt(x, heights.heightAt(x, z) - 0.2, z, random() * Math.PI * 2, (1.4 + random() * 1.2) / bushSize.y));
   }
-  scene.add(instanceModel(models.bush.scene, bushes, { castShadow: false }));
+  scatter.bushes(models, bushes);
 }
 
 /**
@@ -457,7 +455,7 @@ function buildWall({ scene, layout, heights, fixedBox, random }) {
 }
 
 /** Thorn bushes in the sheep field: the farm's bush, big, with a trunk's worth of collider. */
-function buildThorns({ scene, models, layout, heights, physics, RAPIER, random }) {
+function buildThorns({ models, layout, heights, physics, RAPIER, random, scatter }) {
   const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
   const mats = [];
   for (const [x, z] of layout.hill.paddocks.east.thorns) {
@@ -466,7 +464,7 @@ function buildThorns({ scene, models, layout, heights, physics, RAPIER, random }
     mats.push(matrixAt(x, y - 0.25, z, random() * Math.PI * 2, h / bushSize.y));
     physics.createCollider(RAPIER.ColliderDesc.cylinder(h * 0.4, h * 0.22).setTranslation(x, y + h * 0.4, z));
   }
-  scene.add(instanceModel(models.bush.scene, mats));
+  scatter.bushes(models, mats, { castShadow: true }); // standing on their own in the field, so they cast
 }
 
 /** The flat rock at the top of the pasture (layout.hill.viewpoint) where the girls sit with the flask: a squat grey boulder with a smaller one by it. */

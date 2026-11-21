@@ -123,7 +123,7 @@ export class FarDetail {
     this.inside = new WeakMap(); // set piece -> the vehicles standing in it
     this.centre = new THREE.Vector3();
     this.hedgeSwaps = []; // the swaps of the hedges' blocks and the wall's stones for far strips (hedgeFar.js), set by the world once the props are built
-    this.treeSwaps = []; // the swaps of the wood's oaks for far oaks (treeFar.js), set the same way
+    this.treeSwaps = []; // the swap of every oak and bush for its far version (scatter.js, treeFar.js), set the same way
     this.merge = new StaticMerge(); // the still meshes of the vehicles, the barn and the farm animals, drawn as a few
     this.nextLook = new WeakMap(); // root -> when it is next looked at (seconds on `elapsed`)
     this.looks = 0;

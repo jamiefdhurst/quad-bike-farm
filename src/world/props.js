@@ -28,6 +28,7 @@ import { buildVillage } from './villageProps.js';
 import { inVillage } from './village.js';
 import { buildBrookCulvert } from './brookProps.js';
 import { buildFarmBridge } from './farmBridge.js';
+import { Scatter } from './scatter.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { laneBarriers, nearNeighbourYard } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
@@ -59,6 +60,7 @@ function matrixAt(x, y, z, yaw, sx, sy = sx, sz = sx) {
 export function buildProps(ctx) {
   const random = seeded(1234);
   const c = { ...ctx, random };
+  c.scatter = new Scatter(); // the oaks and bushes every builder places, scattered once at the end (scatter.js, #837)
   c.anchors = []; // every trunk the green's winch can hook (items/winchAnchor.js): { x, y, z, r }
   c.fixedBox = (x, y, z, hx, hy, hz, rotY = 0) => {
     const q = new THREE.Quaternion().setFromAxisAngle(UP, rotY);
@@ -107,18 +109,19 @@ export function buildProps(ctx) {
   const puddles = buildPuddles(c);
   buildBogs(c);
   const hillProps = ctx.fields.hill ? buildHill(c) : null;
-  const woodProps = ctx.fields.woods ? buildWoods(c) : null;
+  if (ctx.fields.woods) buildWoods(c);
   if (ctx.fields.quarry) buildQuarry(c);
   buildFieldLandmarks(c); // the new farm's landmark in each field (#815); today's farm has none
   const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: woodProps?.treeSwaps ?? [], barn, yardLights, vane, jumpRamp, silage, puddles, yard, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
+  const treeSwap = c.scatter.build(c.scene); // every builder's oaks and bushes, the far ones swapped in beyond treeFullDistance
+  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: [treeSwap].filter(Boolean), barn, yardLights, vane, jumpRamp, silage, puddles, yard, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
 }
 
 function buildBarn(c) {
   return buildBarnShed(c);
 }
 
-function buildHedges({ scene, models, layout, heights, fields, fixedBox, random }) {
+function buildHedges({ scene, models, layout, heights, fields, fixedBox, random, scatter }) {
   const { hedgeThickness: T } = layout;
   const hedgeSize = modelBounds(models.hedge.scene).getSize(new THREE.Vector3());
   const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
@@ -212,7 +215,7 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random 
   const near = instanceModel(models.hedge.scene, hedgeMatrices, { castShadow: false });
   const far = buildFarHedges(farPieces, { tint: leafTint(models.hedge.scene) });
   scene.add(near, far);
-  scene.add(instanceModel(models.bush.scene, bushMatrices, { castShadow: false }));
+  scatter.bushes(models, bushMatrices);
   return new HedgeSwap(near, far);
 }
 
@@ -659,7 +662,7 @@ function buildBales({ scene, layout, heights, track, physics, RAPIER, random }) 
 
 // Trees ---------------------------------------------------------------------
 
-function buildTrees({ scene, models, layout, heights, physics, RAPIER, random, anchors }) {
+function buildTrees({ models, layout, heights, physics, RAPIER, random, anchors, scatter }) {
   const F = layout.fieldHalf;
   const spots = [];
   const farm = layout.farm ?? { maxX: F, maxZ: F };
@@ -692,8 +695,7 @@ function buildTrees({ scene, models, layout, heights, physics, RAPIER, random, a
   // Trees and hedges lean and rock in the wind (effects/windSway.js; the metres are at the top in an ordinary wind, wind.js).
   swayMaterials(models.treeA.scene, 'tree', 8);
   swayMaterials(models.treeB.scene, 'tree', 8);
-  scene.add(instanceModel(models.treeA.scene, mats[0]));
-  scene.add(instanceModel(models.treeB.scene, mats[1]));
+  scatter.oaks(models, mats);
 }
 
 /** Cheap low-poly tree clumps along the distant hedgerows for depth on the horizon. */

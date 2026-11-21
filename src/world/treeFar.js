@@ -11,6 +11,10 @@ export const FAR_BARK_TRIANGLES = 260;
 export const FAR_LEAF_KEEP = 4;
 export const FAR_LEAF_GROW = 1.75;
 
+/** One leaf clump in this many is kept in a far bush (the bush is 15 clumps, 360 triangles), each grown by `FAR_CLUMP_GROW` about its middle. */
+export const FAR_CLUMP_KEEP = 2;
+export const FAR_CLUMP_GROW = 1.2;
+
 const trianglesOf = (geo) => (geo.index ? geo.index.count : geo.attributes.position.count) / 3;
 
 /** Averages every attribute of `geo` within each cell of a grid `cell` m across (vertex clustering), and drops the triangles that fall into one point or one line. */
@@ -122,6 +126,79 @@ export function farTree(root) {
     if (!o.isMesh) return;
     const leaves = !!o.material?.transparent || o.material?.alphaTest > 0;
     const far = new THREE.Mesh(leaves ? thinCards(o.geometry) : simplifyGeometry(o.geometry), o.material);
+    far.applyMatrix4(o.matrixWorld);
+    group.add(far);
+  });
+  return group;
+}
+
+/**
+ * The leaf clumps of `geo` (the parts of it that share no vertex), as lists of triangle numbers, in the order they first appear.
+ */
+function clumps(geo) {
+  const index = geo.index ? geo.index.array : null;
+  const vertex = (t, k) => (index ? index[t * 3 + k] : t * 3 + k);
+  const parent = new Int32Array(geo.attributes.position.count).map((_, i) => i);
+  const root = (v) => {
+    while (parent[v] !== v) v = parent[v] = parent[parent[v]];
+    return v;
+  };
+  for (let t = 0; t < trianglesOf(geo); t++) {
+    parent[root(vertex(t, 1))] = root(vertex(t, 0));
+    parent[root(vertex(t, 2))] = root(vertex(t, 0));
+  }
+  const out = new Map();
+  for (let t = 0; t < trianglesOf(geo); t++) {
+    const r = root(vertex(t, 0));
+    if (!out.has(r)) out.set(r, []);
+    out.get(r).push(t);
+  }
+  return [...out.values()];
+}
+
+/**
+ * A mesh of separate leaf clumps with one clump in `keep` left, each grown by `grow` about its middle, as a plain list of triangles with every
+ * attribute as it was: the leaf texture and the shading stay the bush's own, and the bigger clumps fill the gaps (as `thinCards` does for the oak).
+ */
+export function thinClumps(geo, keep = FAR_CLUMP_KEEP, grow = FAR_CLUMP_GROW) {
+  const names = Object.keys(geo.attributes);
+  const index = geo.index ? geo.index.array : null;
+  const vertex = (t, k) => (index ? index[t * 3 + k] : t * 3 + k);
+  const pos = geo.attributes.position;
+  const kept = clumps(geo).filter((_, i) => i % keep === 0);
+  const count = kept.reduce((n, c) => n + c.length, 0) * 3;
+  const arrays = names.map((n) => new Float32Array(count * geo.attributes[n].itemSize));
+  let at = 0;
+  for (const clump of kept) {
+    const verts = clump.flatMap((t) => [vertex(t, 0), vertex(t, 1), vertex(t, 2)]);
+    const mid = [0, 1, 2].map((c) => verts.reduce((s, v) => s + pos.array[v * 3 + c], 0) / verts.length);
+    for (const v of verts) {
+      names.forEach((n, j) => {
+        const a = geo.attributes[n];
+        for (let c = 0; c < a.itemSize; c++) {
+          let value = a.array[v * a.itemSize + c];
+          if (n === 'position') value = mid[c] + (value - mid[c]) * grow;
+          arrays[j][at * a.itemSize + c] = value;
+        }
+      });
+      at++;
+    }
+  }
+  const out = new THREE.BufferGeometry();
+  names.forEach((n, j) => out.setAttribute(n, new THREE.BufferAttribute(arrays[j], geo.attributes[n].itemSize)));
+  return out;
+}
+
+/**
+ * The far version of the farm's bush (#837): its leaves are 15 clumps, not cards, so every other clump is kept, grown to fill the gap (`thinClumps`),
+ * with the same material. (Clustering it as the oak's trunk is smeared the leaf texture into smooth pale lumps that stood out of the hedge.)
+ */
+export function farBush(root) {
+  root.updateMatrixWorld(true);
+  const group = new THREE.Group();
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const far = new THREE.Mesh(thinClumps(o.geometry), o.material);
     far.applyMatrix4(o.matrixWorld);
     group.add(far);
   });

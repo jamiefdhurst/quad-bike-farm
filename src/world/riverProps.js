@@ -3,7 +3,6 @@
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { instanceModel } from './assets.js';
 import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
 import { worldBox } from './outbuildingProps.js';
 import { matrixAt } from './hillProps.js';
@@ -279,7 +278,6 @@ export function buildRiverside(c) {
     physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, heights.heightAt(x, z) + 2.5 * s, z));
     anchors.push({ x, y: heights.heightAt(x, z), z, r: 0.32 * s });
   }
-  if (oaks[0].length) scene.add(instanceModel(models.treeA.scene, oaks[0]));
-  if (oaks[1].length) scene.add(instanceModel(models.treeB.scene, oaks[1]));
+  c.scatter.oaks(models, oaks);
   return { river };
 }
