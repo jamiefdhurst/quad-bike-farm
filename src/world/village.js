@@ -103,6 +103,12 @@ function buildShape(layout) {
     { id: 'garage', kind: 'garage', ...v.garage },
     ...v.cottages.map((c) => ({ kind: 'cottage', ...c })),
   ].map((b) => ({ ...b, outer: rect(b.x, b.z, b.halfX, b.halfZ) }));
+  // The lane's approach (#819): three houses facing the lane (a quarter turn, so their frontage is along z) and a small farm's house and barn. Apart from `buildings`,
+  // which are along the street, but as much a part of what is built on and levelled.
+  const laneBuildings = [
+    ...(v.approach?.houses ?? []).map((c) => ({ kind: 'cottage', approach: true, ...c })),
+    ...(v.approach ? [{ kind: 'farmhouse', approach: true, ...v.approach.farm.house }, { kind: 'barn', approach: true, ...v.approach.farm.barn }] : []),
+  ].map((b) => ({ ...b, outer: Math.abs(Math.sin(b.yaw ?? 0)) > 0.5 ? rect(b.x, b.z, b.halfZ, b.halfX) : rect(b.x, b.z, b.halfX, b.halfZ) }));
   const carPark = v.pub.carPark;
   // Where the side road meets the lane: it starts at the lane's west edge (the lane's own tarmac is under the rest), and the give-way line sits
   // just inside that, across the half of the road that carries traffic out (the north side, the left heading east).
@@ -128,9 +134,14 @@ function buildShape(layout) {
   // What is levelled: each building to the ground at its middle, the forecourt likewise, and the car park to the ground at its mouth on the road's
   // side, easing back over longer, so the way in from the road isn't a ramp.
   const pads = [
-    ...buildings.map((b) => ({ r: b.outer, at: [b.x, b.z], reach: 3.5 })),
+    ...[...buildings, ...laneBuildings].map((b) => ({ r: b.outer, at: [b.x, b.z], reach: 3.5 })),
     { r: carPark, at: [(carPark.minX + carPark.maxX) / 2, carPark.maxZ + 3], reach: 7 },
   ];
+  if (v.approach) {
+    // The small farm's yard is levelled to the ground at its middle, easing out over 7 m beyond its wall.
+    const yard = v.approach.farm.yard;
+    pads.push({ r: yard, at: [(yard.minX + yard.maxX) / 2, (yard.minZ + yard.maxZ) / 2], reach: 7 });
+  }
   if (v.garage.forecourt) {
     // On the new farm the land falls 6% east along a 46 m forecourt, so the slab follows it, and only what must stand level is levelled: the pumps' island
     // and canopy (to the ground at its middle, easing out over 4 m) and the MOT bay (to the garage's own floor level, so it meets the front flush).
@@ -142,7 +153,7 @@ function buildShape(layout) {
   } else {
     pads.push({ r: forecourt, at: [(forecourt.minX + forecourt.maxX) / 2, (forecourt.minZ + forecourt.maxZ) / 2], reach: 3.5 });
   }
-  const footprints = buildings.map((b) => b.outer);
+  const footprints = [...buildings, ...laneBuildings].map((b) => b.outer);
 
   /** Distance from (x, z) to the road's middle line, and how far along it that point is (s, in samples, about metres). */
   function roadAt(x, z) {
@@ -242,6 +253,7 @@ function buildShape(layout) {
     curb,
     area: a,
     buildings,
+    laneBuildings,
     carPark,
     forecourt,
     walls,

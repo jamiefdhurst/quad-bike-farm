@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { stoneTexture, corrugatedTexture } from './outbuildingProps.js';
 import { woodTexture, paintedTexture, doorTexture, sashTexture } from './neighbourTextures.js';
 import { slateTexture, concreteTexture } from './neighbourFarmProps.js';
-import { brickTexture, clayTileTexture, pavingTexture, hedgeTexture, phoneGlassTexture } from './villageTextures.js';
+import { brickTexture, clayTileTexture, thatchTexture, pavingTexture, hedgeTexture, phoneGlassTexture } from './villageTextures.js';
 
 const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });
 
@@ -20,6 +20,7 @@ export function makeVillageMaterials(random, { doorColours = [], renders = [] } 
     renders: {},
     slate: new THREE.MeshStandardMaterial({ map: slateTexture(random), roughness: 0.8, side: THREE.DoubleSide }),
     clay: new THREE.MeshStandardMaterial({ map: clayTileTexture(random), roughness: 0.85, side: THREE.DoubleSide }),
+    thatch: new THREE.MeshStandardMaterial({ map: thatchTexture(random), roughness: 1, side: THREE.DoubleSide }),
     tin: new THREE.MeshStandardMaterial({ map: corrugatedTexture(random, '#8d9294', 0.3), roughness: 0.7, metalness: 0.3, side: THREE.DoubleSide }),
     timber: new THREE.MeshStandardMaterial({ map: woodTexture(random), roughness: 0.9 }),
     weathered: new THREE.MeshStandardMaterial({ map: woodTexture(random, [128, 120, 108]), roughness: 0.95 }),

@@ -46,7 +46,7 @@ describe('her land across the lane (#569)', () => {
     expect(laneHedge.gaps.some(([a, b]) => trackZ > a + 2 && trackZ < b - 2)).toBe(true); // wider than her track's carriageway (4 m)
     expect(land.gate).toMatchObject({ x: fromPlan([912, 0])[0], z: gateZ, width: 5 });
     expect(laneHedge.gaps.some(([a, b]) => gateZ > a && gateZ < b && b - a >= land.gate.width)).toBe(true);
-    expect(stretchesOf(laneHedge)).toHaveLength(6); // her track, her north gate, two more gateways (#687) and the cottages' frontage
+    expect(stretchesOf(laneHedge)).toHaveLength(5); // her track, her north gate, the first gateway (#687), the village approach's frontage open from z 405 to 555 (#819), and the short stretch to her south hedge
     // No stretch of any hedge crosses her track, her wall or the lane.
     for (const s of hedgeStretches(land)) {
       const box = { minX: s.x - s.hx, maxX: s.x + s.hx, minZ: s.z - s.hz, maxZ: s.z + s.hz };

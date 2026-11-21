@@ -62,6 +62,37 @@ export function clayTileTexture(random) {
   });
 }
 
+/** Water reed thatch, one tile being 1 m: long straw laid in bands, golden fresh and silvered and mossy lower down, with the ragged courses of a spar coat. */
+export function thatchTexture(random) {
+  return canvasTexture(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#6e5a34';
+    ctx.fillRect(0, 0, w, h);
+    const rows = 16;
+    const rh = h / rows;
+    for (let r = 0; r < rows; r++) {
+      const tone = 0.7 + 0.3 * Math.abs(Math.sin(r * 0.9));
+      for (let i = 0; i < 260; i++) {
+        const x = random() * w;
+        const len = rh * (1.2 + random() * 1.6);
+        const j = (random() - 0.5) * 40;
+        ctx.strokeStyle = `rgba(${150 * tone + j},${120 * tone + j * 0.8},${70 * tone + j * 0.4},0.8)`;
+        ctx.lineWidth = 1 + random() * 1.4;
+        ctx.beginPath();
+        ctx.moveTo(x, r * rh);
+        ctx.lineTo(x + (random() - 0.5) * 4, r * rh + len);
+        ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(30,20,8,0.28)'; // the shadow under each course's butts
+      ctx.fillRect(0, r * rh + rh - 2, w, 2);
+      if (random() < 0.3) {
+        ctx.fillStyle = 'rgba(86,110,50,0.3)'; // moss
+        ctx.fillRect(random() * w, r * rh, 30 + random() * 50, rh * 0.8);
+      }
+    }
+    grain(ctx, w, h, random, 400, 0.08);
+  });
+}
+
 /** Paving slabs 0.6 m square, one tile 1.2 m: pale grey, joints, grit, the odd stain. */
 export function pavingTexture(random) {
   return canvasTexture(256, 256, (ctx, w, h) => {
@@ -84,8 +115,77 @@ export function pavingTexture(random) {
   });
 }
 
-/** The pub's car park from above, one texture over the whole rectangle (`wm` by `hm` metres): worn tarmac with white bay lines along the north edge, a disabled bay and the arrow at the entrance. */
-export function carParkTexture(random, wm, hm) {
+/** The width and depth of a standard bay and of a disabled bay's width, in metres (#542): 2.4 by 4.8, the disabled bay 3.6 wide with its own safety zone. */
+export const BAY = { w: 2.4, d: 4.8, disabledW: 3.6, margin: 1 };
+
+/**
+ * The bays of a car park `wm` by `hm` metres, each { x, z, w, d, row, disabled } with its north-west corner at (x, z) from the car park's own: a row along the north edge
+ * (the disabled bay first, nearest the pub's door) and a row along the south edge either side of the way in, `entry` = [x0, x1] metres from the west edge.
+ */
+export function carParkBays(wm, hm, entry = [wm / 2 - 4.5, wm / 2 + 4.5]) {
+  const bays = [];
+  let x = BAY.margin;
+  bays.push({ x, z: 0.2, w: BAY.disabledW, d: BAY.d, row: 'north', disabled: true });
+  x += BAY.disabledW;
+  while (x + BAY.w <= wm - BAY.margin) {
+    bays.push({ x, z: 0.2, w: BAY.w, d: BAY.d, row: 'north', disabled: false });
+    x += BAY.w;
+  }
+  const south = (from, to) => {
+    for (let sx = from; sx + BAY.w <= to; sx += BAY.w) bays.push({ x: sx, z: hm - 0.2 - BAY.d, w: BAY.w, d: BAY.d, row: 'south', disabled: false });
+  };
+  south(BAY.margin, entry[0] - 0.5);
+  south(entry[1] + 0.5, wm - BAY.margin);
+  return bays;
+}
+
+/** The international wheelchair symbol in white, facing right, about `s` tall at (cx, cy): head, leaning body with an arm, seat and lower leg, and the wheel's open arc. */
+function wheelchairSymbol(ctx, cx, cy, s) {
+  ctx.fillStyle = '#f4f4f0';
+  ctx.strokeStyle = '#f4f4f0';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.arc(cx - 0.08 * s, cy - 0.4 * s, 0.085 * s, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 0.1 * s;
+  ctx.beginPath();
+  ctx.moveTo(cx - 0.08 * s, cy - 0.26 * s); // the back
+  ctx.lineTo(cx - 0.08 * s, cy + 0.06 * s);
+  ctx.lineTo(cx + 0.2 * s, cy + 0.06 * s); // the seat
+  ctx.lineTo(cx + 0.3 * s, cy + 0.38 * s); // the lower leg
+  ctx.stroke();
+  ctx.lineWidth = 0.07 * s;
+  ctx.beginPath();
+  ctx.moveTo(cx - 0.08 * s, cy - 0.14 * s); // the arm
+  ctx.lineTo(cx + 0.22 * s, cy - 0.14 * s);
+  ctx.stroke();
+  ctx.lineWidth = 0.09 * s;
+  ctx.beginPath();
+  ctx.arc(cx - 0.1 * s, cy + 0.2 * s, 0.3 * s, -0.35 * Math.PI, 0.9 * Math.PI); // the wheel, open at the front
+  ctx.stroke();
+}
+
+/** An arrow pointing up the canvas from its tail at (cx, cy) by `len`, `wid` wide at its head: a shaft and a triangular head, white road paint. */
+function paintArrow(ctx, cx, cy, len, wid, up) {
+  const dir = up ? -1 : 1;
+  ctx.fillStyle = 'rgba(238,238,228,0.82)';
+  const shaft = len * 0.62;
+  ctx.fillRect(cx - wid * 0.14, up ? cy - shaft : cy, wid * 0.28, shaft);
+  ctx.beginPath();
+  ctx.moveTo(cx - wid / 2, cy + dir * shaft);
+  ctx.lineTo(cx + wid / 2, cy + dir * shaft);
+  ctx.lineTo(cx, cy + dir * len);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/**
+ * The pub's car park from above, one texture over the whole rectangle (`wm` by `hm` metres, north at the top): worn tarmac, the bays of `carParkBays` marked in white
+ * (2.4 by 4.8 m, the disabled bay 3.6 m wide, painted blue with the wheelchair symbol upright for the aisle), a give-way bar across the way in with an arrow in on the
+ * left and an arrow out on the right, as traffic keeping left meets them.
+ */
+export function carParkTexture(random, wm, hm, entry) {
   const ppm = 24;
   return canvasTexture(Math.round(wm * ppm), Math.round(hm * ppm), (ctx, w, h) => {
     ctx.fillStyle = '#3f4042';
@@ -97,40 +197,48 @@ export function carParkTexture(random, wm, hm) {
       ctx.ellipse(random() * w, random() * h, 6 + random() * 26, 5 + random() * 18, random() * 3, 0, Math.PI * 2);
       ctx.fill();
     }
+    const bays = carParkBays(wm, hm, entry);
+    for (const b of bays.filter((p) => p.disabled)) {
+      ctx.fillStyle = 'rgba(28,78,170,0.85)';
+      ctx.fillRect(b.x * ppm, b.z * ppm, b.w * ppm, b.d * ppm);
+      wheelchairSymbol(ctx, (b.x + b.w / 2) * ppm, (b.z + b.d * 0.5) * ppm, 2.2 * ppm);
+    }
     ctx.strokeStyle = 'rgba(235,235,225,0.85)';
     ctx.lineWidth = 3;
-    const bays = 6;
-    const bw = (w - 2 * ppm) / bays;
-    for (let i = 0; i <= bays; i++) {
+    for (const row of ['north', 'south']) {
+      const rb = bays.filter((p) => p.row === row);
       ctx.beginPath();
-      ctx.moveTo(ppm + i * bw, 0.2 * ppm);
-      ctx.lineTo(ppm + i * bw, 5.2 * ppm);
+      for (const b of rb) {
+        ctx.moveTo(b.x * ppm, b.z * ppm);
+        ctx.lineTo(b.x * ppm, (b.z + b.d) * ppm);
+        ctx.moveTo((b.x + b.w) * ppm, b.z * ppm);
+        ctx.lineTo((b.x + b.w) * ppm, (b.z + b.d) * ppm);
+      }
+      // The bays' back line (at the hedge for the north row, the road's side for the south row is open) and their mouths.
+      const first = rb[0];
+      const last = rb[rb.length - 1];
+      if (row === 'north' && first) {
+        ctx.moveTo(first.x * ppm, (first.z + first.d) * ppm);
+        ctx.lineTo((last.x + last.w) * ppm, (first.z + first.d) * ppm);
+      }
       ctx.stroke();
     }
-    ctx.beginPath(); // and a second row, back to back with the first on the far side
-    ctx.moveTo(ppm, h - 0.2 * ppm);
-    ctx.lineTo(ppm, h - 5.2 * ppm);
-    for (let i = 1; i <= bays; i++) {
-      ctx.moveTo(ppm + i * bw, h - 0.2 * ppm);
-      ctx.lineTo(ppm + i * bw, h - 5.2 * ppm);
-    }
+    // The way in: a give-way bar across the mouth, an arrow in (up) on its left and one out (down) on its right, as keeping left puts them.
+    const [e0, e1] = entry ?? [wm / 2 - 4.5, wm / 2 + 4.5];
+    const mid = ((e0 + e1) / 2) * ppm;
+    const gy = h - 6.5 * ppm;
+    ctx.fillStyle = 'rgba(238,238,228,0.82)';
+    for (let k = 0; k < 7; k++) ctx.fillRect(mid + (0.1 + k * 0.62) * ppm - 0.04 * ppm, gy, 0.32 * ppm, 0.22 * ppm); // the broken give-way bar, right-hand half out
+    paintArrow(ctx, mid - 2.0 * ppm, gy + 3.2 * ppm, 3.0 * ppm, 1.0 * ppm, true);
+    paintArrow(ctx, mid + 2.0 * ppm, gy - 3.0 * ppm, 3.0 * ppm, 1.0 * ppm, false);
+    ctx.strokeStyle = 'rgba(235,235,225,0.7)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([0.6 * ppm, 0.9 * ppm]);
+    ctx.beginPath();
+    ctx.moveTo(mid, gy - 4 * ppm);
+    ctx.lineTo(mid, h - 0.3 * ppm);
     ctx.stroke();
-    ctx.fillStyle = 'rgba(40,90,180,0.75)'; // the disabled bay
-    ctx.fillRect(ppm + 0.15 * bw, 0.4 * ppm, bw * 0.7, 4.7 * ppm);
-    ctx.fillStyle = 'rgba(240,240,240,0.9)';
-    ctx.beginPath();
-    ctx.arc(ppm + bw / 2, 1.9 * ppm, 0.45 * ppm, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillRect(ppm + bw / 2 - 0.12 * ppm, 2.2 * ppm, 0.24 * ppm, 1.6 * ppm);
-    // The way in and out, an arrow along the middle.
-    ctx.fillStyle = 'rgba(235,235,225,0.7)';
-    const ay = h / 2;
-    ctx.fillRect(w - 6 * ppm, ay - 0.12 * ppm, 4 * ppm, 0.24 * ppm);
-    ctx.beginPath();
-    ctx.moveTo(w - 2 * ppm, ay - 0.5 * ppm);
-    ctx.lineTo(w - 1 * ppm, ay);
-    ctx.lineTo(w - 2 * ppm, ay + 0.5 * ppm);
-    ctx.fill();
+    ctx.setLineDash([]);
   });
 }
 
@@ -295,7 +403,8 @@ export function villageSignTexture(random, name = 'Nether Thornby') {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#efe3b4';
-    ctx.font = 'bold 70px Georgia, serif';
+    let size = 70;
+    do ctx.font = `bold ${size--}px Georgia, serif`; while (ctx.measureText(name.toUpperCase()).width > w - 150 && size > 30); // fitted inside the border with room each side
     ctx.fillText(name.toUpperCase(), w / 2, 130);
     ctx.strokeStyle = '#d6b24c';
     ctx.lineWidth = 3;
@@ -326,11 +435,11 @@ export function villageSignTexture(random, name = 'Nether Thornby') {
     ctx.fillText('Please drive carefully', w / 2, 448);
     ctx.font = '22px Georgia, serif';
     ctx.textAlign = 'left';
-    ctx.fillText('Parish of', 56, 232);
-    ctx.fillText('Thornby', 56, 258);
+    ctx.fillText('Parish of', 66, 232);
+    ctx.fillText('Thornby', 66, 258);
     ctx.textAlign = 'right';
-    ctx.fillText('Best Kept', w - 56, 232);
-    ctx.fillText('Village', w - 56, 258);
+    ctx.fillText('Best Kept', w - 66, 232);
+    ctx.fillText('Village', w - 66, 258);
     grain(ctx, w, h, random, 800, 0.08);
   });
 }
@@ -817,5 +926,26 @@ export function reflectorPostTexture(random) {
     dirt.addColorStop(1, 'rgba(80,66,44,0.6)');
     ctx.fillStyle = dirt;
     ctx.fillRect(0, h * 0.62, w, h * 0.38);
+  });
+}
+
+/** A projecting blade sign's board: each of `lines` the same size and fitted to the board's width, white on `bg`, so no line is tiny beside another (#537). */
+export function bladeSignTexture(random, lines, { bg = '#b4141b', fg = '#f6efe0', width = 384, height = 480 } = {}) {
+  return canvasTexture(width, height, (ctx, w, h) => {
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = fg;
+    ctx.lineWidth = 8;
+    ctx.strokeRect(14, 14, w - 28, h - 28);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let size = 140;
+    do ctx.font = `bold ${size--}px Arial, Helvetica, sans-serif`; while (lines.some((l) => ctx.measureText(l).width > w - 80) && size > 20);
+    const step = (h - 100) / lines.length;
+    lines.forEach((l, i) => {
+      ctx.fillStyle = fg;
+      ctx.fillText(l, w / 2, 50 + step * (i + 0.5));
+    });
+    grain(ctx, w, h, random, 300, 0.06);
   });
 }
