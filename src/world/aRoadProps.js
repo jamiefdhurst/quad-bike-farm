@@ -11,7 +11,6 @@ import { layHedges } from './backLaneProps.js';
 import { buildVerge } from './laneVerge.js';
 import { HedgeSwap } from './hedgeFar.js';
 import { matrixAt } from './hillProps.js';
-import { instanceModel } from './assets.js';
 import { tiledInstances } from './tiledInstances.js';
 import { junctionSites, junctionFittings, junctionBreaks, catsEyes, layByOf } from './aRoadFittings.js';
 import * as signs from './roadSigns.js';
@@ -55,7 +54,7 @@ export function buildARoadProps(c) {
     physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * t.scale, 0.32 * t.scale).setTranslation(p.x, y + 2.5 * t.scale, p.z));
     anchors?.push({ x: p.x, y, z: p.z, r: 0.32 * t.scale });
   }
-  scene.add(instanceModel(models.treeA.scene, mats[0]), instanceModel(models.treeB.scene, mats[1]));
+  c.scatter.oaks(models, mats);
   buildVerge(c, a, (s, side) => gaps.some((g) => Math.abs(s - g.s) < g.half + 1 && (g.side === undefined || g.side === side)));
 
   // Cat's eyes: a twin-lens stud in the middle of the road every `eyes` m, flush with the tarmac, in tiles so the far ones are culled.

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Scatter } from '../../src/world/scatter.js';
 import fs from 'node:fs';
 import { vi } from 'vitest';
 import { fakeCanvas } from './vehicleModels.js';
@@ -32,6 +33,7 @@ export function headlessContext() {
     random: seeded(1234),
     fixedBox: () => {},
     anchors: [],
+    scatter: new Scatter(), // the oaks and bushes the builders hand it are never scattered here: they are the farm's models, not the builders'
     gateParams: {},
     drawDistance: stub,
     physics: stub,

@@ -281,7 +281,7 @@ export function buildBackLaneProps(c) {
     physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * t.scale, 0.32 * t.scale).setTranslation(p.x, y + 2.5 * t.scale, p.z));
     anchors?.push({ x: p.x, y, z: p.z, r: 0.32 * t.scale });
   }
-  scene.add(instanceModel(models.treeA.scene, mats[0]), instanceModel(models.treeB.scene, mats[1]));
+  c.scatter.oaks(models, mats);
   // The verge: bare at the gates, the stile and the ford, where it is trampled or washed.
   const gaps = laneGaps(road);
   buildVerge(c, road, (s, side) => gaps.some((g) => Math.abs(s - g.s) < g.half + 1 && (g.side === undefined || g.side === side)));
