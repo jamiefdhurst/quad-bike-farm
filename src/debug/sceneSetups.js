@@ -127,10 +127,14 @@ export function earlier(g) {
   return ['Jess has beaten Amy in a race and Amy has tipped a quad, as far as the day goes; stand near them and wait half a minute or so'];
 }
 
-/** The hedges' far strips (world/hedgeFar.js) brought in to 25 m, so the farm's hedges are mostly strips from the yard and you can compare. */
+/**
+ * The hedges' far strips (world/hedgeFar.js) and the far oaks and bushes (world/scatter.js, #837) brought in to 25 m, so most of what you see from the
+ * yard is the far version and you can compare.
+ */
 export function farHedges(g) {
   g.graphics.hedgeFullDistance = 25;
-  return ['every hedge more than 25 m from you is its plain far strip (usually 150 m), the nearer ones leafy; walk along a hedge to see the swap, scene end puts it back'];
+  g.graphics.treeFullDistance = 25;
+  return ['every hedge more than 25 m from you is its plain far strip (usually 150 m), and every oak and bush the lighter far one (usually 70 m); walk along a hedge to see the swap, scene end puts it back'];
 }
 
 export const SETUPS = { farHedges, prepare: getOff, wardrobe, moto, flock, flask, earlier, end: endScene };

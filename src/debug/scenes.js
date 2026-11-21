@@ -40,7 +40,7 @@ export const SCENES = [
     lines: ['weather fair', 'weather.time 11'],
     setup: 'wardrobe',
   },
-  { id: 'farhedges', label: 'Put you in the yard with the hedges swapping to their far strips at 25 m instead of 150 m', lines: ['weather sunny', 'weather.time 12', 'tp me to yard'], setup: 'farHedges' },
+  { id: 'farhedges', label: 'Put you in the yard with the hedges swapping to their far strips at 25 m instead of 150 m, and the oaks and bushes to their lighter far ones at 25 m instead of 70 m', lines: ['weather sunny', 'weather.time 12', 'tp me to yard'], setup: 'farHedges' },
   { id: 'landform', label: 'Put you at the west edge of the farm, about 20 m above the yard, to see the land fall away east (on layout 2: today\'s farm is not tilted)', lines: ['weather sunny', 'weather.time 12', 'tp me -450 0'] },
   { id: 'hollowwood', label: 'Put you at Hollow Wood\'s gate in daylight, to look at the oaks (they swap for lighter ones beyond 70 m), the lean-to and woodpile, and the ferns (on layout 2: tp me to woodpile, veteranoak, fern or hollowrun for the rest; weather.season autumn for the turned leaves)', lines: ['weather sunny', 'weather.time 12', 'tp me wood'] },
   { id: 'landmarks', label: 'Put you ten metres south of Hay Meadow\'s lone ash in daylight, to look at the field landmarks (on layout 2: today\'s farm has none; tp me to loneoak, oldgateposts, deadelm, farpond, castroller, brookalders or bigoaks for the rest)', lines: ['weather sunny', 'weather.time 12', 'tp me 0 133'] },
