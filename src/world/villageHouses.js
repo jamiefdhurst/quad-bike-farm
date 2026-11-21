@@ -138,8 +138,8 @@ export function buildHouse(ctx, b, index) {
     const gx = -b.halfX * 0.38;
     doorX = b.halfX * 0.48;
     crossGable(f, m, { x: gx, w: 3.8, projection: 1.1, wallZ: front, wallHeight: b.wallHeight, ridge: b.wallHeight + 1.7, roofMat: roof });
-    bayWindow(f, m, { x: gx, w: 2.6, depth: 0.55, h: 1.5, base: 0.7, wallZ: front + 1.0 });
-    windowAt(f, m, { x: gx, y: 3.5, w: 1.0, h: 1.2, face: 1, wallZ: front + 1.0, lintel, flowers: false });
+    bayWindow(f, m, { x: gx, w: 2.6, depth: 0.55, h: 1.5, base: 0.7, wallZ: front + 1.1 });
+    windowAt(f, m, { x: gx, y: 3.5, w: 1.0, h: 1.2, face: 1, wallZ: front + 1.1, lintel, flowers: false });
     windowAt(f, m, { x: doorX, y: 3.45, w: 0.95, h: 1.05, face: 1, wallZ: front, lintel });
     windowAt(f, m, { x: b.halfX * 0.05 + 0.2, y: 1.55, w: 0.95, h: 1.2, face: 1, wallZ: front, lintel });
     doorAt(f, m, { x: doorX, wallZ: front, face: 1, colour: b.door, number: 3 + index * 2, fanlight: true });
