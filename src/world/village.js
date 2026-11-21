@@ -52,6 +52,35 @@ export function villageMudBounds(layout, roads, margin) {
 
 export { smoothRoad };
 
+/**
+ * The speed limit signs at the street's two ends and halfway (#537), on the new farm's street: each { x, z, yaw, front, back }, `yaw` where its front looks (0 south, +z) and
+ * `front`, `back` the mph on each face or 'national' (the national speed limit disc, for the traffic leaving). One post at each end on the left of the way in, 20 to those coming
+ * in and the national limit to those leaving, and a repeater on the left halfway along showing 20 both ways. The lane gets none (its 30s are `approachSignSpecs`). `S` is the shape.
+ */
+export function streetLimitSigns(S) {
+  const at = (i, side) => {
+    const p = S.road[Math.min(S.road.length - 2, i)];
+    const off = side * (S.curb + 0.1);
+    return { x: p.x + -p.tz * off, z: p.z + p.tx * off };
+  };
+  const east = S.eastward ? Math.PI / 2 : -Math.PI / 2;
+  const left = S.eastward ? -1 : 1; // the side of the street on the left of the way in from the lane
+  return [
+    { ...at(18, left), yaw: east, front: S.limit, back: 'national' },
+    { ...at(S.road.length - 12, -left), yaw: east + Math.PI, front: S.limit, back: 'national' },
+    { ...at(Math.floor(S.road.length / 2), left), yaw: east, front: S.limit, back: S.limit },
+  ].filter((p) => !S.builtAt(p.x, p.z, 0.6));
+}
+
+/**
+ * The signs on the lane's approach (#819), from the layout: each limit post { x, z, yaw, front: 30, back: 'national' } and each village sign { x, z, yaw, village: true }.
+ * Empty on a farm without an approach.
+ */
+export function approachSignSpecs(v) {
+  if (!v.approach) return [];
+  return v.approach.signs.map((s) => (s.kind === 'village' ? { x: s.x, z: s.z, yaw: s.yaw, village: true } : { x: s.x, z: s.z, yaw: s.yaw, front: v.approach.limit, back: 'national' }));
+}
+
 /** The marks on the village road: a broken white line down the middle (it is two-way) and one give-way line across the lane going out, not both.
  * The line is on the positive side of the road (the right of the way it is drawn, the left of whoever leaves): on the north half of a road that runs west
  * from the lane, and the south half of one that runs east (the new farm's, #688). */

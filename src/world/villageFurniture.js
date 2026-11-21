@@ -7,6 +7,7 @@ import { worldBox } from './outbuildingProps.js';
 import { villageSignTexture, limitSignTexture, fasciaTexture, noticeTexture } from './villageTextures.js';
 import { nationalLimitTexture } from './roadSigns.js';
 import { signMaterial } from './villageBuildings.js';
+import { approachSignSpecs } from './village.js';
 
 /** A mesh at (px, py, pz) in group `g`. */
 const put = (g, geo, mat, px, py, pz) => {
@@ -87,7 +88,7 @@ export function villageSignAt(ctx, x, z, yaw) {
   g.rotation.y = yaw;
   const box = (w, h, d, mat, px, py, pz) => put(g, worldBox(w, h, d, 0.6), mat, px, py, pz);
   for (const sx of [-1, 1]) {
-    box(0.14, 2.9, 0.14, M.timber, sx * 1.1, 1.35, 0); // the posts, to just inside the roof
+    box(0.14, 3.5, 0.14, M.timber, sx * 1.1, 1.75, 0); // the posts, up into the roof's ridge board
     box(0.22, 0.1, 0.22, M.stone, sx * 1.1, 0.05, 0); // a stone footing
   }
   box(2.5, 0.16, 0.16, M.timber, 0, 2.6, 0); // the head rail the board hangs from
@@ -116,7 +117,7 @@ export function villageSignAt(ctx, x, z, yaw) {
   box(2.4, 0.34, 0.8, M.stone, 0, 0.17, 0.95);
   box(2.2, 0.08, 0.6, M.bark, 0, 0.36, 0.95);
   for (let k = 0; k < 9; k++) put(g, new THREE.IcosahedronGeometry(0.17, 0), M.leaf, -1 + k * 0.25, 0.46, 0.95 + ((k % 2) - 0.5) * 0.25);
-  for (let k = 0; k < 14; k++) put(g, new THREE.IcosahedronGeometry(0.08, 0), M.blooms[k % 4], -1 + (k * 2) / 13, 0.58 + (k % 3) * 0.04, 0.95 + ((k % 2) - 0.5) * 0.36);
+  for (let k = 0; k < 14; k++) put(g, new THREE.IcosahedronGeometry(0.08, 0), M.blooms[k % 4], -1 + (k * 2) / 13, 0.58 + (k % 3) * 0.04, 0.95 + ((k % 2) - 0.5) * 0.2);
   ctx.root.add(g);
   ctx.groups.push(g);
   ctx.fixedBox(x, y + 0.8, z, 1.3, 0.8, 0.9);
@@ -163,11 +164,11 @@ export function phoneBox(ctx, at, faces = Math.PI) {
   const dome = put(g, new THREE.SphereGeometry(0.66, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2), M.red, 0, h + 0.1, 0);
   dome.scale.set(1, 0.28, 1);
   // Inside: the shelf, the telephone, its handset and cord, and a notice.
-  put(g, new THREE.BoxGeometry(0.5, 0.04, 0.2), M.iron, 0, 1.0, -half + 0.12);
-  put(g, new THREE.BoxGeometry(0.22, 0.22, 0.1), M.iron, 0, 1.15, -half + 0.1);
-  put(g, new THREE.BoxGeometry(0.05, 0.2, 0.05), M.iron, -0.15, 1.2, -half + 0.2);
-  put(g, new THREE.TorusGeometry(0.06, 0.008, 4, 10, Math.PI), M.iron, -0.15, 1.05, -half + 0.2);
-  put(g, new THREE.PlaneGeometry(0.25, 0.3), new THREE.MeshStandardMaterial({ map: noticeTexture(random, 'EMERGENCY', 4), roughness: 0.6 }), 0.28, 1.5, -half + 0.05);
+  put(g, new THREE.BoxGeometry(0.5, 0.04, 0.2), M.iron, 0, 1.0, -half + 0.1); // the shelf, its back edge in the wall's glazing bars
+  put(g, new THREE.BoxGeometry(0.22, 0.22, 0.1), M.iron, 0, 1.12, -half + 0.08); // the telephone's body on it
+  put(g, new THREE.BoxGeometry(0.05, 0.2, 0.05), M.iron, -0.15, 1.2, -half + 0.08); // the handset on its cradle
+  put(g, new THREE.TorusGeometry(0.06, 0.008, 4, 10, Math.PI), M.iron, -0.15, 1.1, -half + 0.08); // and its cord, looped down to the shelf
+  put(g, new THREE.PlaneGeometry(0.25, 0.3), new THREE.MeshStandardMaterial({ map: noticeTexture(random, 'EMERGENCY', 4), roughness: 0.6 }), 0.28, 1.5, -half + 0.025);
   ctx.root.add(g);
   ctx.groups.push(g);
   ctx.fixedBox(x, y + 1.25, z, 0.5, 1.25, 0.5);
@@ -197,18 +198,16 @@ export function streetBench(ctx, at, yaw = 0) {
   ctx.fixedBox(x, y + 0.45, z, 0.9, 0.45, 0.3);
 }
 
-/**
- * The 30 mph signs and the village signs on the lane's approach to Nether Thornby (`layout.village.approach.signs`): each a limit disc with the national limit on its
- * back, for the traffic leaving, or the village sign.
- */
+/** A limit disc on a post: `front` and `back` are mph, or 'national' for the national speed limit disc. */
+export function limitPost(ctx, spec) {
+  const tex = (v) => (v === 'national' ? nationalLimitTexture() : limitSignTexture(v));
+  signPost(ctx, spec.x, spec.z, spec.yaw, tex(spec.front), 0.75, 0.75, { round: true, height: 2.2, back: tex(spec.back) });
+}
+
+/** The 30 mph signs and the village signs on the lane's approach to Nether Thornby (`approachSignSpecs`). */
 export function approachSigns(ctx) {
-  const { S } = ctx;
-  const A = S.v.approach;
-  if (!A) return;
-  const disc = limitSignTexture(A.limit);
-  const national = nationalLimitTexture();
-  for (const s of A.signs) {
-    if (s.kind === 'village') villageSignAt(ctx, s.x, s.z, s.yaw);
-    else signPost(ctx, s.x, s.z, s.yaw, disc, 0.75, 0.75, { round: true, height: 2.2, back: national });
+  for (const s of approachSignSpecs(ctx.S.v)) {
+    if (s.village) villageSignAt(ctx, s.x, s.z, s.yaw);
+    else limitPost(ctx, s);
   }
 }

@@ -5,15 +5,14 @@
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { villageShape, roadMarks, roadLeadIn } from './village.js';
+import { villageShape, roadMarks, roadLeadIn, streetLimitSigns } from './village.js';
 import { roadStrip as sharedStrip, paintMarks as sharedMarks, kerbFace as sharedKerb } from './roadMesh.js';
 import { makeVillageMaterials } from './villageMaterials.js';
 import { buildCottage, buildPub, buildCarPark, buildShop, buildGarage } from './villageBuildings.js';
 import { buildHouse, HOUSE_DESIGNS } from './villageHouses.js';
 import { buildFarm } from './villageFarm.js';
-import { lampPost, signPost, villageSignAt, phoneBox, streetBench, approachSigns } from './villageFurniture.js';
+import { lampPost, signPost, limitPost, villageSignAt, phoneBox, streetBench, approachSigns } from './villageFurniture.js';
 import { limitSignTexture, roadClosedTexture, noticeTexture } from './villageTextures.js';
-import { nationalLimitTexture } from './roadSigns.js';
 import { worldBox } from './outbuildingProps.js';
 import { gateLeaf } from './neighbourFarmProps.js';
 import { enableShadows } from './assets.js';
@@ -560,17 +559,8 @@ export function buildVillage(c) {
       signPost(ctx, x, z, side * (S.eastward ? -1 : 1) < 0 ? Math.PI / 2 : -Math.PI / 2, limit, 0.75, 0.75, { round: true, height: 2.2 });
     }
   } else {
-    // The 20 mph limit (#537): one sign facing in at each end of the street (on the left of the way in), with the national limit on its back for the traffic leaving, and one
-    // repeater halfway along, 20 on both faces. The lane gets none: its 30 signs stand on the approach (`approachSigns`).
-    const national = nationalLimitTexture();
-    const east = S.eastward ? Math.PI / 2 : -Math.PI / 2;
-    const left = S.eastward ? -1 : 1; // the side of the street on the left of the way in from the lane
-    const posts = [
-      { ...at(18, left), yaw: east, back: national },
-      { ...at(S.road.length - 12, -left), yaw: east + Math.PI, back: national },
-      { ...at(Math.floor(S.road.length / 2), left), yaw: east, back: limit },
-    ];
-    for (const p of posts) if (!S.builtAt(p.x, p.z, 0.6)) signPost(ctx, p.x, p.z, p.yaw, limit, 0.75, 0.75, { round: true, height: 2.2, back: p.back });
+    // The 20 mph limit (#537), at the street's two ends and halfway; the lane gets none (its 30s are `approachSigns`).
+    for (const p of streetLimitSigns(S)) limitPost(ctx, p);
   }
   if (S.closed) {
     boundaryWalls(ctx);

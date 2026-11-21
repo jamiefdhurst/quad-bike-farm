@@ -100,3 +100,20 @@ describe('tp me neighbour (#569)', () => {
     expect(standIn().places().neighbour).toBeUndefined();
   });
 });
+
+describe('tp places on the village\'s approach (#819)', () => {
+  const approach = {
+    publicLane: { x: 385, open: { minZ: 0 } },
+    village: { approach: { signs: [{ x: 389.2, z: 121 }], farm: { gateway: { x: 412, z: 94.5 } } } },
+  };
+  it('has one on the lane 40 m before the north signs and one on the track in front of the small farm\'s gateway', () => {
+    const places = standIn(approach).places();
+    expect(places.approach).toEqual({ x: 385, z: 81 });
+    expect(places.smallfarm).toEqual({ x: 403, z: 94.5 });
+  });
+  it('has neither on today\'s farm, which has no approach', () => {
+    const today = standIn({ village: {} }).places();
+    expect(today.approach).toBeUndefined();
+    expect(today.smallfarm).toBeUndefined();
+  });
+});

@@ -142,7 +142,7 @@ export function buildCottage(ctx, b, index, { hollow = false } = {}) {
  * splayed legs that run from the ground up to the table's bearer, crossing and bolted to the bench bearers, with a brace between them. Every plank lies along its length
  * with its grain, and the two benches are mirrors of each other.
  */
-function picnicTable(ctx, x, z, parasol = null) {
+export function picnicTable(ctx, x, z, parasol = null) {
   const { M } = ctx;
   const y = ctx.heights.heightAt(x, z);
   const g = new THREE.Group();
@@ -555,7 +555,7 @@ function proxyAt(ctx, f, id, x, y, z, w, h, d) {
 }
 
 /** A pillar box: a red cast cylinder with a domed cap, a slot and a plate, on the pavement beside the shop. */
-function pillarBox(ctx, f, x, z) {
+export function pillarBox(ctx, f, x, z) {
   const { M, random } = ctx;
   f.add(new THREE.CylinderGeometry(0.33, 0.35, 0.2, 18), M.concrete, x, 0.0, z); // the plinth, sunk
   f.add(new THREE.CylinderGeometry(0.3, 0.3, 0.1, 18), M.red, x, 0.15, z); // the foot band
