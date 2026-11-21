@@ -90,6 +90,13 @@ export async function buildWorldModels() {
     const built = b(c);
     return found('village') ?? built?.root;
   });
+  // Nether Thornby on the new farm (#688, #819): its street's houses in their different designs, the lane's three houses and the small farm with its barn and walled yard.
+  {
+    const layoutVillage = (await import('../../src/world/layoutNew.js')).layoutNew(LAYOUT, RAW_LAYOUT);
+    const scene = new THREE.Scene();
+    const cNew = { ...c, scene, layout: layoutVillage, heights: createTerrainHeight(layoutVillage, new Track(layoutVillage.trackPoints)) };
+    add('world', 'villageNew', buildVillage, (b) => (b(cNew), scene.children.find((o) => o.name === 'village')));
+  }
   const { buildNeighbourFarm } = await import('../../src/world/neighbourFarmProps.js');
   add('setPiece', 'neighbourFarm', buildNeighbourFarm, (b) => (b(c), found('neighbourFarm')));
   const { buildRiverside } = await import('../../src/world/riverProps.js');

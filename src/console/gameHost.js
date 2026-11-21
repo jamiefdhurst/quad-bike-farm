@@ -230,6 +230,8 @@ export function createHost(g, { copy = () => {} } = {}) {
       neighbour: neighbourGate(layout), // just inside her gateway, looking into her yard
       village: layout.village?.green, // the green, between the pub and the shop
       carpark: layout.village?.pub?.stop, // the pub's car park
+      approach: layout.village?.approach ? { x: layout.publicLane.x, z: layout.village.approach.signs[0].z - 40 } : null, // the lane 40 m before the 30 signs at the village's north approach: the new farm's, #819
+      smallfarm: layout.village?.approach ? { x: layout.village.approach.farm.gateway.x - 9, z: layout.village.approach.farm.gateway.z } : null, // on the track in front of the small farm's gateway: the new farm's, #819
       rollingroad: g.trafficHost.places.rig.stand, // beside the tuner's trailer when it is set up (the Farm tab's "Send the tuner" brings it)
       motbay: g.villageHost.mot ? g.villageHost.mot.bay : null, // the MOT bay's middle at Hollis Motors (then `face <vehicle> 90` to sit it along the wall)
       mot: g.villageHost.mot ? g.villageHost.mot.stand() : null, // on foot before the MOT clipboard

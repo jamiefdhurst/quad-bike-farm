@@ -10,7 +10,7 @@ import { PARKED_SIZES } from './neighbourFarm.js';
 import { poseBaleSpike } from '../vehicle/tractorModel.js';
 import { MOT_BAY, forecourtMarkings } from './village.js';
 import { Frame, shellAndRoof, chimney, windowAt, bayWindow, doorAt, porch, dormer, flowerBox } from './villageKit.js';
-import { fasciaTexture, pubSignTexture, shopInteriorTexture, awningTexture, chalkBoardTexture, rollerDoorTexture, pumpFaceTexture, partPacketTexture, pumpSideTexture, pumpHeaderTexture, bollardTexture, priceBoardTexture, carParkTexture, noticeTexture } from './villageTextures.js';
+import { fasciaTexture, pubSignTexture, shopInteriorTexture, awningTexture, chalkBoardTexture, rollerDoorTexture, pumpFaceTexture, partPacketTexture, pumpSideTexture, pumpHeaderTexture, bollardTexture, priceBoardTexture, carParkTexture, carParkBays, noticeTexture, bladeSignTexture } from './villageTextures.js';
 
 void poseBaleSpike;
 
@@ -107,12 +107,11 @@ export function buildCottage(ctx, b, index, { hollow = false } = {}) {
     windowAt(sf, m, { x: 0, y: 1.6, w: 0.9, h: 1.1, wallZ: 0, face: 1, lintel });
     windowAt(sf, m, { x: 0, y: 3.45, w: 0.9, h: 1.0, wallZ: 0, face: 1, lintel });
   }
-  // Tubs of flowers by the door, a boot scraper and a bike leant on the wall.
+  // Tubs of flowers by the door.
   for (const sx of [-1, 1]) {
     f.add(new THREE.CylinderGeometry(0.2, 0.15, 0.32, 10), M.pot, sx * 1.05, 0.16, front + 0.55);
     for (let k = 0; k < 4; k++) f.add(new THREE.IcosahedronGeometry(0.1, 0), M.blooms[(k + index) % 4], sx * 1.05 + (k - 1.5) * 0.07, 0.4 + (k % 2) * 0.05, front + 0.55 + ((k % 3) - 1) * 0.06);
   }
-  if (index % 2) bicycle(ctx, f, 1.7, front + 0.18);
   // A hedge down each side and across the back, for a garden, no deeper than the village's wall leaves room for.
   const depth = ctx.S.gardenDepth(b);
   for (const sx of [-1, 1]) {
@@ -125,12 +124,10 @@ export function buildCottage(ctx, b, index, { hollow = false } = {}) {
   // A shed and a washing line out the back, where the garden is deep enough.
   if (depth >= 4) {
     const shedZ = back - depth * 0.6;
-    if (hollow) {
-      // The shed as boards round a hollow: two long sides, two ends and a floor.
-      for (const sz of [-1, 1]) f.box(2.2, 2.0, 0.06, M.weathered, b.halfX - 1.4, 1.0, shedZ + sz * 0.82, 1);
-      for (const sx of [-1, 1]) f.box(0.06, 2.0, 1.7, M.weathered, b.halfX - 1.4 + sx * 1.07, 1.0, shedZ, 1);
-      f.box(2.1, 0.06, 1.6, M.weathered, b.halfX - 1.4, 0.03, shedZ, 1);
-    } else f.box(2.2, 2.0, 1.7, M.weathered, b.halfX - 1.4, 1.0, shedZ, 1);
+    // The shed as boards round a hollow: two long sides, two ends and a floor (never a solid block, #819).
+    for (const sz of [-1, 1]) f.box(2.2, 2.0, 0.06, M.weathered, b.halfX - 1.4, 1.0, shedZ + sz * 0.82, 1);
+    for (const sx of [-1, 1]) f.box(0.06, 2.0, 1.7, M.weathered, b.halfX - 1.4 + sx * 1.07, 1.0, shedZ, 1);
+    f.box(2.1, 0.06, 1.6, M.weathered, b.halfX - 1.4, 0.03, shedZ, 1);
     const roofShed = f.box(2.5, 0.07, 2.0, M.lead, b.halfX - 1.4, 2.05, shedZ, 1);
     roofShed.rotation.x = 0.07;
     if (!hollow) f.solid(b.halfX - 1.4, 1, shedZ, 1.1, 1, 0.85);
@@ -138,55 +135,42 @@ export function buildCottage(ctx, b, index, { hollow = false } = {}) {
   return f;
 }
 
-/** A bicycle leant on a wall: two wheels, a frame, bars and a saddle. Local frame f, at (x, z) facing along x. */
-function bicycle(ctx, f, x, z) {
-  const { M } = ctx;
-  for (const dx of [-0.45, 0.45]) {
-    const w = f.add(new THREE.TorusGeometry(0.33, 0.02, 6, 20), M.iron, x + dx, 0.35, z);
-    w.rotation.x = 0;
-    f.add(new THREE.CylinderGeometry(0.01, 0.01, 0.66, 4), M.lead, x + dx, 0.35, z);
-  }
-  const tube = (a, b2) => {
-    const len = Math.hypot(b2[0] - a[0], b2[1] - a[1]);
-    const t = f.add(new THREE.CylinderGeometry(0.014, 0.014, len, 6), M.red, x + (a[0] + b2[0]) / 2, (a[1] + b2[1]) / 2, z);
-    t.rotation.z = Math.atan2(b2[0] - a[0], b2[1] - a[1]) * -1;
-  };
-  tube([-0.45, 0.35], [-0.1, 0.75]);
-  tube([-0.1, 0.75], [0.35, 0.72]);
-  tube([0.35, 0.72], [0.45, 0.35]);
-  tube([-0.45, 0.35], [0, 0.4]);
-  tube([0, 0.4], [-0.1, 0.75]);
-  f.box(0.2, 0.04, 0.09, M.iron, -0.12 + x, 0.8, z, 0.5);
-  f.box(0.04, 0.04, 0.5, M.iron, x + 0.37, 0.8, z, 0.5);
-}
-
 // The pub -------------------------------------------------------------------------------------------------------------------------------
 
-/** A picnic table with attached benches at the world position, its long side along x, the legs on the ground. */
-function picnicTable(ctx, x, z, parasol = null) {
+/**
+ * A picnic table at the world position, its long side along x: five top planks on two bearers, a bench plank each side on its own bearers, and at each end an A of two
+ * splayed legs that run from the ground up to the table's bearer, crossing and bolted to the bench bearers, with a brace between them. Every plank lies along its length
+ * with its grain, and the two benches are mirrors of each other.
+ */
+export function picnicTable(ctx, x, z, parasol = null) {
   const { M } = ctx;
   const y = ctx.heights.heightAt(x, z);
   const g = new THREE.Group();
   g.position.set(x, y, z);
-  const box = (w, h, d, px, py, pz, rot = 0) => {
-    const o = new THREE.Mesh(worldBox(w, h, d, 0.6), M.timber);
+  const box = (w, h, d, px, py, pz, mat = M.timber) => {
+    const o = new THREE.Mesh(worldBox(w, h, d, 0.6), mat);
     o.position.set(px, py, pz);
-    o.rotation.z = rot;
     g.add(o);
     return o;
   };
-  for (const dz of [-0.1, 0.1]) box(1.9, 0.045, 0.14, 0, 0.76, dz * 2.2 + 0); // table top planks
-  box(1.9, 0.045, 0.14, 0, 0.76, 0);
-  box(1.9, 0.045, 0.14, 0, 0.76, -0.2);
-  box(1.9, 0.045, 0.14, 0, 0.76, 0.2);
-  for (const dz of [-0.62, 0.62]) {
-    box(1.9, 0.04, 0.26, 0, 0.46, dz); // bench seats
-    for (const sx of [-0.7, 0.7]) {
-      const leg = box(0.06, 0.8, 0.06, sx, 0.4, dz * 0.55);
-      leg.rotation.x = dz > 0 ? 0.25 : -0.25;
+  const L = 1.9;
+  for (let k = -2; k <= 2; k++) box(L, 0.045, 0.14, 0, 0.77, k * 0.155); // the table top
+  for (const sz of [-1, 1]) {
+    box(L, 0.04, 0.27, 0, 0.47, sz * 0.7); // the bench
+    for (const sx of [-1, 1]) {
+      box(0.06, 0.06, 1.7, sx * 0.72, 0.43, 0); // the bench bearers: one under both benches at each end, so they are tied together
+      box(0.06, 0.06, 0.07, sx * 0.72, 0.43, sz * 0.7, M.iron); // the bolt through the bench
+      // The leg: from the ground at the bench's outer side up to the table bearer, its top toward the middle.
+      const run = 0.62;
+      const rise = 0.77;
+      const leg = box(0.06, Math.hypot(run, rise) + 0.04, 0.06, sx * 0.72, rise / 2 + 0.01, sz * (0.84 - run / 2));
+      leg.rotation.x = -sz * Math.atan2(run, rise);
     }
   }
-  for (const sx of [-0.7, 0.7]) box(0.05, 0.05, 1.5, sx, 0.26, 0); // cross bearers
+  for (const sx of [-1, 1]) {
+    box(0.06, 0.06, 1.16, sx * 0.72, 0.73, 0); // the table's bearer, under the top
+    box(0.05, 0.05, 0.8, sx * 0.72, 0.2, 0); // the brace low between the legs
+  }
   if (parasol) {
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 2.2, 6), M.iron);
     pole.position.set(0, 1.1, 0);
@@ -268,7 +252,9 @@ export function buildPub(ctx, b) {
     windowAt(f, m, { x, y: 1.7, w: 1.0, h: 1.2, wallZ: back, face: -1 });
     windowAt(f, m, { x, y: 4.2, w: 1.0, h: 1.3, wallZ: back, face: -1 });
   }
-  f.box(7, 3.2, 3, M.renders['#ece5d0'], 0, 1.6 - 0.2, back - 1.5, 1.2);
+  // The kitchen extension: three rendered walls (the pub's own back wall is the fourth) under the lead roof, not a solid block.
+  f.box(7, 3.2, 0.25, M.renders['#ece5d0'], 0, 1.6 - 0.2, back - 2.875, 1.2);
+  for (const sx of [-1, 1]) f.box(0.25, 3.2, 3, M.renders['#ece5d0'], sx * 3.375, 1.6 - 0.2, back - 1.5, 1.2);
   f.box(7.4, 0.2, 3.4, M.lead, 0, 3.25, back - 1.5, 1);
   f.add(new THREE.CylinderGeometry(0.16, 0.16, 1.8, 10), M.lead, 1.8, 4.1, back - 1.5);
   f.add(new THREE.CylinderGeometry(0.21, 0.16, 0.12, 10), M.lead, 1.8, 5.0, back - 1.5);
@@ -322,7 +308,8 @@ export function buildCarPark(ctx) {
   const cx = (c.minX + c.maxX) / 2;
   const cz = (c.minZ + c.maxZ) / 2;
   const y = heights.heightAt(cx, cz);
-  const tex = carParkTexture(random, w, d);
+  const entryLocal = [c.entry.minX - c.minX, c.entry.maxX - c.minX];
+  const tex = carParkTexture(random, w, d, entryLocal);
   const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.92, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   plane.rotation.x = -Math.PI / 2;
   plane.position.set(cx, y + 0.06, cz);
@@ -376,25 +363,29 @@ export function buildCarPark(ctx) {
   apron.receiveShadow = true;
   apron.frustumCulled = false;
   ctx.root.add(apron);
-  // Cars in the bays, nose to the hedge. The farm's own models, like the neighbour's yard.
-  const bw = (w - 2) / 6;
-  const parked = [
-    { bay: 1, kind: 'tor', colour: 0x3d5a80, reg: 'M227 BDK' },
-    { bay: 3, kind: 'utv', colour: 0x8a3b2e },
-    { bay: 4, kind: 'tor', colour: 0xc9c3b0, reg: 'E158 NFA' },
-  ];
+  // Cars in some of the bays: a different few every time, of the farm's two kinds in different colours and plates, nose to the hedge in the north row and to the road in
+  // the south. The disabled bay is left for a blue badge.
+  const bays = carParkBays(w, d, entryLocal).filter((bay) => !bay.disabled);
+  const kinds = ['tor', 'utv', 'tor'];
+  const colours = [0x3d5a80, 0x8a3b2e, 0xc9c3b0, 0x2f4a3a, 0x6a6e72, 0x9a7b2e, 0x7a2a22, 0x20262c];
+  const letters = 'ABCDEFGHJKLMNPRSTUVWXY';
+  const pick = (list) => list[Math.floor(random() * list.length)];
+  const reg = () => `${pick(letters)}${Math.floor(random() * 90) + 10}${pick(letters)} ${pick(letters)}${pick(letters)}${pick(letters)}`;
+  const taken = bays.map((bay) => ({ bay, r: random() })).sort((p, q) => p.r - q.r).slice(0, 3); // three, as before: each car is a good many draw calls
   const cars = [];
-  for (const p of parked) {
-    const body = buildVehicleBody(p.kind, p.colour, p.reg ?? null);
-    const px = c.minX + 1 + (p.bay + 0.5) * bw;
-    const pz = c.minZ + 2.6;
+  for (const { bay } of taken) {
+    const kind = pick(kinds);
+    const colour = pick(colours);
+    const body = buildVehicleBody(kind, colour, kind === 'tor' ? reg() : null);
+    const px = c.minX + bay.x + bay.w / 2;
+    const pz = c.minZ + bay.z + bay.d / 2;
     const gy = y + 0.06;
     body.object.position.set(px, gy - body.spec.offset - (body.spec.layout.spawnSag ?? 0), pz);
-    body.object.rotation.y = Math.PI;
+    body.object.rotation.y = bay.row === 'north' ? Math.PI : 0;
     ctx.root.add(body.object);
-    const size = PARKED_SIZES[p.kind];
+    const size = PARKED_SIZES[kind];
     ctx.fixedBox(px, gy + size.h / 2, pz, size.hw, size.h / 2, size.hl);
-    cars.push({ ...p, x: px, z: pz, object: body.object });
+    cars.push({ bay: bay.x, kind, colour, x: px, z: pz, object: body.object });
   }
   return cars;
 }
@@ -531,10 +522,26 @@ export function buildShop(ctx, b) {
   crate(-3.8, halfZ + 0.9, 0x6aa04a);
   crate(-3.0, halfZ + 1.0, 0xd89a2a);
   f.box(0.8, 0.9, 0.35, M.weathered, 0.4, 0.45, halfZ + 0.35, 0.6);
-  // The "Post Office" blade sign, hung from the corner on an arm, double sided.
-  const blade = f.add(new THREE.PlaneGeometry(0.7, 0.9), signMaterial(ctx, fasciaTexture(random, { text: 'POST', sub: 'OFFICE', bg: '#b4141b', fg: '#f6efe0', accent: '#f6efe0', width: 384, height: 480, font: 'bold 120px Arial, Helvetica, sans-serif' }), 0.3), halfX + 0.55, 3.6, halfZ - 0.45);
-  blade.rotation.y = Math.PI / 2;
-  f.box(0.05, 0.05, 0.9, M.iron, halfX + 0.3, 4.1, halfZ - 0.3, 0.6);
+  // The "Post Office" blade sign: an iron bracket out of the front wall near the corner, on a plate screwed to the wall, and the double-sided board hung from it on two hangers.
+  {
+    const bx = halfX - 0.7;
+    const armY = 4.95;
+    const bz = halfZ + 0.62;
+    f.box(0.12, 0.5, 0.05, M.iron, bx, armY - 0.1, halfZ + 0.02, 0.6); // the wall plate
+    f.box(0.06, 0.06, 1.3, M.iron, bx, armY, halfZ + 0.62, 0.6); // the arm
+    const brace = f.box(0.04, 0.04, 0.9, M.iron, bx, armY - 0.35, halfZ + 0.4, 0.6); // the stay from the wall plate up under the arm
+    brace.rotation.x = -0.45;
+    f.add(new THREE.SphereGeometry(0.05, 8, 6), M.iron, bx, armY, halfZ + 1.27); // the finial
+    for (const dz of [-0.27, 0.27]) f.add(new THREE.CylinderGeometry(0.01, 0.01, 0.24, 5), M.iron, bx, armY - 0.12, bz + dz); // the hangers, sunk into the arm and the board
+    const bh = 0.9;
+    const cy = armY - 0.2 - bh / 2;
+    f.box(0.06, bh + 0.08, 0.76, M.paintDark, bx, cy, bz, 0.6);
+    const mat = signMaterial(ctx, bladeSignTexture(random, ['POST', 'OFFICE']), 0.3);
+    for (const s of [-1, 1]) {
+      const plane = f.add(new THREE.PlaneGeometry(0.72, bh), mat, bx + s * 0.033, cy, bz);
+      plane.rotation.y = (s * Math.PI) / 2;
+    }
+  }
   return f;
 }
 
@@ -548,14 +555,18 @@ function proxyAt(ctx, f, id, x, y, z, w, h, d) {
 }
 
 /** A pillar box: a red cast cylinder with a domed cap, a slot and a plate, on the pavement beside the shop. */
-function pillarBox(ctx, f, x, z) {
-  const { M } = ctx;
-  f.add(new THREE.CylinderGeometry(0.3, 0.32, 0.12, 16), M.iron, x, 0.06, z);
-  f.add(new THREE.CylinderGeometry(0.27, 0.27, 1.05, 16), M.red, x, 0.65, z);
-  f.add(new THREE.SphereGeometry(0.27, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), M.red, x, 1.18, z);
-  f.add(new THREE.CylinderGeometry(0.075, 0.075, 0.07, 10), M.red, x, 1.46, z);
-  f.add(new THREE.BoxGeometry(0.3, 0.04, 0.04), M.iron, x, 0.95, z + 0.275); // the slot
-  f.add(new THREE.BoxGeometry(0.16, 0.12, 0.02), M.paint, x, 0.55, z + 0.27); // the plate
+export function pillarBox(ctx, f, x, z) {
+  const { M, random } = ctx;
+  f.add(new THREE.CylinderGeometry(0.33, 0.35, 0.2, 18), M.concrete, x, 0.0, z); // the plinth, sunk
+  f.add(new THREE.CylinderGeometry(0.3, 0.3, 0.1, 18), M.red, x, 0.15, z); // the foot band
+  f.add(new THREE.CylinderGeometry(0.26, 0.26, 1.0, 18), M.red, x, 0.65, z); // the body
+  f.add(new THREE.CylinderGeometry(0.3, 0.3, 0.06, 18), M.red, x, 1.13, z); // the rim the cap sits on
+  const cap = f.add(new THREE.SphereGeometry(0.28, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2), M.red, x, 1.15, z);
+  cap.scale.set(1, 0.7, 1);
+  f.add(new THREE.CylinderGeometry(0.06, 0.07, 0.07, 10), M.red, x, 1.38, z); // the finial
+  f.add(new THREE.BoxGeometry(0.36, 0.1, 0.05), M.paintDark, x, 0.92, z + 0.255); // the letter aperture, dark
+  f.add(new THREE.BoxGeometry(0.42, 0.035, 0.1), M.red, x, 0.99, z + 0.27); // and its hood
+  f.add(new THREE.PlaneGeometry(0.2, 0.14), new THREE.MeshStandardMaterial({ map: noticeTexture(random, 'LAST COLLECTION', 3), roughness: 0.6 }), x, 0.6, z + 0.262); // the collection plate
   f.solid(x, 0.75, z, 0.3, 0.75, 0.3);
 }
 

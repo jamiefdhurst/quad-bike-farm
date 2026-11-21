@@ -2060,6 +2060,16 @@ export const FAQ_SECTIONS = [
         tip: 'Nether Thornby is down the lane, past the neighbour. Turn right at the village sign.',
       },
       {
+        q: 'What do I pass on the way into Nether Thornby on the new farm?',
+        a: `On the new farm (<code>?layout=2</code>) the village builds up as you arrive. Coming south down the lane you pass a pair of 30 mph signs and the village sign ("Nether Thornby, please drive carefully"), then three houses on the east side, each behind a front garden with a hedge, a gate and a path (a brick house with a gable at the front, a thatched cottage and a bungalow), and a small farm with a stone farmhouse, a stone barn and a walled yard, its gateway on a track from the lane. The garage is further on, then the junction with the village street. Come in from the A-road along the street and there are 30 mph signs and a village sign there too. Inside the village the limit is 20: a sign faces you at each end of the street and one halfway along, and the back of each sign shows the national speed limit to the traffic leaving.`,
+        tip: 'The village builds up as you drive in: 30 signs, three houses, a small farm, then the garage and the street.',
+      },
+      {
+        q: 'Why are the village houses all different?',
+        a: `They are meant to look like a village that grew over a long time: plain brick, render and stone cottages, a thatched cottage, a larger house with a gable at the front, bungalows, and a terrace of three with a door each in its own colour, with the end of the street opposite the pub filled in with another house and a bench. Each has its own hedge and garden; the lane's three have a gate and a path to the door. You cannot go inside any of them.`,
+        tip: 'The houses are different on purpose: thatched, gabled, bungalow and terrace, as a real village is.',
+      },
+      {
         q: 'What is in the village, and what can I buy?',
         a: `The garage, Hollis Motors, has three pumps on a forecourt: two unleaded and one diesel. Stand by one with a jerry can in your hands and hold <kbd>E</kbd> to fill it. The litres are paid for out of the farm's money tin as they go in, at the price on the pump, and filling stops if the tin runs dry. Pargeter's Stores, the shop and post office, is open to walk into: look at the jar of sweets on the counter and press <kbd>E</kbd> to buy the girls a bag, or at the pasty warmer for two hot pasties, one each. Both girls like being treated, and a pasty takes the chill off. Buying again straight away does not please them as much, so the shop makes you wait a few minutes. The garage also has a parts rack on its front wall, between the roller door and the office: look at the spark plugs, inner tubes or drive belts and press <kbd>E</kbd> to buy one, or at the stack of tyres by the roller door for a quad tyre. It is paid for out of the tin and goes straight onto the parts rack at the barn, so you do not have to wait for the post van. It will not sell you one if the barn's rack could not hold it. The pub, the Plough and Harrow, has a car park and a beer garden but no door you can walk through yet.`,
         tip: 'Hollis Motors sells petrol, diesel and a few parts; Pargeter\'s Stores sells treats for the girls.',

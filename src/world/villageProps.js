@@ -5,11 +5,14 @@
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { villageShape, roadMarks, roadLeadIn } from './village.js';
+import { villageShape, roadMarks, roadLeadIn, streetLimitSigns } from './village.js';
 import { roadStrip as sharedStrip, paintMarks as sharedMarks, kerbFace as sharedKerb } from './roadMesh.js';
 import { makeVillageMaterials } from './villageMaterials.js';
-import { buildCottage, buildPub, buildCarPark, buildShop, buildGarage, frameFor, signMaterial } from './villageBuildings.js';
-import { villageSignTexture, limitSignTexture, roadClosedTexture, noticeTexture } from './villageTextures.js';
+import { buildCottage, buildPub, buildCarPark, buildShop, buildGarage } from './villageBuildings.js';
+import { buildHouse, HOUSE_DESIGNS } from './villageHouses.js';
+import { buildFarm } from './villageFarm.js';
+import { lampPost, signPost, limitPost, villageSignAt, phoneBox, streetBench, approachSigns } from './villageFurniture.js';
+import { limitSignTexture, roadClosedTexture, noticeTexture } from './villageTextures.js';
 import { worldBox } from './outbuildingProps.js';
 import { gateLeaf } from './neighbourFarmProps.js';
 import { enableShadows } from './assets.js';
@@ -104,133 +107,6 @@ function groundPatch(ctx, x0, z0, x1, z1, lift, material) {
 /** A vertical face along the road at offset `off`, from `y0` to `y1` over the ground: a kerb. */
 function kerbFace(ctx, off, y0, y1, material, opts) {
   ctx.root.add(sharedKerb({ samples: ctx.S.road, heights: ctx.heights }, off, y0, y1, material, opts));
-}
-
-/** A cast-iron lamp post at (x, z) with its arm over the road: a fluted base, a tapering post, a scroll bracket and a glowing lantern. */
-function lampPost(ctx, x, z, towards) {
-  const { M, heights } = ctx;
-  const y = heights.heightAt(x, z);
-  const g = new THREE.Group();
-  g.position.set(x, y, z);
-  g.rotation.y = Math.atan2(towards.x - x, towards.z - z);
-  const add = (geo, mat, px, py, pz) => {
-    const o = new THREE.Mesh(geo, mat);
-    o.position.set(px, py, pz);
-    g.add(o);
-    return o;
-  };
-  add(new THREE.CylinderGeometry(0.17, 0.2, 0.7, 8), M.iron, 0, 0.35, 0);
-  add(new THREE.CylinderGeometry(0.2, 0.2, 0.06, 8), M.iron, 0, 0.72, 0);
-  add(new THREE.CylinderGeometry(0.06, 0.11, 3.1, 8), M.iron, 0, 2.2, 0);
-  add(new THREE.CylinderGeometry(0.09, 0.09, 0.05, 8), M.iron, 0, 3.78, 0);
-  const arm = add(new THREE.CylinderGeometry(0.025, 0.025, 0.9, 6), M.iron, 0, 3.9, 0.4);
-  arm.rotation.x = Math.PI / 2;
-  const curl = add(new THREE.TorusGeometry(0.28, 0.02, 6, 12, Math.PI / 2), M.iron, 0, 3.55, 0.28);
-  curl.rotation.y = Math.PI / 2;
-  add(new THREE.CylinderGeometry(0.14, 0.09, 0.3, 6), M.lampGlow, 0, 3.72, 0.8);
-  add(new THREE.ConeGeometry(0.2, 0.14, 6), M.iron, 0, 3.94, 0.8);
-  add(new THREE.SphereGeometry(0.03, 6, 4), M.iron, 0, 4.03, 0.8);
-  ctx.furniture.add(g);
-  ctx.fixedBox(x, y + 1.6, z, 0.14, 1.6, 0.14);
-}
-
-/** A sign on a post at (x, z), its face turned to look along `yaw` (0 looks south, +z): a round limit sign, a board or a roadside notice. */
-function signPost(ctx, x, z, yaw, texture, w, h, { height = 2.1, round = false } = {}) {
-  const { M, heights } = ctx;
-  const y = heights.heightAt(x, z);
-  const g = new THREE.Group();
-  g.position.set(x, y, z);
-  g.rotation.y = yaw;
-  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, height + 0.3, 8), M.lead);
-  post.position.y = (height + 0.3) / 2 - 0.1;
-  g.add(post);
-  const face = new THREE.Mesh(round ? new THREE.CircleGeometry(w / 2, 24) : new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: texture, roughness: 0.5, metalness: 0.1 }));
-  face.position.set(0, height - h / 2 + 0.1, 0.05);
-  g.add(face);
-  const back = new THREE.Mesh(round ? new THREE.CircleGeometry(w / 2, 24) : new THREE.PlaneGeometry(w, h), M.lead);
-  back.position.set(0, height - h / 2 + 0.1, 0.04);
-  back.rotation.y = Math.PI;
-  g.add(back);
-  const ring = new THREE.Mesh(round ? new THREE.TorusGeometry(w / 2, 0.012, 6, 28) : new THREE.BoxGeometry(w + 0.02, h + 0.02, 0.02), M.lead);
-  ring.position.set(0, height - h / 2 + 0.1, 0.045);
-  g.add(ring);
-  ctx.furniture.add(g);
-  ctx.fixedBox(x, y + 1, z, 0.08, 1.1, 0.08);
-}
-
-/** The village entrance sign: a painted board on two posts with a little tiled roof, facing the traffic coming in from the lane. */
-function villageSign(ctx) {
-  const { M, S, heights, random } = ctx;
-  const { x, z } = S.v.sign;
-  const y = heights.heightAt(x, z);
-  const g = new THREE.Group();
-  g.position.set(x, y, z);
-  g.rotation.y = S.eastward ? -Math.PI / 2 : Math.PI / 2; // looks towards the lane, to the traffic coming in
-  const box = (w, h, d, mat, px, py, pz) => {
-    const o = new THREE.Mesh(worldBox(w, h, d, 0.6), mat);
-    o.position.set(px, py, pz);
-    g.add(o);
-    return o;
-  };
-  for (const sx of [-1, 1]) box(0.14, 2.7, 0.14, M.timber, sx * 1.1, 1.35, 0);
-  box(2.5, 0.2, 0.18, M.timber, 0, 2.62, 0);
-  const board = new THREE.Mesh(new THREE.PlaneGeometry(1.95, 1.3), signMaterial(ctx, villageSignTexture(random, S.name), 0.2));
-  board.position.set(0, 1.78, 0.1);
-  g.add(board);
-  const back = new THREE.Mesh(new THREE.PlaneGeometry(1.95, 1.3), signMaterial(ctx, villageSignTexture(random, S.name), 0.2));
-  back.position.set(0, 1.78, -0.1);
-  back.rotation.y = Math.PI;
-  g.add(back);
-  box(2.1, 1.4, 0.16, M.paintDark, 0, 1.78, 0);
-  // The little roof: two boards in a ridge over the top, and a finial.
-  for (const s of [-1, 1]) {
-    const roof = box(1.7, 0.06, 0.8, M.clay, 0, 2.95, s * 0.32);
-    roof.rotation.x = s * 0.5;
-  }
-  box(2.9, 0.08, 0.1, M.timber, 0, 3.15, 0);
-  // A flower bed in front of it.
-  box(2.4, 0.3, 0.9, M.stone, 0, 0.15, 0.95);
-  for (let k = 0; k < 14; k++) {
-    const b = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 0), M.blooms[k % 4]);
-    b.position.set(-1 + (k * 2) / 13, 0.38 + (k % 3) * 0.04, 0.95 + ((k % 2) - 0.5) * 0.4);
-    g.add(b);
-  }
-  ctx.root.add(g);
-  ctx.groups.push(g);
-  ctx.fixedBox(x, y + 0.8, z, 0.5, 0.8, 1.3);
-}
-
-/** A telephone box: red cast frame, eight panes a side, a domed roof with the crown plate, and a lit lamp inside after dark. */
-function phoneBox(ctx) {
-  const { M, S, heights } = ctx;
-  const { x, z } = S.v.phone;
-  const y = heights.heightAt(x, z);
-  const g = new THREE.Group();
-  g.position.set(x, y, z);
-  g.rotation.y = Math.PI; // the door faces the road (north)
-  const w = 0.95;
-  const h = 2.4;
-  const add = (geo, mat, px, py, pz) => {
-    const o = new THREE.Mesh(geo, mat);
-    o.position.set(px, py, pz);
-    g.add(o);
-    return o;
-  };
-  add(new THREE.BoxGeometry(w + 0.1, 0.12, w + 0.1), M.red, 0, 0.06, 0);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) add(new THREE.BoxGeometry(0.07, h, 0.07), M.red, sx * w / 2, h / 2, sz * w / 2);
-  for (const side of [0, 1, 2, 3]) {
-    const pane = add(new THREE.PlaneGeometry(w - 0.08, h - 0.2), M.phoneGlow, 0, h / 2 + 0.02, 0);
-    pane.rotation.y = (side * Math.PI) / 2;
-    pane.position.set(Math.sin((side * Math.PI) / 2) * (w / 2 - 0.02), h / 2 + 0.02, Math.cos((side * Math.PI) / 2) * (w / 2 - 0.02));
-  }
-  add(new THREE.BoxGeometry(w + 0.18, 0.2, w + 0.18), M.red, 0, h + 0.1, 0);
-  const dome = add(new THREE.ConeGeometry((w + 0.18) * 0.72, 0.32, 4), M.red, 0, h + 0.36, 0);
-  dome.rotation.y = Math.PI / 4;
-  add(new THREE.BoxGeometry(0.4, 0.2, 0.03), M.paint, 0, h + 0.02, w / 2 + 0.06); // the TELEPHONE sign
-  add(new THREE.BoxGeometry(0.3, 0.3, 0.3), M.iron, 0.3, 1.0, -0.3); // the phone
-  ctx.root.add(g);
-  ctx.groups.push(g);
-  ctx.fixedBox(x, y + 1.25, z, 0.5, 1.25, 0.5);
 }
 
 /** A bus shelter: timber posts and roof rail, glazed back and ends, a bench, a timetable, facing the road. */
@@ -534,10 +410,11 @@ function roadEnd(ctx) {
 /** The village from afar (world/farVersion.js): each building a box with a gabled roof in the colour of its walls and its roof. */
 const WALLS = { stone: '#8c877a', brick: '#9a5c48' };
 export function farVillage(S, heights) {
-  const buildings = S.buildings.map((b) => {
-    const wall = b.kind === 'cottage' ? (b.wall === 'render' ? b.paint : WALLS[b.wall]) : b.kind === 'shop' ? WALLS.brick : b.kind === 'pub' ? '#ece5d0' : WALLS.brick;
-    const roof = b.kind === 'garage' ? '#8d9294' : b.kind === 'cottage' && b.wall !== 'stone' ? '#a85a3e' : '#42474c';
-    return { x: b.x, z: b.z, y: heights.heightAt(b.x, b.z), halfX: b.halfX, halfZ: b.halfZ, wallHeight: b.wallHeight, ridge: b.ridge, wall, roof };
+  const buildings = [...S.buildings, ...S.laneBuildings].map((b) => {
+    const wall = b.kind === 'cottage' || b.kind === 'farmhouse' || b.kind === 'barn' ? (b.wall === 'render' ? b.paint : WALLS[b.wall]) : b.kind === 'shop' ? WALLS.brick : b.kind === 'pub' ? '#ece5d0' : WALLS.brick;
+    const roof = b.kind === 'garage' || b.kind === 'barn' ? '#8d9294' : b.design === 'thatched' ? '#8a7440' : b.kind === 'cottage' && b.wall !== 'stone' ? '#a85a3e' : '#42474c';
+    const turned = Math.abs(Math.sin(b.yaw ?? 0)) > 0.5; // a house facing the lane has its frontage along z
+    return { x: b.x, z: b.z, y: heights.heightAt(b.x, b.z), halfX: turned ? b.halfZ : b.halfX, halfZ: turned ? b.halfX : b.halfZ, wallHeight: b.wallHeight, ridge: b.ridge, wall, roof };
   });
   return buildFarVersion('villageFar', { buildings });
 }
@@ -548,8 +425,9 @@ export function buildVillage(c) {
   if (!S) return null;
   const root = new THREE.Group();
   root.name = 'village';
-  const doorColours = ['#2d4a3a', '#7a1f2b', ...layout.village.cottages.map((b) => b.door)];
-  const renders = ['#ece5d0', ...layout.village.cottages.filter((b) => b.paint).map((b) => b.paint)];
+  const homes = [...layout.village.cottages, ...(layout.village.approach?.houses ?? []), ...(layout.village.approach ? [layout.village.approach.farm.house] : [])];
+  const doorColours = ['#2d4a3a', '#7a1f2b', ...homes.flatMap((b) => [b.door, ...(b.doors ?? [])])];
+  const renders = ['#ece5d0', ...homes.filter((b) => b.paint).map((b) => b.paint)];
   const M = makeVillageMaterials(random, { doorColours: [...new Set(doorColours)], renders: [...new Set(renders)] });
   const tarmac = new THREE.CanvasTexture(c.laneTexture());
   tarmac.wrapS = tarmac.wrapT = THREE.RepeatWrapping;
@@ -635,7 +513,9 @@ export function buildVillage(c) {
   }
 
   // Buildings.
-  S.buildings.filter((b) => b.kind === 'cottage').forEach((b, i) => buildCottage(ctx, b, i));
+  // The street's cottages and the lane's houses: the plain pair of storeys, or one of the other designs (#543).
+  [...S.buildings.filter((b) => b.kind === 'cottage'), ...S.laneBuildings.filter((b) => b.kind !== 'barn')].forEach((b, i) => (HOUSE_DESIGNS.includes(b.design) ? buildHouse(ctx, b, i) : buildCottage(ctx, b, i)));
+  buildFarm(ctx);
   buildPub(ctx, S.pub);
   const cars = buildCarPark(ctx);
   buildShop(ctx, S.shop);
@@ -653,19 +533,34 @@ export function buildVillage(c) {
     if (skipFor(side)(p) || S.builtAt(x, z, 0.3)) continue;
     lampPost(ctx, x, z, { x: p.x, z: p.z });
   }
-  phoneBox(ctx);
+  phoneBox(ctx, S.v.phone);
   busShelter(ctx);
   green(ctx);
-  villageSign(ctx);
-  // The 20 mph limit: a sign each side as you turn in, and repeaters (a 20 on a lamp-height post) through the village.
+  // The village sign at the junction, facing the traffic coming in from the lane, and one on the other side of the street too (#537).
+  const signYaw = S.eastward ? -Math.PI / 2 : Math.PI / 2;
+  villageSignAt(ctx, S.v.sign.x, S.v.sign.z, signYaw);
+  if (!S.closed) {
+    const at = S.roadAt(S.v.sign.x, S.v.sign.z).at;
+    villageSignAt(ctx, S.v.sign.x, 2 * at.z - S.v.sign.z, signYaw);
+    streetBench(ctx, S.v.farBench, 0);
+    approachSigns(ctx);
+  }
   const limit = limitSignTexture(S.limit);
-  for (const [i, side] of S.closed ? [[18, 1], [18, -1], [58, 1], [92, -1]] : [[18, 1], [18, -1], [58, 1], [92, -1], [170, 1], [250, -1]]) {
+  const at = (i, side) => {
     const p = S.road[Math.min(S.road.length - 2, i)];
     const off = side * (curb + 0.1);
-    const x = p.x + -p.tz * off;
-    const z = p.z + p.tx * off;
-    if (S.builtAt(x, z, 0.6)) continue;
-    signPost(ctx, x, z, side * (S.eastward ? -1 : 1) < 0 ? Math.PI / 2 : -Math.PI / 2, limit, 0.75, 0.75, { round: true, height: 2.2 });
+    return { x: p.x + -p.tz * off, z: p.z + p.tx * off };
+  };
+  if (S.closed) {
+    // A sign each side as you turn in, and repeaters (a 20 on a lamp-height post) through the village.
+    for (const [i, side] of [[18, 1], [18, -1], [58, 1], [92, -1]]) {
+      const { x, z } = at(i, side);
+      if (S.builtAt(x, z, 0.6)) continue;
+      signPost(ctx, x, z, side * (S.eastward ? -1 : 1) < 0 ? Math.PI / 2 : -Math.PI / 2, limit, 0.75, 0.75, { round: true, height: 2.2 });
+    }
+  } else {
+    // The 20 mph limit (#537), at the street's two ends and halfway; the lane gets none (its 30s are `approachSigns`).
+    for (const p of streetLimitSigns(S)) limitPost(ctx, p);
   }
   if (S.closed) {
     boundaryWalls(ctx);

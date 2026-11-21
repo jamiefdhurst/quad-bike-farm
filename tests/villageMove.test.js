@@ -162,19 +162,19 @@ describe('what stands along the street', () => {
     expect(Math.hypot(S.v.sign.x - S.road[0].x, S.v.sign.z - S.road[0].z)).toBeLessThan(20);
   });
 
-  it('puts eleven cottages along it, the north side from x 1052 to 1200 and the south from 1036 to 1162, each facing the street', () => {
+  it('puts twelve houses along it, the north side from x 1052 to 1226 and the south from 1036 to 1171, each facing the street', () => {
     const cottages = S.buildings.filter((b) => b.kind === 'cottage');
-    expect(cottages).toHaveLength(11);
+    expect(cottages).toHaveLength(12);
     const north = cottages.filter((b) => b.yaw === 0);
     const south = cottages.filter((b) => Math.abs(b.yaw - Math.PI) < 1e-6);
-    expect(north).toHaveLength(6);
+    expect(north).toHaveLength(7);
     expect(south).toHaveLength(5);
     for (const b of north) {
-      expect(inPlanRect(b.outer, [1052, 690, 1200, 704]), b.id).toBe(true);
+      expect(inPlanRect(b.outer, [1052, 690, 1226, 704]), b.id).toBe(true);
       expect(b.z, b.id).toBeLessThan(S.roadAt(b.x, b.z).at.z); // north of the street, its front (+z) to it
     }
     for (const b of south) {
-      expect(inPlanRect(b.outer, [1036, 725, 1162, 736]), b.id).toBe(true);
+      expect(inPlanRect(b.outer, [1036, 725, 1171, 736]), b.id).toBe(true);
       expect(b.z, b.id).toBeGreaterThan(S.roadAt(b.x, b.z).at.z);
     }
   });

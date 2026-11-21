@@ -14,9 +14,7 @@ import { SET_PIECE_NAMES, BARN_PROP_NAMES } from '../src/world/farDetail.js';
 // there now; a new thing that fails needs its detail, not a bigger allowance: read .claude/rules/looks.md.
 
 /** Existing models with a solid box of 1.5 m or more on every side, with what it is; each is for a detail item to fix and then remove. Never add a new thing here. */
-const KNOWN_BLOCKS = {
-  village: 'the garden sheds behind three cottages (2.2 x 2.0 x 1.7 m weathered boxes) and the pub\'s rendered back extension (7 x 3.2 x 3 m)',
-};
+const KNOWN_BLOCKS = {};
 
 /** Existing models with too few parts or triangles for their size, with why; each is for a detail item to fix and then remove. Never add a new thing here. */
 const KNOWN_THIN = {
@@ -48,6 +46,10 @@ const KNOWN_PLAIN = {
  * (tests/helpers/worldModels.js) instead; this is only for what has none, and a name here must still exist and must not be built there.
  */
 const NOT_MODELS = {
+  'world/villageHouses.js: buildHouse': 'the village\'s houses in their other designs (a thatched cottage, a larger house, a bungalow, a terrace, the farmhouse), made inside buildVillage on the new farm ("villageNew")',
+  'world/villageFarm.js: buildBarn': 'the small farm\'s barn, made inside buildVillage on the new farm ("villageNew")',
+  'world/villageFarm.js: buildFarmYard': 'the small farm\'s walled yard, made inside buildVillage on the new farm ("villageNew")',
+  'world/villageFarm.js: buildFarm': 'the small farm\'s barn and yard, made inside buildVillage on the new farm ("villageNew")',
   'world/barnWide.js: buildWideShell': 'the new farm\'s barn shell, made inside buildBarnShed ("barnOne")',
   'world/upperThornby.js: buildUpperThornby': 'Upper Thornby, a far cluster of roofs and a church tower on the hill that is seen from Back Lane and never reached: it is only ever a far version (farVersion.js boxes with gabled roofs in flat colours), so it has none of the surface detail a near piece is held to (#686)',
   'world/roadMesh.js: buildRoadMesh': 'a road laid over the ground as a strip, the lane and the village street; no model of its own (its look is tests/roadMesh.test.js)',

@@ -1,7 +1,7 @@
 // The village's building kit (world/villageProps.js): a gabled shell with an eaved tiled roof, bargeboards, gutters and downpipes, chimney stacks with
 // pots, sash windows with frames, cills and lintels, bays, doors with surrounds, porches and dormers. Everything is built in a building's own frame
-// (x along the frontage, y up from its floor, +z the front, facing the road) and the group is turned to the road with `yaw` (0 or Math.PI, so a
-// footprint stays a plain rectangle in the world). Pieces are plain boxes that overlap where they meet, so there is no gap to see through.
+// (x along the frontage, y up from its floor, +z the front, facing the road) and the group is turned to the road with `yaw` (a quarter turn, so a
+// footprint stays a plain rectangle in the world: the houses on the lane's east side face west, #819). Pieces are plain boxes that overlap where they meet, so there is no gap to see through.
 
 import * as THREE from 'three';
 import { worldBox } from './outbuildingProps.js';
@@ -11,6 +11,7 @@ export class Frame {
   constructor({ group, x, z, yaw, y0, fixedBox }) {
     Object.assign(this, { group, x, z, yaw, y0, fixedBox });
     this.cos = Math.round(Math.cos(yaw));
+    this.sin = Math.round(Math.sin(yaw));
   }
 
   /** Adds a mesh at a local position. */
@@ -29,18 +30,18 @@ export class Frame {
 
   /** The world position of a local (x, z). */
   world(lx, lz) {
-    return { x: this.x + lx * this.cos, z: this.z + lz * this.cos };
+    return { x: this.x + lx * this.cos + lz * this.sin, z: this.z - lx * this.sin + lz * this.cos };
   }
 
   /** A collider for a local box (centre lx, y above the floor, lz; half sizes). */
   solid(lx, y, lz, hx, hy, hz) {
     const p = this.world(lx, lz);
-    return this.fixedBox(p.x, this.y0 + y, p.z, hx, hy, hz);
+    return this.sin ? this.fixedBox(p.x, this.y0 + y, p.z, hz, hy, hx) : this.fixedBox(p.x, this.y0 + y, p.z, hx, hy, hz); // a quarter turn swaps the half sizes
   }
 }
 
 /** A gable end: a triangle `width` wide and `rise` high, `depth` thick, in the plane facing along x (x = `x`), standing on y = `base`. */
-function gableGeometry(width, rise, depth, tile = 1.5, vOffset = 0) {
+export function gableGeometry(width, rise, depth, tile = 1.5, vOffset = 0) {
   const shape = new THREE.Shape();
   shape.moveTo(-width / 2, 0);
   shape.lineTo(width / 2, 0);
@@ -313,4 +314,29 @@ export function dormer(f, m, { x, b, roofInfo, lit = true, roofMat }) {
     slab.rotation.z = -sx * 0.5;
   }
   f.box(0.06, 0.1, 1.2, m.fascia, x, baseY + h + 0.42, z - 0.35, 0.6);
+}
+
+/**
+ * A gabled wing standing out of the front wall, the way a larger house has a cross-gable: a block of wall `w` wide and `projection` out from the wall at local x,
+ * with its own pitched roof (barge boards, a ridge and fascia) whose ridge runs out from the main roof, sunk into the main slope so no gap shows. `wallZ` is the
+ * main front wall's z and `wallHeight` its eaves, `ridge` how high the wing's ridge stands. A collider for the wing's wall is added.
+ */
+export function crossGable(f, m, { x, w = 3.6, projection = 1.1, wallZ, wallHeight, ridge, roofMat }) {
+  const sink = 0.4;
+  const rise = ridge - wallHeight;
+  const zc = wallZ + projection / 2 - 0.1;
+  f.box(w, wallHeight + sink, projection + 0.2, m.wall, x, (wallHeight - sink) / 2, zc, 1.2);
+  f.box(w + 0.08, 0.5 + sink, projection + 0.28, m.stone, x, (0.5 - sink) / 2, zc, 1);
+  f.add(gableGeometry(w, rise, 0.4, 1.2, (wallHeight + sink) / 1.2), m.wall, x, wallHeight, wallZ + projection - 0.1, Math.PI / 2);
+  const half = w / 2 + 0.28;
+  const slopeLen = Math.hypot(half, rise);
+  const ang = Math.atan2(rise, half);
+  for (const sx of [-1, 1]) {
+    const slab = f.box(slopeLen, 0.1, projection + 1.4, roofMat, x + sx * half / 2, wallHeight + rise / 2 + 0.03, wallZ + (projection + 0.4) / 2 - 0.5, 1);
+    slab.rotation.z = -sx * ang;
+    f.box(0.04, 0.2, projection + 1.4, m.fascia, x + sx * (half - 0.01), wallHeight + 0.02, wallZ + (projection + 0.4) / 2 - 0.5, 0.6);
+  }
+  const cap = f.box(0.16, 0.16, projection + 1.4, m.ridgeCap ?? roofMat, x, ridge + 0.1, wallZ + (projection + 0.4) / 2 - 0.5, 0.6);
+  cap.rotation.z = Math.PI / 4;
+  f.solid(x, wallHeight / 2, zc, w / 2, wallHeight / 2 + 0.6, (projection + 0.2) / 2);
 }

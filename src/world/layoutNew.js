@@ -234,7 +234,7 @@ export const TURN_ROUND_PLAN = {
  */
 export const LANE_FITTINGS_PLAN = {
   cottages: { rect: [920, 418, 944, 442], yaw: Math.PI / 2, gardenDepth: 12 }, // a pair, semi-detached, their fronts to the lane
-  gateways: [{ at: [912, 205], width: 4.5 }, { at: [912, 505], width: 4.5 }],
+  gateways: [{ at: [912, 205], width: 4.5 }, { at: [912, 459.5], width: 4.5 }], // the second is the small farm's track mouth (#819)
   gritBins: [[905, -2]], // by the bend, on its outside; the junctions have their own
   postbox: [900.8, 338], // west verge, north of the drive's mouth
   binStand: [900.8, 353], // and south of it
@@ -293,7 +293,7 @@ export const NEIGHBOUR_LAND_PLAN = {
   // hedges start where the bend is past: x 912 from z 8, the north hedge from x 950), the east hedge is at x 1282, clear of the A-road's verge (its
   // edge is at 1287 at the nearest), and the cottages' plot (plan 912 to 960, 405 to 450) is not hedged across: the lane hedge and the z 420 hedge leave it.
   lines: [
-    { x: 912, from: 8, to: 560, gaps: [[289, 295], [127.5, 132.5], [202.75, 207.25], [502.75, 507.25], [405, 450]] },
+    { x: 912, from: 8, to: 560, gaps: [[289, 295], [127.5, 132.5], [202.75, 207.25], [405, 555]] }, // open from z 405 to 555: the village's approach (#819), the small farm's track and the lane's houses with their own hedges
     { x: 1110, from: -18, to: 560, gaps: [[98, 103], [290, 295]] },
     { x: 1230, from: 150, to: 560, gaps: [[300, 305]] },
     { x: 1282, from: -18, to: 560, gaps: [] },
@@ -1502,24 +1502,54 @@ export const VILLAGE_PLAN = {
     name: 'Hollis Motors', at: [943, 592.5], halfX: 8, halfZ: 4.2, wallHeight: 4.4, ridge: 5.6,
     pumps: [[922, 606], [930, 606], [938, 606]], forecourt: [907.4, 596.7, 953, 612], board: [910.6, 610.6],
   },
+  // `design` is the house's shape (villageHouses.js: 'cottage' the plain pair of storeys, 'thatched', 'gabled' a larger house with a cross-gable, 'bungalow', 'terrace' three
+  // houses in a row); the others of the issue's "different designs" (#543) are on the lane's approach. n7 and the bench at the far end fill the bare end opposite the pub.
   cottages: [
     { id: 'n1', at: [1057, 698.5], yaw: 0, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'render', paint: '#d8cfae', door: '#7a2a22' },
-    { id: 'n2', at: [1083, 698.5], yaw: 0, halfX: 3.6, halfZ: 3, wallHeight: 4.4, ridge: 6.7, wall: 'stone', door: '#2d4a3a' },
-    { id: 'n3', at: [1109, 698.5], yaw: 0, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'brick', door: '#23406b' },
+    { id: 'n2', at: [1083, 698.5], yaw: 0, design: 'thatched', halfX: 4.2, halfZ: 3.5, wallHeight: 3.9, ridge: 7.1, wall: 'stone', door: '#2d4a3a' },
+    { id: 'n3', at: [1109, 698.5], yaw: 0, design: 'gabled', halfX: 5.2, halfZ: 3.6, wallHeight: 5, ridge: 7.8, wall: 'brick', door: '#23406b' },
     { id: 'n4', at: [1137, 698.5], yaw: 0, halfX: 3.6, halfZ: 3.2, wallHeight: 4.4, ridge: 6.7, wall: 'render', paint: '#cfd8c4', door: '#8a5a2b' },
-    { id: 'n5', at: [1165, 698.5], yaw: 0, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'stone', door: '#6b2f4a' },
-    { id: 'n6', at: [1195, 698.5], yaw: 0, halfX: 3.6, halfZ: 3, wallHeight: 4.4, ridge: 6.7, wall: 'render', paint: '#d8cfae', door: '#2d4a3a' },
+    { id: 'n5', at: [1165, 698.5], yaw: 0, design: 'bungalow', halfX: 6, halfZ: 4, wallHeight: 2.7, ridge: 4.7, wall: 'render', paint: '#e4dcc4', door: '#6b2f4a' },
+    { id: 'n6', at: [1197, 698.5], yaw: 0, design: 'terrace', halfX: 10.5, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'brick', door: '#2d4a3a', doors: ['#2d4a3a', '#7a2a22', '#23406b'] },
+    { id: 'n7', at: [1221, 698.5], yaw: 0, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'render', paint: '#cfd8c4', door: '#8a5a2b' },
     { id: 's1', at: [1041, 730.5], yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'brick', door: '#23406b' },
-    { id: 's2', at: [1069, 730.5], yaw: Math.PI, halfX: 3.6, halfZ: 3.2, wallHeight: 4.4, ridge: 6.7, wall: 'render', paint: '#cfd8c4', door: '#8a5a2b' },
-    { id: 's3', at: [1097, 730.5], yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'stone', door: '#6b2f4a' },
-    { id: 's4', at: [1127, 730.5], yaw: Math.PI, halfX: 3.6, halfZ: 3.2, wallHeight: 4.4, ridge: 6.7, wall: 'render', paint: '#d8cfae', door: '#7a2a22' },
-    { id: 's5', at: [1157, 730.5], yaw: Math.PI, halfX: 4, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'brick', door: '#2d4a3a' },
+    { id: 's2', at: [1069, 730.5], yaw: Math.PI, design: 'bungalow', halfX: 6, halfZ: 4, wallHeight: 2.7, ridge: 4.7, wall: 'render', paint: '#cfd8c4', door: '#8a5a2b' },
+    { id: 's3', at: [1097, 730.5], yaw: Math.PI, design: 'thatched', halfX: 4.2, halfZ: 3.5, wallHeight: 3.9, ridge: 7.1, wall: 'stone', door: '#6b2f4a' },
+    { id: 's4', at: [1127, 730.5], yaw: Math.PI, design: 'gabled', halfX: 5.2, halfZ: 3.6, wallHeight: 5, ridge: 7.8, wall: 'render', paint: '#d8cfae', door: '#7a2a22' },
+    { id: 's5', at: [1160, 730.5], yaw: Math.PI, design: 'terrace', halfX: 10.5, halfZ: 3.2, wallHeight: 4.6, ridge: 7, wall: 'brick', door: '#2d4a3a', doors: ['#8a5a2b', '#2d4a3a', '#6b2f4a'] },
   ],
   green: { at: [1022, 699], r: 9 }, // the plan's green is 12 m across the middle of it: its oak, a bench and the war memorial's place (#716) stand on it
   trees: [{ at: [1022, 697], scale: 0.8 }, { at: [1070, 697], scale: 0.5 }, { at: [1151, 697], scale: 0.5 }],
   sign: [917, 714], // "Nether Thornby", at the junction on the street's north side
   phone: [1002, 725.6],
   busStop: [972, 725.6],
+  farBench: [1208, 713.4], // a bench at the street's far end, on the north verge, looking over the street (#543)
+  /**
+   * The lane's approach (#819): the village builds up as you drive in. 30 mph discs and a village sign on the lane at z 486 (from the north) and z 800 (from the south) and on the street
+   * at x 1262 (from the A-road), each post's back the national limit for the traffic leaving; three houses facing the lane across their front gardens, and a small farm, a stone
+   * house and a barn round a walled yard with its gateway on a track from the lane. A sign's `yaw` is where its front looks (0 south, Math.PI north, Math.PI / 2 east). The
+   * lane's east verge is x 909.2 and its west x 900.8; the street's verges are 5.3 m either side of its middle.
+   */
+  approach: {
+    limit: 30,
+    houses: [
+      { id: 'l1', at: [927, 500], yaw: -Math.PI / 2, design: 'gabled', halfX: 5.5, halfZ: 4.2, wallHeight: 5, ridge: 7.8, wall: 'brick', door: '#7a2a22' },
+      { id: 'l2', at: [927, 526], yaw: -Math.PI / 2, design: 'thatched', halfX: 4.4, halfZ: 3.6, wallHeight: 4, ridge: 7.2, wall: 'stone', door: '#2d4a3a' },
+      { id: 'l3', at: [927, 552], yaw: -Math.PI / 2, design: 'bungalow', halfX: 6, halfZ: 4.2, wallHeight: 2.7, ridge: 4.7, wall: 'render', paint: '#d8cfae', door: '#23406b' },
+    ],
+    farm: {
+      yard: [932, 442, 982, 478], wall: 0.5, wallHeight: 1.4,
+      gateway: { z: 459.5, width: 4.5 }, // in the west wall
+      track: { from: [905, 459.5], halfWidth: 2 },
+      house: { id: 'fh', name: 'the farmhouse', at: [955, 450.2], yaw: 0, design: 'farmhouse', halfX: 6.5, halfZ: 4.2, wallHeight: 5, ridge: 7.6, wall: 'stone', door: '#2d4a3a' },
+      barn: { id: 'fb', name: 'the barn', at: [957, 470.5], yaw: Math.PI, design: 'barn', halfX: 13, halfZ: 5, wallHeight: 4.4, ridge: 7.2, wall: 'stone', door: '#5a4a32' },
+    },
+    signs: [
+      { kind: 'limit', at: [909.2, 486], yaw: Math.PI }, { kind: 'limit', at: [900.8, 486], yaw: Math.PI }, { kind: 'village', at: [909.2, 481], yaw: Math.PI },
+      { kind: 'limit', at: [900.8, 800], yaw: 0 }, { kind: 'limit', at: [909.2, 800], yaw: 0 }, { kind: 'village', at: [900.8, 805], yaw: 0 },
+      { kind: 'limit', at: [1262, 711.7], yaw: Math.PI / 2 }, { kind: 'limit', at: [1262, 723.3], yaw: Math.PI / 2 }, { kind: 'village', at: [1267, 723.3], yaw: Math.PI / 2 },
+    ],
+  },
   // Left clear (the church's plot, the hall and the playing field): plan rectangles [minX, minZ, maxX, maxZ].
   clear: { church: [1228, 740, 1280, 788], hall: [1180, 727, 1200, 738], field: [1036, 756, 1152, 810] },
   gardenDepth: 6,
@@ -1550,6 +1580,17 @@ export function villageLayout(P = VILLAGE_PLAN) {
     shop: { ...building(P.shop), yaw: Math.PI },
     garage: { ...building(G), yaw: 0, pumps: { spots: G.pumps.map((p) => [rel(p)[0], rel(p)[1]]) }, forecourt: rect(G.forecourt), board: pt(G.board) },
     cottages: P.cottages.map(building),
+    farBench: pt(P.farBench),
+    approach: {
+      limit: P.approach.limit,
+      houses: P.approach.houses.map(building),
+      farm: {
+        yard: rect(P.approach.farm.yard), wall: P.approach.farm.wall, wallHeight: P.approach.farm.wallHeight,
+        gateway: { ...pt([P.approach.farm.yard[0], P.approach.farm.gateway.z]), width: P.approach.farm.gateway.width },
+        house: building(P.approach.farm.house), barn: building(P.approach.farm.barn),
+      },
+      signs: P.approach.signs.map(({ at: p, ...sign }) => ({ ...pt(p), ...sign })),
+    },
     green: { ...pt(P.green.at), r: P.green.r },
     trees: P.trees.map(({ at: p, scale }) => ({ ...pt(p), scale })),
     sign: pt(P.sign),
@@ -1566,7 +1607,12 @@ export function villageLayout(P = VILLAGE_PLAN) {
     id: 'street', name: 'the village street', surface: 'tarmac', halfWidth: 2.3, pavement: P.pavement, junction: { end: 'start', onto: 'lane' },
     markings: { centre: 'dashed', edge: true, giveWay: true }, points: P.street.map(fromPlan), verge: 0, hedged: false, draw: 'mesh', lift: 0.075,
   };
-  return { village, anchor: { x: ax, z: az, yaw: 0 }, street };
+  const F = P.approach.farm;
+  const track = {
+    id: 'farmTrack', name: 'the small farm\'s track', surface: 'tarmac', halfWidth: F.track.halfWidth, points: [fromPlan(F.track.from), fromPlan([F.yard[0], F.gateway.z])],
+    junction: { end: 'start', onto: 'lane' },
+  };
+  return { village, anchor: { x: ax, z: az, yaw: 0 }, street, track };
 }
 
 /**
@@ -1633,7 +1679,7 @@ export function layoutNew(today, raw) {
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
     upperThornby: { at: fromPlan(BACK_LANE_PLAN.upperThornby) },
     junctions: JUNCTIONS_PLAN, turnRound: turnRoundLayout(), laneFittings: laneFittingsLayout(), aRoadFittings: { layBy: { ...A_ROAD_PLAN.layBy, z: A_ROAD_PLAN.layBy.z - PLAN_ORIGIN[1] } },
-    ...drive, roads: [...drive.roads, village.street, neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout(), ...tracks.roads], farmBridge: tracks.farmBridge, headlands: tracks.headlands,
+    ...drive, roads: [...drive.roads, village.street, village.track, neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout(), ...tracks.roads], farmBridge: tracks.farmBridge, headlands: tracks.headlands,
     woods: wood.woods, logYard: wood.logYard, hill, village: village.village, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, village: village.anchor, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
     budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z } }, // just inside her gateway (#569)
