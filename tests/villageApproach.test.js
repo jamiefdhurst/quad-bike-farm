@@ -236,7 +236,7 @@ describe('the new buildings, built', () => {
 
   it('parks a different few cars in the pub\'s car park each game, none in the disabled bay', () => {
     expect(carsFor(1)).not.toBe(carsFor(7));
-    expect(village.cars.length).toBeGreaterThanOrEqual(4);
+    expect(village.cars).toHaveLength(3);
     const c = S.carPark;
     const disabled = carParkBays(c.maxX - c.minX, c.maxZ - c.minZ, [c.entry.minX - c.minX, c.entry.maxX - c.minX]).find((b) => b.disabled);
     for (const car of village.cars) expect(car.x > c.minX + disabled.x && car.x < c.minX + disabled.x + disabled.w && car.z < c.minZ + disabled.z + disabled.d).toBe(false);

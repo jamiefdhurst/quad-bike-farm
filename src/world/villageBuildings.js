@@ -371,7 +371,7 @@ export function buildCarPark(ctx) {
   const letters = 'ABCDEFGHJKLMNPRSTUVWXY';
   const pick = (list) => list[Math.floor(random() * list.length)];
   const reg = () => `${pick(letters)}${Math.floor(random() * 90) + 10}${pick(letters)} ${pick(letters)}${pick(letters)}${pick(letters)}`;
-  const taken = bays.map((bay) => ({ bay, r: random() })).sort((p, q) => p.r - q.r).slice(0, 4 + Math.floor(random() * 3));
+  const taken = bays.map((bay) => ({ bay, r: random() })).sort((p, q) => p.r - q.r).slice(0, 3); // three, as before: each car is a good many draw calls
   const cars = [];
   for (const { bay } of taken) {
     const kind = pick(kinds);
