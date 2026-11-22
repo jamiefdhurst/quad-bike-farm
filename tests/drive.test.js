@@ -8,7 +8,6 @@ import { createRoads } from '../src/world/roads.js';
 import { createFields } from '../src/world/fields.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { createCattleGrid } from '../src/world/cattleGrid.js';
-import { laneBarriers } from '../src/world/neighbourFarm.js';
 import { Track } from '../src/world/track.js';
 import { visitPlaces, planVisit, Traffic, Visit, DEFAULT_TRAFFIC_PARAMS } from '../src/world/traffic.js';
 import { leaveRoute, hasGone, goneBeyond } from '../src/npc/goingHome.js';
@@ -16,7 +15,7 @@ import { vergeGrassHeight } from '../src/world/driveProps.js';
 import { createRandom } from '../src/core/random.js';
 import { planRoad, paintRoadOnGround } from '../src/world/groundTexture.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const road = two.road;
 const net = createRoads(two.roads);
 const fields = createFields(two);
@@ -65,8 +64,6 @@ describe('the drive on the new farm', () => {
   it('has the lane straight past it with no invisible walls round it', () => {
     expect(two.publicLane.minZ).toBeLessThan(-400);
     expect(two.publicLane.maxZ).toBeGreaterThan(500);
-    expect(laneBarriers(two)).toEqual([]);
-    expect(laneBarriers(LAYOUT).length).toBeGreaterThan(0); // today's lane keeps its walls
   });
 });
 
@@ -137,21 +134,6 @@ describe('the cattle grid on the drive', () => {
     expect(spans[1].hi).toBeGreaterThan(road.z + road.grid.mouth - 0.5);
     expect(spans[0].hi).toBeLessThan(road.z - road.halfWidth);
     expect(spans[1].lo).toBeGreaterThan(road.z + road.halfWidth);
-  });
-
-  it('builds today\'s grid with no sign (the gate across its road swings through that verge) and no two faces on a plane (#961)', async () => {
-    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
-    const { buildCattleGrid } = await import('../src/world/driveProps.js');
-    const heights = createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints));
-    const old = createCattleGrid(LAYOUT);
-    const boxes = [];
-    const group = buildCattleGrid({ scene: new THREE.Scene(), layout: LAYOUT, heights, fixedBox: (...a) => boxes.push(a), grid: old, random: createRandom(3) });
-    expect(group.children).toHaveLength(3); // the deck and two wings
-    expect(boxes.map((b) => b[0])).toEqual([LAYOUT.fieldHalf, LAYOUT.fieldHalf]); // the wings stand at the grid's own x, as they always did
-    group.updateMatrixWorld(true);
-    expect(coplanarOverlaps(group, { gap: 0.003, minArea: 2e-5, textured: true })).toEqual([]);
-    const newGroup = buildCattleGrid({ scene: new THREE.Scene(), layout: two, heights: createTerrainHeight(two, new Track(two.trackPoints)), fixedBox: () => {}, grid, random: createRandom(3) });
-    expect(newGroup.children).toHaveLength(4); // and the new farm's has its sign
   });
 
   it('builds reflector posts at the lane end, two a side, standing clear of the carriageway', async () => {
@@ -285,12 +267,4 @@ describe('the drive\'s old tarmac, painted into the ground', () => {
     }
   });
 
-  it('is plain on a road that asks for none of it: today\'s farm road gets none of these', () => {
-    const today = createRoads(LAYOUT.roads).road('farm');
-    const p = planRoad(today, createFields(LAYOUT), createRandom(5));
-    expect(p.patches).toBeUndefined();
-    expect(p.gravel).toBeUndefined();
-    expect(p.potholes).toBeUndefined();
-    expect(p.washes).toBeUndefined();
-  });
 });

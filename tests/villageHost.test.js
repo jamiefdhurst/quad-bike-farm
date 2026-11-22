@@ -93,7 +93,7 @@ describe('the garage rack and the shop counter', () => {
 // The same counters and places on the new farm (#688), where the village is across the lane, the shop on the street's south side facing north and the garage on the
 // lane facing south: the stand-in game has the new farm's real shape, so where a console line puts you is checked against where things really are.
 describe('the village on the new farm (#688)', () => {
-  const two = layoutNew(LAYOUT, RAW_LAYOUT);
+  const two = LAYOUT;
   const shape = villageShape(two);
 
   function onNewFarm() {

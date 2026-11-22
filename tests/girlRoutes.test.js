@@ -6,7 +6,7 @@ import { polygonBounds } from '../src/world/polygons.js';
 import { DEFAULT_FAR_WALK_PARAMS as FAR, wayLength } from '../src/npc/farWalk.js';
 
 // The girls on the new farm (#690): a way from the yard to every field and waiting point and back that never goes through a hedge.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const fields = createFields(two);
 const yard = { x: 0, z: 0 };
 

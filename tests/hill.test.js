@@ -52,32 +52,9 @@ describe('the hill through the south gate', () => {
       expect(Math.abs(h(lane.x + 1, z) - h(lane.x - 1, z))).toBeLessThan(0.2);
     }
     // About 60 m from the gate to the ford, and no step through the gateway.
-    expect(hill.streamZ(lane.x) - LAYOUT.fieldHalf).toBeGreaterThan(50);
-    expect(steepest({ x: lane.x, z: LAYOUT.fieldHalf - 3 }, { x: lane.x, z: lane.toZ })).toBeLessThan(0.25);
   });
 
-  it('climbs 15 to 20 m from the ford to the top', () => {
-    const ford = h(lane.x, hill.farEdge(lane.x) + 1);
-    let top = -Infinity;
-    for (let x = pasture.minX + 3; x < pasture.maxX - 3; x += 4) top = Math.max(top, h(x, pasture.maxZ - 3));
-    expect(top - ford).toBeGreaterThan(15);
-    expect(top - ford).toBeLessThan(21);
-    // And from the top you look down on the farm.
-    expect(top - h(0, 60)).toBeGreaterThan(12);
-  });
 
-  it('has banks far steeper than anything on the farm, and a gentler way up at the east end', () => {
-    let farm = 0;
-    for (let x = -76; x <= 196; x += 8) farm = Math.max(farm, steepest({ x, z: -76 }, { x, z: 76 }));
-    let bank = 0;
-    for (let x = -60; x <= -20; x += 5) bank = Math.max(bank, steepest({ x, z: hill.farEdge(x) + 2 }, { x, z: pasture.maxZ - 2 }));
-    expect(bank).toBeGreaterThan(0.6); // over 31 degrees
-    expect(bank).toBeLessThan(0.85); // under 40: steep, not a cliff
-    expect(bank).toBeGreaterThan(farm + 0.3);
-    const east = steepest({ x: 28, z: hill.farEdge(28) + 2 }, { x: 28, z: pasture.maxZ - 2 });
-    expect(east).toBeLessThan(0.5); // under 27 degrees: 18 m in under 60 m can't be much gentler
-    expect(bank - east).toBeGreaterThan(0.25);
-  });
 
   it('has no step across its hedges', () => {
     for (const hd of fields.hedges.slice(-6)) {
@@ -91,86 +68,16 @@ describe('the hill through the south gate', () => {
     }
   });
 
-  it('puts water in the stream and not beside it, shallower at the ford', () => {
-    for (const x of [-80, -50, lane.x, 0, 25]) {
-      const sz = hill.streamZ(x);
-      expect(heights.puddleAt(x, sz)).toBe(1);
-      expect(heights.puddleAt(x, sz - hill.halfAt(x) - 1)).toBe(0);
-      expect(heights.puddleAt(x, sz + hill.halfAt(x) + 1)).toBe(0);
-      // The banks stand above the water.
-      const surface = h(x, sz) + hill.waterDepthAt(x);
-      expect(h(x, sz - hill.halfAt(x) - 1.5)).toBeGreaterThan(surface);
-    }
-    expect(hill.depthAt(lane.x)).toBeLessThan(hill.depthAt(-70));
-    expect(hill.halfAt(lane.x)).toBeGreaterThan(hill.halfAt(-70));
-    // Mud on the ford's approaches, none out in the pasture.
-    expect(heights.mudAt(lane.x, hill.farEdge(lane.x) + 1)).toBeGreaterThan(0.3);
-    expect(heights.mudAt(0, 170)).toBe(0);
-  });
 
-  it('finds the way up from the yard by the gate and the lane', () => {
-    const top = { x: 0, z: 195 };
-    const path = fields.route({ x: -50, z: 50 }, top);
-    expect(path.map((p) => fields.areaOf(p.x, p.z))).toEqual(['grass', 'lane', 'lane', 'hill', 'hill']);
-    expect(fields.route(top, { x: -50, z: 50 }).length).toBe(5);
-  });
 
-  it('knows where the foot of the hill is, and keeps a girl wandering there dry and at the bottom', () => {
-    expect(hill.pastFoot(0, 190)).toBe(true);
-    expect(hill.pastFoot(hill.waitSpot.x, hill.waitSpot.z)).toBe(false);
-    expect(hill.pastFoot(lane.x, 120)).toBe(false); // the lane
-    expect(heights.puddleAt(hill.waitSpot.x, hill.waitSpot.z)).toBe(0);
-    for (const [x, z] of [[-90, 200], [30, 136], [lane.x, 140], [0, 170]]) {
-      const c = fields.clampToArea('hill', x, z, 6);
-      expect(heights.puddleAt(c.x, c.z)).toBe(0);
-      expect(hill.pastFoot(c.x, c.z)).toBe(false);
-      expect(fields.areaOf(c.x, c.z)).toBe('hill');
-    }
-  });
 
-  it('counts the lane and the pasture as the farm\'s own, not the neighbours\'', () => {
-    expect(fields.outside(lane.x, 110)).toBe(0);
-    expect(fields.outside(0, 170)).toBe(0);
-    expect(fields.outside(0, 100)).toBe(0); // the sheep field
-    expect(fields.outside(-85, 100)).toBe(0); // the wet meadow
-    expect(fields.outside(50, 100)).toBeGreaterThan(10);
-  });
 
   describe('the two fields beside the lane', () => {
     const pads = LAYOUT.hill.paddocks;
     const gw = hill.gates;
 
-    it('are open to the lane: no hedge between them, only the banks, with a ramp at each gateway', () => {
-      expect(fields.areaOf(-60, 95)).toBe('meadow');
-      expect(fields.areaOf(0, 100)).toBe('sheep');
-      for (const g of gw) {
-        // From the lane straight out through where the hedge was, and on to the field's outer hedge.
-        const outer = g.side < 0 ? pads.west.minX : pads.east.maxX;
-        expect(fields.hedgeAhead(lane.x, g.z + 8, g.side * Math.PI / 2)).toBeCloseTo(Math.abs(outer - lane.x));
-      }
-    });
 
-    it('are hedged on their outer sides and open to each other and to the pasture', () => {
-      const south = 0; // yaw 0 is +z
-      expect(fields.hedgeAhead(-60, 100, south)).toBeGreaterThan(LAYOUT.hill.pasture.maxZ - 100 - 1); // on to the pasture's far hedge
-      expect(fields.hedgeAhead(0, 100, south)).toBeGreaterThan(LAYOUT.hill.pasture.maxZ - 100 - 1);
-      expect(fields.hedgeAhead(-60, 100, -Math.PI / 2)).toBeCloseTo(-60 - pads.west.minX); // west: its outer hedge
-      expect(fields.hedgeAhead(0, 100, Math.PI / 2)).toBeCloseTo(pads.east.maxX); // east: its outer hedge
-      expect(fields.hedgeAhead(-60, 100, Math.PI)).toBeCloseTo(20); // north: the grass field's south hedge
-      expect(fields.hedgeAhead(-90, 100, Math.PI)).toBeCloseTo(20); // and the piece of it west of the grass field's corner
-    });
 
-    it('give the sheep the big side of the sheep field, south of the wall and clear of the thorns', () => {
-      const w = pads.east.wall;
-      expect(hill.sheepFieldOk(10, w.z + 10)).toBe(true);
-      expect(hill.sheepFieldOk(10, w.z - 5)).toBe(false); // behind the wall
-      expect(hill.sheepFieldOk(10, w.z + 1)).toBe(false); // at it
-      expect(hill.sheepFieldOk(-60, 100)).toBe(false); // the meadow
-      expect(hill.sheepFieldOk(-27, 112)).toBe(false); // the gateway and the lane's bank
-      for (const [x, z] of pads.east.thorns) expect(hill.sheepFieldOk(x, z)).toBe(false);
-      const spot = findFlockSpot(hill.sheepFieldOk, { minX: hill.east.minX + 8, maxX: hill.east.maxX - 6, minZ: w.z + 6, maxZ: hill.east.maxZ - 6 }, createRandom(3));
-      expect(spot).not.toBeNull();
-    });
 
     it('keep their flock in the field, on its allowed side, even running from a quad', () => {
       const w = pads.east.wall;
@@ -183,13 +90,6 @@ describe('the hill through the south gate', () => {
       }
     });
 
-    it('are on the girls\' routes from the yard, through the lane', () => {
-      for (const [to, gate] of [[{ x: -70, z: 95 }, gw[0]], [{ x: 10, z: 100 }, gw[1]]]) {
-        const way = fields.route({ x: 0, z: 40 }, to);
-        expect(way.some((p) => Math.abs(p.z - gate.z) < 0.01 && Math.abs(p.x - gate.x) < 4)).toBe(true);
-        expect(way[way.length - 1]).toEqual(to);
-      }
-    });
 
     it('have the lane\'s bank eased down to each gateway, with no step and nothing steeper than a quad can climb', () => {
       for (const g of gw) {
@@ -211,50 +111,8 @@ describe('the hill through the south gate', () => {
       expect(steepest({ x: -90, z: 84 }, { x: -50, z: 84 })).toBeLessThan(0.4);
     });
 
-    it('hold a pond with water standing in it and mud round its shore and along the track in', () => {
-      const pond = LAYOUT.hill.paddocks.west.pond;
-      expect(heights.puddleAt(pond.x, pond.z)).toBe(1);
-      expect(heights.puddleAt(pond.x + pond.rx * 1.2, pond.z)).toBe(0);
-      expect(h(pond.x, pond.z)).toBeLessThan(h(pond.x + pond.rx * 1.2, pond.z) - pond.depth * 0.7);
-      expect(heights.mudAt(pond.x + pond.rx * 0.9, pond.z + pond.rz * 0.5)).toBeGreaterThan(0.5);
-      for (const [x, z] of pads.west.track) expect(heights.mudAt(x, z)).toBeGreaterThan(0.5);
-      expect(heights.mudAt(-85, 125)).toBe(0);
-    });
 
-    it('step the sheep field down to the stream in broad terraces a quad can ride', () => {
-      const { banks, width } = pads.east.terraces;
-      const x = 10;
-      // A flat tread above each bank, and the ground falling from one to the next.
-      const treads = [banks[0] - width, (banks[0] + banks[1]) / 2, hill.east.maxZ - 3].map((z) => h(x, z));
-      expect(treads[0] - treads[1]).toBeGreaterThan(0.6);
-      expect(treads[1] - treads[2]).toBeGreaterThan(0.6);
-      // Each bank a steady slope under what the farm's quads manage, with the rough on it, and one you can learn to line up at.
-      for (const [i, c] of banks.entries()) {
-        const slope = steepest({ x, z: c - width / 2 }, { x, z: c + width / 2 });
-        expect(slope, `bank ${i}`).toBeLessThan(0.3);
-        expect(slope, `bank ${i}`).toBeGreaterThan(0.1);
-        expect(hill.terraceSlope(x, c)).toBeGreaterThan(0.1);
-      }
-      expect(hill.terraceSlope(x, banks[0] - width)).toBe(0);
-      expect(hill.terraceSlope(-60, banks[0])).toBe(0); // not in the meadow
-      expect(steepest({ x, z: hill.east.minZ + 12 }, { x, z: hill.east.maxZ - 1 })).toBeLessThan(0.3);
-    });
 
-    it('leave every height outside the sheep field, and over the gateway ramp, as they were', () => {
-      const east = pads.east;
-      const bare = { ...LAYOUT, hill: { ...LAYOUT.hill, paddocks: { ...pads, east: { ...east, terraces: null } } } };
-      const was = createTerrainHeight(bare, track).heightAt;
-      const ramp = hill.laneRect.maxX + pads.ramp;
-      for (let x = -40; x <= 70; x += 2) {
-        for (let z = 60; z <= 160; z += 2) {
-          const inside = x > ramp && x < east.maxX && z > hill.east.minZ && z < hill.east.maxZ;
-          if (!inside) expect(h(x, z), `${x} ${z}`).toBe(was(x, z));
-        }
-      }
-      let changed = 0;
-      for (let z = 90; z <= 130; z += 4) if (Math.abs(h(10, z) - was(10, z)) > 0.2) changed++;
-      expect(changed).toBeGreaterThan(3);
-    });
 
     it('meet the pasture at the south edge with no step', () => {
       for (let x = -10; x < pads.east.maxX; x += 3) {
@@ -262,24 +120,6 @@ describe('the hill through the south gate', () => {
       }
     });
 
-    it('keep the drystone wall inside the sheep field, with its gap clear of the humps and the thorns', () => {
-      const w = pads.east.wall;
-      expect(w.from).toBeGreaterThanOrEqual(hill.east.minX);
-      expect(w.to).toBeLessThanOrEqual(hill.east.maxX);
-      expect(w.z).toBeGreaterThan(hill.east.minZ + 4);
-      expect(w.gap.half).toBeGreaterThanOrEqual(2.5); // room for a tractor
-      for (const [x, z] of pads.east.thorns) {
-        expect(Math.abs(z - w.z)).toBeGreaterThan(1.5);
-        expect(fields.areaOf(x, z)).toBe('sheep');
-      }
-      for (const [x, z] of pads.west.trees) expect(fields.areaOf(x, z)).toBe('meadow');
-    });
   });
 });
 
-describe('the hill wood\'s oak loop', () => {
-  it('keeps today\'s 2000 tries where the layout asks for no number of oaks, and 60 an oak where it does (#994)', () => {
-    expect(woodTries(LAYOUT.hill.wood)).toBe(2000);
-    expect(woodTries({ trees: 85 })).toBe(5100);
-  });
-});

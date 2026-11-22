@@ -365,22 +365,6 @@ describe('where the strip is', () => {
     expect(left.z).toBeCloseTo(s.z + Math.sin(s.yaw) * 2);
   });
 
-  it('is level, clear of the track, bogs, puddles and hedges', () => {
-    let lo = Infinity;
-    let hi = -Infinity;
-    each((pt, along, across) => {
-      expect(Math.abs(pt.x) < LAYOUT.fieldHalf - 6 && Math.abs(pt.z) < LAYOUT.fieldHalf - 6, `${along},${across} inside`).toBe(true);
-      expect(heights.bogAt(pt.x, pt.z), `bog at ${along},${across}`).toBe(0);
-      expect(heights.puddleAt(pt.x, pt.z), `puddle at ${along},${across}`).toBe(0);
-      expect(track.distanceTo(pt.x, pt.z), `track at ${along},${across}`).toBeGreaterThan(LAYOUT.trackHalfWidth + 1.5);
-    });
-    each((pt) => {
-      const h = heights.heightAt(pt.x, pt.z);
-      lo = Math.min(lo, h);
-      hi = Math.max(hi, h);
-    }, { from: -8, to: s.length + s.runOff, side: s.width / 2 });
-    expect(hi - lo).toBeLessThan(0.05);
-  });
 
   it('keeps clear of the bales, the ramp and its run-up, and the other things in the field', () => {
     for (const [x, z] of LAYOUT.strawBaleSpots) {

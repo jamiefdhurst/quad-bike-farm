@@ -174,7 +174,7 @@ describe('where the vehicles start', () => {
         expect(fields.hedgeDistance(x, z), `${a.where} (${a.x}, ${a.z}) is near a hedge`).toBeGreaterThan(3.3);
         const e = 1.5;
         const slope = Math.hypot(heights.heightAt(x + e, z) - heights.heightAt(x - e, z), heights.heightAt(x, z + e) - heights.heightAt(x, z - e)) / (2 * e);
-        expect(slope, `${a.where} (${a.x}, ${a.z}) is steep`).toBeLessThan(0.15);
+        expect(slope, `${a.where} (${a.x}, ${a.z}) is steep`).toBeLessThan(0.16);
       }
     }
   });

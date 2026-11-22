@@ -49,7 +49,7 @@ export const FLOCK_PARAM_RANGES = {
 };
 
 /** Which half of the hill the flock grazes on farm day `day`: the one `param` says, or with -1 the new farm's alternate day by day and today's stay on the climb's side. */
-export const hillHalfFor = (param, day, newFarm) => (param >= 0 ? param : newFarm ? Math.abs(Math.trunc(day)) % 2 : 1);
+export const hillHalfFor = (param, day) => (param >= 0 ? param : Math.abs(Math.trunc(day)) % 2);
 
 /**
  * Whether a sheep may stand at (x, z) on the hill: inside the pasture and past its foot, out of the wood, the water, the gorse, the steep banks and the hut's

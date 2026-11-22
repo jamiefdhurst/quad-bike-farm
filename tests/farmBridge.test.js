@@ -12,7 +12,7 @@ import { CAPSULE_RADIUS } from '../src/player/player.js';
 import { DEFAULT_PLAYER_PARAMS } from '../src/player/playerParams.js';
 
 // The farm bridge (#689) on the new farm's river: its model and its colliders, walked over in a real Rapier world with the player's capsule.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const spec = two.farmBridge;
 const HALF_HEIGHT = 0.55;
 const WALK = DEFAULT_PLAYER_PARAMS.walkSpeed;

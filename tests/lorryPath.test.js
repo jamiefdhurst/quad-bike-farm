@@ -4,7 +4,7 @@ import { layoutNew, LORRY_PLAN, DRIVE_PLAN, LANE_PLAN, FARMSTEAD_PLAN, PLAN_ORIG
 import { filletDistance } from '../src/world/roads.js';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const plan = (p) => [p.x + PLAN_ORIGIN[0], p.z + PLAN_ORIGIN[1]];
 const around = (name, p, halfX, halfZ) => ({ name, rect: [plan(p)[0] - halfX, plan(p)[1] - halfZ, plan(p)[0] + halfX, plan(p)[1] + halfZ] });
 const planRect = (k) => [k.minX + PLAN_ORIGIN[0], k.minZ + PLAN_ORIGIN[1], k.maxX + PLAN_ORIGIN[0], k.maxZ + PLAN_ORIGIN[1]];

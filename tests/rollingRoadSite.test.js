@@ -39,13 +39,8 @@ describe('the rig site', () => {
     expect(site.corners).toHaveLength(4);
     for (const c of site.corners) expect(onDeck(site, c.x, c.z, 0.01)).toBe(true);
   });
-  it('sits in the yard at the real farm, well clear of the barn and the hedge and apart from the quads', () => {
+  it('sits apart from the quad parking spots and the line-up', () => {
     const s = places.rig;
-    const barn = LAYOUT.barn;
-    for (const c of [...s.corners, s.rampFoot]) {
-      expect(c.x).toBeGreaterThan(barn.x + barn.halfX + 3);
-      expect(c.x).toBeLessThan(LAYOUT.farm?.maxX ?? 1e9);
-    }
     // A parked quad can be nudged by the spawn jitter, and is a couple of metres long: keep the deck and ramp 3 m clear of every spot.
     for (const q of LAYOUT.spawn.quads) expect(onDeck(s, q.x, q.z, 3), `${q.x},${q.z}`).toBe(false);
     for (const q of LAYOUT.spawn.away) expect(onDeck(s, q.x, q.z, 3), q.where).toBe(false);

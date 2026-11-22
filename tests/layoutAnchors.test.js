@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
+import { TODAY } from './helpers/todaysLayout.js';
 import { resolveLayout, anchoredPaths } from '../src/world/layoutAnchors.js';
 import before from './fixtures/layout-before-anchors.json';
 
@@ -18,7 +19,7 @@ function compare(a, b, path, bad) {
 describe('the layout written from anchors', () => {
   it('resolves to the same numbers the layout always had, to a millimetre', () => {
     const bad = [];
-    compare(before, LAYOUT, 'LAYOUT', bad);
+    compare(before, TODAY, 'LAYOUT', bad);
     expect(bad).toEqual([]);
   });
 });

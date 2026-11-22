@@ -83,14 +83,14 @@ describe('the far versions of the farm', () => {
     expect(g.name).toBe('villageFar');
     expect(count(g)).toBe(1);
     const mesh = g.children[0];
-    expect(mesh.geometry.getAttribute('position').count / 3).toBe(S.buildings.length * 16);
+    expect(mesh.geometry.getAttribute('position').count / 3).toBe((S.buildings.length + S.laneBuildings.length) * 16); // the lane's cottages and farmhouse too
   });
   it('has the neighbour farm as one mesh: the house, the barn and the yard wall', () => {
     const s = neighbourFarmShape(LAYOUT);
     const g = farNeighbourFarm(s, 3);
     expect(g.name).toBe('neighbourFarmFar');
     expect(count(g)).toBe(1);
-    expect(g.children[0].geometry.getAttribute('position').count / 3).toBe(2 * 16 + s.walls.length * 10);
+    expect(g.children[0].geometry.getAttribute('position').count / 3).toBe((2 + [s.parlour, s.tankRoom].filter(Boolean).length) * 16 + (s.walls.length + (s.slurry ? 1 : 0)) * 10); // the dairy's low buildings and slurry drum too
   });
   it('lies over the same ground as the full pieces, within the village and the yard', () => {
     const S = villageShape(LAYOUT);

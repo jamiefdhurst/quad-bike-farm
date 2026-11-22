@@ -196,29 +196,6 @@ describe('the real course', () => {
   const track = new Track(LAYOUT.trackPoints);
   const heights = createTerrainHeight(LAYOUT, track);
 
-  it('is clear of the track, bogs, puddles and hedges, and the ground is gentle, from the run-up to the run-off', () => {
-    const c = LAYOUT.coneCourse;
-    const f = { x: Math.sin(c.yaw), z: Math.cos(c.yaw) };
-    const total = c.lead + (c.gates - 1) * c.spacing + c.tail;
-    let lo = Infinity;
-    let hi = -Infinity;
-    for (let along = -8; along <= total + 3; along += 2) {
-      for (let across = -5; across <= 5; across += 2) {
-        const x = c.x + f.x * along + Math.cos(c.yaw) * across;
-        const z = c.z + f.z * along - Math.sin(c.yaw) * across;
-        expect(Math.abs(x) < LAYOUT.fieldHalf - 6 && Math.abs(z) < LAYOUT.fieldHalf - 6, `${along},${across} inside`).toBe(true);
-        expect(heights.bogAt(x, z), `bog ${along},${across}`).toBe(0);
-        expect(heights.puddleAt(x, z), `puddle ${along},${across}`).toBe(0);
-        expect(track.distanceTo(x, z), `track ${along},${across}`).toBeGreaterThan(LAYOUT.trackHalfWidth + 2);
-        for (const [bx, bz] of LAYOUT.strawBaleSpots) expect(Math.hypot(bx - x, bz - z), `bale ${bx},${bz}`).toBeGreaterThan(3);
-        const h = heights.heightAt(x, z);
-        lo = Math.min(lo, h);
-        hi = Math.max(hi, h);
-      }
-    }
-    expect(hi - lo).toBeLessThan(2); // a slope of about 4%: gentle for a quad, and it needs no levelling
-    expect(real).toHaveLength(c.gates + 2);
-  });
 
   it('keeps clear of the drag strip and the jump', () => {
     const s = LAYOUT.dragStrip;

@@ -30,7 +30,7 @@ import { buildBrookCulvert } from './brookProps.js';
 import { buildFarmBridge } from './farmBridge.js';
 import { Scatter } from './scatter.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
-import { laneBarriers, nearNeighbourYard } from './neighbourFarm.js';
+import { nearNeighbourYard } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
 import { roadNetwork } from './roads.js';
 import { junctionBreaks, layByOf, inLaneFittings } from './aRoadFittings.js';
@@ -72,7 +72,7 @@ export function buildProps(ctx) {
   const barn = buildBarn(c);
   const hedgeSwap = buildHedges(c);
   c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
-  const gates = [buildGate(c), buildNorthGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c), buildBypassGate(c), buildMoorGate(c)].filter(Boolean);
+  const gates = [buildGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c), buildBypassGate(c), buildMoorGate(c)].filter(Boolean);
   buildPitLaneGate(c);
   buildCattleGrid(c);
   buildReflectorPosts(c);
@@ -222,13 +222,6 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random,
 function buildGate(c) {
   const { layout } = c;
   return buildFiveBarGate(c, { id: 'south', gate: layout.gate, z: layout.gate.z ?? layout.fieldHalf, dir: 1, gap: c.fields.gates.south });
-}
-
-/** The gate in the grass field's north hedge onto the wood (layout.woods.gate): the south gate's twin, swung back into the field and tied. */
-function buildNorthGate(c) {
-  const { layout } = c;
-  if (!layout.woods || layout.newFarm) return null; // the new farm's gates are #696's: the wood's is a gap in its hedge for now
-  return buildFiveBarGate(c, { id: 'north', gate: layout.woods.gate, z: -layout.fieldHalf, dir: -1, gap: c.fields.gates.north });
 }
 
 /** The gate in the barley field's north hedge onto the gravel pit's field (layout.quarry.gate): swung back into the barley field and tied. */
@@ -448,7 +441,6 @@ function buildPublicLane({ scene, layout, heights, fixedBox }) {
   // the stretch that is open to ride (layout.publicLane.open, world/neighbourFarm.js) they leave the big gate and the neighbour's wall,
   // and shut its far side and both ends. The new farm has none (#568, #687): its roads end at the A-road's junctions and the lane's southern line, where
   // you are turned round (world/turnRound.js).
-  for (const b of laneBarriers(layout)) fixedBox(b.x, 0, b.z, b.hx, 40, b.hz);
   const net = roadNetwork(layout);
   const road = net.road('lane');
   const tarmac = new THREE.CanvasTexture(laneTexture());
@@ -718,7 +710,7 @@ function buildDistantTrees({ scene, layout, heights, fields, random }) {
     const crown = matrixAt(x, y + 5 * s, z, random() * 6, s * (3.2 + random() * 1.2), s * (3 + random()), s * (3.2 + random() * 1.2));
     if (nearNeighbourYard(layout, x, z, 45)) continue; // none stand by her yard or the lane beside it
     if (inVillage(layout, x, z, 14)) continue; // nor in the village
-    if (layout.newFarm && (roads.nearest(x, z, 14) || inLaneFittings(layout, x, z, 14))) continue; // nor on a road or its verge, nor in the lane's cottages' gardens (#687)
+    if (roads.nearest(x, z, 14) || inLaneFittings(layout, x, z, 14)) continue; // nor on a road or its verge, nor in the lane's cottages' gardens (#687)
     trunks.push(trunk);
     crowns.push(crown);
   }

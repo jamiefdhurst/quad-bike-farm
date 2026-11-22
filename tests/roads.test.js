@@ -12,82 +12,6 @@ const smoothstep = (a, b, v) => {
 const base = (x, z) => 0.04 * x + 0.02 * z + Math.sin(x * 0.07) * 0.6 + Math.cos(z * 0.05) * 0.4; // a made-up lie of the land
 const rng = (seed) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 
-describe('the road network of the farm', () => {
-  it('has the lane, the farm road and the village street, each a tarmac road with a width', () => {
-    expect(net.roads.map((r) => r.id)).toEqual(['lane', 'farm', 'street']);
-    for (const r of net.roads) {
-      expect(r.surface).toBe('tarmac');
-      expect(r.halfWidth).toBeGreaterThan(1);
-      expect(r.length).toBeGreaterThan(50);
-    }
-    expect(net.road('street').junction).toEqual({ end: 'start', onto: 'lane' });
-  });
-
-  it('agrees with the numbers the lane and the farm road were laid out with', () => {
-    expect(net.road('lane').halfWidth).toBe(LAYOUT.publicLane.halfWidth);
-    expect(net.pointAt('lane', 0).x).toBe(LAYOUT.publicLane.x);
-    expect(net.pointAt('lane', 0).z).toBe(LAYOUT.publicLane.minZ);
-    expect(net.pointAt('lane', net.road('lane').length).z).toBe(LAYOUT.publicLane.maxZ);
-    expect(net.road('farm').halfWidth).toBe(LAYOUT.road.halfWidth);
-    expect(net.pointAt('farm', 0)).toMatchObject({ x: LAYOUT.road.fromX, z: LAYOUT.road.z });
-    expect(net.pointAt('farm', net.road('farm').length).x).toBe(LAYOUT.road.toX);
-    expect(net.road('farm').pads[0]).toMatchObject({ x: LAYOUT.road.pad.x, z: LAYOUT.road.z, radius: LAYOUT.road.pad.radius });
-  });
-
-  it('is tarmac along the middle of every road and not 1 m past its edge', () => {
-    for (const r of net.roads) {
-      const solo = createRoads([{ ...r, junction: undefined }]);
-      for (let s = 3; s < r.length - 3; s += 5) {
-        const p = net.pointAt(r.id, s);
-        expect(net.tarmacAt(p.x, p.z), `${r.id} at ${s}`).toBe(1);
-        for (const side of [-1, 1]) {
-          const x = p.x + p.tz * side * (r.hard + 1);
-          const z = p.z - p.tx * side * (r.hard + 1);
-          if (r.pads.some((q) => Math.hypot(x - q.x, z - q.z) < q.radius + 2)) continue; // the hardstanding is wider than the road
-          expect(solo.tarmacAt(x, z), `${r.id} at ${s}, side ${side}`).toBe(0);
-        }
-      }
-    }
-  });
-
-  it('counts the street cut square where it joins the lane, so its pavement does not spill over the lane\'s far side', () => {
-    const lane = LAYOUT.publicLane;
-    const start = net.pointAt('street', 0);
-    expect(net.tarmacAt(start.x, start.z)).toBe(1);
-    expect(net.tarmacAt(lane.x + lane.halfWidth + 1, start.z)).toBe(0);
-    expect(net.nearest(lane.x + lane.halfWidth + 1, start.z, 3)?.road.id).not.toBe('street');
-  });
-
-  it('gives the same tarmac as the three roads had when each was its own code', () => {
-    const road = LAYOUT.road;
-    const lane = LAYOUT.publicLane;
-    const old = (x, z) => {
-      const e = 0.15;
-      const along = Math.max(road.fromX - x, 0, x - road.toX);
-      const onRoad = 1 - smoothstep(road.halfWidth - e, road.halfWidth + e, Math.hypot(along, z - road.z));
-      const onPad = 1 - smoothstep(road.pad.radius - e, road.pad.radius + e, Math.hypot(x - road.pad.x, z - road.z));
-      const la = Math.max(lane.minZ - z, 0, z - lane.maxZ);
-      return Math.max(onRoad, onPad, 1 - smoothstep(lane.halfWidth - e, lane.halfWidth + e, Math.hypot(la, x - lane.x)));
-    };
-    const r = rng(7);
-    for (let i = 0; i < 4000; i++) {
-      const x = 60 + r() * 160;
-      const z = -30 + r() * 80;
-      const lx = 200 + r() * 12;
-      const lz = -210 + r() * 420;
-      expect(net.tarmacAt(x, z)).toBeCloseTo(old(x, z), 9);
-      expect(net.tarmacAt(lx, lz)).toBeGreaterThanOrEqual(old(lx, lz) - 1e-9);
-    }
-  });
-
-  it('says which surface is under a point, and how much of it', () => {
-    expect(net.surfaceAt(130, 2)).toMatchObject({ surface: 'tarmac', t: 1, road: 'farm' });
-    expect(net.surfaceAt(130, 20)).toBeNull();
-    expect(net.nearest(130, 4)).toMatchObject({ d: 2 });
-    expect(net.nearest(130, 4).road.id).toBe('farm');
-    expect(net.nearest(130, 4, 1)).toBeNull();
-  });
-});
 
 describe('a stone road', () => {
   const stone = createRoads([{ id: 'drive', surface: 'stone', halfWidth: 1.5, points: [[0, 0], [30, 0]] }]);
@@ -130,54 +54,8 @@ describe('single-track roads', () => {
   });
 });
 
-describe('points along a road', () => {
-  it('runs from one end to the other, with the left of the way you travel kept to', () => {
-    const pts = net.pointsAlong('lane', { step: 10, offset: 1 });
-    expect(pts[0]).toMatchObject({ z: LAYOUT.publicLane.minZ, s: 0 });
-    expect(pts[pts.length - 1].z).toBe(LAYOUT.publicLane.maxZ);
-    expect(pts[0].x).toBeCloseTo(LAYOUT.publicLane.x + 1, 9); // heading south, the left is east
-    const back = net.pointsAlong('lane', { step: 10, offset: 1, dir: -1 });
-    expect(back[0].z).toBe(LAYOUT.publicLane.maxZ);
-    expect(back[0].x).toBeCloseTo(LAYOUT.publicLane.x - 1, 9); // and heading north it is west
-  });
-  it('gives the lane a path to keep left on, a lead past each end', () => {
-    const [from, to] = net.lanePath('lane', 1, 12);
-    expect(from.z).toBe(LAYOUT.publicLane.minZ - 12);
-    expect(to.z).toBe(LAYOUT.publicLane.maxZ + 12);
-    expect(from.x).toBeCloseTo(LAYOUT.publicLane.x + LAYOUT.publicLane.halfWidth * KEEP_LEFT, 9);
-    const [nFrom, nTo] = net.lanePath('lane', -1, 12);
-    expect(nFrom.z).toBe(LAYOUT.publicLane.maxZ + 12);
-    expect(nTo.z).toBe(LAYOUT.publicLane.minZ - 12);
-    expect(nFrom.x).toBeLessThan(LAYOUT.publicLane.x);
-  });
-});
 
 describe('levelling the ground across a road', () => {
-  it('lays the farm road as it was: level across, with a 3 m shoulder and a flat hardstanding', () => {
-    const road = LAYOUT.road;
-    const old = (x, z, h) => {
-      const along = Math.max(road.fromX - 2 - x, 0, x - road.toX);
-      const dRoad = Math.hypot(along, z - road.z) - road.halfWidth;
-      const dPad = Math.hypot(x - road.pad.x, z - road.z) - road.pad.radius;
-      const k = 1 - smoothstep(0, 3, Math.min(dRoad, dPad));
-      if (k <= 0) return h;
-      const padK = 1 - smoothstep(-4, 2, dPad);
-      const level = base(Math.min(x, road.toX), road.z) * (1 - padK) + base(road.pad.x, road.z) * padK;
-      return h + (level - h) * k;
-    };
-    const r = rng(11);
-    let touched = 0;
-    for (let i = 0; i < 6000; i++) {
-      const x = 70 + r() * 140;
-      const z = road.z - 14 + r() * 28;
-      const h = base(x, z) + 0.3;
-      const laid = net.levelAt(x, z, base);
-      const got = laid ? h + (laid.level - h) * laid.k : h;
-      if (laid) touched++;
-      expect(got).toBeCloseTo(old(x, z, h), 9);
-    }
-    expect(touched).toBeGreaterThan(500);
-  });
 
   it('crowns a cambered road in the middle and eases it into the ground at the verge', () => {
     const flat = () => 5;
@@ -240,21 +118,6 @@ describe('levelling the ground across a road', () => {
   });
 });
 
-describe('saying which road you are on', () => {
-  it('names the road, its surface and how far from its middle', () => {
-    expect(describeRoad(net, 130, 2)).toBe('the farm road (tarmac, 100%), on the carriageway, 0.0 m from its middle (52 m along)');
-    expect(describeRoad(net, 130, 5)).toMatch(/on the verge/);
-    expect(describeRoad(net, 130, 40)).toBe('no road within 12 m');
-    expect(describeRoad(net, LAYOUT.publicLane.x, 0)).toMatch(/^the lane \(tarmac/);
-  });
-
-  it('reads the quad you ride before your feet', () => {
-    const game = { world: { roads: net }, player: { position: { x: 130, z: 40 } }, riddenUnit: null };
-    expect(describeRoadUnder(game)).toBe('no road within 12 m');
-    game.riddenUnit = { quad: { position: { x: 130, z: 2 } } };
-    expect(describeRoadUnder(game)).toMatch(/^the farm road/);
-  });
-});
 
 // The index (#664): a lookup looks only at the cells near the point, and must answer as a walk of every segment does.
 describe('the index of a road', () => {

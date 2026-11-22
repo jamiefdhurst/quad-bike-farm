@@ -4,8 +4,6 @@
 // (the games, the day, the workshop, the jobs, the animals and the lane, the farm's memory, getting about), never a flat list.
 import { buttonText } from './buttonText.js';
 import { SEASONS } from '../world/seasons.js';
-import { LAYOUT_CHOSEN } from '../world/layout.js';
-import { describeLayout, searchForLayout } from '../world/layoutNew.js';
 import { describeFieldNames } from '../world/fieldNames.js';
 import { girlActions } from './girlActions.js';
 import { jobActions } from './jobActions.js';
@@ -418,9 +416,7 @@ export function buildGirlsTab(d) {
     g.jobBoardView.refresh();
   });
   for (const season of SEASONS) button(mem, `Load it as ${season}`, () => g.reloadAsSeason(season));
-  show(mem, 'which farm', () => describeLayout(LAYOUT_CHOSEN));
-  if (g.world.layout.fields) show(mem, 'field names', () => describeFieldNames(g.world.layout));
-  button(mem, LAYOUT_CHOSEN === 2 ? 'Load today\'s farm (layout 1)' : 'Load the new farm (layout 2, not saved)', () => (location.search = searchForLayout(location.search, LAYOUT_CHOSEN === 2 ? 1 : 2)));
+  show(mem, 'field names', () => describeFieldNames(g.world.layout));
   show(mem, 'the notebook', () => `${g.discoveries.score().count} of ${g.discoveries.score().totalCount} things learnt`);
   button(mem, 'Write down everything in the notebook', () => g.discoveries.list.forEach((d) => g.discoveries.learn(d.id)));
   button(mem, 'Rub out the notebook\'s learnt page', () => (g.discoveries.forget(), g.hud.bucketOpen && g.showBucketList()));

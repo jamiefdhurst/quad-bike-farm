@@ -4963,7 +4963,7 @@ export class Game {
   /** One line about the save, for the debug panel and the console. */
   farmText() {
     const savedAgo = this.farmSavedAt === undefined ? null : (performance.now() - this.farmSavedAt) / 1000;
-    return describeFarm({ day: this.farm.day, seeded: this.farm.seeded, newFarm: !!this.farm.newFarm, wiped: !!this.farmWiped, started: !!this.farmStarted, savedAgo });
+    return describeFarm({ day: this.farm.day, seeded: this.farm.seeded, wiped: !!this.farmWiped, started: !!this.farmStarted, savedAgo });
   }
 
   /** One line about the farm's date and season, for the debug panel and the console. */
@@ -11772,7 +11772,7 @@ export class Game {
     registerTuning('Sheep', this.flockParams, FLOCK_PARAM_RANGES);
     // The electric fence splits the pasture: the flock grazes one half (`hillHalf`) and never steps across the wire.
     const fence = createElectricFence(this.world.layout);
-    const half = hillHalfFor(this.flockParams.hillHalf, this.farm?.day ?? 1, !!this.world.layout.newFarm);
+    const half = hillHalfFor(this.flockParams.hillHalf, this.farm?.day ?? 1);
     const allowed = hillFlockAllowed(hill, this.world.layout.hill.foot, fence, half);
     this.hillFlockAllowed = allowed; // the flock scene looks for ground by the same rule
     const p = hill.pasture;

@@ -18,22 +18,7 @@ describe('the village', () => {
     expect(S.limit).toBe(20);
   });
 
-  it('starts on the lane and reaches its west edge, so the road can be clamped to the edge with no gap', () => {
-    expect(S.road[0].x).toBeGreaterThanOrEqual(S.laneEdge);
-    expect(S.laneEdge).toBeCloseTo(lane.x - lane.halfWidth, 6);
-    expect(S.road[S.mouth].x).toBeLessThanOrEqual(S.laneEdge);
-    expect(S.road[S.mouth - 1].x).toBeGreaterThan(S.laneEdge);
-  });
 
-  it('has a side road that turns off the lane and bends away west, not a straight line', () => {
-    expect(S.road[0].x).toBeCloseTo(lane.x, 0);
-    expect(S.road[S.road.length - 1].x).toBeLessThan(110);
-    const heading = (i) => Math.atan2(S.road[i].tz, S.road[i].tx);
-    const headings = S.road.map((_, i) => heading(i));
-    expect(Math.max(...headings) - Math.min(...headings)).toBeGreaterThan(0.6);
-    // Smooth: no jump between neighbouring samples.
-    for (let i = 1; i < S.road.length; i++) expect(Math.hypot(S.road[i].x - S.road[i - 1].x, S.road[i].z - S.road[i - 1].z)).toBeLessThan(2.1);
-  });
 
   it('smoothRoad passes through its points and ends where they end', () => {
     const r = smoothRoad([[0, 0], [10, 0], [20, 5]], 1);
@@ -42,18 +27,6 @@ describe('the village', () => {
     expect(r.some((p) => Math.hypot(p.x - 10, p.z) < 0.01)).toBe(true);
   });
 
-  it('keeps every building inside its area, off each other and clear of the road and its pavements', () => {
-    for (const b of S.buildings) {
-      expect(b.outer.minX, b.id).toBeGreaterThan(S.area.minX);
-      expect(b.outer.maxX, b.id).toBeLessThan(S.area.maxX - 2);
-      expect(b.outer.minZ, b.id).toBeGreaterThan(S.area.minZ + 3);
-      expect(b.outer.maxZ, b.id).toBeLessThan(S.area.maxZ - 0.5);
-      for (const o of S.buildings) if (o !== b) expect(overlap(b.outer, o.outer, 1.5), `${b.id} ${o.id}`).toBe(false);
-      for (let x = b.outer.minX; x <= b.outer.maxX; x += 1) {
-        for (const z of [b.outer.minZ, b.outer.maxZ]) expect(S.roadAt(x, z).d, `${b.id} ${x}`).toBeGreaterThan(S.curb + 1.5);
-      }
-    }
-  });
 
   it('turns every front to the road', () => {
     for (const b of S.buildings) {
@@ -72,29 +45,8 @@ describe('the village', () => {
     expect(S.pubStop.z).toBeLessThan(S.carPark.maxZ);
   });
 
-  it('stands clear of the brook and the neighbour\'s yard', () => {
-    const brook = createBrook(LAYOUT);
-    const yard = neighbourFarmShape(LAYOUT).outline;
-    for (const b of S.buildings) {
-      for (let x = b.outer.minX; x <= b.outer.maxX; x += 2) expect(b.outer.minZ - (brook.zAt(x) + brook.halfAt(x)), `${b.id} ${x}`).toBeGreaterThan(4);
-      expect(b.outer.minZ).toBeGreaterThan(yard.maxZ + 8);
-    }
-  });
 
-  it('opens a gap in the lane\'s west barrier at the turning, and keeps the lane ridable down to it', () => {
-    const [a, b] = S.laneGap;
-    expect(a).toBeLessThan(S.road[0].z);
-    expect(b).toBeGreaterThan(S.road[0].z);
-    expect(lane.open.maxZ).toBeGreaterThan(b);
-    const west = laneBarriers(LAYOUT).filter((w) => w.x < lane.x);
-    const mid = (a + b) / 2;
-    expect(west.some((w) => mid > w.z - w.hz && mid < w.z + w.hz)).toBe(false);
-  });
 
-  it('shuts the village in with walls on its north, south and west', () => {
-    expect(S.walls).toHaveLength(3);
-    for (const w of S.walls) expect(w.hx * w.hz).toBeGreaterThan(0);
-  });
 
   it('levels the ground under each building, the car park and the forecourt, and leaves the road to follow the land', () => {
     const heights = createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints));
@@ -111,12 +63,6 @@ describe('the village', () => {
 
 describe('the village road meets the lane and carries on past its gate (#535)', () => {
   const lane2 = LAYOUT.publicLane;
-  it('starts at the lane\'s west edge, with the give-way line just inside it', () => {
-    expect(S.laneEdge).toBeCloseTo(lane2.x - lane2.halfWidth, 5);
-    expect(S.road[S.mouth].x).toBeLessThanOrEqual(S.laneEdge);
-    expect(S.road[S.mouth - 1].x).toBeGreaterThan(S.laneEdge);
-    expect(S.road[S.giveWay].x).toBeLessThan(S.laneEdge - 2);
-  });
 
   it('has a broken centre line and one give-way line, across the way out only', () => {
     const { centre, giveWay } = roadMarks(S);
@@ -137,14 +83,6 @@ describe('the village road meets the lane and carries on past its gate (#535)', 
     expect(e.maxX).toBeLessThanOrEqual(S.carPark.maxX);
   });
 
-  it('goes on past the gate: from the last road sample, bending away and rising', () => {
-    const lastRoad = S.road[S.road.length - 1];
-    expect(S.beyond[0].x).toBeCloseTo(lastRoad.x, 0);
-    expect(S.beyond[0].z).toBeCloseTo(lastRoad.z, 0);
-    expect(S.beyond[S.beyond.length - 1].z).toBeGreaterThan(S.area.maxZ + 10);
-    expect(S.beyond[S.beyond.length - 1].x).toBeGreaterThan(S.area.minX - 20);
-    expect(S.beyondRise).toBeGreaterThan(2);
-  });
 });
 
 describe('the village houses, shop and pub shells (#538)', () => {
@@ -203,29 +141,8 @@ describe('the village houses, shop and pub shells (#538)', () => {
   });
 });
 
-describe('the road mouth is covered right across the lane\'s edge (found testing #593)', () => {
-  it('lays samples out over the lane, whose widest cross-sections lie wholly past its edge', () => {
-    const S = villageShape(LAYOUT);
-    const lead = roadLeadIn(S.road[0], 6, 2);
-    expect(lead).toHaveLength(6);
-    const reach = S.roadHalfWidth + 3.4; // the mouth's flare
-    for (const p of lead) {
-      expect(p.x).toBeGreaterThan(S.road[0].x);
-      for (const o of [-reach, reach]) expect(p.x - p.tz * o).toBeGreaterThan(S.laneEdge);
-    }
-    expect(lead[5].x).toBeLessThan(lead[0].x);
-  });
-});
 
 describe('the road turns south and is shut by a gate before the wall (found testing #593)', () => {
-  it('ends heading south, the gate across it, inside the village and short of its south wall', () => {
-    const last = S.road[S.road.length - 1];
-    expect(last.tz).toBeGreaterThan(0.99);
-    expect(S.gate.tz).toBeGreaterThan(0.99);
-    expect(S.gate.z).toBeCloseTo(last.z - S.v.end.back, 1);
-    expect(S.gate.z).toBeLessThan(S.area.maxZ - 2);
-    expect(S.gate.x - (S.roadHalfWidth + S.v.road.pavement)).toBeGreaterThan(S.area.minX + 1); // the pavements clear the west wall
-  });
 
   it('keeps every building and the car park clear of the road\'s pavements', () => {
     const clear = (r) => S.road.every((p) => Math.hypot(Math.max(r.minX - p.x, 0, p.x - r.maxX), Math.max(r.minZ - p.z, 0, p.z - r.maxZ)) > S.curb - 0.5);

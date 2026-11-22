@@ -6,7 +6,7 @@ import { paintContext, paintStubble } from '../src/world/groundTexture.js';
 import { polygonArea } from '../src/world/polygons.js';
 
 // The ground texture paints each stubble field inside its polygon, not its box (#813).
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const fields = createFields(two);
 
 /** A canvas that only remembers: the path being drawn, the clips in force, and every fill with the clip it was made under. */
@@ -65,14 +65,5 @@ describe('the ground texture inside a field\'s polygon', () => {
       if (clipArea < box.w * box.h * 0.98) slanted++;
     }
     expect(slanted).toBeGreaterThanOrEqual(4);
-  });
-  it('still paints today\'s two rectangles as their boxes', () => {
-    const f1 = createFields(LAYOUT);
-    const { state, win } = paintAll(f1);
-    for (const key of f1.stubbleFields) {
-      const r = f1.areas[key];
-      const clip = state.fills.map((f) => f.clips[0]).find((c) => c.length === 4 && Math.abs(c[0][0] - (r.minX - win.minX)) < 1e-6 && Math.abs(c[0][1] - (r.minZ - win.minZ)) < 1e-6);
-      expect(clip, key).toBeDefined();
-    }
   });
 });

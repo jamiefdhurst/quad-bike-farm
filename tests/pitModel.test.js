@@ -48,11 +48,11 @@ describe('the inspection pit (#817)', () => {
     const { buildBarnShed } = await import('../src/world/barnBuild.js');
     const ctx = headlessContext();
     const { group, floorY, pitPlug } = buildBarnShed(ctx);
-    const { x, z } = LAYOUT.barnLocal.shed.pit;
+    const { x, z } = LAYOUT.shed.pit; // where it is in the world: the barn stands turned, and its group with it
     group.updateMatrixWorld(true);
     pitPlug.updateMatrixWorld(true);
     const slabTop = floorY + 0.011;
-    expect(hitsAt(group, x, floorY + 1, z + 1.5).some((y) => Math.abs(y - slabTop) < 1e-6)).toBe(true); // beside the pit the slab is there
+    expect(hitsAt(group, x + 1.5, floorY + 1, z).some((y) => Math.abs(y - slabTop) < 1e-6)).toBe(true); // beside the pit the slab is there
     expect(hitsAt(group, x, floorY + 0.5, z).some((y) => y > floorY - 0.05)).toBe(false); // over the pit it is not
     expect(hitsAt(pitPlug, x, floorY + 0.5, z).some((y) => Math.abs(y - slabTop) < 1e-6)).toBe(true); // the plug is
   });

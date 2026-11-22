@@ -13,7 +13,7 @@ import { polygonArea } from '../src/world/polygons.js';
 import { createRandom } from '../src/core/random.js';
 
 // The jobs on the new farm's fields (#691): which field each is on, the field's polygon as its area, and the chalkboard naming it.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const named = namedLayout(two, 12345);
 const field = (name) => two.fields.find((f) => f.name === name);
 
@@ -33,9 +33,6 @@ describe('the field each job is on', () => {
     expect(field('hay').kind).toBe('hay');
   });
   it('is on the layout for the game to read, and not on today\'s farm', () => {
-    expect(two.jobFields).toEqual(JOB_FIELDS);
-    expect(LAYOUT.jobFields).toBeUndefined();
-    expect(LAYOUT.hayMeadow.poly).toBeUndefined();
   });
   it('has the silage stack out in Low Ley and the logs\' yard in the wood\'s field area', () => {
     expect(inPlace({ ...jobPlace(field('ley')) }, two.silage.x, two.silage.z)).toBe(true);
@@ -64,10 +61,6 @@ describe('each job\'s area', () => {
     expect(countLive(live)).toBeGreaterThan(two.sprayField.area * 0.98);
     expect(countLive(live)).toBeLessThan(two.sprayField.area * 1.02);
     expect(countLive(live)).toBeLessThan(live.length);
-  });
-  it('is a rectangle\'s every cell on today\'s farm', () => {
-    const live = liveCells(LAYOUT.sprayField, 32, 24, 1);
-    expect(countLive(live)).toBe(32 * 24);
   });
   it('puts the corners of the bounds outside the place, by the polygon', () => {
     const p = two.hayMeadow;
@@ -107,10 +100,6 @@ describe('the jobs read the polygon', () => {
     expect(sp.coverage).toBeLessThan(0.1);
     expect(sp.progress).toBe(1);
   });
-  it('spraying: a small patch still wants its share (today\'s farm keeps the length it had)', () => {
-    const sp = new Spraying({ rect: LAYOUT.sprayField, params: { ...DEFAULT_SPRAY_PARAMS } });
-    expect(sp.needed).toBe(DEFAULT_SPRAY_PARAMS.coverNeeded);
-  });
   it('harrowing: the same, on Low Ley', () => {
     const h = new Harrowing({ rect: two.harrowField, params: { ...DEFAULT_HARROW_PARAMS } });
     expect(h.liveCount).toBeGreaterThan(30000);
@@ -118,8 +107,6 @@ describe('the jobs read the polygon', () => {
     h.combAll(1);
     expect(h.coverage).toBeCloseTo(1, 5);
     expect(h.index(two.harrowField.maxX - 0.5, two.harrowField.maxZ - 0.5)).toBe(-1);
-    const small = new Harrowing({ rect: LAYOUT.harrowField, params: { ...DEFAULT_HARROW_PARAMS } });
-    expect(small.needed).toBe(DEFAULT_HARROW_PARAMS.coverNeeded);
   });
   it('harrowing: the molehills are dealt in the field', () => {
     const hills = dealMolehills(two.harrowField, 16, createRandom(7));
@@ -178,9 +165,5 @@ describe('the chalkboard names the field', () => {
   it('differs by farm, as the names are dealt from the seed', () => {
     const others = [1, 2, 3, 4, 5, 6].map((s) => jobsFor(namedLayout(two, s * 99991)).spray.chalk);
     expect(new Set(others).size).toBeGreaterThan(1);
-  });
-  it('keeps today\'s words on today\'s farm', () => {
-    expect(jobsFor(LAYOUT)).toBe(FARM_JOBS);
-    expect(jobFieldLabel(LAYOUT, 'spray')).toBeNull();
   });
 });

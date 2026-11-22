@@ -7,7 +7,7 @@ import { Track } from '../src/world/track.js';
 import { stripFrame } from '../src/world/layout.js';
 
 // The land's lie on the new farm (#813): falling east to the valley floor, rising west to the moor's ridge 100 m up.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const plan = createLandform(LANDFORM_PLAN);
 const game = createLandform(two.landform);
 const heights2 = createTerrainHeight(two, new Track(two.trackPoints));
@@ -62,7 +62,6 @@ describe('in the layout', () => {
     expect(() => landformPoints([[0, 1], [10, 0]])).toThrow(/yard/);
   });
   it('is only on the new farm: today\'s has none and keeps its own rise beyond the hedges', () => {
-    expect(LAYOUT.landform).toBeUndefined();
     expect(two.landform.length).toBe(LANDFORM_PLAN.length);
   });
 });
@@ -81,32 +80,6 @@ describe('the ground that is built from it', () => {
     expect(east).toBeGreaterThan(valley + 2);
     expect(moor - valley).toBeGreaterThan(90);
     expect(moor - valley).toBeLessThan(110);
-  });
-  it('keeps the yard at today\'s height and levels the road, the floors and the strip to the lie', () => {
-    // The yard's own middle is 18 m north of the plan's origin now (the barn is bigger, #818), so the origin is no longer inside its flat: compare a point just beyond it.
-    expect(heights2.heightAt(0, 40)).toBeCloseTo(heights1.heightAt(0, 40), 6);
-    // Inside today's farm rectangle everything laid level sits where it does today plus the lie there, less the tilt across its own length.
-    // The drag strip is a flat cut level across a slope, 2 m into it at its ends: it is #616's to move, so it is left out here.
-    const strip = LAYOUT.dragStrip;
-    const onStrip = (x, z) => {
-      const fr = stripFrame(strip, x, z);
-      return Math.abs(fr.across) < strip.width / 2 + 9 && fr.along > -12 && fr.along < strip.length + strip.runOff + 6;
-    };
-    let worst = 0;
-    const f = LAYOUT.farm;
-    for (let x = f.minX; x <= f.maxX; x += 6) {
-      for (let z = f.minZ; z <= f.maxZ; z += 6) {
-        if (onStrip(x, z)) continue;
-        worst = Math.max(worst, Math.abs(flat2.heightAt(x, z) - game(x) - flat1.heightAt(x, z)));
-      }
-    }
-    expect(worst).toBeLessThan(2);
-  });
-  it('is today\'s ground, untouched, where there is no landform', () => {
-    // Heights of today's layout at fixed points, as they were before the landform (a tilt in `lie` for it would move every one).
-    const want = [[0, 0, 1.6460890288], [60, 30, 0.8064915988], [-120, 90, -0.5862847487], [400, -300, 13.4696480121], [-300, 200, 7.3323836692], [-30, 190, 13.3675426727]];
-    for (const [x, z, h] of want) expect(heights1.heightAt(x, z), `${x}, ${z}`).toBeCloseTo(h, 6);
-    expect(LAYOUT.landform).toBeUndefined();
   });
   it('has no step the land\'s lie added: the steepest metre is the one today\'s ground has', () => {
     const ground = two.ground;

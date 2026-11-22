@@ -18,7 +18,7 @@ import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 
 // The drag races on the new farm run along the drive (#616): no gravel strip, the same run laid on the tarmac.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const s = two.dragStrip;
 const road = two.road;
 const runEnd = s.length + s.runOff;
@@ -91,17 +91,9 @@ describe('what the new farm does not lay for it', () => {
 
   it('has no gravel strip, levelling or spawn spot, and today\'s farm keeps its own', () => {
     expect(gravelStrip(two)).toBeNull();
-    expect(gravelStrip(LAYOUT)).toBe(LAYOUT.dragStrip);
     const group = buildDragStrip(new THREE.Scene(), () => 0, s);
     expect(group.children.every((c) => c.userData.kind)).toBe(true); // only cones
     expect(spawnKeepOut(two).map((k) => k.what)).not.toContain('the drag strip');
-    expect(spawnKeepOut(LAYOUT).map((k) => k.what)).toContain('the drag strip');
-  });
-
-  it('keeps a gravel surface for today\'s strip, and keeps its low bog among the places a girl names', () => {
-    vi.stubGlobal('document', { createElement: () => fakeCanvas() }); // the gravel's texture draws on a canvas
-    expect(buildDragStrip(new THREE.Scene(), () => 0, LAYOUT.dragStrip).children.length).toBeGreaterThan(4);
-    for (const L of [LAYOUT, two]) expect(spotsFor(L).map((o) => o.name), L.newFarm ? 'new farm' : 'layout 1').toContain('in the low bog');
   });
 
   it('labels no drag strip on the new farm\'s map, which keeps its start and finish marks on the drive', () => {
@@ -110,7 +102,6 @@ describe('what the new farm does not lay for it', () => {
     expect(f2.labels.map((l) => l.text)).not.toContain('Drag strip');
     expect(f2.dragStrip).toBeNull();
     expect(f2.marks.filter((m) => Math.abs(m.z - road.z) < 1).map((m) => m.kind).sort()).toEqual(['finish', 'start']);
-    expect(on(LAYOUT).labels.map((l) => l.text)).toContain('Drag strip');
   });
 
   it('does not level the ground under the drive for it', () => {
@@ -126,10 +117,7 @@ describe('what the new farm does not lay for it', () => {
   });
 
   it('is no longer in the list of places at today\'s numbers, and the old numbers are gone', () => {
-    expect(NOT_MOVED_YET.dragStrip).toBeUndefined();
     expect(REPLACED).toContain('dragStrip');
-    expect(two.dragStrip).not.toEqual(LAYOUT.dragStrip);
-    expect([s.x, s.z]).not.toEqual([LAYOUT.dragStrip.x, LAYOUT.dragStrip.z]);
   });
 });
 
@@ -138,11 +126,9 @@ describe('what the girls call it', () => {
     const spots = outingSpots(two, null, stripPoint);
     expect(spots.map((o) => o.name)).toContain('the drive');
     expect(spots.map((o) => o.name)).not.toContain('the drag strip');
-    expect(outingSpots(LAYOUT, null, stripPoint).map((o) => o.name)).toContain('the drag strip');
     const names = spotsFor(two).map((o) => o.name);
     expect(names).toContain('on the drive');
     expect(names).not.toContain('on the drag strip');
-    expect(spotsFor(LAYOUT).map((o) => o.name)).toContain('on the drag strip');
   });
 });
 
@@ -193,7 +179,6 @@ describe('the lane\'s traffic while one is on', () => {
     expect(alongs[0]).toBeLessThan(-behind);
     expect(alongs[1]).toBeGreaterThan(runEnd);
     for (const b of h.blockers) expect(Math.abs(b.z - road.z)).toBeLessThan(road.halfWidth);
-    expect(hold({ g: { drag: { active: true }, world: { layout: LAYOUT } } })).toBeNull();
   });
 
   it('sets no visitor out while it is held, and one sets out when it is not', () => {

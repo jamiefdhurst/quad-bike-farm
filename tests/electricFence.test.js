@@ -50,7 +50,6 @@ describe('the electric fence', () => {
 
   it('turns its warning sign across the wire: unturned on today\'s east-west fence, a quarter turn on a north-south one (#994)', () => {
     expect(createElectricFence(layout).signYaw).toBe(0);
-    expect(createElectricFence(LAYOUT).signYaw).toBe(0);
     expect(createElectricFence({ hill: { fence: { from: [0, 0], to: [0, 100], gap: { at: 10, half: 3 } } } }).signYaw).toBeCloseTo(Math.PI / 2, 9);
   });
 

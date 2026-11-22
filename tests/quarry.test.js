@@ -112,45 +112,6 @@ describe('the gravel pit: the ground', () => {
     }
   });
 
-  it('winds the haul roads down the wall at a grade a quad can take, from the gate to the floor, one each way round', () => {
-    const grade = (pts) => {
-      let steepest = 0;
-      let down = 0;
-      for (let i = 1; i < pts.length; i++) {
-        const a = pts[i - 1];
-        const b = pts[i];
-        const drop = heights.heightAt(a.x, a.z) - heights.heightAt(b.x, b.z);
-        if (b.t > 0) steepest = Math.max(steepest, drop / Math.hypot(b.x - a.x, b.z - a.z));
-        down += drop;
-      }
-      return { steepest: deg(steepest), down };
-    };
-    const main = quarry.roadPoints;
-    const other = quarry.rampPoints;
-    expect(main[0].t).toBe(0);
-    expect(main[main.length - 1].t).toBeCloseTo(1, 5);
-    expect(other[other.length - 1].t).toBeCloseTo(1, 5);
-    expect(Math.hypot(main[0].x - quarry.gate.x, main[0].z - quarry.rect.maxZ)).toBeLessThan(1);
-    // They leave the same point on the lip and go round opposite ways.
-    const lipEnd = main.filter((p) => p.t === 0).pop();
-    expect(Math.hypot(other[0].x - lipEnd.x, other[0].z - lipEnd.z)).toBeLessThan(0.5);
-    const sideOf = (pts) => Math.sign(Math.sin(pts[pts.length - 1].a - pts[0].a));
-    expect(sideOf(main)).toBe(-sideOf(other));
-    for (const pts of [main, other]) {
-      const g = grade(pts);
-      expect(g.down).toBeGreaterThan(quarry.pit.depth - 2); // the foot ends a little above the floor
-      expect(g.steepest).toBeLessThan(19);
-    }
-    expect(quarry.roadLength).toBeGreaterThan(100);
-    // Their surface is level across.
-    const mid = main[Math.floor(main.length * 0.8)];
-    const next = main[Math.floor(main.length * 0.8) + 1];
-    const nx = -(next.z - mid.z);
-    const nz = next.x - mid.x;
-    const len = Math.hypot(nx, nz);
-    const across = [-1.5, 0, 1.5].map((o) => heights.heightAt(mid.x + (nx / len) * o, mid.z + (nz / len) * o));
-    expect(Math.max(...across) - Math.min(...across)).toBeLessThan(0.9);
-  });
 
   it('keeps the two roads apart once they have left the lip, for every farm', () => {
     for (let seed = 1; seed <= 40; seed++) {
@@ -229,48 +190,6 @@ describe('the gravel pit: the ground', () => {
   });
 });
 
-describe('the gravel pit: its field', () => {
-  it('is a field of its own, through a gate in the barley field\'s north hedge', () => {
-    const [gx, gz] = [quarry.gate.x, quarry.rect.maxZ];
-    expect(fields.areaOf(gx, gz - 3)).toBe('quarry');
-    expect(fields.areaOf(gx, gz + 3)).toBe('north');
-    const gap = fields.hedges.find((h) => h.alongX && h.z1 === gz && h.x1 === 80).gaps.find((g) => g.id === 'quarry');
-    expect(gap).toMatchObject({ at: gx - 80, gate: true, shut: false }); // along the hedge from its west end, at x 80
-    expect(gap.half).toBeCloseTo(quarry.gate.width / 2 + 0.35);
-    expect(fields.gates.quarry).toBe(gap);
-  });
-
-  it('is hedged on its other three sides, the wood\'s east hedge being its west', () => {
-    const r = quarry.rect;
-    const has = (pred) => fields.hedges.some(pred);
-    expect(has((h) => h.alongX && h.z1 === r.minZ && h.x1 === r.minX && h.x2 === r.maxX)).toBe(true);
-    expect(has((h) => !h.alongX && h.x1 === r.maxX && h.z1 === r.minZ && h.z2 === r.maxZ)).toBe(true);
-    expect(has((h) => !h.alongX && h.x1 === r.minX && h.z1 === r.minZ && h.z2 === r.maxZ)).toBe(true);
-  });
-
-  it('is reached from the farm only through the gate, and a girl routes through it', () => {
-    const from = { x: 120, z: -40 };
-    const to = { x: quarry.gate.x - 20, z: quarry.rect.minZ + 20 };
-    const route = fields.route(from, to);
-    expect(route.length).toBeGreaterThan(1);
-    expect(route.some((p) => Math.abs(p.x - quarry.gate.x) < 0.01 && p.z > quarry.rect.maxZ - 3)).toBe(true);
-    expect(fields.route({ x: 0, z: 0 }, to).length).toBeGreaterThan(2);
-  });
-
-  it('counts as part of the farm for the hedges, the map and the distant trees', () => {
-    expect(fields.outside(140, -150)).toBe(0);
-    expect(quarry.weight(140, -150)).toBe(1);
-    expect(quarry.weight(0, 0)).toBe(0);
-    expect(fields.areas.quarry).toMatchObject({ minX: 80, maxX: 200, minZ: -200, maxZ: -80 });
-  });
-
-  it('makes a follower wait just inside the gate rather than go down the road', () => {
-    expect(quarry.pastGate(quarry.gate.x, quarry.rect.maxZ - 3)).toBe(false);
-    expect(quarry.pastGate(quarry.gate.x, quarry.rect.maxZ - 30)).toBe(true);
-    expect(quarry.inQuarry(quarry.waitSpot.x, quarry.waitSpot.z)).toBe(true);
-    expect(quarry.pastGate(quarry.waitSpot.x, quarry.waitSpot.z)).toBe(false);
-  });
-});
 
 describe('the gravel pit: the climb and the plants', () => {
   it('has start cones on the floor, a gate on the wall and the finish over the lip, all in a line up the climb wall', () => {

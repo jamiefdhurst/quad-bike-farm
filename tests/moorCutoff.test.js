@@ -10,7 +10,7 @@ import { distanceToTile } from '../src/world/tiles.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../src/core/graphics.js';
 
 // The Moor's heather, bracken, tussocks and rocks are tiled instances drawn out to `roughDistance` only (#821): the biggest open area on the map.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const NAMES = ['moor heather', 'moor bracken', 'moor tussocks', 'moor rocks'];
 let tiles;
 let params;

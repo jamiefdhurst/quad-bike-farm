@@ -6,7 +6,7 @@ import { scatterStubble, stubbleShares } from '../src/world/stubbleScatter.js';
 import { pointInPolygon, polygonArea, polygonBounds } from '../src/world/polygons.js';
 
 // Stubble stands in each field's own outline, not the box round it (#813).
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const fields = createFields(two);
 
 const seeded = (seed) => () => {

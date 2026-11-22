@@ -12,15 +12,12 @@ import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const land = neighbourLandShape(two);
 const S = neighbourFarmShape(two);
 const lane = two.publicLane;
 
 describe('her land across the lane (#569)', () => {
-  it('has none on today\'s farm', () => {
-    expect(neighbourLandShape(LAYOUT)).toBeNull();
-  });
 
   it('is the plan\'s block of fields east of the lane\'s hedge, from plan z -18 to 560 and x 1282 (cut back from the map\'s -60 and 1290 by the roads, #687), with the yard inside one of them', () => {
     const [x0, z0] = fromPlan([912, -18]);

@@ -11,7 +11,7 @@ import { Track } from '../src/world/track.js';
 import { puddleSpots } from '../src/world/yardGround.js';
 
 // The yard's dressing (#817): the steel gates, the barn wall's gear, the heaps, the stackyard, and the places they are given in the new farm's layout.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const k = two.farmstead.yard;
 const inRect = (r, x, z, m = 0) => x > r.minX - m && x < r.maxX + m && z > r.minZ - m && z < r.maxZ + m;
 const heights = createTerrainHeight(two, new Track(two.trackPoints));
@@ -105,9 +105,6 @@ describe('where the yard is dressed', () => {
     expect(standingWater(0.1)).toBe(0);
     expect(standingWater(0.4)).toBeGreaterThan(0.1);
     expect(standingWater(1)).toBeLessThanOrEqual(0.8);
-  });
-  it('is not on today\'s farm', () => {
-    expect(LAYOUT.farmstead).toBeUndefined();
   });
 
   it('stands the wrapped bales out in Low Ley (#691), well inside it, with a clear way in from the west that a tractor can drive', () => {

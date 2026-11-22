@@ -19,8 +19,8 @@ let world;
 let ground;
 let shape;
 
-/** The hut on today's farm and on the new farm's hill (#684), where it stands at the plan's place: built the same, walked into the same. */
-const LAYOUTS = [['today\'s farm', LAYOUT], ['the new farm', layoutNew(LAYOUT, RAW_LAYOUT)]];
+/** The hut on the farm's hill (#684), where it stands at the plan's place: built the same, walked into the same. */
+const LAYOUTS = [['the farm', LAYOUT]];
 
 async function build(layout) {
   shape = hutShape(layout);

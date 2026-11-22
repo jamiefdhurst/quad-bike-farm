@@ -24,10 +24,6 @@ describe('the ground\'s rectangle', () => {
     expect(groundBounds({ ground: { minX: -10.4, maxX: 20.2, minZ: 3, maxZ: 9 } })).toEqual({ minX: -11, maxX: 21, minZ: 3, maxZ: 9 });
   });
 
-  it('is, for today\'s farm, the layout\'s 420 m square', () => {
-    expect(groundBounds(LAYOUT)).toEqual({ minX: -210, maxX: 210, minZ: -210, maxZ: 210 });
-  });
-
   it('has painting for every part of it: each tile has a painting of its own, and the overview covers the lot', () => {
     // Today\'s ground and a big one that is not centred on the origin.
     for (const layout of [LAYOUT, BIG]) {

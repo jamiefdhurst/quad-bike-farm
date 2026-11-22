@@ -135,16 +135,6 @@ describe('backing out', () => {
   });
 });
 
-describe('the steepest bank', () => {
-  it('is the one that rises most for its width, on the real layout, and clear of the gentle end', () => {
-    const b = steepestBank(LAYOUT.hill);
-    expect(b.rise).toBe(5.5);
-    expect(b.maxX).toBe(LAYOUT.hill.gentle.fromX);
-    const base = LAYOUT.hill.stream.z + LAYOUT.hill.stream.halfWidth + 35;
-    expect(b.minZ).toBeLessThan(base - 6);
-    expect(b.maxZ).toBeGreaterThan(base + 6);
-  });
-});
 
 describe('wiring', () => {
   it('has a chooser entry, lines for every kind, ranges for every param and a bucket-list entry each', () => {

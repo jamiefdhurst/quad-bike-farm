@@ -5,7 +5,7 @@ import { roadNetwork } from '../src/world/roads.js';
 import { Traffic, Visit, DEFAULT_TRAFFIC_PARAMS, A_ROAD_KINDS, visitPlaces } from '../src/world/traffic.js';
 import { leaveRoute, hasGone, goneBeyond, homeVia, DEFAULT_GOING_HOME_PARAMS as G } from '../src/npc/goingHome.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const net = roadNetwork(two);
 const seeded = (seed) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 const quiet = { ...DEFAULT_TRAFFIC_PARAMS, passEvery: 0, visitEvery: 0, backEvery: 0, aRoadEvery: 0 };
@@ -52,7 +52,6 @@ describe('traffic on the A-road (#687)', () => {
     const mean = (at.at(-1) - at[0]) / (at.length - 1);
     expect(mean).toBeGreaterThan(8);
     expect(mean).toBeLessThan(17);
-    expect(new Traffic({ places: visitPlaces(LAYOUT), params: quiet, random: seeded(1) }).spawnARoad()).toBeNull();
   });
 });
 

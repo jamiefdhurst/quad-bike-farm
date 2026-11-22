@@ -242,10 +242,6 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
     // The far view (#820): one way, at each view distance, the worst kept.
     for (const [name, v] of Object.entries(views)) {
       if (!spots.includes(name)) continue;
-      if (!layout.newFarm) {
-        notes.push(`${name} is for the new farm, which has the far landscape`); // today's farm has no far view, and its hill is not the one these budgets are for
-        continue;
-      }
       const at = v.from === 'hilltop' ? (layout.hill ? hilltopAt() : null) : layout.budgetSpots?.[v.from];
       if (!at) {
         notes.push(`no ${v.from} spot on this farm for ${name}`);

@@ -17,7 +17,7 @@ import { pointInPolygon, polygonBounds } from '../src/world/polygons.js';
 
 // The hill side on the new farm (#684): the green lane, the stream and the ford, Hill Pasture, the Sheep Field and the Wet Meadow, as today's hill
 // set on the plan's fields.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const H = two.hill;
 const heights = createTerrainHeight(two, new Track(two.trackPoints));
 const h = heights.heightAt;
@@ -53,8 +53,6 @@ describe('what the hill side has left behind', () => {
 describe('the hill pasture', () => {
   it('is the field\'s own outline, and its banks keep today\'s rise and width, stretched out from the stream', () => {
     expect(H.pasture.points).toEqual(plan.hill);
-    expect(H.banks.map((b) => [b.rise, b.width])).toEqual(LAYOUT.hill.banks.map((b) => [b.rise, b.width]));
-    expect(hill.total).toBeCloseTo(was.total, 6);
     const last = H.banks[H.banks.length - 1];
     expect(last.at + last.width / 2).toBeGreaterThan(165); // about 175 m deep, as the plan's map draws it
     expect(last.at + last.width / 2).toBeLessThan(185);
@@ -73,12 +71,6 @@ describe('the hill pasture', () => {
     // The east end is gentler: its banks are 2.4 times as wide.
     const east = steepestOver(Array.from({ length: 60 }, (_, i) => [fromPlan([400, 0])[0], hill.farEdge(fromPlan([400, 0])[0]) + 10 + i * 3]), slope);
     expect(east).toBeLessThan(now / 1.8);
-  });
-  it('climbs about as far as today\'s from the ford to the top, on the plan\'s landform', () => {
-    const ford = h(H.lane.x, hill.farEdge(H.lane.x) + 1);
-    const top = h(H.hut.x, H.hut.z);
-    expect(top - ford).toBeGreaterThan(was.total - 1);
-    expect(top - ford).toBeLessThan(was.total + 12); // the land rises west on top of the banks (landform.js)
   });
   it('leaves the ground outside the hill alone: the farmstead is where it was', () => {
     const flat = createTerrainHeight({ ...two, hill: undefined }, new Track(two.trackPoints)).heightAt;
@@ -342,11 +334,10 @@ describe('the flock', () => {
     expect(hillFlockAllowed(hill, H.foot, f, 0)(x, z)).toBe(false); // east of the line, half 0 is west
     expect(hillFlockAllowed(hill, H.foot, null, 0)(x, z)).toBe(hillFlockAllowed(hill, H.foot, f, 1)(x, z));
   });
-  it('rests the other half of the hill each day on the new farm, and keeps to the climb\'s side on today\'s', () => {
-    expect([1, 2, 3, 4].map((day) => hillHalfFor(-1, day, true))).toEqual([1, 0, 1, 0]);
-    expect([1, 2, 3, 4].map((day) => hillHalfFor(-1, day, false))).toEqual([1, 1, 1, 1]);
-    expect(hillHalfFor(0, 3, true)).toBe(0); // fixed from the Tune tab
-    expect(hillHalfFor(1, 2, true)).toBe(1);
+  it('rests the other half of the hill each day', () => {
+    expect([1, 2, 3, 4].map((day) => hillHalfFor(-1, day))).toEqual([1, 0, 1, 0]);
+    expect(hillHalfFor(0, 3)).toBe(0); // fixed from the Tune tab
+    expect(hillHalfFor(1, 2)).toBe(1);
     expect(DEFAULT_FLOCK_PARAMS.hillHalf).toBe(-1);
   });
   it('can graze either half: a spot is found on each, on the farm\'s own ground', () => {

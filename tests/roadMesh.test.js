@@ -51,37 +51,48 @@ describe('the dashes of a centre line', () => {
 });
 
 describe('the road mesh builder', () => {
+  // The lane as it is laid on the farm has a give-way line and a bellmouth too (the junction's own tests): a plain stretch of it is read here.
+  const plainLane = () => ({ ...net.road('lane'), markings: { centre: 'dashed' }, bellmouth: undefined, junction: undefined });
   it('lays the lane as a strip of carriageway the width of the road with its dashed line over it', () => {
     const scene = new THREE.Scene();
     const points = net.pointsAlong('lane', { step: 1, to: 60 });
-    const meshes = buildRoadMesh({ scene, road: net.road('lane'), points, heights, texture: null });
+    const meshes = buildRoadMesh({ scene, road: plainLane(), points, heights, texture: null });
     expect(meshes.length).toBe(2);
     expect(scene.children.length).toBe(2);
     const body = meshes[0].geometry.attributes.position;
     const xs = Array.from({ length: body.count }, (_, i) => body.getX(i));
-    expect(Math.min(...xs)).toBeCloseTo(LAYOUT.publicLane.x - LAYOUT.publicLane.halfWidth, 3);
-    expect(Math.max(...xs)).toBeCloseTo(LAYOUT.publicLane.x + LAYOUT.publicLane.halfWidth, 3);
+    const zs = Array.from({ length: body.count }, (_, i) => body.getZ(i));
+    const far = (i) => Math.min(...points.map((p) => Math.hypot(p.x - xs[i], p.z - zs[i]))); // how far each vertex is from the road's middle line
+    for (let i = 0; i < body.count; i += 5) expect(far(i)).toBeLessThanOrEqual(LAYOUT.publicLane.halfWidth + 0.01); // and none is wider than the road
+    expect(Math.max(...xs.map((_, i) => far(i)))).toBeGreaterThan(LAYOUT.publicLane.halfWidth - 0.6);
     // It lies on the ground, lifted: the road's own lift is the one traffic stands things on.
-    expect(net.road('lane').lift).toBe(LANE_TARMAC_LIFT);
-    for (let i = 0; i < body.count; i += 7) expect(body.getY(i)).toBeCloseTo(heights.heightAt(body.getX(i), body.getZ(i)) + LANE_TARMAC_LIFT, 3);
+    const lift = net.road('lane').lift ?? LANE_TARMAC_LIFT; // the lane says its own, which traffic stands things on
+    const crown = net.road('lane').camber ?? 0; // raised that much in the middle, falling to nothing at the edges
+    for (let i = 0; i < body.count; i += 7) {
+      const y = body.getY(i) - heights.heightAt(body.getX(i), body.getZ(i)) - lift;
+      expect(y).toBeGreaterThan(-0.001);
+      expect(y).toBeLessThan(crown + 0.001);
+    }
     // The dashes sit a little above the carriageway.
     const line = meshes[1].geometry.attributes.position;
-    for (let i = 0; i < line.count; i += 3) expect(line.getY(i)).toBeCloseTo(heights.heightAt(line.getX(i), line.getZ(i)) + LANE_TARMAC_LIFT + 0.02, 3);
+    for (let i = 0; i < line.count; i += 3) expect(line.getY(i)).toBeCloseTo(heights.heightAt(line.getX(i), line.getZ(i)) + lift + 0.02 + (net.road('lane').camber ?? 0), 3);
   });
 
   it('lays an edge line down each side when the road has one', () => {
     const scene = new THREE.Scene();
-    const road = { ...net.road('lane'), markings: { centre: 'none', edge: true } };
+    const road = { ...plainLane(), markings: { centre: 'none', edge: true } };
     const meshes = buildRoadMesh({ scene, road, points: net.pointsAlong('lane', { step: 2, to: 30 }), heights, texture: null });
     expect(meshes.length).toBe(3);
     const line = meshes[1].geometry.attributes.position;
-    const xs = Array.from({ length: line.count }, (_, i) => line.getX(i));
-    expect(Math.max(...xs) - LAYOUT.publicLane.x).toBeCloseTo(LAYOUT.publicLane.halfWidth - 0.2, 3);
+    const pts = net.pointsAlong('lane', { step: 2, to: 30 });
+    const off = Array.from({ length: line.count }, (_, i) => Math.min(...pts.map((p) => Math.hypot(p.x - line.getX(i), p.z - line.getZ(i)))));
+    expect(Math.max(...off)).toBeGreaterThan(LAYOUT.publicLane.halfWidth - 0.6);
+    expect(Math.max(...off)).toBeLessThan(LAYOUT.publicLane.halfWidth);
   });
 
   it('draws a road with no centre line without one', () => {
     const scene = new THREE.Scene();
-    const road = { ...net.road('lane'), markings: { centre: 'none' } };
+    const road = { ...plainLane(), markings: { centre: 'none' } };
     expect(buildRoadMesh({ scene, road, points: net.pointsAlong('lane', { step: 2, to: 30 }), heights, texture: null }).length).toBe(1);
   });
 

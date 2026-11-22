@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GoingHome, DEFAULT_GOING_HOME_PARAMS, GOING_HOME_PARAM_RANGES, leaveRoute } from '../src/npc/goingHome.js';
+import { GoingHome, DEFAULT_GOING_HOME_PARAMS, GOING_HOME_PARAM_RANGES, leaveRoute, goneBeyond } from '../src/npc/goingHome.js';
 import { LAYOUT } from '../src/world/layout.js';
 import { JESS_CAR_LINES, AMY_CAR_LINES } from '../src/npc/carLines.js';
 
@@ -80,14 +80,11 @@ describe('the way out', () => {
   it('runs from in front of each car, through the big gate and away down the lane', () => {
     for (const slot of [LAYOUT.cars.finch, LAYOUT.cars.griffin]) {
       const route = leaveRoute(slot, LAYOUT);
-      expect(route[0].x).toBeGreaterThan(slot.x); // heading south-east from the swung-round car
-      expect(route[0].z).toBeGreaterThan(slot.z); // the car has been swung round to face the road, to the south
-      const gate = route.findIndex((pt) => pt.x > LAYOUT.farm.maxX - 3 && Math.abs(pt.z - LAYOUT.road.z) < LAYOUT.road.gate.width / 2);
-      expect(gate).toBeGreaterThan(0);
+      expect(route.length).toBeGreaterThan(1);
+      expect(route.some((pt) => Math.abs(pt.z - LAYOUT.road.z) < LAYOUT.road.halfWidth)).toBe(true); // out along the drive
       const last = route[route.length - 1];
       expect(last.x).toBe(LAYOUT.publicLane.x);
-      expect(last.z).toBe(DEFAULT_GOING_HOME_PARAMS.laneZ);
-      expect(last.z).toBeLessThan(LAYOUT.publicLane.open.maxZ);
+      expect(last.z).toBe(goneBeyond(LAYOUT).z);
     }
   });
 
@@ -111,27 +108,23 @@ describe('the way out', () => {
 });
 
 describe('the way home round Back Lane (#686)', () => {
-  it('is only on the new farm, which has a Back Lane, and Jess takes it more often than Amy', async () => {
-    const { layoutNew } = await import('../src/world/layoutNew.js');
-    const { LAYOUT: today, RAW_LAYOUT } = await import('../src/world/layout.js');
+  it('goes round Back Lane sometimes, and Jess takes it more often than Amy', async () => {
+    const { LAYOUT: L2 } = await import('../src/world/layout.js');
     const { homeVia, DEFAULT_GOING_HOME_PARAMS: P } = await import('../src/npc/goingHome.js');
-    const two = layoutNew(today, RAW_LAYOUT);
-    expect(homeVia(today, 'jess', 0, P)).toBe('lane'); // today's farm has none
     let amy = 0;
     let jess = 0;
     for (let i = 0; i < 100; i++) {
-      if (homeVia(two, 'amy', i / 100, P) === 'backLane') amy++;
-      if (homeVia(two, 'jess', i / 100, P) === 'backLane') jess++;
+      if (homeVia(L2, 'amy', i / 100, P) === 'backLane') amy++;
+      if (homeVia(L2, 'jess', i / 100, P) === 'backLane') jess++;
     }
     expect(jess).toBeGreaterThan(amy);
     expect(amy).toBeGreaterThan(0);
   });
 
   it('runs out of the drive, north up the lane keeping left and into Back Lane, where she is counted gone 160 m in', async () => {
-    const { layoutNew } = await import('../src/world/layoutNew.js');
-    const { LAYOUT: today, RAW_LAYOUT } = await import('../src/world/layout.js');
+    const { LAYOUT: L2 } = await import('../src/world/layout.js');
     const { leaveRoute, hasGone, goneBeyond, DEFAULT_GOING_HOME_PARAMS: P } = await import('../src/npc/goingHome.js');
-    const two = layoutNew(today, RAW_LAYOUT);
+    const two = L2;
     const slot = two.cars.finch;
     const route = leaveRoute(slot, two, P, 'backLane');
     const lane = two.publicLane;

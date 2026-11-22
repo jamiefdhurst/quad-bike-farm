@@ -13,7 +13,7 @@ import { surfaceFeel, DEFAULT_SURFACE_PARAMS } from '../src/world/surfaces.js';
 import { polygonArea, pointInPolygon, distanceToEdges, polygonEdges } from '../src/world/polygons.js';
 
 // The stone tracks, the grass boundary track and the headlands (#689), on the new farm behind ?layout=2.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const fields = createFields(two);
 const net = roadNetwork(two);
 const north = net.road('stoneNorth');
@@ -266,9 +266,6 @@ describe('the places to go to', () => {
     expect(Math.hypot(p.farmbridge.x - two.farmBridge.x, p.farmbridge.z - two.farmBridge.z)).toBeCloseTo(9, 5);
     expect(fields.areaOf(p.headland.x, p.headland.z)).toBe('lanefield');
     expect(fields.headlandAt('lanefield', p.headland.x, p.headland.z)).toBeGreaterThan(0.3);
-  });
-  it('has none on today\'s farm', () => {
-    expect(trackPlaces(LAYOUT, roadNetwork(LAYOUT))).toEqual({});
   });
 });
 

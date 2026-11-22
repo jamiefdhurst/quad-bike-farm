@@ -215,15 +215,6 @@ describe('counting the draws (#597)', () => {
       expect(g.graphics.viewDistance).toBe(1500);
     });
 
-    it('leaves a far-view spot out on today\'s farm, and says so', async () => {
-      const { g } = standIn();
-      g.world.layout.budgetSpots = { backLaneNorth: { x: 5, z: 6 } };
-      g.graphics = { viewDistance: 1500 };
-      const r = await measureInPage({ ...args, spots: ['viewBackLane'], views: VIEW_SPOTS, viewDistances: VIEW_DISTANCES });
-      expect(r.spots.viewBackLane).toBeUndefined();
-      expect(r.notes.join()).toContain('viewBackLane');
-    });
-
     it('says so, and measures nothing, for a name the layout does not have', async () => {
       standIn();
       const r = await measureInPage({ ...args, spots: ['yard', 'dairy'] });
@@ -232,7 +223,7 @@ describe('counting the draws (#597)', () => {
     });
 
     it('has, for every spot in BUDGETS, a way to find it: a built-in one or a name in the layout', () => {
-      const two = layoutNew(LAYOUT, RAW_LAYOUT);
+      const two = LAYOUT;
       for (const s of SPOTS) expect(BUILT_IN_SPOTS.includes(s) || VIEW_SPOTS[s] || LAYOUT.budgetSpots?.[s] || two.budgetSpots?.[s], `no way to stand at the budget spot ${s}: add it to layout.budgetSpots`).toBeTruthy();
     });
   });

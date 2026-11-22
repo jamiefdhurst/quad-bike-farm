@@ -8,7 +8,7 @@ import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 
 // The village's bridge (#688): the lane over the brook on the new farm, a stone parapet each side of the road with its piers, and an arched headwall at each end of the span.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const lane = two.publicLane;
 
 async function build() {
@@ -26,12 +26,6 @@ describe('the lane\'s bridge over the brook', () => {
     const { group } = await build();
     expect(group).toBeTruthy();
     expect(group.children.length).toBeGreaterThanOrEqual(3); // merged to a mesh a material
-    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
-    const { buildBrookCulvert } = await import('../src/world/brookProps.js');
-    const scene = new THREE.Scene();
-    buildBrookCulvert({ layout: LAYOUT, scene, heights: createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints)), fixedBox: () => {}, random: () => 0.5 });
-    expect(scene.getObjectByName('brookCulvert')).toBeTruthy();
-    expect(scene.getObjectByName('laneBridge')).toBeUndefined();
   });
 
   it('has a stone parapet along each side of the road, solid, with the carriageway between them open', async () => {

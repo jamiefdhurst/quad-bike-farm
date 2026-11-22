@@ -109,11 +109,7 @@ describe('where the fire is', () => {
     }
   });
 
-  it('keeps vehicles from starting on it, and the brushwood lies inside the field', () => {
+  it('keeps vehicles from starting on it', () => {
     expect(spawnKeepOut(LAYOUT).some((k) => k.what === 'the bonfire')).toBe(true);
-    for (const [x, z] of LAYOUT.brushwood) {
-      expect(Math.abs(x)).toBeLessThan(LAYOUT.fieldHalf - 4);
-      expect(z).toBeLessThan(LAYOUT.fieldHalf - 1.5);
-    }
   });
 });

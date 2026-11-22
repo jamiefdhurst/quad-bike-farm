@@ -58,9 +58,11 @@ describe('the long grass and the rest of the field\'s ground cover', () => {
     const { inHayMeadow } = await import('../src/world/props.js');
     const { LAYOUT } = await import('../src/world/layout.js');
     const m = LAYOUT.hayMeadow;
-    expect(inHayMeadow(LAYOUT, (m.minX + m.maxX) / 2, (m.minZ + m.maxZ) / 2)).toBe(true);
-    expect(inHayMeadow(LAYOUT, m.minX - 3, m.minZ - 3)).toBe(true);
-    expect(inHayMeadow(LAYOUT, m.minX - 6, m.minZ)).toBe(false);
+    const cx = (m.minX + m.maxX) / 2;
+    const cz = (m.minZ + m.maxZ) / 2;
+    expect(inHayMeadow(LAYOUT, cx, cz)).toBe(true);
+    expect(inHayMeadow(LAYOUT, cx, m.minZ - 3)).toBe(true); // its margin, not only the polygon
+    expect(inHayMeadow(LAYOUT, cx, m.minZ - 30)).toBe(false);
     expect(inHayMeadow({ ...LAYOUT, hayMeadow: undefined }, 60, 60)).toBe(false);
   });
 });

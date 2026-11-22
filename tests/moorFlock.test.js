@@ -7,7 +7,7 @@ import { Flock, DEFAULT_FLOCK_PARAMS, FLOCK_PARAM_RANGES } from '../src/world/fl
 import { moorFlockOn, moorFlockAllowed, moorFlockCentre, LANE_FLOCK_REACH } from '../src/world/moorFlock.js';
 import { createRandom } from '../src/core/random.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const heights = createTerrainHeight(two, new Track(two.trackPoints));
 const moor = heights.moor;
 const gridZ = two.moor.grids.map((g) => g.near[1]).sort((a, b) => a - b);

@@ -233,23 +233,7 @@ describe('where they live', () => {
   const b = LAYOUT.barn;
   const overlap = (a, c, m = 0) => a.minX - m < c.maxX && a.maxX + m > c.minX && a.minZ - m < c.maxZ && a.maxZ + m > c.minZ;
 
-  it('keeps the run and the sty apart from each other, the barn, the silage, the paddock and the hedge', () => {
-    expect(overlap(P, S, 1.5)).toBe(false);
-    const barn = { minX: b.x - b.halfX, maxX: b.x + b.halfX, minZ: b.z - b.halfZ, maxZ: b.z + b.halfZ };
-    const silage = { minX: LAYOUT.silage.x - 1, maxX: LAYOUT.silage.x + 4, minZ: LAYOUT.silage.z - 1, maxZ: LAYOUT.silage.z + 6 };
-    const paddock = { minX: LAYOUT.paddock.x - LAYOUT.paddock.half, maxX: LAYOUT.paddock.x + LAYOUT.paddock.half, minZ: LAYOUT.paddock.z - LAYOUT.paddock.half, maxZ: LAYOUT.paddock.z + LAYOUT.paddock.half };
-    for (const r of [P, S]) {
-      for (const other of [barn, silage, paddock]) expect(overlap(r, other, 1)).toBe(false);
-      expect(r.minX).toBeGreaterThan(-LAYOUT.fieldHalf + LAYOUT.hedgeThickness + 0.5);
-    }
-  });
 
-  it('puts the bin by the barn wall, outside it, and the bucket beside it', () => {
-    expect(bin.z).toBeLessThan(b.z - b.halfZ);
-    expect(Math.abs(bin.x - b.x)).toBeLessThan(b.halfX);
-    expect(Math.hypot(bucket.x - bin.x, bucket.z - bin.z)).toBeLessThan(2);
-    expect(bucket.z).toBeLessThan(b.z - b.halfZ);
-  });
 
   it('keeps vehicles from starting in them', () => {
     const what = spawnKeepOut(LAYOUT).map((k) => k.what);

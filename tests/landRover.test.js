@@ -82,10 +82,9 @@ describe('the Tor or Crag', () => {
 
 
 describe('where the bale trailer stands', () => {
-  it('is clear of the straw bales, the little trailer and the north hedge, so nothing starts inside anything', () => {
+  it('is clear of the straw bales and the little trailer, so nothing starts inside anything', () => {
     const at = LAYOUT.trailer;
     for (const [x, z] of LAYOUT.strawBaleSpots) expect(Math.hypot(at.x - x, at.z - z)).toBeGreaterThan(4);
     expect(Math.hypot(at.x - LAYOUT.tipTrailer.x, at.z - LAYOUT.tipTrailer.z)).toBeGreaterThan(6);
-    expect(LAYOUT.fieldHalf - at.z).toBeGreaterThan(6); // the hedge is at fieldHalf; its body reaches about 2.5 m behind the axle
   });
 });

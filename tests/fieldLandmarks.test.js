@@ -13,7 +13,7 @@ import { SET_PIECE_NAMES, FarDetail } from '../src/world/farDetail.js';
 // The eight landmarks #815 builds (the line, the barn, the hut and rock and the pillar only have their place): each is built on the new farm's ground
 // with its own place, and checked for what a look at one angle can't find, faces fighting on one plane, and for what stops you and what stays in sight.
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const spot = (kind) => landmarksOf(two, kind)[0];
 let land;
 let ctx;
@@ -248,10 +248,6 @@ describe('Far Field\'s pond', () => {
 });
 
 describe('today\'s farm', () => {
-  it('builds none of it: there is no landmark list in today\'s layout', () => {
-    expect(LAYOUT.fieldLandmarks).toBeUndefined();
-    expect(land.buildFieldLandmarks({ ...ctx, layout: LAYOUT, scene: new THREE.Scene() })).toBeNull();
-  });
 
   it('builds them all on the new farm, into the scene with the bodies beside them', () => {
     const scene = new THREE.Scene();

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
-import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
+import { LAYOUT } from '../src/world/layout.js';
+import { TODAY } from './helpers/todaysLayout.js';
 import { layoutNew, fromPlan, quarryLayout, PIT_PLAN, GATEWAYS_PLAN, NOT_MOVED_YET, REPLACED } from '../src/world/layoutNew.js';
 import { createFields } from '../src/world/fields.js';
 import { createQuarry, dealtLayout, quarryPlants, descentPath } from '../src/world/quarry.js';
@@ -17,7 +18,7 @@ import { buildClimbFlags, buildClimbCones, FLAG, CONE_KINDS } from '../src/world
 
 // The gravel pit on the new farm (#685): its field, its two gates (the lane gate shut for good, the farm gate the way in), the haul road from the lane
 // gate, the girls waiting inside the farm gate, the post-and-wire boundary and the lip fence as solid things, and the climb still timed.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const quarryOf = (seed) => createQuarry(dealtLayout(two, seed));
 const Q = two.quarry;
 const lane = Q.gates.find((g) => g.id === 'pitlane');
@@ -29,7 +30,7 @@ describe('the pit on the new farm: its field and gates', () => {
     expect(Object.keys(NOT_MOVED_YET)).not.toContain('quarry');
     expect(Object.keys(NOT_MOVED_YET)).not.toContain('anchors.pit');
     expect(REPLACED).toEqual(expect.arrayContaining(['quarry', 'anchors.pit']));
-    expect(two.quarry).not.toEqual(LAYOUT.quarry);
+    expect(two.quarry).not.toEqual(TODAY.quarry);
     expect(two.anchors.pit).toEqual({ x: fromPlan(PIT_PLAN.centre)[0], z: fromPlan(PIT_PLAN.centre)[1], yaw: 0 });
   });
   it('is the pit\'s own field, 165 by 170 m or so, with the pit centred about plan (805, 108)', () => {
@@ -118,7 +119,7 @@ describe('the haul road and the girls', () => {
     expect(events.map((e) => e.type)).toEqual(['start', 'gate', 'finish']);
   });
   it('is the same pit on today\'s farm: one gate in its south side, as before', () => {
-    const old = createQuarry(LAYOUT);
+    const old = createQuarry(TODAY);
     expect(old.gates).toHaveLength(1);
     expect(old.way).toBe(old.gate);
     expect(old.waitSpot).toEqual({ x: old.gate.x + 3.5, z: old.rect.maxZ - 3.5 });

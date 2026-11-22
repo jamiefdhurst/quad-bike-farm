@@ -9,7 +9,7 @@ import { AudioHub } from '../src/audio/engineAudio.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from '../src/audio/audioParams.js';
 
 // The Moor's sound (#821): wind always, curlews and larks in spring, only on the common and by day. Nothing here makes a sound.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const moor = createTerrainHeight(two, new Track(two.trackPoints)).moor;
 const z = (two.moor.bounds.minZ + two.moor.bounds.maxZ) / 2;
 const edge = moor.laneEdge(z);

@@ -279,8 +279,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   }
   if (v) {
     // Nether Thornby across the lane: its name, and the three buildings you'd go to.
-    if (layout.newFarm && v.green) place(v.name, v.green.x, v.green.z, -v.green.r - 3); // on the new farm the street is 325 m long: the name is over its green
-    else if (v.area) place(v.name, v.area.minX + 38, v.area.maxZ - 3);
+    if (v.green) place(v.name, v.green.x, v.green.z, -v.green.r - 3); // the street is 325 m long: the name is over its green
     if (v.pub) place('Pub', v.pub.x, v.pub.z, -v.pub.halfZ - 3);
     if (v.shop) place('Shop', v.shop.x, v.shop.z, -v.shop.halfZ - 3);
     if (v.garage) place('Garage', v.garage.x, v.garage.z, v.garage.halfZ + 3);
@@ -302,7 +301,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (paddock) place('Paddock', p.x, p.z, p.half + 4);
   if (gravelStrip(layout)) place('Drag strip', strip.x + 6, strip.z + 6); // (the new farm's races are on the drive, which is labelled as the drive)
   if (r) place('Jump', r.x, r.z, -6);
-  if (roads.some((r) => r.id === 'farm')) place(layout.newFarm ? 'The drive' : 'Farm road', (layout.road.fromX + (layout.road.hedgeTo ?? layout.road.toX)) / 2 - 20, layout.road.z - 9);
+  if (roads.some((r) => r.id === 'farm')) place('The drive', (layout.road.fromX + (layout.road.hedgeTo ?? layout.road.toX)) / 2 - 20, layout.road.z - 9);
   if (dutch) place('Dutch barn', layout.dutchBarn.x - 4, layout.dutchBarn.z - layout.dutchBarn.halfZ - 4);
   if (shed) place('Field shed', layout.fieldShed.x + 21, layout.fieldShed.z + 1);
   if (nf) place('Neighbour', nf.yard.minX + 14, nf.yard.minZ + 7);

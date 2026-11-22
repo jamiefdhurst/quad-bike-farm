@@ -6,7 +6,7 @@ import { wantedBodies } from '../src/world/trafficView.js';
 import { createFields } from '../src/world/fields.js';
 
 const places = visitPlaces(LAYOUT);
-const P = { ...DEFAULT_TRAFFIC_PARAMS };
+const P = { ...DEFAULT_TRAFFIC_PARAMS, backEvery: 0, aRoadEvery: 0 }; // Back Lane's and the A-road's traffic have their own tests (backLane, aRoadTraffic)
 
 /** A stand-in gate the visit can open and shut. */
 const fakeGate = (open = false, allow = true) => ({
@@ -58,11 +58,6 @@ describe('Drive', () => {
 });
 
 describe('the lane and the plan', () => {
-  it('has the lane outside the farm and on the terrain', () => {
-    const lane = LAYOUT.publicLane;
-    expect(lane.x - lane.halfWidth).toBeGreaterThan(LAYOUT.farm.maxX + 1);
-    expect(lane.x + lane.halfWidth).toBeLessThan(LAYOUT.ground.maxX);
-  });
 
   it('drives on the left', () => {
     const lane = LAYOUT.publicLane;
@@ -70,31 +65,7 @@ describe('the lane and the plan', () => {
     expect(laneX(lane, -1)).toBeLessThan(lane.x);
   });
 
-  it('keeps every waypoint of a visit inside the farm or on the lane, clear of the hedges', () => {
-    const F = LAYOUT.fieldHalf;
-    for (const from of [1, -1]) {
-      for (const to of [1, -1]) {
-        for (const leaveOpen of [true, false]) {
-          for (const s of planVisit({ places, from, to, does: 'parcel', leaveOpen, farmSpeed: 7 })) {
-            for (const p of s.path ?? []) {
-              if (p.x > LAYOUT.farm.maxX + 1) continue; // out on the lane
-              if (p.x > F) continue; // along the farm road, between its hedges
-              expect(p.z).toBeLessThan(F - 1.5);
-              expect(p.z).toBeGreaterThan(-F);
-            }
-          }
-        }
-      }
-    }
-  });
 
-  it('stops and turns east of the barn, clear of the silage bales and the bell, with its door on the yard side', () => {
-    const b = LAYOUT.barn;
-    expect(places.door.x).toBeGreaterThan(b.x + b.halfX);
-    expect(places.stop.x - places.turn.dx - places.turn.r).toBeGreaterThan(b.x + 2.3 + 2); // the silage stack runs to about x = barn.x + 2.3
-    expect(places.turn.z1).toBeLessThan(LAYOUT.fieldHalf - 3);
-    expect(places.parcel.x).toBeGreaterThan(b.x + b.halfX);
-  });
 
   it('goes through the cattle grid gateway, not the hedge', () => {
     const steps = planVisit({ places, from: 1, to: 1, does: 'parcel', leaveOpen: false, farmSpeed: 7 });
@@ -142,66 +113,11 @@ describe('the lane and the plan', () => {
 describe('a visit', () => {
   const make = (kind, extra = {}) => new Visit({ kind, places, from: 1, to: -1, leaveOpen: false, params: P, colour: 0xc8102e, ...extra });
 
-  it('opens the shut gate, delivers, shuts it again and leaves', () => {
-    const gate = fakeGate(false);
-    const v = make('post');
-    const { events, t } = runVisit(v, gate);
-    const types = events.map((e) => e.type + (e.open !== undefined ? `:${e.open}` : ''));
-    expect(types).toEqual(['gate:true', 'arrived', 'parcel', 'gate:false', 'done']);
-    expect(gate.isOpen).toBe(false);
-    expect(t).toBeLessThan(400);
-  });
 
-  it('leaves an open gate as it found it, and goes in without stopping to open it', () => {
-    const gate = fakeGate(true);
-    const { events } = runVisit(make('neighbour', { leaveOpen: true }), gate);
-    const types = events.map((e) => e.type);
-    expect(types).toContain('chat');
-    expect(types).toContain('leftOpen');
-    expect(events.filter((e) => e.type === 'gate').map((e) => e.open)).toEqual([]);
-    expect(gate.isOpen).toBe(true);
-  });
 
-  it('opens the gate by the cattle grid each way and shuts it behind her', () => {
-    const grid = fakeGate(false);
-    const { events } = runVisit(make('post'), fakeGate(false), { gates: { grid } });
-    const swings = events.filter((e) => e.type === 'gate' && e.which === 'grid').map((e) => e.open);
-    expect(swings).toEqual([true, false, true, false]);
-    expect(grid.isOpen).toBe(false);
-    expect(events.some((e) => e.type === 'done')).toBe(true);
-  });
 
-  it('has the grid gate east of the grid, across the road', () => {
-    expect(places.grid.x).toBeGreaterThan(LAYOUT.fieldHalf + LAYOUT.road.grid.length / 2);
-    expect(places.grid.z).toBe(LAYOUT.road.z);
-  });
 
-  it('opens a gate that was shut behind it from inside', () => {
-    const gate = fakeGate(false);
-    const v = make('post');
-    const events = [];
-    for (let i = 0; i < 12000 && !v.done; i++) {
-      events.push(...v.update(0.1, { gate, blockers: [], swingSeconds: 1.8 }));
-      if (events.some((e) => e.type === 'parcel') && gate.isOpen && !v.shutInside) {
-        gate.isOpen = false; // someone shuts it while she is at the barn
-        v.shutInside = true;
-      }
-    }
-    expect(events.filter((e) => e.type === 'gate').map((e) => e.open)).toEqual([true, true, false]);
-    expect(v.done).toBe(true);
-  });
 
-  it('hoots when held up and waits for the way to clear', () => {
-    const gate = fakeGate(true);
-    const v = make('post');
-    const events = [];
-    // Someone stood on the lane where she turns in.
-    const block = [{ x: laneX(places.lane, 1), z: places.gate.z - 10 }];
-    for (let i = 0; i < 300; i++) events.push(...v.update(0.1, { gate, blockers: block, swingSeconds: 1.8 }));
-    expect(events.some((e) => e.type === 'honk')).toBe(true);
-    expect(v.drive.z).toBeLessThan(places.gate.z - 10);
-    expect(v.done).toBe(false);
-  });
 
   it('edges past something that never moves, after a long wait', () => {
     const d = new Drive({ x: 0, z: 0, yaw: 0, speed: 0, cruise: 8 });
@@ -292,26 +208,6 @@ describe('Traffic', () => {
   });
 });
 
-describe('the gates in the fields', () => {
-  it('lets the route through the south gate only while it is open', () => {
-    const f = createFields(LAYOUT);
-    const from = { x: -30, z: 40 };
-    const to = { x: -30, z: 120 };
-    expect(f.route(from, to).length).toBeGreaterThan(1);
-    f.gates.south.shut = true;
-    expect(f.route(from, to)).toEqual([to]);
-    f.gates.south.shut = false;
-    expect(f.route(from, to).length).toBeGreaterThan(1);
-  });
-
-  it('counts the big gate as a hedge while it is shut', () => {
-    const f = createFields(LAYOUT);
-    const ahead = () => f.hedgeAhead(190, LAYOUT.road.z, Math.PI / 2);
-    expect(ahead()).toBeCloseTo(LAYOUT.farm.maxX - 190, 0);
-    f.gates.road.shut = false;
-    expect(ahead()).toBe(Infinity);
-  });
-});
 
 describe('the girls and the lane', () => {
   it('has a notice, a wave reaction and chances for both girls', async () => {

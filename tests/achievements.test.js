@@ -154,12 +154,13 @@ describe('places', () => {
     const { LAYOUT } = await import('../src/world/layout.js');
     const h = LAYOUT.hill;
     expect(placesAt({ x: h.lane.x, z: h.stream.z }, LAYOUT)).toContain('ford');
-    expect(placesAt({ x: -30, z: 170 }, LAYOUT)).toContain('pasture');
-    expect(placesAt({ x: -80, z: 170 }, LAYOUT)).toEqual(expect.arrayContaining(['pasture', 'wood']));
+    const mid = (b) => ({ x: (b.minX + b.maxX) / 2, z: (b.minZ + b.maxZ) / 2 });
+    expect(placesAt(mid(h.pasture), LAYOUT)).toContain('pasture');
+    expect(placesAt(mid(h.wood), LAYOUT)).toContain('wood');
     expect(placesAt({ x: LAYOUT.dutchBarn.x, z: LAYOUT.dutchBarn.z }, LAYOUT)).toContain('dutchBarn');
     expect(placesAt({ x: LAYOUT.fieldShed.x, z: LAYOUT.fieldShed.z }, LAYOUT)).toContain('fieldShed');
-    expect(placesAt({ x: 79, z: LAYOUT.road.z }, LAYOUT)).toContain('cattleGrid');
-    expect(placesAt({ x: LAYOUT.road.pad.x, z: LAYOUT.road.z }, LAYOUT)).toContain('farEnd');
+    expect(placesAt({ x: LAYOUT.road.grid.x, z: LAYOUT.road.z }, LAYOUT)).toContain('cattleGrid');
+    expect(placesAt({ x: LAYOUT.road.toX - 4, z: LAYOUT.road.z }, LAYOUT)).toContain('farEnd');
     expect(placesAt({ x: 0, z: 0 }, LAYOUT)).toEqual([]);
   });
 });

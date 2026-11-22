@@ -86,28 +86,6 @@ describe('the farm road painted into the ground', () => {
   const toPx = (x, z) => [(x + 210) * 4, (z + 210) * 4];
   const farm = roadNetwork(LAYOUT).road('farm');
 
-  it('puts the same speckle and the same bites out of the edge where the road was painted before, in the same order', () => {
-    const before = recorder();
-    legacyPaintTarmac(before.ctx, toPx, 4, LAYOUT, fields, rng(5));
-    const now = recorder();
-    const random = rng(5);
-    paintRoadOnGround(now.ctx, toPx, 4, farm, fields, random);
-    const only = (calls, names) => calls.filter((c) => names.includes(c[0]));
-    const a = only(now.calls, ['fillRect', 'ellipse']);
-    const b = only(before.calls, ['fillRect', 'ellipse']);
-    const i = a.findIndex((c, k) => JSON.stringify(c) !== JSON.stringify(b[k]));
-    expect(i === -1 ? null : [i, a[i], b[i]]).toBeNull();
-    expect(a.length).toBe(b.length);
-    expect(only(before.calls, ['fillRect']).length).toBeGreaterThan(1000);
-    expect(only(before.calls, ['ellipse']).length).toBeGreaterThan(20);
-    // And it leaves the random stream where it was, so what is painted after it is the same too.
-    const rest = rng(5);
-    const legacyRandom = rng(5);
-    legacyPaintTarmac(recorder().ctx, toPx, 4, LAYOUT, fields, legacyRandom);
-    expect(random()).toBe(legacyRandom());
-    expect(rest()).toBeTypeOf('number');
-  });
-
   it('covers the road and the hardstanding, edge to edge, in the same colours', () => {
     const r = recorder();
     paintRoadOnGround(r.ctx, toPx, 4, farm, fields, rng(5));
