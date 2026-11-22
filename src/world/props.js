@@ -29,6 +29,8 @@ import { inVillage } from './village.js';
 import { buildBrookCulvert } from './brookProps.js';
 import { buildFarmBridge } from './farmBridge.js';
 import { Scatter } from './scatter.js';
+import { layHedge } from './hedgeLay.js';
+import { leafReach } from './hedgeSolid.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { nearNeighbourYard } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
@@ -125,6 +127,8 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random,
   const { hedgeThickness: T } = layout;
   const hedgeSize = modelBounds(models.hedge.scene).getSize(new THREE.Vector3());
   const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
+  const blockReach = leafReach(models.hedge.scene, hedgeSize); // how far its leaves reach, so none hangs past the solid part (hedgeSolid.js, #829)
+  const bushReach = leafReach(models.bush.scene, { x: bushSize.y, z: bushSize.y });
   const hedgeMatrices = [];
   const bushMatrices = [];
   const farPieces = []; // the far version's strips (hedgeFar.js), one for each block, from the same numbers
@@ -133,37 +137,18 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random,
   // (fields.js) runs a metre past its ends so the corners close. The lane's hedges are taller than the rest.
   for (const h of fields.hedges) {
     const H = h.height ?? layout.hedgeHeight;
-    const hy = H / 2 + 0.5;
-    const cy = (x, z) => heights.heightAt(x, z) + H / 2 - 0.3;
-    // `s` is metres along the hedge from its first end, so a hedge can run any way; `side` is the way its blocks are jittered across it.
-    const flip = h.dx - h.dz < 0 ? -1 : 1;
-    const side = { x: -h.dz * flip, z: h.dx * flip };
-    const pointAt = (s, across = 0) => ({ x: h.x1 + h.dx * s + side.x * across, z: h.z1 + h.dz * s + side.z * across });
-    // The gate's leaf needs a little more room than an open gap.
-    const skip = (s) => h.gaps.some((g) => Math.abs(s - g.at) < g.half + (g.gate ? 0.9 : 0.4));
+    const lay = layHedge(h, { T, H, heightAt: heights.heightAt, random, blockReach, bushReach });
     const blocks = []; // { s, x, z, top, width, gap } for the far version: gap where a stretch starts (a gateway before it)
-    let gapBefore = true;
-    for (let s = -1; s <= h.length + 1; s += h.coarse ? 2.2 + random() * 0.6 : 1.1 + random() * 0.5) {
-      if (skip(s)) {
-        gapBefore = true;
-        continue;
-      }
-      const wobble = (random() - 0.5) * 0.6;
-      const { x, z } = pointAt(s, wobble);
-      const y = heights.heightAt(x, z) - 0.2;
-      const width = T * (0.95 + random() * 0.4) * (h.coarse ? 1.5 : 1);
-      const spin = random() * Math.PI * 2;
-      const tall = 0.8 + random() * 0.45;
-      hedgeMatrices.push(matrixAt(x, y, z, spin, width / hedgeSize.x, (H / hedgeSize.y) * tall, width / hedgeSize.z));
-      blocks.push({ s, x, z, top: y + H * tall * FAR_HEDGE_TOP, width: width * FAR_HEDGE_WIDTH, gap: gapBefore });
-      gapBefore = false;
-      if (!h.coarse && random() < 0.3) {
-        const off = (random() - 0.5) * T * 0.8;
-        const b = pointAt(s + (random() - 0.5), off);
-        const bs = (2.3 + random() * 1.6) / bushSize.y;
-        bushMatrices.push(matrixAt(b.x, heights.heightAt(b.x, b.z) - 0.3, b.z, random() * Math.PI * 2, bs));
-      }
+    let prevS = null;
+    for (const b of lay.blocks) {
+      hedgeMatrices.push(matrixAt(b.x, b.y, b.z, b.spin, b.width / hedgeSize.x, (H / hedgeSize.y) * b.tall, b.width / hedgeSize.z));
+      // A stretch starts where the last block was a gateway away (a bit more than a block's step).
+      const gap = prevS === null || h.gaps.some((g) => prevS < g.at && b.s > g.at);
+      blocks.push({ s: b.s, x: b.x, z: b.z, top: b.y + H * b.tall * FAR_HEDGE_TOP, width: b.width * FAR_HEDGE_WIDTH, gap });
+      prevS = b.s;
     }
+    for (const b of lay.bushes) bushMatrices.push(matrixAt(b.x, b.y, b.z, b.yaw, b.height / bushSize.y));
+    const pointAt = lay.pointAt;
 
     // The far version: a strip for each block, from the middle between it and the last to the middle between it and the next, so a stretch of
     // hedge is one unbroken line with the blocks' heights, and closed with half a block's length at each end of a stretch.
@@ -180,35 +165,7 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random,
         groundA: heights.heightAt(a.x, a.z), groundB: heights.heightAt(e.x, e.z),
       });
     });
-
-    // Colliders: boxes between the gaps, at most 20 m long and shorter where the ground climbs (the hill's), so they follow it to within
-    // about half a metre. A hedge along x or z gets a box square to the axes; a slanted one a turned box.
-    const cuts = [-2, ...h.gaps.flatMap((g) => [g.at - g.half, g.at + g.half]).sort((a, b) => a - b), h.length + 2];
-    const groundAt = (s) => {
-      const p = pointAt(s);
-      return heights.heightAt(p.x, p.z);
-    };
-    const turn = h.alongX === null ? Math.atan2(-h.dz, h.dx) : 0;
-    for (let i = 0; i < cuts.length; i += 2) {
-      const a = cuts[i];
-      const b = cuts[i + 1];
-      let lowest = Infinity;
-      let highest = -Infinity;
-      for (let s = a; s <= b; s += 2) {
-        lowest = Math.min(lowest, groundAt(s));
-        highest = Math.max(highest, groundAt(s));
-      }
-      const pieces = Math.max(1, Math.ceil((b - a) / 20), Math.ceil((highest - lowest) / 0.5));
-      for (let k = 0; k < pieces; k++) {
-        const pa = a + ((b - a) * k) / pieces;
-        const pb = a + ((b - a) * (k + 1)) / pieces;
-        const mid = pointAt((pa + pb) / 2);
-        const half = (pb - pa) / 2;
-        if (h.alongX === true) fixedBox(mid.x, cy(mid.x, mid.z), mid.z, half, hy, T / 2);
-        else if (h.alongX === false) fixedBox(mid.x, cy(mid.x, mid.z), mid.z, T / 2, hy, half);
-        else fixedBox(mid.x, cy(mid.x, mid.z), mid.z, half, hy, T / 2, turn);
-      }
-    }
+    for (const k of lay.colliders) fixedBox(k.x, k.y, k.z, k.hx, k.hy, k.hz, k.turn);
   }
   // Hedges don't cast shadows: there are hundreds of instances and the shadow pass would double their cost.
   swayMaterials(models.hedge.scene, 'hedge', layout.hedgeHeight);

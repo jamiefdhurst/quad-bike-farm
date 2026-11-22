@@ -1,3 +1,4 @@
+import { HEDGE_SOLID_HALF } from '../src/world/hedgeSolid.js';
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import { fakeCanvas } from './helpers/vehicleModels.js';
@@ -76,7 +77,7 @@ describe('her land across the lane (#569)', () => {
     }
     const boxes = hedgeStretches(land);
     expect(boxes.length).toBe(land.lines.reduce((n, l) => n + stretchesOf(l).length, 0));
-    for (const b of boxes) expect(Math.min(b.hx, b.hz)).toBeCloseTo(land.hedge.width / 2, 6);
+    for (const b of boxes) expect(Math.min(b.hx, b.hz)).toBeCloseTo(Math.max(land.hedge.width / 2, HEDGE_SOLID_HALF), 6);
   });
 });
 

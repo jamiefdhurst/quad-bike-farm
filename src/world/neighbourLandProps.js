@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import { neighbourLandShape } from './neighbourLand.js';
+import { HEDGE_WOBBLE, blockWidth, leafReach } from './hedgeSolid.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { matrixAt } from './hillProps.js';
 import { buildHerd } from './cattleModel.js';
@@ -81,6 +82,7 @@ export function buildNeighbourLand(c) {
   // Leafy blocks along each stretch, overlapping and turned as props.js lays the farm's hedges, and a far strip for each from the same numbers.
   const hedgeSize = modelBounds(models.hedge.scene).getSize(new THREE.Vector3());
   const T = layout.hedgeThickness;
+  const blockReach = leafReach(models.hedge.scene, hedgeSize);
   const H = land.hedge.height;
   const matrices = [];
   const farPieces = [];
@@ -89,10 +91,12 @@ export function buildNeighbourLand(c) {
     const pointAt = (t, across = 0) => (s.axis === 'x' ? { x: s.at + across, z: s.from + t } : { x: s.from + t, z: s.at + across });
     const length = s.to - s.from;
     const blocks = [];
-    for (let t = -0.5; t <= length + 0.5; t += 1.1 + random() * 0.5) {
-      const { x, z } = pointAt(t, (random() - 0.5) * 0.6);
+    for (let t = 0; t <= length; t += 1.1 + random() * 0.5) {
+      const across = (random() - 0.5) * HEDGE_WOBBLE;
+      const { x, z } = pointAt(t, across);
       const y = groundAt(x, z) - 0.2;
-      const width = T * (0.95 + random() * 0.4);
+      const width = blockWidth(T, random(), blockReach, across); // leaves stay within the solid part and out of the gateways (hedgeSolid.js, #829)
+      if (t - blockReach * width < 0 || t + blockReach * width > length) continue;
       const tall = 0.8 + random() * 0.45;
       matrices.push(matrixAt(x, y, z, random() * Math.PI * 2, width / hedgeSize.x, (H / hedgeSize.y) * tall, width / hedgeSize.z));
       blocks.push({ t, x, z, top: y + H * tall * FAR_HEDGE_TOP, width: width * FAR_HEDGE_WIDTH });
