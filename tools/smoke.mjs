@@ -117,6 +117,9 @@ async function run() {
       c.mind.last = null;
       g.settleGirl(c); // down off the trailer, and stood about
       c.settled.left = 0.1; // for no time at all: settling holds her own mind off
+      // Wanting something, or she weighs her offers and takes none while nothing scores over her bar, which a quiet minute may not: the check is that the
+      // choosing runs and what she takes is taken, not that the farm gives her a reason.
+      for (const k of Object.keys(c.needs)) if (typeof c.needs[k] === 'number') c.needs[k] = 1;
     }
     const t0 = smokeGameTime();
     const heard = () => g.radioAudio.chains.has(set.spec.id);
