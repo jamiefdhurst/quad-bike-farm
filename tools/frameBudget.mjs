@@ -34,7 +34,7 @@ export const BUDGETS = {
   // The far view (#820, `?layout=2`): looking out over the far landscape from the hilltop and the moor's ridge (east) and from Back Lane's north end (south), each at the
   // default view distance and at 3,000 m, the worse kept (`VIEW_SPOTS`). Measured with tools/budget.mjs on ?layout=2 (seed 3, sunny, 15.5), the same at both distances (the
   // fog changes what a pixel looks like, not what is drawn) and held to about 8% over: the hilltop 1,203 calls and 2.00M triangles, the ridge 1,761 and 2.69M, Back Lane
-  // looking south from its north end 1,261 and 2.60M.
+  // looking south from its north end 1,254 and 2.60M.
   viewHilltop: { calls: 1300, triangles: 2.17e6 },
   viewMoorRidge: { calls: 1900, triangles: 2.91e6 },
   viewBackLane: { calls: 1360, triangles: 2.81e6 },

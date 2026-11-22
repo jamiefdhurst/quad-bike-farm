@@ -270,6 +270,6 @@ The sections below are the record, oldest first. A new decision goes at the end.
 
 ## Far-view budget spots (#820)
 
-- Three spots on the new farm look out over the far landscape: `viewHilltop` (east from the hill's top), `viewMoorRidge` (east from the ridge) and `viewBackLane` (south from Back Lane's north end), each counted at 1500 m and at 3000 m (`viewDistance`), the worse kept. Both gave the same counts, because the view distance only changes the fog and the far plane (6000) already reaches the ring's rim. Hilltop 1,203 calls and 2.00M triangles, ridge 1,761 and 2.69M, Back Lane 1,261 and 2.60M, budgets about 8% over. The old spots are unchanged: this change draws nothing differently.
+- Three spots on the new farm look out over the far landscape: `viewHilltop` (east from the hill's top), `viewMoorRidge` (east from the ridge) and `viewBackLane` (south from Back Lane's north end), each counted at 1500 m and at 3000 m (`viewDistance`), the worse kept. Both gave the same counts, because the view distance only changes the fog and the far plane (6000) already reaches the ring's rim. Hilltop 1,203 calls and 2.00M triangles, ridge 1,761 and 2.69M, Back Lane 1,254 and 2.60M, budgets about 8% over. The old spots are unchanged: this change draws nothing differently.
 - On `?layout=2` the older new-farm spots (hairpins 1,515 calls, the ridge 1,663, the middle of the moor 1,706) are now over their own budgets, which are not enforced until #692 brings layout 2 into CI.
 

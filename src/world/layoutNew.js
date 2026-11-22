@@ -937,7 +937,7 @@ export const BACK_LANE_PLAN = {
   ditch: { centre: 1.9, half: 0.55, depth: 0.45 }, // along the low side, at the hedge's foot: m out from the tarmac's edge, half its width, how deep
   ford: { at: [10, 572], reach: 14, west: -200 }, // the stream runs on west from the pasture's hedge to the ford, and to plan x `west`: its spring on the moor (#713)
   hairpins: [[-30, 840], [60, 874]],
-  farViewSpot: [19.5, 100], // the far view's spot (frameBudget `viewBackLane`, #820): on the lane just after it turns south at the map's north edge, looking down it
+  farViewSpot: [13, 100], // the far view's spot (frameBudget `viewBackLane`, #820): on the lane's middle just after it turns south at the map's north edge, looking down it (the corner's curve puts the middle 6 m west of the straight line between its points)
   budgetSpot: [-8, 860], // the frame budget's spot (tools/frameBudget.mjs `hairpins`): on the lane between the two hairpins, looking along it, the most hedge and verge in one view
   footpath: { at: [2, 792], to: [-60, 760] }, // off the road's west side, up the hill: the stile in the hedge at `at`, the path on to `to` (plan metres)
   upperThornby: [-460, 745], // the hamlet the footpath climbs to, over the Moor's ridge wall on the plateau beyond (plan metres): seen from the ridge, never reached (#1037; it stood on the common at -215)
