@@ -9,36 +9,27 @@
 // A budget is raised only on purpose, with a line in docs/decisions/performance.md saying why (.claude/rules/checking.md).
 /** Per spot: the most draw calls and triangles a frame may take there. */
 export const BUDGETS = {
-  // Each is what the spot measured when the count was made the same on every run (#597: spawn 583 calls and 2.99M triangles, yard 2,724 and 3.70M, village 1,993 and
-  // 3.68M, wood 1,394 and 3.75M, hilltop 1,621 and 6.58M, the same on every run) and about 8% over. The animals, the girls and the lane's traffic are not in them; the real
-  // frame, moving things and all, is `tools/perf.mjs`.
-  // The triangle budgets were tightened to about 8% over what the ground in tiles drew (#665: 2.71M, 3.47M, 3.49M, 3.53M and 6.49M), which is 8% fewer than before.
-  // Merging what stands still (#816, `world/staticMerge.js`) took the calls down by a fifth to a quarter (spawn 491, yard 1,937, village 1,787, wood 1,101, hilltop 1,350: the triangles
-  // the same to within 2%) and they are held to about 8% over that.
-  // The far hedges (#667), the far oaks in the wood (#683) and then every oak and bush far away (#837, `world/scatter.js`) took the triangles well under those budgets
-  // (spawn 1.77M, yard 2.75M, village 1.71M, wood 2.65M, hilltop 4.49M), and the triangle budgets are held to about 8% over that.
-  spawn: { calls: 535, triangles: 1.91e6 },
-  yard: { calls: 2095, triangles: 2.97e6 },
-  village: { calls: 1930, triangles: 1.85e6 },
-  wood: { calls: 1190, triangles: 2.86e6 },
-  hilltop: { calls: 1460, triangles: 4.85e6 },
-  // Back Lane between its two hairpins on the new farm (#686, `?layout=2`: 1,136 calls and 3.07M triangles, the same on every run) and about 8% over. Today's farm has no
-  // such spot, so it is noted and skipped there; #692 makes layout 2 the one measured and brings the other budgets onto it.
-  hairpins: { calls: 1230, triangles: 3.32e6 },
-  // The Moor on the new farm (#821): beside the trig pillar on the ridge and in the middle of the common. Measured with tools/budget.mjs on ?layout=2 (seed 3,
-  // sunny, 15.5): the ridge 1,345 calls and 2.44M triangles, the middle 1,442 and 2.27M, the same on every run, held to about 8% over.
-  moorRidge: { calls: 1450, triangles: 2.64e6 },
-  moorMiddle: { calls: 1560, triangles: 2.45e6 },
-  // Everything left out of those counts, drawn up as if all of it were in view (5,275 calls and 1.43M triangles, about 8% over). It is not a frame: it is what a new
-  // herd, rider or vehicle body adds to the farm's moving things, which the spots no longer see. Raise it only on purpose (`MOVERS` in `measureInPage`).
-  // The far view (#820, `?layout=2`): looking out over the far landscape from the hilltop and the moor's ridge (east) and from Back Lane's north end (south), each at the
-  // default view distance and at 3,000 m, the worse kept (`VIEW_SPOTS`). Measured with tools/budget.mjs on ?layout=2 (seed 3, sunny, 15.5), the same at both distances (the
-  // fog changes what a pixel looks like, not what is drawn) and held to about 8% over: the hilltop 1,203 calls and 2.00M triangles, the ridge 1,761 and 2.69M, Back Lane
-  // looking south from its north end 1,254 and 2.60M.
-  viewHilltop: { calls: 1300, triangles: 2.17e6 },
-  viewMoorRidge: { calls: 1900, triangles: 2.91e6 },
-  viewBackLane: { calls: 1360, triangles: 2.81e6 },
-  movers: { calls: 5700, triangles: 1.55e6 },
+  // Every spot on the farm everybody plays (#692), measured with tools/budget.mjs on the build (seed 3, sunny, 15.5), the same on every run, and held to about 8% over:
+  // spawn 718 calls and 1.29M triangles, the yard 1,815 and 1.94M, the village street 2,143 and 2.49M, the wood's gate 1,486 and 3.46M, the hilltop 1,370 and 2.03M,
+  // Back Lane between its hairpins 1,507 and 2.04M, the A-road junction (14 m up the lane) 1,173 and 2.13M, the pit's gate 1,634 and 2.03M, the Moor's ridge 1,637 and 2.56M and
+  // its middle 1,682 and 2.37M, and the far view (#820: the hilltop and the ridge looking east, Back Lane's north end looking south, each at the default view distance and at
+  // 3,000 m, the worse kept, the same at both) 1,180 and 1.98M, 1,734 and 2.65M, 1,288 and 2.66M. The animals, the girls and the lane's traffic are not in them; the real frame,
+  // moving things and all, is `tools/perf.mjs`. `movers` is everything left out of those counts, drawn up as if all of it were in view (5,440 calls and 1.39M triangles):
+  // not a frame, but what a new herd, rider or vehicle body adds to the farm's moving things, which the spots no longer see. Raise it only on purpose (`MOVERS` in `measureInPage`).
+  spawn: { calls: 780, triangles: 1.39e6 },
+  yard: { calls: 1970, triangles: 2.10e6 },
+  village: { calls: 2320, triangles: 2.69e6 },
+  wood: { calls: 1610, triangles: 3.74e6 },
+  hilltop: { calls: 1480, triangles: 2.20e6 },
+  hairpins: { calls: 1630, triangles: 2.21e6 },
+  junction: { calls: 1270, triangles: 2.30e6 },
+  pitGate: { calls: 1770, triangles: 2.20e6 },
+  moorRidge: { calls: 1770, triangles: 2.77e6 },
+  moorMiddle: { calls: 1820, triangles: 2.57e6 },
+  viewHilltop: { calls: 1280, triangles: 2.14e6 },
+  viewMoorRidge: { calls: 1880, triangles: 2.86e6 },
+  viewBackLane: { calls: 1400, triangles: 2.88e6 },
+  movers: { calls: 5880, triangles: 1.51e6 },
 };
 
 /** Spots over their budget today, which are reported and not failed on until the issue that brings them back under makes them strict. None now:
@@ -47,9 +38,6 @@ export const KNOWN_OVER = [];
 
 /** The spots `measureInPage` knows how to find by itself; any other name in `BUDGETS` has to be in `layout.budgetSpots` (a test checks). */
 export const BUILT_IN_SPOTS = ['spawn', 'yard', 'village', 'wood', 'hilltop'];
-
-/** Spots only the new farm (`?layout=2`) has: today's farm, which CI measures, notes their absence and carries on, instead of failing for them (#692 makes layout 2 the one measured). */
-export const NEW_FARM_ONLY = ['hairpins', 'moorRidge', 'moorMiddle', 'viewHilltop', 'viewMoorRidge', 'viewBackLane'];
 
 /** East and south as a player's yaw (0 looks north, down -z: player.js), and the far view's spots (#820): where each stands (`from`: 'hilltop', or a name in the layout's
  * `budgetSpots`), the way it looks and the view distances it is counted at, the worst kept. 3,000 m is the most the setting allows. */
@@ -283,7 +271,7 @@ export function check(measured, budgets = BUDGETS, knownOver = KNOWN_OVER) {
   for (const [spot, budget] of Object.entries(budgets)) {
     const m = measured[spot];
     if (!m) {
-      if (!NEW_FARM_ONLY.includes(spot)) missing.push(spot);
+      missing.push(spot);
       continue;
     }
     const over = [];

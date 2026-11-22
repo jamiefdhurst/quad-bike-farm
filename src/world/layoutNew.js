@@ -1,8 +1,6 @@
-// The new farm (docs/farm-plan.md), built behind `?layout=2` until #692 makes it the default. It starts from today's layout (layout.js) and
-// replaces only what has moved: so far the ground, the farm's outline and its fields with their boundaries and gateways (#681). Everything
-// else stays at today's numbers until its own move, and is named in `NOT_MOVED_YET` with the issue that moves it. Decided with Jamie on
-// 9 November 2026: leaving a piece out stopped the game loading for 16 of the 21 pieces tried (docs/decisions/world.md, "A piece not yet
-// moved stays where it is").
+// The farm (docs/farm-plan.md), the one everybody plays since #692. It starts from the base numbers in layout.js (`RAW`) and replaces what the plan moves
+// (`REPLACED`) or has no use for (`REMOVED`); `NOT_MOVED_YET` is empty, with a test, so no piece reaches a player at the old numbers. Each of the plan's
+// pieces came in behind `?layout=2` first, one issue at a time (#681 onward), and docs/decisions/world.md says how each was decided.
 //
 // Positions here are written in the plan's own metres, as the map in docs/farm-plan.svg has them (x east, z south, from its north-west
 // corner), so they can be checked against it by eye. The game's (0, 0) is the middle of the yard, so a game position is the plan position
@@ -1328,7 +1326,7 @@ export function quarryLayout(today, P = PIT_PLAN) {
       gates: [lane, gateOf('quarry', { open: true })],
     },
     anchor: { x: centre[0], z: centre[1], yaw: 0 },
-    budgetSpots: { pitlane: { x: lane.x + lane.inward[0] * 8, z: lane.z + lane.inward[1] * 8 } }, // just inside the shut lane gate, looking out at it and in at the pit (#685)
+    budgetSpots: { pitGate: { x: lane.x + lane.inward[0] * 8, z: lane.z + lane.inward[1] * 8 } }, // just inside the shut lane gate, looking out at it and in at the pit (#685)
   };
 }
 
@@ -1659,7 +1657,13 @@ export function tracksLayout(T = STONE_TRACKS_PLAN) {
   return { roads, farmBridge: { x: bx, z: bz, length: FARM_BRIDGE_PLAN.length, width: FARM_BRIDGE_PLAN.width, yaw: FARM_BRIDGE_PLAN.yaw }, headlands: { width: HEADLAND_WIDTH, fields: headlands } };
 }
 
-/** The new farm: today's layout (resolved) with what has moved put in its place. */
+/** The A-road junction's budget spot (#692): 14 m up the lane from where it meets the A-road, on the lane's centre line, looking at the junction's furniture and the road beyond. */
+function junctionSpot([a, b]) {
+  const t = 14 / Math.hypot(b[0] - a[0], b[1] - a[1]);
+  return { x: a[0] + (b[0] - a[0]) * t, z: a[1] + (b[1] - a[1]) * t };
+}
+
+/** The farm: the base layout (resolved) with what the plan moves put in its place. */
 export function layoutNew(today, raw) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
   const [gx1, gz1] = fromPlan([GROUND_PLAN.maxX, GROUND_PLAN.maxZ]);
@@ -1684,7 +1688,7 @@ export function layoutNew(today, raw) {
     ...drive, roads: [...drive.roads, village.street, village.track, neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout(), ...tracks.roads], farmBridge: tracks.farmBridge, headlands: tracks.headlands,
     woods: wood.woods, logYard: wood.logYard, hill, village: village.village, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, village: village.anchor, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
-    budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), backLaneNorth: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.farViewSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z }, ...moorBudgetSpots() }, // the neighbour's just inside her gateway (#569), the Moor's on its ridge and in its middle (#821)
+    budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, junction: junctionSpot(drive.roads.find((r) => r.id === 'lane').points), hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), backLaneNorth: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.farViewSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z }, ...moorBudgetSpots() }, // the neighbour's just inside her gateway (#569), the Moor's on its ridge and in its middle (#821)
     fieldLandmarks: fieldLandmarksLayout(), moor: { ...moorLayout(MOOR_FEATURES_PLAN, MOOR_PLAN, fromPlan), gate: moorGateLayout() },
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
     // The places a girl names where she is (npc/spotNames.js), where the new farm has them (#690): down the green lane, on the hill by the flask rock, just inside the wood's gate.
