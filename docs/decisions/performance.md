@@ -267,3 +267,9 @@ The sections below are the record, oldest first. A new decision goes at the end.
 - **Measured** (`node tools/perf.mjs --runs 3`, main against the branch): spawn 491 to 486 calls, 1.80M to 1.77M triangles; yard 1,978 to 1,972, 2.89M to 2.75M; village 1,817 to 1,801, 2.07M to 1.70M; wood 1,129 to 1,116, 2.87M to 2.60M; hilltop 1,376 to 1,355, 4.72M to 4.44M. Ms a frame and load (3.35 s) the same within noise. The hedges' own share, today's farm: yard 928k to 743k triangles, village 830k to 422k, hilltop 1.58M to 1.22M; the new map: yard 1.48M to 461k, village 2.12M to 695k, hilltop 1.80M to 496k.
 - The triangle budgets in `frameBudget.mjs` had been well over the counts since #667 and #683 and are now held to about 8% over these (spawn 1.91M, yard 2.97M, village 1.85M, wood 2.86M, hilltop 4.85M).
 - **Next:** the far strips are up to 174 calls a view on the new map, one a tile for each of five builders; drawing them, the far oaks and the far bushes in bigger batches is #1076.
+
+## Far-view budget spots (#820)
+
+- Three spots on the new farm look out over the far landscape: `viewHilltop` (east from the hill's top), `viewMoorRidge` (east from the ridge) and `viewBackLane` (south from Back Lane's north end), each counted at 1500 m and at 3000 m (`viewDistance`), the worse kept. Both gave the same counts, because the view distance only changes the fog and the far plane (6000) already reaches the ring's rim. Hilltop 1,203 calls and 2.00M triangles, ridge 1,761 and 2.69M, Back Lane 1,261 and 2.60M, budgets about 8% over. The old spots are unchanged: this change draws nothing differently.
+- On `?layout=2` the older new-farm spots (hairpins 1,515 calls, the ridge 1,663, the middle of the moor 1,706) are now over their own budgets, which are not enforced until #692 brings layout 2 into CI.
+
