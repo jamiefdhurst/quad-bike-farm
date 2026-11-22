@@ -4,7 +4,9 @@ import { layoutNew, fromPlan } from '../src/world/layoutNew.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 import { groundBounds } from '../src/world/groundTiles.js';
-import { farFog, FAR_PARAMS, FAR_ROADS, FAR_RIVER, farRects, outsideBy, axisLines, createFarHeight, farRingData, farFieldPlan, farClusters, smoothPath, ribbon, bankTrees } from '../src/world/farLand.js';
+import { WEATHER_KINDS } from '../src/world/weather.js';
+import { DEFAULT_GRAPHICS_PARAMS, GRAPHICS_PARAM_RANGES } from '../src/core/graphics.js';
+import { farFog, FOG_VIEW, FAR_PARAMS, FAR_ROADS, FAR_RIVER, farRects, outsideBy, axisLines, createFarHeight, farRingData, farFieldPlan, farClusters, smoothPath, ribbon, bankTrees } from '../src/world/farLand.js';
 
 // The far landscape (#708): a ring from the skirt's edge out to 3.5 km that meets the ground with no gap and carries the land's lie on.
 const two = layoutNew(LAYOUT, RAW_LAYOUT);
@@ -235,6 +237,46 @@ describe('the fog on the new farm', () => {
       expect(farFog(d)).toBeLessThanOrEqual(d + 1e-12);
       expect(farFog(d)).toBeGreaterThan(last);
       last = farFog(d);
+    }
+  });
+});
+
+describe('the view distance (#820)', () => {
+  const seen = (density) => 1.794 / density; // metres until FogExp2 leaves 4% of the world's colour (exp(-(d x)^2) = 0.04)
+
+  it('is a graphics setting of 1500 m by default, from 300 to 3000 in steps of 50, and the fog is written for that default', () => {
+    expect(DEFAULT_GRAPHICS_PARAMS.viewDistance).toBe(1500);
+    expect(GRAPHICS_PARAM_RANGES.viewDistance).toEqual([300, 3000, 50]);
+    expect(FOG_VIEW).toBe(DEFAULT_GRAPHICS_PARAMS.viewDistance);
+  });
+
+  it('makes every weather a fraction of it: at 500 m and at 1500 m each shows in proportion, and the default is what it was', () => {
+    for (const [kind, def] of Object.entries(WEATHER_KINDS)) {
+      const d = def.sky.fogDensity;
+      expect(farFog(d, 1500), kind).toBe(farFog(d));
+      expect(seen(farFog(d, 500)) / seen(farFog(d, 1500)), kind).toBeCloseTo(500 / 1500, 6);
+      expect(seen(farFog(d, 3000)) / seen(farFog(d, 1500)), kind).toBeCloseTo(2, 6);
+    }
+  });
+
+  it('shows a clear day at the view distance and a grey one in a few hundred metres, rain and mist closing right in', () => {
+    const shown = (kind, view) => seen(farFog(WEATHER_KINDS[kind].sky.fogDensity, view));
+    expect(shown('sunny', 1500)).toBeGreaterThan(1400);
+    expect(shown('sunny', 500)).toBeGreaterThan(450);
+    expect(shown('sunny', 500)).toBeLessThan(600);
+    expect(shown('overcast', 1500)).toBeLessThan(950);
+    expect(shown('rain', 1500)).toBeLessThan(250);
+    expect(shown('fog', 1500)).toBeLessThan(70);
+  });
+
+  it('changes the fog smoothly with the setting: a step of 50 m moves the density by no more than a few percent at 1500 m', () => {
+    for (const def of Object.values(WEATHER_KINDS)) {
+      for (let v = 300; v < 3000; v += 50) {
+        const a = farFog(def.sky.fogDensity, v);
+        const b = farFog(def.sky.fogDensity, v + 50);
+        expect(b).toBeLessThan(a); // a longer view is always a thinner fog
+        expect((a - b) / a).toBeLessThan(50 / v + 1e-9);
+      }
     }
   });
 });

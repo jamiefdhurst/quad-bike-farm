@@ -31,6 +31,13 @@ export const BUDGETS = {
   moorMiddle: { calls: 1560, triangles: 2.45e6 },
   // Everything left out of those counts, drawn up as if all of it were in view (5,275 calls and 1.43M triangles, about 8% over). It is not a frame: it is what a new
   // herd, rider or vehicle body adds to the farm's moving things, which the spots no longer see. Raise it only on purpose (`MOVERS` in `measureInPage`).
+  // The far view (#820, `?layout=2`): looking out over the far landscape from the hilltop and the moor's ridge (east) and from Back Lane's north end (south), each at the
+  // default view distance and at 3,000 m, the worse kept (`VIEW_SPOTS`). Measured with tools/budget.mjs on ?layout=2 (seed 3, sunny, 15.5), the same at both distances (the
+  // fog changes what a pixel looks like, not what is drawn) and held to about 8% over: the hilltop 1,203 calls and 2.00M triangles, the ridge 1,761 and 2.69M, Back Lane
+  // looking south from its north end 1,261 and 2.60M.
+  viewHilltop: { calls: 1300, triangles: 2.17e6 },
+  viewMoorRidge: { calls: 1900, triangles: 2.91e6 },
+  viewBackLane: { calls: 1360, triangles: 2.81e6 },
   movers: { calls: 5700, triangles: 1.55e6 },
 };
 
@@ -42,7 +49,16 @@ export const KNOWN_OVER = [];
 export const BUILT_IN_SPOTS = ['spawn', 'yard', 'village', 'wood', 'hilltop'];
 
 /** Spots only the new farm (`?layout=2`) has: today's farm, which CI measures, notes their absence and carries on, instead of failing for them (#692 makes layout 2 the one measured). */
-export const NEW_FARM_ONLY = ['hairpins', 'moorRidge', 'moorMiddle'];
+export const NEW_FARM_ONLY = ['hairpins', 'moorRidge', 'moorMiddle', 'viewHilltop', 'viewMoorRidge', 'viewBackLane'];
+
+/** East and south as a player's yaw (0 looks north, down -z: player.js), and the far view's spots (#820): where each stands (`from`: 'hilltop', or a name in the layout's
+ * `budgetSpots`), the way it looks and the view distances it is counted at, the worst kept. 3,000 m is the most the setting allows. */
+export const VIEW_DISTANCES = [1500, 3000];
+export const VIEW_SPOTS = {
+  viewHilltop: { from: 'hilltop', yaw: (3 * Math.PI) / 2 },
+  viewMoorRidge: { from: 'moorRidge', yaw: (3 * Math.PI) / 2 },
+  viewBackLane: { from: 'backLaneNorth', yaw: Math.PI },
+};
 
 export const SPOTS = Object.keys(BUDGETS).filter((k) => k !== 'movers');
 
@@ -50,7 +66,7 @@ export const SPOTS = Object.keys(BUDGETS).filter((k) => k !== 'movers');
  * With `dwell` (seconds, on a real GPU: tools/perf.mjs) each view is also held that long and timed: `ms` and `worstMs` from frameStats and the three
  * slowest features, the worst view's kept. The draws are counted with everything that moves held still and out of sight (#597), so the count is the
  * farm's and the same on every run; the timing, if asked for, is with it all moving as in play. */
-export async function measureInPage({ spots, headings, frames, dwell = 0, viewHeight = 0, movers = false }) {
+export async function measureInPage({ spots, headings, frames, dwell = 0, viewHeight = 0, movers = false, views = {}, viewDistances = [] }) {
   const g = window.game;
   const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
   const settle = async (n) => { for (let i = 0; i < n; i++) await frame(); };
@@ -168,6 +184,18 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
     }
     return w;
   };
+  const viewDistance = g.graphics?.viewDistance;
+  // The highest point of the hill's pasture (the hilltop spot, and where the far view from it stands).
+  const hilltopAt = () => {
+    const p = layout.hill.pasture;
+    let best = null;
+    for (let x = p.minX; x <= p.maxX; x += 4) for (let z = p.minZ; z <= p.maxZ; z += 4) {
+      if (p.points && !g.world.fields.hill.inPasture(x, z)) continue; // the new farm's pasture is an outline: not its rectangle's corners
+      const h = g.world.heightAt(x, z);
+      if (!best || h > best.h) best = { x, z, h };
+    }
+    return best;
+  };
   try {
     if (g.player.isRiding) return { error: 'you are on a vehicle at the start' };
     await settle(10);
@@ -200,25 +228,43 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
     }
     // The spots the layout names (`layout.budgetSpots`: { x, z } each, written from the place's anchor), by the name `BUDGETS` has them under.
     for (const name of spots) {
-      if (['spawn', 'yard', 'village', 'wood', 'hilltop'].includes(name)) continue; // (this runs in the page, so it cannot use BUILT_IN_SPOTS)
+      if (['spawn', 'yard', 'village', 'wood', 'hilltop'].includes(name) || views[name]) continue; // (this runs in the page, so it cannot use BUILT_IN_SPOTS)
       const at = layout.budgetSpots?.[name];
       if (at) out[name] = await lookFrom(at.x, at.z);
       else notes.push(`no spot called ${name} in the layout`);
     }
     if (spots.includes('hilltop')) {
       if (layout.hill) {
-        const p = layout.hill.pasture;
-        let best = null;
-        for (let x = p.minX; x <= p.maxX; x += 4) for (let z = p.minZ; z <= p.maxZ; z += 4) {
-          if (p.points && !g.world.fields.hill.inPasture(x, z)) continue; // the new farm's pasture is an outline: not its rectangle's corners
-          const h = g.world.heightAt(x, z);
-          if (!best || h > best.h) best = { x, z, h };
-        }
+        const best = hilltopAt();
         out.hilltop = await lookFrom(best.x, best.z);
       } else notes.push('no hill on this farm');
     }
+    // The far view (#820): one way, at each view distance, the worst kept.
+    for (const [name, v] of Object.entries(views)) {
+      if (!spots.includes(name)) continue;
+      if (!layout.newFarm) {
+        notes.push(`${name} is for the new farm, which has the far landscape`); // today's farm has no far view, and its hill is not the one these budgets are for
+        continue;
+      }
+      const at = v.from === 'hilltop' ? (layout.hill ? hilltopAt() : null) : layout.budgetSpots?.[v.from];
+      if (!at) {
+        notes.push(`no ${v.from} spot on this farm for ${name}`);
+        continue;
+      }
+      standAt(at.x, at.z);
+      g.player.pitch = 0;
+      g.player.yaw = v.yaw;
+      let w = { calls: 0, triangles: 0 };
+      for (const d of viewDistances) {
+        g.graphics.viewDistance = d;
+        w = worst(w, await count());
+      }
+      g.graphics.viewDistance = viewDistance;
+      out[name] = w;
+    }
   } finally {
     holdStill(false);
+    if (viewDistance !== undefined) g.graphics.viewDistance = viewDistance;
     g.world.farDetail.viewHeight = 0;
     info.autoReset = wasAuto;
     g.player.moveTo({ x: home.x, y: home.y, z: home.z });
@@ -228,7 +274,7 @@ export async function measureInPage({ spots, headings, frames, dwell = 0, viewHe
   return { spots: out, notes };
 }
 
-export const MEASURE_ARGS = { spots: SPOTS, headings: [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2], frames: 3, viewHeight: 1000, movers: true };
+export const MEASURE_ARGS = { spots: SPOTS, headings: [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2], frames: 3, viewHeight: 1000, movers: true, views: VIEW_SPOTS, viewDistances: VIEW_DISTANCES };
 
 /**
  * Compare measured numbers with the budgets.

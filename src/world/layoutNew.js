@@ -937,6 +937,7 @@ export const BACK_LANE_PLAN = {
   ditch: { centre: 1.9, half: 0.55, depth: 0.45 }, // along the low side, at the hedge's foot: m out from the tarmac's edge, half its width, how deep
   ford: { at: [10, 572], reach: 14, west: -200 }, // the stream runs on west from the pasture's hedge to the ford, and to plan x `west`: its spring on the moor (#713)
   hairpins: [[-30, 840], [60, 874]],
+  farViewSpot: [19.5, 100], // the far view's spot (frameBudget `viewBackLane`, #820): on the lane just after it turns south at the map's north edge, looking down it
   budgetSpot: [-8, 860], // the frame budget's spot (tools/frameBudget.mjs `hairpins`): on the lane between the two hairpins, looking along it, the most hedge and verge in one view
   footpath: { at: [2, 792], to: [-60, 760] }, // off the road's west side, up the hill: the stile in the hedge at `at`, the path on to `to` (plan metres)
   upperThornby: [-460, 745], // the hamlet the footpath climbs to, over the Moor's ridge wall on the plateau beyond (plan metres): seen from the ridge, never reached (#1037; it stood on the common at -215)
@@ -1689,7 +1690,7 @@ export function layoutNew(today, raw) {
     ...drive, roads: [...drive.roads, village.street, village.track, neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout(), ...tracks.roads], farmBridge: tracks.farmBridge, headlands: tracks.headlands,
     woods: wood.woods, logYard: wood.logYard, hill, village: village.village, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, village: village.anchor, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
-    budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z }, ...moorBudgetSpots() }, // the neighbour's just inside her gateway (#569), the Moor's on its ridge and in its middle (#821)
+    budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), backLaneNorth: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.farViewSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z }, ...moorBudgetSpots() }, // the neighbour's just inside her gateway (#569), the Moor's on its ridge and in its middle (#821)
     fieldLandmarks: fieldLandmarksLayout(), moor: { ...moorLayout(MOOR_FEATURES_PLAN, MOOR_PLAN, fromPlan), gate: moorGateLayout() },
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
     // The places a girl names where she is (npc/spotNames.js), where the new farm has them (#690): down the green lane, on the hill by the flask rock, just inside the wood's gate.

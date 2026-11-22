@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { BUDGETS, BUILT_IN_SPOTS, KNOWN_OVER, MEASURE_ARGS, SPOTS, check, measureInPage, summary } from '../tools/frameBudget.mjs';
+import { BUDGETS, BUILT_IN_SPOTS, VIEW_SPOTS, VIEW_DISTANCES, KNOWN_OVER, MEASURE_ARGS, SPOTS, check, measureInPage, summary } from '../tools/frameBudget.mjs';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew } from '../src/world/layoutNew.js';
 
@@ -197,6 +197,33 @@ describe('counting the draws (#597)', () => {
       expect(r.spots.dairy.calls).toBe(2);
     });
 
+    it('counts a far-view spot at each view distance, looking the way it says, and leaves the setting as it was', async () => {
+      const { g } = standIn();
+      g.world.layout.budgetSpots = { backLaneNorth: { x: 5, z: 6 } };
+      g.world.layout.newFarm = true;
+      g.graphics = { viewDistance: 1500 };
+      const stood = [];
+      const seenAt = [];
+      g.player.moveTo = (p) => stood.push([p.x, p.z]);
+      const was = g.world.farDetail.update;
+      g.world.farDetail.update = (...a) => { seenAt.push([g.graphics.viewDistance, g.player.yaw]); return was?.apply(g.world.farDetail, a); };
+      const r = await measureInPage({ ...args, spots: ['viewBackLane'], views: VIEW_SPOTS, viewDistances: VIEW_DISTANCES });
+      expect(stood).toContainEqual([5, 6]);
+      expect(r.spots.viewBackLane.calls).toBe(2);
+      expect(seenAt.map((s) => s[0])).toEqual(expect.arrayContaining([1500, 3000]));
+      expect(seenAt.every((s) => s[1] === Math.PI)).toBe(true);
+      expect(g.graphics.viewDistance).toBe(1500);
+    });
+
+    it('leaves a far-view spot out on today\'s farm, and says so', async () => {
+      const { g } = standIn();
+      g.world.layout.budgetSpots = { backLaneNorth: { x: 5, z: 6 } };
+      g.graphics = { viewDistance: 1500 };
+      const r = await measureInPage({ ...args, spots: ['viewBackLane'], views: VIEW_SPOTS, viewDistances: VIEW_DISTANCES });
+      expect(r.spots.viewBackLane).toBeUndefined();
+      expect(r.notes.join()).toContain('viewBackLane');
+    });
+
     it('says so, and measures nothing, for a name the layout does not have', async () => {
       standIn();
       const r = await measureInPage({ ...args, spots: ['yard', 'dairy'] });
@@ -206,7 +233,7 @@ describe('counting the draws (#597)', () => {
 
     it('has, for every spot in BUDGETS, a way to find it: a built-in one or a name in the layout', () => {
       const two = layoutNew(LAYOUT, RAW_LAYOUT);
-      for (const s of SPOTS) expect(BUILT_IN_SPOTS.includes(s) || LAYOUT.budgetSpots?.[s] || two.budgetSpots?.[s], `no way to stand at the budget spot ${s}: add it to layout.budgetSpots`).toBeTruthy();
+      for (const s of SPOTS) expect(BUILT_IN_SPOTS.includes(s) || VIEW_SPOTS[s] || LAYOUT.budgetSpots?.[s] || two.budgetSpots?.[s], `no way to stand at the budget spot ${s}: add it to layout.budgetSpots`).toBeTruthy();
     });
   });
 
@@ -294,5 +321,25 @@ describe('a spot only the new farm has (#686)', () => {
     expect(none.missing).toEqual([]);
     const over = check({ hairpins: { calls: BUDGETS.hairpins.calls + 1, triangles: 1 } }, { hairpins: BUDGETS.hairpins }, []);
     expect(over.failures.length).toBe(1);
+  });
+});
+
+describe('the far view\'s spots (#820)', () => {
+  it('are three, looking east from the hilltop and the moor\'s ridge and south from Back Lane, each counted at the default view distance and at 3,000 m', () => {
+    expect(Object.keys(VIEW_SPOTS)).toEqual(['viewHilltop', 'viewMoorRidge', 'viewBackLane']);
+    expect(VIEW_DISTANCES).toEqual([1500, 3000]);
+    for (const k of Object.keys(VIEW_SPOTS)) expect(BUDGETS[k]).toBeDefined();
+    expect(MEASURE_ARGS.views).toBe(VIEW_SPOTS);
+    expect(MEASURE_ARGS.viewDistances).toBe(VIEW_DISTANCES);
+    // east is +x: at yaw 3pi/2 the camera looks along (-sin, -cos) = (1, 0); south is +z at yaw pi
+    for (const [k, [x, z]] of Object.entries({ viewHilltop: [1, 0], viewMoorRidge: [1, 0], viewBackLane: [0, 1] })) {
+      expect(-Math.sin(VIEW_SPOTS[k].yaw)).toBeCloseTo(x, 9);
+      expect(-Math.cos(VIEW_SPOTS[k].yaw)).toBeCloseTo(z, 9);
+    }
+  });
+
+  it('are not missing on today\'s farm, which has no far view', () => {
+    const r = check({ spawn: { calls: 1, triangles: 1 } }, { spawn: BUDGETS.spawn, ...Object.fromEntries(Object.keys(VIEW_SPOTS).map((k) => [k, BUDGETS[k]])) }, []);
+    expect(r.missing).toEqual([]);
   });
 });
