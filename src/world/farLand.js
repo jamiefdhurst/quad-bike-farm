@@ -35,12 +35,16 @@ function noise(x, z) {
 }
 const fbm = (x, z) => noise(x, z) * 0.6 + noise(x * 2.1 + 7, z * 2.1 + 3) * 0.3 + noise(x * 4.3 + 1, z * 4.3 + 9) * 0.1;
 
+/** The view distance (m) the weathers' fog densities are written for: a clear day shows this far at the default `viewDistance`. */
+export const FOG_VIEW = 1500;
+
 /**
- * The fog density to use on the new farm, which thins a clear or fair day's (0.0032 to 0.004: nothing left at 700 m) to what lets 1.5 km show, and leaves rain and mist as
- * they are. A stand-in until #820 makes every weather's fog a fraction of a view distance setting.
+ * The fog density to use on the new farm for a weather whose own density is `density`, with a clear day showing `view` metres. A clear or fair day's (0.0032 to 0.004:
+ * nothing left at 700 m) is thinned to what lets `view` show, and rain and mist are left as they are at 1500 m. Every weather is a fixed fraction of the view
+ * distance (the distance it shows is proportional to it, so its density is inversely), so the weather keeps its murk relative to it.
  */
-export function farFog(density) {
-  return density * mix(0.36, 1, smooth(0.0055, 0.009, density));
+export function farFog(density, view = FOG_VIEW) {
+  return (density * mix(0.36, 1, smooth(0.0055, 0.009, density)) * FOG_VIEW) / Math.max(1, view);
 }
 
 /** The skirt's outer rectangle (the ground and `margin` m round it), where the ring starts, and the ring's own outer one. */

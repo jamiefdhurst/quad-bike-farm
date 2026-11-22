@@ -1,4 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { registerTuning } from '../src/core/tuning.js';
+import { buildGameTree } from '../src/console/gameTree.js';
+import { resolve } from '../src/console/shell.js';
+import { TUNE_CATEGORIES } from '../src/debug/tuneCategories.js';
 import { DEFAULT_GRAPHICS_PARAMS, GRAPHICS_PARAM_RANGES, pixelRatioFor, nextFrameAt } from '../src/core/graphics.js';
 
 /** Frames drawn in a second of screen ticks at `hz` (with a little jitter) under a cap. */
@@ -42,5 +46,19 @@ describe('graphics', () => {
     const due = nextFrameAt(5, 1, 60); // a long stall
     expect(due).toBeCloseTo(5 + 1 / 60);
     expect(nextFrameAt(5.005, due, 60)).toBe(null);
+  });
+});
+
+describe('the view distance setting (#820)', () => {
+  it('is on the Tune tab under Graphics and in the console as tune.graphics.viewDistance, from 300 to 3000 m', () => {
+    const params = { ...DEFAULT_GRAPHICS_PARAMS };
+    registerTuning('Graphics', params, GRAPHICS_PARAM_RANGES);
+    const { node, error } = resolve(buildGameTree({ units: [], companions: [], weather: {} }, {}), 'tune.graphics.viewDistance');
+    expect(error).toBeUndefined();
+    expect(node.get()).toBe(1500);
+    expect([node.min, node.max]).toEqual([300, 3000]);
+    node.set(3000);
+    expect(params.viewDistance).toBe(3000);
+    expect(TUNE_CATEGORIES['World, weather and sound']).toContain('Graphics');
   });
 });

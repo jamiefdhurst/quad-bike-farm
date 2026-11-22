@@ -18,7 +18,7 @@ export const SKY_PARAMS = {
 export const SKY_RANGES = {
   cloudCover: [0, 1, 0.01],
   cloudSpeed: [0, 0.05, 0.001],
-  fogDensity: [0, 0.03, 0.0005],
+  fogDensity: [0, 0.15, 0.0005], // the new farm thins it to a fraction of `viewDistance` (a mist at 300 m is 0.14)
   sunIntensity: [0, 4, 0.05],
   hemiIntensity: [0, 4, 0.05],
   exposure: [0.2, 2.5, 0.05],
