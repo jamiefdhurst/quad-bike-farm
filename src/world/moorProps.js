@@ -173,13 +173,15 @@ export function buildCairn(random, radius = 1.5, height = 1.6) {
  * A cattle grid across the lane, its deck along the road: steel bars over a pit between concrete sills, kerbs painted white on top (the bridle gate and the signs are placed
  * round it in `buildMoorProps`). Local +x is the way along the road and the grid's middle is the origin.
  */
+export const MOOR_GRID_LENGTH = 3.6; // m of bars along the lane
+export const MOOR_GRID_PITCH = 0.16; // m from one bar to the next
 export function buildMoorGrid(c, halfRoad) {
   const { random } = c;
   const group = new THREE.Group();
   group.name = 'moorGrid';
-  const length = 3.6;
+  const length = MOOR_GRID_LENGTH;
   const width = 2 * halfRoad + 0.5;
-  const pitch = 0.16;
+  const pitch = MOOR_GRID_PITCH;
   const concrete = std(concreteTexture(random));
   const steel = std(galvanisedTexture(random), { metalness: 0.65, roughness: 0.42 });
   const pitMat = std(concreteTexture(random), { color: 0x2a2926, roughness: 1 });
@@ -449,7 +451,7 @@ export function buildMoorProps(c) {
     if (b.size > 0.6) physics.createCollider(RAPIER.ColliderDesc.cylinder(b.size * 0.25, b.size * 0.45).setTranslation(b.x, heights.heightAt(b.x, b.z) + b.size * 0.25, b.z));
   }
   const rockMat = new THREE.MeshStandardMaterial({ map: gritstoneTexture(random), color: 0xffffff, roughness: 0.96, flatShading: true });
-  scene.add(tiledInstances(lumpGeo, rockMat, lumps, { colors: lumpColors, tileSize: MODEL_TILE, castShadow: true, name: 'moor rocks' }));
+  scene.add(c.drawDistance.add(tiledInstances(lumpGeo, rockMat, lumps, { colors: lumpColors, tileSize: MODEL_TILE, castShadow: true, name: 'moor rocks' }), 'roughDistance')); // cut off with the plants (#821)
 
   // The peat banks: dark turves cut and left to dry on the lip of each, a few stacked on end.
   const turfGeo = worldBox(0.3, 0.12, 0.16, 0.3);

@@ -187,7 +187,7 @@ export function createTerrainHeight(layout, track) {
       const bd = Math.hypot(x - b.x, z - b.z);
       if (bd < b.radius) w = Math.max(w, 1 - smoothstep(b.radius * 0.35, b.radius * 0.9, bd));
     }
-    return w;
+    return moor ? Math.max(w, moor.bogAt(x, z)) : w; // the Moor's wet flushes (#821)
   }
 
   /** 0..1, how muddy the surface is here (1 on the track centre, and in a bog). */

@@ -26,6 +26,41 @@ export function createCattleGrid(layout) {
 }
 
 /**
+ * A grid across a lane that runs at an angle (the Moor's two on Back Lane, #821): the same questions as `createCattleGrid`'s, asked along the lane's
+ * direction (`tx`, `tz`, a unit vector) from its middle (`x`, `z`), `length` of bars along it and `width` across it. `barsAlong` is `barsBetween` for a wheel
+ * going from one point to another.
+ */
+export function createLaneGrid({ id, x, z, tx, tz, length, width, pitch }) {
+  const local = (px, pz) => ({ u: (px - x) * tx + (pz - z) * tz, v: -(px - x) * tz + (pz - z) * tx });
+  const grid = { id, x, z, tx, tz, length, width, half: width / 2, pitch };
+  /** Whether (px, pz) is over the bars. */
+  grid.onGrid = (px, pz) => {
+    const { u, v } = local(px, pz);
+    return Math.abs(u) <= length / 2 && Math.abs(v) <= width / 2;
+  };
+  /** Whole bars a wheel has crossed going from (ax, az) to (bx, bz), 0 if it isn't across the lane on it. */
+  grid.barsAlong = (ax, az, bx, bz) => {
+    const a = local(ax, az);
+    const b = local(bx, bz);
+    if (Math.abs(a.v) > width / 2 || Math.abs(b.v) > width / 2) return 0;
+    const bar = (u) => Math.floor((Math.min(Math.max(u, -length / 2), length / 2) + length / 2) / pitch);
+    return Math.abs(bar(b.u) - bar(a.u));
+  };
+  return grid;
+}
+
+/** The grid nearest (x, z) of `grids` that is within `reach` metres of its middle, or null. */
+export function gridNear(grids, x, z, reach = 8) {
+  let best = null;
+  let bestD = reach;
+  for (const g of grids) {
+    const d = Math.hypot(x - g.x, z - g.z);
+    if (d < bestD) [best, bestD] = [g, d];
+  }
+  return best;
+}
+
+/**
  * The rattle of crossing the grid at `speed` m/s with `share` (0..1) of the wheels on it: knocks a second and their size in pulse
  * kicks. A wheel meets a bar every pitch/speed seconds, but the springs can't tell more than `maxRate` of them apart, so the rate
  * stops there and the size carries on with speed.
