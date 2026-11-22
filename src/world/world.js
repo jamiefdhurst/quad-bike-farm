@@ -1,6 +1,9 @@
 import { createRiver } from './river.js';
 import { yardHeard } from './yardBed.js';
-import { createCattleGrid } from './cattleGrid.js';
+import { moorHeard, moorBirds } from './moorBed.js';
+import { createMoorSense } from './moorSense.js';
+import { createCattleGrid, createLaneGrid, gridNear } from './cattleGrid.js';
+import { moorGrids, MOOR_GRID_LENGTH, MOOR_GRID_PITCH } from './moorProps.js';
 import { roadNetwork, EDGE } from './roads.js';
 import { LAYOUT } from './layout.js';
 import { Track } from './track.js';
@@ -50,6 +53,8 @@ export class World {
     this.river = createRiver(layout, this.heights.brook); // the river's crossing and what zone a point is in (river.js)
     this.roads = roadNetwork(layout); // every road: world/roads.js
     this.cattleGrid = createCattleGrid(layout); // across the road in the grass field's east gateway, or null
+    const moorLane = layout.moor ? this.roads.road('backLane') : null;
+    this.cattleGrids = [this.cattleGrid, ...(moorLane ? moorGrids(moorLane, layout).map((g) => createLaneGrid({ id: g.id, x: g.x, z: g.z, tx: g.tx, tz: g.tz, length: MOOR_GRID_LENGTH, width: 2 * moorLane.halfWidth + 0.5, pitch: MOOR_GRID_PITCH })) : [])].filter(Boolean); // every grid a wheel can cross: the drive's and the Moor's two (#821)
     this.outbuildings = createOutbuildings(layout); // the Dutch barn, the field shed, the muck heap and the trough out east
     this.hutShape = hutShape(layout); // the shepherd's hut on the hill (hut.js), or null
 
@@ -184,6 +189,11 @@ export class World {
   }
 
   /** How deep a bog: the three on the farm, and any the wear has made. */
+  /** The cattle grid within a few metres of (x, z), or null (the drive's, or one of the Moor's on Back Lane). */
+  gridNear(x, z) {
+    return gridNear(this.cattleGrids, x, z);
+  }
+
   bogAt(x, z) {
     return Math.max(this.heights.bogAt(x, z), this.wear.bogAt(x, z, this.wet));
   }
@@ -301,6 +311,21 @@ export class World {
     }
     this.streamEvent = s.update(dt, this.weather.rain);
     this.setStreamLevel();
+  }
+
+  /** What a girl on the back can see coming on the Moor (moorSense.js) with the game's `flocks`, or null with no Moor. */
+  moorSense(flocks) {
+    const moor = this.heights.moor;
+    if (!moor) return null;
+    this.moorSenseOf ??= createMoorSense(moor);
+    this.moorSenseOf.flocks = flocks;
+    return this.moorSenseOf;
+  }
+
+  /** The Moor's sound at (x, z): { level, birds } (`moorHeard`, `moorBirds` for the farm's date and the darkness), or null with no Moor. */
+  moorHeard(x, z, date, darkness) {
+    const level = moorHeard(this.heights.moor, x, z);
+    return level > 0 ? { level, birds: moorBirds(date, darkness) } : null;
   }
 
   /** 0..1 how much of the yard's sound bed to play at (x, z): see `yardHeard`. */

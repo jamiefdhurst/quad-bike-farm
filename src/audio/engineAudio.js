@@ -12,6 +12,8 @@ import { DEFAULT_AUDIO_PARAMS, DEFAULT_SOUND_PARAMS } from './audioParams.js';
 import { SoundPath, distanceLevel, airCutoff } from './propagation.js';
 import { rainHeard } from '../world/barn.js';
 import { yardBed } from '../world/yardBed.js';
+import { moorBed } from '../world/moorBed.js';
+import { MoorAudio } from './moorAudio.js';
 import { USE_CUES, useSamples } from './useAudio.js';
 import { wantsBank } from './bankWant.js';
 
@@ -319,14 +321,23 @@ export class AudioHub {
   }
 
   /** How hard it's raining, 0..1, and how far indoors you are (0..1): under the barn's tin roof it drums (see `rainHeard`). `yard` is the yard's share (`yardHeard`), with the weather's windiness (`weather.wind`, not the gusts). */
-  setRain(level, indoor = 0, barnParams, yard = 0, windiness = 0) {
+  setRain(level, indoor = 0, barnParams, yard = 0, windiness = 0, moor = null) {
     if (!this.ready) return;
     this.setYard(yard, Math.min(1, windiness / 1.5), level);
+    this.setMoor(moor, Math.min(1, windiness / 1.5));
     const t = this.ctx.currentTime;
     const heard = barnParams ? rainHeard(level, indoor, barnParams) : { level, tin: 0 };
     this.rainGain.gain.setTargetAtTime(this.params.rainVolume * Math.sqrt(Math.max(0, heard.level)), t, 0.5);
     this.rainFilter.frequency.setTargetAtTime(1000 + 1400 * level, t, 0.5);
     this.tinGain.gain.setTargetAtTime(this.params.rainVolume * 2.2 * heard.tin * Math.sqrt(Math.max(0, level)), t, 0.4);
+  }
+
+  /** The Moor's bed (#821): `moor` is { level, birds } from `world.moorHeard` (null off the Moor): the wind rises on the common and the curlews and larks call, by `moorBed`. */
+  setMoor(moor, wind) {
+    const bed = moorBed(moor?.level ?? 0, moor?.birds ?? { curlew: 0, lark: 0 }, wind);
+    this.moorWind = bed.wind;
+    this.moorAudio ??= new MoorAudio(this);
+    this.moorAudio.update(bed, this.params.moorVolume);
   }
 
   /** The yard's bed: `level` (world/yardBed.js `yardHeard`), the wind and the rain 0..1. The loose tin rattles with the wind; a tap drips every so often. */
@@ -418,8 +429,9 @@ export class AudioHub {
 
     this.windPhase += dt;
     const gust = 0.7 + 0.3 * Math.sin(this.windPhase * 0.23) * Math.sin(this.windPhase * 0.071 + 1);
-    this.windGain.gain.setTargetAtTime(p.ambientVolume * gust, t, 0.5);
-    this.windFilter.frequency.setTargetAtTime(300 + 250 * gust, t, 0.5);
+    const open = 1 + p.moorWind * (this.moorWind ?? 0); // the Moor is open ground: more of it, and a higher rush
+    this.windGain.gain.setTargetAtTime(p.ambientVolume * gust * open, t, 0.5);
+    this.windFilter.frequency.setTargetAtTime((300 + 250 * gust) * (1 + 0.5 * (this.moorWind ?? 0)), t, 0.5);
   }
 }
 

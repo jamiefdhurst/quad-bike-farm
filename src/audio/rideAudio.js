@@ -175,7 +175,8 @@ export class RideAudio {
     this.hub = hub;
     this.unit = unit;
     this.surfaceAt = createSurfaceSampler(world);
-    this.grid = world.cattleGrid ?? null;
+    this.world = world;
+    this.grid = world.cattleGrid ?? null; // the grid last near: the drive's, or one of the Moor's (#821)
     this.gridShare = 0; // share of wheels on the cattle grid
     this.gridTimer = 0;
     this.events = new RideEvents(hub.params);
@@ -221,9 +222,11 @@ export class RideAudio {
       wheels.push({ suspension: ph.vehicle.wheelSuspensionLength(i) ?? 0, contact, water: s.water });
     }
     // The cattle grid: which wheels are over the bars (only looked at near it, where the wheel positions cost a call each).
+    const near = this.world.gridNear?.(quad.position.x, quad.position.z) ?? null;
+    if (near) this.grid = near;
     const g = this.grid;
     let onGrid = 0;
-    if (g && Math.abs(quad.position.x - g.x) < 8 && Math.abs(quad.position.z - g.z) < 8) {
+    if (near) {
       for (let i = 0; i < 4; i++) {
         const c = ph.vehicle.wheelIsInContact(i) ? ph.vehicle.wheelContactPoint(i) : null;
         if (c && g.onGrid(c.x, c.z)) onGrid++;

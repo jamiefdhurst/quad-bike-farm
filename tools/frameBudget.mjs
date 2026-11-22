@@ -25,6 +25,10 @@ export const BUDGETS = {
   // Back Lane between its two hairpins on the new farm (#686, `?layout=2`: 1,136 calls and 3.07M triangles, the same on every run) and about 8% over. Today's farm has no
   // such spot, so it is noted and skipped there; #692 makes layout 2 the one measured and brings the other budgets onto it.
   hairpins: { calls: 1230, triangles: 3.32e6 },
+  // The Moor on the new farm (#821): beside the trig pillar on the ridge and in the middle of the common. Measured with tools/budget.mjs on ?layout=2 (seed 3,
+  // sunny, 15.5): the ridge 1,345 calls and 2.44M triangles, the middle 1,442 and 2.27M, the same on every run, held to about 8% over.
+  moorRidge: { calls: 1450, triangles: 2.64e6 },
+  moorMiddle: { calls: 1560, triangles: 2.45e6 },
   // Everything left out of those counts, drawn up as if all of it were in view (5,275 calls and 1.43M triangles, about 8% over). It is not a frame: it is what a new
   // herd, rider or vehicle body adds to the farm's moving things, which the spots no longer see. Raise it only on purpose (`MOVERS` in `measureInPage`).
   movers: { calls: 5700, triangles: 1.55e6 },
@@ -38,7 +42,7 @@ export const KNOWN_OVER = [];
 export const BUILT_IN_SPOTS = ['spawn', 'yard', 'village', 'wood', 'hilltop'];
 
 /** Spots only the new farm (`?layout=2`) has: today's farm, which CI measures, notes their absence and carries on, instead of failing for them (#692 makes layout 2 the one measured). */
-export const NEW_FARM_ONLY = ['hairpins'];
+export const NEW_FARM_ONLY = ['hairpins', 'moorRidge', 'moorMiddle'];
 
 export const SPOTS = Object.keys(BUDGETS).filter((k) => k !== 'movers');
 

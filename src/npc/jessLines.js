@@ -90,6 +90,7 @@ import { JESS_LESSON_LINES } from './lessonLines.js';
 import { JESS_SMOKE_LINES } from './smokeLines.js';
 import { JESS_HILL_LINES } from './hillLines.js';
 import { JESS_TERRACE_LINES } from './terraceLines.js';
+import { JESS_MOOR_LINES } from './moorLines.js';
 import { JESS_SHOUT_LINES } from './shoutFaultLines.js';
 import { JESS_FUMES_LINES } from './fumesLines.js';
 import { JESS_RUSTY_LINES } from './rustyLines.js';
@@ -623,4 +624,6 @@ export const JESS_LINES = {
   ...JESS_TERRACE_LINES,
   // Called from your wheel, and the new farm's places for being stuck (callThemLines.js), after that.
   ...JESS_CALL_THEM_LINES,
+  // The Moor's open ground, wet flushes and sheep on the lane (moorLines.js), after that.
+  ...JESS_MOOR_LINES,
 };
