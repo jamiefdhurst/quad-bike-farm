@@ -1,4 +1,4 @@
-// The Moor's ground painting (#713, layout 2): heather's older and younger stands in browns and olives, bracken's litter, the flushes' bright sphagnum and dark
+// The Moor's ground painting (#713): heather's older and younger stands in browns and olives, bracken's litter, the flushes' bright sphagnum and dark
 // pools, the cut face and bare floor of each peat bank, the sheep tracks worn pale through the heather, the stream's dark bed and the spring. Painted a tile at a
 // time like the rest (groundTexture.js `paintGround`, which calls `paintMoor`), over the grass, west of Back Lane only: the verge and the farm's side are left
 // as they were. The plants over it are moorProps.js; where each stand is comes from moor.js, so the paint and the plants agree.

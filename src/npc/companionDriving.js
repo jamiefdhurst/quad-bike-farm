@@ -832,12 +832,7 @@ export const drivingMethods = {
 
   /** Whether she could drive straight from a to b: inside the farm's hedges, nothing in the way (the hedges between fields included). */
   driveClear(a, b) {
-    if (this.world.fields) {
-      if (!this.world.fields.inFarm(b.x, b.z, 6)) return false;
-    } else {
-      const limit = this.world.layout.fieldHalf - 6;
-      if (Math.abs(b.x) > limit || Math.abs(b.z) > limit) return false;
-    }
+    if (this.world.fields && !this.world.fields.inFarm(b.x, b.z, 6)) return false;
     const dx = b.x - a.x;
     const dz = b.z - a.z;
     const len = Math.hypot(dx, dz);

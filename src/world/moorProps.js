@@ -1,4 +1,4 @@
-// The Moor drawn (#713, layout 2 only): the drystone ridge wall with its ladder stile, the trig pillar and the cairn on the ridge, the two cattle grids on Back Lane with
+// The Moor drawn (#713): the drystone ridge wall with its ladder stile, the trig pillar and the cairn on the ridge, the two cattle grids on Back Lane with
 // their bridle gates and signs, the gritstone outcrops and boulders, the peat banks' cut stones, the spring's stone ring, and the plants: heather in older and younger
 // stands, bracken on the lower slopes and cotton grass, rushes and tussocks in the wet flushes. The ground under it is painted by moorPaint.js and shaped by moor.js.
 // The set pieces are in the group named `moor` (a `SET_PIECE_NAMES` entry: its detail is only drawn near); the wall, the plants and the boulders are in the scene on
