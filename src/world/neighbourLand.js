@@ -2,6 +2,8 @@
 // Her hedges are leafy blocks near and plain strips far (the farm's own, hedgeFar.js), with a collider along each stretch (so you can't ride through
 // them) and gaps where a way through will be; the ground's tones and the dark line along each hedge are patchwork.js `landColor`.
 
+import { HEDGE_SOLID_HALF } from './hedgeSolid.js';
+
 /** The stretches of one line between its gaps: [{ from, to }] along its axis, in order, none shorter than a metre. */
 export function stretchesOf(line) {
   const gaps = [...line.gaps].sort((a, b) => a[0] - b[0]);
@@ -17,7 +19,7 @@ export function stretchesOf(line) {
 
 /** Every hedge stretch of her land: { axis, at, from, to, x, z, hx, hz }, the box that is its collider (`width` m thick) as well as where it runs. */
 export function hedgeStretches(land) {
-  const hw = land.hedge.width / 2;
+  const hw = Math.max(land.hedge.width / 2, HEDGE_SOLID_HALF); // solid as far as its leaves reach (hedgeSolid.js, #829)
   return land.lines.flatMap((line) => stretchesOf(line).map(({ from, to }) => {
     const mid = (from + to) / 2;
     const half = (to - from) / 2;

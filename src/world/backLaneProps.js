@@ -7,6 +7,7 @@ import { roadNetwork } from './roads.js';
 import { laneHedgeRuns, laneTrees, hedgeOffset, sidePoint, sideOf } from './laneHedges.js';
 import { laneSigns, laneGrates, sAlong, footpathSide } from './laneSigns.js';
 import * as kit from './roadSigns.js';
+import { HEDGE_SOLID_HALF, HEDGE_WOBBLE, blockWidth, leafReach } from './hedgeSolid.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { matrixAt } from './hillProps.js';
 import { gateLeaf } from './neighbourFarmProps.js';
@@ -214,6 +215,7 @@ export function layHedges(c, road, runs, name, height = LANE_HEDGE_HEIGHT) {
   const { scene, layout, heights, fixedBox, models, random } = c;
   const hedgeSize = modelBounds(models.hedge.scene).getSize(new THREE.Vector3());
   const T = layout.hedgeThickness;
+  const blockReach = leafReach(models.hedge.scene, hedgeSize);
   const H = height;
   const matrices = [];
   const farPieces = [];
@@ -221,9 +223,10 @@ export function layHedges(c, road, runs, name, height = LANE_HEDGE_HEIGHT) {
     const at = (s, across = 0) => sidePoint(road, s, run.side, hedgeOffset(road, s, run.side) + across);
     const blocks = [];
     for (let s = run.from; s <= run.to; s += 1.1 + random() * 0.5) {
-      const { x, z } = at(s, (random() - 0.5) * 0.6);
+      const across = (random() - 0.5) * HEDGE_WOBBLE;
+      const { x, z } = at(s, across);
       const y = heights.heightAt(x, z) - 0.2;
-      const width = T * (0.95 + random() * 0.4);
+      const width = blockWidth(T, random(), blockReach, across); // leaves stay within the solid part (hedgeSolid.js, #829)
       const tall = 0.8 + random() * 0.45;
       matrices.push(matrixAt(x, y, z, random() * Math.PI * 2, width / hedgeSize.x, (H / hedgeSize.y) * tall, width / hedgeSize.z));
       blocks.push({ s, x, z, top: y + H * tall * FAR_HEDGE_TOP, width: width * FAR_HEDGE_WIDTH });
@@ -249,7 +252,7 @@ export function layHedges(c, road, runs, name, height = LANE_HEDGE_HEIGHT) {
       const mid = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
       const lo = Math.min(heights.heightAt(a.x, a.z), heights.heightAt(mid.x, mid.z), heights.heightAt(b.x, b.z));
       const hi = Math.max(heights.heightAt(a.x, a.z), heights.heightAt(mid.x, mid.z), heights.heightAt(b.x, b.z));
-      fixedBox(mid.x, (lo + hi) / 2 + H / 2 - 0.3, mid.z, len / 2 + 0.2, (hi - lo) / 2 + H / 2, T / 2, Math.atan2(-(b.z - a.z), b.x - a.x));
+      fixedBox(mid.x, (lo + hi) / 2 + H / 2 - 0.3, mid.z, len / 2 + 0.2, (hi - lo) / 2 + H / 2, HEDGE_SOLID_HALF, Math.atan2(-(b.z - a.z), b.x - a.x));
     }
   }
   const near = instanceModel(models.hedge.scene, matrices, { castShadow: false });
