@@ -4,6 +4,8 @@ import { layoutNew, fromPlan } from '../src/world/layoutNew.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 import { groundBounds } from '../src/world/groundTiles.js';
+import { World } from '../src/world/world.js';
+import { roadNetwork, describeRoad } from '../src/world/roads.js';
 import { WEATHER_KINDS } from '../src/world/weather.js';
 import { DEFAULT_GRAPHICS_PARAMS, GRAPHICS_PARAM_RANGES } from '../src/core/graphics.js';
 import { farFog, FOG_VIEW, FAR_PARAMS, FAR_ROADS, FAR_RIVER, farRects, outsideBy, axisLines, createFarHeight, farRingData, farFieldPlan, farClusters, smoothPath, ribbon, bankTrees } from '../src/world/farLand.js';
@@ -280,3 +282,18 @@ describe('the view distance (#820)', () => {
     }
   });
 });
+
+describe('what #820 left to check', () => {
+  it('has the far view\'s Back Lane spot on the lane\'s tarmac, not over its hedge', () => {
+    const at = two.budgetSpots.backLaneNorth;
+    expect(describeRoad(roadNetwork(two), at.x, at.z)).toMatch(/^Back Lane \(tarmac.*on the carriageway/);
+  });
+
+  it('passes the view distance into the new farm\'s fog and leaves today\'s alone', () => {
+    const fogAt = (newFarm, viewDistance) => World.prototype.skyNow.call({ layout: { newFarm }, weather: { skyParams: () => ({ fogDensity: 0.0032 }) }, sky: { graphics: { viewDistance } } }).fogDensity;
+    expect(fogAt(true, 3000)).toBeCloseTo(fogAt(true, 1500) / 2, 9);
+    expect(fogAt(false, 3000)).toBe(0.0032);
+    expect(fogAt(false, 1500)).toBe(0.0032);
+  });
+});
+
