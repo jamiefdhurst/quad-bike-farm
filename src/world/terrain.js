@@ -202,7 +202,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
 
   scene.add(createOuterRing(layout, bounds, heights, fields));
   // The new farm's far landscape (#708) carries on from the ring's edge out to the hills; today's farm has none.
-  if (layout.newFarm) scene.add(createFarLand({ layout, bounds, heights, renderer }));
+  scene.add(createFarLand({ layout, bounds, heights, renderer }));
 
   return {
     mesh,

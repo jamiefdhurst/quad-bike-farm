@@ -1,4 +1,4 @@
-// Back Lane drawn beyond its tarmac (#686, layout 2 only): the tall hedge down each side with a collider along it, in leafy blocks near and plain strips far
+// Back Lane drawn beyond its tarmac (#686): the tall hedge down each side with a collider along it, in leafy blocks near and plain strips far
 // (hedgeFar.js, as the farm's and the neighbour's), and a field gate in the inner hedge across from each of the farm's gateways. The road itself is drawn by
 // props.js with the one road mesh builder; where the hedges stand and where they break is laneHedges.js. Passing places push the hedge back.
 

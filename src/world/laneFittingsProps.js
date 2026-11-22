@@ -1,4 +1,4 @@
-// What makes the lane one other people use (#687, layout 2 only): the pair of cottages on its east side with their gardens and front wall, two more field
+// What makes the lane one other people use (#687): the pair of cottages on its east side with their gardens and front wall, two more field
 // gateways in her hedge, a grit bin on the outside of the northern bend, and at the end of our drive a postbox on its post and a bin stand. Where each goes is
 // `layout.laneFittings` (layoutNew.js `laneFittingsLayout`); the cottages are the village's (villageBuildings.js `buildCottage`, villageKit.js) turned to face the lane.
 

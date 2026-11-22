@@ -134,13 +134,6 @@ describe("today's farm as a plan", () => {
     return true;
   };
 
-  it('is made of fields that all have a kind there is and are clockwise', () => {
-    for (const [name, pts] of Object.entries(f.polygons)) {
-      expect(FIELD_KINDS, name).toContain(f.kinds[name]);
-      expect(polygonArea(pts), name).toBeGreaterThan(0);
-    }
-    expect(f.kinds).toMatchObject({ grass: 'grass', north: 'arable', south: 'arable', road: 'lane', hill: 'rough', meadow: 'pasture', woods: 'wood' });
-  });
 
   it('has every hedge along a side of a field, and each line once', () => {
     for (const h of f.hedges) {

@@ -78,8 +78,9 @@ describe('the gravel pit underfoot and in the bucket list', () => {
   it('has a place and two achievements for it', () => {
     expect(PLACES).toContain('gravelPit');
     expect(ACHIEVEMENTS.map((a) => a.id)).toEqual(expect.arrayContaining(['gravel-pit', 'pit-climb']));
-    expect(placesAt({ x: 140, z: -150 }, LAYOUT)).toContain('gravelPit');
+    const q = LAYOUT.quarry;
+    expect(placesAt({ x: (q.minX + q.maxX) / 2, z: (q.minZ + q.maxZ) / 2 }, LAYOUT)).toContain('gravelPit');
     expect(placesAt({ x: 0, z: 0 }, LAYOUT)).not.toContain('gravelPit');
-    expect(placesAt({ x: 150, z: -60 }, LAYOUT)).not.toContain('gravelPit');
+    expect(placesAt({ x: q.minX - 40, z: q.maxZ + 40 }, LAYOUT)).not.toContain('gravelPit');
   });
 });

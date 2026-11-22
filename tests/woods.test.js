@@ -18,13 +18,6 @@ const half = W.circuit.halfWidth;
 const lap = () => Array.from({ length: Math.floor(woods.track.totalLength) }, (_, m) => woods.at(m));
 
 describe('the wood through the north gate', () => {
-  it('is the grass field wide, behind its north hedge, and lines up with the barley field for growing east later', () => {
-    expect(W.minX).toBe(-LAYOUT.fieldHalf);
-    expect(W.maxX).toBe(LAYOUT.fieldHalf);
-    expect(W.maxZ).toBe(LAYOUT.farm.minZ);
-    expect(W.maxX).toBe(LAYOUT.road ? LAYOUT.fieldHalf : W.maxX);
-    expect(W.minZ).toBeGreaterThan(LAYOUT.ground.minZ + 5);
-  });
 
   it('has its own circuit name, different from the home track', () => {
     expect(W.circuit.name).toBeTruthy();
@@ -43,27 +36,12 @@ describe('the wood through the north gate', () => {
     expect(Math.abs(woods.profile(W.gate.x, -80))).toBeLessThan(1e-9);
   });
 
-  it('has a gate in the grass field\'s north hedge that the girls can route through', () => {
-    const gap = fields.gates.north;
-    expect(gap.at - LAYOUT.fieldHalf).toBe(W.gate.x); // along the hedge from its west end
-    expect(fields.areaOf(W.gate.x, -90)).toBe('woods');
-    expect(fields.areaOf(W.gate.x, -70)).toBe('grass');
-    expect(fields.route({ x: 0, z: 0 }, { x: -20, z: -120 }).length).toBeGreaterThan(1);
-    gap.shut = true;
-    const shut = fields.route({ x: 0, z: 0 }, { x: -20, z: -120 });
-    gap.shut = !W.gate.open;
-    expect(shut).toHaveLength(1); // no way through a shut gate
-  });
 
   it('is hedged on its other three sides', () => {
     const lines = fields.hedges.filter((e) => e.z1 <= W.minZ + 0.1 || e.x1 === W.minX || e.x1 === W.maxX);
     expect(lines.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('counts as part of the farm for the neighbouring farmland', () => {
-    expect(fields.outside(0, -150)).toBe(0);
-    expect(fields.outside(0, -230)).toBeGreaterThan(20);
-  });
 });
 
 describe('the Hollow Run', () => {
@@ -144,13 +122,6 @@ describe('the Hollow Run', () => {
     for (const b of woods.bogs) expect(woods.nearest(b.x, b.z).d).toBeLessThan(0.3);
   });
 
-  it('joins the gate to the loop', () => {
-    const first = LAYOUT.woods.circuit.points[0];
-    const end = W.leadIn[W.leadIn.length - 1];
-    expect(end).toEqual(first);
-    expect(W.leadIn[0][0]).toBe(W.gate.x);
-    expect(W.leadIn[0][1]).toBe(W.maxZ);
-  });
 
   it('has logs across the track that leave a gap to ride through', () => {
     expect(woods.logs).toHaveLength(W.logs.length);
@@ -192,9 +163,4 @@ describe('the pond and the trees', () => {
     for (const [x, z] of trees) expect(Math.abs(x - W.gate.x) < half + 2.4 && z > W.maxZ - 24).toBe(false);
   });
 
-  it('makes a girl following wait just inside the gate while you are deep in the wood', () => {
-    expect(woods.pastGate(0, -150)).toBe(true);
-    expect(woods.pastGate(woods.waitSpot.x, woods.waitSpot.z)).toBe(false);
-    expect(fields.areaOf(woods.waitSpot.x, woods.waitSpot.z)).toBe('woods');
-  });
 });

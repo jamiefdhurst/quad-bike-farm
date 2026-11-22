@@ -5,7 +5,7 @@ import { yardHeard, yardBed, YARD_FADE } from '../src/world/yardBed.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from '../src/audio/audioParams.js';
 
 // The yard's sound bed (#817): chosen inside the yard and not outside, silent in the barn, louder in wind, a tap that drips faster in rain.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const slab = two.farmstead.slab;
 const mid = { x: (slab.minX + slab.maxX) / 2, z: (slab.minZ + slab.maxZ) / 2 };
 
@@ -26,9 +26,6 @@ describe('the yard bed', () => {
   it('is silent inside the barn, where its own sounds are heard, and halves as you go in', () => {
     expect(yardHeard(two, mid.x, mid.z, 1)).toBe(0);
     expect(yardHeard(two, mid.x, mid.z, 0.5)).toBeCloseTo(0.5);
-  });
-  it('is not played on today\'s farm, which has no yard of its own', () => {
-    expect(yardHeard(LAYOUT, 0, 0)).toBe(0);
   });
   it('rattles more in the wind and drips faster in rain, and does neither out of earshot', () => {
     expect(yardBed(1, 1, 0).tin).toBeGreaterThan(yardBed(1, 0.1, 0).tin);

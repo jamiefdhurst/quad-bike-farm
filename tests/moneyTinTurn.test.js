@@ -6,7 +6,7 @@ import { layoutNew } from '../src/world/layoutNew.js';
 import { barnFrame, insideBarn, barnShape } from '../src/world/barn.js';
 
 // The money tin's shelf hangs on the barn's back wall, whichever way the barn is turned (#978): on the new farm that wall is the east one.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 
 const build = async (layout) => {
   vi.stubGlobal('document', { createElement: () => fakeCanvas() });

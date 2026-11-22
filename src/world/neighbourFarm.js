@@ -109,38 +109,6 @@ export function neighbourGate(layout) {
   return s ? { x: s.gateway.x + (s.gateway.side === 'west' ? 3 : -3), z: s.gateway.z } : null;
 }
 
-/** The boxes that shut the lane's stretch: { x, z, hx, hz }, with the lane west and east of its tarmac and across at the ends of what is open. */
-export function laneBarriers(layout) {
-  const lane = layout.publicLane;
-  const open = lane?.open;
-  if (!lane || !open || layout.newFarm) return []; // the new farm's lane has no invisible walls (#568, #687): its `open` is the stretch the road mud is kept for
-  const westX = lane.x - lane.halfWidth - 1.2;
-  const eastX = lane.x + lane.halfWidth + 1.2;
-  const road = layout.road;
-  const shape = neighbourFarmShape(layout);
-  // Along the west side nothing shuts the lane where the big gate is, or where the neighbour's own wall stands.
-  const gaps = [];
-  if (road) gaps.push([road.z - (road.gate?.width ?? 7) / 2 - 1.5, road.z + (road.gate?.width ?? 7) / 2 + 1.5]);
-  if (shape) gaps.push([shape.yard.minZ - 1, shape.yard.maxZ + 1]);
-  const village = villageShape(layout);
-  if (village?.laneGap) gaps.push(village.laneGap); // the side road into the village turns off here
-  gaps.sort((a, b) => a[0] - b[0]);
-  const west = [];
-  let from = lane.minZ - 20;
-  const cut = (a, b) => {
-    if (b > a) west.push({ x: westX, z: (a + b) / 2, hx: 0.3, hz: (b - a) / 2 });
-  };
-  // Beyond the open stretch the old wall carries on, so the whole lane is walled on the west except at the gaps.
-  for (const [a, b] of gaps) {
-    cut(from, a);
-    from = Math.max(from, b);
-  }
-  cut(from, lane.maxZ + 20);
-  const east = { x: eastX, z: (open.minZ + open.maxZ) / 2, hx: 0.3, hz: (open.maxZ - open.minZ) / 2 + 0.3 };
-  const ends = [open.minZ, open.maxZ].map((z) => ({ x: (westX + eastX) / 2, z, hx: (eastX - westX) / 2 + 0.3, hz: 0.3 }));
-  return [...west, east, ...ends];
-}
-
 /** Whether (x, z) is within `margin` m of the yard's wall (or inside it): the distant trees keep clear of her farm and the lane beside it. */
 export function nearNeighbourYard(layout, x, z, margin) {
   const s = neighbourFarmShape(layout);

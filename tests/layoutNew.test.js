@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { LAYOUT, LAYOUT_CHOSEN, RAW_LAYOUT } from '../src/world/layout.js';
+import { LAYOUT, LAYOUT_VERSION } from '../src/world/layout.js';
+import { TODAY } from './helpers/todaysLayout.js';
 import {
-  layoutNew, fromPlan, layoutFromSearch, searchForLayout, describeLayout, clippedFields, boundariesOf, placeGateways, areasOf,
-  OUTLINE_PLAN, CORNERS_PLAN, FIELDS_PLAN, GATEWAYS_PLAN, NOT_MOVED_YET, SETTINGS, REPLACED,
+  fromPlan, clippedFields, boundariesOf, placeGateways, areasOf,
+  OUTLINE_PLAN, CORNERS_PLAN, FIELDS_PLAN, GATEWAYS_PLAN, NOT_MOVED_YET, SETTINGS, REPLACED, REMOVED, FARMSTEAD_PLAN,
   STEWARDSHIP_PLAN, stewardshipPlan, RESERVED_PLAN, flattenPath, LANDMARKS_PLAN, LANDFORM_PLAN, canSee, landformHeightAt, traitsOf,
   FIELD_LANDMARKS_PLAN, MOOR_PLAN, fieldLandmarksLayout, NEIGHBOUR_PLAN, neighbourLayout,
 } from '../src/world/layoutNew.js';
@@ -12,37 +13,23 @@ import { openFarm, describeFarm } from '../src/farm/farmSave.js';
 import { farmMapFeatures } from '../src/hud/farmMap.js';
 import { Track } from '../src/world/track.js';
 
-// The new farm behind ?layout=2 (#681): its ground, outline and seventeen fields with the farmstead and the drive, their boundaries and
+// The new farm (#681, the farm everyone plays since #692): its ground, outline and seventeen fields with the farmstead and the drive, their boundaries and
 // gateways, as the issue gives them in the plan's metres.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const fields = createFields(two);
 const plan = clippedFields();
 const byName = Object.fromEntries(plan.map((f) => [f.name, f]));
 const outlineGame = two.outline;
 
 describe('which farm loads', () => {
-  it('is today\'s unless the address asks for layout 2', () => {
-    expect(LAYOUT_CHOSEN).toBe(1);
-    expect(LAYOUT.fields).toBeUndefined();
-    expect(layoutFromSearch('')).toBe(1);
-    expect(layoutFromSearch('?seed=3&layout=2')).toBe(2);
-    expect(layoutFromSearch('?layout=1')).toBe(1);
+  it('is the new one, and the old farm\'s save opens on it (#692)', () => {
+    expect(LAYOUT.fields).toBeDefined();
+    expect(LAYOUT_VERSION).toBe(2);
   });
-  it('reloads with ?layout=2 added or taken out, keeping the rest', () => {
-    expect(searchForLayout('?seed=3', 2)).toBe('?seed=3&layout=2');
-    expect(searchForLayout('?seed=3&layout=2', 1)).toBe('?seed=3');
-    expect(searchForLayout('?layout=2', 1)).toBe('');
-  });
-  it('says which it is', () => {
-    expect(describeLayout(1)).toMatch(/^today's farm \(layout 1\)/);
-    expect(describeLayout(2)).toMatch(/^the new farm \(layout 2, not saved\): \d+ places still at today's numbers/);
-  });
-  it('never saves the new farm, and leaves the kept one alone', () => {
+  it('saves it like any farm, and leaves a seeded game\'s save alone', () => {
     const store = { getItem: () => JSON.stringify({ version: 1, day: 6, farmSeed: 9 }), setItem: () => { throw new Error('wrote'); } };
-    const f = openFarm({ search: '?layout=2', storage: store });
-    expect(f).toMatchObject({ seeded: true, newFarm: true, continuing: false, day: 1 });
-    expect(describeFarm({ day: 1, seeded: true, newFarm: true })).toBe('the new farm (?layout=2): not saved');
-    expect(openFarm({ search: '?seed=4', storage: store }).newFarm).toBe(false);
+    expect(openFarm({ search: '?seed=4', storage: store })).toMatchObject({ seeded: true, continuing: false, day: 1 });
+    expect(describeFarm({ day: 1, seeded: true })).toBe('a seeded game: not saved');
   });
 });
 
@@ -226,20 +213,24 @@ describe('the fields as data', () => {
 });
 
 describe('what has not moved yet', () => {
-  const keyed = new Set([...Object.keys(NOT_MOVED_YET), ...SETTINGS, ...REPLACED]);
-  it('names every place in today\'s layout that is still at today\'s numbers, with the issue that moves it', () => {
-    for (const k of Object.keys(LAYOUT)) {
-      if (k === 'anchors') for (const a of Object.keys(LAYOUT.anchors)) expect(keyed.has(`anchors.${a}`), `anchors.${a}`).toBe(true);
+  it('is nothing: no place reaches players at today\'s numbers (#692)', () => {
+    expect(Object.keys(NOT_MOVED_YET)).toEqual([]);
+    const today = TODAY;
+    const keyed = new Set([...SETTINGS, ...REPLACED, ...REMOVED]);
+    for (const k of Object.keys(today)) {
+      if (k === 'anchors') for (const a of Object.keys(today.anchors)) expect(keyed.has(`anchors.${a}`) || a in LAYOUT.anchors, `anchors.${a}`).toBe(true);
       else expect(keyed.has(k), k).toBe(true);
     }
-    for (const v of Object.values(NOT_MOVED_YET)) expect(v).toMatch(/^#\d+/);
   });
-  it('really are at today\'s numbers in layout 2', () => {
-    const get = (o, path) => path.split('.').reduce((v, k) => v?.[k], o);
-    for (const k of Object.keys(NOT_MOVED_YET)) expect(get(two, k), k).toEqual(get(LAYOUT, k));
+  it('has no grass field\'s limit, rectangle of farm or trough left over', () => {
+    for (const k of REMOVED) expect(LAYOUT[k], k).toBeUndefined();
   });
-  it('lists nothing that is not in today\'s layout', () => {
-    for (const k of Object.keys(NOT_MOVED_YET)) expect(k.split('.').reduce((v, x) => v?.[x], LAYOUT), k).toBeDefined();
+  it('puts the stone shed at the Sheep Field\'s field-barn spot, with its seats, can and parking spot', () => {
+    const [x, z] = fromPlan(FARMSTEAD_PLAN.fieldShed);
+    expect(LAYOUT.fieldShed).toMatchObject({ x, z });
+    for (const r of LAYOUT.restSpots.filter((s) => s.id.startsWith('fieldShed'))) expect(Math.hypot(r.x - x, r.z - z)).toBeLessThan(6);
+    expect(LAYOUT.spawn.away.find((a) => a.where === 'by the field shed')).toBeDefined();
+    expect(LAYOUT.spawn.away.map((a) => a.where)).not.toEqual(expect.arrayContaining(['out in the barley field', 'out in the wheat field']));
   });
 });
 
@@ -627,7 +618,6 @@ describe('a landmark in every field (#815)', () => {
     }
   });
   it('is in the layout in game metres, and not on today\'s farm', () => {
-    expect(LAYOUT.fieldLandmarks).toBeUndefined();
     expect(two.fieldLandmarks).toHaveLength(L.length);
     const oak = two.fieldLandmarks.find((l) => l.kind === 'loneOak');
     expect(oak.at).toEqual([352 - 520, 150 - 365]);
@@ -670,7 +660,7 @@ describe('the neighbour\'s yard is placed from its anchor (#972)', () => {
   });
 
   it('is the yard\'s middle, at plan (997.5, 292.5), turned by nothing: layout 2 has it as `anchors.neighbour`', () => {
-    const two = layoutNew(LAYOUT, RAW_LAYOUT);
+    const two = LAYOUT;
     const [x, z] = fromPlan(NEIGHBOUR_PLAN.anchor);
     expect(two.anchors.neighbour).toEqual({ x, z, yaw: 0 });
     const yard = two.neighbourFarm.yard;

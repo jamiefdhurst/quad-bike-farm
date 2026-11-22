@@ -17,7 +17,7 @@ import { Frame } from '../src/world/villageKit.js';
 // The village's approach on the new farm (#819): the lane's three houses, the small farm, the signs on the lane and the street, and the fixes folded in with them (#536, #537, #539,
 // #542, #543): the pavements, the signs, the street furniture, the pub's car park and the houses' designs.
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const S = villageShape(two);
 const V = two.village;
 const A = V.approach;

@@ -13,7 +13,7 @@ import { DEFAULT_PLAYER_PARAMS } from '../src/player/playerParams.js';
 
 // The barn as one building on the new farm (#818): its size and place on the plan, its one pair of doors, the lamps, and that a walking player can get in at the doors
 // and not through a wall.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const L = { ...two, ...two.barnLocal };
 const shape = barnShape(L);
 const frame = barnFrame(two);
@@ -172,9 +172,6 @@ describe('the weather, the clock and the calendar in the barn', async () => {
     expect(parts.station.dials.map((d) => d.name)).toEqual(['thermo', 'baro']);
     expect(parts.wallClock).toBeInstanceOf(WallClock);
     expect(new WeatherStation(new THREE.Scene(), { x: 0, y: 0, z: 0 }).dials.map((d) => d.name)).toEqual(['clock', 'thermo', 'baro']);
-    const today = hangBarnBoards(new THREE.Scene(), LAYOUT, 0);
-    expect(today.wallClock).toBeNull();
-    expect(today.station.dials.length).toBe(3);
   });
 });
 

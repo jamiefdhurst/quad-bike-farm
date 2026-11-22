@@ -1,8 +1,6 @@
-// The new farm (docs/farm-plan.md), built behind `?layout=2` until #692 makes it the default. It starts from today's layout (layout.js) and
-// replaces only what has moved: so far the ground, the farm's outline and its fields with their boundaries and gateways (#681). Everything
-// else stays at today's numbers until its own move, and is named in `NOT_MOVED_YET` with the issue that moves it. Decided with Jamie on
-// 9 November 2026: leaving a piece out stopped the game loading for 16 of the 21 pieces tried (docs/decisions/world.md, "A piece not yet
-// moved stays where it is").
+// The farm (docs/farm-plan.md), the one everybody plays since #692. It starts from the base numbers in layout.js (`RAW`) and replaces what the plan moves
+// (`REPLACED`) or has no use for (`REMOVED`); `NOT_MOVED_YET` is empty, with a test, so no piece reaches a player at the old numbers. Each of the plan's
+// pieces came in behind `?layout=2` first, one issue at a time (#681 onward), and docs/decisions/world.md says how each was decided.
 //
 // Positions here are written in the plan's own metres, as the map in docs/farm-plan.svg has them (x east, z south, from its north-west
 // corner), so they can be checked against it by eye. The game's (0, 0) is the middle of the yard, so a game position is the plan position
@@ -21,18 +19,6 @@ export const PLAN_ORIGIN = [520, 365];
 
 /** A plan position as a game position. */
 export const fromPlan = ([x, z]) => [x - PLAN_ORIGIN[0], z - PLAN_ORIGIN[1]];
-
-/** Which layout `?layout=` asks for: 2 for the new farm, otherwise 1 (today's). */
-export const layoutFromSearch = (search = '') => (new URLSearchParams(search).get('layout') === '2' ? 2 : 1);
-
-/** The page's address query for loading on layout `n`: `?layout=2` added for the new farm, taken out for today's, everything else kept. */
-export function searchForLayout(search, n) {
-  const params = new URLSearchParams(search);
-  if (n === 2) params.set('layout', '2');
-  else params.delete('layout');
-  const q = params.toString();
-  return q ? `?${q}` : '';
-}
 
 /** The rectangle of ground with physics, drawn in tiles (#665): the farm, Back Lane round it, the far side of the lane and the Moor up to its ridge wall, in plan metres. */
 const GROUND_PLAN = { minX: -345, maxX: 1350, minZ: -70, maxZ: 970 };
@@ -337,17 +323,11 @@ const WHEAT = { crop: 'wheat', rows: 'x', tramlines: 24, ground: '#b3a06a', stal
 const STUBBLE_CLUMPS = 150000;
 const NORTH_HOLLOW_PLAN = { at: [300, 120], rx: 26, rz: 16, depth: 1.3 };
 
-/**
- * Every place in today's layout still at today's numbers on the new farm, by its key in the layout, with the issue that moves it. A move takes
- * its own off this list, and #692 needs it empty.
- */
-export const NOT_MOVED_YET = {
-  // The farmstead's own pieces are placed now (#682, `farmsteadLayout`, below); what is left of today's grass field is the hill's and the wood's reference.
-  fieldHalf: '#691 (the grass field\'s limit, which the girls\' driving and the quarry\'s code read when a place is in no field)',
-  // Today's rectangle of farm, which only today's farm road and the terrain's rise beyond it read (the pit no longer does).
-  farm: '#692 (today\'s rectangle of farm, which goes with layout 1)',
-  trough: '#710', fieldShed: '#624',
-};
+/** Every place in today's layout still at today's numbers on the new farm, by key: none (#692). A test keeps it empty. */
+export const NOT_MOVED_YET = {};
+
+/** What today's layout had that the new farm has no use for: the grass field's limit and rectangle of farm (the fields are polygons now) and the water trough. */
+export const REMOVED = ['fieldHalf', 'farm', 'trough'];
 
 /** What in today's layout is a setting rather than a place, so it never moves. */
 export const SETTINGS = [
@@ -363,7 +343,7 @@ export const REPLACED = [
   'jumperRail', 'helmetHooks', 'bay', 'bay2', 'moneyTin', 'shed', 'jack', 'axleStands', 'rusty', 'plover', 'yard', 'cars', 'paddock', 'lawns', 'farmAnimals',
   'fuelTank', 'jerryCanSpots', 'trailer', 'tipTrailer', 'sprayer', 'harrows', 'dieselBowser', 'toolbox', 'benchOil', 'oilBottle', 'coolantBottle',
   'antiGelBottle', 'plugAdditive', 'benchLeads', 'benchPack', 'hose', 'dutchBarn', 'jumpRamp', 'lineUp', 'coneCourse', 'trackPoints', 'puddles', 'bogs',
-  'bonfire', 'brushwood', 'strawBaleSpots', 'restSpots', 'spawn', 'muckHeap',
+  'bonfire', 'brushwood', 'strawBaleSpots', 'restSpots', 'spawn', 'muckHeap', 'fieldShed',
   // The drag races run along the drive (#616).
   'dragStrip',
   // The jobs' fields (#691): each is its field's polygon, with the bounds the job's grid is laid over.
@@ -1026,6 +1006,7 @@ export function neighbourLandLayout(L = NEIGHBOUR_LAND_PLAN) {
  * `home` is where today's grass field's middle falls on Home Ground, so the Home Loop, the cones, the jump and the line-up keep today's shape in it.
  */
 export const FARMSTEAD_PLAN = {
+  fieldShed: [378, 451], // the stone shed, at the Sheep Field's field-barn spot until #624 builds the barn there
   barn: { at: [511, 328], yaw: -Math.PI / 2 }, // the building's middle: one building filling the plan's 498 to 524 by 319 to 337, its doors in the south wall at z 337 (#818, barnPlan.js)
   yard: { at: [517.6, 347], yaw: -Math.PI / 2 }, // 10 m out of the doors, where it was from the first barn's
   tanksMove: [2.9, -5.5], // the petrol tank and what stands by it, from where the yard's frame put them to against the barn's east end (north of the drive, clear of the way to the doors)
@@ -1133,6 +1114,8 @@ export function farmsteadLayout(today, raw) {
   const dutchBales = today.strawBaleSpots.filter((b) => !inGrassField(b)).map(([x, z, yaw]) => [x - today.dutchBarn.x, z - today.dutchBarn.z, yaw]);
   const dutchSeats = today.restSpots.filter((r) => r.id.startsWith('dutchBarn')).map((r) => ({ ...r, x: r.x - today.dutchBarn.x, z: r.z - today.dutchBarn.z, door: { x: r.door.x - today.dutchBarn.x, z: r.door.z - today.dutchBarn.z } }));
   const away = today.spawn.away;
+  const shedAt = fromPlan(P.fieldShed);
+  const onShed = (o) => ({ ...o, x: o.x - today.fieldShed.x + shedAt[0], z: o.z - today.fieldShed.z + shedAt[1], ...(o.door && { door: { x: o.door.x - today.fieldShed.x + shedAt[0], z: o.door.z - today.fieldShed.z + shedAt[1] } }) });
   const homeAway = away.filter(inGrassField);
   const dutchAway = away.filter((a) => a.where === 'in the Dutch barn').map((a) => ({ ...a, x: a.x - today.dutchBarn.x, z: a.z - today.dutchBarn.z }));
   const jerry = today.jerryCanSpots.find((j) => j.where === 'by the Dutch barn');
@@ -1181,11 +1164,13 @@ export function farmsteadLayout(today, raw) {
     jerryCanSpots: [
       ...base.jerryCanSpots.filter((j) => j.where !== 'by the Dutch barn' && j.where !== 'by the field shed').map((j) => (j.where === 'by the petrol tank' ? tanks(j) : j.where === 'by the silage bales' ? { ...j, x: pt(P.jerryCan)[0], z: pt(P.jerryCan)[1], where: 'behind the barn' } : j)).map((j) => ({ ...j, where: { 'by the paddock': 'by the trailers', 'by the field gate': 'out in the yard' }[j.where] ?? j.where })),
       again.dutchCan,
-      ...today.jerryCanSpots.filter((j) => j.where === 'by the field shed'),
+      ...today.jerryCanSpots.filter((j) => j.where === 'by the field shed').map(onShed),
     ],
-    restSpots: [...fences, ...again.dutchSeats, ...today.restSpots.filter((r) => r.id.startsWith('fieldShed'))],
-    // The grass field's spots go with Home Ground and the Dutch barn's with the Dutch barn; the east fields' stay where they were (named spots read them, #690).
-    spawn: { ...base.spawn, away: [...again.homeAway, ...farmsteadAway(), ...again.dutchAway, ...away.filter((a) => !inGrassField(a) && a.where !== 'in the Dutch barn')] },
+    restSpots: [...fences, ...again.dutchSeats, ...today.restSpots.filter((r) => r.id.startsWith('fieldShed')).map(onShed)],
+    // The stone shed stands at the Sheep Field's field-barn spot until #624 builds the field barn there; its seats, can and parking spot go with it.
+    fieldShed: { ...today.fieldShed, x: shedAt[0], z: shedAt[1] },
+    // The grass field's spots go with Home Ground and the Dutch barn's with the Dutch barn; the east fields' are gone with the fields, but for the one by the shed.
+    spawn: { ...base.spawn, away: [...again.homeAway, ...farmsteadAway(), ...again.dutchAway, ...away.filter((a) => a.where === 'by the field shed').map(onShed)] },
   };
 }
 
@@ -1341,7 +1326,7 @@ export function quarryLayout(today, P = PIT_PLAN) {
       gates: [lane, gateOf('quarry', { open: true })],
     },
     anchor: { x: centre[0], z: centre[1], yaw: 0 },
-    budgetSpots: { pitlane: { x: lane.x + lane.inward[0] * 8, z: lane.z + lane.inward[1] * 8 } }, // just inside the shut lane gate, looking out at it and in at the pit (#685)
+    budgetSpots: { pitGate: { x: lane.x + lane.inward[0] * 8, z: lane.z + lane.inward[1] * 8 } }, // just inside the shut lane gate, looking out at it and in at the pit (#685)
   };
 }
 
@@ -1672,7 +1657,13 @@ export function tracksLayout(T = STONE_TRACKS_PLAN) {
   return { roads, farmBridge: { x: bx, z: bz, length: FARM_BRIDGE_PLAN.length, width: FARM_BRIDGE_PLAN.width, yaw: FARM_BRIDGE_PLAN.yaw }, headlands: { width: HEADLAND_WIDTH, fields: headlands } };
 }
 
-/** The new farm: today's layout (resolved) with what has moved put in its place. */
+/** The A-road junction's budget spot (#692): 14 m up the lane from where it meets the A-road, on the lane's centre line, looking at the junction's furniture and the road beyond. */
+function junctionSpot([a, b]) {
+  const t = 14 / Math.hypot(b[0] - a[0], b[1] - a[1]);
+  return { x: a[0] + (b[0] - a[0]) * t, z: a[1] + (b[1] - a[1]) * t };
+}
+
+/** The farm: the base layout (resolved) with what the plan moves put in its place. */
 export function layoutNew(today, raw) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
   const [gx1, gz1] = fromPlan([GROUND_PLAN.maxX, GROUND_PLAN.maxZ]);
@@ -1689,25 +1680,20 @@ export function layoutNew(today, raw) {
   const stubbleFields = Object.fromEntries(arable.map((f, i) => [f.name, { ...(i % 2 ? WHEAT : BARLEY) }]));
   const fieldsLayout = newFields();
   stubbleFields.north = { ...stubbleFields.north, hollow: { x: hx, z: hz, rx: NORTH_HOLLOW_PLAN.rx, rz: NORTH_HOLLOW_PLAN.rz, depth: NORTH_HOLLOW_PLAN.depth } };
-  return {
-    ...farmstead, newFarm: true, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...fieldsLayout, ...fieldWorkPlaces(fieldsLayout.fields), jobFields: JOB_FIELDS,
+  const layout = {
+    ...farmstead, ground: { minX: gx0, maxX: gx1, minZ: gz0, maxZ: gz1 }, landform: landformPoints(), stubbleClumps: STUBBLE_CLUMPS, stubbleFields, ...fieldsLayout, ...fieldWorkPlaces(fieldsLayout.fields), jobFields: JOB_FIELDS,
     stewardship: stewardshipLayout(), reserved: reservedLayout(),
     upperThornby: { at: fromPlan(BACK_LANE_PLAN.upperThornby) },
     junctions: JUNCTIONS_PLAN, turnRound: turnRoundLayout(), laneFittings: laneFittingsLayout(), aRoadFittings: { layBy: { ...A_ROAD_PLAN.layBy, z: A_ROAD_PLAN.layBy.z - PLAN_ORIGIN[1] } },
     ...drive, roads: [...drive.roads, village.street, village.track, neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout(), ...tracks.roads], farmBridge: tracks.farmBridge, headlands: tracks.headlands,
     woods: wood.woods, logYard: wood.logYard, hill, village: village.village, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, village: village.anchor, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
-    budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), backLaneNorth: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.farViewSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z }, ...moorBudgetSpots() }, // the neighbour's just inside her gateway (#569), the Moor's on its ridge and in its middle (#821)
+    budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, junction: junctionSpot(drive.roads.find((r) => r.id === 'lane').points), hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), backLaneNorth: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.farViewSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z }, ...moorBudgetSpots() }, // the neighbour's just inside her gateway (#569), the Moor's on its ridge and in its middle (#821)
     fieldLandmarks: fieldLandmarksLayout(), moor: { ...moorLayout(MOOR_FEATURES_PLAN, MOOR_PLAN, fromPlan), gate: moorGateLayout() },
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
     // The places a girl names where she is (npc/spotNames.js), where the new farm has them (#690): down the green lane, on the hill by the flask rock, just inside the wood's gate.
     namedSpots: { lane: { x: hill.lane.x, z: hill.stream.z - 85 }, hill: { x: hill.viewpoint.x, z: hill.viewpoint.z }, wood: { x: wood.woods.gate.x, z: wood.woods.gate.z - 12 } },
   };
-}
-
-/** One line about which farm this is, for the console's `layout` and the panel. */
-export function describeLayout(chosen, notMoved = NOT_MOVED_YET) {
-  if (chosen !== 2) return 'today\'s farm (layout 1). layout 2 loads the new farm, built behind ?layout=2 and not saved';
-  const moves = new Set(Object.values(notMoved).flatMap((v) => v.match(/#\d+/g)));
-  return `the new farm (layout 2, not saved): ${Object.keys(notMoved).length} places still at today's numbers, for ${moves.size} moves. layout 1 loads today's`;
+  for (const key of REMOVED) delete layout[key];
+  return layout;
 }

@@ -11,14 +11,14 @@ export const DEFAULT_GRAPHICS_PARAMS = {
   neighbourFullDistance: 90, // the same for the neighbour's farm, which is seen from the lane 45 m off its wall: from the lane you see the dairy's detail (0: always full)
   hedgeFullDistance: 150, // metres from a tile of hedge or wall within which its leafy blocks are drawn, and beyond which a plain strip is (0: always the blocks)
   treeFullDistance: 70, // metres from a tile of oaks and bushes (the wood's, the hedgerows', every builder's: scatter.js) within which they are drawn in full, and beyond which as the lighter far ones (0: always in full)
-  barnPropsDistance: 25, // metres the barn's racks, charger, generator and jacks are drawn out to, from their nearest edge: more than the barn's corner to corner, so none vanish from inside it (0: all of them)
+  barnPropsDistance: 35, // metres the barn's racks, charger, generator and jacks are drawn out to, from their nearest edge: more than the barn's corner to corner, so none vanish from inside it (0: all of them)
   vehicleDetailDistance: 60, // metres beyond which a vehicle loses its small parts (bolts, cables, decals, brake bits; 0: never)
   shadowDistance: 80, // metres beyond which a vehicle casts no shadow (0: always)
   shadowSize: 64, // metres across the square the sun's shadows are drawn in (it was 90, centred on you)
   shadowAhead: 22, // metres that square is pushed ahead of you along the way you look, so little is drawn behind you (0: centred on you)
   partPixels: 1, // screen points a part's bounding sphere has to span (radius) to be drawn: a bolt, a cable or a fender too far off to see is left out (0: all drawn)
   mergeStill: 1, // 1: the meshes of a vehicle, the barn or the animals' pens that hold still are drawn merged by material, a few calls for hundreds (0: each drawn alone)
-  viewDistance: 1500, // metres a clear day shows on the new farm (?layout=2): every weather's fog is a fraction of it (world/farLand.js `farFog`)
+  viewDistance: 1500, // metres a clear day shows: every weather's fog is a fraction of it (world/farLand.js `farFog`)
   smallShadowDistance: 20, // metres beyond which a small thing (a mug, a bottle, a tool, a bolt) casts no shadow (0: always)
 };
 

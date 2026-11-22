@@ -8,7 +8,7 @@ import { leaveRoute } from '../src/npc/goingHome.js';
 import { farmsteadPlaces, benchSpot } from '../src/console/gameHost.js';
 
 // The farmstead on the new farm (#682): where everything stands, in the plan's own metres (docs/farm-plan.md).
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const plan = ({ x, z }) => [x + PLAN_ORIGIN[0], z + PLAN_ORIGIN[1]];
 const inPlanRect = ([x, z], [x0, z0, x1, z1], m = 0) => x >= x0 + m && x <= x1 - m && z >= z0 + m && z <= z1 - m;
 const fields = Object.fromEntries(clippedFields().map((f) => [f.name, f.points]));
@@ -159,14 +159,8 @@ describe('Home Ground\'s play things', () => {
   const inHome = (p, margin = 0) => pointInPolygon(home, plan(p)[0], plan(p)[1], margin, edges);
   it('has the Home Loop, the cones and the jump inside it, with today\'s track in shape', () => {
     for (const p of two.trackPoints) expect(inHome({ x: p[0], z: p[1] }, 8), `${p}`).toBe(true);
-    const a = LAYOUT.trackPoints;
-    for (let i = 1; i < a.length; i++) {
-      const d = (t) => [t[i][0] - t[i - 1][0], t[i][1] - t[i - 1][1]];
-      expect(d(two.trackPoints)).toEqual(d(a)); // moved as one, not reshaped
-    }
     expect(inHome(two.jumpRamp, 8)).toBe(true);
     expect(inHome(two.coneCourse, 8)).toBe(true);
-    expect(two.jumpRamp.yaw).toBe(LAYOUT.jumpRamp.yaw);
   });
   it('puts the bonfire in its south-east corner, plan (400, 424), the line-up by the south hedge and the brushwood along it', () => {
     expect(plan(two.bonfire).map((v) => +v.toFixed(3))).toEqual([400, 424]);
@@ -174,7 +168,6 @@ describe('Home Ground\'s play things', () => {
     expect(inHome(two.lineUp, 4)).toBe(true);
     expect(440 - plan(two.lineUp)[1]).toBeLessThan(12); // by the south hedge
     for (const [x, z] of two.brushwood) expect(inHome({ x, z }, 2)).toBe(true); // along the inside of the hedge, as today's are (2.5 m in)
-    expect(two.bonfire.seatRadius).toBe(LAYOUT.bonfire.seatRadius);
   });
   it('rails its yard side where the paddock\'s fences were, and seats the girls on that rail facing out over the field', () => {
     expect(two.paddock).toBeUndefined();
@@ -200,7 +193,7 @@ describe('the rest of the layout', () => {
     for (const k of ['fieldShed', 'trough']) expect(two[k]).toEqual(LAYOUT[k]);
   });
   it('moves nothing but the farmstead\'s own: the neighbour, the drive and the fields are as they were', () => {
-    expect(two.road).toEqual(layoutNew(LAYOUT, RAW_LAYOUT).road);
+    expect(two.road).toEqual(LAYOUT.road);
     expect(fromPlan([520, 365])).toEqual([0, 0]);
   });
 });

@@ -5,7 +5,7 @@ import { roadNetwork } from '../src/world/roads.js';
 import { GIVE_WAY_AT } from '../src/world/layoutNew.js';
 import { turnRoundLines, crossed, putBack, TurnRound, DEFAULT_TURN_ROUND_PARAMS as P, headingOf } from '../src/world/turnRound.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const net = roadNetwork(two);
 const lines = turnRoundLines(net, two.turnRound, two.ground);
 const byId = Object.fromEntries(lines.map((l) => [l.id, l]));

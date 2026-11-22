@@ -12,7 +12,7 @@ import { Track } from '../src/world/track.js';
 import { openFarm, writeSave, readSave, SAVE_KEY } from '../src/farm/farmSave.js';
 
 // What the new farm's fields are called (#814): a list by kind, dealt to each farm from its seed, kept in its save.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const dealable = two.fields.filter((f) => !f.fixed && DEALT_KINDS.includes(f.kind));
 const seeds = Array.from({ length: 300 }, (_, i) => 1 + i * 7919);
 const byName = Object.fromEntries(FIELD_NAMES.map((n) => [n.name, n]));
@@ -166,10 +166,6 @@ describe('kept by the save', () => {
     expect(usableFieldNames(good, dealable)).toEqual(good);
     expect(usableFieldNames({ ...good, extra: 'Ghost Field' }, dealable)).toEqual(good);
   });
-  it('leaves today\'s farm, which has no fields as data, as it is', () => {
-    expect(namedLayout(LAYOUT, 5)).toBe(LAYOUT);
-    expect(describeFieldNames(LAYOUT)).toBe('');
-  });
 });
 
 describe('where the names are used', () => {
@@ -185,7 +181,6 @@ describe('where the names are used', () => {
     expect(fieldLabel(named, 'top')).toBe(named.dealtFieldNames.top);
     expect(fieldLabel(named, 'home')).toBe('Home Ground');
     expect(fieldLabel(named, 'nowhere')).toBe('nowhere');
-    expect(fieldLabel(LAYOUT, 'top')).toBe('top');
   });
   it('is listed for the panel and the console, each with its key', () => {
     const line = describeFieldNames(named);

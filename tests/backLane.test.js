@@ -6,7 +6,7 @@ import { pointInPolygon } from '../src/world/polygons.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const net = roadNetwork(two);
 const road = net.road('backLane');
 
@@ -278,10 +278,6 @@ describe('the lane\'s traffic on the new farm', () => {
     const on = new Traffic({ places: visitPlaces(two), params: { ...DEFAULT_TRAFFIC_PARAMS, passEvery: 0, visitEvery: 0, backEvery: 20 }, random });
     for (let t = 0; t < 600; t += 1) on.update(1, { blockers: [], darkness: 0 });
     expect(on.vehicles.some((x) => x.backLane) || on.count > 0).toBe(true);
-    const off = new Traffic({ places: visitPlaces(LAYOUT), params: { ...DEFAULT_TRAFFIC_PARAMS, passEvery: 0, visitEvery: 0, backEvery: 20 }, random });
-    for (let t = 0; t < 600; t += 1) off.update(1, { blockers: [], darkness: 0 });
-    expect(off.count).toBe(0);
-    expect(off.spawnBackLane()).toBeNull();
   });
 });
 
@@ -293,7 +289,6 @@ describe('the places you can go to', () => {
       expect(places[k], k).toBeTruthy();
       expect(net.onCarriageway(places[k].x, places[k].z) ?? net.tarmacAt(places[k].x, places[k].z), k).toBeTruthy();
     }
-    expect(backLanePlaces(LAYOUT, roadNetwork(LAYOUT))).toEqual({});
   });
 });
 

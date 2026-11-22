@@ -7,7 +7,7 @@ import { layoutNew, fromPlan } from '../src/world/layoutNew.js';
 import { neighbourFarmShape, createNeighbourFarm } from '../src/world/neighbourFarm.js';
 import { createRandom } from '../src/core/random.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const S = neighbourFarmShape(two);
 const inRect = (r, x, z) => x > r.minX && x < r.maxX && z > r.minZ && z < r.maxZ;
 const overlap = (a, b) => a.minX < b.maxX && a.maxX > b.minX && a.minZ < b.maxZ && a.maxZ > b.minZ;
@@ -91,11 +91,6 @@ describe('the dairy\'s places on the plan (#569)', () => {
     expect(nf.covered(S.collecting.minX + 5, S.collecting.minZ + 8)).toBe(false);
   });
 
-  it('is not on today\'s farm', () => {
-    const old = neighbourFarmShape(LAYOUT);
-    expect(old.parlour).toBeNull();
-    expect(old.slurry).toBeNull();
-  });
 });
 
 describe('the dairy built', () => {

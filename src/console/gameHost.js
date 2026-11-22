@@ -5,8 +5,6 @@ import { jobActions } from '../debug/jobActions.js';
 import { fixEverything, startWarm, switchOff } from '../debug/vehicleDebug.js';
 import { SCENES, runScene } from '../debug/scenes.js';
 import { WEATHER_KINDS } from '../world/weather.js';
-import { LAYOUT_CHOSEN } from '../world/layout.js';
-import { describeLayout, searchForLayout } from '../world/layoutNew.js';
 import { describeFieldNames } from '../world/fieldNames.js';
 import { plantSite, plantPoint } from '../world/plantSite.js';
 import { labelSpot } from '../hud/farmMap.js';
@@ -249,7 +247,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       hollowrun: layout.woods ? { x: layout.woods.circuit.points[0][0], z: layout.woods.circuit.points[0][1] } : null,
       woodpile: layout.logYard?.scenery ? { x: layout.logYard.park.x, z: layout.logYard.park.z + 6 } : null, // the woodpile at the wood's gate, with its lean-to and block: the new farm's, #683
       veteranoak: layout.woods?.oak ? { x: layout.woods.oak.x, z: layout.woods.oak.z + 12 } : null, // the great oak in the glade by the pond, twelve metres south of it
-      river: layout.hill?.river ? { x: layout.hill.river.crossing.x, z: (layout.newFarm ? g.world.heights.brook.zAt(layout.hill.river.crossing.x) : layout.hill.stream.z) + layout.hill.river.halfWidth + 8 } : null,
+      river: layout.hill?.river ? { x: layout.hill.river.crossing.x, z: g.world.heights.brook.zAt(layout.hill.river.crossing.x) + layout.hill.river.halfWidth + 8 } : null,
       pit: g.world.fields.quarry ? (() => { const r = g.world.fields.quarry.roadPoints.find((p) => p.t > 0.02); return r ? { x: r.x, z: r.z } : null; })() : null,
       pitgate: g.world.fields.quarry ? (() => { const w = g.world.fields.quarry.way; return { x: w.x + w.inward[0] * 6, z: w.z + w.inward[1] * 6 }; })() : null, // just inside the gate you come in by: the farm gate on the new farm (#685)
       pitlane: g.world.fields.quarry?.gates.length > 1 ? (() => { const w = g.world.fields.quarry.gate; return { x: w.x + w.inward[0] * 8, z: w.z + w.inward[1] * 8 }; })() : null, // inside the shut lane gate, looking out at it: the new farm only
@@ -389,11 +387,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       return host.weatherNow();
     },
 
-    layoutNow: () => [describeLayout(LAYOUT_CHOSEN), describeFieldNames(g.world.layout)].filter(Boolean).join('. '),
-    setLayout(n) {
-      location.search = searchForLayout(location.search, n);
-      return n === 2 ? 'loading the new farm' : 'loading today\'s farm';
-    },
+    layoutNow: () => ['the farm on the plan (layout 2)', describeFieldNames(g.world.layout)].filter(Boolean).join('. '),
 
     dump(text) {
       copy(text);

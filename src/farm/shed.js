@@ -23,7 +23,7 @@ export const DEFAULT_SHED_PARAMS = {
   compressorPrice: 120, // £ for the compressor
   washerPrice: 200, // £ for the parts washer
   pitPrice: 450, // £ for the pit
-  hoseReach: 9, // metres from the compressor a vehicle can be and still be reached by its hose (the pressure settings in the toolbox)
+  hoseReach: 13, // metres from the compressor a vehicle can be and still be reached by its hose (the pressure settings in the toolbox): the two bays of the new barn are 12.5 m from it
 };
 
 export const SHED_PARAM_RANGES = {

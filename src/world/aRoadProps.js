@@ -1,4 +1,4 @@
-// The A-road drawn beyond its tarmac, and the junctions where the lane and the village street give way to it (#687, layout 2 only): hedges down both sides with
+// The A-road drawn beyond its tarmac, and the junctions where the lane and the village street give way to it (#687): hedges down both sides with
 // a collider along them (the neighbour's own hedge stands along the west side where her land is), hedgerow trees, the verge's plants, cat's eyes down the middle,
 // and at each junction a give-way sign, a fingerpost, a grit bin or heap and the national speed limit disc across the road, plus the bus bay with its bus stop flag.
 // Where each stands is aRoadFittings.js; the road itself is drawn by props.js with the one road mesh builder.

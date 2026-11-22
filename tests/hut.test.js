@@ -59,15 +59,13 @@ describe("the shepherd's hut: where it stands", () => {
 });
 
 describe('the hut on the hill', () => {
-  const { pasture, fence, viewpoint, wood } = LAYOUT.hill;
+  const { pasture, viewpoint } = LAYOUT.hill;
 
-  it('stands in the pasture, clear of its hedges, the fence, the wood and the flask rock', () => {
+  it('stands in the pasture, clear of its hedges and the flask rock', () => {
     const half = Math.max(shape.halfLength + 3.7, 6);
     expect(shape.x).toBeGreaterThan(pasture.minX + half);
     expect(shape.x).toBeLessThan(pasture.maxX - half);
-    expect(shape.z).toBeGreaterThan(fence.z + 10);
     expect(shape.z + shape.halfLength + 1.6).toBeLessThan(pasture.maxZ - 1); // the drawbar's end
-    expect(shape.x).toBeGreaterThan(wood.maxX + 3);
     expect(Math.hypot(shape.x - viewpoint.x, shape.z - viewpoint.z)).toBeGreaterThan(15);
   });
 

@@ -205,19 +205,11 @@ describe('following you out to the hill', () => {
     return d;
   };
 
-  it('goes by the gate and down the lane after you, rather than at the hedge', () => {
-    lead.position = { x: LAYOUT.hill.lane.x, z: 110 };
-    const t = follower2().followTarget({ x: -10, z: 60 });
-    // Heading for the gateway into the lane first.
-    expect(t.point.z).toBeLessThan(LAYOUT.fieldHalf);
-    expect(Math.abs(t.point.x - LAYOUT.gate.x)).toBeLessThan(0.5);
-    expect(t.stopped).toBe(false);
-  });
-
   it('pulls up at the foot of the hill and waits while you go on up', () => {
-    lead.position = { x: 0, z: 185 };
+    const pa = LAYOUT.hill.pasture;
+    lead.position = { x: (pa.minX + pa.maxX) / 2, z: pa.maxZ - 5 };
     const d = follower2();
-    const coming = d.followTarget({ x: LAYOUT.hill.lane.x, z: 120 });
+    const coming = d.followTarget({ x: hill.waitSpot.x, z: hill.waitSpot.z - 10 });
     expect(coming.stopped).toBe(false);
     expect(d.events).toEqual(['hillWait']);
     // Through the lane's end towards the ford, not up the bank after you.
@@ -226,7 +218,7 @@ describe('following you out to the hill', () => {
     expect(there.stopped).toBe(true);
     expect(d.events).toEqual(['hillWait']); // said once
     // You come back down: she's following again.
-    lead.position = { x: LAYOUT.hill.lane.x, z: 125 };
+    lead.position = { x: hill.waitSpot.x, z: hill.waitSpot.z - 15 };
     expect(d.followTarget({ ...hill.waitSpot }).point).not.toEqual(hill.waitSpot);
   });
 });

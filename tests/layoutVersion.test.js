@@ -12,8 +12,8 @@ const migrated = migrateSave(fixture);
 const POSITIONS = ['bales', 'lane', 'mowing', 'harrow', 'batteries', 'lostThings'];
 
 describe('the layout version', () => {
-  it('is 1 today, and the fixture is a layout 1 save that still validates', () => {
-    expect(LAYOUT_VERSION).toBe(1);
+  it('is 2 since the new farm became the farm, and the fixture is a layout 1 save that still validates', () => {
+    expect(LAYOUT_VERSION).toBe(2);
     expect(fixture.layoutVersion).toBeUndefined();
     expect(validSave(fixture)).toBe(true);
   });
@@ -25,14 +25,15 @@ describe('the layout version', () => {
   });
 
   it('loads a save at the same layout version exactly as it is', () => {
-    const farm = openFarm({ storage: storageWith(fixture) });
+    const farm = openFarm({ storage: storageWith({ ...fixture, layoutVersion: LAYOUT_VERSION }) });
     expect(farm.layoutReset).toBe(false);
-    expect(farm.save).toEqual(migrated);
-    expect(openFarm({ storage: storageWith({ ...fixture, layoutVersion: 1 }) }).layoutReset).toBe(false);
+    expect(farm.save).toEqual({ ...migrated, layoutVersion: LAYOUT_VERSION });
+    expect(openFarm({ storage: storageWith(fixture), layoutVersion: 1 }).layoutReset).toBe(false);
   });
 
   it('keeps condition, money, favour, records and the calendar on another layout, and drops every position', () => {
-    const farm = openFarm({ storage: storageWith(fixture), layoutVersion: 2 });
+    // The old farm on layout 1 opens on the new farm (#692): nothing but where things stood is lost.
+    const farm = openFarm({ storage: storageWith(fixture) });
     expect(farm).toMatchObject({ continuing: true, layoutReset: true, day: fixture.day + 1, farmSeed: fixture.farmSeed });
     const s = farm.save;
     expect(s.layoutVersion).toBe(2);

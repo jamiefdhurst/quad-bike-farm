@@ -477,3 +477,7 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 
 - `all` in `FLOORS` went from 78 to 77 with #713: about 1,500 lines of src for the Moor were added, and the smoke run loads today's farm, where none of them runs (the run reached 77.9%). This is code added that the run cannot reach, not code removed or moved, so it is a deliberate exception to `checking.md`'s rule.
 - It should come back up when the new farm becomes the default (#692), when the smoke run reaches the Moor again: raise it then, from a few CI runs.
+
+## Two smoke floors lowered with the new farm (#692)
+
+- `trafficHost.js` 74 to 70 and `weatherHost.js` 78 to 74: the smoke run now plays the bigger farm and reaches 72.2% and 76.6% of them (two points under each). The gate and grid-gate visits that raised the share on the old farm are no longer in the game, and what the run reaches of the weather host dropped with them. The overall floor (77, #1035) was not raised: it wants a few CI runs on the new farm first.

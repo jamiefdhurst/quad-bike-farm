@@ -11,12 +11,6 @@ import { VibrationModel } from '../src/vibration/vibrationModel.js';
 const grid = createCattleGrid(LAYOUT);
 
 describe('cattle grid', () => {
-  it('sits across the road in the grass field\'s east gateway', () => {
-    expect(grid.onGrid(LAYOUT.fieldHalf, LAYOUT.road.z)).toBe(true);
-    expect(grid.onGrid(LAYOUT.fieldHalf - 5, LAYOUT.road.z)).toBe(false);
-    expect(grid.onGrid(LAYOUT.fieldHalf + 5, LAYOUT.road.z)).toBe(false);
-    expect(grid.onGrid(LAYOUT.fieldHalf, LAYOUT.road.z + 4)).toBe(false);
-  });
 
   it('is wider than the tarmac and fits in the hedge gap', () => {
     expect(grid.maxZ - grid.minZ).toBeGreaterThan(2 * LAYOUT.road.halfWidth);
@@ -73,7 +67,7 @@ describe('grid rumble', () => {
 });
 
 describe('the Moor\'s cattle grids on Back Lane (#821)', () => {
-  const two = layoutNew(LAYOUT, RAW_LAYOUT);
+  const two = LAYOUT;
   const lane = roadNetwork(two).road('backLane');
   const grids = moorGrids(lane, two).map((g) => createLaneGrid({ id: g.id, x: g.x, z: g.z, tx: g.tx, tz: g.tz, length: MOOR_GRID_LENGTH, width: 2 * lane.halfWidth + 0.5, pitch: MOOR_GRID_PITCH }));
 

@@ -5,7 +5,7 @@ import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 import { bogGrip, DEFAULT_BOG_PARAMS } from '../src/vehicle/bog.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const heights = createTerrainHeight(two, new Track(two.trackPoints));
 const flush = two.moor.flushes[0];
 
@@ -28,7 +28,4 @@ describe('the Moor\'s wet flushes bog a quad (#821)', () => {
     }
   });
 
-  it('is a bog only on the Moor: today\'s farm has the same bogs as before', () => {
-    expect(createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints)).moor).toBeNull();
-  });
 });

@@ -55,14 +55,16 @@ const within = (ops, box) =>
   });
 
 describe('painting the ground a window at a time', () => {
-  // Pairs of windows that overlap, each over something the painters draw by the thousand: the gravel pit, the wood, the hill's pasture, the stubble
+  // Pairs of windows that overlap, each over something the painters draw by the thousand: the gravel pit, the wood, the hill's pasture, the drive
   // and the road. The part of the overlap well inside both must be painted by the same marks, in the same places and the same colours.
+  const mid = (b) => [(b.minX + b.maxX) / 2, (b.minZ + b.maxZ) / 2];
+  const pair = ([cx, cz]) => [{ minX: cx - 33, maxX: cx + 33, minZ: cz - 33, maxZ: cz + 33 }, { minX: cx + 17, maxX: cx + 83, minZ: cz - 13, maxZ: cz + 53 }];
   const cases = [
-    ['the gravel pit', { minX: 100, maxX: 166, minZ: -170, maxZ: -104 }, { minX: 150, maxX: 216, minZ: -150, maxZ: -84 }],
-    ['the wood', { minX: -50, maxX: 16, minZ: -130, maxZ: -64 }, { minX: -20, maxX: 46, minZ: -150, maxZ: -84 }],
-    ['the hill', { minX: -60, maxX: 6, minZ: 90, maxZ: 156 }, { minX: -30, maxX: 36, minZ: 120, maxZ: 186 }],
-    ['the stubble and the farm road', { minX: 100, maxX: 166, minZ: -30, maxZ: 36 }, { minX: 130, maxX: 196, minZ: -10, maxZ: 56 }],
-    ['the track', { minX: 10, maxX: 76, minZ: -10, maxZ: 56 }, { minX: 30, maxX: 96, minZ: 10, maxZ: 76 }],
+    ['the gravel pit', ...pair(mid(LAYOUT.quarry))],
+    ['the wood', ...pair(mid(LAYOUT.woods))],
+    ['the hill', ...pair(mid(LAYOUT.hill.pasture))],
+    ['the drive', ...pair([(LAYOUT.road.fromX + LAYOUT.road.toX) / 2, LAYOUT.road.z])],
+    ['the track', ...pair(LAYOUT.trackPoints[0])],
   ];
   for (const [name, a, b] of cases) {
     it(`paints ${name} the same in two overlapping windows`, () => {
@@ -75,7 +77,8 @@ describe('painting the ground a window at a time', () => {
   }
 
   it('draws a stretch of the pit\'s floor at a different scale as the same marks, only smaller', () => {
-    const win = { minX: 120, maxX: 160, minZ: -160, maxZ: -120 };
+    const [px, pz] = mid(LAYOUT.quarry);
+    const win = { minX: px - 20, maxX: px + 20, minZ: pz - 20, maxZ: pz + 20 };
     const fine = paint(win, 10);
     expect(fine.length).toBeGreaterThan(1000);
     expect(paint(win, 10)).toEqual(fine); // and the same again every time

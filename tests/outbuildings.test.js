@@ -12,29 +12,7 @@ const fields = createFields(LAYOUT);
 const { barn, shed } = ob;
 
 describe('the buildings in the east fields', () => {
-  it('puts the Dutch barn and the shed in the barley field, the heap in the wheat and the trough by a gateway, clear of hedges and tarmac', () => {
-    expect(fields.areaOf(LAYOUT.dutchBarn.x, LAYOUT.dutchBarn.z)).toBe('north');
-    expect(fields.areaOf(LAYOUT.fieldShed.x, LAYOUT.fieldShed.z)).toBe('north');
-    expect(fields.areaOf(LAYOUT.muckHeap.x, LAYOUT.muckHeap.z)).toBe('south');
-    expect(fields.areaOf(LAYOUT.trough.x, LAYOUT.trough.z)).toBe('north');
-    const gap = LAYOUT.road.gaps.north.find((x) => Math.abs(x - LAYOUT.trough.x) < 10);
-    expect(gap).toBeDefined();
-    for (const r of ob.footprints) {
-      for (const [x, z] of [[r.minX, r.minZ], [r.maxX, r.minZ], [r.minX, r.maxZ], [r.maxX, r.maxZ], [(r.minX + r.maxX) / 2, r.minZ], [(r.minX + r.maxX) / 2, r.maxZ]]) {
-        expect(fields.hedgeDistance(x, z)).toBeGreaterThan(1.2);
-        expect(fields.tarmacAt(x, z)).toBe(0);
-      }
-    }
-  });
 
-  it('keeps the rain off under the two roofs and nowhere else out there', () => {
-    expect(ob.covered(LAYOUT.dutchBarn.x, LAYOUT.dutchBarn.z)).toBe(true);
-    expect(ob.covered(barn.outer.minX, barn.outer.maxZ)).toBe(true); // under the overhang at the open corner
-    expect(ob.covered(LAYOUT.fieldShed.x, LAYOUT.fieldShed.z)).toBe(true);
-    expect(ob.covered(LAYOUT.dutchBarn.x, barn.outer.maxZ + 2)).toBe(false);
-    expect(ob.covered(LAYOUT.muckHeap.x, LAYOUT.muckHeap.z)).toBe(false);
-    expect(ob.covered(LAYOUT.road.pad.x, LAYOUT.road.z)).toBe(false);
-  });
 
   it('stacks the bales inside the Dutch barn, below the eaves, clear of the open bay and each other', () => {
     expect(barn.bales.length).toBeGreaterThanOrEqual(20);
@@ -80,19 +58,6 @@ describe('the buildings in the east fields', () => {
     }
   });
 
-  it('grows no stubble on them, and levels the ground under the two buildings', () => {
-    expect(fields.stubbleAt(LAYOUT.dutchBarn.x, LAYOUT.dutchBarn.z)).toBe(0);
-    expect(fields.stubbleAt(LAYOUT.fieldShed.x, LAYOUT.fieldShed.z)).toBe(0);
-    expect(fields.stubbleAt(LAYOUT.muckHeap.x, LAYOUT.muckHeap.z)).toBe(0);
-    expect(fields.stubbleAt(LAYOUT.dutchBarn.x, barn.outer.maxZ + 1)).toBe(0); // the hardstanding
-    expect(fields.stubbleAt(LAYOUT.dutchBarn.x - 20, LAYOUT.dutchBarn.z)).toBe(1);
-    const h = createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints)).heightAt;
-    for (const r of [barn.outer, shed.outer]) {
-      const ys = [];
-      for (let x = r.minX; x <= r.maxX; x += 0.5) for (let z = r.minZ; z <= r.maxZ; z += 0.5) ys.push(h(x, z));
-      expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(0.02);
-    }
-  });
 
   it('heaps the muck up to its height in the middle and down to nothing at its edge', () => {
     const m = LAYOUT.muckHeap;
@@ -106,29 +71,7 @@ describe('the buildings in the east fields', () => {
 describe('where things start out east', () => {
   const east = LAYOUT.spawn.away.filter((a) => a.x > LAYOUT.fieldHalf);
 
-  it('has five spots a quad can have been left, each clear of the buildings and hedges by its jitter', () => {
-    expect(east).toHaveLength(5);
-    for (const a of east) {
-      const j = a.jitter ?? LAYOUT.spawn.awayJitter;
-      for (const [dx, dz] of [[-j, -j], [j, -j], [-j, j], [j, j], [0, 0]]) {
-        const x = a.x + dx;
-        const z = a.z + dz;
-        expect(fields.inFarm(x, z, 2)).toBe(true);
-        expect(fields.hedgeDistance(x, z)).toBeGreaterThan(1.8);
-        if (!ob.covered(a.x, a.z)) expect(ob.clearance(x, z)).toBeGreaterThan(1.5);
-      }
-    }
-  });
 
-  it('parks the one in the Dutch barn in its open bay, clear of the stanchions, the seats and the stack', () => {
-    const a = east.find((s) => s.where === 'in the Dutch barn');
-    const j = a.jitter + 1.1; // and the quad's half length, any way round
-    expect(a.x - j).toBeGreaterThan(barn.open.minX + 0.2);
-    expect(a.x + j).toBeLessThan(barn.open.maxX - 0.2);
-    expect(a.z - j).toBeGreaterThan(barn.outer.minZ + 0.2);
-    expect(a.z + j).toBeLessThan(barn.outer.maxZ - 0.2);
-    for (const s of barn.seats) expect(s.x - BALE.length / 2).toBeGreaterThan(a.x + j);
-  });
 
   it('uses a spot`s own jitter', () => {
     const spawn = { ...LAYOUT.spawn, awayChance: 1, away: [{ x: 0, z: 0, jitter: 0.1, where: 'here' }] };

@@ -26,13 +26,6 @@ describe('the neighbour\'s yard', () => {
     }
   });
 
-  it('keeps the buildings and the parked vehicles apart, and clear of the lane and the farm', () => {
-    const things = [S.house.roof, S.barn.roof, ...S.parked.map((p) => p.outer)];
-    for (let i = 0; i < things.length; i++) for (let j = i + 1; j < things.length; j++) expect(overlap(things[i], things[j]), `${i} and ${j}`).toBe(false);
-    // The wall stays west of the lane's tarmac, and south of the farm's own hedge.
-    expect(S.outline.maxX).toBeLessThan(lane.x - lane.halfWidth);
-    expect(S.outline.minZ).toBeGreaterThan(LAYOUT.farm.maxZ + 5);
-  });
 
   it('leaves the gateway open in the east wall, wide enough for the tractor, and a clear way from it to the barn door and the house', () => {
     const gw = S.gateway;
@@ -64,25 +57,7 @@ describe('the neighbour\'s yard', () => {
     expect(ob.builtAt(100, 50)).toBe(false); // the farm's wheat field
   });
 
-  it('levels the ground inside the wall to one height and eases out beyond it', () => {
-    const nf = createNeighbourFarm(LAYOUT);
-    const ground = () => 3;
-    const mid = nf.floorAt(170, 120, ground);
-    expect(mid.k).toBe(1);
-    expect(mid.level).toBe(3);
-    expect(nf.floorAt(S.outline.minX - 2, 120, ground).k).toBeGreaterThan(0);
-    expect(nf.floorAt(S.outline.minX - 2, 120, ground).k).toBeLessThan(1);
-    expect(nf.floorAt(S.outline.minX - 6, 120, ground)).toBeNull();
-  });
 
-  it('leaves the lane\'s own ground alone along the wall, so the tarmac has no camber from the yard, but ramps up to it at the gateway', () => {
-    const nf = createNeighbourFarm(LAYOUT);
-    const ground = () => 3;
-    const laneEdge = lane.x - lane.halfWidth;
-    expect(laneEdge).toBeGreaterThan(S.outline.maxX + 1);
-    for (const z of [125, 135, 145]) expect(nf.floorAt(laneEdge, z, ground), `z ${z}`).toBeNull();
-    expect(nf.floorAt(laneEdge, S.gateway.z, ground).k).toBeGreaterThan(0);
-  });
 
   it('really leaves the terrain under the lane as it was along the wall (the yard does not pull the tarmac sideways)', () => {
     const track = new Track(LAYOUT.trackPoints);
@@ -92,62 +67,6 @@ describe('the neighbour\'s yard', () => {
   });
 });
 
-describe('the lane you can ride', () => {
-  const barriers = laneBarriers(LAYOUT);
-  // The barn is a hollow shed: its walls (0.16 thick) are solid, but not its doorway or its inside.
-  const barnWall = (x, z) => {
-    const o = S.barn.outer;
-    const inner = { minX: o.minX + 0.16, maxX: o.maxX - 0.16, minZ: o.minZ + 0.16, maxZ: o.maxZ - 0.16 };
-    const doorway = x > o.maxX - 0.4 && Math.abs(z - S.barn.door.z) < S.barn.door.halfWidth;
-    return inRect(o, x, z) && !inRect(inner, x, z) && !doorway;
-  };
-  const blocked = (x, z) => barriers.some((b) => inBox(b, x, z)) || S.walls.some((w) => inBox(w, x, z)) || inRect(S.house.outer, x, z) || barnWall(x, z) || S.parked.some((p) => inRect(p.outer, x, z));
-  const westX = lane.x - lane.halfWidth - 1.2;
-
-  it('shuts the lane\'s near edge outside the open stretch and along it, except at the big gate and the neighbour\'s wall', () => {
-    expect(blocked(westX, -150)).toBe(true);
-    expect(blocked(westX, 190)).toBe(true);
-    expect(blocked(westX, -30)).toBe(true);
-    expect(blocked(westX, 60)).toBe(true);
-    expect(blocked(westX, LAYOUT.road.z)).toBe(false); // the big gate
-    expect(barriers.some((b) => inBox(b, westX, 120))).toBe(false); // the neighbour's own wall shuts it there
-    expect(blocked(S.yard.maxX - S.yard.wall / 2, 120)).toBe(true);
-  });
-
-  it('shuts the far side and both ends of the open stretch', () => {
-    const open = lane.open;
-    expect(blocked(lane.x + lane.halfWidth + 1.2, 50)).toBe(true);
-    expect(blocked(lane.x, open.minZ)).toBe(true);
-    expect(blocked(lane.x, open.maxZ)).toBe(true);
-    expect(blocked(lane.x, 50)).toBe(false);
-  });
-
-  it('lets you ride from the big gate along the lane into the yard and up to the barn door and the house, but no further along the lane', () => {
-    const cell = 0.5;
-    const key = (x, z) => `${Math.round(x / cell)},${Math.round(z / cell)}`;
-    const seen = new Set([key(lane.x, LAYOUT.road.z)]);
-    const todo = [[lane.x, LAYOUT.road.z]];
-    while (todo.length) {
-      const [x, z] = todo.pop();
-      for (const [dx, dz] of [[cell, 0], [-cell, 0], [0, cell], [0, -cell]]) {
-        const nx = x + dx;
-        const nz = z + dz;
-        if (nx < 150 || nx > 215 || nz < -80 || nz > 215) continue; // the part of the world that matters
-        if (blocked(nx, nz) || seen.has(key(nx, nz))) continue;
-        seen.add(key(nx, nz));
-        todo.push([nx, nz]);
-      }
-    }
-    const reach = (x, z) => seen.has(key(x, z));
-    expect(reach(S.gateway.x - 3, S.gateway.z)).toBe(true);
-    expect(reach(S.barn.outer.maxX + 2, S.barn.door.z)).toBe(true);
-    expect(reach(S.barn.x, S.barn.z)).toBe(true); // through the big door, inside
-    expect(reach(S.stand.x, S.stand.z)).toBe(true);
-    expect(reach(lane.x, lane.open.maxZ - 2)).toBe(true);
-    expect(reach(lane.x, lane.open.maxZ + 2)).toBe(false);
-    expect(reach(lane.x, lane.open.minZ - 2)).toBe(false);
-  });
-});
 
 describe('the neighbour herself', () => {
   const make = () => new Neighbour(S, { ...DEFAULT_NEIGHBOUR_PARAMS }, createRandom(5));

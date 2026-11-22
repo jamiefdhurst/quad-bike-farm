@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
+import { LAYOUT } from '../src/world/layout.js';
+import { TODAY } from './helpers/todaysLayout.js';
 import { layoutNew, fromPlan, NEIGHBOUR_PLAN, NOT_MOVED_YET, REPLACED, describeLayout } from '../src/world/layoutNew.js';
 import { neighbourFarmShape, createNeighbourFarm, neighbourGate, nearNeighbourYard } from '../src/world/neighbourFarm.js';
 import { createRoads } from '../src/world/roads.js';
@@ -15,7 +16,7 @@ import { fakeCanvas } from './helpers/vehicleModels.js';
 import { headlessContext } from './helpers/worldModels.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const S = neighbourFarmShape(two);
 const lane = two.publicLane;
 const net = createRoads(two.roads);
@@ -154,19 +155,18 @@ describe('the neighbour\'s yard across the lane (#569)', () => {
   it('puts you just inside the gate for `tp neighbour` on either farm', () => {
     const g = neighbourGate(two);
     expect(g).toEqual({ x: S.gateway.x + 3, z: S.gateway.z });
-    const old = neighbourFarmShape(LAYOUT);
-    expect(neighbourGate(LAYOUT)).toEqual({ x: old.gateway.x - 3, z: old.gateway.z });
+    const old = neighbourFarmShape(TODAY);
+    expect(neighbourGate(TODAY)).toEqual({ x: old.gateway.x - 3, z: old.gateway.z });
     expect(neighbourGate({})).toBeNull();
   });
 
   it('is off the not-moved list, and her anchor and yard are what the new farm replaces', () => {
     expect(Object.keys(NOT_MOVED_YET).filter((k) => /neighbour/i.test(k))).toEqual([]);
     expect(REPLACED).toEqual(expect.arrayContaining(['anchors.neighbour', 'neighbourFarm']));
-    expect(describeLayout(2)).toMatch(/places still at today's numbers/);
   });
 
   it('is still today\'s on layout 1: the east wall\'s gateway, across no track', () => {
-    const old = neighbourFarmShape(LAYOUT);
+    const old = neighbourFarmShape(TODAY);
     expect(old.gateway.side).toBe('east');
     expect(old.gateway.x).toBeCloseTo(old.yard.maxX - old.yard.wall / 2, 6);
   });
@@ -342,7 +342,7 @@ describe('her gate and today\'s farm\'s random stream (#969)', () => {
   it('swings its leaves in to the yard when it is open: east on the new farm (gateway in the west wall), west on today\'s', async () => {
     vi.stubGlobal('document', { createElement: () => fakeCanvas() });
     const { buildNeighbourFarm } = await import('../src/world/neighbourFarmProps.js');
-    for (const [layout, into] of [[two, 1], [LAYOUT, -1]]) {
+    for (const [layout, into] of [[two, 1], [TODAY, -1]]) {
       const built = buildNeighbourFarm(ctx(layout, () => 0.5));
       built.gate.state.setOpen(true);
       built.gate.state.update(10);
@@ -365,7 +365,7 @@ describe('her gate and today\'s farm\'s random stream (#969)', () => {
     let n = 0;
     let seed = 1234;
     const random = () => { n++; seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-    buildNeighbourFarm(ctx(LAYOUT, random));
+    buildNeighbourFarm(ctx(TODAY, random));
     expect(n).toBe(9873);
   });
 });

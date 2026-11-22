@@ -9,7 +9,7 @@ import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 
 // A visitor's whole drive, on either farm, stays out of the barn's walls and off the yard's trailers and tanks (#978).
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 
 function drive(layout, kind) {
   const places = visitPlaces(layout);

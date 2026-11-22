@@ -250,7 +250,7 @@ export class World {
   skyNow() {
     const base = this.weather.skyParams();
     const sky = this.daylight ? skyAt(base, this.daylight.sun, this.daylight.p) : base;
-    return this.layout.newFarm ? { ...sky, fogDensity: farFog(sky.fogDensity, this.sky.graphics?.viewDistance) } : sky; // the far landscape (#708) is there to be seen on a clear day, as far as `viewDistance` (#820)
+    return { ...sky, fogDensity: farFog(sky.fogDensity, this.sky.graphics?.viewDistance) }; // the far landscape (#708) is there to be seen on a clear day, as far as `viewDistance` (#820)
   }
 
   /** 0..1 how warm the day is: full sun on a sunny day, nothing much in the rain. */

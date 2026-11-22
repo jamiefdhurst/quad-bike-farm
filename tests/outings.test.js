@@ -48,10 +48,9 @@ describe('outingSpots', () => {
   it('lists named places on the farm from the layout', () => {
     const list = outingSpots(LAYOUT, { x: -27, z: 142 }, stripPoint);
     const names = list.map((s) => s.name);
-    expect(names).toEqual(expect.arrayContaining(['the drag strip', 'the muck heap', 'the foot of the hill', 'the end of the road']));
+    expect(names).toEqual(expect.arrayContaining(['the drive', 'the muck heap']));
     for (const s of list) {
       expect(Number.isFinite(s.x) && Number.isFinite(s.z)).toBe(true);
-      expect(Math.abs(s.x)).toBeLessThan(250);
     }
   });
 });

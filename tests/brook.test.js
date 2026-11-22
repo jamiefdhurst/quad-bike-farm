@@ -29,14 +29,6 @@ describe('the brook', () => {
     }
   });
 
-  it('goes under the lane in a culvert: no channel across the tarmac and its verges, so the road is as level as it was', () => {
-    const without = createTerrainHeight({ ...LAYOUT, hill: { ...LAYOUT.hill, brook: undefined } }, new Track(LAYOUT.trackPoints)).heightAt;
-    for (const x of [lane.x - lane.halfWidth, lane.x, lane.x + lane.halfWidth]) {
-      for (const z of [brook.zAt(x) - 1, brook.zAt(x), brook.zAt(x) + 1]) expect(heights.heightAt(x, z)).toBeCloseTo(without(x, z), 6);
-    }
-    expect(brook.mouths.map((m) => m.side)).toEqual([-1, 1]);
-    expect(brook.waterAt(lane.x, brook.zAt(lane.x))).toBe(0);
-  });
 
   it('is cut into the ground with water standing in the middle of it, and dry on the bank', () => {
     for (const x of [60, 100, 150, 190, 225]) {
@@ -48,12 +40,6 @@ describe('the brook', () => {
     }
   });
 
-  it('flows downhill to the west: the ground it starts on, by the spring beside the lane, is higher than where it joins the pasture\'s stream', () => {
-    const at = (x) => heights.heightAt(x, brook.zAt(x));
-    expect(at(brook.maxX - 30) - at(brook.minX)).toBeGreaterThan(4);
-    // And never climbs more than a metre against the flow over any 20 m.
-    for (let x = brook.minX; x < brook.maxX - 20; x += 5) expect(at(x + 20) - at(x), `x ${x}`).toBeGreaterThan(-1);
-  });
 
   it('is drawn on the map from the hedge on', () => {
     const f = farmMapFeatures(LAYOUT, createFields(LAYOUT), new Track(LAYOUT.trackPoints));
@@ -62,9 +48,4 @@ describe('the brook', () => {
     expect(Math.max(...beyond.map((p) => p.x))).toBeLessThanOrEqual(f.bounds.maxX);
   });
 
-  it('keeps the plain distant trees away from her yard and the lane beside it', () => {
-    expect(nearNeighbourYard(LAYOUT, 245, 125, 45)).toBe(true);
-    expect(nearNeighbourYard(LAYOUT, 180, 120, 45)).toBe(true);
-    expect(nearNeighbourYard(LAYOUT, 20, 20, 45)).toBe(false);
-  });
 });

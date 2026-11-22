@@ -10,7 +10,7 @@ import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 
 // What the recheck of #688 found (#1031): the garage's canopy panels, the forecourt's markings, the new farm's mud grid and the bridge's cost.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const overlap = (a, b) => a.minX < b.maxX && a.maxX > b.minX && a.minZ < b.maxZ && a.maxZ > b.minZ;
 const box = (m) => ({ minX: m.x - m.w / 2, maxX: m.x + m.w / 2, minZ: m.z - m.d / 2, maxZ: m.z + m.d / 2 });
 
@@ -81,8 +81,4 @@ describe('the village\'s road mud grids', () => {
     expect(covered(S.forecourt.minX + 2, S.forecourt.minZ + 2)).toBe(true);
   });
 
-  it('are the village\'s area west of the lane, as they were, on today\'s farm', () => {
-    const bounds = villageMudBounds(LAYOUT, roadNetwork(LAYOUT), 0.85);
-    expect(bounds).toEqual([{ minX: LAYOUT.village.area.minX, maxX: LAYOUT.publicLane.x - LAYOUT.publicLane.halfWidth - 1, minZ: LAYOUT.village.area.minZ, maxZ: LAYOUT.village.area.maxZ }]);
-  });
 });

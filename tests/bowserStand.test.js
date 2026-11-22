@@ -33,7 +33,7 @@ describe('the slab a bowser stands on', () => {
     expect(turned.hi - turned.lo).toBeCloseTo(0.12 * STAND.z, 6);
   });
   it('puts the model on that top and a collider on it, at the new farm\'s two tanks on its real ground', () => {
-    const two = layoutNew(LAYOUT, RAW_LAYOUT);
+    const two = LAYOUT;
     const heights = createTerrainHeight(two, new Track(two.trackPoints));
     for (const [place, scale] of [[two.fuelTank, 1], [two.dieselBowser, 0.8]]) {
       const tank = make((x, z) => heights.heightAt(x, z), place, scale, place.yaw);

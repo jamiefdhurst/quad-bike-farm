@@ -13,7 +13,7 @@ import { pointInPolygon } from '../src/world/polygons.js';
 
 // The river on the new farm (#565): the hill's stream widens into it at the meadow's head, it runs east with the land through Brook Meadow, and the
 // brook carries on to the lane's verge.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const heights = createTerrainHeight(two, new Track(two.trackPoints));
 const brook = heights.brook;
 const hill = createHill(two);
@@ -247,5 +247,5 @@ describe('the bank\'s dirt where the stream becomes the river', () => {
 });
 
 function brookMinX() {
-  return createHill(layoutNew(LAYOUT, RAW_LAYOUT)).pasture.maxX;
+  return createHill(LAYOUT).pasture.maxX;
 }

@@ -154,16 +154,6 @@ describe('the stack', () => {
 });
 
 describe('the wood by the gate', () => {
-  it('is on the grass field, clear of the track and of the wood\'s gate', () => {
-    const y = LAYOUT.logYard;
-    const pts = [...y.piles.map(([x, z]) => ({ x, z })), y.park, y.stack];
-    for (const p of pts) {
-      expect(Math.abs(p.x)).toBeLessThan(LAYOUT.fieldHalf - 4);
-      expect(p.z).toBeGreaterThan(-LAYOUT.fieldHalf + 2);
-      expect(Math.hypot(p.x - LAYOUT.woods.gate.x, p.z + 80)).toBeGreaterThan(6);
-      for (const [tx, tz] of LAYOUT.trackPoints) expect(Math.hypot(p.x - tx, p.z - tz)).toBeGreaterThan(12);
-    }
-  });
 
   it('puts the log job on the board for a farm that has it, and not for one that has not', () => {
     expect(FARM_JOBS.logs.needs).toBe('logYard');

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { FarDetail, detailLevel, isSmallPart, isSpeck, pointsAcross, pixelsPerRadian, SPECK_LAYER, VEHICLE_NAMES, BARN_PROP_NAMES, SET_PIECE_NAMES } from '../src/world/farDetail.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../src/core/graphics.js';
+import { insideBarn } from '../src/world/barn.js';
 import { LAYOUT } from '../src/world/layout.js';
 import { BrushwoodHeap } from '../src/items/brushwood.js';
 
@@ -297,7 +298,7 @@ describe('FarDetail set pieces and props', () => {
     const far = new FarDetail(sceneWith(rack), params);
     far.update({ x: 15, z: 0 }, 1, true); // 10 from the edge
     expect(rack.visible).toBe(true);
-    far.update({ x: 40, z: 0 }, 1, true);
+    far.update({ x: 60, z: 0 }, 1, true);
     expect(rack.visible).toBe(false);
   });
   it('shows nothing it did not hide, and everything with a distance of 0', () => {
@@ -388,10 +389,10 @@ describe('the names FarDetail looks for', () => {
 describe('BARN_PROP_NAMES', () => {
   // Only what is inside the barn may be hidden at the barn's short distance: something in the yard would vanish as you walk off (#402).
   const b = LAYOUT.barn;
-  const inside = ({ x, z }) => Math.abs(x - b.x) <= b.halfX && z >= b.z - b.halfZ && z <= b.z + b.halfZ + 2 * b.annex.halfZ;
+  const inside = ({ x, z }) => insideBarn(LAYOUT, x, z, -0.3); // the barn stands turned: read in its own frame
   const placed = { helmetHooks: [LAYOUT.helmetHooks], 'trolley-jack': [LAYOUT.jack], 'axle-stand': LAYOUT.axleStands };
 
-  it('holds only things that stand inside the barn or its annex', () => {
+  it('holds only things that stand inside the barn', () => {
     for (const [name, spots] of Object.entries(placed)) {
       expect(BARN_PROP_NAMES).toContain(name);
       for (const s of spots) expect(inside(s), `${name} at ${s.x}, ${s.z}`).toBe(true);
@@ -399,8 +400,8 @@ describe('BARN_PROP_NAMES', () => {
   });
 
   // From anywhere inside the barn, a prop at the far corner is still drawn (#379 testing: the racks at the other end vanished).
-  it('is drawn from one corner of the barn and annex to the opposite one', () => {
-    const corner = Math.hypot(2 * b.halfX, 2 * b.halfZ + 2 * b.annex.halfZ);
+  it('is drawn from one corner of the barn to the opposite one', () => {
+    const corner = Math.hypot(2 * b.halfX, 2 * b.halfZ);
     expect(DEFAULT_GRAPHICS_PARAMS.barnPropsDistance).toBeGreaterThan(corner);
   });
 

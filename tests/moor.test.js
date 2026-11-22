@@ -11,7 +11,7 @@ import { turnRoundLines, TurnRound, crossed } from '../src/world/turnRound.js';
 import { moorColours } from '../src/world/moorCover.js';
 import { laneEdgeAt } from '../src/world/moorPaint.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const net = roadNetwork(two);
 const lane = net.road('backLane');
 const heights = createTerrainHeight(two, new Track(two.trackPoints));
@@ -223,7 +223,6 @@ describe('where the common is painted and where you are taken', () => {
     expect(p.flush.x).toBeGreaterThan(M.flushes[0].x + M.flushes[0].rx); // east of the flush, dry ground to ride in from
     expect(net.nearest(p.moorsheep.x, p.moorsheep.z, 3)?.road.id).toBe('backLane'); // on the lane, level with the flock
     expect(Math.abs(p.moorsheep.z - M.gate.z)).toBeLessThan(40);
-    expect(moorPlaces(LAYOUT, roadNetwork(LAYOUT))).toEqual({}); // today's farm has none
   });
 });
 

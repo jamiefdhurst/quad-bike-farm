@@ -92,7 +92,7 @@ export async function buildWorldModels() {
   });
   // Nether Thornby on the new farm (#688, #819): its street's houses in their different designs, the lane's three houses and the small farm with its barn and walled yard.
   {
-    const layoutVillage = (await import('../../src/world/layoutNew.js')).layoutNew(LAYOUT, RAW_LAYOUT);
+    const layoutVillage = LAYOUT;
     const scene = new THREE.Scene();
     const cNew = { ...c, scene, layout: layoutVillage, heights: createTerrainHeight(layoutVillage, new Track(layoutVillage.trackPoints)) };
     add('world', 'villageNew', buildVillage, (b) => (b(cNew), scene.children.find((o) => o.name === 'village')));
@@ -107,8 +107,7 @@ export async function buildWorldModels() {
   const { buildQuarry } = await import('../../src/world/quarryProps.js');
   add('setPiece', 'quarrySite', buildQuarry, (b) => (b(c), found('quarrySite')));
   const { buildPitBoundary } = await import('../../src/world/quarryProps.js');
-  const { layoutNew } = await import('../../src/world/layoutNew.js');
-  const two = layoutNew(LAYOUT, RAW_LAYOUT);
+  const two = LAYOUT;
   add('setPiece', 'pitFence', buildPitBoundary, (b) => b({ ...c, layout: two })); // the new farm's pit boundary needs the new farm's fields
   const { buildFarmBridge } = await import('../../src/world/farmBridge.js');
   add('setPiece', 'farmBridge', buildFarmBridge, (b) => b({ ...c, layout: two, heights: createTerrainHeight(two, new Track(two.trackPoints)) })); // on the new farm's river (#689)
@@ -262,7 +261,7 @@ export async function buildWorldModels() {
   const into = (b, scene, more = {}) => (b({ ...c, scene, ...more }), scene);
   const { buildBarnShed } = await import('../../src/world/barnBuild.js');
   add('world', 'barn', buildBarnShed, (b, scene) => into(b, scene));
-  add('world', 'barnOne', buildBarnShed, (b, scene) => into(b, scene, { layout: layoutNew(LAYOUT, RAW_LAYOUT), heights: { heightAt: () => 0 } })); // the new farm's one building
+  add('world', 'barnOne', buildBarnShed, (b, scene) => into(b, scene, { layout: LAYOUT, heights: { heightAt: () => 0 } })); // the new farm's one building
   const { buildOutbuildings } = await import('../../src/world/outbuildingProps.js');
   const bale = { geo: new THREE.CylinderGeometry(0.7, 0.7, 1.2, 12), straw: new THREE.MeshStandardMaterial({ color: 0xc8a850 }) };
   add('world', 'outbuildings', buildOutbuildings, (b, scene) => into(b, scene, { bale }));
@@ -271,7 +270,7 @@ export async function buildWorldModels() {
   const { buildBrookCulvert } = await import('../../src/world/brookProps.js');
   add('world', 'brookCulvert', buildBrookCulvert, (b, scene) => into(b, scene));
   // The new farm's lane crosses the brook on the village's bridge (#688): the same builder, on layout 2.
-  const layoutTwo = layoutNew(LAYOUT, RAW_LAYOUT);
+  const layoutTwo = LAYOUT;
   const heightsTwo = createTerrainHeight(layoutTwo, new Track(layoutTwo.trackPoints));
   add('setPiece', 'laneBridge', buildBrookCulvert, (b, scene) => into(b, scene, { layout: layoutTwo, heights: heightsTwo }));
   const { buildElectricFence } = await import('../../src/world/electricFenceBuild.js');

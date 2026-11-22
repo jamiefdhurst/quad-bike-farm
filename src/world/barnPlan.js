@@ -43,7 +43,7 @@ export function barnRaw() {
     benchOil: at('barn', { x: bench.x + 0.75, z: -12.3, yaw: 0.2 }),
     benchLeads: at('barn', { x: bench.x - 0.75, z: -12.3, yaw: 0.4 }),
     benchPack: at('barn', { x: bench.x + 1, z: -12.08, yaw: 0.15 }),
-    moneyTin: at('barn', { x: -7.7, z: -INNER_Z, y: 1.05 }),
+    moneyTin: at('barn', { x: -8,  z: -INNER_Z, y: 1.05 }),
     // On the doors' wall beside the doorway: the thermometer, the barometer and the forecast together (the clock is on the bench's wall, `clock`).
     weatherStation: at('barn', { x: INNER_X, z: -6.4, yaw: -Math.PI / 2, y: 1.65 }), // on the doors' wall, facing back into the barn
     clock: at('barn', { x: 1, z: -INNER_Z, yaw: 0, y: 3.9 }), // high on the bench's wall over the bays, so it is seen from the bench and the big bay, apart from the calendar on the back wall
@@ -61,7 +61,7 @@ export function barnRaw() {
       compressor: { x: -8.45, z: -2.4, yaw: Math.PI / 2 },
       washer: { x: bench.x + 2.65, z: -12.05, yaw: 0 },
       pit: { x: 4, z: 0, yaw: 0, halfX: 1.9, halfZ: 0.45 },
-      catalogue: { x: bench.x + 0.45, z: -12.34, yaw: 0.2 },
+      catalogue: { x: bench.x + 0.45, z: -12.14, yaw: 0.2 },
     }),
     rusty: at('barn', { x: -5.8, z: 0.4, yaw: 0.15 }),
     plover: at('barn', { x: -5.2, z: -3.8, yaw: Math.PI }),

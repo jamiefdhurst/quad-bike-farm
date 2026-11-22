@@ -125,7 +125,7 @@ describe('the tarmac map on a full-size ground', () => {
     expect(length).toBeLessThan(3600);
   });
 
-  it('asks tarmacAt fewer than a million times for the whole ground, the tiles\' maps and the overview\'s, where a map of it all is 6 million', () => {
+  it('asks tarmacAt fewer than a million and a half times for the whole ground, the tiles\' maps and the overview\'s, where a map of it all is 6 million', () => {
     let asked = 0;
     const tarmacAt = (x, z) => (asked++, net.tarmacAt(x, z));
     const boxes = net.hardBoxes('tarmac');
@@ -135,7 +135,7 @@ describe('the tarmac map on a full-size ground', () => {
     tarmacMask(tarmacAt, bounds, 2, boxes);
     const dense = ((bounds.maxX - bounds.minX) / 0.5) * ((bounds.maxZ - bounds.minZ) / 0.5);
     expect(dense).toBeGreaterThan(5.9e6);
-    expect(asked).toBeLessThan(1e6);
+    expect(asked).toBeLessThan(1.5e6); // the bigger farm has more road to ask about (1.19 million)
     expect(asked).toBeGreaterThan(50000);
   });
 

@@ -6,10 +6,10 @@ import { roadNetwork } from '../src/world/roads.js';
 import { createBrook } from '../src/world/brook.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
-import { neighbourFarmShape, laneBarriers } from '../src/world/neighbourFarm.js';
+import { neighbourFarmShape } from '../src/world/neighbourFarm.js';
 
 // Nether Thornby on the new farm (#688): across the lane, its street east to the A-road, the garage on the lane, the brook under the lane's bridge.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const S = villageShape(two);
 const net = roadNetwork(two);
 const lane = two.publicLane;
@@ -229,7 +229,6 @@ describe('what is left clear (#715, #716)', () => {
 
 describe('the rest of the farm around it', () => {
   it('has no invisible wall along the lane at the village (the lane\'s west barrier on today\'s farm has a gap there)', () => {
-    expect(laneBarriers(two)).toEqual([]);
     expect(neighbourFarmShape(two)).toBeTruthy();
   });
 

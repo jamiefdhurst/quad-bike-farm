@@ -14,7 +14,7 @@ import { DEFAULT_PLAYER_PARAMS } from '../src/player/playerParams.js';
 const HALF_HEIGHT = 0.55;
 const WALK = DEFAULT_PLAYER_PARAMS.walkSpeed;
 const GRAVITY = DEFAULT_PLAYER_PARAMS.gravity;
-const S = neighbourFarmShape(layoutNew(LAYOUT, RAW_LAYOUT));
+const S = neighbourFarmShape(LAYOUT);
 const GROUND = 3;
 let world;
 

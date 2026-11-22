@@ -185,7 +185,6 @@ export function* paintGround(plan, c) {
     wear(yard.x - 4, yard.z + 2, yard.radius * 0.45, 'rgba(92,80,58,0.7)');
   }
   wear(gate.x, (gate.z ?? fieldHalf) - 3, 7, 'rgba(90,72,48,0.8)');
-  if (layout.road && !layout.newFarm) wear(fieldHalf - 4, layout.road.z, 6, 'rgba(90,72,48,0.6)'); // the quads cut the corner onto the road
   paintOutbuildings(c, plan, wear); // its own draws, leaving the rest of the ground as it was
   yield;
 

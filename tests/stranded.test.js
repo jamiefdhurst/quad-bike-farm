@@ -4,6 +4,7 @@ import { StrandedWait } from '../src/npc/strandedWait.js';
 import { SPOTS, nearestNamedSpot } from '../src/npc/spotNames.js';
 import { Bog } from '../src/vehicle/bog.js';
 import { AMY_STRANDED_LINES, JESS_STRANDED_LINES } from '../src/npc/strandedLines.js';
+import { AMY_CALL_THEM_LINES, JESS_CALL_THEM_LINES } from '../src/npc/callThemLines.js';
 import { CHARACTERS } from '../src/npc/characters.js';
 
 const run = (s, seconds, ctx, dt = 0.5) => {
@@ -68,15 +69,14 @@ describe('Stranded', () => {
 
 describe('spot names', () => {
   it('finds the nearest named spot', () => {
-    expect(nearestNamedSpot(-29, 139).id).toBe('ford');
-    expect(nearestNamedSpot(-52, 60).id).toBe('yard');
-    expect(nearestNamedSpot(185, -10).id).toBe('dutchBarn');
+    for (const s of SPOTS) expect(nearestNamedSpot(s.x + 0.5, s.z - 0.5).id, s.id).toBe(s.id);
+    expect(SPOTS.map((s) => s.id)).toEqual(expect.arrayContaining(['yard', 'ford', 'drive', 'backLane', 'moor', 'pit']));
   });
   it('gives every spot a distinct id', () => {
     expect(new Set(SPOTS.map((s) => s.id)).size).toBe(SPOTS.length);
   });
   it('has a callout line for every spot, bogged and tipped, for each girl, naming the place', () => {
-    for (const lines of [AMY_STRANDED_LINES, JESS_STRANDED_LINES]) {
+    for (const lines of [{ ...AMY_STRANDED_LINES, ...AMY_CALL_THEM_LINES }, { ...JESS_STRANDED_LINES, ...JESS_CALL_THEM_LINES }]) {
       for (const s of SPOTS) {
         for (const kind of ['bog', 'tip']) expect(lines[`callout_${kind}_${s.id}`].lines[0]).toContain(s.name);
       }

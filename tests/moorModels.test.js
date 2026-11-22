@@ -15,7 +15,7 @@ import { DEFAULT_PLAYER_PARAMS } from '../src/player/playerParams.js';
 
 // What the Moor is built from (#713): no two faces of a model on one plane (looks.md), and the ridge wall in a real Rapier world: a walking player
 // is stopped by it only after crossing the stile's turn-round line, and nothing at all gets through it along its whole length.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const M = two.moor;
 const HALF_HEIGHT = 0.55;
 const WALK = DEFAULT_PLAYER_PARAMS.walkSpeed;

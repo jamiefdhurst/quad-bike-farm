@@ -3,14 +3,13 @@ import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, fromPlan, A_ROAD_PLAN, LANE_PLAN, BACK_LANE_PLAN, STREET_STUB_PLAN } from '../src/world/layoutNew.js';
 import { roadNetwork } from '../src/world/roads.js';
 import { neighbourLandShape, hedgeStretches } from '../src/world/neighbourLand.js';
-import { laneBarriers } from '../src/world/neighbourFarm.js';
 import { junctionSites, junctionFittings, junctionBreaks, catsEyes, layByOf, bendBins } from '../src/world/aRoadFittings.js';
 import { laneHedgeRuns, sidePoint, hedgeOffset } from '../src/world/laneHedges.js';
 import { aRoadOut, junctionSOf } from '../src/world/laneRoutes.js';
 import { aRoadGaps } from '../src/world/aRoadProps.js';
 import { cottagePlans, cottageBoxes } from '../src/world/laneFittingsProps.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const net = roadNetwork(two);
 const lane = net.road('lane');
 const aRoad = net.road('aRoad');
@@ -200,7 +199,6 @@ describe('her land is cut back where the roads go through it (#569, #687)', () =
 
 describe('the A-road\'s hedges and the lane\'s side have no invisible wall (#687)', () => {
   it('has no invisible box on the new farm\'s lane, and none across any road\'s middle line, walked from end to end', () => {
-    expect(laneBarriers(two)).toEqual([]);
     const hedges = hedgeStretches(neighbourLandShape(two));
     const gaps = aRoadGaps(net, aRoad, two);
     const runs = laneHedgeRuns(aRoad, gaps);

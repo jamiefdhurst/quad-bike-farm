@@ -935,10 +935,6 @@ export class Companion {
       const c = fields.clampToArea(area, target.x, target.z, area === 'road' || area === 'end' ? 1.5 : 6);
       target.x = c.x;
       target.z = c.z;
-    } else {
-      const limit = this.world.layout.fieldHalf - 6;
-      target.x = Math.max(-limit, Math.min(limit, target.x));
-      target.z = Math.max(-limit, Math.min(limit, target.z));
     }
     target.y = this.world.heightAt(target.x, target.z);
     return target;

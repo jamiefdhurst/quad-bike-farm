@@ -10,7 +10,7 @@ import { JESS_LINES } from '../src/npc/jessLines.js';
 import { DEFAULT_COMPANION_PARAMS, COMPANION_PARAM_RANGES } from '../src/npc/companionParams.js';
 
 // What a girl on the back notices on the Moor (#821): the open common, a wet flush coming up, sheep ahead.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const moor = createTerrainHeight(two, new Track(two.trackPoints)).moor;
 const flush = two.moor.flushes[0];
 const sheepAt = (x, z) => ({ moor: true, flock: { sheep: [{ x, z }] } });

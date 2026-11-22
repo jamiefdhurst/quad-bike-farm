@@ -8,12 +8,13 @@ import { validFeedback } from '../src/interaction/feedback.js';
 
 // The hut as the player meets it: what each prompt says (an E action is a string so the HUD puts the key on it, a refusal is plain text), what
 // happens after the hold at the kettle, and what a girl does when she is asked up. A stand-in game, since game.js is never built in tests.
+const HUT = hutShape(LAYOUT);
 function girl(id, { free = true, near = true } = {}) {
   const log = { goRest: vi.fn(() => true), said: [], held: [], released: [], left: 0 };
   return {
     character: { id },
     name: id === 'amy' ? 'Amy' : 'Jess',
-    root: { position: new THREE.Vector3(near ? -60 : 100, 16, near ? 190 : 0) },
+    root: { position: new THREE.Vector3(near ? HUT.x : HUT.x + 300, 16, near ? HUT.z + 4 : HUT.z) },
     availability: () => ({ free }),
     voice: { say: (k) => log.said.push(k) },
     hold: (...a) => log.held.push(a),
@@ -39,7 +40,7 @@ function setup({ girls = [girl('amy')] } = {}) {
     favour: { add: (id, n) => favour.push([id, n]), mood: () => 'favoured' },
     audioHub: {},
     handsFull: false,
-    player: { isRiding: false, position: new THREE.Vector3(-60, 16, 190) },
+    player: { isRiding: false, position: new THREE.Vector3(shape.x, 16, shape.z + 4) },
     companions: girls,
     weather: { rain: 0, temperature: 10 },
     daylight: { darkness: 0 },

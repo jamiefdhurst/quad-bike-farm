@@ -6,7 +6,7 @@ import { turnRoundLines } from '../src/world/turnRound.js';
 import { TurnRoundHost } from '../src/world/turnRoundHost.js';
 import { TURN_ROUND_TOAST, AMY_TURN_ROUND_LINES, JESS_TURN_ROUND_LINES } from '../src/npc/turnRoundLines.js';
 
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const net = roadNetwork(two);
 const lines = Object.fromEntries(turnRoundLines(net, two.turnRound, two.ground).map((l) => [l.id, l]));
 
@@ -39,12 +39,6 @@ function cross(h, set, a, b, seconds = 3) {
 }
 
 describe('being turned round in the running game (#687)', () => {
-  it('does nothing on today\'s farm, which has no A-road', () => {
-    const g = { world: { layout: LAYOUT, roads: roadNetwork(LAYOUT), groundHeightAt: () => 0 }, hud: { setFade() { throw new Error('touched the fade'); } }, player: { isRiding: false, position: { x: 0, z: 0 } }, companions: [] };
-    const h = new TurnRoundHost(g);
-    h.update(0.1);
-    expect(h.describe()).toMatch(/no A-road/);
-  });
 
   it('on foot and alone: fades, puts you 25 m back up the lane facing home, and gives the one toast', () => {
     const { g, fades, toasts, host } = standIn();

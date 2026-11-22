@@ -44,8 +44,8 @@ describe('the frame budget', () => {
     expect(check(m).missing).toEqual(['village']);
   });
 
-  it('keeps spawn at the budget it was given when the count was made repeatable (#597), its calls tightened by merging what stands still (#816) and its triangles by the far oaks and bushes (#837)', () => {
-    expect(BUDGETS.spawn).toEqual({ calls: 535, triangles: 1.91e6 }); // the triangles tightened to about 8% over 1.77M (#837)
+  it('keeps spawn at the budget it was given on the farm everybody plays (#692): about 8% over 731 calls and 1.74M triangles', () => {
+    expect(BUDGETS.spawn).toEqual({ calls: 790, triangles: 1.88e6 });
   });
 
   it('has a budget for what is left out of the spots, which is not a spot to stand at (#597)', () => {
@@ -215,15 +215,6 @@ describe('counting the draws (#597)', () => {
       expect(g.graphics.viewDistance).toBe(1500);
     });
 
-    it('leaves a far-view spot out on today\'s farm, and says so', async () => {
-      const { g } = standIn();
-      g.world.layout.budgetSpots = { backLaneNorth: { x: 5, z: 6 } };
-      g.graphics = { viewDistance: 1500 };
-      const r = await measureInPage({ ...args, spots: ['viewBackLane'], views: VIEW_SPOTS, viewDistances: VIEW_DISTANCES });
-      expect(r.spots.viewBackLane).toBeUndefined();
-      expect(r.notes.join()).toContain('viewBackLane');
-    });
-
     it('says so, and measures nothing, for a name the layout does not have', async () => {
       standIn();
       const r = await measureInPage({ ...args, spots: ['yard', 'dairy'] });
@@ -232,7 +223,7 @@ describe('counting the draws (#597)', () => {
     });
 
     it('has, for every spot in BUDGETS, a way to find it: a built-in one or a name in the layout', () => {
-      const two = layoutNew(LAYOUT, RAW_LAYOUT);
+      const two = LAYOUT;
       for (const s of SPOTS) expect(BUILT_IN_SPOTS.includes(s) || VIEW_SPOTS[s] || LAYOUT.budgetSpots?.[s] || two.budgetSpots?.[s], `no way to stand at the budget spot ${s}: add it to layout.budgetSpots`).toBeTruthy();
     });
   });
@@ -313,33 +304,13 @@ describe('counting the draws (#597)', () => {
   });
 });
 
-describe('a spot only the new farm has (#686)', () => {
-  it('is not missing on a farm that has none, and is held to its budget where it is measured', async () => {
-    const { NEW_FARM_ONLY } = await import('../tools/frameBudget.mjs');
-    expect(NEW_FARM_ONLY).toContain('hairpins');
-    const none = check({ spawn: { calls: 1, triangles: 1 } }, { spawn: BUDGETS.spawn, hairpins: BUDGETS.hairpins }, []);
-    expect(none.missing).toEqual([]);
+describe('the budgets (#692)', () => {
+  it('hold every spot of the farm: the five, Back Lane\'s hairpins, the A-road junction, the pit gate, the Moor and the far view', () => {
+    for (const k of ['spawn', 'yard', 'village', 'wood', 'hilltop', 'hairpins', 'junction', 'pitGate', 'moorRidge', 'moorMiddle', 'viewHilltop', 'viewMoorRidge', 'viewBackLane', 'movers']) expect(BUDGETS[k], k).toBeDefined();
+  });
+  it('fail a spot that is over its budget, and call a spot the farm lacks missing', () => {
     const over = check({ hairpins: { calls: BUDGETS.hairpins.calls + 1, triangles: 1 } }, { hairpins: BUDGETS.hairpins }, []);
     expect(over.failures.length).toBe(1);
-  });
-});
-
-describe('the far view\'s spots (#820)', () => {
-  it('are three, looking east from the hilltop and the moor\'s ridge and south from Back Lane, each counted at the default view distance and at 3,000 m', () => {
-    expect(Object.keys(VIEW_SPOTS)).toEqual(['viewHilltop', 'viewMoorRidge', 'viewBackLane']);
-    expect(VIEW_DISTANCES).toEqual([1500, 3000]);
-    for (const k of Object.keys(VIEW_SPOTS)) expect(BUDGETS[k]).toBeDefined();
-    expect(MEASURE_ARGS.views).toBe(VIEW_SPOTS);
-    expect(MEASURE_ARGS.viewDistances).toBe(VIEW_DISTANCES);
-    // east is +x: at yaw 3pi/2 the camera looks along (-sin, -cos) = (1, 0); south is +z at yaw pi
-    for (const [k, [x, z]] of Object.entries({ viewHilltop: [1, 0], viewMoorRidge: [1, 0], viewBackLane: [0, 1] })) {
-      expect(-Math.sin(VIEW_SPOTS[k].yaw)).toBeCloseTo(x, 9);
-      expect(-Math.cos(VIEW_SPOTS[k].yaw)).toBeCloseTo(z, 9);
-    }
-  });
-
-  it('are not missing on today\'s farm, which has no far view', () => {
-    const r = check({ spawn: { calls: 1, triangles: 1 } }, { spawn: BUDGETS.spawn, ...Object.fromEntries(Object.keys(VIEW_SPOTS).map((k) => [k, BUDGETS[k]])) }, []);
-    expect(r.missing).toEqual([]);
+    expect(check({}, { junction: BUDGETS.junction }, []).missing).toEqual(['junction']);
   });
 });

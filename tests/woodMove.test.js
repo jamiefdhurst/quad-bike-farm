@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
+import { LAYOUT } from '../src/world/layout.js';
+import { TODAY } from './helpers/todaysLayout.js';
 import { layoutNew, fromPlan, WOOD_PLAN, NOT_MOVED_YET, REPLACED, clippedFields, boundariesOf, placeGateways } from '../src/world/layoutNew.js';
 import { createWoods, woodsPlants } from '../src/world/woods.js';
 import { createFields } from '../src/world/fields.js';
@@ -10,11 +11,11 @@ import { conkerSpots, leavesInAir, leafCover, DEFAULT_AUTUMN_PARAMS, CONKERS_PER
 import { pointInPolygon, polygonArea, polygonBounds, polygonEdges, distanceToEdges } from '../src/world/polygons.js';
 
 // Hollow Wood on the new farm (#683): today's wood carried into the plan's north-west corner, its Run and Trail as they were.
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const W = two.woods;
-const old = LAYOUT.woods;
+const old = TODAY.woods;
 const woods = createWoods(two);
-const was = createWoods(LAYOUT);
+const was = createWoods(TODAY);
 const outline = W.outline;
 const edges = polygonEdges(outline);
 const plan = clippedFields();
@@ -118,7 +119,6 @@ describe('the gates and the lead-in', () => {
     const t = (W.gate.x - x0) / (x1 - x0);
     expect(Math.abs(W.gate.z - (z0 + (z1 - z0) * t))).toBeLessThan(0.5);
     expect(W.gate).toMatchObject({ width: old.gate.width, open: true });
-    expect(two.newFarm).toBe(true);
   });
 
   it('runs the lead-in from the gate, 12 m straight in, then bending west to join the Run where it always did', () => {
@@ -310,7 +310,7 @@ describe('the wood\'s floor on the new farm (#985)', () => {
     expect(outside / spots.length).toBeLessThan(0.02);
   });
   it('still covers today\'s rectangular wood, which has no outline', async () => {
-    const { spots, w } = await painted(LAYOUT, false);
+    const { spots, w } = await painted(TODAY, false);
     expect(spots.length).toBeGreaterThan(1000);
     const r = w.rect;
     for (const [x, z] of spots) {

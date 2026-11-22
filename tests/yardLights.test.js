@@ -10,7 +10,7 @@ import { vaneHeading, turnBetween, buildWeatherVane } from '../src/world/weather
 import { fakeCanvas } from './helpers/vehicleModels.js';
 
 // The yard's floodlights and the weather vane on the barn's ridge (#817, #171, #169).
-const two = layoutNew(LAYOUT, RAW_LAYOUT);
+const two = LAYOUT;
 const heights = createTerrainHeight(two, new Track(two.trackPoints));
 const stream = (seed) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 const inRect = (r, x, z, m = 0) => x > r.minX - m && x < r.maxX + m && z > r.minZ - m && z < r.maxZ + m;

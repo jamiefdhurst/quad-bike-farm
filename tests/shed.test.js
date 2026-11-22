@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Shed, SHED_PIECES, SHED_PIECE_IDS, DEFAULT_SHED_PARAMS, inHoseReach } from '../src/farm/shed.js';
 import { LAYOUT } from '../src/world/layout.js';
-import { barnShape } from '../src/world/barn.js';
+import { barnShape, insideBarn } from '../src/world/barn.js';
 import { captureVehicle, restoreVehicle } from '../src/farm/farmState.js';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { Faults } from '../src/vehicle/faults.js';
@@ -84,7 +84,7 @@ describe('the shed kit', () => {
 
 describe('where the kit stands', () => {
   const shape = barnShape(LAYOUT);
-  const inside = (x, z, m = 0) => x > shape.innerAll.minX + m && x < shape.innerAll.maxX - m && z > shape.innerAll.minZ + m && z < shape.innerAll.maxZ - m;
+  const inside = (x, z, m = 0) => insideBarn(LAYOUT, x, z, m); // the barn stands turned, so its walls are read in its own frame
   const rect = (x, z, hx, hz) => ({ minX: x - hx, maxX: x + hx, minZ: z - hz, maxZ: z + hz });
   const overlap = (a, b) => a.minX < b.maxX && a.maxX > b.minX && a.minZ < b.maxZ && a.maxZ > b.minZ;
 
@@ -92,8 +92,7 @@ describe('where the kit stands', () => {
     const { compressor, washer, pit } = LAYOUT.shed;
     expect(inside(compressor.x, compressor.z, 0.3)).toBe(true);
     expect(inside(washer.x, washer.z, 0.3)).toBe(true);
-    expect(inside(pit.x - pit.halfX, pit.z - pit.halfZ)).toBe(true);
-    expect(inside(pit.x + pit.halfX, pit.z + pit.halfZ)).toBe(true);
+    expect(inside(pit.x, pit.z, 0.5)).toBe(true);
   });
 
   it('keeps the pit in the big bay and clear of the jack and stands', () => {
