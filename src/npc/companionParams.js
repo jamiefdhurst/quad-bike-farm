@@ -366,6 +366,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   voiceHardBrakeShed: 2.5, // ...and this many m/s lost, so a quick dab isn't one
   voiceHardBrakeMinSpeed: 4, // m/s it has to start from
   voiceTerraceSlope: 0.1, // on the back, taking a bank of the sheep field's terraces at least this steep (rise over run) and she remarks on it
+  voiceMoorSpeed: 6, // on the back on the Moor's open common, faster than this (m/s) and she remarks on the room to ride (#821)
   voiceSteepUpY: 0.88, // on the back, the quad's up vector this far from upright (about 28 degrees) and she says it's too steep
   voiceWaitAfter: 25, // seconds of nothing happening before she gets bored
   takeOverAfterMin: 8, // left on a quad driving itself and hating it, seconds before she climbs forward to sort it out
@@ -728,6 +729,7 @@ export const COMPANION_PARAM_RANGES = {
   voiceHardBrakeShed: [0, 10, 0.25],
   voiceHardBrakeMinSpeed: [0, 15, 0.5],
   voiceTerraceSlope: [0.03, 0.3, 0.01],
+  voiceMoorSpeed: [2, 15, 0.5],
   voiceSteepUpY: [0.6, 1, 0.01],
   voiceWaitAfter: [5, 120, 1],
   takeOverAfterMin: [1, 120, 1],

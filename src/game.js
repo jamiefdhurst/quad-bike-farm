@@ -11700,7 +11700,7 @@ export class Game {
         menuOpen: this.menu.isOpen,
         talkingToHer: this.menu.isOpen && this.talkingTo === c,
         weather: this.weather,
-        terraceSlope: this.world.heights.hill ? (x, z) => this.world.heights.hill.terraceSlope(x, z) : null,
+        terraceSlope: this.world.heights.hill ? (x, z) => this.world.heights.hill.terraceSlope(x, z) : null, moor: this.world.moorSense(this.flocks),
         pouring,
         wrongMix: pouring ? this.wrongMix : null,
       });
@@ -11786,8 +11786,7 @@ export class Game {
     this.flockView = new FlockView(this.scene, this.flock, (x, z) => this.world.groundHeightAt(x, z));
     this.flocks.push({ flock: this.flock, view: this.flockView });
     this.sheepAudio = new SheepAudio(this.audioHub);
-    this.setUpFieldFlock(hill, random);
-    setUpMoorFlock(this, random); // the Moor's summer flock (#821)
+    this.setUpFieldFlock(hill, random); setUpMoorFlock(this, random); // and the Moor's summer flock (#821)
   }
 
   /** A smaller flock in the sheep field beside the lane, south of its drystone wall (hill.sheepFieldOk). */

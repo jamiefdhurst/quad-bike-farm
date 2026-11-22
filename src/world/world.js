@@ -1,6 +1,7 @@
 import { createRiver } from './river.js';
 import { yardHeard } from './yardBed.js';
 import { moorHeard, moorBirds } from './moorBed.js';
+import { createMoorSense } from './moorSense.js';
 import { createCattleGrid, createLaneGrid, gridNear } from './cattleGrid.js';
 import { moorGrids, MOOR_GRID_LENGTH, MOOR_GRID_PITCH } from './moorProps.js';
 import { roadNetwork, EDGE } from './roads.js';
@@ -310,6 +311,15 @@ export class World {
     }
     this.streamEvent = s.update(dt, this.weather.rain);
     this.setStreamLevel();
+  }
+
+  /** What a girl on the back can see coming on the Moor (moorSense.js) with the game's `flocks`, or null with no Moor. */
+  moorSense(flocks) {
+    const moor = this.heights.moor;
+    if (!moor) return null;
+    this.moorSenseOf ??= createMoorSense(moor);
+    this.moorSenseOf.flocks = flocks;
+    return this.moorSenseOf;
   }
 
   /** The Moor's sound at (x, z): { level, birds } (`moorHeard`, `moorBirds` for the farm's date and the darkness), or null with no Moor. */

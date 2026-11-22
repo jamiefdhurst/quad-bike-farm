@@ -199,6 +199,14 @@ export class CompanionVoice {
       if (quad.upY < p.voiceSteepUpY && speed > 0.5 && !quad.isTipped) this.say('hillSteep', { urgent: true, chance: 0.8 });
       // Taking one of the sheep field's terraces (world/hill.js).
       if (speed > 1.5 && view.terraceSlope && view.terraceSlope(quad.position.x, quad.position.z) > p.voiceTerraceSlope) this.say('terraceBank', { chance: 0.5 });
+      // The Moor (#821): room to ride on the open common, a wet flush coming up, sheep ahead on the common or the lane.
+      const moor = view.moor;
+      if (moor && !quad.isTipped) {
+        const { x, z } = quad.position;
+        if (moor.common(x, z) && speed > p.voiceMoorSpeed) this.say('moorOpen', { chance: 0.4 });
+        if (moor.common(x, z) && moor.wetAhead(x, z, quad.velocity.x, quad.velocity.z)) this.say('moorBog', { urgent: true, chance: 0.8 });
+        if (moor.sheepAhead(x, z, quad.velocity.x, quad.velocity.z)) this.say('moorSheep', { urgent: true, chance: 0.8 });
+      }
       // Brakes held on down a hill until they fade: get it in a low gear (vehicle/brakeState.js).
       if (quad.brakes?.hot && speed > 1 && quad.brake > 0.3) this.say('brakesFading', { urgent: true, chance: 0.7 });
       if (this.hardBrake.update(dt, this.decel, speed, p)) this.say('hardBrake', { urgent: true });

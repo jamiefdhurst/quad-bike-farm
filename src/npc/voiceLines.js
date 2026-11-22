@@ -95,6 +95,7 @@ import { AMY_LESSON_LINES } from './lessonLines.js';
 import { AMY_SMOKE_LINES } from './smokeLines.js';
 import { AMY_HILL_LINES } from './hillLines.js';
 import { AMY_TERRACE_LINES } from './terraceLines.js';
+import { AMY_MOOR_LINES } from './moorLines.js';
 import { AMY_SHOUT_LINES } from './shoutFaultLines.js';
 import { AMY_FUMES_LINES } from './fumesLines.js';
 import { AMY_RUSTY_LINES } from './rustyLines.js';
@@ -1713,4 +1714,6 @@ export const VOICE_LINES = {
   ...AMY_TERRACE_LINES,
   // Called from your wheel, and the new farm's places for being stuck (callThemLines.js), after that.
   ...AMY_CALL_THEM_LINES,
+  // The Moor's open ground, wet flushes and sheep on the lane (moorLines.js), after that.
+  ...AMY_MOOR_LINES,
 };
