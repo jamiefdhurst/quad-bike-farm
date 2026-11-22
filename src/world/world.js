@@ -18,6 +18,7 @@ import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLe
 import { DEFAULT_WEAR_PARAMS, WEAR_PARAM_RANGES } from './groundWear.js';
 import { WearTiles } from './wearTiles.js';
 import { stripFrame } from './layout.js';
+import { farFog } from './farLand.js';
 import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
 import { createFields } from './fields.js';
 import { detourVia, DEFAULT_DETOUR_PARAMS, DETOUR_PARAM_RANGES } from '../npc/detour.js';
@@ -248,7 +249,8 @@ export class World {
   /** The sky for the weather and, if the day is running (daylight.js), the time of day: golden at dusk, dark at night. */
   skyNow() {
     const base = this.weather.skyParams();
-    return this.daylight ? skyAt(base, this.daylight.sun, this.daylight.p) : base;
+    const sky = this.daylight ? skyAt(base, this.daylight.sun, this.daylight.p) : base;
+    return this.layout.newFarm ? { ...sky, fogDensity: farFog(sky.fogDensity) } : sky; // the far landscape (#708) is there to be seen on a clear day
   }
 
   /** 0..1 how warm the day is: full sun on a sunny day, nothing much in the rain. */

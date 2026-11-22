@@ -438,7 +438,7 @@ export class Game {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 1200);
+    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 6000); // far enough for the far landscape's rim (world/farLand.js); depth precision is set by the near plane
     this.scene.add(this.camera);
 
     this.physics = new RAPIER.World({ x: 0, y: -9.81, z: 0 });

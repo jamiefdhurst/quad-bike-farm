@@ -11,7 +11,7 @@ export const PATCH_COLORS = [
   [0.39, 0.5, 0.24],
 ];
 
-function hash2(a, b) {
+export function hash2(a, b) {
   let h = (a * 374761393 + b * 668265263) | 0;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
