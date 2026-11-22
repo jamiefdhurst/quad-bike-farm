@@ -111,7 +111,7 @@ export function spawnKeepOut(layout) {
     const fz = Math.cos(r.yaw);
     for (let a = -22; a <= r.length + 14; a += 6) add(r.x + fx * a, r.z + fz * a, 6, 'the jump');
   }
-  if (L.dragStrip) {
+  if (L.dragStrip && !L.dragStrip.onDrive) { // (on the new farm the races are on the drive, which is not a spot to keep clear)
     const d = L.dragStrip;
     const fx = Math.sin(d.yaw);
     const fz = Math.cos(d.yaw);

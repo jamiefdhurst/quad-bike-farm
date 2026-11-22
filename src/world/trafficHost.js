@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { createRandom } from '../core/random.js';
 import { registerTuning } from '../core/tuning.js';
+import { stripPoint } from './layout.js';
 import { TurnRoundHost } from './turnRoundHost.js';
 import { Traffic, DEFAULT_TRAFFIC_PARAMS, TRAFFIC_PARAM_RANGES, visitPlaces, LANE_KINDS, VISITOR_KINDS } from './traffic.js';
 import { Kids, DEFAULT_KIDS_PARAMS, KIDS_PARAM_RANGES, SHOWY_OFFERS } from './kids.js';
@@ -77,6 +78,17 @@ export class TrafficHost {
     return out;
   }
 
+  /**
+   * A drag race on the drive holds the lane's traffic back (#616): no visitor sets out while one is being set up or run (`holdVisits`), and a visitor
+   * already on the drive stops at a held point short of each end of the run (14 m behind the line, which is behind the girls' staging point, and just
+   * past the run-off) until it is over.
+   */
+  dragHold() {
+    const s = this.g.world.layout.dragStrip;
+    if (!s?.onDrive || !this.g.drag?.active) return null;
+    return { holdVisits: true, blockers: [-14, s.length + s.runOff + 2].map((at) => ({ ...stripPoint(s, at, 0), hold: true })) };
+  }
+
   /** The gates left open with nobody near (the girls' own to shut do not count, nor the road gate, which the visitors use). */
   leftOpenGates() {
     const near = this.blockers();
@@ -148,10 +160,12 @@ export class TrafficHost {
     const dark = g.daylight?.darkness ?? 0;
     const road = this.gate('road'); // the new farm's drive has no big gate: visitors drive straight in over the grid
     const blockers = this.blockers();
+    const drag = this.dragHold();
     const ctx = {
       darkness: dark,
-      blockers,
+      blockers: drag ? [...blockers, ...drag.blockers] : blockers,
       swingSeconds: (road ?? this.gates[0]).state.p.swingSeconds,
+      holdVisits: !!drag,
       gate: road ? { get isOpen() { return road.isOpen; }, set: (open) => road.set(open, blockers).ok } : undefined,
       gates: { grid: this.gridGate() },
     };

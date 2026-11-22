@@ -72,7 +72,7 @@ export function outingSpots(layout, hillWait, stripPoint) {
   const add = (name, x, z) => spots.push({ name, x, z });
   if (layout.dragStrip) {
     const s = stripPoint(layout.dragStrip, -16, 0);
-    add('the drag strip', s.x, s.z);
+    add(layout.dragStrip.onDrive ? 'the drive' : 'the drag strip', s.x, s.z); // (the new farm races along the drive, #616)
   }
   if (layout.road?.pad) add('the end of the road', layout.road.pad.x - 4, layout.road.z);
   if (layout.muckHeap) add('the muck heap', layout.muckHeap.x - 7, layout.muckHeap.z);

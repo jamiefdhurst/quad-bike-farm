@@ -145,8 +145,12 @@ export const DRIVE_PLAN = {
   grid: { x: 881.7, length: 3.6, pitch: 0.16, margin: 0.3 },
   signSpot: [877, 338.2],
   reflectors: [[889, 341.4], [889, 348.6], [897, 341.4], [897, 348.6]],
-  potholes: [[798, 343.6, 0.55], [736, 346.4, 0.4], [668, 343.2, 0.6], [851, 347.2, 0.35]],
-  washes: [[700, 341.6], [700, 348.4], [790, 341.8]],
+  potholes: [[798, 343.6, 0.55], [736, 346.4, 0.4], [716, 343.2, 0.6], [851, 347.2, 0.35]], // (the one at 716 was at 668, on the drag run, #616)
+  washes: [[703.5, 341.6], [703.5, 348.4], [790, 341.8]], // the two by the field gateways at 700 are carried a little east of the run's end, #616
+  // The drag races (#616, npc/drag.js): the 56 m run from the start line at `fromX` east along the middle of the tarmac, then the run-off, `width` m across
+  // (the cones stand at the verges, `width / 2 + 0.4` out). The yard's gateway is at x 618 and the field gateways at 700, so the girls' staging point
+  // 11 m behind the line (621) is on the drive and the run-off ends (696) short of the gateways' aprons (697.5).
+  dragStrip: { fromX: 632, length: 56, runOff: 8, width: 10 },
   patches: 70,
 };
 
@@ -340,7 +344,6 @@ const NORTH_HOLLOW_PLAN = { at: [300, 120], rx: 26, rz: 16, depth: 1.3 };
 export const NOT_MOVED_YET = {
   // The farmstead's own pieces are placed now (#682, `farmsteadLayout`, below); what is left of today's grass field is the hill's and the wood's reference.
   fieldHalf: '#691 (the grass field\'s limit, which the girls\' driving and the quarry\'s code read when a place is in no field)',
-  dragStrip: '#616',
   // Today's rectangle of farm, which only today's farm road and the terrain's rise beyond it read (the pit no longer does).
   farm: '#692 (today\'s rectangle of farm, which goes with layout 1)',
   trough: '#710', fieldShed: '#624',
@@ -361,6 +364,8 @@ export const REPLACED = [
   'fuelTank', 'jerryCanSpots', 'trailer', 'tipTrailer', 'sprayer', 'harrows', 'dieselBowser', 'toolbox', 'benchOil', 'oilBottle', 'coolantBottle',
   'antiGelBottle', 'plugAdditive', 'benchLeads', 'benchPack', 'hose', 'dutchBarn', 'jumpRamp', 'lineUp', 'coneCourse', 'trackPoints', 'puddles', 'bogs',
   'bonfire', 'brushwood', 'strawBaleSpots', 'restSpots', 'spawn', 'muckHeap',
+  // The drag races run along the drive (#616).
+  'dragStrip',
   // The jobs' fields (#691): each is its field's polygon, with the bounds the job's grid is laid over.
   'hayMeadow', 'sprayField', 'harrowField',
   // Hollow Wood and its log yard (#683).
@@ -883,6 +888,8 @@ export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
     washes: D.washes.map(at),
     patches: D.patches,
   };
+  const [dragX] = fromPlan([D.dragStrip.fromX, D.z]);
+  const dragStrip = { x: dragX, z, yaw: Math.PI / 2, length: D.dragStrip.length, runOff: D.dragStrip.runOff, width: D.dragStrip.width, onDrive: true };
   const [laneX, laneMin] = fromPlan([L.x, L.minZ]);
   const [, laneMax] = fromPlan([L.x, L.maxZ]);
   const [, rideMin] = fromPlan([L.x, L.ridden[0]]);
@@ -897,7 +904,7 @@ export function driveLayout(D = DRIVE_PLAN, L = LANE_PLAN) {
       potholes: road.potholes.map(({ x, z, r }) => ({ x, z, r })), washes: road.washes,
     },
   ];
-  return { road, publicLane, roads };
+  return { road, publicLane, roads, dragStrip };
 }
 
 /** The A-road as a road of the network, in game metres (#687): two lanes, a dashed white centre line, white edge lines, a crown and cat's eyes. */

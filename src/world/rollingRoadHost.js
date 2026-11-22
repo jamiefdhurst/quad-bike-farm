@@ -149,7 +149,7 @@ export class RollingRoadHost {
     this.clock += dt;
     this.slip.update(dt);
     const hour = g.daylight?.hour ?? 12;
-    if (this.state === 'away' && !this.cameToday && this.clock > FIRST_DELAY && this.isToday && roadOpen(hour, this.params)) this.call();
+    if (this.state === 'away' && !this.cameToday && this.clock > FIRST_DELAY && this.isToday && roadOpen(hour, this.params) && !ctx.holdVisits) this.call(); // (not while a drag race is on the drive, #616)
     if (this.visit) {
       this.checkLeaving(hour, g.daylight?.darkness ?? 0);
       const events = this.visit.update(dt, { ...ctx, stayOver: this.state === 'leaving' });

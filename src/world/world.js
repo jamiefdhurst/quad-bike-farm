@@ -17,7 +17,7 @@ import { buildProps } from './props.js';
 import { DEFAULT_BARN_PARAMS, BARN_PARAM_RANGES, underRoof, insideBarn, indoorLevel, detourBoxes } from './barn.js';
 import { DEFAULT_WEAR_PARAMS, WEAR_PARAM_RANGES } from './groundWear.js';
 import { WearTiles } from './wearTiles.js';
-import { stripFrame } from './layout.js';
+import { stripFrame, gravelStrip } from './layout.js';
 import { farFog } from './farLand.js';
 import { Sky, SKY_PARAMS, SKY_RANGES } from './sky.js';
 import { createFields } from './fields.js';
@@ -99,7 +99,7 @@ export class World {
     registerTuning('Sky', this.sky.params, SKY_RANGES);
 
     // Tyres wear the fields (groundWear.js); the yard, the drag strip, the barn floors and the road are hard and never do.
-    const strip = layout.dragStrip;
+    const strip = gravelStrip(layout);
     const exempt = (x, z) => {
       if (Math.hypot(x - layout.yard.x, z - layout.yard.z) < layout.yard.radius) return true;
       if (this.fields.tarmacAt(x, z) > 0.3 || this.fields.stoneAt(x, z) > 0.3) return true; // the stone tracks are hardcore (#689)

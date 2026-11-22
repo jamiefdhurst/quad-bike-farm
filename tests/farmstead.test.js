@@ -197,7 +197,7 @@ describe('Home Ground\'s play things', () => {
 
 describe('the rest of the layout', () => {
   it('still has every pieces a later move places, at today\'s numbers', () => {
-    for (const k of ['fieldShed', 'trough', 'dragStrip']) expect(two[k]).toEqual(LAYOUT[k]);
+    for (const k of ['fieldShed', 'trough']) expect(two[k]).toEqual(LAYOUT[k]);
   });
   it('moves nothing but the farmstead\'s own: the neighbour, the drive and the fields are as they were', () => {
     expect(two.road).toEqual(layoutNew(LAYOUT, RAW_LAYOUT).road);

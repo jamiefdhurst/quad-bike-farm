@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { swayMaterials } from '../effects/windSway.js';
-import { stripFrame } from './layout.js';
+import { stripFrame, gravelStrip } from './layout.js';
 import { inPlace } from './jobFields.js';
 import { enableShadows, instanceModel, modelBounds } from './assets.js';
 import { tiledInstances } from './tiledInstances.js';
@@ -779,7 +779,8 @@ function buildGrass({ scene, layout, heights, random, drawDistance, fields }) {
   const matrices = [];
   const tints = [];
   const F = layout.fieldHalf - 1.5;
-  const { yard, dragStrip: strip } = layout;
+  const { yard } = layout;
+  const strip = gravelStrip(layout);
   let tries = 0;
   while (matrices.length < count && tries++ < count * 3) {
     const x = (random() * 2 - 1) * F;
