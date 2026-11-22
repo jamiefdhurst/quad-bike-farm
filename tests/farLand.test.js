@@ -266,7 +266,9 @@ describe('the view distance (#820)', () => {
     expect(shown('sunny', 1500)).toBeGreaterThan(1400);
     expect(shown('sunny', 500)).toBeGreaterThan(450);
     expect(shown('sunny', 500)).toBeLessThan(600);
-    expect(shown('overcast', 1500)).toBeLessThan(950);
+    expect(shown('overcast', 1500)).toBeLessThan(600);
+    expect(shown('overcast', 1500)).toBeGreaterThan(450);
+    expect(shown('fair', 1500)).toBeGreaterThan(1200);
     expect(shown('rain', 1500)).toBeLessThan(250);
     expect(shown('fog', 1500)).toBeLessThan(70);
   });

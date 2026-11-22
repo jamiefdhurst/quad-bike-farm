@@ -44,7 +44,7 @@ export const FOG_VIEW = 1500;
  * distance (the distance it shows is proportional to it, so its density is inversely), so the weather keeps its murk relative to it.
  */
 export function farFog(density, view = FOG_VIEW) {
-  return (density * mix(0.36, 1, smooth(0.0055, 0.009, density)) * FOG_VIEW) / Math.max(1, view);
+  return (density * mix(0.36, 1, smooth(0.004, 0.0075, density)) * FOG_VIEW) / Math.max(1, view);
 }
 
 /** The skirt's outer rectangle (the ground and `margin` m round it), where the ring starts, and the ring's own outer one. */
