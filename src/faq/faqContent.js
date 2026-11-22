@@ -14,12 +14,12 @@ export const FAQ_SECTIONS = [
       {
         q: 'What is this?',
         a: `A first-person farm in the British countryside with a yard full of temperamental old quads and other machines, a muddy track
-          round a grass field, fields and a hill beyond, and two friends, Amy and Jess, who ride with you, drive, help, hinder and talk.
+          round a farm of fields, woods and hills, and two friends, Amy and Jess, who ride with you, drive, help, hinder and talk.
           There's no story and no fail state: start things, ride them, keep them running, and see what the girls get up to.`,
       },
       {
         q: 'How do I start playing?',
-        a: `Click the start screen to lock the mouse, and you're sat in your own car, just pulled up at the end of the farm road by the Dutch barn with the engine
+        a: `Click the start screen to lock the mouse, and you're sat in your own car, just pulled up in the yard beside the garden wall with the engine
           still running. Press <kbd>E</kbd> to get out (or drive it somewhere first). Walk with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>,
           look with the mouse, and press <kbd>E</kbd> at whatever you're looking at: a quad to get on, an item to pick up. A girl you talk to with <kbd>Enter</kbd>.
           <kbd>H</kbd> shows the controls at any time. Every engine starts stone cold, so read "Starting an engine" below before your first go.`,
@@ -109,14 +109,14 @@ export const FAQ_SECTIONS = [
       {
         q: 'Where is everything?',
         a: `Press <kbd>M</kbd> for the farm map. It shows the fields by name, hedges and their gaps, the track and its bogs, the barns, the lane and the
-          farm road, the neighbour's yard, Nether Thornby with its pub, shop and garage, the woodpile (with how many logs are on the stack), the
+          drive, the neighbour's yard, Nether Thornby with its pub, shop and garage, the woodpile (with how many logs are on the stack), the
           hill and the wood, with you, the girls, every vehicle, the trailers, the jerry cans, the toolbox, the jump leads and the oil bottle marked on it.
           The key is in its own strip along the bottom, clear of the map. The game keeps going while it's open, so you can glance at it as you ride.`,
         tip: 'Lost? M shows the farm map, with the girls, the vehicles and the jerry cans on it.',
       },
       {
         q: 'Why can I see so far, and can I go there?',
-        a: `On the new farm (<code>?layout=2</code>) a clear day shows about a mile (1.5 km): from the Moor's ridge you see the farm laid out below and fields,
+        a: `A clear day shows about a mile (1.5 km): from the Moor's ridge you see the farm laid out below and fields,
           hedges, woods, farms and hills beyond, bluer and softer with distance, with the A-road and the lane running on and the river in the valley.
           It is all for looking at. The land beyond the farm's own edge is a painted stand-in that you can't ride on: every way off the map turns you round
           before you reach it. On a grey day the murk closes in and it goes. How far a clear day shows is the Graphics group's <code>viewDistance</code> in the
@@ -134,7 +134,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Where are all the vehicles?',
         a: `At most four start in the yard, the quad a girl is stood by among them. The rest have been left about the farm: by the gates and
-          hedges, out in the field, by the track or out east by the Dutch barn and the field shed. The tractor, the Yak and the Moorlands are always
+          hedges, out in the field, by the track or out by the Dutch barn and the field shed. The tractor, the Yak and the Moorlands are always
           out on the farm. Press <kbd>M</kbd> for the map, which shows every one.`,
         tip: 'Only a few vehicles start in the yard: press M to see where the rest were left.',
       },
@@ -182,7 +182,7 @@ export const FAQ_SECTIONS = [
         q: 'Can I play the same farm again?',
         a: `Yes. The browser console prints the game's seed when it loads. Add <code>?seed=</code> and that number to the address and you get
           the same layout, weather and luck again, as a first day: a seeded game doesn't touch your saved farm and isn't saved. <code>?weather=rain</code> (or <code>sunny</code>, <code>overcast</code>, <code>drizzle</code>,
-          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) plays a day in the middle of that season, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>shirtTie</code>, <code>cropTop</code>) puts both girls in that outfit. <code>?body=flat</code> shows the girls' bodies without the smoothing. <code>?layout=2</code> loads the bigger farm being built (not saved).`,
+          <code>fog</code>, <code>snow</code>, <code>storm</code>) forces the weather, <code>?temp=-3</code> sets the temperature in degrees, and <code>?season=winter</code> (or <code>spring</code>, <code>summer</code>, <code>autumn</code>) plays a day in the middle of that season, and <code>?outfit=plaid</code> (or <code>polo</code>, <code>doublePolo</code>, <code>shirtTie</code>, <code>cropTop</code>) puts both girls in that outfit. <code>?body=flat</code> shows the girls' bodies without the smoothing.`,
         tip: 'Add ?seed= and a number to the address to play the same farm again.',
       },
       {
@@ -442,21 +442,18 @@ export const FAQ_SECTIONS = [
         tip: 'A snorkel, fitted at the barn workbench, lets a Moorland take the ford fast.',
       },
       {
-        q: 'What are the tracks round the new farm, and where do they go?',
-        a: `On the new farm (?layout=2) the farm has its own ways round. The stone track leaves the yard two ways: north, through the gateway into Top Field and along the hedge to the farm gate of the Old Pit, and south, down Hay Meadow beside the sheep field, over the farm bridge at the head of the river and on into Brook Meadow. It is two wheel ruts of compacted chippings with a grass crown between, a few potholes holding water and a drainage grip cut across it here and there; it is gravel under the tyres, with a little less grip than grass and more than the pit's, and it never wears into mud. The farm bridge is a sleeper deck on stone abutments with steel tube rails and a "Weak bridge" plate: it is solid, so ride across it. The boundary track is a grass track round the inside of the whole farm, about 14 m in from the hedge, with a gateway wherever it goes through a hedge. It goes round the outside of the Old Pit's fence, and crosses the hill pasture's stream at the green lane's ford. It is two bare wheel lines in the grass, and it ruts up in the wet like the green lane does. Inside each arable field there is a 6 m headland of grass where the crop never grows, which you can ride. The girls take the tracks when they can. \`tp me to stonetrack\`, \`farmbridge\`, \`boundarytrack\` or \`headland\` takes you there.`,
-        tip: 'On the new farm the stone track runs north to the pit and south over the farm bridge; a grass track rings the farm.',
+        q: 'What are the tracks round the farm, and where do they go?',
+        a: `The farm has its own ways round. The stone track leaves the yard two ways: north, through the gateway into Top Field and along the hedge to the farm gate of the Old Pit, and south, down Hay Meadow beside the sheep field, over the farm bridge at the head of the river and on into Brook Meadow. It is two wheel ruts of compacted chippings with a grass crown between, a few potholes holding water and a drainage grip cut across it here and there; it is gravel under the tyres, with a little less grip than grass and more than the pit's, and it never wears into mud. The farm bridge is a sleeper deck on stone abutments with steel tube rails and a "Weak bridge" plate: it is solid, so ride across it. The boundary track is a grass track round the inside of the whole farm, about 14 m in from the hedge, with a gateway wherever it goes through a hedge. It goes round the outside of the Old Pit's fence, and crosses the hill pasture's stream at the green lane's ford. It is two bare wheel lines in the grass, and it ruts up in the wet like the green lane does. Inside each arable field there is a 6 m headland of grass where the crop never grows, which you can ride. The girls take the tracks when they can. \`tp me to stonetrack\`, \`farmbridge\`, \`boundarytrack\` or \`headland\` takes you there.`,
+        tip: 'The stone track runs north to the pit and south over the farm bridge; a grass track rings the farm.',
       },
       {
         q: 'Where is the river, and how do I cross it?',
-        a: `Ride up the green lane, over the ford and up the hill pasture, then look for the gateway in its east hedge, just up from
-          the stream at the east side. It opens onto the riverside meadow, with a wide, slow river across it. The only safe way over is the crossing, a strip of pale
-          gravel between two lines of white posts with a red band, where the water is about 20 cm deep. Keep your wheels between the posts and
-          you can ride it at a walking pace or faster. A willow stands on the bank either side and a river gate of hung boards shuts the river in at the far end. On the new farm (?layout=2) the river is in Brook Meadow, the big open pasture south of Hay Meadow: through the gateway on the stone track's way south, at the meadow's north-west corner. It runs east with the land, wide and in bends. Willows stand along both banks, the cattle's drinking places are poached bare, and a river gate of hung boards shuts the water in wherever it crosses a boundary.`,
-        tip: 'The river is through the gateway in the pasture\'s east hedge. Cross it between the white posts.',
+        a: `The river is in Brook Meadow, the big open pasture south of Hay Meadow: through the gateway on the stone track's way south, at the meadow's north-west corner. It runs east with the land, wide and in bends. Willows stand along both banks, the cattle's drinking places are poached bare, and a river gate of hung boards shuts the water in wherever it crosses a boundary.`,
+        tip: 'The river is in Brook Meadow, through the gateway on the stone track\'s way south. Cross it between the white posts.',
       },
       {
         q: 'Where is Back Lane, and what is on it?',
-        a: `Back Lane is on the bigger farm being built (<code>?layout=2</code>). It is an old single-track road that leaves the public lane at the north, runs round the farm's north and west, goes through a ford, over the hill's shoulder in two hairpins and along the south, and rejoins the lane below the village. Hedges line both sides, a strip of grass runs down the middle on the west and south, and a white diamond sign marks a passing place every 190 m or so. Cars, vans and tractors use it now and then, so expect to meet one. <code>tp me to backlane</code> takes you onto it in the console.`,
+        a: `Back Lane is an old single-track road that leaves the public lane at the north, runs round the farm's north and west, goes through a ford, over the hill's shoulder in two hairpins and along the south, and rejoins the lane below the village. Hedges line both sides, a strip of grass runs down the middle on the west and south, and a white diamond sign marks a passing place every 190 m or so. Cars, vans and tractors use it now and then, so expect to meet one. <code>tp me to backlane</code> takes you onto it in the console.`,
         tip: 'Back Lane is single track: pull into a passing place when something comes the other way.',
       },
       {
@@ -465,7 +462,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What is the A-road, and why does the screen go black when I pull out onto it?',
-        a: `On the bigger farm (<code>?layout=2</code>) the farm's public lane bends round in the north and runs out to the A-road, the big road down the valley, a wide two-lane road with a white dashed centre line and cat's eyes. The village street meets it too. Nothing is walled off: each road simply carries on into the distance. But there is nothing for you in town today, so cross a junction's give-way line onto the A-road, or the lane's southern line before it leaves the farm's land, and the picture fades to black and puts you, on foot or on whatever you are riding, about 25 m back up the road you came along, facing home, stopped. A girl with you says why. On your own you get a note: "Nothing needs doing in town today."`,
+        a: `The farm's public lane bends round in the north and runs out to the A-road, the big road down the valley, a wide two-lane road with a white dashed centre line and cat's eyes. The village street meets it too. Nothing is walled off: each road simply carries on into the distance. But there is nothing for you in town today, so cross a junction's give-way line onto the A-road, or the lane's southern line before it leaves the farm's land, and the picture fades to black and puts you, on foot or on whatever you are riding, about 25 m back up the road you came along, facing home, stopped. A girl with you says why. On your own you get a note: "Nothing needs doing in town today."`,
         tip: 'Pull out onto the A-road and you are turned round, facing home. A girl with you says why.',
       },
       {
@@ -484,7 +481,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What is the Moor, and what is up there?',
-        a: `The Moor is the open common beyond Back Lane's west side, climbing about a hundred metres to a drystone wall along the ridge (the new farm, <code>?layout=2</code>). It is rough going: heather (brown most of the year, purple in August and September), bracken on the lower slopes (green in summer, rust in autumn), cotton grass and rushes in the wet flushes (white in June), gritstone outcrops and boulders, a couple of cut peat banks and sheep tracks worn pale through the heather. The stream the farm's river grows from rises at a spring on it. The trig pillar and a cairn stand on the ridge. Back Lane crosses it with nothing fenced on the common's side, between two cattle grids with a "Cattle grid" and a "Sheep on road" sign each way, and a bridle gate beside each grid. The moor gate in the hill pasture's wall opens onto the lane. <code>tp me to moor</code>, <code>ridge</code>, <code>stile</code> or <code>moorgrid</code> takes you there in the console.`,
+        a: `The Moor is the open common beyond Back Lane's west side, climbing about a hundred metres to a drystone wall along the ridge. It is rough going: heather (brown most of the year, purple in August and September), bracken on the lower slopes (green in summer, rust in autumn), cotton grass and rushes in the wet flushes (white in June), gritstone outcrops and boulders, a couple of cut peat banks and sheep tracks worn pale through the heather. The stream the farm's river grows from rises at a spring on it. The trig pillar and a cairn stand on the ridge. Back Lane crosses it with nothing fenced on the common's side, between two cattle grids with a "Cattle grid" and a "Sheep on road" sign each way, and a bridle gate beside each grid. The moor gate in the hill pasture's wall opens onto the lane. <code>tp me to moor</code>, <code>ridge</code>, <code>stile</code> or <code>moorgrid</code> takes you there in the console.`,
         tip: 'The Moor is open common: ride up the sheep tracks to the ridge and its trig pillar.',
       },
       {
@@ -505,7 +502,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why is the road shining?',
-        a: `It has been raining. Tarmac takes the rain at once and holds it: the farm road, the lane and the village's streets go dark and glossy, and they mirror the sky,
+        a: `It has been raining. Tarmac takes the rain at once and holds it: the drive, the lane and the village's streets go dark and glossy, and they mirror the sky,
           most of all when you look along them. It dries slowly, in patches, a good deal faster in sun and wind than under cloud, and the cold keeps it wet. Frost, snow and mud on the road hide the shine. Wet tarmac grips less than dry, but the wet grass and mud beside it are worse.`,
         tip: 'A shining road means a wet one: it dries in patches, faster in sun and wind.',
       },
@@ -516,7 +513,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I jump the ramp?',
-        a: `There's a plank ramp in the grass field with a long run-up behind it and room to land ahead. Hit it straight and fast and keep the bars
+        a: `There's a plank ramp in Home Ground with a long run-up behind it and room to land ahead. Hit it straight and fast and keep the bars
           straight in the air. The bucket list counts a jump, a long one and a clean landing.`,
       },
       {
@@ -774,7 +771,7 @@ export const FAQ_SECTIONS = [
         q: 'Will the girls tidy up after me?',
         a: `Amy will, when she has nothing better to do. A gate you opened and walked away from (a minute or so with nobody near it) she shuts. A jerry can
           you left more than a few metres from where it lives she picks up and carries back. And a helmet lying on the ground she hangs on the hooks in the barn.
-          She leaves the big gate by the road to the visitors, and never takes the can you have only just put down. Jess leaves things where she drops them,
+          She leaves the drive clear for the visitors, and never takes the can you have only just put down. Jess leaves things where she drops them,
           and tells you so.`,
         tip: 'Amy puts left-open gates, stray cans and helmets on the grass back where they belong. Jess does not.',
       },
@@ -818,8 +815,8 @@ export const FAQ_SECTIONS = [
         tip: 'Snow means less grip: brake early, take bends gently, and use the choke on a cold start.',
       },
       {
-        q: 'What is the mist in the barley field?',
-        a: `On a cool, still morning (about six games in ten) a low mist lies in the barley field's hollow, past the east gateway, where the
+        q: 'What is the mist in North Field?',
+        a: `On a cool, still morning (about six games in ten) a low mist lies in North Field's hollow, where the
           damp collects. It is thickest just after sunrise and burns off over the next couple of hours, sooner if the day is warm. Wind
           and rain blow it away, so if there is none to see, it was too late in the day, too breezy or too warm.`,
       },
@@ -957,7 +954,7 @@ export const FAQ_SECTIONS = [
         q: 'What does the tarmac road do?',
         a: `It grips harder and rolls easier than grass, and the tyres squeal on it. Mud you carry onto it from the track leaves slippery brown smears
           until the rain washes them off. The public lane and the village's road, pavements, car park and garage forecourt count as hard ground too, so
-          they grip, squeal and wipe your tyres clean the same way. The smears are only drawn on the farm road, though they still make the lane slippery.`,
+          they grip, squeal and wipe your tyres clean the same way. The smears are only drawn on the drive, though they still make the lane slippery.`,
       },
     ],
   },
@@ -1092,7 +1089,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I get a girl to show me something?',
         a: `Sit on the back of a parked quad (look at its back seat and press <kbd>E</kbd>) and let one of them come and drive you. Most of her drives with you aboard go to see something when there
-          is something to see. Leave the big gate open, or a quad running with nobody on it for a minute or two, and that is what she is likelier to take you to.`,
+          is something to see. Leave a quad running with nobody on it for a minute or two, and that is what she is likelier to take you to.`,
       },
       {
         q: 'Why has the girl on the back gone quiet with her head on my shoulder?',
@@ -1437,7 +1434,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why will not the girls walk across the whole farm?',
-        a: `On the new farm a girl will not set off on a walk of more than about 150 metres by her own choice. If she wants the hut, the flask or a cup of tea from the barn and it is
+        a: `A girl will not set off on a walk of more than about 150 metres by her own choice. If she wants the hut, the flask or a cup of tea from the barn and it is
           further than that, she asks for a lift on the back of your quad when you are sat still close by, or takes a quad of her own and drives there. Ask her to come to you from
           further than that and she stops where she is and calls out for you to come back for her.`,
       },
@@ -1454,7 +1451,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where do the girls drive when they go off on a quad?',
-        a: `Mostly somewhere. More often than not a girl driving a quad on her own picks a place on the farm, such as the drag strip (on the new farm, the drive), the muck heap, the
+        a: `Mostly somewhere. More often than not a girl driving a quad on her own picks a place on the farm, such as the drive, the muck heap, the
           trough, the end of the road, the foot of the hill or a field, goes there by the gateways, stops for a moment and drives back. The rest of the time
           she potters about in loops near where she started.`,
       },
@@ -1548,8 +1545,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'Can I race them?',
         a: `Yes. Ride up to the start line by the yard and press <kbd>Enter</kbd> and pick “A race”, or sit there with the engine running and Jess may dare you. Line up in the
-          middle lane. A lap only counts if you go round the track. For a drag race, ride to the gravel strip in the middle of the field (on the new farm, to the start line on the drive, with cones on the verges) and press
-          <kbd>Enter</kbd> and pick “A drag race”, or answer Jess when she blips her throttle at you. They also race each other. On the new farm nobody drives up the drive while a drag race is on.`,
+          middle lane. A lap only counts if you go round the track. For a drag race, ride to the start line on the drive, with cones on the verges, and press
+          <kbd>Enter</kbd> and pick “A drag race”, or answer Jess when she blips her throttle at you. They also race each other. Nobody drives up the drive while a drag race is on.`,
         tip: 'Press Enter at the start line by the yard to race the girls.',
       },
       {
@@ -1557,7 +1554,7 @@ export const FAQ_SECTIONS = [
         a: `When you press <kbd>Enter</kbd> and pick “A race” they drop what they are doing, find a quad and set off, so it should only take a few moments. If they can't, the game
           tells you why after about fifteen seconds: one of them is carrying something or getting off a quad, there's no quad free for her (the one you're on is
           never offered, and the little ones belong to one girl), a race is already on, or you've rung the bell. The lap race needs both of them, and two different quads; the drag race, the hill climb and the cone course
-          need only one. Ride up to the start line first: the lap race by the yard, the drag race at the gravel strip (on the new farm, on the drive), the climb at the cones past the stream, the cone course at the cones in the field.`,
+          need only one. Ride up to the start line first: the lap race by the yard, the drag race on the drive, the climb at the cones past the stream, the cone course at the cones in the field.`,
       },
       {
         q: 'How do I time a run up the hill?',
@@ -1785,31 +1782,28 @@ export const FAQ_SECTIONS = [
           inside stays dry and cools more slowly, so it starts better later. Running an engine in there fills it with fumes.`,
       },
       {
-        q: 'What’s beyond the grass field?',
-        a: `East, over the cattle grid, a tarmac farm road between two stubble fields, a Dutch barn full of round bales, an old stone field shed, a muck heap and a
-          water trough. South, through the field gate, a sunk green lane down to a ford and a rough hill pasture with gorse, bracken and a small oak wood, and a
-          view over the whole farm from the top. The sheep graze there. Beside the lane, with no hedge between, there is a wet meadow with a pond to the west and a terraced
-          sheep field with a drystone wall to the east. North, through the gate in the grass field's north hedge, there is a wood with a narrow twisting
-          track through it, the Hollow Run, and a narrower trail for two-wheelers, the Fern Trail. North of the barley field, through the gate in its north hedge, there is
-          an old gravel pit.`,
-        tip: 'Ride to the top of the hill pasture for a view over the whole farm.',
+        q: 'What is round the farm?',
+        a: `The farm is in the middle: the yard, the barn and Home Ground (the old grass field, with the Home Loop, the jump and the cones). The drive runs east to the lane over a cattle grid,
+          and across the lane are the neighbour's yard and Nether Thornby. North-west is Hollow Wood with the Hollow Run and the Fern Trail; north-east, beside the lane, the Old Pit.
+          South-west is the sheep field and the hill pasture, with the green lane, the ford and the stream, and the river in Brook Meadow beyond. Back Lane circles the north and west and leads
+          to the Moor. The six arable fields lie between, each with its gateways, and the map (<kbd>M</kbd>) names all of them.`,
       },
       {
         q: 'What is the Hollow Run, and how do I get to it?',
-        a: `A track through the wood north of the grass field, nothing like the Home Loop (the dirt track in the grass field). Go through the gate in the grass field's
-          north hedge (it starts tied open; look at it and press <kbd>E</kbd> to shut it or open it). A short muddy track leads in from the gate and joins the loop, which
+        a: `A track through Hollow Wood, in the north-west corner, nothing like the Home Loop (the dirt track in Home Ground). Go in through the wood's gateway in its south hedge (look at the gate and
+          press <kbd>E</kbd> if it is shut). A short muddy track leads in from the gate and joins the loop, which
           is narrower, twistier and hillier than the Home Loop, about 590 m round with the trees close on both sides. Along it there are four whoops (small humps one after another on the first straight), banked bends, a
           swell the middle rows climb over, two bogs, and logs lying across the track in pairs, a chicane to steer through. Ride it either way round. There is a pond in the
           wood, with reeds, that works like the meadow's: don't drive into it. There is no timed race on it yet.`,
-        tip: 'The Hollow Run is the narrow, twisty wood track through the gate in the grass field\'s north hedge.',
+        tip: 'The Hollow Run is the narrow, twisty wood track through the gateway in Hollow Wood\'s south hedge.',
       },
       {
         q: 'Where is the gravel pit, and how do I get into it?',
-        a: `North of the barley field, behind its north hedge, there is a hedged field with an old gravel pit in it, roughly 90 m by 70 m and about 14 m deep. Ride up the farm road, through a gateway on its north side into the barley field,
-          and across to the gate in the far hedge (it starts tied open; look at it and press <kbd>E</kbd> to shut it or open it). From the
+        a: `In the north-east corner, beside the lane, there is a field of its own with an old gravel pit in it, roughly 90 m by 70 m and about 14 m deep. Ride up the stone track north from the yard
+          to the pit's farm gate (it starts tied open; look at it and press <kbd>E</kbd> to shut it or open it). From the
           gate a pale gravel road runs across the field to the lip, where it forks: one road winds down the pit's wall each way round to the floor, wide enough for a quad or the tractor and dropping about one metre in four to five. Ride down one and back up the other for a loop. Down on the floor are
           heaps of grey gravel and buff sand you can ride over, an old excavator nose to the wall, a screening plant on a level pad (a hopper over a crusher, a conveyor up to a screen and a second conveyor that ends over one of the heaps, with a generator and a site cabin beside it, and the excavator by the hopper, its bucket over the rim), a pond in the low corner with a pile of drums and tyres by it, and boulders fallen from the walls. Up in the field by the gate stands a steel container on sleepers, one door ajar and the other padlocked. The girls will not follow you down: they wait inside the gate.`,
-        tip: 'The gravel pit is through the gate in the barley field\'s north hedge. Two gravel roads wind down its wall, one each way round.',
+        tip: 'The gravel pit is through the farm gate at the end of the stone track north. Two gravel roads wind down its wall, one each way round.',
       },
       {
         q: 'How do I get out of the gravel pit by the wall?',
@@ -1820,7 +1814,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I time a run up the pit\'s wall?',
-        a: `Ride to the green START cones on the pit's floor, at the foot of the climb wall (on the new farm, <code>?layout=2</code>, they are flags planted in the ground instead, the same colours with the same words on the cloth), and press <kbd>Enter</kbd> and pick “The pit climb”, then ride through them when you are ready. The clock runs from there. Go
+        a: `Ride to the green START cones on the pit's floor, at the foot of the climb wall (they are flags planted in the ground, the same colours with the same words on the cloth), and press <kbd>Enter</kbd> and pick “The pit climb”, then ride through them when you are ready. The clock runs from there. Go
           through the gate of cones halfway up the wall (it is nine metres either side of the middle of the wall) and on through the finish cones over the lip. The line is yours. You are out if you get off or stall for eight seconds, or take over two minutes. Your time goes up as a toast, and the best goes on the barn's records board as the pit climb. Only you
           run it; whoever is near the top times you and says something.`,
         tip: 'Press Enter by the green START cones on the pit floor, then ride up the wall and through the blue FINISH cones to be timed.',
@@ -1949,7 +1943,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What are the rabbits and pheasants for?',
-        a: `Just the farm being alive. Rabbits sit about on the grass field, a few metres out from the hedges, and bolt for the hedge when you come close; the faster you come, the earlier they go. Pheasants lie hidden at the foot of the hedges and burst out with a clatter if you ride close or walk up to one. Amy jumps almost every time; Jess usually laughs. A new pheasant turns up somewhere else after a minute or two.`,
+        a: `Just the farm being alive. Rabbits sit about on Home Ground, a few metres out from the hedges, and bolt for the hedge when you come close; the faster you come, the earlier they go. Pheasants lie hidden at the foot of the hedges and burst out with a clatter if you ride close or walk up to one. Amy jumps almost every time; Jess usually laughs. A new pheasant turns up somewhere else after a minute or two.`,
         tip: 'Pheasants lie in the hedge feet and burst out if you pass close. Amy jumps.',
       },
       {
@@ -2018,13 +2012,13 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I open and shut the gates?',
-        a: `Get off, look at the gate and press E: it swings open or shut. There are three: the field gate in the south hedge (it starts tied open), the big gate in the east hedge at the end of the farm road (it starts shut) and the gate just past the cattle grid (it starts shut). A shut gate is solid, and the girls won't route through the south or big gate, so shut the south gate and they stay on the farm side. It won't shut with a quad, a girl or you within a few metres of it.`,
+        a: `Get off, look at the gate and press E: it swings open or shut. The yard, the fields, the wood, the pit and the neighbour's wall each have their gates, most tied open to start with. A shut gate is solid, and the girls won't route through one, so shut a gate and they stay on their side of it. It won't shut with a quad, a girl or you within a few metres of it.`,
         tip: 'Look at a gate on foot and press E to open or shut it.',
       },
       {
-        q: 'Who is that on the lane, and why has someone come in at the gate?',
-        a: `Beyond the big gate is a quiet public lane, which you can ride along (see “Can I ride out onto the lane?”). A van, a Moorland, a tractor or a Yak goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver opens the gate, drives up to the barn and leaves a parcel by the door, or the neighbour from over the lane, who drives in in her green Moorland Tor, parks at the barn and stands about for a while (her yard is empty while she is out). About once a week the tuner comes too, towing her rolling road (see “What is the rolling road?”). Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
-        tip: 'The post van and neighbours come in at the big gate. Pull over for them.',
+        q: 'Who is that on the lane, and why has someone come in?',
+        a: `Over the cattle grid at the end of the drive is a quiet public lane, which you can ride along (see “Can I ride out onto the lane?”). A van, a Moorland, a tractor or a Yak goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver drives up the drive to the barn and leaves a parcel by the door, or the neighbour from over the lane, who drives in in her green Moorland Tor, parks at the barn and stands about for a while (her yard is empty while she is out). About once a week the tuner comes too, towing her rolling road (see “What is the rolling road?”). Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
+        tip: 'The post van and neighbours come in over the cattle grid. Pull over for them.',
       },
       {
         q: 'What is the rolling road?',
@@ -2051,17 +2045,17 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Who are the kids on little motorbikes on the lane?',
-        a: `The neighbours' children ride their mini motos along the lane now and then, in daylight and fine weather, one to three of them in single file. If you or one of the girls is near the big gate when they get to it they stop outside, turn to look in and watch for about half a minute, then ride on. Jess waves, Amy less often, and while they are watching the girls are keener on showing off: the ramp, doughnuts, a race. They only watch the farm, so there is nothing to do for them but give them something worth watching.`,
-        tip: 'The neighbours\' kids stop at the big gate to watch if you are near. The girls show off for them.',
+        a: `The neighbours' children ride their mini motos along the lane now and then, in daylight and fine weather, one to three of them in single file. If you or one of the girls is near the end of the drive when they get to it they stop outside, turn to look in and watch for about half a minute, then ride on. Jess waves, Amy less often, and while they are watching the girls are keener on showing off: the ramp, doughnuts, a race. They only watch the farm, so there is nothing to do for them but give them something worth watching.`,
+        tip: 'The neighbours\' kids stop at the end of the drive to watch if you are near. The girls show off for them.',
       },
       {
         q: 'Can I ride out onto the lane, and where does it go?',
-        a: `Yes. Open the big gate at the end of the farm road (look at it and press <kbd>E</kbd>), ride through and turn right, south, along the lane. Keep to the left for the traffic, which brakes for you. It is walled in on both sides, so the only place to turn off is the neighbour's gateway on the right, about 100 m down (its gate is shut: get off and open it), and it carries on south, past the stream's culvert, to a side road into the village (see “Is there a village, and how do I get there?”), then ends at an invisible wall about 100 m past her gateway. North of the big gate it stops 60 m along, at another. You can walk it too.`,
-        tip: 'The lane runs south from the big gate to the neighbour\'s farm. Look out for the traffic.',
+        a: `Yes. Ride out over the cattle grid at the end of the drive and turn right, south, along the lane. Keep to the left for the traffic, which brakes for you. It is walled in on both sides, so the only place to turn off is the neighbour's gateway on the right, about 100 m down (its gate is shut: get off and open it), and it carries on south, past the stream's culvert, to a side road into the village (see “Is there a village, and how do I get there?”), then ends at an invisible wall about 100 m past her gateway. North of the big gate it stops 60 m along, at another. You can walk it too.`,
+        tip: 'The lane runs south from the drive to the neighbour\'s farm. Look out for the traffic.',
       },
       {
         q: 'Who lives at the farm down the lane, and what does she say?',
-        a: `The neighbour, a woman older than Amy and Jess, who lives in the stone farmhouse behind the walled yard. Open the five-bar gate (get off, look at it and press <kbd>E</kbd>), ride in and she turns to watch you, waves and says hello. Come back later and she says so; get off and stand by her and she makes conversation now and then; ride off after a good chat and she says goodbye. She goes indoors at night, when the downstairs windows glow, and comes out again in the morning. The girls remark when you arrive, and may wave back. The Moorland, the buggy and the tractor parked about the yard are hers, for show: you cannot drive them, and they are not for sale.`,
+        a: `The neighbour, a woman older than Amy and Jess, who lives in the stone farmhouse behind the walled yard. Ride in through the gateway in her wall and she turns to watch you, waves and says hello. Come back later and she says so; get off and stand by her and she makes conversation now and then; ride off after a good chat and she says goodbye. She goes indoors at night, when the downstairs windows glow, and comes out again in the morning. The girls remark when you arrive, and may wave back. The Moorland, the buggy and the tractor parked about the yard are hers, for show: you cannot drive them, and they are not for sale.`,
         tip: 'The neighbour is out in her yard by day, down the lane. Ride in and say hello.',
       },
       {
@@ -2071,12 +2065,12 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Is there a village, and how do I get there?',
-        a: `Yes: Nether Thornby, a short ride south down the lane. Open the big gate, turn right along the lane and keep going past the neighbour's gateway and the culvert. About 70 m past her gateway a side road turns off to the right, with the village sign (and the 20 mph signs) just inside it. The road bends west past a few cottages, the garage, the shop, a little green with an oak and the pub, then turns left, south, and ends at a gate with a "road closed" board standing in front of it (the floods). Past the gate the road carries on between tall hedges, bending away and climbing out of reach, but you cannot follow it: the village is walled in, so there is nowhere else to go, and the lane carries on a little further south to a dead end. The road is two-way, with a broken white line down the middle and a give-way line only across the side that leaves the village, where it meets the lane.`,
+        a: `Yes: Nether Thornby, a short ride south down the lane. Ride out over the cattle grid, turn right along the lane and keep going past the neighbour's gateway and the culvert. About 70 m past her gateway a side road turns off to the right, with the village sign (and the 20 mph signs) just inside it. The road bends west past a few cottages, the garage, the shop, a little green with an oak and the pub, then turns left, south, and ends at a gate with a "road closed" board standing in front of it (the floods). Past the gate the road carries on between tall hedges, bending away and climbing out of reach, but you cannot follow it: the village is walled in, so there is nowhere else to go, and the lane carries on a little further south to a dead end. The road is two-way, with a broken white line down the middle and a give-way line only across the side that leaves the village, where it meets the lane.`,
         tip: 'Nether Thornby is down the lane, past the neighbour. Turn right at the village sign.',
       },
       {
-        q: 'What do I pass on the way into Nether Thornby on the new farm?',
-        a: `On the new farm (<code>?layout=2</code>) the village builds up as you arrive. Coming south down the lane you pass a pair of 30 mph signs and the village sign ("Nether Thornby, please drive carefully"), then three houses on the east side, each behind a front garden with a hedge, a gate and a path (a brick house with a gable at the front, a thatched cottage and a bungalow), and a small farm with a stone farmhouse, a stone barn and a walled yard, its gateway on a track from the lane. The garage is further on, then the junction with the village street. Come in from the A-road along the street and there are 30 mph signs and a village sign there too. Inside the village the limit is 20: a sign faces you at each end of the street and one halfway along, and the back of each sign shows the national speed limit to the traffic leaving.`,
+        q: 'What do I pass on the way into Nether Thornby?',
+        a: `The village builds up as you arrive. Coming south down the lane you pass a pair of 30 mph signs and the village sign ("Nether Thornby, please drive carefully"), then three houses on the east side, each behind a front garden with a hedge, a gate and a path (a brick house with a gable at the front, a thatched cottage and a bungalow), and a small farm with a stone farmhouse, a stone barn and a walled yard, its gateway on a track from the lane. The garage is further on, then the junction with the village street. Come in from the A-road along the street and there are 30 mph signs and a village sign there too. Inside the village the limit is 20: a sign faces you at each end of the street and one halfway along, and the back of each sign shows the national speed limit to the traffic leaving.`,
         tip: 'The village builds up as you drive in: 30 signs, three houses, a small farm, then the garage and the street.',
       },
       {
@@ -2207,15 +2201,6 @@ export const FAQ_SECTIONS = [
       {
         q: 'Where do my photos go, and how many stay?',
         a: `On the cork board in the barn, each at a random spot and a little crooked, with its day. Look at the board and press E for a bigger view that says when each was taken and who is in it. The last twelve stay up and the oldest comes down to make room. They are kept from one day to the next, with the rest of the farm.`,
-      },
-      {
-        q: 'Why can\'t I ride out over the cattle grid?',
-        a: `There is a steel gate across the farm road just past the grid, and it starts shut. Get off, look at it and press E to open it, then ride through. Shut it behind you if you like: the girls open it as they reach it and shut it again once they and you are well clear, but they leave a gate you opened for you to shut, and it won't shut with anyone within a few metres. The post van opens it and shuts it behind them each way.`,
-        tip: 'The gate past the cattle grid starts shut. Get off and press E at it.',
-      },
-      {
-        q: 'Why is the big gate open?',
-        a: `Either you left it, or a visitor did: they shut it behind them most of the time, but about one visit in four they leave it open and Amy or Jess says so. Look at it and press E to shut it.`,
       },
       {
         q: 'Why do the rabbits stand still when I drive at night?',
@@ -2376,14 +2361,14 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I save and carry on to the next day?',
         a: `The farm saves as you play, so you can simply close the tab. To do it properly, wait until the evening (it lets you from 17:00, or a little before sunset on a short winter day), ring the
-          bell by the barn doors to call the girls in, then walk into the barn and press <kbd>E</kbd> on the calendar on the back wall. The girls head home first: each walks to her own car on the pad by the Dutch barn, drives out through the big gate and away down the lane (Jess drives it far too fast, and Amy tuts), and a girl you gave a lift that morning goes and waits in your car. It takes a minute or two. Then a card comes up with Amy's
+          bell by the barn doors to call the girls in, then walk into the barn and press <kbd>E</kbd> on the calendar on the back wall. The girls head home first: each walks to her own car in the yard beside the garden wall, drives out through the big gate and away down the lane (Jess drives it far too fast, and Amy tuts), and a girl you gave a lift that morning goes and waits in your car. It takes a minute or two. Then a card comes up with Amy's
           logbook for the day, a few lines telling the day's story (who raced, who fell out, which quad broke), what you ticked off the bucket list and how far you rode, and the girls say goodnight. Press <kbd>E</kbd>, Enter or click to carry on:
           the screen fades to black, says the day is done, saves, and loads the next morning: click Continue to play it. A seeded game (<code>?seed=</code>) never carries on.`,
         tip: 'In the evening, ring the bell, then press E on the barn calendar to call it a day.',
       },
       {
         q: 'Where do the girls go when I call it a day?',
-        a: `Home. When you press <kbd>E</kbd> on the calendar, each girl walks to her own car on the pad by the Dutch barn, starts it and drives out through the big gate and away down the lane. The big gate swings open for them and shuts again after. Jess drives hers as fast as she dares, Amy tuts at it, and they are sat in their cars on the pad again the next morning. A girl who came with you that morning has no car here, so she goes and sits in yours to wait. If you want to see them go, stay near the pad: it is a long walk from the barn, so give them a minute or two.`,
+        a: `Home. When you press <kbd>E</kbd> on the calendar, each girl walks to her own car in the yard beside the garden wall, starts it and drives out down the drive, over the cattle grid and away down the lane. Jess drives hers as fast as she dares, Amy tuts at it, and they are sat in their cars on the pad again the next morning. A girl who came with you that morning has no car here, so she goes and sits in yours to wait. If you want to see them go, stay near the pad: it is a long walk from the barn, so give them a minute or two.`,
         tip: 'Calling it a day sends the girls home in their cars: Jess drives off far too fast.',
       },
       {
@@ -2433,11 +2418,10 @@ export const FAQ_SECTIONS = [
           a brisk walk, and the job ticks off the board once there's a good strip down. A full tub is a drag on whatever pulls it.`,
       },
       {
-        q: 'How do I mow the lawns?',
+        q: 'How do I mow the lawn?',
         a: `Take the mower (the Clipper) from wherever it was left, start it with the key (<kbd>K</kbd>, hold <kbd>R</kbd>) or, if the battery is flat, the pull cord on the right of the bonnet (<kbd>O</kbd>),
-          and push the blade lever forward with <kbd>T</kbd>: the amber BLADE lamp on the dash comes on. It cuts under the middle of the deck as you drive forward on grass, so go up and down the yard lawn (the open grass east of the
-          barn, past the bare yard) and the paddock in straight passes. Each pass leaves a stripe, paler going one way and darker the other. The job ticks off the board once most of both lawns is cut that day.`,
-        tip: 'The mower: key on, T for the blade, then up and down the yard lawn and the paddock in stripes.',
+          and push the blade lever forward with <kbd>T</kbd>: the amber BLADE lamp on the dash comes on. It cuts under the middle of the deck as you drive forward on grass, so go up and down the garden lawn (behind the stone wall beside the yard, through its gate) in straight passes. Each pass leaves a stripe, paler going one way and darker the other. The job ticks off the board once most of the lawn is cut that day.`,
+        tip: 'The mower: key on, T for the blade, then up and down the garden lawn in stripes.',
       },
       {
         q: 'Why does the mower slow down, and why did the blade stop?',
@@ -2451,7 +2435,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I light the bonfire?',
-        a: `Bundles of hedge cuttings lie along the inside of the south hedge of the grass field. Pick one up (<kbd>E</kbd>, empty-handed), carry it to the ring of stones south of the yard
+        a: `Bundles of hedge cuttings lie along the inside of the south hedge of Home Ground. Pick one up (<kbd>E</kbd>, empty-handed), carry it to the ring of stones in Home Ground's south-east corner
           and press <kbd>E</kbd> to put it on the pile. Three make a pile; then <kbd>E</kbd> lights it. It takes about half a minute to get going and burns for nine minutes or so before it dies down to
           ash. Put three more on the ash to build another. Rain stops you lighting it and puts it out, damp air makes it smoky and burn faster, and a strong wind can blow out a young fire.`,
         tip: 'Three bundles of cuttings from the south hedge, on the ring of stones, make a bonfire.',
@@ -2482,7 +2466,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I split logs with the tractor?',
         a: `Look at the back of the tractor, where the bale spike is, and press <kbd>E</kbd> to take the spike off and fit the log splitter (it will not go on with a bale on the spike
-          or a trailer on the drawbar). Rounds of trunk lie in two piles on the grass field by the wood's gate: pick one up with <kbd>E</kbd>, look at the splitter's beam and press
+          or a trailer on the drawbar). Rounds of trunk lie in two piles in the Wet Meadow by the wood's gate: pick one up with <kbd>E</kbd>, look at the splitter's beam and press
           <kbd>E</kbd> to put it on. Then start the tractor, put its parking brake on (or leave it in neutral), and hold <kbd>E</kbd> at the beam: the ram pushes the round onto the
           wedge and the engine note rises and sags as it works. Let go and the ram comes back. When the round gives way its logs fall either side of the tractor's back. Carry them
           one at a time to the stack against the hedge and press <kbd>E</kbd> there. <kbd>G</kbd> puts what you are holding down.`,
@@ -2501,7 +2485,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I make hay?',
-        a: `When "Cut the hay patch, bale it and stack it in the Dutch barn" is on the chalkboard, it goes in four steps, starting in the long grass in the grass field's south-east corner, past the Home Loop. The meadow is the hay:
+        a: `When "Cut the hay patch, bale it and stack it in the Dutch barn" is on the chalkboard, it goes in four steps, starting in the long grass of Hay Meadow, south of the yard. The meadow is the hay:
           drive the tractor over it at a steady walking pace and it is mown, turning pale as you go. Once enough is cut, drive over the cut hay in the same way and the baler leaves a square bale behind you every so often.
           Then bring the bale trailer (hitched with <kbd>J</kbd>) up beside the bales: the girls carry them up and throw them on, or press <kbd>E</kbd> at a bale to heave it on yourself. Last, drive the trailer into the
           Dutch barn's open bay and stop, and the bales are stacked along its back wall and the job ticks off.`,
@@ -2529,15 +2513,15 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I spray the field?',
-        a: `When "Spray the wheat stubble in the south field" is on the chalkboard, back a quad with a rack up to the sprayer trailer in the yard (east of the petrol tank and the hose) and hook it on with <kbd>J</kbd>.
-          Ride out to the south field, the stubble east of the muck heap (the map, <kbd>M</kbd>, outlines it while the job is on), and press <kbd>T</kbd> to fold the boom out. Then drive slowly up and down the field:
+        a: `When "Spray Lane Field" is on the chalkboard, back a quad with a rack up to the sprayer trailer in the yard (east of the petrol tank and the hose) and hook it on with <kbd>J</kbd>.
+          Ride out to Lane Field, the stubble north-east of the yard (the map, <kbd>M</kbd>, outlines it while the job is on), and press <kbd>T</kbd> to fold the boom out. Then drive slowly up and down the field:
           at about walking pace it sprays a strip 6 m wide behind the trailer. Overlap each line a little so you leave no stripes. The sprayed ground goes a darker green, and darker still where two lines overlap.
           Once nearly all of it is covered the job ticks off. Fold the boom in with <kbd>T</kbd> before you go through a gate.`,
         tip: 'Spraying: hitch the sprayer with J, T folds the boom out, then drive slowly in overlapping lines.',
       },
       {
         q: 'Which field is a job on, and how much of it do I have to do?',
-        a: `On the bigger farm the chalkboard names the field a job is on ("Spray Lane Field", "Harrow Low Ley"), and each farm has its own names for its fields. The field is where you do the job, not how much: spraying and harrowing tick off after a few hundred square metres,
+        a: `The chalkboard names the field a job is on ("Spray Lane Field", "Harrow Low Ley"), and each farm has its own names for its fields. The field is where you do the job, not how much: spraying and harrowing tick off after a few hundred square metres,
           wherever on the field you do them, and the map draws your lines. Hay is the same, anywhere on the hay meadow. Muck only counts on the field the board names, and the silage bales are out in Low Ley.`,
       },
       {
@@ -2557,7 +2541,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I harrow the field?',
-        a: `When "Harrow the field inside the track with the chain harrows" is on the chalkboard, the chain harrows are waiting at the west edge of the harrow field, in the grass field inside the track, east of the middle (the map, <kbd>M</kbd>, outlines the field while the job is on).
+        a: `When "Harrow Low Ley" is on the chalkboard, the chain harrows are waiting at the edge of Low Ley, south-east of the yard (the map, <kbd>M</kbd>, outlines the field while the job is on).
           Back the tractor or a quad with a rack up to their ring and hook them on with <kbd>J</kbd>, then press <kbd>T</kbd> to lower the tines onto the ground.
           Drive up and down the field at a steady pace (about a brisk walk up to a trot) and the mat of tines combs a strip about three and a half metres wide behind the carrier, leaving pale and dark stripes and spreading the molehills.
           Overlap the lines a little so you leave no gaps. Once nearly all of it is combed the job ticks off. Lift the tines with <kbd>T</kbd> before you go through a gate.`,
@@ -2777,9 +2761,9 @@ export const FAQ_SECTIONS = [
       {
         q: 'Whose is the silver car I start in?',
         a: `Yours: the Vauclair 39D, a late-80s three-door diesel in silver-grey with grey cloth seats, a few dents, two bottles of pop in your door pocket and some CDs on the dash.
-          Every day starts with you sat in it, just pulled up on the tarmac at the end of the farm road by the Dutch barn, engine still running and warm, as if you have just driven in.
+          Every day starts with you sat in it, just pulled up in the yard beside the garden wall, engine still running and warm, as if you have just driven in.
           It is a car like the girls': key, gears, clutch, fuel, faults, and the farm remembers it from one day to the next. Its doors open and <kbd>T</kbd> lifts its hatch.`,
-        tip: 'The silver Vauclair is your own car: every day starts with you sat in it by the Dutch barn.',
+        tip: 'The silver Vauclair is your own car: every day starts with you sat in it in the yard.',
       },
       {
         q: 'How do I start my car?',
@@ -2819,8 +2803,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'Whose are the two cars?',
         a: `The brown Thorne Finch is Amy's: an old hatchback, kept clean, with L plates on until she has passed her driving test. The red Ashby Griffin with the grey wing and the big exhaust is
-          Jess's. They park side by side on the tarmac at the end of the farm road, in front of the Dutch barn, and they are there every day unless she came in with you.`,
-        tip: "The Finch is Amy's and the Griffin is Jess's. They park at the end of the farm road, by the Dutch barn.",
+          Jess's. They park side by side in the yard beside the garden wall, and they are there every day unless she came in with you.`,
+        tip: "The Finch is Amy's and the Griffin is Jess's. They park in the yard beside the garden wall.",
       },
       {
         q: 'Can I drive their cars?',
@@ -2842,7 +2826,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Do the girls drive their cars?',
-        a: `Yes, each her own and never the other's. Now and then one takes hers out down the farm road to the end and back, and you can ask her to from the wheel ("Drive it").
+        a: `Yes, each her own and never the other's. Now and then one takes hers out down the drive to the lane and back, and you can ask her to from the wheel ("Drive it").
           Amy goes carefully. Jess does not. Her friend may climb in with her. They also sit in them out of the rain, like the Moorlands.`,
       },
       {
@@ -3007,15 +2991,16 @@ export const FAQ_SECTIONS = [
           (<code>fly</code>) and switch the girls' autonomy and speech off.`,
       },
       {
-        q: 'Can I see the bigger farm that is being built?',
-        a: `Yes, as it goes. Add <code>?layout=2</code> to the address, or type <code>layout 2</code> in the console, and the game loads on the new farm: about 870 by 830 m
-          with a natural outline, six arable fields in stubble, meadows, pasture, the wood's and the pit's fields and Home Ground, each with its hedges and gateways, and
-          all of them on the map (<kbd>M</kbd>). It is being built a piece at a time: the barn, the yard and Home Ground have moved to their new places (see the next question), Hollow Wood is in the north-west corner (see "Where is Hollow Wood on the new farm?"), the gravel pit is in the north-east corner by the lane (see "Where is the gravel pit on the new farm?"), and the hill has moved to the south-west, and the walls round the sheep field and the hill are only on the map so far. It plays as a fresh first day
-          and is never saved, so your own farm is just as you left it. <code>layout 1</code> goes back.`,
+        q: 'Why has my farm changed?',
+        a: `The farm was laid out again as a bigger one, about 870 by 830 m with a natural outline: six arable fields in stubble, meadows, pasture, the wood's and the pit's fields and
+          Home Ground, each with its hedges and gateways, the village across the lane, Back Lane round the north and west, the Moor beyond it, and all of it on the map (<kbd>M</kbd>).
+          Everything is in its new place, which is why nothing is where it was. Your vehicles, money, the girls, records, notebook and stories came with you, and so did the farm's
+          calendar and its names; only where things were left lying (a quad out in a field, bales, a battery, something lost) was put again, and the game told you so when it loaded.
+          If you would rather start from nothing, "Start again" on the start screen deals a new farm.`,
       },
       {
-        q: 'Where is the barn on the new farm?',
-        a: `On <code>?layout=2</code> the farmstead is in the middle of the farm, at the head of the drive, and you can use everything within about 80 m of it each day. The barn is one big building,
+        q: 'Where is the barn, and what is in it?',
+        a: `The farmstead is in the middle of the farm, at the head of the drive, and you can use everything within about 80 m of it each day. The barn is one big building,
           26 by 18 m, with one pair of sliding doors in its long south wall facing the yard. Inside, the workbench is on the east wall with its bay in front, the big bay and the pit are
           in the middle nose-in from the doors, the boards, the calendar and the farm desk are on the back wall with some bales to sit on, the thermometer, barometer and forecast are one board
           by the doors and the clock is over the bench. Six bulbs light it from the generator, and there is no hayloft. The bell is by the doors, the fuel tanks by its east end and the generator by its west wall. The yard is concrete, 190 by 98 m. North of the barn is the orchard, where the hens have a proper house and the pig has an ark, each in a fenced run with the feed bin beside them. West of it is the stackyard, with the Dutch barn at its far end and round bales stacked in it. East of the orchard is the
@@ -3026,8 +3011,8 @@ export const FAQ_SECTIONS = [
           <code>bonfire</code> take you to each.`,
       },
       {
-        q: 'What is in the new farm\'s yard?',
-        a: `On <code>?layout=2</code> the yard is old concrete, laid in bays with tarred joints, a few bays patched and cracked, a drain down its middle to a gully by the barn doors, darker polished
+        q: 'What is in the yard?',
+        a: `The yard is old concrete, laid in bays with tarred joints, a few bays patched and cracked, a drain down its middle to a gully by the barn doors, darker polished
           tracks where the quads run in and mud tracked in from each way out. After rain the low spots fill with water (the ground has to have been wet a while). Against the barn's east end wall hang a hose
           reel, a yard brush, a shovel and a bucket, with a coil of blue baler twine on a nail and a pallet leant by them; a stack of pallets and a pile of old tyres stand at the west corner, and nettles
           grow along the wall's foot. Steel field gates, hung open on stone and timber posts, stand at the ways out to Home Ground and the south field. The stackyard has a hardcore floor, square bales
@@ -3035,8 +3020,8 @@ export const FAQ_SECTIONS = [
           fades away beyond the concrete. <code>tp me barnwall</code>, <code>homegate</code> and <code>stackbales</code> take you to the wall's gear, the gate and the bales.`,
       },
       {
-        q: 'Where is Hollow Wood on the new farm?',
-        a: `On <code>?layout=2</code> the wood is in the north-west corner, about half as big again as before (about 2.8 hectares), with the Hollow Run and the Fern Trail just as they were, laps
+        q: 'Where is Hollow Wood?',
+        a: `The wood is in the north-west corner, about half as big again as before (about 2.8 hectares), with the Hollow Run and the Fern Trail just as they were, laps
           and all, in the middle of it. The gate is in its south side, onto the Wet Meadow; a muddy lead-in bends west inside the hedge from it to the Run, a good deal longer than the old one, and the Fern
           Trail's sign still stands beside it. There is a second gate on the west side for Back Lane, which is not laid yet. The extra ground is more of the same oaks, hazel, holly and fallen
           branches, thorn and bramble along the hedges, and one great old oak in the glade by the pond, much bigger than the rest, so you can see where you are. Beside the gate, in the Wet Meadow, is the woodpile:
@@ -3045,8 +3030,8 @@ export const FAQ_SECTIONS = [
           take you to each, and <code>scene hollowwood</code> sets up a look at the gate in daylight.`,
       },
       {
-        q: 'Where is the gravel pit on the new farm?',
-        a: `On <code>?layout=2</code> the pit is in the north-east corner, beside the lane, in a field of its own about 165 by 185 m, fenced all round in post and wire (barbed, with a strainer post and
+        q: 'Where is the gravel pit?',
+        a: `The pit is in the north-east corner, beside the lane, in a field of its own about 165 by 185 m, fenced all round in post and wire (barbed, with a strainer post and
           a strut at every corner, and a post down here and there). It is the same pit as before, the same size and shape on every farm, with its two gravel roads, its plant, pond and heaps, and the
           pit climb up its long wall, still timed on the records board; the flags that mark the climb are planted in the wall, green for the start, blue for the finish and orange between, with START and FINISH on the cloth. There are two gates.
           The one onto the lane is the way the lorries used to come in, and it is shut and chained for good: the gravel road starts at it, but you cannot get through it, and the girls will not try. You
@@ -3055,16 +3040,16 @@ export const FAQ_SECTIONS = [
           and <code>scene pitgate</code> sets up a look at the farm gate in daylight.`,
       },
       {
-        q: 'What is the drive on the new farm?',
-        a: `On <code>?layout=2</code> the farm road is a drive: 290 m of old tarmac from the yard straight out to the lane, patched in squares with its edges broken into gravel and a few
+        q: 'What is the drive?',
+        a: `The farm road is a drive: 290 m of old tarmac from the yard straight out to the lane, patched in squares with its edges broken into gravel and a few
           potholes holding water, open to the crops either side (no hedges, just a grass verge, cut short by the lane and longer further in). The cattle grid is at the lane end, so you
           drive in without opening a gate, and the big gate is gone. For stock and horses, which can't cross a grid, there is a shut field gate beside it (press <kbd>E</kbd> at it). The girls' cars
           and the visitors come and go over the grid. The lane is straight at the foot of it, with no invisible walls. <code>tp me cattlegrid</code> takes you there,
           <code>scene drive</code> sets it up in daylight and <code>lane.bypassGate true</code> opens the field gate.`,
       },
       {
-        q: 'Where is the neighbour on the new farm?',
-        a: `On <code>?layout=2</code> she is across the lane from the drive, a little way up from it, so the two gateways don't make a crossroads: a walled yard about 95 by 85 m with her gateway in its west wall, at the
+        q: 'Where is the neighbour?',
+        a: `She is across the lane from the drive, a little way up from it, so the two gateways don't make a crossroads: a walled yard about 95 by 85 m with her gateway in its west wall, at the
           end of her own short track off the lane, and her farmhouse at the south of it, her barn at the north-west with its big door facing the yard, and her Moorland, buggy and old tractor parked about. She stands by her
           door until dark as before. She is a dairy farmer: across the yard from her gate is the milking parlour, a long low block building with a row of small high windows, an
           extractor fan in its end and two cow gates, with the collecting yard in front of it where the herd waits, railed in galvanised steel with a backing gate, a hosepipe and a
@@ -3073,8 +3058,8 @@ export const FAQ_SECTIONS = [
           her track, and opens with <kbd>E</kbd>. <code>tp me neighbour</code> stands you just inside her gateway and <code>scene neighbour</code> sets that up in daylight.`,
       },
       {
-        q: 'What are the things standing by themselves in the new farm\'s fields?',
-        a: `Each field of the bigger farm (<code>?layout=2</code>) has one thing of its own you can see from its gate: a lone oak in North Field, a pair of old gateposts in
+        q: 'What are the things standing by themselves in the fields?',
+        a: `Each field has one thing of its own you can see from its gate: a lone oak in North Field, a pair of old gateposts in
           Top Field, a dead elm in Long Piece's hedge, a pond with two willows in Far Field, an old roller in South Field, a lone ash in Hay Meadow, alders along the
           brook in Low Ley and big oaks in Brook Meadow. The rest (the power line, the field barn, the hut and its rock, the trig pillar on the moor) come with their own
           pieces. In the console, <code>tp me to loneoak</code> (or <code>oldgateposts</code>, <code>deadelm</code>, <code>farpond</code>, <code>castroller</code>,
