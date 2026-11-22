@@ -17,7 +17,7 @@ export function baseHeight(x, z) {
 }
 
 import { floorBlend } from './barn.js';
-import { stripFrame } from './layout.js';
+import { stripFrame, gravelStrip } from './layout.js';
 import { outsideRect, createFieldShape } from './fields.js';
 import { createHill } from './hill.js';
 import { hutShape } from './hut.js';
@@ -63,7 +63,7 @@ export function createTerrainHeight(layout, track) {
   if (woods) bogs.push(...woods.bogs.map((b) => ({ ...b })));
   const trackReach = trackHalfWidth + 1.5;
   // The drag strip is level: the average of the ground along it, blended back into the field over its shoulders.
-  const strip = layout.dragStrip;
+  const strip = gravelStrip(layout); // the new farm's races are on the drive, which is its own road's level
   const stripLevel = strip ? [0, 0.25, 0.5, 0.75, 1].reduce((sum, t) => sum + lie(strip.x + Math.sin(strip.yaw) * strip.length * t, strip.z + Math.cos(strip.yaw) * strip.length * t), 0) / 5 : 0;
 
   /** The ground as the land lies, before anything is built on it or cut into it. */

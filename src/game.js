@@ -184,7 +184,7 @@ import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid, pickQuads } from '
 import { DEFAULT_SIGHT_PARAMS, SIGHT_PARAM_RANGES, gatesFoundOpen } from './npc/sights.js';
 import { DEFAULT_OUTING_PARAMS, OUTING_PARAM_RANGES, pickOuting, outingSpots } from './npc/outings.js';
 import { ASK_PATIENCE, ASK_KINDS, askProblems, askLine } from './npc/asking.js';
-import { Drag, DRAG_PARAM_RANGES, onDragGrid } from './npc/drag.js';
+import { Drag, DRAG_PARAM_RANGES, onDragGrid, dragRoute } from './npc/drag.js';
 import { buildDragStrip } from './world/dragStrip.js';
 import { HillClimb, CLIMB_PARAM_RANGES, climbGates, climbRoute } from './npc/hillClimb.js';
 import { ConeCourse, ConeField, DEFAULT_CONE_PARAMS, CONE_PARAM_RANGES, coneGates, coneSpots, knockRoute } from './npc/coneCourse.js';
@@ -10103,9 +10103,7 @@ export class Game {
 
   /** The route for a girl in the drag race: the staging point behind the line, her grid point, then down the strip and past the finish. */
   dragRoute(lane) {
-    const s = this.world.layout.dragStrip;
-    const back = this.drag.p.gridBack;
-    return [stripPoint(s, -back - 10, lane), stripPoint(s, -back, lane), stripPoint(s, s.length + s.runOff * 0.7, lane)];
+    return dragRoute(this.world.layout.dragStrip, lane, this.drag.p.gridBack);
   }
 
   /** Your part in the drag race: lined up on your side of the grid, then how far down the strip you are. */

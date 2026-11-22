@@ -5,7 +5,7 @@ import { createBrook } from '../world/brook.js';
 import { pointAlong, polygonBounds, polygonEdges, pointInPolygon, distanceToEdges } from '../world/polygons.js';
 import { dutchBarnShape, fieldShedShape } from '../world/outbuildings.js';
 import { neighbourFarmShape } from '../world/neighbourFarm.js';
-import { stripPoint } from '../world/layout.js';
+import { stripPoint, gravelStrip } from '../world/layout.js';
 import { barnFrame } from '../world/barn.js';
 import { nearestTrackFraction } from '../world/startLine.js';
 import { roadNetwork } from '../world/roads.js';
@@ -202,7 +202,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   });
 
   const strip = layout.dragStrip;
-  const dragStrip = strip ? (() => {
+  const dragStrip = gravelStrip(layout) ? (() => {
     const along = strip.length + strip.runOff;
     const mid = along / 2;
     return boxCorners(strip.x + Math.sin(strip.yaw) * mid, strip.z + Math.cos(strip.yaw) * mid, strip.yaw, along, strip.width);

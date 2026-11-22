@@ -605,6 +605,9 @@ export function stripFrame(strip, x, z) {
   return { along: dx * sin + dz * cos, across: -dx * cos + dz * sin };
 }
 
+/** The gravel drag strip of today's farm, or null where the races run along the drive instead (the new farm, #616: nothing is laid, levelled or cleared for it). */
+export const gravelStrip = (layout) => (layout.dragStrip && !layout.dragStrip.onDrive ? layout.dragStrip : null);
+
 /** The point `along` and `across` the drag strip, the inverse of stripFrame. */
 export function stripPoint(strip, along, across) {
   const sin = Math.sin(strip.yaw);

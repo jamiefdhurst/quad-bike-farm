@@ -4,6 +4,7 @@
 // both are along the strip; this runs the challenge, the grid, the count-down, false starts, the finish and who won.
 
 import { pickQuads } from './race.js';
+import { stripPoint } from '../world/layout.js';
 
 export const DEFAULT_DRAG_PARAMS = {
   startAfter: 90, // seconds into the game before Jess might challenge you
@@ -321,6 +322,11 @@ export class Drag {
     this.reported = null;
     events.push({ type: 'result', winner: first, loser: first ? racers.find((id) => id !== first) : null, margin, girl: this.girl });
   }
+}
+
+/** The route for a girl in the lane `lane` (+-1): the staging point 10 m behind her grid point, the grid point, then down the strip and past the finish. */
+export function dragRoute(strip, lane, gridBack = DEFAULT_DRAG_PARAMS.gridBack) {
+  return [stripPoint(strip, -gridBack - 10, lane), stripPoint(strip, -gridBack, lane), stripPoint(strip, strip.length + strip.runOff * 0.7, lane)];
 }
 
 /** Whether you're lined up on your grid point: close, stopped and pointing along the strip (`stripYaw`). `dist` is the distance to the point. */

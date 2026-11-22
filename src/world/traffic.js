@@ -94,7 +94,8 @@ export const headingTo = (x, z, tx, tz) => Math.atan2(tx - x, tz - z);
 
 /**
  * A vehicle following waypoints ({ x, z, speed?, stop? }). It steers at a turning circle of `radius`, slows for a sharp turn and for a
- * waypoint it must stop at, and brakes for anything in `blockers` ({ x, z }) in the way ahead of it.
+ * waypoint it must stop at, and brakes for anything in `blockers` ({ x, z }) in the way ahead of it. A blocker with `hold: true` (the drag race's ends, #616)
+ * is waited at for as long as it stands: the vehicle never edges past it as it does a person who is not moving.
  */
 export class Drive {
   constructor({ x, z, yaw = 0, speed = 0, cruise = 8, radius = 4, accel = 2.5, brake = 5 }) {
@@ -104,6 +105,7 @@ export class Drive {
     this.patience = 40; // s it waits for something to move before it edges past regardless
     this.ignoring = 0;
     this.blocked = false;
+    this.held = false; // waiting at a `hold` blocker, which it does until that is taken away
   }
 
   go(path) {
@@ -133,10 +135,13 @@ export class Drive {
     const wp = this.path[0];
     // Looks along where it is heading and along where the next waypoint lies, so a corner doesn't swing it into something it hadn't faced yet.
     const toward = wp ? headingTo(this.x, this.z, wp.x, wp.z) : this.yaw;
-    this.blocked = this.ignoring > 0 ? false : this.inTheWay(blockers) || (Math.abs(wrap(toward - this.yaw)) > 0.2 && this.inTheWay(blockers, toward));
+    const holds = blockers.filter((b) => b.hold);
+    const turning = Math.abs(wrap(toward - this.yaw)) > 0.2;
+    this.held = holds.length > 0 && (this.inTheWay(holds) || (turning && this.inTheWay(holds, toward)));
+    this.blocked = this.held || (this.ignoring > 0 ? false : this.inTheWay(blockers) || (turning && this.inTheWay(blockers, toward)));
     if (this.ignoring > 0) this.ignoring -= dt;
     this.waited = this.blocked && this.speed < 0.3 ? this.waited + dt : 0;
-    if (this.waited > this.patience) {
+    if (this.waited > this.patience && !this.held) {
       this.ignoring = 8; // held up too long by something that is not moving: edge past it
       this.waited = 0;
     }
@@ -673,7 +678,7 @@ export class Traffic {
     }
     if (!this.visit && p.visitEvery > 0 && this.clock > p.firstVisit) {
       this.nextVisit -= dt;
-      if (this.nextVisit <= 0 && (ctx.darkness ?? 0) < 0.7) {
+      if (this.nextVisit <= 0 && (ctx.darkness ?? 0) < 0.7 && !ctx.holdVisits) {
         const v = this.startVisit();
         if (v) events.push({ type: 'visit', visit: v });
         this.nextVisit = exponential(this.random, p.visitEvery);

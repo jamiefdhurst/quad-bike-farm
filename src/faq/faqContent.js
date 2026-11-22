@@ -1454,7 +1454,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where do the girls drive when they go off on a quad?',
-        a: `Mostly somewhere. More often than not a girl driving a quad on her own picks a place on the farm, such as the drag strip, the muck heap, the
+        a: `Mostly somewhere. More often than not a girl driving a quad on her own picks a place on the farm, such as the drag strip (on the new farm, the drive), the muck heap, the
           trough, the end of the road, the foot of the hill or a field, goes there by the gateways, stops for a moment and drives back. The rest of the time
           she potters about in loops near where she started.`,
       },
@@ -1548,8 +1548,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'Can I race them?',
         a: `Yes. Ride up to the start line by the yard and press <kbd>Enter</kbd> and pick “A race”, or sit there with the engine running and Jess may dare you. Line up in the
-          middle lane. A lap only counts if you go round the track. For a drag race, ride to the gravel strip in the middle of the field and press
-          <kbd>Enter</kbd> and pick “A drag race”, or answer Jess when she blips her throttle at you. They also race each other.`,
+          middle lane. A lap only counts if you go round the track. For a drag race, ride to the gravel strip in the middle of the field (on the new farm, to the start line on the drive, with cones on the verges) and press
+          <kbd>Enter</kbd> and pick “A drag race”, or answer Jess when she blips her throttle at you. They also race each other. On the new farm nobody drives up the drive while a drag race is on.`,
         tip: 'Press Enter at the start line by the yard to race the girls.',
       },
       {
@@ -1557,7 +1557,7 @@ export const FAQ_SECTIONS = [
         a: `When you press <kbd>Enter</kbd> and pick “A race” they drop what they are doing, find a quad and set off, so it should only take a few moments. If they can't, the game
           tells you why after about fifteen seconds: one of them is carrying something or getting off a quad, there's no quad free for her (the one you're on is
           never offered, and the little ones belong to one girl), a race is already on, or you've rung the bell. The lap race needs both of them, and two different quads; the drag race, the hill climb and the cone course
-          need only one. Ride up to the start line first: the lap race by the yard, the drag race at the gravel strip, the climb at the cones past the stream, the cone course at the cones in the field.`,
+          need only one. Ride up to the start line first: the lap race by the yard, the drag race at the gravel strip (on the new farm, on the drive), the climb at the cones past the stream, the cone course at the cones in the field.`,
       },
       {
         q: 'How do I time a run up the hill?',

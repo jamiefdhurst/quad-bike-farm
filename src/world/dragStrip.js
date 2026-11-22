@@ -4,6 +4,7 @@ import { cone, LAP_SCALE } from './startLine.js';
 
 // The drag strip (layout.dragStrip): a rough patch of gravel laid over the levelled ground, with ragged edges and ends that thin out into the grass,
 // and only cones to mark the start and the finish. Only something to look at: nothing here has a collider, so the quad rides on the ground under it.
+// On the new farm (#616) the races run along the drive (`strip.onDrive`): no gravel, only the cones, standing on the verges either side of the tarmac.
 
 function gravelTexture() {
   const size = 128;
@@ -25,10 +26,34 @@ function gravelTexture() {
   return tex;
 }
 
+/** The cones: a pair at the start (green) and a pair at the finish (blue), just outside the edges (on the drive, on its verges). */
+export function conePlaces(strip) {
+  const out = [];
+  for (const [at, kind] of [[0, 'start'], [strip.length, 'finish']]) {
+    for (const side of [-1, 1]) out.push({ kind, ...stripPoint(strip, at, side * (strip.width / 2 + 0.4)) });
+  }
+  return out;
+}
+
+function addCones(group, heightAt, strip) {
+  for (const { kind, x, z } of conePlaces(strip)) {
+    const c = cone(kind);
+    c.scale.setScalar(LAP_SCALE);
+    c.position.set(x, heightAt(x, z), z);
+    c.rotation.y = strip.yaw + Math.PI / 2; // the words face along the strip
+    group.add(c);
+  }
+}
+
 /** Builds the strip into the scene and returns its group. `heightAt(x, z)` is the ground. */
 export function buildDragStrip(scene, heightAt, strip) {
   const group = new THREE.Group();
   group.name = 'dragStrip';
+  if (strip.onDrive) {
+    addCones(group, heightAt, strip);
+    scene.add(group);
+    return group;
+  }
   const behind = 6;
   const total = behind + strip.length + strip.runOff;
   const cols = Math.round(strip.width / 1);
@@ -90,18 +115,7 @@ export function buildDragStrip(scene, heightAt, strip) {
   surface.receiveShadow = true;
   group.add(surface);
 
-  // Only cones mark it: a pair at the start (green) and a pair at the finish (blue), just outside the edges.
-  for (const [at, kind] of [[0, 'start'], [strip.length, 'finish']]) {
-    for (const side of [-1, 1]) {
-      const p = stripPoint(strip, at, side * (strip.width / 2 + 0.4));
-      const c = cone(kind);
-      c.scale.setScalar(LAP_SCALE);
-      c.position.set(p.x, heightAt(p.x, p.z), p.z);
-      c.rotation.y = strip.yaw + Math.PI / 2; // the words face along the strip
-      group.add(c);
-    }
-  }
-
+  addCones(group, heightAt, strip);
   scene.add(group);
   return group;
 }

@@ -16,7 +16,7 @@ Every value is at a dotted path. Type the path alone to read it, or the path and
 
 `list`, `find psi`, `get`, `range`, `set`, `add`, `toggle`, `dump` (copies JSON) read and write them. Positions are x east, z south, y up, heading in degrees (0 faces +z, 90 faces +x), the same for you, vehicles, girls and items:
 
-- `tp farm300 barn`, `tp me 100 20`, `tp amy to jess`, `tp hartley here`, `tp petrol-can 10 10 90`, then `nudge`, `face`, `where`, `places`.
+- `tp farm300 barn`, `tp me 100 20`, `tp me to dragstrip` (the drag strip's start line: on the new farm, on the drive), `tp amy to jess`, `tp hartley here`, `tp petrol-can 10 10 90`, then `nudge`, `face`, `where`, `places`.
 - `reset farm300`, `reset vehicles`, `reset girls`, `reset all`. On a girl it stops her where she is (off whatever she is on, out of what she is doing) and has her stand about for a minute, starting nothing of her own (Tune: settleSeconds), ready for the next command.
 - `backcan|backtoolbox|clearback <vehicle>` stand the red jerry can or the toolbox in a Tor's or Crag's back, or tip out what is there (`vehicle.<id>.back` says what is in it); `girl <name> tidy-load` sends a girl to load or unload the nearest one. `girl <name> tidy-up` sends her to put right the nearest thing left out of place (a gate left open, a can away from its spot, a helmet on the ground), without the usual wait.
 - `start|stop|warm|cool|fill|soak|dry|fix <vehicle|all>`, `vehicles`, `girls` (`soak` rains on a vehicle's windscreen as in a downpour, `dry` dries it).

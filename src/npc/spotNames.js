@@ -1,7 +1,7 @@
 // Names for places on the farm, so a girl who is stuck can shout where she is ("I am stuck by the ford!"). Pure: the nearest named spot to a
 // point. Each has an `id` (the key of her line for it, see strandedLines.js) and a `name` that reads after "by", "in" or "at" as written.
 
-import { LAYOUT } from '../world/layout.js';
+import { LAYOUT, gravelStrip } from '../world/layout.js';
 
 /** Every place she can name, by id (the key of her line: strandedLines.js writes one per id), whichever farm is loaded: a place the farm lacks just isn't found. */
 export const SPOT_NAMES = {
@@ -22,7 +22,7 @@ export const spotsFor = (L) => {
   const away = (where) => L.spawn?.away?.find((a) => a.where === where);
   const newFarm = !!L.fields;
   const at = {
-    yard: L.yard, ramp: L.jumpRamp, dragStrip: L.dragStrip, lowBog: L.bogs?.find((b) => b.x !== undefined),
+    yard: L.yard, ramp: L.jumpRamp, dragStrip: gravelStrip(L), // (the new farm's races are on the drive, which has its own name) lowBog: L.bogs?.find((b) => b.x !== undefined),
     bottomTrack: away('by the bottom of the track'), middleField: away('in the middle of the field'), northHedge: away('by the north hedge'),
     farCorner: away('in the far corner'), westHedge: away('down the west hedge'),
     ford: L.hill && { x: L.hill.lane.x, z: L.hill.stream.z }, pond: L.hill?.paddocks?.west?.pond, trough: L.trough,
