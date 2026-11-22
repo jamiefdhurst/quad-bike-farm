@@ -48,6 +48,7 @@ export class World {
     this.autumn = autumn; // an autumn day (autumn.js): turned leaves, leaf litter, conkers and a slippery wood floor
     this.drawDistance = new DrawDistance(graphics); // hides far tiles of grass, stubble, tussocks and bracken (tiledInstances.js)
     this.farDetail = new FarDetail(scene, graphics); // leaves out set pieces, small vehicle parts and far shadows (farDetail.js)
+    this.farDetail.drawShadowsWith(renderer); // and draws the still things' shadows a call or two each (#1041)
     this.track = new Track(layout.trackPoints);
     this.heights = createTerrainHeight(layout, this.track);
     this.fields = createFields(layout);

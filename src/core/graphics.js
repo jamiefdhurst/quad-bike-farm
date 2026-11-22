@@ -18,6 +18,7 @@ export const DEFAULT_GRAPHICS_PARAMS = {
   shadowAhead: 22, // metres that square is pushed ahead of you along the way you look, so little is drawn behind you (0: centred on you)
   partPixels: 1, // screen points a part's bounding sphere has to span (radius) to be drawn: a bolt, a cable or a fender too far off to see is left out (0: all drawn)
   mergeStill: 1, // 1: the meshes of a vehicle, the barn or the animals' pens that hold still are drawn merged by material, a few calls for hundreds (0: each drawn alone)
+  mergeShadows: 1, // 1: and their shadows drawn as one mesh for each of them, whatever the materials (0: each merged mesh casts its own)
   viewDistance: 1500, // metres a clear day shows: every weather's fog is a fraction of it (world/farLand.js `farFog`)
   smallShadowDistance: 20, // metres beyond which a small thing (a mug, a bottle, a tool, a bolt) casts no shadow (0: always)
 };
@@ -39,6 +40,7 @@ export const GRAPHICS_PARAM_RANGES = {
   shadowAhead: [0, 60, 1],
   partPixels: [0, 4, 0.1],
   mergeStill: [0, 1, 1],
+  mergeShadows: [0, 1, 1],
   smallShadowDistance: [0, 200, 5],
   viewDistance: [300, 3000, 50],
 };

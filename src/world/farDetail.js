@@ -36,8 +36,13 @@ export const SET_PIECE_NAMES = ['village', 'laneBridge', 'neighbourFarm', 'neigh
   // The Moor's stile, pillar, cairn, grids, gates, signs and spring (#713); its wall, plants and rocks are tiled and have their own far version or draw distance.
   'moor'];
 
-/** Scene children whose still meshes are merged by material (`staticMerge.js`, #816): the vehicles, the barn and the farm animals' pens and huts. */
-export const MERGED_NAMES = [...VEHICLE_NAMES, 'barn', 'farmAnimals', 'inspection-pit']; // the pit never moves, and is not hidden by distance: with its plug gone and the ground cut it would leave a hole in the floor
+/**
+ * The barn's and the yard's fixtures, merged like the vehicles (#1041): once the vehicles were, they were the yard's biggest share of calls, about 450 drawn and
+ * 350 shadows. Never anything you pick up and carry (a jerry can, the notebook, the toolbox), which leaves the scene while it is held.
+ */
+export const STILL_FIXTURES = [...BARN_PROP_NAMES, 'fuelTank', 'generator', 'hoseReel', 'bell', 'yardLights', 'yardFurniture', 'tin-set', 'weatherVane', 'job-board'];
+/** Scene children whose still meshes are merged by material (`staticMerge.js`, #816): the vehicles, the barn, the farm animals' pens and huts and the fixtures. */
+export const MERGED_NAMES = [...VEHICLE_NAMES, 'barn', 'farmAnimals', 'inspection-pit', ...STILL_FIXTURES]; // the pit never moves, and is not hidden by distance: with its plug gone and the ground cut it would leave a hole in the floor
 const MERGE_NEAR = 15; // m: a vehicle or the barn this close to you is looked at for changes every quarter second
 const MERGE_FAR_EVERY = 2; // s between looks at one further off, about
 const MERGES_A_LOOK = 1; // roots merged again in one look at the scene, so a crowd of vehicles that all stop at once is not all done in one frame
@@ -124,7 +129,7 @@ export class FarDetail {
     this.centre = new THREE.Vector3();
     this.hedgeSwaps = []; // the swaps of the hedges' blocks and the wall's stones for far strips (hedgeFar.js), set by the world once the props are built
     this.treeSwaps = []; // the swap of every oak and bush for its far version (scatter.js, treeFar.js), set the same way
-    this.merge = new StaticMerge(); // the still meshes of the vehicles, the barn and the farm animals, drawn as a few
+    this.merge = new StaticMerge(); // the still meshes of the vehicles, the barn and the farm animals, drawn as a few (and their shadows as one, once `drawShadowsWith` is called)
     this.nextLook = new WeakMap(); // root -> when it is next looked at (seconds on `elapsed`)
     this.looks = 0;
     this.merging = new Set(); // the roots it has looked at, so a switch off puts them all back
@@ -161,10 +166,12 @@ export class FarDetail {
    * root's turn staggered. At most `MERGES_A_LOOK` roots are merged again in one look, all of them for the budget's count.
    */
   mergeStill(position, fresh = false) {
-    if (!(this.params.mergeStill > 0)) {
-      for (const o of this.merging) this.merge.release(o);
+    const shadows = !!this.shadowsWrapped && this.params.mergeShadows > 0;
+    if (!(this.params.mergeStill > 0) || shadows !== this.merge.shadows) {
+      for (const o of this.merging) this.merge.release(o); // off, or the shadows switched: everything put back, and merged again the new way
       this.merging.clear();
-      return;
+      this.merge.shadows = shadows;
+      if (!(this.params.mergeStill > 0)) return;
     }
     let again = 0;
     const due = [];
@@ -178,6 +185,28 @@ export class FarDetail {
       this.merging.add(o);
       if (this.merge.update(o, this.elapsed, fresh)) again++;
     }
+  }
+
+  /**
+   * Has the still roots' shadows drawn as one mesh each (#1041): the renderer's shadow pass is wrapped so `StaticMerge.shadowPass` shows the shadow meshes for
+   * it alone. Without this (the unit tests, a page with no renderer) every merged mesh casts its own shadow, as before. `mergeShadows` 0 in the Tune tab puts
+   * each one's shadow back.
+   */
+  drawShadowsWith(renderer) {
+    const shadowMap = renderer?.shadowMap;
+    if (typeof shadowMap?.render !== 'function' || this.shadowsWrapped) return;
+    this.shadowsWrapped = true;
+    const render = shadowMap.render;
+    const merge = this.merge;
+    shadowMap.render = function (...args) {
+      merge.shadowPass(true);
+      try {
+        return render.apply(this, args);
+      } finally {
+        merge.shadowPass(false);
+      }
+    };
+    merge.shadows = this.params.mergeShadows > 0;
   }
 
   /** A vehicle's parts are about to move (you get on it): whatever is merged of it is put back now, rather than at the next look. */
