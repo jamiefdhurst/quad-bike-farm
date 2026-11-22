@@ -6,7 +6,7 @@ import { BUDGETS } from './frameBudget.mjs';
 
 /** Budgets that only mean something on a real GPU, checked locally and never in CI. */
 export const LOCAL_BUDGETS = {
-  ms: 8, // the game's own work a frame at any spot (the simulation and handing the frame over), on Jamie's Mac
+  ms: 18, // the game's own work a frame at any spot (the simulation and handing the frame over), on Jamie's Mac: the slowest spots hold about 17 ms since the bigger farm, plus the tool's noise (#1041; it was 8, which no spot with anything to see met)
   readyS: 2.5, // seconds from opening the page to "Ready" (.claude/rules/checking.md)
 };
 

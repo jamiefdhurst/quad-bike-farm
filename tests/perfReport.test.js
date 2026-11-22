@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { change, combineRuns, overBudget, report, verdict } from '../tools/perfReport.mjs';
+import { LOCAL_BUDGETS, change, combineRuns, overBudget, report, verdict } from '../tools/perfReport.mjs';
 
 const spot = (calls, ms, extra = {}) => ({ calls, triangles: 3e6, ms, worstMs: ms * 2, ...extra });
 
@@ -30,7 +30,7 @@ describe('perf report', () => {
   });
 
   it('flags the local budgets as well as the frame budget', () => {
-    const over = overBudget({ load: { readyS: 3 }, spots: { spawn: spot(2700, 9) } });
+    const over = overBudget({ load: { readyS: 3 }, spots: { spawn: spot(2700, LOCAL_BUDGETS.ms + 1) } });
     expect(over.some((l) => l.includes('calls'))).toBe(true);
     expect(over.some((l) => l.includes('ms a frame'))).toBe(true);
     expect(over.some((l) => l.includes('to Ready'))).toBe(true);

@@ -16,8 +16,9 @@ export const BUDGETS = {
   // 3,000 m, the worse kept, the same at both) 1,180 and 1.98M, 1,734 and 2.65M, 1,288 and 2.66M. The animals, the girls and the lane's traffic are not in them; the real frame,
   // moving things and all, is `tools/perf.mjs`. `movers` is everything left out of those counts, drawn up as if all of it were in view (5,440 calls and 1.39M triangles):
   // not a frame, but what a new herd, rider or vehicle body adds to the farm's moving things, which the spots no longer see. Raise it only on purpose (`MOVERS` in `measureInPage`).
-  spawn: { calls: 790, triangles: 1.88e6 },
-  yard: { calls: 1970, triangles: 2.10e6 },
+  // Since #1041 (each still root's shadows in a call or two, and the barn's and yard's fixtures merged) the spawn is 494 calls and the yard 1,246, held to about 8% over.
+  spawn: { calls: 530, triangles: 1.88e6 },
+  yard: { calls: 1350, triangles: 2.10e6 },
   village: { calls: 2320, triangles: 2.69e6 },
   wood: { calls: 1610, triangles: 3.74e6 },
   hilltop: { calls: 1480, triangles: 2.20e6 },
