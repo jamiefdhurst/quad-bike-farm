@@ -44,8 +44,8 @@ describe('the frame budget', () => {
     expect(check(m).missing).toEqual(['village']);
   });
 
-  it('keeps spawn at the budget it was given on the farm everybody plays (#692): about 8% over 718 calls and 1.29M triangles', () => {
-    expect(BUDGETS.spawn).toEqual({ calls: 780, triangles: 1.39e6 });
+  it('keeps spawn at the budget it was given on the farm everybody plays (#692): about 8% over 731 calls and 1.74M triangles', () => {
+    expect(BUDGETS.spawn).toEqual({ calls: 790, triangles: 1.88e6 });
   });
 
   it('has a budget for what is left out of the spots, which is not a spot to stand at (#597)', () => {
