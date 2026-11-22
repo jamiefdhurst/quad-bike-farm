@@ -119,7 +119,9 @@ export const FAQ_SECTIONS = [
         a: `On the new farm (<code>?layout=2</code>) a clear day shows about a mile and a half: from the Moor's ridge you see the farm laid out below and fields,
           hedges, woods, farms and hills beyond, bluer and softer with distance, with the A-road and the lane running on and the river in the valley.
           It is all for looking at. The land beyond the farm's own edge is a painted stand-in that you can't ride on: every way off the map turns you round
-          before you reach it. On a grey day the murk closes in and it goes.`,
+          before you reach it. On a grey day the murk closes in and it goes. How far a clear day shows is the Graphics group's <code>viewDistance</code> in the
+          Tune tab (<code>tune.graphics.viewDistance</code> in the console): 1500 m to begin with, up to 3000, and every weather keeps its own share of it,
+          so a grey day is still a few hundred metres and mist still closes right in.`,
         tip: 'On a clear day the Moor\'s ridge shows fields and hills a mile and more away. You can look, not ride there.',
       },
       {
