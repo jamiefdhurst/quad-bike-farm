@@ -215,11 +215,14 @@ describe('where the common is painted and where you are taken', () => {
   it('has a place for the moor and one for the ridge, stile and first grid, each on the common or the lane', async () => {
     const { moorPlaces } = await import('../src/console/gameHost.js');
     const p = moorPlaces(two, net);
-    expect(Object.keys(p).sort()).toEqual(['moor', 'moorgrid', 'ridge', 'stile']);
+    expect(Object.keys(p).sort()).toEqual(['flush', 'moor', 'moorgrid', 'moorsheep', 'ridge', 'stile']);
     expect(p.moor.x).toBeLessThan(M.gate.x - 60); // out on the common, west of the gate
     expect(Math.hypot(p.ridge.x - M.trig.at[0], p.ridge.z - M.trig.at[1])).toBeLessThan(6);
     expect(p.stile.x - M.stile.at[0]).toBeGreaterThan(6); // short of the line, on the farm side
     expect(net.nearest(p.moorgrid.x, p.moorgrid.z, 3)?.road.id).toBe('backLane');
+    expect(p.flush.x).toBeGreaterThan(M.flushes[0].x + M.flushes[0].rx); // east of the flush, dry ground to ride in from
+    expect(net.nearest(p.moorsheep.x, p.moorsheep.z, 3)?.road.id).toBe('backLane'); // on the lane, level with the flock
+    expect(Math.abs(p.moorsheep.z - M.gate.z)).toBeLessThan(40);
     expect(moorPlaces(LAYOUT, roadNetwork(LAYOUT))).toEqual({}); // today's farm has none
   });
 });

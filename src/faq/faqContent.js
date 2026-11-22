@@ -478,6 +478,11 @@ export const FAQ_SECTIONS = [
         tip: 'The Moor is open common: ride up the sheep tracks to the ridge and its trig pillar.',
       },
       {
+        q: 'Can I get stuck on the Moor, and what lives up there?',
+        a: `Yes. The wet flushes, the bright green patches of moss and cotton grass, are bogs: ride into the middle of one and a quad loses its grip and sinks, the same as the farm's other bogs, so go round them (the girls on the back warn you). The ground is rough everywhere else but it holds. From May to September a flock of about a dozen sheep grazes the common and wanders onto Back Lane between the cattle grids, so take the lane gently; they bolt from a quad. In spring (March to June) curlews and skylarks call over the heather by day, and the wind is always stronger up there than in the valley. Each cattle grid rattles and shakes a quad as it crosses, like the drive's. Jess wants to open the throttle on all that room, and Amy would rather you did not.`,
+        tip: 'Wet green flushes on the Moor are bogs, and sheep graze the lane from May to September.',
+      },
+      {
         q: 'What happens at the stile in the ridge wall?',
         a: `The footpath from the farm ends at a ladder stile over the ridge wall, and the way on is to Upper Thornby, an hour over the top. You never go over: walk up to the stile and the screen fades to black and puts you back down the slope, facing home. A girl with you says why ("Upper Thornby is an hour over the top"); on your own you get a note. The wall itself is solid for every vehicle all along the ridge.`,
       },

@@ -118,7 +118,8 @@ export function aRoadPlaces(layout, roads) {
 
 /**
  * The Moor's places (#713), on the new farm: `moor` 70 m out on the heather west of the moor gate, `ridge` beside the trig pillar on the ridge, `stile` 9 m
- * short of the ladder stile (the line that turns you round is 1.2 m from the wall), and `moorgrid` on Back Lane 10 m before the first cattle grid. Today's farm has none.
+ * short of the ladder stile (the line that turns you round is 1.2 m from the wall), `moorgrid` on Back Lane 10 m before the first cattle grid, `flush` east of the spring's
+ * wet flush and `moorsheep` on Back Lane by the summer flock (#821). Today's farm has none.
  */
 export function moorPlaces(layout, roads) {
   const M = layout.moor;
@@ -126,7 +127,12 @@ export function moorPlaces(layout, roads) {
   const lane = roads?.road('backLane');
   const grid = lane && M.grids[0] ? gridPlace(lane, M.grids[0].near) : null;
   const p = grid ? roads.pointAt('backLane', Math.max(0, grid.s - 10)) : null;
+  // The lane's own point nearest 30 m west of the moor gate and 25 m up it: where the summer flock grazes the verge (#821).
+  const flockAt = lane?.samples.reduce((best, s) => (Math.hypot(s.x - (M.gate.x - 30), s.z - (M.gate.z - 25)) < Math.hypot(best.x - (M.gate.x - 30), best.z - (M.gate.z - 25)) ? s : best), lane.samples[0]);
+  const f = M.flushes[0];
   return {
+    flush: { x: f.x + f.rx + 6, z: f.z }, // just east of the spring's flush, to ride into it
+    moorsheep: flockAt ? { x: flockAt.x, z: flockAt.z } : null, // on Back Lane beside where the summer flock grazes
     moor: { x: M.gate.x - 70, z: M.gate.z },
     ridge: { x: M.trig.at[0] + 5, z: M.trig.at[1] },
     stile: { x: M.stile.at[0] + 9, z: M.stile.at[1] },
@@ -211,6 +217,8 @@ export function createHost(g, { copy = () => {} } = {}) {
       ridge: moorSpots.ridge, // beside the trig pillar on the ridge
       stile: moorSpots.stile, // short of the ladder stile in the ridge wall, where climbing it turns you round
       moorgrid: moorSpots.moorgrid, // Back Lane before the first cattle grid onto the common
+      flush: moorSpots.flush, // east of the spring's wet flush on the Moor, to ride into it and bog
+      moorsheep: moorSpots.moorsheep, // Back Lane by the Moor's summer flock
       stonetrack: trackSpots.stonetrack, // the stone track north of the yard, on the way to the pit: the new farm's (#689)
       farmbridge: trackSpots.farmbridge, // 9 m up the stone track south from the farm bridge over the river's head
       boundarytrack: trackSpots.boundarytrack, // the grass track round the boundary, in Lane Field
