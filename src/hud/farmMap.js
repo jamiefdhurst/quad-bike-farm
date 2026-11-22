@@ -300,7 +300,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (hut) place('Hut', hut.x - 2, hut.z - 7.5);
   if (b) place('Barn', barnFrame(layout).toWorld(b.x - 5, b.z + b.halfZ + 6).x, barnFrame(layout).toWorld(b.x - 5, b.z + b.halfZ + 6).z); // south-west of it (turned with the barn), clear of the quads parked in the yard (which has no name: it's crowded)
   if (paddock) place('Paddock', p.x, p.z, p.half + 4);
-  if (strip) place('Drag strip', strip.x + 6, strip.z + 6);
+  if (gravelStrip(layout)) place('Drag strip', strip.x + 6, strip.z + 6); // (the new farm's races are on the drive, which is labelled as the drive)
   if (r) place('Jump', r.x, r.z, -6);
   if (roads.some((r) => r.id === 'farm')) place(layout.newFarm ? 'The drive' : 'Farm road', (layout.road.fromX + (layout.road.hedgeTo ?? layout.road.toX)) / 2 - 20, layout.road.z - 9);
   if (dutch) place('Dutch barn', layout.dutchBarn.x - 4, layout.dutchBarn.z - layout.dutchBarn.halfZ - 4);

@@ -22,7 +22,8 @@ export const spotsFor = (L) => {
   const away = (where) => L.spawn?.away?.find((a) => a.where === where);
   const newFarm = !!L.fields;
   const at = {
-    yard: L.yard, ramp: L.jumpRamp, dragStrip: gravelStrip(L), // (the new farm's races are on the drive, which has its own name) lowBog: L.bogs?.find((b) => b.x !== undefined),
+    // (the new farm's races are on the drive, which has its own name, so `dragStrip` is today's gravel one or none)
+    yard: L.yard, ramp: L.jumpRamp, dragStrip: gravelStrip(L), lowBog: L.bogs?.find((b) => b.x !== undefined),
     bottomTrack: away('by the bottom of the track'), middleField: away('in the middle of the field'), northHedge: away('by the north hedge'),
     farCorner: away('in the far corner'), westHedge: away('down the west hedge'),
     ford: L.hill && { x: L.hill.lane.x, z: L.hill.stream.z }, pond: L.hill?.paddocks?.west?.pond, trough: L.trough,
