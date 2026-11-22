@@ -1,5 +1,6 @@
 import { createRiver } from './river.js';
 import { yardHeard } from './yardBed.js';
+import { moorHeard, moorBirds } from './moorBed.js';
 import { createCattleGrid, createLaneGrid, gridNear } from './cattleGrid.js';
 import { moorGrids, MOOR_GRID_LENGTH, MOOR_GRID_PITCH } from './moorProps.js';
 import { roadNetwork, EDGE } from './roads.js';
@@ -309,6 +310,12 @@ export class World {
     }
     this.streamEvent = s.update(dt, this.weather.rain);
     this.setStreamLevel();
+  }
+
+  /** The Moor's sound at (x, z): { level, birds } (`moorHeard`, `moorBirds` for the farm's date and the darkness), or null with no Moor. */
+  moorHeard(x, z, date, darkness) {
+    const level = moorHeard(this.heights.moor, x, z);
+    return level > 0 ? { level, birds: moorBirds(date, darkness) } : null;
   }
 
   /** 0..1 how much of the yard's sound bed to play at (x, z): see `yardHeard`. */

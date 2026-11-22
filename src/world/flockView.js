@@ -3,6 +3,8 @@
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { Flock } from './flock.js';
+import { moorFlockOn, moorFlockAllowed, moorFlockCentre } from './moorFlock.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const NECK = new THREE.Vector3(0, 0.52, 0.42); // where the head hangs from, in the sheep's own frame
@@ -129,4 +131,18 @@ export class FlockView {
     });
     for (const mesh of this.meshes) mesh.instanceMatrix.needsUpdate = true;
   }
+}
+
+/** The Moor's summer flock (moorFlock.js) put down and drawn, pushed onto the game's `flocks` so it moves with the rest; none out of season or on a farm with no Moor. */
+export function setUpMoorFlock(game, random) {
+  const { layout, heights } = game.world;
+  const moor = heights.moor;
+  const count = game.flockParams.moorCount;
+  if (!moor || !layout.moor.gate || !count || !moorFlockOn(game.date)) return;
+  const gridZ = layout.moor.grids.map((g) => g.near[1]).sort((a, b) => a - b);
+  const allowed = moorFlockAllowed(moor, gridZ);
+  const c = moorFlockCentre(moor, layout.moor.gate);
+  const flock = new Flock({ allowed, random, params: game.flockParams, count });
+  if (!flock.place(c)) return;
+  game.flocks.push({ flock, view: new FlockView(game.scene, flock, (x, z) => game.world.groundHeightAt(x, z)), moor: true });
 }

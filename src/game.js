@@ -281,7 +281,7 @@ import { fuelText } from './engine/diesel.js';
 import { FuelTank } from './items/fuelTank.js';
 import { Bell } from './world/bellBuild.js';
 import { Flock, findFlockSpot, hillHalfFor, hillFlockAllowed, DEFAULT_FLOCK_PARAMS, FLOCK_PARAM_RANGES } from './world/flock.js';
-import { FlockView } from './world/flockView.js';
+import { FlockView, setUpMoorFlock } from './world/flockView.js';
 import { SheepAudio } from './audio/sheepAudio.js';
 import { Rabbits, Pheasants, hedgeSpots, DEFAULT_WILDLIFE_PARAMS, WILDLIFE_PARAM_RANGES } from './world/wildlife.js';
 import { WildlifeView } from './world/wildlifeView.js';
@@ -7067,7 +7067,7 @@ export class Game {
     this.rain.update(dt, this.camera, w.rain, 1, (x, z) => world.covered(x, z));
     this.snow.update(dt, this.camera, w.snow, 1, (x, z) => world.covered(x, z));
     this.updateLeafFall(dt);
-    this.audioHub.setRain(w.rain, indoor, world.barnParams, world.yardHeard(cam.x, cam.z, indoor), w.wind); // and the yard's tin and tap (#817)
+    this.audioHub.setRain(w.rain, indoor, world.barnParams, world.yardHeard(cam.x, cam.z, indoor), w.wind, world.moorHeard(cam.x, cam.z, this.date, this.daylight.darkness)); // the yard's tin and tap (#817), the Moor's wind and birds (#821)
     this.updateStorm(dt, indoor);
     this.audioHub.room ??= { inside: (x, z) => world.inBarn(x, z), params: world.barnParams, listenerIn: false };
     this.audioHub.room.listenerIn = world.inBarn(cam.x, cam.z);
@@ -11787,6 +11787,7 @@ export class Game {
     this.flocks.push({ flock: this.flock, view: this.flockView });
     this.sheepAudio = new SheepAudio(this.audioHub);
     this.setUpFieldFlock(hill, random);
+    setUpMoorFlock(this, random); // the Moor's summer flock (#821)
   }
 
   /** A smaller flock in the sheep field beside the lane, south of its drystone wall (hill.sheepFieldOk). */
