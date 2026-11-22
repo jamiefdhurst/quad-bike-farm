@@ -115,6 +115,14 @@ export const FAQ_SECTIONS = [
         tip: 'Lost? M shows the farm map, with the girls, the vehicles and the jerry cans on it.',
       },
       {
+        q: 'Why can I see so far, and can I go there?',
+        a: `On the new farm (<code>?layout=2</code>) a clear day shows about a mile and a half: from the Moor's ridge you see the farm laid out below and fields,
+          hedges, woods, farms and hills beyond, bluer and softer with distance, with the A-road and the lane running on and the river in the valley.
+          It is all for looking at. The land beyond the farm's own edge is a painted stand-in that you can't ride on: every way off the map turns you round
+          before you reach it. On a grey day the murk closes in and it goes.`,
+        tip: 'On a clear day the Moor\'s ridge shows fields and hills a mile and more away. You can look, not ride there.',
+      },
+      {
         q: 'Is it the same every game?',
         a: `It's the same farm, a day later. Each time you load the game is the next day: the same vehicles in the condition you left them, and
           the girls remembering some of what happened. Where everything is parked, the weather, the temperature, the time of day and the girls'

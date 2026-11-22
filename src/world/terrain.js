@@ -5,6 +5,7 @@ import { tarmacMask, tarmacMaskSteps } from './roadWet.js';
 import { TILE_CELLS, TILE_MARGIN, SLOT } from './wearTiles.js';
 import { DEFAULT_GROUND_PARAMS, GroundGrid, TileSet, tileMeshData, cutTiles, groundBounds } from './groundTiles.js';
 import { PaintSet, PAINT_PX, paintWindow, overviewScale } from './groundPaint.js';
+import { createFarLand } from './farLandView.js';
 
 export { patchAt } from './patchwork.js';
 
@@ -200,6 +201,8 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   });
 
   scene.add(createOuterRing(layout, bounds, heights, fields));
+  // The new farm's far landscape (#708) carries on from the ring's edge out to the hills; today's farm has none.
+  if (layout.newFarm) scene.add(createFarLand({ layout, bounds, heights, renderer }));
 
   return {
     mesh,
