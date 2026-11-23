@@ -174,7 +174,12 @@ export class RideAudio {
   constructor(hub, unit, world) {
     this.hub = hub;
     this.unit = unit;
-    this.surfaceAt = createSurfaceSampler(world);
+    const sample = createSurfaceSampler(world);
+    // The tyre sounds know five surfaces; the hard floors the sampler now names (the yard's concrete, stone tracks, straw) sound as the worn yard did.
+    this.surfaceAt = (x, z) => {
+      const s = sample(x, z);
+      return { grass: s.grass, dirt: s.dirt + s.concrete + s.stone + s.straw, mud: s.mud, water: s.water, tarmac: s.tarmac };
+    };
     this.world = world;
     this.grid = world.cattleGrid ?? null; // the grid last near: the drive's, or one of the Moor's (#821)
     this.gridShare = 0; // share of wheels on the cattle grid

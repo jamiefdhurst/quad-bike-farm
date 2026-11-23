@@ -6,28 +6,56 @@ const smoothstep = (a, b, x) => {
   return t * t * (3 - 2 * t);
 };
 
+/** Whether (x, z) is inside a box with a middle, half sizes and a yaw (the barn stands turned a quarter, #682). */
+function inBox(x, z, b, margin = 0) {
+  const dx = x - b.x;
+  const dz = z - b.z;
+  const c = Math.cos(b.yaw ?? 0);
+  const s = Math.sin(b.yaw ?? 0);
+  return Math.abs(dx * c + dz * s) <= b.halfX - margin && Math.abs(-dx * s + dz * c) <= b.halfZ - margin;
+}
+
 /**
- * Surface under a point, as shares that add up to 1: grass, dirt (the track
- * and the worn yard), mud (the wet ground round a puddle), water (in one) and
- * tarmac (the farm road, unless it's under mud). Stubble counts as grass.
- * @param {object} world  Anything with mudAt(x, z), heights.puddles and layout.
+ * Surface under a point, as shares that add up to 1: grass, dirt (the track and the worn yard), mud (the wet ground round a puddle), water
+ * (in one), tarmac (the farm road, unless it's under mud), concrete (the yard's slab and the barn's floor), stone (the farm's stone tracks) and
+ * straw (the Dutch barn's floor). Stubble counts as grass. Puddles and mud win over the hard ground, which is why wellies squelch in the yard's low corner.
+ * @param {object} world  Anything with mudAt(x, z), heights.puddles and layout; stoneAt(x, z) is optional.
  */
 export function createSurfaceSampler(world) {
   const layout = world.layout;
   const puddles = world.heights?.puddles ?? [];
   const R = layout.puddleRadius ?? 1.7;
   const yard = layout.yard;
+  const slab = layout.farmstead?.slab;
+  const barn = layout.barn?.halfX ? layout.barn : null;
+  const dutch = layout.dutchBarn?.halfX ? layout.dutchBarn : null;
   return function surfaceAt(x, z) {
     let near = Infinity;
     for (const p of puddles) near = Math.min(near, Math.hypot(x - p.x, z - p.z));
     // The water's edge is at about 0.8 of the hollow's radius; the ground round it is churned to mud.
     const water = 1 - smoothstep(0.6 * R, 0.85 * R, near);
     const mud = (1 - smoothstep(0.9 * R, 1.6 * R, near)) * (1 - water);
+    const hard = slab && x >= slab.minX && x <= slab.maxX && z >= slab.minZ && z <= slab.maxZ ? 1 : barn && inBox(x, z, barn) ? 1 : 0;
     let dirt = world.mudAt(x, z);
-    if (yard) dirt = Math.max(dirt, 1 - smoothstep(yard.radius * 0.45, yard.radius * 0.75, Math.hypot(x - yard.x, z - yard.z)));
+    // Where the yard is concrete the old worn-yard blob is gone: the slab is its own surface.
+    if (yard && !slab) dirt = Math.max(dirt, 1 - smoothstep(yard.radius * 0.45, yard.radius * 0.75, Math.hypot(x - yard.x, z - yard.z)));
     const dry = 1 - water - mud;
     const tarmac = world.tarmacAt?.(x, z) ?? 0;
-    return { grass: (1 - dirt) * dry * (1 - tarmac), dirt: dirt * dry, mud, water, tarmac: (1 - dirt) * dry * tarmac };
+    const straw = dutch && inBox(x, z, dutch) ? 1 : 0;
+    const stone = Math.min(1, world.stoneAt?.(x, z) ?? 0);
+    const concrete = hard * (1 - straw);
+    const rest = dry * (1 - concrete - straw); // what the hard floors leave, shared out among the open ground
+    const left = rest * (1 - stone);
+    return {
+      grass: (1 - dirt) * left * (1 - tarmac),
+      dirt: dirt * left,
+      mud,
+      water,
+      tarmac: (1 - dirt) * left * tarmac,
+      concrete: concrete * dry,
+      stone: rest * stone,
+      straw: straw * dry,
+    };
   };
 }
 
