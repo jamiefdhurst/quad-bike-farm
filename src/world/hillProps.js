@@ -32,7 +32,10 @@ export function buildHill(c) {
   let wallSwap = null;
   if (c.fields.hill.riverside) buildRiverside(c);
   if (c.fields.hill.west) {
-    buildPond(c, c.fields.hill, (x, z) => c.fields.hill.lineDistance(c.layout.hill.paddocks.west.track, x, z) < 3);
+    // No reeds on the track's side, or on the bank under the veteran oak's limb, where the rope swing hangs (#881).
+    const oak = (c.layout.fieldLandmarks ?? []).find((l) => l.kind === 'pollardOak');
+    const underLimb = (x, z) => oak && Math.hypot(x - (oak.at[0] + Math.cos(oak.limbYaw) * 5), z - (oak.at[1] + Math.sin(oak.limbYaw) * 5)) < 4.5;
+    buildPond(c, c.fields.hill, (x, z) => c.fields.hill.lineDistance(c.layout.hill.paddocks.west.track, x, z) < 3 || underLimb(x, z));
     buildMeadowTrees(c);
     wallSwap = buildWall(c);
     buildThorns(c);

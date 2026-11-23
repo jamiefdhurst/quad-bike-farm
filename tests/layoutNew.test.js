@@ -497,17 +497,17 @@ describe('a landmark in every field (#815)', () => {
   const pointsOf = (l) => [l.at, ...(l.trees ?? []), ...(l.willows ?? [])];
   const game = fieldLandmarksLayout();
   const toPlan = ([x, z]) => [x + 520, z + 365];
-  const TWELVE = ['north', 'top', 'lanefield', 'longpiece', 'far', 'south', 'hay', 'ley', 'brook', 'sheep', 'hill', 'moor'];
+  const TWELVE = ['north', 'top', 'lanefield', 'longpiece', 'far', 'south', 'hay', 'ley', 'brook', 'sheep', 'hill', 'moor', 'wet'];
 
-  it('has one in each of the twelve fields the issue lists, and none in the others', () => {
+  it('has one in each of the thirteen fields the issues list, and none in the others', () => {
     expect([...new Set(L.map((l) => l.field))].sort()).toEqual([...TWELVE].sort());
-    for (const f of ['wood', 'pit', 'wet', 'home', 'farmstead', 'drive']) expect(L.some((l) => l.field === f), f).toBe(false);
+    for (const f of ['wood', 'pit', 'home', 'farmstead', 'drive']) expect(L.some((l) => l.field === f), f).toBe(false);
   });
   it('has the kind the issue names in each', () => {
     const kind = Object.fromEntries(L.filter((l) => l.field !== 'hill').map((l) => [l.field, l.kind]));
     expect(kind).toEqual({
       north: 'loneOak', top: 'oldGateposts', lanefield: 'powerLine', longpiece: 'deadElm', far: 'farPond', south: 'castRoller', hay: 'loneAsh',
-      ley: 'brookAlders', brook: 'bigOaks', sheep: 'fieldBarn', moor: 'trigPillar',
+      ley: 'brookAlders', brook: 'bigOaks', sheep: 'fieldBarn', moor: 'trigPillar', wet: 'pollardOak',
     });
     expect(L.filter((l) => l.field === 'hill').map((l) => l.kind).sort()).toEqual(['flaskRock', 'hut']);
   });

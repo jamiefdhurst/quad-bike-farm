@@ -7,7 +7,7 @@ const smoothstep = (a, b, x) => {
 };
 
 /** The landmarks this issue builds, by kind. The others only have their place here: #711 (the line), #624 (the barn), #684 (the hut and the rock) and #713 (the pillar) build theirs. */
-export const BUILT_KINDS = ['loneOak', 'oldGateposts', 'deadElm', 'farPond', 'castRoller', 'loneAsh', 'brookAlders', 'bigOaks'];
+export const BUILT_KINDS = ['loneOak', 'oldGateposts', 'deadElm', 'farPond', 'castRoller', 'loneAsh', 'brookAlders', 'bigOaks', 'pollardOak'];
 
 /** The pond's ground: the dish goes `DISH` m deep at its middle and the water stands `WATER` m deep there; the dish reaches `REACH` of the pond's radii out. */
 export const POND = { depth: 0.9, water: 0.5, reach: 1.25 };

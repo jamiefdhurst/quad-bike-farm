@@ -795,6 +795,8 @@ export const FIELD_LANDMARKS_PLAN = [
   { field: 'ley', kind: 'brookAlders', route: 'M650 600 C700 632 790 648 885 650', along: [0.08, 0.78], count: 6, bank: -4 },
   // Big old oaks scattered over the meadow south of the river.
   { field: 'brook', kind: 'bigOaks', trees: [[480, 670], [560, 700], [590, 640], [500, 775]] },
+  // The Wet Meadow's veteran oak on the pond's west bank (the pond is at (112, 292)), its low limb pointing east over the water (#881).
+  { field: 'wet', kind: 'pollardOak', at: [98, 291], limbYaw: 0 },
   // The field barn at the top tread of the sheep field (#684's spot).
   { field: 'sheep', kind: 'fieldBarn', at: [378, 451], builtBy: '#624' },
   // The shepherd's hut and the flask rock, as the plan has them.
@@ -1359,7 +1361,7 @@ export const HILL_PLAN = {
   meadow: {
     pond: { at: [112, 292], rx: 11, rz: 8, depth: 1.1, water: 0.6 },
     track: [[193, 296], [176, 295.4], [160, 294.6], [144, 293.6], [126, 292.6]],
-    trees: [[-10, -3], [-8, 6], [4, 10], [11, 4], [9, -9], [-2, -10], [-11, -12]], // offsets from the pond, today's
+    trees: [[-8, 6], [4, 10], [11, 4], [9, -9], [-2, -10], [-11, -12]], // offsets from the pond, today's but for the west bank's, where the veteran oak stands (#881)
   },
   sheep: {
     terraces: { banks: [491, 527], width: 7, ease: 10, stand: [330, 478] },

@@ -47,7 +47,7 @@ beforeAll(async () => {
   ctx = { ...headlessContext(), layout: two, heights, physics: rec.physics, RAPIER: rec.RAPIER, fixedBox: fixed, anchors: [] };
   const builders = {
     loneOak: land.buildLoneOak, oldGateposts: land.buildGateposts, deadElm: land.buildDeadElm, farPond: land.buildFarPond,
-    castRoller: land.buildRoller, loneAsh: land.buildLoneAsh, brookAlders: land.buildAlders, bigOaks: land.buildBigOaks,
+    castRoller: land.buildRoller, loneAsh: land.buildLoneAsh, brookAlders: land.buildAlders, bigOaks: land.buildBigOaks, pollardOak: land.buildPollardOak,
   };
   for (const kind of BUILT_KINDS) {
     const before = colliders.length;
@@ -55,7 +55,7 @@ beforeAll(async () => {
   }
 }, 60000);
 
-describe('the eight landmarks', () => {
+describe('the nine landmarks', () => {
   it('are the ones the layout places and farDetail names', () => {
     expect(Object.keys(built).sort()).toEqual([...BUILT_KINDS].sort());
     for (const kind of BUILT_KINDS) {
@@ -82,7 +82,7 @@ describe('the eight landmarks', () => {
 
   it('have a collider for every trunk, post and drum, where each stands', () => {
     const counts = Object.fromEntries(BUILT_KINDS.map((k) => [k, built[k].colliders.length]));
-    expect(counts).toEqual({ loneOak: 1, oldGateposts: 2, deadElm: 1, farPond: 2, castRoller: 1, loneAsh: 1, brookAlders: spot('brookAlders').trees.length, bigOaks: spot('bigOaks').trees.length });
+    expect(counts).toEqual({ loneOak: 1, oldGateposts: 2, deadElm: 1, farPond: 2, castRoller: 1, loneAsh: 1, brookAlders: spot('brookAlders').trees.length, bigOaks: spot('bigOaks').trees.length, pollardOak: 1 });
     const [ox, oz] = spot('loneOak').at;
     expect(built.loneOak.colliders[0].at[0]).toBeCloseTo(ox, 6);
     expect(built.loneOak.colliders[0].at[2]).toBeCloseTo(oz, 6);
@@ -98,7 +98,7 @@ describe('the eight landmarks', () => {
   });
 
   it('keep each tree\'s trunk and crown and the pond\'s water out of the named group, as a body in the scene of its own, so a tree stays in sight from a gate beyond setPieceDistance; the gateposts and the roller are all detail', () => {
-    for (const kind of ['loneOak', 'bigOaks', 'loneAsh', 'deadElm', 'brookAlders', 'farPond']) {
+    for (const kind of ['loneOak', 'bigOaks', 'loneAsh', 'deadElm', 'brookAlders', 'farPond', 'pollardOak']) {
       const body = built[kind].group.userData.body;
       expect(body, kind).toBeDefined();
       expect(body.name, 'unnamed, so FarDetail treats it like the farm\'s other trees and never hides it by distance').toBe('');
@@ -176,9 +176,49 @@ describe('the eight landmarks', () => {
   });
 });
 
+describe('the Wet Meadow\'s veteran oak (#881)', () => {
+  const [ox, oz] = spot('pollardOak').at;
+  it('stops a quad: a trunk collider where it stands, as wide as a bole 1.4 m across and as tall as the oak\'s boles', () => {
+    const c = built.pollardOak.colliders[0];
+    expect(c.kind).toBe('cylinder');
+    expect(c.at[0]).toBeCloseTo(ox, 6);
+    expect(c.at[2]).toBeCloseTo(oz, 6);
+    expect(c.size[1]).toBeGreaterThan(0.6); // radius
+    expect(c.size[0]).toBeGreaterThan(3); // half its height
+  });
+  it('stands about 18 m tall, a quarter above the meadow\'s other oaks, with bare dead tips over the leaves', () => {
+    const box = new THREE.Box3();
+    const leaves = new THREE.Box3();
+    built.pollardOak.group.userData.body.traverse((o) => {
+      if (!o.isMesh) return;
+      box.expandByObject(o);
+      if (o.name === 'oakLeaves') leaves.expandByObject(o);
+    });
+    const ground = ctx.heights.heightAt(ox, oz);
+    expect(box.max.y - ground).toBeGreaterThan(16);
+    expect(box.max.y - ground).toBeLessThan(21);
+    expect(box.max.y - leaves.max.y, 'bark (the dead spikes) stands above the leaves').toBeGreaterThan(0.5);
+  });
+  it('has a limb about 6.5 m long level out at about 3 m over the water, and gives the rope swing its point on it', () => {
+    const swing = built.pollardOak.group.userData.swing;
+    expect(swing).toBeDefined();
+    const ground = ctx.heights.heightAt(swing.x, swing.z);
+    expect(swing.y - ground).toBeGreaterThan(2.5);
+    expect(Math.hypot(swing.x - ox, swing.z - oz)).toBeGreaterThan(4.5);
+    expect(Math.hypot(swing.x - ox, swing.z - oz)).toBeLessThan(7);
+    const pond = two.hill.paddocks.west.pond;
+    expect(ctx.heights.heightAt(pond.x, pond.z) + pond.water, 'the water is under the limb\'s end').toBeLessThan(swing.y - 2);
+    expect(Math.hypot(swing.x - pond.x, swing.z - pond.z), 'the swing is over the pond').toBeLessThan(pond.rx);
+  });
+  it('keeps the meadow\'s other oaks clear of its limb, so the bank under it is open', () => {
+    const swing = built.pollardOak.group.userData.swing;
+    for (const [x, z] of two.hill.paddocks.west.trees) expect(Math.hypot(x - swing.x, z - swing.z)).toBeGreaterThan(6);
+  });
+});
+
 describe('the worn ground under them', () => {
   it('lies under each landmark, not off to one side: every patch of earth is centred within 20 m of a tree, post, drum or willow of its landmark (a patch once stood twice as far out)', () => {
-    for (const kind of ['loneOak', 'loneAsh', 'oldGateposts', 'farPond', 'brookAlders', 'bigOaks']) {
+    for (const kind of ['loneOak', 'loneAsh', 'oldGateposts', 'farPond', 'brookAlders', 'bigOaks', 'pollardOak']) {
       const l = spot(kind);
       const points = [l.at, ...(l.trees ?? []), ...(l.willows ?? [])];
       let patches = 0;
@@ -254,6 +294,6 @@ describe('today\'s farm', () => {
     const made = land.buildFieldLandmarks({ ...ctx, scene, random: headlessContext().random });
     expect(Object.keys(made).sort()).toEqual([...BUILT_KINDS].sort());
     for (const kind of BUILT_KINDS) expect(scene.children).toContain(made[kind]);
-    expect(scene.children.filter((o) => o.name === '').length, 'a body for each of the six trees and the pond, in the scene on its own').toBe(6);
+    expect(scene.children.filter((o) => o.name === '').length, 'a body for each of the seven trees and the pond, in the scene on its own').toBe(7);
   });
 });
