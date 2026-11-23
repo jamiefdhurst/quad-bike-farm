@@ -5,6 +5,9 @@ import { LAYOUT } from '../src/world/layout.js';
 import { neighbourFarmShape, dealNeighbourVehicles, PARKED_SIZES } from '../src/world/neighbourFarm.js';
 import { VEHICLE_NAMES } from '../src/world/farDetail.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
+import { headlessContext } from './helpers/worldModels.js';
+import { createTerrainHeight } from '../src/world/terrainHeight.js';
+import { Track } from '../src/world/track.js';
 
 let buildVehicleBody;
 let buildTipTrailerModel;
@@ -135,10 +138,63 @@ describe('what the neighbour\'s dressing adds does not fight with what it lies o
     expect(hers.filter((f) => !plain.includes(f))).toEqual([]);
   });
 
-  it('puts none on the trailer that the player\'s does not have', () => {
+  it('puts none on the trailer that the player\'s does not have', async () => {
     const plain = faces(buildTipTrailerModel());
-    const hers = faces(buildTipTrailerModel({ farm: { rust: 0.5, straw: 0.5, tarp: 0x2f5f8a, seed: 5 } }));
+    const { DEFAULT_TRAILER_LOOK } = await import('../src/world/neighbourVehicles.js');
+    const hers = faces(buildTipTrailerModel({ farm: DEFAULT_TRAILER_LOOK })); // with its let-down side
     expect(hers.filter((f) => !plain.includes(f))).toEqual([]);
+  });
+});
+
+describe('her trailer as the yard builds it (#1149)', () => {
+  it('has the let-down side resting above the wheel and its mudguard, and the guards the same rusted steel as the tub', async () => {
+    const THREE_ = THREE;
+    const { DEFAULT_TRAILER_LOOK } = await import('../src/world/neighbourVehicles.js');
+    const model = buildTipTrailerModel({ farm: DEFAULT_TRAILER_LOOK });
+    model.updateMatrixWorld(true);
+    const side = named(model, 'dropSide')[0];
+    const box = new THREE_.Box3().setFromObject(side, true);
+    // The wheel's top is 0.60 and the guard's arc 0.67 over x 0.56 to 0.78 (at z 0): the side's lowest face over that stretch must clear both.
+    const ray = new THREE_.Raycaster(new THREE_.Vector3(-0.7, 3, 0), new THREE_.Vector3(0, -1, 0));
+    const hits = ray.intersectObject(model, true).filter((h) => !h.object.material.transparent);
+    const sideTop = hits.find((h) => { let o = h.object; while (o) { if (o === side) return true; o = o.parent; } return false; });
+    const guard = hits.find((h) => h.object.material.map && h.object.geometry.type === 'CylinderGeometry');
+    expect(box.max.x - box.min.x).toBeGreaterThan(0.3);
+    expect(sideTop, 'the ray meets the side').toBeTruthy();
+    expect(sideTop.point.y, 'the side is above the guard').toBeGreaterThan(0.67);
+    expect(guard, 'a guard with the rusted texture, not a plain white one').toBeTruthy();
+  });
+
+  it('has a collider centred on the trailer\'s middle, and its model inside it', async () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const { buildNeighbourFarm } = await import('../src/world/neighbourFarmProps.js');
+    const c = headlessContext();
+    const heights = createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints));
+    const boxes = [];
+    const built = buildNeighbourFarm({ ...c, layout: LAYOUT, heights, fixedBox: (...a) => (boxes.push(a), { setEnabled() {} }), gateParams: { swingSeconds: 1, blockBelow: 0.5, clearRadius: 3 } });
+    built.group.updateMatrixWorld(true);
+    for (const kind of ['quad', 'tipTrailer']) {
+      const v = built.vehicles.find((p) => p.kind === kind);
+      const [x, , z, hx, , hz, yaw] = boxes.find((b) => Math.abs(b[0] - v.x) < 1e-9 && Math.abs(b[2] - v.z) < 1e-9 && b[3] === PARKED_SIZES[kind].hw) ?? [];
+      expect([x, z], `${kind} collider centre`).toEqual([v.x, v.z]);
+      expect([hx, hz, yaw]).toEqual([PARKED_SIZES[kind].hw, PARKED_SIZES[kind].hl, v.yaw]);
+      // Its drawn model, in the collider's own frame (x across, z along), is inside it.
+      const sin = Math.sin(v.yaw);
+      const cos = Math.cos(v.yaw);
+      const p = new THREE.Vector3();
+      let worst = 0;
+      v.object.traverse((o) => {
+        if (!o.isMesh || o.material.transparent) return;
+        const a = o.geometry.attributes.position;
+        for (let i = 0; i < a.count; i += 3) {
+          p.fromBufferAttribute(a, i).applyMatrix4(o.matrixWorld);
+          const dx = p.x - v.x;
+          const dz = p.z - v.z;
+          worst = Math.max(worst, Math.abs(dx * cos - dz * sin) - hx, Math.abs(dx * sin + dz * cos) - hz);
+        }
+      });
+      expect(worst, `${kind}: how far its model pokes out of the collider`).toBeLessThan(0.12);
+    }
   });
 });
 

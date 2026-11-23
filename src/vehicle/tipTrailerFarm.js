@@ -7,6 +7,7 @@ import { rod } from './quadGeometry.js';
 // jockey wheel wound down onto the concrete and a rear lamp with a cracked lens. `look` is what the farm seed dealt (neighbourFarm.js `dealNeighbourVehicles`):
 // { rust 0..1, straw 0..1 (how full of the 0.4 m sides), tarp (a colour), dropSide (-1 or 1: the side let down on its hinges, lying out flat on its chains), seed }. All of it is on top of the model, which the player's trailer is unchanged by.
 
+const REST = 0.45; // radians above level the let-down side rests at, on the mudguard's arc (0.09 m above the tub floor at the guard's outer edge)
 export const JOCKEY_DOWN = 0.095; // `addJockeyWheel`'s lift with its little wheel on the ground (its radius 0.065, and 0.03 of hub below its centre)
 
 /** The model's materials with its steel and its tub gone to rust, as clones: the player's trailer keeps the shared ones. */
@@ -81,7 +82,7 @@ export function addFarmTrailerWear({ body, tub, lights, S, look, mat, hz }) {
   const straw = new THREE.Mesh(strawGeometry(S.halfWidth - 0.05, sideZ0 + 0.05, sideZ1 - 0.5, depth, look.seed), strawMat);
   straw.name = 'straw';
   tub.add(straw);
-  const heap = new THREE.Mesh(strawGeometry(S.halfWidth - 0.05, sideZ1 - 0.56, sideZ1, depth + 0.12, look.seed + 1), strawMat); // the load under the tarp
+  const heap = new THREE.Mesh(strawGeometry(S.halfWidth - 0.056, sideZ1 - 0.56, sideZ1, depth + 0.12, look.seed + 1), strawMat); // the load under the tarp
   heap.name = 'strawHeap';
   tub.add(heap);
   // The tarp over the front, and the baler twine that ties it down: a loop over it each side of the middle, tied off to the sides' rolled top edges.
@@ -107,23 +108,23 @@ export function addFarmTrailerWear({ body, tub, lights, S, look, mat, hz }) {
   if (drop) {
     const hinge = new THREE.Group();
     hinge.name = 'dropSide';
-    hinge.position.set(drop * (S.halfWidth - 0.02), 0.0, (sideZ0 + sideZ1) / 2);
-    hinge.rotation.z = -drop * (Math.PI / 2 + 0.08);
+    hinge.position.set(drop * (S.halfWidth + 0.013), 0.035, (sideZ0 + sideZ1) / 2); // on the hinge's knuckles
+    hinge.rotation.z = -drop * (Math.PI / 2 - REST); // propped up on the mudguard, which is above the tub floor: a flat side would cut through wheel and guard
     const len = sideZ1 - sideZ0 + 0.16;
     box(0.04, S.sideHeight, len, mat.tub, 0, S.sideHeight / 2, 0, hinge);
-    box(0.07, 0.04, len, mat.steel, 0, S.sideHeight, 0, hinge);
+    box(0.07, 0.04, len + 0.04, mat.steel, 0, S.sideHeight, 0, hinge); // a little longer than the wall, as the standing wall's edge is, so their ends share no plane
     for (const y of [0.12, 0.26]) box(0.012, 0.03, len - 0.1, mat.tubInner, drop * 0.022, y, 0, hinge);
     tub.add(hinge);
-    for (const z of [sideZ0 + 0.04, sideZ1 - 0.04]) addChain(tub, [drop * (S.halfWidth + 0.3), 0.0, z], [drop * (S.halfWidth + 0.03), S.sideHeight - 0.12, z], 6, 0.03);
+    for (const z of [sideZ0 + 0.04, sideZ1 - 0.04]) addChain(tub, [drop * (S.halfWidth + 0.013 + 0.4 * Math.cos(REST)), 0.035 + 0.4 * Math.sin(REST), z], [drop * (S.halfWidth + 0.03), S.sideHeight - 0.12, z], 6, 0.03);
   }
   // Drop sides: a hinge along the bottom of each side's outside (three knuckles on a pin), and an over-centre catch at each end of its top edge.
   for (const s of [-1, 1]) {
-    const x = s * (S.halfWidth + 0.034);
+    const x = s * (S.halfWidth + 0.013); // the knuckles' inner faces are 2 mm into the wall
     tub.add(new THREE.Mesh(rod([x, 0.035, sideZ0], [x, 0.035, sideZ1], 0.007, 6), mat.steel));
     for (const z of [sideZ0 + 0.14, (sideZ0 + sideZ1) / 2, sideZ1 - 0.14]) box(0.03, 0.045, 0.09, mat.steel, x, 0.035, z, tub);
-    for (const z of [sideZ0 + 0.02, sideZ1 - 0.02]) {
-      box(0.022, 0.07, 0.044, mat.steel, x, S.sideHeight - 0.075, z, tub); // the catch's body on the corner post
-      box(0.016, 0.012, 0.075, PART_MAT.nut, x + s * 0.016, S.sideHeight - 0.02, z, tub); // and its lever across, over the body's top (clear of its faces)
+    for (const z of s === drop ? [] : [sideZ0 + 0.02, sideZ1 - 0.02]) { // the let-down side has nothing to catch
+      box(0.022, 0.07, 0.044, mat.steel, x - s * 0.004, S.sideHeight - 0.075, z, tub); // the catch's body on the corner post
+      box(0.016, 0.012, 0.075, PART_MAT.nut, x + s * 0.012, S.sideHeight - 0.02, z, tub); // and its lever across, over the body's top (clear of its faces)
     }
   }
   // A cracked rear lamp lens each side: pale lines across the clear plastic, and a strip of tape over the left one.

@@ -1753,3 +1753,10 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - **Kept clear.** Both stand outside the 3 m ways to the barn door and the gap (`tests/neighbourYard.test.js` still passes unchanged); `tests/neighbourFarm.test.js` checks nothing overlaps and the colliders are the sizes, `tests/neighbourVehicles.test.js` that each box holds its model.
 - **Cost.** Merged by material like the three before them (`mergeParkedVehicle`): the quad is 41 meshes and 60k triangles, the trailer 31 meshes and 14k, against the Tor's 53, the UTV's 59 and the tractor's 31, so each is under any one of the three. None of the frame budget's spots is in her yard, so `node tools/perf.mjs` against main moved no spot's draw calls beyond the noise (the yard 1,234 and 1,234, the village 2,198 and 2,199) and the smoke test's spots are the same within the vehicles' distance trim.
 - **Looked at** with `tools/shot.mjs --at` on each, two rounds: the first had the blanket a flat plank over the tank end of the seat and the crate hanging off the rack's back edge; the blanket is now a draped sheet and the crate sits on the rack.
+
+## The neighbour's trailer, fixed after the recheck (#1149)
+
+- The let-down side rests propped 0.45 rad above level, on the mudguard's arc, not flat: the guard stands 0.09 m above the tub floor and flat it cut through the guard and the tyre. It hinges on its knuckles; the let-down side has no catches.
+- `addMudguard` copies the material's map as well as its colour, so her guards are the rusted steel and not plain white (the player's have no map, so are unchanged).
+- The coplanar test builds her trailer with the let-down side (and the straw heap is narrower than the straw so their faces share no plane). A test builds the yard with a recording `fixedBox` and checks each collider's centre and that the model is inside it, which the earlier shape-against-sizes case could not fail.
+
