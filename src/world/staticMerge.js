@@ -27,27 +27,34 @@ export function mergeCandidate(m) {
   return true;
 }
 
-const attributeKey = (geo) => `${geo.index ? 'i' : 'n'}${Object.keys(geo.attributes).sort().map((k) => `${k}${geo.attributes[k].itemSize}${geo.attributes[k].array.constructor.name}${geo.attributes[k].normalized ? 'n' : ''}`).join(',')}`;
+// Indexed or not is not part of the kind: the wear bake (vehicle/detail/wear.js) un-indexes a part with creases and leaves a smooth one indexed, so the
+// parts of one material came in both and were drawn as two meshes, or left alone (#1041). A merge with any indexed part numbers the others' triangles in order.
+const attributeKey = (geo) => `${Object.keys(geo.attributes).sort().map((k) => `${k}${geo.attributes[k].itemSize}${geo.attributes[k].array.constructor.name}${geo.attributes[k].normalized ? 'n' : ''}`).join(',')}`;
 
 const _normal = new THREE.Matrix3();
 const _v = new THREE.Vector3();
 
-/** One geometry made of the geometries of `items` ({ mesh, matrix }) moved by their matrices, written straight into new arrays (all of one kind: `attributeKey`). */
-function mergedGeometry(items) {
-  const first = items[0].mesh.geometry;
-  const names = Object.keys(first.attributes);
+/**
+ * One geometry made of the geometries of `items` ({ mesh, matrix }) moved by their matrices, written straight into new arrays: the attributes `names` (all of
+ * the first's when not given, all of one kind: `attributeKey`). Indexed when any of them is.
+ */
+function mergedGeometry(items, names = Object.keys(items[0].mesh.geometry.attributes)) {
   let vertices = 0;
   let indices = 0;
+  let indexed = false;
   for (const { mesh } of items) {
-    vertices += mesh.geometry.attributes.position.count;
-    indices += mesh.geometry.index?.count ?? 0;
+    const g = mesh.geometry;
+    vertices += g.attributes.position.count;
+    indices += g.index?.count ?? g.attributes.position.count;
+    indexed ||= !!g.index;
   }
+  const first = items[0].mesh.geometry;
   const out = new THREE.BufferGeometry();
   for (const name of names) {
     const a = first.attributes[name];
     out.setAttribute(name, new THREE.BufferAttribute(new a.array.constructor(vertices * a.itemSize), a.itemSize, a.normalized));
   }
-  const index = first.index ? (vertices > 65535 ? new Uint32Array(indices) : new Uint16Array(indices)) : null;
+  const index = indexed ? (vertices > 65535 ? new Uint32Array(indices) : new Uint16Array(indices)) : null;
   let at = 0;
   let ix = 0;
   for (const { mesh, matrix } of items) {
@@ -66,10 +73,13 @@ function mergedGeometry(items) {
         }
       } else to.array.set(from.array, at * from.itemSize);
     }
-    if (index) {
+    if (index && g.index) {
       const src = g.index.array;
       for (let i = 0; i < src.length; i++) index[ix + i] = src[i] + at;
       ix += src.length;
+    } else if (index) {
+      for (let i = 0; i < count; i++) index[ix + i] = at + i;
+      ix += count;
     }
     at += count;
   }
@@ -103,10 +113,65 @@ export function mergeByMaterial(list) {
     proxy.renderOrder = first.renderOrder;
     proxy.name = 'merged';
     proxy.userData.mergedProxy = true;
+    proxy.userData.sources = items.map((i) => i.mesh);
     proxies.push(proxy);
     for (const { mesh } of items) merged.push(mesh);
   }
   return { proxies, merged };
+}
+
+/**
+ * Whether a mesh's shadow is the same whatever its material: the sun's shadow pass draws every caster with one plain depth material, unless its material cuts
+ * holes (an alpha test or map), moves its surface (a displacement map) or is clipped, or the mesh has a depth material of its own. Those keep their own shadow.
+ */
+export function shadowMergeable(m) {
+  const mat = m.material;
+  if (!m.castShadow || m.customDepthMaterial || !mat || Array.isArray(mat) || !mat.visible || mat.wireframe) return false;
+  return !(mat.alphaTest > 0) && !mat.alphaToCoverage && !mat.alphaMap && !mat.displacementMap && !mat.clippingPlanes?.length;
+}
+
+const casterMaterials = new Map(); // `side|shadowSide` -> the plain material a shadow mesh is drawn with (only its sides matter to the shadow pass)
+function casterMaterial(side, shadowSide) {
+  const key = `${side}|${shadowSide}`;
+  let m = casterMaterials.get(key);
+  if (!m) {
+    casterMaterials.set(key, (m = new THREE.MeshBasicMaterial({ side, colorWrite: false })));
+    m.shadowSide = shadowSide;
+  }
+  return m;
+}
+
+/**
+ * The shadows of `list` ({ mesh, matrix }, each `shadowMergeable`) as one mesh for each way round its faces are drawn, whatever their materials: only their
+ * positions, in the root's space. Hidden but for the sun's shadow pass (`StaticMerge.shadowPass`), so the camera never draws it. Returns { proxies, casters }:
+ * the new meshes and the meshes whose shadows they draw. A mesh turned inside out by a negative scale is left to cast its own.
+ */
+export function mergeShadows(list) {
+  const groups = new Map();
+  for (const item of list) {
+    if (item.matrix.determinant() <= 0) continue;
+    const mat = item.mesh.material;
+    const pos = item.mesh.geometry.attributes.position;
+    const key = `${mat.side}|${mat.shadowSide}|${pos.itemSize}${pos.array.constructor.name}${pos.normalized ? 'n' : ''}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+  }
+  const proxies = [];
+  const casters = new Set();
+  for (const items of groups.values()) {
+    if (items.length < 2) continue;
+    const mat = items[0].mesh.material;
+    const proxy = new THREE.Mesh(mergedGeometry(items, ['position']), casterMaterial(mat.side, mat.shadowSide));
+    proxy.castShadow = true;
+    proxy.receiveShadow = false;
+    proxy.visible = false;
+    proxy.name = 'mergedShadow';
+    proxy.userData.mergedProxy = true;
+    proxy.userData.shadowProxy = true;
+    proxies.push(proxy);
+    for (const { mesh } of items) casters.add(mesh);
+  }
+  return { proxies, casters };
 }
 
 /** Whether the 16 numbers of `m` are within `EPS` of those in `kept`; when they are not, `kept` takes them (and says so). */
@@ -122,20 +187,48 @@ function drifted(kept, m) {
 
 export class StaticMerge {
   /** `hold`: how many seconds a mesh has to hold still for before it is merged, so a vehicle that stops at a gate is not merged and taken apart each time. */
-  constructor({ hold = 2 } = {}) {
+  /** `shadows`: whether a root's casters are also merged into one shadow mesh, which only `shadowPass` shows (so only when something calls it: `FarDetail.drawShadowsWith`). */
+  constructor({ hold = 2, shadows = false } = {}) {
     this.hold = hold;
-    this.roots = new WeakMap(); // root -> { objects: WeakMap(object -> Float64Array of its local matrix), seen: Map(mesh -> state), merged: Set, left: Set, proxies, gen, mergedAt, hold }
+    this.shadows = shadows;
+    this.roots = new WeakMap(); // root -> { objects: WeakMap(object -> Float64Array of its local matrix), seen: Map(mesh -> state), merged: Set, left: Set, proxies, shadowProxies, shadowLone, gen, mergedAt, hold }
+    this.live = new Set(); // the roots' entries that have shadow meshes
+    this.held = []; // the lone meshes whose shadows were turned off for the shadow pass in progress
+  }
+
+  /**
+   * Around the sun's shadow pass (#1041): with `on`, the shadow meshes are shown and the meshes drawn alone whose shadows they carry stop casting their own;
+   * after it (`on` false) all is as it was, so the camera never draws a shadow mesh and nothing else ever sees a cast turned off.
+   */
+  shadowPass(on) {
+    if (on) {
+      for (const e of this.live) {
+        for (const p of e.shadowProxies) p.visible = true;
+        for (const m of e.shadowLone) {
+          if (!m.castShadow) continue;
+          m.castShadow = false;
+          this.held.push(m);
+        }
+      }
+    } else {
+      for (const e of this.live) for (const p of e.shadowProxies) p.visible = false;
+      for (const m of this.held) m.castShadow = true;
+      this.held.length = 0;
+    }
   }
 
   /**
    * One look at `root` at time `now` (seconds). It walks the root once comparing each object's own matrix with the one it last saw (so a mesh under a group
    * that moves counts as moved, and the root's own movement does not count), and each mesh's visibility, layer, shadow, geometry and material. A mesh that has
    * not changed for `hold` seconds is to be merged. When the set that should be merged is not the set that is, it is merged again. With `fresh` every mesh counts
-   * as having held still (the frame budget's count, which is judged from scratch). Returns whether it merged again.
+   * as having held still (the frame budget's count, which is judged from scratch). Returns whether it merged again. A hidden root is not looked at.
    */
   update(root, now, fresh = false) {
+    // A hidden root (a barn fixture or a set piece beyond its distance, farDetail.js) is left as it is: nothing of it is drawn, and taken apart it would be
+    // drawn unmerged for a while each time it came back into view.
+    if (!root.visible) return false;
     let e = this.roots.get(root);
-    if (!e) this.roots.set(root, (e = { objects: new WeakMap(), seen: new Map(), merged: new Set(), left: new Set(), proxies: [], gen: 0, mergedAt: -Infinity, hold: this.hold }));
+    if (!e) this.roots.set(root, (e = { objects: new WeakMap(), seen: new Map(), merged: new Set(), left: new Set(), proxies: [], shadowProxies: [], shadowLone: [], gen: 0, mergedAt: -Infinity, hold: this.hold }));
     const gen = ++e.gen;
     const want = [];
     const walk = (o, moved, hidden) => {
@@ -192,6 +285,16 @@ export class StaticMerge {
     }
     for (const m of want) if (!e.merged.has(m)) e.left.add(m);
     e.proxies = proxies;
+    if (this.shadows) {
+      // The shadows of all of it in a call or two (#1041): a merged mesh whose sources are all in the shadow mesh stops casting, and a mesh drawn alone has
+      // its own shadow turned off during the shadow pass only.
+      const shadow = mergeShadows(list.filter((i) => shadowMergeable(i.mesh)));
+      for (const p of shadow.proxies) root.add(p);
+      for (const p of proxies) if (p.castShadow && p.userData.sources.every((m) => shadow.casters.has(m))) p.castShadow = false;
+      e.shadowProxies = shadow.proxies;
+      e.shadowLone = [...shadow.casters].filter((m) => !e.merged.has(m));
+      if (shadow.proxies.length) this.live.add(e);
+    }
     e.mergedAt = now;
     return true;
   }
@@ -204,11 +307,14 @@ export class StaticMerge {
     }
     e.merged.clear();
     e.left.clear();
-    for (const p of e.proxies) {
+    for (const p of [...e.proxies, ...e.shadowProxies]) {
       p.parent?.remove(p);
       p.geometry.dispose();
     }
     e.proxies = [];
+    e.shadowProxies = [];
+    e.shadowLone = [];
+    this.live.delete(e);
   }
 
   /** `root` as it was before any merge (the switch in the Tune tab, or a root taken out of the scene). */
@@ -218,9 +324,11 @@ export class StaticMerge {
     this.roots.delete(root);
   }
 
-  /** How many meshes of `root` are merged away, and how many meshes stand in for them. */
+  /** How many meshes of `root` are merged away, and how many meshes stand in for them; with shadows merged, how many shadow meshes and how many casters they carry. */
   counts(root) {
     const e = this.roots.get(root);
-    return { merged: e?.merged.size ?? 0, proxies: e?.proxies.length ?? 0 };
+    const c = { merged: e?.merged.size ?? 0, proxies: e?.proxies.length ?? 0 };
+    if (this.shadows) Object.assign(c, { shadowProxies: e?.shadowProxies.length ?? 0, shadowLone: e?.shadowLone.length ?? 0 });
+    return c;
   }
 }
