@@ -97,7 +97,7 @@ export function addMudguard(parent, x, radius, width, mat, stayFrom) {
   const r = radius + 0.07;
   const geo = new THREE.CylinderGeometry(r, r, width, 20, 1, true, Math.PI / 2 - 1.15, 2.3);
   geo.rotateZ(Math.PI / 2); // axis along X; height is r sin(theta), forward is r cos(theta)
-  const guard = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: mat.color, roughness: mat.roughness, metalness: mat.metalness, side: THREE.DoubleSide }));
+  const guard = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: mat.color, map: mat.map ?? null, roughness: mat.roughness, metalness: mat.metalness, side: THREE.DoubleSide }));
   guard.position.set(x, radius, 0);
   guard.castShadow = true;
   guard.receiveShadow = true;
