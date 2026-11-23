@@ -14,6 +14,14 @@ import { barnFrame, barnLocal } from '../world/barn.js';
 import { sAlong } from '../world/laneSigns.js';
 import { layByOf } from '../world/aRoadFittings.js';
 import { gridPlace } from '../world/moor.js';
+import { faceYaw } from '../world/trailProps.js';
+
+/** In front of the Fern Trail's marker post, which stands on the trail's entrance and faces the lead-in: `tp me fern` must not drop you inside it. */
+export function fernMarkerSpot(woods) {
+  const { x, z } = woods.trail.entrance;
+  const yaw = faceYaw(x, z, woods.leadIn);
+  return { x: x + Math.sin(yaw) * 1.5, z: z + Math.cos(yaw) * 1.5 };
+}
 
 const DEG = 180 / Math.PI;
 const norm = (deg) => ((deg % 360) + 360) % 360;
@@ -243,7 +251,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       mot: g.villageHost.mot ? g.villageHost.mot.stand() : null, // on foot before the MOT clipboard
       ford: layout.hill ? { x: layout.hill.lane.x, z: layout.hill.stream.z } : null,
       wood: layout.woods ? { x: layout.woods.gate.x, z: layout.woods.leadIn[1][1] } : null,
-      fern: layout.woods?.trail ? { x: layout.woods.trail.entrance.x, z: layout.woods.trail.entrance.z } : null,
+      fern: layout.woods?.trail ? fernMarkerSpot(layout.woods) : null, // 1.5 m in front of the marker post, which stands on the trail's entrance
       hollowrun: layout.woods ? { x: layout.woods.circuit.points[0][0], z: layout.woods.circuit.points[0][1] } : null,
       woodpile: layout.logYard?.scenery ? { x: layout.logYard.park.x, z: layout.logYard.park.z + 6 } : null, // the woodpile at the wood's gate, with its lean-to and block: the new farm's, #683
       veteranoak: layout.woods?.oak ? { x: layout.woods.oak.x, z: layout.woods.oak.z + 12 } : null, // the great oak in the glade by the pond, twelve metres south of it
