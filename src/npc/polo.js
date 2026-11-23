@@ -406,6 +406,36 @@ export function dealPoloOpen([lo, hi] = [0, 0], random = Math.random) {
  * rest-frame positions of the bones by name, `paint(i)` the palette band the original texture gives vertex i ('skin', 'shirt',
  * 'trousers', 'hair' ...), `waist` the height of the top of the shorts as she stands.
  */
+/**
+ * The middle of her front at each height as she stands, from her points on the model's mirror line (`onMirror(i)`): a function of
+ * height giving x, averaged over 1 cm bands, evened out between neighbours and held at the ends. Without any, her neck's x. Pure.
+ */
+export function frontMiddle(verts, onMirror, neck) {
+  const bands = new Map();
+  verts.forEach((v, i) => {
+    if (!onMirror(i) || v.rest[2] < neck[2]) return; // her front only
+    const k = Math.round(v.rest[1] * 100);
+    const b = bands.get(k) ?? [0, 0];
+    bands.set(k, [b[0] + v.rest[0], b[1] + 1]);
+  });
+  if (!bands.size) return () => neck[0];
+  const keys = [...bands.keys()].sort((a, b) => a - b);
+  const raw = keys.map((k) => bands.get(k)[0] / bands.get(k)[1]);
+  const xs = raw.map((x, j) => (raw[Math.max(0, j - 1)] + 2 * x + raw[Math.min(raw.length - 1, j + 1)]) / 4);
+  const ys = keys.map((k) => k / 100);
+  return (y) => {
+    if (y <= ys[0]) return xs[0];
+    if (y >= ys.at(-1)) return xs.at(-1);
+    let j = 1;
+    while (ys[j] < y) j++;
+    const t = (y - ys[j - 1]) / (ys[j] - ys[j - 1]);
+    return xs[j - 1] + (xs[j] - xs[j - 1]) * t;
+  };
+}
+
+/** Her front's middle at a height (`body.middle`, bodyData), or her neck's x for a body without one. */
+const middleOf = (body) => body.middle ?? (() => body.bones.Neck[0]);
+
 export function topFields(body, p = POLO) {
   const { bones, boneNames, waist } = body;
   const neck = bones.Neck;
@@ -618,8 +648,8 @@ function buildCuffButtons(mesh, body, p, F) {
  */
 export function buildPocket(mesh, body, pk, top) {
   const neck = body.bones.Neck;
-  const cx = neck[0] + pk.across; // her left
   const cy = top - pk.down - pk.height / 2;
+  const cx = middleOf(body)(cy) + pk.across; // her left
   const near = (v) => Math.abs(v.rest[0] - cx) < pk.width && v.rest[2] > neck[2] && Math.abs(v.rest[1] - cy) < pk.height;
   const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
   const cols = 7;
@@ -710,9 +740,10 @@ function addSkirt(mesh, body, p) {
  */
 function pastBust(mesh, body, p, neckField) {
   const neck = body.bones.Neck;
+  const mid = middleOf(body);
   const bands = new Map();
   for (const { rest: [x, y, z] } of body.verts) {
-    const dx = Math.abs(x - neck[0]);
+    const dx = Math.abs(x - mid(y));
     if (dx < 0.03 || dx > 0.09 || z < neck[2]) continue;
     const k = Math.round((neck[1] - y) * 100);
     bands.set(k, Math.max(bands.get(k) ?? -Infinity, z));
@@ -735,11 +766,11 @@ function pastBust(mesh, body, p, neckField) {
 /** The round neckline's height at the middle of her front, found by rays from in front on the rounded shirt before it's cut. */
 function neckTop(mesh, body, p, neckField) {
   const neck = body.bones.Neck;
-  const x0 = neck[0];
-  const near = (v) => Math.abs(v.rest[0] - x0) < 0.05 && v.rest[2] > neck[2] && v.rest[1] > neck[1] - 0.15;
+  const mid = middleOf(body);
+  const near = (v) => Math.abs(v.rest[0] - mid(v.rest[1])) < 0.05 && v.rest[2] > neck[2] && v.rest[1] > neck[1] - 0.15;
   const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
   for (let y = neck[1] + p.neckCap + 0.005; y > neck[1] - 0.1; y -= 0.001) {
-    const h = rayHit(front, [x0, y, neck[2] + 0.6], [0, 0, -1]);
+    const h = rayHit(front, [mid(y), y, neck[2] + 0.6], [0, 0, -1]);
     if (h && neckField(inTriangle(front, h.tri, h.bary)) <= 0) return y;
   }
   return null;
@@ -752,7 +783,7 @@ function neckTop(mesh, body, p, neckField) {
  */
 function openNeck(mesh, body, p, neckField) {
   const neck = body.bones.Neck;
-  const x0 = neck[0];
+  const mid = middleOf(body);
   const top = neckTop(mesh, body, p, neckField);
   if (top === null) return null;
   const open = Math.min(p.open, p.buttons.length);
@@ -765,8 +796,8 @@ function openNeck(mesh, body, p, neckField) {
   // middle, and staying that far apart all the way down to the hem rather than meeting at the bottom.
   const hanging = (y) => p.veeNeck + (p.veeFloor - p.veeNeck) * smooth01((top - y) / p.veeDrop);
   const halfWidth = p.veeFloor ? (p.veeNeck != null ? hanging : (y) => Math.max(p.veeFloor, closing(y))) : closing;
-  const field = (v) => Math.min(halfWidth(v.rest[1]) - Math.abs(v.rest[0] - x0), v.rest[2] - neck[2] - 0.03);
-  return { top, bottom, halfWidth, field };
+  const field = (v) => Math.min(halfWidth(v.rest[1]) - Math.abs(v.rest[0] - mid(v.rest[1])), v.rest[2] - neck[2] - 0.03);
+  return { top, bottom, halfWidth, field, mid };
 }
 
 // The logo's embroidery threads, all coloured; the one that stands out most from the shirt is used.
@@ -789,18 +820,19 @@ export function logoThread([r, g, b]) {
 function hang(mesh, body, p, F) {
   const { bones, boneNames } = body;
   const neck = bones.Neck;
+  const mid = middleOf(body);
   const torso = (v) => v.weights.reduce((s, [b, w]) => s + (/Spine|Hips/.test(boneNames[b]) ? w : 0), 0);
   const step = 0.02;
-  const front = new Map(); // x bin -> the furthest-forward point of her chest in it
+  const front = new Map(); // bin across her from her middle -> the furthest-forward point of her chest in it
   for (const v of mesh.verts) {
     const r = v.rest;
-    if (torso(v) < 0.6 || r[2] <= neck[2] || r[1] > neck[1] - 0.06 || r[1] < neck[1] - 0.3 || Math.abs(r[0] - neck[0]) > 0.14) continue;
-    const k = Math.round((r[0] - neck[0]) / step);
+    if (torso(v) < 0.6 || r[2] <= neck[2] || r[1] > neck[1] - 0.06 || r[1] < neck[1] - 0.3 || Math.abs(r[0] - mid(r[1])) > 0.14) continue;
+    const k = Math.round((r[0] - mid(r[1])) / step);
     const f = front.get(k);
     if (!f || r[2] > f.z) front.set(k, { z: r[2], y: r[1] });
   }
-  const ledge = (x) => {
-    const k = Math.round((x - neck[0]) / step);
+  const ledge = (x, y) => {
+    const k = Math.round((x - mid(y)) / step);
     let best = null;
     for (let d = -p.hangReach; d <= p.hangReach; d++) {
       const f = front.get(k + d);
@@ -811,14 +843,14 @@ function hang(mesh, body, p, F) {
   for (const v of mesh.verts) {
     const r = v.rest;
     if (torso(v) < 0.6 || r[2] <= neck[2]) continue;
-    const f = ledge(r[0]);
+    const f = ledge(r[0], r[1]);
     if (!f || r[1] >= f.y) continue;
     // Easing back into the tuck at the waist, or into a ribbed hem.
     const toHem = p.tucked ? 0 : 0.012 * smooth01((F.hemField(v) + p.hemBand) / Math.max(p.hemBand, 1e-3));
     const want = f.z - p.hangSlope * (f.y - r[1]) - toHem;
     if (r[2] >= want) continue;
     // Not at her sides, which are already upright.
-    const sides = 1 - smooth01((Math.abs(r[0] - neck[0]) - 0.09) / 0.05);
+    const sides = 1 - smooth01((Math.abs(r[0] - mid(r[1])) - 0.09) / 0.05);
     const tuck = p.tucked ? smooth01((v.rest[1] - (body.waist + 0.01)) / 0.06) : 1;
     const dz = Math.min(p.hangMax, want - r[2]) * sides * tuck;
     if (dz > 0) v.bind = add(v.bind, unskinDir(v.skin, [0, 0, dz]));
@@ -834,13 +866,13 @@ function hang(mesh, body, p, F) {
  */
 function buildPlacket(mesh, body, p, vee) {
   const neck = body.bones.Neck;
-  const x0 = neck[0];
+  const X = middleOf(body); // her front's middle at a height: the placket follows it down her, not a straight line from her neck
   const w = p.placketWidth;
   // Only the front of her chest can be hit; the rest is skipped for speed.
   const reach = Math.max(0.3, p.placketLength + 0.05);
   const wide = 0.07 + (vee ? Math.max(0, vee.halfWidth(vee.top)) : 0);
   // Her sides too: a wide open front's edges come round towards them at the waist.
-  const near = (v) => Math.abs(v.rest[0] - x0) < wide && v.rest[2] > neck[2] - (vee ? 0.08 : 0) && v.rest[1] > neck[1] - reach;
+  const near = (v) => Math.abs(v.rest[0] - X(v.rest[1])) < wide && v.rest[2] > neck[2] - (vee ? 0.08 : 0) && v.rest[1] > neck[1] - reach;
   const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
   const hitAt = (x, y) => {
     // A hair off her middle: split down it, a ray exactly there can fall between the triangles either side.
@@ -848,7 +880,7 @@ function buildPlacket(mesh, body, p, vee) {
     return h && inTriangle(front, h.tri, h.bary);
   };
   // Where the neckline is at the middle of her front (or at the top of the V): walk down until a ray from in front hits.
-  const found = vee ? vee.top : frontTop(hitAt, x0, neck[1] + p.neckCap + 0.005, neck[1] - 0.1);
+  const found = vee ? vee.top : frontTop(hitAt, X, neck[1] + p.neckCap + 0.005, neck[1] - 0.1);
   if (found === null) return null;
   const top = found - 0.0003; // right up to where the shirt meets her neck
   if (p.placketToHem != null) {
@@ -870,7 +902,7 @@ function buildPlacket(mesh, body, p, vee) {
     const k = `${Math.round(y * 1e4)},${side}`;
     if (!edgeCache.has(k)) {
       let d = Math.max(0, vee.halfWidth(y));
-      while (d < 0.2 && !hitAt(x0 + side * d, y)) d += 0.0005;
+      while (d < 0.2 && !hitAt(X(y) + side * d, y)) d += 0.0005;
       edgeCache.set(k, d + 0.001);
     }
     return edgeCache.get(k);
@@ -888,7 +920,7 @@ function buildPlacket(mesh, body, p, vee) {
       // stays where it is; only what's under it is looked for further off).
       let v = null;
       for (let down = 0; !v && down <= 0.012; down += 0.001) {
-        for (let out = 0; !v && out < 0.006; out += 0.001) v = hitAt(x + Math.sign(x - x0) * out, y - down);
+        for (let out = 0; !v && out < 0.006; out += 0.001) v = hitAt(x + Math.sign(x - X(y)) * out, y - down);
       }
       if (!v) return null;
       under.push(v);
@@ -938,10 +970,10 @@ function buildPlacket(mesh, body, p, vee) {
   const closed = !(vee && p.open >= p.buttons.length) && vBottom - bottom > 0.008;
   const halfCaps = closed ? ['top'] : ['top', 'bottom'];
   const ok =
-    (!closed || strip(vBottom, bottom, () => [x0 - w / 2, x0 + w / 2], 0, 1, 5, vee ? ['bottom'] : ['top', 'bottom'])) &&
+    (!closed || strip(vBottom, bottom, (y) => [X(y) - w / 2, X(y) + w / 2], 0, 1, 5, vee ? ['bottom'] : ['top', 'bottom'])) &&
     (!vee ||
-      (strip(top, closed ? vBottom : bottom, (y) => [x0 + split(y), x0 + split(y) + w / 2], 0.5, 1, 3, halfCaps) &&
-        strip(top, closed ? vBottom : bottom, (y) => [x0 - split(y, -1) - w / 2, x0 - split(y, -1)], 0, 0.5, 3, halfCaps)));
+      (strip(top, closed ? vBottom : bottom, (y) => [X(y) + split(y), X(y) + split(y) + w / 2], 0.5, 1, 3, halfCaps) &&
+        strip(top, closed ? vBottom : bottom, (y) => [X(y) - split(y, -1) - w / 2, X(y) - split(y, -1)], 0, 0.5, 3, halfCaps)));
   if (!ok) return null;
 
   // The buttons, and for the undone ones the buttonhole on the other half. Those on the strip lie on it (`on`, onCloth).
@@ -960,10 +992,10 @@ function buildPlacket(mesh, body, p, vee) {
       };
       // Under a loosened tie the undone one and its buttonhole are hidden by the tie's loop round her neck, so there are none.
       if (undone && p.tieOver) return;
-      const b = undone ? on(x0 + split(top) + w / 4) : on(x0);
+      const b = undone ? on(X(top) + split(top) + w / 4) : on(X(top));
       if (b || !undone) {
         if (b) buttons.push(b);
-        const h = undone && on(x0 - split(top, -1) - w / 4);
+        const h = undone && on(X(top) - split(top, -1) - w / 4);
         if (h) slits.push(h);
         return;
       }
@@ -977,6 +1009,7 @@ function buildPlacket(mesh, body, p, vee) {
       const under = rowAt(y, x, x, 1);
       return face && under && { centre: [x, y, face.z], normal: restNormal(under.under[0]), anchor: under.under[0], on: strips };
     };
+    const x0 = X(y);
     const b = open ? at(x0 + split(y) + w / 4, [x0 + split(y), x0 + split(y) + w / 2, 3]) : at(x0, [x0 - w / 2, x0 + w / 2, 5]);
     if (b) buttons.push(b);
     const h = open && at(x0 - split(y, -1) - w / 4, [x0 - split(y) - w / 2, x0 - split(y), 3]);
@@ -992,8 +1025,8 @@ function buildPlacket(mesh, body, p, vee) {
 function buildLogo(mesh, body, p, top) {
   const neck = body.bones.Neck;
   const { across, down, width, height, lift } = p.logo;
-  const cx = neck[0] + across; // her left is +x as she stands
   const cy = top - down;
+  const cx = middleOf(body)(cy) + across; // her left is +x as she stands
   const near = (v) => Math.abs(v.rest[0] - cx) < 0.05 && v.rest[2] > neck[2] && Math.abs(v.rest[1] - cy) < 0.05;
   const front = { verts: mesh.verts, tris: mesh.tris.filter((t) => t.some((i) => near(mesh.verts[i]))) };
   const n = 5;
@@ -1025,13 +1058,13 @@ function buildLogo(mesh, body, p, top) {
  * Walks down the middle of her front until a ray from in front hits the shirt, then narrows it down to a tenth of a millimetre:
  * the top of the shirt there, where it meets her neck.
  */
-function frontTop(hitAt, x0, from, to) {
+function frontTop(hitAt, X, from, to) {
   for (let y = from; y > to; y -= 0.001) {
-    if (!hitAt(x0, y)) continue;
+    if (!hitAt(X(y), y)) continue;
     let [lo, hi] = [y, y + 0.001]; // lo hits, hi doesn't
     while (hi - lo > 0.0001) {
       const mid = (lo + hi) / 2;
-      if (hitAt(x0, mid)) lo = mid;
+      if (hitAt(X(mid), mid)) lo = mid;
       else hi = mid;
     }
     return lo;
@@ -1084,18 +1117,34 @@ export function slitShape(centre, normal, length = 0.009, width = 0.0016) {
   return { points: [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1)], tris: [[0, 1, 2], [0, 2, 3]] };
 }
 
+/** At each point of a mesh (rest frame), the faces within `reach` of it summed by area, as a unit direction out of it. */
+function areaNormalsNear(mesh, reach) {
+  const faces = mesh.tris.map((t) => {
+    const [a, b, c] = t.map((i) => mesh.verts[i].rest);
+    return { centre: scale(add(add(a, b), c), 1 / 3), n: cross(sub(b, a), sub(c, a)) }; // twice the area, along the face's normal
+  });
+  return mesh.verts.map((v) => {
+    let sum = [0, 0, 0];
+    for (const f of faces) if (Math.hypot(...sub(f.centre, v.rest)) < reach) sum = add(sum, f.n);
+    return norm(sum);
+  });
+}
+
 /**
  * Her skin inside the V of an open neck, as a patch of her own (flat-shaded) triangles cut to the V and lifted a hair off her,
  * because the body's paint can't follow a V across its coarse triangles. `vee` comes from buildTop.
  */
 export function buildInset(body, vee, p = POLO) {
   const { verts, index } = body;
-  const x0 = body.bones.Neck[0];
+  const X = middleOf(body); // her front's middle, which the V is cut either side of
   const ids = new Map();
   const mesh = { verts: [], tris: [] };
   for (let t = 0; t < index.length; t += 3) {
     const tri = [index[t], index[t + 1], index[t + 2]];
     if (!tri.some((i) => vee.field(verts[i]) > -0.03)) continue; // generous: the V's point can lie inside a triangle
+    // Only her outside: the model has a second shell inside her throat, facing in, which the V's top reaches now it is centred.
+    const [a, b, c] = tri.map((i) => verts[i].rest);
+    if (cross(sub(b, a), sub(c, a))[2] <= 0) continue;
     mesh.tris.push(
       tri.map((i) => {
         if (!ids.has(i)) {
@@ -1109,17 +1158,18 @@ export function buildInset(body, vee, p = POLO) {
   // Split flat (each triangle into four in its own plane, so it still matches her facets) and down her middle, so the cut can
   // follow the V to its point: her chest's triangles are 5 cm across, and cut whole they stopped the patch well short of it.
   let patch = subdivide(mesh, 0);
-  patch = cut(patch, (v) => v.rest[0] - x0, 'middle', { keep: 'split' });
+  patch = cut(patch, (v) => v.rest[0] - X(v.rest[1]), 'middle', { keep: 'split' });
   // And either side of it, so the shadow down her cleavage stays narrow.
-  for (const side of [-1, 1]) patch = cut(patch, (v) => v.rest[0] - x0 - side * p.cleavageWidth, 'middle', { keep: 'split' });
+  for (const side of [-1, 1]) patch = cut(patch, (v) => v.rest[0] - X(v.rest[1]) - side * p.cleavageWidth, 'middle', { keep: 'split' });
   patch = cut(patch, (v) => -vee.field(v), 'vee');
   patch = cut(patch, (v) => v.rest[1] - (vee.top + 0.01), 'vee');
-  // Lifted along the average of the faces at each corner, so the faces stay joined (each along its own would open cracks at
-  // the creases, showing the shirt paint under them); still drawn flat, to match her.
-  const lift = smoothNormals(patch);
+  // Lifted a hair off her along her surface's way out, averaged over the faces within `liftReach` of each point (by area): the same
+  // for points in the same place, so the faces stay joined, and turning slowly across her, so the cuts' thin pieces move as one.
+  // Along the faces at each corner alone, a piece across one of her creases had its corners pushed apart and turned over (#1134).
+  const lift = areaNormalsNear(patch, 0.015);
   patch.verts.forEach((v, i) => {
-    v.bind = add(v.bind, scale(lift[i], 0.0008));
-    v.rest = applySkin(v.skin, v.bind);
+    v.rest = add(v.rest, scale(lift[i], 0.0008));
+    v.bind = unskin(v.skin, v.rest);
   });
   // Her cleavage, drawn on: her body is a few flat faces there with no dip of its own to show. A soft shadow down her middle,
   // fading in from a little above the fullest part of her bust (the furthest-forward point of her chest either side).
@@ -1127,22 +1177,22 @@ export function buildInset(body, vee, p = POLO) {
   const tips = {}; // each breast's fullest point, by side
   for (const v of verts) {
     const r = v.rest;
-    const dx = Math.abs(r[0] - x0);
+    const dx = Math.abs(r[0] - X(r[1]));
     if (!(dx > 0.04 && dx < 0.12 && r[1] < vee.top && r[1] > vee.top - 0.25)) continue;
     if (!apex || r[2] > apex[2]) apex = r;
-    const side = Math.sign(r[0] - x0);
+    const side = Math.sign(r[0] - X(r[1]));
     if (!tips[side] || r[2] > tips[side][2]) tips[side] = r;
   }
   const from = apex ? apex[1] + 0.09 : -Infinity;
   // Rounded: darker with distance from her fullest point on that side, below a little above it (her upper chest stays light).
   const round = (r) => {
-    const tip = tips[Math.sign(r[0] - x0)] ?? apex;
+    const tip = tips[Math.sign(r[0] - X(r[1]))] ?? apex;
     if (!tip || !p.bustRound) return 1;
     const d = Math.hypot(r[0] - tip[0], r[1] - tip[1]);
     return 1 - p.bustRound * smooth01((d - 0.015) / p.bustRadius) * smooth01((tip[1] + 0.05 - r[1]) / 0.04);
   };
   patch.shade = patch.verts.map((v) => {
-    const across = v.rest[0] - x0;
+    const across = v.rest[0] - X(v.rest[1]);
     const cleft = cleavageShade(across, from - v.rest[1], { strength: p.cleavage, width: p.cleavageWidth, fade: 0.04 });
     return cleft * round(v.rest) * (1 - p.veeShadow * (1 - smooth01(vee.field(v) / 0.008)));
   });
