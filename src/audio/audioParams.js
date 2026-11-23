@@ -46,6 +46,12 @@ export const DEFAULT_SOUND_PARAMS = {
   rideWindFullSpeed: 15, // m/s
   hornVolume: 1, // every horn, on top of its own level (npc/horns.js says how loud each is)
   generatorVolume: 0.45, // the barn generator at its own set: starting, running and stopping
+  footstepVolume: 0.5, // your steps on foot (audio/footsteps.js)
+  footstepGirlGain: 0.45, // a girl's steps against yours at her side, so she is the quieter of you
+  footstepRange: 6, // metres past which a girl's steps cannot be heard: near enough to hear her come up behind you, not across the yard
+  footstepStride: 0.85, // metres of ground for each step at a walk
+  footstepJogStride: 1.3, // and at a jog
+  footstepJogSpeed: 3.3, // m/s at which a walk is a jog
 
   // When the suspension makes a sound (rideEvents.js)
   knockThreshold: 0.5, // m/s of suspension compression before it knocks
@@ -94,6 +100,12 @@ export const SOUND_PARAM_RANGES = {
   gridVolume: [0, 4, 0.05],
   landVolume: [0, 3, 0.01],
   doorVolume: [0, 2, 0.01],
+  footstepVolume: [0, 2, 0.01],
+  footstepGirlGain: [0, 1, 0.01],
+  footstepRange: [2, 20, 0.5],
+  footstepStride: [0.4, 1.2, 0.01],
+  footstepJogStride: [0.6, 1.8, 0.01],
+  footstepJogSpeed: [2, 8, 0.1],
   rattleVolume: [0, 1, 0.005],
   rattleThreshold: [0, 2, 0.01],
   rattleChance: [0, 1, 0.01],
