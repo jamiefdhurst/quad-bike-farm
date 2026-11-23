@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { buildAllGirls } from './helpers/girlModels.js';
-import { buildTop, logoThread, LOGO_THREADS, POLO } from '../src/npc/polo.js';
+import { buildTop, buildInset, logoThread, LOGO_THREADS, POLO } from '../src/npc/polo.js';
+import { applySkinDir, vec } from '../src/npc/garmentMesh.js';
 
 // The polo on each girl (#572): its placket ending a little past her bust, and the logo stitched in a colour that stands out.
 
@@ -31,12 +32,12 @@ describe('the polo on each girl', () => {
   }, 60000);
 
   // Her front, as she stands: the furthest forward each set of points reaches in 1 cm bands below her neck bone, across the
-  // middle of either breast.
+  // middle of either breast (measured from her front's middle, which her pose carries off her neck's line).
   const front = (data, verts) => {
     const neck = data.bones.Neck;
     const bands = new Map();
     for (const { rest: [x, y, z] } of verts) {
-      const dx = Math.abs(x - neck[0]);
+      const dx = Math.abs(x - data.middle(y));
       if (dx < 0.03 || dx > 0.09 || z < neck[2]) continue;
       const k = Math.round((neck[1] - y) * 100);
       bands.set(k, Math.max(bands.get(k) ?? -Infinity, z));
@@ -55,6 +56,44 @@ describe('the polo on each girl', () => {
       const below = (data.bones.Neck[1] - Math.min(...placket.verts.map((v) => v.rest[1]))) * 100;
       expect(below, id).toBeGreaterThan(bust);
       expect(below, id).toBeLessThan(bust + 5);
+    }
+  });
+
+  it('lays the skin in an open V with nothing turned inside out, however far it is undone', () => {
+    // Each piece faces the way her skin under it does (#1134): lifted along the normal at each corner, thin pieces across her creases
+    // turned over, 12 to 78 of them on Jess. Where cuts run a hair apart a sliver can stand on edge; it is under 0.1 mm across.
+    for (const { id, data } of girls) {
+      for (let open = 1; open <= POLO.buttons.length; open++) {
+        const p = { ...POLO, open };
+        const { vee } = buildTop(data, p);
+        if (!vee) continue;
+        const inset = buildInset(data, vee, p);
+        for (const t of inset.tris) {
+          const [a, b, c] = t.map((i) => inset.verts[i].rest);
+          const n = vec.cross(vec.sub(b, a), vec.sub(c, a));
+          const skin = t.map((i) => applySkinDir(inset.verts[i].skin, inset.verts[i].normal)).reduce((s, x) => vec.add(s, x), [0, 0, 0]);
+          const facing = vec.dot(vec.norm(n), vec.norm(skin));
+          expect(facing, `${id}, ${open} undone`).toBeGreaterThan(-0.5);
+          if (facing < 0) {
+            const longest = Math.max(...[[a, b], [b, c], [c, a]].map(([u, w]) => Math.hypot(...vec.sub(u, w))));
+            expect(Math.hypot(...n) / longest, `${id}, ${open} undone: a piece facing away is a hairline`).toBeLessThan(0.0001);
+          }
+        }
+        expect(inset.tris.length, `${id}, ${open} undone`).toBeGreaterThan(100);
+      }
+    }
+  });
+
+  it('runs its placket down the middle of her front, not straight down from her neck', () => {
+    // She stands turned a little, so at her bust her middle is about 3 cm to her left of her neck (#1134).
+    for (const { id, data, placket } of girls) {
+      const neck = data.bones.Neck;
+      const y = neck[1] - 0.14; // across her bust
+      const row = placket.verts.filter((v) => Math.abs(v.rest[1] - y) < 0.004 && v.rest[2] > neck[2]);
+      const xs = row.map((v) => v.rest[0]);
+      const centre = (Math.min(...xs) + Math.max(...xs)) / 2;
+      expect(Math.abs(data.middle(y) - neck[0]), id).toBeGreaterThan(0.015);
+      expect(Math.abs(centre - data.middle(y)), id).toBeLessThan(0.006);
     }
   });
 });

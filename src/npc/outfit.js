@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildTop, buildInset, buttonShape, slitShape, layOnCloth, poloFields, tuckSleeves, logoThread, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER } from './polo.js';
+import { buildTop, buildInset, buttonShape, slitShape, layOnCloth, poloFields, tuckSleeves, logoThread, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER, frontMiddle } from './polo.js';
 import { buildTie } from './tie.js';
 import { shirtButtonsUndone } from './outfits.js';
 import { buildCropTop } from './crop.js';
@@ -666,7 +666,18 @@ export function bodyData(rig, body) {
   // The top of the shorts as she stands: where the old shorts' top (1 cm above her spine bone, in the stored pose) comes to.
   const waist = (rig.bones.Spine ? bonePos(rig, 'Spine') : bonePos(rig, 'Hips')).y - 0.012;
   const split = !!g.userData.split; // already split and rounded at load (smoothBody.js)
-  return { verts, index: g.index ? [...g.index.array] : [...Array(pos.count).keys()], boneNames: body.skeleton.bones.map((b) => b.name), bones, paint, waist, fromRoot, split };
+  // The middle of her front as she stands: her points on the model's mirror line (stored, as a T-pose), wherever her pose has
+  // carried them. She stands turned a little, so at her bust it is about 3 cm to her left of her neck: a placket laid straight
+  // down from her neck ran over her right breast and cut an open V down its inner side (#1134).
+  const bindBone = (name) => {
+    const i = body.skeleton.bones.findIndex((b) => b.name === name);
+    return i < 0 ? null : new THREE.Vector3().setFromMatrixPosition(body.skeleton.boneInverses[i].clone().invert()).applyMatrix4(toRoot);
+  };
+  const [hipsAt, leftAt, rightAt] = ['Hips', 'LeftArm', 'RightArm'].map(bindBone);
+  const across = hipsAt && leftAt && rightAt ? leftAt.clone().sub(rightAt).normalize() : null;
+  const onMirror = across ? verts.map((v) => Math.abs(new THREE.Vector3(...v.bind).sub(hipsAt).dot(across)) < 0.002) : [];
+  const middle = frontMiddle(verts, (i) => onMirror[i], bones.Neck);
+  return { verts, index: g.index ? [...g.index.array] : [...Array(pos.count).keys()], boneNames: body.skeleton.bones.map((b) => b.name), bones, paint, waist, fromRoot, split, middle };
 }
 
 /** The body's paint under the polo garment: shirt up to a little below the garment's neckline, skin above, so none shows. */

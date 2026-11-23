@@ -1712,9 +1712,9 @@ export const FAQ_SECTIONS = [
       {
         q: 'Are Amy and Jess shaped the same?',
         a: `No. They start from the same model, but each is reshaped as the game loads: Amy taller and more evenly built, Jess shorter
-          and curvier, with a fuller bust, a narrower waist and wider hips. Each breast is shaped as a round curve, fuller underneath,
-          with a dip between them, rather than pushed out to a point, so it reads as round from the side as well as the front, and
-          their clothes follow it.`,
+          and curvier, with a fuller bust, a narrower waist and wider hips. The bust stands out less down her middle than at either
+          side, so there is a dip between the two, and a shirt's buttons and an open neck follow the middle of her chest rather than
+          a straight line down from her neck.`,
       },
       {
         q: 'Why do the girls wobble on a running quad?',
