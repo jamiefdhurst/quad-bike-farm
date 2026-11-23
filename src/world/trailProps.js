@@ -200,7 +200,7 @@ export const MARKER = {
 };
 
 /** The way the marker's face looks: towards the lead-in point 5 m up it towards the gate, which is where you come from. */
-function faceYaw(x, z, leadIn) {
+export function faceYaw(x, z, leadIn) {
   let best = { d: Infinity, x: leadIn[0][0], z: leadIn[0][1] };
   for (let i = 0; i + 1 < leadIn.length; i++) {
     const [ax, az] = leadIn[i];
@@ -241,8 +241,9 @@ export function buildTrailSign(c, woods, group) {
     return m;
   };
   part(new THREE.BoxGeometry(w, h + below, d), [wood, wood, wood, wood, face, wood], 0, (h + below) / 2, 0);
-  const cap = part(new THREE.ConeGeometry(0.5, 0.07, 4), wood, 0, h + below + 0.035 - 0.004, 0); // a chamfered top that sheds the rain
-  cap.rotation.y = Math.PI / 4;
+  // A chamfered top that sheds the rain. The cone is turned in its geometry, since a mesh is scaled before it is rotated and would come out a rhombus.
+  const cap = part(new THREE.ConeGeometry(Math.SQRT1_2, 0.07, 4).rotateY(Math.PI / 4), wood, 0, h + below + 0.035 - 0.004, 0);
+  cap.name = 'trailSignCap';
   cap.scale.set(w * 0.98, 1, d * 0.98);
   part(new THREE.BoxGeometry(w + 0.03, 0.2, d + 0.03), new THREE.MeshStandardMaterial({ color: 0x4a5a30, roughness: 1 }), 0, below + 0.04, 0); // the green foot
   const bandY = below + MARKER.band.y;
@@ -270,7 +271,7 @@ export function buildTrailSign(c, woods, group) {
     root.add(leaf);
   }
   group.add(root);
-  fixedBox(x, y + h / 2, z, w / 2, h / 2, d / 2);
+  fixedBox(x, y + h / 2, z, w / 2, h / 2, d / 2, yaw);
   // Ferns round the foot, clear of the face so the lettering reads.
   const fernMatrices = [];
   for (let i = 0; i < 7; i++) {
