@@ -16,6 +16,7 @@ import { KIDS_BIKES, KIDS_TOPS, KIDS_PARAM_RANGES } from './kids.js';
 import { CharacterRig } from '../npc/characterRig.js';
 import { applyOutfit, withShirt, withJumper, OUTFITS } from '../npc/outfit.js';
 import { neighbourOutfit, NEIGHBOUR_HEIGHT } from './neighbourLook.js';
+import { buildFarmQuad, buildFarmTrailer, FARM_QUAD_LAYOUT, FARM_QUAD_GROUND_OFFSET, TIP_TRAILER_LAYOUT } from './neighbourVehicles.js';
 
 const MODELS = {
   crag: { build: (c, reg) => buildCabModel({ bodyColor: c, dashStyle: 'crag', variant: 'crag', reg }), layout: CRAG_LAYOUT, offset: CAB_GROUND_OFFSET, seat: CAB_SEATS.driver },
@@ -28,6 +29,9 @@ const MODELS = {
   finch: { build: (c, reg) => buildCarModel({ kind: 'finch', bodyColor: c, reg }), layout: carLayout('finch'), offset: CAR_GROUND_OFFSET, seat: { x: -0.38, y: 0.9, z: 0.05 } },
   griffin: { build: (c, reg) => buildCarModel({ kind: 'griffin', bodyColor: c, reg }), layout: carLayout('griffin'), offset: CAR_GROUND_OFFSET, seat: { x: -0.38, y: 0.9, z: 0.05 } },
   lorry: { build: (c) => buildLorryModel({ bodyColor: c }), layout: LORRY_LAYOUT, offset: LORRY_GROUND_OFFSET, seat: LORRY_SEAT },
+  // The neighbour's farm quad and tipping trailer (#925): parked scenery, worn by what the farm's seed dealt (`look`, neighbourVehicles.js). Nobody sits in either.
+  quad: { build: (c, reg, look) => buildFarmQuad(c, look ?? undefined), layout: FARM_QUAD_LAYOUT, offset: FARM_QUAD_GROUND_OFFSET, seat: { x: 0, y: 0.9, z: -0.1 } },
+  tipTrailer: { build: (c, reg, look) => buildFarmTrailer(look ?? undefined), layout: TIP_TRAILER_LAYOUT, offset: 0, seat: { x: 0, y: 0.58, z: 0 } },
 };
 
 const KID_HEIGHT = 1.3; // m: a ten-year-old
@@ -48,12 +52,12 @@ function silhouette() {
 }
 
 /**
- * One of the farm's own vehicle models (`model`: crag, tor, tractor or utv) in a paint, with its tyres set on the ground and the body
+ * One of the farm's own vehicle models (`model`: crag, tor, tractor, utv, quad or tipTrailer) in a paint, with its tyres set on the ground and the body
  * sunk by its springs, as quad.js does. Also used for the vehicles parked in the neighbour's yard (neighbourFarmProps.js).
  */
-export function buildVehicleBody(model, colour, reg = null) {
+export function buildVehicleBody(model, colour, reg = null, look = null) {
   const spec = MODELS[model];
-  const object = spec.build(colour, reg);
+  const object = spec.build(colour, reg, look);
   const wheels = spec.layout.wheels.map((w) => {
     const o = object.getObjectByName(w.name);
     o.position.set(w.x, w.radius + spec.offset + (spec.layout.spawnSag ?? 0), w.z); // the tyre on the ground, the body sunk by its springs

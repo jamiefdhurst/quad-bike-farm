@@ -784,8 +784,9 @@ export function buildNeighbourFarm(c) {
   // and the tractor has no bale spike on its back (it isn't a hay farm's, and the spike is for the player's).
   const vehicles = [];
   for (const p of s.parked) {
-    const body = buildVehicleBody(p.kind, p.colour, p.reg ?? null);
-    body.object.position.set(p.x, top - body.spec.offset - (body.spec.layout.spawnSag ?? 0), p.z);
+    const body = buildVehicleBody(p.kind, p.colour, p.reg ?? null, p.look ?? null);
+    const behind = p.cz ?? 0; // a model's origin is not always its middle (the trailer's is under its axle): `x`, `z` are the middle
+    body.object.position.set(p.x - behind * Math.sin(p.yaw), top - body.spec.offset - (body.spec.layout.spawnSag ?? 0), p.z - behind * Math.cos(p.yaw));
     body.object.rotation.y = p.yaw;
     if (p.kind === 'tractor') poseBaleSpike(body.object, 0, false);
     mergeParkedVehicle(body.object);

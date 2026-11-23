@@ -256,6 +256,10 @@ export const NEIGHBOUR_PLAN = {
     { kind: 'tor', x: 30.5, z: 13.5, yaw: 1.2, colour: 0x5d6d4a, reg: 'K412 PBW' }, // plan (1028, 306)
     { kind: 'utv', x: 40.5, z: 29.5, yaw: 0.35, colour: 0x7a2a22 }, // plan (1038, 322)
     { kind: 'tractor', x: -10.5, z: 9.5, yaw: 3.0, colour: 0xb02a20 }, // plan (987, 302)
+    // Her farm quad by the collecting yard's gap, along its fence on the side the herd comes in, and the tipper beside the barn's door, its drawbar to the south on its jockey
+    // wheel (#925): both outside the 3 m ways to the barn door and the gap (tests/neighbourYard.test.js). `x`, `z` are the vehicle's middle, not its origin.
+    { kind: 'quad', x: 0.4, z: -18.6, yaw: 0.12, colour: 0x4c6a3c }, // plan (998, 274)
+    { kind: 'tipTrailer', x: -10.6, z: -20.8, yaw: -0.08, colour: 0x8a9092 }, // plan (987, 272)
   ],
   stand: { x: 11.3, z: 18.1, yaw: Math.PI }, // plan (1008.8, 310.6)
   // The dairy, at the map's places: the parlour (plan 1000 to 1030, 256 to 269) with the collecting yard in front of it (1000 to 1030, 271 to 289, open on its

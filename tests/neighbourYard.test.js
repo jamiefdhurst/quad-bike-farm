@@ -110,10 +110,10 @@ describe('the marks of work on her concrete', () => {
     for (const t of ['tyre', 'hoof', 'puddle', 'straw', 'scrape', 'drip', 'oil']) expect(of(t).length, t).toBeGreaterThan(0);
   });
 
-  it('puts oil under each vehicle that stands on the concrete', () => {
+  it('puts oil under each engine that stands on the concrete (a trailer has none)', () => {
     const onSlab = (p) => p.x > S.slab.minX && p.x < S.slab.maxX && p.z > S.slab.minZ && p.z < S.slab.maxZ;
     expect(S.parked.filter(onSlab).length).toBeGreaterThanOrEqual(2);
-    for (const p of S.parked.filter(onSlab)) expect(of('oil').some((m) => m.vehicle === p.kind && Math.hypot(m.x - p.x, m.z - p.z) < 1.6), p.kind).toBe(true);
+    for (const p of S.parked.filter((v) => onSlab(v) && v.kind !== 'tipTrailer')) expect(of('oil').some((m) => m.vehicle === p.kind && Math.hypot(m.x - p.x, m.z - p.z) < 1.6), p.kind).toBe(true);
   });
 
   it('keeps every mark on the slab, and the puddle in the low corner, clear of the buildings', () => {
