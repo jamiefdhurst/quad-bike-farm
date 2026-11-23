@@ -10,6 +10,8 @@ import { canvasTexture, worldBox } from './outbuildingProps.js';
 import { piece } from './dairyKit.js';
 import { lettered } from './dairyTextures.js';
 import { yardMarks } from './neighbourYard.js';
+import { paintSlabWear } from './concretePaint.js';
+import { createRandom } from '../core/random.js';
 
 const TAU = Math.PI * 2;
 const std = (o) => new THREE.MeshStandardMaterial(o);
@@ -250,7 +252,16 @@ export function buildYardMarks(shape, random, y) {
   const w = slab.maxX - slab.minX;
   const d = slab.maxZ - slab.minZ;
   const marks = yardMarks(shape, random);
-  const map = canvasTexture(Math.ceil(w * MARK_PX), Math.ceil(d * MARK_PX), (ctx) => paintYardMarks(ctx, slab, marks));
+  const map = canvasTexture(Math.ceil(w * MARK_PX), Math.ceil(d * MARK_PX), (ctx) => {
+    // The wear and the rim go under the marks: a polished path from the gateway to the barn door and the exposed aggregate at the slab's edge (#912).
+    const gw = shape.gateway;
+    const door = shape.barn.door;
+    const at = (x, z) => [x - slab.minX, z - slab.minZ];
+    const to = [door.x + (door.x > shape.barn.x ? 2.2 : -2.2), door.z];
+    const from = [gw.x + (gw.side === 'west' ? 1 : -1), gw.z];
+    paintSlabWear(ctx, MARK_PX, w, d, [at(...from), at((from[0] * 2 + to[0]) / 3, (from[1] * 2 + to[1]) / 3 + 0.8), at((from[0] + to[0] * 2) / 3, (to[1] * 2 + from[1]) / 3 - 0.5), at(...to)], createRandom(912));
+    paintYardMarks(ctx, slab, marks);
+  });
   map.wrapS = map.wrapT = THREE.ClampToEdgeWrapping;
   const geo = new THREE.PlaneGeometry(w, d);
   geo.rotateX(-Math.PI / 2);

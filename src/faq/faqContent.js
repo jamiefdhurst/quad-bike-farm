@@ -3084,7 +3084,7 @@ export const FAQ_SECTIONS = [
           feeder round a bale and two wrapped silage bales with the plastic torn off at the top; by the barn door lean a brush, a shovel and a fork, with a wheelbarrow and a parked scraper blade. West of the barn are the
           pallets, a blue tank on a stand, a bag of lime, tied feed sacks and a stack of tyres, and a hen coop and its run. By her back door there are boots on the step, and by the front a collie's kennel and bowl, with its chain
           lying out; at the far wall is the muck heap with a plank ramp up it. The concrete shows the work: tyre tracks from the gate, hoof prints where the herd goes in, oil under the vehicles, a puddle in the low corner,
-          straw blown against the barn door and a drip under the tap. After dark a light on a pole and one on the barn's gable glow. The hens, the cat and the dog are only for show: they stay where they are.`,
+          straw blown against the barn door and a drip under the tap. The concrete itself is worn: ragged oil and diesel stains with pale halos, a long smear where something was dragged, damp lines running down to a green-black patch at the low corner, curved tyre marks, blade scrapes, hairline cracks between the joints, one paler patched square, a worn smooth path from the gate to the barn door and a rough edge round the rim. After dark a light on a pole and one on the barn's gable glow. The hens, the cat and the dog are only for show: they stay where they are.`,
       },
       {
         q: 'What are the things standing by themselves in the fields?',
