@@ -91,7 +91,7 @@ export function yardMarks(shape, random) {
   if (s.tankRoom) wheel([[gx + 14, s.gateway.z + 2.2], [s.collecting ? s.collecting.maxX + 6 : strip[0], s.gateway.z + 6], strip], 0.8, 'tyre');
   wheel([[gx, s.gateway.z - 1.2], [gx + 12, s.gateway.z - 4], [gapX - 6, gapZ + 2], [gapX, gapZ]], 0.3, 'hoof'); // the herd walks the lane's side of the gateway
   const onSlab = (p) => p.x > s.slab.minX && p.x < s.slab.maxX && p.z > s.slab.minZ && p.z < s.slab.maxZ;
-  for (const p of s.parked.filter(onSlab)) for (let k = 0; k < 2; k++) { // a vehicle on the grass has no concrete to stain
+  for (const p of s.parked.filter((v) => onSlab(v) && v.kind !== 'tipTrailer')) for (let k = 0; k < 2; k++) { // a vehicle on the grass has no concrete to stain, and a trailer has no engine to drip
     marks.push({ type: 'oil', x: p.x + rnd(random, -0.7, 0.7) * Math.sin(p.yaw) + rnd(random, -0.3, 0.3), z: p.z + rnd(random, -0.7, 0.7) * Math.cos(p.yaw), yaw: rnd(random, 0, 3), w: rnd(random, 0.5, 0.9), d: rnd(random, 0.35, 0.7), seed: random(), vehicle: p.kind });
   }
   // The low corner: the slab's lowest, where it falls to the wall away from the house, by the gateway side's south end.

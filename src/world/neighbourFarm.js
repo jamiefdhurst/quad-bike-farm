@@ -3,6 +3,7 @@
 // invisible walls that make a stretch of the lane ridable, and `Neighbour`, who stands about, turns to face whoever comes and greets them.
 
 import { villageShape } from './village.js';
+import { createRandom } from '../core/random.js';
 import { yardFootprints, yardPiece } from './neighbourYard.js';
 
 export const DEFAULT_NEIGHBOUR_PARAMS = {
@@ -34,7 +35,29 @@ export const PARKED_SIZES = {
   tor: { hl: 2.15, hw: 0.95, h: 1.95 },
   utv: { hl: 1.55, hw: 0.85, h: 1.85 },
   tractor: { hl: 1.9, hw: 1.0, h: 2.4 },
+  // Her farm quad (the Farm 300's body with a crate on its rear rack) and tipping trailer (#925). A model's origin is not always its middle: the trailer's is under its
+  // axle, 0.38 m behind the middle of the drawbar and tub, so `cz` is how far ahead of the origin its middle is, and the yard places the middle (`x`, `z`).
+  quad: { hl: 1.1, hw: 0.65, h: 1.25, cz: 0 },
+  tipTrailer: { hl: 1.42, hw: 0.75, h: 1.2, cz: 0.38 },
 };
+
+/**
+ * What the farm's seed deals her quad and trailer (#925), added to each parked one as `look`: how chalked the quad's green is, the colour of its crate, which blanket
+ * is on its seat and how much mud; how rusty the trailer is, how full of straw and the colour of its tarp. A farm's seed always deals the same, another farm another;
+ * a layout with neither vehicle comes back as it was.
+ */
+export function dealNeighbourVehicles(layout, farmSeed) {
+  const n = layout.neighbourFarm;
+  if (!n?.parked?.some((p) => p.kind === 'quad' || p.kind === 'tipTrailer')) return layout;
+  const random = createRandom(((farmSeed ?? 0) ^ 0x925f) >>> 0);
+  const pick = (list) => list[Math.floor(random() * list.length)];
+  const parked = n.parked.map((p) => {
+    if (p.kind === 'quad') return { ...p, look: { fade: 0.3 + random() * 0.7, crate: pick([0x2c5ea6, 0xb5372a, 0x2e7a4a, 0xd0a02a]), blanket: Math.floor(random() * 4), mud: 0.7 + random() * 0.6, seed: 1 + Math.floor(random() * 9999) } };
+    if (p.kind === 'tipTrailer') return { ...p, look: { rust: 0.35 + random() * 0.55, straw: 0.35 + random() * 0.5, tarp: pick([0x2f5f8a, 0x3a6a3e, 0x7a6a4a, 0x5a7a96]), seed: 1 + Math.floor(random() * 9999) } };
+    return p;
+  });
+  return { ...layout, neighbourFarm: { ...n, parked } };
+}
 
 const EAST_REACH = 1; // m the levelling eases over on the lane side, away from the gateway (see floorAt), on a farm whose lane runs by the wall
 const rect = (x, z, hx, hz) => ({ minX: x - hx, maxX: x + hx, minZ: z - hz, maxZ: z + hz });

@@ -94,17 +94,19 @@ function crateParts(w, h, d, mat) {
   const parts = [];
   const add = (sx, sy, sz, x, y, z) => parts.push({ size: [sx, sy, sz], at: [x, y, z] });
   const t = 0.014;
-  add(w, t, d, 0, t / 2, 0); // the floor
+  const i = 0.004; // the bands sit this far inside the corner posts' faces, and the posts stand this far over the bands' top, so no two faces share a plane (coplanar test)
+  add(w - 0.02, t, d - 0.02, 0, t / 2 + i, 0); // the floor, inside the lowest bands
   for (const s of [-1, 1]) {
-    for (const z of [-1, 1]) add(0.03, h, 0.03, s * (w / 2 - 0.015), h / 2, z * (d / 2 - 0.015)); // corner posts
-    add(t, 0.034, d, s * (w / 2 - t / 2), h - 0.017, 0); // the sides' top band
-    add(t, 0.034, d, s * (w / 2 - t / 2), 0.017, 0);
-    add(t, 0.022, d, s * (w / 2 - t / 2), h * 0.5, 0); // a rib across the slots
-    add(w - 0.04, 0.034, t, 0, h - 0.017, s * (d / 2 - t / 2)); // the ends'
-    add(w - 0.04, 0.034, t, 0, 0.017, s * (d / 2 - t / 2));
-    add(w - 0.04, 0.022, t, 0, h * 0.5, s * (d / 2 - t / 2));
-    add(0.022, h - 0.07, t, s * w * 0.18, h / 2, d / 2 - t / 2); // a slot divider each end
-    add(0.022, h - 0.07, t, s * w * 0.18, h / 2, -d / 2 + t / 2);
+    for (const z of [-1, 1]) add(0.03, h + i, 0.03, s * (w / 2 - 0.015), (h + i) / 2, z * (d / 2 - 0.015)); // corner posts
+    const sideX = s * (w / 2 - t / 2 - i);
+    add(t, 0.034, d - 0.06, sideX, h - 0.017 - i, 0); // the sides' top and bottom bands, and a rib across the slots
+    add(t, 0.034, d - 0.06, sideX, 0.017 + 2 * i, 0);
+    add(t, 0.022, d - 0.06, sideX, h * 0.5, 0);
+    const endZ = s * (d / 2 - t / 2 - i);
+    add(w - 0.06, 0.034, t, 0, h - 0.017 - i, endZ); // the ends'
+    add(w - 0.06, 0.034, t, 0, 0.017 + 2 * i, endZ);
+    add(w - 0.06, 0.022, t, 0, h * 0.5, endZ);
+    add(0.022, h - 0.15, t, s * w * 0.18, h * 0.5 + 0.0, s * (d / 2 - t / 2 - 2 * i)); // a slot divider each end, behind the ribs' faces
   }
   return parts.map((p) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(...p.size), mat);

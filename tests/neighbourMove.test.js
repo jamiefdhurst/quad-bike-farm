@@ -65,7 +65,7 @@ describe('the neighbour\'s yard across the lane (#569)', () => {
     expect(S.barn.outer).toMatchObject({ minX: x0, maxX: x1, minZ: z0, maxZ: z1 });
   });
 
-  it('keeps everything inside the wall and apart, with her three vehicles clear of the way in', () => {
+  it('keeps everything inside the wall and apart, with her five vehicles clear of the way in', () => {
     const things = [S.house.roof, S.barn.roof, ...S.parked.map((p) => p.outer)];
     for (const r of things) {
       expect(r.minX).toBeGreaterThan(S.yard.minX + S.yard.wall);
@@ -77,7 +77,7 @@ describe('the neighbour\'s yard across the lane (#569)', () => {
     // The way in: a corridor the gateway's width across the yard to its far wall, with nothing parked in it.
     const way = { minX: S.gateway.x, maxX: S.yard.maxX, minZ: S.gateway.minZ, maxZ: S.gateway.maxZ };
     for (const p of S.parked) expect(overlap(p.outer, way), p.kind).toBe(false);
-    expect(S.parked.map((p) => p.kind)).toEqual(['tor', 'utv', 'tractor']);
+    expect(S.parked.map((p) => p.kind)).toEqual(['tor', 'utv', 'tractor', 'quad', 'tipTrailer']);
     expect(S.parked[0]).toMatchObject({ colour: 0x5d6d4a, reg: 'K412 PBW' }); // the Tor she drives away, as traffic.js has it
   });
 
@@ -258,7 +258,7 @@ describe('her parked vehicles drawn as a few meshes', () => {
   it('are merged to one mesh a material, with every triangle and the same shape, and still hide as one', async () => {
     vi.stubGlobal('document', { createElement: () => fakeCanvas() });
     const { buildVehicleBody } = await import('../src/world/trafficView.js');
-    for (const kind of ['tor', 'utv', 'tractor']) {
+    for (const kind of ['tor', 'utv', 'tractor', 'quad', 'tipTrailer']) {
       const { object } = buildVehicleBody(kind, 0x5d6d4a, null);
       object.position.set(5, 1, -3);
       object.rotation.y = 0.7;

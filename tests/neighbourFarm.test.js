@@ -47,6 +47,18 @@ describe('the neighbour\'s yard', () => {
     for (const p of S.parked) expect(PARKED_SIZES[p.kind], p.kind).toBeTruthy();
   });
 
+  it('has her quad and tipping trailer (#925) parked over nothing else, each with a collider of its size', () => {
+    const things = [S.house.roof, S.barn.roof, S.parlour.roof, S.tankRoom.roof, S.collecting.outer, S.slurry.outer, ...S.parked.map((p) => p.outer)];
+    for (let i = 0; i < things.length; i++) for (let j = i + 1; j < things.length; j++) expect(overlap(things[i], things[j]), `${i} and ${j}`).toBe(false);
+    for (const kind of ['quad', 'tipTrailer']) {
+      const p = S.parked.find((v) => v.kind === kind);
+      expect(p, kind).toBeTruthy();
+      const size = PARKED_SIZES[kind];
+      expect([p.hl, p.hw, p.h, p.cz]).toEqual([size.hl, size.hw, size.h, size.cz]); // the collider drawn in neighbourFarmProps.js is the shape's: fixedBox(x, z, hw, hl)
+      expect(p.outer.maxX - p.outer.minX).toBeCloseTo(2 * Math.max(size.hl, size.hw), 9);
+    }
+  });
+
   it('is counted as built by the world\'s outbuildings, and shelters under its roofs', () => {
     const ob = createOutbuildings(LAYOUT);
     expect(ob.builtAt(S.house.x, S.house.z)).toBe(true);

@@ -107,8 +107,8 @@ export function addFarmTrailerWear({ body, tub, lights, S, look, mat, hz }) {
     tub.add(new THREE.Mesh(rod([x, 0.035, sideZ0], [x, 0.035, sideZ1], 0.007, 6), mat.steel));
     for (const z of [sideZ0 + 0.14, (sideZ0 + sideZ1) / 2, sideZ1 - 0.14]) box(0.03, 0.045, 0.09, mat.steel, x, 0.035, z, tub);
     for (const z of [sideZ0 + 0.02, sideZ1 - 0.02]) {
-      box(0.022, 0.07, 0.05, mat.steel, x, S.sideHeight - 0.07, z, tub); // the catch's body on the corner post
-      box(0.018, 0.012, 0.075, PART_MAT.nut, x + s * 0.012, S.sideHeight - 0.04, z, tub); // and its lever across
+      box(0.022, 0.07, 0.044, mat.steel, x, S.sideHeight - 0.075, z, tub); // the catch's body on the corner post
+      box(0.016, 0.012, 0.075, PART_MAT.nut, x + s * 0.016, S.sideHeight - 0.02, z, tub); // and its lever across, over the body's top (clear of its faces)
     }
   }
   // A cracked rear lamp lens each side: pale lines across the clear plastic, and a strip of tape over the left one.

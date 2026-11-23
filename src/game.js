@@ -194,6 +194,7 @@ import { buildLineUpBays } from './world/lineUpBays.js';
 import { Records, JumpMeasure, DEFAULT_RECORD_PARAMS, RECORD_PARAM_RANGES, RECORD_KINDS, WHO_NAMES, formatValue } from './world/records.js';
 import { LAYOUT, stripFrame, stripPoint } from './world/layout.js';
 import { dealtLayout } from './world/quarry.js';
+import { dealNeighbourVehicles } from './world/neighbourFarm.js';
 import { namedLayout } from './world/fieldNames.js';
 import { DashReader, READING_PARAM_RANGES } from './npc/dashReading.js';
 import { Convoy, CONVOY_PARAM_RANGES } from './npc/convoy.js';
@@ -469,7 +470,7 @@ export class Game {
     this.season = this.date.season;
     this.autumn = isAutumn(this.season);
     this.world = new World({
-      layout: namedLayout(dealtLayout(LAYOUT, farmPeek.farmSeed ?? this.seed), farmPeek.farmSeed ?? this.seed, farmPeek.save?.fieldNames), // the farm's field names: kept, or dealt from its seed (world/fieldNames.js)
+      layout: dealNeighbourVehicles(namedLayout(dealtLayout(LAYOUT, farmPeek.farmSeed ?? this.seed), farmPeek.farmSeed ?? this.seed, farmPeek.save?.fieldNames), farmPeek.farmSeed ?? this.seed), // the farm's field names: kept, or dealt from its seed (world/fieldNames.js); the neighbour's quad and trailer dealt their wear from it too (#925)
       autumn: this.autumn,
       winter: isWinter(this.season),
       scene: this.scene,
