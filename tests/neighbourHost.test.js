@@ -75,6 +75,13 @@ describe('her Tor in the yard', () => {
     built = buildNeighbourFarm(c);
   });
 
+  it('lays the slab in four meshes of four different 16 m tiles (#1146)', () => {
+    const slabs = [];
+    built.group.traverse((o) => o.isMesh && o.material.map?.image?.width === 1024 && slabs.push(o)); // the only 1024 px maps are the slab's 16 m tiles
+    expect(slabs).toHaveLength(4);
+    expect(new Set(slabs.map((m) => m.material.map)).size).toBe(4);
+  });
+
   it('is taken out of the yard with its collider while she is away, and nothing else is', () => {
     const tor = built.vehicles.find((v) => v.kind === 'tor');
     const others = built.vehicles.filter((v) => v.kind !== 'tor');

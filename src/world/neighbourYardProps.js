@@ -259,7 +259,7 @@ export function buildYardMarks(shape, random, y) {
     const at = (x, z) => [x - slab.minX, z - slab.minZ];
     const to = [door.x + (door.x > shape.barn.x ? 2.2 : -2.2), door.z];
     const from = [gw.x + (gw.side === 'west' ? 1 : -1), gw.z];
-    paintSlabWear(ctx, MARK_PX, w, d, [at(...from), at((from[0] * 2 + to[0]) / 3, (from[1] * 2 + to[1]) / 3 + 0.8), at((from[0] + to[0] * 2) / 3, (to[1] * 2 + from[1]) / 3 - 0.5), at(...to)], createRandom(912));
+    paintSlabWear(ctx, MARK_PX, w, d, [at(...from), at((from[0] * 2 + to[0]) / 3, (from[1] * 2 + to[1]) / 3 + 0.8), at((from[0] + to[0] * 2) / 3, (to[1] * 2 + from[1]) / 3 - 0.5), at(...to)], createRandom(912), at(slab.minX + 7.5, slab.maxZ - 2.2)); // the slime by the puddle in the slab's low corner (neighbourYard.js `yardMarks`)
     paintYardMarks(ctx, slab, marks);
   });
   map.wrapS = map.wrapT = THREE.ClampToEdgeWrapping;

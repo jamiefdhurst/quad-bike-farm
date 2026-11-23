@@ -25,6 +25,18 @@ describe('the concrete texture (#912)', () => {
     expect(draw(5)).toBe(draw(5));
     expect(draw(5)).not.toBe(draw(6));
   });
+  it('leaves a 4 m tile (it repeats every few metres) without the one-off marks, and a 16 m one with them', () => {
+    const calls = (m) => { const { ctx, log } = recorder(); paintConcrete(ctx, 1024, m, createRandom(5)); return log.filter((l) => l.startsWith('rotate(')).length; };
+    expect(calls(4)).toBe(0); // the tread blocks are the only rotated draws
+    expect(calls(16)).toBeGreaterThan(0);
+    expect(draw(5, 4)).not.toMatch(/rgba\(34,48,30|rgba\(20,30,18/); // no slime on a tile: it is the slab's low corner's, painted once
+    expect(draw(5, 16)).not.toMatch(/rgba\(34,48,30|rgba\(20,30,18/);
+  });
+  it('paints the slime and damp once, at the corner it is told', () => {
+    const { ctx, log } = recorder();
+    paintSlabWear(ctx, 14, 40, 30, [[2, 10], [20, 12], [35, 9]], createRandom(1), [7.5, 27.8]);
+    expect(log.join('|')).toMatch(/rgba\(34,48,30/);
+  });
   it('is drawn for a 4 m tile as well as a 16 m one', () => {
     expect(draw(5, 4).length).toBeGreaterThan(1000);
     expect(draw(5, 4)).not.toBe(draw(5, 16));
