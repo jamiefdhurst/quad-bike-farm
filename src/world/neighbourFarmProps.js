@@ -249,7 +249,16 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   // A thing on a wall: `u` runs along it (a world x on a z-facing wall, a world z on an x-facing one), `v` is the height above y0, `w` is how far out from the wall's face `c`.
   // Each part's back runs on into the wall by its own few mm (`embed`), so the backs of the many parts on one wall never share a plane (tests/farmhouse.test.js).
   let embedded = 0;
-  const onWall = (axis, sign, c) => (du, dv, dw, m, u, v, w, tile = 1) => {
+  // The faces nobody sees are left off (a part's back is against the wall, a stood-on part's foot in the ground), and a `pane` is only its front face. BoxGeometry's faces
+  // are +x, -x, +y, -y, +z, -z, six indices each.
+  const dropFaces = (geo, faces) => {
+    const idx = geo.getIndex().array;
+    const keep = [];
+    for (let f = 0; f < 6; f++) if (!faces.includes(f)) keep.push(...idx.slice(f * 6, f * 6 + 6));
+    geo.setIndex(keep);
+    return geo;
+  };
+  const onWall = (axis, sign, c) => (du, dv, dw, m, u, v, w, tile = 1, pane = false) => {
     const [tu, tv] = Array.isArray(tile) ? tile : [tile, tile];
     const e = 0.02 + 0.005 * (embedded++ % 20);
     const dwe = dw + e;
@@ -257,7 +266,10 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
     const down = v - dv / 2 < 0.005 ? e : 0; // a part standing on the ground sinks by the same, for the same reason
     const dve = dv + down;
     const ve = v - down / 2;
-    return axis === 'z' ? add(worldBox(du, dve, dwe, tu, tv), m, u, y0 + ve, c + sign * we) : add(worldBox(dwe, dve, du, tu, tv), m, c + sign * we, y0 + ve, u);
+    const front = axis === 'z' ? (sign < 0 ? 5 : 4) : sign > 0 ? 0 : 1;
+    const hidden = pane ? [0, 1, 2, 3, 4, 5].filter((f) => f !== front) : [front ^ 1, ...(down ? [3] : [])];
+    const geo = dropFaces(axis === 'z' ? worldBox(du, dve, dwe, tu, tv) : worldBox(dwe, dve, du, tu, tv), hidden);
+    return axis === 'z' ? add(geo, m, u, y0 + ve, c + sign * we) : add(geo, m, c + sign * we, y0 + ve, u);
   };
 
   // Walls: the main range in dark old stone, the wing in newer, the lean-to in the old. The east end of the main range is limewashed.
@@ -275,7 +287,7 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   wallFace(hd, h.wallHeight, oldStone, 'w', h.outer.minX, h.z);
   wallFace(hd, h.wallHeight, oldStone, 'e', h.outer.maxX, h.z);
   fixedBox(h.x, y0 + h.wallHeight / 2, h.z, h.halfX, h.wallHeight / 2 + 0.5, h.halfZ);
-  box(0.2, h.wallHeight, hd - 0.04, lime, h.outer.maxX - 0.07, y0 + h.wallHeight / 2, h.z, 2); // the render on the east end, 3 cm proud of the stone
+  dropFaces(box(0.2, h.wallHeight, hd - 0.04, lime, h.outer.maxX - 0.07, y0 + h.wallHeight / 2, h.z, 4).geometry, [1, 3]); // the render on the east end, 3 cm proud of the stone
   const ww = wing.outer.maxX - wing.outer.minX;
   const wd = wing.outer.maxZ - wing.outer.minZ;
   wallFace(ww, wing.wallHeight, newStone, 'n', wing.x, wing.outer.minZ);
@@ -332,6 +344,7 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
     const drop = k * over;
     const slope = Math.hypot(over, drop);
     const o = box(x1 - x0, thick, slope, m, (x0 + x1) / 2, y0 + ridgeY + thick / 2 - drop / 2, zRidge + (side * over) / 2, 2);
+    dropFaces(o.geometry, [3]); // the underside is over the house, and the eaves' undercourse is the part seen from below
     o.rotation.x = side * Math.atan2(drop, over);
     // The eaves' undercourse: a second course of stone slates under the first at its lower edge, which is what makes the overhang look thick.
     const ang = Math.atan2(drop, over);
@@ -386,7 +399,7 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   // The wall trims: `w` 0 is the wall's face. A mullioned window of `lights` lights: glass, a stone mullion between each, a sill and a drip hood over, set on the wall at `u`.
   const northZ = h.outer.minZ;
   const mullioned = (on, { u, y, lights, w, ht, lit }) => {
-    on(w, ht, 0.03, lit ? glow : glass, u, y, 0.06, [w / lights, ht]);
+    on(w, ht, 0.03, lit ? glow : glass, u, y, 0.06, [w / lights, ht], true);
     for (let i = 1; i < lights; i++) on(0.1, ht + 0.04, 0.06, dressed, u - w / 2 + (w * i) / lights, y, 0.1);
     on(w + 0.34, 0.1, 0.18, dressed, u, y - ht / 2 - 0.07, 0.09); // the sill
     on(w + 0.5, 0.12, 0.2, dressed, u, y + ht / 2 + 0.15, 0.1); // the hood over, a long drip mould
@@ -476,19 +489,21 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   // two wheelie bins at the front's east end.
   const gableE = onWall('x', 1, h.outer.maxX + 0.03);
   gableE(0.3, 0.45, 0.18, paint, h.z - 3.2, 1.4, 0.09); // the meter box
-  gableE(0.34, 0.36, 0.03, iron, h.z - 3.2, 1.4, 0.2);
-  add(new THREE.SphereGeometry(0.28, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2.2), paint, h.outer.maxX + 0.5, y0 + 4.3, h.z - 2.2).rotation.z = -Math.PI / 2 + 0.25; // the dish
+  gableE(0.12, 0.1, 0.03, iron, h.z - 3.2, 1.5, 0.2); // its window
+  add(new THREE.SphereGeometry(0.4, 12, 6, 0, Math.PI * 2, 0, Math.PI / 3), mat(0xc9cdcf, { roughness: 0.5, side: THREE.DoubleSide }), h.outer.maxX + 0.5, y0 + 4.3, h.z - 2.2).rotation.z = -Math.PI / 2 + 0.25; // the dish
   gableE(0.04, 0.04, 0.4, iron, h.z - 2.2, 4.3, 0.2);
   const tapOn = back;
   tapOn(0.04, 0.5, 0.04, iron, h.x - 2, 0.65, 0.06);
   tapOn(0.05, 0.04, 0.12, brass, h.x - 2, 0.45, 0.1);
-  const lineZ = lean.outer.maxZ + 3.3;
-  for (const px of [lx0 + 0.6, lx1 + 1.4]) {
+  const lineZ = h.outer.maxZ + 3.5;
+  const lineX0 = h.x - 8.5;
+  const lineX1 = h.x - 2.5;
+  for (const px of [lineX0, lineX1]) {
     box(0.08, 2.3, 0.08, timber, px, y0 + 1.15, lineZ, 0.6);
     fixedBox(px, y0 + 1.15, lineZ, 0.06, 1.15, 0.06);
   }
-  add(new THREE.CylinderGeometry(0.008, 0.008, lx1 + 1.4 - (lx0 + 0.6), 4), iron, (lx0 + lx1 + 2) / 2, y0 + 2.1, lineZ).rotation.z = Math.PI / 2;
-  for (const [px, wpx, wc] of [[lx0 + 1.8, 0.5, 0xd9d4c4], [lx0 + 2.7, 0.35, 0x7a8fa8], [lx0 + 3.6, 0.55, 0xa8423a]]) box(wpx, 0.7, 0.02, mat(wc, { roughness: 1 }), px, y0 + 1.72, lineZ, 1);
+  add(new THREE.CylinderGeometry(0.008, 0.008, lineX1 - lineX0, 4), iron, (lineX0 + lineX1) / 2, y0 + 2.1, lineZ).rotation.z = Math.PI / 2;
+  for (const [px, wpx, wc] of [[lineX0 + 1.3, 0.5, 0xd9d4c4], [lineX0 + 2.6, 0.35, 0x7a8fa8], [lineX0 + 4.1, 0.55, 0xa8423a]]) box(wpx, 0.7, 0.02, mat(wc, { roughness: 1 }), px, y0 + 1.72, lineZ, 1);
   const stackX = lx1 - 1.05;
   box(1.3, 1.0, 0.6, bark, stackX, y0 + 0.5, lean.outer.maxZ + 0.62, 1); // the stack's sides, bark
   add(worldBox(1.2, 0.98, 0.02, 1), logs, stackX, y0 + 0.5, lean.outer.maxZ + 0.93); // its sawn ends
@@ -529,9 +544,9 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   const lawnW = g.maxX - g.minX - 0.8;
   const lawnD = g.maxZ - g.minZ - 0.4;
   const lawnTop = y0 + 0.045;
-  box(lawnW, 0.06, lawnD, lawn, (g.minX + g.maxX) / 2, lawnTop - 0.03, (g.minZ + 0.4 + g.maxZ) / 2, 2);
+  dropFaces(box(lawnW, 0.06, lawnD, lawn, (g.minX + g.maxX) / 2, lawnTop - 0.03, (g.minZ + 0.4 + g.maxZ) / 2, 2).geometry, [0, 1, 3, 4, 5]); // its top only
   const flag = std(dressedStoneTexture(random));
-  box(1.1, 0.06, g.maxZ - g.minZ - 0.2, flag, g.gate.x, y0 + 0.04, (g.minZ + 0.2 + g.maxZ) / 2, 1.2); // out through the gate
+  dropFaces(box(1.1, 0.06, g.maxZ - g.minZ - 0.2, flag, g.gate.x, y0 + 0.04, (g.minZ + 0.2 + g.maxZ) / 2, 1.2).geometry, [3]); // out through the gate
   const trough = onWall('z', -1, northZ);
   trough(1.1, 0.26, 0.28, timber, h.x - 5.2, 0.2 + 0.13, 0.2, 0.6);
   trough(1.0, 0.04, 0.2, flowers, h.x - 5.2, 0.2 + 0.28, 0.2, 1);

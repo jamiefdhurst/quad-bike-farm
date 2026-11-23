@@ -366,6 +366,6 @@ describe('her gate and today\'s farm\'s random stream (#969)', () => {
     let seed = 1234;
     const random = () => { n++; seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
     buildNeighbourFarm(ctx(TODAY, random));
-    expect(n).toBe(21431); // 9873 until her farmhouse's own textures (#910: stone, slate, limewash, flagstones, flowers and the rest) took their draws
+    expect(n).toBe(21188); // 9873 until her farmhouse's own textures (#910: stone, slate, limewash, flagstones, flowers and the rest) took their draws
   });
 });

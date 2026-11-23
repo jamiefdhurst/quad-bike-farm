@@ -2062,7 +2062,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Who lives at the farm down the lane, and what does she say?',
-        a: `The neighbour, a woman older than Amy and Jess, who lives in the stone farmhouse behind the walled yard. Ride in through the gateway in her wall and she turns to watch you, waves and says hello. Come back later and she says so; get off and stand by her and she makes conversation now and then; ride off after a good chat and she says goodbye. She goes indoors at night, when the downstairs windows glow, and comes out again in the morning. The girls remark when you arrive, and may wave back. The Moorland, the buggy and the tractor parked about the yard are hers, for show: you cannot drive them, and they are not for sale.`,
+        a: `The neighbour, a woman older than Amy and Jess, who lives in the old stone farmhouse behind the walled yard: a long, low upland house under a heavy stone-slate roof, with a stack on each gable, mullioned windows, a door off to one side under a little slated hood, a lower wing of newer stone at one end, a scullery at the back under the long slope of the roof, and a small walled garden in front of the door. Its east end is limewashed and peeling. Ride in through the gateway in her wall and she turns to watch you, waves and says hello. Come back later and she says so; get off and stand by her and she makes conversation now and then; ride off after a good chat and she says goodbye. She goes indoors at night, when the downstairs windows glow, and comes out again in the morning. The girls remark when you arrive, and may wave back. The Moorland, the buggy and the tractor parked about the yard are hers, for show: you cannot drive them, and they are not for sale.`,
         tip: 'The neighbour is out in her yard by day, down the lane. Ride in and say hello.',
       },
       {
@@ -3057,7 +3057,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Where is the neighbour?',
         a: `She is across the lane from the drive, a little way up from it, so the two gateways don't make a crossroads: a walled yard about 95 by 85 m with her gateway in its west wall, at the
-          end of her own short track off the lane, and her farmhouse at the south of it, her barn at the north-west with its big door facing the yard, and her Moorland, buggy and old tractor parked about. She stands by her
+          end of her own short track off the lane, and her farmhouse at the south of it (the old stone one, with its wing, scullery and front garden), her barn at the north-west with its big door facing the yard, and her Moorland, buggy and old tractor parked about. She stands by her
           door until dark as before. She is a dairy farmer: across the yard from her gate is the milking parlour, a long low block building with a row of small high windows, an
           extractor fan in its end and two cow gates, with the collecting yard in front of it where the herd waits, railed in galvanised steel with a backing gate, a hosepipe and a
           channel for the muck. Beside the parlour's end is the little room for the bulk milk tank, its door open so you can see the stainless tank (you can walk in), with the

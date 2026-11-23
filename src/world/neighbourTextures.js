@@ -382,7 +382,7 @@ export function dressedStoneTexture(random) {
   });
 }
 
-/** Rough, darker gritstone of the 1700s, in uneven courses with lichen and a damp band at the foot. One tile is two metres. */
+/** Rough, darker gritstone of the 1700s, in uneven courses with lichen. One tile is two metres. */
 export function oldStoneTexture(random) {
   return canvasTexture(512, 512, (ctx, w, h) => {
     ctx.fillStyle = '#6f695c';
@@ -408,11 +408,6 @@ export function oldStoneTexture(random) {
       ctx.arc(random() * w, random() * h, 3 + random() * 13, 0, Math.PI * 2);
       ctx.fill();
     }
-    const g = ctx.createLinearGradient(0, h, 0, h * 0.8); // damp at the foot
-    g.addColorStop(0, 'rgba(25,25,20,0.3)');
-    g.addColorStop(1, 'rgba(25,25,20,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, h * 0.8, w, h * 0.2);
   });
 }
 
@@ -477,36 +472,36 @@ export function stoneSlateTexture(random) {
   });
 }
 
-/** Limewash over stone, peeling: cream, grey where the rain runs, and patches gone to show the stone underneath. One tile is two metres. */
+/** Limewash over stone, peeling: cream with rain streaks from the top and a few big ragged patches gone to show the stone, clustered at the eaves and the foot. One tile is four metres. */
 export function limewashTexture(random) {
   return canvasTexture(512, 512, (ctx, w, h) => {
     ctx.fillStyle = '#dcd5c0';
     ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 60; i++) {
       ctx.fillStyle = `rgba(120,110,85,${0.04 + random() * 0.08})`;
       ctx.fillRect(random() * w, random() * h * 0.5, 2 + random() * 6, 40 + random() * 220);
     }
-    for (let i = 0; i < 16; i++) { // peeled patches: the stone shows, ragged
-      const px = random() * w;
-      const py = random() * h;
-      const r = 14 + random() * 36;
-      ctx.fillStyle = '#756f60';
+    const patch = (px, py, r) => { // a ragged patch of stone with its courses showing, and a lip of lifted wash along its top
+      ctx.fillStyle = '#8b8574';
       ctx.beginPath();
-      for (let k = 0; k < 9; k++) {
-        const a = (k / 9) * Math.PI * 2;
-        const rr = r * (0.6 + random() * 0.7);
-        ctx.lineTo(px + Math.cos(a) * rr, py + Math.sin(a) * rr * 0.7);
+      for (let k = 0; k < 11; k++) {
+        const a = (k / 11) * Math.PI * 2;
+        const rr = r * (0.55 + random() * 0.8);
+        ctx.lineTo(px + Math.cos(a) * rr * 1.3, py + Math.sin(a) * rr * 0.8);
       }
       ctx.closePath();
       ctx.fill();
-      ctx.fillStyle = 'rgba(190,182,160,0.5)';
-      ctx.fillRect(px - r * 0.5, py - 2, r, 3);
-    }
-    const g = ctx.createLinearGradient(0, h, 0, h * 0.75); // splashed and damp at the foot
-    g.addColorStop(0, 'rgba(60,55,40,0.4)');
-    g.addColorStop(1, 'rgba(60,55,40,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, h * 0.75, w, h * 0.25);
+      ctx.strokeStyle = 'rgba(40,36,28,0.45)';
+      for (let k = -2; k <= 2; k++) {
+        ctx.beginPath();
+        ctx.moveTo(px - r, py + k * r * 0.3);
+        ctx.lineTo(px + r, py + k * r * 0.3);
+        ctx.stroke();
+      }
+    };
+    for (let i = 0; i < 3; i++) patch(random() * w, h * 0.78 + random() * h * 0.2, 28 + random() * 30); // low down, where the rain splashes and the wash goes first
+    for (let i = 0; i < 2; i++) patch(random() * w, random() * h * 0.18, 18 + random() * 20); // and under the eaves
+    patch(w * (0.15 + random() * 0.7), h * (0.35 + random() * 0.3), 22 + random() * 20); // one on its own
   });
 }
 
