@@ -290,3 +290,59 @@ export function postboxTexture(random) {
     ctx.fillText('GR', 78, 118); // a cipher: a king, not a maker
   });
 }
+
+/**
+ * The face of a trailhead marker post: weathered grey oak grain with a green damp foot, and `lines` routed into it (a dark cut with a little cream paint in the
+ * bottom of each letter, no border). The canvas is the whole face, `faceW` by `faceH` m; the lines are centred in `box` ([top, bottom] as fractions of the height)
+ * and each is shrunk until it fits inside the face with `margin` m to spare.
+ */
+export function routedPostTexture(random, { faceW, faceH, lines, box, margin = 0.02 }) {
+  return canvasTexture(256, Math.round(256 * (faceH / faceW)), (ctx, w, h) => {
+    ctx.fillStyle = rgb(132, 126, 114);
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 160; i++) {
+      const shade = (random() - 0.5) * 60;
+      ctx.fillStyle = `rgba(${shade > 0 ? '225,220,205' : '35,32,26'},${Math.abs(shade) / 170})`;
+      ctx.fillRect(random() * w, 0, 1 + random() * 2, h);
+    }
+    const foot = ctx.createLinearGradient(0, h * 0.82, 0, h); // the damp green foot
+    foot.addColorStop(0, 'rgba(70,92,44,0)');
+    foot.addColorStop(1, 'rgba(70,92,44,0.8)');
+    ctx.fillStyle = foot;
+    ctx.fillRect(0, h * 0.82, w, h * 0.18);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const top = box[0] * h;
+    const step = ((box[1] - box[0]) * h) / lines.length;
+    const room = w * (1 - (2 * margin) / faceW);
+    lines.forEach((text, i) => {
+      let px = step * 0.9;
+      do ctx.font = `bold ${px--}px Georgia, serif`;
+      while (ctx.measureText(text).width > room && px > 8);
+      const y = top + step * (i + 0.5);
+      ctx.fillStyle = 'rgba(28,22,14,0.9)'; // the cut
+      ctx.fillText(text, w / 2 + 1.5, y + 1.5);
+      ctx.fillStyle = 'rgba(214,206,176,0.85)'; // the paint in it
+      ctx.fillText(text, w / 2, y);
+    });
+  });
+}
+
+/** A small oak plate with one line of lettering painted on it, `plateW` by `plateH` m. */
+export function platedTexture(random, text, { plateW, plateH }) {
+  return canvasTexture(256, Math.round(256 * (plateH / plateW)), (ctx, w, h) => {
+    ctx.fillStyle = rgb(104, 86, 62);
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 50; i++) {
+      ctx.fillStyle = `rgba(30,20,10,${random() * 0.2})`;
+      ctx.fillRect(0, random() * h, w, 1);
+    }
+    ctx.fillStyle = '#e4dcc0';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let px = h * 0.6;
+    do ctx.font = `bold ${px--}px Georgia, serif`;
+    while (ctx.measureText(text).width > w * 0.9 && px > 8);
+    ctx.fillText(text, w / 2, h / 2);
+  });
+}
