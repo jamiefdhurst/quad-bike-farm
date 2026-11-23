@@ -30,11 +30,11 @@ What is true now, with the sections below to read for the detail. Keep it curren
 - **The river (#49).** It is Brook Meadow's river, east down the land to the lane's bridge and on past the north of the village to a spring, with river gates where it crosses a boundary (`layout.hill.river`, built into `brook.js`): "Move the river and its meadow into Brook Meadow (#565)". Deep water drowns an engine at any speed. "The river and its meadow (#49, was TODO 154)".
 - **The shepherd's hut (#53).** A wheeled hut on the flat top of the hill pasture (`layout.hill.hut`, `hut.js`, `hutBuild.js`) with a stove you light, a kettle you pour tea from, and a bunk where the girls sit out the rain, cold and dark. Not kept between games. "A shepherd's hut on the hill (#53, was TODO 158)".
 - **Small ones:** the barn's echo and its warmth for an engine ("Inside the barn (2026-10-05)"), the loft at the front ("The hayloft moves to the front of the barn (2026-10-06)", which supersedes "The hayloft (2026-10-05)"), the ramp and records ("Bale jump (TODO 13)", "Hill climb and the records board (TODO 14)"), the bonfire, mist, rainbows, the stream rising after rain, ice on the puddles, and mist on the inside of a cab's glass ("Steamed-up windows (#72, was TODO 177)").
+- **The neighbour's farmhouse is an upland house of her own** (a 15 m two-storey range under a 35 degree stone-slate roof, coped gables with kneelers and a stack each, mullioned windows, an off-centre door in a stone surround, a wing of newer stone, a catslide over a scullery, a limewashed east gable and a walled front garden; the same on both layouts): "Her upland farmhouse (#910)".
 
 ---
 
 The sections below are the record, oldest first. A new decision goes at the end.
-- **The neighbour's farmhouse is an upland house of her own** (a 15 m two-storey range under a 35 degree stone-slate roof, coped gables with kneelers and a stack each, mullioned windows, an off-centre door in a stone surround, a wing of newer stone, a catslide over a scullery, a limewashed east gable and a walled front garden; the same on both layouts): "Her upland farmhouse (#910)".
 
 ## Mud (2026-10-05)
 
