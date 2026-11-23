@@ -275,12 +275,12 @@
   "house": {
    "x": 178,
    "z": 138,
-   "halfX": 7,
+   "halfX": 7.5,
    "halfZ": 4.2,
-   "wallHeight": 5.2,
-   "ridge": 7.6,
+   "wallHeight": 5,
+   "ridge": 7.9,
    "door": {
-    "x": 178,
+    "x": 175.5,
     "halfWidth": 0.55,
     "height": 2.05
    }

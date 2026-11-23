@@ -242,7 +242,14 @@ export const NEIGHBOUR_PLAN = {
   track: { halfWidth: 2, from: [905, 292] }, // from the lane, plan metres: it runs to her gate
   yard: { minX: -47.5, maxX: 47.5, minZ: -42.5, maxZ: 42.5, wall: 0.5, wallHeight: 1.3 }, // plan (950 to 1045, 250 to 335)
   gateway: { x: -47.5, z: -0.5, width: 8, side: 'west' }, // plan z 292
-  house: { x: 13.5, z: 25.5, halfX: 7, halfZ: 4.2, wallHeight: 5.2, ridge: 7.6, door: { x: 13.5, z: 21.3, halfWidth: 0.55, height: 2.05 } }, // plan (1011, 318)
+  // Her farmhouse (#910): an upland house, a long low main range of 15 m with its front to the yard and a door off to one side, a lower later wing at the west end, a catslide
+  // over a scullery at the back with its own door, and a small walled garden in front of the door with its gate in line with it.
+  house: {
+    x: 13.5, z: 25.5, halfX: 7.5, halfZ: 4.2, wallHeight: 5, ridge: 7.9, door: { x: 11, z: 21.3, halfWidth: 0.55, height: 2.05 }, // plan (1011, 318)
+    wing: { x: 3.5, z: 25.5, halfX: 2.5, halfZ: 3.4, wallHeight: 3.8, ridge: 5.9 },
+    leanTo: { x: 16, z: 31.3, halfX: 3.6, halfZ: 1.6, wallHeight: 2.8, backDoor: { x: 14.5, z: 32.9, halfWidth: 0.45, height: 2 } },
+    garden: { minX: 7.4, maxX: 14.6, minZ: 16.4, maxZ: 21.3, gate: { x: 11, z: 16.4, halfWidth: 0.6 } },
+  },
   barn: { x: -26.5, z: -26, halfX: 13, halfZ: 8.5, wallHeight: 4.8, ridge: 7.6, door: { x: -13.5, z: -26, halfWidth: 2.6, height: 3.6 } }, // plan (971, 266.5)
   // Her Tor, the one she drives to the farm (traffic.js `VISITOR_KINDS.neighbour`), her UTV and her old tractor: none in the way in or the tanker's way.
   parked: [

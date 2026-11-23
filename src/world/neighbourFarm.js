@@ -67,7 +67,11 @@ export function neighbourFarmShape(layout) {
   ];
   const h = n.house;
   const b = n.barn;
-  const house = { ...h, outer: rect(h.x, h.z, h.halfX, h.halfZ), roof: rect(h.x, h.z, h.halfX + 0.35, h.halfZ + 0.4) };
+  // The main range, and the wing and the lean-to as footprints of their own: the wing's roof is its own, the lean-to's is the main roof's south slope carried on down (a catslide).
+  const wing = h.wing ? { ...h.wing, outer: rect(h.wing.x, h.wing.z, h.wing.halfX, h.wing.halfZ), roof: rect(h.wing.x - 0.175, h.wing.z, h.wing.halfX + 0.175, h.wing.halfZ + 0.4) } : null;
+  const leanTo = h.leanTo ? { ...h.leanTo, outer: rect(h.leanTo.x, h.leanTo.z, h.leanTo.halfX, h.leanTo.halfZ), roof: rect(h.leanTo.x, h.leanTo.z, h.leanTo.halfX + 0.1, h.leanTo.halfZ + 0.35) } : null;
+  const garden = h.garden ? { ...h.garden, outer: { minX: h.garden.minX, maxX: h.garden.maxX, minZ: h.garden.minZ, maxZ: h.garden.maxZ } } : null;
+  const house = { ...h, wing, leanTo, garden, outer: rect(h.x, h.z, h.halfX, h.halfZ), roof: rect(h.x, h.z, h.halfX + 0.35, h.halfZ + 0.4) };
   const barn = { ...b, outer: rect(b.x, b.z, b.halfX, b.halfZ), roof: rect(b.x, b.z, b.halfX + 0.3, b.halfZ + 0.35) };
   // The dairy (the new farm's neighbour has one): the parlour and the bulk tank's room are buildings with roofs, the collecting yard is open slab, the slurry store is round.
   const mk = (o) => o ? { ...o, outer: rect(o.x, o.z, o.halfX, o.halfZ), roof: rect(o.x, o.z, o.halfX + 0.3, o.halfZ + 0.35) } : null;
@@ -120,9 +124,9 @@ export function createNeighbourFarm(layout) {
   const s = neighbourFarmShape(layout);
   if (!s) return null;
   const dairy = [s.parlour, s.tankRoom].filter(Boolean);
-  const footprints = [s.house.outer, s.barn.outer, ...dairy.map((d) => d.outer), ...(s.slurry ? [s.slurry.outer] : []), ...s.parked.map((p) => p.outer)];
+  const footprints = [s.house.outer, ...(s.house.wing ? [s.house.wing.outer] : []), ...(s.house.leanTo ? [s.house.leanTo.outer] : []), s.barn.outer, ...dairy.map((d) => d.outer), ...(s.slurry ? [s.slurry.outer] : []), ...s.parked.map((p) => p.outer)];
   /** Under the house's, the barn's, the parlour's or the tank room's roof: out of the rain. */
-  const covered = (x, z) => inRect(s.house.roof, x, z) || inRect(s.barn.roof, x, z) || dairy.some((d) => inRect(d.roof, x, z));
+  const covered = (x, z) => inRect(s.house.roof, x, z) || (s.house.wing && inRect(s.house.wing.roof, x, z)) || (s.house.leanTo && inRect(s.house.leanTo.roof, x, z)) || inRect(s.barn.roof, x, z) || dairy.some((d) => inRect(d.roof, x, z));
   /** On the yard's wall, a building or a parked vehicle (or within `margin` of one). */
   const builtAt = (x, z, margin = 0) =>
     footprints.some((r) => inRect(r, x, z, margin)) || s.walls.some((wb) => inRect({ minX: wb.x - wb.hx, maxX: wb.x + wb.hx, minZ: wb.z - wb.hz, maxZ: wb.z + wb.hz }, x, z, margin));

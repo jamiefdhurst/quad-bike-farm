@@ -99,6 +99,10 @@ export async function buildWorldModels() {
   }
   const { buildNeighbourFarm } = await import('../../src/world/neighbourFarmProps.js');
   add('setPiece', 'neighbourFarm', buildNeighbourFarm, (b) => (b(c), found('neighbourFarm')));
+  // Her farmhouse (#910), built on its own as well as inside the yard's group.
+  const { buildFarmhouse } = await import('../../src/world/neighbourFarmProps.js');
+  const { neighbourFarmShape: houseShape } = await import('../../src/world/neighbourFarm.js');
+  add('world', 'farmhouse', buildFarmhouse, (b) => b(houseShape(c.layout), 0, { fixedBox: c.fixedBox, random: c.random }).group);
   const { buildRiverside } = await import('../../src/world/riverProps.js');
   add('setPiece', 'riverside', buildRiverside, (b) => (b(c), found('riverside')));
   const { buildWoods } = await import('../../src/world/woodsProps.js');

@@ -90,7 +90,7 @@ describe('the far versions of the farm', () => {
     const g = farNeighbourFarm(s, 3);
     expect(g.name).toBe('neighbourFarmFar');
     expect(count(g)).toBe(1);
-    expect(g.children[0].geometry.getAttribute('position').count / 3).toBe((2 + [s.parlour, s.tankRoom].filter(Boolean).length) * 16 + (s.walls.length + (s.slurry ? 1 : 0)) * 10); // the dairy's low buildings and slurry drum too
+    expect(g.children[0].geometry.getAttribute('position').count / 3).toBe((2 + [s.house.wing, s.house.leanTo, s.parlour, s.tankRoom].filter(Boolean).length) * 16 + (s.walls.length + (s.slurry ? 1 : 0)) * 10); // the house's wing and scullery, the dairy's low buildings and slurry drum too
   });
   it('lies over the same ground as the full pieces, within the village and the yard', () => {
     const S = villageShape(LAYOUT);

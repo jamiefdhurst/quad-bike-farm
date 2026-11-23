@@ -346,3 +346,238 @@ export function platedTexture(random, text, { plateW, plateH }) {
     ctx.fillText(text, w / 2, h / 2);
   });
 }
+
+// The upland farmhouse (neighbourFarmProps.js `buildFarmhouse`) ------------------------------------------------------------------------
+
+/** Dressed gritstone: the squared, paler blocks of lintels, mullions, drip hoods, copings and surrounds, with fine tooling lines and a little soot. One tile is a metre. */
+export function dressedStoneTexture(random) {
+  return canvasTexture(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#b3ab99';
+    ctx.fillRect(0, 0, w, h);
+    let y = 0;
+    while (y < h) {
+      const ch = 40 + random() * 30;
+      let x = -random() * 50;
+      while (x < w) {
+        const sw = 70 + random() * 80;
+        const s = 150 + random() * 32;
+        ctx.fillStyle = rgb(s + 8, s + 2, s - 14);
+        ctx.fillRect(x + 1.5, y + 1.5, sw - 3, ch - 3);
+        ctx.strokeStyle = 'rgba(70,64,50,0.16)'; // the chisel's lines
+        for (let k = 0; k < 7; k++) {
+          const ly = y + 5 + random() * (ch - 10);
+          ctx.beginPath();
+          ctx.moveTo(x + 4, ly);
+          ctx.lineTo(x + sw - 4, ly + random() * 2 - 1);
+          ctx.stroke();
+        }
+        x += sw;
+      }
+      y += ch;
+    }
+    for (let i = 0; i < 60; i++) {
+      ctx.fillStyle = `rgba(30,28,22,${0.05 + random() * 0.1})`; // soot and rain streaks
+      ctx.fillRect(random() * w, random() * h, 1 + random() * 2, 10 + random() * 40);
+    }
+  });
+}
+
+/** Rough, darker gritstone of the 1700s, in uneven courses with lichen and a damp band at the foot. One tile is two metres. */
+export function oldStoneTexture(random) {
+  return canvasTexture(512, 512, (ctx, w, h) => {
+    ctx.fillStyle = '#6f695c';
+    ctx.fillRect(0, 0, w, h);
+    let y = 0;
+    while (y < h) {
+      const ch = 26 + random() * 34;
+      let x = -random() * 60;
+      while (x < w) {
+        const sw = 40 + random() * 90;
+        const s = 92 + random() * 52;
+        ctx.fillStyle = rgb(s + random() * 12, s + random() * 6, s - 10);
+        ctx.beginPath();
+        ctx.roundRect(x + 2, y + 2, sw - 4, ch - 4, 4);
+        ctx.fill();
+        x += sw;
+      }
+      y += ch;
+    }
+    for (let i = 0; i < 200; i++) {
+      ctx.fillStyle = random() < 0.5 ? `rgba(150,160,95,${0.15 + random() * 0.2})` : `rgba(30,30,20,${0.08 + random() * 0.12})`;
+      ctx.beginPath();
+      ctx.arc(random() * w, random() * h, 3 + random() * 13, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    const g = ctx.createLinearGradient(0, h, 0, h * 0.8); // damp at the foot
+    g.addColorStop(0, 'rgba(25,25,20,0.3)');
+    g.addColorStop(1, 'rgba(25,25,20,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, h * 0.8, w, h * 0.2);
+  });
+}
+
+/** The later wing's stone: paler, yellower, squarer and tidier than the old wall. One tile is two metres. */
+export function newStoneTexture(random) {
+  return canvasTexture(512, 512, (ctx, w, h) => {
+    ctx.fillStyle = '#a79d82';
+    ctx.fillRect(0, 0, w, h);
+    const ch = 34;
+    for (let y = 0; y < h; y += ch) {
+      let x = -((y / ch) % 2) * 40;
+      while (x < w) {
+        const sw = 70 + random() * 40;
+        const s = 160 + random() * 26;
+        ctx.fillStyle = rgb(s + 12, s + 4, s - 28);
+        ctx.fillRect(x + 1.5, y + 1.5, sw - 3, ch - 3);
+        x += sw;
+      }
+    }
+    for (let i = 0; i < 80; i++) {
+      ctx.fillStyle = `rgba(60,55,40,${0.04 + random() * 0.08})`;
+      ctx.fillRect(random() * w, random() * h, 2 + random() * 3, 20 + random() * 60);
+    }
+  });
+}
+
+/** Stone slates: thick, uneven, in courses that shrink to the ridge, grey with ochre and green lichen and a few that have slipped. One tile is two metres, courses running across. */
+export function stoneSlateTexture(random) {
+  return canvasTexture(512, 512, (ctx, w, h) => {
+    ctx.fillStyle = '#2f3234';
+    ctx.fillRect(0, 0, w, h);
+    let y = 0;
+    let n = 0;
+    while (y < h) {
+      const ch = 38 - n * 1.6 + random() * 6;
+      let x = -random() * 50;
+      while (x < w) {
+        const sw = 46 + random() * 56;
+        const s = 62 + random() * 36;
+        const lichen = random() < 0.22;
+        ctx.fillStyle = lichen ? rgb(s + 30, s + 28, s - 6) : rgb(s, s + 4, s + 7);
+        ctx.beginPath();
+        ctx.moveTo(x + 2, y + 2 + random() * 3);
+        ctx.lineTo(x + sw - 2, y + 2 + random() * 3);
+        ctx.lineTo(x + sw - 1, y + ch + random() * 3);
+        ctx.lineTo(x + 1, y + ch + random() * 3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,0.35)'; // the shadow under each course's lip
+        ctx.fillRect(x + 2, y + ch - 3, sw - 4, 3);
+        x += sw;
+      }
+      y += ch;
+      n = (n + 1) % 10;
+    }
+    for (let i = 0; i < 70; i++) {
+      ctx.fillStyle = `rgba(140,150,80,${0.1 + random() * 0.2})`;
+      ctx.beginPath();
+      ctx.arc(random() * w, random() * h, 4 + random() * 12, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+/** Limewash over stone, peeling: cream, grey where the rain runs, and patches gone to show the stone underneath. One tile is two metres. */
+export function limewashTexture(random) {
+  return canvasTexture(512, 512, (ctx, w, h) => {
+    ctx.fillStyle = '#dcd5c0';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 90; i++) {
+      ctx.fillStyle = `rgba(120,110,85,${0.04 + random() * 0.08})`;
+      ctx.fillRect(random() * w, random() * h * 0.5, 2 + random() * 6, 40 + random() * 220);
+    }
+    for (let i = 0; i < 16; i++) { // peeled patches: the stone shows, ragged
+      const px = random() * w;
+      const py = random() * h;
+      const r = 14 + random() * 36;
+      ctx.fillStyle = '#756f60';
+      ctx.beginPath();
+      for (let k = 0; k < 9; k++) {
+        const a = (k / 9) * Math.PI * 2;
+        const rr = r * (0.6 + random() * 0.7);
+        ctx.lineTo(px + Math.cos(a) * rr, py + Math.sin(a) * rr * 0.7);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(190,182,160,0.5)';
+      ctx.fillRect(px - r * 0.5, py - 2, r, 3);
+    }
+    const g = ctx.createLinearGradient(0, h, 0, h * 0.75); // splashed and damp at the foot
+    g.addColorStop(0, 'rgba(60,55,40,0.4)');
+    g.addColorStop(1, 'rgba(60,55,40,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, h * 0.75, w, h * 0.25);
+  });
+}
+
+/** Cast iron painted black, rust coming through at the joints and in streaks. One tile is a metre. */
+export function castIronTexture(random) {
+  return canvasTexture(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#1f2325';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 40; i++) {
+      ctx.fillStyle = `rgba(${130 + random() * 40},${60 + random() * 30},30,${0.25 + random() * 0.4})`;
+      ctx.fillRect(random() * w, random() * h, 1 + random() * 3, 6 + random() * 40);
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    for (let x = 0; x < w; x += 32) ctx.fillRect(x, 0, 2, h);
+  });
+}
+
+/** A small lawn with daisies and a few worn bare patches, one tile being two metres. */
+export function lawnTexture(random) {
+  return canvasTexture(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#566b3a';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 700; i++) {
+      ctx.fillStyle = `rgba(${60 + random() * 50},${90 + random() * 50},${40 + random() * 30},0.5)`;
+      ctx.fillRect(random() * w, random() * h, 1.5, 4 + random() * 5);
+    }
+    for (let i = 0; i < 25; i++) {
+      ctx.fillStyle = random() < 0.7 ? '#f1eee2' : '#e8c23a';
+      ctx.fillRect(random() * w, random() * h, 3, 3);
+    }
+  });
+}
+
+/** Bedding flowers in a trough, seen from above and the front: dense green with red, white and yellow blooms. One tile is a metre. */
+export function flowersTexture(random) {
+  return canvasTexture(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#3d5a2c';
+    ctx.fillRect(0, 0, w, h);
+    const colours = ['#c8302e', '#f2efe4', '#e5b82f', '#c8302e', '#8a4a9a'];
+    for (let i = 0; i < 90; i++) {
+      ctx.fillStyle = colours[Math.floor(random() * colours.length)];
+      ctx.beginPath();
+      ctx.arc(random() * w, random() * h, 2.5 + random() * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+/** The sawn ends of a stack of split logs seen end on: rows of pale discs with rings and dark gaps between. One tile is a metre square. */
+export function logStackTexture(random) {
+  return canvasTexture(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#2a1f16';
+    ctx.fillRect(0, 0, w, h);
+    const r = 17;
+    for (let row = 0; row * r * 1.8 < h + r; row++) {
+      for (let col = -1; col * r * 2 < w + r; col++) {
+        const x = col * r * 2 + (row % 2) * r + (random() - 0.5) * 3;
+        const y = row * r * 1.8 + (random() - 0.5) * 3;
+        const rr = r * (0.82 + random() * 0.16);
+        ctx.fillStyle = `rgb(${190 + random() * 25},${150 + random() * 25},${100 + random() * 20})`;
+        ctx.beginPath();
+        ctx.arc(x, y, rr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(110,76,42,0.5)';
+        ctx.beginPath();
+        ctx.arc(x, y, rr * 0.55, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, rr * 0.25, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+  });
+}

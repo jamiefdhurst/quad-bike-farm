@@ -236,7 +236,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const hut = layout.hill?.hut;
   if (hut) buildings.push({ name: 'hut', rect: centred(hut.x, hut.z, hut.width / 2, hut.length / 2), fill: C.building });
   const nf = neighbourFarmShape(layout);
-  if (nf) buildings.push({ name: 'neighbourHouse', rect: nf.house.outer, fill: C.building }, { name: 'neighbourBarn', rect: nf.barn.outer, fill: C.building });
+  if (nf) buildings.push({ name: 'neighbourHouse', rect: nf.house.outer, fill: C.building }, ...[nf.house.wing, nf.house.leanTo].filter(Boolean).map((d, i) => ({ name: i ? 'neighbourLeanTo' : 'neighbourWing', rect: d.outer, fill: C.building })), { name: 'neighbourBarn', rect: nf.barn.outer, fill: C.building });
   if (nf?.parlour) buildings.push({ name: 'neighbourParlour', rect: nf.parlour.outer, fill: C.building }, { name: 'neighbourTankRoom', rect: nf.tankRoom.outer, fill: C.building }, { name: 'neighbourSlurry', rect: nf.slurry.outer, fill: C.building });
   const v = layout.village;
   if (v) {
