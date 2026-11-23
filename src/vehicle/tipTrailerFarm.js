@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { PART_MAT, box, rustedGalvanised, strawStained } from './trailerParts.js';
+import { PART_MAT, box, rustedGalvanised, strawStained, addChain } from './trailerParts.js';
 import { rod } from './quadGeometry.js';
 
 // The neighbour's tipping trailer (#925): the farm's own tipper left out in her yard, the same model with what a working dairy farm does to one. Rusting
 // galvanised steel with drop-side hinges and catches, straw half filling the tub (stained with silage juice), a tarp tied over the front, the
 // jockey wheel wound down onto the concrete and a rear lamp with a cracked lens. `look` is what the farm seed dealt (neighbourFarm.js `dealNeighbourVehicles`):
-// { rust 0..1, straw 0..1 (how full of the 0.4 m sides), tarp (a colour), seed }. All of it is on top of the model, which the player's trailer is unchanged by.
+// { rust 0..1, straw 0..1 (how full of the 0.4 m sides), tarp (a colour), dropSide (-1 or 1: the side let down on its hinges, lying out flat on its chains), seed }. All of it is on top of the model, which the player's trailer is unchanged by.
 
 export const JOCKEY_DOWN = 0.095; // `addJockeyWheel`'s lift with its little wheel on the ground (its radius 0.065, and 0.03 of hub below its centre)
 
@@ -101,6 +101,21 @@ export function addFarmTrailerWear({ body, tub, lights, S, look, mat, hz }) {
       tub.add(m);
     }
   }
+  // The drop side let down: the side the model leaves out, hung on the bottom hinge and lying out flat just below it (a few degrees past level) held by a chain to its corner
+  // post at each end, with its rolled edge and ribs as the wall's, so it is the wall laid down and not a plank.
+  const drop = look.dropSide ?? 0;
+  if (drop) {
+    const hinge = new THREE.Group();
+    hinge.name = 'dropSide';
+    hinge.position.set(drop * (S.halfWidth - 0.02), 0.0, (sideZ0 + sideZ1) / 2);
+    hinge.rotation.z = -drop * (Math.PI / 2 + 0.08);
+    const len = sideZ1 - sideZ0 + 0.16;
+    box(0.04, S.sideHeight, len, mat.tub, 0, S.sideHeight / 2, 0, hinge);
+    box(0.07, 0.04, len, mat.steel, 0, S.sideHeight, 0, hinge);
+    for (const y of [0.12, 0.26]) box(0.012, 0.03, len - 0.1, mat.tubInner, drop * 0.022, y, 0, hinge);
+    tub.add(hinge);
+    for (const z of [sideZ0 + 0.04, sideZ1 - 0.04]) addChain(tub, [drop * (S.halfWidth + 0.3), 0.0, z], [drop * (S.halfWidth + 0.03), S.sideHeight - 0.12, z], 6, 0.03);
+  }
   // Drop sides: a hinge along the bottom of each side's outside (three knuckles on a pin), and an over-centre catch at each end of its top edge.
   for (const s of [-1, 1]) {
     const x = s * (S.halfWidth + 0.034);
@@ -117,7 +132,7 @@ export function addFarmTrailerWear({ body, tub, lights, S, look, mat, hz }) {
   for (const s of [-1, 1]) {
     const at = [s * (S.halfWidth - 0.12), 0.015, -0.048];
     for (const [dx, dy, a] of [[0, 0, 0.5], [0.025, 0.01, -0.9], [-0.03, -0.008, 1.3], [0.01, -0.016, 0.1]]) {
-      const line = box(0.1, 0.003, 0.002, crack, at[0] + dx, at[1] + dy, at[2], lights);
+      const line = box(0.06, 0.003, 0.002, crack, at[0] + dx, at[1] + dy, at[2], lights);
       line.rotation.z = a;
       line.name = 'lampCrack';
     }

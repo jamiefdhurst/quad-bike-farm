@@ -140,13 +140,14 @@ export function buildTipTrailerModel({ farm = null } = {}) {
   const hz = (z) => z - S.rearZ; // tub-local z from trailer-local z
   box(S.halfWidth * 2, 0.04, len, MAT.tubInner, 0, -0.02, hz(midZ), tub);
   for (const s of [-1, 1]) {
+    if (farm?.dropSide === s) continue; // lowered on its hinges (tipTrailerFarm.js), so there is no wall here
     box(0.04, S.sideHeight, len, MAT.tub, s * (S.halfWidth - 0.02), S.sideHeight / 2, hz(midZ), tub);
     box(0.07, 0.04, len + 0.0, MAT.steel, s * (S.halfWidth - 0.02), S.sideHeight, hz(midZ) + 0.02, tub); // rolled top edge (wider than the posts under it, so no face is shared)
   }
   box(S.halfWidth * 2 - 0.02, S.sideHeight + 0.1, 0.04, MAT.tub, 0, (S.sideHeight + 0.1) / 2, hz(S.frontZ) - 0.02, tub); // (a centimetre inside the sides' outer faces, so they share none)
   // Pressed ribs along the sides and across the front, corner posts, and the tipping pivot's hinge lugs at the back.
   for (const s of [-1, 1]) {
-    for (const y of [0.12, 0.26]) box(0.012, 0.03, len - 0.1, MAT.tubInner, s * (S.halfWidth + 0.002), y, hz(midZ), tub);
+    if (farm?.dropSide !== s) for (const y of [0.12, 0.26]) box(0.012, 0.03, len - 0.1, MAT.tubInner, s * (S.halfWidth + 0.002), y, hz(midZ), tub);
     box(0.06, S.sideHeight + 0.04, 0.07, MAT.steel, s * (S.halfWidth - 0.02), (S.sideHeight + 0.04) / 2, hz(S.frontZ) - 0.025, tub); // proud of the wall, so no shared face
     box(0.06, S.sideHeight + 0.04, 0.05, MAT.steel, s * (S.halfWidth - 0.02), (S.sideHeight + 0.04) / 2, 0.03, tub);
     box(0.07, 0.07, 0.1, MAT.steel, s * 0.3, -0.02, -0.04, tub);

@@ -38,7 +38,7 @@ export const PARKED_SIZES = {
   // Her farm quad (the Farm 300's body with a crate on its rear rack) and tipping trailer (#925). A model's origin is not always its middle: the trailer's is under its
   // axle, 0.38 m behind the middle of the drawbar and tub, so `cz` is how far ahead of the origin its middle is, and the yard places the middle (`x`, `z`).
   quad: { hl: 1.1, hw: 0.65, h: 1.25, cz: 0 },
-  tipTrailer: { hl: 1.42, hw: 0.75, h: 1.2, cz: 0.38 },
+  tipTrailer: { hl: 1.42, hw: 0.95, h: 1.2, cz: 0.38 }, // a drop side lying out flat on its chains takes the width from 0.75 to 0.95 on its side
 };
 
 /**
@@ -53,7 +53,7 @@ export function dealNeighbourVehicles(layout, farmSeed) {
   const pick = (list) => list[Math.floor(random() * list.length)];
   const parked = n.parked.map((p) => {
     if (p.kind === 'quad') return { ...p, look: { fade: 0.3 + random() * 0.7, crate: pick([0x2c5ea6, 0xb5372a, 0x2e7a4a, 0xd0a02a]), blanket: Math.floor(random() * 4), mud: 0.7 + random() * 0.6, seed: 1 + Math.floor(random() * 9999) } };
-    if (p.kind === 'tipTrailer') return { ...p, look: { rust: 0.35 + random() * 0.55, straw: 0.35 + random() * 0.5, tarp: pick([0x2f5f8a, 0x3a6a3e, 0x7a6a4a, 0x5a7a96]), seed: 1 + Math.floor(random() * 9999) } };
+    if (p.kind === 'tipTrailer') return { ...p, look: { rust: 0.35 + random() * 0.55, straw: 0.35 + random() * 0.5, tarp: pick([0x2f5f8a, 0x3a6a3e, 0x7a6a4a, 0x5a7a96]), dropSide: -1, seed: 1 + Math.floor(random() * 9999) } };
     return p;
   });
   return { ...layout, neighbourFarm: { ...n, parked } };

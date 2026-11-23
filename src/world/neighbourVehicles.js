@@ -14,7 +14,8 @@ export const TIP_TRAILER_LAYOUT = { wheels: [{ name: 'wheelLeft', x: TIP_TRAILER
 
 /** What the farm seed deals when nothing has (a test, a layout without a deal): the same look every time. */
 export const DEFAULT_QUAD_LOOK = { fade: 0.5, crate: 0x2c5ea6, blanket: 0, mud: 1, seed: 3 };
-export const DEFAULT_TRAILER_LOOK = { rust: 0.55, straw: 0.5, tarp: 0x2f5f8a, seed: 5 };
+// `dropSide` is the side let down on its hinges: -1 is the vehicle's right, the west side as it stands by the barn door, away from where you come into the yard.
+export const DEFAULT_TRAILER_LOOK = { rust: 0.55, straw: 0.5, tarp: 0x2f5f8a, dropSide: -1, seed: 5 };
 
 const rnd = (seed) => {
   let n = (seed * 2654435761) % 2147483647 || 1;

@@ -84,10 +84,11 @@ describe('the neighbour\'s farm quad and tipping trailer (#925)', () => {
     expect(named(object, 'frontPanel').length).toBeGreaterThan(0); // the front rack and rear rack come with the utility body: the crate sits on the rear one
   });
 
-  it('dresses the trailer: straw, a tarp tied on, the jockey wheel down, a rear lamp cracked and the drop sides\' hinges, and leaves the player\'s alone', () => {
+  it('dresses the trailer: straw, a tarp tied on, a side let down, the jockey wheel down, a rear lamp cracked and the drop sides\' hinges, and leaves the player\'s alone', () => {
     const { object } = buildVehicleBody('tipTrailer', 0x8a9092, null, null);
     expect(named(object, 'straw')).toHaveLength(1);
     expect(named(object, 'tarp')).toHaveLength(1);
+    expect(named(object, 'dropSide')).toHaveLength(1); // one drop side let down, lying out flat
     expect(named(object, 'twine').length).toBeGreaterThanOrEqual(8);
     expect(named(object, 'lampCrack').length).toBeGreaterThanOrEqual(8);
     // The jockey wheel is merged into the model's meshes (staticMerge): it is the lowest thing under the drawbar, in line with it and forward of the tub.
@@ -110,6 +111,7 @@ describe('the neighbour\'s farm quad and tipping trailer (#925)', () => {
     const plain = buildTipTrailerModel();
     expect(named(plain, 'straw')).toHaveLength(0);
     expect(named(plain, 'tarp')).toHaveLength(0);
+    expect(named(plain, 'dropSide')).toHaveLength(0);
     expect(lowestUnderDrawbar(plain)).toBeGreaterThan(0.1); // the player's is wound up
   });
 
