@@ -23,7 +23,7 @@ import { dayRecap, todaysLog, DayRecap } from './farm/dayRecap.js';
 import { DayEvents, writeStory, keepStory, validStories } from './farm/dayStory.js';
 import { StoriesView } from './farm/storiesView.js';
 import { DEFAULT_SHOW_PARAMS, SHOW_PARAM_RANGES, ShowKeeper, isShowDay, isShowEve, runShow, showCard, showSpeech, judgeQuad, previewText, rosetteSvg } from './farm/showDay.js';
-import { formatEntry } from './workshop/logbook.js';
+import { formatEntry, shortName } from './workshop/logbook.js';
 import { DEFAULT_FARM_PARAMS, FARM_PARAM_RANGES, LAYOUT_RESET_TOAST, browserStorage, openFarm, writeSave, wipeSave, fleetFromSave, describeFarm, validSave } from './farm/farmSave.js';
 import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from './farm/farmState.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
@@ -320,6 +320,7 @@ import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
 import { dateToday, daylightParams, weatherWeights, temperatureBandWeights, groundFor, isAutumn, isWinter } from './world/seasons.js';
 import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } from './world/wind.js';
 import { DoorAudio } from './audio/doorAudio.js';
+import { FootstepWalkers } from './audio/footstepWalkers.js';
 import { TrafficHost } from './world/trafficHost.js';
 import { NeighbourHost } from './world/neighbourHost.js';
 import { MOT_PARAMS, withCertificate, girlMinds } from './farm/mot.js';
@@ -389,7 +390,6 @@ import { HarrowTrailer, DEFAULT_HARROW_TRAILER_PARAMS, HARROW_TRAILER_PARAM_RANG
 import { harrowWanted } from './world/harrowing.js';
 import { FieldWorkHost } from './world/fieldWorkHost.js';
 import { TractorWorkHost } from './items/tractorWorkHost.js';
-import { shortName } from './workshop/logbook.js';
 import { Interaction } from './interaction/interaction.js';
 import { cueFor } from './interaction/feedback.js';
 import { normalisePrompt } from './interaction/prompt.js';
@@ -937,6 +937,7 @@ export class Game {
     // The hay door's shutter bangs about in a gale, and loose hay blows out of the door (updateWind).
     this.hayBlow = new StrawFall(this.scene);
     this.shutter = new Shutter(this.wind.p);
+    this.footsteps = FootstepWalkers.forGame(this); // your steps on foot and each girl's, on the ground under them (audio/footsteps.js)
     this.doorAudio = this.world.props.barn.hayDoor ? new DoorAudio(this.audioHub, this.world.props.barn.hayDoor) : null;
     this.climb = null; // Climb of you on the ladder, when you are
     this.hiddenFrom = null; // where you were stood before you ducked into the hay
@@ -11727,7 +11728,7 @@ export class Game {
     this.guard.run('updateLoft', () => this.updateLoft(dt));
     fb.lap('player and items', performance.now());
     this.audioHub.setPouring(pouring, dt);
-    this.audioHub.update(dt, this.camera);
+    this.guard.run('updateAudio', () => { this.audioHub.update(dt, this.camera); this.footsteps.update(dt); }); // the hub first: it sets the listener the steps are heard from
     this.rideWind.update(dt, board ? board.quad.speed : 0);
     fb.lap('audio', performance.now());
     this.guard.run('updateWorkLight', () => this.updateWorkLight(dt));

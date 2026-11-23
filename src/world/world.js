@@ -171,6 +171,11 @@ export class World {
     return this.fields.tarmacAt(x, z);
   }
 
+  /** 0..1 how much of (x, z) is one of the farm's stone tracks (the footsteps and the ride sounds read it). */
+  stoneAt(x, z) {
+    return this.fields.stoneAt(x, z);
+  }
+
   stubbleAt(x, z) {
     return this.fields.stubbleAt(x, z);
   }

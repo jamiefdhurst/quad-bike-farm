@@ -15,6 +15,7 @@ import { yardBed } from '../world/yardBed.js';
 import { moorBed } from '../world/moorBed.js';
 import { MoorAudio } from './moorAudio.js';
 import { USE_CUES, useSamples } from './useAudio.js';
+import { STEP_KINDS, stepSamples } from './footstepSamples.js';
 import { wantsBank } from './bankWant.js';
 
 // Recorded pulse banks in public/audio/, made by tools/slice_engine_audio.py and tools/wav_to_flac.py. Only the ones a vehicle near
@@ -264,6 +265,43 @@ export class AudioHub {
       osc.start(t);
       osc.stop(t + ring + 0.05);
     });
+  }
+
+  /**
+   * One footstep on `kind` of ground (`STEP_KINDS`), `level` 0 to 1 already faded for the distance (audio/footsteps.js `stepGain`), placed at
+   * `at` so a girl coming up behind you is heard from behind. Yours pass no `at` and play at the listener.
+   */
+  footstep(kind, level, at = null) {
+    if (!this.ready || this.params.muted || level < 0.01 || !STEP_KINDS.includes(kind)) return;
+    const ctx = this.ctx;
+    this.stepBuffers ??= {};
+    const variant = Math.floor(Math.random() * 3);
+    const key = `${kind}${variant}`;
+    if (!this.stepBuffers[key]) {
+      const samples = stepSamples(kind, ctx.sampleRate, variant);
+      this.stepBuffers[key] = ctx.createBuffer(1, samples.length, ctx.sampleRate);
+      this.stepBuffers[key].copyToChannel(samples, 0);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = this.stepBuffers[key];
+    src.playbackRate.value = 0.92 + Math.random() * 0.16;
+    const gain = ctx.createGain();
+    gain.gain.value = this.params.footstepVolume * level;
+    src.connect(gain);
+    if (at && ctx.createPanner) {
+      // Placed by direction only: the level already has the distance in it.
+      const panner = ctx.createPanner();
+      panner.panningModel = 'HRTF';
+      panner.distanceModel = 'linear';
+      panner.rolloffFactor = 0;
+      if (panner.positionX) {
+        panner.positionX.value = at.x;
+        panner.positionY.value = at.y ?? 0;
+        panner.positionZ.value = at.z;
+      } else panner.setPosition(at.x, at.y ?? 0, at.z);
+      gain.connect(panner).connect(this.master);
+    } else gain.connect(this.master);
+    src.start(ctx.currentTime + 0.01);
   }
 
   /** One of the small sounds of using things (`USE_CUES`), at the listener. */

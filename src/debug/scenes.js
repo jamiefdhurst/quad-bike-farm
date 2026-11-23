@@ -54,6 +54,11 @@ export const SCENES = [
   { id: 'tracks', label: 'Set up daylight for the farm\'s tracks: then `tp me to stonetrack` for the stone track north, `farmbridge` for the farm bridge over the river\'s head, `boundarytrack` for the grass track and `headland` for the headland', lines: ['weather sunny', 'weather.time 12'] },
   { id: 'pitgate', label: 'Put you just inside the gravel pit\'s gate in daylight, to look at the fence round its field and the road from the gate to the lip (the farm gate in post and wire; tp me pitlane for the shut lane gate, pitwall for the flags at the foot of the climb)', lines: ['weather sunny', 'weather.time 12', 'tp me pitgate'] },
   { id: 'nether', label: 'Put you on the green at Nether Thornby in daylight, to look at the street with the pub, the shop and the cottages (it is across the lane, its street running east to the A-road: tp me carpark for the pub, approach for the lane before the 30 signs and smallfarm for the farm, motbay and mot for the garage on the lane, `village.shop on`, `village.garage on` or `village.parts on` to stand at each, and the bridge is on the lane just north of the garage)', lines: ['weather sunny', 'weather.time 12', 'tp me village'] },
+  {
+    id: 'footsteps',
+    label: 'Put you in the yard on concrete at midday with Amy tagging along behind you: walk and jog, then `tp me to stonetrack` for gravel, `barn` for the barn floor, `dutchbarn` for straw and `wet` for mud, and stand still to let her catch you up (her steps are quieter and only heard inside 6 m); `tune` has the volumes',
+    lines: ['weather sunny', 'weather.time 12', 'tp me to yard', 'girl amy tag-along'],
+  },
   { id: 'end', label: 'Let the girls go about their day again after a scene', lines: [], setup: 'end' },
 ];
 
