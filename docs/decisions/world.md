@@ -1736,3 +1736,10 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - **Random stream.** The ramp's and the dairy's concrete draws from its own stream and burns 390 numbers from the farm's, as the old texture took them, so the trees dealt after it stand where they did (#969).
 - **Looked at** with `tools/shot.mjs` from the gate and the barn door, two rounds: the first had every damp line running to the low corner (90 of them, a dark fan) and halos in hard bands; the count is now about 8 and the halos fainter.
 
+## The concrete's faults from the recheck (#1146)
+
+- **A repeating tile carries only what could be anywhere.** The village's 4 m tile (squeezed to 2.4 m on the village farm's apron) had a patched square, a slime stain, a tread, a smear and damp lines, so they showed about 300 times. It now has the mottling, small stains, grit, cracks and joints. The one-offs are on the 16 m slab tiles only.
+- **The drain is placed.** The slime and the damp lines run to the slab's low corner by the puddle, painted by `paintSlabWear` into the marks' decal, not once per 16 m tile.
+- **Seams.** A stain's copies share one outline (`raggedFactors` once per stain, reach widened for the rough edge). A slab tile no longer wraps: it is cut at its edge, which is a joint, and joints are half on each side of an edge so they join full width. A test finds the yard's four 16 m meshes with four different maps.
+- Corrects the #912 section: its tile "joins itself" only for the 4 m one.
+
