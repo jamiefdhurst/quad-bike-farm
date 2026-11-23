@@ -377,6 +377,7 @@ export const DEFAULT_COMPANION_PARAMS = {
   voiceWobbleRef: 0.006, // metres of seat heave that make a hard shake for her voice (a warm idle is about 0.002 to 0.004)
   voiceWobbleCents: 45, // pitch swing of her voice at that shake, in cents (100 is a semitone)
   voiceWobbleLevel: 0.22, // and the swing in its loudness, as a share of the volume
+  voiceHelmetCutoff: 2500, // Hz her voice is lowpassed to with her helmet on her head (npc/voiceRoom.js): lower is more muffled, 20000 is clear
   voiceWobbleDepth: 1, // how much she lets it through: 1 is just the seat, Jess plays it up on purpose, 0 is off
 };
 
@@ -741,4 +742,5 @@ export const COMPANION_PARAM_RANGES = {
   voiceWobbleCents: [0, 200, 1],
   voiceWobbleLevel: [0, 0.8, 0.01],
   voiceWobbleDepth: [0, 4, 0.05],
+  voiceHelmetCutoff: [800, 12000, 50],
 };

@@ -92,6 +92,18 @@ export class CompanionSounds {
     this.loading = null;
     this.active = null; // { source, gain, volume, panner }
     this.wobble = { cents: 0, gain: 1 }; // her seat's shake on her voice (npc/voiceWobble.js), applied to whatever is playing
+    this.room = { cutoff: 20000, send: 0 }; // her helmet's muffle and the barn's ring on her voice (npc/voiceRoom.js), applied likewise
+  }
+
+  /** Her voice muffled by her helmet and rung by the barn: a lowpass in Hz and the level sent into the barn's echo, for the line playing now and the next. */
+  setRoom(cutoff, send) {
+    this.room.cutoff = cutoff;
+    this.room.send = send;
+    const a = this.active;
+    if (!a) return;
+    const t = this.hub.ctx.currentTime;
+    a.muffle.frequency.setTargetAtTime(cutoff, t, 0.05);
+    a.send.gain.setTargetAtTime(send, t, 0.12);
   }
 
   /** Her voice shaken by the seat: detune and a volume multiplier for the line playing now and the next. */
@@ -177,8 +189,16 @@ export class CompanionSounds {
     panner.distanceModel = 'inverse';
     panner.refDistance = 1.5;
     panner.rolloffFactor = rolloff;
-    source.connect(gain).connect(panner).connect(hub.master);
-    this.active = { source, gain, volume, panner };
+    const muffle = ctx.createBiquadFilter(); // her helmet over her voice
+    muffle.type = 'lowpass';
+    muffle.frequency.value = this.room.cutoff;
+    muffle.Q.value = 0.7;
+    const send = ctx.createGain(); // into the barn's echo, as the engines do (propagation.js)
+    send.gain.value = this.room.send;
+    source.connect(gain).connect(muffle).connect(panner).connect(hub.master);
+    muffle.connect(send);
+    if (hub.reverb) send.connect(hub.reverb);
+    this.active = { source, gain, volume, panner, muffle, send };
     this.setPosition(position);
     source.start(0, clip.start, clip.dur); // in seconds of the recording, whatever the rate
     source.onended = () => {

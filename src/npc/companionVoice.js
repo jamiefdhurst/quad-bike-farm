@@ -15,6 +15,7 @@ import { leftRunningSituation } from './leftRunning.js';
 import { quadKey } from './quadNames.js';
 import { weatherSituation } from './briefing.js';
 import { voiceWobble } from './voiceWobble.js';
+import { voiceRoom } from './voiceRoom.js';
 import { SEASON_SITUATIONS } from './seasonLines.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
@@ -150,7 +151,7 @@ export class CompanionVoice {
 
   /**
    * @param {number} dt
-   * @param {object} view  { listener: Vector3, ridden: QuadUnit|null, units, menuOpen, pouring }
+   * @param {object} view  { listener: Vector3, ridden: QuadUnit|null, units, menuOpen, pouring, helmet, room }
    */
   update(dt, view) {
     const p = this.params;
@@ -162,6 +163,9 @@ export class CompanionVoice {
     c.root.getWorldPosition(this.head);
     this.head.y += c.params.height * 0.92;
     this.sounds.setPosition(this.head);
+    const room = view.room; // the barn's, set each frame by the game, with whether you are in it
+    const heard = voiceRoom({ helmet: !!view.helmet, listenerIn: !!room?.listenerIn, sourceIn: !!room?.inside(this.head.x, this.head.z) }, p, room?.params);
+    this.sounds.setRoom?.(heard.cutoff, heard.send); // muffled under her helmet, rung by the barn
     if (!p.voice) return;
 
     const distance = this.head.distanceTo(view.listener);
