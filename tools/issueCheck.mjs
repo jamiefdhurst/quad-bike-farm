@@ -220,7 +220,7 @@ function post(n) {
   else {
     console.log(`Part of #${n}`);
     if (verdict.undone.length) console.log(`Not done, and the issue stays open:\n${verdict.undone.map((t) => `  - ${t}`).join('\n')}`);
-    if (verdict.unagreed.length) console.log(`Done another way, so ask Jamie. On a yes, start the note "Jamie agreed:" with his words and post again:\n${verdict.unagreed.map((t) => `  - ${t}`).join('\n')}`);
+    if (verdict.unagreed.length) console.log(`Done another way, so ask Jamie. On a yes, put "Jamie agreed:" and his words as the first line under it, above its "plan:", and post again:\n${verdict.unagreed.map((t) => `  - ${t}`).join('\n')}`);
   }
 }
 
