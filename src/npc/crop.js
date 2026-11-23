@@ -11,7 +11,7 @@ const { add, scale, norm } = vec;
 export const CROP = {
   ease: 0.01, // how far it stands off her
   top: 0.04, // at her front, its top edge this far above the fullest part of her bust
-  under: 0.055, // and its bottom edge this far below it
+  under: 0.09, // and its bottom edge this far below it, under the round of it
   backTop: -0.022, // round her back, a narrow band: its top this far above her bust's height (below it)
   backUnder: 0.04, // and its bottom
   strapAcross: 0.07, // the straps this far either side of her middle, front and back, over her shoulders

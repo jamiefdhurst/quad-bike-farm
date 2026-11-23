@@ -18,24 +18,32 @@ const smoothstep = (a, b, x) => {
 };
 
 // Regions, in body-frame units.
-const BUST = {
-  reach: 0.185, // sideways radius of each breast's region from its apex (a full bust is wide, not just forward)
-  reachUp: 0.2, // above the apex
-  reachDown: 0.2, // below it, a bit further so the shirt hangs from the bust
-  forward: 0.1, // the whole region moves forward this much
-  swell: 0.25, // and swells by this fraction away from a point inside the chest
-  depth: 0.17, // that point is this far behind the apex
-  drop: 0.03, // a fuller bust sits a little lower
-  frontFrom: 0.0, // only the front of the body moves: none at z = frontFrom,
+// Each breast is a dome her front is lifted on to, rather than a push added to her own points: the model has one point at each apex
+// and a single ring round it, so pushing those out made a flat-fronted block with a shelf under it. The dome is lifted on to again
+// after her body is split (`liftBust`), so the split's extra points lie on the curve and not on a cone between the coarse ones.
+export const BUST = {
+  reach: 0.13, // sideways radius of each breast's dome from its middle: it ends before her chest turns round to her side, where her
+  // points are too far back to be lifted on to it (half lifted, they folded into slashes across it)
+  reachUp: 0.2, // above its fullest line
+  reachDown: 0.2, // below it
+  outward: 0.01, // each breast's middle sits this far further out than the model's apex, so they sit a little apart and face outwards
+  lift: 0.105, // how far its apex stands in front of the model's at a bust of 1
+  swell: 0.12, // the points it lifts also spread this fraction away from its fullest line, so it is full above and below as well as forward
+  drop: 0.025, // a fuller bust sits a little lower: the dome's middle this far down per unit of bust
+  frontFrom: 0.05, // only the front of the body is lifted: none at z = frontFrom,
   frontTo: 0.15, // fully at z = frontTo
-  dome: 0.3, // the forward push follows (1 - e) to this power: under 1 a rounder dome, full across the middle and falling away
-  // at the edge, rather than tapering to a point at the apex
+  domeUp: 0.75, // the upper half's height follows (1 - e) to this power: near 1 a gentle slope down from her collarbone to the apex
+  domeDown: 0.38, // the lower half's, under 1 so it holds out round and tucks in at the fold
+  edgeUp: 0.55, // and meets her chest over this much of t above (a long, soft join)
+  edgeDown: 0.12, // and this little below (the fold under it)
+  coreFrom: 0.25, // inside the dome by this much of t, her front is set on to it even where it stood further out (the split's rounding,
+  coreTo: 0.5, // the model's own shape), fully by this much, so the middle of it is one clean curve
+  valley: 0.72, // between them, down her middle, the dome is this fraction of its height: a shallow dip, not one shelf across her
   sideSwell: 0.4, // the sideways swell, out towards her arms, stronger than the rest so she's fuller at the sides
   grow: 0.45, // a bigger bust (over 1) covers more of her as well as standing out further: its region this much wider and
   // deeper per unit over 1 (and narrower under 1), so a full one is round rather than a point on a narrow base
-  fullBelow: 0.03, // the dome's fullest line sits this far below the apex (more with size), so the lower half is the fuller one
-  domeUnder: 0.16, // below that line the push holds out longer (a lower power than `dome`) before tucking in at the fold
-  foldEdge: 0.3, // and meets the body over a shorter edge underneath than above (the smoothstep's reach in t)
+  centre: 0.15, // points are moved on to it along lines from a point this far behind the apex (times its size), inside her chest
+  fullBelow: 0.02, // the dome's fullest line sits this far below the apex (more with size), so the lower half is the fuller one
 };
 // Each fades out over `reach` above and below its height `y`; the other
 // numbers are the fraction it narrows or widens by at full strength.
@@ -93,6 +101,89 @@ export function roundSeat(points, p = SEAT) {
 }
 
 /**
+ * The bust's dome at a body-frame (x, y): `surface`, where her front reaches there (-Infinity outside it), and `core`, how far
+ * inside it the point is (0 at its edge, 1 well in), where her front is set on to the dome even if it stood further out. `apex` is
+ * the model's left apex (the right is its mirror). Pure.
+ */
+export function bustDome(x, y, apex, bust) {
+  if (!bust) return { surface: -Infinity, core: 0 };
+  const g = Math.max(0.5, 1 + BUST.grow * (bust - 1));
+  const across = Math.abs(x) - apex.x - BUST.outward * g;
+  // Measured from its fullest line, a little below the apex. Above, its height grows half as fast as its width; below, as fast,
+  // so a bigger bust is as round underneath as across rather than wide and shallow.
+  const yc = apex.y - BUST.fullBelow * g - BUST.drop * bust;
+  const ry = y > yc ? BUST.reachUp * (0.5 + 0.5 * g) : BUST.reachDown * g;
+  const v = (y - yc) / ry;
+  const e = (across / (BUST.reach * g)) ** 2 + v * v;
+  if (e >= 1) return { surface: -Infinity, core: 0 };
+  const t = 1 - e;
+  // From the top of it to the bottom the profile turns gradually from the gentle upper slope to the round lower half, so there is
+  // no ridge along the fullest line. The fold is only under it: round her side, towards her arm, it meets her chest softly.
+  const under = smoothstep(0.5, -0.7, v);
+  const beneath = smoothstep(-0.2, -0.8, v) * Math.min(1, (v * v) / Math.max(e, 0.05));
+  const power = (BUST.domeUp + (BUST.domeDown - BUST.domeUp) * under) / Math.sqrt(g);
+  const edge = BUST.edgeUp + (BUST.edgeDown - BUST.edgeUp) * beneath;
+  const valley = BUST.valley + (1 - BUST.valley) * smoothstep(0, apex.x, Math.abs(x));
+  // It rises from `frontFrom`, behind all of her front it can lift, so wherever it starts to lift her it meets her with no step.
+  const height = apex.z + BUST.lift * bust * g - BUST.frontFrom;
+  // Down her middle nothing is pushed back on to it: the dip between them is only as deep as she already is there.
+  const core = smoothstep(BUST.coreFrom, BUST.coreTo, t) * smoothstep(apex.x * 0.4, apex.x, Math.abs(x));
+  return { surface: BUST.frontFrom + height * t ** power * smoothstep(0, edge, t) * valley, core };
+}
+
+/** How far forward her front reaches over the bust at a body-frame (x, y), or -Infinity outside it. */
+export const bustSurface = (x, y, apex, bust) => bustDome(x, y, apex, bust).surface;
+
+/**
+ * The move [dx, dy, dz] that puts a point of her front on the dome: all the way where it falls short of it, and where it stands out,
+ * by how far inside the dome it is. It moves along a line from a point inside her chest behind the breast, not straight forward:
+ * straight forward, the model's flat shelf under her bust was squashed into slivers on the dome, some turned inside out (slashes
+ * across it). Down her middle it moves only forward, so the two sides never cross.
+ */
+function ontoDome(x, y, z, apex, bust) {
+  const front = frontOf(z);
+  if (!front || !bust) return [0, 0, 0];
+  const along = smoothstep(apex.x * 0.3, apex.x * 0.8, Math.abs(x)); // 0 down her middle: forward only
+  const [rx, ry, rz] = along ? alongLine(x, y, z, apex, bust) : [0, 0, 0];
+  let fz = 0;
+  if (along < 1) {
+    const { surface, core } = bustDome(x, y, apex, bust);
+    if (surface !== -Infinity) fz = (surface - z) * (surface > z ? 1 : core);
+  }
+  return [rx * along * front, ry * along * front, (rz * along + fz * (1 - along)) * front];
+}
+
+/** The move on to the dome along the line from a point inside her chest behind the breast through this point, or none. */
+function alongLine(x, y, z, apex, bust) {
+  const none = [0, 0, 0];
+  const g = Math.max(0.5, 1 + BUST.grow * (bust - 1));
+  const cx = (x < 0 ? -1 : 1) * (apex.x + BUST.outward * g);
+  const cy = apex.y - BUST.fullBelow * g - BUST.drop * bust;
+  const cz = apex.z - BUST.centre * g;
+  const [ux, uy, uz] = [x - cx, y - cy, z - cz];
+  if (uz <= 0) return none;
+  // How far out along the line the dome is (in multiples of the point's own distance): the dome only rises forward and falls away
+  // to its edge, so going out the line crosses it once. Bisected.
+  const past = (k) => cz + uz * k - bustDome(cx + ux * k, cy + uy * k, apex, bust).surface;
+  let lo = 0.05;
+  let hi = 4;
+  if (past(lo) > 0 || past(hi) < 0) return none;
+  for (let n = 0; n < 24; n++) {
+    const mid = (lo + hi) / 2;
+    if (past(mid) < 0) lo = mid;
+    else hi = mid;
+  }
+  const k = (lo + hi) / 2;
+  // Only her surface near the dome: nothing deep inside her (far short of it, near the centre, where the line's direction means
+  // little) or well clear of it is moved; and where she stands out, only by how far inside the dome she is.
+  const w = k > 1 ? smoothstep(3.5, 2.5, k) : bustDome(cx + ux * k, cy + uy * k, apex, bust).core * smoothstep(0.5, 0.8, k);
+  return w ? [ux * (k - 1) * w, uy * (k - 1) * w, uz * (k - 1) * w] : none;
+}
+
+/** How far a point at depth z is part of her front, which the bust lifts (0 behind her, 1 well in front). */
+const frontOf = (z) => smoothstep(BUST.frontFrom, BUST.frontTo, z);
+
+/**
  * Offset for one body-frame point. `apex` is the left breast's apex {x, y, z}
  * (the right is its mirror); amounts are 0 for the original shape.
  * @returns {number[]} [dx, dy, dz] in body-frame units
@@ -103,32 +194,25 @@ export function figureOffset(x, y, z, apex, { bust = 0, waist = 0, hips = 0 }) {
   let dz = 0;
 
   if (bust) {
-    // Each side swells about its own apex. The regions overlap a little in
-    // the middle, so the shirt still dips slightly between them.
     const side = x < 0 ? -1 : 1;
+    const g = Math.max(0.5, 1 + BUST.grow * (bust - 1));
     const across = Math.abs(x) - apex.x;
-    const g = Math.max(0.5, 1 + BUST.grow * (bust - 1)); // how much bigger its region is, with the bust
-    // Measured from its fullest line, a little below the apex. Above, its height grows half as fast as its width; below, as fast,
-    // so a bigger bust is as round underneath as across rather than wide and shallow.
     const yc = apex.y - BUST.fullBelow * g;
     const ry = y > yc ? BUST.reachUp * (0.5 + 0.5 * g) : BUST.reachDown * g;
     const e = (across / (BUST.reach * g)) ** 2 + ((y - yc) / ry) ** 2;
-    if (e < 1) {
+    const front = frontOf(z);
+    if (e < 1 && front > 0) {
+      // Spread out from the middle of each a little, sideways (none on her midline, so the two halves meet) and up and down.
       const t = 1 - e;
-      const front = smoothstep(BUST.frontFrom, BUST.frontTo, z) * bust;
-      const w = t * t * (3 - 2 * t) * front;
-      // The forward push is domed, so the breast is round rather than conical; it still meets the body smoothly at the edge.
-      // Underneath (blended in over a short way below the fullest line, so there is no step) it holds out longer and tucks in
-      // over a shorter edge; and the bigger it is the rounder the dome.
-      const under = smoothstep(0, 0.08, yc - y);
-      const power = (BUST.dome + (BUST.domeUnder - BUST.dome) * under) / Math.sqrt(g);
-      const edge = 0.5 + (BUST.foldEdge - 0.5) * under;
-      const dome = t ** power * smoothstep(0, edge, t) * front;
-      // No sideways swell on the midline, so the two halves meet.
-      dx += side * across * BUST.sideSwell * w * smoothstep(0, apex.x, Math.abs(x));
-      dy += ((y - apex.y) * BUST.swell - BUST.drop) * w;
-      dz += BUST.forward * dome * g + (z - apex.z + BUST.depth * g) * BUST.swell * w;
+      const w = t * t * (3 - 2 * t) * front * Math.min(1, bust);
+      dx += side * across * BUST.sideSwell * w * g * smoothstep(0, apex.x, Math.abs(x));
+      dy += ((y - yc) * BUST.swell * g - BUST.drop * bust) * w; // and down with the dome, so the model's own shelf under it stays under it
     }
+    // Then on to the dome, from where she now is.
+    const [ox, oy, oz] = ontoDome(x + dx, y + dy, z, apex, bust);
+    dx += ox;
+    dy += oy;
+    dz += oz;
   }
 
   if (waist) {
@@ -145,6 +229,23 @@ export function figureOffset(x, y, z, apex, { bust = 0, waist = 0, hips = 0 }) {
   }
 
   return [dx, dy, dz];
+}
+
+/**
+ * Sets the points of a split body on to the bust's dome (where they fall short of it, and in its middle), so the split's new points
+ * lie on the curve rather than on the flat faces between the coarse ones. `positions` is changed in place; `arm(i)` is how far point
+ * i follows her arms (held still), `toBody(positions, i)` gives its body-frame [x, y, z] and `move(positions, i, d)` moves it by a
+ * body-frame [dx, dy, dz].
+ */
+export function liftBust(positions, arm, toBody, move, apex, bust) {
+  if (!bust) return;
+  for (let i = 0; i < positions.length / 3; i++) {
+    const k = 1 - arm(i);
+    if (k <= 0) continue;
+    const [x, y, z] = toBody(positions, i);
+    const [dx, dy, dz] = ontoDome(x, y, z, apex, bust);
+    if (dx || dy || dz) move(positions, i, [dx * k, dy * k, dz * k]);
+  }
 }
 
 /** The character's skinned body mesh. */
@@ -200,11 +301,19 @@ export function shapeFigure(rig, amounts) {
   const armBones = new Set(sk.bones.map((b, i) => (/Arm|Hand/.test(b.name) ? i : -1)).filter((i) => i >= 0));
   const skinIndex = coarse ? coarse.skinIndex : geo.attributes.skinIndex.array;
   const skinWeight = coarse ? coarse.skinWeight : geo.attributes.skinWeight.array;
-  const armWeight = (i) => {
+  const armShare = (index, weight, i) => {
     let w = 0;
-    for (let k = 0; k < 4; k++) if (armBones.has(skinIndex[i * 4 + k])) w += skinWeight[i * 4 + k];
+    for (let k = 0; k < 4; k++) if (armBones.has(index[i * 4 + k])) w += weight[i * 4 + k];
     return Math.min(1, w);
   };
+  const armWeight = (i) => armShare(skinIndex, skinWeight, i);
+  // Any point of a positions array in the body frame, and a move in the body frame (in body units) put back on to it.
+  const toBodyAt = (arr, i) => {
+    p.fromArray(arr, i * 3).sub(hips);
+    return [p.dot(left) / unit, p.dot(up) / unit, p.dot(front) / unit];
+  };
+  const fromBodyMove = (arr, i, [dx, dy, dz]) =>
+    p.fromArray(arr, i * 3).addScaledVector(left, dx * unit).addScaledVector(up, dy * unit).addScaledVector(front, dz * unit).toArray(arr, i * 3);
 
   // The bust's apex is the frontmost point of the chest on her left.
   let apex = null;
@@ -234,7 +343,11 @@ export function shapeFigure(rig, amounts) {
       .addScaledVector(front, dz * unit);
     p.toArray(shaped, i * 3);
   }
-  pos.array.set(coarse ? splitBody({ ...coarse, positions: shaped }, { rounded: (t) => coarse.rounded[t] === 1 }).positions : shaped);
+  if (coarse) {
+    const split = splitBody({ ...coarse, positions: shaped }, { rounded: (t) => coarse.rounded[t] === 1 });
+    liftBust(split.positions, (i) => armShare(split.skinIndex, split.skinWeight, i), toBodyAt, fromBodyMove, apex, amounts.bust);
+    pos.array.set(split.positions);
+  } else pos.array.set(shaped);
   pos.needsUpdate = true;
   geo.computeVertexNormals();
   geo.computeBoundingBox();

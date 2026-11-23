@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { figureOffset } from '../src/npc/figure.js';
+import { figureOffset, bustSurface } from '../src/npc/figure.js';
 
 // Roughly where the shipped model's left bust apex sits, in body-frame units.
 const APEX = { x: 0.11, y: 0.725, z: 0.35 };
@@ -41,29 +41,79 @@ describe('figure', () => {
   });
 
   it('has no jumps, so the mesh never tears', () => {
-    // A tiny move never shifts the offset by more than a few times as much.
-    const step = 0.0005;
-    grid((x, y, z) => {
-      const a = figureOffset(x, y, z, APEX, FULL);
-      for (const [ex, ey, ez] of [
-        [step, 0, 0],
-        [0, step, 0],
-        [0, 0, step],
-      ]) {
-        const b = figureOffset(x + ex, y + ey, z + ez, APEX, FULL);
-        for (let k = 0; k < 3; k++) expect(Math.abs(b[k] - a[k])).toBeLessThan(step * 4);
+    // A tiny move never shifts the offset by more than some times as much, at two sizes of move: a jump would not shrink with the
+    // move. (The fold under her bust is steep, as a round underside is, so the bound is looser than it was for the old push.)
+    for (const step of [0.0005, 0.00005]) {
+      grid((x, y, z) => {
+        const a = figureOffset(x, y, z, APEX, FULL);
+        for (const [ex, ey, ez] of [
+          [step, 0, 0],
+          [0, step, 0],
+          [0, 0, step],
+        ]) {
+          const b = figureOffset(x + ex, y + ey, z + ez, APEX, FULL);
+          for (let k = 0; k < 3; k++) expect(Math.abs(b[k] - a[k])).toBeLessThan(step * 12);
+        }
+      });
+    }
+  });
+});
+
+describe('a round bust', () => {
+  const shaped = (bust, x, y, z) => {
+    const [dx, dy, dz] = figureOffset(x, y, z, APEX, { bust, waist: 0, hips: 0 });
+    return [x + dx, y + dy, z + dz];
+  };
+
+  it('is one curve in its middle, whatever the model was there', () => {
+    // The model has one point at each apex and a ring round it, so a push added to her own points kept that cone. Points round the
+    // middle of it, wherever they were, now lie on the dome.
+    for (const bust of [1, 1.4]) {
+      for (const [x, y] of [[APEX.x, APEX.y], [APEX.x + 0.04, APEX.y - 0.03], [APEX.x - 0.02, APEX.y + 0.04]]) {
+        for (const z of [APEX.z - 0.05, APEX.z, APEX.z + 0.03]) {
+          const [sx, sy, sz] = shaped(bust, x, y, z);
+          expect(Math.abs(sz - bustSurface(sx, sy, APEX, bust))).toBeLessThan(0.003);
+        }
       }
-    });
+    }
+  });
+
+  it('is rounded at the front, not a point', () => {
+    // Down through its front the curve bends gently everywhere: a point (a cone) bends all at once at its tip.
+    const h = 0.01;
+    for (const bust of [1, 1.4]) {
+      const z = (y) => bustSurface(APEX.x + 0.01, y, APEX, bust);
+      for (let y = APEX.y - 0.12; y <= APEX.y + 0.08; y += 0.01) {
+        expect(Math.abs(z(y + h) - 2 * z(y) + z(y - h))).toBeLessThan(0.006);
+      }
+    }
+  });
+
+  it('does not fold the shelf under it', () => {
+    // Down her front through the apex, the model's own profile (a shelf steps in under her bust): shaped, it still runs downwards
+    // all the way, so no triangle between these points is turned inside out.
+    const profile = [[0.85, 0.27], [0.8, 0.29], [0.76, 0.33], [APEX.y, APEX.z], [0.68, 0.32], [0.65, 0.29], [0.626, 0.23], [0.6, 0.22], [0.55, 0.22], [0.5, 0.22]];
+    for (const bust of [1, 1.4]) {
+      const ys = profile.map(([y, z]) => shaped(bust, APEX.x, y, z)[1]);
+      for (let i = 1; i < ys.length; i++) expect(ys[i]).toBeLessThan(ys[i - 1]);
+    }
+  });
+
+  it('leaves a dip between them', () => {
+    for (const bust of [1, 1.4]) {
+      const middle = shaped(bust, 0, APEX.y - 0.02, APEX.z - 0.02)[2];
+      const apex = shaped(bust, APEX.x, APEX.y - 0.02, APEX.z)[2];
+      expect(middle).toBeLessThan(apex - 0.04);
+    }
   });
 });
 
 describe('a bigger bust', () => {
   it('covers more of her, wider and deeper, as well as standing out further', () => {
     const at = (bust, x, y, z) => figureOffset(x, y, z, APEX, { bust, waist: 0, hips: 0 });
-    // Out at her side, past where a smaller one reaches, a bigger one still moves her.
-    const side = [APEX.x + 0.2, APEX.y, 0.2];
-    expect(at(1, ...side)).toEqual([0, 0, 0]);
-    expect(Math.hypot(...at(1.5, ...side))).toBeGreaterThan(0.001);
+    // Out towards her side, past where a smaller one reaches, a bigger one's dome still covers her.
+    expect(bustSurface(APEX.x + 0.15, APEX.y - 0.04, APEX, 1)).toBe(-Infinity);
+    expect(bustSurface(APEX.x + 0.15, APEX.y - 0.04, APEX, 1.5)).toBeGreaterThan(0.1);
     // At the apex it stands out further than in proportion to the amount.
     expect(at(1.5, APEX.x, APEX.y, APEX.z)[2]).toBeGreaterThan(1.5 * at(1, APEX.x, APEX.y, APEX.z)[2]);
   });
