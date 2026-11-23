@@ -244,6 +244,9 @@ export async function buildWorldModels() {
   add('world', 'collectingYard', dairy.buildCollectingYard, (b) => b(nf.collecting, nf.parlour, y0, dm));
   add('world', 'tankRoom', dairy.buildTankRoom, (b) => b(nf.tankRoom, nf.parlour, y0, dm));
   add('world', 'slurryStore', dairy.buildSlurryStore, (b) => b(nf.slurry, y0, dm));
+  // What stands about her yard (#911): every piece the layout lists, built together as the yard builds them.
+  const yardProps = await import('../../src/world/neighbourYardProps.js');
+  add('world', 'yardFurniture', yardProps.buildYardFurniture, (b) => b(nf, y0, dm, { random: c.random }));
   const cattle = await import('../../src/world/cattleModel.js');
   add('world', 'cow', cattle.buildCow, (b) => b(0));
   add('world', 'herd', cattle.buildHerd, (b) => b(two.neighbourLand.cows, () => 0));

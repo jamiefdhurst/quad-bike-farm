@@ -42,7 +42,7 @@ export function dairyMaterials(random, concrete) {
 }
 
 /** A builder's scratchpad: a group and shorthands that place things by height above the yard's ground (`y` is a centre, `y0` the ground). */
-function piece(y0, name) {
+export function piece(y0, name) {
   const group = new THREE.Group();
   group.name = name;
   const add = (geo, mat, x, y, z, ry = 0, rx = 0, rz = 0) => {

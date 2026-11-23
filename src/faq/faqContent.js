@@ -3073,6 +3073,15 @@ export const FAQ_SECTIONS = [
           her track, and opens with <kbd>E</kbd>. <code>tp me neighbour</code> stands you just inside her gateway and <code>scene neighbour</code> sets that up in daylight.`,
       },
       {
+        q: "What is in the neighbour's yard, besides the dairy?",
+        a: `The things a working yard has about it. At her gate a name board on two posts (Low Hollins Dairy Farm) and a pair of milk churns on a stand, with a cat on the wall. Along the barn's
+          south wall is the feed passage: a concrete trough of silage, a tub of mineral lick on a pallet, a galvanised water trough with its ball cock, a hose on its hook and a yard tap. Out in the yard stand a steel
+          feeder round a bale and two wrapped silage bales with the plastic torn off at the top; by the barn door lean a brush, a shovel and a fork, with a wheelbarrow and a parked scraper blade. West of the barn are the
+          pallets, a blue tank on a stand, a bag of lime, tied feed sacks and a stack of tyres, and a hen coop and its run. By her back door there are boots on the step, and by the front a collie's kennel and bowl, with its chain
+          lying out; at the far wall is the muck heap with a plank ramp up it. The concrete shows the work: tyre tracks from the gate, hoof prints where the herd goes in, oil under the vehicles, a puddle in the low corner,
+          straw blown against the barn door and a drip under the tap. After dark a light on a pole and one on the barn's gable glow. The hens, the cat and the dog are only for show: they stay where they are.`,
+      },
+      {
         q: 'What are the things standing by themselves in the fields?',
         a: `Each field has one thing of its own you can see from its gate: a lone oak in North Field, a pair of old gateposts in
           Top Field, a dead elm in Long Piece's hedge, a pond with two willows in Far Field, an old roller in South Field, a lone ash in Hay Meadow, alders along the

@@ -3,6 +3,7 @@
 // invisible walls that make a stretch of the lane ridable, and `Neighbour`, who stands about, turns to face whoever comes and greets them.
 
 import { villageShape } from './village.js';
+import { yardFootprints, yardPiece } from './neighbourYard.js';
 
 export const DEFAULT_NEIGHBOUR_PARAMS = {
   greetRange: 16, // m: you or a girl comes this close and she says hello
@@ -97,6 +98,8 @@ export function neighbourFarmShape(layout) {
     tankRoom,
     slurry,
     parked,
+    // What stands about the yard (neighbourYard.js): each piece with its footprint, those on a wall (the cat) included with none.
+    furniture: (n.furniture ?? []).map(yardPiece).filter(Boolean),
     stand: n.stand,
     // Where she is when she is indoors, so a nearby sound can come from the house.
     indoors: { x: h.x, z: h.z },
@@ -124,7 +127,7 @@ export function createNeighbourFarm(layout) {
   const s = neighbourFarmShape(layout);
   if (!s) return null;
   const dairy = [s.parlour, s.tankRoom].filter(Boolean);
-  const footprints = [s.house.outer, ...(s.house.wing ? [s.house.wing.outer] : []), ...(s.house.leanTo ? [s.house.leanTo.outer] : []), s.barn.outer, ...dairy.map((d) => d.outer), ...(s.slurry ? [s.slurry.outer] : []), ...s.parked.map((p) => p.outer)];
+  const footprints = [s.house.outer, ...(s.house.wing ? [s.house.wing.outer] : []), ...(s.house.leanTo ? [s.house.leanTo.outer] : []), s.barn.outer, ...dairy.map((d) => d.outer), ...(s.slurry ? [s.slurry.outer] : []), ...s.parked.map((p) => p.outer), ...yardFootprints(s.furniture).map((f) => f.outer)];
   /** Under the house's, the barn's, the parlour's or the tank room's roof: out of the rain. */
   const covered = (x, z) => inRect(s.house.roof, x, z) || (s.house.wing && inRect(s.house.wing.roof, x, z)) || (s.house.leanTo && inRect(s.house.leanTo.roof, x, z)) || inRect(s.barn.roof, x, z) || dairy.some((d) => inRect(d.roof, x, z));
   /** On the yard's wall, a building or a parked vehicle (or within `margin` of one). */
