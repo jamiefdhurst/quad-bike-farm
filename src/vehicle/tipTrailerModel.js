@@ -4,6 +4,7 @@ import { PART_MAT, box, buildWheel, addMudguard, addJockeyWheel, addRearLights, 
 import { boltsMesh } from './detail/fixings.js';
 import { decalMesh } from './detail/decals.js';
 import { mergeStatic, rod } from './quadGeometry.js';
+import { addFarmTrailerWear, farmTrailerMaterials, JOCKEY_DOWN } from './tipTrailerFarm.js';
 
 // The small tipping trailer, procedural like the others: a galvanised steel tub on one axle with two wheels, a tongue to a quad's hitch,
 // and a tailgate that drops. The tub tips up on a pivot at the back.
@@ -53,7 +54,7 @@ export const CARGO_FOOTPRINTS = {
 /** Where she stands to climb in or out, beside the wheel on the left, as trailer-local metres. */
 export const TIP_STAND = { x: 1.15, z: -0.3 };
 
-const MAT = {
+const BASE_MAT = {
   steel: new THREE.MeshStandardMaterial({ color: 0x4a4c4e, roughness: 0.55, metalness: 0.5 }),
   tub: new THREE.MeshStandardMaterial({ color: 0x9aa3a6, roughness: 0.5, metalness: 0.55 }),
   tubInner: new THREE.MeshStandardMaterial({ color: 0x7d8588, roughness: 0.7, metalness: 0.4 }),
@@ -62,7 +63,12 @@ const MAT = {
   lamp: new THREE.MeshStandardMaterial({ color: 0xaa1111, roughness: 0.4, emissive: 0x330000 }),
 };
 
-export function buildTipTrailerModel() {
+/**
+ * `farm` (a `look` from tipTrailerFarm.js) builds the neighbour's, left out in her yard: rusting, with straw in it, a tarp over the front and its jockey wheel down.
+ * Nothing about the player's trailer changes without it.
+ */
+export function buildTipTrailerModel({ farm = null } = {}) {
+  const MAT = farm ? farmTrailerMaterials(BASE_MAT, farm) : BASE_MAT;
   const S = TIP_TRAILER_SPEC;
   const root = new THREE.Group();
   root.name = 'tipTrailer';
@@ -111,7 +117,7 @@ export function buildTipTrailerModel() {
   plate.position.set(-0.061, S.ringHeight + 0.03, S.drawLength - 0.3);
   plate.rotation.y = -Math.PI / 2;
   body.add(plate);
-  addJockeyWheel(body, 0, S.ringHeight + 0.05, S.frontZ + 0.75);
+  addJockeyWheel(body, 0, S.ringHeight + 0.05, S.frontZ + 0.75, farm ? JOCKEY_DOWN : undefined);
   // Axle on a leaf spring each side, with U-bolts, and the spring's seat on the rail.
   const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, (S.halfWidth + 0.11) * 2, 8), MAT.steel);
   axle.rotation.z = Math.PI / 2;
@@ -123,7 +129,7 @@ export function buildTipTrailerModel() {
     addUBolts(body, s, S.wheelRadius + 0.035, 0, 0.1, 0.012);
     box(0.07, 0.12, 0.1, MAT.steel, s, S.wheelRadius + 0.12, 0, body);
   }
-  addRearLights(body, S.halfWidth - 0.12, S.floorY - 0.15, S.rearZ - 0.08, true); // the lights board, on the chassis behind the tub (it does not tip)
+  const lights = addRearLights(body, S.halfWidth - 0.12, S.floorY - 0.15, S.rearZ - 0.08, true); // the lights board, on the chassis behind the tub (it does not tip)
 
   // The tub: floor, two sides, a front wall and the tailgate. Pivots about the back bottom edge.
   const tub = new THREE.Group();
@@ -188,6 +194,7 @@ export function buildTipTrailerModel() {
     root.add(buildWheel(name, side * (S.halfWidth + 0.11), S.wheelRadius, 0.16, 'atv'));
     addMudguard(root, side * (S.halfWidth + 0.11), S.wheelRadius, 0.22, MAT.tub, S.halfWidth);
   }
+  if (farm) addFarmTrailerWear({ body, tub, lights, S, look: farm, mat: MAT, hz });
   for (const o of tub.children) if (o.name === 'seat' || /^cargo/.test(o.name)) o.userData.keep = true;
   mergeStatic(root);
   root.traverse((o) => {

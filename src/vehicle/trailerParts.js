@@ -160,9 +160,9 @@ export function addRearLights(parent, halfWidth, y, z, withPlate = true) {
  * A jockey wheel on a post under the drawbar at `z`, wound up clear of the ground: a clamp round the drawbar, a telescoping post with its
  * collar, the fork and the little treaded wheel between its plates, and the wind-up handle with its grip. `y` is where the post meets the drawbar.
  */
-export function addJockeyWheel(parent, x, y, z) {
-  const lift = 0.25; // wound up off the ground while it is hitched
+export function addJockeyWheel(parent, x, y, z, lift = 0.25) { // `lift` is how far the little wheel is off the ground: wound up while it is hitched, 0.095 wound down onto it
   const g = new THREE.Group();
+  g.name = 'jockeyWheel';
   g.position.set(x, 0, z);
   parent.add(g);
   box(0.1, 0.07, 0.1, PART_MAT.steel, 0, y - 0.02, 0, g); // the clamp round the drawbar
@@ -286,6 +286,99 @@ export function galvanised() {
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   galvTex = new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 0.5, metalness: 0.55 });
   return galvTex;
+}
+
+/**
+ * Galvanised steel that has been left out: the same spangle as `galvanised()` with rust blooming from the low edges, the seams and a few chips (`rust` 0 to 1, `seed`
+ * picks where), and the dull white of zinc salts between. A material of its own, so the player's trailer keeps its clean one. Plain steel colour where there is no canvas.
+ */
+export function rustedGalvanised(rust = 0.5, seed = 7) {
+  if (typeof document === 'undefined') return new THREE.MeshStandardMaterial({ color: 0x8a6a52, roughness: 0.75, metalness: 0.4 });
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  let n = (seed * 2654435761) % 2147483647 || 1;
+  const rand = () => ((n = (n * 16807) % 2147483647) / 2147483647);
+  g.fillStyle = '#868d8f';
+  g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 200; i++) { // the spangle, dulled
+    const x = rand() * 128;
+    const y = rand() * 128;
+    const r = 3 + rand() * 9;
+    g.fillStyle = rand() > 0.5 ? `rgba(255,255,255,${0.04 + rand() * 0.1})` : `rgba(40,48,52,${0.08 + rand() * 0.16})`;
+    g.beginPath();
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2 + rand() * 0.5;
+      g.lineTo(x + Math.cos(a) * r * (0.6 + rand() * 0.6), y + Math.sin(a) * r * (0.6 + rand() * 0.6));
+    }
+    g.fill();
+  }
+  for (let i = 0; i < 30 * rust + 4; i++) { // white zinc bloom
+    g.fillStyle = `rgba(215,220,214,${0.1 + rand() * 0.14})`;
+    g.beginPath();
+    g.ellipse(rand() * 128, rand() * 128, 3 + rand() * 9, 2 + rand() * 6, rand() * 3, 0, 7);
+    g.fill();
+  }
+  // Rust comes up from the bottom edge (the texture's bottom is the panel's foot) and runs in streaks, then in freckles over the rest.
+  const rusts = ['#7a3b1c', '#9b4d22', '#b8652d', '#5e2e17'];
+  for (let i = 0; i < 70 * rust; i++) {
+    const x = rand() * 128;
+    const reach = (0.15 + rand() * 0.55) * rust * 128;
+    const y0 = 128 - rand() * 6;
+    g.strokeStyle = rusts[(rand() * rusts.length) | 0];
+    g.globalAlpha = 0.25 + rand() * 0.4;
+    g.lineWidth = 0.8 + rand() * 3;
+    g.beginPath();
+    g.moveTo(x, y0);
+    g.lineTo(x + (rand() - 0.5) * 6, y0 - reach);
+    g.stroke();
+  }
+  for (let i = 0; i < 160 * rust; i++) {
+    g.fillStyle = rusts[(rand() * rusts.length) | 0];
+    g.globalAlpha = 0.2 + rand() * 0.5;
+    g.beginPath();
+    g.arc(rand() * 128, rand() * 128, 0.6 + rand() * 2.6, 0, 7);
+    g.fill();
+  }
+  g.globalAlpha = 1;
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 0.78, metalness: 0.35 });
+}
+
+/** Straw on a trailer's floor: golden stalks across it, with the brown-green of silage juice in streaks. A material of its own; plain straw colour with no canvas. */
+export function strawStained(seed = 5) {
+  if (typeof document === 'undefined') return new THREE.MeshStandardMaterial({ color: 0xb59a58, roughness: 1 });
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  let n = (seed * 40503) % 2147483647 || 1;
+  const rand = () => ((n = (n * 16807) % 2147483647) / 2147483647);
+  g.fillStyle = '#b79c5a';
+  g.fillRect(0, 0, 128, 128);
+  const tones = ['rgba(232,205,128,0.55)', 'rgba(150,118,56,0.5)', 'rgba(244,224,160,0.5)', 'rgba(96,84,40,0.4)'];
+  for (let i = 0; i < 700; i++) {
+    g.strokeStyle = tones[(rand() * tones.length) | 0];
+    g.lineWidth = 0.8 + rand() * 1.2;
+    const x = rand() * 128;
+    const y = rand() * 128;
+    const a = rand() * Math.PI;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + Math.cos(a) * (8 + rand() * 18), y + Math.sin(a) * (8 + rand() * 18));
+    g.stroke();
+  }
+  for (let i = 0; i < 9; i++) { // silage juice: a dull olive-brown stain
+    g.fillStyle = `rgba(88,84,36,${0.14 + rand() * 0.16})`;
+    g.beginPath();
+    g.ellipse(rand() * 128, rand() * 128, 8 + rand() * 20, 4 + rand() * 10, rand() * 3, 0, 7);
+    g.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 1 });
 }
 
 const _up = new THREE.Vector3(0, 1, 0);
