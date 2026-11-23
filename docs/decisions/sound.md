@@ -14,6 +14,7 @@ What is true now, with the sections below to read for the detail. Keep it curren
 - **Ride sounds and Doppler.** Each vehicle reaches you through a delay line set by distance, so Doppler comes from travel time. Tyre, surface, wind and knock layers are filtered noise plus a few CC0 one-shots. "Ride sounds and Doppler (2026-10-05)".
 - **The girls' voices** are recorded offline with Chatterbox (Amy from a Piper "cori" reference, Jess from Kokoro's `bf_lily` with a lift of 0.6). Whisper checks every take; Piper is the fallback for one-word shouts. Lines that never match fall back to the browser's speech, women's voices only, with captions always shown. Banks are MP3 files of about a minute, fetched and decoded only when needed. `tools/unrecorded_lines.mjs` lists what is left. "Her voice, recorded (2026-10-05)", "A younger voice for Jess (TODO 1)", "A check for unrecorded voice lines (TODO 73)", and in process.md "Smaller downloads (TODO 104, 2026-10-18)". The browser-only start ("Her voice (2026-10-04)") is history.
 - **Footsteps.** Yours on foot and each girl's while she walks: a step every stride of ground, on the surface underfoot (concrete, stone, mud, straw, grass, dirt, tarmac), procedural. A girl's are quieter and gone past 6 m. "Footsteps (#202, was TODO 311)".
+- **Her voice in a room.** A girl's recorded voice goes through a lowpass while her helmet is on her head and sends into the barn's echo. "Voices under a helmet (#209)".
 - **Doors.** The cars' and the Tor's and Crag's doors, tailgates and hatches click open, thump shut and slam, all procedural. "Door sounds (#102)".
 - **The radio** is in the Tor and the Crag and the girls' cars (`I`). Two stations, Dale FM (easy listening and pop) and Quarry Rock (rock), each real CC0 songs shuffled with recorded talk items (weather, farming, news, phone-in, traffic), the same programme for every set tuned to it. A short press of `I` on a set that is on changes station, a hold switches it off. Each set has its own band, hiss, crackle, overload and warble. Jess turns it up and Amy turns it off, as a reaction on its own clock. "The radio (TODO 79)", "Real radio stations (#104, was TODO 212)".
 
@@ -267,3 +268,11 @@ The review of 14 and 15 November 2026 found why every engine stops changing abov
 - **Procedural, no recordings** (`audio/footstepSamples.js`): a body thud plus noise shaped per surface, three seeded takes each with a little pitch spread. Mud has its own suck as the foot lifts, so the existing CC0 squelch was not needed. Judged by ear only after merge: the gravel and straw grain rates are the likeliest to want a nudge.
 - **In `game.js`** it costs no lines: the update shares the audio line (now inside the frame guard as `updateAudio`).
 - **Left as it was:** a girl's steps on a quad, a trailer or the stairs (not `walking`), and stepping into water deeper than a puddle.
+
+## Voices under a helmet (#209, was TODO 318)
+
+- **One lowpass and one send per line** in `CompanionSounds.start` (`audio/companionAudio.js`), between the gain and the panner, retuned each frame for the line playing with `setRoom`, as `setWobble` does for the seat. `game.js` feeds it from `headgear.wearing(id)` and the barn's `hub.room`.
+- **The barn's ring is the engines' own.** `reverbSend` (`world/barn.js`) into `hub.reverb`: full with both of you inside, `reverbWetOutside` with one, none with neither. No new reverb tunable; the Barn folder's `reverbWet` sets it.
+- **Worn means on her head.** Jess's helmet tipped back, and one on a seat or the hooks, does not muffle her. Your own helmet does not muffle her either: the issue said hers.
+- **Mild to start.** The girls' helmets are open-face, so `voiceHelmetCutoff` is 2,500 Hz (range 800 to 12,000), a dullness and not a bucket. The pure choice is `npc/voiceRoom.js`.
+- **Browser speech is left alone.** A line with no recording falls back to `speechSynthesis`, which never reaches Web Audio and cannot be filtered or sent.

@@ -11696,7 +11696,7 @@ export class Game {
         drip: this.carbDrip,
         coolantPatches: this.coolantPatches,
         history: this.history,
-        menuOpen: this.menu.isOpen,
+        menuOpen: this.menu.isOpen, helmet: this.headgear.wearing(c.character.id), room: this.audioHub.room, // her helmet on, and the barn's (voiceRoom.js)
         talkingToHer: this.menu.isOpen && this.talkingTo === c,
         weather: this.weather,
         terraceSlope: this.world.heights.hill ? (x, z) => this.world.heights.hill.terraceSlope(x, z) : null, moor: this.world.moorSense(this.flocks),

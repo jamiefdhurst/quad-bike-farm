@@ -776,6 +776,11 @@ export const FAQ_SECTIONS = [
           if one has been lying about for a while she will go and hang it on its hook herself.`,
       },
       {
+        q: 'Why do the girls sound muffled sometimes, and echoey in the barn?',
+        a: `A girl with her helmet on talks through it, so she sounds duller until it comes off (a helmet pushed back on Jess's head does not count). In the
+          barn, a girl's voice rings off the walls, strongest when you are both inside and fainter through the doorway.`,
+      },
+      {
         q: 'Will the girls tidy up after me?',
         a: `Amy will, when she has nothing better to do. A gate you opened and walked away from (a minute or so with nobody near it) she shuts. A jerry can
           you left more than a few metres from where it lives she picks up and carries back. And a helmet lying on the ground she hangs on the hooks in the barn.

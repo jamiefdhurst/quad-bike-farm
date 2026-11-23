@@ -59,6 +59,11 @@ export const SCENES = [
     label: 'Put you in the yard on concrete at midday with Amy tagging along behind you: walk and jog, then `tp me to stonetrack` for gravel, `barn` for the barn floor, `dutchbarn` for straw and `wet` for mud, and stand still to let her catch you up (her steps are quieter and only heard inside 6 m); `tune` has the volumes',
     lines: ['weather sunny', 'weather.time 12', 'tp me to yard', 'girl amy tag-along'],
   },
+  {
+    id: 'helmetvoice',
+    label: 'Put you in the barn at midday with Amy fetching her helmet from the hooks and tagging along: listen to her voice ring in here and go muffled once the helmet is on her head (`girl amy helmet` hangs it up again; `tp me to yard` for her outside; `tune` has her voiceHelmetCutoff)',
+    lines: ['weather sunny', 'weather.time 12', 'tp me to barn', 'girl amy helmet', 'girl amy tag-along'],
+  },
   { id: 'end', label: 'Let the girls go about their day again after a scene', lines: [], setup: 'end' },
 ];
 
