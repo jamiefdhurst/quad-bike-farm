@@ -1697,6 +1697,13 @@ export const FAQ_SECTIONS = [
           Their hair keeps its sharp shapes. Add <code>?body=flat</code> to the address to see them as the model comes.`,
       },
       {
+        q: 'Are Amy and Jess shaped the same?',
+        a: `No. They start from the same model, but each is reshaped as the game loads: Amy taller and more evenly built, Jess shorter
+          and curvier, with a fuller bust, a narrower waist and wider hips. Each breast is shaped as a round curve, fuller underneath,
+          with a dip between them, rather than pushed out to a point, so it reads as round from the side as well as the front, and
+          their clothes follow it.`,
+      },
+      {
         q: 'Why do the girls wobble on a running quad?',
         a: `Their bodies give with the shake, as a real body does. Sat on something running, the seat's buzz shows in them: a lumpy single
           like the green gives a slow, heavy wobble and a smoother engine a quicker shiver. A bump, landing on the seat, jumping down or
