@@ -3061,9 +3061,9 @@ export const FAQ_SECTIONS = [
         q: 'What are the things standing by themselves in the fields?',
         a: `Each field has one thing of its own you can see from its gate: a lone oak in North Field, a pair of old gateposts in
           Top Field, a dead elm in Long Piece's hedge, a pond with two willows in Far Field, an old roller in South Field, a lone ash in Hay Meadow, alders along the
-          brook in Low Ley and big oaks in Brook Meadow. The rest (the power line, the field barn, the hut and its rock, the trig pillar on the moor) come with their own
+          brook in Low Ley, big oaks in Brook Meadow and, in the Wet Meadow, an old stag-headed oak on the pond's west bank with a long low limb out over the water. The rest (the power line, the field barn, the hut and its rock, the trig pillar on the moor) come with their own
           pieces. In the console, <code>tp me to loneoak</code> (or <code>oldgateposts</code>, <code>deadelm</code>, <code>farpond</code>, <code>castroller</code>,
-          <code>loneash</code>, <code>brookalders</code>, <code>bigoaks</code>) takes you to each, and <code>scene landmarks</code> sets up the ash in daylight.`,
+          <code>loneash</code>, <code>brookalders</code>, <code>bigoaks</code>, <code>pollardoak</code>) takes you to each, and <code>scene landmarks</code> sets up the ash in daylight.`,
       },
       {
         q: 'How do I find the name of something in the console?',

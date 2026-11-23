@@ -250,7 +250,7 @@ function fieldOak(c, group, body, x, z, s, { hollow = false, ivySide = 0, name =
   const dead = tips.filter((t) => (pollard ? t.at.y > topY * 0.8 || random() < 0.1 : random() < 0.14));
   for (const t of dead) parts.push(limb(t.at, t.at.clone().addScaledVector(t.dir, (pollard ? 2.6 : 1.6) * s), t.r, t.r * 0.3, 6));
   const live = tips.filter((t) => !dead.includes(t)).map((t) => t.at);
-  const along = segs.filter((sg) => sg.b.y > bole + 0.5).map((sg) => sg.b);
+  const along = segs.filter((sg) => sg.b.y > bole + 0.5 && !(pollard && sg.b.y > topY * 0.8)).map((sg) => sg.b); // no leaves on a pollard's top, so its dead tips show
   const centres = [...live, ...along].map((p) => p.clone().add(new THREE.Vector3((random() - 0.5) * 1.2, (random() - 0.3) * 0.8, (random() - 0.5) * 1.2)));
   if (pollard) {
     // The long low limb, level out over the water at about 3 m: it thickens into the bole, droops a little at its end and carries a few leaf clumps and a dead twig.
