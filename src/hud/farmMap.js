@@ -194,6 +194,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const quarry = fields.quarry;
   const woodsTrack = woods ? { points: woods.track.points, leadIn: woods.leadIn, half: woods.halfWidth } : null;
   const woodsTrail = woods?.trail ? { points: woods.trailTrack.points, half: woods.trailHalf } : null;
+  const woodsOaks = woods?.oaks ? woods.oaks.map((o) => ({ x: o.x, z: o.z, s: o.s })) : []; // one dot each, where the wood dealt them
   const woodsBogs = woods ? woods.bogs.map((b) => ({ x: b.x, z: b.z, r: b.radius })) : [];
 
   const bogs = (layout.bogs ?? []).map((b) => {
@@ -351,7 +352,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
 
   return {
     bounds, ground, key, areas, hedges, gates, stream, ford, pond, roads, track: { points: track.points, half: layout.trackHalfWidth }, bogs, dragStrip, ramp,
-    woodsTrack, woodsTrail, woodsBogs, woodsPond: woods?.pond ?? null, woodland: woods ? { ...woods.rect } : null,
+    woodsTrack, woodsTrail, woodsBogs, woodsOaks, woodsPond: woods?.pond ?? null, woodland: woods ? { ...woods.rect } : null,
     quarryPit: quarry ? quarryOutline(quarry) : null,
     buildings, small, muckHeap, paddock, yard, wood, woodpile, labels, marks,
     neighbourYard: nf ? { ...nf.outline } : null,

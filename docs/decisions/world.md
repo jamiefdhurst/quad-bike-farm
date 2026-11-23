@@ -1692,3 +1692,10 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - The name is routed into the face (`routedPostTexture` in `neighbourTextures.js`: a dark cut with cream paint in it, no border), under the blue band (the way-marker posts' own `POST_BAND`, with the arrow disc on it), over a "Two-wheelers" plate 0.19 m long (`platedTexture`). `MARKER` holds the sizes, and `tests/trailMarkers.test.js` checks the lettering, band and plate sit inside the face, that no faces fight (`coplanarOverlaps`) and that the post is built in `buildWorldModels` as `trailSign`.
 - It stands where the sign did (`woods.trail.entrance`, 3 to 4.5 m off the lead-in, so `tp me fern` and the map are unchanged) and faces the lead-in 5 m up towards the gate. Moss grows on its north side, and leaf litter and seven ferns ring the foot, kept off the face.
 - Looked at with `tools/shot.mjs --name trailSign`, by day and in autumn, one round and a moss tweak. The post is about 20 small meshes in one group (one marker, so left unmerged); CI's smoke run measured the wood spot at 1,485 calls, level with the 1,486 before it. A recheck then fixed the cap (turned in its geometry, not its mesh), the collider's yaw and `tp me fern` (now 1.5 m in front of the post, `fernMarkerSpot`) (#1127).
+
+## The wood's trees on the map (#847)
+
+- The map drew the wood as a staggered lattice of dots every 6 m over the whole rectangle, so it showed a grid where the world has random oaks in glades. It now draws one dot for each oak the wood dealt.
+- The oaks are dealt fresh on each load (`woodsPlants`, with the props' seeded random), so `buildTrees` keeps them on `fields.woods.oaks` (`{ x, z, s }`) and `farmMapFeatures` passes them as `woodsOaks`. The map is built after the world, so they are there; before the wood has dealt them the list is empty, not a lattice.
+- A dot is 1.1 m times the oak's scale across in map metres. Nothing extra keeps the Run, the pond and the bogs clear: `treeOk` already does when the oaks are dealt, and the test checks it for the dealt ones.
+- About 250 oaks on the new wood; drawn once into the fixed layer.
