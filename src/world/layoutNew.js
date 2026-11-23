@@ -266,6 +266,36 @@ export const NEIGHBOUR_PLAN = {
   tankRoom: { x: 38.5, z: -30.5, halfX: 2.5, halfZ: 1.75, wallHeight: 2.9 },
   slurry: { x: -27.5, z: 25.5, r: 9, height: 3.6 },
   floor: { at: { x: -51.5, z: 0 }, reach: 16 }, // levelled to the lie at plan (946, 292.5)
+  // What stands about the yard (#911; neighbourYard.js `YARD_KINDS` gives each its size), as offsets from her anchor: the feed passage along the barn's south wall, the
+  // west strip between the barn and the wall, the gateway's churn and name board, the door's kennel, the muck heap at the south wall and the light's pole.
+  // The way from the gateway to the barn door, the collecting yard's gap and the tank room's strip is kept clear (tests/neighbourYard.test.js).
+  furniture: [
+    { kind: 'silageTrough', x: -27.5, z: -17.08 }, // plan (970, 275.5)
+    { kind: 'mineralTub', x: -20.2, z: -16.95 },
+    { kind: 'waterTrough', x: -17.4, z: -17.15 },
+    { kind: 'hoseHook', x: -15.6, z: -17.3 },
+    { kind: 'yardTap', x: -14.7, z: -17.2 },
+    { kind: 'balefeeder', x: -27.5, z: -11.2 },
+    { kind: 'wrappedBale', x: -34.8, z: -12.6 },
+    { kind: 'wrappedBale', x: -33.2, z: -12.5 },
+    { kind: 'leaningTools', x: -13.1, z: -30.4 },
+    { kind: 'barrow', x: -12.3, z: -32.6 },
+    { kind: 'scrapeBlade', x: -8, z: -37.5 },
+    { kind: 'henCoop', x: -43.5, z: -38 },
+    { kind: 'palletStack', x: -44.8, z: -31.8 },
+    { kind: 'ibcTank', x: -44.5, z: -27.5 },
+    { kind: 'limeBags', x: -45.5, z: -22.3 },
+    { kind: 'feedSacks', x: -43.6, z: -22.5 },
+    { kind: 'tyreStack', x: -44.6, z: -18.5 },
+    { kind: 'catOnWall', x: -47.25, z: -10 },
+    { kind: 'churnStand', x: -45.5, z: -7 },
+    { kind: 'nameBoard', x: -45.4, z: 6.8 },
+    { kind: 'kennel', x: 19.4, z: 19.2 },
+    { kind: 'dogBowl', x: 18.2, z: 18.9 },
+    { kind: 'bootsAtDoor', x: 12.8, z: 20.9 },
+    { kind: 'muckHeap', x: -6, z: 38.8 },
+    { kind: 'yardLight', x: 1.5, z: 0.5 },
+  ],
   slab: { minX: -47, maxX: 47, minZ: -42, maxZ: 21.3 },
 };
 

@@ -10,6 +10,8 @@ import { canvasTexture, corrugatedTexture, stoneTexture, blockTexture, worldBox 
 import { buildVehicleBody } from './trafficView.js';
 import { enableShadows } from './assets.js';
 import { buildFarVersion } from './farVersion.js';
+import { createRandom } from '../core/random.js';
+import { buildYardFurniture, buildYardMarks } from './neighbourYardProps.js';
 import { dairyMaterials, buildParlour, buildCollectingYard, buildTankRoom, buildSlurryStore } from './dairyKit.js';
 import { Gate } from './gates.js';
 import { poseBaleSpike } from '../vehicle/tractorModel.js';
@@ -746,13 +748,22 @@ export function buildNeighbourFarm(c) {
   fixedBox(b.outer.minX + 2.9, y0 + 0.3, logZ, 1.9, 0.3, pile.reach);
 
   // The dairy, on the new farm's neighbour: the parlour, the collecting yard, the bulk tank's room and the slurry store (dairyKit.js), merged with the rest by material.
+  // The yard's furniture deals from a stream of its own, so the numbers the rest of the farm takes from `random` are what they were (#969).
+  const yardRandom = createRandom(911);
+  const dm = dairyMaterials(s.parlour ? random : yardRandom, yardConcrete);
   if (s.parlour) {
-    const dm = dairyMaterials(random, yardConcrete);
     const deps = { fixedBox };
     for (const made of [buildParlour(s.parlour, y0, dm, deps), buildCollectingYard(s.collecting, s.parlour, y0, dm, deps), buildTankRoom(s.tankRoom, s.parlour, y0, dm, deps), buildSlurryStore(s.slurry, y0, dm, deps)]) {
       for (const o of [...made.children]) group.add(o);
     }
   }
+
+  // What a working yard has about it (#911: neighbourYardProps.js) and the marks of work on the concrete, one decal: merged with the rest by material.
+  const furniture = buildYardFurniture(s, y0, dm, { random: yardRandom, fixedBox, wallTop: s.yard.wallHeight + 0.1 });
+  for (const o of [...furniture.group.children]) group.add(o);
+  const marks = buildYardMarks(s, yardRandom, top);
+  group.add(marks.mesh);
+  const noShadow = new Set([marks.mesh.material, furniture.steam]);
 
   mergeStatic(group);
 
@@ -771,6 +782,7 @@ export function buildNeighbourFarm(c) {
   }
 
   enableShadows(group);
+  for (const o of group.children) if (o.isMesh && noShadow.has(o.material)) o.castShadow = false; // the marks' decal and the muck's steam cast no shadow
   scene.add(group);
   const far = farNeighbourFarm(s, y0);
   group.userData.farVersion = far;
@@ -794,6 +806,7 @@ export function buildNeighbourFarm(c) {
       const k = Math.max(0, Math.min(1, (darkness - 0.3) / 0.5));
       farmhouse.glow.emissiveIntensity = k * (indoors ? 1.4 : 0.9);
       farmhouse.lampGlow.emissiveIntensity = k * 1.6;
+      furniture.glow.emissiveIntensity = k * 2; // the yard light and the barn's gable light: emissive only, no light in the pool
     },
   };
 }

@@ -46,6 +46,7 @@ const KNOWN_PLAIN = {
  * (tests/helpers/worldModels.js) instead; this is only for what has none, and a name here must still exist and must not be built there.
  */
 const NOT_MODELS = {
+  'world/neighbourYardProps.js: buildYardMarks': 'the marks on her yard\'s concrete, one transparent decal plane (a painted texture, not a model: its look is tests/neighbourYard.test.js and the shot) (#911)',
   'world/villageHouses.js: buildHouse': 'the village\'s houses in their other designs (a thatched cottage, a larger house, a bungalow, a terrace, the farmhouse), made inside buildVillage on the new farm ("villageNew")',
   'world/villageFarm.js: buildBarn': 'the small farm\'s barn, made inside buildVillage on the new farm ("villageNew")',
   'world/villageFarm.js: buildFarmYard': 'the small farm\'s walled yard, made inside buildVillage on the new farm ("villageNew")',
