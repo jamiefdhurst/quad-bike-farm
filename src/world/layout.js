@@ -118,7 +118,12 @@ const RAW = {
   neighbourFarm: at('neighbour', {
     yard: { minX: -29, maxX: 28, minZ: -28, maxZ: 28, wall: 0.5, wallHeight: 1.3 },
     gateway: { x: 28, z: -16, width: 8 },
-    house: { x: 3, z: 18, halfX: 7, halfZ: 4.2, wallHeight: 5.2, ridge: 7.6, door: { x: 3, z: 13.8, halfWidth: 0.55, height: 2.05 } },
+    house: {
+      x: 3, z: 18, halfX: 7.5, halfZ: 4.2, wallHeight: 5, ridge: 7.9, door: { x: 0.5, z: 13.8, halfWidth: 0.55, height: 2.05 }, // the same house as the new farm's (#910)
+      wing: { x: -7, z: 18, halfX: 2.5, halfZ: 3.4, wallHeight: 3.8, ridge: 5.9 },
+      leanTo: { x: 5.5, z: 23.8, halfX: 3.6, halfZ: 1.6, wallHeight: 2.8, backDoor: { x: 4, z: 26.5, halfWidth: 0.45, height: 2 } },
+      garden: { minX: -3.1, maxX: 4.1, minZ: 8.9, maxZ: 13.8, gate: { x: 0.5, z: 8.9, halfWidth: 0.6 } },
+    },
     barn: { x: -17, z: -12, halfX: 8, halfZ: 6, wallHeight: 4.6, ridge: 6.6, door: { x: -9, z: -12, halfWidth: 2.6, height: 3.6 } },
     parked: [
       { kind: 'tor', x: 17, z: 2, yaw: 1.2, colour: 0x5d6d4a, reg: 'K412 PBW' },

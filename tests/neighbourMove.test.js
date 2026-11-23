@@ -234,8 +234,8 @@ describe('her yard seen from afar and from behind its buildings', () => {
     expect(box.max.x).toBeCloseTo(S.yard.maxX, 0);
     expect(box.min.z).toBeCloseTo(S.yard.minZ, 0);
     expect(box.max.z).toBeCloseTo(S.yard.maxZ, 0);
-    // The house, the barn, the parlour and the tank room (16 triangles each) and the five walls and the slurry store (10 each).
-    expect(far.children[0].geometry.getAttribute('position').count / 3).toBe(4 * 16 + (S.walls.length + 1) * 10);
+    // The house with its wing and its scullery, the barn, the parlour and the tank room (16 triangles each) and the five walls and the slurry store (10 each).
+    expect(far.children[0].geometry.getAttribute('position').count / 3).toBe(6 * 16 + (S.walls.length + 1) * 10);
   });
 
   it('hides you from a girl behind her barn or her house (#654), and not across the open yard', () => {
@@ -366,6 +366,6 @@ describe('her gate and today\'s farm\'s random stream (#969)', () => {
     let seed = 1234;
     const random = () => { n++; seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
     buildNeighbourFarm(ctx(TODAY, random));
-    expect(n).toBe(9873);
+    expect(n).toBe(21188); // 9873 until her farmhouse's own textures (#910: stone, slate, limewash, flagstones, flowers and the rest) took their draws
   });
 });

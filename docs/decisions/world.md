@@ -34,6 +34,7 @@ What is true now, with the sections below to read for the detail. Keep it curren
 ---
 
 The sections below are the record, oldest first. A new decision goes at the end.
+- **The neighbour's farmhouse is an upland house of her own** (a 15 m two-storey range under a 35 degree stone-slate roof, coped gables with kneelers and a stack each, mullioned windows, an off-centre door in a stone surround, a wing of newer stone, a catslide over a scullery, a limewashed east gable and a walled front garden; the same on both layouts): "Her upland farmhouse (#910)".
 
 ## Mud (2026-10-05)
 
@@ -1707,3 +1708,12 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - A limb 6.5 m long runs level east over the water at about 3 m, with a collar, a droop at its end, two twigs and leaf clumps. `group.userData.swing` is the point 80% of the way along it, where #147's rope swing hangs. The fallen limb lies on the land side.
 - The bank under the limb is kept clear: the pond's reeds are left off a 4.5 m circle there (`hillProps.js`), and the meadow's own oak at offset (-10, -3) from the pond was dropped from `HILL_PLAN.meadow.trees`, as the veteran stands where it did. Trunk collider as the other field oaks (`trunk`), name in `SET_PIECE_NAMES`, `tp me to pollardoak`.
 - Looked at with `tools/shot.mjs` from the south-west: the dead spikes and the dome read from 45 m. The tool hides the body of a tree with a group box this small, so it was shot with `--keep` and a placed eye.
+
+## Her upland farmhouse (#910)
+
+- The box of four-square stone with a grid of sashes became `buildFarmhouse` (`neighbourFarmProps.js`), a Pennine house of the 1700s that no house in the village resembles. The main range is 15 by 8.4 m, walls 5 m, ridge 7.9 m (34.6 degrees), the front facing the yard. The layout's `house` gained `wing`, `leanTo` and `garden` (and `door.x` 11 from the middle of the range, `backDoor`, `garden.gate`) on both layouts, so `neighbourFarmShape` gives three footprints and `builtAt`, `covered`, `sightBuildings` and the map follow them; the wing is the low later part at the west end (ridge 5.9 m, newer paler stone) and the lean-to is a scullery at the back whose roof is the main south slope carried on down to 2.5 m (a catslide), cut as three slabs so only the scullery's width is long.
+- Walls are one plane each, seen from outside (`wallFace`), because a solid 5 by 8 by 15 m box fails the bare-block test and its hidden faces counted in the surface the triangle floor is judged by. Everything on a wall (`onWall`) runs a few mm into it by its own amount, and the stood-on-ground parts a few mm into the ground, so the many backs and bottoms never share a plane (`tests/farmhouse.test.js` runs `coplanarOverlaps` over the house). Each window picks the lit or the dark glass at random.
+- New textures in `neighbourTextures.js`: `oldStoneTexture`, `newStoneTexture`, `dressedStoneTexture` (lintels, mullions, hoods, copings, kneelers, flags), `stoneSlateTexture`, `limewashTexture` (a few big peeled patches, four metres a tile, no repeating foot band: a band showed as stripes), `castIronTexture`, `lawnTexture`, `flowersTexture` and `logStackTexture`. The bench, butt and bins moved from the yard builder into the house's, as the butt now stands under the east downpipe's foot.
+- Walked in `tests/farmhouseEntry.test.js` (a capsule from the yard through the garden's gate to the front step, round the back to the scullery door, and stopped by the garden wall elsewhere). The gate is hung open: it was a fixed leaf swung back, no gate to open, as it is the garden's, not a barrier.
+- The yard's random stream took 21,188 draws on today's farm (9,873 before): the new textures draw more. The far version gains the wing and the lean-to as two more low boxes (156 triangles, was 124).
+- Looked at with `tools/shot.mjs` (placed eyes, as the group's box frames the whole yard): the front with its door and garden, the east gable, the back and the west end. The limewash's first pass read as leopard spots (sixteen small patches, a damp band repeating every two metres), so it is four patches low, two at the eaves and one, with no band.

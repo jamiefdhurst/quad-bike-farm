@@ -92,7 +92,7 @@ export class World {
     this.sightBuildings = [
       ...this.detourBuildings,
       ...dutchBarnScreens(db),
-      ...(nb ? [nb.house.outer, nb.barn.outer, ...[nb.parlour, nb.tankRoom, nb.slurry].filter(Boolean).map((d) => d.outer)] : []),
+      ...(nb ? [nb.house.outer, ...[nb.house.wing, nb.house.leanTo].filter(Boolean).map((d) => d.outer), nb.barn.outer, ...[nb.parlour, nb.tankRoom, nb.slurry].filter(Boolean).map((d) => d.outer)] : []),
     ];
 
     this.sky = new Sky(scene, renderer, { ...SKY_PARAMS });
