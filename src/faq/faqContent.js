@@ -756,6 +756,14 @@ export const FAQ_SECTIONS = [
         tip: 'Helmet and goggles hang inside the barn door. Press E at the hook. Amy minds if you ride without.',
       },
       {
+        q: 'Can I hear Amy and Jess coming up behind me?',
+        a: `Yes. When you walk, your boots sound like what you are walking on: concrete in the yard and the barn, a crunch on the stone tracks, a squelch in
+          the mud and round the puddles, a rustle in the Dutch barn's straw, and softer on grass. The girls make the same sounds when they walk, quieter than
+          yours, and you can only hear them within about six metres, so you know one is behind you before you turn round. Stand still and the steps stop,
+          and riding makes none.`,
+        tip: 'Your boots, and the girls\', sound like the ground: concrete, gravel, mud, straw. Hear one coming up behind you.',
+      },
+      {
         q: 'Why does Amy keep going on about my helmet?',
         a: `Riding a quad, the mini moto, the three-wheeler or the tractor without a helmet, moving, with Amy close enough to see, gets you a telling-off,
           and then not again for a couple of minutes. Fetch yours from the hooks in the barn and she will say thank you instead. Jess does not mind.`,
