@@ -563,7 +563,7 @@ export function buildYardFurniture(shape, y0, dm, { random, fixedBox = () => nul
   for (const f of shape.furniture) {
     const fn = make[f.kind];
     if (!fn) continue;
-    place(f, fn, f.kind === 'catOnWall' ? wallTop : f.kind === 'bootsAtDoor' ? 0.18 : 0);
+    place(f, fn, f.kind === 'catOnWall' ? wallTop : f.kind === 'bootsAtDoor' ? 0.15 : 0);
   }
   // The barn's gable light: a backplate, a hood and a lens on the gable over the big door (the barn's door is in its gable wall).
   const b = shape.barn;

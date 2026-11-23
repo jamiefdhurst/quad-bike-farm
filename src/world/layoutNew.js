@@ -292,7 +292,7 @@ export const NEIGHBOUR_PLAN = {
     { kind: 'nameBoard', x: -45.4, z: 6.8 },
     { kind: 'kennel', x: 19.4, z: 19.2 },
     { kind: 'dogBowl', x: 18.2, z: 18.9 },
-    { kind: 'bootsAtDoor', x: 12.8, z: 20.9 },
+    { kind: 'bootsAtDoor', x: 14.1, z: 33.15 }, // on the scullery's back door step,
     { kind: 'muckHeap', x: -6, z: 38.8 },
     { kind: 'yardLight', x: 1.5, z: 0.5 },
   ],
