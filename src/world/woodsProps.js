@@ -40,6 +40,7 @@ export function buildWoods(c) {
 function buildTrees(c, woods) {
   const { models, layout, heights, physics, RAPIER, random, anchors } = c;
   const { trees, bushes } = woodsPlants(woods, layout, random);
+  woods.oaks = trees.map(([x, z, s]) => ({ x, z, s })); // dealt fresh each load, so the map (hud/farmMap.js) reads them from here
   const mats = [[], []];
   for (const [x, z, s] of trees) {
     const y = heights.heightAt(x, z);

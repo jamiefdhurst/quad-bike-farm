@@ -162,18 +162,9 @@ export class MapView {
     ctx.fillRect(0, 0, W, W);
     rect(f.ground, C.outside); // the neighbours' land; the sheet below it is the key's strip
     for (const a of f.areas) poly(a.points, a.fill);
-    for (const wd of [f.wood, f.woodland]) {
-      if (!wd) continue;
-      if (wd === f.wood) rect(wd, C.wood);
-      ctx.fillStyle = 'rgba(40, 70, 35, 0.35)';
-      for (let x = wd.minX + 3; x < wd.maxX; x += 6) {
-        for (let z = wd.minZ + 3 + ((x / 6) % 2) * 3; z < wd.maxZ; z += 6) {
-          ctx.beginPath();
-          ctx.arc(...P(x, z), Math.max(1.5, 1.8 * s), 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    }
+    if (f.wood) rect(f.wood, C.wood);
+    // Each oak the wood dealt, a dot as big as the tree.
+    for (const o of f.woodsOaks) disc(o.x, o.z, 1.1 * o.s, 'rgba(40, 70, 35, 0.35)');
 
     // The yard's hardstanding, the paddock, the drag strip's gravel.
     if (f.yard) disc(f.yard.x, f.yard.z, f.yard.r, C.gravel);

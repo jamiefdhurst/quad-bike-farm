@@ -5,6 +5,8 @@ import { Track } from '../src/world/track.js';
 import { boundary, gap } from '../src/world/fieldPlan.js';
 import { mapBounds, mapTransform, hedgeRuns, farmMapFeatures, placeMarkers, mapAngle, boxCorners, labelSpot, nameBox, countedName, keyStripHeight, DEFAULT_MAP_PARAMS, MAP_PARAM_RANGES, MAP_KEY_STRIP } from '../src/hud/farmMap.js';
 import { pointInPolygon } from '../src/world/polygons.js';
+import { createWoods, woodsPlants } from '../src/world/woods.js';
+import { createRandom } from '../src/core/random.js';
 
 const fields = createFields(LAYOUT);
 const track = new Track(LAYOUT.trackPoints);
@@ -305,3 +307,26 @@ describe('a farm drawn from fields that are polygons', () => {
   });
 });
 
+
+describe('the wood\'s oaks on the map (#847)', () => {
+  const woods = createWoods(LAYOUT);
+  const { trees } = woodsPlants(woods, LAYOUT, createRandom(7));
+  woods.oaks = trees.map(([x, z, s]) => ({ x, z, s }));
+  const f = farmMapFeatures(LAYOUT, { ...fields, woods }, track);
+
+  it('carries one dot for each oak, where it stands and as big as it is', () => {
+    expect(f.woodsOaks.length).toBe(trees.length);
+    expect(f.woodsOaks.length).toBeGreaterThan(50);
+    f.woodsOaks.forEach((o, i) => expect([o.x, o.z, o.s]).toEqual(trees[i]));
+  });
+
+  it('has no fixed spacing between neighbours, and none on the track, the pond or a bog', () => {
+    const gaps = f.woodsOaks.map((o, i) => Math.min(...f.woodsOaks.filter((_, j) => j !== i).map((p) => Math.hypot(p.x - o.x, p.z - o.z))));
+    expect(new Set(gaps.map((g) => Math.round(g * 2))).size).toBeGreaterThan(10);
+    for (const o of f.woodsOaks) expect(woods.treeOk(o.x, o.z)).toBe(true);
+  });
+
+  it('has none before the wood has dealt them', () => {
+    expect(farmMapFeatures(LAYOUT, createFields(LAYOUT), track).woodsOaks).toEqual([]);
+  });
+});
