@@ -1,4 +1,4 @@
-// The Fern Trail's things (world/woods.js, `woods.trail`): roots across the path, the log to hop, blue-banded way-marker posts, the sign at
+// The Fern Trail's things (world/woods.js, `woods.trail`): roots across the path, the log to hop, blue-banded way-marker posts, the marker at
 // the start, and ferns and brambles along its edges. Roots and the log have colliders (low rounded bumps, so a wheel rolls over them);
 // the plants don't, you ride through them.
 
@@ -8,7 +8,7 @@ import { tiledInstances } from './tiledInstances.js';
 import { matrixAt } from './hillProps.js';
 import { plantMaterial, fernTexture, brambleLeafTexture, fernGeometry, brambleGeometry } from './woodPlants.js';
 import { worldBox, canvasTexture } from './outbuildingProps.js';
-import { woodTexture, barkTexture, logEndTexture } from './neighbourTextures.js';
+import { woodTexture, barkTexture, logEndTexture, routedPostTexture, platedTexture } from './neighbourTextures.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 export const POST_BAND = 0.114; // m: the blue band round a way-marker post
@@ -24,7 +24,7 @@ export function buildTrail(c, woods) {
   buildRoots(c, trail, group);
   buildHopLog(c, trail.hop, group);
   buildPosts(c, trail, group);
-  buildSign(c, trail, group);
+  buildTrailSign(c, woods, group);
   c.scene.add(group);
   buildEdges(c, woods);
 }
@@ -191,58 +191,97 @@ function buildPosts(c, trail, group) {
   }
 }
 
-/** The board at the start: two posts, a painted board with the trail's name and a bike's welcome, a shingle cap, an arrow. Faces the gate. */
-function buildSign(c, trail, group) {
-  const { heights, random, fixedBox } = c;
-  const { x, z } = trail.entrance;
-  const y = heights.heightAt(x, z);
-  const sign = new THREE.Group();
-  sign.position.set(x, y - 0.1, z);
-  sign.rotation.y = 0.12; // a little round to the lead-in, to face the way you come in
-  const wood = new THREE.MeshStandardMaterial({ map: woodTexture(random, [96, 76, 52]), roughness: 0.95 });
-  const board = new THREE.MeshStandardMaterial({
-    map: canvasTexture(512, 256, (ctx, w, h) => {
-      ctx.fillStyle = '#1b3b2a';
-      ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = '#e8e2cc';
-      ctx.lineWidth = 8;
-      ctx.strokeRect(14, 14, w - 28, h - 28);
-      ctx.fillStyle = BLUE;
-      ctx.fillRect(14, h - 74, w - 28, 60);
-      ctx.fillStyle = '#e8e2cc';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      // Each line is shrunk until it fits inside the painted border, so none runs out past the edge.
-      const fit = (text, weight, size, family, y) => {
-        let px = size;
-        do ctx.font = `${weight} ${px--}px ${family}`;
-        while (ctx.measureText(text).width > w - 72 && px > 12);
-        ctx.fillText(text, w / 2, y);
-      };
-      fit('THE FERN TRAIL', 'bold', 54, 'Georgia, serif', 84);
-      fit('Two-wheelers welcome', '', 30, 'Georgia, serif', 138);
-      fit('Follow the blue posts  →', 'bold', 34, 'Arial, sans-serif', h - 44);
-    }),
-    roughness: 0.75,
-  });
-  for (const px of [-0.5, 0.5]) {
-    const post = new THREE.Mesh(worldBox(0.1, 1.35, 0.1, 1), wood);
-    post.position.set(px, 0.675, 0);
-    sign.add(post);
-    fixedBox(x + px * Math.cos(0.12), y + 0.675, z - px * Math.sin(0.12), 0.06, 0.68, 0.06);
+/** The marker's size in metres (the post's face, its bands and plate), which the lettering's boxes are checked against (tests/trailMarkers.test.js). */
+export const MARKER = {
+  w: 0.26, d: 0.14, h: 1.2, below: 0.15, // the post: its face is w by h, and it is set `below` m into the ground
+  name: { lines: ['FERN', 'TRAIL'], box: [0.04, 0.4] }, // the routed name, as fractions of the face's height from the top
+  band: { y: 0.62, h: POST_BAND }, // the blue band's middle, above the ground
+  plate: { w: 0.19, h: 0.07, y: 0.43, text: 'Two-wheelers' }, // no longer than a hand
+};
+
+/** The way the marker's face looks: towards the lead-in point 5 m up it towards the gate, which is where you come from. */
+function faceYaw(x, z, leadIn) {
+  let best = { d: Infinity, x: leadIn[0][0], z: leadIn[0][1] };
+  for (let i = 0; i + 1 < leadIn.length; i++) {
+    const [ax, az] = leadIn[i];
+    const [bx, bz] = leadIn[i + 1];
+    const len2 = (bx - ax) ** 2 + (bz - az) ** 2 || 1;
+    const t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / len2));
+    const px = ax + (bx - ax) * t;
+    const pz = az + (bz - az) * t;
+    const d = Math.hypot(px - x, pz - z);
+    if (d < best.d) best = { d, x: px, z: pz, dx: ax - bx, dz: az - bz, len: Math.sqrt(len2) };
   }
-  const face = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.55, 0.04), [wood, wood, wood, wood, board, wood]);
-  face.position.set(0, 0.98, 0.07);
-  const rail = new THREE.Mesh(worldBox(1.18, 0.045, 0.1, 1), wood); // the cap along the top, with a drip overhang
-  rail.position.set(0, 1.28, 0.08);
-  rail.rotation.x = -0.12;
-  const rail2 = new THREE.Mesh(worldBox(1.1, 0.05, 0.05, 1), wood); // and a batten behind the board
-  rail2.position.set(0, 0.75, 0.0);
-  sign.add(face, rail, rail2);
-  sign.traverse((o) => {
-    if (o.isMesh) o.castShadow = true;
-  });
-  group.add(sign);
+  const k = best.len ? 5 / best.len : 0; // towards the start of the lead-in, the gate
+  return Math.atan2(best.x + (best.dx ?? 0) * k - x, best.z + (best.dz ?? 0) * k - z);
+}
+
+/** The marker at the start: a squared oak post with the name routed in, a blue band and arrow disc, a small plate, set off the track in the leaf litter with ferns at its foot. `woods` is world/woods.js. */
+export function buildTrailSign(c, woods, group) {
+  const { heights, random, fixedBox, scene, drawDistance, autumn } = c;
+  const { x, z } = woods.trail.entrance;
+  const y = heights.heightAt(x, z);
+  const yaw = faceYaw(x, z, woods.leadIn);
+  const { w, d, h, below } = MARKER;
+  const root = new THREE.Group();
+  root.name = 'trailSign';
+  root.position.set(x, y, z);
+  root.rotation.y = yaw;
+  const lean = new THREE.Group(); // never quite true
+  lean.position.y = -below;
+  lean.rotation.set(-0.025, 0, 0.03);
+  root.add(lean);
+  const wood = new THREE.MeshStandardMaterial({ map: woodTexture(random, [122, 116, 104]), roughness: 0.95 });
+  const face = new THREE.MeshStandardMaterial({ map: routedPostTexture(random, { faceW: w, faceH: h + below, lines: MARKER.name.lines, box: MARKER.name.box.map((f) => f * h / (h + below)) }), roughness: 0.95 });
+  const part = (geo, mat, px, py, pz) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(px, py, pz);
+    m.castShadow = true;
+    lean.add(m);
+    return m;
+  };
+  part(new THREE.BoxGeometry(w, h + below, d), [wood, wood, wood, wood, face, wood], 0, (h + below) / 2, 0);
+  const cap = part(new THREE.ConeGeometry(0.5, 0.07, 4), wood, 0, h + below + 0.035 - 0.004, 0); // a chamfered top that sheds the rain
+  cap.rotation.y = Math.PI / 4;
+  cap.scale.set(w * 0.98, 1, d * 0.98);
+  part(new THREE.BoxGeometry(w + 0.03, 0.2, d + 0.03), new THREE.MeshStandardMaterial({ color: 0x4a5a30, roughness: 1 }), 0, below + 0.04, 0); // the green foot
+  const bandY = below + MARKER.band.y;
+  part(new THREE.BoxGeometry(w + 0.012, MARKER.band.h, d + 0.012), new THREE.MeshStandardMaterial({ color: BLUE, roughness: 0.7 }), 0, bandY, 0);
+  part(new THREE.CircleGeometry(DISC_RADIUS, 16), new THREE.MeshStandardMaterial({ map: arrowTexture(), roughness: 0.6 }), 0, bandY, d / 2 + 0.006 + 0.004);
+  const pl = MARKER.plate;
+  part(new THREE.BoxGeometry(pl.w, pl.h, 0.025), new THREE.MeshStandardMaterial({ map: platedTexture(random, pl.text, { plateW: pl.w, plateH: pl.h }), roughness: 0.85 }), 0, below + pl.y, d / 2 + 0.008);
+  // Moss on the north side, which is where the damp stays: flat patches half in the post.
+  const moss = new THREE.MeshStandardMaterial({ color: 0x5a7a30, roughness: 1 });
+  const nx = Math.sin(yaw);
+  const nz = -Math.cos(yaw);
+  for (const [up, s, across] of [[0.1, 1.5, -0.03], [0.22, 1.2, 0.04], [0.36, 0.8, -0.02], [0.52, 0.6, 0.03]]) {
+    const patch = part(new THREE.SphereGeometry(0.07 * s, 8, 6), moss, nx * (d / 2 - 0.012) + nz * across, below + up, nz * (d / 2 - 0.012) - nx * across);
+    patch.rotation.y = Math.atan2(nx, nz);
+    patch.scale.set(1.5, 0.9, 0.3); // a low cushion, wider than it is tall
+  }
+  // Leaf litter under it, a few brown and ochre scraps.
+  const litter = [0x6b4a28, 0x8a6a2e, 0x5a3e22].map((color) => new THREE.MeshStandardMaterial({ color, roughness: 1 }));
+  for (let i = 0; i < 9; i++) {
+    const leaf = new THREE.Mesh(new THREE.CircleGeometry(0.1 + random() * 0.12, 7), litter[i % 3]);
+    const a = random() * 6.28;
+    const r = 0.1 + random() * 0.45;
+    leaf.rotation.x = -Math.PI / 2;
+    leaf.position.set(Math.cos(a) * r, 0.015 + i * 0.005, Math.sin(a) * r);
+    root.add(leaf);
+  }
+  group.add(root);
+  fixedBox(x, y + h / 2, z, w / 2, h / 2, d / 2);
+  // Ferns round the foot, clear of the face so the lettering reads.
+  const fernMatrices = [];
+  for (let i = 0; i < 7; i++) {
+    const a = yaw + Math.PI * (0.5 + (i / 6) * 1.0) * (i % 2 ? 1 : -1) + random() * 0.4;
+    const r = 0.35 + random() * 0.35;
+    const fx = x + Math.sin(a) * r;
+    const fz = z + Math.cos(a) * r;
+    const s = 0.7 + random() * 0.5;
+    fernMatrices.push(matrixAt(fx, heights.heightAt(fx, fz) - 0.03, fz, random() * 6.28, s, s * (0.8 + random() * 0.4), s));
+  }
+  scene.add(drawDistance.add(tiledInstances(fernGeometry(random, { autumn, turn: autumn ? 0.25 : 0 }), plantMaterial(fernTexture(random)), fernMatrices, { name: 'ferns' }), 'roughDistance'));
 }
 
 /**

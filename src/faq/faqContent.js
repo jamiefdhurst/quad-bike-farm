@@ -1832,7 +1832,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'What is the Fern Trail, and can I take a quad on it?',
         a: `A narrow path for the two-wheelers (the Plover and the mini moto) through the same wood as the Hollow Run, about 390 m round and only 2 m wide. It starts beside the
-          lead-in from the gate, at a sign that says "The Fern Trail", and is marked by posts with a blue band and an arrow every 28 m or so, on the right as you follow it. It
+          lead-in from the gate, at a weathered oak post with "FERN TRAIL" routed into it, a blue band and a little "Two-wheelers" plate, set back in the leaf litter, and is marked by posts with a blue band and an arrow every 28 m or so, on the right as you follow it. It
           winds between the Hollow Run's rows and crosses the Run in four places, so watch for the other track. Along it there are clusters of roots across the path, a damp hollow
           or two, and one fallen log right across it, about 40 cm thick, to hop or roll over. Ferns and brambles grow along its edges. A quad will fit if you steer carefully, and
           the oaks close to the path are what makes the tight turns hard. The trail is on the map as a dashed line.`,

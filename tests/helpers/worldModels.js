@@ -104,6 +104,13 @@ export async function buildWorldModels() {
   const { buildWoods } = await import('../../src/world/woodsProps.js');
   add('setPiece', 'logs', buildWoods, (b) => (b(c), found('logs')));
   add('setPiece', 'trailMarkers', buildWoods, () => found('trailMarkers')); // made by the same call
+  const { buildTrailSign } = await import('../../src/world/trailProps.js');
+  const { createWoods } = await import('../../src/world/woods.js');
+  add('world', 'trailSign', buildTrailSign, (b) => {
+    const group = new THREE.Group();
+    b({ ...c, scene: new THREE.Scene() }, createWoods(LAYOUT), group);
+    return group.children[0];
+  });
   const { buildQuarry } = await import('../../src/world/quarryProps.js');
   add('setPiece', 'quarrySite', buildQuarry, (b) => (b(c), found('quarrySite')));
   const { buildPitBoundary } = await import('../../src/world/quarryProps.js');
