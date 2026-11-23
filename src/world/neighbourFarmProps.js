@@ -244,7 +244,6 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   const box = (w, ht, d, m, x, y, z, tile = 2) => add(worldBox(w, ht, d, tile), m, x, y, z);
   const sink = 0.4; // walls go this far into the ground, so no gap shows where it isn't quite level
   const eaveOver = 0.4;
-  const verge = 0.35;
 
   // A thing on a wall: `u` runs along it (a world x on a z-facing wall, a world z on an x-facing one), `v` is the height above y0, `w` is how far out from the wall's face `c`.
   // Each part's back runs on into the wall by its own few mm (`embed`), so the backs of the many parts on one wall never share a plane (tests/farmhouse.test.js).
@@ -434,7 +433,7 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   for (const sx of [-1, 1]) front(0.2, 0.3, 0.5, dressed, dx + sx * (dw / 2 + 0.3), 2.62, 0.28); // the hood's corbels
   const run = 0.95;
   const rise = 0.42;
-  const hood = front(dw + 1.1, 0.07, Math.hypot(run, rise), slate, dx, 2.99, run / 2 - 0.02, 2);
+  const hood = front(dw + 1.1, 0.07, Math.hypot(run, rise), slate, dx, 2.84, run / 2 - 0.02, 2); // low enough to rest on the corbels' tops, and its top at the wall under the upstairs sill (3.18 m)
   hood.rotation.x = -Math.atan2(rise, run);
   hood.position.z = northZ - run / 2 + 0.02;
   front(0.14, 0.22, 0.14, lampGlow, dx + 1.35, 1.9, 0.07);
@@ -474,7 +473,7 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   gutter(wingRoofX0 + 0.1, wing.outer.maxX - 0.1, wEdge - 0.05, wing.outer.maxZ + eaveOver - 0.04);
   pipe(h.outer.minX + 0.7, northZ - eaveOver + 0.04, edgeY - 0.1, 0.1);
   const buttX = h.outer.maxX - 0.3; // the downpipe at the east end of the front feeds the water butt below it
-  pipe(buttX, northZ - eaveOver + 0.04, edgeY - 0.1, 1.05);
+  pipe(buttX, northZ - eaveOver + 0.04, edgeY - 0.1, 0.99); // into the butt's lid (its top is at 0.995)
   pipe(lx1 - 0.2, lean.outer.maxZ + 0.31, eaveY - 0.1, 0.1);
   pipe(wing.outer.minX + 0.3, wing.outer.minZ - eaveOver + 0.04, wEdge - 0.1, 0.1);
   // The water butt: a barrel under the east downpipe's foot, with a lid the pipe runs into, a tap low down, a drip stone under it.
@@ -540,7 +539,11 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   const leaf = gateLeaf(timber, iron, 1.0);
   leaf.scale.y = 0.75;
   leaf.position.set(g.gate.x - g.gate.halfWidth - 0.02, y0 + 0.02, gz + 0.22); // swung in to lie along +z, clear of the path
-  group.add(leaf);
+  leaf.updateMatrix();
+  for (const o of [...leaf.children]) { // its parts straight into the group, so they merge with the rest (it never moves)
+    o.applyMatrix4(leaf.matrix);
+    group.add(o);
+  }
   const lawnW = g.maxX - g.minX - 0.8;
   const lawnD = g.maxZ - g.minZ - 0.4;
   const lawnTop = y0 + 0.045;
