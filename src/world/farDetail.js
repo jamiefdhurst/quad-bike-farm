@@ -20,7 +20,7 @@ export const BARN_PROP_NAMES = ['tyreRack', 'sparesRack', 'batteryCharger', 'hel
  */
 export const SET_PIECE_NAMES = ['village', 'laneBridge', 'neighbourFarm', 'neighbourLand', 'backLane', 'brushwood', 'logs', 'trailMarkers', 'coneCourse', 'climbCones', 'riverside', 'lineUpSleepers', 'quarrySite', 'pitFence', 'pitFlags', 'shepherdsHut', 'rolling-road-trailer',
   // The field landmarks (#815): the trees have a far version, so they stay in sight from the gates; the others go beyond `setPieceDistance`.
-  'loneOak', 'oldGateposts', 'deadElm', 'farPond', 'castRoller', 'loneAsh', 'brookAlders', 'bigOaks',
+  'loneOak', 'oldGateposts', 'deadElm', 'farPond', 'castRoller', 'loneAsh', 'brookAlders', 'bigOaks', 'pollardOak',
   // Hollow Wood's veteran oak and the woodpile's lean-to and block (#683).
   'veteranOak', 'logYardScenery',
   // The drive's cattle grid with its sign and wings, and the reflector posts at the lane end (#568).

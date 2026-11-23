@@ -1699,3 +1699,11 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - The oaks are dealt fresh on each load (`woodsPlants`, with the props' seeded random), so `buildTrees` keeps them on `fields.woods.oaks` (`{ x, z, s }`) and `farmMapFeatures` passes them as `woodsOaks`. The map is built after the world, so they are there; before the wood has dealt them the list is empty, not a lattice.
 - A dot is 1.1 m times the oak's scale across in map metres. Nothing extra keeps the Run, the pond and the bogs clear: `treeOk` already does when the oaks are dealt, and the test checks it for the dealt ones.
 - About 250 oaks on the new wood; drawn once into the fixed layer.
+
+## The Wet Meadow's veteran oak (#881)
+
+- The Wet Meadow's landmark (#815's list): a stag-headed pollard on the pond's west bank at plan (98, 291), `kind: 'pollardOak'` in `FIELD_LANDMARKS_PLAN`, built by `buildPollardOak` (`landmarkProps.js`) from `fieldOak` with a `pollard` option, so it shares the kit's bark, ivy, burr, hollow, worn earth and fallen limb. Behind `?layout=2` like the rest of the landmarks.
+- Scale 1.28 of the field oak: about 18 m tall (the meadow's oaks are 1.1 to 1.7 times the model, so it stands about a quarter over them), a bole 1.4 m across. The top fifth of the crown is left bare: its tips are 3 m grey dead spikes and no leaf clump covers them, so the stag head shows from across the meadow.
+- A limb 6.5 m long runs level east over the water at about 3 m, with a collar, a droop at its end, two twigs and leaf clumps. `group.userData.swing` is the point 80% of the way along it, where #147's rope swing hangs. The fallen limb lies on the land side.
+- The bank under the limb is kept clear: the pond's reeds are left off a 4.5 m circle there (`hillProps.js`), and the meadow's own oak at offset (-10, -3) from the pond was dropped from `HILL_PLAN.meadow.trees`, as the veteran stands where it did. Trunk collider as the other field oaks (`trunk`), name in `SET_PIECE_NAMES`, `tp me to pollardoak`.
+- Looked at with `tools/shot.mjs` from the south-west: the dead spikes and the dome read from 45 m. The tool hides the body of a tree with a group box this small, so it was shot with `--keep` and a placed eye.

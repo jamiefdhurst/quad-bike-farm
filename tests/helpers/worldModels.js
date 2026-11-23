@@ -146,6 +146,7 @@ export async function buildWorldModels() {
   add('setPiece', 'loneAsh', land.buildLoneAsh, (b) => b(c2, spot('loneAsh')));
   add('setPiece', 'brookAlders', land.buildAlders, (b) => b(c2, spot('brookAlders')));
   add('setPiece', 'bigOaks', land.buildBigOaks, (b) => b(c2, spot('bigOaks')));
+  add('setPiece', 'pollardOak', land.buildPollardOak, (b) => b(c2, spot('pollardOak')));
   // The Moor's set pieces and the models they are made of (#713), on the new farm.
   const moor = await import('../../src/world/moorProps.js');
   add('setPiece', 'moor', moor.buildMoorProps, (b) => (b(c2), found('moor')));

@@ -227,7 +227,7 @@ const OAK_LEAVES = ['#4a6b2a', '#567a30', '#3f5d26', '#617f33'];
  * boughs that sweep out almost level, clumps of leaves along them, a few bare dead tips, a burr, a broken stub, ivy up one side, a worn ring of earth, and
  * a limb that came down in a gale lying under it. `hollow` cuts a hollow in the bole. The trunk is a collider the winch can hook.
  */
-function fieldOak(c, group, body, x, z, s, { hollow = false, ivySide = 0, name = 'fieldOak' } = {}) {
+function fieldOak(c, group, body, x, z, s, { hollow = false, ivySide = 0, name = 'fieldOak', pollard = null } = {}) {
   const { heights, random } = c;
   const T = texturesOf(c);
   const y = heights.heightAt(x, z);
@@ -245,12 +245,28 @@ function fieldOak(c, group, body, x, z, s, { hollow = false, ivySide = 0, name =
   const burr = new THREE.SphereGeometry(0.3 * s, 8, 6);
   burr.scale(1, 1.3, 1);
   parts.push(burr.translate(Math.cos(away + 0.9) * radiusAt(1.5 * s) * 0.95, 1.5 * s, Math.sin(away + 0.9) * radiusAt(1.5 * s) * 0.95));
-  const dead = tips.filter(() => random() < 0.14);
-  for (const t of dead) parts.push(limb(t.at, t.at.clone().addScaledVector(t.dir, 1.6 * s), t.r, t.r * 0.3, 6));
-  bark.add(mesh(mergeGeometries(parts), std(T.bark.oak), 'oakBark'));
+  // A stag-headed pollard has lost the top of its crown: the highest tips are long grey dead spikes standing clear of the leaves.
+  const topY = Math.max(...tips.map((t) => t.at.y));
+  const dead = tips.filter((t) => (pollard ? t.at.y > topY * 0.8 || random() < 0.1 : random() < 0.14));
+  for (const t of dead) parts.push(limb(t.at, t.at.clone().addScaledVector(t.dir, (pollard ? 2.6 : 1.6) * s), t.r, t.r * 0.3, 6));
   const live = tips.filter((t) => !dead.includes(t)).map((t) => t.at);
-  const along = segs.filter((sg) => sg.b.y > bole + 0.5).map((sg) => sg.b);
+  const along = segs.filter((sg) => sg.b.y > bole + 0.5 && !(pollard && sg.b.y > topY * 0.8)).map((sg) => sg.b); // no leaves on a pollard's top, so its dead tips show
   const centres = [...live, ...along].map((p) => p.clone().add(new THREE.Vector3((random() - 0.5) * 1.2, (random() - 0.3) * 0.8, (random() - 0.5) * 1.2)));
+  if (pollard) {
+    // The long low limb, level out over the water at about 3 m: it thickens into the bole, droops a little at its end and carries a few leaf clumps and a dead twig.
+    const dir = new THREE.Vector3(Math.cos(pollard.limbYaw), 0, Math.sin(pollard.limbYaw));
+    const root = dir.clone().multiplyScalar(R * 0.5).setY(pollard.limbHeight);
+    const mid = root.clone().addScaledVector(dir, pollard.limbLength * 0.55).setY(pollard.limbHeight + 0.35);
+    const end = root.clone().addScaledVector(dir, pollard.limbLength).setY(pollard.limbHeight + 0.05);
+    const across = new THREE.Vector3(-dir.z, 0, dir.x);
+    parts.push(limb(root, mid, 0.3, 0.2, 8), limb(mid, end, 0.2, 0.09, 7));
+    parts.push(limb(root.clone().addScaledVector(dir, -0.1).setY(pollard.limbHeight - 0.5), root.clone().addScaledVector(dir, 1.2).setY(pollard.limbHeight + 0.1), R * 0.5, 0.26, 8)); // the collar under it
+    parts.push(limb(mid, mid.clone().addScaledVector(across, 1.6).setY(mid.y + 1.3), 0.09, 0.04, 5)); // a side twig
+    parts.push(limb(mid.clone().lerp(end, 0.5), mid.clone().lerp(end, 0.5).addScaledVector(across, -1.2).setY(mid.y + 0.5), 0.07, 0.03, 5));
+    for (const f of [0.35, 0.6, 0.85, 1]) centres.push(mid.clone().lerp(end, f).add(new THREE.Vector3(0, 0.5 + random() * 0.4, 0)).addScaledVector(across, (random() - 0.5) * 1.2));
+    group.userData.swing = new THREE.Vector3(x, 0, z).addScaledVector(dir, pollard.limbLength * 0.8).setY(heights.heightAt(x + dir.x * pollard.limbLength * 0.8, z + dir.z * pollard.limbLength * 0.8) + pollard.limbHeight + 0.2);
+  }
+  bark.add(mesh(mergeGeometries(parts), std(T.bark.oak), 'oakBark'));
   bark.add(mesh(foliage(random, centres, 2.1 * s, OAK_LEAVES, 0.7), leafMaterial(), 'oakLeaves'));
   detail.add(mesh(ivy(random, radiusAt, 0.2, 2.4 * s, ivySide), leafMaterial(), 'oakIvy'));
   if (hollow) {
@@ -262,7 +278,7 @@ function fieldOak(c, group, body, x, z, s, { hollow = false, ivySide = 0, name =
   }
   group.add(groundDisc(heights, detail.position, 6.5 * s, 6.5 * s, T.earth));
   // The limb that came down, with sticks round it.
-  const yaw = random() * TAU;
+  const yaw = pollard ? pollard.limbYaw + Math.PI + (random() - 0.5) * 1.2 : random() * TAU; // a pollard's lies on the land side, never in the water
   const from = new THREE.Vector3(Math.cos(yaw) * R * 2.4, 0.12, Math.sin(yaw) * R * 2.4);
   const to = from.clone().add(new THREE.Vector3(Math.cos(yaw + 0.3) * 4.2 * s, 0.05, Math.sin(yaw + 0.3) * 4.2 * s));
   const side = (dy, dx, dz, r0) => limb(from.clone().lerp(to, 0.3).add(new THREE.Vector3(0, 0.1, 0)), from.clone().lerp(to, 0.3).add(new THREE.Vector3(dx, dy, dz)), r0, r0 * 0.4, 6);
@@ -294,6 +310,22 @@ export function buildVeteranOak(c, spot) {
   const body = new THREE.Group();
   group.userData.body = body;
   fieldOak(c, group, body, spot.at[0], spot.at[1], 1, { hollow: true, ivySide: 2.4, name: 'veteranOak' });
+  finish(group);
+  finish(body);
+  return group;
+}
+
+/**
+ * The Wet Meadow's veteran oak (#881): a stag-headed pollard on the pond's west bank, a quarter taller than the meadow's oaks (about 18 m), its bole 1.4 m
+ * across with a hollow and ivy, bare grey dead tips above a green crown, and a long limb 6.5 m out level over the water at about 3 m. The limb is the
+ * one the rope swing hangs from (#147): `userData.swing` is the point on it, and the bank under it is left bare. `spot.limbYaw` is the way it points.
+ */
+export function buildPollardOak(c, spot) {
+  const group = new THREE.Group();
+  group.name = 'pollardOak';
+  const body = new THREE.Group();
+  group.userData.body = body;
+  fieldOak(c, group, body, spot.at[0], spot.at[1], 1.28, { hollow: true, ivySide: 2.0, name: 'pollardOak', pollard: { limbYaw: spot.limbYaw, limbHeight: 3, limbLength: 6.5 } });
   finish(group);
   finish(body);
   return group;
@@ -692,6 +724,7 @@ const BUILDERS = {
   loneAsh: buildLoneAsh,
   brookAlders: buildAlders,
   bigOaks: buildBigOaks,
+  pollardOak: buildPollardOak,
 };
 
 /** The textures the landmarks share, drawn once. */
