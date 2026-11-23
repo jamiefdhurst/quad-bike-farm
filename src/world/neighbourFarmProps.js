@@ -393,7 +393,7 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
     const top = h.ridge + 1.35;
     box(1.0, top - (h.ridge - 1.3), 0.9, oldStone, x, y0 + (top + h.ridge - 1.3) / 2, h.z);
     box(1.14, 0.12, 1.04, dressed, x, y0 + top + 0.06, h.z, 1); // the cap
-    for (const dz of [-0.24, 0.24]) add(new THREE.CylinderGeometry(0.1, 0.13, 0.4, 8), pots, x, y0 + top + 0.32, h.z + dz);
+    for (const dz of [-0.24, 0.24]) add(new THREE.CylinderGeometry(0.1, 0.13, 0.4, 6, 1, true), pots, x, y0 + top + 0.32, h.z + dz);
   }
 
   // The wall trims: `w` 0 is the wall's face. A mullioned window of `lights` lights: glass, a stone mullion between each, a sill and a drip hood over, set on the wall at `u`.
@@ -430,7 +430,7 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   for (const sx of [-1, 1]) front(0.22, dh + 0.1, 0.1, dressed, dx + (sx * (dw + 0.22)) / 2, dh / 2 + 0.05, 0.05);
   front(dw + 0.8, 0.3, 0.16, dressed, dx, dh + 0.25, 0.08); // the deep lintel
   front(dw, dh, 0.08, doorMat, dx, dh / 2, 0.04, [dw, dh]);
-  add(new THREE.SphereGeometry(0.035, 8, 6), brass, dx + dw / 2 - 0.12, y0 + 1.0, northZ - 0.1);
+  add(new THREE.SphereGeometry(0.035, 6, 4), brass, dx + dw / 2 - 0.12, y0 + 1.0, northZ - 0.1);
   for (const sx of [-1, 1]) front(0.2, 0.3, 0.5, dressed, dx + sx * (dw / 2 + 0.3), 2.62, 0.28); // the hood's corbels
   const run = 0.95;
   const rise = 0.42;
@@ -463,7 +463,7 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
     add(geo, castIron, (x0 + x1) / 2, y0 + y, z);
     for (let i = 0; i < brackets; i++) box(0.03, 0.05, 0.16, castIron, x0 + 0.3 + (i * (x1 - x0 - 0.6)) / Math.max(1, brackets - 1), y0 + y - 0.04, z, 1);
   };
-  const pipe = (x, z, yTop, yBottom) => add(new THREE.CylinderGeometry(0.045, 0.045, yTop - yBottom, 8), castIron, x, y0 + (yTop + yBottom) / 2, z);
+  const pipe = (x, z, yTop, yBottom) => add(new THREE.CylinderGeometry(0.045, 0.045, yTop - yBottom, 8, 1, true), castIron, x, y0 + (yTop + yBottom) / 2, z);
   const edgeY = h.ridge - kMain * (h.halfZ + eaveOver);
   gutter(rx0 + 0.1, rx1 - 0.1, edgeY - 0.05, northZ - eaveOver + 0.04, 4);
   gutter(rx0 + 0.1, lx0 - 0.05, edgeY - 0.05, h.outer.maxZ + eaveOver - 0.04);
@@ -480,8 +480,8 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   // The water butt: a barrel under the east downpipe's foot, with a lid the pipe runs into, a tap low down, a drip stone under it.
   const butt = std(barrelTexture(), { color: 0x2f5a6c, roughness: 0.55 });
   const bz = northZ - 0.55;
-  add(new THREE.CylinderGeometry(0.36, 0.3, 0.95, 16), butt, buttX, y0 + 0.475, bz);
-  add(new THREE.CylinderGeometry(0.38, 0.38, 0.05, 16), mat(0x1c3440), buttX, y0 + 0.97, bz);
+  add(new THREE.CylinderGeometry(0.36, 0.3, 0.95, 12), butt, buttX, y0 + 0.475, bz);
+  add(new THREE.CylinderGeometry(0.38, 0.38, 0.05, 12), mat(0x1c3440), buttX, y0 + 0.97, bz);
   add(new THREE.CylinderGeometry(0.03, 0.03, 0.14, 8), brass, buttX - 0.34, y0 + 0.18, bz).rotation.z = Math.PI / 2;
   fixedBox(buttX, y0 + 0.475, bz, 0.36, 0.5, 0.36);
 
@@ -490,7 +490,7 @@ export function buildFarmhouse(s, y0, { fixedBox, random }) {
   const gableE = onWall('x', 1, h.outer.maxX + 0.03);
   gableE(0.3, 0.45, 0.18, paint, h.z - 3.2, 1.4, 0.09); // the meter box
   gableE(0.12, 0.1, 0.03, iron, h.z - 3.2, 1.5, 0.2); // its window
-  add(new THREE.SphereGeometry(0.4, 12, 6, 0, Math.PI * 2, 0, Math.PI / 3), mat(0xc9cdcf, { roughness: 0.5, side: THREE.DoubleSide }), h.outer.maxX + 0.5, y0 + 4.3, h.z - 2.2).rotation.z = -Math.PI / 2 + 0.25; // the dish
+  add(new THREE.SphereGeometry(0.4, 12, 2, 0, Math.PI * 2, 0, Math.PI / 3), mat(0xc9cdcf, { roughness: 0.5, side: THREE.DoubleSide }), h.outer.maxX + 0.5, y0 + 4.3, h.z - 2.2).rotation.z = -Math.PI / 2 + 0.25; // the dish
   gableE(0.04, 0.04, 0.4, iron, h.z - 2.2, 4.3, 0.2);
   const tapOn = back;
   tapOn(0.04, 0.5, 0.04, iron, h.x - 2, 0.65, 0.06);
