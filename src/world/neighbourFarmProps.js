@@ -11,6 +11,7 @@ import { buildVehicleBody } from './trafficView.js';
 import { enableShadows } from './assets.js';
 import { buildFarVersion } from './farVersion.js';
 import { createRandom } from '../core/random.js';
+import { paintConcrete } from './concretePaint.js';
 import { buildYardFurniture, buildYardMarks } from './neighbourYardProps.js';
 import { dairyMaterials, buildParlour, buildCollectingYard, buildTankRoom, buildSlurryStore } from './dairyKit.js';
 import { Gate } from './gates.js';
@@ -19,6 +20,13 @@ import {
   woodTexture, paintedTexture, doorTexture, sashTexture, binTexture, barrelTexture, barkTexture, logEndTexture, postboxTexture, dressedStoneTexture, oldStoneTexture, newStoneTexture,
   stoneSlateTexture, limewashTexture, castIronTexture, lawnTexture, flowersTexture, logStackTexture,
 } from './neighbourTextures.js';
+
+const SLAB_TILE = 16; // m across one tile of the yard's concrete
+const SLAB_TILES = 4; // how many different ones
+/** Which of the slab's tiles the cell at (i, j) takes: no two neighbours, across or down, the same. */
+export function slabTileAt(i, j) {
+  return (i + 2 * j) % SLAB_TILES;
+}
 
 /** Slate: courses of dark grey tiles, one tile 1 m square, a few paler or greener. */
 export function slateTexture(random) {
@@ -39,34 +47,13 @@ export function slateTexture(random) {
   });
 }
 
-/** Worn concrete: pale grey with joints every 4 m, oil stains and the odd crack. One tile is 4 m square. */
-export function concreteTexture(random) {
-  return canvasTexture(512, 512, (ctx, w, h) => {
-    ctx.fillStyle = '#9d9b94';
-    ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 90; i++) {
-      const x = random() * w;
-      const y = random() * h;
-      const r = 8 + random() * 40;
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      const dark = random() < 0.6;
-      g.addColorStop(0, dark ? 'rgba(60,55,50,0.14)' : 'rgba(210,205,195,0.1)');
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(x - r, y - r, r * 2, r * 2);
-    }
-    for (let i = 0; i < 6; i++) {
-      const x = random() * w;
-      const y = random() * h;
-      ctx.fillStyle = 'rgba(25,22,18,0.35)'; // oil
-      ctx.beginPath();
-      ctx.ellipse(x, y, 6 + random() * 14, 4 + random() * 8, random() * 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.strokeStyle = 'rgba(50,48,44,0.7)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, w, h);
-  });
+/**
+ * Worn concrete (concretePaint.js): joints every 4 m, ragged oil and diesel stains, damp, slime, tread and blade marks, cracks and a patched square.
+ * One tile is `metres` square, 4 to begin with; the yard's slab takes four of 16 m so no mark repeats within sight.
+ */
+export function concreteTexture(random, metres = 4) {
+  const px = metres > 8 ? 1024 : 512;
+  return canvasTexture(px, px, (ctx) => paintConcrete(ctx, px, metres, random));
 }
 
 /** Barn straw bales: pale gold with the baler's two strings. One tile is a bale's long face. */
@@ -593,8 +580,34 @@ export function buildNeighbourFarm(c) {
   // The yard's concrete, a hair above the ground (which is level at y0 inside the wall), so a tyre on it sits 1.5 cm in at most.
   const slab = s.slab;
   const top = y0 + 0.015;
-  const yardConcrete = new THREE.MeshStandardMaterial({ map: concreteTexture(random), roughness: 0.95 });
-  box(slab.maxX - slab.minX, 0.08, slab.maxZ - slab.minZ, yardConcrete, (slab.minX + slab.maxX) / 2, top - 0.04, (slab.minZ + slab.maxZ) / 2, 4);
+  // The ramp's and the dairy's concrete draws from a stream of its own; 390 numbers are taken from `random` as the old texture took them, so what is dealt after
+  // it (the trees) stands where it did (#969).
+  for (let i = 0; i < 390; i++) random();
+  const yardConcrete = new THREE.MeshStandardMaterial({ map: concreteTexture(createRandom(9121)), roughness: 0.95 });
+  // The slab is laid in 16 m cells, each taking one of four different tiles by its place, so the same mark never shows twice in sight (#912).
+  const slabRandom = createRandom(912);
+  const slabMats = Array.from({ length: SLAB_TILES }, () => new THREE.MeshStandardMaterial({ map: concreteTexture(slabRandom, SLAB_TILE), roughness: 0.95 }));
+  const slabParts = slabMats.map(() => []);
+  const cx = Math.ceil((slab.maxX - slab.minX) / SLAB_TILE);
+  const cz = Math.ceil((slab.maxZ - slab.minZ) / SLAB_TILE);
+  for (let i = 0; i < cx; i++) {
+    for (let j = 0; j < cz; j++) {
+      const x0 = slab.minX + i * SLAB_TILE;
+      const z0 = slab.minZ + j * SLAB_TILE;
+      const x1 = Math.min(slab.maxX, x0 + SLAB_TILE);
+      const z1 = Math.min(slab.maxZ, z0 + SLAB_TILE);
+      const geo = worldBox(x1 - x0, 0.08, z1 - z0, SLAB_TILE);
+      geo.translate((x0 + x1) / 2, top - 0.04, (z0 + z1) / 2);
+      slabParts[slabTileAt(i, j)].push(geo);
+    }
+  }
+  slabMats.forEach((m, n) => {
+    if (!slabParts[n].length) return;
+    const mesh = new THREE.Mesh(slabParts[n].length > 1 ? mergeGeometries(slabParts[n]) : slabParts[n][0], m);
+    mesh.name = 'yardSlab';
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  });
 
   // The wall: drystone with a capping course, and a stone pillar either side of the gateway.
   const cap = mat(0x77736a);
