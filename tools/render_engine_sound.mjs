@@ -1,12 +1,13 @@
 // Renders a vehicle's engine sound offline to a WAV, through the real engine model and the real worklet, with no browser:
 // cheap enough to compare banks and settings by ear or by numbers.
 //
-//   node tools/render_engine_sound.mjs <vehicle id> <out.wav> [--bank path/to/bank.json] [--set param=value ...] [--start]
+//   node tools/render_engine_sound.mjs <vehicle id> <out.wav> [--bank path/to/bank.json] [--set param=value ...] [--start] [--cold] [--blow level]
 //
 // The vehicle id is a spec's id (farm300, bruin, hartley, yak, tor, ...). --bank plays another bank (its WAV beside it, same
 // name) instead of the spec's recBank; --set overrides an audio param (numbers or strings). The engine starts warm and runs
 // one timeline, printed as it goes: idle 4 s, full throttle 7 s, idle 4 s, half throttle 4 s, full throttle 6 s, idle 3 s,
-// with no load (stood still, revving), its roughness the middle of its range and on its own fuel. --start records the start
+// with no load (stood still, revving), its roughness the middle of its range and on its own fuel. --cold starts from stone cold metal (with the choke following the temperature, so it warms as it runs) and --blow <0..1> gives it a leaking
+// exhaust joint of that level, which ticks and chuffs while the metal is cold (#211); both are needed to hear it. --start records the start
 // first instead of skipping it: key on (glow plugs a few seconds), the starter until it catches, then a few seconds of tickover;
 // with --no-catch as well, the tank is empty, so it cranks for four seconds without catching. Rendered at 48 kHz, written at half scale so the soft clipper's top isn't clipped again.
 
@@ -100,10 +101,13 @@ let seed = 7;
 const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 // The middle of its roughness range, and its own fuel: a diesel's engine reads a missing `diesel` as petrol and runs soaked in it.
 const rough = spec.roughnessRange ? { baseRoughness: (spec.roughnessRange[0] + spec.roughnessRange[1]) / 2 } : {};
-const engine = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...spec.engine, ...rough, initialTemperature: 1 }, { random });
+const engine = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...spec.engine, ...rough, initialTemperature: args.includes('--cold') ? 0 : 1 }, { random });
 // --no-catch cranks on an empty tank, so the starter can be heard on its own for as long as it's held.
 const fuel = { fuel: process.argv.includes('--no-catch') ? 0 : 1, diesel: spec.fuel?.startDiesel ?? 0 };
 const recordStart = args.includes('--start');
+const blowAt = args.includes('--blow') ? Math.max(0, Math.min(1, Number(args[args.indexOf('--blow') + 1]) || 0)) : 0;
+// A cold engine wants its choke, easing off as it warms; a warm one wants none. The joint's level goes to every step.
+const fed = () => ({ ...fuel, exhaustBlow: blowAt, choke: args.includes('--cold') ? Math.max(0, Math.min(1, 1 - 2 * engine.temperature)) : 0 });
 const GLOW = 3; // seconds with the key on before the starter (a diesel's glow plugs; a petrol engine doesn't mind)
 engine.setIgnition(true);
 // A bike with no starter motor is kicked over every 1.5 s instead (after its ritual: the spark lever back and a tickle or two), as a person would.
@@ -117,9 +121,9 @@ const kickNow = (s) => noStarter && !engine.isRunning && Math.abs(((s % kickEver
 if (!recordStart) {
   for (let t = 0; t < 30 && !engine.isRunning; t += DT) {
     kickNow(t - 4);
-    engine.update(DT, { ...fuel, starter: !noStarter && t > 8 });
+    engine.update(DT, { ...fed(), starter: !noStarter && t > 8 });
   }
-  for (let t = 0; t < 3; t += DT) engine.update(DT, fuel);
+  for (let t = 0; t < 3; t += DT) engine.update(DT, fed());
   if (!engine.isRunning) throw new Error(`${id} never started`);
 }
 
@@ -139,11 +143,11 @@ for (const [step, dur, throttle = 0] of plan) {
       if (s - caughtAt > 0.5) break;
     }
     if (step === 'crank') kickNow(s);
-    engine.update(DT, { ...fuel, throttle, starter: !noStarter && step === 'crank' && !engine.isRunning });
+    engine.update(DT, { ...fed(), throttle, starter: !noStarter && step === 'crank' && !engine.isRunning });
     top = Math.max(top, engine.rpm);
     const start = (frame + 0.05 * SR) / SR; // a little latency, as in the game
     const events = engine.pulses.map((p) => ({ time: start + p.t, type: p.type, strength: p.strength, period: p.period }));
-    for (const e of engine.events ?? []) events.push({ time: start + e.t, type: e.type, strength: e.strength });
+    for (const e of engine.events ?? []) events.push({ time: start + e.t, type: e.type, strength: e.type === 'blow' ? engine.blow : e.strength }); // (as engineAudio.js does)
     proc.onMessage({
       params,
       state: {
