@@ -148,12 +148,12 @@ export function createHill(layout) {
   }
 
   /**
-   * The stream's channel west of the pasture's hedge, to the ford at Back Lane (#686): the hill's own profile fades out there over 40 m, so the cut is what
+   * The stream's channel west of the pasture's hedge, to the ford at Back Lane (#686): the hill's own profile fades out there over `fade` (40 m), so the cut is what
    * it leaves out, `(1 - weight)` of the channel, so the two make one channel the whole way. 0 on a farm whose stream ends at the hedge.
    */
-  function westCut(x, z) {
+  function westCut(x, z, fade = 40) {
     if (!westEnd || x >= pasture.minX) return 0;
-    return (1 - weight(x, z)) * channelAt(x, z);
+    return (1 - weight(x, z, fade)) * channelAt(x, z);
   }
 
   /**
@@ -176,11 +176,12 @@ export function createHill(layout) {
   /**
    * 0..1 how much of the ground at (x, z) is the hill's own (profile) rather than the neighbouring farmland: all of it in the lane and the
    * pasture, fading out over 40 m beyond their hedges (and over 30 m round the lane) so the hill rolls away into the country round it.
+   * `fade` is that 40 m: the new farm has no rise beyond the hedges to hold the hill's edge up, so terrainHeight.js asks for a longer one (#945).
    */
-  function weight(x, z) {
+  function weight(x, z, fade = 40) {
     if (inRect(farm, x, z)) return 0;
-    let w = Math.max(1 - smoothstep(0, 40, outside(pasture, x, z)), 1 - smoothstep(0, 30, outside(laneRect, x, z)));
-    if (pad) w = Math.max(w, 1 - smoothstep(0, 40, outside(west, x, z)), 1 - smoothstep(0, 40, outside(east, x, z)));
+    let w = Math.max(1 - smoothstep(0, fade, outside(pasture, x, z)), 1 - smoothstep(0, fade * 0.75, outside(laneRect, x, z)));
+    if (pad) w = Math.max(w, 1 - smoothstep(0, fade, outside(west, x, z)), 1 - smoothstep(0, fade, outside(east, x, z)));
     return w;
   }
 
