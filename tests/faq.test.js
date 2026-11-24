@@ -72,6 +72,12 @@ describe('FAQ sections', () => {
     const spoilers = FAQ_SECTIONS.flatMap((s) => s.entries).filter((e) => e.spoiler && e.tip);
     expect(spoilers).toEqual([]);
   });
+
+  it('tells you to sell a vehicle with the right arrow, not S (#940)', () => {
+    const tip = FAQ_SECTIONS.flatMap((s) => s.entries).find((e) => e.q === 'How do I sell a vehicle?').tip;
+    expect(tip).toMatch(/right arrow/);
+    expect(tip).not.toMatch(/\bS\b/);
+  });
 });
 
 describe('the controls list', () => {
