@@ -1749,16 +1749,18 @@ export const FAQ_SECTIONS = [
       {
         q: 'Are Amy and Jess shaped the same?',
         a: `No. They start from the same model, but each is reshaped as the game loads: Amy taller and more evenly built, Jess shorter
-          and curvier, with a fuller bust, a narrower waist and wider hips. The bust stands out less down her middle than at either
-          side, so there is a dip between the two, and a shirt's buttons and an open neck follow the middle of her chest rather than
-          a straight line down from her neck.`,
+          and curvier, with a narrower waist and wider hips. Both have a big bust, Jess's bigger and wider still, drawn afresh on the
+          model as two round breasts that hang: each grows out of her chest just under her collarbone, is fullest at about the middle
+          of her upper arm and curves round underneath. Their tops bridge the gap between them and fall from under them as a tight
+          top does, rather than following them in, and a jumper or a coat over the top keeps the same shape. A shirt's buttons and an
+          open neck follow the middle of her chest rather than a straight line down from her neck.`,
       },
       {
         q: 'Why do the girls wobble on a running quad?',
         a: `Their bodies give with the shake, as a real body does. Sat on something running, the seat's buzz shows in them: a lumpy single
           like the green gives a slow, heavy wobble and a smoother engine a quicker shiver. A bump, landing on the seat, jumping down or
           running makes their bust, belly, the backs of their arms and their seat bounce and settle over a couple of swings. Their clothes
-          move with them. The fuller the figure, the more it moves, so Jess wobbles more than Amy.`,
+          move with them. The fuller the figure, the more it moves: Jess's bust moves about twice as far as Amy's.`,
         tip: 'The girls give with the shake: the seat\'s buzz, a bump or a run makes them wobble, Jess more than Amy.',
       },
       {
