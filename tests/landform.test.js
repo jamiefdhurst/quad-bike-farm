@@ -81,15 +81,32 @@ describe('the ground that is built from it', () => {
     expect(moor - valley).toBeGreaterThan(90);
     expect(moor - valley).toBeLessThan(110);
   });
-  it('has no step the land\'s lie added: the steepest metre is the one today\'s ground has', () => {
+  it('has no metre steeper than today\'s hill fade, less the landform\'s own slope, anywhere but where it is cut on purpose (#945)', () => {
+    // 21 degrees is today's hill fade at its worst, measured on `resolveLayout(RAW_LAYOUT)`.
+    const cap = Math.tan((21 * Math.PI) / 180);
     const ground = two.ground;
-    const steepest = (h) => {
-      let worst = 0;
-      for (let x = ground.minX; x < ground.maxX; x += 9) {
-        for (let z = ground.minZ; z < ground.maxZ; z += 9) worst = Math.max(worst, Math.abs(h.heightAt(x + 1, z) - h.heightAt(x, z)));
+    const h = heights2;
+    const steep = [];
+    for (let x = ground.minX; x < ground.maxX; x += 5) {
+      for (let z = ground.minZ; z < ground.maxZ; z += 5) {
+        if (h.quarry && h.quarry.weight(x, z) > 0) continue; // the pit's own walls
+        if (x < -480) continue; // the hill's west edge, the stream's channel to Back Lane's ford (#686) and the moor's own ground, all shaped on purpose
+        if (h.woods && h.woods.weight(x, z) >= 1) continue; // the wood's own ground: the Run's banks
+        if (h.hill.weight(x, z) >= 1) continue; // the hill's own ground inside its hedges: its banks and the stream's channel are cut on purpose
+        const a = h.naturalAt(x, z);
+        const dx = Math.abs(h.naturalAt(x + 1, z) - a - (game(x + 1) - game(x)));
+        const dz = Math.abs(h.naturalAt(x, z + 1) - a);
+        if (Math.max(dx, dz) > cap) steep.push(`${x},${z}:${Math.max(dx, dz).toFixed(2)}`);
       }
-      return worst;
-    };
-    expect(steepest(heights2)).toBeLessThan(steepest(heights1) + 0.05);
+    }
+    expect(steep.slice(0, 20)).toEqual([]);
+  });
+  it('rides down from the pasture\'s south and east hedges, Back Lane\'s laid level ground included, in no more than 21 degrees (#945)', () => {
+    const cap = Math.tan((21 * Math.PI) / 180);
+    const h = heights2;
+    const worst = [];
+    for (const x of [-460, -380, -273, -200]) for (let z = 480; z < 530; z++) worst.push([Math.abs(h.heightAt(x, z + 1) - h.heightAt(x, z)), `x ${x}, z ${z}`]);
+    for (const z of [350, 450]) for (let x = -110; x < -50; x++) worst.push([Math.abs(h.heightAt(x + 1, z) - h.heightAt(x, z) - (game(x + 1) - game(x))), `x ${x}, z ${z}`]);
+    for (const [d, where] of worst) expect(d, where).toBeLessThan(cap);
   });
 });
