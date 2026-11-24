@@ -14,9 +14,9 @@ const DEPTH = [-0.14, 0.72]; // back and front of a deck
 const TOP = 2.7;
 
 // Bottom row: the biggest tyres. Top row: the smaller ones. `radius` and `width` are for the stack in the bay (a little under the real thing for the big ones, so it fits).
-const BAYS = [
+export const BAYS = [
   { size: 'tractor', label: 'TRACTOR', kind: 'tractor', radius: 0.38, width: 0.24, rimR: 0.22, lugs: 12 },
-  { size: 'landrover', label: 'LAND ROVER', kind: 'allTerrain', radius: 0.34, width: 0.21, rimR: 0.19, lugs: 14 },
+  { size: 'landrover', label: 'MOORLAND', kind: 'allTerrain', radius: 0.34, width: 0.21, rimR: 0.19, lugs: 14 },
   { size: 'utv', label: 'UTILITY', kind: 'allTerrain', radius: 0.31, width: 0.19, rimR: 0.17, lugs: 14 },
   { size: 'quad', label: 'QUAD', kind: 'atv', radius: 0.28, width: 0.19, rimR: 0.15, lugs: 11 },
   { size: 'kid', label: 'SMALL QUAD', kind: 'farm', radius: 0.2, width: 0.13, rimR: 0.1, lugs: 10 },
@@ -33,22 +33,47 @@ export function tagText(label, n) {
   return { label, none: n > 0 ? '' : 'NONE' };
 }
 
+const TAG_W = 256;
+const TAG_PAD = 14; // the card's margin inside its border, each side
+const TAG_GAP = 12; // least clear space between the size and NONE
+const NONE_PX = 18;
+const LABEL_PX = 26;
+const LABEL_MIN_PX = 14;
+
+/**
+ * Where the tag's two texts go: the size at the largest font (down to a floor) that leaves `TAG_GAP` before NONE, which is a smaller font of its own
+ * so the longest label and NONE sit on one card (#939). `measure(text, px)` is the width in pixels, so a test can pass its own.
+ */
+export function tagLayout(measure, label, none = 'NONE') {
+  const room = TAG_W - 2 * TAG_PAD;
+  const noneW = measure(none, NONE_PX);
+  let px = LABEL_PX;
+  while (px > LABEL_MIN_PX && measure(label, px) + TAG_GAP + noneW > room) px -= 1;
+  return { labelPx: px, nonePx: NONE_PX, labelW: measure(label, px), noneW, labelX: TAG_PAD, noneX: TAG_W - TAG_PAD };
+}
+
 /** The tag's card: the size in capitals and, to the right, NONE if the bay is empty. Redrawn when the bay empties or fills. */
 function drawTag(ctx, label, n) {
   ctx.fillStyle = '#e9e1c6';
-  ctx.fillRect(0, 0, 256, 64);
+  ctx.fillRect(0, 0, TAG_W, 64);
   ctx.strokeStyle = '#6b5a35';
   ctx.lineWidth = 3;
   ctx.strokeRect(2, 2, 252, 60);
   ctx.fillStyle = '#2a241a';
   ctx.textBaseline = 'middle';
-  ctx.font = boardFont('label', 26, 'bold');
-  ctx.textAlign = 'left';
+  const measure = (t, px) => {
+    ctx.font = boardFont('label', px, 'bold');
+    return ctx.measureText(t).width;
+  };
+  const lay = tagLayout(measure, label);
   const text = tagText(label, n);
-  ctx.fillText(text.label, 14, 34);
+  ctx.font = boardFont('label', lay.labelPx, 'bold');
+  ctx.textAlign = 'left';
+  ctx.fillText(text.label, lay.labelX, 34);
+  ctx.font = boardFont('label', lay.nonePx, 'bold');
   ctx.textAlign = 'right';
   ctx.fillStyle = '#a3281c';
-  ctx.fillText(text.none, 242, 34);
+  ctx.fillText(text.none, lay.noneX, 34);
 }
 
 export function buildTyreRackModel() {

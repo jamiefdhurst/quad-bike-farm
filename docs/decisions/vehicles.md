@@ -1399,3 +1399,9 @@ Settled with Jamie before building: this item is the mower itself and the mowing
 - **Cost.** 46,000 triangles and 224 meshes as built, 53 meshes once the yard has merged it by material (`mergeParkedVehicle`), against the Tor's 53, the UTV's 59 and the tractor's 31: `tests/loaderTractorModel.test.js` holds it under 80,000 triangles and 150 meshes.
 - **Looked at** with `tools/shot.mjs --at`: the first shot had the clay hidden by dark tyres, the mud splashes floating in the rear wheels and a bucket nearly black; the second the bucket's ribs baked into the body, from the missing keep. The third shows every item of the Looks like list.
 - **Fixed after the recheck (#1156).** The worn tread reached 3 to 4 cm less than the wheels' radius, so the tyres hovered while the bucket touched; it is scaled back to the radius, and a test stands the model as the yard does and checks every tyre's lowest point. The ram test now checks each end against the pin it belongs to (to 1 cm, five heights), and the four hose couplers are spread so none overlap.
+
+## #939: The tyre rack's tags
+
+- The tag for the Moorland's size said a real make; it now says MOORLAND, the game's name for it. The other seven labels were checked against `tools/realMakes.json` and name none.
+- `tests/noRealMakes.test.js` now looks for each make in capitals as well as in its written case (still case-sensitive otherwise, as "ford" is a place), so a printed tag or sign is caught.
+- A long label and the red NONE shared one 256 px tag and overlapped on an empty bay. NONE is now 18 px, and `tagLayout` shrinks the size label (26 px down to a floor of 14) until at least 12 px is clear between them. It measures with the canvas's own `measureText`, so it holds on whichever label font the machine has; the test uses a wider stand-in font (0.75 em a letter) for every bay.
