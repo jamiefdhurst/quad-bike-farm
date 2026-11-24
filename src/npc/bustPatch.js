@@ -6,6 +6,7 @@
 
 import { ShapeUtils, Vector2 } from 'three';
 import { BUST_SHAPE, bustOutline, bustPoint, bustUV, chestWall } from './bustShape.js';
+import { unfold } from './garmentMesh.js';
 
 export const BUST_PATCH = {
   margin: 1.1, // the hole is cut this many of the outline's half-widths round it: her triangles are long at her sides, and an edge
@@ -34,8 +35,8 @@ export const BUST_SHEET = {
   // (at 3 its slope jumped there and the cloth creased across her)
   behind: 0.45, // drawn round a line this far behind her front's middle: further forward (0.15), the outward bulge of each breast's
   // lower outer side was hidden behind its front and the sheet cut inside it
-  angle: 0.56, // radians either side of her front (32 degrees: wider, its top corners reached into her armpits and its collar
-  // folded round her sides)
+  angle: 0.56, // radians either side of her front at her bust (32 degrees: wider, its top corners reached into her armpits)
+  angleLow: 0.4, // and at her waist (23 degrees: her waist is narrower, and wider its collar folded round her sides there)
   step: 0.006, // its grid this fine in angle
   low: 0.28, // from this height (her waist, below where it falls back to her)
   regionTop: 1.05, // to this share of the way from her bust's middle up to where its upper slope starts: up under her collarbone,
@@ -142,7 +143,7 @@ function zipped(loop, rim, middle) {
  * Each loop round the holes is joined to the rims inside it by a collar ear-clipped as laid out round her. Returns the new arrays
  * (and `index`, `smooth`), or null if a hole can't be traced or filled. `fixed(i)`: corner i is never taken (her arm's).
  */
-function fillHoles(mesh, taken, { place, smoothOf, armBone, patches, front, fixed = () => false, zip = false }) {
+function fillHoles(mesh, taken, { place, smoothOf, armBone, patches, front, fixed = () => false, zip = false, tidy = false }) {
   const { positions, uvs, skinIndex, skinWeight } = mesh;
   const tris = positions.length / 9;
   const corner = (i) => [positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]];
@@ -153,6 +154,30 @@ function fillHoles(mesh, taken, { place, smoothOf, armBone, patches, front, fixe
     const k = key(positions, i);
     if (!ids.has(k)) ids.set(k, ids.size);
     weld[i] = ids.get(k);
+  }
+  // Its edge tidied, if asked: a triangle of hers poking into the hole on two sides is taken, and a taken one poking out on two
+  // sides given back, so the edge doesn't zigzag (a zipped collar folded back on itself at every zigzag).
+  if (tidy) {
+    const edgeKey = (t, e) => [weld[t * 3 + e], weld[t * 3 + ((e + 1) % 3)]].sort((x, y) => x - y).join(',');
+    const byEdge = new Map();
+    for (let t = 0; t < tris; t++) for (let e = 0; e < 3; e++) {
+      const k = edgeKey(t, e);
+      if (!byEdge.has(k)) byEdge.set(k, []);
+      byEdge.get(k).push(t);
+    }
+    const others = (t) => [0, 1, 2].flatMap((e) => byEdge.get(edgeKey(t, e)).filter((u) => u !== t));
+    const canTake = (t) => [0, 1, 2].every((j) => positions[(t * 3 + j) * 3 + 2] > front && !fixed(t * 3 + j));
+    for (let pass = 0; pass < 6; pass++) {
+      let changed = false;
+      for (let t = 0; t < tris; t++) {
+        const n = others(t);
+        const across = n.filter((u) => taken[u] !== taken[t]).length;
+        if (across < 2) continue;
+        if (!taken[t] && canTake(t)) (taken[t] = 1), (changed = true);
+        else if (taken[t] && n.filter((u) => taken[u]).length <= 1) (taken[t] = 0), (changed = true);
+      }
+      if (!changed) break;
+    }
   }
   // The hole's edges, traced into loops: each edge of a taken triangle that a kept one shares, run the way the taken one runs it.
   const trace = () => {
@@ -248,11 +273,30 @@ function fillHoles(mesh, taken, { place, smoothOf, armBone, patches, front, fixe
   // The paint and skin of a new point: the nearest corner of a taken triangle.
   const takenCorners = [];
   for (let t = 0; t < tris; t++) if (taken[t]) for (let j = 0; j < 3; j++) takenCorners.push(t * 3 + j);
+  // Bucketed by place seen from the front, so each search looks only near the point.
+  const CELL = 0.03;
+  const buckets = new Map();
+  const cellKey = (i, j) => i * 100003 + j;
+  for (const i of takenCorners) {
+    const k = cellKey(Math.floor(positions[i * 3] / CELL), Math.floor(positions[i * 3 + 1] / CELL));
+    if (!buckets.has(k)) buckets.set(k, []);
+    buckets.get(k).push(i);
+  }
   const nearest = (x, y, z) => {
     let best = takenCorners[0], d = Infinity;
-    for (const i of takenCorners) {
-      const e = (positions[i * 3] - x) ** 2 + (positions[i * 3 + 1] - y) ** 2 + (z === undefined ? 0 : (positions[i * 3 + 2] - z) ** 2);
-      if (e < d) (d = e), (best = i);
+    const ci = Math.floor(x / CELL), cj = Math.floor(y / CELL);
+    // Ring by ring out from its cell, until no further ring can hold a nearer one (seen from the front it is at least that far off).
+    for (let ring = 0; ring < 60; ring++) {
+      if (d < Infinity && (ring - 1) * CELL > Math.sqrt(d)) break;
+      for (let di = -ring; di <= ring; di++) {
+        for (let dj = -ring; dj <= ring; dj++) {
+          if (Math.max(Math.abs(di), Math.abs(dj)) !== ring) continue;
+          for (const i of buckets.get(cellKey(ci + di, cj + dj)) ?? []) {
+            const e = (positions[i * 3] - x) ** 2 + (positions[i * 3 + 1] - y) ** 2 + (z === undefined ? 0 : (positions[i * 3 + 2] - z) ** 2);
+            if (e < d) (d = e), (best = i);
+          }
+        }
+      }
     }
     return best;
   };
@@ -412,8 +456,8 @@ export function coverBust(drawn, size = 1, armBone = () => false, s = BUST_SHAPE
   const behind = c.behind;
   const polar = ([x, y, z]) => [Math.atan2(x, z + behind), y, Math.hypot(x, z + behind)];
   const cart = (a, y, r) => [r * Math.sin(a), y, r * Math.cos(a) - behind];
-  const a0 = -c.angle, a1 = c.angle;
-  const half = () => c.angle;
+  const a0 = -Math.max(c.angle, c.angleLow), a1 = -a0;
+  const half = (y) => c.angleLow + (c.angle - c.angleLow) * smoothstep(o.cy - 0.25, o.cy - 0.05, y); // its half-width at a height
   const yLo = c.low, yHi = o.cy + (s.top - o.cy) * c.regionTop;
   const na = Math.ceil((a1 - a0) / c.step) + 1, ny = Math.ceil((yHi - yLo) / c.cell) + 1;
   const da = (a1 - a0) / (na - 1), dy = (yHi - yLo) / (ny - 1);
@@ -559,6 +603,19 @@ export function coverBust(drawn, size = 1, armBone = () => false, s = BUST_SHAPE
     const out = Math.max(0, y - yHi, yLo - y, (Math.abs(a) - half(y)) * 0.35);
     return Math.max(drawn.smooth ? drawn.smooth[i] : 0, 1 - smoothstep(0, c.smoothOut, out));
   };
-  return fillHoles(drawn, taken, { place: P, smoothOf, armBone, patches, front: p.front, fixed: (i) => keep(i) > 0.5, zip: true });
+  const cover = fillHoles(drawn, taken, { place: P, smoothOf, armBone, patches, front: p.front, fixed: (i) => keep(i) > 0.5, zip: true, tidy: true });
+  if (!cover) return null;
+  // Any fold left in its join (where the hole's edge zigzags) smoothed out, every corner at a point moved together: the cover is only
+  // ever cut, never drawn, and a fold in it was copied into every top cut from it.
+  const same = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];
+  const mesh = { verts: [], tris: [] };
+  // Only the sheet's own new points move: eased towards their neighbours, her own rounded chest and collarbone shrank into her.
+  for (let i = 0; i < cover.positions.length / 3; i++) {
+    mesh.verts.push({ rest: [cover.positions[i * 3], cover.positions[i * 3 + 1], cover.positions[i * 3 + 2]], skin: same, held: cover.source[i] >= 0 });
+  }
+  for (let t = 0; t < mesh.verts.length / 3; t++) mesh.tris.push([t * 3, t * 3 + 1, t * 3 + 2]);
+  unfold(mesh);
+  mesh.verts.forEach((v, i) => cover.positions.set(v.rest, i * 3));
+  return cover;
 }
 

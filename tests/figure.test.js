@@ -117,3 +117,88 @@ describe('two breasts, not one', () => {
     }
   });
 });
+
+describe('the drawn bust (#1143)', () => {
+  it('turns no triangle on her chest into her, on either girl', async () => {
+    const { buildAllGirls } = await import('./helpers/girlModels.js');
+    const { bodyMesh } = await import('../src/npc/outfit.js');
+    const { bodyFrame } = await import('../src/npc/figure.js');
+    const { bodyFacingIn } = await import('../src/npc/facing.js');
+    for (const { id, rig } of await buildAllGirls()) {
+      const body = bodyMesh(rig);
+      const g = body.geometry;
+      const idx = g.index.array;
+      const pos = g.attributes.position.array;
+      const flat = new Float32Array(idx.length * 3);
+      for (let k = 0; k < idx.length; k++) for (let j = 0; j < 3; j++) flat[k * 3 + j] = pos[idx[k] * 3 + j];
+      expect(bodyFacingIn(bodyFrame(body).toBody(flat)), id).toEqual([]);
+    }
+  }, 60000);
+
+  it('catches a fold: a piece turned over between its neighbours', async () => {
+    const { bodyFacingIn } = await import('../src/npc/facing.js');
+    // A strip of her front facing forward, with one piece in its middle turned over (wound the other way) between its neighbours.
+    const sheet = [];
+    const quad = (x, flip) => {
+      const a = [x, 0.6, 0.3], b = [x + 0.05, 0.6, 0.3], c = [x + 0.05, 0.65, 0.3], d = [x, 0.65, 0.3];
+      sheet.push(...(flip ? [a, c, b] : [a, b, c]).flat(), ...[a, c, d].flat());
+    };
+    quad(-0.1, false);
+    quad(-0.05, false);
+    quad(0, false);
+    expect(bodyFacingIn(Float32Array.from(sheet))).toEqual([]);
+    sheet.length = 0;
+    quad(-0.1, false);
+    quad(-0.05, true);
+    quad(0, false);
+    expect(bodyFacingIn(Float32Array.from(sheet)).length).toBeGreaterThan(0);
+  });
+});
+
+describe('the written target (bustShape.js)', () => {
+  it("hangs: its fullest point below the middle of its height, at about mid upper arm", async () => {
+    const { bustPoint, bustOutline } = await import('../src/npc/bustShape.js');
+    for (const size of [1, 1.4]) {
+      const o = bustOutline(size);
+      let full = null;
+      let top = -Infinity;
+      let low = Infinity;
+      for (let v = -1; v <= 1.0001; v += 0.01) {
+        const q = bustPoint(0, v, size, undefined, o);
+        top = Math.max(top, q.y);
+        low = Math.min(low, q.y);
+        if (!full || q.h > full.h) full = q;
+      }
+      expect(full.y, `size ${size}`).toBeLessThan((top + low) / 2);
+      expect(full.y, `size ${size}`).toBeGreaterThan(0.58);
+      expect(full.y, `size ${size}`).toBeLessThan(0.72);
+    }
+  });
+
+  it('leaves her chest flat at the top of its upper slope, so it joins her without an angle', async () => {
+    const { bustPoint } = await import('../src/npc/bustShape.js');
+    for (const size of [1, 1.4]) {
+      const a = bustPoint(0, 0.98, size), b = bustPoint(0, 0.96, size);
+      // Out from her chest by under a millimetre (in body units, about 0.4 m) over the first couple of per cent of its height.
+      expect(b.h - a.h, `size ${size}`).toBeLessThan(0.002);
+    }
+  });
+
+  it('is round at its tip, the same every way round', async () => {
+    const { bustPoint } = await import('../src/npc/bustShape.js');
+    const r = 0.05;
+    const hs = [0, 1, 2, 3, 4, 5, 6, 7].map((k) => bustPoint(r * Math.cos((k * Math.PI) / 4), r * Math.sin((k * Math.PI) / 4), 1).h);
+    expect(Math.max(...hs) - Math.min(...hs)).toBeLessThan(0.002);
+  });
+
+  it("makes Jess's bigger every way and wider from the front", async () => {
+    const { bustOutline, bustPoint } = await import('../src/npc/bustShape.js');
+    const amy = bustOutline(1), jess = bustOutline(1.4);
+    expect(jess.project).toBeGreaterThan(amy.project);
+    expect(jess.cx + jess.outer + jess.spill * jess.project).toBeGreaterThan(amy.cx + amy.outer + amy.spill * amy.project);
+    expect(jess.down).toBeGreaterThan(amy.down);
+    // Seen from the front, her outer side reaches further out.
+    const out = (size) => Math.max(...[0.2, 0.4, 0.6, 0.8].map((u) => bustPoint(u, -0.2, size).x));
+    expect(out(1.4)).toBeGreaterThan(out(1) + 0.01);
+  });
+});

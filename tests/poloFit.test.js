@@ -97,3 +97,59 @@ describe('the polo on each girl', () => {
     }
   });
 });
+
+describe('every top over her bust (#1143)', () => {
+  // Every top the girls wear, cut from the covered body as the game cuts it (bustPatch.js, coverBust), on both girls: none of its
+  // cloth over her bust faces into her (folded over, or inside her). Her bust here is her breasts, her cleavage and under them, as
+  // seen from the front (BUST below, in figure.js's body frame); the turned-in strips along a top's edges face her by design.
+  const BUST = { below: 0.42, above: 0.92, across: 0.28, front: 0.05 };
+  let girls;
+  beforeAll(async () => {
+    const THREE = await import('three');
+    const { bodyData, bodyMesh } = await import('../src/npc/outfit.js');
+    const { bodyFrame } = await import('../src/npc/figure.js');
+    const { buildCropTop } = await import('../src/npc/crop.js');
+    const { JUMPER, COAT, PLAID, SHIRT } = await import('../src/npc/polo.js');
+    const tops = [
+      ['polo done up', { ...POLO, open: 0 }],
+      ['polo half undone', { ...POLO, open: 3 }],
+      ['polo all undone', { ...POLO, open: 5 }],
+      ['plaid', PLAID],
+      ['shirt', SHIRT],
+      ['jumper', JUMPER],
+      ['wax jacket', COAT],
+    ];
+    girls = (await buildAllGirls()).map(({ id, rig }) => {
+      const body = bodyMesh(rig);
+      const frame = bodyFrame(body);
+      const real = bodyData(rig, body);
+      const data = { ...bodyData(rig, body, { cover: true }), paint: () => 'skin' };
+      const v = new THREE.Vector3();
+      const flat = (verts, tris) => frame.toBody(Float32Array.from(tris.flatMap((t) => t.flatMap((i) => v.fromArray(verts[i].bind).applyMatrix4(real.fromRoot).toArray()))));
+      const her = frame.toBody(body.geometry.attributes.position.array);
+      const made = tops.map(([name, spec]) => {
+        const { shell } = buildTop(data, spec);
+        return [name, flat(shell.verts, shell.tris.filter((t) => !t.every((i) => shell.verts[i].apart)))];
+      });
+      const crop = buildCropTop(data);
+      if (crop) made.push(['crop-top', flat(crop.shell.verts, crop.shell.tris)]);
+      return { id, her, made, covered: !!body.userData.cover };
+    });
+  }, 120000);
+
+  it('is cut from a covered body on both girls', () => {
+    for (const { id, covered } of girls) expect(covered, id).toBe(true);
+  });
+
+  it('has no cloth over her bust facing into her, on either girl, in any top', async () => {
+    const { clothFacingIn, foldedOver } = await import('../src/npc/facing.js');
+    for (const { id, her, made } of girls) {
+      expect(made.length, id).toBe(8);
+      for (const [name, cloth] of made) {
+        const bad = clothFacingIn(cloth, her, BUST);
+        if (process.env.SHOW) for (const t of bad) console.log('BAD', id, name, foldedOver(cloth, BUST).has(t) ? 'folded' : 'inside', [0, 1, 2].map((j) => ((cloth[t * 9 + j] + cloth[t * 9 + 3 + j] + cloth[t * 9 + 6 + j]) / 3).toFixed(3)).join(','));
+        if (!process.env.SHOW) expect(bad.length, `${id} in her ${name}`).toBe(0);
+      }
+    }
+  });
+});
