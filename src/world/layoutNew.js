@@ -260,6 +260,8 @@ export const NEIGHBOUR_PLAN = {
     // wheel (#925): both outside the 3 m ways to the barn door and the gap (tests/neighbourYard.test.js). `x`, `z` are the vehicle's middle, not its origin.
     { kind: 'quad', x: 0.4, z: -18.6, yaw: 0.12, colour: 0x4c6a3c }, // plan (998, 274)
     { kind: 'tipTrailer', x: -10.6, z: -20.8, yaw: -0.08, colour: 0x8a9092 }, // plan (987, 272)
+    // Her newer tractor with the front loader (#926), parked south of the barn with its bucket down, nose to the east: clear of the feed passage, the bale feeder and the ways across the yard (tests/neighbourYard.test.js).
+    { kind: 'loaderTractor', x: -20, z: -11, yaw: 1.45, colour: 0x23548f }, // plan (977.5, 281.5)
   ],
   stand: { x: 11.3, z: 18.1, yaw: Math.PI }, // plan (1008.8, 310.6)
   // The dairy, at the map's places: the parlour (plan 1000 to 1030, 256 to 269) with the collecting yard in front of it (1000 to 1030, 271 to 289, open on its

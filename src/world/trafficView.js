@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { buildCabModel, TOR_LAYOUT, CRAG_LAYOUT, CAB_GROUND_OFFSET, CAB_SEATS } from '../vehicle/cabModel.js';
 import { buildTractorModel, TRACTOR_LAYOUT, TRACTOR_GROUND_OFFSET } from '../vehicle/tractorModel.js';
+import { buildLoaderTractorModel, LOADER_TRACTOR_LAYOUT, LOADER_TRACTOR_GROUND_OFFSET } from '../vehicle/loaderTractorModel.js';
 import { buildUtvModel, UTV_LAYOUT, UTV_GROUND_OFFSET, UTV_SEATS } from '../vehicle/utvModel.js';
 import { buildMiniMotoModel, MOTO_LAYOUT, MOTO_GROUND_OFFSET } from '../vehicle/miniMotoModel.js';
 import { TZ_WHEELS } from '../vehicle/tz65Body.js';
@@ -22,6 +23,8 @@ const MODELS = {
   crag: { build: (c, reg) => buildCabModel({ bodyColor: c, dashStyle: 'crag', variant: 'crag', reg }), layout: CRAG_LAYOUT, offset: CAB_GROUND_OFFSET, seat: CAB_SEATS.driver },
   tor: { build: (c, reg) => buildCabModel({ bodyColor: c, dashStyle: 'tor', variant: 'tor', reg }), layout: TOR_LAYOUT, offset: CAB_GROUND_OFFSET, seat: CAB_SEATS.driver },
   tractor: { build: (c) => buildTractorModel({ bodyColor: c, dashStyle: 'tractor' }), layout: TRACTOR_LAYOUT, offset: TRACTOR_GROUND_OFFSET, seat: { x: 0, y: 1.35, z: -0.55 } },
+  // The neighbour's newer tractor with a front loader (#926): parked scenery, nobody sits in it.
+  loaderTractor: { build: (c) => buildLoaderTractorModel({ bodyColor: c }), layout: LOADER_TRACTOR_LAYOUT, offset: LOADER_TRACTOR_GROUND_OFFSET, seat: { x: 0, y: 1.4, z: -0.72 } },
   // The neighbours' kids' mini moto (kids.js): the TZ 65 stood upright on its two wheels, the rider sat on its anchor.
   moto: { build: (c) => buildMiniMotoModel({ bodyColor: c }), layout: { wheels: MOTO_LAYOUT.wheels.map((w) => ({ ...w, radius: TZ_WHEELS.radius })) }, offset: MOTO_GROUND_OFFSET, seat: { x: 0, y: 0.78, z: -0.2 } },
   utv: { build: (c) => buildUtvModel({ bodyColor: c, dashStyle: 'utv' }), layout: UTV_LAYOUT, offset: UTV_GROUND_OFFSET, seat: UTV_SEATS.driver ?? { x: -0.4, y: 0.9, z: -0.1 } },
