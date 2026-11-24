@@ -1190,7 +1190,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why does the exhaust tick and chuff when it is cold, and go quiet when it warms up?',
-        a: `A joint in the exhaust has worked loose, or its gasket has cracked, so a little gas puffs out at every beat. While the metal is cold the gap is open and it ticks and chuffs; as the engine heats the metal swells and shuts the gap, and it goes quiet. It is not the holed silencer, which is loud all the time. It starts while the engine runs and gets worse the longer it is left, and it takes a little of the drive. The yard toolbox can't touch it: it needs the bench's "Seal the exhaust joint" job, where a rag over the joint shows how bad it is, and a new gasket and the nuts done up evenly cure it. Amy knows what it is; Jess says it sounds like a little steam train.`,
+        a: `A joint in the exhaust has worked loose, or its gasket has cracked, so a little gas puffs out. While the metal is cold the gap is open and it ticks and chuffs; as the engine heats the metal swells and shuts the gap, and it goes quiet. It is not the holed silencer, which is loud all the time. It starts while the engine runs and gets worse the longer it is left, and it takes a little of the drive. The yard toolbox can't touch it: it needs the bench's "Seal the exhaust joint" job, where a rag over the joint shows how bad it is, and a new gasket and the nuts done up evenly cure it. Amy knows what it is; Jess says it sounds like a little steam train.`,
         tip: 'Exhaust ticking and chuffing only when cold? Take it to the bench for "Seal the exhaust joint".',
       },
       {
