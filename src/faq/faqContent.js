@@ -2367,7 +2367,7 @@ export const FAQ_SECTIONS = [
           and a note on what pulled it down (a tired engine, a rough body, faults). Press its number, then the same number again to sell it. You get the money at once and a buyer
           collects the vehicle in the morning, so you can use it until you call it a day. <kbd>&larr;</kbd> goes back to the ads. A buyer never pays as much as the board charges for the same
           one, so buying to sell on loses money.`,
-        tip: 'At the cork board in the barn press S to sell a vehicle: its number, then again to confirm.',
+        tip: 'To sell a vehicle: E at the cork board, the right arrow for the page, then its number twice.',
       },
       {
         q: 'Why won\'t it let me sell one?',
