@@ -15,9 +15,9 @@ function seededRandom(seed) {
 const DT = 1 / 60;
 
 /** A quad as far as she's concerned: engine, fuel and choke, run until she's done. */
-function attempt({ temperature, tap = 'off', seed = 1, params = DEFAULT_STARTING_PARAMS, seconds = 400 }) {
+function attempt({ temperature, tap = 'off', seed = 1, params = DEFAULT_STARTING_PARAMS, seconds = 400, engineParams = {} }) {
   const random = seededRandom(seed);
-  const engine = new EngineModel({ initialTemperature: temperature }, { random: seededRandom(seed + 100) });
+  const engine = new EngineModel({ ...engineParams, initialTemperature: temperature }, { random: seededRandom(seed + 100) });
   const fuel = new FuelSystem({ ...DEFAULT_FUEL_PARAMS, startTap: tap });
   const quad = { engine, fuel, choke: 0 };
   const a = new StartingAttempt(quad, { random, params });
@@ -77,5 +77,34 @@ describe('her starting a quad', () => {
     a.events = [];
     a.rethink();
     expect(a.events).not.toContain('flooded');
+  });
+});
+
+describe('her starting an injected quad', () => {
+  it('never pulls a choke it does not have, or says she did, on any go', () => {
+    const eager = { ...DEFAULT_STARTING_PARAMS, coldChokeChance: 1, warmChokeChance: 1, rememberChance: 1 };
+    for (let seed = 1; seed <= 20; seed++) {
+      const { quad, events } = attempt({ temperature: 0, seed, params: eager, engineParams: { injected: true }, tap: 'on' });
+      expect(quad.choke).toBe(0);
+      expect(events).not.toContain('chokeOn');
+    }
+  });
+  it('still does on one with a choke (Amy\'s Finch)', () => {
+    const eager = { ...DEFAULT_STARTING_PARAMS, coldChokeChance: 1 };
+    expect(attempt({ temperature: 0, params: eager, tap: 'on' }).events).toContain('chokeOn');
+  });
+  it('does not remember a choke between goes on an injected one', () => {
+    const go = (engineParams) => {
+      const { a, quad } = attempt({ temperature: 0, engineParams, tap: 'on', seconds: 0 });
+      a.events = [];
+      a.random = () => 0;
+      quad.engine.fouling = 0;
+      quad.engine.rich = 0;
+      a.rethink();
+      return { choke: quad.choke, events: a.events };
+    };
+    expect(go({})).toMatchObject({ choke: 1, events: ['remembered', 'chokeOn'] });
+    expect(go({ injected: true })).toMatchObject({ choke: 0 });
+    expect(go({ injected: true }).events).not.toContain('chokeOn');
   });
 });

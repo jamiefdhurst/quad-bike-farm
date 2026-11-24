@@ -4,6 +4,8 @@
 // off as it warms until someone takes over. Pure logic: it reads the engine and
 // fuel state and sets the controls a person beside the bike would.
 
+import { hasChoke } from '../vehicle/controls.js';
+
 export const DEFAULT_STARTING_PARAMS = {
   tapCheckChance: 0.75, // she checks the fuel tap before cranking
   coldChokeChance: 0.8, // from cold she puts the choke on
@@ -82,7 +84,7 @@ export class StartingAttempt {
         }
         // The old bike's ritual first (a tickle and the spark lever): tickled, she leaves the choke alone, as the two together drown it.
         if (engine.params?.manualTiming) this.oldBikeRitual();
-        if (!this.events.includes('tickle') && this.random() < (engine.temperature < 0.5 ? p.coldChokeChance : p.warmChokeChance)) {
+        if (hasChoke(engine.params) && !this.events.includes('tickle') && this.random() < (engine.temperature < 0.5 ? p.coldChokeChance : p.warmChokeChance)) {
           this.quad.choke = 1;
           this.events.push('chokeOn');
         }
@@ -261,7 +263,7 @@ export class StartingAttempt {
       fuel.tap = 'on';
       this.checkedTap = true;
       this.events.push('remembered', 'tapOn');
-    } else if (engine.temperature < 0.5 && this.quad.choke < 0.5 && !(engine.tickled > 0.3)) { // (tickled, it wants no choke as well)
+    } else if (hasChoke(engine.params) && engine.temperature < 0.5 && this.quad.choke < 0.5 && !(engine.tickled > 0.3)) { // (tickled, it wants no choke as well)
       this.quad.choke = 1;
       this.events.push('remembered', 'chokeOn');
     } else if (engine.params?.manualTiming && engine.advance > engine.params.kickAbove) {

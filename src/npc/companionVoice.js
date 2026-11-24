@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Chatter } from './chatter.js';
+import { hasChoke } from '../vehicle/controls.js';
 import { HardBrake } from './hardBrake.js';
 import { VOICE_LINES } from './voiceLines.js';
 import { band } from './skills.js';
@@ -893,7 +894,7 @@ export class CompanionVoice {
     if (e.knack && !e.knack.primed && e.temperature < e.params.knackColdBelow) return 'crankStruggleKnack';
     if (unit.quad.fuel.bowlLevel < 0.3) return 'crankStruggleNoFuel';
     if (e.fouling > 0.4 || e.rich > 0.2) return 'crankStruggleFlooded';
-    if (e.temperature < 0.4 && unit.quad.choke < 0.5) return 'crankStruggleCold';
+    if (e.temperature < 0.4 && unit.quad.choke < 0.5 && hasChoke(e.params)) return 'crankStruggleCold';
     return 'crankStruggle';
   }
 

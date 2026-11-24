@@ -108,7 +108,7 @@ export class Pranks {
     if (kind === 'tap' || kind === 'choke') {
       return ctx.quads
         .filter((q) => !q.taken && !q.running && far(q) && !this.has(kind, q.id))
-        .filter((q) => (kind === 'tap' ? q.tap !== 'off' : q.choke < 0.5 && q.temperature > this.p.warmAbove))
+        .filter((q) => (kind === 'tap' ? q.hasTap !== false && q.tap !== 'off' : q.hasChoke !== false && q.choke < 0.5 && q.temperature > this.p.warmAbove)) // (a vehicle with no tap or choke to play it on is out)
         .map((q) => ({ quad: q.id }));
     }
     const item = kind === 'hideCan' ? 'can' : 'toolbox';

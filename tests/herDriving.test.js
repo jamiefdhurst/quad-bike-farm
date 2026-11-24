@@ -678,3 +678,42 @@ describe('her driving: a wave from you', () => {
     expect(d.waveStop(8)).toBe(false);
   });
 });
+
+describe('the choke on an injected engine', () => {
+  const drive = (engineParams, extra = {}) => {
+    const d = Object.create(HerDrive.prototype);
+    Object.assign(d, {
+      p: { ...DEFAULT_COMPANION_PARAMS },
+      quad: { choke: 0.6, engine: { isRunning: true, temperature: 0.2, params: engineParams } },
+      events: [],
+      forgetsChoke: false,
+      random: () => 0,
+      bogs: 0,
+      skill: { mud: 0 },
+      clearAhead: 10,
+      note() {},
+      stop() {},
+      ...extra,
+    });
+    return d;
+  };
+  it('has her ease a carb choke off as it warms, but leave an injected one alone', () => {
+    const carb = drive({});
+    carb.quad.engine.temperature = 0.95;
+    carb.tendChoke();
+    expect(carb.events).toContain('practice:choke');
+    const inj = drive({ injected: true });
+    inj.quad.engine.temperature = 0.95;
+    inj.tendChoke();
+    expect(inj.events).not.toContain('practice:choke');
+  });
+  it('has her put the choke back after bogging only where there is one', () => {
+    const carb = drive({}, { quad: { choke: 0, engine: { isRunning: true, temperature: 0.2, params: {} } } });
+    carb.unstick();
+    expect(carb.events).toContain('chokeBack');
+    const inj = drive({ injected: true }, { quad: { choke: 0, engine: { isRunning: true, temperature: 0.2, params: { injected: true } } } });
+    inj.unstick();
+    expect(inj.events).not.toContain('chokeBack');
+    expect(inj.quad.choke).toBe(0);
+  });
+});

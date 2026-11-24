@@ -335,3 +335,18 @@ describe('two-stroke', () => {
     expect(engine.fouling).toBeLessThan(0.05);
   });
 });
+
+describe('choke on an injected engine', () => {
+  const idle = (params, choke, temperature) => {
+    const e = makeEngine({ temperature, params });
+    crank(e, 10, { choke });
+    return averageRpm(e, 6, { choke });
+  };
+  it('does nothing to the idle, cold or warm, where a carburettor engine climbs', () => {
+    for (const temperature of [0.3, 0.9]) {
+      const injected = { injected: true };
+      expect(Math.abs(idle(injected, 1, temperature) - idle(injected, 0, temperature))).toBeLessThan(60);
+      expect(idle({}, 1, temperature)).toBeGreaterThan(idle({}, 0, temperature) + 300);
+    }
+  });
+});

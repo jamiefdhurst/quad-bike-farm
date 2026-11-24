@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ReadyWaiting, DEFAULT_READY_PARAMS as P } from '../src/npc/readyWaiting.js';
+import { ReadyWaiting, DEFAULT_READY_PARAMS as P, mindColdEngine } from '../src/npc/readyWaiting.js';
 import { Horns } from '../src/npc/horns.js';
 import { AMY_READY_LINES, JESS_READY_LINES } from '../src/npc/readyLines.js';
 
@@ -119,5 +119,26 @@ describe('her lines', () => {
     const all = [...Object.values(AMY_READY_LINES).flatMap((l) => l.lines), ...Object.values(JESS_READY_LINES).flat()].join(' ');
     expect(all).not.toMatch(/\b(he|she|they)\b/i);
     expect(all).not.toMatch(/—/);
+  });
+});
+
+describe('minding a cold engine she is sat in', () => {
+  const quad = (params) => ({ choke: 0, helperThrottle: 0, engine: { params } });
+  const mind = (params, revving) => {
+    const q = quad(params);
+    mindColdEngine(q, revving);
+    return { choke: q.choke, throttle: q.helperThrottle };
+  };
+  it('keeps a little choke and throttle on a carburettor one', () => {
+    expect(mind({})).toEqual({ choke: 0.3, throttle: 0.15 });
+  });
+  it('leaves an injected one alone: no choke to pull, and its own fast idle keeps it alive', () => {
+    expect(mind({ injected: true })).toEqual({ choke: 0, throttle: 0 });
+  });
+  it('gives a diesel a touch of throttle but no choke', () => {
+    expect(mind({ compressionIgnition: true })).toEqual({ choke: 0, throttle: 0.15 });
+  });
+  it('leaves the throttle to whoever is revving it', () => {
+    expect(mind({}, true)).toEqual({ choke: 0.3, throttle: 0 });
   });
 });

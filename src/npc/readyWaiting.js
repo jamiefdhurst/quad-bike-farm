@@ -3,6 +3,18 @@
 // than Amy. When you come back she says so; if you take too long she gives up and gets off. Pure logic: the game says whether she is
 // sat on the running quad and where you are; this says when she revs, toots, speaks and gives up.
 
+import { hasChoke } from '../vehicle/controls.js';
+
+/**
+ * Sets the little choke and throttle she keeps on a cold engine she's sat in, or it dies on her. An injected engine has no choke to pull and
+ * its own fast idle keeps it alive, so she leaves both alone.
+ */
+export function mindColdEngine(quad, revving = false) {
+  const p = quad.engine.params ?? {};
+  if (hasChoke(p)) quad.choke = Math.max(quad.choke, 0.3);
+  if (!revving) quad.helperThrottle = p.injected ? 0 : 0.15; // (her blipping it is someone else's to set)
+}
+
 export const DEFAULT_READY_PARAMS = {
   goTimeout: 150, // seconds she has to be sat on a running quad by (starting it can take a few goes) before she gives up
   revMin: 18, // seconds between her revs of the engine, from...
