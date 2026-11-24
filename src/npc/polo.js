@@ -568,9 +568,9 @@ export function buildTop(body, p = POLO) {
   const neck = body.bones.Neck;
   drape(mesh, body.split ? (p.drapeSplit ?? p.drape * 4) : p.drape, (v) => v.rest[2] > neck[2] && v.rest[1] < neck[1] - 0.1 && v.rest[1] > body.waist + 0.02);
   // Last, any fold smoothed out, standing and in her stored pose: pushed straight out from a tight hollow, such as the crease between
-  // her breast and her arm, a thick layer crossed itself (#1143).
-  unfold(mesh);
-  unfold(mesh, { stored: true });
+  // her breast and her arm, a thick layer crossed itself (#1143). 25 rounds clear her bust; a few folds elsewhere never clear.
+  unfold(mesh, { rounds: 25 });
+  unfold(mesh, { rounds: 25, stored: true });
   if (p.skirt) addSkirt(mesh, body, p);
 
   // Shade: the bands a shade darker. A point on a band's line belongs to the side its triangle is on; colours are per vertex,
