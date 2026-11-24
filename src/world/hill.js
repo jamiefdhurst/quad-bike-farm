@@ -176,10 +176,20 @@ export function createHill(layout) {
   /**
    * 0..1 how much of the ground at (x, z) is the hill's own (profile) rather than the neighbouring farmland: all of it in the lane and the
    * pasture, fading out over 40 m beyond their hedges (and over 30 m round the lane) so the hill rolls away into the country round it.
-   * `fade` is that 40 m: the new farm has no rise beyond the hedges to hold the hill's edge up, so terrainHeight.js asks for a longer one (#945).
+   * `fade` is how far beyond the pasture's south and east hedges it runs: the new farm has no rise beyond them to hold the hill's edge up, so
+   * terrainHeight.js asks for a longer one there (#945). Everywhere else, the west most of all where the banks run along z, it stays 40 m (#1172),
+   * and the two are blended over 30 m past those hedges, and over 30 m west of the pasture's west hedge, so there is no step (Back Lane's hairpin at its south-west corner is cut into the 40 m ground).
    */
   function weight(x, z, fade = 40) {
     if (inRect(farm, x, z)) return 0;
+    const near = weightFor(x, z, 40);
+    if (fade === 40) return near;
+    const far = weightFor(x, z, fade);
+    const long = Math.max(smoothstep(0, 30, z - pasture.maxZ), smoothstep(0, 30, x - pasture.maxX)) * smoothstep(pasture.minX - 30, pasture.minX, x);
+    return near + (far - near) * long;
+  }
+
+  function weightFor(x, z, fade) {
     let w = Math.max(1 - smoothstep(0, fade, outside(pasture, x, z)), 1 - smoothstep(0, fade * 0.75, outside(laneRect, x, z)));
     if (pad) w = Math.max(w, 1 - smoothstep(0, fade, outside(west, x, z)), 1 - smoothstep(0, fade, outside(east, x, z)));
     return w;

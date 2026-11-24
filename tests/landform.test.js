@@ -90,7 +90,7 @@ describe('the ground that is built from it', () => {
     for (let x = ground.minX; x < ground.maxX; x += 5) {
       for (let z = ground.minZ; z < ground.maxZ; z += 5) {
         if (h.quarry && h.quarry.weight(x, z) > 0) continue; // the pit's own walls
-        if (x < -480) continue; // the hill's west edge, the stream's channel to Back Lane's ford (#686) and the moor's own ground, all shaped on purpose
+        if (x < LAYOUT.hill.pasture.minX) continue; // west of the pasture: held to the 40 m fade by the next test, and the stream and the moor's own ground are cut on purpose
         if (h.woods && h.woods.weight(x, z) >= 1) continue; // the wood's own ground: the Run's banks
         if (h.hill.weight(x, z) >= 1) continue; // the hill's own ground inside its hedges: its banks and the stream's channel are cut on purpose
         const a = h.naturalAt(x, z);
@@ -100,6 +100,22 @@ describe('the ground that is built from it', () => {
       }
     }
     expect(steep.slice(0, 20)).toEqual([]);
+  });
+  it('keeps the long hill fade off the pasture\'s west side, where the banks run along z (#1172)', () => {
+    const short = createTerrainHeight(two, new Track(two.trackPoints), { hillFade: 40 });
+    const west = LAYOUT.hill.pasture.minX;
+    const steepest = (h, x, z) => Math.max(Math.abs(h.naturalAt(x, z + 1) - h.naturalAt(x, z)), Math.abs(h.naturalAt(x + 1, z) - h.naturalAt(x, z) - (game(x + 1) - game(x))));
+    for (let x = west - 120; x < west; x += 5) {
+      for (let z = LAYOUT.hill.pasture.minZ; z < LAYOUT.hill.pasture.maxZ; z += 5) {
+        expect(steepest(heights2, x, z), `${x}, ${z}`).toBeLessThan(steepest(short, x, z) + 0.02);
+      }
+    }
+  });
+  it('rides Back Lane\'s centreline beside the pasture\'s west hedge, x -510 from z 207 to 335, in no more than 21 degrees (#1172)', () => {
+    const cap = Math.tan((21 * Math.PI) / 180);
+    const road = LAYOUT.roads.find((r) => r.id === 'backLane');
+    expect(road.points.some(([x, z]) => x === -510 && z === 207)).toBe(true); // the line this walks is still the lane's
+    for (let z = 207; z < 335; z++) expect(Math.abs(heights2.heightAt(-510, z + 4) - heights2.heightAt(-510, z)) / 4, `z ${z}`).toBeLessThan(cap);
   });
   it('rides down from the pasture\'s south and east hedges, Back Lane\'s laid level ground included, in no more than 21 degrees (#945)', () => {
     const cap = Math.tan((21 * Math.PI) / 180);
