@@ -4,9 +4,12 @@
 // <girl>.png, before on the left and after on the right.
 //
 //   node tools/bustReview.mjs                       bare, this checkout against origin/main
-//   node tools/bustReview.mjs --query bust=b        add to this checkout's address (a flag being tried)
-//   node tools/bustReview.mjs --before bust=a       the shape before from this checkout with this address instead of origin/main
-//   node tools/bustReview.mjs --dress               in their clothes (as dealt), not bare; --run "<line;line>" console lines first (an outfit, a layer)
+//   node tools/bustReview.mjs --query body=flat     add to this checkout's address (a flag being tried)
+//   node tools/bustReview.mjs --before body=flat    the shape before from this checkout with this address instead of origin/main
+//   node tools/bustReview.mjs --dress               in their clothes (as dealt), not bare; --run "<line;line>" console lines first
+//   node tools/bustReview.mjs --look 16             dressed in the wardrobe scene's look 16 (src/debug/wardrobe.js: each outfit, then each layer
+//                                                   over it; 1 the polo, 11 the plaid, 26 a shirt and tie, 41 the crop-top; +1 a jumper, +2 a wax jacket)
+//   node tools/bustReview.mjs --look 1 --open amy:0,jess:3   and her polo's buttons undone, as many as given
 //   node tools/bustReview.mjs --out bust-b          the folder under .scratch/shots/ (default bust-review)
 //   --views front,three,side,below   --girls amy,jess   --soft (software GL, slow; the default is the GPU)
 //
@@ -30,8 +33,10 @@ const here = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = resolve(here, '.scratch', 'shots', opt('out', 'bust-review'));
 const QUERY = opt('query', '');
 const BEFORE = opt('before', 'main');
-const DRESS = flag('dress');
+const DRESS = flag('dress') || !!opt('look');
 const RUN = opt('run', '');
+const LOOK = opt('look') ? Number(opt('look')) : null;
+const OPEN = Object.fromEntries((opt('open') ?? '').split(',').filter(Boolean).map((p) => p.split(':')).map(([id, n]) => [id, Number(n)]));
 const VIEWS = opt('views', 'front,three,side,below').split(',');
 const GIRLS = opt('girls', 'amy,jess').split(',');
 mkdirSync(OUT, { recursive: true });
@@ -61,10 +66,17 @@ const ANGLES = { front: [0, 0.62, 0.04], three: [Math.PI / 4, 0.62, 0.04], side:
 const wait = (s) => new Promise((r) => setTimeout(r, s * 1000));
 
 /** Runs in the page: both girls held standing side by side in the yard, bare or dressed, everything else near them hidden, the game paused. */
-function standGirls({ bare, run }) {
+function standGirls({ bare, run, look, open }) {
   const g = game;
   for (const line of run.split(';').map((l) => l.trim()).filter(Boolean)) g.console.shell.run(line);
   const me = g.world.layout.yard;
+  // Settled first (settling dresses her as the day dealt), then the look put on.
+  for (const c of g.companions) g.settleGirl(c);
+  if (look) {
+    g.sceneCounters = { ...g.sceneCounters, wardrobe: look - 1 };
+    g.console.shell.run('scene wardrobe');
+  }
+  for (const c of g.companions) if (open[c.character.id] !== undefined) c.setPoloOpen(open[c.character.id]);
   g.companions.forEach((c, i) => {
     c.params.ownMind = false;
     // Plain standing, as she is between her idles: none of them (hands clasped, an arm up to shade her eyes from the sun) and no
@@ -74,7 +86,6 @@ function standGirls({ bare, run }) {
     c.standingIdles = null;
     c.fidget = null;
     c.fidgetTimer = 1e9;
-    g.settleGirl(c);
     const x = me.x + (i === 0 ? -3 : 3);
     const z = me.z + 4;
     c.root.position.set(x, g.world.heightAt(x, z), z);
@@ -84,6 +95,19 @@ function standGirls({ bare, run }) {
   });
   g.audioHub.params.muted = true;
   window.__bare = bare;
+}
+
+/** Runs in the page: both girls back where standGirls put them (the wardrobe scene stands them elsewhere). */
+function standAgain() {
+  const g = game;
+  const me = g.world.layout.yard;
+  g.companions.forEach((c, i) => {
+    const x = me.x + (i === 0 ? -3 : 3);
+    const z = me.z + 4;
+    c.root.position.set(x, g.world.heightAt(x, z), z);
+    c.heading = 0;
+    c.root.rotation.y = 0;
+  });
 }
 
 /** Runs in the page once she has stood a while: hides what's near the girls (never the ground), and her clothes if bare, then pauses. */
@@ -205,8 +229,25 @@ async function shoot(root, query, side, browser) {
   await page.click('#overlay').catch(() => {});
   await wait(1);
   await page.addStyleTag({ content: '#hud { display: none !important; }' });
-  await page.evaluate(standGirls, { bare: !DRESS, run: RUN });
+  await page.evaluate(standGirls, { bare: !DRESS, run: RUN, look: LOOK, open: OPEN });
   await wait(6);
+  // The look again, now they have stood a while (getting down off something, a girl is dressed as the day dealt).
+  const wearing = await page.evaluate(
+    ({ look, open }) => {
+      const g = game;
+      if (look) {
+        g.sceneCounters = { ...g.sceneCounters, wardrobe: look - 1 };
+        g.console.shell.run('scene wardrobe');
+      }
+      for (const c of g.companions) if (open[c.character.id] !== undefined) c.setPoloOpen(open[c.character.id]);
+      return g.companions.map((c) => `${c.name} in ${c.outfit.style?.kind}${c.outfit.poloOpen ? `, ${c.outfit.poloOpen} undone` : ''}`).join('; ');
+    },
+    { look: LOOK, open: OPEN },
+  );
+  console.error(`bustReview (${side}): ${wearing}`);
+  await wait(2);
+  await page.evaluate(standAgain);
+  await wait(0.5);
   await page.evaluate(freeze);
   await wait(0.5);
   const ids = await page.evaluate(() => game.companions.map((c) => c.name.toLowerCase()));
@@ -227,12 +268,15 @@ async function shoot(root, query, side, browser) {
   return tris.map((t, i) => ({ ...t, id: ids[i] }));
 }
 
+const TRIM = /Buttons?|Placket|Logo|Pocket|Stitch|Tie(Knot)?$/i;
+
 /** The facing counts for one side: her body, and each garment against her body. */
 function counts(girls) {
   return girls.map(({ id, body, garments }) => ({
     id,
     body: bodyFacingIn(body).length,
-    garments: garments.map((g) => [g.name, clothFacingIn(g.tris, body).length]),
+    // Trim laid on the cloth has a back facing her by design: only the cloth is checked.
+    garments: garments.filter((g) => !TRIM.test(g.name)).map((g) => [g.name, clothFacingIn(g.tris, body).length]),
   }));
 }
 

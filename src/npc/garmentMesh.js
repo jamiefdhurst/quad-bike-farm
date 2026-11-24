@@ -371,22 +371,47 @@ export function smoothSkinning(mesh, passes = 3, amount = 0.5, where = () => tru
  * was cut along stay put, as do any `where(v)` leaves out. A body split at load (smoothBody.js) has twice the points along any line,
  * so it needs four times the passes for the same reach (evening out spreads with their root).
  */
+/**
+ * Cloth moved from `start` to `rest` (both a point a vertex, `rest` changed): any triangle turned from how it was cut has its
+ * corners eased back towards where they were, halving the move each round, until none is (#1143).
+ */
+export function easeBackFolds(mesh, start, rest) {
+  const facing = (P, t) => cross(sub(P[t[1]], P[t[0]]), sub(P[t[2]], P[t[0]]));
+  const was = mesh.tris.map((t) => facing(start, t));
+  for (let round = 0; round < 12; round++) {
+    const back = new Set();
+    mesh.tris.forEach((t, k) => {
+      const n = facing(rest, t);
+      // Turned past square: cloth on the inner side of a breast turns about a quarter as it is lifted on to the bridge, and is right.
+      if (dot(n, was[k]) < -0.1 * Math.hypot(...n) * Math.hypot(...was[k])) for (const i of t) if (rest[i] !== start[i]) back.add(i);
+    });
+    if (!back.size) break;
+    for (const i of back) rest[i] = round === 11 ? start[i] : add(start[i], scale(sub(rest[i], start[i]), 0.5));
+  }
+}
+
 export function drape(mesh, passes, where = () => true) {
   const near = mesh.verts.map(() => new Set());
   for (const t of mesh.tris) for (const a of t) for (const b of t) if (a !== b) near[a].add(b);
   const free = mesh.verts.map((v) => !v.edge && where(v));
   const out = mesh.verts.map((v) => norm(applySkinDir(v.skin, v.normal)));
   const rest = mesh.verts.map((v) => v.rest);
+  // Only the free points are worked, each pass, from where all of them were at its start (a bust drawn finely takes many passes).
+  const moving = [];
+  for (let i = 0; i < rest.length; i++) if (free[i] && near[i].size) moving.push([i, [...near[i]]]);
   for (let pass = 0; pass < passes; pass++) {
-    const next = rest.map((r, i) => {
-      if (!free[i] || !near[i].size) return r;
+    const next = moving.map(([i, around]) => {
+      const r = rest[i];
       const avg = [0, 0, 0];
-      for (const j of near[i]) for (let k = 0; k < 3; k++) avg[k] += rest[j][k] / near[i].size;
+      for (const j of around) for (let k = 0; k < 3; k++) avg[k] += rest[j][k] / around.length;
       const d = dot(sub(avg, r), out[i]);
       return d > 0 ? add(r, scale(out[i], d * 0.5)) : r;
     });
-    next.forEach((r, i) => (rest[i] = r));
+    moving.forEach(([i], k) => (rest[i] = next[k]));
   }
+  // Pushed out along their own normals, cloth over a breast's underside (facing down) and over her ribs below it (facing forward) met
+  // and folded: eased back where it did (#1143).
+  easeBackFolds(mesh, mesh.verts.map((v) => v.rest), rest);
   mesh.verts.forEach((v, i) => {
     if (rest[i] === v.rest) return;
     v.bind = unskin(v.skin, rest[i]);

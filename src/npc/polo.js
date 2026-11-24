@@ -69,6 +69,8 @@ export const POLO = {
   hangMax: 0.035,
   hangReach: 2, // bins (2 cm) either side it looks for her furthest-forward point, so it bridges between her breasts
   drape: 8, // passes bridging the hollow under her bust on her front, so the cloth doesn't fold in there (garmentMesh.js, drape)
+  bustDepth: 0.05, // the drawn cleavage ends where her front near either breast's middle is this far back from its fullest
+  drapeSplit: 160, // on her split body, whose drawn bust is fine: enough to reach across her cleavage and the fold under each breast (#1143)
   bandShade: 0.84, // the neck band and cuffs, ribbed, a shade darker
   insideShade: 0.55, // the turned-in edge
   lips: ['neck', 'sleeve'], // which edges are turned in
@@ -90,8 +92,9 @@ export const POLO = {
   buttonRadius: 0.0052,
   buttonShade: 0.72, // buttons a shade darker than the shirt
   open: 0, // how many buttons from the top are undone (dealt for each farm between the girl's limits)
-  veeWidths: [0, 0.018, 0.024, 0.03, 0.037, 0.045], // an open neck's V: half its width at the neckline, by buttons undone
-  veeBows: [1, 1, 0.92, 0.8, 0.6, 0.5], // and how its sides curve out (below 1), opening round her bust the further it's undone
+  veeWidths: [0, 0.018, 0.026, 0.035, 0.045, 0.055], // an open neck's V: half its width at the neckline, by buttons undone (wider
+  // well undone, her bust pushing its fronts apart: Jamie, on #1143, all undone "doesn't look open enough")
+  veeBows: [1, 1, 0.9, 0.72, 0.52, 0.4], // and how its sides curve out (below 1), opening round her bust the further it's undone
   veeStop: 0.009, // and where it stops, this far above the first button done up (all undone: the bottom of the placket)
   cleavage: 0.5, // with the neck open down to her bust, how dark the soft shadow down the middle is
   veeShadow: 0.18, // and the shadow along the V's edges, where the shirt's fronts stand over her skin
@@ -562,7 +565,7 @@ export function buildTop(body, p = POLO) {
   for (const v of mesh.verts) v.rest = applySkin(v.skin, v.bind);
   // Over the hollow under her bust rather than in under it, where hanging alone doesn't reach.
   const neck = body.bones.Neck;
-  drape(mesh, body.split ? p.drape * 4 : p.drape, (v) => v.rest[2] > neck[2] && v.rest[1] < neck[1] - 0.1 && v.rest[1] > body.waist + 0.02);
+  drape(mesh, body.split ? (p.drapeSplit ?? p.drape * 4) : p.drape, (v) => v.rest[2] > neck[2] && v.rest[1] < neck[1] - 0.1 && v.rest[1] > body.waist + 0.02);
   if (p.skirt) addSkirt(mesh, body, p);
 
   // Shade: the bands a shade darker. A point on a band's line belongs to the side its triangle is on; colours are per vertex,
@@ -818,6 +821,9 @@ export function logoThread([r, g, b]) {
  * front is +z) and carried back to the bind frame through each point's skin.
  */
 function hang(mesh, body, p, F) {
+  // A drawn bust is hung over by the body her tops are cut from (bustPatch.js, coverBust): hung again here, the cloth stood out in a
+  // skirt below it (#1143).
+  if (body.covered) return;
   const { bones, boneNames } = body;
   const neck = bones.Neck;
   const mid = middleOf(body);
@@ -1184,6 +1190,17 @@ export function buildInset(body, vee, p = POLO) {
     if (!tips[side] || r[2] > tips[side][2]) tips[side] = r;
   }
   const from = apex ? apex[1] + 0.09 : -Infinity;
+  // And ended at the bottom of her bust: the lowest of her front near either breast's middle still standing well forward, so the
+  // shadow doesn't run on down her front below it (#1143).
+  let bottom = -Infinity;
+  if (apex) {
+    bottom = apex[1];
+    for (const v of verts) {
+      const r = v.rest;
+      const dx = Math.abs(r[0] - X(r[1]));
+      if (dx > 0.03 && dx < 0.12 && r[1] < apex[1] && r[2] > apex[2] - p.bustDepth) bottom = Math.min(bottom, r[1]);
+    }
+  }
   // Rounded: darker with distance from her fullest point on that side, below a little above it (her upper chest stays light).
   const round = (r) => {
     const tip = tips[Math.sign(r[0] - X(r[1]))] ?? apex;
@@ -1193,7 +1210,7 @@ export function buildInset(body, vee, p = POLO) {
   };
   patch.shade = patch.verts.map((v) => {
     const across = v.rest[0] - X(v.rest[1]);
-    const cleft = cleavageShade(across, from - v.rest[1], { strength: p.cleavage, width: p.cleavageWidth, fade: 0.04 });
+    const cleft = 1 - (1 - cleavageShade(across, from - v.rest[1], { strength: p.cleavage, width: p.cleavageWidth, fade: 0.04 })) * smooth01((v.rest[1] - bottom) / 0.02);
     return cleft * round(v.rest) * (1 - p.veeShadow * (1 - smooth01(vee.field(v) / 0.008)));
   });
   return patch;
