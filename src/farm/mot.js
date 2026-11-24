@@ -17,9 +17,9 @@ export const DEFAULT_MOT_PARAMS = {
   brakeHeat: 0.45, // brakes this hot (fading) fail
   leakAt: 0.1, // coolant leaking at this rate or over fails the leak
   exhaustAt: 0.3, // a blown silencer at this level or over fails the exhaust
-  bulbsPerHour: 0.12, // bulbs' wear per engine hour
-  bladesPerHour: 0.14, // wiper rubbers' wear per engine hour
-  hornPerHour: 0.08, // horn contacts' wear per engine hour
+  bulbsPerHour: 0.018, // bulbs' wear per engine hour
+  bladesPerHour: 0.02, // wiper rubbers' wear per engine hour
+  hornPerHour: 0.012, // horn contacts' wear per engine hour
   dealMax: 0.55, // the most a vehicle is dealt of each at the start of a game
   logKept: 12, // tests the farm remembers
 };

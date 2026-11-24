@@ -119,7 +119,7 @@ describe('the leaking orange', () => {
 
   it('loses coolant while running, then steams and boils over once, leaving little behind', () => {
     const e = make(0.45, 3);
-    const counts = idle(e, 900);
+    const counts = idle(e, 3000);
     expect(counts.boilOver).toBe(1);
     expect(e.coolant).toBeLessThan(0.1);
     expect(e.coolantPuddle).toBeGreaterThan(0);

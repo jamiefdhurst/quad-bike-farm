@@ -55,7 +55,7 @@ export const DEFAULT_TYRE_PARAMS = {
   minPsi: 1.5, // the lowest a tyre is dealt
   ventMinPsi: 0.5, // the lowest you can let one down to at the pump
   maxPsi: 7,
-  wearPerMetre: 0.00007, // tread lost per metre rolled on grass or the track: about 14 km makes a new tyre bald
+  wearPerMetre: 0.00001, // tread lost per metre rolled on grass or the track: about 100 km makes a new tyre bald (was 14, #1168)
   wearTarmac: 2, // times as fast on tarmac
   wearMud: 0.5, // times as fast in mud and puddles (soft ground is kind to a tyre)
   wearDriven: 1.3, // times as fast on a driven wheel...

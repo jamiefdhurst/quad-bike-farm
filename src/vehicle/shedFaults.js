@@ -39,18 +39,18 @@ export const DEFAULT_SHED_FAULT_PARAMS = {
   caliperEvery: 108000, // riding: a caliper piston sticking
   bearingEvery: 129600, // riding: a wheel bearing running dry
   // How long each takes to go from just started to as bad as it gets.
-  tyreLeakSeconds: 4200,
+  tyreLeakSeconds: 21000, // grows parked or ridden, like the puncture, so it is on the running yardstick
   tyreColdSeconds: 1200,
-  tyreUnevenSeconds: 4200,
-  valveCoreSeconds: 7000,
-  carbGumSeconds: 7600,
-  tapClogSeconds: 7000,
-  chainGritSeconds: 4200,
-  brakeMudSeconds: 4200,
-  exhaustHoleSeconds: 8000,
-  gasketSeconds: 8000,
-  caliperSeconds: 4200,
-  bearingSeconds: 5000,
+  tyreUnevenSeconds: 12600,
+  valveCoreSeconds: 21000,
+  carbGumSeconds: 22800,
+  tapClogSeconds: 21000,
+  chainGritSeconds: 12600,
+  brakeMudSeconds: 12600,
+  exhaustHoleSeconds: 24000,
+  gasketSeconds: 24000,
+  caliperSeconds: 12600,
+  bearingSeconds: 15000,
   // What they do at their worst.
   tyreColdBelow: 6, // degrees C under which the air has contracted enough to matter; the colder, the quicker it starts
   tyreLeakBleed: 0.002, // psi a second off every tyre
@@ -63,7 +63,7 @@ export const DEFAULT_SHED_FAULT_PARAMS = {
   brakeMudFade: 0.55, // braking lost to fully caked brakes
   exhaustHoleLoud: 0.8, // how loud a fully holed silencer is, as a share of one taken off
   exhaustHoleLoss: 0.12, // drive lost to a holed silencer's lost back-pressure and leaking gas
-  gasketBleed: 0.0003, // sump level lost a second at the worst, while the engine runs
+  gasketBleed: 0.0001, // sump level lost a second at the worst, while the engine runs
   caliperDrag: 0.3, // drive lost to a fully dragging caliper
   bearingDrag: 0.1, // drive lost to a fully run-dry bearing
   bearingWobble: 0.05, // radians that wheel shimmies side to side, for show

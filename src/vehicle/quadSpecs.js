@@ -788,7 +788,7 @@ export const EXTRA_SPECS = [
       catchChance: 0.9,
       coldRoughness: 0.2,
       coldPowerLoss: 0.95,
-      wearPerMinute: 0.0008, // new: a fifteenth of the usual wear, it takes hours of thrashing to rough it up
+      wearPerMinute: 0.00009, // new: a fifteenth of the usual wear, it takes hours of thrashing to rough it up
     },
     vehicle: {
       mass: 295,
@@ -1069,7 +1069,7 @@ export const HARTLEY_SPEC = {
     cycleJitter: 0.03,
     pulseStrengthJitter: 0.1,
     coldRoughness: 0.12,
-    wearPerMinute: 0.0006, // slow: it's built to be run all day
+    wearPerMinute: 0.0002, // slow: it's built to be run all day
   },
   vehicle: {
     mass: 2000,
@@ -1216,7 +1216,7 @@ export const YAK_SPEC = {
     misfireRoughness: 0.02,
     cycleJitter: 0.03,
     pulseStrengthJitter: 0.1,
-    wearPerMinute: 0.0007,
+    wearPerMinute: 0.00023,
   },
   vehicle: {
     mass: 760, // with its driver
@@ -1378,7 +1378,7 @@ export const TOR_SPEC = {
     rpmFallRate: 2.8,
     warmUpSeconds: 300,
     lugDepth: 0.4, // plenty of low-down pull
-    wearPerMinute: 0.0003,
+    wearPerMinute: 0.0001,
     cylinders: 4, // fires four times a cycle, evenly: a misfire or a weak beat is one of four, and the others carry it
     // Each firing varies a little, but four of them a cycle average out: an old petrol four ticks over steadily, it doesn't lope.
     misfireRoughness: 0.03,
@@ -1516,7 +1516,7 @@ export const CRAG_SPEC = {
     misfireRoughness: 0.03,
     cycleJitter: 0.05, // rattly: each firing varies more than the UTV's
     pulseStrengthJitter: 0.16,
-    wearPerMinute: 0.0005,
+    wearPerMinute: 0.00017,
   },
   vehicle: {
     ...TOR_SPEC.vehicle,
@@ -1620,7 +1620,7 @@ const CAR_ENGINE = {
   rpmFallRate: 5,
   warmUpSeconds: 360,
   lugDepth: 0.3,
-  wearPerMinute: 0.0003,
+  wearPerMinute: 0.0001,
   cylinders: 4, // four firings a cycle: a misfire is one beat of four
   misfireRoughness: 0.03,
   cycleJitter: 0.04,
@@ -1878,7 +1878,7 @@ export const VAUCLAIR_SPEC = {
     misfireBase: 0,
     cycleJitter: 0.04,
     pulseStrengthJitter: 0.12,
-    wearPerMinute: 0.0004,
+    wearPerMinute: 0.00013,
   },
   vehicle: {
     ...CAR_VEHICLE,

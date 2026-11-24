@@ -37,9 +37,9 @@ describe('the air filter', () => {
     expect(p.clog).toBeGreaterThan(f.clog); // splashing is worse than mud
   });
 
-  it('takes several minutes of hard mud to choke it, never past 1, and cleaning clears it', () => {
+  it('takes the best part of an hour of hard mud to choke it, never past 1, and cleaning clears it', () => {
     const f = new AirFilter();
-    for (let t = 0; t < 1200; t += 1) f.update(1, { running: true, speed: 5, mud: 1, puddle: 1 });
+    for (let t = 0; t < 4000; t += 1) f.update(1, { running: true, speed: 5, mud: 1, puddle: 1 });
     expect(f.clog).toBe(1);
     expect(f.state).toBe('choked');
     f.clean();

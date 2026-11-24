@@ -183,7 +183,7 @@ describe('the wear', () => {
     const w = new MotWear(P);
     w.deal(() => 0.999);
     expect(Math.max(w.bulbs, w.blades, w.horn)).toBeLessThan(P.wornAt);
-    w.wear(10);
+    w.wear(100);
     expect(w.bulbs).toBe(1);
     w.renew();
     expect(w.capture()).toEqual({ bulbs: 0, blades: 0, horn: 0 });
