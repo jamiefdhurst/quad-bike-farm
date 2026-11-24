@@ -5,7 +5,7 @@ import { canPull, engineName, fitEngine, fitIndex, pullEngine, unitFamily } from
 import { SHED_JOBS, SHED_JOB_KINDS, shedJobWhyNot, shedLook } from './shedJobs.js';
 import { registerTuning } from '../core/tuning.js';
 import { DEFAULT_SERVICE_PARAMS, SERVICE_PARAM_RANGES, ServiceRun, servicePlan, factsOf, stateOf, dueBook, applyServiceReward } from './service.js';
-import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, ENGINE_JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, tyreJobFor, inBay, benchCandidates, plugCondition, readPlug, scoringLook, chainLook, bootLook, clutchLook, valvesLook, crashLook } from './benchJobs.js';
+import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, ENGINE_JOB_KINDS, BenchJob, finishJob, jobAvailable, jobPart, tyreJobFor, inBay, benchCandidates, plugCondition, readPlug, scoringLook, chainLook, bootLook, exhaustJointLook, clutchLook, valvesLook, crashLook } from './benchJobs.js';
 
 // The first ten jobs have a number as a shortcut (the tenth on 0); the rest are picked with W, S and E, and carry no key.
 const jobKey = (i) => (i < 10 ? String((i + 1) % 10) : '');
@@ -309,6 +309,8 @@ export class Bench {
       this.game.hud.toast(`The plates: ${clutchLook(this.unit.quad.faults)}`);
     } else if (inspected && this.job?.kind === 'boot') {
       this.game.hud.toast(`The spray: ${bootLook(this.unit.quad.faults)}`);
+    } else if (inspected && this.job?.kind === 'exhaustJoint') {
+      this.game.hud.toast(`The rag: ${exhaustJointLook(this.unit.quad.faults)}`);
     } else if (inspected && this.job?.kind === 'valves') {
       this.game.hud.toast(`The feeler gauge goes in ${valvesLook(this.unit.quad.faults)}`);
     } else if (inspected) {

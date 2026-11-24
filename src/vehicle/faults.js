@@ -15,6 +15,7 @@ export const DEFAULT_FAULT_PARAMS = {
   clutchEvery: 400, // slipping the clutch (at the bite under load, or creeping in low): a worn plate starts after this much slipping
   leakEvery: 6000, // engine running: the intake boot perishing and splitting (diesels have no carb boot, see hasBoot)
   mountsEvery: 5400, // engine running: rubber perishing, so it comes on slower than the rest
+  exhaustBlowEvery: 5400, // engine running: a manifold joint working loose, or a gasket cracking, so it ticks and chuffs from cold
   terminalsEvery: 9000, // engine running, with a battery: the posts furring up with white crust
   valvesEvery: 4800, // engine running, on a four-stroke: the tappets wearing wide
   chainEvery: 3000, // riding, on a chain-driven quad: the chain stretching (a dry one starts sooner, see chainDryWear)
@@ -26,6 +27,7 @@ export const DEFAULT_FAULT_PARAMS = {
   leakSeconds: 1200, // running: the split opening up from a hiss to a gape
   clutchSeconds: 500, // of slipping it: the plate wearing from a little slip to hardly gripping at all
   mountsSeconds: 1500, // running: the mounts going from sound to shot
+  exhaustBlowSeconds: 1500, // running: the joint going from an occasional tick to a steady chuff
   terminalsSeconds: 1500, // running: the crust going from a dusting to thick enough to stop the starter
   valvesSeconds: 2400, // running: the clearance going from a faint tick to a loud one
   chainSeconds: 900, // of riding: the chain going from just slack to hanging off the sprocket
@@ -58,6 +60,7 @@ export const DEFAULT_FAULT_PARAMS = {
   rodToe: 0.14, // radians that front wheel toes out of line, for show
   rimDrag: 0.05, // drive lost to a bent rim at its worst
   rimWobble: 0.09, // radians the bent wheel wobbles from side to side, for show
+  exhaustBlowLoss: 0.04, // drive lost to a fully blowing joint (a little gas escapes before the silencer; it is mostly noise)
   proneSpread: 2.5, // each quad is dealt, once a game, how prone it is to each fault and how fast each worsens: from 1/this to this times the rates here
   hardThrottle: 0.6, // throttle that counts as riding hard
   movingSpeed: 2, // m/s over which it counts as being ridden
@@ -75,6 +78,9 @@ export const FAULT_PARAM_RANGES = {
   carbEvery: [60, 20000, 60],
   mountsEvery: [60, 20000, 60],
   leakEvery: [60, 20000, 60],
+  exhaustBlowEvery: [60, 20000, 60],
+  exhaustBlowSeconds: [10, 7200, 10],
+  exhaustBlowLoss: [0, 0.5, 0.01],
   terminalsEvery: [60, 30000, 60],
   terminalsSeconds: [10, 7200, 10],
   clutchEvery: [30, 10000, 30],
@@ -126,12 +132,12 @@ export const FAULT_PARAM_RANGES = {
   plugFixCap: [0, 1, 0.01],
 };
 
-export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim', 'leak', 'clutch', 'terminals', ...SHED_KINDS];
+export const FAULT_KINDS = ['puncture', 'belt', 'cable', 'carb', 'mounts', 'chain', 'valves', 'rod', 'rim', 'leak', 'clutch', 'terminals', ...SHED_KINDS, 'exhaustBlow']; // (last, so adding it dealt nobody else's luck differently)
 
 const perKind = (v) => Object.fromEntries(FAULT_KINDS.map((k) => [k, v]));
 
 /** Faults the toolbox can't touch: a rough fix in the yard does nothing, only the bench puts them right. */
-export const BENCH_ONLY_KINDS = ['leak', 'clutch', ...SHED_KINDS];
+export const BENCH_ONLY_KINDS = ['leak', 'clutch', 'exhaustBlow', ...SHED_KINDS];
 
 /** Faults the toolbox puts right completely, not roughly: a wire brush on the posts leaves them clean, so there is no mild fault left behind. */
 export const YARD_CLEAN_KINDS = ['terminals'];
@@ -261,6 +267,7 @@ export class Faults {
     if (this.hasValves && running && !this.started.valves && this.random() < chance(p.valvesEvery, 'valves')) this.begin('valves');
     if (this.hasBattery && running && !this.started.terminals && this.random() < chance(p.terminalsEvery, 'terminals')) this.begin('terminals');
     if (this.hasBoot && running && !this.started.leak && this.random() < chance(p.leakEvery, 'leak')) this.begin('leak');
+    if (running && !this.started.exhaustBlow && this.random() < chance(p.exhaustBlowEvery, 'exhaustBlow')) this.begin('exhaustBlow');
     if (this.hasClutch && clutchSlip > 0 && !this.started.clutch && this.random() < chance(p.clutchEvery / clutchSlip, 'clutch')) this.begin('clutch');
     const grow = (kind, on, seconds) => {
       if (this.started[kind] && on) this.levels[kind] = Math.min(this.caps[kind], this.levels[kind] + (dt * this.worsens[kind] * (on === true ? 1 : on)) / seconds);
@@ -271,6 +278,7 @@ export class Faults {
     grow('carb', running, p.carbSeconds);
     grow('mounts', running, p.mountsSeconds);
     grow('leak', running, p.leakSeconds);
+    grow('exhaustBlow', running, p.exhaustBlowSeconds);
     grow('terminals', running, p.terminalsSeconds);
     grow('clutch', clutchSlip > 0 && clutchSlip, p.clutchSeconds); // only slipping it wears it further
     grow('valves', running && !this.kept.valveTight, p.valvesSeconds); // wearing wide; a clearance set too tight stays as it is
@@ -478,7 +486,7 @@ export class Faults {
   get shedDriveFactor() {
     const p = this.params;
     const on = (kind, k) => (this.started[kind] ? k * this.levels[kind] : 0);
-    return (1 - on('tapClog', p.tapClogLoss * this.tapLoad)) * (1 - on('exhaustHole', p.exhaustHoleLoss)) * (1 - on('caliper', p.caliperDrag)) * (1 - on('bearing', p.bearingDrag));
+    return (1 - on('tapClog', p.tapClogLoss * this.tapLoad)) * (1 - on('exhaustHole', p.exhaustHoleLoss)) * (1 - on('caliper', p.caliperDrag)) * (1 - on('bearing', p.bearingDrag)) * (1 - on('exhaustBlow', p.exhaustBlowLoss));
   }
 
   /** 0..1 how badly the belt slips, and how dirty the carb is (for the engine). */
@@ -493,6 +501,11 @@ export class Faults {
   /** 0..1 how badly the intake boot is split, for the engine (it leans out, hunts at idle and pops on the overrun). */
   get airLeak() {
     return this.levels.leak;
+  }
+
+  /** 0..1 how badly the exhaust joint blows, for the engine (it ticks and chuffs while the metal is cold and seals as it heats, see engine/exhaustBlow.js). */
+  get exhaustBlow() {
+    return this.levels.exhaustBlow;
   }
 
   /** 0..1 how corroded the battery posts are, for the engine (the starter turns slowly, then only clicks, with the battery itself fine). */

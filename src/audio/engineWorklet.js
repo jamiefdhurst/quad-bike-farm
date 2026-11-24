@@ -649,6 +649,14 @@ class EngineProcessor extends AudioWorkletProcessor {
         // Piston slap: a hollow clack as the piston rocks across the bore, low and dull beside a tappet's tick.
         this.active.push({ kind: 'slap', age: 0, amp: p.slapVolume * (0.4 + 0.6 * (ev.strength ?? 0.5)) * (0.7 + Math.random() * 0.6), freq: 340 + Math.random() * 120 });
         break;
+      case 'blow': {
+        // An exhaust joint leaking: a sharp tick when it is a little, a soft chuff of gas as it gets worse (the event carries how bad it is just now).
+        const bad = ev.strength ?? 0.5;
+        const amp = p.blowVolume * (0.5 + 0.5 * bad) * (0.7 + Math.random() * 0.6);
+        if (Math.random() < 0.3 + 0.6 * bad) this.active.push({ kind: 'chuff', age: 0, amp, freq: 150 + Math.random() * 60 });
+        else this.active.push({ kind: 'ping', age: 0, amp: amp * 1.6, freq: 1800 + Math.random() * 900, ring: 0.7 });
+        break;
+      }
       case 'coolTick':
         // The metal contracting as it cools: one small, higher, ringing tick.
         this.active.push({ kind: 'ping', age: 0, amp: p.pingVolume * (0.35 + Math.random() * 0.4), freq: 3600 + Math.random() * 1800, ring: 2.2 });
@@ -809,6 +817,13 @@ class EngineProcessor extends AudioWorkletProcessor {
             const env = Math.exp(-a / (0.009 * sr));
             dry += e.amp * env * (Math.sin((TWO_PI * e.freq * a) / sr) + (a < 0.0012 * sr ? (Math.random() * 2 - 1) * 0.7 : 0));
             done = a > 0.06 * sr;
+            break;
+          }
+          case 'chuff': {
+            // A puff of gas past the joint: a burst of noise with a soft low thud under it, gone in about 30 ms.
+            const env = Math.exp(-a / (0.008 * sr));
+            dry += e.amp * env * ((Math.random() * 2 - 1) * 0.8 + Math.sin((TWO_PI * e.freq * a) / sr));
+            done = a > 0.04 * sr;
             break;
           }
           case 'clunk': {

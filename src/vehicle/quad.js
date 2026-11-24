@@ -1222,6 +1222,7 @@ export class Quad {
       terminals: this.faults.terminalCorrosion,
       airLeak: this.faults.airLeak,
       exhaustLeak: this.faults.exhaustLeak,
+      exhaustBlow: this.faults.exhaustBlow,
       valveLoose: this.faults.valveLoose,
       valveTight: this.faults.valveTight,
       clog: Math.min(1, this.filter.clog + (this.sump?.airboxChoke ?? 0)),
