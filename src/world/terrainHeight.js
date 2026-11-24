@@ -37,7 +37,7 @@ import { createMoor, laneEdgeAt } from './moor.js';
  */
 export const HILL_FADE_ON_LANDFORM = 160;
 
-export function createTerrainHeight(layout, track) {
+export function createTerrainHeight(layout, track, { hillFade } = {}) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
   const farm = layout.farm ?? { minX: -fieldHalf, maxX: fieldHalf, minZ: -fieldHalf, maxZ: fieldHalf };
   const fieldShape = createFieldShape(layout);
@@ -79,14 +79,14 @@ export function createTerrainHeight(layout, track) {
     // Land rises gently beyond the farm's hedges towards distant hills; through the south gate, the lane and the hill pasture have their own
     // shape (world/hill.js), fading back into it beyond their hedges.
     // North, through the north gate, the wood has its own (world/woods.js) in the same way, and the gravel pit's field (world/quarry.js) is kept flat for it.
-    const hillFade = landform ? HILL_FADE_ON_LANDFORM : 40;
-    const w = hill ? hill.weight(x, z, hillFade) : 0;
+    const fade = hillFade ?? (landform ? HILL_FADE_ON_LANDFORM : 40); // `hillFade` is for a test to compare with the 40 m one (#1172)
+    const w = hill ? hill.weight(x, z, fade) : 0;
     const ww = woods ? woods.weight(x, z) : 0;
     const qw = quarry ? quarry.weight(x, z) : 0;
     // The new farm's landform (layout.landform) is already in `lie`, so it has no rise of its own beyond the hedges.
     if (!landform) h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013)) * (1 - Math.max(w, ww, qw));
     if (w > 0) h += w * hill.profile(x, z);
-    if (hill && hill.westCut) h -= hill.westCut(x, z, hillFade); // the stream on west of the pasture's hedge to Back Lane's ford (#686)
+    if (hill && hill.westCut) h -= hill.westCut(x, z, fade); // the stream on west of the pasture's hedge to Back Lane's ford (#686)
     if (ww > 0) h += ww * woods.profile(x, z);
 
     // The stubble fields' own lie: the north one's hollow, the south one's rise.
