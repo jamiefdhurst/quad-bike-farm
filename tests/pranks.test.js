@@ -131,4 +131,14 @@ describe('pranks', () => {
       }
     }
   });
+
+  it('only picks a vehicle with the tap or the choke to play it on', () => {
+    const p = make();
+    const noTap = ctx({ quads: [quad({ hasTap: false })] });
+    expect(p.targets('tap', noTap)).toEqual([]);
+    expect(p.targets('tap', ctx())).toHaveLength(1);
+    const noChoke = ctx({ quads: [quad({ hasChoke: false })] });
+    expect(p.targets('choke', noChoke)).toEqual([]);
+    expect(p.targets('choke', ctx({ quads: [quad({ hasChoke: true })] }))).toHaveLength(1);
+  });
 });

@@ -1875,3 +1875,14 @@ Jamie, on #1129's shots: the domes looked much smaller and stuck on, Jess's open
 - Checked: her body turns no triangle against the unshaped one; the polo's shell has the original's few turned faces (by her armpits) and its placket none on its face. Shots against the original in the polo (Jess's open) as it ships; the plaid, jumper and crop-top only with a milder dip (70%) before the V's fixes. A dot of the shirt under Jess's crop-top band showed once, in a different pose from the original's shot.
 - Interim. Jamie, after: still not round from the side or underneath, the cleavage drawn in an open V runs on past her bust, and a big bust should look real and have weight. An egg-shaped bust was tried next (her body split again round it, her front moved on to it) and dropped: too high, too tall, no weight, and it kept turning triangles over and denting the shirt. The redo starts again from a written target in #1143.
 
+
+## Nobody pulls a choke that isn't there (#255)
+
+Jess's Griffin idled about 2,000 rpm for a whole drive: the girls' own starting code put a choke on it, and nothing took it off (the player's choke keys already skip an injected engine).
+
+- **The engine is the one place.** `engineModel.js` drops the `chokeIdleRpm` term from the idle target when `injected`, so no code path can lift an injected idle with `choke`. (The mixture already ignored it.)
+- **Each girl's own code asks `hasChoke`** (`vehicle/controls.js`, the helper the key hints and quirks use) rather than a new check: the cold start and the between-goes "remembered" in `startingAttempt.js`, `chokeBack` after bogging and `practice:choke` in `herDriving.js`, and `crankStruggleCold` in `companionVoice.js` (an injected engine can't be cold for want of a choke).
+- **Sat waiting in a cold engine** (`readyQuads`, `warmSitQuads`, the sulker in the cab) goes through `mindColdEngine` (`readyWaiting.js`): choke 0.3 only where there is one; the 0.15 helper throttle not on an injected engine, whose own fast idle keeps it alive. Diesels keep the throttle and get no choke.
+- **Jess's pranks** pick only a vehicle with the part: `prankContext` says `hasTap` (not `noTap`) and `hasChoke`, and `Pranks.targets` filters on them, so the loan quad is out of both.
+- **`crankAttempt.js:91` left alone:** only the Tor has a starting handle, and it has a real choke.
+- **Split from #258** (faults in parts a vehicle doesn't have): both said "do together" (#422), but #258 is a fault-eligibility table well past this one's size and #255 needed no carb check. They share `hasChoke`; Jamie agreed to the split.

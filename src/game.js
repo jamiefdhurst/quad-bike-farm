@@ -152,7 +152,7 @@ import { Hearing, EAR_PARAM_RANGES } from './npc/earing.js';
 import { Warming, WARMING_PARAM_RANGES, isChilly } from './npc/warming.js';
 import { CabShelter, CAB_SHELTER_PARAM_RANGES } from './npc/cabShelter.js';
 import { Sulking, SULK_PARAM_RANGES } from './npc/sulking.js';
-import { ReadyWaiting, READY_PARAM_RANGES } from './npc/readyWaiting.js';
+import { ReadyWaiting, READY_PARAM_RANGES, mindColdEngine } from './npc/readyWaiting.js';
 import { answerWave, DEFAULT_WAVE_PARAMS, WAVE_RANGES } from './npc/playerWave.js';
 import { WarmSit, WARMSIT_PARAM_RANGES } from './npc/warmSit.js';
 import { Practising, PRACTISING_PARAM_RANGES } from './npc/practising.js';
@@ -8099,8 +8099,7 @@ export class Game {
       const c = this.companions.find((o) => o.character.id === id);
       if (c.fsm.is('starting') || !q.engine.isRunning || q.engine.temperature >= q.engine.params.warmLightThreshold) continue; // (while she is starting it she minds the choke herself)
       cared.add(q);
-      if (q.choke < 0.3) q.choke = 0.3;
-      if (this.readyRev?.quad !== q) q.helperThrottle = 0.15;
+      mindColdEngine(q, this.readyRev?.quad === q);
     }
     for (const q of this.readyCare ?? []) {
       if (!cared.has(q)) {
@@ -8163,8 +8162,7 @@ export class Game {
     if (sat) {
       const q = this.goVehicle(sat.cab).quad;
       if (q.engine.isRunning && q.engine.temperature < q.engine.params.warmLightThreshold) {
-        if (q.choke < 0.3) q.choke = 0.3;
-        if (!this.sulkRev) q.helperThrottle = 0.15; // and a touch of throttle from the seat beside
+        mindColdEngine(q, !!this.sulkRev); // and a touch of throttle from the seat beside
         this.sulkChoke = q;
       } else if (this.sulkChoke === q) {
         q.choke = 0;
@@ -10636,6 +10634,7 @@ export class Game {
         taken: !!u.quad.rider || this.companions.some((c) => c.quad === u.quad && !c.fsm.is('idle')),
         running: u.quad.engine.isRunning,
         tap: u.quad.fuel.tap,
+        hasTap: !u.quad.fuel.params.noTap, hasChoke: hasChoke(u.quad.engine.params),
         choke: u.quad.choke,
         temperature: u.quad.engine.temperature,
       })),

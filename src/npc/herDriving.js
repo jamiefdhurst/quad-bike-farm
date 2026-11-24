@@ -9,6 +9,7 @@
 // use in place of a rider's keys. Obstacles come from a probe callback, so the
 // game can answer with raycasts and tests with anything.
 
+import { hasChoke } from '../vehicle/controls.js';
 import { settleBoost, boostFactor } from './tarmac.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
 import { TractorStartAttempt } from './tractorStart.js';
@@ -756,7 +757,7 @@ export class HerDrive {
   /** Unless she's forgotten about it, she eases the choke off as it warms. */
   tendChoke() {
     const q = this.quad;
-    if (this.forgetsChoke || !q.engine.isRunning || q.choke <= 0) return;
+    if (this.forgetsChoke || !q.engine.isRunning || q.choke <= 0 || !hasChoke(q.engine.params)) return;
     const want = q.engine.temperature > 0.9 ? 0 : 1.15 - q.engine.temperature;
     const before = q.choke;
     q.choke = Math.round(clamp(want, 0, q.choke) * 10) / 10;
@@ -1302,7 +1303,7 @@ export class HerDrive {
     if (this.bogs > 3 + patient) {
       this.events.push('bogged');
       this.stop('gaveUp');
-    } else if (q.engine.temperature < 0.5 && q.choke < 0.5 && this.random() < 0.5) {
+    } else if (hasChoke(q.engine.params) && q.engine.temperature < 0.5 && q.choke < 0.5 && this.random() < 0.5) {
       q.choke = 1;
       this.forgetsChoke = false; // and now she'll mind it
       this.events.push('chokeBack');
