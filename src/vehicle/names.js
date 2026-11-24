@@ -24,6 +24,14 @@ export const VEHICLE_NAMES = {
   vauclair: { maker: 'Vauclair', model: '39D', say: 'Vauclair' }, // your own car: "the Vauclair", as you'd say "the Kestrel"
 };
 
+/**
+ * Vehicles that are scenery and not in the fleet (so they have no spec, and VEHICLE_NAMES stays one entry to a spec): the neighbour's loader tractor (#926), a Calder Dene 100.
+ * Same shape as VEHICLE_NAMES; nothing lends or sells them.
+ */
+export const SCENERY_NAMES = {
+  dene: { maker: 'Calder', model: 'Dene 100', say: 'loader tractor' },
+};
+
 export const MAKER_NAMES = [...new Set(Object.values(VEHICLE_NAMES).map((n) => n.maker))];
 
 /** "Kestrel Farm 300": the panels, the FAQ, the wheel. */

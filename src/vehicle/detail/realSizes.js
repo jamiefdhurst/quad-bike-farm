@@ -18,6 +18,7 @@ export const REAL_SIZES = {
   shepherd: { length: 2085, width: 840, height: 1130, wheelbase: 1330, track: 0, tyre: 670 }, // the book: 2,085 long, 840 over the bars, 1,130 high, 1,330 wheelbase, 2.75-21 and 4.10-18 tyres
   clipper: { length: 2100, width: 1150, height: 1150, wheelbase: 1120, track: 780, tyre: 480 }, // a 42 inch deck tractor: about 2.1 m with the box, 1.15 m over the deck and its chute
   t185: { length: 1780, width: 1040, height: 1050, wheelbase: 1145, track: 780, tyre: 600 },
+  dene: { length: 6000, width: 2500, height: 2950, wheelbase: 2450, track: 1900, tyre: 1450 }, // the neighbour's 100 hp four-wheel-drive tractor with a front loader, its bucket down: about 6 m from the drawbar to the bucket's lip, 2.5 m over the rear tyres, 2.95 m to the top of the beacon, a 600/65R38 rear tyre about 1.5 m across
   hartley: { length: 2970, width: 1650, height: 1920, wheelbase: 1830, track: 1270, tyre: 1170 }, // height is to the top of the exhaust
   yak: { length: 3015, width: 1580, height: 1925, wheelbase: 1910, track: 1230, tyre: 650 },
   tor: { length: 3640, width: 1680, height: 1970, wheelbase: 2235, track: 1310, tyre: 757 },

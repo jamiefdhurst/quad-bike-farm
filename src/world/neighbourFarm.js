@@ -35,6 +35,7 @@ export const PARKED_SIZES = {
   tor: { hl: 2.15, hw: 0.95, h: 1.95 },
   utv: { hl: 1.55, hw: 0.85, h: 1.85 },
   tractor: { hl: 1.9, hw: 1.0, h: 2.4 },
+  loaderTractor: { hl: 3.05, hw: 1.27, h: 2.85, cz: 0.58 }, // her newer tractor with its loader (#926), bucket down: the lip is 3.6 m ahead of the origin and the drawbar 2.45 m behind, so its middle is 0.58 m ahead
   // Her farm quad (the Farm 300's body with a crate on its rear rack) and tipping trailer (#925). A model's origin is not always its middle: the trailer's is under its
   // axle, 0.38 m behind the middle of the drawbar and tub, so `cz` is how far ahead of the origin its middle is, and the yard places the middle (`x`, `z`).
   quad: { hl: 1.1, hw: 0.65, h: 1.25, cz: 0 },

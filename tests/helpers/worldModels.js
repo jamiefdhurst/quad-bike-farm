@@ -136,6 +136,8 @@ export async function buildWorldModels() {
   add('world', 'pigArk', buildPigArk);
   const { buildFarmQuad } = await import('../../src/world/neighbourVehicles.js');
   add('world', 'farmQuad', buildFarmQuad, (b) => b(0x4c6a3c)); // the neighbour's quad, worn (#925); her trailer is the tipper's own model, built by tests/vehicleModels.test.js
+  const { buildLoaderTractorModel } = await import('../../src/vehicle/loaderTractorModel.js');
+  add('world', 'loaderTractor', buildLoaderTractorModel, (b) => b({ bodyColor: 0x23548f })); // the neighbour's newer tractor with its front loader (#926)
   const { buildRollingRoadModel } = await import('../../src/world/rollingRoadModel.js');
   add('setPiece', 'rolling-road-trailer', buildRollingRoadModel);
   const { buildBundle } = await import('../../src/items/brushwood.js');
