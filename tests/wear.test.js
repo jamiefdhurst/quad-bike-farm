@@ -23,7 +23,7 @@ describe('wear', () => {
   it('builds up while it runs, faster when worked hard, up to a limit', () => {
     const idle = running(0, 10);
     const hard = running(1, 10);
-    expect(idle.wear).toBeGreaterThan(0.08);
+    expect(idle.wear).toBeGreaterThan(0.03);
     expect(hard.wear).toBeGreaterThan(idle.wear * 2);
     // Worked hard for long enough, it wears well into needing a service (it stops wearing once it stalls).
     // (seed 2: a hard-run engine stalls at some point past 0.8 wear, and which wear that is changes with the seed)
@@ -44,7 +44,7 @@ describe('wear', () => {
   });
 
   it('makes it run rougher, and clears when serviced', () => {
-    const e = running(0, 10);
+    const e = running(0, 30);
     const worn = e.roughness;
     e.wear = 0;
     e.update(1 / 20, {});

@@ -28,15 +28,15 @@ describe('faults starting', () => {
     expect(f.has('belt')).toBe(true);
   });
 
-  it('are rare: over ten minutes of riding, a quad usually gets under two', () => {
+  it('are rare: over a whole day of riding (eight game hours), a quad gets well under one', () => {
     let total = 0;
     for (let seed = 1; seed <= 40; seed++) {
       const f = new Faults({ ...P }, seeded(seed * 7919));
-      for (let t = 0; t < 600; t += 0.1) f.update(0.1, ride);
+      for (let t = 0; t < 2400; t += 0.5) f.update(0.5, ride);
       total += ['puncture', 'belt', 'cable', 'carb'].filter((k) => f.has(k)).length;
     }
-    expect(total / 40).toBeGreaterThan(0.3);
-    expect(total / 40).toBeLessThan(2);
+    expect(total / 40).toBeGreaterThan(0.1);
+    expect(total / 40).toBeLessThan(1);
   });
 
   it('only one of each at a time, and they get worse until fixed', () => {
@@ -46,7 +46,7 @@ describe('faults starting', () => {
     const before = f.levels.carb;
     for (let i = 0; i < 100; i++) f.update(0.1, { running: true, speed: 0, throttle: 0 });
     expect(f.levels.carb).toBeGreaterThan(before);
-    for (let i = 0; i < 20000; i++) f.update(0.1, { running: true, speed: 0, throttle: 0 });
+    for (let i = 0; i < 20000; i++) f.update(1, { running: true, speed: 0, throttle: 0 });
     expect(f.levels.carb).toBe(1);
   });
 

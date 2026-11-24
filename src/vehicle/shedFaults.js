@@ -26,31 +26,31 @@ export const SHED_WHEEL_KINDS = ['tyreUneven', 'valveCore', 'caliper', 'bearing'
 
 export const DEFAULT_SHED_FAULT_PARAMS = {
   // How often each one starts, as the average seconds of the right kind of use per fault.
-  tyreLeakEvery: 5400, // riding: a bead or a rim seam seeping air
-  tyreColdEvery: 1500, // on a cold morning (below tyreColdBelow), parked or ridden: the air in the tyres contracting
-  tyreUnevenEvery: 4800, // riding: one tyre left lower than the rest after a knock
-  valveCoreEvery: 9000, // any time: a valve core that no longer seals
-  carbGumEvery: 5400, // the engine running: varnish from old fuel building up in the jets
-  tapClogEvery: 6000, // the engine running: sediment clogging the fuel tap's gauze
-  chainGritEvery: 4200, // riding, on a chain-driven quad: mud and grit packed into the chain
-  brakeMudEvery: 4200, // riding: mud caked in the pads and calipers
-  exhaustHoleEvery: 7200, // the engine running: the silencer rusting through
-  gasketEvery: 7200, // the engine running, on a four-stroke with a sump: the gasket weeping
-  caliperEvery: 6000, // riding: a caliper piston sticking
-  bearingEvery: 7200, // riding: a wheel bearing running dry
+  tyreLeakEvery: 97200, // riding: a bead or a rim seam seeping air
+  tyreColdEvery: 27000, // on a cold morning (below tyreColdBelow), parked or ridden: the air in the tyres contracting
+  tyreUnevenEvery: 86400, // riding: one tyre left lower than the rest after a knock
+  valveCoreEvery: 162000, // any time: a valve core that no longer seals
+  carbGumEvery: 97200, // the engine running: varnish from old fuel building up in the jets
+  tapClogEvery: 108000, // the engine running: sediment clogging the fuel tap's gauze
+  chainGritEvery: 75600, // riding, on a chain-driven quad: mud and grit packed into the chain
+  brakeMudEvery: 75600, // riding: mud caked in the pads and calipers
+  exhaustHoleEvery: 129600, // the engine running: the silencer rusting through
+  gasketEvery: 129600, // the engine running, on a four-stroke with a sump: the gasket weeping
+  caliperEvery: 108000, // riding: a caliper piston sticking
+  bearingEvery: 129600, // riding: a wheel bearing running dry
   // How long each takes to go from just started to as bad as it gets.
-  tyreLeakSeconds: 1500,
-  tyreColdSeconds: 600,
-  tyreUnevenSeconds: 900,
-  valveCoreSeconds: 1200,
-  carbGumSeconds: 1800,
-  tapClogSeconds: 1500,
-  chainGritSeconds: 1200,
-  brakeMudSeconds: 1200,
-  exhaustHoleSeconds: 1800,
-  gasketSeconds: 1800,
-  caliperSeconds: 1200,
-  bearingSeconds: 2400,
+  tyreLeakSeconds: 4200,
+  tyreColdSeconds: 1200,
+  tyreUnevenSeconds: 4200,
+  valveCoreSeconds: 7000,
+  carbGumSeconds: 7600,
+  tapClogSeconds: 7000,
+  chainGritSeconds: 4200,
+  brakeMudSeconds: 4200,
+  exhaustHoleSeconds: 8000,
+  gasketSeconds: 8000,
+  caliperSeconds: 4200,
+  bearingSeconds: 5000,
   // What they do at their worst.
   tyreColdBelow: 6, // degrees C under which the air has contracted enough to matter; the colder, the quicker it starts
   tyreLeakBleed: 0.002, // psi a second off every tyre
@@ -63,37 +63,37 @@ export const DEFAULT_SHED_FAULT_PARAMS = {
   brakeMudFade: 0.55, // braking lost to fully caked brakes
   exhaustHoleLoud: 0.8, // how loud a fully holed silencer is, as a share of one taken off
   exhaustHoleLoss: 0.12, // drive lost to a holed silencer's lost back-pressure and leaking gas
-  gasketBleed: 0.0015, // sump level lost a second at the worst, while the engine runs
+  gasketBleed: 0.0003, // sump level lost a second at the worst, while the engine runs
   caliperDrag: 0.3, // drive lost to a fully dragging caliper
   bearingDrag: 0.1, // drive lost to a fully run-dry bearing
   bearingWobble: 0.05, // radians that wheel shimmies side to side, for show
 };
 
 export const SHED_FAULT_RANGES = {
-  tyreLeakEvery: [60, 20000, 60],
-  tyreColdEvery: [30, 20000, 30],
-  tyreUnevenEvery: [60, 20000, 60],
-  valveCoreEvery: [60, 30000, 60],
-  carbGumEvery: [60, 20000, 60],
-  tapClogEvery: [60, 20000, 60],
-  chainGritEvery: [60, 20000, 60],
-  brakeMudEvery: [60, 20000, 60],
-  exhaustHoleEvery: [60, 20000, 60],
-  gasketEvery: [60, 20000, 60],
-  caliperEvery: [60, 20000, 60],
-  bearingEvery: [60, 20000, 60],
-  tyreLeakSeconds: [10, 7200, 10],
-  tyreColdSeconds: [10, 3600, 10],
-  tyreUnevenSeconds: [10, 3600, 10],
-  valveCoreSeconds: [10, 3600, 10],
-  carbGumSeconds: [10, 7200, 10],
-  tapClogSeconds: [10, 7200, 10],
-  chainGritSeconds: [10, 7200, 10],
-  brakeMudSeconds: [10, 7200, 10],
-  exhaustHoleSeconds: [10, 7200, 10],
-  gasketSeconds: [10, 7200, 10],
-  caliperSeconds: [10, 7200, 10],
-  bearingSeconds: [10, 7200, 10],
+  tyreLeakEvery: [60, 400000, 60],
+  tyreColdEvery: [30, 400000, 30],
+  tyreUnevenEvery: [60, 400000, 60],
+  valveCoreEvery: [60, 400000, 60],
+  carbGumEvery: [60, 400000, 60],
+  tapClogEvery: [60, 400000, 60],
+  chainGritEvery: [60, 400000, 60],
+  brakeMudEvery: [60, 400000, 60],
+  exhaustHoleEvery: [60, 400000, 60],
+  gasketEvery: [60, 400000, 60],
+  caliperEvery: [60, 400000, 60],
+  bearingEvery: [60, 400000, 60],
+  tyreLeakSeconds: [10, 20000, 10],
+  tyreColdSeconds: [10, 20000, 10],
+  tyreUnevenSeconds: [10, 20000, 10],
+  valveCoreSeconds: [10, 20000, 10],
+  carbGumSeconds: [10, 20000, 10],
+  tapClogSeconds: [10, 20000, 10],
+  chainGritSeconds: [10, 20000, 10],
+  brakeMudSeconds: [10, 20000, 10],
+  exhaustHoleSeconds: [10, 20000, 10],
+  gasketSeconds: [10, 20000, 10],
+  caliperSeconds: [10, 20000, 10],
+  bearingSeconds: [10, 20000, 10],
   tyreColdBelow: [-10, 20, 0.5],
   tyreLeakBleed: [0, 0.02, 0.0005],
   tyreColdDrop: [0, 4, 0.1],

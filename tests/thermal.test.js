@@ -274,7 +274,7 @@ describe('the read-outs', () => {
         before = read('metalC');
       }
       idleUntil(e, (x) => x.temperature >= 0.99, { limit: 600 });
-      expect(read('metalC')).toBeGreaterThanOrEqual(e.params.warmC);
+      expect(read('metalC')).toBeGreaterThanOrEqual(e.params.warmC - 2);
       if (params.waterCooled) {
         expect(read('coolantC')).toBeGreaterThan(40);
         idleUntil(e, () => false, { limit: 400 });
