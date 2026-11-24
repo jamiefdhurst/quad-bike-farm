@@ -8,30 +8,30 @@ import { DEFAULT_SHED_FAULT_PARAMS, SHED_FAULT_RANGES, SHED_KINDS, SHED_WHEEL_KI
 export const DEFAULT_FAULT_PARAMS = {
   ...DEFAULT_SHED_FAULT_PARAMS,
   // How often each one starts, as the average seconds of the right kind of use per fault.
-  punctureEvery: 2400, // riding: a thorn from the hedge
-  beltEvery: 1800, // riding hard, with the throttle well open
-  cableEvery: 7200, // engine running (was 2700: it stuck too often)
-  carbEvery: 2400, // engine running
-  clutchEvery: 400, // slipping the clutch (at the bite under load, or creeping in low): a worn plate starts after this much slipping
-  leakEvery: 6000, // engine running: the intake boot perishing and splitting (diesels have no carb boot, see hasBoot)
-  mountsEvery: 5400, // engine running: rubber perishing, so it comes on slower than the rest
-  exhaustBlowEvery: 5400, // engine running: a manifold joint working loose, or a gasket cracking, so it ticks and chuffs from cold
-  terminalsEvery: 9000, // engine running, with a battery: the posts furring up with white crust
-  valvesEvery: 4800, // engine running, on a four-stroke: the tappets wearing wide
-  chainEvery: 3000, // riding, on a chain-driven quad: the chain stretching (a dry one starts sooner, see chainDryWear)
+  punctureEvery: 43200, // riding: a thorn from the hedge
+  beltEvery: 32400, // riding hard, with the throttle well open
+  cableEvery: 129600, // engine running (was 2700: it stuck too often)
+  carbEvery: 43200, // engine running
+  clutchEvery: 7200, // slipping the clutch (at the bite under load, or creeping in low): a worn plate starts after this much slipping
+  leakEvery: 108000, // engine running: the intake boot perishing and splitting (diesels have no carb boot, see hasBoot)
+  mountsEvery: 97200, // engine running: rubber perishing, so it comes on slower than the rest
+  exhaustBlowEvery: 97200, // engine running: a manifold joint working loose, or a gasket cracking, so it ticks and chuffs from cold
+  terminalsEvery: 162000, // engine running, with a battery: the posts furring up with white crust
+  valvesEvery: 86400, // engine running, on a four-stroke: the tappets wearing wide
+  chainEvery: 54000, // riding, on a chain-driven quad: the chain stretching (a dry one starts sooner, see chainDryWear)
   // How long each takes to go from just started to as bad as it gets.
-  punctureSeconds: 120, // the tyre going flat
-  beltSeconds: 300, // of hard riding
-  cableSeconds: 600, // running
-  carbSeconds: 900, // running
-  leakSeconds: 1200, // running: the split opening up from a hiss to a gape
-  clutchSeconds: 500, // of slipping it: the plate wearing from a little slip to hardly gripping at all
-  mountsSeconds: 1500, // running: the mounts going from sound to shot
-  exhaustBlowSeconds: 1500, // running: the joint going from an occasional tick to a steady chuff
-  terminalsSeconds: 1500, // running: the crust going from a dusting to thick enough to stop the starter
-  valvesSeconds: 2400, // running: the clearance going from a faint tick to a loud one
-  chainSeconds: 900, // of riding: the chain going from just slack to hanging off the sprocket
-  chainLubeSeconds: 1500, // of riding for a freshly oiled chain to run dry
+  punctureSeconds: 1200, // the tyre going flat
+  beltSeconds: 2100, // of hard riding
+  cableSeconds: 5700, // running
+  carbSeconds: 6400, // running
+  leakSeconds: 7000, // running: the split opening up from a hiss to a gape
+  clutchSeconds: 1050, // of slipping it: the plate wearing from a little slip to hardly gripping at all
+  mountsSeconds: 7600, // running: the mounts going from sound to shot
+  exhaustBlowSeconds: 7600, // running: the joint going from an occasional tick to a steady chuff
+  terminalsSeconds: 7600, // running: the crust going from a dusting to thick enough to stop the starter
+  valvesSeconds: 8400, // running: the clearance going from a faint tick to a loud one
+  chainSeconds: 4200, // of riding: the chain going from just slack to hanging off the sprocket
+  chainLubeSeconds: 6000, // of riding for a freshly oiled chain to run dry
   // What they do at their worst.
   puncturePull: 0.09, // radians the bars are pulled towards the flat tyre (half for a rear one)
   punctureDrag: 0.12, // drive lost to a flat tyre's rolling resistance
@@ -72,19 +72,19 @@ export const DEFAULT_FAULT_PARAMS = {
 
 export const FAULT_PARAM_RANGES = {
   ...SHED_FAULT_RANGES,
-  punctureEvery: [60, 20000, 60],
-  beltEvery: [60, 20000, 60],
-  cableEvery: [60, 20000, 60],
-  carbEvery: [60, 20000, 60],
-  mountsEvery: [60, 20000, 60],
-  leakEvery: [60, 20000, 60],
-  exhaustBlowEvery: [60, 20000, 60],
-  exhaustBlowSeconds: [10, 7200, 10],
+  punctureEvery: [60, 400000, 60],
+  beltEvery: [60, 400000, 60],
+  cableEvery: [60, 400000, 60],
+  carbEvery: [60, 400000, 60],
+  mountsEvery: [60, 400000, 60],
+  leakEvery: [60, 400000, 60],
+  exhaustBlowEvery: [60, 400000, 60],
+  exhaustBlowSeconds: [10, 20000, 10],
   exhaustBlowLoss: [0, 0.5, 0.01],
-  terminalsEvery: [60, 30000, 60],
-  terminalsSeconds: [10, 7200, 10],
-  clutchEvery: [30, 10000, 30],
-  clutchSeconds: [10, 3600, 10],
+  terminalsEvery: [60, 400000, 60],
+  terminalsSeconds: [10, 20000, 10],
+  clutchEvery: [30, 400000, 30],
+  clutchSeconds: [10, 20000, 10],
   clutchDriveLoss: [0, 1, 0.01],
   clutchSlipFrom: [0, 1, 0.05],
   clutchBiteLo: [0, 0.5, 0.01],
@@ -92,18 +92,18 @@ export const FAULT_PARAM_RANGES = {
   clutchCreepSpeed: [0.2, 6, 0.1],
   clutchLoadThrottle: [0, 1, 0.05],
   clutchLoadSlope: [0, 0.3, 0.01],
-  leakSeconds: [10, 3600, 10],
-  chainEvery: [60, 20000, 60],
-  valvesEvery: [60, 20000, 60],
-  valvesSeconds: [10, 7200, 10],
+  leakSeconds: [10, 20000, 10],
+  chainEvery: [60, 400000, 60],
+  valvesEvery: [60, 400000, 60],
+  valvesSeconds: [10, 20000, 10],
   valvesBotchedLevel: [0, 1, 0.05],
-  punctureSeconds: [10, 1200, 10],
-  beltSeconds: [10, 1800, 10],
-  cableSeconds: [10, 1800, 10],
-  carbSeconds: [10, 3600, 10],
-  mountsSeconds: [10, 3600, 10],
-  chainSeconds: [10, 3600, 10],
-  chainLubeSeconds: [60, 7200, 60],
+  punctureSeconds: [10, 20000, 10],
+  beltSeconds: [10, 20000, 10],
+  cableSeconds: [10, 20000, 10],
+  carbSeconds: [10, 20000, 10],
+  mountsSeconds: [10, 20000, 10],
+  chainSeconds: [10, 20000, 10],
+  chainLubeSeconds: [60, 20000, 60],
   chainDryWear: [0, 6, 0.1],
   chainSlapFrom: [0, 1, 0.05],
   chainSlapBump: [0.5, 20, 0.5],

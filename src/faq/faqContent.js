@@ -1206,6 +1206,13 @@ export const FAQ_SECTIONS = [
           otherwise says all is well, so it doesn't give a fault away.`,
       },
       {
+        q: 'How quickly does something go wrong with a quad, and how bad does it get?',
+        a: `Slowly. A quad might pick up one new fault in a day or two of riding, and it takes a couple of days of use to go from a faint symptom to its worst: a carb that
+          starts to gum up is a nuisance for a day or two before it is bad. A slow puncture is the quick one, and takes an afternoon. Nothing gets worse overnight, so a fault you leave is still
+          there the next morning just as you left it. Amy's walk-round and the Problems list in the toolbox tell you what is wrong, and some quads are dealt worse luck than others.`,
+        tip: 'Faults take a day or two of riding to get bad, and wait overnight as they were. Fix them when it suits you.',
+      },
+      {
         q: 'How do I mend a puncture in the field?',
         a: `Take the toolbox to the vehicle, switched off, press <kbd>E</kbd> and pick "Pump and patch tyres". The toolbox has a plug kit with a few tyre plugs in it: one goes in the hole,
           and its little pump brings that tyre up to about 3 psi wherever you are, so you can ride home without the compressor. It leaves a puncture milder than a spare inner tube does, but it is still

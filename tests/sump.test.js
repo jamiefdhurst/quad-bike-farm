@@ -58,22 +58,22 @@ describe('the sump level', () => {
     const other = new Sump({ level: 0.8 });
     burner.step(100, { running: false, work: 1 });
     expect(burner.level).toBe(0.8);
-    for (let i = 0; i < 600; i++) {
+    for (let i = 0; i < 6000; i++) {
       burner.step(1, { running: true, work: 0.6 });
       other.step(1, { running: true, work: 0.6 });
     }
     expect(burner.level).toBeLessThan(0.45);
-    expect(other.level).toBeGreaterThan(0.78);
+    expect(other.level).toBeGreaterThan(0.6);
   });
-  it('a burner left to run goes from half-full to starved in about a quarter of an hour of riding', () => {
+  it('a burner left to run goes from half-full to starved in about an hour and a half of riding', () => {
     const s = new Sump({ level: 0.5, burner: true });
     let t = 0;
-    while (s.level > 0.25 && t < 7200) {
+    while (s.level > 0.25 && t < 20000) {
       s.step(1, { running: true, work: 0.5 });
       t++;
     }
-    expect(t).toBeGreaterThan(300);
-    expect(t).toBeLessThan(900);
+    expect(t).toBeGreaterThan(3000);
+    expect(t).toBeLessThan(9000);
   });
   it('tops up from a bottle, and keeps going past the top mark if you let it, to what it holds', () => {
     const s = new Sump({ level: 0.3 });

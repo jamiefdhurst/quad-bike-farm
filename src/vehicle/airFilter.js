@@ -3,9 +3,9 @@
 // stubble clogs it much faster than mud does. Cleaning it at the toolbox is a short hold. Pure logic.
 
 export const DEFAULT_FILTER_PARAMS = {
-  mudRate: 0.0024, // clog per second, moving through full mud under the wheels (about seven minutes from clean to choked)
-  puddleRate: 0.0033, // the same, splashing through a puddle at full depth
-  dustRate: 0.012, // the same, in a full cloud of stubble dust (five times mud, as dust really clogs: about 80 s from clean to choked)
+  mudRate: 0.0006, // clog per second, moving through full mud under the wheels (about 28 minutes from clean to choked)
+  puddleRate: 0.0008, // the same, splashing through a puddle at full depth
+  dustRate: 0.003, // the same, in a full cloud of stubble dust (five times mud, as dust really clogs: about five minutes from clean to choked)
   minSpeed: 1.5, // m/s: stood still it doesn't get splashed
   cleanSeconds: 3, // holding the key at the toolbox
 };

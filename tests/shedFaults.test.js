@@ -7,8 +7,10 @@ const seeded = (seed = 1) => () => {
   seed = (seed * 16807) % 2147483647;
   return seed / 2147483647;
 };
+// Quick starts: the real rates are one fault in many days (tests/faultPace.test.js holds them), so these tests make them come in minutes.
+const QUICK = Object.fromEntries(SHED_KINDS.map((k) => [`${k}Every`, 600]));
 const make = () => {
-  const f = new Faults({ ...DEFAULT_FAULT_PARAMS }, seeded());
+  const f = new Faults({ ...DEFAULT_FAULT_PARAMS, ...QUICK }, seeded());
   f.hasChain = true;
   f.hasSump = true;
   return f;
@@ -49,7 +51,7 @@ describe('the shed faults', () => {
   });
 
   it('only start where they can: no chain grit without a chain, no gasket without a sump, no gum on a diesel', () => {
-    const f = new Faults({ ...DEFAULT_FAULT_PARAMS }, seeded(7));
+    const f = new Faults({ ...DEFAULT_FAULT_PARAMS, ...QUICK }, seeded(7));
     f.prone.carb = 0;
     run(f, 200000, { running: true, speed: 6, throttle: 0.5, temperature: 12 });
     expect(f.has('chainGrit')).toBe(false);
