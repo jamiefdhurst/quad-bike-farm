@@ -105,6 +105,30 @@ describe('the blow in the engine', () => {
     expect(blows(0.3, 0).n).toBeLessThan(cold);
   });
 
+  it('keeps time with the firings, and comes more often as the revs rise', () => {
+    const run = (throttle) => {
+      const e = new EngineModel({ initialTemperature: 0.6 }, { random: seeded(3) });
+      e.setIgnition(true);
+      for (let i = 0; i < 600 && !e.isRunning; i++) e.update(1 / 60, { starter: true, choke: 1 });
+      let blowsAt = 0;
+      let off = 0;
+      for (let i = 0; i < 6 * 60; i++) {
+        e.update(1 / 60, { throttle, choke: 1, exhaustBlow: 1, load: 0 });
+        e.temperature = 0;
+        const fires = e.pulses.filter((x) => x.type === 'fire').map((x) => x.t);
+        for (const ev of e.events.filter((x) => x.type === 'blow')) {
+          blowsAt++;
+          if (!fires.includes(ev.t)) off++;
+        }
+      }
+      return { blowsAt, off };
+    };
+    const idle = run(0);
+    expect(idle.blowsAt).toBeGreaterThan(10);
+    expect(idle.off).toBe(0);
+    expect(run(0.25).blowsAt).toBeGreaterThan(idle.blowsAt);
+  });
+
   it('is not the holed silencer: it does not make the exhaust louder', () => {
     expect(blows(1, 0).exhaustLeak).toBe(blows(0, 0).exhaustLeak);
   });

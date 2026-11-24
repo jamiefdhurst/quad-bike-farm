@@ -5,13 +5,13 @@
 
 export const DEFAULT_BLOW_PARAMS = {
   blowWarmBelow: 0.6, // engine temperature (0 cold, 1 warm) over which the joint has sealed and the blow has gone
-  blowRate: 10, // ticks and chuffs a second at the worst, at idle and stone cold
+  blowPerFiring: 0.6, // chance of a tick or chuff on each firing at the worst, stone cold at idle: it keeps time with the exhaust pulses
   blowRevsQuiet: 0.5, // how much quieter it is at full revs: the rest of the exhaust drowns it
 };
 
 export const BLOW_RANGES = {
   blowWarmBelow: [0.1, 1, 0.05],
-  blowRate: [0, 40, 0.5],
+  blowPerFiring: [0, 1, 0.05],
   blowRevsQuiet: [0, 1, 0.05],
 };
 

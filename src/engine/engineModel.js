@@ -177,7 +177,6 @@ export class EngineModel {
     this.pistonWear = null; // 0..1 how loose the piston is in the bore (null until first run: it starts at the wear it was dealt); only a new piston clears it
     this.slap = 0; // 0..1 how loudly a worn piston knocks while cold
     this.slapLeft = 0; // clacks owed to the audio
-    this.blowLeft = 0; // ticks and chuffs owed to the audio
     this.erratic = 0; // 0..1 how erratic it's running for want of a service (see erraticFrom)
     this.stumbleLeft = 0; // cycles left of a run of misfires
     this.surge = 0; // rpm of a flare-up at idle, dying away
@@ -731,12 +730,7 @@ export class EngineModel {
     }
     // A leaking exhaust joint ticks and chuffs while the metal is cold; once it has swelled shut it is quiet. Not the holed silencer: that stays loud.
     this.blow = running ? blowLevel(this.exhaustBlow, this.temperature, p) * blowCarry(rpmNorm, p) : 0;
-    if (this.blow > 0) this.blowLeft += p.blowRate * this.blow * (0.5 + 0.5 * this.random()) * h;
-    else this.blowLeft = 0;
-    while (this.blowLeft >= 1) {
-      this.blowLeft -= 1;
-      this.emit('blow', this.random() * h);
-    }
+    if (this.blow > 0) for (const pulse of this.pulses) if (pulse.type === 'fire' && this.random() < p.blowPerFiring * this.blow) this.emit('blow', pulse.t);
     this.nip = nipping(this.scuff, p.nipFrom);
     this.oilRich = oilExcess(this.oil, p.strokes, p);
   }
