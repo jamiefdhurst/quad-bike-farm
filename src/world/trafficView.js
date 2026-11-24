@@ -55,7 +55,7 @@ function silhouette() {
 }
 
 /**
- * One of the farm's own vehicle models (`model`: crag, tor, tractor, utv, quad or tipTrailer) in a paint, with its tyres set on the ground and the body
+ * One of the farm's own vehicle models (`model`: crag, tor, tractor, loaderTractor, utv, quad or tipTrailer) in a paint, with its tyres set on the ground and the body
  * sunk by its springs, as quad.js does. Also used for the vehicles parked in the neighbour's yard (neighbourFarmProps.js).
  */
 export function buildVehicleBody(model, colour, reg = null, look = null) {

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { loftGeometry, mergeStatic, rod } from './quadGeometry.js';
-import { treadTyre, wornTyre } from './detail/tread.js';
+import { treadTyre, wornTyre, outerRadius } from './detail/tread.js';
 import { decalMesh } from './detail/decals.js';
 import { buildLamp } from './detail/lamps.js';
 import { buildMirror } from './detail/mirrors.js';
@@ -147,7 +147,12 @@ const tyreGeo = (rear) => {
     const base = rear
       ? treadTyre('tractor', { radius: LT_WHEELS.rearR, width: LT_WHEELS.rearW, rimR: LT_WHEELS.rearRim, count: 24, segments: 56 })
       : treadTyre('tractor', { radius: LT_WHEELS.frontR, width: LT_WHEELS.frontW, rimR: LT_WHEELS.frontRim, count: 20, segments: 44 });
-    treadCache.set(key, wornTyre(base, 1)); // some of the lugs worn down
+    // Some of the lugs worn down: the worn copy reaches a little less far than the new one, so it is scaled back up to the wheel's radius, or the tyre hovers over the ground.
+    const worn = wornTyre(base, 1).clone();
+    const R = rear ? LT_WHEELS.rearR : LT_WHEELS.frontR;
+    const k = R / outerRadius(worn);
+    worn.scale(1, k, k);
+    treadCache.set(key, worn);
   }
   return treadCache.get(key);
 };
@@ -481,8 +486,8 @@ export function buildLoaderTractorModel({ bodyColor = 0x23548f, reg = 'MK55 WRN'
   // The hose bundle off the remote valves: four hoses from a block on the right, each ending in a quick-release coupler with a coloured cap.
   box(0.22, 0.1, 0.07, M.cast, -0.28, 0.96, -1.65, root, 'valveBlock');
   ['#c0392b', '#2f6db3', '#e0b020', '#2e8a4a'].forEach((colour, i) => {
-    const x0 = -0.37 + i * 0.06;
-    const a = [[x0, 0.94, -1.69], [x0 - 0.02, 0.8, -1.82], [x0 - 0.04 + (i % 2) * 0.04, 0.62, -1.9], [x0 - 0.03 + (i % 2) * 0.05, 0.5, -1.88]];
+    const x0 = -0.37 + i * 0.065;
+    const a = [[x0, 0.94, -1.69], [x0 - 0.02, 0.8, -1.82], [x0 - 0.03, 0.62, -1.9], [x0 - 0.03, 0.5, -1.88]];
     const { hose, clamps } = hoseGeometry(a, 0.014, { sag: 0.02 });
     add(hose, M.hoseRubber, root);
     add(clamps, M.chrome, root);

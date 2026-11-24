@@ -125,18 +125,26 @@ describe('the loader tractor (#926)', () => {
     const worldEnds = (ram) => {
       model.updateMatrixWorld(true);
       const rod = ram.userData.rod;
-      rod.geometry.computeBoundingBox();
       const a = new THREE.Vector3(0, 0, 0).applyMatrix4(ram.matrixWorld);
-      const len = rod.scale.z; // the rod's length: it reaches from the barrel's end to the far pin
-      const b = new THREE.Vector3(0, 0, rod.position.z + len / 2 - 0.1).applyMatrix4(ram.matrixWorld);
+      const b = new THREE.Vector3(0, 0, rod.position.z + rod.scale.z / 2).applyMatrix4(ram.matrixWorld); // the rod's far end
       return { a, b, total: a.distanceTo(b) };
     };
     const lengths = new Map();
     for (const h of [0, 0.25, 0.5, 0.75, 1]) {
       mod.setLoader(model, h);
       for (const ram of rams) {
-        const { total } = worldEnds(ram);
-        if (process.env.RAMS) console.log(ram.name, h, total.toFixed(3));
+        const { a, b, total } = worldEnds(ram);
+        // Each end is on a pin of its own, found from the parts themselves and not from setLoader's sums: the lift ram from a point on the rail to the arm's lug, the tilt ram from the
+        // arm's base to the lug up the bucket's back.
+        const { arms, bucket } = model.userData.loader;
+        const s = ram.userData.side;
+        const arm = arms.find((x) => Math.sign(x.position.x) === s);
+        const world = (o) => o.getWorldPosition(new THREE.Vector3());
+        const pins = ram.userData.kind === 'lift'
+          ? [new THREE.Vector3(s * 0.5, 0.88, 0.5), world(arm.getObjectByName('liftLug') ?? arm.children.find((c) => c.name === 'liftLug'))]
+          : [world(arm.getObjectByName('tiltBase') ?? arm.children.find((c) => c.name === 'tiltBase')), bucket.localToWorld(new THREE.Vector3(s * 0.5, 0.72, -0.18))];
+        expect(a.distanceTo(pins[0]), `${ram.name} base at ${h}`).toBeLessThan(0.01);
+        expect(b.distanceTo(pins[1]), `${ram.name} top at ${h}`).toBeLessThan(0.01);
         expect(total, `${ram.name} at ${h}`).toBeGreaterThan(0.4);
         expect(total, `${ram.name} at ${h}`).toBeLessThan(1.9);
         const l = lengths.get(ram.name) ?? [];
@@ -146,6 +154,19 @@ describe('the loader tractor (#926)', () => {
     }
     for (const [name, l] of lengths) expect(Math.max(...l) / Math.min(...l), name).toBeLessThan(2.1); // a ram doesn't more than double its length
     mod.setLoader(model, 0);
+  });
+
+  it('puts every tyre on the ground when the yard stands it there, and no two hose couplers in one another', async () => {
+    const { buildVehicleBody } = await import('../src/world/trafficView.js');
+    const { object, spec } = buildVehicleBody('loaderTractor', 0x23548f);
+    object.updateMatrixWorld(true);
+    for (const w of spec.layout.wheels) {
+      const spin = object.getObjectByName(w.name).getObjectByName('spin');
+      const low = new THREE.Box3().setFromObject(spin, true).min.y;
+      expect(Math.abs(low - spec.offset), `${w.name} is ${((low - spec.offset) * 100).toFixed(1)} cm off the ground`).toBeLessThan(0.01);
+    }
+    const couplers = named(model, /^coupler(Cap)?$/).map((o) => new THREE.Box3().setFromObject(o, true));
+    for (let i = 0; i < couplers.length; i++) for (let j = i + 1; j < couplers.length; j++) expect(couplers[i].intersectsBox(couplers[j]), `couplers ${i} and ${j}`).toBe(false);
   });
 
   it('is the real size: in proportion over its wheelbase, within a metre of the real length, and its collider holds it', async () => {
