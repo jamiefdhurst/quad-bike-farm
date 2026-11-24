@@ -111,7 +111,10 @@ describe('old saves keep loading', () => {
           expect(back.hours).toBe(saved.hours);
           expect(back.odo).toBe(saved.odo);
           expect(back.fuel.litres).toBe(saved.fuel.litres);
-          expect(back.faults).toMatchObject(saved.faults); // (a fault added since the save was made loads at none: see the next test)
+          // Exactly what was saved, bar a fault added since (the exhaust blow loads at none: see the test above).
+          const was = JSON.parse(JSON.stringify(back.faults));
+          for (const field of ['levels', 'started', 'caps']) if (!(field in saved.faults) || !('exhaustBlow' in saved.faults[field])) delete was[field]?.exhaustBlow;
+          expect(was).toEqual(saved.faults);
           expect(back.tyres).toEqual(saved.tyres);
           expect(back.engine.wear).toBe(saved.engine.wear);
         }
