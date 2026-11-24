@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { recordRowYs } from '../src/world/jobBoard.js';
-import { tagText } from '../src/workshop/tyreRackModel.js';
+import { tagText, tagLayout, BAYS } from '../src/workshop/tyreRackModel.js';
 import { HEADING as ADS_HEADING, slipRect } from '../src/world/classifiedsView.js';
 import { HEADING as PHOTOS_HEADING } from '../src/photos/photoBoard.js';
 import { PhotoWall } from '../src/photos/photos.js';
@@ -56,5 +56,20 @@ describe('the cork boards', () => {
     let seed = 7;
     const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
     for (let i = 0; i < 40; i++) expect(wall.deal(random).y * 800 - 88 - 0.14 * 110).toBeGreaterThan(70);
+  });
+});
+
+describe('the tyre rack tags (#939)', () => {
+  // A deliberately wide stand-in for bold sans capitals (0.75 em a letter; Arial bold capitals average about 0.7), so the check holds on a wider font.
+  const measure = (t, px) => t.length * px * 0.75;
+  it('keeps every label clear of NONE, with the longest ones shrunk to fit', () => {
+    for (const b of BAYS) {
+      const l = tagLayout(measure, b.label);
+      expect(l.labelX + l.labelW + 8, b.label).toBeLessThanOrEqual(l.noneX - l.noneW);
+      expect(l.labelPx, b.label).toBeGreaterThanOrEqual(14);
+    }
+    const widest = BAYS.reduce((a, b) => (b.label.length > a.label.length ? b : a));
+    expect(tagLayout(measure, widest.label).labelPx).toBeLessThan(26);
+    expect(tagLayout(measure, 'CAR').labelPx).toBe(26);
   });
 });
