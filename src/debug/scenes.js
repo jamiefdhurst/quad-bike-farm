@@ -16,6 +16,7 @@ import { SETUPS } from './sceneSetups.js';
 /** @type {Scene[]} */
 export const SCENES = [
   { id: 'callThem', label: 'Put you out on the lane in daylight with the girls in the yard: open your wheel (Enter at nobody) and Call them', lines: ['weather.time 11', 'tp me to lane'] },
+  { id: 'exhaustBlow', label: 'Put you in the yard at dawn with the Farm 300 stone cold and its exhaust joint blowing: start it and listen to the tick and chuff fade as it warms', lines: ['weather fair', 'weather.time 7', 'cool all', 'vehicle.farm300.faults.exhaustBlow 0.8', 'tp me to yard'] },
   {
     id: 'frost',
     label: 'Set up a frosty dawn, every vehicle stone cold',

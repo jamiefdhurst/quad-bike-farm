@@ -24,7 +24,7 @@ const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const SOUND_CAPTIONS = { sigh: '(sighs)', hum: '(hums)', laugh: '(laughs)', yawn: '(yawns)', gasp: '(gasps)', hmm: 'Hmm?', oh: 'Oh.' };
 
 const DIAGNOSE_SITUATION = { cold: 'diagnoseCold', rich: 'diagnoseRich', fouled: 'diagnoseFouled', worn: 'diagnoseWorn', fine: 'diagnoseFine' };
-const FAULT_SITUATION = { puncture: 'faultPuncture', belt: 'faultBelt', cable: 'faultCable', carb: 'faultCarb', mounts: 'faultMounts', chain: 'faultChain', valves: 'faultValves', rod: 'faultRod', rim: 'faultRim', leak: 'faultLeak', clutch: 'faultClutch', tyreLeak: 'faultTyreLeak', tyreCold: 'faultTyreCold', tyreUneven: 'faultTyreUneven', valveCore: 'faultValveCore', carbGum: 'faultCarbGum', tapClog: 'faultTapClog', chainGrit: 'faultChainGrit', brakeMud: 'faultBrakeMud', exhaustHole: 'faultExhaustHole', gasket: 'faultGasket', caliper: 'faultCaliper', bearing: 'faultBearing' };
+const FAULT_SITUATION = { puncture: 'faultPuncture', belt: 'faultBelt', cable: 'faultCable', carb: 'faultCarb', mounts: 'faultMounts', chain: 'faultChain', valves: 'faultValves', rod: 'faultRod', rim: 'faultRim', leak: 'faultLeak', clutch: 'faultClutch', tyreLeak: 'faultTyreLeak', tyreCold: 'faultTyreCold', tyreUneven: 'faultTyreUneven', valveCore: 'faultValveCore', carbGum: 'faultCarbGum', tapClog: 'faultTapClog', chainGrit: 'faultChainGrit', brakeMud: 'faultBrakeMud', exhaustHole: 'faultExhaustHole', gasket: 'faultGasket', caliper: 'faultCaliper', bearing: 'faultBearing', exhaustBlow: 'faultExhaustBlow' };
 
 // Mistakes that show a skill she's short on.
 const SLIPS = { chokeOff: 'choke', stalled: 'starting', overSteer: 'cornering', revIt: 'mud' };
@@ -696,6 +696,7 @@ export class CompanionVoice {
       const off = kind === 'chain' && f.chainOff && unit.engine.isRunning;
       if (!FAULT_SITUATION[kind]) continue; // the corroded posts have no line: she takes the click for a flat battery
       if (kind === 'valves' && !f.valveLoose) continue; // too-tight valves make no noise: you only feel the hard start and the lost power
+      if (kind === 'exhaustBlow' && unit.engine.blow <= 0) continue; // it quietens as the engine warms: she only hears it while it blows
       if (!listening || !(showing || off) || f.levels[kind] < from || w.faultSaid[kind] >= 2) continue;
       const hers = unit.quad === this.companion.quad;
       if (this.say(off ? 'faultChainOff' : FAULT_SITUATION[kind], { urgent: hers, chance: hers ? 0.03 : 0.01 })) w.faultSaid[kind] += 1;

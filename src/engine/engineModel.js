@@ -24,6 +24,7 @@ import { jetError, leanStarve, jetTrue, jetMixture } from './jetting.js';
 import { airCharge, airPowerFactor, airMixture } from './airDensity.js';
 import { coolingEffect, radiatorEffect, thermostatSticks, hotLevel, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
 import { slapLevel, slapCarry, loosen } from './pistonSlap.js';
+import { blowLevel, blowCarry } from './exhaustBlow.js';
 import { stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
 
 export const EngineState = Object.freeze({
@@ -93,6 +94,8 @@ export class EngineModel {
     this.airLeak = 0; // 0..1 a split or loose intake boot letting unmetered air in (set from the quad's faults)
     this.leakPhase = 0;
     this.leakNoise = 0;
+    this.exhaustBlow = 0; // 0..1 a cracked manifold or loose joint ticking and chuffing while the metal is cold (set from the quad's faults)
+    this.blow = 0; // 0..1 how loud it is just now: the joint's level less what the warming has sealed
     this.valveLoose = 0; // 0..1 valve clearance too wide: a tappet tick (set from the quad's faults)
     this.valveTight = 0; // 0..1 clearance too tight: starts hard when hot and loses power
     this.clog = 0; // 0..1 how clogged the air filter is
@@ -174,6 +177,7 @@ export class EngineModel {
     this.pistonWear = null; // 0..1 how loose the piston is in the bore (null until first run: it starts at the wear it was dealt); only a new piston clears it
     this.slap = 0; // 0..1 how loudly a worn piston knocks while cold
     this.slapLeft = 0; // clacks owed to the audio
+    this.blowLeft = 0; // ticks and chuffs owed to the audio
     this.erratic = 0; // 0..1 how erratic it's running for want of a service (see erraticFrom)
     this.stumbleLeft = 0; // cycles left of a run of misfires
     this.surge = 0; // rpm of a flare-up at idle, dying away
@@ -336,6 +340,7 @@ export class EngineModel {
    * @param {number}  [controls.airLeak] 0..1 a split intake boot: the idle hunts up and down, it runs lean and pops on the overrun.
    * @param {number}  [controls.terminals] 0..1 corroded battery posts: the starter turns slower, then only clicks, with the battery and dash fine.
    * @param {number}  [controls.dirt] 0..1 a dirty carb: lumpy, erratic and short of power.
+   * @param {number}  [controls.exhaustBlow] 0..1 a leaking exhaust joint: it ticks and chuffs from cold and seals as the engine heats.
    * @param {number}  [controls.valveLoose] 0..1 valves too loose: the tappets tick.
    * @param {number}  [controls.valveTight] 0..1 valves too tight: a hard hot start and short of power.
    * @param {boolean} [controls.starterStuck] the starter's brushes are stuck: it clicks and nothing turns.
@@ -350,7 +355,7 @@ export class EngineModel {
    * @param {number}  [controls.gearRpm] a manual's revs at this road speed in this gear (speed over the gear's top speed, times full-throttle revs).
    * @param {number}  [controls.gearLock] 0..1 how far the clutch ties the engine to those revs: the throttle then only decides the torque.
    */
-  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, terminals = 0, airLeak = 0, exhaustLeak = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, wax = 0, airLock = 0, starterStuck = false, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12, dayDamp = this.params.airRefDamp } = {}) {
+  update(dt, { starter = false, throttle = 0, choke = 0, load = 0, fuel = 1, driveLoad = 0, resistLoad = 0, overrunRpm = 0, gearRpm = 0, gearLock = 0, oil = this.oil, sump = this.sump, oilBurn = 0, slip = 0, dirt = 0, terminals = 0, airLeak = 0, exhaustLeak = 0, exhaustBlow = 0, valveLoose = 0, valveTight = 0, clog = 0, ice = 0, gulp = 0, diesel = 0, fuelWater = 0, wax = 0, airLock = 0, starterStuck = false, additive = 0, speed = 0, ambient = 0.5, sheltered = false, chill = 0, dayTemp = 12, dayDamp = this.params.airRefDamp } = {}) {
     this.events.length = 0;
     this.pulses.length = 0;
     this.events.push(...this.pendingEvents);
@@ -369,6 +374,7 @@ export class EngineModel {
     this.terminals = clamp(terminals, 0, 1);
     this.airLeak = clamp(airLeak, 0, 1);
     this.exhaustLeak = clamp(exhaustLeak, 0, 1);
+    this.exhaustBlow = clamp(exhaustBlow, 0, 1);
     this.valveLoose = clamp(valveLoose, 0, 1);
     this.valveTight = clamp(valveTight, 0, 1);
     this.clog = clamp(clog, 0, 1);
@@ -722,6 +728,14 @@ export class EngineModel {
     while (this.slapLeft >= 1) {
       this.slapLeft -= 1;
       this.emit('slap', this.random() * h);
+    }
+    // A leaking exhaust joint ticks and chuffs while the metal is cold; once it has swelled shut it is quiet. Not the holed silencer: that stays loud.
+    this.blow = running ? blowLevel(this.exhaustBlow, this.temperature, p) * blowCarry(rpmNorm, p) : 0;
+    if (this.blow > 0) this.blowLeft += p.blowRate * this.blow * (0.5 + 0.5 * this.random()) * h;
+    else this.blowLeft = 0;
+    while (this.blowLeft >= 1) {
+      this.blowLeft -= 1;
+      this.emit('blow', this.random() * h);
     }
     this.nip = nipping(this.scuff, p.nipFrom);
     this.oilRich = oilExcess(this.oil, p.strokes, p);

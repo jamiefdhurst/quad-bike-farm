@@ -94,6 +94,15 @@ describe('old saves keep loading', () => {
         expect(fleetFromSave(save.fleet, specs)?.map((s) => s.id)).toEqual(save.fleet);
       });
 
+      it('loads a fault added since the save was made as none (the exhaust blow, #211)', () => {
+        for (const saved of Object.values(save.vehicles)) {
+          const u = unit();
+          restoreVehicle(u, overnight(saved));
+          expect(u.quad.faults.has('exhaustBlow')).toBe(false);
+          expect(u.quad.faults.exhaustBlow).toBe(0);
+        }
+      });
+
       it('keeps what each vehicle kept', () => {
         for (const saved of Object.values(save.vehicles)) {
           const u = unit();
@@ -102,7 +111,7 @@ describe('old saves keep loading', () => {
           expect(back.hours).toBe(saved.hours);
           expect(back.odo).toBe(saved.odo);
           expect(back.fuel.litres).toBe(saved.fuel.litres);
-          expect(back.faults).toEqual(saved.faults);
+          expect(back.faults).toMatchObject(saved.faults); // (a fault added since the save was made loads at none: see the next test)
           expect(back.tyres).toEqual(saved.tyres);
           expect(back.engine.wear).toBe(saved.engine.wear);
         }

@@ -1,5 +1,5 @@
 // What the girls say about the barn's shed kit (farm/shed.js, vehicle/shedFaults.js): shedBought (you have paid for a piece), shedArrived (one turned up
-// this morning), and a line for each of the twelve faults only the kit puts right. Amy works out what it is and what it needs; Jess blames the quad or
+// this morning), and a line for each of the twelve faults only the kit puts right, with the exhaust blow, which the bench puts right. Amy works out what it is and what it needs; Jess blames the quad or
 // makes a joke of it. Nothing names a piece or a vehicle (the lines are recorded). They never call you he, she or they.
 // Merged into the main line sets (voiceLines.js, jessLines.js), so they're recorded with the rest.
 
@@ -21,6 +21,7 @@ export const AMY_SHED_LINES = {
   faultExhaustHole: line(60, ['That is loud, and it has lost power. The silencer has rusted through.', 'There is a hole in the exhaust. Listen to it blow.']),
   faultGasket: line(60, ['There is oil dripping from the sump. The gasket is weeping.', 'It is losing oil from underneath. We need to get under it.']),
   faultCaliper: line(60, ['One of the brakes is dragging. The wheel is hot.', 'It feels like it is pulling the handbrake on. A caliper must be sticking.']),
+  faultExhaustBlow: line(60, ['Can you hear that ticking from the exhaust? Listen, it chuffs when it is cold. A joint has worked loose.', 'The exhaust is blowing at the manifold. It will quieten as it warms up, but it wants a new gasket.']),
   faultBearing: line(60, ['Can you hear that hum from one of the wheels? That is a bearing going.', 'One wheel is grumbling and wobbling. The bearing is worn.']),
 };
 
@@ -38,5 +39,6 @@ export const JESS_SHED_LINES = {
   faultExhaustHole: ['It is so loud! I love it!', 'It sounds like a motorbike. A rubbish one.'],
   faultGasket: ['It is dripping. It is not crying, is it?', 'There is oil all over the floor. Not mine.'],
   faultCaliper: ['It is pulling backwards like a donkey.', 'Why is it so slow? Is it dragging a brick?'],
+  faultExhaustBlow: ['It is going tick, tick, chuff. Like a little steam train.', 'It is puffing at me. Is it meant to puff?'],
   faultBearing: ['The wheel is humming. I think it likes me.', 'Wubwubwub. It is playing me a song.'],
 };

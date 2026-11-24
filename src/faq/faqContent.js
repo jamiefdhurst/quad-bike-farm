@@ -1189,6 +1189,11 @@ export const FAQ_SECTIONS = [
         a: `That is not a flat battery. After a while the posts on a battery can furrow up with white crust, and the starter can't get enough current through it: it turns slowly, then only clicks, while the dash and lights stay bright. Jump leads clamp onto the same posts, so they don't help. Take the toolbox to it and use "Clean the battery terminals". The girls will take the click for a flat battery, so don't believe them.`,
       },
       {
+        q: 'Why does the exhaust tick and chuff when it is cold, and go quiet when it warms up?',
+        a: `A joint in the exhaust has worked loose, or its gasket has cracked, so a little gas puffs out at every beat. While the metal is cold the gap is open and it ticks and chuffs; as the engine heats the metal swells and shuts the gap, and it goes quiet. It is not the holed silencer, which is loud all the time. It starts while the engine runs and gets worse the longer it is left, and it takes a little of the drive. The yard toolbox can't touch it: it needs the bench's "Seal the exhaust joint" job, where a rag over the joint shows how bad it is, and a new gasket and the nuts done up evenly cure it. Amy knows what it is; Jess says it sounds like a little steam train.`,
+        tip: 'Exhaust ticking and chuffing only when cold? Take it to the bench for "Seal the exhaust joint".',
+      },
+      {
         q: 'Why does the starter click and not turn, with the battery fine, until I tap it?',
         a: `In some games one of the petrol vehicles has an old starter motor with worn brushes. On a cold start it can stick: you hold <kbd>R</kbd> and it only clicks, with the dash and lights bright, so it is not the battery. Open the toolbox on it and use "Tap the starter with the spanner". That frees it for that start, and then it turns over as normal. The next cold start, after it has run, it may stick again. Some games have no such vehicle. Jess learns the trick by watching: tap it near her twice and she does it herself from then on, with great enthusiasm. Amy knows what is wrong but will not do it. A new starter (the debug panel's "Put it right") cures it for good.`,
         tip: 'Starter only clicks, lights bright, battery fine? Open the toolbox and tap the starter with the spanner.',

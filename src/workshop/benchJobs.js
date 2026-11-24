@@ -263,6 +263,16 @@ export const JOBS = {
       { id: 'on', text: 'Airbox back on', kind: 'press' },
     ],
   },
+  exhaustJoint: {
+    name: 'Seal the exhaust joint',
+    steps: [
+      { id: 'cold', text: 'Start it cold and hold a rag over the manifold joint: feel where it blows', kind: 'press', inspect: true },
+      { id: 'nuts', text: 'Undo the manifold nuts and ease the pipe off the head', kind: 'hold', need: 0.8 },
+      { id: 'gasket', text: 'Scrape the faces clean and fit a new gasket', kind: 'press' },
+      { id: 'tight', text: 'Do the nuts up evenly, a little at a time: snug, not tight', kind: 'hold', need: 0.7, limit: 1.5 },
+      { id: 'on', text: 'Heat shield back on', kind: 'press' },
+    ],
+  },
   clutch: {
     name: 'Fit a new clutch plate',
     steps: [
@@ -382,7 +392,7 @@ export const JOBS = {
 // The last row of the list is the charger, and says either 'chargeOn' or 'chargeOff' depending on where this quad's battery is (bench.js kindsFor).
 export const ENGINE_JOB_KINDS = ['pull', 'swap']; // listed with the shed kit's jobs on the second page; the bench decides when they can be done (they need the shelf)
 
-export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'clutch', 'crash', 'newTyres', 'spotlamps', 'snorkel', 'electrics'];
+export const JOB_KINDS = ['plug', 'carb', 'tyre', 'oil', 'sump', 'packing', 'coolant', 'bore', 'mounts', 'topEnd', 'chain', 'valves', 'boot', 'exhaustJoint', 'clutch', 'crash', 'newTyres', 'spotlamps', 'snorkel', 'electrics'];
 
 /** What each reading means, the way Amy would say it. Order is the order Jess can be wrong in. */
 export const PLUG_KINDS = ['healthy', 'rich', 'lean', 'oily', 'worn'];
@@ -443,6 +453,15 @@ export function bootLook(faults) {
   if (l < 0.4) return 'a faint hiss, and the revs lift as the water is sucked in at the split: a small crack';
   if (l < 0.75) return 'the revs jump where you spray the boot: it is split along the fold';
   return 'sucked in with a gulp and the engine nearly stalls: the boot is split right open';
+}
+
+/** What the rag over the joint says about the exhaust blow, for the toast: where and how hard it puffs tells you the gasket or the nuts. */
+export function exhaustJointLook(faults) {
+  const l = faults.exhaustBlow;
+  if (l < 0.1) return 'no puff past the rag: the joint is tight';
+  if (l < 0.4) return 'a faint tick and a little soot at the flange: the nuts have worked loose';
+  if (l < 0.75) return 'a puff at every beat and black soot round the gasket: it is cracked';
+  return 'blowing hard through a gap in the gasket, with the flange stained black: the gasket has gone';
 }
 
 /** What the feeler gauge says about the valve clearance, for the toast: you work out what it needs. */
@@ -702,6 +721,13 @@ export function finishJob(job, target, P = DEFAULT_BENCH_PARAMS) {
     if (bad) faults.leave('leak', P.botchedLevel);
     return bad ? 'New boot on, but the clips are not right and there is a faint hiss left' : 'New intake boot on: the idle is steady again and the popping has stopped';
   }
+  if (job.kind === 'exhaustJoint') {
+    // A new gasket and the nuts done up evenly are the fix; nuts left slack, or pulled up too hard on one side, leave a small blow.
+    const bad = botched || job.outcome('tight') !== 'good';
+    faults.fix('exhaustBlow');
+    if (bad) faults.leave('exhaustBlow', P.botchedLevel);
+    return bad ? 'New gasket in, but the nuts are not even and it still ticks a little when cold' : 'New gasket in and the joint sealed: it runs quietly from cold';
+  }
   if (job.kind === 'valves') {
     // Setting the gap is the fix. Too little turn of the screws leaves it wide, too much leaves it tight; a locknut left slack lets it creep back wide.
     const gap = job.outcome('gap');
@@ -781,6 +807,7 @@ export function jobAvailable(kind, engine, P = DEFAULT_BENCH_PARAMS, chain = fal
   if (kind === 'valves') return !!valves; // every four-stroke has them
   if (kind === 'clutch') return !!clutch; // only a manual quad has a clutch plate
   if (kind === 'boot') return !engine.params.compressionIgnition && !engine.params.injected; // a diesel or an injected engine has no carb to hang a boot on
+  if (kind === 'exhaustJoint') return true; // every engine has an exhaust manifold
   if (kind === 'carb') return !engine.params.compressionIgnition && !engine.params.injected; // nor a carb to strip
   if (kind === 'plug') return !engine.params.compressionIgnition; // a diesel has glow plugs, not a plug to gap and clean
   if (kind === 'chargeOn') return !engine.batteryOut && !engine.params.noStarter; // a cord-only quad has no battery to take out
