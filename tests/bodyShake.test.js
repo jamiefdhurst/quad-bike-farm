@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { bustOutline } from '../src/npc/bustShape.js';
 import { DEFAULT_BODY_SHAKE_PARAMS as P, BODY_SHAKE_PARAM_RANGES, SPRINGS, REGIONS, stillShake, shakeStep, shakeOffsets, shakeWeights, jolt, figureGive } from '../src/npc/bodyShake.js';
 
 const AMY = { bust: 1, hips: 0.95 };
@@ -39,6 +40,10 @@ describe('a body that gives with the shake', () => {
     // ...and has settled within a second and a half.
     const late = ys.slice(Math.round(1.5 * 60));
     expect(Math.max(...late.map(Math.abs))).toBeLessThan(Math.abs(low) * 0.1);
+  });
+
+  it("moves Jess's bigger bust a good deal more than Amy's (Jamie, on #1143)", () => {
+    expect(figureGive(JESS).bust / figureGive(AMY).bust).toBeGreaterThan(2);
   });
 
   it('moves the fuller figure more', () => {
@@ -93,9 +98,10 @@ describe('which parts of her move', () => {
   const none = { armL: 0, armR: 0, legL: 0, legR: 0 };
   const at = (q, skin = none) => Object.fromEntries(REGIONS.map((r, i) => [r.name, shakeWeights(q, skin, frame)[i]]));
 
-  it('her bust most at its apex, and none of her back', () => {
-    expect(at({ x: 0.12, y: 0.7, z: 0.3 }).bust).toBeCloseTo(1, 5);
-    expect(at({ x: -0.12, y: 0.7, z: 0.3 }).bust).toBeCloseTo(1, 5);
+  it('her bust most at its middle as drawn, and none of her back', () => {
+    const o = bustOutline(1);
+    expect(at({ x: o.cx, y: o.cy, z: 0.3 }).bust).toBeCloseTo(1, 5);
+    expect(at({ x: -o.cx, y: o.cy, z: 0.3 }).bust).toBeCloseTo(1, 5);
     expect(at({ x: 0.12, y: 0.7, z: -0.05 }).bust).toBe(0);
     expect(at({ x: 0.12, y: 0.2, z: 0.2 }).bust).toBe(0);
   });
