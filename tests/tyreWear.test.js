@@ -43,12 +43,12 @@ describe('tread wear', () => {
     expect(1 - bike.tread.front).toBeCloseTo(1 - quad.tread.front, 6);
   });
 
-  it('wears out in about fifteen kilometres of grass and never goes below bald', () => {
+  it('wears out in about a hundred kilometres of grass and never goes below bald', () => {
     const t = fresh();
-    for (let i = 0; i < 40; i++) for (const w of [0, 1]) t.wearWheel(w, { metres: 1000 });
+    for (let i = 0; i < 160; i++) for (const w of [0, 1]) t.wearWheel(w, { metres: 1000 });
     expect(t.tread.front).toBe(0);
     const half = fresh();
-    for (let i = 0; i < 7; i++) for (const w of [0, 1]) half.wearWheel(w, { metres: 1000 });
+    for (let i = 0; i < 50; i++) for (const w of [0, 1]) half.wearWheel(w, { metres: 1000 });
     expect(half.tread.front).toBeGreaterThan(0.4);
     expect(half.tread.front).toBeLessThan(0.7); // (a front wheel only rolls: 0.7 of the wear)
   });

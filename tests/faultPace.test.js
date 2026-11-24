@@ -1,5 +1,5 @@
-// How fast faults come and go, in game time (#250). A farm runs over many days, so a fault is something you notice, live with for a
-// day or two and get round to fixing. The clock runs `clockRate` game seconds to a real one, so a change to either can't quietly put
+// How fast faults come and go, in game time (#250). A farm runs over many days, so a fault is something you notice, live with for
+// days and get round to fixing (about a week of constant running to its worst, #1168). The clock runs `clockRate` game seconds to a real one, so a change to either can't quietly put
 // the pace back to the old one-session numbers.
 import { describe, it, expect } from 'vitest';
 import { Faults, DEFAULT_FAULT_PARAMS as P } from '../src/vehicle/faults.js';
@@ -22,19 +22,23 @@ const KINDS = {
   belt: HARD, clutch: SLIPPING,
 };
 
+// These start in some kinds of use but grow whenever the clock runs (`grow(kind, true, ...)` in faults.js), parked or not.
+const GROWS_ALWAYS = ['tyreLeak'];
+
 describe('how long a fault takes to get to its worst (#250)', () => {
   for (const [kind, share] of Object.entries(KINDS)) {
-    it(`${kind}: two to three days of its kind of use, from first noticed to its worst`, () => {
+    it(`${kind}: about a week of its kind of use, from first noticed to its worst`, () => {
       const hours = (P[`${kind}Seconds`] * (1 - START)) / GAME_HOUR; // of that use, at the usual rate (worsens 1)
-      expect(hours).toBeGreaterThanOrEqual(16 * share - 0.5);
-      expect(hours).toBeLessThanOrEqual(24 * share + 0.5);
+      const grows = GROWS_ALWAYS.includes(kind) ? RUNNING : share;
+      expect(hours).toBeGreaterThanOrEqual(48 * grows - 0.5);
+      expect(hours).toBeLessThanOrEqual(72 * grows + 0.5);
     });
   }
 
-  it('a slow puncture takes an afternoon, not two minutes', () => {
+  it('a slow puncture takes about a day of play to go flat, not two minutes', () => {
     const hours = (P.punctureSeconds * (1 - START)) / GAME_HOUR;
-    expect(hours).toBeGreaterThanOrEqual(3);
-    expect(hours).toBeLessThanOrEqual(4);
+    expect(hours).toBeGreaterThanOrEqual(8);
+    expect(hours).toBeLessThanOrEqual(12);
   });
 
   it('a cold morning\'s soft tyres take about the same, as the cold lasts a morning', () => {
@@ -54,8 +58,9 @@ describe('how long a fault takes to get to its worst (#250)', () => {
     f.roll(() => 1);
     expect(f.worsens.carb).toBeCloseTo(2.5);
     f.begin('carb');
-    for (let t = 0; t < 6000; t += 1) f.update(1, { running: true, speed: 0, throttle: 0 });
-    expect(f.levels.carb).toBe(1); // 2.5 times as quick: well inside its seconds
+    const quickEnough = ((P.carbSeconds * (1 - START)) / 2.5) * 1.1; // a little over 2.5 times as quick; at the usual rate it would not be there yet
+    for (let t = 0; t < quickEnough; t += 1) f.update(1, { running: true, speed: 0, throttle: 0 });
+    expect(f.levels.carb).toBe(1);
   });
 
 });

@@ -7,8 +7,8 @@ export const DEFAULT_SUMP_PARAMS = {
   burnerHigh: 0.8,
   normalLow: 0.55, // ...and the others from this range, so now and then one is low without being the burner
   normalHigh: 1,
-  burnPerWork: 0.0001, // level the burner loses a second at full work (half the sump in about eighty minutes of riding, #250)
-  trickle: 0.00002, // and the others (a few hours of riding to go from the top mark to the bottom one)
+  burnPerWork: 0.00003, // level the burner loses a second at full work (half the sump in about four hours flat out, #1168; the others trickle at a fifth of that)
+  trickle: 0.000006, // and the others (about ten hours of riding to go from the top mark to the bottom one)
   minMark: 0.3, // the bottom mark on the dipstick
   lampFrom: 0.18, // the OIL lamp lights while it's running under this level (it flickers at idle, where the pressure is lowest)
   burnSmokeFrom: 0.02, // overrun throttle at which a burner's blue smoke shows

@@ -145,7 +145,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   baseRoughness: 0.08, // a single cylinder is never perfectly smooth
   roughHunt: 0.32, // a fully rough engine's idle hunts by about this fraction of its idle (it grows with roughness squared)
   roughHuntFrequency: 0.7, // Hz
-  wearPerMinute: 0.004, // roughness gained per minute of idling (was 0.012, #250); more when it's worked hard
+  wearPerMinute: 0.0013, // roughness gained per minute of idling (was 0.012, #250, #1168); more when it's worked hard
   wearWorkBoost: 2, // flat out it wears this much faster again
   wearColdBoost: 6, // revved hard while it's cold, it wears this much faster again
   wearColdBelow: 0.5, // engine temperature (0 cold, 1 warm) under which revving it counts as thrashing it
@@ -190,14 +190,14 @@ export const DEFAULT_ENGINE_PARAMS = {
   additiveFoulCut: 0.85, // share of the idle and excess-oil plug fouling that plug-saver in the fuel stops, at full strength (vehicle/plugAdditive.js)
 
   // The orange's coolant leak (see coolant.js). Levels run 1 full to 0 dry.
-  coolantLeakRun: 0.00015, // level lost a second while running at a leak multiplier of 1 (about 110 minutes, 22 game hours, from full to dry)
+  coolantLeakRun: 0.00005, // level lost a second while running at a leak multiplier of 1 (about 5.5 hours, 66 game hours, from full to dry)
   coolantParkedLeak: 0.25, // the share of that it weeps while parked with the metal still hot
   coolantWeepSoak: 0.3, // soak over which a parked engine is still hot enough to weep
   coolantLeakChance: 0.5, // the chance of the orange having a leak at all in a given game
   coolantLeakMin: 0.6, // the leak this game is this many times the rate, at least...
   coolantLeakMax: 1.4, // ...and at most
   thermostatChance: 0.2, // the chance a water-cooled engine starts the game with its thermostat stuck shut
-  thermostatStickPerHour: 0.06, // and the chance, an hour of running, that a good one sticks
+  thermostatStickPerHour: 0.02, // and the chance, an hour of running, that a good one sticks
   thermostatMin: 0.55, // how far shut it sticks: this much at least (1 is fully shut)...
   thermostatBlock: 0.95, // share of the radiator's cooling a fully shut thermostat takes away
   thermostatFlushSeconds: 6, // seconds of pouring coolant through a cold, stopped engine to free it
@@ -339,7 +339,7 @@ export const DEFAULT_ENGINE_PARAMS = {
 
   // Silencer off (a toolbox job)
   silencerPower: 0.08, // power gained with the silencer off
-  silencerBlowPerMinute: 0.012, // two-strokes only: how much of the silencer's packing blows out per minute at full revs (a third of that idling)
+  silencerBlowPerMinute: 0.004, // two-strokes only: how much of the silencer's packing blows out per minute at full revs (a third of that idling)
   silencerBlownLoud: 0.6, // how loud a fully blown silencer is, as a share of one taken off
   silencerPop: 0.5, // overrun propensity added with it off (open pipe, so it crackles)
 

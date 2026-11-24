@@ -168,3 +168,11 @@ describe('new since last time', () => {
     expect(currentBuild('')).toBeNull();
   });
 });
+
+describe('the answer on how fast faults come (#1168)', () => {
+  it('does not say the toolbox lists what is wrong: nothing gives a fault away', () => {
+    const e = FAQ_SECTIONS.flatMap((s) => s.entries).find((x) => x.q.startsWith('How quickly does something go wrong'));
+    expect(e).toBeTruthy();
+    expect(e.a).not.toMatch(/problems list/i);
+  });
+});

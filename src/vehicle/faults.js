@@ -10,7 +10,7 @@ export const DEFAULT_FAULT_PARAMS = {
   // How often each one starts, as the average seconds of the right kind of use per fault.
   punctureEvery: 43200, // riding: a thorn from the hedge
   beltEvery: 32400, // riding hard, with the throttle well open
-  cableEvery: 129600, // engine running (was 2700: it stuck too often)
+  cableEvery: 129600, // engine running
   carbEvery: 43200, // engine running
   clutchEvery: 7200, // slipping the clutch (at the bite under load, or creeping in low): a worn plate starts after this much slipping
   leakEvery: 108000, // engine running: the intake boot perishing and splitting (diesels have no carb boot, see hasBoot)
@@ -20,18 +20,18 @@ export const DEFAULT_FAULT_PARAMS = {
   valvesEvery: 86400, // engine running, on a four-stroke: the tappets wearing wide
   chainEvery: 54000, // riding, on a chain-driven quad: the chain stretching (a dry one starts sooner, see chainDryWear)
   // How long each takes to go from just started to as bad as it gets.
-  punctureSeconds: 1200, // the tyre going flat
-  beltSeconds: 2100, // of hard riding
-  cableSeconds: 5700, // running
-  carbSeconds: 6400, // running
-  leakSeconds: 7000, // running: the split opening up from a hiss to a gape
-  clutchSeconds: 1050, // of slipping it: the plate wearing from a little slip to hardly gripping at all
-  mountsSeconds: 7600, // running: the mounts going from sound to shot
-  exhaustBlowSeconds: 7600, // running: the joint going from an occasional tick to a steady chuff
-  terminalsSeconds: 7600, // running: the crust going from a dusting to thick enough to stop the starter
-  valvesSeconds: 8400, // running: the clearance going from a faint tick to a loud one
-  chainSeconds: 4200, // of riding: the chain going from just slack to hanging off the sprocket
-  chainLubeSeconds: 6000, // of riding for a freshly oiled chain to run dry
+  punctureSeconds: 3600, // the tyre going flat
+  beltSeconds: 6300, // of hard riding
+  cableSeconds: 17100, // running
+  carbSeconds: 19200, // running
+  leakSeconds: 21000, // running: the split opening up from a hiss to a gape
+  clutchSeconds: 3150, // of slipping it: the plate wearing from a little slip to hardly gripping at all
+  mountsSeconds: 22800, // running: the mounts going from sound to shot
+  exhaustBlowSeconds: 22800, // running: the joint going from an occasional tick to a steady chuff
+  terminalsSeconds: 22800, // running: the crust going from a dusting to thick enough to stop the starter
+  valvesSeconds: 25200, // running: the clearance going from a faint tick to a loud one
+  chainSeconds: 12600, // of riding: the chain going from just slack to hanging off the sprocket
+  chainLubeSeconds: 18000, // of riding for a freshly oiled chain to run dry
   // What they do at their worst.
   puncturePull: 0.09, // radians the bars are pulled towards the flat tyre (half for a rear one)
   punctureDrag: 0.12, // drive lost to a flat tyre's rolling resistance

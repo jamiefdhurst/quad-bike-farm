@@ -1207,10 +1207,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How quickly does something go wrong with a quad, and how bad does it get?',
-        a: `Slowly. A quad might pick up one new fault in a day or two of riding, and it takes a couple of days of use to go from a faint symptom to its worst: a carb that
-          starts to gum up is a nuisance for a day or two before it is bad. A slow puncture is the quick one, and takes an afternoon. Nothing gets worse overnight, so a fault you leave is still
-          there the next morning just as you left it. Amy's walk-round and the Problems list in the toolbox tell you what is wrong, and some quads are dealt worse luck than others.`,
-        tip: 'Faults take a day or two of riding to get bad, and wait overnight as they were. Fix them when it suits you.',
+        a: `Slowly. A quad might pick up one new fault in a day or two of riding, and it takes about a week of constant running to go from a faint symptom to its worst: a carb that
+          starts to gum up is a nuisance for days before it is bad. A slow puncture is the quick one, and takes about a day. Nothing gets worse overnight, so a fault you leave is still
+          there the next morning just as you left it. Amy's walk-round and what you feel and hear tell you what is wrong, and some quads are dealt worse luck than others.`,
+        tip: 'Faults take about a week of riding to get really bad, and wait overnight as they were. Fix them when it suits you.',
       },
       {
         q: 'How do I mend a puncture in the field?',

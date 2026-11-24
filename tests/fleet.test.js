@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { pickFleet, DEFAULT_FLEET_PARAMS } from '../src/vehicle/fleet.js';
 import { QUAD_SPECS, EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { BODY_STYLES } from '../src/vehicle/quadModel.js';
@@ -88,7 +89,7 @@ describe('extra vehicles', () => {
     expect(kids.vehicle.wheelRadius).toBeCloseTo(0.3 * kids.scale, 3);
     expect(kids.idleRange[1]).toBeLessThan(QUAD_SPECS.find((q) => q.id === 'hornet').idleRange[0]); // a lower tickover than either two-stroke
     for (const s of QUAD_SPECS) expect(kids.vehicle.maxSpeed).toBeLessThan(s.vehicle.maxSpeed ?? 17);
-    for (const s of QUAD_SPECS) expect(loan.engine.wearPerMinute).toBeLessThan((s.engine?.wearPerMinute ?? 0.012) / 5);
+    for (const s of QUAD_SPECS) expect(loan.engine.wearPerMinute).toBeLessThan((s.engine?.wearPerMinute ?? DEFAULT_ENGINE_PARAMS.wearPerMinute) / 5);
     for (const s of QUAD_SPECS) expect(loan.roughnessRange[1]).toBeLessThanOrEqual(s.roughnessRange[0] + 0.001);
   });
 

@@ -173,7 +173,7 @@ describe('rough fixes in the yard', () => {
     f.levels.carb = 0.8;
     expect(f.fix('carb', { rough: true })).toBe(true);
     expect(f.levels.carb).toBe(DEFAULT_FAULT_PARAMS.fieldFixLevel);
-    for (let i = 0; i < 20000; i++) f.update(0.1, { running: true, speed: 0, throttle: 0 });
+    for (let i = 0; i < 40000; i++) f.update(1, { running: true, speed: 0, throttle: 0 });
     expect(f.levels.carb).toBe(DEFAULT_FAULT_PARAMS.fieldFixCap);
     expect(f.fix('carb', { rough: true })).toBe(false);
     expect(f.fix('carb')).toBe(true);
