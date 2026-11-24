@@ -18,6 +18,7 @@ export const MAKERS = {
   moorland: { name: 'Moorland', badge: 'oval', ink: '#f2f2ea', edge: null, box: '#244a2c' }, // the Tor and the Crag
   thorne: { name: 'Thorne', badge: 'oval', ink: '#ffffff', edge: null, box: '#1b3d7a' }, // the Finch (Ford's)
   fenwick: { name: 'Fenwick', badge: 'block', ink: '#f4f1e6', edge: null, box: '#3c5a2e' }, // the trailers (an Ifor Williams's place)
+  calder: { name: 'Calder', badge: 'block', ink: '#f4f4f4', edge: null, box: '#1f4f8a' }, // the neighbour's loader tractor (#926)
   ashby: { name: 'Ashby', badge: 'block', ink: '#f4f4f4', edge: null, box: '#3a3a3a' }, // the Griffin
   vauclair: { name: 'Vauclair', badge: 'block', ink: '#d9dadb', edge: null, box: '#1b1c1e' }, // your car
 };
