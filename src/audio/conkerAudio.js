@@ -1,5 +1,5 @@
 // A conker landing: a short hard "thock" (a high woody knock with a puff of noise) made once and played where it lands, louder when it hit
-// you. Same shape as doorAudio.js, but the place changes with each throw.
+// you. Same shape as coinAudio.js, but the place changes with each throw.
 
 /** One thock as samples: a 420 Hz knock dying in 60 ms with a click of noise on the front. Deterministic. */
 export function thockSamples(rate) {

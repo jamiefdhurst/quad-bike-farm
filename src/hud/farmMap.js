@@ -226,9 +226,9 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const b = layout.barn;
   const buildings = [];
   if (b) {
-    const f = barnFrame(layout); // both spans, drawn in the barn's own frame and turned with it
-    const mid = f.toWorld(b.x, b.z + (b.annex?.halfZ ?? 0));
-    const [hx, hz] = f.q % 2 ? [b.halfZ + (b.annex?.halfZ ?? 0), b.halfX] : [b.halfX, b.halfZ + (b.annex?.halfZ ?? 0)];
+    const f = barnFrame(layout); // drawn in the barn's own frame and turned with it
+    const mid = f.toWorld(b.x, b.z);
+    const [hx, hz] = f.q % 2 ? [b.halfZ, b.halfX] : [b.halfX, b.halfZ];
     buildings.push({ name: 'barn', rect: centred(mid.x, mid.z, hx, hz), fill: C.building });
   }
   if (dutch) buildings.push({ name: 'dutchBarn', rect: dutch.roof, fill: C.building });

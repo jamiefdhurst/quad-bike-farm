@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { pathAt } from '../world/loft.js';
+import { pathAt } from './restPath.js';
 import { wakesOf, wakesHer } from './dozing.js';
 
 // Her sitting about somewhere on the farm: on the straw bales or the paddock fence
@@ -13,7 +13,7 @@ const UP = new THREE.Vector3(0, 1, 0);
 export const restingMethods = {
   /** Where she stands to climb up (or, for shelter, where she stands). */
   restStandPoint(spot) {
-    if (spot.stand) return new THREE.Vector3(spot.stand.x, this.world.heightAt(spot.stand.x, spot.stand.z), spot.stand.z); // the foot of the loft ladder
+    if (spot.stand) return new THREE.Vector3(spot.stand.x, this.world.heightAt(spot.stand.x, spot.stand.z), spot.stand.z); // the foot of the hut's steps
     const stands = spot.kind === 'shelter' && spot.seat === undefined; // shelter without a seat: she just stands there
     const back = spot.kind === 'bale' || spot.kind === 'shelter' ? 1.65 : 0.9;
     const x = stands ? spot.x : spot.x - Math.sin(spot.yaw) * back;
@@ -112,7 +112,7 @@ export const restingStates = {
       if (sit) {
         this.setColliderEnabled(false);
         this.rig.play(data.spot.via ? 'Walking' : 'Sitting', data.spot.via ? { fade: 0.3 } : { once: true, fade: 0.3 });
-        this.loftClimbing = !!data.spot.via;
+        this.viaClimbing = !!data.spot.via;
       } else {
         this.rig.play('Idle', { fade: 0.3 });
       }
@@ -131,7 +131,7 @@ export const restingStates = {
       }
       const seat = this.restSeatPoint(spot);
       if (spot.via && this.restPhase !== 'sat') {
-        restLoftPath(this, spot, seat, data);
+        restViaPath(this, spot, seat, data);
         return;
       }
       const tall = Math.max(0.15, Math.min(0.5, spot.seat * 0.35)); // how high she lifts over the edge on the way up
@@ -187,10 +187,10 @@ export const restingStates = {
 };
 
 /**
- * Up the ladder to a loft seat, and back down: she walks from where she stood through the points in `spot.via` (the top of
- * the ladder, then across the planks) to her seat over `spot.climbSeconds`, and the same in reverse to get down.
+ * Up to a raised seat, and back down: she walks from where she stood through the points in `spot.via` (the hut's steps, then in at its
+ * door) to her seat over `spot.climbSeconds`, and the same in reverse to get down.
  */
-function restLoftPath(c, spot, seat, data) {
+function restViaPath(c, spot, seat, data) {
   const up = c.restPhase === 'up';
   const points = [
     c.restStandPoint(spot),
@@ -206,8 +206,8 @@ function restLoftPath(c, spot, seat, data) {
   const dz = ahead.z - at.z;
   if (Math.hypot(dx, dz) > 1e-4) c.heading = Math.atan2(dx, dz);
   c.root.rotation.y = c.heading;
-  if (up && !at.climbing && c.loftClimbing) {
-    c.loftClimbing = false;
+  if (up && !at.climbing && c.viaClimbing) {
+    c.viaClimbing = false;
     c.rig.play('Sitting', { once: true, fade: 0.3 });
   }
   if (t < 1) return;

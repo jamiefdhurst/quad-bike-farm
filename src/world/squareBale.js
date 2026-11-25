@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-// Small square (rectangular) bales and loose straw, shared by the hayloft and the bale trailer. Length runs along x.
+// Small square (rectangular) bales, shared by the hay meadow's bales and the bale trailer. Length runs along x.
 
 const TWINE_AT = [0.22, 0.78]; // where the two twine loops cross the long faces, as a fraction of the length
 
@@ -100,17 +99,4 @@ export function squareBaleGeometry(w = 0.9, h = 0.36, d = 0.46) {
   }
   geo.computeVertexNormals();
   return geo;
-}
-
-/** A clump of loose straw: a fan of thin stalks lying flat, about 0.35 m long, as one geometry (y is up, the clump is centred). */
-export function strawClumpGeometry(random, stalks = 6) {
-  const parts = [];
-  for (let i = 0; i < stalks; i++) {
-    const g = new THREE.BoxGeometry(0.14 + random() * 0.14, 0.006, 0.01);
-    g.rotateY((random() - 0.5) * 1.1);
-    g.rotateZ((random() - 0.5) * 0.15);
-    g.translate((random() - 0.5) * 0.08, random() * 0.012, (random() - 0.5) * 0.08);
-    parts.push(g);
-  }
-  return mergeGeometries(parts);
 }

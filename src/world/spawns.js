@@ -93,13 +93,6 @@ export function spawnKeepOut(layout) {
     const own = (x, z) => f.toWorld(x, z);
     add(L.barn.x, L.barn.z, Math.hypot(L.barn.halfX, L.barn.halfZ) + 3, 'the barn');
     add(own(L.barn.x + L.barn.halfX + 3, L.barn.z).x, own(L.barn.x + L.barn.halfX + 3, L.barn.z).z, L.barn.wide ? 7 : 5, 'the barn doorway');
-    if (L.barn.annex) {
-      const az = L.barn.z + L.barn.halfZ + L.barn.annex.halfZ; // the second span, and its doorway
-      const span = own(L.barn.x, az);
-      const doorway = own(L.barn.x + L.barn.halfX + 3, az);
-      add(span.x, span.z, Math.hypot(L.barn.halfX, L.barn.annex.halfZ) + 3, 'the barn extension');
-      add(doorway.x, doorway.z, 5, 'the extension doorway');
-    }
     if (L.silage) add(L.silage.x + 2.5, L.silage.z + 1.5, 5, 'the silage'); // the wrapped bales stacked beside the barn (props.js)
   }
   if (L.paddock) add(L.paddock.x, L.paddock.z, L.paddock.half * Math.SQRT2 + 3, 'the paddock');

@@ -1,14 +1,12 @@
 // The barn as a place: where its walls and doorway are, whether you (or a quad, or a drop of rain) are under its roof,
 // and how it sounds and keeps an engine from there. Pure logic, no Three.js; barnBuild.js draws it.
 //
-// It is a plain box with a gable roof, its big doors (always open) in the +x end wall of its own frame. A second span of the same size (the
-// annex) stands on its +z side with a roof of its own, a valley between, posts where the wall would be and a door of its own; everything about
-// "the barn" (inside, under the roof, the walls, the floor) counts both. The loft and the first door belong to the first span.
+// It is one box under one roof, its big doors (always open) in the +x wall of its own frame (barnWide.js draws it, its ridge along that wall).
 //
 // The barn can stand turned a quarter (`layout.barn.yaw`, #682): `barnShape` and everything that draws or hangs on the barn is in the barn's own
 // frame, the one it has at yaw 0 about its anchor, and `barnFrame` turns a point of it into the world's and back. What answers for the world (is
 // this point inside, where the walls are, how level the ground is) takes a world point and does that itself. `layout.barnLocal` holds the barn's
-// own things (the bench, the loft, the bays) as they are in that frame, for the code that works along the barn's axes.
+// own things (the bench, the bays, the desk) as they are in that frame, for the code that works along the barn's axes.
 
 export const DEFAULT_BARN_PARAMS = {
   reverbWet: 0.55, // how much of a sound's echo off the tin and brick comes back (0..1) when you and it are both inside
@@ -79,7 +77,7 @@ export const barnLampShare = (each, count) => (each * 2) / Math.max(1, count);
 /** The seats on the bales inside the barn, as the girls' rest spots (npc/places.js): each sat on facing `yaw`, out of the rain. */
 export const barnBaleSeats = (layout) => (layout.barnBaleSpots ?? []).map(([x, z, yaw], i) => ({ id: `barnBale${i}`, kind: 'shelter', x, z, yaw, seat: layout.baleSeat }));
 
-/** The barn's own things (`bench`, `loft`, `bay`...) in the barn's frame: `layout.barnLocal`, or the layout itself when the barn is not turned. */
+/** The barn's own things (`bench`, `bay`, `desk`...) in the barn's frame: `layout.barnLocal`, or the layout itself when the barn is not turned. */
 export const barnLocal = (layout) => layout.barnLocal ?? layout;
 
 /** The outside and inside rectangles, the doorway and the heights, from the layout's `barn`. */
@@ -87,23 +85,7 @@ export function barnShape(layout) {
   const b = layout.barn;
   const inner = { minX: b.x - b.halfX + b.wall, maxX: b.x + b.halfX - b.wall, minZ: b.z - b.halfZ + b.wall, maxZ: b.z + b.halfZ - b.wall };
   const outer = { minX: b.x - b.halfX, maxX: b.x + b.halfX, minZ: b.z - b.halfZ, maxZ: b.z + b.halfZ };
-  const a = b.annex;
-  let annex = null;
-  if (a) {
-    const z = b.z + b.halfZ + a.halfZ; // the second span's middle
-    annex = {
-      z,
-      halfZ: a.halfZ,
-      outer: { ...outer, minZ: b.z + b.halfZ, maxZ: z + a.halfZ },
-      door: { x: b.x + b.halfX, z, minZ: z - a.door.halfWidth, maxZ: z + a.door.halfWidth, height: a.door.height },
-    };
-  }
-  const outerAll = { ...outer, maxZ: annex ? annex.outer.maxZ : outer.maxZ };
-  const innerAll = { ...inner, maxZ: outerAll.maxZ - b.wall };
   return {
-    annex,
-    outerAll, // both spans, outside the walls
-    innerAll, // and inside them
     x: b.x,
     z: b.z,
     outer,
@@ -118,8 +100,8 @@ export function barnShape(layout) {
 }
 
 /**
- * The barn's two spans as the buildings she walks round (npc/detour.js), in the world: each the box round its walls with its doorway, `out` being the
- * way out of it. A quarter turn keeps a box a box, so these are the world's own axes.
+ * The barn as a building she walks round (npc/detour.js), in the world: the box round its walls with its doorway, `out` being the way out of it, in a
+ * list as detour.js takes one for each building. A quarter turn keeps a box a box, so it is on the world's own axes.
  */
 export function detourBoxes(layout) {
   const s = barnShape(layout);
@@ -130,33 +112,22 @@ export function detourBoxes(layout) {
     const c = f.toWorld(o.maxX, o.maxZ);
     return { minX: Math.min(a.x, c.x), maxX: Math.max(a.x, c.x), minZ: Math.min(a.z, c.z), maxZ: Math.max(a.z, c.z), door: { ...f.toWorld(doorX, doorZ), halfWidth, out } };
   };
-  const boxes = [box(s.outer, s.door.x, s.z, s.door.maxZ - s.z)];
-  if (s.annex) boxes.push(box(s.annex.outer, s.annex.door.x, s.annex.z, s.annex.door.maxZ - s.annex.z));
-  return boxes;
+  return [box(s.outer, s.door.x, s.z, s.door.maxZ - s.z)];
 }
 
-/** Every doorway in the +x wall, the first span's first. */
+/** The doorways in the +x wall: the one pair of doors, as a list for what walks along that wall (localWallBoxes). */
 export function barnDoors(layout) {
-  const s = barnShape(layout);
-  return s.annex ? [s.door, s.annex.door] : [s.door];
+  return [barnShape(layout).door];
 }
 
-/** The posts that stand where the wall between the two spans would be, to carry the valley beam: { x, z, r } (none with one span). */
-export function dividerPosts(layout) {
-  const s = barnShape(layout);
-  if (!s.annex) return [];
-  const span = s.inner.maxX - s.inner.minX;
-  return [0.2, 0.5, 0.8].map((t) => ({ x: s.inner.minX + span * t, z: s.outer.maxZ, r: 0.1 }));
-}
-
-/** Whether the world point (x, z) is inside the first span's walls, `margin` metres in from them (the cat's and the dog's idea of the barn). */
-export function inFirstSpan(layout, wx, wz, margin = 0.5) {
+/** Whether the world point (x, z) is inside the walls, `margin` metres in from their outsides (the cat's and the dog's idea of the barn). */
+export function inBarnWalls(layout, wx, wz, margin = 0.5) {
   const b = layout.barn;
   const { x, z } = barnFrame(layout).toLocal(wx, wz);
   return Math.abs(x - b.x) < b.halfX - margin && Math.abs(z - b.z) < b.halfZ - margin;
 }
 
-/** Whether the world point (x, z) is in the first door's doorway, a little inside and a little out of it. */
+/** Whether the world point (x, z) is in the doorway, a little inside and a little out of it. */
 export function inDoorway(layout, wx, wz, reach = 0.6) {
   const b = layout.barn;
   const { x, z } = barnFrame(layout).toLocal(wx, wz);
@@ -164,8 +135,8 @@ export function inDoorway(layout, wx, wz, reach = 0.6) {
 }
 
 /**
- * The world point `out` metres out of the first door (negative: inside), `side` metres along the door wall from its middle (positive: towards the
- * barn's own +z, the second span's side). `facing` is the heading to look out of the door, in the world.
+ * The world point `out` metres out of the doors (negative: inside), `side` metres along the door wall from its middle (positive: towards the
+ * barn's own +z). `facing` is the heading to look out of the door, in the world.
  */
 export function outsideDoor(layout, out, side = 0) {
   const b = layout.barn;
@@ -175,14 +146,14 @@ export function outsideDoor(layout, out, side = 0) {
 
 /** Whether the world point (x, z) is inside the walls, `margin` metres in from them (negative: that far outside). */
 export function insideBarn(layout, wx, wz, margin = 0) {
-  const inner = barnShape(layout).innerAll;
+  const inner = barnShape(layout).inner;
   const { x, z } = barnFrame(layout).toLocal(wx, wz);
   return x > inner.minX + margin && x < inner.maxX - margin && z > inner.minZ + margin && z < inner.maxZ - margin;
 }
 
 /** Whether the world point (x, z) is under the roof, which overhangs the walls a little. */
 export function underRoof(layout, wx, wz) {
-  const outer = barnShape(layout).outerAll;
+  const outer = barnShape(layout).outer;
   const { x, z } = barnFrame(layout).toLocal(wx, wz);
   return x > outer.minX - 0.3 && x < outer.maxX + 0.3 && z > outer.minZ - 0.3 && z < outer.maxZ + 0.3;
 }
@@ -192,7 +163,7 @@ export function underRoof(layout, wx, wz) {
  * over `doorFade` metres, 1 once you're properly in.
  */
 export function indoorLevel(layout, wx, wz, p = DEFAULT_BARN_PARAMS) {
-  const { innerAll: inner, door } = barnShape(layout);
+  const { inner, door } = barnShape(layout);
   const { x, z } = barnFrame(layout).toLocal(wx, wz);
   if (z <= inner.minZ || z >= inner.maxZ || x <= inner.minX) return 0;
   // Depth from the open end: positive inside, negative out in the yard (only through the doorway does the yard see in).
@@ -226,7 +197,7 @@ export function rainHeard(rain, indoor, p = DEFAULT_BARN_PARAMS) {
 
 /**
  * The solid wall boxes as { id, x, z, hx, hz } (centres and half-sizes in the ground plane of the world, full wall height): the back, side and far
- * walls and the door wall in pieces either side of the doorways. Named for the barn's own frame (west, north, south and the east wall's three
+ * walls and the door wall in pieces either side of the doorway. Named for the barn's own frame (west, north, south and the east wall's two
  * pieces), whichever way it stands.
  */
 export function wallBoxes(layout) {
@@ -239,8 +210,7 @@ export function wallBoxes(layout) {
 
 /** `wallBoxes` in the barn's own frame. */
 export function localWallBoxes(layout) {
-  const { outerAll: outer, wall } = barnShape(layout);
-  const doors = barnDoors(layout);
+  const { outer, wall, door } = barnShape(layout);
   const cx = (outer.minX + outer.maxX) / 2;
   const cz = (outer.minZ + outer.maxZ) / 2;
   const hx = (outer.maxX - outer.minX) / 2;
@@ -251,20 +221,16 @@ export function localWallBoxes(layout) {
     { id: 'north', x: cx, z: outer.minZ + w, hx, hz: w },
     { id: 'south', x: cx, z: outer.maxZ - w, hx, hz: w },
   ];
-  // The east wall in pieces between the doorways: north of the first, between them, south of the last.
-  const edges = [outer.minZ, ...doors.flatMap((d) => [d.minZ, d.maxZ]), outer.maxZ];
-  const names = ['eastNorth', 'eastMiddle', 'eastSouth'];
-  for (let i = 0; i < edges.length; i += 2) {
-    const len = (edges[i + 1] - edges[i]) / 2;
-    const name = i === 0 ? names[0] : i === edges.length - 2 ? names[2] : names[1];
-    boxes.push({ id: name, x: outer.maxX - w, z: edges[i] + len, hx: w, hz: len });
+  // The east wall in two pieces, either side of the doorway.
+  for (const [id, z0, z1] of [['eastNorth', outer.minZ, door.minZ], ['eastSouth', door.maxZ, outer.maxZ]]) {
+    boxes.push({ id, x: outer.maxX - w, z: (z0 + z1) / 2, hx: w, hz: (z1 - z0) / 2 });
   }
   return boxes;
 }
 
 /** Weight (0..1) at a world point to flatten the ground to the barn's floor: 1 under the building, easing off over `reach` metres outside it. */
 export function floorBlend(layout, wx, wz, reach = 2.5) {
-  const outer = barnShape(layout).outerAll;
+  const outer = barnShape(layout).outer;
   const { x, z } = barnFrame(layout).toLocal(wx, wz);
   const dx = Math.max(outer.minX - x, 0, x - outer.maxX);
   const dz = Math.max(outer.minZ - z, 0, z - outer.maxZ);

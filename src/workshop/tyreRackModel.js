@@ -3,7 +3,7 @@ import { treadTyre } from '../vehicle/detail/tread.js';
 import { TYRE_SIZES, tyrePart } from '../vehicle/tyres.js';
 import { boardFont } from '../world/boardFont.js';
 
-// The tyre rack along the annex's south wall: a timber and steel frame with two decks, a bay for each size of tyre (tyres.js TYRE_SIZES) with the
+// The tyre rack along a wall of the barn (sparesShelf.js places it): a timber and steel frame with two decks, a bay for each size of tyre (tyres.js TYRE_SIZES) with the
 // tyres lying in a stack, as many as the spares shelf has (up to what the bay holds), and a card tag on the front rail that says the size (and NONE when it is empty).
 // Origin on the floor under the middle of the rack, the wall behind it (0.16 m back from the origin), facing +z. `setCounts` shows the stacks.
 

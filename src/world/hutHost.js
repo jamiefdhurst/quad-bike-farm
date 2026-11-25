@@ -35,7 +35,7 @@ export class HutHost {
     this.audio = new HutAudio(game.audioHub);
     this.stovePos = new THREE.Vector3(shape.stove.x, ground + shape.floor + 0.5, shape.stove.z);
     // Rest spots for the bunk's two places: stable objects, since a girl's restSpot is compared by identity. She climbs the steps and goes in the
-    // door like the loft ladder (companionResting.js's `via`), and sits with her hips on the bunk's edge.
+    // door by the `via` points (companionResting.js, npc/restPath.js), and sits with her hips on the bunk's edge.
     this.spots = shape.seatPoints.map((s, i) => ({
       id: `hut${i}`,
       kind: 'hut',

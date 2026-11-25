@@ -134,7 +134,6 @@ export async function pressPrompts({ wait, leftOut }) {
       const v = g[k];
       if (v && typeof v === 'object' && v.isOpen === true && typeof v.close === 'function') v.close();
     }
-    if (g.hiding?.active) g.stopHiding();
   };
   // A prompt that offers an action: a string ("Pick up the can") or { action }, not a line saying why not ({ text } or { info }).
   const offersAction = (p) => typeof p === 'string' || !!p?.action;

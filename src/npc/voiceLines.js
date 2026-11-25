@@ -10,7 +10,6 @@
 import { AMY_SKILL_LINES } from './skillLines.js';
 import { AMY_REQUEST_LINES, AMY_PUB_LINES } from './requestLines.js';
 import { AMY_PLACE_LINES } from './placeLines.js';
-import { AMY_LOFT_LINES } from './loftLines.js';
 import { AMY_BATTERY_LINES } from './batteryLines.js';
 import { AMY_PUSH_LINES } from './pushLines.js';
 import { AMY_STRANDED_LINES } from './strandedLines.js';
@@ -1483,8 +1482,6 @@ export const VOICE_LINES = {
   ...AMY_REQUEST_LINES,
   // Sitting out, and sheltering (placeLines.js).
   ...AMY_PLACE_LINES,
-  // The hayloft (loftLines.js).
-  ...AMY_LOFT_LINES,
   // Flat batteries (batteryLines.js).
   ...AMY_BATTERY_LINES,
   ...AMY_PUSH_LINES,

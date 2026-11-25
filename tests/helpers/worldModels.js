@@ -195,10 +195,8 @@ export async function buildWorldModels() {
   const vane = await import('../../src/world/weatherVane.js');
   add('setPiece', 'weatherVane', vane.buildWeatherVane, (b) => b(c2));
   const trim = await import('../../src/world/barnTrim.js');
-  const { barnShape, dividerPosts } = await import('../../src/world/barn.js');
-  const barnL = { ...LAYOUT, ...LAYOUT.barnLocal }; // today's barn, with its two spans
-  add('world', 'barnTrim', trim.buildBarnTrim, (b) => b({ shape: barnShape(barnL), floorY: 0, eaveZ: 2.95, eaveY: 3.9, posts: dividerPosts(barnL), random: c.random }));
-  const barnTwo = { ...two, ...two.barnLocal }; // the new farm's one building (#818)
+  const { barnShape } = await import('../../src/world/barn.js');
+  const barnTwo = { ...two, ...two.barnLocal }; // the farm's one building (#818)
   const { roofOf } = await import('../../src/world/barnWide.js');
   add('world', 'barnWideTrim', trim.buildWideTrim, (b) => b({ shape: barnShape(barnTwo), floorY: 0, roof: roofOf(barnShape(barnTwo)), random: c.random }));
   const bayKit = await import('../../src/world/bayKit.js');

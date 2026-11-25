@@ -26,7 +26,7 @@ export function poleSpot(layout) {
   return { x: (a.x + b.x) / 2, z: Math.min(a.z, b.z) - 2.6 };
 }
 
-/** Where the gable's floodlight hangs, in the world: on the door gable, to the hay door's yard-left side, with the way it faces (a heading) and the ground it lights. */
+/** Where the barn's floodlight hangs, in the world: on the door wall, past the leaves, with the way it faces (a heading) and the ground it lights. */
 export function gableSpot(layout, floorY) {
   const s = barnShape({ ...layout, ...layout.barnLocal });
   const f = barnFrame(layout);

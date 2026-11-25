@@ -181,7 +181,7 @@ import { HazeLayer } from './effects/hazeLayer.js';
 import { Mist, Rainbow, MIST_PARAM_RANGES, RAINBOW_PARAM_RANGES } from './world/mist.js';
 import { RainbowView } from './effects/rainbowView.js';
 import { BarnFumes, FUMES_PARAM_RANGES } from './world/barnFumes.js';
-import { barnShape, barnFrame, barnLocal, placeInBarn, inFirstSpan, inDoorway, outsideDoor, barnBaleSeats, barnLampShare } from './world/barn.js';
+import { barnShape, barnFrame, barnLocal, placeInBarn, inBarnWalls, inDoorway, outsideDoor, barnBaleSeats, barnLampShare } from './world/barn.js';
 import { Race, RACE_PARAM_RANGES, planLap, YouRun, youOnGrid, pickQuads } from './npc/race.js';
 import { DEFAULT_SIGHT_PARAMS, SIGHT_PARAM_RANGES, gatesFoundOpen } from './npc/sights.js';
 import { DEFAULT_OUTING_PARAMS, OUTING_PARAM_RANGES, pickOuting, outingSpots } from './npc/outings.js';
@@ -245,8 +245,6 @@ import { paginate } from './achievements/pages.js';
 import { Discoveries, stallDiscovery, prankDiscovery } from './achievements/discoveries.js';
 import { achievementSnapshot, placesAt } from './achievements/snapshot.js';
 import { buildStartLine, buildClimbCones, buildClimbFlags, buildConeCourse, layCone, nearestTrackFraction } from './world/startLine.js';
-import { DEFAULT_LOFT_PARAMS, LOFT_PARAM_RANGES, onLoft, Climb, worldClimbPoints, loftRestSpot, strawTip, Hiding, StrawDrop } from './world/loft.js';
-import { StrawFall } from './effects/strawFall.js';
 import { Places, PLACE_PARAM_RANGES, isFine, nearestSpot, restStay } from './npc/places.js';
 import { dozeStay } from './npc/dozing.js';
 import { SnoreAudio } from './audio/snoreAudio.js';
@@ -321,8 +319,7 @@ import { ToolsHost } from './items/toolsHost.js';
 import { WeatherHost } from './world/weatherHost.js';
 import { Weather, pickWeatherKind, pickTemperature } from './world/weather.js';
 import { dateToday, daylightParams, weatherWeights, temperatureBandWeights, groundFor, isAutumn, isWinter } from './world/seasons.js';
-import { Wind, Shutter, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } from './world/wind.js';
-import { DoorAudio } from './audio/doorAudio.js';
+import { Wind, pickHeading, DEFAULT_WIND_PARAMS, WIND_PARAM_RANGES } from './world/wind.js';
 import { FootstepWalkers } from './audio/footstepWalkers.js';
 import { TrafficHost } from './world/trafficHost.js';
 import { NeighbourHost } from './world/neighbourHost.js';
@@ -922,22 +919,9 @@ export class Game {
         { id: `pubBench${i}s`, kind: 'bench', x: t.x, z: t.z + 0.62, yaw: Math.PI, seat: 0.52 },
       ]),
     ];
-    // The hayloft: she climbs the ladder (the points she passes through are heights above the barn floor) and sits on a bale at its edge.
-    this.loftParams = { ...DEFAULT_LOFT_PARAMS };
-    this.loft = this.world.props.barn.loft;
     // The clock and weather station on the barn wall (world/weatherStation.js).
     ({ station: this.station, wallClock: this.wallClock } = hangBarnBoards(this.scene, this.world.layout, this.world.props.barn.floorY));
-    if (this.loft) this.restSpots.push((this.loftSpot = loftRestSpot(this.world.layout, this.loft))); // (the new barn has no hayloft, #818)
-    this.hiding = new Hiding(this.loftParams);
-    this.strawDrop = new StrawDrop(this.loftParams);
-    this.strawFall = new StrawFall(this.scene);
-    // The hay door's shutter bangs about in a gale, and loose hay blows out of the door (updateWind).
-    this.hayBlow = new StrawFall(this.scene);
-    this.shutter = new Shutter(this.wind.p);
     this.footsteps = FootstepWalkers.forGame(this); // your steps on foot and each girl's, on the ground under them (audio/footsteps.js)
-    this.doorAudio = this.world.props.barn.hayDoor ? new DoorAudio(this.audioHub, this.world.props.barn.hayDoor) : null;
-    this.climb = null; // Climb of you on the ladder, when you are
-    this.hiddenFrom = null; // where you were stood before you ducked into the hay
     const fine = () => isFine(this.weather.name, this.weather.rain, this.places.p);
     const spotTaken = (spot) => this.companions.some((o) => o.currentSpot()?.id === spot.id);
     this.napParams = { ...DEFAULT_NAP_PARAMS }; // asleep on the back of a smooth ride (npc/backNap.js); made before the companions are wired to it
@@ -959,8 +943,6 @@ export class Game {
       c.restSpotsNear = (here) => {
         if (!fine()) return [];
         const free = this.restSpots.filter((s) => s.kind !== 'shelter' && !spotTaken(s));
-        const loftFree = this.loftSpot && !spotTaken(this.loftSpot) && Math.hypot(this.loftSpot.x - here.x, this.loftSpot.z - here.z) < this.places.p.restFrom;
-        if (loftFree && Math.random() < this.loftParams.girlLoftChance) return [this.loftSpot];
         const near = nearestSpot(free, ['bale', 'fence', 'bench'], here, new Set(), this.places.p.restFrom);
         return near ? [near] : [];
       };
@@ -1838,24 +1820,6 @@ export class Game {
       interact: () => this.standCones(),
     });
 
-    // The hayloft: the ladder up and down, and the hay to hide in (today's barn only).
-    if (this.loft) {
-      this.interaction.add({
-        target: this.loft.ladderProxy,
-        isAvailable: () => !this.handsFull && !this.climb && !this.hiding.active,
-        prompt: () => (this.youOnLoft() ? 'Climb down the ladder' : 'Climb up to the hayloft'),
-        feedback: 'own',
-        interact: () => this.startClimb(),
-      });
-      this.interaction.add({
-        target: this.loft.hayProxy,
-        isAvailable: () => !this.handsFull && !this.climb && !this.hiding.active && this.youOnLoft(),
-        prompt: () => 'Duck into the hay and hide',
-        feedback: 'paper',
-        interact: () => this.startHiding(),
-      });
-    }
-
     // Start facing the quad she's standing by, wherever it ended up.
     const q = this.homeUnit.quad.position;
     const p = this.player.position;
@@ -1891,7 +1855,7 @@ export class Game {
     registerTuning('Bell', this.bell.params, BELL_PARAM_RANGES);
     registerTuning('Favour', this.favour.p, FAVOUR_PARAM_RANGES);
     registerTuning('Achievements', this.achievements.p, ACHIEVEMENT_PARAM_RANGES);
-    this.achievements.setFarm([...this.units.map((u) => u.id), ...(this.rustyUnit ? ['rusty'] : [])], this.loft ? [] : ['loft']); // (no hayloft in the new barn)
+    this.achievements.fleet = [...this.units.map((u) => u.id), ...(this.rustyUnit ? ['rusty'] : [])];
     this.achievements.onUnlock((a) => this.achievementUnlocked(a));
     this.discoveries.onLearn(() => this.discoveryLearnt());
     registerTuning('Falling out', this.fallingOut.p, FALLING_OUT_PARAM_RANGES);
@@ -2007,7 +1971,6 @@ export class Game {
     registerTuning('Skills', this.skills.p, SKILL_PARAM_RANGES);
     registerTuning('Watching you', this.watching.p, WATCH_PARAM_RANGES);
     registerTuning('Places', this.places.p, PLACE_PARAM_RANGES);
-    if (this.loft) registerTuning('Hayloft', this.loftParams, LOFT_PARAM_RANGES);
     registerTuning('Wind', this.wind.p, WIND_PARAM_RANGES);
     registerTuning('Favours asked', this.requests.p, REQUEST_PARAM_RANGES);
     registerTuning('Girls at the pub', this.pubParams, PUB_PARAM_RANGES);
@@ -5292,7 +5255,7 @@ export class Game {
     const ask = this.askAlong;
     const ctx = {
       distance: c.root.position.distanceTo(this.player.position),
-      youFree: !this.menu.isOpen && !this.hiding.active && !this.climb && !this.tryst && !this.recalling,
+      youFree: !this.menu.isOpen && !this.tryst && !this.recalling,
       company: c.needs.company,
       askChance: c.params.askChance,
       fallenOut: this.fallingOut.active,
@@ -5584,7 +5547,6 @@ export class Game {
       offer.rest(this.offeredBy.params);
       this.offeredBy = null;
     }
-    if (this.hiding.active) return; // they can't find you to offer
     const unit = this.boardUnit;
     const waiting = !!unit && this.player.seat === 'pillion' && !unit.quad.hasBench && unit.quad.speed < 0.5 && !this.menu.isOpen && !this.passengerPlan && !this.herOn(unit.quad);
     if (!offer.update(dt, waiting)) return;
@@ -6117,7 +6079,7 @@ export class Game {
   /** What the romance needs to know (npc/romance.js): how each girl rates you, whether she's free and near, and whether you are. */
   romanceContext() {
     const you = this.player.position;
-    const youFree = !this.player.isRiding && !this.menu.isOpen && !this.hiding.active && !this.climb && !this.race.active && !this.drag.active && !this.recalling && !this.tryst;
+    const youFree = !this.player.isRiding && !this.menu.isOpen && !this.race.active && !this.drag.active && !this.recalling && !this.tryst;
     const girls = this.companions.map((c) => {
       const id = c.character.id;
       return {
@@ -7532,79 +7494,6 @@ export class Game {
     for (const c of this.companions) if (c !== driver && c.fsm.is('idle', 'walking')) this.favour.add(c.character.id, -this.favour.p.ignoredPerSecond * dt);
   }
 
-  // The hayloft ---------------------------------------------------------------
-
-  youOnLoft() {
-    const p = this.player.position;
-    return onLoft(this.world.layout, p.x, p.y, p.z, this.loft.top - this.world.layout.loft.floor);
-  }
-
-  /** Up or down the ladder, whichever you're at the foot or top of. */
-  startClimb() {
-    if (this.climb || this.player.isRiding) return;
-    const up = !this.youOnLoft();
-    if (up) this.achievements.note('loft');
-    const p = this.player.position;
-    const lf = this.loft;
-    const from = { x: p.x, y: p.y, z: p.z };
-    const [first, ...via] = worldClimbPoints(this.world.layout, lf, from, up);
-    this.climb = new Climb(first, via.pop(), this.loftParams.climbSeconds, via);
-    this.climbUp = up;
-    this.player.moveEnabled = false;
-  }
-
-  startHiding() {
-    this.achievements.note('hid');
-    const h = this.world.layout.loft.hideSpot;
-    const p = this.player.position;
-    this.hiddenFrom = { x: p.x, y: p.y, z: p.z };
-    this.player.moveTo({ x: h.x, y: this.loft.top, z: h.z });
-    this.player.moveEnabled = false;
-    this.player.eyeDropTarget = 1.0;
-    this.hiding.hide();
-  }
-
-  stopHiding() {
-    this.hiding.reveal();
-    this.player.eyeDropTarget = 0;
-    this.player.moveEnabled = true;
-    if (this.hiddenFrom) this.player.moveTo(this.hiddenFrom);
-    this.hiddenFrom = null;
-  }
-
-  /** The ladder climb, hiding in the hay, a girl up in the loft, and Jess's straw. */
-  updateLoft(dt) {
-    this.strawFall.update(dt);
-    if (!this.loft) return;
-    if (this.climb) {
-      const at = this.climb.update(dt);
-      this.player.moveTo(at);
-      if (at.done) {
-        this.climb = null;
-        this.player.moveEnabled = true;
-        // Climbing down puts you at the foot facing the barn; up, at the top.
-      }
-    }
-    const girlUp = this.companions.find((c) => c.currentSpot()?.id === this.loftSpot.id && c.isResting && c.restPhase === 'sat');
-    if (this.hiding.active) {
-      const e = this.hiding.update(dt, { girlInLoft: !!girlUp });
-      if (e) {
-        const free = this.companions.filter((c) => c.fsm.is('idle', 'walking', 'resting'));
-        const girl = girlUp ?? free[Math.floor(Math.random() * free.length)];
-        if (e === 'found') this.stopHiding();
-        girl?.voice.say(e === 'found' ? 'loftFound' : 'loftCall', { force: true });
-      }
-    }
-    const jess = this.companions.find((c) => c.character.id === 'jess');
-    const p = this.player.position;
-    const jessUp = !!jess && girlUp === jess;
-    if (this.strawDrop.update(dt, { jessUp, you: { x: p.x, z: p.z, below: !this.youOnLoft() && !this.player.isRiding }, jess: { x: this.loftSpot.x, z: this.loftSpot.z } })) {
-      const tip = strawTip(this.world.layout, this.loftSpot);
-      this.strawFall.drop({ x: tip.x, y: this.loft.top + 0.5, z: tip.z }, p, this.loft.ladderFoot.y);
-      for (const c of this.companions) c.voice.say('loftDrop', { force: c === jess, urgent: true });
-    }
-  }
-
   // Places to be ------------------------------------------------------------
 
   /** Rain sends them to the barn doorway; drying off lets them out. */
@@ -7690,7 +7579,6 @@ export class Game {
   }
 
   updateRequests(dt, ridden) {
-    if (this.hiding.active) return; // nobody to ask
     const ctx = this.requestContext(ridden);
     // She asked to go to the bales and you've got on a quad: she comes and climbs on the back, rather than waiting to be told.
     const ru = ctx.quads.find((q) => q.ridden);
@@ -11392,10 +11280,10 @@ export class Game {
       this.hud.toast(this.audioHub.params.muted ? 'Sound off' : 'Sound on', 1.2);
     }
 
-    // 7: raise the camera, 8: photo mode (photos/photoHost.js), unless you are in a menu, up the ladder or hidden in the hay.
+    // 7: raise the camera, 8: photo mode (photos/photoHost.js), unless you are in a menu or with a girl in the barn.
     const noPhoto =
       this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen ||
-      this.classifiedsView.isOpen || this.moneyTin.isOpen || this.storiesView.isOpen || this.shedView.isOpen || this.photos.view.isOpen || this.climb || this.tryst || this.hiding.active;
+      this.classifiedsView.isOpen || this.moneyTin.isOpen || this.storiesView.isOpen || this.shedView.isOpen || this.photos.view.isOpen || this.tryst;
     if (input.wasPressed('Digit7') && !noPhoto) this.photos.press();
     if (input.wasPressed('Digit8') && !noPhoto) this.photos.enterMode();
 
@@ -11403,7 +11291,7 @@ export class Game {
     if (
       input.wasPressed('Digit6') &&
       !(this.menu.isOpen || this.workshop.isOpen || this.bench.isOpen || this.notebook.isOpen || this.sparesShelf.isOpen || this.jobBoardView.isOpen || this.classifiedsView.isOpen || this.moneyTin.isOpen || this.storiesView.isOpen || this.shedView.isOpen || this.photos.view.isOpen) &&
-      !(this.climb || this.tryst || this.hiding.active)
+      !this.tryst
     ) {
       this.waveAtGirls();
     }
@@ -11465,14 +11353,9 @@ export class Game {
     } else if (this.photos.view.isOpen) {
       this.interaction.clear();
       this.photos.view.handleInput(input);
-    } else if (this.climb || this.tryst) {
+    } else if (this.tryst) {
       this.interaction.clear();
       input.takeWheelSteps();
-    } else if (this.hiding.active) {
-      // Hidden in the hay: any key or E gets you up again.
-      this.interaction.clear();
-      input.takeWheelSteps();
-      if (['KeyE', 'KeyG', 'Escape', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space'].some((k) => input.wasPressed(k))) this.stopHiding();
     } else {
       input.takeWheelSteps();
       const focused = this.interaction.update(this.player, this.player.params.interactRange);
@@ -11721,7 +11604,6 @@ export class Game {
     this.guard.run('updateKickBack', () => this.updateKickBack());
     this.notebook.update(dt);
     this.sparesShelf.update(dt);
-    this.guard.run('updateLoft', () => this.updateLoft(dt));
     fb.lap('player and items', performance.now());
     this.audioHub.setPouring(pouring, dt);
     this.guard.run('updateAudio', () => { this.audioHub.update(dt, this.camera); this.footsteps.update(dt); }); // the hub first: it sets the listener the steps are heard from
@@ -11859,7 +11741,7 @@ export class Game {
     registerTuning('Cat', this.catParams, CAT_PARAM_RANGES);
     const world = this.world;
     const f = world.fields;
-    const inside = (x, z, m = 0.5) => inFirstSpan(L, x, z, m);
+    const inside = (x, z, m = 0.5) => inBarnWalls(L, x, z, m);
     // The barn's wall is shut except at its door; the cat comes and goes by the door.
     const inDoor = (x, z) => inDoorway(L, x, z);
     const allowed = (x, z) => {
@@ -12021,7 +11903,7 @@ export class Game {
     const f = world.fields;
     this.dogParams = { ...DEFAULT_DOG_PARAMS };
     registerTuning('Dog', this.dogParams, DOG_PARAM_RANGES);
-    const inside = (x, z, m = 0.5) => inFirstSpan(L, x, z, m);
+    const inside = (x, z, m = 0.5) => inBarnWalls(L, x, z, m);
     const inDoor = (x, z) => inDoorway(L, x, z);
     // A hedge stops her except through a gap with its gate open.
     const hedged = (x, z) => f.hedgedAt(x, z, 0.45);

@@ -56,7 +56,7 @@ export function detourVia(from, to, buildings, P = DEFAULT_DETOUR_PARAMS, prefer
       const across = (p) => -(p.x - door.x) * out.z + (p.z - door.z) * out.x; // metres along the wall from the doorway's middle
       const at = (d) => ({ x: door.x + out.x * d, z: door.z + out.z * d });
       const inCone = Math.abs(across(from)) < door.halfWidth && dist(from) > -P.doorIn - 0.4;
-      if (fromIn && toIn) continue; // the way about inside is her own (the bales, the loft)
+      if (fromIn && toIn) continue; // the way about inside is her own (the bales, the bench)
       if (fromIn) return inCone && dist(from) < 0.3 ? at(P.doorOut) : inCone ? null : at(-P.doorIn);
       // On the way in: line up on the doorway first, going round the building to get there if she is at the back.
       if (dist(from) > -0.3 && Math.abs(across(from)) < door.halfWidth + 0.6) return null;

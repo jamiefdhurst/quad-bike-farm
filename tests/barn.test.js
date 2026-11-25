@@ -11,7 +11,6 @@ import {
   rainHeard,
   wallBoxes,
   barnDoors,
-  dividerPosts,
   floorBlend,
   offTemperature,
 } from '../src/world/barn.js';

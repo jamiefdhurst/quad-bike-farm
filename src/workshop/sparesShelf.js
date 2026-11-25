@@ -11,7 +11,7 @@ import { Spares, DEFAULT_SPARES_PARAMS, SPARES_PARAM_RANGES, PARTS, PART_IDS, TY
 /**
  * The parts rack on the barn's back wall beside the bench: the parts in their trays and on their pegs, as many as the spares shelf (spares.js) has, the order
  * panel you open with E, and the parcel the post van leaves at the barn door, which you open with E to put the order on the shelf. The tyre rack on the
- * annex's south wall is the same shelf's other half: its own stacks and its own order panel (`mode` says which is open), one parcel and one van.
+ * wall at the barn's own +z (the west end, as the barn stands) is the same shelf's other half: its own stacks and its own order panel (`mode` says which is open), one parcel and one van.
  */
 export class SparesShelf {
   constructor(game) {
@@ -27,8 +27,8 @@ export class SparesShelf {
     this.model = buildSparesModel();
     placeInBarn(L, this.model, x, floor, z);
     game.scene.add(this.model);
-    // The tyre rack on the annex's south wall, facing north into the big bay's span.
-    const inner = barnShape(L).innerAll;
+    // The tyre rack on the wall at the barn's own +z, facing in.
+    const inner = barnShape(L).inner;
     const hooks = own.helmetHooks; // the helmet hooks take the middle of that wall: the rack fills the corner to their left
     const tx = (inner.minX + hooks.x - hooks.length / 2 - 0.1) / 2;
     const tz = inner.maxZ - 0.22; // the rack's back posts just touch the wall

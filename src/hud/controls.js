@@ -157,7 +157,7 @@ export const CONTROLS = [
       `RB300's winch: <kbd>E</kbd> at the hook on its front to take it, <kbd>G</kbd> to put it back, <kbd>E</kbd> on a quad, a vehicle or a tree to hook it, hold <kbd>X</kbd> to wind in (on a tree or a heavy vehicle the RB300 pulls itself up to it)`,
       `Tractor's tow chain: <kbd>E</kbd> looking at its drawbar to take it, <kbd>G</kbd> to put it back, <kbd>E</kbd> on a quad to hook it, then back the tractor up and drive off`,
       `Tow rope on the Farm 300's and Bruin's racks: <kbd>E</kbd> looking at one to take it, <kbd>G</kbd> to put it back, <kbd>E</kbd> on a dead quad to hook it, ride off gently; ask a girl on the wheel to steer it`,
-      `Hayloft ladder, workbench and Amy's logbook in the barn: <kbd>E</kbd>. On the bench menu a number or <kbd>W</kbd> <kbd>S</kbd> and <kbd>E</kbd> starts a job (the full service is the row after the jobs), <kbd>&rarr;</kbd> turns to the jobs for the shed kit and, with a second vehicle at the bench, the last row works on that one instead`,
+      `The workbench and Amy's logbook in the barn: <kbd>E</kbd>. On the bench menu a number or <kbd>W</kbd> <kbd>S</kbd> and <kbd>E</kbd> starts a job (the full service is the row after the jobs), <kbd>&rarr;</kbd> turns to the jobs for the shed kit and, with a second vehicle at the bench, the last row works on that one instead`,
       `The shed catalogue on the workbench: <kbd>E</kbd> to read it, a number to ask for a compressor, parts washer or pit and the same number again to buy`,
       `The bell by the barn doors: <kbd>E</kbd> to ring it and call the girls back`,
       `The calendar on the barn's back wall: <kbd>E</kbd> in the evening, with the girls back, to call it a day and go on to the next`,

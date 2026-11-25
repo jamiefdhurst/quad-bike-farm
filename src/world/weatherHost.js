@@ -1,10 +1,9 @@
 // The weather in the running game: the console's and the panel's switches for it, the time of day moving on, the forecast turning the day,
-// the wind on the hedges and the hay door's shutter, and the snow laid over the farm and the vehicles. The behaviour is weather.js, forecast.js,
+// the wind on the hedges, trees and the vane, and the snow laid over the farm and the vehicles. The behaviour is weather.js, forecast.js,
 // daylight.js, wind.js and snowCoat.js; the state (`weather`, `wind`, `forecast`, `daylight`) stays on the game, which a lot of other
 // code reads. game.js builds this and calls updateDaylight(), updateWind() and updateSnowCoat() inside the frame guard.
 
 import { KIND_WARMTH } from './forecast.js';
-import { barnFrame } from './barn.js';
 import { windUniforms, swayMetres } from '../effects/windSway.js';
 import { vaneHeading } from './weatherVane.js';
 import { yardLightLevel } from './yardLights.js';
@@ -12,14 +11,10 @@ import { lightsWanted } from '../npc/girlControls.js';
 import { snowUniforms, topsCover, vehicleSnowAfter } from './snowCoat.js';
 import { coatTree } from './snowCoatView.js';
 
-const HAY_DOOR_OUT = Math.PI / 2; // the hay door looks out of the barn's door end: east at yaw 0 (turned with the barn)
-const BANG_COOLDOWN = 3; // seconds between the shutter's bangs the girls hear
-
 export class WeatherHost {
   constructor(game) {
     this.g = game;
     this.snowCoated = false; // the snow shader laid over the world and the vehicles (once, when it first snows)
-    this.shutterBangCool = 0;
   }
 
   /** Puts the cold on each vehicle's seat after a change to the frost, the snow or the temperature. */
@@ -122,8 +117,8 @@ export class WeatherHost {
   }
 
   /**
-   * The wind (world/wind.js): ticks the day's wind and gusts, leans the hedges and trees with it, swings the hay door's shutter (a bang
-   * when it slams, which the girls hear) and now and then blows loose hay out of the loft door.
+   * The wind (world/wind.js): ticks the day's wind and gusts, leans the hedges and trees with it and turns the weather vane into it, and lights
+   * the yard's floodlights after dark.
    */
   updateWind(dt) {
     const g = this.g;
@@ -141,31 +136,6 @@ export class WeatherHost {
       vane.userData.heading = vaneHeading(vane.userData.heading ?? wind.heading + Math.PI, wind.heading, wind.strength, dt, windUniforms.uWindTime.value); // into the wind
       vane.userData.set(vane.userData.heading);
     }
-    const barn = g.world.props?.barn;
-    if (!barn?.shutter) return;
-    const out = barnFrame(g.world.layout).headingToWorld(HAY_DOOR_OUT);
-    const bang = g.shutter.update(dt, wind.along(out));
-    barn.shutter.rotation.y = -g.shutter.angle;
-    this.shutterBangCool = Math.max(0, this.shutterBangCool - dt);
-    if (bang && this.shutterBangCool <= 0) {
-      this.shutterBangCool = BANG_COOLDOWN;
-      g.doorAudio.bang(bang.strength);
-      const outOf = (d) => barnFrame(g.world.layout).vecToWorld(d, 0); // out of the door: along the barn's own x, whichever way it is turned
-      g.notice('bang', { x: barn.hayDoor.x + outOf(0.3).x, y: barn.hayDoor.y + 0.7, z: barn.hayDoor.z + outOf(0.3).z }, { key: 'shutter', strength: 0.6 * bang.strength });
-    }
-    if (wind.hayBlows(out)) this.blowHay();
-    g.hayBlow.update(dt);
-  }
-
-  /** Loose hay lifted off the loft floor and out of the hay door on a strong gust, to land in the yard downwind. */
-  blowHay() {
-    const g = this.g;
-    const door = g.world.props.barn.hayDoor;
-    const wind = g.wind;
-    const len = Math.max(0.1, Math.hypot(wind.x, wind.z));
-    const to = { x: door.x + (wind.x / len) * 8, y: door.y, z: door.z + (wind.z / len) * 8 };
-    const lip = barnFrame(g.world.layout).vecToWorld(0.2, 0);
-    g.hayBlow.drop({ x: door.x + lip.x, y: door.y + 0.3, z: door.z + lip.z }, to, g.world.heightAt(to.x, to.z));
   }
 
   /** Lays the snow shader over the world and over each vehicle (once). The ground and the vehicles are left out of the world's, which they don't share. */
