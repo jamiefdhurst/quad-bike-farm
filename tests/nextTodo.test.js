@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { ALONGSIDE, AREAS, BATCH_SIZE, batch, batchLabels, byMilestone, currentPhase, dependsOn, eligible, goesWith, unbatchable } from '../tools/nextTodo.mjs';
+import { ALONGSIDE, AREAS, BATCH_SIZE, NOT_BATCHED, batch, batchLabels, checkBatch, byMilestone, currentPhase, dependsOn, eligible, goesWith, unbatchable } from '../tools/nextTodo.mjs';
 
 const issue = (number, milestone, extra = {}) => ({ number, title: `t${number}`, body: '', labels: [], milestone, ...extra });
 const order = (issues, open, pr, opts) => eligible(issues, open ?? issues.map((i) => i.number), pr, opts).map((i) => i.number);
@@ -134,9 +134,27 @@ describe('which issues a batch takes', () => {
     expect(batchLabels([bug(1, { labels: ['⚡ enhancement', '👭 girls'] })])).toEqual(['⚡ enhancement', '👭 girls']);
   });
 
-  it('knows every area label in .github/settings.yml', () => {
+  it('checks the ones Jamie names: eligible, going with the first, at most four, none twice', () => {
+    const issues = [bug(10), bug(11), bug(12, { labels: ['✨ feature', '🌾 world'] }), bug(13, { labels: ['🐛 bug', '👭 girls'] }), bug(14), bug(15)];
+    const ordered = eligible(issues, issues.map((i) => i.number), [11]);
+    expect(checkBatch([10, 14], issues, ordered)).toEqual([]);
+    expect(checkBatch([10, 11, 12, 13, 99], issues, ordered)).toEqual([
+      [0, ['5 issues, more than 4']],
+      [11, ['not eligible']],
+      [12, ['not a 🐛 bug or ⚡ enhancement']],
+      [13, ['no area label in common with #10']],
+      [99, ['not an open issue']],
+    ]);
+    expect(checkBatch([10, 10], issues, ordered)).toEqual([[0, ['an issue named twice']]]);
+  });
+
+  it('knows every area label in .github/settings.yml, and the file has no other', () => {
     const yml = readFileSync('.github/settings.yml', 'utf8');
     for (const a of AREAS) expect(yml).toContain(`name: "${a}"`);
+    // The area group runs from "Which part of the game" to the 🔜 next label; performance and cohesion sit in it but are worked by /perf and /tidy.
+    const group = yml.split('# Which part of the game.')[1].split('name: "🔜 next"')[0];
+    const names = [...group.matchAll(/name: "([^"]+)"/g)].map((m) => m[1]);
+    expect(names.filter((n) => !NOT_BATCHED.includes(n))).toEqual(AREAS);
   });
 });
 

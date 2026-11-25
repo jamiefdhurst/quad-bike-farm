@@ -90,7 +90,7 @@ export function unbatchable(i) {
 /** Whether `other` goes in a batch led by `lead`: the same milestone and an area label in common, as well as batchable itself. */
 export function goesWith(lead, other) {
   const why = unbatchable(other);
-  if (other.milestone && other.milestone !== lead.milestone) why.push(`in ${other.milestone ?? 'no milestone'}, not ${lead.milestone}`);
+  if (other.milestone && other.milestone !== lead.milestone) why.push(`in ${other.milestone}, not ${lead.milestone}`);
   if (!other.labels.some((l) => AREAS.includes(l) && lead.labels.includes(l))) why.push(`no area label in common with #${lead.number}`);
   return why;
 }
@@ -100,6 +100,24 @@ export function batch(ordered, size = BATCH_SIZE) {
   const lead = ordered.find((i) => !unbatchable(i).length);
   if (!lead) return [];
   return [lead, ...ordered.filter((i) => i !== lead && !goesWith(lead, i).length).slice(0, size - 1)];
+}
+
+/**
+ * Why the issues Jamie names (by number, in his order) can't be one batch: [[number, reasons]], empty if they can. `issues` is every open issue and
+ * `ordered` the eligible ones; the first named leads.
+ */
+export function checkBatch(numbers, issues, ordered) {
+  const problems = [];
+  if (new Set(numbers).size < numbers.length) problems.push([0, ['an issue named twice']]);
+  if (numbers.length > BATCH_SIZE) problems.push([0, [`${numbers.length} issues, more than ${BATCH_SIZE}`]]);
+  const chosen = [...new Set(numbers)].map((n) => issues.find((i) => i.number === n) ?? null);
+  chosen.forEach((i, k) => {
+    const n = [...new Set(numbers)][k];
+    if (!i) return problems.push([n, ['not an open issue']]);
+    const why = [...(ordered.includes(i) ? [] : ['not eligible']), ...(k ? goesWith(chosen[0] ?? i, i) : unbatchable(i))];
+    if (why.length) problems.push([n, why]);
+  });
+  return problems;
 }
 
 /** The labels a batch's PR carries: the area labels of every issue in it, and one type label, `🐛 bug` if any of them is one. */
@@ -114,7 +132,8 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const raw = gh(['issue', 'list', '--state', 'open', '--limit', '1000', '--json', 'number,title,body,labels,milestone']);
   const issues = raw.map((i) => ({ ...i, labels: i.labels.map((l) => l.name), milestone: i.milestone?.title ?? null }));
   const withPr = gh(['pr', 'list', '--state', 'open', '--limit', '200', '--json', 'body,headRefName'])
-    .flatMap((p) => [...`${p.body ?? ''} ${p.headRefName}`.matchAll(/(?:closes|fixes|resolves) #(\d+)|issue-(\d+)/gi)].map((m) => Number(m[1] ?? m[2])));
+    // "Part of" too, so an issue of a batch PR that it won't close still counts as taken (#1180).
+    .flatMap((p) => [...`${p.body ?? ''} ${p.headRefName}`.matchAll(/(?:closes|fixes|resolves|part of) #(\d+)|issue-(\d+)/gi)].map((m) => Number(m[1] ?? m[2])));
   const at = process.argv.indexOf('--label');
   const label = at > 0 ? process.argv[at + 1] : null;
   const opts = { alongside: process.argv.includes('alongside'), label };
@@ -125,12 +144,10 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     let chosen = batch(ordered);
     if (numbers.length) {
       // Ones Jamie names: each must be eligible and go with the first.
-      chosen = numbers.map((n) => issues.find((i) => i.number === n) ?? { number: n, title: '(not an open issue)', labels: [], milestone: null, body: '' });
-      const problems = chosen.map((i, k) => [i, [...(ordered.includes(i) ? [] : ['not eligible']), ...(k ? goesWith(chosen[0], i) : unbatchable(i))]])
-        .filter(([, why]) => why.length);
-      if (chosen.length > BATCH_SIZE) problems.push([{ number: 0 }, [`${chosen.length} issues, more than ${BATCH_SIZE}`]]);
-      for (const [i, why] of problems) console.error(i.number ? `#${i.number} can't go in this batch: ${why.join('; ')}` : `too many: ${why[0]}`);
+      const problems = checkBatch(numbers, issues, ordered);
+      for (const [n, why] of problems) console.error(n ? `#${n} can't go in this batch: ${why.join('; ')}` : `not a batch: ${why.join('; ')}`);
       if (problems.length) process.exit(1);
+      chosen = numbers.map((n) => issues.find((i) => i.number === n));
     }
     if (!chosen.length) {
       console.log('No batch: no eligible bug or enhancement with an area label in milestone 1 or later.');
