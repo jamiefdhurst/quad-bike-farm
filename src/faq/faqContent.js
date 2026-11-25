@@ -2012,6 +2012,15 @@ export const FAQ_SECTIONS = [
         tip: 'Pheasants lie in the hedge feet and burst out if you pass close. Amy jumps.',
       },
       {
+        q: 'What are the birds I can hear in the morning?',
+        a: `The dawn chorus, from the hedges and the trees in them round wherever you are: blackbirds with their low fluting, robins with thin high runs of notes, and wrens, small but the loudest, with a fast trill and a rattle in the middle. It starts about an hour before sunrise, is at its thickest from half an hour before to most of an hour after, and thins to the odd song by two hours after, so you hear it if your game starts early. It is fullest in spring, thinner in winter (robins and wrens sing all year) and quietest in late summer, and rain quietens it.`,
+        tip: 'Start a game early to catch the dawn chorus: it thins out about two hours after sunrise.',
+      },
+      {
+        q: 'What is the cawing in the evening?',
+        a: `Rooks going home to roost. In the hour before sunset a loose flock goes over every few minutes, high up, cawing as it crosses the sky from one side to the other. Rain keeps some of them quiet.`,
+      },
+      {
         q: 'Where is the cat, and why is it on my quad?',
         a: `The farm has a tabby cat that prowls the yard and the barn. It likes somewhere warm: it will curl up asleep on an engine that has just been run, or on a seat in the sun, on any open quad. It keeps asleep however close you walk. To get it off, look at it and press E to shoo it; it hisses, hops down and runs, and keeps off that quad for a few minutes. Starting the quad or sitting on it also sends it packing. It is out and about on mild, dry days and goes into the barn when it is raining, snowing, frosty or dark.`,
         tip: 'The cat sleeps on warm engines and sunny seats. Look at it and press E to shoo it off.',
