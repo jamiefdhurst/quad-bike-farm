@@ -9,6 +9,8 @@ import { roadNetwork, pointAt, filletOutline } from './roads.js';
 import { paintMoor } from './moorPaint.js';
 import { pointInPolygon } from './polygons.js';
 import { heapPatches } from './pitGrowth.js';
+import { pitRide } from './pitScrub.js';
+import { pitWallColour } from './quarryTextures.js';
 
 const smoothstep = (a, b, x) => {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
@@ -94,7 +96,9 @@ export function itemRandom(salt, i) {
 // What each kind of random number is for.
 const S = {
   blotch: 1, mid: 2, fine: 3, stubble: 10, hillGrass: 20, tussock: 21, woodEdge: 22, woodCell: 23, laneA: 24, laneB: 25, stream: 26, ford: 27, paddock: 28, mud: 29, tuft: 30, pondA: 31,
-  woodFloor: 40, leaf: 41, trailSpeck: 42, rootA: 43, mottleWood: 44, pondB: 45, quarryField: 50, grit: 51, gritJ: 52, stone: 53, heap: 54, fleck: 55, pondC: 56,
+  woodFloor: 40, leaf: 41, trailSpeck: 42, rootA: 43, mottleWood: 44, pondB: 45, quarryField: 50, grit: 51, gritJ: 52, stone: 53, heap: 54, fleck: 55, pondC: 56, roughField: 57,
+  quarryTuft: 70, // and 71, 72
+  rootLip: 73,
   barnWear: 60, straw: 61, mottle: 62, bog: 63, slab: 64,
 };
 
@@ -305,13 +309,17 @@ function* paintBase(c) {
   if (c.fine) noiseLayer(c, 420 / 1024, S.fine, (v) => (v > 0.5 ? [140, 160, 80, 40] : [30, 50, 20, 50]));
 }
 
-/** Noise in squares `cell` metres across, kept where they are on the ground whatever the window, drawn smoothed over the window. */
-function noiseLayer(c, cell, salt, colorFn) {
+/**
+ * Noise in squares `cell` metres across, kept where they are on the ground whatever the window, drawn smoothed over the window (or over the part of it
+ * inside `box`). `colorFn(v, x, z)` gives a square's [r, g, b, a] from its number and its corner on the ground, in metres.
+ */
+function noiseLayer(c, cell, salt, colorFn, box = INFINITE) {
   const { ctx, win, s } = c;
-  const i0 = Math.floor(win.minX / cell) - 1;
-  const j0 = Math.floor(win.minZ / cell) - 1;
-  const nx = Math.ceil(win.maxX / cell) + 1 - i0;
-  const nz = Math.ceil(win.maxZ / cell) + 1 - j0;
+  const i0 = Math.floor(Math.max(win.minX, box.minX) / cell) - 1;
+  const j0 = Math.floor(Math.max(win.minZ, box.minZ) / cell) - 1;
+  const nx = Math.ceil(Math.min(win.maxX, box.maxX) / cell) + 1 - i0;
+  const nz = Math.ceil(Math.min(win.maxZ, box.maxZ) / cell) + 1 - j0;
+  if (nx <= 0 || nz <= 0) return;
   const cv = document.createElement('canvas');
   cv.width = nx;
   cv.height = nz;
@@ -319,7 +327,7 @@ function noiseLayer(c, cell, salt, colorFn) {
   const img = g.createImageData(nx, nz);
   for (let j = 0; j < nz; j++) {
     for (let i = 0; i < nx; i++) {
-      const [r, gr, b, a] = colorFn(hash01(salt, i0 + i, j0 + j));
+      const [r, gr, b, a] = colorFn(hash01(salt, i0 + i, j0 + j), (i0 + i) * cell, (j0 + j) * cell);
       const o = (j * nx + i) * 4;
       img.data[o] = r;
       img.data[o + 1] = gr;
@@ -820,22 +828,73 @@ function* paintQuarry(c, quarry) {
   const reach = quarry.reachMax + 3;
   const pitBox = { minX: pit.x - reach, maxX: pit.x + reach, minZ: pit.z - reach, maxZ: pit.z + reach };
   if (!c.over(r, 2) && !c.over(pitBox, 2)) return;
-  // The field: dry rough grass gone to dock and bare patches, browner than the farm's.
+  // The field: dry rough grass gone to dock and bare patches, browner than the farm's, and the ride mown through it (#1004). The tones are smoothed
+  // noise (the 1 m squares they were showed as blocks up close), clipped to the field, with tufts of straw and dark grass speckled over it near to.
   if (c.over(r, 2)) {
-    const [kx0, kx1] = span(r.minX, r.maxX, 1, win.minX, win.maxX, 1);
-    const [kz0, kz1] = span(r.minZ, r.maxZ, 1, win.minZ, win.maxZ, 1);
-    for (let kx = kx0; kx < kx1; kx++) {
-      for (let kz = kz0; kz < kz1; kz++) {
-        const x = r.minX + kx;
-        const z = r.minZ + kz;
-        const v = hash01(S.quarryField, kx, kz);
-        const dry = 0.5 + 0.5 * Math.sin(x * 0.13 + z * 0.09) * Math.sin(z * 0.11 - x * 0.07 + 1);
-        if (dry > 0.45) cell(x, z, 1, 1, `rgba(${118 + v * 40},${112 + v * 34},${66 + v * 20},${0.25 + 0.3 * dry})`);
+    const outline = quarry.outline ?? [[r.minX, r.minZ], [r.maxX, r.minZ], [r.maxX, r.maxZ], [r.minX, r.maxZ]];
+    ctx.save();
+    ctx.beginPath();
+    outline.forEach(([x, z], i) => (i ? ctx.lineTo(...c.toPx(x, z)) : ctx.moveTo(...c.toPx(x, z))));
+    ctx.closePath();
+    ctx.clip();
+    const dryAt = (x, z) => 0.5 + 0.5 * Math.sin(x * 0.13 + z * 0.09) * Math.sin(z * 0.11 - x * 0.07 + 1);
+    noiseLayer(c, 1, S.quarryField, (v, x, z) => {
+      const dry = dryAt(x, z);
+      return [118 + v * 40, 110 + v * 34, 64 + v * 20, dry > 0.3 ? (0.28 + 0.42 * dry) * 255 : 40];
+    }, r);
+    yield;
+    noiseLayer(c, 3.3, S.roughField, (v) => (v > 0.55 ? [70, 88, 38, 95] : v < 0.28 ? [138, 120, 76, 90] : [98, 102, 56, 40]), r);
+    yield;
+    // The ride: shorter, greener grass where it is kept cut, and two faint wheel lines along it.
+    const ride = pitRide(quarry);
+    const along = (pts, closed, offset, widthM, style, alpha, blur) => {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = style;
+      ctx.lineWidth = widthM * s;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      if (blur) ctx.filter = `blur(${blur}px)`;
+      ctx.beginPath();
+      const n = pts.length;
+      for (let i = 0; i <= (closed ? n : n - 1); i++) {
+        const p = pts[i % n];
+        const b = pts[Math.min(closed ? (i + 1) % n : i + 1, n - 1)];
+        const a = pts[closed ? (i - 1 + n) % n : Math.max(i - 1, 0)];
+        const tl = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+        const [px, pz] = c.toPx(p[0] - ((b[1] - a[1]) / tl) * offset, p[1] + ((b[0] - a[0]) / tl) * offset);
+        if (i) ctx.lineTo(px, pz);
+        else ctx.moveTo(px, pz);
       }
-      if (c.due((kz1 - kz0) * 2)) yield;
+      ctx.stroke();
+      ctx.restore();
+    };
+    if (pathNear(c, ride.loop, ride.half + 2, true) || pathNear(c, ride.spur, ride.half + 2)) {
+      for (const [pts, closed] of [[ride.loop, true], [ride.spur, false]]) {
+        // The rough's longer, browner edge either side, then the mown strip, then the two wheel lines worn into it.
+        for (const off of [-(ride.half + 0.4), ride.half + 0.4]) along(pts, closed, off, 1.1, '#8a7a4c', 0.45, fine ? 4 : 0);
+        along(pts, closed, 0, ride.half * 2, '#7a9a44', 0.72, fine ? 4 : 1);
+        for (const off of [-0.8, 0.8]) along(pts, closed, off, 0.4, '#7b6c4a', 0.4, fine ? 2 : 0);
+      }
     }
+    // Tufts near to: a straw-coloured or a dark green speck in some of the half-metre squares, placed by the square so every window agrees.
+    if (fine) {
+      const [kx0, kx1] = span(r.minX, r.maxX, 0.5, win.minX, win.maxX, 1);
+      const [kz0, kz1] = span(r.minZ, r.maxZ, 0.5, win.minZ, win.maxZ, 1);
+      for (let kx = kx0; kx < kx1; kx++) {
+        for (let kz = kz0; kz < kz1; kz++) {
+          const h = hash01(S.quarryTuft, kx, kz);
+          if (h > 0.8) continue;
+          const x = r.minX + kx * 0.5 + hash01(S.quarryTuft + 1, kx, kz) * 0.5;
+          const z = r.minZ + kz * 0.5 + hash01(S.quarryTuft + 2, kx, kz) * 0.5;
+          const dry = dryAt(x, z);
+          cell(x, z, 0.05 + h * 0.09, 0.04 + h * 0.06, h < 0.3 ? `rgba(52,68,28,0.6)` : dry > 0.45 && h < 0.65 ? `rgba(178,160,106,${0.35 + dry * 0.3})` : `rgba(112,118,64,0.45)`);
+        }
+        if (c.due((kz1 - kz0) * 0.6)) yield;
+      }
+    }
+    ctx.restore();
   }
-  const STRATA = [[201, 184, 138], [186, 140, 84], [158, 152, 138], [216, 207, 178], [174, 150, 104]];
   const step = fine ? 0.3 : 1.2;
   // Cells a little bigger than their spacing and knocked off the grid, so the ground reads as grit and not as squares.
   const grit = (x, z, kx, kz, color) => cell(x + (hash01(S.gritJ, kx, kz) - 0.5) * step, z + (hash01(S.gritJ + 100, kx, kz) - 0.5) * step, step * 1.6, step * 1.6, color);
@@ -855,19 +914,17 @@ function* paintQuarry(c, quarry) {
         let col;
         let alpha = 0.98;
         if (u >= 1) {
-          // The floor: packed, with stones.
+          // The floor: packed, with stones, and the scree skirt fanning out onto it from the walls' foot (#1004).
           const g = 120 + v * 28;
           col = [g + 12, g + 4, g - 14];
+          if (u < 1.12) col = mixColour(col, pitWallColour(x, z, cut, u, a, v), 1 - smoothstep(1, 1.12, u));
         } else if (u <= 0) {
-          // The lip: raw ground showing through the grass.
-          col = [176 + v * 20, 160 + v * 18, 112 + v * 14];
-          alpha = 0.9 * (1 - Math.min(1, -u * (quarry.runAt(a) / 2.5)));
+          // The lip: the turf's dark edge, its soil showing through the grass where it has crumbled.
+          col = [96 + v * 22, 84 + v * 18, 58 + v * 12];
+          alpha = 0.85 * (1 - Math.min(1, -u * (quarry.runAt(a) / 2)));
         } else {
-          const band = Math.floor(cut * 0.85 + 0.9 * Math.sin(a * 5 + cut * 0.4) + 0.5 * Math.sin(a * 13 + 2) + v * 0.35);
-          const base = STRATA[((band % STRATA.length) + STRATA.length) % STRATA.length];
-          const scree = smoothScree(u);
-          const m = 0.92 + v * 0.1; // the cells are about half a metre, so each is near its neighbour and the shader's grit gives the texture
-          col = [base[0] * m * (1 - 0.2 * scree) + 30 * scree, base[1] * m * (1 - 0.2 * scree) + 26 * scree, base[2] * m * (1 - 0.2 * scree) + 20 * scree];
+          // The walls (#1004): beds that run level in the world, faint, iron in patches, the topsoil dark at the lip and the scree over the lower bank.
+          col = pitWallColour(x, z, cut, u, a, v);
         }
         grit(x, z, kx, kz, `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},${alpha})`);
       }
@@ -888,6 +945,26 @@ function* paintQuarry(c, quarry) {
         ctx.fill();
         if (c.due(1)) yield;
       }
+      // Roots in the topsoil at the lip (#1004): fine dark threads running down from the turf's edge into the soil, each by its own number.
+      ctx.save();
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 2600; i++) {
+        const random = itemRandom(S.rootLip, i);
+        const a = random() * Math.PI * 2;
+        const rim = quarry.rimAt(a);
+        const p0 = quarry.frameAt(a + (random() - 0.5) * 0.01, rim + 0.05);
+        const len = 0.25 + random() * 0.7;
+        const p1 = quarry.frameAt(a + (random() - 0.5) * 0.02, rim - len);
+        if (!c.inWin(p0.x, p0.z, 1.5)) continue;
+        ctx.strokeStyle = random() < 0.6 ? 'rgba(46,34,24,0.7)' : 'rgba(92,70,48,0.6)';
+        ctx.lineWidth = Math.max(0.6, (0.01 + random() * 0.025) * s);
+        ctx.beginPath();
+        ctx.moveTo(...c.toPx(p0.x, p0.z));
+        ctx.lineTo(...c.toPx(p1.x, p1.z));
+        ctx.stroke();
+        if (c.due(1)) yield;
+      }
+      ctx.restore();
     }
     // The heaps, crusted over from years of standing (#1003): the stone gone dull and grey-brown under a skin of moss and silt, grass grown over
     // patches of it (pitGrowth.js `heapPatches`, where its tufts stand), and a darker tide line of washed-down silt round its foot.
@@ -995,11 +1072,8 @@ function* paintQuarry(c, quarry) {
   }
 }
 
-/** 0..1 how much scree there is `u` of the way down a bank: none at the top, loose stone over the lower part. */
-function smoothScree(u) {
-  const t = Math.min(1, Math.max(0, (u - 0.45) / 0.5));
-  return t * t * (3 - 2 * t);
-}
+/** `a` mixed `t` of the way to `b`, colours as [r, g, b]. */
+const mixColour = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 
 /** The neighbouring farmland beyond the farm's hedges, at 2 m a pixel (4 on the overview), fading in from the grass a few metres out (as the outer ring does). */
 function paintPatchwork(c, fields, land = null) {

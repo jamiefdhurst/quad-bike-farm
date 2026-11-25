@@ -766,3 +766,214 @@ export function hardstandingTexture(random, wear) {
     crackAndMoss(ctx, w, h, wear, { cracks: 9, moss: 1.4 });
   });
 }
+
+// ---- The walls, the stones and the tyres (#1004) ----
+
+/**
+ * The pit's beds, from the lip down (#1004): sands and gravels of a terrace, buff, sandy, grey-buff and pale, close in tone so the bands are faint, as
+ * an old face weathers; the review found the old ones saturated orange, grey and cream that read as stripes.
+ */
+export const PIT_BEDS = [[174, 158, 122], [160, 146, 112], [154, 148, 134], [180, 168, 138], [164, 146, 114], [170, 160, 136]];
+/** How the walls are coloured: metres a bed is thick, how it dips across the pit (metres a metre), the topsoil's depth, and the iron's and scree's tones. */
+export const PIT_WALL = { bed: 0.75, dip: [0.012, 0.007], topsoil: 0.8, topsoilColour: [52, 40, 28], iron: [148, 92, 52], screeColour: [142, 138, 128] };
+
+const smooth = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+const mixRgb = (c, d, t) => [c[0] + (d[0] - c[0]) * t, c[1] + (d[1] - c[1]) * t, c[2] + (d[2] - c[2]) * t];
+
+/**
+ * The colour of the pit's wall at (x, z), `depth` metres below the lip's level and `u` of the way from the lip (0) to the floor (1), `a` its angle round
+ * the pit and `v` a speck of grain (0..1): [r, g, b]. The beds go by depth, which is height in the world, so they run level round the bowl whatever the
+ * slope, with a slight dip across the pit and a slow swell, and fade into each other; iron staining in patches and streaks below them; the dark topsoil
+ * at the lip with a ragged foot; and the paler, greyer scree over the lower part of the bank and in a skirt out onto the floor (`u` over 1).
+ */
+export function pitWallColour(x, z, depth, u, a, v = 0.5) {
+  const W = PIT_WALL;
+  const level = depth / W.bed + (x * W.dip[0] + z * W.dip[1]) / W.bed + 0.18 * Math.sin(x * 0.045 + z * 0.031) + 0.08 * Math.sin(x * 0.13 - z * 0.11);
+  const k = Math.floor(level);
+  const f = level - k;
+  const bed = (i) => PIT_BEDS[((i % PIT_BEDS.length) + PIT_BEDS.length) % PIT_BEDS.length];
+  let col = mixRgb(bed(k), bed(k + 1), smooth(0.78, 1, f));
+  // A thin darker parting at the foot of each bed, where a clay band holds the damp.
+  col = col.map((c) => c * (1 - 0.12 * smooth(0.86, 0.96, f) * (1 - smooth(0.98, 1, f))));
+  // Iron: rusty patches a few metres high and ten or more along, following a bed or two, mottled inside.
+  const blob = Math.sin(a * 9.3 + 1.1 + Math.sin(depth * 0.7) * 0.8) * Math.sin(depth * 1.3 + a * 2.1 + 0.4);
+  const patch = 0.5 + 0.5 * blob * (0.65 + 0.35 * Math.sin(a * 3.7 + 0.6));
+  const mottle = 0.6 + 0.4 * Math.sin(a * 71 + depth * 5.3) * Math.sin(a * 43 - depth * 3.1);
+  const iron = smooth(0.6, 0.8, patch) * mottle * smooth(0.3, 1.2, depth);
+  col = mixRgb(col, W.iron, iron * 0.72);
+  // The topsoil: dark at the lip, its foot ragged where roots and turf hang over.
+  const soil = W.topsoil * (0.75 + 0.35 * Math.sin(a * 17 + 0.4) * Math.sin(a * 5.3));
+  col = mixRgb(col, W.topsoilColour, 1 - smooth(soil * 0.7, soil * 1.15, depth));
+  // The scree skirt: loose stone fallen from above, paler and greyer, over the lower bank and fanning a little out onto the floor.
+  const scree = u <= 1 ? smooth(0.6, 0.92, u) : 1 - smooth(1, 1.12, u);
+  col = mixRgb(col, W.screeColour.map((c) => c * (0.86 + v * 0.28)), scree * 0.7); // loose stone, each speck its own tone
+  const grain = 0.94 + v * 0.1;
+  return col.map((c) => c * grain);
+}
+
+/**
+ * A stone's surface for the pit's stones and boulders (#1004), one tile about a metre across: flint and gravel in a sandy matrix, grey-brown with
+ * pebbles set in it, dark cracks, and lichen in pale grey-green and orange patches. The stone's own tint goes over it (its vertex colours).
+ */
+export function pitStoneTexture(random) {
+  return canvasTexture(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#8a8274';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 60; i++) {
+      const x = random() * w;
+      const y = random() * h;
+      const r = 10 + random() * 46;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      const col = random() < 0.4 ? '104,98,88' : random() < 0.5 ? '150,140,120' : '120,104,84';
+      g.addColorStop(0, `rgba(${col},0.45)`);
+      g.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    // Pebbles and flints set in the matrix: rounded, each with a lit edge and a shadowed one.
+    for (let i = 0; i < 160; i++) {
+      const x = random() * w;
+      const y = random() * h;
+      const rx = 2 + random() * random() * 12;
+      const ry = rx * (0.5 + random() * 0.5);
+      const t = random() * Math.PI;
+      const tone = random() < 0.3 ? [68, 64, 62] : random() < 0.5 ? [176, 168, 150] : [138, 116, 90];
+      ctx.fillStyle = `rgba(${tone.join(',')},0.8)`;
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx, ry, t, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(30,28,26,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(x + 1, y + 1.2, rx, ry * 0.5, t, 0, Math.PI);
+      ctx.fill();
+    }
+    for (let i = 0; i < 2400; i++) {
+      ctx.fillStyle = `rgba(${random() > 0.5 ? '200,192,172' : '60,56,50'},${0.1 + random() * 0.25})`;
+      ctx.fillRect(random() * w, random() * h, 1 + random() * 1.5, 1 + random() * 1.5);
+    }
+    // Cracks, wandering and forking.
+    ctx.strokeStyle = 'rgba(40,36,32,0.55)';
+    for (let i = 0; i < 6; i++) {
+      let x = random() * w;
+      let y = random() * h;
+      let d = random() * Math.PI * 2;
+      ctx.lineWidth = 0.8 + random() * 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      for (let s = 0; s < 14; s++) {
+        d += (random() - 0.5) * 0.9;
+        x += Math.cos(d) * 6;
+        y += Math.sin(d) * 6;
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    // Lichen: crusty pale grey-green rosettes and a few orange ones.
+    for (let i = 0; i < 26; i++) {
+      const x = random() * w;
+      const y = random() * h;
+      const r = 4 + random() * 14;
+      const col = random() < 0.75 ? '176,184,150' : '196,140,60';
+      for (let k = 0; k < 14; k++) {
+        const a = random() * Math.PI * 2;
+        const d = random() * r;
+        ctx.fillStyle = `rgba(${col},${0.35 + random() * 0.35})`;
+        ctx.beginPath();
+        ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, 1 + random() * 2.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+}
+
+/** Where a tyre's texture lies along its section (#1004): the outside from bead to bead takes `outer`, the inner liner `inner`, of the texture's height. */
+export const TYRE_UV = { outer: [0, 0.8], inner: [0.82, 1], tread: [0.3, 0.5], shoulders: [0.26, 0.54], beads: 0.04 };
+
+/**
+ * An old car tyre's rubber (#1004), 512 tall along its section and 256 round it once (`TYRE_UV`): the beads, sidewalls gone grey-brown in the
+ * weather with moulded rings, cracks and scuffs, shoulder blocks, a tread of blocks between three grooves with sipes across them, worn smooth in the
+ * middle, and the inner liner, darker and smooth with the mould's fine ribs, dirt and a green tide line where water has stood in it.
+ */
+export function tyreTexture(random) {
+  return canvasTexture(256, 512, (ctx, w, h) => {
+    const band = (v0, v1, fill) => {
+      ctx.fillStyle = fill;
+      ctx.fillRect(0, v0 * h, w, (v1 - v0) * h);
+    };
+    const U = TYRE_UV;
+    // Sidewalls and beads.
+    band(U.outer[0], U.outer[1], '#3b3936');
+    for (const [v0, v1] of [[U.outer[0], U.beads], [U.outer[1] - U.beads, U.outer[1]]]) band(v0, v1, '#1c1b1a');
+    for (const [a, b] of [[U.beads, U.shoulders[0]], [U.shoulders[1], U.outer[1] - U.beads]]) {
+      for (let i = 0; i < 4; i++) {
+        const v = a + ((i + 1) / 5) * (b - a);
+        band(v - 0.002, v + 0.002, 'rgba(24,23,22,0.6)'); // moulded rings
+      }
+      for (let i = 0; i < 26; i++) {
+        // Raised blocks of the maker's moulding, worn too far to read.
+        ctx.fillStyle = 'rgba(30,29,28,0.5)';
+        ctx.fillRect(random() * w, (a + (b - a) * (0.35 + random() * 0.3)) * h, 3 + random() * 6, 4 + random() * 4);
+      }
+    }
+    // Weathering: grey bloom and brown dust over the rubber, and fine cracks.
+    for (let i = 0; i < 900; i++) {
+      ctx.fillStyle = `rgba(${random() < 0.5 ? '110,104,96' : '92,78,62'},${0.05 + random() * 0.12})`;
+      ctx.fillRect(random() * w, random() * U.outer[1] * h, 2 + random() * 6, 1 + random() * 3);
+    }
+    ctx.strokeStyle = 'rgba(14,13,12,0.6)';
+    ctx.lineWidth = 0.7;
+    for (let i = 0; i < 70; i++) {
+      const x = random() * w;
+      const y = (U.beads + random() * (U.outer[1] - 2 * U.beads)) * h;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (random() - 0.5) * 8, y + (random() - 0.5) * 3);
+      ctx.stroke();
+    }
+    // The shoulders and the tread: blocks between grooves, 30 round the tyre.
+    const [t0, t1] = U.tread;
+    band(t0, t1, '#2a2927');
+    const blocks = 30;
+    const bw = w / blocks;
+    for (let i = 0; i < blocks; i++) {
+      const x = i * bw;
+      for (const [v0, v1] of [[U.shoulders[0], t0 + 0.01], [t0 + 0.02, t0 + 0.085], [t0 + 0.105, t1 - 0.105], [t1 - 0.085, t1 - 0.02], [t1 - 0.01, U.shoulders[1]]]) {
+        const skew = (i % 2 ? 1 : -1) * 2;
+        ctx.fillStyle = '#3a3835';
+        ctx.fillRect(x + 1.5 + skew, v0 * h, bw - 3, (v1 - v0) * h);
+        ctx.fillStyle = 'rgba(70,68,64,0.5)'; // the block's lit edge
+        ctx.fillRect(x + 1.5 + skew, v0 * h, bw - 3, 1.5);
+        ctx.fillStyle = 'rgba(16,15,14,0.7)'; // a sipe across it
+        ctx.fillRect(x + bw * 0.45 + skew, v0 * h + 2, 1, (v1 - v0) * h - 4);
+      }
+    }
+    // Worn smooth along the middle, and grit in the grooves.
+    ctx.fillStyle = 'rgba(74,72,68,0.35)';
+    ctx.fillRect(0, (t0 + 0.06) * h, w, (t1 - t0 - 0.12) * h);
+    for (let i = 0; i < 300; i++) {
+      ctx.fillStyle = `rgba(${random() < 0.5 ? '120,108,88' : '150,140,118'},0.5)`;
+      ctx.fillRect(random() * w, (t0 + random() * (t1 - t0)) * h, 1.2, 1.2);
+    }
+    // The inner liner: smooth, darker, with the mould's fine diagonal ribs, dirt settled low and a green line where rain stood.
+    const [i0, i1] = U.inner;
+    band(i0, i1, '#242322');
+    ctx.strokeStyle = 'rgba(48,46,44,0.55)';
+    ctx.lineWidth = 1;
+    for (let x = -h; x < w + h; x += 6) {
+      ctx.beginPath();
+      ctx.moveTo(x, i0 * h);
+      ctx.lineTo(x + (i1 - i0) * h * 0.6, i1 * h);
+      ctx.stroke();
+    }
+    const low = i0 + (i1 - i0) * 0.62;
+    const g = ctx.createLinearGradient(0, low * h, 0, i1 * h);
+    g.addColorStop(0, 'rgba(70,80,44,0.5)');
+    g.addColorStop(0.15, 'rgba(84,70,48,0.45)');
+    g.addColorStop(1, 'rgba(96,84,62,0.6)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, low * h, w, (i1 - low) * h);
+  });
+}
