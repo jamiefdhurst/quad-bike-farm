@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { drumTexture, SIGN_SIZE } from './quarryTextures.js';
+import { drumTexture, rustedDrumTexture, SIGN_SIZE } from './quarryTextures.js';
 
 export const DRUM = { radius: 0.295, height: 0.88 };
 export const TYRE = { radius: 0.312, width: 0.2 };
@@ -59,12 +59,19 @@ export function scatterClear(count, { pick, radius, ok = () => true, existing = 
   return fresh;
 }
 
-/** The pile's materials: drums in a handful of faded colours, and a tyre's black rubber. */
-export function debrisMaterials(random) {
+/** The drums' paints, as they were: blue, green, red, brown and grey. */
+export const DRUM_PAINTS = ['#3a68a8', '#4a8a52', '#b04a36', '#93684a', '#888d90'];
+
+/**
+ * The pile's materials: drums in a handful of faded colours, and a tyre's black rubber. With `wear` (#1003) each drum is rusted through with the
+ * label gone (`rustedDrumTexture`, its colour in it); the old texture is still made from `random`, so everything dealt after it stands where it did.
+ */
+export function debrisMaterials(random, wear = null) {
   const map = drumTexture(random);
   const drum = (color) => new THREE.MeshStandardMaterial({ map, color, roughness: 0.6, metalness: 0.25 });
+  const rusted = (paint) => new THREE.MeshStandardMaterial({ map: rustedDrumTexture(wear, paint), roughness: 0.9, metalness: 0.15 });
   return {
-    drums: [drum(0x3a68a8), drum(0x4a8a52), drum(0xb04a36), drum(0x93684a), drum(0x888d90)],
+    drums: wear ? DRUM_PAINTS.map(rusted) : DRUM_PAINTS.map((p) => drum(new THREE.Color(p).getHex())),
     tyre: new THREE.MeshStandardMaterial({ color: 0x1d1d1c, roughness: 0.95 }),
   };
 }

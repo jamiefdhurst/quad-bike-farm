@@ -15,6 +15,15 @@ const TAU = Math.PI * 2;
 /** How much more light reflective tape gives back than plain white paint: its material's colour (1 is white). */
 export const TAPE_GAIN = 1.6;
 
+/** A chain's and a padlock's materials, for anything chained shut: galvanised chain gone brown at the links' wear, the lock's steel, its dark keyway. */
+export function lockMaterials() {
+  return {
+    chain: new THREE.MeshStandardMaterial({ color: 0x6e6152, roughness: 0.62, metalness: 0.5 }),
+    lock: new THREE.MeshStandardMaterial({ color: 0x8c8a84, roughness: 0.45, metalness: 0.6 }),
+    dark: new THREE.MeshStandardMaterial({ color: 0x24221f, roughness: 0.7, metalness: 0.3 }),
+  };
+}
+
 /** The kit's materials, all lit: dull galvanising, weathered precast concrete, old yellow paint gone to rust, reflective tape, chain and lock steel, earth. */
 export function entranceMaterials(random) {
   const concreteMap = concreteTexture(random);
@@ -26,9 +35,7 @@ export function entranceMaterials(random) {
     // white, so a headlamp's light comes back off it brighter than off the board or the paint round it.
     tape: new THREE.MeshStandardMaterial({ map: reflectiveTapeTexture('hazard'), color: new THREE.Color(TAPE_GAIN, TAPE_GAIN, TAPE_GAIN), roughness: 0.12, metalness: 0 }),
     tapeWhite: new THREE.MeshStandardMaterial({ map: reflectiveTapeTexture('white'), color: new THREE.Color(TAPE_GAIN, TAPE_GAIN, TAPE_GAIN), roughness: 0.12, metalness: 0 }),
-    chain: new THREE.MeshStandardMaterial({ color: 0x6e6152, roughness: 0.62, metalness: 0.5 }), // galvanised chain gone brown at the links' wear
-    lock: new THREE.MeshStandardMaterial({ color: 0x8c8a84, roughness: 0.45, metalness: 0.6 }),
-    dark: new THREE.MeshStandardMaterial({ color: 0x24221f, roughness: 0.7, metalness: 0.3 }),
+    ...lockMaterials(),
     earth: new THREE.MeshStandardMaterial({ color: 0x55462f, roughness: 1 }),
     heightPlate: new THREE.MeshStandardMaterial({ map: heightPlateTexture('2.1m'), roughness: 0.35 }),
   };
@@ -86,11 +93,11 @@ export function addGatePost(parts, mats, x, y, z, yaw, { w = 0.3, h = 1.8, sink 
 }
 
 /** Bolt heads (the detail kit's) at `points` ([x, y, z] in the parts' frame), each facing along `normal`. */
-export function addBolts(parts, material, points, normal, size = 0.016) {
+export function addBolts(parts, material, points, normal, size = 0.016, { washer = true } = {}) {
   const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...normal).normalize());
   const e = new THREE.Euler().setFromQuaternion(q, 'YXZ');
   for (const [x, y, z] of points) {
-    const geo = boltGeometry({ size, kind: 'hex' });
+    const geo = boltGeometry({ size, kind: 'hex', washer });
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(geo.getAttribute('position').count * 2), 2)); // so it merges with the textured parts it holds on
     parts.add(material, geo, x, y, z, e.x, e.y, e.z);
   }
@@ -132,7 +139,7 @@ function placeLink(parts, material, p, dir, upright) {
 export function addChainAndLock(parts, mats, y, apart) {
   const a = apart / 2 + 0.05;
   const b = 0.05;
-  const n = 16;
+  const n = 2 * Math.max(8, Math.round((Math.PI * Math.sqrt((a * a + b * b) * 2)) / 0.084)); // link to link round the wrap, however far apart the stiles (#1003's container)
   for (let i = 0; i < n; i++) {
     const t = (i / n) * TAU;
     const p = [a * Math.cos(t), y + 0.012 * Math.sin(t * 3), b * Math.sin(t)];
@@ -141,14 +148,19 @@ export function addChainAndLock(parts, mats, y, apart) {
   }
   // The tail, hanging from the front of the wrap.
   for (let i = 0; i < 5; i++) placeLink(parts, mats.chain, [0.012 * Math.sin(i), y - 0.05 - i * 0.045, b + 0.008], [0.05, -1, 0.02], i % 2 === 0);
-  // The padlock: a laminated body of thin plates (each with its edge), a dark keyway, and its shackle up through the wrap's front links.
-  const lx = 0.03;
-  const ly = y - 0.085;
-  const lz = b + 0.02;
-  for (let k = 0; k < 5; k++) parts.add(mats.lock, worldBox(0.046, 0.0085, 0.024, 0.1), lx, ly - 0.02 + k * 0.0095, lz);
-  parts.add(mats.dark, worldBox(0.006, 0.014, 0.004, 0.1), lx, ly - 0.012, lz + 0.0135);
-  parts.add(mats.lock, new THREE.TorusGeometry(0.014, 0.0035, 5, 10, Math.PI), lx, ly + 0.024, lz);
-  return { x: lx, y: ly, z: lz };
+  // The padlock, its shackle up through the wrap's front links.
+  return addPadlock(parts, mats, 0.03, y - 0.085, b + 0.02);
+}
+
+/**
+ * A laminated padlock hanging at (x, y, z) (its body's middle), its face towards +z: a body of thin plates (each with its edge), a dark keyway, and
+ * its shackle up from the body (through whatever it locks). `mats.lock` and `mats.dark`. Returns where it hangs.
+ */
+export function addPadlock(parts, mats, x, y, z) {
+  for (let k = 0; k < 5; k++) parts.add(mats.lock, worldBox(0.046, 0.0085, 0.024, 0.1), x, y - 0.02 + k * 0.0095, z);
+  parts.add(mats.dark, worldBox(0.006, 0.014, 0.004, 0.1), x, y - 0.012, z + 0.0135);
+  parts.add(mats.lock, new THREE.TorusGeometry(0.014, 0.0035, 5, 10, Math.PI), x, y + 0.024, z);
+  return { x, y, z };
 }
 
 /** A square section `w` across chamfered `c`, `l` long along local x, centred: the body of an interlocking block. */
@@ -360,7 +372,7 @@ export function addLitter(parts, mats, kind, x, y, z, yaw, tip) {
  * `frame` (pitEntrance.js `frameOf`) on `groundY` raised `lift` m less `dip(u, v)`, with a skirt down into the ground along both edges and at the
  * first row so its edge has a face and no gap shows. `uvOf(u, v)` gives each point's texture place.
  */
-export function drapeGeometry(rows, { frame, groundY, lift = 0.05, dip = () => 0, cols = 24, uvOf, skirt = 0.08 }) {
+export function drapeGeometry(rows, { frame, groundY, lift = 0.05, dip = () => 0, cols = 24, uvOf, skirt = 0.08, endSkirt = false }) {
   const pos = [];
   const uv = [];
   const index = [];
@@ -402,6 +414,15 @@ export function drapeGeometry(rows, { frame, groundY, lift = 0.05, dip = () => 0
     return vert(fr.u, fr.v, skirt);
   });
   for (let k = 0; k < cols; k++) index.push(grid[0][k], grid[0][k + 1], first[k], grid[0][k + 1], first[k + 1], first[k]);
+  if (endSkirt) {
+    // A slab with an edge all round (#1003, the pit container's hardstanding) has one at its last row too.
+    const n = grid.length - 1;
+    const last = grid[n].map((k) => {
+      const fr = frame.toFrame(pos[k * 3], pos[k * 3 + 2]);
+      return vert(fr.u, fr.v, skirt);
+    });
+    for (let k = 0; k < cols; k++) index.push(grid[n][k], last[k], grid[n][k + 1], grid[n][k + 1], last[k], last[k + 1]);
+  }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));

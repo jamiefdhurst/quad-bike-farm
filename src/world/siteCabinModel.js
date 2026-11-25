@@ -1,31 +1,37 @@
-// The site cabin by the pit's screening plant: a 3.6 by 2.4 m portable steel office on skids and blocks, with ribbed cladding, a door standing open
-// on its steps, two barred windows (one with its shutter swung back), a roof that overhangs, a gutter and downpipe, an air-con box and the odds and
-// ends left outside. Built in a local frame with its length along x, the door side towards +z, standing on y = 0.
+// The site cabin by the pit's screening plant: a 3.6 by 2.4 m portable steel office on skids and blocks, with ribbed cladding, its door shut and
+// padlocked on its steps, three barred windows boarded up (one with its shutter swung back), a roof that overhangs, a gutter and downpipe, an air-con
+// box and the odds and ends left outside, a tipped chair and a folding table among them, all weathered (#1003). Built in a local frame with its
+// length along x, the door side towards +z, standing on y = 0.
 
 import * as THREE from 'three';
 import { Parts, placement } from './parts.js';
 import { cladding, galvanisedTexture, paintedSteelTexture, rustTexture, plateTexture } from './quarryTextures.js';
 import { woodTexture } from './neighbourTextures.js';
+import { relicMaterials, boardedWindow, addBoards, addFoldingTable, addPlasticChair } from './relicKit.js';
+import { addPadlock } from './entranceKit.js';
+import { seeded } from './propStreams.js';
 
 export const CABIN = { length: 3.6, width: 2.4, floor: 0.47, top: 2.65 };
 
-/** The cabin's materials, made once. */
-export function cabinMaterials(random) {
+/** The cabin's materials, made once; `wear` draws the years of standing (#1003), `random` what it drew before. */
+export function cabinMaterials(random, wear = random) {
   const lit = (o) => new THREE.MeshStandardMaterial({ roughness: 0.8, ...o });
   const m = {
-    clad: lit({ map: cladding(random), roughness: 0.65, metalness: 0.15 }),
-    trim: lit({ map: paintedSteelTexture(random, '#5d6a5e', 0.8), roughness: 0.7, metalness: 0.2 }),
+    clad: lit({ map: cladding(random, '#aba48a', { wear, chalk: 0.3, rust: 0.6, grime: 1 }), roughness: 0.85, metalness: 0.1 }), // the cream gone dingy, green down from the roof
+    trim: lit({ map: paintedSteelTexture(random, '#5d6a5e', 0.8, { wear, chalk: 0.4, grime: 0.6 }), roughness: 0.75, metalness: 0.2 }),
     rust: lit({ map: rustTexture(random, '#6b4a38'), roughness: 0.9 }),
     dark: lit({ color: 0x242422, roughness: 0.9 }),
     bar: lit({ map: galvanisedTexture(random), roughness: 0.5, metalness: 0.6 }),
     concrete: lit({ color: 0x8c8b84, roughness: 1 }),
     wood: lit({ map: woodTexture(random, [118, 98, 74]), roughness: 0.95 }),
     plastic: lit({ color: 0xd2d2cc, roughness: 0.6 }),
-    bucket: lit({ color: 0x2f5d8a, roughness: 0.6 }),
+    bucket: lit({ color: 0x4f6c84, roughness: 0.8 }), // the blue faded
     glass: new THREE.MeshStandardMaterial({ color: 0x4a5c60, roughness: 0.15, metalness: 0.2, transparent: true, opacity: 0.35, depthWrite: false }),
-    sign: lit({ map: plateTexture(['SITE OFFICE', 'ALL VISITORS', 'REPORT HERE'], { bg: '#e8e4d4', fg: '#1d3a2a', w: 256, h: 160, size: 30 }), roughness: 0.5 }),
+    sign: lit({ map: plateTexture(['SITE OFFICE', 'ALL VISITORS', 'REPORT HERE'], { bg: '#d6d0bc', fg: '#3c4c40', w: 256, h: 160, size: 30 }), roughness: 0.7 }), // faded
+    lock: lit({ color: 0x7c776c, roughness: 0.5, metalness: 0.5 }),
   };
   for (const [k, v] of Object.entries(m)) v.name = k;
+  m.relic = relicMaterials(wear);
   return m;
 }
 
@@ -43,7 +49,7 @@ export function cutWall(len, y0, y1, openings, box) {
 }
 
 /** A window opening's parts in a frame where the opening is centred on the origin, the wall plane is z = 0 and outside is +z. */
-function buildWindow(m, w, h, { shutter = false } = {}) {
+function buildWindow(m, w, h, { shutter = false, boards = null } = {}) {
   const p = new Parts();
   const jx = w / 2 + 0.02;
   const jy = h / 2 + 0.02;
@@ -62,6 +68,8 @@ function buildWindow(m, w, h, { shutter = false } = {}) {
   const rods = Math.round(w / 0.11);
   for (let i = 0; i <= rods; i++) p.rod(m.bar, [-w / 2 - 0.02 + (i * (w + 0.04)) / rods, -jy - 0.01, barZ], [-w / 2 - 0.02 + (i * (w + 0.04)) / rods, jy + 0.01, barZ], 0.011, 0.011, 5);
   for (const x of [-jx, jx]) for (const y of [jy - 0.06, -jy + 0.06]) p.box(m.dark, 0.03, 0.03, 0.06, x, y, 0.055);
+  // Boarded up (#1003): a ply sheet screwed over the frame behind the bars, or planks nailed across outside them.
+  if (boards) addBoards(p, m.relic, boardedWindow(m.relic, w, h, seeded(boards.seed ?? 1), { kind: boards.kind, out: boards.kind === 'ply' ? 0.05 : 0.1 }), new THREE.Matrix4());
   if (shutter) {
     // The steel shutter, hinged on one jamb and swung right back against the wall.
     const sp = new Parts();
@@ -82,19 +90,20 @@ function buildDoor(m) {
   const w = 0.88;
   const h = 1.98;
   p.box(m.clad, w, h, 0.045, w / 2, h / 2, 0, 0, 0.6, CABIN.top);
-  p.box(m.trim, w - 0.08, 0.05, 0.05, w / 2, 1.5, 0.008, 0, 0.6); // a rail across it
-  p.box(m.trim, w - 0.08, 0.05, 0.052, w / 2, 0.55, 0.009, 0, 0.6);
+  // Every part's face a few millimetres from the next's, so none fights another now the door is shut square to the wall (#1003): the leaf's at
+  // 22.5 mm, the kick plate's 28, the stiles' 34, the rails' 40.
+  p.box(m.trim, w - 0.08, 0.05, 0.05, w / 2, 1.5, 0.015, 0, 0.6); // a rail across it
+  p.box(m.trim, w - 0.08, 0.05, 0.05, w / 2, 0.55, 0.015, 0, 0.6);
   p.box(m.dark, w - 0.04, 0.22, 0.056, w / 2, 0.14, 0.0); // the kick plate
-  p.box(m.trim, 0.05, h - 0.1, 0.048, 0.04, h / 2, 0.006, 0, 0.6); // the stiles
-  p.box(m.trim, 0.05, h - 0.1, 0.05, w - 0.04, h / 2, 0.007, 0, 0.6);
+  p.box(m.trim, 0.05, h - 0.1, 0.05, 0.04, h / 2, 0.009, 0, 0.6); // the stiles
+  p.box(m.trim, 0.05, h - 0.1, 0.05, w - 0.04, h / 2, 0.009, 0, 0.6);
   p.add(m.sign, new THREE.PlaneGeometry(0.34, 0.2125), w / 2, 1.78, 0.0275 + 0.012);
-  // The lever handle and lock plate on the free edge, a hasp swung back and a padlock hung from it.
+  // The lever handle and lock plate on the free edge; a staple standing off the door by its edge, for the hasp on the frame to fold over (#1003).
   p.box(m.dark, 0.05, 0.2, 0.012, w - 0.1, 1.0, 0.035);
   p.rod(m.bar, [w - 0.1, 1.0, 0.04], [w - 0.1, 1.0, 0.085], 0.012);
   p.rod(m.bar, [w - 0.1, 1.0, 0.085], [w - 0.28, 1.0, 0.085], 0.012);
-  p.box(m.rust, 0.06, 0.2, 0.014, w - 0.035, 1.3, 0.036);
-  p.box(m.bar, 0.065, 0.08, 0.035, w - 0.035, 1.12, 0.065);
-  p.add(m.bar, new THREE.TorusGeometry(0.022, 0.006, 5, 10, Math.PI), w - 0.035, 1.17, 0.065, 0, 0, 0);
+  p.box(m.rust, 0.05, 0.12, 0.008, w - 0.05, 1.3, 0.0385); // the staple's plate, screwed to the stile
+  p.box(m.rust, 0.024, 0.05, 0.05, w - 0.05, 1.3, 0.066); // the staple, through the hasp's slot
   for (const y of [0.3, 1.0, 1.7]) {
     p.rod(m.dark, [0, y - 0.07, 0.0], [0, y + 0.07, 0.0], 0.022);
     p.box(m.dark, 0.14, 0.09, 0.008, 0.07, y, 0.026);
@@ -165,17 +174,13 @@ function buildSteps(p, m) {
   p.rod(m.bar, [1.43, FY + 0.9, z0 + 0.15], [1.43, 1.1, z0 + 0.75], 0.02);
 }
 
-/** What has been left outside: a bucket, a plastic chair, a few planks leaning on the end wall, and a pallet. */
+/** What has been left outside: a bucket on its side, a plastic chair blown over and a folding table, all weathered (#1003), a few planks leaning on the end wall, and a pallet. */
 function buildClutter(p, m) {
   const { length: L, width: W } = CABIN;
-  p.add(m.bucket, new THREE.CylinderGeometry(0.15, 0.115, 0.3, 10), -0.7, 0.15, W / 2 + 0.55);
-  p.add(m.dark, new THREE.TorusGeometry(0.15, 0.008, 4, 12), -0.7, 0.3, W / 2 + 0.55, Math.PI / 2, 0, 0);
-  // The chair: seat, back and four legs, a bit askew.
-  const chair = new Parts();
-  chair.box(m.plastic, 0.42, 0.04, 0.42, 0, 0.45, 0, 0, 0.5);
-  chair.box(m.plastic, 0.42, 0.4, 0.03, 0, 0.67, -0.2, 0, 0.5);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) chair.box(m.plastic, 0.035, 0.45, 0.035, sx * 0.18, 0.225, sz * 0.18, 0, 0.5);
-  p.merge(chair, placement(-1.2, 0, W / 2 + 0.7, 0.5));
+  p.add(m.bucket, new THREE.CylinderGeometry(0.15, 0.115, 0.3, 10), 0.3, 0.14, W / 2 + 1.5, 0, 0, Math.PI / 2); // rolled on its side, its open end towards -x
+  p.add(m.dark, new THREE.TorusGeometry(0.15, 0.008, 4, 12), 0.15, 0.14, W / 2 + 1.5, 0, Math.PI / 2, 0);
+  addPlasticChair(p, m.relic.plastic, -1.35, 0, W / 2 + 0.7, 0.5, { tipped: true });
+  addFoldingTable(p, m.relic, -0.35, -0.02, W / 2 + 1.0, 0.15, 0.03);
   // Planks leaning on the right end wall.
   for (let i = 0; i < 4; i++) p.add(m.wood, new THREE.BoxGeometry(0.035, 1.9, 0.14 + (i % 2) * 0.03), L / 2 + 0.135 + i * 0.012, 0.95, -0.5 + i * 0.17, 0, 0, 0.12);
   // A pallet on the ground at the back.
@@ -207,11 +212,17 @@ export function buildCabin(m) {
   buildSteps(p, m);
   buildClutter(p, m);
   buildInside(p, m);
-  // Windows (the one on the end wall faces +x), and the door hung on its hinge, open.
-  p.merge(buildWindow(m, 1.1, 0.85), placement(-0.9, 1.775, W / 2));
-  p.merge(buildWindow(m, 1.1, 0.85, { shutter: true }), placement(0.05, 1.775, -W / 2, Math.PI));
-  p.merge(buildWindow(m, 0.8, 0.85), placement(L / 2, 1.775, -0.1, Math.PI / 2));
-  p.merge(buildDoor(m), placement(0.56, FY + 0.03, W / 2, -1.9)); // swung right out from the post on its left, clear of the steps
+  // Windows (the one on the end wall faces +x), each boarded up (#1003), and the door hung on its hinge, shut and padlocked.
+  p.merge(buildWindow(m, 1.1, 0.85, { boards: { kind: 'ply', seed: 2 } }), placement(-0.9, 1.775, W / 2));
+  p.merge(buildWindow(m, 1.1, 0.85, { shutter: true, boards: { kind: 'ply', seed: 3 } }), placement(0.05, 1.775, -W / 2, Math.PI));
+  p.merge(buildWindow(m, 0.8, 0.85, { boards: { kind: 'planks', seed: 4 } }), placement(L / 2, 1.775, -0.1, Math.PI / 2));
+  const doorZ = W / 2 - 0.0265; // the leaf's face 4 mm inside the wall's, in the opening
+  p.merge(buildDoor(m), placement(0.56, FY + 0.03, doorZ, 0));
+  // The hasp, hinged on the jamb and folded over the door's staple, and the padlock through the staple.
+  const lockY = FY + 0.03 + 1.3;
+  p.box(m.rust, 0.17, 0.06, 0.008, 1.415, lockY, W / 2 + 0.049, 0, 0.5);
+  p.rod(m.rust, [1.5, lockY - 0.035, W / 2 + 0.056], [1.5, lockY + 0.035, W / 2 + 0.056], 0.008, 0.008, 6); // its knuckle
+  addPadlock(p, { lock: m.lock, dark: m.dark }, 0.56 + 0.83, lockY - 0.035, doorZ + 0.104);
   const group = p.build();
   group.name = 'siteCabin';
   const boxes = [[0, top / 2 + 0.1, 0, L / 2 + 0.05, top / 2, W / 2 + 0.05]];

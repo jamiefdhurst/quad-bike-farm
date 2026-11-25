@@ -1,5 +1,6 @@
 // The canvas textures of the pit's props: the plant's hardcore pad, rusty plate, faded digger paint, the container's and the cabin's steel, the hazard signs and the drums,
-// and the lane entrance's bellmouth and its loose tarmac (#1002).
+// and the lane entrance's bellmouth and its loose tarmac (#1002); and the relics' years of standing (#1003): chalked paint, cracks and moss, rusted
+// drums, rust streaks, cracked glass, a worn belt, weathered plastic and the container's hardstanding.
 
 import { canvasTexture } from './outbuildingProps.js';
 import { tarmacAt, rutDip, bellmouthHalf, raggedEdge, ENTRANCE } from './pitEntrance.js';
@@ -178,8 +179,71 @@ export function rustTexture(random, base = '#7a4a30') {
   });
 }
 
-/** The plant's hardcore pad, one tile 3 m square: crushed stone in greys and buff, with dark oil stains and a few pale dust patches. */
-export function hardcoreTexture(random) {
+/**
+ * Cracks, moss and weeds over a stone or concrete surface left for years (#1003), drawn from `wear`: dark cracks that wander and fork, green-black
+ * moss along them and in patches, a few bright tufts of grass in the cracks, and damp dark stains where water stands.
+ */
+export function crackAndMoss(ctx, w, h, wear, { cracks = 7, moss = 1 } = {}) {
+  for (let i = 0; i < 6; i++) {
+    const x = wear() * w;
+    const y = wear() * h;
+    const r = 16 + wear() * 34;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, 'rgba(48,46,40,0.32)'); // damp, where the water stands
+    g.addColorStop(1, 'rgba(48,46,40,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  const crack = (x, y, a, len, width, depth) => {
+    ctx.strokeStyle = `rgba(34,32,28,${0.35 + wear() * 0.3})`;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    const pts = [];
+    for (let s = 0; s < len; s += 5) {
+      a += (wear() - 0.5) * 0.8;
+      x += Math.cos(a) * 5;
+      y += Math.sin(a) * 5;
+      ctx.lineTo(x, y);
+      pts.push([x, y]);
+    }
+    ctx.stroke();
+    for (const [px, py] of pts) {
+      if (wear() < 0.25 * moss) {
+        ctx.fillStyle = `rgba(${52 + wear() * 30},${74 + wear() * 30},${30 + wear() * 14},${0.45 + wear() * 0.3})`; // moss along it
+        ctx.fillRect(px - 2, py - 2, 3 + wear() * 4, 3 + wear() * 4);
+      }
+      if (wear() < 0.06 * moss) {
+        ctx.strokeStyle = `rgba(${86 + wear() * 40},${120 + wear() * 30},${40 + wear() * 20},0.85)`; // a tuft of grass in it
+        ctx.lineWidth = 1;
+        for (let k = 0; k < 5; k++) {
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(px + (wear() - 0.5) * 8, py + (wear() - 0.5) * 8);
+          ctx.stroke();
+        }
+      }
+      if (depth > 0 && wear() < 0.05) crack(px, py, a + (wear() < 0.5 ? 1 : -1) * (0.6 + wear() * 0.6), len * 0.45, Math.max(1, width - 1), depth - 1);
+    }
+  };
+  for (let i = 0; i < cracks; i++) crack(wear() * w, wear() * h, wear() * Math.PI * 2, 60 + wear() * 160, 0.7 + wear() * 0.8, 1);
+  for (let i = 0; i < 10 * moss; i++) {
+    const x = wear() * w;
+    const y = wear() * h;
+    const r = 6 + wear() * 18;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(${60 + wear() * 30},${82 + wear() * 30},${36},0.5)`);
+    g.addColorStop(1, 'rgba(60,82,36,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+}
+
+/**
+ * The plant's hardcore pad, one tile 3 m square: crushed stone in greys and buff, with dark oil stains and a few pale dust patches; with `wear`, cracked,
+ * mossed and weedy from years of standing (`crackAndMoss`, #1003).
+ */
+export function hardcoreTexture(random, { wear = null } = {}) {
   return canvasTexture(256, 256, (ctx, w, h) => {
     ctx.fillStyle = '#8d877b';
     ctx.fillRect(0, 0, w, h);
@@ -200,11 +264,77 @@ export function hardcoreTexture(random) {
       ctx.fillStyle = g;
       ctx.fillRect(x - r, y - r, r * 2, r * 2);
     }
+    if (wear) crackAndMoss(ctx, w, h, wear);
   });
 }
 
-/** A faded paint-and-rust texture for the excavator's body: `colour` worn through to the rust in streaks and edges, dirt low down. */
-export function diggerTexture(random, colour) {
+/**
+ * Years out in the weather over a painted tile (#1003), drawn from `wear` (its own stream, so a texture's first draws stay as they were): `chalk` 0..1
+ * the paint's bloom gone pale and powdery, heaviest at the top where the sun and rain fall; `rust` 0..1 more rust breaking through in patches and runs;
+ * `grime` 0..1 green-grey algae and dirt washed down from the top and up from the foot. v up (the canvas's top is a face's top).
+ */
+export function weatherPaint(ctx, w, h, wear, { chalk = 0, rust = 0, grime = 0 } = {}) {
+  if (chalk) {
+    ctx.fillStyle = `rgba(214,206,178,${0.1 * chalk})`; // the whole coat a little paler and flatter
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 40; i++) {
+      const x = wear() * w;
+      const y = wear() ** 1.6 * h; // more towards the top
+      const r = 10 + wear() * 40;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(232,226,204,${(0.08 + wear() * 0.12) * chalk})`);
+      g.addColorStop(1, 'rgba(232,226,204,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    for (let i = 0; i < 700; i++) {
+      ctx.fillStyle = `rgba(240,234,214,${0.06 * chalk + wear() * 0.08})`; // the powder itself
+      ctx.fillRect(wear() * w, wear() * h, 1, 1);
+    }
+  }
+  if (rust) {
+    for (let i = 0; i < 28 * rust; i++) {
+      ctx.fillStyle = `rgba(${wear() < 0.5 ? '128,64,28' : '96,50,26'},${0.35 + wear() * 0.4})`;
+      ctx.beginPath();
+      ctx.ellipse(wear() * w, wear() * h, 2 + wear() * 10, 1.5 + wear() * 6, wear() * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (let i = 0; i < 34 * rust; i++) {
+      const x = wear() * w;
+      const y = wear() * h * 0.8;
+      const len = 20 + wear() * 120;
+      const g = ctx.createLinearGradient(0, y, 0, y + len);
+      g.addColorStop(0, `rgba(118,56,22,${0.3 + 0.3 * rust})`);
+      g.addColorStop(1, 'rgba(118,56,22,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x, y, 1 + wear() * 3, len);
+    }
+  }
+  if (grime) {
+    ctx.fillStyle = `rgba(96,98,80,${0.12 * grime})`; // dingy all over
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 30; i++) {
+      const x = wear() * w;
+      const len = h * (0.2 + wear() * 0.6);
+      const g = ctx.createLinearGradient(0, 0, 0, len);
+      g.addColorStop(0, `rgba(72,84,52,${0.4 * grime})`);
+      g.addColorStop(1, 'rgba(72,84,52,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x, 0, 3 + wear() * 12, len);
+    }
+    const foot = ctx.createLinearGradient(0, h * 0.65, 0, h);
+    foot.addColorStop(0, 'rgba(70,78,48,0)');
+    foot.addColorStop(1, `rgba(70,78,48,${0.55 * grime})`);
+    ctx.fillStyle = foot;
+    ctx.fillRect(0, h * 0.65, w, h * 0.35);
+  }
+}
+
+/**
+ * A faded paint-and-rust texture for the excavator's body: `colour` worn through to the rust in streaks and edges, dirt low down; with `wear` (a
+ * random stream) the weathering of a machine left for years over it (`weatherPaint`, #1003).
+ */
+export function diggerTexture(random, colour, { wear = null, chalk = 0, rust = 0 } = {}) {
   return canvasTexture(256, 256, (ctx, w, h) => {
     ctx.fillStyle = colour;
     ctx.fillRect(0, 0, w, h);
@@ -237,6 +367,7 @@ export function diggerTexture(random, colour) {
     dirt.addColorStop(1, 'rgba(120,100,70,0.5)');
     ctx.fillStyle = dirt;
     ctx.fillRect(0, h * 0.6, w, h * 0.4);
+    if (wear) weatherPaint(ctx, w, h, wear, { chalk, rust });
   });
 }
 
@@ -244,7 +375,7 @@ export function diggerTexture(random, colour) {
  * Painted steel gone to rust from the bottom: one tile (v up; the container's walls stretch it to their own height). `base` is the paint; the rust creeps up from the foot and the edges,
  * with a few streaks running down from higher up.
  */
-export function paintedSteelTexture(random, base, rustAmount = 0.5) {
+export function paintedSteelTexture(random, base, rustAmount = 0.5, { wear = null, chalk = 0, rust = 0, grime = 0 } = {}) {
   return canvasTexture(256, 256, (ctx, w, h) => {
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, w, h);
@@ -281,11 +412,12 @@ export function paintedSteelTexture(random, base, rustAmount = 0.5) {
       ctx.arc(random() * w, h * (0.7 + random() * 0.3), 2 + random() * 9, 0, Math.PI * 2);
       ctx.fill();
     }
+    if (wear) weatherPaint(ctx, w, h, wear, { chalk, rust, grime });
   });
 }
 
 /** A site cabin's ribbed steel cladding: one tile 0.6 m wide and as tall as the cabin (2.65 m), four ribs across it, v up, rusty at the foot. */
-export function cladding(random, base = '#c9c3a8') {
+export function cladding(random, base = '#c9c3a8', { wear = null, chalk = 0, rust = 0, grime = 0 } = {}) {
   return canvasTexture(256, 256, (ctx, w, h) => {
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, w, h);
@@ -324,6 +456,7 @@ export function cladding(random, base = '#c9c3a8') {
       ctx.fillStyle = g;
       ctx.fillRect(x, y, 1 + random() * 3, len);
     }
+    if (wear) weatherPaint(ctx, w, h, wear, { chalk, rust, grime });
   });
 }
 
@@ -435,5 +568,201 @@ export function drumTexture(random) {
     ctx.fillRect(0, h * 0.85, w, h * 0.15);
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fillRect(w * 0.12, h * 0.42, w * 0.3, 10);
+  });
+}
+
+/**
+ * A drum left out for years (#1003), one tile round the whole drum (u round it, v up), with its colour in it: what is left of the paint (`paint`) in
+ * islands over rust, the label long gone, the rims and hoops rusted through, rust running down from the lid and a brown crust at the foot. From `wear`.
+ */
+export function rustedDrumTexture(wear, paint) {
+  return canvasTexture(64, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#74462a';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 40; i++) {
+      ctx.fillStyle = `rgba(${wear() < 0.5 ? '140,76,36' : '88,50,30'},${0.3 + wear() * 0.4})`;
+      ctx.beginPath();
+      ctx.ellipse(wear() * w, wear() * h, 2 + wear() * 7, 2 + wear() * 6, wear() * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = paint; // the paint that is left, flaking, more of it in the middle band away from the rims
+    for (let i = 0; i < 30; i++) {
+      ctx.globalAlpha = 0.55 + wear() * 0.35;
+      ctx.beginPath();
+      ctx.ellipse(wear() * w, h * (0.18 + wear() * 0.64), 3 + wear() * 9, 3 + wear() * 12, wear() * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(226,220,198,0.16)'; // the paint chalked by the sun
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(92,48,24,0.75)'; // the hoops and rims, rubbed to bare rusted steel
+    for (const f of [0.34, 0.66]) ctx.fillRect(0, h * f - 3, w, 5);
+    ctx.fillRect(0, 0, w, 5);
+    ctx.fillRect(0, h - 6, w, 6);
+    for (let i = 0; i < 18; i++) {
+      const x = wear() * w;
+      const len = 14 + wear() * 50;
+      const g = ctx.createLinearGradient(0, 4, 0, 4 + len);
+      g.addColorStop(0, 'rgba(108,50,20,0.6)');
+      g.addColorStop(1, 'rgba(108,50,20,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x, 4, 1 + wear() * 2, len);
+    }
+    const foot = ctx.createLinearGradient(0, h * 0.78, 0, h);
+    foot.addColorStop(0, 'rgba(84,62,38,0)');
+    foot.addColorStop(1, 'rgba(84,62,38,0.7)');
+    ctx.fillStyle = foot;
+    ctx.fillRect(0, h * 0.78, w, h * 0.22);
+  });
+}
+
+/** A rust streak to hang under a pin or a bolt (#1003), on a transparent canvas: a few runs of rust from the top, fading as they go down. v up. */
+export function rustStreakTexture(wear) {
+  return canvasTexture(64, 128, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    const g0 = ctx.createRadialGradient(w / 2, 6, 0, w / 2, 6, w * 0.45);
+    g0.addColorStop(0, 'rgba(112,54,22,0.85)'); // the stain round the pin itself
+    g0.addColorStop(1, 'rgba(112,54,22,0)');
+    ctx.fillStyle = g0;
+    ctx.fillRect(0, 0, w, w * 0.5);
+    for (let i = 0; i < 6; i++) {
+      const x = w * (0.28 + wear() * 0.44);
+      const len = h * (0.45 + wear() * 0.55);
+      const wd = 5 + wear() * 9;
+      const g = ctx.createLinearGradient(0, 0, 0, len);
+      const c = wear() < 0.5 ? '104,48,18' : '132,66,26';
+      g.addColorStop(0, `rgba(${c},${0.8 + wear() * 0.15})`);
+      g.addColorStop(0.6, `rgba(${c},${0.45 + wear() * 0.2})`);
+      g.addColorStop(1, `rgba(${c},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); // a run that narrows as it goes
+      ctx.moveTo(x - wd / 2, 2);
+      ctx.lineTo(x + wd / 2, 2);
+      ctx.lineTo(x + wd * 0.15, len);
+      ctx.lineTo(x - wd * 0.15, len);
+      ctx.closePath();
+      ctx.fill();
+    }
+  });
+}
+
+/**
+ * Glass that has been hit and left (#1003), on a canvas whose alpha is the glass's: a pale dirty pane, a star of cracks out from where it was hit and
+ * rings round it, the cracks bright and nearly opaque. `hit` [u, v] 0..1 is where.
+ */
+export function crackedGlassTexture(wear, hit = [0.4, 0.55]) {
+  return canvasTexture(128, 128, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(70,86,90,0.42)';
+    ctx.fillRect(0, 0, w, h);
+    const grime = ctx.createLinearGradient(0, h * 0.6, 0, h);
+    grime.addColorStop(0, 'rgba(110,98,72,0)');
+    grime.addColorStop(1, 'rgba(110,98,72,0.5)');
+    ctx.fillStyle = grime;
+    ctx.fillRect(0, h * 0.6, w, h * 0.4);
+    const cx = hit[0] * w;
+    const cy = (1 - hit[1]) * h;
+    ctx.strokeStyle = 'rgba(224,230,228,0.85)';
+    ctx.lineWidth = 1;
+    const rays = 9 + Math.floor(wear() * 5);
+    for (let i = 0; i < rays; i++) {
+      let a = (i / rays) * Math.PI * 2 + wear() * 0.4;
+      let x = cx;
+      let y = cy;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      for (let s = 0; s < 14; s++) {
+        a += (wear() - 0.5) * 0.25;
+        x += Math.cos(a) * 7;
+        y += Math.sin(a) * 7;
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    for (const r of [8, 16, 27]) {
+      ctx.beginPath();
+      for (let i = 0; i <= 16; i++) {
+        const a = (i / 16) * Math.PI * 2;
+        const rr = r * (0.8 + wear() * 0.4);
+        if (i) ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+        else ctx.moveTo(cx + rr, cy);
+      }
+      ctx.stroke();
+    }
+  });
+}
+
+/** A conveyor belt's worn rubber, one tile 1 m square: near black with grey dust in its grooves along the run, scuffs and cracked edges. */
+export function beltTexture(wear) {
+  return canvasTexture(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#262523';
+    ctx.fillRect(0, 0, w, h);
+    for (let y = 0; y < h; y += 6) {
+      ctx.fillStyle = `rgba(150,142,124,${0.06 + wear() * 0.08})`; // stone dust in the grooves
+      ctx.fillRect(0, y, w, 2);
+    }
+    for (let i = 0; i < 40; i++) {
+      ctx.fillStyle = `rgba(${wear() < 0.6 ? '160,150,130' : '12,12,12'},${0.1 + wear() * 0.2})`;
+      ctx.fillRect(wear() * w, wear() * h, 4 + wear() * 30, 1 + wear() * 3);
+    }
+    ctx.strokeStyle = 'rgba(8,8,8,0.6)';
+    for (let i = 0; i < 6; i++) {
+      const y = wear() * h;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(4 + wear() * 10, y + (wear() - 0.5) * 6); // the edge cracking
+      ctx.stroke();
+    }
+  });
+}
+
+/** White moulded plastic left out for years (#1003), one tile 0.5 m: gone grey and chalky, green algae in streaks and a dirty foot. */
+export function weatheredPlasticTexture(wear, base = '#b4b2a5') {
+  return canvasTexture(64, 64, (ctx, w, h) => {
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 30; i++) {
+      ctx.fillStyle = `rgba(${wear() < 0.5 ? '96,104,74' : '120,112,96'},${0.08 + wear() * 0.18})`;
+      ctx.fillRect(wear() * w, wear() * h, 2 + wear() * 6, 4 + wear() * 22);
+    }
+    weatherPaint(ctx, w, h, wear, { grime: 0.8 });
+  });
+}
+
+/**
+ * The container's hardstanding (#1003), one tile 4 m square: an old concrete slab gone grey-green, cracked and mossed, weeds in the cracks, a broken
+ * corner showing the hardcore under it and rust stains where something stood.
+ */
+export function hardstandingTexture(random, wear) {
+  return canvasTexture(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#817f74';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 9; i++) {
+      const x = random() * w;
+      const y = random() * h;
+      const r = 20 + random() * 40;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(${random() < 0.5 ? '84,96,60' : '62,60,52'},0.35)`); // green and dark weathering in broad patches
+      g.addColorStop(1, 'rgba(70,80,56,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    for (let i = 0; i < 1600; i++) {
+      ctx.fillStyle = `rgba(${random() > 0.5 ? '178,176,166' : '82,82,76'},${0.08 + random() * 0.2})`;
+      ctx.fillRect(random() * w, random() * h, 1 + random() * 2, 1 + random() * 2);
+    }
+    for (let i = 0; i < 4; i++) {
+      const x = random() * w;
+      const y = random() * h;
+      const r = 14 + random() * 22;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(118,62,30,0.35)'); // rust stains
+      g.addColorStop(1, 'rgba(118,62,30,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    ctx.fillStyle = 'rgba(60,58,52,0.5)'; // the bay joint
+    ctx.fillRect(w / 2 - 1, 0, 2, h);
+    crackAndMoss(ctx, w, h, wear, { cracks: 9, moss: 1.4 });
   });
 }

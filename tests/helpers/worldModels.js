@@ -118,6 +118,16 @@ export async function buildWorldModels() {
   });
   const { buildQuarry } = await import('../../src/world/quarryProps.js');
   add('setPiece', 'quarrySite', buildQuarry, (b) => (b(c), found('quarrySite')));
+  // The pit's relics on their own as well, weathered as they stand there (#1003), so each is held to the test and not only the pit as a whole.
+  const wear = seeded(1003);
+  const { buildExcavator, excavatorMaterials } = await import('../../src/world/excavatorModel.js');
+  add('world', 'excavator', buildExcavator, (b) => b(excavatorMaterials(c.random, wear)).group);
+  const { buildContainer, containerMaterials } = await import('../../src/world/containerModel.js');
+  add('world', 'container', buildContainer, (b) => b(containerMaterials(c.random, wear), c.random).group);
+  const { buildCabin, cabinMaterials } = await import('../../src/world/siteCabinModel.js');
+  add('world', 'siteCabin', buildCabin, (b) => b(cabinMaterials(c.random, wear)).group);
+  const { buildScreeningPlant, plantMaterials } = await import('../../src/world/screeningPlantModel.js');
+  add('world', 'screeningPlant', buildScreeningPlant, (b) => b(plantMaterials(c.random, wear), { headX: 16, headY: 4.2, ground: () => -0.06, side: 1 }).group);
   const { buildPitBoundary } = await import('../../src/world/quarryProps.js');
   const two = LAYOUT;
   add('setPiece', 'pitFence', buildPitBoundary, (b) => b({ ...c, layout: two })); // the new farm's pit boundary needs the new farm's fields

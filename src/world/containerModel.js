@@ -1,10 +1,12 @@
 // The pit's steel container: a 20 foot shipping container, long left in the field and gone green and rusty, on three railway sleepers. Built in a
-// local frame with its length along x, the doors on the +x end (the left one ajar), standing on y = 0, so a caller can turn it to any heading.
+// local frame with its length along x, the doors on the +x end, standing on y = 0, so a caller can turn it to any heading. Since #1003 both leaves
+// are shut and chained through their inner handles with a padlock, and the paint is faded and chalked with rust breaking through.
 
 import * as THREE from 'three';
 import { Parts, placement } from './parts.js';
 import { paintedSteelTexture, rustTexture, plateTexture, stencilTexture } from './quarryTextures.js';
 import { woodTexture } from './neighbourTextures.js';
+import { addChainAndLock, lockMaterials } from './entranceKit.js';
 
 export const CONTAINER = { length: 6.06, width: 2.44, height: 2.59, lift: 0.2 };
 
@@ -53,20 +55,22 @@ function tallSheet(tex, h) {
 export const WALL_HEIGHT = CONTAINER.lift + CONTAINER.height - 0.12 - (CONTAINER.lift + 0.16) + 0.02; // the side walls' sheet, between the rails
 export const LEAF_HEIGHT = 2.17; // a door leaf's sheet
 
-/** The container's materials, made once. */
-export function containerMaterials(random) {
+/** The container's materials, made once; `wear` draws the years of standing (#1003), `random` what it drew before. */
+export function containerMaterials(random, wear = random) {
   const lit = (o) => new THREE.MeshStandardMaterial({ roughness: 0.8, ...o });
-  const paint = paintedSteelTexture(random, '#4d6a58', 0.6);
+  const paint = paintedSteelTexture(random, '#647d6a', 0.6, { wear, chalk: 0.9, rust: 0.8 }); // the green faded and chalky, rust coming through
   const m = {
-    wall: lit({ map: tallSheet(paint, WALL_HEIGHT), roughness: 0.7, metalness: 0.2, side: THREE.DoubleSide }),
-    leaf: lit({ map: tallSheet(paint, LEAF_HEIGHT), roughness: 0.7, metalness: 0.2, side: THREE.DoubleSide }),
-    frame: lit({ map: paintedSteelTexture(random, '#3d5546', 0.9), roughness: 0.75, metalness: 0.2 }),
+    wall: lit({ map: tallSheet(paint, WALL_HEIGHT), roughness: 0.9, metalness: 0.1, side: THREE.DoubleSide }),
+    leaf: lit({ map: tallSheet(paint, LEAF_HEIGHT), roughness: 0.9, metalness: 0.1, side: THREE.DoubleSide }),
+    frame: lit({ map: paintedSteelTexture(random, '#4b6052', 0.9, { wear, chalk: 0.6, rust: 1 }), roughness: 0.85, metalness: 0.15 }),
     rust: lit({ map: rustTexture(random), roughness: 0.9 }),
     dark: lit({ color: 0x1f1f1d, roughness: 0.9 }),
-    bar: lit({ color: 0x8b8e90, metalness: 0.7, roughness: 0.45 }),
+    bar: lit({ color: 0x7d7a72, metalness: 0.5, roughness: 0.6 }), // the locking bars' galvanising gone dull
     wood: lit({ map: woodTexture(random, [92, 76, 58]), roughness: 0.95 }),
-    stencil: lit({ map: stencilTexture(['GRVL 204118 6', '22G1']), roughness: 0.8, transparent: true, depthWrite: false }),
-    plate: lit({ map: plateTexture(['CSC SAFETY', 'APPROVAL', 'GB/6047']), roughness: 0.5, metalness: 0.4 }),
+    stencil: lit({ map: stencilTexture(['GRVL 204118 6', '22G1']), roughness: 0.8, transparent: true, opacity: 0.55, depthWrite: false }), // half worn off
+    plate: lit({ map: plateTexture(['CSC SAFETY', 'APPROVAL', 'GB/6047']), roughness: 0.6, metalness: 0.3 }),
+    chain: lockMaterials().chain,
+    lock: lockMaterials().lock,
   };
   for (const [k, v] of Object.entries(m)) v.name = k;
   return m;
@@ -180,13 +184,18 @@ export function buildContainer(m, random = Math.random) {
   stencil(1.5, 0.375, -1.6, top - 0.35, nearSide * (W / 2 - 0.015 + 0.004), nearSide > 0 ? 0 : Math.PI);
   stencil(1.5, 0.375, -1.6, top - 0.35, -nearSide * (W / 2 - 0.015 + 0.004), nearSide > 0 ? Math.PI : 0);
   stencil(1.1, 0.275, -L / 2 + 0.015 - 0.004, top - 0.5, 0.0, -Math.PI / 2);
-  // The leaves hang on pins at each post, the one with the hasp shut, the other swung open; the keepers on the header are where the cams lock, and
-  // the approval plate is by the shut leaf.
+  // The leaves hang on pins at each post, both shut (#1003), the one with the hasp padlocked; the keepers on the header are where the cams lock, and
+  // the approval plate is by it.
   const leaves = [
-    { dir: -1, z: W / 2 - HINGE_INSET, open: -1.25, hasp: false },
+    { dir: -1, z: W / 2 - HINGE_INSET, open: 0, hasp: false },
     { dir: 1, z: -(W / 2 - HINGE_INSET), open: 0, hasp: true },
   ];
   for (const l of leaves) p.merge(buildLeaf(m, l.dir, { hasp: l.hasp }), placement(L / 2 + 0.01, 0, l.z, l.open));
+  // A chain round the two inner locking bars, just under their handles, and a padlock through it: someone has made sure it stays shut (#1003).
+  const inner = W / 2 - HINGE_INSET - 0.85; // each leaf's inner bar, this far either side of the middle
+  const chain = new Parts();
+  addChainAndLock(chain, { chain: m.chain, lock: m.lock, dark: m.dark }, CONTAINER.lift + 0.21 + 1.17, 2 * inner);
+  p.merge(chain, placement(L / 2 + 0.035, 0, 0, Math.PI / 2));
   for (const z of [W / 2 - HINGE_INSET - 0.22, W / 2 - HINGE_INSET - 0.85, -(W / 2 - HINGE_INSET - 0.22), -(W / 2 - HINGE_INSET - 0.85)]) p.box(m.dark, 0.06, 0.05, 0.12, L / 2 + 0.01, top - 0.11, z);
   p.add(m.plate, new THREE.PlaneGeometry(0.3, 0.15), L / 2 + 0.036, lift + 0.9, -(W / 2 - HINGE_INSET - 0.5), 0, Math.PI / 2, 0);
   const group = p.build();
