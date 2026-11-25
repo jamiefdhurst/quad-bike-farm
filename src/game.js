@@ -2402,6 +2402,26 @@ export class Game {
     return `${zone ? `you are ${zone === 'crossing' ? 'on the crossing' : zone === 'deep' ? 'in the deep water' : 'on the bank'}` : 'you are away from it'}; the river is ${(this.world.streamLevel.level * 100).toFixed(0)}% up`;
   }
 
+  /** The river's sound where you are listening (#999): `riverHeard` (world/riverBed.js) with the day's darkness and the weather's wind, or null with no river. */
+  riverHeardNow() {
+    const cam = this.camera.position;
+    return this.world.riverHeard(cam.x, cam.z, this.daylight?.darkness ?? 0, Math.min(1, (this.weather.wind ?? 0) / 1.5));
+  }
+
+  /** Plays the river's sound for where you are: its water, the willows and the birds by day (audio/riverAudio.js). */
+  updateRiverSound() {
+    this.audioHub.setRiver(this.riverHeardNow());
+  }
+
+  /** What the river sounds like where you are, for the panel and the console. */
+  describeRiverSound() {
+    const h = this.riverHeardNow();
+    if (!h) return 'no river sound on this farm';
+    if (!h.level) return 'out of earshot of the river';
+    const pc = (v) => `${(v * 100).toFixed(0)}%`;
+    return `heard at ${pc(h.level)}: babble ${pc(h.babble)}, murmur ${pc(h.murmur)}, willows ${pc(h.willows)}; ${h.birdsEvery === Infinity ? 'no birds (night or rain)' : `a bird every ${h.birdsEvery.toFixed(0)} s or so`}`;
+  }
+
   /** J on the tractor or a quad with a rack: hook a trailer on when the hitch is at its ring, or take it off when you're stopped. */
   toggleHitch() {
     const unit = this.riddenUnit;
@@ -11741,6 +11761,7 @@ export class Game {
     this.guard.run('updateDaylight', () => this.weatherHost.updateDaylight(dt));
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera, this.guard);
     this.guard.run('updateWeather', () => this.updateWeather(dt));
+    this.guard.run('updateRiverSound', () => this.updateRiverSound()); // the river's water, willows and birds (#999)
     fb.lap('world, weather and effects', performance.now());
     this.guard.run('updateAchievements', () => this.updateAchievements(dt, ridden));
     this.guard.run('updateDayStory', () => this.updateDayStory());

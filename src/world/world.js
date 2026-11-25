@@ -35,6 +35,7 @@ import { DEFAULT_SQUEAL_PARAMS, SQUEAL_PARAM_RANGES } from '../vehicle/tyreSquea
 import { registerTuning } from '../core/tuning.js';
 import { skyAt } from './daylight.js';
 import { StreamLevel, STREAM_PARAM_RANGES } from './streamLevel.js';
+import { riverHeard, DEFAULT_RIVER_SOUND_PARAMS, RIVER_SOUND_RANGES } from './riverBed.js';
 import { PuddleIce, DEFAULT_PUDDLE_ICE_PARAMS, PUDDLE_ICE_PARAM_RANGES } from './puddleIce.js';
 import { PuddleIceView } from './puddleIceView.js';
 import * as THREE from 'three';
@@ -63,6 +64,8 @@ export class World {
 
     this.streamLevel = new StreamLevel(); // how high the stream stands after rain (streamLevel.js)
     registerTuning('Stream', this.streamLevel.params, STREAM_PARAM_RANGES);
+    this.riverSoundParams = { ...DEFAULT_RIVER_SOUND_PARAMS }; // how the river sounds (riverBed.js, #999)
+    registerTuning('River sound', this.riverSoundParams, RIVER_SOUND_RANGES);
     this.streamStarted = false;
     this.streamEvent = null; // 'up' or 'down' on the frame the stream crossed the line, for the girls
 
@@ -350,6 +353,16 @@ export class World {
   moorHeard(x, z, date, darkness) {
     const level = moorHeard(this.heights.moor, x, z);
     return level > 0 ? { level, birds: moorBirds(date, darkness) } : null;
+  }
+
+  /**
+   * The river's sound at (x, z) (`riverHeard`, riverBed.js) with the stream's level and the rain as they are now: null on a farm whose river has no shaped
+   * banks (today's), which has no sound of its own. `darkness` and `wind` (0..1) are the day's and the weather's.
+   */
+  riverHeard(x, z, darkness = 0, wind = 0) {
+    const brook = this.heights.brook;
+    if (!brook?.banks) return null;
+    return riverHeard(brook, x, z, { streamLevel: this.streamLevel.level, rain: this.weather?.rain ?? 0, darkness, wind }, this.riverSoundParams);
   }
 
   /** 0..1 how much of the yard's sound bed to play at (x, z): see `yardHeard`. */

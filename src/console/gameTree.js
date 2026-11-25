@@ -523,6 +523,7 @@ export function buildGameTree(g, host) {
   }), 'the neighbour over the lane');
   const river = group(() => ({
     now: text(() => g.describeRiver(), 'where you are at the river (on the crossing, in the deep water, on the bank) and how far up it is'),
+    sound: text(() => g.describeRiverSound(), 'how loud the river is where you are: its babble and murmur, the willows and how often a bird calls (#999)'),
   }), 'the river past the pasture, and its crossing');
   const pit = group(() => ({
     now: text(() => g.describeQuarry(), 'where you are at the gravel pit, how it is dealt on this farm, and the pit climb'),

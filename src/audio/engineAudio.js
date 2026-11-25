@@ -14,6 +14,7 @@ import { rainHeard } from '../world/barn.js';
 import { yardBed } from '../world/yardBed.js';
 import { moorBed } from '../world/moorBed.js';
 import { MoorAudio } from './moorAudio.js';
+import { RiverAudio } from './riverAudio.js';
 import { USE_CUES, useSamples } from './useAudio.js';
 import { STEP_KINDS, stepSamples } from './footstepSamples.js';
 import { wantsBank } from './bankWant.js';
@@ -376,6 +377,13 @@ export class AudioHub {
     this.moorWind = bed.wind;
     this.moorAudio ??= new MoorAudio(this);
     this.moorAudio.update(bed, this.params.moorVolume);
+  }
+
+  /** The river (#999): `heard` is `world.riverHeard`'s (null with no river): its babble and murmur from its nearest point, the willows and the birds by day. */
+  setRiver(heard) {
+    if (!this.ready) return;
+    this.riverAudio ??= new RiverAudio(this);
+    this.riverAudio.update(heard, this.params.riverVolume, this.params.riverBirdVolume);
   }
 
   /** The yard's bed: `level` (world/yardBed.js `yardHeard`), the wind and the rain 0..1. The loose tin rattles with the wind; a tap drips every so often. */
