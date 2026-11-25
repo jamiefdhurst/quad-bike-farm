@@ -287,6 +287,7 @@ import { SheepAudio } from './audio/sheepAudio.js';
 import { Rabbits, Pheasants, hedgeSpots, DEFAULT_WILDLIFE_PARAMS, WILDLIFE_PARAM_RANGES } from './world/wildlife.js';
 import { WildlifeView } from './world/wildlifeView.js';
 import { WildlifeAudio } from './audio/wildlifeAudio.js';
+import { FarmBirdsHost } from './world/farmBirdsHost.js';
 import { Cat, perchWarmth, catShelter, DEFAULT_CAT_PARAMS, CAT_PARAM_RANGES } from './world/cat.js';
 import { CatView } from './world/catView.js';
 import { CatAudio } from './audio/catAudio.js';
@@ -11510,6 +11511,7 @@ export class Game {
     this.bell.update(dt);
     this.guard.run('updateFlock', () => this.updateFlock(dt));
     this.guard.run('updateWildlife', () => this.updateWildlife(dt));
+    this.guard.run('updateFarmBirds', () => this.farmBirdsHost?.update(dt));
     this.guard.run('updateCat', () => this.updateCat(dt));
     this.guard.run('updateDog', () => this.updateDog(dt, ridden));
     this.guard.run('updateFarmAnimals', () => this.updateFarmAnimals(dt));
@@ -11700,6 +11702,7 @@ export class Game {
     this.pheasants.place();
     this.wildlifeView = new WildlifeView(this.scene, this.rabbits, this.pheasants, (x, z) => this.world.groundHeightAt(x, z));
     this.wildlifeAudio = new WildlifeAudio(this.audioHub);
+    this.farmBirdsHost = new FarmBirdsHost(this); // the dawn chorus and the rooks (#124)
   }
 
   /** What the wildlife shies from: every vehicle (with its headlights' bearing and brightness), you and the girls. */
@@ -12150,14 +12153,6 @@ export class Game {
       this.fireDogEvent({ kind: 'bark', ...dog.at(), excited: true });
     }
     return true;
-  }
-
-  /** The debug panel's and console's flush: the pheasant nearest you bursts out as if you had walked up to it. */
-  debugFlushPheasant() {
-    const p = this.player.position;
-    const e = this.pheasants?.flush(p.x, p.z);
-    if (e) this.firePheasantEvent(e);
-    return !!e;
   }
 
   /** The electric fence across the hill pasture (world/electricFence.js): it ticks, and a quad's nose or tail or your feet on the wire get a jolt. */
