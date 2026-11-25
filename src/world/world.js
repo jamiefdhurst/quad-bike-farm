@@ -365,6 +365,28 @@ export class World {
     return riverHeard(brook, x, z, { streamLevel: this.streamLevel.level, rain: this.weather?.rain ?? 0, darkness, wind }, this.riverSoundParams);
   }
 
+  /** The river's sound for a listener at `at` ({ x, z }, the camera), at the day's `darkness` and the weather's `windiness` (its wind, 0 to about 1.5). */
+  riverHeardFrom(at, darkness = 0, windiness = 0) {
+    return this.riverHeard(at.x, at.z, darkness, Math.min(1, (windiness ?? 0) / 1.5));
+  }
+
+  /** Where `at` is at the river (on the crossing, in the deep water, on the bank) and how far up it is, for the panel and the console. */
+  describeRiver(at) {
+    const river = this.river;
+    if (!river) return 'no river on this farm';
+    const zone = river.zoneAt(at.x, at.z);
+    return `${zone ? `you are ${zone === 'crossing' ? 'on the crossing' : zone === 'deep' ? 'in the deep water' : 'on the bank'}` : 'you are away from it'}; the river is ${(this.streamLevel.level * 100).toFixed(0)}% up`;
+  }
+
+  /** What the river sounds like for a listener at `at`, for the panel and the console (#999). */
+  describeRiverSound(at, darkness = 0, windiness = 0) {
+    const h = this.riverHeardFrom(at, darkness, windiness);
+    if (!h) return 'no river sound on this farm';
+    if (!h.level) return 'out of earshot of the river';
+    const pc = (v) => `${(v * 100).toFixed(0)}%`;
+    return `heard at ${pc(h.level)}: babble ${pc(h.babble)}, murmur ${pc(h.murmur)}, willows ${pc(h.willows)}; ${h.birdsEvery === Infinity ? 'no birds (night or rain)' : `a bird every ${h.birdsEvery.toFixed(0)} s or so`}`;
+  }
+
   /** 0..1 how much of the yard's sound bed to play at (x, z): see `yardHeard`. */
   yardHeard(x, z, indoor = 0) {
     return yardHeard(this.layout, x, z, indoor);
