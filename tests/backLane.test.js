@@ -11,6 +11,15 @@ const net = roadNetwork(two);
 const road = net.road('backLane');
 
 describe('Back Lane', () => {
+  it('never doubles back on itself, nor any road: no two samples in a row turn more than 25 degrees, hairpins and all (the point before the ford made a loop, #1187)', () => {
+    for (const r of net.roads) {
+      for (let i = 1; i < r.samples.length; i++) {
+        const [a, b] = [r.samples[i - 1], r.samples[i]];
+        expect(a.tx * b.tx + a.tz * b.tz, `${r.id} at ${b.s.toFixed(1)} m`).toBeGreaterThan(Math.cos((25 * Math.PI) / 180));
+      }
+    }
+  });
+
   it('is 2.5 to 3.4 km of single track joined to the lane at both ends', () => {
     expect(road.length).toBeGreaterThan(2500);
     expect(road.length).toBeLessThan(3400);

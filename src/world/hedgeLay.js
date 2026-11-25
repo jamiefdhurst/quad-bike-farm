@@ -1,6 +1,7 @@
 // One hedge line laid out as numbers (#829): its leafy blocks, the bushes in it and the boxes that are solid, so a test can check the boxes cover
 // the leaves. props.js turns these into instances and colliders. `h` is a line from `fields.hedges`: { x1, z1, dx, dz, length, gaps, height?, coarse?, alongX }.
 import { HEDGE_SOLID_HALF, HEDGE_WOBBLE, blockWidth, bushHeight } from './hedgeSolid.js';
+import { sidePoint, hedgeOffset } from './laneHedges.js';
 
 /**
  * @param {object} o  { T, H, heightAt, random, blockReach (leafReach of the hedge model), bushReach (leaf radius per metre of bush height), bushes: whether bushes grow here }
@@ -61,4 +62,44 @@ export function layHedge(h, { T, H, heightAt, random, blockReach, bushReach, bus
     }
   }
   return { blocks, bushes, colliders, pointAt };
+}
+
+const LANE_CHUNK = 6; // m a lane hedge's collider is at longest
+
+/**
+ * One run of a road's hedge laid out as numbers (Back Lane's and the A-road's, `laneHedgeRuns` in laneHedges.js): its leafy blocks and its solid boxes,
+ * the draws from `random` in the order backLaneProps.js has always taken them, so the farm's list of placed things (farmPlacement.js, #1187) sees what is drawn.
+ * @returns {{ blocks, colliders, at }}  blocks { s, across, x, z, y, width, spin, tall }; colliders { s0, s1 (m along), x, z, y, hx, hy, hz, turn } (a box, `turn` its yaw);
+ *   `at(s, across)` the point on the run's line.
+ */
+export function layLaneHedge(road, run, { T, H, heightAt, random, blockReach }) {
+  const at = (s, across = 0) => sidePoint(road, s, run.side, hedgeOffset(road, s, run.side) + across);
+  const blocks = [];
+  for (let s = run.from; s <= run.to; s += 1.1 + random() * 0.5) {
+    const across = (random() - 0.5) * HEDGE_WOBBLE;
+    const { x, z } = at(s, across);
+    const width = blockWidth(T, random(), blockReach, across); // leaves stay within the solid part (hedgeSolid.js, #829)
+    const tall = 0.8 + random() * 0.45;
+    const spin = random() * Math.PI * 2;
+    // A block's leaves stay inside the run, so none hangs into the gate, stile or ford at its end, past the collider (#1122). Its draws are taken all the same.
+    if (s - blockReach * width < run.from || s + blockReach * width > run.to) continue;
+    blocks.push({ s, across, x, z, y: heightAt(x, z) - 0.2, width, tall, spin });
+  }
+  // Colliders: straight boxes of at most LANE_CHUNK m along the curve, each as high as the ground under it climbs, overlapping the next by 0.2 m
+  // either side so the hedge has no seam, but ending at the run's own ends, not 0.2 m into the gap beyond (#1187).
+  const colliders = [];
+  for (let s = run.from; s < run.to; s += LANE_CHUNK) {
+    const e = Math.min(run.to, s + LANE_CHUNK);
+    if (e - s < 0.5) continue;
+    const s0 = Math.max(run.from, s - 0.2);
+    const s1 = Math.min(run.to, e + 0.2);
+    const a = at(s0);
+    const b = at(s1);
+    const len = Math.hypot(b.x - a.x, b.z - a.z);
+    const mid = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+    const lo = Math.min(heightAt(a.x, a.z), heightAt(mid.x, mid.z), heightAt(b.x, b.z));
+    const hi = Math.max(heightAt(a.x, a.z), heightAt(mid.x, mid.z), heightAt(b.x, b.z));
+    colliders.push({ s0, s1, x: mid.x, z: mid.z, y: (lo + hi) / 2 + H / 2 - 0.3, hx: len / 2, hy: (hi - lo) / 2 + H / 2, hz: HEDGE_SOLID_HALF, turn: Math.atan2(-(b.z - a.z), b.x - a.x) });
+  }
+  return { blocks, colliders, at };
 }

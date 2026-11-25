@@ -113,3 +113,18 @@ export function inLaneFittings(layout, x, z, margin = 0) {
   if (x > c.minX - margin && x < c.maxX + margin && z > c.minZ - margin && z < c.maxZ + margin) return true;
   return [F.postbox, F.binStand].some((p) => Math.hypot(p.x - x, p.z - z) < margin);
 }
+
+/** The A-road's hedge gaps: both sides open at each junction's mouth, the west side open along her land (she has her own hedge there), the bus bay's east side. */
+export function aRoadGaps(net, a, layout) {
+  const gaps = junctionBreaks(net, a).map((b) => ({ s: b.s, half: b.half + 3 }));
+  const land = layout.neighbourLand;
+  if (land) {
+    const zs = land.fields.map((f) => [f.minZ, f.maxZ]).flat();
+    const s0 = sAlong(a, a.samples[0].x, Math.min(...zs) - 1);
+    const s1 = sAlong(a, a.samples[0].x, Math.max(...zs) + 1);
+    gaps.push({ s: (s0 + s1) / 2, half: (s1 - s0) / 2 + 2, side: -1 });
+  }
+  const by = layByOf(a, layout.aRoadFittings?.layBy);
+  if (by) gaps.push({ s: by.s, half: by.length / 2 + 3, side: by.side });
+  return gaps;
+}

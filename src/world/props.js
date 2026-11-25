@@ -6,7 +6,6 @@ import { inPlace } from './jobFields.js';
 import { enableShadows, instanceModel, modelBounds } from './assets.js';
 import { tiledInstances } from './tiledInstances.js';
 import { scatterStubble, stubbleShares } from './stubbleScatter.js';
-import { patchAt } from './terrain.js';
 import { buildBarnShed } from './barnBuild.js';
 import { underRoof } from './barn.js';
 import { buildGardenWall, buildHomeRails } from './farmsteadProps.js';
@@ -18,7 +17,6 @@ import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
 import { buildQuarry } from './quarryProps.js';
 import { buildFieldLandmarks } from './landmarkProps.js';
-import { boundaryTreeBlocked } from './boundaryTrees.js';
 import { buildOutbuildings } from './outbuildingProps.js';
 import { buildNeighbourFarm } from './neighbourFarmProps.js';
 import { buildNeighbourLand } from './neighbourLandProps.js';
@@ -26,30 +24,23 @@ import { buildBackLaneProps } from './backLaneProps.js';
 import { buildMoorProps } from './moorProps.js';
 import { buildUpperThornby } from './upperThornby.js';
 import { buildVillage } from './villageProps.js';
-import { inVillage } from './village.js';
 import { buildBrookCulvert } from './brookProps.js';
 import { buildFarmBridge } from './farmBridge.js';
 import { Scatter } from './scatter.js';
 import { layHedge } from './hedgeLay.js';
 import { leafReach } from './hedgeSolid.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
-import { nearNeighbourYard } from './neighbourFarm.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
 import { roadNetwork } from './roads.js';
-import { junctionBreaks, layByOf, inLaneFittings } from './aRoadFittings.js';
+import { junctionBreaks, layByOf } from './aRoadFittings.js';
 import { buildARoadProps } from './aRoadProps.js';
 import { buildLaneFittings } from './laneFittingsProps.js';
 import { buildRoadMesh, roadTexture, grassStripTexture } from './roadMesh.js';
 import { buildCattleGrid, buildReflectorPosts, buildDriveVerge } from './driveProps.js';
+import { streamFor } from './propStreams.js';
+import { farmTreeSpots, distantTreeSpots, YARD_HALF } from './treeSpots.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
-
-function seeded(seed) {
-  return () => {
-    seed = (seed * 16807) % 2147483647;
-    return (seed - 1) / 2147483646;
-  };
-}
 
 function matrixAt(x, y, z, yaw, sx, sy = sx, sz = sx) {
   return new THREE.Matrix4().compose(
@@ -59,15 +50,7 @@ function matrixAt(x, y, z, yaw, sx, sy = sx, sz = sx) {
   );
 }
 
-/**
- * Each builder's own random stream, from the props' fixed seed and its name (#1107): a change to one builder's draws no longer moves another's
- * things, and a builder can run later (behind the start screen) without moving anything built after it.
- */
-export function streamFor(name) {
-  let h = 2166136261;
-  for (let i = 0; i < name.length; i++) h = Math.imul(h ^ name.charCodeAt(i), 16777619);
-  return seeded(((1234 + (h >>> 0)) % 2147483646) + 1);
-}
+export { streamFor }; // each builder's own random stream (propStreams.js), here for the tests that already read it from props.js
 
 /**
  * Builds every static prop on the farm and its colliders. What is only drawn near you and isn't needed for the first view (the grass, the stubble,
@@ -627,30 +610,10 @@ function buildBales({ scene, layout, heights, track, physics, RAPIER, random }) 
 
 // Trees ---------------------------------------------------------------------
 
-/** The grass field's half-side, the number the trees round the yard and the tufts of grass were laid out against (the farm's own limit went with the old layout, #692). */
-const YARD_HALF = 80;
-
 function buildTrees({ models, layout, heights, physics, RAPIER, random, anchors, scatter }) {
-  const F = YARD_HALF;
-  const spots = [];
-  const farm = { maxX: F, maxZ: F };
-  // Tree line along the north boundary, two staggered rows, the length of the farm.
-  for (let x = -115; x <= farm.maxX + 35; x += 7 + random() * 5) {
-    spots.push([x, -F - 8 - random() * 4]);
-    if (random() < 0.7) spots.push([x + 3, -F - 15 - random() * 6]);
-  }
-  // Hedgerow oaks on the east and south hedges (the grass field's east hedge is now between it and the stubble), and the farm's far ones.
-  for (const z of [-58, -18, 24, 62]) spots.push([F + 0.5, z + (random() - 0.5) * 6]);
-  for (const x of [10, 52]) spots.push([x, F + 0.5]);
-  // Behind the barn.
-  spots.push([-76, 72], [-84, 52], [-86, 20], [-90, -14]);
-
   const mats = [[], []];
-  for (const [x, z] of spots) {
-    const v = random() < 0.5 ? 0 : 1;
-    const s = 1.35 + random() * 0.6;
-    if (boundaryTreeBlocked(layout, x, z)) continue; // the north boundary's tree line would stand in the wood or across the pit's lead-in road
-    mats[v].push(matrixAt(x, heights.heightAt(x, z) - 0.15, z, random() * Math.PI * 2, s));
+  for (const { x, z, v, s, yaw } of farmTreeSpots(layout, random)) { // where they stand (treeSpots.js)
+    mats[v].push(matrixAt(x, heights.heightAt(x, z) - 0.15, z, yaw, s));
     physics.createCollider(
       RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, heights.heightAt(x, z) + 2.5 * s, z),
     );
@@ -664,27 +627,12 @@ function buildTrees({ models, layout, heights, physics, RAPIER, random, anchors,
 
 /** Cheap low-poly tree clumps along the distant hedgerows for depth on the horizon. */
 function buildDistantTrees({ scene, layout, heights, fields, random }) {
-  const roads = roadNetwork(layout);
   const trunks = [];
   const crowns = [];
-  const reach = layout.outerSize / 2 - 20;
-  let tries = 0;
-  while (crowns.length < 520 && tries++ < 25000) {
-    const x = (random() * 2 - 1) * reach;
-    const z = (random() * 2 - 1) * reach;
-    // Well clear of the farm's hedges, and none on the ground through the south gate, which is kept for the hill.
-    if (fields.outside(x, z) < 40) continue;
-    if (x > -100 && x < 100 && z > fields.farm.maxZ && z < layout.ground.maxZ + 10) continue;
-    if (patchAt(x, z).border > 4 && random() > 0.04) continue;
-    const s = 0.8 + random() * 0.9;
+  for (const { x, z, s, crown } of distantTreeSpots(layout, fields, roadNetwork(layout), random)) { // where they stand (treeSpots.js)
     const y = heights.heightAt(x, z);
-    const trunk = matrixAt(x, y, z, 0, s);
-    const crown = matrixAt(x, y + 5 * s, z, random() * 6, s * (3.2 + random() * 1.2), s * (3 + random()), s * (3.2 + random() * 1.2));
-    if (nearNeighbourYard(layout, x, z, 45)) continue; // none stand by her yard or the lane beside it
-    if (inVillage(layout, x, z, 14)) continue; // nor in the village
-    if (roads.nearest(x, z, 14) || inLaneFittings(layout, x, z, 14)) continue; // nor on a road or its verge, nor in the lane's cottages' gardens (#687)
-    trunks.push(trunk);
-    crowns.push(crown);
+    trunks.push(matrixAt(x, y, z, 0, s));
+    crowns.push(matrixAt(x, y + 5 * s, z, ...crown));
   }
   const trunkMesh = new THREE.InstancedMesh(
     new THREE.CylinderGeometry(0.25, 0.4, 5, 5).translate(0, 2.5, 0),
