@@ -230,6 +230,8 @@ export class TractorWorkHost {
     const working = powered && (push || g.splitter.moving || g.splitter.load > 0);
     q.pto.throttle = working ? g.splitterParams.pumpThrottle : 0;
     q.pto.load = working ? g.splitter.load : 0;
+    const sp = g.splitter;
+    g.splitAudio.ram(dt, { powered, dir: sp.dir, pressing: sp.pressing, gnarled: !!sp.round?.gnarled }, () => q.localToWorld(0, SPLITTER.roundY + TRACTOR_GROUND_OFFSET, SPLITTER.roundZ));
     poseLogSplitter(q.model, g.splitter.ram, shown);
   }
 
@@ -273,6 +275,28 @@ export class TractorWorkHost {
     const p = g.player.position;
     const yaw = g.player.yaw;
     w.putDown({ x: p.x - Math.sin(yaw) * 0.8, z: p.z - Math.cos(yaw) * 0.8 }, yaw + Math.PI / 2);
+  }
+
+  /** Puts a round from the piles on the beam, as carrying one there would (the splitter scene). Returns whether one is on it now. */
+  debugLoadRound() {
+    const g = this.g;
+    const sp = g.splitter;
+    if (sp.loaded) return true;
+    const r = sp.canLoad() && g.rounds.find((w) => w.onGround);
+    if (!r) return false;
+    sp.putOn(r.gnarled);
+    r.putOnBeam(g.tractorUnit.quad.model.getObjectByName('logSplitter'));
+    this.splitterPiece = r;
+    return true;
+  }
+
+  /** Where to stand to work the splitter: `side` metres to the tractor's side of the beam, facing it. { x, z, heading } in degrees. */
+  beamSide(side = 1.8) {
+    const q = this.g.tractorUnit.quad;
+    const beam = q.localToWorld(0, 0, SPLITTER.roundZ);
+    const me = q.localToWorld(side, 0, SPLITTER.roundZ);
+    const heading = ((Math.atan2(beam.x - me.x, beam.z - me.z) * 180) / Math.PI + 360) % 360;
+    return { x: me.x, z: me.z, heading };
   }
 
   /** Empties the stack and deals the rounds back into their piles (the debug panel). */

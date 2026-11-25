@@ -50,6 +50,8 @@ export class LogSplitter {
     this.pressed = 0; // how far through the press the round is, 0..1 (it stays if you let go: it is still wedged)
     this.load = 0; // the engine load it asks for now, 0..1
     this.moving = false;
+    this.dir = 0; // which way the ram moved this step: 1 out, -1 back, 0 still (the sound reads it, audio/splitAudio.js)
+    this.pressing = false; // and whether its face is pushing into the round
   }
 
   get loaded() {
@@ -99,7 +101,9 @@ export class LogSplitter {
       if (powered) this.ram = Math.max(0, this.ram - dt / p.backSeconds);
     }
     this.moving = Math.abs(this.ram - before) > 1e-6;
+    this.dir = this.moving ? Math.sign(this.ram - before) : 0;
     const pressing = !!this.round && this.moving && this.ram > before && this.ram >= p.pressAt && this.ram < p.splitAt;
+    this.pressing = pressing;
     if (this.round) this.pressed = Math.max(this.pressed, Math.max(0, Math.min(1, (this.ram - p.pressAt) / Math.max(1e-6, p.splitAt - p.pressAt))));
     if (this.round && this.ram >= p.splitAt) {
       events.push({ type: 'split', gnarled: this.round.gnarled });
@@ -116,6 +120,8 @@ export class LogSplitter {
     this.pressed = 0;
     this.load = 0;
     this.moving = false;
+    this.dir = 0;
+    this.pressing = false;
   }
 }
 

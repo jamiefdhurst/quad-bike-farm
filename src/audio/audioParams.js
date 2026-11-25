@@ -49,6 +49,9 @@ export const DEFAULT_SOUND_PARAMS = {
   rideWindFullSpeed: 15, // m/s
   hornVolume: 1, // every horn, on top of its own level (npc/horns.js says how loud each is)
   generatorVolume: 0.45, // the barn generator at its own set: starting, running and stopping
+  splitterWhineVolume: 0.35, // the log splitter's pump whining while its ram moves (audio/splitAudio.js)
+  splitterStrainVolume: 0.5, // its ram straining while it pushes into a round
+  splitterHissVolume: 0.4, // the hiss of oil as its ram starts back
   footstepVolume: 0.5, // your steps on foot (audio/footsteps.js)
   footstepGirlGain: 0.45, // a girl's steps against yours at her side, so she is the quieter of you
   footstepRange: 6, // metres past which a girl's steps cannot be heard: near enough to hear her come up behind you, not across the yard
@@ -119,6 +122,9 @@ export const SOUND_PARAM_RANGES = {
   rideWindFullSpeed: [2, 40, 0.5],
   hornVolume: [0, 2, 0.05],
   generatorVolume: [0, 2, 0.05],
+  splitterWhineVolume: [0, 2, 0.01],
+  splitterStrainVolume: [0, 2, 0.01],
+  splitterHissVolume: [0, 2, 0.01],
   knockThreshold: [0.05, 5, 0.05],
   knockFullSpeed: [0.2, 10, 0.1],
   knockCooldown: [0, 0.5, 0.01],
