@@ -792,7 +792,9 @@ def recheck(name):
     BANKS, which must still describe the bank as it was cut. It only takes grains out of use: one the bank has as not ok stays so
     even if the checks now pass it (the ATC's last Vespa firing does, as a zero-length pulse beside it isn't in the JSON)."""
     config = BANKS[name]
-    wav = next(p for p in (os.path.join(ROOT, d, 'audio', f'{name}.wav') for d in ('public', 'source')) if os.path.exists(p))
+    places = [os.path.join(ROOT, d, 'audio', f'{name}.wav') for d in ('public', 'source')]
+    wav = next((p for p in places if os.path.exists(p)), None)
+    assert wav, f'{name}: no kept WAV in {places[0]} or {places[1]}'
     audio = load(wav)
     path = os.path.join(ROOT, 'public', 'audio', f'{name}.json')
     with open(path) as f:
@@ -818,7 +820,7 @@ def recheck(name):
     assert base + sum(int(t1 * SR) - int(t0 * SR) for _, _, t0, t1, *_ in config['oneshots']) == len(audio), f'{name}: BANKS no longer matches its length'
     whining = {id(g) for g in whine_check(audio, grains)}
     usable = {id(g) for g, ok in zip(grains, was_ok) if ok}
-    rejected['tonal whine'] = len(whining & usable)
+    rejected['tonal whine'] = len(whining & usable)  # newly; the print gives every whining firing too
     # Two cuts at one point aren't in the JSON, so a neighbour's median can come out differently from the slicer's.
     kept = sum(id(g) not in usable and id(g) not in whining for g in passed)
     with open(path, 'w') as f:
@@ -827,7 +829,7 @@ def recheck(name):
         else:
             json.dump(bank, f, separators=(',', ':'), allow_nan=False)  # as wav_to_flac.py writes it
     before, after = sum(was_ok), sum(g.get('ok', True) for g in grains)
-    print(f'{name}: {before} usable grains before, {after} after, rejected {rejected}; {kept} kept out of use that the checks now pass')
+    print(f'{name}: {before} usable grains before, {after} after, rejected {rejected} ({len(whining)} whining in all); {kept} kept out of use that the checks now pass')
 
 
 def main():
