@@ -115,6 +115,13 @@ async function measureOnce(root, profileFor, showSteps) {
       const step = s.replace(/\s*\d+\/\d+$/, '');
       if (!seen.has(step)) seen.add(step), console.error(`perf: ${t.toFixed(2).padStart(6)} s  ${s}`);
     }
+    // And inside "Building world…", which is one step on the screen: each part the game timed (core/loadSteps.js, #1107), slowest first.
+    if (showSteps) {
+      const parts = await page.evaluate(() => performance.getEntriesByType('measure').filter((e) => e.name.startsWith('load · ')).map((e) => [e.name.slice(7), e.duration]));
+      const sum = new Map();
+      for (const [n, ms] of parts) sum.set(n, (sum.get(n) ?? 0) + ms);
+      for (const [n, ms] of [...sum].sort((a, b) => b[1] - a[1]).slice(0, 25)) console.error(`perf: ${(ms / 1000).toFixed(2).padStart(6)} s  ${n}`);
+    }
     const heapMb = await page.evaluate(() => (performance.memory ? performance.memory.usedJSHeapSize / 1e6 : undefined));
     await new Promise((ok) => setTimeout(ok, 5000)); // a player is on the start card for a few seconds: what the game builds behind it (shaders #372, the lane's vehicles #532) is done
     await page.evaluate(() => {

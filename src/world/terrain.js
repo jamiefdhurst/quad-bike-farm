@@ -1,3 +1,4 @@
+import { timed } from '../core/loadSteps.js';
 import * as THREE from 'three';
 import { createGroundPlan, paintGround, paintContext, createDetailCanvas } from './groundTexture.js';
 import { patchColor, patchBlend } from './patchwork.js';
@@ -14,11 +15,11 @@ export { patchAt } from './patchwork.js';
  * (groundTiles.js), plus a coarser patchwork ring of neighbouring fields out to the horizon. The ground is painted a tile at a time as you come
  * near it, over a coarse painting of the whole of it (groundPaint.js).
  */
-export function createTerrain({ scene, physics, RAPIER, layout, heights, track, renderer, wear, fields, roadMud, autumn = false, params = { ...DEFAULT_GROUND_PARAMS } }) {
+export function createTerrain({ scene, physics, RAPIER, layout, heights, track, renderer, wear, fields, roadMud, autumn = false, params = { ...DEFAULT_GROUND_PARAMS }, groundHeights = null }) {
   const bounds = groundBounds(layout);
 
-  // Sample heights once; shared by the tiles and the collider.
-  const grid = new GroundGrid(bounds, heights.heightAt);
+  // Sample heights once; shared by the tiles and the collider. Worked out already by the workers unless they couldn't run (groundSampler.js).
+  const grid = timed('terrain · height grid', () => new GroundGrid(bounds, heights.heightAt, groundHeights));
 
   // Physics. Rapier's heightfield is column-major with rows along z, and centred on the collider's translation.
   const collider = physics.createCollider(
@@ -111,7 +112,7 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
   const ovCanvas = document.createElement('canvas');
   ovCanvas.width = Math.ceil((bounds.maxX - bounds.minX) * ovScale);
   ovCanvas.height = Math.ceil((bounds.maxZ - bounds.minZ) * ovScale);
-  for (const _ of paintGround(plan, paintContext(ovCanvas.getContext('2d'), bounds, ovScale)));
+  timed('terrain · overview painted', () => { for (const _ of paintGround(plan, paintContext(ovCanvas.getContext('2d'), bounds, ovScale))); });
   const ovTarmac = tarmacOf(tarmacMask(fields.tarmacAt, bounds, 2, tarmacBoxes)); // two metres a texel is as fine as the overview needs
   const overviewMat = makeMaterial(groundTexture(ovCanvas), bounds, ovTarmac.tarmac);
 
@@ -200,9 +201,9 @@ export function createTerrain({ scene, physics, RAPIER, layout, heights, track, 
     },
   });
 
-  scene.add(createOuterRing(layout, bounds, heights, fields));
+  scene.add(timed('terrain · outer ring', () => createOuterRing(layout, bounds, heights, fields, grid)));
   // The new farm's far landscape (#708) carries on from the ring's edge out to the hills; today's farm has none.
-  scene.add(createFarLand({ layout, bounds, heights, renderer }));
+  scene.add(timed('terrain · far land', () => createFarLand({ layout, bounds, heights, renderer })));
 
   return {
     mesh,
@@ -366,7 +367,7 @@ function addDetailLayer(material, { detailTex, quarryRect, pitHole, wear, roadMu
   };
 }
 
-function createOuterRing(layout, bounds, heights, fields) {
+function createOuterRing(layout, bounds, heights, fields, grid) {
   const m = layout.outerMargin;
   const minX = bounds.minX - m;
   const minZ = bounds.minZ - m;
@@ -381,22 +382,13 @@ function createOuterRing(layout, bounds, heights, fields) {
   const count = (segX + 1) * nz;
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 3);
-  for (let ix = 0; ix <= segX; ix++) {
-    for (let iz = 0; iz <= segZ; iz++) {
-      const i = ix * nz + iz;
-      const x = minX + ix * stepX;
-      const z = minZ + iz * stepZ;
-      positions.set([x, heights.heightAt(x, z), z], i * 3);
-      // Fading from the farm's grass just beyond its hedges, as the ground texture does (groundTexture.js).
-      colors.set(patchColor(x, z, patchBlend(fields.outside(x, z)), layout.neighbourLand), i * 3);
-    }
-  }
   const indices = [];
   const inside = (ix, iz) => {
     const x = minX + ix * stepX;
     const z = minZ + iz * stepZ;
     return x >= bounds.minX - 1e-3 && x <= bounds.maxX + 1e-3 && z >= bounds.minZ - 1e-3 && z <= bounds.maxZ + 1e-3;
   };
+  const used = new Uint8Array(count); // the vertices a square of the ring uses: over half lie under the farm's own ground, where it draws none
   for (let ix = 0; ix < segX; ix++) {
     for (let iz = 0; iz < segZ; iz++) {
       if (inside(ix, iz) && inside(ix + 1, iz + 1) && inside(ix + 1, iz) && inside(ix, iz + 1)) continue;
@@ -405,6 +397,25 @@ function createOuterRing(layout, bounds, heights, fields) {
       const c = a + nz;
       const d = c + 1;
       indices.push(a, b, c, c, b, d);
+      used[a] = used[b] = used[c] = used[d] = 1;
+    }
+  }
+  for (let ix = 0; ix <= segX; ix++) {
+    for (let iz = 0; iz <= segZ; iz++) {
+      const i = ix * nz + iz;
+      const x = minX + ix * stepX;
+      const z = minZ + iz * stepZ;
+      // A vertex no square uses is never drawn: it only has to keep the mesh's bounds where they were, so the 1 m grid's height will do (#1107).
+      if (!used[i]) {
+        positions[i * 3] = x;
+        const h = grid.surfaceAt(x, z);
+        positions[i * 3 + 1] = Number.isNaN(h) ? heights.heightAt(x, z) : h; // a hair past the grid's edge, as `inside` allows
+        positions[i * 3 + 2] = z;
+        continue;
+      }
+      positions.set([x, heights.heightAt(x, z), z], i * 3);
+      // Fading from the farm's grass just beyond its hedges, as the ground texture does (groundTexture.js).
+      colors.set(patchColor(x, z, patchBlend(fields.outside(x, z)), layout.neighbourLand), i * 3);
     }
   }
   const geo = new THREE.BufferGeometry();

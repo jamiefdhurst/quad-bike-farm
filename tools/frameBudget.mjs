@@ -57,6 +57,7 @@ export const SPOTS = Object.keys(BUDGETS).filter((k) => k !== 'movers');
  * farm's and the same on every run; the timing, if asked for, is with it all moving as in play. */
 export async function measureInPage({ spots, headings, frames, dwell = 0, viewHeight = 0, movers = false, views = {}, viewDistances = [] }) {
   const g = window.game;
+  await g.world.buildLater?.(); // the ground cover built behind the start screen (#1107)
   const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
   const settle = async (n) => { for (let i = 0; i < n; i++) await frame(); };
   const info = g.renderer.info;

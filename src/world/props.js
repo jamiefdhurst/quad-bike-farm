@@ -1,3 +1,4 @@
+import { timed } from '../core/loadSteps.js';
 import * as THREE from 'three';
 import { swayMaterials } from '../effects/windSway.js';
 import { stripFrame, gravelStrip } from './layout.js';
@@ -58,10 +59,26 @@ function matrixAt(x, y, z, yaw, sx, sy = sx, sz = sx) {
   );
 }
 
-/** Builds every static prop on the farm and its colliders. */
+/**
+ * Each builder's own random stream, from the props' fixed seed and its name (#1107): a change to one builder's draws no longer moves another's
+ * things, and a builder can run later (behind the start screen) without moving anything built after it.
+ */
+export function streamFor(name) {
+  let h = 2166136261;
+  for (let i = 0; i < name.length; i++) h = Math.imul(h ^ name.charCodeAt(i), 16777619);
+  return seeded(((1234 + (h >>> 0)) % 2147483646) + 1);
+}
+
+/**
+ * Builds every static prop on the farm and its colliders. What is only drawn near you and isn't needed for the first view (the grass, the stubble,
+ * the Moor's plants) goes on `later`: [{ name, build }], which the World builds behind the start screen (#1107).
+ */
 export function buildProps(ctx) {
-  const random = seeded(1234);
-  const c = { ...ctx, random };
+  const c = { ...ctx, random: null, streamFor, later: [] };
+  const run = (name, build) => {
+    c.random = streamFor(name);
+    return timed(`props · ${name}`, build);
+  };
   c.scatter = new Scatter(); // the oaks and bushes every builder places, scattered once at the end (scatter.js, #837)
   c.anchors = []; // every trunk the green's winch can hook (items/winchAnchor.js): { x, y, z, r }
   c.fixedBox = (x, y, z, hx, hy, hz, rotY = 0) => {
@@ -71,52 +88,51 @@ export function buildProps(ctx) {
     );
   };
 
-  const barn = buildBarn(c);
-  const hedgeSwap = buildHedges(c);
+  const barn = run('buildBarn', () => buildBarn(c));
+  const hedgeSwap = run('buildHedges', () => buildHedges(c));
   c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
-  const gates = [buildGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c), buildBypassGate(c), buildMoorGate(c)].filter(Boolean);
-  buildPitLaneGate(c);
-  buildCattleGrid(c);
-  buildReflectorPosts(c);
-  buildDriveVerge(c);
-  buildPublicLane(c);
-  buildBackLane(c);
-  buildPaddock(c);
-  buildGardenWall(c); // the new farm's garden plot and Home Ground's rail (#682); today's farm has neither
-  buildHomeRails(c);
-  buildYardGates(c); // the yard's dressing on the new farm (#817): its steel gates, the barn wall's gear, the heaps and the stackyard's bales
-  const yard = buildYardFurniture(c);
-  buildStackyardKit(c);
-  const yardLights = buildYardLights(c); // the floodlights on the barn's gable and on a pole behind the tanks, dimmed up after dark (#817)
-  const vane = buildWeatherVane(c); // on the barn's ridge, turning into the wind (#169)
-  const bale = buildBales(c);
-  buildOutbuildings({ ...c, bale });
-  const neighbourFarm = buildNeighbourFarm(c);
-  buildUpperThornby(c); // the far hamlet on the hill to the west, seen from Back Lane (#686)
-  const backLane = buildBackLaneProps(c); // Back Lane's hedges and gates (#686)
-  const moor = buildMoorProps(c); // the Moor beyond it: ridge wall, stile, trig pillar, grids and plants (#713)
-  const neighbourLand = buildNeighbourLand(c); // her fields across the lane, at far-ground detail (#569)
-  const aRoad = buildARoadProps(c); // the A-road's hedges and the junctions' furniture (#687)
-  buildLaneFittings(c); // the lane's cottages, gateways, bin and postbox (#687)
-  const village = buildVillage({ ...c, laneTexture });
-  buildBrookCulvert(c);
-  buildFarmBridge(c); // where the stone track south crosses the river's head (#689)
+  const gates = run('gates', () => [buildGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c), buildBypassGate(c), buildMoorGate(c)].filter(Boolean));
+  run('buildPitLaneGate', () => buildPitLaneGate(c));
+  run('buildCattleGrid', () => buildCattleGrid(c));
+  run('buildReflectorPosts', () => buildReflectorPosts(c));
+  run('buildDriveVerge', () => buildDriveVerge(c));
+  run('buildPublicLane', () => buildPublicLane(c));
+  run('buildBackLane', () => buildBackLane(c));
+  run('buildPaddock', () => buildPaddock(c));
+  run('buildGardenWall', () => buildGardenWall(c)); // the new farm's garden plot and Home Ground's rail (#682); today's farm has neither
+  run('buildHomeRails', () => buildHomeRails(c));
+  run('buildYardGates', () => buildYardGates(c)); // the yard's dressing on the new farm (#817): its steel gates, the barn wall's gear, the heaps and the stackyard's bales
+  const yard = run('buildYardFurniture', () => buildYardFurniture(c));
+  run('buildStackyardKit', () => buildStackyardKit(c));
+  const yardLights = run('buildYardLights', () => buildYardLights(c)); // the floodlights on the barn's gable and on a pole behind the tanks, dimmed up after dark (#817)
+  const vane = run('buildWeatherVane', () => buildWeatherVane(c)); // on the barn's ridge, turning into the wind (#169)
+  const bale = run('buildBales', () => buildBales(c));
+  run('buildOutbuildings', () => buildOutbuildings({ ...c, bale }));
+  const neighbourFarm = run('buildNeighbourFarm', () => buildNeighbourFarm(c));
+  run('buildUpperThornby', () => buildUpperThornby(c)); // the far hamlet on the hill to the west, seen from Back Lane (#686)
+  const backLane = run('buildBackLaneProps', () => buildBackLaneProps(c)); // Back Lane's hedges and gates (#686)
+  const moor = run('buildMoorProps', () => buildMoorProps(c)); // the Moor beyond it: ridge wall, stile, trig pillar, grids and plants (#713)
+  const neighbourLand = run('buildNeighbourLand', () => buildNeighbourLand(c)); // her fields across the lane, at far-ground detail (#569)
+  const aRoad = run('buildARoadProps', () => buildARoadProps(c)); // the A-road's hedges and the junctions' furniture (#687)
+  run('buildLaneFittings', () => buildLaneFittings(c)); // the lane's cottages, gateways, bin and postbox (#687)
+  const village = run('buildVillage', () => buildVillage({ ...c, laneTexture }));
+  run('buildBrookCulvert', () => buildBrookCulvert(c));
+  run('buildFarmBridge', () => buildFarmBridge(c)); // where the stone track south crosses the river's head (#689)
   if (neighbourFarm) gates.push(neighbourFarm.gate); // the yard's own gate opens and shuts like the farm's
   if (neighbourLand) gates.push(neighbourLand.gate); // and so does her north field gate
   const silage = bale.silage;
-  buildTrees(c);
-  buildDistantTrees(c);
-  buildGrass(c);
-  buildStubble(c);
-  const puddles = buildPuddles(c);
-  buildBogs(c);
-  const hillProps = ctx.fields.hill ? buildHill(c) : null;
-  if (ctx.fields.woods) buildWoods(c);
-  if (ctx.fields.quarry) buildQuarry(c);
-  buildFieldLandmarks(c); // the new farm's landmark in each field (#815); today's farm has none
-  const jumpRamp = ctx.layout.jumpRamp ? buildJumpRamp(c) : null;
-  const treeSwap = c.scatter.build(c.scene); // every builder's oaks and bushes, the far ones swapped in beyond treeFullDistance
-  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: [treeSwap].filter(Boolean), barn, yardLights, vane, jumpRamp, silage, puddles, yard, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors };
+  run('buildTrees', () => buildTrees(c));
+  run('buildDistantTrees', () => buildDistantTrees(c));
+  c.later.push({ name: 'grass', build: () => run('buildGrass', () => buildGrass(c)) }, { name: 'stubble', build: () => run('buildStubble', () => buildStubble(c)) });
+  const puddles = run('buildPuddles', () => buildPuddles(c));
+  run('buildBogs', () => buildBogs(c));
+  const hillProps = ctx.fields.hill ? run('buildHill', () => buildHill(c)) : null;
+  if (ctx.fields.woods) run('buildWoods', () => buildWoods(c));
+  if (ctx.fields.quarry) run('buildQuarry', () => buildQuarry(c));
+  run('buildFieldLandmarks', () => buildFieldLandmarks(c)); // the new farm's landmark in each field (#815); today's farm has none
+  const jumpRamp = ctx.layout.jumpRamp ? run('buildJumpRamp', () => buildJumpRamp(c)) : null;
+  const treeSwap = run('scatter', () => c.scatter.build(c.scene)); // every builder's oaks and bushes, the far ones swapped in beyond treeFullDistance
+  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: [treeSwap].filter(Boolean), barn, yardLights, vane, jumpRamp, silage, puddles, yard, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors, later: c.later };
 }
 
 function buildBarn(c) {

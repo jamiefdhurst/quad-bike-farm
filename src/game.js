@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { Input } from './core/input.js';
 import { createRandom, startSeed } from './core/random.js';
 import { prepareShaders } from './core/shaderPrep.js';
+import { laps } from './core/loadSteps.js';
+import { sampleGroundInWorkers } from './world/groundSampler.js';
 import { randomiseQuadSpawns, randomJerryCanSpots, spawnKeepOut, spawnBlocked } from './world/spawns.js';
 import { registerTuning } from './core/tuning.js';
 import { loadModels } from './world/assets.js';
@@ -458,10 +460,6 @@ export class Game {
   }
 
   async load(report) {
-    report('Loading models…');
-    this.models = await loadModels((done, total) => report(`Loading models… ${done}/${total}`));
-    report('Building world…');
-    await new Promise((r) => setTimeout(r, 0));
     // The farm's date and season (world/seasons.js) have to be known before the world is built: autumn turns the trees and the wood's floor, and
     // winter dulls them. The farm has its own calendar, started on a date dealt from its seed; ?season=spring|summer|autumn|winter forces one.
     const farmPeek = openFarm({ search: location.search, storage: browserStorage() });
@@ -469,26 +467,20 @@ export class Game {
     this.date = dateToday({ farmSeed: farmPeek.farmSeed ?? this.seed, day: farmPeek.day, forced: new URLSearchParams(location.search).get('season'), createRandom });
     this.season = this.date.season;
     this.autumn = isAutumn(this.season);
-    this.world = new World({
-      layout: dealNeighbourVehicles(namedLayout(dealtLayout(LAYOUT, farmPeek.farmSeed ?? this.seed), farmPeek.farmSeed ?? this.seed, farmPeek.save?.fieldNames), farmPeek.farmSeed ?? this.seed), // the farm's field names: kept, or dealt from its seed (world/fieldNames.js); the neighbour's quad and trailer dealt their wear from it too (#925)
-      autumn: this.autumn,
-      winter: isWinter(this.season),
-      scene: this.scene,
-      physics: this.physics,
-      RAPIER: this.RAPIER,
-      renderer: this.renderer,
-      models: this.models,
-      graphics: this.graphics,
-    });
-
-    this.player = new Player({
-      physics: this.physics,
-      RAPIER: this.RAPIER,
-      camera: this.camera,
-      input: this.input,
-      world: this.world,
-      params: { ...DEFAULT_PLAYER_PARAMS },
-    });
+    const layout = dealNeighbourVehicles(namedLayout(dealtLayout(LAYOUT, farmPeek.farmSeed ?? this.seed), farmPeek.farmSeed ?? this.seed, farmPeek.save?.fieldNames), farmPeek.farmSeed ?? this.seed); // the farm's field names: kept, or dealt from its seed (world/fieldNames.js); the neighbour's quad and trailer dealt their wear from it too (#925)
+    // The ground's 1 m grid, worked out in workers while the models load (world/groundSampler.js, #1107): null if they can't, and the World does it.
+    const groundHeights = sampleGroundInWorkers(layout);
+    report('Loading models…');
+    this.models = await loadModels((done, total) => report(`Loading models… ${done}/${total}`));
+    report('Building world…');
+    await new Promise((r) => setTimeout(r, 0));
+    const lap = laps(); // each part's time, for `perf.mjs --steps` and the console's `perf` (core/loadSteps.js, #1107)
+    const heightsWorkedOut = await groundHeights;
+    lap('game · waiting for the ground');
+    const { scene, physics, RAPIER, renderer, models, graphics, camera, input } = this;
+    this.world = new World({ layout, groundHeights: heightsWorkedOut, autumn: this.autumn, winter: isWinter(this.season), scene, physics, RAPIER, renderer, models, graphics });
+    lap('game · world');
+    this.player = new Player({ physics, RAPIER, camera, input, world: this.world, params: { ...DEFAULT_PLAYER_PARAMS } });
 
     this.audioHub = new AudioHub({ ...DEFAULT_SOUND_PARAMS });
     this.input.on('firstinteraction', () => this.audioHub.unlock());
@@ -693,6 +685,7 @@ export class Game {
     const sumpUnits = this.units.filter((u) => u.quad.sump);
     const burnerId = pickBurner(sumpUnits.map((u) => u.spec.id), sumpRandom);
     for (const u of sumpUnits) u.quad.sump = new Sump({ level: startLevel(u.spec.id === burnerId, sumpRandom, this.sumpParams), burner: u.spec.id === burnerId, params: this.sumpParams });
+    lap('game · the quads');
     // The tractor, if it's here this game. It's a unit like the quads (you ride it, fuel it, hear it), but `girlUnits` is what the girls know about:
     // they leave it alone for now. Each of the three is null when it isn't on the farm, and everything that uses it checks.
     this.girlUnits = this.units;
@@ -789,6 +782,7 @@ export class Game {
     this.snowCoatParams = { ...DEFAULT_SNOW_COAT_PARAMS };
     registerTuning('Snow coat', this.snowCoatParams, SNOW_COAT_PARAM_RANGES);
     this.worldSnow = new WorldSnow(this.snowCoatParams);
+    lap('game · the other vehicles and the day');
     this.mindsHost = new MindsHost(this); // the girls' needs, moods and choosing (npc/mindsHost.js)
     this.weatherHost = new WeatherHost(this); // the weather's switches, the time of day, the wind and the snow coat (world/weatherHost.js)
     if (this.weather.cover > 0 || this.weather.snow > 0) this.weatherHost.coatSnow();
@@ -819,6 +813,7 @@ export class Game {
     this.homeUnit = this.units[home];
     this.lastUnit = this.homeUnit;
 
+    lap('game · weather and effects');
     // The companions (src/npc/characters.js), each starting beside her own quad in the yard.
     const yard = this.girlUnits.filter((u, i) => u !== this.homeUnit && spawns[i].where === spawns[home].where);
     const homes = [this.homeUnit, ...yard, ...this.girlUnits.filter((u) => u !== this.homeUnit && !yard.includes(u))];
@@ -874,6 +869,7 @@ export class Game {
       return c;
     });
 
+    lap('game · the girls');
     // Who you favour: each girl keeps a quiet score of how you treat her (npc/favour.js), shown in the tuning panel.
     this.favour = new Favour(CHARACTERS.map((ch) => ch.id));
     for (const c of this.companions) {
@@ -1608,6 +1604,7 @@ export class Game {
     this.setUpFarmAnimals();
     this.setUpFence();
     this.setUpRadios();
+    lap('game · what the girls do');
     this.trafficHost = new TrafficHost(this); // the lane's traffic, the visitors and the two gates (world/trafficHost.js)
     this.neighbourHost = new NeighbourHost(this); // the neighbour in her yard over the lane (world/neighbourHost.js)
 
@@ -2025,17 +2022,21 @@ export class Game {
       registerTuning(c.name, c.params, COMPANION_PARAM_RANGES, { onChange: () => c.refreshFigure() });
       registerTuning(`${c.name} pillion`, c.pillion.params, PILLION_PARAM_RANGES);
     }
+    lap('game · items, jobs and the village');
     this.debugGui = new DebugGui(this);
     this.console = new GameConsole(this);
 
     this.applyDebugCamera();
     if (import.meta.env.DEV || location.search.includes('smoke')) window.game = this; // ?smoke lets tools/smoke.mjs drive the built game
+    lap('game · panel and console');
     report('Settling…');
     this.restoreDay();
     await new Promise((r) => setTimeout(r, 0));
     this.settleVehicles();
     this.arriveInCar();
+    lap('game · settling');
     await this.loadSounds(report);
+    lap('game · sounds');
   }
 
   /**

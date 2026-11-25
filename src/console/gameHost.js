@@ -1,5 +1,6 @@
 // What the console's commands need from the game: where things are, putting them somewhere else, the vehicle verbs, the girls' actions
 // and the weather. Everything calls the same methods the debug panel and the game itself use.
+import { loadSteps } from '../core/loadSteps.js';
 import { girlActions } from '../debug/girlActions.js';
 import { jobActions } from '../debug/jobActions.js';
 import { fixEverything, startWarm, switchOff } from '../debug/vehicleDebug.js';
@@ -431,7 +432,7 @@ export function createHost(g, { copy = () => {} } = {}) {
 
     perf() {
       const r = g.renderer;
-      return { ...g.frameStats.summary(), stages: g.frameBreakdown.summary().map((x) => ({ name: x.name, ms: x.ms })), slowestFeatures: g.guard.slowest(5), ground: g.world.terrain.tileSet.stats(), groundPainting: g.world.terrain.paintStats(), wornGround: g.world.wear.stats(), longFrameCauses: g.stutters.log.lines(), heapMb: g.stutters.heap.used / 1048576, allocMbPerSecond: g.stutters.heap.allocMbPerSecond, ...r.info.render, width: r.domElement.width, height: r.domElement.height, pixelRatio: r.getPixelRatio(), maxFps: g.graphics.maxFps };
+      return { ...g.frameStats.summary(), stages: g.frameBreakdown.summary().map((x) => ({ name: x.name, ms: x.ms })), slowestFeatures: g.guard.slowest(5), ground: g.world.terrain.tileSet.stats(), groundPainting: g.world.terrain.paintStats(), wornGround: g.world.wear.stats(), longFrameCauses: g.stutters.log.lines(), heapMb: g.stutters.heap.used / 1048576, allocMbPerSecond: g.stutters.heap.allocMbPerSecond, loadSteps: loadSteps().slice(0, 8), groundFromWorkers: g.world.groundFromWorkers, ...r.info.render, width: r.domElement.width, height: r.domElement.height, pixelRatio: r.getPixelRatio(), maxFps: g.graphics.maxFps };
     },
   };
   return host;

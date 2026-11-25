@@ -1,3 +1,4 @@
+import { timed } from '../core/loadSteps.js';
 // The Moor drawn (#713): the drystone ridge wall with its ladder stile, the trig pillar and the cairn on the ridge, the two cattle grids on Back Lane with
 // their bridle gates and signs, the gritstone outcrops and boulders, the peat banks' cut stones, the spring's stone ring, and the plants: heather in older and younger
 // stands, bracken on the lower slopes and cotton grass, rushes and tussocks in the wet flushes. The ground under it is painted by moorPaint.js and shaped by moor.js.
@@ -284,13 +285,30 @@ function heatherGeometry(random) {
   return geo;
 }
 
-/** The plants: [{ mesh group, material, kind }] in the scene, coloured for the day by `setDate`. */
+/**
+ * The plants, coloured for the day by `setDate`: { mats, cottonGroup, cottonShown }. Only drawn within the rough's draw distance, so with the props'
+ * `later` list (props.js) they are scattered behind the start screen on their own stream (#1107): `cottonGroup` is null until then, and the cotton
+ * grass takes `cottonShown` when it comes.
+ */
 function buildPlants(c, M, moor, bare) {
-  const { scene, heights, random, drawDistance } = c;
-  const b = M.bounds;
   const lambert = (extra = {}) => new THREE.MeshLambertMaterial({ vertexColors: true, ...extra });
   // The fronds' own vertex colours are the hill's greens: here the day's colour is the whole of it, so they are left off.
   const mats = { heather: lambert(), bracken: lambert({ vertexColors: false, side: THREE.DoubleSide }), tussock: lambert({ vertexColors: false, side: THREE.DoubleSide }), cotton: new THREE.MeshLambertMaterial({ color: 0xffffff }) };
+  const plants = { mats, cottonGroup: null, cottonShown: true };
+  const build = () => {
+    const random = c.streamFor ? c.streamFor('moor plants') : c.random;
+    plants.cottonGroup = scatterPlants({ ...c, random }, M, moor, bare, mats);
+    plants.cottonGroup.visible = plants.cottonShown;
+  };
+  if (c.later) c.later.push({ name: 'moor plants', build: () => timed('props · moor plants', build) });
+  else build();
+  return plants;
+}
+
+/** Scatters the heather, bracken, tussocks and cotton grass over the common; returns the cotton grass's heads, which show only in their season. */
+function scatterPlants(c, M, moor, bare, mats) {
+  const { scene, heights, random, drawDistance } = c;
+  const b = M.bounds;
   const scatter = (count, accept, make) => {
     const matrices = [];
     const colors = [];
@@ -340,7 +358,7 @@ function buildPlants(c, M, moor, bare) {
   }
   const cottonGroup = drawDistance.add(tiledInstances(new THREE.IcosahedronGeometry(1, 0), mats.cotton, heads, { name: 'moor cotton grass' }), 'roughDistance');
   scene.add(cottonGroup);
-  return { mats, cottonGroup };
+  return cottonGroup;
 }
 
 /**
@@ -484,7 +502,8 @@ export function buildMoorProps(c) {
     plants.mats.bracken.color.setHex(k.bracken);
     plants.mats.tussock.color.setHex(k.tussock);
     plants.mats.cotton.color.setHex(0xf4f2ea);
-    plants.cottonGroup.visible = k.cotton > 0.05;
+    plants.cottonShown = k.cotton > 0.05;
+    if (plants.cottonGroup) plants.cottonGroup.visible = plants.cottonShown;
   };
   /** One line for the console and the panel: which month the plants are dressed for and what stands on the common. */
   const describe = () => `${grids.length} cattle grids, ${M.flushes.length} flushes, ${moor.outcrops.length} outcrops, ${M.peat.length} peat banks; plants dressed for ${shown ? MONTHS[shown.month] : 'no date yet'}`;

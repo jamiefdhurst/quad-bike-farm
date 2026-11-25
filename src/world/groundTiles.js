@@ -41,20 +41,36 @@ export function groundBounds(layout) {
   return { minX: Math.floor(g.minX), maxX: Math.ceil(g.maxX), minZ: Math.floor(g.minZ), maxZ: Math.ceil(g.maxZ) };
 }
 
-/** The height of the ground at every metre over `bounds`, from `heightAt(x, z)`. Index `ix * (nz + 1) + iz`, which is Rapier's heightfield order. */
+/**
+ * The heights of the grid's columns `ix0` to `ix1 - 1` (a column is every metre along z at one x) over `bounds`, from `heightAt(x, z)`, in a
+ * Float32Array in the grid's order starting at column `ix0`. The whole grid is columns 0 to `maxX - minX`; groundSampler.js shares them out among
+ * workers, as the grid is 1.8 million asks of the ground on the new farm (#1107).
+ */
+export function sampleColumns(bounds, heightAt, ix0, ix1) {
+  const stride = bounds.maxZ - bounds.minZ + 1;
+  const out = new Float32Array((ix1 - ix0) * stride);
+  for (let ix = ix0; ix < ix1; ix++) {
+    const x = bounds.minX + ix;
+    const row = (ix - ix0) * stride;
+    for (let iz = 0; iz < stride; iz++) out[row + iz] = heightAt(x, bounds.minZ + iz);
+  }
+  return out;
+}
+
+/**
+ * The height of the ground at every metre over `bounds`, from `heightAt(x, z)`. Index `ix * (nz + 1) + iz`, which is Rapier's heightfield order.
+ * `heights`, when given, is the same already worked out (by the workers, groundSampler.js), and `heightAt` isn't asked.
+ */
 export class GroundGrid {
-  constructor(bounds, heightAt) {
+  constructor(bounds, heightAt, heights = null) {
     this.bounds = bounds;
     this.minX = bounds.minX;
     this.minZ = bounds.minZ;
     this.nx = bounds.maxX - bounds.minX; // squares along x
     this.nz = bounds.maxZ - bounds.minZ;
     this.stride = this.nz + 1;
-    this.heights = new Float32Array((this.nx + 1) * this.stride);
-    for (let ix = 0; ix <= this.nx; ix++) {
-      const x = this.minX + ix;
-      for (let iz = 0; iz <= this.nz; iz++) this.heights[ix * this.stride + iz] = heightAt(x, this.minZ + iz);
-    }
+    const size = (this.nx + 1) * this.stride;
+    this.heights = heights?.length === size ? heights : sampleColumns(bounds, heightAt, 0, this.nx + 1);
   }
 
   /** The sample at grid point (ix, iz), the nearest one on the edge if it is off the grid. */
