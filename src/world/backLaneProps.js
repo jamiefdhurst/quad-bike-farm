@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 import { roadNetwork } from './roads.js';
-import { laneHedgeRuns, laneTrees, hedgeOffset, sidePoint, laneGates, laneGaps, GATE_HALF } from './laneHedges.js';
+import { laneHedgeRuns, laneTrees, hedgeOffset, sidePoint, laneGates, laneGaps, laneStile, GATE_HALF } from './laneHedges.js';
 import { laneSigns, laneGrates, sAlong, footpathSide } from './laneSigns.js';
 import * as kit from './roadSigns.js';
 import { leafReach } from './hedgeSolid.js';
@@ -117,12 +117,16 @@ function buildFurniture(road, c, group) {
   if (road.footpath) {
     const s = sAlong(road, road.footpath.at[0], road.footpath.at[1]);
     const side = footpathSide(road);
-    const t = pointAtTangent(road, s);
     const dir = { x: road.footpath.to[0] - road.footpath.at[0], z: road.footpath.to[1] - road.footpath.at[1] };
     const post = place(kit.buildFingerpost(random), s - 3, side, road.halfWidth + 0.8, Math.atan2(-dir.z, dir.x));
     fixedBox(post.x, heights.heightAt(post.x, post.z) + 1, post.z, 0.1, 1.1, 0.1);
-    const stile = place(kit.buildStile(random), s, side, hedgeOffset(road, s, side), Math.atan2(-t.tz, t.tx));
-    void stile;
+  }
+  // The stile, shut to anything on wheels by one box across its whole gap, its steps inside it (#1017). On foot it is shut too, until stiles are climbed (#709).
+  const stile = laneStile(road, (x, z) => heights.heightAt(x, z));
+  if (stile) {
+    place(kit.buildStile(random), stile.s, stile.side, hedgeOffset(road, stile.s, stile.side), stile.yaw);
+    const b = stile.box;
+    fixedBox(b.x, b.y, b.z, b.hx, b.hy, b.hz, b.turn);
   }
 }
 

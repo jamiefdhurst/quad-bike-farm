@@ -67,6 +67,28 @@ export function laneTrees(road, random, gaps = []) {
 
 export const FORD_OPEN = 6; // m either side of the ford that the hedges are open, for the stream
 export const STILE_HALF = 1.1; // m either side of the stile that the hedge is open
+export const STILE_SOLID_HALF = 0.45; // m either side of the hedge line that the stile is solid: its step boards stand out 0.43 m
+export const STILE_SOLID_TOP = 1.1; // m above the ground that it is solid to, just over its posts
+
+/**
+ * The footpath's stile in the hedge (#686), or null with no footpath: where it stands on the hedge line, `yaw` turning its rail (local x) along the lane,
+ * and `box`, the one fixed collider that shuts its whole gap (`STILE_HALF` each way along) so nothing on wheels gets through it (#1017). `heightAt` lifts
+ * the box from just under the lowest ground beneath it to `STILE_SOLID_TOP` over the highest.
+ */
+export function laneStile(road, heightAt = () => 0) {
+  if (!road.footpath) return null;
+  const s = sAlong(road, road.footpath.at[0], road.footpath.at[1]);
+  const side = footpathSide(road);
+  const p = sidePoint(road, s, side, hedgeOffset(road, s, side));
+  const yaw = Math.atan2(-p.tz, p.tx);
+  const ys = [];
+  for (const a of [-STILE_HALF, STILE_HALF]) {
+    for (const c of [-STILE_SOLID_HALF, STILE_SOLID_HALF]) ys.push(heightAt(p.x + p.tx * a + p.tz * side * c, p.z + p.tz * a - p.tx * side * c));
+  }
+  const lo = Math.min(...ys) - 0.2;
+  const hi = Math.max(...ys) + STILE_SOLID_TOP;
+  return { s, side, x: p.x, z: p.z, yaw, box: { x: p.x, y: (lo + hi) / 2, z: p.z, hx: STILE_HALF, hy: (hi - lo) / 2, hz: STILE_SOLID_HALF, turn: yaw } };
+}
 
 /** How far along the road (m) the point (x, z) is nearest: a walk of the samples, run once for each of a few gates. */
 function nearestS(road, x, z) {
