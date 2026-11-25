@@ -6,6 +6,7 @@ import { LOSABLE } from '../items/lostThings.js';
 import { netCharge } from '../engine/charging.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
+import { describeLift } from '../npc/farWalk.js';
 import { REMEMBERED_KINDS } from '../npc/memory.js';
 import { strengthOf } from '../vehicle/strength.js';
 import { AGENDA_IDS } from '../npc/agenda.js';
@@ -260,6 +261,7 @@ export function buildGameTree(g, host) {
       chose: text(() => describeMind(c().mind).chose),
       nearlyChose: text(() => describeMind(c().mind).nearly),
       thinking: text(() => describeMind(c().mind).next),
+      lift: text(() => describeLift(c().lift, c().root.position, (k) => OFFER_KINDS[k]?.label ?? k), 'a lift to a far place she is on: what for, how, and how far off it is (the verb lift sends her up to the hut)'),
       agenda: choice(['none', ...AGENDA_IDS], () => c().agenda.id ?? 'none', (v) => c().agenda.set(v, c().params), 'what she has in mind for the day, which she is keener on all game and says early on'),
       remembers: text(() => c().memory.describe(), 'what has gone well or badly for her lately, and so what she is keener or warier of'),
       quadViews: text(() => c().opinion.describe(g.strengthIds(), g.strengthTruth), 'which quad she thinks best on a hill, in mud and on tarmac, from riding them'),
