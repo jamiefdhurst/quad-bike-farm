@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { ALONGSIDE, AREAS, BATCH_SIZE, NOT_BATCHED, batch, batchLabels, checkBatch, byMilestone, currentPhase, dependsOn, eligible, goesWith, unbatchable } from '../tools/nextTodo.mjs';
+import { ALONGSIDE, AREAS, POLISH, READY, BATCH_SIZE, NOT_BATCHED, batch, batchLabels, checkBatch, byMilestone, currentPhase, dependsOn, eligible, goesWith, unbatchable } from '../tools/nextTodo.mjs';
 
 const issue = (number, milestone, extra = {}) => ({ number, title: `t${number}`, body: '', labels: [], milestone, ...extra });
 const order = (issues, open, pr, opts) => eligible(issues, open ?? issues.map((i) => i.number), pr, opts).map((i) => i.number);
@@ -14,10 +14,20 @@ describe('which issue /todo takes next', () => {
 
   it('takes the earliest milestone in run order, then the lowest number', () => {
     const issues = [
-      issue(700, '13 · Ready for players'), issue(681, '1 · The new map'), issue(662, '0 · Foundations'), issue(661, '0 · Foundations'),
+      issue(700, READY), issue(681, '1 · The new map'), issue(662, '0 · Foundations'), issue(661, '0 · Foundations'),
       issue(117, '6 · Engines and sound'), issue(118, '10 · What the girls wear'),
     ];
     expect(order(issues)).toEqual([661, 662, 681, 117, 118, 700]);
+  });
+
+  it('runs Polish after the alongside milestones and Ready for players last, and leaves Polish out of alongside', () => {
+    const issues = [issue(700, READY), issue(1013, POLISH), issue(1027, '6 · Engines and sound'), issue(1062, "11 · The girls' days"), issue(985, '1 · The new map')];
+    expect(order(issues)).toEqual([985, 1027, 1062, 1013, 700]);
+    expect(order(issues, undefined, [], { alongside: true })).toEqual([1027, 1062]);
+    // Polish isn't a phase /tidy and /perf wait for: its cohesion issue comes up only once it is the earliest open milestone.
+    const tidy = { labels: ['🧩 cohesion'] };
+    expect(order([issue(1, POLISH, tidy), issue(2, '1 · The new map')], undefined, [], { label: '🧩 cohesion' })).toEqual([]);
+    expect(order([issue(1, POLISH, tidy), issue(3, READY, tidy)], undefined, [], { label: '🧩 cohesion' })).toEqual([1]);
   });
 
   it('sorts milestones by the number they start with, so 10 comes after 9', () => {
@@ -45,7 +55,7 @@ describe('which issue /todo takes next', () => {
   it('gives alongside only the alongside milestones, earliest first, and never an issue without a milestone', () => {
     const issues = [
       issue(300, null), issue(118, '9 · How the girls move'), issue(117, '9 · How the girls move'), issue(852, '6 · Engines and sound'),
-      issue(661, '1 · The new map'), issue(700, '13 · Ready for players'),
+      issue(661, '1 · The new map'), issue(700, READY),
     ];
     expect(order(issues)).toEqual([661, 852, 117, 118, 700]);
     expect(order(issues, undefined, [], { alongside: true })).toEqual([852, 117, 118]);
@@ -57,7 +67,7 @@ describe('which issue /todo takes next', () => {
     const tidy = { labels: ['🧩 cohesion'] };
     const issues = [
       issue(126, '0 · Foundations', tidy), issue(412, '5 · Pulled together', tidy), issue(300, "11 · The girls' days", tidy),
-      issue(661, '0 · Foundations'), issue(175, '13 · Ready for players', { labels: ['🚀 performance'] }),
+      issue(661, '0 · Foundations'), issue(175, READY, { labels: ['🚀 performance'] }),
     ];
     expect(currentPhase(issues)).toBe('0 · Foundations');
     expect(order(issues, undefined, [], { label: '🧩 cohesion' })).toEqual([126, 300]);
@@ -159,7 +169,7 @@ describe('which issues a batch takes', () => {
 });
 
 describe('the milestones', () => {
-  const titles = ['0 · Foundations', '1 · The new map', '2 · The farmstead', '3 · Crops', '4 · The vehicles', '5 · Pulled together', ...ALONGSIDE, '13 · Ready for players'];
+  const titles = ['0 · Foundations', '1 · The new map', '2 · The farmstead', '3 · Crops', '4 · The vehicles', '5 · Pulled together', ...ALONGSIDE, POLISH, READY];
 
   it('are in .github/settings.yml, each open or closed, in the order the plan runs them', () => {
     const yml = readFileSync('.github/settings.yml', 'utf8');
@@ -171,8 +181,10 @@ describe('the milestones', () => {
     expect([...found].sort(byMilestone)).toEqual(found);
   });
 
-  it('keep the alongside ones together, after the map\'s phases and before Ready for players', () => {
+  it('keep the alongside ones together, after the map\'s phases and before Polish and Ready for players', () => {
     expect(ALONGSIDE.map((t) => Number(/^\d+/.exec(t)[0]))).toEqual([6, 7, 8, 9, 10, 11, 12]);
+    expect([POLISH, READY].map((t) => Number(/^\d+/.exec(t)[0]))).toEqual([13, 14]);
+    expect(ALONGSIDE).not.toContain(POLISH);
   });
 
   it('each has a section in docs/farm-plan.md', () => {

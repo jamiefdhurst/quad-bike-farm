@@ -135,7 +135,11 @@ milestones:
   - title: "12 · The world and you"
     description: The animals, the weather, the days of the week, and you getting wet and muddy. /todo alongside.
     state: open
-  - title: "13 · Ready for players"
+  # 13 holds what no phase waits on (#1181): plain /todo reaches it after 12, and /todo alongside doesn't take it.
+  - title: "13 · Polish"
+    description: Finds and ideas no phase's work fails without and no alongside theme takes. docs/farm-plan.md, 'The phases'.
+    state: open
+  - title: "14 · Ready for players"
     description: Settings, quality, subtitles, crash screen, the first ten minutes, browsers and download size.
     state: open
 branches:

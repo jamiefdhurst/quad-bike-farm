@@ -17,6 +17,10 @@ export const ALONGSIDE = [
   '6 · Engines and sound', '7 · More from the vehicles', '8 · The workshop', '9 · How the girls move', '10 · What the girls wear',
   "11 · The girls' days", '12 · The world and you',
 ];
+// What no phase waits on (#1181): after the alongside milestones and before Ready for players, and not one of them, so `/todo alongside`
+// leaves it and plain `/todo` reaches it once 12 is done. It runs by its number like the rest; the name is here for the tests and the docs.
+export const POLISH = '13 · Polish';
+export const READY = '14 · Ready for players';
 
 // Which part of the game an issue is about (the second group in .github/settings.yml). A batch shares one of these.
 export const AREAS = ['👭 girls', '🏍️ vehicles', '⚙️ engine', '🌾 world', '🔊 sound', '🧰 items', '🖥️ interface'];
