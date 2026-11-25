@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildTop, buildInset, buttonShape, slitShape, layOnCloth, poloFields, tuckSleeves, logoThread, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER, frontMiddle } from './polo.js';
+import { buildTop, buildInset, buttonShape, slitShape, layOnCloth, poloFields, tuckSleeves, hiddenUnder, logoThread, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER, frontMiddle } from './polo.js';
 import { buildTie } from './tie.js';
 import { shirtButtonsUndone } from './outfits.js';
 import { buildCropTop } from './crop.js';
@@ -1082,8 +1082,9 @@ function addCrop(rig, color) {
 function addCoat(rig, color, under = null) {
   const coat = addTop(rig, 'coat', color, COAT);
   if (!coat) return;
-  // What's under it tucked inside it (#1143), as under a jumper.
+  // What's under it tucked inside it (#1143), as under a jumper, and what it hides left undrawn.
   if (under) tuckUnder(under, coat);
+  hideUnder(under, coat);
   const body = bodyMesh(rig);
   const { data, built } = coat;
   const collar = buildCollar(built.shell, data, { vee: built.vee, placketWidth: COAT.placketWidth, over: [built.shell] }, COAT_COLLAR);
@@ -1417,6 +1418,7 @@ function addEachGarment(rig, outfit) {
   // jumper crossed back inside it and the top showed through (#1143).
   const top = outer ?? polo;
   if (jumper && top) tuckUnder(top, jumper);
+  if (jumper) for (const under of [polo, outer]) hideUnder(under, jumper);
   // A collar lies on its own top and on the jumper over everything (its neck is low enough for collars to come out over it), never
   // on a shirt worn over its top: under that it's hidden but for where it shows at the neck and down the front.
   const knit = jumper ? [jumper.built.shell] : [];
@@ -1473,6 +1475,17 @@ function addTie(rig, shirt, polo, poloCollar, color, style) {
 }
 
 /** Her polo's sleeves pulled back inside the top over it (polo.js, tuckSleeves), and its mesh moved to match. */
+/**
+ * The triangles of a top worn under a jumper or a wax jacket that it hides, left undrawn (polo.js, hiddenUnder): wholly under the
+ * layer's cloth, they can't be seen, and where a corner pushed them a few millimetres through it they showed (#1143).
+ */
+function hideUnder(top, layer) {
+  if (!top?.mesh || !layer?.built) return;
+  const hidden = hiddenUnder(top.built.shell, layer.built.shell);
+  const index = top.built.shell.tris.filter((t) => !t.every((i) => hidden[i])).flat();
+  top.mesh.geometry.setIndex(index);
+}
+
 function tuckUnder(polo, outer) {
   if (!polo.mesh || !tuckSleeves(polo.built.shell, outer.built.shell, polo.data)) return;
   const attr = polo.mesh.geometry.attributes.position;

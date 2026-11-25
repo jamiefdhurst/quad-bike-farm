@@ -61,7 +61,7 @@ describe('the polo on each girl', () => {
 
   it('lays the skin in an open V with nothing turned inside out, however far it is undone', () => {
     // Each piece faces the way her skin under it does (#1134): lifted along the normal at each corner, thin pieces across her creases
-    // turned over, 12 to 78 of them on Jess. Where cuts run a hair apart a sliver can stand on edge; it is under 0.1 mm across.
+    // turned over, 12 to 78 of them on Jess.
     for (const { id, data } of girls) {
       for (let open = 1; open <= POLO.buttons.length; open++) {
         const p = { ...POLO, open };
@@ -72,12 +72,11 @@ describe('the polo on each girl', () => {
           const [a, b, c] = t.map((i) => inset.verts[i].rest);
           const n = vec.cross(vec.sub(b, a), vec.sub(c, a));
           const skin = t.map((i) => applySkinDir(inset.verts[i].skin, inset.verts[i].normal)).reduce((s, x) => vec.add(s, x), [0, 0, 0]);
-          const facing = vec.dot(vec.norm(n), vec.norm(skin));
-          expect(facing, `${id}, ${open} undone`).toBeGreaterThan(-0.5);
-          if (facing < 0) {
-            const longest = Math.max(...[[a, b], [b, c], [c, a]].map(([u, w]) => Math.hypot(...vec.sub(u, w))));
-            expect(Math.hypot(...n) / longest, `${id}, ${open} undone: a piece facing away is a hairline`).toBeLessThan(0.0001);
-          }
+          // A hairline has no facing to see: under 0.3 mm across (twice its area over its longest side), as a sliver laid flat on its
+          // line under her collarbone is once cut and lifted (#1143). Any other piece faces out with her skin.
+          const longest = Math.max(...[[a, b], [b, c], [c, a]].map(([u, w]) => Math.hypot(...vec.sub(u, w))));
+          if (Math.hypot(...n) / longest < 0.0003) continue;
+          expect(vec.dot(vec.norm(n), vec.norm(skin)), `${id}, ${open} undone`).toBeGreaterThan(0);
         }
         expect(inset.tris.length, `${id}, ${open} undone`).toBeGreaterThan(100);
       }
@@ -152,4 +151,29 @@ describe('every top over her bust (#1143)', () => {
       }
     }
   });
+});
+
+describe('a top under a jumper or a wax jacket (#1143)', () => {
+  // Under a layer the top is drawn only where it can be seen: from below, the polo came a few millimetres through Jess's jumper where
+  // the cloth under her bust comes back on to her belly.
+  it('is hidden where the layer covers it, and shows at its neck', async () => {
+    const { bodyData, bodyMesh } = await import('../src/npc/outfit.js');
+    const { hiddenUnder, JUMPER, COAT } = await import('../src/npc/polo.js');
+    for (const { id, rig } of await buildAllGirls()) {
+      const data = { ...bodyData(rig, bodyMesh(rig), { cover: true }), paint: () => 'skin' };
+      const polo = buildTop(data, { ...POLO, open: 0 }).shell;
+      const neck = data.bones.Neck;
+      // Less under the wax jacket, whose two fronts meet down her middle under its flap: along that seam the top is still drawn.
+      for (const [name, spec, most] of [['jumper', JUMPER, 0.9], ['wax jacket', COAT, 0.8]]) {
+        const hidden = hiddenUnder(polo, buildTop(data, spec).shell);
+        // Her front from her waist to well below her neck: all but the points along the layer's own seams hidden.
+        const front = polo.verts.map((v, i) => [v, i]).filter(([v]) => v.rest[2] > neck[2] + 0.03 && v.rest[1] > data.waist + 0.08 && v.rest[1] < neck[1] - 0.15);
+        expect(front.filter(([, i]) => hidden[i]).length / front.length, `${id}, ${name}`).toBeGreaterThan(most);
+        // Its neck's edge (the collar is sewn on to it) never hidden.
+        const edge = polo.verts.map((v, i) => [v, i]).filter(([v]) => v.edge === 'neck');
+        expect(edge.length, `${id}, ${name}`).toBeGreaterThan(10);
+        expect(edge.filter(([, i]) => hidden[i]).length, `${id}, ${name}`).toBe(0);
+      }
+    }
+  }, 120000);
 });

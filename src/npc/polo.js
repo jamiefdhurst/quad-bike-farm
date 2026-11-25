@@ -35,6 +35,7 @@ const smooth01 = (t) => {
 // What sets one knitted top apart from another; POLO and JUMPER below.
 export const POLO = {
   ease: 0.007, // how far the shirt stands off her body (m)
+  offsetStep: 0.0012, // it stands off along her facing averaged over one ring of neighbours for each this much of its ease (#1143)
   round: 0.75, // how far the subdivided shirt rounds out between the body's corners (0 flat, 1 full)
   armRound: 0.25, // less on the arms, whose few long triangles would balloon
   skinSmoothing: 4, // passes evening out its bone weights between neighbours, so it bends without creasing
@@ -335,7 +336,7 @@ export const SHIRT_ROLLED_OVER = { ...SHIRT_ROLLED, ...OVER, sleeveEase: 0.019, 
  * carries, along the line out from her middle. Changes `inner`'s points
  * (bind and rest) in place and returns how many moved. `body` as for topFields.
  */
-export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008 } = {}) {
+export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008, nearMost = 0.015 } = {}) {
   const { bones, boneNames } = body;
   let moved = 0;
   for (const side of ['Left', 'Right']) {
@@ -396,7 +397,123 @@ export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008 } = 
     v.bind = unskin(v.skin, rest);
     moved++;
   }
+  // Then, in front, against the nearest of the outer top's faces and along its own facing: under her bust the cloth faces down, the
+  // line out from her middle runs along it and never meets it, and the top stood a few millimetres proud of a jumper there (#1143).
+  for (const v of inner.verts) {
+    if (v.rest[2] <= cz || v.weights.reduce((s, [b, w]) => s + (anyArm.test(boneNames[b]) ? w : 0), 0) >= 0.3) continue;
+    const [i0, j0, k0] = v.rest.map((x) => Math.floor(x / 0.04));
+    let best = null;
+    for (let i = i0 - 1; i <= i0 + 1; i++) for (let j = j0 - 1; j <= j0 + 1; j++) for (let k = k0 - 1; k <= k0 + 1; k++) {
+      for (const t of grid.get(`${i},${j},${k}`) ?? []) {
+        const [a, b, e] = outer.tris[t].map((n) => outer.verts[n].rest);
+        const q = closestOnTriangle(v.rest, a, b, e);
+        const d2 = dot(sub(v.rest, q), sub(v.rest, q));
+        if (!best || d2 < best.d2) best = { q, d2, a, b, e, t };
+      }
+    }
+    if (!best || best.d2 > nearMost * nearMost) continue;
+    let n = norm(cross(sub(best.b, best.a), sub(best.e, best.a)));
+    // Facing out from her, whichever way the face was wound: as the cloth's own corners were cut facing (under her bust the cloth
+    // faces down, and the line out from her middle runs along it), or failing that away from her middle at that height.
+    const corners = outer.tris[best.t].map((k) => outer.verts[k]);
+    const own = corners.every((c) => c.normal) ? corners.reduce((sum, c) => add(sum, applySkinDir(c.skin, c.normal)), [0, 0, 0]) : sub(best.q, [cx, best.q[1], cz]);
+    if (dot(n, own) < 0) n = scale(n, -1);
+    const over = dot(sub(v.rest, best.q), n) + gap; // how far in front of where it should be
+    if (over <= gap / 2) continue; // tucked already, near enough (the first pass leaves a point a hair off a face tilted from its line)
+    const rest = sub(v.rest, scale(n, Math.min(over, nearMost)));
+    v.rest = rest;
+    v.bind = unskin(v.skin, rest);
+    moved++;
+  }
   return moved;
+}
+
+/**
+ * Each point's normal averaged with its neighbours', `rounds(v)` times for point v (points at one place moved together), for
+ * buildTop to push it out along. Returns one unit direction per point.
+ */
+function offsetNormals(mesh, rounds) {
+  const key = (v) => v.bind.map((x) => Math.round(x * 1e5)).join();
+  const id = new Map();
+  const of = mesh.verts.map((v) => {
+    const k = key(v);
+    if (!id.has(k)) id.set(k, id.size);
+    return id.get(k);
+  });
+  const n = id.size;
+  const near = Array.from({ length: n }, () => new Set());
+  for (const t of mesh.tris) for (const a of t) for (const b of t) if (of[a] !== of[b]) near[of[a]].add(of[b]);
+  let dir = Array.from({ length: n }, () => [0, 0, 0]);
+  const most = new Array(n).fill(0);
+  mesh.verts.forEach((v, i) => {
+    dir[of[i]] = add(dir[of[i]], v.normal);
+    most[of[i]] = Math.max(most[of[i]], rounds(v));
+  });
+  dir = dir.map((d) => norm(d));
+  const top = Math.max(0, ...most);
+  for (let r = 0; r < top; r++) {
+    dir = dir.map((d, g) => {
+      if (r >= most[g] || !near[g].size) return d;
+      let sum = d;
+      for (const h of near[g]) sum = add(sum, dir[h]);
+      return norm(sum);
+    });
+  }
+  return mesh.verts.map((_, i) => dir[of[i]]);
+}
+
+/**
+ * Which points of a top worn under `outer` (a jumper, a wax jacket) it hides (#1143): over each, within `reach`, the nearest of the
+ * outer top's faces is in the body of it (none of its corners on an edge: its neck, cuffs or hem, where what is under shows), and the
+ * point is behind that face or less than `through` in front of it. Pushed out of a tight corner a top can come a few millimetres
+ * through a layer (the polo showed through Jess's jumper under her bust, from below); drawn only where it can be seen, it can't. One
+ * flag per point of `inner`.
+ */
+export function hiddenUnder(inner, outer, { reach = 0.04, through = 0.01 } = {}) {
+  const size = 0.04;
+  const cell = (q) => q.map((x) => Math.floor(x / size));
+  const grid = new Map();
+  outer.tris.forEach((t, k) => {
+    for (const key of new Set(t.map((i) => cell(outer.verts[i].rest).join()))) grid.set(key, [...(grid.get(key) ?? []), k]);
+  });
+  return inner.verts.map((v) => {
+    if (v.edge) return false; // its own edges (its neck, under its collar) always drawn
+    const [i0, j0, k0] = cell(v.rest);
+    let best = null;
+    for (let i = i0 - 1; i <= i0 + 1; i++) for (let j = j0 - 1; j <= j0 + 1; j++) for (let k = k0 - 1; k <= k0 + 1; k++) {
+      for (const t of grid.get(`${i},${j},${k}`) ?? []) {
+        const [a, b, e] = outer.tris[t].map((n) => outer.verts[n].rest);
+        const q = closestOnTriangle(v.rest, a, b, e);
+        const d2 = dot(sub(v.rest, q), sub(v.rest, q));
+        if (!best || d2 < best.d2) best = { q, d2, t, a, b, e };
+      }
+    }
+    if (!best || best.d2 > reach * reach) return false;
+    const corners = outer.tris[best.t].map((n) => outer.verts[n]);
+    if (corners.some((c) => c.edge || !c.normal)) return false;
+    let n = norm(cross(sub(best.b, best.a), sub(best.e, best.a)));
+    if (dot(n, corners.reduce((sum, c) => add(sum, applySkinDir(c.skin, c.normal)), [0, 0, 0])) < 0) n = scale(n, -1);
+    return dot(sub(v.rest, best.q), n) < through;
+  });
+}
+
+/** The point of triangle a, b, c nearest p (Ericson, Real-Time Collision Detection, 5.1.5). */
+function closestOnTriangle(p, a, b, c) {
+  const ab = sub(b, a), ac = sub(c, a), ap = sub(p, a);
+  const d1 = dot(ab, ap), d2 = dot(ac, ap);
+  if (d1 <= 0 && d2 <= 0) return a;
+  const bp = sub(p, b), d3 = dot(ab, bp), d4 = dot(ac, bp);
+  if (d3 >= 0 && d4 <= d3) return b;
+  const vc = d1 * d4 - d3 * d2;
+  if (vc <= 0 && d1 >= 0 && d3 <= 0) return add(a, scale(ab, d1 / (d1 - d3)));
+  const cp = sub(p, c), d5 = dot(ab, cp), d6 = dot(ac, cp);
+  if (d6 >= 0 && d5 <= d6) return c;
+  const vb = d5 * d2 - d1 * d6;
+  if (vb <= 0 && d2 >= 0 && d6 <= 0) return add(a, scale(ac, d2 / (d2 - d6)));
+  const va = d3 * d6 - d5 * d4;
+  if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) return add(b, scale(sub(c, b), (d4 - d3) / (d4 - d3 + d5 - d6)));
+  const denom = 1 / (va + vb + vc);
+  return add(a, add(scale(ab, vb * denom), scale(ac, vc * denom)));
 }
 
 /** How many of a girl's polo buttons are undone on this farm: a whole number from `lo` to `hi`, both included. */
@@ -558,10 +675,15 @@ export function buildTop(body, p = POLO) {
     }
     return e;
   };
-  for (const v of mesh.verts) {
-    v.bind = add(v.bind, scale(v.normal, ease(v)));
+  // Each point stands off along her facing there averaged over her surface about as far round as it stands off (on her split body):
+  // along its own, where her front turns a tighter corner than that (under each breast, where the cloth under it comes back onto
+  // her belly), a thick layer's points crossed, it folded and the top under it showed through (#1143). Bridging the corner instead,
+  // as knit does, it changes nothing where she is flat or gently curved.
+  const away = body.split ? offsetNormals(mesh, (v) => Math.round(ease(v) / p.offsetStep)) : mesh.verts.map((v) => v.normal);
+  mesh.verts.forEach((v, i) => {
+    v.bind = add(v.bind, scale(away[i], ease(v)));
     v.rest = applySkin(v.skin, v.bind);
-  }
+  });
   hang(mesh, body, p, F);
   for (const v of mesh.verts) v.rest = applySkin(v.skin, v.bind);
   // Over the hollow under her bust rather than in under it, where hanging alone doesn't reach.

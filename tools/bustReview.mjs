@@ -6,6 +6,7 @@
 //   node tools/bustReview.mjs                       bare, this checkout against origin/main
 //   node tools/bustReview.mjs --query body=flat     add to this checkout's address (a flag being tried)
 //   node tools/bustReview.mjs --before body=flat    the shape before from this checkout with this address instead of origin/main
+//   node tools/bustReview.mjs --before ref:HEAD     the shape before from a commit (here, the last one on this branch)
 //   node tools/bustReview.mjs --dress               in their clothes (as dealt), not bare; --run "<line;line>" console lines first
 //   node tools/bustReview.mjs --look 16             dressed in the wardrobe scene's look 16 (src/debug/wardrobe.js: each outfit, then each layer
 //                                                   over it; 1 the polo, 11 the plaid, 26 a shirt and tie, 41 the crop-top; +1 a jumper, +2 a wax jacket)
@@ -13,6 +14,8 @@
 //   node tools/bustReview.mjs --out bust-b          the folder under .scratch/shots/ (default bust-review)
 //   --views front,three,side,below   --girls amy,jess   --soft (software GL, slow; the default is the GPU)
 //   --hide polo,poloCollar,body       hide what she wears by name, or her body (to see what is under it, or through a gap)
+//   --through                         from below, what each ray meets first, by mesh: a top under a layer, met first, shows through
+//                                     (her body's count is her face, neck and hands)
 //
 // Open the sheets at full size. The counts print at the end: 0 on her body and on every garment is the aim.
 import { mkdirSync, readFileSync, writeFileSync, existsSync, symlinkSync, rmSync } from 'node:fs';
@@ -36,6 +39,7 @@ const QUERY = opt('query', '');
 const BEFORE = opt('before', 'main');
 const DRESS = flag('dress') || !!opt('look');
 const RUN = opt('run', '');
+const THROUGH = flag('through');
 const LOOK = opt('look') ? Number(opt('look')) : null;
 const OPEN = Object.fromEntries((opt('open') ?? '').split(',').filter(Boolean).map((p) => p.split(':')).map(([id, n]) => [id, Number(n)]));
 const VIEWS = opt('views', 'front,three,side,below').split(',');
@@ -53,11 +57,12 @@ const git = (...a) => execFileSync('git', a, { cwd: here, encoding: 'utf8' }).tr
 // The shape before: origin/main in a throwaway worktree beside this checkout (never the main checkout, which other sessions edit), or this checkout.
 let throwaway = null;
 let beforeRoot = here;
-if (BEFORE === 'main') {
-  git('fetch', '-q', 'origin', 'main');
+const REF = BEFORE === 'main' ? 'origin/main' : BEFORE.startsWith('ref:') ? BEFORE.slice(4) : null;
+if (REF) {
+  if (BEFORE === 'main') git('fetch', '-q', 'origin', 'main');
   throwaway = resolve(here, '..', `${here.split('/').pop()}-bust-main`);
   if (existsSync(throwaway)) git('worktree', 'remove', '--force', throwaway);
-  git('worktree', 'add', '-q', '--detach', throwaway, 'origin/main');
+  git('worktree', 'add', '-q', '--detach', throwaway, REF);
   symlinkSync(resolve(here, 'node_modules'), resolve(throwaway, 'node_modules'));
   beforeRoot = throwaway;
 }
@@ -220,6 +225,63 @@ function chestTriangles() {
   });
 }
 
+/**
+ * Runs in the page: from the camera as aimed, which of the girl's meshes each ray through the lower middle of the frame meets first,
+ * skinned as drawn (her body, or a top under a layer, met first is showing through it). Counts by mesh name.
+ */
+function seenThrough({ i, step = 3 }) {
+  const g = game;
+  const c = g.companions[i];
+  const V = g.camera.position.constructor;
+  let body = null;
+  c.rig.model.traverse((m) => m.isSkinnedMesh && !body && (body = m));
+  const tris = [];
+  const p = new V();
+  c.root.traverse((m) => {
+    if (!m.isSkinnedMesh || !m.visible) return;
+    m.updateMatrixWorld(true);
+    const pos = m.geometry.attributes.position;
+    const idx = m.geometry.index ? m.geometry.index.array : Array.from({ length: pos.count }, (_, k) => k);
+    const W = new Float32Array(pos.count * 3);
+    for (let k = 0; k < pos.count; k++) {
+      m.getVertexPosition(k, p);
+      p.applyMatrix4(m.matrixWorld);
+      W.set([p.x, p.y, p.z], k * 3);
+    }
+    for (let t = 0; t < idx.length; t += 3) tris.push({ name: m === body ? 'body' : m.name || 'garment', W, a: idx[t] * 3, b: idx[t + 1] * 3, c: idx[t + 2] * 3 });
+  });
+  const o = g.camera.position.clone();
+  const d = new V(), e1 = new V(), e2 = new V(), pv = new V(), sv = new V(), qv = new V(), A = new V(), B = new V(), C = new V();
+  const counts = {};
+  for (let y = Math.floor(innerHeight * 0.3); y < innerHeight * 0.95; y += step) {
+    for (let x = Math.floor(innerWidth * 0.15); x < innerWidth * 0.85; x += step) {
+      d.set((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1, 0.5).unproject(g.camera).sub(o).normalize();
+      let best = Infinity;
+      let who = null;
+      for (const t of tris) {
+        A.fromArray(t.W, t.a);
+        B.fromArray(t.W, t.b);
+        C.fromArray(t.W, t.c);
+        e1.subVectors(B, A);
+        e2.subVectors(C, A);
+        pv.crossVectors(d, e2);
+        const det = e1.dot(pv);
+        if (Math.abs(det) < 1e-12) continue;
+        sv.subVectors(o, A);
+        const u = sv.dot(pv) / det;
+        if (u < 0 || u > 1) continue;
+        qv.crossVectors(sv, e1);
+        const w = d.dot(qv) / det;
+        if (w < 0 || u + w > 1) continue;
+        const tt = e2.dot(qv) / det;
+        if (tt > 1e-4 && tt < best) (best = tt), (who = t.name);
+      }
+      if (who) counts[who] = (counts[who] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
 async function shoot(root, query, side, browser) {
   const server = await createServer({ root, configFile: resolve(root, 'vite.config.js'), server: { port: 0, strictPort: false }, logLevel: 'error' });
   await server.listen();
@@ -267,6 +329,7 @@ async function shoot(root, query, side, browser) {
       await page.evaluate(aim, { i, ang, dist, up });
       await wait(0.15);
       await page.screenshot({ path: resolve(OUT, `${id}-${view}-${side}.png`) });
+      if (THROUGH && view === 'below') console.log(`${id} (${side}), what each ray from below meets first: ${JSON.stringify(await page.evaluate(seenThrough, { i }))}`);
     }
   }
   const tris = await page.evaluate(chestTriangles);
@@ -294,7 +357,7 @@ const browser = await puppeteer.launch({
 });
 let report = [];
 try {
-  const before = await shoot(beforeRoot, BEFORE === 'main' ? '' : BEFORE, 'before', browser);
+  const before = await shoot(beforeRoot, REF ? '' : BEFORE, 'before', browser);
   const after = await shoot(here, QUERY, 'after', browser);
   const b = counts(before);
   const a = counts(after);
