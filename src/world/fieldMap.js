@@ -2,7 +2,7 @@
 // is ahead, and the way round from one field to another through the gateways. Pure, and it knows nothing of the farm's own layout, so a field
 // of any outline can be tried in a test.
 
-import { clockwise, rectPolygon, polygonBounds, polygonEdges, pointInPolygon, outsidePolygon, nearestOnEdge, rayHitsEdge, clampIntoPolygon, notchCorners, segmentInside } from './polygons.js';
+import { clockwise, rectPolygon, polygonBounds, polygonEdges, pointInPolygon, outsidePolygon, nearestOnEdge, distanceToEdges, rayHitsEdge, clampIntoPolygon, notchCorners, segmentInside } from './polygons.js';
 
 /**
  * `farm` is the farm's outline inside the outer hedges: a rectangle, or a polygon (a list of [x, z] points). `trackAt` (0..1 how much of a point is one of
@@ -37,15 +37,8 @@ export function createFieldMap(plan, farm, { trackAt = null } = {}) {
   /** Whether the point `s` along a hedge (metres from its first end) is in one of its gaps. */
   const inGap = (h, s) => h.gaps.some((g) => Math.abs(s - g.at) < g.half);
 
-  /** Metres to the nearest hedge line (gaps and all). */
-  function hedgeDistance(x, z) {
-    let best = Infinity;
-    for (const h of solid) {
-      const d = nearestOnEdge(h, x, z).d;
-      if (d < best) best = d;
-    }
-    return best;
-  }
+  /** Metres to the nearest hedge line (gaps and all). Each hedge is an edge, so this is distanceToEdges, which makes no objects (#1107). */
+  const hedgeDistance = (x, z) => distanceToEdges(solid, x, z);
 
   /** Whether a hedge is within `reach` metres of (x, z) there is no way through: not in a gap, unless its gate is shut. */
   function hedgedAt(x, z, reach) {

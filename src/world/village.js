@@ -182,6 +182,13 @@ function buildShape(layout) {
   } else {
     pads.push({ r: forecourt, at: [(forecourt.minX + forecourt.maxX) / 2, (forecourt.minZ + forecourt.maxZ) / 2], reach: 3.5 });
   }
+  // The box every pad's reach is inside: the ground is asked at every metre of the farm, and nearly all of it is nowhere near one (#1107).
+  const padBox = {
+    minX: Math.min(...pads.map((p) => p.r.minX - p.reach)),
+    maxX: Math.max(...pads.map((p) => p.r.maxX + p.reach)),
+    minZ: Math.min(...pads.map((p) => p.r.minZ - p.reach)),
+    maxZ: Math.max(...pads.map((p) => p.r.maxZ + p.reach)),
+  };
   const footprints = [...buildings, ...laneBuildings].map((b) => b.outer);
 
   /** Distance from (x, z) to the road's middle line, and how far along it that point is (s, in samples, about metres). */
@@ -216,6 +223,7 @@ function buildShape(layout) {
    * building, the car park and the forecourt, easing back over `reach` m outside it.
    */
   function floorAt(x, z, ground) {
+    if (x <= padBox.minX || x >= padBox.maxX || z <= padBox.minZ || z >= padBox.maxZ) return null; // past every pad's reach
     let best = null;
     for (const { r, at, reach } of pads) {
       const d = outside(r, x, z);
