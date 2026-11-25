@@ -38,13 +38,14 @@ export const BUST_SHEET = {
   angle: 0.56, // radians either side of her front at her bust (32 degrees: wider, its top corners reached into her armpits)
   angleLow: 0.4, // and at her waist (23 degrees: her waist is narrower, and wider its collar folded round her sides there)
   step: 0.006, // its grid this fine in angle
-  low: 0.28, // from this height (her waist, below where it falls back to her)
+  low: 0.18, // from this height (just above her waistband, well below where it falls back to her: its join folded, and every top
+  // with it, where the cloth under each breast lands on her belly, at 0.28, #1143)
   regionTop: 1.17, // to this share of the way from her bust's middle up to where its upper slope starts: up to her collarbone, so
   // its join doesn't step (lower, on her upper slope, the cloth showed a cut there; with her chest sloping forward under her
   // collarbone, #1143, up to 1.13 every top folded at its outer corners, from 1.15 none)
   smoothOut: 0.06, // her shading smooth round it, fading back to her facets over this far past its edge
   rim: 0.85, // its rings' rim this share of the way to its edge, inside the hole
-  rings: 24, // its rings from the middle out
+  rings: 28, // its rings from the middle out (24 before it reached down to `low` 0.18: the lower outer side of each breast fell between them)
   around: 96, // points round each ring
   skinRounds: 40, // passes blending its new points' skin with their neighbours', so the cloth under each breast moves with it
 };

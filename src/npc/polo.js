@@ -651,7 +651,8 @@ export function buildTop(body, p = POLO) {
   // along its own, where her front turns a tighter corner than that (under each breast, where the cloth under it comes back onto
   // her belly), a thick layer's points crossed, it folded and the top under it showed through (#1143). Bridging the corner instead,
   // as knit does, it changes nothing where she is flat or gently curved.
-  const away = body.split ? offsetNormals(mesh, (v) => Math.round(ease(v) / p.offsetStep)) : mesh.verts.map((v) => v.normal);
+  // Not on her arms: averaged across from her side on to her arm, a sleeve stood off crooked, creased round her upper arm.
+  const away = body.split ? offsetNormals(mesh, (v) => (onArm(v) ? 0 : Math.round(ease(v) / p.offsetStep))) : mesh.verts.map((v) => v.normal);
   mesh.verts.forEach((v, i) => {
     v.bind = add(v.bind, scale(away[i], ease(v)));
     v.rest = applySkin(v.skin, v.bind);
@@ -665,7 +666,8 @@ export function buildTop(body, p = POLO) {
   // Last, any fold smoothed out, standing and in her stored pose: pushed straight out from a tight hollow, such as the crease between
   // her breast and her arm, a thick layer crossed itself (#1143). 25 rounds clear her bust; a few folds elsewhere never clear.
   // Not where it's tucked or bloused over her waistband, whose folds are meant: pulled apart, they tore.
-  const aboveTuck = (v) => v.rest[1] > body.waist + 0.06;
+  // (A top worn loose, a jumper or a wax jacket, has no tuck: down to its hem, which is held.)
+  const aboveTuck = p.tucked ? (v) => v.rest[1] > body.waist + 0.06 : () => true;
   unfold(mesh, { rounds: 25, where: aboveTuck });
   unfold(mesh, { rounds: 25, stored: true, where: aboveTuck });
   if (p.skirt) addSkirt(mesh, body, p);
