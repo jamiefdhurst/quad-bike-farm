@@ -5,16 +5,23 @@
 // And the lane entrance on the new farm (#1002): the shut lane gate dressed, its bellmouth, blocks, barrier, signs, weeds, buddleia, hedge and litter.
 // And the relics as years of standing have left them (#1003): weathered from their own stream (`pitRelicWear`), grass, birch and buddleia over the
 // heaps, reeds and rushes round the pond, weeds through the tracks, the drums and the plant's footings, and the container on its hardstanding.
+// And the field gone to scrub (#1004): hawthorn, gorse, bramble and birch thick along the lip, rough grass and thistles over the rough with a ride
+// kept open, a tree line of hawthorn with ash and oak standards on the sides that face arable, roots hanging from the lip's topsoil, scree at the
+// walls' foot, textured stones, dead trees with real limbs, tyres with their liners and a pallet built as one is. Each new thing from a stream of its own.
 
 import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { instanceModel, modelBounds, enableShadows } from './assets.js';
-import { matrixAt, buildPond, gorseGeometry } from './hillProps.js';
-import { woodTexture } from './neighbourTextures.js';
+import { matrixAt, buildPond } from './hillProps.js';
+import { woodTexture, barkTexture } from './neighbourTextures.js';
 import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
 import { quarryPlants } from './quarry.js';
 import { Parts } from './parts.js';
-import { rustTexture, signTexture, bellmouthTexture, bellmouthUv, tarmacTexture, hardstandingTexture } from './quarryTextures.js';
+import { rustTexture, signTexture, bellmouthTexture, bellmouthUv, tarmacTexture, hardstandingTexture, pitStoneTexture } from './quarryTextures.js';
+import { pitCover, pitLip, pitTreeLine, relicScrub, scrubOk } from './pitScrub.js';
+import { hawthornModel, ashStandardModel, deadTreeGeometry } from './landmarkProps.js';
+import { farKitTree, farTree, farSprayTree } from './treeFar.js';
+import { gorseTexture, gorseBushGeometry, brambleLeafTexture, brambleGeometry, sprayTexture, plantMaterial as leafCardMaterial } from './woodPlants.js';
 import { roadNetwork } from './roads.js';
 import { crownAt } from './roadMesh.js';
 import { leafReach } from './hedgeSolid.js';
@@ -32,29 +39,149 @@ import { buildContainer, containerMaterials } from './containerModel.js';
 import { buildCabin, cabinMaterials } from './siteCabinModel.js';
 import { buildScreeningPlant, plantMaterials } from './screeningPlantModel.js';
 import { plantSite, plantPoint, inPlantsWay, PLANT } from './plantSite.js';
-import { buildSign, debrisMaterials, drumGeometry, scatterClear, tyreGeometry, DRUM, TYRE } from './quarryDebris.js';
+import { buildSign, debrisMaterials, drumGeometry, scatterClear, tyreGeometry, addPallet, DRUM, TYRE } from './quarryDebris.js';
 import { wireFenceMaterials, wireFenceRun, addPost, addSpan } from './wireFence.js';
 import { streamFor } from './propStreams.js';
 import { pitGrowth, excavatorGrowth, drumWeeds, containerDressing, framePoint } from './pitGrowth.js';
-import { plantMaterial, reedModel, rushModel, sedgeModel, tussockModel, birchModel } from './riverPlants.js';
+import { plantMaterial, reedModel, rushModel, sedgeModel, tussockModel, birchModel, thistleModel, rootTangleModel } from './riverPlants.js';
 
 const TAU = Math.PI * 2;
 
-/** Builds the pit's props and their colliders. `c` is the props context (props.js). */
+/** Builds the pit's props and their colliders. `c` is the props context (props.js). Returns the set piece (`userData.treeSwap`: its scrub's near and far). */
 export function buildQuarry(c) {
   const quarry = c.fields.quarry;
-  const plants = quarryPlants(quarry, c.random);
+  takeOldPlantDraws(quarry, c.random); // so the relics, dealt from the pit's stream after them, stand where they did (#1004)
+  const plants = quarryPlants(quarry); // from the plants' own stream
   // One set piece (farDetail.js SET_PIECE_NAMES): everything in the pit's field is left out beyond the far-detail distance, so a view from the
   // yard or the village pays nothing for it.
   const site = new THREE.Group();
   site.name = 'quarrySite';
-  buildScrub(c, quarry, plants, site);
+  const kit = pitKit();
+  buildScrub(c, quarry, plants, site, kit);
   buildBoulders(c, quarry, plants, site);
   const relics = buildSite(c, quarry, site);
   buildPitGrowth(c, quarry, site, relics);
+  buildFieldCover(c, quarry, site, relics, kit);
+  buildLip(c, quarry, plants, site);
+  site.userData.relics = relics; // where each relic stands, for the console's places and the scenes
   c.scene.add(site);
   buildPond(c, quarry, () => false, { reeds: false }); // its reeds are the river's, round its edge (buildPitGrowth)
   buildPitBoundary(c);
+  buildPitTreeLine(c, quarry, kit);
+  return site;
+}
+
+/** The pit's own plant models and materials (#1004), made once a build from their own stream: the field's hawthorn, gorse, bramble and birch. */
+function pitKit() {
+  const random = streamFor('pitKit');
+  const sprays = leafCardMaterial(sprayTexture(random));
+  const hawthorn = hawthornModel(random, sprays, { height: 5 });
+  const birch = birchScrubModel(random);
+  return {
+    hawthorn,
+    hawthornFar: farSprayTree(hawthorn),
+    ash: ashStandardModel(random, barkTexture(random, 'ash'), sprays),
+    gorse: { geo: gorseBushGeometry(random), mat: leafCardMaterial(gorseTexture(random)) },
+    bramble: { geo: brambleGeometry(random), mat: leafCardMaterial(brambleLeafTexture(random)) },
+    birch,
+    birchFar: farKitTree(birch),
+  };
+}
+
+/** A birch of the scrub (#1004): the plant kit's young birch (riverPlants.js `birchModel`), a metre tall to be scaled up, in the atlas's material, as a model the scatter places. */
+function birchScrubModel(random) {
+  const mesh = new THREE.Mesh(birchModel(random, { height: 1, branches: 5 }), plantMaterial());
+  mesh.name = 'birchScrub';
+  const group = new THREE.Group();
+  group.name = 'birch';
+  group.add(mesh);
+  return group;
+}
+
+/**
+ * The draws the pit's plants took from its stream before #1004 (when `quarryPlants` dealt 90 bushes, 6 trees, 64 boulders and 9 big ones from it,
+ * and the scrub and boulders drew their turns and shapes from it after), taken again in the same order and number, so everything dealt after them
+ * from the pit's stream (the fence, the container, the cabin, the drums and tyres, the dead trees, the signs, the pond and the boundary) stands
+ * exactly where it did. The plants now come from a stream of their own, so changing them never moves the relics again.
+ */
+function takeOldPlantDraws(quarry, random) {
+  const { pit, rect } = quarry;
+  const patch = (x, z) => 0.5 + 0.25 * Math.sin(x * 0.07 + z * 0.05 + 0.7) + 0.25 * Math.sin(z * 0.1 - x * 0.045 + 2.1);
+  let bushes = 0;
+  for (let tries = 0; bushes < 90 && tries < 20000; tries++) {
+    const a = random() * TAU;
+    let x;
+    let z;
+    if (random() < 0.65) {
+      const p = quarry.frameAt(a, quarry.rimAt(a) + 2 + random() * 9);
+      x = p.x;
+      z = p.z;
+    } else {
+      x = rect.minX + 3 + random() * (rect.maxX - rect.minX - 6);
+      z = rect.minZ + 3 + random() * (rect.maxZ - rect.minZ - 6);
+    }
+    if (random() > 0.25 + 0.75 * patch(x, z)) continue;
+    if (!quarry.plantOk(x, z)) continue;
+    random();
+    bushes++;
+  }
+  const trees = [];
+  for (let tries = 0; trees.length < 6 && tries < 4000; tries++) {
+    const x = rect.minX + 6 + random() * (rect.maxX - rect.minX - 12);
+    const z = rect.minZ + 6 + random() * (rect.maxZ - rect.minZ - 12);
+    if (!quarry.plantOk(x, z, 7)) continue;
+    if (trees.some(([tx, tz]) => Math.hypot(tx - x, tz - z) < 12)) continue;
+    random();
+    trees.push([x, z]);
+  }
+  const start = quarry.climb.points[0];
+  let boulders = 0;
+  for (let tries = 0; boulders < 64 && tries < 5000; tries++) {
+    const a = random() * TAU;
+    const run = quarry.runAt(a);
+    const p = quarry.frameAt(a, quarry.floorEdge(a) + (random() - 0.35) * run * 0.7);
+    if (quarry.waterAt(p.x, p.z) > 0 || pit.heaps.some((m) => Math.hypot(m.x - p.x, m.z - p.z) < m.r)) continue;
+    if (quarry.roadNear(p.x, p.z).d < quarry.roadHalf + 1.2) continue;
+    if (inPlantsWay(pit, p.x, p.z, 0.6)) continue;
+    if (Math.hypot(p.x - start[0], p.z - start[1]) < 4) continue;
+    random();
+    random();
+    boulders++;
+  }
+  const big = [];
+  for (let tries = 0; big.length < 9 && tries < 3000; tries++) {
+    const a = random() * TAU;
+    const p = quarry.frameAt(a, quarry.floorEdge(a) - 2 - random() * 12);
+    if (quarry.waterAt(p.x, p.z) > 0 || quarry.roadNear(p.x, p.z).d < 8) continue;
+    if (pit.heaps.some((m) => Math.hypot(m.x - p.x, m.z - p.z) < m.r + 1.5) || inPlantsWay(pit, p.x, p.z, 1.5)) continue;
+    if (Math.hypot(p.x - start[0], p.z - start[1]) < 9) continue;
+    if (big.some(([bx, bz]) => Math.hypot(bx - p.x, bz - p.z) < 6)) continue;
+    random();
+    big.push([p.x, p.z]);
+  }
+  // The scrub: each bush hawthorn (a turn) or gorse (a turn and two stretches), the gorse clump's seven lumps of 80 faces, and each tree's model and turn.
+  for (let i = 0; i < bushes; i++) {
+    if (random() < 0.5) random();
+    else for (let k = 0; k < 3; k++) random();
+  }
+  for (let k = 0; k < 7; k++) {
+    random();
+    if (k) random();
+    random();
+    for (let f = 0; f < 80 * 5; f++) random();
+  }
+  for (let i = 0; i < trees.length * 2; i++) random();
+  // The boulders: four draws each, a rock's shape for each of four lots, a turn for each big one and a shape for each of three lots.
+  const rockDraws = () => {
+    random();
+    for (let i = 0; i < 3 + Math.floor(random() * 3); i++) for (let k = 0; k < 3; k++) random();
+    random();
+    random();
+  };
+  for (let i = 0; i < boulders * 4; i++) random();
+  for (let i = 0; i < Math.min(4, boulders); i++) rockDraws();
+  for (let i = 0; i < big.length; i++) random();
+  for (let i = 0; i < Math.min(3, big.length); i++) rockDraws();
 }
 
 /**
@@ -112,28 +239,56 @@ function findSpot(tries, ok, pick) {
   return null;
 }
 
-/** Hawthorn and gorse along the lip and over the field, and a few oaks standing in the rough. */
-function buildScrub(c, quarry, plants, site) {
-  const { models, heights, physics, RAPIER, random, anchors } = c;
-  const bushSize = modelBounds(models.bush.scene).getSize(new THREE.Vector3());
-  const hawthorn = [];
-  const gorse = [];
-  for (const [x, z, s] of plants.bushes) {
-    if (random() < 0.5) hawthorn.push(matrixAt(x, heights.heightAt(x, z) - 0.2, z, random() * TAU, (1.5 + s * 1.2) / bushSize.y));
-    else gorse.push(matrixAt(x, heights.heightAt(x, z) - 0.1, z, random() * TAU, s * (1 + random() * 0.5), s, s * (1 + random() * 0.5)));
+/**
+ * The field's scrub (#1004): hawthorn, gorse, bramble and birch where `quarryPlants` dealt them, thick along the lip, from the pit's own plant kit
+ * (`pitKit`), none of it solid (you push through scrub, as the old bushes let you); and a few oaks standing in the rough, which are. Their turns and
+ * sizes from a stream of their own.
+ */
+function buildScrub(c, quarry, plants, site, kit) {
+  const { models, heights, physics, RAPIER, anchors } = c;
+  const random = streamFor('pitScrub');
+  const ground = (x, z) => heights.heightAt(x, z);
+  const lists = { hawthorn: [], gorse: [], bramble: [], birch: [] };
+  for (const [x, z, s, kind] of plants.bushes) {
+    const yaw = random() * TAU;
+    const v = random();
+    if (kind === 'hawthorn') lists.hawthorn.push(matrixAt(x, ground(x, z) - 0.15, z, yaw, (0.5 + s * 0.35) * (0.9 + v * 0.2)));
+    else if (kind === 'gorse') {
+      const g = 0.75 + s * 0.35; // 1 to 1.5 m across
+      lists.gorse.push(matrixAt(x, ground(x, z) - 0.06, z, yaw, g * (0.9 + v * 0.3), g * (0.85 + random() * 0.3), g * (0.9 + random() * 0.3)));
+    }
+    else if (kind === 'bramble') lists.bramble.push(matrixAt(x, ground(x, z) - 0.04, z, yaw, 0.8 + s * 0.45, 0.7 + s * 0.4 + v * 0.2, 0.8 + s * 0.45));
+    else lists.birch.push(matrixAt(x, ground(x, z) - 0.04, z, yaw, 1.4 + s * 1.3 + v * 0.6)); // the birch kit is a metre tall: these are 2 to 4.5 m
   }
-  if (hawthorn.length) site.add(instanceModel(models.bush.scene, hawthorn, { castShadow: false })); // (instanceModel complains of an empty list)
-  const material = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
-  site.add(tiledInstances(gorseGeometry(random), material, gorse, { tileSize: MODEL_TILE, castShadow: true, name: 'quarryGorse' }));
-  const mats = [[], []];
+  const scrub = new THREE.Group();
+  scrub.name = 'pitScrub';
+  if (lists.gorse.length) scrub.add(tiledInstances(kit.gorse.geo, kit.gorse.mat, lists.gorse, { tileSize: MODEL_TILE, name: 'pit-gorse' }));
+  if (lists.bramble.length) scrub.add(tiledInstances(kit.bramble.geo, kit.bramble.mat, lists.bramble, { tileSize: MODEL_TILE, name: 'pit-bramble' }));
+  // The oaks in the rough: their trunks are solid.
+  const oaks = [[], []];
   for (const [x, z, s] of plants.trees) {
-    const y = heights.heightAt(x, z);
-    mats[random() < 0.5 ? 0 : 1].push(matrixAt(x, y - 0.15, z, random() * TAU, s));
+    const y = ground(x, z);
+    oaks[random() < 0.5 ? 0 : 1].push(matrixAt(x, y - 0.15, z, random() * TAU, s));
     physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5 * s, 0.32 * s).setTranslation(x, y + 2.5 * s, z));
     anchors.push({ x, y, z, r: 0.32 * s });
   }
-  if (mats[0].length) site.add(instanceModel(models.treeA.scene, mats[0]));
-  if (mats[1].length) site.add(instanceModel(models.treeB.scene, mats[1]));
+  // The hawthorns, the birch and the oaks, near and far (#1004: `treeFullDistance`, as the farm's trees), so from the lane gate most of the field's are
+  // the far versions (an oak was its full 6,300 triangles at any distance in the set piece). Swapped tile by tile as the scattered trees are, but in the
+  // set piece, so from across the farm they cost nothing at all.
+  const near = new THREE.Group();
+  const far = new THREE.Group();
+  const sets = [[kit.hawthorn, kit.hawthornFar, lists.hawthorn, true], [kit.birch, kit.birchFar, lists.birch, false]];
+  if (models.treeA?.scene && plants.trees.length) sets.push([models.treeA.scene, farTree(models.treeA.scene), oaks[0], true], [models.treeB.scene, farTree(models.treeB.scene), oaks[1], true]);
+  for (const [model, farModel, list, castShadow] of sets) {
+    if (!list.length) continue;
+    near.add(...instanceModel(model, list, { castShadow }).children);
+    far.add(...instanceModel(farModel, list, { castShadow }).children);
+  }
+  near.name = 'pitScrubNear';
+  far.name = 'pitScrubFar';
+  scrub.add(near, far);
+  if (near.children.length) site.userData.treeSwap = new HedgeSwap(near, far);
+  site.add(scrub);
 }
 
 /** A smooth value-noise-ish wobble of a direction, 0..1: a few sines of the unit vector, so two vertices at one place always agree. */
@@ -141,10 +296,11 @@ const lump = (x, y, z, k) => 0.5 + 0.25 * Math.sin(x * 3.1 * k + y * 1.7 + z * 2
 
 /**
  * A rock: a closed, welded icosphere (its vertices shared, so no cracks) pushed about by a smooth lump, a few flat faces cut into it where a
- * quarried stone has split, its underside flattened, smooth normals and a tint that drifts across it. About 1 m across, base near y = 0.
+ * quarried stone has split, its underside flattened, smooth normals and a tint that drifts across it. About 1 m across, base near y = 0. Its uvs
+ * (#1004) lay the stone texture on it a tile a metre from the side each part faces; the tint goes over the texture.
  */
-export function rockGeometry(random) {
-  let geo = new THREE.IcosahedronGeometry(0.5, 3);
+export function rockGeometry(random, detail = 3) {
+  let geo = new THREE.IcosahedronGeometry(0.5, detail);
   geo.deleteAttribute('normal');
   geo.deleteAttribute('uv');
   geo = mergeVertices(geo, 1e-4);
@@ -157,9 +313,11 @@ export function rockGeometry(random) {
     const r = Math.sqrt(1 - u * u);
     planes.push({ n: [r * Math.cos(t), u * 0.8, r * Math.sin(t)], d: 0.27 + random() * 0.1 });
   }
-  const tint = [[0.46, 0.43, 0.38], [0.38, 0.37, 0.36], [0.52, 0.41, 0.3], [0.54, 0.51, 0.44]][Math.floor(random() * 4)];
+  // A tint over the texture: grey, darker grey, iron-stained and pale. (They were the stone's whole colour, in linear terms, which lit pale as chalk.)
+  const tint = [[0.98, 0.94, 0.88], [0.8, 0.8, 0.82], [1.0, 0.84, 0.68], [1.06, 1.02, 0.94]][Math.floor(random() * 4)];
   const squash = 0.7 + random() * 0.3;
   const colors = new Float32Array(p.count * 3);
+  const uvs = new Float32Array(p.count * 2);
   for (let i = 0; i < p.count; i++) {
     const nx = p.getX(i) * 2;
     const ny = p.getY(i) * 2;
@@ -180,53 +338,71 @@ export function rockGeometry(random) {
     p.setXYZ(i, x, y + 0.2, z);
     const v = 0.88 + 0.24 * lump(x * 2.3 + seed, y * 2.3, z * 2.3, 2.2);
     colors.set([tint[0] * v, tint[1] * v, tint[2] * v], i * 3);
+    // Laid from whichever side it faces, as a box is mapped: no seam, and only the faces between two sides take it a little askew.
+    const [ax, ay, az] = [Math.abs(nx), Math.abs(ny), Math.abs(nz)];
+    uvs.set(ay >= ax && ay >= az ? [x + seed, z] : ax >= az ? [z + 0.37, y + seed] : [x + 0.71, y - seed], i * 2);
   }
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
   geo.computeVertexNormals();
   return geo;
 }
 
-/** Boulders and flints fallen to the foot of the walls and strewn down the chutes, and a few big ones on the floor you ride round. */
+/** How the stones are drawn (#1004): shapes for the wall's stones and the field's flints, for the big boulders, and their icospheres' detail. */
+export const PIT_STONES = { shapes: 2, bigShapes: 2, detail: 2, bigDetail: 3 };
+
+/** The pit's stone material (#1004): the stone texture under each rock's own tint, lit like the world. One for every stone in the pit. */
+export function pitStoneMaterial(random = streamFor('pitStoneTexture')) {
+  return new THREE.MeshStandardMaterial({ map: pitStoneTexture(random), vertexColors: true, roughness: 0.95, metalness: 0 });
+}
+
+/**
+ * Boulders and stones fallen to the foot of the walls and strewn down the chutes, flints turned up in the rough, and a few big ones on the floor you
+ * ride round (#1004: textured, two shapes each in 60 m tiles where it was four in 30 m and three, the small ones at a lighter detail). Their shapes and
+ * turns from a stream of their own.
+ */
 function buildBoulders(c, quarry, plants, site) {
-  const { heights, random, fixedBox } = c;
-  const material = new THREE.MeshLambertMaterial({ vertexColors: true });
+  const { heights, fixedBox } = c;
+  const random = streamFor('pitStones');
+  const material = pitStoneMaterial();
   // A stone sits in the ground, not on it: its middle at the ground's height, lower again on a slope, so the scree comes up round it.
   const sunk = (x, z, h) => {
     const y = heights.heightAt(x, z);
     const lean = Math.max(Math.abs(heights.heightAt(x + h, z) - y), Math.abs(heights.heightAt(x, z + h) - y));
     return y - h * 0.12 - Math.min(lean, h * 0.5) * 0.6;
   };
-  const SHAPES = 4;
+  const S = PIT_STONES;
   const stones = [];
   for (const [x, z, size] of plants.boulders) {
     const h = size * (0.6 + random() * 0.5);
     stones.push(matrixAt(x, sunk(x, z, h), z, random() * TAU, size * (1.1 + random() * 0.5), h, size * (1 + random() * 0.4)));
   }
-  for (let i = 0; i < SHAPES; i++) {
-    const mine = stones.filter((_, k) => k % SHAPES === i);
-    if (mine.length) site.add(tiledInstances(rockGeometry(random), material, mine, { castShadow: true, name: 'quarryStones' }));
+  for (let i = 0; i < S.shapes; i++) {
+    const mine = stones.filter((_, k) => k % S.shapes === i);
+    if (mine.length) site.add(tiledInstances(rockGeometry(random, S.detail), material, mine, { tileSize: MODEL_TILE, castShadow: true, name: 'quarryStones' }));
   }
-  const bigShapes = Array.from({ length: 3 }, () => []);
+  const bigShapes = Array.from({ length: S.bigShapes }, () => []);
   plants.big.forEach(([x, z, size], k) => {
     const s = size * 1.7;
     const yaw = random() * TAU;
     const y = sunk(x, z, s * 0.8);
     fixedBox(x, y + s * 0.3, z, s * 0.4, s * 0.25, s * 0.4, yaw);
-    bigShapes[k % 3].push(matrixAt(x, y, z, yaw, s * 1.15, s * 0.8, s));
+    bigShapes[k % S.bigShapes].push(matrixAt(x, y, z, yaw, s * 1.15, s * 0.8, s));
   });
   for (const mine of bigShapes) {
-    if (mine.length) site.add(tiledInstances(rockGeometry(random), material, mine, { tileSize: MODEL_TILE, castShadow: true, name: 'quarryBoulders' }));
+    if (mine.length) site.add(tiledInstances(rockGeometry(random, S.bigDetail), material, mine, { tileSize: MODEL_TILE, castShadow: true, name: 'quarryBoulders' }));
   }
 }
 
 /**
  * Everything standing in and round the pit that isn't a plant or a stone: the fence, the container, the excavator, the plant, the drums and the dead
- * trees. Returns where the relics stand, for what grows round them (buildPitGrowth): `{ container, plant, excavator, drums }`.
+ * trees. Returns where the relics stand, for what grows round them (buildPitGrowth, buildFieldCover): `{ container, plant, excavator, drums,
+ * pallet, deadTrees }`.
  */
 function buildSite(c, quarry, site) {
   const { heights, random, fixedBox } = c;
   const wear = streamFor('pitRelicWear'); // the years of standing (#1003), drawn apart from the pit's own stream so nothing it deals moves
-  const relics = { container: null, plant: null, excavator: null, drums: [] };
+  const relics = { container: null, plant: null, excavator: null, drums: [], pallet: null, deadTrees: [] };
   const things = new THREE.Group();
   const lit = (o) => new THREE.MeshStandardMaterial({ roughness: 0.85, ...o });
   const wood = new THREE.MeshStandardMaterial({ map: woodTexture(random, [118, 98, 74]), roughness: 0.95 });
@@ -333,13 +509,16 @@ function buildSite(c, quarry, site) {
       const at = (x, y, z, rx, ry, rz) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1));
       const group = new THREE.Group();
       for (const pal of deal(1, 0.75, 1.5, 3)) {
+        // The pallet (#1004): its deck boards across its bearers and resting on them, as one is built; which board is split, gone or sprung from
+        // a stream of its own, so the pit's draws are as they were.
         const g = new Parts();
-        for (let i = 0; i < 5; i++) g.box(wood, 1.2, 0.025, 0.14, 0, 0.14, -0.4 + i * 0.2, 0, 1);
-        for (const z of [-0.42, 0, 0.42]) g.box(wood, 1.2, 0.09, 0.1, 0, 0.06, z, 0, 1);
+        addPallet(g, wood, streamFor('pitPallet'), dark);
         const m = g.build();
-        m.position.set(pal.x, groundY(pal.x, pal.z) - 0.02, pal.z);
+        m.name = 'pallet';
+        m.position.set(pal.x, groundY(pal.x, pal.z) - 0.01, pal.z);
         m.rotation.y = random() * TAU;
         group.add(m);
+        relics.pallet = { x: pal.x, z: pal.z, r: 0.75 };
       }
       for (const st of deal(1, 0.4, 1, 3)) {
         const y = groundY(st.x, st.z);
@@ -384,28 +563,30 @@ function buildSite(c, quarry, site) {
     }
   }
 
-  // Dead trees leaning at the rim: a bare grey trunk with a couple of broken limbs.
+  // Dead trees leaning at the rim (#1004: rebuilt from the tree kit, landmarkProps.js `deadTreeGeometry`): a bleached trunk forking into bare limbs,
+  // some snapped, a flared foot with roots, a fallen limb by it. Where each stands, how it leans, how tall and its turn are drawn as they were.
   {
-    const bark = lit({ color: 0x5d544a, roughness: 1 });
+    const shape = streamFor('pitDeadTrees');
+    const bark = new THREE.MeshStandardMaterial({ map: barkTexture(shape, 'elm'), color: 0xcfc8bc, roughness: 1 });
     const spots = [];
     for (let tries = 0; spots.length < 3 && tries < 200; tries++) {
       const a = random() * TAU;
       const p = quarry.frameAt(a, quarry.rimAt(a) + 4 + random() * 8);
       if (quarry.plantOk(p.x, p.z, 3) && !spots.some((s) => Math.hypot(s.x - p.x, s.z - p.z) < 14)) spots.push(p);
     }
+    const trees = new Parts();
     for (const p of spots) {
       const lean = (random() - 0.5) * 0.35;
       const h = 4 + random() * 2.5;
       const y = groundY(p.x, p.z);
-      const local = new Parts();
-      local.add(bark, new THREE.CylinderGeometry(0.1, 0.26, h, 7), 0, h / 2, 0, lean, 0, lean * 0.5);
-      local.add(bark, new THREE.CylinderGeometry(0.04, 0.1, 1.8, 5), 0.5, h * 0.72, 0, 0, 0, -1.0);
-      local.add(bark, new THREE.CylinderGeometry(0.03, 0.08, 1.4, 5), -0.4, h * 0.55, 0.2, 0.3, 0, 0.9);
-      const g = local.build();
-      g.position.set(p.x, y - 0.1, p.z);
-      g.rotation.y = random() * TAU;
-      things.add(g);
+      trees.add(bark, deadTreeGeometry(shape, { height: h, radius: 0.24, lean }), p.x, y - 0.05, p.z, 0, random() * TAU, 0);
       fixedBox(p.x, y + 1.5, p.z, 0.25, 1.5, 0.25);
+      relics.deadTrees.push({ x: p.x, z: p.z });
+    }
+    if (spots.length) {
+      const g = trees.build();
+      g.name = 'deadTrees';
+      things.add(g);
     }
   }
 
@@ -516,6 +697,106 @@ function buildPitGrowth(c, quarry, site, relics) {
   }
   site.add(group);
   return group;
+}
+
+/**
+ * The rough's ground cover (#1004), into the set piece: rough grass tussocks and thistles over the field (pitScrub.js `pitCover`, listed in
+ * farmPlacement.js), and, round the relics buildSite stood in the field, brambles, nettles, grass and thistles thick about the container's
+ * hardstanding, the dead trees' feet and the pallet (`relicScrub`). None of it solid; in tiles with the rough ground's draw distance.
+ */
+function buildFieldCover(c, quarry, site, relics, kit) {
+  const { heights, drawDistance } = c;
+  const ground = (x, z) => heights.heightAt(x, z);
+  const random = streamFor('pitCoverDraw');
+  const cover = pitCover(quarry);
+  const verge = vergeMakers(random);
+  const leaves = plantMaterial();
+  const kinds = {
+    tussock: { geo: tussockModel(random, { height: 0.7, blades: 11 }), mat: leaves, list: [], tint: () => new THREE.Color().setHSL(0.13 + random() * 0.06, 0.25 + random() * 0.2, 0.6 + random() * 0.2) },
+    thistle: { geo: thistleModel(random, { height: 0.9 }), mat: leaves, list: [], tint: () => new THREE.Color().setHSL(0.22, 0.1 + random() * 0.1, 0.8 + random() * 0.15) },
+    bramble: { geo: kit.bramble.geo, mat: kit.bramble.mat, list: [] },
+    nettle: { geo: verge.nettle[0], mat: verge.nettle[1], list: [] },
+  };
+  const put = (kind, p) => kinds[kind].list.push(matrixAt(p.x, ground(p.x, p.z) - 0.03, p.z, p.yaw, p.s, p.s * (0.85 + ((Math.abs(p.x) * 7.3) % 0.3)), p.s));
+  for (const p of cover.tussocks) put('tussock', p);
+  for (const p of cover.thistles) put('thistle', p);
+  // In the field what the scrub may take; on the floor by the pallet, anywhere dry and off the roads.
+  const clearOfDrums = (x, z) => relics.drums.every((d) => Math.hypot(x - d.x, z - d.z) > d.r + 0.15);
+  const ok = (x, z) => (quarry.inPit(x, z) ? quarry.waterAt(x, z) === 0 && quarry.roadNear(x, z).d > quarry.roadHalf + 0.6 && clearOfDrums(x, z) : scrubOk(quarry, x, z, 0.5));
+  const near = relicScrub({ container: relics.container, trees: relics.deadTrees, pallet: relics.pallet }, ok);
+  for (const p of near) put(p.kind, p);
+  const group = new THREE.Group();
+  group.name = 'pitCover';
+  for (const [name, k] of Object.entries(kinds)) {
+    if (!k.list.length) continue;
+    const colors = k.tint ? k.list.map(() => k.tint()) : undefined;
+    group.add(drawDistance.add(tiledInstances(k.geo, k.mat, k.list, { colors, name: `pit-${name}`, tileSize: MODEL_TILE }), 'roughDistance'));
+  }
+  site.add(group);
+  return group;
+}
+
+/**
+ * The lip and the walls' foot (#1004), into the set piece: roots hanging out of the topsoil just under the lip and trailing down the face, each laid to
+ * the face's slope there, and the scree skirt's loose stones at the foot (pitScrub.js `pitLip`). Nothing solid, so the climb and the roads ride as they did.
+ */
+function buildLip(c, quarry, plants, site) {
+  const { heights, drawDistance } = c;
+  const ground = (x, z) => heights.heightAt(x, z);
+  const random = streamFor('pitLipDraw');
+  const { roots, scree } = pitLip(quarry);
+  const group = new THREE.Group();
+  group.name = 'pitLip';
+  const shapes = [rootTangleModel(random, { roots: 8, length: 1.1, steps: 2 })];
+  const lists = [[]];
+  const q = new THREE.Quaternion();
+  const e = new THREE.Euler();
+  for (const r of roots) {
+    const dx = Math.sin(r.yaw);
+    const dz = Math.cos(r.yaw);
+    const y = ground(r.x, r.z);
+    const slope = Math.atan2(y - ground(r.x + dx * 0.8, r.z + dz * 0.8), 0.8); // how steeply the face falls away into the pit
+    q.setFromEuler(e.set(slope, r.yaw, 0, 'YXZ'));
+    lists[0].push(new THREE.Matrix4().compose(new THREE.Vector3(r.x, y + 0.012, r.z), q, new THREE.Vector3(r.s * (0.8 + random() * 0.4), r.s, r.s)));
+  }
+  const leaves = plantMaterial();
+  lists.forEach((m, i) => m.length && group.add(drawDistance.add(tiledInstances(shapes[i], leaves, m, { tileSize: MODEL_TILE, name: 'pit-roots' }), 'roughDistance')));
+  // The scree's loose stones, and with them the flints turned up in the rough (quarryPlants' `stones`): small, so a light shape and the rough's draw distance.
+  const stones = scree.map((p) => matrixAt(p.x, ground(p.x, p.z) - p.s * 0.25, p.z, p.yaw, p.s * (1.1 + p.shape * 0.5), p.s * (0.6 + p.shape * 0.3), p.s));
+  for (const [x, z, size] of plants.stones) stones.push(matrixAt(x, ground(x, z) - size * 0.3, z, random() * TAU, size * (1.1 + random() * 0.4), size * (0.55 + random() * 0.3), size));
+  if (stones.length) group.add(drawDistance.add(tiledInstances(rockGeometry(random, 0), pitStoneMaterial(), stones, { tileSize: MODEL_TILE, name: 'pit-scree' }), 'roughDistance'));
+  site.add(group);
+  return group;
+}
+
+/**
+ * The tree line between the arable and the pit (#1004, pitScrub.js `pitTreeLine`): hawthorns inside the fence along the sides that face arable, with
+ * ash and oak standards among them. Handed to the farm's scatter (scatter.js) with the other builders' trees, so each tile is one batch a model and
+ * the far ones are the far versions (treeFar.js `farTree`: the bark simplified, a quarter of the leaf cards grown to fill): the line is what you see of the pit from across the arable. The standards'
+ * trunks are solid.
+ */
+function buildPitTreeLine(c, quarry, kit) {
+  const { layout, fields, heights, physics, RAPIER, anchors, scatter, models } = c;
+  if (!scatter) return [];
+  const random = streamFor('pitTreeLineDraw');
+  const line = pitTreeLine(quarry, layout.boundaries, fields.kinds);
+  const haw = [];
+  const ash = [];
+  const oaks = [[], []];
+  for (const t of line) {
+    const y = heights.heightAt(t.x, t.z);
+    if (t.kind === 'hawthorn') haw.push(matrixAt(t.x, y - 0.15, t.z, t.yaw, t.s));
+    else if (t.kind === 'ash') ash.push(matrixAt(t.x, y - 0.1, t.z, t.yaw, t.s));
+    else oaks[0].push(matrixAt(t.x, y - 0.15, t.z, t.yaw, t.s * 1.1)); // one oak model, so the line's tiles hold one more batch, not two, from across the farm
+    if (t.kind === 'hawthorn') continue;
+    const r = (t.kind === 'ash' ? 0.38 : 0.32 * 1.1) * t.s;
+    physics.createCollider(RAPIER.ColliderDesc.cylinder(2.5, r).setTranslation(t.x, y + 2.5, t.z));
+    anchors.push({ x: t.x, y, z: t.z, r });
+  }
+  scatter.add(kit.hawthorn, haw, { far: farSprayTree });
+  scatter.add(kit.ash, ash, { far: farTree });
+  scatter.oaks(models, oaks);
+  return line;
 }
 
 /**

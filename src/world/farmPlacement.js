@@ -30,6 +30,8 @@ import { createRiver } from './river.js';
 import { riversidePlaces, fenceStretches } from './riverPlaces.js';
 import { laneGateOf, laneReach, entrancePlan, entranceHedges, ENTRANCE } from './pitEntrance.js';
 import { pitGrowth } from './pitGrowth.js';
+import { quarryPlants } from './quarry.js';
+import { pitCover, pitLip, pitTreeLine } from './pitScrub.js';
 
 /** m: how far two shapes must overlap, or a shape reach into a place, before it counts. Less is a touch, which the rules allow. */
 export const PLACE_TOLERANCE = 0.05;
@@ -291,6 +293,26 @@ export function farmPlacements(layout, { fields = createFields(layout), roads = 
       ['padLumps', "a lump off the pit plant's pad", (p) => p.size / 2],
     ];
     for (const [key, name, r] of grown) for (const p of G[key]) add(disc(key === 'padLumps' ? 'prop' : 'plant', name, p.x, p.z, r(p), false, owner));
+    // The field gone to scrub (#1004, quarry.js `quarryPlants`, pitScrub.js): the bushes (none solid), the oaks in the rough and the big boulders on
+    // the floor (solid), the stones and flints, the rough grass and thistles, the roots at the lip and the scree at the foot, and the tree line, whose
+    // ash and oak standards are solid and whose hawthorns are not.
+    const P = quarryPlants(pitQuarry);
+    const reach = { hawthorn: 1.5, gorse: 0.75, bramble: 0.7, birch: 0.4 };
+    // Named for the Old Pit, so they are told apart from #1003's growth on its floor.
+    for (const [x, z, s, kind] of P.bushes) add(disc('plant', `a ${kind} in the Old Pit's field`, x, z, reach[kind] * s, false, owner));
+    for (const [x, z, s] of P.trees) add(disc('tree', "an oak in the Old Pit's field", x, z, 0.32 * s, true, owner));
+    for (const [x, z, size] of P.big) add(disc('prop', "a big boulder on the Old Pit's floor", x, z, size * 0.96, true, owner)); // its collider's corners, however it is turned
+    for (const [x, z, size] of [...P.boulders, ...P.stones]) add(disc('prop', "a stone in the Old Pit's walls or field", x, z, size * 0.6, false, owner));
+    const C = pitCover(pitQuarry);
+    for (const p of C.tussocks) add(disc('plant', "rough grass in the Old Pit's field", p.x, p.z, 0.2 * p.s, false, owner));
+    for (const p of C.thistles) add(disc('plant', "a thistle in the Old Pit's field", p.x, p.z, 0.2 * p.s, false, owner));
+    const L = pitLip(pitQuarry);
+    for (const p of L.roots) add(disc('plant', "roots at the Old Pit's lip", p.x, p.z, 0.4 * p.s, false, owner));
+    for (const p of L.scree) add(disc('prop', "scree at the foot of the Old Pit's walls", p.x, p.z, p.s, false, owner));
+    for (const t of pitTreeLine(pitQuarry, layout.boundaries, fields.kinds)) {
+      const standard = t.kind !== 'hawthorn';
+      add(disc(standard ? 'tree' : 'plant', `a ${t.kind} in the Old Pit's tree line`, t.x, t.z, (standard ? (t.kind === 'ash' ? 0.38 : 0.35) : 1.6) * t.s, standard, owner));
+    }
   }
   return out;
 }
@@ -314,7 +336,7 @@ export const PLACEMENT_SOURCES = {
     buildVillage: 'its furniture, and the small farm\'s walls and buildings',
     buildHill: 'the hut\'s steps, the climb\'s flags, the flask rock and the posts of Brook Meadow\'s gateway from Hay Meadow',
     buildWoods: 'the trail\'s signs and the woodpile\'s scenery',
-    buildQuarry: 'the screening plant, the digger and the heaps\' drums and tyres; and, with the relics they stand by (#1003), the weeds through the digger\'s tracks and the drums, the cabin\'s chair and table, and the container\'s hardstanding and birch',
+    buildQuarry: 'the screening plant, the digger and the heaps\' drums and tyres; and, with the relics they stand by (#1003), the weeds through the digger\'s tracks and the drums, the cabin\'s chair and table, and the container\'s hardstanding and birch; and (#1004) the scrub thick round the container, the dead trees and the pallet',
     buildFieldLandmarks: 'the gateposts\' and roller\'s own boxes (their places are listed)',
   },
   flat: {

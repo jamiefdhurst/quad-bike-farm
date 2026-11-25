@@ -141,6 +141,127 @@ export function sticks(random, n, spread, length = [0.4, 1.3]) {
 }
 
 /**
+ * A crown of leafy sprays (#1004): at each of `centres` three cards about `size` m across, crossed at random, with one half of the spray texture
+ * (woodPlants.js `sprayTexture`: `half` 0 the hawthorn's, 1 the ash's), each clump its own shade of green. Two triangles a card, in order, so the far
+ * version can thin them (treeFar.js `thinCards`); the normals face up, so a crown is lit as a whole and not card by card.
+ */
+export function crownCards(random, centres, size, half = 0) {
+  const pos = [];
+  const uv = [];
+  const colors = [];
+  const [u0, u1] = half ? [0.505, 0.995] : [0.03, 0.495];
+  for (const p of centres) {
+    const shade = 0.92 + random() * 0.3;
+    const s = size * (0.75 + random() * 0.5);
+    for (let k = 0; k < 3; k++) {
+      const yaw = random() * TAU;
+      const tilt = (random() - 0.5) * 1.2;
+      const ax = new THREE.Vector3(Math.cos(yaw), 0, Math.sin(yaw)).multiplyScalar(s / 2);
+      const up = new THREE.Vector3(-Math.sin(yaw) * Math.sin(tilt), Math.cos(tilt), Math.cos(yaw) * Math.sin(tilt)).multiplyScalar(s / 2);
+      const c = [p.clone().sub(ax).sub(up), p.clone().add(ax).sub(up), p.clone().add(ax).add(up), p.clone().sub(ax).add(up)];
+      const q = [[u0, 0], [u1, 0], [u1, 1], [u0, 1]];
+      for (const i of [0, 1, 2, 0, 2, 3]) {
+        pos.push(c[i].x, c[i].y, c[i].z);
+        uv.push(...q[i]);
+        colors.push(shade, shade, shade * 0.95);
+      }
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(pos.map((_, i) => (i % 3 === 1 ? 1 : 0)), 3));
+  return geo;
+}
+
+/**
+ * A field hawthorn for a tree line or scrub (#1004), about `height` m tall and as wide: two or three crooked stems from the foot, forking into a tangle
+ * of branches, a rounded crown of leafy sprays right down to the ground on its outside, with red haws in it. A group of one mesh, `hawthornCrown`, in
+ * `cards` (the spray texture's material; the stems, a hand's width and mostly inside the crown, take its bark patch), its foot at the origin, for
+ * scatter.js to place with the farm's trees.
+ */
+export function hawthornModel(random, cards, { height = 5 } = {}) {
+  const k = height / 5;
+  const segs = [];
+  const centres = [];
+  const stems = 2 + Math.floor(random() * 2);
+  for (let i = 0; i < stems; i++) {
+    const a = (i / stems) * TAU + random();
+    const dir = kick(UP, 0.25 + random() * 0.2, a);
+    const grown = grow(random, { base: new THREE.Vector3(Math.cos(a) * 0.12, -0.1, Math.sin(a) * 0.12), dir, length: 1.8 * k, radius: 0.1 * k, taper: 0.68, levels: 2, fork: 2, spread: 0.85, upward: 0.2, shrink: 0.8, snap: 0.12 });
+    segs.push(...grown.segs);
+    for (const t of grown.tips) centres.push(t.at.clone().addScaledVector(t.dir, -0.3 * k));
+  }
+  // The crown comes down the outside of the bush, so add clumps low round its edge and through its middle as well as at the tips.
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * TAU + random() * 0.5;
+    const r = (i % 3 ? 1.5 : 0.7) * k;
+    centres.push(new THREE.Vector3(Math.cos(a) * r, (0.8 + random() * 1.6) * k, Math.sin(a) * r));
+  }
+  // One mesh in the sprays' material, so a tile of hawthorns is one draw: the stems on the texture's bark patch, the crown's cards after them
+  // (`userData.solid` says how many triangles the stems are, for the far version: treeFar.js `farSprayTree`).
+  const bark = paint(bough(segs, 4).toNonIndexed(), '#ddd2c4', random, 0.2);
+  const uv = bark.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, 0.012, 0.98);
+  const geo = mergeGeometries([bark, crownCards(random, centres, 1.6 * k, 0)]);
+  geo.userData.solid = bark.attributes.position.count / 3;
+  const mesh = new THREE.Mesh(geo, cards);
+  mesh.name = 'hawthornCrown';
+  const group = new THREE.Group();
+  group.name = 'hawthorn';
+  group.add(mesh);
+  return group;
+}
+
+/**
+ * An ash standard for a hedge or tree line (#1004), about 14 m tall: a straight pale trunk clear for five metres, a flare at its foot, limbs curving up
+ * into a tall open crown with its leaves in airy sprays at the ends, and bunches of keys. A group of `ashBark` (textured with `barkMap`) and `ashLeaves`
+ * (`cards`, the spray texture's material).
+ */
+export function ashStandardModel(random, barkMap, cards) {
+  const { segs, tips } = grow(random, { length: 5.2, radius: 0.36, taper: 0.72, levels: 3, fork: 4, spread: 0.55, upward: 0.35, shrink: 0.74 });
+  const parts = [bough(segs, 6), limb(new THREE.Vector3(0, -0.2, 0), new THREE.Vector3(0, 0.9, 0), 0.44, 0.33, 7)];
+  const bark = new THREE.Mesh(mergeGeometries(parts), std(barkMap));
+  bark.name = 'ashBark';
+  const centres = segs.filter((sg) => sg.b.y > 6).map((sg) => sg.b.clone().add(new THREE.Vector3((random() - 0.5) * 0.8, (random() - 0.2) * 0.6, (random() - 0.5) * 0.8)));
+  for (const t of tips) centres.push(t.at.clone().add(new THREE.Vector3((random() - 0.5) * 0.6, -0.4, (random() - 0.5) * 0.6)));
+  const leaves = new THREE.Mesh(crownCards(random, centres, 2.2, 1), cards);
+  leaves.name = 'ashLeaves';
+  const group = new THREE.Group();
+  group.name = 'ash';
+  group.add(bark, leaves);
+  return group;
+}
+
+/**
+ * A dead tree, long dead and standing (#1004): a trunk `height` m tall, leaning `lean` (radians, towards +x), that forks into bare limbs which fork again,
+ * a share of them snapped off short; the bole flared at its foot with roots reaching out into the ground, and a limb fallen and lying by it. One
+ * bark-textured geometry (for the bleached elm bark), its foot at the origin. For the pit's rim, and any dead tree a field or a hedge has.
+ */
+export function deadTreeGeometry(random, { height = 5, radius = 0.24, lean = 0 } = {}) {
+  const dir = new THREE.Vector3(Math.sin(lean), Math.cos(lean), 0);
+  const trunk = height * 0.48;
+  const { segs } = grow(random, { dir, length: trunk, radius, taper: 0.66, levels: 3, fork: 3, spread: 0.6, upward: 0.2, shrink: 0.7, snap: 0.35 });
+  const parts = [bough(segs, 7)];
+  parts.push(limb(new THREE.Vector3(0, -0.25, 0), dir.clone().multiplyScalar(0.7), radius * 1.45, radius * 0.95, 8)); // the flare
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * TAU + random() * 0.8;
+    const out = 0.7 + random() * 0.5;
+    parts.push(limb(new THREE.Vector3(Math.cos(a) * radius * 0.6, 0.25, Math.sin(a) * radius * 0.6), new THREE.Vector3(Math.cos(a) * out, -0.18, Math.sin(a) * out), radius * 0.5, radius * 0.12, 5));
+  }
+  // A limb that came down, lying by the foot with a stub of a branch on it.
+  const a = random() * TAU;
+  const len = height * (0.3 + random() * 0.15);
+  const p0 = new THREE.Vector3(Math.cos(a) * 0.9, 0.06, Math.sin(a) * 0.9);
+  const p1 = p0.clone().add(new THREE.Vector3(Math.cos(a + 0.4) * len, 0.04, Math.sin(a + 0.4) * len));
+  parts.push(limb(p0, p1, radius * 0.38, radius * 0.22, 6));
+  const mid = p0.clone().lerp(p1, 0.55);
+  parts.push(limb(mid, mid.clone().add(new THREE.Vector3(Math.cos(a + 1.6) * 0.6, 0.25, Math.sin(a + 1.6) * 0.6)), radius * 0.16, radius * 0.08, 5));
+  return mergeGeometries(parts);
+}
+
+/**
  * A thin patch of `map` laid over the ground at (x, z), following it: an ellipse `rx` by `rz` m in rings of vertices each at the ground's height there
  * (so it never sinks into a slope or floats over a dip), a few millimetres above it, fading to nothing at its rim by the map's own alpha. The mesh is
  * positioned at `origin` ({ x, y, z }), so it goes in a group at the world's origin, never one that is itself placed at the spot.

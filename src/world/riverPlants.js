@@ -444,3 +444,32 @@ export function birchModel(random, { height = 1, branches = 4, facing = null } =
   for (let k = 0; k < 3; k++) spray(top, facing === null ? yaw0 + (k * Math.PI * 2) / 3 : facing + (k - 1) * 0.9, Math.min(0.36, 0.12 + height * 0.14), 0.45);
   return merge(parts);
 }
+
+/**
+ * Roots hanging out of a cut bank's topsoil (#1004): a tangle of seven or so brown roots, thick where they leave the soil and thinning to hair, coming
+ * out along a metre of the edge and trailing down the face, lifting off it a little and curling, with a few fine strands among them. In a face's own
+ * frame: x along the edge, +z down the face, +y out of it, the edge at the origin. The bark and hair from the atlas, browned by vertex colour.
+ */
+export function rootTangleModel(random, { roots = 7, length = 0.75, steps = 3 } = {}) {
+  const parts = [];
+  const brown = (g, shade) => {
+    const c = g.attributes.color;
+    for (let i = 0; i < c.count; i++) c.setXYZ(i, 0.42 * shade, 0.3 * shade, 0.2 * shade);
+    return g;
+  };
+  for (let i = 0; i < roots; i++) {
+    const x0 = (random() - 0.5) * 1.0;
+    const len = length * (0.4 + random() * 0.8);
+    const r0 = 0.01 + random() * 0.016;
+    const curl = (random() - 0.5) * 0.5;
+    const lift = 0.05 + random() * 0.16;
+    const at = (t) => [x0 + curl * t * t * len, lift * Math.sin(t * Math.PI) - 0.01, -0.06 + t * len];
+    const shade = 0.75 + random() * 0.5;
+    for (let s = 0; s < steps; s++) parts.push(brown(barkStem(at(s / steps), at((s + 1) / steps), r0 * (1 - (s / steps) * 0.7), r0 * (1 - ((s + 1) / steps) * 0.7), s / steps, (s + 1) / steps, 3), shade));
+  }
+  for (let i = 0; i < 4; i++) {
+    const g = strip({ x: (random() - 0.5) * 0.9, y: 0.01, yaw: Math.PI / 2 + (random() - 0.5) * 0.4, len: 0.2 + random() * 0.25, width: 0.03, lean: 1.45, droop: 0.05, segs: 2, col: 'blade', shade: '#6b5238' });
+    parts.push(g);
+  }
+  return merge(parts);
+}
