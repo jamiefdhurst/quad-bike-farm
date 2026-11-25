@@ -29,7 +29,7 @@ import { cpus, totalmem } from 'node:os';
 import { createServer, preview } from 'vite';
 import puppeteer from 'puppeteer-core';
 import { MEASURE_ARGS, check, measureInPage } from './frameBudget.mjs';
-import { CHROME_ARGS, chromePath, loadStepLines, recordLoadSteps, stubDraws, waitForReady } from './frameBudgetRun.mjs';
+import { CHROME_ARGS, LOAD_TIMEOUT_MS, chromePath, loadStepLines, recordLoadSteps, stubDraws, waitForReady } from './frameBudgetRun.mjs';
 import { ACTION_WAIT_MS, GIRL_ACTIONS_LEFT_OUT, HUNG_FACTOR, HUNG_FLAT_S, PROMPTS_LEFT_OUT, RIDE_MS, VERB_WAIT_MS, VEHICLE_VERBS_LEFT_OUT, doGirlActions, doVehicleVerbs, installGameClock, pressPrompts, rideEach, runEveryScene } from './smokeActions.mjs';
 import { bytesByFile, checkShares, sharesOf, summaryMarkdown } from './smokeCoverage.mjs';
 
@@ -107,6 +107,14 @@ async function run() {
   });
   await page.evaluate(installGameClock, { factor: HUNG_FACTOR, flat: HUNG_FLAT_S }); // every wait below counts the game's time, not real seconds (#770)
   if (LOADS) await measureBudget(page, note);
+  else {
+    // The first frames after Ready prepare every shader in view, which on a runner's software GL took over a minute (#1182): with both parts the
+    // budget's renders pay for it, but on its own the play part met it in its first 0.25 s wait and called the page hung. So it waits for the
+    // first game second here, with the load's own limit.
+    const started = Date.now();
+    await page.evaluate((limit) => smokeWait(1, undefined, limit), LOAD_TIMEOUT_MS / 1000);
+    console.log(`first game second in ${Math.round((Date.now() - started) / 1000)} s`);
+  }
   if (PLAYS) await play(page, note);
   if (LOADS) await runPhases(page, note);
   else {
