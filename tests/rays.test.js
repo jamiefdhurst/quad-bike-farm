@@ -53,4 +53,13 @@ describe('quick rays', () => {
     }
     expect(hit).toBeGreaterThan(500); // most of them through something
   });
+
+  it('falls back to three\'s own raycast when a mesh is given a new geometry after it', () => {
+    const mesh = quickRays(new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))); // (both sides, so the ray hits it going in and coming out)
+    mesh.updateMatrixWorld(true);
+    const count = () => new THREE.Raycaster(new THREE.Vector3(0, 0, 5), new THREE.Vector3(0, 0, -1)).intersectObject(mesh, false).length;
+    expect(count()).toBe(2);
+    mesh.geometry = new THREE.SphereGeometry(1, 32, 16);
+    expect(count()).toBe(2);
+  });
 });

@@ -38,8 +38,8 @@ export function quickRays(root) {
     const whole = g.drawRange;
     const range = { start: 0, count: 0 };
     o.raycast = function (raycaster, intersects) {
-      // Should the geometry change after this, the runs' boxes are out of date: three's own raycast, then.
-      if (pos.version !== versions[0] || index?.version !== versions[1] || g.drawRange !== whole || whole.start % 3) return THREE.Mesh.prototype.raycast.call(this, raycaster, intersects);
+      // Should the geometry change or be replaced after this, the runs are out of date: three's own raycast, then.
+      if (this.geometry !== g || pos.version !== versions[0] || index?.version !== versions[1] || g.drawRange !== whole || whole.start % 3) return THREE.Mesh.prototype.raycast.call(this, raycaster, intersects);
       _inverse.copy(this.matrixWorld).invert();
       _ray.copy(raycaster.ray).applyMatrix4(_inverse);
       const from = whole.start;
