@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ramSound, whineSamples, strainSamples, hissSamples, crackSamples, RAM_SOUND } from '../src/audio/splitAudio.js';
+import { ramSound, whineSamples, strainSamples, hissSamples, crackSamples, RAM_SOUND, SplitAudio } from '../src/audio/splitAudio.js';
 import { DEFAULT_SOUND_PARAMS as S, SOUND_PARAM_RANGES } from '../src/audio/audioParams.js';
 import { LogSplitter, DEFAULT_SPLITTER_PARAMS as P } from '../src/items/logSplitter.js';
 
@@ -87,5 +87,66 @@ describe('the ram\'s samples', () => {
       const typical = a.slice(1).reduce((sum, v, i) => sum + Math.abs(v - a[i]), 0) / (a.length - 1);
       expect(jump).toBeLessThan(typical * 4);
     }
+  });
+});
+
+// A stand-in audio context that counts what is made, started and stopped, and makes no sound.
+function stubHub() {
+  const made = { sources: [], started: 0, stopped: 0 };
+  const param = () => ({ value: 0, setTargetAtTime(v) { this.value = v; } });
+  const node = () => ({ connect: (n) => n });
+  const ctx = {
+    sampleRate: 8000,
+    currentTime: 0,
+    createPanner: () => ({ ...node(), positionX: param(), positionY: param(), positionZ: param() }),
+    createGain: () => ({ ...node(), gain: param() }),
+    createBuffer: () => ({ copyToChannel() {} }),
+    createBufferSource: () => {
+      const src = { ...node(), playbackRate: param(), loop: false, start: () => made.started++, stop: () => made.stopped++ };
+      made.sources.push(src);
+      return src;
+    },
+  };
+  return { made, hub: { ready: true, ctx, master: node(), params: { ...S } } };
+}
+
+describe('SplitAudio.ram', () => {
+  const at = () => ({ x: 1, y: 2, z: 3 });
+  const still = { powered: true, dir: 0, pressing: false, gnarled: false };
+
+  it('makes nothing while the ram is still, then starts the two loops once and follows them', () => {
+    const { made, hub } = stubHub();
+    const a = new SplitAudio(hub);
+    a.ram(0.1, still, at);
+    expect(made.sources).toHaveLength(0);
+    for (let i = 0; i < 5; i++) a.ram(0.1, out, at);
+    expect(made.sources.filter((s) => s.loop)).toHaveLength(2);
+    expect(a.loops.whine.gain.gain.value).toBe(S.splitterWhineVolume);
+    a.ram(0.1, { ...out, pressing: true }, at);
+    expect(a.loops.strain.gain.gain.value).toBe(S.splitterStrainVolume);
+  });
+
+  it('hisses once as the ram starts back, and stops the loops after a second of quiet', () => {
+    const { made, hub } = stubHub();
+    const a = new SplitAudio(hub);
+    a.ram(0.1, out, at);
+    const before = made.sources.length;
+    for (let i = 0; i < 5; i++) a.ram(0.1, { ...out, dir: -1 }, at);
+    expect(made.sources.length - before).toBe(1); // the one hiss
+    a.ram(0.1, still, at);
+    expect(a.loops).not.toBeNull();
+    for (let i = 0; i < 11; i++) a.ram(0.1, still, at);
+    expect(a.loops).toBeNull();
+    expect(made.stopped).toBe(2);
+  });
+
+  it('forgets which way the ram was going while the tractor is off, so it hisses again when it starts back', () => {
+    const { made, hub } = stubHub();
+    const a = new SplitAudio(hub);
+    a.ram(0.1, { ...out, dir: -1 }, at);
+    const n = made.sources.length;
+    a.ram(0.1, { ...out, dir: -1, powered: false }, at);
+    a.ram(0.1, { ...out, dir: -1 }, at);
+    expect(made.sources.length - n).toBe(1);
   });
 });
