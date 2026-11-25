@@ -12,18 +12,28 @@ function standIn({ tractor = true, rider = null } = {}) {
   const beam = Object.assign(new THREE.Group(), { name: 'logSplitter' });
   model.add(beam);
   const placed = [];
+  // As the real quad: placeAt moves the body (currPos, currQuat) and the model follows only on the next frame; localToWorld reads the model.
   const quad = {
     rider,
     driver: null,
     parkBrake: false,
     model,
-    placeAt: (x, z, yaw) => placed.push({ x, z, yaw }),
-    localToWorld: (x, y, z) => ({ x: 50 + x, y, z: 80 + z }),
+    currPos: new THREE.Vector3(),
+    currQuat: new THREE.Quaternion(),
+    placeAt(x, z, yaw) {
+      placed.push({ x, z, yaw });
+      this.currPos.set(x, 0, z);
+      this.currQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    },
+    localToWorld: (x, y, z) => model.localToWorld(new THREE.Vector3(x, y, z)),
   };
+  model.position.set(-300, 0, 40); // somewhere else on the farm, turned
+  model.rotation.y = 1.2;
+  model.updateMatrixWorld(true);
   const unit = { id: 'hartley', quad };
   const onBeam = [];
   const g = {
-    world: { layout: { logYard: { park: { x: 50, z: 80, yaw: 0 } } } },
+    world: { layout: { logYard: { park: { x: 50, z: 80, yaw: 0 } } } }, // the woodpile's parking place
     tractorUnit: tractor ? unit : null,
     units: tractor ? [unit] : [],
     logStack: {},
@@ -44,7 +54,7 @@ describe('scene splitter', () => {
     expect(SETUPS.splitter).toBeTypeOf('function');
   });
 
-  it('parks the tractor at the log yard, fits the splitter and starts it, brake on, a round on the beam and you beside it', () => {
+  it('parks the tractor at the woodpile, fits the splitter and starts it, brake on, a round on the beam and you beside it', () => {
     const { g, said, say, placed, beam, onBeam } = standIn();
     const out = SETUPS.splitter(g, say);
     expect(placed).toEqual([{ x: 50, z: 80, yaw: 0 }]);

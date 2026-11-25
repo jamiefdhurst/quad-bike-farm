@@ -71,7 +71,7 @@ export const SCENES = [
     label: 'Put you in the barn at midday with Amy fetching her helmet from the hooks and tagging along: listen to her voice ring in here and go muffled once the helmet is on her head (`girl amy helmet` hangs it up again; `tp me to yard` for her outside; `tune` has her voiceHelmetCutoff)',
     lines: ['weather sunny', 'weather.time 12', 'tp me to barn', 'girl amy helmet', 'girl amy tag-along'],
   },
-  { id: 'splitter', label: 'Put you at the log splitter on the tractor in the log yard by day, the engine running, its brake on and a round on the beam: hold E to push the ram through and listen to the pump whine, the ram strain in the round and the oil hiss as it comes back', lines: ['weather.kind sunny', 'weather.time 12'], setup: 'splitter' },
+  { id: 'splitter', label: 'Put you at the log splitter on the tractor at the woodpile by day, the engine running, its brake on and a round on the beam: hold E to push the ram through and listen to the pump whine, the ram strain in the round and the oil hiss as it comes back', lines: ['weather.kind sunny', 'weather.time 12'], setup: 'splitter' },
   { id: 'end', label: 'Let the girls go about their day again after a scene', lines: [], setup: 'end' },
 ];
 
