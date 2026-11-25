@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { ALONGSIDE, byMilestone, currentPhase, dependsOn, eligible } from '../tools/nextTodo.mjs';
+import { ALONGSIDE, AREAS, BATCH_SIZE, batch, batchLabels, byMilestone, currentPhase, dependsOn, eligible, goesWith, unbatchable } from '../tools/nextTodo.mjs';
 
 const issue = (number, milestone, extra = {}) => ({ number, title: `t${number}`, body: '', labels: [], milestone, ...extra });
 const order = (issues, open, pr, opts) => eligible(issues, open ?? issues.map((i) => i.number), pr, opts).map((i) => i.number);
@@ -76,6 +76,67 @@ describe('which issue /todo takes next', () => {
     const tidy = { labels: ['🧩 cohesion'] };
     const issues = [issue(130, '0 · Foundations', { ...tidy, body: 'Depends on: #661' }), issue(661, '0 · Foundations')];
     expect(order(issues, undefined, [], { label: '🧩 cohesion' })).toEqual([]);
+  });
+});
+
+// `/todo batch` takes up to four small issues that belong together, as one PR (#1180).
+describe('which issues a batch takes', () => {
+  const MAP = '1 · The new map';
+  const bug = (number, extra = {}) => issue(number, MAP, { labels: ['🐛 bug', '🌾 world'], ...extra });
+  const take = (issues, opts) => batch(eligible(issues, issues.map((i) => i.number), [], opts)).map((i) => i.number);
+
+  it('starts from the next eligible issue and takes up to three more in its milestone that share an area label', () => {
+    const issues = [bug(1122), bug(1123), bug(1124), bug(1125), bug(1126)];
+    expect(take(issues)).toEqual([1122, 1123, 1124, 1125]);
+    expect(BATCH_SIZE).toBe(4);
+  });
+
+  it('takes bugs and enhancements alike, but not a feature or a task', () => {
+    const issues = [
+      bug(10), bug(11, { labels: ['⚡ enhancement', '🌾 world'] }), bug(12, { labels: ['✨ feature', '🌾 world'] }), bug(13, { labels: ['🔨 task', '🌾 world'] }),
+    ];
+    expect(take(issues)).toEqual([10, 11]);
+    expect(unbatchable(issues[2])).toEqual(['not a 🐛 bug or ⚡ enhancement']);
+  });
+
+  it('leaves out one in another milestone, or with no area label in common', () => {
+    const issues = [bug(10), bug(11, { milestone: '2 · The farmstead' }), bug(12, { labels: ['🐛 bug', '👭 girls'] }), bug(13, { labels: ['🐛 bug', '👭 girls', '🌾 world'] })];
+    expect(take(issues)).toEqual([10, 13]);
+    expect(goesWith(issues[0], issues[1])).toEqual(['in 2 · The farmstead, not 1 · The new map']);
+    expect(goesWith(issues[0], issues[2])).toEqual(['no area label in common with #10']);
+  });
+
+  it('starts no batch before milestone 1, without a milestone, or from an issue of more than 12 lines', () => {
+    const big = Array.from({ length: 13 }, (_, k) => `- line ${k}`).join('\n');
+    const issues = [bug(5, { milestone: '0 · Foundations' }), bug(6, { milestone: null, labels: ['🐛 bug', '🌾 world', '🔜 next'] }), bug(7, { body: big }), bug(8), bug(9)];
+    expect(take(issues)).toEqual([8, 9]);
+    expect(unbatchable(issues[0])).toEqual(['in 0 · Foundations, before milestone 1']);
+    expect(unbatchable(issues[2])).toEqual(['13 lines of work, more than 12']);
+  });
+
+  it('skips what /todo skips: held back, with a PR, or waiting on an open issue', () => {
+    const issues = [bug(10), bug(11, { labels: ['🐛 bug', '🌾 world', '💤 later'] }), bug(12, { body: 'Depends on: #10' }), bug(13), bug(14)];
+    expect(batch(eligible(issues, issues.map((i) => i.number), [13])).map((i) => i.number)).toEqual([10, 14]);
+  });
+
+  it('leaves performance and cohesion issues to /perf and /tidy', () => {
+    const issues = [bug(10, { labels: ['⚡ enhancement', '🌾 world', '🚀 performance'] }), bug(11, { labels: ['🐛 bug', '🌾 world', '🧩 cohesion'] }), bug(12)];
+    expect(take(issues)).toEqual([12]);
+    expect(unbatchable(issues[0])).toEqual(['labelled 🚀 performance, which /perf works alone']);
+  });
+
+  it('is empty when nothing can start one', () => {
+    expect(take([issue(1, MAP, { labels: ['✨ feature', '🌾 world'] })])).toEqual([]);
+  });
+
+  it('gives the PR every area label and one type label, a bug if any of them is one', () => {
+    expect(batchLabels([bug(1, { labels: ['⚡ enhancement', '🌾 world'] }), bug(2, { labels: ['🐛 bug', '🌾 world', '🔊 sound'] })])).toEqual(['🐛 bug', '🌾 world', '🔊 sound']);
+    expect(batchLabels([bug(1, { labels: ['⚡ enhancement', '👭 girls'] })])).toEqual(['⚡ enhancement', '👭 girls']);
+  });
+
+  it('knows every area label in .github/settings.yml', () => {
+    const yml = readFileSync('.github/settings.yml', 'utf8');
+    for (const a of AREAS) expect(yml).toContain(`name: "${a}"`);
   });
 });
 

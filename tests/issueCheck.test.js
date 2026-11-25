@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { requirements, parseList, writeList, refresh, judge, unplanned, commentBody, postedComment, canClose } from '../tools/issueCheck.mjs';
+import { requirements, parseList, writeList, refresh, judge, unplanned, commentBody, postedComment, canClose, prVerdict } from '../tools/issueCheck.mjs';
 
 const BODY = `What happens for the player.
 
@@ -214,5 +214,33 @@ describe('a plan for every line (#775)', () => {
 
   it('counts a plan, nothing done, as 0 of n on the comment', () => {
     expect(commentBody([planned('One'), planned('Two')])).toContain('0 of 2 lines done');
+  });
+});
+
+// A `/todo batch` PR closes several issues at once, so the check reads each and fails on any one with a line unanswered (#1180).
+describe('a PR that closes several issues', () => {
+  const posted = (entries) => [{ body: commentBody(entries), url: 'x#issuecomment-1' }];
+  const issue = (number, entries) => ({ number, title: 'T', body: '- One\n- Two', labels: [], comments: posted(entries) });
+
+  it('passes with every line of every issue answered', () => {
+    const r = prVerdict([issue(1122, [done('One'), done('Two')]), issue(1123, [done('One'), done('Two')])]);
+    expect(r).toMatchObject({ ok: true, says: ['#1122: every line done', '#1123: every line done'] });
+  });
+
+  it('fails when one issue of the batch has a line unanswered, naming that issue and its line', () => {
+    const r = prVerdict([
+      issue(1122, [done('One'), done('Two')]),
+      issue(1123, [done('One'), { ticked: false, text: 'Two', note: 'blocked on #9' }]),
+      issue(1124, [done('One'), done('Two')]),
+    ]);
+    expect(r.ok).toBe(false);
+    expect(r.says[0]).toBe('#1122: every line done');
+    expect(r.says[1]).toMatch(/^#1123: this PR would close it with lines unanswered/);
+    expect(r.says[1]).toContain('not done: Two');
+    expect(r.says[2]).toBe('#1124: every line done');
+  });
+
+  it('passes a PR that closes nothing', () => {
+    expect(prVerdict([])).toEqual({ ok: true, says: ['This PR closes no issue.'] });
   });
 });
