@@ -4,33 +4,38 @@
 // Measured over the dev server (SMOKE_DEV=1), not the build: the built bundle is one file, so there is nothing to give a share per file, and Chrome's
 // ranges on it would need its source map to be turned back into files. The dev server serves each module as its own file. Its inline source maps are
 // stripped first: left in they count as code and every share reads about 96%.
+//
+// A share counts whole functions (#1212): Chrome is asked for function coverage, not block coverage, which doubled the time the world took to build on
+// the dev server. A function that was called counts all of its bytes, branches it never took included, and one never called counts none, so a share
+// reads higher than it did by blocks. It still falls when something stops running: a function no longer called takes its bytes out.
 
 /** The share of each of these that a smoke run reaches, as a whole-number percentage, with the point each may not fall below. Each floor is 2 points
  * under the worst of five CI runs, so the ordinary differences between runs don't fail a PR. To raise one, run the Smoke play job a few times (it prints the
- * shares in its summary; #1182) and set it 2 under the lowest. To add a host file, add a line here: a test fails until it has one. */
+ * shares in its summary; #1182) and set it 2 under the lowest. To add a host file, add a line here: a test fails until it has one. All of them were set
+ * again from five Smoke play runs when the shares began counting whole functions (#1212). */
 export const FLOORS = {
-  all: 77, // was 78: the Moor (#713, about 1,500 lines of src) is on the new farm only, and the smoke run loads today's farm
-  'src/game.js': 63,
+  all: 85,
+  'src/game.js': 79,
   hosts: {
-    'src/console/gameHost.js': 69,
-    'src/items/powerHost.js': 49,
-    'src/items/rackHost.js': 74,
-    'src/items/toolsHost.js': 30,
-    'src/items/towHost.js': 43,
-    'src/items/tractorWorkHost.js': 37,
-    'src/npc/mindsHost.js': 75, // the lift and Call them (#690) only run with a far place or a whistle; tests/farWalkHost.test.js holds them
-    'src/photos/photoHost.js': 30,
-    'src/world/farmJobsHost.js': 44,
-    'src/world/fieldWorkHost.js': 43,
-    'src/world/hutHost.js': 69, // was 71: 73.6% with the frame budget's spots in the same run, 71.7% in the play part on its own (#1182)
-    'src/world/motHost.js': 57,
-    'src/world/mowHost.js': 43,
-    'src/world/neighbourHost.js': 63,
-    'src/world/rollingRoadHost.js': 43,
-    'src/world/trafficHost.js': 70, // was 74 (76 before that; 72.2% reached on the farm everybody plays, #692): `debugBackLane` runs only on the new farm (#686), which the smoke does not play until #692 makes it the default
-    'src/world/turnRoundHost.js': 40, // 42.8% in one run: its turn-round code runs only on the new farm (#687), which the smoke does not play until #692 makes it the default
-    'src/world/villageHost.js': 68, // was 80: the frame budget's stop in the village street ran the rest, and it is in the load part now (82.3% then, 70.8% in play, #1182)
-    'src/world/weatherHost.js': 74, // was 78: the run reaches 76.6% on the farm everybody plays (#692)
+    'src/console/gameHost.js': 88,
+    'src/items/powerHost.js': 64,
+    'src/items/rackHost.js': 90,
+    'src/items/toolsHost.js': 64,
+    'src/items/towHost.js': 62,
+    'src/items/tractorWorkHost.js': 44,
+    'src/npc/mindsHost.js': 78, // the lift and Call them (#690) only run with a far place or a whistle; tests/farWalkHost.test.js holds them
+    'src/photos/photoHost.js': 44,
+    'src/world/farmJobsHost.js': 56,
+    'src/world/fieldWorkHost.js': 53,
+    'src/world/hutHost.js': 83,
+    'src/world/motHost.js': 66,
+    'src/world/mowHost.js': 75,
+    'src/world/neighbourHost.js': 82,
+    'src/world/rollingRoadHost.js': 57,
+    'src/world/trafficHost.js': 83,
+    'src/world/turnRoundHost.js': 65,
+    'src/world/villageHost.js': 78,
+    'src/world/weatherHost.js': 83,
   },
 };
 
