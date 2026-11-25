@@ -256,10 +256,73 @@ describe('traffic along it', () => {
     const { LaneDrive } = await import('../src/world/backLaneTraffic.js');
     const all = [];
     const a = new LaneDrive({ id: 1, road, all, dir: 1, speed: 6 });
+    const b = new LaneDrive({ id: 2, road, all, dir: 1, speed: 8 }); // faster, dealt 3 s after the first at the same end (#1015)
     all.push(a);
-    for (let i = 0; i < 100; i++) a.update(0.1);
+    let closest = Infinity;
+    for (let i = 0; i < 100; i++) {
+      if (i === 30) all.push(b);
+      a.update(0.1);
+      if (i >= 30) {
+        b.update(0.1);
+        closest = Math.min(closest, (a.s - b.s) * a.dir);
+      }
+    }
     expect(a.s).toBeGreaterThan(50);
     expect(a.state).toBe('driving');
+    expect(b.s).toBeGreaterThan(20);
+    expect(b.state).toBe('driving');
+    expect(closest).toBeGreaterThan(5); // still behind it, and never on it
+  });
+
+  // #1015: same-way vehicles drove through each other, a van at 4 m/s and a car at 9 m/s behind it reaching 0.00 m apart.
+  it('keeps a fast vehicle at least 5 m behind a slow one the whole way round, either way', async () => {
+    const { LaneDrive } = await import('../src/world/backLaneTraffic.js');
+    for (const dir of [1, -1]) {
+      const all = [];
+      const van = new LaneDrive({ id: 1, road, all, dir, speed: 4 });
+      const car = new LaneDrive({ id: 2, road, all, dir, speed: 9 });
+      van.s = dir > 0 ? 60 : road.length - 60;
+      all.push(van, car);
+      let closest = Infinity;
+      let nearestAlong = Infinity;
+      for (let t = 0; t < 1500 && !van.arrived; t += 0.1) {
+        van.update(0.1);
+        car.update(0.1);
+        if (van.arrived || car.arrived) break;
+        closest = Math.min(closest, Math.hypot(van.x - car.x, van.z - car.z));
+        nearestAlong = Math.min(nearestAlong, (van.s - car.s) * dir);
+      }
+      expect(van.arrived, `dir ${dir}`).toBe(true);
+      expect(closest, `dir ${dir}`).toBeGreaterThanOrEqual(5);
+      expect(nearestAlong, `dir ${dir}: it caught the van up and followed it`).toBeLessThan(20);
+    }
+  });
+
+  it('never puts two vehicles in one passing place when two following each other meet one coming the other way', async () => {
+    const { LaneDrive } = await import('../src/world/backLaneTraffic.js');
+    for (const dir of [1, -1]) {
+      const bay = road.bays.find((b, i) => b.side === dir && i >= 2 && i < road.bays.length - 2); // on the left of the two that follow
+      const all = [];
+      const lead = new LaneDrive({ id: 1, road, all, dir, speed: 7 });
+      const follower = new LaneDrive({ id: 2, road, all, dir, speed: 7 });
+      const other = new LaneDrive({ id: 3, road, all, dir: -dir, speed: 7 });
+      lead.s = bay.s - 50 * dir;
+      follower.s = bay.s - 64 * dir;
+      other.s = bay.s + 50 * dir;
+      all.push(lead, follower, other);
+      let waited = 0;
+      let closest = Infinity;
+      for (let t = 0; t < 1200 && !all.every((v) => v.arrived); t += 0.1) {
+        for (const v of all) v.update(0.1);
+        const held = all.filter((v) => !v.arrived && (v.state === 'pulling' || v.state === 'waiting')).map((v) => v.bay);
+        expect(new Set(held).size, `dir ${dir} at ${t.toFixed(1)} s`).toBe(held.length);
+        if (all.some((v) => v.state === 'waiting')) waited += 0.1;
+        if (!lead.arrived && !follower.arrived) closest = Math.min(closest, (lead.s - follower.s) * dir);
+      }
+      expect(all.every((v) => v.arrived), `dir ${dir}`).toBe(true);
+      expect(waited, `dir ${dir}: one of them waited in a passing place`).toBeGreaterThan(0);
+      expect(closest, `dir ${dir}`).toBeGreaterThanOrEqual(5);
+    }
   });
 });
 
