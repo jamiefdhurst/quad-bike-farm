@@ -59,7 +59,7 @@ A mixed upland-edge farm of about 68 ha (870 by 830 m), about seven times today'
 
 ## The phases
 
-Each phase is a GitHub milestone, kept in `.github/settings.yml`. `/todo` takes a `🔜 next` issue first, then the lowest-numbered issue in the earliest open milestone whose `Depends on:` line names only closed issues. Work that doesn't depend on where things are (the girls, the vehicles, the engine, sound, items) is in the **alongside** milestones, 6 to 12, grouped by what it is about. `/todo alongside` takes the earliest of those while the map's phases run, and plain `/todo` runs on into them once 5 is done; Ready for players comes after them all, as 13. The vehicle reviews are the exception: they are a phase of their own, 4 · The vehicles, so they come before the cohesion passes. Milestones run by the number their title starts with. An issue that puts something in the world isn't started before its phase.
+Each phase is a GitHub milestone, kept in `.github/settings.yml`. `/todo` takes a `🔜 next` issue first, then the lowest-numbered issue in the earliest open milestone whose `Depends on:` line names only closed issues. Work that doesn't depend on where things are (the girls, the vehicles, the engine, sound, items) is in the **alongside** milestones, 6 to 12, grouped by what it is about. `/todo alongside` takes the earliest of those while the map's phases run, and plain `/todo` runs on into them once 5 is done; then 13 · Polish, and Ready for players comes after them all, as 14. A find or an idea goes in a map phase only when that phase's work fails without it; otherwise it goes in the alongside milestone it is about, or in Polish. The vehicle reviews are the exception: they are a phase of their own, 4 · The vehicles, so they come before the cohesion passes. Milestones run by the number their title starts with. An issue that puts something in the world isn't started before its phase.
 
 ### 0 · Foundations
 
@@ -118,7 +118,7 @@ New moves:
 - #708 See further on a clear day, with a far landscape beyond the map's edges
 - #692 Open the new farm: make it the default (the breaking release; until then the new map is built behind `?layout=2`, with a piece not yet moved left at today's numbers)
 
-Existing: #565 (rewritten: Brook Meadow), #568 (rewritten: the drive), #569 (the neighbour across the lane), #616 (drag races on the drive), #615 (girls stuck behind the Dutch barn), #558, #563, #564, #561, #311, and the village fixes #386, #392, #536, #537, #539, #540, #541, #542, #543.
+Existing: #565 (rewritten: Brook Meadow), #568 (rewritten: the drive), #569 (the neighbour across the lane), #616 (drag races on the drive), #615 (girls stuck behind the Dutch barn), #558, #311, and the village fixes #386, #536, #537, #539, #542.
 
 ### 2 · The farmstead and the missing parts
 
@@ -135,7 +135,7 @@ New:
 - #715 Build Nether Thornby's church, its tower seen from the farm and its bells heard across it
 - #716 Nether Thornby's village hall, playing field and war memorial
 
-Existing: #613 (bigger barn), #617 (machinery shed), #570 (farm sign), #145 (cattle), #601 (the cars arrive down the lane), #622, #623, #624, #625 (the sheep field's walls, barn and the girls there), #404, #465, #503, #329, #246, #212, #169, #171 (the barn and yard), #161, #166, #213, #214, #215, #167, #168, #146, #147, #172, #124, #163 (things in the fields and on the farm), #337, #338, #340, #341, #342, #230, #232, #560 (the wood and logs), #315, #122, #331, #393, #614, #361, #362, #544, #547, #548 (the neighbour, the lane and the village).
+Existing: #613 (bigger barn), #617 (machinery shed), #145 (cattle), #622, #624 (the sheep field's wall and barn), #614 (the fuel bowsers).
 
 ### 3 · Crops
 
@@ -167,7 +167,11 @@ New:
 
 Existing: #412, #413, #414, #415 (with #252 folded in or first), #423, #424, #425, #589, #218.
 
-### 13 · Ready for players
+### 13 · Polish
+
+Finds and ideas that no phase's work fails without and that no alongside theme takes: a recheck's small finds, a walk's niggles, a nicer way to do something that already works. Added on 25 November 2026 (#1181), when the map's phases were filling with them faster than they closed. Plain `/todo` takes it after 12; `/todo alongside` doesn't.
+
+### 14 · Ready for players
 
 New:
 
@@ -230,6 +234,8 @@ Four were rewritten: #360, #565, #568, #569. #122, #145, #569, #681, #682, #687,
 #708 moved from Foundations to The new map on 9 November: the far landscape starts at the new map's edge, and #692 now depends on it. The review of Foundations added #759 and #760 the same day. Its second review added #764 and #767, and Foundations closes after them.
 
 On 15 November the 124 issues in Alongside were split into 6 to 12 (Alongside was renamed 6 · Engines and sound, and 6 · Ready for players became 13). Five that fix places the new map rebuilds moved to 1 · The new map: #828, #829, #837, #846 and #847.
+
+On 25 November 13 · Polish was added for what no phase waits on, and Ready for players became 14 (#1181). 32 issues moved out of 1 · The new map and 65 out of 2 · The farmstead, to Polish or the alongside milestone each is about, as the sort on #1181 lists them; the rest of 2's old existing list (#570, #601, #623, #625, #404, #465, #503, #329, #246, #212, #169, #171, #161, #166, #213, #214, #215, #167, #168, #146, #147, #172, #124, #163, #337, #338, #340, #341, #342, #230, #232, #560, #315, #122, #331, #393, #361, #362, #544, #547, #548) and #392, #540, #541, #543, #561, #563 and #564 from 1's are among them.
 
 Turned down on 8 November: a pheasant shoot, or any shooting (`docs/decisions/ideas-turned-down.md`).
 
