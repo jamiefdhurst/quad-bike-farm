@@ -3,14 +3,14 @@ import { createRandom } from '../src/core/random.js';
 import { planDamage, applyDamage } from '../src/vehicle/rustyDamage.js';
 import { loadDonors, buildDonor, landsTheSame } from './helpers/rustyDamage.js';
 
-// The rusty quad's damage lands the same wherever and however the vehicle stands (#597), for the yellow, the green and the orange, and
+// The rusty quad's damage lands the same wherever and however the vehicle stands (#597), for the blue, the green and the orange, and
 // is put on without moving the vehicle: the rest of rustyDamageSteady.test.js (#1183).
 
 describe('the look on each donor', () => {
   beforeAll(loadDonors);
 
   describe('lands the same wherever and however the vehicle stands (#597)', () => {
-    for (const id of ['hornet', 'rb300', 'adder']) {
+    for (const id of ['bruin', 'rb300', 'adder']) {
       it(`for the ${id}: turned, tilted on its springs, with the bars steered, or with parts left out for being small`, () => landsTheSame(id));
     }
 
