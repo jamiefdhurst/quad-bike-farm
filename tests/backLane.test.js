@@ -351,6 +351,49 @@ describe('the lane\'s traffic on the new farm', () => {
     for (let t = 0; t < 600; t += 1) on.update(1, { blockers: [], darkness: 0 });
     expect(on.vehicles.some((x) => x.backLane) || on.count > 0).toBe(true);
   });
+
+  it('holds one dealt at an end until the last one dealt there going its way is far enough on, so they are never dealt on top of each other (#1015)', async () => {
+    const { Traffic, DEFAULT_TRAFFIC_PARAMS, visitPlaces } = await import('../src/world/traffic.js');
+    let seed = 11;
+    const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const traffic = new Traffic({ places: visitPlaces(two), params: { ...DEFAULT_TRAFFIC_PARAMS, passEvery: 0, visitEvery: 0, backEvery: 0, aRoadEvery: 0 }, random });
+    const first = traffic.spawnBackLane('tractor', 1);
+    traffic.update(0.1, { blockers: [], darkness: 0 });
+    const second = traffic.spawnBackLane('van', 1); // the panel's button pressed twice
+    const third = traffic.spawnBackLane('van', -1); // the other end is clear: it goes at once
+    expect(traffic.vehicles).toContain(first);
+    expect(traffic.vehicles).not.toContain(second);
+    expect(traffic.vehicles).toContain(third);
+    let closest = Infinity;
+    const gone = [];
+    for (let t = 0; t < 3000 && (traffic.vehicles.length || traffic.backHeld.length); t += 0.1) {
+      for (const e of traffic.update(0.1, { blockers: [], darkness: 0 })) if (e.type === 'gone') gone.push(e.vehicle);
+      const [a, b] = [first.drive, second.drive];
+      if (traffic.vehicles.includes(first) && traffic.vehicles.includes(second)) closest = Math.min(closest, Math.hypot(a.x - b.x, a.z - b.z));
+    }
+    expect(gone).toEqual(expect.arrayContaining([first, second, third]));
+    expect(closest).toBeLessThan(40); // it did come in behind the tractor
+    expect(closest).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('a passing place on Back Lane', () => {
+  it('is refused to a vehicle while another holds it, and is free again once that one pulls out (#1015)', async () => {
+    const { LaneDrive } = await import('../src/world/backLaneTraffic.js');
+    const bay = road.bays[5];
+    const all = [];
+    const waiter = new LaneDrive({ id: 1, road, all, dir: bay.side, speed: 7 });
+    const other = new LaneDrive({ id: 2, road, all, dir: -bay.side, speed: 7 });
+    waiter.s = bay.s;
+    other.s = bay.side > 0 ? road.length - 1 : 1; // far off at the other end, out of sight, with no vehicle ahead of it
+    Object.assign(waiter, { state: 'waiting', bay, speed: 0 });
+    all.push(waiter, other);
+    expect(other.canUse(bay)).toBe(false);
+    waiter.update(0.1); // nothing coming: it pulls out
+    expect(waiter.state).toBe('driving');
+    expect(waiter.bay).toBeNull();
+    expect(other.canUse(bay)).toBe(true);
+  });
 });
 
 describe('the places you can go to', () => {
