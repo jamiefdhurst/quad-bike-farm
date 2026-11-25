@@ -18,6 +18,33 @@ export function waterEdge(brook, x, side) {
   return brook.halfAt(x) + 3;
 }
 
+/** How the river's water is shaded at x (#1000), a multiplier on its colour: darker over a deep pool, paler over a riffle with its gravel showing; 1 elsewhere. */
+export function waterShade(brook, x) {
+  if (!brook?.steps) return 1;
+  const deep = Math.max(0, Math.min(1, (brook.waterDepthAt(x) - 0.45) / 0.7));
+  return (1 - 0.3 * deep) * (1 + 0.45 * brook.riffleK(x));
+}
+
+/**
+ * The broken water over each riffle (#1000), for a strip of pale flecks laid on the water: per riffle a run of cross-sections { x, z, hn, hs, y, a } every
+ * half metre from just above its fall to a little below it, `hn` and `hs` m to its north and south edges (inside the water's edge), `y` a hand over the
+ * surface (`heightAt` the ground's), `a` 0..1 how much of it shows, nothing at the run's ends.
+ */
+export function riffleFoam(brook, heightAt) {
+  if (!brook?.steps) return [];
+  return brook.riffles().map((r) => {
+    const from = r.a - 0.5;
+    const to = r.b + 1.5;
+    const run = [];
+    for (let x = from; x <= to + 1e-6; x += 0.5) {
+      const z = brook.zAt(x);
+      const t = (x - from) / (to - from);
+      run.push({ x, z, hn: Math.max(0.2, waterEdge(brook, x, -1) - 0.15), hs: Math.max(0.2, waterEdge(brook, x, 1) - 0.15), y: heightAt(x, z) + brook.waterDepthAt(x) + 0.015, a: Math.sin(Math.PI * t) ** 0.7 * 0.9 });
+    }
+    return run;
+  });
+}
+
 /**
  * The stock fence along the brook's north bank (#999): from Brook Meadow's river gate to the lane's verge, `BROOK_FENCE.off` m back from the water, as a
  * few straight stretches (a strainer at each corner, wireFence.js), open where the boundary track crosses the brook, where the farm's east hedge
@@ -128,6 +155,9 @@ export function riversidePlaces(layout, brook, { roads = roadNetwork(layout), ra
   const byCrossing = (x, r) => Math.abs(x - cross.x) < cross.reach + r;
   const byBridge = (x) => river.bridge && Math.abs(x - river.bridge.x) < 10;
   const track = (x, z) => !!roads.surfaceAt(x, z);
+  // A footpath's crossing is kept for its stile or gate (farmPlacement.js `SPOT_RADIUS`, 1.5 m, and a plant's own reach).
+  const spots = layout.reserved?.crossings ?? [];
+  const kept = (x, z) => spots.some((c) => Math.hypot(x - c.at[0], z - c.at[1]) < 2);
   const lane = layout.publicLane;
   const brookEnd = lane ? lane.x - lane.halfWidth - 2.5 : meadow.maxX;
 
@@ -144,11 +174,13 @@ export function riversidePlaces(layout, brook, { roads = roadNetwork(layout), ra
       const edge = waterEdge(brook, x, side);
       const zc = brook.zAt(x);
       const zr = zc + side * (edge + (random() - 0.35) * 0.8);
-      if (!track(x, zr)) rushes.push(plant(x, zr, 0.9 + random() * 0.5));
+      if (!track(x, zr) && !kept(x, zr)) rushes.push(plant(x, zr, 0.9 + random() * 0.5));
       if (random() < 0.7) {
-        const zs = zc + side * (edge + 0.4 + random() * 1.4);
+        // Behind the water's edge where it stands, not where the rush does: on a bend or by a riffle's bar the edge moves a metre in a metre (#1000).
+        const back = 0.4 + random() * 1.4;
         const xs = x + (random() - 0.5) * 1.5;
-        if (!track(xs, zs)) sedge.push(plant(xs, zs, 0.7 + random() * 0.5));
+        const zs = brook.zAt(xs) + side * (waterEdge(brook, xs, side) + back);
+        if (!track(xs, zs) && !kept(xs, zs)) sedge.push(plant(xs, zs, 0.7 + random() * 0.5));
       }
     }
   }

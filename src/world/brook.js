@@ -72,19 +72,84 @@ export function createBrook(layout) {
     if (culvert) k *= smoothstep(0, culvert.ease, Math.abs(x - culvert.x) - culvert.half);
     return k;
   }
+  // The pools and riffles (#1000, the new farm's `river.steps`). The riffles stand where the layout puts them, the first at the crossing, laid from
+  // `cross.x` and nothing else, so where they are (and so the river's width, its bars and how deep its water stands) needs no ground; how far each drops does.
+  const steps = river?.steps && cross ? river.steps : null;
+  const riffleList = steps
+    ? [{ a: cross.x - steps.crossing / 2, b: cross.x + steps.crossing / 2, crossing: true }, ...steps.riffles.map((a) => ({ a, b: a + steps.length, crossing: false }))].map((r, i) => {
+        // Its gravel bar: over the riffle and on past its foot, or for the crossing just past its downstream posts, beyond the landings.
+        const barFrom = r.crossing ? cross.x + cross.half + 0.5 : r.a - 0.5;
+        const barTo = r.crossing ? barFrom + 5 : r.b + steps.bar.tail;
+        const mid = (barFrom + barTo) / 2;
+        const side = bends ? (Math.sin(mid * bends.k + bends.phase) < 0 ? 1 : -1) : i % 2 ? 1 : -1; // the inside of the bend it is in, never under a cut bank
+        return { ...r, x: r.crossing ? cross.x : (r.a + r.b) / 2, barFrom, barTo, side };
+      })
+    : [];
+  // How much of a riffle x is in (0..1), and of its bar (signed by the bar's side), on a quarter-metre grid: halfAt and cutAt ask for them constantly.
+  const gridDx = 0.25;
+  const gridFrom = steps ? steps.from - 2 : 0;
+  const gridN = steps ? Math.ceil((steps.to + 12 - gridFrom) / gridDx) + 1 : 0;
+  const riffleGrid = new Float32Array(gridN);
+  const barGrid = new Float32Array(gridN);
+  for (let i = 0; i < gridN; i++) {
+    const x = gridFrom + i * gridDx;
+    for (const r of riffleList) {
+      riffleGrid[i] = Math.max(riffleGrid[i], smoothstep(r.a - 0.5, r.a, x) * (1 - smoothstep(r.b, r.b + 0.5, x))); // shallow over the whole of its fall
+      const bar = smoothstep(r.barFrom - 1, r.barFrom + 1, x) * (1 - smoothstep(r.barTo - 1, r.barTo + 1, x));
+      if (bar > Math.abs(barGrid[i])) barGrid[i] = bar * r.side;
+    }
+  }
+  const onGrid = (g, x) => {
+    const f = (x - gridFrom) / gridDx;
+    if (!(f > 0 && f < gridN - 1)) return 0;
+    const i = Math.floor(f);
+    return g[i] + (g[i + 1] - g[i]) * (f - i);
+  };
+  /** 0..1 how much of a riffle x is in: its shallow, narrower water. */
+  const riffleK = (x) => onGrid(riffleGrid, x);
+  // The crossing's riffle draws its banks in by `steps.narrow` (its landings are cut down, so it has no bar in the water); the rest are narrowed by their bars.
+  const crossingRiffleK = (x) => (Math.abs(x - cross.x) < cross.half ? riffleK(x) : 0);
+  // The pools, each { a, b } from its head to its foot: the head pool from `steps.from` down to the crossing, then one between each riffle and the next,
+  // so every pool ends in a riffle. Either side of the crossing a pool's deep water ends where the crossing's bed ramps up to its shallows, and either
+  // side of a riffle where its shallow water begins, half a metre beyond its fall. Below the last riffle, where the river narrows into the brook, there
+  // is no pool: the surface falls `tail.share` as fast as the steady fall until it meets it again, at most at `steps.to`.
+  const shallows = cross ? cross.half + cross.ramp : 0;
+  const poolList = [];
+  if (steps) {
+    let a = steps.from;
+    for (const r of riffleList) {
+      poolList.push({ a, b: r.crossing ? Math.min(r.a, cross.x - shallows) : r.a - 0.5 });
+      a = r.crossing ? Math.max(r.b, cross.x + shallows) : r.b + 0.5;
+    }
+  }
+  // Above the head pool the steady surface is let down `lead.depth` m over `lead.reach` m, where the pasture's stream falls into the river's head, so the
+  // head pool starts that much under the field and the bank above the crossing stays 0.3 m clear of it as it climbs.
+  const head = steps ? steps.from - steps.lead.reach : 0;
+  const stepped = (x) => !!steps && x >= head && x <= steps.to;
+  /** Metres of water standing in the river's pools and riffles at x: deepening down each pool to its foot, shallow over a riffle. */
+  function steppedWater(x) {
+    const w = steps.water;
+    const p = poolList.find((q) => x < q.b);
+    const pool = p ? mix(w.head, w.foot, clamp((x - p.a) / Math.max(1, p.b - p.a), 0, 1)) : river.water; // below the last riffle, the steady water
+    return mix(pool, w.riffle, riffleK(x));
+  }
+
   // The river keeps the surface where it was and deepens the bed under it; the crossing raises the bed again until `cross.water` m stand over it.
   const riverDepth = (x) => mix(depth0, river.depth + deepen, riverK(x));
-  const riverWater = (x) => mix(water0, river.water, riverK(x));
+  const steadyWater = (x) => mix(water0, river.water, riverK(x));
+  const riverWater = (x) => (stepped(x) ? mix(water0, steppedWater(x), riverK(x)) : steadyWater(x));
   const baseDepthAt = (x) => {
     if (!river) return depth0 * fullness(x);
     const d = riverDepth(x);
-    return (cross ? mix(d, d - riverWater(x) + cross.water, crossK(x)) : d) * fullness(x);
+    return (cross ? mix(d, d - steadyWater(x) + cross.water, crossK(x)) : d) * fullness(x);
   };
+  /** The steady river's water at x, as it stood before the pools: what its surface, and so the pools', are worked out from. */
+  const steadyDepthAt = (x) => (river ? (cross ? mix(steadyWater(x), cross.water, crossK(x)) : steadyWater(x)) : water0) * fullness(x);
   // Where the land rises downstream the water would run uphill (the surface is the ground at its middle less the cut plus the water standing). With
   // the ground along the line (`useGround`, from terrainHeight.js) on a river that runs east (`river.eastward`, the new farm's) the channel is cut that much deeper there, so its surface only ever falls (#565).
   let ground = null;
   let lower = null;
-  const surfaceAt = (x) => ground(x) - baseDepthAt(x) + waterDepthAt(x);
+  const surfaceAt = (x) => ground(x) - baseDepthAt(x) + steadyDepthAt(x);
   function lowerAt(x) {
     if (!ground || x <= minX + 1 || x >= maxX) return 0;
     if (!lower) {
@@ -101,10 +166,81 @@ export function createBrook(layout) {
     const i = Math.min(lower.length - 2, Math.floor(f));
     return lower[i] + (lower[i + 1] - lower[i]) * (f - i);
   }
-  const depthAt = (x) => baseDepthAt(x) + lowerAt(x);
-  const halfAt = (x) => (half0 * (0.55 + 0.45 * fullness(x))) * (river ? mix(1, river.halfWidth / half0, riverK(x)) : 1) * (vary ? 1 + vary.amount * Math.sin(x * vary.k + vary.phase) * riverK(x) : 1);
   /** How deep the water stands in the channel at x (before any rise after rain). */
   const waterDepthAt = (x) => (river ? (cross ? mix(riverWater(x), cross.water, crossK(x)) : riverWater(x)) : water0) * fullness(x);
+
+  // The surface of the pools and riffles (#1000), worked out once from the ground: the steady surface (the ground less the cut plus the water, held from
+  // rising) is the line they step about. Each pool's surface falls `third` as fast as it does, so it climbs nearer the field down the pool, and each
+  // riffle drops it to `below` m under it again, by `drop[0]` to `drop[1]` m. The water stands on the bed, so the bed is the surface less the water: the
+  // cut is worked from the surface, never the surface from the cut, or a deeper cut and deeper water cancel and the river is one steady fall (#565).
+  let profile = null;
+  function stepProfile() {
+    if (profile || !ground || !steps) return profile;
+    const n = Math.ceil((steps.to - head) / gridDx) + 1;
+    const at = (x) => head + x * gridDx;
+    const T = new Float64Array(n); // the steady surface, never rising
+    for (let i = 0; i < n; i++) T[i] = Math.min(i ? T[i - 1] : Infinity, surfaceAt(at(i)) - lowerAt(at(i)));
+    const Tx = (x) => {
+      const f = clamp((x - head) / gridDx, 0, n - 1);
+      const i = Math.min(n - 2, Math.floor(f));
+      return T[i] + (T[i + 1] - T[i]) * (f - i);
+    };
+    const [dMin, dMax] = steps.drop;
+    const lead = steps.lead.depth;
+    let p = steps.from;
+    let sp = Tx(p) - lead;
+    const marks = riffleList.map((r, i) => {
+      const sa = sp - (Tx(p) - Tx(r.a)) * steps.third;
+      const drop = clamp(sa - (Tx(r.b) - (i === riffleList.length - 1 ? steps.tail.below : steps.below)), dMin, dMax);
+      p = r.b;
+      sp = sa - drop;
+      return { sa, drop };
+    });
+    const last = riffleList[riffleList.length - 1];
+    const S = (x) => {
+      if (x < steps.from) return Tx(x) - lead * smoothstep(head, steps.from, x);
+      let from = steps.from;
+      let s0 = Tx(from) - lead;
+      for (let i = 0; i < riffleList.length; i++) {
+        const r = riffleList[i];
+        if (x < r.a) return s0 - (Tx(from) - Tx(x)) * steps.third;
+        if (x <= r.b) return marks[i].sa - marks[i].drop * smoothstep(r.a, r.b, x);
+        from = r.b;
+        s0 = marks[i].sa - marks[i].drop;
+      }
+      return Math.min(s0 - (Tx(from) - Tx(x)) * steps.tail.share, Tx(x)); // below the last riffle, until it meets the steady fall again
+    };
+    const F = new Float32Array(n); // the freeboard: how far the surface stands under the ground at the middle
+    let meet = null;
+    for (let i = 0; i < n; i++) {
+      const x = at(i);
+      const s = S(x);
+      F[i] = ground(x) - s;
+      if (meet === null && x > last.b && s >= Tx(x) - 1e-6) meet = x;
+    }
+    profile = { F, n, meet, drops: marks.map((m) => m.drop) };
+    return profile;
+  }
+  /** Metres the water's surface stands under the ground at the river's middle at x. */
+  function freeboardAt(x) {
+    const pr = stepProfile();
+    if (!pr || !stepped(x)) return baseDepthAt(x) - steadyDepthAt(x) + lowerAt(x);
+    const f = clamp((x - head) / gridDx, 0, pr.n - 1);
+    const i = Math.min(pr.n - 2, Math.floor(f));
+    return pr.F[i] + (pr.F[i + 1] - pr.F[i]) * (f - i);
+  }
+  const depthAt = (x) => (stepped(x) ? freeboardAt(x) + waterDepthAt(x) : baseDepthAt(x) + lowerAt(x));
+  const halfAt = (x) => (half0 * (0.55 + 0.45 * fullness(x))) * (river ? mix(1, river.halfWidth / half0, riverK(x)) : 1) * (vary ? 1 + vary.amount * Math.sin(x * vary.k + vary.phase) * riverK(x) : 1) * (steps ? 1 - steps.narrow * crossingRiffleK(x) : 1);
+
+  /** The riffles, the crossing first (`crossing` true): each from `a` to `b` with its middle `x`, its bar's side and reach, and with the ground the m it drops. */
+  const riffles = () => {
+    const pr = stepProfile();
+    return riffleList.map((r, i) => ({ ...r, drop: pr ? pr.drops[i] : null }));
+  };
+  /** The pools, each { a, b } from its head to its foot, each ending in a riffle: the head pool above the crossing, then one between each pair. */
+  const pools = () => poolList.map((p) => ({ ...p }));
+  /** Where the surface meets the river's steady fall again below its last riffle (null with no ground, or if it doesn't by `steps.to`). */
+  const tailMeets = () => stepProfile()?.meet ?? null;
 
   /**
    * The bend at x (#999): `out` the side its outside is on (-1 north, 1 south: the line bulges that way, `sway` is a sine), and `s` 0..1 how much of a
@@ -183,6 +319,17 @@ export function createBrook(layout) {
         cut = mix(cut, bar, s);
       }
     }
+    // A riffle's gravel bar (#1000), on the inside of the bend it is in: the bed shelves up out of the shallow water at `bar.from` of the half-width (on a
+    // bend, where the bend's own bar already stands out there, further in, to `bar.bend`) and runs on up to the field, so the water is narrower still.
+    const rb = steps ? onGrid(barGrid, x) : 0;
+    if (rb !== 0 && dz * rb > 0) {
+      const bFrom = half * mix(steps.bar.from, steps.bar.bend, s);
+      const a = Math.min(half * 0.15, bFrom * 0.5);
+      const c = half + steps.bar.reach;
+      const shelf = dry + 0.06;
+      const bar = r <= a ? d : r <= bFrom ? mix(d, shelf, smoothstep(a, bFrom, r)) : r >= c ? 0 : shelf * (1 - ((r - bFrom) / (c - bFrom)) ** 1.6);
+      cut = mix(cut, bar, Math.abs(rb));
+    }
     // The crossing's landings and the drinking places: the bank sloped from just above the water at the edge to the field `reach` m back.
     const notch = notchAt(x, z);
     // The ramp runs on a metre into the water, 0.1 m under it there, and the bed shelves on down from it at 1 in 2, so it is one slope through the edge.
@@ -200,11 +347,14 @@ export function createBrook(layout) {
   /** 0..1 how much of a gravel bar (x, z) is on: the shelf on the inside of a bend, out of the water and up the slope, for the ground's paint. */
   function barAt(x, z) {
     const { out, s } = bendAt(x);
-    if (s <= 0.05) return 0;
+    const rb = steps ? onGrid(barGrid, x) : 0;
+    if (s <= 0.05 && Math.abs(rb) <= 0.05) return 0;
     const half = halfAt(x);
-    const u = -(z - zAt(x)) * out - half * banks.bar.from;
-    if (u < -0.5) return 0;
-    return s * (1 - smoothstep(half * (1 - banks.bar.from) + banks.bar.reach * 0.5, half * (1 - banks.bar.from) + banks.bar.reach, u));
+    const shelf = (u, from, reach) => (u < -0.5 ? 0 : 1 - smoothstep(half * (1 - from) + reach * 0.5, half * (1 - from) + reach, u));
+    const bend = s > 0.05 ? s * shelf(-(z - zAt(x)) * out - half * banks.bar.from, banks.bar.from, banks.bar.reach) : 0;
+    const rf = steps ? mix(steps.bar.from, steps.bar.bend, s) : 0;
+    const riffle = Math.abs(rb) > 0.05 ? Math.abs(rb) * shelf((z - zAt(x)) * Math.sign(rb) - half * rf, rf, steps.bar.reach) : 0; // a riffle's (#1000)
+    return Math.max(bend, riffle);
   }
 
   /**
@@ -312,5 +462,5 @@ export function createBrook(layout) {
     return out;
   }
 
-  return { minX, maxX, bridge: !!(culvert && b.bridge), zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, crossing, bends: bends_, bendAt, barAt, reliefAt, notchAt, banks, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt, drinks, useGround: (fn) => { ground = river?.eastward ? fn : null; lower = null; } };
+  return { minX, maxX, bridge: !!(culvert && b.bridge), zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, crossing, bends: bends_, bendAt, barAt, reliefAt, notchAt, banks, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt, drinks, riffles, pools, tailMeets, riffleK, steps, useGround: (fn) => { ground = river?.eastward ? fn : null; lower = null; profile = null; } };
 }
