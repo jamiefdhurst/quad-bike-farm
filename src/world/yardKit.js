@@ -188,8 +188,8 @@ export function gatePosts(gates) {
   return gates.flatMap((g) => [-1, 1].map((side) => ({ x: g.along === 'z' ? g.x : g.x + side * GATE_HALF, z: g.along === 'z' ? g.z + side * GATE_HALF : g.z, side, gate: g })));
 }
 
-/** A steel gate's leaf lying along local +x from its hinge: seven rails with a heavier top one, two stiles and a brace, 1.2 m high, in tube. */
-function leafParts(len) {
+/** A steel gate's leaf lying along local +x from its hinge: seven rails with a heavier top one, two stiles and a brace, 1.2 m high, in tube. The pit's lane gate's too (#1002). */
+export function leafParts(len) {
   const parts = [];
   const tube = (l, r, x, y, rz = 0) => parts.push(put(new THREE.CylinderGeometry(r, r, l, 8), x, y, 0, 0, 0, rz));
   for (const y of [0.12, 0.26, 0.41, 0.57, 0.75, 0.95, 1.18]) tube(len, y === 1.18 ? 0.03 : 0.018, len / 2, y, Math.PI / 2);

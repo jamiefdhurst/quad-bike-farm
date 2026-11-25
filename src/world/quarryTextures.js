@@ -1,6 +1,149 @@
-// The canvas textures of the pit's props: the plant's hardcore pad, rusty plate, faded digger paint, the container's and the cabin's steel, the hazard signs and the drums.
+// The canvas textures of the pit's props: the plant's hardcore pad, rusty plate, faded digger paint, the container's and the cabin's steel, the hazard signs and the drums,
+// and the lane entrance's bellmouth and its loose tarmac (#1002).
 
 import { canvasTexture } from './outbuildingProps.js';
+import { tarmacAt, rutDip, bellmouthHalf, raggedEdge, ENTRANCE } from './pitEntrance.js';
+
+/** Where the bellmouth's texture lies over it: `v` metres either way along the gate, and from `u0` metres inside the gate to `pad` past the lane's edge. */
+export const BELLMOUTH_UV = { v: 10, u0: -1.2, pad: 0.6 };
+
+/** The texture's [u, v] at (u, v) in the gate's frame, for a bellmouth reaching `reach` m to the lane. */
+export const bellmouthUv = (u, v, reach) => [(v + BELLMOUTH_UV.v) / (2 * BELLMOUTH_UV.v), (u - BELLMOUTH_UV.u0) / (reach + BELLMOUTH_UV.pad - BELLMOUTH_UV.u0)];
+
+/** Old road tarmac for a loose lump of it, one tile 0.5 m square: near black with grey aggregate showing, a pale crazed top. */
+export function tarmacTexture(random) {
+  return canvasTexture(64, 64, (ctx, w, h) => {
+    ctx.fillStyle = '#3b3b3d';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 380; i++) {
+      const v = 70 + Math.floor(random() * 90);
+      ctx.fillStyle = `rgba(${v},${v},${v - 4},0.55)`;
+      ctx.fillRect(random() * w, random() * h, 1 + random() * 2, 1 + random() * 2);
+    }
+    ctx.strokeStyle = 'rgba(20,20,20,0.6)';
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.moveTo(random() * w, random() * h);
+      for (let k = 0; k < 4; k++) ctx.lineTo(random() * w, random() * h);
+      ctx.stroke();
+    }
+  });
+}
+
+/**
+ * The bellmouth's own painting (#1002), over the whole of it once (`bellmouthUv`): crushed hardcore at the gate breaking up into old tarmac towards the
+ * lane in islands with crumbled edges and cracks, two ruts worn muddy through it with damp silt where the puddles stand, an oil stain, chippings fanned
+ * out at the lane's edge and grass creeping in at the ragged sides. `plan` is pitEntrance.js `entrancePlan`'s: `reach` (how far the lane is) and its `puddles`.
+ */
+export function bellmouthTexture(random, { reach, puddles }) {
+  const W = 1024; // about 50 pixels a metre
+  const H = 1024;
+  const span = reach + BELLMOUTH_UV.pad - BELLMOUTH_UV.u0;
+  const toPx = (u, v) => [((v + BELLMOUTH_UV.v) / (2 * BELLMOUTH_UV.v)) * W, H * (1 - (u - BELLMOUTH_UV.u0) / span)];
+  const pxPerM = W / (2 * BELLMOUTH_UV.v);
+  return canvasTexture(W, H, (ctx) => {
+    // The hardcore: crushed stone in greys and buff.
+    ctx.fillStyle = '#8b8578';
+    ctx.fillRect(0, 0, W, H);
+    for (let i = 0; i < 36000; i++) {
+      const v = 90 + Math.floor(random() * 90);
+      ctx.fillStyle = `rgba(${v + 10},${v + 4},${v - 10},0.55)`;
+      ctx.fillRect(random() * W, random() * H, 1.5 + random() * 3, 1.5 + random() * 2.5);
+    }
+    // The tarmac, cell by cell where it still holds, with a crumbled grey rim where it is breaking up.
+    // Each cell a little bigger than its spacing and knocked off the grid, so the broken edge reads as crumbled stone and not as squares.
+    const cell = 0.07;
+    for (let u = BELLMOUTH_UV.u0; u < reach + BELLMOUTH_UV.pad; u += cell) {
+      for (let v = -BELLMOUTH_UV.v; v < BELLMOUTH_UV.v; v += cell) {
+        const t = tarmacAt(u, v, reach) + (random() - 0.5) * 0.07;
+        if (t < 0.42) continue;
+        const [x, y] = toPx(u + (random() - 0.5) * cell, v + (random() - 0.5) * cell);
+        const g = 54 + Math.floor(random() * 6);
+        const r = (cell * pxPerM * (1.2 + random() * 0.6)) / 2; // round crumbs, not squares
+        ctx.fillStyle = t < 0.48 ? `rgb(${g + 40},${g + 37},${g + 32})` : `rgb(${g},${g},${g + 2})`;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    // Aggregate showing through the tarmac, and its cracks.
+    for (let i = 0; i < 9000; i++) {
+      const u = BELLMOUTH_UV.u0 + random() * (reach + 1);
+      const v = (random() - 0.5) * 2 * BELLMOUTH_UV.v;
+      if (tarmacAt(u, v, reach) < 0.55) continue;
+      const [x, y] = toPx(u, v);
+      const c = 85 + Math.floor(random() * 60);
+      ctx.fillStyle = `rgba(${c},${c},${c - 3},0.6)`;
+      ctx.fillRect(x, y, 2, 2);
+    }
+    ctx.strokeStyle = 'rgba(18,18,18,0.75)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 60; i++) {
+      let u = reach * (0.45 + random() * 0.55);
+      let v = (random() - 0.5) * 2 * bellmouthHalf(u, reach);
+      ctx.beginPath();
+      ctx.moveTo(...toPx(u, v));
+      for (let k = 0; k < 5; k++) {
+        u += (random() - 0.5) * 0.9;
+        v += (random() - 0.5) * 0.9;
+        ctx.lineTo(...toPx(u, v));
+      }
+      ctx.stroke();
+    }
+    // The ruts: worn muddy lines through it all, darkest in the middle of each.
+    for (let u = BELLMOUTH_UV.u0; u < reach; u += 0.06) {
+      for (let v = -ENTRANCE.rut - 0.4; v <= ENTRANCE.rut + 0.4; v += 0.06) {
+        const d = rutDip(v) / ENTRANCE.rutDip;
+        if (d < 0.05) continue;
+        const [x, y] = toPx(u, v);
+        const on = 1 - 0.5 * tarmacAt(u, v, reach);
+        ctx.fillStyle = `rgba(${78 + random() * 14},${66 + random() * 10},${48 + random() * 8},${0.75 * d * on})`;
+        ctx.fillRect(x, y, 0.06 * pxPerM + 0.5, 0.06 * pxPerM + 0.5);
+      }
+    }
+    // Damp silt where the puddles stand, with a paler rim where they have dried back.
+    // Each a run of overlapping blobs along the rut, so its edge is uneven and not a drawn oval.
+    for (const { u, v, len } of puddles) {
+      for (const [col, grow] of [['rgba(176,166,140,0.16)', 0.12], ['rgba(62,54,42,0.5)', 0]]) {
+        for (let k = 0; k < 7; k++) {
+          const along = (k / 6 - 0.5) * len * 0.8;
+          const [x, y] = toPx(u + along, v + (random() - 0.5) * 0.08);
+          ctx.fillStyle = col;
+          ctx.beginPath();
+          ctx.ellipse(x, y, (ENTRANCE.rutHalf * (0.8 + random() * 0.4) + grow) * pxPerM, (len * 0.17 + grow) * pxPerM, (random() - 0.5) * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+    // An oil stain where something stood.
+    {
+      const [x, y] = toPx(reach * 0.55, -1.8);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, 0.8 * pxPerM);
+      g.addColorStop(0, 'rgba(20,18,16,0.55)');
+      g.addColorStop(1, 'rgba(20,18,16,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x - pxPerM, y - pxPerM, pxPerM * 2, pxPerM * 2);
+    }
+    // Chippings fanned out at the lane's edge, and grass creeping in at the ragged sides.
+    for (let i = 0; i < 1600; i++) {
+      const u = reach - 1.5 + Math.pow(random(), 0.6) * 2;
+      const v = (random() - 0.5) * 2 * (bellmouthHalf(u, reach) - 0.5);
+      const [x, y] = toPx(u, v);
+      const c = 118 + Math.floor(random() * 60);
+      ctx.fillStyle = `rgba(${c},${c - 6},${c - 18},${0.45 + random() * 0.3})`;
+      ctx.fillRect(x, y, 1.5 + random() * 2, 1.5 + random() * 2);
+    }
+    // Moss and grass in the cracks at the very edge, where nothing runs over it.
+    for (let i = 0; i < 2400; i++) {
+      const u = BELLMOUTH_UV.u0 + random() * (reach + 1);
+      const side = random() < 0.5 ? -1 : 1;
+      const v = side * (bellmouthHalf(u, reach) + raggedEdge(u, side) - random() * random() * 0.35);
+      const [x, y] = toPx(u, v);
+      ctx.fillStyle = `rgba(${66 + random() * 30},${92 + random() * 36},${42 + random() * 18},${0.3 + random() * 0.35})`;
+      ctx.fillRect(x, y, 2 + random() * 2, 2 + random() * 3);
+    }
+  });
+}
 
 /** A rusty steel plate texture, one tile 2 m square: orange and brown blotches, streaks, and the odd pale patch of old paint. */
 export function rustTexture(random, base = '#7a4a30') {

@@ -38,6 +38,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | drinking place | Where the cattle come down to the river, the bank trodden down into a muddy slope | watering hole |
 | gravel pit | The old pit in the hedged field north of the barley field, through the gate in its north hedge (on the new farm, the Old Pit in the north-east corner by the lane, fenced in post and wire): the deep cut, its haul roads, pond and heaps | sandpit, sand pit, gravel quarry, borrow pit |
 | lane gate | The gravel pit's gate onto the lane on the new farm, where the lorries came in: shut and chained for good, the haul road starts at it and nothing goes through it | pit gate, quarry gate, main gate |
+| spoil bank | The long grassed bank inside the Old Pit's fence along the lane, either side of where the haul road comes out: the pit's landmark from the lane | spoil mound, overburden heap |
 | stone track | The farm's own hardcore track on the new farm, two arms from the yard: north to the pit's farm gate and south over the farm bridge into Brook Meadow; two wheel ruts of chippings with a grass crown | hardcore road |
 | boundary track | The grass track round the inside of the new farm's boundary, about 14 m in, closing the loop; it goes round the Old Pit and over the stream at the green lane's ford | perimeter track, ring road |
 | headland | The 6 m strip of grass inside every arable field's edge on the new farm, where the crop is never drilled and you can ride | headland strip |

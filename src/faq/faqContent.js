@@ -3092,6 +3092,16 @@ export const FAQ_SECTIONS = [
           and <code>scene pitgate</code> sets up a look at the farm gate in daylight.`,
       },
       {
+        q: 'Why won\'t the gravel pit\'s gate on the lane open?',
+        a: `Because the pit is worked out and the firm that dug it shut it for good. The lane gate is where the lorries came and went: a wide galvanised gate on concrete posts,
+          chained and padlocked, with the firm's faded "Works entrance, No tipping" board beside it and a newer "Private land, no access" plate wired to it. Out in front, the old
+          bellmouth is breaking up from tarmac into hardcore, its ruts hold puddles after rain, there is a rusty height barrier with reflective bands that show in your lights at night,
+          and two concrete blocks have been dumped across the way, with weeds, buddleia and a scrappy hedge full of litter round it all. Behind the fence, the long grassed bank of spoil
+          either side of the haul road is how you know the pit is there from the lane. You can't get in this way on foot or on a quad: go round by the stone track to the farm gate in the
+          west fence. In the console, <code>tp me pitentrance</code> takes you out to it, and <code>scene pitentrance</code> sets up a look at it in daylight.`,
+        tip: 'The pit\'s lane gate is chained for good: you get into the Old Pit by the farm gate off the stone track.',
+      },
+      {
         q: 'What is the drive?',
         a: `The farm road is a drive: 290 m of old tarmac from the yard straight out to the lane, patched in squares with its edges broken into gravel and a few
           potholes holding water, open to the crops either side (no hedges, just a grass verge, cut short by the lane and longer further in). The cattle grid is at the lane end, so you

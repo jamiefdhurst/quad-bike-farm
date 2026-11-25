@@ -949,3 +949,148 @@ export function bladeSignTexture(random, lines, { bg = '#b4141b', fg = '#f6efe0'
     grain(ctx, w, h, random, 300, 0.06);
   });
 }
+
+/**
+ * Reflective tape (#1002), one tile 0.4 m along: red and white diagonal bars (`hazard`) for a barrier's beam and posts, or plain white with its
+ * prismatic weave (`white`) for a sign's edge. Drawn bright and clean, as tape is; it is the material's gloss that throws a headlamp back.
+ */
+export function reflectiveTapeTexture(kind = 'hazard') {
+  return canvasTexture(128, 32, (ctx, w, h) => {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    if (kind === 'hazard') {
+      ctx.fillStyle = '#c8161c';
+      for (let x = -h; x < w + h; x += 32) {
+        ctx.beginPath();
+        ctx.moveTo(x, h);
+        ctx.lineTo(x + 16, h);
+        ctx.lineTo(x + 16 + h, 0);
+        ctx.lineTo(x + h, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    // The prismatic weave of the tape's face: a fine diamond grid, just there.
+    ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+    ctx.lineWidth = 1;
+    for (let x = -h; x < w + h; x += 6) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + h, h);
+      ctx.moveTo(x + h, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+  });
+}
+
+/**
+ * An old works-entrance board gone faded (#1002): the operator's name white on a washed-out blue band, `lines` under it in black and the last in red
+ * on a cream face gone chalky, rust weeping from the four fixings, lichen at the foot and the paint flaking at the edges. 512 by 341, the board's 3:2.
+ */
+export function worksSignTexture(random, operator, lines) {
+  return canvasTexture(512, 341, (ctx, w, h) => {
+    ctx.fillStyle = '#e4ddc8';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#5d7a92'; // once a strong blue, now chalky
+    ctx.fillRect(0, 0, w, 96);
+    ctx.fillStyle = '#f1ede1';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let size = 52;
+    do ctx.font = `bold ${size--}px Arial, Helvetica, sans-serif`; while (ctx.measureText(operator).width > w - 50 && size > 18);
+    ctx.fillText(operator, w / 2, 50);
+    lines.forEach((l, i) => {
+      ctx.fillStyle = i === lines.length - 1 ? '#a8423a' : '#2a2a28';
+      ctx.font = `bold ${i === 0 ? 50 : 56}px Arial, Helvetica, sans-serif`;
+      ctx.fillText(l, w / 2, 150 + i * 82);
+    });
+    ctx.strokeStyle = '#3c5468';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(5, 5, w - 10, h - 10);
+    // Faded: a pale wash over it, heavier at the top where the sun has had it.
+    const fade = ctx.createLinearGradient(0, 0, 0, h);
+    fade.addColorStop(0, 'rgba(240,236,226,0.28)');
+    fade.addColorStop(1, 'rgba(240,236,226,0.08)');
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 0, w, h);
+    // Rust weeping from the fixings, and flaking at the edges.
+    for (const [x, y] of [[24, 24], [w - 24, 24], [24, h - 24], [w - 24, h - 24]]) {
+      ctx.fillStyle = 'rgba(70,64,58,0.9)';
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      const run = ctx.createLinearGradient(0, y, 0, y + 70);
+      run.addColorStop(0, 'rgba(140,70,30,0.55)');
+      run.addColorStop(1, 'rgba(140,70,30,0)');
+      ctx.fillStyle = run;
+      ctx.fillRect(x - 3, y, 6 + random() * 4, 70);
+    }
+    for (let i = 0; i < 70; i++) {
+      const edge = random() < 0.5;
+      const x = edge ? (random() < 0.5 ? random() * 22 : w - random() * 22) : random() * w;
+      const y = edge ? random() * h : (random() < 0.5 ? random() * 16 : h - random() * 16);
+      ctx.fillStyle = `rgba(${random() < 0.6 ? '150,150,146' : '120,72,40'},${0.35 + random() * 0.4})`;
+      ctx.fillRect(x, y, 2 + random() * 9, 2 + random() * 6);
+    }
+    for (let i = 0; i < 30; i++) {
+      ctx.fillStyle = `rgba(120,140,70,${0.15 + random() * 0.25})`; // lichen at the foot
+      ctx.beginPath();
+      ctx.arc(random() * w, h - random() * 40, 2 + random() * 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    grain(ctx, w, h, random, 900, 0.07);
+  });
+}
+
+/** A newer correx plate (#1002): `lines`, the first red and the rest black, on clean white with a red border; only a little road dirt. 256 by 171. */
+export function privatePlateTexture(random, lines) {
+  return canvasTexture(256, 171, (ctx, w, h) => {
+    ctx.fillStyle = '#f7f6f1';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#c4171d';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(8, 8, w - 16, h - 16);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    lines.forEach((l, i) => {
+      ctx.fillStyle = i === 0 ? '#c4171d' : '#141414';
+      ctx.font = `bold ${i === 0 ? 34 : 40}px Arial, Helvetica, sans-serif`;
+      ctx.fillText(l, w / 2, 60 + i * 52);
+    });
+    for (let i = 0; i < 40; i++) {
+      ctx.fillStyle = `rgba(110,96,70,${0.04 + random() * 0.08})`;
+      ctx.fillRect(random() * w, h * 0.6 + random() * h * 0.4, 2 + random() * 12, 1 + random() * 4);
+    }
+  });
+}
+
+/** A height limit plate (#1002): a red ring on white with the clearance in black between two arrowheads, as on a barrier's beam. 128 square. */
+export function heightPlateTexture(text = '2.1m') {
+  return canvasTexture(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#9a9ea0';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#f4f3ee';
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, 62, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#c4171d';
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, 54, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = '#111';
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(w / 2, h / 2 + s * 40);
+      ctx.lineTo(w / 2 - 12, h / 2 + s * 26);
+      ctx.lineTo(w / 2 + 12, h / 2 + s * 26);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.font = 'bold 30px Arial, Helvetica, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, w / 2, h / 2 + 2);
+  });
+}

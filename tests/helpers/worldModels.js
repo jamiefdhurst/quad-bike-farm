@@ -121,6 +121,8 @@ export async function buildWorldModels() {
   const { buildPitBoundary } = await import('../../src/world/quarryProps.js');
   const two = LAYOUT;
   add('setPiece', 'pitFence', buildPitBoundary, (b) => b({ ...c, layout: two })); // the new farm's pit boundary needs the new farm's fields
+  const { buildPitEntrance } = await import('../../src/world/quarryProps.js');
+  add('setPiece', 'pitEntrance', buildPitEntrance, (b) => b({ ...c, layout: two, scene: new THREE.Scene() })); // the lane gate dressed and its entrance (#1002)
   const { buildFarmBridge } = await import('../../src/world/farmBridge.js');
   add('setPiece', 'farmBridge', buildFarmBridge, (b) => b({ ...c, layout: two, heights: createTerrainHeight(two, new Track(two.trackPoints)) })); // on the new farm's river (#689)
   const { buildHut } = await import('../../src/world/hutBuild.js');

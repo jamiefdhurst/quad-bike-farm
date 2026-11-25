@@ -28,6 +28,7 @@ import { farmTreeSpots, distantTreeSpots } from './treeSpots.js';
 import { polygonBounds, pointInPolygon } from './polygons.js';
 import { createRiver } from './river.js';
 import { riversidePlaces, fenceStretches } from './riverPlaces.js';
+import { laneGateOf, laneReach, entrancePlan, entranceHedges, ENTRANCE } from './pitEntrance.js';
 
 /** m: how far two shapes must overlap, or a shape reach into a place, before it counts. Less is a touch, which the rules allow. */
 export const PLACE_TOLERANCE = 0.05;
@@ -151,6 +152,21 @@ export function farmPlacements(layout, { fields = createFields(layout), roads = 
   if (layout.gate) add(box('gate', `the ${layout.gate.side ?? ''} field gate`.replace('  ', ' '), layout.gate.x, layout.gate.z ?? layout.fieldHalf, layout.gate.width / 2 + 0.2, 0.2, 0, !layout.gate.open, { gate: true }));
   for (const g of layout.quarry?.gates ?? []) {
     add(box('gate', `the pit's ${g.open ? 'farm' : 'lane'} gate`, g.x, g.z, g.width / 2, 0.2, Math.atan2(-g.inward[0], -g.inward[1]), !g.open, { gate: true })); // across the fence, square to the way in
+  }
+  // The pit's lane entrance (props.js `buildPitLaneGate`, quarryProps.js `buildPitEntrance`, #1002): from the same plan the builder draws.
+  const pitLane = laneGateOf(layout.quarry?.gates);
+  if (pitLane && roads.road('lane')) {
+    const plan = entrancePlan(pitLane, laneReach(pitLane, (x, z) => roads.onRoad('lane', x, z)));
+    const yaw = plan.frame.yaw;
+    for (const p of plan.posts) add(box('gate', 'a post of the pit\'s lane gate', p.x, p.z, ENTRANCE.postW / 2, ENTRANCE.postW / 2, yaw, true, { gate: true }));
+    for (const b of plan.blocks) add(box('prop', 'a concrete block at the pit\'s lane gate', b.x, b.z, ENTRANCE.block.l / 2, ENTRANCE.block.w / 2, yaw + b.turn, true));
+    for (const p of plan.barrier.posts) add(box('prop', 'a post of the height barrier at the pit\'s lane gate', p.x, p.z, ENTRANCE.barrier.post / 2 + 0.01, ENTRANCE.barrier.post / 2 + 0.01, yaw, true));
+    for (const p of plan.sign.posts) add(box('prop', 'a post of the works sign at the pit\'s lane gate', p.x, p.z, 0.04, 0.04, yaw, true));
+    for (const b of plan.buddleia) add(disc('plant', 'a buddleia at the pit\'s lane gate', b.x, b.z, b.h * 0.4, false));
+    for (const lay of entranceHedges(plan, { T, H: layout.hedgeHeight, heightAt: flat, blockReach })) {
+      for (const b of lay.blocks) add(disc('hedgeLeaves', 'the hedge at the pit\'s lane gate', b.x, b.z, blockReach * b.width, false));
+      for (const k of lay.colliders) add(box('hedge', 'the hedge at the pit\'s lane gate', k.x, k.z, k.hx, k.hz, k.turn, true));
+    }
   }
   if (layout.road?.bypass) add(box('gate', 'the bypass gate', layout.road.bypass.x, layout.road.bypass.z, 0.2, layout.road.bypass.width / 2 + 0.3, 0, true, { gate: true }));
   if (layout.moor?.gate) add(box('gate', 'the moor gate', layout.moor.gate.x, layout.moor.gate.z, 0.2, layout.moor.gate.width / 2 + 0.3, layout.moor.gate.yaw, true, { gate: true }));
