@@ -303,6 +303,8 @@ describe('the wood\'s floor on the new farm (#985)', () => {
       expect([clipAtTrack, depth, saves === restores]).toEqual([null, 0, true]);
       expect(spots.filter((s) => !s.litter).every((s) => s.kept)).toBe(true);
       const litter = spots.filter((s) => s.litter);
+      // Every cell and every drift is drawn under the outline's clip, so a drift whose middle is just inside is cut at the hedge too.
+      expect(litter.every((s) => s.under === clips[0])).toBe(true);
       const kept = litter.filter((s) => s.kept);
       expect(kept.length).toBeGreaterThan(fine ? 20000 : 5000);
       for (const { x, z } of kept) expect(woods.inWoods(x, z)).toBe(true);

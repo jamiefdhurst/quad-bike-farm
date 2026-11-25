@@ -4,7 +4,8 @@ import { pointInPolygon } from '../../src/world/polygons.js';
 /**
  * Runs `paintWoods` for the wood `w` (createWoods) on a canvas that only records, at a metre a pixel over a window round the whole wood, and
  * honours `clip()` as a canvas does: a floor cell or a fallen leaf whose middle is outside the clip in force is clipped away. Gives every spot
- * drawn as { x, z, litter, kept } in metres (`litter` for the floor's cells and drifts, `kept` false where the clip took it), the clips set (each a run of [x, z] points),
+ * drawn as { x, z, litter, under, kept } in metres (`litter` for the floor's cells and drifts, `under` the clip in force or null, `kept` false where the clip
+ * took it: a drift is recorded by its middle, so `under` is what shows one on the line is cut), the clips set (each a run of [x, z] points),
  * the saves and restores, how many saves were left open at the end (`depth`) and the clip still in force when the track was first stroked.
  */
 export function paintWoodFloor(w, { fine = true, autumn = false } = {}) {
@@ -19,7 +20,7 @@ export function paintWoodFloor(w, { fine = true, autumn = false } = {}) {
   let restores = 0;
   let stroked = false; // the floor and its drifts are drawn first, then the track is stroked and its ruts, roots and the pond drawn over them
   let clipAtTrack = null; // the clip still in force when the track is first stroked
-  const at = (x, z) => spots.push({ x, z, litter: !stroked, kept: !clip || pointInPolygon(clip, x, z) });
+  const at = (x, z) => spots.push({ x, z, litter: !stroked, under: clip, kept: !clip || pointInPolygon(clip, x, z) });
   const record = {
     save: () => (saves++, stack.push(clip)),
     restore: () => (restores++, (clip = stack.pop() ?? null)),
