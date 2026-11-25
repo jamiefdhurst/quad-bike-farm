@@ -574,11 +574,25 @@ export function* paintWoods(c, fields, autumn = false) {
     const ws = fine ? 0.5 : 2;
     const [kx0, kx1] = span(r.minX, r.maxX, ws, win.minX, win.maxX, 1);
     const [kz0, kz1] = span(r.minZ, r.maxZ, ws, win.minZ, win.maxZ, 1);
+    // The new wood is its field's shape, not its bounding box (#985): its floor and drifts are clipped to the outline, so the litter stops at the
+    // hedge line. Each tile paints onto a canvas of its own (terrain.js), so the clip can stay set across the pauses; it comes off after the drifts.
+    const clipped = !!woods.outline;
+    if (clipped) {
+      ctx.save();
+      ctx.beginPath();
+      woods.outline.forEach(([x, z], i) => {
+        const [px, pz] = c.toPx(x, z);
+        if (i === 0) ctx.moveTo(px, pz);
+        else ctx.lineTo(px, pz);
+      });
+      ctx.closePath();
+      ctx.clip();
+    }
     for (let kx = kx0; kx < kx1; kx++) {
       for (let kz = kz0; kz < kz1; kz++) {
         const x = r.minX + kx * ws;
         const z = r.minZ + kz * ws;
-        if (woods.outline && !woods.inWoods(x + ws / 2, z + ws / 2)) continue; // the new wood is its field's shape, not its bounding box (#985)
+        if (clipped && !woods.inWoods(x + ws / 2, z + ws / 2, -ws)) continue; // wholly outside: the clip would take all of it, so don't draw it
         const v = hash01(S.woodFloor, kx, kz);
         const moss = 0.5 + 0.5 * Math.sin(x * 0.19 + z * 0.13) * Math.sin(z * 0.17 - x * 0.11);
         if (moss > 0.62 && v < 0.6) cell(x, z, ws, ws, `rgba(${52 + v * 20},${72 + v * 22},${34 + v * 10},0.6)`);
@@ -595,7 +609,7 @@ export function* paintWoods(c, fields, autumn = false) {
         const random = itemRandom(S.leaf, i);
         const x = r.minX + random() * (r.maxX - r.minX);
         const z = r.minZ + random() * (r.maxZ - r.minZ);
-        if (woods.outline && !woods.inWoods(x, z)) continue;
+        if (clipped && !woods.inWoods(x, z)) continue; // a drift that starts outside isn't drawn; one on the line is cut by the clip
         const colour = autumn ? (random() < 0.85 ? AUTUMN_LEAVES[Math.floor(random() * AUTUMN_LEAVES.length)] : 'rgba(40,32,20,0.35)') : random() < 0.6 ? 'rgba(150,104,48,0.3)' : 'rgba(40,32,20,0.35)';
         const rx = (0.2 + random() * 0.5) * s;
         const rz = (0.12 + random() * 0.25) * s;
@@ -609,6 +623,7 @@ export function* paintWoods(c, fields, autumn = false) {
       }
       yield;
     }
+    if (clipped) ctx.restore();
   }
 
   // The track: the circuit (closed) and the lead-in from the gate (open), each stroked in layers like the main track but narrower and darker.

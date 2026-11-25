@@ -5,6 +5,8 @@ import { createFields } from '../src/world/fields.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 import { createRandom } from '../src/core/random.js';
+import { TODAY } from './helpers/todaysLayout.js';
+import { paintWoodFloor } from './helpers/woodFloorPaint.js';
 
 const woods = createWoods(LAYOUT);
 const fields = createFields(LAYOUT);
@@ -163,4 +165,26 @@ describe('the pond and the trees', () => {
     for (const [x, z] of trees) expect(Math.abs(x - W.gate.x) < half + 2.4 && z > W.maxZ - 24).toBe(false);
   });
 
+});
+
+describe('today\'s wood\'s floor (#985)', () => {
+  // The new wood is clipped to its outline (tests/woodMove.test.js); today's has none, so it is painted over its rectangle as it was.
+  const old = createWoods(TODAY);
+  const litter = (opts) => paintWoodFloor(old, opts).spots.filter((s) => s.litter);
+  it('sets no clip and lays its leaf litter over the whole rectangle, every cell once, then every drift', () => {
+    expect(old.outline).toBe(null);
+    const r = old.rect;
+    for (const fine of [true, false]) {
+      const { spots, clips } = paintWoodFloor(old, { fine });
+      expect(clips).toHaveLength(0);
+      const ws = fine ? 0.5 : 2;
+      const all = spots.filter((s) => s.litter);
+      const cells = all.slice(0, Math.ceil((r.maxX - r.minX) / ws) * Math.ceil((r.maxZ - r.minZ) / ws));
+      const seen = new Set(cells.map(({ x, z }) => `${Math.floor((x - r.minX) / ws)},${Math.floor((z - r.minZ) / ws)}`));
+      expect(seen.size).toBe(cells.length);
+      for (const { x, z } of cells) expect(x > r.minX && x < r.maxX + ws && z > r.minZ && z < r.maxZ + ws).toBe(true);
+      expect(all.length - cells.length).toBe(fine ? 7000 : 0); // none of the drifts left out
+    }
+    expect(litter({ autumn: true }).length - litter().length).toBe(14000); // three times as many in autumn
+  });
 });

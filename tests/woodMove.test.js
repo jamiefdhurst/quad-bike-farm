@@ -9,6 +9,7 @@ import { Track } from '../src/world/track.js';
 import { createRandom } from '../src/core/random.js';
 import { conkerSpots, leavesInAir, leafCover, DEFAULT_AUTUMN_PARAMS, CONKERS_PER_TREE } from '../src/world/autumn.js';
 import { pointInPolygon, polygonArea, polygonBounds, polygonEdges, distanceToEdges } from '../src/world/polygons.js';
+import { paintWoodFloor } from './helpers/woodFloorPaint.js';
 
 // Hollow Wood on the new farm (#683): today's wood carried into the plan's north-west corner, its Run and Trail as they were.
 const two = LAYOUT;
@@ -286,36 +287,29 @@ describe('the thorn and bramble edge', () => {
 });
 
 describe('the wood\'s floor on the new farm (#985)', () => {
-  /** What paintWoods draws, as [x, z] metres: the floor's cells and the fallen leaves, on a canvas that only records. */
-  async function painted(layout, fine = true) {
-    const { paintWoods } = await import('../src/world/groundTexture.js');
-    const w = createWoods(layout);
-    const b = { minX: w.rect.minX - 20, maxX: w.rect.maxX + 20, minZ: w.rect.minZ - 20, maxZ: w.rect.maxZ + 20 };
-    const spots = [];
-    const toPx = (x, z) => [x - b.minX, z - b.minZ];
-    const ctx = new Proxy({ fillRect: (px, pz, wide, tall) => spots.push([px + b.minX + wide / 2, pz + b.minZ + tall / 2]), ellipse: (px, pz) => spots.push([px + b.minX, pz + b.minZ]) }, { get: (t, k) => (k in t ? t[k] : () => {}), set: () => true });
-    const c = { ctx, s: 1, win: b, fine, toPx, over: () => true, inWin: () => true, due: () => false };
-    for (const _ of paintWoods(c, { woods: w }, false));
-    return { spots, w };
-  }
-  it('is painted inside the wood\'s outline only, not over the whole of its bounding box', async () => {
-    const { spots, w } = await painted(two);
-    expect(spots.length).toBeGreaterThan(20000);
-    const edges = polygonEdges(W.outline);
-    // A cell is a half metre across and a drift's ellipse reaches under a metre, so a spot may lie a metre outside the line, no more.
-    for (const [x, z] of spots) if (!w.inWoods(x, z)) expect(distanceToEdges(edges, x, z)).toBeLessThan(1.2);
+  // Today's wood, which has no outline, is in tests/woods.test.js: it is painted over its rectangle as it was.
+  it('clips its floor and drifts to the wood\'s outline, so no litter lands outside it', () => {
     const bounds = polygonArea(W.outline) / ((W.maxX - W.minX) * (W.maxZ - W.minZ));
     expect(bounds).toBeLessThan(0.9); // the box is a good deal more than the wood, so painting it all would show
-    const outside = spots.filter(([x, z]) => !w.inWoods(x, z)).length;
-    expect(outside / spots.length).toBeLessThan(0.02);
-  });
-  it('still covers today\'s rectangular wood, which has no outline', async () => {
-    const { spots, w } = await painted(TODAY, false);
-    expect(spots.length).toBeGreaterThan(1000);
-    const r = w.rect;
-    for (const [x, z] of spots) {
-      expect(x).toBeGreaterThanOrEqual(r.minX - 2);
-      expect(x).toBeLessThanOrEqual(r.maxX + 2);
+    for (const fine of [true, false]) {
+      const { spots, clips, saves, restores, depth, clipAtTrack } = paintWoodFloor(woods, { fine });
+      // One clip, on the outline itself, taken off again before the track: the lead-in runs on out through the gate.
+      expect(clips).toHaveLength(1);
+      expect(clips[0]).toHaveLength(W.outline.length);
+      clips[0].forEach(([x, z], i) => {
+        expect(x).toBeCloseTo(W.outline[i][0], 6);
+        expect(z).toBeCloseTo(W.outline[i][1], 6);
+      });
+      expect([clipAtTrack, depth, saves === restores]).toEqual([null, 0, true]);
+      expect(spots.filter((s) => !s.litter).every((s) => s.kept)).toBe(true);
+      const litter = spots.filter((s) => s.litter);
+      const kept = litter.filter((s) => s.kept);
+      expect(kept.length).toBeGreaterThan(fine ? 20000 : 5000);
+      for (const { x, z } of kept) expect(woods.inWoods(x, z)).toBe(true);
+      // The cells across the line are drawn and cut by the clip, so the floor runs right up to the hedge with no gap inside it.
+      expect(litter.some((s) => !s.kept)).toBe(true);
+      const atEdge = kept.filter(({ x, z }) => clearOfEdge(x, z) < (fine ? 0.5 : 2)).length;
+      expect(atEdge).toBeGreaterThan(fine ? 1000 : 250);
     }
   });
 });
