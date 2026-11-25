@@ -1,6 +1,6 @@
 ---
 description: Work through one GitHub issue, start to finish, as a pull request that merges itself when CI passes
-argument-hint: "[issue number; default: the next one] [--solo: no second opinion before a stop and no recheck before the PR]"
+argument-hint: "[issue number; default: the next one; or batch, or batch <n> <n>...] [--solo: no second opinion before a stop and no recheck before the PR]"
 ---
 
 **First, `tools/upToDate.sh`.** These instructions are read from the main checkout, so if it is behind `origin/main` they are old ones. If the script doesn't print `ok`, stop and pass its message on to Jamie before choosing or starting anything (#721).
@@ -16,6 +16,18 @@ Work on GitHub issue $ARGUMENTS. If no number is given, take the next one, in th
 gh issue list --state open --label "🔜 next" --json number,title --jq 'sort_by(.number) | .[0]'
 tools/nextTodo.mjs            # the eligible issues in order, first five; `tools/nextTodo.mjs alongside` for the alongside milestones
 ```
+
+## Batches
+
+**`batch`** (`/todo batch`, or `/todo batch 1122 1123 1124` for ones Jamie names) builds up to four small issues that belong together as one PR, with one run of the tests and one CI run (#1180). `node tools/nextTodo.mjs batch` prints them (with Jamie's numbers, it checks they can go together and says why not), then the PR's `labels:` line. A batch is only `🐛 bug` and `⚡ enhancement` issues of at most 12 lines of work, in milestone 1 or later and not `🚀 performance` or `🧩 cohesion` (which `/perf` and `/tidy` work alone), all in one milestone and sharing an area label, so the merge releases as the same patch bump any of them would alone. Everything below holds, with these changes:
+
+- **Steps 1 and 2 run for each issue** in turn: say each one's number, title and link, read it, `node tools/issueLint.mjs <n>`, `node tools/issueCheck.mjs start <n>`, its `plan:` notes, `node tools/issueCheck.mjs plan <n>`. Questions for all of them go to Jamie in one stop.
+- **An issue that has to stop for Jamie drops out of the batch** (a lint failure, a question, an unreachable source, a `[~]` line or a recheck `ask` that can't wait): say so to Jamie, leave it on the list untouched (no commit for it on the branch, no "Closes"), and carry on with the rest. The report names it and why. If the first issue drops out after the worktree is made, rename the branch for the next one before pushing (`git branch -m issue-<next>-<slug>`), as a branch named for an issue marks it taken, and post the recheck's count line on the first issue still in the batch. A batch down to one issue is an ordinary item.
+- **One worktree, named for the first issue** (`tools/worktree.sh start <first>`), one build, one `npm test`, one `npm run smoke` if any of them needs it, and one recheck (step 8) over the whole diff, its count line posted on the first issue.
+- **Each issue has its own commit** (or commits), so its change can be found and reverted alone.
+- **One section in the area's `docs/decisions/` file,** headed with every issue number (`## Keeping hedge leaves out of the gateways (#1122, #1123, #1124)`).
+- **One PR:** run `node tools/issueCheck.mjs post <n>` for each issue, and put each line it prints (`Closes #n` or `Part of #n`) on a line of its own at the top of the body. Pass every label on the `labels:` line `nextTodo.mjs batch` printed: the area labels of them all and one type label, `🐛 bug` if any of them is one. The Issue check fails the PR if any issue it closes has a line unanswered.
+- **The report** gives step 13's first line for each issue, then one account of the batch. Each issue's lines for a walk go to its place's walk (step 12), with `node tools/walkIssue.mjs add` run for each.
 
 Other sessions work in this checkout at the same time, so every item gets its own worktree and branch. Never switch branch in the main checkout, and never commit to main.
 

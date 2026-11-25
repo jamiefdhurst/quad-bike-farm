@@ -163,6 +163,16 @@ export function canClose(issue) {
   return { ok: false, say: `#${number}: this PR would close it with lines unanswered:\n${list.map((l) => `  - ${l}`).join('\n')}\n${again}${partly}` };
 }
 
+/**
+ * The Issue check on a PR: every issue it would close ({ number, title, body, labels, comments }), each with what it says. One PR can close several (a
+ * `/todo batch`, #1180), and it fails if any one of them has a line unanswered, naming that one.
+ */
+export function prVerdict(issues) {
+  if (!issues.length) return { ok: true, says: ['This PR closes no issue.'] };
+  const results = issues.map(canClose);
+  return { ok: results.every((r) => r.ok), says: results.map((r) => r.say) };
+}
+
 const gh = (...args) => execFileSync('gh', args, { encoding: 'utf8' });
 const readIssue = (n) => ({ number: Number(n), ...JSON.parse(gh('issue', 'view', String(n), '--json', 'title,body,labels,comments')) });
 const listFile = (n) => resolve('.scratch', `issue-check-${n}.md`);
@@ -226,13 +236,9 @@ function post(n) {
 
 function pr(n) {
   const { closingIssuesReferences: closes } = JSON.parse(gh('pr', 'view', String(n), '--json', 'closingIssuesReferences'));
-  if (!closes.length) {
-    console.log('This PR closes no issue.');
-    return;
-  }
-  const results = closes.map((c) => canClose(readIssue(c.number)));
-  for (const r of results) console.log(r.say);
-  if (results.some((r) => !r.ok)) process.exit(1);
+  const { ok, says } = prVerdict(closes.map((c) => readIssue(c.number)));
+  for (const say of says) console.log(say);
+  if (!ok) process.exit(1);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
