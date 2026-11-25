@@ -179,7 +179,7 @@ export function farmPlacements(layout, { fields = createFields(layout), roads = 
       const mid = sidePoint(backLane, g.s, g.side, hedgeOffset(backLane, g.s, g.side));
       add(box('gate', `Back Lane's ${g.id} gate`, mid.x, mid.z, 2, 0.12, Math.atan2(-mid.tz, mid.tx), true, { gate: true }));
     }
-    // The footpath's stile, solid across its gap (#1017): its gap's own, as a gate is its gateway's.
+    // The footpath's stile, solid (#1017): its gap's own, as a gate is its gateway's.
     const stile = laneStile(backLane);
     if (stile) add(box('gate', "Back Lane's stile", stile.x, stile.z, stile.box.hx, stile.box.hz, stile.yaw, true, { gate: true }));
   }
