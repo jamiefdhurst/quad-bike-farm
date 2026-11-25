@@ -9,7 +9,8 @@
 //
 // Its western reach, just beyond the pasture's hedge, is the river (`layout.hill.river`): the brook widened and deepened (a ramp up from the
 // hedge, full for a while, a ramp back down) with a shallow crossing across it. It is the same channel, so it still runs on east to the
-// culvert and the spring, and never meets the edge of the map.
+// culvert and the spring, and never meets the edge of the map. Where the boundary track crosses the brook in Low Ley its bed is raised into a ford
+// (`b.ford`, #1060) in the same way, with a worn landing cut down each bank.
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -34,6 +35,7 @@ export function createBrook(layout) {
   const water0 = b.water ?? hill.stream.water;
   const river = hill.river ?? null;
   const cross = river?.crossing ?? null;
+  const ford = b.ford ?? null; // where the boundary track wades the brook (#1060)
 
   /** 0..1 how much of the river it is at x: widening from `fromX`, full, then narrowing back to the brook by `toX`. */
   const riverK = (x) => (river ? smoothstep(river.fromX, river.fromX + river.rampIn, x) * (1 - smoothstep(river.toX - river.rampOut, river.toX, x)) : 0);
@@ -142,13 +144,19 @@ export function createBrook(layout) {
   const riverDepth = (x) => mix(depth0, river.depth + deepen, riverK(x));
   const steadyWater = (x) => mix(water0, river.water, riverK(x));
   const riverWater = (x) => (stepped(x) ? mix(water0, steppedWater(x), riverK(x)) : steadyWater(x));
-  const baseDepthAt = (x) => {
+  const baseDepth0 = (x) => {
     if (!river) return depth0 * fullness(x);
     const d = riverDepth(x);
     return (cross ? mix(d, d - steadyWater(x) + cross.water, crossK(x)) : d) * fullness(x);
   };
+  const steadyDepth0 = (x) => (river ? (cross ? mix(steadyWater(x), cross.water, crossK(x)) : steadyWater(x)) : water0) * fullness(x);
+  // The ford (#1060), as the crossing does it: the bed raised under a surface kept where it was until `ford.water` m stand over it, level `ford.half` m
+  // either side of its middle and ramping back down to the brook's own bed over `ford.ramp` m. `fordLift` is how far the bed is raised, given the water.
+  const fordK = (x) => (ford ? 1 - smoothstep(ford.half, ford.half + ford.ramp, Math.abs(x - ford.x)) : 0);
+  const fordLift = (x, w) => (ford ? Math.max(0, w - ford.water * fullness(x)) * fordK(x) : 0);
+  const baseDepthAt = (x) => baseDepth0(x) - fordLift(x, steadyDepth0(x));
   /** The steady river's water at x, as it stood before the pools: what its surface, and so the pools', are worked out from. */
-  const steadyDepthAt = (x) => (river ? (cross ? mix(steadyWater(x), cross.water, crossK(x)) : steadyWater(x)) : water0) * fullness(x);
+  const steadyDepthAt = (x) => steadyDepth0(x) - fordLift(x, steadyDepth0(x));
   // Where the land rises downstream the water would run uphill (the surface is the ground at its middle less the cut plus the water standing). With
   // the ground along the line (`useGround`, from terrainHeight.js) on a river that runs east (`river.eastward`, the new farm's) the channel is cut that much deeper there, so its surface only ever falls (#565).
   let ground = null;
@@ -171,7 +179,8 @@ export function createBrook(layout) {
     return lower[i] + (lower[i + 1] - lower[i]) * (f - i);
   }
   /** How deep the water stands in the channel at x (before any rise after rain). */
-  const waterDepthAt = (x) => (river ? (cross ? mix(riverWater(x), cross.water, crossK(x)) : riverWater(x)) : water0) * fullness(x);
+  const waterDepth0 = (x) => (river ? (cross ? mix(riverWater(x), cross.water, crossK(x)) : riverWater(x)) : water0) * fullness(x);
+  const waterDepthAt = (x) => waterDepth0(x) - fordLift(x, waterDepth0(x));
 
   // The surface of the pools and riffles (#1000), worked out once from the ground: the steady surface (the ground less the cut plus the water, held from
   // rising) is the line they step about. Each pool's surface falls `third` as fast as it does, so it climbs nearer the field down the pool, and each
@@ -281,6 +290,10 @@ export function createBrook(layout) {
       const across = 1 - smoothstep(cross.half - 0.5, cross.half + 2, Math.abs(x - cross.x));
       if (across > k) { k = across; reach = banks.landing; }
     }
+    if (ford) {
+      const across = 1 - smoothstep(ford.half - 0.5, ford.half + 1.5, Math.abs(x - ford.x)); // the ford's landings (#1060), both banks
+      if (across > k) { k = across; reach = ford.landing; }
+    }
     for (const d of drinks) {
       if ((z - zAt(x)) * d.side < 0) continue;
       const kd = 1 - smoothstep(1.5, 4, Math.abs(x - d.x));
@@ -384,9 +397,10 @@ export function createBrook(layout) {
     const dry = depthAt(x) - wd;
     const d = cutAt(x, z) - dry;
     const w = clamp(d / (wd * 0.5), 0, 1);
-    // In the river only deep water counts as deep: over the crossing it is a wade (under the engine's gulp threshold), in the deep it drowns.
-    const k = riverK(x);
-    return k > 0 ? w * mix(1, clamp((d - 0.05) / river.deepFrom, 0, 1), k) : w;
+    // In the river only deep water counts as deep: over the crossing it is a wade (under the engine's gulp threshold), in the deep it drowns. Over the
+    // brook's ford (#1060) the same, so its shallows are a wade too.
+    const k = Math.max(riverK(x), fordK(x));
+    return k > 0 ? w * mix(1, clamp((d - 0.05) / (river?.deepFrom ?? 0.45), 0, 1), k) : w;
   }
 
   /** 0..1 how much of the river's deep water is at (x, z): only the river's own, and not over the crossing's shallows. */
@@ -424,10 +438,20 @@ export function createBrook(layout) {
     return m;
   }
 
-  /** 0..1 how muddy the ground is at (x, z): the worn landing where the tyres come down to the crossing, on each bank, and the cattle's drinking places. */
+  /** 0..1 the ford's worn landings (#1060): the bank the tyres have trodden bare coming down to the water, muddiest a metre or so up from it. */
+  function fordMud(x, z) {
+    if (!ford) return 0;
+    const across = clamp(1 - (Math.abs(x - ford.x) - ford.half) / 1.5, 0, 1);
+    if (across <= 0) return 0;
+    const out = Math.abs(z - zAt(x)) - halfAt(x);
+    return out < -0.5 || out > ford.landing ? 0 : clamp(1 - Math.abs(out - 1.2) / (ford.landing - 1.1), 0, 1) * across;
+  }
+
+  /** 0..1 how muddy the ground is at (x, z): the worn landing where the tyres come down to the crossing or the ford, on each bank, and the cattle's drinking places. */
   function mudAt(x, z) {
-    if (!cross) return 0;
-    const drink = drinkMud(x, z);
+    const worn = fordMud(x, z);
+    if (!cross) return worn;
+    const drink = Math.max(worn, drinkMud(x, z));
     const across = clamp(1 - (Math.abs(x - cross.x) - cross.half) / 1.5, 0, 1);
     if (across <= 0) return drink;
     const out = Math.abs(z - zAt(x)) - halfAt(x);
@@ -459,6 +483,20 @@ export function createBrook(layout) {
     return anchor;
   }
 
+  /**
+   * The ford's anchor (#1060), in the crossing's shape: its middle on the brook's line at `layout.hill.brook.ford.x`, `reach` m of level bed either
+   * side along the brook, landings `back` m up each bank, and `landing(side, out)` a point `out` m beyond the water's edge on the north (-1) or south (1) bank. Null with no ford.
+   */
+  let fordAnchor;
+  function fordPlace() {
+    if (!ford) return null;
+    if (fordAnchor) return fordAnchor;
+    const z = zAt(ford.x);
+    const half = halfAt(ford.x);
+    fordAnchor = { x: ford.x, z, half, reach: ford.half, back: ford.landing, landing: (side, out = 0) => ({ x: ford.x, z: z + side * (half + out) }) };
+    return fordAnchor;
+  }
+
   /** Points along the line every `step` m, for the map and the water. */
   function line(step = 2) {
     const out = [];
@@ -466,5 +504,5 @@ export function createBrook(layout) {
     return out;
   }
 
-  return { minX, maxX, bridge: !!(culvert && b.bridge), zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, crossing, bends: bends_, bendAt, barAt, reliefAt, notchAt, banks, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt, drinks, riffles, pools, tailMeets, riffleK, steps, useGround: (fn) => { ground = river?.eastward ? fn : null; lower = null; profile = null; } };
+  return { minX, maxX, bridge: !!(culvert && b.bridge), zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, crossing, ford: fordPlace, fordK, bends: bends_, bendAt, barAt, reliefAt, notchAt, banks, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt, drinks, riffles, pools, tailMeets, riffleK, steps, useGround: (fn) => { ground = river?.eastward ? fn : null; lower = null; profile = null; } };
 }

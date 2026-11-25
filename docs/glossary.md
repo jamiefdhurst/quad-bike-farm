@@ -45,7 +45,7 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | ride | The mown strip kept open through the scrub round the Old Pit, about 15 m out from the lip, joined to the farm gate | firebreak, mown path |
 | tree line | The hawthorns with ash and oak standards inside the Old Pit's fence on the sides that face the arable | shelter belt, windbreak |
 | stone track | The farm's own hardcore track on the new farm, two arms from the yard: north to the pit's farm gate and south over the farm bridge into Brook Meadow; two wheel ruts of chippings with a grass crown | hardcore road |
-| boundary track | The grass track round the inside of the new farm's boundary, about 14 m in, closing the loop; it goes round the Old Pit and over the stream at the green lane's ford | perimeter track, ring road |
+| boundary track | The grass track round the inside of the new farm's boundary, about 14 m in, closing the loop; it goes round the Old Pit, over the stream at the green lane's ford and over the east brook in Low Ley by a ford of its own | perimeter track, ring road |
 | headland | The 6 m strip of grass inside every arable field's edge on the new farm, where the crop is never drilled and you can ride | headland strip |
 | farm bridge | The small bridge on the stone track south that crosses the head of the river: sleeper deck on stone abutments, steel tube rails | plank bridge |
 | farm gate | The gate in the gravel pit's west fence on the new farm, from the stone track: tied open, the way in, where the girls wait just inside | pit gate, quarry gate, back gate |
