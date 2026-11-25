@@ -439,17 +439,38 @@ function* paintHill(c, fields) {
   if (brook?.river?.bends) {
     const bx0 = p.maxX + 3;
     const [bk0, bk1] = span(bx0, brook.maxX, ss, win.minX, win.maxX, 3);
+    // With shaped banks (#999) the bars' gravel is painted pale on the inside of each bend, and the crossing's landings and the drinking places dark
+    // with poached mud (`mudAt`, which was grip only), in soft daubs so their edges are ragged rather than a row of squares.
+    const ext = brook.banks ? brook.banks.landing + 1 : 1;
     for (let kx = bk0; kx < bk1; kx++) {
       const x = bx0 + kx * ss;
       const sz = brook.zAt(x);
       const half = brook.halfAt(x);
-      const zlo = sz - half - 1;
-      const [kz0, kz1] = span(zlo, sz + half + 1, ss, win.minZ, win.maxZ, 1);
+      const zlo = sz - half - ext;
+      const [kz0, kz1] = span(zlo, sz + half + ext, ss, win.minZ, win.maxZ, 1);
       for (let kz = kz0; kz < kz1; kz++) {
         const z = zlo + kz * ss;
         const r = Math.abs(z - sz) / (half + 1);
         const v = hash01(S.stream, Math.round(x / ss), Math.round(z / ss));
-        cell(x, z, ss, ss, `rgba(${50 + v * 20},${42 + v * 15},${30 + v * 10},${0.95 - r * 0.5})`);
+        if (r <= 1) cell(x, z, ss, ss, `rgba(${50 + v * 20},${42 + v * 15},${30 + v * 10},${0.95 - r * 0.5})`);
+        if (!brook.banks) continue;
+        const bar = brook.barAt(x, z);
+        const mud = brook.mudAt(x, z);
+        if (bar < 0.1 && mud < 0.1) continue;
+        const [px, pz] = c.toPx(x + ss * (0.2 + v * 0.6), z + ss * (0.8 - v * 0.6));
+        const rad = ss * s * (0.55 + v * 0.4);
+        if (bar >= 0.1) {
+          ctx.fillStyle = `rgba(${150 + v * 35},${138 + v * 28},${112 + v * 22},${Math.min(0.9, bar * 0.95)})`;
+          ctx.beginPath();
+          ctx.ellipse(px, pz, rad, rad * 0.8, v * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (mud >= 0.1) {
+          ctx.fillStyle = `rgba(${56 + v * 14},${42 + v * 10},${28 + v * 8},${Math.min(0.88, mud * 0.95)})`;
+          ctx.beginPath();
+          ctx.ellipse(px, pz, rad * 1.1, rad * 0.9, v * 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
       if (c.due(kz1 - kz0)) yield;
     }

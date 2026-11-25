@@ -2393,14 +2393,9 @@ export class Game {
     return `${where}; ${p.depth.toFixed(1)} m deep, ${(p.rx * 2).toFixed(0)} by ${(p.rz * 2).toFixed(0)} m; climb wall on the ${side} side, ${p.buttresses.length} buttresses; haul roads ${quarry.roadLength.toFixed(0)} m (to the lip and down the ${p.road.dir > 0 ? 'clockwise' : 'anticlockwise'} side) and ${quarry.rampPoints[quarry.rampPoints.length - 1].at.toFixed(0)} m (the other way); ${p.heaps.length} heaps; pit climb ${climb}${best ? `, best ${formatValue('pit', best.value)}` : ''}`;
   }
 
-  /** Where you are at the river and how the crossing stands, for the panel and the console. */
-  describeRiver() {
-    const river = this.world.river;
-    if (!river) return 'no river on this farm';
-    const at = this.boardUnit ? this.boardUnit.quad.position : this.camera.position;
-    const zone = river.zoneAt(at.x, at.z);
-    return `${zone ? `you are ${zone === 'crossing' ? 'on the crossing' : zone === 'deep' ? 'in the deep water' : 'on the bank'}` : 'you are away from it'}; the river is ${(this.world.streamLevel.level * 100).toFixed(0)}% up`;
-  }
+  /** Where you are at the river and how the crossing stands, and what it sounds like where you listen (world.js), for the panel and the console. */
+  describeRiver() { return this.world.describeRiver(this.boardUnit ? this.boardUnit.quad.position : this.camera.position); }
+  describeRiverSound() { return this.world.describeRiverSound(this.camera.position, this.daylight?.darkness ?? 0, this.weather.wind); }
 
   /** J on the tractor or a quad with a rack: hook a trailer on when the hitch is at its ring, or take it off when you're stopped. */
   toggleHitch() {
@@ -11741,6 +11736,7 @@ export class Game {
     this.guard.run('updateDaylight', () => this.weatherHost.updateDaylight(dt));
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera, this.guard);
     this.guard.run('updateWeather', () => this.updateWeather(dt));
+    this.guard.run('updateRiverSound', () => this.audioHub.setRiver(this.world.riverHeardFrom(this.camera.position, this.daylight?.darkness ?? 0, this.weather.wind))); // the river's water, willows and birds (#999)
     fb.lap('world, weather and effects', performance.now());
     this.guard.run('updateAchievements', () => this.updateAchievements(dt, ridden));
     this.guard.run('updateDayStory', () => this.updateDayStory());

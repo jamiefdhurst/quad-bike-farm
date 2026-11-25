@@ -35,6 +35,7 @@ import { DEFAULT_SQUEAL_PARAMS, SQUEAL_PARAM_RANGES } from '../vehicle/tyreSquea
 import { registerTuning } from '../core/tuning.js';
 import { skyAt } from './daylight.js';
 import { StreamLevel, STREAM_PARAM_RANGES } from './streamLevel.js';
+import { riverHeard, DEFAULT_RIVER_SOUND_PARAMS, RIVER_SOUND_RANGES } from './riverBed.js';
 import { PuddleIce, DEFAULT_PUDDLE_ICE_PARAMS, PUDDLE_ICE_PARAM_RANGES } from './puddleIce.js';
 import { PuddleIceView } from './puddleIceView.js';
 import * as THREE from 'three';
@@ -63,6 +64,8 @@ export class World {
 
     this.streamLevel = new StreamLevel(); // how high the stream stands after rain (streamLevel.js)
     registerTuning('Stream', this.streamLevel.params, STREAM_PARAM_RANGES);
+    this.riverSoundParams = { ...DEFAULT_RIVER_SOUND_PARAMS }; // how the river sounds (riverBed.js, #999)
+    registerTuning('River sound', this.riverSoundParams, RIVER_SOUND_RANGES);
     this.streamStarted = false;
     this.streamEvent = null; // 'up' or 'down' on the frame the stream crossed the line, for the girls
 
@@ -142,7 +145,7 @@ export class World {
     // The ground is drawn in tiles (groundTiles.js): those round where you start are built now, behind the start screen, and the rest as you move.
     this.groundParams = { ...DEFAULT_GROUND_PARAMS };
     registerTuning('Ground tiles', this.groundParams, GROUND_PARAM_RANGES);
-    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud?.main, drawDistance: this.drawDistance, autumn, params: this.groundParams, groundHeights }; // groundHeights: the 1 m grid, if the workers worked it out (groundSampler.js)
+    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roads: this.roads, roadMud: this.roadMud?.main, drawDistance: this.drawDistance, autumn, params: this.groundParams, groundHeights }; // groundHeights: the 1 m grid, if the workers worked it out (groundSampler.js)
     this.terrain = timed('world · terrain', () => createTerrain(ctx));
     this.groundFromWorkers = !!groundHeights; // the 1 m grid came from the workers (groundSampler.js), for the panel and `perf`
     timed('world · ground tiles primed', () => this.terrain.prime(layout.spawn.player.x, layout.spawn.player.z));
@@ -350,6 +353,38 @@ export class World {
   moorHeard(x, z, date, darkness) {
     const level = moorHeard(this.heights.moor, x, z);
     return level > 0 ? { level, birds: moorBirds(date, darkness) } : null;
+  }
+
+  /**
+   * The river's sound at (x, z) (`riverHeard`, riverBed.js) with the stream's level and the rain as they are now: null on a farm whose river has no shaped
+   * banks (today's), which has no sound of its own. `darkness` and `wind` (0..1) are the day's and the weather's.
+   */
+  riverHeard(x, z, darkness = 0, wind = 0) {
+    const brook = this.heights.brook;
+    if (!brook?.banks) return null;
+    return riverHeard(brook, x, z, { streamLevel: this.streamLevel.level, rain: this.weather?.rain ?? 0, darkness, wind }, this.riverSoundParams);
+  }
+
+  /** The river's sound for a listener at `at` ({ x, z }, the camera), at the day's `darkness` and the weather's `windiness` (its wind, 0 to about 1.5). */
+  riverHeardFrom(at, darkness = 0, windiness = 0) {
+    return this.riverHeard(at.x, at.z, darkness, Math.min(1, (windiness ?? 0) / 1.5));
+  }
+
+  /** Where `at` is at the river (on the crossing, in the deep water, on the bank) and how far up it is, for the panel and the console. */
+  describeRiver(at) {
+    const river = this.river;
+    if (!river) return 'no river on this farm';
+    const zone = river.zoneAt(at.x, at.z);
+    return `${zone ? `you are ${zone === 'crossing' ? 'on the crossing' : zone === 'deep' ? 'in the deep water' : 'on the bank'}` : 'you are away from it'}; the river is ${(this.streamLevel.level * 100).toFixed(0)}% up`;
+  }
+
+  /** What the river sounds like for a listener at `at`, for the panel and the console (#999). */
+  describeRiverSound(at, darkness = 0, windiness = 0) {
+    const h = this.riverHeardFrom(at, darkness, windiness);
+    if (!h) return 'no river sound on this farm';
+    if (!h.level) return 'out of earshot of the river';
+    const pc = (v) => `${(v * 100).toFixed(0)}%`;
+    return `heard at ${pc(h.level)}: babble ${pc(h.babble)}, murmur ${pc(h.murmur)}, willows ${pc(h.willows)}; ${h.birdsEvery === Infinity ? 'no birds (night or rain)' : `a bird every ${h.birdsEvery.toFixed(0)} s or so`}`;
   }
 
   /** 0..1 how much of the yard's sound bed to play at (x, z): see `yardHeard`. */

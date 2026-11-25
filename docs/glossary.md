@@ -31,6 +31,9 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | shepherd's hut | The little wheeled hut on top of the hill pasture, with the bunk, the stove and the kettle | shepherds hut, shepherd's shed, hill hut, hut on wheels |
 | river | The wide river across the riverside meadow, past the pasture's east hedge: the brook widened | big stream |
 | crossing | The marked shallows across the river, between the white posts | river ford |
+| gravel bar | The low shelf of gravel on the inside of each of the river's bends, sloping gently into the water | shingle bank |
+| cut bank | The steep face of bare earth on the outside of each of the river's bends | river cliff |
+| drinking place | Where the cattle come down to the river, the bank trodden down into a muddy slope | watering hole |
 | gravel pit | The old pit in the hedged field north of the barley field, through the gate in its north hedge (on the new farm, the Old Pit in the north-east corner by the lane, fenced in post and wire): the deep cut, its haul roads, pond and heaps | sandpit, sand pit, gravel quarry, borrow pit |
 | lane gate | The gravel pit's gate onto the lane on the new farm, where the lorries came in: shut and chained for good, the haul road starts at it and nothing goes through it | pit gate, quarry gate, main gate |
 | stone track | The farm's own hardcore track on the new farm, two arms from the yard: north to the pit's farm gate and south over the farm bridge into Brook Meadow; two wheel ruts of chippings with a grass crown | hardcore road |

@@ -42,6 +42,11 @@ export function createBrook(layout) {
   const mix = (a, c, k) => a + (c - a) * k;
   const bends = river?.bends ?? null;
   const vary = river?.vary ?? null;
+  // The banks shaped from the bends (#999, the new farm's `river.banks`): the full river is cut `deepen` m deeper so the water stands `freeboard` m under
+  // the field, with a steep wall on the outside of each bend and a gravel bar built up on the inside. Today's farm has none and is as it was.
+  const banks = river?.banks ?? null;
+  const deepen = banks ? Math.max(0, banks.freeboard - (river.depth - river.water)) : 0;
+  const brookBanks = banks?.brook ?? null;
 
   /** The brook's middle line at x: smooth steps between its waypoints, with a little wander of its own once it is away from the hedge. */
   function zAt(x) {
@@ -68,7 +73,7 @@ export function createBrook(layout) {
     return k;
   }
   // The river keeps the surface where it was and deepens the bed under it; the crossing raises the bed again until `cross.water` m stand over it.
-  const riverDepth = (x) => mix(depth0, river.depth, riverK(x));
+  const riverDepth = (x) => mix(depth0, river.depth + deepen, riverK(x));
   const riverWater = (x) => mix(water0, river.water, riverK(x));
   const baseDepthAt = (x) => {
     if (!river) return depth0 * fullness(x);
@@ -101,13 +106,121 @@ export function createBrook(layout) {
   /** How deep the water stands in the channel at x (before any rise after rain). */
   const waterDepthAt = (x) => (river ? (cross ? mix(riverWater(x), cross.water, crossK(x)) : riverWater(x)) : water0) * fullness(x);
 
+  /**
+   * The bend at x (#999): `out` the side its outside is on (-1 north, 1 south: the line bulges that way, `sway` is a sine), and `s` 0..1 how much of a
+   * bend it is, none in the straight between two bends, on the river's ramps or by the crossing, whose banks are its landings.
+   */
+  function bendAt(x) {
+    if (!banks || !bends) return { out: 1, s: 0 };
+    const sn = Math.sin(x * bends.k + bends.phase);
+    const clear = cross ? smoothstep(cross.half + cross.ramp, cross.half + cross.ramp + 4, Math.abs(x - cross.x)) : 1;
+    return { out: sn < 0 ? -1 : 1, s: smoothstep(banks.from, banks.full, Math.abs(sn)) * Math.min(1, riverK(x) / 0.6) * clear }; // a bend on the ramps is full once the river is
+  }
+
+  /** Every bend of the river where it is the river (at least half its width): its apex's x and middle, and the side its outside is on. */
+  function bends_() {
+    if (!banks || !bends) return [];
+    const out = [];
+    for (let n = -20; n <= 20; n++) {
+      const x = (Math.PI / 2 + n * Math.PI - bends.phase) / bends.k;
+      if (x <= minX || x >= maxX || riverK(x) < 0.5) continue;
+      out.push({ x, z: zAt(x), out: bendAt(x).out });
+    }
+    return out;
+  }
+
+  /**
+   * 0..1 how much the bank at (x, z) is trodden or cut down to a ramp: the crossing's landings on both banks, and each drinking place on its own side. In it
+   * the ground slopes from just above the water at the edge up to the field `reach` m back (`banks.landing`, `banks.drink`).
+   */
+  function notchAt(x, z) {
+    if (!banks) return { k: 0, reach: 1 };
+    let k = 0;
+    let reach = banks.drink;
+    if (cross) {
+      const across = 1 - smoothstep(cross.half - 0.5, cross.half + 2, Math.abs(x - cross.x));
+      if (across > k) { k = across; reach = banks.landing; }
+    }
+    for (const d of drinks) {
+      if ((z - zAt(x)) * d.side < 0) continue;
+      const kd = 1 - smoothstep(1.5, 4, Math.abs(x - d.x));
+      if (kd > k) { k = kd; reach = banks.drink; }
+    }
+    return { k, reach };
+  }
+
   /** Metres the channel is cut into the ground at (x, z). */
   function cutAt(x, z) {
     if (x <= minX || x > maxX) return 0; // at `minX` itself it is still the pasture's stream cut (hill.js), or the two cut there and leave a pit
     const half = halfAt(x);
+    const dz = z - zAt(x);
+    const r = Math.abs(dz);
+    if (!banks || (riverK(x) <= 0 && x > (brookBanks?.to ?? -Infinity))) {
+      if (r > half + 1.2) return 0;
+      return depthAt(x) * (1 - smoothstep(half * 0.4, half + 1.2, r));
+    }
+    if (r > half + Math.max(banks.landing, banks.bar.reach) + 1) return 0;
+    const d = depthAt(x);
+    const dry = d - waterDepthAt(x); // the cut at which the water's surface stands
+    const k = riverK(x);
+    // Banks either side: the river's (`banks.wall` m from the bed's edge to the field) and, past the meadow, the brook's own steep little banks.
+    // The brook's wall stands a little further out than the river's, so its water is as wide as it was (#999 only steepens the bank above it).
+    const wall = mix(brookBanks?.wall ?? 1.6, banks.wall, k);
+    const inner = mix(0.45, 0.75, k);
+    let cut = d * (1 - smoothstep(half - wall * inner, half + wall * (1 - inner), r));
+    const { out, s } = bendAt(x);
+    if (s > 0) {
+      const u = dz * out; // + towards the bend's outside
+      if (u > 0) cut = mix(cut, d * (1 - smoothstep(half - banks.cut, half + 0.2, r)), s); // the cut bank: a steeper wall
+      else {
+        // The point bar: the bed shelves up from the deep to just under the water at `bar.from` of the half-width, comes out of it as gravel and runs
+        // gently on up to the field `bar.reach` m beyond the edge.
+        const a = half * 0.3;
+        const bFrom = half * banks.bar.from;
+        const c = half + banks.bar.reach;
+        const shelf = dry + 0.06;
+        const bar = r <= a ? d : r <= bFrom ? mix(d, shelf, smoothstep(a, bFrom, r)) : r >= c ? 0 : shelf * (1 - ((r - bFrom) / (c - bFrom)) ** 1.6); // flat by the water, steeper to the field
+        cut = mix(cut, bar, s);
+      }
+    }
+    // The crossing's landings and the drinking places: the bank sloped from just above the water at the edge to the field `reach` m back.
+    const notch = notchAt(x, z);
+    // The ramp runs on a metre into the water, 0.1 m under it there, and the bed shelves on down from it at 1 in 2, so it is one slope through the edge.
+    if (notch.k > 0) {
+      const ramp = (dry + 0.1) * clamp(1 - (r - (half - 1)) / (notch.reach + 1), 0, 1);
+      const shelf = r < half - 1 ? Math.min(cut, dry + 0.1 + (half - 1 - r) * 0.5) : 0;
+      cut = mix(cut, Math.max(ramp, shelf), notch.k);
+    }
+    // Its first 4 m past the pasture's hedge keep the stream's own gentle profile, so there is no step at the seam where hill.js's cut ends.
+    const seam = smoothstep(minX, minX + 4, x);
+    if (seam < 1) cut = mix(r > half + 1.2 ? 0 : d * (1 - smoothstep(half * 0.4, half + 1.2, r)), cut, seam);
+    return Math.max(0, cut);
+  }
+
+  /** 0..1 how much of a gravel bar (x, z) is on: the shelf on the inside of a bend, out of the water and up the slope, for the ground's paint. */
+  function barAt(x, z) {
+    const { out, s } = bendAt(x);
+    if (s <= 0.05) return 0;
+    const half = halfAt(x);
+    const u = -(z - zAt(x)) * out - half * banks.bar.from;
+    if (u < -0.5) return 0;
+    return s * (1 - smoothstep(half * (1 - banks.bar.from) + banks.bar.reach * 0.5, half * (1 - banks.bar.from) + banks.bar.reach, u));
+  }
+
+  /**
+   * Metres of low hummocks on the banks at (x, z) (#999): a few centimetres of rise and hollow from a metre and a half off the water out to a dozen metres,
+   * so the field by the river is not a lawn. On the river and on the brook past the meadow (`banks.brook.to` its east end), nowhere else.
+   */
+  function reliefAt(x, z) {
+    if (!banks || x <= minX + 2 || x > maxX) return 0;
+    const k = Math.max(riverK(x), brookBanks ? 1 - smoothstep(brookBanks.to - 6, brookBanks.to, x) : 0);
+    if (k <= 0) return 0;
+    const half = halfAt(x);
     const r = Math.abs(z - zAt(x));
-    if (r > half + 1.2) return 0;
-    return depthAt(x) * (1 - smoothstep(half * 0.4, half + 1.2, r));
+    const band = smoothstep(half + 1.2, half + 3, r) * (1 - smoothstep(half + 9, half + 14, r));
+    if (band <= 0) return 0;
+    const n = 0.55 * Math.sin(x * 0.93 + z * 0.41) + 0.45 * Math.sin(x * 0.37 - z * 1.13 + 1.3) + 0.35 * Math.sin(x * 1.71 + z * 0.77 + 4.2);
+    return banks.relief * k * band * (1 - notchAt(x, z).k) * n / 1.35;
   }
 
   /** 0..1 how much water stands at (x, z): the channel where it is cut deeper than the water stands. */
@@ -136,7 +249,11 @@ export function createBrook(layout) {
     const k = riverK(x);
     if (k <= 0) return 0;
     const r = Math.abs(z - zAt(x));
-    return k * (1 - smoothstep(halfAt(x) + 1, halfAt(x) + (river.level ?? 7), r));
+    if (!banks) return k * (1 - smoothstep(halfAt(x) + 1, halfAt(x) + (river.level ?? 7), r));
+    // With shaped banks (#999) only the water's edge is held level, and the land comes back to its own lie over a reach that changes along the river
+    // (between 60% and all of `river.level`), so the field beside it rolls instead of lying in a plane.
+    const reach = (river.level ?? 7) * (0.6 + 0.2 * (1 + Math.sin(x * 0.083 + 2.1)));
+    return k * (1 - smoothstep(halfAt(x) + 0.3, halfAt(x) + reach, r));
   }
 
   /** The poached drinking places (`river.drinks`: [x, side], side -1 north and 1 south): where the cattle come down to the water, a trodden patch of mud; and `river.worn` ([x, z, r]) the gateways'. */
@@ -160,7 +277,9 @@ export function createBrook(layout) {
     const across = clamp(1 - (Math.abs(x - cross.x) - cross.half) / 1.5, 0, 1);
     if (across <= 0) return drink;
     const out = Math.abs(z - zAt(x)) - halfAt(x);
-    return Math.max(drink, out < -0.5 || out > 3.5 ? 0 : clamp(1 - Math.abs(out - 1.2) / 2.4, 0, 1) * across);
+    // With shaped banks the landing is the whole ramp down to the water (`banks.landing` m), muddiest at its foot.
+    const reach = banks ? banks.landing : 3.5;
+    return Math.max(drink, out < -0.5 || out > reach ? 0 : clamp(1 - Math.abs(out - 1.2) / (reach - 1.1), 0, 1) * across);
   }
 
   /** The two mouths of the culvert (west, east): where the water goes in and comes out, facing along x. */
@@ -171,6 +290,21 @@ export function createBrook(layout) {
       })
     : [];
 
+  /**
+   * The crossing's one anchor (#999): its x is `layout.hill.river.crossing.x` and nothing else, its middle on the river's line, and `landing(side, out)` a
+   * point `out` m beyond the water's edge on the north (-1) or south (1) bank. The posts, the gravel, the ruts, the map's label, `tp me to river` and the
+   * frame budget's spot all stand from it. Null with no crossing.
+   */
+  let anchor;
+  function crossing() {
+    if (!cross) return null;
+    if (anchor) return anchor; // worked out once: the sound asks for it every frame
+    const z = zAt(cross.x);
+    const half = halfAt(cross.x);
+    anchor = { x: cross.x, z, half, reach: cross.half, landing: (side, out = 0) => ({ x: cross.x, z: z + side * (half + out) }) };
+    return anchor;
+  }
+
   /** Points along the line every `step` m, for the map and the water. */
   function line(step = 2) {
     const out = [];
@@ -178,5 +312,5 @@ export function createBrook(layout) {
     return out;
   }
 
-  return { minX, maxX, bridge: !!(culvert && b.bridge), zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt, drinks, useGround: (fn) => { ground = river?.eastward ? fn : null; lower = null; } };
+  return { minX, maxX, bridge: !!(culvert && b.bridge), zAt, depthAt, halfAt, waterDepthAt, cutAt, waterAt, fullness, culvert, mouths, line, crossing, bends: bends_, bendAt, barAt, reliefAt, notchAt, banks, half: half0, depth: depth0, water: water0, river, riverK, crossK, levelK, mudAt, deepAt, drinks, useGround: (fn) => { ground = river?.eastward ? fn : null; lower = null; } };
 }

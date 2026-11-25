@@ -164,11 +164,14 @@ export function createTerrainHeight(layout, track, { hillFade } = {}) {
       }
     }
 
-    // The river's valley is level across, to the ground at its middle, and then the brook's channel is cut into it.
+    // The river's valley is level at the water's edge, to the ground at its middle, then the brook's channel is cut into it, and its banks get their hummocks (#999).
     if (brook) {
       const lk = brook.levelK(x, z);
       if (lk > 0) h += (natural(x, brook.zAt(x)) - h) * lk;
       h -= brook.cutAt(x, z);
+      // The hummocks stay off a road or track: off what a road levelled, and off a track painted over the ground (the stone track to the farm bridge, the boundary track over the brook).
+      const relief = brook.reliefAt(x, z);
+      if (relief) h += relief * (laid ? 1 - laid.k : 1) * (1 - (roads.surfaceAt(x, z)?.t ?? 0));
     }
 
     // The gravel pit: its patch levelled, the bowl cut into it, the haul road down its wall, the pond and the heaps.

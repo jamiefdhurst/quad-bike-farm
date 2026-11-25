@@ -30,6 +30,7 @@ export const BUDGETS = {
   viewHilltop: { calls: 1280, triangles: 2.14e6 },
   viewMoorRidge: { calls: 1880, triangles: 2.86e6 },
   viewBackLane: { calls: 1400, triangles: 2.88e6 },
+  river: { calls: 1480, triangles: 2.32e6 }, // the river's crossing, 6 m back on its north landing (#999): 1,369 calls and 2.15M triangles there, held to about 8% over
   movers: { calls: 5880, triangles: 1.51e6 },
 };
 

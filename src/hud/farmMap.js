@@ -312,8 +312,8 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     place('Lane', hill.lane.x + 9, (hill.top + hill.lane.toZ) / 2);
     place('Ford', hill.lane.x + 9, ford.z + 1);
     place('Stream', hill.pasture.maxX - 16, hill.streamZ(hill.pasture.maxX - 16) - 4);
-    const cr = layout.hill.river?.crossing;
-    if (cr) place('River crossing', cr.x, createBrook(layout).zAt(cr.x) + layout.hill.river.halfWidth + 5);
+    const cr = layout.hill.river?.crossing ? createBrook(layout).crossing() : null; // from the crossing's one anchor (#999)
+    if (cr) { const p = cr.landing(1, 5); place('River crossing', p.x, p.z); }
   }
   if (wood) place('Wood', (wood.minX + wood.maxX) / 2, (wood.minZ + wood.maxZ) / 2);
   if (woods) {

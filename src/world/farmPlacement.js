@@ -26,6 +26,8 @@ import { createWoods } from './woods.js';
 import { BUILT_KINDS, landmarksOf, pondShape } from './fieldLandmarks.js';
 import { farmTreeSpots, distantTreeSpots } from './treeSpots.js';
 import { polygonBounds, pointInPolygon } from './polygons.js';
+import { createRiver } from './river.js';
+import { riversidePlaces, fenceStretches } from './riverPlaces.js';
 
 /** m: how far two shapes must overlap, or a shape reach into a place, before it counts. Less is a touch, which the rules allow. */
 export const PLACE_TOLERANCE = 0.05;
@@ -236,6 +238,27 @@ export function farmPlacements(layout, { fields = createFields(layout), roads = 
   for (const t of farmTreeSpots(layout, streamFor('buildTrees'))) add(disc('tree', 'an oak by the yard', t.x, t.z, 0.32 * t.s, true));
   for (const t of distantTreeSpots(layout, fields, roads, streamFor('buildDistantTrees'))) add(disc('tree', 'a distant tree clump', t.x, t.z, 0.4 * t.s, false));
   for (const [x, z, s] of layout.hill?.hedgeOaks ?? []) add(disc('tree', 'a hedgerow oak on the hill', x, z, 0.32 * s, true));
+  // Brook Meadow and the brook past it (hillProps.js `buildRiverside`, #999), on the ground as the game shapes it: the crossing's posts and the river
+  // gates stand in the water on purpose, and so do the reeds and rushes of the shallows and the crossing's stones; the willows, the meadow's grazing and
+  // the brook's stock fence don't. The meadow's things belong to Brook Meadow.
+  const brook = layout.hill?.riverside?.gates ? placementContext(layout, { fields, roads }).heights.brook : null;
+  const river = brook ? createRiver(layout, brook) : null;
+  if (river) {
+    for (const p of river.posts()) add(disc('post', 'a post at the river crossing', p.x, p.z, 0.08, true, { water: true }));
+    for (const h of river.hurdles(fields.gateways)) add(box('gate', 'a river gate', h.x, h.z, 0.2, h.half, 0, true, { water: true, gate: true }));
+    for (const w of river.willows()) add(disc('tree', 'a willow by the river', w.x, w.z, 0.48, true));
+    for (const r of river.reeds(streamFor('riverReeds'))) add(disc('plant', 'a reed by the river', r.x, r.z, 0.2, false, { water: brook.waterAt(r.x, r.z) > 0.05 }));
+    const P = riversidePlaces(layout, brook, { roads });
+    const plants = [['rushes', 'a rush', 0.12], ['sedge', 'a sedge', 0.15], ['brookReeds', 'a reed by the brook', 0.2], ['stones', 'a stone at the crossing', 0.1]];
+    for (const [key, name, r] of plants) for (const p of P[key]) add(disc(key === 'stones' ? 'prop' : 'plant', name, p.x, p.z, r * p.s, false, { water: p.water }));
+    for (const [key, name, r] of [['tussocks', 'a tussock in Brook Meadow', 0.18], ['thistles', 'a thistle in Brook Meadow', 0.2], ['docks', 'a dock in Brook Meadow', 0.3], ['dung', 'a cowpat in Brook Meadow', 0.22]]) {
+      for (const p of P[key]) add(disc('plant', name, p.x, p.z, r * p.s, false, { owner: 'brook' }));
+    }
+    for (const [[ax, az], [bx, bz]] of fenceStretches(P.fence)) {
+      const len = Math.hypot(bx - ax, bz - az);
+      add(box('fence', "the brook's stock fence", (ax + bx) / 2, (az + bz) / 2, len / 2, 0.07, Math.atan2(-(bz - az) / len, (bx - ax) / len), true));
+    }
+  }
   return out;
 }
 
@@ -256,7 +279,7 @@ export const PLACEMENT_SOURCES = {
     buildMoorProps: 'the stile, the trig pillar, the cairn, the grids\' wings and the bridle gates',
     buildLaneFittings: 'the cottages and their front walls',
     buildVillage: 'its furniture, and the small farm\'s walls and buildings',
-    buildHill: 'the hut\'s steps, the climb\'s flags and the flask rock',
+    buildHill: 'the hut\'s steps, the climb\'s flags, the flask rock and the posts of Brook Meadow\'s gateway from Hay Meadow',
     buildWoods: 'the trail\'s signs and the woodpile\'s scenery',
     buildQuarry: 'the screening plant, the digger and the heaps\' drums and tyres',
     buildFieldLandmarks: 'the gateposts\' and roller\'s own boxes (their places are listed)',

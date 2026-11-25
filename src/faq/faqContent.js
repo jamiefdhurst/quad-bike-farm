@@ -454,8 +454,17 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where is the river, and how do I cross it?',
-        a: `The river is in Brook Meadow, the big open pasture south of Hay Meadow: through the gateway on the stone track's way south, at the meadow's north-west corner. It runs east with the land, wide and in bends. Willows stand along both banks, the cattle's drinking places are poached bare, and a river gate of hung boards shuts the water in wherever it crosses a boundary.`,
+        a: `The river is in Brook Meadow, the big open pasture south of Hay Meadow: through the gateway on the stone track's way south, at the meadow's north-west corner. It runs east with the land, wide and in bends. Willows stand along both banks, the cattle's drinking places are poached bare, and a river gate of hung boards shuts the water in wherever it crosses a boundary. Cross at the crossing, between the white posts: both banks are cut down to a muddy landing with gravel up it, and the water over the bed there is only a wade. Anywhere else the river is deep enough to drown an engine.`,
         tip: 'The river is in Brook Meadow, through the gateway on the stone track\'s way south. Cross it between the white posts.',
+      },
+      {
+        q: 'Why are the river\'s banks so steep in places?',
+        a: `The water sits well below the field, as a real lowland river's does. On the outside of each bend the current has cut the bank into a steep face of bare earth; on the inside it has dropped a low bar of gravel that slopes gently down to the water. So the easy ways down to the water are the crossing, the gravel bars and the cattle's trodden drinking places, and the cut banks are best left alone. The brook it runs on into past the meadow has small steep banks of its own and a stock fence along it, open where the boundary track crosses it and at one gap half-way.`,
+      },
+      {
+        q: 'What is that sound by the river?',
+        a: `The river itself: water babbling over the stones at the crossing and a low murmur along the deep reaches, louder when the stream is up after rain and while it rains. By day you will hear rooks in the trees, a wagtail's quick "chis-ick", a moorhen calling from the reeds and the willows rustling when the wind is up. You hear it from about 40 m away, coming from wherever the water is nearest.`,
+        tip: 'Listen at the river after rain: it runs louder when the stream is up.',
       },
       {
         q: 'Where is Back Lane, and what is on it?',
