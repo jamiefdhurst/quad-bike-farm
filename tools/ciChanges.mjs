@@ -6,7 +6,7 @@
 /** Markdown files the unit tests read, so a change to one still runs them. */
 export const READ_BY_TESTS = [
   'docs/glossary.md', 'docs/game.md', 'docs/farm-plan.md',
-  '.claude/commands/todo.md', '.claude/commands/tidy.md', '.claude/commands/perf.md', '.claude/commands/recheck.md', 'CLAUDE.md',
+  '.claude/commands/todo.md', '.claude/commands/tidy.md', '.claude/commands/perf.md', '.claude/commands/recheck.md', '.claude/commands/test.md', 'CLAUDE.md',
 ];
 
 /** Whether a path is prose nothing in CI reads. */

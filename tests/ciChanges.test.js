@@ -6,7 +6,7 @@ import { isProse, needsChecks, READ_BY_TESTS } from '../tools/ciChanges.mjs';
 describe('which pull requests need the tests', () => {
   it('skips them for prose alone', () => {
     expect(needsChecks(['docs/decisions/process.md', 'docs/tidy.md', 'README.md'])).toBe(false);
-    expect(needsChecks(['.claude/commands/test.md', '.claude/settings.json'])).toBe(false);
+    expect(needsChecks(['.claude/commands/idea.md', '.claude/settings.json'])).toBe(false);
   });
 
   it('runs them as soon as anything else changes', () => {

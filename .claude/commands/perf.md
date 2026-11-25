@@ -30,7 +30,7 @@ Follow `/todo` (`.claude/commands/todo.md`) for everything not said here: say th
 4. **Final measurement**: rebase on origin/main, then measure main and the branch again (`--main --runs 3` and `--runs 3`), so both sides are the same main.
 5. **The PR body** has what changed and why, then the `--compare` table under "Before and after" (the table is the reason for the change, so it belongs). If a step made things worse elsewhere (a stutter for fewer draw calls), say so in a line.
 6. **The decisions file** gets the section at the end of `docs/decisions/performance.md`: what was done, the before and after numbers for what moved, and what was tried and undone. Fix "Where things stand" if the frame time, load time or a budget moved. If a budget in `tools/frameBudget.mjs` should be tightened because there's now room, tighten it to about 8% over the new numbers, with a line saying so.
-7. **A testing issue** only if the change could show in play (pop-in at a distance, a shadow that goes, a stutter the tool can't catch).
+7. **Lines on the walk for its place** (`/todo` step 12) only if the change could show in play (pop-in at a distance, a shadow that goes, a stutter the tool can't catch).
 
 ## The check-up
 

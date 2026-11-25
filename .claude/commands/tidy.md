@@ -28,7 +28,7 @@ Follow `/todo` (`.claude/commands/todo.md`) for everything not said here. The ex
 2. **Move the outliers** in small commits, each saying what changed for the player.
 3. **Add the test that keeps it there**, as the issue says. A cohesion fix without a test that fails on the next drift is half done.
 4. **Update the rule** to what was built, and the FAQ, `docs/game.md`, `src/hud/controls.js` and the glossary wherever a key, a name or a behaviour changed.
-5. **A testing issue** for anything Jamie should feel in play (new keys, a screen that behaves differently).
+5. **Lines on the walk for its place** (`/todo` step 12) for anything Jamie should feel in play (new keys, a screen that behaves differently).
 
 ## The check-up
 

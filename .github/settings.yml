@@ -76,7 +76,7 @@ labels:
     description: /todo takes this before the lowest-numbered open issue
   - name: "🧪 testing"
     color: fef2c0
-    description: Jamie to try a merged change in the running game; /todo skips these
+    description: "A walk: what Jamie tries in the running game, one issue for each place; /test works these, /todo skips them"
   - name: "💤 later"
     color: c2c5cc
     description: Kept, but held back until there is room for it; /todo and /tidy skip these
