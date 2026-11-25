@@ -337,19 +337,25 @@ describe('the rebuilt small things (#1004)', () => {
 describe('the pit in the scene (#1004)', () => {
   // The pit's stream's boxes after the big boulders (the fence, the container, the cabin, the plant, the excavator, the tyres, the drums, the dead
   // trees, the signs, the boundary), recorded on main before #1004: the relics stand where they did, though the plants now deal from their own stream.
+  // Twice: on the headless stand-in stream, and on the pit's own stream as the game builds it (props.js `streamFor('buildQuarry')`).
   const RELIC_BOXES = { count: 279, sum: 21332.53 };
+  const RELIC_BOXES_GAME = { count: 281, sum: 22173.56 };
 
   it('stands every relic, the fence and the boundary where they stood', async () => {
     vi.stubGlobal('document', { createElement: () => fakeCanvas() });
     const { buildQuarry } = await import('../src/world/quarryProps.js');
-    const c = { ...headlessContext(), drawDistance: { add: (o) => o } };
-    const boxes = [];
-    c.fixedBox = (...a) => boxes.push(a.map((v) => +v.toFixed(4)));
-    buildQuarry(c);
-    const sub = boxes.slice(quarryPlants(c.fields.quarry).big.length);
-    const sum = sub.reduce((t, b, i) => t + b.reduce((u, v, k) => u + v * (1 + ((i * 7 + k) % 13)), 0), 0);
-    expect(sub.length).toBe(RELIC_BOXES.count);
-    expect(sum).toBeCloseTo(RELIC_BOXES.sum, 1);
+    const { streamFor } = await import('../src/world/propStreams.js');
+    for (const [random, want] of [[null, RELIC_BOXES], [streamFor('buildQuarry'), RELIC_BOXES_GAME]]) {
+      const c = { ...headlessContext(), drawDistance: { add: (o) => o } };
+      if (random) c.random = random;
+      const boxes = [];
+      c.fixedBox = (...a) => boxes.push(a.map((v) => +v.toFixed(4)));
+      buildQuarry(c);
+      const sub = boxes.slice(quarryPlants(c.fields.quarry).big.length);
+      const sum = sub.reduce((t, b, i) => t + b.reduce((u, v, k) => u + v * (1 + ((i * 7 + k) % 13)), 0), 0);
+      expect(sub.length).toBe(want.count);
+      expect(sum).toBeCloseTo(want.sum, 1);
+    }
   });
 
   it('draws its scrub, cover, lip, stones and dead trees in the set piece, lit, and hands the tree line and the oaks to the farm\'s scatter', async () => {
