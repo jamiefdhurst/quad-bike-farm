@@ -481,6 +481,11 @@ export const FAQ_SECTIONS = [
         a: `On a single track two vehicles can only pass at a passing place. The one with a passing place on its left, nearest, pulls in and waits until the other has gone by, and one with no bay either side creeps past. One behind another going the same way keeps its distance and waits behind it while it waits in a passing place, as a passing place holds only one. If you stop on the road, they wait for you. Pull into a bay yourself, on your left, and they carry on.`,
       },
       {
+        q: 'Can I get off Back Lane into the farm\'s fields?',
+        a: `Yes, through its field gates: there is one across from each of the farm's gateways along the north and west, standing open. A ditch runs along the low side of the west stretch at the foot of the hedge, but it is piped under each gateway, as a real one is, so you drive straight off the tarmac and through the gate with no drop on the way. The ditch also swings out round each passing place, and the passing places are laid level with the road, so pulling into one is as smooth as staying on the road.`,
+        tip: 'Back Lane\'s ditch is piped under its field gates: drive straight off the tarmac and through.',
+      },
+      {
         q: 'What is the A-road, and why does the screen go black when I pull out onto it?',
         a: `The farm's public lane bends round in the north and runs out to the A-road, the big road down the valley, a wide two-lane road with a white dashed centre line and cat's eyes. The village street meets it too. Nothing is walled off: each road simply carries on into the distance. But there is nothing for you in town today, so cross a junction's give-way line onto the A-road, or the lane's southern line before it leaves the farm's land, and the picture fades to black and puts you, on foot or on whatever you are riding, about 25 m back up the road you came along, facing home, stopped. A girl with you says why. On your own you get a note: "Nothing needs doing in town today."`,
         tip: 'Pull out onto the A-road and you are turned round, facing home. A girl with you says why.',
