@@ -12,7 +12,7 @@ A mixed upland-edge farm of about 68 ha (870 by 830 m), about seven times today'
 | --- | --- | --- | --- |
 | **The farmstead** | The house, a concrete yard and every building you use daily, all within about 80 m of each other | Moves: the barn and yard are in the far south-west corner, the Dutch barn and cars 250 m away | |
 | Farmhouse, garden, orchard | Outside only at first: kitchen door, lit windows, washing line, kennel. Hens and pig in the orchard | New | |
-| The barn | The workshop: bench, loft, boards, bell, toolbox. Bigger, one pair of doors | Moves | #613, #503, #465, #329, #246, #212, #169, #171 |
+| The barn | The workshop: bench, boards, bell, toolbox. Bigger, one pair of doors | Moves | #613, #503, #465, #329, #246, #212, #169, #171 |
 | Machinery shed | Trailers, mower, harrows, sprayer, splitter, nose-out | New | #617 |
 | Dutch barn and stackyard | Hay and straw, where they're used | Moves from the lane gate | |
 | Cattle shed, silage clamp, muck heap | Winter housing; the muck job's source and the silage job's destination | New | #145 |
