@@ -99,6 +99,58 @@ describe('the walk after a merge', () => {
   });
 });
 
+// A session stops only for what a later PR can't change back, and records every other choice where Jamie will meet it (#1186).
+describe('the stops that stay', () => {
+  const todo = read('.claude/commands/todo.md');
+  const section = todo.split(/^## The stops that stay$/m)[1]?.split(/^## /m)[0] ?? '';
+  const stepText = (title) => {
+    const start = todo.search(new RegExp(`^\\d+\\. \\*\\*${title}`, 'm'));
+    if (start < 0) return '';
+    const from = todo.indexOf('\n', start);
+    const next = todo.slice(from).search(/^\d+\. \*\*/m);
+    return todo.slice(start, next < 0 ? undefined : from + next);
+  };
+  const STOPS = [
+    /\*\*A line of the issue left out or done another way\*\* \(#736, #745\)/,
+    /\*\*Anything that changes what the farm save keeps\*\*/,
+    /\*\*Removing or replacing something already built that the issue doesn't name\.\*\*/,
+    /\*\*A place that isn't on the plan\*\*/,
+    /\*\*A source to use as given that can't be reached\*\* \(#719/,
+    /\*\*An issue that fails the lint\*\* \(#774/,
+  ];
+
+  it('lists every stop in one section of /todo', () => {
+    expect(section, 'todo.md has a "The stops that stay" section').not.toBe('');
+    for (const stop of STOPS) expect(section).toMatch(stop);
+  });
+
+  it('step 2 decides any other choice itself, under "Decided without you"', () => {
+    const step = stepText('Plan every line');
+    expect(step).toMatch(/\*\*A choice the issue leaves open is not a stop\*\*/);
+    for (const kind of ['a look', 'a feel', 'a number', 'which of two behaviours']) expect(step).toContain(kind);
+    expect(step).toMatch(/headed "Decided without you": each choice, the other one and why it was not taken/);
+    expect(step).toContain('Only what is in "The stops that stay" goes to Jamie');
+  });
+
+  it('puts the choices in the walk and the report', () => {
+    expect(stepText('Ask for testing if it needs it')).toMatch(/under a heading "Decided without you" in the lines file, one line each with the choice and how to see it/);
+    expect(stepText('Tell Jamie')).toMatch(/Straight after it, each choice made without Jamie/);
+  });
+
+  it('still gets a second opinion for each stop that stays, and a recheck ask stops only when it is one', () => {
+    const before = todo.split(/^## Before you stop$/m)[1] ?? '';
+    expect(before).toMatch(/^Every one of "The stops that stay"/m);
+    expect(section).toMatch(/Every stop gets "Before you stop" first/);
+    expect(stepText('Recheck it before the PR')).toMatch(/`ask` that is one of "The stops that stay"/);
+  });
+
+  it('CLAUDE.md says the same in its Autonomous line', () => {
+    const line = read('CLAUDE.md').match(/^- Autonomous: .*$/m)?.[0] ?? '';
+    expect(line).toContain('"The stops that stay"');
+    expect(line).toContain('"Decided without you"');
+  });
+});
+
 // /todo batch builds several small issues as one PR (#1180).
 describe('/todo batch', () => {
   const todo = read('.claude/commands/todo.md');
