@@ -7,28 +7,64 @@
 import * as THREE from 'three';
 import { worldBox, canvasTexture } from './outbuildingProps.js';
 import { galvanisedTexture, concreteTexture } from './yardKit.js';
-import { paintedSteelTexture } from './quarryTextures.js';
 import { reflectiveTapeTexture, heightPlateTexture } from './villageTextures.js';
 import { vergeLeafTexture } from './laneVerge.js';
 import { boltGeometry } from '../vehicle/detail/fixings.js';
 
 const TAU = Math.PI * 2;
+/** How much more light reflective tape gives back than plain white paint: its material's colour (1 is white). */
+export const TAPE_GAIN = 1.6;
 
 /** The kit's materials, all lit: dull galvanising, weathered precast concrete, old yellow paint gone to rust, reflective tape, chain and lock steel, earth. */
 export function entranceMaterials(random) {
   const concreteMap = concreteTexture(random);
   return {
     concrete: new THREE.MeshStandardMaterial({ map: concreteMap, roughness: 0.95 }),
-    galv: new THREE.MeshStandardMaterial({ map: galvanisedTexture(random), color: 0xbdbdb8, roughness: 0.66, metalness: 0.35 }), // galvanising gone dull and chalky
-    paint: new THREE.MeshStandardMaterial({ map: paintedSteelTexture(random, '#b89a3c', 0.95), roughness: 0.8, metalness: 0.2 }), // a barrier's yellow, mostly rust now
-    tape: new THREE.MeshStandardMaterial({ map: reflectiveTapeTexture('hazard'), roughness: 0.16, metalness: 0.05 }),
-    tapeWhite: new THREE.MeshStandardMaterial({ map: reflectiveTapeTexture('white'), roughness: 0.16, metalness: 0.05 }),
+    galv: new THREE.MeshStandardMaterial({ map: galvanisedTexture(random), color: 0xe4e4df, roughness: 0.72, metalness: 0.15 }), // galvanising gone dull and chalky: pale, not shiny
+    paint: new THREE.MeshStandardMaterial({ map: rustyPaintTexture(random, '#a88a3e'), roughness: 0.85, metalness: 0.15 }), // a barrier's yellow, mostly rust now
+    // Reflective tape gives back far more of a lamp than paint does: lit like everything else (dark with no light on it), but its colour taken past
+    // white, so a headlamp's light comes back off it brighter than off the board or the paint round it.
+    tape: new THREE.MeshStandardMaterial({ map: reflectiveTapeTexture('hazard'), color: new THREE.Color(TAPE_GAIN, TAPE_GAIN, TAPE_GAIN), roughness: 0.12, metalness: 0 }),
+    tapeWhite: new THREE.MeshStandardMaterial({ map: reflectiveTapeTexture('white'), color: new THREE.Color(TAPE_GAIN, TAPE_GAIN, TAPE_GAIN), roughness: 0.12, metalness: 0 }),
     chain: new THREE.MeshStandardMaterial({ color: 0x6e6152, roughness: 0.62, metalness: 0.5 }), // galvanised chain gone brown at the links' wear
     lock: new THREE.MeshStandardMaterial({ color: 0x8c8a84, roughness: 0.45, metalness: 0.6 }),
     dark: new THREE.MeshStandardMaterial({ color: 0x24221f, roughness: 0.7, metalness: 0.3 }),
     earth: new THREE.MeshStandardMaterial({ color: 0x55462f, roughness: 1 }),
     heightPlate: new THREE.MeshStandardMaterial({ map: heightPlateTexture('2.1m'), roughness: 0.35 }),
   };
+}
+
+/**
+ * Old paint on steel gone mostly to rust, one tile 0.6 m: the paint (`base`) left in faded islands over orange-brown rust, with darker pitting and
+ * streaks running down. For a barrier, a post or anything painted and left out for years.
+ */
+export function rustyPaintTexture(random, base) {
+  return canvasTexture(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#7c4a2a';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 60; i++) {
+      ctx.fillStyle = `rgba(${random() < 0.5 ? '150,82,40' : '96,52,30'},${0.3 + random() * 0.4})`;
+      ctx.beginPath();
+      ctx.ellipse(random() * w, random() * h, 3 + random() * 12, 2 + random() * 8, random() * 3, 0, TAU);
+      ctx.fill();
+    }
+    ctx.fillStyle = base; // what is left of the paint
+    for (let i = 0; i < 26; i++) {
+      ctx.globalAlpha = 0.7 + random() * 0.3;
+      ctx.beginPath();
+      ctx.ellipse(random() * w, random() * h, 6 + random() * 20, 4 + random() * 14, random() * 3, 0, TAU);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    for (let i = 0; i < 30; i++) {
+      const x = random() * w;
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, 'rgba(90,44,20,0.5)');
+      g.addColorStop(1, 'rgba(90,44,20,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x, random() * h * 0.5, 1 + random() * 2, h * 0.5);
+    }
+  });
 }
 
 /** A square post `w` across with its four arrises chamfered `c`, standing from y = 0 to `h`, its texture in metres over `tile`. */
@@ -44,7 +80,7 @@ export function chamferedPostGeometry(w, h, c = 0.025, tile = 0.5) {
 
 /** A precast concrete gate post at (x, y, z) turned `yaw`: chamfered, `h` out of the ground and `sink` into it, a weathered cap and a ring of trodden earth at its foot. */
 export function addGatePost(parts, mats, x, y, z, yaw, { w = 0.3, h = 1.8, sink = 0.45 } = {}) {
-  parts.add(mats.concrete, chamferedPostGeometry(w, h + sink), x, y - sink, z, 0, yaw, 0);
+  parts.add(mats.concrete, chamferedPostGeometry(w, h + sink, 0.025, h + sink), x, y - sink, z, 0, yaw, 0); // one tile up the post: its seam once, the green at its foot
   parts.add(mats.concrete, new THREE.ConeGeometry(w * 0.72, 0.06, 4, 1).rotateY(Math.PI / 4), x, y + h + 0.028, z, 0, yaw, 0); // the cap, weathered to shed the wet
   parts.add(mats.earth, new THREE.CylinderGeometry(w * 0.9, w * 1.25, 0.08, 10), x, y + 0.005, z, 0, yaw, 0);
 }
@@ -117,7 +153,7 @@ export function addChainAndLock(parts, mats, y, apart) {
 
 /** A square section `w` across chamfered `c`, `l` long along local x, centred: the body of an interlocking block. */
 function blockBody(l, w, c) {
-  return chamferedPostGeometry(w, l, c, 0.6).translate(0, -l / 2, 0).rotateZ(Math.PI / 2);
+  return chamferedPostGeometry(w, l, c, l).translate(0, -l / 2, 0).rotateZ(Math.PI / 2); // one tile along it, so the texture's seam is not a course of bricks
 }
 
 /**
@@ -148,7 +184,7 @@ export function addHeightBarrier(parts, mats, span, groundL, groundR, { clear = 
     parts.add(mats.paint, worldBox(post, h, post, 0.6), sx, gy - 0.35 + h / 2, 0);
     parts.add(mats.paint, worldBox(post + 0.04, 0.012, post + 0.04, 0.3), sx, top + 0.006, 0); // the cap plate
     parts.add(mats.concrete, new THREE.CylinderGeometry(0.22, 0.27, 0.1, 12), sx, gy + 0.02, 0); // the footing's concrete showing
-    for (const by of [1.0, 1.55]) parts.add(mats.tape, worldBox(post + 0.008, 0.2, post + 0.008, 0.4, 0.2), sx, gy + by, 0); // reflective bands round the post
+    for (const by of [0.55, 1.0, 1.55]) parts.add(mats.tape, worldBox(post + 0.008, 0.2, post + 0.008, 0.4, 0.2), sx, gy + by, 0); // reflective bands round the post
     parts.add(mats.paint, worldBox(post + 0.02, beam + 0.08, 0.01, 0.3), sx, beamY, post / 2 + 0.005); // the cleat the beam is bolted to
     addBolts(parts, mats.galv, [[sx - 0.045, beamY + 0.05, post / 2 + 0.07], [sx + 0.045, beamY - 0.05, post / 2 + 0.07]], [0, 0, 1], 0.015);
   }
@@ -158,7 +194,7 @@ export function addHeightBarrier(parts, mats, span, groundL, groundR, { clear = 
   const bands = Math.max(3, Math.round(len / 0.9));
   for (let i = 0; i < bands; i++) {
     const bx = -len / 2 + 0.35 + (i * (len - 0.7)) / Math.max(1, bands - 1);
-    parts.add(mats.tape, worldBox(0.4, beam + 0.008, 0.118, 0.4, 0.2), bx, beamY, post / 2 + 0.065);
+    parts.add(mats.tape, worldBox(0.5, beam + 0.008, 0.118, 0.4, 0.2), bx, beamY, post / 2 + 0.065);
   }
   // The limit plate on two straps under the beam's middle.
   for (const sx of [-0.12, 0.12]) parts.add(mats.galv, worldBox(0.03, 0.22, 0.008, 0.2), sx, beamY - beam / 2 - 0.08, post / 2 + 0.125);

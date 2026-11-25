@@ -198,12 +198,14 @@ export function entrancePlan(gate, reach) {
   for (const s of [-1, 1]) weed(su + 0.3, sign.v + s * (ENTRANCE.sign.w / 2 - 0.18), 'dock');
   for (const h of [-1, 1]) for (let i = 0; i < 8; i++) weed(E.hedge.u + 1.2 + random() * 0.6, h * (E.hedge.from + random() * (E.hedge.to - E.hedge.from)), kinds[Math.floor(random() * 3)]);
   // Litter: snagged in the hedge, at the foot of the fence, and thrown on the verge by the mouth.
+  // Snagged on the hedge's face towards the lane (its leaves reach about 1.3 m from its line), half in it, so it shows.
   const litter = [
-    { kind: 'bag', u: E.hedge.u + 0.7, v: 9.8, y: 0.95 },
-    { kind: 'packet', u: E.hedge.u + 0.9, v: 14.2, y: 0.55 },
-    { kind: 'packet', u: E.hedge.u + 0.8, v: -11.6, y: 0.7 },
-    { kind: 'can', u: E.hedge.u + 1.1, v: -19.4, y: 0.35 },
-    { kind: 'bag', u: E.hedge.u + 0.6, v: -22.3, y: 1.2 },
+    { kind: 'bag', u: E.hedge.u + 1.25, v: 9.8, y: 0.95 },
+    { kind: 'packet', u: E.hedge.u + 1.3, v: 14.2, y: 0.55 },
+    { kind: 'packet', u: E.hedge.u + 1.3, v: -11.6, y: 0.7 },
+    { kind: 'can', u: E.hedge.u + 1.4, v: -19.4, y: 0 },
+    { kind: 'bag', u: E.hedge.u + 1.2, v: -22.3, y: 1.2 },
+    { kind: 'packet', u: E.hedge.u + 1.3, v: 21.5, y: 0.35 },
     { kind: 'bottle', u: 0.35, v: 6.4, y: 0 },
     { kind: 'can', u: 0.3, v: -7.9, y: 0 },
     { kind: 'packet', u: -0.25, v: 3.6, y: 0 },

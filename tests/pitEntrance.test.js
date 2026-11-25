@@ -60,7 +60,7 @@ describe('where the lane entrance stands', () => {
     expect(plan.weeds.length).toBeGreaterThan(50);
     expect(plan.weeds.filter((w) => Math.abs(w.u) < 1).length).toBeGreaterThan(40);
     for (const h of plan.hedges) expect(Math.abs(f.toFrame(h.a.x, h.a.z).v)).toBeGreaterThan(bellmouthHalf(ENTRANCE.hedge.u, reach) + 3);
-    const inHedge = plan.litter.filter((l) => Math.abs(l.u - ENTRANCE.hedge.u) < 1.3 && Math.abs(l.v) >= ENTRANCE.hedge.from && Math.abs(l.v) <= ENTRANCE.hedge.to);
+    const inHedge = plan.litter.filter((l) => Math.abs(l.u - ENTRANCE.hedge.u) < 1.5 && Math.abs(l.v) >= ENTRANCE.hedge.from && Math.abs(l.v) <= ENTRANCE.hedge.to);
     expect(inHedge.length).toBeGreaterThanOrEqual(4);
     expect(inHedge.some((l) => l.y > 0.5)).toBe(true); // snagged up in it, not only at its foot
   });
@@ -182,6 +182,18 @@ describe('the lane entrance as a model', () => {
     }
     const drape = group.getObjectByName('bellmouth');
     expect(drape.material.map).toBeTruthy();
+  });
+  it('gives the barrier\'s and the sign\'s reflective tape more back than white paint, and nothing that glows on its own', async () => {
+    const { entranceMaterials, TAPE_GAIN } = await import('../src/world/entranceKit.js');
+    const m = entranceMaterials(() => 0.5);
+    for (const tape of [m.tape, m.tapeWhite]) {
+      expect(tape.color.r).toBe(TAPE_GAIN);
+      expect(TAPE_GAIN).toBeGreaterThan(1);
+      expect(tape.emissive.getHex()).toBe(0);
+    }
+    const used = new Set();
+    group.getObjectByName('pitEntranceParts').traverse((o) => o.isMesh && used.add(o.material));
+    expect(used.has(m.tape) || [...used].some((x) => x.color?.r === TAPE_GAIN)).toBe(true);
   });
   it('fills the ruts\' puddles when the ground is wet and dries them when it is not, as the yard\'s', () => {
     const puddles = group.getObjectByName('pitEntrancePuddles');

@@ -530,14 +530,26 @@ export function buildPitEntrance(c) {
   }
 
   // The bellmouth: a drape over the ground, its ruts lower, the painting from the plan; loose lumps of tarmac at its break; and the puddles in the ruts.
+  // It is laid over the ground as drawn (a 1 m grid of the ground's heights, groundTiles.js), not between its samples, or the drawn ground's facets
+  // would come up through it where the lane's shoulder curves: the higher of the two at each point.
+  const drawn = (x, z) => {
+    const x0 = Math.floor(x);
+    const z0 = Math.floor(z);
+    const fx = x - x0;
+    const fz = z - z0;
+    const a = ground(x0, z0) * (1 - fx) + ground(x0 + 1, z0) * fx;
+    const b = ground(x0, z0 + 1) * (1 - fx) + ground(x0 + 1, z0 + 1) * fx;
+    return Math.max(ground(x, z), a * (1 - fz) + b * fz);
+  };
   const dip = (u, v) => rutDip(v) * (1 - 0.5 * tarmacAt(u, v, reach));
   const surface = (u, v) => {
     const p = f.at(u, v);
-    return ground(p.x, p.z) + 0.05 - dip(u, v);
+    return drawn(p.x, p.z) + 0.05 - dip(u, v);
   };
   {
-    const geo = drapeGeometry(plan.bellmouth.rows, { frame: f, groundY: ground, lift: 0.05, dip, cols: 28, uvOf: (u, v) => bellmouthUv(u, v, reach) });
-    const drape = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: bellmouthTexture(random, plan), roughness: 0.92 }));
+    const geo = drapeGeometry(plan.bellmouth.rows, { frame: f, groundY: drawn, lift: 0.05, dip, cols: 28, uvOf: (u, v) => bellmouthUv(u, v, reach) });
+    const material = new THREE.MeshStandardMaterial({ map: bellmouthTexture(random, plan), roughness: 0.92, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }); // drawn over the ground it lies on, a little way off
+    const drape = new THREE.Mesh(geo, material);
     drape.name = 'bellmouth';
     drape.receiveShadow = true;
     group.add(drape);

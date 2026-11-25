@@ -956,7 +956,7 @@ export function bladeSignTexture(random, lines, { bg = '#b4141b', fg = '#f6efe0'
  */
 export function reflectiveTapeTexture(kind = 'hazard') {
   return canvasTexture(128, 32, (ctx, w, h) => {
-    ctx.fillStyle = '#f2f1ec';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
     if (kind === 'hazard') {
       ctx.fillStyle = '#c8161c';

@@ -2,7 +2,7 @@
 // and the lane entrance's bellmouth and its loose tarmac (#1002).
 
 import { canvasTexture } from './outbuildingProps.js';
-import { tarmacAt, rutDip, bellmouthHalf, ENTRANCE } from './pitEntrance.js';
+import { tarmacAt, rutDip, bellmouthHalf, raggedEdge, ENTRANCE } from './pitEntrance.js';
 
 /** Where the bellmouth's texture lies over it: `v` metres either way along the gate, and from `u0` metres inside the gate to `pad` past the lane's edge. */
 export const BELLMOUTH_UV = { v: 10, u0: -1.2, pad: 0.6 };
@@ -36,8 +36,8 @@ export function tarmacTexture(random) {
  * out at the lane's edge and grass creeping in at the ragged sides. `plan` is pitEntrance.js `entrancePlan`'s: `reach` (how far the lane is) and its `puddles`.
  */
 export function bellmouthTexture(random, { reach, puddles }) {
-  const W = 512;
-  const H = 512;
+  const W = 1024; // about 50 pixels a metre
+  const H = 1024;
   const span = reach + BELLMOUTH_UV.pad - BELLMOUTH_UV.u0;
   const toPx = (u, v) => [((v + BELLMOUTH_UV.v) / (2 * BELLMOUTH_UV.v)) * W, H * (1 - (u - BELLMOUTH_UV.u0) / span)];
   const pxPerM = W / (2 * BELLMOUTH_UV.v);
@@ -45,35 +45,39 @@ export function bellmouthTexture(random, { reach, puddles }) {
     // The hardcore: crushed stone in greys and buff.
     ctx.fillStyle = '#8b8578';
     ctx.fillRect(0, 0, W, H);
-    for (let i = 0; i < 9000; i++) {
+    for (let i = 0; i < 36000; i++) {
       const v = 90 + Math.floor(random() * 90);
       ctx.fillStyle = `rgba(${v + 10},${v + 4},${v - 10},0.55)`;
-      ctx.fillRect(random() * W, random() * H, 1 + random() * 2.2, 1 + random() * 2);
+      ctx.fillRect(random() * W, random() * H, 1.5 + random() * 3, 1.5 + random() * 2.5);
     }
     // The tarmac, cell by cell where it still holds, with a crumbled grey rim where it is breaking up.
-    const cell = 0.14;
+    // Each cell a little bigger than its spacing and knocked off the grid, so the broken edge reads as crumbled stone and not as squares.
+    const cell = 0.07;
     for (let u = BELLMOUTH_UV.u0; u < reach + BELLMOUTH_UV.pad; u += cell) {
       for (let v = -BELLMOUTH_UV.v; v < BELLMOUTH_UV.v; v += cell) {
-        const t = tarmacAt(u, v, reach) + (random() - 0.5) * 0.12;
+        const t = tarmacAt(u, v, reach) + (random() - 0.5) * 0.07;
         if (t < 0.42) continue;
-        const [x, y] = toPx(u, v);
-        const g = 52 + Math.floor(random() * 14);
-        ctx.fillStyle = t < 0.52 ? `rgb(${g + 34},${g + 32},${g + 28})` : `rgb(${g},${g},${g + 2})`;
-        ctx.fillRect(x, y - cell * pxPerM, cell * pxPerM + 0.6, cell * pxPerM + 0.6);
+        const [x, y] = toPx(u + (random() - 0.5) * cell, v + (random() - 0.5) * cell);
+        const g = 54 + Math.floor(random() * 6);
+        const r = (cell * pxPerM * (1.2 + random() * 0.6)) / 2; // round crumbs, not squares
+        ctx.fillStyle = t < 0.48 ? `rgb(${g + 40},${g + 37},${g + 32})` : `rgb(${g},${g},${g + 2})`;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
     // Aggregate showing through the tarmac, and its cracks.
-    for (let i = 0; i < 2600; i++) {
+    for (let i = 0; i < 9000; i++) {
       const u = BELLMOUTH_UV.u0 + random() * (reach + 1);
       const v = (random() - 0.5) * 2 * BELLMOUTH_UV.v;
       if (tarmacAt(u, v, reach) < 0.55) continue;
       const [x, y] = toPx(u, v);
       const c = 85 + Math.floor(random() * 60);
       ctx.fillStyle = `rgba(${c},${c},${c - 3},0.6)`;
-      ctx.fillRect(x, y, 1.2, 1.2);
+      ctx.fillRect(x, y, 2, 2);
     }
     ctx.strokeStyle = 'rgba(18,18,18,0.75)';
-    ctx.lineWidth = 1.2;
+    ctx.lineWidth = 2;
     for (let i = 0; i < 60; i++) {
       let u = reach * (0.45 + random() * 0.55);
       let v = (random() - 0.5) * 2 * bellmouthHalf(u, reach);
@@ -98,16 +102,18 @@ export function bellmouthTexture(random, { reach, puddles }) {
       }
     }
     // Damp silt where the puddles stand, with a paler rim where they have dried back.
+    // Each a run of overlapping blobs along the rut, so its edge is uneven and not a drawn oval.
     for (const { u, v, len } of puddles) {
-      const [x, y] = toPx(u, v);
-      ctx.fillStyle = 'rgba(196,186,160,0.45)';
-      ctx.beginPath();
-      ctx.ellipse(x, y, ENTRANCE.rutHalf * 1.4 * pxPerM, (len / 2 + 0.15) * pxPerM, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(62,54,42,0.85)';
-      ctx.beginPath();
-      ctx.ellipse(x, y, ENTRANCE.rutHalf * pxPerM, (len / 2) * pxPerM, 0, 0, Math.PI * 2);
-      ctx.fill();
+      for (const [col, grow] of [['rgba(176,166,140,0.16)', 0.12], ['rgba(62,54,42,0.5)', 0]]) {
+        for (let k = 0; k < 7; k++) {
+          const along = (k / 6 - 0.5) * len * 0.8;
+          const [x, y] = toPx(u + along, v + (random() - 0.5) * 0.08);
+          ctx.fillStyle = col;
+          ctx.beginPath();
+          ctx.ellipse(x, y, (ENTRANCE.rutHalf * (0.8 + random() * 0.4) + grow) * pxPerM, (len * 0.17 + grow) * pxPerM, (random() - 0.5) * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
     }
     // An oil stain where something stood.
     {
@@ -119,21 +125,22 @@ export function bellmouthTexture(random, { reach, puddles }) {
       ctx.fillRect(x - pxPerM, y - pxPerM, pxPerM * 2, pxPerM * 2);
     }
     // Chippings fanned out at the lane's edge, and grass creeping in at the ragged sides.
-    for (let i = 0; i < 1400; i++) {
-      const u = reach - 1.5 + random() * 2;
+    for (let i = 0; i < 1600; i++) {
+      const u = reach - 1.5 + Math.pow(random(), 0.6) * 2;
       const v = (random() - 0.5) * 2 * (bellmouthHalf(u, reach) - 0.5);
       const [x, y] = toPx(u, v);
-      const c = 150 + Math.floor(random() * 70);
-      ctx.fillStyle = `rgba(${c},${c - 6},${c - 20},0.8)`;
-      ctx.fillRect(x, y, 1.5 + random() * 1.5, 1.5 + random() * 1.5);
+      const c = 118 + Math.floor(random() * 60);
+      ctx.fillStyle = `rgba(${c},${c - 6},${c - 18},${0.45 + random() * 0.3})`;
+      ctx.fillRect(x, y, 1.5 + random() * 2, 1.5 + random() * 2);
     }
-    for (let i = 0; i < 2200; i++) {
+    // Moss and grass in the cracks at the very edge, where nothing runs over it.
+    for (let i = 0; i < 2400; i++) {
       const u = BELLMOUTH_UV.u0 + random() * (reach + 1);
       const side = random() < 0.5 ? -1 : 1;
-      const v = side * (bellmouthHalf(u, reach) - random() * 0.6);
+      const v = side * (bellmouthHalf(u, reach) + raggedEdge(u, side) - random() * random() * 0.35);
       const [x, y] = toPx(u, v);
-      ctx.fillStyle = `rgba(${70 + random() * 30},${100 + random() * 40},${44 + random() * 20},${0.4 + random() * 0.4})`;
-      ctx.fillRect(x, y, 1.2, 2.5 + random() * 3);
+      ctx.fillStyle = `rgba(${66 + random() * 30},${92 + random() * 36},${42 + random() * 18},${0.3 + random() * 0.35})`;
+      ctx.fillRect(x, y, 2 + random() * 2, 2 + random() * 3);
     }
   });
 }
