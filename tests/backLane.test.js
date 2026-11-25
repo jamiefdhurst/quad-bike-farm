@@ -421,4 +421,54 @@ describe('walking and riding into the gateways', () => {
       }
     }
   });
+
+  it('finds no step over 3 cm walking from the road through each gate, across the ditch\'s line, as the ditch is piped under the gateway (#1016)', async () => {
+    const { laneGates, hedgeOffset, sidePoint, GATE_HALF } = await import('../src/world/laneHedges.js');
+    const heights = createTerrainHeight(two, new Track(two.trackPoints));
+    // Every 2 cm from the tarmac's edge, as the centreline is walked above. The ditch's sides are a smooth curve, so a step between two points can
+    // pass a 0.45 m ditch; it is a drop and a climb back out, so the walk is also never more than 3 cm below ground both behind it and ahead of it.
+    // A bank that only rises or only falls (the lane runs in a cut at the moor gate, 1.3 m up to the hedge) is no step.
+    for (const g of laneGates(road)) {
+      const end = hedgeOffset(road, g.s, g.side) + 1.5; // through the opening to a metre and a half past the hedge's line
+      for (const along of [-(GATE_HALF - 0.4), 0, GATE_HALF - 0.4]) { // the gate's middle and either side of it, inside the posts
+        const hs = [];
+        for (let d = road.halfWidth; d <= end + 1e-9; d += 0.02) {
+          const p = sidePoint(road, g.s + along, g.side, d);
+          hs.push(heights.heightAt(p.x, p.z));
+        }
+        const where = (i) => `${g.id} gate, ${along.toFixed(1)} m along, ${(road.halfWidth + i * 0.02).toFixed(2)} m out`;
+        let worst = 0;
+        let at = 0;
+        for (let i = 1; i < hs.length; i++) if (Math.abs(hs[i] - hs[i - 1]) > worst) [worst, at] = [Math.abs(hs[i] - hs[i - 1]), i];
+        expect(worst, `a step: ${where(at)}`).toBeLessThan(0.03);
+        const ahead = hs.slice();
+        for (let i = hs.length - 2; i >= 0; i--) ahead[i] = Math.max(hs[i], ahead[i + 1]);
+        let behind = -Infinity;
+        let dip = 0;
+        for (let i = 0; i < hs.length; i++) {
+          behind = Math.max(behind, hs[i]);
+          if (Math.min(behind, ahead[i]) - hs[i] > dip) [dip, at] = [Math.min(behind, ahead[i]) - hs[i], i];
+        }
+        expect(dip, `down and back up: ${where(at)}`).toBeLessThan(0.03);
+      }
+    }
+  });
+});
+
+describe('the passing places', () => {
+  it('are laid level with the road: every bay\'s outer edge is within 3 cm of its level where it meets the carriageway, the whole length of the bay (#1016)', async () => {
+    const { sidePoint } = await import('../src/world/laneHedges.js');
+    const heights = createTerrainHeight(two, new Track(two.trackPoints));
+    for (const b of road.bays) {
+      let worst = 0;
+      let at = 0;
+      for (let s = b.s - b.length / 2; s <= b.s + b.length / 2 + 1e-9; s += 0.5) {
+        const inner = sidePoint(road, s, b.side, road.halfWidth);
+        const outer = sidePoint(road, s, b.side, road.halfWidth + b.bay);
+        const off = Math.abs(heights.heightAt(outer.x, outer.z) - heights.heightAt(inner.x, inner.z));
+        if (off > worst) [worst, at] = [off, s];
+      }
+      expect(worst, `the bay at ${b.s.toFixed(0)} m, at ${at.toFixed(1)} m`).toBeLessThan(0.03);
+    }
+  });
 });

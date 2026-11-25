@@ -2,8 +2,10 @@
 // lane's two ends, broken where a gate or the footpath's stile is, and pushed back where a passing place widens the road, so the bay is clear.
 // `laneHedgeRuns` says where hedge is and is not, `laneHedgePoint` where it stands at a distance along; props.js lays blocks along each run.
 
-import { pointAt } from './roads.js';
+import { pointAt, GATE_HALF } from './roads.js';
 import { sAlong, footpathSide } from './laneSigns.js';
+
+export { GATE_HALF }; // the gate's opening lives with the road, whose ditch is piped under it (#1016)
 
 /** m of the road's two ends with no hedge, so the junction with the lane is open. */
 export const JUNCTION_OPEN = 9;
@@ -71,7 +73,6 @@ export function laneTrees(road, random, gaps = []) {
   return out;
 }
 
-export const GATE_HALF = 2.2; // m either side of a gate's middle that the hedge leaves open: the leaf's length and a post each side
 export const FORD_OPEN = 6; // m either side of the ford that the hedges are open, for the stream
 export const STILE_HALF = 1.1; // m either side of the stile that the hedge is open
 
