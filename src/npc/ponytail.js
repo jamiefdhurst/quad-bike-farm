@@ -26,14 +26,15 @@ export const PONYTAIL_PARAM_RANGES = {
 export const TAIL = {
   lift: 0.04, // how far it rises back out of the band before it falls
   liftAngle: 0.8, // radians above level it leaves the band at
-  gathered: 0.009, // its radius under the band
-  full: 0.024, // its radius at its thickest, just past the band
-  end: 0.003, // its radius at the end
+  gathered: 0.012, // its radius under the band
+  full: 0.034, // its radius at its thickest, just past the band
+  end: 0.004, // its radius at the end
+  taper: 0.5, // how it narrows from its thickest to its end: under 1 it keeps its thickness further down and thins near the end
   wide: 1.15, // across against deep: a tail lies a little flat
   deep: 0.8,
   clear: 0.004, // metres it keeps off her back
   rings: 22,
-  sides: 10,
+  sides: 12,
   wisps: 4, // thin strands splaying out of its end
   wispFrom: 0.7, // how far down the tail they start
 };
@@ -59,7 +60,7 @@ export function tailRadius(u, p = TAIL) {
   u = Math.max(0, Math.min(1, u));
   if (u < 0.08) return lerp(p.gathered, p.full * 0.9, smooth01(u / 0.08));
   if (u < 0.16) return lerp(p.full * 0.9, p.full, (u - 0.08) / 0.08);
-  return lerp(p.end, p.full, Math.pow(1 - (u - 0.16) / 0.84, 0.85));
+  return lerp(p.end, p.full, Math.pow(1 - (u - 0.16) / 0.84, p.taper));
 }
 
 /**

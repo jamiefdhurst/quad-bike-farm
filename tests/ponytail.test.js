@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import * as THREE from 'three';
+import { buildAllGirls } from './helpers/girlModels.js';
 import { dealPonytail, BAND_COLOURS, tailRadius, tailPath, buildTail, swingStep, STILL, TAIL, DEFAULT_PONYTAIL_PARAMS, PONYTAIL_PARAM_RANGES } from '../src/npc/ponytail.js';
 import { completeStyle, describeOutfit } from '../src/npc/outfits.js';
 import { CHARACTERS } from '../src/npc/characters.js';
@@ -57,6 +59,12 @@ describe('the tail\'s shape', () => {
     expect(tailRadius(1.02)).toBeCloseTo(TAIL.end, 4);
   });
 
+  it('keeps most of its thickness half way down, thinning near its end (#1243)', () => {
+    expect(TAIL.full).toBeGreaterThanOrEqual(0.03);
+    expect(tailRadius(0.58)).toBeGreaterThan(TAIL.full * 0.65);
+    expect(tailRadius(0.9)).toBeLessThan(TAIL.full * 0.5);
+  });
+
   it('rises back out of the band before it falls, and ends the drop below it', () => {
     const path = tailPath(0.3);
     expect(Math.max(...path.map((p) => p[1]))).toBeGreaterThan(0.004);
@@ -85,8 +93,9 @@ describe('the tail\'s shape', () => {
     }
     // The wisps run on past the end of the tail.
     expect(Math.min(...hair.points.map((p) => p[1]))).toBeLessThan(-0.31);
-    // The band sits within a few centimetres of where the tail leaves her head.
-    expect(Math.max(...band.points.map((p) => Math.hypot(...p)))).toBeLessThan(0.03);
+    // The band sits within a few centimetres of where the tail leaves her head, and fits round it there.
+    expect(Math.max(...band.points.map((p) => Math.hypot(...p)))).toBeLessThan(0.04);
+    expect(Math.max(...band.points.map((p) => Math.abs(p[0])))).toBeGreaterThan(tailRadius(0.03) * TAIL.wide);
   });
 });
 
@@ -130,4 +139,70 @@ describe('the swing', () => {
       expect(v).toBeLessThanOrEqual(hi);
     }
   });
+});
+
+describe('her hair tied back as she turns her head (#1243)', () => {
+  // Built with her texture's real paint, so her hair is found and pulled in as the game does it.
+  let girls;
+  beforeAll(async () => {
+    girls = await buildAllGirls({ paint: true });
+  }, 120000);
+
+  // Each tied-back hair point, and the band, in her head bone's frame: on her head they stay put however it turns.
+  const onHead = (rig) => {
+    rig.root.updateMatrixWorld(true);
+    const into = rig.bones.Head.matrixWorld.clone().invert();
+    const out = [];
+    for (const { mesh, points } of rig.hairTied) {
+      mesh.skeleton.update();
+      const p = new THREE.Vector3();
+      for (const i of points) {
+        mesh.getVertexPosition(i, p);
+        out.push(p.applyMatrix4(mesh.matrixWorld).applyMatrix4(into).clone());
+      }
+    }
+    out.push(rig.ponytail.pivot.getWorldPosition(new THREE.Vector3()).applyMatrix4(into));
+    return out;
+  };
+  // Turned as the rig turns her head to look (characterRig.js applyLook): the neck takes 0.4 of it and the head 0.6.
+  const turn = (rig, yaw, nod) => {
+    rig.rotateAboutRootAxis(rig.bones.Neck, new THREE.Vector3(0, 1, 0), yaw * 0.4);
+    rig.rotateAboutRootAxis(rig.bones.Head, new THREE.Vector3(0, 1, 0), yaw * 0.6);
+    rig.rotateAboutRootAxis(rig.bones.Neck, new THREE.Vector3(1, 0, 0), nod * 0.4);
+    rig.rotateAboutRootAxis(rig.bones.Head, new THREE.Vector3(1, 0, 0), nod * 0.6);
+  };
+
+  it('moves none of it off her head when she turns her head 60 degrees or nods', async () => {
+    const { refitOutfit, OUTFITS } = await import('../src/npc/outfit.js');
+    for (const { id, rig } of girls) {
+      const { params } = CHARACTERS.find((c) => c.id === id);
+      const base = OUTFITS[params.outfit];
+      refitOutfit(rig, { ...base, style: { ...base.style, ponytail: true } });
+      expect(rig.hairTied.length, id).toBeGreaterThan(0);
+      const rest = onHead(rig);
+      const kept = [rig.bones.Neck.quaternion.clone(), rig.bones.Head.quaternion.clone()];
+      for (const [yaw, nod] of [[Math.PI / 3, 0], [-Math.PI / 3, 0], [0, 0.5], [Math.PI / 3, -0.3]]) {
+        turn(rig, yaw, nod);
+        const worst = Math.max(...onHead(rig).map((p, i) => p.distanceTo(rest[i])));
+        expect(worst, `${id} turned ${yaw.toFixed(2)}, nodding ${nod}`).toBeLessThan(0.001);
+        rig.bones.Neck.quaternion.copy(kept[0]);
+        rig.bones.Head.quaternion.copy(kept[1]);
+      }
+      refitOutfit(rig, base);
+    }
+  }, 120000);
+
+  it('gives her hair back its own skin weights when she lets it down', async () => {
+    const { refitOutfit, OUTFITS } = await import('../src/npc/outfit.js');
+    const { id, rig } = girls[0];
+    const base = OUTFITS[CHARACTERS.find((c) => c.id === id).params.outfit];
+    refitOutfit(rig, base);
+    const meshes = [];
+    rig.model.traverse((o) => o.isSkinnedMesh && !rig.outfitParts.includes(o) && meshes.push(o));
+    const loose = meshes.map((m) => m.geometry.attributes.skinWeight.array.slice());
+    refitOutfit(rig, { ...base, style: { ...base.style, ponytail: true } });
+    expect(meshes.some((m, k) => m.geometry.attributes.skinWeight.array.some((w, i) => w !== loose[k][i]))).toBe(true);
+    refitOutfit(rig, base);
+    meshes.forEach((m, k) => expect([...m.geometry.attributes.skinWeight.array]).toEqual([...loose[k]]));
+  }, 120000);
 });
