@@ -75,16 +75,12 @@ export function buildQuarry(c) {
 function pitKit() {
   const random = streamFor('pitKit');
   const sprays = leafCardMaterial(sprayTexture(random));
-  const hawthorn = hawthornModel(random, sprays, { height: 5 });
-  const birch = birchScrubModel(random);
   return {
-    hawthorn,
-    hawthornFar: farSprayTree(hawthorn),
+    hawthorn: hawthornModel(random, sprays, { height: 5 }),
     ash: ashStandardModel(random, barkTexture(random, 'ash'), sprays),
     gorse: { geo: gorseBushGeometry(random), mat: leafCardMaterial(gorseTexture(random)) },
     bramble: { geo: brambleGeometry(random), mat: leafCardMaterial(brambleLeafTexture(random)) },
-    birch,
-    birchFar: farKitTree(birch),
+    birch: birchScrubModel(random),
   };
 }
 
@@ -277,8 +273,15 @@ function buildScrub(c, quarry, plants, site, kit) {
   // set piece, so from across the farm they cost nothing at all.
   const near = new THREE.Group();
   const far = new THREE.Group();
-  const sets = [[kit.hawthorn, kit.hawthornFar, lists.hawthorn, true], [kit.birch, kit.birchFar, lists.birch, false]];
-  if (models.treeA?.scene && plants.trees.length) sets.push([models.treeA.scene, farTree(models.treeA.scene), oaks[0], true], [models.treeB.scene, farTree(models.treeB.scene), oaks[1], true]);
+  // A far model is made once for the farm: the scatter's, shared, where there is one (the oaks' and the hawthorn's are the scatter's too).
+  const farOf = (model, make) => {
+    const cache = c.scatter?.farModels;
+    if (!cache) return make(model);
+    if (!cache.has(model)) cache.set(model, make(model));
+    return cache.get(model);
+  };
+  const sets = [[kit.hawthorn, farOf(kit.hawthorn, farSprayTree), lists.hawthorn, true], [kit.birch, farOf(kit.birch, farKitTree), lists.birch, false]];
+  if (models.treeA?.scene && plants.trees.length) sets.push([models.treeA.scene, farOf(models.treeA.scene, farTree), oaks[0], true], [models.treeB.scene, farOf(models.treeB.scene, farTree), oaks[1], true]);
   for (const [model, farModel, list, castShadow] of sets) {
     if (!list.length) continue;
     near.add(...instanceModel(model, list, { castShadow }).children);
