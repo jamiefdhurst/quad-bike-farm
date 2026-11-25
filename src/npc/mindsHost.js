@@ -3,7 +3,7 @@
 // here. game.js builds this and calls updateMinds() inside the frame guard; .claude/rules/girls-minds.md has the rules.
 
 import * as THREE from 'three';
-import { choose, mainNeed, nextThink, OFFER_KINDS } from './chooser.js';
+import { choose, mainNeed, needsMetBy, nextThink, OFFER_KINDS } from './chooser.js';
 import { agendaKey } from './agenda.js';
 import { GO_KINDS } from './tractorGo.js';
 import { showOffBoost } from '../world/kids.js';
@@ -11,7 +11,7 @@ import { registerTuning } from '../core/tuning.js';
 import { DEFAULT_CALL_PARAMS, CALL_PARAM_RANGES, callThem, callSummary } from './callThem.js';
 import { nearestNamedSpot } from './spotNames.js';
 import { underCover } from './soaking.js';
-import { DEFAULT_FAR_WALK_PARAMS, FAR_WALK_PARAM_RANGES, splitFar, liftOffer, howShePlans, wayLength } from './farWalk.js';
+import { DEFAULT_FAR_WALK_PARAMS, FAR_WALK_PARAM_RANGES, splitFar, liftOffer, howShePlans, liftDrop, wayLength } from './farWalk.js';
 
 /** Where each kind of offer takes her, by the name of the place (`farPlaces`); a kind not listed has no place to walk to, or one near her by its own range. */
 export const FAR_PLACE_OF_KIND = {
@@ -36,8 +36,10 @@ export class MindsHost {
    */
   updateMinds(dt, ridden) {
     const g = this.g;
+    this.ridden = ridden; // for what she does once a lift has got her there (liftArrived)
     for (const c of g.companions) {
       c.farFrom = this.farParams.liftFrom; // how far she walks on her own choice or follows you on foot (npc/farWalk.js)
+      this.watchLift(c, ridden, dt);
       const ctx = this.needsContext(c);
       c.needs.update(dt, ctx, c.params);
       g.favour.setWant(c.character.id, c.needs.attention); // her jealousy is what 'neglected' is made of (favour.js)
@@ -95,7 +97,7 @@ export class MindsHost {
         continue;
       }
       pick.take();
-      c.needs.met(OFFER_KINDS[pick.key].satisfies);
+      c.needs.met(needsMetBy(pick)); // a lift meets what she is going for (#1066)
       c.chose();
       // She walks to it at its pace, and on her way she can be stopped (npc/intent.js).
       c.pace = OFFER_KINDS[pick.key].pace ?? null;
@@ -175,12 +177,17 @@ export class MindsHost {
     }, p);
     const lift = liftOffer(far, how, p);
     if (!lift) return near;
-    const take = () => this.takeLift(c, lift, yours, quad);
+    const kept = far.find((f) => f.offer.key === lift.for)?.offer ?? null;
+    const take = () => this.takeLift(c, lift, yours, quad, kept);
     return [...near, { ...lift, take }];
   }
 
-  /** She goes the far way: onto the back of your quad, or on a quad of her own, driving to the place by the gateways (herDriving's outing). */
-  takeLift(c, lift, yours, quad) {
+  /**
+   * She goes the far way: onto the back of your quad, or on a quad of her own, driving to the place by the gateways (herDriving's outing,
+   * one way: she parks near it). `c.lift` remembers what for (#1066): got there, she gets off and does it (`liftArrived`).
+   */
+  takeLift(c, lift, yours, quad, kept = null) {
+    c.lift = { for: lift.for, place: lift.place, how: lift.how, since: 0, boarded: false, parkWithin: this.farParams.liftParkWithin, arrive: () => this.liftArrived(c, lift, kept) };
     if (lift.how === 'ask') {
       c.selfEvents.push('join'); // "Shove up, I want a ride"
       c.requestMount(yours, { ownChoice: true, seat: 'pillion' });
@@ -188,6 +195,56 @@ export class MindsHost {
     }
     c.outingTo = { name: 'where she was going', x: lift.place.x, z: lift.place.z };
     c.requestDrive(quad);
+  }
+
+  /**
+   * On the back of your quad for a lift (#1066), each frame: once she is sat on it she says where she wants to go, and when you stop within
+   * `liftDropWithin` of the place she gets off and does what she went for. Off it any other way, or never on it, the lift is forgotten. On a
+   * quad of her own the drive's end does it (companionDriving.endDrive); this only forgets one that never got her there.
+   */
+  watchLift(c, ridden, dt) {
+    const l = c.lift;
+    if (!l) return;
+    l.since += dt;
+    const p = this.farParams;
+    if (l.how !== 'ask') {
+      if (l.since > p.liftGiveUp && !c.fsm.is('driving')) c.lift = null;
+      return;
+    }
+    const yours = ridden?.quad;
+    const on = !!yours && c.quad === yours && c.fsm.is('seated');
+    const distance = on ? Math.hypot(yours.position.x - l.place.x, yours.position.z - l.place.z) : Infinity;
+    const what = liftDrop({ boarded: l.boarded, on, stopped: on && Math.abs(yours.speed) < 0.5, distance, since: l.since }, p);
+    if (what === 'board') {
+      l.boarded = true;
+      const where = FAR_PLACE_OF_KIND[l.for];
+      if (where) c.voice.say(`liftTo_${where}`, { urgent: true, waitTurn: true, chance: 1 }); // liftLines.js
+    } else if (what === 'gone') c.lift = null;
+    else if (what === 'off') {
+      c.lift = null;
+      c.requestStandBeside(yours);
+      c.afterDismount = l.arrive;
+    }
+  }
+
+  /**
+   * A lift has got her to the place (#1066): she does what she went for, asked afresh now she is near it, or failing that (someone else got
+   * the seat, it went out of range) the offer she set off for. Its needs were met when she took the lift (needsMetBy).
+   */
+  liftArrived(c, lift, kept) {
+    const offer = this.offersFor(c, this.ridden ?? null).find((o) => o.key === lift.for) ?? kept;
+    if (!offer) return null;
+    offer.take();
+    c.pace = OFFER_KINDS[offer.key]?.pace ?? null;
+    return offer.key;
+  }
+
+  /** The Girls tab's and the console's "lift" (girlActions.js): she takes a free quad to the shepherd's hut, parks, gets off and sits in it. */
+  debugLift(c, quad, kind = 'hut') {
+    const place = this.farPlaces()[FAR_PLACE_OF_KIND[kind]];
+    if (!place) return false;
+    this.takeLift(c, { key: 'lift', girl: c.character.id, place, how: 'quad', for: kind }, null, quad);
+    return true;
   }
 
   /** Everything this girl could choose to do now (npc/chooser.js): her boredom choices and what the moved features offer her. */

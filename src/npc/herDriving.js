@@ -818,6 +818,12 @@ export class HerDrive {
     if (this.outing && !this.follow) {
       const o = this.outing;
       if (this.trip && !this.waypoints.length) this.trip = null; // something cleared her route on the way (backing off twice, a friend getting on): the trip is off
+      if (this.trip?.stage === 'there' && this.trip.oneWay) {
+        // Gone there for something (a lift to a far place, #1066): that's her there, and she pulls up to get off.
+        this.events.push('arrived');
+        this.stop('arrived');
+        return false;
+      }
       if (this.trip?.stage === 'there') {
         // At the place: home again, by the same gateways.
         this.trip.stage = 'back';
@@ -832,7 +838,8 @@ export class HerDrive {
         const sight = s && (this.passenger() || s.forced) && this.random() < s.p.chance ? s.pick(pos) : null;
         const trip = sight ?? (this.random() < o.p.chance ? o.pick(pos) : null);
         if (trip?.path.length) {
-          this.trip = { name: trip.name, stage: 'there', sight: sight ? trip.spot : null };
+          // One way (`oneWay`, a lift to a far place): she parks within `parkWithin` of it and gets off there (#1066).
+          this.trip = { name: trip.name, stage: 'there', sight: sight ? trip.spot : null, oneWay: !sight && !!o.p.oneWay, parkWithin: o.p.parkWithin ?? 0 };
           this.waypoints = trip.path.map((pt) => ({ x: pt.x, z: pt.z }));
           this.index = 0;
           // Long enough to get there and back at her pace, and a while at the place, before she tires of it.
@@ -924,6 +931,16 @@ export class HerDrive {
       this.events.push('parkedUp');
       this.stop('parked');
       return;
+    }
+    // Near enough the place she went there for (#1066): she parks here rather than driving into it (the hut, the fire).
+    const trip = this.trip;
+    if (trip?.oneWay && trip.stage === 'there' && this.waypoints.length) {
+      const end = this.waypoints[this.waypoints.length - 1];
+      if (Math.hypot(end.x - q.position.x, end.z - q.position.z) < trip.parkWithin) {
+        this.events.push('arrived');
+        this.stop('arrived');
+        return;
+      }
     }
     if (this.index >= this.waypoints.length && !this.plan()) return;
     const wp = this.waypoints[this.index];

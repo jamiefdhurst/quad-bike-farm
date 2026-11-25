@@ -620,10 +620,15 @@ export const drivingMethods = {
     }
     if (nick && !(nick.phase === 'back' && d.result === 'parked')) this.nickJob = null; // anything else ends it: she's done, or you've got it back
     this.driveConfidence = afterDrive(this.driveConfidence ?? p.driveConfidence, d.result);
+    // A lift to a far place on a quad of her own (#1066): parked there, she gets off and does what she went for (MindsHost.liftArrived).
+    // A drive that ended any other way drops it.
+    const lift = this.lift?.how === 'quad' ? this.lift : null;
+    if (lift) this.lift = null;
+    const arrived = !!lift && d.result === 'arrived' && !exit;
     let how = exit?.how;
-    if (!how) how = d.towing || d.result === 'parked' || d.result === 'gaveUp' || d.result === 'rescued' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
-    // Done, and getting off: most of the time she drives it back near the barn first, into clear ground east of the row.
-    if (how === 'off' && !d.park && !d.towing && !nick && !q.tractor && !q.driverStand) {
+    if (!how) how = d.towing || d.result === 'parked' || d.result === 'arrived' || d.result === 'gaveUp' || d.result === 'rescued' || d.result === 'noRoom' || Math.random() >= p.driveBackChance ? 'off' : 'back';
+    // Done, and getting off: most of the time she drives it back near the barn first, into clear ground east of the row (not at the end of a lift).
+    if (how === 'off' && d.result !== 'arrived' && !d.park && !d.towing && !nick && !q.tractor && !q.driverStand) {
       const home = this.homeParams ?? DEFAULT_HOME_PARAMS;
       const lp = this.lineUpParams ?? DEFAULT_LINEUP_PARAMS;
       const wants = bringsItHome({ result: d.result, pos: q.position, hasPassenger: !!q.passenger, asked: !!exit }, Math.random, home, lp);
@@ -649,7 +654,7 @@ export const drivingMethods = {
       if (q.tractor) q.engine.stopKnob();
       else q.engine.setIgnition(false);
     }
-    this.afterDismount = exit?.next ?? (d.park && (d.result === 'parked' || d.park.then) ? () => this.finishParking(d.park, d.result) : null);
+    this.afterDismount = exit?.next ?? (arrived ? lift.arrive : d.park && (d.result === 'parked' || d.park.then) ? () => this.finishParking(d.park, d.result) : null);
     this.fsm.transition('dismounting');
   },
 
@@ -801,14 +806,16 @@ export const drivingMethods = {
     // Sent somewhere far on her own choice (farWalk.js): that one place, certain, however far.
     const to = this.outingTo;
     this.outingTo = null;
+    // Going there for something (MindsHost.takeLift, #1066): one way, parking near the place rather than turning round at it.
+    const oneWay = to && this.lift?.how === 'quad' ? { oneWay: true, parkWithin: this.lift.parkWithin } : null;
     // A car only ever goes out along the farm road and back (outings.js roadSpots), every time, however far the road's end is.
-    const p = to ? { ...this.outingParams, chance: 1, minDistance: 0, maxDistance: Infinity } : road ? { ...this.outingParams, chance: 1, maxDistance: Infinity } : forced ? { ...this.outingParams, chance: 1 } : this.outingParams;
+    const p = to ? { ...this.outingParams, chance: 1, minDistance: 0, maxDistance: Infinity, ...oneWay } : road ? { ...this.outingParams, chance: 1, maxDistance: Infinity } : forced ? { ...this.outingParams, chance: 1 } : this.outingParams;
     const spots = () => (to ? [to] : road ? roadSpots(this.world.layout) : this.outingSpots());
-    // With you on the back, somewhere to show you (sights.js). Forced (the debug panel): even with nobody on, and certain.
+    // With you on the back, somewhere to show you (sights.js). Forced (the debug panel): even with nobody on, and certain. Not on her way somewhere far.
     const sp = this.sightParams ?? DEFAULT_SIGHT_PARAMS;
     const sightForced = this.sightForced;
     this.sightForced = false;
-    const sights = road || !this.sightsNow ? null : {
+    const sights = road || to || !this.sightsNow ? null : {
       p: sightForced ? { ...sp, chance: 1 } : sp,
       forced: sightForced,
       pick: (from) => pickSight(from, sightsFrom(from, this.sightsNow(), sp), way, clear, this.driveRandom ?? Math.random, sp),
