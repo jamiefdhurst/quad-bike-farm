@@ -9,10 +9,10 @@ Graded first from `tools/shot.mjs` shots and the code, then corrected from Jamie
 | Object | Grade | What it lacks |
 | --- | --- | --- |
 | Barn front and doors | passable | The texture differs top and bottom and does not line up; the two doors differ in size and the hay door goes through the roof (#613) (rebuilt in #818 on the new farm: one wall outline so the boards run on across the doorway, one pair of doors 6.4 m wide, a hood and rail) |
-| Barn, second span (annex) | passable | Plain boards over the door up to the eaves, posts in place of a wall, no trim on the valley (rebuilt in #817: a rain hood and cover battens over the door, pads and knee braces at the posts, the valley's end stops and drop) |
+| Barn, second span (annex) | passable | Plain boards over the door up to the eaves, posts in place of a wall, no trim on the valley (rebuilt in #817: a rain hood and cover battens over the door, pads and knee braces at the posts, the valley's end stops and drop; gone with the old barn, #1055) |
 | Barn roof | passable | A gutter on one edge only and no downpipes seen, no weather vane (#169) (rebuilt in #817: fascia and barge boards, gutters on both outer eaves, downpipes, the vane) |
 | Barn lighting | passable | Two dim bulbs at the top; more are needed (rebuilt in #818 on the new farm: six bulbs with shades on three lights at the same overall level) |
-| Loft and its ladder | block | The ladder is very basic and climbing it goes through the floor; the floor and wall alpha-fight; the loft has no use (removed in the move) |
+| Loft and its ladder | block | The ladder is very basic and climbing it goes through the floor; the floor and wall alpha-fight; the loft has no use (removed in the move, its code taken out in #1055) |
 | Straw on the floor, bales inside | block | Plain pieces; the bales are too regular (the bales inside are scattered, each turned its own way, on the new farm, #818) |
 | Workbench and boards | passable | The boards need headings, the records overlap their lines, the classified board's shadow does not match what is pinned |
 | Pinboard and its tools | block | Poor tool shapes; removed until #517 |
