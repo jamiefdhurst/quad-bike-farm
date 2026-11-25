@@ -379,7 +379,7 @@ function buildBoulders(c, quarry, plants, site) {
   }
   for (let i = 0; i < S.shapes; i++) {
     const mine = stones.filter((_, k) => k % S.shapes === i);
-    if (mine.length) site.add(tiledInstances(rockGeometry(random, S.detail), material, mine, { tileSize: MODEL_TILE, castShadow: true, name: 'quarryStones' }));
+    if (mine.length) site.add(tiledInstances(rockGeometry(random, S.detail), material, mine, { tileSize: MODEL_TILE, name: 'quarryStones' })); // sunk in the scree, so no shadow of their own: the big ones keep theirs
   }
   const bigShapes = Array.from({ length: S.bigShapes }, () => []);
   plants.big.forEach(([x, z, size], k) => {
@@ -712,7 +712,7 @@ function buildFieldCover(c, quarry, site, relics, kit) {
   const verge = vergeMakers(random);
   const leaves = plantMaterial();
   const kinds = {
-    tussock: { geo: tussockModel(random, { height: 0.7, blades: 11 }), mat: leaves, list: [], tint: () => new THREE.Color().setHSL(0.13 + random() * 0.06, 0.25 + random() * 0.2, 0.6 + random() * 0.2) },
+    tussock: { geo: tussockModel(random, { height: 0.7, blades: 9 }), mat: leaves, list: [], tint: () => new THREE.Color().setHSL(0.13 + random() * 0.06, 0.25 + random() * 0.2, 0.6 + random() * 0.2) },
     thistle: { geo: thistleModel(random, { height: 0.9 }), mat: leaves, list: [], tint: () => new THREE.Color().setHSL(0.22, 0.1 + random() * 0.1, 0.8 + random() * 0.15) },
     bramble: { geo: kit.bramble.geo, mat: kit.bramble.mat, list: [] },
     nettle: { geo: verge.nettle[0], mat: verge.nettle[1], list: [] },
@@ -747,7 +747,7 @@ function buildLip(c, quarry, plants, site) {
   const { roots, scree } = pitLip(quarry);
   const group = new THREE.Group();
   group.name = 'pitLip';
-  const shapes = [rootTangleModel(random, { roots: 8, length: 1.1, steps: 2 })];
+  const shapes = [rootTangleModel(random, { roots: 6, length: 1.1, steps: 2 })];
   const lists = [[]];
   const q = new THREE.Quaternion();
   const e = new THREE.Euler();

@@ -17,9 +17,9 @@ export const PIT_SCRUB = {
   rideOut: 15, // metres out from the lip that the ride runs round the pit
   rideHalf: 2.6, // half its width: a mown strip about 5 m across
   rideClear: 1, // metres the scrub keeps off its edge
-  tussocks: [0.026, 850], // rough grass tussocks a square metre of the field, and the most (the rest of the rough is in the ground's painting)
+  tussocks: [0.02, 650], // rough grass tussocks a square metre of the field, and the most (the rest of the rough is in the ground's painting)
   thistles: [0.003, 100],
-  roots: 0.85, // root tangles a metre round the lip, where the face is not the road's or the climb's
+  roots: 0.6, // root tangles a metre round the lip, where the face is not the road's or the climb's
   scree: 1.8, // loose stones a metre round the walls' foot
   hawthornStep: 3.4, // metres between the tree line's hawthorns, give or take
   standardStep: 42, // and between its standards, alternately ash and oak
