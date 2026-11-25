@@ -505,6 +505,11 @@ export const FAQ_SECTIONS = [
         a: `The fingerpost and the stile in the hedge on the west side, towards the south, point up the hill to Upper Thornby (1 mile). You can see its roofs and church tower from the ridge, over the wall, but it is too far to reach: the path crosses the Moor to a ladder stile in the ridge wall, and climbing it turns you round.`,
       },
       {
+        q: 'Why can\'t I get through the stile on Back Lane?',
+        a: `A stile is for walkers, so its whole gap in the hedge is shut to anything on wheels, quad, mini moto or car. You can't climb it on foot yet either. To get up onto the Moor, ride on along Back Lane to where the common's side is open between the two cattle grids.`,
+        tip: 'Back Lane\'s stile is shut to anything on wheels. Ride on to the cattle grids, where the Moor is open from the lane.',
+      },
+      {
         q: 'What is the Moor, and what is up there?',
         a: `The Moor is the open common beyond Back Lane's west side, climbing about a hundred metres to a drystone wall along the ridge. It is rough going: heather (brown most of the year, purple in August and September), bracken on the lower slopes (green in summer, rust in autumn), cotton grass and rushes in the wet flushes (white in June), gritstone outcrops and boulders, a couple of cut peat banks and sheep tracks worn pale through the heather. The stream the farm's river grows from rises at a spring on it. The trig pillar and a cairn stand on the ridge. Back Lane crosses it with nothing fenced on the common's side, between two cattle grids with a "Cattle grid" and a "Sheep on road" sign each way, and a bridle gate beside each grid. The moor gate in the hill pasture's wall opens onto the lane. <code>tp me to moor</code>, <code>ridge</code>, <code>stile</code> or <code>moorgrid</code> takes you there in the console.`,
         tip: 'The Moor is open common: ride up the sheep tracks to the ridge and its trig pillar.',
