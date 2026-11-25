@@ -25,6 +25,7 @@ export const FLOORS = {
     'src/items/tractorWorkHost.js': 44,
     'src/npc/mindsHost.js': 78, // the lift and Call them (#690) only run with a far place or a whistle; tests/farWalkHost.test.js holds them
     'src/photos/photoHost.js': 44,
+    'src/world/farmBirdsHost.js': 90,
     'src/world/farmJobsHost.js': 56,
     'src/world/fieldWorkHost.js': 53,
     'src/world/hutHost.js': 83,

@@ -414,6 +414,9 @@ export function createHost(g, { copy = () => {} } = {}) {
       return host.weatherNow();
     },
 
+    birdsNow: () => g.farmBirdsHost?.describe() ?? 'no birds on this farm',
+    startBirds: (kind) => g.farmBirdsHost.force(kind),
+
     layoutNow: () => ['the farm on the plan (layout 2)', describeFieldNames(g.world.layout)].filter(Boolean).join('. '),
 
     dump(text) {

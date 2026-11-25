@@ -449,7 +449,7 @@ export function buildGameTree(g, host) {
     rabbits: ro(() => g.rabbits.rabbits.filter((r) => r.mode !== 'down').length, '', 'rabbits above ground (the rest are in the hedge)'),
     caught: ro(() => g.rabbits.rabbits.filter((r) => r.mode === 'caught').length, '', 'rabbits frozen in a headlight'),
     pheasants: text(() => g.pheasants.birds.map((b) => b.mode).join(', ') || 'none', 'each pheasant: hidden, fly or gone'),
-    flush: flag(() => false, (v) => v && g.debugFlushPheasant(), 'set to true: the nearest pheasant bursts out as if you had come up to it'),
+    flush: flag(() => false, (v) => v && g.farmBirdsHost.flushPheasant(), 'set to true: the nearest pheasant bursts out as if you had come up to it'),
   }), 'rabbits and pheasants');
   const cat = group(() => ({
     mode: text(() => `${g.cat.mode}${g.cat.perchId != null ? ` on ${g.cat.perchId}` : ''}`, 'what the cat is doing (sit, walk, seek, sleep, flee, hide, greeted, curl...) and what it is on'),

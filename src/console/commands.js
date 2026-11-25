@@ -424,6 +424,21 @@ export function buildCommands(host) {
       },
     },
     {
+      name: 'birds',
+      group: 'World',
+      usage: 'birds [chorus|rooks]',
+      help: 'say which of the farm\'s birds are due now and how many are singing, or start one whatever the hour: chorus sings round you for a minute and a half, rooks sends a flock over',
+      examples: ['birds', 'birds chorus', 'birds rooks'],
+      complete: (ctx, tokens) => (tokens.length === 0 ? ['chorus', 'rooks'] : []),
+      run: ([kind]) => {
+        if (!kind) return host.birdsNow();
+        const k = kind.toLowerCase();
+        if (!['chorus', 'rooks'].includes(k)) throw new Error(`no birds "${kind}". There is chorus, rooks`);
+        host.startBirds(k);
+        return k === 'chorus' ? 'the dawn chorus starts round you' : 'a flock of rooks is coming over';
+      },
+    },
+    {
       name: 'layout',
       group: 'World',
       usage: 'layout',
