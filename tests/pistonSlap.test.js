@@ -86,3 +86,15 @@ describe('piston slap', () => {
     expect(g.pistonWear).toBe(0.1);
   });
 });
+
+describe('the Vehicles tab slap readout', () => {
+  it('is the knock now: above 0 for a cold engine with a loose piston, 0 for the same engine warm', async () => {
+    const { engineReadouts } = await import('../src/debug/vehicleDebug.js');
+    const row = (e) => engineReadouts(e, { manual: false }).find((m) => m.key === 'slap');
+    const cold = idle(0.9, 0).e;
+    const warm = idle(0.9, 0.9).e;
+    expect(row(cold).get(cold)).toBeGreaterThan(0);
+    expect(row(warm).get(warm)).toBe(0);
+    expect(row(cold).label).toMatch(/now/);
+  });
+});

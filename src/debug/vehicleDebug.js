@@ -191,7 +191,7 @@ export function engineReadouts(engine, { manual = false } = {}) {
   }
   if (diesel) list.push({ key: 'glow', label: 'glow plugs', get: (e) => e.glow });
   list.push({ key: 'nip', label: 'nipping up', get: (e) => e.nip });
-  list.push({ key: 'slap', label: 'piston slap (worn bore, cold)', get: (e) => e.slap });
+  list.push({ key: 'slap', label: 'piston slap now (the knock heard: loose piston and cold, 0 once warm)', get: (e) => e.slap });
   list.push({ key: 'blow', label: 'exhaust blow (leaking joint, cold)', get: (e) => e.blow });
   list.push({ key: 'tick', label: 'tappet tick (low oil)', get: (e) => e.tick });
   list.push({ key: 'oilBurn', label: 'burning oil (or too much of it)', get: (e) => e.oilBurn });

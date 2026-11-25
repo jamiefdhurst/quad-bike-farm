@@ -218,7 +218,7 @@ export function buildGameTree(g, host) {
         plugFouling: num(() => e().fouling, (v) => (e().fouling = v), 0, 1),
         airFilterClog: num(() => e().clog, (v) => (e().clog = v), 0, 1),
         wear: num(() => e().wear, (v) => (e().wear = v), 0, e().params.wearMax ?? 1),
-        pistonLooseness: num(() => e().pistonWear ?? e().wear, (v) => (e().pistonWear = v), 0, e().params.wearMax ?? 1, '', 'a worn piston knocks while the engine is cold; only a new piston and rings clear it'),
+        pistonLooseness: num(() => e().pistonWear ?? e().wear, (v) => (e().pistonWear = v), 0, e().params.wearMax ?? 1, '', 'how loose the piston is: it rises with the wear but a service does not clear it, only a new piston and rings do; the knock itself is `slap`'),
         scuffing: num(() => e().scuff, (v) => (e().scuff = v), 0, 1, '', '1 seizes it'),
         seized: flag(() => e().seized, (v) => (e().seized = v)),
         hardStart: num(() => q().startTrouble, (v) => (q().startTrouble = Math.round(v)), 0, 6, '', 'goes the last start took; 2 or more makes the girls keep it going'),

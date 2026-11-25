@@ -395,7 +395,7 @@ export class DebugGui {
     if (e.params.tickler) set(p, 'flooded by the tickler (fuel in the bowl)', () => round(unit().engine.tickled), (v) => (unit().engine.tickled = v), 0, 3, 0.1);
     set(p, 'air filter clogged', () => round(unit().engine.clog), (v) => (unit().engine.clog = v), 0, 1);
     set(p, 'wear (a service clears it)', () => round(unit().engine.wear), (v) => (unit().engine.wear = v), 0, e.params.wearMax ?? 1);
-    set(p, 'piston looseness (slap when cold; only a new piston clears it)', () => round(unit().engine.pistonWear ?? unit().engine.wear), (v) => (unit().engine.pistonWear = v), 0, e.params.wearMax ?? 1);
+    set(p, 'piston looseness (how worn the bore is: rises with wear, a service leaves it, only a new piston clears it; the knock is in Running)', () => round(unit().engine.pistonWear ?? unit().engine.wear), (v) => (unit().engine.pistonWear = v), 0, e.params.wearMax ?? 1);
     set(p, 'scuffing (1 seizes it)', () => round(unit().engine.scuff), (v) => (unit().engine.scuff = v), 0, 1);
     tick(p, 'seized', () => unit().engine.seized, (v) => (unit().engine.seized = v));
     if (e.params.waterCooled) set(p, 'thermostat stuck shut', () => round(unit().engine.thermostat), (v) => (unit().engine.thermostat = v), 0, 1);
