@@ -225,7 +225,7 @@ export const TURN_ROUND_PLAN = {
 export const LANE_FITTINGS_PLAN = {
   cottages: { rect: [920, 418, 944, 442], yaw: Math.PI / 2, gardenDepth: 12 }, // a pair, semi-detached, their fronts to the lane
   gateways: [{ at: [912, 205], width: 4.5 }, { at: [912, 459.5], width: 4.5 }], // the second is the small farm's track mouth (#819)
-  gritBins: [[905, -2]], // by the bend, on its outside; the junctions have their own
+  gritBins: [[906, -5]], // by the bend, on its outside, beside Back Lane's mouth (at (905, -2) it stood on the edge of Back Lane's tarmac, #1187); the junctions have their own
   postbox: [900.8, 338], // west verge, north of the drive's mouth
   binStand: [900.8, 353], // and south of it
 };
@@ -835,7 +835,7 @@ export const FIELD_LANDMARKS_PLAN = [
   // A lone ash in the middle of Hay Meadow, well clear of the stone track and the trough.
   { field: 'hay', kind: 'loneAsh', at: [520, 488] },
   // Alders on the brook's north bank through Low Ley (the plan map's own curve, flattened), `count` of them from `along` of its run, `bank` m off it.
-  { field: 'ley', kind: 'brookAlders', route: 'M650 600 C700 632 790 648 885 650', along: [0.08, 0.78], count: 6, bank: -4 },
+  { field: 'ley', kind: 'brookAlders', route: 'M650 600 C700 632 790 648 885 650', along: [0.05, 0.78], count: 6, bank: -4 }, // the first was in the river at 0.08 (#1187)
   // Big old oaks scattered over the meadow south of the river.
   { field: 'brook', kind: 'bigOaks', trees: [[480, 670], [560, 700], [590, 640], [500, 775]] },
   // The Wet Meadow's veteran oak on the pond's west bank (the pond is at (112, 292)), its low limb pointing east over the water (#881).
@@ -957,7 +957,7 @@ export function streetStubLayout(S = STREET_STUB_PLAN) {
  */
 export const BACK_LANE_PLAN = {
   points: [
-    [905, -2], [800, 0], [700, 6], [580, 2], [480, -6], [360, 4], [230, 16], [110, 24], [22, 70], [14, 160], [10, 250], [12, 340], [14, 470], [10, 560],
+    [905, -2], [800, 0], [700, 6], [580, 2], [480, -6], [360, 4], [230, 16], [110, 24], [22, 70], [14, 160], [10, 250], [12, 340], [14, 470], [11, 545],
     [10, 572], [10, 700], [2, 792], [-30, 840], [60, 874], [300, 880], [560, 878], [820, 880], [905, 886],
   ],
   halfWidth: 1.6,
@@ -965,7 +965,7 @@ export const BACK_LANE_PLAN = {
   strip: { half: 0.35, rects: [[-20, 90, 60, 800], [60, 850, 880, 900]] }, // the grass down the middle, on the west and south stretches only: plan rectangles [minX, minZ, maxX, maxZ] (settled 13 November)
   verge: 2.6,
   level: { shoulder: 2.5, lead: [2, 2], blend: 10, natural: true },
-  cuttings: [[1555, 1640], [1730, 2175]], // m along: where the lane runs in a hollow way into the hill's shoulder (up to 2.6 m, as a sunken old road does), flagged so `cuttings()` accepts it
+  cuttings: [[1548, 1633], [1723, 2168]], // m along (7 m less since the point before the ford moved north out of a loop in the road, #1187): where the lane runs in a hollow way into the hill's shoulder (up to 2.6 m, as a sunken old road does), flagged so `cuttings()` accepts it
   ditch: { centre: 1.9, half: 0.55, depth: 0.45 }, // along the low side, at the hedge's foot: m out from the tarmac's edge, half its width, how deep
   ford: { at: [10, 572], reach: 14, west: -200 }, // the stream runs on west from the pasture's hedge to the ford, and to plan x `west`: its spring on the moor (#713)
   hairpins: [[-30, 840], [60, 874]],
@@ -1265,7 +1265,7 @@ function farmsteadAway() {
 export const WOOD_PLAN = {
   runAt: [126, 131.5],
   leadIn: [[127, 203.5], [120, 198.5], [110, 194.5], [100, 192], [95, 189]],
-  deadwood: [[165, 204, 0.6, 4.4], [62, 202, 2.4, 3.8], [150, 66, 1.1, 4.8], [108, 60, 2.9, 3.6]],
+  deadwood: [[165, 204, 0.6, 4.4], [62, 202, 2.4, 3.8], [150, 66, 1.1, 4.8], [110, 56, 2.9, 3.6]], // the last lay across the boundary track at z 60 (#1187)
   oak: [80, 113], // the veteran oak, in the glade north of the pond (19 m from the nearest track)
   logYard: [142, 235],
   // The woodpile's scenery, as offsets from `logYard`'s anchor: a lean-to with an old stack under it along the south hedge beyond the working stack (which
