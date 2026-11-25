@@ -266,6 +266,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       veteranoak: layout.woods?.oak ? { x: layout.woods.oak.x, z: layout.woods.oak.z + 12 } : null, // the great oak in the glade by the pond, twelve metres south of it
       river: layout.hill?.river ? g.world.heights.brook.crossing().landing(1, 8) : null, // on the crossing's south landing, 8 m back from the water: from its one anchor (#999)
       riffle: layout.hill?.river?.steps ? riffleSpot(g.world.heights.brook) : null, // on the gravel bar beside the first riffle below the crossing (#1000)
+      brookford: g.world.heights?.brook?.ford?.()?.landing(-1, 6) ?? null, // on the boundary track 6 m north of its ford over the east brook (#1060)
       pit: g.world.fields.quarry ? (() => { const r = g.world.fields.quarry.roadPoints.find((p) => p.t > 0.02); return r ? { x: r.x, z: r.z } : null; })() : null,
       pitgate: g.world.fields.quarry ? (() => { const w = g.world.fields.quarry.way; return { x: w.x + w.inward[0] * 6, z: w.z + w.inward[1] * 6 }; })() : null, // just inside the gate you come in by: the farm gate on the new farm (#685)
       pitlane: g.world.fields.quarry?.gates.length > 1 ? (() => { const w = g.world.fields.quarry.gate; return { x: w.x + w.inward[0] * 8, z: w.z + w.inward[1] * 8 }; })() : null, // inside the shut lane gate, looking out at it: the new farm only
