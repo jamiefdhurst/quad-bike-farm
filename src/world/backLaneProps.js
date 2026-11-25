@@ -1,6 +1,7 @@
 // Back Lane drawn beyond its tarmac (#686): the tall hedge down each side with a collider along it, in leafy blocks near and plain strips far
 // (hedgeFar.js, as the farm's and the neighbour's), and a field gate in the inner hedge across from each of the farm's gateways. The road itself is drawn by
-// props.js with the one road mesh builder; where the hedges stand and where they break is laneHedges.js. Passing places push the hedge back.
+// props.js with the one road mesh builder; where the hedges stand and where they break is laneHedges.js. Passing places push the hedge back. The gates,
+// signs, drains and the ford are a set piece to each stretch of road, so each is left out by distance with its stretch (#1018).
 
 import * as THREE from 'three';
 import { roadNetwork } from './roads.js';
@@ -83,15 +84,15 @@ const SIGN_MAKERS = {
   ford: () => kit.buildFordSign(),
 };
 
-/** Puts every sign, the gauge, the fingerpost and the stile where laneSigns.js says, into `group`. */
-function buildFurniture(road, c, group) {
+/** Puts every sign, the gauge, the fingerpost and the stile where laneSigns.js says, each into the group `groupAt(s)` gives for its place along the road. */
+function buildFurniture(road, c, groupAt) {
   const { heights, fixedBox, random } = c;
   const proto = {};
   const place = (obj, s, side, offset, yaw) => {
     const p = sidePoint(road, s, side, offset);
     obj.position.set(p.x, heights.heightAt(p.x, p.z), p.z);
     obj.rotation.y = yaw;
-    group.add(obj);
+    groupAt(s).add(obj);
     return p;
   };
   for (const sg of laneSigns(road)) {
@@ -112,7 +113,7 @@ function buildFurniture(road, c, group) {
     const m = grate.clone();
     m.position.set(p.x, heights.heightAt(p.x, p.z) + 0.062, p.z);
     m.rotation.y = Math.atan2(-p.tz, p.tx);
-    group.add(m);
+    groupAt(g.s).add(m);
   }
   if (road.footpath) {
     const s = sAlong(road, road.footpath.at[0], road.footpath.at[1]);
@@ -140,10 +141,11 @@ function pointAtTangent(road, s) {
  * The ford's concrete bed laid over the road for 11 m, a band of dressed stone laid along each edge of it (a low kerb of blocks, the way a ford is lined), and the
  * depth gauge and the warning signs are with the other furniture. The water is the stream's own (hillProps.js).
  */
-function buildFord(road, c, group, points) {
+function buildFord(road, c, groupAt, points) {
   const { heights, random } = c;
   if (!road.ford) return;
   const s = sAlong(road, road.ford.at[0], road.ford.at[1]);
+  const group = groupAt(s);
   const mat = new THREE.MeshStandardMaterial({ map: concreteTexture(random), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
   const ctx = { samples: points, heights };
   for (const m of roadStrip(ctx, -road.halfWidth - 0.3, road.halfWidth + 0.3, 0.08, mat, { from: Math.floor(s - 6), to: Math.ceil(s + 6), uv: 1, cols: 3 })) group.add(m);
@@ -204,19 +206,41 @@ export function layHedges(c, road, runs, name, height = LANE_HEDGE_HEIGHT) {
   return { near, far };
 }
 
+export const FURNITURE_STRETCH = 250; // m of road, about, to each group of the lane's furniture: each is left out by distance on its own (#1018)
+
+/**
+ * The groups the lane's gates, signs, drains, fingerpost, stile and ford go in, one to each stretch of about `FURNITURE_STRETCH` m of road, all named
+ * `backLane` (a set piece in farDetail.js). One group round the whole loop was 0 m from anywhere inside it and never left out (#1018). `at(s)` is the group
+ * for a place `s` m along; `used()` the ones with something in them, in order along the road.
+ */
+export function furnitureGroups(road) {
+  const n = Math.max(1, Math.round(road.length / FURNITURE_STRETCH));
+  const stretch = road.length / n;
+  const groups = Array.from({ length: n }, (_, i) => {
+    const g = new THREE.Group();
+    g.name = 'backLane';
+    g.userData.from = i * stretch;
+    g.userData.to = (i + 1) * stretch;
+    return g;
+  });
+  return {
+    at: (s) => groups[Math.min(n - 1, Math.max(0, Math.floor(s / stretch)))],
+    used: () => groups.filter((g) => g.children.length),
+  };
+}
+
 /** Builds the lane's hedges, their colliders and its gates. `c` is the props context (props.js). Null on a farm with no Back Lane. */
 export function buildBackLaneProps(c) {
   const { scene, layout, heights, fixedBox, models, random } = c;
   const net = roadNetwork(layout);
   const road = net.road('backLane');
   if (!road) return null;
-  const group = new THREE.Group();
-  group.name = 'backLane';
+  const stretches = furnitureGroups(road);
   const { near, far } = layHedges(c, road, laneHedgeRuns(road, laneGaps(road)), 'backLaneHedgesFar');
   const points = net.pointsAlong('backLane', { step: 1 });
-  for (const g of laneGates(road)) buildGate(road, g, c, group, points);
-  buildFurniture(road, c, group);
-  buildFord(road, c, group, points);
+  for (const g of laneGates(road)) buildGate(road, g, c, stretches.at(g.s), points);
+  buildFurniture(road, c, stretches.at);
+  buildFord(road, c, stretches.at, points);
   // Hedgerow trees, oaks and ash alternately, in the hedge line with a trunk collider each (the winch can hook them).
   const { physics, RAPIER, anchors } = c;
   const mats = [[], []];
@@ -231,6 +255,7 @@ export function buildBackLaneProps(c) {
   // The verge: bare at the gates, the stile and the ford, where it is trampled or washed.
   const gaps = laneGaps(road);
   buildVerge(c, road, (s, side) => gaps.some((g) => Math.abs(s - g.s) < g.half + 1 && (g.side === undefined || g.side === side)));
-  scene.add(group);
-  return { group, hedgeSwap: new HedgeSwap(near, far), road };
+  const groups = stretches.used();
+  scene.add(...groups);
+  return { groups, hedgeSwap: new HedgeSwap(near, far), road };
 }
