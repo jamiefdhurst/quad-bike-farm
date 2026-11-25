@@ -108,7 +108,7 @@ async function run() {
   await page.evaluate(installGameClock, { factor: HUNG_FACTOR, flat: HUNG_FLAT_S }); // every wait below counts the game's time, not real seconds (#770)
   if (LOADS) await measureBudget(page, note);
   else {
-    // The first frames after Ready prepare every shader in view, which on a runner's software GL took over a minute (#1182): with both parts the
+    // The first frames after Ready prepare every shader in view, which on a slow runner's software GL took over 45 s (#1182): with both parts the
     // budget's renders pay for it, but on its own the play part met it in its first 0.25 s wait and called the page hung. So it waits for the
     // first game second here, with the load's own limit.
     const started = Date.now();
