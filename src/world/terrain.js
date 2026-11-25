@@ -300,6 +300,11 @@ function addDetailLayer(material, { detailTex, quarryRect, pitHole, wear, roadMu
           float gritA = texture2D(detailMap, wp.zy * 2.6).r * tw.x + texture2D(detailMap, wp.xz * 2.6).r * tw.y + texture2D(detailMap, wp.xy * 2.6).r * tw.z;
           float gritB = texture2D(detailMap, wp.zy * 7.3 + 0.31).r * tw.x + texture2D(detailMap, wp.xz * 7.3 + 0.31).r * tw.y + texture2D(detailMap, wp.xy * 7.3 + 0.31).r * tw.z;
           diffuseColor.rgb *= mix(0.5, 1.5, gritA * 0.45 + gritB * 0.55);
+          // The walls' bedding (#1004): fine partings read from the detail map by the height in the world and only slowly along the wall, so they
+          // run level whatever the slope, faint, and only where the ground is steep enough to be a face (not the floor, the field or the heaps' tops).
+          float face = 1.0 - smoothstep(0.62, 0.86, vWorldN.y);
+          float bedding = texture2D(detailMap, vec2(vWorldY * 1.9, (vWorldXZ.x + vWorldXZ.y) * 0.013)).r;
+          diffuseColor.rgb *= mix(1.0, mix(0.9, 1.07, bedding), face);
         }
         // The hay meadow (hayMask.js): long green grass, pale stubble in swaths once cut, a darker tan once baled, one surface with the field round it.
         // The picture is read through a wobble and a noise threshold, so the edge and the cut cells' borders are ragged, never a straight line.

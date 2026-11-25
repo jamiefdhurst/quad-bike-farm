@@ -4,6 +4,7 @@
 // gaps, 500 to 750 triangles in all, by the same tile swap the hedges use (hedgeFar.js `HedgeSwap`). See docs/decisions/performance.md, "Oaks far away (#683)".
 
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 /** Triangles a far oak's trunk is simplified to at most. */
 export const FAR_BARK_TRIANGLES = 260;
@@ -199,6 +200,55 @@ export function farBush(root) {
   root.traverse((o) => {
     if (!o.isMesh) return;
     const far = new THREE.Mesh(thinClumps(o.geometry), o.material);
+    far.applyMatrix4(o.matrixWorld);
+    group.add(far);
+  });
+  return group;
+}
+
+/** Triangles each mesh of a tree from the tree kit (landmarkProps.js: the pit's birch scrub, #1004) is simplified to far away. */
+export const FAR_KIT_TRIANGLES = 140;
+
+/**
+ * The far version of a tree whose stems and leaf cards are one mesh (#1004: the tree kit's hawthorn, landmarkProps.js `hawthornModel`): the first
+ * `geometry.userData.solid` triangles, the stems, simplified, and the cards after them thinned as the oak's are (`thinCards`), back in one mesh with the
+ * same material, so a far tile is one draw as the near one is. A mesh without `solid` is done as `farTree` does it.
+ */
+export function farSprayTree(root) {
+  root.updateMatrixWorld(true);
+  const group = new THREE.Group();
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const solid = o.geometry.userData.solid;
+    let geo;
+    if (solid === undefined) geo = o.material?.alphaTest > 0 ? thinCards(o.geometry) : simplifyGeometry(o.geometry);
+    else {
+      const part = (from, to) => {
+        const g = new THREE.BufferGeometry();
+        for (const [n, a] of Object.entries(o.geometry.attributes)) g.setAttribute(n, new THREE.BufferAttribute(a.array.slice(from * 3 * a.itemSize, to * 3 * a.itemSize), a.itemSize));
+        return g;
+      };
+      const all = trianglesOf(o.geometry);
+      const stems = simplifyGeometry(part(0, solid), 40).toNonIndexed();
+      geo = mergeGeometries([stems, thinCards(part(solid, all))]);
+    }
+    const far = new THREE.Mesh(geo, o.material);
+    far.applyMatrix4(o.matrixWorld);
+    group.add(far);
+  });
+  return group;
+}
+
+/**
+ * The far version of a tree from the tree kit (#1004): its bark and its leaf clumps, both opaque, each simplified by clustering (`simplifyGeometry`),
+ * which keeps the crown's outline and its vertex colours: at 70 m a clump is a few pixels and a smoothed lump reads as one.
+ */
+export function farKitTree(root) {
+  root.updateMatrixWorld(true);
+  const group = new THREE.Group();
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const far = new THREE.Mesh(simplifyGeometry(o.geometry, FAR_KIT_TRIANGLES), o.material);
     far.applyMatrix4(o.matrixWorld);
     group.add(far);
   });

@@ -11,6 +11,8 @@ import { createRandom } from '../core/random.js';
 import { dealPlant, inPlantsWay, plantPadWeight } from './plantSite.js';
 import { polygonEdges, pointInPolygon, outsidePolygon, polygonBounds, outsideBounds } from './polygons.js';
 import { laneGateOf, spoilBankOf, bankRise } from './pitEntrance.js';
+import { streamFor } from './propStreams.js';
+import { byArea, fieldArea, bowlArea, scrubOk } from './pitScrub.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -481,8 +483,13 @@ export function createQuarry(layout) {
     return gates.every((g) => Math.hypot(x - g.x, z - g.z) >= 9);
   }
 
+  // The places held in the field for later items (layoutNew.js `RESERVED_PLAN`: the 11 kV line's poles, a trough), which the scrub keeps off (#1004).
+  const R = layout.reserved ?? {};
+  const held = [...(R.powerLine?.poles ?? []), ...(R.troughs ?? []).map((t) => t.at), ...(R.crossings ?? []).map((c) => c.at)]
+    .filter(([x, z]) => x > rect.minX - 5 && x < rect.maxX + 5 && z > rect.minZ - 5 && z < rect.maxZ + 5);
+
   return {
-    rect, outline, name: q.name, pit, gate, gates, way, pond, waitSpot, climb,
+    rect, outline, name: q.name, pit, gate, gates, way, pond, waitSpot, climb, held,
     weight, groundAt, waterAt, mudAt, gravelAt, roadAt, pondCut, bowlCut, heapRise, inQuarry, inPit, pastGate, plantOk, laneGate, bank,
     bankAt: (x, z) => bankAt(x, z, roadNear(x, z)),
     polar, frameAt, rimAt, runAt, floorEdge, roadNear, fenceOpen, roadPoints: roadPts, rampPoints: rampPts, roadHalf, roadLength, reachMax,
@@ -491,20 +498,49 @@ export function createQuarry(layout) {
 }
 
 /**
- * Where the scrub and the boulders go round the pit: hawthorn and gorse thick along the lip and over the field (thinned into patches by a slow
- * pattern), boulders and flints strewn at the foot of the banks. `random` gives 0..1. Returns { bushes: [[x, z, scale]],
- * trees: [[x, z, scale]], boulders: [[x, z, size]], big: [[x, z, size]] }.
+ * How much the pit's field grows, by area and to a cap (#1004): each is `[how many a hectare, the most]`. The bushes and the field's stones and trees go
+ * by the field's area (the new farm's is 1.9 times the old one's, so its scrub would have doubled with nothing to stop it), the wall's stones and the
+ * big boulders by the bowl's at the lip. `lip` is the share of the bushes dealt along the lip (2 to 11 m out), the rest over the field, and the kinds
+ * are dealt by those shares: birch thickest at the lip, bramble and hawthorn more over the rough.
  */
-export function quarryPlants(quarry, random) {
+export const PIT_PLANTS = {
+  bushes: [58, 190],
+  trees: [2, 4],
+  stones: [12, 40],
+  boulders: [120, 80],
+  big: [16, 10],
+  lip: 0.62,
+  lipKinds: { birch: 0.34, gorse: 0.28, hawthorn: 0.18, bramble: 0.2 },
+  fieldKinds: { birch: 0.12, gorse: 0.3, hawthorn: 0.28, bramble: 0.3 },
+};
+
+const HECTARE = 10000;
+const pickKind = (shares, v) => {
+  let t = 0;
+  for (const [k, w] of Object.entries(shares)) if (v < (t += w)) return k;
+  return Object.keys(shares).at(-1);
+};
+
+/**
+ * Where the scrub and the boulders go round the pit: hawthorn, gorse, bramble and birch thick along the lip and over the field (thinned into patches by
+ * a slow pattern, kept off the ride: pitScrub.js), a few oaks standing in the rough, flints over it, and boulders and stones strewn at the foot of the
+ * banks, each as many as the field's or the bowl's area gives, to its cap (`PIT_PLANTS`). From the pit's plants' own stream unless `random` is given
+ * (0..1). Returns { bushes: [[x, z, scale, kind]], trees: [[x, z, scale]], stones: [[x, z, size]], boulders: [[x, z, size]], big: [[x, z, size]] }.
+ */
+export function quarryPlants(quarry, random = streamFor('pitPlants')) {
   const { pit, rect } = quarry;
+  const field = fieldArea(quarry) / HECTARE;
+  const bowl = bowlArea(quarry) / HECTARE;
+  const P = PIT_PLANTS;
   const patch = (x, z) => 0.5 + 0.25 * Math.sin(x * 0.07 + z * 0.05 + 0.7) + 0.25 * Math.sin(z * 0.1 - x * 0.045 + 2.1);
   const bushes = [];
-  for (let tries = 0; bushes.length < 90 && tries < 20000; tries++) {
+  const bushCount = byArea(P.bushes, field);
+  for (let tries = 0; bushes.length < bushCount && tries < bushCount * 220; tries++) {
     const a = random() * TAU;
     let x;
     let z;
-    if (random() < 0.65) {
-      // along the lip
+    const lip = random() < P.lip;
+    if (lip) {
       const p = quarry.frameAt(a, quarry.rimAt(a) + 2 + random() * 9);
       x = p.x;
       z = p.z;
@@ -512,21 +548,38 @@ export function quarryPlants(quarry, random) {
       x = rect.minX + 3 + random() * (rect.maxX - rect.minX - 6);
       z = rect.minZ + 3 + random() * (rect.maxZ - rect.minZ - 6);
     }
-    if (random() > 0.25 + 0.75 * patch(x, z)) continue;
-    if (!quarry.plantOk(x, z)) continue;
-    bushes.push([x, z, 0.8 + random() * 1.1]);
+    const keep = random();
+    const s = 0.8 + random() * 1.1;
+    const kind = pickKind(lip ? P.lipKinds : P.fieldKinds, random());
+    if (keep > 0.25 + 0.75 * patch(x, z)) continue;
+    if (!scrubOk(quarry, x, z)) continue;
+    bushes.push([x, z, s, kind]);
   }
   const trees = [];
-  for (let tries = 0; trees.length < 6 && tries < 4000; tries++) {
+  const treeCount = byArea(P.trees, field);
+  for (let tries = 0; trees.length < treeCount && tries < 4000; tries++) {
     const x = rect.minX + 6 + random() * (rect.maxX - rect.minX - 12);
     const z = rect.minZ + 6 + random() * (rect.maxZ - rect.minZ - 12);
-    if (!quarry.plantOk(x, z, 7)) continue;
+    const s = 0.9 + random() * 0.7;
+    if (!scrubOk(quarry, x, z, 7, 2) || !quarry.inQuarry(x, z, 9)) continue;
+    if ([[0, 0], [2, 0], [-2, 0], [0, 2], [0, -2]].some(([dx, dz]) => quarry.bankAt(x + dx, z + dz) > 0.01)) continue; // nor up on the spoil bank (#1002)
     if (trees.some(([tx, tz]) => Math.hypot(tx - x, tz - z) < 12)) continue;
-    trees.push([x, z, 0.9 + random() * 0.7]);
+    trees.push([x, z, s]);
+  }
+  // Flints and stones turned up in the rough, here and there.
+  const stones = [];
+  const stoneCount = byArea(P.stones, field);
+  for (let tries = 0; stones.length < stoneCount && tries < stoneCount * 40; tries++) {
+    const x = rect.minX + 3 + random() * (rect.maxX - rect.minX - 6);
+    const z = rect.minZ + 3 + random() * (rect.maxZ - rect.minZ - 6);
+    const size = 0.12 + random() * random() * 0.35;
+    if (!scrubOk(quarry, x, z, 0.5)) continue;
+    stones.push([x, z, size]);
   }
   const start = quarry.climb.points[0];
   const boulders = [];
-  for (let tries = 0; boulders.length < 64 && tries < 5000; tries++) {
+  const boulderCount = byArea(P.boulders, bowl);
+  for (let tries = 0; boulders.length < boulderCount && tries < 5000; tries++) {
     const a = random() * TAU;
     const run = quarry.runAt(a);
     const p = quarry.frameAt(a, quarry.floorEdge(a) + (random() - 0.35) * run * 0.7); // the foot and lower bank, where it has rolled down
@@ -537,7 +590,8 @@ export function quarryPlants(quarry, random) {
     boulders.push([p.x, p.z, 0.2 + random() * random() * 0.7]);
   }
   const big = [];
-  for (let tries = 0; big.length < 9 && tries < 3000; tries++) {
+  const bigCount = byArea(P.big, bowl);
+  for (let tries = 0; big.length < bigCount && tries < 3000; tries++) {
     const a = random() * TAU;
     const p = quarry.frameAt(a, quarry.floorEdge(a) - 2 - random() * 12);
     if (quarry.waterAt(p.x, p.z) > 0 || quarry.roadNear(p.x, p.z).d < 8) continue;
@@ -546,5 +600,5 @@ export function quarryPlants(quarry, random) {
     if (big.some(([bx, bz]) => Math.hypot(bx - p.x, bz - p.z) < 6)) continue;
     big.push([p.x, p.z, 0.8 + random() * 0.6]);
   }
-  return { bushes, trees, boulders, big };
+  return { bushes, trees, stones, boulders, big };
 }

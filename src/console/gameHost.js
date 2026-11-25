@@ -8,6 +8,7 @@ import { SCENES, runScene } from '../debug/scenes.js';
 import { WEATHER_KINDS } from '../world/weather.js';
 import { describeFieldNames } from '../world/fieldNames.js';
 import { plantSite, plantPoint } from '../world/plantSite.js';
+import { pitRide } from '../world/pitScrub.js';
 import { labelSpot } from '../hud/farmMap.js';
 import { BUILT_KINDS } from '../world/fieldLandmarks.js';
 import { neighbourGate } from '../world/neighbourFarm.js';
@@ -273,6 +274,12 @@ export function createHost(g, { copy = () => {} } = {}) {
       plant: (() => { const q = g.world.fields.quarry; const s = q && plantSite(q, ground); return s ? plantPoint(s, -5, 0) : null; })(), // the pit's screening plant, behind its hopper on the pad's line
       pitpond: g.world.fields.quarry ? (() => { const q = g.world.fields.quarry; const p = q.pond; const a = Math.atan2(q.pit.z - p.z, q.pit.x - p.x); return { x: p.x + Math.cos(a) * (p.rx + 3), z: p.z + Math.sin(a) * (p.rz + 3) }; })() : null, // on the pit's floor by its pond, at the gap in the reeds where the drums were dumped (#1003)
       pitcontainer: (() => { const c = g.scene?.getObjectByName('quarrySite')?.getObjectByName('container'); return c ? { x: c.position.x + Math.cos(c.rotation.y) * 4.5, z: c.position.z - Math.sin(c.rotation.y) * 4.5 } : null; })(), // on the hardstanding's apron, a metre and a half off the doors of the pit's old container (#1003)
+      // The pit's field and walls worn and grown over (#1004): on the ride where it passes the climb's finish, on the lip a quarter of the way round from
+      // the climb (its topsoil, roots and the scree below), by a dead tree at the rim, and out in Top Field looking at the tree line along the fence.
+      pitride: g.world.fields.quarry ? (() => { const q = g.world.fields.quarry; const [fx, fz] = q.climb.points[2]; const p = pitRide(q).loop.reduce((b, c) => (Math.hypot(c[0] - fx, c[1] - fz) < Math.hypot(b[0] - fx, b[1] - fz) ? c : b)); return { x: p[0], z: p[1] }; })() : null,
+      pitlip: g.world.fields.quarry ? (() => { const q = g.world.fields.quarry; const a = q.pit.climbAt + Math.PI / 2; return q.frameAt(a, q.rimAt(a) + 1); })() : null,
+      pitdeadtree: (() => { const t = g.scene?.getObjectByName('quarrySite')?.userData.relics?.deadTrees[0]; const q = g.world.fields.quarry; if (!t || !q) return null; const k = Math.hypot(t.x - q.pit.x, t.z - q.pit.z); return { x: t.x + ((t.x - q.pit.x) / k) * 5, z: t.z + ((t.z - q.pit.z) / k) * 5 }; })(),
+      pittrees: g.world.fields.quarry?.gates.length > 1 ? (() => { const w = g.world.fields.quarry.way; return { x: w.x - w.inward[0] * 16 + w.inward[1] * 40, z: w.z - w.inward[1] * 16 - w.inward[0] * 40 }; })() : null,
       viewpoint: layout.hill?.viewpoint, // the flat rock at the top of the pasture, where the flask is
       hut: g.world.hutShape?.footOfSteps ?? null, // the foot of its steps, not inside it
       terraces: layout.hill?.paddocks?.east.terraces?.stand ?? null, // the sheep field's top tread, looking down its banks

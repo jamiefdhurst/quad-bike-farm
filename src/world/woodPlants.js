@@ -221,3 +221,200 @@ export function brambleGeometry(random, { autumn = false, turn = 0 } = {}) {
   }
   return finish(pos, uv, colors);
 }
+
+/**
+ * Leafy sprays for a tree's crown (#1004), 256 by 128, in their own colours, clear between: on the left a hawthorn's, a crooked twig crowded with
+ * small dark lobed leaves, a thorn or two and bunches of red haws; on the right an ash's, compound leaves of paired pale leaflets and a hanging bunch
+ * of keys; an opaque bark-brown patch in the top left corner for the stems. For the tree kit's crowns (landmarkProps.js `crownCards`).
+ */
+export function sprayTexture(random) {
+  return canvasTexture(256, 128, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgb(112,98,84)';
+    ctx.fillRect(0, 0, 6, 6);
+    const leaf = (x, y, r, a, fill, edge) => {
+      ctx.fillStyle = fill;
+      for (const [dx, dy, k] of [[0, 0, 1], [-0.5, 0.35, 0.65], [0.5, 0.35, 0.65]]) {
+        ctx.beginPath();
+        ctx.ellipse(x + (Math.cos(a) * dx - Math.sin(a) * dy) * r, y + (Math.sin(a) * dx + Math.cos(a) * dy) * r, r * 0.55 * k, r * k, a, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.strokeStyle = edge;
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(x, y + r * 0.9);
+      ctx.lineTo(x, y - r * 0.8);
+      ctx.stroke();
+    };
+    // The hawthorn: a twig and its side shoots, leaves all along them filling a rough round spray, haws in bunches.
+    const cx = w / 4;
+    ctx.strokeStyle = 'rgb(70,54,40)';
+    ctx.lineWidth = 2.5;
+    const shoots = [];
+    for (let i = 0; i < 7; i++) {
+      const a = -Math.PI / 2 + (random() - 0.5) * 2.2;
+      const len = 26 + random() * 30;
+      const x0 = cx + (random() - 0.5) * 10;
+      const y0 = h - 6 - random() * 30;
+      shoots.push([x0, y0, x0 + Math.cos(a) * len, y0 + Math.sin(a) * len]);
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x0 + Math.cos(a) * len, y0 + Math.sin(a) * len);
+      ctx.stroke();
+    }
+    for (let i = 0; i < 70; i++) {
+      const [x0, y0, x1, y1] = shoots[Math.floor(random() * shoots.length)];
+      const t = random();
+      const x = x0 + (x1 - x0) * t + (random() - 0.5) * 16;
+      const y = y0 + (y1 - y0) * t + (random() - 0.5) * 16;
+      if (x < 10 && y < 10) continue;
+      const g = 0.8 + random() * 0.4;
+      leaf(Math.max(6, Math.min(w / 2 - 6, x)), Math.max(6, y), 5 + random() * 3, random() * Math.PI * 2, `rgb(${Math.round(72 * g)},${Math.round(106 * g)},${Math.round(46 * g)})`, `rgba(40,58,26,0.6)`);
+    }
+    // Haws, a centimetre across, in small bunches at the shoots' ends.
+    for (let i = 0; i < 4; i++) {
+      const [, , x1, y1] = shoots[Math.floor(random() * shoots.length)];
+      for (let k = 0; k < 3; k++) {
+        const x = x1 + (random() - 0.5) * 6;
+        const y = y1 + (random() - 0.5) * 5 + 3;
+        ctx.fillStyle = 'rgb(128,30,20)';
+        ctx.beginPath();
+        ctx.arc(x, y, 1.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    // The ash: four compound leaves from the foot of the spray, each a midrib with five or six pairs of leaflets and one at its end, and keys.
+    const ax = (3 * w) / 4;
+    for (let i = 0; i < 4; i++) {
+      const a = -Math.PI / 2 + (i - 1.5) * 0.45 + (random() - 0.5) * 0.2;
+      const len = 46 + random() * 12;
+      const x0 = ax + (random() - 0.5) * 6;
+      const y0 = h - 4;
+      ctx.strokeStyle = 'rgb(96,110,60)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x0 + Math.cos(a) * len, y0 + Math.sin(a) * len);
+      ctx.stroke();
+      for (let k = 1; k <= 6; k++) {
+        const t = k / 6.3;
+        const px = x0 + Math.cos(a) * len * t;
+        const py = y0 + Math.sin(a) * len * t;
+        for (const side of k === 6 ? [0] : [-1, 1]) {
+          const la = a + side * 1.15;
+          const g = 0.85 + random() * 0.3;
+          ctx.fillStyle = `rgb(${Math.round(86 * g)},${Math.round(118 * g)},${Math.round(52 * g)})`;
+          ctx.beginPath();
+          ctx.ellipse(px + Math.cos(la) * 6, py + Math.sin(la) * 6, 6.5, 2.4, la, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+    for (let k = 0; k < 9; k++) {
+      ctx.fillStyle = 'rgb(150,136,84)';
+      ctx.beginPath();
+      ctx.ellipse(ax + 30 + (random() - 0.5) * 10, 30 + k * 3 + random() * 4, 1.6, 6, 0.3 + (random() - 0.5) * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+/** Triangles in one gorse bush, at most (#1004): the pit's field has a hundred or so of them. */
+export const GORSE_TRIANGLES = 200;
+
+/**
+ * Gorse shoots, 256 by 128 (#1004), in their own colours: two shoots side by side, each a stiff green stem bristling with dark spines all along it, the
+ * left one in flower (clusters of yellow pea flowers up its top two-thirds), the right one not, clear between; an opaque dark patch for the bush's heart.
+ */
+export function gorseTexture(random) {
+  return canvasTexture(256, 128, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgb(52,72,34)';
+    ctx.fillRect(0, 0, 6, 6);
+    for (const [cx, flowers] of [[w * 0.25, true], [w * 0.75, false]]) {
+      ctx.strokeStyle = 'rgb(66,88,40)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, h - 2);
+      ctx.quadraticCurveTo(cx + 4, h / 2, cx - 2, 6);
+      ctx.stroke();
+      // Spines: short, stiff and pointing up the shoot, in tufts all the way along it.
+      for (let i = 0; i < 150; i++) {
+        const y = 6 + random() * (h - 10);
+        const side = random() < 0.5 ? -1 : 1;
+        const len = 9 + random() * 16;
+        const a = -Math.PI / 2 + side * (0.35 + random() * 0.7);
+        ctx.strokeStyle = random() < 0.5 ? 'rgb(44,66,30)' : 'rgb(70,96,44)';
+        ctx.lineWidth = 1 + random() * 1.2;
+        ctx.beginPath();
+        ctx.moveTo(cx + side * random() * 3, y);
+        ctx.lineTo(cx + Math.cos(a) * len, y + Math.sin(a) * len);
+        ctx.stroke();
+      }
+      if (!flowers) continue;
+      for (let i = 0; i < 26; i++) {
+        const y = 8 + random() * h * 0.62;
+        const x = cx + (random() - 0.5) * 34;
+        for (let k = 0; k < 3; k++) {
+          ctx.fillStyle = k ? 'rgb(240,196,30)' : 'rgb(196,142,20)';
+          ctx.beginPath();
+          ctx.ellipse(x + (random() - 0.5) * 5, y + (random() - 0.5) * 4, 3 + random() * 2, 2.4 + random() * 1.5, random() * Math.PI, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+  });
+}
+
+/**
+ * A gorse bush (#1004), about a metre and a half across and a metre high at scale 1: a dark, dense heart and about forty spiny shoots standing out
+ * of it all round and over the top, each a crossed pair of the gorse texture's cards, `flowering` of them in flower. Its foot at the origin. For the
+ * pit's field, and anywhere rough ground has gone to gorse. The material is `plantMaterial(gorseTexture(...))`.
+ */
+export function gorseBushGeometry(random, { shoots = 44, flowering = 0.45 } = {}) {
+  const pos = [];
+  const uv = [];
+  const colors = [];
+  const put = (p, q, col) => {
+    pos.push(...p);
+    uv.push(...q);
+    colors.push(...col);
+  };
+  // The heart: a low dark-green dome, smaller than the shoots' reach, so you never see through the bush and never see it either.
+  const heart = new THREE.IcosahedronGeometry(0.24, 0).toNonIndexed();
+  const hp = heart.attributes.position;
+  for (let i = 0; i < hp.count; i++) {
+    const y = hp.getY(i);
+    put([hp.getX(i) * 1.15, Math.max(0.02, 0.24 + y * 0.8), hp.getZ(i) * 1.15], [0.012, 0.98], [1, 1, 1]);
+  }
+  for (let k = 0; k < shoots; k++) {
+    const a = random() * Math.PI * 2;
+    const up = k < 10 ? 0.02 + random() * 0.2 : 0.15 + random() * 0.85; // a ring of them low round the skirt, the rest over the top
+    const d = [Math.cos(a) * Math.sqrt(1 - up * up), up, Math.sin(a) * Math.sqrt(1 - up * up)];
+    const base = [d[0] * 0.22, 0.26 + d[1] * 0.2, d[2] * 0.22];
+    const len = 0.45 + random() * 0.35;
+    const tip = [base[0] + d[0] * len, base[1] + d[1] * len, base[2] + d[2] * len];
+    const half = 0.13 + random() * 0.05;
+    const [u0, u1] = random() < flowering ? [0.0, 0.5] : [0.5, 1.0];
+    const shade = 0.8 + random() * 0.3;
+    const col = [shade, shade, shade * 0.95];
+    // Two cards crossed along the shoot: one across it level, one across it upright.
+    const across = [[-d[2], 0, d[0]], [d[1] * d[0], -(d[0] * d[0] + d[2] * d[2]), d[1] * d[2]]];
+    for (const s of across) {
+      const l = Math.hypot(...s) || 1;
+      const o = s.map((v) => (v / l) * half);
+      const a0 = [base[0] - o[0], base[1] - o[1], base[2] - o[2]];
+      const a1 = [base[0] + o[0], base[1] + o[1], base[2] + o[2]];
+      const b0 = [tip[0] - o[0], tip[1] - o[1], tip[2] - o[2]];
+      const b1 = [tip[0] + o[0], tip[1] + o[1], tip[2] + o[2]];
+      // The canvas is drawn top down with the shoot's foot at its bottom, so v = 0 is the foot.
+      for (const [p, q] of [[a0, [u0, 0]], [a1, [u1, 0]], [b1, [u1, 1]], [a0, [u0, 0]], [b1, [u1, 1]], [b0, [u0, 1]]]) put(p, q, col);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+  return geo;
+}

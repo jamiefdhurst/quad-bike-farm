@@ -1867,6 +1867,13 @@ export const FAQ_SECTIONS = [
         a: `No. The cabin by the screening plant is padlocked and its windows are boarded, and the container by the gate is chained shut round its door handles with a padlock through the chain. Both are solid: you ride round them, not into them.`,
       },
       {
+        q: 'Can I ride through the scrub round the gravel pit?',
+        a: `Yes, mostly. The hawthorn, gorse, bramble and young birch that have grown up along the pit's lip and over its field are scrub you push through on a quad, and so are the rough grass and thistles.
+          The trees are not: the oaks standing in the rough, the ash and oak standards in the tree line along the fence and the dead trees at the rim all have solid trunks. The easy way round is the ride,
+          a mown strip about 5 m wide kept open round the pit some 15 m out from the lip and out to the farm gate: it crosses the haul road and passes where the pit climb comes over the lip, so nothing grows in your way out of a climb.`,
+        tip: 'A mown ride runs round the gravel pit and out to the farm gate; the scrub you push through, the trees you don\'t.',
+      },
+      {
         q: 'How do I get out of the gravel pit by the wall?',
         a: `The roads are the easy way. The walls are loose gravel, which gives you less grip than grass and drags at the wheels, so a climb takes more speed and more courage than the hill's banks.
           The pit's climb wall, on the far side from the lip where the roads fork, between the feet of the two roads, is long and gentle enough for a quad to go straight up, with buttresses of hard rock to either side that are much too steep. The line up is yours. Take a run at it from the floor, keep the wheels straight, and keep

@@ -42,6 +42,8 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | screening plant | The gravel pit's old plant on its pad on the floor: a hopper over a crusher, a conveyor up to a screen and a long conveyor on trestles out over a heap, with a generator; its long belt torn and hanging | quarry plant, stone crusher |
 | site cabin | The gravel pit's steel cabin beside the screening plant: shut, padlocked and its windows boarded | portable office, site hut |
 | hardstanding | The old broken concrete slab the gravel pit's container stands on, up in the field by the farm gate | container base, container slab |
+| ride | The mown strip kept open through the scrub round the Old Pit, about 15 m out from the lip, joined to the farm gate | firebreak, mown path |
+| tree line | The hawthorns with ash and oak standards inside the Old Pit's fence on the sides that face the arable | shelter belt, windbreak |
 | stone track | The farm's own hardcore track on the new farm, two arms from the yard: north to the pit's farm gate and south over the farm bridge into Brook Meadow; two wheel ruts of chippings with a grass crown | hardcore road |
 | boundary track | The grass track round the inside of the new farm's boundary, about 14 m in, closing the loop; it goes round the Old Pit and over the stream at the green lane's ford | perimeter track, ring road |
 | headland | The 6 m strip of grass inside every arable field's edge on the new farm, where the crop is never drilled and you can ride | headland strip |
