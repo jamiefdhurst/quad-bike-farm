@@ -2547,7 +2547,7 @@ export const FAQ_SECTIONS = [
         a: `Look at the back of the tractor, where the bale spike is, and press <kbd>E</kbd> to take the spike off and fit the log splitter (it will not go on with a bale on the spike
           or a trailer on the drawbar). Rounds of trunk lie in two piles in the Wet Meadow by the wood's gate: pick one up with <kbd>E</kbd>, look at the splitter's beam and press
           <kbd>E</kbd> to put it on. Then start the tractor, put its parking brake on (or leave it in neutral), and hold <kbd>E</kbd> at the beam: the ram pushes the round onto the
-          wedge and the engine note rises and sags as it works. Let go and the ram comes back. When the round gives way its logs fall either side of the tractor's back. Carry them
+          wedge, the pump whines and the engine note rises and sags as it works. Let go and the ram comes back. When the round gives way its logs fall either side of the tractor's back. Carry them
           one at a time to the stack against the hedge and press <kbd>E</kbd> there. <kbd>G</kbd> puts what you are holding down.`,
         tip: 'Fit the log splitter at the back of the tractor, then hold E at the beam with the engine running and the brake on.',
       },
@@ -2556,6 +2556,12 @@ export const FAQ_SECTIONS = [
         a: `The tractor has to be running, with the parking brake on or in neutral, and not moving. If the engine stalls under a stubborn round the ram stops where it is; start it
           again and carry on. A round with a knot in it takes longer to push through. Put the bale spike back (look at the beam when it is empty and press <kbd>E</kbd>) and the
           splitter comes off. Hitching a trailer hides the splitter and unhitching brings it back.`,
+      },
+      {
+        q: 'What are the noises the log splitter makes?',
+        a: `It runs off the tractor's hydraulics, so you hear the pump whine whenever the ram is moving, and the tractor's engine working with it. As the ram meets the
+          round the pump labours and a deep strain comes in, deeper and louder with a knotted round, until the crack as it gives way. When the ram starts back there is a hiss
+          of oil through the valve, and the pump whines more lightly on the way home. With the engine off, or the ram at rest, it is quiet.`,
       },
       {
         q: 'How do I do the log job?',
