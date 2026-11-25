@@ -2,15 +2,13 @@
 // lane's two ends, broken where a gate or the footpath's stile is, and pushed back where a passing place widens the road, so the bay is clear.
 // `laneHedgeRuns` says where hedge is and is not, `laneHedgePoint` where it stands at a distance along; props.js lays blocks along each run.
 
-import { pointAt, GATE_HALF } from './roads.js';
+import { pointAt, bayPush, GATE_HALF } from './roads.js';
 import { sAlong, footpathSide } from './laneSigns.js';
 
 export { GATE_HALF }; // the gate's opening lives with the road, whose ditch is piped under it (#1016)
 
 /** m of the road's two ends with no hedge, so the junction with the lane is open. */
 export const JUNCTION_OPEN = 9;
-/** m a bay takes to ease out to its full width at each end. */
-const BAY_EASE = 2;
 
 /** The point `off` m out from the road's middle on `side` (1 or -1: the side a passing place on that side widens to) at `s` m along. */
 export function sidePoint(road, s, side, off) {
@@ -18,15 +16,9 @@ export function sidePoint(road, s, side, off) {
   return { x: p.x + p.tz * side * off, z: p.z - p.tx * side * off, tx: p.tx, tz: p.tz };
 }
 
-/** How many metres out from the middle the hedge stands on `side` at `s`: the carriageway, the verge, and a passing place's bay where there is one. */
+/** How many metres out from the middle the hedge stands on `side` at `s`: the carriageway, the verge, and a passing place's bay where there is one (`bayPush`, which the ditch at its foot follows). */
 export function hedgeOffset(road, s, side) {
-  let off = road.halfWidth + (road.pavement ?? 0) + (road.verge ?? 0);
-  for (const b of road.bays) {
-    if (b.side !== side) continue;
-    const into = Math.min(s - (b.s - b.length / 2), b.s + b.length / 2 - s);
-    if (into > 0) off += b.bay * Math.min(1, into / BAY_EASE);
-  }
-  return off;
+  return road.halfWidth + (road.pavement ?? 0) + (road.verge ?? 0) + bayPush(road, s, side);
 }
 
 /**
@@ -87,12 +79,9 @@ function nearestS(road, x, z) {
   return at;
 }
 
-/** Where the lane's gates are and which side they are on: [{ id, s, side }], from the road's `gates` (the farm's gateway each stands across from). */
+/** Where the lane's gates are and which side they are on: [{ id, s, side }], from the road's `gates` (the farm's gateway each stands across from), as the road keeps them for its ditch (`gateAt`). */
 export function laneGates(road) {
-  return (road.gates ?? []).map((g) => {
-    const s = nearestS(road, g.farm[0], g.farm[1]);
-    return { id: g.id, s, side: sideOf(road, s, g.farm[0], g.farm[1]) };
-  });
+  return (road.gates ?? []).map((g, i) => ({ id: g.id, s: road.gateAt[i].s, side: road.gateAt[i].side }));
 }
 
 /** The common is on the lane's west side as it runs south, which is side -1 (laneHedges.js `sideOf`). */

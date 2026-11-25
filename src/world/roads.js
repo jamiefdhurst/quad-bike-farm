@@ -32,7 +32,8 @@ export const EDGE = 0.15; // m: the soft edge of hard standing, a hand's width a
 export const KEEP_LEFT = 0.48; // of a road's half width: where a vehicle drives, to the left of its way
 export const GATE_HALF = 2.2; // m either side of the middle of a gate in a road's hedge that is open (the leaf's length and a post each side, laneHedges.js), and the ditch is piped under
 const DITCH_EASE = 2; // m past a gateway's opening that the ditch takes to come back to its full depth (#1016)
-const BAY_EASE = 2; // m past each end of a passing place that the ground laid level with it, and the ditch pushed out round it, take to ease back (#1016)
+const BAY_EASE = 2; // m past each end of a passing place that the ground laid level with it takes to ease back to the road's shoulder (#1016)
+const BAY_PUSH_EASE = 2; // m in from each end of a passing place that the hedge, and the ditch at its foot, take to swing out to the bay's full width
 
 export const SURFACES = ['tarmac', 'stone', 'grass'];
 export const MARKINGS = ['dashed', 'solid', 'none'];
@@ -91,7 +92,7 @@ function simplify(samples) {
   return keep;
 }
 
-/** Where a gate across from the farm's point [x, z] is on a road: { s, side }, the nearest sample's distance along and the side (1 or -1) the point is on, as `laneGates` has it. */
+/** Where a gate across from the farm's point [x, z] is on a road: { s, side }, the nearest sample's distance along and the side (1 or -1) the point is on (`laneGates` reads it). */
 function gateOn(samples, [x, z]) {
   let p = samples[0];
   for (const q of samples) if (Math.hypot(q.x - x, q.z - z) < Math.hypot(p.x - x, p.z - z)) p = q;
@@ -107,6 +108,17 @@ function bayWidening(r, s, side) {
     if (past < BAY_EASE) w = Math.max(w, b.bay * (1 - smoothstep(0, BAY_EASE, past)));
   }
   return w;
+}
+
+/** m the hedge on `side` of road `road`, and the ditch at its foot, are pushed out by a passing place at `s` m along: easing out over BAY_PUSH_EASE inside each end of the bay. */
+export function bayPush(road, s, side) {
+  let off = 0;
+  for (const b of road.bays) {
+    if (b.side !== side) continue;
+    const into = Math.min(s - (b.s - b.length / 2), b.s + b.length / 2 - s);
+    if (into > 0) off += b.bay * Math.min(1, into / BAY_PUSH_EASE);
+  }
+  return off;
 }
 
 function buildRoad(def, step, cell) {
@@ -642,7 +654,9 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
    * Metres a roadside ditch is cut into the ground at (x, z): along the side of a road with a `ditch` that the land falls towards. The land falls east
    * (layout.landform), so on a road running north to south it is the east side, and where the road turns east to west there is no low side and no ditch,
    * fading out between a quarter and a half turn. It is piped under each gateway on its side (none across the gate's opening, `GATE_HALF` either side
-   * of its middle, back to its full depth over DITCH_EASE m beyond) and pushed out by a passing place's width round the bay, so neither is cut (#1016).
+   * of its middle, back to its full depth over DITCH_EASE m beyond), and pushed out by a passing place's width round the bay, staying at the hedge's foot
+   * as the hedge swings out (`bayPush`); where that leaves it nearer a bay's level ground than it runs to the road's edge elsewhere, at the bay's two
+   * ends, it shallows as if piped, so neither a gateway, a bay nor the hedge is cut (#1016).
    */
   function ditchAt(x, z) {
     let cut = 0;
@@ -659,9 +673,12 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
       if (side * Math.sign(p.tz) < 0) continue; // the low side is the one whose normal points east (+x)
       const lowness = smoothstep(0.35, 0.7, across);
       if (lowness <= 0) continue;
-      const k = 1 - smoothstep(0, r.ditch.half, Math.abs(n.d - (r.halfWidth + r.ditch.centre + bayWidening(r, n.s, side))));
+      const centre = r.halfWidth + r.ditch.centre + bayPush(r, n.s, side);
+      const k = 1 - smoothstep(0, r.ditch.half, Math.abs(n.d - centre));
       if (k <= 0) continue;
-      let open = 1;
+      // How far its near side is from the level ground (the carriageway and any bay), against how far it is from the road's edge on a plain stretch.
+      const clear = centre - r.ditch.half - (r.halfWidth + bayWidening(r, n.s, side));
+      let open = smoothstep(0, r.ditch.centre - r.ditch.half, clear);
       for (const g of r.gateAt) if (g.side === side) open = Math.min(open, smoothstep(GATE_HALF, GATE_HALF + DITCH_EASE, Math.abs(n.s - g.s)));
       cut = Math.max(cut, r.ditch.depth * k * lowness * open);
     }

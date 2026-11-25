@@ -209,6 +209,20 @@ describe('the ditch', () => {
       for (const d of [-centre, centre]) expect(net.ditchAt(m.x, m.z + d)).toBe(0);
     }
   });
+
+  it('keeps out from under the hedge all the way round, where it swings out round a passing place too, so the hedge has no notch (#1016)', async () => {
+    const { hedgeOffset, sidePoint } = await import('../src/world/laneHedges.js');
+    let worst = 0;
+    let at = 0;
+    for (let s = 0; s <= road.length; s += 0.25) {
+      for (const side of [1, -1]) {
+        const p = sidePoint(road, s, side, hedgeOffset(road, s, side));
+        const d = net.ditchAt(p.x, p.z);
+        if (d > worst) [worst, at] = [d, s];
+      }
+    }
+    expect(worst, `${at.toFixed(1)} m along`).toBeLessThan(0.01);
+  });
 });
 
 describe('the drains', () => {
