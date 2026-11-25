@@ -189,9 +189,9 @@ export function createBrook(layout) {
     const lead = steps.lead.depth;
     let p = steps.from;
     let sp = Tx(p) - lead;
-    const marks = riffleList.map((r, i) => {
+    const marks = riffleList.map((r) => {
       const sa = sp - (Tx(p) - Tx(r.a)) * steps.third;
-      const drop = clamp(sa - (Tx(r.b) - (i === riffleList.length - 1 ? steps.tail.below : steps.below)), dMin, dMax);
+      const drop = clamp(sa - (Tx(r.b) - steps.below), dMin, dMax);
       p = r.b;
       sp = sa - drop;
       return { sa, drop };

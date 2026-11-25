@@ -1435,19 +1435,20 @@ export const RIVER_PLAN = {
     // a bend's banks start at `from` of its sine and are full by `full`; the crossing's landings run `landing` m back and a drinking place `drink`;
     // `relief` m of hummocks on the banks; the brook past the meadow has its own `wall` as far as `brook.to`, the lane's verge.
     banks: { freeboard: 0.8, wall: 1.6, cut: 0.9, bar: { from: 0.55, reach: 5.5 }, from: 0.25, full: 0.7, landing: 7, drink: 4.5, relief: 0.14, brook: { wall: 1.3, to: 899 } },
-    // The pools and riffles (#1000, world/brook.js): from `from` the surface steps, let down `lead.depth` m over the `lead.reach` m above it, until it
-    // meets the steady fall again (by `to`). The crossing is the first riffle, `crossing` m long about its middle and `narrow` of its width narrower;
-    // `riffles` are the plan x's where each of the rest begins, `length` m long, the last where the river narrows into the brook, dropping it to
-    // `tail.below` m under the steady fall, which it then falls `tail.share` as fast as until it meets it. A pool's surface falls `third` as fast as the
-    // river's steady fall, and a riffle drops it back to `below` m under that, by `drop` m; the water stands `water.head` deep at a pool's head and
-    // `water.foot` at its foot, `water.riffle` over a riffle, which has a gravel bar out of the water from `bar.from` of the half-width and `bar.reach` m
-    // on up the bank, running `bar.tail` m past its foot. The land falls about 8% from the crossing for 100 m and lies nearly flat for 70 m below it,
-    // so on the steep reach a riffle comes every 7 to 12 m (0.5 m is the most a riffle drops, and with 12 m pools it couldn't keep up with the land
-    // there) and on the flat the pools are long. Where they go was walked out from the ground: a riffle wherever the pool's surface had climbed back to
-    // the steady fall, its pool 5 m and more long.
+    // The pools and riffles (#1000, world/brook.js): from `from` the surface steps, let down `lead.depth` m over the `lead.reach` m above it so the bank
+    // above the crossing stays 0.3 m clear, until it meets the steady fall again (by `to`). The crossing is the first riffle, `crossing` m long about its
+    // middle and `narrow` of its width narrower; `riffles` are the plan x's where each of the rest begins, `length` m long, the last where the river
+    // narrows into the brook, below which the surface falls `tail.share` as fast as the steady fall until it meets it (the land falls away south of it
+    // there, and its bank would stand only 0.06 m over the water). A pool's surface falls `third` as fast as the river's steady fall, and a riffle drops
+    // it back to `below` m under that, by `drop` m; the water stands `water.head` deep at a pool's head and `water.foot` at its foot, `water.riffle` over
+    // a riffle, which has a gravel bar out of the water from `bar.from` of the half-width (`bar.bend` on a bend, where the bend's own bar is already out
+    // there) and `bar.reach` m on up the bank, running `bar.tail` m past its foot. The land falls about 8% from the crossing for 100 m and lies nearly
+    // flat for 70 m below it, so on the steep reach a riffle comes every 7 to 12 m (0.5 m is the most a riffle drops, and with 12 m pools it couldn't keep
+    // up with the land there) and on the flat the pools are long. Where they go was walked out from the ground: a riffle wherever the pool's surface had
+    // climbed back to the steady fall, its pool 4 m and more long.
     steps: {
-      from: 450, to: 760, crossing: 3, length: 2, third: 1 / 3, below: 0.3, drop: [0.3, 0.5], narrow: 0.1, lead: { reach: 15, depth: 0.25 }, tail: { below: 0.4, share: 0.8 },
-      riffles: [485.5, 495.5, 502.5, 510.75, 517.75, 526, 534, 543, 554.5, 563, 570, 577, 589, 648, 665],
+      from: 450, to: 760, crossing: 3, length: 2, third: 1 / 3, below: 0.3, drop: [0.3, 0.5], narrow: 0.1, lead: { reach: 15, depth: 0.25 }, tail: { share: 0.8 },
+      riffles: [487.5, 495.5, 502.5, 510.75, 517.75, 526, 534, 543, 554.5, 563, 570, 577, 589, 648, 665],
       water: { head: 0.95, foot: 1.4, riffle: 0.38 }, bar: { from: 0.35, bend: 0.15, reach: 4, tail: 0.5 },
     },
   },
