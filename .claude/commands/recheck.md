@@ -3,7 +3,7 @@ description: Have a fresh Opus subagent review this session's work against its i
 argument-hint: "[what to look at; default: everything this session changed] [--report: list the findings, fix nothing]"
 ---
 
-Jamie runs this part-way through or at the end of a piece of work, most often a `/todo` item, to have it looked at by someone who wasn't there. The reviewer is a fresh Opus subagent: it sees only the brief and what it reads for itself, so it isn't anchored on how this session reasoned. Run it even when this session is on Opus, as the fresh context is the point (unlike "Before you stop" in `.claude/commands/todo.md`, which is skipped there). Jamie asked for this subagent, so launch it without asking him.
+`/todo` runs this itself before the pull request opens (its step 8: when the issue is labelled `🌾 world` or `🏍️ vehicles`, or the diff is over 150 lines, and not with `--solo`), so what it finds is fixed on the branch instead of filed after the merge (#1178). Jamie can still run it by hand at any time, part-way through or at the end of a piece of work, to have it looked at by someone who wasn't there. The reviewer is a fresh Opus subagent: it sees only the brief and what it reads for itself, so it isn't anchored on how this session reasoned. Run it even when this session is on Opus, as the fresh context is the point (unlike "Before you stop" in `.claude/commands/todo.md`, which is skipped there). Jamie asked for this subagent, so launch it without asking him.
 
 `$ARGUMENTS` can narrow what is looked at ("the gate's latch", "the last two commits"). `--report` anywhere in it means list the findings and fix nothing.
 
@@ -20,10 +20,16 @@ Jamie runs this part-way through or at the end of a piece of work, most often a 
    - **An agreed `fix`:** fix it now in the worktree, with a test that fails without the fix where it is logic. Run `npm test` (and `npm run smoke` if it touches `game.js` or the frame), update the line and its evidence in `.scratch/issue-check-<n>.md` if a tick changes, and commit with a message written for a player, staging files by name.
    - **A `nit`:** do the ones that take a minute; say which you left.
    - **An `ask`:** after the fixes, put them to Jamie as a numbered list, a recommendation and its reason with each. A finding that a line of the issue was done another way is an `ask` and makes it a `[~]` line, as `/todo` step 7 says.
-   - **If the PR is open and not merged,** turn its auto-merge off before the first fix (`gh pr merge --disable-auto <pr>`), so it can't merge between pushes. When the fixes are pushed: `node tools/issueCheck.mjs post <n>` again if the list changed, `gh pr merge --auto --merge`, and `node tools/waitMerged.mjs <pr>` in the background as `/todo` step 9 says.
+   - **If no PR is open yet** (the run `/todo` makes before opening it), fix on the branch and carry on with `/todo` step 9; the `ask`s go to Jamie in the same stop as its step 7 questions.
+   - **If the PR is open and not merged,** turn its auto-merge off before the first fix (`gh pr merge --disable-auto <pr>`), so it can't merge between pushes. When the fixes are pushed: `node tools/issueCheck.mjs post <n>` again if the list changed, `gh pr merge --auto --merge`, and `node tools/waitMerged.mjs <pr>` in the background as `/todo` step 10 says.
    - **If it has already merged,** file each agreed `fix` as a `🐛 bug` issue (what is wrong, the evidence, the fix, a **Where it fits** and a **Done when**; `node tools/issueLint.mjs --file <draft>` passes before filing). Fix a small one now in this session, from its own worktree and PR as `/todo` would; leave a bigger one for `/todo`.
    - **One more round at most,** and only when a fix ran to more than a few lines: send the reviewer the first round's findings and the diff of the fixes alone. Never loop until it's clean.
-5. **Tell Jamie**, briefly: how many findings and of what kind, each fix with its commit, each one you disagreed with and why, the asks, and what the reviewer couldn't check. Then carry on with what the session was doing, such as the next step of `/todo`.
+5. **Leave a count.** Post one line on the issue (`gh issue comment <n> --body '...'`), in exactly this form, the numbers being this round's findings of each kind and the fixes you agreed with, and the model id the item was built on (this session's, from your system prompt), as plain text, not in backticks:
+   ```
+   Recheck count: <f> fix, <a> ask, <n> nit; <g> fixes agreed; built on <model id>.
+   ```
+   `tools/recheckRate.mjs` totals these by model to show whether the recheck still pays (#1178). With no issue, there is nowhere to post it: skip it.
+6. **Tell Jamie**, briefly: how many findings and of what kind, each fix with its commit, each one you disagreed with and why, the asks, and what the reviewer couldn't check. Then carry on with what the session was doing, such as the next step of `/todo`.
 
 ## The reviewer's instructions
 

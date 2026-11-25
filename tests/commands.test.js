@@ -38,3 +38,40 @@ describe('keeping the reviewers cheap', () => {
     expect(read('CLAUDE.md')).toMatch(/\*\*Batch what you read\.\*\*/);
   });
 });
+
+// /todo rechecks an item before its pull request opens, so the reviewer's findings are fixed on the branch rather than filed after the merge (#1178).
+describe('the recheck before the PR', () => {
+  const todo = read('.claude/commands/todo.md');
+  const step = todo.match(/^\d+\. \*\*Recheck it before the PR\*\*.*$/m)?.[0] ?? '';
+  const stepNumber = (title) => Number(todo.match(new RegExp(`^(\\d+)\\. \\*\\*${title}`, 'm'))?.[1]);
+
+  it('is a step of /todo between answering the issue and opening the PR', () => {
+    expect(step, 'todo.md has the step').not.toBe('');
+    expect(stepNumber('Recheck it before the PR')).toBe(stepNumber('Answer the issue') + 1);
+    expect(stepNumber('Commit and open the PR')).toBe(stepNumber('Recheck it before the PR') + 1);
+    expect(step, 'it runs /recheck').toContain('.claude/commands/recheck.md');
+  });
+
+  it('names both conditions and --solo', () => {
+    expect(step, 'the world label').toContain('`🌾 world`');
+    expect(step, 'the vehicles label').toContain('`🏍️ vehicles`');
+    expect(step, 'the size of the diff').toMatch(/git diff --shortstat origin\/main\.\.\..*more than 150 changed lines/);
+    expect(step, '--solo skips it').toContain('--solo');
+    expect(hint(todo), 'the argument-hint says --solo skips it').toMatch(/--solo:[^\]]*recheck/);
+  });
+
+  it('fixes before the list is posted, asks in step 7\'s stop, and leaves a count', () => {
+    expect(step).toMatch(/fix.*before `node tools\/issueCheck\.mjs post`/);
+    expect(step).toMatch(/`ask`.*same stop as step 7's/);
+    expect(step).toMatch(/count line/);
+  });
+
+  it('/recheck gives the count line in the form tools/recheckRate.mjs reads, and says /todo runs it', async () => {
+    const { COUNT_FORM } = await import('../tools/recheckRate.mjs');
+    const recheck = read('.claude/commands/recheck.md');
+    expect(recheck).toContain(COUNT_FORM);
+    expect(recheck).toMatch(/`\/todo` runs this itself before the pull request opens/);
+    expect(recheck, 'still run by hand').toMatch(/Jamie can still run it by hand at any time/);
+    expect(recheck, 'keeps the after-merge branch').toMatch(/\*\*If it has already merged,\*\*/);
+  });
+});
