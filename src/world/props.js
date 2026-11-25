@@ -115,7 +115,7 @@ export function buildProps(ctx) {
   run('buildFieldLandmarks', () => buildFieldLandmarks(c)); // the new farm's landmark in each field (#815); today's farm has none
   const jumpRamp = ctx.layout.jumpRamp ? run('buildJumpRamp', () => buildJumpRamp(c)) : null;
   const treeSwap = run('scatter', () => c.scatter.build(c.scene)); // every builder's oaks and bushes, the far ones swapped in beyond treeFullDistance
-  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: [treeSwap].filter(Boolean), barn, yardLights, vane, jumpRamp, silage, puddles, yard, pitEntrance, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors, later: c.later };
+  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap, pitEntrance?.userData.hedgeSwap].filter(Boolean), treeSwaps: [treeSwap].filter(Boolean), barn, yardLights, vane, jumpRamp, silage, puddles, yard, pitEntrance, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors, later: c.later };
 }
 
 function buildBarn(c) {

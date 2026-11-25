@@ -142,6 +142,21 @@ describe('the spoil bank', () => {
     const buried = farmPlacements(LAYOUT).filter((t) => t.solid && t.corners.some(([x, z]) => q.bankAt(x, z) > 0.05));
     expect(buried.map((t) => t.name)).toEqual([]);
   });
+  it('has no step in it: along it every 5 cm it rises or falls no faster than its own flanks, through the gap and past the haul road\'s search box', () => {
+    for (const q of quarries) {
+      let worst = 0;
+      for (let u = -18; u <= -8; u += 1) {
+        let last = null;
+        for (let v = -30; v <= 30; v += 0.05) {
+          const p = f.at(u, v);
+          const h = q.bankAt(p.x, p.z);
+          if (last !== null) worst = Math.max(worst, Math.abs(h - last));
+          last = h;
+        }
+      }
+      expect(worst).toBeLessThan(0.08); // its steepest flank is about 1 in 1; the old search-box edge stepped 13 to 21 cm
+    }
+  });
   it('is nothing on a farm without a lane gate, and nothing outside its own box', () => {
     const bank = spoilBankOf(gate);
     expect(bankRise(null, gate.x, gate.z, () => 100, 2.7)).toBe(0);
@@ -152,11 +167,13 @@ describe('the spoil bank', () => {
 describe('the lane entrance as a model', () => {
   let group;
   let boxes;
+  let heights;
   beforeAll(async () => {
     vi.stubGlobal('document', { createElement: () => ({ getContext: () => new Proxy({}, { get: (t, k) => (k === 'measureText' ? (s) => ({ width: String(s).length * 10 }) : () => ({ addColorStop() {} })) }), width: 0, height: 0 }) });
     const { buildPitEntrance } = await import('../src/world/quarryProps.js');
     boxes = [];
     const c = { ...headlessContext(), scene: new THREE.Scene(), fixedBox: (...b) => boxes.push(b) };
+    heights = c.heights;
     group = buildPitEntrance(c);
   });
   it('is one set piece named for the far detail, with each of its parts', () => {
@@ -166,6 +183,18 @@ describe('the lane entrance as a model', () => {
       expect(group.getObjectByName(name), name).toBeTruthy();
     }
     expect(group.userData.hedge?.isObject3D).toBe(true);
+  });
+  it('swaps its hedge for plain strips far off, as every other hedge, and builds it into the farm\'s hedge swaps', () => {
+    expect(group.userData.hedgeSwap?.tiles.size).toBeGreaterThan(0);
+    const src = fs.readFileSync(path.resolve(__dirname, '../src/world/props.js'), 'utf8');
+    expect(src).toMatch(/hedgeSwaps: \[[^\]]*pitEntrance\?\.userData\.hedgeSwap/);
+  });
+  it('makes the barrier\'s beam solid at its height, over a 2.1 m clearance', () => {
+    const beam = boxes.find(([, , , , hy, hz]) => hy === ENTRANCE.barrier.beam / 2 && hz === 0.06);
+    expect(beam).toBeTruthy();
+    expect(beam[3]).toBeGreaterThan(plan.barrier.span);
+    const mid = f.at(ENTRANCE.barrier.u, 0);
+    expect(beam[1] - beam[4] - heights.heightAt(mid.x, mid.z)).toBeGreaterThanOrEqual(ENTRANCE.barrier.clear - 0.01);
   });
   it('keeps #685\'s collider for the gate as it was: 0.4 m through, 1.8 m high, across the whole gap', () => {
     const g = boxes.find(([x, , z, hx, hy, hz]) => x === gate.x && z === gate.z && hx === 0.2 && hy === 0.9);

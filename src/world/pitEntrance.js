@@ -123,7 +123,8 @@ export function bankRise(bank, x, z, roadDist, roadHalf) {
   const end = smooth(half, half - bank.taper, Math.abs(v));
   const profile = 0.5 + 0.5 * Math.cos(Math.PI * across);
   const lump = 1 + 0.07 * Math.sin(v * 0.31 + 0.6) + 0.05 * Math.sin(v * 0.83 - 1.1) - 0.04 * Math.sin(u * 0.9 + v * 0.2);
-  const gap = smooth(roadHalf + 2, roadHalf + 9, roadDist(x, z));
+  // Full height again by roadHalf + 7.5, inside the haul roads' search boxes (quarry.js pads them roadHalf + 8), so no step where a box ends.
+  const gap = smooth(roadHalf + 2, roadHalf + 7.5, roadDist(x, z));
   return bank.h * profile * end * lump * gap;
 }
 

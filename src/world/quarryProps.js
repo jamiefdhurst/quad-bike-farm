@@ -18,6 +18,7 @@ import { crownAt } from './roadMesh.js';
 import { leafReach } from './hedgeSolid.js';
 import { leafParts, standingWater } from './yardKit.js';
 import { vergeMakers } from './laneVerge.js';
+import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { worksSignTexture, privatePlateTexture } from './villageTextures.js';
 import { laneGateOf, laneReach, entrancePlan, entranceHedges, rutDip, tarmacAt, ENTRANCE, SIGN_WORDS } from './pitEntrance.js';
 import {
@@ -512,9 +513,12 @@ export function buildPitEntrance(c) {
     const base = ground(mid.x, mid.z);
     const [l, r] = B.posts;
     const bp = new Parts();
-    addHeightBarrier(bp, mats, B.span, ground(l.x, l.z) - base, ground(r.x, r.z) - base, { clear: ENTRANCE.barrier.clear, post: ENTRANCE.barrier.post, beam: ENTRANCE.barrier.beam });
+    const { beamY } = addHeightBarrier(bp, mats, B.span, ground(l.x, l.z) - base, ground(r.x, r.z) - base, { clear: ENTRANCE.barrier.clear, post: ENTRANCE.barrier.post, beam: ENTRANCE.barrier.beam });
     parts.merge(bp, frameAt(mid.x, base, mid.z));
     for (const p of B.posts) fixedBox(p.x, ground(p.x, p.z) + 1.2, p.z, ENTRANCE.barrier.post / 2 + 0.01, 1.2, ENTRANCE.barrier.post / 2 + 0.01, f.yaw);
+    // The beam is solid too, at its height, so nothing taller than the 2.1 m it allows drives under it.
+    const front = f.at(B.u + ENTRANCE.barrier.post / 2 + 0.065, 0);
+    fixedBox(front.x, base + beamY, front.z, B.span + 0.1, ENTRANCE.barrier.beam / 2, 0.06, f.yaw);
   }
 
   // The operator's board, faded, on its two posts facing the lane.
@@ -632,21 +636,38 @@ export function buildPitEntrance(c) {
   group.userData.plan = plan;
   scene.add(group);
 
-  // The remnant hedge either side of the bellmouth, as the farm's hedges are drawn, and as solid. Drawn at any distance, so it never goes from the lane's view.
+  // The remnant hedge either side of the bellmouth, as the farm's hedges are drawn and as solid: leafy blocks near and plain strips far, swapped by
+  // distance with the rest (`userData.hedgeSwap`, props.js `hedgeSwaps`), so it stays in the lane's view without costing its leaves from across the farm.
   if (models?.hedge) {
     const hedgeSize = modelBounds(models.hedge.scene).getSize(new THREE.Vector3());
     const blockReach = leafReach(models.hedge.scene, hedgeSize);
     const H = layout.hedgeHeight;
     const matrices = [];
+    const farPieces = [];
     for (const lay of entranceHedges(plan, { T: layout.hedgeThickness, H, heightAt: ground, blockReach })) {
-      for (const b of lay.blocks) matrices.push(matrixAt(b.x, b.y, b.z, b.spin, b.width / hedgeSize.x, (H / hedgeSize.y) * b.tall, b.width / hedgeSize.z));
+      const blocks = [];
+      for (const b of lay.blocks) {
+        matrices.push(matrixAt(b.x, b.y, b.z, b.spin, b.width / hedgeSize.x, (H / hedgeSize.y) * b.tall, b.width / hedgeSize.z));
+        blocks.push({ s: b.s, x: b.x, z: b.z, top: b.y + H * b.tall * FAR_HEDGE_TOP, width: b.width * FAR_HEDGE_WIDTH });
+      }
+      blocks.forEach((b, i) => {
+        const a = lay.pointAt(i ? (blocks[i - 1].s + b.s) / 2 : b.s - FAR_HEDGE_END);
+        const e = lay.pointAt(i < blocks.length - 1 ? (blocks[i + 1].s + b.s) / 2 : b.s + FAR_HEDGE_END);
+        const len = Math.hypot(e.x - a.x, e.z - a.z) || 1;
+        farPieces.push({
+          x: b.x, z: b.z, cx: (a.x + e.x) / 2, cz: (a.z + e.z) / 2, along: [(e.x - a.x) / len, (e.z - a.z) / len], length: len, width: b.width, top: b.top,
+          gap: i === 0, kind: 'hedge', groundA: ground(a.x, a.z), groundB: ground(e.x, e.z),
+        });
+      });
       for (const k of lay.colliders) fixedBox(k.x, k.y, k.z, k.hx, k.hy, k.hz, k.turn);
     }
     if (matrices.length) {
       const hedge = instanceModel(models.hedge.scene, matrices, { castShadow: false });
       hedge.name = 'pitEntranceHedge';
-      scene.add(hedge);
+      const far = buildFarHedges(farPieces, { tint: leafTint(models.hedge.scene), name: 'pitEntranceHedgeFar' });
+      scene.add(hedge, far);
       group.userData.hedge = hedge;
+      group.userData.hedgeSwap = new HedgeSwap(hedge, far);
     }
   }
   return group;
