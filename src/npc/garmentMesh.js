@@ -395,7 +395,7 @@ export function easeBackFolds(mesh, start, rest) {
  * a Z, where cloth pushed straight out from a tight hollow, such as the crease between a full breast and her arm, crossed itself)
  * has its corners eased towards their neighbours, a round at a time, until none does. Changes `mesh.verts`' rest and bind.
  */
-export function unfold(mesh, { rounds = 80, stored = false } = {}) {
+export function unfold(mesh, { rounds = 80, stored = false, where = () => true } = {}) {
   // Standing (`rest`), or in her stored pose (`bind`, arms straight out), where her armpits and sides lie differently.
   const at = (v) => (stored ? v.bind : v.rest);
   // Points at the same place (either side of a cut along a band) move as one, and are each other's neighbours' neighbours.
@@ -409,8 +409,8 @@ export function unfold(mesh, { rounds = 80, stored = false } = {}) {
   const n = groupOf.size;
   const members = Array.from({ length: n }, () => []);
   group.forEach((g, i) => members[g].push(i));
-  // A point marked `held` stays where it is, and so does one on a hem (where a coat's skirt meets it is measured).
-  const held = members.map((m) => m.some((i) => mesh.verts[i].held || mesh.verts[i].edge === 'hem'));
+  // A point marked `held` stays where it is, and so does one on a hem (where a coat's skirt meets it is measured) or not `where`.
+  const held = members.map((m) => m.some((i) => mesh.verts[i].held || mesh.verts[i].edge === 'hem' || !where(mesh.verts[i])));
   const pos = members.map((m) => at(mesh.verts[m[0]]));
   const tris = mesh.tris.map((t) => t.map((i) => group[i]));
   const near = Array.from({ length: n }, () => new Set());
