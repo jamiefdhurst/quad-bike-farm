@@ -4,7 +4,8 @@
 <title>Farm Plan</title>
 <!-- The farm plan's map (docs/farm-plan.md). Open it in a browser; `node tools/farmPlanSvg.mjs` renders it to docs/farm-plan.svg.
      A change to the plan edits the numbers here and in docs/farm-plan.md together, in one PR, and re-runs the script. Positions are the plan's
-     metres, x east and z south from the north-west corner; code positions are these minus (520, 365). -->
+     metres, x east and z south from the north-west corner; code positions are these minus (520, 365). tests/farmPlanMap.test.js holds the
+     corners, fields and outline here equal to src/world/layoutNew.js. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,500;0,700;1,400;1,500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
 <style>
@@ -388,8 +389,8 @@ function drawProposed(root) {
     m0: [-10, 215], m1: [200, 225], m2: [412, 235], m3: [618, 228], m4: [720, 195], m5: [885, 200],
     s0: [618, 335], e1: [885, 335], s1: [618, 355], e2: [885, 355],
     q0: [-10, 365], q1: [195, 370],
-    p1: [195, 440], p2: [412, 440], p3: [618, 440],
-    r0: [-10, 565], r1: [200, 565], r2: [420, 545], r3: [640, 525], e3: [885, 520],
+    p1: [195, 440], pe: [204.2, 440], p2: [412, 440], p3: [618, 440],
+    r0: [-10, 565], r1: [195, 565], re: [204.2, 565], r2: [420, 545], r3: [640, 525], e3: [885, 520],
     l4: [640, 660], e4: [885, 650],
     b0: [-10, 880], b2: [420, 880], b3: [640, 880], b4: [885, 880],
   };
@@ -399,14 +400,15 @@ function drawProposed(root) {
     ['top', 'arable', 'o2 o3 m4 m3 m2', 'hedge'],
     ['pit', 'rough', 'o3 o4 m5 m4', 'hedge'],
     ['wet', 'marsh', 'm0 m1 q1 q0', 'hedge'],
-    ['home', 'ride', 'm1 m2 p2 p1 q1', 'hedge'],
+    ['home', 'ride', 'm1 m2 p2 pe p1 q1', 'hedge'],
     ['stead', 'yardland', 'm2 m3 s0 s1 p3 p2', 'hedge'],
     ['lanefield', 'arable2', 'm3 m4 m5 e1 s0', 'hedge'],
     ['longpiece', 'arable', 's1 e2 e3 r3 p3', 'hedge'],
     ['far', 'arable', 'q0 q1 p1 r1 r0', 'hedge'],
-    ['sheep', 'grass', 'p1 p2 r2 r1', 'wall'],
+    ['sunk', 'lane', 'p1 pe re r1', 'hedge'],
+    ['sheep', 'grass', 'pe p2 r2 re', 'wall'],
     ['hay', 'hay', 'p2 p3 r3 r2', 'hedge'],
-    ['hill', 'rough', 'r0 r1 r2 b2 b0', 'wall'],
+    ['hill', 'rough', 'r0 r1 re r2 b2 b0', 'wall'],
     ['brook', 'grass', 'r2 r3 l4 b3 b2', 'hedge'],
     ['ley', 'ley', 'r3 e3 e4 l4', 'hedge'],
     ['south', 'arable2', 'l4 e4 b4 b3', 'hedge'],

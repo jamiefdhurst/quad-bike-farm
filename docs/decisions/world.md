@@ -1805,3 +1805,11 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - **The edge is the line.** Cells within a cell's width of the outline are drawn and cut by the clip, so the litter reaches the hedge with no ragged gap and stops exactly there; cells further out are skipped. A drift whose middle is outside is still left out (`woods.inWoods`), and one on the line is cut.
 - **Today's wood is untouched.** It has no outline, so no clip: every canvas call it makes (summer and autumn, fine and coarse) was fingerprinted on main and again after, and they are identical. `tests/woods.test.js` checks it sets no clip and lays every cell of its rectangle once and every drift.
 - **The tests honour the clip.** `tests/helpers/woodFloorPaint.js` records `paintWoods` on a canvas that clips as a real one does, so `tests/woodMove.test.js` can say no litter lands outside the outline at all, where #986's allowed a metre and 2% of spots.
+
+
+## The plan's map page has the green lane's field (#995)
+
+- **The map page follows the code.** `docs/farm-plan-map.html` has #684's corners (`pe` and `re` added, `r1` at x 195) and the lane's field between Far Field and the Sheep Field, and `docs/farm-plan.svg` is re-rendered from it with `tools/farmPlanSvg.mjs`. Only those four fields' polygons changed in the SVG.
+- **Home Ground has `pe` too.** The code's Home Ground runs `p2 pe p1`, a corner on its straight south side, so its shape is the same either way; the page has it so its fields are the code's exactly.
+- **The lane's id on the page is `sunk`.** The page already had the green lane's entry under `sunk`, and its `lane` is the public road, so the field takes `sunk` and a click shows what it is for. As with the farmstead (`stead` on the page), the test maps the code's key to the page's.
+- **A test holds them together.** `tests/farmPlanMap.test.js` reads the page's corners, fields (the drive included, drawn on its own), walled fields and outline and fails on any difference from `layoutNew.js`, so a plan change that moves one and not the other is caught. With these changes nothing else differed.
