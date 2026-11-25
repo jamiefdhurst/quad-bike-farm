@@ -64,7 +64,7 @@ describe('an engine parked in the barn', () => {
   });
 });
 
-describe('the second span', () => {
+describe('the fittings in and round the barn', () => {
   const s = barnShape(L);
   it('keeps the fittings that moved outside the walls, and the generator and silage off the building', () => {
     expect(insideBarn(L, L.generator.x, L.generator.z, -0.5)).toBe(false);

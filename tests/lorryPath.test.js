@@ -9,7 +9,7 @@ const plan = (p) => [p.x + PLAN_ORIGIN[0], p.z + PLAN_ORIGIN[1]];
 const around = (name, p, halfX, halfZ) => ({ name, rect: [plan(p)[0] - halfX, plan(p)[1] - halfZ, plan(p)[0] + halfX, plan(p)[1] + halfZ] });
 const planRect = (k) => [k.minX + PLAN_ORIGIN[0], k.minZ + PLAN_ORIGIN[1], k.maxX + PLAN_ORIGIN[0], k.maxZ + PLAN_ORIGIN[1]];
 const DRIVE_Z = DRIVE_PLAN.z;
-const BARN = [498, 319, 524, 337]; // the barn's walls on the plan, both spans (docs/farm-plan.md)
+const BARN = [498, 319, 524, 337]; // the barn's walls on the plan (docs/farm-plan.md)
 
 /** What stands in the farmstead that a lorry cannot drive through, as plan rectangles: buildings, kept-clear places (less the lorry's own circle), the garden and the
  * stackyard, the girls' cars and the yard's trailers and tanks (a trailer as the square that holds it). Vehicles that come and go (the day's quads) are not here. */

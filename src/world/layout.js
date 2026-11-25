@@ -347,8 +347,8 @@ const RAW = {
   moneyTin: at('barn', { x: -3.9, z: -4.4, y: 1.05 }),
   // The bay painted on the barn floor in front of the bench: park a quad here to work on it at the bench (workshop/bench.js).
   bay: at('barn', { x: 1.7, z: -1.5, halfX: 1.5, halfZ: 1.1, yaw: 0 }),
-  // The big bay, nose-in from the doors: the tractor, UTV, the Tor and the Crag and cars are worked on here, at the same bench (workshop/bench.js).
-  // A trolley jack and axle stands stand by it (workshop/jackModel.js). barnPlan.js gives it, and the rest of the barn's things, their places in the barn (#818).
+  // The big bay: the tractor, UTV, the Tor and the Crag and cars are worked on here, at the same bench (workshop/bench.js), with a trolley jack and axle
+  // stands by it (workshop/jackModel.js). These numbers are the old barn's; barnPlan.js gives it, and the rest of the barn's things, their places in the barn (#818).
   bay2: at('barn', { x: -1.4, z: 9.2, halfX: 3.0, halfZ: 1.9, yaw: 0 }),
   // The shed kit bought from the catalogue on the workbench (farm/shed.js, workshop/shedModels.js), standing in the barn the morning after it is paid for.
   // The compressor stands on the west wall beside the barn find, facing the room (yaw is the way it faces, 0 being +z); the parts washer on the floor at the
@@ -402,8 +402,8 @@ const RAW = {
   // up, `width` across. The ground is levelled under it (terrainHeight.js); a test checks it is clear of the track, the bogs, the bales and the ramp.
   dragStrip: { x: -30, z: 19, yaw: Math.PI / 2 - 0.2, length: 56, runOff: 8, width: 10 },
 
-  // The line-up spaces (world/challenges.js, lineUpBays.js): four old railway sleepers half sunk in the grass by the south hedge, east of the barn's
-  // extension doorway and west of the field gate, for the tidiest line-up challenge on the barn's chalkboard. `bays` of them side by side `spacing` m
+  // The line-up spaces (world/challenges.js, lineUpBays.js): four old railway sleepers half sunk in the grass by the south hedge, west of the
+  // field gate, for the tidiest line-up challenge on the barn's chalkboard. `bays` of them side by side `spacing` m
   // apart along the hedge, centred on x, z, each `length` m deep with a quad's nose to yaw (a quad's yaw, here towards the hedge); the sleeper lies
   // across the nose end. Clear of the spawn keep-out and the track (a test checks).
   lineUp: at('yard', { x: 10, z: 17, yaw: 0, bays: 4, spacing: 3, length: 3 }),
