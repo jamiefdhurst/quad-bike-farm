@@ -271,6 +271,8 @@ export function createHost(g, { copy = () => {} } = {}) {
       pitentrance: g.world.fields.quarry?.gates.length > 1 ? (() => { const w = g.world.fields.quarry.gate; return { x: w.x - w.inward[0] * 13, z: w.z - w.inward[1] * 13 }; })() : null, // out on the lane gate's bellmouth by the lane, looking at the gate and the spoil bank (#1002)
       pitwall: g.world.fields.quarry ? { x: g.pitGates[0].x - g.pitGates[0].tx * 4, z: g.pitGates[0].z - g.pitGates[0].tz * 4 } : null,
       plant: (() => { const q = g.world.fields.quarry; const s = q && plantSite(q, ground); return s ? plantPoint(s, -5, 0) : null; })(), // the pit's screening plant, behind its hopper on the pad's line
+      pitpond: g.world.fields.quarry ? (() => { const q = g.world.fields.quarry; const p = q.pond; const a = Math.atan2(q.pit.z - p.z, q.pit.x - p.x); return { x: p.x + Math.cos(a) * (p.rx + 3), z: p.z + Math.sin(a) * (p.rz + 3) }; })() : null, // on the pit's floor by its pond, at the gap in the reeds where the drums were dumped (#1003)
+      pitcontainer: (() => { const c = g.scene?.getObjectByName('quarrySite')?.getObjectByName('container'); return c ? { x: c.position.x + Math.cos(c.rotation.y) * 7, z: c.position.z - Math.sin(c.rotation.y) * 7 } : null; })(), // 7 m off the doors of the pit's old container, on its hardstanding (#1003)
       viewpoint: layout.hill?.viewpoint, // the flat rock at the top of the pasture, where the flask is
       hut: g.world.hutShape?.footOfSteps ?? null, // the foot of its steps, not inside it
       terraces: layout.hill?.paddocks?.east.terraces?.stand ?? null, // the sheep field's top tread, looking down its banks

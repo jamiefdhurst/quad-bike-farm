@@ -1854,8 +1854,17 @@ export const FAQ_SECTIONS = [
         a: `In the north-east corner, beside the lane, there is a field of its own with an old gravel pit in it, roughly 90 m by 70 m and about 14 m deep. Ride up the stone track north from the yard
           to the pit's farm gate (it starts tied open; look at it and press <kbd>E</kbd> to shut it or open it). From the
           gate a pale gravel road runs across the field to the lip, where it forks: one road winds down the pit's wall each way round to the floor, wide enough for a quad or the tractor and dropping about one metre in four to five. Ride down one and back up the other for a loop. Down on the floor are
-          heaps of grey gravel and buff sand you can ride over, an old excavator nose to the wall, a screening plant on a level pad (a hopper over a crusher, a conveyor up to a screen and a second conveyor that ends over one of the heaps, with a generator and a site cabin beside it, and the excavator by the hopper, its bucket over the rim), a pond in the low corner with a pile of drums and tyres by it, and boulders fallen from the walls. Up in the field by the gate stands a steel container on sleepers, one door ajar and the other padlocked. The girls will not follow you down: they wait inside the gate.`,
+          heaps of gravel and sand you can ride over, gone grassy with years of standing, a screening plant on a cracked pad (a hopper over a crusher, a conveyor up to a screen and a second conveyor that ends over one of the heaps, with a generator and a site cabin beside it, and an old excavator by the hopper, its bucket over the rim), a pond in the low corner ringed with reeds and rushes, with a pile of rusted drums and tyres by it, and boulders fallen from the walls. Up in the field by the gate stands a steel container on sleepers, chained shut. The girls will not follow you down: they wait inside the gate.`,
         tip: 'The gravel pit is through the farm gate at the end of the stone track north. Two gravel roads wind down its wall, one each way round.',
+      },
+      {
+        q: 'Is anyone still working the gravel pit?',
+        a: `No. It was worked until years ago and left, and everything in it shows it. The excavator's paint has faded to a chalky yellow with rust running down from every pin, its windscreen has been put through and grass and nettles grow up through its tracks. The site cabin is shut and padlocked with its windows boarded up, and its chair has blown over beside a weathered table. The long conveyor's belt has torn through and hangs down, weeds grow round every footing of the plant and in the cracks of its pad, and its cable has long gone. The heaps are crusted over with grass, birch seedlings and buddleia; the drums by the pond have rusted, their labels long gone, with weeds through them; and up by the gate the container stands chained shut on an old concrete hardstanding, a young birch coming up between its sleepers.`,
+        tip: 'The gravel pit has been left for years: a padlocked cabin, a chained container and grass through the excavator\'s tracks.',
+      },
+      {
+        q: 'Can I get into the pit\'s cabin or the container?',
+        a: `No. The cabin by the screening plant is padlocked and its windows are boarded, and the container by the gate is chained shut round its door handles with a padlock through the chain. Both are solid: you ride round them, not into them.`,
       },
       {
         q: 'How do I get out of the gravel pit by the wall?',
