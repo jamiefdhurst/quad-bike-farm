@@ -177,3 +177,29 @@ describe('a top under a jumper or a wax jacket (#1143)', () => {
     }
   }, 120000);
 });
+
+describe('her clothes as the game puts them on (#1143)', () => {
+  let girls;
+  beforeAll(async () => {
+    girls = await buildAllGirls();
+  }, 120000);
+  it('reshapes her live with her hair tied back, keeping her paint on her (a new bust size gives her body a different number of corners)', async () => {
+    const { reshapeFigure, refitOutfit, OUTFITS, bodyMesh } = await import('../src/npc/outfit.js');
+    const { CHARACTERS } = await import('../src/npc/characters.js');
+    for (const { id, rig } of girls) {
+      const { params } = CHARACTERS.find((c) => c.id === id);
+      const base = OUTFITS[params.outfit];
+      const outfit = { ...base, style: { ...base.style, ponytail: true } };
+      refitOutfit(rig, outfit);
+      for (const bust of [params.bust + 0.3, params.bust]) {
+        expect(() => reshapeFigure(rig, { bust, waist: params.waist, hips: params.hips }, outfit), id).not.toThrow();
+        const uv = bodyMesh(rig).geometry.attributes.uv;
+        expect(uv.count, id).toBe(bodyMesh(rig).geometry.attributes.position.count);
+        // Her neckline cut into them: every UV in the texture's left half, or on the neckline strip in its right.
+        const off = Array.from({ length: uv.count }, (_, i) => uv.getX(i)).filter((x) => x > 0.5001 && Math.abs(x - 0.75) > 1e-4);
+        expect(off.length, `${id} at bust ${bust}`).toBe(0);
+      }
+      refitOutfit(rig, base);
+    }
+  }, 240000);
+});

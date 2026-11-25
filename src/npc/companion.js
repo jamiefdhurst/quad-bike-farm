@@ -5,7 +5,7 @@ import { StateMachine } from './stateMachine.js';
 import { CharacterRig } from './characterRig.js';
 import { DEFAULT_COMPANION_PARAMS } from './companionParams.js';
 import { outfitsFor } from './outfits.js';
-import { applyOutfit, refitOutfit, reshirt, restyle, withJumper, withCoat, setHood, OUTFITS, PALETTE } from './outfit.js';
+import { applyOutfit, refitOutfit, reshapeFigure, reshirt, restyle, withJumper, withCoat, setHood, OUTFITS, PALETTE } from './outfit.js';
 import { shapeFigure } from './figure.js';
 import { BodyShake } from './bodyShakeView.js';
 import { StartingAttempt, DEFAULT_STARTING_PARAMS } from './startingAttempt.js';
@@ -281,8 +281,7 @@ export class Companion {
     const next = this.figureAmounts();
     if (Object.keys(next).every((k) => next[k] === this.figure[k])) return;
     this.figure = next;
-    shapeFigure(this.rig, next);
-    refitOutfit(this.rig, this.outfit);
+    reshapeFigure(this.rig, next, this.outfit);
   }
 
   /** Her shirt in the colour of her favourite quad, which isn't known until the game has dealt them out. */
