@@ -68,6 +68,11 @@ describe('the river\'s steps (#1000)', () => {
     for (const p of pools) expect(cut(p.b - 0.5), `pool ${p.a.toFixed(0)} to ${p.b.toFixed(0)}`).toBeGreaterThan(cut(p.a + 0.5));
   });
 
+  it('has a bed with no ledge along the river: it shelves from a pool\'s deep foot up onto its riffle no steeper than 1 in 1 (the surface alone hid a 0.45 m step)', () => {
+    const bed = (x) => heights.heightAt(x, brook.zAt(x));
+    for (let x = pools[0].a; x < brook.tailMeets(); x += 0.25) expect(Math.abs(bed(x + 0.25) - bed(x)), `x ${x}`).toBeLessThan(0.27);
+  });
+
   it('never rises downstream, through every pool and riffle', () => {
     for (let x = brook.minX + 1; x < brook.maxX - 8; x += 0.25) expect(surface(x + 0.25) - surface(x), `x ${x}`).toBeLessThan(0.01);
   });

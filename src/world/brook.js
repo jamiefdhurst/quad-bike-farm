@@ -94,7 +94,8 @@ export function createBrook(layout) {
   for (let i = 0; i < gridN; i++) {
     const x = gridFrom + i * gridDx;
     for (const r of riffleList) {
-      riffleGrid[i] = Math.max(riffleGrid[i], smoothstep(r.a - 0.5, r.a, x) * (1 - smoothstep(r.b, r.b + 0.5, x))); // shallow over the whole of its fall
+      // Shallow over the whole of its fall; the bed shelves up onto it from the pool's deep foot over a metre and back down over three quarters.
+      riffleGrid[i] = Math.max(riffleGrid[i], clamp(x - (r.a - 1), 0, 1) * clamp((r.b + 0.75 - x) / 0.75, 0, 1));
       const bar = smoothstep(r.barFrom - 1, r.barFrom + 1, x) * (1 - smoothstep(r.barTo - 1, r.barTo + 1, x));
       if (bar > Math.abs(barGrid[i])) barGrid[i] = bar * r.side;
     }
@@ -111,15 +112,15 @@ export function createBrook(layout) {
   const crossingRiffleK = (x) => (Math.abs(x - cross.x) < cross.half ? riffleK(x) : 0);
   // The pools, each { a, b } from its head to its foot: the head pool from `steps.from` down to the crossing, then one between each riffle and the next,
   // so every pool ends in a riffle. Either side of the crossing a pool's deep water ends where the crossing's bed ramps up to its shallows, and either
-  // side of a riffle where its shallow water begins, half a metre beyond its fall. Below the last riffle, where the river narrows into the brook, there
-  // is no pool: the surface falls `tail.share` as fast as the steady fall until it meets it again, at most at `steps.to`.
+  // side of a riffle where the bed starts to shelve up onto it. Below the last riffle, where the river narrows into the brook, there is no pool: the
+  // surface falls `tail.share` as fast as the steady fall until it meets it again, at most at `steps.to`.
   const shallows = cross ? cross.half + cross.ramp : 0;
   const poolList = [];
   if (steps) {
     let a = steps.from;
     for (const r of riffleList) {
-      poolList.push({ a, b: r.crossing ? Math.min(r.a, cross.x - shallows) : r.a - 0.5 });
-      a = r.crossing ? Math.max(r.b, cross.x + shallows) : r.b + 0.5;
+      poolList.push({ a, b: r.crossing ? Math.min(r.a, cross.x - shallows) : r.a - 1 });
+      a = r.crossing ? Math.max(r.b, cross.x + shallows) : r.b + 0.75;
     }
   }
   // Above the head pool the steady surface is let down `lead.depth` m over `lead.reach` m, where the pasture's stream falls into the river's head, so the
@@ -129,7 +130,10 @@ export function createBrook(layout) {
   /** Metres of water standing in the river's pools and riffles at x: deepening down each pool to its foot, shallow over a riffle. */
   function steppedWater(x) {
     const w = steps.water;
-    const p = poolList.find((q) => x < q.b);
+    // Up to a riffle's middle the pool above it, held at its foot's depth past its foot, then the next pool, held at its head's: so the water's depth
+    // is one smooth run from the deep foot onto the shallows and off again, and the bed has no ledge (the recheck found a 0.45 m one at every foot).
+    const k = riffleList.findIndex((r) => x < r.x);
+    const p = k < 0 ? null : poolList[k];
     const pool = p ? mix(w.head, w.foot, clamp((x - p.a) / Math.max(1, p.b - p.a), 0, 1)) : river.water; // below the last riffle, the steady water
     return mix(pool, w.riffle, riffleK(x));
   }
