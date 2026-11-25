@@ -454,7 +454,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I get over the east brook on the boundary track?',
-        a: `Ride straight through it. Where the boundary track comes down the farm's east side through Low Ley it fords the brook: the bed is built up into a level shallow about 6 m wide with only about 20 cm of water over it, and both banks are worn down into a muddy landing, so a quad goes down one, through and up the other. It is a wade, not the brook's own channel either side of it, which is deeper and steep-sided, so keep to the track. \`tp me to brookford\` puts you on the track just north of it.`,
+        a: `Ride straight through it. Where the boundary track comes down the farm's east side through Low Ley it fords the brook: the bed is built up into a level shallow about 6 m wide with only about 20 cm of water over it, and both banks are worn down into a muddy landing, so a quad goes down one, through and up the other. Either side of the ford the brook is deeper and steep-sided, so keep to the track. \`tp me to brookford\` puts you on the track just north of it.`,
         tip: 'The boundary track fords the east brook in Low Ley: keep to the track and ride straight through.',
       },
       {
