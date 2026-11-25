@@ -98,3 +98,29 @@ describe('the walk after a merge', () => {
     expect(test).toMatch(/Close the walk as soon as every line is ticked/);
   });
 });
+
+// /todo batch builds several small issues as one PR (#1180).
+describe('/todo batch', () => {
+  const todo = read('.claude/commands/todo.md');
+  const section = todo.split(/^## Batches$/m)[1]?.split(/^## /m)[0] ?? '';
+
+  it('has its section, and the argument-hint names it', () => {
+    expect(section, 'todo.md has a Batches section').not.toBe('');
+    expect(hint(todo)).toMatch(/batch/);
+    expect(section).toContain('node tools/nextTodo.mjs batch');
+  });
+
+  it('runs steps 1 and 2 for each issue, then one worktree for the first, one test run and one PR', () => {
+    for (const s of ['node tools/issueLint.mjs <n>', 'node tools/issueCheck.mjs start <n>', 'node tools/issueCheck.mjs plan <n>', 'tools/worktree.sh start <first>', 'npm test', 'npm run smoke']) {
+      expect(section).toContain(s);
+    }
+  });
+
+  it('gives each issue its own commit and closing line, one decisions section headed with every number, and drops one that has to stop', () => {
+    expect(section).toMatch(/Each issue has its own commit/);
+    expect(section).toMatch(/node tools\/issueCheck\.mjs post <n>` for each issue/);
+    expect(section).toMatch(/headed with every issue number/);
+    expect(section).toMatch(/drops out of the batch/);
+    expect(section).toMatch(/`🐛 bug` if any of them is one/);
+  });
+});
