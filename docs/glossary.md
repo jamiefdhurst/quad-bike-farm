@@ -30,8 +30,10 @@ A row is for a name with a choice in it. A thing with one obvious name does not 
 | moor gate | The gate in the hill pasture's wall onto Back Lane and the Moor | hill gate |
 | shepherd's hut | The little wheeled hut on top of the hill pasture, with the bunk, the stove and the kettle | shepherds hut, shepherd's shed, hill hut, hut on wheels |
 | river | The wide river across the riverside meadow, past the pasture's east hedge: the brook widened | big stream |
-| crossing | The marked shallows across the river, between the white posts | river ford |
-| gravel bar | The low shelf of gravel on the inside of each of the river's bends, sloping gently into the water | shingle bank |
+| crossing | The marked shallows across the river, between the white posts: the river's first riffle | river ford |
+| pool | A still, dark, deep stretch of the river between two riffles, deep enough to drown an engine | deep hole, plunge pool |
+| riffle | A short shallow run of broken water over stones between two of the river's pools, where its surface steps down; a wade | rapids, white water, cascade |
+| gravel bar | The low shelf of gravel on the inside of each of the river's bends, and beside each riffle, sloping gently into the water | shingle bank |
 | cut bank | The steep face of bare earth on the outside of each of the river's bends | river cliff |
 | drinking place | Where the cattle come down to the river, the bank trodden down into a muddy slope | watering hole |
 | gravel pit | The old pit in the hedged field north of the barley field, through the gate in its north hedge (on the new farm, the Old Pit in the north-east corner by the lane, fenced in post and wire): the deep cut, its haul roads, pond and heaps | sandpit, sand pit, gravel quarry, borrow pit |

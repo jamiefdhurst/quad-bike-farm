@@ -454,7 +454,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where is the river, and how do I cross it?',
-        a: `The river is in Brook Meadow, the big open pasture south of Hay Meadow: through the gateway on the stone track's way south, at the meadow's north-west corner. It runs east with the land, wide and in bends. Willows stand along both banks, the cattle's drinking places are poached bare, and a river gate of hung boards shuts the water in wherever it crosses a boundary. Cross at the crossing, between the white posts: both banks are cut down to a muddy landing with gravel up it, and the water over the bed there is only a wade. Anywhere else the river is deep enough to drown an engine.`,
+        a: `The river is in Brook Meadow, the big open pasture south of Hay Meadow: through the gateway on the stone track's way south, at the meadow's north-west corner. It runs east with the land, wide and in bends. Willows stand along both banks, the cattle's drinking places are poached bare, and a river gate of hung boards shuts the water in wherever it crosses a boundary. Cross at the crossing, between the white posts: both banks are cut down to a muddy landing with gravel up it, and the water over the bed there is only a wade. The river runs in pools and riffles, and the crossing is its first riffle: the pools between are deep enough to drown an engine.`,
         tip: 'The river is in Brook Meadow, through the gateway on the stone track\'s way south. Cross it between the white posts.',
       },
       {
@@ -463,8 +463,13 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What is that sound by the river?',
-        a: `The river itself: water babbling over the stones at the crossing and a low murmur along the deep reaches, louder when the stream is up after rain and while it rains. By day you will hear rooks in the trees, a wagtail's quick "chis-ick", a moorhen calling from the reeds and the willows rustling when the wind is up. You hear it from about 40 m away, coming from wherever the water is nearest.`,
+        a: `The river itself: water babbling over the stones at the crossing and the other riffles (loudest at the crossing) and a low murmur along the deep pools, louder when the stream is up after rain and while it rains. By day you will hear rooks in the trees, a wagtail's quick "chis-ick", a moorhen calling from the reeds and the willows rustling when the wind is up. You hear it from about 40 m away, coming from wherever the water is nearest.`,
         tip: 'Listen at the river after rain: it runs louder when the stream is up.',
+      },
+      {
+        q: 'Why does the river go down in steps?',
+        a: `It runs in pools and riffles, as a real river over gravel does. A pool is a still, dark, deep stretch, a metre and more deep, whose surface hardly falls. At its foot the water spills over a riffle: a short shallow run over the stones, narrower, with a gravel bar showing on one side and broken pale water on top, where the surface drops a foot or more to the next pool. The land falls fastest below the crossing, so there the pools are short and a riffle comes every few lengths of a quad; lower down, where it is flatter, there is one long still pool. The crossing is the first riffle. A riffle is a wade, about 0.4 m deep, so you can ride through one at a walk; take it fast and the bow wave goes up the intake, as in the stream. The pools drown an engine however slowly you go in. <code>tp me to riffle</code> puts you on the bar beside the first riffle below the crossing.`,
+        tip: 'A riffle is a wade at a walk. The pools either side of it are deep enough to drown any engine.',
       },
       {
         q: 'Where is Back Lane, and what is on it?',
@@ -510,10 +515,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What happens if I miss the posts and ride into the river?',
-        a: `Outside the posts the river is deep, nearly a metre, and it is over the intake whatever speed you are doing, so the engine drowns within a second
-          or two, however slowly you go in. Reverse out, then let it drain (about 45 s standing, quicker running with the throttle open) before it will
+        a: `Outside the posts the river's pools are deep, a metre and more, and over the intake whatever speed you are doing, so the engine drowns within a
+          second or two, however slowly you go in. Only its riffles, the short shallow runs of broken water between the pools, are a wade. Reverse out, then let it drain (about 45 s standing, quicker running with the throttle open) before it will
           start. A snorkel only lets in less; it does not keep a Moorland clear of water that deep. The girls will have something to say.`,
-        tip: 'Outside the white posts the river is deep enough to drown any engine, at any speed.',
+        tip: 'Outside the white posts the river\'s pools are deep enough to drown any engine, at any speed.',
       },
       {
         q: 'Why is the road shining?',
