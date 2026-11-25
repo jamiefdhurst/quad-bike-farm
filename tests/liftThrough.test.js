@@ -5,7 +5,8 @@ import { DEFAULT_COMPANION_PARAMS as P } from '../src/npc/companionParams.js';
 import { DEFAULT_OUTING_PARAMS } from '../src/npc/outings.js';
 import { MindsHost } from '../src/npc/mindsHost.js';
 import { OFFER_KINDS, needsMetBy } from '../src/npc/chooser.js';
-import { DEFAULT_FAR_WALK_PARAMS, liftDrop, describeLift } from '../src/npc/farWalk.js';
+import { DEFAULT_FAR_WALK_PARAMS, liftDrop, describeLift, onTheWay } from '../src/npc/farWalk.js';
+import { afterDrive } from '../src/npc/driveMood.js';
 import { AMY_LIFT_LINES, JESS_LIFT_LINES } from '../src/npc/liftLines.js';
 import { VOICE_LINES as COMPANION_LINES } from '../src/npc/voiceLines.js';
 import { JESS_LINES } from '../src/npc/jessLines.js';
@@ -252,6 +253,60 @@ describe('a lift on the back of your quad (#1066)', () => {
     girl.fsm.name = 'idle';
     host.watchLift(girl, null, DT);
     expect(girl.lift).toBeNull();
+  });
+
+  it('forgets the lift if she is taken off it before she is on, so a later ride on your quad is not it', () => {
+    const s = setup();
+    const yours = fakeQuad();
+    yours.id = 'mine';
+    yours.position.x = 6;
+    s.host.farWalkOffers(s.girl, { quad: yours }, s.offers).find((o) => o.key === 'lift').take();
+    s.girl.quad = yours;
+    s.girl.fsm.name = 'walking';
+    s.girl.fsm.data = { goal: 'mount' };
+    s.host.watchLift(s.girl, { quad: yours }, DT);
+    expect(s.girl.lift).toBeTruthy(); // on her way to get on
+    s.girl.fsm.name = 'idle'; // called off by your wheel, say
+    s.girl.quad = null;
+    s.host.watchLift(s.girl, { quad: yours }, DT);
+    expect(s.girl.lift).toBeNull();
+    s.girl.quad = yours;
+    s.girl.fsm.name = 'seated'; // got on later for some other reason
+    s.host.watchLift(s.girl, { quad: yours }, DT);
+    expect(s.said).toEqual([]);
+  });
+
+  it('knows when she is still on her way (farWalk.js)', () => {
+    const way = (how, state, goal, sameQuad = true) => onTheWay({ how, state, goal, sameQuad });
+    expect(way('ask', 'walking', 'mount')).toBe(true);
+    expect(way('ask', 'mounting')).toBe(true);
+    expect(way('ask', 'dismounting', undefined, false)).toBe(true); // off another quad first
+    expect(way('ask', 'walking', 'wander')).toBe(false);
+    expect(way('ask', 'seated', undefined, false)).toBe(false);
+    expect(way('quad', 'walking', 'drive')).toBe(true);
+    expect(way('quad', 'cranking')).toBe(true);
+    expect(way('quad', 'driving')).toBe(true);
+    expect(way('quad', 'idle')).toBe(false);
+    expect(way('quad', 'driving', undefined, false)).toBe(false);
+  });
+
+  it('drops a quad lift and its outing if she is taken off it before she drives', () => {
+    const { host, girl, quad, offers } = setup();
+    host.farWalkOffers(girl, null, offers).find((o) => o.key === 'lift').take();
+    girl.quad = quad;
+    girl.fsm.name = 'walking';
+    girl.fsm.data = { goal: 'drive' };
+    girl.outingTo = { name: 'where she was going', x: HUT.x, z: HUT.z };
+    host.watchLift(girl, null, DT);
+    expect(girl.lift).toBeTruthy();
+    girl.fsm.name = 'idle';
+    host.watchLift(girl, null, DT);
+    expect(girl.lift).toBeNull();
+    expect(girl.outingTo).toBeNull();
+  });
+
+  it('getting there on a lift builds her driving confidence, as a drive she chose to end does', () => {
+    expect(afterDrive(0.5, 'arrived')).toBeGreaterThan(0.5);
   });
 
   it('knows when to get off (farWalk.js)', () => {

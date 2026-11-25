@@ -75,6 +75,17 @@ export function liftDrop({ boarded, on, stopped, distance, since }, p = DEFAULT_
   return stopped && distance <= p.liftDropWithin ? 'off' : null;
 }
 
+/**
+ * Whether she is still on her way to the lift (#1066), from her state, its goal if walking, and whether her quad is the lift's: onto the
+ * back of yours ('ask'), or to and off on a quad of her own ('quad'). Getting off another quad first counts. Re-tasked, the lift is dropped.
+ */
+export function onTheWay({ how, state, goal, sameQuad }) {
+  if (state === 'dismounting') return true;
+  if (!sameQuad) return false;
+  if (how === 'ask') return state === 'seated' || state === 'mounting' || (state === 'walking' && goal === 'mount');
+  return ['driving', 'starting', 'cranking', 'pushing', 'mounting', 'shuffling'].includes(state) || (state === 'walking' && ['drive', 'crank', 'push', 'start'].includes(goal));
+}
+
 /** A lift she is on, for the Girls tab and the console: what for, how, and how far off the place is from `from`; 'none' when she isn't on one. */
 export function describeLift(lift, from, labelOf = (k) => k) {
   if (!lift) return 'none';

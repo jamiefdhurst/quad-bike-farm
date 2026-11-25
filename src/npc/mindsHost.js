@@ -11,7 +11,7 @@ import { registerTuning } from '../core/tuning.js';
 import { DEFAULT_CALL_PARAMS, CALL_PARAM_RANGES, callThem, callSummary } from './callThem.js';
 import { nearestNamedSpot } from './spotNames.js';
 import { underCover } from './soaking.js';
-import { DEFAULT_FAR_WALK_PARAMS, FAR_WALK_PARAM_RANGES, splitFar, liftOffer, howShePlans, liftDrop, wayLength } from './farWalk.js';
+import { DEFAULT_FAR_WALK_PARAMS, FAR_WALK_PARAM_RANGES, splitFar, liftOffer, howShePlans, liftDrop, onTheWay, wayLength } from './farWalk.js';
 
 /** Where each kind of offer takes her, by the name of the place (`farPlaces`); a kind not listed has no place to walk to, or one near her by its own range. */
 export const FAR_PLACE_OF_KIND = {
@@ -187,7 +187,7 @@ export class MindsHost {
    * one way: she parks near it). `c.lift` remembers what for (#1066): got there, she gets off and does it (`liftArrived`).
    */
   takeLift(c, lift, yours, quad, kept = null) {
-    c.lift = { for: lift.for, place: lift.place, how: lift.how, since: 0, boarded: false, parkWithin: this.farParams.liftParkWithin, arrive: () => this.liftArrived(c, lift, kept) };
+    c.lift = { for: lift.for, place: lift.place, how: lift.how, quad: lift.how === 'ask' ? yours : quad, since: 0, boarded: false, parkWithin: this.farParams.liftParkWithin, arrive: () => this.liftArrived(c, lift, kept) };
     if (lift.how === 'ask') {
       c.selfEvents.push('join'); // "Shove up, I want a ride"
       c.requestMount(yours, { ownChoice: true, seat: 'pillion' });
@@ -207,6 +207,12 @@ export class MindsHost {
     if (!l) return;
     l.since += dt;
     const p = this.farParams;
+    // Taken off it on the way (your wheel, the bell, anything else she was asked to do): the lift is off, so a later ride doesn't count as it.
+    if (!l.boarded && !onTheWay({ how: l.how, state: c.fsm.name, goal: c.fsm.data?.goal, sameQuad: c.quad === l.quad })) {
+      c.lift = null;
+      if (l.how !== 'ask') c.outingTo = null;
+      return;
+    }
     if (l.how !== 'ask') {
       if (l.since > p.liftGiveUp && !c.fsm.is('driving')) c.lift = null;
       return;
