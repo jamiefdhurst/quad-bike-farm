@@ -300,13 +300,17 @@ class RecordedEngine {
     // of a bang (cut evenly, the Griffin's Carlton recording ticked every firing) and the recording's own spacing is kept.
     const frame = Math.round(0.001 * sampleRate);
     const hop = frame >> 1;
+    // It runs on the audio thread as the engine catches, so each window's energy comes from a running sum, not a sum of its own.
     const quietNear = (at, reach) => {
+      const lo = Math.max(0, at - reach);
+      const hi = Math.min(d.length - frame - 1, at + reach);
       let best = at;
       let bestE = Infinity;
-      for (let c = Math.max(0, at - reach); c <= Math.min(d.length - frame - 1, at + reach); c += hop) {
-        let e = 0;
-        for (let i = 0; i < frame; i++) e += d[c + i] * d[c + i];
-        if (e < bestE) [bestE, best] = [e, c];
+      let e = 0;
+      for (let i = 0; i < frame; i++) e += d[lo + i] * d[lo + i];
+      for (let c = lo; c <= hi; c++) {
+        if ((c - lo) % hop === 0 && e < bestE) [bestE, best] = [e, c];
+        e += d[c + frame] * d[c + frame] - d[c] * d[c];
       }
       return best;
     };
@@ -323,8 +327,13 @@ class RecordedEngine {
         const len = Math.max(frame, cuts[i + 1] - start);
         const s = { start, len, tail: Math.max(1, Math.min(Math.round(0.003 * sampleRate), end - start - len)), rpm: g.rpm * n, rms: g.rms, kind: key, gain: g.gain, next: null, ok: true, slice: i, whole: g };
         if (prev) prev.next = s;
-        // A cycle's last firing leads on to the next cycle's first where the two followed on in the recording.
-        else if (prevLast && prevLast.whole.next === g) prevLast.next = s;
+        // A cycle's last firing leads on to the next cycle's first where the two followed on in the recording, and ends where it
+        // starts, so the few milliseconds the quiet cut moved are neither played twice nor skipped.
+        else if (prevLast && prevLast.whole.next === g) {
+          prevLast.next = s;
+          prevLast.len = Math.max(frame, s.start - prevLast.start);
+          prevLast.tail = Math.max(1, Math.min(Math.round(0.003 * sampleRate), end - prevLast.start - prevLast.len));
+        }
         prev = s;
         out.push(s);
       }

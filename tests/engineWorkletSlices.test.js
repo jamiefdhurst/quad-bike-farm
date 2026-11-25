@@ -212,6 +212,9 @@ describe('pulseSplit', () => {
       // Labelled with the firing rate, so it is picked against one firing's period.
       expect(s.rpm).toBe(4800);
     }
+    // Each firing ends where the next in the recording starts, across cycles too: nothing played twice, nothing skipped.
+    for (const s of slices) if (s.next) expect(s.start + s.len, `slice at ${s.start}`).toBe(s.next.start);
+    expect(slices.filter((s) => s.next)).toHaveLength(31);
   });
 
   it('plays one firing per engine firing, in recording order through each cycle and on into the next', () => {
