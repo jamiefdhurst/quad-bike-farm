@@ -86,7 +86,8 @@ async function run() {
   if (process.env.SMOKE_CPU_THROTTLE) await (await page.createCDPSession()).send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.SMOKE_CPU_THROTTLE) }); // a starved machine (#770)
   await page.evaluateOnNewDocument(stubDraws);
   await page.evaluateOnNewDocument(recordLoadSteps);
-  if (!built && PLAYS) await page.coverage.startJSCoverage({ resetOnNavigation: false }); // what the run reaches, per file (smokeCoverage.mjs)
+  // What the run reaches, per file (smokeCoverage.mjs). Whole functions, not blocks: block coverage doubled the world's build on the dev server (#1212).
+  if (!built && PLAYS) await page.coverage.startJSCoverage({ resetOnNavigation: false, useBlockCoverage: false });
   await page.goto(`${base}?smoke&${QUERY}`, { waitUntil: 'load' });
   try {
     await waitForReady(page);
