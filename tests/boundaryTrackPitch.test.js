@@ -17,16 +17,17 @@ const where = (r) => `plan (${plan(r).map((v) => v.toFixed(0)).join(', ')}): alo
 const steep = (r) => r.along > LIMIT || r.across > LIMIT;
 
 /**
- * Stretches still steeper than the limit, each waiting on Jamie in its issue: a box in plan metres, the steepest it measured when listed (held to no
- * worse), and why it is not fixed here. Never add to this; take one off when its stretch is fixed (the test fails while it is listed and gone).
+ * Stretches still steeper than the limit, each waiting on Jamie in its issue: a box in plan metres, the steepest it measured along and across when
+ * listed (each held to no worse), and why it is not fixed here. Never add to this; take one off when its stretch is fixed (the test fails while it is listed and gone).
  */
 const KNOWN = [
   {
     issue: 1061,
     box: [40, 600, 70, 760],
-    worst: 34.6,
+    along: 34.6,
+    across: 11.1,
     why: 'Hill Pasture\'s west side: the track comes straight down the hill\'s banks, which are 33 to 39 degrees all across the pasture west of plan x 320, '
-      + 'and no line crosses a bank steeper than 27 degrees under 20 both along and across: the gentle way down is at plan x 350 to 410, 350 m from the boundary',
+      + 'and no line crosses a bank steeper than 27 degrees under 20 both along and across: the gentle way down is at plan x 350 to 410, about 300 m east of the west hedge',
   },
 ];
 const inBox = ([x0, z0, x1, z1], r) => {
@@ -50,7 +51,8 @@ describe('the pitch of the boundary track (#1061)', () => {
       const inside = samples.filter((r) => inBox(k.box, r));
       expect(inside.some(steep), `#${k.issue} is fixed: take it off KNOWN`).toBe(true);
       const worst = steepest(inside);
-      expect(Math.max(worst.along.along, worst.across.across), `#${k.issue}`).toBeLessThanOrEqual(k.worst + 0.1);
+      expect(worst.along.along, `#${k.issue} along`).toBeLessThanOrEqual(k.along + 0.1);
+      expect(worst.across.across, `#${k.issue} across`).toBeLessThanOrEqual(k.across + 0.1);
     }
   });
 });
