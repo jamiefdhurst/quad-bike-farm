@@ -176,3 +176,19 @@ describe('/todo batch', () => {
     expect(section).toMatch(/`🐛 bug` if any of them is one/);
   });
 });
+
+// A session took #1107 while another worked it, as tools/worktree.sh start handed out the existing worktree (#1191).
+describe('an issue another session has a worktree for', () => {
+  const todo = read('.claude/commands/todo.md');
+  const step = (n) => todo.split(new RegExp(`^${n}\\. `, 'm'))[1]?.split(/^\d+\. /m)[0] ?? '';
+
+  it('is not eligible, and a refusal from start means taking the next issue', () => {
+    expect(todo.match(/^- \*\*Eligible\*\*.*$/m)?.[0]).toMatch(/no open PR yet.*and no worktree yet/);
+    expect(step(3)).toMatch(/If it refuses .*stop.*take the next issue/);
+    expect(step(3), 'a session resuming its own item uses path').toContain('tools/worktree.sh path <n>');
+  });
+
+  it('has /test finish or reuse its walk\'s worktree rather than expect start to hand it out', () => {
+    expect(read('.claude/commands/test.md')).toMatch(/It refuses \(exit 1\) if the walk already has a worktree.*tools\/worktree\.sh path <n>/);
+  });
+});

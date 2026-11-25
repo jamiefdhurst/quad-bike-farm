@@ -1,6 +1,7 @@
 // The issues /todo takes next, in order (.claude/commands/todo.md; the phases are the milestones in .github/settings.yml).
 //
-//   node tools/nextTodo.mjs [alongside] [count]    prints the next few eligible issues, as "#n title (milestone)"
+//   node tools/nextTodo.mjs [alongside] [count]    prints the next few eligible issues, as "#n title (milestone)", leaving out any with an open
+//                                                  PR or a worktree (#1191)
 //   node tools/nextTodo.mjs --label "🧩 cohesion"   the same for /tidy (or "🚀 performance" for /perf): only that label, and only
 //                                                  the current phase or the alongside milestones
 //   node tools/nextTodo.mjs batch [alongside]      the next issue a batch can start from and up to three more that go with it (#1180), then the
@@ -42,6 +43,14 @@ export function dependsOn(body) {
   return line ? [...line[1].matchAll(/#(\d+)/g)].map((m) => Number(m[1])) : [];
 }
 
+/**
+ * The issues another session has a worktree for, from `git worktree list --porcelain`: a path ending `issue-<n>` (#1191), which is what
+ * `tools/worktree.sh start` makes. A side worktree such as `issue-1143-bust-main` isn't counted; its issue's own `issue-1143` is.
+ */
+export function withWorktree(listing) {
+  return [...(listing ?? '').matchAll(/^worktree .*\/issue-(\d+)$/gm)].map((m) => Number(m[1]));
+}
+
 /** The phase being worked: the earliest milestone in run order that any open issue is in (null if none). */
 export function currentPhase(issues) {
   const titles = issues.map((i) => i.milestone).filter(Boolean).sort(byMilestone);
@@ -50,7 +59,8 @@ export function currentPhase(issues) {
 
 /**
  * Open issues ({ number, title, body, labels: [names], milestone: title or null }) in the order /todo takes them.
- * `openNumbers` is every open issue's number (a dependency is met when it isn't in it); `withPr` the numbers with an open PR.
+ * `openNumbers` is every open issue's number (a dependency is met when it isn't in it); `withPr` the numbers already taken: with an open PR,
+ * or a worktree another session may be working in (`withWorktree`).
  * A `🔜 next` issue comes first (the lowest-numbered, in any milestone or none), then the earliest milestone in run order, then number.
  * `alongside` takes only the alongside milestones, `🔜 next` or not; an issue with no milestone is only picked by `🔜 next`.
  * `label` (for /tidy and /perf) takes only issues with that label, in the current phase or an alongside milestone: a later phase's waits.
@@ -137,7 +147,9 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const issues = raw.map((i) => ({ ...i, labels: i.labels.map((l) => l.name), milestone: i.milestone?.title ?? null }));
   const withPr = gh(['pr', 'list', '--state', 'open', '--limit', '200', '--json', 'body,headRefName'])
     // "Part of" too, so an issue of a batch PR that it won't close still counts as taken (#1180).
-    .flatMap((p) => [...`${p.body ?? ''} ${p.headRefName}`.matchAll(/(?:closes|fixes|resolves|part of) #(\d+)|issue-(\d+)/gi)].map((m) => Number(m[1] ?? m[2])));
+    .flatMap((p) => [...`${p.body ?? ''} ${p.headRefName}`.matchAll(/(?:closes|fixes|resolves|part of) #(\d+)|issue-(\d+)/gi)].map((m) => Number(m[1] ?? m[2])))
+    // A worktree with no PR yet is taken too: another session may be planning or building it (#1191).
+    .concat(withWorktree(execFileSync('git', ['worktree', 'list', '--porcelain'], { encoding: 'utf8' })));
   const at = process.argv.indexOf('--label');
   const label = at > 0 ? process.argv[at + 1] : null;
   const opts = { alongside: process.argv.includes('alongside'), label };

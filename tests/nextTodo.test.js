@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { ALONGSIDE, AREAS, POLISH, READY, BATCH_SIZE, NOT_BATCHED, batch, batchLabels, checkBatch, byMilestone, currentPhase, dependsOn, eligible, goesWith, unbatchable } from '../tools/nextTodo.mjs';
+import { ALONGSIDE, AREAS, POLISH, READY, BATCH_SIZE, NOT_BATCHED, batch, batchLabels, checkBatch, byMilestone, currentPhase, dependsOn, eligible, goesWith, unbatchable, withWorktree } from '../tools/nextTodo.mjs';
 
 const issue = (number, milestone, extra = {}) => ({ number, title: `t${number}`, body: '', labels: [], milestone, ...extra });
 const order = (issues, open, pr, opts) => eligible(issues, open ?? issues.map((i) => i.number), pr, opts).map((i) => i.number);
@@ -43,6 +43,21 @@ describe('which issue /todo takes next', () => {
     const issues = ['❓ question', '🤦‍♂️ wontfix', '🧪 testing', '💤 later'].map((l, n) => issue(10 + n, '0 · Foundations', { labels: [l] }));
     issues.push(issue(20, '0 · Foundations'), issue(21, '0 · Foundations'));
     expect(order(issues, undefined, [20])).toEqual([21]);
+  });
+
+  // #1191: a session took #1107 while another was working it, as only an open PR counted.
+  it('skips an issue another session has a worktree for, read from git worktree list', () => {
+    const listing = [
+      'worktree /Users/x/quad-bike-sim', 'HEAD 334f4bc8', 'branch refs/heads/main', '',
+      'worktree /Users/x/quad-bike-sim-worktrees/issue-11', 'HEAD 6e5bed10', 'branch refs/heads/issue-11-draw-the-busts', '',
+      'worktree /Users/x/quad-bike-sim-worktrees/issue-1143-bust-main', 'HEAD fa4f4414', 'detached', '',
+      'worktree /Users/x/quad-bike-sim-worktrees/issue-209', 'HEAD 40e8abaf', 'branch refs/heads/issue-209-voices', '',
+    ].join('\n');
+    // Only a path ending issue-<n>: issue-11 isn't issue-110, and a side worktree names no issue of its own.
+    expect(withWorktree(listing)).toEqual([11, 209]);
+    expect(withWorktree('')).toEqual([]);
+    const issues = [issue(11, '0 · Foundations'), issue(110, '0 · Foundations'), issue(209, '0 · Foundations'), issue(1143, '0 · Foundations')];
+    expect(order(issues, undefined, withWorktree(listing))).toEqual([110, 1143]);
   });
 
   it('waits for an issue whose dependencies are still open', () => {
