@@ -1,11 +1,13 @@
-// The river's sound (#999): water over stones at the crossing and a murmur along the deep reaches, from the nearest point of the river, louder when the
-// stream is up and in rain, heard from about 40 m; and by day rooks, a pied wagtail, a moorhen and the willows' leaves in the wind. Pure: where you are,
-// the river (brook.js) and the weather in, how much of each out; the sound itself is made on the spot by `audio/riverAudio.js`.
+// The river's sound (#999): water over stones at the crossing and the other riffles (#1000) and a murmur along the deep pools, from the nearest point of
+// the river, louder when the stream is up and in rain, heard from about 40 m; and by day rooks, a pied wagtail, a moorhen and the willows' leaves in the
+// wind. Pure: where you are, the river (brook.js) and the weather in, how much of each out; the sound itself is made on the spot by `audio/riverAudio.js`.
 
 export const DEFAULT_RIVER_SOUND_PARAMS = {
   heardFrom: 40, // m from the river's water at which its sound has fallen to nothing
   crossingBoost: 0.9, // how much more babble the crossing's riffle has than a reach of deep water
   crossingReach: 14, // m either side of the crossing over which its babble fades into the rest
+  riffleBoost: 0.35, // how much more babble each of the other riffles has than a pool: less than the crossing's, the widest and most stony (#1000)
+  riffleReach: 6, // m either side of a riffle over which its babble fades into the pools'
   upBoost: 0.8, // how much louder it runs with the stream full (`streamLevel` 1) than low
   rainBoost: 0.35, // and how much louder again in steady rain (the rain on the water and the run-off)
   birdsEvery: 9, // seconds between one bird's calls and the next, near the water by day, on average
@@ -16,6 +18,8 @@ export const RIVER_SOUND_RANGES = {
   heardFrom: [10, 120, 1],
   crossingBoost: [0, 3, 0.05],
   crossingReach: [2, 40, 1],
+  riffleBoost: [0, 3, 0.05],
+  riffleReach: [1, 20, 0.5],
   upBoost: [0, 3, 0.05],
   rainBoost: [0, 2, 0.05],
   birdsEvery: [2, 60, 1],
@@ -24,6 +28,7 @@ export const RIVER_SOUND_RANGES = {
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const boxes = new WeakMap(); // brook -> the box round its river's water
+const riffleXs = new WeakMap(); // brook -> the middles of its riffles but the crossing's (#1000), worked out once: the sound asks every frame
 
 /**
  * The nearest point of the river's water to (x, z): { x, z, d } with `d` the metres from (x, z) to the water's edge there (0 on or in it), or null if the
@@ -83,11 +88,15 @@ export function riverHeard(brook, x, z, weather = {}, p = DEFAULT_RIVER_SOUND_PA
   const swell = 1 + p.upBoost * clamp01(streamLevel) + p.rainBoost * clamp01(rain);
   const cross = brook.crossing();
   const riffle = cross ? clamp01(1 - Math.abs(near.x - cross.x) / p.crossingReach) : 0;
+  // The other riffles (#1000), each babbling over its own stones; the crossing's stays the loudest.
+  if (!riffleXs.has(brook)) riffleXs.set(brook, (brook.riffles?.() ?? []).filter((r) => !r.crossing).map((r) => r.x));
+  let other = 0;
+  for (const rx of riffleXs.get(brook)) other = Math.max(other, 1 - Math.abs(near.x - rx) / p.riffleReach);
   const day = dayBirds(darkness);
   const birds = level > 0.05 ? day * clamp01(1 - rain * 0.7) : 0; // fewer calls in the rain
   return {
     level,
-    babble: level * swell * (0.35 + p.crossingBoost * riffle),
+    babble: level * swell * (0.35 + Math.max(p.crossingBoost * riffle, p.riffleBoost * clamp01(other))),
     murmur: level * swell * 0.55,
     at: { x: near.x, z: near.z },
     birds,

@@ -16,6 +16,7 @@ import { sAlong } from '../world/laneSigns.js';
 import { layByOf } from '../world/aRoadFittings.js';
 import { gridPlace } from '../world/moor.js';
 import { faceYaw } from '../world/trailProps.js';
+import { waterEdge } from '../world/riverPlaces.js';
 
 /** In front of the Fern Trail's marker post, which stands on the trail's entrance and faces the lead-in: `tp me fern` must not drop you inside it. */
 export function fernMarkerSpot(woods) {
@@ -147,6 +148,12 @@ export function moorPlaces(layout, roads) {
   };
 }
 
+/** `tp me to riffle` (#1000): on the gravel bar beside the first riffle below the crossing, a metre and a half up it from the water's edge. */
+export function riffleSpot(brook) {
+  const r = brook.riffles?.()[1];
+  return r ? { x: r.x, z: brook.zAt(r.x) + r.side * (waterEdge(brook, r.x, r.side) + 1.5) } : null;
+}
+
 /**
  * The farm's tracks' places (#689), on the new farm: `stonetrack` on the stone track north a third of the way to the pit, `farmbridge` 9 m up the south track from the
  * bridge, `boundarytrack` on the grass track in Lane Field, and `headland` on the headland inside Lane Field's north-west corner. Today's farm has none.
@@ -257,6 +264,7 @@ export function createHost(g, { copy = () => {} } = {}) {
       woodpile: layout.logYard?.scenery ? { x: layout.logYard.park.x, z: layout.logYard.park.z + 6 } : null, // the woodpile at the wood's gate, with its lean-to and block: the new farm's, #683
       veteranoak: layout.woods?.oak ? { x: layout.woods.oak.x, z: layout.woods.oak.z + 12 } : null, // the great oak in the glade by the pond, twelve metres south of it
       river: layout.hill?.river ? g.world.heights.brook.crossing().landing(1, 8) : null, // on the crossing's south landing, 8 m back from the water: from its one anchor (#999)
+      riffle: layout.hill?.river?.steps ? riffleSpot(g.world.heights.brook) : null, // on the gravel bar beside the first riffle below the crossing (#1000)
       pit: g.world.fields.quarry ? (() => { const r = g.world.fields.quarry.roadPoints.find((p) => p.t > 0.02); return r ? { x: r.x, z: r.z } : null; })() : null,
       pitgate: g.world.fields.quarry ? (() => { const w = g.world.fields.quarry.way; return { x: w.x + w.inward[0] * 6, z: w.z + w.inward[1] * 6 }; })() : null, // just inside the gate you come in by: the farm gate on the new farm (#685)
       pitlane: g.world.fields.quarry?.gates.length > 1 ? (() => { const w = g.world.fields.quarry.gate; return { x: w.x + w.inward[0] * 8, z: w.z + w.inward[1] * 8 }; })() : null, // inside the shut lane gate, looking out at it: the new farm only
