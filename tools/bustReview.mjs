@@ -12,6 +12,7 @@
 //   node tools/bustReview.mjs --look 1 --open amy:0,jess:3   and her polo's buttons undone, as many as given
 //   node tools/bustReview.mjs --out bust-b          the folder under .scratch/shots/ (default bust-review)
 //   --views front,three,side,below   --girls amy,jess   --soft (software GL, slow; the default is the GPU)
+//   --hide polo,poloCollar,body       hide what she wears by name, or her body (to see what is under it, or through a gap)
 //
 // Open the sheets at full size. The counts print at the end: 0 on her body and on every garment is the aim.
 import { mkdirSync, readFileSync, writeFileSync, existsSync, symlinkSync, rmSync } from 'node:fs';
@@ -39,6 +40,7 @@ const LOOK = opt('look') ? Number(opt('look')) : null;
 const OPEN = Object.fromEntries((opt('open') ?? '').split(',').filter(Boolean).map((p) => p.split(':')).map(([id, n]) => [id, Number(n)]));
 const VIEWS = opt('views', 'front,three,side,below').split(',');
 const GIRLS = opt('girls', 'amy,jess').split(',');
+const HIDE = (opt('hide') ?? '').split(',').filter(Boolean);
 mkdirSync(OUT, { recursive: true });
 
 const executablePath = chromePath();
@@ -111,8 +113,13 @@ function standAgain() {
 }
 
 /** Runs in the page once she has stood a while: hides what's near the girls (never the ground), and her clothes if bare, then pauses. */
-function freeze() {
+function freeze(hide) {
   const g = game;
+  for (const c of g.companions) {
+    let body = null;
+    c.rig.model.traverse((m) => m.isSkinnedMesh && !body && (body = m));
+    c.root.traverse((m) => m.isMesh && (hide.includes(m.name) || (m === body && hide.includes('body'))) && (m.visible = false));
+  }
   const roots = new Set(g.companions.map((c) => c.root));
   for (const o of g.scene.children) {
     if (roots.has(o) || !o.visible) continue;
@@ -248,7 +255,7 @@ async function shoot(root, query, side, browser) {
   await wait(2);
   await page.evaluate(standAgain);
   await wait(0.5);
-  await page.evaluate(freeze);
+  await page.evaluate(freeze, HIDE);
   await wait(0.5);
   const ids = await page.evaluate(() => game.companions.map((c) => c.name.toLowerCase()));
   for (const [i, id] of ids.entries()) {

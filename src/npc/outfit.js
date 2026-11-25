@@ -1079,9 +1079,11 @@ function addCrop(rig, color) {
  * The wax jacket (COAT) over everything else on top, its corduroy collar on its neck edge, and its hood: one up over her head
  * (on her head bone, as her helmet is) and one pushed back down her back (on her chest bone), only one of them shown (setHood).
  */
-function addCoat(rig, color) {
+function addCoat(rig, color, under = null) {
   const coat = addTop(rig, 'coat', color, COAT);
   if (!coat) return;
+  // What's under it tucked inside it (#1143), as under a jumper.
+  if (under) tuckUnder(under, coat);
   const body = bodyMesh(rig);
   const { data, built } = coat;
   const collar = buildCollar(built.shell, data, { vee: built.vee, placketWidth: COAT.placketWidth, over: [built.shell] }, COAT_COLLAR);
@@ -1411,6 +1413,10 @@ function addEachGarment(rig, outfit) {
   }
   if (polo && outer) tuckUnder(polo, outer);
   const jumper = outfit.jumper ? addTop(rig, 'jumper', outfit.jumper, JUMPER) : null;
+  // The top under a jumper tucked inside it, as a polo is under a shirt: in the hollow under her bust, pushed further out, the
+  // jumper crossed back inside it and the top showed through (#1143).
+  const top = outer ?? polo;
+  if (jumper && top) tuckUnder(top, jumper);
   // A collar lies on its own top and on the jumper over everything (its neck is low enough for collars to come out over it), never
   // on a shirt worn over its top: under that it's hidden but for where it shows at the neck and down the front.
   const knit = jumper ? [jumper.built.shell] : [];
@@ -1434,7 +1440,7 @@ function addEachGarment(rig, outfit) {
     const under = polo ? addCollar(rig, polo, [polo.built.shell, ...knit], outfit.polo, pop(mine)) : null;
     if (outer) addCollar(rig, outer, [outer.built.shell, ...knit, ...(under ? [under] : [])], style.over, pop(kind === 'plaid' ? SHIRT_COLLAR : { ...OVER_COLLAR, clear: 0.005 }), `${kind}Collar`);
   }
-  if (outfit.coat) addCoat(rig, outfit.coat);
+  if (outfit.coat) addCoat(rig, outfit.coat, jumper ?? top);
   if (outfit.shorts) addBottom(rig, outfit.shorts, !!outfit.coat);
   if (outfit.wellies) addWellies(rig, outfit.wellies);
 }

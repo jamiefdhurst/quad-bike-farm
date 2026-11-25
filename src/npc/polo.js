@@ -566,7 +566,8 @@ export function buildTop(body, p = POLO) {
   for (const v of mesh.verts) v.rest = applySkin(v.skin, v.bind);
   // Over the hollow under her bust rather than in under it, where hanging alone doesn't reach.
   const neck = body.bones.Neck;
-  drape(mesh, body.split ? (p.drapeSplit ?? p.drape * 4) : p.drape, (v) => v.rest[2] > neck[2] && v.rest[1] < neck[1] - 0.1 && v.rest[1] > body.waist + 0.02);
+  // A layer drapes as far as the top under it, or the top stood out further under her bust and showed through it.
+  drape(mesh, body.split ? (p.drapeSplit ?? POLO.drapeSplit) : p.drape, (v) => v.rest[2] > neck[2] && v.rest[1] < neck[1] - 0.1 && v.rest[1] > body.waist + 0.02);
   // Last, any fold smoothed out, standing and in her stored pose: pushed straight out from a tight hollow, such as the crease between
   // her breast and her arm, a thick layer crossed itself (#1143). 25 rounds clear her bust; a few folds elsewhere never clear.
   // Not where it's tucked or bloused over her waistband, whose folds are meant: pulled apart, they tore.
