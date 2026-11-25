@@ -1232,7 +1232,7 @@ function headSkin(mesh, md, boneIndex) {
 
 /**
  * A ponytail (ponytail.js): her hair pulled in tight to her head and up off the back of her neck, then a band and a tail on her head
- * bone, hanging down her back from a pivot the rig turns each frame (PonytailSwing), and a few loose strands at her temples and nape.
+ * bone, the tail bent each frame below its root to hang down her back (PonytailSwing), and a few loose strands at her temples and nape.
  * In the rest pose, with the posed body for rays.
  */
 function addPonytail(rig, style) {
@@ -1298,7 +1298,7 @@ function addPonytail(rig, style) {
       dir.copy(p).sub(C).normalize();
       const s = scalp(dir);
       if (s != null) p.copy(C).addScaledVector(dir, s + margin);
-      moves.push([i, unskin(onHead, p.toArray())]);
+      moves.push([i, unskin(onHead, p.toArray()), p.toArray()]);
     });
     if (!moves.length) continue;
     if (!mesh.userData.ownGeometry) {
@@ -1306,7 +1306,8 @@ function addPonytail(rig, style) {
       mesh.userData.ownGeometry = true;
     }
     const { position: attr, skinIndex, skinWeight } = mesh.geometry.attributes;
-    tied.push({ mesh, points: moves.map(([i]) => i), loose: attr.array.slice(), looseIndex: skinIndex.array.slice(), looseWeight: skinWeight.array.slice() });
+    // `points` and `aimed` (where each was put, in root space as she stands) for the tests.
+    tied.push({ mesh, points: moves.map(([i]) => i), aimed: moves.map(([, , at]) => at), loose: attr.array.slice(), looseIndex: skinIndex.array.slice(), looseWeight: skinWeight.array.slice() });
     for (const [i, at] of moves) {
       p.fromArray(at).applyMatrix4(md.fromRoot).toArray(attr.array, i * 3);
       skinIndex.setXYZW(i, headIndex, 0, 0, 0);
@@ -1398,7 +1399,7 @@ function addPonytail(rig, style) {
   strands.name = 'ponytailStrands';
   attachToBone(rig, strands, 'Head');
 
-  rig.ponytail = { pivot, strands, swing: new PonytailSwing(pivot, { low: lowLocal, chest: b.Spine2, params: rig.ponytailParams }) };
+  rig.ponytail = { pivot, strands, swing: new PonytailSwing(pivot, { hair, low: lowLocal, chest: b.Spine2, params: rig.ponytailParams }) };
   rig.ponytail.swing.underHelmet = !!rig.underHelmet;
 }
 

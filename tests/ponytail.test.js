@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import { buildAllGirls } from './helpers/girlModels.js';
-import { dealPonytail, BAND_COLOURS, tailRadius, tailPath, buildTail, swingStep, STILL, TAIL, DEFAULT_PONYTAIL_PARAMS, PONYTAIL_PARAM_RANGES } from '../src/npc/ponytail.js';
+import { dealPonytail, BAND_COLOURS, tailRadius, tailPath, buildTail, swingStep, STILL, TAIL, DEFAULT_PONYTAIL_PARAMS, PONYTAIL_PARAM_RANGES, hangShare, bendTail, tipIntoHead } from '../src/npc/ponytail.js';
 import { completeStyle, describeOutfit } from '../src/npc/outfits.js';
 import { CHARACTERS } from '../src/npc/characters.js';
 import { createRandom } from '../src/core/random.js';
@@ -99,6 +99,40 @@ describe('the tail\'s shape', () => {
   });
 });
 
+describe('the tail bent to hang (#1243)', () => {
+  it('keeps the band, the lift and its first centimetre on her head, and hangs from her chest lower down', () => {
+    expect(hangShare(0.03)).toBe(0);
+    expect(hangShare(0)).toBe(0);
+    expect(hangShare(-TAIL.bendFrom)).toBe(0);
+    expect(hangShare(-TAIL.bendTo)).toBe(1);
+    expect(hangShare(-0.3)).toBe(1);
+    expect(hangShare(-0.03)).toBeGreaterThan(0);
+    expect(hangShare(-0.03)).toBeLessThan(1);
+  });
+
+  it('lets it tip in towards her head no further than intoHead, and out from it as far as it likes', () => {
+    const about = (a) => {
+      const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), a);
+      return [q.x, q.y, q.z, q.w];
+    };
+    expect(tipIntoHead(about(0))).toBe(0);
+    expect(tipIntoHead(about(-0.6))).toBe(0); // out behind her
+    expect(tipIntoHead(about(TAIL.intoHead * 0.9))).toBe(0);
+    expect(tipIntoHead(about(0.5))).toBeCloseTo(0.5 - TAIL.intoHead, 6); // her head down: in towards it
+  });
+
+  it('turns each point as far as its share, and keeps normals a unit long', () => {
+    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+    const rest = [0, 0, 0.1, 0, -0.2, 0.1, 0, -0.1, 0.1];
+    const out = bendTail(rest, [0, 1, 0.5], [q.x, q.y, q.z, q.w], new Array(9));
+    expect(out.slice(0, 3)).toEqual([0, 0, 0.1]);
+    const turned = new THREE.Vector3(0, -0.2, 0.1).applyQuaternion(q);
+    out.slice(3, 6).forEach((v, k) => expect(v).toBeCloseTo(turned.getComponent(k), 6));
+    const n = bendTail([0, 0, 1], [0.5], [q.x, q.y, q.z, q.w], new Array(3), true);
+    expect(Math.hypot(...n)).toBeCloseTo(1, 6);
+  });
+});
+
 describe('the swing', () => {
   const run = (accel, seconds, s = { ...STILL }, p = DEFAULT_PONYTAIL_PARAMS) => {
     for (let t = 0; t < seconds; t += 1 / 60) s = swingStep(s, accel, 1 / 60, p);
@@ -171,6 +205,98 @@ describe('her hair tied back as she turns her head (#1243)', () => {
     rig.rotateAboutRootAxis(rig.bones.Neck, new THREE.Vector3(1, 0, 0), nod * 0.4);
     rig.rotateAboutRootAxis(rig.bones.Head, new THREE.Vector3(1, 0, 0), nod * 0.6);
   };
+
+  it('puts each tied-back point where it was aimed, on her scalp', async () => {
+    const { refitOutfit, OUTFITS } = await import('../src/npc/outfit.js');
+    for (const { id, rig } of girls) {
+      const base = OUTFITS[CHARACTERS.find((c) => c.id === id).params.outfit];
+      refitOutfit(rig, { ...base, style: { ...base.style, ponytail: true } });
+      rig.root.updateMatrixWorld(true);
+      const toRoot = rig.root.matrixWorld.clone().invert();
+      let worst = 0;
+      for (const { mesh, points, aimed } of rig.hairTied) {
+        mesh.skeleton.update();
+        const p = new THREE.Vector3();
+        points.forEach((i, k) => {
+          mesh.getVertexPosition(i, p).applyMatrix4(mesh.matrixWorld).applyMatrix4(toRoot);
+          worst = Math.max(worst, p.distanceTo(new THREE.Vector3(...aimed[k])));
+        });
+      }
+      expect(worst, id).toBeLessThan(0.001);
+      refitOutfit(rig, base);
+    }
+  }, 120000);
+
+  // Her skull and tied-back hair (every point of hers wholly on her head bone) in the head bone's frame, and how deep a point is inside
+  // it: from their middle, against the radius of the one of them most nearly the same way.
+  const skull = (rig) => {
+    const into = rig.bones.Head.matrixWorld.clone().invert();
+    const pts = [];
+    rig.model.traverse((o) => {
+      if (!o.isSkinnedMesh || rig.outfitParts.includes(o)) return;
+      const head = o.skeleton.bones.findIndex((bone) => bone.name === 'Head');
+      const { skinIndex, skinWeight, position } = o.geometry.attributes;
+      const p = new THREE.Vector3();
+      for (let i = 0; i < position.count; i++) {
+        let w = 0;
+        for (let k = 0; k < 4; k++) if (skinIndex.getComponent(i, k) === head) w += skinWeight.getComponent(i, k);
+        if (w > 0.99) pts.push(o.getVertexPosition(i, p).applyMatrix4(o.matrixWorld).applyMatrix4(into).clone());
+      }
+    });
+    const mid = pts.reduce((a, q) => a.add(q), new THREE.Vector3()).divideScalar(pts.length);
+    const dirs = pts.map((q) => q.clone().sub(mid));
+    const radii = dirs.map((d) => d.length());
+    dirs.forEach((d) => d.normalize());
+    return (q) => {
+      const d = q.clone().sub(mid);
+      const r = d.length();
+      d.normalize();
+      let best = -2;
+      let at = 0;
+      dirs.forEach((u, k) => {
+        const c = u.dot(d);
+        if (c > best) [best, at] = [c, k];
+      });
+      return radii[at] - r;
+    };
+  };
+  // The band and the tail within 8 cm of it, as drawn, in the head bone's frame.
+  const nearBand = (rig) => {
+    const into = rig.bones.Head.matrixWorld.clone().invert();
+    const band = rig.ponytail.pivot.getWorldPosition(new THREE.Vector3());
+    const out = [];
+    rig.ponytail.pivot.traverse((o) => {
+      if (!o.isMesh) return;
+      const pos = o.geometry.attributes.position;
+      const p = new THREE.Vector3();
+      for (let i = 0; i < pos.count; i++) {
+        p.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+        if (p.distanceTo(band) < 0.08) out.push(p.clone().applyMatrix4(into));
+      }
+    });
+    return out;
+  };
+
+  it('keeps the band and the root of the tail out of her skull as she turns her head and the tail hangs', async () => {
+    const { refitOutfit, OUTFITS } = await import('../src/npc/outfit.js');
+    for (const { id, rig } of girls) {
+      const base = OUTFITS[CHARACTERS.find((c) => c.id === id).params.outfit];
+      refitOutfit(rig, { ...base, style: { ...base.style, ponytail: true } });
+      rig.root.updateMatrixWorld(true);
+      const depth = skull(rig);
+      const kept = [rig.bones.Neck.quaternion.clone(), rig.bones.Head.quaternion.clone()];
+      for (const [yaw, nod] of [[0, 0], [Math.PI / 6, 0], [Math.PI / 3, 0], [-Math.PI / 3, 0], [0, 0.5], [Math.PI / 3, -0.3]]) {
+        turn(rig, yaw, nod);
+        for (let f = 0; f < 3; f++) rig.ponytail.swing.update(1 / 60); // as the rig runs it, after her head has turned
+        rig.root.updateMatrixWorld(true);
+        const worst = Math.max(...nearBand(rig).map(depth));
+        expect(worst, `${id} turned ${yaw.toFixed(2)}, nodding ${nod}: metres inside her head`).toBeLessThan(0.003);
+        rig.bones.Neck.quaternion.copy(kept[0]);
+        rig.bones.Head.quaternion.copy(kept[1]);
+      }
+      refitOutfit(rig, base);
+    }
+  }, 120000);
 
   it('moves none of it off her head when she turns her head 60 degrees or nods', async () => {
     const { refitOutfit, OUTFITS } = await import('../src/npc/outfit.js');
