@@ -1453,6 +1453,10 @@ export const RIVER_PLAN = {
     },
   },
   crossing: { x: 475, half: 4.5, ramp: 3, water: 0.2, posts: 4 },
+  // The ford where the grass boundary track crosses the brook in Low Ley (#1060), down the farm's east side at plan x 871 (the outline's 885 drawn in 14 m,
+  // farmTracks.js): the bed raised level `half` m either side of the track's middle with a `ramp` m ramp down at each end until `water` m stand over it,
+  // and each bank cut down to a worn landing `landing` m back from the water (world/brook.js `ford`).
+  ford: { x: 871, half: 3, ramp: 1.5, water: 0.2, landing: 4 }, // as shallow as the crossing: the brook never runs shallower than that (tests/riverMove.test.js)
   bridge: [420, 572],
   crackWillow: [431, 563],
   willows: [
@@ -1472,7 +1476,7 @@ export function riverLayout(hill, meadow, P = RIVER_PLAN) {
   const [crossX] = fromPlan([P.crossing.x, 0]);
   const gateXs = [meadow.minX, meadow.maxX, fromPlan([885, 0])[0]]; // the farm's east boundary, along the lane
   return {
-    brook: { points: P.points.map(fromPlan), wander: P.wander, source: P.source, bridge: true },
+    brook: { points: P.points.map(fromPlan), wander: P.wander, source: P.source, bridge: true, ford: { ...P.ford, x: fromPlan([P.ford.x, 0])[0] } },
     river: {
       ...R, fromX: fromPlan([R.fromX, 0])[0], toX: fromPlan([R.toX, 0])[0], drinks: R.drinks.map(([x, side]) => [fromPlan([x, 0])[0], side]), worn: R.worn.map(([x, z, r]) => [...fromPlan([x, z]), r]),
       crossing: { ...P.crossing, x: crossX }, bridge: { x: fromPlan(P.bridge)[0], z: fromPlan(P.bridge)[1] },

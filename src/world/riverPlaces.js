@@ -251,5 +251,8 @@ export function riversidePlaces(layout, brook, { roads = roadNetwork(layout), ra
   const docks = scatter(RIVERSIDE_COUNTS.docks, 5, 9, () => rich[Math.floor(random() * rich.length)]);
   const dung = scatter(RIVERSIDE_COUNTS.dung, 1, 0);
 
-  return { rushes, sedge, brookReeds, stones, ruts, tussocks, thistles, docks, dung, fence: brookFence(layout, brook, roads) };
+  // None on the ford's landings (#1060): left out once they are all placed, so the rest stand where they did.
+  const ford = brook.ford?.();
+  const offFord = (p) => !ford || Math.abs(p.x - ford.x) >= ford.reach + 1 || Math.abs(p.z - ford.z) >= ford.half + ford.back + 1;
+  return { rushes: rushes.filter(offFord), sedge: sedge.filter(offFord), brookReeds: brookReeds.filter(offFord), stones, ruts, tussocks, thistles, docks, dung, fence: brookFence(layout, brook, roads) };
 }
