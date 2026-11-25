@@ -39,12 +39,14 @@ export const BUST_SHEET = {
   angleLow: 0.4, // and at her waist (23 degrees: her waist is narrower, and wider its collar folded round her sides there)
   step: 0.006, // its grid this fine in angle
   low: 0.28, // from this height (her waist, below where it falls back to her)
-  regionTop: 1.05, // to this share of the way from her bust's middle up to where its upper slope starts: up under her collarbone,
-  // where she is nearly flat, so its join doesn't step (lower, on her upper slope, the cloth showed a cut there)
+  regionTop: 1.17, // to this share of the way from her bust's middle up to where its upper slope starts: up to her collarbone, so
+  // its join doesn't step (lower, on her upper slope, the cloth showed a cut there; with her chest sloping forward under her
+  // collarbone, #1143, up to 1.13 every top folded at its outer corners, from 1.15 none)
   smoothOut: 0.06, // her shading smooth round it, fading back to her facets over this far past its edge
   rim: 0.85, // its rings' rim this share of the way to its edge, inside the hole
   rings: 24, // its rings from the middle out
   around: 96, // points round each ring
+  skinRounds: 40, // passes blending its new points' skin with their neighbours', so the cloth under each breast moves with it
 };
 
 // The collar round the hole is laid out flat as an angle round her (about a line behind her chest) and a height, not as she's seen
@@ -63,10 +65,16 @@ function flatten(x, y, z, o, s, p) {
   const { r2 } = bustUV(x, y, o);
   const m = p.own;
   const own = (1 - smoothstep(m.fullX, m.x, Math.abs(x))) * smoothstep(m.from, m.fullFrom, y) * (1 - smoothstep(m.fullTo, m.to, y));
-  const w = Math.max(own, 1 - smoothstep(p.bandFull, p.band, Math.sqrt(r2)));
+  const band = 1 - smoothstep(p.bandFull, p.band, Math.sqrt(r2));
+  const w = Math.max(own, band);
   if (w <= 0) return z;
   const wall = chestWall(Math.abs(x), y, s);
-  return z - w * Math.max(0, z - wall);
+  const back = z - w * Math.max(0, z - wall);
+  // Round the upper half of the outline she is brought forward on to it too: where her chest falls back into the hollow in front of
+  // her shoulder, left there it made a groove round the bust's upper edge, and every top folded in it (#1143). Not round the lower
+  // half, where the cloth bridges the fold under each breast.
+  const forward = band * smoothstep(o.cy, o.cy + o.up * 0.5, y);
+  return back + forward * Math.max(0, wall - back);
 }
 
 const key = (a, i) => `${Math.round(a[i * 3] * 1e4)},${Math.round(a[i * 3 + 1] * 1e4)},${Math.round(a[i * 3 + 2] * 1e4)}`;
@@ -431,7 +439,52 @@ export function patchBust(mesh, size = 1, keep = () => 0, armBone = () => false,
       // Anticlockwise in u, v is anticlockwise as she's seen from the front on her left, clockwise on her right.
       return { grid, side, middle };
     });
-  return fillHoles(mesh, taken, { place, smoothOf, armBone, patches, front: p.front, fixed: (i) => keep(i) > 0.5 });
+  const drawn = fillHoles(mesh, taken, { place, smoothOf, armBone, patches, front: p.front, fixed: (i) => keep(i) > 0.5 });
+  if (drawn) onTheLine(drawn, p.front);
+  return drawn;
+}
+
+/**
+ * Where a triangle of hers meets two split ones along one edge, a sliver fills the join, its middle point on that edge's line. Eased
+ * back to her chest wall, which curves, the middle point came off the line by a few millimetres, the sliver turned sideways and her
+ * chest creased there (#1143). Every point within `close` of the line through one of her own triangles' longest edge, part way along
+ * it, put back on it, every corner at the point together; only in front (z over `front`). In place.
+ */
+function onTheLine(drawn, front, close = 0.06) {
+  const { positions, source } = drawn;
+  const corners = positions.length / 3;
+  const key = (i) => `${Math.round(positions[i * 3] * 1e5)},${Math.round(positions[i * 3 + 1] * 1e5)},${Math.round(positions[i * 3 + 2] * 1e5)}`;
+  const at = new Map();
+  for (let i = 0; i < corners; i++) {
+    const k = key(i);
+    if (!at.has(k)) at.set(k, []);
+    at.get(k).push(i);
+  }
+  const same = Array.from({ length: corners });
+  for (const list of at.values()) for (const i of list) same[i] = list;
+  const P = (i) => [positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]];
+  for (let pass = 0; pass < 3; pass++) {
+    let moved = 0;
+    for (let t = 0; t < corners / 3; t++) {
+      const c = [t * 3, t * 3 + 1, t * 3 + 2];
+      // Only her own triangles: the drawn rings' thin wedges round each tip are meant.
+      if (c.some((i) => source[i] < 0)) continue;
+      const q = c.map(P);
+      if (q.some((x) => x[2] <= front)) continue;
+      const len = [0, 1, 2].map((e) => Math.hypot(...[0, 1, 2].map((j) => q[(e + 1) % 3][j] - q[e][j])));
+      const e = len.indexOf(Math.max(...len));
+      const a = q[e], b = q[(e + 1) % 3], v = q[(e + 2) % 3];
+      const ab = [0, 1, 2].map((j) => b[j] - a[j]);
+      const along = [0, 1, 2].reduce((sum, j) => sum + (v[j] - a[j]) * ab[j], 0) / (len[e] * len[e]);
+      if (along < 0.02 || along > 0.98) continue;
+      const on = [0, 1, 2].map((j) => a[j] + ab[j] * along);
+      const off = Math.hypot(...[0, 1, 2].map((j) => v[j] - on[j]));
+      if (off < 1e-7 || off > close * len[e]) continue;
+      for (const i of same[c[(e + 2) % 3]]) positions.set(on, i * 3);
+      moved++;
+    }
+    if (!moved) break;
+  }
 }
 
 /**
@@ -616,6 +669,65 @@ export function coverBust(drawn, size = 1, armBone = () => false, s = BUST_SHAPE
   for (let t = 0; t < mesh.verts.length / 3; t++) mesh.tris.push([t * 3, t * 3 + 1, t * 3 + 2]);
   unfold(mesh);
   mesh.verts.forEach((v, i) => cover.positions.set(v.rest, i * 3));
+  blendSkin(cover, c.skinRounds);
   return cover;
+}
+
+/**
+ * The cover's own new points (`source` < 0) given skin weights blended with their neighbours', `rounds` times, her own corners held:
+ * each new point took the skin of the corner of her nearest it, so under each breast the cloth switched from following her chest to
+ * following her belly from one point to the next. As she moved off the pose it was cut in (breathing, her chest leaning), the breast
+ * above came down past it and her body and her top showed through a layer there (#1143). Four bones at most, as three needs.
+ */
+function blendSkin(cover, rounds) {
+  const { positions, skinIndex, skinWeight, source, index } = cover;
+  const corners = positions.length / 3;
+  const key = (i) => `${Math.round(positions[i * 3] * 1e5)},${Math.round(positions[i * 3 + 1] * 1e5)},${Math.round(positions[i * 3 + 2] * 1e5)}`;
+  const id = new Map();
+  const of = new Int32Array(corners);
+  const first = [];
+  for (let i = 0; i < corners; i++) {
+    const k = key(i);
+    if (!id.has(k)) id.set(k, first.push(i) - 1);
+    of[i] = id.get(k);
+  }
+  const n = first.length;
+  const free = new Uint8Array(n);
+  for (let i = 0; i < corners; i++) if (source[i] < 0) free[of[i]] = 1;
+  for (let i = 0; i < corners; i++) if (source[i] >= 0) free[of[i]] = 0;
+  const near = Array.from({ length: n }, () => new Set());
+  const tri = index ? (t, j) => index[t * 3 + j] : (t, j) => t * 3 + j;
+  const tris = (index ? index.length : corners) / 3;
+  for (let t = 0; t < tris; t++) {
+    for (let j = 0; j < 3; j++) {
+      const a = of[tri(t, j)], b = of[tri(t, (j + 1) % 3)];
+      if (a !== b) near[a].add(b), near[b].add(a);
+    }
+  }
+  let w = first.map((i) => {
+    const m = new Map();
+    for (let k = 0; k < 4; k++) if (skinWeight[i * 4 + k] > 0) m.set(skinIndex[i * 4 + k], (m.get(skinIndex[i * 4 + k]) ?? 0) + skinWeight[i * 4 + k]);
+    return m;
+  });
+  for (let r = 0; r < rounds; r++) {
+    w = w.map((m, g) => {
+      if (!free[g] || !near[g].size) return m;
+      const sum = new Map(m);
+      for (const h of near[g]) for (const [b, x] of w[h]) sum.set(b, (sum.get(b) ?? 0) + x);
+      const total = near[g].size + 1;
+      for (const [b, x] of sum) sum.set(b, x / total);
+      return sum;
+    });
+  }
+  for (let i = 0; i < corners; i++) {
+    const g = of[i];
+    if (!free[g]) continue;
+    const top = [...w[g]].sort((a, b) => b[1] - a[1]).slice(0, 4);
+    const total = top.reduce((a, [, x]) => a + x, 0) || 1;
+    for (let k = 0; k < 4; k++) {
+      skinIndex[i * 4 + k] = top[k] ? top[k][0] : 0;
+      skinWeight[i * 4 + k] = top[k] ? top[k][1] / total : 0;
+    }
+  }
 }
 

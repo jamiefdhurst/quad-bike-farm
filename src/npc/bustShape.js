@@ -9,19 +9,19 @@ export const BUST_SHAPE = {
   x: 0.15, // each breast's middle, from hers
   inner: 0.14, // its base's half-width towards her middle: they nearly meet there
   outer: 0.16, // and out towards her arm
-  top: 0.93, // where the upper slope starts, just under her collarbone, so it leaves her chest flat and runs down gently to the fullest
-  // point (started 10 cm lower, the slope stood out 7 cm in 3 and met her chest at a hard angle: Jamie, "a hard angle between the
-  // bust and the top of the chest")
+  top: 0.94, // where the upper slope starts, just under her collarbone, so it runs down from her chest gently to the fullest point
+  // (started 10 cm lower, the slope stood out 7 cm in 3 and met her chest at a hard angle: Jamie, "a hard angle between the bust and
+  // the top of the chest"; at 0.93 it still rose sharply out of her chest)
   fold: 0.51, // the fold under it, against her ribs
   middle: 0.735, // the base's middle, between fold and top: the furthest forward point sits a little below it once it hangs
-  project: 0.285, // how far it stands out from her chest wall, at its fullest
+  project: 0.255, // how far it stands out from her chest wall, at its fullest (the wall rounds forward under it, `wallRound`: 0.285
+  // on an upright wall stood out as far)
   upper: 1.0, // the upper slope's power: 1 is full and round (Jamie, on the first pass: "slightly rounder on the top"); over 1
   // it leaves her chest gently and goes flat or hollow
   lower: 0.6, // the lower curve's: under 1 it is full and round, turning in sharply at the fold
   side: 0.75, // across, at its sides
   taper: 0.55, // its outline narrows towards the top by this share of its width (a teardrop from the front, too), so the top rises in
   // the middle and keeps out of the crease of her armpit
-  rise: 1.5, // the upper slope's S (bustPoint): over 1 its hollow start is longer and its turn into the fullness later
   blendTop: 0.7, // over most of the upper slope (this share of 1 - r²) it rises from flat out of her chest, so the skin joins her chest
   // with no line (Jamie: "the skin should join fairly seamlessly to the chest"); less round her sides (`blendSide`) and none at the
   // fold, which is a crease
@@ -36,7 +36,7 @@ export const BUST_SHAPE = {
   growWide: 0.75, // across, out towards her arm (towards her middle a third of this: they already nearly meet)
   growSpill: 3.75,
   growTall: 0.2,
-  growOut: 0.9,
+  growOut: 1.05, // (0.9 on an upright chest wall: rounded forward under it, Jess's stood 6 mm less far out)
   growLow: 0.06, // and its middle sits this much lower per unit over 1
   maxOut: 0.32, // its outer edge never past this: her side, where her chest turns back to her arm (further, the chest wall here stands
   // in front of her real side and the collar round it folds)
@@ -45,6 +45,11 @@ export const BUST_SHAPE = {
   wallCurve: 1.0, // how it curves back round to her sides at the fold (z drops by this times x squared)
   wallCurveHigh: 0.45, // and at the top of the bust, where her ribcage is rounder under her arms
   wallCurveShoulder: 0.75, // and above it, where her chest falls back into the hollow in front of her shoulder
+  wallRound: 1.0, // her ribcage rounding forward from her collarbone (chestWall): above `wallRoundFrom` it falls back by this times
+  wallRoundFrom: 0.75, // the square of the height above it, meeting the wall's line at `wallRoundTop`, where her upper chest slopes
+  wallRoundTop: 0.94, // forward at about 0.4, as her own does; below it, back to the wall's line by the fold
+  wallRoundIn: 0.3, // all of it this far either side of her middle, none from `wallRoundOut`
+  wallRoundOut: 0.55,
   wallUnder: 0.45, // below the fold her front draws in to her waist: back this much per unit under `wallUnderFrom`
   wallUnderFrom: 0.48,
 };
@@ -62,7 +67,16 @@ export function chestWall(x, y, s = BUST_SHAPE) {
   const curve =
     s.wallCurve + (s.wallCurveHigh - s.wallCurve) * smoothstep(s.fold, 0.75, y) + (s.wallCurveShoulder - s.wallCurveHigh) * smoothstep(0.75, 0.9, y);
   const under = Math.max(0, s.wallUnderFrom - y);
-  return s.wallMiddle + s.wallSlope * (y - s.fold) - curve * x * x - s.wallUnder * under * under * 10;
+  // Her ribcage rounding forward from her collarbone: under it her chest slopes as her own upper chest does, turning upright by the
+  // bust's middle, back to the wall's line at the fold. (Upright all the way up, her chest just above the bust was pressed back
+  // flat and the bust rose sharply out of a dip there.)
+  const above = y - s.wallRoundFrom;
+  const most = s.wallRound * (s.wallRoundTop - s.wallRoundFrom) ** 2;
+  // Across her front only: towards her sides her chest falls back into the hollow in front of her shoulder, and rounded forward there
+  // the bust's edge stood proud of it.
+  const across = 1 - smoothstep(s.wallRoundIn, s.wallRoundOut, Math.abs(x));
+  const round = across * (above > 0 ? most - s.wallRound * above * above : most * smoothstep(s.fold, s.wallRoundFrom, y));
+  return s.wallMiddle + s.wallSlope * (y - s.fold) - curve * x * x - s.wallUnder * under * under * 10 + round;
 }
 
 /** The left breast's outline on her chest for a bust size (1 is Amy's): its middle and half-widths, all body-frame. */
@@ -109,9 +123,10 @@ export function bustPoint(u, v, size = 1, s = BUST_SHAPE, o = bustOutline(size, 
     // On top the lead-in is the whole smoothstep, flat where it leaves her chest; round her sides its square root, a shorter one.
     const lead = blend > 0 ? smoothstep(0, blend, 1 - r2) ** (0.5 + 0.5 * Math.max(0, sin)) : 1;
     const dome = (1 - r2) ** a * lead;
-    // Above, an S: flat where it leaves her chest and hollow for the first few centimetres, then turning round into the fullness, so
-    // it grows out of her chest rather than meeting it at an angle. `rise` stretches the hollow part. Eased in from her sides.
-    const t = (1 - Math.sqrt(r2)) ** s.rise;
+    // Above, a slope that leaves her chest wall level with it (the wall already slopes forward under her collarbone as her chest does,
+    // so the bust carries straight on from her chest) and steepens steadily into the fullness, turning round at the tip. Eased in from
+    // her sides.
+    const t = 1 - Math.sqrt(r2);
     const slope = t * t * (3 - 2 * t);
     h = o.project * (dome + (slope - dome) * smoothstep(0, 1, Math.max(0, sin)) * smoothstep(0, 0.35, Math.sqrt(r2)));
   }

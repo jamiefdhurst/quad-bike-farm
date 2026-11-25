@@ -175,12 +175,19 @@ describe('the written target (bustShape.js)', () => {
     }
   });
 
-  it('leaves her chest flat at the top of its upper slope, so it joins her without an angle', async () => {
-    const { bustPoint } = await import('../src/npc/bustShape.js');
+  it('carries straight on from her chest at the top of its upper slope, so it joins her without an angle', async () => {
+    const { bustPoint, chestWall } = await import('../src/npc/bustShape.js');
     for (const size of [1, 1.4]) {
-      const a = bustPoint(0, 0.98, size), b = bustPoint(0, 0.96, size);
-      // Out from her chest by under a millimetre (in body units, about 0.4 m) over the first couple of per cent of its height.
-      expect(b.h - a.h, `size ${size}`).toBeLessThan(0.002);
+      for (const u of [-0.5, 0, 0.5]) {
+        // Her chest just above it slopes forward as her own upper chest does (0.4 to 0.5 forward per unit down at her middle, less
+        // towards her sides, where it falls back into the hollow in front of her shoulder), and the bust leaves it at close to that
+        // slope over the first couple of per cent of its height, steepening from there.
+        const a = bustPoint(u, 0.99, size), b = bustPoint(u, 0.97, size);
+        const above = (chestWall(a.xBase, a.yBase + 0.01) - chestWall(a.xBase, a.yBase + 0.03)) / 0.02;
+        const leaving = (b.z - a.z) / (a.y - b.y);
+        if (u === 0) expect(above, `size ${size}: her chest above, down the middle of her breast`).toBeGreaterThan(0.35);
+        expect(Math.abs(leaving - above), `size ${size}, u ${u}`).toBeLessThan(0.3);
+      }
     }
   });
 
