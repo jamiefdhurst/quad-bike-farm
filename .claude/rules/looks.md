@@ -47,7 +47,7 @@ One look per new thing, two rounds at most. A unit test can't tell a shop from a
 
 - Shoot it in the running game with the overlay cleared and the HUD hidden: four sides and one close-up of the main face (the largest side), in daylight. `node tools/shot.mjs --name <group.name>` (or `--at <place>`) does it: it starts its own dev server, clears the overlay and checks it is gone, hides the HUD, sets daylight, hides whatever stands between the camera and the target for each shot (never the ground or the sky; it prints what it hid and puts it back, and `--keep` leaves it all in), and writes four sides, a close-up of the main face (the largest side, square on, framed whole) and a contact sheet to `.scratch/shots/<name>/` (`--fov` crops in on lettering; the top of the file lists the rest). Open the shots at full size; the sheet is for choosing which. Attach them to the testing issue if there is one.
 - Look at each shot at full size, and crop the original for anything small (never judge detail from a shrunken contact sheet), against the "Looks like" list. Fix what's missing or wrong and take one more round if you must, then stop.
-- Say in the PR summary to Jamie what you looked at, and put anything you couldn't judge (it reads right at dusk, it looks right from the lane) on the item's testing issue.
+- Say in the PR summary to Jamie what you looked at, and put anything you couldn't judge (it reads right at dusk, it looks right from the lane) on the item's section of the walk for its place (`/todo` step 12).
 
 ## Light and size
 
