@@ -47,7 +47,6 @@ export const BUST_SHEET = {
   rim: 0.85, // its rings' rim this share of the way to its edge, inside the hole
   rings: 28, // its rings from the middle out (24 before it reached down to `low` 0.18: the lower outer side of each breast fell between them)
   around: 96, // points round each ring
-  skinRounds: 40, // passes blending its new points' skin with their neighbours', so the cloth under each breast moves with it
 };
 
 // The collar round the hole is laid out flat as an angle round her (about a line behind her chest) and a height, not as she's seen
@@ -670,65 +669,6 @@ export function coverBust(drawn, size = 1, armBone = () => false, s = BUST_SHAPE
   for (let t = 0; t < mesh.verts.length / 3; t++) mesh.tris.push([t * 3, t * 3 + 1, t * 3 + 2]);
   unfold(mesh);
   mesh.verts.forEach((v, i) => cover.positions.set(v.rest, i * 3));
-  blendSkin(cover, c.skinRounds);
   return cover;
-}
-
-/**
- * The cover's own new points (`source` < 0) given skin weights blended with their neighbours', `rounds` times, her own corners held:
- * each new point took the skin of the corner of her nearest it, so under each breast the cloth switched from following her chest to
- * following her belly from one point to the next. As she moved off the pose it was cut in (breathing, her chest leaning), the breast
- * above came down past it and her body and her top showed through a layer there (#1143). Four bones at most, as three needs.
- */
-function blendSkin(cover, rounds) {
-  const { positions, skinIndex, skinWeight, source, index } = cover;
-  const corners = positions.length / 3;
-  const key = (i) => `${Math.round(positions[i * 3] * 1e5)},${Math.round(positions[i * 3 + 1] * 1e5)},${Math.round(positions[i * 3 + 2] * 1e5)}`;
-  const id = new Map();
-  const of = new Int32Array(corners);
-  const first = [];
-  for (let i = 0; i < corners; i++) {
-    const k = key(i);
-    if (!id.has(k)) id.set(k, first.push(i) - 1);
-    of[i] = id.get(k);
-  }
-  const n = first.length;
-  const free = new Uint8Array(n);
-  for (let i = 0; i < corners; i++) if (source[i] < 0) free[of[i]] = 1;
-  for (let i = 0; i < corners; i++) if (source[i] >= 0) free[of[i]] = 0;
-  const near = Array.from({ length: n }, () => new Set());
-  const tri = index ? (t, j) => index[t * 3 + j] : (t, j) => t * 3 + j;
-  const tris = (index ? index.length : corners) / 3;
-  for (let t = 0; t < tris; t++) {
-    for (let j = 0; j < 3; j++) {
-      const a = of[tri(t, j)], b = of[tri(t, (j + 1) % 3)];
-      if (a !== b) near[a].add(b), near[b].add(a);
-    }
-  }
-  let w = first.map((i) => {
-    const m = new Map();
-    for (let k = 0; k < 4; k++) if (skinWeight[i * 4 + k] > 0) m.set(skinIndex[i * 4 + k], (m.get(skinIndex[i * 4 + k]) ?? 0) + skinWeight[i * 4 + k]);
-    return m;
-  });
-  for (let r = 0; r < rounds; r++) {
-    w = w.map((m, g) => {
-      if (!free[g] || !near[g].size) return m;
-      const sum = new Map(m);
-      for (const h of near[g]) for (const [b, x] of w[h]) sum.set(b, (sum.get(b) ?? 0) + x);
-      const total = near[g].size + 1;
-      for (const [b, x] of sum) sum.set(b, x / total);
-      return sum;
-    });
-  }
-  for (let i = 0; i < corners; i++) {
-    const g = of[i];
-    if (!free[g]) continue;
-    const top = [...w[g]].sort((a, b) => b[1] - a[1]).slice(0, 4);
-    const total = top.reduce((a, [, x]) => a + x, 0) || 1;
-    for (let k = 0; k < 4; k++) {
-      skinIndex[i * 4 + k] = top[k] ? top[k][0] : 0;
-      skinWeight[i * 4 + k] = top[k] ? top[k][1] / total : 0;
-    }
-  }
 }
 

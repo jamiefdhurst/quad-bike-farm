@@ -504,7 +504,11 @@ function addWellies(rig, color) {
  * Dresses her: recolours the body's palette and fits the garments. `garments: false` leaves the fitting for later (refitOutfit),
  * for a girl whose shirt colour and buttons are dealt straight after she's made, so they're only fitted once.
  */
-export function applyOutfit(rig, outfit, { garments = true } = {}) {
+export function applyOutfit(rig, outfit, options = {}) {
+  whileDressing(() => dressFor(rig, outfit, options));
+}
+
+function dressFor(rig, outfit, { garments = true } = {}) {
   rig.root.updateMatrixWorld(true);
   rig.outfitParts = [];
   const body = bodyMesh(rig);
@@ -639,6 +643,28 @@ export function reshirt(rig, outfit, color) {
  * under each breast (figure.js, bustPatch.js coverBust; #1143), where she has one.
  */
 export function bodyData(rig, body, { cover = false } = {}) {
+  const key = cover ? 'cover' : 'own';
+  const kept = dressing?.get(body)?.[key];
+  if (kept) return kept;
+  const made = freshBodyData(rig, body, cover);
+  if (dressing) dressing.set(body, { ...dressing.get(body), [key]: made });
+  return made;
+}
+
+// While she is being dressed, her body data worked out once and shared by every top, collar and trim (#1143): she doesn't move in
+// between, and from the covered body it took about 0.1 s each time. Nothing changes it in place.
+let dressing = null;
+function whileDressing(fn) {
+  const was = dressing;
+  dressing = new Map();
+  try {
+    return fn();
+  } finally {
+    dressing = was;
+  }
+}
+
+function freshBodyData(rig, body, cover) {
   rig.root.updateMatrixWorld(true);
   body.skeleton.update();
   const g = body.geometry;
@@ -1514,7 +1540,7 @@ export function refitOutfit(rig, outfit) {
   rig.outfitParts = [];
   rig.hood = null;
   rig.withRestPose(() => {
-    addGarments(rig, outfit);
+    whileDressing(() => addGarments(rig, outfit));
     rig.onDressed?.(); // mud and dust on what she has on (effects/girlMud.js), while the clothes are at rest
   });
 }
