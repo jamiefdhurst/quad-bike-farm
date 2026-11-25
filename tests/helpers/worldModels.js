@@ -213,9 +213,14 @@ export async function buildWorldModels() {
   // The neighbour's land across the lane (#569) and her cows, on the new farm's ground.
   const { buildNeighbourLand } = await import('../../src/world/neighbourLandProps.js');
   add('setPiece', 'neighbourLand', buildNeighbourLand, (b) => (b(c2), found('neighbourLand')));
-  // Back Lane's gates and hedges (#686), on the new farm's ground.
+  // Back Lane's gates and hedges (#686), on the new farm's ground: its furniture is a group to each stretch of road (#1018), all of them checked as one.
   const { buildBackLaneProps } = await import('../../src/world/backLaneProps.js');
-  add('setPiece', 'backLane', buildBackLaneProps, (b) => (b(c2), found('backLane')));
+  add('setPiece', 'backLane', buildBackLaneProps, (b) => {
+    const all = new THREE.Group();
+    all.name = 'backLane';
+    all.add(...b(c2).groups);
+    return all;
+  });
   // The A-road's hedges, junction furniture and bus stop flag, and the lane's cottages, gateways, bin and postbox (#687), on the new farm's ground.
   const { buildARoadProps } = await import('../../src/world/aRoadProps.js');
   add('setPiece', 'junctions', buildARoadProps, (b) => (b(c2), found('junctions')));
