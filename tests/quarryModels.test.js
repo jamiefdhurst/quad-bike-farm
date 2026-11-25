@@ -73,7 +73,7 @@ describe('the excavator joins up', () => {
 });
 
 describe('the container', () => {
-  it('has corrugated sides that a dent pushes in, and doors on the +x end with one leaf standing open', async () => {
+  it('has corrugated sides that a dent pushes in, and doors on the +x end, both leaves shut and chained (#1003: one stood open before)', async () => {
     vi.stubGlobal('document', { createElement: () => fakeCanvas() });
     const { corrugatedGeometry, dentGeometry, buildContainer, containerMaterials, CONTAINER } = await import('../src/world/containerModel.js');
     const flat = corrugatedGeometry(2, 1, { crest: 1, steps: 8 });
@@ -84,9 +84,12 @@ describe('the container', () => {
     let pushed = 0;
     for (let i = 0; i < flat.attributes.position.count; i++) if (zs(flat, i) - zs(dented, i) > 0.04) pushed++;
     expect(pushed).toBeGreaterThan(0);
-    const { boxes, leaves } = buildContainer(containerMaterials(random), random);
+    const { group, boxes, leaves } = buildContainer(containerMaterials(random), random);
     expect(leaves).toHaveLength(2);
-    expect(leaves.filter((open) => Math.abs(open) > 0.5)).toHaveLength(1);
+    expect(leaves.filter((open) => Math.abs(open) > 0.01)).toHaveLength(0);
+    const chain = new THREE.Box3().setFromObject(group.getObjectByName('chain'));
+    expect(chain.min.x).toBeGreaterThan(CONTAINER.length / 2 - 0.05); // on the doors, round the inner bars
+    expect(chain.max.z - chain.min.z).toBeGreaterThan(0.6);
     expect(boxes[0][3]).toBeCloseTo(CONTAINER.length / 2, 1);
   });
 });

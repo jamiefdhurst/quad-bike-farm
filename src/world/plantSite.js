@@ -28,6 +28,29 @@ const segmentDistance = (px, pz, ax, az, bx, bz) => {
   return Math.hypot(px - (ax + t * dx), pz - (az + t * dz));
 };
 
+/** The x of each trestle under the second conveyor, in the plant's frame, for a conveyor whose head hangs at `headX`: every 3.6 m from 10.7 m, none near its head. */
+export function secondLegs(headX) {
+  const legs = [];
+  for (let x = 10.7; x < headX - 3.8; x += 3.6) legs.push(x);
+  return legs;
+}
+
+/**
+ * Where the plant's legs and posts stand on their footings (#1003), in its frame, for the weeds that grow round them: the hopper's four legs, the tail
+ * posts and trestles of the first conveyor, the screen's posts, the second conveyor's trestles and the generator skid's corners (on the side
+ * `side`). `[{ x, z, onPad }]`, `onPad` for a footing on the pad rather than the floor.
+ */
+export function plantFootings(headX, side = -1, params = PLANT) {
+  const out = [];
+  const add = (x, z) => out.push({ x, z, onPad: x > params.padX0 && x < params.padX1 && Math.abs(z) < params.padHz });
+  for (const sx of [-1.12, 1.12]) for (const sz of [-1.75, 1.75]) add(sx, sz);
+  for (const sz of [-0.58, 0.58]) add(0.3, sz);
+  for (const x of [2.7, 4.0, 4.7, 8.1]) for (const sz of [-0.97, 0.97]) add(x, sz);
+  for (const x of secondLegs(headX)) for (const sz of [-0.95, 0.95]) add(x, sz);
+  for (const dx of [-1.45, 1.45]) for (const dz of [-0.55, 0.55]) add(6.4 + dx, side * 2.45 + dz);
+  return out;
+}
+
 /** A point of the plant at (lx, lz) in its frame, in the world. `site` is `{ x, z, turn }`. */
 export function plantPoint(site, lx, lz) {
   return { x: site.x + Math.cos(site.turn) * lx + Math.sin(site.turn) * lz, z: site.z - Math.sin(site.turn) * lx + Math.cos(site.turn) * lz };

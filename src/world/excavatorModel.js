@@ -4,18 +4,25 @@
 
 import * as THREE from 'three';
 import { Parts } from './parts.js';
-import { diggerTexture, rustTexture } from './quarryTextures.js';
+import { diggerTexture, rustTexture, crackedGlassTexture } from './quarryTextures.js';
+import { addRustStreaks, brokenPaneGeometry, shardsGeometry, streakMaterial } from './relicKit.js';
+import { seeded } from './propStreams.js';
 
-/** The excavator's materials, made once. */
-export function excavatorMaterials(random) {
+/**
+ * The excavator's materials, made once. `wear` is the stream the years of standing are drawn from (#1003): the yellow and the orange faded and
+ * chalked, the rams' chrome gone dull, rust streaks, and the cab's glass cracked. `random` draws what it drew before, so nothing dealt after it moves.
+ */
+export function excavatorMaterials(random, wear = random) {
   const lit = (o) => new THREE.MeshStandardMaterial({ roughness: 0.85, ...o });
   return named({
-    yellow: lit({ map: diggerTexture(random, '#b69a34'), roughness: 0.8 }),
-    orange: lit({ map: diggerTexture(random, '#a85a28'), roughness: 0.8 }),
+    yellow: lit({ map: diggerTexture(random, '#bf9d3e', { wear, chalk: 1, rust: 0.6 }), roughness: 0.95 }), // faded and chalky: matt, paler, powdery
+    orange: lit({ map: diggerTexture(random, '#a2643a', { wear, chalk: 0.8, rust: 0.8 }), roughness: 0.95 }),
     rustDark: lit({ map: rustTexture(random, '#5b3a2a'), roughness: 0.9 }),
     dark: lit({ color: 0x252422, roughness: 0.9 }),
-    chrome: lit({ color: 0xa9adb0, metalness: 0.8, roughness: 0.3 }),
-    glass: new THREE.MeshStandardMaterial({ color: 0x31444a, roughness: 0.15, metalness: 0.2, transparent: true, opacity: 0.4, depthWrite: false }),
+    chrome: lit({ color: 0x8d8a84, metalness: 0.55, roughness: 0.55 }), // the rams' rods dulled and pitted
+    glass: new THREE.MeshStandardMaterial({ color: 0x3a4a4c, roughness: 0.3, metalness: 0.1, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide }),
+    cracked: new THREE.MeshStandardMaterial({ map: crackedGlassTexture(wear), roughness: 0.3, metalness: 0.1, transparent: true, depthWrite: false, side: THREE.DoubleSide }),
+    streak: streakMaterial(wear),
     amber: lit({ color: 0xc9801a, roughness: 0.4 }),
   });
 }
@@ -88,6 +95,7 @@ function buildHouse(p, m) {
   p.extrude(m.orange, [[-2.25, 1.17], [-1.45, 1.17], [-1.45, 2.35], [-2.25, 2.35], [-2.5, 2.0], [-2.5, 1.4]], 2.46);
   p.add(m.dark, new THREE.TorusGeometry(0.07, 0.02, 6, 12), -2.0, 2.4, 0, Math.PI / 2, 0, 0); // its lifting eye
   p.box(m.rustDark, 0.12, 0.1, 0.3, -2.0, 2.36, 0);
+  addRustStreaks(p, m.streak, [-0.45, 0.05, 0.5].map((z, i) => ({ x: -2.5, y: 1.99, z, normal: '-x', len: 0.32 + i * 0.07, w: 0.12 }))); // rust run down its back from the top (#1003)
   for (const z of [-0.95, 0.95]) p.box(m.amber, 0.03, 0.14, 0.2, -2.505, 1.55, z); // the tail lamps
   for (const z of [-0.95, 0.95]) p.box(m.dark, 0.05, 0.2, 0.28, -2.485, 1.55, z);
   // The engine hood, its door lines, handle and louvres.
@@ -129,12 +137,15 @@ function buildCab(p, m) {
   for (const px of [x0 + 0.03, x1 - 0.03]) for (const pz of [z0 + 0.03, z1 - 0.03]) p.box(m.yellow, 0.07, 1.1, 0.07, px, 2.33, pz < cz ? pz - 0.005 : pz + 0.005, 0, 1.5);
   p.box(m.yellow, 1.56, 0.08, 1.14, cx, 2.89, cz, 0, 1.5); // the roof
   p.box(m.rustDark, 1.5, 0.03, 1.08, cx, 2.945, cz, 0, 1.5); // a worn plate on it
-  // The glass: the windscreen, the back, the right side and the door's.
-  p.box(m.glass, 0.012, 1.0, 0.82, x1 - 0.005, 2.325, cz, 0);
+  // The glass, years after it was left (#1003): the windscreen put through, a hole with the glass jagged round it and its shards on the deck in
+  // front; the door's pane starred and crazed; the little pane beside the door gone, a few shards on the sill; the back and the right side dirty but whole.
+  const rnd = seeded(1003);
+  p.add(m.cracked, brokenPaneGeometry(0.82, 1.0, rnd, { hole: [0.42, 0.56], size: 0.62 }), x1 - 0.005, 2.325, cz, 0, Math.PI / 2, 0);
+  p.add(m.glass, shardsGeometry(rnd, 10, 0.18), x1 + 0.12, 1.272, cz - 0.1);
   p.box(m.glass, 0.012, 1.0, 0.82, x0 + 0.005, 2.325, cz, 0);
   p.box(m.glass, 1.2, 1.0, 0.012, cx, 2.325, z1 - 0.005, 0);
-  p.box(m.glass, 0.86, 0.86, 0.012, 0.5, 2.35, z0 + 0.012, 0);
-  p.box(m.glass, 0.3, 0.86, 0.012, x0 + 0.17, 2.35, z0 + 0.012, 0);
+  p.box(m.cracked, 0.86, 0.86, 0.012, 0.5, 2.35, z0 + 0.012, 0);
+  p.add(m.glass, shardsGeometry(rnd, 3, 0.1), x0 + 0.17, 1.802, z0 + 0.1);
   p.box(m.yellow, 0.05, 1.0, 0.05, 0.47, 2.33, z1 - 0.03, 0, 1.5); // the right side's mullion
   // The door: its frame, a lower panel, a handle on stand-offs, two hinges.
   const zb = (w, h, x, y, outer, inner) => p.box(m.yellow, w, h, inner - outer, x, y, (outer + inner) / 2, 0, 1.5); // a bar of the frame from `outer` to `inner` in z
@@ -284,6 +295,27 @@ function buildArm(p, m) {
     const pts = [[0.9, 1.3, z - 0.1 * Math.sign(z - zc)], [...along(P0, M, 0.35, -0.3), z], [...along(P0, M, 0.9, -0.3), z], [...along(M, E, 0.5, -0.27), z], [...along(M, E, 1.0, -0.27), z], [...along(E, S, 0.15, -0.28), z]];
     p.add(m.dark, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((q) => new THREE.Vector3(...q))), 24, 0.026, 6), 0, 0, 0);
   }
+  // Rust streaming from every pin (#1003), down the face it shows on, both sides: the foot's ears, the boom under its bend, the elbow's boss and the
+  // stick under it, the stick ram's ear, the bucket's side plates under its pin and its top lug, and the boom rams' feet.
+  const streaks = [];
+  const both = (x, y, zPlus, zMinus, len, w = 0.09) => {
+    streaks.push({ x, y, z: zPlus, normal: '+z', len, w }, { x, y, z: zMinus, normal: '-z', len, w });
+  };
+  both(P0[0], P0[1], 0.66, 0.04, 0.22);
+  both(M[0], M[1] - 0.02, zc + 0.23, zc - 0.23, 0.4);
+  both(E[0], E[1], zc + 0.25, zc - 0.25, 0.25, 0.12);
+  both(E[0], E[1] - 0.3, zc + 0.17, zc - 0.17, 0.2, 0.07);
+  both(ear[0], ear[1], zc + 0.15, zc - 0.15, 0.12, 0.06);
+  both(S[0], S[1], zc + 0.54, zc - 0.54, 0.85, 0.1);
+  both(lug[0], lug[1] - 0.04, zc + 0.54, zc - 0.54, 0.5, 0.07);
+  streaks.push({ x: 0.82, y: 1.5, z: -0.17, normal: '-z', len: 0.18, w: 0.06 }, { x: 0.82, y: 1.5, z: 0.87, normal: '+z', len: 0.18, w: 0.06 });
+  // The rams' other pins: the boom rams' top eyes down the cross box they hang from, the stick ram's foot down its bracket on the boom, and a short
+  // run on the eye of the bucket ram at each end (its foot on the stick and its rod at the H-link), which is all the flat steel under them.
+  both(lugB[0], lugB[1] + 0.005, zc + 0.23, zc - 0.23, 0.08, 0.05);
+  both(stickBase[0], stickBase[1], zc + 0.1, zc - 0.1, 0.13, 0.04);
+  both(kTop[0], kTop[1] - 0.005, zc + 0.065, zc - 0.065, 0.06, 0.04);
+  both(hk[0], hk[1] - 0.005, zc + 0.085, zc - 0.085, 0.055, 0.035);
+  addRustStreaks(p, m.streak, streaks);
   return {
     joints: [{ name: 'boomFoot', at: P0 }, { name: 'boomBend', at: M }, { name: 'elbow', at: E }, { name: 'bucketPin', at: S }],
     links: [

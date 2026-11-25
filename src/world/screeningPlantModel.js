@@ -1,17 +1,19 @@
 // The pit's screening plant, as a small aggregate plant really stands: a hardcore pad, a feed hopper on legs over a jaw crusher, a conveyor climbing
 // to a screen box on springs, a second conveyor from the screen that climbs on trestles to end over the top of a heap, and beside them a diesel
 // generator on its skid. Rusted and left, but standing: every part meets the next. Built in a local frame (+x from the hopper to the heap, +z to the
-// right, y = 0 the pad's top) and merged per material. The site cabin and the excavator are placed beside it by quarryProps.js.
+// right, y = 0 the pad's top) and merged per material. The site cabin and the excavator are placed beside it by quarryProps.js. Since #1003 the long
+// conveyor's belt is torn through, its ends hanging and its return run slack, the pad is cracked and mossed, and the cable across the pad is gone;
+// the weeds at its footings are placed round `parts.footings` by quarryProps.js.
 
 import * as THREE from 'three';
 import { Parts } from './parts.js';
-import { PLANT } from './plantSite.js';
-import { hardcoreTexture, paintedSteelTexture, rustTexture } from './quarryTextures.js';
+import { PLANT, secondLegs, plantFootings } from './plantSite.js';
+import { hardcoreTexture, paintedSteelTexture, rustTexture, beltTexture } from './quarryTextures.js';
 
-/** The plant's materials, made once. */
-export function plantMaterials(random) {
+/** The plant's materials, made once; `wear` draws the years of standing (#1003), `random` what it drew before. */
+export function plantMaterials(random, wear = random) {
   const lit = (o) => new THREE.MeshStandardMaterial({ roughness: 0.85, ...o });
-  const hardcore = hardcoreTexture(random);
+  const hardcore = hardcoreTexture(random, { wear });
   const m = {
     hardcore: lit({ map: hardcore, roughness: 1 }),
     rust: lit({ map: rustTexture(random), roughness: 0.9 }),
@@ -19,7 +21,7 @@ export function plantMaterials(random) {
     frame: lit({ map: paintedSteelTexture(random, '#55646a', 0.8), roughness: 0.8 }),
     crusher: lit({ map: paintedSteelTexture(random, '#a8622c', 0.9), roughness: 0.8 }),
     canopy: lit({ map: paintedSteelTexture(random, '#46604b', 0.6), roughness: 0.75 }),
-    belt: lit({ color: 0x1f1f1d, roughness: 0.95 }),
+    belt: lit({ map: beltTexture(wear), roughness: 0.95 }),
     dark: lit({ color: 0x252422, roughness: 0.9 }),
     concrete: lit({ color: 0x8a867d, roughness: 1 }),
     red: lit({ color: 0x9a2a1e, roughness: 0.6 }),
@@ -34,13 +36,50 @@ const BELT_W = 0.84;
 
 /**
  * A conveyor from `a` to `b` ([x, y], the top of its belt): a belt on two side channels with a drum at each end, a return run, troughing idlers
- * every metre, and trestles at each x in `legs`, standing on `ground(x, z)`. Returns the trestles' colliders.
+ * every metre, and trestles at each x in `legs`, standing on `ground(x, z)`. With `torn` ([from, to] fractions along it, #1003) the belt is torn
+ * through there, both ends hanging, and its return run slack between its supports. Returns the trestles' colliders.
  */
-function conveyor(p, m, a, b, legs, ground) {
+function conveyor(p, m, a, b, legs, ground, { torn = null } = {}) {
   const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
   const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  p.beam(m.belt, a[0], a[1] - 0.03, b[0], b[1] - 0.03, 0.05, BELT_W, 0, 1);
-  p.beam(m.belt, a[0], a[1] - 0.44, b[0], b[1] - 0.44, 0.03, BELT_W - 0.04, 0, 1);
+  const at = (t, dy) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t + dy];
+  if (!torn) {
+    p.beam(m.belt, a[0], a[1] - 0.03, b[0], b[1] - 0.03, 0.05, BELT_W, 0, 1);
+    p.beam(m.belt, a[0], a[1] - 0.44, b[0], b[1] - 0.44, 0.03, BELT_W - 0.04, 0, 1);
+  } else {
+    const [t0, t1] = torn;
+    const e0 = at(t0, -0.03);
+    const e1 = at(t1, -0.03);
+    p.beam(m.belt, a[0], a[1] - 0.03, e0[0], e0[1], 0.05, BELT_W, 0, 1);
+    p.beam(m.belt, e1[0], e1[1], b[0], b[1] - 0.03, 0.05, BELT_W, 0, 1);
+    // Each torn end hangs down off its last idler in pieces that narrow to a ragged tip.
+    const flap = (from, dirs) => {
+      let q = from;
+      for (const [a2, l, wd, z] of dirs) {
+        const n = [q[0] + Math.cos(a2) * l, q[1] + Math.sin(a2) * l];
+        p.beam(m.belt, q[0], q[1], n[0], n[1], 0.012, wd, z, 1);
+        q = n;
+      }
+    };
+    flap(e0, [[-0.9, 0.5, BELT_W - 0.06, 0], [-1.2, 0.45, 0.6, -0.08], [-1.4, 0.28, 0.32, -0.18]]); // down and on, from the lower piece
+    flap(e1, [[Math.PI + 1.1, 0.42, BELT_W - 0.08, 0], [Math.PI + 1.3, 0.34, 0.5, 0.12], [Math.PI + 1.45, 0.2, 0.24, 0.22]]); // down and back, from the upper
+    // The return run, slack: drooping between the drums and the trestles it hangs from.
+    const supports = [0, ...legs.map((x) => (x - a[0]) / (b[0] - a[0])).filter((t) => t > 0.02 && t < 0.98), 1];
+    for (let i = 0; i + 1 < supports.length; i++) {
+      const [s0, s1] = [supports[i], supports[i + 1]];
+      const sag = Math.min(0.35, 0.09 * (s1 - s0) * len);
+      const n = 4;
+      for (let k = 0; k < n; k++) {
+        const u0 = k / n;
+        const u1 = (k + 1) / n;
+        const y0 = -0.44 - sag * 4 * u0 * (1 - u0);
+        const y1 = -0.44 - sag * 4 * u1 * (1 - u1);
+        const pa = at(s0 + (s1 - s0) * u0, y0);
+        const pb = at(s0 + (s1 - s0) * u1, y1);
+        p.beam(m.belt, pa[0], pa[1], pb[0], pb[1], 0.03, BELT_W - 0.04 - (k % 2) * 0.008, 0, 1); // every other piece 8 mm narrower, so their sides never share a plane where they overlap
+      }
+    }
+  }
   for (const sz of [-1, 1]) p.beam(m.frame, a[0], a[1] - 0.1, b[0], b[1] - 0.1, 0.32, 0.06, sz * 0.48, 2);
   for (const e of [a, b]) {
     p.wheel(m.rustDark, 0.22, BELT_W + 0.04, e[0], e[1] - 0.22, 0, 14);
@@ -162,9 +201,8 @@ export function buildScreeningPlant(m, { headX, headY, ground, side = -1 }) {
   for (const sz of [-1, 1]) p.box(m.rustDark, 0.1, tail1[1] - 0.22, 0.1, tail1[0], (tail1[1] - 0.22) / 2, sz * 0.58, 0, 1); // the tail's posts
   const tail2 = [PLANT.tailX, PLANT.tailY];
   const head2 = [headX, headY];
-  const legs2 = [];
-  for (let x = 10.7; x < headX - 3.8; x += 3.6) legs2.push(x);
-  boxes.push(...conveyor(p, m, tail2, head2, legs2, floorAt));
+  const legs2 = secondLegs(headX);
+  boxes.push(...conveyor(p, m, tail2, head2, legs2, floorAt, { torn: tornAt(legs2, tail2, head2) }));
 
   // The screen: a box on four springs on cross beams and posts, a lid with a feed box on it, a motor, a chute out to the second belt.
   for (const sx of [4.7, 8.1]) {
@@ -205,16 +243,23 @@ export function buildScreeningPlant(m, { headX, headY, ground, side = -1 }) {
   p.rod(m.dark, [g.x + 1.0, 1.8, g.z - near * 0.2], [g.x + 1.0, 2.7, g.z - near * 0.2], 0.055, 0.055, 8);
   p.add(m.dark, new THREE.CylinderGeometry(0, 0.18, 0.1, 8), g.x + 1.0, 2.75, g.z - near * 0.2);
   p.box(m.rustDark, 0.08, 0.1, 0.08, g.x + 1.0, 2.69, g.z - near * 0.2, 0, 1);
-  // The cable from it along the pad, in under the hopper's back and up to a junction box on the crusher.
-  const cable = [[g.x - 1.4, 0.05, g.z], [g.x - 1.4, 0.05, side * 2.45], [-2.6, 0.05, side * 2.45], [-2.6, 0.05, 0], [-0.88, 0.05, 0], [-0.88, 1.1, 0]];
-  for (let i = 0; i + 1 < cable.length; i++) {
-    p.rod(m.dark, cable[i], cable[i + 1], 0.025, 0.025, 5);
-    p.box(m.dark, 0.06, 0.06, 0.06, ...cable[i + 1], 0, 1);
-  }
-  p.box(m.rustDark, 0.14, 0.24, 0.32, -0.88, 1.2, 0, 0, 1.5);
+  // The junction box on the crusher's back, its cable long since cut off (#1003: the cable that ran across the pad read as stray black lines),
+  // a stub of it hanging from the gland under it.
+  p.box(m.rustDark, 0.14, 0.24, 0.32, -0.86, 1.2, 0, 0, 1.5);
+  p.rod(m.dark, [-0.87, 1.09, 0.05], [-0.88, 0.9, 0.07], 0.022, 0.02, 6);
   boxes.push([g.x, 0.95, g.z, 1.4, 0.95, 0.65]);
 
   const group = p.build();
   group.name = 'screeningPlant';
-  return { group, boxes, parts: { head1, tail2, head2, screen: { x: 6.4, y: 1.5, hx: 2.0, hy: 0.35 }, legs2, generator: g } };
+  const torn = tornAt(legs2, tail2, head2);
+  return { group, boxes, parts: { head1, tail2, head2, screen: { x: 6.4, y: 1.5, hx: 2.0, hy: 0.35 }, legs2, generator: g, torn, footings: plantFootings(headX, side) } };
+}
+
+/** Where the long conveyor's belt is torn (#1003): [from, to] as fractions along it, a gap of 0.9 m between its first two trestles (or past the first). */
+export function tornAt(legs2, tail2, head2) {
+  const len = head2[0] - tail2[0];
+  const mid = legs2.length > 1 ? (legs2[0] + legs2[1]) / 2 : (legs2[0] ?? tail2[0]) + 1.6;
+  const t = (mid - tail2[0]) / len;
+  const half = 0.45 / Math.hypot(len, head2[1] - tail2[1]);
+  return [t - half, t + half];
 }

@@ -1,16 +1,17 @@
 // The wet edge's and the grazed meadow's plants (#999), built once for every wet edge: a reed with flat streaked blades and a buff plume, a soft rush,
 // a sedge, a meadow tussock, a spear thistle, a broad-leaved dock, a cowpat and a loose stone. They share one texture (`plantAtlas`): a reed blade
 // greening to straw at its tip, a plume, a rush stem, a sedge blade, a thistle's spiny leaf, a dock's leaf and a white patch, which a part with only a
-// colour of its own maps to, so its vertex colour shows. One material for the lot (`plantMaterial`), lit like the world.
+// colour of its own maps to, so its vertex colour shows. One material for the lot (`plantMaterial`), lit like the world. The Old Pit's relics (#1003)
+// added a young birch (`birchModel`), with a bark column and a spray of birch leaves in the atlas, and use the reeds, rushes, sedge and tussocks too.
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { canvasTexture } from './outbuildingProps.js';
 
 /** The atlas's columns, as [u0, u1] across it; v runs 0 at a blade's foot to 1 at its tip. `white` is a patch of plain white for coloured parts. */
-export const ATLAS = { blade: [0, 0.125], plume: [0.125, 0.25], rush: [0.25, 0.375], sedge: [0.375, 0.5], thistle: [0.5, 0.625], dock: [0.625, 0.75], white: [0.8, 0.9] };
+export const ATLAS = { blade: [0, 0.125], plume: [0.125, 0.25], rush: [0.25, 0.375], sedge: [0.375, 0.5], thistle: [0.5, 0.625], dock: [0.625, 0.75], bark: [0.75, 0.8], white: [0.8, 0.9], birch: [0.9, 1] };
 
-/** The plants' texture (`draw` given a 2D context, so a test can draw it on a stand-in). 256 by 256: seven columns of 32 px. */
+/** The plants' texture (`draw` given a 2D context, so a test can draw it on a stand-in). 256 by 256: six columns of 32 px, the white patch, and the birch's bark and leaves. */
 export function drawPlantAtlas(g, w = 256, h = 256) {
   const col = (k) => ATLAS[k][0] * w;
   const cw = w / 8;
@@ -100,6 +101,41 @@ export function drawPlantAtlas(g, w = 256, h = 256) {
   }
   g.fillStyle = '#ffffff';
   g.fillRect(ATLAS.white[0] * w, 0, (ATLAS.white[1] - ATLAS.white[0]) * w, h);
+  // A young birch's bark (#1003): white, grey at the foot, with dark lenticels across it and the odd black scar.
+  {
+    const x0 = ATLAS.bark[0] * w;
+    const bw = (ATLAS.bark[1] - ATLAS.bark[0]) * w;
+    const grad = g.createLinearGradient(0, h, 0, 0);
+    grad.addColorStop(0, '#7d766a');
+    grad.addColorStop(0.25, '#d9d6cc');
+    grad.addColorStop(1, '#a4714f'); // a young twig's red-brown at the top
+    g.fillStyle = grad;
+    g.fillRect(x0, 0, bw, h);
+    for (let i = 0; i < 40; i++) {
+      g.fillStyle = `rgba(40,36,32,${0.4 + rnd() * 0.4})`;
+      g.fillRect(x0 + rnd() * bw * 0.6, rnd() * h, 2 + rnd() * bw * 0.5, 1);
+    }
+  }
+  // A spray of birch leaves (#1003): small toothed diamond-shaped leaves alternating along a thin twig, see-through between them.
+  {
+    const x0 = ATLAS.birch[0] * w;
+    const bw = (ATLAS.birch[1] - ATLAS.birch[0]) * w;
+    g.fillStyle = '#6a4a34';
+    g.fillRect(x0 + bw / 2 - 0.5, 0, 1, h);
+    for (let i = 0; i < 9; i++) {
+      const y = h * (1 - (i + 0.7) / 10);
+      const side = i % 2 ? 1 : -1;
+      const l = 0.8 + rnd() * 0.2;
+      g.fillStyle = rnd() < 0.15 ? '#a89a3c' : `rgb(${70 + rnd() * 25},${104 + rnd() * 30},${38 + rnd() * 14})`;
+      g.beginPath(); // a leaf a hand's width long on a spray, pointed, broadest near its stalk
+      g.moveTo(x0 + bw / 2, y);
+      g.lineTo(x0 + bw / 2 + side * bw * 0.3 * l, y - 22 * l);
+      g.lineTo(x0 + bw / 2 + side * bw * 0.49 * l, y - 8 * l);
+      g.lineTo(x0 + bw / 2 + side * bw * 0.2 * l, y + 6 * l);
+      g.closePath();
+      g.fill();
+    }
+  }
 }
 
 let atlas = null;
@@ -357,4 +393,54 @@ export function cowpatModel(random) {
 /** A loose stone or cobble: a rounded lump, flattened, grey-brown. */
 export function stoneModel() {
   return coloured(new THREE.IcosahedronGeometry(1, 1).scale(1, 0.55, 0.8), '#ffffff');
+}
+
+/** A tapered stem from `a` to `b` ([x, y, z]), radius `r0` to `r1`, its bark from the atlas's bark column (v up it, `v0` to `v1`). Non-indexed. */
+function barkStem(a, b, r0, r1, v0 = 0, v1 = 1, sides = 5) {
+  const dir = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+  const len = dir.length();
+  const geo = new THREE.CylinderGeometry(r1, r0, len, sides, 1, true).toNonIndexed();
+  geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize()));
+  geo.translate((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2);
+  const uv = geo.attributes.uv;
+  const [u0, u1] = ATLAS.bark;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, u0 + 0.004 + uv.getX(i) * (u1 - u0 - 0.008), v0 + uv.getY(i) * (v1 - v0));
+  const colors = new Float32Array(geo.attributes.position.count * 3).fill(1);
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return geo;
+}
+
+/**
+ * A young birch (#1003), the first tree into waste ground: a white stem `height` m tall, a little crooked, `branches` slender side shoots up its top
+ * two-thirds, and sprays of small leaves along each and at the top. A seedling at half a metre or a sapling at three, the bark and the leaves from
+ * the atlas; its foot at the origin. For the pit's heaps, the sleepers under its container, and anywhere ground has been left. `facing` (radians,
+ * the way `strip` takes a yaw) is for one growing against a wall: it leans that way and puts its shoots out on that side only.
+ */
+export function birchModel(random, { height = 1, branches = 4, facing = null } = {}) {
+  const parts = [];
+  const r0 = 0.006 + height * 0.012;
+  const lean = facing === null ? (random() - 0.5) * 0.12 : 0.1 + random() * 0.06;
+  const yaw0 = facing ?? random() * Math.PI * 2;
+  const bend = [Math.cos(yaw0) * lean * height, Math.sin(yaw0) * lean * height];
+  const stemAt = (t) => [bend[0] * t * t + 0.03 * height * Math.sin(t * 7), height * t, bend[1] * t * t];
+  const steps = 4;
+  for (let i = 0; i < steps; i++) parts.push(barkStem(stemAt(i / steps), stemAt((i + 1) / steps), r0 * (1 - (i / steps) * 0.8), r0 * (1 - ((i + 1) / steps) * 0.8), i / steps, (i + 1) / steps));
+  // A spray of leaves: two strips crossed, so it reads from the side as well as from above.
+  const spray = (at, yaw, len, lean2) => {
+    for (const roll of [0, Math.PI / 2]) parts.push(strip({ x: at[0], y: at[1], z: at[2], yaw: yaw + roll * 0.25, len, width: Math.min(0.22, 0.1 + len * 0.35), lean: lean2 + (roll ? 0.35 : 0), droop: 0.35, segs: 3, col: 'birch', taper: 0.2 }));
+  };
+  for (let k = 0; k < branches; k++) {
+    const t = 0.35 + (k / Math.max(1, branches)) * 0.55 + random() * 0.05;
+    const from = stemAt(t);
+    const yaw = facing === null ? yaw0 + k * 2.4 + random() * 0.6 : facing + (random() - 0.5) * 2.2;
+    const blen = height * (0.25 + random() * 0.2) * (1.2 - t);
+    const to = [from[0] + Math.cos(yaw) * blen, from[1] + blen * 0.55, from[2] + Math.sin(yaw) * blen];
+    parts.push(barkStem(from, to, r0 * 0.35, r0 * 0.12, 0.6, 0.95, 4));
+    spray(to, yaw, Math.min(0.4, 0.12 + height * 0.15), 0.9);
+    spray([(from[0] + to[0]) / 2, (from[1] + to[1]) / 2, (from[2] + to[2]) / 2], yaw + 1.2, Math.min(0.32, 0.1 + height * 0.12), 1.2);
+  }
+  for (let t = 0.45; t < 0.97; t += 0.13) spray(stemAt(t), facing === null ? random() * Math.PI * 2 : facing + (random() - 0.5) * 1.6, Math.min(0.34, 0.1 + height * 0.12), 1.0); // short shoots off the stem itself
+  const top = stemAt(1);
+  for (let k = 0; k < 3; k++) spray(top, facing === null ? yaw0 + (k * Math.PI * 2) / 3 : facing + (k - 1) * 0.9, Math.min(0.36, 0.12 + height * 0.14), 0.45);
+  return merge(parts);
 }
