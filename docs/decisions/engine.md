@@ -687,3 +687,9 @@ Jamie, after #250: a quad shouldn't go from perfect to ruined inside a day; a we
 - Found by listing what else runs down: the MOT's bulbs, blades and horn (`bulbsPerHour` 0.12 to 0.018, `bladesPerHour` 0.14 to 0.02, `hornPerHour` 0.08 to 0.012, so a week of engine hours) and tyre tread (`wearPerMetre` 0.00007 to 0.00001: a new tyre bald in about 100 km, not 14). Starting rates are unchanged from #250 (about half a new fault a day, so three or four in a week).
 - Not slowed: crash damage (`rod`, `rim`), which comes from a knock; the frozen cable and a cold morning's soft tyres, which follow the weather; faults dealt at the start of a game.
 - Recheck of #250 fixed here too: game.md's old numbers, the FAQ's "Problems list" (there is none in the toolbox), and the burner's comment (80 minutes was flat out, not the old 14 at half work).
+
+## #308 Piston slap and piston looseness read apart in the panel
+
+- The panel showed no wrong value. The Problems row "piston looseness" is `pistonWear ?? wear`, and `pistonWear` starts from `wear` and rises by the same amount, so the two rows match digit for digit until a service clears `wear`. Its old label began "slap when cold", which read as the knock. The Running row "piston slap" was always `engine.slap` (looseness times coldness times the idle carry), so it can't follow wear.
+- Decided: looseness keeps following wear one for one (as #11 chose, so a service can't mend a loose bore). Only labels changed: the Problems row and the console's `pistonLooseness` help say it is how worn the bore is and that the knock is `slap`; the Running row says it is the knock now and 0 once warm.
+- `tests/pistonSlap.test.js` checks the Running row is above 0 for a cold engine with a loose piston and 0 for the same engine warm.
