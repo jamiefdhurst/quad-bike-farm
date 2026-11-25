@@ -2,7 +2,7 @@ import { vi, expect } from 'vitest';
 import { createRandom } from '../../src/core/random.js';
 import { planDamage, applyDamage } from '../../src/vehicle/rustyDamage.js';
 import { fakeCanvas } from './vehicleModels.js';
-import { boxEveryMesh } from './rays.js';
+import { quickRays } from './rays.js';
 
 // The rusty quad's donors built in node, for the damage tests (tests/rustyDamage*.test.js). Laying the damage fires thousands of rays at the
 // body, so the tests were one file of a minute that set how long `npm test` took; they are split by what they look at (#1183).
@@ -23,11 +23,11 @@ export async function loadDonors() {
   return loaded;
 }
 
-/** A donor's finished model, in brown, with `decay` (a damage plan) built into it, its geometry boxed for the rays. */
+/** A donor's finished model, in brown, with `decay` (a damage plan) built into it, its large meshes made quick to raycast. */
 export function buildDonor(id, decay) {
   const model = buildQuadModel({ bodyColor: 0x6b4426, dashStyle: id, style: STYLES[id], decay });
   model.updateMatrixWorld(true);
-  return boxEveryMesh(model);
+  return quickRays(model);
 }
 
 // Landing the same however the vehicle stands (#597), for rustyDamageSteady*.test.js ------------------------------------------------------

@@ -9,7 +9,7 @@ import { MAKERS } from '../src/vehicle/detail/decals.js';
 import { RADIO_STYLES } from '../src/vehicle/detail/radios.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
-import { boxEveryMesh } from './helpers/rays.js';
+import { quickRays } from './helpers/rays.js';
 
 let model;
 beforeAll(async () => {
@@ -17,7 +17,7 @@ beforeAll(async () => {
   vi.stubGlobal('document', { createElement: () => ({ width: 0, height: 0, getContext: () => new Proxy({}, { get: () => () => ({ addColorStop() {} }), set: () => true }), style: {} }) });
   model = buildGriffinModel({});
   model.updateMatrixWorld(true);
-  boxEveryMesh(model); // the hole tests fire thousands of rays at it (tests/helpers/rays.js)
+  quickRays(model); // the hole tests fire thousands of rays at it (tests/helpers/rays.js)
 });
 
 const world = (name) => model.getObjectByName(name).getWorldPosition(new THREE.Vector3());
@@ -229,7 +229,7 @@ describe('the Griffin at its real size', () => {
       const tyre = new THREE.Mesh(new THREE.CylinderGeometry(GRIFFIN_BODY.R, GRIFFIN_BODY.R, 0.155, 20).rotateZ(Math.PI / 2), new THREE.MeshBasicMaterial());
       tyre.position.set(wh.x, GRIFFIN_BODY.R + 0.05, wh.z);
       tyre.updateMatrixWorld(true);
-      meshes.push(boxEveryMesh(tyre));
+      meshes.push(quickRays(tyre));
     }
     const rc = new THREE.Raycaster();
     const holes = [];
