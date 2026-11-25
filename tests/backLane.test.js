@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, BACK_LANE_PLAN, OUTLINE_PLAN, fromPlan } from '../src/world/layoutNew.js';
 import { roadNetwork } from '../src/world/roads.js';
@@ -465,6 +465,56 @@ describe('walking and riding into the gateways', () => {
         }
         expect(dip, `down and back up: ${where(at)}`).toBeLessThan(0.03);
       }
+    }
+  });
+});
+
+describe('its furniture far away (#1018)', () => {
+  // The gates, signs, drains, fingerpost, stile and ford, built as the game builds them. One group round the whole 2.6 km loop was 0 m from anywhere
+  // inside it, so none of it was ever left out by distance; a group to each stretch of road is left out with the stretch.
+  let scene;
+  let groups;
+  beforeAll(async () => {
+    const { headlessContext } = await import('./helpers/worldModels.js');
+    const { fakeCanvas } = await import('./helpers/vehicleModels.js');
+    const { buildBackLaneProps } = await import('../src/world/backLaneProps.js');
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const c = headlessContext();
+    buildBackLaneProps(c);
+    vi.unstubAllGlobals();
+    scene = c.scene;
+    groups = scene.children.filter((o) => o.name === 'backLane');
+  });
+
+  it('is in groups of a stretch of road each, none with a bounding box longer than 300 m', async () => {
+    const { FarDetail } = await import('../src/world/farDetail.js');
+    const { DEFAULT_GRAPHICS_PARAMS } = await import('../src/core/graphics.js');
+    const far = new FarDetail(scene, { ...DEFAULT_GRAPHICS_PARAMS });
+    for (const g of groups) {
+      expect(g.children.length).toBeGreaterThan(0);
+      const b = far.box(g);
+      expect(Math.max(b.maxX - b.minX, b.maxZ - b.minZ), `the group from ${g.userData.from?.toFixed(0)} m along`).toBeLessThanOrEqual(300);
+    }
+    expect(groups.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it('hides each group more than setPieceDistance from you and draws the ones within it, wherever you are on the lane', async () => {
+    const { FarDetail } = await import('../src/world/farDetail.js');
+    const { distanceToTile } = await import('../src/world/tiles.js');
+    const { DEFAULT_GRAPHICS_PARAMS } = await import('../src/core/graphics.js');
+    const params = { ...DEFAULT_GRAPHICS_PARAMS };
+    const far = new FarDetail(scene, params);
+    for (const s of [40, road.length / 3, road.length / 2, road.length - 40]) {
+      const p = net.pointAt('backLane', s);
+      const you = { x: p.x, y: p.y ?? 0, z: p.z };
+      far.update(you, 0, true);
+      let hidden = 0;
+      for (const g of groups) {
+        const d = distanceToTile(far.box(g), you.x, you.z);
+        expect(g.visible, `${s.toFixed(0)} m along, a group ${d.toFixed(0)} m off`).toBe(d <= params.setPieceDistance);
+        if (!g.visible) hidden++;
+      }
+      expect(hidden, `${s.toFixed(0)} m along`).toBeGreaterThan(groups.length / 2);
     }
   });
 });
