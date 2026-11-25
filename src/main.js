@@ -9,7 +9,8 @@ try {
   await game.load((msg) => (status.textContent = msg));
   status.textContent = 'Ready';
   game.start();
-  game.prepareShaders(); // behind the start screen; nothing waits for it
+  // Behind the start screen, and nothing waits for either: the ground cover (world.js buildLater, #1107), then every shader, its own among them.
+  game.world.buildLater().then(() => game.prepareShaders());
 } catch (err) {
   status.textContent = `Failed to start: ${err.message}`;
   throw err;

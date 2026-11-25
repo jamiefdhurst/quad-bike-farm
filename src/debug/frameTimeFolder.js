@@ -1,6 +1,7 @@
 // The Tune tab's "Frame time" folder: what a frame costs and where it goes (core/frameBreakdown.js), updated as you watch. It is the first thing on
 // the tab, closed. Read-only: it is for finding what to look at, not for changing anything.
 import { FRAME_STAGES, stageText } from '../core/frameBreakdown.js';
+import { slowestStepsText } from '../core/loadSteps.js';
 
 const show = (f, label, get) => f.add({ get v() { return get(); } }, 'v').name(label).listen().disable();
 
@@ -29,6 +30,9 @@ export function buildFrameTime(d) {
   show(f, 'Ground tiles', () => { const t = g.world.terrain.tileSet.stats(); return `${t.built} of ${t.tiles} (${Object.entries(t.bySteps).map(([s, n]) => `${n} at ${s} m`).join(', ')}), ${t.waiting} waiting, slowest build ${t.worstBuildMs.toFixed(1)} ms`; });
   // The ground's painting (world/groundPaint.js): the tiles painted at full size, those waiting, and the longest a frame has spent painting one.
   show(f, 'Ground painting', () => { const t = g.world.terrain.paintStats(); return `${t.painted} tiles painted, ${t.waiting} waiting, slowest frame ${t.worstFrameMs.toFixed(1)} ms (hand-over ${t.worstFinishMs.toFixed(1)} ms)`; });
+  // The load (core/loadSteps.js, #1107): its slowest parts, which include the ground cover built behind the start screen, and where the 1 m grid was worked out.
+  show(f, 'Slowest parts of the load', () => slowestStepsText());
+  show(f, 'Ground grid worked out', () => (g.world.groundFromWorkers ? 'in workers, while the models loaded' : 'on the page'));
   show(f, 'Drawn', () => `${info().calls} calls, ${Math.round(info().triangles / 1000)}k triangles`);
   return f;
 }

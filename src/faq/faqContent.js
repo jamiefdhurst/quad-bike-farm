@@ -26,6 +26,12 @@ export const FAQ_SECTIONS = [
         tip: 'Press H at any time for the controls.',
       },
       {
+        q: 'Why does the game take a few seconds to load?',
+        a: `It builds the whole farm before it says "Ready": the shape of the ground for every metre of it, the hedges, the buildings, the village and
+          the far hills. The shape of the ground is worked out on several of your computer's cores at once while the models load, and the grass, the
+          stubble and the heather on the Moor are planted while the start screen is up. Click straight in and the nearest stubble may appear a moment later.`,
+      },
+      {
         q: 'What does the prompt in the middle of the screen mean?',
         a: `Look at anything you can use and it says what <kbd>E</kbd> does. "hold E" means the job takes time (pouring, filling, washing, forking muck): keep the key down until it is done.
           Other keys that work on the same thing are listed under it, such as <kbd>G</kbd> to put down what you are holding. A line with no key is the game saying why you can't, such as "The jerry can is full".`,

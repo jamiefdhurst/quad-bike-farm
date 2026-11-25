@@ -1,3 +1,4 @@
+import { timed } from '../core/loadSteps.js';
 import { createRiver } from './river.js';
 import { yardHeard } from './yardBed.js';
 import { moorHeard, moorBirds } from './moorBed.js';
@@ -43,15 +44,15 @@ import { villageMudBounds } from './village.js';
 const GRID_MARGIN = 1 - EDGE; // a road's bounds already include its soft edge: a grid reaches a metre past the tarmac
 
 export class World {
-  constructor({ scene, physics, RAPIER, renderer, models, layout = LAYOUT, graphics = { ...DEFAULT_GRAPHICS_PARAMS }, autumn = false, winter = false }) {
+  constructor({ scene, physics, RAPIER, renderer, models, layout = LAYOUT, graphics = { ...DEFAULT_GRAPHICS_PARAMS }, autumn = false, winter = false, groundHeights = null }) {
     this.layout = layout;
     this.autumn = autumn; // an autumn day (autumn.js): turned leaves, leaf litter, conkers and a slippery wood floor
     this.drawDistance = new DrawDistance(graphics); // hides far tiles of grass, stubble, tussocks and bracken (tiledInstances.js)
     this.farDetail = new FarDetail(scene, graphics); // leaves out set pieces, small vehicle parts and far shadows (farDetail.js)
     this.farDetail.drawShadowsWith(renderer); // and draws the still things' shadows a call or two each (#1041)
     this.track = new Track(layout.trackPoints);
-    this.heights = createTerrainHeight(layout, this.track);
-    this.fields = createFields(layout);
+    this.heights = timed('world · heights', () => createTerrainHeight(layout, this.track));
+    this.fields = timed('world · fields', () => createFields(layout));
     this.river = createRiver(layout, this.heights.brook); // the river's crossing and what zone a point is in (river.js)
     this.roads = roadNetwork(layout); // every road: world/roads.js
     this.cattleGrid = createCattleGrid(layout); // across the road in the grass field's east gateway, or null
@@ -111,7 +112,7 @@ export class World {
     };
     this.wearParams = { ...DEFAULT_WEAR_PARAMS };
     registerTuning('Ground wear', this.wearParams, WEAR_PARAM_RANGES);
-    this.wear = new WearTiles({ bounds: this.fields.wearBounds, ground: groundBounds(layout), exempt, soak: this.fields.soakAt, lane: this.fields.laneAt, params: this.wearParams });
+    this.wear = timed('world · wear', () => new WearTiles({ bounds: this.fields.wearBounds, ground: groundBounds(layout), exempt, soak: this.fields.soakAt, lane: this.fields.laneAt, params: this.wearParams }));
 
     // Mud the tyres carry onto the road (roadMud.js), on a fine grid over the tarmac.
     this.roadMudParams = { ...DEFAULT_ROAD_MUD_PARAMS };
@@ -141,10 +142,11 @@ export class World {
     // The ground is drawn in tiles (groundTiles.js): those round where you start are built now, behind the start screen, and the rest as you move.
     this.groundParams = { ...DEFAULT_GROUND_PARAMS };
     registerTuning('Ground tiles', this.groundParams, GROUND_PARAM_RANGES);
-    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud?.main, drawDistance: this.drawDistance, autumn, params: this.groundParams };
-    this.terrain = createTerrain(ctx);
-    this.terrain.prime(layout.spawn.player.x, layout.spawn.player.z);
-    this.props = buildProps(ctx);
+    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud?.main, drawDistance: this.drawDistance, autumn, params: this.groundParams, groundHeights }; // groundHeights: the 1 m grid, if the workers worked it out (groundSampler.js)
+    this.terrain = timed('world · terrain', () => createTerrain(ctx));
+    this.groundFromWorkers = !!groundHeights; // the 1 m grid came from the workers (groundSampler.js), for the panel and `perf`
+    timed('world · ground tiles primed', () => this.terrain.prime(layout.spawn.player.x, layout.spawn.player.z));
+    this.props = timed('world · props', () => buildProps(ctx));
     this.farDetail.hedgeSwaps = this.props.hedgeSwaps; // the hedges' and the sheep field wall's far strips swap in by distance (hedgeFar.js)
     this.farDetail.treeSwaps = this.props.treeSwaps; // and so do the oaks and bushes, every builder's (scatter.js, treeFar.js)
 
@@ -154,6 +156,20 @@ export class World {
     this.puddleIce = new PuddleIce(this.heights.puddles, layout.puddleRadius, this.puddleIceParams);
     this.puddleIceView = new PuddleIceView(this.props.puddles ?? [], this.puddleIce);
     this.puddleIceStarted = false;
+  }
+
+  /**
+   * Builds what the props left for later (the grass, the stubble and the Moor's plants: props.js `later`, #1107), behind the start screen, one a
+   * task so a click still gets through between them. Once: every call has the same promise, which the frame budget's count waits for too.
+   */
+  buildLater() {
+    this.builtLater ??= (async () => {
+      for (const { build } of this.props.later ?? []) {
+        await new Promise((r) => setTimeout(r, 0));
+        build();
+      }
+    })();
+    return this.builtLater;
   }
 
   heightAt(x, z) {

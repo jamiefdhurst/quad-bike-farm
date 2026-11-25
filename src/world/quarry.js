@@ -9,7 +9,7 @@
 
 import { createRandom } from '../core/random.js';
 import { dealPlant, inPlantsWay, plantPadWeight } from './plantSite.js';
-import { polygonEdges, pointInPolygon, outsidePolygon } from './polygons.js';
+import { polygonEdges, pointInPolygon, outsidePolygon, polygonBounds, outsideBounds } from './polygons.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -238,6 +238,7 @@ export function createQuarry(layout) {
   const farm = layout.farm ?? { minX: -layout.fieldHalf, maxX: layout.fieldHalf, minZ: -layout.fieldHalf, maxZ: layout.fieldHalf };
   const outline = q.outline ?? null; // the new farm's field is its own shape, not a rectangle (`rect` is its bounds)
   const outlineEdges = outline ? polygonEdges(outline) : null;
+  const outlineBox = outline ? polygonBounds(outline) : null; // 40 m past it the pit's weight is nothing, without walking the outline (#1107)
   const { gates, haul: gate, way } = gatesOf(q);
   const cosY = Math.cos(pit.yaw);
   const sinY = Math.sin(pit.yaw);
@@ -360,7 +361,7 @@ export function createQuarry(layout) {
 
   /** 0..1 how much of the ground at (x, z) is the pit's own rather than the farmland round it: 1 in the field, fading out 40 m beyond its hedges. */
   function weight(x, z) {
-    if (outline) return 1 - smoothstep(0, 40, outsidePolygon(outline, x, z, outlineEdges));
+    if (outline) return outsideBounds(outlineBox, x, z) >= 40 ? 0 : 1 - smoothstep(0, 40, outsidePolygon(outline, x, z, outlineEdges));
     if (inRect(farm, x, z)) return 0;
     return 1 - smoothstep(0, 40, outside(rect, x, z));
   }

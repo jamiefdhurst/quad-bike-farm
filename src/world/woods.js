@@ -3,7 +3,7 @@
 // Nothing here is drawn; the meshes are in woodsProps.js.
 
 import { Track } from './track.js';
-import { polygonEdges, pointInPolygon, outsidePolygon } from './polygons.js';
+import { polygonEdges, pointInPolygon, outsidePolygon, polygonBounds, outsideBounds } from './polygons.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -33,6 +33,7 @@ export function createWoods(layout) {
   // side that is not quite level (`south`, its two ends): the rectangle is then only its bounds. Today's wood is its rectangle, with the gate in its south side.
   const outline = w.outline ?? null;
   const outlineEdges = outline ? polygonEdges(outline) : null;
+  const outlineBox = outline ? polygonBounds(outline) : null; // 40 m past it the wood's weight is nothing, without walking the outline (#1107)
   const southZ = (x) => {
     if (!w.south) return rect.maxZ;
     const [[x0, z0], [x1, z1]] = w.south;
@@ -249,6 +250,7 @@ export function createWoods(layout) {
   /** 0..1 how much of the ground at (x, z) is the wood's own rather than the farmland round it, fading out over 40 m beyond its hedges. */
   function weight(x, z) {
     if (inRect(farm, x, z)) return 0;
+    if (outline && outsideBounds(outlineBox, x, z) >= 40) return 0;
     return 1 - smoothstep(0, 40, outline ? outsidePolygon(outline, x, z, outlineEdges) : outside(rect, x, z));
   }
 

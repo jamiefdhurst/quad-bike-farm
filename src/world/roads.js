@@ -569,9 +569,29 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
       const b = r.bounds;
       const m = shoulder + (r.level.lead ? Math.max(...r.level.lead) : 0);
       if (x < b.minX - m || x > b.maxX + m || z < b.minZ - m || z > b.maxZ + m) continue;
-      // Past the shoulder a road with no pads lays nothing, so there is no need to find which part of it is nearest.
-      const n = nearestOn(r, x, z, r.level.lead ?? null, r.pads.length ? Infinity : r.halfWidth + shoulder);
-      let d = n ? n.d - r.halfWidth : Infinity;
+      // The pads first: away from every one, past the shoulder the road lays nothing, so there is no need to find which part of it is nearest.
+      // Most of the ground is nowhere near a road, so what is laid is worked out only where it is laid (the levels are costly; #1107).
+      let kPad = 0;
+      let padK = 0;
+      let pad = null;
+      for (const q of r.pads) {
+        const dp = Math.hypot(x - q.x, z - q.z) - q.radius;
+        const kp = 1 - smoothstep(0, shoulder, dp);
+        if (kp > kPad) kPad = kp;
+        const pk = 1 - smoothstep(-4, 2, dp);
+        if (pk > padK) {
+          padK = pk;
+          pad = q;
+        }
+      }
+      const n = nearestOn(r, x, z, r.level.lead ?? null, kPad > 0 ? Infinity : r.halfWidth + shoulder);
+      let k = n ? 1 - smoothstep(0, shoulder, n.d - r.halfWidth) : 0;
+      if (kPad > k) k = kPad;
+      if (k <= 0) continue;
+      // A road that joins another fades in from its square end over `mouth` m, so the main road is all there is at the join and its levels meet.
+      if (n && r.junctions.length) k *= smoothstep(0, r.level.mouth ?? 4, n.depth);
+      if (k <= 0) continue;
+      const padLevel = pad ? ground(pad.x, pad.z) : 0;
       let level = null;
       let across = 0;
       if (n) {
@@ -583,25 +603,9 @@ export function createRoads(defs, { step = 1, cell = GRID_CELL } = {}) {
         }
         across = n.d;
       }
-      let k = n ? 1 - smoothstep(0, shoulder, d) : 0;
-      let padK = 0;
-      let padLevel = 0;
-      for (const q of r.pads) {
-        const dp = Math.hypot(x - q.x, z - q.z) - q.radius;
-        const kp = 1 - smoothstep(0, shoulder, dp);
-        if (kp > k) k = kp;
-        const pk = 1 - smoothstep(-4, 2, dp);
-        if (pk > padK) {
-          padK = pk;
-          padLevel = ground(q.x, q.z);
-        }
-      }
-      if (k <= 0) continue;
       let lv = level ?? padLevel;
       if (level !== null && padK > 0) lv = level * (1 - padK) + padLevel * padK;
       if (r.camber && n && across < r.halfWidth) lv += r.camber * (1 - (across / r.halfWidth) ** 2) * (1 - padK);
-      // A road that joins another fades in from its square end over `mouth` m, so the main road is all there is at the join and its levels meet.
-      if (n && r.junctions.length) k *= smoothstep(0, r.level.mouth ?? 4, n.depth);
       sumK += k;
       sumKL += k * lv;
       none *= 1 - k;

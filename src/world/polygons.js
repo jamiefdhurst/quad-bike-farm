@@ -65,14 +65,44 @@ export function nearestOnEdge(e, x, z) {
   return { s, d: Math.hypot(x - (e.x1 + e.dx * s), z - (e.z1 + e.dz * s)) };
 }
 
-/** Metres from (x, z) to the nearest edge. */
+/**
+ * Metres from (x, z) to the nearest edge. The sums are nearestOnEdge's, written out so the ground's million asks make no objects (#1107), and the
+ * edges are first compared by the square of the distance, which is cheap; Math.hypot, which is not, is asked only of those within a hair of the
+ * nearest, so the answer is the very number hypot gives for the nearest, as when every edge was asked.
+ */
 export function distanceToEdges(edges, x, z) {
+  let best2 = Infinity;
+  for (let i = 0; i < edges.length; i++) {
+    const e = edges[i];
+    const s = Math.max(0, Math.min(e.length, (x - e.x1) * e.dx + (z - e.z1) * e.dz));
+    const ex = x - (e.x1 + e.dx * s);
+    const ez = z - (e.z1 + e.dz * s);
+    const d2 = ex * ex + ez * ez;
+    if (d2 < best2) best2 = d2;
+  }
+  const near2 = best2 * (1 + 1e-9) + 1e-300; // a squared distance and hypot's squared differ by a few parts in 1e16 at most
   let best = Infinity;
-  for (const e of edges) {
-    const d = nearestOnEdge(e, x, z).d;
+  for (let i = 0; i < edges.length; i++) {
+    const e = edges[i];
+    const s = Math.max(0, Math.min(e.length, (x - e.x1) * e.dx + (z - e.z1) * e.dz));
+    const ex = x - (e.x1 + e.dx * s);
+    const ez = z - (e.z1 + e.dz * s);
+    if (ex * ex + ez * ez > near2) continue;
+    const d = Math.hypot(ex, ez);
     if (d < best) best = d;
   }
   return best;
+}
+
+/** Whether (x, z) is inside by the crossing count, with no care for the edges themselves. */
+function crossesOdd(pts, x, z) {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, zi] = pts[i];
+    const [xj, zj] = pts[j];
+    if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
 }
 
 /**
@@ -82,19 +112,18 @@ export function distanceToEdges(edges, x, z) {
 export function pointInPolygon(pts, x, z, margin = 0, edges = polygonEdges(pts)) {
   const near = distanceToEdges(edges, x, z);
   if (near <= EPS) return margin <= 0;
-  let inside = false;
-  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-    const [xi, zi] = pts[i];
-    const [xj, zj] = pts[j];
-    if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
-  }
-  return inside ? near >= margin : near <= -margin;
+  return crossesOdd(pts, x, z) ? near >= margin : near <= -margin;
 }
 
 /** Metres (x, z) is outside the polygon (0 inside). */
 export function outsidePolygon(pts, x, z, edges = polygonEdges(pts)) {
-  return pointInPolygon(pts, x, z, 0, edges) ? 0 : distanceToEdges(edges, x, z);
+  const near = distanceToEdges(edges, x, z); // once, where pointInPolygon and then this used to find it twice
+  if (near <= EPS) return 0;
+  return crossesOdd(pts, x, z) ? 0 : near;
 }
+
+/** Metres from (x, z) to the rectangle { minX, maxX, minZ, maxZ }, 0 inside: never more than to any polygon inside it, so a quick "too far" first. */
+export const outsideBounds = (b, x, z) => Math.hypot(Math.max(b.minX - x, 0, x - b.maxX), Math.max(b.minZ - z, 0, z - b.maxZ));
 
 /**
  * Where the ray from (x, z) towards (dx, dz) (a unit direction) meets the edge: `t` metres along the ray and `s` metres along the edge,
