@@ -1442,10 +1442,10 @@ export const RIVER_PLAN = {
     // there, and its bank would stand only 0.06 m over the water). A pool's surface falls `third` as fast as the river's steady fall, and a riffle drops
     // it back to `below` m under that, by `drop` m; the water stands `water.head` deep at a pool's head and `water.foot` at its foot, `water.riffle` over
     // a riffle, which has a gravel bar out of the water from `bar.from` of the half-width (`bar.bend` on a bend, where the bend's own bar is already out
-    // there) and `bar.reach` m on up the bank, running `bar.tail` m past its foot. The land falls about 8% from the crossing for 100 m and lies nearly
-    // flat for 70 m below it, so on the steep reach a riffle comes every 7 to 12 m (0.5 m is the most a riffle drops, and with 12 m pools it couldn't keep
+    // there) and `bar.reach` m on up the bank, running `bar.tail` m past its foot. The land falls 7.2% from the crossing for 100 m and 1.5% for
+    // the 70 m below it, so on the steep reach a riffle comes every 7 to 12 m (0.5 m is the most a riffle drops, and with 12 m pools it couldn't keep
     // up with the land there) and on the flat the pools are long. Where they go was walked out from the ground: a riffle wherever the pool's surface had
-    // climbed back to the steady fall, its pool 4 m and more long.
+    // climbed back to the steady fall, its pool 4 m and more from riffle to riffle.
     steps: {
       from: 450, to: 760, crossing: 3, length: 2, third: 1 / 3, below: 0.3, drop: [0.3, 0.5], narrow: 0.1, lead: { reach: 15, depth: 0.25 }, tail: { share: 0.8 },
       riffles: [487.5, 495.5, 502.5, 510.75, 517.75, 526, 534, 543, 554.5, 563, 570, 577, 589, 648, 665],
