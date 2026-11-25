@@ -3,7 +3,7 @@
 //
 //   node tools/waitMerged.mjs <pr>    polls every 20 s; prints "merged <time>" and exits 0, or says why it stopped and exits 1
 //
-// Run it in the background and wait for it to finish (/todo step 9).
+// Run it in the background and wait for it to finish (/todo step 10).
 
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
