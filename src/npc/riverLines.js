@@ -5,7 +5,8 @@
 const line = (cooldown, lines) => ({ cooldown, lines });
 
 export const AMY_RIVER_LINES = {
-  riverNear: line(240, ['Keep between the white posts. Anywhere else is far too deep.', 'That is the crossing, between the posts. Stay on the gravel.', 'It is only shallow between the posts. Do not wander off the line.']),
+  // The riffles are wades too since #1000, so she warns of the pools rather than saying the posts are the only shallows.
+  riverNear: line(240, ['Keep between the white posts. The pools either side are far too deep.', 'That is the crossing, between the posts. Stay on the gravel.', 'It is shallow between the posts. Do not wander off into the pools.']),
   riverStall: line(60, ['That is exactly what the posts were for.', 'You went off the line. Wait for it to drain.', 'It is deep outside the posts. I did say.']),
 };
 

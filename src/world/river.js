@@ -2,6 +2,11 @@
 // stand, the hurdle that shuts the river in at the meadow's east end, where reeds and trees grow, and which part of the river a point is in.
 // Pure: the props (riverProps.js) and the girls (what they say as you come to the crossing) both read it.
 
+const ZONE_WORDS = { crossing: 'on the crossing', riffle: 'on a riffle', deep: 'in a deep pool', bank: 'on the bank' };
+
+/** Where you are at the river (`zoneAt`'s answer) and how far up it is (`level` 0..1), in words, for the panel and the console's `river.now`. */
+export const describeRiverZone = (zone, level) => `${zone ? `you are ${ZONE_WORDS[zone]}` : 'you are away from it'}; the river is ${(level * 100).toFixed(0)}% up`;
+
 /** Null when the layout has no river (or the brook it widens). */
 export function createRiver(layout, brook) {
   const river = layout.hill?.river;
@@ -60,8 +65,8 @@ export function createRiver(layout, brook) {
   const places = () => ({ ...(river.bridge ? { bridge: { x: river.bridge.x, z: brook.zAt(river.bridge.x) } } : {}), crossing: { x: anchor.x, z: anchor.z } });
 
   /**
-   * Which part of the river (x, z) is in: 'crossing' on the marked shallows (between the posts, in the water), 'deep' in the river's deep
-   * water, 'bank' on the ground beside it, and null everywhere else.
+   * Which part of the river (x, z) is in: 'crossing' on the marked shallows (between the posts, in the water), 'riffle' in a riffle's shallow water
+   * (#1000), 'deep' in the river's deep water, 'bank' on the ground beside it, and null everywhere else.
    */
   function zoneAt(x, z) {
     if (x < meadow.minX || x > meadow.maxX) return null;
@@ -69,6 +74,7 @@ export function createRiver(layout, brook) {
     if (dz > brook.halfAt(x) + 6) return null;
     if (brook.waterAt(x, z) > 0.05 || brook.cutAt(x, z) > 0.3) {
       if (Math.abs(x - cross.x) <= cross.half && brook.waterDepthAt(x) <= cross.water + 0.05) return 'crossing';
+      if (brook.waterAt(x, z) > 0.05 && brook.deepAt(x, z) === 0 && (brook.riffleK?.(x) ?? 0) > 0.5) return 'riffle';
       return brook.waterAt(x, z) > 0.55 ? 'deep' : 'bank';
     }
     return 'bank';

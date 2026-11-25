@@ -1,5 +1,5 @@
 import { timed } from '../core/loadSteps.js';
-import { createRiver } from './river.js';
+import { createRiver, describeRiverZone } from './river.js';
 import { yardHeard } from './yardBed.js';
 import { moorHeard, moorBirds } from './moorBed.js';
 import { createMoorSense } from './moorSense.js';
@@ -370,12 +370,11 @@ export class World {
     return this.riverHeard(at.x, at.z, darkness, Math.min(1, (windiness ?? 0) / 1.5));
   }
 
-  /** Where `at` is at the river (on the crossing, in the deep water, on the bank) and how far up it is, for the panel and the console. */
+  /** Where `at` is at the river (on the crossing, on a riffle, in a deep pool, on the bank) and how far up it is, for the panel and the console. */
   describeRiver(at) {
     const river = this.river;
     if (!river) return 'no river on this farm';
-    const zone = river.zoneAt(at.x, at.z);
-    return `${zone ? `you are ${zone === 'crossing' ? 'on the crossing' : zone === 'deep' ? 'in the deep water' : 'on the bank'}` : 'you are away from it'}; the river is ${(this.streamLevel.level * 100).toFixed(0)}% up`;
+    return describeRiverZone(river.zoneAt(at.x, at.z), this.streamLevel.level);
   }
 
   /** What the river sounds like for a listener at `at`, for the panel and the console (#999). */

@@ -10,7 +10,7 @@ import { buildElectricFence } from './electricFenceBuild.js';
 import { buildRiverside } from './riverProps.js';
 import { buildHut } from './hutBuild.js';
 import { woodTries } from './hill.js';
-import { waterEdge } from './riverPlaces.js';
+import { waterEdge, waterShade, riffleFoam } from './riverPlaces.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const WALL_WIDTH = 0.55; // m across the drystone wall's stones, for its far strip
@@ -96,44 +96,29 @@ function buildStream({ scene, heights, fields }) {
       // water meets the foot of its cut bank.
       const hn = brook.banks ? waterEdge(brook, x, -1) + 0.15 : brook.halfAt(x) * 0.95;
       const hs = brook.banks ? waterEdge(brook, x, 1) + 0.15 : hn;
-      run.push({ x, z, half: brook.halfAt(x) * 0.95, hn, hs, y: heights.heightAt(x, z) + wd });
+      run.push({ x, z, half: brook.halfAt(x) * 0.95, hn, hs, y: heights.heightAt(x, z) + wd, shade: waterShade(brook, x) }); // dark over a pool, pale over a riffle (#1000)
     }
     if (run.length > 1) runs.push(run);
   }
   // Peaty, clear-ish moorland water: brown-green, glossy, the bed showing through.
   const map = flowTexture();
-  const mat = new THREE.MeshStandardMaterial({ color: STREAM_CLEAR.clone(), map, roughness: 0.12, transparent: true, opacity: 0.86, depthWrite: false });
-  const ribbons = runs.map((run, n) => {
-    const pos = [];
-    const uv = [];
-    const index = [];
-    const base = [];
-    for (const c of run) {
-      pos.push(c.x, c.y, c.z - (c.hn ?? c.half), c.x, c.y, c.z + (c.hs ?? c.half));
-      base.push(c.y);
-      uv.push(c.x / 6, 0, c.x / 6, 1);
-    }
-    for (let i = 0; i < run.length - 1; i++) {
-      const a = i * 2;
-      index.push(a, a + 1, a + 2, a + 2, a + 1, a + 3);
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-    geo.setIndex(index);
-    geo.computeVertexNormals();
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.receiveShadow = true;
-    mesh.name = n === 0 ? 'stream' : 'brook';
-    scene.add(mesh);
-    return { mesh, geo, base };
-  });
+  const mat = new THREE.MeshStandardMaterial({ color: STREAM_CLEAR.clone(), map, roughness: 0.12, transparent: true, opacity: 0.86, depthWrite: false, vertexColors: true });
+  // The broken water over the river's riffles (#1000): pale flecks on a strip laid just over the water, one mesh for them all, drifting faster than the pools.
+  const foamMap = brook?.steps ? foamTexture() : null;
+  const foamRuns = foamMap ? riffleFoam(brook, heights.heightAt) : [];
+  const foamMat = foamMap ? new THREE.MeshStandardMaterial({ color: 0xf4f1e8, map: foamMap, roughness: 0.6, transparent: true, depthWrite: false, vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2 }) : null;
+  const ribbons = runs.map((run, n) => ribbonMesh(scene, [run], mat, n === 0 ? 'stream' : 'brook', (c, v) => [c.x / 6, v], (c) => [c.shade ?? 1, c.shade ?? 1, c.shade ?? 1]));
+  if (foamRuns.length) {
+    ribbons.push(ribbonMesh(scene, foamRuns, foamMat, 'riffles', (c, v) => [c.x / 2, (v * (c.hn + c.hs)) / 2], (c) => [1, 1, 1, c.a]));
+    ribbons.at(-1).mesh.renderOrder = 1; // over the water it lies on, whichever is nearer the camera
+  }
   const mesh = ribbons[0].mesh;
   let lastRise = 0;
   return {
     mesh,
     update(dt, level, rise, flow) {
       map.offset.x -= dt * 0.12 * flow;
+      if (foamMap) foamMap.offset.x -= dt * 0.35 * flow;
       mat.color.copy(STREAM_CLEAR).lerp(STREAM_SPATE, level);
       mat.opacity = 0.86 + 0.1 * level;
       if (Math.abs(rise - lastRise) < 0.003) return;
@@ -148,6 +133,69 @@ function buildStream({ scene, heights, fields }) {
       }
     },
   };
+}
+
+/**
+ * One mesh of water strips: each run of cross-sections { x, z, half or hn and hs, y } is a strip level across, two vertices a section, so the rise after
+ * rain lifts them all alike. `uvAt(c, 0 or 1)` and `colourAt(c)` (three numbers, or four with how much shows) give each side's texture and colour.
+ */
+function ribbonMesh(scene, runs, material, name, uvAt, colourAt) {
+  const pos = [];
+  const uv = [];
+  const colour = [];
+  const index = [];
+  const base = [];
+  let at = 0;
+  for (const run of runs) {
+    for (const c of run) {
+      pos.push(c.x, c.y, c.z - (c.hn ?? c.half), c.x, c.y, c.z + (c.hs ?? c.half));
+      base.push(c.y);
+      uv.push(...uvAt(c, 0), ...uvAt(c, 1));
+      const k = colourAt(c);
+      colour.push(...k, ...k);
+    }
+    for (let i = 0; i < run.length - 1; i++) {
+      const a = (at + i) * 2;
+      index.push(a, a + 1, a + 2, a + 2, a + 1, a + 3);
+    }
+    at += run.length;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colour, colour.length / (pos.length / 3)));
+  geo.setIndex(index);
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.receiveShadow = true;
+  mesh.name = name;
+  scene.add(mesh);
+  return { mesh, geo, base };
+}
+
+/** Pale broken water for the riffles (#1000): flecks and short streaks along the flow on nothing, so the water's own colour shows between them. */
+function foamTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 64;
+  const g = canvas.getContext('2d');
+  // Big enough to read from the bank: streaks 10 to 40 cm long and a few cm across, over about half the water (the strip is 2 m to a repeat along it).
+  for (let i = 0; i < 260; i++) {
+    const x = (i * 37) % 128;
+    const y = (i * 23 + ((i * 7) % 11)) % 64;
+    const rx = 3 + ((i * 13) % 10);
+    const ry = 1.2 + ((i * 5) % 4) * 0.6;
+    g.fillStyle = `rgba(255,255,255,${0.45 + ((i * 11) % 7) * 0.08})`;
+    for (const dx of x + rx > 128 ? [0, -128] : [0]) {
+      g.beginPath();
+      g.ellipse(x + dx, y, rx, ry, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
 /**
