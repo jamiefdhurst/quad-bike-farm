@@ -336,7 +336,7 @@ export const SHIRT_ROLLED_OVER = { ...SHIRT_ROLLED, ...OVER, sleeveEase: 0.019, 
  * carries, along the line out from her middle. Changes `inner`'s points
  * (bind and rest) in place and returns how many moved. `body` as for topFields.
  */
-export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008, nearMost = 0.015 } = {}) {
+export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008 } = {}) {
   const { bones, boneNames } = body;
   let moved = 0;
   for (const side of ['Left', 'Right']) {
@@ -393,34 +393,6 @@ export function tuckSleeves(inner, outer, body, { gap = 0.002, most = 0.008, nea
     const there = d + 0.03 - hit.t; // how far out from her middle the outer top is
     if (there >= d + gap - 1e-9) continue;
     const rest = add(c, scale(dir, Math.max(d - most, there - gap)));
-    v.rest = rest;
-    v.bind = unskin(v.skin, rest);
-    moved++;
-  }
-  // Then, in front, against the nearest of the outer top's faces and along its own facing: under her bust the cloth faces down, the
-  // line out from her middle runs along it and never meets it, and the top stood a few millimetres proud of a jumper there (#1143).
-  for (const v of inner.verts) {
-    if (v.rest[2] <= cz || v.weights.reduce((s, [b, w]) => s + (anyArm.test(boneNames[b]) ? w : 0), 0) >= 0.3) continue;
-    const [i0, j0, k0] = v.rest.map((x) => Math.floor(x / 0.04));
-    let best = null;
-    for (let i = i0 - 1; i <= i0 + 1; i++) for (let j = j0 - 1; j <= j0 + 1; j++) for (let k = k0 - 1; k <= k0 + 1; k++) {
-      for (const t of grid.get(`${i},${j},${k}`) ?? []) {
-        const [a, b, e] = outer.tris[t].map((n) => outer.verts[n].rest);
-        const q = closestOnTriangle(v.rest, a, b, e);
-        const d2 = dot(sub(v.rest, q), sub(v.rest, q));
-        if (!best || d2 < best.d2) best = { q, d2, a, b, e, t };
-      }
-    }
-    if (!best || best.d2 > nearMost * nearMost) continue;
-    let n = norm(cross(sub(best.b, best.a), sub(best.e, best.a)));
-    // Facing out from her, whichever way the face was wound: as the cloth's own corners were cut facing (under her bust the cloth
-    // faces down, and the line out from her middle runs along it), or failing that away from her middle at that height.
-    const corners = outer.tris[best.t].map((k) => outer.verts[k]);
-    const own = corners.every((c) => c.normal) ? corners.reduce((sum, c) => add(sum, applySkinDir(c.skin, c.normal)), [0, 0, 0]) : sub(best.q, [cx, best.q[1], cz]);
-    if (dot(n, own) < 0) n = scale(n, -1);
-    const over = dot(sub(v.rest, best.q), n) + gap; // how far in front of where it should be
-    if (over <= gap / 2) continue; // tucked already, near enough (the first pass leaves a point a hair off a face tilted from its line)
-    const rest = sub(v.rest, scale(n, Math.min(over, nearMost)));
     v.rest = rest;
     v.bind = unskin(v.skin, rest);
     moved++;
