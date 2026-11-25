@@ -1273,7 +1273,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why is the carb running badly after I cleaned it, or the brakes weak and a wheel dragging?',
         a: `Some faults are deeper than the usual jobs reach. Varnish in the carb's jets, a clogged fuel tap that starves it at full throttle, a chain packed with grit and brakes caked in mud all want the parts washer.
-          A sticking caliper that drags, a worn wheel bearing that hums and wobbles, a holed silencer that is loud and weak and a weeping sump gasket want the pit. The bench's second page (<kbd>R</kbd>) has a
+          A sticking caliper that drags, a worn wheel bearing that wobbles and hums (the hum rises as you speed up and comes from the wheel it is in, so you can hear which side and end before you look), a holed silencer that is loud and weak and a weeping sump gasket want the pit. The bench's second page (<kbd>R</kbd>) has a
           job for each, and its look-it-over step tells you which wheel it is.`,
       },
       {
