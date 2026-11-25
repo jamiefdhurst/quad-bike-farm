@@ -1217,6 +1217,7 @@ export const YAK_SPEC = {
     cycleJitter: 0.03,
     pulseStrengthJitter: 0.1,
     wearPerMinute: 0.00023,
+    cylinders: 3, // a three: three firings a cycle, as its idle recording (whole cycles) is cut into (audio.pulseSplit)
   },
   vehicle: {
     mass: 760, // with its driver
@@ -1257,7 +1258,7 @@ export const YAK_SPEC = {
     mountGain: 0.55, // a small diesel on rubber mounts
     mountFreq: 10.5,
     steadiness: 0.6, // a small diesel three: a regular rock, but rougher than the Tor's or Crag's petrol four (0.85)
-    firingsPerCycle: 3, // a three-cylinder: a quick, even shudder
+    firingsPerCycle: 1, // the engine already fires three times a cycle (engine.cylinders): one kick each, a quick, even shudder
     idleRpm: 700,
     smoothRpmRange: 1200,
     pulseGain: 1.4,
@@ -1273,6 +1274,7 @@ export const YAK_SPEC = {
   audio: {
     recBank: 'engine-bank-utv', // a a farm utility vehicle's three-cylinder diesel, recorded on the vehicle
     recIdleSource: 'quad',
+    pulseSplit: 3, // its idle grains are whole cycles of the three: each cut into its firings, one per engine firing, so none drop out revving
     pulseRefRpm: 970,
     pulseRevLoudness: 0.25,
     recVolume: 1.12, // the Gator's bank plays quieter than the tractor's did, and the boom cut takes more: this keeps its idle as loud
@@ -1517,6 +1519,7 @@ export const CRAG_SPEC = {
     cycleJitter: 0.05, // rattly: each firing varies more than the UTV's
     pulseStrengthJitter: 0.16,
     wearPerMinute: 0.00017,
+    cylinders: 4, // a four: four firings a cycle, as its idle recording (whole cycles) is cut into (audio.pulseSplit)
   },
   vehicle: {
     ...TOR_SPEC.vehicle,
@@ -1535,7 +1538,7 @@ export const CRAG_SPEC = {
     ...TOR_SPEC.vibration,
     steadiness: 0.4, // a diesel four rattles and shakes: far less regular than the Tor's petrol four
     idleRpm: 800,
-    pulseGain: 1.4, // (the first go had 1.9, 0.2 and 0.26 for these three: too much body motion at idle)
+    pulseGain: 0.6, // four kicks a cycle now its engine fires four times (#853): 0.6 keeps the body motion at idle that 1.4 gave at one (the first go had 1.9, 0.2 and 0.26 for these three: too much)
     heaveGain: 0.12,
     pitchGain: 0.16,
     heaveDamping: 0.45,
@@ -1545,12 +1548,13 @@ export const CRAG_SPEC = {
   audio: {
     recBank: 'engine-bank-tdi',
     recIdleSource: 'quad',
+    pulseSplit: 4, // the Transit's idle grains are whole cycles: each cut into its four firings, so revs come from the idle alone
     pulseRefRpm: 960, // the Transit's tickover, where the rev loudness and EQ start
-    pulseRevLo: 1300, // from here it blends into the Tor's or Crag's own firings
-    pulseRevHi: 2000,
-    pulseRevFollow: 0.08, // reading on through its pull-up, rather than a firing from anywhere each time
+    pulseRevLo: 0, // no rev recording: built from the idle, every firing holds together to the top (#853)
+    pulseRevHi: 0,
+    pulseRevFollow: 0.08,
     pulseRevLoudness: 0.25,
-    pulseRevGain: 1.25, // revs as loud as they were on the UTV's bank
+    pulseRevGain: 1.25,
     recVolume: 0.72, // idles as loud as it did on the UTV's bank
     recStarterVolume: 0.4, // the crank just under its idle (the van it was recorded on idled quietly, so its own balance came out louder)
     recToneClosed: 4200,
@@ -1697,10 +1701,11 @@ export const FINCH_SPEC = {
   audio: {
     recBank: 'engine-bank-fiesta', // the BBC's Finch 1.1 idling and pulling away, a 1976 Mini revving above that, its own starter
     recIdleSource: 'quad',
-    pulseDivide: 4, // the bank's grains are whole cycles: one plays every fourth firing, filling the cycle
+    pulseDivide: 1,
+    pulseSplit: 4, // the bank's grains are whole cycles: each cut into its four firings, one per engine firing
     pulseRefRpm: 1130, // its recorded idle, where the rev loudness and EQ start
-    pulseRevLo: 1600, // from here it blends into real rev firings
-    pulseRevHi: 2600,
+    pulseRevLo: 0, // no rev recording: built from the idle, every firing holds together to the top (#853)
+    pulseRevHi: 0,
     pulseRevFollow: 0.08,
     pulseRevLoudness: 0.3,
     pulseRevGain: 1,
@@ -1783,14 +1788,15 @@ export const GRIFFIN_SPEC = {
   audio: {
     recBank: 'engine-bank-corsa', // the BBC's Carlton 1.8 idling, pulling away and revved cold, its own starter and its cold stall
     recIdleSource: 'quad',
-    pulseDivide: 4,
+    pulseDivide: 1,
+    pulseSplit: 4, // the bank's grains are whole cycles: each cut into its four firings, one per engine firing
     pulseRefRpm: 880,
-    pulseRevLo: 1100,
-    pulseRevHi: 1800,
+    pulseRevLo: 0, // no rev recording: built from the idle, every firing holds together to the top (#853)
+    pulseRevHi: 0,
     pulseRevFollow: 0.08,
     pulseRevLoudness: 0.35,
     pulseRevGain: 1.2,
-    recVolume: 1.1,
+    recVolume: 0.78, // 3 dB under the 1.1 it had (about the Finch's): louder, its boomiest firings ticked in the output's soft clipper
     recStarterVolume: 0.8,
     recToneClosed: 3800,
     pipeLength: 1.9, // the big-bore pipe: a deeper, louder note
@@ -1899,10 +1905,11 @@ export const VAUCLAIR_SPEC = {
   audio: {
     recBank: 'engine-bank-309', // the BBC's 309 diesel itself: idling, pulling away and the interior constant run, a starter and its switch-off
     recIdleSource: 'quad',
-    pulseDivide: 4, // the bank's grains are whole cycles: one plays every fourth firing
+    pulseDivide: 1,
+    pulseSplit: 4, // the bank's grains are whole cycles: each cut into its four firings, one per engine firing
     pulseRefRpm: 775, // its recorded idle, where the rev loudness and EQ start
-    pulseRevLo: 1100,
-    pulseRevHi: 1800,
+    pulseRevLo: 0, // no rev recording: built from the idle, every firing holds together to the top (#853)
+    pulseRevHi: 0,
     pulseRevFollow: 0.08,
     pulseRevLoudness: 0.3,
     pulseRevGain: 1.1,

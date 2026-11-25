@@ -176,6 +176,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   pulseRevHi: 0, // rpm where they've fully taken over
   pulseSlowest: 0.45, // the slowest a firing is ever stretched to; any slower and it stops short of the next, leaving a gap
   pulseDivide: 1, // sound only every Nth firing, stretched over N: 2 plays the recording at half its pace and an octave down
+  pulseSplit: 1, // an idle recorded as whole cycles of several cylinders is cut into this many firings each, one played per engine firing (the engine's cylinders)
   pulseRevGain: 1, // level of those rev firings against the idle ones
   pulseRevFollow: 0, // read on through the rev recording while its next firing is within this rpm ratio (log); 0 picks each afresh
   pulseCleanUp: 1.3, // idles cut in slices (the moto's and T185's two-strokes): above this multiple of the recorded idle speed only the bangs play, so it fires every turn
@@ -283,6 +284,7 @@ export const AUDIO_PARAM_RANGES = {
   pulseRevHi: [0, 12000, 50],
   pulseSlowest: [0.1, 1, 0.01],
   pulseDivide: [1, 4, 1],
+  pulseSplit: [1, 6, 1],
   pulseRevGain: [0, 3, 0.01],
   pulseRevFollow: [0, 0.4, 0.005],
   pulseCleanUp: [1, 4, 0.05],

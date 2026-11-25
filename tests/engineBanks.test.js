@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import * as SPECS from '../src/vehicle/quadSpecs.js';
 import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
+import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 
 describe('engine banks', () => {
   it('every vehicle names a bank that is listed, loads in the hub and exists on disk', () => {
@@ -172,5 +173,28 @@ describe('engine banks', () => {
     // The Plover's usable idle firings are all it had before the check (the rest fail the slicer's older checks).
     const plover = JSON.parse(readFileSync(`public/audio/${PLOVER_SPEC.audio.recBank}.json`, 'utf8'));
     expect(plover.grains.filter((g) => g.kind === 'idle' && g.ok !== false)).toHaveLength(171);
+  });
+});
+
+describe('idles cut into firings (pulseSplit)', () => {
+  const specs = Object.values(SPECS).flatMap((v) => (Array.isArray(v) ? v : [v])).filter((s) => s?.id && s?.audio);
+
+  it('fires the engine as many times a cycle as its idle cycles are cut into, or most of each cycle is silence', () => {
+    // The Yak and Crag said one cylinder: cut into three and four, each cycle played its first firing and then nothing (#853).
+    const cut = specs.filter((s) => (s.audio.pulseSplit ?? 1) > 1);
+    expect(cut.length).toBeGreaterThanOrEqual(5);
+    for (const spec of cut) expect(spec.engine.cylinders ?? DEFAULT_ENGINE_PARAMS.cylinders, spec.id).toBe(spec.audio.pulseSplit);
+  });
+
+  it('builds the cars\' and the diesels\' revs from their idle alone, every firing played, with no rev recording', () => {
+    const want = { finch: 4, griffin: 4, vauclair: 4, crag: 4, yak: 3 };
+    for (const [id, split] of Object.entries(want)) {
+      const a = specs.find((s) => s.id === id).audio;
+      expect(a.pulseSplit, id).toBe(split);
+      expect(a.pulseDivide ?? 1, id).toBe(1);
+      expect([a.pulseRevLo ?? 0, a.pulseRevHi ?? 0], id).toEqual([0, 0]);
+    }
+    // The Griffin 3 dB under the 1.1 it had, about the Finch's, so its boomiest firings stay out of the soft clipper.
+    expect(specs.find((s) => s.id === 'griffin').audio.recVolume).toBeCloseTo(1.1 * 10 ** (-3 / 20), 2);
   });
 });

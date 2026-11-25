@@ -180,3 +180,59 @@ describe('pulseSlowest', () => {
     }
   });
 });
+
+// An idle recorded as whole cycles of a four (the cars' and the diesels' banks): eight cycles of 100 ms back to back, each four
+// loud firings with a 2 ms quiet gap 3.4 ms after each even quarter, so an even cut lands mid-bang and the quiet is near it.
+const CYCLE = 4410; // samples at 44.1 kHz
+const GAP_AT = 150; // samples after each even quarter
+const GAP_LEN = 88;
+function wholeCycleBank() {
+  const data = new Float32Array(44100).fill(0.5);
+  const grains = [];
+  for (let c = 0; c < 8; c++) {
+    for (let i = 0; i < 4; i++) data.fill(0, c * CYCLE + i * Math.floor(CYCLE / 4) + GAP_AT, c * CYCLE + i * Math.floor(CYCLE / 4) + GAP_AT + GAP_LEN);
+    grains.push({ kind: 'idle', start: (c * CYCLE) / 44100, dur: CYCLE / 44100, tail: 0, rpm: 1200, src: 'car', rms: 0.4 });
+  }
+  return { data, sourceGain: { car: 1 }, crankRpm: 200, grains, oneshots: {} };
+}
+
+describe('pulseSplit', () => {
+  it('cuts each whole cycle into its firings at the quietest moment near each even quarter, not mid-bang', () => {
+    const { RecordedEngine } = loadWorklet(44100);
+    const rec = new RecordedEngine(wholeCycleBank());
+    const key = rec.splitKind('idle', 4);
+    const slices = [...rec.byKind[key]].sort((a, b) => a.start - b.start);
+    expect(slices).toHaveLength(32);
+    for (const s of slices) {
+      const at = s.start - Math.floor(s.start / CYCLE) * CYCLE - s.slice * Math.floor(CYCLE / 4);
+      // Each cut starts inside the quiet gap (within 1 ms of it), so the 1 ms there is silent, not on a bang.
+      expect(at, `cycle ${Math.floor(s.start / CYCLE)} slice ${s.slice}`).toBeGreaterThanOrEqual(GAP_AT);
+      expect(at).toBeLessThanOrEqual(GAP_AT + GAP_LEN - 44);
+      expect(rec.data[s.start]).toBe(0);
+      // Labelled with the firing rate, so it is picked against one firing's period.
+      expect(s.rpm).toBe(4800);
+    }
+    // Each firing ends where the next in the recording starts, across cycles too: nothing played twice, nothing skipped.
+    for (const s of slices) if (s.next) expect(s.start + s.len, `slice at ${s.start}`).toBe(s.next.start);
+    expect(slices.filter((s) => s.next)).toHaveLength(31);
+  });
+
+  it('plays one firing per engine firing, in recording order through each cycle and on into the next', () => {
+    const { RecordedEngine } = loadWorklet(44100);
+    const rec = new RecordedEngine(wholeCycleBank());
+    const params = { ...PARAMS, pulseSplit: 4, pulseStretch: 1 };
+    const key = rec.splitKind('idle', 4);
+    const order = [...rec.byKind[key]].sort((a, b) => a.start - b.start).map((s) => s.start);
+    const played = [];
+    // A four at 2,400 rpm: a firing every 12.5 ms, twice its recorded idle.
+    for (let i = 0; i < 20; i++) {
+      const before = rec.voices.length;
+      rec.trigger({ type: 'fire', strength: 1, period: 0.0125 }, params, 2400, 0.3);
+      expect(rec.voices.length).toBe(before + 1);
+      played.push(order.indexOf(rec.voices[rec.voices.length - 1].start));
+    }
+    expect(played.every((n) => n >= 0)).toBe(true);
+    // Wherever it starts, each firing is the one after the last in the recording, until the recording runs out.
+    for (let i = 1; i < played.length; i++) if (played[i - 1] < order.length - 1) expect(played[i]).toBe(played[i - 1] + 1);
+  });
+});
