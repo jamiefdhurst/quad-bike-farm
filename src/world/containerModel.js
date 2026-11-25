@@ -69,8 +69,7 @@ export function containerMaterials(random, wear = random) {
     wood: lit({ map: woodTexture(random, [92, 76, 58]), roughness: 0.95 }),
     stencil: lit({ map: stencilTexture(['GRVL 204118 6', '22G1']), roughness: 0.8, transparent: true, opacity: 0.55, depthWrite: false }), // half worn off
     plate: lit({ map: plateTexture(['CSC SAFETY', 'APPROVAL', 'GB/6047']), roughness: 0.6, metalness: 0.3 }),
-    chain: lockMaterials().chain,
-    lock: lockMaterials().lock,
+    ...(({ chain, lock }) => ({ chain, lock }))(lockMaterials()),
   };
   for (const [k, v] of Object.entries(m)) v.name = k;
   return m;

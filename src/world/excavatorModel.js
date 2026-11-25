@@ -309,6 +309,12 @@ function buildArm(p, m) {
   both(S[0], S[1], zc + 0.54, zc - 0.54, 0.85, 0.1);
   both(lug[0], lug[1] - 0.04, zc + 0.54, zc - 0.54, 0.5, 0.07);
   streaks.push({ x: 0.82, y: 1.5, z: -0.17, normal: '-z', len: 0.18, w: 0.06 }, { x: 0.82, y: 1.5, z: 0.87, normal: '+z', len: 0.18, w: 0.06 });
+  // The rams' other pins: the boom rams' top eyes down the cross box they hang from, the stick ram's foot down its bracket on the boom, and a short
+  // run on the eye of the bucket ram at each end (its foot on the stick and its rod at the H-link), which is all the flat steel under them.
+  both(lugB[0], lugB[1] + 0.005, zc + 0.23, zc - 0.23, 0.08, 0.05);
+  both(stickBase[0], stickBase[1], zc + 0.1, zc - 0.1, 0.13, 0.04);
+  both(kTop[0], kTop[1] - 0.005, zc + 0.065, zc - 0.065, 0.06, 0.04);
+  both(hk[0], hk[1] - 0.005, zc + 0.085, zc - 0.085, 0.055, 0.035);
   addRustStreaks(p, m.streak, streaks);
   return {
     joints: [{ name: 'boomFoot', at: P0 }, { name: 'boomBend', at: M }, { name: 'elbow', at: E }, { name: 'bucketPin', at: S }],

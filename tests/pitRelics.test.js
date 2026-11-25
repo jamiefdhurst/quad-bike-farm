@@ -61,10 +61,13 @@ describe('the relics keep their shapes (#1003)', () => {
       make(() => (pit++, 0.37), () => (wear++, w()));
       return { pit, wear };
     };
-    for (const make of [excavatorMaterials, containerMaterials, cabinMaterials, plantMaterials, debrisMaterials]) {
+    // The draws each took from the pit's stream before #1003 (counted on main with this same stand-in stream, always 0.37), which they still take,
+    // whatever the weathering draws.
+    for (const [make, before] of [[excavatorMaterials, 1124], [containerMaterials, 1852], [cabinMaterials, 1804], [plantMaterials, 14876], [debrisMaterials, 70]]) {
       const a = count(make, 1);
       const b = count(make, 2);
-      expect(a.pit).toBe(b.pit);
+      expect(a.pit).toBe(before);
+      expect(b.pit).toBe(before);
       expect(a.wear).toBeGreaterThan(100); // the weathering is drawn, from its own stream
     }
     // The drums' old texture is still drawn from the pit's stream, whether or not they are weathered.
@@ -111,7 +114,7 @@ describe('the relics read as disused (#1003)', () => {
     expect(area).toBeGreaterThan(0.3);
     expect(area).toBeLessThan(0.82 * 1.0 * 0.85);
     const streaks = mesh(ex.group, 'streak');
-    expect(streaks.geometry.attributes.position.count / 4).toBeGreaterThanOrEqual(17); // a streak each side of every pin, and down the back
+    expect(streaks.geometry.attributes.position.count / 6).toBe(27); // a streak each side of every pin (boom foot and bend, elbow and stick, the rams' eyes and feet, bucket pin and lug, H-link), and three down the back
     expect(streaks.material.transparent).toBe(true);
     expect(mesh(ex.group, 'yellow').material.roughness).toBeGreaterThan(0.9); // chalky, not glossy
     expect(ex.group.children.length).toBeLessThanOrEqual(12);

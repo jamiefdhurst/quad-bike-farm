@@ -445,7 +445,9 @@ function buildPitGrowth(c, quarry, site, relics) {
   const padY = (p) => (p.onPad && plant ? plant.padTop - 0.01 : ground(p.x, p.z) - 0.02);
   for (const t of g.tufts) put('grass', t.x, ground(t.x, t.z) - 0.03, t.z, t.yaw, t.s);
   for (const b of g.seedlings) put('birch', b.x, ground(b.x, b.z) - 0.03, b.z, b.yaw, b.h);
-  for (const [k, list] of [['reeds', g.reeds], ['rushes', g.rushes], ['sedge', g.sedge]]) for (const p of list) put(k, p.x, ground(p.x, p.z) - 0.04, p.z, p.yaw, p.s, p.s * (0.85 + ((p.x * 7.3) % 0.3)));
+  // The reeds keep a gap where the drums were dumped; on a farm whose pile lies off that gap, none stands inside a drum.
+  const clearOfDrums = (p) => relics.drums.every((d) => Math.hypot(p.x - d.x, p.z - d.z) > d.r + 0.3);
+  for (const [k, list] of [['reeds', g.reeds], ['rushes', g.rushes], ['sedge', g.sedge]]) for (const p of list.filter(clearOfDrums)) put(k, p.x, ground(p.x, p.z) - 0.04, p.z, p.yaw, p.s, p.s * (0.85 + ((p.x * 7.3) % 0.3)));
   if (plant) for (const w of [...g.footings, ...g.padWeeds]) put(w.kind ?? 'grass', w.x, padY(w), w.z, w.yaw, w.s);
   if (relics.excavator) {
     const { at, turn } = relics.excavator;
