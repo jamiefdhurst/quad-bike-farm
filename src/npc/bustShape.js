@@ -38,8 +38,8 @@ export const BUST_SHAPE = {
   growTall: 0.2,
   growOut: 1.05, // (0.9 on an upright chest wall: rounded forward under it, Jess's stood 6 mm less far out)
   growLow: 0.06, // and its middle sits this much lower per unit over 1
-  maxOut: 0.32, // its outer edge never past this: her side, where her chest turns back to her arm (further, the chest wall here stands
-  // in front of her real side and the collar round it folds)
+  maxOut: 0.31, // its outer edge never past this: her side, where her chest turns back to her arm (further, the chest wall here stands
+  // in front of her real side and the collar round it folds; 0.32 did once her chest wall rounded forward, #1143)
   wallMiddle: 0.24, // her chest wall's z down her middle at the fold's height, under the model's own small bust
   wallSlope: -0.07, // how much further back it is per unit higher (her ribs slope back to her collarbone)
   wallCurve: 1.0, // how it curves back round to her sides at the fold (z drops by this times x squared)
@@ -48,8 +48,9 @@ export const BUST_SHAPE = {
   wallRound: 1.0, // her ribcage rounding forward from her collarbone (chestWall): above `wallRoundFrom` it falls back by this times
   wallRoundFrom: 0.75, // the square of the height above it, meeting the wall's line at `wallRoundTop`, where her upper chest slopes
   wallRoundTop: 0.94, // forward at about 0.4, as her own does; below it, back to the wall's line by the fold
-  wallRoundIn: 0.3, // all of it this far either side of her middle, none from `wallRoundOut`
-  wallRoundOut: 0.55,
+  wallRoundIn: 0.15, // all of it this far either side of her middle, none from `wallRoundOut` (out to her sides, the outer side of
+  // each breast stood further out against her arm and her tops folded in the crease there)
+  wallRoundOut: 0.3,
   wallUnder: 0.45, // below the fold her front draws in to her waist: back this much per unit under `wallUnderFrom`
   wallUnderFrom: 0.48,
 };
