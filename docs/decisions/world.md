@@ -1443,7 +1443,7 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 
 ## What the recheck of Hollow Wood's move found (#985)
 
-- **The floor was still a box.** `paintWoods` painted the leaf litter and the fallen-leaf drifts over `woods.rect`, which on the new farm is only the bounds of the seven-sided outline: about 5,500 m2 of litter lay outside the wood, up the slanted east hedge into North Field and in a sliver of the Wet Meadow. A wood with an `outline` now paints a floor cell and a drift only where `woods.inWoods` says it is in the wood (no canvas clip: the painter yields part way, and a clip held across a yield would catch another tile's drawing). Today's rectangular wood is painted as before.
+- **The floor was still a box.** `paintWoods` painted the leaf litter and the fallen-leaf drifts over `woods.rect`, which on the new farm is only the bounds of the seven-sided outline: about 5,500 m2 of litter lay outside the wood, up the slanted east hedge into North Field and in a sliver of the Wet Meadow. A wood with an `outline` now has its floor and drifts clipped to it ("Hollow Wood's floor clipped to its outline (#985)", below). Today's rectangular wood is painted as before.
 - **Two names on the map.** The wood's own label and the plan's field label both said "Hollow Wood"; on a plan that names its fields only the plan's is written.
 - **A tint that went the wrong way.** `barkPale` was the bark texture multiplied by a colour, which can only darken, so it was darker than `bark`. The dark kind carries the tint now and the pale one is the texture as painted. The FAQ's "nearly 2.8 hectares" is "about 2.8".
 - **Left to #847:** the map's tree dots are still a lattice over the wood's bounding box.
@@ -1798,3 +1798,10 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 - **The named bugs:** #1122 is closed by the fix above. #1082 is found (listed in `KNOWN`). #1084 and #1085 are in what isn't listed yet (the village's hedges and the far clumps in its gardens: no rule keeps one thing out of another's plot), #1117's harrows belong to the farmstead by `FARMSTEAD_PLAN`, and #1110, #1090 and #1123 are not placements of things (a job's polygon, a flock's ground, the box beside a gap's first leaf): all stay open.
 - **Time:** the whole farm is listed and checked in about 0.6 s, the file in under 1 s on its own.
 
+
+## Hollow Wood's floor clipped to its outline (#985)
+
+- **A canvas clip, as the issue asked.** PR #986 kept the litter in by testing each floor cell's middle against the outline, and left `ctx.clip()` out for fear a clip held across the painter's pauses would catch another tile's drawing. It can't: each tile is painted onto a canvas of its own (`terrain.js`, `begin` takes a canvas and resets it), and nothing else draws on it until that painter has finished. So `paintWoods` sets the clip to the outline's path before the floor and takes it off after the drifts, before the track, whose lead-in runs on out through the gate.
+- **The edge is the line.** Cells within a cell's width of the outline are drawn and cut by the clip, so the litter reaches the hedge with no ragged gap and stops exactly there; cells further out are skipped. A drift whose middle is outside is still left out (`woods.inWoods`), and one on the line is cut.
+- **Today's wood is untouched.** It has no outline, so no clip: every canvas call it makes (summer and autumn, fine and coarse) was fingerprinted on main and again after, and they are identical. `tests/woods.test.js` checks it sets no clip and lays every cell of its rectangle once and every drift.
+- **The tests honour the clip.** `tests/helpers/woodFloorPaint.js` records `paintWoods` on a canvas that clips as a real one does, so `tests/woodMove.test.js` can say no litter lands outside the outline at all, where #986's allowed a metre and 2% of spots.
