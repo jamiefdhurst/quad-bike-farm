@@ -9,7 +9,7 @@
 import { streamFor } from './propStreams.js';
 import { layHedge } from './hedgeLay.js';
 
-/** The entrance's sizes, metres, real ones: a quarry gate, precast posts, an interlocking block, a height barrier and a works sign. */
+/** The entrance's sizes, metres, real ones: a works entrance's gate, precast posts, an interlocking block, a height barrier and a works sign. */
 export const ENTRANCE = {
   postW: 0.3, // the precast concrete gate posts, square with chamfered arrises
   postH: 1.8, // above the ground
