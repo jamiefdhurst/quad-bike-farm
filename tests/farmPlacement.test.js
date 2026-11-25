@@ -55,10 +55,11 @@ describe('everything placed on the new farm (#1187)', () => {
     }
   });
 
-  it('reads every builder the props run, or says why it places nothing that stands', () => {
+  it('reads every builder the props run, or names it as placing nothing that stands or as not listed yet', () => {
     const src = fs.readFileSync(new URL('../src/world/props.js', import.meta.url), 'utf8');
     const ran = [...src.matchAll(/run\('(\w+)'/g)].map((m) => m[1]).filter((n) => n !== 'scatter'); // the scatter only draws what the builders above it placed
-    const named = [...PLACEMENT_SOURCES.read, ...Object.keys(PLACEMENT_SOURCES.notStanding)];
+    const named = [...PLACEMENT_SOURCES.read, ...Object.keys(PLACEMENT_SOURCES.flat), ...Object.keys(PLACEMENT_SOURCES.notYet)];
+    expect(Object.keys(PLACEMENT_SOURCES.partly).filter((n) => !PLACEMENT_SOURCES.read.includes(n))).toEqual([]);
     expect(ran.filter((n) => !named.includes(n)), 'builders in buildProps the list neither reads nor names').toEqual([]);
     expect(named.filter((n) => !ran.includes(n)), 'names here no builder has').toEqual([]);
   });

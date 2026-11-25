@@ -239,26 +239,35 @@ export function farmPlacements(layout, { fields = createFields(layout), roads = 
   return out;
 }
 
-/** What `farmPlacements` reads, by builder (props.js `buildProps`), and the builders it doesn't read because they place nothing that stands: the test holds the two to the builders that run. */
+/**
+ * What `farmPlacements` reads, by builder (props.js `buildProps`), and the builders it doesn't: the test holds the three to the builders that run.
+ * `read` builders are listed by what they place (with `partly` saying what of theirs is not yet: their small fittings are worked out inside their
+ * drawing code), `flat` ones place nothing that stands, and `notYet` ones place things the list doesn't have yet, for the same reason.
+ */
 export const PLACEMENT_SOURCES = {
   read: [
     'buildBarn', 'buildHedges', 'gates', 'buildPitLaneGate', 'buildHomeRails', 'buildBales', 'buildOutbuildings', 'buildNeighbourFarm', 'buildBackLaneProps', 'buildMoorProps',
     'buildNeighbourLand', 'buildARoadProps', 'buildLaneFittings', 'buildVillage', 'buildFarmBridge', 'buildTrees', 'buildDistantTrees', 'buildHill', 'buildWoods', 'buildQuarry',
     'buildFieldLandmarks', 'buildJumpRamp',
   ],
-  // Builders whose things stand inside another's footprint that is listed (the barn's, the yard's), or lie flat on the ground, or are beyond the map.
-  notStanding: {
+  partly: {
+    buildBackLaneProps: 'its hedgerow trees, signs, drains and the gates\' posts',
+    buildARoadProps: 'its hedgerow trees and the bus stop flag',
+    buildMoorProps: 'the stile, the trig pillar, the cairn, the grids\' wings and the bridle gates',
+    buildLaneFittings: 'the cottages and their front walls',
+    buildVillage: 'its furniture, and the small farm\'s walls and buildings',
+    buildHill: 'the hut\'s steps, the climb\'s flags and the flask rock',
+    buildWoods: 'the trail\'s signs and the woodpile\'s scenery',
+    buildQuarry: 'the screening plant, the digger and the heaps\' drums and tyres',
+    buildFieldLandmarks: 'the gateposts\' and roller\'s own boxes (their places are listed)',
+  },
+  flat: {
     buildCattleGrid: 'bars in the road, driven over',
     buildReflectorPosts: 'posts on the drive\'s verge with no collider',
-    buildDriveVerge: 'the drive\'s verge: grass and its edge, flat',
-    buildPublicLane: 'the lane\'s tarmac, flat',
-    buildBackLane: 'Back Lane\'s tarmac, flat',
+    buildDriveVerge: 'the drive\'s verge: grass and its edge',
+    buildPublicLane: 'the lane\'s tarmac',
+    buildBackLane: 'Back Lane\'s tarmac',
     buildPaddock: 'today\'s farm only: nothing on the new one',
-    buildGardenWall: 'the garden\'s wall round `farmstead.garden`, inside the farmstead',
-    buildYardGates: 'the yard\'s steel gates, hung in the farmstead\'s own gateways',
-    buildYardFurniture: 'the barn wall\'s gear and the heaps, against the barn listed above',
-    buildStackyardKit: 'the stackyard\'s bales, under the Dutch barn listed above',
-    buildYardLights: 'on the barn\'s gable and a pole behind the tanks',
     buildWeatherVane: 'on the barn\'s ridge',
     buildUpperThornby: 'the far hamlet on the hill, beyond the map',
     buildBrookCulvert: 'under the road where the brook crosses it',
@@ -266,6 +275,13 @@ export const PLACEMENT_SOURCES = {
     buildBogs: 'mud in the ground',
     buildGrass: 'ground cover',
     buildStubble: 'ground cover',
+  },
+  notYet: {
+    buildGardenWall: 'the garden\'s wall round `farmstead.garden`',
+    buildYardGates: 'the yard\'s steel gates and their posts',
+    buildYardFurniture: 'the barn wall\'s gear, the heaps, the pallets and the tyres',
+    buildStackyardKit: 'the stackyard\'s bales and the bale spike',
+    buildYardLights: 'the floodlight pole behind the tanks',
   },
 };
 
