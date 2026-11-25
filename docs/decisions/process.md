@@ -564,3 +564,9 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 - **So function-level coverage was kept.** The highest share was 92.5% (`rackHost.js`), none at 100. Runners vary by over a minute between runs of the same commit, so the median is the number to read.
 - Every floor was set again, 2 points under the lowest of the five runs (all of `src` 85, `game.js` 79, the hosts 44 to 90). Shares read higher by functions (all of `src` 87.6% against 81.6%, `game.js` 81.8% against 65.4%), as a called function counts whole.
 - A floor still falls: with half the prompts left out (a throwaway change to `pressPrompts`), the play part failed on five host files (`villageHost.js` 54.6% against 78, `motHost.js` 55.2% against 66, `rackHost.js`, `trafficHost.js`, `hutHost.js`), while all of `src` moved only from 87.6% to 87.3%, so the host floors are what catch a lost step.
+
+## Narrowing the recheck
+
+- **Kept as it is** (Jamie, 25 November 2026, asked whether to narrow the recheck to world and vehicle-model items, with keeping it recommended: "As recommended on all"). `/todo` goes on rechecking an issue labelled `🌾 world` or `🏍️ vehicles` and any diff over 150 lines.
+- When asked, 25 items built on Opus had been rechecked since 25 November, with 34 agreed fixes: 1.36 an item, against the one in five (`NARROW_BELOW`) under which narrowing is worth it.
+- What it caught that day and tests had not: Back Lane's stile standing on open common with no hedge to shut (#1017), the ditch pushed under the hedge's line at two passing places (#1016), a relics test that passed with a draw removed (#1004), and a lift a girl was called away from being taken for a later ride (#1066).
