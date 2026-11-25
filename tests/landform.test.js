@@ -5,6 +5,8 @@ import { createLandform } from '../src/world/landform.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
 import { stripFrame } from '../src/world/layout.js';
+import { createHill } from '../src/world/hill.js';
+import { createWoods } from '../src/world/woods.js';
 
 // The land's lie on the new farm (#813): falling east to the valley floor, rising west to the moor's ridge 100 m up.
 const two = LAYOUT;
@@ -125,4 +127,35 @@ describe('the ground that is built from it', () => {
     for (const z of [350, 450]) for (let x = -110; x < -50; x++) worst.push([Math.abs(h.heightAt(x + 1, z) - h.heightAt(x, z) - (game(x + 1) - game(x))), `x ${x}, z ${z}`]);
     for (const [d, where] of worst) expect(d, where).toBeLessThan(cap);
   });
+});
+
+// The meadow's pond and the wood's (#946): their water is a flat sheet at the ground's height at the middle, so on the lie the bowl is levelled.
+// (The game has only layout 2 now; `LAYOUT` is it.)
+describe('the ponds sit level on the land\'s lie', () => {
+  const ponds = [['meadow', createHill(two)], ['wood', createWoods(two)]];
+  for (const [name, src] of ponds) {
+    const p = src.pond;
+    const level = heights2.heightAt(p.x, p.z) + p.water;
+    const at = (a, r) => [p.x + Math.cos(a) * r * p.rx, p.z + Math.sin(a) * r * p.rz];
+    it(`has the ${name} pond's water meeting its shore all round`, () => {
+      for (let i = 0; i < 48; i++) {
+        const a = (i / 48) * Math.PI * 2;
+        let r = 0;
+        while (r < 1.3 && src.waterAt(...at(a, r)) > 0.05) r += 0.02; // as buildPond marches out to the rim
+        const rim = at(a, r * 0.97);
+        expect(Math.abs(level - heights2.heightAt(...rim)), `bearing ${i}`).toBeLessThan(0.05);
+      }
+    });
+    it(`has no ground over the ${name} pond's water and none under the water outside it`, () => {
+      for (let i = 0; i < 48; i++) {
+        for (let r = 0; r <= 1; r += 0.05) {
+          const [x, z] = at((i / 48) * Math.PI * 2, r);
+          const wet = src.waterAt(x, z) > 0.05;
+          const ground = heights2.heightAt(x, z);
+          if (wet) expect(ground, `wet ${i} ${r}`).toBeLessThan(level + 0.05);
+          else expect(ground, `dry ${i} ${r}`).toBeGreaterThan(level - 0.05);
+        }
+      }
+    });
+  }
 });

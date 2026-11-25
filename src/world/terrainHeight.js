@@ -36,6 +36,8 @@ import { createMoor, laneEdgeAt } from './moor.js';
  * edge (15.7 m above the lie) up and lets 40 m do; the landform has no such rise, so the same fade was a 33 to 47 degree bank down to Back Lane.
  */
 export const HILL_FADE_ON_LANDFORM = 160;
+/** How far past a pond's own radius (in its radii) the ground is eased back to the lie, so the levelled bowl has a shoulder (#946). */
+const PONDS_EASE_TO = 1.7;
 
 export function createTerrainHeight(layout, track, { hillFade } = {}) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
@@ -102,8 +104,23 @@ export function createTerrainHeight(layout, track, { hillFade } = {}) {
   // The ground the gravel pit is cut into: the lie at its middle, the whole patch round it eased to it (quarry.groundAt).
   const quarryLevel = quarry ? natural(quarry.pit.x, quarry.pit.z) : 0;
 
+  // The meadow's pond and the wood's, on the new farm's lie (#946): their water is a flat sheet at the ground's height at the middle, so each
+  // bowl is dug into ground levelled to that, or the downhill shore drops away under the water and the uphill one stands over it.
+  const pondBowls = landform ? [hill?.pond && hill, woods?.pond && woods].filter(Boolean).map((src) => ({ src, level: null })) : [];
+  function pondLevelled(x, z, h) {
+    for (const b of pondBowls) {
+      const { pond } = b.src;
+      const r = Math.hypot((x - pond.x) / pond.rx, (z - pond.z) / pond.rz);
+      if (r >= PONDS_EASE_TO) continue;
+      b.level ??= natural(pond.x, pond.z) + pond.depth; // the ground at the middle as the land lies, before the bowl is cut
+      const k = 1 - smoothstep(1, PONDS_EASE_TO, r);
+      h += (b.level - (h + b.src.pondCut(x, z))) * k;
+    }
+    return h;
+  }
+
   function heightAt(x, z) {
-    let h = natural(x, z);
+    let h = pondBowls.length ? pondLevelled(x, z, natural(x, z)) : natural(x, z);
 
     // The village's ground is laid to a plane along its road (world/village.js), over the natural lie.
     if (village) {
