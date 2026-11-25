@@ -95,6 +95,7 @@ import { AMY_SMOKE_LINES } from './smokeLines.js';
 import { AMY_HILL_LINES } from './hillLines.js';
 import { AMY_TERRACE_LINES } from './terraceLines.js';
 import { AMY_MOOR_LINES } from './moorLines.js';
+import { AMY_LIFT_LINES } from './liftLines.js';
 import { AMY_SHOUT_LINES } from './shoutFaultLines.js';
 import { AMY_FUMES_LINES } from './fumesLines.js';
 import { AMY_RUSTY_LINES } from './rustyLines.js';
@@ -1713,4 +1714,6 @@ export const VOICE_LINES = {
   ...AMY_CALL_THEM_LINES,
   // The Moor's open ground, wet flushes and sheep on the lane (moorLines.js), after that.
   ...AMY_MOOR_LINES,
+  // Where she wants a lift to (liftLines.js), last of all.
+  ...AMY_LIFT_LINES,
 };

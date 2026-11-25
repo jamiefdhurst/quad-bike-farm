@@ -15,6 +15,7 @@ import { SETUPS } from './sceneSetups.js';
 
 /** @type {Scene[]} */
 export const SCENES = [
+  { id: 'lifthut', label: 'Put you at the foot of the shepherd\'s hut\'s steps in daylight and send Amy up to it on the nearest quad, to see her arrive, park, get off and go in', lines: ['weather.time 11', 'tp me to hut', 'girl amy lift'] },
   { id: 'callThem', label: 'Put you out on the lane in daylight with the girls in the yard: open your wheel (Enter at nobody) and Call them', lines: ['weather.time 11', 'tp me to lane'] },
   { id: 'exhaustBlow', label: 'Put you in the yard at dawn with the Farm 300 stone cold and its exhaust joint blowing: start it and listen to the tick and chuff fade as it warms', lines: ['weather fair', 'weather.time 7', 'cool all', 'vehicle.farm300.faults.exhaustBlow 0.8', 'tp me to yard'] },
   { id: 'carrevs', label: 'Put you beside the Finch in daylight with its engine running, to get in and rev it to the top and hear every firing hold together (tp me griffin, vauclair, crag or yak and start the same one for the others)', lines: ['weather fair', 'weather.time 11', 'tp me finch', 'start finch'] },

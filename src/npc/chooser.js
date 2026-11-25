@@ -103,6 +103,15 @@ export function scoreOffer(offer, needs) {
   return sum * (offer.weight ?? 1);
 }
 
+/**
+ * The needs met when she takes an offer: its kind's, except a lift to a far place (farWalk.js), which meets those of the offer she is
+ * going there for (#1066), so the same far offer doesn't come round again on the way.
+ */
+export function needsMetBy(offer) {
+  const kind = OFFER_KINDS[offer.key === 'lift' && OFFER_KINDS[offer.for] ? offer.for : offer.key];
+  return kind?.satisfies ?? {};
+}
+
 /** Which of her needs this offer mostly answered (the biggest share of its score): what she did it for. */
 export function mainNeed(offer, needs) {
   const kind = OFFER_KINDS[offer.key];

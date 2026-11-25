@@ -62,7 +62,7 @@ export function pickConfidence(base, swing, random = Math.random) {
 /** Her usual confidence after a go that ended like this. */
 export function afterDrive(base, result, { gain = 0.1, fright = 0.15 } = {}) {
   if (result === 'scared' || result === 'gaveUp') return clamp01(base - fright);
-  if (result === 'bored' || result === 'asked') return clamp01(base + gain);
+  if (result === 'bored' || result === 'asked' || result === 'arrived') return clamp01(base + gain); // 'arrived': got where she went on a lift (#1066)
   return base;
 }
 

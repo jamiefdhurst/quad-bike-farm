@@ -554,6 +554,18 @@ export function girlActions(g) {
       },
     },
     {
+      verb: 'lift',
+      label: '% drives up to sit in the hut (a lift to a far place: on a quad, parking near it, getting off and going in)',
+      run: (id) => {
+        const c = girl(id);
+        if (!free(id)) return;
+        const q = freeQuads(c, c.root.position)[0];
+        if (!q) return toast(`${c.name} has no quad she can take`);
+        if (!g.mindsHost.debugLift(c, q, 'hut')) return toast('There is no shepherd\'s hut on this farm');
+        toast(`${c.name} is off up to the hut`);
+      },
+    },
+    {
       verb: 'sight',
       label: '% takes you to see something (the view, an open gate, a quad left running), pointing at it',
       run: (id) => {

@@ -11,6 +11,7 @@ import { SCENES, runScene } from './scenes.js';
 import { LOSABLE } from '../items/lostThings.js';
 import { NEEDS, NEED_LABELS } from '../npc/needs.js';
 import { describeMind, OFFER_KINDS } from '../npc/chooser.js';
+import { describeLift } from '../npc/farWalk.js';
 import { REMEMBERED_KINDS } from '../npc/memory.js';
 import { DRILLS } from '../npc/lessons.js';
 import { rampPoint } from '../npc/jumps.js';
@@ -79,6 +80,7 @@ export function buildGirlsTab(d) {
     show(why, 'chose', () => describeMind(c.mind).chose);
     show(why, 'nearly chose', () => describeMind(c.mind).nearly);
     show(why, 'next', () => describeMind(c.mind).next);
+    show(why, 'lift', () => describeLift(c.lift, c.root.position, (k) => OFFER_KINDS[k]?.label ?? k)); // a far place she is getting to (npc/farWalk.js)
     show(why, 'set on', () => c.intent.describe((k) => OFFER_KINDS[k]?.label ?? k));
     show(why, 'pace', () => `${c.paceMul.toFixed(2)} times her walk${c.pace ? ` (${c.pace})` : ''}`);
     show(why, 'has in mind today', () => c.agenda.describe());
