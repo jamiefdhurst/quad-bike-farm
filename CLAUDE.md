@@ -51,7 +51,7 @@ The detailed rules for each part of the game are in `.claude/rules/`. They load 
 
 ## Testing (keep it cheap)
 
-- `npm test` must pass before every commit. Add or update unit tests for any logic you change.
+- While building, run only the tests related to what you changed: `npx vitest related --run <changed files>` (the tests that import them, and any test file among them). `npm test` runs in full once before the push, and again after a rebase that brought changes in, and must pass (about 30 s; #1183). Add or update unit tests for any logic you change.
 - `npm run smoke` before opening a PR that touches `game.js` or adds to the frame (CI runs it too; `checking.md`).
 - No headless browser checks or screenshot rounds, apart from model work (anything new you'll see gets one look, `looks.md`) and the smoke test: they are slow, and screenshots keep showing the "Click to play" overlay. The one exception is a check where you get past the overlay and confirm it in the screenshot (`checking.md`). Otherwise rely on unit tests and say what you didn't verify. No long simulation runs or tuning loops: pick sensible values.
 - Jamie tries the running game for what only eyes and ears can judge (a look, a feel, a line by ear, how it plays), not for what a test can assert: prompts and their keys, toasts, that a sound is triggered, refusals, values. Those are tests before the item is done, and a stand-in game (`tests/villageHost.test.js`) is how to test code that lives in a host class.
@@ -67,7 +67,7 @@ Every merge to `main` that changes what ships is released by CI as `vX.Y.Z`; the
 
 ## Finishing an item
 
-1. `npm test` passes, and `npm run smoke` too if you touched `game.js` or added to the frame.
+1. `npm test` passes in full, and `npm run smoke` too if you touched `game.js` or added to the frame.
 2. The debug panel and console have anything new (`debug-panel.md`), and anything judged by eye or ear has a scene in `src/debug/scenes.js` (`scene <name>`); the FAQ answers it (`faq.md`); new or changed keys are in `src/hud/controls.js`; `docs/game.md` is fixed where it describes something the item changed (the README stays short); assets are credited in ASSETS.md; new lines are recorded and their banks committed on the branch (`voice-lines.md`).
 3. The area's file in `docs/decisions/` gets a section at its end headed with the issue number (and its old TODO number if it has one): what was decided, why, and any numbers measured, in about ten lines. Not what wasn't checked (that goes on the walk for its place) and not a restatement of the code. If the item changes how something stands, fix that line in the file's summary too.
 4. Commit in sensible chunks with plain messages saying what changed for the player ("Let the girls share a quad, one driving and one on the back"): they become the FAQ's "Recently changed". No AI attribution of any kind. Stage only your own files by name: never `git add -A`, `git add .` or `git commit -a`.
