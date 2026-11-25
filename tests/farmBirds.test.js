@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { birdsDue, chorusSeason, songSpots, FarmBirds, SINGERS, DEFAULT_FARM_BIRD_PARAMS, FARM_BIRD_PARAM_RANGES } from '../src/world/farmBirds.js';
+import { birdsDue, chorusSeason, ODD_SONG, ODD_SONG_UNTIL, songSpots, FarmBirds, SINGERS, DEFAULT_FARM_BIRD_PARAMS, FARM_BIRD_PARAM_RANGES } from '../src/world/farmBirds.js';
 import { createRandom } from '../src/core/random.js';
 import { boundary, gap } from '../src/world/fieldPlan.js';
 
@@ -14,7 +14,8 @@ describe('which birds are due', () => {
     expect(birdsDue(sun.sunrise + 0.75, sun, april).chorus).toBe(1);
     expect(birdsDue(sun.sunrise + 1.5, sun, april).chorus).toBeGreaterThan(0); // thinning to the odd song
     expect(birdsDue(sun.sunrise + 1.5, sun, april).chorus).toBeLessThan(0.5);
-    expect(birdsDue(sun.sunrise + 2, sun, april).chorus).toBe(0);
+    expect(birdsDue(sun.sunrise + 2, sun, april).chorus).toBe(ODD_SONG); // the chorus gone, the odd song left
+    expect(birdsDue(ODD_SONG_UNTIL, sun, april).chorus).toBe(0); // and by mid-morning that too
     expect(birdsDue(sun.sunrise - 1, sun, april).chorus).toBe(0);
     expect(birdsDue(sun.sunset - 0.5, sun, april).rooks).toBe(1);
     expect(birdsDue(sun.sunset - 1, sun, april).rooks).toBe(0);
@@ -27,7 +28,9 @@ describe('which birds are due', () => {
   it('follows the day\'s own sunrise and sunset, so a summer dawn comes early', () => {
     const june = { sunrise: 4.75, sunset: 21.5 };
     expect(birdsDue(4.5, june, { month: 5 }).chorus).toBe(1);
-    expect(birdsDue(7.25, june, { month: 5 }).chorus).toBe(0);
+    expect(birdsDue(7.25, june, { month: 5 }).chorus).toBe(ODD_SONG); // a game starting after it hears the odd song
+    expect(birdsDue(8, june, { month: 5 }).chorus).toBeGreaterThan(0.05); // enough to start a song (FarmBirds sings above 0.05)
+    expect(birdsDue(10.5, june, { month: 5 }).chorus).toBe(0);
     expect(birdsDue(21, june, { month: 5 }).rooks).toBe(1);
   });
 
@@ -119,6 +122,12 @@ describe('rooks going over at dusk', () => {
       expect(Math.min(...across)).toBeLessThan(70); // it passes near you
       expect(f.height).toBeGreaterThanOrEqual(30);
     }
+  });
+
+  it('never leaves a forced flock waiting for good at the fewest voices allowed', () => {
+    const birds = new FarmBirds({ spots: [], random: createRandom(10), params: { ...DEFAULT_FARM_BIRD_PARAMS, maxVoices: FARM_BIRD_PARAM_RANGES.maxVoices[0] } });
+    birds.force('rooks');
+    expect(run(birds, 5, { chorus: 0, rooks: 0 }).events).toHaveLength(1);
   });
 
   it('sends none outside the evening, and one at once when sent over by hand', () => {

@@ -15,7 +15,7 @@ export const FARM_BIRD_PARAM_RANGES = {
   volume: [0, 3, 0.05],
   chorusEvery: [0.2, 5, 0.1],
   rookEvery: [20, 900, 10],
-  maxVoices: [1, 12, 1],
+  maxVoices: [2, 12, 1], // a passing flock is two voices, so fewer than two would keep the rooks away for good
   singerReach: [20, 120, 5],
 };
 
@@ -24,6 +24,9 @@ const smooth = (a, b, v) => {
   const t = clamp01((v - a) / (b - a));
   return t * t * (3 - 2 * t);
 };
+
+export const ODD_SONG = 0.12; // how thick the morning's odd song is after the chorus has gone: a song every several seconds
+export const ODD_SONG_UNTIL = 10; // the hour by which the odd song has stopped too (it fades over the half hour before)
 
 /** How full the chorus is in a month (0 for January): spring is the thick of it; robins and wrens keep singing through the winter; late summer is the moult's quiet. */
 export function chorusSeason(month) {
@@ -36,13 +39,15 @@ export function chorusSeason(month) {
 /**
  * Which of the farm's birds are due at `hour` (hours after midnight, past 24 the same night going on), 0..1 each:
  * `chorus` from about half an hour before `sunrise` (rising from an hour before), full until three quarters of an hour after and thinning to
- * nothing two hours after; `rooks` in the hour before `sunset`. Rain quietens both, the chorus more.
+ * nothing two hours after, then the odd song (`ODD_SONG`) from sunrise until mid-morning by the clock (`ODD_SONG_UNTIL`), so a game that starts
+ * at eight in a summer's morning, long after the chorus, still hears a bird or two; `rooks` in the hour before `sunset`. Rain quietens both, the chorus more.
  */
 export function birdsDue(hour, { sunrise, sunset }, { month = 4, rain = 0 } = {}) {
   const r = clamp01(rain);
   const chorus = smooth(sunrise - 1, sunrise - 0.5, hour) * (1 - smooth(sunrise + 0.75, sunrise + 2, hour));
   const rooks = smooth(sunset - 1, sunset - 0.8, hour) * (1 - smooth(sunset - 0.1, sunset, hour));
-  return { chorus: chorus * chorusSeason(month) * (1 - 0.7 * r), rooks: rooks * (1 - 0.5 * r) };
+  const odd = ODD_SONG * smooth(sunrise, sunrise + 0.25, hour) * (1 - smooth(ODD_SONG_UNTIL - 0.5, ODD_SONG_UNTIL, hour));
+  return { chorus: Math.max(chorus * chorusSeason(month), odd) * (1 - 0.7 * r), rooks: rooks * (1 - 0.5 * r) };
 }
 
 /**

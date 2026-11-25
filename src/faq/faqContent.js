@@ -2013,8 +2013,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What are the birds I can hear in the morning?',
-        a: `The dawn chorus, from the hedges and the trees in them round wherever you are: blackbirds with their low fluting, robins with thin high runs of notes, and wrens, small but the loudest, with a fast trill and a rattle in the middle. It starts about an hour before sunrise, is at its thickest from half an hour before to most of an hour after, and thins to the odd song by two hours after, so you hear it if your game starts early. It is fullest in spring, thinner in winter (robins and wrens sing all year) and quietest in late summer, and rain quietens it.`,
-        tip: 'Start a game early to catch the dawn chorus: it thins out about two hours after sunrise.',
+        a: `The dawn chorus, from the hedges and the trees in them round wherever you are: blackbirds with their low fluting, robins with thin high runs of notes, and wrens, small but the loudest, with a fast trill and a rattle in the middle. It starts about an hour before sunrise, is at its thickest from half an hour before to most of an hour after, and thins to nothing two hours after. A day starts at eight at the earliest, so you catch the end of it on an early start in the winter months, when the sun is up late; from spring to early autumn it is over by then, and you hear only the odd song from the hedges until about ten. It is thicker in spring than in winter (robins and wrens sing all year), quietest in late summer, and rain quietens it.`,
+        tip: 'Birds sing from the hedges in the morning until about ten. A winter day that starts early catches the end of the dawn chorus.',
       },
       {
         q: 'What is the cawing in the evening?',
