@@ -341,7 +341,10 @@ export function buildGirlsTab(d) {
   const out = sub('Animals, gates and the lane');
   show(out, 'the road under you', () => describeRoadUnder(g));
   show(out, 'wildlife', () => `${g.rabbits.rabbits.filter((r) => r.mode !== 'down').length} rabbits about (${g.rabbits.rabbits.filter((r) => r.mode === 'caught').length} in a beam), pheasants ${g.pheasants.birds.map((b) => b.mode).join('/')}`);
-  button(out, 'Flush the nearest pheasant', () => g.debugFlushPheasant());
+  button(out, 'Flush the nearest pheasant', () => g.farmBirdsHost.flushPheasant());
+  show(out, 'the farm\'s birds', () => g.farmBirdsHost?.describe() ?? 'none');
+  button(out, 'Start the dawn chorus round you', () => g.farmBirdsHost.force('chorus'));
+  button(out, 'Send a flock of rooks over', () => g.farmBirdsHost.force('rooks'));
   show(out, 'the cat', () => `${g.cat.mode}${g.cat.perchId != null ? ` on ${g.cat.perchId}` : ''}${g.cat.purring ? ', purring' : ''}`);
   button(out, 'Call the cat over to you', () => g.debugCat('call'));
   button(out, 'Put the cat asleep on the nearest vehicle', () => g.debugCat('perch') || toast('No open vehicle to put it on'));

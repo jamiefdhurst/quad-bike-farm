@@ -52,6 +52,8 @@ function makeWorld() {
     weatherNow: () => 'sunny',
     setWeather: (k) => `now ${k}`,
     layoutNow: () => 'layout 2',
+    birdsNow: () => 'dawn chorus 0%, rooks 0%; 0 sounding',
+    startBirds: (k) => (state.birds = k),
     scenes: () => [{ id: 'frost', label: 'Set up a frosty dawn' }],
     runScene: (id) => [`ran ${id}`],
     dump: (t) => (state.dumped = t),
@@ -338,6 +340,19 @@ describe('the notebook\'s things I\'ve learnt', () => {
     expect(text(shell.run('learn all'))).toBe('wrote them all down');
     expect(text(shell.run('learn none'))).toBe('rubbed them all out');
     expect(text(shell.run('learn'))).toContain('[ ] wax');
+  });
+});
+
+describe('the farm\'s birds', () => {
+  it('says what is due, starts the chorus or sends rooks over, and refuses anything else (#124)', () => {
+    const { shell, state } = makeWorld();
+    expect(text(shell.run('birds'))).toBe('dawn chorus 0%, rooks 0%; 0 sounding');
+    expect(text(shell.run('birds chorus'))).toBe('the dawn chorus starts round you');
+    expect(state.birds).toBe('chorus');
+    expect(text(shell.run('birds Rooks'))).toBe('a flock of rooks is coming over');
+    expect(state.birds).toBe('rooks');
+    expect(text(shell.run('birds owl'))).toContain('no birds "owl". There is chorus, rooks');
+    expect(state.birds).toBe('rooks');
   });
 });
 
