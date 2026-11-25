@@ -4,7 +4,7 @@
 // wrong place, or null: a builder can ask before it places (`placementBreaks`), and tests/farmPlacement.test.js runs all of them over the whole farm.
 // Positions are game metres; `toPlan` turns one into the plan's metres (docs/farm-plan.md) for a message.
 
-import { PLAN_ORIGIN, fromPlan } from './layoutNew.js';
+import { PLAN_ORIGIN } from './layoutNew.js';
 import { createFields } from './fields.js';
 import { roadNetwork } from './roads.js';
 import { createTerrainHeight } from './terrainHeight.js';
@@ -300,7 +300,7 @@ export function placementContext(layout, { fields = createFields(layout), roads 
   // a hedge's solid half-thickness across, and Back Lane's gaps (its gates, the ford, the stile and the bridle gates). A shut one has no way through, so is left out.
   const openings = [];
   for (const g of fields.gateways) {
-    if (g.gap.shut) continue;
+    if (!g.gap || g.gap.shut) continue; // a way across with no gap of its own (fieldPlan.js) has no opening to keep clear
     const e = g.via.edge;
     openings.push({ name: `the gateway ${g.a}|${g.b}${g.gap.id ? ` (${g.gap.id})` : ''}`, x: e.x1 + e.dx * g.via.at, z: e.z1 + e.dz * g.via.at, ux: e.dx, uz: e.dz, half: g.gap.half, across: HEDGE_SOLID_HALF });
   }
@@ -483,4 +483,3 @@ export function placementBreaks(t, layout, ctx = placementContext(layout)) {
   return out;
 }
 
-export { fromPlan };
