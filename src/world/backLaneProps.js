@@ -4,10 +4,11 @@
 
 import * as THREE from 'three';
 import { roadNetwork } from './roads.js';
-import { laneHedgeRuns, laneTrees, hedgeOffset, sidePoint, sideOf } from './laneHedges.js';
+import { laneHedgeRuns, laneTrees, hedgeOffset, sidePoint, laneGates, laneGaps, GATE_HALF } from './laneHedges.js';
 import { laneSigns, laneGrates, sAlong, footpathSide } from './laneSigns.js';
 import * as kit from './roadSigns.js';
-import { HEDGE_SOLID_HALF, HEDGE_WOBBLE, blockWidth, leafReach } from './hedgeSolid.js';
+import { leafReach } from './hedgeSolid.js';
+import { layLaneHedge } from './hedgeLay.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { matrixAt } from './hillProps.js';
 import { gateLeaf } from './neighbourFarmProps.js';
@@ -19,55 +20,7 @@ import { concreteTexture } from './villageTextures.js';
 import { stoneTexture } from './outbuildingProps.js';
 
 export const LANE_HEDGE_HEIGHT = 2.5; // m: a tall hedge on a single-track lane, taller than the farm's
-export const GATE_HALF = 2.2; // m either side of a gate's middle that the hedge leaves open: the leaf's length and a post each side
-export const FORD_OPEN = 6; // m either side of the ford that the hedges are open, for the stream
-export const STILE_HALF = 1.1; // m either side of the stile that the hedge is open
-const CHUNK = 6; // m a hedge collider is at longest
-
-/** How far along the road (m) the point (x, z) is nearest: a walk of the samples, run once for each of a few gates. */
-function nearestS(road, x, z) {
-  let best = Infinity;
-  let at = 0;
-  for (const p of road.samples) {
-    const d = Math.hypot(p.x - x, p.z - z);
-    if (d < best) [best, at] = [d, p.s];
-  }
-  return at;
-}
-
-/** Where the lane's gates are and which side they are on: [{ id, s, side }], from the road's `gates` (the farm's gateway each stands across from). */
-export function laneGates(road) {
-  return (road.gates ?? []).map((g) => {
-    const s = nearestS(road, g.farm[0], g.farm[1]);
-    return { id: g.id, s, side: sideOf(road, s, g.farm[0], g.farm[1]) };
-  });
-}
-
-/** The common is on the lane's west side as it runs south, which is side -1 (laneHedges.js `sideOf`). */
-export const MOOR_SIDE = -1;
-export const BRIDLE_GATE_OFFSET = 3.2; // m along the lane from a cattle grid to its bridle gate, outside the unhedged stretch
-export const BRIDLE_HALF = 0.85; // m either side of a bridle gate's middle that the hedge leaves open: the leaf and a post each side
-
-/** Where the lane crosses the common: { from, to } m along it, from the first cattle grid to the second, or null with no grids. */
-export function moorStretch(road) {
-  const grids = road.moor?.grids;
-  if (!grids || grids.length < 2) return null;
-  const [a, b] = grids.map((g) => nearestS(road, g.near[0], g.near[1])).sort((x, y) => x - y);
-  return { from: a, to: b };
-}
-
-/** The hedge's gaps: the gates now, a stile and its footpath when #686's footpath is placed. */
-export function laneGaps(road) {
-  const gaps = laneGates(road).map((g) => ({ s: g.s, half: GATE_HALF, side: g.side }));
-  if (road.ford) gaps.push({ s: sAlong(road, road.ford.at[0], road.ford.at[1]), half: FORD_OPEN }); // the stream runs through the hedge line on both sides
-  if (road.footpath) gaps.push({ s: sAlong(road, road.footpath.at[0], road.footpath.at[1]), half: STILE_HALF, side: footpathSide(road) });
-  const moor = moorStretch(road);
-  if (moor) {
-    gaps.push({ s: (moor.from + moor.to) / 2, half: (moor.to - moor.from) / 2, side: MOOR_SIDE }); // the common's side is open between the grids (#713)
-    gaps.push({ s: moor.from - BRIDLE_GATE_OFFSET, half: BRIDLE_HALF, side: MOOR_SIDE }, { s: moor.to + BRIDLE_GATE_OFFSET, half: BRIDLE_HALF, side: MOOR_SIDE }); // and each grid's bridle gate
-  }
-  return gaps;
-}
+export { GATE_HALF, FORD_OPEN, STILE_HALF, MOOR_SIDE, BRIDLE_GATE_OFFSET, BRIDLE_HALF, laneGates, moorStretch, laneGaps } from './laneHedges.js'; // where the hedge breaks: pure, so the farm's list of placed things can read it (farmPlacement.js, #1187)
 
 function buildGate(road, g, c, group, points) {
   const { heights, fixedBox, random } = c;
@@ -208,7 +161,7 @@ function buildFord(road, c, group, points) {
 }
 
 /**
- * Lays hedge along `runs` of `road` (laneHedges.js `laneHedgeRuns`): leafy blocks near, plain strips far, and a collider every `CHUNK` m. Added to the scene;
+ * Lays hedge along `runs` of `road` (laneHedges.js `laneHedgeRuns`): leafy blocks near, plain strips far, and a collider every 6 m (hedgeLay.js `layLaneHedge`). Added to the scene;
  * returns the near and far meshes, which the game swaps by distance (`HedgeSwap`). `name` names the far strips. Back Lane's and the A-road's.
  */
 export function layHedges(c, road, runs, name, height = LANE_HEDGE_HEIGHT) {
@@ -220,16 +173,12 @@ export function layHedges(c, road, runs, name, height = LANE_HEDGE_HEIGHT) {
   const matrices = [];
   const farPieces = [];
   for (const run of runs) {
-    const at = (s, across = 0) => sidePoint(road, s, run.side, hedgeOffset(road, s, run.side) + across);
+    const lay = layLaneHedge(road, run, { T, H, heightAt: heights.heightAt, random, blockReach }); // where each block and box goes (hedgeLay.js)
+    const { at } = lay;
     const blocks = [];
-    for (let s = run.from; s <= run.to; s += 1.1 + random() * 0.5) {
-      const across = (random() - 0.5) * HEDGE_WOBBLE;
-      const { x, z } = at(s, across);
-      const y = heights.heightAt(x, z) - 0.2;
-      const width = blockWidth(T, random(), blockReach, across); // leaves stay within the solid part (hedgeSolid.js, #829)
-      const tall = 0.8 + random() * 0.45;
-      matrices.push(matrixAt(x, y, z, random() * Math.PI * 2, width / hedgeSize.x, (H / hedgeSize.y) * tall, width / hedgeSize.z));
-      blocks.push({ s, x, z, top: y + H * tall * FAR_HEDGE_TOP, width: width * FAR_HEDGE_WIDTH });
+    for (const b of lay.blocks) {
+      matrices.push(matrixAt(b.x, b.y, b.z, b.spin, b.width / hedgeSize.x, (H / hedgeSize.y) * b.tall, b.width / hedgeSize.z));
+      blocks.push({ s: b.s, x: b.x, z: b.z, top: b.y + H * b.tall * FAR_HEDGE_TOP, width: b.width * FAR_HEDGE_WIDTH });
     }
     blocks.forEach((b, i) => {
       const from = i ? (blocks[i - 1].s + b.s) / 2 : b.s - FAR_HEDGE_END;
@@ -242,18 +191,7 @@ export function layHedges(c, road, runs, name, height = LANE_HEDGE_HEIGHT) {
         gap: i === 0, kind: 'hedge', groundA: heights.heightAt(a.x, a.z), groundB: heights.heightAt(e.x, e.z),
       });
     });
-    // Colliders: straight boxes of at most CHUNK m along the curve, each as high as the ground under it climbs.
-    for (let s = run.from; s < run.to; s += CHUNK) {
-      const e = Math.min(run.to, s + CHUNK);
-      const a = at(s);
-      const b = at(e);
-      const len = Math.hypot(b.x - a.x, b.z - a.z);
-      if (len < 0.5) continue;
-      const mid = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
-      const lo = Math.min(heights.heightAt(a.x, a.z), heights.heightAt(mid.x, mid.z), heights.heightAt(b.x, b.z));
-      const hi = Math.max(heights.heightAt(a.x, a.z), heights.heightAt(mid.x, mid.z), heights.heightAt(b.x, b.z));
-      fixedBox(mid.x, (lo + hi) / 2 + H / 2 - 0.3, mid.z, len / 2 + 0.2, (hi - lo) / 2 + H / 2, HEDGE_SOLID_HALF, Math.atan2(-(b.z - a.z), b.x - a.x));
-    }
+    for (const k of lay.colliders) fixedBox(k.x, k.y, k.z, k.hx, k.hy, k.hz, k.turn);
   }
   const near = instanceModel(models.hedge.scene, matrices, { castShadow: false });
   const far = buildFarHedges(farPieces, { tint: leafTint(models.hedge.scene), name: name });

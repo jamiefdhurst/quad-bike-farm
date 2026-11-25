@@ -1,46 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
 import { LAYOUT } from '../src/world/layout.js';
 import { createFields } from '../src/world/fields.js';
-import { layHedge } from '../src/world/hedgeLay.js';
+import { layHedge, layLaneHedge } from '../src/world/hedgeLay.js';
+import { roadNetwork } from '../src/world/roads.js';
+import { laneHedgeRuns, laneGaps } from '../src/world/laneHedges.js';
+import { aRoadGaps } from '../src/world/aRoadFittings.js';
 import { HEDGE_SOLID_HALF, HEDGE_LEAF_SLACK, leafReach, blockWidth, bushHeight, widestBlock } from '../src/world/hedgeSolid.js';
+import { glbModel, outline } from './helpers/hedgeModels.js';
 
 // A hedge is solid as far as its leaves reach, and its leaves stay out of its gateways (#829). Built from the real hedge and bush models' vertices
 // and the same laying-out props.js uses, so a block or bush that sticks out past the collider, or into a way through, fails here.
-
-/** The model's vertices as a stand-in the code reads (traverse, matrixWorld and a position attribute), straight from the .glb. */
-function glbModel(name) {
-  const b = fs.readFileSync(new URL(`../public/models/${name}.glb`, import.meta.url));
-  const n = b.readUInt32LE(12);
-  const j = JSON.parse(b.subarray(20, 20 + n).toString());
-  const acc = j.accessors[j.meshes[0].primitives[0].attributes.POSITION];
-  const view = j.bufferViews[acc.bufferView];
-  const off = 20 + n + 8 + (view.byteOffset || 0) + (acc.byteOffset || 0);
-  const stride = view.byteStride || 12;
-  const sc = j.nodes.find((x) => x.mesh !== undefined).scale[0];
-  const xyz = (i, k) => b.readFloatLE(off + i * stride + 4 * k) * sc;
-  const verts = Array.from({ length: acc.count }, (_, i) => [xyz(i, 0), xyz(i, 1), xyz(i, 2)]);
-  const position = { count: verts.length, getX: (i) => verts[i][0], getY: (i) => verts[i][1], getZ: (i) => verts[i][2] };
-  const mesh = { isMesh: true, geometry: { attributes: { position } }, matrixWorld: { elements: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] } };
-  const lo = [0, 1, 2].map((k) => Math.min(...verts.map((v) => v[k])));
-  const hi = [0, 1, 2].map((k) => Math.max(...verts.map((v) => v[k])));
-  return { root: { traverse: (f) => f(mesh) }, verts, size: { x: hi[0] - lo[0], y: hi[1] - lo[1], z: hi[2] - lo[2] } };
-}
-
-/** The corners of the points' outline in plan (x, z): every limit checked here is a distance in a direction, so a corner is the farthest. */
-function outline(verts) {
-  const pts = [...new Map(verts.map((v) => [`${v[0].toFixed(4)},${v[2].toFixed(4)}`, v])).values()].sort((a, b) => a[0] - b[0] || a[2] - b[2]);
-  const cross = (o, a, b) => (a[0] - o[0]) * (b[2] - o[2]) - (a[2] - o[2]) * (b[0] - o[0]);
-  const half = (list) => {
-    const h = [];
-    for (const p of list) {
-      while (h.length >= 2 && cross(h[h.length - 2], h[h.length - 1], p) <= 0) h.pop();
-      h.push(p);
-    }
-    return h.slice(0, -1);
-  };
-  return [...half(pts), ...half([...pts].reverse())];
-}
 
 const hedge = glbModel('hedge');
 const bush = glbModel('bush');
@@ -137,5 +106,66 @@ describe('hedge leaves and colliders', () => {
     expect(blockWidth(T, 0, blockReach, 0)).toBeCloseTo(T * 0.95, 6); // a slim block is as it was
     expect(blockWidth(T, 1, blockReach, 0.2)).toBeLessThanOrEqual(widestBlock(blockReach, 0.2) + 1e-9);
     expect(bushHeight(1, bushReach, 0.1) * bushReach + 0.1).toBeLessThanOrEqual(HEDGE_SOLID_HALF + HEDGE_LEAF_SLACK + 1e-9);
+  });
+});
+
+// Back Lane's and the A-road's hedges (#1122): each run starts and ends at a gate, the ford, a stile, a bridle gate or a junction, so its leaves stop at the
+// run's ends and its collider ends there too, and every leaf is within the collider and a hand across. Laid as the game lays them (hedgeLay.js `layLaneHedge`).
+describe("the lanes' hedges at their gateways", () => {
+  const net = roadNetwork(LAYOUT);
+  const roads = [['backLane', (r) => laneGaps(r)], ['aRoad', (r) => aRoadGaps(net, r, LAYOUT)]].map(([id, gapsOf]) => {
+    const road = net.road(id);
+    const gaps = gapsOf(road);
+    const runs = laneHedgeRuns(road, gaps).map((run) => ({ run, lay: layLaneHedge(road, run, { T, H: 2, heightAt: () => 0, random: seeded(77), blockReach }) }));
+    return { id, road, gaps, runs };
+  });
+  /** Every leaf vertex of a block as { s (along the road), a (across, from the hedge's line) }: near the block, the road is straight enough to take its heading there. */
+  const leafPoints = (road, run, lay, b) => {
+    const mid = lay.at(b.s);
+    const ahead = lay.at(b.s + 0.5);
+    const len = Math.hypot(ahead.x - mid.x, ahead.z - mid.z) || 1;
+    const ux = (ahead.x - mid.x) / len;
+    const uz = (ahead.z - mid.z) / len;
+    const c = Math.cos(b.spin);
+    const sn = Math.sin(b.spin);
+    return hedge.corners.map((v) => {
+      const x = (v[0] / hedge.size.x) * b.width;
+      const z = (v[2] / hedge.size.z) * b.width;
+      const dx = b.x + c * x + sn * z - mid.x;
+      const dz = b.z - sn * x + c * z - mid.z;
+      return { s: b.s + dx * ux + dz * uz, a: -dx * uz + dz * ux };
+    });
+  };
+
+  it('keeps every leaf out of each gateway and within the run, so none hangs past the collider', () => {
+    let blocks = 0;
+    for (const { id, road, gaps, runs } of roads) {
+      for (const { run, lay } of runs) {
+        for (const b of lay.blocks) {
+          blocks++;
+          for (const p of leafPoints(road, run, lay, b)) {
+            expect(p.s, `${id}: a leaf before its run's start at ${run.from.toFixed(1)}`).toBeGreaterThanOrEqual(run.from - 1e-6);
+            expect(p.s, `${id}: a leaf past its run's end at ${run.to.toFixed(1)}`).toBeLessThanOrEqual(run.to + 1e-6);
+            for (const g of gaps) {
+              if (g.side !== undefined && g.side !== run.side) continue;
+              expect(Math.abs(p.s - g.s), `${id}: a leaf in the gap at ${g.s.toFixed(1)}`).toBeGreaterThanOrEqual(g.half - 1e-6);
+            }
+          }
+        }
+      }
+    }
+    expect(blocks).toBeGreaterThan(2000);
+  });
+
+  it('keeps every leaf within the collider and a hand across, and the collider within its run', () => {
+    for (const { id, runs } of roads) {
+      for (const { run, lay } of runs) {
+        for (const b of lay.blocks) for (const p of leafPoints(null, run, lay, b)) expect(Math.abs(p.a), id).toBeLessThanOrEqual(HEDGE_SOLID_HALF + HEDGE_LEAF_SLACK + 1e-6);
+        for (const k of lay.colliders) {
+          expect(k.s0, `${id}: a collider before its run's start`).toBeGreaterThanOrEqual(run.from - 1e-6);
+          expect(k.s1, `${id}: a collider past its run's end`).toBeLessThanOrEqual(run.to + 1e-6);
+        }
+      }
+    }
   });
 });

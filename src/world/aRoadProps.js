@@ -6,33 +6,19 @@
 import * as THREE from 'three';
 import { roadNetwork } from './roads.js';
 import { laneHedgeRuns, laneTrees, sidePoint, hedgeOffset } from './laneHedges.js';
-import { sAlong } from './laneSigns.js';
 import { layHedges } from './backLaneProps.js';
 import { buildVerge } from './laneVerge.js';
 import { HedgeSwap } from './hedgeFar.js';
 import { matrixAt } from './hillProps.js';
 import { tiledInstances } from './tiledInstances.js';
-import { junctionSites, junctionFittings, junctionBreaks, catsEyes, layByOf } from './aRoadFittings.js';
+import { junctionSites, junctionFittings, junctionBreaks, catsEyes, layByOf, aRoadGaps } from './aRoadFittings.js';
 import * as signs from './roadSigns.js';
 import * as furniture from './roadFurniture.js';
 
 export const A_ROAD_HEDGE_HEIGHT = 2.0; // m: a trimmed roadside hedge, lower than a single-track lane's
 const SIGN_FOOT = 0.04; // m: a post stands this far into the ground, so nothing shows a gap on a slope
 
-/** The A-road's hedge gaps: both sides open at each junction's mouth, the west side open along her land (she has her own hedge there), the bus bay's east side. */
-export function aRoadGaps(net, a, layout) {
-  const gaps = junctionBreaks(net, a).map((b) => ({ s: b.s, half: b.half + 3 }));
-  const land = layout.neighbourLand;
-  if (land) {
-    const zs = land.fields.map((f) => [f.minZ, f.maxZ]).flat();
-    const s0 = sAlong(a, a.samples[0].x, Math.min(...zs) - 1);
-    const s1 = sAlong(a, a.samples[0].x, Math.max(...zs) + 1);
-    gaps.push({ s: (s0 + s1) / 2, half: (s1 - s0) / 2 + 2, side: -1 });
-  }
-  const by = layByOf(a, layout.aRoadFittings?.layBy);
-  if (by) gaps.push({ s: by.s, half: by.length / 2 + 3, side: by.side });
-  return gaps;
-}
+export { aRoadGaps } from './aRoadFittings.js'; // where its hedge breaks: pure, for the farm's list of placed things (farmPlacement.js, #1187)
 
 /** Builds the A-road's hedges, trees and verge, and its junctions' and bus bay's furniture. `c` is the props context (props.js). Null on a farm without an A-road. */
 export function buildARoadProps(c) {
