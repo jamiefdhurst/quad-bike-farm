@@ -5,6 +5,8 @@
 // for any of this, so the offsets are added to her vertices in the shader (bodyShakeView.js), weighted by region here. Pure.
 // docs/decisions/girls.md, "Bodies that give with the shake (#573)".
 
+import { bustOutline, bustUV } from './bustShape.js';
+
 export const DEFAULT_BODY_SHAKE_PARAMS = {
   strength: 1, // all of it together: 0 holds her still, 2 twice as much
   maxOffset: 0.035, // metres: about the furthest a part of her moves from where it would be (eased into, and more on a fuller figure)
@@ -14,6 +16,8 @@ export const DEFAULT_BODY_SHAKE_PARAMS = {
   bustStiffness: 220, // how hard each part is pulled back (per second squared): 220 is about 2.4 swings a second
   bustDamping: 4.5, // how quickly a swing dies away (per second): a bump settles over a couple of swings
   bustGive: 0.75, // how far it moves for a jolt
+  bustSize: 2.5, // and that times her bust's size (figure.js, 1 Amy's) to this power: Jess's (1.4) moves about 2.3 times Amy's (at 1.5,
+  // 1.7: Jamie, on #1143, "for Jess it needs to shake a little more")
   bellyStiffness: 320,
   bellyDamping: 7,
   bellyGive: 0.45,
@@ -34,6 +38,7 @@ export const BODY_SHAKE_PARAM_RANGES = {
   bustStiffness: [40, 800, 5],
   bustDamping: [0.5, 20, 0.1],
   bustGive: [0, 3, 0.05],
+  bustSize: [1, 4, 0.1],
   bellyStiffness: [40, 800, 5],
   bellyDamping: [0.5, 20, 0.1],
   bellyGive: [0, 3, 0.05],
@@ -105,10 +110,13 @@ export function jolt(state, speed = 0.5) {
 
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
-/** How much each spring's part moves for her figure (figure.js amounts, 1 the usual): the fuller her bust or hips, the more. */
-export function figureGive({ bust = 1, hips = 1 } = {}) {
+/**
+ * How much each spring's part moves for her figure (figure.js amounts, 1 the usual): the fuller her bust or hips, the more, her bust
+ * by `bustSize`.
+ */
+export function figureGive({ bust = 1, hips = 1 } = {}, p = DEFAULT_BODY_SHAKE_PARAMS) {
   return {
-    bust: clamp(bust, 0, 2.5) ** 1.5,
+    bust: clamp(bust, 0, 2.5) ** (p.bustSize ?? 1.5),
     belly: 1,
     arm: 1,
     seat: clamp(hips, 0, 2.5) ** 1.5,
@@ -121,7 +129,7 @@ export function figureGive({ bust = 1, hips = 1 } = {}) {
  * figure's give, so a fuller figure still moves further) rather than stopping dead. Fills and returns `out` ({ bust: [x, y, z], ... }).
  */
 export function shakeOffsets(state, heave, p = DEFAULT_BODY_SHAKE_PARAMS, figure = {}, out = {}) {
-  const give = figureGive(figure);
+  const give = figureGive(figure, p);
   for (const k of SPRINGS) {
     const g = p[`${k}Give`] * give[k] * p.strength;
     const { x } = state[k];
@@ -145,7 +153,8 @@ const smoothstep = (a, b, x) => {
 // Where each region is on her, in figure.js's body frame (the hips bone at 0, x to her left, y up, z to her front, a unit her
 // hips-to-neck length).
 export const SHAKE_SHAPE = {
-  bustReach: 0.22, // each breast's region about its apex, across and up and down
+  bustOut: 1.4, // each breast's region: all of it inside its drawn outline (bustShape.js), fading out to this many of its half-widths
+  // (past it, as it hangs below its outline)
   bustFrontFrom: 0, // only the front of her chest moves: none at this z,
   bustFrontTo: 0.15, // all of it from here
   bellyY: 0.28, // her belly's middle, its reach up and down, its half-width
@@ -164,15 +173,13 @@ export const SHAKE_SHAPE = {
 
 /**
  * How much each region (REGIONS' order) moves one point of her or her clothes, 0 to 1. `q`: { x, y, z } in the body frame. `skin`: the
- * point's skin weight on her upper arms and thighs ({ armL, armR, legL, legR }). `frame`: from the body ({ apex, arms: { L: {y, z},
- * R }, hip: { y }, knee: { y } }, body frame), with `bust` her figure's bust amount so a fuller one's region is as much bigger as
- * figure.js made it.
+ * point's skin weight on her upper arms and thighs ({ armL, armR, legL, legR }). `frame`: from the body ({ arms: { L: {y, z}, R },
+ * hip: { y }, knee: { y } }, body frame), with `bust` her figure's bust amount, so the region is her bust as drawn for that size.
  */
 export function shakeWeights(q, skin, frame, s = SHAKE_SHAPE) {
-  const { apex } = frame;
-  const g = Math.max(0.5, 1 + 0.45 * ((frame.bust ?? 1) - 1)); // figure.js's BUST.grow
-  const across = Math.abs(q.x) - apex.x;
-  const e = (across / (s.bustReach * g)) ** 2 + ((q.y - apex.y) / (s.bustReach * g)) ** 2;
+  // Each breast as drawn (bustShape.js's outline for her size), so the whole of it moves, as big as it is.
+  const { r2 } = bustUV(q.x, q.y, bustOutline(frame.bust ?? 1));
+  const e = r2 / (s.bustOut * s.bustOut);
   const bust = e < 1 ? smoothstep(0, 1, 1 - e) * smoothstep(s.bustFrontFrom, s.bustFrontTo, q.z) : 0;
   const belly = bell((q.y - s.bellyY) / s.bellyReach) * bell(q.x / s.bellyWide) * smoothstep(s.bellyFrontFrom, s.bellyFrontTo, q.z) * (1 - bust);
   // The backs of her upper arms: in the bind pose her arms are straight out, so the underside and back of each is below and behind

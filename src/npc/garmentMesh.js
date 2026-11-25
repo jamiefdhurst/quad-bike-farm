@@ -371,22 +371,150 @@ export function smoothSkinning(mesh, passes = 3, amount = 0.5, where = () => tru
  * was cut along stay put, as do any `where(v)` leaves out. A body split at load (smoothBody.js) has twice the points along any line,
  * so it needs four times the passes for the same reach (evening out spreads with their root).
  */
+/**
+ * Cloth moved from `start` to `rest` (both a point a vertex, `rest` changed): any triangle turned from how it was cut has its
+ * corners eased back towards where they were, halving the move each round, until none is (#1143).
+ */
+export function easeBackFolds(mesh, start, rest) {
+  const facing = (P, t) => cross(sub(P[t[1]], P[t[0]]), sub(P[t[2]], P[t[0]]));
+  const was = mesh.tris.map((t) => facing(start, t));
+  for (let round = 0; round < 12; round++) {
+    const back = new Set();
+    mesh.tris.forEach((t, k) => {
+      const n = facing(rest, t);
+      // Turned past square: cloth on the inner side of a breast turns about a quarter as it is lifted on to the bridge, and is right.
+      if (dot(n, was[k]) < -0.1 * Math.hypot(...n) * Math.hypot(...was[k])) for (const i of t) if (rest[i] !== start[i]) back.add(i);
+    });
+    if (!back.size) break;
+    for (const i of back) rest[i] = round === 11 ? start[i] : add(start[i], scale(sub(rest[i], start[i]), 0.5));
+  }
+}
+
+/**
+ * Smooths out folds in cloth (#1143): a triangle that points against the triangles on two or more of its edges (the middle sheet of
+ * a Z, where cloth pushed straight out from a tight hollow, such as the crease between a full breast and her arm, crossed itself)
+ * has its corners eased towards their neighbours, a round at a time, until none does. Changes `mesh.verts`' rest and bind.
+ */
+export function unfold(mesh, { rounds = 80, stored = false, where = () => true } = {}) {
+  // Standing (`rest`), or in her stored pose (`bind`, arms straight out), where her armpits and sides lie differently.
+  const at = (v) => (stored ? v.bind : v.rest);
+  // Points at the same place (either side of a cut along a band) move as one, and are each other's neighbours' neighbours.
+  const key = (p) => `${Math.round(p[0] * 1e5)},${Math.round(p[1] * 1e5)},${Math.round(p[2] * 1e5)}`;
+  const groupOf = new Map();
+  const group = mesh.verts.map((v) => {
+    const k = key(at(v));
+    if (!groupOf.has(k)) groupOf.set(k, groupOf.size);
+    return groupOf.get(k);
+  });
+  const n = groupOf.size;
+  const members = Array.from({ length: n }, () => []);
+  group.forEach((g, i) => members[g].push(i));
+  // A point marked `held` stays where it is, and so does one on a hem (where a coat's skirt meets it is measured) or not `where`.
+  const held = members.map((m) => m.some((i) => mesh.verts[i].held || mesh.verts[i].edge === 'hem' || !where(mesh.verts[i])));
+  const pos = members.map((m) => at(mesh.verts[m[0]]));
+  const tris = mesh.tris.map((t) => t.map((i) => group[i]));
+  const near = Array.from({ length: n }, () => new Set());
+  for (const t of tris) for (const a of t) for (const b of t) if (a !== b) near[a].add(b);
+  // Each triangle's neighbours across its edges, worked out once (points joined by place).
+  const byEdge = new Map();
+  tris.forEach((t, k) => {
+    for (let e = 0; e < 3; e++) {
+      const a = t[e], b = t[(e + 1) % 3];
+      const key = a < b ? a * n + b : b * n + a;
+      if (!byEdge.has(key)) byEdge.set(key, []);
+      byEdge.get(key).push(k);
+    }
+  });
+  const across = tris.map((t, k) => {
+    const out = [];
+    for (let e = 0; e < 3; e++) {
+      const a = t[e], b = t[(e + 1) % 3];
+      for (const u of byEdge.get(a < b ? a * n + b : b * n + a)) if (u !== k) out.push(u);
+    }
+    return out;
+  });
+  const normal = new Float32Array(tris.length * 3);
+  const sliver = new Uint8Array(tris.length);
+  const moved = new Set();
+  const byPoint = Array.from({ length: n }, () => []);
+  tris.forEach((t, k) => t.forEach((g) => byPoint[g].push(k)));
+  let dirty = tris.map((_, k) => k); // the triangles whose facing is worked out again this round: all at first, then those moved
+  for (let round = 0; round < rounds; round++) {
+    // Folded as facing.js's check sees it: pointing against the triangles on two or more of its edges, slivers (with no facing to
+    // speak of) left out on both sides.
+    for (const k of dirty) {
+      const t = tris[k];
+      const [p0, p1, p2] = t.map((g) => pos[g]);
+      const e1 = sub(p1, p0), e2 = sub(p2, p0);
+      const c = cross(e1, e2);
+      const len = Math.hypot(...c);
+      const longest = Math.max(dot(e1, e1), dot(e2, e2), dot(sub(p2, p1), sub(p2, p1)));
+      sliver[k] = len < 1e-14 || len / 2 < 0.01 * longest ? 1 : 0;
+      for (let j = 0; j < 3; j++) normal[k * 3 + j] = len > 0 ? c[j] / len : 0;
+    }
+    const bad = new Set();
+    for (let k = 0; k < tris.length; k++) {
+      const t = tris[k];
+      if (sliver[k]) continue;
+      let against = 0;
+      for (const u of across[k]) {
+        if (sliver[u]) continue;
+        if (normal[k * 3] * normal[u * 3] + normal[k * 3 + 1] * normal[u * 3 + 1] + normal[k * 3 + 2] * normal[u * 3 + 2] < 0) against++;
+      }
+      if (against >= 2) for (const g of t) bad.add(g);
+    }
+    if (!bad.size) break;
+    // The folded points and a ring round them, each part way to its neighbours' middle: the folded ones alone swung back and forth.
+    const work = new Set(bad);
+    for (const g of bad) for (const h of near[g]) work.add(h);
+    const next = new Map();
+    for (const g of work) {
+      if (held[g]) continue;
+      const avg = [0, 0, 0];
+      for (const h of near[g]) for (let k = 0; k < 3; k++) avg[k] += pos[h][k] / near[g].size;
+      next.set(g, add(pos[g], scale(sub(avg, pos[g]), 0.6)));
+    }
+    for (const [g, p] of next) (pos[g] = p), moved.add(g);
+    const again = new Set();
+    for (const g of next.keys()) for (const k of byPoint[g]) again.add(k);
+    dirty = [...again];
+  }
+  for (const g of moved) {
+    for (const i of members[g]) {
+      const v = mesh.verts[i];
+      if (stored) {
+        v.bind = pos[g];
+        v.rest = applySkin(v.skin, pos[g]);
+      } else {
+        v.rest = pos[g];
+        v.bind = unskin(v.skin, pos[g]);
+      }
+    }
+  }
+}
+
 export function drape(mesh, passes, where = () => true) {
   const near = mesh.verts.map(() => new Set());
   for (const t of mesh.tris) for (const a of t) for (const b of t) if (a !== b) near[a].add(b);
   const free = mesh.verts.map((v) => !v.edge && where(v));
   const out = mesh.verts.map((v) => norm(applySkinDir(v.skin, v.normal)));
   const rest = mesh.verts.map((v) => v.rest);
+  // Only the free points are worked, each pass, from where all of them were at its start (a bust drawn finely takes many passes).
+  const moving = [];
+  for (let i = 0; i < rest.length; i++) if (free[i] && near[i].size) moving.push([i, [...near[i]]]);
   for (let pass = 0; pass < passes; pass++) {
-    const next = rest.map((r, i) => {
-      if (!free[i] || !near[i].size) return r;
+    const next = moving.map(([i, around]) => {
+      const r = rest[i];
       const avg = [0, 0, 0];
-      for (const j of near[i]) for (let k = 0; k < 3; k++) avg[k] += rest[j][k] / near[i].size;
+      for (const j of around) for (let k = 0; k < 3; k++) avg[k] += rest[j][k] / around.length;
       const d = dot(sub(avg, r), out[i]);
       return d > 0 ? add(r, scale(out[i], d * 0.5)) : r;
     });
-    next.forEach((r, i) => (rest[i] = r));
+    moving.forEach(([i], k) => (rest[i] = next[k]));
   }
+  // Pushed out along their own normals, cloth over a breast's underside (facing down) and over her ribs below it (facing forward) met
+  // and folded: eased back where it did (#1143).
+  easeBackFolds(mesh, mesh.verts.map((v) => v.rest), rest);
   mesh.verts.forEach((v, i) => {
     if (rest[i] === v.rest) return;
     v.bind = unskin(v.skin, rest[i]);

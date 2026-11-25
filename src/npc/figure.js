@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { splitBody } from './smoothBody.js';
+import { patchBust, coverBust } from './bustPatch.js';
+
 
 // Body shape for the companion. The source model is fairly straight up and
 // down, so her figure is reshaped at load time: the bust fuller, the waist
@@ -152,6 +154,126 @@ export function figureOffset(x, y, z, apex, { bust = 0, waist = 0, hips = 0 }) {
   return [dx, dy, dz];
 }
 
+/**
+ * Her normals smoothed where `smooth` (0 to 1 a corner) says: each corner's flat normal eased towards the normal of every triangle
+ * meeting at its point, by area. The drawn bust is shaded smooth and her chest round it fades back to flat, so the bust doesn't show
+ * an edge where fine meets faceted.
+ */
+function smoothNormals(geo, smooth) {
+  const pos = geo.attributes.position.array;
+  const nrm = geo.attributes.normal.array;
+  const key = (i) => `${Math.round(pos[i * 3] * 1e5)},${Math.round(pos[i * 3 + 1] * 1e5)},${Math.round(pos[i * 3 + 2] * 1e5)}`;
+  const sums = new Map();
+  const count = pos.length / 3;
+  for (let t = 0; t < count / 3; t++) {
+    const k = t * 9;
+    const ax = pos[k + 3] - pos[k], ay = pos[k + 4] - pos[k + 1], az = pos[k + 5] - pos[k + 2];
+    const bx = pos[k + 6] - pos[k], by = pos[k + 7] - pos[k + 1], bz = pos[k + 8] - pos[k + 2];
+    const n = [ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx];
+    for (let j = 0; j < 3; j++) {
+      const i = t * 3 + j;
+      if (!smooth[i]) continue;
+      const kk = key(i);
+      const sum = sums.get(kk) ?? [0, 0, 0];
+      sums.set(kk, [sum[0] + n[0], sum[1] + n[1], sum[2] + n[2]]);
+    }
+  }
+  // Every corner at a smoothed point counts, flagged or not, so its neighbours outside the band agree on it.
+  for (let t = 0; t < count / 3; t++) {
+    const k = t * 9;
+    const ax = pos[k + 3] - pos[k], ay = pos[k + 4] - pos[k + 1], az = pos[k + 5] - pos[k + 2];
+    const bx = pos[k + 6] - pos[k], by = pos[k + 7] - pos[k + 1], bz = pos[k + 8] - pos[k + 2];
+    const n = [ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx];
+    for (let j = 0; j < 3; j++) {
+      const i = t * 3 + j;
+      if (smooth[i]) continue;
+      const sum = sums.get(key(i));
+      if (sum) for (let c = 0; c < 3; c++) sum[c] += n[c];
+    }
+  }
+  for (let i = 0; i < count; i++) {
+    const w = smooth[i];
+    if (!w) continue;
+    const sum = sums.get(key(i));
+    const len = Math.hypot(...sum) || 1;
+    const n = [0, 1, 2].map((c) => nrm[i * 3 + c] * (1 - w) + (sum[c] / len) * w);
+    const l2 = Math.hypot(...n) || 1;
+    for (let c = 0; c < 3; c++) nrm[i * 3 + c] = n[c] / l2;
+  }
+  geo.attributes.normal.needsUpdate = true;
+}
+
+/** Her body mesh's normals worked out again (after her hair is tied back, say), smoothed round a drawn bust as shapeFigure left them. */
+export function bodyNormals(mesh) {
+  const geo = mesh.geometry;
+  geo.computeVertexNormals();
+  const smooth = mesh.userData.smoothShading;
+  if (smooth && smooth.length === geo.attributes.position.count) smoothNormals(geo, smooth);
+}
+
+/**
+ * The covered body's arrays as bodyData reads them: positions, normals (smoothed, as her drawn bust's), paint and skin. `source`
+ * is each corner's own corner of her body, or -1: her paint is cut round her neckline after this (outfit.js), so it is read from her.
+ */
+function coverArrays(c) {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(c.positions, 3));
+  geo.setIndex(Array.from(c.index));
+  geo.computeVertexNormals();
+  smoothNormals(geo, c.smooth);
+  return { position: c.positions, normal: geo.attributes.normal.array, uv: c.uvs, source: c.source, skinIndex: c.skinIndex, skinWeight: c.skinWeight, index: c.index };
+}
+
+/** Puts a split (or patched) body's arrays on her geometry, replacing them when the number of corners has changed. */
+function setBody(geo, b) {
+  const pos = geo.attributes.position;
+  if (pos.array.length === b.positions.length && geo.index?.count === b.index.length) {
+    pos.array.set(b.positions);
+    pos.needsUpdate = true;
+    return;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(Float32Array.from(b.positions), 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(Float32Array.from(b.uvs), 2));
+  geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(Array.from(b.skinIndex), 4));
+  geo.setAttribute('skinWeight', new THREE.BufferAttribute(Float32Array.from(b.skinWeight), 4));
+  geo.setIndex(Array.from(b.index));
+}
+
+/**
+ * The body frame of a skinned body in its bind pose (the hips bone at 0, x her left, y up, z her front, one unit hips to neck), and
+ * `toBody(positions)`, which gives a copy of a flat xyz array in it. Null if her bones aren't there.
+ */
+export function bodyFrame(mesh) {
+  // Bone bind positions are in the same space as the vertices.
+  const sk = mesh.skeleton;
+  const bindPos = (name) => {
+    const i = sk.bones.findIndex((b) => b.name === name);
+    return i < 0 ? null : new THREE.Vector3().setFromMatrixPosition(sk.boneInverses[i].clone().invert());
+  };
+  const hips = bindPos('Hips');
+  const neck = bindPos('Neck');
+  const leftArm = bindPos('LeftArm');
+  const rightArm = bindPos('RightArm');
+  if (!hips || !neck || !leftArm || !rightArm) return null;
+  const unit = neck.distanceTo(hips);
+  const up = neck.clone().sub(hips).normalize();
+  const left = leftArm.sub(rightArm);
+  left.addScaledVector(up, -left.dot(up)).normalize();
+  const front = new THREE.Vector3().crossVectors(left, up);
+  const q = new THREE.Vector3();
+  const toBody = (positions) => {
+    const out = new Float32Array(positions.length);
+    for (let i = 0; i < out.length / 3; i++) {
+      q.fromArray(positions, i * 3).sub(hips);
+      out[i * 3] = q.dot(left) / unit;
+      out[i * 3 + 1] = q.dot(up) / unit;
+      out[i * 3 + 2] = q.dot(front) / unit;
+    }
+    return out;
+  };
+  return { hips, unit, up, left, front, toBody };
+}
+
 /** The character's skinned body mesh. */
 function bodyMesh(rig) {
   let mesh = null;
@@ -178,22 +300,10 @@ export function shapeFigure(rig, amounts) {
   const original = coarse ? coarse.positions : geo.userData.bindPositions;
   const count = original.length / 3;
 
-  // Bone bind positions are in the same space as the vertices.
+  const frame = bodyFrame(mesh);
+  if (!frame) return;
+  const { hips, unit, up, left, front } = frame;
   const sk = mesh.skeleton;
-  const bindPos = (name) => {
-    const i = sk.bones.findIndex((b) => b.name === name);
-    return i < 0 ? null : new THREE.Vector3().setFromMatrixPosition(sk.boneInverses[i].clone().invert());
-  };
-  const hips = bindPos('Hips');
-  const neck = bindPos('Neck');
-  const leftArm = bindPos('LeftArm');
-  const rightArm = bindPos('RightArm');
-  if (!hips || !neck || !leftArm || !rightArm) return;
-  const unit = neck.distanceTo(hips);
-  const up = neck.clone().sub(hips).normalize();
-  const left = leftArm.sub(rightArm);
-  left.addScaledVector(up, -left.dot(up)).normalize();
-  const front = new THREE.Vector3().crossVectors(left, up);
 
   const p = new THREE.Vector3();
   const toBody = (i) => {
@@ -219,10 +329,15 @@ export function shapeFigure(rig, amounts) {
   }
   if (!apex) return;
 
+  // Drawn from the written target (bustShape.js) after the split, or pushed out here as before.
+  // On the split body her bust is drawn after the split, from the written target (bustShape.js, bustPatch.js; #1143). On the model as
+  // it comes (`?body=flat`) it is still pushed out here.
+  const drawBust = !!(amounts.bust && coarse);
+  const pushed = drawBust ? { ...amounts, bust: 0 } : amounts;
   const moved = [];
   for (let i = 0; i < count; i++) {
     const [x, y, z] = toBody(i);
-    const [dx, dy, dz] = figureOffset(x, y, z, apex, amounts);
+    const [dx, dy, dz] = figureOffset(x, y, z, apex, pushed);
     const k = 1 - armWeight(i);
     moved.push({ x: x + dx * k, y: y + dy * k, z: z + dz * k, k });
   }
@@ -239,9 +354,45 @@ export function shapeFigure(rig, amounts) {
       .addScaledVector(front, dz * unit);
     p.toArray(shaped, i * 3);
   }
-  pos.array.set(coarse ? splitBody({ ...coarse, positions: shaped }, { rounded: (t) => coarse.rounded[t] === 1 }).positions : shaped);
-  pos.needsUpdate = true;
-  geo.computeVertexNormals();
+  let split = null;
+  mesh.userData.cover = null;
+  if (!coarse) {
+    pos.array.set(shaped);
+    pos.needsUpdate = true;
+  } else {
+    split = splitBody({ ...coarse, positions: shaped }, { rounded: (t) => coarse.rounded[t] === 1 });
+    if (drawBust) {
+      // The split body into the body frame and back, with her arms held still.
+      const body = frame.toBody(split.positions);
+      const keep = (i) => {
+        let w = 0;
+        for (let k = 0; k < 4; k++) if (armBones.has(split.skinIndex[i * 4 + k])) w += split.skinWeight[i * 4 + k];
+        return Math.min(1, w);
+      };
+      const drawn = patchBust({ ...split, positions: body }, amounts.bust, keep, (b) => armBones.has(b));
+      const fromBody = (a) => {
+        const out = new Float32Array(a.length);
+        for (let i = 0; i < out.length / 3; i++) {
+          p.copy(hips)
+            .addScaledVector(left, a[i * 3] * unit)
+            .addScaledVector(up, a[i * 3 + 1] * unit)
+            .addScaledVector(front, a[i * 3 + 2] * unit)
+            .toArray(out, i * 3);
+        }
+        return out;
+      };
+      if (drawn) {
+        split = { ...drawn, positions: fromBody(drawn.positions) };
+        // Her body as her tops are cut from it (bustPatch.js, coverBust), on her mesh: both girls' geometries share one userData.
+        const cover = coverBust(drawn, amounts.bust, (b) => armBones.has(b));
+        mesh.userData.cover = cover ? coverArrays({ ...cover, positions: fromBody(cover.positions) }) : null;
+      }
+    }
+    setBody(geo, split);
+  }
+  // On her mesh, not the geometry: both girls' geometries are clones that share one userData.
+  mesh.userData.smoothShading = coarse && split.smooth ? split.smooth : null;
+  bodyNormals(mesh);
   geo.computeBoundingBox();
   geo.computeBoundingSphere();
   // The skinned bounds are recomputed from the new shape on next use.

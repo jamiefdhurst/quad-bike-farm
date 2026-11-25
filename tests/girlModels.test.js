@@ -4,11 +4,12 @@ import { buildAllGirls, measureGirl } from './helpers/girlModels.js';
 // The girls' shape (TODO 86), checked without a screenshot: how many meshes and triangles each has dressed, and how big she is.
 // A change that shrinks a girl, leaves a garment out or doubles one fails here. Recorded in the model's rest pose, with the
 // polo's neckline uncut (the test has no texture pixels to cut it from), so the triangle count is a little above the game's.
-// To change on purpose, update the numbers below and say why in DECISIONS.md. 8444 since her body is split into four (#176).
+// To change on purpose, update the numbers below and say why in DECISIONS.md. 8444 since her body is split into four (#176); about
+// 10,940 since her bust is drawn as rings (#1143), and its rings and the covered body her polo is cut from carry more triangles.
 
 const WAS = {
-  amy: { meshes: 7, tris: 8444, size: [0.499, 1.613, 0.358] },
-  jess: { meshes: 7, tris: 8444, size: [0.481, 1.553, 0.385] },
+  amy: { meshes: 7, tris: 10938, size: [0.499, 1.613, 0.36] },
+  jess: { meshes: 7, tris: 10934, size: [0.481, 1.553, 0.391] },
 };
 const SIZE_TOLERANCE = 0.03; // of each side
 const TRIS_TOLERANCE = 0.05;

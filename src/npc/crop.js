@@ -8,13 +8,18 @@ import { smoothNormals, unskin, applySkinDir, rayHit, inTriangle, vec } from './
 
 const { add, scale, norm } = vec;
 
+const smooth01 = (t) => {
+  const k = Math.max(0, Math.min(1, t));
+  return k * k * (3 - 2 * k);
+};
+
 export const CROP = {
   ease: 0.01, // how far it stands off her
   top: 0.04, // at her front, its top edge this far above the fullest part of her bust
-  under: 0.055, // and its bottom edge this far below it
+  under: 0.09, // and its bottom edge this far below it: under her bust's lowest point, about 7.5 cm below its fullest (#1143)
   backTop: -0.022, // round her back, a narrow band: its top this far above her bust's height (below it)
   backUnder: 0.04, // and its bottom
-  strapAcross: 0.07, // the straps this far either side of her middle, front and back, over her shoulders
+  strapAcross: 0.07, // the straps this far either side of her front's middle (at the band's top), over her shoulders
   strapWidth: 0.0025, // half the width of a strap: a string
   grooveWidth: 0.025, // the drawn cleavage (cleavage.js) reaches this far either side of the line between her apexes
   grooveHeight: 0.09, // and this far up from the band's top
@@ -263,13 +268,19 @@ export function hullReach(hull, dx, dz) {
 export function buildStraps(body, F, p = CROP, ground = skinAround(body, F, 'all')) {
   const neck = body.bones.Neck;
   const out = [];
+  // Either side of her front's middle where the band's top is, not her neck's line: she stands turned a little, so at her bust her
+  // middle is about 2.5 cm to her left of it, and the straps sat off to her right (#1143, as the polo's placket did in #1134).
+  // At her shoulder and back they are either side of her neck's line, so each runs from one to the other as it goes over.
+  const mid = body.middle ? body.middle(F.bust.y + p.top) : neck[0];
   for (const side of [-1, 1]) {
-    const x = neck[0] + side * p.strapAcross;
+    const xAt = (a) => neck[0] + (mid - neck[0]) * (1 - smooth01((a + 0.2) / 1.6)) + side * p.strapAcross;
+    const x = xAt(Math.PI / 2);
     const centre = [x, neck[1] - 0.08, neck[2]];
     const path = [];
     for (let a = -1.2; a <= Math.PI + 1.2; a += 0.04) {
       const d = [0, Math.sin(a), Math.cos(a)];
-      const hit = rayHit(ground, add(centre, scale(d, 0.35)), scale(d, -1));
+      const from = [xAt(a), centre[1], centre[2]];
+      const hit = rayHit(ground, add(from, scale(d, 0.35)), scale(d, -1));
       if (!hit) continue;
       const v = inTriangle(ground, hit.tri, hit.bary);
       // Only skin on the side of her the ray came from: a low ray at her front can slip under her bust, where none of her skin is
@@ -288,7 +299,7 @@ export function buildStraps(body, F, p = CROP, ground = skinAround(body, F, 'all
       // Evening out cuts the corner over the curve of her bust and shoulder: never in further than her skin is where it now lies.
       rest.forEach((q, i) => {
         const dir = norm([0, q[1] - centre[1], q[2] - centre[2]]);
-        const hit = rayHit(ground, add([x, centre[1], centre[2]], scale(dir, 0.35)), scale(dir, -1));
+        const hit = rayHit(ground, add([q[0], centre[1], centre[2]], scale(dir, 0.35)), scale(dir, -1));
         if (!hit) return;
         const want = 0.35 - hit.t;
         const has = reach(q);

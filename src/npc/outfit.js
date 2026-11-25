@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { buildTop, buildInset, buttonShape, slitShape, layOnCloth, poloFields, tuckSleeves, logoThread, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER, frontMiddle } from './polo.js';
+import { buildTop, buildInset, buttonShape, slitShape, layOnCloth, poloFields, tuckSleeves, hiddenUnder, logoThread, POLO, JUMPER, COAT, PLAID, PLAID_OVER, PLAID_OPEN, OVER_POLO, SHIRT, SHIRT_OVER, SHIRT_ROLLED, SHIRT_ROLLED_OVER, frontMiddle } from './polo.js';
 import { buildTie } from './tie.js';
 import { shirtButtonsUndone } from './outfits.js';
 import { buildCropTop } from './crop.js';
@@ -11,6 +11,7 @@ import { measureHead, RIM_BELOW_CROWN } from './helmetView.js';
 import { buildTail, strand, merge } from './ponytail.js';
 import { PonytailSwing } from './ponytailView.js';
 import { unskin, smoothNormals, blendWeights, vec } from './garmentMesh.js';
+import { bodyNormals, shapeFigure } from './figure.js';
 
 // Outfits for the companion. The Quaternius model is textured from a tiny palette (one flat colour per band), so her hair and the
 // body under her clothes are recoloured by swapping palette entries. Her clothes are garments over the body: the polo, its collar,
@@ -336,8 +337,7 @@ function attachToBone(rig, mesh, boneName) {
 const NECK_SPAN = 0.14; // metres of height the neckline strip covers, half below the neckline and half above
 
 /** Reads a body vertex's colour in the model's original texture: `is(i, rgb)` says whether vertex i is that palette colour. */
-function paletteUv(body) {
-  const map = body.material.userData.baseMap ?? body.material.map;
+function paletteUv(body, cover = null, map = body.material.userData.baseMap ?? body.material.map) {
   const img = map?.image;
   if (!img) return null;
   const canvas = document.createElement('canvas');
@@ -347,9 +347,18 @@ function paletteUv(body) {
   ctx.drawImage(img, 0, 0);
   const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
   const uv = body.geometry.attributes.uv;
+  // A covered body's corners read her paint as it is now (her neckline is cut into it after her figure is shaped): their own
+  // corner's, or a new point's nearest of hers.
+  const own = (i) => {
+    if (!cover) return i;
+    const k = cover.source[i];
+    return k >= 0 ? k : k <= -2 ? -2 - k : -1; // her own corner, or for a new point the nearest of hers
+  };
+  const ux = (i) => (own(i) >= 0 ? uv.getX(own(i)) : cover.uv[i * 2]);
+  const uy = (i) => (own(i) >= 0 ? uv.getY(own(i)) : cover.uv[i * 2 + 1]);
   const texel = (i) => {
-    const x = Math.min(canvas.width - 1, Math.floor(uv.getX(i) * canvas.width));
-    const y = Math.min(canvas.height - 1, Math.floor((map.flipY ? 1 - uv.getY(i) : uv.getY(i)) * canvas.height));
+    const x = Math.min(canvas.width - 1, Math.floor(ux(i) * canvas.width));
+    const y = Math.min(canvas.height - 1, Math.floor((map.flipY ? 1 - uy(i) : uy(i)) * canvas.height));
     return (y * canvas.width + x) * 4;
   };
   return {
@@ -361,9 +370,10 @@ function paletteUv(body) {
 }
 
 const strips = new WeakMap(); // original texture -> a copy twice as wide, with the neckline strip in its right half
-const stripTextures = new WeakSet();
-// Geometries already cut. Not a flag in geometry.userData: a cloned geometry shares that object with the one it came from.
-const cutGeometries = new WeakSet();
+const stripOriginals = new WeakMap(); // and back
+// Each geometry already cut, with the UVs it was cut on: reshaping her (figure.js) can give her body new ones, which are cut again.
+// Not a flag in geometry.userData: a cloned geometry shares that object with the one it came from.
+const cutUvs = new WeakMap();
 
 /**
  * The texture with a strip added beside it: shirt colour in one half of its height and skin in the other. A triangle mapped
@@ -371,7 +381,7 @@ const cutGeometries = new WeakSet();
  * The colours are the original palette's, so recolouring the shirt recolours the strip too.
  */
 function withNecklineStrip(texture) {
-  if (stripTextures.has(texture)) return texture;
+  if (stripOriginals.has(texture)) return texture;
   if (strips.has(texture)) return strips.get(texture);
   const img = texture.image;
   const w = img.width;
@@ -391,7 +401,7 @@ function withNecklineStrip(texture) {
   for (const key of ['flipY', 'colorSpace', 'wrapS', 'wrapT', 'magFilter', 'minFilter', 'generateMipmaps']) tex[key] = texture[key];
   tex.needsUpdate = true;
   strips.set(texture, tex);
-  stripTextures.add(tex);
+  stripOriginals.set(tex, texture);
   return tex;
 }
 
@@ -403,22 +413,23 @@ function withNecklineStrip(texture) {
  * so no paint shows above the polo. Once per geometry; each girl has her own.
  */
 function cutNeckline(rig, body, line) {
-  const original = body.material.userData.baseMap ?? body.material.map;
+  const current = body.material.userData.baseMap ?? body.material.map;
+  const original = stripOriginals.get(current) ?? current;
   if (!original?.image || !line) return;
   const strip = withNecklineStrip(original);
   // Every mesh on that texture (her hair can be its own mesh on the same material), found before any is changed.
   const users = [];
   rig.model.traverse((o) => {
-    if (o.isMesh && (o.material.userData.baseMap ?? o.material.map) === original) users.push(o);
+    if (o.isMesh && (o.material.userData.baseMap ?? o.material.map) === current) users.push(o);
   });
   for (const o of users) {
     const g = o.geometry;
-    if (!cutGeometries.has(g)) {
+    if (cutUvs.get(g) !== g.attributes.uv) {
       const uv = g.attributes.uv;
       // Which triangles to cut, read from the original texture and UVs.
       const cut = [];
       if (o === body) {
-        const pal = paletteUv(body);
+        const pal = paletteUv(body, null, original);
         const pos = g.attributes.position;
         const index = g.index ? g.index.array : [...Array(pos.count).keys()];
         for (let t = 0; t < index.length; t += 3) {
@@ -432,13 +443,17 @@ function cutNeckline(rig, body, line) {
       for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) / 2);
       for (const [i, d] of cut) uv.setXY(i, 0.75, 0.5 + Math.max(-0.49, Math.min(0.49, d / NECK_SPAN)));
       uv.needsUpdate = true;
-      cutGeometries.add(g);
+      cutUvs.set(g, uv);
     }
   }
-  for (const o of users) {
-    o.material.userData.baseMap = strip;
-    o.material.map = strip;
+  // Cut again after a reshape, she is already painted from the strip (and her shirt recoloured from it).
+  if (current !== strip) {
+    for (const o of users) {
+      o.material.userData.baseMap = strip;
+      o.material.map = strip;
+    }
   }
+  dressing?.delete(body); // her paint as it now reads
 }
 
 /** Rubber boots: a shaft fitted round each shin and a chunky foot over the shoe. */
@@ -494,7 +509,11 @@ function addWellies(rig, color) {
  * Dresses her: recolours the body's palette and fits the garments. `garments: false` leaves the fitting for later (refitOutfit),
  * for a girl whose shirt colour and buttons are dealt straight after she's made, so they're only fitted once.
  */
-export function applyOutfit(rig, outfit, { garments = true } = {}) {
+export function applyOutfit(rig, outfit, options = {}) {
+  whileDressing(() => dressFor(rig, outfit, options));
+}
+
+function dressFor(rig, outfit, { garments = true } = {}) {
   rig.root.updateMatrixWorld(true);
   rig.outfitParts = [];
   const body = bodyMesh(rig);
@@ -625,16 +644,42 @@ export function reshirt(rig, outfit, color) {
 /**
  * Her body as plain data for polo.js: each vertex's position as stored (`bind`, a T-pose turned a quarter round) and as she
  * stands (`rest`), both in root space, its normal, skin weights and `skin`, the map from one to the other. Needs her in her
- * rest pose.
+ * rest pose. `cover`: her body as her tops are cut from it, one sheet over her bust bridged across her cleavage and falling from
+ * under each breast (figure.js, bustPatch.js coverBust; #1143), where she has one.
  */
-export function bodyData(rig, body) {
+export function bodyData(rig, body, { cover = false } = {}) {
+  const key = cover ? 'cover' : 'own';
+  const kept = dressing?.get(body)?.[key];
+  if (kept) return kept;
+  const made = freshBodyData(rig, body, cover);
+  if (dressing) dressing.set(body, { ...dressing.get(body), [key]: made });
+  return made;
+}
+
+// While she is being dressed, her body data worked out once and shared by every top, collar and trim (#1143): she doesn't move in
+// between, and from the covered body it took about 0.1 s each time. What moves her points or repaints her (her hair tied back, her
+// neckline cut) drops her from it.
+let dressing = null;
+function whileDressing(fn) {
+  const was = dressing;
+  dressing = new Map();
+  try {
+    return fn();
+  } finally {
+    dressing = was;
+  }
+}
+
+function freshBodyData(rig, body, cover) {
   rig.root.updateMatrixWorld(true);
   body.skeleton.update();
   const g = body.geometry;
-  const pos = g.attributes.position;
-  const nrm = g.attributes.normal;
-  const si = g.attributes.skinIndex;
-  const sw = g.attributes.skinWeight;
+  const c = cover ? body.userData.cover : null;
+  const arr = (a, n) => ({ count: a.length / n, getComponent: (i, k) => a[i * n + k], getX: (i) => a[i * n], getY: (i) => a[i * n + 1], getZ: (i) => a[i * n + 2] });
+  const pos = c ? arr(c.position, 3) : g.attributes.position;
+  const nrm = c ? arr(c.normal, 3) : g.attributes.normal;
+  const si = c ? arr(c.skinIndex, 4) : g.attributes.skinIndex;
+  const sw = c ? arr(c.skinWeight, 4) : g.attributes.skinWeight;
   const toRoot = rig.root.matrixWorld.clone().invert().multiply(body.matrixWorld);
   const fromRoot = toRoot.clone().invert();
   const bm = body.skeleton.boneMatrices;
@@ -642,8 +687,8 @@ export function bodyData(rig, body) {
   const sum = new THREE.Matrix4();
   const verts = [];
   for (let i = 0; i < pos.count; i++) {
-    const bind = v.fromBufferAttribute(pos, i).applyMatrix4(toRoot).toArray();
-    const normal = v.fromBufferAttribute(nrm, i).transformDirection(toRoot).toArray();
+    const bind = v.set(pos.getX(i), pos.getY(i), pos.getZ(i)).applyMatrix4(toRoot).toArray();
+    const normal = v.set(nrm.getX(i), nrm.getY(i), nrm.getZ(i)).transformDirection(toRoot).toArray();
     const weights = [];
     const acc = new Array(16).fill(0);
     for (let k = 0; k < 4; k++) {
@@ -655,12 +700,15 @@ export function bodyData(rig, body) {
     }
     const e = sum.fromArray(acc).premultiply(body.bindMatrixInverse).multiply(body.bindMatrix).premultiply(toRoot).multiply(fromRoot).elements;
     const skin = [e[0], e[4], e[8], e[12], e[1], e[5], e[9], e[13], e[2], e[6], e[10], e[14]];
-    const rest = body.getVertexPosition(i, v).applyMatrix4(toRoot).toArray(); // the matrices once, not per point
+    // The matrices once, not per point; the covered body isn't her geometry, so it is carried by its own skin.
+    const rest = c
+      ? [0, 1, 2].map((r) => skin[r * 4] * bind[0] + skin[r * 4 + 1] * bind[1] + skin[r * 4 + 2] * bind[2] + skin[r * 4 + 3])
+      : body.getVertexPosition(i, v).applyMatrix4(toRoot).toArray();
     verts.push({ bind, rest, normal, weights, skin });
   }
   const bones = {};
   for (const name of Object.keys(rig.bones)) bones[name] = bonePos(rig, name).toArray();
-  const pal = paletteUv(body);
+  const pal = paletteUv(body, c);
   const bands = Object.entries(PALETTE);
   const paint = (i) => bands.find(([, c]) => pal?.is(i, c))?.[0] ?? 'other';
   // The top of the shorts as she stands: where the old shorts' top (1 cm above her spine bone, in the stored pose) comes to.
@@ -677,7 +725,7 @@ export function bodyData(rig, body) {
   const across = hipsAt && leftAt && rightAt ? leftAt.clone().sub(rightAt).normalize() : null;
   const onMirror = across ? verts.map((v) => Math.abs(new THREE.Vector3(...v.bind).sub(hipsAt).dot(across)) < 0.002) : [];
   const middle = frontMiddle(verts, (i) => onMirror[i], bones.Neck);
-  return { verts, index: g.index ? [...g.index.array] : [...Array(pos.count).keys()], boneNames: body.skeleton.bones.map((b) => b.name), bones, paint, waist, fromRoot, split, middle };
+  return { verts, covered: !!c, index: c ? [...c.index] : g.index ? [...g.index.array] : [...Array(pos.count).keys()], boneNames: body.skeleton.bones.map((b) => b.name), bones, paint, waist, fromRoot, split, middle };
 }
 
 /** The body's paint under the polo garment: shirt up to a little below the garment's neckline, skin above, so none shows. */
@@ -782,7 +830,8 @@ function addTop(rig, name, color, spec) {
   const body = bodyMesh(rig);
   const needs = ['Neck', 'Spine', 'LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm', 'LeftHand', 'RightHand'];
   if (!body || !needs.every((b) => rig.bones[b])) return;
-  const data = bodyData(rig, body);
+  // Cut from her covered body: bridged across her cleavage and falling from under each breast, the same under every layer.
+  const data = bodyData(rig, body, { cover: true });
   const built = buildTop(data, spec);
   const { shell, shade, placket, vee } = built;
   const made = { data, built, spec };
@@ -807,7 +856,9 @@ function addTop(rig, name, color, spec) {
   );
   if (vee && spec.inset !== false) {
     // Her skin in the V of the open neck, her own flat faces in her skin's colour.
-    const inset = buildInset(data, vee, spec);
+    // Cut from her real body, not the covered one: through the V you see her cleavage, behind the cloth bridged across it.
+    const own = bodyData(rig, body);
+    const inset = buildInset(own, vee, spec);
     made.inset = inset;
     const [r, g, b] = PALETTE.skin.map((c) => c / 255);
     const skin = new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
@@ -816,7 +867,7 @@ function addTop(rig, name, color, spec) {
     skinnedFromArrays(
       rig,
       body,
-      data,
+      own,
       'poloVee',
       { positions: inset.verts.map((q) => q.bind), normals: inset.verts.map((q) => q.normal), weights: inset.verts.map((q) => q.weights), colors: shading, index: inset.tris.flat() },
       new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, flatShading: true }),
@@ -1024,7 +1075,7 @@ ${
 function addCrop(rig, color) {
   const body = bodyMesh(rig);
   if (!body || !rig.bones.Neck) return;
-  const data = bodyData(rig, body);
+  const data = bodyData(rig, body, { cover: true });
   const built = buildCropTop(data);
   if (!built) return;
   const tint = new THREE.Color(color);
@@ -1060,9 +1111,12 @@ function addCrop(rig, color) {
  * The wax jacket (COAT) over everything else on top, its corduroy collar on its neck edge, and its hood: one up over her head
  * (on her head bone, as her helmet is) and one pushed back down her back (on her chest bone), only one of them shown (setHood).
  */
-function addCoat(rig, color) {
+function addCoat(rig, color, under = null) {
   const coat = addTop(rig, 'coat', color, COAT);
   if (!coat) return;
+  // What's under it tucked inside it (#1143), as under a jumper, and what it hides left undrawn.
+  if (under) tuckUnder(under, coat);
+  hideUnder(under, coat);
   const body = bodyMesh(rig);
   const { data, built } = coat;
   const collar = buildCollar(built.shell, data, { vee: built.vee, placketWidth: COAT.placketWidth, over: [built.shell] }, COAT_COLLAR);
@@ -1159,7 +1213,7 @@ function letHairDown(rig) {
   for (const { mesh, loose } of rig.hairTied ?? []) {
     mesh.geometry.attributes.position.array.set(loose);
     mesh.geometry.attributes.position.needsUpdate = true;
-    mesh.geometry.computeVertexNormals();
+    bodyNormals(mesh);
   }
   rig.hairTied = null;
   rig.ponytail = null;
@@ -1239,7 +1293,8 @@ function addPonytail(rig, style) {
     tied.push({ mesh, loose: attr.array.slice() });
     for (const [i, at] of moves) p.fromArray(at).applyMatrix4(md.fromRoot).toArray(attr.array, i * 3);
     attr.needsUpdate = true;
-    mesh.geometry.computeVertexNormals();
+    bodyNormals(mesh);
+    dressing?.delete(mesh); // her hair has moved
   }
   rig.hairTied = tied;
 
@@ -1392,6 +1447,11 @@ function addEachGarment(rig, outfit) {
   }
   if (polo && outer) tuckUnder(polo, outer);
   const jumper = outfit.jumper ? addTop(rig, 'jumper', outfit.jumper, JUMPER) : null;
+  // The top under a jumper tucked inside it, as a polo is under a shirt: in the hollow under her bust, pushed further out, the
+  // jumper crossed back inside it and the top showed through (#1143).
+  const top = outer ?? polo;
+  if (jumper && top) tuckUnder(top, jumper);
+  if (jumper) for (const under of [polo, outer]) hideUnder(under, jumper);
   // A collar lies on its own top and on the jumper over everything (its neck is low enough for collars to come out over it), never
   // on a shirt worn over its top: under that it's hidden but for where it shows at the neck and down the front.
   const knit = jumper ? [jumper.built.shell] : [];
@@ -1415,7 +1475,7 @@ function addEachGarment(rig, outfit) {
     const under = polo ? addCollar(rig, polo, [polo.built.shell, ...knit], outfit.polo, pop(mine)) : null;
     if (outer) addCollar(rig, outer, [outer.built.shell, ...knit, ...(under ? [under] : [])], style.over, pop(kind === 'plaid' ? SHIRT_COLLAR : { ...OVER_COLLAR, clear: 0.005 }), `${kind}Collar`);
   }
-  if (outfit.coat) addCoat(rig, outfit.coat);
+  if (outfit.coat) addCoat(rig, outfit.coat, jumper ?? top);
   if (outfit.shorts) addBottom(rig, outfit.shorts, !!outfit.coat);
   if (outfit.wellies) addWellies(rig, outfit.wellies);
 }
@@ -1447,6 +1507,17 @@ function addTie(rig, shirt, polo, poloCollar, color, style) {
   return tie;
 }
 
+/**
+ * The triangles of a top worn under a jumper or a wax jacket that it hides, left undrawn (polo.js, hiddenUnder): wholly under the
+ * layer's cloth, they can't be seen, and where a corner pushed them a few millimetres through it they showed (#1143).
+ */
+function hideUnder(top, layer) {
+  if (!top?.mesh || !layer?.built) return;
+  const hidden = hiddenUnder(top.built.shell, layer.built.shell);
+  const index = top.built.shell.tris.filter((t) => !t.every((i) => hidden[i])).flat();
+  top.mesh.geometry.setIndex(index);
+}
+
 /** Her polo's sleeves pulled back inside the top over it (polo.js, tuckSleeves), and its mesh moved to match. */
 function tuckUnder(polo, outer) {
   if (!polo.mesh || !tuckSleeves(polo.built.shell, outer.built.shell, polo.data)) return;
@@ -1455,6 +1526,26 @@ function tuckUnder(polo, outer) {
   polo.built.shell.verts.forEach((q, i) => v.fromArray(q.bind).applyMatrix4(polo.data.fromRoot).toArray(attr.array, i * 3));
   attr.needsUpdate = true;
   polo.mesh.geometry.computeBoundingSphere();
+}
+
+/**
+ * Reshapes her figure (figure.js, shapeFigure) and dresses her again, for her figure tuned live. Her hair is let down first, as tying
+ * it back moved her body's own points, and her neckline is cut again into the new UVs a different number of corners gives her (the
+ * bust patch's corners depend on its size, #1143).
+ */
+export function reshapeFigure(rig, amounts, outfit) {
+  if (rig.hood) setHood(rig, false);
+  rig.hood = null;
+  letHairDown(rig);
+  shapeFigure(rig, amounts);
+  const body = bodyMesh(rig);
+  if (body && outfit.polo) {
+    rig.withRestPose(() => {
+      rig.root.updateMatrixWorld(true);
+      cutNeckline(rig, body, poloNeckPaint(rig, body));
+    });
+  }
+  refitOutfit(rig, outfit);
 }
 
 /**
@@ -1476,7 +1567,7 @@ export function refitOutfit(rig, outfit) {
   rig.outfitParts = [];
   rig.hood = null;
   rig.withRestPose(() => {
-    addGarments(rig, outfit);
+    whileDressing(() => addGarments(rig, outfit));
     rig.onDressed?.(); // mud and dust on what she has on (effects/girlMud.js), while the clothes are at rest
   });
 }

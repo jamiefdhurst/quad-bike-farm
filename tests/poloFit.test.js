@@ -61,7 +61,7 @@ describe('the polo on each girl', () => {
 
   it('lays the skin in an open V with nothing turned inside out, however far it is undone', () => {
     // Each piece faces the way her skin under it does (#1134): lifted along the normal at each corner, thin pieces across her creases
-    // turned over, 12 to 78 of them on Jess. Where cuts run a hair apart a sliver can stand on edge; it is under 0.1 mm across.
+    // turned over, 12 to 78 of them on Jess.
     for (const { id, data } of girls) {
       for (let open = 1; open <= POLO.buttons.length; open++) {
         const p = { ...POLO, open };
@@ -72,12 +72,11 @@ describe('the polo on each girl', () => {
           const [a, b, c] = t.map((i) => inset.verts[i].rest);
           const n = vec.cross(vec.sub(b, a), vec.sub(c, a));
           const skin = t.map((i) => applySkinDir(inset.verts[i].skin, inset.verts[i].normal)).reduce((s, x) => vec.add(s, x), [0, 0, 0]);
-          const facing = vec.dot(vec.norm(n), vec.norm(skin));
-          expect(facing, `${id}, ${open} undone`).toBeGreaterThan(-0.5);
-          if (facing < 0) {
-            const longest = Math.max(...[[a, b], [b, c], [c, a]].map(([u, w]) => Math.hypot(...vec.sub(u, w))));
-            expect(Math.hypot(...n) / longest, `${id}, ${open} undone: a piece facing away is a hairline`).toBeLessThan(0.0001);
-          }
+          // A hairline has no facing to see: under 0.3 mm across (twice its area over its longest side), as a sliver laid flat on its
+          // line under her collarbone is once cut and lifted (#1143). Any other piece faces out with her skin.
+          const longest = Math.max(...[[a, b], [b, c], [c, a]].map(([u, w]) => Math.hypot(...vec.sub(u, w))));
+          if (Math.hypot(...n) / longest < 0.0003) continue;
+          expect(vec.dot(vec.norm(n), vec.norm(skin)), `${id}, ${open} undone`).toBeGreaterThan(0);
         }
         expect(inset.tris.length, `${id}, ${open} undone`).toBeGreaterThan(100);
       }
@@ -96,4 +95,111 @@ describe('the polo on each girl', () => {
       expect(Math.abs(centre - data.middle(y)), id).toBeLessThan(0.006);
     }
   });
+});
+
+describe('every top over her bust (#1143)', () => {
+  // Every top the girls wear, cut from the covered body as the game cuts it (bustPatch.js, coverBust), on both girls: none of its
+  // cloth over her bust faces into her (folded over, or inside her). Her bust here is her breasts, her cleavage and under them, as
+  // seen from the front (BUST below, in figure.js's body frame); the turned-in strips along a top's edges face her by design.
+  const BUST = { below: 0.42, above: 0.92, across: 0.28, front: 0.05 };
+  let girls;
+  beforeAll(async () => {
+    const THREE = await import('three');
+    const { bodyData, bodyMesh } = await import('../src/npc/outfit.js');
+    const { bodyFrame } = await import('../src/npc/figure.js');
+    const { buildCropTop } = await import('../src/npc/crop.js');
+    const { JUMPER, COAT, PLAID, SHIRT } = await import('../src/npc/polo.js');
+    const tops = [
+      ['polo done up', { ...POLO, open: 0 }],
+      ['polo half undone', { ...POLO, open: 3 }],
+      ['polo all undone', { ...POLO, open: 5 }],
+      ['plaid', PLAID],
+      ['shirt', SHIRT],
+      ['jumper', JUMPER],
+      ['wax jacket', COAT],
+    ];
+    girls = (await buildAllGirls()).map(({ id, rig }) => {
+      const body = bodyMesh(rig);
+      const frame = bodyFrame(body);
+      const real = bodyData(rig, body);
+      const data = { ...bodyData(rig, body, { cover: true }), paint: () => 'skin' };
+      const v = new THREE.Vector3();
+      const flat = (verts, tris) => frame.toBody(Float32Array.from(tris.flatMap((t) => t.flatMap((i) => v.fromArray(verts[i].bind).applyMatrix4(real.fromRoot).toArray()))));
+      const her = frame.toBody(body.geometry.attributes.position.array);
+      const made = tops.map(([name, spec]) => {
+        const { shell } = buildTop(data, spec);
+        return [name, flat(shell.verts, shell.tris.filter((t) => !t.every((i) => shell.verts[i].apart)))];
+      });
+      const crop = buildCropTop(data);
+      if (crop) made.push(['crop-top', flat(crop.shell.verts, crop.shell.tris)]);
+      return { id, her, made, covered: !!body.userData.cover };
+    });
+  }, 120000);
+
+  it('is cut from a covered body on both girls', () => {
+    for (const { id, covered } of girls) expect(covered, id).toBe(true);
+  });
+
+  it('has no cloth over her bust facing into her, on either girl, in any top', async () => {
+    const { clothFacingIn, foldedOver } = await import('../src/npc/facing.js');
+    for (const { id, her, made } of girls) {
+      expect(made.length, id).toBe(8);
+      for (const [name, cloth] of made) {
+        const bad = clothFacingIn(cloth, her, BUST);
+        if (process.env.SHOW) for (const t of bad) console.log('BAD', id, name, foldedOver(cloth, BUST).has(t) ? 'folded' : 'inside', [0, 1, 2].map((j) => ((cloth[t * 9 + j] + cloth[t * 9 + 3 + j] + cloth[t * 9 + 6 + j]) / 3).toFixed(3)).join(','));
+        if (!process.env.SHOW) expect(bad.length, `${id} in her ${name}`).toBe(0);
+      }
+    }
+  });
+});
+
+describe('a top under a jumper or a wax jacket (#1143)', () => {
+  // Under a layer the top is drawn only where it can be seen: from below, the polo came a few millimetres through Jess's jumper where
+  // the cloth under her bust comes back on to her belly.
+  it('is hidden where the layer covers it, and shows at its neck', async () => {
+    const { bodyData, bodyMesh } = await import('../src/npc/outfit.js');
+    const { hiddenUnder, JUMPER, COAT } = await import('../src/npc/polo.js');
+    for (const { id, rig } of await buildAllGirls()) {
+      const data = { ...bodyData(rig, bodyMesh(rig), { cover: true }), paint: () => 'skin' };
+      const polo = buildTop(data, { ...POLO, open: 0 }).shell;
+      const neck = data.bones.Neck;
+      // Less under the wax jacket, whose two fronts meet down her middle under its flap: along that seam the top is still drawn.
+      for (const [name, spec, most] of [['jumper', JUMPER, 0.9], ['wax jacket', COAT, 0.8]]) {
+        const hidden = hiddenUnder(polo, buildTop(data, spec).shell);
+        // Her front from her waist to well below her neck: all but the points along the layer's own seams hidden.
+        const front = polo.verts.map((v, i) => [v, i]).filter(([v]) => v.rest[2] > neck[2] + 0.03 && v.rest[1] > data.waist + 0.08 && v.rest[1] < neck[1] - 0.15);
+        expect(front.filter(([, i]) => hidden[i]).length / front.length, `${id}, ${name}`).toBeGreaterThan(most);
+        // Its neck's edge (the collar is sewn on to it) never hidden.
+        const edge = polo.verts.map((v, i) => [v, i]).filter(([v]) => v.edge === 'neck');
+        expect(edge.length, `${id}, ${name}`).toBeGreaterThan(10);
+        expect(edge.filter(([, i]) => hidden[i]).length, `${id}, ${name}`).toBe(0);
+      }
+    }
+  }, 120000);
+});
+
+describe('her clothes as the game puts them on (#1143)', () => {
+  let girls;
+  beforeAll(async () => {
+    girls = await buildAllGirls();
+  }, 120000);
+  it('reshapes her live with her hair tied back, keeping her paint on her (a new bust size gives her body a different number of corners)', async () => {
+    const { reshapeFigure, refitOutfit, OUTFITS, bodyMesh } = await import('../src/npc/outfit.js');
+    const { CHARACTERS } = await import('../src/npc/characters.js');
+    for (const { id, rig } of girls) {
+      const { params } = CHARACTERS.find((c) => c.id === id);
+      const base = OUTFITS[params.outfit];
+      const outfit = { ...base, style: { ...base.style, ponytail: true } };
+      refitOutfit(rig, outfit);
+      for (const bust of [params.bust + 0.3, params.bust]) {
+        expect(() => reshapeFigure(rig, { bust, waist: params.waist, hips: params.hips }, outfit), id).not.toThrow();
+        const uv = bodyMesh(rig).geometry.attributes.uv;
+        expect(uv.count, id).toBe(bodyMesh(rig).geometry.attributes.position.count);
+        // Her neckline cut into them: every UV in the texture's left half, or on the neckline strip in its right.
+        const off = Array.from({ length: uv.count }, (_, i) => uv.getX(i)).filter((x) => x > 0.5001 && Math.abs(x - 0.75) > 1e-4);
+        expect(off.length, `${id} at bust ${bust}`).toBe(0);
+      }
+      refitOutfit(rig, base);
+    }
+  }, 240000);
 });
