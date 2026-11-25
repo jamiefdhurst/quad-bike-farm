@@ -156,4 +156,21 @@ describe('engine banks', () => {
       expect(median).toBeLessThan(idleRange[1] * 1.15);
     });
   }
+
+  it("takes the T185's whining idle firings out of use, and leaves the Plover's always tonal idle alone", () => {
+    // The Ape recording the T185 idles on whines at 3.2 to 3.6 kHz in a few stretches, worst at 32.9 to 33.0 s of the bank, heard
+    // whenever one of their firings was picked. The slicer's whine check (tools/slice_engine_audio.py, #852) marks a firing whose
+    // tonal peak stands 5.5 dB over its recording's median, so the Plover, whose whistle is there all through, loses none.
+    const t185 = EXTRA_SPECS.find((s) => s.id === 't185');
+    const atc = JSON.parse(readFileSync(`public/audio/${t185.audio.recBank}.json`, 'utf8'));
+    const whining = atc.grains.filter((g) => g.kind === 'idle' && g.start >= 32.9 && g.start <= 33.0);
+    expect(whining.length).toBeGreaterThan(1);
+    for (const g of whining) expect(g.ok, `T185 idle at ${g.start.toFixed(3)} s`).toBe(false);
+    const idle = atc.grains.filter((g) => g.kind === 'idle');
+    expect(idle.filter((g) => g.ok === false).length).toBeGreaterThan(50); // 65 of its 1215 were found whining
+    expect(idle.filter((g) => g.ok !== false).length).toBeGreaterThan(1100);
+    // The Plover's usable idle firings are all it had before the check (the rest fail the slicer's older checks).
+    const plover = JSON.parse(readFileSync(`public/audio/${PLOVER_SPEC.audio.recBank}.json`, 'utf8'));
+    expect(plover.grains.filter((g) => g.kind === 'idle' && g.ok !== false)).toHaveLength(171);
+  });
 });
