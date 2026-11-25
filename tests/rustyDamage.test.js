@@ -1,12 +1,11 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
-import * as THREE from 'three';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { createRandom } from '../src/core/random.js';
 import { planDamage, applyDamage, DEFAULT_RUSTY_DAMAGE } from '../src/vehicle/rustyDamage.js';
-import { fakeCanvas } from './helpers/vehicleModels.js';
+import { DONORS, loadDonors, buildDonor } from './helpers/rustyDamage.js';
 
 // The rusty quad's damage (TODO 97): the plan is seeded and pure; the look is laid on each donor's finished model, and the jobs change it.
-
-const DONORS = ['farm300', 'bruin', 'hornet', 'rb300', 'adder'];
+// Where the webs and patches sit is in rustyDamagePlacing.test.js, the tarp and the jobs in rustyDamageTarp.test.js, and the damage landing
+// the same however the vehicle stands in rustyDamageSteady.test.js and rustyDamageSteadyMore.test.js.
 
 describe('the damage plan', () => {
   it('is the same for the same seed and deals each donor its own: racks have bars to lose, the open engine a nest', () => {
@@ -34,19 +33,11 @@ describe('the damage plan', () => {
 });
 
 describe('the look on each donor', () => {
-  let buildQuadModel;
   let weatherModel;
   let buildTarp;
-  const build = (id, decay) => {
-    const spec = { farm300: 'utility', bruin: 'bruin', hornet: 'hornet', rb300: 'rb300', adder: 'racer' }[id];
-    const model = buildQuadModel({ bodyColor: 0x6b4426, dashStyle: { farm300: 'farm300', bruin: 'bruin', hornet: 'hornet', rb300: 'rb300', adder: 'adder' }[id], style: spec, decay });
-    model.updateMatrixWorld(true);
-    return model;
-  };
+  const build = buildDonor;
   beforeAll(async () => {
-    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
-    ({ buildQuadModel } = await import('../src/vehicle/quadModel.js'));
-    ({ weatherModel, buildTarp } = await import('../src/vehicle/rustyLook.js'));
+    ({ weatherModel, buildTarp } = await loadDonors());
   });
 
   for (const id of DONORS) {
@@ -77,241 +68,4 @@ describe('the look on each donor', () => {
     expect(tri(build('farm300', hanging))).not.toBe(tri(build('farm300', null))); // a hanging bar is half a bar and a broken end
   });
 
-  it('shows what the jobs did: the tarp slides off and lies on the floor, the tyres get fresh black rubber, the nest goes with the carb job', () => {
-    const plan = planDamage(createRandom(5), 'hornet');
-    const model = build('hornet', plan);
-    weatherModel(model);
-    const tarp = buildTarp();
-    model.getObjectByName('bodyRoot').add(tarp);
-    const look = applyDamage(model, plan, tarp);
-    const find = { tarpOff: false, done: new Set(), isDone(k) { return this.done.has(k); } };
-    look.sync(find);
-    expect(tarp.visible).toBe(true);
-    const pale = look.tyres[0].mesh.material.color.getHex();
-    expect(look.nest.visible).toBe(true);
-    // The tarp comes off.
-    find.tarpOff = true;
-    look.sync(find);
-    look.step(0.5);
-    expect(tarp.visible).toBe(true);
-    expect(tarp.position.x).toBeGreaterThan(look.tarpHome.x + 0.1); // on its way
-    look.step(1.5);
-    expect(tarp.visible).toBe(true); // still there, for you and the girls to find
-    expect(tarp.position.x).toBeGreaterThan(look.tarpHome.x + 1);
-    // The tyre job and the carb job.
-    find.done.add('tyre');
-    find.done.add('carb');
-    look.sync(find);
-    expect(look.tyres[0].mesh.material.color.getHex()).not.toBe(pale);
-    expect(look.tyres[0].mesh.material.color.r).toBeLessThan(0.1);
-    expect(look.tyres[0].rings.every((r) => !r.visible)).toBe(true);
-    expect(look.nest.visible).toBe(false);
-  });
-
-  it('hangs each web from a point on something, with its top edge level and the plane upright (so it falls straight down)', () => {
-    const plan = planDamage(createRandom(5), 'farm300');
-    const model = build('farm300', plan);
-    applyDamage(model, plan, null);
-    model.traverse((o) => {
-      if (o.name !== 'cobweb') return;
-      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(o.quaternion); // the plane's own up
-      expect(Math.abs(up.y), 'upright').toBeGreaterThan(0.85);
-    });
-  });
-
-  it('keeps every patch and crack on the body: no vertex of one hangs further than a few centimetres from the surface it follows', () => {
-    const plan = planDamage(createRandom(9), 'farm300');
-    const model = build('farm300', plan);
-    applyDamage(model, plan, null);
-    model.updateMatrixWorld(true);
-    const root = model.getObjectByName('bodyRoot');
-    const body = [];
-    root.traverse((o) => { if (o.isMesh && !o.userData.rustyDamage && !/^wheel_/.test(o.name)) body.push(o); });
-    const rc = new THREE.Raycaster();
-    let checked = 0;
-    let missed = 0;
-    root.traverse((o) => {
-      if (!(o.name === 'rustPatch' || o.name === 'crack')) return;
-      const p = o.geometry.attributes.position;
-      for (let i = 0; i < p.count; i += 5) {
-        const v = new THREE.Vector3().fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld);
-        const n = new THREE.Vector3().fromBufferAttribute(o.geometry.attributes.normal, i).transformDirection(o.matrixWorld);
-        let hits = 0;
-        for (const sign of [1, -1]) { // (the plane's normal may point either way: look both ways)
-          rc.set(v.clone().addScaledVector(n, 0.03 * sign), n.clone().multiplyScalar(-sign));
-          rc.far = 0.06;
-          hits += rc.intersectObjects(body, false).length;
-        }
-        if (!hits) missed++;
-        checked++;
-      }
-    });
-    expect(checked).toBeGreaterThan(50);
-    expect(missed / checked, 'a few corners of a patch over a thin tube may not be seen from the normal').toBeLessThan(0.1);
-  });
-
-  it('drapes the tarp over the quad’s own shape, down to the ground all round, with nothing of the quad through it', () => {
-    const plan = planDamage(createRandom(5), 'farm300');
-    const model = build('farm300', plan);
-    const tarp = buildTarp(model);
-    const root = model.getObjectByName('bodyRoot');
-    root.add(tarp);
-    model.updateMatrixWorld(true);
-    const rc = new THREE.Raycaster();
-    const top = (x, z) => { rc.set(new THREE.Vector3(x, 3, z), new THREE.Vector3(0, -1, 0)); return rc.intersectObject(tarp)[0]?.point.y ?? 0; };
-    expect(top(0.93, 0)).toBeLessThan(0.1); // down to the ground at the sides
-    expect(top(0, -1.4)).toBeLessThan(0.1);
-    expect(top(0, 0.46)).toBeGreaterThan(0.95); // up over the bars
-    const lumpy = [0, 0.3, -0.3, 0.6].map((x) => top(x, 0.2));
-    expect(Math.max(...lumpy) - Math.min(...lumpy)).toBeGreaterThan(0.02); // not a flat-topped box
-    for (const [x, z] of [[0.41, 0.9], [-0.41, 0.9], [0.41, -0.95], [0, 0.46]]) { // the racks' rails and the bars stand under it
-      rc.set(new THREE.Vector3(x, 3, z), new THREE.Vector3(0, -1, 0));
-      const body = [];
-      model.traverse((o) => { if (o.isMesh && o !== tarp && o.name !== 'proxy' && o.visible && !/beam|halo/i.test(o.name)) body.push(o); });
-      const high = rc.intersectObjects(body, false)[0]?.point.y ?? 0;
-      expect(top(x, z), `over ${x},${z}`).toBeGreaterThan(high - 0.015); // (a thin rail may show a centimetre between the grid's points)
-    }
-  });
-
-  it('puts a loaded farm straight to where it was, with no tarp to drag', () => {
-    const plan = planDamage(createRandom(5), 'farm300');
-    const model = build('farm300', plan);
-    const tarp = buildTarp();
-    model.getObjectByName('bodyRoot').add(tarp);
-    const look = applyDamage(model, plan, tarp);
-    look.sync({ tarpOff: true, isDone: () => false }, { instant: true });
-    expect(tarp.visible).toBe(true); // it lies where it would have been left, not back on the vehicle and not gone
-    expect(tarp.position.x).toBeGreaterThan(look.tarpHome.x + 1);
-    expect(look.tarpFolded).toBe(true);
-  });
-
-  describe('a tarp that has come off (#808)', () => {
-    const lay = (scene = true) => {
-      const plan = planDamage(createRandom(5), 'farm300');
-      const model = build('farm300', plan);
-      weatherModel(model);
-      const root = new THREE.Scene();
-      const quad = new THREE.Group();
-      quad.add(model);
-      if (scene) root.add(quad);
-      const tarp = buildTarp(model);
-      model.getObjectByName('bodyRoot').add(tarp);
-      const look = applyDamage(model, plan, tarp);
-      const find = { tarpOff: false, isDone: () => false };
-      look.sync(find);
-      return { look, tarp, quad, model, find, root };
-    };
-    const box = (o) => new THREE.Box3().setFromObject(o);
-    const vehicleBox = (model, tarp) => {
-      const b = new THREE.Box3();
-      model.traverse((o) => { if (o.isMesh && o !== tarp && o.visible && !o.userData.rustyDamage && !/proxy|beam|halo/i.test(o.name)) b.expandByObject(o); });
-      return b;
-    };
-
-    it('is left on the floor beside the vehicle: in plain sight, clear of it, low and close enough to reach', () => {
-      const { look, tarp, model, find, root } = lay();
-      find.tarpOff = true;
-      look.sync(find);
-      look.step(2);
-      root.updateMatrixWorld(true);
-      expect(tarp.visible).toBe(true);
-      const t = box(tarp);
-      const v = vehicleBox(model, tarp);
-      expect(t.max.y - t.min.y).toBeLessThan(0.35); // folded down, not a heap you could not step over
-      expect(t.min.y).toBeGreaterThan(-0.001); // not through the floor
-      expect(t.min.x).toBeGreaterThan(v.max.x - 0.05); // beside the vehicle (this one stands unturned), not over it
-      expect(t.getCenter(new THREE.Vector3()).distanceTo(v.getCenter(new THREE.Vector3()))).toBeLessThan(3);
-    });
-
-    it('stays where it lay when the vehicle is driven away, not riding on it', () => {
-      const { look, tarp, quad, find, root } = lay();
-      find.tarpOff = true;
-      look.sync(find);
-      look.step(2);
-      root.updateMatrixWorld(true);
-      const before = tarp.getWorldPosition(new THREE.Vector3());
-      quad.position.set(20, 0, -5);
-      root.updateMatrixWorld(true);
-      expect(tarp.getWorldPosition(new THREE.Vector3()).distanceTo(before)).toBeLessThan(1e-6);
-      expect(tarp.parent).toBe(root);
-    });
-
-    it('goes back over the vehicle if the job is undone', () => {
-      const { look, tarp, quad, find, root } = lay();
-      find.tarpOff = true;
-      look.sync(find);
-      look.step(2);
-      find.tarpOff = false;
-      look.sync(find);
-      root.updateMatrixWorld(true);
-      expect(tarp.visible).toBe(true);
-      expect(tarp.scale.y).toBe(1);
-      expect(tarp.position.distanceTo(look.tarpHome)).toBeLessThan(1e-6);
-      expect(tarp.parent.parent).not.toBe(root); // on the vehicle's body again
-      quad.position.set(5, 0, 0);
-      look.sync({ tarpOff: true, isDone: () => false }, { instant: true });
-      expect(look.tarpFolded).toBe(true);
-    });
-  });
-  describe('lands the same wherever and however the vehicle stands (#597)', () => {
-    // The geometry of each decal, as the sum of its vertices' distances from the origin in the body's own frame: the same placing gives the same figures.
-    const signature = (model) => {
-      const out = [];
-      model.traverse((o) => {
-        if (!o.userData.rustyDamage || !o.geometry) return;
-        const p = o.geometry.attributes.position;
-        let sum = 0;
-        for (let i = 0; i < p.count; i++) sum += Math.hypot(p.getX(i), p.getY(i), p.getZ(i));
-        out.push(`${o.name}:${p.count}:${sum.toFixed(3)}`);
-      });
-      return out.join(' ');
-    };
-    const dressed = (id, setUp) => {
-      const plan = planDamage(createRandom(7), id);
-      const model = build(id, plan);
-      setUp?.(model);
-      model.updateMatrixWorld(true);
-      applyDamage(model, plan, null);
-      return model;
-    };
-
-    for (const id of DONORS) {
-      it(`for the ${id}: turned, tilted on its springs, with the bars steered, or with parts left out for being small`, () => {
-        const plain = signature(dressed(id));
-        expect(plain.length).toBeGreaterThan(0);
-        const moved = dressed(id, (m) => {
-          m.position.set(30, 0.4, -12);
-          m.rotation.y = 2.1;
-          const body = m.getObjectByName('bodyRoot');
-          body.rotation.x = 0.04;
-          body.rotation.z = -0.03;
-          const bars = m.getObjectByName('handlebars');
-          if (bars) bars.rotation.y = 0.15;
-          m.traverse((o) => { if (o.isMesh && o.name.length % 3 === 0) o.layers.set(1); }); // FarDetail's leaving out of specks
-        });
-        expect(signature(moved)).toBe(plain);
-      });
-    }
-
-    it('puts a vehicle back as it was stood, steered and tilted', () => {
-      const plan = planDamage(createRandom(7), 'farm300');
-      const model = build('farm300', plan);
-      model.position.set(3, 0.2, 4);
-      model.rotation.y = 1;
-      const bars = model.getObjectByName('handlebars');
-      bars.rotation.y = 0.2;
-      const before = [model.quaternion.clone(), bars.quaternion.clone(), model.getObjectByName('bodyRoot').quaternion.clone()];
-      applyDamage(model, plan, null);
-      expect(model.position.toArray()).toEqual([3, 0.2, 4]);
-      expect(model.quaternion.angleTo(before[0])).toBeLessThan(1e-6);
-      expect(bars.quaternion.angleTo(before[1])).toBeLessThan(1e-6);
-      expect(model.getObjectByName('bodyRoot').quaternion.angleTo(before[2])).toBeLessThan(1e-6);
-    });
-
-    it('counts a small part FarDetail has hidden for being far off as still there, and leaves out one the game hid', { timeout: 30000 }, () => {
-      const plain = signature(dressed('farm300'));
-      expect(signature(dressed('farm300', (m) => m.traverse((o) => { if (o.isMesh && o.name === 'seat') { o.visible = false; o.userData.farHidden = true; } })))).toBe(plain);
-      expect(signature(dressed('farm300', (m) => m.traverse((o) => { if (o.isMesh && o.name === 'seat') o.visible = false; })))).not.toBe(plain);
-    });
-  });
 });
