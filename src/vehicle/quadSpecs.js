@@ -1538,7 +1538,7 @@ export const CRAG_SPEC = {
     ...TOR_SPEC.vibration,
     steadiness: 0.4, // a diesel four rattles and shakes: far less regular than the Tor's petrol four
     idleRpm: 800,
-    pulseGain: 1.4, // (the first go had 1.9, 0.2 and 0.26 for these three: too much body motion at idle)
+    pulseGain: 0.6, // four kicks a cycle now its engine fires four times (#853): 0.6 keeps the body motion at idle that 1.4 gave at one (the first go had 1.9, 0.2 and 0.26 for these three: too much)
     heaveGain: 0.12,
     pitchGain: 0.16,
     heaveDamping: 0.45,
