@@ -401,7 +401,7 @@ function buildTussocks({ scene, heights, fields, random, drawDistance }) {
  * A pond: its water a fan out to the edge of where the dished ground holds it, level, and reeds standing round the shore. `source` is the
  * hill or the wood (its `pond` and `waterAt`); `keepClear(x, z)` says where reeds mustn't grow (the way down to drink).
  */
-export function buildPond({ scene, heights, random, drawDistance }, source, keepClear) {
+export function buildPond({ scene, heights, random, drawDistance }, source, keepClear, { reeds: withReeds = true } = {}) {
   const hill = source;
   const pond = hill.pond;
   const level = heights.heightAt(pond.x, pond.z) + pond.water;
@@ -443,6 +443,9 @@ export function buildPond({ scene, heights, random, drawDistance }, source, keep
     matrices.push(matrixAt(x, heights.heightAt(x, z) - 0.05, z, random() * 6.28, s, s * (0.8 + random() * 0.6), s));
     colors.push(new THREE.Color().setHSL(0.17 + random() * 0.05, 0.3 + random() * 0.15, 0.3 + random() * 0.15));
   }
+  // The Old Pit's pond has the river's textured reeds, rushes and sedge instead (#1003, quarryProps.js): its plain clumps are still dealt, so
+  // everything the pit draws after them stands where it did, but not drawn.
+  if (!withReeds) return;
   const material = new THREE.MeshLambertMaterial({ vertexColors: true });
   scene.add(drawDistance.add(tiledInstances(reeds, material, matrices, { colors, name: 'reeds' }), 'roughDistance'));
 }

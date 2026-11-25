@@ -3,6 +3,8 @@
 // tyres by the pond, hawthorn and gorse along the lip, boulders and flints fallen from the walls, dead trees, and the pond with its reeds.
 // All procedural, with canvas textures; the big pieces have colliders. The ground itself (the walls, the heaps, the road) is the terrain's.
 // And the lane entrance on the new farm (#1002): the shut lane gate dressed, its bellmouth, blocks, barrier, signs, weeds, buddleia, hedge and litter.
+// And the relics as years of standing have left them (#1003): weathered from their own stream (`pitRelicWear`), grass, birch and buddleia over the
+// heaps, reeds and rushes round the pond, weeds through the tracks, the drums and the plant's footings, and the container on its hardstanding.
 
 import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -12,7 +14,7 @@ import { woodTexture } from './neighbourTextures.js';
 import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
 import { quarryPlants } from './quarry.js';
 import { Parts } from './parts.js';
-import { rustTexture, signTexture, bellmouthTexture, bellmouthUv, tarmacTexture } from './quarryTextures.js';
+import { rustTexture, signTexture, bellmouthTexture, bellmouthUv, tarmacTexture, hardstandingTexture } from './quarryTextures.js';
 import { roadNetwork } from './roads.js';
 import { crownAt } from './roadMesh.js';
 import { leafReach } from './hedgeSolid.js';
@@ -32,6 +34,9 @@ import { buildScreeningPlant, plantMaterials } from './screeningPlantModel.js';
 import { plantSite, plantPoint, inPlantsWay, PLANT } from './plantSite.js';
 import { buildSign, debrisMaterials, drumGeometry, scatterClear, tyreGeometry, DRUM, TYRE } from './quarryDebris.js';
 import { wireFenceMaterials, wireFenceRun, addPost, addSpan } from './wireFence.js';
+import { streamFor } from './propStreams.js';
+import { pitGrowth, excavatorGrowth, drumWeeds, containerDressing, framePoint } from './pitGrowth.js';
+import { plantMaterial, reedModel, rushModel, sedgeModel, tussockModel, birchModel } from './riverPlants.js';
 
 const TAU = Math.PI * 2;
 
@@ -45,9 +50,10 @@ export function buildQuarry(c) {
   site.name = 'quarrySite';
   buildScrub(c, quarry, plants, site);
   buildBoulders(c, quarry, plants, site);
-  buildSite(c, quarry, site);
+  const relics = buildSite(c, quarry, site);
+  buildPitGrowth(c, quarry, site, relics);
   c.scene.add(site);
-  buildPond(c, quarry, () => false);
+  buildPond(c, quarry, () => false, { reeds: false }); // its reeds are the river's, round its edge (buildPitGrowth)
   buildPitBoundary(c);
 }
 
@@ -213,9 +219,14 @@ function buildBoulders(c, quarry, plants, site) {
   }
 }
 
-/** Everything standing in and round the pit that isn't a plant or a stone: the fence, the container, the excavator, the plant, the drums and the dead trees. */
+/**
+ * Everything standing in and round the pit that isn't a plant or a stone: the fence, the container, the excavator, the plant, the drums and the dead
+ * trees. Returns where the relics stand, for what grows round them (buildPitGrowth): `{ container, plant, excavator, drums }`.
+ */
 function buildSite(c, quarry, site) {
   const { heights, random, fixedBox } = c;
+  const wear = streamFor('pitRelicWear'); // the years of standing (#1003), drawn apart from the pit's own stream so nothing it deals moves
+  const relics = { container: null, plant: null, excavator: null, drums: [] };
   const things = new THREE.Group();
   const lit = (o) => new THREE.MeshStandardMaterial({ roughness: 0.85, ...o });
   const wood = new THREE.MeshStandardMaterial({ map: woodTexture(random, [118, 98, 74]), roughness: 0.95 });
@@ -235,10 +246,11 @@ function buildSite(c, quarry, site) {
   const hut = findSpot(400, (p) => quarry.plantOk(p.x, p.z, 8) && Math.hypot(p.x - way.x, p.z - way.z) > 14, () => offGate(10 + random() * 24, 12 + random() * 14)) ?? offGate(18, 18);
   const hutYaw = (random() - 0.5) * 0.7;
   {
-    const { group, boxes } = buildContainer(containerMaterials(random), random);
+    const { group, boxes, nearSide } = buildContainer(containerMaterials(random, wear), random);
     const y0 = settle(group, hut, hutYaw, 3, 1.2, groundY);
     things.add(group);
     placeBoxes(fixedBox, hut, y0, hutYaw, boxes);
+    relics.container = { at: hut, turn: hutYaw, side: nearSide };
   }
 
   // Whether (x, z) is flat floor off the water and clear of the roads, for the things that stand by the plant.
@@ -250,7 +262,9 @@ function buildSite(c, quarry, site) {
   // The screening plant on its pad, where the pit was dealt it, its conveyor ending over the heap it was dealt with.
   const plant = plantSite(quarry, groundY);
   if (plant) {
-    const { group, boxes } = buildScreeningPlant(plantMaterials(random), {
+    const materials = plantMaterials(random, wear);
+    relics.plant = { site: plant, hardcore: materials.hardcore };
+    const { group, boxes } = buildScreeningPlant(materials, {
       headX: plant.headX,
       headY: plant.headY,
       ground: (lx, lz) => {
@@ -270,7 +284,7 @@ function buildSite(c, quarry, site) {
     spots.push({ at: plantPoint(plant, PLANT.padX0 - 2.8, 0), turn: plant.turn + Math.PI / 2 });
     for (const { at, turn } of spots) {
       if (![[0, 0], [2.2, 2.2], [-2.2, 2.2], [2.2, -2.2], [-2.2, -2.2]].every(([ox, oz]) => onFloor(at.x + ox, at.z + oz))) continue;
-      const { group: cabin, boxes: cabinBoxes } = buildCabin(cabinMaterials(random));
+      const { group: cabin, boxes: cabinBoxes } = buildCabin(cabinMaterials(random, wear));
       const y0 = settle(cabin, at, turn, 1.6, 1.0, groundY);
       things.add(cabin);
       placeBoxes(fixedBox, at, y0, turn, cabinBoxes);
@@ -286,11 +300,12 @@ function buildSite(c, quarry, site) {
     const fallback = findSpot(300, (p) => !quarry.pit.heaps.some((m) => Math.hypot(m.x - p.x, m.z - p.z) < m.r + 4) && quarry.waterAt(p.x, p.z) === 0 && quarry.roadNear(p.x, p.z).d > 7, () => floorAt(endA - road.dir * (0.3 + random() * 0.4), 10 + random() * 6)) ?? floorAt(endA - road.dir * 0.5, 12);
     const dig = plant?.dig ?? fallback;
     const turn = plant?.dig ? plant.dig.turn : Math.atan2(quarry.pit.x - dig.x, quarry.pit.z - dig.z) + Math.PI + (random() - 0.5) * 0.6 - Math.PI / 2; // else it looks out at the wall it has been digging
-    const { group, boxes } = buildExcavator(excavatorMaterials(random));
+    const { group, boxes } = buildExcavator(excavatorMaterials(random, wear));
     const y0 = settle(group, dig, turn, 1.9, 1.3, groundY) - 0.03;
     group.position.y = y0;
     things.add(group);
     placeBoxes(fixedBox, dig, y0, turn, boxes);
+    relics.excavator = { at: { x: dig.x, z: dig.z }, turn };
   }
 
   // Drums and tyres dumped by the pond with a pallet, none overlapping, and a drum and a tyre that have rolled off down the slope.
@@ -312,7 +327,7 @@ function buildSite(c, quarry, site) {
         placed.push(...got);
         return got;
       };
-      const mat = debrisMaterials(random);
+      const mat = debrisMaterials(random, wear);
       const drums = mat.drums.map(() => []);
       const tyres = [];
       const at = (x, y, z, rx, ry, rz) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1));
@@ -336,12 +351,14 @@ function buildSite(c, quarry, site) {
         const y = groundY(d.x, d.z);
         drums[d.i % drums.length].push(at(d.x, y + DRUM.height / 2, d.z, 0, random() * TAU, 0));
         fixedBox(d.x, y + DRUM.height / 2, d.z, 0.28, DRUM.height / 2, 0.28);
+        relics.drums.push({ x: d.x, z: d.z, r: DRUM.radius });
       }
       for (const d of deal(2, 0.5, 1.5, 4.5)) {
         const y = groundY(d.x, d.z);
         const yaw = random() * TAU;
         drums[(d.i + 2) % drums.length].push(at(d.x, y + DRUM.radius, d.z, 0, yaw, Math.PI / 2));
         fixedBox(d.x, y + DRUM.radius, d.z, DRUM.height / 2, DRUM.radius, DRUM.radius, yaw);
+        relics.drums.push({ x: d.x, z: d.z, r: 0.45 }); // on its side: the weeds stand clear of its length
       }
       for (const t of deal(3, TYRE.radius + 0.04, 1, 4)) tyres.push(at(t.x, groundY(t.x, t.z) + TYRE.width / 2, t.z, (random() - 0.5) * 0.08, random() * TAU, 0));
       // Rolled off: a drum on its side and a tyre on its edge, well clear of the rest.
@@ -394,6 +411,109 @@ function buildSite(c, quarry, site) {
 
   enableShadows(things);
   site.add(things);
+  return relics;
+}
+
+/**
+ * What has grown over the pit since it was left (#1003), into the set piece: from the pit's own deal (pitGrowth.js `pitGrowth`, listed in
+ * farmPlacement.js) the grass, birch seedlings and buddleia on the heaps, the reeds, rushes and sedge round the pond and the weeds and broken lumps
+ * at the plant; from where buildSite stood each relic, the grass and weeds through the excavator's tracks and the drums, and the container's
+ * hardstanding with the birch through its sleepers. The plants are the river's (riverPlants.js) and the verge's, drawn in tiles with the draw distance.
+ */
+function buildPitGrowth(c, quarry, site, relics) {
+  const { heights, drawDistance } = c;
+  const ground = (x, z) => heights.heightAt(x, z);
+  const grow = streamFor('pitRelicGrowth');
+  const g = pitGrowth(quarry);
+  const group = new THREE.Group();
+  group.name = 'pitGrowth';
+  const material = plantMaterial();
+  const tint = (h, s, l) => new THREE.Color().setHSL(h, s, l);
+  const verge = vergeMakers(grow);
+  const kinds = {
+    grass: { geo: tussockModel(grow, { height: 0.42, blades: 26 }), mat: material, colour: () => tint(0.17 + grow() * 0.05, 0.15 + grow() * 0.2, 0.7 + grow() * 0.2), list: [] },
+    reeds: { geo: reedModel(grow, { height: 1.55, blades: 14, seeds: 0.5, dead: 2 }), mat: material, colour: () => tint(0.2 + grow() * 0.05, 0.1 + grow() * 0.15, 0.78 + grow() * 0.17), list: [] },
+    rushes: { geo: rushModel(grow), mat: material, colour: () => tint(0.22, 0.1 + grow() * 0.15, 0.75 + grow() * 0.2), list: [] },
+    sedge: { geo: sedgeModel(grow), mat: material, colour: () => tint(0.17 + grow() * 0.04, 0.15 + grow() * 0.2, 0.78 + grow() * 0.17), list: [] },
+    birch: { geo: birchModel(grow, { height: 1, branches: 4 }), mat: material, colour: () => tint(0.2, 0.05 + grow() * 0.1, 0.85 + grow() * 0.15), list: [] },
+    nettle: { geo: verge.nettle[0], mat: verge.nettle[1], list: [] },
+    dock: { geo: verge.dock[0], mat: verge.dock[1], list: [] },
+    parsley: { geo: verge.parsley[0], mat: verge.parsley[1], list: [] },
+  };
+  const put = (kind, x, y, z, yaw, s, sy = s) => kinds[kind].list.push(matrixAt(x, y, z, yaw, s, sy, s));
+  const plant = relics.plant?.site;
+  const padY = (p) => (p.onPad && plant ? plant.padTop - 0.01 : ground(p.x, p.z) - 0.02);
+  for (const t of g.tufts) put('grass', t.x, ground(t.x, t.z) - 0.03, t.z, t.yaw, t.s);
+  for (const b of g.seedlings) put('birch', b.x, ground(b.x, b.z) - 0.03, b.z, b.yaw, b.h);
+  for (const [k, list] of [['reeds', g.reeds], ['rushes', g.rushes], ['sedge', g.sedge]]) for (const p of list) put(k, p.x, ground(p.x, p.z) - 0.04, p.z, p.yaw, p.s, p.s * (0.85 + ((p.x * 7.3) % 0.3)));
+  if (plant) for (const w of [...g.footings, ...g.padWeeds]) put(w.kind ?? 'grass', w.x, padY(w), w.z, w.yaw, w.s);
+  if (relics.excavator) {
+    const { at, turn } = relics.excavator;
+    for (const w of excavatorGrowth(grow)) {
+      const p = framePoint(at, turn, w.x, w.z);
+      put(w.kind, p.x, ground(p.x, p.z) - 0.02, p.z, w.yaw, w.s);
+    }
+  }
+  for (const w of drumWeeds(relics.drums, grow)) put(w.kind, w.x, ground(w.x, w.z) - 0.02, w.z, w.yaw, w.s);
+  // The container's hardstanding: a drape of old concrete over the ground, broken back at its edges, a few lumps off it, weeds in its cracks, and the
+  // birch come up between two of its sleepers, leaning out from the wall.
+  const parts = new Parts();
+  if (relics.container) {
+    const { at, turn, side } = relics.container;
+    const d = containerDressing(grow, side);
+    const frame = {
+      at: (u, v) => framePoint(at, turn, u, v),
+      toFrame: (x, z) => {
+        const dx = x - at.x;
+        const dz = z - at.z;
+        return { u: Math.cos(turn) * dx - Math.sin(turn) * dz, v: Math.sin(turn) * dx + Math.cos(turn) * dz };
+      },
+    };
+    const slabMaterial = new THREE.MeshStandardMaterial({ map: hardstandingTexture(grow, grow), roughness: 0.95, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+    const slab = new THREE.Mesh(drapeGeometry(d.rows, { frame, groundY: ground, lift: 0.04, cols: 10, uvOf: (u, v) => [u / 4, v / 4], skirt: 0.1, endSkirt: true }), slabMaterial);
+    slab.name = 'hardstanding';
+    slab.receiveShadow = true;
+    group.add(slab);
+    for (const l of d.lumps) {
+      const p = framePoint(at, turn, l.x, l.z);
+      parts.add(slabMaterial, tarmacChunkGeometry(l.size, l.shape).scale(1, 2.5, 1), p.x, ground(p.x, p.z) - 0.02, p.z, 0.08, l.yaw, -0.06);
+    }
+    for (const w of d.weeds) {
+      const p = framePoint(at, turn, w.x, w.z);
+      put(w.kind, p.x, ground(p.x, p.z) + 0.02, p.z, w.yaw, w.s);
+    }
+    const s = d.sapling;
+    const p = framePoint(at, turn, s.x, s.z);
+    const sapling = new THREE.Mesh(birchModel(grow, { height: s.h, branches: 6, facing: side > 0 ? Math.PI / 2 : -Math.PI / 2 }), material);
+    sapling.position.set(p.x, ground(p.x, p.z) - 0.04, p.z);
+    sapling.rotation.y = turn;
+    sapling.name = 'containerBirch';
+    sapling.castShadow = true;
+    group.add(sapling);
+  }
+  // The plant's pad: lumps of its hardcore broken off round its edge.
+  if (plant) for (const l of g.padLumps) parts.add(relics.plant.hardcore, tarmacChunkGeometry(l.size, l.shape).scale(1, 2.2, 1), l.x, ground(l.x, l.z) - 0.015, l.z, l.tip, l.yaw, l.tip * 0.5);
+  // Buddleia low on the heaps.
+  {
+    const bp = new Parts();
+    const bm = buddleiaMaterials();
+    for (const b of g.buddleia) addBuddleia(bp, bm, b.x, ground(b.x, b.z) - 0.05, b.z, b.h, grow);
+    if (g.buddleia.length) {
+      const bush = bp.build({ castShadow: true });
+      bush.name = 'pitBuddleia';
+      group.add(bush);
+    }
+  }
+  const built = parts.build({ castShadow: true });
+  built.name = 'pitGrowthParts';
+  group.add(built);
+  for (const [name, k] of Object.entries(kinds)) {
+    if (!k.list.length) continue;
+    const colors = k.colour ? k.list.map(() => k.colour()) : undefined;
+    group.add(drawDistance.add(tiledInstances(k.geo, k.mat, k.list, { colors, name: `pit-${name}`, tileSize: MODEL_TILE }), 'roughDistance'));
+  }
+  site.add(group);
+  return group;
 }
 
 /**

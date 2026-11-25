@@ -29,6 +29,7 @@ import { polygonBounds, pointInPolygon } from './polygons.js';
 import { createRiver } from './river.js';
 import { riversidePlaces, fenceStretches } from './riverPlaces.js';
 import { laneGateOf, laneReach, entrancePlan, entranceHedges, ENTRANCE } from './pitEntrance.js';
+import { pitGrowth } from './pitGrowth.js';
 
 /** m: how far two shapes must overlap, or a shape reach into a place, before it counts. Less is a touch, which the rules allow. */
 export const PLACE_TOLERANCE = 0.05;
@@ -275,6 +276,22 @@ export function farmPlacements(layout, { fields = createFields(layout), roads = 
       add(box('fence', "the brook's stock fence", (ax + bx) / 2, (az + bz) / 2, len / 2, 0.07, Math.atan2(-(bz - az) / len, (bx - ax) / len), true));
     }
   }
+  // What has grown over the Old Pit's floor (quarryProps.js `buildPitGrowth`, pitGrowth.js, #1003): the heaps' grass, birch seedlings and buddleia,
+  // the reeds, rushes and sedge round the pond (at its edge, not in it), the weeds at the plant's footings and pad, and the lumps off the pad's edge.
+  // Nothing in it is solid. What grows round the relics buildSite deals in its drawing code joins the list with them (#1229).
+  const pitQuarry = layout.quarry?.outline ? placementContext(layout, { fields, roads }).heights.quarry : null;
+  if (pitQuarry) {
+    const G = pitGrowth(pitQuarry);
+    const owner = fields.polygons?.pit ? { owner: 'pit' } : {};
+    const grown = [
+      ['tufts', 'grass on a heap in the pit', (p) => 0.2 * p.s], ['seedlings', 'a birch seedling on a heap in the pit', (p) => 0.25 * p.h],
+      ['buddleia', 'a buddleia on a heap in the pit', (p) => 0.4 * p.h], ['reeds', "a reed at the pit's pond", (p) => 0.2 * p.s],
+      ['rushes', "a rush at the pit's pond", (p) => 0.12 * p.s], ['sedge', "a sedge at the pit's pond", (p) => 0.15 * p.s],
+      ['footings', "a weed at a footing of the pit's plant", (p) => 0.2 * p.s], ['padWeeds', "a weed on the pit plant's pad", (p) => 0.15 * p.s],
+      ['padLumps', "a lump off the pit plant's pad", (p) => p.size / 2],
+    ];
+    for (const [key, name, r] of grown) for (const p of G[key]) add(disc(key === 'padLumps' ? 'prop' : 'plant', name, p.x, p.z, r(p), false, owner));
+  }
   return out;
 }
 
@@ -297,7 +314,7 @@ export const PLACEMENT_SOURCES = {
     buildVillage: 'its furniture, and the small farm\'s walls and buildings',
     buildHill: 'the hut\'s steps, the climb\'s flags, the flask rock and the posts of Brook Meadow\'s gateway from Hay Meadow',
     buildWoods: 'the trail\'s signs and the woodpile\'s scenery',
-    buildQuarry: 'the screening plant, the digger and the heaps\' drums and tyres',
+    buildQuarry: 'the screening plant, the digger and the heaps\' drums and tyres; and, with the relics they stand by (#1003), the weeds through the digger\'s tracks and the drums, the cabin\'s chair and table, and the container\'s hardstanding and birch',
     buildFieldLandmarks: 'the gateposts\' and roller\'s own boxes (their places are listed)',
   },
   flat: {

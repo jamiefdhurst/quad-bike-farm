@@ -8,6 +8,12 @@ import { createOutbuildings } from './outbuildings.js';
 import { roadNetwork, pointAt, filletOutline } from './roads.js';
 import { paintMoor } from './moorPaint.js';
 import { pointInPolygon } from './polygons.js';
+import { heapPatches } from './pitGrowth.js';
+
+const smoothstep = (a, b, x) => {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
 
 function rand(seed) {
   return () => {
@@ -883,10 +889,12 @@ function* paintQuarry(c, quarry) {
         if (c.due(1)) yield;
       }
     }
-    // The heaps.
+    // The heaps, crusted over from years of standing (#1003): the stone gone dull and grey-brown under a skin of moss and silt, grass grown over
+    // patches of it (pitGrowth.js `heapPatches`, where its tufts stand), and a darker tide line of washed-down silt round its foot.
     pit.heaps.forEach((h, hi) => {
       if (!c.inWin(h.x, h.z, h.r + 2)) return;
       const sand = h.kind === 'sand';
+      const patches = heapPatches(h, hi);
       const [hx0, hx1] = span(h.x - h.r, h.x + h.r, step, win.minX, win.maxX, 2);
       const [hz0, hz1] = span(h.z - h.r, h.z + h.r, step, win.minZ, win.maxZ, 2);
       for (let kx = hx0; kx < hx1; kx++) {
@@ -897,7 +905,16 @@ function* paintQuarry(c, quarry) {
           if (d > 1) continue;
           const v = hash01(S.heap + hi, kx, kz);
           const m = 0.85 + v * 0.3 + 0.12 * (1 - d);
-          grit(x, z, kx + 5000 * (hi + 1), kz, sand ? `rgba(${(214 * m) | 0},${(190 * m) | 0},${(134 * m) | 0},0.95)` : `rgba(${(138 * m) | 0},${(135 * m) | 0},${(130 * m) | 0},0.95)`);
+          let col = sand ? [214 * m, 190 * m, 134 * m] : [138 * m, 135 * m, 130 * m];
+          const crust = 0.4 + 0.25 * hash01(S.heap + hi + 40, kx >> 2, kz >> 2); // weathered in blotches a metre or so across
+          col = [col[0] * (1 - crust) + 104 * crust, col[1] * (1 - crust) + 100 * crust, col[2] * (1 - crust) + 80 * crust];
+          let grass = 0;
+          for (const p of patches) grass = Math.max(grass, 1 - smoothstep(0.55, 1.05, Math.hypot(x - p.x, z - p.z) / p.r));
+          grass = Math.min(1, grass * (0.75 + 0.5 * v));
+          col = [col[0] * (1 - grass) + (78 + v * 30) * grass, col[1] * (1 - grass) + (100 + v * 30) * grass, col[2] * (1 - grass) + (46 + v * 14) * grass];
+          const tide = smoothstep(0.78, 0.97, d) * 0.3;
+          col = col.map((k, i) => k * (1 - tide) + [70, 72, 56][i] * tide);
+          grit(x, z, kx + 5000 * (hi + 1), kz, `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},0.95)`);
         }
       }
     });
