@@ -478,7 +478,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why did the car on Back Lane stop?',
-        a: `On a single track two vehicles can only pass at a passing place. The one with a passing place on its left, nearest, pulls in and waits until the other has gone by, and one with no bay either side creeps past. If you stop on the road, they wait for you. Pull into a bay yourself, on your left, and they carry on.`,
+        a: `On a single track two vehicles can only pass at a passing place. The one with a passing place on its left, nearest, pulls in and waits until the other has gone by, and one with no bay either side creeps past. One behind another going the same way keeps its distance and waits behind it while it waits in a passing place, as a passing place holds only one. If you stop on the road, they wait for you. Pull into a bay yourself, on your left, and they carry on.`,
       },
       {
         q: 'What is the A-road, and why does the screen go black when I pull out onto it?',
