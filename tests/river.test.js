@@ -25,12 +25,12 @@ const across = (x, step = 0.5) => {
 describe('the river', () => {
 
 
-  it('keeps its banks level across and its water in them: the ground either side of it is at one height, the water below both', () => {
+  // Its banks were levelled flat across until #999, which keeps only the water's edge level and lets the land come back to its own lie (riverBanks.test.js).
+  it('keeps its water in its banks: the ground either side of it stands above the water', () => {
     for (const x of [50, 58, 74]) {
       const zc = brook.zAt(x);
       const a = heights.heightAt(x, zc - brook.halfAt(x) - 2.5);
       const b = heights.heightAt(x, zc + brook.halfAt(x) + 2.5);
-      expect(Math.abs(a - b), `x ${x}`).toBeLessThan(0.5);
       const surface = heights.heightAt(x, zc) + brook.waterDepthAt(x);
       expect(surface, `x ${x}`).toBeLessThan(Math.min(a, b));
     }

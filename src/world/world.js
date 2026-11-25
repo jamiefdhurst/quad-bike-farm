@@ -142,7 +142,7 @@ export class World {
     // The ground is drawn in tiles (groundTiles.js): those round where you start are built now, behind the start screen, and the rest as you move.
     this.groundParams = { ...DEFAULT_GROUND_PARAMS };
     registerTuning('Ground tiles', this.groundParams, GROUND_PARAM_RANGES);
-    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roadMud: this.roadMud?.main, drawDistance: this.drawDistance, autumn, params: this.groundParams, groundHeights }; // groundHeights: the 1 m grid, if the workers worked it out (groundSampler.js)
+    const ctx = { scene, physics, RAPIER, renderer, models, layout, grid: this.cattleGrid, heights: this.heights, track: this.track, wear: this.wear, fields: this.fields, roads: this.roads, roadMud: this.roadMud?.main, drawDistance: this.drawDistance, autumn, params: this.groundParams, groundHeights }; // groundHeights: the 1 m grid, if the workers worked it out (groundSampler.js)
     this.terrain = timed('world · terrain', () => createTerrain(ctx));
     this.groundFromWorkers = !!groundHeights; // the 1 m grid came from the workers (groundSampler.js), for the panel and `perf`
     timed('world · ground tiles primed', () => this.terrain.prime(layout.spawn.player.x, layout.spawn.player.z));

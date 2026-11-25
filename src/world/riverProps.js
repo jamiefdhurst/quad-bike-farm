@@ -1,14 +1,21 @@
 // What stands in the riverside meadow (world/river.js): the white posts that mark the crossing, the sheep hurdle that shuts the river in at the
 // meadow's east end, reeds along both banks, willows leaning over the water and the farm's oaks in the corners. All procedural but the oaks.
+// On the new farm (#999) also the crossing's gravel up its landings, its ruts and loose stones, rushes and sedge at the wet edges, the meadow's tussocks,
+// thistles, docks and cowpats, and the brook's reeds and stock fence to the lane's verge, placed by riverPlaces.js and drawn from riverPlants.js.
 
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
-import { worldBox } from './outbuildingProps.js';
+import { worldBox, canvasTexture } from './outbuildingProps.js';
 import { matrixAt } from './hillProps.js';
 import { createRiver } from './river.js';
 import { gateLeaf } from './neighbourFarmProps.js';
 import { swayMaterials } from '../effects/windSway.js';
+import { riversidePlaces } from './riverPlaces.js';
+import { plantMaterial, reedModel, rushModel, sedgeModel, tussockModel, thistleModel, dockModel, cowpatModel, stoneModel } from './riverPlants.js';
+import { wireFenceMaterials, wireFenceRun } from './wireFence.js';
+import { Parts } from './parts.js';
+import { streamFor } from './propStreams.js';
 
 const paint = (geo, hex) => {
   const c = new THREE.Color(hex);
@@ -103,17 +110,111 @@ function gravelTexture(random) {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = 128;
   const g = canvas.getContext('2d');
-  for (let i = 0; i < 700; i++) {
-    const l = 150 + Math.floor(random() * 50);
-    g.fillStyle = `rgba(${l + 14},${l + 8},${l - 6},${0.55 + random() * 0.4})`;
+  // Grey-brown and buff, smaller and closer than they were (#999: up the landings in the sun the old ones read as white blotches).
+  for (let i = 0; i < 1300; i++) {
+    const l = 105 + Math.floor(random() * 60);
+    g.fillStyle = `rgba(${l + 16},${l + 8},${l - 8},${0.55 + random() * 0.4})`;
     g.beginPath();
-    g.ellipse(random() * 128, random() * 128, 1 + random() * 2.4, 0.8 + random() * 1.6, random() * 3, 0, Math.PI * 2);
+    g.ellipse(random() * 128, random() * 128, 0.7 + random() * 1.7, 0.6 + random() * 1.2, random() * 3, 0, Math.PI * 2);
     g.fill();
   }
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
+}
+
+/** A tyre rut's texture: dark wet mud with soft edges, the tread's chevrons pressed into it and a little water standing in the bottom. */
+function rutTexture() {
+  return canvasTexture(64, 256, (g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0, 'rgba(48,36,24,0)');
+    grad.addColorStop(0.22, 'rgba(48,36,24,0.85)');
+    grad.addColorStop(0.5, 'rgba(34,26,18,0.95)');
+    grad.addColorStop(0.78, 'rgba(48,36,24,0.85)');
+    grad.addColorStop(1, 'rgba(48,36,24,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(20,15,10,0.55)';
+    g.lineWidth = 3;
+    for (let y = 0; y < h; y += 16) {
+      g.beginPath();
+      g.moveTo(w * 0.24, y);
+      g.lineTo(w * 0.5, y + 7);
+      g.lineTo(w * 0.76, y);
+      g.stroke();
+    }
+    g.fillStyle = 'rgba(120,130,135,0.25)'; // the sheen of water lying in the bottom
+    g.fillRect(w * 0.44, 0, w * 0.12, h);
+  });
+}
+
+/** The crossing's two ruts (riverPlaces.js `ruts`): strips laid on the ground and the bed from the top of the north landing to the top of the south one. */
+function rutMesh(ruts, heights) {
+  const pos = [];
+  const uv = [];
+  const index = [];
+  for (const r of ruts) {
+    const base = pos.length / 3;
+    const n = Math.ceil((r.to - r.from) / 0.4);
+    for (let i = 0; i <= n; i++) {
+      const z = r.from + ((r.to - r.from) * i) / n;
+      const wobble = Math.sin(z * 0.7) * 0.06; // a wheel's track is never quite straight
+      for (const side of [-1, 1]) {
+        const x = r.x + wobble + (side * r.width) / 2;
+        pos.push(x, heights.heightAt(x, z) + 0.015, z);
+        uv.push(side < 0 ? 0 : 1, z / 1.6);
+      }
+      if (i < n) {
+        const a = base + i * 2;
+        index.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+      }
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(index);
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: rutTexture(), roughness: 0.95, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, side: THREE.DoubleSide }));
+  mesh.name = 'ruts';
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+/**
+ * The new farm's wet edges, meadow and brook (#999), from `riverPlaces.js`: rushes and sedge, loose stones at the crossing, the meadow's tussocks,
+ * thistles, docks and cowpats through `tiledInstances` with the draw distance, and the stock fence along the brook (wireFence.js), a set piece of its own.
+ */
+function buildRiversideCover({ scene, heights, drawDistance, fixedBox }, places, material) {
+  const random = streamFor('riversideModels');
+  const tint = (h, s, l) => new THREE.Color().setHSL(h, s, l);
+  const kinds = [
+    ['rushes', rushModel(random), places.rushes, () => tint(0.22, 0.1 + random() * 0.15, 0.75 + random() * 0.2), 0.02],
+    ['sedge', sedgeModel(random), places.sedge, () => tint(0.17 + random() * 0.04, 0.15 + random() * 0.2, 0.78 + random() * 0.17), 0.02],
+    ['meadowTussocks', tussockModel(random), places.tussocks, () => tint(0.18 + random() * 0.05, 0.1 + random() * 0.2, 0.72 + random() * 0.2), 0.02],
+    ['thistles', thistleModel(random), places.thistles, () => tint(0.25, 0.05 + random() * 0.1, 0.8 + random() * 0.15), 0.01],
+    ['docks', dockModel(random), places.docks, () => tint(0.22, 0.05 + random() * 0.1, 0.75 + random() * 0.2), 0.01],
+    ['cowpats', cowpatModel(random), places.dung, () => tint(0.08, 0.1, 0.75 + random() * 0.25), 0.005],
+  ];
+  for (const [name, geo, spots, colour, sink] of kinds) {
+    if (!spots.length) continue;
+    const matrices = spots.map((p) => matrixAt(p.x, heights.heightAt(p.x, p.z) - sink, p.z, p.yaw, p.s, p.s * (0.85 + ((p.x * 7.3) % 0.3)), p.s));
+    scene.add(drawDistance.add(tiledInstances(geo, material, matrices, { colors: spots.map(colour), name, tileSize: MODEL_TILE }), 'roughDistance'));
+  }
+  // The crossing's loose stones: grey-brown cobbles half sunk in the bed and the landings.
+  const stones = places.stones.map((p) => matrixAt(p.x, heights.heightAt(p.x, p.z) - p.s * 0.25, p.z, p.yaw, p.s, p.s, p.s));
+  const stoneColours = places.stones.map(() => tint(0.08 + random() * 0.04, 0.08 + random() * 0.1, 0.16 + random() * 0.14)); // lit by the sun these read a good deal paler
+  scene.add(drawDistance.add(tiledInstances(stoneModel(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, flatShading: true }), stones, { colors: stoneColours, name: 'crossingStones' }), 'roughDistance'));
+  // The brook's stock fence, post and wire to the lane's verge.
+  if (places.fence) {
+    const parts = new Parts();
+    const count = wireFenceRun({ parts, mats: wireFenceMaterials(random), points: places.fence.points, gaps: places.fence.gaps, groundY: (x, z) => heights.heightAt(x, z), fixedBox, random });
+    const fence = parts.build({ castShadow: false });
+    fence.name = 'brookFence';
+    fence.userData.count = count;
+    scene.add(fence);
+  }
 }
 
 /** Builds the riverside meadow's props and their colliders. `c` is the props context (props.js). */
@@ -204,24 +305,38 @@ export function buildRiverside(c) {
     group.add(pivot);
   }
 
-  // The gravel laid over the crossing, a hand's breadth under the surface: a strip across the river between the posts, its pebbles breaking it.
+  // The gravel laid over the crossing, a hand's breadth under the surface: a strip across the river between the posts, its pebbles breaking it. With
+  // shaped banks (#999) it runs on up both landings to the field, narrowing as it climbs, so it tapers into the banks rather than stopping on the grass.
   const cx = river.cross;
+  const shaped = !!heights.brook.banks;
+  const landing = shaped ? heights.brook.banks.landing : 0;
   const gx0 = cx.x - cx.half + 0.3;
   const gx1 = cx.x + cx.half - 0.3;
   const gpos = [];
   const guv = [];
   const gidx = [];
-  const steps = 8;
-  for (let i = 0; i <= steps; i++) {
-    const x = gx0 + ((gx1 - gx0) * i) / steps;
-    const zc = heights.brook.zAt(x);
-    const reach = heights.brook.halfAt(x) + 0.5;
-    const y = surface(x, zc) - 0.03;
-    for (const dz of [-reach, reach]) {
-      gpos.push(x, Math.max(y, heights.heightAt(x, zc + dz) + 0.02), zc + dz);
-      guv.push(x / 3, (zc + dz) / 3);
+  const cols = 8;
+  const half0 = heights.brook.halfAt(cx.x);
+  const rowsAt = shaped ? Array.from({ length: Math.ceil((half0 * 2 + landing * 1.7) / 0.5) + 1 }, (_, i) => -(half0 + landing * 0.85) + i * 0.5) : [-(half0 + 0.5), half0 + 0.5];
+  for (const dz of rowsAt) {
+    // Up the landing the strip narrows to 3 m wide by the top, where the field takes over.
+    const up = Math.max(0, Math.abs(dz) - half0) / Math.max(1, landing * 0.85);
+    const w = (gx1 - gx0) / 2 * (1 - up * 0.62);
+    for (let i = 0; i <= cols; i++) {
+      const x = cx.x + (i / cols - 0.5) * 2 * w;
+      const zc = heights.brook.zAt(x);
+      const z = zc + dz;
+      const y = surface(x, zc) - 0.03;
+      gpos.push(x, Math.max(y, heights.heightAt(x, z) + 0.02), z);
+      guv.push(x / 3, z / 3);
     }
-    if (i < steps) gidx.push(i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 2, i * 2 + 1, i * 2 + 3);
+  }
+  for (let r = 0; r + 1 < rowsAt.length; r++) {
+    for (let i = 0; i < cols; i++) {
+      const a = r * (cols + 1) + i;
+      const b = a + cols + 1;
+      gidx.push(a, b, a + 1, a + 1, b, b + 1);
+    }
   }
   const ggeo = new THREE.BufferGeometry();
   ggeo.setAttribute('position', new THREE.Float32BufferAttribute(gpos, 3));
@@ -232,24 +347,33 @@ export function buildRiverside(c) {
   gravel.name = 'gravel';
   gravel.receiveShadow = true;
   group.add(gravel);
+  const places = shaped ? riversidePlaces(layout, heights.brook, { roads: c.roads }) : null;
+  if (places) group.add(rutMesh(places.ruts, heights));
   scene.add(group);
 
-  // Reeds and rushes, built once for every wet edge: three heights of clump, tall in the shallows and shorter up the bank.
-  const reedMaterial = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  // Reeds and rushes, built once for every wet edge: three heights of clump, tall in the shallows and shorter up the bank. The new farm's (#999) are
+  // the textured reed (riverPlants.js), placed from their own stream so the farm's list of placed things has the same ones.
+  const plants = places ? plantMaterial() : null;
   const kinds = layout.hill.riverside.gates
     ? { tall: { height: 1.9, blades: 16, seeds: 0.6, dead: 3 }, mid: { height: 1.45, blades: 14, seeds: 0.45, dead: 2 }, rush: { height: 0.95, blades: 12, seeds: 0.25, dead: 1 } }
     : { mid: { height: 1.6, blades: 8, seeds: 0, dead: 0 } };
   const reedSets = Object.fromEntries(Object.keys(kinds).map((k) => [k, { matrices: [], colors: [] }]));
-  for (const r of river.reeds(random)) {
-    const set = reedSets[r.kind === 'bank' ? 'rush' : r.kind === 'shallow' ? (random() < 0.5 ? 'tall' : 'mid') : 'mid'] ?? reedSets.mid;
-    const s = 0.8 + random() * 0.7;
-    set.matrices.push(matrixAt(r.x, heights.heightAt(r.x, r.z) - 0.05, r.z, random() * 6.28, s, s * (0.8 + random() * 0.5), s));
-    set.colors.push(new THREE.Color().setHSL(0.2 + random() * 0.04, 0.2 + random() * 0.15, 0.5 + random() * 0.2));
+  const reedRandom = places ? streamFor('riverReeds') : random;
+  const tint = (h, s, l) => new THREE.Color().setHSL(h, s, l);
+  const reedTint = () => (places ? tint(0.2 + reedRandom() * 0.05, 0.1 + reedRandom() * 0.15, 0.78 + reedRandom() * 0.17) : tint(0.2 + reedRandom() * 0.04, 0.2 + reedRandom() * 0.15, 0.5 + reedRandom() * 0.2));
+  for (const r of [...river.reeds(reedRandom), ...(places?.brookReeds ?? [])]) {
+    const set = reedSets[r.kind === 'bank' ? 'rush' : r.kind === 'shallow' ? (reedRandom() < 0.5 ? 'tall' : 'mid') : r.kind === 'tall' ? 'tall' : 'mid'] ?? reedSets.mid;
+    const s = r.s ?? 0.8 + reedRandom() * 0.7;
+    set.matrices.push(matrixAt(r.x, heights.heightAt(r.x, r.z) - 0.05, r.z, r.yaw ?? reedRandom() * 6.28, s, s * (0.8 + reedRandom() * 0.5), s));
+    set.colors.push(reedTint());
   }
+  const reedMaterial = plants ?? new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   for (const [k, set] of Object.entries(reedSets)) {
     if (!set.matrices.length) continue;
-    scene.add(drawDistance.add(tiledInstances(reedGeometry(random, kinds[k]), reedMaterial, set.matrices, { colors: set.colors, name: `reeds-${k}` }), 'roughDistance'));
+    const geo = places ? reedModel(reedRandom, kinds[k]) : reedGeometry(random, kinds[k]);
+    scene.add(drawDistance.add(tiledInstances(geo, reedMaterial, set.matrices, { colors: set.colors, name: `reeds-${k}`, tileSize: places ? MODEL_TILE : undefined }), 'roughDistance'));
   }
+  if (places) buildRiversideCover(c, places, plants);
 
   // Willows in groups along both banks, a pollard among every few, and a big old crack willow beside the farm bridge's place; they lean in the wind.
   const willow = willowGeometry(random);

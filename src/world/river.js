@@ -8,17 +8,33 @@ export function createRiver(layout, brook) {
   const meadow = layout.hill?.riverside;
   if (!river || !meadow || !brook) return null;
   const cross = river.crossing;
+  const anchor = brook.crossing(); // the crossing's one anchor (#999): everything at the crossing stands from it
 
-  /** Posts marking the crossing: two lines across the river at either end of the shallows, `cross.posts` a line, from bank to bank. */
+  // The public footpath's line (layoutNew.js `RESERVED_PLAN`), which comes down the south bank past the crossing: a post is kept off it (#999).
+  const paths = layout.reserved?.footpath ?? [];
+  const offPath = (x, z) => paths.every((pts) => pts.every(([ax, az], i) => {
+    if (!i) return true;
+    const [bx, bz] = pts[i - 1];
+    const len2 = (bx - ax) ** 2 + (bz - az) ** 2 || 1;
+    const t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / len2));
+    return Math.hypot(x - ax - t * (bx - ax), z - az - t * (bz - az)) > 1.3;
+  }));
+
+  /**
+   * Posts marking the crossing: two lines across the river at either end of the shallows, `cross.posts` a line, from bank to bank. A bank post on the
+   * footpath's line moves in towards the water until it is clear of it.
+   */
   function posts() {
     const out = [];
     for (const side of [-1, 1]) {
-      const x = cross.x + side * (cross.half - 0.2);
+      const x = anchor.x + side * (anchor.reach - 0.2);
       const zc = brook.zAt(x);
       const reach = brook.halfAt(x) + 1.2;
       for (let i = 0; i < cross.posts; i++) {
         const t = cross.posts === 1 ? 0.5 : i / (cross.posts - 1);
-        out.push({ x, z: zc - reach + t * reach * 2, line: side });
+        let z = zc - reach + t * reach * 2;
+        for (let k = 0; k < 12 && !offPath(x, z); k++) z += Math.sign(zc - z) * 0.25;
+        out.push({ x, z, line: side });
       }
     }
     return out;
@@ -41,7 +57,7 @@ export function createRiver(layout, brook) {
   });
 
   /** The farm bridge's place (#689) and the crossing, named for the girls' routes (#690): the new farm's river has the bridge, the old one has none. */
-  const places = () => ({ ...(river.bridge ? { bridge: { x: river.bridge.x, z: brook.zAt(river.bridge.x) } } : {}), crossing: { x: cross.x, z: brook.zAt(cross.x) } });
+  const places = () => ({ ...(river.bridge ? { bridge: { x: river.bridge.x, z: brook.zAt(river.bridge.x) } } : {}), crossing: { x: anchor.x, z: anchor.z } });
 
   /**
    * Which part of the river (x, z) is in: 'crossing' on the marked shallows (between the posts, in the water), 'deep' in the river's deep
@@ -59,12 +75,26 @@ export function createRiver(layout, brook) {
   }
 
   /** Whether (x, z) is within `reach` m of the crossing's middle: where a girl remarks on it as you come to it. */
-  const nearCrossing = (x, z, reach = 14) => Math.hypot(x - cross.x, z - brook.zAt(cross.x)) < reach;
+  const nearCrossing = (x, z, reach = 14) => Math.hypot(x - anchor.x, z - anchor.z) < reach;
 
   /**
    * Reed clumps. The new farm's (`meadow.gates`): drifts in the shallows, `kind` 'shallow', and a thin stand now and then up the bank,
    * 'bank', none by the crossing, the drinking places or the bridge (#565). Today's: one every stride along both banks from the hedge to the hurdle.
    */
+  /**
+   * With shaped banks (#999): metres from the line to a reed's place in the shallows on `side`, `t` 0..1 of the way out from as deep as a reed stands
+   * (0.35 m of water) to the water's edge, so a reed by a cut bank stands at its foot and one on a bar out along its shelf.
+   */
+  function shallowAt(x, side, t) {
+    const zc = brook.zAt(x);
+    const dry = brook.depthAt(x) - brook.waterDepthAt(x);
+    let edge = 0;
+    while (edge < brook.halfAt(x) + 3 && brook.cutAt(x, zc + side * edge) > dry) edge += 0.1;
+    let deep = edge;
+    while (deep > 0 && brook.cutAt(x, zc + side * (deep - 0.1)) - dry < 0.35) deep -= 0.1;
+    return deep + (edge - deep) * t;
+  }
+
   function reeds(random) {
     const out = [];
     if (meadow.gates) {
@@ -76,7 +106,7 @@ export function createRiver(layout, brook) {
           for (let d = 0; d < drift; d += 0.5 + random() * 0.6) {
             const xx = x + d;
             if (!clear(xx, side)) continue;
-            out.push({ x: xx, z: brook.zAt(xx) + side * (brook.halfAt(xx) * (0.7 + random() * 0.3)), kind: 'shallow' });
+            out.push({ x: xx, z: brook.zAt(xx) + side * (brook.banks ? shallowAt(xx, side, random()) : brook.halfAt(xx) * (0.7 + random() * 0.3)), kind: 'shallow' });
           }
         } else if (clear(x, side)) {
           out.push({ x, z: brook.zAt(x) + side * (brook.halfAt(x) + 0.3 + random() * 1.5), kind: 'bank' });
@@ -101,5 +131,5 @@ export function createRiver(layout, brook) {
     return (meadow.willows ?? []).map(([x, side, off]) => ({ x, z: brook.zAt(x) + side * (brook.halfAt(x) + off) }));
   }
 
-  return { posts, hurdle, hurdles, places, zoneAt, nearCrossing, reeds, willows, cross, meadow };
+  return { posts, hurdle, hurdles, places, zoneAt, nearCrossing, reeds, willows, cross, anchor, meadow };
 }

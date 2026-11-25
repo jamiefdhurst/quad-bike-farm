@@ -12,6 +12,7 @@ import { resolveWithBarnLocal } from './layoutBarn.js';
 import { barnRaw } from './barnPlan.js';
 import { STONE_TRACKS_PLAN, FARM_BRIDGE_PLAN, BOUNDARY_TRACK_PLAN, HEADLAND_WIDTH, boundaryTrackPoints, trackGateways, headlandRing, densify } from './farmTracks.js';
 import { JOB_FIELDS, fieldWorkPlaces } from './jobFields.js';
+import { createBrook } from './brook.js';
 import { intersectPolygons, polygonArea, polygonBounds, clockwise, edgeBetween, insetPolygon, pointInPolygon, distanceToEdges, polygonEdges, pointAlong } from './polygons.js';
 
 /** Where the game's (0, 0) is on the plan: the middle of the yard. */
@@ -1429,6 +1430,11 @@ export const RIVER_PLAN = {
     bends: { amp: 8, k: 0.068, phase: 0.6 }, vary: { amount: 0.25, k: 0.17, phase: 1 },
     drinks: [[505, -1], [560, -1], [615, -1], [530, 1], [585, 1], [630, 1]],
     worn: [[424, 544, 6], [420, 640, 5]], // [x, z, r] the trodden ground at the gateways from Hay Meadow and the stone track
+    // The banks from the bends (#999, world/brook.js): the water stands `freeboard` m under the field; `wall` m from the bed's edge to the field in a
+    // straight, `cut` on a bend's outside; the bar comes out of the water at `bar.from` of the half-width and runs `bar.reach` m on up to the field;
+    // a bend's banks start at `from` of its sine and are full by `full`; the crossing's landings run `landing` m back and a drinking place `drink`;
+    // `relief` m of hummocks on the banks; the brook past the meadow has its own `wall` as far as `brook.to`, the lane's verge.
+    banks: { freeboard: 0.8, wall: 1.6, cut: 0.9, bar: { from: 0.55, reach: 5.5 }, from: 0.25, full: 0.7, landing: 7, drink: 4.5, relief: 0.14, brook: { wall: 1.3, to: 899 } },
   },
   crossing: { x: 475, half: 4.5, ramp: 3, water: 0.2, posts: 4 },
   bridge: [420, 572],
@@ -1454,6 +1460,7 @@ export function riverLayout(hill, meadow, P = RIVER_PLAN) {
     river: {
       ...R, fromX: fromPlan([R.fromX, 0])[0], toX: fromPlan([R.toX, 0])[0], drinks: R.drinks.map(([x, side]) => [fromPlan([x, 0])[0], side]), worn: R.worn.map(([x, z, r]) => [...fromPlan([x, z]), r]),
       crossing: { ...P.crossing, x: crossX }, bridge: { x: fromPlan(P.bridge)[0], z: fromPlan(P.bridge)[1] },
+      banks: { ...R.banks, brook: { ...R.banks.brook, to: fromPlan([R.banks.brook.to, 0])[0] } },
     },
     riverside: {
       ...meadow, gates: gateXs, trees: [],
@@ -1708,6 +1715,12 @@ function junctionSpot([a, b]) {
   return { x: a[0] + (b[0] - a[0]) * t, z: a[1] + (b[1] - a[1]) * t };
 }
 
+/** The frame budget's spot at the river (#999): on the crossing's north landing, 6 m back from the water, from the crossing's one anchor (brook.js `crossing`). */
+function riverBudgetSpot(hill) {
+  const c = createBrook({ hill })?.crossing();
+  return c ? c.landing(-1, 6) : null;
+}
+
 /** The farm: the base layout (resolved) with what the plan moves put in its place. */
 export function layoutNew(today, raw) {
   const [gx0, gz0] = fromPlan([GROUND_PLAN.minX, GROUND_PLAN.minZ]);
@@ -1733,7 +1746,7 @@ export function layoutNew(today, raw) {
     ...drive, roads: [...drive.roads, village.street, village.track, neighbour.track, backLaneLayout(), aRoadLayout(), streetStubLayout(), ...tracks.roads], farmBridge: tracks.farmBridge, headlands: tracks.headlands,
     woods: wood.woods, logYard: wood.logYard, hill, village: village.village, quarry: pit.quarry, gate: { x: hill.lane.x, z: hill.lane.top, side: 'south', width: today.gate.width, open: true },
     anchors: { ...farmstead.anchors, village: village.anchor, neighbour: neighbour.anchor, logYard: wood.anchor, pit: pit.anchor, hut: { x: hill.hut.x, z: hill.hut.z, yaw: 0 } }, neighbourFarm: neighbour.neighbourFarm, neighbourLand: neighbourLandLayout(),
-    budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, junction: junctionSpot(drive.roads.find((r) => r.id === 'lane').points), hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), backLaneNorth: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.farViewSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z }, ...moorBudgetSpots() }, // the neighbour's just inside her gateway (#569), the Moor's on its ridge and in its middle (#821)
+    budgetSpots: { ...farmstead.budgetSpots, ...pit.budgetSpots, junction: junctionSpot(drive.roads.find((r) => r.id === 'lane').points), hairpins: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.budgetSpot)), backLaneNorth: (([x, z]) => ({ x, z }))(fromPlan(BACK_LANE_PLAN.farViewSpot)), neighbour: { x: neighbour.neighbourFarm.gateway.x + 3, z: neighbour.neighbourFarm.gateway.z }, ...moorBudgetSpots(), river: riverBudgetSpot(hill) }, // the neighbour's just inside her gateway (#569), the Moor's on its ridge and in its middle (#821), the river's crossing (#999)
     fieldLandmarks: fieldLandmarksLayout(), moor: { ...moorLayout(MOOR_FEATURES_PLAN, MOOR_PLAN, fromPlan), gate: moorGateLayout() },
     landmarks: LANDMARKS_PLAN.map((l) => ({ ...l, at: fromPlan(l.at) })),
     // The places a girl names where she is (npc/spotNames.js), where the new farm has them (#690): down the green lane, on the hill by the flask rock, just inside the wood's gate.

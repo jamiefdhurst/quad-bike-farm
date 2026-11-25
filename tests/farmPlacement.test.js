@@ -22,6 +22,7 @@ const KNOWN = [
   { issue: 1216, rule: 'water', name: 'hedge ley|south', at: [880, 650], within: 8 }, // the brook running over the corner where it leaves the farm
   { issue: 1216, rule: 'water', name: 'hedge south|out', at: [885, 649], within: 4 },
   { issue: 1082, rule: 'track', name: 'the lane\'s gateway at plan z 459.5', at: [912, 459.5], within: 1 }, // the small farm's track shut by a lane gate
+  { issue: 1224, rule: 'reserved', name: 'a river gate', at: [640, 606], within: 2 }, // the footpath's crossing out of Brook Meadow is in the river gate's gap
   { issue: 1217, rule: 'track', name: 'an oak by the yard', at: [545, 267], within: 2 }, // the old farm's tree line, on the stone track north
   { issue: 1217, rule: 'reserved', name: 'an oak by the yard', at: [434, 385], within: 2 }, // in the sheep pens' place
   { issue: 1217, rule: 'reserved', name: 'an oak by the yard', at: [430, 351], within: 2 }, // in the machinery shed's place

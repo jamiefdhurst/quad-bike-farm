@@ -10,6 +10,7 @@ import { buildElectricFence } from './electricFenceBuild.js';
 import { buildRiverside } from './riverProps.js';
 import { buildHut } from './hutBuild.js';
 import { woodTries } from './hill.js';
+import { waterEdge } from './riverPlaces.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const WALL_WIDTH = 0.55; // m across the drystone wall's stones, for its far strip
@@ -91,7 +92,11 @@ function buildStream({ scene, heights, fields }) {
         continue;
       }
       const z = brook.zAt(x);
-      run.push({ x, z, half: brook.halfAt(x) * 0.95, y: heights.heightAt(x, z) + wd });
+      // With shaped banks (#999) each side reaches its own water's edge and a hand under the bank, so a bend's bar stands out of the water and the
+      // water meets the foot of its cut bank.
+      const hn = brook.banks ? waterEdge(brook, x, -1) + 0.15 : brook.halfAt(x) * 0.95;
+      const hs = brook.banks ? waterEdge(brook, x, 1) + 0.15 : hn;
+      run.push({ x, z, half: brook.halfAt(x) * 0.95, hn, hs, y: heights.heightAt(x, z) + wd });
     }
     if (run.length > 1) runs.push(run);
   }
@@ -104,7 +109,7 @@ function buildStream({ scene, heights, fields }) {
     const index = [];
     const base = [];
     for (const c of run) {
-      pos.push(c.x, c.y, c.z - c.half, c.x, c.y, c.z + c.half);
+      pos.push(c.x, c.y, c.z - (c.hn ?? c.half), c.x, c.y, c.z + (c.hs ?? c.half));
       base.push(c.y);
       uv.push(c.x / 6, 0, c.x / 6, 1);
     }
