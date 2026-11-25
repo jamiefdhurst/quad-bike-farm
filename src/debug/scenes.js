@@ -17,6 +17,7 @@ import { SETUPS } from './sceneSetups.js';
 export const SCENES = [
   { id: 'callThem', label: 'Put you out on the lane in daylight with the girls in the yard: open your wheel (Enter at nobody) and Call them', lines: ['weather.time 11', 'tp me to lane'] },
   { id: 'exhaustBlow', label: 'Put you in the yard at dawn with the Farm 300 stone cold and its exhaust joint blowing: start it and listen to the tick and chuff fade as it warms', lines: ['weather fair', 'weather.time 7', 'cool all', 'vehicle.farm300.faults.exhaustBlow 0.8', 'tp me to yard'] },
+  { id: 'carrevs', label: 'Put you beside the Finch in daylight with its engine running, to get in and rev it to the top and hear every firing hold together (tp me griffin, vauclair, crag or yak and start the same one for the others)', lines: ['weather fair', 'weather.time 11', 'tp me finch', 'start finch'] },
   { id: 'bearingHum', label: 'Put you in the yard in daylight on the Farm 300 with a worn wheel bearing: ride it and listen to the hum rise with speed and sit on the wheel it is in', lines: ['weather fair', 'weather.time 11', 'vehicle.farm300.faults.bearing 0.8', 'tp me to yard'] },
   {
     id: 'frost',
