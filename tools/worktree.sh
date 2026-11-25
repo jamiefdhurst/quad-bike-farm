@@ -2,8 +2,8 @@
 # A worktree per GitHub issue, so sessions working in parallel never switch each other's branch (docs/decisions/process.md, "Issues, pull
 # requests and releases"). Worktrees live beside the main checkout, not inside it, so the dev server there doesn't watch them.
 #
-#   tools/worktree.sh start <issue>    branch issue-<n>-<slug> from origin/main, print the worktree's path
-#   tools/worktree.sh path <issue>     print the path of an issue's worktree
+#   tools/worktree.sh start <issue>    branch issue-<n>-<slug> from origin/main, print the worktree's path; refuse (exit 1) if it has one
+#   tools/worktree.sh path <issue>     print the path of an issue's worktree (how a session resuming its own item finds it)
 #   tools/worktree.sh finish <issue>   remove the worktree and its local branch (after the PR has merged)
 set -eu
 
@@ -16,7 +16,8 @@ dir="$base/issue-$issue"
 
 case "$cmd" in
   start)
-    if [ -d "$dir" ]; then echo "$dir"; exit 0; fi
+    # One already there is another session's, or this one's from earlier: never hand it out as new (#1191). `path` finds it.
+    if [ -d "$dir" ]; then echo "issue-$issue already has a worktree at $dir: another session may be working it" >&2; exit 1; fi
     title=$(gh issue view "$issue" --json title --jq .title)
     slug=$(printf '%s' "$title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\{1,\}/-/g; s/^-//; s/-$//' | cut -c1-40 | sed 's/-$//')
     git -C "$main" fetch -q origin main
