@@ -283,6 +283,61 @@ class RecordedEngine {
     });
   }
 
+  /**
+   * Whole-cycle idle grains (a four's or a three's) cut into their `n` firings, once per bank and cut, so every engine firing plays
+   * one recorded firing instead of a whole cycle cut short to fit (which dropped its later firings as the revs rose). Each slice is
+   * labelled with the firing rate as a cycle rpm (so it is picked against one firing's period) and linked in recording order.
+   * Returns the kind the slices are kept under.
+   */
+  splitKind(kind, n) {
+    const key = `${kind}/${n}`;
+    if (this.byKind[key]) return key;
+    if (!this.byKind[kind]) return kind;
+    const src = [...this.byKind[kind]].sort((a, b) => a.start - b.start);
+    const d = this.data;
+    const end = d.length - 2;
+    // Each cut goes at the quietest millisecond within a quarter of a firing of the even split, so no firing starts in the middle
+    // of a bang (cut evenly, the Griffin's Carlton recording ticked every firing) and the recording's own spacing is kept.
+    const frame = Math.round(0.001 * sampleRate);
+    const hop = frame >> 1;
+    const quietNear = (at, reach) => {
+      let best = at;
+      let bestE = Infinity;
+      for (let c = Math.max(0, at - reach); c <= Math.min(d.length - frame - 1, at + reach); c += hop) {
+        let e = 0;
+        for (let i = 0; i < frame; i++) e += d[c + i] * d[c + i];
+        if (e < bestE) [bestE, best] = [e, c];
+      }
+      return best;
+    };
+    const out = [];
+    let prevLast = null;
+    for (const g of src) {
+      const each = Math.floor(g.len / n);
+      const cuts = [];
+      for (let i = 0; i < n; i++) cuts.push(quietNear(g.start + i * each, Math.floor(each / 4)));
+      cuts.push(g.start + g.len);
+      let prev = null;
+      for (let i = 0; i < n; i++) {
+        const start = cuts[i];
+        const len = Math.max(frame, cuts[i + 1] - start);
+        const s = { start, len, tail: Math.max(1, Math.min(Math.round(0.003 * sampleRate), end - start - len)), rpm: g.rpm * n, rms: g.rms, kind: key, gain: g.gain, next: null, ok: true, slice: i, whole: g };
+        if (prev) prev.next = s;
+        // A cycle's last firing leads on to the next cycle's first where the two followed on in the recording.
+        else if (prevLast && prevLast.whole.next === g) prevLast.next = s;
+        prev = s;
+        out.push(s);
+      }
+      prevLast = prev;
+    }
+    out.sort((a, b) => a.rpm - b.rpm);
+    this.byKind[key] = out;
+    const rms = out.map((s) => s.rms).sort((a, b) => a - b);
+    this.medianRms[key] = rms[rms.length >> 1] || 1;
+    this.medianRpm[key] = out[out.length >> 1].rpm;
+    return key;
+  }
+
   /** How far the pulse sound has blended into real rev firings at this rpm: 0 without any, or where the quad sets no range. */
   pulseRevBlend(p, rpm) {
     return p.pulseRevHi > p.pulseRevLo && this.byKind.accel ? smoothstep(p.pulseRevLo, p.pulseRevHi, rpm) : 0;
@@ -322,6 +377,9 @@ class RecordedEngine {
         // Which recorded machine it idles on: the main quad, the ATV rev recording, or a third.
         const idleKinds = [{ rev: 'idle2', third: 'idle3' }[p.recIdleSource] ?? 'idle'];
         if (p.engineSound === 'pulse') {
+          // An idle of whole cycles cut into its firings (pulseSplit), so each of the engine's firings plays one of them.
+          const split = Math.round(p.pulseSplit ?? 1);
+          if (split > 1) idleKinds[0] = this.splitKind(idleKinds[0], split);
           // Revs built from idle: every firing is a recorded idle firing, cut off when the next one fires.
           // pulseDivide N sounds only every Nth firing, given N firings' time: the recording slowed to 1 / N.
           const every = Math.max(1, Math.round(p.pulseDivide ?? 1));
@@ -338,7 +396,12 @@ class RecordedEngine {
           const revW = this.pulseRevBlend(p, rpm);
           if (revW < 0.999) {
             let g;
-            if (leads && cycleRpm > p.pulseCleanUp * this.medianRpm[idleKinds[0]]) {
+            const cur = this.cursor.low;
+            if (cur?.whole && cur.kind === idleKinds[0]) {
+              // Cut into firings: carry on through the recording in order, a cycle's firings one after another and on into the next
+              // cycle where it followed on; a fresh one, picked by the revs, only where the recording breaks.
+              g = cur.next ?? this.pick(idleKinds, cycleRpm);
+            } else if (leads && cycleRpm > p.pulseCleanUp * this.medianRpm[idleKinds[0]]) {
               g = this.pickFrom([...leads], cycleRpm);
             } else {
               const next = this.readThrough ? this.cursor.low?.next : null;
