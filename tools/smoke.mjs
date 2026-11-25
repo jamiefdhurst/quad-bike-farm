@@ -12,7 +12,7 @@
 // the top of smokeActions.mjs. It also fails if a list comes back empty.
 // And it measures how much of the code that reached (tools/smokeCoverage.mjs): the share of game.js, of each host file and of all of src, against a floor for each
 // in that file. Chrome's coverage needs a file per module, so this needs the dev server (SMOKE_DEV=1, which CI sets); on the build it says so and skips it.
-// A share under its floor fails the run and says which. To raise a floor, run the Smoke job a few times, read the shares in its summary and set it 2 points
+// A share under its floor fails the run and says which. To raise a floor, run the Smoke play job a few times, read the shares in its summary and set it 2 points
 // under the lowest. A new host file needs a line there (a test fails until it has one).
 //
 // It uses the built game in dist/ if there is one (?smoke exposes window.game in a build), else the dev server (SMOKE_DEV=1 forces that).
@@ -21,6 +21,9 @@
 //   npm run smoke                  SMOKE_SECONDS=10 npm run smoke   shorter phases
 //   SMOKE_CPU_THROTTLE=6 npm run smoke   the CPU slowed six times, as a starved machine is: every wait counts game time (#770), so this passes
 //   CHROME_PATH=/path/to/chrome    to use a particular Chrome (else a system Chrome is looked for)
+//   SMOKE_PART=load                only load, measure the frame budget and run the phases (CI's Smoke load job, on the build)
+//   SMOKE_PART=play                only load, make the girls and sound run, do every action, ride and scene, and measure what that reached (CI's Smoke play job, SMOKE_DEV=1)
+// With no SMOKE_PART it runs both parts in one load, as before the split (#1182). Each part fails on the same errors, so neither job is blind to a fault.
 import { existsSync, writeFileSync } from 'node:fs';
 import { cpus, totalmem } from 'node:os';
 import { createServer, preview } from 'vite';
@@ -38,6 +41,15 @@ const PHASES = [
   { name: 'sunny', weather: 'sunny', clockRate: 1, seconds: SECONDS / 2 },
   { name: 'snow, fast clock into dusk', weather: 'snow', clockRate: 600, seconds: SECONDS / 2 },
 ];
+
+// Which part to run (#1182): CI runs the two side by side, as two jobs, so the check takes the time of the longer rather than of both.
+const PART = process.env.SMOKE_PART || '';
+if (!['', 'load', 'play'].includes(PART)) {
+  console.error(`smoke: SMOKE_PART is "${PART}": it takes load, play or nothing (both).`);
+  process.exit(2);
+}
+const LOADS = PART !== 'play'; // the frame budget and the weather phases
+const PLAYS = PART !== 'load'; // the girls and sound made to run, every action, ride and scene, and what the run reached
 
 const executablePath = chromePath();
 if (!executablePath) {
@@ -74,7 +86,7 @@ async function run() {
   if (process.env.SMOKE_CPU_THROTTLE) await (await page.createCDPSession()).send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.SMOKE_CPU_THROTTLE) }); // a starved machine (#770)
   await page.evaluateOnNewDocument(stubDraws);
   await page.evaluateOnNewDocument(recordLoadSteps);
-  if (!built) await page.coverage.startJSCoverage({ resetOnNavigation: false }); // what the run reaches, per file (smokeCoverage.mjs)
+  if (!built && PLAYS) await page.coverage.startJSCoverage({ resetOnNavigation: false }); // what the run reaches, per file (smokeCoverage.mjs)
   await page.goto(`${base}?smoke&${QUERY}`, { waitUntil: 'load' });
   try {
     await waitForReady(page);
@@ -94,7 +106,34 @@ async function run() {
     game.audioHub.unlock();
   });
   await page.evaluate(installGameClock, { factor: HUNG_FACTOR, flat: HUNG_FLAT_S }); // every wait below counts the game's time, not real seconds (#770)
-  // The frame's budget, from fixed spots on the farm while it is still sunny at the start (tools/frameBudget.mjs); the numbers go to a file for the job summary.
+  if (LOADS) await measureBudget(page, note);
+  if (PLAYS) await play(page, note);
+  if (LOADS) await runPhases(page, note);
+  else {
+    // The phases run in the other job, so look once at where everyone is after the rides: a vehicle left under the ground is caught here too.
+    await page.evaluate(() => smokeWait(2));
+    for (const o of await page.evaluate(oddPositions)) note(`odd: ${o}`);
+  }
+  const guarded = await page.evaluate(() => game.guard.summary());
+  for (const g of guarded) note(`feature ${g.name} threw ${g.count}x: ${g.message}`);
+  const ran = await page.evaluate(() => game.firstFrameDone === true);
+  if (!ran) note('no frame ever finished');
+  if (!PLAYS) console.log('reached: not measured (the play part measures it)');
+  else if (!built) {
+    const { rows, failures } = checkShares(sharesOf(bytesByFile(await page.coverage.stopJSCoverage())));
+    writeFileSync(process.env.SMOKE_COVERAGE_OUT ?? 'smoke-coverage.md', summaryMarkdown(rows));
+    console.log(`what the run reached, against each floor (tools/smokeCoverage.mjs):\n${rows.map((r) => `  ${r.label.padEnd(32)} ${r.share.toFixed(1).padStart(5)}%  floor ${r.floor ?? 'none'}%`).join('\n')}`);
+    for (const f of failures) note(`reach: ${f}`);
+  } else console.log('reached: not measured (it needs the dev server: SMOKE_DEV=1)');
+  await page.close();
+  const bad = [...seen].map(([k, n]) => `${n}x ${k}`);
+  const did = [LOADS && 'the frame budget', PLAYS && 'every action, ride and scene', LOADS && PHASES.map((p) => p.name).join(', then ')].filter(Boolean).join('; ');
+  console.log(`${bad.length ? 'FAIL' : 'ok  '} ${PART || 'both parts'}: ${did} (loaded in ${Math.round((loaded - t0) / 1000)} s, ${Math.round((Date.now() - loaded) / 1000)} s played)${bad.length ? '\n  ' + bad.join('\n  ') : ''}`);
+  if (bad.length) problems.push('smoke');
+}
+
+// The frame's budget, from fixed spots on the farm while it is still sunny at the start (tools/frameBudget.mjs); the numbers go to a file for the job summary.
+async function measureBudget(page, note) {
   const measured = await page.evaluate(measureInPage, MEASURE_ARGS);
   if (measured.error) note(`budget: ${measured.error}`);
   else {
@@ -104,7 +143,10 @@ async function run() {
     for (const m of missing) note(`budget: ${m} not measured (${measured.notes.join(', ') || 'no reason given'})`);
     console.log(rows.map((r) => `  ${r.spot.padEnd(8)} ${String(Math.round(r.calls)).padStart(5)} calls ${(r.triangles / 1e6).toFixed(2)}M triangles${r.over.length ? (r.known ? '  over (known overrun)' : '  OVER') : ''}`).join('\n'));
   }
-  // The girls choose and a radio plays, then the phases run with them getting on with it.
+}
+
+// The girls choose and a radio plays, then everything a player and the girls can do; then the girls are got down, for the phases if they follow.
+async function play(page, note) {
   const madeToRun = await page.evaluate(async (limit) => {
     const g = game;
     const you = g.camera.position;
@@ -177,6 +219,28 @@ async function run() {
       game.settleGirl(c);
     }
   });
+}
+
+// Every girl and vehicle where it should be: a number for its position, a girl stood or walking on the ground, a vehicle not under it. Runs in the page.
+function oddPositions() {
+  const out = [];
+  for (const c of game.companions) {
+    const r = c.root;
+    const wp = r.getWorldPosition(new r.position.constructor());
+    const st = c.fsm.name;
+    if (!Number.isFinite(wp.x + wp.y + wp.z)) out.push(`${c.character.id} NaN position in ${st}`);
+    else if (['idle', 'walking'].includes(st) && Math.abs(wp.y - game.world.heightAt(wp.x, wp.z)) > 0.6) out.push(`${c.character.id} ${st}: off the ground`);
+  }
+  for (const u of game.units) {
+    const q = u.quad.position;
+    if (!Number.isFinite(q.x + q.y + q.z)) out.push(`${u.id} NaN position`);
+    else if (q.y < game.world.heightAt(q.x, q.z) - 2) out.push(`${u.id} under the ground`);
+  }
+  return out;
+}
+
+// The weather and the clock changed in the page, with everyone's position looked at every 2 game seconds.
+async function runPhases(page, note) {
   for (const phase of PHASES) {
     await page.evaluate((ph) => {
       game.weatherHost.setKind(ph.weather);
@@ -184,39 +248,9 @@ async function run() {
     }, phase);
     for (let t = 0; t < phase.seconds; t += 2) {
       await page.evaluate(() => smokeWait(2)); // game seconds (#770)
-      const out = await page.evaluate(() => {
-        const out = [];
-        for (const c of game.companions) {
-          const r = c.root;
-          const wp = r.getWorldPosition(new r.position.constructor());
-          const st = c.fsm.name;
-          if (!Number.isFinite(wp.x + wp.y + wp.z)) out.push(`${c.character.id} NaN position in ${st}`);
-          else if (['idle', 'walking'].includes(st) && Math.abs(wp.y - game.world.heightAt(wp.x, wp.z)) > 0.6) out.push(`${c.character.id} ${st}: off the ground`);
-        }
-        for (const u of game.units) {
-          const q = u.quad.position;
-          if (!Number.isFinite(q.x + q.y + q.z)) out.push(`${u.id} NaN position`);
-          else if (q.y < game.world.heightAt(q.x, q.z) - 2) out.push(`${u.id} under the ground`);
-        }
-        return out;
-      });
-      for (const o of out) note(`odd: ${o}`);
+      for (const o of await page.evaluate(oddPositions)) note(`odd: ${o}`);
     }
   }
-  const guarded = await page.evaluate(() => game.guard.summary());
-  for (const g of guarded) note(`feature ${g.name} threw ${g.count}x: ${g.message}`);
-  const ran = await page.evaluate(() => game.firstFrameDone === true);
-  if (!ran) note('no frame ever finished');
-  if (!built) {
-    const { rows, failures } = checkShares(sharesOf(bytesByFile(await page.coverage.stopJSCoverage())));
-    writeFileSync(process.env.SMOKE_COVERAGE_OUT ?? 'smoke-coverage.md', summaryMarkdown(rows));
-    console.log(`what the run reached, against each floor (tools/smokeCoverage.mjs):\n${rows.map((r) => `  ${r.label.padEnd(32)} ${r.share.toFixed(1).padStart(5)}%  floor ${r.floor ?? 'none'}%`).join('\n')}`);
-    for (const f of failures) note(`reach: ${f}`);
-  } else console.log('reached: not measured (it needs the dev server: SMOKE_DEV=1)');
-  await page.close();
-  const bad = [...seen].map(([k, n]) => `${n}x ${k}`);
-  console.log(`${bad.length ? 'FAIL' : 'ok  '} ${PHASES.map((p) => p.name).join(', then ')} (loaded in ${Math.round((loaded - t0) / 1000)} s, ${Math.round((Date.now() - loaded) / 1000)} s played)${bad.length ? '\n  ' + bad.join('\n  ') : ''}`);
-  if (bad.length) problems.push('smoke');
 }
 
 try {

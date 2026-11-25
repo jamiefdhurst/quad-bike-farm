@@ -13,21 +13,23 @@ concurrency:
   group: test-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-# The unit tests (in three shards) and Smoke run side by side; Test waits for them all and is the one check main requires, so the required
-# name never changes (#284, #286). Each checks out only the tree: the full history is gigabytes of audio, and nothing here reads it. The
-# shards leave the recordings out and Smoke takes them from the cache (#640).
-# Changes looks at the PR's files first: prose alone (tools/ciChanges.mjs) skips the shards and Smoke, and Test passes without them (#636).
+# The unit tests (in three shards) and Smoke (in two parts) run side by side; Test waits for them all and is the one check main requires, so the
+# required name never changes (#284, #286, #1182). Each checks out only the tree: the full history is gigabytes of audio, and nothing here reads it.
+# The shards leave the recordings out and Smoke takes them from the cache (#640).
+# Changes looks at the PR's files first (tools/ciChanges.mjs): prose alone skips the shards and Smoke, and Test passes without them (#636); prose a
+# test reads, or the tests alone, can't reach the game, so they skip Smoke and run the shards (#1182).
 jobs:
   Changes:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.files.outputs.code }}
+      smoke: ${{ steps.files.outputs.smoke }}
     steps:
       - uses: actions/checkout@v7
         with:
           sparse-checkout: tools
       # The runner's own Node: the script needs nothing from mise.toml, and this saves installing it.
-      - name: Does it change anything but prose?
+      - name: Does it change anything but prose, and can it reach the game?
         id: files
         env:
           GH_TOKEN: ${{ github.token }}
@@ -86,10 +88,19 @@ jobs:
       - name: Test
         run: npm test -- --testTimeout=30000 --shard=${{ matrix.shard }}/3
 
+  # Two jobs side by side, each loading the game once (tools/smoke.mjs, SMOKE_PART): load plays the build and holds the frame to its budget, then
+  # runs the weather phases; play runs on the dev server, makes the girls and sound run, does every action, verb, prompt, ride and scene, and
+  # measures what that reached. The check then takes the time of the longer, not of both (#1182).
   Smoke:
+    name: Smoke ${{ matrix.part }}
     needs: Changes
-    if: needs.Changes.outputs.code == 'true'
+    if: needs.Changes.outputs.smoke == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      # Let the other part finish, so one red run shows every fault.
+      fail-fast: false
+      matrix:
+        part: [load, play]
     steps:
       # The game plays its recordings, so they come back from the Actions cache rather than a fresh git fetch (#640).
       - uses: actions/checkout@v7
@@ -113,21 +124,22 @@ jobs:
           restore-keys: npm-${{ runner.os }}-
       - name: Install dependencies
         run: node --version && npm ci
-      # The smoke test plays the built game when there is one, so this is also the check that it builds. With one commit checked out, the
-      # FAQ's "Recently changed" has one entry; the release builds it again on main with 300.
+      # The load part plays the built game, so this is also the check that it builds. With one commit checked out, the FAQ's "Recently changed"
+      # has one entry; the release builds it again on main with 300.
       - name: Build
+        if: matrix.part == 'load'
         run: npm run build
-      # Runs the real game in headless Chrome (the runner's own) with software GL and fails on any error or oddity (tools/smoke.mjs). It plays
-      # the dev server's modules, not the build: Chrome's coverage needs a file for each module to say how much of each the run reached, and the
-      # build is one bundle (SMOKE_DEV=1; #767). The Build step above is still the check that it builds.
-      - name: Smoke test
-        run: SMOKE_DEV=1 CHROME_PATH=$(which google-chrome) npm run smoke
+      # Runs the real game in headless Chrome (the runner's own) with software GL and fails on any error or oddity (tools/smoke.mjs). The play part
+      # plays the dev server's modules, not a build: Chrome's coverage needs a file for each module to say how much of each the run reached, and the
+      # build is one bundle (SMOKE_DEV=1; #767).
+      - name: Smoke test (${{ matrix.part }})
+        run: SMOKE_PART=${{ matrix.part }} ${{ matrix.part == 'play' && 'SMOKE_DEV=1' || '' }} CHROME_PATH=$(which google-chrome) npm run smoke
         timeout-minutes: 12
       # The smoke test also holds the frame to its budget (draw calls and triangles from fixed spots, tools/frameBudget.mjs) and fails a PR over it.
       # This prints the numbers in the job summary with the change from main: main's numbers are the newest merge in the history the Release
       # workflow keeps, not main built and measured again here (#636). It never fails the job: with no history the table has no change column.
       - name: Frame budget against main
-        if: always()
+        if: always() && matrix.part == 'load'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -136,20 +148,23 @@ jobs:
           node tools/budget.mjs --summary budget-pr.json --history history.json >> "$GITHUB_STEP_SUMMARY"
       # How much of game.js, of each host file and of all of src the run reached, beside its floor (tools/smokeCoverage.mjs).
       - name: What the smoke run reached
-        if: always()
+        if: always() && matrix.part == 'play'
         run: '[ -f smoke-coverage.md ] && { echo; cat smoke-coverage.md; } >> "$GITHUB_STEP_SUMMARY" || true'
 
-  # always(): if a Unit shard or Smoke fails this would otherwise be skipped, and a skipped required check counts as passed. Skipped shards
-  # and Smoke pass only when Changes ran and said the PR is prose alone.
+  # always(): if a Unit shard or Smoke fails this would otherwise be skipped, and a skipped required check counts as passed. Skipped shards pass
+  # only when Changes ran and said the PR is prose alone, and a skipped Smoke only when it said the PR can't reach the game. An answer that is
+  # neither true nor false fails, so a Changes that stops saying fails rather than skipping a job (#1182).
   Test:
     needs: [Changes, Issue, Unit, Smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: The issue check passed, and every shard and Smoke did, or the PR is prose alone
+      - name: The issue check passed, and every shard and Smoke part did, or the PR didn't need them
         run: |
-          echo "Changes: ${{ needs.Changes.result }} (code ${{ needs.Changes.outputs.code }}), Issue: ${{ needs.Issue.result }}, Unit: ${{ needs.Unit.result }}, Smoke: ${{ needs.Smoke.result }}"
+          code="${{ needs.Changes.outputs.code }}"; smoke="${{ needs.Changes.outputs.smoke }}"
+          echo "Changes: ${{ needs.Changes.result }} (code $code, smoke $smoke), Issue: ${{ needs.Issue.result }}, Unit: ${{ needs.Unit.result }}, Smoke: ${{ needs.Smoke.result }}"
           [ "${{ needs.Changes.result }}" = success ] || exit 1
           [ "${{ needs.Issue.result }}" = success ] || exit 1
-          [ "${{ needs.Changes.outputs.code }}" = false ] && exit 0
-          [ "${{ needs.Unit.result }}" = success ] && [ "${{ needs.Smoke.result }}" = success ]
+          case "$code $smoke" in "true true"|"true false"|"false false") ;; *) echo "Changes said code=$code smoke=$smoke"; exit 1 ;; esac
+          [ "$code" = false ] || [ "${{ needs.Unit.result }}" = success ] || exit 1
+          [ "$smoke" = false ] || [ "${{ needs.Smoke.result }}" = success ] || exit 1
