@@ -400,6 +400,7 @@ export class World {
     this.puddleIce.update(dt, this.weather.temperature, this.weather.rain);
     this.puddleIceView.sync();
     this.props.yard?.userData.setWet(this.wet); // the water standing in the yard's low spots (#817)
+    this.props.pitEntrance?.userData.setWet(this.wet); // and in the ruts of the pit's lane entrance (#1002)
   }
 
   /** Gives the hill, and the water drawn, the stream's level as it is now. */

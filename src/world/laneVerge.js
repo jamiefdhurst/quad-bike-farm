@@ -208,14 +208,19 @@ export function dockGeometry(random) {
   return finish(a.pos, a.uv, a.colors);
 }
 
-/** Puts the verge plants of `road` in the scene as three tiled instance groups. `skip(s, side)` leaves a stretch bare. Returns the groups. */
-export function buildVerge({ scene, heights, random, drawDistance }, road, skip) {
-  const plants = vergePlants(road, random, skip);
-  const makers = {
+/** The three weeds as { kind: [geometry, material] }, for the verge and for any other rough corner (the pit's lane entrance, #1002). */
+export function vergeMakers(random) {
+  return {
     parsley: [parsleyGeometry(random), plantMaterial(umbelTexture(random))],
     nettle: [nettleGeometry(random), plantMaterial(vergeLeafTexture('#3f6f2c', 7))],
     dock: [dockGeometry(random), plantMaterial(vergeLeafTexture('#58803a', 3))],
   };
+}
+
+/** Puts the verge plants of `road` in the scene as three tiled instance groups. `skip(s, side)` leaves a stretch bare. Returns the groups. */
+export function buildVerge({ scene, heights, random, drawDistance }, road, skip) {
+  const plants = vergePlants(road, random, skip);
+  const makers = vergeMakers(random);
   const groups = [];
   for (const kind of Object.keys(makers)) {
     const matrices = plants.filter((p) => p.kind === kind).map((p) => {

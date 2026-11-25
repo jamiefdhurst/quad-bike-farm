@@ -211,7 +211,8 @@ describe('the gates and the fences in a physics world', () => {
   });
 
   it('shuts the lane gate for good: nothing opens it and a walking player cannot pass it', () => {
-    expect(gates.lane).toBeUndefined(); // built, but not a `Gate`: there is nothing to open
+    expect(gates.lane?.name).toBe('pitEntrance'); // built and dressed (#1002), but not a `Gate`: there is nothing to open
+    expect(gates.lane.isOpen).toBeUndefined();
     const end = walk({ x: lane.x - 14, z: lane.z }, { x: lane.x + 14, z: lane.z });
     expect(end.x).toBeGreaterThan(lane.x - 1.2); // it walked right up to the gate
     expect(end.x).toBeLessThan(lane.x - 0.2); // and no further

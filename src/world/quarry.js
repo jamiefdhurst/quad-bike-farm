@@ -10,6 +10,7 @@
 import { createRandom } from '../core/random.js';
 import { dealPlant, inPlantsWay, plantPadWeight } from './plantSite.js';
 import { polygonEdges, pointInPolygon, outsidePolygon, polygonBounds, outsideBounds } from './polygons.js';
+import { laneGateOf, spoilBankOf, bankRise } from './pitEntrance.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const smoothstep = (a, b, x) => {
@@ -340,6 +341,11 @@ export function createQuarry(layout) {
     return r >= 1 ? 0 : pond.depth * (1 - smoothstep(0.3, 1, r));
   };
 
+  // The spoil bank along the lane side of the new farm's field, with the haul road's gap through it (pitEntrance.js, #1002): the pit's landmark from the lane.
+  const laneGate = outline ? laneGateOf(gates) : null;
+  const bank = laneGate ? spoilBankOf(laneGate) : null;
+  const bankAt = (x, z, rd) => (bank ? bankRise(bank, x, z, () => rd.d, roadHalf) : 0);
+
   const heapRise = (x, z) => {
     let h = 0;
     for (const m of pit.heaps) {
@@ -376,7 +382,8 @@ export function createQuarry(layout) {
     const dz = z - pit.z;
     const near = dx * dx + dz * dz <= (reachMax + ZONE_FADE) ** 2;
     const rd = roadNear(x, z);
-    if (!near && rd.d > roadHalf + ROAD_SHOULDER) return h;
+    const rise = bankAt(x, z, rd);
+    if (!near && rd.d > roadHalf + ROAD_SHOULDER) return h + rise;
     let base = h;
     let cut = 0;
     if (near) {
@@ -396,7 +403,7 @@ export function createQuarry(layout) {
     // The screening plant's pad is level: the floor's roughness and the foot of a wall are levelled out under it, and eased back in beyond its edge.
     const flat = plantPadWeight(pit.plant, x, z);
     if (flat > 0) out += (level - pit.depth - out) * flat;
-    return out - pondCut(x, z) + heapRise(x, z);
+    return out - pondCut(x, z) + heapRise(x, z) + rise;
   }
 
   /** 0..1 how much standing water there is at (x, z): the pond, where it is cut deeper than the water stands. */
@@ -476,7 +483,8 @@ export function createQuarry(layout) {
 
   return {
     rect, outline, name: q.name, pit, gate, gates, way, pond, waitSpot, climb,
-    weight, groundAt, waterAt, mudAt, gravelAt, roadAt, pondCut, bowlCut, heapRise, inQuarry, inPit, pastGate, plantOk,
+    weight, groundAt, waterAt, mudAt, gravelAt, roadAt, pondCut, bowlCut, heapRise, inQuarry, inPit, pastGate, plantOk, laneGate, bank,
+    bankAt: (x, z) => bankAt(x, z, roadNear(x, z)),
     polar, frameAt, rimAt, runAt, floorEdge, roadNear, fenceOpen, roadPoints: roadPts, rampPoints: rampPts, roadHalf, roadLength, reachMax,
     outside: (x, z) => (outline ? outsidePolygon(outline, x, z, outlineEdges) : outside(rect, x, z)),
   };

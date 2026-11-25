@@ -15,7 +15,7 @@ import { buildWeatherVane } from './weatherVane.js';
 import { buildJumpRamp } from './jumpRamp.js';
 import { buildHill } from './hillProps.js';
 import { buildWoods } from './woodsProps.js';
-import { buildQuarry } from './quarryProps.js';
+import { buildQuarry, buildPitEntrance } from './quarryProps.js';
 import { buildFieldLandmarks } from './landmarkProps.js';
 import { buildOutbuildings } from './outbuildingProps.js';
 import { buildNeighbourFarm } from './neighbourFarmProps.js';
@@ -75,7 +75,7 @@ export function buildProps(ctx) {
   const hedgeSwap = run('buildHedges', () => buildHedges(c));
   c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
   const gates = run('gates', () => [buildGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c), buildBypassGate(c), buildMoorGate(c)].filter(Boolean));
-  run('buildPitLaneGate', () => buildPitLaneGate(c));
+  const pitEntrance = run('buildPitLaneGate', () => buildPitLaneGate(c)); // the pit's shut lane gate and its entrance (#685, #1002)
   run('buildCattleGrid', () => buildCattleGrid(c));
   run('buildReflectorPosts', () => buildReflectorPosts(c));
   run('buildDriveVerge', () => buildDriveVerge(c));
@@ -115,7 +115,7 @@ export function buildProps(ctx) {
   run('buildFieldLandmarks', () => buildFieldLandmarks(c)); // the new farm's landmark in each field (#815); today's farm has none
   const jumpRamp = ctx.layout.jumpRamp ? run('buildJumpRamp', () => buildJumpRamp(c)) : null;
   const treeSwap = run('scatter', () => c.scatter.build(c.scene)); // every builder's oaks and bushes, the far ones swapped in beyond treeFullDistance
-  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: [treeSwap].filter(Boolean), barn, yardLights, vane, jumpRamp, silage, puddles, yard, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors, later: c.later };
+  return { hedgeSwaps: [hedgeSwap, hillProps?.wallSwap, neighbourLand?.hedgeSwap, backLane?.hedgeSwap, moor?.hedgeSwap, aRoad?.hedgeSwap].filter(Boolean), treeSwaps: [treeSwap].filter(Boolean), barn, yardLights, vane, jumpRamp, silage, puddles, yard, pitEntrance, gates, neighbourFarm, neighbourLand, village, gateParams: c.gateParams, moor, stream: hillProps?.stream ?? null, hut: hillProps?.hut ?? null, anchors: c.anchors, later: c.later };
 }
 
 function buildBarn(c) {
@@ -194,12 +194,11 @@ function buildQuarryGate(c) {
 
 /**
  * The pit's lane gate on the new farm (#685): the way the lorries came in, now shut and chained for good (Jamie, 15 November 2026). Solid and
- * never a `Gate`, so nothing opens it: the haul road ends in it, and you and the girls come in by the farm gate.
+ * never a `Gate`, so nothing opens it: the haul road ends in it, and you and the girls come in by the farm gate. Dressed with its entrance (#1002):
+ * quarryProps.js `buildPitEntrance`, which keeps this gate's collider as it was. Returns the entrance's group, or null.
  */
 function buildPitLaneGate(c) {
-  const lane = c.layout.quarry?.gates?.find((g) => !g.open);
-  if (!lane) return;
-  buildSteelGate({ ...c, id: 'pitlane', x: lane.x, z: lane.z, w: lane.width - 0.4, fixed: true });
+  return buildPitEntrance(c);
 }
 
 /**
@@ -312,10 +311,9 @@ function buildMoorGate({ layout, fields, ...c }) {
 }
 
 /**
- * Two steel leaves hung from timber posts across the road at (x, z), `w` m between the posts; `swing` -1 opens them west, 1 east. `fixed` makes it
- * a gate that is shut for good: solid, and not a `Gate`, so there is nothing to open (the pit's lane gate).
+ * Two steel leaves hung from timber posts across the road at (x, z), `w` m between the posts; `swing` -1 opens them west, 1 east.
  */
-function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swing, gap, fixed = false, turn = 0 }) {
+function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swing, gap, turn = 0 }) {
   const y = heights.heightAt(x, z);
   const steel = new THREE.MeshStandardMaterial({ color: 0xa8adaf, metalness: 0.6, roughness: 0.45 });
   const timber = new THREE.MeshStandardMaterial({ color: 0x5e4c38, roughness: 0.95 });
@@ -365,7 +363,6 @@ function buildSteelGate({ scene, heights, fixedBox, gateParams, id, x, z, w, swi
   enableShadows(g);
   scene.add(g);
   const solid = fixedBox(x, y + 0.8, z, 0.2, 0.9, w / 2 + 0.3, turn);
-  if (fixed) return null;
   return new Gate({
     id,
     params: gateParams,

@@ -2,6 +2,7 @@
 // steel container, an old excavator left on the floor and a screening plant (a hopper and crusher on a pad, conveyors and a screen, delivering onto a heap), its cabin and generator, drums and
 // tyres by the pond, hawthorn and gorse along the lip, boulders and flints fallen from the walls, dead trees, and the pond with its reeds.
 // All procedural, with canvas textures; the big pieces have colliders. The ground itself (the walls, the heaps, the road) is the terrain's.
+// And the lane entrance on the new farm (#1002): the shut lane gate dressed, its bellmouth, blocks, barrier, signs, weeds, buddleia, hedge and litter.
 
 import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -11,7 +12,18 @@ import { woodTexture } from './neighbourTextures.js';
 import { tiledInstances, MODEL_TILE } from './tiledInstances.js';
 import { quarryPlants } from './quarry.js';
 import { Parts } from './parts.js';
-import { rustTexture, signTexture } from './quarryTextures.js';
+import { rustTexture, signTexture, bellmouthTexture, bellmouthUv, tarmacTexture } from './quarryTextures.js';
+import { roadNetwork } from './roads.js';
+import { crownAt } from './roadMesh.js';
+import { leafReach } from './hedgeSolid.js';
+import { leafParts, standingWater } from './yardKit.js';
+import { vergeMakers } from './laneVerge.js';
+import { worksSignTexture, privatePlateTexture } from './villageTextures.js';
+import { laneGateOf, laneReach, entrancePlan, entranceHedges, rutDip, tarmacAt, ENTRANCE, SIGN_WORDS } from './pitEntrance.js';
+import {
+  entranceMaterials, addGatePost, addHinges, addChainAndLock, addConcreteBlock, addHeightBarrier, addSignBoard, buddleiaMaterials, addBuddleia,
+  litterMaterials, addLitter, drapeGeometry, tarmacChunkGeometry,
+} from './entranceKit.js';
 import { buildExcavator, excavatorMaterials } from './excavatorModel.js';
 import { buildContainer, containerMaterials } from './containerModel.js';
 import { buildCabin, cabinMaterials } from './siteCabinModel.js';
@@ -417,12 +429,12 @@ function buildFence(site, quarry, { mats, wood, groundY, random, fixedBox }) {
   fence.name = 'quarryFence';
   site.add(fence);
 
-  // The signs: where the road comes in, over the pond, and one on the far side, each on a post of its own, leaning a little.
+  // The signs: where the road comes in and over the pond, each on a post of its own, leaning a little. The third, a private sign in American wording on the
+  // far side, went with the lane entrance's signs (#1002); its two draws are still taken, so everything dealt after it in the pit stands where it did.
   const road = quarry.pit.road;
   const signs = [
     { a: road.from + road.dir * 0.35, back: 3.4, tex: signTexture('DANGER', ['UNSTABLE FACES', 'KEEP OUT']) },
     { a: Math.atan2(quarry.pond.z - quarry.pit.z, quarry.pond.x - quarry.pit.x) - quarry.pit.yaw, back: 3.4, tex: signTexture('DANGER', ['DEEP WATER', 'NO SWIMMING']) },
-    { a: quarry.pit.climbAt + 1.25, back: 3.4, tex: signTexture('PRIVATE', ['GRAVEL PIT', 'NO TRESPASSING'], { bg: '#e9e5d6' }) },
   ];
   for (const sg of signs) {
     const p = quarry.frameAt(sg.a, quarry.rimAt(sg.a) + sg.back);
@@ -432,4 +444,198 @@ function buildFence(site, quarry, { mats, wood, groundY, random, fixedBox }) {
     g.rotation.set(0, Math.atan2(quarry.pit.x - p.x, quarry.pit.z - p.z) + Math.PI + (random() - 0.5) * 0.4, (random() - 0.5) * 0.12); // facing out from the pit
     site.add(g);
   }
+  random();
+  random();
+}
+
+/**
+ * The Old Pit's lane entrance on the new farm (#1002), the way the lorries came in, now shut for good: the lane gate dressed (two galvanised leaves gone
+ * dull on precast concrete posts, chained and padlocked, with #685's collider as it was), the splayed bellmouth of broken tarmac into hardcore with its
+ * ruts and puddles and the chippings washed onto the lane, two concrete blocks, a rusty height barrier with reflective bands, the faded operator's board
+ * and a newer plate on the gate, weeds and buddleia along the fence, a remnant hedge either side with litter caught in it. Where each stands is
+ * pitEntrance.js `entrancePlan`. One set piece, `pitEntrance` (farDetail.js), and the hedge on its own. Null on a farm with no lane gate.
+ * Returns the group; `userData.setWet(wet)` fills the ruts' puddles with the ground's wetness, as the yard's.
+ */
+export function buildPitEntrance(c) {
+  const { scene, layout, heights, fixedBox, random, models } = c;
+  const gate = laneGateOf(layout.quarry?.gates);
+  if (!gate) return null;
+  const net = roadNetwork(layout);
+  const reach = laneReach(gate, (x, z) => net.onRoad('lane', x, z));
+  const plan = entrancePlan(gate, reach);
+  const f = plan.frame;
+  const ground = (x, z) => heights.heightAt(x, z);
+  const mats = entranceMaterials(random);
+  const parts = new Parts();
+  const group = new THREE.Group();
+  group.name = 'pitEntrance';
+  /** A matrix that sets parts built in a local frame (x along the gate, z out to the lane) at (x, y, z), turned `turn` more. */
+  const frameAt = (x, y, z, turn = 0) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), f.yaw + turn), new THREE.Vector3(1, 1, 1));
+
+  // The gate: its leaves hung on the posts, the chain and padlock round the closing stiles, the newer plate wired to one leaf. Built in the gate's frame.
+  const gy = ground(gate.x, gate.z);
+  const gp = new Parts();
+  const postFace = plan.postV - ENTRANCE.postW / 2;
+  for (const lf of plan.leaves) {
+    for (const geo of leafParts(lf.length)) gp.add(mats.galv, geo, lf.hinge, 0, 0, 0, lf.side > 0 ? Math.PI : 0, 0);
+    addHinges(gp, mats, lf.side * postFace, lf.side * (plan.gateW / 2 - 0.03), [0.26, 1.1]);
+  }
+  addChainAndLock(gp, mats, 0.92, 2 * (plan.gateW / 2 - plan.leaves[0].length + 0.03));
+  {
+    const P = plan.plate;
+    const py = P.y + P.h / 2;
+    const face = new THREE.MeshStandardMaterial({ map: privatePlateTexture(random, SIGN_WORDS.plate), roughness: 0.6 });
+    gp.add(mats.galv, new THREE.BoxGeometry(P.w, P.h, 0.005), P.v, py, 0.036);
+    gp.add(face, new THREE.PlaneGeometry(P.w - 0.01, P.h - 0.01), P.v, py, 0.0425); // 4 mm proud of the board, so the two never fight
+    for (const [dx, ry] of [[-P.w / 2 + 0.04, 0.57], [P.w / 2 - 0.04, 0.57], [-P.w / 2 + 0.04, 0.95], [P.w / 2 - 0.04, 0.95]]) {
+      gp.add(mats.dark, new THREE.TorusGeometry(0.03, 0.0025, 4, 10), P.v + dx, ry, 0.012, 0, Math.PI / 2, 0); // a wire tie round the rail
+    }
+  }
+  parts.merge(gp, frameAt(gate.x, gy, gate.z));
+  for (const p of plan.posts) addGatePost(parts, mats, p.x, ground(p.x, p.z), p.z, f.yaw, { w: ENTRANCE.postW, h: ENTRANCE.postH, sink: ENTRANCE.postSink });
+  // #685's collider, as it was: the gate shut and solid for good.
+  fixedBox(gate.x, gy + 0.8, gate.z, 0.2, 0.9, plan.gateW / 2 + 0.3, f.yaw - Math.PI / 2);
+
+  // The blocks, each on the lowest ground under it so neither end floats, and solid.
+  for (const b of plan.blocks) {
+    const turn = f.yaw + b.turn;
+    const corners = [-1, 1].flatMap((sx) => [-1, 1].map((sz) => [b.x + Math.cos(turn) * sx * 0.8 + Math.sin(turn) * sz * 0.4, b.z - Math.sin(turn) * sx * 0.8 + Math.cos(turn) * sz * 0.4]));
+    const y = Math.min(...corners.map(([x, z]) => ground(x, z)));
+    addConcreteBlock(parts, mats, b.x, y, b.z, turn, 0.02);
+    fixedBox(b.x, y + 0.36, b.z, 0.8, 0.4, 0.4, turn);
+  }
+
+  // The height barrier across the way, its posts solid.
+  {
+    const B = plan.barrier;
+    const mid = f.at(B.u, 0);
+    const base = ground(mid.x, mid.z);
+    const [l, r] = B.posts;
+    const bp = new Parts();
+    addHeightBarrier(bp, mats, B.span, ground(l.x, l.z) - base, ground(r.x, r.z) - base, { clear: ENTRANCE.barrier.clear, post: ENTRANCE.barrier.post, beam: ENTRANCE.barrier.beam });
+    parts.merge(bp, frameAt(mid.x, base, mid.z));
+    for (const p of B.posts) fixedBox(p.x, ground(p.x, p.z) + 1.2, p.z, ENTRANCE.barrier.post / 2 + 0.01, 1.2, ENTRANCE.barrier.post / 2 + 0.01, f.yaw);
+  }
+
+  // The operator's board, faded, on its two posts facing the lane.
+  {
+    const S = plan.sign;
+    const base = ground(S.x, S.z);
+    const [a, b] = S.posts;
+    const face = new THREE.MeshStandardMaterial({ map: worksSignTexture(random, SIGN_WORDS.operator, SIGN_WORDS.board), roughness: 0.75 });
+    const sp = new Parts();
+    addSignBoard(sp, mats, face, ENTRANCE.sign, ground(a.x, a.z) - base, ground(b.x, b.z) - base);
+    parts.merge(sp, frameAt(S.x, base, S.z, S.turn));
+    for (const p of S.posts) fixedBox(p.x, ground(p.x, p.z) + 1, p.z, 0.04, 1, 0.04, f.yaw);
+  }
+
+  // The bellmouth: a drape over the ground, its ruts lower, the painting from the plan; loose lumps of tarmac at its break; and the puddles in the ruts.
+  const dip = (u, v) => rutDip(v) * (1 - 0.5 * tarmacAt(u, v, reach));
+  const surface = (u, v) => {
+    const p = f.at(u, v);
+    return ground(p.x, p.z) + 0.05 - dip(u, v);
+  };
+  {
+    const geo = drapeGeometry(plan.bellmouth.rows, { frame: f, groundY: ground, lift: 0.05, dip, cols: 28, uvOf: (u, v) => bellmouthUv(u, v, reach) });
+    const drape = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: bellmouthTexture(random, plan), roughness: 0.92 }));
+    drape.name = 'bellmouth';
+    drape.receiveShadow = true;
+    group.add(drape);
+    const tarmac = new THREE.MeshStandardMaterial({ map: tarmacTexture(random), roughness: 0.85 });
+    for (const k of plan.chunks) parts.add(tarmac, tarmacChunkGeometry(k.size, k.shape), k.x, surface(k.u, k.v) - 0.012, k.z, k.tilt, k.yaw, k.tilt * 0.5);
+  }
+  const water = new THREE.MeshStandardMaterial({ color: 0x353a3f, roughness: 0.04, metalness: 0.15, transparent: true, opacity: 0, depthWrite: false });
+  const puddles = (() => {
+    const pos = [];
+    for (const p of plan.puddles) {
+      const n = 18;
+      const ring = Array.from({ length: n }, (_, i) => {
+        const a = (i / n) * Math.PI * 2;
+        const u = p.u + (Math.sin(a) * p.len) / 2;
+        const v = p.v + (Math.cos(a) * p.w) / 2;
+        const q = f.at(u, v);
+        return [q.x, surface(u, v) + 0.012, q.z];
+      });
+      const mid = f.at(p.u, p.v);
+      const c0 = [mid.x, surface(p.u, p.v) + 0.012, mid.z];
+      for (let i = 0; i < n; i++) pos.push(...c0, ...ring[(i + 1) % n], ...ring[i]);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(geo, water);
+    mesh.name = 'pitEntrancePuddles';
+    mesh.visible = false;
+    mesh.receiveShadow = true;
+    mesh.userData.keepFar = true;
+    return mesh;
+  })();
+  group.add(puddles);
+
+  // Chippings washed out of the hardcore onto the lane's near half: on its tarmac (its lift and camber) or on the bellmouth. Nothing to ride into.
+  {
+    const lane = net.road('lane');
+    const crown = lane?.camber ? { height: lane.camber, half: lane.halfWidth } : null;
+    const matrices = plan.gravel.map((g) => {
+      const y = g.onLane ? ground(g.x, g.z) + (lane?.lift ?? 0.076) + (crown ? crownAt(crown, lane.halfWidth - (g.u - reach)) : 0) : surface(g.u, g.v);
+      return matrixAt(g.x, y + g.size * 0.2, g.z, g.yaw, g.size, g.size * 0.45, g.size * 0.8);
+    });
+    const chips = tiledInstances(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshStandardMaterial({ color: 0xa79f8c, roughness: 0.9 }), matrices, { name: 'pitEntranceChippings' });
+    group.add(chips);
+  }
+
+  // Buddleia along the fence, and the weeds along it, round the posts, the blocks and the barrier, and at the hedge's foot.
+  {
+    const bp = new Parts();
+    const bm = buddleiaMaterials();
+    for (const b of plan.buddleia) addBuddleia(bp, bm, b.x, ground(b.x, b.z) - 0.05, b.z, b.h, random);
+    const bush = bp.build({ castShadow: true });
+    bush.name = 'buddleia';
+    group.add(bush);
+    const makers = vergeMakers(random);
+    for (const kind of Object.keys(makers)) {
+      const matrices = plan.weeds.filter((w) => w.kind === kind).map((w) => matrixAt(w.x, ground(w.x, w.z) - 0.02, w.z, w.yaw, w.scale));
+      if (matrices.length) group.add(tiledInstances(makers[kind][0], makers[kind][1], matrices, { name: `pitEntrance-${kind}`, receiveShadow: false }));
+    }
+  }
+
+  // Litter: in the hedge, at the fence's foot and on the verge.
+  {
+    const lp = new Parts();
+    const lm = litterMaterials(random);
+    for (const l of plan.litter) addLitter(lp, lm, l.kind, l.x, ground(l.x, l.z) + l.y, l.z, l.yaw, l.tip);
+    const litter = lp.build({ castShadow: false });
+    litter.name = 'litter';
+    group.add(litter);
+  }
+
+  const built = parts.build({ castShadow: true });
+  built.name = 'pitEntranceParts';
+  group.add(built);
+  group.userData.setWet = (wet) => {
+    const o = standingWater(wet);
+    water.opacity = o;
+    puddles.visible = o > 0.01;
+  };
+  group.userData.plan = plan;
+  scene.add(group);
+
+  // The remnant hedge either side of the bellmouth, as the farm's hedges are drawn, and as solid. Drawn at any distance, so it never goes from the lane's view.
+  if (models?.hedge) {
+    const hedgeSize = modelBounds(models.hedge.scene).getSize(new THREE.Vector3());
+    const blockReach = leafReach(models.hedge.scene, hedgeSize);
+    const H = layout.hedgeHeight;
+    const matrices = [];
+    for (const lay of entranceHedges(plan, { T: layout.hedgeThickness, H, heightAt: ground, blockReach })) {
+      for (const b of lay.blocks) matrices.push(matrixAt(b.x, b.y, b.z, b.spin, b.width / hedgeSize.x, (H / hedgeSize.y) * b.tall, b.width / hedgeSize.z));
+      for (const k of lay.colliders) fixedBox(k.x, k.y, k.z, k.hx, k.hy, k.hz, k.turn);
+    }
+    if (matrices.length) {
+      const hedge = instanceModel(models.hedge.scene, matrices, { castShadow: false });
+      hedge.name = 'pitEntranceHedge';
+      scene.add(hedge);
+      group.userData.hedge = hedge;
+    }
+  }
+  return group;
 }
