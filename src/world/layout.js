@@ -310,12 +310,8 @@ const RAW = {
 
   // The barn (world/barn.js): a hollow shed with its big doors open on the +x side, facing the yard. halfX and halfZ are the outside
   // half-sizes, wall the thickness, wallHeight the eaves and ridge the top of the roof along its length (x). The door is centred on z.
-  barn: at('barn', { x: 0, z: 0, yaw: 0, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 },
-    // A second span of the same size on the south side (world/barn.js), its own gable roof beside the first with a valley between and posts in
-    // place of a wall, and its own door in the +x wall, centred on its middle. It is where the tractor, the UTV, the Tor, the Crag and the cars are mended.
-    annex: { halfZ: 4.6, door: { halfWidth: 2.0, height: 3.2 } },
-  }),
-  // The bell on its post just north of the barn's north door leaf (the first door's), arm out towards the yard (world/bellBuild.js): ring it to call the girls back.
+  barn: at('barn', { x: 0, z: 0, yaw: 0, halfX: 5.2, halfZ: 4.6, wall: 0.2, wallHeight: 4.2, ridge: 6.3, door: { halfWidth: 2.3, height: 3.2 } }),
+  // The bell on its post just north of the barn's north door leaf, arm out towards the yard (world/bellBuild.js): ring it to call the girls back.
   bell: at('yard', { x: -4.1, z: -3.9, yaw: 0 }),
   // The wrapped silage, stacked beside the barn's west wall (world/props.js): `x`, `z` are the stack's north-west corner.
   silage: at('yard', { x: -22.5, z: 4.5 }),
@@ -324,22 +320,6 @@ const RAW = {
     [-2.4, -2.7, Math.PI / 2],
     [-2.4, 2.7, Math.PI / 2],
   ]),
-  // The hayloft over the front of the barn, above the big doors (world/loft.js): planks `floor` m above the barn floor (clear of the doorway's
-  // 3.2 m and its header) from the end wall back to `edgeX`, an open edge with a rail and a gap at the ladder, and a hay door in the end wall
-  // at head height (from `sill` to `top` above the barn floor). The roof comes down at the sides, so you can only walk `band` m either side of
-  // the centre line; hay is stacked outside that, the north stack (`hay`) being the one you hide in. A girl sits on a bale at the open edge.
-  loft: at('barn', {
-    floor: 3.5,
-    edge: { x: 1.5, z: 0 }, // the middle of the open edge; `edgeX` is read off it
-    band: 1.9,
-    rail: 1,
-    ladder: { x: 0.6, z: 1.3, gap: 0.7, width: 0.55 },
-    hayDoor: { halfWidth: 0.8, sill: 4.1, top: 5.5 },
-    hay: { x: 3.25, z: -3.15, halfX: 1.75, halfZ: 1.25, height: 1.3 },
-    hideSpot: { x: 3.25, z: -3.15 },
-    seat: { id: 'loft0', kind: 'loft', x: 2, z: -0.8, yaw: -Math.PI / 2, seat: 3.5 + 0.53 }, // sat on a bale at the edge, facing out over the barn
-    strawDx: -0.4, // Jess tips her straw from this far towards the edge
-  }),
   // The workbench along the north wall: where the toolbox sits (its height is `lift`).
   // (4.2 long: the east end, with the vice, is where it was; the extra metre at the west end holds the battery charger.)
   bench: at('barn', { x: 1.2, z: -3.9, yaw: 0, length: 4.2, depth: 0.7, height: 0.92 }),
@@ -367,8 +347,8 @@ const RAW = {
   moneyTin: at('barn', { x: -3.9, z: -4.4, y: 1.05 }),
   // The bay painted on the barn floor in front of the bench: park a quad here to work on it at the bench (workshop/bench.js).
   bay: at('barn', { x: 1.7, z: -1.5, halfX: 1.5, halfZ: 1.1, yaw: 0 }),
-  // The big bay in the barn's second span, nose-in from its door: the tractor, UTV, the Tor and the Crag and cars are worked on here, at the same bench
-  // (workshop/bench.js). A trolley jack and axle stands stand by it (workshop/jackModel.js), and a second bulb hangs over it.
+  // The big bay: the tractor, UTV, the Tor and the Crag and cars are worked on here, at the same bench (workshop/bench.js), with a trolley jack and axle
+  // stands by it (workshop/jackModel.js). These numbers are the old barn's; barnPlan.js gives it, and the rest of the barn's things, their places in the barn (#818).
   bay2: at('barn', { x: -1.4, z: 9.2, halfX: 3.0, halfZ: 1.9, yaw: 0 }),
   // The shed kit bought from the catalogue on the workbench (farm/shed.js, workshop/shedModels.js), standing in the barn the morning after it is paid for.
   // The compressor stands on the west wall beside the barn find, facing the room (yaw is the way it faces, 0 being +z); the parts washer on the floor at the
@@ -422,8 +402,8 @@ const RAW = {
   // up, `width` across. The ground is levelled under it (terrainHeight.js); a test checks it is clear of the track, the bogs, the bales and the ramp.
   dragStrip: { x: -30, z: 19, yaw: Math.PI / 2 - 0.2, length: 56, runOff: 8, width: 10 },
 
-  // The line-up spaces (world/challenges.js, lineUpBays.js): four old railway sleepers half sunk in the grass by the south hedge, east of the barn's
-  // extension doorway and west of the field gate, for the tidiest line-up challenge on the barn's chalkboard. `bays` of them side by side `spacing` m
+  // The line-up spaces (world/challenges.js, lineUpBays.js): four old railway sleepers half sunk in the grass by the south hedge, west of the
+  // field gate, for the tidiest line-up challenge on the barn's chalkboard. `bays` of them side by side `spacing` m
   // apart along the hedge, centred on x, z, each `length` m deep with a quad's nose to yaw (a quad's yaw, here towards the hedge); the sleeper lies
   // across the nose end. Clear of the spawn keep-out and the track (a test checks).
   lineUp: at('yard', { x: 10, z: 17, yaw: 0, bays: 4, spacing: 3, length: 3 }),
@@ -585,10 +565,6 @@ export const RAW_LAYOUT = RAW;
 export const LAYOUT = layoutNew(resolveLayout(RAW), RAW);
 
 // A few readers want one coordinate of a point on its own. They are read off the points (which are what turn with the anchor), once, here.
-if (LAYOUT.loft) {
-  LAYOUT.loft.edgeX = LAYOUT.loft.edge.x; // (the new barn has no hayloft)
-  LAYOUT.loft.ladder.footX = LAYOUT.loft.ladder.x;
-}
 LAYOUT.village.garage.pumps.xs = LAYOUT.village.garage.pumps.spots.map(([x]) => x);
 LAYOUT.village.garage.pumps.z = LAYOUT.village.garage.pumps.spots[0][1];
 

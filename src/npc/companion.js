@@ -586,7 +586,7 @@ export class Companion {
         else this.requestDrive(this.pickByOpinion(options.drive.some((q) => this.ownsQuad(q)) ? options.drive.filter((q) => this.ownsQuad(q)) : options.drive));
       }, say));
     }
-    if (options.rest.length) out.push(offer('rest', () => this.goRest(pick(options.rest), { stay: this.restStayFor?.() }), options.rest[0]?.kind === 'loft' ? 'loftGo' : 'restGo'));
+    if (options.rest.length) out.push(offer('rest', () => this.goRest(pick(options.rest), { stay: this.restStayFor?.() }), 'restGo'));
     return out.filter((o) => o.weight > 0);
   }
 

@@ -231,7 +231,7 @@ export class MindsHost {
       ...mine(g.lunch.offers(g.lunchContext()), (o) => g.handleLunchEvent(g.lunch.take(o))),
       ...mine(g.hutHost.offers(), (o) => g.hutHost.take(o)),
       ...mine(g.fireSit.offers(g.fireSitContext()), (o) => g.handleFireEvent(g.fireSit.take(o, g.fireSit.seatsLeft(g.fireSpots.length)))),
-      ...(g.hiding.active ? [] : mine(g.requests.offers(g.requestContext(ridden)), (o) => g.handleRequestEvent(g.requests.take(o)))),
+      ...mine(g.requests.offers(g.requestContext(ridden)), (o) => g.handleRequestEvent(g.requests.take(o))),
       ...mine(g.jumpers.offers(g.jumpersContext()), (o) => g.handleJumperEvent(g.jumpers.take(o))),
       ...mine(g.coats.offers(g.jumpersContext()), (o) => g.handleCoatEvent(g.coats.take(o))),
       ...mine(g.headgear.offers(g.headgearContext()), (o) => g.handleHeadgearEvent(g.headgear.take(o))),

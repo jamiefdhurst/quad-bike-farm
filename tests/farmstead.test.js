@@ -31,7 +31,7 @@ describe('the barn', () => {
     expect(inPlanRect(plan(out), P.slab)).toBe(true); // out of the doors is the yard
   });
   it('has the bell by its doors, the tanks by its east end and the generator along its west wall', () => {
-    const outer = barnShape(two).outerAll;
+    const outer = barnShape(two).outer;
     const corners = [f.toWorld(outer.minX, outer.minZ), f.toWorld(outer.maxX, outer.maxZ)];
     const east = Math.max(corners[0].x, corners[1].x);
     const west = Math.min(corners[0].x, corners[1].x);
@@ -41,8 +41,7 @@ describe('the barn', () => {
     expect(Math.hypot(two.bell.x - door.x, two.bell.z - door.z)).toBeLessThan(10);
     expect(two.jumperRail.yaw).toBeCloseTo(-Math.PI / 2, 6); // its fittings turn with it
   });
-  it('seats the girls on bales scattered inside it, with no hayloft', () => {
-    expect(two.loft).toBeUndefined();
+  it('seats the girls on bales scattered inside it', () => {
     expect(two.barnBaleSpots.length).toBeGreaterThanOrEqual(4);
     for (const [x, z] of two.barnBaleSpots) expect(insideBarn(two, x, z)).toBe(true);
     // And you can work at the bench: the bay, the bench and where she stands are inside it, and the console's `tp me bench` puts you in front of it.

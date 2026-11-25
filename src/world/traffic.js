@@ -206,12 +206,12 @@ export function visitPlaces(layout) {
     inside: { x: gate.x - 3.8, z: gate.z },
     grid: road.grid?.gateOffset == null ? null : { x: layout.fieldHalf + road.grid.gateOffset, z: road.z }, // the gate just east of the cattle grid
     over: open ? { x: road.grid.x, z: road.z } : null, // the drive's cattle grid, which a visitor drives over
-    // The barn's big doors face out onto the yard (east on today's farm); the wrapped silage is stacked beside its back wall, the bell
-    // is by the first leaf and the second span's door is 9.2 m along. The vehicle stops out from the door, facing west, and turns round, clear of both.
+    // The barn's big doors face out onto the yard, measured in the barn's own frame (`at`); the bell is by the doors. The vehicle stops out
+    // from the door, facing the barn, and turns round clear of it.
     stop: at(14, 7.5),
     door: at(barn.halfX + 1.8, 2.6), // where the driver goes
     parcel: at(barn.halfX + 1.4, 4.2),
-    turn: { z0: at(14, 7.5).z, z1: at(14, 7.5).z + 9, r: 4.5, dx: 3 }, // a loop as wide as the vehicle's own turning circle (4 m) needs, or it orbits a waypoint it cannot reach; its far side is 1.3 m clear of the second span's wall
+    turn: { z0: at(14, 7.5).z, z1: at(14, 7.5).z + 9, r: 4.5, dx: 3 }, // a loop as wide as the vehicle's own turning circle (4 m) needs, or it orbits a waypoint it cannot reach
     // The tuner's rig: the Tor or Crag stops where the other visitors do, facing west, and the trailer stands behind it.
     rig: rigSite({ ...at(14, 7.5), yaw: -Math.PI / 2 }),
   };

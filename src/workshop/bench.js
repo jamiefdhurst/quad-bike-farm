@@ -11,7 +11,7 @@ import { DEFAULT_BENCH_PARAMS, BENCH_PARAM_RANGES, JOBS, JOB_KINDS, ENGINE_JOB_K
 const jobKey = (i) => (i < 10 ? String((i + 1) % 10) : '');
 
 /**
- * The barn bench: park a vehicle in a painted bay (the small one for the quads, the big one in the second span for everything else), switch it off and work on it here. Each job is a few
+ * The barn bench: park a vehicle in a painted bay (the small one for the quads, the big one in the middle of the barn for everything else), switch it off and work on it here. Each job is a few
  * steps with E (tap or hold). Unlike the toolbox panel's quick fixes, a job done right puts the thing
  * properly right. The girls watch from wherever they are: Amy helps, Jess heckles.
  */

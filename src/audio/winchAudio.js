@@ -1,5 +1,5 @@
 // The winch cable groaning under load: a low creak of strained fibre, made once (a slow swept tone with rough noise on it) and played at the
-// fairlead through a panner, louder the harder the cable works. Same shape as doorAudio.js.
+// fairlead through a panner, louder the harder the cable works. Same shape as coinAudio.js.
 
 /** One groan as samples: a 70 to 120 Hz scrape rising and falling over 0.6 s with a rasp of noise. Deterministic. */
 export function creakSamples(rate) {

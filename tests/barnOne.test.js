@@ -46,20 +46,15 @@ describe('the barn on the new farm', () => {
     const b = frame.toWorld(shape.outer.maxX, shape.outer.maxZ);
     const plan = (p) => [p.x + PLAN_ORIGIN[0], p.z + PLAN_ORIGIN[1]];
     expect([plan(a), plan(b)].flat().sort((p, q) => p - q).map((v) => Math.round(v * 10) / 10)).toEqual([319, 337, 498, 524]);
-    expect(shape.annex).toBeNull();
     expect(shape.wide).toBe(true);
   });
-  it('has one pair of doors, in the long wall on the yard\'s side, wide enough for a tractor, and no hay door or hayloft', () => {
+  it('has one pair of doors, in the long wall on the yard\'s side, wide enough for a tractor', () => {
     const doors = barnDoors(L);
     expect(doors.length).toBe(1);
     expect(doors[0].maxZ - doors[0].minZ).toBeGreaterThanOrEqual(5.5);
     expect(doors[0].height).toBeGreaterThanOrEqual(3.6);
     expect(detourBoxes(two).length).toBe(1);
     expect(localWallBoxes(L).map((w) => w.id).sort()).toEqual(['eastNorth', 'eastSouth', 'north', 'south', 'west']);
-    expect(two.loft).toBeUndefined();
-    expect(built.loft).toBeNull();
-    expect(built.hayDoor).toBeNull();
-    expect(built.shutter).toBeNull();
   });
   it('hangs six bulbs from three lights, more than the two it had, so that the lit barn is as bright overall', () => {
     expect(built.bulbs.length).toBe(6);
@@ -128,7 +123,7 @@ describe('the seats and the desk in the barn', async () => {
   const { barnBaleSeats } = await import('../src/world/barn.js');
   const { DESK } = await import('../src/workshop/deskModel.js');
   const inside = (p, m = 0.5) => insideBarn(two, p.x, p.z, m);
-  it('has the girls sit on bale seats scattered inside, not in a row, with no loft seat', () => {
+  it('has the girls sit on bale seats scattered inside, not in a row, all on the floor', () => {
     const seats = barnBaleSeats(two);
     expect(seats.length).toBeGreaterThanOrEqual(4);
     expect(new Set(seats.map((s) => s.id)).size).toBe(seats.length);
@@ -137,7 +132,7 @@ describe('the seats and the desk in the barn', async () => {
       expect(inside(s, 1), s.id).toBe(true);
       expect(s.seat).toBe(two.baleSeat);
     }
-    expect(seats.some((s) => s.kind === 'loft' || /loft/.test(s.id))).toBe(false);
+    expect(seats.some((s) => s.via)).toBe(false); // none up a ladder or steps
     // Scattered: no two turned the same way, and not all on one line.
     expect(new Set(seats.map((s) => s.yaw.toFixed(2))).size).toBe(seats.length);
     const zs = seats.map((s) => frame.toLocal(s.x, s.z));

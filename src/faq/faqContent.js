@@ -835,18 +835,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'Which way is the wind blowing, and what does it do?',
         a: `Each game has its own wind, a different way every time, and gusts come and go. Watch the exhaust smoke, the dust off the stubble or the rain and
-          snow: they all lean downwind. The hedges and trees rock in it, and on a strong day with the wind blowing out through the barn's hay door (towards the east) its shutter is lifted
-          off the wall and bangs about, which makes the girls jump. Foggy days are the stillest; rainy and overcast ones are the windiest.`,
-      },
-      {
-        q: 'Why did hay blow out of the loft?',
-        a: `On a gusty day with the wind blowing out of the hay door, loose hay lifts off the loft floor and drifts into the yard. It is only for show, and it
-          doesn't happen again for a minute or two.`,
-      },
-      {
-        q: 'Why is a door banging in the barn?',
-        a: `That is the hay door's shutter, on the end of the barn. It sits hooked back against the wall, but a strong gust blowing out of the door lifts it off,
-          and it slams back. It stops when the wind drops or turns.`,
+          snow: they all lean downwind. The hedges and trees rock in it, and the weather vane on the barn's roof turns into it. Foggy days are the stillest; rainy and
+          overcast ones are the windiest.`,
       },
       {
         q: 'Why is it snowing, and why is my quad sliding about?',
@@ -1064,10 +1054,10 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I mend a bent rod or rim on the tractor, the Yak, a Moorland or a car?',
-        a: `The same way as on a quad, in the big bay in the barn's second span. Drive it in through the second door (the one nearer the generator), nose to the back
+        a: `The same way as on a quad, in the big bay in the middle of the barn. Drive it in through the doors, nose-in towards the back
           wall, switch it off and use the bench with the toolbox on it. The big bay is the one with the trolley jack and axle stands beside it. The quads use the small bay
           in front of the bench. Jobs that don't apply (spark plugs on a diesel, a carb on the Griffin) are greyed out. The bench opens on what is parked in a bay, so the rusty quad and the old bike under their tarps never keep a vehicle from it: with one of them still standing there the last row of the menu is "Work on the ... instead", and <kbd>E</kbd> on it swaps to the other.`,
-        tip: 'The tractor, Yak, Moorlands and cars are mended in the barn’s big bay, through the second door.',
+        tip: 'The tractor, Yak, Moorlands and cars are mended in the barn’s big bay, nose-in from the doors.',
       },
       {
         q: 'Why is my four-stroke ticking, and what does the feeler gauge do?',
@@ -1354,7 +1344,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where do the new tyres come from, and what if there are none?',
-        a: `The tyre rack on the barn's second span, on the south wall left of the helmets, keeps a stack for each size: small quads (the kids' quad and the mini moto), quads, sport quads, the old three-wheeler, the Yak, the Moorlands,
+        a: `The tyre rack on the barn's west end wall, left of the helmets, keeps a stack for each size: small quads (the kids' quad and the mini moto), quads, sport quads, the old three-wheeler, the Yak, the Moorlands,
           the cars and the tractor. The tag on each shelf says the size, and NONE when there are no tyres left; the stack shows how many, up to five. Look at the rack and press <kbd>E</kbd> for the exact number, then the number of a size to order two. The post van brings them like any other part (see "How do I order spare parts"), and you open the parcel by the barn door to put them on the rack. A quad starts with some in stock, but the Yak, Moorlands, cars and tractor have none until you order, so watch their tread. With too few on the rack the bench greys the job out and says how many it wants.`,
       },
       {
@@ -1829,11 +1819,6 @@ export const FAQ_SECTIONS = [
           On a cold day she may walk over to a Moorland, climb in, start it from her seat (choke and all, not stood out in the cold) and sit in it for a minute or two with the engine running. Only a flat battery makes her swing the starting handle outside. When the weather turns or she has had enough
           she gets out again, and switches off an engine she started herself. If you want the vehicle, just get in: she shuffles up and comes along.`,
       },
-      {
-        q: 'Can I hide from them?',
-        a: `Climb the ladder to the hayloft inside the barn doors and press <kbd>E</kbd> at the stack of hay to duck into it. They can't find you while you're
-          hidden and call for you now and then, until one finds you.`,
-      },
     ],
   },
   {
@@ -1842,7 +1827,7 @@ export const FAQ_SECTIONS = [
     entries: [
       {
         q: 'What’s in the barn?',
-        a: `The workbench with the toolbox, the jump leads, the oil bottle and Amy's logbook; the jumper rack; the hooks for the helmets and goggles; straw bales; the ladder to the hayloft. A quad parked
+        a: `The workbench with the toolbox, the jump leads, the oil bottle and Amy's logbook; the jumper rack; the hooks for the helmets and goggles; straw bales; the spares and tyre racks; the farm desk. A quad parked
           inside stays dry and cools more slowly, so it starts better later. Running an engine in there fills it with fumes.`,
       },
       {
@@ -2241,7 +2226,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I order spare parts, and when do they come?',
-        a: `Look at the parts rack in the barn (back wall, beyond the workbench), press <kbd>E</kbd> and press the number of the part to order a pack. Tyres have their own rack, on the second span's south wall, and work the same way. About five minutes later the post van comes in at the big gate (if no one else is visiting, and only in daylight) and leaves a parcel by the barn door. Look at the parcel and press <kbd>E</kbd> to open it and put what is in it on the rack. An order you have not had by the end of the day is still on its way the next morning, and so is a parcel you have not opened. You can only order what the rack would have room for.`,
+        a: `Look at the parts rack in the barn (back wall, beyond the workbench), press <kbd>E</kbd> and press the number of the part to order a pack. Tyres have their own rack, on the barn's west end wall, and work the same way. About five minutes later the post van comes in at the big gate (if no one else is visiting, and only in daylight) and leaves a parcel by the barn door. Look at the parcel and press <kbd>E</kbd> to open it and put what is in it on the rack. An order you have not had by the end of the day is still on its way the next morning, and so is a parcel you have not opened. You can only order what the rack would have room for.`,
       },
       {
         q: 'How do I wave at the girls?',
@@ -3083,7 +3068,7 @@ export const FAQ_SECTIONS = [
         a: `The farmstead is in the middle of the farm, at the head of the drive, and you can use everything within about 80 m of it each day. The barn is one big building,
           26 by 18 m, with one pair of sliding doors in its long south wall facing the yard. Inside, the workbench is on the east wall with its bay in front, the big bay and the pit are
           in the middle nose-in from the doors, the boards, the calendar and the farm desk are on the back wall with some bales to sit on, the thermometer, barometer and forecast are one board
-          by the doors and the clock is over the bench. Six bulbs light it from the generator, and there is no hayloft. The bell is by the doors, the fuel tanks by its east end and the generator by its west wall. The yard is concrete, 190 by 98 m. North of the barn is the orchard, where the hens have a proper house and the pig has an ark, each in a fenced run with the feed bin beside them. West of it is the stackyard, with the Dutch barn at its far end and round bales stacked in it. East of the orchard is the
+          by the doors and the clock is over the bench. Six bulbs light it from the generator. The bell is by the doors, the fuel tanks by its east end and the generator by its west wall. The yard is concrete, 190 by 98 m. North of the barn is the orchard, where the hens have a proper house and the pig has an ark, each in a fenced run with the feed bin beside them. West of it is the stackyard, with the Dutch barn at its far end and round bales stacked in it. East of the orchard is the
           garden, a lawn behind a stone wall with a gate on the yard side (the house comes later), and the girls park their cars south of it. The muck heap is behind where the cattle shed will be,
           and the machinery shed, the grain store, the cattle shed and the sheep pens have their places kept clear on the yard. Home Ground, the old grass field, is just west of the yard behind a
           post and rail fence (the girls sit on it to watch you ride), with the Home Loop, the cones, the jump and the line-up as they were, and the bonfire in its south-east corner. In the console,

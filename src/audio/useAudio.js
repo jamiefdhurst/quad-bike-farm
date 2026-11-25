@@ -1,5 +1,5 @@
 // The small sounds of using things: picking something up, putting it down, a latch or switch, a page or a board. Made once as samples
-// and played at the listener, so every interaction has a sound (.claude/rules/controls.md). Same shape as doorAudio.js. Pure.
+// and played at the listener, so every interaction has a sound (.claude/rules/controls.md). Same shape as coinAudio.js. Pure.
 
 export const USE_CUES = ['pickUp', 'putDown', 'latch', 'paper', 'tap'];
 

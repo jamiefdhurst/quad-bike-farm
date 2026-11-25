@@ -13,7 +13,7 @@
 //   - `{ minX, maxX, minZ, maxZ }` is a rectangle (it stays one, so only quarter turns).
 //   - an array of `[x, z]` or `[x, z, yaw]` is a list of points.
 //   - an `x` or `z` on its own, or a flat list of them, is a line across the anchor's frame: it moves, and turns by a half turn, but a quarter turn
-//     cannot say which axis it is on, so it throws (give the thing its other coordinate, as `loft.edge` and `ladder.x` do).
+//     cannot say which axis it is on, so it throws (give the thing its other coordinate, as the garage's `pumps.spots` do).
 //   - anything else (`y`, `radius`, `length`, `width`, a name) is a scalar and stays as it is.
 
 const QUARTER = Math.PI / 2;

@@ -1,5 +1,5 @@
-// A coin or two dropped on a tin: a few short metallic pings made once and played at the tin, softer when it is a small amount. Same shape as
-// doorAudio.js: pure samples (tested), and a small class that plays them through a panner at the tin's place.
+// A coin or two dropped on a tin: a few short metallic pings made once and played at the tin, softer when it is a small amount. Pure
+// samples (tested), and a small class that plays them through a panner at the tin's place: the shape the other one-off sounds here copy.
 
 /** The chink as samples: three coins, each a bright ring of two or three partials that dies in a tenth of a second, a little apart. Deterministic. */
 export function chinkSamples(rate) {

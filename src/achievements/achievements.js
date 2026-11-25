@@ -130,8 +130,6 @@ export const ACHIEVEMENTS = [
 
   { id: 'show-first', group: 'Jobs', name: 'Best in show', hint: 'Win a first at the farm show, the last Sunday of a month', points: 3, test: (s) => s.n('showFirst') >= 1 },
   { id: 'bell', group: 'Jobs', name: 'Dinner bell', hint: 'Ring the bell by the barn', points: 1, test: (s) => s.n('bell') >= 1 },
-  { id: 'loft', group: 'Jobs', name: 'Up the ladder', hint: 'Climb into the hayloft', points: 1, feature: 'loft', test: (s) => s.n('loft') >= 1 },
-  { id: 'hide', group: 'Jobs', name: 'Hide and seek', hint: 'Hide in the hay', points: 1, feature: 'loft', test: (s) => s.n('hid') >= 1 },
   { id: 'dipstick', group: 'Jobs', name: 'Check the oil', hint: 'Pull a dipstick', points: 1, test: (s) => s.n('dipstick') >= 1 },
   { id: 'oil', group: 'Jobs', name: 'Topped up', hint: 'Put oil in a four-stroke from the bottle', points: 1, test: (s) => s.n('oilPoured') >= 1 },
   { id: 'fuel', group: 'Jobs', name: 'Filled up', hint: 'Pour petrol from a jerry can into a quad', points: 1, test: (s) => s.n('fuelPoured') >= 1 },
@@ -179,7 +177,6 @@ export class Achievements {
     this.p = params;
     this.list = list;
     this.fleet = fleet;
-    this.without = []; // features this farm has none of (the new barn has no 'loft'): their achievements are left off the list and the total
     this.counters = {};
     this.maxima = {};
     this.sets = {};
@@ -230,15 +227,9 @@ export class Achievements {
     this.listeners.push(fn);
   }
 
-  /** What is on this farm: the ids of its vehicles, and the features it has none of (the new barn has no 'loft'), whose achievements are left off the list and the total. */
-  setFarm(fleet, without = []) {
-    this.fleet = fleet;
-    this.without = without;
-  }
-
   /** Whether this one can be had on this farm. */
   available(a) {
-    return (!a.needs || this.fleet.includes(a.needs)) && !(a.feature && this.without.includes(a.feature));
+    return !a.needs || this.fleet.includes(a.needs);
   }
 
   /**

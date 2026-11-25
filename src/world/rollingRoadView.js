@@ -187,7 +187,7 @@ export class RoadSlip {
 }
 
 /**
- * Where the sheet hangs: on the barn's back (west) wall just past the cork board, beyond the first post between the two spans, at eye height. The wall
+ * Where the sheet hangs: on the barn's back wall (its own -x) just past the cork board, 6 m along from the middle, at eye height. The wall
  * under the boards is behind the bales, and the boards themselves are full.
  */
 export function sheetAnchor(layout, floorY) {

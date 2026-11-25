@@ -26,10 +26,10 @@ describe('the layout written from anchors', () => {
 
 // Moving and turning an anchor. The expected numbers are worked out here from the unmoved layout, not by the resolver.
 const MOVE = { x: 37, z: -12 };
-const X_KEYS = new Set(['x', 'minX', 'maxX', 'edgeX', 'footX']);
+const X_KEYS = new Set(['x', 'minX', 'maxX']);
 const Z_KEYS = new Set(['z', 'minZ', 'maxZ']);
 // Read off a point once the layout is resolved (layout.js): they follow a move, but say nothing of a turn, so only the points they come from are checked.
-const DERIVED = new Set(['loft.edgeX', 'loft.ladder.footX', 'village.garage.pumps.xs', 'village.garage.pumps.z']);
+const DERIVED = new Set(['village.garage.pumps.xs', 'village.garage.pumps.z']);
 
 const moved = (name, change) => {
   const anchors = { ...RAW_LAYOUT.anchors, [name]: { ...RAW_LAYOUT.anchors[name], ...change(RAW_LAYOUT.anchors[name]) } };

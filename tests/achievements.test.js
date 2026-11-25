@@ -179,21 +179,17 @@ describe('places you start the day in (#229)', () => {
   });
 });
 
-describe('achievements for what the farm has none of', () => {
-  it('leaves the hayloft ones off the list and the total on a farm without a loft, and keeps them on one with', () => {
-    const withLoft = new Achievements({ fleet: FLEET });
-    const without = new Achievements({ fleet: FLEET });
-    without.setFarm(FLEET, ['loft']);
-    for (const id of ['loft', 'hide']) {
-      const a = ACHIEVEMENTS.find((x) => x.id === id);
-      expect(withLoft.available(a), id).toBe(true);
-      expect(without.available(a), id).toBe(false);
-    }
-    expect(without.entries().filter((x) => x.available).length).toBe(withLoft.entries().filter((x) => x.available).length - 2);
-    without.note('loft');
+describe('ticks an old save kept for what has gone', () => {
+  // The old barn's two, taken off the list with it (#1055). An old save may still have them ticked: it loads, and they fall away quietly.
+  const GONE = ['loft', 'hide'];
+  it('drops them on loading, keeps the rest, and makes no fuss', () => {
+    for (const id of GONE) expect(ACHIEVEMENTS.some((a) => a.id === id), id).toBe(false);
+    const b = new Achievements({ fleet: FLEET });
     const got = [];
-    without.onUnlock((x) => got.push(x.id));
-    run(without, 1, {});
-    expect(got).not.toContain('loft');
+    b.onUnlock((x) => got.push(x.id));
+    b.restore(['bell', ...GONE]);
+    expect(b.toJSON()).toEqual(['bell']);
+    run(b, 1, {});
+    expect(got).toEqual([]);
   });
 });

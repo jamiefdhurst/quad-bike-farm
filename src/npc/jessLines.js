@@ -7,7 +7,6 @@
 import { JESS_SKILL_LINES } from './skillLines.js';
 import { JESS_REQUEST_LINES, JESS_PUB_LINES } from './requestLines.js';
 import { JESS_PLACE_LINES } from './placeLines.js';
-import { JESS_LOFT_LINES } from './loftLines.js';
 import { JESS_BATTERY_LINES } from './batteryLines.js';
 import { JESS_PUSH_LINES } from './pushLines.js';
 import { JESS_STRANDED_LINES } from './strandedLines.js';
@@ -469,7 +468,6 @@ export const JESS_LINES = {
   ...JESS_SKILL_LINES,
   ...JESS_REQUEST_LINES,
   ...JESS_PLACE_LINES,
-  ...JESS_LOFT_LINES,
   ...JESS_BATTERY_LINES,
   ...JESS_PUSH_LINES,
   ...JESS_TOW_LINES,
