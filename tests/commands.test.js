@@ -75,3 +75,26 @@ describe('the recheck before the PR', () => {
     expect(recheck, 'keeps the after-merge branch').toMatch(/\*\*If it has already merged,\*\*/);
   });
 });
+
+// A merged item's lines go into the walk for its place, never a testing issue of its own (#1179).
+describe('the walk after a merge', () => {
+  const todo = read('.claude/commands/todo.md');
+  const step = todo.slice(todo.search(/^\d+\. \*\*Ask for testing if it needs it\.\*\*/m), todo.search(/^\d+\. \*\*Tell Jamie\*\*/m));
+
+  it('is the step of /todo before telling Jamie, and adds to the walk with tools/walkIssue.mjs', () => {
+    expect(step, 'todo.md has the step').not.toBe('');
+    expect(step).toContain('node tools/walkIssue.mjs add <n> --pr <PR link> --lines');
+    expect(step).toContain('Never open a "Try: ..." issue of its own');
+  });
+
+  it('keeps the rule that only eyes and ears go in', () => {
+    expect(step).toMatch(/A walk is for eyes and ears only/);
+    expect(step).toMatch(/never for what a test could assert/);
+  });
+
+  it('/test works a place\'s walk and closes it when every line is ticked', () => {
+    const test = read('.claude/commands/test.md');
+    expect(test).toMatch(/\*\*A place\*\*.*works its walk/);
+    expect(test).toMatch(/Close the walk as soon as every line is ticked/);
+  });
+});

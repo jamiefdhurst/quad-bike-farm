@@ -5,7 +5,9 @@
 //   node tools/walkIssue.mjs place <n>                                    prints the walk an issue's lines go to, and why
 //   node tools/walkIssue.mjs add <n> --pr <url> --lines <file> [--place <p>] [--dry-run]
 //                                                                          adds a "Try #n, merged in <PR>" section to the open walk for the
-//                                                                          place (worked out from the issue if --place isn't given), or opens one
+//                                                                          place (worked out from the issue if --place isn't given; --place takes
+//                                                                          a walk's name or any place's, and refuses anything else), or opens one;
+//                                                                          a walk too long for GitHub is followed by "Walk: <place> (2)"
 //   node tools/walkIssue.mjs fold [--dry-run] [--out <dir>]                moves every open testing issue that isn't a walk into the walk for its
 //                                                                          item's place, ticked lines left out, and closes it with a link
 //
@@ -79,11 +81,11 @@ export function placeLine(section) {
 const namePattern = (name) => (/^the /i.test(name) ? `[Tt]he ${escape(name.slice(4))}` : escape(name));
 
 /** The walk the first place named in a line belongs to (earliest in the line, the longest name where two start together), or null. */
-export function matchPlace(line, places) {
+export function matchPlace(line, places, flags = 'u') {
   let best = null;
   for (const place of places) {
     for (const name of place.names) {
-      const m = new RegExp(`(?<![\\p{L}\\d])${namePattern(name)}(?![\\p{L}\\d])`, 'u').exec(line);
+      const m = new RegExp(`(?<![\\p{L}\\d])${namePattern(name)}(?![\\p{L}\\d])`, flags).exec(line);
       if (m && (!best || m.index < best.index || (m.index === best.index && name.length > best.name.length))) best = { index: m.index, name, walk: place.walk };
     }
   }
@@ -104,7 +106,28 @@ export function placeFor({ body = '', labels = [] }, places) {
   return { place: 'the game', why: 'not placed, and no area label' };
 }
 
-export const walkTitle = (place) => `${TITLE}${place}`;
+export const walkTitle = (place, part = 1) => `${TITLE}${place}${part > 1 ? ` (${part})` : ''}`;
+
+/** Every walk there can be: each place's, each area's and the game's. */
+export const walkNames = (places) => [...new Set([...places.map((p) => p.walk), ...AREAS.map(([, w]) => w), 'the game'])];
+
+/** The walk a `--place` names: a walk's own name, or any name of a place on the plan ("the barn" is the farmstead's). Throws on anything else, so a
+ * slip can't open a second walk for a place. */
+export function resolvePlace(given, places) {
+  const names = walkNames(places);
+  const exact = names.find((w) => w.toLowerCase() === given.trim().toLowerCase());
+  if (exact) return exact;
+  const hit = matchPlace(given, places, 'iu');
+  if (hit) return hit.walk;
+  throw new Error(`"${given}" isn't a place on docs/farm-plan.md or an area. The walks are: ${names.join(', ')}`);
+}
+
+/** The open walk a place's next section goes in: the latest part, as a full one is followed by "Walk: <place> (2)". Null if none is open. */
+export function currentWalk(issues, place) {
+  const title = new RegExp(`^${escape(TITLE + place)}(?: \\((\\d+)\\))?$`);
+  const parts = issues.map((i) => ({ i, m: title.exec(i.title) })).filter((x) => x.m).map((x) => ({ ...x.i, part: Number(x.m[1] ?? 1) }));
+  return parts.sort((a, b) => b.part - a.part)[0] ?? null;
+}
 
 export const walkIntro = (place) =>
   `Everything merged for ${place} that only eyes and ears can judge, one section per item. \`/test ${place}\` works it in one go along one route, ` +
@@ -182,8 +205,8 @@ function option(args, name) {
 }
 
 /** Writes a walk: edits the open one, or opens it. Returns its number (or 'new' on a dry run). */
-function writeWalk(walk, place, body, labels, dry) {
-  if (body.length > MAX_BODY) throw new Error(`${walkTitle(place)} would be ${body.length} characters, over GitHub's ${MAX_BODY}`);
+function writeWalk(walk, place, body, labels, dry, part = 1) {
+  if (body.length > MAX_BODY) throw new Error(`${walkTitle(place, part)} would be ${body.length} characters, over GitHub's ${MAX_BODY}`);
   const file = resolve('.scratch', `walk-${place.replace(/\W+/g, '-')}.md`);
   mkdirSync(resolve('.scratch'), { recursive: true });
   writeFileSync(file, body);
@@ -193,7 +216,7 @@ function writeWalk(walk, place, body, labels, dry) {
     gh('issue', 'edit', String(walk.number), '--body-file', file, ...add.flatMap((l) => ['--add-label', l]));
     return walk.number;
   }
-  const url = gh('issue', 'create', '--title', walkTitle(place), '--label', TESTING, ...add.flatMap((l) => ['--label', l]), '--body-file', file).trim();
+  const url = gh('issue', 'create', '--title', walkTitle(place, part), '--label', TESTING, ...add.flatMap((l) => ['--label', l]), '--body-file', file).trim();
   return Number(url.split('/').pop());
 }
 
@@ -210,15 +233,31 @@ function add(args) {
   if (!pr || !linesFile) throw new Error('add needs --pr <url> and --lines <file>');
   const dry = args.includes('--dry-run');
   const issue = readIssue(n);
-  const p = option(args, '--place') ?? placeFor(issue, planPlaces()).place;
+  const places = planPlaces();
+  const given = option(args, '--place');
+  const p = given ? resolvePlace(given, places) : placeFor(issue, places).place;
   const text = section({ item: n, pr, lines: readFileSync(resolve(linesFile), 'utf8') });
-  const walk = openTesting().find((i) => i.title === walkTitle(p));
-  if (walk && hasSection(walk.body, n)) {
-    console.log(`#${walk.number} ${walkTitle(p)} already has a section for #${n}`);
+  const open = openTesting();
+  const already = open.find((i) => currentWalk([i], p) && hasSection(i.body, n));
+  if (already) {
+    console.log(`#${already.number} ${already.title} already has a section for #${n}`);
     return;
   }
-  const number = writeWalk(walk, p, withSection(walk?.body, p, text), [TESTING, ...areaLabels(issue.labels)], dry);
-  console.log(`${dry ? 'would add' : 'added'} #${n} to ${walk ? `#${number}` : 'a new walk,'} ${walkTitle(p)}${dry || walk ? '' : ` (#${number})`}`);
+  let walk = currentWalk(open, p);
+  let part = walk?.part ?? 1;
+  if (walk && withSection(walk.body, p, text).length > MAX_BODY) {
+    part += 1;
+    walk = null;
+  }
+  const labels = [TESTING, ...areaLabels(issue.labels)];
+  const number = writeWalk(walk, p, withSection(walk?.body, p, text), labels, dry, part);
+  // A /test session ticking lines, or another /todo adding, writes the whole body too: if one landed between the read and the write, ours replaced
+  // it. Read it back, and add the section again to what is there now if it's gone.
+  if (!dry && walk) {
+    const now = readIssue(number);
+    if (!hasSection(now.body, n)) writeWalk({ ...walk, body: now.body }, p, withSection(now.body, p, text), labels, false, part);
+  }
+  console.log(`${dry ? 'would add' : 'added'} #${n} to ${walk ? `#${number}` : 'a new walk,'} ${walkTitle(p, part)}${dry || walk ? '' : ` (#${number})`}`);
 }
 
 function fold(args) {

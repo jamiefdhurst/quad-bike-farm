@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  AREAS, readPlaces, whereItFits, placeLine, placeFor, section, hasSection, withSection, walkTitle, untickedOnly, triedItem, foldedSection,
+  AREAS, readPlaces, resolvePlace, currentWalk, whereItFits, placeLine, placeFor, section, hasSection, withSection, walkTitle, untickedOnly, triedItem, foldedSection,
 } from '../tools/walkIssue.mjs';
 
 const places = readPlaces(readFileSync(resolve('docs/farm-plan.md'), 'utf8'));
@@ -93,6 +93,28 @@ describe('the section added to a walk', () => {
     expect(hasSection(more, 2)).toBe(true);
     expect(hasSection(more, 20)).toBe(false);
     expect(walkTitle('the barn')).toBe('Walk: the barn');
+  });
+});
+
+describe('the walk a session names, and a full one', () => {
+  it('takes a walk by its name, or a place by any of its names, so the barn is the farmstead\'s walk', () => {
+    expect(resolvePlace('the farmstead', places)).toBe('the farmstead');
+    expect(resolvePlace('The barn', places)).toBe('the farmstead');
+    expect(resolvePlace('the farmhouse', places)).toBe('the farmstead');
+    expect(resolvePlace("the neighbour's", places)).toBe("the neighbour's");
+    expect(resolvePlace('the girls', places)).toBe('the girls');
+  });
+
+  it('refuses a name that is no walk, rather than opening a second one', () => {
+    expect(() => resolvePlace('the shed out back', places)).toThrow(/isn't a place on docs\/farm-plan.md or an area. The walks are: .*the farmstead/);
+  });
+
+  it('adds to the latest part of a walk, and a full one is followed by part 2', () => {
+    const open = [{ number: 1, title: 'Walk: the girls' }, { number: 9, title: 'Walk: the girls (2)' }, { number: 4, title: 'Walk: the girls next door' }];
+    expect(currentWalk(open, 'the girls')).toMatchObject({ number: 9, part: 2 });
+    expect(currentWalk(open.slice(0, 1), 'the girls')).toMatchObject({ number: 1, part: 1 });
+    expect(currentWalk([{ number: 4, title: 'Walk: the girls next door' }], 'the girls')).toBeNull();
+    expect(walkTitle('the girls', 2)).toBe('Walk: the girls (2)');
   });
 });
 
