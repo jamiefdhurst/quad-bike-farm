@@ -36,8 +36,8 @@ import { createMoor, laneEdgeAt } from './moor.js';
  * edge (15.7 m above the lie) up and lets 40 m do; the landform has no such rise, so the same fade was a 33 to 47 degree bank down to Back Lane.
  */
 export const HILL_FADE_ON_LANDFORM = 160;
-/** How far past a pond's own radius (in its radii) the ground is eased back to the lie, so the levelled bowl has a shoulder (#946). */
-const PONDS_EASE_TO = 1.7;
+/** How far past a pond's own radius (in its radii) the ground is eased back to the lie, so the levelled bowl has a shoulder (#946). The ground there falls about 12 degrees, so a shorter one (1.7) made 25 degree banks (#1184). */
+const PONDS_EASE_TO = 2.5;
 
 export function createTerrainHeight(layout, track, { hillFade } = {}) {
   const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
