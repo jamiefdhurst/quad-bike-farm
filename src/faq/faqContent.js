@@ -1485,8 +1485,9 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why will not the girls walk across the whole farm?',
         a: `A girl will not set off on a walk of more than about 150 metres by her own choice. If she wants the hut, the flask or a cup of tea from the barn and it is
-          further than that, she asks for a lift on the back of your quad when you are sat still close by, or takes a quad of her own and drives there. Ask her to come to you from
-          further than that and she stops where she is and calls out for you to come back for her.`,
+          further than that, she asks for a lift on the back of your quad when you are sat still close by, or takes a quad of her own and drives there. On the back of
+          yours she says where she wants to go, and gets off when you stop within about 30 metres of it. On her own quad she parks near it, gets off and does what she went
+          for (sits in the hut, has her tea). Ask her to come to you from further than that and she stops where she is and calls out for you to come back for her.`,
       },
       {
         q: 'What can I ask them to do?',
