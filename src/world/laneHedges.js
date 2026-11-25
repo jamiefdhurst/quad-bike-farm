@@ -67,6 +67,34 @@ export function laneTrees(road, random, gaps = []) {
 
 export const FORD_OPEN = 6; // m either side of the ford that the hedges are open, for the stream
 export const STILE_HALF = 1.1; // m either side of the stile that the hedge is open
+export const STILE_SOLID_HALF = 0.45; // m either side of the hedge line that the stile is solid: its step boards stand out 0.43 m
+export const STILE_SOLID_TOP = 1.1; // m above the ground that it is solid to, just over its posts
+export const STILE_OWN_HALF = 0.62; // m either side of the stile's middle along the lane that it stands: its posts' outer faces, and a hand
+
+/**
+ * The footpath's stile (#686), or null with no footpath: where it stands on the hedge line, `yaw` turning its rail (local x) along the lane, whether
+ * hedge runs up to it on both sides (`hedged`), and `box`, the one fixed collider that shuts it to anything on wheels (#1017). In a hedge the box spans
+ * the whole gap (`STILE_HALF` each way along), so nothing slips by beside the posts; with no hedge beside it (the Moor's open side, #713) it is the stile's
+ * own posts and rail (`STILE_OWN_HALF`), so it is no invisible wall. `heightAt` lifts the box from just under the lowest ground beneath it to
+ * `STILE_SOLID_TOP` over the highest.
+ */
+export function laneStile(road, heightAt = () => 0) {
+  if (!road.footpath) return null;
+  const s = sAlong(road, road.footpath.at[0], road.footpath.at[1]);
+  const side = footpathSide(road);
+  const p = sidePoint(road, s, side, hedgeOffset(road, s, side));
+  const yaw = Math.atan2(-p.tz, p.tx);
+  const runs = laneHedgeRuns(road, laneGaps(road)).filter((r) => r.side === side);
+  const hedged = runs.some((r) => Math.abs(r.to - (s - STILE_HALF)) < 0.05) && runs.some((r) => Math.abs(r.from - (s + STILE_HALF)) < 0.05);
+  const half = hedged ? STILE_HALF : STILE_OWN_HALF;
+  const ys = [];
+  for (const a of [-half, half]) {
+    for (const c of [-STILE_SOLID_HALF, STILE_SOLID_HALF]) ys.push(heightAt(p.x + p.tx * a + p.tz * side * c, p.z + p.tz * a - p.tx * side * c));
+  }
+  const lo = Math.min(...ys) - 0.2;
+  const hi = Math.max(...ys) + STILE_SOLID_TOP;
+  return { s, side, x: p.x, z: p.z, yaw, hedged, box: { x: p.x, y: (lo + hi) / 2, z: p.z, hx: half, hy: (hi - lo) / 2, hz: STILE_SOLID_HALF, turn: yaw } };
+}
 
 /** How far along the road (m) the point (x, z) is nearest: a walk of the samples, run once for each of a few gates. */
 function nearestS(road, x, z) {

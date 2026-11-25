@@ -502,7 +502,12 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where does the footpath off Back Lane go?',
-        a: `The fingerpost and the stile in the hedge on the west side, towards the south, point up the hill to Upper Thornby (1 mile). You can see its roofs and church tower from the ridge, over the wall, but it is too far to reach: the path crosses the Moor to a ladder stile in the ridge wall, and climbing it turns you round.`,
+        a: `The fingerpost and the stile on the west side, on the Moor's open stretch just before the southern cattle grid, point up the hill to Upper Thornby (1 mile). You can see its roofs and church tower from the ridge, over the wall, but it is too far to reach: the path crosses the Moor to a ladder stile in the ridge wall, and climbing it turns you round.`,
+      },
+      {
+        q: 'Why can\'t I ride through the stile on Back Lane?',
+        a: `A stile is for walkers, so it is solid to anything on wheels, quad, mini moto or car, and you can't climb it on foot yet either. It stands where the lane's west side is open to the Moor, so go round it: the common is open on either side of it.`,
+        tip: 'Back Lane\'s stile is solid. It stands on the Moor\'s open side, so go round it.',
       },
       {
         q: 'What is the Moor, and what is up there?',
