@@ -44,6 +44,10 @@ Usage (needs numpy, and matplotlib for --plot):
   python3 tools/slice_engine_audio.py engine-bank-fiesta fx=07043115.wav fd=07043116.wav fs=07043117.wav st=st.wav mini=686742.wav
   python3 tools/slice_engine_audio.py engine-bank-corsa cd=07043124.wav cc=07043123.wav cs=07043125.wav st=st.wav
   python3 tools/slice_engine_audio.py engine-bank-309 px=07043131.wav pd=07043132.wav jumpy=500193.wav   # your 309
+
+  A new check on a bank whose sources aren't to hand: runs every check on its kept WAV (source/audio/) and rewrites only the
+  'ok' flags in its JSON, as a re-slice would leave them (#852):
+  python3 tools/slice_engine_audio.py --recheck engine-bank-atc
 """
 
 import argparse
@@ -697,13 +701,146 @@ def eq_match(x, span, ref, max_db=12):
     # A boosted band can push peaks over full scale; keep it below, and the source gain puts the level back.
     return (y * min(1, 0.95 / np.abs(y).max())).astype(np.float32)
 
+def pulse_reasons(x, cuts, kind, lo, hi, config):
+    """Why each pulse between cuts fails, or None where it passes, from the segment's audio as the bank keeps it (after any
+    flattening). Slicing and --recheck both use it, so a re-check gives the flags a re-slice would."""
+    k = int(SR * 0.0008)
+    fine_env = np.convolve(np.abs(x), np.ones(k) / k, mode='same')
+    whole = kind == 'idle' and config.get('idleCycles')
+    rev = kind in ('accel', 'decel')
+    odd_limit = config.get('revOdd', 0.2) if rev else config.get('idleOdd', 0.2)
+    tail_limit = config.get('revTail', 0.5) if rev else config.get('idleTail', 0.5)
+    durs = np.diff(cuts) / SR
+    reasons = []
+    for i in range(len(cuts) - 1):
+        s, e = cuts[i], cuts[i + 1]
+        reason = None
+        if e > s:
+            dur = (e - s) / SR
+            seg_env = fine_env[s:e]
+            n = len(seg_env)
+            med = np.median(durs[max(0, i - 3) : i + 4])
+            if config.get('periodCheck') and not 0.85 * lo <= dur <= 1.15 * hi:
+                reason = 'out of range'  # the tracker slipped: no real pulse is this long or short here
+            elif abs(dur - med) / med > odd_limit:
+                reason = 'odd length'
+            elif not whole and tail_limit and seg_env[int(n * 0.8) :].max() > tail_limit * seg_env[: int(n * 0.4)].max():
+                # (A whole cycle has its other cylinders' beats in it, so this check doesn't apply. Nor does it where revTail is
+                # None: a single at high revs never goes quiet before its next firing, and followed peaks can't carry it.)
+                reason = 'next thump in tail'
+        reasons.append(reason)
+    return reasons
+
+
+# A whine: an idle firing whose strongest narrow peak from 2 to 6 kHz stands this many dB further over the 50 bins round it than
+# its recording's firings usually do. The Ape's idle (the T185's) has a 3.2 to 3.6 kHz whine in a few stretches that was heard
+# whenever one of their firings was picked. Relative to each recording's median, so one that is tonal all through (the Plover's)
+# loses nothing (#852).
+WHINE_OVER = 5.5
+# Measured as the worklet plays a bank in a 48 kHz audio context, read with linear interpolation: the engine review fitted the
+# 5.5 dB there, and measured at the bank's own 44.1 kHz the Plover's 5.8 kHz whistle, there all through, tips a firing over it.
+WHINE_RATE = 48000
+WHINE_N = 2048  # 43 ms from the firing's start, about one Ape firing
+
+
+def at_whine_rate(audio):
+    return np.interp(np.arange(len(audio) * WHINE_RATE // SR) * SR / WHINE_RATE, np.arange(len(audio)), audio)
+
+
+def tonal_peak(heard, start):
+    """How far the strongest narrow peak from 2 to 6 kHz in the WHINE_N samples of `heard` (at WHINE_RATE) from `start` stands
+    over the 50 bins round it (the 5 nearest left out), in dB. As tools/engine-review/srcscan.mjs measures it."""
+    seg = np.zeros(WHINE_N)
+    part = heard[start : start + WHINE_N]
+    seg[: len(part)] = part
+    seg *= 0.5 - 0.5 * np.cos(2 * np.pi * np.arange(WHINE_N) / WHINE_N)
+    db = 10 * np.log10(np.abs(np.fft.rfft(seg)[: WHINE_N // 2]) ** 2 + 1e-20)
+    ks = np.arange(int(np.floor(2000 / WHINE_RATE * WHINE_N)), int(np.ceil(6000 / WHINE_RATE * WHINE_N)))
+    offs = np.array([d for d in range(-25, 26) if abs(d) > 2])
+    around = np.sort(db[ks[:, None] + offs[None, :]], axis=1)[:, len(offs) // 2]
+    return float((db[ks] - around).max())
+
+
+def whine_check(audio, grains):
+    """Marks each idle firing with a whine not ok, against its own kind's median (each kind of idle is one recording). Returns the
+    firings it found whining."""
+    heard = at_whine_rate(audio)
+    whining = []
+    for kind in sorted({g['kind'] for g in grains if g['kind'].startswith('idle')}):
+        group = [g for g in grains if g['kind'] == kind]
+        peaks = [tonal_peak(heard, round(g['start'] * WHINE_RATE)) for g in group]
+        median = sorted(peaks)[len(peaks) // 2]
+        for g, p in zip(group, peaks):
+            if p > median + WHINE_OVER:
+                whining.append(g)
+                set_ok(g, False)
+    return whining
+
+
+def set_ok(grain, ok):
+    """'ok': False sits after 'rms', where slicing puts it, so a re-checked bank reads as a re-sliced one."""
+    rest = {key: grain.pop(key) for key in list(grain) if key not in ('kind', 'start', 'dur', 'tail', 'rpm', 'src', 'rms')}
+    rest.pop('ok', None)
+    if not ok:
+        grain['ok'] = False
+    grain.update(rest)
+
+
+def recheck(name):
+    """Runs every check on a bank's kept WAV (source/audio/, or public/audio/ before wav_to_flac has moved it) and rewrites only
+    the 'ok' flags in its JSON, for a new check on a bank whose source recordings aren't to hand. Each segment is found again from
+    BANKS, which must still describe the bank as it was cut. It only takes grains out of use: one the bank has as not ok stays so
+    even if the checks now pass it (the ATC's last Vespa firing does, as a zero-length pulse beside it isn't in the JSON)."""
+    config = BANKS[name]
+    wav = next(p for p in (os.path.join(ROOT, d, 'audio', f'{name}.wav') for d in ('public', 'source')) if os.path.exists(p))
+    audio = load(wav)
+    path = os.path.join(ROOT, 'public', 'audio', f'{name}.json')
+    with open(path) as f:
+        text = f.read()
+    bank = json.loads(text)
+    grains = bank['grains']
+    was_ok = [g.get('ok', True) for g in grains]
+    base = 0
+    rejected = {}
+    passed = []  # the grains every check but the whine passes
+    for kind, src, t0, t1, (lo, hi) in config['segments']:
+        end = base + int(t1 * SR) - int(t0 * SR)
+        mine = [g for g in grains if base <= round(g['start'] * SR) < end]
+        assert mine and all(g['kind'] == kind and g['src'] == src for g in mine), f'{name}: BANKS no longer matches the bank at {kind} {src} {t0}'
+        cuts = [round(g['start'] * SR) - base for g in mine] + [round((mine[-1]['start'] + mine[-1]['dur']) * SR) - base]
+        for g, reason in zip(mine, pulse_reasons(audio[base:end], cuts, kind, lo, hi, config)):
+            if reason:
+                rejected[reason] = rejected.get(reason, 0) + 1
+            else:
+                passed.append(g)
+            set_ok(g, not reason and g.get('ok', True))
+        base = end
+    assert base + sum(int(t1 * SR) - int(t0 * SR) for _, _, t0, t1, *_ in config['oneshots']) == len(audio), f'{name}: BANKS no longer matches its length'
+    whining = {id(g) for g in whine_check(audio, grains)}
+    usable = {id(g) for g, ok in zip(grains, was_ok) if ok}
+    rejected['tonal whine'] = len(whining & usable)
+    # Two cuts at one point aren't in the JSON, so a neighbour's median can come out differently from the slicer's.
+    kept = sum(id(g) not in usable and id(g) not in whining for g in passed)
+    with open(path, 'w') as f:
+        if text.startswith('{\n'):
+            json.dump(bank, f, indent=1, allow_nan=False)
+        else:
+            json.dump(bank, f, separators=(',', ':'), allow_nan=False)  # as wav_to_flac.py writes it
+    before, after = sum(was_ok), sum(g.get('ok', True) for g in grains)
+    print(f'{name}: {before} usable grains before, {after} after, rejected {rejected}; {kept} kept out of use that the checks now pass')
+
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('bank', choices=sorted(BANKS))
-    ap.add_argument('sources', nargs='+', help='name=path.wav for each source the bank uses')
+    ap.add_argument('bank', nargs='?', choices=sorted(BANKS))
+    ap.add_argument('sources', nargs='*', help='name=path.wav for each source the bank uses')
     ap.add_argument('--plot')
+    ap.add_argument('--recheck', choices=sorted(BANKS), help="run the checks on this bank's kept WAV and rewrite only its 'ok' flags")
     args = ap.parse_args()
+    if args.recheck:
+        return recheck(args.recheck)
+    if not args.bank or not args.sources:
+        ap.error('a bank and its sources, or --recheck <bank>')
     config = BANKS[args.bank]
     sources = {}
     for item in args.sources:
@@ -749,9 +886,8 @@ def main():
         flat = config.get('flatten')
         if flat and src in flat['sources']:
             x = flatten(x, cuts, flat['rms3000'], flat['slope'], flat['headroom'])
-            fine_env = np.convolve(np.abs(x), np.ones(k) / k, mode='same')
         base = append(x)
-        durs = np.diff(cuts) / SR
+        reasons = pulse_reasons(x, cuts, kind, lo, hi, config)
         for i in range(len(cuts) - 1):
             s, e = cuts[i], cuts[i + 1]
             if e <= s:
@@ -759,21 +895,7 @@ def main():
             dur = (e - s) / SR
             # Overlap into the quiet stretch before the next thump, for crossfading at playback.
             tail = int(min(0.003, 0.12 * dur) * SR)
-            seg_env = fine_env[s:e]
-            n = len(seg_env)
-            reason = None
-            med = np.median(durs[max(0, i - 3) : i + 4])
-            rev = kind in ('accel', 'decel')
-            odd_limit = config.get('revOdd', 0.2) if rev else config.get('idleOdd', 0.2)
-            tail_limit = config.get('revTail', 0.5) if rev else config.get('idleTail', 0.5)
-            if config.get('periodCheck') and not 0.85 * lo <= dur <= 1.15 * hi:
-                reason = 'out of range'  # the tracker slipped: no real pulse is this long or short here
-            elif abs(dur - med) / med > odd_limit:
-                reason = 'odd length'
-            elif not whole and tail_limit and seg_env[int(n * 0.8) :].max() > tail_limit * seg_env[: int(n * 0.4)].max():
-                # (A whole cycle has its other cylinders' beats in it, so this check doesn't apply. Nor does it where revTail is
-                # None: a single at high revs never goes quiet before its next firing, and followed peaks can't carry it.)
-                reason = 'next thump in tail'
+            reason = reasons[i]
             if reason:
                 rejected[reason] = rejected.get(reason, 0) + 1
             seg = x[s:e]
@@ -830,6 +952,10 @@ def main():
     # Borrowed starter and shutdown recordings keep the gain they have in the bank the vehicle used before, so changing its
     # idle recording doesn't make its starter louder or quieter.
     source_gain.update(config.get('fixedGain', {}))
+    # After the levels are set, so taking a whining stretch out of use doesn't move a bank's loudness (and --recheck, which keeps
+    # the gains, gives the same bank).
+    was_ok = {id(g) for g in grains if g.get('ok', True)}
+    rejected['tonal whine'] = sum(id(g) in was_ok for g in whine_check(audio, grains))
 
     os.makedirs(os.path.join(ROOT, 'public', 'audio'), exist_ok=True)
     with wave.open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.wav'), 'wb') as w:
