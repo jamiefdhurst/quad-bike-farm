@@ -137,4 +137,25 @@ export function farHedges(g) {
   return ['every hedge more than 25 m from you is its plain far strip (usually 150 m), and every oak and bush the lighter far one (usually 70 m); walk along a hedge to see the swap, scene end puts it back'];
 }
 
-export const SETUPS = { farHedges, prepare: getOff, wardrobe, moto, flock, flask, earlier, end: endScene };
+/** The tractor at the log yard with the splitter on it, running and held, a round on the beam and you beside it (#338). Not lines alone,
+ * as a farm with no tractor or log yard has nothing for them to set. */
+export function splitter(g, say) {
+  const yard = g.world.layout.logYard;
+  const q = g.tractorUnit?.quad;
+  if (!yard || !q || !g.logStack || !g.units.includes(g.tractorUnit)) return ['this farm has no tractor and log yard, so there is nowhere to split'];
+  if (q.rider || q.driver) return ['the tractor has someone on it: get them off, then run the scene again'];
+  if (g.tractorWork.splitterTrailerOn()) return ['a trailer is on the tractor\'s drawbar, which hides the splitter: unhitch it, then run the scene again'];
+  q.placeAt(yard.park.x, yard.park.z, yard.park.yaw);
+  say('farm.splitter true');
+  say(`start ${g.tractorUnit.id}`);
+  q.parkBrake = true;
+  const loaded = g.tractorWork.debugLoadRound();
+  const me = g.tractorWork.beamSide();
+  say(`tp me ${me.x.toFixed(1)} ${me.z.toFixed(1)} ${Math.round(me.heading)}`);
+  return [
+    loaded ? 'the tractor is running with its brake on and a round on the splitter: hold E at the beam to push the ram through it' : 'no round left in the piles to put on the beam (the Farm tab\'s "Empty the log stack (rounds dealt back)" deals them again)',
+    'listen for the pump\'s whine as the ram moves, the strain as it meets the round, and the hiss as it comes back',
+  ];
+}
+
+export const SETUPS = { farHedges, prepare: getOff, wardrobe, moto, flock, flask, earlier, splitter, end: endScene };
