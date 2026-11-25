@@ -6,8 +6,8 @@
 // stripped first: left in they count as code and every share reads about 96%.
 
 /** The share of each of these that a smoke run reaches, as a whole-number percentage, with the point each may not fall below. Each floor is 2 points
- * under the worst of five CI runs, so the ordinary differences between runs don't fail a PR. To raise one, run the Smoke job a few times (it prints the
- * shares in its summary) and set it 2 under the lowest. To add a host file, add a line here: a test fails until it has one. */
+ * under the worst of five CI runs, so the ordinary differences between runs don't fail a PR. To raise one, run the Smoke play job a few times (it prints the
+ * shares in its summary; #1182) and set it 2 under the lowest. To add a host file, add a line here: a test fails until it has one. */
 export const FLOORS = {
   all: 77, // was 78: the Moor (#713, about 1,500 lines of src) is on the new farm only, and the smoke run loads today's farm
   'src/game.js': 63,
@@ -22,14 +22,14 @@ export const FLOORS = {
     'src/photos/photoHost.js': 30,
     'src/world/farmJobsHost.js': 44,
     'src/world/fieldWorkHost.js': 43,
-    'src/world/hutHost.js': 71,
+    'src/world/hutHost.js': 69, // was 71: 73.6% with the frame budget's spots in the same run, 71.7% in the play part on its own (#1182)
     'src/world/motHost.js': 57,
     'src/world/mowHost.js': 43,
     'src/world/neighbourHost.js': 63,
     'src/world/rollingRoadHost.js': 43,
     'src/world/trafficHost.js': 70, // was 74 (76 before that; 72.2% reached on the farm everybody plays, #692): `debugBackLane` runs only on the new farm (#686), which the smoke does not play until #692 makes it the default
     'src/world/turnRoundHost.js': 40, // 42.8% in one run: its turn-round code runs only on the new farm (#687), which the smoke does not play until #692 makes it the default
-    'src/world/villageHost.js': 80,
+    'src/world/villageHost.js': 68, // was 80: the frame budget's stop in the village street ran the rest, and it is in the load part now (82.3% then, 70.8% in play, #1182)
     'src/world/weatherHost.js': 74, // was 78: the run reaches 76.6% on the farm everybody plays (#692)
   },
 };

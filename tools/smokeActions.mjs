@@ -16,7 +16,8 @@ export const HUNG_FLAT_S = 30;
 
 /**
  * Run in the page once, after the game is up: `window.smokeWait(gameSeconds)` resolves when that much game time has passed (the frames' own steps, capped
- * as the game caps them) and throws, saying it is the real-time limit, if the page was hung. `smokeGameTime()` reads the clock.
+ * as the game caps them) and throws, saying it is the real-time limit, if the page was hung. `smokeGameTime()` reads the clock. A third argument sets that
+ * limit in real seconds, for a wait that is known to be slow (the first frames, #1182).
  */
 export function installGameClock({ factor, flat }) {
   const cap = 0.1; // MAX_FRAME_DT in game.js
@@ -28,10 +29,10 @@ export function installGameClock({ factor, flat }) {
     return dt;
   };
   window.smokeGameTime = () => now;
-  window.smokeWait = async (seconds, until = () => false) => {
+  window.smokeWait = async (seconds, until = () => false, limitSeconds = seconds * factor + flat) => {
     const from = now;
     const started = performance.now();
-    const limit = (seconds * factor + flat) * 1000;
+    const limit = limitSeconds * 1000;
     while (now - from < seconds && !until()) {
       if (performance.now() - started > limit) {
         throw new Error(`hung: ${seconds} s of game time took over ${Math.round(limit / 1000)} s of real time (the real-time limit, not the game-time one)`);
