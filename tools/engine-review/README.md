@@ -37,7 +37,7 @@ WORKLET=tools/engine-review/prototype/engineWorklet.js
 | `wavpeak.mjs` | The strongest narrow tone from 2 to 6 kHz in a WAV, and how many 85 ms frames show one 6 dB over the median. | `node tools/engine-review/wavpeak.mjs a.wav [b.wav ...]` |
 | `whine.mjs` | Renders a long idle and looks for a narrow spectral peak standing out, listing the grains playing when one shows. The T185's whine. A third argument plays a patched bank (`dewhine.mjs`'s) in place of the shipped one. | `node tools/engine-review/whine.mjs <vehicle id> [seconds] [bank.json]` |
 | `srcscan.mjs` | Scans a bank's idle grains in the source recording for a narrow tonal peak, grain by grain. | `node tools/engine-review/srcscan.mjs <bank name> [kind]` |
-| `dewhine.mjs` | Marks the idle grains whose peak stands more than `over` dB (5.5) over the recording's median as `ok: false` (which the worklet honours) and writes the bank to `banks/`. In the game this belongs in `tools/slice_engine_audio.py`, so a re-slice keeps it (#852). | `node tools/engine-review/dewhine.mjs <bank name> [over]` |
+| `dewhine.mjs` | Marks the idle grains whose peak stands more than `over` dB (5.5) over the recording's median as `ok: false` (which the worklet honours) and writes the bank to `banks/`. The game's version is the slicer's whine check (`tools/slice_engine_audio.py`, and `--recheck <bank>` without the sources; #852). | `node tools/engine-review/dewhine.mjs <bank name> [over]` |
 | `cuts.mjs` | Where a cycle's even cut into firings lands: the level in the 1 ms at each cut against the firing's RMS (high means it starts mid-sound), and where the loudest moment falls in each slice. | `node tools/engine-review/cuts.mjs <bank> <split> [kind]` |
 
 ## Fitting the rule
