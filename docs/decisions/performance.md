@@ -298,3 +298,7 @@ The sections below are the record, oldest first. A new decision goes at the end.
 - **Each props builder its own stream** (`streamFor`, Jamie agreed): the scatter shuffled once, the same in kind and density, and a change to one builder no longer moves another's things (the drive verge's 69,000 draws used to move the Moor, the village and the hill). The grass, the stubble and the Moor's plants then go on `later` and are built behind the start screen before the shaders are prepared; the frame budget waits for them (`buildLater` in `measureInPage`).
 - **Measured** (`--runs 3`, main and the branch the same session): see the PR's table. Jamie agreed to take the number as measured rather than the 4 s the issue asked for; what is left is spread thin (the props 1.1 s, the girls' dressing 0.7 s, the terrain's overview painting 0.4 s, the sounds 0.3 s).
 - **Not done:** the spraying, harrowing and hay views (0.4 s) show the fields' saved state from the first frame and are read every frame, so they stay in the load.
+
+## A budget spot at the river's crossing (#999)
+
+- **New spot `river`** in `BUDGETS`, 6 m back from the water on the crossing's north landing (`layout.budgetSpots.river`, from the crossing's anchor), so the river's banks, plants and fence are held from now on. Measured with `tools/perf.mjs`: 1,363 calls and 2.06M triangles before #999 (main with only the spot added) and 1,369 and 2.15M after; budget 1,480 calls and 2.32M triangles, about 8% over.
