@@ -543,6 +543,7 @@ export class Traffic {
     this.nextPass = exponential(random, Math.max(1, params.passEvery)) * 0.5;
     this.backRoad = places.lanes?.road?.('backLane') ?? null; // Back Lane, on the new farm
     this.backAll = []; // the vehicles on it, which watch each other for meeting on the single track
+    this.backHeld = []; // dealt but not yet on it: the end they come in at has one going their way too near it (#1015)
     this.nextBack = exponential(random, Math.max(1, params.backEvery)) * 0.5;
     this.aRoad = places.lanes?.road?.('aRoad') ?? null; // the A-road, on the new farm: where the lane meets it, and the traffic on it
     this.junctionS = this.aRoad ? sAlong(this.aRoad, places.lanes.road('lane').samples[0].x, places.lanes.road('lane').samples[0].z) : 0;
@@ -594,18 +595,46 @@ export class Traffic {
     return v;
   }
 
-  /** Sets a vehicle off round Back Lane now, from one end or the other (new farm only). `kind` a LANE_KINDS id, or random. Null where there is no Back Lane. */
+  /**
+   * Sets a vehicle off round Back Lane now, from one end or the other (new farm only). `kind` a LANE_KINDS id, or random. Null where there is no Back Lane.
+   * If one going the same way has only just left that end, it is held off the road until that one is its following distance on (`backEndClear`), so it is
+   * never dealt on top of it.
+   */
   spawnBackLane(kind, dir = this.random() < 0.5 ? 1 : -1) {
     if (!this.backRoad) return null;
     const [id, spec] = kind && LANE_KINDS[kind] ? [kind, LANE_KINDS[kind]] : pickKind(this.random);
     const p = this.p;
     const speed = spec.speed === 'tractor' ? Math.min(p.tractorSpeed, p.backSpeedMax) : p.backSpeedMin + this.random() * Math.max(0, p.backSpeedMax - p.backSpeedMin);
     const drive = new LaneDrive({ id: this.count + 1, road: this.backRoad, all: this.backAll, dir, speed });
-    this.backAll.push(drive);
     const colour = spec.colours[Math.floor(this.random() * spec.colours.length)];
     const v = { id: ++this.count, kind: id, model: spec.model, colour, dir, drive, passed: true, backLane: true };
-    this.vehicles.push(v);
+    this.backHeld.push(v);
+    this.releaseBackLane();
     return v;
+  }
+
+  /** Puts each held Back Lane vehicle on the road once its end is clear, in the order they were dealt at each end. */
+  releaseBackLane() {
+    const waiting = new Set(); // the ends with one still held, which those behind it wait behind
+    this.backHeld = this.backHeld.filter((v) => {
+      if (waiting.has(v.dir) || !this.backEndClear(v.drive)) {
+        waiting.add(v.dir);
+        return true;
+      }
+      this.putOnBackLane(v);
+      return false;
+    });
+  }
+
+  /** Whether `drive`, at its end of Back Lane, has its following distance to every vehicle there going its way: `followGap` plus `followTime` a m/s. */
+  backEndClear(drive) {
+    const { followGap, followTime } = drive.p;
+    return this.backAll.every((o) => o.dir !== drive.dir || (o.s - drive.s) * drive.dir >= followGap + drive.cruise * followTime);
+  }
+
+  putOnBackLane(v) {
+    this.backAll.push(v.drive);
+    this.vehicles.push(v);
   }
 
   /** Sets a visitor off now, if there is not one: `kind` 'post' or 'neighbour', or random. `leaveOpen` forces the gate's fate. */
@@ -642,7 +671,8 @@ export class Traffic {
     const p = this.p;
     this.clock += dt;
     const quiet = 1 + (p.nightQuiet - 1) * (ctx.darkness ?? 0);
-    if (this.backRoad && p.backEvery > 0 && this.backAll.length < 3) {
+    if (this.backHeld.length) this.releaseBackLane();
+    if (this.backRoad && p.backEvery > 0 && this.backAll.length + this.backHeld.length < 3) {
       this.nextBack -= dt;
       if (this.nextBack <= 0) {
         this.spawnBackLane();
