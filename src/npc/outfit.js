@@ -1208,20 +1208,31 @@ function addHood(rig, data, shell, tint) {
   setHood(rig, rig.hoodIsUp);
 }
 
-/** Her hair as it was before it was tied back (each mesh's own copy of its points), put back for a refit. */
+/** Her hair as it was before it was tied back (each mesh's own copy of its points and skin weights), put back for a refit. */
 function letHairDown(rig) {
-  for (const { mesh, loose } of rig.hairTied ?? []) {
-    mesh.geometry.attributes.position.array.set(loose);
-    mesh.geometry.attributes.position.needsUpdate = true;
+  for (const { mesh, loose, looseIndex, looseWeight } of rig.hairTied ?? []) {
+    const { position, skinIndex, skinWeight } = mesh.geometry.attributes;
+    position.array.set(loose);
+    skinIndex.array.set(looseIndex);
+    skinWeight.array.set(looseWeight);
+    position.needsUpdate = skinIndex.needsUpdate = skinWeight.needsUpdate = true;
     bodyNormals(mesh);
   }
   rig.hairTied = null;
   rig.ponytail = null;
 }
 
+/** The map from a mesh's stored points to where they stand (in root space, as bodyData's `skin`) for a point on one bone alone. */
+function headSkin(mesh, md, boneIndex) {
+  mesh.skeleton.update();
+  const toRoot = md.fromRoot.clone().invert();
+  const e = new THREE.Matrix4().fromArray(mesh.skeleton.boneMatrices, boneIndex * 16).premultiply(mesh.bindMatrixInverse).multiply(mesh.bindMatrix).premultiply(toRoot).multiply(md.fromRoot).elements;
+  return [e[0], e[4], e[8], e[12], e[1], e[5], e[9], e[13], e[2], e[6], e[10], e[14]];
+}
+
 /**
  * A ponytail (ponytail.js): her hair pulled in tight to her head and up off the back of her neck, then a band and a tail on her head
- * bone, hanging down her back from a pivot the rig turns each frame (PonytailSwing), and a few loose strands at her temples and nape.
+ * bone, the tail bent each frame below its root to hang down her back (PonytailSwing), and a few loose strands at her temples and nape.
  * In the rest pose, with the posed body for rays.
  */
 function addPonytail(rig, style) {
@@ -1264,7 +1275,9 @@ function addPonytail(rig, style) {
     return Hb.y + lift * k;
   };
 
-  // Her hair pulled in, in each of her meshes painted hair (her own copy of the geometry: the girls' clones share it).
+  // Her hair pulled in, in each of her meshes painted hair (her own copy of the geometry: the girls' clones share it). Pulled onto her
+  // skull, it is skinned to her head bone alone: the loose hair at the back was partly on her neck and chest bones, so when she turned
+  // her head the hair now on her skull stayed behind with her neck and tore across the back of her head, up to 10 cm off it (#1243).
   const tied = [];
   const meshes = [];
   rig.model.traverse((o) => {
@@ -1273,6 +1286,9 @@ function addPonytail(rig, style) {
   const p = new THREE.Vector3();
   for (const mesh of meshes) {
     const md = mesh === body ? data : bodyData(rig, mesh);
+    const headIndex = mesh.skeleton.bones.findIndex((bone) => bone.name === 'Head');
+    if (headIndex < 0) continue;
+    const onHead = headSkin(mesh, md, headIndex);
     const moves = [];
     md.verts.forEach((q, i) => {
       if (md.paint(i) !== 'hair') return;
@@ -1282,17 +1298,22 @@ function addPonytail(rig, style) {
       dir.copy(p).sub(C).normalize();
       const s = scalp(dir);
       if (s != null) p.copy(C).addScaledVector(dir, s + margin);
-      moves.push([i, unskin(q.skin, p.toArray())]);
+      moves.push([i, unskin(onHead, p.toArray()), p.toArray()]);
     });
     if (!moves.length) continue;
     if (!mesh.userData.ownGeometry) {
       mesh.geometry = mesh.geometry.clone();
       mesh.userData.ownGeometry = true;
     }
-    const attr = mesh.geometry.attributes.position;
-    tied.push({ mesh, loose: attr.array.slice() });
-    for (const [i, at] of moves) p.fromArray(at).applyMatrix4(md.fromRoot).toArray(attr.array, i * 3);
-    attr.needsUpdate = true;
+    const { position: attr, skinIndex, skinWeight } = mesh.geometry.attributes;
+    // `points` and `aimed` (where each was put, in root space as she stands) for the tests.
+    tied.push({ mesh, points: moves.map(([i]) => i), aimed: moves.map(([, , at]) => at), loose: attr.array.slice(), looseIndex: skinIndex.array.slice(), looseWeight: skinWeight.array.slice() });
+    for (const [i, at] of moves) {
+      p.fromArray(at).applyMatrix4(md.fromRoot).toArray(attr.array, i * 3);
+      skinIndex.setXYZW(i, headIndex, 0, 0, 0);
+      skinWeight.setXYZW(i, 1, 0, 0, 0);
+    }
+    attr.needsUpdate = skinIndex.needsUpdate = skinWeight.needsUpdate = true;
     bodyNormals(mesh);
     dressing?.delete(mesh); // her hair has moved
   }
@@ -1378,7 +1399,7 @@ function addPonytail(rig, style) {
   strands.name = 'ponytailStrands';
   attachToBone(rig, strands, 'Head');
 
-  rig.ponytail = { pivot, strands, swing: new PonytailSwing(pivot, { low: lowLocal, chest: b.Spine2, params: rig.ponytailParams }) };
+  rig.ponytail = { pivot, strands, swing: new PonytailSwing(pivot, { hair, low: lowLocal, chest: b.Spine2, params: rig.ponytailParams }) };
   rig.ponytail.swing.underHelmet = !!rig.underHelmet;
 }
 

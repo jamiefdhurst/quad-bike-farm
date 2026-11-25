@@ -26,16 +26,20 @@ export const PONYTAIL_PARAM_RANGES = {
 export const TAIL = {
   lift: 0.04, // how far it rises back out of the band before it falls
   liftAngle: 0.8, // radians above level it leaves the band at
-  gathered: 0.009, // its radius under the band
-  full: 0.024, // its radius at its thickest, just past the band
-  end: 0.003, // its radius at the end
+  gathered: 0.012, // its radius under the band
+  full: 0.034, // its radius at its thickest, just past the band
+  end: 0.004, // its radius at the end
+  taper: 0.5, // how it narrows from its thickest to its end: under 1 it keeps its thickness further down and thins near the end
   wide: 1.15, // across against deep: a tail lies a little flat
   deep: 0.8,
   clear: 0.004, // metres it keeps off her back
   rings: 22,
-  sides: 10,
+  sides: 12,
   wisps: 4, // thin strands splaying out of its end
   wispFrom: 0.7, // how far down the tail they start
+  bendFrom: 0.01, // metres below the band where it starts to hang from her chest rather than her head (above, it is fixed to her head)
+  bendTo: 0.06, // and below which it hangs from her chest alone
+  intoHead: 0.05, // radians it may tip in towards her head from where it hangs at rest: her head down, it lies over the back of it
 };
 
 /**
@@ -59,7 +63,7 @@ export function tailRadius(u, p = TAIL) {
   u = Math.max(0, Math.min(1, u));
   if (u < 0.08) return lerp(p.gathered, p.full * 0.9, smooth01(u / 0.08));
   if (u < 0.16) return lerp(p.full * 0.9, p.full, (u - 0.08) / 0.08);
-  return lerp(p.end, p.full, Math.pow(1 - (u - 0.16) / 0.84, 0.85));
+  return lerp(p.end, p.full, Math.pow(1 - (u - 0.16) / 0.84, p.taper));
 }
 
 /**
@@ -202,6 +206,67 @@ export function buildTail(drop, backAt, p = TAIL) {
   ring.push(ring[1]); // round once more, so the closed tube's ends meet inside itself
   const band = tube(ring, () => 0.0045, { sides: 6, side: tng, shade: (ang) => 0.85 + 0.15 * Math.cos(ang) });
   return { hair: merge([main, ...wisps]), band, path };
+}
+
+/**
+ * How much a point of the tail, `y` metres above the band in the tail's frame, hangs from her chest rather than her head (0 to 1): the
+ * band, the lift out of it and the first centimetre stay on her head however she turns it, so they never swing into her skull (#1243).
+ */
+export function hangShare(y, p = TAIL) {
+  return smooth01((-y - p.bendFrom) / (p.bendTo - p.bendFrom));
+}
+
+/**
+ * How far, in radians, the hang `q` ([x, y, z, w], in the tail's frame) tips the tail in towards her head past `intoHead`, about the
+ * tail's own across axis (x): 0 when it doesn't. Turning it back by this about x (a positive turn tips it in) keeps it off her skull
+ * when she puts her head down and her chest's "down" swings forward under it (#1243).
+ */
+export function tipIntoHead(q, p = TAIL) {
+  const [qx, qy, qz, qw] = q;
+  // Where the tail's "down" (0, -1, 0) goes, as y and z.
+  const dy = -(1 - 2 * (qx * qx + qz * qz));
+  const dz = -(2 * (qy * qz + qx * qw));
+  const into = Math.atan2(-dz, -dy); // towards her head (z forward of the band) is in
+  return Math.max(0, into - p.intoHead);
+}
+
+/**
+ * The tail bent to hang: each point of `rest` (x, y, z flat) turned by the quaternion `q` ([x, y, z, w], the hang in the tail's own
+ * frame) as far as its `share` (hangShare), into `out`. Also used for normals, with `unit` to keep them a unit long.
+ */
+export function bendTail(rest, share, q, out, unit = false) {
+  const [qx, qy, qz, qw] = q;
+  for (let i = 0, n = share.length; i < n; i++) {
+    const x = rest[i * 3];
+    const y = rest[i * 3 + 1];
+    const z = rest[i * 3 + 2];
+    const k = share[i];
+    let ox = x;
+    let oy = y;
+    let oz = z;
+    if (k > 0) {
+      // v + 2w(u x v) + 2u x (u x v), u the quaternion's vector part.
+      const tx = 2 * (qy * z - qz * y);
+      const ty = 2 * (qz * x - qx * z);
+      const tz = 2 * (qx * y - qy * x);
+      const rx = x + qw * tx + (qy * tz - qz * ty);
+      const ry = y + qw * ty + (qz * tx - qx * tz);
+      const rz = z + qw * tz + (qx * ty - qy * tx);
+      ox = x + (rx - x) * k;
+      oy = y + (ry - y) * k;
+      oz = z + (rz - z) * k;
+      if (unit) {
+        const l = Math.hypot(ox, oy, oz) || 1;
+        ox /= l;
+        oy /= l;
+        oz /= l;
+      }
+    }
+    out[i * 3] = ox;
+    out[i * 3 + 1] = oy;
+    out[i * 3 + 2] = oz;
+  }
+  return out;
 }
 
 /**
