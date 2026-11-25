@@ -61,12 +61,19 @@ describe('the river\'s bends (#999)', () => {
         if (brook.notchAt(x, z).k > 0) continue;
         expect(Math.abs(heights.heightAt(x, z) - heights.naturalAt(x, z)), `${x}, ${side}`).toBeLessThan(0.05);
       }
-      // 4 m back from the water the bank is not one height across: it is the levelled middle plus hummocks plus some of the land's lie.
-      lie.push(heights.heightAt(x, zc - brook.halfAt(x) - 4) - heights.naturalAt(x, zc));
+      // 7 m back from the water, hummocks taken off, the field is not at the levelled middle's height: it has come back to some of the land's own lie
+      // (levelled flat it would be the middle's height all along, give or take nothing).
+      for (const side of [-1, 1]) {
+        const z = zc + side * (brook.halfAt(x) + 7);
+        if (brook.notchAt(x, z).k > 0 || brook.cutAt(x, z) > 0) continue;
+        lie.push(heights.heightAt(x, z) - brook.reliefAt(x, z) - heights.naturalAt(x, zc));
+      }
     }
     const mean = lie.reduce((a, b) => a + b, 0) / lie.length;
     const spread = Math.sqrt(lie.reduce((a, b) => a + (b - mean) ** 2, 0) / lie.length);
-    expect(spread).toBeGreaterThan(0.05);
+    expect(lie.length).toBeGreaterThan(50);
+    expect(spread).toBeGreaterThan(0.1);
+    expect(Math.max(...lie.map(Math.abs))).toBeGreaterThan(0.2);
     expect(brook.levelK(0, brook.zAt(0) + brook.halfAt(0) + 0.2)).toBeCloseTo(1, 5);
   });
 
@@ -80,6 +87,21 @@ describe('the river\'s bends (#999)', () => {
         last = h;
       }
     }
+  });
+
+  it('keeps the banks\' hummocks off the roads and tracks: the stone track to the farm bridge and the boundary track over the brook lie as they would without them', () => {
+    const banks = LAYOUT.hill.river.banks;
+    const flat = createTerrainHeight({ ...LAYOUT, hill: { ...LAYOUT.hill, river: { ...LAYOUT.hill.river, banks: { ...banks, relief: 0 } } } }, new Track(LAYOUT.trackPoints));
+    let seen = 0;
+    for (let x = brook.minX; x < LAYOUT.publicLane.x; x += 0.5) {
+      for (let dz = -16; dz <= 16; dz += 0.5) {
+        const z = brook.zAt(x) + dz;
+        if ((roads.surfaceAt(x, z)?.t ?? 0) < 0.999 || Math.abs(brook.reliefAt(x, z)) < 0.02) continue;
+        seen++;
+        expect(Math.abs(heights.heightAt(x, z) - flat.heightAt(x, z)), `${x}, ${z}`).toBeLessThan(0.001);
+      }
+    }
+    expect(seen).toBeGreaterThan(50);
   });
 });
 

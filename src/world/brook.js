@@ -191,6 +191,9 @@ export function createBrook(layout) {
       const shelf = r < half - 1 ? Math.min(cut, dry + 0.1 + (half - 1 - r) * 0.5) : 0;
       cut = mix(cut, Math.max(ramp, shelf), notch.k);
     }
+    // Its first 4 m past the pasture's hedge keep the stream's own gentle profile, so there is no step at the seam where hill.js's cut ends.
+    const seam = smoothstep(minX, minX + 4, x);
+    if (seam < 1) cut = mix(r > half + 1.2 ? 0 : d * (1 - smoothstep(half * 0.4, half + 1.2, r)), cut, seam);
     return Math.max(0, cut);
   }
 
@@ -292,11 +295,14 @@ export function createBrook(layout) {
    * point `out` m beyond the water's edge on the north (-1) or south (1) bank. The posts, the gravel, the ruts, the map's label, `tp me to river` and the
    * frame budget's spot all stand from it. Null with no crossing.
    */
+  let anchor;
   function crossing() {
     if (!cross) return null;
+    if (anchor) return anchor; // worked out once: the sound asks for it every frame
     const z = zAt(cross.x);
     const half = halfAt(cross.x);
-    return { x: cross.x, z, half, reach: cross.half, landing: (side, out = 0) => ({ x: cross.x, z: z + side * (half + out) }) };
+    anchor = { x: cross.x, z, half, reach: cross.half, landing: (side, out = 0) => ({ x: cross.x, z: z + side * (half + out) }) };
+    return anchor;
   }
 
   /** Points along the line every `step` m, for the map and the water. */

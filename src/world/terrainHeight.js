@@ -169,7 +169,9 @@ export function createTerrainHeight(layout, track, { hillFade } = {}) {
       const lk = brook.levelK(x, z);
       if (lk > 0) h += (natural(x, brook.zAt(x)) - h) * lk;
       h -= brook.cutAt(x, z);
-      h += brook.reliefAt(x, z);
+      // The hummocks stay off a road or track: off what a road levelled, and off a track painted over the ground (the stone track to the farm bridge, the boundary track over the brook).
+      const relief = brook.reliefAt(x, z);
+      if (relief) h += relief * (laid ? 1 - laid.k : 1) * (1 - (roads.surfaceAt(x, z)?.t ?? 0));
     }
 
     // The gravel pit: its patch levelled, the bowl cut into it, the haul road down its wall, the pond and the heaps.

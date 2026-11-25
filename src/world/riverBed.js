@@ -45,20 +45,23 @@ export function nearestRiver(brook, x, z, within = 60) {
   }
   const box = boxes.get(brook);
   if (x < box.minX - within - 1 || x > box.maxX + within + 1 || z < box.minZ - within - 1 || z > box.maxZ + within + 1) return null;
-  let best = null;
+  // The best so far as numbers, not an object a try: this runs every frame.
+  let bx = 0;
+  let bz = 0;
+  let bd = Infinity;
   const span = (from, to, step) => {
     for (let xx = from; xx <= to; xx += step) {
       if (xx < brook.minX || xx > brook.maxX || brook.riverK(xx) < 0.1) continue;
       const zc = brook.zAt(xx);
       const half = brook.halfAt(xx);
-      const across = Math.max(-half, Math.min(half, z - zc));
       const d = Math.max(0, Math.hypot(x - xx, z - zc) - half);
-      if (!best || d < best.d) best = { x: xx, z: zc + across, d };
+      if (d < bd) { bd = d; bx = xx; bz = zc + Math.max(-half, Math.min(half, z - zc)); }
     }
   };
   span(x - within, x + within, 1);
-  if (best) span(best.x - 1, best.x + 1, 0.1);
-  return best && best.d <= within ? best : null;
+  if (bd === Infinity) return null;
+  span(bx - 1, bx + 1, 0.1);
+  return bd <= within ? { x: bx, z: bz, d: bd } : null;
 }
 
 /** 0..1 how much the birds are about by the water at this darkness (0 day, 1 full dark): all day, fewer at dusk, none at night. */
