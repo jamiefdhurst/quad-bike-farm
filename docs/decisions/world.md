@@ -1776,7 +1776,13 @@ Snow was only in the ground shader, so a snowy farm was a white field with a gre
 
 ## The meadow's and the wood's ponds sit level on the lie (#946)
 
-- **What was wrong.** A pond's water is a flat sheet at the ground's height at its middle, but its bowl was cut relative to the local ground, and the new farm's lie falls 3.7 degrees. The downhill shore dropped away under the sheet and the uphill one stood over it. Probed at the rim before the change: water above the ground by up to 0.74 m at the meadow pond (-408, -73) and 0.45 m at the wood's (-437, -242); on the uphill side the ground stood over the water by about as much.
-- **The fix.** `heightAt` in `terrainHeight.js` levels the ground under each pond to the lie at its middle (the hut's terrace does the same), over the pond's radius and eased back to the lie by 1.7 radii (`PONDS_EASE_TO`), then the bowl is cut as before. Only on the new farm (`landform`); the pre-cut level is found once, lazily, from `natural`.
-- **Numbers.** Rim water minus ground is now 0.03 m all round at both ponds (the water's edge sits 3 cm inside the water's own level).
+- **What was wrong.** A pond's water is a flat sheet at the ground's height at its middle, but its bowl was cut relative to the local ground, and the new farm's lie falls 3.7 degrees (about 12 degrees at these ponds, with the meadow's and the wood's own profile). The downhill shore dropped away under the sheet and the uphill one stood over it. Probed at the rim before the change: water above the ground by up to 0.74 m at the meadow pond (-408, -73) and 0.45 m at the wood's (-437, -242); on the uphill side the ground stood over the water by about as much.
+- **The fix.** `heightAt` in `terrainHeight.js` levels the ground under each pond to the lie at its middle (the hut's terrace does the same), over the pond's radius and eased back to the lie by 2.5 radii (`PONDS_EASE_TO`), then the bowl is cut as before. Only on the new farm (`landform`); the pre-cut level is found once, lazily, from `natural`.
+- **Numbers.** Rim water minus ground is now 0.03 m all round at both ponds (the rim is taken at 0.97 of the wet radius, so it stands 3 cm under the water).
 - **Tests.** `tests/landform.test.js`: the rim is within 5 cm of the ground at 48 bearings, no ground stands over wet points and none lies under the water on the dry side, for both ponds. All four fail with the levelling removed. The game has only layout 2 now, so there is no layout 1 run; the issue's coordinates (-66 110, -42 -150) were the old frame, the ponds are at the ones above.
+
+## The ponds' shoulder made longer (#1184)
+
+- **What the recheck found.** The shoulder in #946 eased back over 1.7 radii, but the ground there falls about 12 degrees, so levelling moved it by up to 1.5 m: the meadow's steepest ground between 1 and 2.6 radii went from 12.3 to 24.7 degrees, and the Wet Meadow's pollard oak (1.28 radii out on the uphill bank) dropped 1.18 m, leaving its foot flare 0.10 m clear of the ground.
+- **The fix.** `PONDS_EASE_TO` is 2.5: steepest 15.7 degrees at the meadow, and the oak's foot is buried again. 2.2 gave 18.4. The wood's steep banks at 1.8 to 2.6 radii (33 to 37 degrees) were there before #946.
+- **Tests.** The meadow's shoulder is under 20 degrees, and the oak's foot ring falls under its 0.25 m sink; both fail at 1.7.

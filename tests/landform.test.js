@@ -132,6 +132,29 @@ describe('the ground that is built from it', () => {
 // The meadow's pond and the wood's (#946): their water is a flat sheet at the ground's height at the middle, so on the lie the bowl is levelled.
 // (The game has only layout 2 now; `LAYOUT` is it.)
 describe('the ponds sit level on the land\'s lie', () => {
+  it('leaves no steep bank in the meadow pond\'s shoulder (#1184)', () => {
+    const p = createHill(two).pond;
+    let worst = 0;
+    for (let i = 0; i < 72; i++) {
+      for (let r = 1; r <= 2.5; r += 0.1) {
+        const x = p.x + Math.cos((i / 72) * Math.PI * 2) * r * p.rx;
+        const z = p.z + Math.sin((i / 72) * Math.PI * 2) * r * p.rz;
+        const gx = (heights2.heightAt(x + 1, z) - heights2.heightAt(x - 1, z)) / 2;
+        const gz = (heights2.heightAt(x, z + 1) - heights2.heightAt(x, z - 1)) / 2;
+        worst = Math.max(worst, (Math.atan(Math.hypot(gx, gz)) * 180) / Math.PI);
+      }
+    }
+    expect(worst).toBeLessThan(20);
+  });
+  it('keeps the Wet Meadow\'s pollard oak\'s foot on the ground (#881, #1184)', () => {
+    const [ox, oz] = fromPlan([98, 291]);
+    const flare = 1.02; // its foot flare's radius, sunk 0.25 m (the model)
+    const centre = heights2.heightAt(ox, oz);
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * Math.PI * 2;
+      expect(centre - heights2.heightAt(ox + Math.cos(a) * flare, oz + Math.sin(a) * flare), `bearing ${i}`).toBeLessThan(0.25);
+    }
+  });
   const ponds = [['meadow', createHill(two)], ['wood', createWoods(two)]];
   for (const [name, src] of ponds) {
     const p = src.pond;
