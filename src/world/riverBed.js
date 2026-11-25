@@ -23,6 +23,7 @@ export const RIVER_SOUND_RANGES = {
 };
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const boxes = new WeakMap(); // brook -> the box round its river's water
 
 /**
  * The nearest point of the river's water to (x, z): { x, z, d } with `d` the metres from (x, z) to the water's edge there (0 on or in it), or null if the
@@ -30,6 +31,20 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
  */
 export function nearestRiver(brook, x, z, within = 60) {
   if (!brook?.river) return null;
+  // Most of the farm is nowhere near it: a box round the river's water, worked out once, says so before the search along it (it runs every frame).
+  if (!boxes.has(brook)) {
+    const b = { minX: Infinity, maxX: -Infinity, minZ: Infinity, maxZ: -Infinity };
+    for (let xx = brook.minX; xx <= brook.maxX; xx += 1) {
+      if (brook.riverK(xx) < 0.1) continue;
+      const zc = brook.zAt(xx);
+      const half = brook.halfAt(xx);
+      b.minX = Math.min(b.minX, xx); b.maxX = Math.max(b.maxX, xx);
+      b.minZ = Math.min(b.minZ, zc - half); b.maxZ = Math.max(b.maxZ, zc + half);
+    }
+    boxes.set(brook, b);
+  }
+  const box = boxes.get(brook);
+  if (x < box.minX - within - 1 || x > box.maxX + within + 1 || z < box.minZ - within - 1 || z > box.maxZ + within + 1) return null;
   let best = null;
   const span = (from, to, step) => {
     for (let xx = from; xx <= to; xx += step) {
