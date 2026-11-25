@@ -16,6 +16,8 @@ import { hornVoice } from '../npc/horns.js';
 import { RideEvents, createSurfaceSampler } from './rideEvents.js';
 import { gridRumble } from '../world/cattleGrid.js';
 import { doorSamples, DOOR_PROFILES } from './doorSamples.js';
+import { SoundPath } from './propagation.js';
+import { bearingHum, humSource } from './bearingHum.js';
 
 const TWO_PI = Math.PI * 2;
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -189,6 +191,7 @@ export class RideAudio {
     this.contact = 0; // share of wheels on the ground
     this.wheelSurface = [0, 1, 2, 3].map(() => ({ grass: 1, dirt: 0, mud: 0, water: 0, tarmac: 0 }));
     this.squealParams = world.squealParams ?? DEFAULT_SQUEAL_PARAMS;
+    this.humPhase = 0; // where the hum's wheel is in its turn, so the hum swells once a turn
     this.surfaceTimer = 0;
     this.squelchTimer = 0;
     this.sloshTimer = 0;
@@ -351,6 +354,45 @@ export class RideAudio {
     g.setTargetAtTime(on ? this.hornLevel * this.hub.params.hornVolume * 0.5 : 0, t, on ? 0.008 : 0.02);
   }
 
+  /**
+   * A worn wheel bearing (faults.js): a low hum that rises with road speed and swells once a turn, from the wheel it is in (bearingHum.js).
+   * It has a sound path of its own, put at that wheel, so you hear which side and which end. Built when first needed.
+   */
+  updateBearingHum(dt, quad, speed) {
+    const f = quad.faults;
+    const wheel = f.started.bearing ? quad.layout.wheels[f.wheelOf.bearing] : null;
+    const hum = wheel ? bearingHum({ speed, level: f.levels.bearing, started: true }, this.hub.params.bearingVolume) : { freq: 0, gain: 0 };
+    if (!this.humGain) {
+      if (hum.gain <= 0) return;
+      const ctx = this.hub.ctx;
+      const ap = this.unit.audio.params;
+      this.humPath = new SoundPath(this.hub, { refDistance: ap.refDistance, rolloff: ap.rolloff });
+      const tone = ctx.createBiquadFilter();
+      tone.type = 'lowpass';
+      tone.frequency.value = 700;
+      this.humGain = ctx.createGain();
+      this.humGain.gain.value = 0;
+      tone.connect(this.humGain).connect(this.humPath.input);
+      this.humOscs = [['triangle', 1], ['sine', 2.01]].map(([type, ratio]) => {
+        const o = ctx.createOscillator();
+        o.type = type;
+        o.frequency.value = 70 * ratio;
+        const g = ctx.createGain();
+        g.gain.value = ratio === 1 ? 1 : 0.35;
+        o.connect(g).connect(tone);
+        o.start();
+        return { o, ratio };
+      });
+    }
+    const now = this.hub.ctx.currentTime;
+    if (wheel) {
+      this.humPath.update(dt, humSource(wheel, quad.position, quad.yaw), !!this.unit.audio.onBoard);
+      this.humPhase = (this.humPhase + dt * Math.abs(speed) * 0.6 * Math.PI * 2) % (Math.PI * 2); // a turn is about 1.6 m of road
+    }
+    for (const { o, ratio } of this.humOscs) o.frequency.setTargetAtTime((hum.freq || 70) * ratio, now, 0.08);
+    this.humGain.gain.setTargetAtTime(hum.gain * (0.8 + 0.2 * Math.sin(this.humPhase)), now, hum.gain > 0 ? 0.08 : 0.15);
+  }
+
   /** A squealing brake (quirks.js): a thin, high, slightly wobbling whistle while it's braked hard enough, lower as it slows. Built when first needed. */
   updateSqueal(level, speed) {
     if (!this.squealGain) {
@@ -460,6 +502,7 @@ export class RideAudio {
     const level = p.rideVolume;
     const set = (param, value, tau = 0.06) => param.setTargetAtTime(value, now, tau);
 
+    this.updateBearingHum(dt, quad, speed);
     this.updateSqueal(quad.quirks.squeal(quad.brake, Math.abs(speed)), Math.abs(speed));
     this.updateTyreSqueal(this.tyreSquealLevel(quad, speed, on), Math.abs(speed));
 
