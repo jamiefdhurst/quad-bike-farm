@@ -17,6 +17,9 @@ describe('where an issue came from', () => {
     expect(origin("Found on Jamie's walk of Hollow Wood (#1201).")).toBe('walk');
     expect(origin("From Jamie's walk of the barn (19 November).")).toBe('walk');
     expect(origin('The gate sticks. Found testing #1153.')).toBe('walk');
+    expect(origin('It is not clear what order the gates go in. (Walk of Home Ground, #669.)')).toBe('walk');
+    expect(origin('Found by the review of #568 (merged in #959): the drive.')).toBe('recheck');
+    expect(origin("From #671's review of Hollow Wood: the bogs.")).toBe('new');
     expect(origin('Split out of #222, which keeps the tools on the right part.')).toBe('split');
     expect(origin('Part of the split of #681 (too big for one session): the fields.')).toBe('split');
     expect(origin('A pig with split trotters.')).toBe('new');

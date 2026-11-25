@@ -20,9 +20,10 @@ export const ORIGINS = ['recheck', 'walk', 'split', 'new'];
 const START = String.raw`(?:^|[.!?(]\s*)`; // a marker opens a line or a sentence, so "came from (a recheck" in prose doesn't count
 const FROM = {
   // "Found by `/recheck` of #690", "From the recheck of #912", "A recheck of #691 (PR #1068) found", "found by the #691 recheck"
-  recheck: new RegExp(String.raw`${START}(?:found|from|filed)\b[^\n.]{0,40}\brecheck|\b(?:a|the) \`?\/?recheck\`? of #\d+|#\d+(?:'s)? recheck\b`, 'im'),
-  // "Found on Jamie's walk of Hollow Wood", "From Jamie's walk of the barn", "Found testing #1153", "Found in play"
-  walk: new RegExp(String.raw`${START}(?:found|from)\b[^\n.]{0,40}(?:\bwalks?\b|\btesting #\d+|\bin play\b)|\bJamie's walks? (?:of|round|along)\b`, 'im'),
+  // and the older "Found by the review of #568 (merged in #959)"
+  recheck: new RegExp(String.raw`${START}(?:found|from|filed)\b[^\n.]{0,40}\brecheck|\b(?:a|the) \`?\/?recheck\`? of #\d+|#\d+(?:'s)? recheck\b|\bfound by the review of #\d+`, 'im'),
+  // "Found on Jamie's walk of Hollow Wood", "From Jamie's walk of the barn", "Found testing #1153", "Found in play", "(walk of Home Ground, #669)"
+  walk: new RegExp(String.raw`${START}(?:found|from)\b[^\n.]{0,40}(?:\bwalks?\b|\btesting #\d+|\bin play\b)|\bJamie's walks? (?:of|round|along)\b|\bwalk of [^\n,]{1,40}, #\d+`, 'im'),
   // "Split out of #222", "Split from #815", "Part of the split of #681"
   split: /\bsplit (?:out )?(?:of|from|off) #\d+|\bpart of the split of #\d+/i,
 };
