@@ -9,6 +9,7 @@ import { DEF_END, DEF_DOOR, DEF_BACK_DOOR, DEF_SCREEN, DEF_ROOF, DEF_DASH, DEF_H
 import { CAB_SEATS, CRAG_REAR_SEATS, CRAG_LAYOUT, poseCabControls } from '../src/vehicle/cabModel.js';
 import { buildAllModels } from './helpers/vehicleModels.js';
 import { coplanarOverlaps } from './helpers/coplanar.js';
+import { boxEveryMesh } from './helpers/rays.js';
 
 let model;
 beforeAll(async () => {
@@ -16,6 +17,7 @@ beforeAll(async () => {
   vi.stubGlobal('document', { createElement: () => ({ width: 0, height: 0, getContext: () => new Proxy({}, { get: () => () => ({ addColorStop() {} }), set: () => true }), style: {} }) });
   model = buildCragModel({});
   model.updateMatrixWorld(true);
+  boxEveryMesh(model); // the hole tests fire thousands of rays at it (tests/helpers/rays.js)
 });
 
 const at = (name) => model.getObjectByName(name).getWorldPosition(new THREE.Vector3()).sub(model.getObjectByName('bodyRoot').getWorldPosition(new THREE.Vector3()));
@@ -294,7 +296,7 @@ describe('the 200TDi at its real size', () => {
       const tyre = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.21, 24).rotateZ(Math.PI / 2), new THREE.MeshBasicMaterial());
       tyre.position.set(x, 0.45, CRAG_LAYOUT.wheels[2].z);
       tyre.updateMatrixWorld(true);
-      meshes.push(tyre);
+      meshes.push(boxEveryMesh(tyre));
     }
     const rc = new THREE.Raycaster();
     const holes = [];
@@ -307,6 +309,7 @@ describe('the 200TDi at its real size', () => {
             const d = target.clone().sub(o);
             const dist = d.length();
             rc.set(o, d.normalize());
+            rc.far = dist + 0.12; // a hit beyond this counts as a hole anyway, so the meshes past it need not be tried
             const h = rc.intersectObjects(meshes, false)[0];
             if (!h || Math.abs(h.point.x) > 0.9 || h.distance > dist + 0.12) holes.push(`eye ${eye} to z ${tz.toFixed(2)} y ${ty.toFixed(2)} side ${side}`);
           }
