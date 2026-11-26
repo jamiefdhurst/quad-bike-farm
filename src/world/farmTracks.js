@@ -1,5 +1,5 @@
-// The farm's own ways round (#689), plan metres like layoutNew.js: the stone track north to the pit and south to the river, the grass track right round
-// the inside of the boundary that closes the loop, and the grass headlands round every arable field. Pure: no Three.js. layoutNew.js turns these into
+// The farm's own ways round (#689), plan metres like layoutNew.js: the stone track north to the pit and south to the river, the grass track round
+// the inside of the boundary that closes the loop (off the boundary only on Hill Pasture, #1061), and the grass headlands round every arable field. Pure: no Three.js. layoutNew.js turns these into
 // roads of the network (roads.js), the gateways they need and `layout.headlands`; the ground painter, the wear and the girls' routes read those.
 
 import { insetPolygon, edgeBetween } from './polygons.js';
@@ -19,12 +19,19 @@ export const STONE_TRACKS_PLAN = {
 export const FARM_BRIDGE_PLAN = { at: [424, 572], length: 7, width: 3.6, yaw: 0 };
 
 /**
- * The grass boundary track (#689): the outline drawn in 14 m, all the way round. Two places it leaves that line, each a `detour`: the points of the way
- * between the inset's corners `after` and `before` (indexes into the inset), plan metres, which replace the corners between them.
+ * The grass boundary track (#689): the outline drawn in 14 m, all the way round but in two places. Each is a `detour`: the points of the way between the
+ * inset's corners `after` and `before` (indexes into the inset), plan metres, which replace the corners between them.
  * - The Old Pit's field (north-east) is fenced and has only its two gates (#685), so the track goes round it outside the fence: down x 700 in Top Field,
  *   through a gateway in the hedge to Lane Field, and east at z 214 to rejoin the east side below the pit's south fence.
- * - Where the hill pasture's stream runs into the west side, 5 m south of Far Field, it is not waded there: the track goes east along the south of the
- *   hill pasture's top, crosses at the green lane's ford and comes back along Far Field's south side.
+ * - Hill Pasture (south-west), which it leaves the boundary for (#1061, on the plan since Jamie's choice of 25 November 2026). The hill's west side
+ *   comes down banks of 33 to 39 degrees, which no slant takes under 20 both along and across the track, so from the top of the hill's east end (the
+ *   inset's corner 15, just inside the wall to Brook Meadow) it comes down plan x 398, where the banks are spread out (`HILL_PLAN.gentle`), beside
+ *   the climb's cones. The last bank is 20.3 degrees straight down x 398 (at z 635), so the line bends west above it ((398, 655) to (388, 604)) and
+ *   takes it 5 m further west and a little aslant, where it is 16 degrees along and 14 across at worst, and the ground under the track is nowhere
+ *   over 20. The turn at its foot passes 8 m in front of the climb's first gate. Then west along the foot at z 588, through the electric fence's
+ *   gap, to the green lane's ford, the one place it crosses the stream (it is not waded where it runs into the west side, 5 m south of Far Field),
+ *   and back along Far Field's south side to the boundary. The hill's west side and the west half of its top have no track.
+ * Held to 20 degrees every metre by tests/boundaryTrackPitch.test.js; `node tools/trackPitch.mjs` prints the pitch of a line before it is moved.
  */
 export const BOUNDARY_TRACK_PLAN = {
   inset: 14,
@@ -32,7 +39,14 @@ export const BOUNDARY_TRACK_PLAN = {
   verge: 1.2,
   detours: [
     { after: 6, before: 10, points: [[700, 38], [700, 150], [700, 190], [702, 201], [710, 214], [790, 214], [871, 214]] },
-    { after: 21, before: 23, points: [[50, 600], [110, 592], [180, 592], [199.6, 584], [199.6, 520], [197, 501], [186, 500], [120, 500], [56, 500]] },
+    {
+      after: 15,
+      before: 23,
+      points: [
+        [406, 829], [399, 818], [398, 800], [398, 655], [391, 622], [388, 604], [380, 590], [366, 588], [219, 588], // down the hill's east end and along its foot
+        [199.6, 584], [199.6, 520], [197, 501], [186, 500], [120, 500], [56, 500], // over the ford, up the green lane and along Far Field's south side
+      ],
+    },
   ],
 };
 

@@ -79,12 +79,12 @@ describe('the stone track south', () => {
 
 describe('the grass boundary track', () => {
   const pts = step(loop, 2);
-  it('is a grass road round the whole farm, 14 m in from the outline but round the pit and the stream ford, about 3 km', () => {
+  it('is a grass road round the farm, 14 m in from the outline but round the pit and on Hill Pasture, about 3 km', () => {
     expect(loop.surface).toBe('grass');
     expect(loop.length).toBeGreaterThan(3000);
     expect(loop.length).toBeLessThan(4200);
     const out = polygonEdges(two.outline);
-    // 14 m from the outline all the way, except the detour to the ford, which is inside.
+    // 14 m from the outline all the way, except the two detours (round the pit; down Hill Pasture's east end to the ford, #1061), which are inside.
     for (const p of pts) {
       expect(pointInPolygon(two.outline, p.x, p.z)).toBe(true);
       expect(distanceToEdges(out, p.x, p.z)).toBeGreaterThan(8);
