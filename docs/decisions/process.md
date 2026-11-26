@@ -574,7 +574,7 @@ The 189 issues moved from the old TODO list predate Looks like lists, the perfor
 
 ## Working through the list while Jamie is away
 
-- **Asked for by Jamie** on 25 November 2026 ("I want you to run in a loop... run one subagent in Opus and launch it with todo until it is complete and the worktree is deleted and the PR is merged, then start the loop again"), and written up as `/queue` the next day ("Can we write the loop into a skill please?") from how that day went: 21 issues closed in about ten hours, one left open for a choice only he could make.
+- **Asked for by Jamie** on 25 November 2026 ("I want you to run in a loop... run one subagent in Opus and launch it with todo until it is complete and the worktree is deleted and the PR is merged, then start the loop again"), and written up as `/queue` the next day ("Can we write the loop into a skill please?") from how that day went: 21 issues closed in the day, one left open for a choice only he could make.
 - **One at a time, a fresh subagent each.** His rule ("Please only run one at once"), and what kept it working: each `/todo` run fills a context of its own (200,000 to 700,000 tokens an issue), while the session running the loop reads only the issue, the report and a few `gh` and `git` lines, so it lasts the day.
 - **The loop checks every result itself** (the PR merged, the issue's state, the worktree gone, the stash list unchanged) and says in its report which facts it confirmed and which are the subagent's account.
 - **It may pull the main checkout,** `--ff-only`, as nobody else is there to. Nothing else in the main checkout changes.
