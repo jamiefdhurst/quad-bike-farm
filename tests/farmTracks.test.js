@@ -122,6 +122,19 @@ describe('the grass boundary track', () => {
     const wades = pts.filter((p) => Math.abs(p.z - (hill.stream.z + hill.stream.wander * Math.sin(p.x * 0.05 + 1.1))) < hill.stream.halfWidth + 0.5 && p.x < hill.pasture.maxX && p.x > -480);
     expect(wades.every((p) => Math.abs(p.x - ford[0]) < hill.stream.ford.halfWidth + hill.stream.ford.reach)).toBe(true);
   });
+  it('goes through Hill Pasture\'s electric fence once, by its gap at the foot of the hill (#1061)', () => {
+    const f = two.hill.fence;
+    const crossings = [];
+    for (let i = 1; i < pts.length; i++) {
+      const [p, q] = [pts[i - 1], pts[i]];
+      if ((p.x - f.from[0]) * (q.x - f.from[0]) > 0 || Math.abs(q.x - p.x) > 5) continue; // not across the fence's line (or the loop's join)
+      const z = (p.z + q.z) / 2;
+      if (z > f.from[1] && z < f.to[1]) crossings.push(z);
+    }
+    expect(crossings.length).toBe(1);
+    // Its whole width and a metre each side are inside the gap.
+    expect(Math.abs(crossings[0] - (f.from[1] + f.gap.at))).toBeLessThan(f.gap.half - loop.halfWidth - 1);
+  });
   it('reaches every field from the yard by a track, but Home Ground (open to the yard) and the sheep field (its gate is on the south track)', () => {
     const reached = new Set();
     for (const r of [north, south, loop]) for (const p of step(r, 3)) reached.add(fields.areaOf(p.x, p.z));
