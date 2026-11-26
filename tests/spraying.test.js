@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import * as THREE from 'three';
 import { LAYOUT } from '../src/world/layout.js';
 import { createFields } from '../src/world/fields.js';
 import { inPlace } from '../src/world/jobFields.js';
 import { Spraying, DEFAULT_SPRAY_PARAMS, SPRAY_PARAM_RANGES, SPRAY_CELL, UNSPRAYED, SPRAYED, DOUBLED, sprayRuns, sprayWanted } from '../src/world/spraying.js';
 import { DEFAULT_HOSE_PARAMS } from '../src/items/hose.js';
 import { FARM_JOBS, availableJobs } from '../src/world/farmJobs.js';
+import { SprayView } from '../src/world/sprayView.js';
 
 const RECT = { minX: 0, maxX: 24, minZ: 0, maxZ: 20 };
 const mk = (over = {}) => new Spraying({ rect: RECT, params: { ...DEFAULT_SPRAY_PARAMS, ...over } });
@@ -246,11 +248,169 @@ describe('keeping it', () => {
     }
   });
 
+  it('keeps the farm\'s big field in no more characters than it has cells of its own, and the job\'s progress through capture and restore (#1072)', () => {
+    const sp = new Spraying({ rect: LAYOUT.sprayField }); // what the game's captureFarm keeps is this toJSON, and its restore this restore
+    expect(sp.cells).toBeGreaterThan(sp.liveCount); // the field's bounds reach past its corners
+    expect(sp.toJSON().cells.length).toBeLessThan(10); // nothing sprayed: one run
+    sp.sprayHalf(3);
+    sp.tank = 0.4;
+    const save = JSON.parse(JSON.stringify(sp.toJSON()));
+    expect(save.cells.length).toBeLessThan(1000); // half a day's job, where a digit a cell was 32,640
+    const back = new Spraying({ rect: LAYOUT.sprayField });
+    back.restore(save, 4);
+    expect(back.progress).toBeCloseTo(0.5, 2);
+    expect(back.progress).toBe(sp.progress);
+    expect(back.coverage).toBe(sp.coverage);
+    expect([...back.state]).toEqual([...sp.state]);
+    expect(back.tank).toBeCloseTo(0.4, 3);
+    expect(back.since).toBe(3);
+    // The worst there could be: every cell of the field different from the one before it.
+    for (let i = 0; i < sp.cells; i++) sp.dose[i] = sp.live[i] ? (i % 3) * 0.75 : 0;
+    const worst = sp.toJSON().cells;
+    expect(worst.length).toBeLessThanOrEqual(sp.liveCount);
+    back.restore({ ...save, cells: worst }, 4);
+    for (let i = 0; i < sp.cells; i++) expect(back.dose[i]).toBe(sp.dose[i]);
+  });
+
+  it('still reads a save from before, a digit for every cell of the grid', () => {
+    const sp = new Spraying({ rect: LAYOUT.sprayField });
+    sp.sprayHalf(3);
+    let digits = '';
+    for (let i = 0; i < sp.cells; i++) digits += Math.min(9, Math.ceil(sp.dose[i] * 4 - 1e-9));
+    const back = new Spraying({ rect: LAYOUT.sprayField });
+    back.restore({ tank: 1, since: 3, doneDay: null, cells: digits }, 4);
+    expect([...back.state]).toEqual([...sp.state]);
+    expect(back.progress).toBe(sp.progress);
+  });
+
   it('tells the board from the save alone whether the field wants spraying', () => {
     expect(sprayWanted(undefined, 3)).toBe(true);
     expect(sprayWanted({ doneDay: 2 }, 3)).toBe(false);
     expect(sprayWanted({ doneDay: 2 }, 2 + DEFAULT_SPRAY_PARAMS.lastsDays)).toBe(true);
     expect(sprayWanted({ doneDay: null }, 3)).toBe(true);
+  });
+});
+
+describe('the sprayed ground on the farm\'s big field (#1072)', () => {
+  const rect = LAYOUT.sprayField;
+  const midX = Math.round((rect.minX + rect.maxX) / 2);
+  const midZ = Math.round((rect.minZ + rect.maxZ) / 2);
+  const field = () => out(new Spraying({ rect, params: { ...DEFAULT_SPRAY_PARAMS, tankMetres: 1e6, areaNeeded: 1e9 } }));
+  const viewOf = (sp) => new SprayView({ scene: new THREE.Scene(), spraying: sp, heightAt: (x, z) => 0.01 * x + 0.02 * z });
+  const colours = (mesh) => mesh.geometry.attributes.color;
+  /** What drawing a chunk does: its marked colours go to the graphics card and the marks are forgotten. */
+  const draw = (view) => {
+    for (const mesh of view.parts) {
+      if (!mesh) continue;
+      colours(mesh).onUploadCallback();
+      colours(mesh).clearUpdateRanges();
+    }
+  };
+  /** A pass of the boom up the field at `x`, each event's cells repainted as the game does. Returns every cell that changed. */
+  const pass = (sp, view, x, z0 = midZ - 30, z1 = midZ + 30) => {
+    const changed = new Set();
+    for (const e of drive(sp, x, z0, z1)) {
+      if (e.type !== 'sprayed') continue;
+      view.repaint(e.cells);
+      for (const cell of e.cells) changed.add(cell);
+    }
+    return changed;
+  };
+  const triangles = (view) => view.parts.reduce((n, mesh) => n + (mesh ? mesh.geometry.index.count / 3 : 0), 0);
+
+  it('draws nothing over a field with no spray on it', () => {
+    const sp = field();
+    expect(sp.index(midX, midZ)).toBeGreaterThanOrEqual(0); // the passes below are in the field
+    const view = viewOf(sp);
+    expect(view.parts.every((mesh) => mesh === null)).toBe(true);
+    expect(view.ground.children).toEqual([view.primer]); // the one cell the shader is built from, never shown
+    expect(view.primer.visible).toBe(false);
+  });
+
+  it('builds only the chunks a pass goes through', () => {
+    const sp = field();
+    const view = viewOf(sp);
+    const changed = pass(sp, view, midX);
+    expect(changed.size).toBeGreaterThan(300);
+    const touched = new Set([...changed].map((cell) => view.grid.chunkOf[cell]));
+    expect(view.parts.flatMap((mesh, k) => (mesh ? [k] : [])).sort()).toEqual([...touched].sort());
+    expect(touched.size).toBeLessThanOrEqual(10); // 60 m of a 6 m boom, in 16 m chunks
+    expect(triangles(view)).toBeLessThan((sp.liveCount * 2) / 10); // where one mesh of the field drew all of it
+  });
+
+  it('sends only the changed cells\' colours after a pass', () => {
+    const sp = field();
+    const view = viewOf(sp);
+    pass(sp, view, midX);
+    draw(view);
+    const before = view.parts.map((mesh) => (mesh ? colours(mesh).version : null));
+    const changed = pass(sp, view, midX + 4, midZ - 30, midZ - 10); // beside the first, lapping it: cells in chunks already drawn, and perhaps new ones
+    expect(changed.size).toBeGreaterThan(50);
+    let sent = 0;
+    view.parts.forEach((mesh, k) => {
+      const mine = [...changed].filter((cell) => view.grid.chunkOf[cell] === k);
+      if (!mesh) return expect(mine).toEqual([]);
+      const col = colours(mesh);
+      if (!mine.length) {
+        expect(col.version, `chunk ${k} was left alone`).toBe(before[k]);
+        expect(col.updateRanges).toEqual([]);
+        return;
+      }
+      expect(col.version).toBeGreaterThan(before[k] ?? 0);
+      if (before[k] === null) return expect(mesh.userData.whole).toBe(true); // a new chunk goes whole, once
+      const slots = new Set();
+      for (const { start, count } of col.updateRanges) {
+        expect(start % 16).toBe(0);
+        for (let s = start / 16; s < (start + count) / 16; s++) slots.add(s);
+        sent += count;
+      }
+      expect([...slots].sort((a, b) => a - b)).toEqual(mine.map((cell) => view.grid.slotOf[cell]).sort((a, b) => a - b));
+    });
+    expect(sent).toBeGreaterThan(0);
+    expect(sent * 4).toBeLessThan(40000); // bytes: a fiftieth of the 2.1 MB that went each time a cell changed
+  });
+
+  it('sends a chunk whole rather than keep more than a few dozen runs for one out of sight', () => {
+    const sp = field();
+    const view = viewOf(sp);
+    pass(sp, view, midX);
+    draw(view);
+    const mesh = view.parts.find(Boolean);
+    const chunk = view.grid.chunks[view.parts.indexOf(mesh)];
+    for (let n = 0; n < 40; n++) view.repaint([chunk.cells[(n * 2) % chunk.cells.length]]); // every other cell: no two join into a run
+    expect(colours(mesh).updateRanges).toEqual([]);
+    expect(mesh.userData.whole).toBe(true);
+  });
+
+  it('paints a pass and a loaded field the same, and clears away what is cleared', () => {
+    const sp = field();
+    const view = viewOf(sp);
+    pass(sp, view, midX);
+    pass(sp, view, midX + 4);
+    const back = new Spraying({ rect });
+    back.restore(JSON.parse(JSON.stringify(sp.toJSON())), 1);
+    const loaded = viewOf(back);
+    expect(loaded.parts.map(Boolean)).toEqual(view.parts.map(Boolean));
+    view.parts.forEach((mesh, k) => {
+      if (!mesh) return;
+      const want = Array.from(colours(mesh).array);
+      expect(want.some((v) => v > 0)).toBe(true);
+      expect(Array.from(colours(loaded.parts[k]).array), `chunk ${k}`).toEqual(want);
+    });
+    sp.clear();
+    view.refresh();
+    expect(view.parts.every((mesh) => mesh === null)).toBe(true);
+    expect(view.ground.children).toEqual([view.primer]);
+  });
+
+  it('is the field\'s own cells and no more when all of it is sprayed', () => {
+    const sp = field();
+    const view = viewOf(sp);
+    sp.sprayAll(1);
+    view.refresh();
+    expect(triangles(view)).toBe(sp.liveCount * 2);
+    const y = view.parts.find(Boolean).geometry.attributes.position;
+    expect(y.getY(0)).toBeCloseTo(0.01 * y.getX(0) + 0.02 * y.getZ(0) + 0.05, 4); // on the ground, lifted clear of it
   });
 });
 

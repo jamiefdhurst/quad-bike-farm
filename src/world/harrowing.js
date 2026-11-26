@@ -5,6 +5,7 @@
 // and is not on the board until then. Tested in tests/harrowing.test.js.
 
 import { liveCells, countLive, inPlace, liveMiddleFirst } from './jobFields.js';
+import { packCells, unpackCells } from './cellRuns.js';
 
 export const HARROW_CELL = 1; // metres a side of one cell of the field (fixed: the grid is built from it)
 
@@ -234,11 +235,9 @@ export class Harrowing {
 
   // Keeping it ---------------------------------------------------------------
 
-  /** What the farm keeps: the days, and the field as a string with a digit a cell (0 untouched, 1 combed along z, 2 along x). */
+  /** What the farm keeps: the days, and the field's own cells as runs (cellRuns.js) of 0 untouched, 1 combed along z and 2 along x. */
   toJSON() {
-    let cells = '';
-    for (let i = 0; i < this.cells; i++) cells += this.state[i];
-    return { since: this.since, doneDay: this.doneDay, cells };
+    return { since: this.since, doneDay: this.doneDay, cells: packCells(this.live, (i) => this.state[i]) };
   }
 
   /** Puts a save back on `day`: combing older than `lastsDays` has grown out, the field is untouched again. */
@@ -248,13 +247,11 @@ export class Harrowing {
     if (!save || typeof save.cells !== 'string' || !Number.isInteger(save.since)) return;
     const marked = Number.isInteger(save.doneDay) ? save.doneDay : save.since;
     if (day - marked >= this.p.lastsDays) return;
-    for (let i = 0; i < this.cells && i < save.cells.length; i++) {
-      const v = Number(save.cells[i]);
-      if (this.live[i] && (v === COMBED_ALONG_Z || v === COMBED_ALONG_X)) {
-        this.state[i] = v;
-        this.combed++;
-      }
-    }
+    unpackCells(save.cells, this.live, (i, v) => {
+      if (!this.live[i] || this.state[i] !== UNTOUCHED || (v !== COMBED_ALONG_Z && v !== COMBED_ALONG_X)) return;
+      this.state[i] = v;
+      this.combed++;
+    });
     this.since = save.since;
     this.doneDay = Number.isInteger(save.doneDay) ? save.doneDay : null;
   }
