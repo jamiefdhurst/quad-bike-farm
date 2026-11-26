@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { squareBaleGeometry, squareBaleMaterials } from './squareBale.js';
 import { STACK_CAPACITY, stackSpots } from './haymaking.js';
 import { createRandom } from '../core/random.js';
-import { maskLayout, fillMask, presence } from './hayMask.js';
+import { maskLayout, fillMask, fillState, paintCells, presence } from './hayMask.js';
 import { tiledInstances } from './tiledInstances.js';
 
 // What the hay job looks like. The meadow's colour is drawn by the terrain's own shader from a small picture of the cells (hayMask.js), so it is
@@ -102,7 +102,8 @@ export class HayView {
       this.patch.origin.value.set(l.minX, l.minZ);
       this.patch.size.value.set(l.cols * 0.5, l.rows * 0.5);
     }
-    this.refresh();
+    fillMask(this.maskData, l, this.hay); // the one time the edge fade is worked out
+    this.maskTexture.needsUpdate = true;
   }
 
   /** The lines wheels have pressed in the standing grass: a picture of how flat each point is, read by the ground shader and the grass. */
@@ -168,15 +169,19 @@ export class HayView {
     this.trackTexture.needsUpdate = true;
   }
 
-  /** Redraws the picture from the state. */
+  /** Redraws every texel's colour from the state (a load, the panel's buttons). The edge fade stays as `buildMask` wrote it. */
   refresh() {
-    fillMask(this.maskData, this.layout, this.hay);
+    fillState(this.maskData, this.layout, this.hay);
     this.maskTexture.needsUpdate = true;
   }
 
-  /** The cells have changed: the picture is redrawn whole (it is a few thousand texels). */
-  repaint() {
-    this.refresh();
+  /**
+   * These cells have changed (a pass of the mower or the baler): only their texels are redrawn, as the new farm's meadow is 107,000 texels and a
+   * pass changes a couple of cells of 16 at a time (#1071). With no cells, the lot.
+   */
+  repaint(cells) {
+    if (!cells) return this.refresh();
+    if (paintCells(this.maskData, this.layout, this.hay, cells)) this.maskTexture.needsUpdate = true;
   }
 
   // The bales ---------------------------------------------------------------
