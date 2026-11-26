@@ -5,6 +5,7 @@
 // until then. Tested in tests/spraying.test.js.
 
 import { liveCells, countLive, liveMiddleFirst } from './jobFields.js';
+import { packCells, unpackCells } from './cellRuns.js';
 
 export const SPRAY_CELL = 1; // metres a side of one cell of the field (fixed: the grid is built from it)
 
@@ -279,10 +280,12 @@ export class Spraying {
 
   // Keeping it ---------------------------------------------------------------
 
-  /** What the farm keeps: the tank, the days, and the doses as a string with a digit (0 to 9, tenths of a dose, doubled at most) a cell. */
+  /**
+   * What the farm keeps: the tank, the days, and the doses of the field's own cells as runs (cellRuns.js), each dose in quarters, 0 to 9 (to
+   * 2.25, rounded up, so a cell keeps its state).
+   */
   toJSON() {
-    let cells = '';
-    for (let i = 0; i < this.cells; i++) cells += Math.min(9, Math.ceil(this.dose[i] * 4 - 1e-9)).toString(); // quarters of a dose, to 2.25 (rounded up, so a cell keeps its state)
+    const cells = packCells(this.live, (i) => Math.min(9, Math.ceil(this.dose[i] * 4 - 1e-9)));
     return { tank: Math.round(this.tank * 1000) / 1000, since: this.since, doneDay: this.doneDay, cells };
   }
 
@@ -295,13 +298,11 @@ export class Spraying {
     if (!save || typeof save.cells !== 'string' || !Number.isInteger(save.since)) return;
     const marked = Number.isInteger(save.doneDay) ? save.doneDay : save.since;
     if (day - marked >= this.p.lastsDays) return;
-    for (let i = 0; i < this.cells && i < save.cells.length; i++) {
-      const d = Number(save.cells[i]) / 4;
-      if (Number.isFinite(d)) {
-        this.dose[i] = d;
-        this.state[i] = stateOf(d, this.p);
-      }
-    }
+    unpackCells(save.cells, this.live, (i, quarters) => {
+      if (!(quarters >= 0 && quarters <= 9)) return;
+      this.dose[i] = quarters / 4;
+      this.state[i] = stateOf(this.dose[i], this.p);
+    });
     for (let i = 0; i < this.cells; i++) if (!this.live[i]) (this.dose[i] = 0), (this.state[i] = UNSPRAYED);
     this.since = save.since;
     this.doneDay = Number.isInteger(save.doneDay) ? save.doneDay : null;
