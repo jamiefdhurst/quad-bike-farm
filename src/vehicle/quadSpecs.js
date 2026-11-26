@@ -62,7 +62,10 @@ export const QUAD_SPECS = [
       pitchDamping: 0.28,
       barsGain: 0.13,
     },
-    audio: { recIdleSource: 'quad' },
+    audio: {
+      recIdleSource: 'quad',
+      pulseSteady: 0.2, // a four-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
+    },
     smoke: {},
   },
   {
@@ -122,6 +125,7 @@ export const QUAD_SPECS = [
       barsFreq: 20,
     },
     audio: {
+      pulseSteady: 0.2, // a four-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
       recIdleSource: 'rev',
       pulseRefRpm: 1450,
       recToneClosed: 7000,
@@ -213,6 +217,7 @@ export const QUAD_SPECS = [
       pitchGain: 0.28,
     },
     audio: {
+      pulseSteady: 0.4, // a two-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
       recBank: 'engine-bank-yellow', // a 125cc trail bike idling, into a 85cc motocross bike flat out as it revs
       pulseRevLo: 3500, // from here it blends into the CR85's own firings
       pulseRevHi: 5000,
@@ -307,13 +312,14 @@ export const QUAD_SPECS = [
       barsFreq: 12,
     },
     audio: {
-      recBank: 'engine-bank-green', // a 250cc trail bike idling, into a farm ATV as it revs
+      pulseSteady: 0.2, // a four-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
+      recBank: 'engine-bank-green', // a 250cc trail bike idling (and a farm ATV's revs, unused while it builds its revs from idle)
       recIdleSource: 'quad',
       pulseStretch: 0.5, // its idle firings are twice as quick as its tickover: stretch them half way and leave a gap, a big lazy single
-      pulseRevLo: 1600, // from here it blends into the farm ATV's own firings
-      pulseRevHi: 2600,
-      pulseRevGain: 1.45, // revs as loud as its old sound's, which was fitted to real engines
-      pulseRevFollow: 0.08, // reads on through the farm ATV's pull-away, not a firing from anywhere each time
+      pulseRevLo: 0, // its revs built from its own idle alone, steady (#854), as Jamie chose over blending into the farm ATV's firings
+      pulseRevHi: 0,
+      pulseRevGain: 1.45, // with a blend set again: revs as loud as its old sound's, which was fitted to real engines
+      pulseRevFollow: 0.08, // and reads on through the farm ATV's pull-away, not a firing from anywhere each time
       pulseRefRpm: 1050,
       pulseRevLoudness: 0.05, // its recorded pulses are already punchy when cut short; it hardly needs to get louder
       recVolume: 0.58, // idles as loud as it did on the CRF250
@@ -402,6 +408,7 @@ export const QUAD_SPECS = [
       directionJitter: 0.9,
     },
     audio: {
+      pulseSteady: 0.4, // a two-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
       recBank: 'engine-bank-2t',
       recIdleSource: 'rev',
       pulseRefRpm: 1950,
@@ -512,6 +519,7 @@ export const EXTRA_SPECS = [
       heaveDamping: 0.16,
     },
     audio: {
+      pulseSteady: 0.4, // a two-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
       recBank: 'engine-bank-50', // a Gilera Runner SP50 recorded close to its exhaust
       engineSound: 'pulse', // its revs from the Gilera's own rev recordings: its idle beats (it fires every other turn) are too long to build revs from
       recIdleSource: 'quad',
@@ -618,6 +626,7 @@ export const EXTRA_SPECS = [
       heaveDamping: 0.16,
     },
     audio: {
+      pulseSteady: 0.4, // a two-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
       recBank: 'engine-bank-moto', // a Derbi GPR 50 two-stroke, banging every other turn at idle
       engineSound: 'pulse',
       recIdleSource: 'quad',
@@ -727,6 +736,7 @@ export const EXTRA_SPECS = [
       pitchGain: 0.3,
     },
     audio: {
+      pulseSteady: 0.4, // a two-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
       recBank: 'engine-bank-atc', // a Piaggio Ape's slow lumpy tickover, with old two-stroke revs
       pulseRefRpm: 1500,
       pulseRevLoudness: 1.1, // a two-stroke gets louder faster as it revs
@@ -803,6 +813,7 @@ export const EXTRA_SPECS = [
       barsGain: 0.08,
     },
     audio: {
+      pulseSteady: 0.2, // a four-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
       recIdleSource: 'quad',
       recVolume: 0.45,
       pipeLength: 1.4,
@@ -896,6 +907,7 @@ export const EXTRA_SPECS = [
       heaveDamping: 0.2,
     },
     audio: {
+      pulseSteady: 0.2, // a four-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
       recIdleSource: 'rev', // the blue's machine's idle, not the red's: a different single
       pulseRefRpm: 1550,
       recBlendLo: 3000,
@@ -991,6 +1003,7 @@ export const EXTRA_SPECS = [
       heaveDamping: 0.2,
     },
     audio: {
+      pulseSteady: 0.2, // a four-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
       recIdleSource: 'rev', // the same single as the farm bike's, slowed right down until the mower has an engine of its own (#76)
       pulseRefRpm: 1350,
       recBlendLo: 1800,
@@ -1436,6 +1449,7 @@ export const TOR_SPEC = {
     barsGain: 0.1,
   },
   audio: {
+    pulseSteady: 0.3, // the fitted steadiness on its own settings (#854)
     recBank: 'engine-bank-tor', // an old Jeep's four-cylinder petrol idling (craigsmith), and a car started on a handle
     recIdleSource: 'quad',
     pulseRefRpm: 490,
@@ -1699,6 +1713,7 @@ export const FINCH_SPEC = {
   },
   vibration: { ...CAR_VIBRATION, idleRpm: 850 },
   audio: {
+    pulseSteady: 0.3, // its own engine's revs run evenly: fitted to them (#854)
     recBank: 'engine-bank-fiesta', // the BBC's Finch 1.1 idling and pulling away, a 1976 Mini revving above that, its own starter
     recIdleSource: 'quad',
     pulseDivide: 1,
@@ -1786,6 +1801,10 @@ export const GRIFFIN_SPEC = {
   // A touch more shake than Amy's (the exhaust rattles against the floor), but Jamie found the first go's random bouncing too much.
   vibration: { ...CAR_VIBRATION, idleRpm: 880, steadiness: 0.82, pulseGain: 0.75, heaveGain: 0.07, pitchGain: 0.1 },
   audio: {
+    pulseCylGain: 4, // the Carlton's revs are lumpy: its cylinders 4 dB apart in strength, fitted to them (#854)
+    pulseCylTime: 0.2, // and up to a fifth of a firing apart in time
+    pulseFireJitter: 0.1, // each firing up to a tenth of one late
+    pulseStrengthJitter: 0.3, // and up to 30% stronger or weaker
     recBank: 'engine-bank-corsa', // the BBC's Carlton 1.8 idling, pulling away and revved cold, its own starter and its cold stall
     recIdleSource: 'quad',
     pulseDivide: 1,
@@ -2017,6 +2036,7 @@ export const PLOVER_SPEC = {
     heaveDamping: 0.16,
   },
   audio: {
+    pulseSteady: 0.4, // a two-stroke single's revs repeat firing to firing: the fit to real rev recordings (#854)
     recBank: 'engine-bank-plover', // a 1938 98cc light motorbike's slow lumpy two-stroke single
     pulseRefRpm: 1550,
     pulseRevLoudness: 1.0,

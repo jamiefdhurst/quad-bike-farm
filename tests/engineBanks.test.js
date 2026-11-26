@@ -76,11 +76,13 @@ describe('engine banks', () => {
     expect(EXTRA_SPECS.find((s) => s.id === 'asp').audio.recBank).toBe('engine-bank-50');
   });
 
-  it('gives the green and the yellow their own banks, blending into real rev firings as they rev', () => {
+  it('gives the green and the yellow their own banks, the yellow blending into real rev firings as it revs', () => {
     for (const [id, bank] of [['rb300', 'engine-bank-green'], ['hornet', 'engine-bank-yellow']]) {
       const spec = QUAD_SPECS.find((s) => s.id === id);
       expect(spec.audio.recBank, id).toBe(bank);
-      expect(spec.audio.pulseRevHi, id).toBeGreaterThan(spec.audio.pulseRevLo);
+      // The green builds its revs from its idle alone, steady, as Jamie chose (#854); the yellow keeps its blend.
+      if (id === 'rb300') expect([spec.audio.pulseRevLo, spec.audio.pulseRevHi], id).toEqual([0, 0]);
+      else expect(spec.audio.pulseRevHi, id).toBeGreaterThan(spec.audio.pulseRevLo);
       const grains = JSON.parse(readFileSync(`public/audio/${bank}.json`, 'utf8')).grains.filter((g) => g.ok !== false);
       expect(grains.filter((g) => g.kind === 'idle').length, id).toBeGreaterThan(100);
       expect(grains.filter((g) => g.kind === 'accel').length, id).toBeGreaterThan(100);
