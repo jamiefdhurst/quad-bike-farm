@@ -17,19 +17,22 @@ export const BUDGETS = {
   // moving things and all, is `tools/perf.mjs`. `movers` is everything left out of those counts, drawn up as if all of it were in view (5,440 calls and 1.39M triangles):
   // not a frame, but what a new herd, rider or vehicle body adds to the farm's moving things, which the spots no longer see. Raise it only on purpose (`MOVERS` in `measureInPage`).
   // Since #1041 (each still root's shadows in a call or two, and the barn's and yard's fixtures merged) the spawn is 494 calls and the yard 1,246, held to about 8% over.
+  // Since #1072 (the sprayed and combed ground drawn only where it is worked: 65,000 and 274,000 triangles no longer in every view of Lane Field and Low Ley) the nine
+  // spots that saw both are held to about 8% over their new triangles: the yard 1.81M, the village 2.24M, the wood 3.22M, the junction 1.81M, the ridge 2.23M, the Moor's
+  // middle 2.04M and the far views 1.68M, 2.34M and 2.38M. Their calls did not move.
   spawn: { calls: 530, triangles: 1.88e6 },
-  yard: { calls: 1350, triangles: 2.10e6 },
-  village: { calls: 2320, triangles: 2.69e6 },
-  wood: { calls: 1610, triangles: 3.74e6 },
+  yard: { calls: 1350, triangles: 1.96e6 },
+  village: { calls: 2320, triangles: 2.42e6 },
+  wood: { calls: 1610, triangles: 3.48e6 },
   hilltop: { calls: 1480, triangles: 2.20e6 },
   hairpins: { calls: 1630, triangles: 2.21e6 },
-  junction: { calls: 1270, triangles: 2.30e6 },
+  junction: { calls: 1270, triangles: 1.96e6 },
   pitGate: { calls: 1770, triangles: 2.20e6 },
-  moorRidge: { calls: 1770, triangles: 2.77e6 },
-  moorMiddle: { calls: 1820, triangles: 2.57e6 },
-  viewHilltop: { calls: 1280, triangles: 2.14e6 },
-  viewMoorRidge: { calls: 1880, triangles: 2.86e6 },
-  viewBackLane: { calls: 1400, triangles: 2.88e6 },
+  moorRidge: { calls: 1770, triangles: 2.41e6 },
+  moorMiddle: { calls: 1820, triangles: 2.21e6 },
+  viewHilltop: { calls: 1280, triangles: 1.82e6 },
+  viewMoorRidge: { calls: 1880, triangles: 2.53e6 },
+  viewBackLane: { calls: 1400, triangles: 2.57e6 },
   river: { calls: 1480, triangles: 2.32e6 }, // the river's crossing, 6 m back on its north landing (#999): 1,369 calls and 2.15M triangles there, held to about 8% over
   movers: { calls: 5880, triangles: 1.51e6 },
 };
