@@ -4,7 +4,7 @@
 // crosses, so a strip two passes cover shows as doubled. A field that has been sprayed stays sprayed for a few days and is not on the board
 // until then. Tested in tests/spraying.test.js.
 
-import { liveCells, countLive } from './jobFields.js';
+import { liveCells, countLive, liveMiddleFirst } from './jobFields.js';
 
 export const SPRAY_CELL = 1; // metres a side of one cell of the field (fixed: the grid is built from it)
 
@@ -257,6 +257,24 @@ export class Spraying {
     this.started = true;
     this.since ??= day;
     this.doneDay = day;
+  }
+
+  /**
+   * Sprays half of what the job needs at once, out in the middle of the field (the debug panel). Only the field's own cells, and no more
+   * once half is on: on a big field the job is a small share of it (`needed`), so half the field would be the job many times over.
+   */
+  sprayHalf(day) {
+    const want = Math.ceil((this.needed * this.liveCount) / 2);
+    let have = this.count(SPRAYED) + this.count(DOUBLED);
+    for (const i of liveMiddleFirst(this.live, this.cols, this.rows)) {
+      if (have >= want) break;
+      if (this.state[i] !== UNSPRAYED) continue;
+      this.dose[i] = 1;
+      this.state[i] = SPRAYED;
+      have++;
+    }
+    this.started = true;
+    this.since ??= day;
   }
 
   // Keeping it ---------------------------------------------------------------

@@ -4,7 +4,7 @@
 // untouched or combed along the way the mat went (the two ways show as different stripes). A harrowed field stays harrowed for a few days
 // and is not on the board until then. Tested in tests/harrowing.test.js.
 
-import { liveCells, countLive, inPlace } from './jobFields.js';
+import { liveCells, countLive, inPlace, liveMiddleFirst } from './jobFields.js';
 
 export const HARROW_CELL = 1; // metres a side of one cell of the field (fixed: the grid is built from it)
 
@@ -215,6 +215,21 @@ export class Harrowing {
     this.combed = this.liveCount;
     this.since ??= day;
     this.doneDay = day;
+  }
+
+  /**
+   * Combs half of what the job needs at once, out in the middle of the field (the debug panel). Only the field's own cells, and no more
+   * once half is done: on a big field the job is a small share of it (`needed`), so half the field would be the job many times over.
+   */
+  combHalf(day) {
+    const want = Math.ceil((this.needed * this.liveCount) / 2);
+    for (const i of liveMiddleFirst(this.live, this.cols, this.rows)) {
+      if (this.combed >= want) break;
+      if (this.state[i] !== UNTOUCHED) continue;
+      this.state[i] = COMBED_ALONG_Z;
+      this.combed++;
+    }
+    this.since ??= day;
   }
 
   // Keeping it ---------------------------------------------------------------

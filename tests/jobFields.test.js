@@ -2,11 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew } from '../src/world/layoutNew.js';
 import { namedLayout } from '../src/world/fieldNames.js';
-import { JOB_FIELDS, FIELD_WORK, jobPlace, inPlace, outsideBy, liveCells, countLive, jobFieldLabel } from '../src/world/jobFields.js';
+import { JOB_FIELDS, FIELD_WORK, jobPlace, inPlace, outsideBy, liveCells, countLive, liveMiddleFirst, jobFieldLabel } from '../src/world/jobFields.js';
 import { FARM_JOBS, JobBoard, jobsFor } from '../src/world/farmJobs.js';
-import { Spraying, DEFAULT_SPRAY_PARAMS, SPRAYED } from '../src/world/spraying.js';
-import { Harrowing, DEFAULT_HARROW_PARAMS, dealMolehills } from '../src/world/harrowing.js';
-import { Haymaking, DEFAULT_HAY_PARAMS } from '../src/world/haymaking.js';
+import { Spraying, DEFAULT_SPRAY_PARAMS, SPRAYED, UNSPRAYED } from '../src/world/spraying.js';
+import { Harrowing, DEFAULT_HARROW_PARAMS, UNTOUCHED, dealMolehills } from '../src/world/harrowing.js';
+import { Haymaking, DEFAULT_HAY_PARAMS, STANDING, CUT } from '../src/world/haymaking.js';
+import { FieldWorkHost } from '../src/world/fieldWorkHost.js';
 import { presence } from '../src/world/hayMask.js';
 import { inHayMeadow } from '../src/world/props.js';
 import { polygonArea } from '../src/world/polygons.js';
@@ -134,6 +135,134 @@ describe('the jobs read the polygon', () => {
     expect(inHayMeadow(two, m.x, m.z)).toBe(true);
     expect(inHayMeadow(two, p.minX + 0.5, p.maxZ - 0.5)).toBe(false);
     expect(inHayMeadow(two, p.maxX + 30, p.maxZ + 30)).toBe(false);
+  });
+});
+
+// The debug panel's buttons, pressed on a stand-in game that holds the real jobs over the real fields (#1069).
+function panel({ sprayField = two.sprayField, harrowField = two.harrowField, hayMeadow = two.hayMeadow } = {}) {
+  const view = { refresh() {}, reset() {}, addLoose() {}, repaint() {} };
+  const nowhere = { position: { distanceTo: () => 5 } };
+  const game = {
+    farm: { day: 3 },
+    jobBoard: { has: () => true, add() {} },
+    jobDefs: {},
+    hud: { toast() {} },
+    companions: [],
+    trailer: { model: nowhere },
+    spray: new Spraying({ rect: sprayField, params: { ...DEFAULT_SPRAY_PARAMS } }),
+    harrow: new Harrowing({ rect: harrowField, params: { ...DEFAULT_HARROW_PARAMS } }),
+    hay: new Haymaking({ rect: hayMeadow, params: { ...DEFAULT_HAY_PARAMS } }),
+    sprayView: view,
+    harrowView: view,
+    hayView: view,
+  };
+  return { game, host: new FieldWorkHost(game) };
+}
+const offField = (job) => [...job.state.keys()].filter((i) => !job.live[i]);
+
+describe('the panel\'s buttons on the new fields (#1069)', () => {
+  it('deals the field\'s own cells from the middle out', () => {
+    const sp = new Spraying({ rect: two.sprayField, params: { ...DEFAULT_SPRAY_PARAMS } });
+    const cells = liveMiddleFirst(sp.live, sp.cols, sp.rows);
+    expect(cells.length).toBe(sp.liveCount);
+    for (const i of cells) expect(sp.live[i]).toBe(1);
+    const far = (i) => Math.hypot((i % sp.cols) - sp.cols / 2, Math.floor(i / sp.cols) - sp.rows / 2);
+    expect(far(cells[0])).toBeLessThan(2);
+    expect(far(cells[cells.length - 1])).toBeGreaterThan(sp.rows / 2);
+  });
+  it('the spray "half" button leaves the job about half done on Lane Field, with nothing sprayed off the field', () => {
+    const { game, host } = panel();
+    const sp = game.spray;
+    host.debugSpray('half');
+    expect(sp.progress).toBeGreaterThanOrEqual(0.5);
+    expect(sp.progress).toBeLessThan(0.52);
+    expect(sp.count(SPRAYED)).toBe(Math.ceil((sp.needed * sp.liveCount) / 2));
+    for (const i of offField(sp)) expect(sp.state[i] + sp.dose[i], `cell ${i}`).toBe(0);
+    expect(sp.started).toBe(true);
+    expect(sp.since).toBe(3);
+    // The next update does not tick it off: half is half of the job, not of the field.
+    const events = sp.update(0.1, { x: two.sprayField.minX - 50, z: two.sprayField.minZ - 50, yaw: 0, speed: 2, hitched: true, day: 3 });
+    expect(events.some((e) => e.type === 'done')).toBe(false);
+    expect(sp.done).toBe(false);
+    // Pressed again it adds nothing: the job is already half done.
+    host.debugSpray('half');
+    expect(sp.progress).toBeLessThan(0.52);
+  });
+  it('the harrow "half" button the same, on Low Ley', () => {
+    const { game, host } = panel();
+    const h = game.harrow;
+    host.debugHarrow('half');
+    expect(h.progress).toBeGreaterThanOrEqual(0.5);
+    expect(h.progress).toBeLessThan(0.52);
+    expect(h.combed).toBe(Math.ceil((h.needed * h.liveCount) / 2));
+    for (const i of offField(h)) expect(h.state[i], `cell ${i}`).toBe(UNTOUCHED);
+    expect(h.since).toBe(3);
+    const events = h.update(0.1, { x: two.harrowField.minX - 50, z: two.harrowField.minZ - 50, yaw: 0, speed: 2, hitched: true, day: 3 });
+    expect(events.some((e) => e.type === 'done')).toBe(false);
+    expect(h.done).toBe(false);
+    host.debugHarrow('half');
+    expect(h.progress).toBeLessThan(0.52);
+  });
+  it('both "half" buttons still do half of the old small patches, where the job is most of the patch', () => {
+    const { game, host } = panel({ sprayField: RAW_LAYOUT.sprayField, harrowField: RAW_LAYOUT.harrowField });
+    host.debugSpray('half');
+    host.debugHarrow('half');
+    expect(game.spray.coverage).toBeCloseTo(DEFAULT_SPRAY_PARAMS.coverNeeded / 2, 2);
+    expect(game.harrow.coverage).toBeCloseTo(DEFAULT_HARROW_PARAMS.coverNeeded / 2, 2);
+    expect(game.spray.done || game.harrow.done).toBe(false);
+  });
+  it('the hay stage that lays the bales ("load", the baling done) has all eight inside the patch, on Hay Meadow and on the old farm\'s patch', () => {
+    for (const [name, hayMeadow] of [['Hay Meadow', two.hayMeadow], ['the old patch', RAW_LAYOUT.hayMeadow]]) {
+      const { game, host } = panel({ hayMeadow });
+      const hay = game.hay;
+      host.debugHayStage('load');
+      expect(hay.bales.length, name).toBe(8);
+      expect(hay.phase, name).toBe('load');
+      for (const b of hay.bales) {
+        expect(inPlace(hay.rect, b.x, b.z, -1), `${name}: bale at ${b.x}, ${b.z}`).toBe(true);
+        expect(b.x, name).toBeGreaterThan(hay.rect.minX + 1);
+        expect(b.x, name).toBeLessThan(hay.rect.maxX - 1);
+      }
+      const xs = hay.bales.map((b) => b.x);
+      expect((Math.min(...xs) + Math.max(...xs)) / 2, name).toBeCloseTo((hay.rect.minX + hay.rect.maxX) / 2, 6); // the row is centred
+      expect(hay.count(CUT), name).toBe(hay.p.cutNeeded);
+      for (const i of offField(hay)) expect(hay.state[i], `${name}: cell ${i}`).toBe(STANDING);
+    }
+  });
+  it('the bale row closes up rather than run off a patch too narrow for it', () => {
+    const hay = new Haymaking({ rect: RAW_LAYOUT.hayMeadow, params: { ...DEFAULT_HAY_PARAMS, balesNeeded: 16 } });
+    const row = hay.baleRow();
+    expect(row.length).toBe(16);
+    for (const at of row) expect(inPlace(hay.rect, at.x, at.z - hay.p.baleBehind, -1)).toBe(true);
+    expect(row[1].x - row[0].x).toBeLessThan(3);
+  });
+});
+
+describe('a save with cells off the field (#1069)', () => {
+  it('spraying: restores the field\'s cells and leaves the rest of the bounds unsprayed', () => {
+    const sp = new Spraying({ rect: two.sprayField, params: { ...DEFAULT_SPRAY_PARAMS } });
+    expect(offField(sp).length).toBeGreaterThan(1000);
+    sp.restore({ tank: 0.5, since: 2, doneDay: null, cells: '4'.repeat(sp.cells) }, 2);
+    for (const i of offField(sp)) expect(sp.state[i] + sp.dose[i], `cell ${i}`).toBe(0);
+    expect(sp.count(SPRAYED)).toBe(sp.liveCount);
+    expect(sp.count(UNSPRAYED)).toBe(sp.cells - sp.liveCount);
+    expect(sp.coverage).toBeCloseTo(1, 6);
+  });
+  it('harrowing: the same', () => {
+    const h = new Harrowing({ rect: two.harrowField, params: { ...DEFAULT_HARROW_PARAMS } });
+    expect(offField(h).length).toBeGreaterThan(1000);
+    h.restore({ since: 2, doneDay: null, cells: '12'.repeat(h.cells / 2 + 1).slice(0, h.cells) }, 2);
+    for (const i of offField(h)) expect(h.state[i], `cell ${i}`).toBe(UNTOUCHED);
+    expect(h.combed).toBe(h.liveCount);
+    expect(h.coverage).toBeCloseTo(1, 6);
+  });
+  it('hay: the same', () => {
+    const hay = new Haymaking({ rect: two.hayMeadow, params: { ...DEFAULT_HAY_PARAMS } });
+    expect(offField(hay).length).toBeGreaterThan(100);
+    hay.restore({ cut: [...hay.state.keys()], cutDay: 2, stacked: 0 }, 2);
+    for (const i of offField(hay)) expect(hay.state[i], `cell ${i}`).toBe(STANDING);
+    expect(hay.cut).toBe(countLive(hay.live));
+    expect(hay.toJSON().cut.every((i) => hay.live[i] === 1)).toBe(true);
   });
 });
 

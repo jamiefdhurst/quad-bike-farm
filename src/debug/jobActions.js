@@ -54,7 +54,7 @@ export function jobActions(g) {
       a('boom-in', 'Fold the sprayer boom in', () => g.fieldWork.debugSpray('in')),
       spray('empty', 'Empty the sprayer tank'),
       spray('fill', 'Fill the sprayer tank'),
-      spray('half', 'Spray half the field'),
+      spray('half', 'Spray half of what the job needs'),
       spray('done', 'Finish the spraying job now'),
       spray('clear', 'Clear the field to spray it again'),
     ]);
@@ -65,7 +65,7 @@ export function jobActions(g) {
     add('harrow', 'Harrow the field', () => g.harrow.describe(), [
       harrow('down', 'Lower the harrows\' tines'),
       harrow('up', 'Lift the harrows\' tines'),
-      harrow('half', 'Harrow half the field'),
+      harrow('half', 'Harrow half of what the job needs'),
       harrow('done', 'Finish the harrowing job now'),
       harrow('clear', 'Clear the field to harrow it again'),
     ]);
