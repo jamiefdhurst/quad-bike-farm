@@ -99,6 +99,17 @@ export function countLive(live) {
   return n;
 }
 
+/**
+ * The field's own cells of a job's grid, as indexes, the ones nearest the middle of its bounds first: where the debug panel puts work done at
+ * once, so it is out in the field and not along one edge of it.
+ */
+export function liveMiddleFirst(live, cols, rows) {
+  const far = (i) => Math.abs((i % cols) + 0.5 - cols / 2) + Math.abs(Math.floor(i / cols) + 0.5 - rows / 2);
+  const cells = [];
+  for (let i = 0; i < live.length; i++) if (live[i]) cells.push(i);
+  return cells.sort((a, b) => far(a) - far(b) || a - b);
+}
+
 /** The field a job happens on, named for the chalkboard: its dealt name ("Lane Field"), or null where the farm has no such field (today's). */
 export function jobFieldLabel(layout, job) {
   const name = JOB_FIELDS[job];

@@ -315,6 +315,26 @@ describe('the hay patch in the farm', () => {
     expect(own / n).toBeGreaterThan(0.95); // a corner of it is the farmstead's
   });
 
+  it('cuts nothing when the mower crosses a corner of its bounds that is not the meadow (#1069)', () => {
+    const hay = new Haymaking({ rect: m, params: { ...DEFAULT_HAY_PARAMS } });
+    hay.start();
+    // The south-east corner of the bounds: the meadow's south edge runs up to the north-east here, so this row is well outside it.
+    const z = m.maxZ - 4;
+    const from = m.maxX - 24;
+    const to = m.maxX - 2;
+    for (let x = from; x <= to; x += 2) expect(inPlace(m, x, z, 6), `${x},${z}`).toBe(false);
+    const events = [];
+    for (let x = from; x <= to; x += 0.2) events.push(...hay.update(0.1, { x, z, heading: Math.PI / 2, speed: 2, working: true, day: 1 }));
+    expect(events).toEqual([]);
+    expect(hay.cut).toBe(0);
+    expect(hay.cutDay).toBe(null);
+    expect(hay.count(STANDING)).toBe(hay.cells);
+    // The same drive a little way into the meadow does cut, so it is the place and not the driving that stopped it.
+    const mid = { x: (m.minX + m.maxX) / 2, z: (m.minZ + m.maxZ) / 2 };
+    for (let x = mid.x - 11; x <= mid.x + 11; x += 0.2) hay.update(0.1, { x, z: mid.z, heading: Math.PI / 2, speed: 2, working: true, day: 1 });
+    expect(hay.cut).toBeGreaterThan(0);
+  });
+
   it('is clear of the track, bogs and puddles, and not a steep hillside', () => {
     let lo = Infinity;
     let hi = -Infinity;

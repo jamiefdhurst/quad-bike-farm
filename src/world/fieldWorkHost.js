@@ -15,6 +15,7 @@ import { Harrowing, DEFAULT_HARROW_PARAMS, HARROW_PARAM_RANGES, HARROW_PHASE_TEX
 import { HarrowView } from './harrowView.js';
 import { Haymaking, DEFAULT_HAY_PARAMS, HAY_PARAM_RANGES, trailerSlots } from './haymaking.js';
 import { HayView } from './hayView.js';
+import { liveMiddleFirst } from './jobFields.js';
 import { GrassTracks, DEFAULT_TRACKS_PARAMS, TRACKS_PARAM_RANGES } from './grassTracks.js';
 import { HayLoading, HAY_LOADING_PARAM_RANGES } from '../npc/hayLoading.js';
 
@@ -144,12 +145,7 @@ export class FieldWorkHost {
       sp.clear();
       this.sprayStarted = this.sprayEmptied = false;
     } else if (what === 'half') {
-      for (let i = 0; i < sp.cells / 2; i++) {
-        sp.dose[i] = 1;
-        sp.state[i] = 1;
-      }
-      sp.started = true;
-      sp.since ??= g.farm.day;
+      sp.sprayHalf(g.farm.day);
     } else if (what === 'done') {
       sp.sprayAll(g.farm.day);
       this.sprayDone();
@@ -241,11 +237,7 @@ export class FieldWorkHost {
       h.clear();
       this.harrowStarted = false;
     } else if (what === 'half') {
-      for (let i = 0; i < h.cells / 2; i++) {
-        if (h.state[i] === 0) h.combed++;
-        h.state[i] = 1;
-      }
-      h.since ??= g.farm.day;
+      h.combHalf(g.farm.day);
     } else if (what === 'done') {
       h.combAll(g.farm.day);
       this.harrowDone();
@@ -503,13 +495,12 @@ export class FieldWorkHost {
     hay.cut = hay.made = hay.loaded = hay.delivered = 0;
     if (at >= 1) {
       hay.cut = hay.p.cutNeeded;
-      const cells = [...hay.live.keys()].filter((i) => hay.live[i]); // the field's own cells, in the middle first: the corners of its bounds are not it
-      cells.sort((a, b) => Math.abs(a % hay.cols - hay.cols / 2) + Math.abs(Math.floor(a / hay.cols) - hay.rows / 2) - (Math.abs(b % hay.cols - hay.cols / 2) + Math.abs(Math.floor(b / hay.cols) - hay.rows / 2)));
-      for (const i of cells.slice(0, hay.p.cutNeeded)) hay.state[i] = 1;
+      // The field's own cells, in the middle first: the corners of its bounds are not it.
+      for (const i of liveMiddleFirst(hay.live, hay.cols, hay.rows).slice(0, hay.p.cutNeeded)) hay.state[i] = 1;
       g.hayView.refresh();
     }
     if (at >= 2) {
-      for (let i = hay.made; i < hay.p.balesNeeded; i++) g.hayView.addLoose(hay.drop({ x: (hay.rect.minX + hay.rect.maxX) / 2 + i * 3, z: (hay.rect.minZ + hay.rect.maxZ) / 2, heading: 0 }));
+      for (const at of hay.baleRow()) g.hayView.addLoose(hay.drop(at));
     }
     if (at >= 3) {
       for (const b of hay.bales) {

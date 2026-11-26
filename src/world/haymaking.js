@@ -244,6 +244,19 @@ export class Haymaking {
     return bale;
   }
 
+  /**
+   * Where to `drop` the bales the job still wants so they lie in one row along the middle of the patch (the debug panel's "bale" stage): the
+   * row is centred, `gap` metres apart, and closes up where the patch is too narrow for it, so none lands past an end.
+   */
+  baleRow(gap = 3) {
+    const n = Math.max(0, this.p.balesNeeded - this.made);
+    const room = Math.max(0, this.rect.maxX - this.rect.minX - 4); // two metres clear at each end
+    const step = n > 1 ? Math.min(gap, room / (n - 1)) : 0;
+    const midX = (this.rect.minX + this.rect.maxX) / 2;
+    const midZ = (this.rect.minZ + this.rect.maxZ) / 2;
+    return Array.from({ length: n }, (_, i) => ({ x: midX + (i - (n - 1) / 2) * step, z: midZ + this.p.baleBehind, heading: 0 }));
+  }
+
   // The bales ----------------------------------------------------------------
 
   get(id) {
