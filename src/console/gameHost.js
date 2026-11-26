@@ -170,7 +170,7 @@ export function trackPlaces(layout, roads) {
   return {
     stonetrack: on('stoneNorth', 0.35),
     farmbridge: { x: layout.farmBridge.x, z: layout.farmBridge.z - 9 },
-    boundarytrack: on('boundaryTrack', 0.3),
+    boundarytrack: on('boundaryTrack', 0.33), // down the east side, where 0.3 put it before the loop lost 300 m on Hill Pasture (#1061)
     headland: ring && edge ? { x: (ring[0] + edge[0]) / 2, z: (ring[1] + edge[1]) / 2 } : null,
   };
 }
