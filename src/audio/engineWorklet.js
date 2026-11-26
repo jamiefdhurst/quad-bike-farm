@@ -93,6 +93,9 @@ class Biquad {
   }
 }
 
+// Each cylinder's fixed strength and lateness, as a share of pulseCylGain and pulseCylTime (#854): fixed so a cylinder keeps its own.
+const CYL_PATTERN = [0.0, 0.8, -0.6, 0.35, -0.9, 0.55];
+
 const smoothstep = (a, b, x) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -256,7 +259,7 @@ class RecordedEngine {
    * resonances too. pulseStretch below 1 stretches a firing recorded faster
    * than the engine turns only part of the way, leaving a gap before the next.
    */
-  playPulse(g, cycleRpm, gain, period, attackGain, p, layer = 'low') {
+  playPulse(g, cycleRpm, gain, period, attackGain, p, layer = 'low', lateBy = 0) {
     if (!g || gain <= 0.0005) return;
     const cycle = period > 0 ? period * sampleRate : (120 / cycleRpm) * sampleRate;
     const target = cycle * (1 + this.overlap);
@@ -265,15 +268,27 @@ class RecordedEngine {
     const xfade = Math.max(0.0015 * sampleRate, Math.min(0.008 * sampleRate, cycle * p.pulseCrossfade));
     // Length in recorded samples: the whole grain, or as much as fits before the next firing.
     const len = natural <= 1 ? g.len + g.tail : Math.min(g.len + g.tail, (target + xfade) * rate);
+    // A firing that starts late (lateBy, in samples) lets the one before it play on until it starts, or each late one leaves a gap.
+    const late = Math.round(lateBy);
     for (const v of this.voices) {
-      if (v.layer === layer && !v.releaseLeft) v.releaseLeft = v.releaseLen = xfade;
+      if (v.layer !== layer || v.releaseLeft) continue;
+      v.releaseLen = xfade;
+      if (late > 0) {
+        // Cut short to fit its cycle, it reads on into its recording by as much, as far as the grain goes.
+        v.releaseIn = late;
+        if (v.maxLen) v.len = Math.min(v.maxLen, v.len + late * v.rate);
+      } else {
+        v.releaseIn = 0;
+        v.releaseLeft = xfade;
+      }
     }
     this.cursor[layer] = g;
     this.voices.push({
       layer,
-      pos: 0,
+      pos: -late * rate,
       start: g.start,
       len,
+      maxLen: g.len + g.tail,
       rate,
       gain: gain * g.gain * this.levelFor(g),
       fadeIn: 0.0005 * sampleRate,
@@ -334,6 +349,7 @@ class RecordedEngine {
           prevLast.len = Math.max(frame, s.start - prevLast.start);
           prevLast.tail = Math.max(1, Math.min(Math.round(0.003 * sampleRate), end - prevLast.start - prevLast.len));
         }
+        s.first = prev ? prev.first : s; // the cycle's first firing, where a steady engine starts the same cycle again
         prev = s;
         out.push(s);
       }
@@ -403,20 +419,48 @@ class RecordedEngine {
           // Where the bank has real rev firings and the quad says where to use them (pulseRevLo to pulseRevHi), blend from
           // idle firings into them as the revs rise, each still at its own speed: up the range it's that engine revving.
           const revW = this.pulseRevBlend(p, rpm);
+          const idleRpm = this.medianRpm[idleKinds[0]] ?? p.pulseRefRpm;
           if (revW < 0.999) {
             let g;
             const cur = this.cursor.low;
+            // Steady at speed (pulseSteady): well above idle, that share of firings replays the last one rather than a fresh one,
+            // as a real engine's revs repeat firing to firing, so they ring as one note that climbs. None of it at idle.
+            const steady = (p.pulseSteady ?? 0) * smoothstep(1.4 * idleRpm, 2.5 * idleRpm, cycleRpm);
+            // The random draw only where there is steadiness, so an engine without it plays exactly the firings it did before.
+            const stay = steady > 0 && Math.random() < steady;
             if (cur?.whole && cur.kind === idleKinds[0]) {
               // Cut into firings: carry on through the recording in order, a cycle's firings one after another and on into the next
-              // cycle where it followed on; a fresh one, picked by the revs, only where the recording breaks.
-              g = cur.next ?? this.pick(idleKinds, cycleRpm);
+              // cycle where it followed on; a fresh one, picked by the revs, only where the recording breaks. Steady, a cycle's end
+              // starts the same cycle again, so it repeats by the cycle with each cylinder its own.
+              const atEnd = !cur.next || cur.next.first !== cur.first;
+              g = atEnd && stay ? cur.first : cur.next ?? this.pick(idleKinds, cycleRpm);
+            } else if (cur && stay && idleKinds.includes(cur.kind)) {
+              g = cur;
             } else if (leads && cycleRpm > p.pulseCleanUp * this.medianRpm[idleKinds[0]]) {
               g = this.pickFrom([...leads], cycleRpm);
             } else {
               const next = this.readThrough ? this.cursor.low?.next : null;
               g = next?.ok && idleKinds.includes(next.kind) ? next : this.pick(idleKinds, cycleRpm);
             }
-            this.playPulse(g, cycleRpm, gain * louder * (1 - revW), period, attack, p);
+            // Each cylinder its own: a fixed strength (pulseCylGain dB spread) and lateness (pulseCylTime of a firing's period) from a
+            // fixed pattern, so a several-cylinder engine's cylinders differ as a real one's do; and each firing a little different from
+            // the last in time and strength (pulseFireJitter, pulseStrengthJitter), as the mixture burns unevenly. None of it at idle,
+            // where the recording has its own engine's unevenness; all of it by twice that.
+            const cyls = Math.max(1, Math.round(p.pulseCylinders || p.pulseSplit || 1));
+            this.cylIndex = ((this.cylIndex ?? -1) + 1) % cyls;
+            const uneven = smoothstep(1.2 * idleRpm, 2 * idleRpm, cycleRpm);
+            let cg = 1;
+            let lateBy = 0;
+            if (uneven > 0) {
+              const periodS = (period > 0 ? period : 120 / cycleRpm) * sampleRate;
+              if (cyls > 1) {
+                cg = Math.pow(10, ((p.pulseCylGain ?? 0) * uneven * CYL_PATTERN[this.cylIndex % 6]) / 20);
+                lateBy = uneven * (p.pulseCylTime ?? 0) * (0.5 + 0.5 * CYL_PATTERN[(this.cylIndex + 2) % 6]) * periodS;
+              }
+              if (p.pulseFireJitter > 0) lateBy += uneven * Math.random() * p.pulseFireJitter * periodS;
+              if (p.pulseStrengthJitter > 0) cg *= 1 + uneven * (Math.random() * 2 - 1) * p.pulseStrengthJitter;
+            }
+            this.playPulse(g, cycleRpm, gain * louder * (1 - revW) * cg, period, attack, p, 'low', lateBy);
           }
           if (revW > 0.001) {
             // Open throttle mostly plays revs rising, a shut one revs falling, where the bank has both.
@@ -426,7 +470,11 @@ class RecordedEngine {
             // recording plays as one engine revving; a firing picked afresh each time, from anywhere, sounds gritty.
             const next = this.cursor.high?.next;
             const follow = next?.kind === kind && Math.abs(Math.log(next.rpm / cycleRpm)) < (p.pulseRevFollow ?? 0);
-            this.playPulse(follow ? next : this.pick([kind], cycleRpm), cycleRpm, gain * louder * revW * p.pulseRevGain, period, attack, p, 'high');
+            // Steady here too, once the revs are past the firing last played, so a blend into real revs (the Hornet's) rings as well.
+            const last = this.cursor.high;
+            const steadyHigh = last ? (p.pulseSteady ?? 0) * smoothstep(1, 1.3, cycleRpm / (last.rpm || cycleRpm)) : 0;
+            const stay = steadyHigh > 0 && Math.random() < steadyHigh;
+            this.playPulse(stay ? last : follow ? next : this.pick([kind], cycleRpm), cycleRpm, gain * louder * revW * p.pulseRevGain, period, attack, p, 'high');
           }
           return true;
         }
@@ -506,6 +554,7 @@ class RecordedEngine {
         v.releaseGain = (v.releaseGain ?? 1) * 0.9993;
         w *= v.releaseGain;
       }
+      if (v.releaseIn > 0 && --v.releaseIn === 0) v.releaseLeft = v.releaseLen;
       if (v.releaseLeft) {
         // Crossfading out under the next grain (equal-power curve).
         w *= Math.sin((Math.PI / 2) * (v.releaseLeft / v.releaseLen));
