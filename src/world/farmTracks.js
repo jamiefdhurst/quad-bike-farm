@@ -1,6 +1,7 @@
 // The farm's own ways round (#689), plan metres like layoutNew.js: the stone track north to the pit and south to the river, the grass track round
-// the inside of the boundary that closes the loop (off the boundary only on Hill Pasture, #1061), and the grass headlands round every arable field. Pure: no Three.js. layoutNew.js turns these into
-// roads of the network (roads.js), the gateways they need and `layout.headlands`; the ground painter, the wear and the girls' routes read those.
+// the inside of the boundary that closes the loop (off it round the Old Pit and on Hill Pasture, #1061), and the grass headlands round every
+// arable field. Pure: no Three.js. layoutNew.js turns these into roads of the network (roads.js), the gateways they need and `layout.headlands`;
+// the ground painter, the wear and the girls' routes read those.
 
 import { insetPolygon, edgeBetween } from './polygons.js';
 
