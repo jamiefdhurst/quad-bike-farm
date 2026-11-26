@@ -232,7 +232,10 @@ class RecordedEngine {
     // Crossfade a little longer at higher revs, where the material is denser.
     const xfade = Math.max(0.003 * sampleRate, Math.min(0.007 * sampleRate, cycle * 0.3));
     for (const v of this.voices) {
-      if (v.layer === layer && !v.releaseLeft) v.releaseLeft = v.releaseLen = xfade;
+      if (v.layer === layer && !v.releaseLeft) {
+        v.releaseLeft = v.releaseLen = xfade;
+        v.releaseIn = 0; // one left waiting by the pulse sound fades once, not again when its wait runs out
+      }
     }
     this.voices.push({
       layer,

@@ -47,16 +47,19 @@ function play(sets, rpm, { firings = 1, seconds = 0.8, seed = 1 } = {}) {
   const period = 120 / rpm / firings;
   const out = new Float32Array(Math.round(seconds * SR));
   const played = [];
+  const voices = []; // the start (below 0 while it waits to start late) and gain of each firing's voice as it is played
   let next = 0;
   for (let n = 0; n < out.length; n++) {
     if (n >= next) {
       rec.trigger({ type: 'fire', strength: 1, period }, p, rpm, 1);
       played.push(rec.cursor.low);
+      const v = rec.voices[rec.voices.length - 1];
+      voices.push({ pos: v.pos, gain: v.gain });
       next += period * SR;
     }
     out[n] = rec.sample({ rpm, cranking: false });
   }
-  return { out, played };
+  return { out, played, voices };
 }
 
 // What the worklet played before #854, with none of its settings: total energy and a few samples, from the code as it was.
@@ -92,12 +95,31 @@ describe('engine worklet: steadiness and each cylinder its own', () => {
     expect(new Set(play({ pulseSteady: 1 }, 1200).played).size).toBeGreaterThan(1);
   });
 
+  it('gives each cylinder its own strength and lateness above idle, the same every cycle, and none at idle', () => {
+    const sets = { pulseSplit: 4, pulseCylGain: 6, pulseCylTime: 0.4 };
+    // At twice the made-up idle, all of it: four different strengths, some firings late, repeating every four firings.
+    const { voices } = play(sets, 2500, { firings: 4 });
+    const cycle = voices.slice(8, 12);
+    expect(new Set(cycle.map((v) => v.gain.toFixed(6))).size).toBe(4);
+    expect(cycle.some((v) => v.pos < 0)).toBe(true);
+    for (let i = 12; i < voices.length; i++) {
+      expect(voices[i].gain).toBeCloseTo(voices[i - 4].gain, 9);
+      expect(voices[i].pos).toBeCloseTo(voices[i - 4].pos, 9);
+    }
+    // At idle the recording carries its own unevenness: no spread and nobody late.
+    const idle = play(sets, 1200, { firings: 4 }).voices.slice(4);
+    expect(idle.every((v) => v.pos === 0)).toBe(true);
+    expect(new Set(idle.map((v) => v.gain.toFixed(6))).size).toBe(1);
+  });
+
   it('never leaves a gap where a firing starts late', () => {
     // A four with its cylinders spread wide in time and every firing late at random, at twice its idle (all of the spread), with
     // short crossfades: released at once, the firing before a late one would be gone up to 7 ms before it starts.
     const sets = { pulseSplit: 4, pulseCylGain: 4, pulseCylTime: 0.5, pulseFireJitter: 0.3, pulseStrengthJitter: 0.3, pulseCrossfade: 0.1 };
     for (const seed of [1, 2, 3]) {
-      const { out } = play(sets, 2500, { firings: 4, seed });
+      const { out, voices } = play(sets, 2500, { firings: 4, seed });
+      // Firings really do start late here, so the test can't pass on an engine that never is.
+      expect(voices.filter((v) => v.pos < 0).length).toBeGreaterThan(voices.length / 2);
       const w = Math.round(0.005 * SR);
       const levels = [];
       for (let i = Math.round(0.1 * SR); i + w <= out.length; i += w >> 1) {
