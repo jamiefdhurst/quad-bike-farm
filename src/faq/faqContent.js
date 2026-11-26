@@ -197,6 +197,13 @@ export const FAQ_SECTIONS = [
           tappets ticking, pinking) long before anything shows. The girls speak too, with captions at the bottom of the screen. <kbd>N</kbd> mutes.`,
         tip: 'Listen to the engines: most faults are heard before they are seen.',
       },
+      {
+        q: 'Why does each engine sound different as it revs?',
+        a: `Each one is built from its own recording, firing by firing, and revs the way its kind of engine does. A single (most of the
+          quads and bikes) repeats itself from one firing to the next, so its revs ring as one note that climbs. A two-stroke rings the
+          clearest. A four has cylinders that each fire a little differently, so Jess's Griffin throbs and lumps as it revs, while Amy's
+          Finch runs smooth. The diesels stay rough from firing to firing, as real ones do.`,
+      },
     ],
   },
   {

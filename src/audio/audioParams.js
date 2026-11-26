@@ -185,6 +185,12 @@ export const DEFAULT_AUDIO_PARAMS = {
   pulseBoomFreq: 110, // Hz, the middle of that boom
   pulseDrone: 0, // dB of low boost for a big-bore exhaust's drone (Jess's Griffin), fullest at idle and half of it high up the revs; 0 leaves it alone
   pulseDroneFreq: 80, // Hz, the middle of that drone
+  pulseSteady: 0, // share of firings well above idle (1.4 to 2.5 times it) that replay the last one, so the revs ring as a note (a cut-up cycle replays its cycle)
+  pulseCylinders: 0, // cylinders that each keep their own strength and lateness below; 0 takes pulseSplit
+  pulseCylGain: 0, // dB between the strongest and weakest cylinder's firings, from 1.2 to 2 times idle (none at idle: the recording has its own)
+  pulseCylTime: 0, // how late a cylinder's firing can start, as a share of a firing's period, from a fixed pattern
+  pulseFireJitter: 0, // each firing up to this share of a period late at random, as the mixture burns unevenly (a carb more than injection)
+  pulseStrengthJitter: 0, // each firing up to this much stronger or weaker at random (0.3 is 30%)
   recStarterVolume: 0.9,
   recShutdownVolume: 0.9,
   // A turbocharger (engineWorklet.js turboSample): off unless turboVolume is above 0 (the 200TDi).
@@ -293,6 +299,12 @@ export const AUDIO_PARAM_RANGES = {
   pulseBoomFreq: [40, 400, 5],
   pulseDrone: [0, 18, 0.5],
   pulseDroneFreq: [30, 300, 5],
+  pulseSteady: [0, 1, 0.01],
+  pulseCylinders: [0, 6, 1],
+  pulseCylGain: [0, 12, 0.5],
+  pulseCylTime: [0, 0.5, 0.01],
+  pulseFireJitter: [0, 0.3, 0.01],
+  pulseStrengthJitter: [0, 1, 0.01],
   recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-plover', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-tor', 'engine-bank-tdi', 'engine-bank-fiesta', 'engine-bank-corsa', 'engine-bank-309'],
   recIdleSource: ['quad', 'rev', 'third'],
   recVolume: [0, 3, 0.01],
