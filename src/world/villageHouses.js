@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import { frameFor, sideFrame } from './villageBuildings.js';
+import { gardenHedges, frontDoorX, FRONT_GARDEN } from './village.js';
 import { shellAndRoof, chimney, windowAt, bayWindow, doorAt, porch, dormer, crossGable, flowerBox } from './villageKit.js';
 
 const mixed = (M, over) => ({ ...M, ...over });
@@ -27,18 +28,15 @@ function standing(ctx, f, w, h, d, mat, x, z, { sink = 0.3, solid = false, tile 
 
 /**
  * The front garden of a house on the lane: a hedge across at `depth` m out from the front wall with a timber gate and gateposts opposite the door, and a flagged path
- * from the door to the gate. The hedge stops short of the gate by its posts and runs `reach` m either side of the door.
+ * from the door to the gate. The hedge's runs are `gardenHedges`' front ones (village.js), each stopping short of the gate by its posts and at the house's plot.
  */
-function frontGarden(ctx, f, b, { depth, doorX, reach }) {
+function frontGarden(ctx, f, b, hedges) {
   const { M } = ctx;
+  const { depth, gap } = FRONT_GARDEN;
+  const doorX = frontDoorX(b);
   const z = b.halfZ + depth;
-  const gap = 0.9;
+  for (const p of hedges) if (p.part === 'front') standing(ctx, f, p.w, p.h, p.d, M.hedge, p.x, p.z, { solid: true });
   for (const sign of [-1, 1]) {
-    const from = doorX + sign * (gap + 0.2);
-    const to = doorX + sign * reach;
-    const mid = (from + to) / 2;
-    const len = Math.abs(to - from);
-    standing(ctx, f, len, 1.3, 0.8, M.hedge, mid, z, { solid: true });
     // A gatepost each side of the gap, with a stone cap.
     standing(ctx, f, 0.2, 1.25, 0.2, M.timber, doorX + sign * gap, z, { sink: 0.5, solid: true, tile: 0.6 });
     const cap = groundAt(ctx, f, doorX + sign * gap, z) + 1.27;
@@ -71,16 +69,14 @@ function frontGarden(ctx, f, b, { depth, doorX, reach }) {
   }
 }
 
-/** The hedges down each side and across the back of a garden `depth` deep, and the plot's low back fence, as a cottage has. */
-function backGarden(ctx, f, b, depth) {
+/** The hedges down each side and across the back of a garden, as a cottage has (`gardenHedges`' side and back ones, none for the small farm's farmhouse). */
+function backGarden(ctx, f, hedges) {
   const { M } = ctx;
-  const back = -b.halfZ;
-  for (const sx of [-1, 1]) {
-    f.box(0.8, 1.5, depth + 1, M.hedge, sx * (b.halfX + 0.9), 0.75, back - (depth - 1) / 2, 1);
-    f.solid(sx * (b.halfX + 0.9), 0.75, back - (depth - 1) / 2, 0.4, 0.75, (depth + 1) / 2);
+  for (const p of hedges) {
+    if (p.part === 'front') continue;
+    f.box(p.w, p.h, p.d, M.hedge, p.x, p.h / 2, p.z, 1);
+    f.solid(p.x, 0.75, p.z, p.w / 2, 0.75, p.d / 2);
   }
-  f.box(b.halfX * 2 + 2.8, 1.62, 0.8, M.hedge, 0, 0.81, back - depth, 1);
-  f.solid(0, 0.75, back - depth, b.halfX + 1.4, 0.75, 0.4);
 }
 
 /** Tubs of flowers either side of a door at local x, in front of the wall. */
@@ -202,7 +198,8 @@ export function buildHouse(ctx, b, index) {
     f.box(0.3, 0.2, 0.12, M.iron, 1.5, 0.1, front + 0.2, 0.6); // the boot scraper
     f.box(0.04, 0.3, 0.04, M.iron, 1.5, 0.3, front + 0.2, 0.6);
   }
-  backGarden(ctx, f, b, ctx.S.gardenDepth(b));
-  if (b.approach && b.design !== 'farmhouse') frontGarden(ctx, f, b, { depth: 8.5, doorX, reach: 11.5 });
+  const hedges = gardenHedges(b, ctx.S.gardenDepth(b));
+  backGarden(ctx, f, hedges);
+  if (b.approach && b.design !== 'farmhouse') frontGarden(ctx, f, b, hedges);
   return f;
 }
