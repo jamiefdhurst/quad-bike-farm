@@ -243,13 +243,13 @@ describe('an engine warming and cooling as it did', () => {
     let top = 0;
     for (let t = 0; t < 1800; t += 0.5) {
       e.update(0.5, { ambient: 1 });
-      top = Math.max(top, e.heat);
+      top = Math.max(top, e.coolantC);
     }
     for (let t = 0; t < 900; t += 0.5) {
       e.update(0.5, { ambient: 1, throttle: 1, driveLoad: 1, speed: 1 });
-      top = Math.max(top, e.heat);
+      top = Math.max(top, e.coolantC);
     }
-    expect(top).toBeLessThan(WATER.hotFrom);
+    expect(top).toBeLessThan(WATER.hotFromC);
     expect(e.hot).toBe(0);
     expect(e.isRunning).toBe(true);
   });

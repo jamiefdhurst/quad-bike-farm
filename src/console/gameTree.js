@@ -1,5 +1,6 @@
 // The game as the console sees it: a tree of values (vehicle.farm300.temperature, girl.amy.favour, weather.rain, tune.<group>.<key>...)
 // built over the live game. Every value reads and writes through the same fields and methods the debug panel uses.
+import { tempGaugeFraction, WARM_AT, HOT_FROM } from '../vehicle/tempGauge.js';
 import { tinLevel, ledgerText } from '../farm/classifieds.js';
 import { SEASONS } from '../world/seasons.js';
 import { LOSABLE } from '../items/lostThings.js';
@@ -108,6 +109,7 @@ export function buildGameTree(g, host) {
         load: ro(() => e().load),
         rolled: ro(() => e().rollSpeed, '', 'how fast the wheels turn it over (bump-start), 0 to 1 of a starter'),
         temperature: num(() => e().temperature, (v) => e().setTemperature(v), 0, 1, '', '0 cold, 1 warm'),
+        gauge: ro(() => tempGaugeFraction(e().gauge, true, e().overheat), '', `where the temperature needle is: 0 C, ${WARM_AT} warm, ${HOT_FROM} the red, 1 H (the coolant's °C with a radiator, the metal's without)`),
         trailer: text(() => (q().loadedOn ? (g.trailer.load.mode === 'aboard' ? (g.trailer.load.strapped ? 'strapped on' : 'on, loose') : 'on the ramps') : 'off'), 'on the bale trailer?'),
         rack: text(() => g.rackLoads.rackSummary(u()), 'what is on its rack, and whether it is strapped (the verbs rackcan, racktoolbox, strap and clearrack change it)'),
         back: text(() => g.backSummary(u()), 'what is in the back of a Tor or Crag (the verbs backcan, backtoolbox and clearback change it)'),

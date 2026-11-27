@@ -41,6 +41,16 @@ export function celsiusForHeat(heat, p) {
   return from + clamp01(heat) * span;
 }
 
+/**
+ * What the dash's temperature gauge reads, in °C, with its marks (tempGauge.js): the coolant on a water-cooled engine, cold at the air,
+ * the middle at warm, the red where it runs too hot (`hotFromC`) and the top where it stalls (`hotStallC`); the metal on an air-cooled
+ * one, its red where it starts to pink (`pinkFromC`) and its top where it pinks fully.
+ */
+export function gaugeReading(metalC, coolantC, air, p) {
+  if (p.waterCooled) return { c: coolantC, air, warm: p.coolantWarmC, hot: p.hotFromC, top: p.hotStallC };
+  return { c: metalC, air, warm: p.warmC, hot: p.pinkFromC, top: p.pinkFromC + p.pinkSpanC };
+}
+
 /** How much heat the fuel puts in: 1 idling, more with revs, pulling under load, a big bore and (manual timing) a retarded spark. */
 export function fuelHeat({ rpmNorm, load, bore = 0, extra = 0 }, p) {
   return (1 + p.fuelRevBoost * clamp01(rpmNorm) + p.fuelLoadBoost * clamp01(load)) * (1 + p.boreHeat * bore) + extra;

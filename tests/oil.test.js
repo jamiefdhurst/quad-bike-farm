@@ -128,8 +128,9 @@ describe('too much oil', () => {
 
 describe('the temperature gauge', () => {
   it('goes into the red when it runs hot for want of oil', () => {
-    expect(tempGaugeFraction(1, true, 0)).toBe(WARM_AT);
-    expect(tempGaugeFraction(1, true, 1)).toBeCloseTo(1);
-    expect(tempGaugeFraction(1, false, 1)).toBe(0);
+    const warm = { c: 70, air: 12, warm: 70, hot: 115, top: 170 };
+    expect(tempGaugeFraction(warm, true, 0)).toBe(WARM_AT);
+    expect(tempGaugeFraction(warm, true, 1)).toBeCloseTo(1);
+    expect(tempGaugeFraction(warm, false, 1)).toBe(0);
   });
 });

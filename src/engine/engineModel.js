@@ -16,7 +16,7 @@ import { followThrottle, isSnap, spitChance } from './spitBack.js';
 import { stepWater, waterCatchFactor } from './water.js';
 import { stepDieselSoak, dieselCatchFactor, contaminant } from './diesel.js';
 import { stepGlow, glowReady, compressionCatchFactor } from './compression.js';
-import { stepThermal, warmth, metalForWarmth, heatLevel, celsiusForHeat, thermostatOpen } from './thermal.js';
+import { stepThermal, warmth, metalForWarmth, heatLevel, celsiusForHeat, thermostatOpen, gaugeReading } from './thermal.js';
 import { runInWearFactor, startRunningIn, stepRunningIn } from './runningIn.js';
 import { boreWearFactor, borePowerFactor } from './bigBore.js';
 import { netCharge, lowBatteryStallRate } from './charging.js';
@@ -25,7 +25,7 @@ import { airCharge, airPowerFactor, airMixture } from './airDensity.js';
 import { coolingEffect, radiatorEffect, thermostatSticks, hotLevel, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
 import { slapLevel, slapCarry, loosen } from './pistonSlap.js';
 import { blowLevel, blowCarry } from './exhaustBlow.js';
-import { stepSoak, pinkLevel, gaugeHeat, coolTickRate, hotStartRich } from './heat.js';
+import { stepSoak, pinkLevel, coolTickRate, hotStartRich } from './heat.js';
 
 export const EngineState = Object.freeze({
   OFF: 'off',
@@ -629,7 +629,7 @@ export class EngineModel {
     if (p.waterCooled) this.updateCoolant(h, running);
     this.soak = stepSoak(this.soak, h, { running, work: this.work, heat: this.heat }, p);
     if (p.waterCooled) this.updateHot(h, running);
-    this.pink = running && !p.waterCooled && !p.compressionIgnition ? pinkLevel(this.heat, p) : 0;
+    this.pink = running && !p.waterCooled && !p.compressionIgnition ? pinkLevel(this.metalC, p) : 0;
     // Rattling under load; the audio plays what's owed (ticks a second, so they land at random times).
     if (this.pink > 0) this.pinkLeft += p.pinkRate * this.pink * (0.2 + 0.8 * this.throttle) * h;
     while (this.pinkLeft >= 1) {
@@ -651,17 +651,17 @@ export class EngineModel {
     return radiatorEffect(this.coolant, this.thermostat, this.params);
   }
 
-  /** A water-cooled engine over what it can take: it loses power, runs rough, and past `hotStallAt` stalls and won't catch until it's cooled. */
+  /** A water-cooled engine over what it can take (coolant over `hotFromC`): it loses power, runs rough, and at `hotStallC` stalls and won't catch until it's cooled to `hotRestartC`. */
   updateHot(h, running) {
     const p = this.params;
     if (running && this.thermostat === 0) this.thermostat = thermostatSticks(this.random, h, p);
-    this.hot = running ? hotLevel(this.heat, p) : 0;
-    if (running && this.heat >= p.hotStallAt) {
+    this.hot = running ? hotLevel(this.coolantC, p) : 0;
+    if (running && this.coolantC >= p.hotStallC) {
       this.heatLocked = true;
       this.rpm = 0;
       this.stall('overheated');
       this.emit('overheated');
-    } else if (this.heatLocked && this.heat < p.hotRestartBelow) this.heatLocked = false;
+    } else if (this.heatLocked && this.coolantC < p.hotRestartC) this.heatLocked = false;
   }
 
   /** The leak, the damp patch, the steam and the boil-over (coolant.js). */
@@ -672,18 +672,18 @@ export class EngineModel {
     this.coolantPuddle = stepPuddle(this.coolantPuddle, h, { leaking: rate > 0, level: this.coolant }, p);
     this.boil = Math.max(0, this.boil - h / p.coolantBoilSteamSeconds);
     if (this.coolant > p.coolantOkAt) this.boiled = false; // topped up
-    if (running && boilsOver(this.coolant, this.heat, this.boiled, p)) {
+    if (running && boilsOver(this.coolant, this.coolantC, this.boiled, p)) {
       this.boiled = true;
       this.coolant = Math.min(this.coolant, p.coolantBoilLeft);
       this.boil = 1;
       this.emit('boilOver', 0);
     }
-    this.steam = steamLevel(this.coolant, this.heat, this.boil, p);
+    this.steam = steamLevel(this.coolant, this.coolantC, this.boil, p);
   }
 
-  /** What the dash gauge shows above the normal band: poor lubrication, or running hot. */
-  get gaugeHeat() {
-    return gaugeHeat(this.overheat, this.heat, this.params, this.params.waterCooled ? this.radiator : 1);
+  /** What the dash's temperature gauge reads: the coolant's °C or the metal's, with its marks (thermal.js `gaugeReading`). */
+  get gauge() {
+    return gaugeReading(this.metalC, this.coolantC, this.dayTemp, this.params);
   }
 
   /** How hard the engine works its oil, 0..1: idling is a little, flat out with the throttle open is all of it. */

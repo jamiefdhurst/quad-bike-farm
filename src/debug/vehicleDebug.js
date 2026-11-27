@@ -1,4 +1,5 @@
 // Pure helpers behind the debug panel's Vehicles tab (no DOM, no Three.js), so what the buttons do is tested.
+import { tempGaugeFraction, WARM_AT, HOT_FROM } from '../vehicle/tempGauge.js';
 import { FAULT_KINDS } from '../vehicle/faults.js';
 import { idealAdvance } from '../engine/ignitionTiming.js';
 import { condensation } from '../engine/heat.js';
@@ -177,6 +178,7 @@ export function engineReadouts(engine, { manual = false } = {}) {
     list.push({ key: 'coolantC', label: "the coolant's temperature (°C)", get: (e) => Math.round(e.coolantC) });
     list.push({ key: 'thermostatOpen', label: 'thermostat open (0 shut, 1 wide open)', get: (e) => e.thermostatOpen });
   }
+  list.push({ key: 'gauge', label: `temperature needle (0 C, ${WARM_AT} warm, ${HOT_FROM} the red, 1 H): the ${p.waterCooled ? 'coolant' : 'metal'}'s °C`, get: (e) => tempGaugeFraction(e.gauge, true, e.overheat) });
   list.push({ key: 'overheating', label: 'overheating', get: (e) => e.heat });
   if (!p.waterCooled && !diesel) list.push({ key: 'pinking', label: 'pinking (heat too high, loses power)', get: (e) => e.pink });
   list.push({ key: 'condensing', label: 'vapour and drips from a cold exhaust in cold air', get: (e) => condensation({ running: e.isRunning, temperature: e.temperature, dayTemp: e.dayTemp }, e.params) });

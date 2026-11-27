@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
-import { radiatorEffect, pickThermostat, thermostatSticks, hotLevel, flushThermostat } from '../src/engine/coolant.js';
+import { radiatorEffect, pickThermostat, thermostatSticks, hotLevel, flushThermostat, boilingC, boilsOver } from '../src/engine/coolant.js';
+import { gaugeReading } from '../src/engine/thermal.js';
+import { lampStates } from '../src/vehicle/dashState.js';
 import { pourStep, DEFAULT_COOLANT_BOTTLE_PARAMS } from '../src/items/coolantBottle.js';
 import { HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, FINCH_SPEC, GRIFFIN_SPEC } from '../src/vehicle/quadSpecs.js';
 import { tempGaugeFraction, WARM_AT, HOT_FROM } from '../src/vehicle/tempGauge.js';
@@ -28,11 +30,74 @@ function drive(e, seconds, controls) {
   return false;
 }
 
+/** Where an engine's needle is. */
+const needle = (e) => tempGaugeFraction(e.gauge, true, e.overheat);
+
 describe('the gauge', () => {
   it('puts a warm engine in the middle and the red zone near the top', () => {
-    expect(tempGaugeFraction(1)).toBe(0.5);
     expect(WARM_AT).toBe(0.5);
     expect(HOT_FROM).toBeGreaterThan(0.7);
+  });
+
+  it('reads the coolant on a radiator engine: cold at the air, the middle warm, the red too hot and the top at the stall', () => {
+    const at = (c) => tempGaugeFraction(gaugeReading(c - 10, c, 12, P));
+    expect(at(12)).toBe(0);
+    expect(at(5)).toBe(0);
+    expect(at(P.coolantWarmC)).toBeCloseTo(WARM_AT);
+    expect(at(P.hotFromC)).toBeCloseTo(HOT_FROM);
+    expect(at(P.hotStallC)).toBeCloseTo(1);
+    expect(at(P.hotStallC + 30)).toBe(1);
+    expect(at(50)).toBeGreaterThan(0);
+    expect(at(50)).toBeLessThan(WARM_AT);
+    expect(at(100)).toBeGreaterThan(WARM_AT);
+    expect(at(100)).toBeLessThan(HOT_FROM);
+    expect(tempGaugeFraction(gaugeReading(80, 90, 12, P), false)).toBe(0);
+  });
+
+  it('reads the metal on an air-cooled engine, its red where it starts to pink', () => {
+    const A = DEFAULT_ENGINE_PARAMS;
+    const at = (c) => tempGaugeFraction(gaugeReading(c, 0, 12, A));
+    expect(at(12)).toBe(0);
+    expect(at(A.warmC)).toBeCloseTo(WARM_AT);
+    expect(at(A.pinkFromC)).toBeCloseTo(HOT_FROM);
+    expect(at(A.pinkFromC + A.pinkSpanC)).toBeCloseTo(1);
+  });
+
+  it('follows the coolant on a real engine, not the metal', () => {
+    const e = make();
+    e.coolantC = P.hotFromC + 1;
+    e.metalC = 60;
+    expect(needle(e)).toBeGreaterThan(HOT_FROM);
+    const a = new EngineModel({}, { random: seeded(5) });
+    a.metalC = a.params.pinkFromC + 1;
+    expect(needle(a)).toBeGreaterThan(HOT_FROM);
+  });
+
+  it('lights the temperature lamp with the needle in the red, and only then', () => {
+    const lamp = (c) => lampStates({ ignition: true, gauge: gaugeReading(c - 5, c, 12, P), overheat: 0, fuelLevel: 1, reserveLevel: 0.1 }).temp;
+    expect(lamp(P.hotFromC - 0.5)).toBe(false);
+    expect(lamp(P.hotFromC + 0.5)).toBe(true);
+    expect(lampStates({ ignition: false, gauge: gaugeReading(130, 130, 12, P), overheat: 0, fuelLevel: 1, reserveLevel: 0.1 }).temp).toBe(false);
+  });
+
+  it('rises from cold to the middle after a start on a healthy radiator, and stays there idling', () => {
+    const e = make();
+    e.dayTemp = 12;
+    e.setTemperature(0);
+    e.setIgnition(true);
+    for (let t = 0; t < 10 && !e.isRunning; t += 0.05) e.update(0.05, { starter: true, choke: 0.8, dayTemp: 12 });
+    expect(needle(e)).toBeLessThan(0.1);
+    const seen = [];
+    for (let t = 0; t < 1200; t += 0.5) {
+      e.update(0.5, { choke: Math.max(0, 0.8 - t / 200), dayTemp: 12, ambient: 0.5 });
+      if (t % 60 < 0.5) seen.push(needle(e));
+    }
+    expect(e.isRunning).toBe(true);
+    for (let i = 1; i < 3; i++) expect(seen[i]).toBeGreaterThan(seen[i - 1]);
+    for (const f of seen.slice(-10)) {
+      expect(f).toBeGreaterThan(WARM_AT - 0.05);
+      expect(f).toBeLessThan(WARM_AT + 0.1);
+    }
   });
 });
 
@@ -48,7 +113,7 @@ describe('a healthy water-cooled engine', () => {
     start(e);
     drive(e, 1800, { ambient: 1 });
     expect(e.hot).toBe(0);
-    expect(tempGaugeFraction(e.temperature, true, e.gaugeHeat)).toBeLessThan(HOT_FROM);
+    expect(needle(e)).toBeLessThan(HOT_FROM);
     expect(e.isRunning).toBe(true);
   });
 
@@ -66,7 +131,7 @@ describe('a stuck thermostat', () => {
     e.thermostat = 1;
     start(e);
     drive(e, 1200, { ambient: 1 });
-    expect(tempGaugeFraction(e.temperature, true, e.gaugeHeat)).toBeGreaterThan(HOT_FROM);
+    expect(needle(e)).toBeGreaterThan(HOT_FROM);
     expect(e.hot).toBeGreaterThan(0.2);
     expect(e.power).toBeLessThan(0.9);
   });
@@ -108,9 +173,49 @@ describe('a stuck thermostat', () => {
     expect(e.thermostat).toBeGreaterThan(0);
   });
 
-  it('scores heat from the threshold', () => {
-    expect(hotLevel(P.hotFrom, P)).toBe(0);
-    expect(hotLevel(1, P)).toBe(1);
+  it('runs too hot from the too-hot temperature of the coolant, up to the stall', () => {
+    expect(hotLevel(P.hotFromC, P)).toBe(0);
+    expect(hotLevel(P.hotFromC - 10, P)).toBe(0);
+    expect(hotLevel((P.hotFromC + P.hotStallC) / 2, P)).toBeCloseTo(0.5);
+    expect(hotLevel(P.hotStallC, P)).toBe(1);
+    const e = make();
+    start(e);
+    e.coolantC = P.hotFromC + 4;
+    e.update(0.05, {});
+    expect(e.hot).toBeGreaterThan(0);
+    expect(e.isRunning).toBe(true);
+  });
+
+  it('stalls at the stall temperature and will not restart until the coolant is under the restart one', () => {
+    const e = make();
+    start(e);
+    e.coolantC = P.hotStallC - 2;
+    e.update(0.05, {});
+    expect(e.isRunning).toBe(true);
+    e.coolantC = P.hotStallC + 0.5;
+    e.update(0.05, {});
+    expect(e.isRunning).toBe(false);
+    expect(e.heatLocked).toBe(true);
+    e.coolantC = P.hotRestartC + 1;
+    e.update(0.05, {});
+    expect(e.heatLocked).toBe(true);
+    e.coolantC = P.hotRestartC - 1;
+    e.update(0.05, {});
+    expect(e.heatLocked).toBe(false);
+  });
+});
+
+describe('boiling over', () => {
+  it('boils lower the less coolant there is, as the pressure goes', () => {
+    expect(boilingC(1, P)).toBe(P.coolantBoilFullC);
+    expect(boilingC(0.3, P)).toBeLessThan(boilingC(0.45, P));
+    expect(boilingC(0.2, P)).toBeLessThan(boilingC(0.3, P));
+    expect(boilingC(0, P)).toBe(P.coolantBoilLowC);
+    // Full, it would stall before it boiled; at 115 °C a low one boils and a fuller one doesn't.
+    expect(P.coolantBoilFullC).toBeGreaterThan(P.hotStallC);
+    expect(boilsOver(1, P.hotStallC, false, P)).toBe(false);
+    expect(boilsOver(0.2, 115, false, P)).toBe(true);
+    expect(boilsOver(0.45, 115, false, P)).toBe(false);
   });
 });
 

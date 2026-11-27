@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 import { coolingEffect, leakRate, stepPuddle, steamLevel, boilsOver, levelText, pickLeak } from '../src/engine/coolant.js';
-import { gaugeHeat } from '../src/engine/heat.js';
+import { gaugeReading } from '../src/engine/thermal.js';
+import { tempGaugeFraction } from '../src/vehicle/tempGauge.js';
 import { stepThermal } from '../src/engine/thermal.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
 import { createRandom } from '../src/core/random.js';
@@ -20,8 +21,8 @@ const make = (coolant, leak = 1) => {
   return e;
 };
 
-/** Runs a warm engine in full sun for `seconds`, idling; returns the events counted by type. */
-function idle(e, seconds) {
+/** Runs a warm engine in full sun for `seconds`, idling, calling `each` after every step; returns the events counted by type. */
+function idle(e, seconds, each = () => {}) {
   e.setTemperature(1);
   e.setIgnition(true);
   for (let t = 0; t < 10 && !e.isRunning; t += 0.05) e.update(0.05, { starter: true, choke: 0.3 });
@@ -29,6 +30,7 @@ function idle(e, seconds) {
   for (let t = 0; t < seconds; t += 0.1) {
     e.update(0.1, { ambient: 1 });
     for (const ev of e.events) counts[ev.type] = (counts[ev.type] ?? 0) + 1;
+    each();
   }
   return counts;
 }
@@ -56,18 +58,19 @@ describe('the coolant level', () => {
   });
 
   it('steams only when low and hot, and for a while after a boil-over', () => {
-    expect(steamLevel(0.9, 0.9, 0, P)).toBe(0);
-    expect(steamLevel(0.1, 0.1, 0, P)).toBe(0);
-    expect(steamLevel(0.1, 0.9, 0, P)).toBeGreaterThan(0.5);
-    expect(steamLevel(0.9, 0.1, 1, P)).toBe(1);
+    expect(steamLevel(0.9, 124, 0, P)).toBe(0);
+    expect(steamLevel(0.1, 92, 0, P)).toBe(0);
+    expect(steamLevel(0.1, P.coolantSteamC, 0, P)).toBe(0);
+    expect(steamLevel(0.1, 124, 0, P)).toBeGreaterThan(0.5);
+    expect(steamLevel(0.9, 92, 1, P)).toBe(1);
   });
 
   it('boils over only when hot with the radiator failing, and not again once it has', () => {
-    expect(boilsOver(0.9, 0.9, false, P)).toBe(false);
-    expect(boilsOver(0.2, 0.2, false, P)).toBe(false);
-    expect(boilsOver(0.2, 0.9, false, P)).toBe(true);
-    expect(boilsOver(0, 0.9, false, P)).toBe(true); // it can run dry before the heat catches up
-    expect(boilsOver(0.2, 0.9, true, P)).toBe(false);
+    expect(boilsOver(0.9, 124, false, P)).toBe(false);
+    expect(boilsOver(0.2, 95, false, P)).toBe(false);
+    expect(boilsOver(0.2, 124, false, P)).toBe(true);
+    expect(boilsOver(0, 102, false, P)).toBe(true); // run dry, it boils barely over 100 °C
+    expect(boilsOver(0.2, 124, true, P)).toBe(false);
   });
 
   it('says how full it is, and a seed picks a leak within the limits', () => {
@@ -100,8 +103,8 @@ describe('what a low radiator does to the heat', () => {
     };
     expect(idle(0, false)).toBeGreaterThan(idle(1, false) + 10);
     expect(idle(0, true)).toBeCloseTo(idle(0, false), 5); // no fan help with no radiator
-    expect(gaugeHeat(0, 0.8, P, 0)).toBeGreaterThan(gaugeHeat(0, 0.8, P, 1));
-    expect(gaugeHeat(0, 0.8, P, 0)).toBeCloseTo(0.8);
+    const needle = (radiator) => tempGaugeFraction(gaugeReading(0, idle(radiator, false), 12, P));
+    expect(needle(0)).toBeGreaterThan(needle(1) + 0.1);
   });
 });
 
@@ -119,10 +122,13 @@ describe('the leaking orange', () => {
 
   it('loses coolant while running, then steams and boils over once, leaving little behind', () => {
     const e = make(0.45, 3);
-    const counts = idle(e, 3000);
+    // It boils only once the level is so low that the coolant's boiling point has come down to it (coolant.js `boilingC`), then runs
+    // on near dry until it stalls hot, by when the damp patch may have dried: so the patch is read as it boils.
+    let puddle = 0;
+    const counts = idle(e, 3000, () => e.events.some((ev) => ev.type === 'boilOver') && (puddle = e.coolantPuddle));
     expect(counts.boilOver).toBe(1);
     expect(e.coolant).toBeLessThan(0.1);
-    expect(e.coolantPuddle).toBeGreaterThan(0);
+    expect(puddle).toBeGreaterThan(0);
   });
 
   it('a full one stays cool and fine on the same day', () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
-import { hotSteam, pinkLevel, gaugeHeat, stepSoak, coolTickRate, hotStartRich, airflow, condensation } from '../src/engine/heat.js';
+import { hotSteam, pinkLevel, stepSoak, coolTickRate, hotStartRich, airflow, condensation } from '../src/engine/heat.js';
 import { heatLevel, metalTarget, fuelHeat, finCooling } from '../src/engine/thermal.js';
 import { Weather, WEATHER_KINDS } from '../src/world/weather.js';
 import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
@@ -30,11 +30,11 @@ function run(e, seconds, controls) {
 
 describe('running heat', () => {
   it('builds idling in full sun, but not on a dull day or riding along', () => {
-    // The heat an air-cooled engine settles at (the metal's target, as a 0..1 heat).
-    const settles = ({ ambient, rpmNorm = 0.1, load = 0, speed = 0 }) => heatLevel(metalTarget({ air: 12, ambient, fuel: fuelHeat({ rpmNorm, load }, P), cooling: finCooling({ rpmNorm, speed }, P) }, P), 0, P);
-    expect(settles({ ambient: 1 })).toBeGreaterThan(P.pinkFrom);
-    expect(settles({ ambient: 0.3 })).toBeLessThan(P.pinkFrom);
-    expect(settles({ ambient: 1, rpmNorm: 0.6, speed: P.airflowSpeed })).toBeLessThan(0.1);
+    // The °C an air-cooled engine's metal settles at, and the 0..1 heat that is.
+    const settlesC = ({ ambient, rpmNorm = 0.1, load = 0, speed = 0 }) => metalTarget({ air: 12, ambient, fuel: fuelHeat({ rpmNorm, load }, P), cooling: finCooling({ rpmNorm, speed }, P) }, P);
+    expect(settlesC({ ambient: 1 })).toBeGreaterThan(P.pinkFromC);
+    expect(settlesC({ ambient: 0.3 })).toBeLessThan(P.pinkFromC);
+    expect(heatLevel(settlesC({ ambient: 1, rpmNorm: 0.6, speed: P.airflowSpeed }), 0, P)).toBeLessThan(0.1);
     expect(airflow(-P.airflowSpeed * 2, P)).toBe(1);
   });
 
@@ -67,8 +67,8 @@ describe('running heat', () => {
     run(hot, 600, { ambient: 1, throttle: 0.5 });
     expect(hot.roughness).toBeGreaterThan(cool.roughness + 0.1);
     expect(hot.power).toBeLessThan(cool.power - 0.1);
-    expect(tempGaugeFraction(hot.temperature, true, hot.gaugeHeat)).toBeGreaterThan(HOT_FROM);
-    expect(tempGaugeFraction(cool.temperature, true, cool.gaugeHeat)).toBeLessThan(HOT_FROM);
+    expect(tempGaugeFraction(hot.gauge, true, hot.overheat)).toBeGreaterThan(HOT_FROM);
+    expect(tempGaugeFraction(cool.gauge, true, cool.overheat)).toBeLessThan(HOT_FROM);
   });
 
   it('heats crawling through mud with the throttle open, and riding at speed clears it', () => {
@@ -95,7 +95,7 @@ describe('running heat', () => {
     expect(flips).toBeGreaterThanOrEqual(2);
     expect(fan.some((f) => f)).toBe(true);
     expect(fan.some((f) => !f)).toBe(true);
-    expect(e.gaugeHeat).toBeLessThan(HOT_FROM / 2);
+    expect(tempGaugeFraction(e.gauge, true, e.overheat)).toBeLessThan(HOT_FROM);
     expect(WATER.waterCooled).toBe(true);
   });
 
@@ -104,15 +104,33 @@ describe('running heat', () => {
     expect(water.map((s) => s.name)).toEqual(['Viper Adder 250']);
   });
 
-  it('shows the worse of poor lubrication and heat on the gauge', () => {
-    expect(gaugeHeat(0.6, 0.2, P)).toBe(0.6);
-    expect(gaugeHeat(0, 0.8, P)).toBe(0.8);
-    expect(gaugeHeat(0, 0.8, WATER)).toBeCloseTo(0.8 * WATER.heatGaugeWater);
+  it('measures pinking from the temperature of the metal', () => {
+    expect(pinkLevel(P.pinkFromC, P)).toBe(0);
+    expect(pinkLevel(P.pinkFromC - 20, P)).toBe(0);
+    expect(pinkLevel(P.pinkFromC + P.pinkSpanC / 2, P)).toBeCloseTo(0.5);
+    expect(pinkLevel(P.pinkFromC + P.pinkSpanC, P)).toBe(1);
   });
 
-  it('measures pinking from the threshold', () => {
-    expect(pinkLevel(P.pinkFrom, P)).toBe(0);
-    expect(pinkLevel(1, P)).toBe(1);
+  it('pinks a running engine once its metal is past the pinking temperature, whatever the coolant', () => {
+    const e = make();
+    run(e, 1, {});
+    e.metalC = P.pinkFromC - 3;
+    e.update(0.05, {});
+    expect(e.pink).toBe(0);
+    e.metalC = P.pinkFromC + 15;
+    e.update(0.05, {});
+    expect(e.pink).toBeGreaterThan(0.2);
+  });
+
+  it('puts the red on an air-cooled gauge where pinking starts, and lubrication pushes the needle on up', () => {
+    const e = make();
+    run(e, 1, {});
+    e.metalC = P.pinkFromC - 2;
+    expect(tempGaugeFraction(e.gauge)).toBeLessThan(HOT_FROM);
+    e.metalC = P.pinkFromC + 2;
+    expect(tempGaugeFraction(e.gauge)).toBeGreaterThan(HOT_FROM);
+    e.metalC = P.warmC;
+    expect(tempGaugeFraction(e.gauge, true, 0.6)).toBeGreaterThan(tempGaugeFraction(e.gauge, true, 0));
   });
 });
 

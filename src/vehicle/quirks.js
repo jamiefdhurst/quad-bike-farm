@@ -11,7 +11,7 @@ export const DEFAULT_QUIRK_PARAMS = {
   countThree: 0.15, // chance a quad gets three
   fuelHighPower: 0.6, // the fuel gauge shows level to this power, so below full it reads high (and empty still reads empty)
   fuelStickJump: 0.01, // per second moving that a sticking fuel needle gets a knock and jumps to the real level before sticking again
-  tempColdCap: 0.12, // the temperature needle never gets past this engine temperature (0 cold, 1 warm)
+  tempColdCap: 0.12, // the temperature needle never gets past this share of the way from the air's temperature to warm
   chokeCreepRate: 0.25, // lever steps a second at full shake that the choke creeps back on, when running
   chokeCreepMax: 0.2, // the most the shake will pull the choke on to: two steps, a faster idle but under richTolerance on a warm engine
   tapStiffPresses: 3, // presses of F to get a fully stiff tap to move (they have to come within tapStiffWindow of each other)
@@ -146,7 +146,7 @@ export class QuirkSet {
   }
 
   /** The fuel level, engine temperature and overheat the dash shows, with this quad's lies in them. */
-  dash({ fuelLevel, temperature, overheat }, dt, moving = false) {
+  dash({ fuelLevel, gauge, overheat }, dt, moving = false) {
     const P = this.P;
     let fuel = fuelLevel;
     if (this.has('fuelHigh')) fuel = Math.min(1, Math.max(0, fuelLevel)) ** P.fuelHighPower;
@@ -154,8 +154,12 @@ export class QuirkSet {
       if (moving && this.random() < P.fuelStickJump * dt) this.stuckFuel = fuelLevel; // a knock frees it, then it sticks where it lands
       fuel = this.stuckFuel;
     }
-    if (this.has('tempCold')) return { fuelLevel: fuel, temperature: Math.min(temperature, P.tempColdCap), overheat: 0 };
-    return { fuelLevel: fuel, temperature, overheat };
+    if (this.has('tempCold')) {
+      // The needle never gets past this much of the way from the air to warm, whatever the engine is doing.
+      const cap = gauge.air + P.tempColdCap * (gauge.warm - gauge.air);
+      return { fuelLevel: fuel, gauge: { ...gauge, c: Math.min(gauge.c, cap) }, overheat: 0 };
+    }
+    return { fuelLevel: fuel, gauge, overheat };
   }
 
   /** How much the choke creeps on this frame (a `step` of the lever, or 0), shaken by a running engine. */

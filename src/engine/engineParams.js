@@ -201,11 +201,11 @@ export const DEFAULT_ENGINE_PARAMS = {
   thermostatMin: 0.55, // how far shut it sticks: this much at least (1 is fully shut)...
   thermostatBlock: 0.95, // share of the radiator's cooling a fully shut thermostat takes away
   thermostatFlushSeconds: 6, // seconds of pouring coolant through a cold, stopped engine to free it
-  hotFrom: 0.5, // a water-cooled engine's heat from which it is running too hot: it loses power and runs rough
+  hotFromC: 108, // a water-cooled engine's coolant (°C) from which it is running too hot: it loses power and runs rough, and the gauge is in the red
   hotPowerLoss: 0.55, // power lost at the top of that
   hotRoughness: 0.25, // roughness at the top of that
-  hotStallAt: 0.95, // heat at which it gives up and stalls
-  hotRestartBelow: 0.4, // heat it has to cool to before it will start again
+  hotStallC: 126, // coolant (°C) at which it gives up and stalls: the top of the gauge
+  hotRestartC: 104, // coolant (°C) it has to cool to before it will start again
   coolantStartMin: 0.55, // it starts the game this full, at least...
   coolantStartMax: 0.95, // ...and at most
   coolantPuddleFrom: 0.92, // level under which a damp patch grows while it leaks
@@ -214,9 +214,9 @@ export const DEFAULT_ENGINE_PARAMS = {
   coolantOkAt: 0.5, // level at and above which the radiator does all its cooling
   coolantEmptyAt: 0.1, // level at which it does none
   coolantSteamBelow: 0.4, // level under which it can steam when it's hot
-  coolantSteamHeat: 0.35, // heat from which steam shows
-  coolantBoilHeat: 0.5, // heat over which a low engine boils over...
-  coolantBoilEffect: 0.5, // ...once the radiator's down to this share of its cooling
+  coolantSteamC: 102, // coolant (°C) from which a low radiator steams, more up to `hotStallC`
+  coolantBoilFullC: 130, // coolant (°C) it boils over at with the system full and under pressure (over the stall, so a full one stalls first)...
+  coolantBoilLowC: 100, // ...and with too little left to hold any pressure, at `coolantEmptyAt`; between, it follows the radiator's cooling
   coolantBoilLeft: 0.06, // level left after a boil-over
   coolantBoilSteamSeconds: 14, // how long the steam from a boil-over takes to die away
   // Jetting a two-stroke (see jetting.js). Sizes are jet sizes either side of stock.
@@ -295,7 +295,8 @@ export const DEFAULT_ENGINE_PARAMS = {
   metalOverC: 6, // °C the metal runs over the coolant idling (more working)
   metalFollowSeconds: 20, // how quickly the metal follows the coolant
   airflowSpeed: 8, // ground speed in m/s that gives full airflow
-  pinkFrom: 0.45, // pinking starts at this heat
+  pinkFromC: 115, // an air-cooled engine's metal (°C) at which pinking starts, and the red on its gauge
+  pinkSpanC: 55, // °C over that at which it pinks fully: the top of its gauge
   pinkRoughness: 0.3, // roughness at full pinking
   pinkPowerLoss: 0.25, // power lost at full pinking
   pinkRate: 14, // rattles a second at full pinking under load
@@ -308,7 +309,6 @@ export const DEFAULT_ENGINE_PARAMS = {
   condenseAirFull: 0, // and the air temperature at which it shows most
   condenseWarmAt: 0.6, // engine warmth (0..1) from which the exhaust has dried out
   condenseDripFrom: 0.2, // condensation level from which water drips out of the tip
-  heatGaugeWater: 0.25, // how much of its heat the water-cooled one's gauge shows
   soakIdle: 0.25, // heat held in the metal by an engine just idling, against 1 flat out
   soakRiseSeconds: 60, // how fast the metal heats up
   soakFallSeconds: 240, // and how long it takes to shed it (running, or switched off)
@@ -509,11 +509,11 @@ export const ENGINE_PARAM_RANGES = {
   thermostatMin: [0, 1, 0.05],
   thermostatBlock: [0, 1, 0.05],
   thermostatFlushSeconds: [1, 30, 1],
-  hotFrom: [0, 1, 0.05],
+  hotFromC: [90, 130, 1],
   hotPowerLoss: [0, 1, 0.05],
   hotRoughness: [0, 1, 0.05],
-  hotStallAt: [0.5, 1, 0.01],
-  hotRestartBelow: [0, 1, 0.05],
+  hotStallC: [100, 140, 1],
+  hotRestartC: [85, 130, 1],
   coolantStartMin: [0, 1, 0.05],
   coolantStartMax: [0, 1, 0.05],
   coolantPuddleFrom: [0, 1, 0.01],
@@ -522,9 +522,9 @@ export const ENGINE_PARAM_RANGES = {
   coolantOkAt: [0, 1, 0.05],
   coolantEmptyAt: [0, 1, 0.05],
   coolantSteamBelow: [0, 1, 0.05],
-  coolantSteamHeat: [0, 1, 0.05],
-  coolantBoilHeat: [0, 1, 0.05],
-  coolantBoilEffect: [0, 1, 0.05],
+  coolantSteamC: [85, 130, 1],
+  coolantBoilFullC: [100, 150, 1],
+  coolantBoilLowC: [90, 130, 1],
   coolantBoilLeft: [0, 0.3, 0.01],
   coolantBoilSteamSeconds: [1, 60, 1],
   jetRefCelsius: [0, 25, 0.5],
@@ -651,7 +651,8 @@ export const ENGINE_PARAM_RANGES = {
   metalOverC: [0, 40, 1],
   metalFollowSeconds: [1, 120, 1],
   airflowSpeed: [1, 20, 0.5],
-  pinkFrom: [0, 0.95, 0.01],
+  pinkFromC: [70, 200, 1],
+  pinkSpanC: [5, 150, 1],
   pinkRoughness: [0, 1, 0.01],
   pinkPowerLoss: [0, 1, 0.01],
   pinkRate: [0, 40, 1],
@@ -664,7 +665,6 @@ export const ENGINE_PARAM_RANGES = {
   condenseAirFull: [-10, 15, 0.5],
   condenseWarmAt: [0.1, 1, 0.01],
   condenseDripFrom: [0, 1, 0.01],
-  heatGaugeWater: [0, 1, 0.01],
   soakIdle: [0, 1, 0.01],
   soakRiseSeconds: [5, 600, 5],
   soakFallSeconds: [30, 1800, 10],

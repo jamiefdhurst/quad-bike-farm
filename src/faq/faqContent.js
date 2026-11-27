@@ -993,9 +993,13 @@ export const FAQ_SECTIONS = [
       {
         q: 'The temperature needle is in the red on a car or the tractor. What is wrong?',
         tip: 'Needle in the red on a car? Switch off. It is low on coolant or has a stuck thermostat.',
-        a: `A healthy cooling system keeps the needle in the middle on every vehicle, all day, even idling in the sun. In the red means something is wrong: the coolant
+        a: `The gauge reads the engine's real temperature. On anything with a radiator (the cars, the Tor, the Crag, the UTV, the tractor and the Adder) it reads the
+          coolant: cold at the day's temperature, the middle at about 88 °C, the red from about 108 °C where it starts running too hot, and the top at about 126 °C
+          where it cuts out. On the air-cooled quads it reads the metal of the engine instead, the middle when warm and the red where it starts to pink.
+          A healthy cooling system keeps the needle in the middle on every vehicle, all day, even idling in the sun. In the red means something is wrong: the coolant
           is low (look for a damp patch on the ground under it) or the thermostat has stuck shut, which can be there from the start or come on after a long run.
-          It loses power and runs rough, steams if it gets worse, and past the top it cuts out and won't start until it has cooled for a minute or two. The red
+          It loses power and runs rough, steams if it gets worse, and past the top it cuts out and won't start until it has cooled for a minute or two. Low on coolant
+          it boils over sooner, as a low system holds less pressure: nearly dry, it boils at not much over 100 °C. The red
           lamp or red symbol on the dash lights as the needle goes in. Switch it off and let it cool. Then take the coolant bottle (it stands by the oil bottle
           at the petrol tank), look at the vehicle with the engine off and cool, and hold <kbd>E</kbd> to top up. With the radiator full, keep holding it and the
           coolant flushes through, which frees a stuck thermostat. A weeping hose keeps weeping until it is mended at the workbench, which also changes the thermostat.`,
