@@ -101,6 +101,19 @@ export function hotrev(g) {
   return ['you are on the Adder with the parking brake on: hold the throttle and watch the needle climb into the red within a minute or two'];
 }
 
+/** On a hot air-cooled quad in the yard, running: the Hornet if the farm has it, else another that pinks (#861). */
+export function hotpink(g, say) {
+  const prone = (u) => !u.engine.params.waterCooled && !u.engine.params.compressionIgnition && u.engine.params.pinkProne > 0 && !u.spec.miniMoto;
+  const u = g.units.find((x) => x.id === 'hornet') ?? g.units.find((x) => prone(x) && !x.engineOut);
+  if (!u) return ['this farm has no air-cooled quad that pinks'];
+  if (u.quad.rider || u.quad.driver) return [`the ${u.label} has someone on it already: scene end, then reset it`];
+  say(`tp ${u.id} to yard`);
+  say(`start ${u.id}`);
+  say(`tp me ${u.id}`);
+  u.engine.metalC = u.engine.params.pinkFromC + 25; // hot already, as if it had been worked hard in the sun
+  return [`you are on the ${u.label} with its engine hot: let it idle and it stays quiet, then pull away or rev it and it pinks`];
+}
+
 export function flock(g, say) {
   const [cx, cz] = g.world.layout.hill.climb.points[0];
   if (!g.flock) return ['there is no flock on this farm'];
@@ -172,4 +185,4 @@ export function splitter(g, say) {
   ];
 }
 
-export const SETUPS = { farHedges, prepare: getOff, wardrobe, moto, flock, flask, earlier, splitter, hotrev, end: endScene };
+export const SETUPS = { farHedges, prepare: getOff, wardrobe, moto, flock, flask, earlier, splitter, hotrev, hotpink, end: endScene };
