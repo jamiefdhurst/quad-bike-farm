@@ -219,13 +219,13 @@ export const TURN_ROUND_PLAN = {
 };
 
 /**
- * What makes the lane a lane other people use (#687), plan metres: the pair of cottages on its east side, two more field gateways in her hedge, the grit
+ * What makes the lane a lane other people use (#687), plan metres: the pair of cottages on its east side, one more field gateway in her hedge, the grit
  * bins at the bends (one at the northern bend, one at the junction), the postbox on its post and the bin stand at the end of our drive (the drive meets
  * the lane at z 345, and these stand on its north verge on the lane's west side). The lane's west side at x 905 is the farm boundary at x 885.
  */
 export const LANE_FITTINGS_PLAN = {
   cottages: { rect: [920, 418, 944, 442], yaw: Math.PI / 2, gardenDepth: 12 }, // a pair, semi-detached, their fronts to the lane
-  gateways: [{ at: [912, 205], width: 4.5 }, { at: [912, 459.5], width: 4.5 }], // the second is the small farm's track mouth (#819)
+  gateways: [{ at: [912, 205], width: 4.5 }], // none at the small farm's track mouth (z 459.5): a shut leaf stood across its track, and the hedge is open there anyway (#1082)
   gritBins: [[906, -5]], // by the bend, on its outside, beside Back Lane's mouth (at (905, -2) it stood on the edge of Back Lane's tarmac, #1187); the junctions have their own
   postbox: [900.8, 338], // west verge, north of the drive's mouth
   binStand: [900.8, 353], // and south of it

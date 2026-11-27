@@ -196,6 +196,8 @@ describe('the pub\'s car park (#542)', () => {
 describe('the new buildings, built', () => {
   let village;
   let boxes;
+  let villageBoxes;
+  let laneBoxes;
   let carsFor;
   beforeAll(async () => {
     vi.stubGlobal('document', { createElement: () => fakeCanvas() });
@@ -209,14 +211,24 @@ describe('the new buildings, built', () => {
       return buildVillage(c);
     };
     village = make(1234);
+    villageBoxes = boxes;
+    // The lane's fittings too (#1082): their gateways' shut leaves are colliders, and one stood across the small farm's track.
+    laneBoxes = [];
+    const { buildLaneFittings } = await import('../src/world/laneFittingsProps.js');
+    let s = 99;
+    const random = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
+    buildLaneFittings({ ...headlessContext(), scene: new THREE.Scene(), random, layout: two, heights: createTerrainHeight(two, new Track(two.trackPoints)),
+      fixedBox: (x, y, z, hx, hy, hz) => laneBoxes.push({ x, y, z, hx, hy, hz }) });
     carsFor = (seed) => make(seed).cars.map((q) => `${q.kind}${q.colour}${q.bay}`).join();
   });
 
-  it('leaves the farm\'s gateway and its track open: no collider stands across them', () => {
+  it('leaves the farm\'s gateway and its track open, from the lane to the yard: no collider of the village or the lane stands across them (#1082)', () => {
     const gz = A.farm.gateway.z;
     const gx = A.farm.yard.minX;
-    for (const dz of [-1.5, 0, 1.5]) for (const x of [gx - 6, gx - 0.3, gx, gx + 0.3, gx + 6]) {
-      const hit = boxes.find((b) => Math.abs(x - b.x) < b.hx && Math.abs(gz + dz - b.z) < b.hz);
+    const all = [...villageBoxes, ...laneBoxes];
+    expect(laneBoxes.length).toBeGreaterThan(0);
+    for (const dz of [-1.5, 0, 1.5]) for (let x = plan(905, 0)[0]; x <= gx + 6; x += 0.25) {
+      const hit = all.find((b) => Math.abs(x - b.x) < b.hx && Math.abs(gz + dz - b.z) < b.hz);
       expect(hit, `${x} ${gz + dz}`).toBeUndefined();
     }
   });
