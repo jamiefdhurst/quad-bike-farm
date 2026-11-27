@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew } from '../src/world/layoutNew.js';
 import { namedLayout } from '../src/world/fieldNames.js';
-import { JOB_FIELDS, FIELD_WORK, jobPlace, inPlace, outsideBy, liveCells, countLive, liveMiddleFirst, jobFieldLabel } from '../src/world/jobFields.js';
+import { JOB_FIELDS, FIELD_WORK, FIELD_EDGE, BROOK_CLEAR, jobPlace, clearOfBrook, placeOutline, inPlace, outsideBy, liveCells, countLive, liveMiddleFirst, jobFieldLabel } from '../src/world/jobFields.js';
+import { createBrook } from '../src/world/brook.js';
 import { FARM_JOBS, JobBoard, jobsFor } from '../src/world/farmJobs.js';
 import { Spraying, DEFAULT_SPRAY_PARAMS, SPRAYED, UNSPRAYED } from '../src/world/spraying.js';
 import { Harrowing, DEFAULT_HARROW_PARAMS, UNTOUCHED, dealMolehills } from '../src/world/harrowing.js';
@@ -10,7 +11,7 @@ import { Haymaking, DEFAULT_HAY_PARAMS, STANDING, CUT } from '../src/world/hayma
 import { FieldWorkHost } from '../src/world/fieldWorkHost.js';
 import { presence } from '../src/world/hayMask.js';
 import { inHayMeadow } from '../src/world/props.js';
-import { polygonArea } from '../src/world/polygons.js';
+import { polygonArea, insetPolygon } from '../src/world/polygons.js';
 import { createRandom } from '../src/core/random.js';
 
 // The jobs on the new farm's fields (#691): which field each is on, the field's polygon as its area, and the chalkboard naming it.
@@ -50,8 +51,36 @@ describe('each job\'s area', () => {
       expect(place.poly.length, key).toBeGreaterThanOrEqual(4);
       expect(place.area, key).toBeLessThan((place.maxX - place.minX) * (place.maxZ - place.minZ));
     }
-    expect(two.hayMeadow.area).toBeCloseTo(polygonArea(field('hay').points), 3);
-    expect(two.harrowField.area).toBeCloseTo(polygonArea(field('ley').points), 3);
+    expect(two.hayMeadow.area).toBeCloseTo(polygonArea(insetPolygon(field('hay').points, FIELD_EDGE)), 3);
+    expect(two.harrowField.area).toBeLessThan(polygonArea(insetPolygon(field('ley').points, FIELD_EDGE)) * 0.8); // the strip beyond the brook is cut off
+    expect(two.harrowField.area).toBeGreaterThan(20000);
+  });
+  it('is cut clear of the brook, keeping the side with the most field, and leaves a field it doesn\'t reach as it was (#1110)', () => {
+    const brook = createBrook(two);
+    const p = two.harrowField;
+    for (let x = p.minX; x <= p.maxX; x += 4) {
+      const water = brook.zAt(x);
+      for (let z = water - brook.halfAt(x) - BROOK_CLEAR + 0.5; z <= p.maxZ + 10; z += 2) expect(inPlace(p, x, z), `${x},${z}`).toBe(false);
+    }
+    expect(inPlace(p, (p.minX + p.maxX) / 2, p.minZ + 20)).toBe(true); // the field north of the water is the job's
+    const square = [[0, 0], [100, 0], [100, 100], [0, 100]];
+    const brookAt = (z) => ({ line: () => Array.from({ length: 71 }, (_, i) => ({ x: -20 + i * 2, z, half: 2 })) });
+    const across = brookAt(70);
+    const cut = clearOfBrook(square, across, 8);
+    expect(Math.abs(polygonArea(cut))).toBeCloseTo(100 * 60, 3); // the side short of z 70 - 2 - 8, the larger
+    const away = brookAt(300);
+    expect(clearOfBrook(square, away, 8)).toBe(square);
+  });
+  it('starts FIELD_EDGE in from the hedge lines, so a point on one is never the next field\'s', () => {
+    for (const { key } of Object.values(FIELD_WORK)) {
+      const p = two[key];
+      const f = field(p.field);
+      for (const [x, z] of f.points) expect(inPlace(p, x, z), `${key} ${x},${z}`).toBe(false);
+    }
+  });
+  it('is what the map outlines while the job is on: the polygon, or the rectangle\'s corners on today\'s farm', () => {
+    expect(placeOutline(two.harrowField)).toBe(two.harrowField.poly);
+    expect(placeOutline({ minX: 0, maxX: 4, minZ: 1, maxZ: 3 })).toEqual([[0, 1], [4, 1], [4, 3], [0, 3]]);
   });
   it('is the headland-free middle for the spraying and the whole field for the hay and the harrowing', () => {
     expect(two.sprayField.area).toBeLessThan(polygonArea(field('lanefield').points) - 6 * 100);
@@ -103,11 +132,11 @@ describe('the jobs read the polygon', () => {
   });
   it('harrowing: the same, on Low Ley', () => {
     const h = new Harrowing({ rect: two.harrowField, params: { ...DEFAULT_HARROW_PARAMS } });
-    expect(h.liveCount).toBeGreaterThan(30000);
+    expect(h.liveCount).toBeGreaterThan(20000); // Low Ley north of the brook (#1110)
     expect(h.needed).toBeCloseTo(DEFAULT_HARROW_PARAMS.areaNeeded / h.liveCount, 6);
     h.combAll(1);
     expect(h.coverage).toBeCloseTo(1, 5);
-    expect(h.index(two.harrowField.maxX - 0.5, two.harrowField.maxZ - 0.5)).toBe(-1);
+    expect(h.index(two.harrowField.minX + 0.5, two.harrowField.maxZ - 0.5)).toBe(-1); // the south-west corner of the bounds is beyond the brook
   });
   it('harrowing: the molehills are dealt in the field', () => {
     const hills = dealMolehills(two.harrowField, 16, createRandom(7));

@@ -4,6 +4,7 @@
 import { MAP_COLOURS as C, mapTransform, placeMarkers, mapAngle, countedName } from './farmMap.js';
 import { sprayRuns, SPRAY_CELL, DOUBLED } from '../world/spraying.js';
 import { harrowRuns, HARROW_CELL, COMBED_ALONG_X } from '../world/harrowing.js';
+import { placeOutline } from '../world/jobFields.js';
 
 export class MapView {
   /** `features` from farmMapFeatures, `params` DEFAULT_MAP_PARAMS (tuned live), `counts` what to add to a name that carries a count, by the label's `id`. */
@@ -57,20 +58,28 @@ export class MapView {
     for (const m of placed) this.drawMarker(ctx, m, p.markerScale);
   }
 
+  /** A job's place as a dashed line while the job is on: the cut field's own outline (world/jobFields.js `placeOutline`), not its bounds. */
+  outlinePlace(ctx, t, place) {
+    ctx.save();
+    ctx.setLineDash([5, 4]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = C.ink;
+    ctx.beginPath();
+    placeOutline(place).forEach(([x, z], i) => {
+      const [u, v] = t.toMap(x, z);
+      if (i) ctx.lineTo(u, v);
+      else ctx.moveTo(u, v);
+    });
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+
   /** The lines you have sprayed (world/spraying.js): a strip a pass, darker where two passes overlap, and the field's outline while the job is on. */
   drawSprayed(ctx, t) {
     const sp = this.spray;
     if (!sp) return;
-    if (this.sprayWanted?.()) {
-      const [u0, v0] = t.toMap(sp.rect.minX, sp.rect.minZ);
-      const [u1, v1] = t.toMap(sp.rect.maxX, sp.rect.maxZ);
-      ctx.save();
-      ctx.setLineDash([5, 4]);
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = C.ink;
-      ctx.strokeRect(u0, v0, u1 - u0, v1 - v0);
-      ctx.restore();
-    }
+    if (this.sprayWanted?.()) this.outlinePlace(ctx, t, sp.rect);
     for (const run of sprayRuns(sp)) {
       const [u0, v0] = t.toMap(run.x0, run.z);
       const [u1, v1] = t.toMap(run.x1, run.z + SPRAY_CELL);
@@ -83,16 +92,7 @@ export class MapView {
   drawHarrowed(ctx, t) {
     const h = this.harrow;
     if (!h) return;
-    if (this.harrowWanted?.()) {
-      const [u0, v0] = t.toMap(h.rect.minX, h.rect.minZ);
-      const [u1, v1] = t.toMap(h.rect.maxX, h.rect.maxZ);
-      ctx.save();
-      ctx.setLineDash([5, 4]);
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = C.ink;
-      ctx.strokeRect(u0, v0, u1 - u0, v1 - v0);
-      ctx.restore();
-    }
+    if (this.harrowWanted?.()) this.outlinePlace(ctx, t, h.rect);
     for (const run of harrowRuns(h)) {
       const [u0, v0] = t.toMap(run.x0, run.z);
       const [u1, v1] = t.toMap(run.x1, run.z + HARROW_CELL);
