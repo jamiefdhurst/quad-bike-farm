@@ -1062,7 +1062,9 @@ export const FARMSTEAD_PLAN = {
   slab: [425, 317, 615, 415], // the yard, concrete
   stackyard: [420, 253, 472, 309],
   orchard: [478, 250, 538, 310],
-  garden: { rect: [552, 250, 615, 312], gate: { x: 583, width: 3.6 } }, // lawn behind a stone wall, its gate on the yard side
+  // The garden behind a stone wall, its gate on the yard side. Its lawn is 40 by 28 m at the north of the plot, about eight minutes with the mower (#1108):
+  // the whole plot was 26 minutes, and #693's house stands at 562 to 592 by 284 to 296 facing it, with the vegetable patch on the strip east of the lawn.
+  garden: { rect: [552, 250, 615, 312], gate: { x: 583, width: 3.6 }, lawn: [556, 254, 596, 282] },
   cars: { z: 326, xs: [578, 583.2, 588.4], yaw: Math.PI }, // beside the garden, nosed in towards its wall (plan 572 to 612 by 319 to 333)
   muck: [486, 416],
   // What the yard is dressed with (#817), plan metres. The barn's door wall is the plane z 335 (x 501.8 to 520.2), its doors' leaves covering most of it, so `wall` is the gear on
@@ -1202,7 +1204,7 @@ export function farmsteadLayout(today, raw) {
     silage: { x: pt(P.silage)[0], z: pt(P.silage)[1] },
     muckHeap: { ...today.muckHeap, x: pt(P.muck)[0], z: pt(P.muck)[1] },
     paddock: undefined, // the paddock's fences are Home Ground's rails now
-    lawns: { garden: { ...rectOf([P.garden.rect[0] + 2, P.garden.rect[1] + 2, P.garden.rect[2] - 2, P.garden.rect[3] - 2]) } },
+    lawns: { garden: { ...rectOf(P.garden.lawn) } },
     farmAnimals: {
       pen: rectOf(P.animals.pen), sty: rectOf(P.animals.sty),
       bin: { x: bin[0], z: bin[1], yaw: P.animals.bin[2] }, bucket: { x: bucket[0], z: bucket[1], yaw: P.animals.bucket[2] },
