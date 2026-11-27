@@ -1987,3 +1987,9 @@ A house's garden hedges are worked out in one place now, `gardenHedges` in `vill
 - The hayloft, the second span and the controls' "Hayloft ladder" hint were already gone (#1055, #1112), so what was left was the big gate, the lane's invisible walls, the old muck heap, the old parking spots, the gates, the map paragraph, the logs, the drag strip's old gravel and the `?layout=2` and "either farm" wording. Each now reads from `layoutNew.js`: visitors, the tuner and the girls' cars come and go over the cattle grid, the muck heap is at the yard's south edge and the muck goes on the field the board names, and the rounds and stack are at the woodpile by Hollow Wood's gate.
 - The FAQ says "(by default)" once, at the first field name (the stone track's answer), with a line that each farm deals its own names and the map shows them, rather than hedging every name.
 - #1109 had already put the sprayer within the hose's reach, so "Spraying the field" needed no note.
+
+
+## The chain harrows at Low Ley's edge (#1117)
+
+- #692 left the harrows at plan (548, 372), in the farmstead about 200 m from Low Ley, and loosened their test to finite numbers. They stand at plan (647, 570), world (127, 205): 6 m inside Low Ley's west edge and 10 m north of its gateway from Brook Meadow (640, 580), so the way in is clear and the harrows are the first thing you meet through it. The tongue points west at the gateway, as it pointed at the yard before.
+- `tests/harrowing.test.js` checks them again: inside the harrow field's polygon, within 12 m of its edge, on the ley and clear of the Home Loop. With the old spot it fails.
