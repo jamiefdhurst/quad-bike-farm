@@ -139,6 +139,7 @@ export function buildFarmYard(ctx, farm) {
   const geo = worldBox(y.maxX - y.minX - wall, 0.3, y.maxZ - y.minZ - wall, 2.4);
   const idx = geo.getIndex().array;
   geo.setIndex([...idx.slice(0, 18), ...idx.slice(24)]);
+  geo.clearGroups(); // its six face groups would point past the shorter index
   const slab = new THREE.Mesh(geo, M.concrete);
   slab.position.set(cx, heights.heightAt(cx, cz) - 0.1, cz);
   slab.receiveShadow = true;
