@@ -4,10 +4,10 @@
 //   node tools/engine-review/sweep.mjs [vehicle id ...] [--set param=value ...]
 
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { renderClip, SPECS } from './render.mjs';
+import { renderLadder, SPECS, SR } from './ladder.mjs';
+import { spectrum, bandsDb } from './measures.mjs';
 import { DEFAULT_ENGINE_PARAMS } from '../../src/engine/engineParams.js';
 
-const SR = 48000;
 const STEP = 1.6; // seconds at each rpm
 const SETTLE = 0.6; // of which this is skipped before measuring
 const args = process.argv.slice(2);
@@ -21,51 +21,11 @@ for (let i = 0; i < args.length; i++) {
 }
 mkdirSync('.scratch/engine-review/sweep', { recursive: true });
 
-function fft(re, im) {
-  const n = re.length;
-  for (let i = 1, j = 0; i < n; i++) {
-    let bit = n >> 1;
-    for (; j & bit; bit >>= 1) j ^= bit;
-    j ^= bit;
-    if (i < j) {
-      [re[i], re[j]] = [re[j], re[i]];
-      [im[i], im[j]] = [im[j], im[i]];
-    }
-  }
-  for (let len = 2; len <= n; len <<= 1) {
-    const a = (-2 * Math.PI) / len;
-    for (let i = 0; i < n; i += len) {
-      for (let k = 0; k < len / 2; k++) {
-        const c = Math.cos(a * k);
-        const s = Math.sin(a * k);
-        const xr = re[i + k + len / 2] * c - im[i + k + len / 2] * s;
-        const xi = re[i + k + len / 2] * s + im[i + k + len / 2] * c;
-        re[i + k + len / 2] = re[i + k] - xr;
-        im[i + k + len / 2] = im[i + k] - xi;
-        re[i + k] += xr;
-        im[i + k] += xi;
-      }
-    }
-  }
-}
-
-// Third-octave band levels (dB) from 40 Hz to 12 kHz, the centroid, and the strongest periodicity near the expected firing rate.
+// Third-octave band levels (dB of the whole) from 40 Hz to 12 kHz, the centroid, and the strongest periodicity near the expected
+// firing rate.
 function analyse(x, expectHz) {
-  const N = 32768;
-  const re = new Float64Array(N);
-  const im = new Float64Array(N);
-  for (let i = 0; i < N; i++) re[i] = (x[i] ?? 0) * (0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N));
-  fft(re, im);
-  const pow = new Float64Array(N / 2);
-  for (let i = 0; i < N / 2; i++) pow[i] = re[i] * re[i] + im[i] * im[i];
-  const bands = [];
-  for (let f = 40; f < 12000; f *= 2 ** (1 / 3)) {
-    const lo = Math.floor((f / SR) * N);
-    const hi = Math.max(lo + 1, Math.floor((f * 2 ** (1 / 3) / SR) * N));
-    let e = 1e-20;
-    for (let k = lo; k < hi; k++) e += pow[k];
-    bands.push(e);
-  }
+  const pow = spectrum(x);
+  const N = pow.length * 2;
   let tot = 0;
   let cen = 0;
   for (let k = 1; k < N / 2; k++) {
@@ -92,28 +52,15 @@ function analyse(x, expectHz) {
     const r = s / Math.sqrt(e0 * e1 + 1e-20);
     if (r > best.r) best = { hz: SR / lag, r };
   }
-  const db = bands.map((e) => 10 * Math.log10(e / tot));
-  return { rmsDb: 20 * Math.log10(rms + 1e-9), centroid: cen / tot, bandsDb: db, periodHz: best.hz, periodR: best.r };
+  return { rmsDb: 20 * Math.log10(rms + 1e-9), centroid: cen / tot, bandsDb: bandsDb(pow), periodHz: best.hz, periodR: best.r };
 }
 
 const out = [];
 for (const spec of SPECS) {
   if (ids.length && !ids.includes(spec.id)) continue;
   const eng = { ...DEFAULT_ENGINE_PARAMS, ...spec.engine };
-  const steps = [];
-  for (let r = Math.ceil(eng.idleRpmWarm / 500) * 500; r <= eng.maxRpm; r += 500) steps.push(r);
-  if (steps.at(-1) !== eng.maxRpm) steps.push(eng.maxRpm);
-  const [lo, hi] = spec.roughnessRange ?? [0.08, 0.08];
-  let revsPerFiring = 2;
-  const clip = renderClip({ ...spec, audio: { ...spec.audio, ...sets } }, {
-    roughness: (lo + hi) / 2,
-    duration: steps.length * STEP,
-    script: (t, engine) => {
-      revsPerFiring = engine.revsPerFiring;
-      const i = Math.min(steps.length - 1, Math.floor(t / STEP));
-      return { throttle: 0.35, gearRpm: steps[i], gearLock: 1, driveLoad: 0.3 };
-    },
-  });
+  const clip = renderLadder({ ...spec, audio: { ...spec.audio, ...sets } }, { stepSeconds: STEP });
+  const { steps, revsPerFiring } = clip;
   const rows = steps.map((rpm, i) => {
     const a = Math.round((i * STEP + SETTLE) * SR);
     const seg = clip.pcm.subarray(a, Math.round((i + 1) * STEP * SR));

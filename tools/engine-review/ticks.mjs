@@ -13,9 +13,19 @@ export function tickRate(x, sr = 48000, { hz = 2500, over = 5 } = {}) {
     e += y * y;
     if (++k === step) { lv.push(Math.sqrt(e / step)); e = 0; k = 0; }
   }
+  // The 20 ms around each step (80 levels) kept sorted as it slides, one out and one in, rather than sorted afresh at every step.
   let ticks = 0, last = -99;
+  const around = lv.slice(0, 80).sort((p, q) => p - q);
+  const at = (v) => {
+    let lo = 0, hi = around.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (around[mid] < v) lo = mid + 1; else hi = mid; }
+    return lo;
+  };
   for (let j = 40; j < lv.length - 40; j++) {
-    const around = lv.slice(j - 40, j + 40).sort((p, q) => p - q);
+    if (j > 40) {
+      around.splice(at(lv[j - 41]), 1);
+      around.splice(at(lv[j + 39]), 0, lv[j + 39]);
+    }
     if (lv[j] > over * around[40] && j - last > 8) { ticks++; last = j; }
   }
   return ticks / (x.length / sr);
