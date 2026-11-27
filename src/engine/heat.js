@@ -3,7 +3,7 @@
 // Apart from the warm-up (temperature, 0 cold to 1 warm), an engine can run on into being too hot. The
 // air-cooled ones get there idling for ages on a sunny day, or crawling in mud with the throttle open, and
 // start pinking and running rough; riding along at speed blows it away. The water-cooled one has a fan that
-// cuts in and out and never gets that far. Both come from the engine's real temperatures (thermal.js): pinking
+// cuts in and out and copes idling and riding, though not revved hard standing still (thermal.js). Both come from the engine's real temperatures: pinking
 // from the metal's °C, the steam and the soak from the 0..1 heat worked out from them. Separately, `soak` is how much heat the metal's holding after
 // work, whatever the airflow: switched off it ticks as it cools, and a hot carburettor percolates, so a
 // hot engine starts rich until the heat's gone.
