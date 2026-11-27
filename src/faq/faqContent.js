@@ -2520,7 +2520,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I mow the lawn?',
         a: `Take the mower (the Clipper) from wherever it was left, start it with the key (<kbd>K</kbd>, hold <kbd>R</kbd>) or, if the battery is flat, the pull cord on the right of the bonnet (<kbd>O</kbd>),
-          and push the blade lever forward with <kbd>T</kbd>: the amber BLADE lamp on the dash comes on. It cuts under the middle of the deck as you drive forward on grass, so go up and down the garden lawn (behind the stone wall beside the yard, through its gate) in straight passes. Each pass leaves a stripe, paler going one way and darker the other. The job ticks off the board once most of the lawn is cut that day.`,
+          and push the blade lever forward with <kbd>T</kbd>: the amber BLADE lamp on the dash comes on. It cuts under the middle of the deck as you drive forward on grass, so go up and down the garden lawn (behind the stone wall beside the yard, through its gate: the lawn is the far end of the garden, about eight minutes' mowing) in straight passes. Each pass leaves a stripe, paler going one way and darker the other. The job ticks off the board once most of the lawn is cut that day.`,
         tip: 'The mower: key on, T for the blade, then up and down the garden lawn in stripes.',
       },
       {
