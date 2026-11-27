@@ -363,7 +363,8 @@ export const QUAD_SPECS = [
     engine: {
       strokes: 2,
       popProne: 0.7, // two-strokes crackle and bang on the overrun
-      waterCooled: true, // a radiator with a fan that cuts in; it never gets as hot as the air-cooled ones
+      waterCooled: true, // a radiator with a fan that cuts in: it copes idling and riding along, but revved hard standing still it gets hot
+      radiatorFan: 1.6, // the smallest radiator of all: held near the top standing still on a mild day it gets hot in about two minutes
       pullStart: true, // a recoil cord as well as the starter
       idleRpmWarm: 1950,
       maxRpm: 11500,
@@ -1049,7 +1050,7 @@ export const HARTLEY_SPEC = {
   topRpmRange: [2150, 2250], // full-throttle revs this game, about 4% either side of the engine's own
   fuel: { tankCapacity: 45, reserveLitres: 4, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.0003, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
   engine: {
-    waterCooled: true, // a radiator and a fan like the orange's: it only gets hot with a fault (a stuck thermostat, a low radiator)
+    waterCooled: true, // a big radiator and fan, built for standing work on the PTO: healthy, it never overheats; a stuck thermostat or a low radiator still does
     thermostatChance: 0.12, // (a fault in 1 of 8 or so, not 1 in 5)
     coolantLeakChance: 0.25, // and a leak in 1 game in 4, not 1 in 2
     compressionIgnition: true, // glow plugs, no choke, the key doesn't stop it, a knob does (src/engine/compression.js)
@@ -1196,7 +1197,8 @@ export const YAK_SPEC = {
   topRpmRange: [3150, 3250], // full-throttle revs this game, about 2% either side of the engine's own
   fuel: { tankCapacity: 30, reserveLitres: 3, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.00012, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
   engine: {
-    waterCooled: true, // a radiator and a fan like the orange's: it only gets hot with a fault (a stuck thermostat, a low radiator)
+    waterCooled: true, // a radiator and a fan: it copes idling and riding along, but revved hard standing still it gets hot (radiatorFan), and a stuck thermostat or a low radiator makes it worse
+    radiatorFan: 1.6, // a small fan: held near the top standing still on a mild day it gets hot in about four minutes
     thermostatChance: 0.12, // (a fault in 1 of 8 or so, not 1 in 5)
     coolantLeakChance: 0.25, // and a leak in 1 game in 4, not 1 in 2
     compressionIgnition: true, // glow plugs, no choke (src/engine/compression.js)
@@ -1372,7 +1374,8 @@ export const TOR_SPEC = {
   },
   fuel: { tankCapacity: 45, reserveLitres: 5, noTap: true, startTap: 'on', burnPerRev: 0.0003, idleBurnFraction: 0.3 },
   engine: {
-    waterCooled: true, // a radiator and a fan like the orange's: it only gets hot with a fault (a stuck thermostat, a low radiator)
+    waterCooled: true, // a radiator and a fan: it copes idling and riding along, but revved hard standing still it gets hot (radiatorFan), and a stuck thermostat or a low radiator makes it worse
+    radiatorFan: 1.5, // held near the top standing still on a mild day it gets hot in about five minutes, the last but the Hartley (its slow warm-up is a lot of water)
     thermostatChance: 0.12, // (a fault in 1 of 8 or so, not 1 in 5)
     coolantLeakChance: 0.25, // and a leak in 1 game in 4, not 1 in 2
     loadDragRpm: 2200, // a manual: slowing in third or fourth with the clutch out stalls it; first and second hold on (a heavy flywheel)
@@ -1518,6 +1521,7 @@ export const CRAG_SPEC = {
   fuel: { tankCapacity: 54, reserveLitres: 5, startDiesel: 1, noTap: true, startTap: 'on', burnPerRev: 0.00022, idleBurnFraction: 0.3, bowlCapacity: 0.05, bowlFillRate: 0.06 },
   engine: {
     ...YAK_SPEC.engine,
+    radiatorFan: 1.6, // with its slower warm-up, the Yak's fan gives it about five minutes revved hard standing still
     idleRpmWarm: 800,
     maxRpm: 4400,
     redlineRpm: 4300,
@@ -1626,7 +1630,8 @@ const CAR_VIBRATION = {
   barsGain: 0.06,
 };
 const CAR_ENGINE = {
-  waterCooled: true, // a radiator and a fan like the orange's: it only gets hot with a fault (a stuck thermostat, a low radiator)
+  waterCooled: true, // a radiator and a fan: it copes idling and riding along, but revved hard standing still it gets hot (radiatorFan), and a stuck thermostat or a low radiator makes it worse
+  radiatorFan: 1.25, // a car's: held near the top standing still on a mild day it gets hot in about four minutes
   thermostatChance: 0.12, // (a fault in 1 of 8 or so, not 1 in 5)
   coolantLeakChance: 0.25, // and a leak in 1 game in 4, not 1 in 2
   loadDragRpm: 1800, // a manual: lugging it in a high gear with the clutch out stalls it
@@ -1784,6 +1789,7 @@ export const GRIFFIN_SPEC = {
     maxRpm: 6300,
     redlineRpm: 6000,
     warmUpSeconds: 300,
+    radiatorFan: 1.4, // (its quicker warm-up than the Finch's needs a bigger fan for the same four minutes revved hard standing still)
   },
   vehicle: {
     ...CAR_VEHICLE,
@@ -1893,6 +1899,7 @@ export const VAUCLAIR_SPEC = {
     rpmRiseRate: 4.2, // a heavier flywheel than the petrol cars': slower to rev and to drop
     rpmFallRate: 3.6,
     warmUpSeconds: 300,
+    radiatorFan: 1.4, // (as the Griffin: four minutes revved hard standing still)
     lugDepth: 0.22, // pulls from low down
     popProne: 0,
     roughHunt: 0.02,
