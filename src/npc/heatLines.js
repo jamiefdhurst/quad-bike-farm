@@ -1,4 +1,4 @@
-// What the girls say about heat: heatPink (an air-cooled quad running too hot and pinking) and
+// What the girls say about heat: heatPink (an air-cooled quad running too hot and pinking as it's worked) and
 // heatHot and heatStalled (a water-cooled engine over what it can take, and one that has given up), heatRevved (hot with nothing wrong
 // with the cooling: it's been revved hard standing still), heatTicking (stood by a hot engine that's been switched off, ticking as it cools). Amy says what's
 // wrong; Jess is cheerful about it. Merged into the main line sets (voiceLines.js, jessLines.js), so
@@ -12,7 +12,7 @@ export function hotLine(engine) {
 }
 
 export const AMY_HEAT_LINES = {
-  heatPink: line(60, ["Can you hear that rattling? It's too hot. Let it have a rest.", "It's pinking. It's been sat idling in the sun for ages.", 'That engine is cooking. Get some air through it.']),
+  heatPink: line(60, ["Can you hear that rattling? It's too hot. Let it have a rest.", "It's pinking. It doesn't like being worked this hard when it's hot.", 'That engine is cooking. Get some air through it.']),
   heatHot: line(90, ["The temperature gauge is in the red. Switch it off before it cooks.", "It's running hot. Have you looked at the temperature?", "That needle's right up. Something's wrong with the cooling."]),
   heatStalled: line(60, ["That's overheated and cut out. Leave it a few minutes.", "It's cooked itself. Give it time to cool before you try again."]),
   heatRevved: line(90, ["It's the revving, not the radiator. Let it idle and it'll come down.", "You've had it flat out stood still. Let it tick over and cool.", "There's nothing wrong with the cooling. Stop revving it."]),
