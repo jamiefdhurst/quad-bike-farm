@@ -37,6 +37,7 @@ export const BUDGETS = {
   viewMoorRidge: { calls: 1400, triangles: 2.54e6 },
   viewBackLane: { calls: 970, triangles: 2.83e6 },
   river: { calls: 1120, triangles: 2.33e6 }, // the river's crossing, 6 m back on its north landing (#999): 1,029 calls and 2.16M triangles there since #1076, held to about 8% over
+  laneApproach: { calls: 3000, triangles: 4e6 }, // on the lane 47 m short of the village's approach (#1087): set from its first count below
   movers: { calls: 5880, triangles: 1.51e6 },
 };
 
