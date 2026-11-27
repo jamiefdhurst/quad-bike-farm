@@ -4,8 +4,8 @@
 // ground (patchwork.js). The gate and the herd are the set piece named in farDetail.js, drawn out to `setPieceDistance` from its nearest edge.
 
 import * as THREE from 'three';
-import { neighbourLandShape } from './neighbourLand.js';
-import { HEDGE_WOBBLE, blockWidth, leafReach } from './hedgeSolid.js';
+import { neighbourLandShape, layLandStretch } from './neighbourLand.js';
+import { blockWidth, leafReach } from './hedgeSolid.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { matrixAt } from './hillProps.js';
 import { buildHerd } from './cattleModel.js';
@@ -91,14 +91,11 @@ export function buildNeighbourLand(c) {
     const pointAt = (t, across = 0) => (s.axis === 'x' ? { x: s.at + across, z: s.from + t } : { x: s.from + t, z: s.at + across });
     const length = s.to - s.from;
     const blocks = [];
-    for (let t = 0; t <= length; t += 1.1 + random() * 0.5) {
-      const across = (random() - 0.5) * HEDGE_WOBBLE;
+    // Leaves stay within the solid part and out of the gaps, ending at each gap's edge and running on to the corners (hedgeSolid.js, #829, #1123).
+    for (const { t, across, width, tall, spin } of layLandStretch(s, { random, blockReach, width: (r, a) => blockWidth(T, r, blockReach, a) })) {
       const { x, z } = pointAt(t, across);
       const y = groundAt(x, z) - 0.2;
-      const width = blockWidth(T, random(), blockReach, across); // leaves stay within the solid part and out of the gateways (hedgeSolid.js, #829)
-      if (t - blockReach * width < 0 || t + blockReach * width > length) continue;
-      const tall = 0.8 + random() * 0.45;
-      matrices.push(matrixAt(x, y, z, random() * Math.PI * 2, width / hedgeSize.x, (H / hedgeSize.y) * tall, width / hedgeSize.z));
+      matrices.push(matrixAt(x, y, z, spin, width / hedgeSize.x, (H / hedgeSize.y) * tall, width / hedgeSize.z));
       blocks.push({ t, x, z, top: y + H * tall * FAR_HEDGE_TOP, width: width * FAR_HEDGE_WIDTH });
     }
     blocks.forEach((b, i) => {

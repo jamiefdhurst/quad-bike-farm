@@ -6,7 +6,7 @@ import { headlessContext } from './helpers/worldModels.js';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, fromPlan, NEIGHBOUR_LAND_PLAN } from '../src/world/layoutNew.js';
 import { neighbourFarmShape } from '../src/world/neighbourFarm.js';
-import { neighbourLandShape, stretchesOf, hedgeStretches, landFieldAt } from '../src/world/neighbourLand.js';
+import { neighbourLandShape, stretchesOf, hedgeStretches, landFieldAt, layLandStretch } from '../src/world/neighbourLand.js';
 import { landColor, patchColor } from '../src/world/patchwork.js';
 import { COW_VARIANTS, buildCow, cowGeometry } from '../src/world/cattleModel.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
@@ -78,6 +78,30 @@ describe('her land across the lane (#569)', () => {
     const boxes = hedgeStretches(land);
     expect(boxes.length).toBe(land.lines.reduce((n, l) => n + stretchesOf(l).length, 0));
     for (const b of boxes) expect(Math.min(b.hx, b.hz)).toBeCloseTo(Math.max(land.hedge.width / 2, HEDGE_SOLID_HALF), 6);
+  });
+
+  it('ends each stretch\'s leaves at a gap\'s edge, never in it, and runs them past the line\'s end at a corner (#1123)', () => {
+    const blockReach = 1.1;
+    const seeded = (seed) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const random = seeded(99);
+    let gapEnds = 0;
+    let corners = 0;
+    for (const s of land.stretches) {
+      const length = s.to - s.from;
+      const blocks = layLandStretch(s, { random, blockReach, width: (r) => 1 + r * 0.3 });
+      if (!blocks.length) continue;
+      const lo = Math.min(...blocks.map((b) => b.t - blockReach * b.width)); // how far the leaves run, from the stretch's start
+      const hi = Math.max(...blocks.map((b) => b.t + blockReach * b.width));
+      for (const [gap, back] of [[s.gapBefore, lo], [s.gapAfter, length - hi]]) { // `back`: from the end to the leaves, positive inwards
+        if (gap) gapEnds++;
+        else corners++;
+        if (gap) expect(back, 'leaves end at the gap\'s edge, out of it').toBeGreaterThanOrEqual(0);
+        if (gap) expect(back, 'leaves end at the gap\'s edge, with no bare box').toBeLessThan(0.1);
+        else expect(back, 'leaves run on to the corner').toBeLessThanOrEqual(0);
+      }
+    }
+    expect(gapEnds).toBeGreaterThan(2);
+    expect(corners).toBeGreaterThan(4);
   });
 });
 
