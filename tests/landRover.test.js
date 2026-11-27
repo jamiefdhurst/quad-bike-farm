@@ -6,7 +6,7 @@ import { canTow } from '../src/vehicle/tipTrailer.js';
 import { featuresOf } from '../src/vehicle/quirks.js';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
-import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
+import { AUDIO_PARAM_RANGES, DEFAULT_AUDIO_PARAMS } from '../src/audio/audioParams.js';
 import { LAYOUT } from '../src/world/layout.js';
 import { TOR_LAYOUT, CAB_GROUND_OFFSET } from '../src/vehicle/cabModel.js';
 
@@ -32,12 +32,14 @@ describe('the Tor or Crag', () => {
     expect(L.fuel.noTap).toBe(true);
   });
 
-  it('idles at the pace of the old Jeep it is recorded from, so its beats play at their own speed', () => {
+  it("idles slower than the Model T it is recorded from, each firing drawn out to fit with no gap after it", () => {
     const bank = JSON.parse(readFileSync('public/audio/engine-bank-tor.json', 'utf8'));
-    const rpms = bank.grains.filter((g) => g.kind === 'idle' && g.ok !== false).map((g) => g.rpm / 4).sort((a, b) => a - b);
+    const rpms = bank.grains.filter((g) => g.kind === 'idle' && g.ok !== false).map((g) => g.rpm).sort((a, b) => a - b);
     const recorded = rpms[Math.floor(rpms.length / 2)];
-    expect(L.idleRange[0]).toBeGreaterThan(recorded * 0.92);
-    expect(L.idleRange[1]).toBeLessThan(recorded * 1.05);
+    // At the bottom of its idle a firing is stretched to the idle's share of the recording's pace, never under pulseSlowest
+    // (where it would stop short of the next and leave a gap).
+    expect(L.idleRange[0] / recorded).toBeGreaterThan(L.audio.pulseSlowest ?? DEFAULT_AUDIO_PARAMS.pulseSlowest);
+    expect(L.idleRange[1]).toBeLessThan(recorded);
     expect(L.engine.idleRpmWarm).toBeGreaterThanOrEqual(L.idleRange[0]);
     expect(L.engine.idleRpmWarm).toBeLessThanOrEqual(L.idleRange[1]);
   });

@@ -17,8 +17,7 @@ const SETS = [
   { real: ['engine-bank', 'atv'], vehicle: 'farm300', type: 'four-stroke single quad' },
   { real: ['engine-bank', 'quarry'], vehicle: 'farm300', type: 'four-stroke single quad' },
   { real: ['engine-bank-green', 'honda'], vehicle: 'rb300', type: 'four-stroke single' },
-  { real: ['engine-bank-fiesta', 'mini'], vehicle: 'finch', type: 'petrol four', split: 4 },
-  { real: ['engine-bank-corsa', 'cc'], vehicle: 'griffin', type: 'petrol four', split: 4 },
+  // The petrol fours' rev recordings (a Mini, the BBC's Carlton) went with the girls' old banks in #858.
   { real: ['engine-bank-utv', 'bob'], vehicle: 'yak', type: 'diesel' },
   { real: ['engine-bank-tdi', 'saf'], vehicle: 'crag', type: 'diesel four' },
   { real: ['engine-bank-moto', 'der'], vehicle: 'tz65', type: 'two-stroke single' },

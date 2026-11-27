@@ -136,22 +136,35 @@ describe('engine banks', () => {
     }
   });
 
-  it("cuts the Tor's or Crag's Jeep idle into single beats from its steady stretch, in order, each lasting one of its engine's firings", () => {
+  it("cuts the Tor's Model T idle into whole cycles, in order, each split into its four firings as it plays", () => {
     const bank = JSON.parse(readFileSync('public/audio/engine-bank-tor.json', 'utf8'));
     expect(bank.readThrough).toBe(true);
     const idle = bank.grains.filter((g) => g.kind === 'idle');
-    idle.forEach((g, i) => expect(g.slice).toBe(i % 3)); // in groups of three, as the steady stretch repeats
-    expect(idle.length).toBeGreaterThan(40);
-    for (const g of idle.filter((g) => g.ok !== false)) {
-      expect(g.dur).toBeGreaterThan(0.05);
-      expect(g.dur).toBeLessThan(0.07);
-    }
+    expect(idle.length).toBeGreaterThan(150); // 30 s of it
+    expect(idle.every((g) => g.slice === undefined)).toBe(true); // whole cycles, cut into firings by the worklet (pulseSplit)
     expect(TOR_SPEC.engine.cylinders).toBe(4);
-    // The bank's rpm (120 / beat length) is four times the engine's: each beat plays near its own speed at the Tor's or Crag's idle.
-    const ok = idle.filter((g) => g.ok !== false).map((g) => g.rpm / 4).sort((a, b) => a - b);
+    expect(TOR_SPEC.audio.pulseSplit).toBe(TOR_SPEC.engine.cylinders);
+    // A whole cycle's rpm (120 / its length) is the engine's: the Model T measured at 836, where its rev loudness and EQ start.
+    const ok = idle.filter((g) => g.ok !== false).map((g) => g.rpm).sort((a, b) => a - b);
     const median = ok[Math.floor(ok.length / 2)];
-    expect(median).toBeGreaterThan(TOR_SPEC.idleRange[0] * 0.85);
-    expect(median).toBeLessThan(TOR_SPEC.idleRange[1] * 1.1);
+    expect(Math.abs(median / TOR_SPEC.audio.pulseRefRpm - 1)).toBeLessThan(0.05);
+  });
+
+  // #858: the girls' cars, yours and the Tor each idle on a CC0 recording of their own, picked by ear on the review page (#857).
+  it('gives the Finch, the Griffin, the Vauclair and the Tor each its own bank, cut from one recording, played every firing', () => {
+    const four = [SPECS.FINCH_SPEC, SPECS.GRIFFIN_SPEC, SPECS.VAUCLAIR_SPEC, TOR_SPEC];
+    const banks = four.map((s) => s.audio.recBank);
+    expect(banks).toEqual(['engine-bank-finch', 'engine-bank-griffin', 'engine-bank-vauclair', 'engine-bank-tor']);
+    const others = Object.values(SPECS).flatMap((v) => (Array.isArray(v) ? v : [v])).filter((s) => s?.audio && !four.includes(s));
+    expect(others.filter((s) => banks.includes(s.audio.recBank)).map((s) => s.id)).toEqual([]);
+    for (const spec of four) {
+      const bank = JSON.parse(readFileSync(`public/audio/${spec.audio.recBank}.json`, 'utf8'));
+      expect(new Set(bank.grains.map((g) => g.src)), spec.id).toEqual(new Set(['src']));
+      expect(Object.keys(bank.oneshots).sort(), spec.id).toEqual(expect.arrayContaining(['crankLoop', 'shutdown', 'starterEngage']));
+      expect(bank.oneshots.stall, spec.id).toBeUndefined(); // a stall runs down as the key does
+      expect(spec.audio.pulseDivide ?? DEFAULT_AUDIO_PARAMS.pulseDivide, spec.id).toBe(1);
+      expect(spec.audio.pulseSplit, spec.id).toBe(spec.engine.cylinders);
+    }
   });
 
   // The moto's Derbi bangs every other turn at idle (two slices a lump), the T185's Ape about every third (three).

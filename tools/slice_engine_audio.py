@@ -41,11 +41,13 @@ Usage (needs numpy, and matplotlib for --plot):
   afconvert ... 510231.mp3 ten.wav;  afconvert ... 450136.mp3 honda.wav
   python3 tools/slice_engine_audio.py engine-bank-green ten=ten.wav honda=honda.wav quad=quad.wav
 
-  The girls' cars, from the BBC's recordings (each unzipped WAV made mono with afconvert as above, named by its number):
-  afconvert ... 511685.mp3 st.wav   # the won't-start car, for both starters
-  python3 tools/slice_engine_audio.py engine-bank-fiesta fx=07043115.wav fd=07043116.wav fs=07043117.wav st=st.wav mini=686742.wav
-  python3 tools/slice_engine_audio.py engine-bank-corsa cd=07043124.wav cc=07043123.wav cs=07043125.wav st=st.wav
-  python3 tools/slice_engine_audio.py engine-bank-309 px=07043131.wav pd=07043132.wav jumpy=500193.wav   # your 309
+  The girls' cars, your car and the Tor, from Freesound's previews (each made mono with afconvert as above, named by its number;
+  picked on the review page, #857):
+  afconvert ... 511685.mp3 st.wav   # the won't-start car, for both girls' starters
+  python3 tools/slice_engine_audio.py engine-bank-finch src=577503.wav st=st.wav off=505816.wav
+  python3 tools/slice_engine_audio.py engine-bank-griffin src=874840.wav st=st.wav off=505816.wav
+  python3 tools/slice_engine_audio.py engine-bank-vauclair src=628539.wav jumpy=500193.wav off=395586.wav
+  python3 tools/slice_engine_audio.py engine-bank-tor src=675232.wav ford=521857.wav crank=438033.wav jeep=438105.wav
 
   A trial bank, to hear a recording before it is chosen (#857): its BANKS entry as JSON (lists for the tuples), written to a
   folder of its own instead of public/audio (tools/engine-review/candidates.mjs writes these):
@@ -360,16 +362,14 @@ BANKS = {
         'revOdd': 0.3,
     },
     'engine-bank-tor': {
-        # The Land Rover: craigsmith's old Jeep rumbling at idle (Freesound 438105), beating every 61 ms. Only its steadiest three
-        # seconds (15.4 to 18.4 s): elsewhere the beat and the level wander, and from 21 s it speeds up and dips. There the beats
-        # fall in groups of three, so it's cut into those and each split into its beats, read in order. Its pull-away for the
-        # recorded sound's revs. The starter is an old Ford stake bed truck's (D.jones, 521857): a heavy, uneven crank about
-        # five compressions a second, the Series' slow 170 rpm; the starting handle's clunk is craigsmith's old car cranked by
-        # hand (438033), one swing; the shutdown is the Jeep stopping.
+        # The Tor: craigsmith's Model T Ford at a steady idle (Freesound 675232, CC0), picked by ear on the review page (#857). A
+        # slow-firing four, measured at 836 rpm by its firing rate (a firing every 36 ms) and wandering 2.4%, cut into whole
+        # cycles from its first 30 s, each split into its four firings (pulseSplit). The starter is an old Ford stake bed truck's
+        # (D.jones, 521857): a heavy, uneven crank about five compressions a second, the Series' slow 170 rpm; the starting
+        # handle's clunk is craigsmith's old car cranked by hand (438033), one swing; the shutdown is craigsmith's old Jeep
+        # stopping (438105), which the Tor idled on before.
         'segments': [
-            ('idle', 'jeep', 15.4, 18.4, (0.17, 0.2)),
-            ('accel', 'jeep', 29.0, 45.0, (0.12, 0.16)),
-            ('decel', 'jeep', 37.0, 45.0, (0.12, 0.16)),
+            ('idle', 'src', 0.0, 30.0, (0.12200956937799043, 0.1650717703349282)),
         ],
         'oneshots': [
             ('starterEngage', 'ford', 0.05, 0.444),
@@ -377,12 +377,9 @@ BANKS = {
             ('handCrank', 'crank', 31.95, 32.45),
             ('shutdown', 'jeep', 55.2, 57.0),
         ],
-        'level': [('idle', 'idle', 'jeep'), ('idle', 'accel', 'jeep')],
-        'oneshotLevel': {'ford': (4.5, 9.0)},  # the starter as loud against the Jeep's idle as against the truck's own
+        'level': [('idle', 'idle', 'src')],
+        'oneshotLevel': {'ford': (4.5, 9.0)},  # the starter as loud against the bank's idle as against the truck's own
         'idleCycles': True,
-        'cycleSplit': 3,  # one slice per beat, each played for one of the engine's firings
-        'revTail': 0.9,
-        'revOdd': 0.3,
     },
     'engine-bank-utv': {
         # The UTV: a John Deere Gator idling, recorded on the vehicle (videog, Freesound 149193). A small three-cylinder
@@ -431,86 +428,60 @@ BANKS = {
         'revTail': 0.9,
         'revOdd': 0.3,
     },
-    'engine-bank-fiesta': {
-        # Amy's Fiesta, from the BBC's 1986/7 Fiesta 1.1 (RemArc licence, see ASSETS.md): the same small four as a Mk1's. Its
-        # idle is the exterior idle (07043115) once it has settled, firing every 27 ms (about 1,100 rpm), cut into whole cycles
-        # (about 109 ms). Its own revs only go as far as pulling away (the depart, 07043116), so above that it revs on the CC0
-        # 1976 Mini (Dokuta_Gerovv, Freesound 686742), another small four, blipped to about 3,700 rpm and falling back. The
-        # BBC's starts all catch within half a second and their cranks are faint or fire part way, so the starter is a car that
-        # won't start (jerry.berumen, Freesound 511685, CC0): seven seconds of even cranking, a compression every 120 to 140 ms;
-        # the loop is its four steadiest (two turns at about 220 rpm), cut just ahead of a compression so it goes round on the
-        # beat. The run-down is the exterior approach and stop (07043117).
+    'engine-bank-finch': {
+        # Amy's Finch: TRP's small car idling in Blyth (Freesound 577503, CC0), picked by ear on the review page (#857). Its idle
+        # from 1.5 to 23.25 s, measured at 652 rpm as a four (a whole cycle every 184 ms) and barely wandering, cut into whole
+        # cycles. The starter is a car that won't start (jerry.berumen, Freesound 511685, CC0): seven seconds of even cranking,
+        # a compression every 120 to 140 ms; the loop is its four steadiest (two turns at about 220 rpm), cut just ahead of a
+        # compression so it goes round on the beat. The run-down is a 1970s MG switched off (jedg, Freesound 505816, CC0).
         'segments': [
-            ('idle', 'fx', 62.0, 88.0, (0.095, 0.125)),
-            ('accel', 'fd', 2.8, 4.7, (0.03, 0.05)),
-            ('accel', 'mini', 21.2, 21.6, (0.026, 0.05)),
-            ('accel', 'mini', 23.0, 23.5, (0.022, 0.05)),
-            ('decel', 'mini', 21.5, 22.9, (0.026, 0.06)),
-            ('decel', 'mini', 23.8, 25.0, (0.026, 0.06)),
+            ('idle', 'src', 1.5, 23.25, (0.15644171779141103, 0.21165644171779138)),
         ],
         'oneshots': [
             ('starterEngage', 'st', 0.18, 0.42),
             ('crankLoop', 'st', 2.388, 2.933, {'crankRpm': 220}),
-            ('shutdown', 'fs', 21.95, 23.6),
+            ('shutdown', 'off', 13.95, 15.3),
         ],
-        'level': [('idle', 'idle', 'fx'), ('idle', 'accel', 'fd'), ('idle', 'accel', 'mini')],
+        'level': [('idle', 'idle', 'src')],
         'oneshotGain': {'st': 6},  # the crank about 10 dB under the idle, as a starter heard from beside the car is
-        'periodCheck': True,  # the Mini's blips throw up half-cycles and single firings among its cycles: keep only real cycles
-        'oneshotLevel': {'fs': (14.0, 21.0)},  # the run-down as loud against the bank's idle as against its own recording's
+        'oneshotLevel': {'off': (8.0, 13.5)},  # the run-down as loud against the bank's idle as against the MG's own
         'idleCycles': True,
-        'revTail': 0.9,
-        'revOdd': 0.3,
     },
-    'engine-bank-309': {
-        # Your 309, from the BBC's own 1986/7 Peugeot 309 1.9 diesel (RemArc licence, see ASSETS.md). Its idle is the exterior idle
-        # (07043131) once it has settled, firing about every 40 ms (about 750 rpm, the clatter of a cold-ish XUD), cut into whole
-        # cycles; its revs are the same car pulling away (07043132), off tickover and up through first. The BBC's start catches at
-        # once, so the starter is the Citroen Jumpy van's diesel crank (chlund, 500193, CC0) as the 200TDi's; the run-down is the
-        # 309's own switch-off at the end of its idle.
+    'engine-bank-vauclair': {
+        # Your Vauclair: greatsoundstube's diesel car recorded under the bonnet (Freesound 628539, CC0), picked by ear on the
+        # review page (#857). Its idle from 26.5 to 56.5 s, measured at 858 rpm as a four: it starts after a clonk at 25.85 s
+        # (something metallic, a bonnet dropping), before which the recording is about 4 dB quieter, so a cut never spans it.
+        # The starter is the Citroen Jumpy van's diesel crank (chlund, 500193, CC0) as the 200TDi's; the run-down is a diesel
+        # car switched off (BeeProductive, Freesound 395586, CC0).
         'segments': [
-            ('idle', 'px', 30.0, 52.0, (0.14, 0.18)),
-            ('accel', 'pd', 2.3, 5.8, (0.04, 0.15)),
-            ('decel', 'pd', 5.8, 7.5, (0.05, 0.15)),
+            ('idle', 'src', 26.5, 56.5, (0.11888111888111888, 0.16083916083916083)),
         ],
         'oneshots': [
             ('starterEngage', 'jumpy', 1.0, 1.273),
             ('crankLoop', 'jumpy', 1.273, 1.716, {'crankRpm': 230}),
-            ('shutdown', 'px', 156.4, 158.2),
+            ('shutdown', 'off', 39.7, 41.6),
         ],
-        'level': [('idle', 'idle', 'px'), ('idle', 'accel', 'pd')],
-        'oneshotLevel': {'jumpy': (3.0, 10.0)},
-        'periodCheck': True,
+        'level': [('idle', 'idle', 'src')],
+        'oneshotLevel': {'jumpy': (3.0, 10.0), 'off': (10.0, 20.0)},  # each as loud against the bank's idle as against its own
         'idleCycles': True,
-        'revTail': 0.9,
-        'revOdd': 0.3,
     },
-    'engine-bank-corsa': {
-        # Jess's Corsa, from the BBC's 1986 Vauxhall Carlton 1.8 (RemArc licence, see ASSETS.md), a deeper four than a Corsa's
-        # 1.2 that suits its big exhaust. The idle is the depart recording's (07043124) before it moves off, firing every 34 ms
-        # (875 rpm, a warm Corsa's idle), cut into whole cycles; its revs are the same car pulling away (875 to 1,770 rpm) and
-        # the cold engine revved and held at about 2,170 rpm (07043123). The starter is the same won't-start car as the Fiesta's
-        # (Freesound 511685), its second go: a little quicker, about 240 rpm (the Carlton's own crank fires part way through). The
-        # stall is the cold engine dying (07043123), the run-down the exterior approach and stop (07043125).
+    'engine-bank-griffin': {
+        # Jess's Griffin: loganzsound's small saloon idling on a loud sports exhaust (Freesound 874840, CC0), picked by ear on the
+        # review page (#857). Its first 30 s, measured at 886 rpm as a four, cut into whole cycles. The starter is the same
+        # won't-start car as the Finch's (Freesound 511685), its second go: a little quicker, about 240 rpm. The run-down is the
+        # Finch's, the 1970s MG switched off (505816); it has no stall of its own, so a stall runs down the same way.
         'segments': [
-            ('idle', 'cd', 2.0, 11.2, (0.12, 0.155)),
-            ('accel', 'cd', 11.0, 13.0, (0.075, 0.14)),
-            ('accel', 'cd', 13.0, 16.3, (0.065, 0.11)),
-            ('accel', 'cc', 13.5, 20.2, (0.048, 0.064)),
-            ('decel', 'cc', 20.2, 21.4, (0.05, 0.1)),
+            ('idle', 'src', 0.0, 30.0, (0.11512415349887134, 0.15575620767494358)),
         ],
         'oneshots': [
             ('starterEngage', 'st', 12.85, 13.05),
             ('crankLoop', 'st', 14.373, 14.872, {'crankRpm': 240}),
-            ('stall', 'cc', 57.4, 58.9),
-            ('shutdown', 'cs', 15.6, 17.3),
+            ('shutdown', 'off', 13.95, 15.3),
         ],
-        'level': [('idle', 'idle', 'cd'), ('idle', 'accel', 'cc', 'cd')],
+        'level': [('idle', 'idle', 'src')],
         'oneshotGain': {'st': 7},
-        'periodCheck': True,
-        'oneshotLevel': {'cs': (8.0, 15.0)},
+        'oneshotLevel': {'off': (8.0, 13.5)},
         'idleCycles': True,
-        'revTail': 0.9,
-        'revOdd': 0.3,
     },
 }
 

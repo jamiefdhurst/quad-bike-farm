@@ -29,10 +29,9 @@ for (const st of [0.85, 0.6, 0.3, 0]) multiGrid.unshift({ pulseSteady: st, pulse
 export const TYPES = {
   'four-stroke single': { grid: singleGrid, sets: [['engine-bank', 'atv', 'farm300'], ['engine-bank', 'quarry', 'farm300'], ['engine-bank-green', 'honda', 'rb300']] },
   'two-stroke single': { grid: singleGrid, sets: [['engine-bank-moto', 'der', 'tz65'], ['engine-bank-2t', 'db', 'adder']] },
-  'petrol four': { grid: multiGrid, split: 4, sets: [['engine-bank-fiesta', 'mini', 'finch'], ['engine-bank-fiesta', 'fd', 'finch'], ['engine-bank-corsa', 'cc', 'griffin'], ['engine-bank-corsa', 'cd', 'griffin']] },
-  // Where a car's own engine has rev recordings, fitted to those alone: real fours differ a lot (an even Fiesta, a lumpy Mini).
-  'Finch, its own revs': { grid: multiGrid, split: 4, sets: [['engine-bank-fiesta', 'fd', 'finch']] },
-  'Griffin, its own revs': { grid: multiGrid, split: 4, sets: [['engine-bank-corsa', 'cd', 'griffin']] },
+  // The petrol fours were fitted (#854) to the rev recordings in the girls' old banks, BBC recordings and a Mini, which went with
+  // them in #858 (git show 'ce2c9ac7:public/audio/engine-bank-fiesta.json' and its WAV in source/audio, likewise corsa): a new rev
+  // recording of a petrol four goes here to fit them again.
   'diesel, several cylinders': { grid: multiGrid, sets: [['engine-bank-tdi', 'saf', 'crag', 4], ['engine-bank-utv', 'bob', 'yak', 3]] },
 };
 

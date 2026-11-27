@@ -144,7 +144,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   engineSound: 'pulse', // 'pulse' (revs built from recorded idle firings), 'recorded' (idle and rev recordings) or 'synth' (fully synthesised)
 
   // Recorded engine
-  recBank: 'engine-bank', // which recordings: 'engine-bank' (four-stroke quads), 'engine-bank-plover' (the old bike's 1938 two-stroke), 'engine-bank-2t' (two-stroke dirt bikes), 'engine-bank-50' (the kids' 50cc scooter two-stroke), 'engine-bank-tractor' (the diesel tractor), 'engine-bank-moto' (the mini moto's Derbi 50), 'engine-bank-atc' (the T185's Piaggio Ape), 'engine-bank-utv' (the UTV's Gator diesel), 'engine-bank-green' (a Ténéré 250 into a farm ATV), 'engine-bank-yellow' (a DT 125 into a CR85), 'engine-bank-tor' (the Tor's or Crag's old four), 'engine-bank-fiesta' and 'engine-bank-corsa' (the girls' cars), 'engine-bank-309' (your car) or 'engine-bank-tractor-eq' (another old tractor, for later)
+  recBank: 'engine-bank', // which recordings: 'engine-bank' (four-stroke quads), 'engine-bank-plover' (the old bike's 1938 two-stroke), 'engine-bank-2t' (two-stroke dirt bikes), 'engine-bank-50' (the kids' 50cc scooter two-stroke), 'engine-bank-tractor' (the diesel tractor), 'engine-bank-moto' (the mini moto's Derbi 50), 'engine-bank-atc' (the T185's Piaggio Ape), 'engine-bank-utv' (the UTV's Gator diesel), 'engine-bank-green' (a Ténéré 250 into a farm ATV), 'engine-bank-yellow' (a DT 125 into a CR85), 'engine-bank-tor' (the Tor's Model T four), 'engine-bank-finch' and 'engine-bank-griffin' (the girls' cars), 'engine-bank-vauclair' (your car) or 'engine-bank-tractor-eq' (another old tractor, for later)
   recIdleSource: 'quad', // which recorded idle: 'quad' (the main quad), 'rev' (the ATV rev recording, or the CRM250 in the two-stroke bank) or 'third' (the CRF250, four-stroke bank)
   recVolume: 0.6,
   recThrottleLoudness: 0.15, // extra loudness with the throttle open (the rev recording is already louder up the range)
@@ -312,7 +312,7 @@ export const AUDIO_PARAM_RANGES = {
   pulseBurstFollow: [0, 1, 0.05],
   pulseRateJitter: [0, 0.1, 0.005],
   pulseModelEq: [0, 1, 0.05],
-  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-plover', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-tor', 'engine-bank-tdi', 'engine-bank-fiesta', 'engine-bank-corsa', 'engine-bank-309'],
+  recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-plover', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-tor', 'engine-bank-tdi', 'engine-bank-finch', 'engine-bank-griffin', 'engine-bank-vauclair'],
   recIdleSource: ['quad', 'rev', 'third'],
   recVolume: [0, 3, 0.01],
   recThrottleLoudness: [0, 3, 0.01],

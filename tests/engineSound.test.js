@@ -18,7 +18,7 @@ const SETTLE = 0.4; // seconds of each step left out of its tone, while the revs
 // (the review: the Carlton's, and the TZ65's rasp at 160 firings a second). The test renders seed 7.
 const TICK_BUDGET = {
   farm300: 0.8, bruin: 2.9, hornet: 7.3, rb300: 0, adder: 0.2, asp: 9.3, tz65: 5.3, t185: 0.1, ursa: 0.3, shepherd: 4.7, clipper: 1.9,
-  plover: 0.2, hartley: 0, yak: 0.3, tor: 0.2, crag: 0.2, finch: 0, griffin: 4, vauclair: 0.4,
+  plover: 0.2, hartley: 0, yak: 0.3, tor: 0.2, crag: 0.2, finch: 0, griffin: 2.4, vauclair: 0.9,
 };
 
 // The tone at the top step against the step nearest half the top (mean third-octave difference in dB, level taken out): each
@@ -26,7 +26,7 @@ const TICK_BUDGET = {
 // stopped changing as it revs.
 const TONE_FLOOR = {
   farm300: 2.8, bruin: 2.5, hornet: 3.2, rb300: 2.6, adder: 2.1, asp: 1.7, tz65: 1.9, t185: 2, ursa: 2.5, shepherd: 2.5, clipper: 1.8,
-  plover: 3.1, hartley: 1.7, yak: 2.1, tor: 4.1, crag: 1.6, finch: 3.1, griffin: 6.2, vauclair: 2.4,
+  plover: 3.1, hartley: 1.7, yak: 2.1, tor: 3.1, crag: 1.6, finch: 3.8, griffin: 2.7, vauclair: 2.6,
 };
 
 // A vehicle not in the tables yet is held to the loosest of them, so it is covered with nothing added; measure it and add its own.
