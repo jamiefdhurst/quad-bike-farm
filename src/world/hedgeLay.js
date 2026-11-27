@@ -3,6 +3,8 @@
 import { HEDGE_SOLID_HALF, HEDGE_WOBBLE, blockWidth, bushHeight } from './hedgeSolid.js';
 import { sidePoint, hedgeOffset } from './laneHedges.js';
 
+const EDGE_BACK = 0.07; // m a gateway's edge block is set back from touching its gap (#1123)
+
 /**
  * @param {object} o  { T, H, heightAt, random, blockReach (leafReach of the hedge model), bushReach (leaf radius per metre of bush height), bushes: whether bushes grow here }
  * @returns {{ blocks, bushes, colliders }}  blocks { s, across, x, z, y, width, spin, tall }; bushes { x, z, y, height, yaw };
@@ -14,11 +16,26 @@ export function layHedge(h, { T, H, heightAt, random, blockReach, bushReach, bus
   const pointAt = (s, across = 0) => ({ x: h.x1 + h.dx * s + side.x * across, z: h.z1 + h.dz * s + side.z * across });
   const blocks = [];
   const bushes = [];
+  // A block's leaves stay out of a gateway: no nearer to its middle than the block reaches along the hedge (a gate's leaf needs room too).
+  const clearOf = (g, width) => g.half + Math.max(blockReach * width, g.gate ? 0.9 : 0);
+  // The gap edges with box beyond them inside the laid stretch, each to get a block right at it (#1123): `${i}-` before gap i, `${i}+` after it.
+  const open = new Set(h.gaps.flatMap((g, i) => [...(g.at - g.half > -1 ? [`${i}-`] : []), ...(g.at + g.half < h.length + 1 ? [`${i}+`] : [])]));
   for (let s = -1; s <= h.length + 1; s += h.coarse ? 2.2 + random() * 0.6 : 1.1 + random() * 0.5) {
     const across = (random() - 0.5) * HEDGE_WOBBLE;
     const width = blockWidth(T, random(), blockReach, across, h.coarse ? 1.5 : 1);
-    // A block's leaves stay out of a gateway: no nearer to its middle than the block reaches along the hedge (a gate's leaf needs room too).
-    if (h.gaps.some((g) => Math.abs(s - g.at) < g.half + Math.max(blockReach * width, g.gate ? 0.9 : 0))) continue;
+    const i = h.gaps.findIndex((g) => Math.abs(s - g.at) < clearOf(g, width));
+    if (i >= 0) {
+      // A step into a gateway's clearance puts its block at the gap's edge instead, first the near one, then the far, so the box either side
+      // ends in leaves rather than a bare stretch of up to a step and a half (#1123). The next step goes on from there.
+      const key = open.has(`${i}-`) ? `${i}-` : open.has(`${i}+`) ? `${i}+` : null;
+      if (!key) continue;
+      open.delete(key);
+      const g = h.gaps[i];
+      // 0.1 m back from touching the gap: farmPlacement.js draws a block's leaves as an octagon round its reach, that much wider at its corners.
+      const at = g.at + (key.endsWith('-') ? -1 : 1) * (clearOf(g, width) + EDGE_BACK);
+      if (h.gaps.some((o) => o !== g && Math.abs(at - o.at) < clearOf(o, width))) continue; // two gateways too close for a block between
+      s = at;
+    }
     const { x, z } = pointAt(s, across);
     blocks.push({ s, across, x, z, y: heightAt(x, z) - 0.2, width, spin: random() * Math.PI * 2, tall: 0.8 + random() * 0.45 });
     if (withBushes && !h.coarse && random() < 0.3) {

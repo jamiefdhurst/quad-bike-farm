@@ -19,6 +19,7 @@ import { hedgeReach } from './helpers/hedgeModels.js';
 const KNOWN = [
   { issue: 1216, rule: 'gateway', name: 'hedge far|lane', at: [195, 562], within: 6 }, // the hedge's end at the ford, past its corner into the ford's opening
   { issue: 1216, rule: 'water', name: 'hedge far|lane', at: [195, 562], within: 6 }, // and into the stream
+  { issue: 1216, rule: 'water', name: 'hedge far|lane bush', at: [195, 562], within: 6 }, // a bush in that end too, since the gateways' edge blocks (#1123) moved the draws
   { issue: 1216, rule: 'water', name: 'hedge ley|south', at: [880, 650], within: 8 }, // the brook running over the corner where it leaves the farm
   { issue: 1216, rule: 'water', name: 'hedge south|out', at: [885, 649], within: 4 },
   { issue: 1224, rule: 'reserved', name: 'a river gate', at: [640, 606], within: 2 }, // the footpath's crossing out of Brook Meadow is in the river gate's gap

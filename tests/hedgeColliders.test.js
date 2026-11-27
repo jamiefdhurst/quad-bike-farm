@@ -102,6 +102,28 @@ describe('hedge leaves and colliders', () => {
     }
   });
 
+  it('ends the box beside every gateway in leaves, with none more than about 0.3 m back from the gap\'s edge (#1123)', () => {
+    let edges = 0;
+    const worst = [];
+    for (const { h, lay, pts } of laid) {
+      for (const g of h.gaps) {
+        for (const side of [-1, 1]) {
+          const edge = g.at + side * g.half;
+          const box = lay.colliders.find((k) => Math.abs((side < 0 ? k.s1 : k.s0) - edge) < 1e-9);
+          if (!box) continue; // no box ends here (past the hedge's end)
+          // A sliver between two gateways too short for a block's reach both ways (0.25 m between the cattle grid and the bypass gate's post) holds no leaf.
+          if (box.s1 - box.s0 < 1) continue;
+          edges++;
+          const back = pts.reduce((m, p) => ((p.s - edge) * side >= -1e-6 ? Math.min(m, (p.s - edge) * side) : m), Infinity);
+          // "About 0.3 m": a block's reach along the hedge depends on how it is turned, so the edge block's nearest leaf falls 0 to 0.33 m back (was 0.58 m median).
+          if (back > 0.35) worst.push(`${back.toFixed(2)} m on the hedge at ${h.x1.toFixed(0)}, ${h.z1.toFixed(0)}, gap at ${g.at.toFixed(1)}${side < 0 ? ' before' : ' after'}${g.gate ? ' (gate)' : ''}`);
+        }
+      }
+    }
+    expect(edges).toBeGreaterThan(40);
+    expect(worst).toEqual([]);
+  });
+
   it('shrinks a block or bush only as far as it must', () => {
     expect(blockWidth(T, 0, blockReach, 0)).toBeCloseTo(T * 0.95, 6); // a slim block is as it was
     expect(blockWidth(T, 1, blockReach, 0.2)).toBeLessThanOrEqual(widestBlock(blockReach, 0.2) + 1e-9);
