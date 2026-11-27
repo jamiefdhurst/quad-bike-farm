@@ -273,6 +273,26 @@ function buildShape(layout) {
   const builtAt = (x, z, margin = 0) => footprints.some((r) => inRect(r, x, z, margin));
   /** Under a roof: out of the rain. */
   const covered = (x, z) => footprints.some((r) => inRect(r, x, z));
+  /**
+   * The lane's approach as the trees see it (#1085): each lane house with its back garden and its front garden out to the hedge, the small farm's house
+   * and barn, and its yard to the outside of the wall, as world boxes. The street's own buildings are inside `a` already.
+   */
+  const yard = v.approach?.farm.yard;
+  const approachBoxes = v.approach ? [
+    ...laneBuildings.map((b) => {
+      const house = b.kind === 'cottage'; // the farm's house and barn have the yard round them instead of gardens
+      const [side, back, front] = house ? [1.3, gardenDepth(b) + 0.4, FRONT_GARDEN.depth + 0.4] : [0, 0, 0];
+      const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, k]) => houseToWorld(b, i * (b.halfX + side), k > 0 ? b.halfZ + front : -b.halfZ - back));
+      const xs = pts.map((q) => q.x);
+      const zs = pts.map((q) => q.z);
+      // A front garden runs along the lane to its plot's ends (gardenHedges), which can be wider than the house.
+      if (b.plot) zs.push(b.plot.minZ, b.plot.maxZ);
+      return { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
+    }),
+    { minX: yard.minX - v.approach.farm.wall, maxX: yard.maxX + v.approach.farm.wall, minZ: yard.minZ - v.approach.farm.wall, maxZ: yard.maxZ + v.approach.farm.wall },
+  ] : [];
+  /** Within `margin` m of the lane's approach: its houses and their gardens, the small farm's buildings and yard (#1085). */
+  const nearApproach = (x, z, margin = 0) => approachBoxes.some((r) => inRect(r, x, z, margin));
   /** Within `margin` m of anything in the village (or inside its area). */
   const nearVillage = (x, z, margin = 0) => inRect(a, x, z, margin);
   /**
@@ -362,6 +382,8 @@ function buildShape(layout) {
     gardenDepth,
     covered,
     nearVillage,
+    nearApproach,
+    approachBoxes,
     floorAt,
     /** The gap in the lane's west barrier where the side road turns off: [minZ, maxZ]. */
     laneGap: closed ? [a.minZ + 1, street.points[0][1] + 15] : null,
@@ -372,4 +394,10 @@ function buildShape(layout) {
 export function inVillage(layout, x, z, margin = 0) {
   const s = villageShape(layout);
   return !!s && s.nearVillage(x, z, margin);
+}
+
+/** Whether (x, z) is within `margin` m of the lane's approach to the village: its houses and gardens, the small farm and its yard (#1085). */
+export function nearApproach(layout, x, z, margin = 0) {
+  const s = villageShape(layout);
+  return !!s && s.nearApproach(x, z, margin);
 }

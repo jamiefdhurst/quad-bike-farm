@@ -4,7 +4,7 @@
 import { boundaryTreeBlocked } from './boundaryTrees.js';
 import { patchAt } from './patchwork.js';
 import { nearNeighbourYard } from './neighbourFarm.js';
-import { inVillage } from './village.js';
+import { inVillage, nearApproach } from './village.js';
 import { inLaneFittings } from './aRoadFittings.js';
 
 /** The grass field's half-side, the number the trees round the yard and the tufts of grass were laid out against (the farm's own limit went with the old layout, #692). */
@@ -57,6 +57,7 @@ export function distantTreeSpots(layout, fields, roads, random) {
     const crown = [random() * 6, s * (3.2 + random() * 1.2), s * (3 + random()), s * (3.2 + random() * 1.2)];
     if (nearNeighbourYard(layout, x, z, 45)) continue; // none stand by her yard or the lane beside it
     if (inVillage(layout, x, z, 14)) continue; // nor in the village
+    if (nearApproach(layout, x, z, 14)) continue; // nor in the lane houses' gardens or the small farm's yard (#1085)
     if (roads.nearest(x, z, 14) || inLaneFittings(layout, x, z, 14)) continue; // nor on a road or its verge, nor in the lane's cottages' gardens (#687)
     out.push({ x, z, s, crown });
   }
