@@ -179,14 +179,13 @@ describe('the girls\' cars and the visitors on the drive', () => {
     const last = route[route.length - 1];
     expect(last.x).toBe(two.publicLane.x);
     expect(last.z).toBeGreaterThan(road.z + 90);
-    expect(hasGone(two, { gateX: 0, laneZ: 95 }, { x: last.x, z: last.z })).toBe(true);
-    expect(hasGone(two, { gateX: 0, laneZ: 95 }, { x: slot.x, z: slot.z })).toBe(false);
-    expect(goneBeyond(two, { gateX: 0, laneZ: 95 }).x).toBeLessThan(two.publicLane.x);
+    expect(hasGone(two, { laneZ: 95 }, { x: last.x, z: last.z })).toBe(true);
+    expect(hasGone(two, { laneZ: 95 }, { x: slot.x, z: slot.z })).toBe(false);
+    expect(goneBeyond(two, { laneZ: 95 }).x).toBeLessThan(two.publicLane.x);
   });
 
   it('plans a visit that drives in over the grid, goes to the barn and comes back out, with no gate step', () => {
     const places = visitPlaces(two);
-    expect(places.open).toBe(true);
     for (const from of [1, -1]) {
       const steps = planVisit({ places, from, to: from, does: 'parcel', leaveOpen: false, farmSpeed: 6 });
       expect(steps.filter((s) => s.type === 'gate')).toEqual([]);

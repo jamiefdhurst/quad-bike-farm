@@ -3,7 +3,7 @@ import { LAYOUT, LAYOUT_VERSION } from '../src/world/layout.js';
 import { TODAY } from './helpers/todaysLayout.js';
 import {
   fromPlan, clippedFields, boundariesOf, placeGateways, areasOf,
-  OUTLINE_PLAN, CORNERS_PLAN, FIELDS_PLAN, GATEWAYS_PLAN, NOT_MOVED_YET, SETTINGS, REPLACED, REMOVED, FARMSTEAD_PLAN,
+  OUTLINE_PLAN, CORNERS_PLAN, FIELDS_PLAN, GATEWAYS_PLAN, NOT_MOVED_YET, SETTINGS, REPLACED, FARMSTEAD_PLAN,
   STEWARDSHIP_PLAN, stewardshipPlan, RESERVED_PLAN, flattenPath, LANDMARKS_PLAN, LANDFORM_PLAN, canSee, landformHeightAt, traitsOf,
   FIELD_LANDMARKS_PLAN, MOOR_PLAN, fieldLandmarksLayout, NEIGHBOUR_PLAN, neighbourLayout,
 } from '../src/world/layoutNew.js';
@@ -216,14 +216,14 @@ describe('what has not moved yet', () => {
   it('is nothing: no place reaches players at today\'s numbers (#692)', () => {
     expect(Object.keys(NOT_MOVED_YET)).toEqual([]);
     const today = TODAY;
-    const keyed = new Set([...SETTINGS, ...REPLACED, ...REMOVED]);
+    const keyed = new Set([...SETTINGS, ...REPLACED]);
     for (const k of Object.keys(today)) {
       if (k === 'anchors') for (const a of Object.keys(today.anchors)) expect(keyed.has(`anchors.${a}`) || a in LAYOUT.anchors, `anchors.${a}`).toBe(true);
       else expect(keyed.has(k), k).toBe(true);
     }
   });
   it('has no grass field\'s limit, rectangle of farm or trough left over', () => {
-    for (const k of REMOVED) expect(LAYOUT[k], k).toBeUndefined();
+    for (const k of ['fieldHalf', 'farm', 'trough']) expect(LAYOUT[k], k).toBeUndefined();
   });
   it('puts the stone shed at the Sheep Field\'s field-barn spot, with its seats, can and parking spot', () => {
     const [x, z] = fromPlan(FARMSTEAD_PLAN.fieldShed);

@@ -16,9 +16,10 @@ describe('the farm\'s boundary tree line', () => {
   it('still keeps off the wood and still stands along the rest of the north boundary', () => {
     const w = LAYOUT.woods;
     expect(boundaryTreeBlocked(LAYOUT, (w.minX + w.maxX) / 2, (w.minZ + w.maxZ) / 2)).toBe(true);
-    expect(boundaryTreeBlocked(LAYOUT, -100, -LAYOUT.fieldHalf - 10)).toBe(false); // west of the wood
-    expect(boundaryTreeBlocked(LAYOUT, 220, -LAYOUT.fieldHalf - 10)).toBe(false); // east of the pit's field
-    expect(boundaryTreeBlocked(LAYOUT, LAYOUT.fieldHalf + 0.5, -58)).toBe(false); // the east hedgerow oaks
+    // The old tree line's numbers (treeSpots.js `farmTreeSpots`, laid against the old grass field's 80 m half-side until #1217 replaces it).
+    expect(boundaryTreeBlocked(LAYOUT, -100, -90)).toBe(false); // west of the wood
+    expect(boundaryTreeBlocked(LAYOUT, 220, -90)).toBe(false); // east of the pit's field
+    expect(boundaryTreeBlocked(LAYOUT, 80.5, -58)).toBe(false); // the east hedgerow oaks
     expect(boundaryTreeBlocked({ ...LAYOUT, quarry: undefined, woods: undefined }, 150, -92)).toBe(false);
   });
 });

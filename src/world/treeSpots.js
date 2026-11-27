@@ -7,15 +7,12 @@ import { nearNeighbourYard } from './neighbourFarm.js';
 import { inVillage, nearApproach } from './village.js';
 import { inLaneFittings } from './aRoadFittings.js';
 
-/** The grass field's half-side, the number the trees round the yard and the tufts of grass were laid out against (the farm's own limit went with the old layout, #692). */
-export const YARD_HALF = 80;
-
 /**
  * The oaks `buildTrees` stands (props.js), each with a trunk collider: [{ x, z, v (which of the two models), s (scale), yaw }]. A spot the wood or the
  * pit takes (`boundaryTreeBlocked`) is drawn for and left out, as the builder does.
  */
 export function farmTreeSpots(layout, random) {
-  const F = YARD_HALF;
+  const F = 80; // the old grass field's half-side, which these were laid out against: #1217 stands oaks along the new farm's hedges instead
   const spots = [];
   const farm = { maxX: F, maxZ: F };
   // Tree line along the north boundary, two staggered rows, the length of the farm.

@@ -1,12 +1,5 @@
 {
  "outerSize": 1000,
- "fieldHalf": 80,
- "farm": {
-  "minX": -80,
-  "maxX": 200,
-  "minZ": -80,
-  "maxZ": 80
- },
  "road": {
   "z": 2,
   "fromX": 78,
@@ -1178,13 +1171,6 @@
   "halfX": 3.6,
   "halfZ": 2.3,
   "height": 1.5
- },
- "trough": {
-  "x": 146.8,
-  "z": -5.5,
-  "length": 2.4,
-  "width": 0.65,
-  "height": 0.6
  },
  "barn": {
   "x": -64,

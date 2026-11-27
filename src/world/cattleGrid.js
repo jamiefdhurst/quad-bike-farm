@@ -10,7 +10,7 @@ export function createCattleGrid(layout) {
   const road = layout.road;
   const g = road?.grid;
   if (!g) return null;
-  const x = g.x ?? layout.fieldHalf; // the drive says where its own is; today's fills the grass field's east gateway
+  const x = g.x; // where the drive has it, at the lane
   const half = road.halfWidth + g.margin;
   const grid = { minX: x - g.length / 2, maxX: x + g.length / 2, minZ: road.z - half, maxZ: road.z + half, pitch: g.pitch, x, z: road.z, half };
   /** Whether (x, z) is over the bars. */

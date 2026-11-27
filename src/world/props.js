@@ -38,9 +38,11 @@ import { buildLaneFittings } from './laneFittingsProps.js';
 import { buildRoadMesh, roadTexture, grassStripTexture } from './roadMesh.js';
 import { buildCattleGrid, buildReflectorPosts, buildDriveVerge } from './driveProps.js';
 import { streamFor } from './propStreams.js';
-import { farmTreeSpots, distantTreeSpots, YARD_HALF } from './treeSpots.js';
+import { farmTreeSpots, distantTreeSpots } from './treeSpots.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
+/** m out from the middle of the yard's concrete that the farmstead's tufts of grass grow to, either way along x and z. */
+const TUFT_REACH = 78.5;
 
 function matrixAt(x, y, z, yaw, sx, sy = sx, sz = sx) {
   return new THREE.Matrix4().compose(
@@ -74,7 +76,7 @@ export function buildProps(ctx) {
   const barn = run('buildBarn', () => buildBarn(c));
   const hedgeSwap = run('buildHedges', () => buildHedges(c));
   c.gateParams = { ...DEFAULT_GATE_PARAMS }; // shared by the gates, tuned in the panel
-  const gates = run('gates', () => [buildGate(c), buildQuarryGate(c), buildRoadGate(c), buildGridGate(c), buildBypassGate(c), buildMoorGate(c)].filter(Boolean));
+  const gates = run('gates', () => [buildGate(c), buildQuarryGate(c), buildBypassGate(c), buildMoorGate(c)].filter(Boolean));
   const pitEntrance = run('buildPitLaneGate', () => buildPitLaneGate(c)); // the pit's shut lane gate and its entrance (#685, #1002)
   run('buildCattleGrid', () => buildCattleGrid(c));
   run('buildReflectorPosts', () => buildReflectorPosts(c));
@@ -177,19 +179,15 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random,
 
 function buildGate(c) {
   const { layout } = c;
-  return buildFiveBarGate(c, { id: 'south', gate: layout.gate, z: layout.gate.z ?? layout.fieldHalf, dir: 1, gap: c.fields.gates.south });
+  return buildFiveBarGate(c, { id: 'south', gate: layout.gate, z: layout.gate.z, dir: 1, gap: c.fields.gates.south });
 }
 
-/** The gate in the barley field's north hedge onto the gravel pit's field (layout.quarry.gate): swung back into the barley field and tied. */
+/** The pit's farm gate (#685, `layout.quarry.gates`, the open one) in the pit's west fence: a field gate tied open into the field. */
 function buildQuarryGate(c) {
   const { layout } = c;
   if (!layout.quarry) return null;
-  if (layout.quarry.gates) {
-    // The new farm's pit (#685): the farm gate in the pit's west fence, a field gate tied open into the field.
-    const way = layout.quarry.gates.find((g) => g.open);
-    return buildFiveBarGate(c, { id: 'quarry', gate: { x: way.x, width: way.width, open: true }, z: way.z, dir: -1, yaw: Math.atan2(way.inward[0], way.inward[1]), gap: c.fields.gates.quarry });
-  }
-  return buildFiveBarGate(c, { id: 'quarry', gate: layout.quarry.gate, z: layout.farm.minZ, dir: -1, gap: c.fields.gates.quarry });
+  const way = layout.quarry.gates.find((g) => g.open);
+  return buildFiveBarGate(c, { id: 'quarry', gate: { x: way.x, width: way.width, open: true }, z: way.z, dir: -1, yaw: Math.atan2(way.inward[0], way.inward[1]), gap: c.fields.gates.quarry });
 }
 
 /**
@@ -269,28 +267,6 @@ function buildFiveBarGate({ scene, heights, fixedBox, gateParams }, { id, gate, 
     swungSolid: fixedBox(gate.x + mid.x, y + 0.7, F + mid.z, leafW / 2, 0.7, 0.08, swing + yaw),
     gap,
   });
-}
-
-/**
- * The big gate at the end of the farm road (layout.road.gate), in the farm's east hedge: a pair of galvanised steel field gates on heavy
- * timber posts, shut, meeting in the middle with a chain round them. Seven tubular rails each, closer together towards the bottom, with a
- * diagonal brace from the foot of the hinge end.
- */
-function buildRoadGate({ layout, fields, ...c }) {
-  const road = layout.road;
-  if (!road?.gate || !layout.farm) return;
-  return buildSteelGate({ ...c, id: 'road', x: layout.farm.maxX, z: road.z, w: road.gate.width, swing: -1, gap: fields.gates.road });
-}
-
-/**
- * The gate across the farm road just east of the cattle grid (layout.road.grid.gateOffset), hedge to hedge so there is no way round it:
- * the same steel gates as the big one, swung out east to lie along the verges, shut at the start of a game.
- */
-function buildGridGate({ layout, ...c }) {
-  const road = layout.road;
-  if (road?.grid?.gateOffset == null) return;
-  const w = 2 * (road.halfWidth + road.verge) - 0.9; // between the hedges, less their thickness and the posts
-  return buildSteelGate({ ...c, layout, id: 'grid', x: layout.fieldHalf + road.grid.gateOffset, z: road.z, w, swing: 1, gap: null });
 }
 
 /**
@@ -687,13 +663,17 @@ function buildGrass({ scene, layout, heights, random, drawDistance, fields }) {
   const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const matrices = [];
   const tints = [];
-  const F = YARD_HALF - 1.5;
+  // Out to 78.5 m round the middle of the yard's concrete, where the farmstead's grass is (the slab itself is skipped below).
   const { yard } = layout;
+  const slab = layout.farmstead.slab;
+  const midX = (slab.minX + slab.maxX) / 2;
+  const midZ = (slab.minZ + slab.maxZ) / 2;
+  const F = TUFT_REACH;
   const strip = gravelStrip(layout);
   let tries = 0;
   while (matrices.length < count && tries++ < count * 3) {
-    const x = (random() * 2 - 1) * F;
-    const z = (random() * 2 - 1) * F;
+    const x = midX + (random() * 2 - 1) * F;
+    const z = midZ + (random() * 2 - 1) * F;
     if (heights.mudAt(x, z) > 0.02) continue;
     if (Math.hypot(x - yard.x, z - yard.z) < yard.radius * 0.75) continue;
     if (onSlab(layout.farmstead?.slab, x, z)) continue; // the new farm's yard is concrete: nothing grows through it

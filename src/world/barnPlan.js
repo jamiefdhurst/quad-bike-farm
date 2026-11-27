@@ -13,7 +13,6 @@ export const BARN_NEW = {
   wallHeight: 5, // the eaves
   ridge: 8.4, // the top of the roof: 18 m of span at about 21 degrees
   door: { halfWidth: 3.2, height: 3.9 }, // the one pair of doors, in the middle of the doors' wall: a tractor and a trailer go through
-  wide: true, // the doors are in an eaves wall and the roof's ridge runs across them (barn.js `barnShape.wide`)
 };
 
 const INNER_X = BARN_NEW.halfX - BARN_NEW.wall; // 8.8: the inside face of the doors' wall (and, negative, of the back wall)

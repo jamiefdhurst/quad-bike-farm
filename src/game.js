@@ -6588,7 +6588,7 @@ export class Game {
     const cam = this.camera.position;
     const you = { x: cam.x, z: cam.z, onFoot: !this.player.isRiding };
     const L = this.world.layout;
-    const things = [...this.units.map((u) => u.quad).filter((q) => Math.abs(q.speed) < 0.5).map((q) => ({ x: q.position.x, z: q.position.z })), ...(L.gate ? [{ x: L.gate.x, z: L.gate.z ?? L.fieldHalf }] : [])];
+    const things = [...this.units.map((u) => u.quad).filter((q) => Math.abs(q.speed) < 0.5).map((q) => ({ x: q.position.x, z: q.position.z })), ...(L.gate ? [{ x: L.gate.x, z: L.gate.z }] : [])];
     let workAt = null;
     for (const t of things) if (Math.hypot(t.x - you.x, t.z - you.z) < p.workNear && (!workAt || Math.hypot(t.x - you.x, t.z - you.z) < Math.hypot(workAt.x - you.x, workAt.z - you.z))) workAt = t;
     const lit = (q) => !q.noHeadlight && !!q.model?.userData.beams?.length;

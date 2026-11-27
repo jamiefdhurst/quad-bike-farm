@@ -67,20 +67,24 @@ describe('the lane and the plan', () => {
 
 
 
-  it('goes through the cattle grid gateway, not the hedge', () => {
-    const steps = planVisit({ places, from: 1, to: 1, does: 'parcel', leaveOpen: false, farmSpeed: 7 });
+  it('crosses the drive\'s cattle grid on the tarmac, in and out', () => {
+    const steps = planVisit({ places, from: 1, to: 1, does: 'parcel', farmSpeed: 7 });
+    const gx = LAYOUT.road.grid.x;
+    let crossings = 0;
     for (const s of steps) {
       const path = s.path ?? [];
       for (let i = 1; i < path.length; i++) {
         const a = path[i - 1];
         const b = path[i];
-        // a leg that crosses x = fieldHalf (the hedge) must cross it within the road's gateway
-        if ((a.x - LAYOUT.fieldHalf) * (b.x - LAYOUT.fieldHalf) < 0) {
-          const z = a.z + ((b.z - a.z) * (LAYOUT.fieldHalf - a.x)) / (b.x - a.x);
+        // a leg that crosses the grid's line must cross it on the drive's tarmac
+        if ((a.x - gx) * (b.x - gx) < 0) {
+          const z = a.z + ((b.z - a.z) * (gx - a.x)) / (b.x - a.x);
           expect(Math.abs(z - LAYOUT.road.z)).toBeLessThan(LAYOUT.road.halfWidth);
+          crossings++;
         }
       }
     }
+    expect(crossings).toBe(2);
   });
 
   it('gives the post van and the neighbour their own registrations, not the farm\'s the Tor and the Crag\'', () => {

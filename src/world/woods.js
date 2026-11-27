@@ -27,7 +27,6 @@ export function createWoods(layout) {
   const track = new Track(c.points, 30);
   const pts = track.points;
   const n = pts.length;
-  const farm = layout.farm ?? { minX: -layout.fieldHalf, maxX: layout.fieldHalf, minZ: -layout.fieldHalf, maxZ: layout.fieldHalf };
   const pond = w.pond ?? null;
   // The new farm's wood is the shape of its field (`outline`, game metres), cut by the farm's outline at one corner, with its gate part way along a south
   // side that is not quite level (`south`, its two ends): the rectangle is then only its bounds. Today's wood is its rectangle, with the gate in its south side.
@@ -249,7 +248,6 @@ export function createWoods(layout) {
 
   /** 0..1 how much of the ground at (x, z) is the wood's own rather than the farmland round it, fading out over 40 m beyond its hedges. */
   function weight(x, z) {
-    if (inRect(farm, x, z)) return 0;
     if (outline && outsideBounds(outlineBox, x, z) >= 40) return 0;
     return 1 - smoothstep(0, 40, outline ? outsidePolygon(outline, x, z, outlineEdges) : outside(rect, x, z));
   }
