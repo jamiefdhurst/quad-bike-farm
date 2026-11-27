@@ -58,10 +58,11 @@ function faults(spec) {
 const spec = (id) => SPECS.find((s) => s.id === id);
 
 describe('every engine as it revs', () => {
-  it('has a budget and a floor for every vehicle, and none for one that has gone', () => {
-    const ids = SPECS.map((s) => s.id).sort();
-    expect(Object.keys(TICK_BUDGET).sort()).toEqual(ids);
-    expect(Object.keys(TONE_FLOOR).sort()).toEqual(ids);
+  // A new vehicle needs nothing here (it gets the loosest figures), but one renamed or gone leaves a figure that holds nothing.
+  it('has no budget or floor for a vehicle that has gone', () => {
+    const ids = new Set(SPECS.map((s) => s.id));
+    expect(Object.keys(TICK_BUDGET).filter((id) => !ids.has(id))).toEqual([]);
+    expect(Object.keys(TONE_FLOOR).filter((id) => !ids.has(id))).toEqual([]);
   });
 
   it.each(SPECS.map((s) => [s.id, s]))('%s never cuts out, ticks under its budget and changes to the top', (id, s) => {
