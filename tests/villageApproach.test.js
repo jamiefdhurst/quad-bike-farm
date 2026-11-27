@@ -4,7 +4,10 @@ import { fakeCanvas } from './helpers/vehicleModels.js';
 import { headlessContext } from './helpers/worldModels.js';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, fromPlan, VILLAGE_PLAN, NEIGHBOUR_LAND_PLAN } from '../src/world/layoutNew.js';
-import { villageShape, streetLimitSigns, approachSignSpecs } from '../src/world/village.js';
+import { villageShape, streetLimitSigns, approachSignSpecs, gardenHedges, hedgeCorners } from '../src/world/village.js';
+import { distantTreeSpots } from '../src/world/treeSpots.js';
+import { createFields } from '../src/world/fields.js';
+import { seeded, streamFor } from '../src/world/propStreams.js';
 import { roadNetwork } from '../src/world/roads.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
 import { Track } from '../src/world/track.js';
@@ -314,5 +317,31 @@ describe('the street furniture is joined together', () => {
     const f = new Frame({ group: new THREE.Group(), x: 0, z: 0, yaw: 0, y0: 0, fixedBox: () => {} });
     pillarBox(c, f, 0, 0);
     expect(floating(f.group)).toBe(0);
+  });
+});
+
+describe('the distant tree clumps on the lane\'s approach (#1085)', () => {
+  // Each lane house's ground as the drawing has it: the house and every garden hedge round it (gardenHedges), and the small farm's yard to the outside
+  // of its wall, which the farmhouse and barn stand in. Worked out from the gardens, not from `nearApproach`, as the pair's test works its gardens.
+  const grounds = [
+    ...laneBuildings.filter((b) => b.kind === 'cottage').map((b) => {
+      const pts = [[b.outer.minX, b.outer.minZ], [b.outer.maxX, b.outer.maxZ], ...gardenHedges(b, S.gardenDepth(b)).flatMap((p) => hedgeCorners(b, p))];
+      return { id: b.id, minX: Math.min(...pts.map((q) => q[0])), maxX: Math.max(...pts.map((q) => q[0])), minZ: Math.min(...pts.map((q) => q[1])), maxZ: Math.max(...pts.map((q) => q[1])) };
+    }),
+    { id: 'the yard', minX: A.farm.yard.minX - A.farm.wall, maxX: A.farm.yard.maxX + A.farm.wall, minZ: A.farm.yard.minZ - A.farm.wall, maxZ: A.farm.yard.maxZ + A.farm.wall },
+  ];
+  const fields = createFields(two);
+  const roads = roadNetwork(two);
+
+  it('stands none in a lane house\'s gardens or the small farm\'s yard, nor within 8 m of one, over the game\'s own stream and 59 others', () => {
+    const streams = [streamFor('buildDistantTrees'), ...Array.from({ length: 59 }, (_, i) => seeded(1 + i * 7919))];
+    const near = [];
+    for (const random of streams) {
+      for (const t of distantTreeSpots(two, fields, roads, random)) {
+        const g = grounds.find((r) => overlap(r, { minX: t.x, maxX: t.x, minZ: t.z, maxZ: t.z }, 8));
+        if (g) near.push(`${g.id}: (${t.x.toFixed(1)}, ${t.z.toFixed(1)})`);
+      }
+    }
+    expect(near, near.slice(0, 10).join('\n')).toEqual([]);
   });
 });
