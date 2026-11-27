@@ -9,7 +9,7 @@
 export function tileInstances(positions, size) {
   const tiles = new Map();
   positions.forEach(({ x, z }, i) => {
-    const key = `${Math.floor(x / size)},${Math.floor(z / size)}`;
+    const key = tileKey(x, z, size);
     let t = tiles.get(key);
     if (!t) tiles.set(key, (t = { key, minX: x, maxX: x, minZ: z, maxZ: z, indices: [] }));
     t.minX = Math.min(t.minX, x);
@@ -19,6 +19,11 @@ export function tileInstances(positions, size) {
     t.indices.push(i);
   });
   return [...tiles.values()];
+}
+
+/** The key of the tile of `size` metres a side that (x, z) is in: the same for a tile of instances and a bigger tile over it (farBatch.js). */
+export function tileKey(x, z, size) {
+  return `${Math.floor(x / size)},${Math.floor(z / size)}`;
 }
 
 /** How far (x, z) is across the ground from the nearest edge of a tile's bounds: 0 inside it. */

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { farHedgeTriangles, buildFarHedges, wallFarPieces, HedgeSwap, leafTint } from '../src/world/hedgeFar.js';
 import { tiledInstances, MODEL_TILE } from '../src/world/tiledInstances.js';
+import { FarStrips, STRIP_BATCH_TILE } from '../src/world/farBatch.js';
 
 const piece = (x, over = {}) => ({ x, z: 0, along: [1, 0], length: 1.2, width: 1.6, top: 3, groundA: 0, groundB: 0, kind: 'hedge', gap: false, ...over });
 const run = (xs, over = {}) => xs.map((x, i) => piece(x, { gap: i === 0, ...over }));
@@ -156,6 +157,77 @@ describe('the swap between blocks and strips', () => {
   it('puts a strip in the same tile as its block, so the two swap together', () => {
     const far = buildFarHedges([piece(10), piece(70, { gap: true })]);
     expect(far.children.map((m) => m.userData.tile.key).sort()).toEqual(['0,0', '1,0']);
+  });
+});
+
+describe('the far strips drawn a big tile at a time (#1076)', () => {
+  // Two builders' hedges (each with its own far group and its own material, alike) along z = 0, in the 60 m tiles at x 0, 60 and 120 (one big tile)
+  // and 300 (the next), each with its near blocks in the same tiles, as props.js and backLaneProps.js make them.
+  const build = () => {
+    const scene = new THREE.Scene();
+    const swaps = [];
+    const metas = [];
+    for (const [name, xs] of [['hedgesFar', [10, 70, 130, 310]], ['backLaneHedgesFar', [20, 140]]]) {
+      const pieces = xs.map((x) => piece(x, { gap: true }));
+      const far = buildFarHedges(pieces, { name });
+      const near = tiledInstances(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial(), xs.map((x) => new THREE.Matrix4().makeTranslation(x, 0, 0)), { tileSize: MODEL_TILE });
+      scene.add(near, far);
+      swaps.push(new HedgeSwap(near, far));
+      metas.push(...far.children.map((m) => ({ mesh: m, key: m.userData.tile.key, positions: [...m.geometry.attributes.position.array] })));
+    }
+    return { scene, swaps, metas, strips: new FarStrips(swaps) };
+  };
+  // Each triangle drawn, as its nine numbers, sorted, so two lists of the same triangles compare equal.
+  const drawnTriangles = (strips) => {
+    const out = [];
+    for (const b of strips.batches) {
+      if (!b.mesh.visible) continue;
+      const pos = b.mesh.geometry.attributes.position.array;
+      const idx = b.mesh.geometry.index.array;
+      const n = b.mesh.geometry.drawRange.count;
+      for (let i = 0; i < n; i += 3) out.push([0, 1, 2].flatMap((k) => [...pos.slice(idx[i + k] * 3, idx[i + k] * 3 + 3)].map((v) => v.toFixed(4))).join(' '));
+    }
+    return out.sort();
+  };
+  const trianglesOf = (metas, keys) => metas.filter((m) => keys.includes(m.key)).flatMap(({ positions }) => {
+    const out = [];
+    for (let i = 0; i < positions.length; i += 9) out.push(positions.slice(i, i + 9).map((v) => v.toFixed(4)).join(' '));
+    return out;
+  }).sort();
+
+  it('draws both builders\' strips in one mesh a big tile, and the 60 m meshes no more', () => {
+    const { scene, strips, metas } = build();
+    expect(STRIP_BATCH_TILE).toBe(5 * MODEL_TILE);
+    expect(strips.batches.length).toBe(2); // the big tile over x 0 to 300 and the one past it, for both builders together
+    expect(strips.batches.map((b) => b.ranges.length).sort()).toEqual([1, 5]);
+    for (const { mesh } of metas) expect(mesh.parent).toBe(null);
+    expect(scene.getObjectByName('hedgesFarBatched').children.length).toBe(2);
+  });
+
+  it('draws exactly the strips of its far 60 m tiles, before and after a swap', () => {
+    const { swaps, strips, metas } = build();
+    expect(drawnTriangles(strips)).toEqual([]); // nothing far until the swap has decided
+    for (const s of swaps) s.update({ x: 0, z: 0 }, 100, true); // the tiles at 120 and 300 are past 100 m
+    strips.sync();
+    expect(drawnTriangles(strips)).toEqual(trianglesOf(metas, ['2,0', '5,0']));
+    expect(strips.batches.find((b) => b.ranges.length === 5).ranges.filter((r) => r.shown).length).toBe(2); // both builders' strips at 120
+    for (const s of swaps) s.update({ x: 220, z: 0 }, 100, true); // now the tiles at 0 and 60 are far, and 120 and 300 near
+    expect(strips.sync()).toBe(2);
+    expect(drawnTriangles(strips)).toEqual(trianglesOf(metas, ['0,0', '1,0']));
+    expect(strips.batches.find((b) => b.ranges.length === 1).mesh.visible).toBe(false); // a big tile with nothing far is not drawn at all
+    expect(strips.sync()).toBe(0); // and nothing changed is not rebuilt
+  });
+
+  it('keeps the strips\' colours and normals with their triangles', () => {
+    const { swaps, strips, metas } = build();
+    for (const s of swaps) s.update({ x: 1000, z: 0 }, 100, true);
+    strips.sync();
+    const b = strips.batches.find((x) => x.ranges.length === 5);
+    const r = b.ranges.find((x) => x.mesh === metas[0].mesh);
+    const geo = b.mesh.geometry;
+    for (const name of ['position', 'normal', 'color']) {
+      expect([...geo.attributes[name].array.slice(r.start * 3, (r.start + r.count) * 3)]).toEqual([...metas[0].mesh.geometry.attributes[name].array]);
+    }
   });
 });
 

@@ -454,7 +454,7 @@ export function createHost(g, { copy = () => {} } = {}) {
 
     perf() {
       const r = g.renderer;
-      return { ...g.frameStats.summary(), stages: g.frameBreakdown.summary().map((x) => ({ name: x.name, ms: x.ms })), slowestFeatures: g.guard.slowest(5), ground: g.world.terrain.tileSet.stats(), groundPainting: g.world.terrain.paintStats(), wornGround: g.world.wear.stats(), longFrameCauses: g.stutters.log.lines(), heapMb: g.stutters.heap.used / 1048576, allocMbPerSecond: g.stutters.heap.allocMbPerSecond, loadSteps: loadSteps().slice(0, 8), groundFromWorkers: g.world.groundFromWorkers, ...r.info.render, width: r.domElement.width, height: r.domElement.height, pixelRatio: r.getPixelRatio(), maxFps: g.graphics.maxFps };
+      return { ...g.frameStats.summary(), stages: g.frameBreakdown.summary().map((x) => ({ name: x.name, ms: x.ms })), slowestFeatures: g.guard.slowest(5), ground: g.world.terrain.tileSet.stats(), groundPainting: g.world.terrain.paintStats(), wornGround: g.world.wear.stats(), longFrameCauses: g.stutters.log.lines(), heapMb: g.stutters.heap.used / 1048576, allocMbPerSecond: g.stutters.heap.allocMbPerSecond, loadSteps: loadSteps().slice(0, 8), groundFromWorkers: g.world.groundFromWorkers, farBatches: g.world.farDetail.batchStats(), ...r.info.render, width: r.domElement.width, height: r.domElement.height, pixelRatio: r.getPixelRatio(), maxFps: g.graphics.maxFps };
     },
   };
   return host;

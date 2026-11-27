@@ -20,20 +20,23 @@ export const BUDGETS = {
   // Since #1072 (the sprayed and combed ground drawn only where it is worked: 65,000 and 274,000 triangles no longer in every view of Lane Field and Low Ley) the nine
   // spots that saw both are held to about 8% over their new triangles: the yard 1.81M, the village 2.24M, the wood 3.22M, the junction 1.81M, the ridge 2.23M, the Moor's
   // middle 2.04M and the far views 1.68M, 2.34M and 2.38M. Their calls did not move.
-  spawn: { calls: 530, triangles: 1.88e6 },
-  yard: { calls: 1350, triangles: 1.96e6 },
-  village: { calls: 2320, triangles: 2.42e6 },
-  wood: { calls: 1610, triangles: 3.48e6 },
-  hilltop: { calls: 1480, triangles: 2.20e6 },
-  hairpins: { calls: 1630, triangles: 2.21e6 },
-  junction: { calls: 1270, triangles: 1.96e6 },
-  pitGate: { calls: 1770, triangles: 2.20e6 },
-  moorRidge: { calls: 1770, triangles: 2.41e6 },
-  moorMiddle: { calls: 1820, triangles: 2.21e6 },
-  viewHilltop: { calls: 1280, triangles: 1.82e6 },
-  viewMoorRidge: { calls: 1880, triangles: 2.53e6 },
-  viewBackLane: { calls: 1400, triangles: 2.57e6 },
-  river: { calls: 1480, triangles: 2.32e6 }, // the river's crossing, 6 m back on its north landing (#999): 1,369 calls and 2.15M triangles there, held to about 8% over
+  // Since #1076 (the far hedge strips drawn a 300 m tile at a time, the far oaks and bushes a 240 m tile) every spot is a sixth to a third fewer calls, held to about 8%
+  // over again, and the triangles, which rose up to 10% because a big tile partly in view draws all of its far tiles, are raised to 8% over where they had less room than
+  // that (spawn 357 and 1.88M, yard 1,028 and 1.86M, wood 1,112 and 3.41M, Back Lane's far view 884 and 2.61M; the rest are below with their budgets).
+  spawn: { calls: 390, triangles: 2.03e6 },
+  yard: { calls: 1120, triangles: 2.02e6 },
+  village: { calls: 1800, triangles: 2.45e6 },
+  wood: { calls: 1210, triangles: 3.69e6 },
+  hilltop: { calls: 1090, triangles: 2.30e6 },
+  hairpins: { calls: 1210, triangles: 2.25e6 },
+  junction: { calls: 910, triangles: 2.02e6 },
+  pitGate: { calls: 1420, triangles: 2.31e6 },
+  moorRidge: { calls: 1290, triangles: 2.41e6 },
+  moorMiddle: { calls: 1100, triangles: 2.24e6 },
+  viewHilltop: { calls: 930, triangles: 1.91e6 },
+  viewMoorRidge: { calls: 1400, triangles: 2.54e6 },
+  viewBackLane: { calls: 970, triangles: 2.83e6 },
+  river: { calls: 1120, triangles: 2.33e6 }, // the river's crossing, 6 m back on its north landing (#999): 1,029 calls and 2.16M triangles there since #1076, held to about 8% over
   movers: { calls: 5880, triangles: 1.51e6 },
 };
 
