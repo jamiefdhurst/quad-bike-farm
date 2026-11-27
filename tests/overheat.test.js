@@ -206,14 +206,28 @@ describe('a stuck thermostat', () => {
 });
 
 describe('boiling over', () => {
+  it('boils a full radiator with a stuck thermostat over before it stalls, worked hard in the sun', () => {
+    const e = make();
+    e.thermostat = 1;
+    start(e);
+    const order = [];
+    for (let t = 0; t < 2400 && !order.includes('overheated'); t += 0.5) {
+      e.update(0.5, { ambient: 1, throttle: 1, driveLoad: 1, speed: 1 });
+      for (const ev of e.events) if (ev.type === 'boilOver' || ev.type === 'overheated') order.push(ev.type);
+    }
+    expect(order).toEqual(['boilOver', 'overheated']);
+    expect(e.coolant).toBeLessThan(0.1);
+  });
+
   it('boils lower the less coolant there is, as the pressure goes', () => {
     expect(boilingC(1, P)).toBe(P.coolantBoilFullC);
     expect(boilingC(0.3, P)).toBeLessThan(boilingC(0.45, P));
     expect(boilingC(0.2, P)).toBeLessThan(boilingC(0.3, P));
     expect(boilingC(0, P)).toBe(P.coolantBoilLowC);
-    // Full, it would stall before it boiled; at 115 °C a low one boils and a fuller one doesn't.
-    expect(P.coolantBoilFullC).toBeGreaterThan(P.hotStallC);
-    expect(boilsOver(1, P.hotStallC, false, P)).toBe(false);
+    // Full, it boils over before it would stall; at 115 °C a low one boils and a fuller one doesn't.
+    expect(P.coolantBoilFullC).toBeLessThan(P.hotStallC);
+    expect(boilsOver(1, P.coolantBoilFullC - 0.5, false, P)).toBe(false);
+    expect(boilsOver(1, P.coolantBoilFullC + 0.5, false, P)).toBe(true);
     expect(boilsOver(0.2, 115, false, P)).toBe(true);
     expect(boilsOver(0.45, 115, false, P)).toBe(false);
   });

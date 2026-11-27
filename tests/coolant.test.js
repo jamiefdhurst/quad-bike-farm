@@ -65,8 +65,9 @@ describe('the coolant level', () => {
     expect(steamLevel(0.9, 92, 1, P)).toBe(1);
   });
 
-  it('boils over only when hot with the radiator failing, and not again once it has', () => {
-    expect(boilsOver(0.9, 124, false, P)).toBe(false);
+  it('boils over only when hot for what is left, and not again once it has', () => {
+    expect(boilsOver(0.9, 118, false, P)).toBe(false);
+    expect(boilsOver(0.9, 124, false, P)).toBe(true); // full, it still boils at the cap's temperature
     expect(boilsOver(0.2, 95, false, P)).toBe(false);
     expect(boilsOver(0.2, 124, false, P)).toBe(true);
     expect(boilsOver(0, 102, false, P)).toBe(true); // run dry, it boils barely over 100 °C
