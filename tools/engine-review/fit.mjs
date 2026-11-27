@@ -22,8 +22,7 @@ export const PAIRS = [
   { bank: 'engine-bank-50', vehicle: 'asp', kind: 'idle', src: 'gil', split: 1 },
   { bank: 'engine-bank-plover', vehicle: 'plover', kind: 'idle', src: 'sl', split: 1 },
   { bank: 'engine-bank-2t', vehicle: 'adder', kind: 'idle2', src: 'crm', split: 1, sets: { recIdleSource: 'rev' } },
-  { bank: 'engine-bank-corsa', vehicle: 'griffin', kind: 'idle', src: 'cd', split: 4 },
-  { bank: 'engine-bank-fiesta', vehicle: 'finch', kind: 'idle', src: 'fd', split: 4 },
+  // The Griffin's and Finch's pairs went with their old BBC banks in #858: their new recordings are idles alone.
 ];
 
 const IDLE_ONLY = { pulseRevLo: 0, pulseRevHi: 0 };

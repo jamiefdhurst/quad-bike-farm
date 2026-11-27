@@ -1344,7 +1344,7 @@ export const TOR_SPEC = {
   odoRange: [60000, 140000], // miles on the clock
   wearRange: [0.04, 0.12], // old and well used, but four cylinders hide it: a quad's wear would make it lumpy
   safeIdle: 420,
-  idleRange: [470, 510], // a 2.25 petrol ticks over slowly; the Jeep in its sound recording runs at 500 (474 to 528), so its beats play at their own pace
+  idleRange: [470, 510], // a 2.25 petrol ticks over slowly; its recording, a Model T, runs at 836 (800 to 878), so each firing is drawn out
   roughnessRange: [0.04, 0.1],
   fuelRange: [12, 40], // 45 litre tank, 5 litre reserve
   topRpmRange: [4100, 4300],
@@ -1450,13 +1450,12 @@ export const TOR_SPEC = {
   },
   audio: {
     pulseSteady: 0.3, // the fitted steadiness on its own settings (#854)
-    recBank: 'engine-bank-tor', // an old Jeep's four-cylinder petrol idling (craigsmith), and a car started on a handle
+    recBank: 'engine-bank-tor', // a Model T Ford's four idling (craigsmith), an old truck's starter and a car started on a handle
     recIdleSource: 'quad',
-    pulseRefRpm: 490,
-    pulseDivide: 3, // Jamie: at its own pace the Jeep's idle sounded far too quick for it; a third of the pace, one beat every third firing
-    pulseSlowest: 0.25, // each 61 ms beat stretched to fill three firings (about 190 ms at idle) with no gap after it
+    pulseSplit: 4, // the bank's grains are whole cycles: each cut into its four firings, one per engine firing
+    pulseRefRpm: 490, // its idle, where the rev loudness and EQ start (Jamie, #858: as heard, not its recording's 836, a firing every 36 ms)
+    pulseDivide: 1, // every firing played: the Model T at 490 is each firing stretched to 0.59 of its pace, as Jamie picked it (#857)
     pulseRevLoudness: 0.3,
-    pulsePitchFollow: 0.25, // one recorded beat per firing, at about its own speed: the beats come faster as it revs, the note barely rises
     recVolume: 0.6,
     recStarterVolume: 0.6, // as loud against its idle as the truck's starter was against its own
     recToneClosed: 5000,
@@ -1669,7 +1668,7 @@ export const FINCH_SPEC = {
   odoRange: [38000, 76000], // a careful owner's miles
   wearRange: [0.03, 0.08], // looked after
   safeIdle: 650,
-  idleRange: [830, 870], // Jamie: about 850 warm (its recording idles faster, at 1,084 to 1,187: each beat is stretched to fit)
+  idleRange: [830, 870], // Jamie: about 850 warm (its recording idles slower, at 622 to 643: each firing is cut short to fit)
   roughnessRange: [0.03, 0.07],
   fuelRange: [12, 30], // 34 litre tank
   topRpmRange: [5900, 6100],
@@ -1714,11 +1713,11 @@ export const FINCH_SPEC = {
   vibration: { ...CAR_VIBRATION, idleRpm: 850 },
   audio: {
     pulseSteady: 0.3, // its own engine's revs run evenly: fitted to them (#854)
-    recBank: 'engine-bank-fiesta', // the BBC's Finch 1.1 idling and pulling away, a 1976 Mini revving above that, its own starter
+    recBank: 'engine-bank-finch', // a small car idling (TRP, Blyth), a won't-start car's crank and a 1970s MG switched off
     recIdleSource: 'quad',
     pulseDivide: 1,
     pulseSplit: 4, // the bank's grains are whole cycles: each cut into its four firings, one per engine firing
-    pulseRefRpm: 1130, // its recorded idle, where the rev loudness and EQ start
+    pulseRefRpm: 850, // its idle, where the rev loudness and EQ start (Jamie, #858: as heard, not its recording's 652, a cycle every 184 ms)
     pulseRevLo: 0, // no rev recording: built from the idle, every firing holds together to the top (#853)
     pulseRevHi: 0,
     pulseRevFollow: 0.08,
@@ -1753,7 +1752,7 @@ export const GRIFFIN_SPEC = {
   odoRange: [88000, 140000],
   wearRange: [0.06, 0.12], // thrashed (but four cylinders hide it: much more and it hunts and shakes about)
   safeIdle: 650,
-  idleRange: [860, 900], // its recording ticks over at 854 to 909
+  idleRange: [860, 900], // its recording ticks over at 878 to 952 (886 on the whole)
   roughnessRange: [0.04, 0.08],
   fuelRange: [3, 18], // 46 litre tank, and never more than a tenner in it
   topRpmRange: [6200, 6400],
@@ -1801,15 +1800,15 @@ export const GRIFFIN_SPEC = {
   // A touch more shake than Amy's (the exhaust rattles against the floor), but Jamie found the first go's random bouncing too much.
   vibration: { ...CAR_VIBRATION, idleRpm: 880, steadiness: 0.82, pulseGain: 0.75, heaveGain: 0.07, pitchGain: 0.1 },
   audio: {
-    pulseCylGain: 4, // the Carlton's revs are lumpy: its cylinders 4 dB apart in strength, fitted to them (#854)
+    pulseCylGain: 4, // its cylinders 4 dB apart in strength, fitted to the lumpy revs of the recording it had before (#854)
     pulseCylTime: 0.2, // and up to a fifth of a firing apart in time
     pulseFireJitter: 0.1, // each firing up to a tenth of one late
     pulseStrengthJitter: 0.3, // and up to 30% stronger or weaker
-    recBank: 'engine-bank-corsa', // the BBC's Carlton 1.8 idling, pulling away and revved cold, its own starter and its cold stall
+    recBank: 'engine-bank-griffin', // a small saloon idling on a loud sports exhaust (loganzsound), the Finch's crank and run-down
     recIdleSource: 'quad',
     pulseDivide: 1,
     pulseSplit: 4, // the bank's grains are whole cycles: each cut into its four firings, one per engine firing
-    pulseRefRpm: 880,
+    pulseRefRpm: 886, // its recorded idle (a firing every 34 ms), where the rev loudness and EQ start
     pulseRevLo: 0, // no rev recording: built from the idle, every firing holds together to the top (#853)
     pulseRevHi: 0,
     pulseRevFollow: 0.08,
@@ -1848,7 +1847,7 @@ export const VAUCLAIR_SPEC = {
   odoRange: [118000, 164000], // a diesel's miles
   wearRange: [0.05, 0.1],
   safeIdle: 650,
-  idleRange: [760, 800], // its recording ticks over at 748 to 803, so it plays at its own pace
+  idleRange: [840, 880], // its recording ticks over at 806 to 893 (858 on the whole), so it plays at its own pace
   roughnessRange: [0.08, 0.13], // a diesel's clatter, but four cylinders on soft mounts
   fuelRange: [15, 40], // 55 litre tank
   topRpmRange: [4950, 5050],
@@ -1884,7 +1883,7 @@ export const VAUCLAIR_SPEC = {
     catchColdFactor: 0.9,
     coldRoughness: 0.12,
     coldPowerLoss: 0.3,
-    idleRpmWarm: 780,
+    idleRpmWarm: 860,
     maxRpm: 5000,
     redlineRpm: 4800,
     stallRpm: 380,
@@ -1920,13 +1919,13 @@ export const VAUCLAIR_SPEC = {
     suspensionCompression: 2.8,
     suspensionRelaxation: 2.6,
   },
-  vibration: { ...CAR_VIBRATION, idleRpm: 780, steadiness: 0.6, pulseGain: 1.0, heaveGain: 0.1, pitchGain: 0.13 }, // a diesel four shakes more than the petrols
+  vibration: { ...CAR_VIBRATION, idleRpm: 860, steadiness: 0.6, pulseGain: 1.0, heaveGain: 0.1, pitchGain: 0.13 }, // a diesel four shakes more than the petrols
   audio: {
-    recBank: 'engine-bank-309', // the BBC's 309 diesel itself: idling, pulling away and the interior constant run, a starter and its switch-off
+    recBank: 'engine-bank-vauclair', // a diesel car recorded under its bonnet (greatsoundstube), a van's crank and a diesel switched off
     recIdleSource: 'quad',
     pulseDivide: 1,
     pulseSplit: 4, // the bank's grains are whole cycles: each cut into its four firings, one per engine firing
-    pulseRefRpm: 775, // its recorded idle, where the rev loudness and EQ start
+    pulseRefRpm: 858, // its recorded idle (a firing every 35 ms), where the rev loudness and EQ start
     pulseRevLo: 0, // no rev recording: built from the idle, every firing holds together to the top (#853)
     pulseRevHi: 0,
     pulseRevFollow: 0.08,
