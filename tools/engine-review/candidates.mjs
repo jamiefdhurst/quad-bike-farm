@@ -33,7 +33,7 @@ const VEHICLES = {
   finch: { rpm: [650, 1300], cyl: 4, what: 'a small carburettor petrol four' },
   griffin: { rpm: [650, 1300], cyl: 4, what: 'a bigger petrol four with a loud exhaust' },
   vauclair: { rpm: [600, 1100], cyl: 4, what: 'a diesel four' },
-  tor: { rpm: [380, 800], cyl: 4, what: 'a big slow petrol four idling near 500 rpm' },
+  tor: { rpm: [380, 1000], cyl: 4, what: 'a big slow petrol four idling near 500 rpm' },
 };
 
 // The vehicle's settings with only the bank changed: its idle cut into its firings. The Tor plays its present Jeep one beat in three

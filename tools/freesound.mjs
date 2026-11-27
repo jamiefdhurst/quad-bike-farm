@@ -37,7 +37,7 @@ async function api(path, params = {}) {
   writeFileSync(`${DIR}/last`, String(Date.now()));
   const url = new URL(`${API}${path}`);
   for (const [k, v] of Object.entries({ ...params, token: token() })) url.searchParams.set(k, v);
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(60000) });
   if (!res.ok) throw new Error(`${path}: ${res.status} ${res.statusText}`);
   return res.json();
 }
@@ -62,7 +62,7 @@ async function save(s) {
   const d = details(s);
   if (!/creativecommons\.org\/publicdomain\/zero/.test(d.licence) && d.licence !== CC0) throw new Error(`${d.id} is not CC0 (${d.licence})`);
   if (!existsSync(`${DIR}/${d.id}.mp3`)) {
-    const res = await fetch(d.preview);
+    const res = await fetch(d.preview, { signal: AbortSignal.timeout(120000) });
     if (!res.ok) throw new Error(`${d.id} preview: ${res.status}`);
     writeFileSync(`${DIR}/${d.id}.mp3`, Buffer.from(await res.arrayBuffer()));
     await sleep(1000);
