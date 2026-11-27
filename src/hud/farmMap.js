@@ -269,6 +269,10 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   const labels = [];
   const field = (text, x, z) => labels.push({ text, x, z, kind: 'field' });
   const place = (text, x, z, dz = 0) => labels.push({ text, x, z: z + dz, kind: 'place' });
+  // A name written along a line (a road, a circuit, a trail) goes at the first of its spots that is clear of the names already written, so it is
+  // placed once every name pinned to one spot is down; if none is clear, the first. `spots` are [x, z] in metres, most wanted first.
+  const along = [];
+  const placeAlong = (text, spots) => along.push({ text, spots });
   if (!layout.fields) {
     field('Grass field', 0, -68);
     if (A.north) field(`${cap(crop('north') ?? 'stubble')} stubble`, (A.north.minX + A.north.maxX) / 2, A.north.minZ + 20);
@@ -280,7 +284,7 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   }
   if (v) {
     // Nether Thornby across the lane: its name, and the three buildings you'd go to.
-    if (v.green) place(v.name, v.green.x, v.green.z, -v.green.r - 3); // the street is 325 m long: the name is over its green
+    if (v.green) place(v.name, v.green.x, v.green.z, -v.green.r - 36); // the street is 325 m long: the name is north of its green, above the pub's
     if (v.pub) place('Pub', v.pub.x, v.pub.z, -v.pub.halfZ - 3);
     if (v.shop) place('Shop', v.shop.x, v.shop.z, -v.shop.halfZ - 3);
     if (v.garage) place('Garage', v.garage.x, v.garage.z, v.garage.halfZ + 3);
@@ -295,23 +299,24 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
     if (rd.id === 'farm' || !rd.name || inVillage) continue; // the village's own name stands for its street
     const text = cap(rd.name);
     const half = (text.length * 6) / 2 / sheet + 3;
-    place(text, Math.min(ground.maxX - half, Math.max(ground.minX + half, mid[0] - rd.half - half)), mid[1]);
+    const beside = (pt) => [Math.min(ground.maxX - half, Math.max(ground.minX + half, pt[0] - rd.half - half)), pt[1]];
+    placeAlong(text, [0.6, 0.5, 0.7, 0.4, 0.8, 0.3, 0.9, 0.2].map((f) => beside(rd.points[Math.floor(rd.points.length * f)])));
   }
   if (hut) place('Hut', hut.x - 2, hut.z - 7.5);
   if (b) place('Barn', barnFrame(layout).toWorld(b.x - 5, b.z + b.halfZ + 6).x, barnFrame(layout).toWorld(b.x - 5, b.z + b.halfZ + 6).z); // south-west of it (turned with the barn), clear of the quads parked in the yard (which has no name: it's crowded)
   if (paddock) place('Paddock', p.x, p.z, p.half + 4);
   if (gravelStrip(layout)) place('Drag strip', strip.x + 6, strip.z + 6); // (the new farm's races are on the drive, which is labelled as the drive)
-  if (r) place('Jump', r.x, r.z, -6);
+  if (r) place('Jump', r.x, r.z, 10); // south of the ramp: the lap's name is north of it
   if (roads.some((r) => r.id === 'farm')) place('The drive', (layout.road.fromX + (layout.road.hedgeTo ?? layout.road.toX)) / 2 - 20, layout.road.z - 9);
   if (dutch) place('Dutch barn', layout.dutchBarn.x - 4, layout.dutchBarn.z - layout.dutchBarn.halfZ - 4);
-  if (shed) place('Field shed', layout.fieldShed.x + 21, layout.fieldShed.z + 1);
+  if (shed) place('Field shed', layout.fieldShed.x - 22, layout.fieldShed.z + 1); // west of it: the muck heap's name is east
   if (nf) place('Neighbour', nf.yard.minX + 14, nf.yard.minZ + 7);
   if (m) place('Muck heap', m.x, m.z, m.halfZ + 4);
   if (t) place('Trough', t.x, t.z - 5);
   if (hill) {
     place('Lane', hill.lane.x + 9, (hill.top + hill.lane.toZ) / 2);
     place('Ford', hill.lane.x + 9, ford.z + 1);
-    place('Stream', hill.pasture.maxX - 16, hill.streamZ(hill.pasture.maxX - 16) - 4);
+    place('Stream', hill.pasture.maxX - 85, hill.streamZ(hill.pasture.maxX - 85) + 12); // below the water, well west of the river crossing's name
     const cr = layout.hill.river?.crossing ? createBrook(layout).crossing() : null; // from the crossing's one anchor (#999)
     if (cr) { const p = cr.landing(1, 5); place('River crossing', p.x, p.z); }
   }
@@ -319,21 +324,26 @@ export function farmMapFeatures(layout, fields, track, margin = MAP_MARGIN) {
   if (woods) {
     const r = woods.rect;
     if (!layout.fields) field(woods.name, (r.minX + r.maxX) / 2 + 20, r.minZ + 10); // a plan that names its fields writes it below
-    const p = woods.at(woods.track.totalLength * 0.97); // on the way back to the junction, in the open by the gate
-    place(woods.circuitName, p.x + 6, p.z - 10);
+    // On the way back to the junction, in the open by the gate, or further round where that is taken.
+    placeAlong(woods.circuitName, [0.97, 0.9, 0.85, 0.8, 0.75, 0.7].map((f) => { const p = woods.at(woods.track.totalLength * f); return [p.x + 6, p.z - 10]; }));
     if (woods.trail) {
-      const t = woods.trailAt(woods.trailTrack.totalLength * 0.2);
-      place(woods.trail.name, t.x, t.z - 9);
+      placeAlong(woods.trail.name, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.1].map((f) => { const t = woods.trailAt(woods.trailTrack.totalLength * f); return [t.x, t.z - 9]; }));
     }
     if (woods.pond) place('Pond', woods.pond.x, woods.pond.z, woods.pond.rz + 4);
   }
   if (quarry) {
     field(quarry.name, quarry.rect.maxX - 26, quarry.rect.maxZ - 20);
-    place('Pit climb', quarry.climb.points[2][0], quarry.climb.points[2][1], 12); // where the line finishes, written inside the lip so it stays on the map
-    place('Pond', quarry.pond.x, quarry.pond.z, quarry.pond.rz + 4);
+    place('Pit climb', quarry.climb.points[2][0], quarry.climb.points[2][1], 34); // below where the line finishes, clear of its marks and inside the lip
+    place('Pond', quarry.pond.x + 34, quarry.pond.z, quarry.pond.rz + 4); // to the east, clear of the pit climb's
   }
   const tp = track.sample(0.78);
   place(layout.trackName ?? 'Track', tp.x + 8, tp.z);
+  for (const a of along) {
+    const taken = labels.map((l) => nameBox(l, sheet));
+    const clear = a.spots.find(([x, z]) => { const n = nameBox({ text: a.text, kind: 'place', x, z }, sheet); return !taken.some((r) => overlaps(r, n)); });
+    const [x, z] = clear ?? a.spots[0];
+    place(a.text, x, z);
+  }
   // A plan that names its fields: each name where its field has the most room, clear of the buildings and of every name already written.
   if (layout.fields) {
     const clear = [...buildings, ...small].map((b) => b.rect);
@@ -418,6 +428,7 @@ export function labelSpot(points, avoid = [], box = { minX: 0, maxX: 0, minZ: 0,
 }
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const overlaps = (a, b) => a.minX < b.maxX && b.minX < a.maxX && a.minZ < b.maxZ && b.minZ < a.maxZ;
 
 /**
  * Where the markers (you, the girls, the vehicles and the items) go on the map, in pixels. A marker off the map is pinned to its edge,
