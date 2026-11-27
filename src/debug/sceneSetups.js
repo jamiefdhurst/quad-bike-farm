@@ -91,6 +91,16 @@ export function moto(g, say) {
   return ['the mini moto is in the paddock and Jess is going for it', 'she may refuse it or come off, as she would in play'];
 }
 
+/** On the Adder in the yard, warm and running with the parking brake on, so the throttle only revs it (#860). */
+export function hotrev(g) {
+  const u = g.units.find((x) => x.id === 'adder');
+  if (!u) return ['this farm has no Adder, so there is nothing to rev'];
+  if (u.quad.rider || u.quad.driver) return ['the Adder has someone on it already: scene end, then reset it'];
+  g.mount(u);
+  u.quad.parkBrake = true;
+  return ['you are on the Adder with the parking brake on: hold the throttle and watch the needle climb into the red in about two minutes'];
+}
+
 export function flock(g, say) {
   const [cx, cz] = g.world.layout.hill.climb.points[0];
   if (!g.flock) return ['there is no flock on this farm'];
@@ -162,4 +172,4 @@ export function splitter(g, say) {
   ];
 }
 
-export const SETUPS = { farHedges, prepare: getOff, wardrobe, moto, flock, flask, earlier, splitter, end: endScene };
+export const SETUPS = { farHedges, prepare: getOff, wardrobe, moto, flock, flask, earlier, splitter, hotrev, end: endScene };
