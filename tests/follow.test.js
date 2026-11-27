@@ -222,3 +222,37 @@ describe('following you out to the hill', () => {
     expect(d.followTarget({ ...hill.waitSpot }).point).not.toEqual(hill.waitSpot);
   });
 });
+
+describe('following you down the lane (#1118)', () => {
+  const fields = createFields(LAYOUT);
+  const her = { world: { fields } };
+  const lead = { position: { x: 0, z: 0 }, yaw: Math.PI, forwardSpeed: 6 };
+  const follower3 = () => {
+    const d = follower(lead);
+    d.events = [];
+    d.followWay = (pos, point, lp) => drivingMethods.followWay.call(her, pos, point, lp);
+    return d;
+  };
+  const gw = (a, b) => fields.gateways.find((g) => g.a === a && g.b === b);
+  // You on the lane south of the drive's mouth, riding away down it.
+  const lane = LAYOUT.publicLane;
+  lead.position = { x: lane.x + 1.2, z: LAYOUT.road.z - 60 };
+
+  it('goes by the gateway onto the drive rather than at the hedge between the field and the lane', () => {
+    const into = gw('lanefield', 'drive');
+    const t = follower3().followTarget({ x: into.pa.x - 10, z: lead.position.z });
+    expect(t.point).toEqual(into.pa);
+    expect(t.stopped).toBe(false);
+  });
+
+  it('comes out of the yard along the drive, through its mouth onto the lane, and then after you', () => {
+    const yard = gw('farmstead', 'drive');
+    const mouth = fields.gateways.find((g) => g.a === 'drive' && g.b === 'out' && g.pa.z === LAYOUT.road.z);
+    const d = follower3();
+    expect(d.followTarget({ x: yard.pa.x - 20, z: LAYOUT.road.z }).point).toEqual(yard.pa);
+    expect(d.followTarget({ x: 200, z: LAYOUT.road.z }).point).toEqual(mouth.pa);
+    const out = d.followTarget({ x: mouth.pb.x + 2, z: LAYOUT.road.z });
+    expect(out.point.z).toBeGreaterThan(lead.position.z); // behind you on the lane, not back up the drive
+    expect(Math.abs(out.point.x - lane.x)).toBeLessThan(lane.halfWidth);
+  });
+});

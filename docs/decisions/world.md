@@ -1993,3 +1993,10 @@ A house's garden hedges are worked out in one place now, `gardenHedges` in `vill
 
 - #692 left the harrows at plan (548, 372), in the farmstead about 200 m from Low Ley, and loosened their test to finite numbers. They stand at plan (647, 570), world (127, 205): 6 m inside Low Ley's west edge and 10 m north of its gateway from Brook Meadow (640, 580), so the way in is clear and the harrows are the first thing you meet through it. The tongue points west at the gateway, as it pointed at the yard before.
 - `tests/harrowing.test.js` checks them again: inside the harrow field's polygon, within 12 m of its edge, on the ley and clear of the Home Loop. With the old spot it fails.
+
+## The new farm's tests for what #692 deleted (#1118)
+
+- The edge check in `tests/roads.test.js` runs on every road of the network (eleven today: tarmac, stone and grass track alike), each alone so a road it joins doesn't count, asking for its own surface along the middle and nothing 1 m past its hard edge. It skips a pad, a passing place on its own side only, and a bellmouth's corner (`fillets`, within its radius plus 2 m).
+- The 32 samples #1118 counted were exactly those: 28 on Back Lane, all in its passing places, and 4 on the drive at 283 m and 288 m of its 293, which are its bellmouth onto the lane, not a bay.
+- The lane now bends from the A-road before running straight past the drive, so `lanePath` is tested by its lead along each end's own direction and its offset to the left of the way travelled, and against `laneX` on the straight, rather than by the old straight lane's numbers.
+- The honk, `nextWaypoint` and following-down-the-lane tests use the drive's own places: the post van held up 10 m short of the drive's mouth, the yard's gateway onto the drive, and the lane field's gateway onto it. Each was seen to fail with the behaviour it guards taken out.

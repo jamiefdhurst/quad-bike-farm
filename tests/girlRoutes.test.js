@@ -168,3 +168,24 @@ describe('their cars on the new farm', () => {
     expect(hasGone(two, HOME, { x: slot.x, z: slot.z })).toBe(false);
   });
 });
+
+describe('the next point on her way (#1118)', () => {
+  // The gateway out of the yard onto the drive, on the way to the lane.
+  const gw = fields.gateways.find((g) => g.a === 'farmstead' && g.b === 'drive');
+  const to = { x: LAYOUT.publicLane.x, z: LAYOUT.road.z - 40 };
+
+  it('heads for the gateway first, and skips a point she has already reached', () => {
+    expect(fields.nextWaypoint({ x: gw.pa.x - 30, z: gw.pa.z - 4 }, to)).toEqual(gw.pa);
+    expect(fields.nextWaypoint({ x: gw.pa.x - 0.5, z: gw.pa.z }, to)).toEqual(gw.pb); // within reach of the near point: on to the far one
+    expect(fields.nextWaypoint({ x: gw.pb.x + 0.5, z: gw.pb.z }, to)).not.toEqual(gw.pb); // and through it, on to what comes after
+  });
+
+  it('does not turn her back to a gateway point she has walked on past', () => {
+    // Walking on through the gap from the point before it: at every step she is heading for the point after it, never back.
+    for (let x = gw.pa.x; x < gw.pb.x - 1; x += 0.25) {
+      expect(fields.nextWaypoint({ x, z: gw.pa.z + 0.8 }, to).x, `at x ${x}`).toBeGreaterThanOrEqual(x > gw.pa.x + 1.5 ? gw.pb.x : gw.pa.x);
+    }
+    // Alongside the hedge but nowhere near the gap she still goes to the gap's point first.
+    expect(fields.nextWaypoint({ x: gw.pa.x - 1, z: gw.pa.z + 12 }, to)).toEqual(gw.pa);
+  });
+});
