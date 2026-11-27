@@ -706,5 +706,5 @@ Jamie, after #250: a quad shouldn't go from perfect to ruined inside a day; a we
 ## A full radiator boils over before it cuts out (#1288)
 
 - `coolantBoilFullC` 130 to 122 °C, under `hotStallC` 126, at Jamie's word after #864: a full system with a stuck thermostat boils at the cap's temperature, spits most of its coolant (to `coolantBoilLeft`), and only then, short of coolant, gets hot enough to stall. Before, a full one stalled without boiling, which had the order backwards.
-- A healthy radiator still never gets near it (it stays under `hotFromC` 108), and a stuck thermostat idling an hour in full sun tops out at 119.9 °C (measured), so it runs in the red without boiling; worked hard it boils and then stalls (`tests/overheat.test.js`).
+- A healthy radiator still never gets near it (it stays under `hotFromC` 108), and a stuck thermostat idling an hour in full sun on a 12 °C day tops out at 119.9 °C (measured), so it runs in the red without boiling; on a warmer day, or worked hard, it boils and then stalls within minutes (18 °C idling: boils at 377 s, stalls at 431 s). From about 18 °C it reached the stall before this change too; only days of about 12 to 17 °C now boil where nothing happened (`tests/overheat.test.js`).
 - Each kind of engine failing from heat its own way (a limp mode, vapour lock, a diesel running on into damage) is #1289.

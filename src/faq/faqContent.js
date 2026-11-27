@@ -992,6 +992,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Will an air-cooled quad cut out if it gets too hot?',
+        tip: 'An air-cooled quad never cuts out from heat: it pinks and loses power. Ride it along to cool it.',
         a: `No. Only an engine with a radiator cuts out from heat. An air-cooled quad pinks (a metallic rattle), runs rough and loses more power the hotter it
           gets, with the needle in the red, but it keeps going. Ride it along to cool it. A two-stroke run short of oil is another matter: that nips up and
           seizes, which is the oil, not the heat.`,
