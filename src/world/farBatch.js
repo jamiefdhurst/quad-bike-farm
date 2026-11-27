@@ -1,7 +1,7 @@
 // The far hedge strips, far oaks and far bushes drawn in big tiles (#1076). Each builder's far strips (hedgeFar.js) and the scattered far oaks and
 // bushes (scatter.js) are one mesh a 60 m tile, so that `HedgeSwap` can swap a tile for its near version on its own; on the new map that was up to
 // 174 calls a view for the strips alone. Here every far 60 m mesh is taken out of the drawing and gathered by its parent, its look (material,
-// geometry and shadow settings) and the 240 m tile it is in: one mesh a big tile draws the 60 m tiles of it that the swaps have made far. The
+// geometry and shadow settings) and the big tile it is in (300 m for the strips, 240 m for the trees): one mesh a big tile draws the 60 m tiles of it that the swaps have made far. The
 // swaps still decide each 60 m tile by writing `visible` on its far mesh; `sync` reads those flags and rebuilds only a big tile where one changed.
 // The strips' big mesh holds every member's triangles and an index of the far ones; the trees' is an InstancedMesh refilled with the far ones'
 // instances. Its bounds are the whole big tile's, so it is culled less finely than the 60 m meshes were: a few more triangles for far fewer calls.
@@ -10,7 +10,8 @@
 import * as THREE from 'three';
 import { tileKey } from './tiles.js';
 
-export const BATCH_TILE = 240; // m a side of a big tile: four 60 m tiles (MODEL_TILE) across
+export const BATCH_TILE = 240; // m a side of a big tile of far oaks and bushes: four 60 m tiles (MODEL_TILE) across
+export const STRIP_BATCH_TILE = 300; // and of far strips, five across: at 240 m the moor's far views had 34 big tiles of hedge in view, over the 30 calls #1076 asked for, and strips are few triangles
 
 const tileOf = (mesh, size) => {
   const t = mesh.userData.tile;
@@ -34,7 +35,7 @@ function farMembers(swaps) {
  * material at a time. The batches go in a group `name` beside the first far group of each parent, so the strips stay where they were in the scene.
  */
 export class FarStrips {
-  constructor(swaps, { tileSize = BATCH_TILE, name = 'hedgesFarBatched' } = {}) {
+  constructor(swaps, { tileSize = STRIP_BATCH_TILE, name = 'hedgesFarBatched' } = {}) {
     this.batches = [];
     const byKey = new Map();
     for (const mesh of farMembers(swaps)) {
