@@ -982,13 +982,14 @@ export const FAQ_SECTIONS = [
         a: `Yes. Rain wets the ground, and wet grass and especially wet mud are slipperier and the bogs worse. It's colder in the morning and after dark than
           in the afternoon. Cold days want more choke, longer to warm
           up and drain batteries faster; a hard frost whitens the grass and the seats (your tyres melt a track through the grass, and sitting on a seat clears it). Dry stubble throws up dust that clogs air filters fast. Hot, sunny days make the
-          air-cooled quads overheat if you idle them or crawl through mud. The cars, Moorlands, Yak and tractor have radiators and stay cool on any day, unless
-          something is wrong with their cooling.`,
+          air-cooled quads overheat if you idle them or crawl through mud. The Adder, the cars, Moorlands, Yak and tractor have radiators: they stay cool idling
+          and riding along on any day, but hold the revs up hard while standing still and they get hot, quicker on a hot day. Only the tractor never does.`,
       },
       {
         q: 'Why is my quad losing power and rattling on a hot day?',
         a: `It's too hot and pinking. The air-cooled quads (Farm 300, Bruin, Hornet and RB300) cook if left idling for ages in the sun or crawled through the mud
-          with the throttle open. Ride along at a decent speed to cool it. The Adder has a radiator and a fan, and stays cooler unless it's leaking.`,
+          with the throttle open. Ride along at a decent speed to cool it. The Adder has a radiator and a fan, and copes with idling and riding, but its radiator is
+          the smallest on the farm: hold its revs up standing still and the needle goes into the red in a couple of minutes, and then it loses power.`,
       },
       {
         q: 'Will an air-cooled quad cut out if it gets too hot?',
@@ -999,12 +1000,15 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'The temperature needle is in the red on a car or the tractor. What is wrong?',
-        tip: 'Needle in the red on a car? Switch off. It is low on coolant or has a stuck thermostat.',
+        tip: 'Needle in the red on a car? Stop revving it and let it idle. If it stays there, it is low on coolant or the thermostat has stuck.',
         a: `The gauge reads the engine's real temperature. On anything with a radiator (the cars, the Tor, the Crag, the UTV, the tractor and the Adder) it reads the
           coolant: cold at the day's temperature, the middle at about 88 °C, the red from about 108 °C where it starts running too hot, and the top at about 126 °C
           where it cuts out. On the air-cooled quads it reads the metal of the engine instead, the middle when warm and the red where it starts to pink.
-          A healthy cooling system keeps the needle in the middle on every vehicle, all day, even idling in the sun. In the red means something is wrong: the coolant
-          is low (look for a damp patch on the ground under it) or the thermostat has stuck shut, which can be there from the start or come on after a long run.
+          A healthy cooling system keeps the needle in the middle idling all day in the sun and riding along. What it can't cope with is revving hard while
+          standing still: with no air through the radiator the fan can't keep up. The Adder gets hot in about two minutes, the cars and the Yak in about four,
+          the Moorlands in about five, and the tractor, built for standing work, never does. Let it idle and it comes back down. If it is in the red without
+          that, something is wrong: the coolant is low (look for a damp patch on the ground under it) or the thermostat has stuck shut, which can be there from
+          the start or come on after a long run. With the coolant all gone it gets hot in about a minute even idling, on any day.
           It loses power and runs rough and steams if it gets worse. Near the top it boils over, at about 122 °C with the radiator full, spitting out most of
           what is left, and only then does it get hot enough to cut out, and won't start until it has cooled for a minute or two. Low on coolant it boils
           over sooner, as a low system holds less pressure: nearly dry, it boils at not much over 100 °C. The red
