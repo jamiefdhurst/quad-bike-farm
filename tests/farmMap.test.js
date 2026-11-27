@@ -26,21 +26,9 @@ const polygonLayout = {
   roads: [{ id: 'drive', name: 'the drive', surface: 'tarmac', halfWidth: 2, points: [[-60, 50], [-5, 50], [20, 28]] }],
   trackPoints: [[10, 60], [40, 60], [40, 90], [10, 90]],
 };
+// Names that run into each other on the map drawn 700 px across: none now (#1111), and never added to.
+const KNOWN_OVERLAPS = [];
 const inside = (r, x, z) => x >= r.minX && x <= r.maxX && z >= r.minZ && z <= r.maxZ;
-
-const KNOWN_OVERLAPS = [
-  'Field shed and Muck heap',
-  'Ford and The stone track south',
-  'Jump and The Home Loop',
-  'Nether Thornby and Pub',
-  'Nether Thornby and The village street',
-  'Pit climb and Pond',
-  'Pond and The Hollow Run',
-  'River crossing and Stream',
-  'River crossing and The stone track south',
-  'Stream and The stone track south',
-  'The Fern Trail and The Hollow Run',
-];
 
 describe('the farm map', () => {
   it('covers the farm, the hill pasture, the wood, the lane and the village across it, with a margin round them', () => {
@@ -140,7 +128,6 @@ describe('the farm map', () => {
         if (overlap) overlapping.push([placed[i].text, placed[j].text].sort().join(' and '));
       }
     }
-    // The names that run into each other on the bigger farm's map when it is drawn 700 px across: never added to, and the test fails when one is fixed.
     expect(overlapping.sort()).toEqual(KNOWN_OVERLAPS);
   });
 
