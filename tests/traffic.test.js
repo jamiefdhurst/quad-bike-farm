@@ -117,6 +117,31 @@ describe('the lane and the plan', () => {
 describe('a visit', () => {
   const make = (kind, extra = {}) => new Visit({ kind, places, from: 1, to: -1, leaveOpen: false, params: P, colour: 0xc8102e, ...extra });
 
+  it('hoots when held up on the lane short of the drive, waits behind it, and goes on in once the way is clear (#1118)', () => {
+    const gate = fakeGate(true);
+    const v = make('post');
+    // Someone stood on the lane, on her side of it, 10 m before she turns into the drive.
+    const block = [{ x: laneX(places.lane, 1), z: places.gate.z - 10 }];
+    const events = [];
+    for (let i = 0; i < 4000 && !events.some((e) => e.type === 'honk'); i++) events.push(...v.update(0.1, { gate, blockers: block, swingSeconds: 1.8 }));
+    const honk = events.find((e) => e.type === 'honk');
+    expect(honk).toBeTruthy();
+    expect(Math.abs(honk.x - block[0].x)).toBeLessThan(2); // on the lane behind whoever is in the way, not somewhere else
+    expect(honk.z).toBeLessThan(block[0].z);
+    expect(block[0].z - honk.z).toBeLessThan(15);
+    // Held up longer, she hoots again now and then rather than every frame.
+    for (let i = 0; i < 100; i++) events.push(...v.update(0.1, { gate, blockers: block, swingSeconds: 1.8 }));
+    expect(v.drive.z).toBeLessThan(block[0].z);
+    expect(events.filter((e) => e.type === 'honk').length).toBe(2);
+    expect(v.done).toBe(false);
+    // The way clears: on she goes, into the drive, with no more hooting.
+    const before = events.length;
+    const rest = runVisit(v, gate).events;
+    expect(rest.some((e) => e.type === 'honk')).toBe(false);
+    expect(rest.some((e) => e.type === 'parcel')).toBe(true);
+    expect(events.length).toBe(before);
+  });
+
 
 
 
