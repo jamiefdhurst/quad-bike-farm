@@ -62,7 +62,8 @@ jobs:
         shard: [1, 2, 3]
     steps:
       # Without the recordings (the MP3s and FLACs in public/audio, the WAVs in source/audio): about 3 s and 28 MB, not 22 s and 310 MB.
-      # The tests read the JSON beside them, never the audio itself; a test that starts to will find its file missing here (#640).
+      # The tests read the JSON beside them, never the audio itself (#640), but for the engine banks' kept WAVs (about 60 MB), which
+      # tests/engineSound.test.js renders every vehicle from (#856); a test that starts to read other audio will find it missing here.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 1
@@ -73,6 +74,7 @@ jobs:
             !*.mp3
             !*.flac
             !*.wav
+            /source/audio/engine-bank*.wav
       # The Node version in mise.toml, the same one used locally.
       - name: Setup Node
         uses: jdx/mise-action@v5

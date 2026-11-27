@@ -12,20 +12,21 @@ import { dropouts, tickRate, toneChange } from '../tools/engine-review/measures.
 const LADDER = { stepSeconds: 0.8, throttle: 0.7, seed: 7 };
 const SETTLE = 0.4; // seconds of each step left out of its tone, while the revs settle
 
-// Ticks a second over the whole ladder: each vehicle's figure on main after #855 (2026-11-27), 25% over and rounded up to 0.1, so
-// what is there today passes and a fault that adds ticks fails. A zero stays zero: an engine that never ticked shouldn't start.
-// The bikes' and the Griffin's come with their recordings (the review: the Carlton's, and the TZ65's rasp at 160 firings a second).
+// Ticks a second over the whole ladder: each vehicle's worst of five seeds (7, 11, 13, 17, 23) on main after #855 (2026-11-27), 25% over
+// and rounded up to 0.1, so what is there today passes, a change that only moves the random stream passes too, and a fault that adds
+// ticks fails. A zero stays zero: an engine that never ticked shouldn't start. The bikes' and the Griffin's come with their recordings
+// (the review: the Carlton's, and the TZ65's rasp at 160 firings a second). The test renders seed 7.
 const TICK_BUDGET = {
-  farm300: 0.8, bruin: 2.5, hornet: 7.2, rb300: 0, adder: 0, asp: 9.2, tz65: 3.9, t185: 0, ursa: 0.3, shepherd: 2.8, clipper: 1.9,
-  plover: 0, hartley: 0, yak: 0, tor: 0.2, crag: 0, finch: 0, griffin: 4, vauclair: 0.2,
+  farm300: 0.8, bruin: 2.9, hornet: 7.3, rb300: 0, adder: 0.2, asp: 9.3, tz65: 5.3, t185: 0.1, ursa: 0.3, shepherd: 4.7, clipper: 1.9,
+  plover: 0.2, hartley: 0, yak: 0.3, tor: 0.2, crag: 0.2, finch: 0, griffin: 4, vauclair: 0.4,
 };
 
 // The tone at the top step against the step nearest half the top (mean third-octave difference in dB, level taken out): each
-// vehicle's figure on main after #855, less 25% and rounded down to 0.1. Under it, the top sounds too like half way: it has stopped
-// changing as it revs.
+// vehicle's least of the same five seeds, less 25% and rounded down to 0.1. Under it, the top sounds too like half way: it has
+// stopped changing as it revs.
 const TONE_FLOOR = {
-  farm300: 3.4, bruin: 2.6, hornet: 3.2, rb300: 3.2, adder: 2.4, asp: 2, tz65: 1.9, t185: 2.1, ursa: 2.6, shepherd: 2.5, clipper: 1.8,
-  plover: 3.2, hartley: 2, yak: 2.2, tor: 4.2, crag: 2.5, finch: 3.4, griffin: 6.5, vauclair: 2.7,
+  farm300: 2.8, bruin: 2.5, hornet: 3.2, rb300: 2.6, adder: 2.1, asp: 1.7, tz65: 1.9, t185: 2, ursa: 2.5, shepherd: 2.5, clipper: 1.8,
+  plover: 3.1, hartley: 1.7, yak: 2.1, tor: 4.1, crag: 1.6, finch: 3.1, griffin: 6.2, vauclair: 2.4,
 };
 
 // A vehicle not in the tables yet is held to the loosest of them, so it is covered with nothing added; measure it and add its own.

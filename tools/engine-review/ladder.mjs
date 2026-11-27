@@ -7,7 +7,6 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { basename } from 'node:path';
-import { execFileSync } from 'node:child_process';
 import vm from 'node:vm';
 import { EngineModel } from '../../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../../src/engine/engineParams.js';
@@ -31,10 +30,8 @@ function wavFor(jsonPath) {
   const kept = `source/audio/${basename(beside)}`;
   if (existsSync(beside)) return beside;
   if (existsSync(kept)) return kept;
-  // No lossless copy kept: decode the shipped FLAC (macOS only), into the review's scratch folder.
-  const decoded = `.scratch/engine-review/wav/bank-${basename(beside)}`;
-  if (!existsSync(decoded)) execFileSync('afconvert', ['-f', 'WAVE', '-d', 'LEI16', jsonPath.replace(/\.json$/, '.flac'), decoded]);
-  return decoded;
+  // CI's unit tests check out only the bank WAVs (.github/workflows/test.yml): a bank without one has to have one kept.
+  throw new Error(`no WAV for ${jsonPath}: keep the one its FLAC was made from as ${kept} (tools/wav_to_flac.py)`);
 }
 
 // A 16-bit mono WAV, resampled to SR.
