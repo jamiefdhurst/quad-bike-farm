@@ -1023,7 +1023,8 @@ export const FAQ_SECTIONS = [
           it boils over, throwing out most of its coolant, and then it needs topping up from the coolant bottle before it will cool. If it is in the red without
           that, something is wrong: the coolant is low (look for a damp patch on the ground under it) or the thermostat has stuck shut, which can be there from
           the start or come on after a long run. With the coolant all gone it gets hot in about a minute even idling, on any day.
-          It loses power and runs rough and steams if it gets worse. Near the top it boils over, at about 122 °C with the radiator full, spitting out most of
+          It loses power and runs rough and steams if it gets worse, from the radiator: through the grille and from under the front of the bonnet on a car, the Moorlands,
+          the Yak or the tractor, and from behind the front rack on the Adder and the Bruin, never from the cab. An air-cooled quad's engine is under the seat, so it steams from there. Near the top it boils over, at about 122 °C with the radiator full, spitting out most of
           what is left, and only then does it get hot enough to cut out, and won't start until it has cooled for a minute or two. Low on coolant it boils
           over sooner, as a low system holds less pressure: nearly dry, it boils at not much over 100 °C. The red
           lamp or red symbol on the dash lights as the needle goes in. Switch it off and let it cool. Then take the coolant bottle (it stands by the oil bottle
