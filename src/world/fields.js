@@ -21,17 +21,9 @@ const smoothstep = (a, b, x) => {
   return t * t * (3 - 2 * t);
 };
 
-/** How far (x, z) is outside the rectangle, metres (0 inside). */
-export function outsideRect(r, x, z) {
-  const dx = Math.max(r.minX - x, 0, x - r.maxX);
-  const dz = Math.max(r.minZ - z, 0, z - r.maxZ);
-  return Math.hypot(dx, dz);
-}
-
 /**
  * The lie of the stubble fields: how far each lifts or drops the ground at (x, z), and how much of the wet it holds (0..1, 1 at the bottom of
- * a field's hollow: today's north field has one, and on the new farm North Field). The south field's rise starts a few metres off the road and fades in over its first 25 m from the grass field,
- * so neither the road nor the hedge between them has a step in it; past the far hedge it stays up, and the farmland beyond carries on from it.
+ * a field's hollow, as North Field has).
  */
 export function createFieldShape(layout) {
   const sf = layout.stubbleFields;

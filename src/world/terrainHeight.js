@@ -49,7 +49,7 @@ export function createTerrainHeight(layout, track, { hillFade } = {}) {
   const brook = createBrook(layout);
   const village = villageShape(layout);
   const roads = roadNetwork(layout);
-  const landform = layout.landform ? createLandform(layout.landform) : null; // the new farm's lie (#813); today's rises beyond its hedges instead
+  const landform = layout.landform ? createLandform(layout.landform) : null; // the farm's lie (#813)
   /** The farm's rolling, on the land's lie where there is one: what a level piece (the yard, a road, a floor) is laid to. */
   const lie = landform ? (x, z) => baseHeight(x, z) + landform(x) : baseHeight;
   const hut = hutShape(layout);
