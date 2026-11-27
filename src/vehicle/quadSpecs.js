@@ -1453,7 +1453,7 @@ export const TOR_SPEC = {
     recBank: 'engine-bank-tor', // a Model T Ford's four idling (craigsmith), an old truck's starter and a car started on a handle
     recIdleSource: 'quad',
     pulseSplit: 4, // the bank's grains are whole cycles: each cut into its four firings, one per engine firing
-    pulseRefRpm: 836, // its recorded idle (a firing every 36 ms), where the rev loudness and EQ start
+    pulseRefRpm: 490, // its idle, where the rev loudness and EQ start (Jamie, #858: as heard, not its recording's 836, a firing every 36 ms)
     pulseDivide: 1, // every firing played: the Model T at 490 is each firing stretched to 0.59 of its pace, as Jamie picked it (#857)
     pulseRevLoudness: 0.3,
     recVolume: 0.6,
@@ -1717,7 +1717,7 @@ export const FINCH_SPEC = {
     recIdleSource: 'quad',
     pulseDivide: 1,
     pulseSplit: 4, // the bank's grains are whole cycles: each cut into its four firings, one per engine firing
-    pulseRefRpm: 652, // its recorded idle (a whole cycle every 184 ms), where the rev loudness and EQ start
+    pulseRefRpm: 850, // its idle, where the rev loudness and EQ start (Jamie, #858: as heard, not its recording's 652, a cycle every 184 ms)
     pulseRevLo: 0, // no rev recording: built from the idle, every firing holds together to the top (#853)
     pulseRevHi: 0,
     pulseRevFollow: 0.08,

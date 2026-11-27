@@ -26,7 +26,7 @@ const TICK_BUDGET = {
 // stopped changing as it revs.
 const TONE_FLOOR = {
   farm300: 2.8, bruin: 2.5, hornet: 3.2, rb300: 2.6, adder: 2.1, asp: 1.7, tz65: 1.9, t185: 2, ursa: 2.5, shepherd: 2.5, clipper: 1.8,
-  plover: 3.1, hartley: 1.7, yak: 2.1, tor: 3.1, crag: 1.6, finch: 3.8, griffin: 2.7, vauclair: 2.6,
+  plover: 3.1, hartley: 1.7, yak: 2.1, tor: 3, crag: 1.6, finch: 4.1, griffin: 2.7, vauclair: 2.6,
 };
 
 // A vehicle not in the tables yet is held to the loosest of them, so it is covered with nothing added; measure it and add its own.

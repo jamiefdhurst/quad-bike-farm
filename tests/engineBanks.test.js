@@ -144,10 +144,11 @@ describe('engine banks', () => {
     expect(idle.every((g) => g.slice === undefined)).toBe(true); // whole cycles, cut into firings by the worklet (pulseSplit)
     expect(TOR_SPEC.engine.cylinders).toBe(4);
     expect(TOR_SPEC.audio.pulseSplit).toBe(TOR_SPEC.engine.cylinders);
-    // A whole cycle's rpm (120 / its length) is the engine's: the Model T measured at 836, where its rev loudness and EQ start.
+    // A whole cycle's rpm (120 / its length) is the engine's: the Model T measured at 836, faster than the Tor's idle, so each
+    // firing is drawn out to fit (tests/landRover.test.js).
     const ok = idle.filter((g) => g.ok !== false).map((g) => g.rpm).sort((a, b) => a - b);
     const median = ok[Math.floor(ok.length / 2)];
-    expect(Math.abs(median / TOR_SPEC.audio.pulseRefRpm - 1)).toBeLessThan(0.05);
+    expect(Math.abs(median / 836 - 1)).toBeLessThan(0.05);
   });
 
   // #858: the girls' cars, yours and the Tor each idle on a CC0 recording of their own, picked by ear on the review page (#857).
