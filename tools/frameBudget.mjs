@@ -22,7 +22,7 @@ export const BUDGETS = {
   // middle 2.04M and the far views 1.68M, 2.34M and 2.38M. Their calls did not move.
   // Since #1076 (the far hedge strips drawn a 300 m tile at a time, the far oaks and bushes a 240 m tile) every spot is a sixth to a third fewer calls, held to about 8%
   // over again, and the triangles, which rose up to 10% because a big tile partly in view draws all of its far tiles, are raised to 8% over where they had less room than
-  // that (spawn 357 and 1.88M, yard 1,028 and 1.86M, wood 1,112 and 3.41M, Back Lane's far view 884 and 2.61M; docs/decisions/performance.md has every spot).
+  // that (spawn 357 and 1.88M, yard 1,028 and 1.86M, wood 1,112 and 3.41M, Back Lane's far view 884 and 2.61M; the rest are below with their budgets).
   spawn: { calls: 390, triangles: 2.03e6 },
   yard: { calls: 1120, triangles: 2.02e6 },
   village: { calls: 1800, triangles: 2.45e6 },
@@ -36,7 +36,7 @@ export const BUDGETS = {
   viewHilltop: { calls: 930, triangles: 1.91e6 },
   viewMoorRidge: { calls: 1400, triangles: 2.54e6 },
   viewBackLane: { calls: 970, triangles: 2.83e6 },
-  river: { calls: 1120, triangles: 2.33e6 }, // the river's crossing, 6 m back on its north landing (#999): 1,369 calls and 2.15M triangles there, held to about 8% over
+  river: { calls: 1120, triangles: 2.33e6 }, // the river's crossing, 6 m back on its north landing (#999): 1,029 calls and 2.16M triangles there since #1076, held to about 8% over
   movers: { calls: 5880, triangles: 1.51e6 },
 };
 

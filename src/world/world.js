@@ -152,7 +152,7 @@ export class World {
     this.props = timed('world · props', () => buildProps(ctx));
     this.farDetail.hedgeSwaps = this.props.hedgeSwaps; // the hedges' and the sheep field wall's far strips swap in by distance (hedgeFar.js)
     this.farDetail.treeSwaps = this.props.treeSwaps; // and so do the oaks and bushes, every builder's (scatter.js, treeFar.js)
-    timed('world · far batches', () => this.farDetail.batchFar(layout.spawn.player)); // and every far one is drawn a 240 m tile at a time (farBatch.js, #1076)
+    timed('world · far batches', () => this.farDetail.batchFar(layout.spawn.player)); // and every far one is drawn a big tile at a time, 300 m for the strips and 240 m for the trees (farBatch.js, #1076)
 
     // A skin of ice on the track's puddles on a frosty day (puddleIce.js): wheels crack it and break it.
     this.puddleIceParams = { ...DEFAULT_PUDDLE_ICE_PARAMS };

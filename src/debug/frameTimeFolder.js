@@ -30,7 +30,7 @@ export function buildFrameTime(d) {
   show(f, 'Ground tiles', () => { const t = g.world.terrain.tileSet.stats(); return `${t.built} of ${t.tiles} (${Object.entries(t.bySteps).map(([s, n]) => `${n} at ${s} m`).join(', ')}), ${t.waiting} waiting, slowest build ${t.worstBuildMs.toFixed(1)} ms`; });
   // The ground's painting (world/groundPaint.js): the tiles painted at full size, those waiting, and the longest a frame has spent painting one.
   show(f, 'Ground painting', () => { const t = g.world.terrain.paintStats(); return `${t.painted} tiles painted, ${t.waiting} waiting, slowest frame ${t.worstFrameMs.toFixed(1)} ms (hand-over ${t.worstFinishMs.toFixed(1)} ms)`; });
-  // The far hedges, oaks and bushes a 240 m tile at a time (world/farBatch.js, #1076): how many big tiles are drawn, and the worst rebuild after a swap.
+  // The far hedges a 300 m tile at a time and the far oaks and bushes a 240 m one (world/farBatch.js, #1076): how many big tiles are drawn, and the worst rebuild after a swap.
   show(f, 'Far batches', () => { const b = g.world.farDetail.batchStats(); return `${b.drawn} of ${b.tiles} drawn, worst rebuild ${b.worstMs.toFixed(2)} ms`; });
   // The load (core/loadSteps.js, #1107): its slowest parts, which include the ground cover built behind the start screen, and where the 1 m grid was worked out.
   show(f, 'Slowest parts of the load', () => slowestStepsText());

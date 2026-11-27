@@ -130,7 +130,7 @@ export class FarDetail {
     this.centre = new THREE.Vector3();
     this.hedgeSwaps = []; // the swaps of the hedges' blocks and the wall's stones for far strips (hedgeFar.js), set by the world once the props are built
     this.treeSwaps = []; // the swap of every oak and bush for its far version (scatter.js, treeFar.js), set the same way
-    this.farBatches = []; // the far strips, oaks and bushes drawn a 240 m tile at a time (farBatch.js, #1076), made by `batchFar` once the swaps are set
+    this.farBatches = []; // the far strips drawn a 300 m tile at a time and the far oaks and bushes a 240 m one (farBatch.js, #1076), made by `batchFar` once the swaps are set
     this.batchSync = { ms: 0, worst: 0, rebuilt: 0 }; // the last sync's time, the worst since load, and how many big tiles it rebuilt (`perf`, the panel)
     this.merge = new StaticMerge(); // the still meshes of the vehicles, the barn and the farm animals, drawn as a few (and their shadows as one, once `drawShadowsWith` is called)
     this.nextLook = new WeakMap(); // root -> when it is next looked at (seconds on `elapsed`)
