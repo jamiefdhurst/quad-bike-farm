@@ -18,6 +18,7 @@ import { weatherSituation } from './briefing.js';
 import { voiceWobble } from './voiceWobble.js';
 import { voiceRoom } from './voiceRoom.js';
 import { SEASON_SITUATIONS } from './seasonLines.js';
+import { hotLine } from './heatLines.js';
 
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
@@ -670,12 +671,12 @@ export class CompanionVoice {
     else if (!e.isRunning && unit.quad.fuel.sediment > 0.9) this.say('waterBowl', { chance: 0.004 });
   }
 
-  /** An air-cooled quad running too hot and pinking, or a hot one that's been switched off ticking as it cools. */
+  /** A water-cooled engine too hot (revved hard, or the cooling at fault) or cut out from it, an air-cooled quad pinking, or a hot one that's been switched off ticking as it cools. */
   watchHeat(unit, listening) {
     const e = unit.engine;
     if (!listening) return;
     if (e.params.waterCooled && e.events.some((x) => x.type === 'overheated')) this.say('heatStalled', { urgent: true, chance: 1 });
-    else if (e.params.waterCooled && e.isRunning && e.hot > 0.3) this.say('heatHot', { chance: 0.03 });
+    else if (e.params.waterCooled && e.isRunning && e.hot > 0.3) this.say(hotLine(e), { chance: 0.03 });
     else if (e.pink > 0.4) this.say('heatPink', { chance: 0.03 });
     else if (!e.isRunning && e.events.some((x) => x.type === 'coolTick')) this.say('heatTicking', { chance: 0.08 });
   }

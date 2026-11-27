@@ -7,6 +7,7 @@ import { lampStates } from '../src/vehicle/dashState.js';
 import { pourStep, DEFAULT_COOLANT_BOTTLE_PARAMS } from '../src/items/coolantBottle.js';
 import { QUAD_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { tempGaugeFraction, WARM_AT, HOT_FROM } from '../src/vehicle/tempGauge.js';
+import { hotLine, AMY_HEAT_LINES, JESS_HEAT_LINES } from '../src/npc/heatLines.js';
 
 const P = { ...DEFAULT_ENGINE_PARAMS, waterCooled: true };
 const seeded = (seed) => () => {
@@ -375,5 +376,18 @@ describe('the coolant bottle', () => {
     expect(how).toBe('freed');
     expect(e.thermostat).toBe(0);
     expect(flushThermostat(0.1, 100, P)).toBe(0);
+  });
+});
+
+describe('what the girls say about a hot radiator (#860)', () => {
+  it('says it is the revving when the radiator is full and the thermostat free, and blames the cooling otherwise', () => {
+    expect(hotLine({ coolant: 1, thermostat: 0 })).toBe('heatRevved');
+    expect(hotLine({ coolant: 0.5, thermostat: 0 })).toBe('heatHot');
+    expect(hotLine({ coolant: 1, thermostat: 0.6 })).toBe('heatHot');
+  });
+
+  it('gives both girls the revved lines', () => {
+    expect(AMY_HEAT_LINES.heatRevved.lines.length).toBeGreaterThan(1);
+    expect(JESS_HEAT_LINES.heatRevved.length).toBeGreaterThan(1);
   });
 });
