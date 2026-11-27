@@ -27,8 +27,9 @@ describe('wear', () => {
     expect(hard.wear).toBeGreaterThan(idle.wear * 2);
     // Worked hard for long enough, it wears well into needing a service (it stops wearing once it stalls).
     // (seed 2: a hard-run engine stalls at some point past 0.8 wear, and which wear that is changes with the seed)
+    // (past `erraticFrom`: since #861 a hot engine revved free loses less power to the heat than pulling, so it wears a little faster and stalls a little sooner)
     const worn = running(1, 300, {}, 2).wear;
-    expect(worn).toBeGreaterThan(0.85);
+    expect(worn).toBeGreaterThan(idle.params.erraticFrom);
     expect(worn).toBeLessThanOrEqual(idle.params.wearMax);
   });
 

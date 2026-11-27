@@ -301,6 +301,9 @@ export const DEFAULT_ENGINE_PARAMS = {
   pinkRoughness: 0.3, // roughness at full pinking
   pinkPowerLoss: 0.25, // power lost at full pinking
   pinkRate: 14, // rattles a second at full pinking under load
+  pinkProne: 1, // 0..1 how prone this engine is to pinking, from its compression: 0 never rattles however hot it runs (it still loses power)
+  pinkRevShare: 0.5, // how much free revving counts towards pinking, as a share of pulling under load (idling counts for nothing)
+  pinkRevFrom: 0.15, // revs (0 idle, 1 full) up to which revving counts for nothing: a fast idle on the choke or a high idler doesn't pink
   steamFrom: 0.7, // running heat from which a wisp of steam shows
   steamCooking: 0.5, // how much steam a fully cooking engine gives (1 is as much as the orange's boil-over)
   steamWetFrom: 0.3, // metal heat (running heat or soak) from which rain steams off it: just idling doesn't
@@ -658,6 +661,9 @@ export const ENGINE_PARAM_RANGES = {
   pinkRoughness: [0, 1, 0.01],
   pinkPowerLoss: [0, 1, 0.01],
   pinkRate: [0, 40, 1],
+  pinkProne: [0, 1, 0.05],
+  pinkRevShare: [0, 1, 0.05],
+  pinkRevFrom: [0, 0.9, 0.05],
   steamFrom: [0, 1, 0.01],
   steamCooking: [0, 1, 0.01],
   steamWetFrom: [0, 1, 0.01],

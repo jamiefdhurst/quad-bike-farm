@@ -1,8 +1,8 @@
 // Heat. Pure logic, no Three.js.
 //
 // Apart from the warm-up (temperature, 0 cold to 1 warm), an engine can run on into being too hot. The
-// air-cooled ones get there idling for ages on a sunny day, or crawling in mud with the throttle open, and
-// start pinking and running rough; riding along at speed blows it away. The water-cooled one has a fan that
+// air-cooled ones get there worked hard standing still or crawling in mud, sooner in the sun, and pink and run rough
+// while they are made to work (not idling); riding along at speed blows it away. The water-cooled one has a fan that
 // cuts in and out and copes idling and riding, though not revved hard standing still (thermal.js). Both come from the engine's real temperatures: pinking
 // from the metal's °C, the steam and the soak from the 0..1 heat worked out from them. Separately, `soak` is how much heat the metal's holding after
 // work, whatever the airflow: switched off it ticks as it cools, and a hot carburettor percolates, so a
@@ -15,9 +15,24 @@ export function airflow(speed, p) {
   return clamp01(Math.abs(speed) / Math.max(0.1, p.airflowSpeed));
 }
 
-/** How badly it's pinking, 0..1, from the metal's °C: none below `pinkFromC`, fully `pinkSpanC` over it (an air-cooled engine only). */
-export function pinkLevel(metalC, p) {
+/** How hot the metal is for pinking, 0..1, from its °C: none below `pinkFromC`, fully `pinkSpanC` over it (an air-cooled engine only). */
+export function pinkHeat(metalC, p) {
   return clamp01((metalC - p.pinkFromC) / Math.max(1, p.pinkSpanC));
+}
+
+/** 0..1 how hard it's asked to work, for pinking: pulling under load counts fully, free revving for `pinkRevShare` of it, idling (and revs up to `pinkRevFrom`) for nothing. */
+export function pinkWork({ rpmNorm = 0, load = 0 }, p) {
+  const revs = clamp01((rpmNorm - p.pinkRevFrom) / Math.max(0.01, 1 - p.pinkRevFrom));
+  return clamp01(Math.max(clamp01(load), p.pinkRevShare * revs));
+}
+
+/**
+ * How badly it's pinking, 0..1: the mixture detonating while a hot engine is made to work, so the metal's heat times how hard it is
+ * working. A hot engine idling doesn't pink; opening the throttle on it does. The power loss and roughness of a hot engine follow this
+ * (an engine that won't pink still runs hot and weak); the rattles are this times the engine's `pinkProne`.
+ */
+export function pinkLevel(metalC, work, p) {
+  return pinkHeat(metalC, p) * clamp01(work);
 }
 
 /**
