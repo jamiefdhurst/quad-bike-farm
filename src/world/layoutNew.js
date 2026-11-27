@@ -1,5 +1,5 @@
 // The farm (docs/farm-plan.md), the one everybody plays since #692. It starts from the base numbers in layout.js (`RAW`) and replaces what the plan moves
-// (`REPLACED`) or has no use for (`REMOVED`); `NOT_MOVED_YET` is empty, with a test, so no piece reaches a player at the old numbers. Each of the plan's
+// (`REPLACED`); `NOT_MOVED_YET` is empty, with a test, so no piece reaches a player at the old numbers. Each of the plan's
 // pieces came in behind `?layout=2` first, one issue at a time (#681 onward), and docs/decisions/world.md says how each was decided.
 //
 // Positions here are written in the plan's own metres, as the map in docs/farm-plan.svg has them (x east, z south, from its north-west
@@ -370,8 +370,6 @@ const NORTH_HOLLOW_PLAN = { at: [300, 120], rx: 26, rz: 16, depth: 1.3 };
 /** Every place in today's layout still at today's numbers on the new farm, by key: none (#692). A test keeps it empty. */
 export const NOT_MOVED_YET = {};
 
-/** What today's layout had that the new farm has no use for: the grass field's limit and rectangle of farm (the fields are polygons now) and the water trough. */
-export const REMOVED = ['fieldHalf', 'farm', 'trough'];
 
 /** What in today's layout is a setting rather than a place, so it never moves. */
 export const SETTINGS = [
@@ -1778,6 +1776,5 @@ export function layoutNew(today, raw) {
     // The places a girl names where she is (npc/spotNames.js), where the new farm has them (#690): down the green lane, on the hill by the flask rock, just inside the wood's gate.
     namedSpots: { lane: { x: hill.lane.x, z: hill.stream.z - 85 }, hill: { x: hill.viewpoint.x, z: hill.viewpoint.z }, wood: { x: wood.woods.gate.x, z: wood.woods.gate.z - 12 } },
   };
-  for (const key of REMOVED) delete layout[key];
   return layout;
 }

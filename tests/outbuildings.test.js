@@ -69,10 +69,6 @@ describe('the buildings in the east fields', () => {
 });
 
 describe('where things start out east', () => {
-  const east = LAYOUT.spawn.away.filter((a) => a.x > LAYOUT.fieldHalf);
-
-
-
   it('uses a spot`s own jitter', () => {
     const spawn = { ...LAYOUT.spawn, awayChance: 1, away: [{ x: 0, z: 0, jitter: 0.1, where: 'here' }] };
     for (let seed = 1; seed < 20; seed++) {

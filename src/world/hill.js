@@ -24,8 +24,7 @@ export function createHill(layout) {
   const ford = stream.ford;
   /** Metres the water stands above its usual after rain (world/streamLevel.js sets it); the channel's cut and the bed don't change. */
   let rise = 0;
-  const farm = layout.farm ?? { minX: -layout.fieldHalf, maxX: layout.fieldHalf, minZ: -layout.fieldHalf, maxZ: layout.fieldHalf };
-  const top = lane.top ?? layout.fieldHalf; // where the lane starts: the grass field's south hedge, where the gate is (the new farm says its own)
+  const top = lane.top; // where the lane starts, at its gate
   // The new farm's fields are outlines, not rectangles: each keeps its bounding rectangle for the ground's weight and gets its edges once.
   for (const r of [pasture, hill.paddocks?.west?.rect, hill.paddocks?.east?.rect]) if (r?.points && !r.edges) r.edges = polygonEdges(r.points);
   const laneRect = { minX: lane.x - lane.hedgeOff, maxX: lane.x + lane.hedgeOff, minZ: top, maxZ: lane.toZ };
@@ -181,7 +180,6 @@ export function createHill(layout) {
    * and the two are blended over 30 m past those hedges, and over 30 m west of the pasture's west hedge, so there is no step (Back Lane's hairpin at its south-west corner is cut into the 40 m ground).
    */
   function weight(x, z, fade = 40) {
-    if (inRect(farm, x, z)) return 0;
     const near = weightFor(x, z, 40);
     if (fade === 40) return near;
     const far = weightFor(x, z, fade);

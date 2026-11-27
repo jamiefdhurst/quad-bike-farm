@@ -18,7 +18,7 @@ export function baseHeight(x, z) {
 
 import { floorBlend } from './barn.js';
 import { stripFrame, gravelStrip } from './layout.js';
-import { outsideRect, createFieldShape } from './fields.js';
+import { createFieldShape } from './fields.js';
 import { createHill } from './hill.js';
 import { hutShape } from './hut.js';
 import { createWoods } from './woods.js';
@@ -40,8 +40,7 @@ export const HILL_FADE_ON_LANDFORM = 160;
 const PONDS_EASE_TO = 2.5;
 
 export function createTerrainHeight(layout, track, { hillFade } = {}) {
-  const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth, fieldHalf } = layout;
-  const farm = layout.farm ?? { minX: -fieldHalf, maxX: fieldHalf, minZ: -fieldHalf, maxZ: fieldHalf };
+  const { yard, trackHalfWidth, trackDepth, puddleRadius, puddleDepth } = layout;
   const fieldShape = createFieldShape(layout);
   const hill = createHill(layout);
   const woods = createWoods(layout);
@@ -78,15 +77,12 @@ export function createTerrainHeight(layout, track, { hillFade } = {}) {
   function natural(x, z) {
     let h = lie(x, z);
 
-    // Land rises gently beyond the farm's hedges towards distant hills; through the south gate, the lane and the hill pasture have their own
-    // shape (world/hill.js), fading back into it beyond their hedges.
-    // North, through the north gate, the wood has its own (world/woods.js) in the same way, and the gravel pit's field (world/quarry.js) is kept flat for it.
+    // The green lane and the hill pasture have their own shape (world/hill.js), fading back into the lie beyond their hedges, and the wood its
+    // own (world/woods.js) in the same way. The gravel pit's is its own cut (quarry.groundAt, below).
     const fade = hillFade ?? (landform ? HILL_FADE_ON_LANDFORM : 40); // `hillFade` is for a test to compare with the 40 m one (#1172)
     const w = hill ? hill.weight(x, z, fade) : 0;
     const ww = woods ? woods.weight(x, z) : 0;
-    const qw = quarry ? quarry.weight(x, z) : 0;
-    // The new farm's landform (layout.landform) is already in `lie`, so it has no rise of its own beyond the hedges.
-    if (!landform) h += smoothstep(10, 300, outsideRect(farm, x, z)) * 22 * (0.6 + 0.4 * Math.sin(x * 0.01 + z * 0.013)) * (1 - Math.max(w, ww, qw));
+    // The land's lie (layout.landform) is already in `lie`, so there is no rise of its own beyond the hedges.
     if (w > 0) h += w * hill.profile(x, z);
     if (hill && hill.westCut) h -= hill.westCut(x, z, fade); // the stream on west of the pasture's hedge to Back Lane's ford (#686)
     if (ww > 0) h += ww * woods.profile(x, z);

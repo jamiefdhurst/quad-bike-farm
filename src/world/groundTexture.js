@@ -184,7 +184,7 @@ export function* paintGround(plan, c) {
     ctx.fillStyle = g;
     ctx.fillRect(px - r * s, pz - r * s, r * 2 * s, r * 2 * s);
   };
-  const { yard, gate, fieldHalf } = layout;
+  const { yard, gate } = layout;
   if (layout.farmstead?.slab) {
     paintYardConcrete(c, ctx, s, layout, hash01); // the new farm's yard is old concrete, not bare earth (#682, #817)
     paintHardcore(c, ctx, s, layout, hash01);
@@ -194,7 +194,7 @@ export function* paintGround(plan, c) {
     wear(yard.x, yard.z, yard.radius * 0.8, 'rgba(105,92,66,0.85)');
     wear(yard.x - 4, yard.z + 2, yard.radius * 0.45, 'rgba(92,80,58,0.7)');
   }
-  wear(gate.x, (gate.z ?? fieldHalf) - 3, 7, 'rgba(90,72,48,0.8)');
+  wear(gate.x, gate.z - 3, 7, 'rgba(90,72,48,0.8)');
   paintOutbuildings(c, plan, wear); // its own draws, leaving the rest of the ground as it was
   yield;
 

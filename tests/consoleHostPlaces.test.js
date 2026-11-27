@@ -78,15 +78,11 @@ describe('tp places for the field landmarks (#815)', () => {
 
 describe('tp me cattlegrid (#568)', () => {
   it('stands you eight metres west of the drive\'s grid on the new farm', () => {
-    const places = standIn({ road: { z: -20, grid: { x: 361.7, length: 3.6 } }, fieldHalf: 80 }).places();
+    const places = standIn({ road: { z: -20, grid: { x: 361.7, length: 3.6 } } }).places();
     expect(places.cattlegrid).toEqual({ x: 353.7, z: -20 });
   });
-  it('stands you eight metres west of today\'s grid in the grass field\'s gateway, so the scene works on both farms', () => {
-    const places = standIn({ road: { z: 2, grid: { length: 3.2 } }, fieldHalf: 80 }).places();
-    expect(places.cattlegrid).toEqual({ x: 72, z: 2 });
-  });
   it('has no such place on a layout with no grid', () => {
-    expect(standIn({ fieldHalf: 80 }).places().cattlegrid).toBeUndefined();
+    expect(standIn().places().cattlegrid).toBeUndefined();
   });
 });
 

@@ -38,10 +38,6 @@ const RAW = {
   // place's anchor (tools/frameBudget.mjs). Each move adds the spots for what it puts on the map.
   budgetSpots: {},
 
-  // The grass field (the track, the yard and the barn are in it) is bounded by hedges on this square.
-  fieldHalf: 80,
-  // The whole farm inside its outer hedges: the grass field and, to the east, two stubble fields either side of the farm road (world/fields.js).
-  farm: { minX: -80, maxX: 200, minZ: -80, maxZ: 80 },
   // The tarmac farm road: from just inside the grass field's east gateway, straight east along `z` to a round hardstanding (`pad`) at the far end.
   // `hedgeTo` is where the hedges either side of it stop, `verge` the grass between the tarmac and those hedges, `gaps` the open gateways in them
   // into the stubble fields (x of each, `gapWidth` wide), north side then south. The tarmac runs on across the hardstanding to a big double
@@ -295,8 +291,7 @@ const RAW = {
   // end, a curved tin roof on steel stanchions `bays` bays long, `eaves` m up to the eaves and `rise` m more to the top of the curve. Round
   // bales are stacked `layers` high in the east bays, leaving the west bay (`openBays`) clear to park in. The stone field shed is in the
   // barley field's far corner by the grass field, its doorway (`door`, `halfWidth` m either side of x) in its south wall. The muck heap
-  // is in the wheat field by its first gateway, a long heap `halfX` by `halfZ` and `height` high, and the water trough by the barley
-  // field's second gateway, along the hedge.
+  // is in the wheat field by its first gateway, a long heap `halfX` by `halfZ` and `height` high.
   dutchBarn: { x: 186, z: -14, halfX: 7.5, halfZ: 4.5, bays: 3, eaves: 5.4, rise: 1.6, overhang: 0.4, openBays: 1, layers: 3 },
   fieldShed: { x: 89, z: -73, halfX: 3.2, halfZ: 2.2, wall: 0.5, wallHeight: 2.3, ridge: 3.5, door: { halfWidth: 0.9, height: 1.9 } },
   // The hay patch (world/haymaking.js): a rectangle of long grass in the grass field's south-east corner, past the Home Loop's far side, level and dry, that the hay job mows, bales and clears.
@@ -306,7 +301,6 @@ const RAW = {
   // The harrow field (world/harrowing.js): a rectangle of the grass field inside the Home Loop's east side, level and clear of the track, the bogs, the jump's run and the drag strip, with a few molehills in it, that the harrowing job drags the chain harrows over.
   harrowField: { minX: 26, maxX: 50, minZ: 8, maxZ: 24 },
   muckHeap: { x: 118, z: 15.2, halfX: 3.6, halfZ: 2.3, height: 1.5 },
-  trough: { x: 146.8, z: -5.5, length: 2.4, width: 0.65, height: 0.6 },
 
   // The barn (world/barn.js): a hollow shed with its big doors open on the +x side, facing the yard. halfX and halfZ are the outside
   // half-sizes, wall the thickness, wallHeight the eaves and ridge the top of the roof along its length (x). The door is centred on z.

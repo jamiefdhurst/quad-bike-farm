@@ -35,11 +35,7 @@ export function outsideRect(r, x, z) {
  */
 export function createFieldShape(layout) {
   const sf = layout.stubbleFields;
-  const road = layout.road;
-  const F = layout.fieldHalf;
-  if (!sf || !road) return () => ({ lift: 0, soak: 0 });
-  const roadEdge = road.z + road.halfWidth + road.verge;
-  const farEdge = layout.farm?.maxZ ?? F;
+  if (!sf || !layout.road) return () => ({ lift: 0, soak: 0 });
   const hollows = Object.values(sf).map((f) => f.hollow).filter(Boolean);
   return function shapeAt(x, z) {
     let lift = 0;
@@ -51,26 +47,24 @@ export function createFieldShape(layout) {
         soak = Math.max(soak, 1 - smoothstep(0.3, 1, r));
       }
     }
-    if (sf.south?.rise && x > F && z > roadEdge) lift += sf.south.rise * smoothstep(roadEdge + 3, farEdge, z) * smoothstep(F, F + 25, x);
     return { lift, soak };
   };
 }
 
 export function createFields(layout) {
-  const F = layout.fieldHalf;
-  // The farm's outer boundary: a polygon if the layout gives one (`outline`), whose bounding box is `farm` for what wants a box.
-  const outline = layout.outline ? clockwise(layout.outline) : null;
-  const farm = outline ? polygonBounds(outline) : layout.farm ?? { minX: -F, maxX: F, minZ: -F, maxZ: F };
+  // The farm's outer boundary, a polygon, whose bounding box is `farm` for what wants a box.
+  const outline = clockwise(layout.outline);
+  const farm = polygonBounds(outline);
   const road = layout.road;
   const hill = createHill(layout);
   const woods = createWoods(layout);
   const quarry = createQuarry(layout);
   const built = createOutbuildings(layout);
   const brook = createBrook(layout);
-  const plan = fieldPlan(layout, { hill, woods, quarry, brook });
+  const plan = fieldPlan(layout);
   const { gateways, gates } = plan;
   const roads = roadNetwork(layout);
-  const { polygons, areas, kinds, hedges, areaOf, inGap, hedgeDistance, hedgedAt, hedgeAhead, route, nextWaypoint, inFarm, clampToArea, outsideFarm } = createFieldMap(plan, outline ?? farm, { trackAt: roads.trackAt });
+  const { polygons, areas, kinds, hedges, areaOf, inGap, hedgeDistance, hedgedAt, hedgeAhead, route, nextWaypoint, inFarm, clampToArea, outsideFarm } = createFieldMap(plan, outline, { trackAt: roads.trackAt });
   const grass = areas.grass ?? farm;
 
   /**

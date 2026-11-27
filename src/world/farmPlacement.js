@@ -152,7 +152,7 @@ export function farmPlacements(layout, { fields = createFields(layout), roads = 
   }
 
   // The gates (props.js): each fills its own gateway, solid while it is shut.
-  if (layout.gate) add(box('gate', `the ${layout.gate.side ?? ''} field gate`.replace('  ', ' '), layout.gate.x, layout.gate.z ?? layout.fieldHalf, layout.gate.width / 2 + 0.2, 0.2, 0, !layout.gate.open, { gate: true }));
+  if (layout.gate) add(box('gate', `the ${layout.gate.side ?? ''} field gate`.replace('  ', ' '), layout.gate.x, layout.gate.z, layout.gate.width / 2 + 0.2, 0.2, 0, !layout.gate.open, { gate: true }));
   for (const g of layout.quarry?.gates ?? []) {
     add(box('gate', `the pit's ${g.open ? 'farm' : 'lane'} gate`, g.x, g.z, g.width / 2, 0.2, Math.atan2(-g.inward[0], -g.inward[1]), !g.open, { gate: true })); // across the fence, square to the way in
   }
