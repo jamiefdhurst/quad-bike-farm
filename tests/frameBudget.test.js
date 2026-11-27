@@ -44,8 +44,8 @@ describe('the frame budget', () => {
     expect(check(m).missing).toEqual(['village']);
   });
 
-  it('keeps spawn at the budget it was given once the still things\' shadows were merged (#1041): about 8% over 494 calls, and 1.88M triangles from #692', () => {
-    expect(BUDGETS.spawn).toEqual({ calls: 530, triangles: 1.88e6 });
+  it('keeps spawn at the budget it was given once the far strips, oaks and bushes were drawn in big tiles (#1076): about 8% over 355 calls and 1.87M triangles', () => {
+    expect(BUDGETS.spawn).toEqual({ calls: 390, triangles: 2.03e6 });
   });
 
   it('has a budget for what is left out of the spots, which is not a spot to stand at (#597)', () => {
