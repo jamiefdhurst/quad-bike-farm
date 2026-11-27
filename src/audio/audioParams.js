@@ -192,6 +192,9 @@ export const DEFAULT_AUDIO_PARAMS = {
   pulseFireJitter: 0, // each firing up to this share of a period late at random, as the mixture burns unevenly (a carb more than injection)
   pulseStrengthJitter: 0, // each firing up to this much stronger or weaker at random (0.3 is 30%)
   pulseModel: true, // firings from the bank's bare pulses under its own resonances (no rev EQ), each burst shortened to fit the gap once firings meet, so the pitch rises at the top
+  pulseBurstFollow: 0.5, // how much of that shortening a firing takes (1 all of it, 0.5 half of it in pitch, as Jamie picked by ear: all of it sounded artificial)
+  pulseModelEq: 0.5, // share of the rev EQ (pulseLowCut, pulseMidBoost) put on the model's firings as well (0 none; half keeps the top from going dark and heavy)
+  pulseRateJitter: 0.03, // once shortened, each firing's speed varied up to this much at random (3%), so the top isn't machine-even
   recStarterVolume: 0.9,
   recShutdownVolume: 0.9,
   // A turbocharger (engineWorklet.js turboSample): off unless turboVolume is above 0 (the 200TDi).
@@ -306,6 +309,9 @@ export const AUDIO_PARAM_RANGES = {
   pulseCylTime: [0, 0.5, 0.01],
   pulseFireJitter: [0, 0.3, 0.01],
   pulseStrengthJitter: [0, 1, 0.01],
+  pulseBurstFollow: [0, 1, 0.05],
+  pulseRateJitter: [0, 0.1, 0.005],
+  pulseModelEq: [0, 1, 0.05],
   recBank: ['engine-bank', 'engine-bank-2t', 'engine-bank-50', 'engine-bank-tractor', 'engine-bank-moto', 'engine-bank-atc', 'engine-bank-plover', 'engine-bank-utv', 'engine-bank-green', 'engine-bank-yellow', 'engine-bank-tor', 'engine-bank-tdi', 'engine-bank-fiesta', 'engine-bank-corsa', 'engine-bank-309'],
   recIdleSource: ['quad', 'rev', 'third'],
   recVolume: [0, 3, 0.01],

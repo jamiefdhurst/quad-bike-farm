@@ -15,7 +15,8 @@ function loadWorklet() {
   return sandbox;
 }
 
-const P = { ...DEFAULT_AUDIO_PARAMS, recIdleSource: 'quad', pulseSplit: 1, pulseSteady: 0, pulseModel: true };
+// The rule as the issue gives it, all of the shortening and nothing varied; the game's defaults take part of it (tested below).
+const P = { ...DEFAULT_AUDIO_PARAMS, recIdleSource: 'quad', pulseSplit: 1, pulseSteady: 0, pulseModel: true, pulseBurstFollow: 1, pulseRateJitter: 0, pulseModelEq: 0 };
 
 // An idle of 40 back-to-back firings, 60 ms each, over noise (seeded, so the test is the same every run).
 function noise(n, seed = 7) {
@@ -79,6 +80,19 @@ describe('the pulse model', () => {
     // 10 ms and 5 ms apart: the burst is shortened to fit the gap.
     expect(rateAt(0.01)).toBeCloseTo(2, 6);
     expect(rateAt(0.005)).toBeCloseTo(4, 6);
+    // As the game plays it (Jamie's pick by ear): half the shortening in pitch, each firing within 3% of that, none of it below.
+    const game = { ...P, pulseBurstFollow: DEFAULT_AUDIO_PARAMS.pulseBurstFollow, pulseRateJitter: DEFAULT_AUDIO_PARAMS.pulseRateJitter };
+    expect(game.pulseBurstFollow).toBe(0.5);
+    const rates = [];
+    for (let k = 0; k < 50; k++) {
+      rec.trigger({ type: 'fire', strength: 1, period: 0.005 }, game, 24000, 0);
+      rates.push(rec.voices[rec.voices.length - 1].rate);
+    }
+    expect(Math.min(...rates)).toBeGreaterThanOrEqual(2 * 0.97 - 1e-9);
+    expect(Math.max(...rates)).toBeLessThanOrEqual(2 * 1.03 + 1e-9);
+    expect(Math.max(...rates) - Math.min(...rates)).toBeGreaterThan(0.02);
+    rec.trigger({ type: 'fire', strength: 1, period: 0.04 }, game, 3000, 0);
+    expect(rec.voices[rec.voices.length - 1].rate).toBe(1);
     // Firings from the model are summed apart, for the resonances to go back on, and not through the rev EQ.
     const v = rec.voices[rec.voices.length - 1];
     expect(v.bare).toBe(true);
@@ -155,6 +169,11 @@ describe('the pulse model', () => {
     }
     expect(energy).toBeGreaterThan(0);
     expect(moved / energy).toBeLessThan(1e-12);
+    // With pulseModelEq (the game's half) that share of the rev EQ does reach them.
+    const halfEq = run({ pulseLowCut: 30, pulseMidBoost: 20, pulseModelEq: 0.5 });
+    let eqMoved = 0;
+    for (let i = 0; i < plain.length; i++) eqMoved += (halfEq[i] - plain[i]) ** 2;
+    expect(eqMoved / energy).toBeGreaterThan(0.01);
     // And it does go through the peaks: without them the same click comes out otherwise.
     const none = run({ pulseLowCut: 0, pulseMidBoost: 0 }, []);
     let diff = 0;

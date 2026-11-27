@@ -239,7 +239,11 @@ class RecordedEngine {
   /** As pick, from a given list of grains (sorted here, so pass a copy if the order matters). */
   pickFrom(pool, rpm) {
     if (!pool.length) return null;
-    pool.sort((a, b) => Math.abs(Math.log(a.rpm / rpm)) - Math.abs(Math.log(b.rpm / rpm)));
+    // Each grain's distance worked out once, not on every comparison (the same numbers, and the sort is stable, so the same order): this
+    // sort was a quarter of the engine sound's time.
+    const keyed = pool.map((g) => ({ g, d: Math.abs(Math.log(g.rpm / rpm)) }));
+    keyed.sort((a, b) => a.d - b.d);
+    for (let i = 0; i < pool.length; i++) pool[i] = keyed[i].g;
     const near = pool.slice(0, 8).filter((g) => g !== this.last);
     const g = near[Math.floor(Math.random() * near.length)] ?? pool[0];
     this.last = g;
@@ -347,7 +351,10 @@ class RecordedEngine {
     // The burst fits the gap (the pulse model): once the gap to the next firing is shorter than a firing's main burst, the firing
     // plays just fast enough for its burst to fit, as a real exhaust pulse shortens with the revs. Below that it plays as recorded.
     const bare = !!model && g.start >= model.from && g.start + g.len + g.tail + 2 <= model.from + model.data.length;
-    const fit = bare ? Math.max(1, (model.burst * sampleRate) / cycle) : 1;
+    // pulseBurstFollow takes part of that shortening (1 all of it); pulseRateJitter varies each firing's speed a little at random once
+    // it is shortened, as a real engine never fires two alike. The random draw only where it is set, so 0 plays exactly as before.
+    let fit = bare ? Math.pow(Math.max(1, (model.burst * sampleRate) / cycle), p.pulseBurstFollow ?? 1) : 1;
+    if (fit > 1 && p.pulseRateJitter > 0) fit *= 1 + (Math.random() * 2 - 1) * p.pulseRateJitter * Math.min(1, (fit - 1) * 4);
     const rate = (natural <= 1 ? Math.max(p.pulseSlowest ?? 0.45, Math.pow(natural, p.pulseStretch)) : Math.pow(natural, p.pulsePitchFollow)) * fit;
     const xfade = Math.max(0.0015 * sampleRate, Math.min(0.008 * sampleRate, cycle * p.pulseCrossfade));
     // Length in recorded samples: the whole grain, or as much as fits before the next firing.
@@ -1184,6 +1191,13 @@ class EngineProcessor extends AudioWorkletProcessor {
         const rev = smoothstep(p.pulseRefRpm, p.pulseRefRpm + p.pulseEqRange, this.rpm) * (1 - (this.recorded?.pulseRevBlend(p, this.rpm) ?? 0));
         this.pulseLow.set('lowshelf', 160, 0.7, sr, -p.pulseLowCut * rev);
         this.pulseMid.set('peaking', p.pulseMidFreq, p.pulseMidQ, sr, p.pulseMidBoost * rev);
+        // pulseModelEq: that share of the same EQ on the model's firings too (0 leaves them with only their own resonances).
+        if (p.pulseModelEq > 0) {
+          this.modelLow ??= new Biquad();
+          this.modelMid ??= new Biquad();
+          this.modelLow.set('lowshelf', 160, 0.7, sr, -p.pulseLowCut * rev * p.pulseModelEq);
+          this.modelMid.set('peaking', p.pulseMidFreq, p.pulseMidQ, sr, p.pulseMidBoost * rev * p.pulseModelEq);
+        }
         // A recording made on the machine can carry its body's boom; take it out at every rpm.
         if (p.pulseBoomCut > 0) this.pulseBoom.set('peaking', p.pulseBoomFreq, 1.4, sr, -p.pulseBoomCut);
         // A big-bore exhaust's drone: a boost low down, fullest at idle and easing to half of it as the revs rise.
@@ -1228,7 +1242,9 @@ class EngineProcessor extends AudioWorkletProcessor {
         // As revs rise the firings merge: less of the deep thump, more mid-range rasp. Not on firings from the model's bare pulses,
         // which get the recording's own resonances back instead, fixed whatever the revs, and shorten their bursts to rise in pitch.
         x = this.pulseMid.run(this.pulseLow.run(x));
-        x = (x + (resonances ? runChain(resonances, this.recorded.bareOut) : this.recorded.bareOut)) * drive;
+        let bare = resonances ? runChain(resonances, this.recorded.bareOut) : this.recorded.bareOut;
+        if (p.pulseModelEq > 0 && this.modelLow) bare = this.modelMid.run(this.modelLow.run(bare));
+        x = (x + bare) * drive;
         if (p.pulseBoomCut > 0) x = this.pulseBoom.run(x);
         if (p.pulseDrone > 0) x = this.pulseDrone.run(x);
       }
