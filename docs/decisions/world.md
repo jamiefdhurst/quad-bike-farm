@@ -1957,3 +1957,11 @@ A house's garden hedges are worked out in one place now, `gardenHedges` in `vill
 - **Saves.** A saved lawn of the old shape is forgotten on load (`MowGrid.restore` checks the grid's size), so old saves load with the lawn uncut. Not breaking.
 - `tests/mowing.test.js` holds a whole lawn to 90 to 600 s again; it failed at 1,555 s with the old rectangle.
 
+
+## The sprayer where the hose reaches (#1109)
+
+- **Moved to plan (538, 326)**, yaw 0.3 as before, in `FARMSTEAD_PLAN.trailers`: on the yard's concrete north of the drive, north-east of the petrol tank and the diesel bowser. The hose's reel stays where it is at the barn's east end (plan 529.1, 334.3), 12.2 m off: 12.8 m inside its 25 m `reach`, and 11.8 m inside the test's reach less a metre. At (560, 380) it was 55 m off, so the hose could never fill it.
+- **The sprayer moved, not the hose**: the reel belongs with the tanks and the barn's tap, and the other trailers stay where #816 put them. The spot is 19 m off the drive's line (z 345), so `farmsteadVisits.test.js` still holds, and clear of every kept-clear place, the quads' spawns (all south of the drive), the floodlight pole (10 m) and the garden wall.
+- **West of the north stone track's mouth** (`STONE_TRACKS_PLAN.north` starts at plan (546, 320)): the first spot, (545, 331), stood on the straight line from the drive to it, which no test covers; the recheck found it.
+- **The plan's table puts the sprayer in the machinery shed** (#617, plan 428 to 442 by 325 to 373, about 90 m from the reel): that item has to bring a tap or the hose with it, or the restored test fails.
+- **The test is back** in `tests/spraying.test.js`, "puts the sprayer where the hose reaches (with a metre to spare)", as #692 took it out.

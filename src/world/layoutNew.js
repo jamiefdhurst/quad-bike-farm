@@ -1092,7 +1092,9 @@ export const FARMSTEAD_PLAN = {
   },
   harrows: { at: [548, 372], yaw: -Math.PI / 2 },
   // The trailers, off the visitors' lane (the drive's line, z 345, and the loop south of the barn's doors to z 353) and clear of the kept-clear places and the spawns.
-  trailers: { trailer: { at: [572, 398], yaw: 2.7 }, tipTrailer: { at: [588, 394], yaw: 0.2 }, sprayer: { at: [560, 380], yaw: 0.3 } }, // (the tipping trailer stood at (562, 366), in the lorry's way to the grain store: #816)
+  trailers: { trailer: { at: [572, 398], yaw: 2.7 }, tipTrailer: { at: [588, 394], yaw: 0.2 }, sprayer: { at: [538, 326], yaw: 0.3 } }, // (the tipping trailer stood at (562, 366), in the lorry's way to the grain store: #816)
+  // The sprayer stands north of the drive, 12 m from the hose's reel at the barn's east end, so the hose reaches it to fill, and west of the north stone track's
+  // mouth at (546, 320), out of the way to it (#1109; at (560, 380) it was 55 m off). The plan's machinery shed (#617) has to bring a tap or the hose if it takes it.
   silage: [700, 545], // the wrapped silage's stack's north-west corner, out in Low Ley (#691), 60 m in from its gateway from Brook Meadow and clear of the river
   jerryCan: [508, 316.5], // the can that stood by the silage, behind the barn's back wall (z 319), the orchard's fence at 310
   animals: { pen: [486, 270, 492.5, 277], sty: [500, 270, 504.5, 275], bin: [496.5, 266, 0], bucket: [498, 266.4, 0.4] }, // in the orchard
