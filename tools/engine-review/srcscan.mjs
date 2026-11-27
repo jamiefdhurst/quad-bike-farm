@@ -1,10 +1,10 @@
 // Scans a bank's idle grains in the source recording for a narrow tonal peak (2 to 6 kHz), grain by grain.
-//   node tools/engine-review/srcscan.mjs <bank name> [kind]
+//   node tools/engine-review/srcscan.mjs <bank name, or a bank's .json path> [kind]   (a path for a trial bank in .scratch/, #857)
 import { readFileSync } from 'node:fs';
 import { bankFor } from './render.mjs';
 const SR = 48000;
 const [name, kind = 'idle'] = process.argv.slice(2);
-const b = bankFor(`public/audio/${name}.json`);
+const b = bankFor(name.endsWith('.json') ? name : `public/audio/${name}.json`);
 const N = 2048;
 function prominence(off) {
   const re = new Float64Array(N), im = new Float64Array(N);

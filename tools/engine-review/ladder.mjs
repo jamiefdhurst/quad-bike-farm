@@ -94,9 +94,10 @@ function newProcessor(bankPath, seed) {
  * One clip. `script(t, engine)` returns the frame's controls (throttle, starter, driveLoad, gearRpm, gearLock, overrunRpm, gear)
  * or null to end. The engine is started warm and silently first unless `recordStart` (the start clip records it).
  */
-export function renderClip(spec, { roughness, recordStart = false, duration, script, onProc, bankMsg, seed = 7 }) {
+export function renderClip(spec, { roughness, recordStart = false, duration, script, onProc, bankMsg, bankPath, seed = 7 }) {
   const params = { ...DEFAULT_AUDIO_PARAMS, ...spec.audio };
-  const bankPath = `public/audio/${params.recBank}.json`;
+  // `bankPath` plays a bank from anywhere (a trial bank in .scratch/, #857) in place of the vehicle's own.
+  bankPath ??= `public/audio/${params.recBank}.json`;
   const { proc, sandbox } = newProcessor(bankPath, seed);
   // Another bank in place of the shipped one (the model's, with its resonances divided out).
   if (bankMsg) proc.onMessage({ bank: bankMsg });
