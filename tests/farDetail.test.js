@@ -645,10 +645,10 @@ describe('the lane\'s approach to the village, a set piece of its own (#1087)', 
     // The street's bounds start at the street now, not 140 m up the lane at the small farm's yard (plan z 440).
     expect(streetBox.minZ).toBeGreaterThan(fromPlan([0, 540])[1]);
     expect(far.box(approach).minZ).toBeLessThan(fromPlan([0, 445])[1]);
-    // At the budget spot, 47 m short of the yard, both are their far versions.
+    // At the budget spot, by the small farm's track, the approach is full and the street its far version (both were full before).
     const spot = LAYOUT.budgetSpots.laneApproach;
     far.update(spot, 1, true, true);
-    expect([village.visible, village.userData.farVersion.visible]).toEqual([false, true]);
+    expect([approach.visible, village.visible, village.userData.farVersion.visible]).toEqual([true, false, true]);
     // Up the lane past the small farm and the houses, the approach comes in full and the street holds off until it is within fullDistance.
     for (let z = 395; z <= 600; z += 5) {
       const at = onLane(z);
