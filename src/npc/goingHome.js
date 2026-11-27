@@ -1,5 +1,5 @@
 // Going home (#100): calling it a day at the wall calendar sends the girls home before the recap. Each takes her own car off the pad by the Dutch
-// barn, out through the big gate and away down the public lane; a girl you gave a lift that morning (her car isn't here) goes and sits in
+// barn, down the drive over the cattle grid and away down the public lane (or round Back Lane, or onto the A-road); a girl you gave a lift that morning (her car isn't here) goes and sits in
 // your car to wait for you instead. Pure: the game says where each girl is and acts on the events; the driving is HerDrive's `park` route.
 // Jess's speed on the way out is her own in carGo.js (she gives it everything), and Amy tuts at it. Tested in tests/goingHome.test.js.
 
@@ -8,7 +8,6 @@ import { laneDeparture, aRoadOut, junctionSOf } from '../world/laneRoutes.js';
 
 export const DEFAULT_GOING_HOME_PARAMS = {
   giveUpAfter: 360, // seconds before a girl who still hasn't got away is counted gone anyway (stuck, or a very long walk to the pad)
-  gateX: 200.5, // metres: the big gate in the east hedge (layout.road.gate), opened for them
   laneZ: 95, // how far down the public lane (z) her route runs: past this she is gone
   tutAfter: 1.5, // seconds after Jess sets off that Amy tuts, if Amy is still there to hear it
   backLaneAmy: 0.15, // 0..1 the chance Amy drives home round Back Lane rather than down the lane, where the farm has one (the new farm)
@@ -27,70 +26,58 @@ export const GOING_HOME_PARAM_RANGES = {
   aRoadJess: [0, 1, 0.05],
   aRoadMetres: [10, 80, 5],
   giveUpAfter: [60, 900, 10],
-  gateX: [190, 210, 0.5],
   laneZ: [20, 200, 5],
   tutAfter: [0, 10, 0.5],
 };
 
 /**
  * Her route out, for a car turned to face the road (the row is nosed in to the Dutch barn with no room to turn, so the game swings it round
- * to the south-east before she gets in): on to the road, along it to the big gate, through it and away down the lane. The last point is `laneZ` down it, where
+ * to the south-east before she gets in): on to the drive, along it over the cattle grid and away down the lane. The last point is `laneZ` down it, where
  * she is gone. `slot` is where her car is parked ({ x, z }).
  */
 export function leaveRoute(slot, layout, p = DEFAULT_GOING_HOME_PARAMS, via = 'lane') {
   const lane = layout.publicLane;
   const roadZ = layout.road.z;
   const gone = goneBeyond(layout, p);
-  if (layout.road.grid.x !== undefined) {
-    // The drive (#568): along it, over the cattle grid (no gate to open) and out onto the lane.
-    const over = layout.road.grid.x;
-    if (via === 'backLane' && backLaneOf(layout)) {
-      // Or the other way: out of the drive, north up the lane keeping left, then in at Back Lane's north end and along it.
-      const lead = backLaneOf(layout).pointsAlong('backLane', { step: 14, from: 0, to: p.backLaneMetres });
-      return [
-        { x: slot.x + 3.5, z: roadZ + 1.5 },
-        { x: over - 6, z: roadZ + 1.5 },
-        { x: over + 6, z: roadZ + 1.5 },
-        { x: lane.x - 5, z: roadZ + 1.5 },
-        { x: lane.x - 1.3, z: roadZ - 6 },
-        { x: lane.x - 1.3, z: lead[0].z + 24 },
-        ...lead.map((q) => ({ x: q.x, z: q.z })),
-      ];
-    }
-    if (via === 'aRoad' && aRoadOf(layout)) {
-      // Or north up the lane, round its bend to the A-road and out onto it (#687): the route ends where the A-road leaves the map.
-      return [
-        { x: slot.x + 3.5, z: roadZ + 1.5 },
-        { x: over - 6, z: roadZ + 1.5 },
-        { x: over + 6, z: roadZ + 1.5 },
-        { x: lane.x - 5, z: roadZ + 1.5 },
-        { x: lane.x - 1.3, z: roadZ - 6 },
-        ...aRoadRoute(layout, roadZ).map(({ x, z }) => ({ x, z })),
-      ];
-    }
+  // The drive (#568): along it, over the cattle grid (no gate to open) and out onto the lane.
+  const over = layout.road.grid.x;
+  if (via === 'backLane' && backLaneOf(layout)) {
+    // Or the other way: out of the drive, north up the lane keeping left, then in at Back Lane's north end and along it.
+    const lead = backLaneOf(layout).pointsAlong('backLane', { step: 14, from: 0, to: p.backLaneMetres });
     return [
       { x: slot.x + 3.5, z: roadZ + 1.5 },
       { x: over - 6, z: roadZ + 1.5 },
       { x: over + 6, z: roadZ + 1.5 },
       { x: lane.x - 5, z: roadZ + 1.5 },
-      { x: lane.x - 1.3, z: roadZ + 4.5 },
-      { x: lane.x, z: roadZ + 10 },
-      { x: lane.x, z: gone.z },
+      { x: lane.x - 1.3, z: roadZ - 6 },
+      { x: lane.x - 1.3, z: lead[0].z + 24 },
+      ...lead.map((q) => ({ x: q.x, z: q.z })),
+    ];
+  }
+  if (via === 'aRoad' && aRoadOf(layout)) {
+    // Or north up the lane, round its bend to the A-road and out onto it (#687): the route ends where the A-road leaves the map.
+    return [
+      { x: slot.x + 3.5, z: roadZ + 1.5 },
+      { x: over - 6, z: roadZ + 1.5 },
+      { x: over + 6, z: roadZ + 1.5 },
+      { x: lane.x - 5, z: roadZ + 1.5 },
+      { x: lane.x - 1.3, z: roadZ - 6 },
+      ...aRoadRoute(layout, roadZ).map(({ x, z }) => ({ x, z })),
     ];
   }
   return [
     { x: slot.x + 3.5, z: roadZ + 1.5 },
-    { x: p.gateX - 2.5, z: roadZ + 1.5 },
-    { x: p.gateX + 1.5, z: roadZ + 1.5 },
+    { x: over - 6, z: roadZ + 1.5 },
+    { x: over + 6, z: roadZ + 1.5 },
+    { x: lane.x - 5, z: roadZ + 1.5 },
     { x: lane.x - 1.3, z: roadZ + 4.5 },
     { x: lane.x, z: roadZ + 10 },
-    { x: lane.x, z: p.laneZ },
+    { x: lane.x, z: gone.z },
   ];
 }
 
 /**
- * Where a girl is counted gone: past the big gate and `laneZ` down the lane. On the new farm's drive there is no gate, so it is past the drive's mouth
- * and as far down the lane from it as today's is from the farm road.
+ * Where a girl is counted gone: past the drive's mouth and `laneZ` less 2 m down the lane from it, or at the end of her way along Back Lane or the A-road.
  */
 export function goneBeyond(layout, p = DEFAULT_GOING_HOME_PARAMS, via = 'lane') {
   if (via === 'aRoad' && aRoadOf(layout)) {
@@ -101,9 +88,7 @@ export function goneBeyond(layout, p = DEFAULT_GOING_HOME_PARAMS, via = 'lane') 
     const lead = backLaneOf(layout).pointsAlong('backLane', { step: 14, from: 0, to: p.backLaneMetres });
     return { x: lead[lead.length - 1].x, z: lead[lead.length - 1].z, backLane: true };
   }
-  const road = layout.road;
-  if (road.grid.x === undefined) return { x: p.gateX, z: p.laneZ };
-  return { x: layout.publicLane.x - 5, z: road.z + (p.laneZ - 2) };
+  return { x: layout.publicLane.x - 5, z: layout.road.z + (p.laneZ - 2) };
 }
 
 /** Whether a car at `position` is past where its girl is counted gone (`goneBeyond`, with ten metres' give on the way down the lane). */

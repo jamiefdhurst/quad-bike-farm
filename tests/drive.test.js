@@ -186,7 +186,6 @@ describe('the girls\' cars and the visitors on the drive', () => {
 
   it('plans a visit that drives in over the grid, goes to the barn and comes back out, with no gate step', () => {
     const places = visitPlaces(two);
-    expect(places.open).toBe(true);
     for (const from of [1, -1]) {
       const steps = planVisit({ places, from, to: from, does: 'parcel', leaveOpen: false, farmSpeed: 6 });
       expect(steps.filter((s) => s.type === 'gate')).toEqual([]);
