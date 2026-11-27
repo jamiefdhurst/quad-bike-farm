@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Scatter } from '../src/world/scatter.js';
+import { FarInstances } from '../src/world/farBatch.js';
 import { farBush, thinClumps, FAR_CLUMP_KEEP } from '../src/world/treeFar.js';
 
 // Every builder's oaks and bushes scattered once, with their far versions beyond treeFullDistance (#837), on the farm's real models.
@@ -101,6 +102,31 @@ describe('Scatter', () => {
     expect(inTile(far, 200).length).toBe(5); // oak A's bark and leaves, oak B's, and the bush
     swap.update({ x: 190, z: 0 }, 70, true);
     expect(inTile(near, 200).every((m) => m.visible) && inTile(far, 200).every((m) => !m.visible)).toBe(true);
+  });
+
+  it('draws the far oaks and bushes as one InstancedMesh a big tile a material, holding exactly the instances of its far 60 m tiles (#1076)', () => {
+    const scatter = new Scatter();
+    scatter.oaks(models, [[at(10, 10), at(70, 10), at(130, 10), at(340, 10)], [at(75, 30)]]);
+    scatter.bushes(models, [at(15, 12), at(135, 12)]);
+    const scene = new THREE.Scene();
+    const swap = scatter.build(scene);
+    const far = [...scene.getObjectByName('treesFar').children];
+    const before = new Map(far.map((m) => [m, Array.from({ length: m.count }, (_, i) => { const x = new THREE.Matrix4(); m.getMatrixAt(i, x); return x.elements.map((v) => v.toFixed(4)).join(' '); })]));
+    const batched = new FarInstances([swap]);
+    expect(scene.getObjectByName('treesFar').children.filter((m) => far.includes(m))).toEqual([]); // the 60 m meshes are no longer drawn
+    const big = (x) => batched.batches.filter((b) => b.ranges.some((r) => r.mesh.userData.tile.minX >= x && r.mesh.userData.tile.minX < x + 240));
+    expect(new Set(big(0).map((b) => b.mesh.material)).size).toBe(big(0).length); // one batch a material in the first big tile (oak A's, oak B's and the bush's)
+    const drawn = (b) => Array.from({ length: b.mesh.count }, (_, i) => { const x = new THREE.Matrix4(); b.mesh.getMatrixAt(i, x); return x.elements.map((v) => v.toFixed(4)).join(' '); }).sort();
+    const expected = (b, keys) => b.ranges.filter((r) => keys.includes(r.mesh.userData.tile.key)).flatMap((r) => before.get(r.mesh)).sort();
+    for (const [x, keys] of [[-20, ['2,0', '5,0']], [200, ['0,0', '1,0', '5,0']]]) { // from x -20 the tile at 60 to 75 is under 100 m, 130 is past it
+      swap.update({ x, z: 0 }, 100, true);
+      batched.sync();
+      for (const b of batched.batches) {
+        expect(drawn(b)).toEqual(expected(b, keys));
+        expect(b.mesh.visible).toBe(b.mesh.count > 0);
+      }
+    }
+    expect(batched.sync()).toBe(0);
   });
 
   it('builds nothing and gives no swap when no builder placed anything', () => {

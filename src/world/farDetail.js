@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { distanceToTile } from './tiles.js';
 import { drawFull } from './farVersion.js';
 import { StaticMerge } from './staticMerge.js';
+import { FarStrips, FarInstances } from './farBatch.js';
 
 /** Scene children that are vehicles (and trailers, the sprayer): they lose small parts and then their shadow with distance. */
 export const VEHICLE_NAMES = ['quad', 'trailer', 'tipTrailer', 'sprayer', 'harrows'];
@@ -129,6 +130,8 @@ export class FarDetail {
     this.centre = new THREE.Vector3();
     this.hedgeSwaps = []; // the swaps of the hedges' blocks and the wall's stones for far strips (hedgeFar.js), set by the world once the props are built
     this.treeSwaps = []; // the swap of every oak and bush for its far version (scatter.js, treeFar.js), set the same way
+    this.farBatches = []; // the far strips, oaks and bushes drawn a 240 m tile at a time (farBatch.js, #1076), made by `batchFar` once the swaps are set
+    this.batchSync = { ms: 0, worst: 0, rebuilt: 0 }; // the last sync's time, the worst since load, and how many big tiles it rebuilt (`perf`, the panel)
     this.merge = new StaticMerge(); // the still meshes of the vehicles, the barn and the farm animals, drawn as a few (and their shadows as one, once `drawShadowsWith` is called)
     this.nextLook = new WeakMap(); // root -> when it is next looked at (seconds on `elapsed`)
     this.looks = 0;
@@ -155,9 +158,38 @@ export class FarDetail {
     }
     for (const swap of this.hedgeSwaps) swap.update(position, this.params.hedgeFullDistance, fresh);
     for (const swap of this.treeSwaps) swap.update(position, this.params.treeFullDistance, fresh);
+    this.syncFarBatches();
     this.smallShadows(position, fresh);
     this.leaveOutSpecks(position, fresh);
     this.mergeStill(position, fresh);
+  }
+
+  /** Draws the far strips, oaks and bushes of `hedgeSwaps` and `treeSwaps` in big tiles from now on (farBatch.js). The swaps are settled from `position`
+   * (where you start) first, so the batches are built as they will be drawn and the first frame has nothing to rebuild: on cold code that was 1 ms. */
+  batchFar(position) {
+    if (position) {
+      for (const swap of this.hedgeSwaps) swap.update(position, this.params.hedgeFullDistance, true);
+      for (const swap of this.treeSwaps) swap.update(position, this.params.treeFullDistance, true);
+    }
+    this.farBatches = [new FarStrips(this.hedgeSwaps), new FarInstances(this.treeSwaps)];
+  }
+
+  /** How the far batches stand (`perf`, the Frame time folder): how many big tiles, how many drawn, and the last and worst sync's time. */
+  batchStats() {
+    const all = this.farBatches.flatMap((b) => b.batches);
+    return { tiles: all.length, drawn: all.filter((b) => b.mesh.visible).length, lastMs: this.batchSync.ms, worstMs: this.batchSync.worst, rebuilt: this.batchSync.rebuilt };
+  }
+
+  /** Rebuilds the big tiles whose 60 m tiles the swaps have just changed, timed for `perf` (#1076: held under 1 ms). */
+  syncFarBatches() {
+    if (!this.farBatches.length) return;
+    const t0 = performance.now();
+    let rebuilt = 0;
+    for (const b of this.farBatches) rebuilt += b.sync();
+    const ms = performance.now() - t0;
+    this.batchSync.ms = ms;
+    this.batchSync.rebuilt = rebuilt;
+    if (rebuilt) this.batchSync.worst = Math.max(this.batchSync.worst, ms);
   }
 
   /**
