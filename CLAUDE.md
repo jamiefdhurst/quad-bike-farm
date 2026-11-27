@@ -37,7 +37,7 @@ The detailed rules for each part of the game are in `.claude/rules/`. They load 
 - **File what Jamie finds as issues, without asking.** When he hands over findings or an idea (a walk of an area in a review, something he notices), every finding that the current issue or the move doesn't take gets an issue at once, in `/idea`'s shape (labels, milestone, **Done when**, `node tools/issueLint.mjs --file`), and you tell him the numbers afterwards. A find or an idea goes in a map phase's milestone only when that phase's work fails without it; otherwise in the alongside milestone it is about, or in `13 · Polish` (#1181). A passing idea goes in as a `❓ question`. Still ask for a real decision (a look, a feel, scope) and hold anything that needs his yes before building.
 - **Keep what you learn in the repo, not in memory.** Don't write to the auto-memory: a lesson, a preference or a process fix goes in this file or `.claude/rules/`, so it is there in every checkout and every session.
 - When Jamie asks how something works, or something turns out to be confusing, add it to the FAQ as well as answering.
-- Assets: CC0 or public domain only, credited in ASSETS.md. Prefer procedural. (One exception, the BBC RemArc engine recordings: see the top of ASSETS.md.)
+- Assets: CC0 or public domain only, credited in ASSETS.md. Prefer procedural.
 - Prose (docs, commit messages, comments, lines the girls say): British English, no em dashes, no throat-clearing. The girls refer to the player only as "you", never "he", "she" or "they".
 
 ## Code

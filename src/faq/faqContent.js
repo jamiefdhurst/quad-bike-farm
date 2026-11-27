@@ -206,6 +206,13 @@ export const FAQ_SECTIONS = [
           start to run into each other, and from there each one's bang gets shorter to fit, as a real exhaust pulse does, so the engine
           rises in pitch as well as speed while its pipe and silencer ring where they always do.`,
       },
+      {
+        q: 'Where do the engine sounds come from?',
+        a: `Real engines, recorded by people who gave the recordings away free for anyone to use (CC0, on Freesound), each credited in
+          ASSETS.md. Most vehicles idle on one recording and build their revs from it. Amy's Finch is a small old car idling, Jess's
+          Griffin a small saloon on a big sports exhaust, your Vauclair a diesel car recorded under its bonnet, and the Tor a vintage
+          car, each picked by ear from a few of its kind.`,
+      },
     ],
   },
   {

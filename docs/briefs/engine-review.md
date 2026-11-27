@@ -180,7 +180,7 @@ cylinders), five rpms per recording, two seeds. Tone change shown as a guard; it
 
 ## Later, the reason to get this right
 
-- **The cars need CC0 recordings** in place of the BBC ones (`engine-bank-fiesta`, `-corsa`, `-309`: RemArc licence, ASSETS.md).
+- **The cars need CC0 recordings** (done in #858) in place of the BBC ones (`engine-bank-fiesta`, `-corsa`, `-309`: RemArc licence, ASSETS.md).
   The per-type rule should make that easier: an idle recording of the right kind of engine is enough if the revs are built from
   it.
 - **Engine characters from the same source material:** fuel injection against carburettor (an injected engine fires evenly

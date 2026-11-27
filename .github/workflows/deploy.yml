@@ -1,7 +1,7 @@
 name: Deploy
 
-# Puts each release on the server at https://qbf.jamiehurst.co.uk (behind a password while the BBC recordings are in it,
-# ASSETS.md), the same way the blog is deployed. Only the latest release is kept: /srv/qbf is emptied and refilled.
+# Puts each release on the server at https://qbf.jamiehurst.co.uk (behind a password, first put there for the BBC recordings that
+# #858 replaced), the same way the blog is deployed. Only the latest release is kept: /srv/qbf is emptied and refilled.
 # Run it by hand with a version to put an older one back.
 on:
   workflow_dispatch:
