@@ -40,10 +40,13 @@ export function canPull(unit) {
   return !unit.engineOut && !!unitFamily(unit);
 }
 
-/** The first engine on the shelf that would fit this unit, or -1. */
+/**
+ * The first engine on the shelf that would fit this unit, or -1. A vehicle's own engine always goes back in, whatever family it was put
+ * on the shelf as: the Bruin's, shelved air-cooled before it had a radiator (#861), is now the only one of its kind, and would otherwise fit nothing.
+ */
 export function fitIndex(engines, unit) {
   const family = unitFamily(unit);
-  return family ? engines.findIndex((p) => p.family === family) : -1;
+  return family ? engines.findIndex((p) => p.family === family || p.from === unit.spec.id) : -1;
 }
 
 /** A plain copy of the unit's engine, as the shelf holds it. */

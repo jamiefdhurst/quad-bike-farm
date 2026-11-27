@@ -221,6 +221,24 @@ describe('the shelf and the save', () => {
       expect(runs(ursa)).toBe(true);
     });
 
+    it('goes back into the Bruin from the shelf of an old save that had it out, and runs', () => {
+      const old = unit(OLD_BRUIN);
+      const spares = new Spares(DEFAULT_SPARES_PARAMS, random);
+      spares.engines.push(pullEngine(old));
+      const saved = JSON.parse(JSON.stringify(captureVehicle(old)));
+      delete saved.cooled;
+      const back = new Spares(DEFAULT_SPARES_PARAMS, random);
+      back.restore(JSON.parse(JSON.stringify(spares.toJSON())));
+      const bruin = unit(BRUIN);
+      restoreVehicle(bruin, saved);
+      expect(bruin.engineOut).toBe(true);
+      const at = fitIndex(back.engines, bruin);
+      expect(at).toBe(0); // its own engine, though it was shelved as the air-cooled sort
+      fitEngine(bruin, back.engines[at], 1, B);
+      expect(runs(bruin)).toBe(true);
+      expect(fitIndex(back.engines, unit(real('adder')))).toBe(-1); // and no other family takes it
+    });
+
     it('loads swapped into another quad in an old save, and runs', () => {
       const ursa = unit(URSA);
       fitEngine(ursa, pullEngine(unit(OLD_BRUIN)), 1, B);
