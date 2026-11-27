@@ -23,9 +23,9 @@ import { DEFAULT_AUDIO_PARAMS } from '../../src/audio/audioParams.js';
 import { measure } from '../engine-bank-model.mjs';
 
 const SR = 48000;
-const SHOP = '.scratch/shop/cars';
-const OUT = '.scratch/engine-review';
-const PY = process.env.PYTHON ?? (existsSync('.scratch/venv/bin/python3') ? '.scratch/venv/bin/python3' : 'python3');
+export const SHOP = '.scratch/shop/cars';
+export const OUT = '.scratch/engine-review';
+export const PY = process.env.PYTHON ?? (existsSync('.scratch/venv/bin/python3') ? '.scratch/venv/bin/python3' : 'python3');
 const KEEP = 5;
 
 // What each vehicle needs: the idle's rpm range to look in (the recording's, not the game's), its cylinders, and what it is.
@@ -38,7 +38,7 @@ const VEHICLES = {
 
 // The vehicle's settings with only the bank changed: its idle cut into its firings. The Tor plays its present Jeep one beat in three
 // (pulseDivide 3); a recording that idles near its own pace plays every firing.
-function trialAudio(spec, idleRpm) {
+export function trialAudio(spec, idleRpm) {
   const audio = { ...spec.audio, recIdleSource: 'quad', pulseSplit: VEHICLES[spec.id].cyl };
   if (spec.id === 'tor') {
     const idle = { ...DEFAULT_ENGINE_PARAMS, ...spec.engine }.idleRpmWarm;
@@ -67,27 +67,27 @@ const CLIPS = [
   ['start', 'Starting', (s) => ({ recordStart: true, duration: 16, script: startScript(s) })],
 ];
 
-function writeWav(path, out, scale = 0.5) {
+export function writeWav(path, out, scale = 0.5, rate = SR) {
   const wav = Buffer.alloc(44 + out.length * 2);
   wav.write('RIFF', 0); wav.writeUInt32LE(36 + out.length * 2, 4); wav.write('WAVEfmt ', 8); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22);
-  wav.writeUInt32LE(SR, 24); wav.writeUInt32LE(SR * 2, 28); wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(out.length * 2, 40);
+  wav.writeUInt32LE(rate, 24); wav.writeUInt32LE(rate * 2, 28); wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(out.length * 2, 40);
   for (let i = 0; i < out.length; i++) wav.writeInt16LE(Math.round(Math.max(-1, Math.min(1, out[i] * scale)) * 32767), 44 + i * 2);
   writeFileSync(path, wav);
 }
-const toPage = (wav, file) => execFileSync('afconvert', ['-f', 'm4af', '-d', 'aac', '-b', '128000', wav, `${OUT}/site/audio/${file}.mp4`]);
+export const toPage = (wav, file) => execFileSync('afconvert', ['-f', 'm4af', '-d', 'aac', '-b', '128000', wav, `${OUT}/site/audio/${file}.mp4`]);
 
-function preview(id) {
+export function preview(id) {
   for (const p of [`.scratch/shop/fs/${id}.mp3`, `.scratch/shop/raw2/${id}.mp3`, `.scratch/shop/raw/${id}.mp3`]) if (existsSync(p)) return p;
   throw new Error(`no preview for ${id}: node tools/freesound.mjs fetch ${id}`);
 }
-function details(id) {
+export function details(id) {
   const p = `.scratch/shop/fs/${id}.json`;
   return existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : { id, name: `Freesound ${id}`, author: '?', link: `https://freesound.org/s/${id}/` };
 }
 
 // The bank's starter, crank and shutdown (and the Tor's starting handle, the Griffin's stall) that the trial bank lacks, copied from
 // the vehicle's present bank: its WAV with them appended, their entries as they were (their gain is on the raw samples, as here).
-function borrow(trialPath, presentPath) {
+export function borrow(trialPath, presentPath) {
   const trial = JSON.parse(readFileSync(trialPath, 'utf8'));
   const present = JSON.parse(readFileSync(presentPath, 'utf8'));
   const presentPcm = rawBank(presentPath);
