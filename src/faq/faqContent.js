@@ -991,6 +991,12 @@ export const FAQ_SECTIONS = [
           with the throttle open. Ride along at a decent speed to cool it. The Adder has a radiator and a fan, and stays cooler unless it's leaking.`,
       },
       {
+        q: 'Will an air-cooled quad cut out if it gets too hot?',
+        a: `No. Only an engine with a radiator cuts out from heat. An air-cooled quad pinks (a metallic rattle), runs rough and loses more power the hotter it
+          gets, with the needle in the red, but it keeps going. Ride it along to cool it. A two-stroke run short of oil is another matter: that nips up and
+          seizes, which is the oil, not the heat.`,
+      },
+      {
         q: 'The temperature needle is in the red on a car or the tractor. What is wrong?',
         tip: 'Needle in the red on a car? Switch off. It is low on coolant or has a stuck thermostat.',
         a: `The gauge reads the engine's real temperature. On anything with a radiator (the cars, the Tor, the Crag, the UTV, the tractor and the Adder) it reads the
@@ -998,8 +1004,9 @@ export const FAQ_SECTIONS = [
           where it cuts out. On the air-cooled quads it reads the metal of the engine instead, the middle when warm and the red where it starts to pink.
           A healthy cooling system keeps the needle in the middle on every vehicle, all day, even idling in the sun. In the red means something is wrong: the coolant
           is low (look for a damp patch on the ground under it) or the thermostat has stuck shut, which can be there from the start or come on after a long run.
-          It loses power and runs rough, steams if it gets worse, and past the top it cuts out and won't start until it has cooled for a minute or two. Low on coolant
-          it boils over sooner, as a low system holds less pressure: nearly dry, it boils at not much over 100 °C. The red
+          It loses power and runs rough and steams if it gets worse. Near the top it boils over, at about 122 °C with the radiator full, spitting out most of
+          what is left, and only then does it get hot enough to cut out, and won't start until it has cooled for a minute or two. Low on coolant it boils
+          over sooner, as a low system holds less pressure: nearly dry, it boils at not much over 100 °C. The red
           lamp or red symbol on the dash lights as the needle goes in. Switch it off and let it cool. Then take the coolant bottle (it stands by the oil bottle
           at the petrol tank), look at the vehicle with the engine off and cool, and hold <kbd>E</kbd> to top up. With the radiator full, keep holding it and the
           coolant flushes through, which frees a stuck thermostat. A weeping hose keeps weeping until it is mended at the workbench, which also changes the thermostat.`,
