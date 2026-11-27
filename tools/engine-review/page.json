@@ -1,12 +1,52 @@
 [
   {
-    "id": "q1", "n": 1, "status": "listen", "from": "calibrated", "rows": ["griffin", "finch"],
+    "id": "off-finch", "status": "done", "from": "off-finch",
+    "title": "A shutdown for the Finch",
+    "question": "Which run-down should the Finch stop with (or none of them)?"
+  },
+  {
+    "id": "off-griffin", "status": "done", "from": "off-griffin",
+    "title": "A shutdown for the Griffin",
+    "question": "Which run-down should the Griffin stop with (or none of them)?"
+  },
+  {
+    "id": "stall-griffin", "status": "done", "from": "stall-griffin",
+    "title": "A stall for the Griffin",
+    "question": "Should the Griffin die with this when it stalls cold, or keep its run-down for a stall too?"
+  },
+  {
+    "id": "off-vauclair", "status": "done", "from": "off-vauclair",
+    "title": "A shutdown for the Vauclair",
+    "question": "Which run-down should the Vauclair stop with (or none of them)?"
+  },
+  {
+    "id": "pick-finch", "status": "done", "from": "cand-finch",
+    "title": "Pick a recording for the Finch",
+    "question": "Which recording should the Finch idle, start and stop on (or none of them)?"
+  },
+  {
+    "id": "pick-griffin", "status": "done", "from": "cand-griffin",
+    "title": "Pick a recording for the Griffin",
+    "question": "Which recording should the Griffin idle, start and stop on (or none of them)?"
+  },
+  {
+    "id": "pick-vauclair", "status": "done", "from": "cand-vauclair",
+    "title": "Pick a recording for the Vauclair",
+    "question": "Which recording should the Vauclair idle, start and stop on (or none of them)?"
+  },
+  {
+    "id": "pick-tor", "status": "done", "from": "cand-tor",
+    "title": "Pick a recording for the Tor",
+    "question": "Which recording should the Tor idle, start and stop on (or none of them)?"
+  },
+  {
+    "id": "q1", "status": "done", "from": "calibrated", "rows": ["griffin", "finch"],
     "title": "The Griffin's ticking",
     "question": "Is the ticking under the Griffin gone, or at least acceptable? (The Finch is there to compare.)",
     "intro": "Two causes found and mended. Each recorded cycle was cut into its four firings at exactly even points, which on the Carlton recording land right at each bang, so every firing started abruptly: the cuts now go at the quietest moment near each even point (and keep the recording's own spacing). And the Griffin was set the loudest of any vehicle, so its boomiest firings drove the output's soft clipper, a tick each: it is 3 dB lower now, about the Finch's level. Some ticking is left between 2,000 and 3,000 rpm that comes from the Carlton recording itself, less than the game has now; that recording is due to be replaced with a CC0 one anyway."
   },
   {
-    "id": "q2", "n": 2, "status": "listen", "from": "top", "rows": ["farm300", "rb300", "tz65", "adder", "finch", "griffin", "crag"],
+    "id": "q2", "status": "done", "from": "top", "rows": ["farm300", "rb300", "tz65", "adder", "finch", "griffin", "crag"],
     "cols": ["fit-ladder", "short-ladder", "burst-ladder", "short-revs", "burst-revs"],
     "title": "The top of the revs: your pick against the physics",
     "question": "Does \"burst fits the gap\" work as well as the half-way version you picked, or better?",

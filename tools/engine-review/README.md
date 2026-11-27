@@ -37,7 +37,7 @@ WORKLET=tools/engine-review/prototype/engineWorklet.js
 | `ticks.mjs` | Counts ticks a second: bursts above 2.5 kHz five times over the 20 ms around them. The measure for the Griffin's ticking; `gaps.mjs`'s click count only catches steep low-frequency waveform. | `node tools/engine-review/ticks.mjs a.wav [b.wav ...]` |
 | `wavpeak.mjs` | The strongest narrow tone from 2 to 6 kHz in a WAV, and how many 85 ms frames show one 6 dB over the median. | `node tools/engine-review/wavpeak.mjs a.wav [b.wav ...]` |
 | `whine.mjs` | Renders a long idle and looks for a narrow spectral peak standing out, listing the grains playing when one shows. The T185's whine. A third argument plays a patched bank (`dewhine.mjs`'s) in place of the shipped one. | `node tools/engine-review/whine.mjs <vehicle id> [seconds] [bank.json]` |
-| `srcscan.mjs` | Scans a bank's idle grains in the source recording for a narrow tonal peak, grain by grain. | `node tools/engine-review/srcscan.mjs <bank name> [kind]` |
+| `srcscan.mjs` | Scans a bank's idle grains in the source recording for a narrow tonal peak, grain by grain. A path to a bank's JSON plays a trial bank. | `node tools/engine-review/srcscan.mjs <bank name or bank.json> [kind]` |
 | `dewhine.mjs` | Marks the idle grains whose peak stands more than `over` dB (5.5) over the recording's median as `ok: false` (which the worklet honours) and writes the bank to `banks/`. The game's version is the slicer's whine check (`tools/slice_engine_audio.py`, and `--recheck <bank>` without the sources; #852). | `node tools/engine-review/dewhine.mjs <bank name> [over]` |
 | `cuts.mjs` | Where a cycle's even cut into firings lands: the level in the 1 ms at each cut against the firing's RMS (high means it starts mid-sound), and where the loudest moment falls in each slice. | `node tools/engine-review/cuts.mjs <bank> <split> [kind]` |
 
@@ -72,5 +72,17 @@ node tools/engine-review/render.mjs
 WORKLET=tools/engine-review/prototype/engineWorklet.js node tools/engine-review/sections.mjs
 node tools/engine-review/build.mjs
 ```
+
+## Choosing new recordings (#857)
+
+`tools/freesound.mjs` searches Freesound for CC0 sounds and saves each preview and its author and licence to `.scratch/shop/fs/`
+(the key in `FREESOUND_API_KEY`, or the main checkout's `.scratch/freesound-api-creds`). The list to hear is
+`.scratch/shop/cars/candidates.json`; the tools below turn it into sections of the review page, then `build.mjs` as above.
+
+| Tool | What it does | Run |
+| --- | --- | --- |
+| `idlescan.py` | A recording's longest steady idle (start, end, rpm, how much it wanders, how cleanly it repeats), its start and stop, and a score. | `python3 tools/engine-review/idlescan.py rec.wav --rpm 650-1300 [--cyl 4] [--json]` |
+| `candidates.mjs` | Each candidate's idle sliced into a trial bank (`slice_engine_audio.py --trial`), with its model and whine, ranked, and rendered as the vehicle (idle, ladder, revving, driving, starting) beside it as now. Writes `.scratch/shop/cars/ranking.md`. | `node tools/engine-review/candidates.mjs [vehicle ...]` |
+| `shutdowns.mjs` | Run-downs and stalls from `.scratch/shop/cars/shutdowns.json` cut into the picked idle and rendered as it is switched off or stalls. | `node tools/engine-review/shutdowns.mjs [vehicle ...]` |
 
 One vehicle on its own, with the game's own worklet, is `tools/render_engine_sound.mjs` (`.claude/rules/checking.md`).

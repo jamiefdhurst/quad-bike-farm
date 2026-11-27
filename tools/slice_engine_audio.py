@@ -47,6 +47,10 @@ Usage (needs numpy, and matplotlib for --plot):
   python3 tools/slice_engine_audio.py engine-bank-corsa cd=07043124.wav cc=07043123.wav cs=07043125.wav st=st.wav
   python3 tools/slice_engine_audio.py engine-bank-309 px=07043131.wav pd=07043132.wav jumpy=500193.wav   # your 309
 
+  A trial bank, to hear a recording before it is chosen (#857): its BANKS entry as JSON (lists for the tuples), written to a
+  folder of its own instead of public/audio (tools/engine-review/candidates.mjs writes these):
+  python3 tools/slice_engine_audio.py --trial cand.json --out .scratch/shop/cars/banks/finch-123456 src=123456.wav
+
   A new check on a bank whose sources aren't to hand: runs every check on its kept WAV (source/audio/) and rewrites only the
   'ok' flags in its JSON, as a re-slice would leave them (#852):
   python3 tools/slice_engine_audio.py --recheck engine-bank-atc
@@ -836,16 +840,33 @@ def recheck(name):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('bank', nargs='?', choices=sorted(BANKS))
+    ap.add_argument('bank', nargs='?', help=f'one of {", ".join(sorted(BANKS))}')
     ap.add_argument('sources', nargs='*', help='name=path.wav for each source the bank uses')
     ap.add_argument('--plot')
     ap.add_argument('--recheck', choices=sorted(BANKS), help="run the checks on this bank's kept WAV and rewrite only its 'ok' flags")
+    ap.add_argument('--trial', help="a trial bank: its BANKS entry as JSON, with 'name'; the first positional is then a source")
+    ap.add_argument('--out', help='with --trial, the folder the trial bank is written to (it never goes in public/audio)')
     args = ap.parse_args()
     if args.recheck:
         return recheck(args.recheck)
-    if not args.bank or not args.sources:
+    out_dir = os.path.join(ROOT, 'public', 'audio')
+    if args.trial:
+        if not args.out:
+            ap.error('--trial needs --out')
+        with open(args.trial) as f:
+            config = json.load(f)
+        # JSON has no tuples: the segments' period range is unpacked as one.
+        config['segments'] = [(k, src, t0, t1, tuple(rng)) for k, src, t0, t1, rng in config['segments']]
+        if args.bank:
+            args.sources.insert(0, args.bank)
+        args.bank = config['name']
+        out_dir = args.out
+    elif not args.bank or not args.sources:
         ap.error('a bank and its sources, or --recheck <bank>')
-    config = BANKS[args.bank]
+    elif args.bank not in BANKS:
+        ap.error(f'no bank {args.bank}: one of {", ".join(sorted(BANKS))}')
+    else:
+        config = BANKS[args.bank]
     sources = {}
     for item in args.sources:
         name, path = item.split('=', 1)
@@ -961,8 +982,8 @@ def main():
     was_ok = {id(g) for g in grains if g.get('ok', True)}
     rejected['tonal whine'] = sum(id(g) in was_ok for g in whine_check(audio, grains))
 
-    os.makedirs(os.path.join(ROOT, 'public', 'audio'), exist_ok=True)
-    with wave.open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.wav'), 'wb') as w:
+    os.makedirs(out_dir, exist_ok=True)
+    with wave.open(os.path.join(out_dir, f'{args.bank}.wav'), 'wb') as w:
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(SR)
@@ -978,7 +999,7 @@ def main():
     }
     if config.get('idleCycles'):
         bank['readThrough'] = True  # idle grains are whole, matching cycles: play them in recording order (engineWorklet.js)
-    with open(os.path.join(ROOT, 'public', 'audio', f'{args.bank}.json'), 'w') as f:
+    with open(os.path.join(out_dir, f'{args.bank}.json'), 'w') as f:
         json.dump(bank, f, indent=1, allow_nan=False)  # NaN isn't JSON: the browser would refuse the whole bank
 
     for k in ('idle', 'idle2', 'idle3', 'accel', 'decel'):
