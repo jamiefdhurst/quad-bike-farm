@@ -132,7 +132,7 @@ export function buildHouse(ctx, b, index) {
   } else if (b.design === 'gabled') {
     // A cross-gable at the front with a bay under it, the door beside it under a porch, windows over the rest, a stack at each end.
     const gx = -b.halfX * 0.38;
-    doorX = b.halfX * 0.48;
+    doorX = frontDoorX(b); // where village.js puts the front garden's gate
     crossGable(f, m, { x: gx, w: 3.8, projection: 1.1, wallZ: front, wallHeight: b.wallHeight, ridge: b.wallHeight + 1.7, roofMat: roof });
     bayWindow(f, m, { x: gx, w: 2.6, depth: 0.55, h: 1.5, base: 0.7, wallZ: front + 1.1 });
     windowAt(f, m, { x: gx, y: 3.5, w: 1.0, h: 1.2, face: 1, wallZ: front + 1.1, lintel, flowers: false });
@@ -145,7 +145,7 @@ export function buildHouse(ctx, b, index) {
     plainSides(f, m, b, { lintel });
   } else if (b.design === 'bungalow') {
     // One storey under a low hipped-looking roof: a wide picture window, a smaller one and the door under a flat canopy, one stack.
-    doorX = b.halfX * 0.4;
+    doorX = frontDoorX(b) + 0.5; // the canopy's middle: the door itself is half a metre left of it, where village.js puts the gate
     windowAt(f, m, { x: -b.halfX * 0.38, y: 1.4, w: 2.2, h: 1.25, face: 1, wallZ: front, lintel, shutters: null, flowers: index % 2 === 0 });
     windowAt(f, m, { x: -b.halfX * 0.85 + 0.3, y: 1.4, w: 0.9, h: 1.2, face: 1, wallZ: front, lintel });
     windowAt(f, m, { x: b.halfX * 0.78, y: 1.4, w: 0.9, h: 1.2, face: 1, wallZ: front, lintel });
