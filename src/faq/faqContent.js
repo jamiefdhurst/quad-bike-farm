@@ -307,7 +307,8 @@ export const FAQ_SECTIONS = [
       {
         q: 'Why does it start badly when it’s hot?',
         a: `A hot engine boils the fuel in its carb, so it starts rich. Don't use the choke, and hold the throttle open while you crank. It lasts as long
-          as the metal stays hot: worked hard, about half a minute on an air-cooled quad and a minute on one with a radiator; only idled, hardly at all.`,
+          as the metal stays hot: revved hard standing still or worked in the mud, about half a minute on an air-cooled quad and a minute on one with a
+          radiator. Ridden fast, the wind keeps an air-cooled engine cool, and one only idled on a dull day hardly does it at all.`,
       },
       {
         q: 'It coughs back through the carb when I open the throttle.',
