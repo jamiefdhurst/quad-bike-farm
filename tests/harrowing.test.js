@@ -420,7 +420,16 @@ describe('the field in the farm', () => {
 
   it('has the harrows left at its edge, on the grass and off the track', () => {
     const at = LAYOUT.harrows;
+    const edge = Math.min(...m.poly.map((a, i) => {
+      const b = m.poly[(i + 1) % m.poly.length];
+      const dx = b[0] - a[0];
+      const dz = b[1] - a[1];
+      const t = Math.max(0, Math.min(1, ((at.x - a[0]) * dx + (at.z - a[1]) * dz) / (dx * dx + dz * dz)));
+      return Math.hypot(at.x - a[0] - t * dx, at.z - a[1] - t * dz);
+    }));
+    expect(inPlace(m, at.x, at.z)).toBe(true);
+    expect(edge).toBeLessThan(12);
+    expect(fields.areaOf(at.x, at.z)).toBe('ley');
     expect(track.distanceTo(at.x, at.z)).toBeGreaterThan(LAYOUT.trackHalfWidth + 3);
-    expect(Number.isFinite(at.x) && Number.isFinite(at.z)).toBe(true);
   });
 });

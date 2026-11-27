@@ -1088,7 +1088,7 @@ export const FARMSTEAD_PLAN = {
     straw: [[444, 275], [452, 278], [446, 272.5]],
     stackyardTrack: [[446, 285, 4], [440, 296, 3]],
   },
-  harrows: { at: [548, 372], yaw: -Math.PI / 2 },
+  harrows: { at: [647, 570], yaw: -Math.PI / 2 }, // at Low Ley's west edge, 6 m in and 10 m north of its gateway from Brook Meadow (640, 580), the tongue towards it (#1117)
   // The trailers, off the visitors' lane (the drive's line, z 345, and the loop south of the barn's doors to z 353) and clear of the kept-clear places and the spawns.
   trailers: { trailer: { at: [572, 398], yaw: 2.7 }, tipTrailer: { at: [588, 394], yaw: 0.2 }, sprayer: { at: [538, 326], yaw: 0.3 } }, // (the tipping trailer stood at (562, 366), in the lorry's way to the grain store: #816)
   // The sprayer stands north of the drive, 12 m from the hose's reel at the barn's east end, so the hose reaches it to fill, and west of the north stone track's
