@@ -8,7 +8,7 @@ import { barrelTexture } from './neighbourTextures.js';
 import { buildVehicleBody } from './trafficView.js';
 import { PARKED_SIZES } from './neighbourFarm.js';
 import { poseBaleSpike } from '../vehicle/tractorModel.js';
-import { MOT_BAY, forecourtMarkings } from './village.js';
+import { MOT_BAY, forecourtMarkings, gardenHedges } from './village.js';
 import { Frame, shellAndRoof, chimney, windowAt, bayWindow, doorAt, porch, dormer, flowerBox } from './villageKit.js';
 import { fasciaTexture, pubSignTexture, shopInteriorTexture, awningTexture, chalkBoardTexture, rollerDoorTexture, pumpFaceTexture, partPacketTexture, pumpSideTexture, pumpHeaderTexture, bollardTexture, priceBoardTexture, carParkTexture, carParkBays, noticeTexture, bladeSignTexture } from './villageTextures.js';
 
@@ -113,14 +113,12 @@ export function buildCottage(ctx, b, index, { hollow = false } = {}) {
     for (let k = 0; k < 4; k++) f.add(new THREE.IcosahedronGeometry(0.1, 0), M.blooms[(k + index) % 4], sx * 1.05 + (k - 1.5) * 0.07, 0.4 + (k % 2) * 0.05, front + 0.55 + ((k % 3) - 1) * 0.06);
   }
   // A hedge down each side and across the back, for a garden, no deeper than the village's wall leaves room for.
+  // The back hedge is a touch taller and wider than the sides, so their tops and ends never share a plane (`gardenHedges`, which farmPlacement.js lists).
   const depth = ctx.S.gardenDepth(b);
-  for (const sx of [-1, 1]) {
-    f.box(0.8, 1.5, depth + 1, M.hedge, sx * (b.halfX + 0.9), 0.75, back - (depth - 1) / 2, 1);
-    f.solid(sx * (b.halfX + 0.9), 0.75, back - (depth - 1) / 2, 0.4, 0.75, (depth + 1) / 2);
+  for (const p of gardenHedges(b, depth)) {
+    f.box(p.w, p.h, p.d, M.hedge, p.x, p.h / 2, p.z, 1);
+    f.solid(p.x, 0.75, p.z, p.w / 2, 0.75, p.d / 2);
   }
-  // The back hedge is a touch taller and wider than the sides, so their tops and ends never share a plane.
-  f.box(b.halfX * 2 + 2.8, 1.62, 0.8, M.hedge, 0, 0.81, back - depth, 1);
-  f.solid(0, 0.75, back - depth, b.halfX + 1.4, 0.75, 0.4);
   // A shed and a washing line out the back, where the garden is deep enough.
   if (depth >= 4) {
     const shedZ = back - depth * 0.6;

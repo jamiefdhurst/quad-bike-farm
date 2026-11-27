@@ -110,6 +110,63 @@ export function roadLeadIn(first, count, step) {
 
 export const frontOf = (b) => (Math.cos(b.yaw) > 0 ? { z: b.z + b.halfZ, face: 1 } : { z: b.z - b.halfZ, face: -1 });
 
+/** Where a house's front door is along its front (its own x), by design: what the front garden's gate and path line up with (villageHouses.js draws the door there). */
+export function frontDoorX(b) {
+  if (b.design === 'gabled') return b.halfX * 0.48;
+  if (b.design === 'bungalow') return b.halfX * 0.4 - 0.5;
+  return 0;
+}
+
+/** A lane house's front garden: its hedge `depth` m out from the front wall, running `reach` m either side of the door and stopping `gap` m short of it for the gate. */
+export const FRONT_GARDEN = { depth: 8.5, reach: 11.5, gap: 0.9 };
+
+/** A point of a building's own frame (x along its front, z out from it) in the world, turned by its `yaw` as the house's group is. */
+export function houseToWorld(b, lx, lz) {
+  const c = Math.cos(b.yaw ?? 0);
+  const s = Math.sin(b.yaw ?? 0);
+  return { x: b.x + lx * c + lz * s, z: b.z - lx * s + lz * c };
+}
+
+/**
+ * The hedges of a house's gardens (#1084), in its own frame: boxes { part, x, z, w, d, h } (`w` along its front, `d` out from it, `h` tall). A garden at the
+ * back `depth` deep with a hedge down each side and across the end, but none for the small farm's farmhouse: its yard wall stands 4 m behind it and is the
+ * garden's boundary. A lane house's front hedge either side of its gate, each run ending at the house's `plot` (a world { minZ, maxZ } along the lane,
+ * which its front faces with a quarter turn), so it never runs into the next plot or through the neighbour's hedge.
+ */
+export function gardenHedges(b, depth) {
+  const out = [];
+  if (b.kind !== 'farmhouse') {
+    const back = -b.halfZ;
+    for (const sx of [-1, 1]) out.push({ part: 'side', x: sx * (b.halfX + 0.9), z: back - (depth - 1) / 2, w: 0.8, d: depth + 1, h: 1.5 });
+    out.push({ part: 'back', x: 0, z: back - depth, w: b.halfX * 2 + 2.8, d: 0.8, h: 1.62 });
+  }
+  if (b.approach && b.design !== 'farmhouse') {
+    const { depth: fd, reach, gap } = FRONT_GARDEN;
+    const doorX = frontDoorX(b);
+    let [lo, hi] = [-Infinity, Infinity];
+    if (b.plot) {
+      // The plot's ends along the lane in the house's own x: a quarter turn maps world z onto its x, one way or the other.
+      const s = -Math.sin(b.yaw ?? 0);
+      [lo, hi] = [(b.plot.minZ - b.z) * s, (b.plot.maxZ - b.z) * s].sort((p, q) => p - q);
+    }
+    for (const sign of [-1, 1]) {
+      const from = Math.min(hi, Math.max(lo, doorX + sign * (gap + 0.2)));
+      const to = Math.min(hi, Math.max(lo, doorX + sign * reach));
+      if (Math.abs(to - from) < 0.3) continue;
+      out.push({ part: 'front', x: (from + to) / 2, z: b.halfZ + fd, w: Math.abs(to - from), d: 0.8, h: 1.3 });
+    }
+  }
+  return out;
+}
+
+/** A garden hedge box's four corners in the world, [x, z] each. */
+export function hedgeCorners(b, p) {
+  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, k]) => {
+    const w = houseToWorld(b, p.x + (i * p.w) / 2, p.z + (k * p.d) / 2);
+    return [w.x, w.z];
+  });
+}
+
 /**
  * The village from the layout, or null on a farm without one: the road's curve, every building with its footprint, the car park, the
  * walls that shut the area in, and what the rest of the world asks (is this built on, how much to level the ground here).

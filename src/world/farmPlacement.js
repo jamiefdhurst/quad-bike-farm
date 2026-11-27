@@ -20,7 +20,7 @@ import { yardFootprints } from './neighbourYard.js';
 import { createOutbuildings } from './outbuildings.js';
 import { wallBoxes } from './barn.js';
 import { hutShape } from './hut.js';
-import { villageShape } from './village.js';
+import { villageShape, gardenHedges, houseToWorld, hedgeCorners } from './village.js';
 import { wallPieces } from './moor.js';
 import { createWoods } from './woods.js';
 import { BUILT_KINDS, landmarksOf, pondShape } from './fieldLandmarks.js';
@@ -218,6 +218,13 @@ export function farmPlacements(layout, { fields = createFields(layout), roads = 
     const v = villageShape(layout);
     v.footprints.forEach((f, i) => add(rect('building', `a village building at plan ${toPlan((f.minX + f.maxX) / 2, (f.minZ + f.maxZ) / 2)}`, f, true, { index: i })));
     for (const w of v.walls ?? []) add(box('wall', 'a village wall', w.x, w.z, w.hx, w.hz, 0, true));
+    // The houses' garden hedges (`gardenHedges`, which villageHouses.js and villageBuildings.js draw and make solid), on the street and the lane (#1084).
+    for (const b of [...v.buildings.filter((h) => h.kind === 'cottage'), ...v.laneBuildings.filter((h) => h.kind !== 'barn')]) {
+      for (const p of gardenHedges(b, v.gardenDepth(b))) {
+        const c = houseToWorld(b, p.x, p.z);
+        add(thing('hedge', `${b.id}'s garden hedge`, c.x, c.z, hedgeCorners(b, p), true, { house: b.id, part: p.part }));
+      }
+    }
   }
   if (layout.farmBridge) {
     const b = layout.farmBridge;
