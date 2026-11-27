@@ -3,10 +3,9 @@
 // Apart from the warm-up (temperature, 0 cold to 1 warm), an engine can run on into being too hot. The
 // air-cooled ones get there worked hard standing still or crawling in mud, sooner in the sun, and pink and run rough
 // while they are made to work (not idling); riding along at speed blows it away. The water-cooled one has a fan that
-// cuts in and out and copes idling and riding, though not revved hard standing still (thermal.js). Both come from the engine's real temperatures: pinking
-// from the metal's °C, the steam and the soak from the 0..1 heat worked out from them. Separately, `soak` is how much heat the metal's holding after
-// work, whatever the airflow: switched off it ticks as it cools, and a hot carburettor percolates, so a
-// hot engine starts rich until the heat's gone.
+// cuts in and out and copes idling and riding, though not revved hard standing still (thermal.js). All of it comes from the engine's real
+// temperatures: pinking from the metal's °C, the steam from the 0..1 heat worked out from them, and `soak`, the heat the metal holds after
+// work (thermal.js `soakLevel`): switched off it ticks as it cools, and a hot carburettor percolates, so a hot engine starts rich until the heat's gone.
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
@@ -56,14 +55,6 @@ export function condensation({ running, temperature, dayTemp }, p) {
   const air = clamp01((p.condenseAirBelow - dayTemp) / Math.max(0.5, p.condenseAirBelow - p.condenseAirFull));
   const cold = clamp01((p.condenseWarmAt - temperature) / Math.max(0.05, p.condenseWarmAt));
   return air * cold;
-}
-
-/** The heat in the metal after work: it follows what the engine's doing while it runs, and soaks away when it's off. */
-export function stepSoak(soak, h, { running, work, heat }, p) {
-  if (!running) return clamp01(soak - (soak * h) / Math.max(1, p.soakFallSeconds));
-  const target = Math.max(p.soakIdle + (1 - p.soakIdle) * clamp01(work), clamp01(heat));
-  const seconds = target > soak ? p.soakRiseSeconds : p.soakFallSeconds;
-  return clamp01(soak + ((target - soak) * h) / Math.max(1, seconds));
 }
 
 /** Ticks a second from the cooling metal of an engine that's off: none when it's only warm, more the hotter it was. */

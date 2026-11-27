@@ -37,7 +37,7 @@ describe('the gauge against the stick', () => {
   it('shows a sticking gauge up: it reads half on a nearly dry tank', () => {
     const quirks = new QuirkSet(['fuelSticks'], DEFAULT_QUIRK_PARAMS, createRandom(3));
     quirks.stuckFuel = 0.5;
-    const shown = quirks.dash({ fuelLevel: 0.08, temperature: 0.5, overheat: 0 }, 0.016).fuelLevel;
+    const shown = quirks.dash({ fuelLevel: 0.08, temperature: 0.5 }, 0.016).fuelLevel;
     expect(shown).toBe(0.5);
     const message = dipMessage(tank(0.96), shown, P);
     expect(message).toMatch(/^Dip: Barely wet/);

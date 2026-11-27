@@ -32,7 +32,7 @@ import {
 //              IGN, OIL, CHOKE and BRAKE lamps, a 4WD and a DIFF lamp, and the key.
 //
 // buildDash(style) returns { group, update(state), mount } where state is { rpm, maxRpm, redline, speedMph, fuelLevel, reserveLevel,
-// tap, gauge (the temperature reading in °C and its marks, tempGauge.js), overheat, coldBelow, ignition (has power), keyOn, tripMiles, odoMiles, hours, reverse, neutral, clock, seconds }.
+// tap, gauge (the temperature reading in °C and its marks, tempGauge.js), coldBelow, ignition (has power), keyOn, tripMiles, odoMiles, hours, reverse, neutral, clock, seconds }.
 // The group faces the rider along -Z and its +X is on the rider's left. `mount` is where a pod stands (a child of the group) or null.
 
 const LCD = { bg: '#a9b59d', on: '#1f261c', ghost: '#9aa68f', dim: '#b0bba5' }; // Bruin 660: positive, grey-green
@@ -42,7 +42,7 @@ const LCD_COOL = { bg: '#b8c2c7', on: '#151a1e', ghost: '#a9b3b8', dim: '#bcc6cb
 export function segmentCounts(s, fuelSegs, tempSegs) {
   return {
     fuel: Math.ceil(s.fuelLevel * fuelSegs - 0.001),
-    temp: Math.ceil(tempGaugeFraction(s.gauge, true, s.overheat) * tempSegs - 0.001),
+    temp: Math.ceil(tempGaugeFraction(s.gauge, true) * tempSegs - 0.001),
   };
 }
 
@@ -807,7 +807,7 @@ function buildTractor() {
       // Cable-driven and mechanical gauges read with the key off, and swing with a little lag.
       shownRpm += (s.rpm - shownRpm) * 0.35;
       shownFuel += (s.fuelLevel - shownFuel) * 0.2;
-      shownTemp += (tempGaugeFraction(s.gauge, true, s.overheat) - shownTemp) * 0.1;
+      shownTemp += (tempGaugeFraction(s.gauge, true) - shownTemp) * 0.1;
       const running = s.rpm > 300;
       const L = { rpm: shownRpm, fuel: shownFuel, temp: shownTemp, hot: !!s.ignition && shownTemp >= HOT_FROM, glow: !!s.ignition && !!s.glow, charge: !!s.ignition && !running, oil: !!s.ignition && !running };
       const hh = counterDigits(s.hours, 4);
@@ -941,7 +941,7 @@ function buildUtv() {
     update(s) {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
-      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true, s.overheat) : 0) - shownTemp) * 0.1;
+      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true) : 0) - shownTemp) * 0.1;
       const keyTo = s.cranking ? 1.45 : s.keyOn ? 0.72 : 0; // OFF at the top, ON half-way round, START at the end, clockwise as the driver sees it
       keyAngle += (keyTo - keyAngle) * 0.5;
       ignitionKey.rotation.z = keyAngle;
@@ -1082,7 +1082,7 @@ function buildTor() {
     update(s) {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
-      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true, s.overheat) : 0) - shownTemp) * 0.1;
+      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true) : 0) - shownTemp) * 0.1;
       const keyTo = s.cranking ? 1.45 : s.keyOn ? 0.72 : 0; // OFF at the top, ON half-way round, START at the end, clockwise as the driver sees it
       keyAngle += (keyTo - keyAngle) * 0.5;
       ignitionKey.rotation.z = keyAngle;
@@ -1209,7 +1209,7 @@ function buildCrag() {
     update(s) {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
-      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true, s.overheat) : 0) - shownTemp) * 0.1;
+      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true) : 0) - shownTemp) * 0.1;
       shownVolts += ((s.ignition ? voltsFraction(s.battery, s.rpm > 300) : 0) - shownVolts) * 0.1; // the volts gauge reads the battery
       const keyTo = s.cranking ? 1.45 : s.keyOn ? 0.72 : 0;
       keyAngle += (keyTo - keyAngle) * 0.5;
@@ -1350,7 +1350,7 @@ function buildFinch() {
     update(s) {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
-      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true, s.overheat) : 0) - shownTemp) * 0.1;
+      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true) : 0) - shownTemp) * 0.1;
       const running = s.rpm > 300;
       const on = !!s.ignition;
       const L = {
@@ -1460,7 +1460,7 @@ function buildGriffin() {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       shownRpm += ((s.ignition ? s.rpm : 0) - shownRpm) * 0.35;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
-      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true, s.overheat) : 0) - shownTemp) * 0.1;
+      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true) : 0) - shownTemp) * 0.1;
       const running = s.rpm > 300;
       const on = !!s.ignition;
       const L = {
@@ -1593,7 +1593,7 @@ function buildVAUCLAIR() {
     update(s) {
       shownMph += ((s.ignition ? s.speedMph : 0) - shownMph) * 0.5;
       shownFuel += ((s.ignition ? s.fuelLevel : 0) - shownFuel) * 0.2;
-      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true, s.overheat) : 0) - shownTemp) * 0.1;
+      shownTemp += ((s.ignition ? tempGaugeFraction(s.gauge, true) : 0) - shownTemp) * 0.1;
       const running = s.rpm > 300;
       const on = !!s.ignition;
       const L = {

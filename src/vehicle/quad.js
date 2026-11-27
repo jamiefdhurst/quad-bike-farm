@@ -1404,7 +1404,7 @@ export class Quad {
       maxRpm: e.params.maxRpm,
       redline: e.params.redlineRpm,
       speedMph: speed > 0.2 ? speed * 2.237 : 0,
-      ...this.quirks.dash({ fuelLevel: f.level, gauge: e.gauge, overheat: e.overheat }, dt, speed > 1),
+      ...this.quirks.dash({ fuelLevel: f.level, gauge: e.gauge }, dt, speed > 1),
       reserveLevel: f.params.reserveLitres / f.params.tankCapacity,
       oilLow: !!this.sump && oilPressureLamp({ running: e.isRunning, level: this.sump.level, rpm: e.rpm, idleRpm: e.params.idleRpmWarm, t: this.sumpClock }),
       tap: f.tap,

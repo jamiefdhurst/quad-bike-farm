@@ -145,8 +145,8 @@ export class QuirkSet {
     return this.kinds.includes(kind);
   }
 
-  /** The fuel level, engine temperature and overheat the dash shows, with this quad's lies in them. */
-  dash({ fuelLevel, gauge, overheat }, dt, moving = false) {
+  /** The fuel level and engine temperature the dash shows, with this quad's lies in them. */
+  dash({ fuelLevel, gauge }, dt, moving = false) {
     const P = this.P;
     let fuel = fuelLevel;
     if (this.has('fuelHigh')) fuel = Math.min(1, Math.max(0, fuelLevel)) ** P.fuelHighPower;
@@ -157,9 +157,9 @@ export class QuirkSet {
     if (this.has('tempCold')) {
       // The needle never gets past this much of the way from the air to warm, whatever the engine is doing.
       const cap = gauge.air + P.tempColdCap * (gauge.warm - gauge.air);
-      return { fuelLevel: fuel, gauge: { ...gauge, c: Math.min(gauge.c, cap) }, overheat: 0 };
+      return { fuelLevel: fuel, gauge: { ...gauge, c: Math.min(gauge.c, cap) } };
     }
-    return { fuelLevel: fuel, gauge, overheat };
+    return { fuelLevel: fuel, gauge };
   }
 
   /** How much the choke creeps on this frame (a `step` of the lever, or 0), shaken by a running engine. */

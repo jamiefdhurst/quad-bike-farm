@@ -178,15 +178,16 @@ export function engineReadouts(engine, { manual = false } = {}) {
     list.push({ key: 'coolantC', label: "the coolant's temperature (°C)", get: (e) => Math.round(e.coolantC) });
     list.push({ key: 'thermostatOpen', label: 'thermostat open (0 shut, 1 wide open)', get: (e) => e.thermostatOpen });
   }
-  list.push({ key: 'gauge', label: `temperature needle (0 C, ${WARM_AT} warm, ${HOT_FROM} the red, 1 H): the ${p.waterCooled ? 'coolant' : 'metal'}'s °C`, get: (e) => tempGaugeFraction(e.gauge, true, e.overheat) });
+  list.push({ key: 'gauge', label: `temperature needle (0 C, ${WARM_AT} warm, ${HOT_FROM} the red, 1 H): the ${p.waterCooled ? 'coolant' : 'metal'}'s °C`, get: (e) => tempGaugeFraction(e.gauge, true) });
   list.push({ key: 'overheating', label: 'overheating', get: (e) => e.heat });
   if (!p.waterCooled && !diesel) {
     list.push({ key: 'hotWork', label: 'too hot and working (loses power, runs rough)', get: (e) => e.hotWork });
     list.push({ key: 'pinking', label: 'pinking (the rattle: too hot and working, times how prone it is)', get: (e) => e.pink });
   }
   list.push({ key: 'condensing', label: 'vapour and drips from a cold exhaust in cold air', get: (e) => condensation({ running: e.isRunning, temperature: e.temperature, dayTemp: e.dayTemp }, e.params) });
-  list.push({ key: 'heatSoak', label: 'heat soak (ticks as it cools, hot start rich)', get: (e) => e.soak });
-  list.push({ key: 'lubeHeat', label: 'extra heat from poor lubrication', get: (e) => e.overheat });
+  list.push({ key: 'heatSoak', label: 'heat soak, from the metal\'s °C (ticks as it cools, hot start rich)', get: (e) => e.soak });
+  list.push({ key: 'lubeHeat', label: 'extra heat poor lubrication is putting into the metal', get: (e) => e.overheat });
+  if (p.waterCooled) list.push({ key: 'heatCreep', label: '°C still in the hot parts, to creep into the metal once switched off', get: (e) => e.creepC });
   if (p.waterCooled) {
     list.push({ key: 'hotLevel', label: 'running too hot (loses power, stalls at the top)', get: (e) => e.hot });
     list.push({ key: 'heatLocked', label: 'overheated and stalled (won\'t catch till cool)', get: (e) => (e.heatLocked ? 'yes' : 'no') });
