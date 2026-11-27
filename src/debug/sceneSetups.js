@@ -114,6 +114,23 @@ export function hotpink(g, say) {
   return [`you are on the ${u.label} with its engine hot: let it idle and it stays quiet, then pull away or rev it and it pinks`];
 }
 
+/** The Finch (or another car, the Tor or the Crag) running where it is parked, low on coolant and hot enough to boil over, you stood looking at its nose (#916). */
+export function carboil(g, say) {
+  const u = ['finch', 'griffin', 'vauclair', 'tor', 'crag'].map((id) => g.units.find((x) => x.id === id)).find((x) => x && !x.engineOut);
+  if (!u) return ['this farm has no car, Tor or Crag to boil over'];
+  if (u.quad.rider || u.quad.driver) return [`the ${u.label} has someone on it already: scene end, then reset it`];
+  say(`start ${u.id}`);
+  // Five metres ahead of its nose, facing it (not moved first: a vehicle sent somewhere only gets there on the next physics step).
+  const q = u.quad;
+  const x = q.position.x + Math.sin(q.yaw) * 5;
+  const z = q.position.z + Math.cos(q.yaw) * 5;
+  g.player.moveTo({ x, y: g.world.heightAt(x, z) + 0.5, z });
+  g.player.yaw = q.yaw;
+  u.engine.coolant = 0.3; // low: it steams from the radiator, and its boiling point is well under the stall
+  u.engine.coolantC = u.engine.params.hotFromC + 10; // as if it had been worked hard: over that boiling point, so it boils over at once
+  return [`the ${u.label} is boiling over in front of you: watch the steam come out of the grille and from under the bonnet's front edge, not the cab`];
+}
+
 export function flock(g, say) {
   const [cx, cz] = g.world.layout.hill.climb.points[0];
   if (!g.flock) return ['there is no flock on this farm'];
@@ -185,4 +202,4 @@ export function splitter(g, say) {
   ];
 }
 
-export const SETUPS = { farHedges, prepare: getOff, wardrobe, moto, flock, flask, earlier, splitter, hotrev, hotpink, end: endScene };
+export const SETUPS = { farHedges, prepare: getOff, wardrobe, moto, flock, flask, earlier, splitter, hotrev, hotpink, carboil, end: endScene };

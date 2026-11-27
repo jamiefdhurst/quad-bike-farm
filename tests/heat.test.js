@@ -7,6 +7,7 @@ import { heatLevel, metalTarget, fuelHeat, finCooling } from '../src/engine/ther
 import { Weather, WEATHER_KINDS } from '../src/world/weather.js';
 import { QUAD_SPECS, EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC, PLOVER_SPEC } from '../src/vehicle/quadSpecs.js';
 import { tempGaugeFraction, HOT_FROM } from '../src/vehicle/tempGauge.js';
+import { steamSource, SEAT_STEAM_RISE } from '../src/vehicle/steamSource.js';
 
 const P = DEFAULT_ENGINE_PARAMS;
 const WATER = { ...P, waterCooled: true };
@@ -409,5 +410,32 @@ describe('who pinks, run hot and hard (#861)', () => {
       else expect(pulling, id).toBe(0);
       void idlePower;
     }
+  });
+});
+
+describe('where a hot engine steams from (#916)', () => {
+  const ALL = [...QUAD_SPECS, ...EXTRA_SPECS, PLOVER_SPEC, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC];
+  const water = ALL.filter((s) => s.engine?.waterCooled);
+  const air = ALL.filter((s) => !s.engine?.waterCooled);
+
+  it('covers both kinds', () => {
+    expect(water.map((s) => s.id)).toEqual(expect.arrayContaining(['adder', 'bruin', 'hartley', 'yak', 'tor', 'crag', 'finch', 'griffin', 'vauclair']));
+    expect(air.map((s) => s.id)).toEqual(expect.arrayContaining(['farm300', 'hornet', 'plover']));
+  });
+
+  it.each(water.map((s) => [s.id, s]))('the %s steams from its radiator, at the front', (id, spec) => {
+    expect(spec.radiatorAt, `${id} has no radiatorAt`).toBeTruthy();
+    expect(steamSource(spec)).toEqual({ from: 'radiator', at: spec.radiatorAt });
+    expect(spec.radiatorAt.z).toBeGreaterThan(0.5); // ahead of any seat: the nose, not the cab
+    expect(spec.radiatorAt.y).toBeLessThan(1.2); // under the bonnet's top, not the height of the driver's head
+  });
+
+  it.each(air.map((s) => [s.id, s]))('the air-cooled %s steams from over its seat anchor', (id, spec) => {
+    expect(steamSource(spec)).toEqual({ from: 'seat', rise: SEAT_STEAM_RISE });
+  });
+
+  it('follows the engine fitted, not the spec it came with', () => {
+    expect(steamSource(TOR_SPEC, false).from).toBe('seat');
+    expect(steamSource(PLOVER_SPEC, true).from).toBe('seat'); // a radiator engine with nowhere to put the steam keeps the seat
   });
 });

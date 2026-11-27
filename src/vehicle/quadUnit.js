@@ -33,10 +33,10 @@ import { buildCarModel, carLayout, carProxy, CAR_GROUND_OFFSET, CAR_STAND } from
 import { CrankHandle, DEFAULT_CRANK_PARAMS, CRANK_PARAM_RANGES } from './crankHandle.js';
 
 import { hotSteam } from '../engine/heat.js';
+import { steamSource } from './steamSource.js';
 import { Radio, RADIO_PARAMS, hasRadio } from './radio.js';
 
-// Where steam leaves the orange's radiator, in the model's own space, and what the steam looks like: pale, quick and rising.
-const RADIATOR_AT = { x: 0, y: 0.68, z: 0.86 };
+// What steam looks like: pale, quick and rising. Where it leaves is steamSource.js's (each water-cooled spec's `radiatorAt`).
 const STEAM_SMOKE = { opacity: 1.2, maxPerSecond: 40, lifeMin: 0.8, lifeMax: 2.4, startSize: 0.1, endSize: 1.0, exitSpeed: 1.6, drag: 1.4, buoyancy: 1.1 };
 
 /**
@@ -241,11 +241,7 @@ export class QuadUnit {
       // The airbox is under the seat: a puff comes up from there, not the pipe.
       if (e.type === 'spitBack' && this.quad.riderAnchor) this.smoke.spit(this.quad.riderAnchor.getWorldPosition(this.airbox), this.quad.velocity, e.strength);
     }
-    if (this.steam) {
-      const at = this.spec.radiatorAt ?? RADIATOR_AT;
-      this.quad.model.localToWorld(this.radiator.set(at.x, at.y, at.z));
-      this.steam.steam(dt, this.radiator, this.engine.steam, this.quad.velocity);
-    }
+    if (this.steam && this.steamAt(this.radiator).from === 'radiator') this.steam.steam(dt, this.radiator, this.engine.steam, this.quad.velocity);
     this.updateHotSteam(dt);
     this.mud.update(dt);
     this.updateDust(dt);
@@ -267,10 +263,22 @@ export class QuadUnit {
       this.heatSteam = new ExhaustSmoke(this.scene, (x, z) => this.world.heightAt(x, z), { ...DEFAULT_SMOKE_PARAMS, ...STEAM_SMOKE });
       if (this.viewport) this.heatSteam.setViewport(...this.viewport);
     }
-    // From under the seat, where the engine sits on a quad; the exhaust end for the ones with no seat anchor.
-    (this.quad.riderAnchor ?? this.quad.exhaustTip ?? this.quad.model).getWorldPosition(this.engineAt);
-    this.engineAt.y += 0.1;
+    this.steamAt(this.engineAt);
     this.heatSteam.steam(dt, this.engineAt, level, this.quad.velocity);
+  }
+
+  /**
+   * Puts where steam leaves this vehicle into `out`, in the world (steamSource.js): the radiator on a water-cooled engine, else just above
+   * the seat anchor, where an air-cooled quad's engine sits (the exhaust end for the ones with no seat anchor). Returns steamSource's answer.
+   */
+  steamAt(out) {
+    const s = steamSource(this.spec, !!this.engine.params.waterCooled);
+    if (s.from === 'radiator') this.quad.model.localToWorld(out.set(s.at.x, s.at.y, s.at.z));
+    else {
+      (this.quad.riderAnchor ?? this.quad.exhaustTip ?? this.quad.model).getWorldPosition(out);
+      out.y += s.rise;
+    }
+    return s;
   }
 
   /** Dust lifted off dry stubble behind the quad (world/dust.js). */
