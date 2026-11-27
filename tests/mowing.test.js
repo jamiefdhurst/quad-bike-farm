@@ -189,11 +189,11 @@ describe('the farm', () => {
     }
   });
 
-  it('can be done in a long afternoon at mowing speed', () => {
+  it('can be done in a few minutes at mowing speed', () => {
     const cells = new MowGrid(plots, { ...P }).cells;
     const area = cells * P.cell * P.cell;
     const seconds = area / (P.deckWidth * 2.2);
     expect(seconds).toBeGreaterThan(90);
-    expect(seconds).toBeLessThan(1800); // the garden is 59 by 58 m: about 26 minutes of mowing (a long job, filed to look at)
+    expect(seconds).toBeLessThan(600); // the garden's lawn is 40 by 28 m: about eight and a half minutes (#1108)
   });
 });
