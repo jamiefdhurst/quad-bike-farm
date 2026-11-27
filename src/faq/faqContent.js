@@ -2655,7 +2655,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I harrow the field?',
-        a: `When "Harrow Low Ley" is on the chalkboard, the chain harrows are waiting at the edge of Low Ley, south-east of the yard (the map, <kbd>M</kbd>, outlines the field while the job is on). The brook runs across the north of Low Ley, so the job is the part south of the water: the strip beyond it is left alone.
+        a: `When "Harrow Low Ley" is on the chalkboard, the chain harrows are waiting at the edge of Low Ley, south-east of the yard (the map, <kbd>M</kbd>, outlines the field while the job is on). The brook runs across the south of Low Ley, so the job is the part north of the water: the strip beyond it is left alone.
           Back the tractor or a quad with a rack up to their ring and hook them on with <kbd>J</kbd>, then press <kbd>T</kbd> to lower the tines onto the ground.
           Drive up and down the field at a steady pace (about a brisk walk up to a trot) and the mat of tines combs a strip about three and a half metres wide behind the carrier, leaving pale and dark stripes and spreading the molehills.
           Overlap the lines a little so you leave no gaps. Once nearly all of it is combed the job ticks off. Lift the tines with <kbd>T</kbd> before you go through a gate.`,

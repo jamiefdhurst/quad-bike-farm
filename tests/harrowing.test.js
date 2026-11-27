@@ -402,7 +402,7 @@ describe('the field in the farm', () => {
       expect(fields.areaOf(x, z), `${x},${z}`).toBe('ley');
       expect(heights.puddleAt(x, z), `puddle ${x},${z}`).toBe(0);
     });
-    expect(n).toBeGreaterThan(5000); // Low Ley south of the brook, sampled every 2 m
+    expect(n).toBeGreaterThan(5000); // Low Ley north of the brook, sampled every 2 m
   });
 
   it('is clear of the track and bogs, and not a steep hillside', () => {

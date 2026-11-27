@@ -62,12 +62,12 @@ describe('each job\'s area', () => {
       const water = brook.zAt(x);
       for (let z = water - brook.halfAt(x) - BROOK_CLEAR + 0.5; z <= p.maxZ + 10; z += 2) expect(inPlace(p, x, z), `${x},${z}`).toBe(false);
     }
-    expect(inPlace(p, (p.minX + p.maxX) / 2, p.minZ + 20)).toBe(true); // the field south of the water is the job's
+    expect(inPlace(p, (p.minX + p.maxX) / 2, p.minZ + 20)).toBe(true); // the field north of the water is the job's
     const square = [[0, 0], [100, 0], [100, 100], [0, 100]];
     const brookAt = (z) => ({ line: () => Array.from({ length: 71 }, (_, i) => ({ x: -20 + i * 2, z, half: 2 })) });
     const across = brookAt(70);
     const cut = clearOfBrook(square, across, 8);
-    expect(Math.abs(polygonArea(cut))).toBeCloseTo(100 * 60, 3); // south of 70 - 2 - 8
+    expect(Math.abs(polygonArea(cut))).toBeCloseTo(100 * 60, 3); // the side short of z 70 - 2 - 8, the larger
     const away = brookAt(300);
     expect(clearOfBrook(square, away, 8)).toBe(square);
   });
@@ -132,11 +132,11 @@ describe('the jobs read the polygon', () => {
   });
   it('harrowing: the same, on Low Ley', () => {
     const h = new Harrowing({ rect: two.harrowField, params: { ...DEFAULT_HARROW_PARAMS } });
-    expect(h.liveCount).toBeGreaterThan(20000); // Low Ley south of the brook (#1110)
+    expect(h.liveCount).toBeGreaterThan(20000); // Low Ley north of the brook (#1110)
     expect(h.needed).toBeCloseTo(DEFAULT_HARROW_PARAMS.areaNeeded / h.liveCount, 6);
     h.combAll(1);
     expect(h.coverage).toBeCloseTo(1, 5);
-    expect(h.index(two.harrowField.minX + 0.5, two.harrowField.maxZ - 0.5)).toBe(-1); // the north-west corner of the bounds is beyond the brook
+    expect(h.index(two.harrowField.minX + 0.5, two.harrowField.maxZ - 0.5)).toBe(-1); // the south-west corner of the bounds is beyond the brook
   });
   it('harrowing: the molehills are dealt in the field', () => {
     const hills = dealMolehills(two.harrowField, 16, createRandom(7));

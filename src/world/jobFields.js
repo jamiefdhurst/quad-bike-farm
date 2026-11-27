@@ -49,8 +49,8 @@ export function jobPlace(field, headland = false, brook = null) {
 }
 
 /**
- * `poly` with what lies across the brook cut off: the brook's line, `BROOK_CLEAR` m off its water either side, splits the field, and the larger
- * side is the field's (Low Ley's north strip, beyond the water, is left out). A field the brook doesn't reach is as it was.
+ * `poly` with what lies across the brook cut off: the brook's line, `BROOK_CLEAR` m off its water either side (measured along z, so a little less out from the water where it bends sharply), splits the field, and the larger
+ * side is the field's (Low Ley's south strip, beyond the water, is left out). A field the brook doesn't reach is as it was.
  */
 export function clearOfBrook(poly, brook, clear = BROOK_CLEAR) {
   const edges = polygonEdges(poly);
