@@ -1006,7 +1006,8 @@ export const FAQ_SECTIONS = [
           where it cuts out. On the air-cooled quads it reads the metal of the engine instead, the middle when warm and the red where it starts to pink.
           A healthy cooling system keeps the needle in the middle idling all day in the sun and riding along. What it can't cope with is revving hard while
           standing still: with no air through the radiator the fan can't keep up. The Adder gets hot in about two minutes, the cars and the Yak in about four,
-          the Moorlands in about five, and the tractor, built for standing work, never does. Let it idle and it comes back down. If it is in the red without
+          the Moorlands in about five, and the tractor, built for standing work, never does. Let it idle and it comes back down. Keep revving on a warm day and
+          it boils over, throwing out most of its coolant, and then it needs topping up from the coolant bottle before it will cool. If it is in the red without
           that, something is wrong: the coolant is low (look for a damp patch on the ground under it) or the thermostat has stuck shut, which can be there from
           the start or come on after a long run. With the coolant all gone it gets hot in about a minute even idling, on any day.
           It loses power and runs rough and steams if it gets worse. Near the top it boils over, at about 122 °C with the radiator full, spitting out most of

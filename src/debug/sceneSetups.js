@@ -98,7 +98,7 @@ export function hotrev(g) {
   if (u.quad.rider || u.quad.driver) return ['the Adder has someone on it already: scene end, then reset it'];
   g.mount(u);
   u.quad.parkBrake = true;
-  return ['you are on the Adder with the parking brake on: hold the throttle and watch the needle climb into the red in about two minutes'];
+  return ['you are on the Adder with the parking brake on: hold the throttle and watch the needle climb into the red within a minute or two'];
 }
 
 export function flock(g, say) {
