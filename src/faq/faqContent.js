@@ -982,30 +982,41 @@ export const FAQ_SECTIONS = [
         a: `Yes. Rain wets the ground, and wet grass and especially wet mud are slipperier and the bogs worse. It's colder in the morning and after dark than
           in the afternoon. Cold days want more choke, longer to warm
           up and drain batteries faster; a hard frost whitens the grass and the seats (your tyres melt a track through the grass, and sitting on a seat clears it). Dry stubble throws up dust that clogs air filters fast. Hot, sunny days make the
-          air-cooled quads overheat if you idle them or crawl through mud. The Adder, the cars, Moorlands, Yak and tractor have radiators: they stay cool idling
-          and riding along on any day, but hold the revs up hard while standing still and they get hot, quicker on a hot day. Only the tractor never does.`,
+          air-cooled quads overheat sooner if you work them hard standing still or crawl through mud, and a hot one pinks when you open the throttle. The Adder,
+          the Bruin, the cars, Moorlands, Yak and tractor have radiators: they stay cool idling and riding along on any day, but hold the revs up hard while
+          standing still and they get hot, quicker on a hot day. Only the tractor never does.`,
       },
       {
         q: 'Why is my quad losing power and rattling on a hot day?',
-        a: `It's too hot and pinking. The air-cooled quads (Farm 300, Bruin, Hornet and RB300) cook if left idling for ages in the sun or crawled through the mud
-          with the throttle open. Ride along at a decent speed to cool it. The Adder has a radiator and a fan, and copes with idling and riding, but its radiator is
-          the smallest on the farm: hold its revs up standing still and the needle goes into the red in a couple of minutes, and then it loses power.`,
+        a: `It's too hot and pinking. The air-cooled quads (Farm 300, Hornet and RB300, and the little ones) get hot worked hard standing still or crawled
+          through the mud with the throttle open, sooner in the sun: the small two-strokes in about two minutes flat out, the farm four-strokes in about four.
+          Hot, they pink when you make them work, pulling away or climbing, not while they sit idling, so you hear it when you open the throttle. Ride along at
+          a decent speed to cool it. Some engines never pink: the old Plover and the Clipper's garden engine get hot and lose power but don't rattle. The Adder
+          and the Bruin have a radiator and a fan instead, and cope with idling and riding, but hold their revs up standing still and the needle goes into the
+          red (in a couple of minutes on the Adder, about four on the Bruin), and then they lose power.`,
+      },
+      {
+        q: 'Why does my hot quad only rattle when I open the throttle?',
+        tip: 'A hot air-cooled engine pinks when you work it, not idling. Ease off or ride it along to cool it.',
+        a: `Pinking is the fuel going off too early in a hot cylinder, and it happens when the engine is working: pulling away, climbing, or revved hard.
+          Let a hot engine idle and it goes quiet, though it is still hot (the needle stays in the red until it cools). Revving it free makes it pink a little,
+          pulling a load a lot. It loses power the same way, worst while you work it.`,
       },
       {
         q: 'Will an air-cooled quad cut out if it gets too hot?',
         tip: 'An air-cooled quad never cuts out from heat: it pinks and loses power. Ride it along to cool it.',
-        a: `No. Only an engine with a radiator cuts out from heat. An air-cooled quad pinks (a metallic rattle), runs rough and loses more power the hotter it
-          gets, with the needle in the red, but it keeps going. Ride it along to cool it. A two-stroke run short of oil is another matter: that nips up and
+        a: `No. Only an engine with a radiator cuts out from heat. A hot air-cooled quad pinks (a metallic rattle) as you work it, runs rough and loses more power
+          the hotter it gets, with the needle in the red, but it keeps going. Ride it along to cool it. A two-stroke run short of oil is another matter: that nips up and
           seizes, which is the oil, not the heat.`,
       },
       {
         q: 'The temperature needle is in the red on a car or the tractor. What is wrong?',
         tip: 'Needle in the red on a car? Stop revving it and let it idle. If it stays there, it is low on coolant or the thermostat has stuck.',
-        a: `The gauge reads the engine's real temperature. On anything with a radiator (the cars, the Tor, the Crag, the UTV, the tractor and the Adder) it reads the
+        a: `The gauge reads the engine's real temperature. On anything with a radiator (the cars, the Tor, the Crag, the UTV, the tractor, the Adder and the Bruin) it reads the
           coolant: cold at the day's temperature, the middle at about 88 °C, the red from about 108 °C where it starts running too hot, and the top at about 126 °C
           where it cuts out. On the air-cooled quads it reads the metal of the engine instead, the middle when warm and the red where it starts to pink.
           A healthy cooling system keeps the needle in the middle idling all day in the sun and riding along. What it can't cope with is revving hard while
-          standing still: with no air through the radiator the fan can't keep up. The Adder gets hot in about two minutes, the cars and the Yak in about four,
+          standing still: with no air through the radiator the fan can't keep up. The Adder gets hot in about two minutes, the Bruin, the cars and the Yak in about four,
           the Moorlands in about five, and the tractor, built for standing work, never does. Let it idle and it comes back down. Keep revving on a warm day and
           it boils over, throwing out most of its coolant, and then it needs topping up from the coolant bottle before it will cool. If it is in the red without
           that, something is wrong: the coolant is low (look for a damp patch on the ground under it) or the thermostat has stuck shut, which can be there from
@@ -1296,8 +1307,8 @@ export const FAQ_SECTIONS = [
         a: `Yes, once the barn find runs. Park it in the yellow bay, switch it off, open the bench and press <kbd>&rarr;</kbd> for the second page: "Take the engine out" lifts it clear
           and stands it on the floor by the parts rack (the rack's panel lists it, and how worn it is). Then park another quad, open the same page and pick "Fit the spare engine". The
           engine comes with its character: its idle, how high it revs, how rough it runs, its sound and its wear. The quad keeps its body, its gearbox or belt, its tank and its dash.
-          The engine that comes out goes on the floor in its place, so you can fit it back, or in the barn find's empty body. A two-stroke only takes a two-stroke and a manual's only
-          another manual's. A new engine wants running in, like any rebuilt one, and if you rush the bolts it rocks on its mounts and runs rough.`,
+          The engine that comes out goes on the floor in its place, so you can fit it back, or in the barn find's empty body. A two-stroke only takes a two-stroke, a manual's only
+          another manual's, and one with a radiator only another with one, so the Bruin's fits no other quad. A quad always takes its own engine back. A new engine wants running in, like any rebuilt one, and if you rush the bolts it rocks on its mounts and runs rough.`,
         tip: 'Pull the barn find\'s engine at the bench (R for page two) and fit it in another quad of the same sort.',
       },
       {

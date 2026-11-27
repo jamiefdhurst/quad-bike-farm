@@ -25,7 +25,7 @@ import { airCharge, airPowerFactor, airMixture } from './airDensity.js';
 import { coolingEffect, radiatorEffect, thermostatSticks, hotLevel, leakRate, stepPuddle, steamLevel, boilsOver } from './coolant.js';
 import { slapLevel, slapCarry, loosen } from './pistonSlap.js';
 import { blowLevel, blowCarry } from './exhaustBlow.js';
-import { stepSoak, pinkLevel, coolTickRate, hotStartRich } from './heat.js';
+import { stepSoak, pinkLevel, pinkWork, coolTickRate, hotStartRich } from './heat.js';
 
 export const EngineState = Object.freeze({
   OFF: 'off',
@@ -134,7 +134,8 @@ export class EngineModel {
     this.boreFit = 1; // 0..1 how well it was fitted: a botched fit gives less of the power but all of the wear
     this.chill = 0; // 0..1 how cold a day it is: more choke, slower warm-up, faster battery drain (chill* params)
     this.sheltered = false; // parked under the barn roof: it cools slowly and never goes stone cold
-    this.pink = 0; // 0..1 how badly it's pinking
+    this.pink = 0; // 0..1 how badly it's pinking: the rattles (hotWork times its `pinkProne`)
+    this.hotWork = 0; // 0..1 an air-cooled engine too hot and made to work: its power loss and roughness, pinking or not
     this.keyOff = false; // switched off but running on for a few more beats
     this.slowThrottle = 0; // the throttle's recent self, to tell a snapped-open one (spitBack.js)
     this.spitWait = 0; // seconds before it can spit back again
@@ -630,9 +631,13 @@ export class EngineModel {
     if (p.waterCooled) this.updateCoolant(h, running);
     this.soak = stepSoak(this.soak, h, { running, work: this.work, heat: this.heat }, p);
     if (p.waterCooled) this.updateHot(h, running);
-    this.pink = running && !p.waterCooled && !p.compressionIgnition ? pinkLevel(this.metalC, p) : 0;
-    // Rattling under load; the audio plays what's owed (ticks a second, so they land at random times).
-    if (this.pink > 0) this.pinkLeft += p.pinkRate * this.pink * (0.2 + 0.8 * this.throttle) * h;
+    // Too hot and made to work, an air-cooled engine loses power and runs rough; one prone to it pinks as well. Idling, it does neither.
+    const rpmNorm = clamp((this.rpm - p.idleRpmWarm) / (p.maxRpm - p.idleRpmWarm), 0, 1);
+    const work = pinkWork({ rpmNorm, load: this.driveLoad * this.throttle }, p);
+    this.hotWork = running && !p.waterCooled && !p.compressionIgnition ? pinkLevel(this.metalC, work, p) : 0;
+    this.pink = this.hotWork * clamp(p.pinkProne, 0, 1);
+    // The rattles: the audio plays what's owed (ticks a second, so they land at random times).
+    if (this.pink > 0) this.pinkLeft += p.pinkRate * this.pink * h;
     while (this.pinkLeft >= 1) {
       this.pinkLeft -= 1;
       this.emit('pink', this.random() * h);
@@ -796,7 +801,7 @@ export class EngineModel {
         p.slapRoughness * this.slap +
         p.oilRichRoughness * this.oilRich +
         p.dirtRoughness * this.dirt +
-        p.pinkRoughness * this.pink +
+        p.pinkRoughness * this.hotWork +
         p.hotRoughness * this.hot +
         p.waterRoughness * this.water +
         p.dieselRoughness * this.dieselSoak +
@@ -831,7 +836,7 @@ export class EngineModel {
       this.power *= timingPower(err, p);
       this.roughness = clamp(this.roughness + p.roughPerError * timingRough(err), 0, 1);
     }
-    this.power *= 1 - p.pinkPowerLoss * this.pink;
+    this.power *= 1 - p.pinkPowerLoss * this.hotWork;
     this.power *= 1 - p.hotPowerLoss * this.hot;
     this.power *= 1 - p.waterPowerLoss * this.water;
     this.power *= 1 - p.dieselPowerLoss * this.dieselSoak;

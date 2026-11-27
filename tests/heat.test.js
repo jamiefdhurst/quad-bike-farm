@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
-import { hotSteam, pinkLevel, stepSoak, coolTickRate, hotStartRich, airflow, condensation } from '../src/engine/heat.js';
+import { hotSteam, pinkLevel, pinkHeat, pinkWork, stepSoak, coolTickRate, hotStartRich, airflow, condensation } from '../src/engine/heat.js';
 import { heatLevel, metalTarget, fuelHeat, finCooling } from '../src/engine/thermal.js';
 import { Weather, WEATHER_KINDS } from '../src/world/weather.js';
-import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC, PLOVER_SPEC } from '../src/vehicle/quadSpecs.js';
 import { tempGaugeFraction, HOT_FROM } from '../src/vehicle/tempGauge.js';
 
 const P = DEFAULT_ENGINE_PARAMS;
@@ -38,33 +38,33 @@ describe('running heat', () => {
     expect(airflow(-P.airflowSpeed * 2, P)).toBe(1);
   });
 
-  it('has an air-cooled engine pinking after a few minutes idling in the sun', () => {
-    const e = make();
-    const sunny = { ambient: 1 };
-    const pinkAt = (limit) => {
-      const at = make();
-      at.setTemperature(1);
-      at.setIgnition(true);
-      for (let t = 0; t < 10 && !at.isRunning; t += 0.05) at.update(0.05, { starter: true, choke: 0.3 });
-      for (let t = 0; t < limit; t += 0.5) {
-        at.update(0.5, sunny);
-        if (at.pink > 0) return t;
-      }
-      return Infinity;
-    };
-    const t = pinkAt(900);
-    expect(t).toBeGreaterThan(120);
-    expect(t).toBeLessThan(420);
-    const counts = run(e, 600, sunny);
-    expect(e.pink).toBeGreaterThan(0.3);
-    expect(counts.pink).toBeGreaterThan(20);
+  it('has an air-cooled engine hot after a few minutes idling in the sun, but pinking only once it is made to work', () => {
+    const at = make();
+    at.setTemperature(1);
+    at.setIgnition(true);
+    for (let t = 0; t < 10 && !at.isRunning; t += 0.05) at.update(0.05, { starter: true, choke: 0.3 });
+    let hotAt = Infinity;
+    for (let t = 0; t < 900; t += 0.5) {
+      at.update(0.5, { ambient: 1 });
+      if (hotAt === Infinity && at.metalC > P.pinkFromC) hotAt = t;
+      expect(at.pink).toBe(0); // idling, however hot
+    }
+    expect(hotAt).toBeGreaterThan(120);
+    expect(hotAt).toBeLessThan(420);
+    let pinks = 0;
+    for (let t = 0; t < 30; t += 0.1) {
+      at.update(0.1, { ambient: 1, throttle: 1, driveLoad: 0.8 }); // pulling away
+      pinks += at.events.filter((x) => x.type === 'pink').length;
+    }
+    expect(at.pink).toBeGreaterThan(0.1);
+    expect(pinks).toBeGreaterThan(5);
   });
 
   it('runs rougher and weaker for it, and the dash needle goes into the red', () => {
     const cool = make();
     const hot = make();
-    run(cool, 60, { ambient: 0, throttle: 0.5 });
-    run(hot, 600, { ambient: 1, throttle: 0.5 });
+    run(cool, 60, { ambient: 0, throttle: 0.9, driveLoad: 1 });
+    run(hot, 600, { ambient: 1, throttle: 0.9, driveLoad: 1 });
     expect(hot.roughness).toBeGreaterThan(cool.roughness + 0.1);
     expect(hot.power).toBeLessThan(cool.power - 0.1);
     expect(tempGaugeFraction(hot.gauge, true, hot.overheat)).toBeGreaterThan(HOT_FROM);
@@ -99,19 +99,25 @@ describe('running heat', () => {
     expect(WATER.waterCooled).toBe(true);
   });
 
-  it('only gives the orange a radiator', () => {
+  it('gives the orange and the Bruin a radiator among the girls\' quads', () => {
     const water = QUAD_SPECS.filter((s) => s.engine?.waterCooled);
-    expect(water.map((s) => s.name)).toEqual(['Viper Adder 250']);
+    expect(water.map((s) => s.id).sort()).toEqual(['adder', 'bruin']);
   });
 
-  it('measures pinking from the temperature of the metal', () => {
-    expect(pinkLevel(P.pinkFromC, P)).toBe(0);
-    expect(pinkLevel(P.pinkFromC - 20, P)).toBe(0);
-    expect(pinkLevel(P.pinkFromC + P.pinkSpanC / 2, P)).toBeCloseTo(0.5);
-    expect(pinkLevel(P.pinkFromC + P.pinkSpanC, P)).toBe(1);
+  it('measures pinking from the temperature of the metal and how hard it is working', () => {
+    expect(pinkHeat(P.pinkFromC, P)).toBe(0);
+    expect(pinkHeat(P.pinkFromC - 20, P)).toBe(0);
+    expect(pinkHeat(P.pinkFromC + P.pinkSpanC / 2, P)).toBeCloseTo(0.5);
+    expect(pinkHeat(P.pinkFromC + P.pinkSpanC, P)).toBe(1);
+    const hot = P.pinkFromC + P.pinkSpanC;
+    expect(pinkLevel(hot, pinkWork({ rpmNorm: 0, load: 0 }, P), P)).toBe(0); // idling
+    expect(pinkLevel(hot, pinkWork({ rpmNorm: 1, load: 0 }, P), P)).toBeCloseTo(P.pinkRevShare); // revved free
+    expect(pinkWork({ rpmNorm: P.pinkRevFrom, load: 0 }, P)).toBe(0); // a fast idle
+    expect(pinkLevel(hot, pinkWork({ rpmNorm: 0.4, load: 1 }, P), P)).toBe(1); // pulling hard
+    expect(pinkLevel(P.pinkFromC - 5, 1, P)).toBe(0);
   });
 
-  it('pinks a running engine once its metal is past the pinking temperature, whatever the coolant', () => {
+  it('pinks a running engine working with its metal past the pinking temperature, whatever the coolant', () => {
     const e = make();
     run(e, 1, {});
     e.metalC = P.pinkFromC - 3;
@@ -119,6 +125,11 @@ describe('running heat', () => {
     expect(e.pink).toBe(0);
     e.metalC = P.pinkFromC + 15;
     e.update(0.05, {});
+    expect(e.pink).toBe(0); // idling
+    for (let t = 0; t < 2; t += 0.05) {
+      e.metalC = P.pinkFromC + 15;
+      e.update(0.05, { throttle: 1, driveLoad: 1 });
+    }
     expect(e.pink).toBeGreaterThan(0.2);
   });
 
@@ -276,5 +287,124 @@ describe('condensation in a cold exhaust', () => {
   });
   it('stops when the engine is off', () => {
     expect(at(0.1, 2, false)).toBe(0);
+  });
+});
+
+// Each air-cooled vehicle heats in its own time, and only some of them pink (#861).
+const EVERY_SPEC = [...QUAD_SPECS, ...EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC, PLOVER_SPEC].filter((s, i, all) => all.findIndex((x) => x.id === s.id) === i);
+const spec = (id) => EVERY_SPEC.find((s) => s.id === id);
+
+/** A warm, running engine from a vehicle's spec on a day of `dayTemp` °C (a pull-start one started as if pulled). */
+function vehicleEngine(s, dayTemp = 12) {
+  const e = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...s.engine }, { random: seeded(5) });
+  const diesel = s.engine.runsOnDiesel ? 1 : 0;
+  const noStarter = e.params.noStarter;
+  e.params.noStarter = false;
+  e.dayTemp = dayTemp;
+  e.setTemperature(1);
+  e.setIgnition(true);
+  for (let t = 0; t < 4; t += 0.05) e.update(0.05, { diesel, dayTemp }); // (the glow plugs)
+  for (let t = 0; t < 20 && !e.isRunning; t += 0.05) e.update(0.05, { starter: true, choke: diesel ? 0 : 0.15, diesel, dayTemp });
+  e.params.noStarter = noStarter;
+  expect(e.isRunning, s.id).toBe(true);
+  return { e, diesel };
+}
+
+/** Seconds held flat out standing still until the metal reaches the pinking temperature, or Infinity. */
+function timeToPinkC(s, { ambient = 0.5, dayTemp = 12, limit = 900 } = {}) {
+  const { e } = vehicleEngine(s, dayTemp);
+  for (let t = 0; t < limit; t += 0.5) {
+    if (s.engine.strokes === 2) e.fouling = 0; // (a two-stroke held flat out oils its plug: not what this is about)
+    e.update(0.5, { throttle: 1, ambient, dayTemp });
+    if (e.metalC >= e.params.pinkFromC) return t;
+  }
+  return Infinity;
+}
+
+const PINK_TIMES = [['hornet', 120], ['asp', 120], ['tz65', 120], ['t185', 120], ['plover', 120], ['farm300', 240], ['rb300', 240], ['ursa', 240], ['shepherd', 240]];
+
+describe('each air-cooled engine heats its own way (#861)', () => {
+  for (const [id, seconds] of PINK_TIMES) {
+    it(`${id}: held open standing still on a mild 12 °C day, reaches the pinking temperature in about ${seconds / 60} minutes`, () => {
+      const t = timeToPinkC(spec(id));
+      expect(t).toBeGreaterThan(seconds * 0.75);
+      expect(t).toBeLessThan(seconds * 1.25);
+    });
+  }
+
+  it('has the Clipper, cooled by its flywheel fan, get there only in full sun', () => {
+    expect(timeToPinkC(spec('clipper'))).toBe(Infinity);
+    expect(timeToPinkC(spec('clipper'), { ambient: 0.8 })).toBe(Infinity);
+    expect(timeToPinkC(spec('clipper'), { ambient: 1 })).toBeLessThan(400);
+  });
+
+  it('gets the little two-strokes there sooner than the farm four-strokes', () => {
+    expect(timeToPinkC(spec('hornet'))).toBeLessThan(timeToPinkC(spec('farm300')));
+    expect(timeToPinkC(spec('asp'))).toBeLessThan(timeToPinkC(spec('rb300')));
+  });
+
+  it('gives every air-cooled petrol engine a pinkProne, 0 on the Plover and the Clipper', () => {
+    for (const s of EVERY_SPEC) {
+      const p = { ...DEFAULT_ENGINE_PARAMS, ...s.engine };
+      if (p.waterCooled || p.compressionIgnition) continue;
+      expect(s.engine.pinkProne, s.id).toBeGreaterThanOrEqual(0);
+      expect(s.engine.pinkProne, s.id).toBeLessThanOrEqual(1);
+    }
+    expect(spec('plover').engine.pinkProne).toBe(0);
+    expect(spec('clipper').engine.pinkProne).toBe(0);
+  });
+});
+
+describe('who pinks, run hot and hard (#861)', () => {
+  /** Every vehicle run hard with its engine hot: whether it pinked, and whether it lost power to the heat. */
+  const hotAndHard = (s) => {
+    const { e, diesel } = vehicleEngine(s, 25);
+    let pinks = 0;
+    let hotWork = 0;
+    for (let t = 0; t < 20; t += 0.1) {
+      e.metalC = Math.max(e.metalC, e.params.pinkFromC + 40);
+      if (e.params.waterCooled) e.coolantC = Math.max(e.coolantC, e.params.hotFromC + 5);
+      if (s.engine.strokes === 2) e.fouling = 0;
+      e.update(0.1, { throttle: 1, driveLoad: 1, ambient: 1, dayTemp: 25, diesel });
+      pinks += e.events.filter((x) => x.type === 'pink').length;
+      hotWork = Math.max(hotWork, e.hotWork);
+    }
+    return { pinks, hotWork, p: e.params };
+  };
+
+  for (const s of EVERY_SPEC) {
+    it(`${s.id}: pinks only if it is air-cooled petrol and prone to it`, () => {
+      const { pinks, hotWork, p } = hotAndHard(s);
+      const shouldPink = !p.waterCooled && !p.compressionIgnition && p.pinkProne > 0;
+      if (shouldPink) expect(pinks).toBeGreaterThan(5);
+      else expect(pinks).toBe(0);
+      if (!p.waterCooled && !p.compressionIgnition) expect(hotWork).toBeGreaterThan(0.5); // too hot and working, it loses power whether it rattles or not
+    });
+  }
+
+  it('has a hot engine idling not pink or lose power, and the same engine pulling away do both', () => {
+    for (const [id] of PINK_TIMES) {
+      const { e } = vehicleEngine(spec(id), 25);
+      let idlePinks = 0;
+      for (let t = 0; t < 20; t += 0.1) {
+        e.metalC = e.params.pinkFromC + 30;
+        if (spec(id).engine.strokes === 2) e.fouling = 0;
+        e.update(0.1, { ambient: 1, dayTemp: 25 });
+        idlePinks += e.events.filter((x) => x.type === 'pink').length;
+      }
+      expect(idlePinks, id).toBe(0);
+      expect(e.hotWork, id).toBe(0);
+      const idlePower = e.power;
+      let pulling = 0;
+      for (let t = 0; t < 3; t += 0.1) {
+        e.metalC = e.params.pinkFromC + 30;
+        e.update(0.1, { ambient: 1, dayTemp: 25, throttle: 1, driveLoad: 0.8 });
+        pulling += e.events.filter((x) => x.type === 'pink').length;
+      }
+      expect(e.hotWork, id).toBeGreaterThan(0.3);
+      if (spec(id).engine.pinkProne > 0) expect(pulling, id).toBeGreaterThan(0);
+      else expect(pulling, id).toBe(0);
+      void idlePower;
+    }
   });
 });

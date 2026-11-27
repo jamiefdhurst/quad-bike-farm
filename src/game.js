@@ -27,7 +27,7 @@ import { StoriesView } from './farm/storiesView.js';
 import { DEFAULT_SHOW_PARAMS, SHOW_PARAM_RANGES, ShowKeeper, isShowDay, isShowEve, runShow, showCard, showSpeech, judgeQuad, previewText, rosetteSvg } from './farm/showDay.js';
 import { formatEntry, shortName } from './workshop/logbook.js';
 import { DEFAULT_FARM_PARAMS, FARM_PARAM_RANGES, LAYOUT_RESET_TOAST, browserStorage, openFarm, writeSave, wipeSave, fleetFromSave, describeFarm, validSave } from './farm/farmSave.js';
-import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from './farm/farmState.js';
+import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls, GAINED_A_RADIATOR } from './farm/farmState.js';
 import { applyIdle, applyTopRpm, applyVariation, pickIdle } from './vehicle/quadVariation.js';
 import { AudioHub } from './audio/engineAudio.js';
 import { startBanks } from './audio/bankWant.js';
@@ -728,12 +728,14 @@ export class Game {
     // The water-cooled ones' coolant leaks, and some have a thermostat stuck shut (engine/coolant.js): how fast and how full it starts are picked from the seed, on their own stream.
     this.coolantPatches = new Map(); // quad id -> the damp patch under a leaking radiator
     const coolantRandom = createRandom(this.farmSeed ^ 0x2b6d);
+    const gainedRandom = createRandom(this.farmSeed ^ 0x2b6e); // the ones that gained a radiator later (the Bruin, #861) draw on their own, so the rest keep what a seed gave them
     for (const u of this.units) {
       if (!u.engine.params.waterCooled) continue;
-      const pick = pickLeak(coolantRandom, u.engine.params);
+      const r = GAINED_A_RADIATOR.includes(u.spec.id) ? gainedRandom : coolantRandom;
+      const pick = pickLeak(r, u.engine.params);
       u.engine.coolantLeak = pick.leak;
       u.engine.coolant = pick.level;
-      u.engine.thermostat = pickThermostat(coolantRandom, u.engine.params);
+      u.engine.thermostat = pickThermostat(r, u.engine.params);
       console.info(pick.leak > 0 ? `${u.name}: leaking coolant, ${levelText(pick.level)} (${pick.level.toFixed(2)}) at ${pick.leak.toFixed(2)} times the usual rate` : `${u.name}: coolant fine this game`);
     }
     this.wearGearbox();

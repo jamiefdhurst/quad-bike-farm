@@ -106,6 +106,14 @@ describe('which vehicles have a radiator', () => {
   it('gives every car, Tor, Crag, the UTV and the tractor one', () => {
     for (const spec of [HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, FINCH_SPEC, GRIFFIN_SPEC]) expect(spec.engine.waterCooled, spec.id).toBe(true);
   });
+
+  it('gives the Bruin one behind its front rack, with a leak in 1 game in 4 like the others (#861)', () => {
+    const bruin = QUAD_SPECS.find((s) => s.id === 'bruin');
+    expect(bruin.engine.waterCooled).toBe(true);
+    expect(bruin.engine.coolantLeakChance).toBe(0.25);
+    expect(bruin.radiatorAt.z).toBeGreaterThan(0.6); // the front, under the rack (its rack anchor is at z 0.66)
+    expect(bruin.radiatorAt.y).toBeLessThan(0.84); // below the rack
+  });
 });
 
 describe('a healthy water-cooled engine', () => {
@@ -122,8 +130,10 @@ describe('a healthy water-cooled engine', () => {
 
 // Each vehicle with a radiator, built from its own spec: how long it lasts revved hard standing still (#860).
 const ADDER_SPEC = QUAD_SPECS.find((s) => s.id === 'adder');
+const BRUIN_SPEC = QUAD_SPECS.find((s) => s.id === 'bruin');
 const RADIATORS = [
   ['Adder', ADDER_SPEC, 120],
+  ['Bruin', BRUIN_SPEC, 240],
   ['Finch', FINCH_SPEC, 240],
   ['Griffin', GRIFFIN_SPEC, 240],
   ['Vauclair', VAUCLAIR_SPEC, 240],

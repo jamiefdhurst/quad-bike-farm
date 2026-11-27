@@ -11,6 +11,12 @@ import { captureSwap, restoreSwap } from '../vehicle/engineSwap.js';
 
 // Engine values that are its condition rather than its running state (rpm, heat, choke). Restored only when the save has them.
 export const ENGINE_KEPT = ['wear', 'pistonWear', 'fouling', 'scuff', 'seized', 'silencerBlown', 'silencerOff', 'runIn', 'scar', 'coolant', 'coolantLeak', 'thermostat', 'boiled', 'dieselSoak', 'bore', 'boreFit', 'battery', 'batteryOut'];
+// The radiator's condition, which a save keeps only for an engine that had a radiator when it was saved.
+const COOLANT_KEPT = ['coolant', 'coolantLeak', 'thermostat', 'boiled'];
+// Vehicles that had no radiator in a save from before it said how each engine was cooled (#861): the Bruin was air-cooled until then,
+// so an old save's full radiator and free thermostat for it are an air-cooled engine's blanks, and its first load keeps what it was dealt.
+export const GAINED_A_RADIATOR = ['bruin'];
+
 const FUEL_KEPT = ['oil', 'diesel', 'water', 'sediment', 'additive', 'wax', 'antiGel', 'airLock'];
 const FAULT_FIELDS = ['levels', 'started', 'caps', 'kept', 'wheelOf']; // kept: the chain's oil and whether it is off the sprocket; wheelOf: the shed faults' wheels
 
@@ -29,6 +35,7 @@ export function captureVehicle(unit, extra = {}) {
     hours: q.usage.hours,
     odo: q.usage.odoMiles,
     engine: Object.fromEntries(ENGINE_KEPT.filter((k) => k in e).map((k) => [k, e[k]])),
+    cooled: e.params.waterCooled ? 'water' : 'air', // so a vehicle that gains a radiator keeps the leak and thermostat dealt it, not an air-cooled save's blanks
     keyOn: !!e.ignitionOn,
     running: !!e.isRunning, // a running engine is taken as fine overnight: the key is only "left on" when the engine is not going
     filter: q.filter?.clog ?? 0,
@@ -67,6 +74,13 @@ export function overnight(saved, P = DEFAULT_FARM_PARAMS) {
   return out;
 }
 
+/** Whether the engine had a radiator when it was saved: as the save says, or for an older save, as the vehicle (or the engine swapped in) had then. */
+function savedWithRadiator(unit, s) {
+  if (s.cooled) return s.cooled === 'water';
+  if (s.swap?.params) return !!s.swap.params.waterCooled;
+  return !!unit.engine.params.waterCooled && !GAINED_A_RADIATOR.includes(unit.spec?.id);
+}
+
 /** Puts a saved condition back on a freshly dealt vehicle. Anything the save lacks keeps what was dealt. */
 export function restoreVehicle(unit, s) {
   if (!s) return;
@@ -77,7 +91,7 @@ export function restoreVehicle(unit, s) {
   if (num(s.roughness)) e.params.baseRoughness = s.roughness;
   if (num(s.hours)) q.usage.hours = s.hours;
   if (num(s.odo)) q.usage.odoMiles = s.odo;
-  copyKnown(e, s.engine, ENGINE_KEPT);
+  copyKnown(e, s.engine, savedWithRadiator(unit, s) === !!e.params.waterCooled ? ENGINE_KEPT : ENGINE_KEPT.filter((k) => !COOLANT_KEPT.includes(k)));
   if (num(s.filter) && q.filter) e.clog = q.filter.clog = s.filter;
   if (s.fuel) {
     if (num(s.fuel.litres)) q.fuel.setLitres(s.fuel.litres);

@@ -29,6 +29,7 @@ export const SCENES = [
     lines: ['weather sunny', 'weather.temperature -4', 'weather.time 6.8', 'weather.puddleIce 1', 'cool all', 'tp me to yard'],
   },
   { id: 'controls', label: 'Make it dusk and send Amy off in the Tor or Crag and Jess on the red: lights, indicators, and what they leave behind', lines: ['weather.time 21.5', 'girl amy drive tor', 'girl jess drive farm300'] },
+  { id: 'hotpink', label: 'Put you on the Hornet (or, on a farm without one, another air-cooled quad that pinks) in the yard on a sunny midday with its engine already hot: idling it stays quiet, and pulling away or revving it it pinks, a quick metallic rattle', lines: ['weather.kind sunny', 'weather.time 12'], setup: 'hotpink' },
   { id: 'earlier', label: 'Put you stood by the girls with a race and a tipped quad already in the day, so they bring them up in half a minute', lines: ['weather fair', 'weather.time 11', 'tp me to yard'], setup: 'earlier' },
   { id: 'generator', label: 'Put you at the barn generator with a full tank, in daylight, to start it, listen to it run and see how long it lasts', lines: ['weather fair', 'weather.time 12', 'generator.fuel 5', 'tp me to generator'] },
   { id: 'boards', label: 'Put you at the barn with ads pinned on the small ads board, in daylight, to look at the boards on its back wall', lines: ['weather.time 12', 'farm.ads on', 'tp me to barn'] },

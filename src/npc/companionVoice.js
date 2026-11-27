@@ -677,7 +677,7 @@ export class CompanionVoice {
     if (!listening) return;
     if (e.params.waterCooled && e.events.some((x) => x.type === 'overheated')) this.say('heatStalled', { urgent: true, chance: 1 });
     else if (e.params.waterCooled && e.isRunning && e.hot > 0.3) this.say(hotLine(e), { chance: 0.03 });
-    else if (e.pink > 0.4) this.say('heatPink', { chance: 0.03 });
+    else if (e.pink > 0.2) this.say('heatPink', { chance: 0.03 }); // (pinking follows the work since #861: a farm quad revved hot standing still gets to about 0.3)
     else if (!e.isRunning && e.events.some((x) => x.type === 'coolTick')) this.say('heatTicking', { chance: 0.08 });
   }
 

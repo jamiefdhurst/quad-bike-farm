@@ -54,7 +54,13 @@ export const QUAD_SPECS = [
     manual: true, // a clutch (Shift) and a four-speed gearbox in place of the CVT (src/vehicle/manualDrivetrain.js)
     gearbox: { gears: 4, topSpeed1: 4.5, topSpeed2: 8.5, topSpeed3: 12.5, topSpeed4: 17, topSpeedReverse: 3.5, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, torqueReverse: 0.9, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, launchLoad4: 1, lugSpeed: 0.6 },
     fuel: {},
-    engine: { loadDragRpm: 9000 }, // a manual: slowing in a high gear drags it down and stalls it (manualDrivetrain.js)
+    engine: {
+      loadDragRpm: 9000, // a manual: slowing in a high gear drags it down and stalls it (manualDrivetrain.js)
+      // How it heats (#861): a farm four-stroke with big fins: about four minutes
+      finRevCooling: 0.5, // its fins and the flywheel's draught at full revs
+      fuelRevBoost: 1.05, // the heat it makes revved hard, set so held flat out standing still on a mild 12 °C day it reaches the pinking temperature in its own time
+      pinkProne: 0.6, // how prone it is to pinking, from its compression
+    },
     vehicle: {},
     vibration: {
       pulseGain: 1.15,
@@ -73,6 +79,7 @@ export const QUAD_SPECS = [
     // when cold and runs lumpier until it's warm, warms a little quicker, and
     // pulls slightly harder. Its idle comes from the other recorded machine.
     id: 'bruin',
+    radiatorAt: { x: 0, y: 0.72, z: 0.72 }, // where its steam leaves, in the model's own space: the radiator under the front rack
     stockBhp: 26, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'mud', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
@@ -99,6 +106,9 @@ export const QUAD_SPECS = [
     topRpmRange: [6550, 7050], // full-throttle revs this game, about 4% either side of the engine's own
     fuel: { tankCapacity: 11, reserveLitres: 1.8 },
     engine: {
+      waterCooled: true, // a radiator behind the front rack, as the real one has (#861): it copes idling and riding along, but revved hard standing still it gets hot
+      radiatorFan: 1.71, // held near the top standing still on a mild day it gets hot in about four minutes (bisected: 1.75 never does, 1.65 in under three)
+      coolantLeakChance: 0.25, // and a leak in 1 game in 4, as the other radiators
       idleRpmWarm: 1450,
       maxRpm: 6800,
       redlineRpm: 6400,
@@ -170,6 +180,10 @@ export const QUAD_SPECS = [
     gearbox: { gears: 4, topSpeed1: 5, topSpeed2: 9.5, topSpeed3: 14.5, topSpeed4: 20, topSpeedReverse: 3.5, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, torqueReverse: 0.9, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, launchLoad4: 1, lugSpeed: 0.6 },
     fuel: { tankCapacity: 9, startOil: 0.02, reserveLitres: 1.5, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
+      // How it heats (#861): small fins and a bored-out barrel: hot in about two minutes, and the most prone to pinking of all
+      finRevCooling: 0.4, // its fins and the flywheel's draught at full revs
+      fuelRevBoost: 1.01, // the heat it makes revved hard, set so held flat out standing still on a mild 12 °C day it reaches the pinking temperature in its own time
+      pinkProne: 1, // how prone it is to pinking, from its compression
       loadDragRpm: 32000, // a manual: slowing in a high gear drags it down and stalls it, high idle and all (manualDrivetrain.js)
       strokes: 2,
       popProne: 0.7, // two-strokes crackle and bang on the overrun
@@ -277,6 +291,10 @@ export const QUAD_SPECS = [
     gearbox: { gears: 4, topSpeed1: 4, topSpeed2: 7.5, topSpeed3: 11, topSpeed4: 15, topSpeedReverse: 3, torque1: 1, torque2: 0.9, torque3: 0.75, torque4: 0.65, torqueReverse: 1, launchLoad1: 0.1, launchLoad2: 0.6, launchLoad3: 0.85, launchLoad4: 1, lugSpeed: 0.6 },
     fuel: { tankCapacity: 14, reserveLitres: 2.5, burnPerRev: 0.000085 },
     engine: {
+      // How it heats (#861): a farm four-stroke with big fins: about four minutes
+      finRevCooling: 0.55, // its fins and the flywheel's draught at full revs
+      fuelRevBoost: 1.2, // the heat it makes revved hard, set so held flat out standing still on a mild 12 °C day it reaches the pinking temperature in its own time
+      pinkProne: 0.6, // how prone it is to pinking, from its compression
       idleRpmWarm: 1050,
       chokeEnrichment: 1.25, // full choke must cover its cold need (1.15), or it dies on the choke before it has warmed a little
       maxRpm: 5600,
@@ -468,6 +486,10 @@ export const EXTRA_SPECS = [
     topRpmRange: [9400, 10200], // full-throttle revs this game, about 4% either side of the engine's own
     fuel: { tankCapacity: 2.5, startOil: 0.02, reserveLitres: 0.4, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
+      // How it heats (#861): a little two-stroke with small fins: hot in about two minutes
+      finRevCooling: 0.4, // its fins and the flywheel's draught at full revs
+      fuelRevBoost: 0.85, // the heat it makes revved hard, set so held flat out standing still on a mild 12 °C day it reaches the pinking temperature in its own time
+      pinkProne: 0.8, // how prone it is to pinking, from its compression
       strokes: 2,
       popProne: 0.7, // two-strokes crackle and bang on the overrun
       pullStart: true,
@@ -571,6 +593,10 @@ export const EXTRA_SPECS = [
     topRpmRange: [9400, 10200], // full-throttle revs this game, about 4% either side of the engine's own
     fuel: { tankCapacity: 1.8, startOil: 0.02, reserveLitres: 0.3, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
+      // How it heats (#861): a little two-stroke with small fins: hot in about two minutes
+      finRevCooling: 0.4, // its fins and the flywheel's draught at full revs
+      fuelRevBoost: 0.85, // the heat it makes revved hard, set so held flat out standing still on a mild 12 °C day it reaches the pinking temperature in its own time
+      pinkProne: 0.85, // how prone it is to pinking, from its compression
       strokes: 2,
       popProne: 0.7, // two-strokes crackle and bang on the overrun
       pullStart: true,
@@ -684,6 +710,10 @@ export const EXTRA_SPECS = [
     gearbox: { gears: 4, topSpeed1: 4, topSpeed2: 8, topSpeed3: 12, topSpeed4: 16, topSpeedReverse: 3, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, torqueReverse: 0.9, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, launchLoad4: 1, lugSpeed: 0.6 },
     fuel: { tankCapacity: 6, startOil: 0.02, reserveLitres: 1, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
     engine: {
+      // How it heats (#861): a two-stroke with small fins: hot in about two minutes
+      finRevCooling: 0.45, // its fins and the flywheel's draught at full revs
+      fuelRevBoost: 1.13, // the heat it makes revved hard, set so held flat out standing still on a mild 12 °C day it reaches the pinking temperature in its own time
+      pinkProne: 0.75, // how prone it is to pinking, from its compression
       loadDragRpm: 28000, // a manual: slowing in a high gear drags it down and stalls it (manualDrivetrain.js)
       strokes: 2,
       popProne: 0.7, // two-strokes crackle and bang on the overrun
@@ -788,6 +818,10 @@ export const EXTRA_SPECS = [
     topRpmRange: [6900, 7100], // full-throttle revs this game, about 4% either side of the engine's own
     fuel: { tankCapacity: 12, reserveLitres: 1.8, noTap: true, startTap: 'on', burnPerRev: 0.000075 },
     engine: {
+      // How it heats (#861): a big four-stroke: about four minutes, and its high compression makes it keen to pink
+      finRevCooling: 0.5, // its fins and the flywheel's draught at full revs
+      fuelRevBoost: 0.95, // the heat it makes revved hard, set so held flat out standing still on a mild 12 °C day it reaches the pinking temperature in its own time
+      pinkProne: 0.9, // how prone it is to pinking, from its compression
       idleRpmWarm: 1150,
       maxRpm: 7000,
       redlineRpm: 6600,
@@ -860,6 +894,10 @@ export const EXTRA_SPECS = [
     gearbox: { gears: 4, topSpeed1: 4, topSpeed2: 8, topSpeed3: 12.5, topSpeed4: 17, topSpeedReverse: 2, torque1: 1, torque2: 0.85, torque3: 0.7, torque4: 0.6, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, launchLoad4: 1, lugSpeed: 0.6 },
     fuel: { tankCapacity: 9, reserveLitres: 1.5 },
     engine: {
+      // How it heats (#861): a farm four-stroke: about four minutes
+      finRevCooling: 0.5, // its fins and the flywheel's draught at full revs
+      fuelRevBoost: 0.97, // the heat it makes revved hard, set so held flat out standing still on a mild 12 °C day it reaches the pinking temperature in its own time
+      pinkProne: 0.7, // how prone it is to pinking, from its compression
       loadDragRpm: 12000, // a manual: slowing in a high gear drags it down and stalls it (manualDrivetrain.js)
       pullStart: true,
       kickStart: true, // the pull is a kickstart pedal as well as the button
@@ -957,6 +995,11 @@ export const EXTRA_SPECS = [
     topRpmRange: [3500, 3800], // full-throttle revs this game, about 4% either side of the engine's own
     fuel: { tankCapacity: 5, reserveLitres: 1 },
     engine: {
+      // How it heats (#861): a garden engine cooled by its own flywheel fan inside a shroud, so the wind does little: it only gets that hot in full sun, and never pinks
+      finRevCooling: 1.2, // its fins and the flywheel's draught at full revs
+      fuelRevBoost: 1.7, // the heat it makes revved hard, set so held flat out standing still on a mild 12 °C day it reaches the pinking temperature in its own time
+      windCooling: 0.6, // the shroud keeps the wind off the fins
+      pinkProne: 0, // how prone it is to pinking, from its compression
       pullStart: true, // a cord, as well as the key
       idleRpmWarm: 1350,
       maxRpm: 3650,
@@ -1982,6 +2025,10 @@ export const PLOVER_SPEC = {
   gearbox: { gears: 3, topSpeed1: 5, topSpeed2: 10, topSpeed3: 17, topSpeedReverse: 2, torque1: 1, torque2: 0.8, torque3: 0.6, launchLoad1: 0.15, launchLoad2: 0.7, launchLoad3: 0.9, lugSpeed: 0.6 },
   fuel: { tankCapacity: 9, startOil: 0.02, reserveLitres: 1, burnPerRev: 0.000032, idleBurnFraction: 0.45 },
   engine: {
+    // How it heats (#861): hot in about two minutes, but a low-compression 1940s two-stroke never pinks: it just loses power
+    finRevCooling: 0.5, // its fins and the flywheel's draught at full revs
+    fuelRevBoost: 0.9, // the heat it makes revved hard, set so held flat out standing still on a mild 12 °C day it reaches the pinking temperature in its own time
+    pinkProne: 0, // how prone it is to pinking, from its compression
     loadDragRpm: 16000, // a manual: slowing in a high gear drags it down and stalls it (manualDrivetrain.js)
     strokes: 2,
     popProne: 0.8, // two-strokes crackle and bang on the overrun, and an old one more

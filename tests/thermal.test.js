@@ -229,8 +229,10 @@ describe('an engine warming and cooling as it did', () => {
     expect(cool(true, 40000)).toBeGreaterThan(0.1);
   });
 
-  it('has an air-cooled engine idling in full sun from cold pinking in about four minutes', () => {
-    const t = idleUntil(coldIdle({}, 12), (e) => e.pink > 0, { ambient: 1 });
+  it('has an air-cooled engine idling in full sun from cold reach the pinking temperature in about four minutes, without pinking idling (#861)', () => {
+    const e = coldIdle({}, 12);
+    const t = idleUntil(e, (x) => x.metalC > x.params.pinkFromC, { ambient: 1 });
+    expect(e.pink).toBe(0);
     expect(t).toBeGreaterThan(240 * 0.75);
     expect(t).toBeLessThan(240 * 1.25);
   });
