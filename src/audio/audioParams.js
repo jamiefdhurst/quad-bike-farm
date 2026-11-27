@@ -191,6 +191,7 @@ export const DEFAULT_AUDIO_PARAMS = {
   pulseCylTime: 0, // how late a cylinder's firing can start, as a share of a firing's period, from a fixed pattern
   pulseFireJitter: 0, // each firing up to this share of a period late at random, as the mixture burns unevenly (a carb more than injection)
   pulseStrengthJitter: 0, // each firing up to this much stronger or weaker at random (0.3 is 30%)
+  pulseModel: true, // firings from the bank's bare pulses under its own resonances (no rev EQ), each burst shortened to fit the gap once firings meet, so the pitch rises at the top
   recStarterVolume: 0.9,
   recShutdownVolume: 0.9,
   // A turbocharger (engineWorklet.js turboSample): off unless turboVolume is above 0 (the 200TDi).
