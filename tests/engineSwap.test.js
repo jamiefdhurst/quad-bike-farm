@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
-import { QUAD_SPECS } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, EXTRA_SPECS } from '../src/vehicle/quadSpecs.js';
 import { engineFamily, canPull, fitIndex, pullEngine, fitEngine, captureSwap, restoreSwap, familyWords, engineName } from '../src/vehicle/engineSwap.js';
 import { captureVehicle, restoreVehicle } from '../src/farm/farmState.js';
 import { Spares, DEFAULT_SPARES_PARAMS } from '../src/workshop/spares.js';
@@ -179,6 +179,70 @@ describe('the shelf and the save', () => {
     expect(fresh.engine.wear).toBe(0.33);
     expect(captureSwap(unit(twoStroke))).toBeNull();
     restoreSwap(fresh, null); // nothing to put back is fine
+  });
+
+  describe('the Bruin\'s engine from before it had a radiator (#861)', () => {
+    const real = (id) => [...QUAD_SPECS, ...EXTRA_SPECS].find((x) => x.id === id);
+    const BRUIN = real('bruin');
+    const URSA = real('ursa');
+    // The Bruin as an old save knew it: air-cooled, so its engine was the Ursa's sort.
+    const { waterCooled, radiatorFan, coolantLeakChance, ...airEngine } = BRUIN.engine;
+    const OLD_BRUIN = { ...BRUIN, engine: airEngine };
+    /** Runs a unit's engine for a few seconds and says whether it kept going. */
+    const runs = (u) => {
+      const e = u.engine;
+      let seed = 7;
+      e.random = () => (seed = (seed * 16807) % 2147483647) / 2147483647; // (the stand-in's fixed 0.5 never lets a cranking engine catch)
+      e.setTemperature(1);
+      e.setIgnition(true);
+      for (let t = 0; t < 10 && !e.isRunning; t += 0.05) e.update(0.05, { starter: true, choke: 0.2 });
+      for (let t = 0; t < 10; t += 0.1) e.update(0.1, { throttle: 0.5 });
+      return e.isRunning && Number.isFinite(e.metalC);
+    };
+
+    it('is water-cooled now, so it no longer fits the air-cooled four-strokes', () => {
+      expect(waterCooled && radiatorFan && coolantLeakChance).toBeTruthy();
+      const f = (spec) => engineFamily(spec, { ...DEFAULT_ENGINE_PARAMS, ...spec.engine });
+      expect(f(BRUIN)).not.toBe(f(URSA));
+      expect(f(OLD_BRUIN)).toBe(f(URSA));
+    });
+
+    it('loads from the shelf of an old save, and still goes into an Ursa and runs', () => {
+      const spares = new Spares(DEFAULT_SPARES_PARAMS, random);
+      spares.engines.push(pullEngine(unit(OLD_BRUIN)));
+      const back = new Spares(DEFAULT_SPARES_PARAMS, random);
+      back.restore(JSON.parse(JSON.stringify(spares.toJSON())));
+      expect(back.engines).toHaveLength(1);
+      const ursa = unit(URSA);
+      const at = fitIndex(back.engines, ursa);
+      expect(at).toBe(0);
+      fitEngine(ursa, back.engines[at], 1, B);
+      expect(ursa.engine.params.waterCooled).toBe(false);
+      expect(runs(ursa)).toBe(true);
+    });
+
+    it('loads swapped into another quad in an old save, and runs', () => {
+      const ursa = unit(URSA);
+      fitEngine(ursa, pullEngine(unit(OLD_BRUIN)), 1, B);
+      const saved = JSON.parse(JSON.stringify(captureVehicle(ursa)));
+      delete saved.cooled; // (an old save didn't say)
+      const fresh = unit(URSA);
+      restoreVehicle(fresh, saved);
+      expect(fresh.engineOrigin.from).toBe('bruin');
+      expect(fresh.engine.params.maxRpm).toBe(BRUIN.engine.maxRpm);
+      expect(runs(fresh)).toBe(true);
+    });
+
+    it('loads an old save of the Bruin with the Ursa\'s engine in it, which keeps the Bruin air-cooled', () => {
+      const bruin = unit(OLD_BRUIN);
+      fitEngine(bruin, pullEngine(unit(URSA)), 1, B);
+      const saved = JSON.parse(JSON.stringify(captureVehicle(bruin)));
+      delete saved.cooled;
+      const fresh = unit(BRUIN);
+      restoreVehicle(fresh, saved);
+      expect(fresh.engine.params.maxRpm).toBe(URSA.engine.maxRpm);
+      expect(runs(fresh)).toBe(true);
+    });
   });
 
   it('keeps a body with its engine out', () => {

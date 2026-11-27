@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { SAVE_KEY, SAVE_VERSION, DEFAULT_FARM_PARAMS as P, readSave, writeSave, wipeSave, openFarm, continueInfo, fleetFromSave, validSave, describeFarm } from '../src/farm/farmSave.js';
 import { MotWear } from '../src/farm/mot.js';
-import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls } from '../src/farm/farmState.js';
+import { captureVehicle, restoreVehicle, overnight, savedFaults, captureGirls, restoreGirls, GAINED_A_RADIATOR } from '../src/farm/farmState.js';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { Spotlamps } from '../src/vehicle/spotlamps.js';
 import { Snorkel } from '../src/vehicle/snorkel.js';
@@ -29,10 +29,11 @@ function memoryStorage() {
 }
 
 /** A vehicle made of the real pure parts, as the game's QuadUnit holds them. */
-function unit() {
-  const engine = new EngineModel({ strokes: 2 });
+function unit(engineParams = { strokes: 2 }, spec = undefined) {
+  const engine = new EngineModel(engineParams);
   const fuel = new FuelSystem({ tankCapacity: 10, bowlCapacity: 0.1, startLitres: 6, reserveLitres: 1, startOil: 0.02 });
   return {
+    spec,
     dealtIdle: 1450,
     engine,
     quad: {
@@ -118,6 +119,48 @@ describe('the save', () => {
 });
 
 describe('a vehicle from one day to the next', () => {
+  describe('the radiator, once the Bruin has one (#861)', () => {
+    const wet = { strokes: 4, waterCooled: true };
+    /** A save from before the save said how each engine was cooled. */
+    const oldSave = (u) => {
+      const data = JSON.parse(JSON.stringify(captureVehicle(u)));
+      delete data.cooled;
+      return data;
+    };
+    const dealt = (u) => Object.assign(u.engine, { coolant: 0.45, coolantLeak: 0.8, thermostat: 1 });
+
+    it('keeps the leak and thermostat an old save of a radiator it always had was dealt', () => {
+      const a = unit(wet, { id: 'adder' });
+      Object.assign(a.engine, { coolant: 0.3, coolantLeak: 1.2, thermostat: 0.6, boiled: true });
+      const b = unit(wet, { id: 'adder' });
+      dealt(b);
+      restoreVehicle(b, oldSave(a));
+      expect([b.engine.coolant, b.engine.coolantLeak, b.engine.thermostat, b.engine.boiled]).toEqual([0.3, 1.2, 0.6, true]);
+    });
+
+    it('deals the Bruin its own on the first load of an old save, which held an air-cooled engine\'s blanks', () => {
+      expect(GAINED_A_RADIATOR).toContain('bruin');
+      const old = unit({ strokes: 4 }, { id: 'bruin' }); // as it was saved: air-cooled, so a full radiator, no leak, a free thermostat
+      old.engine.wear = 0.3;
+      const b = unit(wet, { id: 'bruin' });
+      dealt(b);
+      restoreVehicle(b, oldSave(old));
+      expect([b.engine.coolant, b.engine.coolantLeak, b.engine.thermostat]).toEqual([0.45, 0.8, 1]);
+      expect(b.engine.wear).toBe(0.3); // the rest of what it kept still comes back
+    });
+
+    it('keeps the Bruin\'s leak and thermostat from then on', () => {
+      const a = unit(wet, { id: 'bruin' });
+      Object.assign(a.engine, { coolant: 0.6, coolantLeak: 1.4, thermostat: 0.5 });
+      const data = JSON.parse(JSON.stringify(captureVehicle(a)));
+      expect(data.cooled).toBe('water');
+      const b = unit(wet, { id: 'bruin' });
+      dealt(b);
+      restoreVehicle(b, data);
+      expect([b.engine.coolant, b.engine.coolantLeak, b.engine.thermostat]).toEqual([0.6, 1.4, 0.5]);
+    });
+  });
+
   it('keeps its condition', () => {
     const a = unit();
     a.engine.params.baseRoughness = 0.07;
