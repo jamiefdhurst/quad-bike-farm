@@ -96,6 +96,8 @@ export async function buildWorldModels() {
     const scene = new THREE.Scene();
     const cNew = { ...c, scene, layout: layoutVillage, heights: createTerrainHeight(layoutVillage, new Track(layoutVillage.trackPoints)) };
     add('world', 'villageNew', buildVillage, (b) => (b(cNew), scene.children.find((o) => o.name === 'village')));
+    // The lane's houses and the small farm, built in the same call into a set piece of their own (#1087).
+    add('setPiece', 'villageApproach', buildVillage, () => scene.children.find((o) => o.name === 'villageApproach'));
   }
   const { buildNeighbourFarm } = await import('../../src/world/neighbourFarmProps.js');
   add('setPiece', 'neighbourFarm', buildNeighbourFarm, (b) => (b(c), found('neighbourFarm')));

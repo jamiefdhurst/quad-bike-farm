@@ -205,8 +205,8 @@ export function limitPost(ctx, spec) {
 }
 
 /** The 30 mph signs and the village signs on the lane's approach to Nether Thornby (`approachSignSpecs`). */
-export function approachSigns(ctx) {
-  for (const s of approachSignSpecs(ctx.S.v)) {
+export function approachSigns(ctx, which = () => true) {
+  for (const s of approachSignSpecs(ctx.S.v).filter(which)) {
     if (s.village) villageSignAt(ctx, s.x, s.z, s.yaw);
     else limitPost(ctx, s);
   }

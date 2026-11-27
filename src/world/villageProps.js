@@ -407,17 +407,21 @@ function roadEnd(ctx) {
 }
 
 /** Builds the village and its colliders. `c` is the props context (props.js). Returns null on a farm without one. */
-/** The village from afar (world/farVersion.js): each building a box with a gabled roof in the colour of its walls and its roof. */
+/** The village from afar (world/farVersion.js): each building a box with a gabled roof in the colour of its walls and its roof. `list` is the street's
+ * buildings for the village and the lane's for its approach (#1087), each its own far version under `name`. */
 const WALLS = { stone: '#8c877a', brick: '#9a5c48' };
-export function farVillage(S, heights) {
-  const buildings = [...S.buildings, ...S.laneBuildings].map((b) => {
+export function farVillage(S, heights, list, name) {
+  const buildings = list.map((b) => {
     const wall = b.kind === 'cottage' || b.kind === 'farmhouse' || b.kind === 'barn' ? (b.wall === 'render' ? b.paint : WALLS[b.wall]) : b.kind === 'shop' ? WALLS.brick : b.kind === 'pub' ? '#ece5d0' : WALLS.brick;
     const roof = b.kind === 'garage' || b.kind === 'barn' ? '#8d9294' : b.design === 'thatched' ? '#8a7440' : b.kind === 'cottage' && b.wall !== 'stone' ? '#a85a3e' : '#42474c';
     const turned = Math.abs(Math.sin(b.yaw ?? 0)) > 0.5; // a house facing the lane has its frontage along z
     return { x: b.x, z: b.z, y: heights.heightAt(b.x, b.z), halfX: turned ? b.halfZ : b.halfX, halfZ: turned ? b.halfX : b.halfZ, wallHeight: b.wallHeight, ridge: b.ridge, wall, roof };
   });
-  return buildFarVersion('villageFar', { buildings });
+  return buildFarVersion(name, { buildings });
 }
+
+/** The approach's signs (the 30 posts and the village sign on the lane, #819) are with its houses within this of them; the street's other ends keep theirs. */
+export const APPROACH_SIGN_REACH = 15; // m
 
 export function buildVillage(c) {
   const { scene, layout, heights, fixedBox, random } = c;
@@ -425,6 +429,10 @@ export function buildVillage(c) {
   if (!S) return null;
   const root = new THREE.Group();
   root.name = 'village';
+  // The lane's approach (#819) is a set piece of its own (#1087): in the village's group it stretched the village's bounds 140 m up the lane, so the
+  // whole street, the pub and its cars drew in full from the lane and the field across it.
+  const approach = S.laneBuildings.length ? new THREE.Group() : null;
+  if (approach) approach.name = 'villageApproach';
   const homes = [...layout.village.cottages, ...(layout.village.approach?.houses ?? []), ...(layout.village.approach ? [layout.village.approach.farm.house] : [])];
   const doorColours = ['#2d4a3a', '#7a1f2b', ...homes.flatMap((b) => [b.door, ...(b.doors ?? [])])];
   const renders = ['#ece5d0', ...homes.filter((b) => b.paint).map((b) => b.paint)];
@@ -446,17 +454,24 @@ export function buildVillage(c) {
     partProxies: [],
     pumpProxies: [],
     furniture: null, // every lamp post and road sign in one group, so the street's lot merge into a mesh or two a material, not two a post
-    rootGroup: (name, y = 0) => {
+    rootGroup: null,
+  };
+  /** The context for building into `r`, sharing the materials, the lists and the night's glow with the rest. */
+  const into = (r, base) => {
+    const p = { ...base, root: r };
+    p.rootGroup = (name, y = 0) => {
       const g = new THREE.Group();
       g.name = name;
       g.position.y = y;
-      root.add(g);
-      ctx.groups.push(g);
+      r.add(g);
+      p.groups.push(g);
       return g;
-    },
+    };
+    p.furniture = p.rootGroup(`${r.name}-furniture`);
+    return p;
   };
-
-  ctx.furniture = ctx.rootGroup('village-furniture');
+  Object.assign(ctx, into(root, ctx));
+  const actx = approach ? into(approach, ctx) : ctx;
 
   // The road and its pavements. The road is the lane's tarmac, widening at its mouth; the pavements stand 8 cm proud with a kerb; they stop for the
   // garage's forecourt and the car park's mouth.
@@ -514,8 +529,11 @@ export function buildVillage(c) {
 
   // Buildings.
   // The street's cottages and the lane's houses: the plain pair of storeys, or one of the other designs (#543).
-  [...S.buildings.filter((b) => b.kind === 'cottage'), ...S.laneBuildings.filter((b) => b.kind !== 'barn')].forEach((b, i) => (HOUSE_DESIGNS.includes(b.design) ? buildHouse(ctx, b, i) : buildCottage(ctx, b, i)));
-  buildFarm(ctx);
+  [...S.buildings.filter((b) => b.kind === 'cottage'), ...S.laneBuildings.filter((b) => b.kind !== 'barn')].forEach((b, i) => {
+    const c = b.approach ? actx : ctx;
+    return HOUSE_DESIGNS.includes(b.design) ? buildHouse(c, b, i) : buildCottage(c, b, i);
+  });
+  buildFarm(actx);
   buildPub(ctx, S.pub);
   const cars = buildCarPark(ctx);
   buildShop(ctx, S.shop);
@@ -543,7 +561,9 @@ export function buildVillage(c) {
     const at = S.roadAt(S.v.sign.x, S.v.sign.z).at;
     villageSignAt(ctx, S.v.sign.x, 2 * at.z - S.v.sign.z, signYaw);
     streetBench(ctx, S.v.farBench, 0);
-    approachSigns(ctx);
+    const near = (s) => S.nearApproach(s.x, s.z, APPROACH_SIGN_REACH);
+    approachSigns(ctx, (s) => !near(s));
+    approachSigns(actx, near);
   }
   const limit = limitSignTexture(S.limit);
   const at = (i, side) => {
@@ -573,14 +593,25 @@ export function buildVillage(c) {
   for (const g of ctx.groups) mergeInto(g);
   enableShadows(root);
   scene.add(root);
-  const far = farVillage(S, heights);
+  const far = farVillage(S, heights, S.buildings, 'villageFar');
   root.userData.farVersion = far;
   far.visible = false; // FarDetail shows it, and hides the full village, from a distance
   scene.add(far);
+  let approachFar = null;
+  if (approach) {
+    enableShadows(approach);
+    scene.add(approach);
+    approachFar = farVillage(S, heights, S.laneBuildings, 'villageApproachFar');
+    approach.userData.farVersion = approachFar;
+    approachFar.visible = false; // swapped on its own bounds, like the village's
+    scene.add(approachFar);
+  }
 
   return {
     group: root,
     far,
+    /** The lane's approach, its houses, the small farm and its signs, swapped on its own (#1087); null on a farm without one. */
+    approach: approach ? { group: approach, far: approachFar } : null,
     shape: S,
     cars,
     shopProxies: ctx.shopProxies,

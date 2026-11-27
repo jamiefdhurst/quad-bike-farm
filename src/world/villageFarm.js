@@ -135,7 +135,12 @@ export function buildFarmYard(ctx, farm) {
   const h = farm.wallHeight;
   const gz = farm.gateway.z;
   const half = farm.gateway.width / 2;
-  const slab = new THREE.Mesh(worldBox(y.maxX - y.minX - wall, 0.3, y.maxZ - y.minZ - wall, 2.4), M.concrete);
+  // Its underside is in the ground and never seen, so it is left off (BoxGeometry's -y face, the fourth of six, six indices each), as the neighbour's hidden faces are.
+  const geo = worldBox(y.maxX - y.minX - wall, 0.3, y.maxZ - y.minZ - wall, 2.4);
+  const idx = geo.getIndex().array;
+  geo.setIndex([...idx.slice(0, 18), ...idx.slice(24)]);
+  geo.clearGroups(); // its six face groups would point past the shorter index
+  const slab = new THREE.Mesh(geo, M.concrete);
   slab.position.set(cx, heights.heightAt(cx, cz) - 0.1, cz);
   slab.receiveShadow = true;
   const apron = new THREE.Group(); // in a group of its own, which the village merges (a lone mesh would be removed from the scene by the merge)

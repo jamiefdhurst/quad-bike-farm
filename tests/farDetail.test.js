@@ -1,10 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import * as THREE from 'three';
 import { FarDetail, detailLevel, isSmallPart, isSpeck, pointsAcross, pixelsPerRadian, SPECK_LAYER, VEHICLE_NAMES, BARN_PROP_NAMES, SET_PIECE_NAMES } from '../src/world/farDetail.js';
 import { DEFAULT_GRAPHICS_PARAMS } from '../src/core/graphics.js';
 import { insideBarn } from '../src/world/barn.js';
 import { LAYOUT } from '../src/world/layout.js';
 import { BrushwoodHeap } from '../src/items/brushwood.js';
+import { fakeCanvas } from './helpers/vehicleModels.js';
+import { headlessContext } from './helpers/worldModels.js';
+import { createTerrainHeight } from '../src/world/terrainHeight.js';
+import { Track } from '../src/world/track.js';
+import { distanceToTile } from '../src/world/tiles.js';
+import { fromPlan, LANE_PLAN } from '../src/world/layoutNew.js';
+import { approachSignSpecs } from '../src/world/village.js';
 
 const params = { ...DEFAULT_GRAPHICS_PARAMS };
 const box = (w, mat) => new THREE.Mesh(new THREE.BoxGeometry(w, w, w), mat ?? new THREE.MeshStandardMaterial());
@@ -595,5 +602,61 @@ describe('specks: parts too small on the screen to see', () => {
       far.update(at(500), 1, true);
       expect(m.layers.isEnabled(0)).toBe(true);
     }
+  });
+});
+
+describe('the lane\'s approach to the village, a set piece of its own (#1087)', () => {
+  let scene;
+  let built;
+  let APPROACH_SIGN_REACH;
+  beforeAll(async () => {
+    vi.stubGlobal('document', { createElement: () => fakeCanvas() });
+    const props = await import('../src/world/villageProps.js');
+    const { buildVillage } = props;
+    APPROACH_SIGN_REACH = props.APPROACH_SIGN_REACH;
+    scene = new THREE.Scene();
+    built = buildVillage({ ...headlessContext(), scene, layout: LAYOUT, heights: createTerrainHeight(LAYOUT, new Track(LAYOUT.trackPoints)), fixedBox: () => {} });
+    vi.unstubAllGlobals();
+  });
+  const named = (n) => scene.children.find((o) => o.name === n);
+  const onLane = (z) => { const [x, gz] = fromPlan([LANE_PLAN.x, z]); return { x, z: gz }; };
+
+  it('builds the approach into its own named group, with its own far version, apart from the street', () => {
+    const approach = named('villageApproach');
+    expect(SET_PIECE_NAMES).toContain('villageApproach');
+    expect(approach).toBe(built.approach.group);
+    expect(approach.userData.farVersion?.name).toBe('villageApproachFar');
+    expect(named('village').userData.farVersion?.name).toBe('villageFar');
+    // The lane's houses and the small farm are in it, and not in the street's.
+    const ids = (o) => { const out = []; o.traverse((m) => /^village-(l\d|fh|fb)$/.test(m.name) && out.push(m.name)); return out; };
+    expect(ids(approach).sort()).toEqual(['village-fb', 'village-fh', 'village-l1', 'village-l2', 'village-l3']);
+    expect(ids(named('village'))).toEqual([]);
+    // The lane's two 30 posts and its village sign go with it; the street's other two ends keep theirs.
+    const near = approachSignSpecs(LAYOUT.village).filter((q) => built.shape.nearApproach(q.x, q.z, APPROACH_SIGN_REACH));
+    expect(near.length).toBe(3);
+    for (const q of near) expect(q.z).toBeLessThan(fromPlan([0, 490])[1]);
+  });
+
+  it('keeps the street, the pub and its car park in the far version up the lane until you are near the street', () => {
+    const village = named('village');
+    const approach = named('villageApproach');
+    const far = new FarDetail(scene, params);
+    const streetBox = far.box(village);
+    // The street's bounds start at the street now, not 140 m up the lane at the small farm's yard (plan z 440).
+    expect(streetBox.minZ).toBeGreaterThan(fromPlan([0, 540])[1]);
+    expect(far.box(approach).minZ).toBeLessThan(fromPlan([0, 445])[1]);
+    // At the budget spot, by the small farm's track, the approach is full and the street its far version (both were full before).
+    const spot = LAYOUT.budgetSpots.laneApproach;
+    far.update(spot, 1, true, true);
+    expect([approach.visible, village.visible, village.userData.farVersion.visible]).toEqual([true, false, true]);
+    // Up the lane past the small farm and the houses, the approach comes in full and the street holds off until it is within fullDistance.
+    for (let z = 395; z <= 600; z += 5) {
+      const at = onLane(z);
+      far.update(at, 1, true, true);
+      expect(village.visible, `plan z ${z}`).toBe(distanceToTile(streetBox, at.x, at.z) < params.fullDistance);
+      if (z >= 430 && z <= 560) expect(approach.visible, `plan z ${z}`).toBe(true);
+    }
+    far.update(onLane(420), 1, true, true);
+    expect([approach.visible, village.visible]).toEqual([true, false]);
   });
 });
