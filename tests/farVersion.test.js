@@ -77,13 +77,15 @@ describe('the far versions of the farm', () => {
     g.traverse((o) => o.isMesh && n++);
     return n;
   };
-  it('has the village as one mesh, a box and roof for every building', () => {
+  it('has the village as one mesh, a box and roof for every building, and the lane\'s approach as another (#1087)', () => {
     const S = villageShape(LAYOUT);
-    const g = farVillage(S, heights);
-    expect(g.name).toBe('villageFar');
-    expect(count(g)).toBe(1);
-    const mesh = g.children[0];
-    expect(mesh.geometry.getAttribute('position').count / 3).toBe((S.buildings.length + S.laneBuildings.length) * 16); // the lane's cottages and farmhouse too
+    for (const [list, name] of [[S.buildings, 'villageFar'], [S.laneBuildings, 'villageApproachFar']]) {
+      const g = farVillage(S, heights, list, name);
+      expect(g.name).toBe(name);
+      expect(count(g)).toBe(1);
+      expect(g.children[0].geometry.getAttribute('position').count / 3).toBe(list.length * 16);
+    }
+    expect(S.laneBuildings.length).toBe(5); // the lane's three houses, the small farm's house and its barn
   });
   it('has the neighbour farm as one mesh: the house, the barn and the yard wall', () => {
     const s = neighbourFarmShape(LAYOUT);
@@ -94,10 +96,19 @@ describe('the far versions of the farm', () => {
   });
   it('lies over the same ground as the full pieces, within the village and the yard', () => {
     const S = villageShape(LAYOUT);
-    const g = farVillage(S, heights);
+    const g = farVillage(S, heights, S.buildings, 'villageFar');
     g.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(g);
     expect(box.min.x).toBeGreaterThan(S.area.minX - 2);
     expect(box.max.x).toBeLessThan(S.area.maxX + 2);
+    // The approach's (#1087) within its houses' gardens and the small farm's yard.
+    const a = farVillage(S, heights, S.laneBuildings, 'villageApproachFar');
+    a.updateMatrixWorld(true);
+    const ab = new THREE.Box3().setFromObject(a);
+    const r = S.approachBoxes;
+    expect(ab.min.x).toBeGreaterThan(Math.min(...r.map((q) => q.minX)) - 2);
+    expect(ab.max.x).toBeLessThan(Math.max(...r.map((q) => q.maxX)) + 2);
+    expect(ab.min.z).toBeGreaterThan(Math.min(...r.map((q) => q.minZ)) - 2);
+    expect(ab.max.z).toBeLessThan(Math.max(...r.map((q) => q.maxZ)) + 2);
   });
 });
