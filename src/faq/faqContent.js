@@ -1307,8 +1307,8 @@ export const FAQ_SECTIONS = [
         a: `Yes, once the barn find runs. Park it in the yellow bay, switch it off, open the bench and press <kbd>&rarr;</kbd> for the second page: "Take the engine out" lifts it clear
           and stands it on the floor by the parts rack (the rack's panel lists it, and how worn it is). Then park another quad, open the same page and pick "Fit the spare engine". The
           engine comes with its character: its idle, how high it revs, how rough it runs, its sound and its wear. The quad keeps its body, its gearbox or belt, its tank and its dash.
-          The engine that comes out goes on the floor in its place, so you can fit it back, or in the barn find's empty body. A two-stroke only takes a two-stroke and a manual's only
-          another manual's. A new engine wants running in, like any rebuilt one, and if you rush the bolts it rocks on its mounts and runs rough.`,
+          The engine that comes out goes on the floor in its place, so you can fit it back, or in the barn find's empty body. A two-stroke only takes a two-stroke, a manual's only
+          another manual's, and one with a radiator only another with one, so the Bruin's fits no other quad. A quad always takes its own engine back. A new engine wants running in, like any rebuilt one, and if you rush the bolts it rocks on its mounts and runs rough.`,
         tip: 'Pull the barn find\'s engine at the bench (R for page two) and fit it in another quad of the same sort.',
       },
       {
