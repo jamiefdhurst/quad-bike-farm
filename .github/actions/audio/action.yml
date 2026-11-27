@@ -18,7 +18,7 @@ runs:
       with:
         path: public/audio
         key: ${{ steps.key.outputs.key }}
-    # Everything but source/audio's WAVs, which nothing in CI reads.
+    # Everything but source/audio's WAVs, which only the unit tests read (their own checkout has the engine banks', #856).
     - name: Fetch the recordings from git
       if: steps.restore.outputs.cache-hit != 'true'
       shell: bash
