@@ -465,7 +465,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What are the tracks round the farm, and where do they go?',
-        a: `The farm has its own ways round. The stone track leaves the yard two ways: north, through the gateway into Top Field and along the hedge to the farm gate of the Old Pit, and south, down Hay Meadow beside the sheep field, over the farm bridge at the head of the river and on into Brook Meadow. It is two wheel ruts of compacted chippings with a grass crown between, a few potholes holding water and a drainage grip cut across it here and there; it is gravel under the tyres, with a little less grip than grass and more than the pit's, and it never wears into mud. The farm bridge is a sleeper deck on stone abutments with steel tube rails and a "Weak bridge" plate: it is solid, so ride across it. The boundary track is a grass track round the inside of the farm, about 14 m in from the hedge, with a gateway wherever it goes through a hedge, and it is never steeper than 20 degrees. It goes round the outside of the Old Pit's fence. On Hill Pasture it leaves the boundary, because the banks on the hill's west side are far too steep for a track: it comes down the gentle east end of the hill, beside the cones of the climb, and runs west along the foot to the green lane's ford, where it crosses the stream and goes up the lane, so the west side of the hill and the west half of its top have no track. It crosses the east brook in Low Ley by a ford of its own, a shallow raised bed with a worn landing down each bank, which you wade. It is two bare wheel lines in the grass, and it ruts up in the wet like the green lane does. Inside each arable field there is a 6 m headland of grass where the crop never grows, which you can ride. The girls take the tracks when they can. \`tp me to stonetrack\`, \`farmbridge\`, \`boundarytrack\`, \`brookford\` or \`headland\` takes you there.`,
+        a: `The farm has its own ways round. The stone track leaves the yard two ways: north, through the gateway into Top Field (by default: each farm deals its own names for its fields, so yours may differ from these answers, and the farm map, <kbd>M</kbd>, writes them on) and along the hedge to the farm gate of the Old Pit, and south, down Hay Meadow beside the sheep field, over the farm bridge at the head of the river and on into Brook Meadow. It is two wheel ruts of compacted chippings with a grass crown between, a few potholes holding water and a drainage grip cut across it here and there; it is gravel under the tyres, with a little less grip than grass and more than the pit's, and it never wears into mud. The farm bridge is a sleeper deck on stone abutments with steel tube rails and a "Weak bridge" plate: it is solid, so ride across it. The boundary track is a grass track round the inside of the farm, about 14 m in from the hedge, with a gateway wherever it goes through a hedge, and it is never steeper than 20 degrees. It goes round the outside of the Old Pit's fence. On Hill Pasture it leaves the boundary, because the banks on the hill's west side are far too steep for a track: it comes down the gentle east end of the hill, beside the cones of the climb, and runs west along the foot to the green lane's ford, where it crosses the stream and goes up the lane, so the west side of the hill and the west half of its top have no track. It crosses the east brook in Low Ley by a ford of its own, a shallow raised bed with a worn landing down each bank, which you wade. It is two bare wheel lines in the grass, and it ruts up in the wet like the green lane does. Inside each arable field there is a 6 m headland of grass where the crop never grows, which you can ride. The girls take the tracks when they can. \`tp me to stonetrack\`, \`farmbridge\`, \`boundarytrack\`, \`brookford\` or \`headland\` takes you there.`,
         tip: 'The stone track runs north to the pit and south over the farm bridge; a grass track rings the farm.',
       },
       {
@@ -2146,7 +2146,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'What is the rolling road?',
-        a: `A tuner, Hargreave, brings a trailer with two steel rollers in its deck to the farm about once a week (the first day of a new farm is one), from the middle of the morning until the evening. Her Moorland Crag tows it in through the big gate and she sets up in front of the barn, lowers the ramp and stands by the trailer. You ride a quad up the ramp and onto the rollers, and she measures how much power it makes. It is how you find out whether a jet change, a new plug or a tidy-up of the clutch did anything, and whether a quad is as strong as it should be. The two girls like it: they cheer a good figure, tease a poor one and argue about whose quad is strongest.`,
+        a: `A tuner, Hargreave, brings a trailer with two steel rollers in its deck to the farm about once a week (the first day of a new farm is one), from the middle of the morning until the evening. Her Moorland Crag tows it in over the cattle grid and up the drive, and she sets up in front of the barn, lowers the ramp and stands by the trailer. You ride a quad up the ramp and onto the rollers, and she measures how much power it makes. It is how you find out whether a jet change, a new plug or a tidy-up of the clutch did anything, and whether a quad is as strong as it should be. The two girls like it: they cheer a good figure, tease a poor one and argue about whose quad is strongest.`,
         tip: 'About once a week a tuner brings a rolling road to the barn. Ride a quad onto it to see its power.',
       },
       {
@@ -2174,7 +2174,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Can I ride out onto the lane, and where does it go?',
-        a: `Yes. Ride out over the cattle grid at the end of the drive and turn right, south, along the lane. Keep to the left for the traffic, which brakes for you. It is walled in on both sides, so the only place to turn off is the neighbour's gateway on the right, about 100 m down (its gate is shut: get off and open it), and it carries on south, past the stream's culvert, to a side road into the village (see “Is there a village, and how do I get there?”), then ends at an invisible wall about 100 m past her gateway. North of the big gate it stops 60 m along, at another. You can walk it too.`,
+        a: `Yes. Ride out over the cattle grid at the end of the drive onto the lane. Keep to the left for the traffic, which brakes for you. Across it, a little way north, the neighbour's own short track leads to her gateway. North, the lane bends round to the A-road; south, it passes the turning into the village (see “Is there a village, and how do I get there?”) and runs on out of the valley. Nothing is walled off: where a road leaves the farm's country (the A-road's give-way line, or the lane's southern end) the picture fades and turns you round, facing home (see “What is the A-road, and why does the screen go black when I pull out onto it?”). You can walk it too.`,
         tip: 'The lane runs south from the drive to the neighbour\'s farm. Look out for the traffic.',
       },
       {
@@ -2236,7 +2236,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why is the neighbour not in her yard?',
-        a: `She goes indoors when it gets dark and comes back out in the morning, so at night you will see only her windows and the lamp over her door lit. When she calls at your farm (a green Moorland Tor comes in at the big gate and stops at the barn) she is out, and so is her Tor: her yard is empty until she has driven home. Otherwise by day she may be out of earshot of whoever is in the yard: she only turns and speaks when you, or a girl, comes within about 16 m.`,
+        a: `She goes indoors when it gets dark and comes back out in the morning, so at night you will see only her windows and the lamp over her door lit. When she calls at your farm (a green Moorland Tor comes over the cattle grid, up the drive and stops at the barn) she is out, and so is her Tor: her yard is empty until she has driven home. Otherwise by day she may be out of earshot of whoever is in the yard: she only turns and speaks when you, or a girl, comes within about 16 m.`,
       },
       {
         q: 'Why is the barn dark, and why has the charger gone dead?',
@@ -2285,7 +2285,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I order spare parts, and when do they come?',
-        a: `Look at the parts rack in the barn (back wall, beyond the workbench), press <kbd>E</kbd> and press the number of the part to order a pack. Tyres have their own rack, on the barn's west end wall, and work the same way. About five minutes later the post van comes in at the big gate (if no one else is visiting, and only in daylight) and leaves a parcel by the barn door. Look at the parcel and press <kbd>E</kbd> to open it and put what is in it on the rack. An order you have not had by the end of the day is still on its way the next morning, and so is a parcel you have not opened. You can only order what the rack would have room for.`,
+        a: `Look at the parts rack in the barn (back wall, beyond the workbench), press <kbd>E</kbd> and press the number of the part to order a pack. Tyres have their own rack, on the barn's west end wall, and work the same way. About five minutes later the post van comes up the drive (if no one else is visiting, and only in daylight) and leaves a parcel by the barn door. Look at the parcel and press <kbd>E</kbd> to open it and put what is in it on the rack. An order you have not had by the end of the day is still on its way the next morning, and so is a parcel you have not opened. You can only order what the rack would have room for.`,
       },
       {
         q: 'How do I wave at the girls?',
@@ -2485,7 +2485,7 @@ export const FAQ_SECTIONS = [
       {
         q: 'How do I save and carry on to the next day?',
         a: `The farm saves as you play, so you can simply close the tab. To do it properly, wait until the evening (it lets you from 17:00, or a little before sunset on a short winter day), ring the
-          bell by the barn doors to call the girls in, then walk into the barn and press <kbd>E</kbd> on the calendar on the back wall. The girls head home first: each walks to her own car in the yard beside the garden wall, drives out through the big gate and away down the lane (Jess drives it far too fast, and Amy tuts), and a girl you gave a lift that morning goes and waits in your car. It takes a minute or two. Then a card comes up with Amy's
+          bell by the barn doors to call the girls in, then walk into the barn and press <kbd>E</kbd> on the calendar on the back wall. The girls head home first: each walks to her own car in the yard beside the garden wall, drives down the drive, over the cattle grid and away along the lane (Jess drives it far too fast, and Amy tuts), and a girl you gave a lift that morning goes and waits in your car. It takes a minute or two. Then a card comes up with Amy's
           logbook for the day, a few lines telling the day's story (who raced, who fell out, which quad broke), what you ticked off the bucket list and how far you rode, and the girls say goodnight. Press <kbd>E</kbd>, Enter or click to carry on:
           the screen fades to black, says the day is done, saves, and loads the next morning: click Continue to play it. A seeded game (<code>?seed=</code>) never carries on.`,
         tip: 'In the evening, ring the bell, then press E on the barn calendar to call it a day.',
@@ -2536,8 +2536,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'How do I do the muck job?',
-        a: `Hitch the little trailer to the tractor or a quad with a rack and park it by the muck heap in the east wheat field (within about five metres).
-          Hold <kbd>E</kbd> at the trailer, empty-handed, to fork muck in: the girls will have something to say about the smell. Drive onto the stubble, stop,
+        a: `Hitch the little trailer to the tractor or a quad with a rack and park it by the muck heap at the south edge of the yard (within about five metres).
+          Hold <kbd>E</kbd> at the trailer, empty-handed, to fork muck in: the girls will have something to say about the smell. Drive onto the stubble of the field the chalkboard names ("Spread muck on Long Piece", or whatever your farm calls it), stop,
           press <kbd>T</kbd> (the tub tilts just enough and holds there) and drive off slowly. Muck runs out of the back in patches while you go slower than
           a brisk walk, and the job ticks off the board once there's a good strip down. A full tub is a drag on whatever pulls it.`,
       },
@@ -3183,8 +3183,8 @@ export const FAQ_SECTIONS = [
         q: 'What is the drive?',
         a: `The farm road is a drive: 290 m of old tarmac from the yard straight out to the lane, patched in squares with its edges broken into gravel and a few
           potholes holding water, open to the crops either side (no hedges, just a grass verge, cut short by the lane and longer further in). The cattle grid is at the lane end, so you
-          drive in without opening a gate, and the big gate is gone. For stock and horses, which can't cross a grid, there is a shut field gate beside it (press <kbd>E</kbd> at it). The girls' cars
-          and the visitors come and go over the grid. The lane is straight at the foot of it, with no invisible walls. <code>tp me cattlegrid</code> takes you there,
+          drive in without opening a gate. For stock and horses, which can't cross a grid, there is a shut field gate beside it (press <kbd>E</kbd> at it). The girls' cars
+          and the visitors come and go over the grid. The lane is straight at the foot of it. <code>tp me cattlegrid</code> takes you there,
           <code>scene drive</code> sets it up in daylight and <code>lane.bypassGate true</code> opens the field gate.`,
       },
       {
