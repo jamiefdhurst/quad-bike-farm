@@ -306,13 +306,12 @@ describe('the hay patch in the farm', () => {
 
   it('is the hay field, with no stubble', () => {
     let n = 0;
-    let own = 0;
     inside(0, (x, z) => {
       n++;
-      if (fields.areaOf(x, z) === 'hay') own++;
+      expect(fields.areaOf(x, z), `${x},${z}`).toBe('hay'); // none of it the farmstead's, whose yard it meets along its south edge (#1110)
       expect(fields.stubbleAt(x, z), `${x},${z}`).toBe(0);
     });
-    expect(own / n).toBeGreaterThan(0.95); // a corner of it is the farmstead's
+    expect(n).toBeGreaterThan(4000);
   });
 
   it('cuts nothing when the mower crosses a corner of its bounds that is not the meadow (#1069)', () => {

@@ -3,7 +3,7 @@
 // and `harrowField`); on the new farm that rectangle is the polygon's bounds and carries the polygon as `poly`, so a cell of a job's grid
 // outside the field is simply not there (`liveCells`).
 
-import { polygonBounds, polygonArea, insetPolygon, pointInPolygon, polygonEdges, distanceToEdges } from './polygons.js';
+import { polygonBounds, polygonArea, insetPolygon, pointInPolygon, polygonEdges, distanceToEdges, intersectPolygons, rectPolygon } from './polygons.js';
 import { HEADLAND_WIDTH } from './farmTracks.js';
 
 /**
@@ -31,24 +31,57 @@ export const FIELD_WORK = {
 /** The field `name` in the layout's `fields`, or undefined (today's farm has none). */
 export const fieldOf = (layout, name) => layout.fields?.find((f) => f.name === name);
 
+/** Metres in from a field's hedge lines a job's ground starts, so a point on the line it shares with the next field is never that field's (#1110). */
+export const FIELD_EDGE = 1;
+
+/** Metres from the brook's water's edge to a job's: past its banks, gravel bars and the ford's landings, where nothing is cut into the field (#1110). */
+export const BROOK_CLEAR = 8;
+
 /**
- * A job's place as the rectangle the jobs read, with the polygon on it: the field's own outline, or its headland-free middle (the headland is
- * ploughed round last and sprayed by no one). `area` is square metres.
+ * A job's place as the rectangle the jobs read, with the polygon on it: the field's own outline `FIELD_EDGE` in from its hedges, or its
+ * headland-free middle (the headland is ploughed round last and sprayed by no one), and cut clear of the brook where it runs through
+ * (`brook`, world/brook.js). `area` is square metres.
  */
-export function jobPlace(field, headland = false) {
-  const poly = headland ? insetPolygon(field.points, HEADLAND_WIDTH) : field.points;
+export function jobPlace(field, headland = false, brook = null) {
+  const inset = insetPolygon(field.points, headland ? HEADLAND_WIDTH : FIELD_EDGE);
+  const poly = brook ? clearOfBrook(inset, brook) : inset;
   return { ...polygonBounds(poly), poly, area: polygonArea(poly), field: field.name };
 }
 
-/** The three field jobs' places on the new farm, by the layout key each reads. */
-export function fieldWorkPlaces(fields) {
+/**
+ * `poly` with what lies across the brook cut off: the brook's line, `BROOK_CLEAR` m off its water either side, splits the field, and the larger
+ * side is the field's (Low Ley's north strip, beyond the water, is left out). A field the brook doesn't reach is as it was.
+ */
+export function clearOfBrook(poly, brook, clear = BROOK_CLEAR) {
+  const edges = polygonEdges(poly);
+  const b = polygonBounds(poly);
+  const line = brook.line(2).filter((p) => p.x >= b.minX - 2 && p.x <= b.maxX + 2);
+  if (!line.some((p) => [-1, 0, 1].some((s) => pointInPolygon(poly, p.x, p.z + s * (p.half + clear), 0, edges)))) return poly;
+  const x0 = b.minX - 10;
+  const x1 = b.maxX + 10;
+  const far = b.maxZ - b.minZ + 100;
+  // Each side of the water as one shape: the line's bank, carried out past the field's ends, and a long way out from the water.
+  const side = (s) => {
+    const bank = line.map((p) => [p.x, p.z + s * (p.half + clear)]);
+    const zEnd = (p) => p.z + s * (p.half + clear);
+    return [[x0, zEnd(line[0])], ...bank, [x1, zEnd(line[line.length - 1])], [x1, b.maxZ * (s > 0) + b.minZ * (s < 0) + s * far], [x0, b.maxZ * (s > 0) + b.minZ * (s < 0) + s * far]];
+  };
+  const pieces = [...intersectPolygons(side(-1), poly), ...intersectPolygons(side(1), poly)];
+  return pieces.reduce((best, p) => (Math.abs(polygonArea(p)) > Math.abs(polygonArea(best)) ? p : best), pieces[0] ?? poly);
+}
+
+/** The three field jobs' places on the new farm, by the layout key each reads, clear of `brook` where it has one. */
+export function fieldWorkPlaces(fields, brook = null) {
   const out = {};
   for (const [job, { key, headland }] of Object.entries(FIELD_WORK)) {
     const field = fields.find((f) => f.name === JOB_FIELDS[job]);
-    if (field) out[key] = jobPlace(field, headland);
+    if (field) out[key] = jobPlace(field, headland, brook);
   }
   return out;
 }
+
+/** The outline the map draws round a job's place while it is on: its polygon, or its rectangle's corners where it has none (today's farm). */
+export const placeOutline = (place) => place.poly ?? rectPolygon(place);
 
 const edgesOf = new WeakMap(); // a place's polygon edges, worked out once
 

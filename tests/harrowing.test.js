@@ -395,14 +395,14 @@ describe('the field in the farm', () => {
   // The field is a polygon on the new farm (`inPlace`), so only the points inside it are sampled; its bounds reach past its corners.
   const inside = (pad, each) => { for (let x = m.minX - pad; x <= m.maxX + pad; x += 2) for (let z = m.minZ - pad; z <= m.maxZ + pad; z += 2) if (inPlace(m, x, z)) each(x, z); };
 
-  it('is all one field', () => {
+  it('is all one field, with no water in it (#1110)', () => {
     let n = 0;
-    let own = 0;
     inside(0, (x, z) => {
       n++;
-      if (fields.areaOf(x, z) === 'ley') own++;
+      expect(fields.areaOf(x, z), `${x},${z}`).toBe('ley');
+      expect(heights.puddleAt(x, z), `puddle ${x},${z}`).toBe(0);
     });
-    expect(own / n).toBeGreaterThan(0.95); // the brook clips a corner of Low Ley
+    expect(n).toBeGreaterThan(5000); // Low Ley south of the brook, sampled every 2 m
   });
 
   it('is clear of the track and bogs, and not a steep hillside', () => {
