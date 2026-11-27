@@ -306,7 +306,8 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Why does it start badly when it’s hot?',
-        a: `A hot engine boils the fuel in its carb, so it starts rich. Don't use the choke, and hold the throttle open while you crank.`,
+        a: `A hot engine boils the fuel in its carb, so it starts rich. Don't use the choke, and hold the throttle open while you crank. It lasts as long
+          as the metal stays hot: worked hard, about half a minute on an air-cooled quad and a minute on one with a radiator; only idled, hardly at all.`,
       },
       {
         q: 'It coughs back through the carb when I open the throttle.',
@@ -634,7 +635,7 @@ export const FAQ_SECTIONS = [
         q: 'What do the two-strokes need?',
         a: `The Hornet, Adder, kids' quad, mini moto and three-wheeler run on pre-mix, about 50:1 oil in petrol. There's a yellow can of pre-mix
           somewhere on the farm, and a bottle of two-stroke oil: hold <kbd>E</kbd> on the bottle with a can in your hands to add oil. Straight
-          petrol in a two-stroke runs hot, nips up and in the end seizes solid. Too much oil, or pre-mix in a four-stroke, smokes like a bonfire
+          petrol in a two-stroke runs hot (the needle climbs into the red and it pinks), nips up and in the end seizes solid. Too much oil, or pre-mix in a four-stroke, smokes like a bonfire
           and fouls the plug. The prompts tell you what's in the can you're holding; nothing tells you what's in a tank except how it runs.`,
         tip: 'The two-strokes need pre-mix. Straight petrol will seize them.',
       },
