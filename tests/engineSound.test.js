@@ -1,0 +1,91 @@
+import { describe, it, expect } from 'vitest';
+import { SPECS, renderLadder } from '../tools/engine-review/ladder.mjs';
+import { dropouts, tickRate, toneChange } from '../tools/engine-review/measures.mjs';
+
+// Every vehicle's engine held at 500 rpm steps from idle to its top, rendered offline through the real engine model and worklet, and
+// listened to for the faults the engine review found only by ear (#856): cutting out (the diesels with one cylinder playing a cycle
+// cut in four), ticking (the Griffin's firings starting mid-bang and its level driving the clipper) and the tone that stopped changing
+// above about 3k. The render is seeded, so a run repeats; a change to the sound that moves a figure means measuring it again.
+
+// 0.7 throttle, not the review sweep's 0.35: part throttle never reaches the output's soft clipper, so the Griffin at its old
+// recVolume ticked no more than now. 0.8 s a step keeps all 19 vehicles at about 12 s for the file.
+const LADDER = { stepSeconds: 0.8, throttle: 0.7, seed: 7 };
+const SETTLE = 0.4; // seconds of each step left out of its tone, while the revs settle
+
+// Ticks a second over the whole ladder: each vehicle's figure on main after #855 (2026-11-27), 25% over and rounded up to 0.1, so
+// what is there today passes and a fault that adds ticks fails. A zero stays zero: an engine that never ticked shouldn't start.
+// The bikes' and the Griffin's come with their recordings (the review: the Carlton's, and the TZ65's rasp at 160 firings a second).
+const TICK_BUDGET = {
+  farm300: 0.8, bruin: 2.5, hornet: 7.2, rb300: 0, adder: 0, asp: 9.2, tz65: 3.9, t185: 0, ursa: 0.3, shepherd: 2.8, clipper: 1.9,
+  plover: 0, hartley: 0, yak: 0, tor: 0.2, crag: 0, finch: 0, griffin: 4, vauclair: 0.2,
+};
+
+// The tone at the top step against the step nearest half the top (mean third-octave difference in dB, level taken out): each
+// vehicle's figure on main after #855, less 25% and rounded down to 0.1. Under it, the top sounds too like half way: it has stopped
+// changing as it revs.
+const TONE_FLOOR = {
+  farm300: 3.4, bruin: 2.6, hornet: 3.2, rb300: 3.2, adder: 2.4, asp: 2, tz65: 1.9, t185: 2.1, ursa: 2.6, shepherd: 2.5, clipper: 1.8,
+  plover: 3.2, hartley: 2, yak: 2.2, tor: 4.2, crag: 2.5, finch: 3.4, griffin: 6.5, vauclair: 2.7,
+};
+
+// A vehicle not in the tables yet is held to the loosest of them, so it is covered with nothing added; measure it and add its own.
+const budgetFor = (id) => TICK_BUDGET[id] ?? Math.max(...Object.values(TICK_BUDGET));
+const floorFor = (id) => TONE_FLOOR[id] ?? Math.min(...Object.values(TONE_FLOOR));
+
+// The step nearest half the top.
+function halfStep(steps) {
+  const top = steps.at(-1);
+  return steps.reduce((best, r, i) => (Math.abs(r - top / 2) < Math.abs(steps[best] - top / 2) ? i : best), 0);
+}
+
+// Renders a vehicle's ladder and returns what is wrong with it, each naming the vehicle and the measure; none means it passes.
+function faults(spec) {
+  const ladder = renderLadder(spec, LADDER);
+  const out = [];
+  const gaps = dropouts(ladder.pcm);
+  if (gaps.count > 0) out.push(`${spec.id}: dropouts: ${gaps.count} 5 ms windows 20 dB under the median, first at ${gaps.at.slice(0, 5).join(', ')} s`);
+  const ticks = tickRate(ladder.pcm);
+  if (ticks > budgetFor(spec.id)) out.push(`${spec.id}: ticks: ${ticks.toFixed(2)} a second, over its budget of ${budgetFor(spec.id)}`);
+  const top = ladder.steps.length - 1;
+  const half = halfStep(ladder.steps);
+  const tone = toneChange(ladder.segment(top, SETTLE), ladder.segment(half, SETTLE));
+  if (tone < floorFor(spec.id)) {
+    out.push(`${spec.id}: tone: the top (${ladder.steps[top]} rpm) is ${tone.toFixed(2)} dB from half way (${ladder.steps[half]}), under its floor of ${floorFor(spec.id)}`);
+  }
+  return out;
+}
+
+const spec = (id) => SPECS.find((s) => s.id === id);
+
+describe('every engine as it revs', () => {
+  it('has a budget and a floor for every vehicle, and none for one that has gone', () => {
+    const ids = SPECS.map((s) => s.id).sort();
+    expect(Object.keys(TICK_BUDGET).sort()).toEqual(ids);
+    expect(Object.keys(TONE_FLOOR).sort()).toEqual(ids);
+  });
+
+  it.each(SPECS.map((s) => [s.id, s]))('%s never cuts out, ticks under its budget and changes to the top', (id, s) => {
+    expect(faults(s)).toEqual([]);
+  });
+
+  it('renders the same twice, so a figure means the same each run', () => {
+    const a = renderLadder(spec('clipper'), LADDER).pcm;
+    const b = renderLadder(spec('clipper'), LADDER).pcm;
+    expect(a.length).toBe(b.length);
+    expect(a.every((v, i) => v === b[i])).toBe(true);
+  });
+});
+
+describe('a planted fault fails it', () => {
+  it('the Crag with one cylinder, playing a cycle cut in four, cuts out', () => {
+    const crag = spec('crag');
+    const found = faults({ ...crag, engine: { ...crag.engine, cylinders: 1 } });
+    expect(found).toContainEqual(expect.stringMatching(/^crag: dropouts: \d+ 5 ms windows/));
+  });
+
+  it('the Griffin back at recVolume 1.1 ticks over its budget', () => {
+    const griffin = spec('griffin');
+    const found = faults({ ...griffin, audio: { ...griffin.audio, recVolume: 1.1 } });
+    expect(found).toContainEqual(expect.stringMatching(/^griffin: ticks: [\d.]+ a second, over its budget/));
+  });
+});
