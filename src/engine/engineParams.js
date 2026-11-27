@@ -215,7 +215,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   coolantEmptyAt: 0.1, // level at which it does none
   coolantSteamBelow: 0.4, // level under which it can steam when it's hot
   coolantSteamC: 102, // coolant (°C) from which a low radiator steams, more up to `hotStallC`
-  coolantBoilFullC: 130, // coolant (°C) it boils over at with the system full and under pressure (over the stall, so a full one stalls first)...
+  coolantBoilFullC: 122, // coolant (°C) it boils over at with the system full and under pressure (under the stall, so a full one boils over before it cuts out)...
   coolantBoilLowC: 100, // ...and with too little left to hold any pressure, at `coolantEmptyAt`; between, it follows the radiator's cooling
   coolantBoilLeft: 0.06, // level left after a boil-over
   coolantBoilSteamSeconds: 14, // how long the steam from a boil-over takes to die away
