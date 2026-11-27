@@ -1,5 +1,5 @@
-// What makes the lane one other people use (#687): the pair of cottages on its east side with their gardens and front wall, two more field
-// gateways in her hedge, a grit bin on the outside of the northern bend, and at the end of our drive a postbox on its post and a bin stand. Where each goes is
+// What makes the lane one other people use (#687): the pair of cottages on its east side with their gardens and front wall, one more field
+// gateway in her hedge, a grit bin on the outside of the northern bend, and at the end of our drive a postbox on its post and a bin stand. Where each goes is
 // `layout.laneFittings` (layoutNew.js `laneFittingsLayout`); the cottages are the village's (villageBuildings.js `buildCottage`, villageKit.js) turned to face the lane.
 
 import * as THREE from 'three';
@@ -80,7 +80,7 @@ export function buildLaneFittings(c) {
     fixedBox(frontX, y + 0.5, (z0 + z1) / 2, 0.25, 0.55, len / 2);
   }
 
-  // Two more field gateways in her hedge: a timber post each side and a shut five-bar leaf between, the leaf hung from the south post.
+  // One more field gateway in her hedge (none at the small farm's track, which is open, #1082): a timber post each side and a shut five-bar leaf between, the leaf hung from the south post.
   const wood = new THREE.MeshStandardMaterial({ map: woodTexture(random, [128, 120, 108]), roughness: 0.95 });
   const postWood = new THREE.MeshStandardMaterial({ map: woodTexture(random), roughness: 0.9 });
   const iron = new THREE.MeshStandardMaterial({ color: 0x24282a, metalness: 0.6, roughness: 0.5 });

@@ -153,8 +153,8 @@ describe('the lane is one other people use (#687)', () => {
     }
   });
 
-  it('has two more field gateways on its east side, a postbox and a bin stand at the end of our drive, off the tarmac', () => {
-    expect(F.gateways).toHaveLength(2);
+  it('has one more field gateway on its east side, a postbox and a bin stand at the end of our drive, off the tarmac', () => {
+    expect(F.gateways).toHaveLength(1);
     const line = land().lines.find((l) => l.axis === 'x' && l.at === fromPlan([912, 0])[0]);
     for (const g of F.gateways) expect(line.gaps.some(([a, b]) => g.z > a && g.z < b && b - a >= g.width)).toBe(true);
     for (const p of [F.postbox, F.binStand]) {
