@@ -80,28 +80,39 @@ describe('her land across the lane (#569)', () => {
     for (const b of boxes) expect(Math.min(b.hx, b.hz)).toBeCloseTo(Math.max(land.hedge.width / 2, HEDGE_SOLID_HALF), 6);
   });
 
-  it('ends each stretch\'s leaves at a gap\'s edge, never in it, and runs them past the line\'s end at a corner (#1123)', () => {
+  it('ends each stretch\'s leaves at a gap\'s edge, never in it, runs them past the line\'s end at a corner and keeps them in at a free end (#1123)', () => {
     const blockReach = 1.1;
     const seeded = (seed) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
-    const random = seeded(99);
-    let gapEnds = 0;
-    let corners = 0;
-    for (const s of land.stretches) {
-      const length = s.to - s.from;
-      const blocks = layLandStretch(s, { random, blockReach, width: (r) => 1 + r * 0.3 });
-      if (!blocks.length) continue;
-      const lo = Math.min(...blocks.map((b) => b.t - blockReach * b.width)); // how far the leaves run, from the stretch's start
-      const hi = Math.max(...blocks.map((b) => b.t + blockReach * b.width));
-      for (const [gap, back] of [[s.gapBefore, lo], [s.gapAfter, length - hi]]) { // `back`: from the end to the leaves, positive inwards
-        if (gap) gapEnds++;
-        else corners++;
-        if (gap) expect(back, 'leaves end at the gap\'s edge, out of it').toBeGreaterThanOrEqual(0);
-        if (gap) expect(back, 'leaves end at the gap\'s edge, with no bare box').toBeLessThan(0.1);
-        else expect(back, 'leaves run on to the corner').toBeLessThanOrEqual(0);
+    const count = { gap: 0, corner: 0, free: 0 };
+    for (const seed of [99, 1234, 7]) {
+      const random = seeded(seed);
+      for (const s of land.stretches) {
+        const length = s.to - s.from;
+        const blocks = layLandStretch(s, { random, blockReach, width: (r) => 1 + r * 0.3 });
+        if (!blocks.length) continue;
+        const lo = Math.min(...blocks.map((b) => b.t - blockReach * b.width)); // how far the leaves run, from the stretch's start
+        const hi = Math.max(...blocks.map((b) => b.t + blockReach * b.width));
+        // `back`: from the end to the leaves, positive inwards; `past`: how far the other stretch's box goes on beyond a corner.
+        for (const [gap, corner, past, back] of [[s.gapBefore, s.cornerBefore, s.pastBefore, lo], [s.gapAfter, s.cornerAfter, s.pastAfter, length - hi]]) {
+          if (gap) {
+            count.gap++;
+            expect(back, 'leaves end at the gap\'s edge, out of it').toBeGreaterThanOrEqual(0);
+            expect(back, 'leaves end at the gap\'s edge, with no bare box').toBeLessThan(0.1);
+          } else if (corner) {
+            count.corner++;
+            expect(back, 'leaves run on to the corner').toBeLessThanOrEqual(0);
+            expect(-back, 'and no further than the other box').toBeLessThanOrEqual(past + 1e-9);
+          } else {
+            count.free++;
+            expect(back, 'leaves stay inside the box at a free end').toBeGreaterThanOrEqual(-1e-9);
+            expect(back, 'and run to its end').toBeLessThan(0.1);
+          }
+        }
       }
     }
-    expect(gapEnds).toBeGreaterThan(2);
-    expect(corners).toBeGreaterThan(4);
+    expect(count.gap).toBeGreaterThan(2);
+    expect(count.corner).toBeGreaterThan(4);
+    expect(count.free).toBeGreaterThan(2); // the lane's hedge stopping at the village frontage, and the lines that meet no other
   });
 });
 

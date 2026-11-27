@@ -31,7 +31,7 @@ export function layHedge(h, { T, H, heightAt, random, blockReach, bushReach, bus
       if (!key) continue;
       open.delete(key);
       const g = h.gaps[i];
-      // 0.1 m back from touching the gap: farmPlacement.js draws a block's leaves as an octagon round its reach, that much wider at its corners.
+      // Set back from touching the gap: farmPlacement.js draws a block's leaves as an octagon round its reach, about 0.1 m wider at its corners.
       const at = g.at + (key.endsWith('-') ? -1 : 1) * (clearOf(g, width) + EDGE_BACK);
       if (h.gaps.some((o) => o !== g && Math.abs(at - o.at) < clearOf(o, width))) continue; // two gateways too close for a block between
       s = at;
