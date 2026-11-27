@@ -46,7 +46,6 @@ describe('the barn on the new farm', () => {
     const b = frame.toWorld(shape.outer.maxX, shape.outer.maxZ);
     const plan = (p) => [p.x + PLAN_ORIGIN[0], p.z + PLAN_ORIGIN[1]];
     expect([plan(a), plan(b)].flat().sort((p, q) => p - q).map((v) => Math.round(v * 10) / 10)).toEqual([319, 337, 498, 524]);
-    expect(shape.wide).toBe(true);
   });
   it('has one pair of doors, in the long wall on the yard\'s side, wide enough for a tractor', () => {
     const doors = barnDoors(L);

@@ -123,7 +123,7 @@ describe('the weather vane', () => {
     expect(vane.position.y).toBeCloseTo(floorY + s.ridge + 0.12, 6);
     const f = barnFrame(two);
     // The new barn's ridge runs along the doors' wall (the barn's z), the vane near its east end; today's ran out of the doors.
-    const ridgeEnds = s.wide ? [f.toWorld(s.x, s.outer.minZ), f.toWorld(s.x, s.outer.maxZ)] : [f.toWorld(s.outer.minX, s.z), f.toWorld(s.outer.maxX, s.z)];
+    const ridgeEnds = [f.toWorld(s.x, s.outer.minZ), f.toWorld(s.x, s.outer.maxZ)];
     const along = new THREE.Vector2(ridgeEnds[1].x - ridgeEnds[0].x, ridgeEnds[1].z - ridgeEnds[0].z);
     const rel = new THREE.Vector2(vane.position.x - ridgeEnds[0].x, vane.position.z - ridgeEnds[0].z);
     const t = rel.dot(along) / along.lengthSq();

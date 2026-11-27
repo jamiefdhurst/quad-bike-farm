@@ -30,9 +30,9 @@ export function poleSpot(layout) {
 export function gableSpot(layout, floorY) {
   const s = barnShape({ ...layout, ...layout.barnLocal });
   const f = barnFrame(layout);
-  // The new barn has no gable over its doors: the light hangs on the wall under the eaves, past where the door leaves rest.
-  const p = s.wide ? f.toWorld(s.outer.maxX + 0.3, s.z + (s.door.maxZ - s.z) + 4.4) : f.toWorld(s.outer.maxX + 0.3, s.z + 2.1);
-  return { x: p.x, y: floorY + (s.wide ? s.wallHeight - 0.6 : s.wallHeight + 0.55), z: p.z, heading: f.headingToWorld(Math.PI / 2) };
+  // The barn has no gable over its doors: the light hangs on the wall under the eaves, past where the door leaves rest.
+  const p = f.toWorld(s.outer.maxX + 0.3, s.z + (s.door.maxZ - s.z) + 4.4);
+  return { x: p.x, y: floorY + s.wallHeight - 0.6, z: p.z, heading: f.headingToWorld(Math.PI / 2) };
 }
 
 /** A black halogen floodlight, built facing local +z with its mounting plate at the origin: bracket, finned housing, hood, glass, a PIR sensor under it. */
