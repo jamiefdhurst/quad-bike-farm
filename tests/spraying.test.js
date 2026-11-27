@@ -433,6 +433,11 @@ describe('the field in the farm', () => {
   const fields = createFields(LAYOUT);
   const f = LAYOUT.sprayField;
 
+  it('puts the sprayer where the hose reaches (with a metre to spare)', () => {
+    const s = LAYOUT.sprayer;
+    expect(Math.hypot(s.x - LAYOUT.hose.x, s.z - LAYOUT.hose.z)).toBeLessThan(DEFAULT_HOSE_PARAMS.reach - 1);
+  });
+
   it('is stubble, as far as the eye goes, with nothing built on it', () => {
     let n = 0;
     let stubble = 0;
