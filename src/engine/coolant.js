@@ -3,9 +3,10 @@
 // The water-cooled engine has a slow leak from a perished hose. The level (1 full, 0 dry) falls while it runs
 // (the system is under pressure) and a little while it sits hot; a damp patch grows under it once it's down a
 // bit. As the level drops the radiator does less, so the engine heats the way an air-cooled one does and the
-// gauge shows more of it. Below `coolantSteamBelow` and hot it steams from the radiator, and past `boilHeat`
-// with little left it boils over: a burst of steam, most of what's left gone, and the heat stays up until it
-// cools. Topping it up (and nipping the clip) is the bench's job.
+// gauge shows more of it. Below `coolantSteamBelow` and hot it steams from the radiator, and once the coolant
+// is over its boiling point it boils over: a burst of steam, most of what's left gone, and the heat stays up
+// until it cools. The boiling point falls as the level does, as a low system holds less pressure. Topping it up
+// (and nipping the clip) is the bench's job. Every limit here is the coolant's real temperature in °C (thermal.js).
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
@@ -26,16 +27,21 @@ export function stepPuddle(puddle, h, { leaking, level }, p) {
   return clamp01(puddle - p.coolantPuddleFade * h);
 }
 
-/** 0..1 how much steam is coming off the radiator: low coolant and hot, plus whatever's left of a boil-over. */
-export function steamLevel(level, heat, boil, p) {
+/** 0..1 how much steam is coming off the radiator: low coolant and hot (from `coolantSteamC` up to `hotStallC`), plus whatever's left of a boil-over. */
+export function steamLevel(level, coolantC, boil, p) {
   const low = clamp01((p.coolantSteamBelow - level) / Math.max(0.01, p.coolantSteamBelow));
-  const hot = clamp01((heat - p.coolantSteamHeat) / Math.max(0.01, 1 - p.coolantSteamHeat));
+  const hot = clamp01((coolantC - p.coolantSteamC) / Math.max(1, p.hotStallC - p.coolantSteamC));
   return Math.max(low * hot, clamp01(boil));
 }
 
-/** Whether it boils over now: hot, and what's left no longer does the job. Once per top-up (`boiled`): after that it just steams. */
-export function boilsOver(level, heat, boiled, p) {
-  return !boiled && heat > p.coolantBoilHeat && coolingEffect(level, p) < p.coolantBoilEffect;
+/** The coolant's boiling point (°C) at this level: `coolantBoilFullC` full and under pressure, down to `coolantBoilLowC` with too little to hold any. */
+export function boilingC(level, p) {
+  return p.coolantBoilLowC + (p.coolantBoilFullC - p.coolantBoilLowC) * coolingEffect(level, p);
+}
+
+/** Whether it boils over now: the coolant is past its boiling point for the level. Once per top-up (`boiled`): after that it just steams. */
+export function boilsOver(level, coolantC, boiled, p) {
+  return !boiled && coolantC > boilingC(level, p);
 }
 
 /** What it says on the dash or the panel: "full", "a bit low", "low", "nearly dry". */
@@ -65,9 +71,9 @@ export function thermostatSticks(random, h, p) {
   return random() < (p.thermostatStickPerHour * h) / 3600 ? p.thermostatMin + random() * (1 - p.thermostatMin) : 0;
 }
 
-/** 0..1 how far over the heat a water-cooled engine can take: from `hotFrom` to the top. */
-export function hotLevel(heat, p) {
-  return clamp01((heat - p.hotFrom) / Math.max(0.01, 1 - p.hotFrom));
+/** 0..1 how far over what it can take a water-cooled engine is: 0 at `hotFromC` of coolant, 1 at `hotStallC`, where it stalls. */
+export function hotLevel(coolantC, p) {
+  return clamp01((coolantC - p.hotFromC) / Math.max(1, p.hotStallC - p.hotFromC));
 }
 
 /** Flushing coolant through a cold, stopped engine frees a stuck thermostat: the new stuck amount after `h` seconds of it. */

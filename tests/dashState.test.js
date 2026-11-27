@@ -30,10 +30,10 @@ describe('dash state', () => {
   });
 
   it('lights lamps by the rules, and none with the ignition off', () => {
-    const s = { ignition: true, reverse: true, neutral: false, temperature: 1, overheat: 1, fuelLevel: 0.05, reserveLevel: 0.1, oilLow: false };
+    const s = { ignition: true, reverse: true, neutral: false, gauge: { c: 70, air: 12, warm: 70, hot: 115, top: 170 }, overheat: 1, fuelLevel: 0.05, reserveLevel: 0.1, oilLow: false };
     expect(lampStates(s)).toEqual({ r: true, n: false, temp: true, fuel: true, oil: false });
     expect(lampStates({ ...s, ignition: false })).toEqual({ r: false, n: false, temp: false, fuel: false, oil: false });
-    expect(lampStates({ ...s, temperature: 0.3, overheat: 0, fuelLevel: 0.5, reverse: false, neutral: true })).toEqual({ r: false, n: true, temp: false, fuel: false, oil: false });
+    expect(lampStates({ ...s, gauge: { ...s.gauge, c: 40 }, overheat: 0, fuelLevel: 0.5, reverse: false, neutral: true })).toEqual({ r: false, n: true, temp: false, fuel: false, oil: false });
   });
 
   it('formats counters with tenths', () => {

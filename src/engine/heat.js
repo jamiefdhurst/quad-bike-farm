@@ -3,8 +3,8 @@
 // Apart from the warm-up (temperature, 0 cold to 1 warm), an engine can run on into being too hot. The
 // air-cooled ones get there idling for ages on a sunny day, or crawling in mud with the throttle open, and
 // start pinking and running rough; riding along at speed blows it away. The water-cooled one has a fan that
-// cuts in and out and never gets that far. Both come from the engine's real temperatures (thermal.js); this
-// file reads the 0..1 heat they give. Separately, `soak` is how much heat the metal's holding after
+// cuts in and out and never gets that far. Both come from the engine's real temperatures (thermal.js): pinking
+// from the metal's °C, the steam and the soak from the 0..1 heat worked out from them. Separately, `soak` is how much heat the metal's holding after
 // work, whatever the airflow: switched off it ticks as it cools, and a hot carburettor percolates, so a
 // hot engine starts rich until the heat's gone.
 
@@ -15,9 +15,9 @@ export function airflow(speed, p) {
   return clamp01(Math.abs(speed) / Math.max(0.1, p.airflowSpeed));
 }
 
-/** How badly it's pinking, 0..1 (an air-cooled engine only: the water-cooled one's heat never builds that far). */
-export function pinkLevel(heat, p) {
-  return clamp01((heat - p.pinkFrom) / Math.max(0.01, 1 - p.pinkFrom));
+/** How badly it's pinking, 0..1, from the metal's °C: none below `pinkFromC`, fully `pinkSpanC` over it (an air-cooled engine only). */
+export function pinkLevel(metalC, p) {
+  return clamp01((metalC - p.pinkFromC) / Math.max(1, p.pinkSpanC));
 }
 
 /**
@@ -41,12 +41,6 @@ export function condensation({ running, temperature, dayTemp }, p) {
   const air = clamp01((p.condenseAirBelow - dayTemp) / Math.max(0.5, p.condenseAirBelow - p.condenseAirFull));
   const cold = clamp01((p.condenseWarmAt - temperature) / Math.max(0.05, p.condenseWarmAt));
   return air * cold;
-}
-
-/** Where the dash gauge's red zone pushes to: poor lubrication, or this heat (shown weakly on the water-cooled). */
-export function gaugeHeat(overheat, heat, p, coolant = 1) {
-  // With the coolant gone the gauge shows the water-cooled engine's heat in full.
-  return Math.max(overheat, clamp01(heat) * (p.waterCooled ? 1 + (p.heatGaugeWater - 1) * coolant : 1));
 }
 
 /** The heat in the metal after work: it follows what the engine's doing while it runs, and soaks away when it's off. */

@@ -39,7 +39,7 @@ describe('picking quirks', () => {
 });
 
 describe('the dash lies', () => {
-  const real = { fuelLevel: 0.25, temperature: 0.9, overheat: 0.2 };
+  const real = { fuelLevel: 0.25, gauge: { c: 80, air: 10, warm: 70, hot: 110, top: 130 }, overheat: 0.2 };
 
   it('shows the truth with no quirks', () => {
     expect(set().dash(real, 0.016)).toEqual(real);
@@ -63,7 +63,8 @@ describe('the dash lies', () => {
 
   it('holds the temperature needle at cold, with no red zone', () => {
     const d = set('tempCold').dash(real, 0.016);
-    expect(d.temperature).toBe(P.tempColdCap);
+    expect(d.gauge.c).toBeCloseTo(10 + P.tempColdCap * 60);
+    expect(d.gauge.warm).toBe(70);
     expect(d.overheat).toBe(0);
   });
 });
