@@ -124,4 +124,41 @@ describe('the pulse model', () => {
     // Without the voice's low-pass (the model off) it folds back nearly as loud as the tone it keeps.
     expect(level(false)).toBeGreaterThan(-15);
   });
+
+  it('puts the resonances back on firings from the bare pulses, and never the rev EQ', () => {
+    // The processor's own output path, with the recorded firings stood in for by a click in the bare sum.
+    const sandbox = { sampleRate: SR, currentFrame: 0, registerProcessor: () => {}, AudioWorkletProcessor: class { constructor() { this.port = { postMessage: () => {} }; } } };
+    vm.createContext(sandbox);
+    vm.runInContext(`${readFileSync('src/audio/engineWorklet.js', 'utf8')}\n;this.EngineProcessor = EngineProcessor;`, sandbox);
+    const peaks = JSON.parse(readFileSync('public/audio/engine-bank.json', 'utf8')).model['idle/1'].peaks;
+    const run = (params, withPeaks = peaks) => {
+      const proc = new sandbox.EngineProcessor();
+      proc.onMessage({ params: { ...P, recBank: 'engine-bank', ...params }, bank: bank({ 'idle/1': { peaks: withPeaks, burst: 0.02 } }) });
+      const rec = proc.recorded;
+      rec.modelNow = { key: 'idle/1', peaks: withPeaks };
+      let t = 0;
+      rec.sample = () => {
+        rec.bareOut = t++ === 0 ? 0.2 : 0;
+        return 0;
+      };
+      const out = new Float32Array(2048);
+      // High revs, so the rev EQ is in full.
+      proc.processRecorded(out, out.length, { rpm: 9000, throttle: 0, running: true });
+      return out;
+    };
+    const plain = run({ pulseLowCut: 0, pulseMidBoost: 0 });
+    const hard = run({ pulseLowCut: 30, pulseMidBoost: 20 });
+    let moved = 0, energy = 0;
+    for (let i = 0; i < plain.length; i++) {
+      moved += (hard[i] - plain[i]) ** 2;
+      energy += plain[i] ** 2;
+    }
+    expect(energy).toBeGreaterThan(0);
+    expect(moved / energy).toBeLessThan(1e-12);
+    // And it does go through the peaks: without them the same click comes out otherwise.
+    const none = run({ pulseLowCut: 0, pulseMidBoost: 0 }, []);
+    let diff = 0;
+    for (let i = 0; i < plain.length; i++) diff += (none[i] - plain[i]) ** 2;
+    expect(diff / energy).toBeGreaterThan(0.01);
+  });
 });

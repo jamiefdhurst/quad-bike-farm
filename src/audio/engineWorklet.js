@@ -346,7 +346,8 @@ class RecordedEngine {
     const natural = g.len / target;
     // The burst fits the gap (the pulse model): once the gap to the next firing is shorter than a firing's main burst, the firing
     // plays just fast enough for its burst to fit, as a real exhaust pulse shortens with the revs. Below that it plays as recorded.
-    const fit = model ? Math.max(1, (model.burst * sampleRate) / cycle) : 1;
+    const bare = !!model && g.start >= model.from && g.start + g.len + g.tail + 2 <= model.from + model.data.length;
+    const fit = bare ? Math.max(1, (model.burst * sampleRate) / cycle) : 1;
     const rate = (natural <= 1 ? Math.max(p.pulseSlowest ?? 0.45, Math.pow(natural, p.pulseStretch)) : Math.pow(natural, p.pulsePitchFollow)) * fit;
     const xfade = Math.max(0.0015 * sampleRate, Math.min(0.008 * sampleRate, cycle * p.pulseCrossfade));
     // Length in recorded samples: the whole grain, or as much as fits before the next firing.
@@ -366,7 +367,6 @@ class RecordedEngine {
       }
     }
     this.cursor[layer] = g;
-    const bare = !!model && g.start >= model.from && g.start + g.len + g.tail + 2 <= model.from + model.data.length;
     if (bare) this.modelNow = model;
     const voice = {
       layer,
