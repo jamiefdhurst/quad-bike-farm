@@ -5,7 +5,7 @@ import { radiatorEffect, pickThermostat, thermostatSticks, hotLevel, flushThermo
 import { gaugeReading } from '../src/engine/thermal.js';
 import { lampStates } from '../src/vehicle/dashState.js';
 import { pourStep, DEFAULT_COOLANT_BOTTLE_PARAMS } from '../src/items/coolantBottle.js';
-import { HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, FINCH_SPEC, GRIFFIN_SPEC } from '../src/vehicle/quadSpecs.js';
+import { QUAD_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC } from '../src/vehicle/quadSpecs.js';
 import { tempGaugeFraction, WARM_AT, HOT_FROM } from '../src/vehicle/tempGauge.js';
 
 const P = { ...DEFAULT_ENGINE_PARAMS, waterCooled: true };
@@ -117,11 +117,126 @@ describe('a healthy water-cooled engine', () => {
     expect(e.isRunning).toBe(true);
   });
 
-  it('copes with a heavy crawl too', () => {
-    const e = make();
-    start(e);
-    expect(drive(e, 900, { ambient: 1, throttle: 1, driveLoad: 1, speed: 1 })).toBe(false);
-    expect(e.hot).toBe(0);
+});
+
+// Each vehicle with a radiator, built from its own spec: how long it lasts revved hard standing still (#860).
+const ADDER_SPEC = QUAD_SPECS.find((s) => s.id === 'adder');
+const RADIATORS = [
+  ['Adder', ADDER_SPEC, 120],
+  ['Finch', FINCH_SPEC, 240],
+  ['Griffin', GRIFFIN_SPEC, 240],
+  ['Vauclair', VAUCLAIR_SPEC, 240],
+  ['Yak', YAK_SPEC, 240],
+  ['Tor', TOR_SPEC, 300],
+  ['Crag', CRAG_SPEC, 300],
+  ['Hartley', HARTLEY_SPEC, null],
+];
+
+/** A warm, running engine from a vehicle's spec, on a day of `dayTemp` °C, with its setup (`coolant`, `thermostat`) applied first. */
+function vehicleEngine(spec, dayTemp, setup = {}) {
+  const e = new EngineModel({ ...DEFAULT_ENGINE_PARAMS, ...spec.engine }, { random: seeded(5) });
+  const diesel = spec.engine.runsOnDiesel ? 1 : 0;
+  e.dayTemp = dayTemp;
+  e.setTemperature(1);
+  Object.assign(e, setup);
+  e.setIgnition(true);
+  for (let t = 0; t < 4; t += 0.05) e.update(0.05, { diesel, dayTemp }); // (the glow plugs)
+  for (let t = 0; t < 20 && !e.isRunning; t += 0.05) e.update(0.05, { starter: true, choke: diesel ? 0 : 0.15, diesel, dayTemp });
+  expect(e.isRunning, spec.id).toBe(true);
+  return { e, diesel };
+}
+
+/** Runs it `seconds` with the same controls: when it first ran too hot, when it stalled from heat, and the needle when it first lost power. */
+function hold(spec, seconds, controls, setup) {
+  const { e, diesel } = vehicleEngine(spec, controls.dayTemp, setup);
+  const out = { e, hotAt: null, stallAt: null, needleAtHot: null, maxHot: 0 };
+  for (let t = 0; t < seconds; t += 0.5) {
+    if (spec.engine.strokes === 2) e.fouling = 0; // (a two-stroke idling for ages oils its plug: not what this is about)
+    e.update(0.5, { diesel, ...controls });
+    out.maxHot = Math.max(out.maxHot, e.hot);
+    if (out.hotAt === null && e.hot > 0) {
+      out.hotAt = t;
+      out.needleAtHot = needle(e);
+    }
+    if (e.events.some((x) => x.type === 'overheated')) {
+      out.stallAt = t;
+      break;
+    }
+  }
+  return out;
+}
+
+const REVVED = { throttle: 1, ambient: 0.5, dayTemp: 12 }; // held near the limiter standing still on a mild day
+
+describe('each radiator, revved hard standing still (#860)', () => {
+  for (const [name, spec, seconds] of RADIATORS) {
+    it(`${name}: idles an hour in full sun on the hottest day without running hot`, () => {
+      const r = hold(spec, 3600, { ambient: 1, dayTemp: 29 });
+      expect(r.maxHot).toBe(0);
+      expect(r.e.isRunning).toBe(true);
+      expect(needle(r.e)).toBeGreaterThan(WARM_AT - 0.02);
+      expect(needle(r.e)).toBeLessThan(HOT_FROM); // mid-band while the fan copes
+    });
+
+    it(`${name}: stays cool riding along at speed on a warm sunny day`, () => {
+      const r = hold(spec, 1800, { throttle: 0.6, driveLoad: 0.5, speed: 12, ambient: 1, dayTemp: 25 });
+      expect(r.maxHot).toBe(0);
+    });
+
+    if (seconds) {
+      it(`${name}: gets hot in about ${seconds / 60} minutes held near the limiter, the needle in the red before the power goes`, () => {
+        const r = hold(spec, 1200, REVVED);
+        expect(r.hotAt).not.toBeNull();
+        expect(r.hotAt).toBeGreaterThan(seconds * 0.75);
+        expect(r.hotAt).toBeLessThan(seconds * 1.25);
+        expect(r.needleAtHot).toBeGreaterThanOrEqual(HOT_FROM - 0.005);
+      });
+    } else {
+      it(`${name}: never runs hot at full revs standing still, even in full sun on the hottest day`, () => {
+        const r = hold(spec, 1800, { throttle: 1, ambient: 1, dayTemp: 29 });
+        expect(r.maxHot).toBe(0);
+        expect(r.e.isRunning).toBe(true);
+      });
+    }
+
+    it(`${name}: dry, it runs hot idling within about a minute and stalls within three, on a frosty day or a hot one`, () => {
+      for (const day of [{ ambient: 0, dayTemp: -5 }, { ambient: 1, dayTemp: 28 }]) {
+        const r = hold(spec, 600, day, { coolant: 0 });
+        expect(r.hotAt).toBeLessThan(90);
+        expect(r.stallAt).not.toBeNull();
+        expect(r.stallAt).toBeLessThan(180);
+        expect(r.needleAtHot).toBeGreaterThanOrEqual(HOT_FROM - 0.005);
+      }
+    });
+  }
+
+  it('lasts longest on the Land Rovers and shortest on the Adder', () => {
+    const at = (spec) => hold(spec, 1200, REVVED).hotAt;
+    const adder = at(ADDER_SPEC);
+    const finch = at(FINCH_SPEC);
+    const tor = at(TOR_SPEC);
+    expect(adder).toBeLessThan(finch);
+    expect(finch).toBeLessThan(tor);
+  });
+
+  it('still lets a stuck thermostat or a leak cook the Hartley', () => {
+    expect(hold(HARTLEY_SPEC, 2400, { throttle: 1, driveLoad: 1, speed: 1, ambient: 1, dayTemp: 18 }, { thermostat: 1 }).stallAt).not.toBeNull();
+    expect(hold(HARTLEY_SPEC, 600, { ambient: 0.5, dayTemp: 12 }, { coolant: 0 }).stallAt).not.toBeNull();
+  });
+
+  it('puts the needle at the red at the too-hot temperature whatever the coolant level', () => {
+    for (const coolant of [1, 0.4, 0.05]) {
+      const { e } = vehicleEngine(ADDER_SPEC, 12, { coolant });
+      e.coolantC = e.params.hotFromC;
+      expect(needle(e)).toBeCloseTo(HOT_FROM, 2);
+    }
+  });
+
+  it('gets the small radiators hot on a heavy crawl in the sun, not the Hartley', () => {
+    const crawl = { throttle: 1, driveLoad: 1, speed: 1, ambient: 1, dayTemp: 18 };
+    expect(hold(ADDER_SPEC, 900, crawl).hotAt).not.toBeNull();
+    expect(hold(TOR_SPEC, 900, crawl).hotAt).not.toBeNull();
+    expect(hold(HARTLEY_SPEC, 900, crawl).maxHot).toBe(0);
   });
 });
 

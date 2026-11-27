@@ -81,10 +81,12 @@ export function fanState(fan, coolantC, running, p) {
 
 /**
  * One step of the temperatures. `s` is { metalC, coolantC, fan }; it is changed in place. `radiator` is 0..1 how much cooling the
- * radiator still does (the coolant level and a stuck thermostat: `radiatorEffect`). Running, a water-cooled engine's coolant is
- * heated by the fuel and cooled through the thermostat; its metal follows the coolant, a little above it, the more so working.
+ * radiator still does (the coolant level and a stuck thermostat: `radiatorEffect`), and `coolant` 0..1 how much of it the level
+ * alone leaves (`coolingEffect`). Running, a water-cooled engine's coolant is heated by the fuel and cooled through the thermostat;
+ * its metal follows the coolant, a little above it, the more so working. With the coolant gone there is nothing to carry the heat
+ * off or to soak it up, so it climbs at `dryRiseC` a second whatever the engine's size, and the block and hoses shed nothing.
  */
-export function stepThermal(s, h, { running, air, sheltered = false, ambient = 0, rpmNorm = 0, load = 0, speed = 0, bore = 0, extra = 0, radiator = 1 }, p) {
+export function stepThermal(s, h, { running, air, sheltered = false, ambient = 0, rpmNorm = 0, load = 0, speed = 0, bore = 0, extra = 0, radiator = 1, coolant = 1 }, p) {
   const shelter = { warmFloor: air + p.barnWarmC, openFloor: air, coolFactor: p.barnCoolFactor };
   s.fan = fanState(s.fan, s.coolantC, running, p);
   if (!running) {
@@ -101,12 +103,14 @@ export function stepThermal(s, h, { running, air, sheltered = false, ambient = 0
     s.coolantC = s.metalC;
     return;
   }
-  // Heat into the coolant (°C a second): the fuel, and a little of the sun on the engine bay.
-  const into = ((p.warmRiseC * (1 + p.coolantWork * (fuel - 1))) / tau) * (1 + p.waterSun * clamp01(ambient));
+  // Heat into the coolant (°C a second): the fuel, and a little of the sun on the engine bay; with the coolant gone, `dryRiseC` instead.
+  const wet = clamp01(coolant);
+  const work = (1 + p.coolantWork * (fuel - 1)) * (1 + p.waterSun * clamp01(ambient));
+  const into = work * ((wet * p.warmRiseC) / tau + (1 - wet) * p.dryRiseC);
   // Heat out: the radiator (through the thermostat), with the wind and the fan, and a little through the block and hoses.
   const flow = thermostatOpen(s.coolantC, p) * clamp01(radiator);
   const cap = p.radiatorLoss * (1 + p.radiatorWind * airflow(speed, p) + (s.fan ? p.radiatorFan : 0));
-  const out = ((flow * cap + p.bodyLoss) * Math.max(0, s.coolantC - air)) / tau;
+  const out = ((flow * cap + p.bodyLoss * wet) * Math.max(0, s.coolantC - air)) / tau;
   s.coolantC = Math.max(air, s.coolantC + (into - out) * h);
   // The metal sits above the coolant by what it is making, easing on to it.
   const metalAim = s.coolantC + p.metalOverC * fuel;

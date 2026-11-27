@@ -591,6 +591,7 @@ export class EngineModel {
     stepThermal(this, h, {
       running, air: this.dayTemp, sheltered: this.sheltered, ambient: this.ambient, rpmNorm, load: this.driveLoad * this.throttle, speed: this.speed, bore: this.bore,
       extra: p.manualTiming ? p.heatPerError * retardHeat(this.timingErr) : 0, radiator: p.waterCooled ? this.radiator : 1,
+      coolant: p.waterCooled ? coolingEffect(this.coolant, p) : 1,
     }, p);
     if (running) {
       // And it wears: plug, filter and carb slowly go off, faster when it's worked hard.

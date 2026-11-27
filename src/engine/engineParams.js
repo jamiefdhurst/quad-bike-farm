@@ -282,16 +282,17 @@ export const DEFAULT_ENGINE_PARAMS = {
   coolantWarmC: 88, // a water-cooled engine's coolant (°C) when it is warm: `heat` 0
   coolantSpanC: 40, // °C over that at which its `heat` is 1 (about 128 °C)
   warmRiseC: 60, // °C of coolant the idling fuel heats it by over `warmUpSeconds` (the thermostat holds the radiator shut until it is warm)
-  coolantWork: 0.5, // how much of the fuel's extra heat from working goes into the coolant (the rest goes out of the exhaust)
+  coolantWork: 0.8, // how much of the fuel's extra heat from working goes into the coolant (the rest goes out of the exhaust): revving hard nearly doubles it
   waterSun: 0.6, // extra heat into the coolant in a full-sun day, as a share
   thermostatOpenC: 82, // the thermostat starts to open at this coolant temperature (°C)
   thermostatSpanC: 10, // and is open this much (°C) above it
   fanOnC: 96, // the radiator fan cuts in above this coolant temperature (°C)
   fanOffC: 91, // and out below this
   radiatorLoss: 0.3, // the radiator, thermostat open and still air: the coolant's °C over the air it sheds, per `warmUpSeconds` (so a big engine has a big radiator)
-  radiatorWind: 1.2, // times as much with full airflow
-  radiatorFan: 5, // and with the fan on, again
+  radiatorWind: 3, // times as much again with full airflow: riding along cools it better than the fan
+  radiatorFan: 5, // and with the fan on, again: this big one (the Hartley's, built for standing work) copes with anything; the rest set a smaller one that copes idling but not revved hard standing still
   bodyLoss: 0.8, // what the block and hoses shed the same way whatever the thermostat does (it is all there is with a stuck one)
+  dryRiseC: 0.3, // °C a second the coolant's sensor climbs idling with the coolant gone (more working, and in the sun), whatever the engine: a minute or so to the red
   metalOverC: 6, // °C the metal runs over the coolant idling (more working)
   metalFollowSeconds: 20, // how quickly the metal follows the coolant
   airflowSpeed: 8, // ground speed in m/s that gives full airflow
@@ -648,6 +649,7 @@ export const ENGINE_PARAM_RANGES = {
   radiatorWind: [0, 4, 0.05],
   radiatorFan: [0, 8, 0.1],
   bodyLoss: [0, 3, 0.01],
+  dryRiseC: [0, 2, 0.01],
   metalOverC: [0, 40, 1],
   metalFollowSeconds: [1, 120, 1],
   airflowSpeed: [1, 20, 0.5],
