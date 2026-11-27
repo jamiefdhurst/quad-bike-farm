@@ -90,7 +90,8 @@ describe('the lane\'s approach to Nether Thornby', () => {
     expect(net.road('farmTrack')).toBeTruthy();
     expect(net.onCarriageway((x0 + x1) / 2, z0)?.id ?? 'farmTrack').toBe('farmTrack');
     const lanes = NEIGHBOUR_LAND_PLAN.lines.find((l) => l.x === 912);
-    expect(lanes.gaps.some(([a, b]) => A.farm.gateway.z > plan(0, a)[1] && A.farm.gateway.z < plan(0, b)[1])).toBe(true); // the lane's hedge is open here
+    const open = A.farm.gateway.z > plan(0, lanes.to)[1] || lanes.gaps.some(([a, b]) => A.farm.gateway.z > plan(0, a)[1] && A.farm.gateway.z < plan(0, b)[1]);
+    expect(open).toBe(true); // the lane's hedge is open here (it stops at z 405, short of the track: #1084)
   });
 });
 

@@ -327,7 +327,7 @@ export const NEIGHBOUR_LAND_PLAN = {
   // hedges start where the bend is past: x 912 from z 8, the north hedge from x 950), the east hedge is at x 1282, clear of the A-road's verge (its
   // edge is at 1287 at the nearest), and the cottages' plot (plan 912 to 960, 405 to 450) is not hedged across: the lane hedge and the z 420 hedge leave it.
   lines: [
-    { x: 912, from: 8, to: 560, gaps: [[289, 295], [127.5, 132.5], [202.75, 207.25], [405, 555]] }, // open from z 405 to 555: the village's approach (#819), the small farm's track and the lane's houses with their own hedges
+    { x: 912, from: 8, to: 405, gaps: [[289, 295], [127.5, 132.5], [202.75, 207.25]] }, // it stops at z 405 for the village's approach (#819), the small farm's track and the lane's houses with their own hedges; the stub it had from z 555 on to her z 560 hedge ran in front of l3's (#1084)
     { x: 1110, from: -18, to: 560, gaps: [[98, 103], [290, 295]] },
     { x: 1230, from: 150, to: 560, gaps: [[300, 305]] },
     { x: 1282, from: -18, to: 560, gaps: [] },
@@ -1594,14 +1594,15 @@ export const VILLAGE_PLAN = {
    * The lane's approach (#819): the village builds up as you drive in. 30 mph discs and a village sign on the lane at z 486 (from the north) and z 800 (from the south) and on the street
    * at x 1262 (from the A-road), each post's back the national limit for the traffic leaving; three houses facing the lane across their front gardens, and a small farm, a stone
    * house and a barn round a walled yard with its gateway on a track from the lane. A sign's `yaw` is where its front looks (0 south, Math.PI north, Math.PI / 2 east). The
-   * lane's east verge is x 909.2 and its west x 900.8; the street's verges are 5.3 m either side of its middle.
+   * lane's east verge is x 909.2 and its west x 900.8; the street's verges are 5.3 m either side of its middle. A house's `plot` is the stretch of the lane (plan z) its
+   * front garden's hedge keeps inside (#1084): l3's ends at the face of the neighbour's z 560 hedge.
    */
   approach: {
     limit: 30,
     houses: [
-      { id: 'l1', at: [927, 500], yaw: -Math.PI / 2, design: 'gabled', halfX: 5.5, halfZ: 4.2, wallHeight: 5, ridge: 7.8, wall: 'brick', door: '#7a2a22' },
-      { id: 'l2', at: [927, 526], yaw: -Math.PI / 2, design: 'thatched', halfX: 4.4, halfZ: 3.6, wallHeight: 4, ridge: 7.2, wall: 'stone', door: '#2d4a3a' },
-      { id: 'l3', at: [927, 552], yaw: -Math.PI / 2, design: 'bungalow', halfX: 6, halfZ: 4.2, wallHeight: 2.7, ridge: 4.7, wall: 'render', paint: '#d8cfae', door: '#23406b' },
+      { id: 'l1', at: [927, 500], yaw: -Math.PI / 2, design: 'gabled', halfX: 5.5, halfZ: 4.2, wallHeight: 5, ridge: 7.8, wall: 'brick', door: '#7a2a22', plot: [488, 514.3] },
+      { id: 'l2', at: [927, 526], yaw: -Math.PI / 2, design: 'thatched', halfX: 4.4, halfZ: 3.6, wallHeight: 4, ridge: 7.2, wall: 'stone', door: '#2d4a3a', plot: [514.3, 540] },
+      { id: 'l3', at: [927, 552], yaw: -Math.PI / 2, design: 'bungalow', halfX: 6, halfZ: 4.2, wallHeight: 2.7, ridge: 4.7, wall: 'render', paint: '#d8cfae', door: '#23406b', plot: [540, 559.2] },
     ],
     farm: {
       yard: [932, 442, 982, 478], wall: 0.5, wallHeight: 1.4,
@@ -1649,7 +1650,7 @@ export function villageLayout(P = VILLAGE_PLAN) {
     farBench: pt(P.farBench),
     approach: {
       limit: P.approach.limit,
-      houses: P.approach.houses.map(building),
+      houses: P.approach.houses.map(({ plot, ...h }) => ({ ...building(h), ...(plot ? { plot: { minZ: rel([0, plot[0]])[1], maxZ: rel([0, plot[1]])[1] } } : {}) })),
       farm: {
         yard: rect(P.approach.farm.yard), wall: P.approach.farm.wall, wallHeight: P.approach.farm.wallHeight,
         gateway: { ...pt([P.approach.farm.yard[0], P.approach.farm.gateway.z]), width: P.approach.farm.gateway.width },
