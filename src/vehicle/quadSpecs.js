@@ -79,7 +79,7 @@ export const QUAD_SPECS = [
     // when cold and runs lumpier until it's warm, warms a little quicker, and
     // pulls slightly harder. Its idle comes from the other recorded machine.
     id: 'bruin',
-    radiatorAt: { x: 0, y: 0.72, z: 0.72 }, // where its steam leaves, in the model's own space: the radiator under the front rack
+    radiatorAt: { x: 0, y: 0.6, z: 0.86 }, // where its steam leaves, in the model's own space: the radiator just behind the grille, under the front rack (#916)
     stockBhp: 26, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'mud', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'quad', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
@@ -355,6 +355,7 @@ export const QUAD_SPECS = [
     // her), barely any engine braking, and smokes like a chimney. Its idle is a
     // different two-stroke from the yellow's.
     id: 'adder',
+    radiatorAt: { x: 0, y: 0.68, z: 0.86 }, // where its steam leaves, in the model's own space: the radiator in the shroud's nose, under the louvres (#916)
     stockBhp: 38, // what a sound stock one makes on the rolling road (farm/rollingRoad.js), at about three quarters of its full revs
     strength: 'tarmac', // its hidden strength (strength.js): the girls work it out over games
     tyreSize: 'sport', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
@@ -1073,7 +1074,7 @@ export const HARTLEY_SPEC = {
   id: 'hartley',
   tyreSize: 'tractor', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-  radiatorAt: { x: 0, y: 1.25, z: 1.3 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
+  radiatorAt: { x: 0, y: 1.0, z: 1.37 }, // where its steam leaves, in the model's own space: just behind the grille, under the nose's top (#916)
   steadyLights: true, // a battery runs its lights
   barLights: 'switch', // a plain on / off switch low on the panel's right (P: off, on; lightSwitch.js), starting on
   label: sayName('hartley'), // what the girls and the toasts call it (vehicle/names.js)
@@ -1220,7 +1221,7 @@ export const YAK_SPEC = {
   wipers: ['slow'], // the windscreen wipers' speeds after off (wipers.js): one speed, on or off
   tyreSize: 'utv', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.3, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-  radiatorAt: { x: 0, y: 0.95, z: 1.15 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
+  radiatorAt: { x: 0, y: 0.78, z: 1.36 }, // where its steam leaves, in the model's own space: just behind the mesh grille, under the hood's front edge (#916)
   label: sayName('yak'), // what the girls and the toasts call it (vehicle/names.js)
   name: fullName('yak'),
   utv: true,
@@ -1374,7 +1375,7 @@ export const TOR_SPEC = {
   wipers: ['slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a two-speed toggle on the dash
   tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.6, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-  radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
+  radiatorAt: { x: 0, y: 1.08, z: 1.58 }, // where its steam leaves, in the model's own space: just behind the grille's top, under the bonnet's front edge (#916)
   label: sayName('tor'), // what the girls and the toasts call it (vehicle/names.js)
   name: fullName('tor'),
   landRover: true,
@@ -1524,7 +1525,7 @@ export const CRAG_SPEC = {
   wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'landrover', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-  radiatorAt: { x: 0, y: 0.95, z: 1.6 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
+  radiatorAt: { x: 0, y: 1.04, z: 1.67 }, // where its steam leaves, in the model's own space: just behind the grille's top, under the bonnet's front edge (#916)
   label: sayName('crag'), // what the girls and the toasts call it (vehicle/names.js)
   name: fullName('crag'),
   landRover: true,
@@ -1702,7 +1703,7 @@ export const FINCH_SPEC = {
   wipers: ['slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk with two speeds
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.2, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js): a careful owner's car
-  radiatorAt: { x: 0, y: 0.85, z: 1.5 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
+  radiatorAt: { x: 0, y: 0.62, z: 1.77 }, // where its steam leaves, in the model's own space: just behind the grille, under the bonnet's front edge (#916)
   label: sayName('finch'), // what the girls and the toasts call it (vehicle/names.js)
   name: fullName('finch'),
   car: 'finch',
@@ -1787,7 +1788,7 @@ export const GRIFFIN_SPEC = {
   wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.35, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js)
-  radiatorAt: { x: 0, y: 0.85, z: 1.55 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
+  radiatorAt: { x: 0, y: 0.66, z: 1.85 }, // where its steam leaves, in the model's own space: just behind the grille, under the bonnet's front edge (#916)
   label: sayName('griffin'), // what the girls and the toasts call it (vehicle/names.js)
   name: fullName('griffin'),
   car: 'griffin',
@@ -1883,7 +1884,7 @@ export const VAUCLAIR_SPEC = {
   wipers: ['int', 'slow', 'fast'], // the windscreen wipers' speeds after off (wipers.js): a stalk: intermittent, slow and fast
   tyreSize: 'car', // which tyres the barn stocks for it (tyres.js TYRE_SIZES)
   bodyWear: 0.12, // how worn the body looks, 0 new to 1 derelict: scuffs, fading, rust and old mud (effects/wearLayer.js): an everyday old car (0.3 and 0.2 read as rusty on silver)
-  radiatorAt: { x: 0, y: 0.85, z: 1.65 }, // where its steam leaves, in the model's own space (the front, under the bonnet)
+  radiatorAt: { x: 0, y: 0.66, z: 1.92 }, // where its steam leaves, in the model's own space: just behind the grille, under the bonnet's front edge (#916)
   label: sayName('vauclair'), // what the girls and the toasts call it (vehicle/names.js)
   name: fullName('vauclair'),
   car: 'vauclair',
