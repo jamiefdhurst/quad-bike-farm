@@ -1,21 +1,21 @@
 [
   {
-    "id": "off-finch", "n": 1, "status": "listen", "from": "off-finch",
+    "id": "off-finch", "status": "done", "from": "off-finch",
     "title": "A shutdown for the Finch",
     "question": "Which run-down should the Finch stop with (or none of them)?"
   },
   {
-    "id": "off-griffin", "n": 2, "status": "listen", "from": "off-griffin",
+    "id": "off-griffin", "status": "done", "from": "off-griffin",
     "title": "A shutdown for the Griffin",
     "question": "Which run-down should the Griffin stop with (or none of them)?"
   },
   {
-    "id": "stall-griffin", "n": 3, "status": "listen", "from": "stall-griffin",
+    "id": "stall-griffin", "status": "done", "from": "stall-griffin",
     "title": "A stall for the Griffin",
     "question": "Should the Griffin die with this when it stalls cold, or keep its run-down for a stall too?"
   },
   {
-    "id": "off-vauclair", "n": 4, "status": "listen", "from": "off-vauclair",
+    "id": "off-vauclair", "status": "done", "from": "off-vauclair",
     "title": "A shutdown for the Vauclair",
     "question": "Which run-down should the Vauclair stop with (or none of them)?"
   },
