@@ -31,14 +31,14 @@ export function oilExcess(oil, strokes, p) {
 
 /**
  * One step of a two-stroke's lubrication. state is { overheat, scuff, seized }:
- * overheat 0..1 is extra heat on top of the normal warm-up, scuff 0..1 is damage that
+ * overheat 0..1 is how much extra heat poor oiling is making now (how starved it is times how hard it works), which the engine
+ * puts into its metal (thermal.js), so the metal's °C, the gauge and pinking show it; scuff 0..1 is damage that
  * stays until it's stripped down. `lube` (0..1) is how well it's oiled where that isn't the fuel's oil: a four-stroke's sump.
  * Returns whether it seized on this step.
  */
 export function stepLube(state, h, { oil, lube, running, work }, p) {
   const starved = 1 - (lube ?? lubeFactor(oil, p.oilGood));
-  const target = running ? starved * work : 0;
-  state.overheat += (target - state.overheat) * Math.min(1, h / p.overheatSeconds);
+  state.overheat = running ? starved * work : 0;
   if (running && !state.seized) state.scuff = Math.min(1, state.scuff + (h * starved * starved * work) / p.seizeSeconds);
   if (running && state.scuff >= 1) {
     state.seized = true;

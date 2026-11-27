@@ -258,7 +258,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   oilRichRoughness: 0.2, // roughness at full excess oil
   seizeSeconds: 70, // flat out on straight petrol it seizes in about this long (idling takes lubeIdleWork times longer)
   lubeIdleWork: 0.15, // how hard an idling engine works the oil, against 1 flat out
-  overheatSeconds: 12, // how quickly the extra heat from poor lubrication builds and fades
+  lubeHeat: 1.5, // heat made in the metal by an engine fully starved of oil at full work, as a share of what the idling fuel makes (thermal.js)
   seizeWear: 0.3, // wear left behind after a seized engine is freed (a service clears it)
   nipFrom: 0.55, // scuffing this far towards seizing, it starts to tighten up
   nipRoughness: 0.45, // roughness when nearly seized
@@ -277,7 +277,7 @@ export const DEFAULT_ENGINE_PARAMS = {
   carbIcePowerLoss: 0.55, // power lost to a carb iced solid (a damp, cold day at steady part throttle; a blip clears it)
   clogPowerLoss: 0.3, // top-end power lost to a fully clogged air filter (it's the revs it can't breathe for)
 
-  // Heat (see heat.js). Running heat is 0..1 above a normal warm engine; soak is the heat held in the metal.
+  // Heat (see heat.js). Running heat is 0..1 above a normal warm engine; soak is the heat held in the metal, from its °C (thermal.js).
   waterCooled: false, // a radiator and a fan: the heat stays low and the fan cuts in and out
   coolantWarmC: 88, // a water-cooled engine's coolant (°C) when it is warm: `heat` 0
   coolantSpanC: 40, // °C over that at which its `heat` is 1 (about 128 °C)
@@ -313,9 +313,10 @@ export const DEFAULT_ENGINE_PARAMS = {
   condenseAirFull: 0, // and the air temperature at which it shows most
   condenseWarmAt: 0.6, // engine warmth (0..1) from which the exhaust has dried out
   condenseDripFrom: 0.2, // condensation level from which water drips out of the tip
-  soakIdle: 0.25, // heat held in the metal by an engine just idling, against 1 flat out
-  soakRiseSeconds: 60, // how fast the metal heats up
-  soakFallSeconds: 240, // and how long it takes to shed it (running, or switched off)
+  soakFromC: 84, // the metal's °C at which `soak` (the heat held in it, for the ticks, the hot start, the steam in the rain and the weep) is 0: warm and idling it sits about 94 (0.3), at the edge of the ticks
+  soakSpanC: 35, // and °C over that at which it is 1: worked hard it gets to 105 to 118 (0.6 to 1)
+  offCreep: 1.5, // heat left in a water-cooled engine's hot parts, as times the metal's lead over the coolant, that goes into the metal once the coolant stops
+  creepSeconds: 20, // and how quickly it goes in, so the metal climbs for a short while after switching off before it cools
   tickFrom: 0.3, // an engine switched off ticks as it cools from this much soak
   coolTickRate: 1.1, // ticks a second when it's as hot as it gets
   hotStartFrom: 0.5, // a carburettor this heat-soaked starts to boil its fuel
@@ -620,7 +621,7 @@ export const ENGINE_PARAM_RANGES = {
   oilRichRoughness: [0, 1, 0.01],
   seizeSeconds: [5, 600, 5],
   lubeIdleWork: [0, 1, 0.01],
-  overheatSeconds: [1, 60, 1],
+  lubeHeat: [0, 5, 0.05],
   seizeWear: [0, 1, 0.01],
   nipFrom: [0, 0.95, 0.01],
   nipRoughness: [0, 1, 0.01],
@@ -673,9 +674,10 @@ export const ENGINE_PARAM_RANGES = {
   condenseAirFull: [-10, 15, 0.5],
   condenseWarmAt: [0.1, 1, 0.01],
   condenseDripFrom: [0, 1, 0.01],
-  soakIdle: [0, 1, 0.01],
-  soakRiseSeconds: [5, 600, 5],
-  soakFallSeconds: [30, 1800, 10],
+  soakFromC: [30, 150, 1],
+  soakSpanC: [5, 150, 1],
+  offCreep: [0, 5, 0.05],
+  creepSeconds: [1, 120, 1],
   tickFrom: [0, 0.95, 0.01],
   coolTickRate: [0, 5, 0.05],
   hotStartFrom: [0, 0.95, 0.01],

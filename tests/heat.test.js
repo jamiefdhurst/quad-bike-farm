@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
-import { hotSteam, pinkLevel, pinkHeat, pinkWork, stepSoak, coolTickRate, hotStartRich, airflow, condensation } from '../src/engine/heat.js';
+import { hotSteam, pinkLevel, pinkHeat, pinkWork, coolTickRate, hotStartRich, airflow, condensation } from '../src/engine/heat.js';
+import { soakLevel } from '../src/engine/thermal.js';
 import { heatLevel, metalTarget, fuelHeat, finCooling } from '../src/engine/thermal.js';
 import { Weather, WEATHER_KINDS } from '../src/world/weather.js';
 import { QUAD_SPECS, EXTRA_SPECS, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC, CRAG_SPEC, FINCH_SPEC, GRIFFIN_SPEC, VAUCLAIR_SPEC, PLOVER_SPEC } from '../src/vehicle/quadSpecs.js';
@@ -146,18 +147,20 @@ describe('running heat', () => {
 });
 
 describe('heat soak, ticking and hot starts', () => {
-  it('soaks with work and sheds it when off', () => {
-    let soak = 0;
-    for (let t = 0; t < 120; t += 0.1) soak = stepSoak(soak, 0.1, { running: true, work: 1, heat: 0 }, P);
-    expect(soak).toBeGreaterThan(0.8);
-    for (let t = 0; t < 1200; t += 0.1) soak = stepSoak(soak, 0.1, { running: false, work: 0, heat: 0 }, P);
-    expect(soak).toBeLessThan(0.1);
+  it('soaks with work and sheds it when off, as its metal heats and cools (#865)', () => {
+    const e = make();
+    run(e, 150, { throttle: 1, ambient: 0.4 });
+    expect(e.soak).toBeGreaterThan(0.7);
+    expect(e.soak).toBeCloseTo(soakLevel(e.metalC, P));
+    e.setIgnition(false);
+    for (let t = 0; t < 1200; t += 0.1) e.update(0.1, {});
+    expect(e.soak).toBeLessThan(0.1);
   });
 
   it('ticks as a thrashed engine cools after switching off, and not after idling', () => {
     const ticks = (work) => {
       const e = make();
-      run(e, 150, { throttle: work, driveLoad: work, ambient: 0.4, speed: 6 });
+      run(e, 150, { throttle: work, ambient: 0.4 }); // revved hard standing still: riding along, the wind keeps an air-cooled engine's metal down
       e.setIgnition(false);
       let n = 0;
       for (let t = 0; t < 120; t += 0.1) {
@@ -166,13 +169,13 @@ describe('heat soak, ticking and hot starts', () => {
       }
       return n;
     };
-    expect(ticks(1)).toBeGreaterThan(30);
-    expect(ticks(0)).toBeLessThan(5);
+    expect(ticks(1)).toBeGreaterThan(8);
+    expect(ticks(0)).toBeLessThan(2);
   });
 
   it('ticks less and less, then stops, as it cools', () => {
     const e = make();
-    run(e, 150, { throttle: 1, driveLoad: 1, ambient: 0.4, speed: 6 });
+    run(e, 150, { throttle: 1, ambient: 0.4 });
     e.setIgnition(false);
     const count = (secs) => {
       let n = 0;
@@ -262,7 +265,7 @@ describe('steam off a hot engine', () => {
   });
 
   it('does not steam from a merely idling engine in the rain, or out of the rain, or under cover', () => {
-    expect(hotSteam({ ...base, soak: P.soakIdle, rain: 1 }, P)).toBe(0);
+    expect(hotSteam({ ...base, soak: soakLevel(P.coolantWarmC + P.metalOverC, P), rain: 1 }, P)).toBe(0); // a warm radiator engine's metal, idling
     expect(hotSteam({ ...base, soak: 1 }, P)).toBe(0);
     expect(hotSteam({ ...base, soak: 1, rain: 1, covered: true }, P)).toBe(0);
   });

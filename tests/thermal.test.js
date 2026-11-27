@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { EngineModel } from '../src/engine/engineModel.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
-import { warmth, metalForWarmth, heatLevel, celsiusForHeat, fuelHeat, finCooling, metalTarget, thermostatOpen, fanState, stepThermal } from '../src/engine/thermal.js';
+import { warmth, metalForWarmth, heatLevel, celsiusForHeat, soakLevel, metalForSoak, fuelHeat, finCooling, metalTarget, thermostatOpen, fanState, stepThermal } from '../src/engine/thermal.js';
+import * as heat from '../src/engine/heat.js';
 import { radiatorEffect } from '../src/engine/coolant.js';
 import { engineReadouts } from '../src/debug/vehicleDebug.js';
 
@@ -284,5 +285,113 @@ describe('the read-outs', () => {
         expect(read('thermostatOpen')).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+/** A warm engine run for `seconds` with `controls`, then switched off: what it does over the next `after` seconds. */
+function workThenOff(params, seconds, controls, after = 300) {
+  const e = make(params);
+  e.setTemperature(1);
+  e.setIgnition(true);
+  for (let t = 0; t < 12 && !e.isRunning; t += 0.05) e.update(0.05, { starter: true, choke: 0.3 });
+  for (let t = 0; t < seconds; t += 0.1) e.update(0.1, { ambient: 0.4, ...controls });
+  const offC = e.metalC;
+  e.setIgnition(false);
+  let ticks = 0, lastTick = 0, rich = 0, peak = offC;
+  const metal = [];
+  for (let t = 0; t < after; t += 0.1) {
+    e.update(0.1, { ambient: 0.4 });
+    if (e.events.some((x) => x.type === 'coolTick')) {
+      ticks += e.events.filter((x) => x.type === 'coolTick').length;
+      lastTick = t;
+    }
+    if (heat.hotStartRich(e.soak, 0, e.params) > 0) rich = t;
+    peak = Math.max(peak, e.metalC);
+    metal.push(e.metalC);
+  }
+  return { e, offC, ticks, lastTick, rich, peak, metal };
+}
+
+describe('the heat left in the metal after work comes from its °C (#865)', () => {
+  it('reads soak off the metal on one scale, and maps back', () => {
+    expect(soakLevel(AIR.soakFromC, AIR)).toBe(0);
+    expect(soakLevel(AIR.soakFromC + AIR.soakSpanC, AIR)).toBe(1);
+    for (const v of [0.2, 0.5, 0.9]) expect(soakLevel(metalForSoak(v, AIR), AIR)).toBeCloseTo(v);
+    const e = make(WATER);
+    e.soak = 0.6;
+    expect(e.soak).toBeCloseTo(0.6);
+    expect(e.metalC).toBeCloseTo(metalForSoak(0.6, WATER));
+    for (const gone of ['soakIdle', 'soakRiseSeconds', 'soakFallSeconds', 'overheatSeconds']) expect(gone in DEFAULT_ENGINE_PARAMS).toBe(false);
+    expect('stepSoak' in heat).toBe(false);
+  });
+
+  it('has a hard run switched off tick and start rich for longer than an idle one, in either kind', () => {
+    for (const p of [AIR, WATER]) {
+      const idle = workThenOff(p, 300, { throttle: 0 });
+      const hard = workThenOff(p, 150, { throttle: 1, driveLoad: 1, speed: 1 }); // crawling through mud flat out
+      expect(hard.ticks).toBeGreaterThan(idle.ticks + 5);
+      expect(hard.lastTick).toBeGreaterThan(idle.lastTick + 15);
+      expect(hard.rich).toBeGreaterThan(idle.rich + 10);
+      expect(idle.rich).toBe(0); // only idled, it doesn't start rich at all
+    }
+  });
+
+  it('has a water-cooled engine\'s metal creep up for a short while once switched off, then cool; an air-cooled one cools at once', () => {
+    const water = workThenOff(WATER, 150, { throttle: 1 });
+    expect(water.peak).toBeGreaterThan(water.offC + 1);
+    const peakAt = water.metal.indexOf(water.peak) * 0.1;
+    expect(peakAt).toBeGreaterThan(2);
+    expect(peakAt).toBeLessThan(40);
+    expect(water.metal.at(-1)).toBeLessThan(water.offC - 10);
+    expect(water.e.creepC).toBeLessThan(0.01);
+    const air = workThenOff(AIR, 150, { throttle: 1 });
+    expect(air.metal[0]).toBeLessThan(air.offC);
+    expect(air.peak).toBe(air.offC);
+  });
+
+  it('creeps more after hard work than after idling', () => {
+    const rise = (controls, seconds) => {
+      const r = workThenOff(WATER, seconds, controls, 60);
+      return r.peak - r.offC;
+    };
+    expect(rise({ throttle: 1 }, 150)).toBeGreaterThan(rise({ throttle: 0 }, 300) + 0.5);
+  });
+});
+
+describe('a two-stroke short of oil heats its metal (#865)', () => {
+  /** A warm two-stroke ridden hard on `oil` for `seconds`: its metal, gauge and pinking at the end, and the most it pinked. */
+  function ridden(oil, seconds) {
+    const e = make({ strokes: 2 });
+    e.setTemperature(1);
+    e.setIgnition(true);
+    for (let t = 0; t < 12 && !e.isRunning; t += 1 / 60) e.update(1 / 60, { starter: true, choke: 0.5, oil });
+    let pink = 0;
+    for (let t = 0; t < seconds && !e.seized; t += 1 / 60) {
+      e.update(1 / 60, { throttle: 0.9, driveLoad: 0.5, oil });
+      pink = Math.max(pink, e.pink);
+    }
+    return { e, pink };
+  }
+
+  it('runs its metal, its gauge and its pinking hotter on straight petrol than on pre-mix, from the same temperature', () => {
+    const good = ridden(0.02, 85);
+    const dry = ridden(0, 85);
+    expect(dry.e.seized).toBe(false);
+    expect(dry.e.metalC).toBeGreaterThan(good.e.metalC + 15);
+    expect(dry.e.gauge.c).toBe(dry.e.metalC);
+    expect(dry.e.gauge.c).toBeGreaterThan(dry.e.gauge.hot); // into the red
+    expect(good.e.gauge.c).toBeLessThan(good.e.gauge.hot);
+    expect(dry.pink).toBeGreaterThan(0);
+    expect(good.pink).toBe(0);
+  });
+
+  it('makes its heat at once, with nothing of its own to fade: the metal carries it', () => {
+    const e = ridden(0, 5).e;
+    expect(e.overheat).toBeGreaterThan(0.5);
+    const hot = ridden(0, 60).e;
+    const c = hot.metalC;
+    hot.update(1 / 60, { throttle: 0, oil: 0.02 });
+    expect(hot.overheat).toBe(0); // good oil again: no more heat from it...
+    expect(hot.metalC).toBeGreaterThan(c - 1); // ...but the metal is still as hot
   });
 });

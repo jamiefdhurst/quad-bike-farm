@@ -7,7 +7,8 @@
 // Switched off, both cool towards the air, slower sheltered in the barn.
 //
 // The 0 to 1 values the rest of the game reads are worked out from these: `warmth` (the choke, cold running, wear and the gauge's
-// middle) from the metal, and `heatLevel` (pinking, running hot, steam) from the coolant, or from the metal on an air-cooled engine.
+// middle) from the metal, `heatLevel` (pinking, running hot, steam) from the coolant, or from the metal on an air-cooled engine, and
+// `soakLevel` (the heat held in the metal after work: the cooling ticks, a hot start, rain steaming off it, a hot coolant weep) from the metal.
 
 import { airflow } from './heat.js';
 import { offTemperature } from '../world/barn.js';
@@ -35,6 +36,16 @@ export function heatLevel(metalC, coolantC, p) {
   return clamp01(((p.waterCooled ? coolantC : metalC) - from) / Math.max(1, span));
 }
 
+/** 0..1 the heat held in the metal (what `EngineModel.soak` reads): 0 at `soakFromC`, 1 `soakSpanC` over it, the same scale on every engine. */
+export function soakLevel(metalC, p) {
+  return clamp01((metalC - p.soakFromC) / Math.max(1, p.soakSpanC));
+}
+
+/** The metal's °C for a soak: the other way round. */
+export function metalForSoak(soak, p) {
+  return p.soakFromC + clamp01(soak) * p.soakSpanC;
+}
+
 /** The °C that gives a heat level, the other way round. */
 export function celsiusForHeat(heat, p) {
   const { from, span } = heatScale(p);
@@ -51,7 +62,7 @@ export function gaugeReading(metalC, coolantC, air, p) {
   return { c: metalC, air, warm: p.warmC, hot: p.pinkFromC, top: p.pinkFromC + p.pinkSpanC };
 }
 
-/** How much heat the fuel puts in: 1 idling, more with revs, pulling under load, a big bore and (manual timing) a retarded spark. */
+/** How much heat the fuel puts in: 1 idling, more with revs, pulling under load, a big bore, and `extra` (a retarded spark, poor oiling). */
 export function fuelHeat({ rpmNorm, load, bore = 0, extra = 0 }, p) {
   return (1 + p.fuelRevBoost * clamp01(rpmNorm) + p.fuelLoadBoost * clamp01(load)) * (1 + p.boreHeat * bore) + extra;
 }
@@ -85,12 +96,16 @@ export function fanState(fan, coolantC, running, p) {
  * alone leaves (`coolingEffect`). Running, a water-cooled engine's coolant is heated by the fuel and cooled through the thermostat;
  * its metal follows the coolant, a little above it, the more so working. With the coolant gone there is nothing to carry the heat
  * off or to soak it up, so it climbs at `dryRiseC` a second whatever the engine's size, and the block and hoses shed nothing.
+ * Its hot parts (the head, the valves) hold heat the moving coolant carries away (`creepC`, °C still to come); switched off, the
+ * coolant stops, so that goes into the metal over `creepSeconds` and it climbs for a short while before it cools.
  */
 export function stepThermal(s, h, { running, air, sheltered = false, ambient = 0, rpmNorm = 0, load = 0, speed = 0, bore = 0, extra = 0, radiator = 1, coolant = 1 }, p) {
   const shelter = { warmFloor: air + p.barnWarmC, openFloor: air, coolFactor: p.barnCoolFactor };
   s.fan = fanState(s.fan, s.coolantC, running, p);
   if (!running) {
-    s.metalC = cool(s.metalC, h, air, sheltered, p.warmC, shelter, p);
+    const creep = p.waterCooled ? (s.creepC ?? 0) * Math.min(1, h / Math.max(1, p.creepSeconds)) : 0;
+    s.creepC = Math.max(0, (s.creepC ?? 0) - creep);
+    s.metalC = cool(s.metalC + creep, h, air, sheltered, p.warmC, shelter, p);
     s.coolantC = cool(s.coolantC, h, air, sheltered, p.waterCooled ? p.coolantWarmC : p.warmC, shelter, p);
     return;
   }
@@ -101,6 +116,7 @@ export function stepThermal(s, h, { running, air, sheltered = false, ambient = 0
     s.metalC += (metalTarget({ air, ambient, fuel, cooling }, p) - s.metalC) * Math.min(1, (h * cooling) / tau); // more cooling is also a quicker pull to the target
     s.metalC = Math.max(s.metalC, air);
     s.coolantC = s.metalC;
+    s.creepC = 0;
     return;
   }
   // Heat into the coolant (°C a second): the fuel, and a little of the sun on the engine bay; with the coolant gone, `dryRiseC` instead.
@@ -116,6 +132,7 @@ export function stepThermal(s, h, { running, air, sheltered = false, ambient = 0
   const metalAim = s.coolantC + p.metalOverC * fuel;
   s.metalC += (metalAim - s.metalC) * Math.min(1, h / Math.max(1, p.metalFollowSeconds));
   s.metalC = Math.max(s.metalC, air);
+  s.creepC = p.offCreep * Math.max(0, s.metalC - s.coolantC);
 }
 
 /** A switched-off engine's part cooling in a step: towards the air (the barn's, sheltered), and quickly while it is over its warm temperature. */
