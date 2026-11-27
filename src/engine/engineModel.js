@@ -299,6 +299,7 @@ export class EngineModel {
   set temperature(t) {
     const p = this.params;
     this.metalC = metalForWarmth(t, this.dayTemp, p);
+    this.creepC = 0; // set by hand: nothing left to creep in
     this.coolantC = p.waterCooled ? this.dayTemp + clamp(t, 0, 1) * (p.coolantWarmC - this.dayTemp) : this.metalC;
   }
 
@@ -311,6 +312,7 @@ export class EngineModel {
   set heat(v) {
     const p = this.params;
     const c = celsiusForHeat(v, p);
+    this.creepC = 0;
     if (p.waterCooled) this.coolantC = v > 0 ? c : Math.min(this.coolantC, c);
     else this.metalC = v > 0 ? c : Math.min(this.metalC, c);
     this.coolantC = p.waterCooled ? this.coolantC : this.metalC;
@@ -324,6 +326,7 @@ export class EngineModel {
   /** Sets the metal to the °C that gives this soak (an air-cooled engine's coolant follows it). */
   set soak(v) {
     this.metalC = metalForSoak(v, this.params);
+    this.creepC = 0;
     if (!this.params.waterCooled) this.coolantC = this.metalC;
   }
 

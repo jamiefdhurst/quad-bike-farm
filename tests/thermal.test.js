@@ -344,6 +344,11 @@ describe('the heat left in the metal after work comes from its °C (#865)', () =
     expect(peakAt).toBeLessThan(40);
     expect(water.metal.at(-1)).toBeLessThan(water.offC - 10);
     expect(water.e.creepC).toBeLessThan(0.01);
+    const cooled = workThenOff(WATER, 150, { throttle: 1 }, 0).e; // just switched off, then cooled right down from the debug tools
+    expect(cooled.creepC).toBeGreaterThan(1);
+    cooled.setTemperature(0);
+    for (let t = 0; t < 30; t += 0.1) cooled.update(0.1, { ambient: 0.4 });
+    expect(cooled.temperature).toBeLessThan(0.02); // stays cold: nothing left to creep back in
     const air = workThenOff(AIR, 150, { throttle: 1 });
     expect(air.metal[0]).toBeLessThan(air.offC);
     expect(air.peak).toBe(air.offC);
