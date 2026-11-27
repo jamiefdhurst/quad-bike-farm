@@ -96,6 +96,37 @@ class Biquad {
 // Each cylinder's fixed strength and lateness, as a share of pulseCylGain and pulseCylTime (#854): fixed so a cylinder keeps its own.
 const CYL_PATTERN = [0.0, 0.8, -0.6, 0.35, -0.9, 0.55];
 
+/**
+ * A voice's anti-aliasing low-pass for reading its source `rate` times faster (#855): sixth-order Butterworth, three biquads, at 0.8 of
+ * the Nyquist it plays at (0.4 of the sample rate over the rate, in the source's samples).
+ */
+function antiAlias(rate) {
+  return filterChain([0.5176, 0.7071, 1.9319].map((q) => {
+    const b = new Biquad();
+    b.set('lowpass', (0.4 * sampleRate) / rate, q, sampleRate);
+    return b;
+  }));
+}
+
+/** Biquads as one flat array (b0 b1 b2 a1 a2 and the state x1 x2 y1 y2, nine each), run by runChain: much faster per sample. */
+function filterChain(biquads) {
+  const c = new Float64Array(biquads.length * 9);
+  biquads.forEach((b, k) => c.set([b.b0, b.b1, b.b2, b.a1, b.a2, 0, 0, 0, 0], k * 9));
+  return c;
+}
+
+function runChain(c, x) {
+  for (let k = 0; k < c.length; k += 9) {
+    const y = c[k] * x + c[k + 1] * c[k + 5] + c[k + 2] * c[k + 6] - c[k + 3] * c[k + 7] - c[k + 4] * c[k + 8];
+    c[k + 6] = c[k + 5];
+    c[k + 5] = x;
+    c[k + 8] = c[k + 7];
+    c[k + 7] = y;
+    x = y;
+  }
+  return x;
+}
+
 const smoothstep = (a, b, x) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -116,6 +147,15 @@ class RecordedEngine {
     this.crankRpm = bank.crankRpm;
     this.byKind = {};
     this.leads = {}; // the bang slices of idles cut whole and split, by kind
+    // The pulse model (#855, tools/engine-bank-model.mjs): by "<idle kind>/<cut>", the idle's resonances as peaking filters and its
+    // firing's burst. The idle's stretch of the bank with the resonances divided out (its bare pulses) is made once, a block at a
+    // time (work), and the firings are played from that; the processor puts the resonances back on the mix.
+    this.model = bank.model ?? null;
+    this.bare = {};
+    this.building = [];
+    this.stretch = {};
+    this.modelNow = null; // the model the last firing played from, whose resonances go on the output
+    this.bareOut = 0; // this sample's firings played from bare pulses, apart from the rest
     // Idle grains cut as whole, matching cycles (the tractor's) are played in recording order in the pulse sound, so its own
     // even rhythm comes through instead of a random grain from somewhere else each cycle.
     this.readThrough = !!bank.readThrough;
@@ -145,6 +185,10 @@ class RecordedEngine {
       // Pulses that failed the slicer's checks can be read through but never start a grain.
       if (g.ok !== false) (this.byKind[g.kind] ??= []).push(grain);
       if (g.ok !== false && g.slice === 0) (this.leads[g.kind] ??= []).push(grain);
+      // Where each kind's grains lie in the bank, as one stretch, for the pulse model's bare copy of it.
+      const st = (this.stretch[g.kind] ??= [start, start]);
+      st[0] = Math.min(st[0], start);
+      st[1] = Math.min(end + 2, Math.max(st[1], start + len + grain.tail + 2));
     }
     this.skip = { low: 0, high: 0 }; // pulses still covered by the last multi-cycle grain on each layer
     this.cursor = { low: null, high: null }; // last recorded grain played on each layer
@@ -195,7 +239,11 @@ class RecordedEngine {
   /** As pick, from a given list of grains (sorted here, so pass a copy if the order matters). */
   pickFrom(pool, rpm) {
     if (!pool.length) return null;
-    pool.sort((a, b) => Math.abs(Math.log(a.rpm / rpm)) - Math.abs(Math.log(b.rpm / rpm)));
+    // Each grain's distance worked out once, not on every comparison (the same numbers, and the sort is stable, so the same order): this
+    // sort was a quarter of the engine sound's time.
+    const keyed = pool.map((g) => ({ g, d: Math.abs(Math.log(g.rpm / rpm)) }));
+    keyed.sort((a, b) => a.d - b.d);
+    for (let i = 0; i < pool.length; i++) pool[i] = keyed[i].g;
     const near = pool.slice(0, 8).filter((g) => g !== this.last);
     const g = near[Math.floor(Math.random() * near.length)] ?? pool[0];
     this.last = g;
@@ -253,6 +301,39 @@ class RecordedEngine {
   }
 
   /**
+   * The pulse model for an idle kind (as trigger names it: "idle", or "idle/4" once cut into firings), once its bare copy is made;
+   * null until then, or where the bank has none. Asking starts the copy.
+   */
+  modelFor(kind) {
+    const key = kind.includes('/') ? kind : `${kind}/1`;
+    const m = this.model?.[key];
+    if (!m) return null;
+    let b = this.bare[key];
+    if (!b) {
+      const [from, to] = this.stretch[key.split('/')[0]] ?? [0, 0];
+      const undo = filterChain(m.peaks.map((pk) => {
+        const f = new Biquad();
+        f.set('peaking', pk.f, pk.q, sampleRate, -pk.g);
+        return f;
+      }));
+      b = this.bare[key] = { key, peaks: m.peaks, burst: m.burst, from, data: new Float32Array(Math.max(0, to - from)), done: 0, undo };
+      this.building.push(b);
+    }
+    return b.done >= b.data.length ? b : null;
+  }
+
+  /** Makes up to `n` more samples of a bare copy being built, so a long idle (49 s, the Plover's) never stalls one block. */
+  work(n) {
+    const b = this.building[0];
+    if (!b) return;
+    const d = this.data;
+    const end = Math.min(b.data.length, b.done + n);
+    for (let i = b.done; i < end; i++) b.data[i] = runChain(b.undo, d[b.from + i]);
+    b.done = end;
+    if (end >= b.data.length) this.building.shift();
+  }
+
+  /**
    * Plays one recorded idle firing for one engine cycle. Up to idle speed it's
    * stretched to fill the cycle, as in playGrain. Above that it plays at nearly
    * its own speed (pulsePitchFollow bends it up a little) and is cut off with a
@@ -262,12 +343,19 @@ class RecordedEngine {
    * resonances too. pulseStretch below 1 stretches a firing recorded faster
    * than the engine turns only part of the way, leaving a gap before the next.
    */
-  playPulse(g, cycleRpm, gain, period, attackGain, p, layer = 'low', lateBy = 0) {
+  playPulse(g, cycleRpm, gain, period, attackGain, p, layer = 'low', lateBy = 0, model = null) {
     if (!g || gain <= 0.0005) return;
     const cycle = period > 0 ? period * sampleRate : (120 / cycleRpm) * sampleRate;
     const target = cycle * (1 + this.overlap);
     const natural = g.len / target;
-    const rate = natural <= 1 ? Math.max(p.pulseSlowest ?? 0.45, Math.pow(natural, p.pulseStretch)) : Math.pow(natural, p.pulsePitchFollow);
+    // The burst fits the gap (the pulse model): once the gap to the next firing is shorter than a firing's main burst, the firing
+    // plays just fast enough for its burst to fit, as a real exhaust pulse shortens with the revs. Below that it plays as recorded.
+    const bare = !!model && g.start >= model.from && g.start + g.len + g.tail + 2 <= model.from + model.data.length;
+    // pulseBurstFollow takes part of that shortening (1 all of it); pulseRateJitter varies each firing's speed a little at random once
+    // it is shortened, as a real engine never fires two alike. The random draw only where it is set, so 0 plays exactly as before.
+    let fit = bare ? Math.pow(Math.max(1, (model.burst * sampleRate) / cycle), p.pulseBurstFollow ?? 1) : 1;
+    if (fit > 1 && p.pulseRateJitter > 0) fit *= 1 + (Math.random() * 2 - 1) * p.pulseRateJitter * Math.min(1, (fit - 1) * 4);
+    const rate = (natural <= 1 ? Math.max(p.pulseSlowest ?? 0.45, Math.pow(natural, p.pulseStretch)) : Math.pow(natural, p.pulsePitchFollow)) * fit;
     const xfade = Math.max(0.0015 * sampleRate, Math.min(0.008 * sampleRate, cycle * p.pulseCrossfade));
     // Length in recorded samples: the whole grain, or as much as fits before the next firing.
     const len = natural <= 1 ? g.len + g.tail : Math.min(g.len + g.tail, (target + xfade) * rate);
@@ -286,7 +374,8 @@ class RecordedEngine {
       }
     }
     this.cursor[layer] = g;
-    this.voices.push({
+    if (bare) this.modelNow = model;
+    const voice = {
       layer,
       pos: -late * rate,
       start: g.start,
@@ -298,7 +387,18 @@ class RecordedEngine {
       fadeOut: natural <= 1 ? g.tail : xfade * rate,
       attackGain,
       attackLen: g.len * 0.3,
-    });
+      // Every pulse voice has the same fields, set or not, so the read in sample() stays fast.
+      data: bare ? model.data : null,
+      base: bare ? -model.from : 0,
+      bare,
+      // Read faster than recorded, a voice low-passes its source for its own speed (every source sample through the filter), so
+      // nothing above its Nyquist folds back down as a whistle or grit. With the model on only, so off plays exactly as before.
+      lp: p.pulseModel && rate > 1.001 ? antiAlias(rate) : null,
+      fed: -1,
+      y0: 0,
+      y1: 0,
+    };
+    this.voices.push(voice);
   }
 
   /**
@@ -463,7 +563,7 @@ class RecordedEngine {
               if (p.pulseFireJitter > 0) lateBy += uneven * Math.random() * p.pulseFireJitter * periodS;
               if (p.pulseStrengthJitter > 0) cg *= 1 + uneven * (Math.random() * 2 - 1) * p.pulseStrengthJitter;
             }
-            this.playPulse(g, cycleRpm, gain * louder * (1 - revW) * cg, period, attack, p, 'low', lateBy);
+            this.playPulse(g, cycleRpm, gain * louder * (1 - revW) * cg, period, attack, p, 'low', lateBy, p.pulseModel ? this.modelFor(idleKinds[0]) : null);
           }
           if (revW > 0.001) {
             // Open throttle mostly plays revs rising, a shut one revs falling, where the bank has both.
@@ -536,6 +636,7 @@ class RecordedEngine {
   sample(state) {
     const d = this.data;
     let s = 0;
+    let bare = 0;
     for (let k = this.voices.length - 1; k >= 0; k--) {
       const v = this.voices[k];
       const pos = v.pos;
@@ -547,7 +648,21 @@ class RecordedEngine {
       }
       const i = Math.floor(pos);
       const f = pos - i;
-      const x = d[v.start + i] * (1 - f) + d[v.start + i + 1] * f;
+      const src = v.data || d;
+      const at = v.start + (v.base || 0);
+      let x;
+      if (v.lp) {
+        // Every source sample up to the one after this read goes through the voice's low-pass, then the read is between two of them.
+        const lp = v.lp;
+        while (v.fed < i + 1) {
+          v.fed++;
+          v.y0 = v.y1;
+          v.y1 = runChain(lp, src[at + v.fed] || 0);
+        }
+        x = v.y0 * (1 - f) + v.y1 * f;
+      } else {
+        x = src[at + i] * (1 - f) + src[at + i + 1] * f;
+      }
       let w = Math.min(1, pos / v.fadeIn, (v.len - pos) / v.fadeOut);
       if (v.attackGain !== 1 && pos < v.attackLen) {
         const k = pos / v.attackLen;
@@ -566,8 +681,10 @@ class RecordedEngine {
           continue;
         }
       }
-      s += x * v.gain * w;
+      if (v.bare) bare += x * v.gain * w;
+      else s += x * v.gain * w;
     }
+    this.bareOut = bare;
 
     // Starter loop, crossfaded at its seam, playing faster or slower with the cranking speed.
     const cv = this.crankVoice;
@@ -665,6 +782,7 @@ class EngineProcessor extends AudioWorkletProcessor {
     this.turboBoost = this.turboSurge = 0;
     this.turboAir = new Biquad();
     this.active = [];
+    this.modelOut = null;
     if (this.recorded) {
       this.recorded.voices = [];
       this.recorded.crankVoice = null;
@@ -1049,6 +1167,20 @@ class EngineProcessor extends AudioWorkletProcessor {
       this.tone.set('lowpass', tone * (1 + p.silencerBright * (st.loud || 0)), 0.7, sr);
     }
     const drive = 1 + p.pulseDrive * this.throttle;
+    // The pulse model's bare copy of the idle, made a little each block, and its resonances to put back on the firings played from it.
+    this.recorded.work(8192);
+    const model = pulse && p.pulseModel ? this.recorded.modelNow : null;
+    if (model && this.modelOut?.key !== model.key) {
+      this.modelOut = {
+        key: model.key,
+        filters: filterChain(model.peaks.map((pk) => {
+          const b = new Biquad();
+          b.set('peaking', pk.f, pk.q, sr, pk.g);
+          return b;
+        })),
+      };
+    }
+    const resonances = model ? this.modelOut.filters : null;
     if (pulse) {
       this.pulseLow ??= new Biquad();
       this.pulseMid ??= new Biquad();
@@ -1059,6 +1191,13 @@ class EngineProcessor extends AudioWorkletProcessor {
         const rev = smoothstep(p.pulseRefRpm, p.pulseRefRpm + p.pulseEqRange, this.rpm) * (1 - (this.recorded?.pulseRevBlend(p, this.rpm) ?? 0));
         this.pulseLow.set('lowshelf', 160, 0.7, sr, -p.pulseLowCut * rev);
         this.pulseMid.set('peaking', p.pulseMidFreq, p.pulseMidQ, sr, p.pulseMidBoost * rev);
+        // pulseModelEq: that share of the same EQ on the model's firings too (0 leaves them with only their own resonances).
+        if (p.pulseModelEq > 0) {
+          this.modelLow ??= new Biquad();
+          this.modelMid ??= new Biquad();
+          this.modelLow.set('lowshelf', 160, 0.7, sr, -p.pulseLowCut * rev * p.pulseModelEq);
+          this.modelMid.set('peaking', p.pulseMidFreq, p.pulseMidQ, sr, p.pulseMidBoost * rev * p.pulseModelEq);
+        }
         // A recording made on the machine can carry its body's boom; take it out at every rpm.
         if (p.pulseBoomCut > 0) this.pulseBoom.set('peaking', p.pulseBoomFreq, 1.4, sr, -p.pulseBoomCut);
         // A big-bore exhaust's drone: a boost low down, fullest at idle and easing to half of it as the revs rise.
@@ -1100,8 +1239,12 @@ class EngineProcessor extends AudioWorkletProcessor {
       }
       let x = this.recorded.sample(st);
       if (pulse) {
-        // As revs rise the firings merge: less of the deep thump, more mid-range rasp.
-        x = this.pulseMid.run(this.pulseLow.run(x)) * drive;
+        // As revs rise the firings merge: less of the deep thump, more mid-range rasp. Not on firings from the model's bare pulses,
+        // which get the recording's own resonances back instead, fixed whatever the revs, and shorten their bursts to rise in pitch.
+        x = this.pulseMid.run(this.pulseLow.run(x));
+        let bare = resonances ? runChain(resonances, this.recorded.bareOut) : this.recorded.bareOut;
+        if (p.pulseModelEq > 0 && this.modelLow) bare = this.modelMid.run(this.modelLow.run(bare));
+        x = (x + bare) * drive;
         if (p.pulseBoomCut > 0) x = this.pulseBoom.run(x);
         if (p.pulseDrone > 0) x = this.pulseDrone.run(x);
       }
