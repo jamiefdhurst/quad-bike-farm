@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import * as SPECS from '../src/vehicle/quadSpecs.js';
 import { QUAD_SPECS, EXTRA_SPECS, PLOVER_SPEC, HARTLEY_SPEC, YAK_SPEC, TOR_SPEC } from '../src/vehicle/quadSpecs.js';
-import { AUDIO_PARAM_RANGES } from '../src/audio/audioParams.js';
+import { AUDIO_PARAM_RANGES, DEFAULT_AUDIO_PARAMS } from '../src/audio/audioParams.js';
 import { DEFAULT_ENGINE_PARAMS } from '../src/engine/engineParams.js';
 
 describe('engine banks', () => {
@@ -18,6 +18,20 @@ describe('engine banks', () => {
       expect(AUDIO_PARAM_RANGES.recBank, spec.id).toContain(bank);
       expect(hub, `${spec.id}: ${bank} in BANK_NAMES`).toContain(bank);
       expect(existsSync(`public/audio/${bank}.json`), spec.id).toBe(true);
+    }
+  });
+
+  it("every vehicle's bank has the pulse model for how it plays its idle, so its revs rise in pitch (#855)", () => {
+    // tools/engine-bank-model.mjs writes it; slicing a bank again writes its JSON afresh without it, so re-run the tool after.
+    const specs = Object.values(SPECS).flatMap((v) => (Array.isArray(v) ? v : [v])).filter((s) => s?.id && s?.audio);
+    for (const spec of specs) {
+      const audio = { ...DEFAULT_AUDIO_PARAMS, ...spec.audio };
+      const key = `${{ rev: 'idle2', third: 'idle3' }[audio.recIdleSource] ?? 'idle'}/${Math.max(1, Math.round(audio.pulseSplit ?? 1))}`;
+      const m = JSON.parse(readFileSync(`public/audio/${audio.recBank}.json`, 'utf8')).model?.[key];
+      expect(m, `${spec.id}: model ${key} in ${audio.recBank} (node tools/engine-bank-model.mjs ${audio.recBank})`).toBeTruthy();
+      expect(m.peaks.length, spec.id).toBeLessThanOrEqual(12);
+      for (const pk of m.peaks) for (const k of ['f', 'q', 'g']) expect(Number.isFinite(pk[k]), `${spec.id} ${k}`).toBe(true);
+      expect(m.burst, spec.id).toBeGreaterThan(0.005);
     }
   });
 

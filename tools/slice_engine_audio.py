@@ -7,6 +7,8 @@ come from), finds each firing pulse, and writes:
                             (then run tools/wav_to_flac.py <bank>: it moves this to source/audio and ships a FLAC)
   public/audio/<bank>.json  where every pulse ("grain") starts and ends, its
                             pulse rate, and what kind it is
+                            (then run node tools/engine-bank-model.mjs <bank>: it adds the
+                            pulse model's resonances and burst, which this file is written without)
 
 There are four banks: engine-bank (four-stroke quads), engine-bank-2t
 (two-stroke), engine-bank-50 (the kids' 50cc) and engine-bank-tractor (the diesel tractor). A grain's "rpm" is 120 / pulse period whatever the engine type,
