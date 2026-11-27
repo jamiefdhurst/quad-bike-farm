@@ -97,7 +97,7 @@ function miniDial(ctx, cx, cy, r, kind, s, on) {
     arc(ctx, cx, cy, r - 3, miniAngle(HOT_FROM), MINI_END, '#d2321e', 2);
     labels(ctx, cx, cy, r - 7, MINI_START, MINI_END, ['C', '', '', '', 'H'], INK, 3.4);
     warnSymbol(ctx, 'temp', cx, cy + 5.5, INK, true, 0.5, false);
-    needle(ctx, cx, cy, r - 2, miniAngle(tempGaugeFraction(s.gauge, on, s.overheat)), '#d2321e', 0.9);
+    needle(ctx, cx, cy, r - 2, miniAngle(tempGaugeFraction(s.gauge, on)), '#d2321e', 0.9);
   }
 }
 
@@ -154,7 +154,7 @@ function buildAnalogue() {
       const l = lampStates(s);
       const key = [
         s.ignition, l.r, l.n, l.temp, l.fuel, l.oil, Math.round(s.speedMph * 3), Math.round(s.rpm / 40), Math.round(s.redline / 100),
-        Math.round(s.fuelLevel * 60), Math.round(s.reserveLevel * 100), Math.round(tempGaugeFraction(s.gauge, s.ignition, s.overheat) * 60),
+        Math.round(s.fuelLevel * 60), Math.round(s.reserveLevel * 100), Math.round(tempGaugeFraction(s.gauge, s.ignition) * 60),
         o.key, t.key, h.key, s.fourWd, s.diffLock,
       ].join('|');
       if (gate(key)) face.redraw((ctx) => draw(ctx, s));

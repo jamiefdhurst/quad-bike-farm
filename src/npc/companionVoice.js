@@ -651,7 +651,7 @@ export class CompanionVoice {
     if (e.events.some((x) => x.type === 'seized')) this.say('engineSeized', { urgent: true });
     if (!e.isRunning) return;
     if (e.nip > 0.3) this.say('engineNipping', { urgent: true, chance: 0.05 });
-    else if (e.overheat > 0.45) this.say('engineHot', { chance: 0.02 });
+    else if (e.overheat > 0.45 && e.heat > 0.3) this.say('engineHot', { chance: 0.02 }); // starved of oil, once the metal it heats is hot
     else if (e.tick > 0.4) this.say('engineTicking', { chance: 0.015 });
     if (e.oilRich > 0.5) this.say('oilSmoky', { chance: 0.01 });
   }

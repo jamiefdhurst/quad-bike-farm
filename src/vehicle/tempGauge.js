@@ -15,7 +15,8 @@ const along = (c, a, b) => clamp01((c - a) / Math.max(0.1, b - a));
 
 /**
  * Dial fraction 0..1 for a reading `{ c, air, warm, hot, top }` (all °C): 0 at the air's temperature, WARM_AT at warm, HOT_FROM at
- * too hot and 1 at the top. The needle rests at C with the ignition off. `overheat` (0..1, a two-stroke short of oil) pushes it on up.
+ * too hot and 1 at the top. The needle rests at C with the ignition off. `overheat` (0..1)
+ * pushes it on up; the game no longer passes it, as a two-stroke short of oil now heats its metal (thermal.js), which the reading shows.
  */
 export function tempGaugeFraction(g, ignition = true, overheat = 0) {
   if (!ignition || !g) return 0;
