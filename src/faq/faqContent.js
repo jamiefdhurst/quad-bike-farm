@@ -3214,6 +3214,17 @@ export const FAQ_SECTIONS = [
           straw blown against the barn door and a drip under the tap. Three of her working vehicles stand about too: her newer tractor, a blue Calder Dene 100 with a front loader and its bucket down, clay caked on its tyres, a dented wing and a little oil weeping from the engine, south of the barn; her farm quad, in worn green with a crate bungeed on its rear rack, a dog's blanket on the seat and dried mud in the footwells, along the collecting yard's fence by the gap the herd comes in through, and a rusty galvanised tipping trailer beside the barn's door, half full of silage-stained straw with a tarp tied over the front, its jockey wheel down and both rear lamps cracked, one taped over. Like her Moorland, buggy and old tractor they are only for show: you cannot drive or borrow them, but you can ride into them. How rusty and how muddy they are, and the colours of the crate, the blanket and the tarp, are different on every farm. The concrete itself is worn: ragged oil and diesel stains with pale halos, a long smear where something was dragged, damp lines running down to a green-black patch at the low corner, curved tyre marks, blade scrapes, hairline cracks between the joints, one paler patched square, a worn smooth path from the gate to the barn door and a rough edge round the rim. After dark a light on a pole and one on the barn's gable glow. The hens, the cat and the dog are only for show: they stay where they are.`,
       },
       {
+        q: "What can I hear at the neighbour's?",
+        a: `Her yard sounds like a working dairy before you see it. She milks twice a day: her herd walks in at 05:30 and 15:30, waits in the collecting yard while she
+          milks for about an hour and a quarter, then walks back. While she milks you hear the milking machine's pulsator ticking its "tsch-tsch" every second and the
+          vacuum pump droning from the parlour, a radio playing in there, cows lowing and hooves shifting on the concrete, and the water trough's valve filling it more often
+          as they drink it down. The bulk tank's compressor hums on the tank room's wall for an hour after each milking and for a few minutes in every twenty by day. After
+          milking her loader tractor ticks over for a while as she feeds and scrapes, her dog barks now and then by day, and in a wind the barn's sheeting roars and clacks. From
+          about 22:00 to the morning milking it is quiet but for the wind. The parlour's sounds are duller from outside it and the yard's from indoors, and nothing of hers is heard
+          from more than 80 m beyond her wall. <code>scene dairysound</code> stands you at her gate at milking time with all of them going, <code>dairy</code> says where her milking
+          is, and <code>dairy all</code> or <code>dairy pulse</code> (or vacuum, compressor, radio, wind, moo, hooves, bark, trough, tractor) starts one for a minute whatever the hour.`,
+      },
+      {
         q: 'What are the things standing by themselves in the fields?',
         a: `Each field has one thing of its own you can see from its gate: a lone oak in North Field, a pair of old gateposts in
           Top Field, a dead elm in Long Piece's hedge, a pond with two willows in Far Field, an old roller in South Field, a lone ash in Hay Meadow, alders along the
