@@ -94,7 +94,7 @@ export const GATEWAYS_PLAN = [
   { a: 'hay', b: 'sheep', at: [413, 455], why: 'the sheep field from the stone track just inside Hay Meadow (it touches the farmstead only at a corner)' },
   { a: 'far', b: 'lane', at: [195, 500], why: 'Far Field\'s gate onto the green lane (#684, #674\'s review)' },
   { a: 'lane', b: 'sheep', at: [204.2, 500], why: 'the sheep field\'s gate onto the green lane (#684, #674\'s review)' },
-  { a: 'lane', b: 'hill', at: [199.6, 565], half: 3.5, why: 'the ford: the green lane opens into the hill pasture over the stream (#684)' },
+  { a: 'lane', b: 'hill', at: [199.6, 565], half: 3.3, why: 'the ford: the green lane opens into the hill pasture over the stream (#684), as wide as between its two hedges\' solid parts (#1216)' },
   { a: 'hay', b: 'brook', at: [420, 545], why: 'the stone track on south to the river' },
   { a: 'farmstead', b: 'top', at: [546, 232], why: 'Top Field from the stone track north' },
   { a: 'top', b: 'pit', at: [720, 150], half: 2.45, gate: true, id: 'quarry', why: 'the farm gate into the pit\'s field from the stone track north: the way in, tied open (#685)' },
@@ -116,7 +116,7 @@ export const GATEWAYS_PLAN = [
   // Where the river crosses a boundary: a gap wide enough for the water and its banks, shut with a river gate (hung boards, #565). No way through for you or the girls.
   { a: 'hill', b: 'brook', at: [420, 572], half: 7, shut: true, river: true, why: 'the river leaves Hill Pasture under its wall (the stream\'s end, the farm bridge\'s place)' },
   { a: 'brook', b: 'ley', at: [640, 606], half: 8, shut: true, river: true, why: 'the river leaves Brook Meadow for Low Ley' },
-  { a: 'ley', b: 'out', at: [885, 647], half: 3.5, shut: true, river: true, why: 'the brook leaves the farm for the lane\'s verge' },
+  { a: 'ley', b: 'out', at: [885, 644], half: 3.5, shut: true, river: true, why: 'the brook leaves the farm for the lane\'s verge' },
 ];
 
 /**
@@ -1424,7 +1424,7 @@ export const HILL_PLAN = {
  * bridge (#689) goes over the river, `willows` are [x, side, metres out from the bank] and `crackWillow` the big one by the bridge.
  */
 export const RIVER_PLAN = {
-  points: [[535, 586], [650, 600], [694, 621], [751, 636], [815, 645], [885, 647], [905, 653], [925, 660], [960, 668], [1000, 674], [1050, 674], [1100, 670], [1150, 668], [1200, 671], [1250, 676]],
+  points: [[535, 586], [650, 600], [694, 621], [751, 636], [815, 645], [885, 644], [905, 653], [925, 660], [960, 668], [1000, 674], [1050, 674], [1100, 670], [1150, 668], [1200, 671], [1250, 676]],
   wander: 1.2,
   source: 30, // it shallows out to a spring 30 m before its end, short of the A-road's verge (#688)
   river: {

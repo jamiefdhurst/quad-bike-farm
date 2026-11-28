@@ -28,6 +28,7 @@ import { buildBrookCulvert } from './brookProps.js';
 import { buildFarmBridge } from './farmBridge.js';
 import { Scatter } from './scatter.js';
 import { layHedge } from './hedgeLay.js';
+import { farmWaterAt } from './waterAt.js';
 import { leafReach } from './hedgeSolid.js';
 import { buildFarHedges, HedgeSwap, leafTint, FAR_HEDGE_TOP, FAR_HEDGE_WIDTH, FAR_HEDGE_END } from './hedgeFar.js';
 import { Gate, DEFAULT_GATE_PARAMS } from './gates.js';
@@ -133,18 +134,19 @@ function buildHedges({ scene, models, layout, heights, fields, fixedBox, random,
   const hedgeMatrices = [];
   const bushMatrices = [];
   const farPieces = []; // the far version's strips (hedgeFar.js), one for each block, from the same numbers
+  const waterAt = farmWaterAt(layout, heights); // a hedge stops on the bank where its line runs into a stream or a pond (#1216)
 
   // Overlapping, randomly turned blocks of varying height read as an irregular hedgerow rather than a row of cubes. Each hedge line
   // (fields.js) runs a metre past its ends so the corners close. The lane's hedges are taller than the rest.
   for (const h of fields.hedges) {
     const H = h.height ?? layout.hedgeHeight;
-    const lay = layHedge(h, { T, H, heightAt: heights.heightAt, random, blockReach, bushReach });
+    const lay = layHedge(h, { T, H, heightAt: heights.heightAt, random, blockReach, bushReach, waterAt });
     const blocks = []; // { s, x, z, top, width, gap } for the far version: gap where a stretch starts (a gateway before it)
     let prevS = null;
     for (const b of lay.blocks) {
       hedgeMatrices.push(matrixAt(b.x, b.y, b.z, b.spin, b.width / hedgeSize.x, (H / hedgeSize.y) * b.tall, b.width / hedgeSize.z));
-      // A stretch starts where the last block was a gateway away (a bit more than a block's step).
-      const gap = prevS === null || h.gaps.some((g) => prevS < g.at && b.s > g.at);
+      // A stretch starts where the last block was a gateway away, or across water whose blocks were left out (more than a coarse block's step).
+      const gap = prevS === null || h.gaps.some((g) => prevS < g.at && b.s > g.at) || b.s - prevS > 3.5;
       blocks.push({ s: b.s, x: b.x, z: b.z, top: b.y + H * b.tall * FAR_HEDGE_TOP, width: b.width * FAR_HEDGE_WIDTH, gap });
       prevS = b.s;
     }
