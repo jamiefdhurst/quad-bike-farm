@@ -36,6 +36,7 @@ import { registerTuning } from '../core/tuning.js';
 import { skyAt } from './daylight.js';
 import { StreamLevel, STREAM_PARAM_RANGES } from './streamLevel.js';
 import { riverHeard, DEFAULT_RIVER_SOUND_PARAMS, RIVER_SOUND_RANGES } from './riverBed.js';
+import { woodsHeard, DEFAULT_WOODS_SOUND_PARAMS, WOODS_SOUND_RANGES } from './woodsBed.js';
 import { PuddleIce, DEFAULT_PUDDLE_ICE_PARAMS, PUDDLE_ICE_PARAM_RANGES } from './puddleIce.js';
 import { PuddleIceView } from './puddleIceView.js';
 import * as THREE from 'three';
@@ -66,6 +67,8 @@ export class World {
     registerTuning('Stream', this.streamLevel.params, STREAM_PARAM_RANGES);
     this.riverSoundParams = { ...DEFAULT_RIVER_SOUND_PARAMS }; // how the river sounds (riverBed.js, #999)
     registerTuning('River sound', this.riverSoundParams, RIVER_SOUND_RANGES);
+    this.woodsSoundParams = { ...DEFAULT_WOODS_SOUND_PARAMS }; // how Hollow Wood sounds (woodsBed.js, #980)
+    registerTuning('Woods sound', this.woodsSoundParams, WOODS_SOUND_RANGES);
     this.streamStarted = false;
     this.streamEvent = null; // 'up' or 'down' on the frame the stream crossed the line, for the girls
 
@@ -369,6 +372,21 @@ export class World {
   /** The river's sound for a listener at `at` ({ x, z }, the camera), at the day's `darkness` and the weather's `windiness` (its wind, 0 to about 1.5). */
   riverHeardFrom(at, darkness = 0, windiness = 0) {
     return this.riverHeard(at.x, at.z, darkness, Math.min(1, (windiness ?? 0) / 1.5));
+  }
+
+  /**
+   * Hollow Wood's sound (`woodsHeard`, woodsBed.js) for a listener at `at` ({ x, z }, the camera) `dt` seconds after the last call, so the autumn leaves
+   * hear how fast you move through them: null on a farm with no wood. `date` is the farm's, `darkness` the day's, `windiness` the weather's wind (0 to about 1.5).
+   */
+  woodsHeardFrom(at, dt, date, darkness = 0, windiness = 0) {
+    const woods = this.fields.woods;
+    if (!woods) return null;
+    const last = this.woodsLast;
+    const moved = last ? Math.hypot(at.x - last.x, at.z - last.z) : 0;
+    this.woodsLast = { x: at.x, z: at.z };
+    const speed = dt > 0 && moved < 30 ? moved / dt : 0; // a jump of 30 m in a frame is a teleport, not a ride
+    const state = { darkness, wind: Math.min(1, (windiness ?? 0) / 1.5), month: date?.month ?? 4, autumn: this.autumn, speed, rain: this.weather?.rain ?? 0 };
+    return woodsHeard(woods, at.x, at.z, state, this.woodsSoundParams);
   }
 
   /** Where `at` is at the river (on the crossing, on a riffle, in a deep pool, on the bank) and how far up it is, for the panel and the console. */
