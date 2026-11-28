@@ -54,6 +54,8 @@ function makeWorld() {
     layoutNow: () => 'layout 2',
     birdsNow: () => 'dawn chorus 0%, rooks 0%; 0 sounding',
     startBirds: (k) => (state.birds = k),
+    dairyNow: () => 'afternoon milking, milking (20 min); going: pulse, vacuum',
+    startDairy: (n) => (state.dairy = n) !== 'tractor',
     scenes: () => [{ id: 'frost', label: 'Set up a frosty dawn' }],
     runScene: (id) => [`ran ${id}`],
     dump: (t) => (state.dumped = t),
@@ -340,6 +342,20 @@ describe('the notebook\'s things I\'ve learnt', () => {
     expect(text(shell.run('learn all'))).toBe('wrote them all down');
     expect(text(shell.run('learn none'))).toBe('rubbed them all out');
     expect(text(shell.run('learn'))).toContain('[ ] wax');
+  });
+});
+
+describe('the neighbour\'s dairy sounds', () => {
+  it('says what is going, starts one or all, and refuses a name that is none or a sound her yard has no place for', () => {
+    const { shell, state } = makeWorld();
+    expect(text(shell.run('dairy'))).toBe('afternoon milking, milking (20 min); going: pulse, vacuum');
+    expect(text(shell.run('dairy all'))).toBe('every sound of her yard is going for a minute');
+    expect(state.dairy).toBe('all');
+    expect(text(shell.run('dairy Pulse'))).toBe('the milking machine\'s pulse for a minute');
+    expect(state.dairy).toBe('pulse');
+    expect(text(shell.run('dairy goat'))).toContain('no dairy sound "goat". There is all, pulse');
+    expect(state.dairy).toBe('pulse');
+    expect(text(shell.run('dairy tractor'))).toContain('no dairy to hear that from');
   });
 });
 

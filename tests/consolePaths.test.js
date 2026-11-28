@@ -45,6 +45,7 @@ const standIn = () => {
     jobVerb: () => undefined,
     scenes: () => SCENES.map(({ id, label }) => ({ id, label })),
     runScene: () => [],
+    startDairy: () => true, // the stand-in's neighbour has her dairy
     perf: () => ({ fps: 60, ms: 16, worstMs: 20, maxFps: 0, calls: 0, triangles: 0, width: 0, height: 0, pixelRatio: 1 }),
   };
   return new Proxy(base, { get: (t, k) => (k in t ? t[k] : () => undefined) });

@@ -3,6 +3,7 @@
 // romance and her skills, so both girls fit on the screen at once. The shared folder is a set of closed subfolders by subject
 // (the games, the day, the workshop, the jobs, the animals and the lane, the farm's memory, getting about), never a flat list.
 import { buttonText } from './buttonText.js';
+import { DAIRY_SOUNDS, DAIRY_SOUND_NAMES } from '../world/dairySound.js';
 import { SEASONS } from '../world/seasons.js';
 import { describeFieldNames } from '../world/fieldNames.js';
 import { girlActions } from './girlActions.js';
@@ -394,6 +395,9 @@ export function buildGirlsTab(d) {
   show(out, 'the neighbour over the lane', () => g.neighbourHost.describe());
   button(out, 'Take you to the neighbour\'s gate', () => g.neighbourHost.debugGoTo() || toast('Get off your vehicle first'));
   button(out, 'Make the neighbour say hello', () => g.neighbourHost.debugGreet() || toast('She is indoors, or out calling at the farm'));
+  show(out, 'the neighbour\'s dairy sounds', () => g.neighbourHost.describeDairy());
+  button(out, 'Start every sound of the neighbour\'s yard', () => g.neighbourHost.debugDairy('all') || toast('This farm\'s neighbour has no dairy'));
+  for (const name of DAIRY_SOUND_NAMES) button(out, `Start ${DAIRY_SOUNDS[name].label} at the neighbour's`, () => g.neighbourHost.debugDairy(name) || toast('This farm\'s neighbour has nowhere for that'));
   show(out, 'the river', () => g.describeRiver());
   show(out, 'the river\'s sound', () => g.describeRiverSound());
   show(out, 'the gravel pit', () => g.describeQuarry());

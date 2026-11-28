@@ -2190,6 +2190,15 @@ export const FAQ_SECTIONS = [
         tip: 'The neighbour is out in her yard by day, down the lane. Ride in and say hello.',
       },
       {
+        q: "What can I hear at the neighbour's?",
+        a: `Her yard sounds like a working dairy before you see it. She milks twice a day: her herd walks in at 05:30 and 15:30, waits in the collecting yard while she
+          milks for about an hour and a quarter, then walks back. While she milks you hear the milking machine ticking its "tsch-tsch" every second and the vacuum pump
+          droning from the parlour, a radio playing in there, cows lowing and hooves shifting on the concrete, and the water trough filling more often as they drink it
+          down. The bulk tank's compressor hums by its room for an hour after each milking and for a few minutes in every twenty by day. After milking her tractor ticks over
+          for a while as she feeds, her dog barks now and then by day, and in a wind the barn's sheeting roars and clacks. At night it is quiet but for the wind. The
+          parlour's sounds are duller from outside it, and nothing of hers is heard from more than 80 m beyond her wall.`,
+      },
+      {
         q: 'Can I open the neighbour\'s gate, and can I drive her vehicles?',
         a: `You can open the gate: get off, look at it and press <kbd>E</kbd>, and again to shut it (it will not shut with someone in the way). Her Moorland, buggy, tractors, quad and trailer are for show for now, so you cannot drive them.`,
         tip: 'The neighbour\'s gate opens with E, like the farm\'s. Her vehicles are only for show.',
@@ -3212,6 +3221,12 @@ export const FAQ_SECTIONS = [
           pallets, a blue tank on a stand, a bag of lime, tied feed sacks and a stack of tyres, and a hen coop and its run. By her back door there are boots on the step, and by the front a collie's kennel and bowl, with its chain
           lying out; at the far wall is the muck heap with a plank ramp up it. The concrete shows the work: tyre tracks from the gate, hoof prints where the herd goes in, oil under the vehicles, a puddle in the low corner,
           straw blown against the barn door and a drip under the tap. Three of her working vehicles stand about too: her newer tractor, a blue Calder Dene 100 with a front loader and its bucket down, clay caked on its tyres, a dented wing and a little oil weeping from the engine, south of the barn; her farm quad, in worn green with a crate bungeed on its rear rack, a dog's blanket on the seat and dried mud in the footwells, along the collecting yard's fence by the gap the herd comes in through, and a rusty galvanised tipping trailer beside the barn's door, half full of silage-stained straw with a tarp tied over the front, its jockey wheel down and both rear lamps cracked, one taped over. Like her Moorland, buggy and old tractor they are only for show: you cannot drive or borrow them, but you can ride into them. How rusty and how muddy they are, and the colours of the crate, the blanket and the tarp, are different on every farm. The concrete itself is worn: ragged oil and diesel stains with pale halos, a long smear where something was dragged, damp lines running down to a green-black patch at the low corner, curved tyre marks, blade scrapes, hairline cracks between the joints, one paler patched square, a worn smooth path from the gate to the barn door and a rough edge round the rim. After dark a light on a pole and one on the barn's gable glow. The hens, the cat and the dog are only for show: they stay where they are.`,
+      },
+      {
+        q: "What are the console lines for the neighbour's yard sounds?",
+        a: `<code>scene dairysound</code> stands you at her gate at 16:00 with every sound of her yard going. <code>dairy</code> says where her milking is and what is going;
+          <code>dairy all</code>, or <code>dairy pulse</code> (or vacuum, compressor, radio, wind, moo, hooves, bark, trough, tractor), starts one for a minute whatever the hour.
+          Their levels and times are in the Tune tab's "Neighbour dairy".`,
       },
       {
         q: 'What are the things standing by themselves in the fields?',

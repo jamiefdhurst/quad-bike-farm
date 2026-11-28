@@ -1,6 +1,7 @@
 // The console's commands. They work on the tree (shell.js) and on a `host`, the game seen through a small set of calls (gameHost.js),
 // so they are tested here against a stand-in host. Keep every command in `GROUPS` order: `help` prints them like that.
 import { resolve, walk, show, describe, parseValue, pathCandidates } from './shell.js';
+import { DAIRY_SOUNDS, DAIRY_SOUND_NAMES } from '../world/dairySound.js';
 
 /*
  * host:
@@ -436,6 +437,21 @@ export function buildCommands(host) {
         if (!['chorus', 'rooks'].includes(k)) throw new Error(`no birds "${kind}". There is chorus, rooks`);
         host.startBirds(k);
         return k === 'chorus' ? 'the dawn chorus starts round you' : 'a flock of rooks is coming over';
+      },
+    },
+    {
+      name: 'dairy',
+      group: 'World',
+      usage: 'dairy [sound|all]',
+      help: `say where the neighbour's milking is and which of her yard's sounds are going, or start one (or all) for a minute whatever the hour: ${DAIRY_SOUND_NAMES.join(', ')}`,
+      examples: ['dairy', 'dairy all', 'dairy pulse'],
+      complete: (ctx, tokens) => (tokens.length === 0 ? ['all', ...DAIRY_SOUND_NAMES] : []),
+      run: ([name]) => {
+        if (!name) return host.dairyNow();
+        const n = name === 'all' ? 'all' : DAIRY_SOUND_NAMES.find((k) => k.toLowerCase() === name.toLowerCase());
+        if (!n) throw new Error(`no dairy sound "${name}". There is all, ${DAIRY_SOUND_NAMES.join(', ')}`);
+        if (!host.startDairy(n)) throw new Error('this farm\'s neighbour has no dairy to hear that from');
+        return n === 'all' ? 'every sound of her yard is going for a minute' : `${DAIRY_SOUNDS[n].label} for a minute`;
       },
     },
     {
