@@ -169,20 +169,22 @@ export function frogCroak(ctx, dest, t, volume) {
     const osc = ctx.createOscillator();
     const roll = ctx.createOscillator();
     const rollDepth = ctx.createGain();
+    const rolled = ctx.createGain(); // the purr on a gain of its own, so the envelope alone says when the croak starts and ends
     const env = ctx.createGain();
     const band = ctx.createBiquadFilter();
     osc.type = 'square';
     osc.frequency.setValueAtTime(260 + Math.random() * 60, at);
     roll.frequency.value = 22;
-    rollDepth.gain.value = volume * 0.7;
+    rolled.gain.value = 0.6;
+    rollDepth.gain.value = 0.4;
     band.type = 'bandpass';
     band.frequency.value = 520;
     band.Q.value = 3;
     env.gain.setValueAtTime(0.0001, at);
     env.gain.linearRampToValueAtTime(volume * 0.7, at + 0.03);
     env.gain.exponentialRampToValueAtTime(0.0001, at + 0.4);
-    roll.connect(rollDepth).connect(env.gain);
-    osc.connect(band).connect(env).connect(dest);
+    roll.connect(rollDepth).connect(rolled.gain);
+    osc.connect(band).connect(rolled).connect(env).connect(dest);
     for (const o of [osc, roll]) { o.start(at); o.stop(at + 0.45); }
     at += 0.5 + Math.random() * 0.3;
   }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { LAYOUT } from '../src/world/layout.js';
 import { createWoods } from '../src/world/woods.js';
-import { woodsHeard, owlCalls, pondEdge, DEFAULT_WOODS_SOUND_PARAMS as P, WOODS_SOUND_RANGES } from '../src/world/woodsBed.js';
+import { woodsHeard, owlCalls, pondEdge, travelSpeed, DEFAULT_WOODS_SOUND_PARAMS as P, WOODS_SOUND_RANGES } from '../src/world/woodsBed.js';
 import { WoodsAudio } from '../src/audio/woodsAudio.js';
 import { DEFAULT_SOUND_PARAMS, SOUND_PARAM_RANGES } from '../src/audio/audioParams.js';
 import { TUNE_CATEGORIES } from '../src/debug/tuneCategories.js';
@@ -63,6 +63,12 @@ describe('Hollow Wood\'s sound (#980)', () => {
     expect(at(deep, { autumn: true, speed: 0 }).leaves).toBe(0);
     expect(at(deep, { autumn: true, speed: 3 }).leaves).toBeGreaterThan(0);
     expect(at(deep, { autumn: true, speed: 6 }).leaves).toBeGreaterThan(at(deep, { autumn: true, speed: 3 }).leaves);
+  });
+
+  it('reads your speed for the leaves from how far you moved, and a jump as standing still', () => {
+    expect(travelSpeed(0.1, 1 / 60)).toBeCloseTo(6, 5);
+    expect(travelSpeed(12, 1 / 60)).toBe(0); // got on a quad, or a tp
+    expect(travelSpeed(0.1, 0)).toBe(0);
   });
 
   it('sighs in the canopy even in a calm, and more in a wind', () => {

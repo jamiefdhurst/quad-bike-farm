@@ -37,6 +37,11 @@ const smoothstep = (a, b, x) => {
 /** 0..1 how much the tawny owl calls at this darkness: none by day, coming in as the sun sets (darkness 0.5 is the sun on the horizon), thinning to a third in the full dark. */
 export const owlCalls = (darkness = 0) => smoothstep(0.45, 0.65, darkness) * (1 - 0.66 * smoothstep(0.85, 1, darkness));
 
+/** Metres a second you move at, from `moved` metres in `dt` seconds: 0 for a jump of over 5 m in a frame (getting on a quad, a `tp`), which is not a ride. */
+export function travelSpeed(moved, dt) {
+  return dt > 0 && moved <= 5 ? moved / dt : 0;
+}
+
 /** About how many metres (x, z) is from the edge of `pond` (an ellipse { x, z, rx, rz }): 0 in it, Infinity with no pond. Near enough for a sound. */
 export function pondEdge(pond, x, z) {
   if (!pond) return Infinity;
