@@ -1900,6 +1900,15 @@ export const FAQ_SECTIONS = [
         tip: 'The Hollow Run is the narrow, twisty wood track through the gateway in Hollow Wood\'s south hedge.',
       },
       {
+        q: 'What can I hear in Hollow Wood?',
+        a: `The wood has a sound of its own, which comes in under the engine as the trees close round you and is gone again once you are out in the open. The wind sighs
+          in the canopy even on a still day, and louder in a wind. By day the wood's birds sing: a wren's loud trill, a chiffchaff calling its two notes, a wood pigeon
+          cooing and now and then a woodpecker drumming, most in spring and fewest in winter or rain. Near the pond you hear drips into the water and, from March to
+          August, frogs croaking, more of them as the light goes. In autumn the dead leaves rustle under your wheels or your feet as you go. From sunset a tawny owl
+          calls, the long wavering "hoo" or a sharp "ke-wick".`,
+        tip: 'Ride into Hollow Wood at sunset and listen for the tawny owl.',
+      },
+      {
         q: 'Where is the gravel pit, and how do I get into it?',
         a: `In the north-east corner, beside the lane, there is a field of its own with an old gravel pit in it, roughly 90 m by 70 m and about 14 m deep. Ride up the stone track north from the yard
           to the pit's farm gate (it starts tied open; look at it and press <kbd>E</kbd> to shut it or open it). From the

@@ -188,6 +188,7 @@ These have no external source:
 - **Dashes**: drawn on canvas in `src/vehicle/dash.js`.
 - **Terrain, track, grass tufts, distant trees and sky**: generated in `src/world/`.
 - **Synthesised engine sound** (selectable in the tuning panel), relay clicks, fuel pump, pouring and wind: synthesised at runtime in `src/audio/`.
+- **Hollow Wood's sound** (the canopy, the autumn leaves, a wren, a chiffchaff, a wood pigeon, a woodpecker's drum, the pond's drips and frogs, a tawny owl): synthesised at runtime in `src/audio/woodsAudio.js`.
 
 ## Generator
 
