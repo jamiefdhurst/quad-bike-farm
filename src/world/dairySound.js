@@ -144,15 +144,16 @@ export function dairyPlan(hour, { wind = 0, away = false, forced = {} } = {}, p 
   const m = milkingAt(hour, p);
   const h = ((hour % 24) + 24) % 24;
   const milking = m.phase === 'milking';
-  const herdIn = milking;
+  const herdIn = milking; // the herd waits in the collecting yard on the clock, she or no
+  const machine = milking && !away; // she milks only when she is at home
   const night = h >= p.nightFrom || h < p.morning;
   const cooling = milking || m.phase === 'walkOut' || m.sinceMilking * 60 < p.compressorAfter;
   const cycling = !night && ((h * 60) % p.compressorCycle) < p.compressorRun;
   const windLevel = Math.max(0, Math.min(1, (wind - 0.6) / 0.9));
   const feeding = !away && m.phase === 'none' && m.sinceMilking * 60 < p.feedMinutes;
   const loops = {
-    pulse: milking ? 1 : 0,
-    vacuum: milking ? 1 : 0,
+    pulse: machine ? 1 : 0,
+    vacuum: machine ? 1 : 0,
     compressor: cooling || cycling ? 1 : 0,
     radio: m.phase !== 'none' && !away ? 1 : 0,
     wind: windLevel < 0.05 ? 0 : windLevel,

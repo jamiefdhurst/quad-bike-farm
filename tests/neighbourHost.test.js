@@ -110,3 +110,38 @@ describe('one woman, in her yard and at the farm', () => {
     }
   });
 });
+
+describe('her yard\'s sounds in the host (#965)', () => {
+  const dairyGame = () => {
+    const { host, game } = standIn(null);
+    game.daylight = { hour: 3 };
+    game.weather = { wind: 0.6 };
+    game.camera = { position: { x: 0, y: 0, z: 0 } };
+    return { host, game };
+  };
+
+  it('starts a sound for a minute whatever the hour, then lets it go', () => {
+    const { host } = dairyGame();
+    host.updateDairy(0.1);
+    expect(host.dairyPlan.loops.pulse).toBe(0);
+    expect(host.debugDairy('pulse')).toBe(true);
+    host.updateDairy(0.1);
+    expect(host.dairyPlan.loops.pulse).toBe(1);
+    for (let t = 0; t < 59; t += 1) host.updateDairy(1);
+    expect(host.dairyPlan.loops.pulse).toBe(1);
+    host.updateDairy(1.5);
+    expect(host.dairyPlan.loops.pulse).toBe(0);
+    expect(host.describeDairy()).toMatch(/^no milking now; going: nothing; made near you: 0$/);
+  });
+
+  it('starts every sound this yard has a place for with all, and refuses a name that is none', () => {
+    const { host } = dairyGame();
+    expect(host.debugDairy('goat')).toBe(false);
+    expect(host.debugDairy('all')).toBe(true);
+    expect(Object.keys(host.dairyForced).sort()).toEqual(Object.keys(host.dairySpots).sort());
+    host.dairySpots = { ...host.dairySpots };
+    delete host.dairySpots.radio;
+    expect(host.debugDairy('radio')).toBe(false); // a yard with no parlour has nowhere for it
+  });
+});
+

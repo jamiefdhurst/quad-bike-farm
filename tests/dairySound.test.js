@@ -51,6 +51,14 @@ describe('when each sound plays', () => {
     expect(plan.loops.radio).toBe(1);
   });
 
+  it('stops the machine, the pump and the radio while she is out calling at the farm, with the herd still waiting', () => {
+    const plan = dairyPlan(16, { away: true });
+    expect(plan.loops.pulse).toBe(0);
+    expect(plan.loops.vacuum).toBe(0);
+    expect(plan.loops.radio).toBe(0);
+    expect(plan.every.moo).toBe(P.mooEvery);
+  });
+
   it('ticks her tractor over while she feeds after milking, and not while she is out calling at the farm', () => {
     const after = 17.3; // the afternoon milking is over at 17:15
     expect(milkingAt(after).phase).toBe('none');
