@@ -17,11 +17,6 @@ import { hedgeReach } from './helpers/hedgeModels.js';
  * that name breaking that rule there (a hedge breaks as several boxes and blocks).
  */
 const KNOWN = [
-  { issue: 1216, rule: 'gateway', name: 'hedge far|lane', at: [195, 562], within: 6 }, // the hedge's end at the ford, past its corner into the ford's opening
-  { issue: 1216, rule: 'water', name: 'hedge far|lane', at: [195, 562], within: 6 }, // and into the stream
-  { issue: 1216, rule: 'water', name: 'hedge far|lane bush', at: [195, 562], within: 6 }, // a bush in that end too, since the gateways' edge blocks (#1123) moved the draws
-  { issue: 1216, rule: 'water', name: 'hedge ley|south', at: [880, 650], within: 8 }, // the brook running over the corner where it leaves the farm
-  { issue: 1216, rule: 'water', name: 'hedge south|out', at: [885, 649], within: 4 },
   { issue: 1224, rule: 'reserved', name: 'a river gate', at: [640, 606], within: 2 }, // the footpath's crossing out of Brook Meadow is in the river gate's gap
   { issue: 1217, rule: 'track', name: 'an oak by the yard', at: [545, 267], within: 2 }, // the old farm's tree line, on the stone track north
   { issue: 1217, rule: 'reserved', name: 'an oak by the yard', at: [434, 385], within: 2 }, // in the sheep pens' place
