@@ -11,8 +11,11 @@ import { CharacterRig } from '../npc/characterRig.js';
 import { applyOutfit } from '../npc/outfit.js';
 import { neighbourOutfit, NEIGHBOUR_HEIGHT } from './neighbourLook.js';
 import { CompanionSounds } from '../audio/companionAudio.js';
+import { DairyAudio } from '../audio/dairyAudio.js';
+import { DEFAULT_DAIRY_SOUND_PARAMS, DAIRY_SOUND_PARAM_RANGES, DAIRY_SOUNDS, DAIRY_SOUND_NAMES, dairySpots, dairyPlan, buildingAt, outsideYard, describeDairy } from './dairySound.js';
 
 const WAVE_SECONDS = 2.4;
+const FORCED_SECONDS = 60; // how long a sound started from the panel or the console keeps going whatever the hour
 
 export class NeighbourHost {
   constructor(game) {
@@ -35,6 +38,15 @@ export class NeighbourHost {
     this.lastEvent = 'nothing yet';
     this.pos = new THREE.Vector3();
     this.groundY = game.world.groundHeightAt(this.neighbour.x, this.neighbour.z);
+    // Her dairy yard's sounds (#965): the milking machine, the tank's compressor, the radio, the barn's sheeting, the herd, the dog, the trough, the tractor.
+    this.dairyParams = { ...DEFAULT_DAIRY_SOUND_PARAMS };
+    registerTuning('Neighbour dairy', this.dairyParams, DAIRY_SOUND_PARAM_RANGES);
+    this.dairySpots = dairySpots(this.shape);
+    this.dairyGround = game.world.groundHeightAt((this.shape.outline.minX + this.shape.outline.maxX) / 2, (this.shape.outline.minZ + this.shape.outline.maxZ) / 2);
+    this.dairy = new DairyAudio(game.audioHub, this.dairyParams);
+    this.dairyForced = {}; // sound name -> s it is kept going for (debugDairy)
+    this.dairyRandom = createRandom(game.seed ^ 0x965d);
+    this.dairyPlan = null;
   }
 
   /** Her rig, made on first use (the girls' model is shared, so it is built once the game has it). */
@@ -69,6 +81,20 @@ export class NeighbourHost {
     this.watchArrival(dt);
     this.sounds.ensure();
     this.show(dt);
+    this.updateDairy(dt);
+  }
+
+  /** Her yard's sounds for this frame, from the hour, the wind and where you are (world/dairySound.js says what, audio/dairyAudio.js makes it). */
+  updateDairy(dt) {
+    const g = this.g;
+    const forced = {};
+    for (const [name, left] of Object.entries(this.dairyForced)) {
+      if (left - dt <= 0) delete this.dairyForced[name];
+      else forced[name] = !!(this.dairyForced[name] = left - dt);
+    }
+    this.dairyPlan = dairyPlan(g.daylight.hour, { wind: g.weather?.wind ?? 0, away: this.neighbour.away, forced }, this.dairyParams);
+    const l = g.audioHub.listenerPosition ?? g.camera.position;
+    this.dairy.update(dt, { spots: this.dairySpots, plan: this.dairyPlan, listenerIn: buildingAt(this.shape, l.x, l.z), outside: outsideYard(this.shape, l.x, l.z), ground: this.dairyGround, random: this.dairyRandom });
   }
 
   /**
@@ -168,6 +194,27 @@ export class NeighbourHost {
     const at = neighbourGate(this.g.world.layout);
     this.g.player.moveTo({ x: at.x, y: this.g.world.groundHeightAt(at.x, at.z), z: at.z });
     return true;
+  }
+
+  /**
+   * Starts one of her yard's sounds whatever the hour (`DAIRY_SOUND_NAMES`, or 'all'), kept going a minute: a one-shot plays at once too. False
+   * for a name that isn't one, or one this yard has no place for.
+   */
+  debugDairy(name) {
+    if (!this.active) return false;
+    const names = name === 'all' ? DAIRY_SOUND_NAMES.filter((n) => this.dairySpots[n]) : [name];
+    if (!names.length || names.some((n) => !DAIRY_SOUNDS[n] || !this.dairySpots[n])) return false;
+    for (const n of names) {
+      this.dairyForced[n] = FORCED_SECONDS;
+      if (DAIRY_SOUNDS[n].kind === 'once') this.dairy.next[n] = 0;
+    }
+    return true;
+  }
+
+  /** Where her milking is and which of the yard's sounds are going, and how many are made near you. */
+  describeDairy() {
+    if (!this.active || !this.dairyPlan) return 'no dairy on this farm';
+    return `${describeDairy(this.dairyPlan)}; made near you: ${this.dairy.madeCount}`;
   }
 
   describe() {
