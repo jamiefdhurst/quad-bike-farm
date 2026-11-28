@@ -202,4 +202,11 @@ export function splitter(g, say) {
   ];
 }
 
-export const SETUPS = { farHedges, prepare: getOff, wardrobe, moto, flock, flask, earlier, splitter, hotrev, hotpink, carboil, end: endScene };
+/** A quarter of an hour after this farm's sunset, whatever the date: the light going and the owl starting in Hollow Wood (#980). */
+function dusk(g, say) {
+  const hour = Math.round((g.daylight.p.sunset + 0.25) * 100) / 100;
+  say(`weather.time ${hour}`);
+  return [`weather.time ${hour}: a quarter of an hour after sunset on this farm's date`];
+}
+
+export const SETUPS = { farHedges, dusk, prepare: getOff, wardrobe, moto, flock, flask, earlier, splitter, hotrev, hotpink, carboil, end: endScene };
