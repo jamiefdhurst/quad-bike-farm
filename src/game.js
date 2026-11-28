@@ -11623,6 +11623,7 @@ export class Game {
     this.world.update(dt, board ? board.quad.position : this.player.position, this.camera, this.guard);
     this.guard.run('updateWeather', () => this.updateWeather(dt));
     this.guard.run('updateRiverSound', () => this.audioHub.setRiver(this.world.riverHeardFrom(this.camera.position, this.daylight?.darkness ?? 0, this.weather.wind))); // the river's water, willows and birds (#999)
+    this.guard.run('updateWoodsSound', () => this.audioHub.setWoods(this.world.woodsHeardFrom(this.camera.position, dt, this.date, this.daylight?.darkness ?? 0, this.weather.wind))); // Hollow Wood's birds, canopy, leaves, pond and owl (#980)
     fb.lap('world, weather and effects', performance.now());
     this.guard.run('updateAchievements', () => this.updateAchievements(dt, ridden));
     this.guard.run('updateDayStory', () => this.updateDayStory());

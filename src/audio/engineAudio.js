@@ -15,6 +15,7 @@ import { yardBed } from '../world/yardBed.js';
 import { moorBed } from '../world/moorBed.js';
 import { MoorAudio } from './moorAudio.js';
 import { RiverAudio } from './riverAudio.js';
+import { WoodsAudio } from './woodsAudio.js';
 import { USE_CUES, useSamples } from './useAudio.js';
 import { STEP_KINDS, stepSamples } from './footstepSamples.js';
 import { wantsBank } from './bankWant.js';
@@ -384,6 +385,13 @@ export class AudioHub {
     if (!this.ready) return;
     this.riverAudio ??= new RiverAudio(this);
     this.riverAudio.update(heard, this.params.riverVolume, this.params.riverBirdVolume);
+  }
+
+  /** Hollow Wood (#980): `heard` is `world.woodsHeardFrom`'s (null with no wood): its birds, the canopy, the leaves under you, the pond and the owl. */
+  setWoods(heard) {
+    if (!this.ready) return;
+    this.woodsAudio ??= new WoodsAudio(this);
+    this.woodsAudio.update(heard, this.params.woodsVolume);
   }
 
   /** The yard's bed: `level` (world/yardBed.js `yardHeard`), the wind and the rain 0..1. The loose tin rattles with the wind; a tap drips every so often. */

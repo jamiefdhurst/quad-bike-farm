@@ -14,6 +14,7 @@ export const DEFAULT_SOUND_PARAMS = {
   moorWind: 1.2, // extra wind on the open Moor: the ambient wind is this many times louder again at its loudest (0 for none)
   riverVolume: 0.06, // the river's water: the babble over the crossing and the murmur of the deep (world/riverBed.js, audio/riverAudio.js)
   riverBirdVolume: 0.05, // the rooks, the wagtail and the moorhen by the river by day
+  woodsVolume: 0.06, // Hollow Wood's own sound: its birds, the canopy, the autumn leaves, the pond and the owl (world/woodsBed.js, audio/woodsAudio.js)
 
   // How each quad's sound reaches you (propagation.js)
   doppler: true, // passing quads rise and fall in pitch
@@ -83,6 +84,7 @@ export const SOUND_PARAM_RANGES = {
   moorWind: [0, 4, 0.05],
   riverVolume: [0, 0.4, 0.005],
   riverBirdVolume: [0, 0.3, 0.005],
+  woodsVolume: [0, 0.4, 0.005],
   masterVolume: [0, 2, 0.01],
   latency: [0.02, 0.2, 0.005],
   ambientVolume: [0, 0.5, 0.005],
