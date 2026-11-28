@@ -2144,7 +2144,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: 'Where does a hedge stop being solid?',
-        a: `Where its leaves stop. A hedge is solid about 1.3 m either side of its line, as far as the leaves reach, and its leaves run right up to the edge of every gateway, so what you bump into beside a gap is always the hedge you can see. The same goes for the neighbour's hedges across the lane, whose corners close with leaves too.`,
+        a: `Where its leaves stop. A hedge is solid about 1.3 m either side of its line, as far as the leaves reach, and its leaves run right up to the edge of every gateway, so what you bump into beside a gap is always the hedge you can see. The same goes for the neighbour's hedges across the lane, whose corners close with leaves too. Where a hedge runs down to a stream it stops on the bank, so nothing solid stands in the water: the green lane's hedge at the ford ends there.`,
       },
       {
         q: 'Who is that on the lane, and why has someone come in?',
