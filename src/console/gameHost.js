@@ -417,6 +417,8 @@ export function createHost(g, { copy = () => {} } = {}) {
 
     birdsNow: () => g.farmBirdsHost?.describe() ?? 'no birds on this farm',
     startBirds: (kind) => g.farmBirdsHost.force(kind),
+    dairyNow: () => g.neighbourHost?.describeDairy() ?? 'no dairy on this farm',
+    startDairy: (name) => !!g.neighbourHost?.debugDairy(name),
 
     layoutNow: () => ['the farm on the plan (layout 2)', describeFieldNames(g.world.layout)].filter(Boolean).join('. '),
 
