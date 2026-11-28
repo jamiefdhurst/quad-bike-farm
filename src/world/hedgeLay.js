@@ -4,18 +4,29 @@ import { HEDGE_SOLID_HALF, HEDGE_WOBBLE, blockWidth, bushHeight } from './hedgeS
 import { sidePoint, hedgeOffset } from './laneHedges.js';
 
 const EDGE_BACK = 0.07; // m a gateway's edge block is set back from touching its gap (#1123)
+const WET = 0.05; // m of water that counts as in it (farmPlacement.js `waterBreak`)
+const SHORE_STEP = 0.1; // m between the points a hedge's solid part is tried against the water, so it stops within that of the edge (#1216)
 
 /**
- * @param {object} o  { T, H, heightAt, random, blockReach (leafReach of the hedge model), bushReach (leaf radius per metre of bush height), bushes: whether bushes grow here }
+ * @param {object} o  { T, H, heightAt, random, blockReach (leafReach of the hedge model), bushReach (leaf radius per metre of bush height), bushes: whether bushes grow here,
+ *   waterAt(x, z): the water's depth there (waterAt.js), so the hedge stops on the bank where its line runs into a stream or a pond (#1216) }
  * @returns {{ blocks, bushes, colliders }}  blocks { s, across, x, z, y, width, spin, tall }; bushes { x, z, y, height, yaw };
  *   colliders { s0, s1, across (half thickness), x, z, y, hx, hy, hz, turn } (a box, `turn` its yaw; its middle is x, y, z).
  */
-export function layHedge(h, { T, H, heightAt, random, blockReach, bushReach, bushes: withBushes = true }) {
+export function layHedge(h, { T, H, heightAt, random, blockReach, bushReach, bushes: withBushes = true, waterAt = null }) {
   const flip = h.dx - h.dz < 0 ? -1 : 1;
   const side = { x: -h.dz * flip, z: h.dx * flip };
   const pointAt = (s, across = 0) => ({ x: h.x1 + h.dx * s + side.x * across, z: h.z1 + h.dz * s + side.z * across });
   const blocks = [];
   const bushes = [];
+  // A disc of leaves in the water, tried at its middle and eight points round its edge. One in it is left out, its draws taken all the same, so
+  // no other hedge's blocks move (#1216).
+  const wetDisc = (x, z, r) => {
+    if (!waterAt) return false;
+    if (waterAt(x, z) > WET) return true;
+    for (let k = 0; k < 8; k++) if (waterAt(x + r * Math.cos((k * Math.PI) / 4), z + r * Math.sin((k * Math.PI) / 4)) > WET) return true;
+    return false;
+  };
   // A block's leaves stay out of a gateway: no nearer to its middle than the block reaches along the hedge (a gate's leaf needs room too).
   const clearOf = (g, width) => g.half + Math.max(blockReach * width, g.gate ? 0.9 : 0);
   // The gap edges with box beyond them inside the laid stretch, each to get a block right at it (#1123): `${i}-` before gap i, `${i}+` after it.
@@ -37,7 +48,8 @@ export function layHedge(h, { T, H, heightAt, random, blockReach, bushReach, bus
       s = at;
     }
     const { x, z } = pointAt(s, across);
-    blocks.push({ s, across, x, z, y: heightAt(x, z) - 0.2, width, spin: random() * Math.PI * 2, tall: 0.8 + random() * 0.45 });
+    const block = { s, across, x, z, y: heightAt(x, z) - 0.2, width, spin: random() * Math.PI * 2, tall: 0.8 + random() * 0.45 };
+    if (!wetDisc(x, z, blockReach * width)) blocks.push(block);
     if (withBushes && !h.coarse && random() < 0.3) {
       const off = (random() - 0.5) * T * 0.8;
       const bs = s + (random() - 0.5);
@@ -45,7 +57,9 @@ export function layHedge(h, { T, H, heightAt, random, blockReach, bushReach, bus
       // Not within its own reach of a gateway either.
       if (h.gaps.some((g) => Math.abs(bs - g.at) < g.half + bushReach * height + 0.3)) continue;
       const b = pointAt(bs, off);
-      bushes.push({ x: b.x, z: b.z, y: heightAt(b.x, b.z) - 0.3, height, yaw: random() * Math.PI * 2, s: bs, across: off });
+      const yaw = random() * Math.PI * 2; // drawn before the water is asked, so a bush left out takes its draws too
+      if (wetDisc(b.x, b.z, bushReach * height)) continue;
+      bushes.push({ x: b.x, z: b.z, y: heightAt(b.x, b.z) - 0.3, height, yaw, s: bs, across: off });
     }
   }
 
@@ -57,10 +71,33 @@ export function layHedge(h, { T, H, heightAt, random, blockReach, bushReach, bus
     const p = pointAt(s);
     return heightAt(p.x, p.z);
   };
-  const colliders = [];
+  // Where the line runs into water the solid part stops at its edge: each stretch between gaps is split into its dry runs, a run being dry across
+  // the whole solid thickness, and a run shorter than half a metre is dropped (#1216).
+  const wetAt = (s) => waterAt && [-HEDGE_SOLID_HALF, 0, HEDGE_SOLID_HALF].some((a) => {
+    const p = pointAt(s, a);
+    return waterAt(p.x, p.z) > WET;
+  });
+  const spans = [];
   for (let i = 0; i < cuts.length; i += 2) {
-    const a = cuts[i];
-    const b = cuts[i + 1];
+    if (!waterAt) {
+      spans.push([cuts[i], cuts[i + 1]]);
+      continue;
+    }
+    let from = null;
+    const n = Math.ceil((cuts[i + 1] - cuts[i]) / SHORE_STEP);
+    for (let k = 0; k <= n; k++) {
+      const s = k === n ? cuts[i + 1] : cuts[i] + ((cuts[i + 1] - cuts[i]) * k) / n;
+      const dry = !wetAt(s);
+      if (dry && from === null) from = s;
+      if ((!dry || k === n) && from !== null) {
+        const to = dry ? s : s - SHORE_STEP;
+        if (to - from >= 0.5 || (from === cuts[i] && to === cuts[i + 1])) spans.push([from, to]); // a whole stretch is kept, however short
+        from = null;
+      }
+    }
+  }
+  const colliders = [];
+  for (const [a, b] of spans) {
     let lowest = Infinity;
     let highest = -Infinity;
     for (let s = a; s <= b; s += 2) {

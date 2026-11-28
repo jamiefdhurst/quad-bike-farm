@@ -10,6 +10,7 @@ import { roadNetwork } from './roads.js';
 import { createTerrainHeight } from './terrainHeight.js';
 import { Track } from './track.js';
 import { layHedge, layLaneHedge } from './hedgeLay.js';
+import { farmWaterAt } from './waterAt.js';
 import { HEDGE_SOLID_HALF } from './hedgeSolid.js';
 import { streamFor } from './propStreams.js';
 import { laneHedgeRuns, laneGaps, laneGates, laneStile, sidePoint, hedgeOffset } from './laneHedges.js';
@@ -23,7 +24,7 @@ import { hutShape } from './hut.js';
 import { villageShape, gardenHedges, houseToWorld, hedgeCorners } from './village.js';
 import { wallPieces } from './moor.js';
 import { createWoods } from './woods.js';
-import { BUILT_KINDS, landmarksOf, pondShape } from './fieldLandmarks.js';
+import { BUILT_KINDS } from './fieldLandmarks.js';
 import { farmTreeSpots, distantTreeSpots } from './treeSpots.js';
 import { polygonBounds, pointInPolygon } from './polygons.js';
 import { createRiver } from './river.js';
@@ -116,9 +117,10 @@ export function farmPlacements(layout, { fields = createFields(layout), roads = 
   // The farm's hedges (props.js `buildHedges`): every block's leaves, every bush and every solid box, from the builder's own stream.
   {
     const random = streamFor('buildHedges');
+    const { waterAt } = placementContext(layout, { fields, roads }); // the hedges stop at the water's edge (#1216)
     for (const h of fields.hedges) {
       const name = `hedge ${h.between?.join('|') ?? ''}`.trim();
-      const lay = layHedge(h, { T, H: h.height ?? layout.hedgeHeight, heightAt: flat, random, blockReach, bushReach });
+      const lay = layHedge(h, { T, H: h.height ?? layout.hedgeHeight, heightAt: flat, random, blockReach, bushReach, waterAt });
       for (const b of lay.blocks) add(disc('hedgeLeaves', name, b.x, b.z, blockReach * b.width, false));
       for (const b of lay.bushes) add(disc('hedgeLeaves', `${name} bush`, b.x, b.z, bushReach * b.height, false));
       for (const k of lay.colliders) add(box('hedge', name, k.x, k.z, k.hx, k.hz, k.turn, true));
@@ -402,8 +404,7 @@ export function placementContext(layout, { fields = createFields(layout), roads 
       }
     }
   }
-  const ponds = landmarksOf(layout, 'farPond').map((l) => pondShape(l));
-  const waterAt = (x, z) => Math.max(h.hill?.waterAt(x, z) ?? 0, h.woods?.waterAt(x, z) ?? 0, h.quarry?.waterAt(x, z) ?? 0, h.brook?.waterAt(x, z) ?? 0, ponds.some((p) => p.through(x, z) < 1) ? 1 : 0);
+  const waterAt = farmWaterAt(layout, h);
   const R = layout.reserved ?? {};
   const routes = [...(R.footpath ?? []).map((pts) => ({ name: 'the footpath', pts })), ...(R.bridleway ?? []).map((pts) => ({ name: 'the bridleway', pts }))];
   const spots = [

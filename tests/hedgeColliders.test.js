@@ -191,3 +191,28 @@ describe("the lanes' hedges at their gateways", () => {
     }
   });
 });
+
+describe('hedges at the water (#1216)', () => {
+  it('stops a hedge on the bank where its line runs into water, taking the same draws so the rest of it does not move (#1216)', () => {
+    // A hedge along x from 0 to 40: a stream across it from x 20 to 24, and a pond its end runs on into from x 40.5.
+    const h = { x1: 0, z1: 0, dx: 1, dz: 0, length: 40, gaps: [], alongX: true };
+    const waterAt = (x) => (x > 20 && x < 24) || x > 40.5 ? 0.3 : 0;
+    const opts = { T, H: LAYOUT.hedgeHeight, heightAt: () => 0, blockReach, bushReach };
+    const dry = layHedge(h, { ...opts, random: seeded(77) });
+    const wet = layHedge(h, { ...opts, random: seeded(77), waterAt });
+    for (const k of wet.colliders) {
+      expect(k.s1 <= 20 + 1e-6 || k.s0 >= 24 - 1e-6, `a box from ${k.s0} to ${k.s1} in the stream`).toBe(true);
+      expect(k.s1).toBeLessThanOrEqual(40.5 + 1e-6);
+    }
+    // Solid right up to each bank, within a tenth of a metre.
+    for (const s of [-2, 0, 10, 19.85, 24.15, 30, 40.35]) expect(wet.colliders.some((k) => s >= k.s0 - 1e-6 && s <= k.s1 + 1e-6), `solid at ${s}`).toBe(true);
+    for (const b of [...wet.blocks.map((b) => ({ x: b.x, r: blockReach * b.width })), ...wet.bushes.map((b) => ({ x: b.x, r: bushReach * b.height }))]) {
+      expect(waterAt(b.x - b.r) || waterAt(b.x + b.r) || waterAt(b.x), `leaves at x ${b.x.toFixed(2)} in the water`).toBe(0);
+    }
+    // Every block out of the water is where it was laid without any: only the wet ones went.
+    expect(wet.blocks.length).toBeLessThan(dry.blocks.length);
+    const key = (b) => `${b.x.toFixed(6)},${b.z.toFixed(6)},${b.width.toFixed(6)}`;
+    const kept = new Set(wet.blocks.map(key));
+    for (const b of dry.blocks) if (!waterAt(b.x - blockReach * b.width) && !waterAt(b.x + blockReach * b.width) && !waterAt(b.x)) expect(kept.has(key(b))).toBe(true);
+  });
+});
