@@ -6,7 +6,7 @@ import { headlessContext } from './helpers/worldModels.js';
 import { LAYOUT, RAW_LAYOUT } from '../src/world/layout.js';
 import { layoutNew, fromPlan, NEIGHBOUR_LAND_PLAN } from '../src/world/layoutNew.js';
 import { neighbourFarmShape } from '../src/world/neighbourFarm.js';
-import { neighbourLandShape, stretchesOf, hedgeStretches, landFieldAt } from '../src/world/neighbourLand.js';
+import { neighbourLandShape, stretchesOf, hedgeStretches, landFieldAt, layLandStretch } from '../src/world/neighbourLand.js';
 import { landColor, patchColor } from '../src/world/patchwork.js';
 import { COW_VARIANTS, buildCow, cowGeometry } from '../src/world/cattleModel.js';
 import { createTerrainHeight } from '../src/world/terrainHeight.js';
@@ -78,6 +78,41 @@ describe('her land across the lane (#569)', () => {
     const boxes = hedgeStretches(land);
     expect(boxes.length).toBe(land.lines.reduce((n, l) => n + stretchesOf(l).length, 0));
     for (const b of boxes) expect(Math.min(b.hx, b.hz)).toBeCloseTo(Math.max(land.hedge.width / 2, HEDGE_SOLID_HALF), 6);
+  });
+
+  it('ends each stretch\'s leaves at a gap\'s edge, never in it, runs them past the line\'s end at a corner and keeps them in at a free end (#1123)', () => {
+    const blockReach = 1.1;
+    const seeded = (seed) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    const count = { gap: 0, corner: 0, free: 0 };
+    for (const seed of [99, 1234, 7]) {
+      const random = seeded(seed);
+      for (const s of land.stretches) {
+        const length = s.to - s.from;
+        const blocks = layLandStretch(s, { random, blockReach, width: (r) => 1 + r * 0.3 });
+        if (!blocks.length) continue;
+        const lo = Math.min(...blocks.map((b) => b.t - blockReach * b.width)); // how far the leaves run, from the stretch's start
+        const hi = Math.max(...blocks.map((b) => b.t + blockReach * b.width));
+        // `back`: from the end to the leaves, positive inwards; `past`: how far the other stretch's box goes on beyond a corner.
+        for (const [gap, corner, past, back] of [[s.gapBefore, s.cornerBefore, s.pastBefore, lo], [s.gapAfter, s.cornerAfter, s.pastAfter, length - hi]]) {
+          if (gap) {
+            count.gap++;
+            expect(back, 'leaves end at the gap\'s edge, out of it').toBeGreaterThanOrEqual(0);
+            expect(back, 'leaves end at the gap\'s edge, with no bare box').toBeLessThan(0.1);
+          } else if (corner) {
+            count.corner++;
+            expect(back, 'leaves run on to the corner').toBeLessThanOrEqual(0);
+            expect(-back, 'and no further than the other box').toBeLessThanOrEqual(past + 1e-9);
+          } else {
+            count.free++;
+            expect(back, 'leaves stay inside the box at a free end').toBeGreaterThanOrEqual(-1e-9);
+            expect(back, 'and run to its end').toBeLessThan(0.1);
+          }
+        }
+      }
+    }
+    expect(count.gap).toBeGreaterThan(2);
+    expect(count.corner).toBeGreaterThan(4);
+    expect(count.free).toBeGreaterThan(2); // the lane's hedge stopping at the village frontage, and the lines that meet no other
   });
 });
 

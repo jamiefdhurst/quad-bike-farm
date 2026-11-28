@@ -2143,6 +2143,10 @@ export const FAQ_SECTIONS = [
         tip: 'Look at a gate on foot and press E to open or shut it.',
       },
       {
+        q: 'Where does a hedge stop being solid?',
+        a: `Where its leaves stop. A hedge is solid about 1.3 m either side of its line, as far as the leaves reach, and its leaves run right up to the edge of every gateway, so what you bump into beside a gap is always the hedge you can see. The same goes for the neighbour's hedges across the lane, whose corners close with leaves too.`,
+      },
+      {
         q: 'Who is that on the lane, and why has someone come in?',
         a: `Over the cattle grid at the end of the drive is a quiet public lane, which you can ride along (see “Can I ride out onto the lane?”). A van, a Moorland, a tractor or a Yak goes by now and then, less after dark. Now and then a visitor turns in: the post van, whose driver drives up the drive to the barn and leaves a parcel by the door, or the neighbour from over the lane, who drives in in her green Moorland Tor, parks at the barn and stands about for a while (her yard is empty while she is out). About once a week the tuner comes too, towing her rolling road (see “What is the rolling road?”). Jess waves at them, Amy less often. If you are in their way they wait, then hoot, so pull over.`,
         tip: 'The post van and neighbours come in over the cattle grid. Pull over for them.',
